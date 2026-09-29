@@ -23,6 +23,7 @@ import {
   shouldOpenReviewWidgetNotesInNewTab,
 } from '../reviewWidgetNavigation';
 import { resolveYearlyReviewYear } from '../../../utils/yearlyReviewYear';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 interface TechnicalGameWidgetProps {
   filePath: string;
@@ -617,7 +618,10 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
                     items: 'months',
                   })}
                 </span>
-                <div className="journalit-reviewv2-pagination-controls">
+                <div
+                  className="journalit-reviewv2-pagination-controls"
+                  {...shareCaptureExcludeProps}
+                >
                   <button
                     onClick={goToPrevPage}
                     disabled={effectiveCurrentPage === 0}
@@ -733,7 +737,10 @@ export const TechnicalGameWidget: React.FC<TechnicalGameWidgetProps> =
                   items: 'weeks',
                 })}
               </span>
-              <div className="journalit-reviewv2-pagination-controls">
+              <div
+                className="journalit-reviewv2-pagination-controls"
+                {...shareCaptureExcludeProps}
+              >
                 <button
                   onClick={goToPrevPage}
                   disabled={effectiveCurrentPage === 0}

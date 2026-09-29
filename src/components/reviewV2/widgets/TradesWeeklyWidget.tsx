@@ -34,6 +34,7 @@ import {
   getReviewWidgetPeriodAriaLabel,
   openReviewWidgetPeriod,
 } from '../reviewWidgetNavigation';
+import { shareLoadingProps } from '../../../services/share/brandedCapture';
 
 type ReviewPeriodTrade = Record<string, unknown> & {
   tradeId?: string;
@@ -235,6 +236,7 @@ export const TradesWeeklyWidget: React.FC<TradesWeeklyWidgetProps> = ({
           
           <div
             className="journalit-reviewv2-chart-skeleton"
+            {...shareLoadingProps}
             style={cssVars({
               '--reviewv2-chart-height': `${height}px`,
               '--reviewv2-chart-bar-gap': '4px',

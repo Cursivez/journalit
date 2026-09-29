@@ -103,15 +103,12 @@ export function createDefaultPropChallengeConfig(
   };
 }
 
-interface ExistingAccountPropChallengeOptions {
-  initialBalance: number;
+interface LegacyAccountRuleOptions {
   drawdownType: DrawdownType;
   drawdownAmount: number;
   hasProfitTarget: boolean;
   profitTarget: number;
   profitTargetType: ProfitTargetType;
-  phaseName?: string;
-  now?: Date;
 }
 
 export function buildLegacyAccountRules({
@@ -120,14 +117,7 @@ export function buildLegacyAccountRules({
   hasProfitTarget,
   profitTarget,
   profitTargetType,
-}: Pick<
-  ExistingAccountPropChallengeOptions,
-  | 'drawdownType'
-  | 'drawdownAmount'
-  | 'hasProfitTarget'
-  | 'profitTarget'
-  | 'profitTargetType'
->): PropChallengeRule[] {
+}: LegacyAccountRuleOptions): PropChallengeRule[] {
   const rules: PropChallengeRule[] = [];
   if (
     drawdownAmount > 0 &&
@@ -152,38 +142,6 @@ export function buildLegacyAccountRules({
     });
   }
   return rules;
-}
-
-export function createPropChallengeFromExistingAccount({
-  initialBalance,
-  drawdownType,
-  drawdownAmount,
-  hasProfitTarget,
-  profitTarget,
-  profitTargetType,
-  phaseName = 'Phase 1',
-  now = new Date(),
-}: ExistingAccountPropChallengeOptions): PropChallengeConfig {
-  const rules = buildLegacyAccountRules({
-    drawdownType,
-    drawdownAmount,
-    hasProfitTarget,
-    profitTarget,
-    profitTargetType,
-  });
-  const phase = {
-    ...createPropChallengePhase(phaseName, 'active'),
-    stage: 'evaluation' as const,
-    startingBalance: initialBalance,
-    startedAt: now.toISOString(),
-    rules,
-  };
-  return {
-    challengeName: '',
-    status: 'active',
-    currentPhaseId: phase.id,
-    phases: [phase],
-  };
 }
 
 function createRuleFromProfile(rule: PropFirmProfileRule): PropChallengeRule {
@@ -618,6 +576,19 @@ export function reopenChallenge(
       if (phase.id !== currentPhase.id) return phase;
       const reopenedPhase = { ...phase };
       delete reopenedPhase.failure;
+      
+      
+      
+      
+      if (phase.failure) {
+        reopenedPhase.waivedFailures = [
+          ...(phase.waivedFailures ?? []),
+          {
+            ruleId: phase.failure.ruleId,
+            breachedAt: phase.failure.breachedAt,
+          },
+        ];
+      }
       return {
         ...reopenedPhase,
         status: 'active',

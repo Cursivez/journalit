@@ -22,6 +22,7 @@ const localeCodes = [
   'ru',
   'it',
   'ta',
+  'ar',
 ];
 
 function readLocaleObjectLiteral(localeCode) {

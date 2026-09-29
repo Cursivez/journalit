@@ -38,31 +38,42 @@ export const LEGACY_CHALLENGE_SETUP_GUIDE_STEPS: ModalGuideStep[] = [
 ];
 
 
+const CHALLENGE_PAGE_TARGET_STEP: ModalGuideStep = {
+  id: 'target',
+  titleKey: 'guide.merge-wizard.target.title',
+  descriptionKey: 'guide.merge-wizard.target.description',
+  targetSelector: target('account-merge.target'),
+  placement: 'right',
+  
+  skipIfMissing: true,
+};
+
+const CHALLENGE_PAGE_IDENTITY_STEP: ModalGuideStep = {
+  id: 'identity',
+  titleKey: 'guide.merge-wizard.identity.title',
+  descriptionKey: 'guide.merge-wizard.identity.description',
+  targetSelector: target('account-merge.identity'),
+  placement: 'right',
+};
+
 export const ACCOUNT_MERGE_CHALLENGE_PAGE_GUIDE: {
   identity: ModalGuideIdentity;
   steps: ModalGuideStep[];
+  
+  freeSteps: ModalGuideStep[];
 } = {
   identity: {
     guideId: 'account.merge-wizard.challenge',
     version: 1,
     dataKey: 'accountMergeWizardChallengeGuide',
   },
-  steps: [
+  steps: [CHALLENGE_PAGE_TARGET_STEP, CHALLENGE_PAGE_IDENTITY_STEP],
+  freeSteps: [
+    CHALLENGE_PAGE_TARGET_STEP,
     {
-      id: 'target',
-      titleKey: 'guide.merge-wizard.target.title',
-      descriptionKey: 'guide.merge-wizard.target.description',
-      targetSelector: target('account-merge.target'),
-      placement: 'right',
-      
-      skipIfMissing: true,
-    },
-    {
-      id: 'identity',
-      titleKey: 'guide.merge-wizard.identity.title',
-      descriptionKey: 'guide.merge-wizard.identity.description',
-      targetSelector: target('account-merge.identity'),
-      placement: 'right',
+      ...CHALLENGE_PAGE_IDENTITY_STEP,
+      titleKey: 'guide.merge-wizard.identity.free-title',
+      descriptionKey: 'guide.merge-wizard.identity.free-description',
     },
   ],
 };

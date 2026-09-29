@@ -108,7 +108,6 @@ export const SHARED_COMPONENT_STYLES = `
     cursor: pointer;
   }
 
-
   .journalit-label-color-picker__reset {
     padding: 4px 8px;
     color: var(--text-muted);
@@ -267,6 +266,7 @@ export const SHARED_COMPONENT_STYLES = `
 
   .journalit-home-period-option--active .journalit-home-period-option__check {
     background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
     border-color: var(--interactive-accent);
   }
 
@@ -274,7 +274,6 @@ export const SHARED_COMPONENT_STYLES = `
     background: transparent !important;
     background-color: transparent !important;
   }
-
 
   .journalit-modal-actions {
     display: flex;
@@ -302,6 +301,7 @@ export const SHARED_COMPONENT_STYLES = `
 
   .journalit-modal-actions .journalit-button--primary:hover:not(:disabled) {
     background: var(--interactive-accent-hover);
+    color: var(--text-on-accent);
     border-color: var(--interactive-accent-hover);
   }
 
@@ -413,7 +413,6 @@ export const SHARED_COMPONENT_STYLES = `
   .journalit-confirmation-panel__action {
     cursor: pointer;
   }
-
 
   .journalit-obsidian-icon {
     display: inline-flex;
@@ -719,7 +718,7 @@ export const SHARED_COMPONENT_STYLES = `
 
   .journalit-entity-shortcut-option:hover .journalit-entity-shortcut-action,
   .journalit-entity-shortcut-option:focus-visible .journalit-entity-shortcut-action {
-    color: var(--interactive-accent);
+    color: var(--text-accent);
     background-color: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
   }
 
@@ -772,10 +771,6 @@ export const SHARED_COMPONENT_STYLES = `
     background-color: transparent !important;
   }
 
-  .journalit-shared-selector-item--selected {
-    background-color: var(--background-secondary) !important;
-  }
-
   .journalit-shared-selector-icon {
     width: 20px !important;
     height: 20px !important;
@@ -799,33 +794,11 @@ export const SHARED_COMPONENT_STYLES = `
     margin-bottom: 2px !important;
   }
 
-  .journalit-shared-selector-item-description {
-    font-size: 12px !important;
-    color: var(--text-muted) !important;
-    line-height: 1.3 !important;
-  }
-
   .journalit-shared-selector-empty {
     padding: 24px 16px !important;
     text-align: center !important;
     color: var(--text-muted) !important;
     font-size: 13px !important;
-  }
-
-  .journalit-shared-selector-footer {
-    padding: 8px 12px !important;
-    border-top: 1px solid var(--background-modifier-border) !important;
-    font-size: 11px !important;
-    color: var(--text-faint) !important;
-    display: flex !important;
-    gap: 12px !important;
-    flex-shrink: 0 !important;
-  }
-
-  .journalit-shared-selector-widget-category {
-    color: var(--text-faint);
-    font-size: 11px;
-    margin-left: 6px;
   }
 
   .journalit-privacy-mask,
@@ -1017,7 +990,7 @@ export const SHARED_COMPONENT_STYLES = `
   width: 100%;
   height: 100%; 
   color: var(--text-muted);
-  animation: fadeIn 0.3s ease-out;
+  animation: journalit-shared-fade-in-up 0.3s ease-out;
   margin: 0 auto; 
 }
 
@@ -1078,6 +1051,7 @@ export const SHARED_COMPONENT_STYLES = `
   .journalit-empty-state .journalit-empty-state-actions button.journalit-empty-state-action-button:hover,
   .journalit-empty-state .journalit-empty-state-actions button.journalit-empty-state-action-button:focus-visible {
     background-color: var(--interactive-accent-hover);
+    color: var(--text-on-accent);
     transform: translateY(-1px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
@@ -1132,7 +1106,7 @@ export const SHARED_COMPONENT_STYLES = `
   }
 
   
-  @keyframes fadeIn {
+  @keyframes journalit-shared-fade-in-up {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
   }
@@ -1456,7 +1430,7 @@ export const SHARED_COMPONENT_STYLES = `
   }
 
   .journalit-u-text-accent {
-    color: var(--interactive-accent);
+    color: var(--text-accent);
   }
 
   .journalit-u-font-italic {
@@ -1950,7 +1924,8 @@ export const SHARED_COMPONENT_STYLES = `
     opacity: 0.6;
   }
 
-  .jl-checkbox-input {
+  
+  .jl-checkbox-wrapper .jl-checkbox-input {
     position: absolute;
     opacity: 0;
     width: 0;
@@ -1988,6 +1963,7 @@ export const SHARED_COMPONENT_STYLES = `
 
   .jl-checkbox-box[data-checked="true"] {
     background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
     border-color: var(--interactive-accent);
   }
 
@@ -2144,6 +2120,13 @@ export const SHARED_COMPONENT_STYLES = `
   }
 
   
+  .journalit-r-unavailable-note {
+    margin-top: 8px;
+    padding-top: 8px;
+    border-top: 1px solid var(--background-modifier-border);
+  }
+
+  
   .journalit-segmented-progress {
     display: flex;
     gap: 4px;
@@ -2163,6 +2146,7 @@ export const SHARED_COMPONENT_STYLES = `
   .journalit-segmented-progress.is-attention
     .journalit-segmented-progress__segment.is-met {
     background: var(--interactive-accent);
+    color: var(--text-on-accent);
   }
 
   .journalit-segmented-progress.is-positive
@@ -2326,139 +2310,6 @@ export const SHARED_COMPONENT_STYLES = `
   .journalit-select option:checked {
     color: var(--text-normal);
     opacity: 1;
-  }
-
-  .journalit-drilldown-filter {
-    position: relative;
-  }
-
-  .journalit-drilldown-filter__menu {
-    position: absolute;
-    top: calc(100% + 6px);
-    right: 0;
-    width: min(320px, calc(100cqw - 24px));
-    max-height: min(430px, calc(100vh - 140px));
-    overflow-y: auto;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 10px;
-    background-color: var(--background-primary);
-    box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
-    z-index: 120;
-  }
-
-  .journalit-drilldown-filter__panel {
-    padding: 6px;
-  }
-
-  .journalit-drilldown-filter__panel-header {
-    min-height: 36px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 2px 4px 6px;
-    color: var(--text-normal);
-    font-size: 13px;
-    font-weight: 600;
-    border-bottom: 1px solid var(--background-modifier-border);
-    margin-bottom: 4px;
-  }
-
-  .journalit-drilldown-filter__back {
-    width: 28px;
-    height: 28px;
-    padding: 5px;
-  }
-
-   .journalit-drilldown-filter .journalit-drilldown-filter__reset,
-  .journalit-drilldown-filter .journalit-drilldown-filter__row,
-  .journalit-drilldown-filter .journalit-drilldown-filter__option {
-    width: 100%;
-    height: auto;
-    min-height: 38px;
-    display: flex;
-    align-items: center;
-    justify-content: flex-start;
-    gap: 9px;
-    padding: 8px 10px;
-    border: 0;
-    border-radius: 6px;
-    appearance: none;
-    -webkit-appearance: none;
-    background: transparent;
-    background-color: transparent;
-    color: var(--text-normal);
-    text-align: left;
-    cursor: pointer;
-    box-shadow: none;
-    font-size: 13px;
-    font-weight: 400;
-  }
-
-  .journalit-drilldown-filter .journalit-drilldown-filter__reset:hover,
-  .journalit-drilldown-filter .journalit-drilldown-filter__row:hover,
-  .journalit-drilldown-filter .journalit-drilldown-filter__option:hover {
-    background-color: var(--background-modifier-hover);
-  }
-
-  .journalit-drilldown-filter .journalit-drilldown-filter__reset {
-    min-height: 36px;
-    color: var(--text-muted);
-    font-weight: 500;
-  }
-
-  .journalit-drilldown-filter__row-icon {
-    display: inline-flex;
-    align-items: center;
-    flex: 0 0 auto;
-    color: var(--text-muted);
-  }
-
-  .journalit-drilldown-filter__row-label {
-    flex: 0 0 78px;
-    font-size: 13px;
-    font-weight: 500;
-  }
-
-  .journalit-drilldown-filter__row-summary {
-    flex: 1 1 auto;
-    min-width: 0;
-    color: var(--text-muted);
-    font-size: 12px;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    text-align: right;
-  }
-
-  .journalit-drilldown-filter__check {
-    width: 16px;
-    height: 16px;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    flex: 0 0 auto;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    font-size: 10px;
-    color: var(--text-on-accent);
-  }
-
-  .journalit-drilldown-filter__check--active {
-    border-color: var(--interactive-accent);
-    background-color: var(--interactive-accent);
-  }
-
-  .journalit-drilldown-filter__divider {
-    height: 1px;
-    margin: 4px 8px;
-    background-color: var(--background-modifier-border);
-  }
-
-  .journalit-drilldown-filter__empty {
-    padding: 16px 10px;
-    color: var(--text-muted);
-    font-size: 12px;
-    text-align: center;
   }
 
 `;

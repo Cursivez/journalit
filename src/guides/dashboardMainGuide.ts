@@ -6,6 +6,7 @@ import {
   DASHBOARD_EDIT_LAYOUT_BUTTON_TARGET_ID,
   DASHBOARD_FILTER_BUTTON_TARGET_ID,
   DASHBOARD_MAIN_GUIDE_ID,
+  DASHBOARD_MAIN_GUIDE_VERSION,
   DASHBOARD_METRICS_SECTION_TARGET_ID,
 } from './dashboardGuideIds';
 
@@ -14,7 +15,7 @@ export function registerDashboardMainGuide(guideRegistry: GuideRegistry): void {
   guideRegistry.registerGuide({
     id: DASHBOARD_MAIN_GUIDE_ID,
     viewType: HOME_VIEW_TYPE,
-    version: 5,
+    version: DASHBOARD_MAIN_GUIDE_VERSION,
     autoShow: true,
     priority: 110,
     initialStepId: 'intro',

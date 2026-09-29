@@ -58,6 +58,7 @@ export type PropChallengeRule =
       consistencyCushionPercent?: number;
     })
   | (PropChallengeRuleBase &
+      PositionSizeCounting &
       (
         | {
             kind: 'max_position_size';
@@ -80,6 +81,11 @@ export type PropChallengeRule =
             profitBasis?: 'cumulative_trade_profit' | 'current_account_profit';
           }
       ));
+
+interface PositionSizeCounting {
+  
+  microsPerContract?: 10;
+}
 
 export type PropChallengeStage = 'evaluation' | 'sim_funded' | 'live_funded';
 
@@ -221,6 +227,8 @@ export interface PropChallengePhase {
   startedAt?: string;
   completedAt?: string;
   failure?: PropChallengeFailure;
+  
+  waivedFailures?: PropChallengeWaivedFailure[];
   payoutPolicy?: PropChallengePayoutPolicy;
   
   policyHistory?: PropChallengePolicyRevision[];
@@ -263,6 +271,11 @@ export interface PropChallengeFailure {
   >;
   breachedAt: string;
 }
+
+type PropChallengeWaivedFailure = Pick<
+  PropChallengeFailure,
+  'ruleId' | 'breachedAt'
+>;
 
 export interface PropChallengeCost {
   id: string;

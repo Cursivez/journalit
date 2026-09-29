@@ -469,6 +469,7 @@ export class AccountLinkModalWrapper extends Modal {
   async onOpen() {
     const { contentEl } = this;
     contentEl.empty();
+    this.modalEl.addClass('journalit-modal');
 
     
     const [, , { createRoot }] = await Promise.all([

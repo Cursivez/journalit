@@ -1,16 +1,15 @@
 
 
-import React, {
-  useState,
-  useEffect,
-  useRef,
-  useMemo,
-  useCallback,
-} from 'react';
-import { X, Plus } from '../../shared/icons/ObsidianIcon';
+import React, { useMemo, useCallback } from 'react';
 import { AVAILABLE_METRICS, MetricDefinition } from './TopSection/types';
-import { AVAILABLE_WIDGETS, WidgetDefinition } from './BottomSection/types';
+import {
+  AVAILABLE_WIDGETS,
+  WidgetDefinition,
+  normalizeDashboardWidgetIds,
+  type DashboardWidgetCategory,
+} from './BottomSection/types';
 import { findBestWidgetPosition } from './BottomSection/GridLayout';
+import type { Layout } from '../../shared/gridLayout/reactGridLayoutCompat';
 import { usePlugin } from '../../../hooks/usePlugin';
 import {
   getActiveLayout,
@@ -21,480 +20,237 @@ import { eventBus } from '../../../services/events/EventBus';
 import { t } from '../../../lang/helpers';
 import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';
 import { DASHBOARD_WIDGET_PICKER_TARGET_ID } from '../../../guides/dashboardGuideIds';
+import {
+  WidgetPreviewDrawer,
+  type WidgetDrawerItem,
+  type WidgetDrawerTab,
+} from '../../shared/widgetDrawer/WidgetPreviewDrawer';
+import {
+  DASHBOARD_WIDGET_PREVIEWS,
+  renderMetricPreview,
+} from './dashboardWidgetPreviews';
 
 interface UnifiedComponentSelectorProps {
   activeMetrics: string[];
   activeWidgets: string[];
-  onAddMetric: (metricId: string) => void | Promise<void>;
-  onAddWidget: (widgetId: string) => void | Promise<void>;
   onClose: () => void;
 }
 
-type SelectableItem =
-  | { type: 'metric'; data: MetricDefinition }
-  | { type: 'widget'; data: WidgetDefinition };
+const METRICS_TAB_ID = 'metrics';
+const METRIC_ITEM_PREFIX = 'metric:';
 
-interface SelectorItemProps {
-  item: SelectableItem;
-  itemIndex: number;
-  isSelected: boolean;
-  onAddMetric: (metric: MetricDefinition) => void | Promise<void>;
-  onAddWidget: (widget: WidgetDefinition) => void | Promise<void>;
-  onSelectIndex: (index: number) => void;
-  onItemKeyDown: (
-    event: React.KeyboardEvent,
-    action: () => void | Promise<void>
-  ) => void;
-}
-
-const SelectorItem: React.FC<SelectorItemProps> = ({
-  item,
-  itemIndex,
-  isSelected,
-  onAddMetric,
-  onAddWidget,
-  onSelectIndex,
-  onItemKeyDown,
-}) => {
-  const isMetric = item.type === 'metric';
-  const action = () => {
-    if (isMetric) {
-      void onAddMetric(item.data);
-      return;
-    }
-
-    void onAddWidget(item.data);
-  };
-
-  return (
-    <div
-      data-selectable
-      data-item-index={itemIndex}
-      onClick={action}
-      onKeyDown={(event) => onItemKeyDown(event, action)}
-      onMouseEnter={() => onSelectIndex(itemIndex)}
-      onFocus={() => onSelectIndex(itemIndex)}
-      role="button"
-      tabIndex={0}
-      className={`journalit-shared-selector-item${isSelected ? ' journalit-shared-selector-item--selected' : ''}`}
-    >
-      <div className="journalit-shared-selector-icon">
-        <Plus size={16} />
-      </div>
-      <div className="journalit-shared-selector-body">
-        <div className="journalit-shared-selector-item-title">
-          {item.data.name}
-        </div>
-        <div className="journalit-shared-selector-item-description">
-          {item.data.description}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-interface SelectorSectionProps {
-  title: string;
-  items: SelectableItem[];
-  selectedIndex: number;
-  spaced?: boolean;
-  getItemIndex: (type: 'metric' | 'widget', id: string) => number;
-  onAddMetric: (metric: MetricDefinition) => void | Promise<void>;
-  onAddWidget: (widget: WidgetDefinition) => void | Promise<void>;
-  onSelectIndex: (index: number) => void;
-  onItemKeyDown: (
-    event: React.KeyboardEvent,
-    action: () => void | Promise<void>
-  ) => void;
-}
-
-const SelectorSection: React.FC<SelectorSectionProps> = ({
-  title,
-  items,
-  selectedIndex,
-  spaced = false,
-  getItemIndex,
-  onAddMetric,
-  onAddWidget,
-  onSelectIndex,
-  onItemKeyDown,
-}) => {
-  if (items.length === 0) {
-    return null;
-  }
-
-  return (
-    <>
-      <div
-        className={`journalit-shared-selector-section${spaced ? ' journalit-shared-selector-section--spaced' : ''}`}
-      >
-        {title}
-      </div>
-
-      {items.map((item) => {
-        const currentIndex = getItemIndex(item.type, item.data.id);
-
-        return (
-          <SelectorItem
-            key={item.data.id}
-            item={item}
-            itemIndex={currentIndex}
-            isSelected={currentIndex === selectedIndex}
-            onAddMetric={onAddMetric}
-            onAddWidget={onAddWidget}
-            onSelectIndex={onSelectIndex}
-            onItemKeyDown={onItemKeyDown}
-          />
-        );
-      })}
-    </>
-  );
-};
-
-function useSelectorKeyboardNavigation({
-  onClose,
-  selectableItems,
-  selectedIndex,
-  setSelectedIndex,
-  handleAddMetric,
-  handleAddWidget,
-}: {
-  onClose: () => void;
-  selectableItems: SelectableItem[];
-  selectedIndex: number;
-  setSelectedIndex: React.Dispatch<React.SetStateAction<number>>;
-  handleAddMetric: (metric: MetricDefinition) => void | Promise<void>;
-  handleAddWidget: (widget: WidgetDefinition) => void | Promise<void>;
-}) {
-  const keyboardSelectionRef = useRef({
-    onClose,
-    selectableItems,
-    selectedIndex,
-    handleAddMetric,
-    handleAddWidget,
-  });
-
-  useEffect(() => {
-    keyboardSelectionRef.current = {
-      onClose,
-      selectableItems,
-      selectedIndex,
-      handleAddMetric,
-      handleAddWidget,
-    };
-  }, [
-    onClose,
-    selectableItems,
-    selectedIndex,
-    handleAddMetric,
-    handleAddWidget,
-  ]);
-
-  useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      const currentSelection = keyboardSelectionRef.current;
-
-      switch (e.key) {
-        case 'Escape':
-          e.preventDefault();
-          e.stopPropagation();
-          e.stopImmediatePropagation(); 
-          currentSelection.onClose();
-          break;
-        case 'ArrowDown':
-          e.preventDefault();
-          setSelectedIndex((prev) =>
-            Math.min(prev + 1, currentSelection.selectableItems.length - 1)
-          );
-          break;
-        case 'ArrowUp':
-          e.preventDefault();
-          setSelectedIndex((prev) => Math.max(prev - 1, 0));
-          break;
-        case 'Enter': {
-          e.preventDefault();
-          const item =
-            currentSelection.selectableItems[currentSelection.selectedIndex];
-          if (item) {
-            if (item.type === 'metric') {
-              void currentSelection.handleAddMetric(item.data);
-            } else {
-              void currentSelection.handleAddWidget(item.data);
-            }
-          }
-          break;
-        }
-      }
-    };
-
-    window.activeDocument.addEventListener('keydown', handleKeyDown, true);
-    return () =>
-      window.activeDocument.removeEventListener('keydown', handleKeyDown, true);
-  }, [setSelectedIndex]);
-}
+const CATEGORY_LABEL_KEYS = {
+  performance: 'dashboard.selector.tab.performance',
+  breakdowns: 'dashboard.selector.tab.breakdowns',
+  risk: 'dashboard.selector.tab.risk',
+} as const satisfies Record<DashboardWidgetCategory, string>;
 
 const UnifiedComponentSelectorBase: React.FC<UnifiedComponentSelectorProps> = ({
   activeMetrics,
   activeWidgets,
-  onAddMetric,
-  onAddWidget,
   onClose,
 }) => {
   const plugin = usePlugin();
-  const [selectedIndex, setSelectedIndex] = useState(0);
-  const listRef = useRef<HTMLDivElement>(null);
   const registerWidgetPickerTarget = useGuideTarget(
     DASHBOARD_WIDGET_PICKER_TARGET_ID
   );
 
-  
-  const availableMetrics = useMemo(
-    () => AVAILABLE_METRICS.filter((m) => !activeMetrics.includes(m.id)),
-    [activeMetrics]
-  );
-
-  const availableWidgets = useMemo(
-    () => AVAILABLE_WIDGETS.filter((w) => !activeWidgets.includes(w.id)),
-    [activeWidgets]
-  );
-
-  
-  const selectableItems = useMemo<SelectableItem[]>(() => {
-    const items: SelectableItem[] = [];
-
-    availableWidgets.forEach((widget) => {
-      items.push({ type: 'widget', data: widget });
-    });
-
-    availableMetrics.forEach((metric) => {
-      items.push({ type: 'metric', data: metric });
-    });
-
-    return items;
-  }, [availableMetrics, availableWidgets]);
-
-  const availableWidgetItems = useMemo<SelectableItem[]>(
-    () => availableWidgets.map((widget) => ({ type: 'widget', data: widget })),
-    [availableWidgets]
-  );
-
-  const availableMetricItems = useMemo<SelectableItem[]>(
-    () => availableMetrics.map((metric) => ({ type: 'metric', data: metric })),
-    [availableMetrics]
-  );
-
-  
-  const handleAddMetric = useCallback(
-    async (metric: MetricDefinition) => {
-      if (activeMetrics.includes(metric.id)) return;
-
-      if (plugin) {
-        try {
-          const currentLayout = getActiveLayout(plugin);
-          const updatedTopSection = [...currentLayout.topSection];
-          if (!updatedTopSection.includes(metric.id)) {
-            updatedTopSection.push(metric.id);
-          }
-
-          const newLayout: DashboardLayout = {
-            ...currentLayout,
-            topSection: updatedTopSection,
-          };
-
-          await saveLayout(plugin, 'Default', newLayout);
-          void onAddMetric(metric.id);
-
-          eventBus.publish('metrics:changed', {
-            activeMetrics: updatedTopSection,
-          });
-        } catch (error) {
-          console.error('Error adding metric:', error);
-        }
-      } else {
-        void onAddMetric(metric.id);
-      }
-    },
-    [activeMetrics, plugin, onAddMetric]
-  );
-
-  
-  const handleAddWidget = useCallback(
-    async (widget: WidgetDefinition) => {
-      if (activeWidgets.includes(widget.id)) return;
-
-      if (plugin) {
-        try {
-          const currentLayout = getActiveLayout(plugin);
-          const widgetDef = AVAILABLE_WIDGETS.find((w) => w.id === widget.id);
-
-          if (!widgetDef) {
-            throw new Error(`Widget definition not found: ${widget.id}`);
-          }
-
-          const newLayoutItem = findBestWidgetPosition(
-            currentLayout.bottomSection.lg,
-            widget.id,
-            widgetDef.defaultSize.w,
-            widgetDef.defaultSize.h,
-            plugin
-          );
-
-          const newLayout: DashboardLayout = {
-            ...currentLayout,
-            bottomSection: {
-              lg: [...currentLayout.bottomSection.lg, newLayoutItem],
-              md: [...currentLayout.bottomSection.md, newLayoutItem],
-              sm: [...currentLayout.bottomSection.sm, newLayoutItem],
-              xs: [
-                ...(currentLayout.bottomSection.xs || []),
-                {
-                  ...newLayoutItem,
-                  w: Math.min(newLayoutItem.w, 2),
-                },
-              ],
-              xxs: [
-                ...(currentLayout.bottomSection.xxs || []),
-                {
-                  ...newLayoutItem,
-                  w: 1,
-                },
-              ],
-            },
-          };
-
-          await saveLayout(plugin, 'Default', newLayout);
-          void onAddWidget(widget.id);
-
-          eventBus.publish('widgets:changed', {
-            activeWidgets: [...activeWidgets, widget.id],
-          });
-        } catch (error) {
-          console.error('Error adding widget:', error);
-        }
-      } else {
-        void onAddWidget(widget.id);
-      }
-    },
-    [activeWidgets, plugin, onAddWidget]
-  );
-  useSelectorKeyboardNavigation({
-    onClose,
-    selectableItems,
-    selectedIndex,
-    setSelectedIndex,
-    handleAddMetric,
-    handleAddWidget,
-  });
-
-  
-  useEffect(() => {
-    if (!listRef.current) return;
-    const items = listRef.current.querySelectorAll('[data-selectable]');
-    const selected = items[selectedIndex];
-    if (selected?.instanceOf(HTMLElement)) {
-      selected.scrollIntoView({ block: 'nearest' });
-    }
-  }, [selectedIndex]);
-
-  
-  const getItemIndex = useCallback(
-    (type: 'metric' | 'widget', id: string): number => {
-      return selectableItems.findIndex(
-        (item) => item.type === type && item.data.id === id
-      );
-    },
-    [selectableItems]
-  );
-
-  const handleItemKeyDown = useCallback(
-    (event: React.KeyboardEvent, action: () => void) => {
-      if (event.key !== ' ') {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopPropagation();
-      void action();
-    },
+  const tabs = useMemo<WidgetDrawerTab[]>(
+    () => [
+      ...Object.entries(CATEGORY_LABEL_KEYS).map(([id, labelKey]) => ({
+        id,
+        label: t(labelKey),
+      })),
+      { id: METRICS_TAB_ID, label: t('dashboard.selector.metrics') },
+    ],
     []
   );
 
-  return (
-    <div
-      onClick={(e) => e.target === e.currentTarget && onClose()}
-      onKeyDown={(e) => {
-        if (e.key === 'Escape') {
-          onClose();
+  
+  
+  const items = useMemo<WidgetDrawerItem[]>(() => {
+    const widgetsInUse = new Set(activeWidgets);
+    const metricsInUse = new Set(activeMetrics);
+    return [
+      ...AVAILABLE_WIDGETS.map((widget) => ({
+        id: widget.id,
+        name: widget.name,
+        description: widget.description,
+        tabId: widget.category,
+        renderPreview: DASHBOARD_WIDGET_PREVIEWS[widget.id],
+        inUse: widgetsInUse.has(widget.id),
+      })),
+      ...AVAILABLE_METRICS.map((metric) => ({
+        id: `${METRIC_ITEM_PREFIX}${metric.id}`,
+        name: metric.name,
+        description: metric.description,
+        tabId: METRICS_TAB_ID,
+        renderPreview: () => renderMetricPreview(metric),
+        compact: true,
+        inUse: metricsInUse.has(metric.id),
+      })),
+    ];
+  }, [activeMetrics, activeWidgets]);
+
+  
+  
+  
+  
+  
+  
+  const handleAddMetric = useCallback(
+    async (metric: MetricDefinition) => {
+      if (!plugin) return;
+      try {
+        const currentLayout = getActiveLayout(plugin);
+        if (currentLayout.topSection.includes(metric.id)) return;
+
+        const updatedTopSection = [...currentLayout.topSection, metric.id];
+        const persisted = saveLayout(plugin, {
+          ...currentLayout,
+          topSection: updatedTopSection,
+        });
+        eventBus.publish('metrics:changed', {
+          activeMetrics: updatedTopSection,
+        });
+        await persisted;
+      } catch (error) {
+        console.error('Error adding metric:', error);
+      }
+    },
+    [plugin]
+  );
+
+  const handleAddWidget = useCallback(
+    async (widget: WidgetDefinition) => {
+      if (!plugin) return;
+      try {
+        const currentLayout = getActiveLayout(plugin);
+        if (
+          currentLayout.bottomSection.lg.some((item) => item.i === widget.id)
+        ) {
+          return;
         }
-      }}
-      role="presentation"
-      className="journalit-shared-selector-overlay"
-    >
-      <div
-        onClick={(e) => e.stopPropagation()}
-        onKeyDown={(e) => e.stopPropagation()}
-        role="presentation"
-        className="journalit-shared-selector-modal"
-        ref={registerWidgetPickerTarget}
-      >
-        
-        <div className="journalit-shared-selector-header">
-          <span className="journalit-shared-selector-title">
-            {t('dashboard.selector.title')}
-          </span>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              onClose();
-            }}
-            className="journalit-shared-selector-close"
-          >
-            <X size={16} />
-          </button>
-        </div>
 
-        
-        <div ref={listRef} className="journalit-shared-selector-content">
-          <SelectorSection
-            title={t('dashboard.selector.charts')}
-            items={availableWidgetItems}
-            selectedIndex={selectedIndex}
-            getItemIndex={getItemIndex}
-            onAddMetric={handleAddMetric}
-            onAddWidget={handleAddWidget}
-            onSelectIndex={setSelectedIndex}
-            onItemKeyDown={handleItemKeyDown}
-          />
+        const newLayoutItem = findBestWidgetPosition(
+          currentLayout.bottomSection.lg,
+          widget.id,
+          widget.defaultSize.w,
+          widget.defaultSize.h,
+          plugin
+        );
 
-          <SelectorSection
-            title={t('dashboard.selector.metrics')}
-            items={availableMetricItems}
-            selectedIndex={selectedIndex}
-            spaced={availableWidgets.length > 0}
-            getItemIndex={getItemIndex}
-            onAddMetric={handleAddMetric}
-            onAddWidget={handleAddWidget}
-            onSelectIndex={setSelectedIndex}
-            onItemKeyDown={handleItemKeyDown}
-          />
+        const newLayout: DashboardLayout = {
+          ...currentLayout,
+          bottomSection: {
+            lg: [...currentLayout.bottomSection.lg, newLayoutItem],
+            md: [...currentLayout.bottomSection.md, newLayoutItem],
+            sm: [...currentLayout.bottomSection.sm, newLayoutItem],
+            xs: [
+              ...(currentLayout.bottomSection.xs || []),
+              {
+                ...newLayoutItem,
+                w: Math.min(newLayoutItem.w, 2),
+              },
+            ],
+            xxs: [
+              ...(currentLayout.bottomSection.xxs || []),
+              {
+                ...newLayoutItem,
+                w: 1,
+              },
+            ],
+          },
+        };
 
-          
-          {availableMetrics.length === 0 && availableWidgets.length === 0 && (
-            <div className="journalit-shared-selector-empty">
-              {t('dashboard.selector.empty')}
-            </div>
-          )}
-        </div>
+        const persisted = saveLayout(plugin, newLayout);
+        eventBus.publish('widgets:changed', {
+          activeWidgets: normalizeDashboardWidgetIds(
+            newLayout.bottomSection.lg.map((item) => item.i)
+          ),
+        });
+        await persisted;
+      } catch (error) {
+        console.error('Error adding widget:', error);
+      }
+    },
+    [plugin]
+  );
 
-        
-        <div className="journalit-shared-selector-footer">
-          <span>{t('dashboard.selector.hint.navigate')}</span>
-          <span>{t('dashboard.selector.hint.select')}</span>
-          <span>{t('dashboard.selector.hint.close')}</span>
-        </div>
-      </div>
-    </div>
+  const handleAdd = useCallback(
+    (itemId: string) => {
+      if (itemId.startsWith(METRIC_ITEM_PREFIX)) {
+        const metricId = itemId.slice(METRIC_ITEM_PREFIX.length);
+        const metric = AVAILABLE_METRICS.find((m) => m.id === metricId);
+        if (metric) return handleAddMetric(metric);
+        return;
+      }
+      const widget = AVAILABLE_WIDGETS.find((w) => w.id === itemId);
+      if (widget) return handleAddWidget(widget);
+    },
+    [handleAddMetric, handleAddWidget]
+  );
+
+  
+  
+  const handleRemove = useCallback(
+    async (itemId: string) => {
+      if (!plugin) return;
+      try {
+        const currentLayout = getActiveLayout(plugin);
+        if (itemId.startsWith(METRIC_ITEM_PREFIX)) {
+          const metricId = itemId.slice(METRIC_ITEM_PREFIX.length);
+          const updatedTopSection = currentLayout.topSection.filter(
+            (id) => id !== metricId
+          );
+          const persisted = saveLayout(plugin, {
+            ...currentLayout,
+            topSection: updatedTopSection,
+          });
+          eventBus.publish('metrics:changed', {
+            activeMetrics: updatedTopSection,
+          });
+          await persisted;
+          return;
+        }
+
+        const withoutWidget = (items: Layout[] = []) =>
+          items.filter((item) => item.i !== itemId);
+        const bottomSection = {
+          lg: withoutWidget(currentLayout.bottomSection.lg),
+          md: withoutWidget(currentLayout.bottomSection.md),
+          sm: withoutWidget(currentLayout.bottomSection.sm),
+          xs: withoutWidget(currentLayout.bottomSection.xs),
+          xxs: withoutWidget(currentLayout.bottomSection.xxs),
+        };
+        const persisted = saveLayout(plugin, {
+          ...currentLayout,
+          bottomSection,
+        });
+        eventBus.publish('widgets:changed', {
+          activeWidgets: normalizeDashboardWidgetIds(
+            bottomSection.lg.map((item) => item.i)
+          ),
+        });
+        await persisted;
+      } catch (error) {
+        console.error('Error removing dashboard item:', error);
+      }
+    },
+    [plugin]
+  );
+
+  return (
+    <WidgetPreviewDrawer
+      title={t('dashboard.selector.title')}
+      subtitle={t('dashboard.selector.subtitle')}
+      tabs={tabs}
+      items={items}
+      onAdd={handleAdd}
+      onRemove={handleRemove}
+      onClose={onClose}
+      panelRef={registerWidgetPickerTarget}
+    />
   );
 };
 

@@ -70,6 +70,22 @@ type DisplayRollingStatsDataPoint = RollingStatsDataPoint & {
   displayAvgLossR?: number | null;
 };
 
+type DisplayValueFormatter = ReturnType<
+  typeof useDisplayFormatter
+>['formatValue'];
+
+function formatRollingStatsYAxisTick(
+  value: number,
+  displayRMultiples: boolean,
+  currencyCode: string,
+  formatValue: DisplayValueFormatter
+): string {
+  if (!Number.isFinite(value)) return '';
+  return displayRMultiples
+    ? formatValue({ kind: 'rMultiple', value })
+    : formatValue({ kind: 'pnl', value, currencyCode });
+}
+
 const collectVisibleYAxisValues = (
   chartData: DisplayRollingStatsDataPoint[],
   displayRMultiples: boolean
@@ -296,23 +312,13 @@ export const RollingStatsChart = React.memo<BaseWidgetProps>(
             displayRMultiples
           );
           const yAxisConfig = buildRollingStatsYAxis(yAxisValues);
-          const formatYAxisTick = (value: number) => {
-            if (!Number.isFinite(value)) {
-              return '';
-            }
-            if (displayRMultiples) {
-              return formatValue({
-                kind: 'rMultiple',
-                value,
-              });
-            }
-
-            return formatValue({
-              kind: 'pnl',
+          const formatYAxisTick = (value: number) =>
+            formatRollingStatsYAxisTick(
               value,
-              currencyCode: activeCurrency,
-            });
-          };
+              displayRMultiples,
+              activeCurrency,
+              formatValue
+            );
 
           
           const renderTooltip = (
@@ -448,6 +454,7 @@ export const RollingStatsChart = React.memo<BaseWidgetProps>(
                       interval="preserveStartEnd"
                     />
                     <YAxis
+                      className="journalit-chart-axis--numeric"
                       tickFormatter={formatYAxisTick}
                       width={calculateYAxisWidth(
                         yAxisConfig.ticks,

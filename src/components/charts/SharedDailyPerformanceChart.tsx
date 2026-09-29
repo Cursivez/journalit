@@ -265,6 +265,9 @@ export const SharedDailyPerformanceChart =
               kind: 'pnl',
               value,
               currencyCode: currency,
+              
+              rMultiple: undefined,
+              fallback: '',
             });
           }
 
@@ -370,6 +373,7 @@ export const SharedDailyPerformanceChart =
               }}
             />
             <YAxis
+              className="journalit-chart-axis--numeric"
               tickFormatter={formatYAxisTick}
               tick={{
                 fontSize: 11,

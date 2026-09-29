@@ -64,7 +64,7 @@ export const PATH_CHANGE_INSTRUCTION_MODAL_STYLES = `
   .journalit-confirmation-modal .path-change-instruction-alert-icon {
     margin-right: 8px;
     margin-top: 2px;
-    color: var(--color-accent);
+    color: var(--text-accent);
     flex-shrink: 0;
   }
 

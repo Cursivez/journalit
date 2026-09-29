@@ -1,5 +1,9 @@
 export const TRADE_LOG_EMPTY_GUIDE_ID = 'tradelog.empty';
 export const TRADE_LOG_MAIN_GUIDE_ID = 'tradelog.main';
+
+
+
+export const TRADE_LOG_MAIN_GUIDE_VERSION = 11;
 export const TRADE_LOG_IMAGE_GALLERY_EMPTY_GUIDE_ID =
   'tradelog.imageGallery.empty';
 export const TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID =
@@ -11,7 +15,6 @@ export const TRADE_LOG_IMAGE_GALLERY_MODE_BUTTON_TARGET_ID =
   'tradelog.image-gallery-mode-button';
 export const TRADE_LOG_VIEW_SELECTOR_TARGET_ID = 'tradelog.view-selector';
 export const TRADE_LOG_FILTER_BUTTON_TARGET_ID = 'tradelog.filter-button';
-export const TRADE_LOG_FILTER_MODAL_TARGET_ID = 'tradelog.filter-modal';
 export const TRADE_LOG_TABLE_HEADERS_TARGET_ID = 'tradelog.table-headers';
 export const TRADE_LOG_MULTI_SELECT_BUTTON_TARGET_ID =
   'tradelog.multi-select-button';
@@ -30,8 +33,6 @@ export const TRADE_LOG_IMAGE_GALLERY_GROUPING_TARGET_ID =
   'tradelog.image-gallery-grouping';
 export const TRADE_LOG_IMAGE_GALLERY_SIZE_TARGET_ID =
   'tradelog.image-gallery-size';
-export const TRADE_LOG_IMAGE_GALLERY_FILTER_SECTION_TARGET_ID =
-  'tradelog.image-gallery-filter-section';
 export const TRADE_LOG_IMAGE_GALLERY_GRID_TARGET_ID =
   'tradelog.image-gallery-grid';
 export const TRADE_LOG_IMAGE_GALLERY_FULLSCREEN_ACTIONS_TARGET_ID =
@@ -41,10 +42,6 @@ export const TRADE_LOG_IMAGE_GALLERY_TAG_BUTTON_TARGET_ID =
 export const TRADE_LOG_IMAGE_GALLERY_ANNOTATION_PANEL_TARGET_ID =
   'tradelog.image-gallery-annotation-panel';
 
-export const TRADE_LOG_FILTER_MODAL_OPENED_ACTION_ID =
-  'tradelog.filter-modal-opened';
-export const TRADE_LOG_FILTER_MODAL_CLOSED_ACTION_ID =
-  'tradelog.filter-modal-closed';
 export const TRADE_LOG_MULTI_SELECT_ENABLED_ACTION_ID =
   'tradelog.multi-select-enabled';
 export const TRADE_LOG_AVAILABLE_COLUMNS_OPENED_ACTION_ID =

@@ -145,31 +145,7 @@ export class GlobalPasteManager {
 
     if (!handler) {
       
-      try {
-        const result = await PasteManager.extractClipboardImages();
-        if (result.success && result.files.length > 0) {
-          
-          const hasVisibleUploadAreas = this.handlers.some((h) => {
-            const rect = h.element.getBoundingClientRect();
-            return (
-              rect.width > 0 &&
-              rect.height > 0 &&
-              window.getComputedStyle(h.element).visibility !== 'hidden' &&
-              window.getComputedStyle(h.element).display !== 'none'
-            );
-          });
-
-          if (!hasVisibleUploadAreas) {
-            const context: ErrorContext = {
-              operation: 'paste target detection',
-            };
-            const noTargetError = new Error('No image upload area available');
-            ErrorHandler.showError(noTargetError, context);
-          }
-        }
-      } catch {
-        // intentional
-      }
+      
       return;
     }
 

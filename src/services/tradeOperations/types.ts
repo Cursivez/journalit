@@ -14,7 +14,6 @@ export interface TradeOperationTrade {
   filePath: string;
   entryTime: string;
   accountName: string;
-  brokerLabel?: string;
   change: TradeOperationChange;
 }
 

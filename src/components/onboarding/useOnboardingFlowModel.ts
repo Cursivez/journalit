@@ -21,10 +21,10 @@ import type {
   OnboardingStepId,
 } from '../../services/onboarding/types';
 import {
+  MANUAL_IMPORT_BROKER_ID,
   buildOnboardingBrokerOptions,
   getSyncProviderOptions,
   getUnlistedBrokerOption,
-  MANUAL_IMPORT_BROKER_ID,
   type OnboardingBrokerOption,
 } from '../../services/onboarding/brokerCatalog';
 import { applyOnboardingPersonalisation } from '../../services/onboarding/personalisation/applyOnboardingPersonalisation';
@@ -33,7 +33,7 @@ import { BackendTradeImportService } from '../../services/tradeImport/BackendTra
 import { setOnboardingTradeImportBroker } from '../../services/tradeImport/onboardingTradeImportHandoff';
 import type { TradeImportCapabilities } from '../../services/tradeImport/types';
 import { writeTradeSyncProviderPreference } from '../../services/tradeSync/tradeSyncProviderPreference';
-import { markOnboardingUpgradeOrigin } from '../../services/upgrade/upgradeOrigin';
+import { markUpgradeOrigin } from '../../services/upgrade/upgradeOrigin';
 import { useBackendProEntitlement } from '../../hooks/useBackendProEntitlement';
 import { DeviceFlowSignInModal } from '../auth/DeviceFlowSignInModal';
 import { ONBOARDING_VIEW_TYPE } from '../../views/OnboardingView';
@@ -185,7 +185,9 @@ export function useOnboardingFlowModel(
   const [busy, setBusy] = useState(false);
   const [sidebarRevealed, setSidebarRevealed] = useState(false);
   const { isAuthenticated } = useBackendProEntitlement(plugin, 'onboarding');
-  const capabilitiesState = useBrokerCapabilities(data.step === 'broker');
+  const capabilitiesState = useBrokerCapabilities(
+    data.step === 'data-source' || data.step === 'broker'
+  );
   const sampleJournal = useMemo(
     () => resolveSampleJournalIntegration(plugin, service),
     [plugin, service]
@@ -287,7 +289,7 @@ export function useOnboardingFlowModel(
         await plugin.viewManager.openOnboardingView();
         return;
       }
-      markOnboardingUpgradeOrigin('metatraderSync');
+      markUpgradeOrigin('onboarding', 'metatraderSync');
     } catch (error) {
       console.error('[Onboarding] Failed to open Trade Sync:', error);
       new Notice(t('onboarding.notice.trade-sync-open-failed'));
@@ -295,11 +297,9 @@ export function useOnboardingFlowModel(
   };
 
   const openTradeImport = async (importBrokerId: string | undefined) => {
-    const selectedBroker =
-      importBrokerId && importBrokerId !== MANUAL_IMPORT_BROKER_ID
-        ? importBrokerId
-        : undefined;
-    setOnboardingTradeImportBroker(selectedBroker);
+    
+    
+    setOnboardingTradeImportBroker(importBrokerId);
     try {
       await plugin.viewManager.openCSVImportView();
       window.dispatchEvent(
@@ -309,7 +309,7 @@ export function useOnboardingFlowModel(
         await plugin.viewManager.openOnboardingView();
         return;
       }
-      markOnboardingUpgradeOrigin('csvImport');
+      markUpgradeOrigin('onboarding', 'csvImport');
     } catch (error) {
       console.error('[Onboarding] Failed to open Trade Import:', error);
       new Notice(
@@ -374,6 +374,11 @@ export function useOnboardingFlowModel(
         }
         return;
       case 'file':
+        
+        
+        
+        await openTradeImport(MANUAL_IMPORT_BROKER_ID);
+        return;
       case undefined:
         await openTradeImport(undefined);
         return;

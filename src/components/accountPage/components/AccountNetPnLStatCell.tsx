@@ -4,8 +4,13 @@ import React from 'react';
 import { useAccountPageData } from '../context/AccountPageDataContext';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
-import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
+import {
+  useDisplayFormatter,
+  useDisplayPolicy,
+} from '../../../hooks/useDisplayPolicy';
 import { ConversionSourceLines } from '../../shared/display/CurrencyConversionInfo';
+import { getRCoverageMessage } from '../../shared/display/RMultipleUnavailableHint';
+import { HelpTooltipContent } from '../../shared/HelpTooltipContent';
 import { Tooltip } from '../../shared/Tooltip';
 import { t } from '../../../lang/helpers';
 import {
@@ -20,6 +25,7 @@ export const AccountNetPnLStatCell: React.FC<{
   const { accountPageData, getMetrics } = useAccountPageData();
   const { currency: globalCurrency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
+  const { displayRMultiples } = useDisplayPolicy();
 
   
   
@@ -37,12 +43,21 @@ export const AccountNetPnLStatCell: React.FC<{
   const maskedOrSingleCurrency = formatValue({
     kind: 'pnl',
     value: metrics.totalPnL,
+    rMultiple: metrics.totalPnLRMultiple,
     currencyCode: effectiveCurrency,
   });
 
+  
   const display =
-    isPnlMasked || !metrics.isMultiCurrency
-      ? { amount: metrics.totalPnL, value: maskedOrSingleCurrency }
+    isPnlMasked || !metrics.isMultiCurrency || displayRMultiples
+      ? {
+          
+          amount:
+            displayRMultiples && !isPnlMasked
+              ? metrics.totalPnLRMultiple
+              : metrics.totalPnL,
+          value: maskedOrSingleCurrency,
+        }
       : metrics.convertedTotalPnL !== undefined
         ? {
             amount: metrics.convertedTotalPnL,
@@ -76,62 +91,87 @@ export const AccountNetPnLStatCell: React.FC<{
             }
           : { amount: metrics.totalPnL, value: maskedOrSingleCurrency };
 
-  const label =
-    metrics.isMultiCurrency && metrics.convertedTotalPnL !== undefined ? (
-      <span className="journalit-account-stat-label-with-icon">
-        {t('dashboard.metrics.netPnL')}
-        <Tooltip
-          content={
-            <div className="account-metrics-conversion-tooltip">
-              <div className="account-metrics-conversion-tooltip-title">
-                {t('dashboard.conversion.converted-total')}
-              </div>
-              <div>
-                {t('dashboard.conversion.base', {
-                  currency: metrics.conversionBaseCurrency || '',
-                })}
-              </div>
-              <ConversionSourceLines
-                brokerBaseCurrencyTradeCount={
-                  metrics.brokerBaseCurrencyTradeCount
-                }
-                manualFxRateTradeCount={metrics.manualFxRateTradeCount}
-                conversionRateDate={metrics.conversionRateDate}
-              />
-              {metrics.partiallyConvertedCurrencies &&
-                metrics.partiallyConvertedCurrencies.length > 0 && (
-                  <div className="account-metrics-conversion-warning">
-                    {t('dashboard.conversion.partial-warning', {
-                      currencies:
-                        metrics.partiallyConvertedCurrencies.join(', '),
-                    })}
-                  </div>
-                )}
-              {metrics.unconvertedCurrencies &&
-                metrics.unconvertedCurrencies.length > 0 && (
-                  <div className="account-metrics-conversion-warning">
-                    {t('dashboard.conversion.excluded-warning', {
-                      converted: String(metrics.convertedTradeCount),
-                      total: String(metrics.originalTradeCount),
-                      excluded: String(
-                        metrics.originalTradeCount! -
-                          metrics.convertedTradeCount!
-                      ),
-                      currencies: metrics.unconvertedCurrencies.join(', '),
-                    })}
-                  </div>
-                )}
+  
+  const rCoverageWarning =
+    displayRMultiples && !isPnlMasked
+      ? getRCoverageMessage(metrics.rMultipleTradeCount, metrics.totalTrades)
+      : undefined;
+
+  const label = rCoverageWarning ? (
+    <span className="journalit-account-stat-label-with-icon">
+      {t('dashboard.metrics.netPnL')}
+      <Tooltip
+        content={
+          <HelpTooltipContent
+            title={t('dashboard.metrics.netPnL')}
+            description={rCoverageWarning}
+            example={t('common.r-missing.fix')}
+          />
+        }
+        delay={200}
+        
+        
+        disclosureLabel={`${t('dashboard.metrics.netPnL')}: ${rCoverageWarning}`}
+        preferredPosition="bottom"
+      >
+        <span className="metric-label-info-icon" aria-hidden="true">
+          ⓘ
+        </span>
+      </Tooltip>
+    </span>
+  ) : metrics.isMultiCurrency && metrics.convertedTotalPnL !== undefined ? (
+    <span className="journalit-account-stat-label-with-icon">
+      {t('dashboard.metrics.netPnL')}
+      <Tooltip
+        content={
+          <div className="account-metrics-conversion-tooltip">
+            <div className="account-metrics-conversion-tooltip-title">
+              {t('dashboard.conversion.converted-total')}
             </div>
-          }
-          delay={200}
-          preferredPosition="bottom"
-        >
-          <span className="metric-label-info-icon">ⓘ</span>
-        </Tooltip>
-      </span>
-    ) : (
-      t('dashboard.metrics.netPnL')
-    );
+            <div>
+              {t('dashboard.conversion.base', {
+                currency: metrics.conversionBaseCurrency || '',
+              })}
+            </div>
+            <ConversionSourceLines
+              brokerBaseCurrencyTradeCount={
+                metrics.brokerBaseCurrencyTradeCount
+              }
+              manualFxRateTradeCount={metrics.manualFxRateTradeCount}
+              conversionRateDate={metrics.conversionRateDate}
+            />
+            {metrics.partiallyConvertedCurrencies &&
+              metrics.partiallyConvertedCurrencies.length > 0 && (
+                <div className="account-metrics-conversion-warning">
+                  {t('dashboard.conversion.partial-warning', {
+                    currencies: metrics.partiallyConvertedCurrencies.join(', '),
+                  })}
+                </div>
+              )}
+            {metrics.unconvertedCurrencies &&
+              metrics.unconvertedCurrencies.length > 0 && (
+                <div className="account-metrics-conversion-warning">
+                  {t('dashboard.conversion.excluded-warning', {
+                    converted: String(metrics.convertedTradeCount),
+                    total: String(metrics.originalTradeCount),
+                    excluded: String(
+                      metrics.originalTradeCount! - metrics.convertedTradeCount!
+                    ),
+                    currencies: metrics.unconvertedCurrencies.join(', '),
+                  })}
+                </div>
+              )}
+          </div>
+        }
+        delay={200}
+        preferredPosition="bottom"
+      >
+        <span className="metric-label-info-icon">ⓘ</span>
+      </Tooltip>
+    </span>
+  ) : (
+    t('dashboard.metrics.netPnL')
+  );
 
   return (
     <AccountStatCell

@@ -1,4 +1,4 @@
-import type { TradeImportDefaultAction } from './types';
+import type { ClassifiedPreviewTrade, TradeImportDefaultAction } from './types';
 
 export function isTradeImportCommitEligible(
   action: TradeImportDefaultAction
@@ -6,14 +6,35 @@ export function isTradeImportCommitEligible(
   return action === 'create' || action === 'update';
 }
 
-export function isTradeImportSkipped(
-  action: TradeImportDefaultAction
-): boolean {
+function isTradeImportSkipped(action: TradeImportDefaultAction): boolean {
   return action === 'skip';
 }
 
-export function isTradeImportBlocked(
-  action: TradeImportDefaultAction
-): boolean {
+function isTradeImportBlocked(action: TradeImportDefaultAction): boolean {
   return action === 'blocked' || action === 'manual_review';
+}
+
+type ClassifiedItem = Pick<
+  ClassifiedPreviewTrade,
+  'classification' | 'defaultAction'
+>;
+
+
+export function canImportTradeAnyway(item: ClassifiedItem): boolean {
+  return (
+    item.classification === 'likely_duplicate' &&
+    item.defaultAction === 'manual_review'
+  );
+}
+
+
+export function isTradeImportDuplicate(item: ClassifiedItem): boolean {
+  return isTradeImportSkipped(item.defaultAction) || canImportTradeAnyway(item);
+}
+
+
+export function needsTradeImportAttention(item: ClassifiedItem): boolean {
+  return (
+    isTradeImportBlocked(item.defaultAction) && !isTradeImportDuplicate(item)
+  );
 }

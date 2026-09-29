@@ -511,7 +511,7 @@ export interface DrawdownChartDataPoint {
   distanceToRecoveryR?: number;
 }
 
-export const shouldUseDrawdownPercentScale = (
+const shouldUseDrawdownPercentScale = (
   data: DrawdownChartDataPoint[]
 ): boolean =>
   data.length > 0 &&
@@ -522,11 +522,41 @@ export const shouldUseDrawdownPercentScale = (
       point.drawdownPercentBasisLabel
   );
 
-export const getDrawdownChartScaleValue = (
+const getDrawdownChartScaleValue = (
   point: DrawdownChartDataPoint,
   usePercentScale: boolean
 ): number =>
   usePercentScale ? -Math.abs(point.drawdownPercent ?? 0) : point.drawdown;
+
+export type DrawdownChartScale = 'r' | 'percent' | 'money';
+
+
+export const getDrawdownChartScale = (
+  series: DrawdownChartDataPoint[][],
+  displayRMultiples: boolean
+): DrawdownChartScale => {
+  const points = series.flat();
+  if (
+    displayRMultiples &&
+    points.length > 0 &&
+    points.every(
+      (point) => point.drawdownAmount <= 0 || Number.isFinite(point.drawdownR)
+    )
+  ) {
+    return 'r';
+  }
+  return series.length > 0 && series.every(shouldUseDrawdownPercentScale)
+    ? 'percent'
+    : 'money';
+};
+
+export const getDrawdownChartPlotValue = (
+  point: DrawdownChartDataPoint,
+  scale: DrawdownChartScale
+): number =>
+  scale === 'r'
+    ? -Math.abs(point.drawdownR ?? 0)
+    : getDrawdownChartScaleValue(point, scale === 'percent');
 
 interface PreparedDrawdownChartData {
   data: DrawdownChartDataPoint[];

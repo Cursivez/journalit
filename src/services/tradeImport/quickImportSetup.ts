@@ -4,7 +4,14 @@ import type { LocalCSVTemplate, ManualImportMode } from '../csv/types';
 import { canonicalTradeImportBrokerId } from './brokerIds';
 import type { BackendTradeImportService } from './BackendTradeImportService';
 import type { TradeImportCapabilities } from './types';
-import { missingRequiredFieldsForMappings } from './manualMappingValidation';
+import {
+  manualModeForBackend,
+  missingRequiredFieldsForMappings,
+} from './manualMappingValidation';
+import {
+  defaultTradeImportAssetType,
+  tradeImportSourceLabel,
+} from './tradeImportSources';
 
 type TradeImportQuickSetupSource =
   | 'favorite-template'
@@ -17,6 +24,8 @@ export interface TradeImportQuickSetup {
   state: TradeImportQuickSetupState;
   source: TradeImportQuickSetupSource;
   accountName: string;
+  
+  accountNames: string[];
   broker: string;
   brokerLabel: string;
   assetType: 'stock' | 'options' | 'futures' | 'forex' | 'crypto';
@@ -40,6 +49,7 @@ export interface TradeImportQuickImportState {
     | 'importing'
     | 'complete'
     | 'needs_full_import'
+    | 'unavailable'
     | 'error';
   message?: string;
 }
@@ -93,27 +103,6 @@ function asMappings(value: unknown): Record<string, string[]> {
   return mappings;
 }
 
-function isQuickSetupAssetType(
-  value: unknown
-): value is TradeImportQuickSetup['assetType'] {
-  return (
-    value === 'stock' ||
-    value === 'options' ||
-    value === 'futures' ||
-    value === 'forex' ||
-    value === 'crypto'
-  );
-}
-
-function brokerLabel(
-  capabilities: TradeImportCapabilities,
-  broker: string
-): string {
-  return (
-    capabilities.brokers.find((item) => item.id === broker)?.label ?? broker
-  );
-}
-
 function validBroker(
   capabilities: TradeImportCapabilities,
   broker: string | undefined
@@ -143,7 +132,8 @@ function safeAccount(accounts: string[], favoriteAccount?: string): string {
 function templateSetup(
   capabilities: TradeImportCapabilities,
   template: LocalCSVTemplate,
-  accountName: string
+  accountName: string,
+  accountNames: string[]
 ): TradeImportQuickSetup {
   const broker =
     validBroker(capabilities, template.broker_type) ?? safeBroker(capabilities);
@@ -151,14 +141,19 @@ function templateSetup(
   const mappedHeaders = Object.values(columnMappings).flat();
   const manualMode = template.manual_mode ?? 'price_based';
   const mappingComplete =
-    missingRequiredFieldsForMappings(manualMode, columnMappings, mappedHeaders)
-      .length === 0;
+    missingRequiredFieldsForMappings(
+      manualModeForBackend(manualMode, capabilities.manualMapping.modes),
+      columnMappings,
+      mappedHeaders,
+      template.asset_type
+    ).length === 0;
   return {
     state: mappingComplete ? 'ready' : 'needs_setup',
     source: 'favorite-template',
     accountName,
+    accountNames,
     broker,
-    brokerLabel: brokerLabel(capabilities, broker),
+    brokerLabel: tradeImportSourceLabel(broker, capabilities),
     assetType: template.asset_type,
     manualMode,
     dateFormat: template.date_format ?? '',
@@ -187,7 +182,7 @@ export async function resolveQuickTradeImportSetup(
     : undefined;
 
   if (favoriteTemplate) {
-    return templateSetup(capabilities, favoriteTemplate, accountName);
+    return templateSetup(capabilities, favoriteTemplate, accountName, accounts);
   }
 
   const favoriteBroker = validBroker(
@@ -195,17 +190,19 @@ export async function resolveQuickTradeImportSetup(
     plugin.settings.csvFavoriteBroker
   );
   if (favoriteBroker) {
-    const rememberedAssetType =
-      plugin.settings.csvLastAssetType?.[favoriteBroker];
     return {
       state: favoriteBroker === 'MANUAL' ? 'needs_setup' : 'ready',
       source: 'favorites',
       accountName,
+      accountNames: accounts,
       broker: favoriteBroker,
-      brokerLabel: brokerLabel(capabilities, favoriteBroker),
-      assetType: isQuickSetupAssetType(rememberedAssetType)
-        ? rememberedAssetType
-        : 'stock',
+      brokerLabel: tradeImportSourceLabel(favoriteBroker, capabilities),
+      assetType: defaultTradeImportAssetType(
+        plugin.settings,
+        favoriteBroker,
+        plugin.serviceManager.getInitializedOnboardingService()?.getState()
+          .answers.assetFocus
+      ),
       manualMode: 'price_based',
       dateFormat: '',
       sheetName: null,
@@ -220,8 +217,9 @@ export async function resolveQuickTradeImportSetup(
     state: fallbackBroker === 'MANUAL' ? 'needs_setup' : 'ready',
     source: 'fallback',
     accountName,
+    accountNames: accounts,
     broker: fallbackBroker,
-    brokerLabel: brokerLabel(capabilities, fallbackBroker),
+    brokerLabel: tradeImportSourceLabel(fallbackBroker, capabilities),
     assetType: 'stock',
     manualMode: 'price_based',
     dateFormat: '',

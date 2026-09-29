@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { DraftInput } from '../../../ui/DraftInput';
 import { t } from '../../../../lang/helpers';
 import {
   addPropChallengeRule,
@@ -319,7 +320,7 @@ export function PhaseEditor({
         </label>
         <label className="journalit-prop-challenge-field">
           <span>{t('account.prop-challenge.starting-balance')}</span>
-          <input
+          <DraftInput
             type="number"
             min="0"
             step="100"

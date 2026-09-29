@@ -39,6 +39,10 @@ import {
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { groupReviewFieldsByConfiguredOrder } from './reviewContextFieldGrouping';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
+import {
+  shareCaptureExcludeProps,
+  shareLoadingProps,
+} from '../../../services/share/brandedCapture';
 
 interface ReviewContextFieldsWidgetProps {
   filePath: string;
@@ -657,7 +661,9 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
 
     if (isLoading) {
       return (
-        <div className="journalit-widget-loading">{t('common.loading')}</div>
+        <div className="journalit-widget-loading" {...shareLoadingProps}>
+          {t('common.loading')}
+        </div>
       );
     }
 
@@ -673,9 +679,16 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
       return (
         <div className="review-context-fields-empty">
           <p>{t('widget.review-context-fields.empty-title')}</p>
-          <p>{t('widget.review-context-fields.empty-desc')}</p>
+          
+          <p {...shareCaptureExcludeProps}>
+            {t('widget.review-context-fields.empty-desc')}
+          </p>
           {!preview && (
-            <Button variant="primary" onClick={openReviewFieldSettings}>
+            <Button
+              variant="primary"
+              onClick={openReviewFieldSettings}
+              {...shareCaptureExcludeProps}
+            >
               {t('widget.review-context-fields.configure')}
             </Button>
           )}
@@ -696,6 +709,7 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
                   variant="secondary"
                   size="small"
                   className="review-context-fields-edit-toggle"
+                  {...shareCaptureExcludeProps}
                   onClick={() =>
                     setIsEditingLocalContext((current) => !current)
                   }

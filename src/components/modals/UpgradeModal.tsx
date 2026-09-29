@@ -38,6 +38,7 @@ class UpgradeModal extends Modal {
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
+    this.modalEl.addClass('journalit-modal');
 
     this.container = contentEl.createDiv();
     this.root = createRoot(this.container);

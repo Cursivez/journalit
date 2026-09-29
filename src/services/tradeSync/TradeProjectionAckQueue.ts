@@ -806,23 +806,33 @@ export async function clearLocalDeletedTradeProjection(
   plugin: JournalitPlugin,
   tradeId: string
 ): Promise<void> {
+  await clearLocalDeletedTradeProjections(plugin, [tradeId]);
+}
+
+
+export async function clearLocalDeletedTradeProjections(
+  plugin: JournalitPlugin,
+  tradeIds: Iterable<string>
+): Promise<void> {
+  const cleared = new Set(tradeIds);
+  if (cleared.size === 0) return;
   await runProjectionAckWork(plugin, () =>
-    clearLocalDeletedTradeProjectionUnlocked(plugin, tradeId)
+    clearLocalDeletedTradeProjectionsUnlocked(plugin, cleared)
   );
 }
 
-async function clearLocalDeletedTradeProjectionUnlocked(
+async function clearLocalDeletedTradeProjectionsUnlocked(
   plugin: JournalitPlugin,
-  tradeId: string
+  cleared: ReadonlySet<string>
 ): Promise<void> {
   const settings = plugin.settings.backendIntegration;
   if (!settings) return;
   settings.localDeletedCanonicalTradeIds = (
     settings.localDeletedCanonicalTradeIds ?? []
-  ).filter((id) => id !== tradeId);
+  ).filter((id) => !cleared.has(id));
   settings.restoringCanonicalTradeIds = (
     settings.restoringCanonicalTradeIds ?? []
-  ).filter((id) => id !== tradeId);
+  ).filter((id) => !cleared.has(id));
   const currentOwner = getTradeProjectionOwnerId(plugin);
   settings.pendingTradeImportProjectionAcks = (
     settings.pendingTradeImportProjectionAcks ?? []
@@ -831,7 +841,7 @@ async function clearLocalDeletedTradeProjectionUnlocked(
       return [request];
     const results = request.results.filter(
       (result) =>
-        result.tradeId !== tradeId || result.status !== 'local_deleted'
+        !cleared.has(result.tradeId) || result.status !== 'local_deleted'
     );
     return results.length ? [{ ...request, results }] : [];
   });

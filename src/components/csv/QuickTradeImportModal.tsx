@@ -1,8 +1,10 @@
+import { tradeImportClassificationLabel } from '../../services/tradeImport/classificationLabels';
 import React, {
   useCallback,
   useEffect,
   useMemo,
   useReducer,
+  useState,
   useRef,
 } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
@@ -18,13 +20,23 @@ import {
 } from '../shared/icons/ObsidianIcon';
 import type JournalitPlugin from '../../main';
 import { t, tPlural } from '../../lang/helpers';
-import { PnLValue } from '../shared/display/DisplayValue';
 import { DisplayPolicyProvider } from '../../contexts/DisplayPolicyContext';
-import { classifyPnLWithBreakEvenSettings } from '../../utils/breakEvenRange';
+import { TradeImportPnlCell } from './TradeImportPnlCell';
+import { tradeImportAccountCurrency } from '../../services/tradeImport/accountCurrency';
+import { workbookImageCountForImport } from '../../services/tradeImport/workbookImages';
+
+const NO_ITEMS: ReadonlySet<string> = new Set();
+import { DATE_ORDER_DIAGNOSTIC_CODES } from './dateOrderQuestion';
+import { manualModeForBackend } from '../../services/tradeImport/manualMappingValidation';
 import { resolveUpgradeUrl } from '../../services/upgrade/upgradeOrigin';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { DeviceFlowSignInModal } from '../auth/DeviceFlowSignInModal';
 import { useBackendProEntitlement } from '../../hooks/useBackendProEntitlement';
+import {
+  dateFormatForBroker,
+  isHyperliquidTradeHistory,
+  resolveHyperliquidExportTimeZone,
+} from './hyperliquidImportOptions';
 import { BackendTradeImportService } from '../../services/tradeImport/BackendTradeImportService';
 import { TradeProjectionClient } from '../../services/tradeSync/TradeProjectionClient';
 import {
@@ -40,9 +52,9 @@ import type {
 } from '../../services/tradeImport/types';
 import type { TradeImportCompletionResult } from '../../services/tradeImport/TradeImportWorkflowService';
 import {
-  isTradeImportBlocked,
   isTradeImportCommitEligible,
-  isTradeImportSkipped,
+  isTradeImportDuplicate,
+  needsTradeImportAttention,
 } from '../../services/tradeImport/commitEligibility';
 import {
   getCachedQuickTradeImportSetup,
@@ -54,14 +66,20 @@ import {
   clearQuickImportTradeImportHandoff,
   setQuickImportTradeImportHandoff,
 } from '../../services/tradeImport/quickImportHandoff';
+import { rememberTradeImportAssetType } from '../../services/tradeImport/tradeImportSources';
 import {
-  resolveBrokerImportAnalyseRecovery,
+  shouldRouteQuickImportToSourceRecovery,
   resolveBrokerImportRecovery,
 } from './brokerImportRecovery';
 import { TradeOperationResultCard } from '../tradeOperations/TradeOperationResultCard';
 import { buildImportOperationResult } from '../../services/tradeOperations/resultBuilders';
 import type { TradeOperationResult } from '../../services/tradeOperations/types';
 import { formatTradeImportPreviewDate } from './tradeImportPreviewDate';
+import {
+  previewStatusLabel,
+  TradeImportOtherAccountNotice,
+} from './TradeImportPreviewReview';
+import { openImportManagement } from '../../services/tradeImport/importManagementNavigation';
 
 const LOCAL_WRITE_TIMEOUT_MS = 10000;
 const PRIVACY_URL = 'https://journalit.co/privacy';
@@ -110,7 +128,7 @@ const quickSetupReducer = (
 const QuickImportClassificationIcon: React.FC<{
   classification: ClassifiedPreviewTrade['classification'];
 }> = ({ classification }) => {
-  const label = classification.replace('_', ' ');
+  const label = tradeImportClassificationLabel(classification);
   if (classification === 'new') {
     return (
       <span className="journalit-quick-import-result-icon is-new">
@@ -146,44 +164,6 @@ const QuickImportClassificationIcon: React.FC<{
   );
 };
 
-const QuickImportPnlCell: React.FC<{
-  item: ClassifiedPreviewTrade;
-  plugin: JournalitPlugin;
-}> = ({ item, plugin }) => {
-  const { preview, tradeData } = item;
-  
-  
-  const value =
-    typeof tradeData.authoritativePnl === 'number'
-      ? tradeData.authoritativePnl
-      : (preview.profitLoss ?? preview.directPnL);
-  const outcome =
-    typeof value === 'number' && Number.isFinite(value)
-      ? classifyPnLWithBreakEvenSettings(value, {
-          breakEvenRangeMin: plugin.settings.trade.breakEvenRangeMin,
-          breakEvenRangeMax: plugin.settings.trade.breakEvenRangeMax,
-          breakEvenThresholdMode: plugin.settings.trade.breakEvenThresholdMode,
-          breakEvenThresholdPercent:
-            plugin.settings.trade.breakEvenThresholdPercent,
-        })
-      : 'unknown';
-  const tone =
-    outcome === 'win'
-      ? 'positive'
-      : outcome === 'loss'
-        ? 'negative'
-        : 'neutral';
-
-  return (
-    <PnLValue
-      value={value}
-      currencyCode={preview.currency ?? 'USD'}
-      fallback="—"
-      tone={tone}
-    />
-  );
-};
-
 function formatQuickImportDate(
   preview: ClassifiedPreviewTrade['preview'],
   plugin: JournalitPlugin
@@ -202,10 +182,18 @@ function formatQuickImportDate(
 }
 
 interface QuickImportPreviewSummaryProps {
+  accountCurrency: string | undefined;
+  
+  workbookImageCount: number;
+  workbookImagesIncluded: boolean;
+  onToggleWorkbookImages: (included: boolean) => void;
   classified: ClassifiedPreviewTrade[];
   duplicateCount: number;
   failedCount: number;
+  localAccountNames: readonly string[];
   noImportablePreview: boolean;
+  onImportIntoAccount: (accountName: string) => void;
+  onManageImports: () => void;
   plugin: JournalitPlugin;
   preview: TradeImportPreviewResponse;
   previewRows: ClassifiedPreviewTrade[];
@@ -214,10 +202,17 @@ interface QuickImportPreviewSummaryProps {
 }
 
 const QuickImportPreviewSummary: React.FC<QuickImportPreviewSummaryProps> = ({
+  accountCurrency,
+  workbookImageCount,
+  workbookImagesIncluded,
+  onToggleWorkbookImages,
   classified,
   duplicateCount,
   failedCount,
+  localAccountNames,
+  onImportIntoAccount,
   noImportablePreview,
+  onManageImports,
   plugin,
   preview,
   previewRows,
@@ -285,12 +280,22 @@ const QuickImportPreviewSummary: React.FC<QuickImportPreviewSummaryProps> = ({
           </>
         )}
       </div>
-      {noImportablePreview && !recovery && (
-        <div className="journalit-quick-import-callout">
-          <FileText size={16} />
-          <span>{t('quick-import.message.no-importable')}</span>
-        </div>
-      )}
+      <TradeImportOtherAccountNotice
+        classified={classified}
+        className="journalit-quick-import-outcome-callout journalit-quick-import-outcome-callout--warning"
+        localAccountNames={localAccountNames}
+        onImportIntoAccount={onImportIntoAccount}
+        onManageImports={onManageImports}
+      />
+      
+      {noImportablePreview &&
+        !recovery &&
+        !classified.some((item) => item.otherAccount) && (
+          <div className="journalit-quick-import-callout">
+            <FileText size={16} />
+            <span>{t('quick-import.message.no-importable')}</span>
+          </div>
+        )}
       {previewRows.length > 0 && (
         <div className="journalit-quick-import-preview-table-wrap">
           <table className="journalit-quick-import-preview-table">
@@ -299,7 +304,7 @@ const QuickImportPreviewSummary: React.FC<QuickImportPreviewSummaryProps> = ({
                 <th>{t('trade-import.table.symbol')}</th>
                 <th>{t('trade-import.table.date')}</th>
                 <th>{t('chart.tooltip.pnl')}</th>
-                <th>{t('trade-import.table.status')}</th>
+                <th>{t('trade-import.table.open-closed')}</th>
                 <th>{t('trade-import.table.result')}</th>
               </tr>
             </thead>
@@ -309,9 +314,13 @@ const QuickImportPreviewSummary: React.FC<QuickImportPreviewSummaryProps> = ({
                   <td>{item.preview.symbol}</td>
                   <td>{formatQuickImportDate(item.preview, plugin)}</td>
                   <td>
-                    <QuickImportPnlCell item={item} plugin={plugin} />
+                    <TradeImportPnlCell
+                      item={item}
+                      breakEven={plugin.settings.trade}
+                      accountCurrency={accountCurrency}
+                    />
                   </td>
-                  <td>{item.preview.status}</td>
+                  <td>{previewStatusLabel(item.preview.status)}</td>
                   <td>
                     <QuickImportClassificationIcon
                       classification={item.classification}
@@ -329,6 +338,20 @@ const QuickImportPreviewSummary: React.FC<QuickImportPreviewSummaryProps> = ({
             </p>
           )}
         </div>
+      )}
+      {workbookImageCount > 0 && (
+        <label className="journalit-quick-import-workbook-images">
+          <input
+            type="checkbox"
+            checked={workbookImagesIncluded}
+            onChange={(event) => onToggleWorkbookImages(event.target.checked)}
+          />
+          <span>
+            {t('trade-import.preview.include-screenshots', {
+              count: String(workbookImageCount),
+            })}
+          </span>
+        </label>
       )}
     </div>
   );
@@ -475,7 +498,8 @@ interface QuickImportMainContentProps {
   handleImport: () => Promise<void>;
   isDragging: boolean;
   onBeforeNavigate: () => void;
-  openFullTradeImport: () => Promise<void>;
+  
+  openFullTradeImport: (accountName?: string) => Promise<void>;
   plugin: JournalitPlugin;
   preview: TradeImportPreviewResponse | null;
   result: TradeImportCompletionResult | null;
@@ -483,6 +507,8 @@ interface QuickImportMainContentProps {
   setDragging: (isDragging: boolean) => void;
   setup: TradeImportQuickSetup | null;
   state: TradeImportQuickImportState;
+  workbookImagesIncluded: boolean;
+  onToggleWorkbookImages: (included: boolean) => void;
 }
 
 export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
@@ -502,13 +528,11 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
   setDragging,
   setup,
   state,
+  workbookImagesIncluded,
+  onToggleWorkbookImages,
 }) => {
-  const duplicateCount = classified.filter((item) =>
-    isTradeImportSkipped(item.defaultAction)
-  ).length;
-  const failedCount = classified.filter((item) =>
-    isTradeImportBlocked(item.defaultAction)
-  ).length;
+  const duplicateCount = classified.filter(isTradeImportDuplicate).length;
+  const failedCount = classified.filter(needsTradeImportAttention).length;
   const writableCount = classified.filter((item) =>
     isTradeImportCommitEligible(item.defaultAction)
   ).length;
@@ -521,7 +545,13 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
     state.phase === 'ready_to_import' &&
     (preview?.outcome === 'partially_completed' ||
       preview?.outcome === 'failed');
+  
+  
+  const hasOtherAccountMatches =
+    state.phase === 'ready_to_import' &&
+    classified.some((item) => item.otherAccount);
   const showFullTradeImportAction =
+    hasOtherAccountMatches ||
     needsQuickImportSetup ||
     state.phase === 'error' ||
     state.phase === 'needs_full_import' ||
@@ -532,7 +562,8 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
     : state.phase === 'needs_full_import' ||
         state.phase === 'error' ||
         noImportablePreview ||
-        parsingNeedsFullReview
+        parsingNeedsFullReview ||
+        hasOtherAccountMatches
       ? t('quick-import.action.review-in-trade-import')
       : t('quick-import.action.open-full');
   const previewRows = classified.slice(0, 5);
@@ -604,7 +635,9 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
         />
       )}
 
-      {(state.phase === 'needs_full_import' || state.phase === 'error') && (
+      {(state.phase === 'needs_full_import' ||
+        state.phase === 'unavailable' ||
+        state.phase === 'error') && (
         <div className="journalit-quick-import-callout">
           <FileText size={16} />
           <span>{state.message}</span>
@@ -613,10 +646,25 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
 
       {preview && state.phase === 'ready_to_import' && (
         <QuickImportPreviewSummary
+          workbookImageCount={workbookImageCountForImport(classified, NO_ITEMS)}
+          workbookImagesIncluded={workbookImagesIncluded}
+          onToggleWorkbookImages={onToggleWorkbookImages}
+          accountCurrency={tradeImportAccountCurrency(
+            plugin.settings,
+            setup?.accountName
+          )}
           classified={classified}
           duplicateCount={duplicateCount}
           failedCount={failedCount}
+          localAccountNames={setup?.accountNames ?? []}
+          onImportIntoAccount={(accountName) =>
+            void openFullTradeImport(accountName)
+          }
           noImportablePreview={noImportablePreview}
+          onManageImports={() => {
+            onBeforeNavigate();
+            openImportManagement(plugin);
+          }}
           plugin={plugin}
           preview={preview}
           previewRows={previewRows}
@@ -662,6 +710,20 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
             <p>
               {t('csv.results.pending-local-writes', {
                 count: String(result.pendingCount),
+              })}
+            </p>
+          )}
+          {result.attachedImageCount > 0 && (
+            <p>
+              {t('trade-import.completion.screenshots-added', {
+                count: String(result.attachedImageCount),
+              })}
+            </p>
+          )}
+          {result.failedImageCount > 0 && (
+            <p>
+              {t('trade-import.completion.screenshots-failed', {
+                count: String(result.failedImageCount),
               })}
             </p>
           )}
@@ -844,7 +906,7 @@ function useQuickImportSetupState({
   return { ...quickSetupState, updateState };
 }
 
-const QuickTradeImportModalContent: React.FC<
+export const QuickTradeImportModalContent: React.FC<
   QuickTradeImportModalContentProps
 > = ({ plugin, closeModal }) => {
   const backendService = useMemo(() => new BackendTradeImportService(), []);
@@ -927,52 +989,67 @@ const QuickTradeImportModalContent: React.FC<
     operationResult,
     isDragging,
   } = importState;
+  
+  const [workbookImagesExcludedFor, setWorkbookImagesExcludedFor] = useState<
+    string | null
+  >(null);
+  const includeWorkbookImages =
+    !preview || workbookImagesExcludedFor !== preview.importId;
 
   const selectedBrokerCapabilities = useMemo(
     () => capabilities?.brokers.find((broker) => broker.id === setup?.broker),
     [capabilities, setup?.broker]
   );
 
-  const openFullTradeImport = useCallback(async () => {
-    if (file && setup) {
-      setQuickImportTradeImportHandoff({
-        file,
-        broker: setup.broker,
-        accountName: setup.accountName,
-        assetType: setup.assetType,
-        manualMode: setup.manualMode,
-        dateFormat: setup.dateFormat,
-        sheetName: setup.sheetName,
-        headerRowIndex: setup.headerRowIndex,
-        templateId: setup.templateId,
-        templateName: setup.templateName,
-        columnMappings: setup.columnMappings,
-        aiMappingEnabled: setup.aiMappingEnabled,
-        analyse,
-        preview,
-        previewOwnerUserId,
-        classified,
-      });
-    }
-    closeModal();
-    try {
-      await plugin.viewManager.openCSVImportView();
-      window.dispatchEvent(new Event('journalit:quick-import-handoff-ready'));
-    } catch (error) {
-      clearQuickImportTradeImportHandoff();
-      console.error('[Quick Import] Failed to open Trade Import:', error);
-      new Notice(t('trade-import.notice.open-failed'));
-    }
-  }, [
-    analyse,
-    classified,
-    closeModal,
-    file,
-    plugin.viewManager,
-    preview,
-    previewOwnerUserId,
-    setup,
-  ]);
+  const openFullTradeImport = useCallback(
+    async (targetAccountName?: string) => {
+      
+      
+      const retarget =
+        targetAccountName !== undefined &&
+        targetAccountName !== setup?.accountName;
+      if (file && setup) {
+        setQuickImportTradeImportHandoff({
+          file,
+          broker: setup.broker,
+          accountName: retarget ? targetAccountName : setup.accountName,
+          assetType: setup.assetType,
+          manualMode: setup.manualMode,
+          dateFormat: setup.dateFormat,
+          sheetName: setup.sheetName,
+          headerRowIndex: setup.headerRowIndex,
+          templateId: setup.templateId,
+          templateName: setup.templateName,
+          columnMappings: setup.columnMappings,
+          aiMappingEnabled: setup.aiMappingEnabled,
+          analyse,
+          preview: retarget ? null : preview,
+          previewOwnerUserId: retarget ? null : previewOwnerUserId,
+          classified: retarget ? [] : classified,
+          previewOnOpen: retarget,
+        });
+      }
+      closeModal();
+      try {
+        await plugin.viewManager.openCSVImportView();
+        window.dispatchEvent(new Event('journalit:quick-import-handoff-ready'));
+      } catch (error) {
+        clearQuickImportTradeImportHandoff();
+        console.error('[Quick Import] Failed to open Trade Import:', error);
+        new Notice(t('trade-import.notice.open-failed'));
+      }
+    },
+    [
+      analyse,
+      classified,
+      closeModal,
+      file,
+      plugin.viewManager,
+      preview,
+      previewOwnerUserId,
+      setup,
+    ]
+  );
 
   const handleSignIn = useCallback(() => {
     const modal = new DeviceFlowSignInModal(
@@ -1016,15 +1093,16 @@ const QuickTradeImportModalContent: React.FC<
           brokerCapabilities: selectedBrokerCapabilities,
           broker: setup.broker,
           sheetName: setup.sheetName,
-          headerRowIndex: setup.headerRowIndex,
+          header: { index: setup.headerRowIndex },
           aiMappingEnabled: setup.aiMappingEnabled,
         });
         if (requestVersionRef.current !== requestVersion) return;
         dispatchImportState({ analyse: analyseResult.response });
         if (
-          resolveBrokerImportAnalyseRecovery(
+          shouldRouteQuickImportToSourceRecovery(
             analyseResult.response,
-            setup.broker
+            setup,
+            capabilities.brokers
           )
         ) {
           updateQuickImportState({
@@ -1033,14 +1111,32 @@ const QuickTradeImportModalContent: React.FC<
           });
           return;
         }
+        const isHyperliquid = isHyperliquidTradeHistory(setup.broker);
+        const exportTimeZone = resolveHyperliquidExportTimeZone(
+          setup.broker,
+          selectedBrokerCapabilities?.supportsExportTimeZone === true
+        );
+        if (exportTimeZone.errorKey) {
+          updateQuickImportState({
+            phase: 'unavailable',
+            message: t(exportTimeZone.errorKey),
+          });
+          return;
+        }
         const nextSheetName =
           analyseResult.response.selectedSheet ??
           analyseResult.response.suggestedSheet ??
           setup.sheetName;
-        const nextHeaderRowIndex =
-          setup.headerRowIndex ??
-          analyseResult.response.suggestedHeaderRowIndex ??
-          null;
+        
+        
+        const nextHeaderRowIndex = analyseResult.response.headerRowIndex;
+        if (nextHeaderRowIndex === undefined) {
+          updateQuickImportState({
+            phase: 'needs_full_import',
+            message: t('quick-import.message.preview-failed'),
+          });
+          return;
+        }
         const columnMappings =
           Object.keys(setup.columnMappings).length > 0
             ? setup.columnMappings
@@ -1056,13 +1152,48 @@ const QuickTradeImportModalContent: React.FC<
           headerRowIndex: nextHeaderRowIndex,
           accountName: setup.accountName,
           assetType: setup.assetType,
-          manualMode: setup.manualMode,
-          dateFormat: setup.dateFormat,
+          manualMode: manualModeForBackend(
+            setup.manualMode,
+            capabilities.manualMapping.modes
+          ),
+          dateFormat: dateFormatForBroker(setup.broker, setup.dateFormat),
+          timeZone: exportTimeZone.timeZone,
           columnMappings,
           manualMappingRequired:
             setup.broker === 'MANUAL' || setup.source === 'favorite-template',
         });
         if (requestVersionRef.current !== requestVersion) return;
+        
+        
+        if (
+          (setup.broker === 'MANUAL' || setup.source === 'favorite-template') &&
+          previewResult.response.diagnostics.some((diagnostic) =>
+            DATE_ORDER_DIAGNOSTIC_CODES.has(diagnostic.code)
+          )
+        ) {
+          dispatchImportState({
+            preview: previewResult.response,
+            previewOwnerUserId: previewResult.ownerUserId,
+            classified: previewResult.classifiedTrades,
+          });
+          updateQuickImportState({
+            phase: 'needs_full_import',
+            message: t('quick-import.message.date-order'),
+          });
+          return;
+        }
+        if (
+          isHyperliquid &&
+          previewResult.response.diagnostics.some(
+            (diagnostic) => diagnostic.code === 'ambiguous-date-format'
+          )
+        ) {
+          updateQuickImportState({
+            phase: 'needs_full_import',
+            message: t('quick-import.message.preview-failed'),
+          });
+          return;
+        }
         dispatchImportState({
           preview: previewResult.response,
           previewOwnerUserId: previewResult.ownerUserId,
@@ -1128,6 +1259,7 @@ const QuickTradeImportModalContent: React.FC<
       preview,
       previewOwnerUserId,
       classified,
+      workbookFile: includeWorkbookImages ? (file ?? undefined) : undefined,
       accountName: setup.accountName,
       brokerLabel: setup.brokerLabel,
       localWriteTimeoutMs: LOCAL_WRITE_TIMEOUT_MS,
@@ -1144,8 +1276,11 @@ const QuickTradeImportModalContent: React.FC<
         .record(nextOperationResult),
     });
     updateQuickImportState({ phase: 'complete' });
+    void rememberTradeImportAssetType(plugin, setup.broker, setup.assetType);
   }, [
     classified,
+    file,
+    includeWorkbookImages,
     plugin,
     preview,
     previewOwnerUserId,
@@ -1186,6 +1321,12 @@ const QuickTradeImportModalContent: React.FC<
       }
       setup={setup}
       state={state}
+      workbookImagesIncluded={includeWorkbookImages}
+      onToggleWorkbookImages={(included) =>
+        setWorkbookImagesExcludedFor(
+          included ? null : (preview?.importId ?? null)
+        )
+      }
     />
   );
 };

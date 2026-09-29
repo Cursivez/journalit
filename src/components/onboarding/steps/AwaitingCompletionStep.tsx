@@ -62,7 +62,7 @@ export const AwaitingCompletionStep: React.FC<AwaitingCompletionStepProps> = ({
           </p>
         </div>
 
-        <div className="first-trade-actions">
+        <div className="first-trade-actions awaiting-step-actions">
           <Button
             variant="primary"
             size="large"
@@ -73,7 +73,12 @@ export const AwaitingCompletionStep: React.FC<AwaitingCompletionStepProps> = ({
               ? t('onboarding.awaiting.sign-in.action')
               : t(copy.action)}
           </Button>
-          <Button variant="secondary" onClick={onChangeRoute} disabled={busy}>
+          <Button
+            variant="secondary"
+            size="large"
+            onClick={onChangeRoute}
+            disabled={busy}
+          >
             {t('onboarding.awaiting.change-route')}
           </Button>
         </div>

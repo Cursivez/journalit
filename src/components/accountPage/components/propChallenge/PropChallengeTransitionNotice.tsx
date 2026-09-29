@@ -167,7 +167,7 @@ export const PropChallengeTransitionNotice: React.FC<{
       });
     });
 
-  const lifecycle = (action: 'advance' | 'archive') =>
+  const lifecycle = (action: 'advance' | 'archive' | 'reopen') =>
     run(async () => {
       if (action === 'advance') {
         await runPropChallengeAdvance(context);
@@ -219,6 +219,10 @@ export const PropChallengeTransitionNotice: React.FC<{
         label: t('account.prop-challenge.actions.archive'),
         onClick: () => void lifecycle('archive'),
         destructive: true,
+      };
+      middleAction = {
+        label: t('account.prop-challenge.actions.reopen'),
+        onClick: () => void lifecycle('reopen'),
       };
       secondaryLabel = t('account.prop-challenge.notice.keep-open');
       break;

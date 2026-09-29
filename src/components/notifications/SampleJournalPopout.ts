@@ -100,7 +100,10 @@ export class SampleJournalPopout {
       this.hideTimeoutId = null;
     }
     if (!this.containerEl) {
-      this.containerEl = mountBottomLeftNotification('journalit-sample-popout');
+      this.containerEl = mountBottomLeftNotification(
+        'journalit-sample-popout',
+        'chrome'
+      );
     }
     return this.containerEl;
   }

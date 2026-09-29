@@ -6,7 +6,6 @@ import {
   MarkdownRenderChild,
   MarkdownView,
   TFile,
-  Plugin,
 } from 'obsidian';
 import { isViewWithTFile } from '../../types/obsidian-extensions';
 import { TradeNoteRenderer } from './TradeNoteRenderer';
@@ -19,6 +18,8 @@ import {
   Unsubscribe,
 } from '../../services/events/types';
 import { readFrontmatterFromDisk } from '../../utils/dataRefresh';
+import { TradeNoteShareAction } from './TradeNoteShareAction';
+import type JournalitPlugin from '../../main';
 
 const READING_RENDER_GRACE_PERIOD_MS = 3000;
 const INLINE_RENDER_COMMIT_TIMEOUT_MS = 5000;
@@ -62,15 +63,28 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
 
   
   private observerTimeouts: Map<MutationObserver, number> = new Map();
-  constructor(app: App, plugin: Plugin) {
+  private readonly shareAction: TradeNoteShareAction;
+  constructor(app: App, plugin: JournalitPlugin) {
     super(app, plugin, new TradeNoteRenderer(app));
+    this.shareAction = new TradeNoteShareAction(app, plugin, (file) => {
+      const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+      return (
+        frontmatter !== undefined && this.isValidComponentType(frontmatter)
+      );
+    });
 
     
     this.setupTradeUpdateListener();
   }
 
+  
+  public shareActiveNoteAsImage(checking: boolean): boolean {
+    return this.shareAction.runOnActiveView(checking);
+  }
+
   public initialize(): void {
     super.initialize();
+    this.shareAction.initialize();
 
     const scheduleReadingRecoveryScan = () => {
       this.scheduleReadingRecoveryScan();
@@ -1047,6 +1061,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
 
   
   public cleanup(): void {
+    this.shareAction.cleanup();
     
     for (const [, timeout] of this.observerTimeouts) {
       window.clearTimeout(timeout);

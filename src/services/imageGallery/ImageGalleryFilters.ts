@@ -2,6 +2,13 @@ import { parseLocalDateSafe } from '../../utils/dateUtils';
 import { createTickerMatcher } from '../../utils/tickerMatching';
 import type { DirectionFilter, TradeLogFilters } from '../tradelog/types';
 import type { ImageGalleryItem } from '../../components/imageGallery/types';
+import type { FilterExclusions } from '../../components/shared/filters/filterExclusions';
+import {
+  type FilterMatchMode,
+  type FilterMatchModes,
+  getCustomFieldMatchMode,
+  matchesSelectedValues,
+} from '../../components/shared/filters/filterMatchModes';
 import {
   getStringArray,
   isRecord,
@@ -21,20 +28,24 @@ function includesAny(values: string[], selected: string[]): boolean {
   );
 }
 
-function includesAnyWithNoValueSentinel(
+
+function matchesSelection(
   values: string[],
   selected: string[],
-  noValueSentinel: string
+  noValueSentinel: string,
+  mode: FilterMatchMode
 ): boolean {
   if (selected.length === 0) return true;
-
-  const hasNoValueFilter = selected.includes(noValueSentinel);
-  if (hasNoValueFilter && values.length === 0) return true;
-
-  const regularSelected = selected.filter((value) => value !== noValueSentinel);
-  if (regularSelected.length === 0) return false;
-
-  return includesAny(values, regularSelected);
+  const selectedSet = new Set<string>();
+  for (const value of selected) {
+    if (value !== noValueSentinel) selectedSet.add(value.toLowerCase());
+  }
+  return matchesSelectedValues(
+    values.map((value) => value.toLowerCase()),
+    selectedSet,
+    mode,
+    selected.includes(noValueSentinel)
+  );
 }
 
 export function normalizeCustomFieldFilterValue(value: unknown): string | null {
@@ -54,28 +65,75 @@ export function normalizeCustomFieldFilterValue(value: unknown): string | null {
 
 function hasAnySourceCustomFieldValue(
   item: ImageGalleryItem,
-  selectedCustomFields: TradeLogFilters['customFieldFilters']
+  selectedCustomFields: TradeLogFilters['customFieldFilters'],
+  matchModes: FilterMatchModes
 ): boolean {
   return Object.entries(selectedCustomFields || {}).every(
-    ([fieldId, selectedValues]) => {
-      if (!Array.isArray(selectedValues) || selectedValues.length === 0) {
-        return true;
-      }
-
-      const itemValues = item.sourceCustomFields[fieldId] ?? [];
-      if (itemValues.length === 0) {
-        return selectedValues.includes(`__NO_VALUE__${fieldId}`);
-      }
-
-      return selectedValues.some((selectedValue) => {
-        if (selectedValue === `__NO_VALUE__${fieldId}`) return false;
-        const normalizedSelected = selectedValue.toLowerCase();
-        return itemValues.some(
-          (itemValue) => itemValue.toLowerCase() === normalizedSelected
-        );
-      });
-    }
+    ([fieldId, selectedValues]) =>
+      !Array.isArray(selectedValues) ||
+      matchesSelection(
+        item.sourceCustomFields[fieldId] ?? [],
+        selectedValues,
+        `__NO_VALUE__${fieldId}`,
+        getCustomFieldMatchMode(matchModes, fieldId)
+      )
   );
+}
+
+function includesExcludedValue(
+  values: string[],
+  excluded: string[],
+  noValueSentinel: string
+): boolean {
+  if (excluded.length === 0) return false;
+  if (values.length === 0) return excluded.includes(noValueSentinel);
+  const excludedValues = excluded.filter((value) => value !== noValueSentinel);
+  
+  
+  return excludedValues.length > 0 && includesAny(values, excludedValues);
+}
+
+
+function matchesAnyImageGalleryExclusion(
+  item: ImageGalleryItem,
+  exclusions: FilterExclusions
+): boolean {
+  if (exclusions.tickers.length > 0) {
+    const tickerCandidate =
+      item.sourceType === 'folder'
+        ? item.symbol || ''
+        : item.symbol || item.sourceLabel || '';
+    if (createTickerMatcher(exclusions.tickers)(tickerCandidate)) return true;
+  }
+
+  if (includesExcludedValue(item.setupIds, exclusions.setups, '__NO_SETUP__')) {
+    return true;
+  }
+  if (includesExcludedValue(item.sourceTags, exclusions.tags, '__NO_TAGS__')) {
+    return true;
+  }
+  if (
+    includesExcludedValue(item.mistakes, exclusions.mistakes, '__NO_MISTAKES__')
+  ) {
+    return true;
+  }
+
+  for (const [fieldId, excludedValues] of Object.entries(
+    exclusions.customFieldFilters
+  )) {
+    const itemValues = item.sourceCustomFields[fieldId] ?? [];
+    if (
+      includesExcludedValue(
+        itemValues,
+        excludedValues,
+        `__NO_VALUE__${fieldId}`
+      )
+    ) {
+      return true;
+    }
+  }
+
+  return false;
 }
 
 function matchesImageAnnotationStatus(
@@ -180,34 +238,47 @@ export function matchesImageGalleryTradeLogFilters(
   }
 
   if (
-    !includesAnyWithNoValueSentinel(
+    !matchesSelection(
       item.setupIds,
       filters.setups,
-      '__NO_SETUP__'
+      '__NO_SETUP__',
+      filters.matchModes.setups
     )
   ) {
     return false;
   }
   if (
-    !includesAnyWithNoValueSentinel(
+    !matchesSelection(
       item.sourceTags,
       filters.tags,
-      '__NO_TAGS__'
+      '__NO_TAGS__',
+      filters.matchModes.tags
     )
   ) {
     return false;
   }
   if (
-    !includesAnyWithNoValueSentinel(
+    !matchesSelection(
       item.mistakes,
       filters.mistakes,
-      '__NO_MISTAKES__'
+      '__NO_MISTAKES__',
+      filters.matchModes.mistakes
     )
   ) {
     return false;
   }
 
-  if (!hasAnySourceCustomFieldValue(item, filters.customFieldFilters)) {
+  if (
+    !hasAnySourceCustomFieldValue(
+      item,
+      filters.customFieldFilters,
+      filters.matchModes
+    )
+  ) {
+    return false;
+  }
+
+  if (matchesAnyImageGalleryExclusion(item, filters.exclusions)) {
     return false;
   }
 
@@ -230,11 +301,7 @@ export function matchesImageGalleryTradeLogFilters(
   }
 
   if (
-    !includesAnyWithNoValueSentinel(
-      item.tags,
-      filters.imageTags,
-      '__NO_IMAGE_TAGS__'
-    )
+    !matchesSelection(item.tags, filters.imageTags, '__NO_IMAGE_TAGS__', 'any')
   ) {
     return false;
   }

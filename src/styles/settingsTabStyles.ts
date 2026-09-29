@@ -1078,7 +1078,7 @@ export const SETTINGS_TAB_STYLES = `
     border-radius: 4px !important;
     background-color: var(--background-primary) !important;
     color: var(--text-normal) !important;
-    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.3) !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 30%, transparent) !important;
     position: relative !important;
     z-index: 100 !important;
     min-width: 100px !important;
@@ -1226,9 +1226,11 @@ export const SETTINGS_TAB_STYLES = `
   .journalit-settings-tab .drc-settings .custom-item-add .input:focus,
   .journalit-settings-tab .drc-settings .custom-item-add input:focus,
   .journalit-settings-tab .weekly-review-settings .custom-item-add .input:focus,
-  .journalit-settings-tab .weekly-review-settings .custom-item-add input:focus {
+  .journalit-settings-tab .weekly-review-settings .custom-item-add input:focus,
+  .journalit-settings-tab .custom-options-settings .custom-item-add .input:focus,
+  .journalit-settings-tab .custom-options-settings .custom-item-add input:focus {
     border-color: var(--interactive-accent) !important;
-    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2) !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent) !important;
     outline: none !important;
   }
 
@@ -1307,6 +1309,7 @@ export const SETTINGS_TAB_STYLES = `
   .journalit-settings-tab .drc-settings button:hover,
   .journalit-settings-tab .weekly-review-settings button:hover {
     background-color: var(--interactive-accent-hover) !important;
+    color: var(--text-on-accent) !important;
     border-color: var(--interactive-accent-hover) !important;
   }
 
@@ -1350,7 +1353,7 @@ export const SETTINGS_TAB_STYLES = `
   .journalit-settings input[placeholder="New timeframe (e.g., Weekly, Daily)"]:focus {
     
     border-color: var(--interactive-accent) !important;
-    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2) !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent) !important;
     outline: none !important;
   }
 
@@ -1679,7 +1682,7 @@ export const SETTINGS_TAB_STYLES = `
   .journalit-settings .input:focus,
   .journalit-settings textarea.input:focus {
     border-color: var(--interactive-accent) !important;
-    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2) !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent) !important;
     outline: none !important;
   }
 
@@ -1726,6 +1729,7 @@ export const SETTINGS_TAB_STYLES = `
 
   .journalit-settings .journalit-button--primary:hover:not(:disabled) {
     background-color: var(--interactive-accent-hover) !important;
+    color: var(--text-on-accent) !important;
     border-color: var(--interactive-accent-hover) !important;
   }
 
@@ -1807,14 +1811,14 @@ export const SETTINGS_TAB_STYLES = `
   
   .journalit-settings .tier-badge.tier-pro,
   .journalit-settings .tier-badge.tier-premium {
-    background: rgba(var(--interactive-accent-rgb, 0, 200, 100), 0.15);
-    color: var(--interactive-accent);
+    background: color-mix(in srgb, var(--interactive-accent) 15%, transparent);
+    color: var(--text-accent);
     border-color: var(--interactive-accent);
   }
 
   .journalit-settings .tier-badge.tier-enterprise {
-    background: rgba(var(--interactive-accent-rgb, 0, 200, 100), 0.2);
-    color: var(--interactive-accent);
+    background: color-mix(in srgb, var(--interactive-accent) 20%, transparent);
+    color: var(--text-accent);
     border-color: var(--interactive-accent);
     font-weight: 700;
   }
@@ -1946,7 +1950,7 @@ export const SETTINGS_TAB_STYLES = `
   }
 
   .journalit-settings .section-header-row .manage-subscription-link:hover {
-    color: var(--interactive-accent);
+    color: var(--text-accent);
     border-color: var(--interactive-accent);
     gap: 6px;
   }
@@ -2964,6 +2968,183 @@ export const SETTINGS_TAB_STYLES = `
     justify-content: center;
   }
 
+  .backend-integration-settings .journalit-trade-import-sync-header {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-header__summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px 14px;
+    color: var(--text-muted);
+    font-size: 13px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-header__connection::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 6px;
+    border-radius: 50%;
+    background: var(--text-faint);
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-header__connection.is-connected::before {
+    background: var(--color-green);
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-header__connection.is-disconnected::before {
+    background: var(--color-red);
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-header__restorable,
+  .backend-integration-settings .journalit-trade-import-account-row__restorable {
+    color: var(--text-accent);
+  }
+
+  .backend-integration-settings .journalit-trade-import-sync-header__actions {
+    display: flex;
+    gap: 8px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-list,
+  .backend-integration-settings .journalit-trade-import-history__list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: 8px;
+    background: var(--background-secondary);
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-row {
+    display: grid;
+    grid-template-columns: minmax(120px, 1.2fr) minmax(120px, 1fr) minmax(140px, 1fr) auto;
+    align-items: center;
+    gap: 8px 16px;
+    padding: 10px 12px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-row + .journalit-trade-import-account-row,
+  .backend-integration-settings .journalit-trade-import-history__row + .journalit-trade-import-history__row {
+    border-top: 1px solid var(--background-modifier-border);
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-row__identity {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-row__identity strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-row__identity span,
+  .backend-integration-settings .journalit-trade-import-account-row__status {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-row__status {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px 10px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-row__issues {
+    color: var(--text-warning);
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-row__link {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-row__notes {
+    grid-column: 1 / -1;
+    color: var(--text-faint);
+    font-size: 11px;
+    line-height: 1.4;
+  }
+
+  .backend-integration-settings .journalit-trade-import-account-row__notes p {
+    margin: 0;
+  }
+
+  .backend-integration-settings .journalit-trade-import-history {
+    margin-top: 16px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-history__toggle {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    height: auto;
+    gap: 6px;
+    width: 100%;
+    margin-bottom: 8px;
+    padding: 8px 4px;
+    border: none;
+    background: none;
+    box-shadow: none;
+    color: var(--text-normal);
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .backend-integration-settings .journalit-trade-import-history__row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 12px;
+  }
+
+  .backend-integration-settings .journalit-trade-import-history__details {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .backend-integration-settings .journalit-trade-import-history__details span {
+    color: var(--text-muted);
+    font-size: 12px;
+  }
+
+  
+  .backend-integration-settings .journalit-trade-import-account-list {
+    container-type: inline-size;
+  }
+
+  @container (max-width: 600px) {
+    .backend-integration-settings .journalit-trade-import-account-row {
+      grid-template-columns: minmax(0, 1fr) auto;
+    }
+
+    .backend-integration-settings .journalit-trade-import-account-row__menu {
+      grid-row: 1;
+      grid-column: 2;
+    }
+
+    .backend-integration-settings .journalit-trade-import-account-row__status,
+    .backend-integration-settings .journalit-trade-import-account-row__link {
+      grid-column: 1 / -1;
+    }
+  }
+
   .backend-integration-settings .journalit-trade-import-account-card__actions button:disabled {
     border-color: var(--background-modifier-border);
     background: var(--background-secondary);
@@ -3179,7 +3360,7 @@ export const SETTINGS_TAB_STYLES = `
 
   .setup-step--current {
     border-color: var(--interactive-accent);
-    background: rgba(var(--interactive-accent-rgb), 0.08);
+    background: color-mix(in srgb, var(--interactive-accent) 8%, transparent);
     box-shadow: 0 0 0 1px var(--interactive-accent);
   }
 
@@ -3270,7 +3451,7 @@ export const SETTINGS_TAB_STYLES = `
 
   .status-card--disconnected {
     border-color: var(--background-modifier-error);
-    background: rgba(var(--background-modifier-error-rgb, 255, 0, 0), 0.04);
+    background: rgba(var(--color-red-rgb), 0.04);
   }
 
   .status-card--unknown {
@@ -3324,7 +3505,7 @@ export const SETTINGS_TAB_STYLES = `
   .metric-value--large {
     font-size: 32px;
     font-weight: 700;
-    color: var(--interactive-accent);
+    color: var(--text-accent);
     line-height: 1;
   }
 
@@ -4280,6 +4461,7 @@ export const SETTINGS_TAB_STYLES = `
 
   .journalit-settings-tab .custom-fields-manager .custom-review-field-group-header .custom-review-field-group-add-button.journalit-button:hover:not(:disabled) {
     background-color: var(--interactive-accent-hover) !important;
+    color: var(--text-on-accent) !important;
     border-color: var(--interactive-accent-hover) !important;
   }
 

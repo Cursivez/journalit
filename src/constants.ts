@@ -13,11 +13,32 @@ const UPGRADE_FEATURE_CONTENT = {
 
 export type UpgradeFeature = keyof typeof UPGRADE_FEATURE_CONTENT;
 
+function isUpgradeFeatureKey(key: string): key is UpgradeFeature {
+  return key in UPGRADE_FEATURE_CONTENT;
+}
+
+const UPGRADE_FEATURE_BY_CONTENT = new Map<string, UpgradeFeature>();
+for (const key of Object.keys(UPGRADE_FEATURE_CONTENT)) {
+  if (isUpgradeFeatureKey(key)) {
+    UPGRADE_FEATURE_BY_CONTENT.set(UPGRADE_FEATURE_CONTENT[key], key);
+  }
+}
+
+
+export function parseUpgradeFeatureContent(
+  value: unknown
+): UpgradeFeature | null {
+  if (typeof value !== 'string') return null;
+  return UPGRADE_FEATURE_BY_CONTENT.get(value) ?? null;
+}
+
 export const UPGRADE_CAMPAIGNS = {
   
   default: 'pro_upgrade',
   
   onboarding: 'pro_upgrade_onboarding',
+  
+  manualTradeNudge: 'pro_upgrade_manual_trade_nudge',
 } as const;
 
 type UpgradeCampaign =

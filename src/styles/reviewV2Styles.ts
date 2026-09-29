@@ -53,8 +53,9 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   
   
+  
   .markdown-source-view.mod-cm6 .cm-content > .cm-preview-code-block.cm-embed-block[class*="cm-lang-journalit-"] > .edit-block-button,
-  .markdown-source-view.mod-cm6 .cm-content > .cm-preview-code-block.cm-embed-block[class*="cm-lang-journalit-"]:hover > .edit-block-button {
+  .markdown-source-view.mod-cm6 .cm-content > .cm-preview-code-block.cm-embed-block[class*="cm-lang-journalit-"] > .embed-actions > .edit-block-button {
     display: none;
     opacity: 0;
     pointer-events: none;
@@ -1835,7 +1836,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .journalit-reviewv2-missed-setup-tag {
     font-size: 10px;
     padding: 1px 6px;
-    background: rgba(var(--color-info-rgb, 33, 150, 243), 0.12);
+    background: rgba(var(--color-blue-rgb), 0.12);
     color: var(--color-info, #2196f3);
     border-radius: 3px;
     font-weight: 500;
@@ -1845,7 +1846,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .journalit-reviewv2-missed-setup-overflow {
     font-size: 10px;
     padding: 1px 6px;
-    background: rgba(var(--color-info-rgb, 33, 150, 243), 0.08);
+    background: rgba(var(--color-blue-rgb), 0.08);
     color: var(--text-muted);
     border-radius: 3px;
     font-weight: 500;
@@ -2455,8 +2456,8 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   }
 
   .journalit-reviewv2-bestworst-chip--setup {
-    background: rgba(var(--interactive-accent-rgb, 66, 153, 225), 0.15);
-    color: var(--interactive-accent);
+    background: color-mix(in srgb, var(--interactive-accent) 15%, transparent);
+    color: var(--text-accent);
   }
 
   .journalit-reviewv2-bestworst-chip--mistake {
@@ -2518,6 +2519,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-reviewv2-mark-reviewed-button--pending:hover {
     background: var(--interactive-accent-hover);
+    color: var(--text-on-accent);
   }
 
   .journalit-reviewv2-mark-reviewed-button--disabled {
@@ -2745,7 +2747,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     border: 1px solid var(--background-modifier-border);
     border-left: 3px solid var(--interactive-accent);
     border-radius: 10px;
-    background: rgba(var(--background-secondary-alt-rgb, 35, 35, 35), 0.35);
+    background: color-mix(in srgb, var(--background-secondary-alt) 35%, transparent);
   }
 
   .journalit-previous-drc-reference-header {
@@ -2755,7 +2757,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     gap: 1rem;
     padding: 0.75rem 1rem;
     border-bottom: 1px solid var(--background-modifier-border);
-    background: rgba(var(--background-secondary-rgb, 30, 30, 30), 0.45);
+    background: color-mix(in srgb, var(--background-secondary) 45%, transparent);
   }
 
   .journalit-previous-drc-reference-title-group {
@@ -3154,7 +3156,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .key-levels-source-tag--clickable:hover {
     border-color: var(--interactive-accent) !important;
-    color: var(--interactive-accent) !important;
+    color: var(--text-accent) !important;
   }
 
   .key-levels-empty {
@@ -3200,7 +3202,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     background: transparent;
     border: 1px solid var(--interactive-accent);
     border-radius: 4px;
-    color: var(--interactive-accent);
+    color: var(--text-accent);
     cursor: pointer;
     font-size: 22px;
     font-weight: 400;
@@ -3932,7 +3934,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .journalit-weekly-drc-context .journalit-weekly-drc-reference-date-link:focus-visible,
   .journalit-weekly-drc-summary--sticky-clone .journalit-weekly-drc-reference-date-link:hover,
   .journalit-weekly-drc-summary--sticky-clone .journalit-weekly-drc-reference-date-link:focus-visible {
-    color: var(--interactive-accent);
+    color: var(--text-accent);
     text-decoration-color: currentColor;
   }
 

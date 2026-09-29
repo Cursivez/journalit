@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
 import { BackendSecretStorage } from '../../../../services/backend/BackendSecretStorage';
@@ -6,6 +6,7 @@ import {
   addPropChallengePhase,
   createPropChallengePhase,
   removePropChallengePhase,
+  reopenChallenge,
   updatePropChallengePhase,
   validatePhaseTimeline,
 } from '../../../../services/propChallenge/PropChallengeConfig';
@@ -24,9 +25,9 @@ import {
   PropFirmPrefillMatch,
   usePropFirmIndex,
 } from './PropFirmPrefillTeaser';
-import { observeSelectedPhaseStep } from './phaseTimelineScroll';
+import { PhaseTimeline } from './PhaseTimeline';
+import { PhasePolicyHistory } from './PhasePolicyHistory';
 import { PersonalProfileLibrary } from './PersonalProfileLibrary';
-import { CollapsibleSection } from '../../../shared/CollapsibleSection';
 
 interface Props {
   value: PropChallengeConfig | undefined;
@@ -49,7 +50,6 @@ export function PropChallengeSettingsSection({
 }: Props) {
   const plugin = usePlugin();
   const [selectedPhaseId, setSelectedPhaseId] = useState('');
-  const phaseTimelineRef = useRef<HTMLElement>(null);
   
   
   
@@ -66,12 +66,6 @@ export function PropChallengeSettingsSection({
     value?.phases.find((phase) => phase.id === selectedPhaseId) ??
     value?.phases.find((phase) => phase.id === value.currentPhaseId) ??
     value?.phases[0];
-
-  useEffect(() => {
-    const timeline = phaseTimelineRef.current;
-    if (!timeline) return;
-    return observeSelectedPhaseStep(timeline);
-  }, [selectedPhase?.id, value?.phases.length]);
 
   if (!value) return null;
 
@@ -116,6 +110,24 @@ export function PropChallengeSettingsSection({
     if (promoted) alignAccountType(promoted.stage ?? 'evaluation');
     onChange(next);
   };
+
+  
+  
+  const canReopenSelectedPhase =
+    value.status === 'failed' && selectedPhase?.id === value.currentPhaseId;
+
+  const reopenSelectedPhase = () => {
+    if (!canReopenSelectedPhase || !selectedPhase) return;
+    alignAccountType(selectedPhase.stage ?? 'evaluation');
+    onChange(reopenChallenge(value));
+  };
+
+  
+  
+  const showsLinkedIdentity =
+    existingAccount &&
+    value.profileRef !== undefined &&
+    Boolean(value.firmName?.trim() && value.challengeName.trim());
 
   const firmNameField = value ? (
     <label className="journalit-prop-challenge-field">
@@ -179,7 +191,14 @@ export function PropChallengeSettingsSection({
               }}
             />
           )}
-          {(!showProfilePicker || existingAccount) && (
+          {showsLinkedIdentity && (
+            
+            
+            <p className="journalit-prop-challenge-linked-identity">
+              {value.firmName} · {value.challengeName}
+            </p>
+          )}
+          {(existingAccount ? !showsLinkedIdentity : !showProfilePicker) && (
             <>
               
               <div className="journalit-prop-challenge-identity-block">
@@ -201,6 +220,10 @@ export function PropChallengeSettingsSection({
             currencyCode={currencyCode}
             disabled={disabled}
             existingAccount={existingAccount}
+            
+            
+            
+            showPicker={!showProfilePicker}
             onChange={(next) => {
               onChange(next);
               const firstPhase = next.phases[0];
@@ -211,32 +234,13 @@ export function PropChallengeSettingsSection({
           />
         </div>
         <div className="journalit-prop-challenge-phase-workspace">
-          <nav
-            ref={phaseTimelineRef}
-            className="journalit-prop-challenge-phase-timeline"
-            aria-label={t('account.prop-challenge.title')}
-          >
-            {value.phases.map((phase) => {
-              const selected = phase.id === selectedPhase?.id;
-              const current = phase.id === value.currentPhaseId;
-              return (
-                <button
-                  key={phase.id}
-                  type="button"
-                  className={`journalit-prop-challenge-phase-step${selected ? ' is-selected' : ''}${current ? ' is-current' : ''}`}
-                  aria-pressed={selected}
-                  aria-current={current ? 'step' : undefined}
-                  onClick={() => setSelectedPhaseId(phase.id)}
-                  disabled={disabled}
-                >
-                  <span className="journalit-prop-challenge-phase-step-marker" />
-                  <span className="journalit-prop-challenge-phase-step-label">
-                    {phase.name || t('account.prop-challenge.unnamed-phase')}
-                  </span>
-                </button>
-              );
-            })}
-          </nav>
+          <PhaseTimeline
+            phases={value.phases}
+            selectedPhaseId={selectedPhase?.id}
+            currentPhaseId={value.currentPhaseId}
+            disabled={disabled}
+            onSelect={setSelectedPhaseId}
+          />
           <div className="journalit-prop-challenge-phase-actions">
             <Button
               variant="plain"
@@ -246,6 +250,16 @@ export function PropChallengeSettingsSection({
             >
               {t('account.prop-challenge.add-phase')}
             </Button>
+            {canReopenSelectedPhase && (
+              <Button
+                variant="plain"
+                size="small"
+                onClick={reopenSelectedPhase}
+                disabled={disabled}
+              >
+                {t('account.prop-challenge.actions.reopen')}
+              </Button>
+            )}
             <Button
               variant="plain"
               size="small"
@@ -285,44 +299,12 @@ export function PropChallengeSettingsSection({
             <div className="error-message-inline">{timelineError}</div>
           )}
         </div>
-        {selectedPhase?.policyHistory && (
-          <CollapsibleSection
-            className="journalit-profile-history"
-            title={t('account.profiles.history')}
-            defaultOpen={false}
-          >
-            <div className="journalit-profile-history__entries">
-              <p>{t('account.profiles.history-help')}</p>
-              {selectedPhase.policyHistory.map((revision) => (
-                <CollapsibleSection
-                  key={revision.effectiveAt}
-                  title={new Date(revision.effectiveAt).toLocaleString()}
-                  defaultOpen={false}
-                  className="journalit-profile-history__entry"
-                >
-                  <div className="journalit-profile-history__entries">
-                    {revision.transition?.basis === 'custom' && (
-                      <p>
-                        {t('account.profiles.custom-transition')}:{' '}
-                        {revision.transition.source}
-                      </p>
-                    )}
-                    <PhaseEditor
-                      phase={{
-                        ...selectedPhase,
-                        rules: revision.rules,
-                        payoutPolicy: revision.payoutPolicy,
-                      }}
-                      phases={value.phases}
-                      currencyCode={currencyCode}
-                      disabled
-                      onChange={() => {}}
-                    />
-                  </div>
-                </CollapsibleSection>
-              ))}
-            </div>
-          </CollapsibleSection>
+        {selectedPhase && (
+          <PhasePolicyHistory
+            phase={selectedPhase}
+            phases={value.phases}
+            currencyCode={currencyCode}
+          />
         )}
         <PropChallengeCostsEditor
           value={value}

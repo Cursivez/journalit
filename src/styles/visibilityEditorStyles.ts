@@ -314,6 +314,7 @@ export const VISIBILITY_EDITOR_STYLES = `
 
   .journalit-visibility-editor__add-button:hover {
     background: var(--interactive-accent-hover);
+    color: var(--text-on-accent);
   }
 
   .journalit-visibility-editor__add-button-icon {

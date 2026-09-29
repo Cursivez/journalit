@@ -38,7 +38,8 @@ export function registerDashboardCustomizeGuide(
         description: t('dashboard.guide.main.widget-picker.description'),
         progression: 'manual',
         targetId: DASHBOARD_WIDGET_PICKER_TARGET_ID,
-        placement: 'right',
+        
+        placement: 'left',
         skipIfTargetMissing: false,
       },
       {

@@ -1,5 +1,15 @@
 import { GuideDefinition } from './types';
 
+
+export function guidesRequireResolution(
+  guidesForView: readonly GuideDefinition[]
+): boolean {
+  return (
+    guidesForView.length > 1 ||
+    guidesForView.some((guide) => guide.resolvedByView === true)
+  );
+}
+
 export class GuideRegistry {
   private guidesById = new Map<string, GuideDefinition>();
   private guidesByViewType = new Map<string, GuideDefinition[]>();

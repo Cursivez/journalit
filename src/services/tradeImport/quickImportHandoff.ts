@@ -24,6 +24,8 @@ interface QuickImportTradeImportHandoff {
   preview: TradeImportPreviewResponse | null;
   previewOwnerUserId: string | null;
   classified: ClassifiedPreviewTrade[];
+  
+  previewOnOpen?: boolean;
 }
 
 let pendingQuickImportHandoff: QuickImportTradeImportHandoff | null = null;

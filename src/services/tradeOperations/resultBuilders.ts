@@ -18,7 +18,6 @@ function operationTrades(
     filePath: summary.filePath,
     entryTime: summary.entryTime,
     accountName: summary.accountName,
-    brokerLabel: summary.brokerLabel,
     change: summary.change,
   }));
 }
@@ -166,9 +165,9 @@ export function buildProjectionSyncOperationResult({
     }),
     trades,
     accountNames: unique(trades.map((trade) => trade.accountName)),
-    brokerLabels: unique(
-      trades.flatMap((trade) => (trade.brokerLabel ? [trade.brokerLabel] : []))
-    ),
+    
+    
+    brokerLabels: [],
     partial:
       result.partial === true ||
       result.failedCount > 0 ||

@@ -1,4 +1,4 @@
-import { EventRef, WorkspaceLeaf } from 'obsidian';
+import { EventRef, View, WorkspaceLeaf } from 'obsidian';
 import type JournalitPlugin from '../main';
 import {
   ActiveLeafContext,
@@ -124,6 +124,12 @@ export class ViewGuideService {
     );
 
     this.syncActiveLeafContext();
+    
+    
+    
+    this.plugin.app.workspace.onLayoutReady(() => {
+      this.syncActiveLeafContext();
+    });
 
     this.initialized = true;
   }
@@ -327,8 +333,10 @@ export class ViewGuideService {
     const existing = this.getSessionForGuide(guideId);
 
     if (!this.activeLeaf) {
-      this.activeLeaf = options.leaf;
-      this.activeLeafContext = this.resolveLeafContext(options.leaf);
+      
+      
+      this.activeLeaf = this.getCurrentActiveLeaf() ?? options.leaf;
+      this.activeLeafContext = this.resolveLeafContext(this.activeLeaf);
     }
 
     if (
@@ -547,14 +555,22 @@ export class ViewGuideService {
 
   
   private getCurrentActiveLeaf(): WorkspaceLeaf | null {
+    const workspace = this.plugin.app.workspace;
     const known = this.activeLeaf;
-    if (
+    const candidates = [
+      workspace.getActiveViewOfType(View)?.leaf ?? null,
+      workspace.getMostRecentLeaf(),
       known?.view &&
       this.isLeafIdStillOpen(this.getLeafId(known), known.view.getViewType())
-    ) {
-      return known;
-    }
-    return this.plugin.app.workspace.getMostRecentLeaf();
+        ? known
+        : null,
+    ].filter((leaf): leaf is WorkspaceLeaf => leaf !== null);
+
+    return (
+      candidates.find((leaf) => leaf.view.containerEl.isShown()) ??
+      candidates[0] ??
+      null
+    );
   }
 
   private syncActiveLeafContext(leaf?: WorkspaceLeaf | null): void {

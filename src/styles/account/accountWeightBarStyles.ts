@@ -258,11 +258,11 @@ export const ACCOUNT_WEIGHT_BAR_STYLES = `
 
 
 .account-weight-bar .account-weight-segment {
-  animation: segment-grow 0.6s ease-out;
+  animation: journalit-segment-grow 0.6s ease-out;
   animation-fill-mode: both;
 }
 
-@keyframes segment-grow {
+@keyframes journalit-segment-grow {
   from {
     clip-path: inset(0 100% 0 0 round 4px);
     opacity: 0;

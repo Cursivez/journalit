@@ -19,7 +19,7 @@ import { AccountType } from '../../../../services/account/types';
 import { OptionType } from '../../../../services/options/CustomOptionsService';
 import { AccountMetadataConflictError } from '../../../../services/accountPage/AccountPageService';
 import { showConfirmationModal } from '../../../shared/ConfirmationModal';
-import type { PropChallengeManualAction } from './PropChallengeActionsMenu';
+import type { PropChallengeLifecycleAction } from './PropChallengeActionsMenu';
 import { openPropChallengeTransitionModal } from './PropChallengeTransitionModal';
 
 export function getAvailableAccountTypes(
@@ -44,7 +44,7 @@ export interface LifecycleActionContext {
 
 function resolveLifecycleActionLabel(
   challenge: PropChallengeConfig,
-  action: PropChallengeManualAction
+  action: PropChallengeLifecycleAction
 ): string {
   const currentPhase = getCurrentPropChallengePhase(challenge);
   const currentIndex = challenge.phases.findIndex(
@@ -128,6 +128,9 @@ async function persistPropChallengeLifecycleConfig(
 ): Promise<boolean> {
   const accountPageService = context.plugin.accountPageService;
   if (!accountPageService) return false;
+  const previousAccountType = accountPageService.getAccountMetadataEntry(
+    context.accountName
+  )?.metadata.accountType;
   try {
     await savePropChallengeConfig({
       accountPageService,
@@ -147,7 +150,7 @@ async function persistPropChallengeLifecycleConfig(
     }
     throw error;
   }
-  if (notifyTypeChange && accountType)
+  if (notifyTypeChange && accountType && accountType !== previousAccountType)
     new Notice(
       t('account.prop-challenge.notice.type-changed', { accountType })
     );
@@ -200,7 +203,7 @@ export async function applyPropChallengeAdvanceWithIdentity(
 
 export async function applyPropChallengeLifecycleAction(
   context: LifecycleActionContext,
-  action: PropChallengeManualAction,
+  action: PropChallengeLifecycleAction,
   options: { confirm?: boolean; at?: Date } = {}
 ): Promise<boolean> {
   const { plugin, app, challenge } = context;
@@ -241,7 +244,8 @@ export async function applyPropChallengeLifecycleAction(
           : `account.prop-challenge.confirm.${action}`,
         {
           account: context.accountName,
-          challenge: challenge.challengeName,
+          
+          challenge: challenge.challengeName.trim() || context.accountName,
           phase: currentPhase?.name ?? '',
         }
       ),

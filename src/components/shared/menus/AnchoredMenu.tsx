@@ -2,6 +2,7 @@ import React, { useEffect, useEffectEvent, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import {
+  anchoredMenuPortalRoot,
   useAnchoredMenuPosition,
   type AnchoredMenuWidth,
 } from './useAnchoredMenuPosition';
@@ -123,8 +124,7 @@ export function AnchoredMenu({
 
   if (!isOpen) return null;
 
-  const portalRoot =
-    triggerRef.current?.ownerDocument.body ?? window.activeDocument.body;
+  const portalRoot = anchoredMenuPortalRoot(triggerRef.current);
   const cssWidth =
     width === 'content' && position.width === 0
       ? 'max-content'

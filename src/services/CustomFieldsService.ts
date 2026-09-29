@@ -56,7 +56,7 @@ function parseCustomFieldType(value: unknown): CustomFieldType | null {
   }
 }
 
-function normalizeCustomFieldLabel(label: string): string {
+export function normalizeCustomFieldLabel(label: string): string {
   return label.trim().toLowerCase();
 }
 

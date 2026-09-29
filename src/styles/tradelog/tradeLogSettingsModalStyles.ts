@@ -333,6 +333,7 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
 
   .column-add-btn:hover {
     background: var(--interactive-accent-hover);
+    color: var(--text-on-accent);
   }
 
   
@@ -385,6 +386,7 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
 
   .tradelog-settings-modal-buttons button.primary:hover {
     background: var(--interactive-accent-hover);
+    color: var(--text-on-accent);
   }
 
   .tradelog-settings-modal-buttons .reset-button {

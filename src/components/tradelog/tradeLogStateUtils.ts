@@ -4,6 +4,7 @@ import {
   type TimeNode,
   type TradeLogFilters,
 } from '../../services/tradelog/types';
+import { hasFilterExclusions } from '../shared/filters/filterExclusions';
 
 export type TradeLogMode = 'trades' | 'imageGallery';
 
@@ -59,7 +60,8 @@ export function hasActiveTradeLogResultFilters(
     filters.reviewStatus.length > 0 ||
     Object.values(filters.customFieldFilters).some(
       (values) => values.length > 0
-    )
+    ) ||
+    hasFilterExclusions(filters.exclusions)
   );
 }
 

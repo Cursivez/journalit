@@ -3,11 +3,11 @@
 import type { Lang } from './en';
 
 const vi: Lang = {
+  'templateEditor.widget.session-log.hide-empty-outside':
+    'Ẩn nhật ký ngoài phiên khi trống',
   'account.profiles.correction-title': 'Sửa lỗi danh mục',
   'account.profiles.correction-source': 'Nguồn quy tắc',
   'account.profiles.correction-period': 'Lịch sử bị ảnh hưởng',
-  'account.profiles.correction-guide':
-    'Cần phê duyệt bản sửa trước khi tính lại lịch sử bị ảnh hưởng.',
   'account.profiles.correction-history': 'Lịch sử sửa lỗi',
   'account.profiles.correction-stale':
     'Lịch sử tài khoản đã thay đổi. Hãy mở lại phần xem xét.',
@@ -31,16 +31,16 @@ const vi: Lang = {
   'account.profiles.published-date': 'Ngày hiệu lực đã công bố',
   'account.profiles.applicability-checking': 'Đang kiểm tra việc áp dụng…',
   'account.profiles.no-matching-phase':
-    'Không có giai đoạn phù hợp trong hồ sơ này.',
+    'Không có giai đoạn tương ứng trong các quy tắc của quỹ này.',
   'account.profiles.history-unchanged': 'Lịch sử trước đó không thay đổi.',
-  'account.profiles.notice-title': 'Có hồ sơ thử thách được cập nhật',
+  'account.profiles.notice-title': 'Có quy tắc quỹ đã cập nhật',
   'account.profiles.notice-description':
-    'Hồ sơ nguồn khác với hồ sơ đã lưu. Quy tắc tài khoản của bạn chưa thay đổi.',
+    'Quy tắc quỹ đã công bố khác với quy tắc đã lưu trên tài khoản này. Quy tắc của tài khoản bạn không thay đổi.',
   'account.profiles.review-changes': 'Xem xét thay đổi',
   'account.profiles.check-failed': 'Không thể kiểm tra cập nhật quy tắc.',
   'account.profiles.retry': 'Thử lại',
   'account.profiles.source-changed':
-    'Hồ sơ nguồn đã thay đổi trong khi xem xét. Hãy mở lại phần xem xét trước khi áp dụng.',
+    'Quy tắc quỹ đã thay đổi khi bản xem xét này đang mở. Hãy mở lại bản xem xét trước khi áp dụng.',
   'account.profiles.retain': 'Giữ quy tắc hiện tại',
   'account.profiles.retain-help':
     'Giữ quy tắc tài khoản và ẩn những thay đổi nguồn này. Các thay đổi quy tắc sau này vẫn có thể được thông báo.',
@@ -54,57 +54,60 @@ const vi: Lang = {
     'Không có khác biệt về quy tắc hoặc chính sách rút tiền cho giai đoạn này.',
   'account.profiles.accept': 'Áp dụng cập nhật',
   'account.profiles.cached':
-    'Đang dùng hồ sơ đã lưu tạm; không thể kiểm tra quy tắc mới nhất.',
-  'account.profiles.guide':
-    'Xem thay đổi theo điều khoản được công bố hoặc công ty xác nhận. Nhập ngày mua ban đầu khi được yêu cầu. Lưu mẫu trong Hồ sơ công ty của tôi khi chỉnh sửa tài khoản.',
+    'Đang dùng quy tắc quỹ đã lưu tạm; không thể kiểm tra quy tắc mới nhất.',
   'account.profiles.account-phase': 'Giai đoạn tài khoản',
-  'account.profiles.choose': 'Chọn hồ sơ đã lưu',
+  'account.profiles.choose': 'Chọn quy tắc đã lưu',
   'account.profiles.completed':
     'Giai đoạn đã hoàn thành giữ nguyên quy tắc cũ.',
   'account.profiles.confirm': 'Các quy tắc này áp dụng cho tài khoản của tôi.',
   'account.profiles.currency':
-    'Chọn loại tiền tài khoản khớp với hồ sơ trước khi áp dụng.',
+    'Chọn đơn vị tiền tệ tài khoản khớp với các quy tắc này trước khi áp dụng.',
   'account.profiles.current': 'Quy tắc tài khoản hiện tại',
   'account.profiles.custom-transition': 'Điều khoản chuyển đổi tùy chỉnh',
   'account.profiles.cycle-start': 'Bắt đầu chu kỳ rút tiền (giờ địa phương)',
   'account.profiles.delete-help':
-    'Xóa hồ sơ đã lưu này? Các tài khoản đang dùng hồ sơ sẽ không thay đổi.',
+    'Xóa các quy tắc đã lưu này? Các tài khoản đang dùng chúng sẽ không thay đổi.',
   'account.profiles.effective': 'Có hiệu lực từ (giờ địa phương)',
   'account.profiles.error':
-    'Không thể lưu hồ sơ. Kiểm tra các giá trị và thử lại.',
+    'Không thể lưu quy tắc. Kiểm tra các giá trị và thử lại.',
   'account.profiles.floor': 'Mức sàn sụt giảm khi chuyển đổi',
   'account.profiles.history': 'Lịch sử quy tắc',
   'account.profiles.history-help':
-    'Quy tắc cũ được giữ lại. Dùng Xem xét cập nhật hồ sơ để thay đổi; chỉnh sửa trực tiếp bị khóa để bảo vệ lịch sử.',
-  'account.profiles.incoming': 'Quy tắc hồ sơ mới',
+    'Quy tắc cũ được giữ nguyên. Dùng Xem xét cập nhật quy tắc để thay đổi một giai đoạn có phiên bản; chỉnh sửa trực tiếp bị khóa để bảo vệ lịch sử.',
+  'account.profiles.incoming': 'Quy tắc quỹ mới nhận',
   'account.profiles.independent':
-    'Hồ sơ được lưu cục bộ trong kho. Áp dụng tạo bản sao tài khoản độc lập; lưu phiên bản mới không thay đổi tài khoản hiện có.',
+    'Quy tắc đã lưu chỉ nằm trong vault này. Áp dụng sẽ tạo một bản sao độc lập trên tài khoản; lưu bản sửa đổi mới không bao giờ thay đổi các tài khoản hiện có.',
   'account.profiles.keep-help':
-    'Quy tắc được chọn giữ giá trị cục bộ thay cho quy tắc mới cùng loại. Bỏ chọn để chấp nhận giá trị mới. Các loại quy tắc mới được thêm vào.',
+    'Quy tắc được đánh dấu giữ giá trị cục bộ của bạn thay vì quy tắc mới cùng loại. Bỏ đánh dấu để nhận giá trị của quỹ. Các loại quy tắc mới sẽ được thêm vào.',
   'account.profiles.keep-local': 'Giữ quy tắc của tôi:',
   'account.profiles.keep-payout': 'Giữ chính sách rút tiền hiện tại',
-  'account.profiles.library': 'Hồ sơ công ty của tôi',
+  'account.profiles.library': 'Quy tắc đã lưu của tôi',
   'account.profiles.locked': 'Mức sàn sụt giảm đã được khóa',
-  'account.profiles.missing': 'Hồ sơ đã lưu này không còn tồn tại.',
+  'account.profiles.missing': 'Các quy tắc đã lưu này không còn tồn tại.',
   'account.profiles.peak': 'Số dư đỉnh chuyển tiếp',
-  'account.profiles.review': 'Xem xét cập nhật hồ sơ',
-  'account.profiles.link-source': 'Liên kết hồ sơ công ty',
-  'account.profiles.save-new': 'Lưu thành hồ sơ mới',
-  'account.profiles.save-revision': 'Lưu phiên bản mới của hồ sơ đã chọn',
-  'account.profiles.source-phase': 'Giai đoạn hồ sơ nguồn',
+  'account.profiles.review': 'Xem xét cập nhật quy tắc',
+  'account.profiles.save-new': 'Lưu các quy tắc này',
+  'account.profiles.saved': 'Đã lưu vào Quy tắc đã lưu của tôi.',
+  'account.profiles.update-saved': 'Cập nhật quy tắc đã lưu',
+  'account.profiles.delete-saved': 'Xóa quy tắc đã lưu',
+  'account.profiles.save-revision':
+    'Lưu thành bản sửa đổi mới của quy tắc đã chọn',
+  'account.profiles.source-phase': 'Giai đoạn trong quy tắc quỹ',
   'account.profiles.transition-help':
     'Chưa có điều khoản chuyển đổi đã xác minh. Nhập mức sàn, đỉnh và ngày bắt đầu chu kỳ do công ty xác nhận. Chúng được đánh dấu tùy chỉnh. Lợi nhuận giai đoạn và tổng số lần rút được giữ lại; giao dịch cũ vẫn dùng quy tắc cũ.',
   'account.profiles.transition-source':
     'Xác nhận của công ty hoặc nguồn tham chiếu',
-  'account.profiles.unknown-baseline':
-    'Tài khoản cũ này không có bản sao nguồn ban đầu. Hãy xem xét từng khác biệt; không thể tự động nhận biết các thay đổi cục bộ.',
+  'account.profiles.link-intro':
+    'Liên kết thử thách này với quy tắc của quỹ và Journalit sẽ báo khi quỹ thay đổi chúng. Trước tiên bạn xem chúng khác quy tắc của tài khoản này thế nào; không có gì thay đổi cho đến khi bạn áp dụng.',
+  'account.profiles.link-title': 'Liên kết với quy tắc quỹ',
+  'account.profiles.choose-source': 'Chọn quy tắc quỹ',
   'account.profiles.update-available':
-    'Cần xem xét khác biệt hồ sơ. Tài khoản vẫn dùng quy tắc đã lưu.',
+    'Quy tắc quỹ đã thay đổi và cần được xem xét. Tài khoản của bạn vẫn dùng quy tắc đã lưu.',
   'account.profiles.up-to-date':
-    'Giai đoạn này dùng định nghĩa hồ sơ được xem xét gần nhất; thay đổi cục bộ vẫn độc lập.',
+    'Giai đoạn này dùng quy tắc quỹ mới nhất đã xem xét; các điều chỉnh cục bộ vẫn độc lập.',
   'widget.mfeScatter.name': 'MFE và lãi/lỗ đã thực hiện',
   'widget.mfeScatter.description':
-    'Biến động thuận lợi tối đa so với lãi/lỗ ròng đã thực hiện của các giao dịch đã đóng',
+    'Lợi nhuận mở tối đa so với P&L cuối mỗi lệnh',
   'widget.mfeScatter.y': 'Lãi/lỗ đã thực hiện ({unit})',
   'widget.mfeScatter.winners': 'Lãi',
   'widget.mfeScatter.losers': 'Lỗ',
@@ -282,6 +285,8 @@ const vi: Lang = {
     'Trước tiên, hãy mở chế độ xem Journalit được hỗ trợ, sau đó chạy lệnh này.',
   'notice.guide.no-guide-for-view':
     'Chưa có hướng dẫn nào được đăng ký cho chế độ xem này ({viewType}).',
+  'notice.guide.unavailable-in-current-state':
+    'Hướng dẫn của chế độ xem này không khả dụng ở trạng thái hiện tại.',
   'notice.guide.replay-failed':
     'Không thể bắt đầu hướng dẫn. Vui lòng thử lại.',
   'notice.guide.replay-started':
@@ -409,6 +414,18 @@ const vi: Lang = {
   
   
   'form.import-shortcut.open': 'Mở Nhập giao dịch',
+  'form.manual-import-nudge.title.one':
+    'Mẹo: bạn đã nhập tay {count} giao dịch',
+  'form.manual-import-nudge.title.few':
+    'Mẹo: bạn đã nhập tay {count} giao dịch',
+  'form.manual-import-nudge.title.many':
+    'Mẹo: bạn đã nhập tay {count} giao dịch',
+  'form.manual-import-nudge.title.other':
+    'Mẹo: bạn đã nhập tay {count} giao dịch',
+  'form.manual-import-nudge.body':
+    'Nhập giao dịch có thể đưa lịch sử từ sàn môi giới hoặc bảng tính của bạn vào cùng lúc, thay vì từng giao dịch một.',
+  'form.manual-import-nudge.cta': 'Xem trước giao dịch của tôi',
+  'form.manual-import-nudge.dismiss': 'Để sau',
   'form.layout.customize': 'Tùy chỉnh biểu mẫu',
   'form.layout.modal-title': 'Tùy chỉnh biểu mẫu giao dịch',
   'form.layout.settings-title': 'Bố cục biểu mẫu giao dịch',
@@ -776,6 +793,7 @@ const vi: Lang = {
     '{label} chứa các giá trị thời gian không hợp lệ',
 
   'notice.login-success': 'Đăng nhập thành công!',
+  'notice.pro-access-ready': 'Quyền truy cập PRO đã sẵn sàng.',
 
   'notice.logout-success': 'Đã đăng xuất thành công',
   'notice.ftp-created': 'Thông tin đăng nhập FTP được tạo thành công',
@@ -936,10 +954,7 @@ const vi: Lang = {
   'tradelog.guide.filters.title':
     'Sử dụng các bộ lọc để thu hẹp Nhật ký giao dịch',
   'tradelog.guide.filters.description':
-    'Mở bộ lọc khi bạn chỉ muốn xem xét một số tài khoản, thiết lập, thẻ, loại giao dịch, trạng thái hoặc ngày nhất định.',
-  'tradelog.guide.filter-modal.title': 'Đây là những bộ lọc chi tiết của bạn',
-  'tradelog.guide.filter-modal.description':
-    'Sử dụng phương thức này khi bạn muốn kiểm soát nhiều hơn chính xác những giao dịch nào được hiển thị. Đóng nó lại khi bạn xem xong hoặc thay đổi bộ lọc.',
+    'Mở bộ lọc khi bạn chỉ muốn xem xét một số tài khoản, thiết lập, thẻ, loại giao dịch, trạng thái hoặc ngày nhất định. Bạn cũng có thể loại trừ bất kỳ giá trị nào để bỏ các giao dịch đó ra.',
   'tradelog.guide.sorting.title': 'Nhấp vào tiêu đề cột để sắp xếp bảng',
   'tradelog.guide.sorting.description':
     'Trong chế độ xem Giao dịch, hãy nhấp vào tiêu đề cột có thể sắp xếp để sắp xếp lại bảng. Ví dụ: nhấp vào P&L ròng để sắp xếp theo số tiền thắng lớn nhất và khoản lỗ lớn nhất của bạn.',
@@ -981,7 +996,7 @@ const vi: Lang = {
   'dashboard.guide.main.filters.title':
     'Bộ lọc thay đổi toàn bộ Bảng điều khiển',
   'dashboard.guide.main.filters.description':
-    'Sử dụng bộ lọc khi bạn muốn mọi thống kê và biểu đồ trên trang này cập nhật theo phạm vi ngày, tài khoản, thiết lập, thẻ hoặc loại giao dịch khác.',
+    'Sử dụng bộ lọc khi bạn muốn mọi thống kê và biểu đồ trên trang này cập nhật theo phạm vi ngày, tài khoản, thiết lập, thẻ hoặc loại giao dịch khác. Bạn cũng có thể loại trừ bất kỳ giá trị nào để bỏ các giao dịch đó ra.',
   'dashboard.guide.main.edit-layout.title':
     'Bật chế độ chỉnh sửa để tùy chỉnh trang này',
   'dashboard.guide.main.edit-layout.description':
@@ -991,7 +1006,7 @@ const vi: Lang = {
     'Nhấp vào Thêm tiện ích để thêm nhiều biểu đồ hơn và khôi phục các tiện ích bạn đã xóa trước đó.',
   'dashboard.guide.main.widget-picker.title': 'Chọn nội dung bạn muốn hiển thị',
   'dashboard.guide.main.widget-picker.description':
-    'Bộ chọn này hiển thị các biểu đồ và số liệu hiện không có trên Bảng điều khiển của bạn. Bấm vào một để thêm nó.',
+    'Ngăn này hiển thị bản xem trước của mọi biểu đồ và chỉ số. Nhấp vào một mục để thêm; những mục đã có trên Bảng điều khiển nằm trong mục Đang dùng.',
   'dashboard.guide.main.metrics.title':
     'Những thẻ hàng đầu này là bản tóm tắt nhanh của bạn',
   'dashboard.guide.main.metrics.description':
@@ -1029,7 +1044,7 @@ const vi: Lang = {
     'Di chuyển và thay đổi kích thước các vật dụng của bạn',
   'home.guide.widget-picker.title': 'Thêm tiện ích tại đây',
   'home.guide.widget-picker.description':
-    'Thêm widget, khôi phục Liên kết Nhanh hoặc thêm lối tắt tài khoản và thiết lập.',
+    'Xem trước và thêm widget, khôi phục Liên kết Nhanh hoặc thêm lối tắt tài khoản và thiết lập. Mọi thứ đã có trên Trang chủ được liệt kê trong mục Đang dùng, nơi bạn có thể gỡ bỏ.',
   'home.guide.move-and-resize.description':
     'Đây là khu vực chính bạn có thể sắp xếp lại trong chế độ chỉnh sửa. Kéo tiện ích để di chuyển chúng hoặc kéo tiện ích từ góc dưới bên phải để thay đổi kích thước.',
   'home.guide.add-widget.title': 'Thêm mục vào Trang chủ',
@@ -1105,28 +1120,17 @@ const vi: Lang = {
   'tradelog.node.performance.period':
     'Khoảng thời gian hoạt động của {indicator}',
   'tradelog.filter.all': 'Tất cả trạng thái',
-  'tradelog.filter.all.desc': 'Tất cả các trạng thái giao dịch',
-  'tradelog.filter.all-review-statuses': 'Tất cả đánh giá',
-  'tradelog.filter.all-directions': 'Tất cả hướng',
   'tradelog.filter.winners': 'Giao dịch thắng',
-  'tradelog.filter.winners.desc': 'Giao dịch thắng',
   'tradelog.filter.losers': 'Giao dịch thua',
-  'tradelog.filter.losers.desc': 'Giao dịch thua lỗ',
   'tradelog.filter.breakeven': 'Hòa vốn',
   'tradelog.filter.breakeven.desc': 'Giao dịch hòa vốn',
   'tradelog.filter.open': 'Mở',
   'tradelog.filter.open.desc': 'Các vị thế hiện đang mở',
   'tradelog.filter.closed': 'Đã đóng',
-  'tradelog.filter.closed.desc':
-    'Tất cả các vị thế đã đóng (thắng/thua/hòa vốn)',
-  'tradelog.type.all': 'Tất cả các loại',
-  'tradelog.type.all.desc': 'Tất cả các loại hình giao dịch',
   'tradelog.type.regular': 'Thường',
   'tradelog.type.regular.desc': 'Giao dịch tiêu chuẩn',
   'tradelog.type.missed': 'Bỏ lỡ',
-  'tradelog.type.missed.desc': 'Cơ hội bị bỏ lỡ',
   'tradelog.type.backtest': 'Backtest',
-  'tradelog.type.backtest.desc': 'Giao dịch mô phỏng',
   'tradelog.status.win': 'THẮNG',
   'tradelog.status.loss': 'LỖ',
   'tradelog.status.open': 'MỞ',
@@ -1381,7 +1385,6 @@ const vi: Lang = {
   'dashboard.conversion.converted-pnl': 'P&L đã chuyển đổi',
   'dashboard.conversion.details-label': 'Chi tiết chuyển đổi tiền tệ',
 
-  'dashboard.top-section.add-metric': 'Thêm số liệu',
   'dashboard.top-section.remove-metric': 'Xóa số liệu',
   'dashboard.top-section.failed-load': 'Không tải được số liệu',
   'dashboard.filter.date.today': 'Hôm nay',
@@ -1400,24 +1403,7 @@ const vi: Lang = {
 
   'dashboard.filter.accounts.none-found': 'Không tìm thấy tài khoản nào',
   'dashboard.filter.accounts.phase-now': 'hiện tại',
-  'dashboard.filter.tags.all': 'Tất cả các thẻ',
-  'dashboard.filter.tags.none': 'Không có thẻ',
-  'dashboard.filter.tags.n-selected': '{count} Tags',
-  'dashboard.filter.tags.select-all': 'Chọn tất cả',
-  'dashboard.filter.tags.none-found': 'Không tìm thấy thẻ nào',
-  'dashboard.filter.mistakes.all': 'Tất cả sai lầm',
-  'dashboard.filter.mistakes.none': 'Không có sai lầm',
-  'dashboard.filter.mistakes.n-selected': 'Những sai lầm của {count}',
-  'dashboard.filter.mistakes.select-all': 'Chọn tất cả',
-  'dashboard.filter.mistakes.none-found': 'Không tìm thấy lỗi nào',
-  'dashboard.filter.tickers.all': 'Tất cả các mã',
-  'dashboard.filter.tickers.n-selected': 'Mã {count}',
-  'dashboard.filter.tickers.select-all': 'Chọn tất cả',
   'dashboard.filter.tickers.none-found': 'Không tìm thấy mã nào',
-  'dashboard.filter.setup.all': 'Tất cả các thiết lập',
-  'dashboard.filter.setup.none': 'Không cần thiết lập',
-  'dashboard.filter.setup.n-selected': '{count} setup',
-  'dashboard.filter.setup.select-all': 'Chọn tất cả',
 
   'dashboard.widgets.daily-performance.title': 'Hiệu suất hàng ngày',
   'dashboard.widgets.daily-performance.period-aria': 'Giai đoạn',
@@ -1447,13 +1433,13 @@ const vi: Lang = {
 
   'dashboard.widgets.setup-performance.title': 'Hiệu suất thiết lập',
   'dashboard.widgets.setup-performance.description':
-    'Biểu đồ thanh xếp hạng so sánh hiệu suất theo thiết lập',
+    'Biểu đồ xếp hạng hiệu suất theo setup',
   'dashboard.widgets.setup-performance.empty':
     'Không có dữ liệu hiệu suất thiết lập',
   'dashboard.widgets.setup-performance.masked-label': 'Thiết lập',
   'dashboard.widgets.tag-performance.title': 'Hiệu suất theo thẻ',
   'dashboard.widgets.tag-performance.description':
-    'Biểu đồ thanh xếp hạng so sánh hiệu suất theo thẻ',
+    'Biểu đồ xếp hạng hiệu suất theo thẻ',
   'dashboard.widgets.tag-performance.empty':
     'Không có dữ liệu hiệu suất theo thẻ',
   'dashboard.widgets.tag-performance.masked-label': 'Thẻ',
@@ -1505,7 +1491,7 @@ const vi: Lang = {
     'Lịch hiển thị hoạt động giao dịch của bạn trong năm',
   'home.widget.getting-started.name': 'Bắt đầu',
   'home.widget.getting-started.description':
-    'Danh sách bước giúp bạn thêm lịch sử giao dịch và thiết lập Journalit',
+    'Danh sách thiết lập Journalit và giao dịch',
   'home.widget.getting-started.progress': '{completed}/{total} đã hoàn thành',
   'home.widget.getting-started.progress.loading': 'Đang kiểm tra tiến độ...',
   'home.widget.getting-started.item.account.title':
@@ -1542,41 +1528,38 @@ const vi: Lang = {
   'home.widget.getting-started.item.pro.cta': 'Kích hoạt',
   'home.widget.weekly-summary.name': 'Tóm tắt hàng tuần',
   'home.widget.weekly-summary.description':
-    'Số liệu tuần hiện tại với biểu đồ thu nhỏ P&L hàng ngày',
+    'Số liệu tuần này kèm P&L theo ngày',
   'home.widget.key-events.name': 'Sự kiện chính',
   'home.widget.key-events.description':
-    'Tin tức và sự kiện thị trường quan trọng từ bản đánh giá tuần hiện tại',
+    'Tin tức và sự kiện từ bản đánh giá tuần này',
   'home.widget.key-events.empty-title': 'Chưa có sự kiện chính',
   'home.widget.key-events.open-aria': 'Mở bản đánh giá của tuần này',
   'home.widget.position-size.name': 'Công cụ tính kích thước vị thế',
   'home.widget.position-size.description':
-    'Tính toán quy mô vị thế dựa trên tỷ lệ phần trăm rủi ro tài khoản',
+    'Tính khối lượng theo % rủi ro tài khoản',
   'home.widget.embedded-note.name': 'Ghi chú nhúng',
-  'home.widget.embedded-note.description':
-    'Hiển thị bất kỳ ghi chú Markdown nào từ vault của bạn',
+  'home.widget.embedded-note.description': 'Hiển thị ghi chú Markdown từ vault',
   'home.widget.current-streak.name': 'Chuỗi hiện tại',
   'home.widget.current-streak.description':
     'Theo dõi chuỗi giao dịch và đánh giá',
   'home.widget.best-hours.name': 'Giờ tốt nhất',
-  'home.widget.best-hours.description':
-    'Xem thời điểm bạn giao dịch tốt nhất theo thời gian trong ngày',
+  'home.widget.best-hours.description': 'Khung giờ bạn giao dịch tốt nhất',
   'home.widget.setup-leaderboard.name': 'Phân tích hàng đầu',
   'home.widget.setup-leaderboard.description':
-    'So sánh các setup, thẻ, loại tài sản hoặc mã giao dịch hàng đầu của bạn',
+    'So sánh setup, thẻ, loại tài sản, mã giao dịch',
   'home.widget.unreviewed-trades.name': 'Giao dịch chưa được xem xét',
   'home.widget.unreviewed-trades.description': 'Các giao dịch cần bạn xem xét',
   'home.widget.goals-progress.name': 'Tiến độ mục tiêu',
   'home.widget.goals-progress.description':
-    'Theo dõi tiến trình hướng tới mục tiêu giao dịch của bạn',
+    'Tiến độ mục tiêu giao dịch của bạn',
   'home.widget.trading-score.name': 'Điểm giao dịch',
   'home.widget.trading-score.description':
-    'Điểm hiệu suất toàn diện với trực quan hóa biểu đồ radar',
+    'Một điểm số cho hiệu suất giao dịch tổng thể',
   'home.widget.aum.name': 'AUM',
-  'home.widget.aum.description':
-    'Tổng tài sản được quản lý với đường xu hướng 7 ngày',
+  'home.widget.aum.description': 'Tổng số dư tài khoản với xu hướng 7 ngày',
   'home.widget.drawdown-monitor.name': 'Theo dõi drawdown',
   'home.widget.drawdown-monitor.description':
-    'Theo dõi trạng thái drawdown trên các tài khoản có giới hạn được định cấu hình',
+    'Mức sử dụng giới hạn drawdown theo tài khoản',
   'account.header.title': 'Tài khoản: {name}',
   'account.header.back-to-dashboard': 'Quay lại bảng điều khiển',
   'account.header.add-event.aria': 'Thêm tiền gửi/rút tiền',
@@ -1693,6 +1676,7 @@ const vi: Lang = {
     'Sự kiện tác động lớn trong ghi chú tuần của bạn.',
   'view.economic-calendar.pro-benefit-trial':
     'Bắt đầu với bản dùng thử miễn phí 14 ngày.',
+  'view.economic-calendar.sign-in': 'Đã có Pro? Đăng nhập',
   'settings.economic-calendar.title': 'Lịch kinh tế',
   'settings.economic-calendar.description':
     'Tự động nhập các sự kiện kinh tế của tuần này vào Sự kiện chính trong ghi chú tuần.',
@@ -1785,9 +1769,9 @@ const vi: Lang = {
   'csv.mapper.required-badge': 'Yêu cầu',
   'csv.mapper.required-label': 'YÊU CẦU',
   'csv.mapper.example': 'Ví dụ:',
-  'csv.mapper.mode.title': 'Chế độ nhập',
+  'csv.mapper.mode.title': 'Mỗi dòng là gì?',
   'csv.mapper.mode.help':
-    'Chọn cách diễn giải các hàng thủ công. Chế độ PnL trực tiếp nhập các hàng dưới dạng giao dịch đã đóng bằng cách sử dụng các giá trị PnL được ánh xạ.',
+    'Bảng tính nhật ký thường có một giao dịch đã đóng trên mỗi dòng cùng cột P/L. Lịch sử lệnh của sàn liệt kê mỗi lệnh mua và bán trên một dòng riêng.',
 
   'csv.mapper.asset-type.help':
     'Chọn loại tài sản trong tệp này. Điều này xác định các trường bắt buộc và logic phân tích cú pháp.',
@@ -2672,6 +2656,10 @@ const vi: Lang = {
     'Journalit có sẵn quy tắc cho mọi thử thách {firm} để điền trước.',
   'upgrade.prop-profiles.message':
     'Journalit luôn sẵn quy tắc của các prop firm để điền vào thử thách của bạn.',
+  'upgrade.prop-profiles.message-updates':
+    'Liên kết thử thách với quy tắc đã công bố của quỹ và Journalit sẽ báo khi quỹ thay đổi chúng.',
+  'upgrade.prop-profiles.message-updates-firm':
+    'Liên kết thử thách với quy tắc đã công bố của {firm} và Journalit sẽ báo khi {firm} thay đổi chúng.',
   'upgrade.prop-profiles.benefits-title': 'Pro điền sẵn cho bạn:',
   'upgrade.benefit.prop.rules':
     'Giới hạn drawdown và lỗ hằng ngày, lấy thẳng từ quy tắc của firm bạn',
@@ -2752,30 +2740,20 @@ const vi: Lang = {
     'Biểu đồ cân bằng không chỉ thể hiện sự cân bằng',
   'account-page.guide.main.balance-chart.description':
     'Biểu đồ này hiển thị tài khoản theo thời gian, bao gồm tiền gửi và tiền rút, cộng với mức rút vốn và mục tiêu lợi nhuận mà bạn đặt cho tài khoản.',
-  'account-page.guide.main.metrics.title':
-    'Các số liệu này chỉ tóm tắt tài khoản này',
+  'account-page.guide.main.metrics.title': 'Hiệu suất của riêng tài khoản này',
   'account-page.guide.main.metrics.description':
-    'Bảng chỉ số liền mạch hiển thị hệ số lợi nhuận, kết quả trung bình, giao dịch thắng và thua, hoa hồng, phí, chi phí một lần đã cấu hình cùng chi phí định kỳ ước tính.',
+    'Số dư, P&L, tỷ lệ thắng và mọi chi phí của riêng tài khoản này. Tài khoản prop hiển thị các lần rút lợi nhuận thay cho dòng tiền ròng.',
   'account-page.guide.main.risk.title':
     'Tiến trình rủi ro được theo dõi riêng ở đây',
   'account-page.guide.main.risk.description':
-    'Phần này hiển thị tiến độ sụt giảm và mục tiêu lợi nhuận. Nếu tài khoản theo dõi thử thách quỹ cấp vốn, giai đoạn hiện tại và các quy tắc sẽ xuất hiện ngay bên dưới.',
+    'Bạn đã dùng bao nhiêu hạn mức drawdown và còn cách mục tiêu lợi nhuận bao xa.',
   'account-page.guide.main.transactions.title':
     'Các khoản tiền ra vào nằm trong phần riêng',
   'account-page.guide.main.transactions.description':
-    'Mỗi hàng ghi lại một lần tiền ra vào cùng số tiền và số dư sau đó, giúp bạn tách dòng tiền khỏi hiệu suất giao dịch. Với tài khoản prop challenge, cùng bảng này hiển thị dưới dạng các lần rút lợi nhuận được đánh số.',
-  'account-page.guide.main.trade-log.title':
-    'Xem giao dịch của tài khoản này trong Nhật ký giao dịch',
-  'account-page.guide.main.trade-log.description':
-    'Mở Nhật ký giao dịch với tài khoản này đã được chọn. Trong thử thách nhiều giai đoạn, nút theo giai đoạn bạn đang xem; mũi tên cho phép chọn các giai đoạn khác hoặc toàn bộ tài khoản.',
-  'account-page.guide.main.add-event.title':
-    'Thêm vào hồ sơ sự kiện gửi và rút tiền',
-  'account-page.guide.main.add-event.description':
-    'Sử dụng tính năng này bất cứ khi nào tiền được thêm hoặc bớt ngoài kết quả giao dịch thông thường để lịch sử tài khoản luôn chính xác.',
-  'account-page.guide.main.edit-account.title':
-    'Chỉnh sửa tài khoản thay đổi cài đặt tài khoản',
-  'account-page.guide.main.edit-account.description':
-    'Đây là nơi bạn cập nhật chi tiết tài khoản, quy tắc rủi ro, mức rút vốn và mục tiêu lợi nhuận nếu chúng thay đổi theo thời gian.',
+    'Các khoản nạp và rút cùng số dư sau mỗi lần, tách riêng khỏi kết quả giao dịch. Tài khoản prop liệt kê các lần rút lợi nhuận tại đây.',
+  'account-page.guide.main.actions.title': 'Giao dịch, tiền và cài đặt',
+  'account-page.guide.main.actions.description':
+    'Mở các giao dịch của tài khoản này trong Trade Log, ghi một khoản nạp hoặc rút bằng +, hoặc chỉnh sửa tài khoản và các quy tắc của nó.',
   'account-dashboard.title': 'Tài khoản',
   'account-dashboard.copy-badge.base': 'GỐC',
   'account-dashboard.copy-badge.copy': 'COPY',
@@ -2856,29 +2834,17 @@ const vi: Lang = {
   'account-dashboard.guide.main.open-account.description':
     'Tài khoản được nhóm theo loại để bạn so sánh các tài khoản tương tự. Mở bất kỳ thẻ nào để xem chi tiết đầy đủ; hướng dẫn Trang tài khoản sẽ tiếp tục ở đó.',
   'account-dashboard.guide.whats-new.prop-challenges.intro.title':
-    'Tính năng mới: thử thách prop nhiều giai đoạn',
+    'Mới: thử thách quỹ cấp vốn',
   'account-dashboard.guide.whats-new.prop-challenges.intro.description':
-    'Tiến độ thử thách prop giờ được tích hợp trực tiếp vào Bảng điều khiển tài khoản, với dải giai đoạn, số liệu kinh tế và các nhóm tài khoản quen thuộc.',
+    'Giờ một tài khoản có thể theo dõi thử thách quỹ cấp vốn: các giai đoạn, quy tắc của quỹ và các khoản chi trả của bạn.',
   'account-dashboard.guide.whats-new.prop-challenges.enable.title':
-    'Bật theo dõi khi tạo hoặc chỉnh sửa tài khoản',
+    'Bắt đầu thử thách mới',
   'account-dashboard.guide.whats-new.prop-challenges.enable.description':
-    'Trong Tạo tài khoản hoặc Chỉnh sửa tài khoản, hãy bật theo dõi thử thách prop. Mẫu mặc định cung cấp một điểm khởi đầu nhiều giai đoạn để bạn đổi tên và điều chỉnh.',
-  'account-dashboard.guide.whats-new.prop-challenges.overview.title':
-    'Hiệu suất thử thách trong một lần xem',
-  'account-dashboard.guide.whats-new.prop-challenges.overview.description':
-    'Bảng điểm phía trên tóm tắt thử thách đang hoạt động, tỷ lệ đạt, chi phí, khoản rút và kết quả ròng. Các bảng phân tích so sánh điểm nghẽn theo giai đoạn và hiệu suất theo công ty khi bạn theo dõi nhiều công ty prop.',
-  'account-dashboard.guide.whats-new.prop-challenges.ribbons.title':
-    'Dải giai đoạn giúp xem nhanh từng thử thách',
-  'account-dashboard.guide.whats-new.prop-challenges.ribbons.description':
-    'Thẻ tài khoản prop hiển thị các giai đoạn đã hoàn thành, hiện tại, đang chờ và thất bại, cùng tiến độ mục tiêu, drawdown, lỗ trong ngày và số ngày giao dịch.',
+    'Khi tạo tài khoản, bật Thử thách quỹ cấp vốn và chọn quỹ của bạn. Quy tắc sẽ được điền sẵn cho bạn.',
   'account-dashboard.guide.whats-new.prop-challenges.mode.title':
-    'Chuyển giữa phân tích danh mục và thử thách',
+    'Xem tất cả thử thách',
   'account-dashboard.guide.whats-new.prop-challenges.mode.description':
-    'Chọn Thử thách để xem hiệu quả chi phí tổng hợp cùng phân tích theo giai đoạn và nhiều công ty. Tổng quan tập trung vào AUM và số liệu danh mục.',
-  'account-dashboard.guide.whats-new.prop-challenges.account-page.title':
-    'Tài khoản chuyển đổi vẫn ở trong cùng quy trình',
-  'account-dashboard.guide.whats-new.prop-challenges.account-page.description':
-    'Khi thử thách tiến lên hoặc chuyển thành tài khoản funded, loại tài khoản và lịch sử giai đoạn vẫn được liên kết. Mở thẻ để xử lý quyết định, hành động và xem đầy đủ quy tắc.',
+    'Chuyển sang Thử thách để xem tiến độ, tỷ lệ vượt qua, chi phí và khoản chi trả của mọi thử thách.',
   'account-dashboard.metrics.total-accounts': 'Tổng số tài khoản',
   'account-dashboard.metrics.total-aum': 'Tổng AUM',
   'account-dashboard.metrics.total-growth': 'Tổng mức tăng trưởng',
@@ -2960,6 +2926,33 @@ const vi: Lang = {
   'trade.image.no-images': 'Không có hình ảnh cho giao dịch này',
   'trade.image.click-edit': 'Bấm chỉnh sửa để thêm hình ảnh',
   'trade.image.alt-prefix': 'Hình ảnh thương mại',
+  'command.share-note-as-image': 'Chia sẻ ghi chú hiện tại dưới dạng hình ảnh',
+  'trade.share.copy-screenshot': 'Sao chép ảnh chụp giao dịch',
+  'trade.share.copied': 'Đã sao chép ảnh chụp giao dịch vào bộ nhớ tạm',
+  'trade.share.failed': 'Không thể sao chép ảnh chụp giao dịch',
+  'trade.share.not-ready':
+    'Ghi chú giao dịch vẫn đang tải. Hãy thử lại sau giây lát.',
+  'share.review.action': 'Chia sẻ thẻ đánh giá',
+  'share.review.modal-title': 'Chia sẻ đánh giá',
+  'share.review.section.top': 'Đầu ghi chú',
+  'share.review.select-all': 'Chọn tất cả',
+  'share.review.clear': 'Xóa lựa chọn',
+  'share.review.legend.widget': 'Tiện ích',
+  'share.review.legend.heading': 'Tiêu đề và nội dung',
+  'share.review.legend.media': 'Phương tiện',
+  'share.review.legend.text': 'Văn bản',
+  'share.review.copy': 'Sao chép ảnh',
+  'settings.general.hide-dollar-amounts-in-shares':
+    'Ẩn số tiền đô la trong hình ảnh chia sẻ',
+  'settings.general.hide-dollar-amounts-in-shares-desc':
+    'Khi bật bội số R, ảnh chụp giao dịch và thẻ đánh giá sẽ bỏ qua rủi ro, phí, hoa hồng và MAE/MFE tính bằng đô la.',
+  'share.review.hide-dollar-amounts': 'Ẩn số tiền đô la',
+  'share.review.hide-dollar-amounts-hint':
+    'Bỏ qua rủi ro, phí và các giá trị đô la khác.',
+  'share.review.hide-dollar-amounts-needs-r':
+    'Bật bội số R trong cài đặt để chia sẻ mà không có số tiền đô la.',
+  'share.review.copied': 'Đã sao chép thẻ chia sẻ vào bộ nhớ tạm',
+  'share.review.failed': 'Không thể sao chép thẻ chia sẻ',
 
   'trade.review.reviewed': 'Đã đánh giá',
   'trade.review.reviewed-on': 'Đã đánh giá trên {date}',
@@ -3030,6 +3023,12 @@ const vi: Lang = {
   'settings.general.privacy-mode-desc':
     'Che giấu các giá trị giao dịch, tài khoản, giá và hiệu suất nhạy cảm trong giao diện người dùng mà không thay đổi dữ liệu đã lưu.',
   'settings.general.privacy-mode-aria': 'Chuyển đổi chế độ riêng tư',
+  'settings.general.appearance': 'Giao diện',
+  'settings.general.accent-color': 'Màu nhấn',
+  'settings.general.accent-color-desc':
+    'Màu cho các nút, công tắc và phần tô sáng của Journalit. Màu nhấn Journalit chỉ được dùng khi Obsidian đang dùng màu nhấn mặc định; màu nhấn bạn chọn trong cài đặt Giao diện của Obsidian hoặc từ theme luôn được ưu tiên.',
+  'settings.general.accent-color-journalit': 'Màu nhấn Journalit (mặc định)',
+  'settings.general.accent-color-obsidian': 'Theo màu nhấn của Obsidian',
   'settings.general.home-view-settings': 'Cài đặt xem trang chủ',
   'settings.general.home-auto-open': 'Trang chủ Xem tự động mở',
   'settings.general.home-auto-open-desc':
@@ -3764,9 +3763,9 @@ const vi: Lang = {
   'onboarding.data-source.option.broker.label': 'Ở sàn hoặc nền tảng của tôi',
   'onboarding.data-source.option.broker.description':
     'Kết nối, hoặc nhập tệp xuất từ đó.',
-  'onboarding.data-source.option.file.label': 'Trong bảng tính hoặc tệp',
+  'onboarding.data-source.option.file.label': 'Trong bảng tính của tôi',
   'onboarding.data-source.option.file.description':
-    'Tệp xuất CSV, Excel hoặc HTML.',
+    'Nhật ký bạn ghi trong Excel, Google Sheets hoặc CSV.',
   'onboarding.data-source.option.fresh.label': 'Chưa có, tôi bắt đầu từ đầu',
   'onboarding.data-source.option.fresh.description':
     'Thêm giao dịch khi bạn thực hiện.',
@@ -4057,6 +4056,17 @@ const vi: Lang = {
   'widget.stats.description': 'Số liệu hiệu suất chính ở định dạng lưới',
   'widget.stats.no-trades': 'Không có giao dịch đóng trong thời gian này',
   'widget.stats.vs-prev': 'so với trước',
+  'common.r-missing.title': 'Không có R cho giao dịch này',
+  'common.r-missing.trade':
+    'Giao dịch này không có số tiền rủi ro nên không thể hiển thị kết quả theo R.',
+  'common.r-missing.fix':
+    'Hãy thêm số tiền rủi ro hoặc đặt số tiền rủi ro mặc định trong Cài đặt.',
+  'common.r-coverage.partial':
+    'Dựa trên {valid} trong {total} giao dịch. Các giao dịch không có số tiền rủi ro không được tính vào R.',
+  'common.r-coverage.none':
+    'Không có giao dịch nào ở đây có số tiền rủi ro nên không có R để hiển thị.',
+  'dashboard.r-coverage.no-comparison':
+    'Không hiển thị thay đổi: kỳ so sánh không có giá trị R cho chỉ số này.',
   'dashboard.metrics.past-30d': '30 ngày qua',
 
   'widget.stats.net-pnl': 'Lãi & lỗ ròng',
@@ -4342,13 +4352,11 @@ const vi: Lang = {
   'metric.profitFactor.description': 'Tỷ lệ lãi gộp trên lỗ gộp',
   'metric.sharpeRatio.name': 'Tỷ lệ Sharpe',
   'metric.sharpeRatio.description':
-    'Tỷ lệ Sharpe theo giao dịch: P&L ròng trung bình của giao dịch đã đóng chia cho độ biến động P&L mẫu',
+    'P&L trung bình mỗi lệnh so với độ biến động',
   'metric.expectancy.name': 'Kỳ vọng',
-  'metric.expectancy.description':
-    'Số tiền thắng hoặc thua trung bình trên mỗi giao dịch',
+  'metric.expectancy.description': 'Lãi hoặc lỗ trung bình mỗi lệnh',
   'metric.maxDrawdown.name': 'Drawdown tối đa',
-  'metric.maxDrawdown.description':
-    'Số tiền rút giao dịch đóng lớn nhất từ ​​mức P&L đã nhận ra trước đó',
+  'metric.maxDrawdown.description': 'Mức giảm lớn nhất từ đỉnh P&L trước đó',
   'metric.bestDay.name': 'Ngày tuyệt vời nhất',
   'metric.bestDay.description': 'P&L cao nhất trong một ngày',
   'metric.largestWin.name': 'Lệnh thắng lớn nhất',
@@ -4356,8 +4364,7 @@ const vi: Lang = {
   'metric.largestLoss.name': 'Lệnh lỗ lớn nhất',
   'metric.largestLoss.description': 'Giao dịch thua lỗ lớn nhất',
   'metric.longestWinStreak.name': 'Chuỗi hay nhất',
-  'metric.longestWinStreak.description':
-    'Chuỗi chiến thắng liên tiếp dài nhất tính đến ngày thoát',
+  'metric.longestWinStreak.description': 'Chuỗi thắng liên tiếp dài nhất',
   'metric.longestLossStreak.name': 'Chuỗi tồi tệ nhất',
   'metric.longestLossStreak.description':
     'Chuỗi thua liên tiếp dài nhất tính đến ngày thoát',
@@ -4372,56 +4379,43 @@ const vi: Lang = {
   'metric.avgLoss.name': 'Mức lỗ trung bình',
   'metric.avgLoss.description': 'Mức lỗ trung bình của các giao dịch thua lỗ',
   'metric.avgRR.name': 'RR trung bình (Tiền chi trả)',
-  'metric.avgRR.description':
-    'Tỷ lệ hoàn trả dựa trên tiền tệ: thắng trung bình / thua trung bình',
+  'metric.avgRR.description': 'Lãi trung bình chia cho lỗ trung bình',
   'metric.avgRRRiskBased.name': 'RR trung bình (Dựa trên R)',
   'metric.avgRRRiskBased.description':
-    'Tỷ lệ dựa trên rủi ro sử dụng bội số R:R thắng trung bình / R thua trung bình (yêu cầu dữ liệu dừng/rủi ro)',
+    'R thắng trung bình so với R thua (cần stop)',
   'metric.avgHoldTime.name': 'Thời gian giữ trung bình',
-  'metric.avgHoldTime.description':
-    'Thời gian trung bình trong tất cả các giao dịch đã đóng',
+  'metric.avgHoldTime.description': 'Thời gian giữ lệnh trung bình',
   'metric.avgWinHoldTime.name': 'Thời gian nắm giữ chiến thắng trung bình',
-  'metric.avgWinHoldTime.description':
-    'Thời gian trung bình để thắng các giao dịch đã đóng',
+  'metric.avgWinHoldTime.description': 'Thời gian giữ lệnh thắng trung bình',
   'metric.avgLossHoldTime.name': 'Thời gian giữ tổn thất trung bình',
   'metric.avgLossHoldTime.description':
     'Thời gian trung bình để thua các giao dịch đã đóng',
   'metric.avgWinnerHeat.name': 'MAE trung bình lệnh thắng',
-  'metric.avgWinnerHeat.description':
-    'MAE trung bình để thắng các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
+  'metric.avgWinnerHeat.description': 'MAE trung bình của lệnh thắng',
   'metric.winnerMaeP90.name': 'MAE P90 lệnh thắng',
-  'metric.winnerMaeP90.description':
-    'Ngưỡng MAE phân vị thứ 90 để thắng các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
+  'metric.winnerMaeP90.description': 'Phân vị 90 của MAE ở lệnh thắng',
   'metric.winnerMaeMedian.name': 'MAE trung vị lệnh thắng',
-  'metric.winnerMaeMedian.description':
-    'MAE trung bình để thắng các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
+  'metric.winnerMaeMedian.description': 'MAE trung vị của lệnh thắng',
   'metric.avgLossHeat.name': 'MAE trung bình lệnh thua',
-  'metric.avgLossHeat.description':
-    'MAE trung bình để thua các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
+  'metric.avgLossHeat.description': 'MAE trung bình của lệnh thua',
   'metric.winnerAvgMfe.name': 'MFE trung bình lệnh thắng',
-  'metric.winnerAvgMfe.description':
-    'MFE trung bình để thắng các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
+  'metric.winnerAvgMfe.description': 'MFE trung bình của lệnh thắng',
   'metric.loserAvgMfe.name': 'MFE trung bình lệnh thua',
-  'metric.loserAvgMfe.description':
-    'MFE trung bình để thua các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
+  'metric.loserAvgMfe.description': 'MFE trung bình của lệnh thua',
   'metric.winnerMfeP90.name': 'MFE P90 lệnh thắng',
-  'metric.winnerMfeP90.description':
-    'Ngưỡng MFE phân vị thứ 90 để thắng các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
+  'metric.winnerMfeP90.description': 'Phân vị 90 của MFE ở lệnh thắng',
   'metric.loserMfeP90.name': 'MFE P90 lệnh thua',
-  'metric.loserMfeP90.description':
-    'Ngưỡng MFE phân vị thứ 90 để thua các giao dịch đã đóng, sử dụng đơn vị hiển thị MAE/MFE đã cấu hình',
+  'metric.loserMfeP90.description': 'Phân vị 90 của MFE ở lệnh thua',
   'metric.timeInDrawdown.name': 'Thời gian trong drawdown',
-  'metric.timeInDrawdown.description':
-    'Phần trăm thời gian đã trôi qua được sử dụng dưới mức P&L cao nhất đã nhận ra trước đó',
+  'metric.timeInDrawdown.description': 'Tỷ lệ thời gian dưới đỉnh P&L của bạn',
   'metric.avgRecoveryTime.name': 'Thời gian phục hồi trung bình',
   'metric.avgRecoveryTime.description':
-    'Thời gian trung bình để các khoản rút vốn được thực hiện trong giao dịch đóng để phục hồi lên mức cao mới',
+    'Thời gian trung bình để phục hồi drawdown',
   'metric.longestDrawdown.name': 'Drawdown dài nhất',
   'metric.longestDrawdown.description':
-    'Thời gian trôi qua dài nhất trong một đợt rút vốn đã thực hiện',
+    'Thời gian dài nhất trong một đợt drawdown',
   'metric.drawdownEpisodes.name': 'Các đợt drawdown',
-  'metric.drawdownEpisodes.description':
-    'Số giai đoạn drawdown đã thực hiện trong bộ giao dịch được lọc hiện tại',
+  'metric.drawdownEpisodes.description': 'Số đợt drawdown riêng biệt',
   'metric.category.performance': 'Hiệu suất',
   'metric.category.volume': 'Âm lượng',
 
@@ -4429,6 +4423,8 @@ const vi: Lang = {
   'onboarding.wizard.skip-onboarding': 'Bỏ qua phần giới thiệu',
 
   'guide.skip-guide': 'Bỏ qua hướng dẫn',
+  'guide.step-count': '{count} bước',
+  'guide.step-position': 'Bước {current}/{total}',
 
   'account.linked-trades.setups': 'Setup',
 
@@ -4555,6 +4551,10 @@ const vi: Lang = {
   'account.edit-event.delete-confirm.warning':
     'Không thể hoàn tác hành động này.',
   'account.edit.title': 'Chỉnh sửa tài khoản',
+  'account.edit.convert.discard-title': 'Bỏ các thay đổi chưa lưu?',
+  'account.edit.convert.discard-message':
+    'Thiết lập thử thách mở trong cửa sổ riêng và đóng biểu mẫu này. Các thay đổi ở đây sẽ không được lưu.',
+  'account.edit.convert.discard-confirm': 'Bỏ và tiếp tục',
   'account.edit.field.name': 'Tên tài khoản',
   'account.edit.field.name-desc': 'Tên duy nhất cho tài khoản này',
   'account.edit.placeholder.name': 'ví dụ: Tài khoản giao dịch của tôi',
@@ -4619,6 +4619,7 @@ const vi: Lang = {
   'account.prop-challenge.actions.mark-failed': 'Đánh dấu thất bại',
   'account.prop-challenge.actions.archive': 'Lưu trữ thử thách',
   'account.prop-challenge.actions.reopen': 'Mở lại',
+  'account.prop-challenge.actions.link-rules': 'Liên kết với quy tắc quỹ…',
   'account.prop-challenge.view-trades': 'Xem giao dịch của {phase}',
   'account.prop-challenge.actions.manual': 'Thao tác thủ công',
   'account.prop-challenge.notice.failed-title': '{phase} thất bại',
@@ -4714,27 +4715,16 @@ const vi: Lang = {
   'account.summary.payouts': 'Rút tiền',
   'account.performance.title': 'Hiệu suất giao dịch',
   'account-page.guide.whats-new.cockpit.intro.title':
-    'Có gì mới ở trang tài khoản',
+    'Quy tắc thử thách của bạn',
   'account-page.guide.whats-new.cockpit.intro.description':
-    'Biểu đồ số dư giờ đây mở đầu phần phân tích tài khoản. Bảng chỉ số liền mạch nằm ngay bên dưới, tiếp theo là các quy tắc thử thách prop.',
+    'Trên tài khoản quỹ cấp vốn, mọi quy tắc của quỹ và mức bạn đang gần chạm đến nằm bên dưới các chỉ số.',
   'account-page.guide.whats-new.cockpit.cockpit.title':
-    'Quy tắc thử thách theo sau hiệu suất',
+    'Kiểm tra một giai đoạn và hành động',
   'account-page.guide.whats-new.cockpit.cockpit.description':
-    'Với tài khoản prop, hãy chọn một giai đoạn trong tiêu đề quy tắc bên dưới bảng chỉ số để xem từng yêu cầu và tiến độ. Các thao tác vòng đời vẫn nằm trong menu bên cạnh.',
-  'account-page.guide.whats-new.cockpit.summary.title':
-    'Một bảng chỉ số liền mạch',
-  'account-page.guide.whats-new.cockpit.summary.description':
-    'Trạng thái tài khoản và hiệu suất chi tiết giờ dùng chung một bề mặt dưới biểu đồ: số dư, P&L ròng và dòng tiền trước, các chỉ số còn lại tiếp tục trong cùng lưới.',
-  'account-page.guide.whats-new.cockpit.risk.title':
-    'Chỉ một nguồn rủi ro chuẩn',
-  'account-page.guide.whats-new.cockpit.risk.description':
-    'Khi thử thách đang chạy, đã đạt hoặc đã trượt, chỉ các quy tắc giai đoạn của nó được hiển thị, nên không có con số sụt giảm thứ hai gây mâu thuẫn. Rủi ro tài khoản chung quay lại với tài khoản thường hoặc đã lưu trữ.',
+    'Chọn một giai đoạn ở tiêu đề quy tắc để xem quy tắc. Đánh dấu đạt hoặc trượt, hoặc mở lại, từ menu ⋮ bên cạnh.',
   'account-page.guide.main.challenge.title': 'Toàn cảnh thử thách của bạn',
   'account-page.guide.main.challenge.description':
-    'Bên dưới bảng chỉ số liền mạch, hãy chọn một giai đoạn thử thách trong tiêu đề quy tắc rồi xem từng yêu cầu cùng tiến độ và trạng thái. Các thao tác nằm cạnh bộ chọn.',
-  'account-page.guide.main.summary.title': 'Toàn cảnh trạng thái tài khoản',
-  'account-page.guide.main.summary.description':
-    'Bảng chỉ số liền mạch bắt đầu với số dư, P&L ròng, tăng trưởng, số giao dịch, tỷ lệ thắng và dòng tiền ròng — hoặc rút tiền với tài khoản prop.',
+    'Chọn một giai đoạn để xem từng quy tắc cùng tiến độ. Giai đoạn funded có quy tắc rút lợi nhuận đã xác minh cũng theo dõi điều kiện rút tiền tại đây.',
   'account.edit.field.target-type': 'Loại mục tiêu',
   'account.edit.field.target-type-desc': 'Tuyệt đối hoặc phần trăm',
   'account.edit.field.target-percent': 'Mục tiêu (%)',
@@ -4958,13 +4948,25 @@ const vi: Lang = {
   'home.quick-links.move-below':
     'Di chuyển các liên kết nhanh bên dưới các widget',
   'home.widget-selector.title': 'Thêm vào Trang chủ',
-  'home.widget-selector.section.widgets': 'Widget',
+  'home.widget-selector.subtitle':
+    'Duyệt widget qua bản xem trước và nhấp vào một widget để thêm vào Trang chủ.',
+  'home.widget-selector.sample-note.title': 'Kế hoạch giao dịch',
+  'home.widget-selector.sample-note.intro':
+    'Chỉ giao dịch setup A+ tại các mức giá quan trọng. Tối đa 3 lệnh mỗi ngày.',
+  'home.widget-selector.sample-note.checklist':
+    'Danh sách kiểm tra trước phiên',
+  'home.widget-selector.sample-note.task.calendar': 'Xem lịch kinh tế',
+  'home.widget-selector.sample-note.task.levels':
+    'Đánh dấu các mức quan trọng trên biểu đồ',
+  'home.widget-selector.sample-note.task.max-loss':
+    'Đặt mức lỗ tối đa trong ngày',
+  'home.widget-selector.sample-note.task.journal': 'Ghi nhật ký lệnh đầu tiên',
+  'home.widget-selector.tab.performance': 'Hiệu suất',
+  'home.widget-selector.tab.accounts': 'Tài khoản',
+  'home.widget-selector.tab.workflow': 'Quy trình',
   'home.widget-selector.section.quick-links': 'Liên kết Nhanh',
   'home.widget-selector.restore': 'khôi phục',
   'home.widget-selector.add-shortcut': 'Thêm lối tắt tài khoản/thiết lập',
-  'home.widget-selector.hint.navigate': '↑↓ điều hướng',
-  'home.widget-selector.hint.select': '↵ chọn',
-  'home.widget-selector.hint.close': 'esc đóng',
   'home.period.month': 'Tháng',
   'home.period.quarter': 'Quý',
   'home.period.year': 'Năm',
@@ -5159,6 +5161,29 @@ const vi: Lang = {
   'home.widget.profit-target.remaining': 'còn lại',
   'home.widget.profit-target.unable-to-load': 'Không thể tải',
   'home.widget.profit-target.no-accounts': 'Không có tài khoản nào có mục tiêu',
+  'home.widget.account-progress.configure-aria': 'Chọn tài khoản cho {widget}',
+  'home.widget.account-progress.config-title': 'Tài khoản hiển thị',
+  'home.widget.account-progress.mode.automatic': 'Tự động',
+  'home.widget.account-progress.mode.selected': 'Chọn tài khoản',
+  'home.widget.account-progress.automatic-drawdown': 'Drawdown cao nhất trước.',
+  'home.widget.account-progress.automatic-profit-target':
+    'Gần mục tiêu nhất trước.',
+  'home.widget.account-progress.max-label': 'Hiển thị tối đa',
+  'home.widget.account-progress.max-all': 'Tất cả',
+  'home.widget.account-progress.select-hint': 'Chọn bao nhiêu tùy thích.',
+  'home.widget.account-progress.no-eligible': 'Chưa có tài khoản nào để chọn.',
+  'home.widget.account-progress.none-selected':
+    'Chưa chọn tài khoản. Nhấp để chọn.',
+  'home.widget.account-progress.search': 'Tìm tài khoản',
+  'home.widget.account-progress.select-all': 'Tất cả',
+  'home.widget.account-progress.select-none': 'Không',
+  'home.widget.account-progress.select-all-aria':
+    'Chọn tất cả tài khoản đang hiển thị',
+  'home.widget.account-progress.select-none-aria':
+    'Bỏ chọn tài khoản đang hiển thị',
+  'home.widget.account-progress.no-match': 'Không có tài khoản phù hợp.',
+  'home.widget.account-progress.none-available':
+    'Không thể hiển thị tài khoản nào đã chọn. Nhấp để chọn tài khoản khác.',
   'home.widget.eval-roi.title': 'ROI đánh giá',
   'home.widget.eval-roi.unable-to-load': 'Không thể tải',
   'home.widget.eval-roi.no-challenges': 'Không có prop challenge',
@@ -5245,32 +5270,19 @@ const vi: Lang = {
   'calendar.month.december': 'Tháng 12',
 
   'shared.collapsible.active-filters': 'Bộ lọc hoạt động {count}',
-  'filter.modal.title': 'Bộ lọc nâng cao',
-  'filter.modal.active-filters': 'Bộ lọc hoạt động ({count}):',
-  'filter.modal.no-active-filters': 'Không có bộ lọc hoạt động',
-  'filter.modal.clear-all': 'Xóa tất cả',
-  'filter.modal.section.trading-data': 'Dữ liệu giao dịch',
-  'filter.modal.section.classification': 'Phân loại',
-  'filter.modal.section.trade-criteria': 'Tiêu chí giao dịch',
   'filter.modal.no-setup': 'Không cần thiết lập',
   'filter.modal.no-tags': 'Không có thẻ',
   'filter.modal.no-mistakes': 'Không có sai lầm',
   'filter.modal.type.regular': 'Thường',
-  'filter.modal.type.missed': 'Bỏ lỡ',
   'filter.modal.type.backtest': 'Giao dịch backtest',
   'filter.summary.regular-trades': 'Thường',
-  'filter.modal.status.win': 'Thắng',
-  'filter.modal.status.loss': 'Lỗ',
   'filter.modal.status.breakeven': 'Hòa vốn',
-  'filter.modal.status.open': 'Mở',
-  'filter.modal.status.closed': 'Đã đóng',
 
   'filter.modal.review-status.reviewed': 'Đã đánh giá',
   'filter.modal.review-status.unreviewed': 'Chưa đánh giá',
   'filter.modal.direction.long-call': 'Long/Quyền chọn mua',
   'filter.modal.direction.short-put': 'Short/Quyền chọn bán',
   'filter.modal.section.custom-fields': 'Trường tùy chỉnh',
-  'filter.modal.custom-field.n-selected': 'Đã chọn {count}',
   'filter.modal.custom-field.none-available': 'Không có giá trị nào',
   'widget.checklist.title': 'Danh sách kiểm tra trước khi giao dịch',
   'widget.checklist.weekly-title': 'Danh sách kiểm tra trước hàng tuần',
@@ -5456,45 +5468,61 @@ const vi: Lang = {
   'manual-drawdown.modal.delete-limit': 'Giới hạn drawdown: {limit}',
   'manual-drawdown.modal.delete-warning': 'Không thể hoàn tác hành động này.',
   'dashboard.selector.title': 'Thêm vào Bảng điều khiển',
+  'dashboard.selector.subtitle':
+    'Duyệt biểu đồ và chỉ số qua bản xem trước và nhấp vào một mục để thêm vào Bảng điều khiển.',
+  'dashboard.selector.tab.performance': 'Hiệu suất',
+  'dashboard.selector.tab.breakdowns': 'Phân tích chi tiết',
+  'dashboard.selector.tab.risk': 'Rủi ro & Phân tích',
+  'widget-drawer.tab.all': 'Tất cả',
+  'widget-drawer.search.placeholder': 'Tìm widget',
+  'widget-drawer.section.available': 'Có sẵn',
+  'widget-drawer.section.in-use': 'Đang dùng',
+  'widget-drawer.empty-search': 'Không có widget nào khớp với tìm kiếm',
+  'widget-drawer.added-count': 'Đã thêm {count}',
+  'widget-drawer.add-aria': 'Thêm {name}',
+  'widget-drawer.remove': 'Xóa',
+  'widget-drawer.remove-aria': 'Xóa {name}',
+  'widget-drawer.close': 'Đóng',
   'dashboard.selector.metrics': 'Số liệu',
-  'dashboard.selector.charts': 'Biểu đồ',
-  'dashboard.selector.empty': 'Tất cả số liệu và biểu đồ đã được thêm vào',
-  'dashboard.selector.hint.navigate': '↑↓ điều hướng',
-  'dashboard.selector.hint.select': '↵ chọn',
-  'dashboard.selector.hint.close': 'esc đóng',
 
-  'dashboard.component-selector.category.performance': 'Hiệu suất',
-
-  'dashboard.component-selector.category.journal': 'tạp chí',
   'widget.pnlChart.name': 'P&L tích lũy',
+  'widget.pnlChart.description': 'P&L tích lũy theo thời gian',
 
   'widget.longPnLChart.name': 'P&L lệnh Long',
   'widget.longPnLChart.description':
-    'Đường cong P&L tích lũy chỉ dành cho vị thế Long đã đóng',
+    'Đường P&L tích lũy của vị thế Long đã đóng',
   'widget.shortPnLChart.name': 'P&L lệnh Short',
   'widget.shortPnLChart.description':
-    'Đường cong P&L tích lũy chỉ dành cho các lệnh Short đã đóng',
+    'Đường P&L tích lũy của lệnh Short đã đóng',
   'widget.performanceCalendar.name': 'Lịch hiệu suất',
+  'widget.performanceCalendar.description': 'Lịch P&L hàng ngày của bạn',
 
   'widget.dailyPerformance.name': 'Hiệu suất hàng ngày',
+  'widget.dailyPerformance.description': 'P&L của từng ngày giao dịch',
 
   'widget.tradesChart.name': 'Biểu đồ giao dịch',
+  'widget.tradesChart.description': 'P&L của từng lệnh',
 
   'widget.weekdayPerformance.name': 'Hiệu suất ngày trong tuần',
+  'widget.weekdayPerformance.description': 'P&L theo ngày trong tuần',
 
   'widget.hourlyPerformance.name': 'Hiệu suất hàng giờ',
+  'widget.hourlyPerformance.description': 'P&L theo giờ trong ngày',
 
   'widget.tickerPerformance.name': 'Hiệu suất theo mã',
-  'widget.tickerPerformance.description':
-    'Biểu đồ thanh xếp hạng so sánh hiệu suất theo mã',
+  'widget.tickerPerformance.description': 'Biểu đồ xếp hạng hiệu suất theo mã',
   'widget.tradesChart.limit': 'Giao dịch {count}',
   'widget.drawdownChart.name': 'Biểu đồ drawdown',
+  'widget.drawdownChart.description':
+    'Mức giảm từ đỉnh P&L đã thực hiện trước đó',
 
   'widget.directionalDrawdownChart.name': 'Drawdown đã thực hiện theo hướng',
 
   'widget.longDrawdownChart.name': 'Drawdown lệnh Long',
+  'widget.longDrawdownChart.description': 'Drawdown chỉ của lệnh mua',
 
   'widget.shortDrawdownChart.name': 'Drawdown lệnh Short',
+  'widget.shortDrawdownChart.description': 'Drawdown chỉ của lệnh bán',
 
   'widget.drawdownStats.no-conversion':
     'Số liệu thống kê drawdown không có sẵn cho các loại tiền tệ hỗn hợp nếu không chuyển đổi FX.',
@@ -5509,10 +5537,13 @@ const vi: Lang = {
   'widget.recentTrades.empty-submessage': 'Hãy thử chọn một phạm vi ngày khác',
   'widget.recentTrades.unknown': 'Không xác định',
   'widget.rollingWinRate.name': 'Tỷ lệ thắng/thua luân phiên',
+  'widget.rollingWinRate.description':
+    'Tỷ lệ lãi/lỗ trung bình của các lệnh gần đây',
 
   'widget.rollingStats.name': 'Trung bình trượt thắng/thua',
+  'widget.rollingStats.description':
+    'Lãi và lỗ trung bình của các lệnh gần đây',
 
-  'filter.chip.remove-aria': 'Xóa bộ lọc {label}',
   'shared.filter.disabled-preview': 'Bộ lọc bị tắt trong bản xem trước',
   'shared.filter.open': 'Mở bộ lọc',
   'shared.filter.active-count': 'Bộ lọc hoạt động {count}',
@@ -5601,8 +5632,6 @@ const vi: Lang = {
     'Không tìm thấy gì trong clipboard để dán. Hãy thử sao chép một hình ảnh đầu tiên.',
   'error.clipboard.no-images':
     'Không tìm thấy hình ảnh nào trong clipboard. Đảm bảo bạn đã sao chép hình ảnh chứ không phải văn bản hoặc nội dung khác.',
-  'error.clipboard.no-target':
-    'Không tìm thấy khu vực tải lên hình ảnh. Trước tiên hãy nhấp vào khu vực tải lên hình ảnh, sau đó dán hình ảnh của bạn.',
   'error.clipboard.network-error':
     'Đã xảy ra lỗi mạng khi xử lý dán. Vui lòng kiểm tra kết nối của bạn và thử lại.',
   'error.clipboard.paste-failed':
@@ -5931,20 +5960,86 @@ const vi: Lang = {
   'trade-import.asset.futures': 'Hợp đồng tương lai',
   'trade-import.asset.forex': 'Ngoại hối',
   'trade-import.asset.crypto': 'tiền điện tử',
-  'trade-import.label.manual-mode': 'Chế độ thủ công',
-  'trade-import.manual-mode.price-based': 'Dựa trên giá',
-  'trade-import.manual-mode.direct-pnl': 'Lãi lỗ trực tiếp',
+  'trade-import.manual-mode.price-based':
+    'Lệnh hoặc khớp lệnh (gộp thành giao dịch)',
+  'trade-import.manual-mode.direct-pnl': 'Mỗi dòng một giao dịch (dùng P/L)',
   'trade-import.label.ai-mapping': 'Yêu cầu đề xuất ánh xạ AI',
   'trade-import.privacy.copy':
-    'Nhập giao dịch tải bản xuất của nhà môi giới đã chọn lên máy chủ Journalit để xử lý. Thông tin xuất khẩu của nhà môi giới có thể chứa số nhận dạng tài khoản, lịch sử giao dịch, ký hiệu, dấu thời gian, giá cả, số lượng, phí, số dư và P&L. Để tạo bản xem trước, Journalit cũng gửi tên tài khoản đã chọn của bạn, các lựa chọn ánh xạ/mẫu, định nghĩa trường tùy chỉnh và các tùy chọn đã lưu cũng như bối cảnh giao dịch mở cục bộ hạn chế để khớp vị trí mở IBKR. Các tệp thô được xử lý cho lần nhập này và không được lưu trữ theo mặc định.',
+    'Nhập giao dịch tải bản xuất của nhà môi giới đã chọn lên máy chủ Journalit để xử lý. Thông tin xuất khẩu của nhà môi giới có thể chứa số nhận dạng tài khoản, lịch sử giao dịch, ký hiệu, dấu thời gian, giá cả, số lượng, phí, số dư và P&L. Để tạo bản xem trước, Journalit cũng gửi tên tài khoản đã chọn của bạn, các lựa chọn ánh xạ/mẫu, định nghĩa trường tùy chỉnh và các tùy chọn đã lưu cũng như bối cảnh giao dịch mở cục bộ hạn chế để khớp vị trí mở IBKR. Các tệp thô được xử lý cho lần nhập này và không được lưu trữ theo mặc định. Khi bật gợi ý ánh xạ bằng AI, tiêu đề cột và một vài dòng mẫu cũng được gửi tới một mô hình AI để gợi ý cách ghép cột; bỏ chọn tùy chọn này để tự ghép cột.',
 
   'trade-import.action.analyse': 'Phân tích tập tin',
   'trade-import.action.choose-file': 'Nhấp để tải lên hoặc kéo và thả',
   'trade-import.guide.prompt': 'Bạn không chắc chắn nên xuất khẩu gì?',
   'trade-import.guide.link': 'Xem hướng dẫn môi giới',
+  'trade-import.hyperliquid.export-guidance':
+    'Trong Hyperliquid, chọn Trade History → Export as CSV, không chọn Export More (báo cáo riêng của bên thứ ba). Không dùng Funding History hoặc Order History.',
+  'trade-import.hyperliquid.date-us': 'Mỹ: tháng/ngày/năm - giờ 24 tiếng',
+  'trade-import.hyperliquid.date-day-first':
+    'Ngày trước: ngày/tháng/năm, có hoặc không có “ - ” trước giờ',
+  'trade-import.hyperliquid.date-german': 'Đức: ngày.tháng.năm - giờ 24 tiếng',
+  'trade-import.hyperliquid.invalid-time-zone':
+    'Không thể xác định múi giờ của thiết bị này. Hãy kiểm tra cài đặt hệ thống.',
+  'trade-import.hyperliquid.backend-update-required':
+    'Cần cập nhật máy chủ để xem trước tệp Hyperliquid. Vui lòng thử lại sau.',
   'trade-import.action.drop-file': 'Thả tập tin để tải lên',
   'trade-import.analyse.detected':
-    'Đã phát hiện {fileType}. Các tiêu đề và hàng mẫu được trả về bởi chương trình phụ trợ.',
+    'Đã đọc tệp {fileType} của bạn. Kiểm tra các dòng bên dưới, rồi ghép từng cột với một trường giao dịch.',
+  'trade-import.table.screenshots': 'Ảnh chụp màn hình',
+  'trade-import.preview.screenshot-alt':
+    'Ảnh chụp màn hình {symbol} từ dòng {row} của bảng tính',
+  'trade-import.preview.screenshots-more': 'thêm {count}',
+  'trade-import.preview.include-screenshots':
+    'Thêm ảnh chụp màn hình từ bảng tính vào giao dịch tương ứng ({count})',
+  'trade-import.completion.screenshots-added':
+    'Ảnh chụp màn hình đã thêm từ bảng tính: {count}',
+  'trade-import.completion.screenshots-failed':
+    'Ảnh chụp màn hình từ bảng tính không thể thêm: {count}',
+  'trade-import.preview.import-anyway': 'Vẫn nhập',
+  'trade-import.preview.import-anyway-aria': 'Vẫn nhập {symbol} ngày {date}',
+  'trade-import.preview.import-all-anyway':
+    'Vẫn nhập tất cả {count} giao dịch có thể trùng lặp',
+  'csv.mapper.missing-fields.pnl-or-prices':
+    'Hoặc ghép Giá vào, Giá ra và Khối lượng để tính P/L từ giá.',
+  'trade-import.pnl-from-prices.title': 'P/L sẽ được tính từ giá của bạn',
+  'trade-import.pnl-from-prices.body':
+    'Không có cột P/L, nên P/L được tính từ giá vào, giá ra và khối lượng. Chỉ đúng khi chọn đúng loại tài sản, vì vậy hãy chọn loại cho các giao dịch này.',
+  'trade-import.pnl-from-prices.contract-size':
+    'Forex và hợp đồng tương lai cần thêm cột Kích thước hợp đồng để tính P/L. Nếu không có, hãy ghép cột P/L của bạn.',
+  'trade-import.diagnostic.choose-date-format': 'Chọn định dạng ngày',
+  'trade-import.date-question.ambiguous':
+    'Ngày của bạn có dạng {example}. Đó là ngày nào?',
+  'trade-import.date-question.mixed':
+    'Một số ngày trong cột này dùng thứ tự khác, như {example}. Phần lớn ngày của bạn dùng thứ tự nào?',
+  'trade-import.date-question.mixed-note':
+    'Các dòng viết theo thứ tự còn lại sẽ được liệt kê để bạn sửa trong tệp.',
+  'quick-import.message.date-order':
+    'Ngày của bạn có thể đọc theo hai cách. Mở phần nhập đầy đủ để chọn.',
+  'csv.date-format.eu-dot': 'EU dấu chấm: 25.12.2024 (ngày.tháng.năm)',
+  'csv.date-format.ymd-dot': 'Năm trước, dấu chấm: 2024.12.25',
+  'trade-import.unmapped.title': 'Không được nhập ({count})',
+  'trade-import.unmapped.body':
+    'Các cột này không khớp với trường nào của Journalit và sẽ bị bỏ qua. Nếu có trường phù hợp, hãy ghép cột ở phía trên.',
+  'trade-import.unmapped.keep': 'Giữ làm trường tùy chỉnh',
+  'trade-import.unmapped.keep-aria': 'Giữ {header} làm trường tùy chỉnh',
+  'trade-import.custom-field.title': 'Giữ “{header}” làm trường tùy chỉnh',
+  'trade-import.custom-field.hint':
+    'Thêm một trường vào giao dịch của bạn và điền từ cột này. Nếu đã có trường Journalit phù hợp, hãy ghép cột vào trường đó.',
+  'trade-import.custom-field.name': 'Tên trường',
+  'trade-import.custom-field.type': 'Loại trường',
+  'trade-import.custom-field.type.text': 'Văn bản',
+  'trade-import.custom-field.type.number': 'Số',
+  'trade-import.custom-field.type.dropdown': 'Danh sách lựa chọn',
+  'trade-import.custom-field.create': 'Tạo trường',
+  'trade-import.custom-field.error.reserved':
+    'Tên này đã được một trường giao dịch sẵn có sử dụng. Hãy chọn tên khác.',
+  'trade-import.table.open-closed': 'Mở/đóng',
+  'trade-import.status.open': 'Đang mở',
+  'trade-import.status.partially-closed': 'Đóng một phần',
+  'trade-import.status.closed': 'Đã đóng',
+  'trade-import.status.cancelled': 'Đã hủy',
+  'trade-import.diagnostic.column': 'Cột: {columns}',
+  'trade-import.diagnostic.unmap-column': 'Không nhập cột này',
+  'trade-import.diagnostic.edit-mapping': 'Đổi ánh xạ',
   'trade-import.diagnostic.info': 'thông tin',
   'trade-import.label.sheet': 'Trang tính',
   'trade-import.label.header-row': 'Hàng tiêu đề',
@@ -5992,22 +6087,22 @@ const vi: Lang = {
     'Journalit yêu cầu tệp CSV Order History / History của TradingView Paper Trading. Không dùng Account History, dữ liệu biểu đồ, tệp xuất chiến lược hoặc các tệp CSV TradingView khác.',
   'trade-import.preview.tradingview-export.guide':
     'Xem hướng dẫn xuất TradingView',
-  'trade-import.source-recovery.deepcharts.title':
-    'Tệp này có vẻ là bản xuất từ DeepCharts',
+  'trade-import.source-recovery.title': 'Tệp này có vẻ là bản xuất từ {source}',
+  'trade-import.source-recovery.message':
+    'Journalit có thể nhập trực tiếp tệp này bằng {source} thay vì {selected}.',
+  'trade-import.source-recovery.continue': 'Tiếp tục với {selected}',
+  'trade-import.source-recovery.switch': 'Chuyển sang {source}',
+  'trade-import.source-recovery.guide': 'Xem hướng dẫn xuất {source}',
+  'trade-import.source-recovery.metatrader.message':
+    'Journalit có thể nhập trực tiếp sao kê MetaTrader này, không cần ánh xạ cột.',
   'trade-import.source-recovery.deepcharts.rithmic-message':
-    'Tệp được xuất từ DeepCharts ngay cả khi tài khoản khớp lệnh qua Rithmic. Hãy dùng DeepCharts để Quantity có dấu xác định đúng lệnh mua hoặc bán.',
+    'Tệp này đến từ DeepCharts dù tài khoản khớp lệnh qua Rithmic. Hãy dùng DeepCharts để các giao dịch long và short được đọc đúng từ Trade List.',
   'trade-import.source-recovery.deepcharts.manual-message':
-    'Hãy dùng trình nhập DeepCharts. DeepCharts lưu hướng giao dịch trong Quantity có dấu, vì vậy không nên ánh xạ Quantity thành trường Hướng thủ công.',
-  'trade-import.source-recovery.deepcharts.switch': 'Chuyển sang DeepCharts',
-  'trade-import.source-recovery.deepcharts.guide':
-    'Xem hướng dẫn xuất DeepCharts',
+    'Hãy dùng trình nhập DeepCharts. Trình này đọc long và short từ Quantity có dấu hoặc cột Direction của Trade List, nên không cần ánh xạ thủ công.',
   'trade-import.source-recovery.motivewave.title':
     'Tệp này có vẻ là bản xuất khớp lệnh MotiveWave',
   'trade-import.source-recovery.motivewave.message':
     'Hãy dùng MotiveWave để Journalit ghép chính xác các dòng khớp lệnh thành giao dịch đã hoàn tất.',
-  'trade-import.source-recovery.motivewave.switch': 'Chuyển sang MotiveWave',
-  'trade-import.source-recovery.motivewave.guide':
-    'Xem hướng dẫn xuất MotiveWave',
   'quick-import.message.source-mismatch':
     'Journalit đã xác định một nguồn xuất khác. Hãy xem lại trong Trade Import để đổi nguồn mà không cần tải tệp lên lại.',
   'trade-import.preview.no-eligible':
@@ -6030,6 +6125,54 @@ const vi: Lang = {
   'trade-import.table.position': 'Vị thế',
   'trade-import.table.result': 'Kết quả',
   'trade-import.table.message': 'Tin nhắn',
+  'trade-import.status.new': 'Mới',
+  'trade-import.status.already-imported': 'Đã nhập',
+  'trade-import.status.other-account': 'Ở tài khoản khác',
+  'trade-import.status.other-account.detail': 'Đã nhập vào {account}',
+  'trade-import.status.updates-existing': 'Cập nhật giao dịch hiện có',
+  'trade-import.status.possible-duplicate': 'Có thể trùng lặp',
+  'trade-import.status.needs-review': 'Cần xem lại',
+  'trade-import.status.duplicate-in-file': 'Trùng lặp trong tệp',
+  'trade-import.status.invalid': 'Giao dịch không hợp lệ',
+  'trade-import.status.no-open-trade': 'Không có giao dịch mở để đóng',
+  'trade-import.status.multiple-open-trades': 'Nhiều giao dịch mở khớp',
+  'trade-import.status.quantity-mismatch': 'Khối lượng không khớp',
+  'trade-import.server-deletion.deleted':
+    'Giao dịch đã xóa khỏi máy chủ Journalit: {count}',
+  'trade-import.server-deletion.kept':
+    'Giao dịch được giữ lại vì một lần nhập khác cũng chứa chúng: {count}',
+  'trade-import.server-deletion.blocked-broker-connected':
+    'Tài khoản này được đồng bộ bởi kết nối broker. Hãy ngắt kết nối broker để xóa dữ liệu của nó.',
+  'trade-import.server-deletion.blocked-broker-history':
+    'Tài khoản này có lịch sử đồng bộ broker và không thể xóa tại đây. Hãy xóa từng lần nhập.',
+  'trade-import.server-deletion.failed':
+    'Không thể xóa trên máy chủ Journalit. Vui lòng thử lại.',
+  'trade-import.server-deletion.notice':
+    'Ghi chú giao dịch đã chuyển vào thùng rác sau khi xóa trên máy chủ: {count}',
+  'trade-import.server-deletion.account.title': 'Xóa tài khoản trên máy chủ?',
+  'trade-import.server-deletion.account.message':
+    'Thao tác này xóa vĩnh viễn "{account}" và các giao dịch đã nhập ({count} trên máy chủ) khỏi máy chủ Journalit, đồng thời chuyển ghi chú của chúng vào thùng rác trong mọi vault đã đồng bộ. Sau đó bạn có thể nhập lại các tệp.',
+  'trade-import.server-deletion.account.confirm': 'Xóa khỏi máy chủ',
+  'trade-import.server-deletion.account.button': 'Xóa khỏi máy chủ',
+  'trade-import.history.title': 'Lịch sử nhập',
+  'trade-import.completion.wrong-account': 'Nhập nhầm tài khoản?',
+  'trade-import.completion.undo-import': 'Hoàn tác lần nhập này',
+  'trade-import.action.manage-imports': 'Quản lý các lần nhập trước',
+  'trade-import.history.loading': 'Đang tải lịch sử nhập…',
+  'trade-import.history.load-failed': 'Không thể tải lịch sử nhập.',
+  'trade-import.history.empty': 'Chưa có lần nhập nào.',
+  'trade-import.history.trades-on-server': '{count} trên máy chủ',
+  'trade-import.history.delete.title': 'Xóa lần nhập này?',
+  'trade-import.history.delete.message':
+    'Thao tác này xóa vĩnh viễn khỏi máy chủ Journalit các giao dịch mà lần nhập này đã thêm vào "{account}" ({count} trên máy chủ) và chuyển ghi chú của chúng vào thùng rác trong mọi vault đã đồng bộ. Giao dịch mà lần nhập khác cũng chứa sẽ được giữ lại. Sau đó bạn có thể nhập lại tệp.',
+  'trade-import.history.delete.confirm': 'Xóa lần nhập',
+  'trade-import.history.load-more': 'Tải thêm',
+  'account.edit.modal.delete.delete-server-trades':
+    'Đồng thời xóa các giao dịch đã nhập khỏi máy chủ Journalit ({count} trên máy chủ). Ghi chú của chúng sẽ được chuyển vào thùng rác trong mọi vault đã đồng bộ, kể cả khi bạn giữ chúng ở đây.',
+  'trade-import.preview.other-account.message':
+    'Đã có trong {account} ({count}) nên sẽ bị bỏ qua.',
+  'trade-import.preview.other-account.import-instead': 'Nhập vào {account}',
+  'trade-import.preview.other-account.undo-earlier': 'Hoàn tác lần nhập trước',
   'trade-import.action.confirm': 'Xác nhận nhập',
   'trade-import.action.activate-pro.one':
     'Kích hoạt PRO để nhập {count} giao dịch',
@@ -6041,6 +6184,32 @@ const vi: Lang = {
     'Kích hoạt PRO để nhập {count} giao dịch',
   'trade-import.action.cancel-preview': 'Hủy xem trước',
   'trade-import.broker.manual': 'Ánh xạ thủ công',
+  'trade-import.source.title': 'Các giao dịch này đến từ đâu?',
+  'trade-import.source.subtitle':
+    'Chọn nền tảng bạn đã xuất dữ liệu. Journalit đọc trực tiếp định dạng tệp của nó, không cần ánh xạ cột.',
+  'trade-import.source.search': 'Tìm broker và nền tảng',
+  'trade-import.source.sync-available': 'Cũng hỗ trợ Trade Sync tự động',
+  'trade-import.source.manual.tile': 'Bảng tính riêng / tệp khác',
+  'trade-import.source.manual.title': 'Bảng tính riêng hoặc tệp khác',
+  'trade-import.source.manual.hint':
+    'Bạn sẽ ghép các cột trong tệp với trường của Journalit.',
+  'trade-import.source.native.hint':
+    'Định dạng tệp được đọc tự động, không cần ánh xạ.',
+  'trade-import.source.guide': 'Cách xuất dữ liệu',
+  'trade-import.source.change': 'Thay đổi',
+  'trade-import.sync-suggestion.full.title': '{broker} có thể đồng bộ tự động',
+  'trade-import.sync-suggestion.full.body':
+    'Trade Sync tự đưa giao dịch mới vào, không cần xuất tệp. Bạn vẫn có thể nhập tệp bên dưới.',
+  'trade-import.sync-suggestion.partial.title':
+    'Dùng {provider}? Hãy đồng bộ thay thế',
+  'trade-import.sync-suggestion.partial.body':
+    'Trade Sync tự động đưa giao dịch {provider} vào. Các sao kê khác vẫn nhập ở bên dưới.',
+  'trade-import.sync-suggestion.action': 'Thiết lập Trade Sync',
+  'trade-import.sync-suggestion.sync-only.title':
+    '{broker} kết nối qua Trade Sync',
+  'trade-import.sync-suggestion.sync-only.body':
+    'Không cần xuất tệp: Trade Sync tự động đưa giao dịch {broker} vào. Vẫn có tệp {broker}? Chọn Không có trong danh sách / tệp tùy chỉnh.',
+  'trade-import.sync-suggestion.action.open': 'Mở Trade Sync',
 
   'home.quick-links.quick-import': 'Nhập nhanh',
 
@@ -6355,13 +6524,13 @@ const vi: Lang = {
 
   'home.widget.profit-target-widget.name': 'Mục tiêu lợi nhuận',
   'home.widget.profit-target-widget.description':
-    'Theo dõi tiến độ mục tiêu lợi nhuận trên các tài khoản',
+    'Tiến độ mục tiêu lợi nhuận theo tài khoản',
   'home.widget.eval-roi.name': 'ROI đánh giá',
   'home.widget.challenge-alerts.name': 'Cảnh báo challenge',
   'home.widget.challenge-alerts.description':
-    'Tài khoản prop challenge cần quyết định: thất bại, vượt qua hoặc sẵn sàng rút',
+    'Tài khoản prop thất bại, đạt hoặc sẵn sàng rút',
   'home.widget.eval-roi.description':
-    'Chi phí đánh giá so với khoản rút trên các tài khoản prop challenge',
+    'Phí thử thách prop so với khoản chi trả đã nhận',
   'trade-import.restore.complete':
     'Đã khôi phục {written} giao dịch đã nhập; {failed} thất bại.',
   'trade-import.restore.broker-label': 'Khôi phục backend',
@@ -6448,28 +6617,16 @@ const vi: Lang = {
     'Đồng bộ Rithmic thất bại: {message}',
   'trade-sync.tradovate.never': 'Chưa bao giờ',
 
-  'trade-sync.import.card.connection': 'Kết nối',
-  'trade-sync.import.card.backup': 'Bản sao lưu import',
-  'trade-sync.import.card.restorable': 'Giao dịch có thể khôi phục',
-  'trade-sync.import.card.import': 'Trade Import',
-
-  'trade-sync.import.card.open-importer-desc': 'Nhập tệp broker mới tại đây',
   'trade-sync.import.card.inventory-summary':
     '{accounts} tài khoản · {trades} giao dịch',
   'trade-sync.import.action.check': 'Kiểm tra',
+  'trade-sync.import.more-actions': 'Thêm thao tác',
 
   'trade-sync.import.action.open-import': 'Mở Trade Import',
 
   'trade-sync.import.action.create-local-account': 'Tạo tài khoản',
-  'trade-sync.import.action.create-local-account-title':
-    'Tạo tài khoản Journalit bằng tên tài khoản backend.',
-  'trade-sync.import.action.save-mapping': 'Lưu',
-  'trade-sync.import.action.save-mapping-title':
-    'Lưu ánh xạ từ tài khoản backend này sang tài khoản cục bộ.',
 
   'trade-sync.import.action.restore-account': 'Khôi phục',
-  'trade-sync.import.action.restore-account-title':
-    'Khôi phục ghi chú giao dịch cục bộ bị thiếu cho tài khoản backend này.',
   'trade-sync.import.action.restoring': 'Đang khôi phục…',
 
   'trade-sync.import.pending-acks': '{count} ACK đang chờ',
@@ -6481,8 +6638,6 @@ const vi: Lang = {
   'trade-sync.import.account.missing-count': '{count} bị thiếu',
   'trade-sync.import.account.issue-count': '{count} vấn đề',
   'trade-sync.import.account.local-account': 'Tài khoản Journalit',
-  'trade-sync.import.account.mapping-hint':
-    'Giao dịch được khôi phục sẽ được ghi vào tài khoản Journalit này.',
   'trade-sync.import.notice.restored':
     'Đã khôi phục {count} giao dịch đã nhập.',
 
@@ -7104,11 +7259,7 @@ const vi: Lang = {
     'Dùng các nút kích thước này để chuyển giữa chế độ quét gọn và xem trước biểu đồ lớn hơn mà không cắt mất chi tiết quan trọng.',
   'tradelog.guide.gallery-filters.title': 'Lọc thư viện từ cùng một điểm vào',
   'tradelog.guide.gallery-filters.description':
-    'Nút bộ lọc vẫn mở Bộ lọc nâng cao. Trong chế độ Thư viện, nó cũng bao gồm các bộ lọc riêng cho phương tiện như trạng thái chú thích và thẻ phương tiện.',
-  'tradelog.guide.gallery-filter-modal.title':
-    'Bộ lọc phương tiện nằm cùng bộ lọc giao dịch',
-  'tradelog.guide.gallery-filter-modal.description':
-    'Dùng hộp thoại này để kết hợp bộ lọc giao dịch với bộ lọc phương tiện. Ví dụ, lọc theo một setup rồi chỉ hiển thị phương tiện có ghi chú hoặc một thẻ phương tiện cụ thể.',
+    'Menu bộ lọc hoạt động giống như vậy ở đây. Ở chế độ Thư viện, menu còn có mục Thư viện với các bộ lọc media như trạng thái chú thích và thẻ media.',
   'tradelog.guide.gallery-grid.title': 'Mở phương tiện để xem kỹ hơn',
   'tradelog.guide.gallery-grid.description':
     'Mỗi thẻ giữ biểu đồ không bị che khuất trong khi vẫn hiển thị ngữ cảnh giao dịch và đánh giá gọn gàng. Nhấp vào bất kỳ thẻ nào hoặc nhấn Tiếp để mở mục đầu tiên đang hiển thị ở chế độ toàn màn hình.',
@@ -7127,19 +7278,33 @@ const vi: Lang = {
     'Bạn đã biết cả hai chế độ Nhật ký giao dịch',
   'tradelog.guide.gallery-finish.description':
     'Dùng Giao dịch khi bạn cần bảng và công cụ xử lý hàng loạt. Dùng Thư viện khi muốn xem lại hình ảnh, GIF, video, liên kết YouTube và chú thích biểu đồ trong toàn bộ nhật ký.',
+  'filter.menu.whats-new.open.title': 'Bộ lọc có menu mới',
+  'filter.menu.whats-new.open.description':
+    'Mọi bộ lọc giờ nằm trong một menu nhiều lớp, với hai cách mới để thu hẹp giao dịch. Mở menu để xem.',
+  'filter.menu.whats-new.exclude.title': 'Loại trừ những gì bạn không muốn',
+  'filter.menu.whats-new.exclude.description':
+    'Mỗi giá trị có một nút ⊘. Loại trừ một giá trị sẽ bỏ ra mọi giao dịch có giá trị đó, dù giao dịch khớp với điều gì khác.',
+  'filter.menu.whats-new.match.title': 'Chọn cách nhiều giá trị khớp nhau',
+  'filter.menu.whats-new.match.description':
+    'Khi chọn nhiều giá trị, hãy quyết định giao dịch cần "Bất kỳ", "Tất cả", "Chỉ những mục này" hay "Chính xác những mục này". Thẻ, thiết lập, lỗi và trường tùy chỉnh đều có tùy chọn Khớp này.',
+  'filter.menu.whats-new.phases.title': 'Lọc theo giai đoạn thử thách',
+  'filter.menu.whats-new.phases.description':
+    'Tài khoản prop có nhiều giai đoạn sẽ mở danh sách các giai đoạn của nó. Chọn từng giai đoạn thay vì cả tài khoản.',
+  'filter.menu.whats-new.done.title': 'Đó là những điểm mới của bộ lọc',
+  'filter.menu.whats-new.done.description':
+    'Cùng menu này dùng được ở Nhật ký giao dịch, Bảng điều khiển, Trang chủ, Thiết lập và trong các bài đánh giá. Thay đổi áp dụng ngay khi bạn nhấp.',
   'tradelog.guide.image-gallery-empty.intro.title': 'Chưa có phương tiện',
   'tradelog.guide.image-gallery-empty.intro.description':
     'Thêm hình ảnh, GIF, video hoặc liên kết YouTube vào giao dịch hoặc ghi chú đánh giá và chúng sẽ tự động xuất hiện tại đây. Khi có phương tiện, Journalit sẽ hiển thị hướng dẫn thư viện đầy đủ cho xem toàn màn hình, thẻ và ghi chú.',
 
   'filter.modal.section.image-gallery': 'Thư viện',
   'filter.modal.session-tags.placeholder': 'Thẻ phiên',
-  'filter.modal.session-tags.all': 'Tất cả thẻ phiên',
-  'filter.modal.session-tags.n-selected': '{count} thẻ phiên',
-  'filter.modal.session-tags.select-all': 'Chọn tất cả',
   'filter.modal.session-tags.none-found': 'Không tìm thấy thẻ phiên',
   'account.prop-challenge.title': 'Thử thách quỹ cấp vốn',
   'account.prop-challenge.identity': 'Thông tin thử thách',
   'account.prop-challenge.prefill.heading-link': 'Điền sẵn từ firm của bạn',
+  'account.prop-challenge.prefill.updates-link': 'Cập nhật quy tắc quỹ',
+  'account.prop-challenge.prefill.updates-link-firm': 'Cập nhật quy tắc {firm}',
   'account.prop-challenge.prefill.phase-link': 'Điền sẵn quy tắc với PRO',
   'account.prop-challenge.prefill.phase-link-firm':
     'Điền sẵn quy tắc của {firm} với PRO',
@@ -7160,19 +7325,26 @@ const vi: Lang = {
   'account.prop-challenge.challenge-name-placeholder': 'Ví dụ: Đánh giá 25K',
   'account.prop-challenge.firm-name': 'Tên công ty (không bắt buộc)',
   'account.prop-challenge.firm-name-placeholder': 'Ví dụ: Apex Trader Funding',
-  'account.prop-challenge.profile.title': 'Áp dụng hồ sơ công ty',
+  'account.prop-challenge.profile.title': 'Áp dụng quy tắc quỹ',
   'account.prop-challenge.profile.firm': 'Công ty',
   'account.prop-challenge.profile.challenge': 'Thử thách',
+  'account.prop-challenge.profile.choose-firm': 'Chọn công ty',
+  'account.prop-challenge.profile.choose-challenge': 'Chọn thử thách',
+  'account.prop-challenge.profile.custom-firm': 'Khác / công ty tùy chỉnh',
+  'account.prop-challenge.profile.help':
+    'Chọn quỹ và gói của bạn để điền quy tắc: drawdown, mục tiêu, chi trả. Bạn có thể chỉnh sửa sau.',
+  'account.prop-challenge.profile.current': 'Hiện tại: {identity}',
   'account.prop-challenge.profile.apply': 'Áp dụng',
-  'account.prop-challenge.profile.loading': 'Đang tải hồ sơ công ty…',
-  'account.prop-challenge.profile.refreshing': 'Đang kiểm tra cập nhật hồ sơ…',
+  'account.prop-challenge.profile.loading': 'Đang tải quy tắc quỹ…',
+  'account.prop-challenge.profile.refreshing':
+    'Đang kiểm tra cập nhật quy tắc…',
   'account.prop-challenge.profile.unavailable':
-    'Hồ sơ công ty không khả dụng khi ngoại tuyến.',
+    'Quy tắc quỹ không khả dụng khi ngoại tuyến.',
 
   'account.prop-challenge.profile.confirm-title':
     'Thay thế thiết lập thử thách?',
   'account.prop-challenge.profile.confirm-message':
-    'Áp dụng hồ sơ này sẽ thay thế các giai đoạn và quy tắc hiện được cấu hình.',
+    'Áp dụng các quy tắc quỹ này sẽ thay thế các giai đoạn và quy tắc hiện đang thiết lập.',
   'account.prop-challenge.current-phase': 'Giai đoạn hiện tại',
   'account.prop-challenge.phase-rules': 'Quy tắc cho {phase}',
   'account.prop-challenge.next-phase': 'Tiếp theo: {phase}',
@@ -7267,6 +7439,10 @@ const vi: Lang = {
     'Lợi nhuận cuối ngày cho mỗi hợp đồng bổ sung',
   'account.prop-challenge.rule.maximum-contracts':
     'Số hợp đồng tối đa sau khi tăng quy mô',
+  'account.prop-challenge.rule.micros-per-contract':
+    'Tính 10 micro là 1 hợp đồng',
+  'account.prop-challenge.rule.micros-per-contract-help':
+    'Bật nếu công ty của bạn tính hợp đồng tương lai micro (MES, MNQ, MGC, ...) bằng một phần mười hợp đồng tiêu chuẩn cho giới hạn này. Để tắt nếu mỗi micro được tính là một hợp đồng đầy đủ.',
   'account.prop-challenge.rule.max-contracts': 'Số hợp đồng tối đa',
   'account.prop-challenge.rule.profit_target': 'Mục tiêu lợi nhuận',
   'account.prop-challenge.rule.drawdown': 'Sụt giảm',
@@ -7405,9 +7581,9 @@ const vi: Lang = {
   'account.prop-challenge.ledger.help.consistency.example-none':
     'Chưa có lợi nhuận nên không có ngày tốt nhất để so sánh.',
   'account.prop-challenge.ledger.help.max_position_size':
-    'Số hợp đồng tối đa được giữ cùng lúc, trên mọi vị thế đang mở. Một số công ty tăng hạn mức khi lợi nhuận tăng.',
+    'Số hợp đồng tối đa được phép trong một vị thế. Journalit kiểm tra kích thước từng giao dịch. Một số quỹ nâng giới hạn khi lợi nhuận tăng.',
   'account.prop-challenge.ledger.help.max_position_size.example':
-    'Hiện tối đa {maximum} hợp đồng cùng lúc; vị thế lớn nhất đến nay {current}.',
+    'Hiện tối đa {maximum} hợp đồng mỗi giao dịch; giao dịch lớn nhất đến nay {current}.',
   'account.prop-challenge.ledger.help.payout.cycle_days':
     'Ngày giao dịch trong chu kỳ rút hiện tại. Bộ đếm reset sau lần rút được duyệt.',
   'account.prop-challenge.ledger.help.payout.cycle_days.example':
@@ -7569,6 +7745,40 @@ const vi: Lang = {
   'home.filters.accounts': 'Tài khoản',
   'home.filters.back': 'Quay lại',
   'filter.reset': 'Đặt lại bộ lọc',
+  'filter.menu.title': 'Lọc theo',
+  'filter.menu.accounts': 'Tài khoản',
+  'filter.menu.tickers': 'Mã giao dịch',
+  'filter.menu.setups': 'Setup',
+  'filter.menu.tags': 'Thẻ',
+  'filter.menu.mistakes': 'Lỗi',
+  'filter.menu.trade-type': 'Loại giao dịch',
+  'filter.menu.status': 'Trạng thái',
+  'filter.menu.direction': 'Hướng',
+  'filter.menu.review-status': 'Trạng thái xem lại',
+  'filter.menu.status.cancelled': 'Đã hủy',
+  'filter.menu.included-count': '{count} bao gồm',
+  'filter.menu.excluded-count': '{count} loại trừ',
+  'filter.menu.search': 'Tìm kiếm',
+  'filter.menu.no-matches': 'Không có kết quả',
+  'filter.menu.no-options': 'Chưa có gì để lọc',
+  'filter.menu.clear': 'Xóa',
+  'filter.menu.match.label': 'Khớp',
+  'filter.menu.match.any': 'Bất kỳ',
+  'filter.menu.match.all': 'Tất cả',
+  'filter.menu.match.only': 'Chỉ những mục này',
+  'filter.menu.match.exact': 'Chính xác những mục này',
+  'filter.menu.match.hint.any': 'Giao dịch có ít nhất một giá trị đã chọn.',
+  'filter.menu.match.hint.all':
+    'Giao dịch có mọi giá trị đã chọn. Cho phép giá trị khác.',
+  'filter.menu.match.hint.only':
+    'Giao dịch có mọi giá trị đều nằm trong các giá trị đã chọn.',
+  'filter.menu.match.hint.exact':
+    'Giao dịch có đúng các giá trị đã chọn, không hơn không kém.',
+  'filter.menu.match.no-value-any-only': 'Chỉ với “Bất kỳ”',
+  'filter.menu.exclude-value': 'Loại trừ {label}',
+  'filter.menu.match.badge.all': 'Tất cả',
+  'filter.menu.match.badge.only': 'Chỉ',
+  'filter.menu.match.badge.exact': 'Chính xác',
   'home.guide.modes.title': 'Một điều nữa: Bảng điều khiển',
   'home.guide.modes.description':
     'Tổng quan và Bảng điều khiển dùng chung trang này. Hãy chuyển sang Bảng điều khiển ngay để tiếp tục với chuyến tham quan ngắn về thống kê hiệu suất của bạn.',
@@ -7640,13 +7850,6 @@ const vi: Lang = {
     'Mức sàn drawdown được khóa sau khi rút tiền.',
   'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
     'Tài khoản và giới hạn drawdown được đặt lại sau khi rút tiền.',
-  'account-page.guide.whats-new.cockpit.payout.title':
-    'Biết khi nào khoản rút funded là an toàn',
-  'account-page.guide.whats-new.cockpit.payout.description':
-    'Tài khoản funded có quy tắc đã xác minh giờ hiển thị yêu cầu rút tiền, số tiền khả dụng và bản xem trước tác động đến số dư và drawdown.',
-  'account-page.guide.main.payout.title': 'Lập kế hoạch rút tiền funded',
-  'account-page.guide.main.payout.description':
-    'Khi giai đoạn funded có quy tắc rút tiền đã xác minh, bảng này theo dõi điều kiện và xem trước tác động của số tiền yêu cầu lên tài khoản.',
   'account.prop-challenge.stage': 'Loại giai đoạn',
   'account.prop-challenge.stage.evaluation': 'Đánh giá',
   'account.prop-challenge.stage.sim-funded': 'Funded mô phỏng',
@@ -7799,7 +8002,7 @@ const vi: Lang = {
   
   'account.merge.challenge.move-earlier': 'Chuyển {account} lên trước',
   'account.merge.challenge.move-later': 'Chuyển {account} ra sau',
-  'account.merge.warning.use-profile-balance': 'Dùng số dư hồ sơ',
+  'account.merge.warning.use-profile-balance': 'Dùng số dư của quỹ',
   'account.merge.warning.edit-phases': 'Chỉnh sửa giai đoạn',
   'account.merge.title': 'Thiết lập thử thách',
   'account.merge.loading': 'Đang tải...',
@@ -7838,8 +8041,21 @@ const vi: Lang = {
   'account.merge.error.unknown': 'Gộp thất bại.',
   'account.merge.action.merge': 'Gộp',
   'account.merge.action.undo': 'Hoàn tác',
+  'account.merge.action.looks-right': 'Đúng rồi',
   'account.merge.action.delete': 'Xóa tài khoản cũ',
   'account.merge.notice.converted': 'Đã chuyển thành thử thách',
+  'account.merge.summary.intro':
+    'Kiểm tra xem điều này có khớp với thử thách của bạn:',
+  'account.merge.summary.phases': 'Giai đoạn: {phases}',
+  'account.merge.summary.current': 'Hiện ở {phase} ({stage}), bắt đầu {date}',
+  'account.merge.summary.current-stage': 'Hiện ở {phase}, bắt đầu {date}',
+  'account.merge.summary.trades':
+    '{counted}/{total} giao dịch được tính cho thử thách',
+  'account.merge.summary.trades-missing':
+    '{counted}/{total} giao dịch được tính cho thử thách. Số còn lại nằm ngoài ngày của mọi giai đoạn.',
+  'account.merge.summary.rules': 'Quy tắc {phase}: {rules}',
+  'account.merge.summary.no-rules':
+    'Chưa có quy tắc cho {phase}. Thêm quy tắc của quỹ trong Chỉnh sửa tài khoản.',
   'account.merge.notice.title': 'Đã gộp từ {accounts}',
   'account.merge.notice.error': 'Thao tác thất bại.',
   'account.merge.undo.title': 'Hoàn tác việc gộp',
@@ -7852,7 +8068,7 @@ const vi: Lang = {
   'account.merge.action.convert': 'Chuyển đổi',
   'account.merge.profile.applied': 'Đã áp dụng: {firm} · {challenge}',
   'account.merge.profile.remove': 'Gỡ',
-  'account.merge.phase.apply-profile': 'Áp dụng hồ sơ công ty',
+  'account.merge.phase.apply-profile': 'Áp dụng quy tắc quỹ',
   'account.merge.profile.replace-rules.title': 'Thay thế các quy tắc nhập tay?',
   'account.merge.profile.replace-rules.body':
     'Hồ sơ của {firm} xác định quy tắc của mọi giai đoạn. Các quy tắc bạn nhập trên trang này sẽ bị thay thế.',
@@ -7869,32 +8085,43 @@ const vi: Lang = {
   'guide.merge-wizard.target.title': 'Một tài khoản giữ lịch sử',
   'guide.merge-wizard.target.description':
     'Tài khoản đích tồn tại với mọi giai đoạn. Các tài khoản còn lại được lưu trữ, không bị xóa, và giao dịch của chúng chuyển sang tài khoản đích.',
-  'guide.merge-wizard.identity.title': 'Đặt tên công ty và thử thách',
+  'guide.merge-wizard.identity.title': 'Chọn quy tắc của quỹ',
   'guide.merge-wizard.identity.description':
-    'Áp dụng hồ sơ công ty sẽ điền quy tắc thật và giai đoạn được cấp vốn. Không có hồ sơ, các giai đoạn không có quy tắc cho đến khi bạn thêm trên trang tài khoản.',
+    'Chọn quỹ và gói của bạn để điền các giai đoạn và quy tắc. Không thấy quỹ của bạn? Chọn Khác / quỹ tùy chỉnh và đặt quy tắc ở trang tiếp theo.',
+  'guide.merge-wizard.identity.free-title': 'Đặt tên thử thách',
+  'guide.merge-wizard.identity.free-description':
+    'Đặt tên cho nó, và tên quỹ nếu muốn. Quy tắc đã lưu từ thử thách trước sẽ điền các giai đoạn và quy tắc; nếu không, bạn đặt chúng ở trang tiếp theo.',
   'guide.merge-wizard.phases.title': 'Kiểm tra từng giai đoạn',
   'guide.merge-wizard.phases.description':
     'Đặt loại chặng, đánh dấu giai đoạn đã hoàn thành là Đạt và giai đoạn hiện tại là Đang hoạt động, rồi xác nhận ngày.',
   'guide.merge-wizard.review.title':
     'Không có gì xảy ra cho đến khi bạn xác nhận',
   'guide.merge-wizard.review.description':
-    'Kiểm tra giao dịch đã chuyển, tài khoản đã lưu trữ và mọi cảnh báo. Gộp áp dụng tất cả; bạn có thể hoàn tác từ trang tài khoản.',
+    'Sau khi chuyển đổi, trang tài khoản liệt kê những gì đã thiết lập để bạn kiểm tra, và bạn có thể hoàn tác tại đó.',
   'account.merge.challenge.accounts': 'Tài khoản',
   'account.merge.challenge.order-hint': 'Giai đoạn cũ nhất trước',
   'account.merge.challenge.single-hint':
     'Tài khoản này trở thành một thử thách riêng',
-  'account.merge.phase.identities-count': '{count} định danh',
+  'account.merge.phase.broker-accounts.one': '{count} tài khoản broker',
+  'account.merge.phase.broker-accounts.few': '{count} tài khoản broker',
+  'account.merge.phase.broker-accounts.many': '{count} tài khoản broker',
+  'account.merge.phase.broker-accounts.other': '{count} tài khoản broker',
+  'account.merge.review.phase-count.one': 'giai đoạn',
+  'account.merge.review.phase-count.few': 'giai đoạn',
+  'account.merge.review.phase-count.many': 'giai đoạn',
+  'account.merge.review.phase-count.other': 'giai đoạn',
   'account.merge.phase.pending': 'Đang chờ',
-  'account.merge.review.phases': 'giai đoạn',
+  'account.merge.phase.starts-after': 'Bắt đầu sau khi vượt qua {phase}',
+  'account.merge.phase.pending-rules': 'Quy tắc: {rules}',
   'account.merge.review.archived': 'đã lưu trữ',
-  'account.merge.review.open': 'đang mở',
+  'account.merge.review.starts-after': 'Sau {phase}',
+  'account.merge.review.since': 'Từ {date}',
   'account.merge.sequence': 'Thử thách {index} / {total}',
-  'account.merge.warning.balance-differs':
-    'Số dư ban đầu khác với hồ sơ công ty',
+  'account.merge.warning.balance-differs': 'Số dư ban đầu khác với quy tắc quỹ',
   'account.merge.error.profile-phase-mismatch':
-    'Nhiều tài khoản hơn số giai đoạn trong hồ sơ công ty',
+    'Nhiều tài khoản hơn số giai đoạn trong quy tắc quỹ',
   'account.merge.error.profile-currency-mismatch':
-    'Tiền tệ của hồ sơ khác với các tài khoản này.',
+    'Quy tắc quỹ dùng đơn vị tiền tệ khác với các tài khoản này.',
   'account.merge.error.source-changed':
     'Một tài khoản đã thay đổi. Hãy xem lại việc gộp.',
   'account.merge.error.multiple-active-phases':
@@ -7904,17 +8131,18 @@ const vi: Lang = {
   'account.merge.error.copy-trading-overlap':
     'Các giai đoạn copy trading bị chồng lấn. Hãy đóng một giai đoạn trước.',
   'onboarding.legacy-challenge.legend':
-    'Gộp các tài khoản từng là giai đoạn của cùng một thử thách. Tài khoản đứng riêng sẽ là một thử thách độc lập.',
-  'onboarding.legacy-challenge.assign.leave': 'Giữ nguyên',
-  'onboarding.legacy-challenge.assign.own': 'Thử thách riêng',
-  'onboarding.legacy-challenge.assign.group': 'Thử thách {letter}',
-  'onboarding.legacy-challenge.assign.new-group': 'Thử thách mới…',
+    'Chọn cách xử lý từng tài khoản cũ. Bạn có tài khoản riêng cho mỗi giai đoạn, như Giai đoạn 1 và Được cấp vốn? Đặt chúng vào cùng một thử thách để thành một tài khoản có các giai đoạn.',
+  'onboarding.legacy-challenge.assign.leave': 'Giữ là tài khoản thường',
+  'onboarding.legacy-challenge.assign.own': 'Chuyển thành thử thách',
+  'onboarding.legacy-challenge.assign.group': 'Thêm vào thử thách {letter}',
+  'onboarding.legacy-challenge.assign.new-group': 'Gộp vào thử thách mới…',
   'onboarding.legacy-challenge.action.continue': 'Tiếp tục',
   'onboarding.legacy-challenge.action.continue-count': 'Thiết lập {count}',
   'guide.action-step.dismiss': 'Để sau',
-  'guide.legacy-challenge.title': 'Các tài khoản hiện có',
+  'guide.legacy-challenge.title':
+    'Thiết lập tài khoản có từ trước bản cập nhật này',
   'guide.legacy-challenge.description':
-    'Gộp các tài khoản từng là giai đoạn của một thử thách, hoặc biến một tài khoản thành thử thách độc lập.',
+    'Chuyển các tài khoản đánh giá hoặc được cấp vốn cũ thành thử thách. Quá trình thiết lập hướng dẫn qua các giai đoạn và ngày, và cuối cùng hiển thị những gì đã thiết lập để bạn kiểm tra.',
   'guide.legacy-challenge.action': 'Thiết lập tài khoản',
   'account-dashboard.challenges.empty.title': 'Chưa có thử thách nào',
   'account-dashboard.challenges.empty.message':

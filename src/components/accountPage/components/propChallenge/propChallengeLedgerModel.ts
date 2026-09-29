@@ -96,16 +96,28 @@ function ratioOf(value: number, total: number): number {
   return total > 0 ? clampRatio(value / total) : 0;
 }
 
+
+function sizeDecimals(value: number): number {
+  const hundredths = Math.round(value * 100);
+  if (hundredths % 100 === 0) return 0;
+  if (hundredths % 10 === 0) return 1;
+  return 2;
+}
+
 function money(
   formatValue: FormatDisplayValue,
   value: number,
   currency: string
 ): string {
+  
+  
+  
   return formatValue({
     kind: 'money',
     value,
     currencyCode: currency,
     signed: false,
+    precision: Math.round(value * 100) % 100 === 0 ? 0 : 2,
   });
 }
 
@@ -433,7 +445,11 @@ function buildRow(
 
     case 'max_position_size': {
       const size = (value: number) =>
-        formatValue({ kind: 'positionSize', value, precision: 2 });
+        formatValue({
+          kind: 'positionSize',
+          value,
+          precision: sizeDecimals(value),
+        });
       return {
         progressText: currentOf(size(rule.current), size(rule.target)),
         progressRatio: ratioOf(rule.current, rule.target),

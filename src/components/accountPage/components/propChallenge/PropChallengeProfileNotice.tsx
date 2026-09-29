@@ -13,7 +13,6 @@ import {
 import { Button } from '../../../ui/Button';
 import { Info } from '../../../shared/icons/ObsidianIcon';
 import {
-  openProfileSourceModal,
   openProfileUpdateModal,
   openCorrectionHistoryModal,
 } from './ProfileUpdateModal';
@@ -141,18 +140,8 @@ function ProfileNoticeCore({
       ))
   )
     return null;
-  if (!config.profileRef)
-    return (
-      <div className="journalit-profile-update-status">
-        <Button
-          variant="plain"
-          size="small"
-          onClick={() => openProfileSourceModal({ plugin, account, onUpdated })}
-        >
-          {t('account.profiles.link-source')}
-        </Button>
-      </div>
-    );
+  
+  if (!config.profileRef) return null;
   if (state.kind === 'unavailable')
     return (
       <div className="journalit-profile-update-status" role="status">

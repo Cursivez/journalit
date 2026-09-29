@@ -111,31 +111,9 @@ export const DASHBOARD_STYLES = `
     justify-content: flex-start !important; 
   }
   
-  .journalit-dashboard-top-section-header {
-    display: flex !important;
-    justify-content: flex-end !important;
-    align-items: center !important;
-    padding: 0 10px !important;
-    width: 100% !important;
-  }
-
   .journalit-dashboard-top-section-body {
     position: relative !important;
     width: 100% !important;
-  }
-
-  .journalit-dashboard-add-metric-button {
-    background-color: var(--interactive-accent) !important;
-    color: var(--text-on-accent) !important;
-    border: none !important;
-    border-radius: 4px !important;
-    padding: 4px 8px !important;
-    font-size: 12px !important;
-    cursor: pointer !important;
-  }
-
-  .journalit-dashboard-add-metric-button:hover {
-    filter: brightness(1.05);
   }
 
   .journalit-dashboard-metric-tooltip {
@@ -151,6 +129,15 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-metric-tooltip__warning {
     margin-top: 4px;
     color: var(--text-warning, #f0a020);
+  }
+
+  .journalit-dashboard-metric-tooltip__note {
+    margin-top: 4px;
+  }
+
+  .journalit-dashboard-metric-tooltip__hint {
+    margin-top: 6px;
+    color: var(--text-muted);
   }
 
   
@@ -258,7 +245,7 @@ export const DASHBOARD_STYLES = `
     padding: 14px !important;
     background-color: var(--journalit-dashboard-widget-background, var(--background-primary)) !important;
     border-radius: 8px !important;
-    border: 1px solid rgba(var(--background-modifier-border-rgb, 0, 0, 0), 0.08) !important;
+    border: 1px solid color-mix(in srgb, var(--text-normal) 8%, transparent) !important;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.08) !important;
     display: flex !important;
     flex-direction: column !important;
@@ -293,7 +280,7 @@ export const DASHBOARD_STYLES = `
   }
 
   .journalit-dashboard-metric-wrapper[data-editing="true"]:hover .journalit-dashboard-metric-drag-indicator {
-    color: var(--interactive-accent) !important;
+    color: var(--text-accent) !important;
     opacity: 1 !important;
   }
 
@@ -354,6 +341,17 @@ export const DASHBOARD_STYLES = `
 
   .journalit-dashboard-metric-name > .journalit-dashboard-metric-warning {
     transform: translateY(-1px) !important;
+  }
+
+  
+  .journalit-dashboard-metric-name
+    > .journalit-dashboard-metric-icons-trigger {
+    display: inline-flex !important;
+    flex: 0 0 auto !important;
+    width: auto !important;
+    gap: 4px !important;
+    transform: translateY(-1px) !important;
+    cursor: help !important;
   }
   
   .journalit-dashboard-metric-value {
@@ -501,7 +499,7 @@ export const DASHBOARD_STYLES = `
     justify-content: center;
     align-items: center;
     padding: 8px 12px;
-    border-bottom: 1px solid rgba(var(--background-modifier-border-rgb), 0.4);
+    border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 40%, transparent);
     position: relative;
   }
 
@@ -512,7 +510,7 @@ export const DASHBOARD_STYLES = `
     letter-spacing: 0.3px;
     text-align: center;
     opacity: 0.8;
-    text-shadow: 0 1px 1px rgba(var(--background-primary-rgb), 0.8);
+    text-shadow: 0 1px 1px color-mix(in srgb, var(--background-primary) 80%, transparent);
   }
 
   .journalit-dashboard-trades-chart__selector {
@@ -561,7 +559,7 @@ export const DASHBOARD_STYLES = `
     justify-content: center;
     align-items: center;
     padding: 8px 12px;
-    border-bottom: 1px solid rgba(var(--background-modifier-border-rgb), 0.4);
+    border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 40%, transparent);
     position: relative;
   }
 
@@ -572,7 +570,7 @@ export const DASHBOARD_STYLES = `
     letter-spacing: 0.3px;
     text-align: center;
     opacity: 0.8;
-    text-shadow: 0 1px 1px rgba(var(--background-primary-rgb), 0.8);
+    text-shadow: 0 1px 1px color-mix(in srgb, var(--background-primary) 80%, transparent);
   }
 
   .journalit-dashboard-daily-performance-chart__selector {
@@ -847,10 +845,10 @@ export const DASHBOARD_STYLES = `
 
   
   .journalit-dashboard-custom-date-dropdown.date-dropdown-visible {
-    animation: dateDropdownFadeIn 0.2s ease-out !important;
+    animation: journalit-date-dropdown-fade-in 0.2s ease-out !important;
   }
 
-  @keyframes dateDropdownFadeIn {
+  @keyframes journalit-date-dropdown-fade-in {
     from {
       opacity: 0;
       transform: translateY(-4px);
@@ -935,7 +933,7 @@ export const DASHBOARD_STYLES = `
   
   .journalit-date-picker-input input:focus {
     border-color: var(--interactive-accent) !important;
-    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2) !important;
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent) !important;
     outline: none !important;
   }
   
@@ -944,17 +942,7 @@ export const DASHBOARD_STYLES = `
   }
 
   
-  .journalit-dashboard-account-filter,
-  .journalit-dashboard-ticker-filter,
-  .journalit-dashboard-tag-filter {
-    display: flex !important;
-    flex-direction: column !important;
-    
-    min-width: 140px !important;
-    max-width: 200px !important;
-    width: 100% !important;
-    position: relative !important;
-  }
+
   
   
   .journalit-dashboard-filters-section .journalit-dashboard-tickers-section {
@@ -974,205 +962,11 @@ export const DASHBOARD_STYLES = `
     overflow: visible !important;
   }
   
-  .journalit-dashboard-account-dropdown,
-  .journalit-dashboard-ticker-dropdown,
-  .journalit-dashboard-setup-dropdown,
-  .journalit-dashboard-tag-dropdown,
-  .journalit-dashboard-mistake-dropdown {
-    position: relative !important;
-    width: 100% !important;
-  }
   
-  button.journalit-native-button.journalit-dashboard-account-summary,
-  button.journalit-native-button.journalit-dashboard-ticker-summary,
-  button.journalit-native-button.journalit-dashboard-setup-summary,
-  button.journalit-native-button.journalit-dashboard-tag-summary,
-  button.journalit-native-button.journalit-dashboard-mistake-summary {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding: 5px 10px !important;
-    background-color: var(--background-primary) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: 4px !important;
-    cursor: pointer !important;
-    font-size: 0.9em !important;
-    white-space: nowrap !important;
-    gap: 8px !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    min-width: 0 !important;
-  }
-
-  .journalit-dashboard-summary-text {
-    flex: 1 !important;
-    min-width: 0 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-
-  button.journalit-native-button.journalit-dashboard-account-summary:hover,
-  button.journalit-native-button.journalit-dashboard-ticker-summary:hover,
-  button.journalit-native-button.journalit-dashboard-setup-summary:hover,
-  button.journalit-native-button.journalit-dashboard-tag-summary:hover,
-  button.journalit-native-button.journalit-dashboard-mistake-summary:hover {
-    border-color: var(--interactive-accent) !important;
-    background-color: var(--background-modifier-hover) !important;
-  }
-
-  button.journalit-native-button.journalit-dashboard-account-summary:focus-visible,
-  button.journalit-native-button.journalit-dashboard-ticker-summary:focus-visible,
-  button.journalit-native-button.journalit-dashboard-setup-summary:focus-visible,
-  button.journalit-native-button.journalit-dashboard-tag-summary:focus-visible,
-  button.journalit-native-button.journalit-dashboard-mistake-summary:focus-visible {
-    outline: 2px solid var(--interactive-accent) !important;
-    outline-offset: 2px !important;
-  }
-  
-  .journalit-dashboard-account-summary .dropdown-arrow,
-  .journalit-dashboard-ticker-summary .dropdown-arrow,
-  .journalit-dashboard-setup-summary .dropdown-arrow,
-  .journalit-dashboard-tag-summary .dropdown-arrow,
-  .journalit-dashboard-mistake-summary .dropdown-arrow {
-    font-size: 10px !important;
-    color: var(--text-muted) !important;
-  }
-  
-  .journalit-dashboard-account-option-item,
-  .journalit-dashboard-ticker-option-item,
-  .journalit-dashboard-setup-option-item,
-  .journalit-dashboard-tag-option-item,
-  .journalit-dashboard-mistake-option-item {
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    padding: 6px 10px !important;
-    cursor: pointer !important;
-    font-size: 13px !important;
-  }
-  
-  .journalit-dashboard-account-option-item:hover,
-  .journalit-dashboard-ticker-option-item:hover,
-  .journalit-dashboard-setup-option-item:hover,
-  .journalit-dashboard-tag-option-item:hover,
-  .journalit-dashboard-mistake-option-item:hover {
-    background-color: var(--background-modifier-hover) !important;
-  }
-
-  .journalit-dashboard-account-option-item:focus-visible,
-  .journalit-dashboard-ticker-option-item:focus-visible,
-  .journalit-dashboard-setup-option-item:focus-visible,
-  .journalit-dashboard-tag-option-item:focus-visible,
-  .journalit-dashboard-mistake-option-item:focus-visible {
-    outline: 2px solid var(--interactive-accent) !important;
-    outline-offset: -2px !important;
-  }
-
-  .journalit-dashboard-account-option-item > span:last-child,
-  .journalit-dashboard-ticker-option-item > span:last-child,
-  .journalit-dashboard-setup-option-item > span:last-child,
-  .journalit-dashboard-tag-option-item > span:last-child,
-  .journalit-dashboard-mistake-option-item > span:last-child {
-    flex: 1 !important;
-    min-width: 0 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-  
-  .journalit-dashboard-account-option-item.select-all,
-  .journalit-dashboard-ticker-option-item.select-all,
-  .journalit-dashboard-tag-option-item.select-all,
-  .journalit-dashboard-mistake-option-item.select-all {
-    font-weight: 500 !important;
-  }
-  
-  .journalit-dashboard-account-divider,
-  .journalit-dashboard-ticker-divider,
-  .journalit-dashboard-setup-divider,
-  .journalit-dashboard-tag-divider,
-  .journalit-dashboard-mistake-divider {
-    height: 1px !important;
-    background-color: var(--background-modifier-border) !important;
-    margin: 4px 0 !important;
-  }
-  
-  
-  .journalit-dashboard-no-accounts,
-  .journalit-dashboard-no-tickers,
-  .journalit-dashboard-no-tags,
-  .journalit-dashboard-no-mistakes {
-    padding: 12px !important;
-    color: var(--text-muted) !important;
-    font-style: italic !important;
-    text-align: center !important;
-    font-size: 13px !important;
-  }
-
-
-  .journalit-dashboard-account-option-item.journalit-dashboard-account-phase-item {
-    padding-left: 30px !important;
-    font-size: 12px !important;
-  }
-
-  .journalit-dashboard-account-phase-name {
-    flex: 0 1 auto !important;
-    min-width: 0 !important;
-    overflow: hidden !important;
-    text-overflow: ellipsis !important;
-    white-space: nowrap !important;
-  }
-
-  .journalit-dashboard-account-option-item
-    > .journalit-dashboard-account-phase-window {
-    flex: 0 0 auto !important;
-    margin-left: auto !important;
-    color: var(--text-muted) !important;
-    font-size: 11px !important;
-    white-space: nowrap !important;
-  }
 
   
-  .journalit-dashboard-account-checkbox,
-  .journalit-dashboard-ticker-checkbox,
-  .journalit-dashboard-setup-checkbox,
-  .journalit-dashboard-tag-checkbox,
-  .journalit-dashboard-mistake-checkbox {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 14px !important;
-    height: 14px !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: 2px !important;
-    background-color: var(--background-primary) !important;
-    font-size: 10px !important;
-    color: var(--text-on-accent) !important;
-    flex-shrink: 0 !important;
-  }
-
-  .journalit-dashboard-account-checkbox.checked,
-  .journalit-dashboard-ticker-checkbox.checked,
-  .journalit-dashboard-setup-checkbox.checked,
-  .journalit-dashboard-tag-checkbox.checked,
-  .journalit-dashboard-mistake-checkbox.checked {
-    background-color: var(--interactive-accent) !important;
-    border-color: var(--interactive-accent) !important;
-  }
 
   
-  .journalit-dashboard-setup-filter {
-    display: flex !important;
-    flex-direction: column !important;
-    position: relative !important;
-    min-width: 140px !important;
-  }
-
-
-  .journalit-dashboard-setup-option-all {
-    font-weight: 500 !important;
-  }
 
   .journalit-dashboard-reset-button {
     background-color: var(--background-primary) !important;
@@ -1216,13 +1010,6 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-grid-layout {
     padding: 0;
     margin: 0;
-  }
-
-  .journalit-dashboard-bottom-section-header {
-    display: flex;
-    justify-content: flex-end;
-    align-items: center;
-    padding: 0 10px;
   }
 
   .journalit-dashboard-bottom-section-body {
@@ -1283,7 +1070,7 @@ export const DASHBOARD_STYLES = `
     padding: 4px 12px !important;
     height: 24px !important;
     background-color: transparent !important;
-    border-bottom: 1px solid rgba(var(--background-modifier-border-rgb), 0.4) !important;
+    border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 40%, transparent) !important;
     opacity: var(--journalit-dashboard-widget-header-opacity, 0.8) !important;
   }
   
@@ -1295,7 +1082,7 @@ export const DASHBOARD_STYLES = `
     text-align: center !important;
     width: 100% !important;
     
-    text-shadow: 0 1px 1px rgba(var(--background-primary-rgb), 0.8) !important;
+    text-shadow: 0 1px 1px color-mix(in srgb, var(--background-primary) 80%, transparent) !important;
   }
   
   .journalit-dashboard-widget-header {
@@ -1426,6 +1213,7 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-grid-layout .react-grid-item.react-grid-placeholder,
   .journalit-home-grid-layout .react-grid-item.react-grid-placeholder {
     background-color: var(--interactive-accent) !important;
+    color: var(--text-on-accent) !important;
     opacity: 0.3 !important;
   }
   
@@ -1563,7 +1351,7 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-calendar-inner {
     display: flex;
     flex-direction: column;
-    animation: calendarFadeIn 0.5s ease-out;
+    animation: journalit-calendar-fade-in 0.5s ease-out;
     padding: 0 6px 6px 0;
     min-height: 100%;
   }
@@ -1985,10 +1773,10 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-calendar .journalit-dashboard-calendar-day.today,
   .journalit-dashboard-calendar-grid .journalit-dashboard-calendar-day.today {
     border: 2px solid var(--interactive-accent) !important;
-    box-shadow: 0 0 6px rgba(var(--interactive-accent-rgb), 0.4) !important;
+    box-shadow: 0 0 6px color-mix(in srgb, var(--interactive-accent) 40%, transparent) !important;
     position: relative !important;
     z-index: 2 !important; 
-    animation: pulseBorder 2s infinite ease-in-out !important;
+    animation: journalit-dashboard-pulse-border 2s infinite ease-in-out !important;
   }
   
   .journalit-dashboard-calendar-day.neutral,
@@ -2001,13 +1789,13 @@ export const DASHBOARD_STYLES = `
     ) !important;
     color: var(--text-normal) !important;
     border-color: var(--background-modifier-border, rgba(128, 128, 128, 0.36)) !important;
-    box-shadow: 0 2px 8px rgba(var(--background-modifier-border-rgb, 128, 128, 128), 0.18) !important;
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--text-normal) 18%, transparent) !important;
   }
 
   .journalit-dashboard-calendar-day.neutral:hover,
   .journalit-dashboard-calendar-weekly-pnl.neutral:hover {
-    box-shadow: 0 4px 12px rgba(var(--background-modifier-border-rgb, 128, 128, 128), 0.24),
-      0 0 0 1px rgba(var(--background-modifier-border-rgb, 128, 128, 128), 0.5) !important;
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--text-normal) 24%, transparent),
+      0 0 0 1px color-mix(in srgb, var(--text-normal) 50%, transparent) !important;
   }
 
   
@@ -2067,7 +1855,7 @@ export const DASHBOARD_STYLES = `
   }
 
   .journalit-dashboard-calendar .journalit-dashboard-calendar-header-link:hover {
-    color: var(--interactive-accent) !important;
+    color: var(--text-accent) !important;
     background: transparent !important;
     box-shadow: none !important;
   }
@@ -2313,7 +2101,6 @@ export const DASHBOARD_STYLES = `
       inset 0 0 0 1px var(--text-muted) !important;
   }
 
-
   .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-week-number,
   .journalit-dashboard-calendar .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-week-number,
   .journalit-dashboard-calendar-grid .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-week-number {
@@ -2358,10 +2145,6 @@ export const DASHBOARD_STYLES = `
       font-size: 8px !important;
     }
   }
-
-
-
-
 
   .journalit-dashboard-calendar.is-compact .journalit-dashboard-calendar-day .journalit-dashboard-calendar-day-number,
   .journalit-dashboard-calendar.is-compact .journalit-dashboard-calendar .journalit-dashboard-calendar-day .journalit-dashboard-calendar-day-number,
@@ -2547,21 +2330,6 @@ export const DASHBOARD_STYLES = `
     border-color: var(--interactive-accent) !important;
   }
 
-  .journalit-dashboard-view-container
-    .journalit-dashboard-filter-actions
-    .journalit-dashboard-add-widget-button--primary {
-    background-color: var(--interactive-accent) !important;
-    color: var(--text-on-accent) !important;
-    border-color: var(--interactive-accent) !important;
-  }
-
-  .journalit-dashboard-view-container
-    .journalit-dashboard-filter-actions
-    .journalit-dashboard-add-widget-button--primary:hover {
-    background-color: var(--interactive-accent-hover) !important;
-    border-color: var(--interactive-accent-hover) !important;
-  }
-
   
   .journalit-dashboard-loading,
   .journalit-dashboard-error {
@@ -2594,10 +2362,7 @@ export const DASHBOARD_STYLES = `
     }
     
     
-    .journalit-dashboard-account-filter,
-    .journalit-dashboard-ticker-filter {
-      min-width: 140px !important;
-    }
+
     
     
     .journalit-dashboard-accounts-section {
@@ -2702,9 +2467,6 @@ export const DASHBOARD_STYLES = `
     }
     
     
-    .journalit-dashboard-account-filter {
-      min-width: 120px !important;
-    }
 
     
     .journalit-dashboard-primary-filters {
@@ -2757,15 +2519,8 @@ export const DASHBOARD_STYLES = `
       margin: 5px 0 !important;
     }
     
-    .journalit-dashboard-account-filter {
-      width: 100% !important;
-    }
     
-    
-    .journalit-dashboard-account-dropdown,
-    .journalit-dashboard-account-summary {
-      width: 100% !important;
-    }
+
     
     
     .journalit-dashboard-date-range-section {
@@ -2824,8 +2579,7 @@ export const DASHBOARD_STYLES = `
     
     
     .journalit-dashboard-reset-button,
-    .journalit-dashboard-edit-mode-button,
-    .journalit-dashboard-add-component-button {
+    .journalit-dashboard-edit-mode-button {
       padding: 10px !important;
       height: auto !important;
       min-height: 40px !important;
@@ -2844,12 +2598,6 @@ export const DASHBOARD_STYLES = `
       padding: 4px 8px !important;
     }
     
-    
-    .journalit-dashboard-component-selector {
-      width: 90vw !important;
-      max-height: 80vh !important;
-      margin-top: 50px !important;
-    }
 
     
     .journalit-dashboard-filter-actions {
@@ -2893,314 +2641,16 @@ export const DASHBOARD_STYLES = `
   }
 
   
-  .unified-selector-overlay {
-    position: fixed !important;
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    background-color: rgba(0, 0, 0, 0.4) !important;
-    backdrop-filter: blur(3px) !important;
-    z-index: 1000 !important; 
-    display: flex !important;
-    align-items: flex-start !important;
-    justify-content: center !important;
-    padding: 20px !important;
-    pointer-events: none !important; 
-  }
   
-  .journalit-dashboard-component-selector {
-    position: relative !important;
-    margin-top: 100px !important;
-    width: 480px !important;
-    max-height: 75vh !important;
-    overflow-y: auto !important;
-    background-color: var(--background-primary) !important;
-    border: 1px solid rgba(255, 255, 255, 0.08) !important;
-    border-radius: 12px !important;
-    overflow: hidden !important;
-    z-index: 1001 !important; 
-    pointer-events: auto !important; 
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2), 0 16px 64px rgba(0, 0, 0, 0.1) !important;
-    max-width: 90vw !important;
-    animation: fadeInScale 0.25s cubic-bezier(0.19, 1, 0.22, 1) !important;
-  }
-
-  .journalit-dashboard-unified-selector-button-container {
-    display: flex !important;
-    justify-content: center !important;
-    margin: 0 0 4px 0 !important; 
-    padding: 4px !important; 
-    background-color: transparent !important;
-    border-radius: 8px !important;
-    border: 1px dashed var(--background-modifier-border) !important;
-  }
-  
-  .journalit-dashboard-add-component-button {
-    background-color: var(--interactive-accent) !important;
-    color: var(--text-on-accent, white) !important;
-    border: none !important;
-    border-radius: 6px !important;
-    padding: 8px 16px !important;
-    font-size: 14px !important;
-    font-weight: 600 !important;
-    cursor: pointer !important;
-    display: flex !important;
-    align-items: center !important;
-    gap: 8px !important;
-    transition: all 0.2s ease !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  }
-  
-  .journalit-dashboard-add-component-button:hover {
-    background-color: var(--interactive-accent-hover) !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
-  }
-  
-  .journalit-dashboard-component-selector-header {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    padding: 16px 20px !important;
-    border-bottom: 1px solid var(--background-modifier-border) !important;
-    background-color: var(--background-secondary-alt) !important;
-    border-radius: 12px 12px 0 0 !important;
-  }
-  
-  .journalit-dashboard-component-selector-header h3 {
-    font-size: 18px !important;
-    font-weight: 600 !important;
-    color: var(--text-normal) !important;
-    margin: 0 !important;
-  }
-  
-  .journalit-dashboard-component-selector-close {
-    width: 28px !important;
-    height: 28px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 6px !important;
-    background-color: var(--background-modifier-hover) !important;
-    color: var(--text-muted) !important;
-    transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1) !important;
-    border: none !important;
-    padding: 0 !important;
-    cursor: pointer !important;
-  }
-  
-  .journalit-dashboard-component-selector-close svg {
-    width: 14px !important;
-    height: 14px !important;
-    display: block !important;
-  }
-  
-  .journalit-dashboard-component-selector-close:hover {
-    background-color: var(--background-modifier-error-hover) !important;
-    color: white !important;
-    transform: rotate(90deg) !important;
-  }
-  
-  .journalit-dashboard-component-selector-search {
-    padding: 12px 20px !important;
-    position: relative !important;
-  }
-  
-  .journalit-dashboard-component-selector-search input {
-    width: 100% !important;
-    padding: 10px 16px !important;
-    border-radius: 8px !important;
-    background-color: var(--background-modifier-form-field) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    font-size: 14px !important;
-    transition: all 0.2s ease !important;
-    color: var(--text-normal) !important;
-  }
-  
-  .journalit-dashboard-component-selector-search input:focus {
-    box-shadow: 0 0 0 2px var(--interactive-accent) !important;
-    border-color: var(--interactive-accent) !important;
-    outline: none !important;
-  }
-  
-  .journalit-dashboard-component-selector-categories {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 8px !important;
-    padding: 0 20px 12px !important;
-    border-bottom: 1px solid var(--background-modifier-border) !important;
-    justify-content: center !important; 
-  }
-  
-  .journalit-dashboard-component-selector-category {
-    border-radius: 20px !important;
-    padding: 6px 14px !important;
-    font-size: 13px !important;
-    font-weight: 500 !important;
-    background-color: var(--background-secondary) !important;
-    color: var(--text-muted) !important;
-    border: 1px solid transparent !important;
-    transition: all 0.2s cubic-bezier(0.19, 1, 0.22, 1) !important;
-    box-shadow: none !important;
-    cursor: pointer !important;
-  }
-  
-  .journalit-dashboard-component-selector-category:hover {
-    background-color: var(--background-modifier-hover) !important;
-    color: var(--text-normal) !important;
-    transform: translateY(-1px) !important;
-  }
-  
-  .journalit-dashboard-component-selector-category.active {
-    background-color: var(--interactive-accent) !important;
-    color: var(--text-on-accent, white) !important;
-    font-weight: 600 !important;
-    transform: translateY(-1px) !important;
-    box-shadow: 0 2px 8px rgba(var(--interactive-accent-rgb), 0.3) !important;
-  }
-  
-  .journalit-dashboard-component-selector-list {
-    padding: 16px 20px !important;
-    max-height: 50vh !important;
-    overflow-y: auto !important;
-    scrollbar-width: thin !important;
-  }
-  
-  .journalit-dashboard-component-selector-list h4 {
-    font-size: 15px !important;
-    font-weight: 600 !important;
-    color: var(--text-normal) !important;
-    margin: 0 0 12px 0 !important;
-    padding-bottom: 8px !important;
-    border-bottom: 1px solid var(--background-modifier-border) !important;
-  }
-  
-  
-  .journalit-dashboard-component-selector-item {
-    background-color: var(--background-secondary) !important;
-    border-radius: 10px !important;
-    padding: 14px 16px !important;
-    margin-bottom: 10px !important;
-    cursor: pointer !important;
-    position: relative !important;
-    transition: all 0.25s cubic-bezier(0.19, 1, 0.22, 1) !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
-    border: 1px solid transparent !important;
-  }
-
-  .journalit-dashboard-component-selector-item[data-is-added="true"] {
-    opacity: 0.5;
-  }
-  
-  .journalit-dashboard-component-selector-item:hover {
-    transform: translateY(-2px) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
-    background-color: var(--background-primary) !important;
-    border-color: var(--interactive-accent) !important;
-  }
-  
-  
-  .journalit-dashboard-component-selector-widget-name {
-    font-size: 15px !important;
-    font-weight: 600 !important;
-    color: var(--text-normal) !important;
-    margin-bottom: 6px !important;
-  }
-  
-  
-  .journalit-dashboard-component-selector-divider {
-    height: 1px !important;
-    background-color: var(--background-modifier-border) !important;
-    margin: 16px 0 20px !important;
-    opacity: 0.7 !important;
-  }
-  
-  .journalit-dashboard-component-selector-widget-description {
-    font-size: 13px !important;
-    color: var(--text-muted) !important;
-    margin-bottom: 10px !important;
-    line-height: 1.4 !important;
-  }
-  
-  
-  .journalit-dashboard-component-selector-widget-category {
-    display: inline-block !important;
-    font-size: 11px !important;
-    font-weight: 500 !important;
-    color: var(--text-normal) !important;
-    background-color: var(--background-secondary-alt) !important;
-    padding: 3px 8px !important;
-    border-radius: 12px !important;
-    margin-top: 4px !important;
-  }
-  
-  
-  .journalit-dashboard-component-selector-widget-badge {
-    position: absolute !important;
-    top: 12px !important;
-    right: 12px !important;
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    color: white !important;
-    background: linear-gradient(135deg, var(--text-success), #2e7d32) !important;
-    padding: 3px 10px !important;
-    border-radius: 12px !important;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1) !important;
-  }
-  
-  
-  .journalit-dashboard-component-selector-empty {
-    text-align: center !important;
-    padding: 24px 0 !important;
-    color: var(--text-muted) !important;
-    font-style: italic !important;
-    background-color: var(--background-secondary-alt) !important;
-    border-radius: 8px !important;
-    font-size: 14px !important;
-  }
-  
-  
-  .journalit-dashboard-component-selector-list::-webkit-scrollbar {
-    width: 8px !important;
-  }
-  
-  .journalit-dashboard-component-selector-list::-webkit-scrollbar-track {
-    background: transparent !important;
-  }
-  
-  .journalit-dashboard-component-selector-list::-webkit-scrollbar-thumb {
-    background-color: var(--background-modifier-border) !important;
-    border-radius: 4px !important;
-    border: 2px solid var(--background-primary) !important;
-  }
-  
-  .journalit-dashboard-component-selector-list::-webkit-scrollbar-thumb:hover {
-    background-color: var(--interactive-accent) !important;
-  }
-  
-  
-  @keyframes fadeInScale {
-    from {
-      opacity: 0;
-      transform: scale(0.92);
-    }
-    to {
-      opacity: 1;
-      transform: scale(1);
-    }
-  }
-  
-  
-  @keyframes pulseBorder {
+  @keyframes journalit-dashboard-pulse-border {
     0% {
-      box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2), 0 4px 12px rgba(var(--interactive-accent-rgb), 0.25);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent), 0 4px 12px color-mix(in srgb, var(--interactive-accent) 25%, transparent);
     }
     50% {
-      box-shadow: 0 0 0 4px rgba(var(--interactive-accent-rgb), 0.15), 0 4px 16px rgba(var(--interactive-accent-rgb), 0.3);
+      box-shadow: 0 0 0 4px color-mix(in srgb, var(--interactive-accent) 15%, transparent), 0 4px 16px color-mix(in srgb, var(--interactive-accent) 30%, transparent);
     }
     100% {
-      box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2), 0 4px 12px rgba(var(--interactive-accent-rgb), 0.25);
+      box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent), 0 4px 12px color-mix(in srgb, var(--interactive-accent) 25%, transparent);
     }
   }
   
@@ -3265,7 +2715,6 @@ export const DASHBOARD_STYLES = `
     font-size: 0.9rem;
     padding: 0.75rem;
   }
-
 
   .journalit-dashboard-widget-error {
     display: flex;

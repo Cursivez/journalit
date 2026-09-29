@@ -14,6 +14,10 @@ import {
 } from '../../../../types/reviewV2';
 import { getTradingDayString } from '../../../../utils/tradingDayUtils';
 import type { DemonTrackerEntry } from '../../../../services/monthly/types';
+import {
+  type FilterMatchMode,
+  matchesSelectedValues,
+} from '../../../shared/filters/filterMatchModes';
 
 interface PluginWithTradeSettings {
   settings?: {
@@ -34,6 +38,10 @@ interface AggregateDemonTrackerInput {
   trackingMethod: DemonTrackerTrackingMethod;
   plugin?: PluginWithTradeSettings;
   mistakesFilter?: string[] | null;
+  
+  excludedMistakes?: string[];
+  
+  mistakesMatchMode?: FilterMatchMode;
 }
 
 const NO_MISTAKES_SENTINEL = '__NO_MISTAKES__';
@@ -158,8 +166,13 @@ export function aggregateDemonTrackerData({
   trackingMethod,
   plugin,
   mistakesFilter,
+  excludedMistakes = [],
+  mistakesMatchMode = 'any',
 }: AggregateDemonTrackerInput): DemonTrackerEntry[] {
   const { onlyNoMistakes, allowed } = normalizeMistakeFilter(mistakesFilter);
+  const excluded = new Set(
+    excludedMistakes.map((mistake) => mistake.toLowerCase())
+  );
 
   if (onlyNoMistakes) {
     return [];
@@ -179,6 +192,7 @@ export function aggregateDemonTrackerData({
       const mistakes = extractTradeMistakes(trade);
       for (const mistake of mistakes) {
         if (!isMistakeAllowed(mistake, allowed)) continue;
+        if (excluded.has(mistake.toLowerCase())) continue;
 
         if (trackingMethod === 'trading-days') {
           const dedupeKey = `${dateInfo.tradingDay}::${mistake.toLowerCase()}`;
@@ -203,9 +217,23 @@ export function aggregateDemonTrackerData({
       const mistakes = Array.isArray(rawMistakes)
         ? normalizeMistakeList(rawMistakes)
         : [];
+      
+      
+      if (
+        mistakesMatchMode !== 'any' &&
+        !matchesSelectedValues(
+          mistakes.map((mistake) => mistake.toLowerCase()),
+          allowed,
+          mistakesMatchMode,
+          false
+        )
+      ) {
+        continue;
+      }
 
       for (const mistake of mistakes) {
         if (!isMistakeAllowed(mistake, allowed)) continue;
+        if (excluded.has(mistake.toLowerCase())) continue;
 
         const dedupeKey = `${tradingDay}::${mistake.toLowerCase()}`;
         if (seenTradingDayMistakes.has(dedupeKey)) {

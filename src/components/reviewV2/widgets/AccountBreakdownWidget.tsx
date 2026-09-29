@@ -2,7 +2,10 @@
 
 import React, { useLayoutEffect, useMemo, useRef, useState } from 'react';
 import JournalitPlugin from '../../../main';
-import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
+import {
+  useDisplayFormatter,
+  useDisplayPolicy,
+} from '../../../hooks/useDisplayPolicy';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
 import { t } from '../../../lang/helpers';
@@ -19,12 +22,15 @@ import {
   UNKNOWN_ACCOUNT_LABEL,
 } from './shared/accountDisplay';
 import { splitReviewTradeByRealizedPnlEvent } from '../utils/reviewTradeDates';
+import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 
 interface AccountBreakdownTrade extends Record<string, unknown> {
   tradeId?: string | number;
   id?: string | number;
   path?: string;
   pnl?: number | null;
+  rMultiple?: number;
+  riskAmount?: number;
   directPnL?: number | null;
   useDirectPnLInput?: boolean;
   dividends?: Array<{ amount?: number | null }>;
@@ -54,6 +60,8 @@ interface AccountBreakdownRow {
   account: string;
   trades: number;
   pnl: number;
+  
+  pnlR: number | undefined;
   wins: number;
   losses: number;
   grossProfit: number;
@@ -63,6 +71,7 @@ interface AccountBreakdownRow {
 interface AccountBreakdownAccumulator {
   account: string;
   pnl: number;
+  pnlR: number | undefined;
   tradePnls: Map<string, { pnl: number; breakEvenBalance?: number }>;
 }
 
@@ -136,10 +145,15 @@ export const AccountBreakdownWidget: React.FC<AccountBreakdownWidgetProps> =
     );
     const loading = preview ? false : cacheLoading;
     const { formatValue, shouldMask } = useDisplayFormatter();
+    const { displayRMultiples } = useDisplayPolicy();
+    
+    const displayedPnl = (row: AccountBreakdownRow): number | undefined =>
+      displayRMultiples ? row.pnlR : row.pnl;
     const isPnlMasked = shouldMask('pnl');
     const isMetricMasked = shouldMask('metric');
     const currencyOverride = getSingleExplicitCurrency(trades);
     const breakEvenSettings = plugin?.settings?.trade;
+    const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
 
     const rows = useMemo(() => {
       const accountLookup = new Map<string, AccountBreakdownAccumulator>();
@@ -164,6 +178,12 @@ export const AccountBreakdownWidget: React.FC<AccountBreakdownWidgetProps> =
           const accounts =
             accountNames.length > 0 ? accountNames : [UNKNOWN_ACCOUNT_LABEL];
           const pnl = getEffectivePnL(trade);
+          const tradeR = calculateEffectiveRMultiple(
+            pnl,
+            trade.rMultiple,
+            trade.riskAmount,
+            defaultRiskAmount
+          );
           const breakEvenBalance =
             typeof trade.breakEvenAccountCurrentBalance === 'number'
               ? trade.breakEvenAccountCurrentBalance
@@ -173,6 +193,7 @@ export const AccountBreakdownWidget: React.FC<AccountBreakdownWidgetProps> =
             const row = accountLookup.get(account) ?? {
               account,
               pnl: 0,
+              pnlR: undefined,
               tradePnls: new Map<
                 string,
                 { pnl: number; breakEvenBalance?: number }
@@ -180,6 +201,9 @@ export const AccountBreakdownWidget: React.FC<AccountBreakdownWidgetProps> =
             };
 
             row.pnl += pnl;
+            if (tradeR !== undefined) {
+              row.pnlR = (row.pnlR ?? 0) + tradeR;
+            }
             const tradePnl = row.tradePnls.get(tradeKey) ?? {
               pnl: 0,
               breakEvenBalance,
@@ -197,6 +221,7 @@ export const AccountBreakdownWidget: React.FC<AccountBreakdownWidgetProps> =
           account: accountData.account,
           trades: accountData.tradePnls.size,
           pnl: accountData.pnl,
+          pnlR: accountData.pnlR,
           wins: 0,
           losses: 0,
           grossProfit: 0,
@@ -221,8 +246,20 @@ export const AccountBreakdownWidget: React.FC<AccountBreakdownWidgetProps> =
 
         return row;
       });
-      return rows.sort((a, b) => b.pnl - a.pnl);
-    }, [breakEvenSettings, plugin, preview, trades]);
+      
+      return rows.sort(
+        (a, b) =>
+          (displayRMultiples ? (b.pnlR ?? -Infinity) : b.pnl) -
+            (displayRMultiples ? (a.pnlR ?? -Infinity) : a.pnl) || 0
+      );
+    }, [
+      breakEvenSettings,
+      defaultRiskAmount,
+      displayRMultiples,
+      plugin,
+      preview,
+      trades,
+    ]);
 
     if (loading) {
       return (
@@ -285,11 +322,12 @@ export const AccountBreakdownWidget: React.FC<AccountBreakdownWidgetProps> =
             {rows.map((row) => {
               const winRate = calculateWinRate(row);
               const profitFactor = calculateProfitFactor(row);
+              const shownPnl = displayedPnl(row);
               const pnlToneClass = isPnlMasked
                 ? ''
-                : row.pnl > 0
+                : shownPnl !== undefined && shownPnl > 0
                   ? 'journalit-reviewv2-table-cell--positive'
-                  : row.pnl < 0
+                  : shownPnl !== undefined && shownPnl < 0
                     ? 'journalit-reviewv2-table-cell--negative'
                     : 'journalit-reviewv2-table-cell--muted';
               const profitFactorToneClass =
@@ -316,6 +354,7 @@ export const AccountBreakdownWidget: React.FC<AccountBreakdownWidgetProps> =
                     {formatValue({
                       kind: 'pnl',
                       value: row.pnl,
+                      rMultiple: row.pnlR,
                       currencyCode: currencyOverride,
                     })}
                   </td>

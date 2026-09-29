@@ -18,12 +18,14 @@ import type {
   TradeImportCommitRequest,
   TradeImportCommitResponse,
   TradeImportDiagnostic,
+  TradeImportEmbeddedImage,
   TradeImportDefaultAction,
   TradeImportFileType,
   TradeImportPreviewClassification,
   TradeImportPreviewItem,
   TradeImportPreviewOutcome,
   TradeImportManualMode,
+  TradeImportOtherAccountMatch,
   TradeImportPreviewRequest,
   TradeImportPreviewResponse,
   TradeImportPreviewTrade,
@@ -241,7 +243,13 @@ function validateCommittedPreviewTrade(record: Record<string, unknown>): void {
     throw new Error('Invalid Trade Import commit sourceRows response');
   }
 
-  for (const field of ['executionIds', 'tags', 'images', 'setup', 'mistake']) {
+  for (const field of [
+    'executionIds',
+    'tags',
+    'images',
+    'setupIds',
+    'mistake',
+  ]) {
     const value = record[field];
     if (
       value !== undefined &&
@@ -286,6 +294,40 @@ const requiredNonNegativeInteger = (value: unknown): number => {
   return value;
 };
 
+const embeddedImagesArray = (
+  value: unknown
+): TradeImportEmbeddedImage[] | undefined => {
+  if (value === undefined || value === null) return undefined;
+  if (!Array.isArray(value)) {
+    throw new Error('Invalid Trade Import preview embeddedImages response');
+  }
+  return value.map((item) => {
+    const record = asRecord(item);
+    if (
+      !record ||
+      typeof record.path !== 'string' ||
+      !record.path.startsWith('xl/media/') ||
+      record.path.includes('..') ||
+      typeof record.row !== 'number' ||
+      !Number.isInteger(record.row) ||
+      record.row < 1 ||
+      (record.column !== undefined && typeof record.column !== 'string')
+    ) {
+      throw new Error('Invalid Trade Import preview embeddedImages response');
+    }
+    return {
+      path: record.path,
+      row: record.row,
+      ...(typeof record.column === 'string' ? { column: record.column } : {}),
+    };
+  });
+};
+
+const positiveInteger = (value: unknown): number | undefined =>
+  typeof value === 'number' && Number.isInteger(value) && value >= 1
+    ? value
+    : undefined;
+
 const unknownArray = (value: unknown): unknown[] =>
   Array.isArray(value) ? value : [];
 
@@ -317,8 +359,14 @@ const diagnosticsArray = (value: unknown): TradeImportDiagnostic[] =>
         code: record.code,
         message: record.message,
         row: typeof record.row === 'number' ? record.row : undefined,
+        sheetRow: positiveInteger(record.sheetRow),
         field: typeof record.field === 'string' ? record.field : undefined,
         count: typeof record.count === 'number' ? record.count : undefined,
+        example:
+          typeof record.example === 'string' ? record.example : undefined,
+        candidateFormats: Array.isArray(record.candidateFormats)
+          ? stringArray(record.candidateFormats)
+          : undefined,
       },
     ];
   });
@@ -483,7 +531,10 @@ const previewTradesArray = (value: unknown): TradeImportPreviewTrade[] =>
         executionIds: stringArray(record.executionIds),
         tags: stringArray(record.tags),
         images: stringArray(record.images),
-        setup: stringArray(record.setup),
+        embeddedImages: embeddedImagesArray(record.embeddedImages),
+        
+        
+        setup: stringArray(record.setupIds),
         mistake: stringArray(record.mistake),
         customFields: asRecord(record.customFields) ?? {},
         strikePrice: nullablePositiveNumber(record.strikePrice, 'strikePrice'),
@@ -530,6 +581,7 @@ const classificationValue = (
     case 'new':
     case 'exact_duplicate':
     case 'already_applied':
+    case 'exists_in_other_account':
     case 'update_existing':
     case 'partial_update_existing':
     case 'likely_duplicate':
@@ -543,6 +595,29 @@ const classificationValue = (
     default:
       return 'failed_invalid_trade';
   }
+};
+
+const OTHER_ACCOUNT_REASON_CODE = 'execution_ids_exist_in_other_account';
+
+const otherAccountMatchValue = (
+  reasons: unknown
+): TradeImportOtherAccountMatch | undefined => {
+  for (const reason of unknownArray(reasons)) {
+    const reasonRecord = asRecord(reason);
+    if (reasonRecord?.code !== OTHER_ACCOUNT_REASON_CODE) continue;
+    const fields = asRecord(reasonRecord.fields);
+    if (
+      typeof fields?.accountId !== 'string' ||
+      typeof fields.accountDisplayName !== 'string'
+    ) {
+      return undefined;
+    }
+    return {
+      accountId: fields.accountId,
+      accountDisplayName: fields.accountDisplayName,
+    };
+  }
+  return undefined;
 };
 
 const defaultActionValue = (value: unknown): TradeImportDefaultAction => {
@@ -643,6 +718,7 @@ const previewItemsArray = (
         typeof record.matchedTradeId === 'string'
           ? record.matchedTradeId
           : null,
+      otherAccount: otherAccountMatchValue(record.decisionReasons),
       decisionReasons: unknownArray(record.decisionReasons).flatMap(
         (reason) => {
           const reasonRecord = asRecord(reason);
@@ -707,7 +783,9 @@ const parseFileType = (value: unknown): TradeImportFileType =>
   value === 'xlsx' || value === 'xls' || value === 'html' ? value : 'csv';
 
 const parseManualMode = (value: unknown): TradeImportManualMode | null =>
-  value === 'price_based' || value === 'direct_pnl' ? value : null;
+  value === 'price_based' || value === 'direct_pnl' || value === 'trade_per_row'
+    ? value
+    : null;
 
 const columnAssignments = (
   value: unknown
@@ -805,6 +883,7 @@ const ensureTradeImportCapabilities = (
           supportsAnalyse: broker.supportsAnalyse === true,
           supportsManualMapping: broker.supportsManualMapping === true,
           supportsAiMapping: broker.supportsAiMapping === true,
+          supportsExportTimeZone: broker.supportsExportTimeZone === true,
         },
       ];
     }),
@@ -883,6 +962,8 @@ export const parseTradeImportAnalyseResponse = (
       typeof record.suggestedHeaderRowIndex === 'number'
         ? record.suggestedHeaderRowIndex
         : undefined,
+    headerRowIndex: positiveInteger(record.headerRowIndex),
+    headerSheetRow: positiveInteger(record.headerSheetRow),
     brokerCandidates: unknownArray(record.brokerCandidates).flatMap((item) => {
       const candidate = asRecord(item);
       if (!candidate || typeof candidate.broker !== 'string') return [];

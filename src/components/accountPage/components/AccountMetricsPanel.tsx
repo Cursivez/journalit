@@ -1,14 +1,11 @@
 
 
-import React, { useCallback, useId } from 'react';
+import React, { useId } from 'react';
 import { useAccountMetricsTiles } from './AccountMetrics';
 import { useSummaryBandTiles } from './AccountSummaryBand';
 import type { PropChallengeCockpitState } from './propChallenge/usePropChallengeCockpitState';
 import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';
-import {
-  ACCOUNT_PAGE_METRICS_SECTION_TARGET_ID,
-  ACCOUNT_PAGE_SUMMARY_BAND_TARGET_ID,
-} from '../../../guides/accountPageGuideIds';
+import { ACCOUNT_PAGE_METRICS_SECTION_TARGET_ID } from '../../../guides/accountPageGuideIds';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { metricGridLayout } from './metricGridLayout';
@@ -22,9 +19,6 @@ export const AccountMetricsPanel: React.FC<{
   
   cockpitState: PropChallengeCockpitState | null;
 }> = ({ showSummaryBand, cockpitState }) => {
-  const registerSummaryBandTarget = useGuideTarget(
-    ACCOUNT_PAGE_SUMMARY_BAND_TARGET_ID
-  );
   const registerMetricsSectionTarget = useGuideTarget(
     ACCOUNT_PAGE_METRICS_SECTION_TARGET_ID
   );
@@ -39,25 +33,13 @@ export const AccountMetricsPanel: React.FC<{
   const md = metricGridLayout(tiles.length, MAX_COLUMNS.md);
   const sm = metricGridLayout(tiles.length, MAX_COLUMNS.sm);
 
-  
-  
-  
-  
-  const registerPanel = useCallback(
-    (element: HTMLElement | null) => {
-      registerSummaryBandTarget(showSummaryBand ? element : null);
-      registerMetricsSectionTarget(element);
-    },
-    [registerMetricsSectionTarget, registerSummaryBandTarget, showSummaryBand]
-  );
-
   if (tiles.length === 0) return null;
 
   return (
     <section
       className="journalit-account-metrics-panel"
       aria-labelledby={headingId}
-      ref={registerPanel}
+      ref={registerMetricsSectionTarget}
       style={cssVars({
         '--journalit-metric-tracks': String(lg.tracks),
         '--journalit-metric-tracks-md': String(md.tracks),

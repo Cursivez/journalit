@@ -7,8 +7,7 @@ interface ExtractedMarkdownSection {
 const FRONTMATTER_PATTERN = /^---\r?\n[\s\S]*?\r?\n---\r?\n?/;
 const HEADING_PATTERN = /^(#{1,6})\s+(.+?)\s*#*\s*$/;
 const FENCE_PATTERN = /^\s*(```|~~~)/;
-const PREVIOUS_TRADING_DAY_CONTEXT_WIDGET =
-  'journalit-previous-trading-day-context';
+const IMAGE_WIDGET = 'journalit-images';
 const OPENING_FENCE_PATTERN = /^ {0,3}(`{3,}|~{3,})[\t ]*([^\r\n]*)$/;
 const BLOCKQUOTE_PREFIX_PATTERN = /^ {0,3}>[\t ]?/;
 const LIST_ITEM_PREFIX_PATTERN = /^ {0,3}(?:[-+*]|\d{1,9}[.)])[\t ]+/;
@@ -113,11 +112,11 @@ function getOpeningFence(
   };
 }
 
-function isPreviousTradingDayContextOpeningFence(
-  fence: MarkdownFence
-): boolean {
+function isEmbeddedReviewWidgetOpeningFence(fence: MarkdownFence): boolean {
   const language = fence.infoString.split(/[\t ]+/)[0];
-  return language === PREVIOUS_TRADING_DAY_CONTEXT_WIDGET;
+  
+  
+  return language.startsWith('journalit-') && language !== IMAGE_WIDGET;
 }
 
 function isClosingFence(
@@ -222,9 +221,7 @@ export function extractJournalitImageWidgetIds(content: string): string[] {
   return ids;
 }
 
-export function stripPreviousTradingDayContextWidgetBlocks(
-  content: string
-): string {
+export function stripEmbeddedReviewWidgetBlocks(content: string): string {
   const lines = content.split(/(\r?\n)/);
   const output: string[] = [];
   const activeListIndents: number[] = [];
@@ -261,7 +258,7 @@ export function stripPreviousTradingDayContextWidgetBlocks(
       continue;
     }
 
-    const shouldStrip = isPreviousTradingDayContextOpeningFence(openingFence);
+    const shouldStrip = isEmbeddedReviewWidgetOpeningFence(openingFence);
     if (!shouldStrip) output.push(line, newline);
 
     while (i + 2 < lines.length) {

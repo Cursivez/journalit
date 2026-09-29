@@ -60,6 +60,7 @@ import {
   type ManualKeyEventDraft,
 } from './keyEventFields';
 import { mergeClassNames } from '../../../utils/classNames';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 
 interface KeyEventsPreviewData {
@@ -916,7 +917,10 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                 className="key-events-notes-input"
               />
 
-              <div className="key-events-edit-actions">
+              <div
+                className="key-events-edit-actions"
+                {...shareCaptureExcludeProps}
+              >
                 <button
                   className="key-events-secondary-button"
                   onClick={() => void handleCancelEditEvent()}
@@ -976,7 +980,10 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                 ))}
             </div>
             {(isWeeklyEditable || isDrcEditable) && (
-              <div className="key-events-item-actions">
+              <div
+                className="key-events-item-actions"
+                {...shareCaptureExcludeProps}
+              >
                 <button
                   className="key-events-action-button"
                   onClick={() => void handleStartEditEvent(event, index)}
@@ -1046,7 +1053,10 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
               )}
             </div>
             {shouldShowCompactAdd && (
-              <div className="key-events-header-actions">
+              <div
+                className="key-events-header-actions"
+                {...shareCaptureExcludeProps}
+              >
                 <button
                   className="key-events-header-add-button"
                   onClick={() => setIsAddFormOpen(true)}
@@ -1062,6 +1072,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
           {shouldShowAddForm && (
             <div
               className={`key-events-form ${canAddFromDrc ? 'key-events-form--drc' : ''}`}
+              {...shareCaptureExcludeProps}
             >
               {isWeeklyEditable && (
                 <div className="key-events-source-actions">

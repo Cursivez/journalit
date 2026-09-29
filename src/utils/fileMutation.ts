@@ -91,3 +91,26 @@ export async function replaceFileContent(
 
   await writeVaultContent(app, file, newContent);
 }
+
+
+export async function transformFileContent(
+  app: App,
+  file: TFile,
+  transform: (currentContent: string) => string
+): Promise<void> {
+  const activeView = getActiveMarkdownViewForFile(app, file);
+  if (activeView) {
+    const currentContent = activeView.editor.getValue();
+    const nextContent = transform(currentContent);
+    if (nextContent !== currentContent) {
+      await replaceFileContent(app, file, nextContent);
+    }
+    return;
+  }
+
+  
+  const snapshot = await app.vault.read(file);
+  if (transform(snapshot) === snapshot) return;
+
+  await app.vault.process(file, transform);
+}

@@ -38,6 +38,8 @@ export const ACCOUNT_STYLES = `
 }
 
 .journalit-account-chart-tooltip-date {
+  direction: ltr;
+  unicode-bidi: isolate;
   font-size: 14px;
   font-weight: 500;
   color: var(--text-normal);
@@ -46,6 +48,8 @@ export const ACCOUNT_STYLES = `
 }
 
 .journalit-account-chart-tooltip-value {
+  direction: ltr;
+  unicode-bidi: isolate;
   font-size: 18px;
   font-weight: 600;
   text-align: center;
@@ -81,7 +85,7 @@ export const ACCOUNT_STYLES = `
 }
 
 .journalit-account-chart-tooltip-row--deposit {
-  color: var(--interactive-accent);
+  color: var(--text-accent);
 }
 
 .journalit-account-chart-tooltip-row--withdrawal {
@@ -273,6 +277,7 @@ export const ACCOUNT_STYLES = `
 .journalit-account .progress-bar {
   height: 100%;
   background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
   border-radius: 5px;
   transition: width 0.5s ease;
 }
@@ -511,7 +516,7 @@ export const ACCOUNT_STYLES = `
 }
 
 .impact-item svg {
-  color: var(--interactive-accent);
+  color: var(--text-accent);
   flex-shrink: 0;
 }
 
@@ -537,7 +542,7 @@ export const ACCOUNT_STYLES = `
 }
 
 .backup-notice-header svg {
-  color: var(--interactive-accent);
+  color: var(--text-accent);
 }
 
 .backup-notice-header h5 {
@@ -632,6 +637,7 @@ export const ACCOUNT_STYLES = `
 .migration-progress-fill {
   height: 100%;
   background: var(--interactive-accent, #007acc);
+  color: var(--text-on-accent);
   transition: width 0.3s ease;
   border-radius: 4px;
   
@@ -669,6 +675,7 @@ export const ACCOUNT_STYLES = `
 .progress-fill {
   height: 100%;
   background: var(--interactive-accent, #007acc);
+  color: var(--text-on-accent);
   transition: width 0.3s ease;
   border-radius: 4px;
   
@@ -1217,6 +1224,7 @@ export const ACCOUNT_STYLES = `
   .settings-modal-buttons
   .journalit-button--primary:hover:not(:disabled) {
   background: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
   border-color: var(--interactive-accent-hover);
 }
 
@@ -2500,6 +2508,7 @@ export const ACCOUNT_STYLES = `
 .journalit-account-dashboard .progress-bar.profit-target,
 .journalit-account-dashboard .progress-bar.drawdown.safe {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
   border-radius: 4px;
   box-shadow: none;
 }
@@ -3196,6 +3205,7 @@ export const ACCOUNT_STYLES = `
   width: var(--journalit-account-progress-width, 0%);
   height: 100%;
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
   border-radius: 4px;
 }
 

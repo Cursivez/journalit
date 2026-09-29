@@ -9,7 +9,10 @@ import React, {
 import { createPortal } from 'react-dom';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { ChevronDown } from './icons/ObsidianIcon';
-import { useAnchoredMenuPosition } from './menus/useAnchoredMenuPosition';
+import {
+  anchoredMenuPortalRoot,
+  useAnchoredMenuPosition,
+} from './menus/useAnchoredMenuPosition';
 
 interface DropdownSelectOption {
   value: string;
@@ -276,8 +279,7 @@ export function DropdownSelect({
               );
             })}
           </div>,
-          internalTriggerRef.current?.ownerDocument.body ??
-            window.activeDocument.body
+          anchoredMenuPortalRoot(internalTriggerRef.current)
         )}
     </div>
   );

@@ -63,11 +63,15 @@ import { GraphLinkService } from './services/graph/GraphLinkService';
 
 import { ReviewDataCache } from './services/reviewV2/ReviewDataCache';
 import { EventBus } from './services/events';
-import { clearOnboardingUpgradeOrigin } from './services/upgrade/upgradeOrigin';
+import { clearUpgradeOrigin } from './services/upgrade/upgradeOrigin';
 import { GuideRegistry } from './guides/GuideRegistry';
 import { ViewGuideService } from './guides/ViewGuideService';
 import { mergeFreshTradeFormEditData } from './components/forms/trade/tradeFormEditData';
 import { DemoSessionService } from './demo/DemoSessionService';
+import {
+  handleUpgradeReturn,
+  parseUpgradeReturnFeature,
+} from './services/upgrade/UpgradeReturnService';
 
 
 
@@ -170,6 +174,7 @@ export default class JournalitPlugin extends Plugin {
 
   
   private pluginInitializer: PluginInitializer;
+  private initializationReady: Promise<void> | null = null;
   settingsManager: SettingsManager;
   uiStateManager: UIStateManager;
   commandRegistry: CommandRegistry;
@@ -234,7 +239,23 @@ export default class JournalitPlugin extends Plugin {
 
     
     this.pluginInitializer = new PluginInitializer(this);
-    await this.pluginInitializer.initialize();
+    this.registerObsidianProtocolHandler('journalit-upgrade', (params) => {
+      const feature = parseUpgradeReturnFeature(params.feature);
+      if (!feature) {
+        new Notice(t('onboarding.activation.notice.invalid-url'), 5000);
+        return;
+      }
+
+      void (async () => {
+        await this.initializationReady;
+        await handleUpgradeReturn(this, feature);
+      })().catch((error) => {
+        console.error('[Journalit] Upgrade return failed:', error);
+        new Notice(t('onboarding.activation.error.generic'));
+      });
+    });
+    this.initializationReady = this.pluginInitializer.initialize();
+    await this.initializationReady;
     const tradeOperationSyncToast = new TradeOperationSyncToast(this);
     this.tradeOperationSyncToast = tradeOperationSyncToast;
 
@@ -463,7 +484,7 @@ export default class JournalitPlugin extends Plugin {
 
   
   private async runUnloadCleanup(): Promise<void> {
-    clearOnboardingUpgradeOrigin();
+    clearUpgradeOrigin();
     await this.cleanupManager.cleanup().catch((error: unknown) => {
       console.error('Error during plugin cleanup:', error);
       

@@ -2,6 +2,34 @@
 import type { Lang } from './en';
 
 const ja: Partial<Lang> = {
+  'command.share-note-as-image': '現在のノートを画像として共有',
+  'trade.share.copy-screenshot': 'トレードのスクリーンショットをコピー',
+  'trade.share.copied':
+    'トレードのスクリーンショットをクリップボードにコピーしました',
+  'trade.share.failed': 'トレードのスクリーンショットをコピーできませんでした',
+  'trade.share.not-ready':
+    'トレードノートを読み込み中です。しばらくしてから再試行してください。',
+  'share.review.action': 'レビューカードを共有',
+  'share.review.modal-title': 'レビューを共有',
+  'share.review.section.top': 'ノートの冒頭',
+  'share.review.select-all': 'すべて選択',
+  'share.review.clear': 'クリア',
+  'share.review.legend.widget': 'ウィジェット',
+  'share.review.legend.heading': '見出しと本文',
+  'share.review.legend.media': 'メディア',
+  'share.review.legend.text': 'テキスト',
+  'share.review.copy': '画像をコピー',
+  'settings.general.hide-dollar-amounts-in-shares':
+    '共有画像でドル金額を非表示',
+  'settings.general.hide-dollar-amounts-in-shares-desc':
+    'Rマルチプルがオンのとき、トレードのスクリーンショットとレビューカードからリスク、手数料、コミッション、MAE/MFEのドル金額を除外します。',
+  'share.review.hide-dollar-amounts': 'ドル金額を非表示',
+  'share.review.hide-dollar-amounts-hint':
+    'リスク、手数料などのドル金額を除外します。',
+  'share.review.hide-dollar-amounts-needs-r':
+    'ドル金額なしで共有するには、設定でRマルチプルをオンにしてください。',
+  'share.review.copied': '共有カードをクリップボードにコピーしました',
+  'share.review.failed': '共有カードをコピーできませんでした',
   'trade.broker-synced-at': 'ブローカー同期 {date}',
   'home.period.month': '月',
   'home.period.quarter': '四半期',
@@ -322,6 +350,7 @@ const ja: Partial<Lang> = {
   
 
   'notice.login-success': 'ログインに成功しました！',
+  'notice.pro-access-ready': 'PROアクセスの準備ができました。',
 
   'notice.logout-success': 'サインアウトしました',
   'notice.hotkey-set': 'ショートカットを設定しました: {hotkey}',
@@ -430,7 +459,7 @@ const ja: Partial<Lang> = {
     'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
   'dashboard.guide.main.filters.title': 'Filters change the whole Dashboard',
   'dashboard.guide.main.filters.description':
-    'Use filters when you want every stat and chart on this page to update for a different date range, account, setup, tag, or trade type.',
+    'このページのすべての統計とチャートを、別の期間、口座、セットアップ、タグ、トレードタイプで更新したいときはフィルターを使います。任意の値を除外して、そのトレードを外すこともできます。',
   'dashboard.guide.main.edit-layout.title':
     'Turn on edit mode to customise this page',
   'dashboard.guide.main.edit-layout.description':
@@ -440,7 +469,7 @@ const ja: Partial<Lang> = {
     'Click Add Widget to add more charts and bring back widgets you removed earlier.',
   'dashboard.guide.main.widget-picker.title': 'Pick what you want to show',
   'dashboard.guide.main.widget-picker.description':
-    'This picker shows the metrics and widgets that are not currently on your Dashboard. Click one to add it.',
+    'このパネルではすべてのチャートと指標をプレビューできます。クリックすると追加され、すでにダッシュボードにあるものは「使用中」に表示されます。',
   'dashboard.guide.main.metrics.title':
     'These top cards are your quick summary',
   'dashboard.guide.main.metrics.description':
@@ -472,7 +501,7 @@ const ja: Partial<Lang> = {
   'home.guide.move-and-resize.title': 'Move and resize your widgets',
   'home.guide.widget-picker.title': 'Add widgets here',
   'home.guide.widget-picker.description':
-    'This picker lets you add more widgets and bring back quick links that you previously hid.',
+    'ウィジェットをプレビューして追加したり、クイックリンクを元に戻したり、口座やセットアップのショートカットを追加できます。ホームにすでにあるものは「使用中」に表示され、そこから削除できます。',
   'home.guide.move-and-resize.description':
     'This is the main area you can rearrange in edit mode. Drag widgets to move them, or drag a widget from its bottom-right corner to resize it.',
   'home.guide.add-widget.title': 'Add widgets or bring back hidden quick links',
@@ -552,10 +581,7 @@ const ja: Partial<Lang> = {
     'Use this menu to switch between the full trade table and grouped time views like months, weeks, or days. Trades is the default, but grouped views are useful when you want to review by period.',
   'tradelog.guide.filters.title': 'Use filters to narrow the Trade Log',
   'tradelog.guide.filters.description':
-    'Open filters when you want to review only certain accounts, setups, tags, trade types, statuses, or dates.',
-  'tradelog.guide.filter-modal.title': 'These are your detailed filters',
-  'tradelog.guide.filter-modal.description':
-    'Use this modal when you want more control over exactly which trades are shown. Close it when you are done reviewing or changing filters.',
+    '特定の口座、セットアップ、タグ、トレードタイプ、ステータス、日付だけを確認したいときはフィルターを開きます。任意の値を除外して、そのトレードを外すこともできます。',
   'tradelog.guide.sorting.title': 'Click column headers to sort the table',
   'tradelog.guide.sorting.description':
     'In Trades view, click a sortable column header to reorder the table. For example, click Net P&L to sort by your biggest win and biggest loss.',
@@ -584,7 +610,6 @@ const ja: Partial<Lang> = {
   'tradelog.filter.losers': '負けトレード',
   'tradelog.filter.breakeven': '損益なし',
   'tradelog.filter.open': 'オープン',
-  'tradelog.type.all': 'すべてのタイプ',
   'tradelog.type.regular': '通常',
   'tradelog.type.missed': '見逃し',
   'tradelog.type.backtest': 'バックテスト',
@@ -598,13 +623,12 @@ const ja: Partial<Lang> = {
   'dashboard.empty.manual-action': 'Add a trade manually',
   'dashboard.widgets.setup-performance.title': 'セットアップ別パフォーマンス',
   'dashboard.widgets.setup-performance.description':
-    'セットアップ別のパフォーマンスを比較するランキング棒グラフ',
+    'セットアップ別の成績ランキング',
   'dashboard.widgets.setup-performance.empty':
     'セットアップ別のパフォーマンスデータがありません',
   'dashboard.widgets.setup-performance.masked-label': 'セットアップ',
   'dashboard.widgets.tag-performance.title': 'タグ別パフォーマンス',
-  'dashboard.widgets.tag-performance.description':
-    'タグ別のパフォーマンスを比較するランキング棒グラフ',
+  'dashboard.widgets.tag-performance.description': 'タグ別の成績ランキング',
   'dashboard.widgets.tag-performance.empty':
     'タグ別のパフォーマンスデータがありません',
   'dashboard.widgets.tag-performance.masked-label': 'タグ',
@@ -630,8 +654,7 @@ const ja: Partial<Lang> = {
   'dashboard.widgets.ticker-performance.omitted-count': '省略：{count}',
 
   'widget.tickerPerformance.name': 'ティッカー別パフォーマンス',
-  'widget.tickerPerformance.description':
-    'ティッカー別のパフォーマンスを比較するランキング棒グラフ',
+  'widget.tickerPerformance.description': 'ティッカー別の成績ランキング',
 
   
   'dashboard.filter.accounts.all': 'すべての口座',
@@ -641,11 +664,6 @@ const ja: Partial<Lang> = {
   'dashboard.filter.accounts.none-found': '口座が見つかりません',
 
   
-  'dashboard.filter.mistakes.all': 'すべてのミス',
-  'dashboard.filter.mistakes.none': 'ミスなし',
-  'dashboard.filter.mistakes.n-selected': '{count}個のミス',
-  'dashboard.filter.mistakes.select-all': 'すべて選択',
-  'dashboard.filter.mistakes.none-found': 'ミスが見つかりません',
 
   
   
@@ -737,7 +755,7 @@ const ja: Partial<Lang> = {
   
   'home.widget.getting-started.name': 'Getting Started',
   'home.widget.getting-started.description':
-    'Checklist to help you add trading history and configure Journalit',
+    'Journalit とトレードの設定チェックリスト',
   'home.widget.getting-started.progress': '{completed}/{total} completed',
   'home.widget.getting-started.progress.loading': 'Checking progress...',
   'home.widget.getting-started.item.account.title': '取引アカウントを設定',
@@ -835,13 +853,11 @@ const ja: Partial<Lang> = {
   'dashboard.avgRRRiskBased.tooltip.no-data':
     'RベースRRの計算に十分なデータがありません。ストップ/リスク情報を入力し、有効な勝ち・負けトレードの両方を確保してください。',
   'metric.avgRR.name': '平均RR（ペイオフ）',
-  'metric.avgRR.description': '平均リワード/リスク比（平均利益 / 平均損失）',
+  'metric.avgRR.description': '平均利益を平均損失で割った値',
   'metric.sharpeRatio.name': 'シャープレシオ',
-  'metric.sharpeRatio.description':
-    'トレード単位のシャープレシオ: クローズドトレードの平均純損益をP&Lの標本ボラティリティで割った値',
+  'metric.sharpeRatio.description': 'ボラティリティに対する平均トレード P&L',
   'metric.avgRRRiskBased.name': '平均RR（Rベース）',
-  'metric.avgRRRiskBased.description':
-    'R倍数に基づく比率: 平均勝ちR / 平均負けR（ストップ/リスクデータが必要）',
+  'metric.avgRRRiskBased.description': '平均勝ち R と負け R（ストップ必須）',
   'metric.longestWinStreak.name': 'ベスト連勝',
   'metric.longestWinStreak.description': '決済日ベースの最長連続勝ち',
   'metric.longestLossStreak.name': 'ワースト連敗',
@@ -884,7 +900,6 @@ const ja: Partial<Lang> = {
   'tradelog.column.maxR': 'Max R',
   'tradelog.column.returnPercent': 'Return %',
   'filter.modal.section.custom-fields': 'Custom Fields',
-  'filter.modal.custom-field.n-selected': '{count} selected',
   'filter.modal.custom-field.none-available': 'No values available',
   'settings.general.analytics-date-basis': '分析の日付基準',
   'settings.general.analytics-date-basis-desc':
@@ -939,7 +954,9 @@ const ja: Partial<Lang> = {
   'widget.drawdownStats.no-conversion':
     'Drawdown stats are unavailable for mixed currencies without FX conversion.',
 
-  'guide.skip-guide': 'Skip Guide',
+  'guide.skip-guide': 'ガイドをスキップ',
+  'guide.step-count': '{count} ステップ',
+  'guide.step-position': 'ステップ {current}/{total}',
   'settings.general.data-management': 'データ管理 & プライバシー',
 
   'settings.general.privacy-mode': 'プライバシーモード',
@@ -1010,6 +1027,17 @@ const ja: Partial<Lang> = {
   'dashboard.conversion.details-label': '通貨換算の詳細',
 
   'widget.stats.vs-prev': 'vs prev',
+  'common.r-missing.title': 'このトレードにはRがありません',
+  'common.r-missing.trade':
+    'このトレードにはリスク額がないため、結果をRで表示できません。',
+  'common.r-missing.fix':
+    'リスク額を追加するか、設定でデフォルトのリスク額を設定してください。',
+  'common.r-coverage.partial':
+    '{total}件中{valid}件のトレードに基づいています。リスク額のないトレードはRに含まれません。',
+  'common.r-coverage.none':
+    'ここにはリスク額のあるトレードがないため、表示できるRがありません。',
+  'dashboard.r-coverage.no-comparison':
+    '変化は表示されません: 比較期間にはこの指標のR値がありません。',
   'dashboard.metrics.past-30d': 'past 30d',
 
   'chart.tooltip.drawdown-amount': 'Amount',
@@ -1123,20 +1151,83 @@ const ja: Partial<Lang> = {
   'trade-import.asset.futures': 'Futures',
   'trade-import.asset.forex': 'Forex',
   'trade-import.asset.crypto': 'Crypto',
-  'trade-import.label.manual-mode': 'Manual mode',
-  'trade-import.manual-mode.price-based': 'Price based',
-  'trade-import.manual-mode.direct-pnl': 'Direct P&L',
+  'trade-import.manual-mode.price-based': '注文・約定（トレードにまとめる）',
+  'trade-import.manual-mode.direct-pnl': '1行 = 1トレード（損益を使用）',
   'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
   'trade-import.privacy.copy':
-    'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default.',
+    'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default. When AI mapping suggestions are on, the column headers and a few sample rows are also sent to an AI model to suggest column matches; untick the option to map columns yourself.',
 
   'trade-import.action.analyse': 'Analyse file',
   'trade-import.action.choose-file': 'Choose file',
-  'trade-import.guide.prompt': '何をエクスポートすればよいですか？',
-  'trade-import.guide.link': 'ブローカーガイドを見る',
   'trade-import.action.drop-file': 'Drop file to upload',
   'trade-import.analyse.detected':
-    'Detected {fileType}. Headers and sample rows are returned by the backend.',
+    '{fileType} ファイルを読み込みました。下の行を確認し、各列をトレード項目に対応付けてください。',
+  'trade-import.table.screenshots': 'スクリーンショット',
+  'trade-import.preview.screenshot-alt':
+    'スプレッドシート {row} 行目の {symbol} のスクリーンショット',
+  'trade-import.preview.screenshots-more': '他 {count} 件',
+  'trade-import.preview.include-screenshots':
+    'スプレッドシートのスクリーンショットを各トレードに追加（{count}）',
+  'trade-import.completion.screenshots-added':
+    'スプレッドシートから追加したスクリーンショット: {count}',
+  'trade-import.completion.screenshots-failed':
+    '追加できなかったスプレッドシートのスクリーンショット: {count}',
+  'trade-import.preview.import-anyway': 'それでもインポート',
+  'trade-import.preview.import-anyway-aria':
+    '{date} の {symbol} をそれでもインポート',
+  'trade-import.preview.import-all-anyway':
+    '重複の可能性がある{count}件をすべてそれでもインポート',
+  'csv.mapper.missing-fields.pnl-or-prices':
+    'または、エントリー価格・決済価格・数量を対応付けると、価格から損益を計算します。',
+  'trade-import.pnl-from-prices.title': '損益は価格から計算されます',
+  'trade-import.pnl-from-prices.body':
+    '損益の列がないため、エントリー価格・決済価格・数量から損益を計算します。正しい資産クラスでないと計算が合わないため、これらのトレードの種類を選んでください。',
+  'trade-import.pnl-from-prices.contract-size':
+    'FX と先物で損益を計算するには、契約サイズの列も必要です。ない場合は、損益の列を対応付けてください。',
+  'trade-import.diagnostic.choose-date-format': '日付形式を選択',
+  'trade-import.date-question.ambiguous':
+    '日付は {example} のような形式です。これはどの日付ですか？',
+  'trade-import.date-question.mixed':
+    'この列の一部の日付は {example} のように順序が異なります。大半の日付はどの順序ですか？',
+  'trade-import.date-question.mixed-note':
+    '別の順序で書かれた行は一覧表示されるので、ファイル側で修正できます。',
+  'quick-import.message.date-order':
+    '日付が2通りに読めます。完全なインポートを開いて選択してください。',
+  'csv.date-format.eu-dot': 'EU（ドット区切り）: 25.12.2024（日.月.年）',
+  'csv.date-format.ymd-dot': '年が先（ドット区切り）: 2024.12.25',
+  'onboarding.data-source.option.file.description':
+    'Excel、Google スプレッドシート、CSV で付けている記録。',
+  'onboarding.data-source.option.file.label': '自分のスプレッドシート',
+  'trade-import.unmapped.title': 'インポートされない列 ({count})',
+  'trade-import.unmapped.body':
+    'これらの列は Journalit の項目に対応付けられておらず、取り込まれません。合う項目があれば、上で対応付けてください。',
+  'trade-import.unmapped.keep': 'カスタム項目として残す',
+  'trade-import.unmapped.keep-aria': '{header} をカスタム項目として残す',
+  'trade-import.custom-field.title': '「{header}」をカスタム項目として残す',
+  'trade-import.custom-field.hint':
+    'トレードに項目を追加し、この列の値を入れます。Journalit の既存の項目が合う場合は、そちらに対応付けてください。',
+  'trade-import.custom-field.name': '項目名',
+  'trade-import.custom-field.type': '項目の種類',
+  'trade-import.custom-field.type.text': 'テキスト',
+  'trade-import.custom-field.type.number': '数値',
+  'trade-import.custom-field.type.dropdown': '選択リスト',
+  'trade-import.custom-field.create': '項目を作成',
+  'trade-import.custom-field.error.reserved':
+    'この名前は標準のトレード項目で使われています。別の名前を選んでください。',
+  'trade-import.table.open-closed': '保有/決済',
+  'trade-import.status.open': '保有中',
+  'trade-import.status.partially-closed': '一部決済',
+  'trade-import.status.closed': '決済済み',
+  'trade-import.status.cancelled': 'キャンセル',
+  'trade-import.diagnostic.column': '列: {columns}',
+  'trade-import.diagnostic.unmap-column': 'この列はインポートしない',
+  'trade-import.diagnostic.edit-mapping': 'マッピングを変更',
+  'trade-import.source.manual.tile': '自作スプレッドシート / その他のファイル',
+  'trade-import.source.manual.title':
+    '自作スプレッドシートまたはその他のファイル',
+  'csv.mapper.mode.title': '各行の内容は？',
+  'csv.mapper.mode.help':
+    'トレード記録のスプレッドシートは通常、1行に決済済みのトレード1件と損益列があります。ブローカーの注文履歴は、買いと売りをそれぞれ別の行に記載します。',
   'trade-import.diagnostic.info': 'info',
   'trade-import.label.sheet': 'Sheet',
   'trade-import.label.header-row': 'Header row',
@@ -1163,6 +1254,59 @@ const ja: Partial<Lang> = {
   'trade-import.table.entry-time': 'Entry time',
   'trade-import.table.quantity': 'Quantity',
   'trade-import.table.message': 'Message',
+  'trade-import.status.new': '新規',
+  'trade-import.status.already-imported': 'インポート済み',
+  'trade-import.status.other-account': '別の口座にあり',
+  'trade-import.status.other-account.detail': '{account} にインポート済み',
+  'trade-import.status.updates-existing': '既存の取引を更新',
+  'trade-import.status.possible-duplicate': '重複の可能性',
+  'trade-import.status.needs-review': '確認が必要',
+  'trade-import.status.duplicate-in-file': 'ファイル内で重複',
+  'trade-import.status.invalid': '無効な取引',
+  'trade-import.status.no-open-trade': '決済対象の保有取引なし',
+  'trade-import.status.multiple-open-trades': '複数の保有取引が一致',
+  'trade-import.status.quantity-mismatch': '数量の不一致',
+  'trade-import.server-deletion.deleted':
+    'Journalit サーバーから削除された取引: {count}',
+  'trade-import.server-deletion.kept':
+    '別のインポートにも含まれるため保持された取引: {count}',
+  'trade-import.server-deletion.blocked-broker-connected':
+    'この口座はブローカー接続で同期されています。データを削除するにはブローカーの接続を解除してください。',
+  'trade-import.server-deletion.blocked-broker-history':
+    'この口座にはブローカー同期の履歴があるため、ここでは削除できません。代わりに個別のインポートを削除してください。',
+  'trade-import.server-deletion.failed':
+    'Journalit サーバーから削除できませんでした。もう一度お試しください。',
+  'trade-import.server-deletion.notice':
+    'サーバーでの削除後にゴミ箱へ移動した取引ノート: {count}',
+  'trade-import.server-deletion.account.title':
+    'サーバーの口座を削除しますか？',
+  'trade-import.server-deletion.account.message':
+    '「{account}」とそのインポート済み取引（サーバー上に {count} 件）を Journalit サーバーから完全に削除し、同期しているすべての Vault でそのノートをゴミ箱へ移動します。その後、ファイルを再インポートできます。',
+  'trade-import.server-deletion.account.confirm': 'サーバーから削除',
+  'trade-import.server-deletion.account.button': 'サーバーから削除',
+  'trade-import.history.title': 'インポート履歴',
+  'trade-import.completion.wrong-account':
+    '間違った口座にインポートしましたか？',
+  'trade-import.completion.undo-import': 'このインポートを取り消す',
+  'trade-import.action.manage-imports': '過去のインポートを管理',
+  'trade-sync.import.more-actions': 'その他の操作',
+  'trade-import.history.loading': 'インポート履歴を読み込み中…',
+  'trade-import.history.load-failed': 'インポート履歴を読み込めませんでした。',
+  'trade-import.history.empty': 'インポートはまだありません。',
+  'trade-import.history.trades-on-server': 'サーバー上に {count} 件',
+  'trade-import.history.delete.title': 'このインポートを削除しますか？',
+  'trade-import.history.delete.message':
+    'このインポートが「{account}」に追加した取引（サーバー上に {count} 件）を Journalit サーバーから完全に削除し、同期しているすべての Vault でそのノートをゴミ箱へ移動します。別のインポートにも含まれる取引は保持されます。その後、ファイルを再インポートできます。',
+  'trade-import.history.delete.confirm': 'インポートを削除',
+  'trade-import.history.load-more': 'さらに読み込む',
+  'account.edit.modal.delete.delete-server-trades':
+    'インポート済み取引も Journalit サーバーから削除する（サーバー上に {count} 件）。ここでノートを残しても、同期しているすべての Vault でゴミ箱へ移動されます。',
+  'trade-import.preview.other-account.message':
+    'すでに {account} にあるため（{count}件）、スキップされます。',
+  'trade-import.preview.other-account.import-instead':
+    '代わりに {account} にインポート',
+  'trade-import.preview.other-account.undo-earlier':
+    '以前のインポートを取り消す',
   'trade-import.action.confirm': 'Confirm import',
   'trade-import.action.activate-pro.one':
     'PRO を有効にして {count} 件の取引をインポート',
@@ -1517,11 +1661,7 @@ const ja: Partial<Lang> = {
     'これらのサイズボタンで、重要なチャート詳細を切り落とさずに、コンパクトな確認と大きめのチャートプレビューを切り替えます。',
   'tradelog.guide.gallery-filters.title': '同じ入口からギャラリーを絞り込む',
   'tradelog.guide.gallery-filters.description':
-    'フィルターボタンは引き続き詳細フィルターを開きます。ギャラリーモードでは、注釈ステータスやメディアタグなどメディア専用のフィルターも含まれます。',
-  'tradelog.guide.gallery-filter-modal.title':
-    'メディアフィルターはトレードフィルターと一緒にあります',
-  'tradelog.guide.gallery-filter-modal.description':
-    'このモーダルでトレードフィルターとメディアフィルターを組み合わせます。たとえば特定のセットアップで絞り込み、メモや特定のメディアタグがあるメディアだけを表示できます。',
+    'フィルターメニューはここでも同じように使えます。ギャラリーモードでは、注釈ステータスやメディアタグなどのメディアフィルターを含む「ギャラリー」セクションも表示されます。',
   'tradelog.guide.gallery-grid.title': 'メディアを開いて詳しく確認する',
   'tradelog.guide.gallery-grid.description':
     '各カードはチャートを邪魔せず、トレードとレビューのコンテキストをコンパクトに表示します。任意のカードをクリックすると全画面で開きます。',
@@ -1655,6 +1795,38 @@ const ja: Partial<Lang> = {
   'home.filters.accounts': '口座',
   'home.filters.back': '戻る',
   'filter.reset': 'フィルターをリセット',
+  'filter.menu.title': 'フィルター条件',
+  'filter.menu.accounts': '口座',
+  'filter.menu.tickers': 'ティッカー',
+  'filter.menu.setups': 'セットアップ',
+  'filter.menu.tags': 'タグ',
+  'filter.menu.mistakes': 'ミス',
+  'filter.menu.trade-type': 'トレード種別',
+  'filter.menu.status': 'ステータス',
+  'filter.menu.direction': '方向',
+  'filter.menu.review-status': 'レビュー状況',
+  'filter.menu.status.cancelled': 'キャンセル済み',
+  'filter.menu.included-count': '{count} 件を含む',
+  'filter.menu.excluded-count': '{count} 件を除外',
+  'filter.menu.search': '検索',
+  'filter.menu.no-matches': '一致なし',
+  'filter.menu.no-options': 'まだフィルターできる項目がありません',
+  'filter.menu.clear': 'クリア',
+  'filter.menu.match.label': '一致条件',
+  'filter.menu.match.any': 'いずれか',
+  'filter.menu.match.all': 'すべて',
+  'filter.menu.match.only': 'これらのみ',
+  'filter.menu.match.exact': '完全一致',
+  'filter.menu.match.hint.any': '選択した値を1つ以上含むトレード。',
+  'filter.menu.match.hint.all':
+    '選択した値をすべて含むトレード。他の値があっても構いません。',
+  'filter.menu.match.hint.only': 'すべての値が選択した値に含まれるトレード。',
+  'filter.menu.match.hint.exact': '選択した値とちょうど一致するトレード。',
+  'filter.menu.match.no-value-any-only': '「いずれか」でのみ使用可能',
+  'filter.menu.exclude-value': '{label} を除外',
+  'filter.menu.match.badge.all': 'すべて',
+  'filter.menu.match.badge.only': 'のみ',
+  'filter.menu.match.badge.exact': '完全',
   'home.guide.modes.title': '最後にもう1つ：ダッシュボード',
   'home.guide.modes.description':
     '概要とダッシュボードはこのページを共有しています。今すぐダッシュボードに切り替えて、パフォーマンス統計の短いツアーを続けましょう。',
@@ -1805,15 +1977,6 @@ const ja: Partial<Lang> = {
     'The drawdown floor locks after payout.',
   'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
     'The account and drawdown limits reset after payout.',
-  'account-page.guide.whats-new.cockpit.payout.title':
-    'Know when a funded payout is safe',
-  'account-page.guide.whats-new.cockpit.payout.description':
-    'Funded accounts with verified rules now show payout requirements, the amount available, and a preview of the balance and drawdown consequences before you request money.',
-  'account-page.guide.main.payout.title': 'Plan funded payouts',
-  'account-page.guide.main.payout.description':
-    'When the funded phase has verified payout rules, this panel tracks eligibility and previews the account impact of a requested amount.',
-  'account-page.guide.main.trade-log.description':
-    'この口座が選択された状態でトレードログを開きます。複数フェーズのチャレンジでは、ボタンは表示中のフェーズに従い、矢印から他のフェーズまたは口座全体を選べます。',
   'account.prop-challenge.stage': 'Stage type',
   'account.prop-challenge.stage.evaluation': 'Evaluation',
   'account.prop-challenge.stage.sim-funded': 'Sim funded',
@@ -1941,9 +2104,9 @@ const ja: Partial<Lang> = {
   'account.prop-challenge.ledger.help.consistency.example-none':
     'まだ利益がないため、比較する最良日はありません。',
   'account.prop-challenge.ledger.help.max_position_size':
-    '未決済をすべて合わせて一度に持てる契約数の上限です。利益が増えると上限を上げる会社もあります。',
+    '1つのポジションで許可される最大契約数。Journalitは各トレードのサイズを確認します。利益が増えると上限を引き上げるファームもあります。',
   'account.prop-challenge.ledger.help.max_position_size.example':
-    '現在は同時に最大 {maximum} 枚。これまでの最大ポジションは {current}。',
+    '現在は1トレードあたり最大{maximum}契約。これまでの最大トレードは{current}。',
   'account.prop-challenge.ledger.help.payout.cycle_days':
     '現在の出金サイクルの取引日です。承認後にカウントがリセットされます。',
   'account.prop-challenge.ledger.help.payout.cycle_days.example':
@@ -1995,7 +2158,7 @@ const ja: Partial<Lang> = {
   
   'account.merge.challenge.move-earlier': '{account} を前へ',
   'account.merge.challenge.move-later': '{account} を後ろへ',
-  'account.merge.warning.use-profile-balance': 'プロファイルの残高を使用',
+  'account.merge.warning.use-profile-balance': 'ファームの残高を使用',
   'account.merge.warning.edit-phases': 'フェーズを編集',
   'account.merge.title': 'チャレンジの設定',
   'account.merge.loading': '読み込み中...',
@@ -2032,8 +2195,20 @@ const ja: Partial<Lang> = {
   'account.merge.error.unknown': '統合に失敗しました。',
   'account.merge.action.merge': '統合',
   'account.merge.action.undo': '元に戻す',
+  'account.merge.action.looks-right': '問題なし',
   'account.merge.action.delete': '旧アカウントを削除',
   'account.merge.notice.converted': 'チャレンジに変換済み',
+  'account.merge.summary.intro': 'チャレンジと一致しているか確認してください:',
+  'account.merge.summary.phases': 'フェーズ: {phases}',
+  'account.merge.summary.current': '現在 {phase}（{stage}）、{date} に開始',
+  'account.merge.summary.current-stage': '現在 {phase}、{date} に開始',
+  'account.merge.summary.trades':
+    '{total} 件中 {counted} 件のトレードがチャレンジに含まれます',
+  'account.merge.summary.trades-missing':
+    '{total} 件中 {counted} 件のトレードがチャレンジに含まれます。残りはどのフェーズの期間にも入っていません。',
+  'account.merge.summary.rules': '{phase} のルール: {rules}',
+  'account.merge.summary.no-rules':
+    '{phase} にはまだルールがありません。口座を編集でファームのルールを追加してください。',
   'account.merge.notice.title': '{accounts} から統合',
   'account.merge.notice.error': '操作に失敗しました。',
   'account.merge.undo.title': '統合を元に戻す',
@@ -2044,21 +2219,31 @@ const ja: Partial<Lang> = {
   'command.open-legacy-challenge-onboarding': 'プロップチャレンジを設定',
   'account.merge.step.challenge': 'チャレンジ',
   'account.merge.action.convert': '変換',
+  'account.merge.phase.apply-profile': 'ファームのルールを適用',
   'account.merge.challenge.accounts': '口座',
   'account.merge.challenge.order-hint': '最も古いフェーズを先頭に',
   'account.merge.challenge.single-hint': 'この口座は単独のチャレンジになります',
-  'account.merge.phase.identities-count': '{count} 件の識別子',
+  'account.merge.phase.broker-accounts.one': '{count} 件のブローカー口座',
+  'account.merge.phase.broker-accounts.few': '{count} 件のブローカー口座',
+  'account.merge.phase.broker-accounts.many': '{count} 件のブローカー口座',
+  'account.merge.phase.broker-accounts.other': '{count} 件のブローカー口座',
+  'account.merge.review.phase-count.one': 'フェーズ',
+  'account.merge.review.phase-count.few': 'フェーズ',
+  'account.merge.review.phase-count.many': 'フェーズ',
+  'account.merge.review.phase-count.other': 'フェーズ',
   'account.merge.phase.pending': '保留',
-  'account.merge.review.phases': 'フェーズ',
+  'account.merge.phase.starts-after': '{phase} に合格すると開始',
+  'account.merge.phase.pending-rules': 'ルール: {rules}',
   'account.merge.review.archived': 'アーカイブ',
-  'account.merge.review.open': '進行中',
+  'account.merge.review.starts-after': '{phase} の後',
+  'account.merge.review.since': '{date} から',
   'account.merge.sequence': 'チャレンジ {index} / {total}',
   'account.merge.warning.balance-differs':
-    '初期残高が会社プロファイルと異なります',
+    '開始残高がファームのルールと異なります',
   'account.merge.error.profile-phase-mismatch':
-    '会社プロファイルのフェーズ数より口座が多いです',
+    'ファームのルールのフェーズより口座が多いです',
   'account.merge.error.profile-currency-mismatch':
-    'プロファイルの通貨がこれらの口座と異なります。',
+    'ファームのルールはこれらの口座と異なる通貨を使用しています。',
   'account.merge.error.source-changed':
     'アカウントが変更されました。統合を再確認してください。',
   'account.merge.error.multiple-active-phases':
@@ -2066,17 +2251,17 @@ const ja: Partial<Lang> = {
   'account.merge.error.copy-trading-overlap':
     'コピートレード期間が重複しています。先に1つ終了してください。',
   'onboarding.legacy-challenge.legend':
-    '同じチャレンジのフェーズだった口座をまとめます。単独の口座はそれ自体がチャレンジになります。',
-  'onboarding.legacy-challenge.assign.leave': 'そのまま',
-  'onboarding.legacy-challenge.assign.own': '単独のチャレンジ',
-  'onboarding.legacy-challenge.assign.group': 'チャレンジ {letter}',
-  'onboarding.legacy-challenge.assign.new-group': '新しいチャレンジ…',
+    '以前の各口座をどうするか選んでください。フェーズ1とファンデッドのように、フェーズごとに別の口座がありましたか？同じチャレンジに入れると、フェーズを持つ1つの口座になります。',
+  'onboarding.legacy-challenge.assign.leave': '通常の口座のままにする',
+  'onboarding.legacy-challenge.assign.own': 'チャレンジにする',
+  'onboarding.legacy-challenge.assign.group': 'チャレンジ{letter}に追加',
+  'onboarding.legacy-challenge.assign.new-group': '新しいチャレンジにまとめる…',
   'onboarding.legacy-challenge.action.continue': '続行',
   'onboarding.legacy-challenge.action.continue-count': '{count} 件を設定',
   'guide.action-step.dismiss': '今はしない',
-  'guide.legacy-challenge.title': '既存の口座',
+  'guide.legacy-challenge.title': 'このアップデート以前の口座を設定',
   'guide.legacy-challenge.description':
-    '同じチャレンジのフェーズだった口座をまとめるか、口座を単独のチャレンジにします。',
+    '以前の評価口座やファンデッド口座をチャレンジに変換します。設定ではフェーズと日付を順に案内し、最後に設定内容を表示するので確認できます。',
   'guide.legacy-challenge.action': '口座を設定',
   'onboarding.legacy-challenge.title': 'プロップチャレンジ',
   'onboarding.legacy-challenge.action.skip': 'スキップ',
@@ -2130,6 +2315,21 @@ const ja: Partial<Lang> = {
   'calendar.aria.open-weekly-review': '{date} の週次レビューを開く',
   'calendar.aria.open-monthly-review': '{date} の月次レビューを開く',
   'calendar.aria.open-quarterly-review': '{date} の四半期レビューを開く',
+  'filter.menu.whats-new.open.title': 'フィルターが新しいメニューに',
+  'filter.menu.whats-new.open.description':
+    'すべてのフィルターが1つの階層メニューにまとまり、トレードを絞り込む新しい方法が2つ加わりました。開いて確認しましょう。',
+  'filter.menu.whats-new.exclude.title': '不要なものを除外',
+  'filter.menu.whats-new.exclude.description':
+    '各値には ⊘ ボタンがあります。値を除外すると、その値を持つトレードは、ほかの条件に一致していても除かれます。',
+  'filter.menu.whats-new.match.title': '複数の値の一致条件を選ぶ',
+  'filter.menu.whats-new.match.description':
+    '複数の値を選んだとき、トレードに「いずれか」「すべて」「これらのみ」「完全一致」のどれを求めるか選べます。タグ、セットアップ、ミス、カスタムフィールドにも同じ一致条件があります。',
+  'filter.menu.whats-new.phases.title': 'チャレンジのフェーズで絞り込む',
+  'filter.menu.whats-new.phases.description':
+    '複数のフェーズがあるプロップ口座は、フェーズの一覧を開けます。口座全体ではなく、個別のフェーズを選べます。',
+  'filter.menu.whats-new.done.title': 'フィルターの新機能は以上です',
+  'filter.menu.whats-new.done.description':
+    '同じメニューがトレードログ、ダッシュボード、ホーム、セットアップ、レビューで使えます。クリックするとすぐに反映されます。',
 };
 
 export default ja;

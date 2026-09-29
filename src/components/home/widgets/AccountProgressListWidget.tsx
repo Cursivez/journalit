@@ -1,6 +1,9 @@
 import React from 'react';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
+import { ChevronRight } from '../../shared/icons/ObsidianIcon';
+import { setTooltip } from 'obsidian';
+import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import type { DisplayValueKind } from '../../../services/display/DisplayPolicy';
@@ -16,7 +19,7 @@ export interface AccountProgressListItem<TStatus extends string = string> {
   currencyCode?: string;
 }
 
-interface AccountProgressListWidgetProps<TStatus extends string> {
+export interface AccountProgressListWidgetProps<TStatus extends string> {
   title: string;
   items: AccountProgressListItem<TStatus>[];
   remainingLabel: string;
@@ -26,7 +29,51 @@ interface AccountProgressListWidgetProps<TStatus extends string> {
   getCompleteLabel?: (item: AccountProgressListItem<TStatus>) => string;
   completePercentageClassName?: string;
   onAccountClick: (accountName: string) => void;
+  
+  onConfigure?: () => void;
+  
+  configureRef?: React.Ref<HTMLButtonElement>;
 }
+
+
+const ConfigureChevron: React.FC<{
+  title: string;
+  onConfigure: () => void;
+  configureRef?: React.Ref<HTMLButtonElement>;
+}> = ({ title, onConfigure, configureRef }) => (
+  <button
+    type="button"
+    ref={configureRef}
+    className="clickable-icon journalit-home-account-progress__configure"
+    aria-label={t('home.widget.account-progress.configure-aria', {
+      widget: title,
+    })}
+    onClick={(event) => {
+      
+      event.preventDefault();
+      onConfigure();
+    }}
+  >
+    <ChevronRight size={12} aria-hidden="true" />
+  </button>
+);
+
+
+export const showNameIfTruncated = (event: React.MouseEvent<HTMLElement>) => {
+  const el = event.currentTarget;
+  const truncated = el.scrollWidth > el.clientWidth;
+  setTooltip(el, truncated ? (el.textContent ?? '') : '', {
+    placement: 'top',
+  });
+};
+
+
+const configureOnClick =
+  (onConfigure: (() => void) | undefined) =>
+  (event: React.MouseEvent<HTMLDivElement>) => {
+    if (!onConfigure || event.defaultPrevented) return;
+    onConfigure();
+  };
 
 interface AccountProgressLoadingProps {
   titleWidth?: number;
@@ -56,14 +103,30 @@ interface AccountProgressStateProps {
   title: string;
   message: string;
   icon?: React.ReactNode;
+  onConfigure?: () => void;
+  configureRef?: React.Ref<HTMLButtonElement>;
 }
 
 export const AccountProgressState: React.FC<AccountProgressStateProps> = ({
   title,
   message,
   icon,
+  onConfigure,
+  configureRef,
 }) => (
-  <div className="journalit-home-account-progress__state">
+  <div
+    className={`journalit-home-account-progress__state${onConfigure ? ' is-configurable' : ''}`}
+    onClick={configureOnClick(onConfigure)}
+  >
+    {onConfigure && (
+      <span className="journalit-home-account-progress__state-configure">
+        <ConfigureChevron
+          title={title}
+          onConfigure={onConfigure}
+          configureRef={configureRef}
+        />
+      </span>
+    )}
     {icon}
     <span className="journalit-home-account-progress__state-title">
       {title}
@@ -84,14 +147,26 @@ export function AccountProgressListWidget<TStatus extends string>({
   getCompleteLabel,
   completePercentageClassName,
   onAccountClick,
+  onConfigure,
+  configureRef,
 }: AccountProgressListWidgetProps<TStatus>): React.ReactElement {
   const { formatValue, shouldMask } = useDisplayFormatter();
   const isMasked = maskKinds.some((kind) => shouldMask(kind));
 
   return (
-    <div className="journalit-home-account-progress">
+    <div
+      className={`journalit-home-account-progress${onConfigure ? ' is-configurable' : ''}`}
+      onClick={configureOnClick(onConfigure)}
+    >
       <div className="journalit-home-widget__eyebrow journalit-home-account-progress__header">
-        {title}
+        <span>{title}</span>
+        {onConfigure && (
+          <ConfigureChevron
+            title={title}
+            onConfigure={onConfigure}
+            configureRef={configureRef}
+          />
+        )}
       </div>
 
       <div className="journalit-home-account-progress__list">
@@ -118,7 +193,11 @@ export function AccountProgressListWidget<TStatus extends string>({
               key={item.name}
               role="button"
               tabIndex={0}
-              onClick={() => onAccountClick(item.accountName)}
+              onClick={(e) => {
+                
+                e.preventDefault();
+                onAccountClick(item.accountName);
+              }}
               onKeyDown={(e) => {
                 if (e.key !== 'Enter' && e.key !== ' ') return;
                 e.preventDefault();
@@ -130,7 +209,10 @@ export function AccountProgressListWidget<TStatus extends string>({
               })}
             >
               <div className="journalit-home-account-progress__row-header">
-                <span className="journalit-account-progress-name">
+                <span
+                  className="journalit-account-progress-name"
+                  onMouseEnter={showNameIfTruncated}
+                >
                   {item.name}
                 </span>
                 <span className={percentageClassName}>

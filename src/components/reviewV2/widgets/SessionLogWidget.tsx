@@ -32,6 +32,7 @@ import { resolveUnplannedSessionWindow } from '../../sessionMode/unplannedSessio
 import { useEventBus } from '../../../hooks/useEventBus';
 import { Tooltip } from '../../shared/Tooltip';
 import { Info } from '../../shared/icons/ObsidianIcon';
+import { shareLoadingProps } from '../../../services/share/brandedCapture';
 
 const getSessionWindowsForTradingDay = (
   tradingDay: Date,
@@ -123,7 +124,13 @@ const createOutsideSessionWindow = (
   const activeGap = gaps.find(
     (gap) => nowMs >= gap.start.getTime() && nowMs < gap.end.getTime()
   );
-  const outsideWindow = activeGap ?? gaps[0] ?? { start, end: start };
+  
+  
+  const outsideWindow = activeGap ??
+    (nowMs >= end.getTime() ? gaps[gaps.length - 1] : gaps[0]) ?? {
+      start,
+      end: start,
+    };
 
   return {
     kind: 'scheduled',
@@ -185,6 +192,7 @@ const createTradeTimelineEntriesForDRC = (
 interface SessionLogWidgetProps {
   filePath: string;
   plugin: JournalitPlugin;
+  hideEmptyOutsideSession?: boolean;
 }
 
 const formatLessonTime = (date: Date, use24HourTime: boolean): string => {
@@ -241,7 +249,7 @@ const LessonSummary: React.FC<{
 };
 
 export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
-  ({ filePath, plugin }) => {
+  ({ filePath, plugin, hideEmptyOutsideSession = false }) => {
     const { data, loading, refresh } = useReviewData(filePath, plugin);
     const [settingsVersion, setSettingsVersion] = useState(0);
     useEventBus('settings:changed', (payload) => {
@@ -328,8 +336,7 @@ export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
       }
       
       
-      
-      if (outsideEntries.length > 0) {
+      if (outsideEntries.length > 0 || !hideEmptyOutsideSession) {
         groups.push({
           id: 'outside-sessions',
           label: t('session-log.session-group.outside'),
@@ -339,7 +346,7 @@ export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
       }
 
       return groups;
-    }, [data, plugin, timelineEntries]);
+    }, [data, plugin, timelineEntries, hideEmptyOutsideSession]);
 
     const drcTimestampContext = useMemo(() => {
       if (!data) return undefined;
@@ -387,7 +394,7 @@ export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
 
     if (loading && timelineEntries.length === 0) {
       return (
-        <div className="journalit-widget-loading">
+        <div className="journalit-widget-loading" {...shareLoadingProps}>
           {t('session-log.loading')}
         </div>
       );

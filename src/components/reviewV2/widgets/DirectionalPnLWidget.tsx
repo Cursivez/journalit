@@ -13,6 +13,7 @@ import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
+import { shareLoadingProps } from '../../../services/share/brandedCapture';
 
 const asDirectionalTrades = (value: unknown): Trade[] =>
   Array.isArray(value)
@@ -141,6 +142,7 @@ export const DirectionalPnLWidget: React.FC<DirectionalPnLWidgetProps> =
             <div className="journalit-reviewv2-chart-body">
               <div
                 className="journalit-reviewv2-chart-skeleton"
+                {...shareLoadingProps}
                 style={cssVars({
                   '--reviewv2-chart-height': `${mergedConfig.height || 250}px`,
                   '--reviewv2-chart-bar-gap': '4px',

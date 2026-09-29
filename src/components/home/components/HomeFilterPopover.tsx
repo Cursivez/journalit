@@ -1,38 +1,24 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+
+
+import React, { useCallback, useMemo } from 'react';
+import type { App } from 'obsidian';
 import type { TradeType } from '../../../services/tradelog/types';
 import type { HomePeriod } from '../../../settings/types';
 import { DEFAULT_REGULAR_ONLY_TRADE_TYPES } from '../../../settings/viewFiltersDefaults';
 import { t } from '../../../lang/helpers';
-import { FilterButton } from '../../shared/FilterButton';
-import {
-  CalendarRange,
-  ListFilter,
-  UsersRound,
-  type ObsidianIconComponent,
-} from '../../shared/icons/ObsidianIcon';
 import {
   DEFAULT_HOME_FILTERS,
   normalizeHomeTradeTypes,
 } from '../utils/homeTradeTypeUtils';
+import { CascadingFilterMenu } from '../../shared/filters/menu/CascadingFilterMenu';
 import {
-  DrilldownFilterDivider,
-  DrilldownFilterEmpty,
-  DrilldownFilterOption,
-  DrilldownFilterPanel,
-  DrilldownFilterPanelHeader,
-  DrilldownFilterReset,
-  DrilldownFilterRow,
-} from '../../shared/filters/DrilldownFilterPopover';
-
-type HomeFilterPanel = 'root' | 'period' | 'tradeType' | 'accounts';
+  type FilterMenuEntry,
+  checklistNode,
+} from '../../shared/filters/menu/menuModel';
+import { FILTER_MENU_ICONS } from '../../shared/filters/menu/filterMenuIcons';
 
 interface HomeFilterPopoverProps {
+  app: App;
   periods: HomePeriod[];
   periodLabels: Record<HomePeriod, string>;
   selectedPeriod: HomePeriod;
@@ -53,6 +39,7 @@ interface HomeFilterPopoverProps {
 const TRADE_TYPES: TradeType[] = ['regular', 'backtest'];
 
 export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
+  app,
   periods,
   periodLabels,
   selectedPeriod,
@@ -66,68 +53,35 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
   onReset,
   onOpen,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [panel, setPanel] = useState<HomeFilterPanel>('root');
-  const popoverRef = useRef<HTMLDivElement>(null);
   const normalizedTradeTypes = useMemo(
     () => normalizeHomeTradeTypes(selectedTradeTypes),
     [selectedTradeTypes]
   );
-  const normalizedAccounts = useMemo<string[]>(
+  const accounts = useMemo(
     () =>
       Array.from(new Set(availableAccounts.filter(Boolean))).sort((a, b) =>
         a.localeCompare(b)
       ),
     [availableAccounts]
   );
-  const allTradeTypesSelected = TRADE_TYPES.every((tradeType) =>
-    normalizedTradeTypes.includes(tradeType)
-  );
-  const normalizedTradeTypesSet = new Set(normalizedTradeTypes);
+  const selectedTradeTypeSet = new Set(normalizedTradeTypes);
   const defaultTradeTypesSelected =
-    normalizedTradeTypes.length === DEFAULT_HOME_FILTERS.tradeTypes.length &&
+    selectedTradeTypeSet.size === DEFAULT_HOME_FILTERS.tradeTypes.length &&
     DEFAULT_HOME_FILTERS.tradeTypes.every((tradeType) =>
-      normalizedTradeTypesSet.has(tradeType)
+      selectedTradeTypeSet.has(tradeType)
     );
+  
   const allAccountsSelected =
     explicitAllAccountsSelected || selectedAccounts.length === 0;
-  const activeFilterCount =
-    (selectedPeriod === DEFAULT_HOME_FILTERS.period ? 0 : 1) +
-    (defaultTradeTypesSelected ? 0 : 1) +
-    (allAccountsSelected ? 0 : 1);
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target;
-      const ActiveDocumentNode = window.activeDocument.defaultView?.Node;
-      if (
-        !popoverRef.current ||
-        !ActiveDocumentNode ||
-        !(target instanceof ActiveDocumentNode) ||
-        !popoverRef.current.contains(target)
-      ) {
-        setIsOpen(false);
-        setPanel('root');
-      }
-    };
-
-    window.activeDocument.addEventListener('mousedown', handleClickOutside);
-    return () =>
-      window.activeDocument.removeEventListener(
-        'mousedown',
-        handleClickOutside
-      );
-  }, []);
-
-  const togglePopover = useCallback(() => {
-    const nextIsOpen = !isOpen;
-    if (nextIsOpen) onOpen?.();
-    else setPanel('root');
-    setIsOpen(nextIsOpen);
-  }, [isOpen, onOpen]);
+  const visibleAccountSelection = useMemo(
+    () => (allAccountsSelected ? [] : selectedAccounts),
+    [allAccountsSelected, selectedAccounts]
+  );
+  const periodChanged = selectedPeriod !== DEFAULT_HOME_FILTERS.period;
 
   const toggleTradeType = useCallback(
     (tradeType: TradeType) => {
+      
       if (
         normalizedTradeTypes.length === 1 &&
         normalizedTradeTypes[0] === tradeType
@@ -137,7 +91,6 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
         ]);
         return;
       }
-
       const next = normalizedTradeTypes.includes(tradeType)
         ? normalizedTradeTypes.filter((value) => value !== tradeType)
         : [...normalizedTradeTypes, tradeType];
@@ -146,168 +99,94 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
     [normalizedTradeTypes, onTradeTypesChange]
   );
 
-  const toggleAccount = useCallback(
-    (account: string) => {
-      const visualSelection = allAccountsSelected ? [] : selectedAccounts;
-      const next = visualSelection.includes(account)
-        ? visualSelection.filter((value) => value !== account)
-        : [...visualSelection, account];
-      void onAccountsChange(next, false);
-    },
-    [allAccountsSelected, onAccountsChange, selectedAccounts]
+  const entries = useMemo<FilterMenuEntry[]>(
+    () => [
+      checklistNode({
+        id: 'period',
+        label: t('home.filters.period'),
+        icon: FILTER_MENU_ICONS.period,
+        singleChoice: true,
+        options: periods.map((period) => ({
+          value: period,
+          label: periodLabels[period],
+        })),
+        selected: [selectedPeriod],
+        appliedCount: periodChanged ? 1 : 0,
+        onToggle: (value) => {
+          const period = periods.find((candidate) => candidate === value);
+          if (period) void onPeriodChange(period);
+        },
+        onClear: () => void onPeriodChange(DEFAULT_HOME_FILTERS.period),
+      }),
+      checklistNode({
+        id: 'tradeType',
+        label: t('home.filters.trade-type'),
+        icon: FILTER_MENU_ICONS.tradeType,
+        options: TRADE_TYPES.map((tradeType) => ({
+          value: tradeType,
+          label:
+            tradeType === 'backtest'
+              ? t('filter.modal.type.backtest')
+              : t('filter.modal.type.regular'),
+        })),
+        selected: normalizedTradeTypes,
+        appliedCount: defaultTradeTypesSelected
+          ? 0
+          : normalizedTradeTypes.length,
+        onToggle: (value) => {
+          const tradeType = TRADE_TYPES.find(
+            (candidate) => candidate === value
+          );
+          if (tradeType) toggleTradeType(tradeType);
+        },
+        onClear: () =>
+          void onTradeTypesChange([...DEFAULT_REGULAR_ONLY_TRADE_TYPES]),
+      }),
+      checklistNode({
+        id: 'accounts',
+        label: t('home.filters.accounts'),
+        icon: FILTER_MENU_ICONS.accounts,
+        options: accounts.map((account) => ({
+          value: account,
+          label: account,
+        })),
+        selected: visibleAccountSelection,
+        emptyLabel: t('dashboard.filter.accounts.none-found'),
+        onToggle: (account) => {
+          const next = visibleAccountSelection.includes(account)
+            ? visibleAccountSelection.filter((value) => value !== account)
+            : [...visibleAccountSelection, account];
+          void onAccountsChange(next, false);
+        },
+        onClear: () => void onAccountsChange([], true),
+      }),
+    ],
+    [
+      accounts,
+      defaultTradeTypesSelected,
+      normalizedTradeTypes,
+      onAccountsChange,
+      onPeriodChange,
+      onTradeTypesChange,
+      periodChanged,
+      periodLabels,
+      periods,
+      selectedPeriod,
+      toggleTradeType,
+      visibleAccountSelection,
+    ]
   );
 
-  const tradeTypeSummary = allTradeTypesSelected
-    ? t('tradelog.root.all-trades')
-    : normalizedTradeTypes.length === 1
-      ? normalizedTradeTypes[0] === 'backtest'
-        ? t('filter.modal.type.backtest')
-        : t('filter.modal.type.regular')
-      : t('common.n-types', {
-          count: normalizedTradeTypes.length.toString(),
-        });
-  const accountSummary = allAccountsSelected
-    ? t('dashboard.filter.accounts.all')
-    : selectedAccounts.length === 1
-      ? selectedAccounts[0]
-      : t('dashboard.filter.accounts.n-selected', {
-          count: selectedAccounts.length.toString(),
-        });
-
-  const selectedAccountsSet = new Set(selectedAccounts);
   return (
-    <div className="journalit-drilldown-filter" ref={popoverRef}>
-      <FilterButton
-        onClick={togglePopover}
-        activeFilterCount={activeFilterCount}
-        className="journalit-home-filter-button"
-      />
-      {isOpen ? (
-        <div className="journalit-drilldown-filter__menu">
-          {panel === 'root' ? (
-            <DrilldownFilterPanel>
-              <DrilldownFilterReset onClick={onReset} />
-              <DrilldownFilterDivider />
-              {(
-                [
-                  [
-                    'period',
-                    t('home.filters.period'),
-                    periodLabels[selectedPeriod],
-                    CalendarRange,
-                  ],
-                  [
-                    'tradeType',
-                    t('home.filters.trade-type'),
-                    tradeTypeSummary,
-                    ListFilter,
-                  ],
-                  [
-                    'accounts',
-                    t('home.filters.accounts'),
-                    accountSummary,
-                    UsersRound,
-                  ],
-                ] satisfies Array<
-                  [HomeFilterPanel, string, string, ObsidianIconComponent]
-                >
-              ).map(([targetPanel, label, summary, RowIcon]) => (
-                <DrilldownFilterRow
-                  key={targetPanel}
-                  icon={RowIcon}
-                  label={label}
-                  summary={summary}
-                  onClick={() => setPanel(targetPanel)}
-                />
-              ))}
-            </DrilldownFilterPanel>
-          ) : null}
-          {panel === 'period' ? (
-            <DrilldownFilterPanel>
-              <DrilldownFilterPanelHeader
-                title={t('home.filters.period')}
-                onBack={() => setPanel('root')}
-              />
-              {periods.map((period) => (
-                <DrilldownFilterOption
-                  key={period}
-                  checked={selectedPeriod === period}
-                  onClick={() => void onPeriodChange(period)}
-                >
-                  {periodLabels[period]}
-                </DrilldownFilterOption>
-              ))}
-            </DrilldownFilterPanel>
-          ) : null}
-          {panel === 'tradeType' ? (
-            <DrilldownFilterPanel>
-              <DrilldownFilterPanelHeader
-                title={t('home.filters.trade-type')}
-                onBack={() => setPanel('root')}
-              />
-              <DrilldownFilterOption
-                checked={allTradeTypesSelected}
-                onClick={() =>
-                  void onTradeTypesChange(
-                    allTradeTypesSelected
-                      ? [...DEFAULT_REGULAR_ONLY_TRADE_TYPES]
-                      : [...TRADE_TYPES]
-                  )
-                }
-              >
-                {t('common.select-all')}
-              </DrilldownFilterOption>
-              <DrilldownFilterDivider />
-              {TRADE_TYPES.map((tradeType) => (
-                <DrilldownFilterOption
-                  key={tradeType}
-                  checked={normalizedTradeTypes.includes(tradeType)}
-                  onClick={() => toggleTradeType(tradeType)}
-                >
-                  {tradeType === 'backtest'
-                    ? t('filter.modal.type.backtest')
-                    : t('filter.modal.type.regular')}
-                </DrilldownFilterOption>
-              ))}
-            </DrilldownFilterPanel>
-          ) : null}
-          {panel === 'accounts' ? (
-            <DrilldownFilterPanel>
-              <DrilldownFilterPanelHeader
-                title={t('home.filters.accounts')}
-                onBack={() => setPanel('root')}
-              />
-              <DrilldownFilterOption
-                checked={allAccountsSelected}
-                onClick={() => void onAccountsChange([], true)}
-              >
-                {t('dashboard.filter.accounts.select-all')}
-              </DrilldownFilterOption>
-              <DrilldownFilterDivider />
-              {normalizedAccounts.length > 0 ? (
-                normalizedAccounts.map((account) => {
-                  const selected =
-                    allAccountsSelected || selectedAccountsSet.has(account);
-                  return (
-                    <DrilldownFilterOption
-                      key={account}
-                      checked={selected}
-                      onClick={() => toggleAccount(account)}
-                    >
-                      {account}
-                    </DrilldownFilterOption>
-                  );
-                })
-              ) : (
-                <DrilldownFilterEmpty>
-                  {t('dashboard.filter.accounts.none-found')}
-                </DrilldownFilterEmpty>
-              )}
-            </DrilldownFilterPanel>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
+    <CascadingFilterMenu
+      app={app}
+      entries={entries}
+      onReset={onReset}
+      className="journalit-home-filter-button"
+      onOpenChange={(isOpen) => {
+        if (isOpen) onOpen?.();
+      }}
+    />
   );
 };
 

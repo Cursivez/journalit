@@ -199,6 +199,8 @@ export interface EventMap {
   'entity-shortcuts:changed': EntityShortcutsChangedPayload;
   
   'home:widget-opacity-changed': void;
+  
+  'appearance:accent-source-changed': void;
   'options:changed': OptionsChangedPayload;
   'default-template:changed': DefaultTemplateChangedPayload;
   'trade-template:changed': void;

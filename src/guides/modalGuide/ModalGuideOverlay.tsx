@@ -4,14 +4,25 @@ import React from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '../../lang/helpers';
 import { cssVars } from '../../styles/inlineStylePolicy';
-import type { ModalGuidePopoverPosition } from './modalGuidePopover';
+import {
+  GuideStepProgressBar,
+  useMeasuredPopoverHeight,
+} from '../GuidePopoverParts';
+import {
+  getModalGuidePopoverPosition,
+  type ModalGuidePlacement,
+} from './modalGuidePopover';
+import { getWindowViewport } from '../viewGuidePopoverPosition';
 
 interface ModalGuideOverlayProps {
   titleId: string;
   title: string;
   description: string;
-  stepLabel: string;
-  position: ModalGuidePopoverPosition;
+  
+  stepNumber: number;
+  stepCount: number;
+  placement: ModalGuidePlacement | undefined;
+  targetRect: DOMRect | null;
   isWaitingForTarget: boolean;
   isFirstStep: boolean;
   isLastStep: boolean;
@@ -25,8 +36,10 @@ export const ModalGuideOverlay: React.FC<ModalGuideOverlayProps> = ({
   titleId,
   title,
   description,
-  stepLabel,
-  position,
+  stepNumber,
+  stepCount,
+  placement,
+  targetRect,
   isWaitingForTarget,
   isFirstStep,
   isLastStep,
@@ -34,8 +47,18 @@ export const ModalGuideOverlay: React.FC<ModalGuideOverlayProps> = ({
   onBack,
   onSkip,
   portalTarget,
-}) =>
-  createPortal(
+}) => {
+  const [popoverRef, popoverHeight] = useMeasuredPopoverHeight();
+  const position = getModalGuidePopoverPosition(
+    placement,
+    targetRect,
+    popoverHeight,
+    
+    
+    getWindowViewport(portalTarget.ownerDocument.defaultView ?? window)
+  );
+
+  return createPortal(
     <div
       className="journalit-view-guide-overlay"
       data-journalit-modal-guide-overlay
@@ -52,6 +75,7 @@ export const ModalGuideOverlay: React.FC<ModalGuideOverlayProps> = ({
         />
       )}
       <div
+        ref={popoverRef}
         className={`journalit-view-guide-popover ${position.anchored ? 'journalit-view-guide-popover--anchored' : ''}`}
         role="dialog"
         aria-labelledby={titleId}
@@ -70,7 +94,7 @@ export const ModalGuideOverlay: React.FC<ModalGuideOverlayProps> = ({
             : description}
         </p>
         <div className="journalit-view-guide-footer">
-          <span className="journalit-view-guide-step">{stepLabel}</span>
+          <GuideStepProgressBar stepNumber={stepNumber} stepCount={stepCount} />
           <div className="journalit-view-guide-actions">
             {!isLastStep && (
               <button
@@ -92,7 +116,7 @@ export const ModalGuideOverlay: React.FC<ModalGuideOverlayProps> = ({
             )}
             <button
               type="button"
-              className="journalit-view-guide-button journalit-view-guide-button--primary"
+              className="journalit-view-guide-button journalit-view-guide-button--primary mod-cta"
               onClick={onPrimary}
               disabled={isWaitingForTarget}
             >
@@ -104,3 +128,4 @@ export const ModalGuideOverlay: React.FC<ModalGuideOverlayProps> = ({
     </div>,
     portalTarget
   );
+};

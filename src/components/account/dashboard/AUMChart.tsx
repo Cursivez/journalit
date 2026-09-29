@@ -26,6 +26,22 @@ import { generateNiceAxis } from '../../../utils/chartUtils';
 const POSITIVE_AUM_COLOR = 'var(--chart-positive, #43a047)';
 const NEGATIVE_AUM_COLOR = 'var(--chart-negative, #e53935)';
 let aumChartIdCounter = 0;
+type DisplayValueFormatter = ReturnType<
+  typeof useDisplayFormatter
+>['formatValue'];
+
+function formatAUMYAxisTick(
+  value: number,
+  currency: CurrencyCode,
+  formatValue: DisplayValueFormatter
+): string {
+  return formatValue({
+    kind: 'balance',
+    value,
+    currencyCode: currency,
+    notation: 'compact',
+  });
+}
 
 interface AUMDotProps extends Omit<DotItemDotProps, 'payload'> {
   payload?: AUMChartDataPoint;
@@ -348,13 +364,9 @@ export const AUMChart: React.FC<AUMChartProps> = ({
           />
           <XAxis dataKey="date" tickMargin={8} tickLine={false} />
           <YAxis
+            className="journalit-chart-axis--numeric"
             tickFormatter={(value: number) =>
-              formatValue({
-                kind: 'balance',
-                value,
-                currencyCode: currency,
-                notation: 'compact',
-              })
+              formatAUMYAxisTick(value, currency, formatValue)
             }
             domain={domain}
             allowDataOverflow={false}

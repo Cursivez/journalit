@@ -1937,6 +1937,8 @@ export class SettingsManager {
       homeStartupBehavior:
         saved.general?.homeStartupBehavior ??
         defaults.general!.homeStartupBehavior,
+      accentColorSource:
+        saved.general?.accentColorSource ?? defaults.general!.accentColorSource,
       onboardingCompleted:
         saved.general?.onboardingCompleted ??
         defaults.general!.onboardingCompleted,

@@ -9,7 +9,10 @@ import {
   TransactionType,
 } from '../../../services/account/types';
 import { resolvePropChallengePayoutPhaseAt } from '../../../services/propChallenge/PropChallengeConfig';
-import { doesPhaseOwnTransaction } from '../../../services/propChallenge/PropChallengeRuleEngine';
+import {
+  doesPhaseOwnTransaction,
+  propChallengePhaseBalancesAfter,
+} from '../../../services/propChallenge/PropChallengeRuleEngine';
 import type { AccountTradeData } from '../../../services/accountPage/types';
 import { openEditEventModal } from './EditEventModal';
 import {
@@ -38,8 +41,17 @@ const LedgerRow: React.FC<{
   accountName: string;
   currency: string;
   payoutNumber: number | undefined;
+  
+  balanceAfter: number;
   onUpdate: () => void;
-}> = ({ transaction, accountName, currency, payoutNumber, onUpdate }) => {
+}> = ({
+  transaction,
+  accountName,
+  currency,
+  payoutNumber,
+  balanceAfter,
+  onUpdate,
+}) => {
   const plugin = usePlugin();
   const { formatValue, shouldMask } = useDisplayFormatter();
 
@@ -132,7 +144,7 @@ const LedgerRow: React.FC<{
       <td className="journalit-account-ledger-cell-balance">
         {formatValue({
           kind: 'balance',
-          value: transaction.balanceAfter,
+          value: balanceAfter,
           currencyCode: currency,
           signed: false,
         })}
@@ -203,6 +215,21 @@ export const DepositsWithdrawalsSection: React.FC = () => {
       );
     }
   );
+
+  
+  
+  
+  
+  const phaseBalances =
+    phaseWindow && phaseStart !== undefined && account.propChallenge
+      ? propChallengePhaseBalancesAfter({
+          phase: phaseWindow,
+          config: account.propChallenge,
+          trades: accountPageData.trades,
+          transactions: account.transactions,
+          now: ledgerEvaluatedAt,
+        })
+      : undefined;
 
   
   
@@ -364,6 +391,9 @@ export const DepositsWithdrawalsSection: React.FC = () => {
                 currency={currency}
                 payoutNumber={
                   isProp ? payoutNumbers.get(transaction) : undefined
+                }
+                balanceAfter={
+                  phaseBalances?.get(transaction) ?? transaction.balanceAfter
                 }
                 onUpdate={() => void refreshData()}
               />

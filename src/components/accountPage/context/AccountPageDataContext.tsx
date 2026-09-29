@@ -175,6 +175,8 @@ const createEmptyAccountMetrics = (): AccountMetrics => ({
   losingTrades: 0,
   winRate: 0,
   totalPnL: 0,
+  totalPnLRMultiple: undefined,
+  rMultipleTradeCount: 0,
   avgWin: 0,
   avgLoss: 0,
   avgWinRMultiple: undefined,
@@ -339,6 +341,20 @@ const calculateFilteredAccountMetrics = (
     (sum, trade) => sum + getEffectivePnL(trade),
     0
   );
+  const tradeRMultiples = pnlContributingTrades.flatMap((trade) => {
+    const r = calculateEffectiveRMultiple(
+      getEffectivePnL(trade),
+      trade.rMultiple,
+      trade.riskAmount,
+      options.defaultRiskAmount
+    );
+    return r === undefined ? [] : [r];
+  });
+  
+  const totalPnLRMultiple =
+    tradeRMultiples.length > 0
+      ? tradeRMultiples.reduce((sum, r) => sum + r, 0)
+      : undefined;
 
   const breakEvenSettings = {
     breakEvenThresholdMode: options.breakEvenThresholdMode,
@@ -425,6 +441,8 @@ const calculateFilteredAccountMetrics = (
     losingTrades: losingTrades.length,
     winRate,
     totalPnL,
+    totalPnLRMultiple,
+    rMultipleTradeCount: tradeRMultiples.length,
     avgWin,
     avgLoss,
     avgWinRMultiple,

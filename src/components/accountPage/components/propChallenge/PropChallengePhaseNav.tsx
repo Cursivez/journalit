@@ -107,7 +107,9 @@ export const PropChallengePhaseNav: React.FC<{
     | PropChallengePhaseEvaluationStatus;
   actions: readonly PropChallengeMenuAction[];
   onAction: (action: PropChallengeManualAction) => void;
-}> = ({ challenge, selectedPhase, status, actions, onAction }) => {
+  
+  upsell?: React.ReactNode;
+}> = ({ challenge, selectedPhase, status, actions, onAction, upsell }) => {
   const selectedIndex = challenge.phases.findIndex(
     (phase) => phase.id === selectedPhase.id
   );
@@ -135,6 +137,7 @@ export const PropChallengePhaseNav: React.FC<{
           </span>
         ) : null}
         
+        {upsell}
         <PropChallengeActionsMenu actions={actions} onSelect={onAction} />
       </div>
     </div>

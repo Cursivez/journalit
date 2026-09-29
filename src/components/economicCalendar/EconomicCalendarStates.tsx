@@ -179,7 +179,14 @@ export const EconomicCalendarError: React.FC<EconomicCalendarErrorProps> = ({
 
 EconomicCalendarError.displayName = 'EconomicCalendarError';
 
-export const EconomicCalendarProGate: React.FC = () => (
+interface EconomicCalendarProGateProps {
+  
+  onSignIn?: () => void;
+}
+
+export const EconomicCalendarProGate: React.FC<
+  EconomicCalendarProGateProps
+> = ({ onSignIn }) => (
   <div className="journalit-econ-gate">
     <div className="journalit-econ-gate__icon" aria-hidden="true">
       <CalendarRange size={24} strokeWidth={1.8} />
@@ -204,6 +211,15 @@ export const EconomicCalendarProGate: React.FC = () => (
     >
       {t('premium.gate.cta.continue-pro')}
     </button>
+    {onSignIn && (
+      <button
+        type="button"
+        className="journalit-econ-gate__secondary"
+        onClick={onSignIn}
+      >
+        {t('view.economic-calendar.sign-in')}
+      </button>
+    )}
   </div>
 );
 

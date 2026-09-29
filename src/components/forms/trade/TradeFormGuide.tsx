@@ -1,11 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import JournalitPlugin from '../../../main';
 import type { TranslationKey } from '../../../lang/locale/en';
@@ -18,7 +11,6 @@ import {
   shouldAutoShowModalGuide,
 } from '../../../guides/modalGuide/modalGuidePersistence';
 import {
-  getModalGuidePopoverPosition,
   getModalGuideTargetElement,
   type ModalGuidePlacement,
 } from '../../../guides/modalGuide/modalGuidePopover';
@@ -265,22 +257,13 @@ function useTradeFormGuideModel({ plugin }: TradeFormGuideProps) {
     finish('skipped');
   }, [finish]);
 
-  const popoverPosition = useMemo(
-    () =>
-      getModalGuidePopoverPosition(
-        currentStep.placement,
-        overlayState.targetRect
-      ),
-    [currentStep, overlayState.targetRect]
-  );
-
   return {
     currentStep,
     stepIndex,
     isVisible,
     isFirstStep,
     isLastStep,
-    popoverPosition,
+    targetRect: overlayState.targetRect,
     isWaitingForTarget: overlayState.isWaitingForTarget,
     handlePrimaryClick,
     handleBack,
@@ -306,7 +289,7 @@ export const TradeFormGuide: React.FC<TradeFormGuideProps> = (props) => {
     isVisible,
     isFirstStep,
     isLastStep,
-    popoverPosition,
+    targetRect,
     isWaitingForTarget,
     handlePrimaryClick,
     handleBack,
@@ -321,14 +304,14 @@ export const TradeFormGuide: React.FC<TradeFormGuideProps> = (props) => {
         className="journalit-trade-form-guide-orb-layer"
         data-journalit-modal-guide-overlay
       >
-        {popoverPosition.highlight && (
+        {targetRect && (
           <div
             className="journalit-trade-form-guide-hover-highlight"
             style={cssVars({
-              '--journalit-guide-highlight-top': `${popoverPosition.highlight.top}px`,
-              '--journalit-guide-highlight-left': `${popoverPosition.highlight.left}px`,
-              '--journalit-guide-highlight-width': `${popoverPosition.highlight.width}px`,
-              '--journalit-guide-highlight-height': `${popoverPosition.highlight.height}px`,
+              '--journalit-guide-highlight-top': `${targetRect.top}px`,
+              '--journalit-guide-highlight-left': `${targetRect.left}px`,
+              '--journalit-guide-highlight-width': `${targetRect.width}px`,
+              '--journalit-guide-highlight-height': `${targetRect.height}px`,
             })}
           />
         )}
@@ -344,8 +327,10 @@ export const TradeFormGuide: React.FC<TradeFormGuideProps> = (props) => {
       titleId={titleId}
       title={t(currentStep.titleKey)}
       description={t(currentStep.descriptionKey)}
-      stepLabel={`${getVisibleGuideStepIndex(stepIndex)}/${VISIBLE_GUIDE_STEP_COUNT}`}
-      position={popoverPosition}
+      stepNumber={getVisibleGuideStepIndex(stepIndex)}
+      stepCount={VISIBLE_GUIDE_STEP_COUNT}
+      placement={currentStep.placement}
+      targetRect={targetRect}
       isWaitingForTarget={isWaitingForTarget}
       isFirstStep={isFirstStep}
       isLastStep={isLastStep}

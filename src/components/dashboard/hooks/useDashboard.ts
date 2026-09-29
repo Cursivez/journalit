@@ -9,11 +9,7 @@ import {
   useRef,
 } from 'react';
 import { FilterState } from '../DashboardView';
-import {
-  getActiveLayout,
-  saveLayout,
-  LAYOUT_BOTTOM_POSITION,
-} from '../utils/layoutUtils';
+import { getActiveLayout } from '../utils/layoutUtils';
 import {
   createDashboardFilters,
   normalizeDashboardFilters,
@@ -21,11 +17,7 @@ import {
 import { applyAllCalendarFixes } from '../utils/calendarStyles';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { useEventBus } from '../../../hooks/useEventBus';
-import {
-  AVAILABLE_WIDGETS,
-  normalizeDashboardWidgetIds,
-  type WidgetDefinition,
-} from '../components/BottomSection/types';
+import { normalizeDashboardWidgetIds } from '../components/BottomSection/types';
 import { AccountChangedPayload } from '../../../services/events/types';
 import { remapAccountFilterFromAccountChange } from '../../shared/filters/remapSelectedAccounts';
 import { persistViewFilter } from '../../shared/filters/viewFilterPersistence';
@@ -255,108 +247,6 @@ export const useDashboard = () => {
     []
   );
 
-  
-  const handleAddMetric = useCallback(
-    (metricId: string) => {
-      try {
-        
-        if (!activeMetrics.includes(metricId)) {
-          
-          setActiveMetrics((prev) => [...prev, metricId]);
-
-          
-          if (plugin && activeLayout) {
-            const newLayout = {
-              ...activeLayout,
-              topSection: [...activeMetrics, metricId],
-            };
-
-            
-            saveLayout(plugin, 'Default', newLayout).catch((err: Error) => {
-              console.error('Error saving layout after adding metric:', err);
-            });
-          }
-        }
-      } catch (error) {
-        console.error('Error in handleAddMetric:', error);
-      }
-    },
-    [activeMetrics, plugin, activeLayout]
-  );
-
-  
-  const createValidLayoutItem = useMemo(() => {
-    const cols: Record<string, number> = {
-      lg: 12,
-      md: 6,
-      sm: 4,
-      xs: 2,
-      xxs: 1,
-    };
-
-    return (widgetId: string, bp: string, widgetDef: WidgetDefinition) => {
-      const maxCols = cols[bp];
-      const scaledWidth = Math.min(widgetDef.defaultSize.w, maxCols);
-
-      return {
-        i: widgetId,
-        x: 0,
-        y: LAYOUT_BOTTOM_POSITION, 
-        w: scaledWidth,
-        h: widgetDef.defaultSize.h,
-      };
-    };
-  }, []);
-
-  
-  const handleAddWidget = useCallback(
-    (widgetId: string) => {
-      if (!plugin || !activeLayout || activeWidgets.includes(widgetId)) {
-        return;
-      }
-
-      try {
-        
-        const widgetDef = AVAILABLE_WIDGETS.find((w) => w.id === widgetId);
-
-        if (!widgetDef) {
-          console.warn(`Widget definition not found: ${widgetId}`);
-          return;
-        }
-
-        
-        const layoutItems = {
-          lg: createValidLayoutItem(widgetId, 'lg', widgetDef),
-          md: createValidLayoutItem(widgetId, 'md', widgetDef),
-          sm: createValidLayoutItem(widgetId, 'sm', widgetDef),
-          xs: createValidLayoutItem(widgetId, 'xs', widgetDef),
-          xxs: createValidLayoutItem(widgetId, 'xxs', widgetDef),
-        };
-
-        
-        const newLayout = {
-          ...activeLayout,
-          bottomSection: {
-            lg: [...activeLayout.bottomSection.lg, layoutItems.lg],
-            md: [...activeLayout.bottomSection.md, layoutItems.md],
-            sm: [...activeLayout.bottomSection.sm, layoutItems.sm],
-            xs: [...(activeLayout.bottomSection.xs || []), layoutItems.xs],
-            xxs: [...(activeLayout.bottomSection.xxs || []), layoutItems.xxs],
-          },
-        };
-
-        
-        void saveLayout(plugin, 'Default', newLayout);
-
-        
-        setActiveWidgets((prev) => [...prev, widgetId]);
-      } catch (error) {
-        console.error('Error adding widget:', error);
-      }
-    },
-    [activeWidgets, plugin, activeLayout, createValidLayoutItem]
-  );
-
   return {
     filters,
     isFiltersHydrated,
@@ -371,7 +261,5 @@ export const useDashboard = () => {
     openUnifiedSelector,
     closeUnifiedSelector,
     restoreGuideStepState,
-    handleAddMetric,
-    handleAddWidget,
   };
 };

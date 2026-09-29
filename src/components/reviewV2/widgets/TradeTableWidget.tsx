@@ -49,6 +49,7 @@ import {
 import { formatDateDisplay } from '../../../utils/dateUtils';
 import { getReviewTradeDate } from '../utils/reviewTradeDates';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 type ReviewTableTrade = Record<string, unknown> &
   Parameters<typeof calculateAssetAdjustedPriceMoveValue>[0] & {
@@ -1073,7 +1074,10 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
                 total: String(totalTrades),
               })}
             </span>
-            <div className="journalit-reviewv2-pagination-controls">
+            <div
+              className="journalit-reviewv2-pagination-controls"
+              {...shareCaptureExcludeProps}
+            >
               <button
                 onClick={goToPrevPage}
                 disabled={effectiveCurrentPage === 0}

@@ -25,6 +25,7 @@ import { Japanese } from 'flatpickr/dist/l10n/ja';
 import { Korean } from 'flatpickr/dist/l10n/ko';
 import { Russian } from 'flatpickr/dist/l10n/ru';
 import { Italian } from 'flatpickr/dist/l10n/it';
+import { Arabic } from 'flatpickr/dist/l10n/ar';
 import {
   getUserDateFormat,
   getWeekStartDayIndex,
@@ -118,6 +119,7 @@ const flatpickrLocales: Record<string, CustomLocale> = {
   ru: Russian,
   it: Italian,
   ta: Tamil,
+  ar: Arabic,
 };
 import { t, getCurrentLanguage } from '../../lang/helpers';
 
@@ -1122,6 +1124,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
 
         <div
           ref={containerRef}
+          dir="ltr"
           role="group"
           aria-label={label ? undefined : ariaLabel}
           aria-labelledby={label ? labelId : undefined}

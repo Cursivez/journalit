@@ -1,4 +1,5 @@
 import type { Plugin } from 'obsidian';
+import { isSupportedTimeZone } from '../services/propChallenge/normalization';
 
 export const DEMO_PACK_VERSION = 4;
 export const DEMO_MANIFEST_SCHEMA_VERSION = 1;
@@ -82,15 +83,6 @@ export interface DemoManifest {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
-
-function isSupportedTimeZone(value: string): boolean {
-  try {
-    new Intl.DateTimeFormat('en-US', { timeZone: value }).format(0);
-    return true;
-  } catch {
-    return false;
-  }
-}
 
 function isCanonicalVaultPath(value: string): boolean {
   if (value.length === 0 || value.trim() !== value || value.startsWith('/')) {

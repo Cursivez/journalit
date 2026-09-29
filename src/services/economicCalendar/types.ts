@@ -29,6 +29,8 @@ export interface EconomicCalendarEvent {
 export type EconomicCalendarFetchResult =
   | { status: 'ok'; events: EconomicCalendarEvent[] }
   | { status: 'not_entitled' }
+  
+  | { status: 'signed_out' }
   | { status: 'offline' }
   | { status: 'error' };
 
@@ -57,8 +59,8 @@ export interface EconomicCalendarImportResult {
 
 export type EconomicCalendarRestoreResult =
   | ({ status: 'ok' } & EconomicCalendarImportResult)
-  | { status: 'not_entitled' | 'offline' | 'error' };
+  | { status: 'not_entitled' | 'signed_out' | 'offline' | 'error' };
 
 export type EconomicCalendarRestoreCheckResult =
   | { status: 'ok'; missingCount: number }
-  | { status: 'not_entitled' | 'offline' | 'error' };
+  | { status: 'not_entitled' | 'signed_out' | 'offline' | 'error' };

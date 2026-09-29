@@ -296,7 +296,7 @@ export const CHART_STYLES = `
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
   transform: translateY(-4px);
   position: relative;
-  animation: tooltipFadeIn 0.2s var(--chart-animation-function);
+  animation: journalit-chart-tooltip-fade-in 0.2s var(--chart-animation-function);
   z-index: 1000;
   overflow-wrap: anywhere;
   white-space: normal;
@@ -315,6 +315,8 @@ export const CHART_STYLES = `
 
 
 .journalit-chart-tooltip-value {
+  direction: ltr;
+  unicode-bidi: isolate;
   font-size: 20px;
   font-weight: 600;
   text-align: center;
@@ -386,7 +388,7 @@ export const CHART_STYLES = `
 }
 
 
-@keyframes tooltipFadeIn {
+@keyframes journalit-chart-tooltip-fade-in {
   from {
     opacity: 0;
     transform: translateY(-8px);
@@ -443,6 +445,11 @@ export const CHART_STYLES = `
 .journalit-chart-container .recharts-yAxis .recharts-cartesian-axis-line {
   stroke: var(--background-modifier-border);
   stroke-opacity: 0.5;
+}
+
+.journalit-chart-container .recharts-cartesian-axis.journalit-chart-axis--numeric .recharts-cartesian-axis-tick-value {
+  direction: ltr;
+  unicode-bidi: isolate;
 }
 
 .journalit-chart-container .recharts-cartesian-axis-tick-value {
@@ -529,7 +536,7 @@ export const CHART_STYLES = `
 }
 
 
-@keyframes barFadeIn {
+@keyframes journalit-chart-bar-fade-in {
   from {
     opacity: 0;
     transform: scaleY(0.8);
@@ -545,7 +552,7 @@ export const CHART_STYLES = `
 }
 
 
-@keyframes calendarFadeIn {
+@keyframes journalit-calendar-fade-in {
   from {
     opacity: 0;
     transform: translateY(8px);
@@ -556,21 +563,21 @@ export const CHART_STYLES = `
   }
 }
 
-@keyframes pulseBorder {
+@keyframes journalit-chart-pulse-border {
   0% {
-    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2), 0 4px 12px rgba(var(--interactive-accent-rgb), 0.25);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent), 0 4px 12px color-mix(in srgb, var(--interactive-accent) 25%, transparent);
   }
   50% {
-    box-shadow: 0 0 0 3px rgba(var(--interactive-accent-rgb), 0.3), 0 4px 15px rgba(var(--interactive-accent-rgb), 0.35);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-accent) 30%, transparent), 0 4px 15px color-mix(in srgb, var(--interactive-accent) 35%, transparent);
   }
   100% {
-    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2), 0 4px 12px rgba(var(--interactive-accent-rgb), 0.25);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent), 0 4px 12px color-mix(in srgb, var(--interactive-accent) 25%, transparent);
   }
 }
 
 
 .journalit-dashboard-calendar-day.today {
-  animation: pulseBorder 2s infinite ease-in-out;
+  animation: journalit-chart-pulse-border 2s infinite ease-in-out;
   border: 2px solid var(--interactive-accent) !important;
   z-index: 2 !important;
 }

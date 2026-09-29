@@ -5,7 +5,10 @@ import JournalitPlugin from '../../../main';
 import { t } from '../../../lang/helpers';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
-import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
+import {
+  useDisplayFormatter,
+  useDisplayPolicy,
+} from '../../../hooks/useDisplayPolicy';
 import { CurrencyCode } from '../../../utils/currencyConfig';
 import {
   getEffectivePnL,
@@ -166,6 +169,7 @@ export const BestWorstWeeksWidget: React.FC<BestWorstWeeksWidgetProps> =
       
       const currency = plugin?.settings?.general?.currency || CurrencyCode.USD;
       const { formatValue, shouldMask } = useDisplayFormatter();
+      const { displayRMultiples } = useDisplayPolicy();
       const isPnlMasked = shouldMask('pnl');
       const isReturnPercentMasked = shouldMask('returnPercent');
       const applyAccountCountMultiplier = false;
@@ -443,7 +447,8 @@ export const BestWorstWeeksWidget: React.FC<BestWorstWeeksWidgetProps> =
 
       const formatWeekPnL = (week: WeekStats): string => {
         const currencies = Object.keys(week.pnlByCurrency).sort();
-        if (currencies.length <= 1) {
+        
+        if (currencies.length <= 1 || displayRMultiples) {
           return formatValue({
             kind: 'pnl',
             value: week.pnl,

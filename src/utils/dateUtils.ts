@@ -1,6 +1,7 @@
 
 
 import { getPluginInstance } from './pluginContext';
+import { getCurrentLanguage } from '../lang/helpers';
 
 export type WeekStartDaySetting =
   | 'sunday'
@@ -679,6 +680,7 @@ export function formatDatesForChartAxis(
 
   const sameYear = years.size === 1;
   const sameDay = days.size === 1;
+  const chartLocale = sameYear && !sameDay ? getCurrentLanguage() : undefined;
 
   
   return parsedDates.map((dateObj, i) => {
@@ -690,7 +692,7 @@ export function formatDatesForChartAxis(
     } else if (sameYear) {
       
       const day = dateObj.getDate();
-      const monthShort = dateObj.toLocaleDateString(undefined, {
+      const monthShort = dateObj.toLocaleDateString(chartLocale, {
         month: 'short',
       });
       return `${day} ${monthShort}`;

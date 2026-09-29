@@ -1,21 +1,18 @@
-import React, { useCallback, useId, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useId, useMemo, useState } from 'react';
 
 import type JournalitPlugin from '../../main';
 import type { SetupDirection } from '../../services/setup/types';
 import { t } from '../../lang/helpers';
 import { UNTAGGED_SETUP_FILTER_VALUE } from '../../utils/setupTagFilter';
-import { useCloseOnOutsideMouseDown } from '../../hooks/useCloseOnOutsideMouseDown';
-import { FilterButton } from '../shared/FilterButton';
-import { ListFilter, Tag } from '../shared/icons/ObsidianIcon';
+import { Tag } from '../shared/icons/ObsidianIcon';
 import { Tooltip } from '../shared/Tooltip';
+import type { App } from 'obsidian';
+import { CascadingFilterMenu } from '../shared/filters/menu/CascadingFilterMenu';
 import {
-  DrilldownFilterDivider,
-  DrilldownFilterOption,
-  DrilldownFilterPanel,
-  DrilldownFilterPanelHeader,
-  DrilldownFilterReset,
-  DrilldownFilterRow,
-} from '../shared/filters/DrilldownFilterPopover';
+  type FilterMenuEntry,
+  checklistNode,
+} from '../shared/filters/menu/menuModel';
+import { FILTER_MENU_ICONS } from '../shared/filters/menu/filterMenuIcons';
 import type { SetupViewModel } from './setupsViewTypes';
 
 export { UNTAGGED_SETUP_FILTER_VALUE };
@@ -306,9 +303,8 @@ export const SetupTagIndicator: React.FC<{ tags: string[] }> = ({ tags }) => {
 
 SetupTagIndicator.displayName = 'SetupTagIndicator';
 
-type SetupFilterPanel = 'root' | 'tags' | 'direction';
-
 interface SetupOverviewFilterProps {
+  app: App;
   availableTags: string[];
   selectedTags: string[];
   selectedDirections: SetupDirectionFilter[];
@@ -322,7 +318,24 @@ const directionLabel = (direction: SetupDirectionFilter) =>
     ? t('setups.create.direction.any')
     : t(`setups.create.direction.${direction}`);
 
+
+function selectedTagOptionValues(
+  options: ReadonlyArray<{ value: string }>,
+  selectedTags: readonly string[]
+): string[] {
+  const selectedKeys = new Set(selectedTags.map(normalizeTagKey));
+  const values: string[] = [];
+  for (const option of options) {
+    if (selectedKeys.has(normalizeTagKey(option.value))) {
+      values.push(option.value);
+    }
+  }
+  return values;
+}
+
+
 export const SetupOverviewFilter: React.FC<SetupOverviewFilterProps> = ({
+  app,
   availableTags,
   selectedTags,
   selectedDirections,
@@ -330,19 +343,7 @@ export const SetupOverviewFilter: React.FC<SetupOverviewFilterProps> = ({
   onDirectionsChange,
   onReset,
 }) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const [panel, setPanel] = useState<SetupFilterPanel>('root');
-  const popoverRef = useRef<HTMLDivElement>(null);
   const triggerLabelId = useId();
-  useCloseOnOutsideMouseDown(
-    popoverRef,
-    () => {
-      setIsOpen(false);
-      setPanel('root');
-    },
-    isOpen
-  );
-
   const tagOptions = useMemo(() => {
     const displayedTags = new Map<string, string>();
     for (const tag of availableTags) {
@@ -361,132 +362,79 @@ export const SetupOverviewFilter: React.FC<SetupOverviewFilterProps> = ({
       })),
     ];
   }, [availableTags]);
-  const validTags = getValidSetupTagFilters(availableTags, selectedTags);
-  const activeFilterCount =
-    (validTags.length > 0 ? 1 : 0) + (selectedDirections.length > 0 ? 1 : 0);
-  const tagSummary =
-    validTags.length === 0
-      ? t('common.all')
-      : t('filter.modal.custom-field.n-selected', {
-          count: validTags.length.toString(),
-        });
-  const directionSummary =
-    selectedDirections.length === 0
-      ? t('common.all')
-      : t('filter.modal.custom-field.n-selected', {
-          count: selectedDirections.length.toString(),
-        });
-  const toggleTag = (tag: string) => {
-    const key = normalizeTagKey(tag);
-    onTagsChange(
-      validTags.some((selected) => normalizeTagKey(selected) === key)
-        ? validTags.filter((selected) => normalizeTagKey(selected) !== key)
-        : [...validTags, tag]
-    );
-  };
-  const toggleDirection = (direction: SetupDirectionFilter) => {
-    onDirectionsChange(
-      selectedDirections.includes(direction)
-        ? selectedDirections.filter((selected) => selected !== direction)
-        : [...selectedDirections, direction]
-    );
-  };
-  const activePanel =
-    panel === 'tags'
-      ? {
-          title: t('setups.view.tags'),
-          selectedCount: validTags.length,
-          onClear: () => onTagsChange([]),
-          options: tagOptions.map((option) => ({
-            value: option.value,
-            label: option.label,
-            selected: validTags.some(
-              (tag) => normalizeTagKey(tag) === normalizeTagKey(option.value)
-            ),
-            onToggle: () => toggleTag(option.value),
-          })),
-        }
-      : {
-          title: t('setups.create.field.direction'),
-          selectedCount: selectedDirections.length,
-          onClear: () => onDirectionsChange([]),
-          options: SETUP_DIRECTION_FILTERS.map((direction) => ({
-            value: direction,
-            label: directionLabel(direction),
-            selected: selectedDirections.includes(direction),
-            onToggle: () => toggleDirection(direction),
-          })),
-        };
+  const validTags = useMemo(
+    () => getValidSetupTagFilters(availableTags, selectedTags),
+    [availableTags, selectedTags]
+  );
+
+  
+  const entries = useMemo<FilterMenuEntry[]>(
+    () => [
+      checklistNode({
+        id: 'tags',
+        label: t('setups.view.tags'),
+        icon: FILTER_MENU_ICONS.tags,
+        options: tagOptions,
+        
+        
+        selected: selectedTagOptionValues(tagOptions, validTags),
+        onToggle: (tag) => {
+          const key = normalizeTagKey(tag);
+          onTagsChange(
+            validTags.some((selected) => normalizeTagKey(selected) === key)
+              ? validTags.filter(
+                  (selected) => normalizeTagKey(selected) !== key
+                )
+              : [...validTags, tag]
+          );
+        },
+        onClear: () => onTagsChange([]),
+      }),
+      checklistNode({
+        id: 'direction',
+        label: t('setups.create.field.direction'),
+        icon: FILTER_MENU_ICONS.direction,
+        options: SETUP_DIRECTION_FILTERS.map((direction) => ({
+          value: direction,
+          label: directionLabel(direction),
+        })),
+        selected: selectedDirections,
+        onToggle: (value) => {
+          const direction = SETUP_DIRECTION_FILTERS.find(
+            (candidate) => candidate === value
+          );
+          if (!direction) return;
+          onDirectionsChange(
+            selectedDirections.includes(direction)
+              ? selectedDirections.filter((selected) => selected !== direction)
+              : [...selectedDirections, direction]
+          );
+        },
+        onClear: () => onDirectionsChange([]),
+      }),
+    ],
+    [
+      onDirectionsChange,
+      onTagsChange,
+      selectedDirections,
+      tagOptions,
+      validTags,
+    ]
+  );
 
   return (
-    <div className="journalit-drilldown-filter" ref={popoverRef}>
+    <>
       <span id={triggerLabelId} className="journalit-setups-view__sr-only">
         {t('setups.view.overview.tag-filter.aria')}
       </span>
-      <FilterButton
-        activeFilterCount={activeFilterCount}
-        ariaExpanded={isOpen}
-        ariaHaspopup="true"
-        ariaLabelledBy={triggerLabelId}
+      <CascadingFilterMenu
+        app={app}
+        entries={entries}
+        onReset={onReset}
         className="journalit-setups-filter-button"
-        onClick={() => {
-          if (isOpen) setPanel('root');
-          setIsOpen(!isOpen);
-        }}
+        ariaLabelledBy={triggerLabelId}
       />
-      {isOpen ? (
-        <div className="journalit-drilldown-filter__menu">
-          {panel === 'root' ? (
-            <DrilldownFilterPanel>
-              <DrilldownFilterReset onClick={onReset} />
-              <DrilldownFilterDivider />
-              {(
-                [
-                  ['tags', t('setups.view.tags'), tagSummary, Tag],
-                  [
-                    'direction',
-                    t('setups.create.field.direction'),
-                    directionSummary,
-                    ListFilter,
-                  ],
-                ] as const
-              ).map(([target, label, summary, Icon]) => (
-                <DrilldownFilterRow
-                  key={target}
-                  icon={Icon}
-                  label={label}
-                  summary={summary}
-                  onClick={() => setPanel(target)}
-                />
-              ))}
-            </DrilldownFilterPanel>
-          ) : (
-            <DrilldownFilterPanel>
-              <DrilldownFilterPanelHeader
-                title={activePanel.title}
-                onBack={() => setPanel('root')}
-              />
-              <DrilldownFilterOption
-                checked={activePanel.selectedCount === 0}
-                onClick={activePanel.onClear}
-              >
-                {t('common.all')}
-              </DrilldownFilterOption>
-              <DrilldownFilterDivider />
-              {activePanel.options.map((option) => (
-                <DrilldownFilterOption
-                  key={option.value}
-                  checked={option.selected}
-                  onClick={option.onToggle}
-                >
-                  {option.label}
-                </DrilldownFilterOption>
-              ))}
-            </DrilldownFilterPanel>
-          )}
-        </div>
-      ) : null}
-    </div>
+    </>
   );
 };
 

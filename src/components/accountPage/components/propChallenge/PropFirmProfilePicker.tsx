@@ -2,23 +2,54 @@ import React, { useEffect, useReducer, useState } from 'react';
 import { t } from '../../../../lang/helpers';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { useService } from '../../../../hooks/useService';
-import { Check } from '../../../shared/icons/ObsidianIcon';
+import { useEventBus } from '../../../../hooks/useEventBus';
 import { replacePropChallengeWithProfile } from '../../../../services/propChallenge/PropChallengeConfig';
+import { personalProfileSelection } from '../../../../services/propChallenge/PersonalPropFirmProfiles';
 import type {
   PropChallengeConfig,
   PropFirmProfileCatalog,
+  PropFirmProfileSelection,
 } from '../../../../services/propChallenge/types';
 import { showConfirmationModal } from '../../../shared/ConfirmationModal';
 import { DropdownSelect } from '../../../shared/DropdownSelect';
-import { NoTooltipButton } from '../../../ui/NoTooltipButton';
+import {
+  isUntouchedChallengeConfig,
+  markUntouchedChallengeConfig,
+} from './untouchedChallengeConfigs';
 
 interface Props {
   value: PropChallengeConfig;
   disabled: boolean;
   currencyCode: string;
+  
   firmNameField: React.ReactNode;
   challengeNameField: React.ReactNode;
   onChange: (value: PropChallengeConfig) => void;
+}
+
+
+const SAVED_PROFILES = '__saved-profiles';
+const CUSTOM_FIRM = '__custom-firm';
+
+
+function hasTypedIdentity(value: PropChallengeConfig): boolean {
+  return (
+    !value.profileRef &&
+    Boolean(value.firmName?.trim() || value.challengeName.trim())
+  );
+}
+
+
+function appliedSelection(value: PropChallengeConfig): {
+  firmId: string;
+  challengeId: string;
+} {
+  const ref = value.profileRef;
+  if (!ref) return { firmId: '', challengeId: '' };
+  return {
+    firmId: ref.source === 'personal' ? SAVED_PROFILES : ref.firmId,
+    challengeId: ref.challengeId,
+  };
 }
 
 type LoadStatus = 'loading' | 'ready' | 'failed';
@@ -61,16 +92,28 @@ export function PropFirmProfilePicker({
     catalogReducer,
     { status: 'loading' }
   );
+  const [, refreshSavedProfiles] = useReducer(
+    (revision: number) => revision + 1,
+    0
+  );
+  useEventBus('settings:changed', (event) => {
+    if (event.section === 'personalPropFirmProfiles') refreshSavedProfiles();
+  });
+  const savedProfiles = plugin?.settings.personalPropFirmProfiles ?? [];
+  
+  
+  
   const [selectedFirmId, setSelectedFirmId] = useState(
-    value.profileRef?.source === 'personal'
-      ? ''
-      : (value.profileRef?.firmId ?? '')
+    () =>
+      appliedSelection(value).firmId ||
+      (hasTypedIdentity(value) ? CUSTOM_FIRM : '')
   );
   const [selectedChallengeId, setSelectedChallengeId] = useState(
-    value.profileRef?.source === 'personal'
-      ? ''
-      : (value.profileRef?.challengeId ?? '')
+    () => appliedSelection(value).challengeId
   );
+  
+  
+  const firmId = selectedFirmId || (hasTypedIdentity(value) ? CUSTOM_FIRM : '');
 
   useEffect(() => {
     if (!service) return;
@@ -90,126 +133,230 @@ export function PropFirmProfilePicker({
     };
   }, [service]);
 
-  const selectedFirm =
-    catalog?.firms.find((firm) => firm.id === selectedFirmId) ??
-    catalog?.firms[0];
-  const selectedChallenge =
-    selectedFirm?.challenges.find(
-      (challenge) => challenge.id === selectedChallengeId
-    ) ?? selectedFirm?.challenges[0];
-
-  const applyProfile = async () => {
-    if (!plugin || !catalog || !selectedFirm || !selectedChallenge) return;
-    if (value.phases.length > 0) {
+  
+  
+  
+  const applySelection = async (selection: PropFirmProfileSelection) => {
+    if (!plugin) return;
+    setSelectedChallengeId(selection.challenge.id);
+    
+    
+    if (selection.challenge.currency !== currencyCode) return;
+    if (!isUntouchedChallengeConfig(value)) {
       const confirmed = await showConfirmationModal(plugin.app, {
         title: t('account.prop-challenge.profile.confirm-title'),
         message: t('account.prop-challenge.profile.confirm-message'),
         confirmLabel: t('account.prop-challenge.profile.apply'),
         cancelLabel: t('button.cancel'),
       });
-      if (!confirmed) return;
+      if (!confirmed) {
+        
+        
+        const applied = appliedSelection(value);
+        setSelectedFirmId(applied.firmId);
+        setSelectedChallengeId(applied.challengeId);
+        return;
+      }
     }
     onChange(
-      replacePropChallengeWithProfile(value, {
-        firmId: selectedFirm.id,
-        firmName: selectedFirm.name,
-        verifiedAt: selectedFirm.verifiedAt,
-        catalogVersion: catalog.version,
-        challenge: selectedChallenge,
-      })
+      markUntouchedChallengeConfig(
+        replacePropChallengeWithProfile(value, selection)
+      )
     );
   };
 
-  const renderManualIdentity = (status?: string) => (
-    <div className="journalit-prop-profile-picker">
-      {status && <div className="journalit-prop-profile-status">{status}</div>}
-      <div className="journalit-prop-profile-picker__controls">
-        <div className="journalit-prop-profile-picker__column">
-          {firmNameField}
-        </div>
-        <div className="journalit-prop-profile-picker__column">
-          {challengeNameField}
-        </div>
+  
+  
+  
+  
+  
+  const chooseCustomFirm = () => {
+    setSelectedFirmId(CUSTOM_FIRM);
+    setSelectedChallengeId('');
+    if (!value.profileRef) return;
+    const next: PropChallengeConfig = {
+      ...value,
+      challengeName: '',
+      phases: value.phases.map((phase) => {
+        const unlinked = { ...phase };
+        delete unlinked.profileSnapshot;
+        delete unlinked.profilePhaseIndex;
+        delete unlinked.profileApplication;
+        return unlinked;
+      }),
+    };
+    delete next.firmName;
+    delete next.profileRef;
+    delete next.profileUpdateDismissals;
+    onChange(
+      isUntouchedChallengeConfig(value)
+        ? markUntouchedChallengeConfig(next)
+        : next
+    );
+  };
+
+  const manualIdentity = (
+    <div className="journalit-prop-profile-picker__controls">
+      <div className="journalit-prop-profile-picker__column">
+        {firmNameField}
+      </div>
+      <div className="journalit-prop-profile-picker__column">
+        {challengeNameField}
       </div>
     </div>
   );
 
   if ((serviceStatus === 'loading' || loadStatus === 'loading') && !catalog) {
-    return renderManualIdentity(t('account.prop-challenge.profile.loading'));
-  }
-  if ((serviceStatus === 'error' || loadStatus === 'failed') && !catalog) {
-    return renderManualIdentity(
-      t('account.prop-challenge.profile.unavailable')
+    return (
+      <div className="journalit-prop-profile-picker">
+        <div className="journalit-prop-profile-status">
+          {t('account.prop-challenge.profile.loading')}
+        </div>
+        {manualIdentity}
+      </div>
     );
   }
-  if (!catalog || !selectedFirm || !selectedChallenge) {
-    return renderManualIdentity();
+  if (!catalog) {
+    return (
+      <div className="journalit-prop-profile-picker">
+        <div className="journalit-prop-profile-status">
+          {t('account.prop-challenge.profile.unavailable')}
+        </div>
+        {manualIdentity}
+      </div>
+    );
   }
+
+  const selectedFirm = catalog.firms.find((firm) => firm.id === firmId);
+  const challengeChoices: Array<{
+    label: string;
+    selection: PropFirmProfileSelection;
+  }> =
+    firmId === SAVED_PROFILES
+      ? savedProfiles.map((profile) => ({
+          label: `${profile.firmName} / ${profile.challenge.name}`,
+          selection: personalProfileSelection(profile),
+        }))
+      : selectedFirm
+        ? selectedFirm.challenges.map((challenge) => ({
+            label: challenge.name,
+            selection: {
+              firmId: selectedFirm.id,
+              firmName: selectedFirm.name,
+              verifiedAt: selectedFirm.verifiedAt,
+              catalogVersion: catalog.version,
+              challenge,
+            },
+          }))
+        : [];
+  const selectedChoice = challengeChoices.find(
+    (choice) => choice.selection.challenge.id === selectedChallengeId
+  );
+  const isCustomFirm = firmId === CUSTOM_FIRM;
+  
+  
+  
+  const appliedIdentity = [value.firmName, value.challengeName]
+    .map((name) => name?.trim())
+    .filter(Boolean)
+    .join(' · ');
+  const applied = appliedSelection(value);
+  const showsApplied =
+    value.profileRef !== undefined &&
+    firmId === applied.firmId &&
+    selectedChallengeId === applied.challengeId;
 
   return (
     <div className="journalit-prop-profile-picker">
-      <div className="journalit-prop-profile-picker__title-row">
-        <div className="journalit-prop-profile-picker__title">
-          {t('account.prop-challenge.profile.title')}
+      {loadStatus === 'loading' && (
+        <div className="journalit-prop-profile-status">
+          {t('account.prop-challenge.profile.refreshing')}
         </div>
-        {loadStatus === 'loading' && (
-          <div className="journalit-prop-profile-status">
-            {t('account.prop-challenge.profile.refreshing')}
-          </div>
-        )}
-      </div>
+      )}
       <div className="journalit-prop-profile-picker__controls">
         <div className="journalit-prop-profile-picker__column">
           <label className="journalit-prop-challenge-field">
             <span>{t('account.prop-challenge.profile.firm')}</span>
             <DropdownSelect
-              value={selectedFirm.id}
-              onChange={(firmId) => {
-                setSelectedFirmId(firmId);
+              value={firmId}
+              onChange={(nextFirmId) => {
+                if (nextFirmId === CUSTOM_FIRM) {
+                  chooseCustomFirm();
+                  return;
+                }
+                setSelectedFirmId(nextFirmId);
                 setSelectedChallengeId('');
               }}
               ariaLabel={t('account.prop-challenge.profile.firm')}
+              placeholder={t('account.prop-challenge.profile.choose-firm')}
               disabled={disabled}
-              options={catalog.firms.map((firm) => ({
-                value: firm.id,
-                label: firm.name,
-              }))}
+              options={[
+                ...(savedProfiles.length > 0
+                  ? [
+                      {
+                        value: SAVED_PROFILES,
+                        label: t('account.profiles.library'),
+                      },
+                    ]
+                  : []),
+                ...catalog.firms.map((firm) => ({
+                  value: firm.id,
+                  label: firm.name,
+                })),
+                {
+                  value: CUSTOM_FIRM,
+                  label: t('account.prop-challenge.profile.custom-firm'),
+                },
+              ]}
             />
           </label>
-          {firmNameField}
         </div>
-        <div className="journalit-prop-profile-picker__column">
-          <div className="journalit-prop-profile-picker__challenge-selection">
+        {!isCustomFirm && (
+          <div className="journalit-prop-profile-picker__column">
             <label className="journalit-prop-challenge-field">
               <span>{t('account.prop-challenge.profile.challenge')}</span>
               <DropdownSelect
-                value={selectedChallenge.id}
+                value={selectedChoice?.selection.challenge.id ?? ''}
                 onChange={(id) => {
-                  setSelectedChallengeId(id);
+                  const choice = challengeChoices.find(
+                    (entry) => entry.selection.challenge.id === id
+                  );
+                  if (choice) void applySelection(choice.selection);
                 }}
                 ariaLabel={t('account.prop-challenge.profile.challenge')}
-                disabled={disabled}
-                options={selectedFirm.challenges.map((challenge) => ({
-                  value: challenge.id,
-                  label: challenge.name,
+                placeholder={t(
+                  'account.prop-challenge.profile.choose-challenge'
+                )}
+                disabled={disabled || !firmId}
+                options={challengeChoices.map((choice) => ({
+                  value: choice.selection.challenge.id,
+                  label:
+                    choice.selection.challenge.currency === currencyCode
+                      ? choice.label
+                      : `${choice.label} · ${choice.selection.challenge.currency}`,
                 }))}
               />
             </label>
-            <NoTooltipButton
-              className="journalit-prop-profile-picker__apply"
-              label={t('account.prop-challenge.profile.apply')}
-              onClick={applyProfile}
-              disabled={disabled || selectedChallenge.currency !== currencyCode}
-            >
-              <Check size={16} aria-hidden="true" />
-            </NoTooltipButton>
           </div>
-          {challengeNameField}
-        </div>
+        )}
       </div>
-      {selectedChallenge.currency !== currencyCode && (
-        <p role="status">{t('account.profiles.currency')}</p>
+      {!isCustomFirm && !value.profileRef && (
+        <p className="journalit-prop-profile-picker__help">
+          {t('account.prop-challenge.profile.help')}
+        </p>
       )}
+      {isCustomFirm && manualIdentity}
+      {!isCustomFirm && !showsApplied && appliedIdentity && (
+        <p className="journalit-prop-challenge-linked-identity">
+          {t('account.prop-challenge.profile.current', {
+            identity: appliedIdentity,
+          })}
+        </p>
+      )}
+      {selectedChoice &&
+        selectedChoice.selection.challenge.currency !== currencyCode && (
+          <p role="status">{t('account.profiles.currency')}</p>
+        )}
       {loadStatus === 'failed' && (
         <p role="status">{t('account.profiles.cached')}</p>
       )}

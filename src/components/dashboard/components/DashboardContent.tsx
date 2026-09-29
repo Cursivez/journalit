@@ -27,8 +27,6 @@ interface DashboardContentProps {
   showUnifiedSelector: boolean;
   activeMetrics: string[];
   activeWidgets: string[];
-  onAddMetric: (metricId: string) => void;
-  onAddWidget: (widgetId: string) => void;
   onCloseSelector: () => void;
   openUnifiedSelector: () => void;
 }
@@ -68,8 +66,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = React.memo(
     showUnifiedSelector,
     activeMetrics,
     activeWidgets,
-    onAddMetric,
-    onAddWidget,
     onCloseSelector,
     openUnifiedSelector: _openUnifiedSelector,
   }) => {
@@ -124,11 +120,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = React.memo(
             className="journalit-dashboard-section-wrapper"
             targetId={DASHBOARD_METRICS_SECTION_TARGET_ID}
           >
-            <TopSection
-              filters={filters}
-              isEditing={isEditing}
-              hideAddButton={true}
-            />
+            <TopSection isEditing={isEditing} />
           </GuideTargetContainer>
 
           
@@ -136,11 +128,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = React.memo(
             className="journalit-dashboard-section-wrapper"
             targetId={DASHBOARD_BOTTOM_SECTION_TARGET_ID}
           >
-            <BottomSection
-              filters={filters}
-              isEditing={isEditing}
-              hideAddButton={true}
-            />
+            <BottomSection filters={filters} isEditing={isEditing} />
           </GuideTargetContainer>
         </div>
 
@@ -149,8 +137,6 @@ export const DashboardContent: React.FC<DashboardContentProps> = React.memo(
           <UnifiedComponentSelector
             activeMetrics={activeMetrics}
             activeWidgets={activeWidgets}
-            onAddMetric={onAddMetric}
-            onAddWidget={onAddWidget}
             onClose={onCloseSelector}
           />
         )}

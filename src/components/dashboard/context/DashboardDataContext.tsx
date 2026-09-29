@@ -13,6 +13,8 @@ import { App } from 'obsidian';
 import { TradeService } from '../../../services/trade/TradeService';
 import { DashboardData, fetchDashboardData } from '../utils/dataUtils';
 import type { FilterState } from '../DashboardView';
+import { areFilterExclusionsEqual } from '../../shared/filters/filterExclusions';
+import { areFilterMatchModesEqual } from '../../shared/filters/filterMatchModes';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { t } from '../../../lang/helpers';
 import type JournalitPlugin from '../../../main';
@@ -27,6 +29,8 @@ interface MetricValue {
 interface DashboardDataContextValue {
   
   dashboardData: DashboardData | null;
+  
+  dataFilters: FilterState | null;
   isLoading: boolean;
   isStale: boolean;
   error: Error | null;
@@ -63,7 +67,7 @@ interface DashboardDataProviderProps {
 
 const DEFAULT_CACHE_DURATION = 5000;
 
-export const haveDashboardFiltersChanged = (
+const haveDashboardFiltersChanged = (
   prevFilters: FilterState,
   currentFilters: FilterState
 ): boolean => {
@@ -130,7 +134,18 @@ export const haveDashboardFiltersChanged = (
     JSON.stringify(prevFilters.customFieldFilters || {}) !==
     JSON.stringify(currentFilters.customFieldFilters || {});
 
+  const exclusionsChanged = !areFilterExclusionsEqual(
+    prevFilters.exclusions,
+    currentFilters.exclusions
+  );
+  const matchModesChanged = !areFilterMatchModesEqual(
+    prevFilters.matchModes,
+    currentFilters.matchModes
+  );
+
   return (
+    exclusionsChanged ||
+    matchModesChanged ||
     dateRangeChanged ||
     accountsChanged ||
     accountPhasesChanged ||
@@ -262,6 +277,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
     (
       current: {
         dashboardData: DashboardData | null;
+        dataFilters: FilterState | null;
         isLoading: boolean;
         isStale: boolean;
         error: Error | null;
@@ -269,6 +285,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
       },
       update: Partial<{
         dashboardData: DashboardData | null;
+        dataFilters: FilterState | null;
         isLoading: boolean;
         isStale: boolean;
         error: Error | null;
@@ -277,13 +294,21 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
     ) => ({ ...current, ...update }),
     {
       dashboardData: null,
+      dataFilters: null,
       isLoading: false,
       isStale: false,
       error: null,
       lastFetchTime: 0,
     }
   );
-  const { dashboardData, isLoading, isStale, error, lastFetchTime } = state;
+  const {
+    dashboardData,
+    dataFilters,
+    isLoading,
+    isStale,
+    error,
+    lastFetchTime,
+  } = state;
 
   
   const fetchingRef = useRef(false);
@@ -356,11 +381,12 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
           fetchingRef.current = true;
           dispatchState({ isLoading: true, error: null });
 
+          const fetchFilters = filtersRef.current;
           try {
             const data = await fetchDashboardData(
               app,
               tradeService,
-              filtersRef.current,
+              fetchFilters,
               defaultRiskAmount,
               plugin,
               {
@@ -371,6 +397,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
             completedFetchRef.current = { hasData: true, timestamp };
             dispatchState({
               dashboardData: data,
+              dataFilters: fetchFilters,
               lastFetchTime: timestamp,
               isStale: false,
             });
@@ -503,6 +530,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   const contextValue = useMemo<DashboardDataContextValue>(
     () => ({
       dashboardData,
+      dataFilters,
       isLoading,
       isStale,
       error,
@@ -516,6 +544,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
     }),
     [
       dashboardData,
+      dataFilters,
       isLoading,
       isStale,
       error,

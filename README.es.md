@@ -23,7 +23,8 @@ Diario de trading local-first para Obsidian.
   <a href="README.it.md">Italiano</a> |
   <a href="README.vi.md">Tiếng Việt</a> |
   <a href="README.hi.md">हिन्दी</a> |
-  <a href="README.ta.md">தமிழ்</a>
+  <a href="README.ta.md">தமிழ்</a> |
+  <a href="README.ar.md">العربية</a>
 </p>
 
 [Instalación](#installation) · [Brokers compatibles](#supported-brokers) · [Privacidad](PRIVACY.md)
@@ -49,7 +50,7 @@ Página de la comunidad: https://community.obsidian.md/plugins/journalit
 - **Local-first**: el diario principal permanece dentro de tu bóveda de Obsidian.
 - **Panel Home View**: widgets arrastrables y mapa de calor de trading.
 - **Panel de trading**: sigue el rendimiento y los patrones de un vistazo.
-- **Panel de cuentas**: creado para objetivos de beneficio y drawdowns de prop firms.
+- **[Prop challenges](https://journalit.co/docs/prop-challenges)**: sigue las fases de evaluación y funded, el drawdown, la pérdida diaria, los objetivos de beneficio y las reglas de pago, con perfiles de firmas para configurarlas.
 - **Sistema de revisión (V2)**: plantillas diarias → anuales con constructor de diseños.
 - **[Trade Import](https://journalit.co/csv-import)**: importaciones con backend para CSV, hojas de cálculo, HTML y extractos de brokers.
 - **[Trade Sync](https://journalit.co/docs/trade-sync)**: sincronización automática de operaciones para brokers compatibles.
@@ -58,7 +59,7 @@ Página de la comunidad: https://community.obsidian.md/plugins/journalit
 
 - **Núcleo local-first**: el diario principal funciona sin conexión y guarda tus notas y operaciones en tu bóveda de Obsidian.
 - **Cuenta necesaria para acceso completo**: se requiere una cuenta de Journalit para funciones con autenticación y suscripción.
-- **Funciones de pago**: se requiere una suscripción Pro para acceso completo a funciones Pro como Trade Sync y Trade Import.
+- **Funciones de pago**: se requiere una suscripción Pro para acceso completo a funciones Pro como Trade Sync, Trade Import, el calendario económico y perfiles de prop firms precompletados.
 - **Uso de red**: Journalit comprueba de forma predeterminada metadatos públicos de versiones de GitHub para buscar actualizaciones, sin enviar datos del vault ni de la cuenta. Las funciones con sesión iniciada pueden usar servicios de Journalit; la sincronización MT4 usa FTP gestionado y la conversión de divisas puede usar un servicio externo de tipos de cambio. Consulta [PRIVACY.md](PRIVACY.md).
 - **Código disponible, licencia propietaria**: el plugin es software propietario con código revisable.
 - **Detalles de privacidad**: consulta [PRIVACY.md](PRIVACY.md) para obtener información sobre el tratamiento, la retención y la infraestructura de los datos.
@@ -79,6 +80,12 @@ Página de la comunidad: https://community.obsidian.md/plugins/journalit
 
 ![Comparación de setups](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/setup-comparison.png)
 
+### Cuentas y prop challenges
+
+![Account Dashboard](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
+
+![Account Pages](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
+
 ### Constructor de diseños
 
 ![Layout Builder](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/layout-builder.png)
@@ -94,14 +101,6 @@ Página de la comunidad: https://community.obsidian.md/plugins/journalit
 ### Trade Import
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
-
-### Panel de cuentas
-
-![Account Dashboard](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-dashboard.png)
-
-### Páginas de cuenta
-
-![Account Pages](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/account-pages.png)
 
 <a id="supported-brokers"></a>
 
@@ -130,7 +129,7 @@ Formatos de importación de brokers compatibles:
 <details>
 <summary>Palabras clave de búsqueda</summary>
 
-Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, Trade Import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown
+Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, Trade Import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown, prop challenge, evaluation, funded phase, payout rules, daily loss limit
 
 </details>
 
@@ -141,6 +140,7 @@ Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trad
 - [Resumen de Trade Import](https://journalit.co/csv-import)
 - [Resumen de sincronización MetaTrader](https://journalit.co/metatrader-trading-journal)
 - [Comparar con otros diarios](https://journalit.co/compare)
+- [Guía de prop challenges](https://journalit.co/docs/prop-challenges)
 
 </details>
 

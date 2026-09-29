@@ -645,6 +645,7 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
                     />
 
                     <YAxis
+                      className="journalit-chart-axis--numeric"
                       tickFormatter={formatYAxisTick}
                       tick={{
                         fontSize: 11,

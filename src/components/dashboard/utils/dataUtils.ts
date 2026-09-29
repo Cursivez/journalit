@@ -983,6 +983,10 @@ export interface DashboardData {
     netPnLR?: number;
     unrealizedPnLR?: number;
     
+    unrealizedTradeCount?: number;
+    
+    unrealizedRTradeCount?: number;
+    
     snapshotTimelineRealizedPnLContribution?: number;
     
     unrealizedPnL?: number;
@@ -1812,6 +1816,21 @@ export const calculateMetrics = (
   let unrealizedPnLR: number | undefined;
   let snapshotTimelineRealizedPnLContribution: number | undefined;
   let snapshotTimelineRAdjustment: number | undefined;
+  let unrealizedTradeCount = 0;
+  let unrealizedRTradeCount = 0;
+  
+  
+  const metricSourceKeys = new Set<string>();
+  if (unrealizedPnlSourceTrades.length > 0) {
+    for (const trade of trades) {
+      if (isPnlContributingTrade(trade)) {
+        metricSourceKeys.add(
+          trade._dashboardExcursionSourceKey ??
+            getDashboardExcursionSourceKey(trade)
+        );
+      }
+    }
+  }
   const projectedRealizedSourceKeys = new Set<string>();
   if (analyticsDateBasis === 'exit' && unrealizedPnlSourceTrades.length > 0) {
     for (const trade of trades) {
@@ -1838,6 +1857,10 @@ export const calculateMetrics = (
     );
     if (unrealizedR !== undefined) {
       unrealizedPnLR = (unrealizedPnLR ?? 0) + unrealizedR;
+    }
+    if (!metricSourceKeys.has(getDashboardExcursionSourceKey(trade))) {
+      unrealizedTradeCount += 1;
+      if (unrealizedR !== undefined) unrealizedRTradeCount += 1;
     }
 
     const hasProjectedRealizedContribution =
@@ -1886,6 +1909,8 @@ export const calculateMetrics = (
     return {
       unrealizedPnL,
       unrealizedPnLR,
+      unrealizedTradeCount,
+      unrealizedRTradeCount,
       snapshotTimelineRealizedPnLContribution,
       netPnL: 0,
       winRate: 0,
@@ -1997,6 +2022,8 @@ export const calculateMetrics = (
       ...cachedResult,
       unrealizedPnL,
       unrealizedPnLR,
+      unrealizedTradeCount,
+      unrealizedRTradeCount,
       snapshotTimelineRealizedPnLContribution,
       netPnLR:
         unrealizedPnLR === undefined &&
@@ -2473,6 +2500,8 @@ export const calculateMetrics = (
     ...metrics,
     unrealizedPnL,
     unrealizedPnLR,
+    unrealizedTradeCount,
+    unrealizedRTradeCount,
     snapshotTimelineRealizedPnLContribution,
     netPnLR:
       unrealizedPnLR === undefined && snapshotTimelineRAdjustment === undefined

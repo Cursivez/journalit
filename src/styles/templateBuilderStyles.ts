@@ -210,7 +210,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container .template-form-input:focus {
   border-color: var(--interactive-accent);
-  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent);
   outline: none;
 }
 
@@ -305,6 +305,7 @@ export const TEMPLATE_BUILDER_STYLES = `
   right: 0;
   height: 2px;
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
   border-radius: 1px;
   pointer-events: none;
   z-index: 100;
@@ -567,6 +568,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container .template-action-button--primary:hover {
   background: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
   border-color: var(--interactive-accent-hover);
 }
 
@@ -776,7 +778,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container .template-search-input:focus {
   border-color: var(--interactive-accent);
-  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent);
   outline: none;
 }
 
@@ -928,7 +930,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 
-@keyframes fadeIn {
+@keyframes journalit-template-builder-fade-in {
   from {
     opacity: 0;
     transform: translateY(-8px);
@@ -942,7 +944,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .template-editor,
 .journalit-template-builder-container .template-list-item,
 .journalit-template-builder-container .template-modal {
-  animation: fadeIn 0.2s ease-out;
+  animation: journalit-template-builder-fade-in 0.2s ease-out;
 }
 
 
@@ -1225,6 +1227,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container .template-toggle.is-checked {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .journalit-template-builder-container .template-toggle.is-disabled {
@@ -2068,6 +2071,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .template-review-context-field-filter__checkbox--checked {
   border-color: var(--interactive-accent);
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .journalit-template-builder-container .template-review-context-field-filter__option-label {
@@ -2172,7 +2176,7 @@ export const TEMPLATE_BUILDER_STYLES = `
     var(--interactive-accent) 14%,
     var(--background-primary)
   );
-  color: var(--interactive-accent);
+  color: var(--text-accent);
   box-shadow: none;
 }
 
@@ -2443,7 +2447,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container button.template-trade-review-add-option:hover {
   border-color: var(--interactive-accent);
-  color: var(--interactive-accent);
+  color: var(--text-accent);
   background: color-mix(
     in srgb,
     var(--interactive-accent) 6%,
@@ -2868,7 +2872,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 .journalit-template-builder-container .sidebar-template-item-star.is-default {
-  color: var(--interactive-accent);
+  color: var(--text-accent);
   cursor: default;
 }
 

@@ -250,6 +250,13 @@ export const SESSION_MODE_STYLES = `
   gap: var(--size-2-1);
 }
 
+.journalit-session-mode-header__preparation-action {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  margin-top: var(--size-2-1);
+}
+
 .journalit-session-mode .journalit-session-mode-edit-button,
 .journalit-session-mode .journalit-session-mode-drc-header-button {
   all: unset;
@@ -531,6 +538,7 @@ export const SESSION_MODE_STYLES = `
 .journalit-session-mode .journalit-trade-gate-workflow-menu__option.is-selected .journalit-home-period-option__check {
   border-color: var(--interactive-accent);
   background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .journalit-session-mode .journalit-trade-gate-workflow-menu__option .journalit-home-period-option__label {
@@ -1029,7 +1037,8 @@ export const SESSION_MODE_STYLES = `
   width: 10px;
   height: 10px;
   border-radius: 999px;
-  background: var(--text-accent);
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
   box-shadow: 0 0 0 4px var(--background-modifier-border);
 }
 
@@ -1749,6 +1758,7 @@ export const SESSION_MODE_STYLES = `
 .journalit-session-log-composer-tag-checkbox.is-checked {
   border-color: var(--interactive-accent);
   background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .journalit-session-log-composer-tag-option-label {
@@ -2345,6 +2355,7 @@ export const SESSION_MODE_STYLES = `
 
 .journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-input:checked + .toggle-switch-label {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-input:checked + .toggle-switch-label .toggle-switch-button {

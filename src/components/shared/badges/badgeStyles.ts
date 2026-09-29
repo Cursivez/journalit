@@ -88,7 +88,7 @@ export const badgeStyles = `
 }
 
 .journalit-tooltip .badge-tooltip.setups-tooltip .tooltip-title {
-  color: var(--interactive-accent);
+  color: var(--text-accent);
 }
 
 .journalit-tooltip .badge-tooltip.mistakes-tooltip .tooltip-title {

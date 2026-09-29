@@ -52,6 +52,17 @@ export interface TradeCreateOptions {
   creationBatch?: TradeCreationBatch;
 }
 
+export class TradeCreationBatchFinalizationError extends Error {
+  constructor(public readonly cause: unknown) {
+    super(
+      cause instanceof Error
+        ? cause.message
+        : 'Trade creation batch finalization failed'
+    );
+    this.name = 'TradeCreationBatchFinalizationError';
+  }
+}
+
 export interface TradeCreationBatch {
   registerCreatedFile(filePath: string): Promise<void>;
   registerPostCreateTask(

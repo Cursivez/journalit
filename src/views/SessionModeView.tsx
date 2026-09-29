@@ -475,16 +475,6 @@ const SessionMode: React.FC<{
               {phaseState.phase === 'live' && drcButton}
             </div>
             <div className="journalit-session-mode-header__actions">
-              {phaseState.phase === 'preparation' && (
-                <Button
-                  variant="secondary"
-                  size="small"
-                  onClick={startUnplanned}
-                >
-                  <Play size={14} aria-hidden="true" />
-                  {t('session-mode.unplanned.start')}
-                </Button>
-              )}
               {editButton}
             </div>
           </div>
@@ -502,6 +492,14 @@ const SessionMode: React.FC<{
               filePath={resolvedFilePath}
               tradingDay={backingTradingDay ?? tradingDay}
             />
+          )}
+          {phaseState.phase === 'preparation' && (
+            <div className="journalit-session-mode-header__preparation-action">
+              <Button variant="secondary" size="small" onClick={startUnplanned}>
+                <Play size={14} aria-hidden="true" />
+                {t('session-mode.unplanned.start')}
+              </Button>
+            </div>
           )}
         </SessionModeGuideHeader>
       )}

@@ -267,6 +267,11 @@ export function generateUniqueFieldKey(
   if (!baseKey || RESERVED_FRONTMATTER_KEYS.has(baseKey)) {
     baseKey = 'custom_field';
   }
+  
+  
+  if (/^\d/.test(baseKey)) {
+    baseKey = `field_${baseKey}`;
+  }
 
   let fieldKey = baseKey;
   let counter = 1;

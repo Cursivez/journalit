@@ -75,6 +75,7 @@ export const interactionsCSS = `
 
 .jl-checkbox-checked {
   background-color: var(--interactive-accent);
+  color: var(--text-on-accent);
   border-color: var(--interactive-accent);
 }
 
@@ -124,10 +125,10 @@ export const interactionsCSS = `
 
 .jl-force-redraw {
   opacity: 0.99;
-  animation: redraw 0.01s;
+  animation: journalit-redraw 0.01s;
 }
 
-@keyframes redraw {
+@keyframes journalit-redraw {
   to { opacity: 1; }
 }
 

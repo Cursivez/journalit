@@ -3,6 +3,7 @@
 import React, { memo } from 'react';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { SkeletonBox } from './SkeletonBox';
+import { shareLoadingProps } from '../../services/share/brandedCapture';
 
 interface SkeletonTextProps {
   width?: string | number;
@@ -30,6 +31,7 @@ export const SkeletonText = memo<SkeletonTextProps>(
     return (
       <div
         className="journalit-skeleton-text-multi"
+        {...shareLoadingProps}
         style={cssVars({
           '--journalit-skeleton-text-gap': `${gap}px`,
           '--journalit-skeleton-text-width': cssWidth,

@@ -622,11 +622,11 @@ export const DRC_STYLES = `
     list-style: none !important; 
     padding: 0 !important;
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
-    animation: drc-dropdown-open 0.15s ease forwards !important;
+    animation: journalit-drc-dropdown-open 0.15s ease forwards !important;
   }
   
   
-  @keyframes drc-dropdown-open {
+  @keyframes journalit-drc-dropdown-open {
     from {
       opacity: 0;
     }
@@ -750,6 +750,7 @@ export const DRC_STYLES = `
 
   .drc-add-button:hover {
     background-color: var(--interactive-accent-hover);
+    color: var(--text-on-accent);
   }
 
   .drc-remove-button {
@@ -1221,7 +1222,7 @@ export const DRC_STYLES = `
 
   .importance-low .drc-level-importance {
     background-color: rgba(33, 150, 243, 0.2) !important;
-    color: var(--interactive-accent) !important;
+    color: var(--text-accent) !important;
   }
 
   .drc-level-remove-button {
@@ -1345,14 +1346,14 @@ export const DRC_STYLES = `
 
   .drc-image-upload:hover {
     border-color: var(--interactive-accent);
-    background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.05);
+    background-color: color-mix(in srgb, var(--interactive-accent) 5%, transparent);
   }
 
   .drc-image-upload.dragging-over {
     border-color: var(--interactive-accent);
-    background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.1);
+    background-color: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
     transform: scale(1.02);
-    box-shadow: 0 0 12px rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.3);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--interactive-accent) 30%, transparent);
   }
 
   .drc-image-upload::after {
@@ -1363,7 +1364,7 @@ export const DRC_STYLES = `
     transform: translate(-50%, -50%);
     font-size: 16px;
     font-weight: 600;
-    color: var(--interactive-accent);
+    color: var(--text-accent);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
@@ -1385,7 +1386,7 @@ export const DRC_STYLES = `
   }
 
   .drc-image-upload:hover .drc-image-label {
-    color: var(--interactive-accent);
+    color: var(--text-accent);
   }
 
   .drc-image-input {
@@ -1450,7 +1451,7 @@ export const DRC_STYLES = `
     display: flex;
     align-items: center;
     justify-content: center;
-    animation: fadeIn 0.3s ease-in-out;
+    animation: journalit-drc-fade-in 0.3s ease-in-out;
     backdrop-filter: blur(5px);
     -webkit-backdrop-filter: blur(5px);
     cursor: pointer;
@@ -1464,7 +1465,7 @@ export const DRC_STYLES = `
     background-color: var(--background-primary);
     border-radius: 8px;
     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    animation: zoomIn 0.3s ease-in-out;
+    animation: journalit-drc-zoom-in 0.3s ease-in-out;
     overflow: hidden;
     cursor: default;
   }
@@ -1536,12 +1537,12 @@ export const DRC_STYLES = `
   }
 
   
-  @keyframes fadeIn {
+  @keyframes journalit-drc-fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
   }
 
-  @keyframes zoomIn {
+  @keyframes journalit-drc-zoom-in {
     from { transform: scale(0.9); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
   }
@@ -1786,6 +1787,6 @@ export const DRC_STYLES = `
   }
 
   .journalit-tooltip.setups-tooltip .tooltip-title {
-    color: var(--interactive-accent);
+    color: var(--text-accent);
   }
 `;

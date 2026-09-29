@@ -259,6 +259,11 @@ export function resolveAccountPhaseWindowsFromPlugin(
   );
 }
 
+
+export function offersPhaseList(group: AccountPhaseOptionGroup): boolean {
+  return group.phases.length >= 2;
+}
+
 export function listAccountPhaseOptions(
   accountMetadata: Record<string, AccountMetadata> | undefined
 ): AccountPhaseOptionGroup[] {

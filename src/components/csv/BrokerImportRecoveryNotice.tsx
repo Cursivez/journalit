@@ -8,13 +8,16 @@ export interface BrokerImportRecoveryPresentationProps {
   disabled?: boolean;
   iconSize: number;
   onSwitchSource?: () => void;
-  selectedSource?: string;
 }
 
 interface BrokerImportRecoveryNoticeProps extends BrokerImportRecoveryPresentationProps {
   actionLabel?: string;
+  
+  continueLabel?: string;
+  onContinue?: () => void;
   guideLabel: string;
-  guideUrl: string;
+  
+  guideUrl?: string;
   message: string;
   title: string;
 }
@@ -24,11 +27,13 @@ export const BrokerImportRecoveryNotice: React.FC<
 > = ({
   className,
   actionLabel,
+  continueLabel,
   disabled = false,
   guideLabel,
   guideUrl,
   iconSize,
   message,
+  onContinue,
   onSwitchSource,
   title,
 }) => (
@@ -48,15 +53,27 @@ export const BrokerImportRecoveryNotice: React.FC<
             {actionLabel}
           </button>
         )}
-        <button
-          type="button"
-          className="journalit-trade-import-guide-link"
-          disabled={disabled}
-          onClick={() => openExternalUrl(guideUrl)}
-        >
-          {guideLabel}
-          <ExternalLink size={13} aria-hidden="true" />
-        </button>
+        {continueLabel && onContinue && (
+          <button
+            type="button"
+            className="journalit-trade-import-recovery-continue"
+            disabled={disabled}
+            onClick={onContinue}
+          >
+            {continueLabel}
+          </button>
+        )}
+        {guideUrl && (
+          <button
+            type="button"
+            className="journalit-trade-import-guide-link"
+            disabled={disabled}
+            onClick={() => openExternalUrl(guideUrl)}
+          >
+            {guideLabel}
+            <ExternalLink size={13} aria-hidden="true" />
+          </button>
+        )}
       </div>
     </div>
   </div>

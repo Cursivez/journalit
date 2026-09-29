@@ -29,6 +29,11 @@ import { getTradeDirectionDisplayKind } from '../../../services/trade/core/Trade
 import { createTickerMatcher } from '../../../utils/tickerMatching';
 import { getTradeBrokerIdentity } from '../../../services/propChallenge/tradeIdentity';
 import { hasUnknownCanonicalPnL } from '../../../services/trade/core/CanonicalProjectionFields';
+import { type FilterExclusions, hasFilterExclusions } from './filterExclusions';
+import {
+  getCustomFieldMatchMode,
+  matchesSelectedValues,
+} from './filterMatchModes';
 
 const ALL_SELECTABLE_TRADE_STATUSES = [
   'open',
@@ -184,87 +189,57 @@ export function applyTradeFilters<T extends object>(
   }
 
   
+  
+  
   if (filters.setups?.length > 0) {
-    const hasNoSetupFilter = filters.setups.includes('__NO_SETUP__');
-    const regularSetups = filters.setups.filter((s) => s !== '__NO_SETUP__');
-
+    
+    const selected = new Set<string>();
+    for (const setup of filters.setups) {
+      if (setup !== '__NO_SETUP__') selected.add(setup.toLowerCase());
+    }
+    const includesNoSetup = filters.setups.includes('__NO_SETUP__');
     filtered = filtered.filter((t) => {
-      const trade = t as PartialTradeFrontmatter;
-      const hasNoSetup = !trade.setup || trade.setup.length === 0;
-
-      
-      if (hasNoSetupFilter && hasNoSetup) return true;
-
-      
-      if (
-        regularSetups.length > 0 &&
-        trade.setup &&
-        Array.isArray(trade.setup) &&
-        trade.setup.length > 0
-      ) {
-        return trade.setup.some((tradeSetup: string) =>
-          regularSetups.some(
-            (filterSetup: string) =>
-              tradeSetup.toLowerCase() === filterSetup.toLowerCase()
-          )
-        );
-      }
-
-      return false;
+      const setups = (t as PartialTradeFrontmatter).setup;
+      const tradeSetups = Array.isArray(setups)
+        ? setups.map((setup) => setup.toLowerCase())
+        : [];
+      return matchesSelectedValues(
+        tradeSetups,
+        selected,
+        filters.matchModes.setups,
+        includesNoSetup
+      );
     });
   }
 
-  
   if (filters.tags?.length > 0) {
-    const hasNoTagsFilter = filters.tags.includes('__NO_TAGS__');
-    const regularTags = filters.tags.filter((tag) => tag !== '__NO_TAGS__');
-    const regularTagsSet = new Set(regularTags);
-
-    filtered = filtered.filter((t) => {
-      const trade = t as PartialTradeFrontmatter;
-      const hasNoTags = !trade.tags || trade.tags.length === 0;
-
-      
-      if (hasNoTagsFilter && hasNoTags) return true;
-
-      
-      if (
-        regularTags.length > 0 &&
-        trade.tags?.some((tag: string) => regularTagsSet.has(tag))
-      ) {
-        return true;
-      }
-
-      return false;
-    });
+    const selected = new Set(
+      filters.tags.filter((tag) => tag !== '__NO_TAGS__')
+    );
+    const includesNoTags = filters.tags.includes('__NO_TAGS__');
+    filtered = filtered.filter((t) =>
+      matchesSelectedValues(
+        (t as PartialTradeFrontmatter).tags ?? [],
+        selected,
+        filters.matchModes.tags,
+        includesNoTags
+      )
+    );
   }
 
-  
   if (filters.mistakes?.length > 0) {
-    const hasNoMistakesFilter = filters.mistakes.includes('__NO_MISTAKES__');
-    const regularMistakes = filters.mistakes.filter(
-      (mistake) => mistake !== '__NO_MISTAKES__'
+    const selected = new Set(
+      filters.mistakes.filter((mistake) => mistake !== '__NO_MISTAKES__')
     );
-    const regularMistakesSet = new Set(regularMistakes);
-
-    filtered = filtered.filter((t) => {
-      const trade = t as PartialTradeFrontmatter;
-      const mistakes = Array.isArray(trade.mistake)
-        ? trade.mistake
-        : trade.mistake
-          ? [trade.mistake]
-          : [];
-      const hasNoMistakes = mistakes.length === 0;
-
-      
-      if (hasNoMistakesFilter && hasNoMistakes) return true;
-
-      if (regularMistakes.length > 0) {
-        return mistakes.some((mistake) => regularMistakesSet.has(mistake));
-      }
-
-      return false;
-    });
+    const includesNoMistakes = filters.mistakes.includes('__NO_MISTAKES__');
+    filtered = filtered.filter((t) =>
+      matchesSelectedValues(
+        getTradeMistakes(t as PartialTradeFrontmatter),
+        selected,
+        filters.matchModes.mistakes,
+        includesNoMistakes
+      )
+    );
   }
 
   
@@ -396,18 +371,12 @@ export function applyTradeFilters<T extends object>(
           );
 
           if (fieldDefinition.type === CustomFieldType.MULTISELECT) {
-            const tradeValues = Array.isArray(rawValue)
-              ? rawValue.flatMap((value) => {
-                  const normalized = normalizeCustomFieldFilterValue(value);
-                  return normalized === null ? [] : [normalized];
-                })
-              : rawValue !== undefined
-                ? [normalizeCustomFieldFilterValue(rawValue)].filter(
-                    (value): value is string => value !== null
-                  )
-                : [];
-
-            return tradeValues.some((value) => selectedValueSet.has(value));
+            return matchesSelectedValues(
+              getTradeCustomFieldValues(tradeRecord, fieldDefinition),
+              selectedValueSet,
+              getCustomFieldMatchMode(filters.matchModes, fieldId),
+              false
+            );
           }
 
           const normalizedValue = normalizeCustomFieldFilterValue(rawValue);
@@ -419,5 +388,115 @@ export function applyTradeFilters<T extends object>(
     });
   }
 
+  if (hasFilterExclusions(filters.exclusions)) {
+    filtered = applyTradeExclusions(
+      filtered,
+      filters.exclusions,
+      customFieldDefinitions
+    );
+  }
+
   return filtered;
+}
+
+function getTradeMistakes(trade: PartialTradeFrontmatter): string[] {
+  return Array.isArray(trade.mistake)
+    ? trade.mistake
+    : trade.mistake
+      ? [trade.mistake]
+      : [];
+}
+
+function getTradeCustomFieldValues(
+  tradeRecord: Record<string, unknown>,
+  field: CustomFieldDefinition
+): string[] {
+  const rawValue = getTradeCustomFieldRawValue(tradeRecord, field);
+  const rawValues = Array.isArray(rawValue) ? rawValue : [rawValue];
+  const values: string[] = [];
+  for (const value of rawValues) {
+    const normalized = normalizeCustomFieldFilterValue(value);
+    if (normalized !== null) values.push(normalized);
+  }
+  return values;
+}
+
+
+function applyTradeExclusions<T extends object>(
+  trades: T[],
+  exclusions: FilterExclusions,
+  customFieldDefinitions: CustomFieldDefinition[]
+): T[] {
+  const matchesExcludedTicker =
+    exclusions.tickers.length > 0
+      ? createTickerMatcher(exclusions.tickers)
+      : null;
+  const excludesNoSetup = exclusions.setups.includes('__NO_SETUP__');
+  const excludedSetups = new Set<string>();
+  for (const setup of exclusions.setups) {
+    if (setup !== '__NO_SETUP__') excludedSetups.add(setup.toLowerCase());
+  }
+  const excludesNoTags = exclusions.tags.includes('__NO_TAGS__');
+  const excludedTags = new Set(
+    exclusions.tags.filter((tag) => tag !== '__NO_TAGS__')
+  );
+  const excludesNoMistakes = exclusions.mistakes.includes('__NO_MISTAKES__');
+  const excludedMistakes = new Set(
+    exclusions.mistakes.filter((mistake) => mistake !== '__NO_MISTAKES__')
+  );
+  const excludedCustomFields: Array<{
+    field: CustomFieldDefinition;
+    values: Set<string>;
+  }> = [];
+  for (const field of customFieldDefinitions) {
+    const values = exclusions.customFieldFilters[field.id];
+    if (!values || values.length === 0) continue;
+    if (!isDiscreteCustomFieldFilterable(field)) continue;
+    excludedCustomFields.push({ field, values: new Set(values) });
+  }
+
+  return trades.filter((t) => {
+    const trade = t as PartialTradeFrontmatter;
+
+    if (matchesExcludedTicker && matchesExcludedTicker(trade.instrument)) {
+      return false;
+    }
+
+    if (excludesNoSetup || excludedSetups.size > 0) {
+      const setups = Array.isArray(trade.setup) ? trade.setup : [];
+      if (excludesNoSetup && setups.length === 0) return false;
+      if (setups.some((setup) => excludedSetups.has(setup.toLowerCase()))) {
+        return false;
+      }
+    }
+
+    if (excludesNoTags || excludedTags.size > 0) {
+      const tags = trade.tags ?? [];
+      if (excludesNoTags && tags.length === 0) return false;
+      if (tags.some((tag) => excludedTags.has(tag))) return false;
+    }
+
+    if (excludesNoMistakes || excludedMistakes.size > 0) {
+      const mistakes = getTradeMistakes(trade);
+      if (excludesNoMistakes && mistakes.length === 0) return false;
+      if (mistakes.some((mistake) => excludedMistakes.has(mistake))) {
+        return false;
+      }
+    }
+
+    if (excludedCustomFields.length > 0) {
+      const tradeRecord = Object.fromEntries(Object.entries(t));
+      for (const { field, values } of excludedCustomFields) {
+        if (
+          getTradeCustomFieldValues(tradeRecord, field).some((value) =>
+            values.has(value)
+          )
+        ) {
+          return false;
+        }
+      }
+    }
+
+    return true;
+  });
 }

@@ -17,6 +17,7 @@ import { parseDisplayText } from '../../../utils/tagSchema';
 import type { TradeFormData } from '../../forms/trade/types';
 import type JournalitPlugin from '../../../main';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -707,6 +708,7 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
             )}
             {!preview && noteType === 'drc' && (
               <button
+                {...shareCaptureExcludeProps}
                 onClick={() => void handleCreateMissedTrade()}
                 className="journalit-reviewv2-missed-add"
                 aria-label={t('widget.missed-trades.add-aria')}

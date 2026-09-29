@@ -13,6 +13,17 @@ export async function writeClipboardImage(blob: Blob): Promise<void> {
   ]);
 }
 
+
+export async function writeClipboardPendingPng(
+  png: Promise<Blob>
+): Promise<void> {
+  await navigator.clipboard.write([
+    new ClipboardItem({
+      'image/png': png,
+    }),
+  ]);
+}
+
 export async function readClipboardText(): Promise<string> {
   return navigator.clipboard.readText();
 }

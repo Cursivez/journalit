@@ -12,13 +12,12 @@ import { useEventBus } from '../../hooks/useEventBus';
 
 type EconomicCalendarWeekStatus =
   | 'loading'
-  | 'ok'
-  | 'not_entitled'
-  | 'offline'
-  | 'error';
+  | EconomicCalendarFetchResult['status'];
 
 interface WeekState {
   status: EconomicCalendarWeekStatus;
+  
+  settledStatus: EconomicCalendarFetchResult['status'] | null;
   events: EconomicCalendarEvent[];
   
   fetchedAt: number;
@@ -30,7 +29,7 @@ interface EconomicCalendarWeek extends WeekState {
   
   keyEvents: NewsEvent[];
   
-  refresh: () => Promise<EconomicCalendarWeekStatus>;
+  refresh: () => Promise<EconomicCalendarFetchResult['status']>;
   
   refreshKeyEvents: () => Promise<void>;
 }
@@ -43,6 +42,7 @@ export function useEconomicCalendarWeek(
 ): EconomicCalendarWeek {
   const [week, setWeek] = useState<WeekState>(() => ({
     status: 'loading',
+    settledStatus: null,
     events: [],
     fetchedAt: Date.now(),
     weekDate: new Date(),
@@ -52,6 +52,12 @@ export function useEconomicCalendarWeek(
   const weekDateRef = useRef(week.weekDate);
   const isMountedRef = useRef(false);
   const keyEventsReadGenerationRef = useRef(0);
+  
+  const weekLoadGenerationRef = useRef(0);
+  
+  const newestWeekLoadRef = useRef<Promise<
+    EconomicCalendarFetchResult['status']
+  > | null>(null);
   const onKeyEventsChangedRef = useRef(onKeyEventsChanged);
 
   useEffect(() => {
@@ -74,50 +80,85 @@ export function useEconomicCalendarWeek(
     }
   }, [plugin]);
 
-  const refresh = useCallback(async (): Promise<EconomicCalendarWeekStatus> => {
-    setWeek((current) => ({ ...current, status: 'loading' }));
-    const weekDate = new Date();
-    weekDateRef.current = weekDate;
+  const loadWeek = useCallback(
+    async (
+      loadGeneration: number
+    ): Promise<EconomicCalendarFetchResult['status']> => {
+      const isSuperseded = (): boolean =>
+        loadGeneration !== weekLoadGenerationRef.current;
+      
+      
+      const followNewestLoad = (): Promise<
+        EconomicCalendarFetchResult['status']
+      > => {
+        const newestLoad = newestWeekLoadRef.current;
+        
+        
+        if (newestLoad === null) {
+          throw new Error(
+            '[EconomicCalendar] Superseded week load has no newer load'
+          );
+        }
+        return newestLoad;
+      };
+      setWeek((current) => ({ ...current, status: 'loading' }));
+      const weekDate = new Date();
+      weekDateRef.current = weekDate;
 
-    let result: EconomicCalendarFetchResult;
-    try {
-      const service = await plugin.serviceManager.getEconomicCalendarService();
-      result = await service.fetchWeek({ weekDate });
-      await refreshKeyEvents();
-    } catch (error) {
-      console.error('[EconomicCalendar] Failed to load events:', error);
-      if (isMountedRef.current) {
+      let result: EconomicCalendarFetchResult;
+      try {
+        const service =
+          await plugin.serviceManager.getEconomicCalendarService();
+        result = await service.fetchWeek({ weekDate });
+        await refreshKeyEvents();
+      } catch (error) {
+        console.error('[EconomicCalendar] Failed to load events:', error);
+        if (isSuperseded()) return followNewestLoad();
+        if (!isMountedRef.current) return 'error';
         setWeek({
           status: 'error',
+          settledStatus: 'error',
           events: [],
           fetchedAt: Date.now(),
           weekDate,
         });
+        return 'error';
       }
-      return 'error';
-    }
 
-    if (!isMountedRef.current) return result.status;
+      if (isSuperseded()) return followNewestLoad();
+      if (!isMountedRef.current) return result.status;
 
-    if (result.status !== 'ok') {
+      if (result.status !== 'ok') {
+        setWeek({
+          status: result.status,
+          settledStatus: result.status,
+          events: [],
+          fetchedAt: Date.now(),
+          weekDate,
+        });
+        return result.status;
+      }
+
+      
       setWeek({
-        status: result.status,
-        events: [],
+        status: 'ok',
+        settledStatus: 'ok',
+        events: result.events,
         fetchedAt: Date.now(),
         weekDate,
       });
-      return result.status;
-    }
+      return 'ok';
+    },
+    [plugin, refreshKeyEvents]
+  );
 
-    
-    setWeek({
-      status: 'ok',
-      events: result.events,
-      fetchedAt: Date.now(),
-      weekDate,
-    });
-    return 'ok';
-  }, [plugin, refreshKeyEvents]);
+  const refresh = useCallback((): Promise<
+    EconomicCalendarFetchResult['status']
+  > => {
+    const load = loadWeek(++weekLoadGenerationRef.current);
+    newestWeekLoadRef.current = load;
+    return load;
+  }, [loadWeek]);
 
   useEffect(() => {
     isMountedRef.current = true;
@@ -138,6 +179,24 @@ export function useEconomicCalendarWeek(
   );
 
   useEventBus('review:changed', handleReviewChanged);
+
+  
+  
+  useEffect(() => {
+    const handleSubscriptionChanged = (): void => {
+      void refresh();
+    };
+    window.addEventListener(
+      'journalit:subscription-changed',
+      handleSubscriptionChanged
+    );
+    return () => {
+      window.removeEventListener(
+        'journalit:subscription-changed',
+        handleSubscriptionChanged
+      );
+    };
+  }, [refresh]);
 
   return { ...week, keyEvents, refresh, refreshKeyEvents };
 }

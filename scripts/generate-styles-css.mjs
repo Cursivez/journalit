@@ -45,7 +45,13 @@ function computeInputsDigest(files) {
 }
 
 const sourceFiles = walk(SRC).sort();
-const scriptHash = sha256(readFileSync(fileURLToPath(import.meta.url), 'utf8'));
+const CONTROL_PRECEDENCE_MODULE = fileURLToPath(
+  new URL('./lib/obsidianControlPrecedence.mjs', import.meta.url)
+);
+const scriptHash = sha256(
+  readFileSync(fileURLToPath(import.meta.url), 'utf8') +
+    readFileSync(CONTROL_PRECEDENCE_MODULE, 'utf8')
+);
 const inputsDigest = computeInputsDigest(sourceFiles);
 
 if (existsSync(CACHE_FILE) && existsSync(OUT)) {
@@ -297,7 +303,24 @@ function sanitizeForObsidianReview(css) {
 const chunks = styleEntries.map(({ file, name, css }) =>
   stripCssComments(resolveInterpolations(css))
 );
-const nextCss = `${sanitizeForObsidianReview(chunks.filter(Boolean).join('\n\n'))}\n`;
+const sanitizedCss = sanitizeForObsidianReview(
+  chunks.filter(Boolean).join('\n\n')
+);
+
+
+
+const { collectControlClasses, enforceControlPrecedence } = await import(
+  CONTROL_PRECEDENCE_MODULE
+);
+const isStyleSource = (file) =>
+  /(^|\/)styles\//.test(relative(SRC, file)) || /Styles\.tsx?$/.test(file);
+const controlClasses = collectControlClasses(
+  sourceFiles
+    .filter((file) => !isStyleSource(file) && !file.includes('/lang/'))
+    .map((file) => ({ text: readFileSync(file, 'utf8') })),
+  [{ text: sanitizedCss }]
+);
+const nextCss = `${enforceControlPrecedence(sanitizedCss, controlClasses)}\n`;
 
 if (existsSync(OUT) && readFileSync(OUT, 'utf8') === nextCss) {
   console.log(

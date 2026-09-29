@@ -1,13 +1,6 @@
 
 
-import React, {
-  useCallback,
-  useEffect,
-  useId,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import type JournalitPlugin from '../../../main';
 import { t } from '../../../lang/helpers';
 import type { TranslationKey } from '../../../lang/locale/en';
@@ -19,7 +12,6 @@ import {
   shouldAutoShowModalGuide,
 } from '../../../guides/modalGuide/modalGuidePersistence';
 import {
-  getModalGuidePopoverPosition,
   getModalGuideTargetElement,
   type ModalGuidePlacement,
 } from '../../../guides/modalGuide/modalGuidePopover';
@@ -234,12 +226,6 @@ export const SessionModeSettingsGuide: React.FC<
   const total = navigableSteps.includes(stepIndex)
     ? navigableSteps.length
     : navigableSteps.length + 1;
-  const stepLabel = `${stepsBefore + 1}/${total}`;
-
-  const position = useMemo(
-    () => getModalGuidePopoverPosition(step.placement, targetRect),
-    [step.placement, targetRect]
-  );
 
   return (
     <>
@@ -249,8 +235,10 @@ export const SessionModeSettingsGuide: React.FC<
           titleId={titleId}
           title={t(step.titleKey)}
           description={t(step.descriptionKey)}
-          stepLabel={stepLabel}
-          position={position}
+          stepNumber={stepsBefore + 1}
+          stepCount={total}
+          placement={step.placement}
+          targetRect={targetRect}
           isWaitingForTarget={isWaitingForTarget}
           isFirstStep={isFirstStep}
           isLastStep={isLastStep}

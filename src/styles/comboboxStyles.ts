@@ -149,7 +149,7 @@ export const comboboxCSS = `
   margin: 0 4px 4px 0;
   padding: 4px 8px;
   background-color: var(--interactive-accent, #5183e4);
-  color: white;
+  color: var(--text-on-accent);
   border-radius: 4px;
   font-size: 12px;
   gap: 6px;

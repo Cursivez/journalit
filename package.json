@@ -1,6 +1,6 @@
 {
   "name": "journalit",
-  "version": "1.8.4",
+  "version": "1.9.0",
   "description": "Trading journal with templates, trade tracking, imports, and reviews for Obsidian.",
   "main": "main.js",
   "scripts": {
@@ -30,6 +30,7 @@
     "@lezer/markdown": "1.7.2",
     "fflate": "^0.8.3",
     "flatpickr": "^4.6.13",
+    "html-to-image": "^1.11.13",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "react-grid-layout": "^2.2.3",

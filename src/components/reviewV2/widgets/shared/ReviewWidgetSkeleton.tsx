@@ -2,6 +2,7 @@ import React, { memo } from 'react';
 import { t } from '../../../../lang/helpers';
 import { SkeletonBox } from '../../../shared/SkeletonBox';
 import { SkeletonText } from '../../../shared/SkeletonText';
+import { shareLoadingProps } from '../../../../services/share/brandedCapture';
 
 type ReviewWidgetSkeletonVariant = 'trade-review' | 'weekday-review';
 
@@ -41,6 +42,7 @@ export const ReviewWidgetSkeleton = memo<ReviewWidgetSkeletonProps>(
     return (
       <div
         className={`journalit-review-widget-skeleton journalit-review-widget-skeleton--${variant}`}
+        {...shareLoadingProps}
         aria-busy="true"
         role="status"
       >

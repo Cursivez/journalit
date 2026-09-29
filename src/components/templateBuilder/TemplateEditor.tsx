@@ -802,6 +802,25 @@ function useSortableWidgetItemContent({
       </div>
 
       
+      {widget.type === 'session-log' && isEditing && (
+        <div className="template-widget-config-row">
+          <label className="template-review-context-toggle-row">
+            <input
+              type="checkbox"
+              checked={widget.config?.hideEmptyOutsideSession === true}
+              onChange={(event) =>
+                onConfigChange(index, {
+                  ...widget.config,
+                  hideEmptyOutsideSession: event.target.checked,
+                })
+              }
+            />
+            {t('templateEditor.widget.session-log.hide-empty-outside')}
+          </label>
+        </div>
+      )}
+
+      
       {widget.type === 'markdown-header' && isEditing && (
         <div className="template-widget-config-row">
           <select

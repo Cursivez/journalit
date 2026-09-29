@@ -2,6 +2,30 @@
 import type { Lang } from './en';
 
 const zhTW: Partial<Lang> = {
+  'command.share-note-as-image': '將目前筆記分享為圖片',
+  'trade.share.copy-screenshot': '複製交易截圖',
+  'trade.share.copied': '交易截圖已複製到剪貼簿',
+  'trade.share.failed': '無法複製交易截圖',
+  'trade.share.not-ready': '交易筆記仍在載入中，請稍後再試。',
+  'share.review.action': '分享複盤卡片',
+  'share.review.modal-title': '分享複盤',
+  'share.review.section.top': '筆記開頭',
+  'share.review.select-all': '全選',
+  'share.review.clear': '清除',
+  'share.review.legend.widget': '元件',
+  'share.review.legend.heading': '標題及其文字',
+  'share.review.legend.media': '媒體',
+  'share.review.legend.text': '文字',
+  'share.review.copy': '複製圖片',
+  'settings.general.hide-dollar-amounts-in-shares': '在分享圖片中隱藏美元金額',
+  'settings.general.hide-dollar-amounts-in-shares-desc':
+    '開啟 R 倍數時，交易截圖和複盤卡片會省略以美元計的風險、費用、佣金和 MAE/MFE。',
+  'share.review.hide-dollar-amounts': '隱藏美元金額',
+  'share.review.hide-dollar-amounts-hint': '省略風險、費用和其他美元數值。',
+  'share.review.hide-dollar-amounts-needs-r':
+    '在設定中開啟 R 倍數，即可在不顯示美元金額的情況下分享。',
+  'share.review.copied': '分享卡片已複製到剪貼簿',
+  'share.review.failed': '無法複製分享卡片',
   'trade.broker-synced-at': '券商同步於 {date}',
   'home.period.month': '月份',
   'home.period.quarter': '季度',
@@ -315,6 +339,7 @@ const zhTW: Partial<Lang> = {
   
 
   'notice.login-success': '登入成功！',
+  'notice.pro-access-ready': 'PRO 權限已就緒。',
 
   'notice.logout-success': '已成功登出',
   'notice.hotkey-set': '快捷鍵已設定：{hotkey}',
@@ -408,7 +433,7 @@ const zhTW: Partial<Lang> = {
     'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
   'dashboard.guide.main.filters.title': 'Filters change the whole Dashboard',
   'dashboard.guide.main.filters.description':
-    'Use filters when you want every stat and chart on this page to update for a different date range, account, setup, tag, or trade type.',
+    '想讓本頁的所有統計和圖表依其他日期範圍、帳戶、交易策略、標籤或交易類型更新時，使用篩選。也可以排除任意值，把這些交易去掉。',
   'dashboard.guide.main.edit-layout.title':
     'Turn on edit mode to customise this page',
   'dashboard.guide.main.edit-layout.description':
@@ -418,7 +443,7 @@ const zhTW: Partial<Lang> = {
     'Click Add Widget to add more charts and bring back widgets you removed earlier.',
   'dashboard.guide.main.widget-picker.title': 'Pick what you want to show',
   'dashboard.guide.main.widget-picker.description':
-    'This picker shows the metrics and widgets that are not currently on your Dashboard. Click one to add it.',
+    '此面板可預覽所有圖表和指標。點擊即可新增；已在儀表板上的項目會列在「使用中」下。',
   'dashboard.guide.main.metrics.title':
     'These top cards are your quick summary',
   'dashboard.guide.main.metrics.description':
@@ -450,7 +475,7 @@ const zhTW: Partial<Lang> = {
   'home.guide.move-and-resize.title': 'Move and resize your widgets',
   'home.guide.widget-picker.title': 'Add widgets here',
   'home.guide.widget-picker.description':
-    'This picker lets you add more widgets and bring back quick links that you previously hid.',
+    '預覽並新增小工具、恢復快捷連結，或新增帳戶和交易策略捷徑。首頁上已有的內容會列在「使用中」下，可在那裡移除。',
   'home.guide.move-and-resize.description':
     'This is the main area you can rearrange in edit mode. Drag widgets to move them, or drag a widget from its bottom-right corner to resize it.',
   'home.guide.add-widget.title': 'Add widgets or bring back hidden quick links',
@@ -529,10 +554,7 @@ const zhTW: Partial<Lang> = {
     'Use this menu to switch between the full trade table and grouped time views like months, weeks, or days. Trades is the default, but grouped views are useful when you want to review by period.',
   'tradelog.guide.filters.title': 'Use filters to narrow the Trade Log',
   'tradelog.guide.filters.description':
-    'Open filters when you want to review only certain accounts, setups, tags, trade types, statuses, or dates.',
-  'tradelog.guide.filter-modal.title': 'These are your detailed filters',
-  'tradelog.guide.filter-modal.description':
-    'Use this modal when you want more control over exactly which trades are shown. Close it when you are done reviewing or changing filters.',
+    '想只檢視某些帳戶、交易策略、標籤、交易類型、狀態或日期時，打開篩選。也可以排除任意值，把這些交易去掉。',
   'tradelog.guide.sorting.title': 'Click column headers to sort the table',
   'tradelog.guide.sorting.description':
     'In Trades view, click a sortable column header to reorder the table. For example, click Net P&L to sort by your biggest win and biggest loss.',
@@ -561,7 +583,6 @@ const zhTW: Partial<Lang> = {
   'tradelog.filter.losers': '虧損',
   'tradelog.filter.breakeven': '打平',
   'tradelog.filter.open': '未平倉',
-  'tradelog.type.all': '所有類型',
   'tradelog.type.regular': '一般',
   'tradelog.type.missed': '錯過',
   'tradelog.type.backtest': '回測',
@@ -574,13 +595,11 @@ const zhTW: Partial<Lang> = {
   'dashboard.empty.import-action': 'Import existing trades',
   'dashboard.empty.manual-action': 'Add a trade manually',
   'dashboard.widgets.setup-performance.title': '策略績效',
-  'dashboard.widgets.setup-performance.description':
-    '按交易策略比較績效的排名長條圖',
+  'dashboard.widgets.setup-performance.description': '依策略排名的表現長條圖',
   'dashboard.widgets.setup-performance.empty': '沒有策略績效資料',
   'dashboard.widgets.setup-performance.masked-label': '策略',
   'dashboard.widgets.tag-performance.title': '標籤績效',
-  'dashboard.widgets.tag-performance.description':
-    '按交易標籤比較績效的排名長條圖',
+  'dashboard.widgets.tag-performance.description': '依標籤排名的表現長條圖',
   'dashboard.widgets.tag-performance.empty': '沒有標籤績效資料',
   'dashboard.widgets.tag-performance.masked-label': '標籤',
   'dashboard.widgets.ticker-performance.title': '標的績效',
@@ -604,7 +623,7 @@ const zhTW: Partial<Lang> = {
   'dashboard.widgets.ticker-performance.omitted-count': '已省略：{count}',
 
   'widget.tickerPerformance.name': '標的績效',
-  'widget.tickerPerformance.description': '按標的比較績效的排名長條圖',
+  'widget.tickerPerformance.description': '依商品排名的表現長條圖',
   'dashboard.filter.accounts.all': '所有帳戶',
   'dashboard.filter.accounts.n-selected': '{count} 個帳戶',
   'dashboard.filter.accounts.select-all': '全選',
@@ -612,11 +631,6 @@ const zhTW: Partial<Lang> = {
   'dashboard.filter.accounts.none-found': '未找到帳戶',
 
   
-  'dashboard.filter.mistakes.all': '所有錯誤',
-  'dashboard.filter.mistakes.none': '無錯誤',
-  'dashboard.filter.mistakes.n-selected': '{count} 個錯誤',
-  'dashboard.filter.mistakes.select-all': '全選',
-  'dashboard.filter.mistakes.none-found': '未找到錯誤',
 
   
   
@@ -712,8 +726,7 @@ const zhTW: Partial<Lang> = {
   
   
   'home.widget.getting-started.name': 'Getting Started',
-  'home.widget.getting-started.description':
-    'Checklist to help you add trading history and configure Journalit',
+  'home.widget.getting-started.description': '協助設定 Journalit 與交易的清單',
   'home.widget.getting-started.progress': '{completed}/{total} completed',
   'home.widget.getting-started.progress.loading': 'Checking progress...',
   'home.widget.getting-started.item.account.title': '設定你的交易帳戶',
@@ -809,13 +822,11 @@ const zhTW: Partial<Lang> = {
   'dashboard.avgRRRiskBased.tooltip.no-data':
     '資料不足，無法計算 R 基礎 RR。請補上停損/風險資料，並確保同時有有效的獲利與虧損交易。',
   'metric.avgRR.name': '平均風險回報比（盈虧）',
-  'metric.avgRR.description': '平均風險回報比（平均獲利 / 平均虧損）',
+  'metric.avgRR.description': '平均獲利除以平均虧損',
   'metric.sharpeRatio.name': '夏普比率',
-  'metric.sharpeRatio.description':
-    '按交易計算的夏普比率：已平倉交易平均淨盈虧除以盈虧樣本波動率',
+  'metric.sharpeRatio.description': '平均單筆 P&L 相對其波動率',
   'metric.avgRRRiskBased.name': '平均風險回報比（R 基礎）',
-  'metric.avgRRRiskBased.description':
-    '以 R 倍數計算的比率：平均盈利 R / 平均虧損 R（需要停損/風險資料）',
+  'metric.avgRRRiskBased.description': '平均獲利 R 與虧損 R（需停損資料）',
   'metric.longestWinStreak.name': '最佳連勝',
   'metric.longestWinStreak.description': '依平倉日期計算的最長連續獲利',
   'metric.longestLossStreak.name': '最差連敗',
@@ -858,7 +869,6 @@ const zhTW: Partial<Lang> = {
   'tradelog.column.maxR': 'Max R',
   'tradelog.column.returnPercent': 'Return %',
   'filter.modal.section.custom-fields': 'Custom Fields',
-  'filter.modal.custom-field.n-selected': '{count} selected',
   'filter.modal.custom-field.none-available': 'No values available',
   'settings.general.analytics-date-basis': '分析日期基準',
   'settings.general.analytics-date-basis-desc':
@@ -913,7 +923,9 @@ const zhTW: Partial<Lang> = {
   'widget.drawdownStats.no-conversion':
     'Drawdown stats are unavailable for mixed currencies without FX conversion.',
 
-  'guide.skip-guide': 'Skip Guide',
+  'guide.skip-guide': '跳過引導',
+  'guide.step-count': '{count} 個步驟',
+  'guide.step-position': '第 {current} 步，共 {total} 步',
   'settings.general.data-management': '資料管理 & 隱私',
 
   'settings.general.privacy-mode': '隱私模式',
@@ -983,6 +995,14 @@ const zhTW: Partial<Lang> = {
   'dashboard.conversion.details-label': '貨幣轉換詳情',
 
   'widget.stats.vs-prev': 'vs prev',
+  'common.r-missing.title': '此交易沒有 R',
+  'common.r-missing.trade': '此交易沒有風險金額，因此無法以 R 顯示其結果。',
+  'common.r-missing.fix': '請新增風險金額，或在設定中設定預設風險金額。',
+  'common.r-coverage.partial':
+    '基於 {total} 筆交易中的 {valid} 筆。沒有風險金額的交易不計入 R。',
+  'common.r-coverage.none':
+    '這裡沒有任何交易設有風險金額，因此沒有可顯示的 R。',
+  'dashboard.r-coverage.no-comparison': '未顯示變化：比較期間此指標沒有 R 值。',
   'dashboard.metrics.past-30d': 'past 30d',
 
   'chart.tooltip.drawdown-amount': 'Amount',
@@ -1095,20 +1115,78 @@ const zhTW: Partial<Lang> = {
   'trade-import.asset.futures': 'Futures',
   'trade-import.asset.forex': 'Forex',
   'trade-import.asset.crypto': 'Crypto',
-  'trade-import.label.manual-mode': 'Manual mode',
-  'trade-import.manual-mode.price-based': 'Price based',
-  'trade-import.manual-mode.direct-pnl': 'Direct P&L',
+  'trade-import.manual-mode.price-based': '委託或成交（合併為交易）',
+  'trade-import.manual-mode.direct-pnl': '每列一筆交易（使用損益）',
   'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
   'trade-import.privacy.copy':
-    'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default.',
+    'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default. When AI mapping suggestions are on, the column headers and a few sample rows are also sent to an AI model to suggest column matches; untick the option to map columns yourself.',
 
   'trade-import.action.analyse': 'Analyse file',
   'trade-import.action.choose-file': 'Choose file',
-  'trade-import.guide.prompt': '不確定要匯出什麼？',
-  'trade-import.guide.link': '查看券商指南',
   'trade-import.action.drop-file': 'Drop file to upload',
   'trade-import.analyse.detected':
-    'Detected {fileType}. Headers and sample rows are returned by the backend.',
+    '已讀取你的 {fileType} 檔案。請檢查下方各列，再將每一欄對應到交易欄位。',
+  'trade-import.table.screenshots': '截圖',
+  'trade-import.preview.screenshot-alt': '試算表第 {row} 列 {symbol} 的截圖',
+  'trade-import.preview.screenshots-more': '還有 {count} 張',
+  'trade-import.preview.include-screenshots':
+    '將試算表中的截圖加到對應交易（{count}）',
+  'trade-import.completion.screenshots-added': '已從試算表加入的截圖：{count}',
+  'trade-import.completion.screenshots-failed': '未能加入的試算表截圖：{count}',
+  'trade-import.preview.import-anyway': '仍要匯入',
+  'trade-import.preview.import-anyway-aria': '仍要匯入 {date} 的 {symbol}',
+  'trade-import.preview.import-all-anyway':
+    '仍要匯入全部 {count} 筆可能重複的交易',
+  'csv.mapper.missing-fields.pnl-or-prices':
+    '或者對應進場價、出場價和數量，以價格計算損益。',
+  'trade-import.pnl-from-prices.title': '損益將依你的價格計算',
+  'trade-import.pnl-from-prices.body':
+    '沒有損益欄，因此會用進場價、出場價和數量計算損益。只有資產類型正確時結果才對，請選擇這些交易的類型。',
+  'trade-import.pnl-from-prices.contract-size':
+    '外匯和期貨還需要合約規模欄才能計算損益。如果沒有，請改為對應你的損益欄。',
+  'trade-import.diagnostic.choose-date-format': '選擇日期格式',
+  'trade-import.date-question.ambiguous':
+    '你的日期形如 {example}。這是哪一天？',
+  'trade-import.date-question.mixed':
+    '此欄中有些日期的順序不同，例如 {example}。你的大部分日期採用哪種順序？',
+  'trade-import.date-question.mixed-note':
+    '採用另一種順序的列會被列出，方便你在檔案中修正。',
+  'quick-import.message.date-order':
+    '你的日期有兩種讀法。請開啟完整匯入進行選擇。',
+  'csv.date-format.eu-dot': '歐式點分：25.12.2024（日.月.年）',
+  'csv.date-format.ymd-dot': '年份在前（點分）：2024.12.25',
+  'onboarding.data-source.option.file.description':
+    '你在 Excel、Google 試算表或 CSV 中記錄的交易日誌。',
+  'onboarding.data-source.option.file.label': '在我自己的試算表裡',
+  'trade-import.unmapped.title': '不會匯入 ({count})',
+  'trade-import.unmapped.body':
+    '這些欄沒有對應到 Journalit 欄位，將被略過。如果有合適的欄位，請在上方進行對應。',
+  'trade-import.unmapped.keep': '保留為自訂欄位',
+  'trade-import.unmapped.keep-aria': '將 {header} 保留為自訂欄位',
+  'trade-import.custom-field.title': '將「{header}」保留為自訂欄位',
+  'trade-import.custom-field.hint':
+    '為你的交易新增一個欄位，並以此欄的值填入。如果 Journalit 已有合適的欄位，請改為對應到該欄位。',
+  'trade-import.custom-field.name': '欄位名稱',
+  'trade-import.custom-field.type': '欄位類型',
+  'trade-import.custom-field.type.text': '文字',
+  'trade-import.custom-field.type.number': '數字',
+  'trade-import.custom-field.type.dropdown': '選項清單',
+  'trade-import.custom-field.create': '建立欄位',
+  'trade-import.custom-field.error.reserved':
+    '此名稱已被內建交易欄位使用，請換一個名稱。',
+  'trade-import.table.open-closed': '持倉/平倉',
+  'trade-import.status.open': '持倉中',
+  'trade-import.status.partially-closed': '部分平倉',
+  'trade-import.status.closed': '已平倉',
+  'trade-import.status.cancelled': '已取消',
+  'trade-import.diagnostic.column': '欄：{columns}',
+  'trade-import.diagnostic.unmap-column': '不匯入此欄',
+  'trade-import.diagnostic.edit-mapping': '變更對應',
+  'trade-import.source.manual.tile': '自製試算表 / 其他檔案',
+  'trade-import.source.manual.title': '自製試算表或其他檔案',
+  'csv.mapper.mode.title': '每一列代表什麼？',
+  'csv.mapper.mode.help':
+    '交易日誌試算表通常每列是一筆已平倉交易，並有損益欄。券商的委託紀錄會把每次買進和賣出分別列成一列。',
   'trade-import.diagnostic.info': 'info',
   'trade-import.label.sheet': 'Sheet',
   'trade-import.label.header-row': 'Header row',
@@ -1135,6 +1213,54 @@ const zhTW: Partial<Lang> = {
   'trade-import.table.entry-time': 'Entry time',
   'trade-import.table.quantity': 'Quantity',
   'trade-import.table.message': 'Message',
+  'trade-import.status.new': '新交易',
+  'trade-import.status.already-imported': '已匯入',
+  'trade-import.status.other-account': '在其他帳戶中',
+  'trade-import.status.other-account.detail': '已匯入到 {account}',
+  'trade-import.status.updates-existing': '更新現有交易',
+  'trade-import.status.possible-duplicate': '可能重複',
+  'trade-import.status.needs-review': '需要檢查',
+  'trade-import.status.duplicate-in-file': '檔案內重複',
+  'trade-import.status.invalid': '無效交易',
+  'trade-import.status.no-open-trade': '沒有可平倉的持倉交易',
+  'trade-import.status.multiple-open-trades': '多筆持倉交易符合',
+  'trade-import.status.quantity-mismatch': '數量不符',
+  'trade-import.server-deletion.deleted':
+    '已從 Journalit 伺服器刪除的交易：{count}',
+  'trade-import.server-deletion.kept': '因其他匯入也包含而保留的交易：{count}',
+  'trade-import.server-deletion.blocked-broker-connected':
+    '此帳戶由券商連線同步。請中斷券商連線以刪除其資料。',
+  'trade-import.server-deletion.blocked-broker-history':
+    '此帳戶包含券商同步記錄，無法在此刪除。請改為逐一刪除匯入。',
+  'trade-import.server-deletion.failed':
+    '無法從 Journalit 伺服器刪除，請重試。',
+  'trade-import.server-deletion.notice':
+    '伺服器刪除後移至垃圾桶的交易筆記：{count}',
+  'trade-import.server-deletion.account.title': '刪除伺服器帳戶？',
+  'trade-import.server-deletion.account.message':
+    '這將從 Journalit 伺服器永久刪除「{account}」及其匯入的交易（伺服器上 {count} 筆），並在每個已同步的儲存庫中將其筆記移至垃圾桶。之後可以重新匯入檔案。',
+  'trade-import.server-deletion.account.confirm': '從伺服器刪除',
+  'trade-import.server-deletion.account.button': '從伺服器刪除',
+  'trade-import.history.title': '匯入記錄',
+  'trade-import.completion.wrong-account': '匯入到錯誤的帳戶？',
+  'trade-import.completion.undo-import': '復原此次匯入',
+  'trade-import.action.manage-imports': '管理以往匯入',
+  'trade-sync.import.more-actions': '更多操作',
+  'trade-import.history.loading': '正在載入匯入記錄…',
+  'trade-import.history.load-failed': '無法載入匯入記錄。',
+  'trade-import.history.empty': '尚無匯入。',
+  'trade-import.history.trades-on-server': '伺服器上 {count} 筆',
+  'trade-import.history.delete.title': '刪除此匯入？',
+  'trade-import.history.delete.message':
+    '這將從 Journalit 伺服器永久刪除此匯入新增到「{account}」的交易（伺服器上 {count} 筆），並在每個已同步的儲存庫中將其筆記移至垃圾桶。其他匯入也包含的交易會被保留。之後可以重新匯入該檔案。',
+  'trade-import.history.delete.confirm': '刪除匯入',
+  'trade-import.history.load-more': '載入更多',
+  'account.edit.modal.delete.delete-server-trades':
+    '同時從 Journalit 伺服器刪除其匯入的交易（伺服器上 {count} 筆）。即使你在此保留筆記，它們也會在每個已同步的儲存庫中移至垃圾桶。',
+  'trade-import.preview.other-account.message':
+    '已在 {account} 中（{count}），將被略過。',
+  'trade-import.preview.other-account.import-instead': '改為匯入到 {account}',
+  'trade-import.preview.other-account.undo-earlier': '撤銷先前的匯入',
   'trade-import.action.confirm': 'Confirm import',
   'trade-import.action.activate-pro.one': '啟用 PRO 以匯入 {count} 筆交易',
   'trade-import.action.activate-pro.few': '啟用 PRO 以匯入 {count} 筆交易',
@@ -1471,10 +1597,7 @@ const zhTW: Partial<Lang> = {
     '使用這些尺寸按鈕在緊湊瀏覽和較大的圖表預覽之間切換，同時不裁切重要圖表細節。',
   'tradelog.guide.gallery-filters.title': '用同一個入口篩選圖庫',
   'tradelog.guide.gallery-filters.description':
-    '篩選按鈕仍會開啟進階篩選。在圖庫模式下，它也包含媒體專用篩選，例如註解狀態和媒體標籤。',
-  'tradelog.guide.gallery-filter-modal.title': '媒體篩選與交易篩選放在一起',
-  'tradelog.guide.gallery-filter-modal.description':
-    '使用此視窗組合交易篩選和媒體篩選。例如，先篩選某個 setup，再只顯示有筆記或特定媒體標籤的媒體。',
+    '篩選選單在這裡的用法相同。在圖庫模式下，它還包含一個「圖庫」區段，提供註解狀態和媒體標籤等媒體篩選。',
   'tradelog.guide.gallery-grid.title': '開啟媒體進行細看',
   'tradelog.guide.gallery-grid.description':
     '每張卡片都會盡量保持內容不被遮擋，同時顯示精簡的交易和複盤脈絡。點擊任意卡片即可全螢幕開啟。',
@@ -1597,6 +1720,37 @@ const zhTW: Partial<Lang> = {
   'home.filters.accounts': '帳戶',
   'home.filters.back': '返回',
   'filter.reset': '重設篩選器',
+  'filter.menu.title': '篩選條件',
+  'filter.menu.accounts': '帳戶',
+  'filter.menu.tickers': '商品',
+  'filter.menu.setups': '交易策略',
+  'filter.menu.tags': '標籤',
+  'filter.menu.mistakes': '錯誤',
+  'filter.menu.trade-type': '交易類型',
+  'filter.menu.status': '狀態',
+  'filter.menu.direction': '方向',
+  'filter.menu.review-status': '複盤狀態',
+  'filter.menu.status.cancelled': '已取消',
+  'filter.menu.included-count': '已包含 {count} 項',
+  'filter.menu.excluded-count': '已排除 {count} 項',
+  'filter.menu.search': '搜尋',
+  'filter.menu.no-matches': '沒有相符項目',
+  'filter.menu.no-options': '目前沒有可篩選的內容',
+  'filter.menu.clear': '清除',
+  'filter.menu.match.label': '比對',
+  'filter.menu.match.any': '任一項',
+  'filter.menu.match.all': '全部',
+  'filter.menu.match.only': '僅這些',
+  'filter.menu.match.exact': '完全一致',
+  'filter.menu.match.hint.any': '至少包含一個所選值的交易。',
+  'filter.menu.match.hint.all': '包含所有所選值的交易，允許有其他值。',
+  'filter.menu.match.hint.only': '所有值都在所選範圍內的交易。',
+  'filter.menu.match.hint.exact': '值與所選完全一致的交易，不多也不少。',
+  'filter.menu.match.no-value-any-only': '僅適用於「任一項」',
+  'filter.menu.exclude-value': '排除 {label}',
+  'filter.menu.match.badge.all': '全部',
+  'filter.menu.match.badge.only': '僅',
+  'filter.menu.match.badge.exact': '完全',
   'home.guide.modes.title': '最後一件事：儀表板',
   'home.guide.modes.description':
     '總覽與儀表板共用此頁面。現在切換到儀表板，繼續進行績效統計的簡短導覽。',
@@ -1729,15 +1883,6 @@ const zhTW: Partial<Lang> = {
     'The drawdown floor locks after payout.',
   'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
     'The account and drawdown limits reset after payout.',
-  'account-page.guide.whats-new.cockpit.payout.title':
-    'Know when a funded payout is safe',
-  'account-page.guide.whats-new.cockpit.payout.description':
-    'Funded accounts with verified rules now show payout requirements, the amount available, and a preview of the balance and drawdown consequences before you request money.',
-  'account-page.guide.main.payout.title': 'Plan funded payouts',
-  'account-page.guide.main.payout.description':
-    'When the funded phase has verified payout rules, this panel tracks eligibility and previews the account impact of a requested amount.',
-  'account-page.guide.main.trade-log.description':
-    '開啟交易日誌並已選取此帳戶。在多階段挑戰中，按鈕會跟隨你正在檢視的階段；箭頭可選擇其他階段或整個帳戶。',
   'account.prop-challenge.stage': 'Stage type',
   'account.prop-challenge.stage.evaluation': 'Evaluation',
   'account.prop-challenge.stage.sim-funded': 'Sim funded',
@@ -1865,9 +2010,9 @@ const zhTW: Partial<Lang> = {
   'account.prop-challenge.ledger.help.consistency.example-none':
     '尚無利潤，因此沒有可比較的最佳日。',
   'account.prop-challenge.ledger.help.max_position_size':
-    '所有未平倉持倉合計最多可持有的合約數。有些公司隨利潤增加會提高限額。',
+    '單一部位允許的最大合約數。Journalit 會檢查每筆交易的規模。部分機構會隨獲利增加而提高上限。',
   'account.prop-challenge.ledger.help.max_position_size.example':
-    '目前最多同時 {maximum} 口；迄今最大倉位 {current}。',
+    '目前每筆交易最多 {maximum} 口合約；目前最大一筆為 {current}。',
   'account.prop-challenge.ledger.help.payout.cycle_days':
     '當前出金週期內的交易日。批准出金後重新計數。',
   'account.prop-challenge.ledger.help.payout.cycle_days.example':
@@ -1919,7 +2064,7 @@ const zhTW: Partial<Lang> = {
   
   'account.merge.challenge.move-earlier': '將 {account} 前移',
   'account.merge.challenge.move-later': '將 {account} 後移',
-  'account.merge.warning.use-profile-balance': '使用檔案餘額',
+  'account.merge.warning.use-profile-balance': '使用機構的餘額',
   'account.merge.warning.edit-phases': '編輯階段',
   'account.merge.title': '挑戰設定',
   'account.merge.loading': '載入中...',
@@ -1952,8 +2097,19 @@ const zhTW: Partial<Lang> = {
   'account.merge.error.unknown': '合併失敗。',
   'account.merge.action.merge': '合併',
   'account.merge.action.undo': '復原',
+  'account.merge.action.looks-right': '沒問題',
   'account.merge.action.delete': '刪除舊帳戶',
   'account.merge.notice.converted': '已轉換為挑戰',
+  'account.merge.summary.intro': '請確認這與你的挑戰相符：',
+  'account.merge.summary.phases': '階段：{phases}',
+  'account.merge.summary.current': '目前處於 {phase}（{stage}），開始於 {date}',
+  'account.merge.summary.current-stage': '目前處於 {phase}，開始於 {date}',
+  'account.merge.summary.trades': '{total} 筆交易中有 {counted} 筆計入挑戰',
+  'account.merge.summary.trades-missing':
+    '{total} 筆交易中有 {counted} 筆計入挑戰。其餘交易不在任何階段的日期內。',
+  'account.merge.summary.rules': '{phase} 規則：{rules}',
+  'account.merge.summary.no-rules':
+    '{phase} 尚未設定規則。請在編輯帳戶中新增你機構的規則。',
   'account.merge.notice.title': '合併自 {accounts}',
   'account.merge.notice.error': '操作失敗。',
   'account.merge.undo.title': '復原合併',
@@ -1963,36 +2119,46 @@ const zhTW: Partial<Lang> = {
   'command.open-legacy-challenge-onboarding': '設定 Prop 挑戰',
   'account.merge.step.challenge': '挑戰',
   'account.merge.action.convert': '轉換',
+  'account.merge.phase.apply-profile': '套用機構規則',
   'account.merge.challenge.accounts': '帳戶',
   'account.merge.challenge.order-hint': '最早的階段在前',
   'account.merge.challenge.single-hint': '此帳戶將單獨成為一個挑戰',
-  'account.merge.phase.identities-count': '{count} 個識別碼',
+  'account.merge.phase.broker-accounts.one': '{count} 個經紀商帳戶',
+  'account.merge.phase.broker-accounts.few': '{count} 個經紀商帳戶',
+  'account.merge.phase.broker-accounts.many': '{count} 個經紀商帳戶',
+  'account.merge.phase.broker-accounts.other': '{count} 個經紀商帳戶',
+  'account.merge.review.phase-count.one': '個階段',
+  'account.merge.review.phase-count.few': '個階段',
+  'account.merge.review.phase-count.many': '個階段',
+  'account.merge.review.phase-count.other': '個階段',
   'account.merge.phase.pending': '待定',
-  'account.merge.review.phases': '個階段',
+  'account.merge.phase.starts-after': '通過 {phase} 後開始',
+  'account.merge.phase.pending-rules': '規則：{rules}',
   'account.merge.review.archived': '已封存',
-  'account.merge.review.open': '進行中',
+  'account.merge.review.starts-after': '{phase} 之後',
+  'account.merge.review.since': '自 {date} 起',
   'account.merge.sequence': '挑戰 {index} / {total}',
-  'account.merge.warning.balance-differs': '起始餘額與公司檔案不一致',
-  'account.merge.error.profile-phase-mismatch':
-    '帳戶數量多於公司檔案中的階段數',
-  'account.merge.error.profile-currency-mismatch': '檔案貨幣與這些帳戶不一致。',
+  'account.merge.warning.balance-differs': '起始餘額與機構規則不同',
+  'account.merge.error.profile-phase-mismatch': '帳戶數量多於機構規則中的階段',
+  'account.merge.error.profile-currency-mismatch':
+    '機構規則使用的貨幣與這些帳戶不同。',
   'account.merge.error.source-changed': '有帳戶已變更。請重新檢查合併。',
   'account.merge.error.multiple-active-phases':
     '只能是最後一個帳戶仍處於進行中。',
   'account.merge.error.copy-trading-overlap':
     '跟單週期重疊。請先結束其中一個。',
   'onboarding.legacy-challenge.legend':
-    '將曾是同一挑戰各階段的帳戶歸為一組。單獨的帳戶會成為一個獨立挑戰。',
-  'onboarding.legacy-challenge.assign.leave': '保持不變',
-  'onboarding.legacy-challenge.assign.own': '獨立挑戰',
-  'onboarding.legacy-challenge.assign.group': '挑戰 {letter}',
-  'onboarding.legacy-challenge.assign.new-group': '新增挑戰…',
+    '選擇如何處理每個舊帳戶。你是否為每個階段各建了一個帳戶，例如第 1 階段和已獲資金？把它們放進同一個挑戰，就會合併成一個有階段的帳戶。',
+  'onboarding.legacy-challenge.assign.leave': '保留為一般帳戶',
+  'onboarding.legacy-challenge.assign.own': '轉為挑戰',
+  'onboarding.legacy-challenge.assign.group': '加入挑戰 {letter}',
+  'onboarding.legacy-challenge.assign.new-group': '合併為新的挑戰…',
   'onboarding.legacy-challenge.action.continue': '繼續',
   'onboarding.legacy-challenge.action.continue-count': '設定 {count} 個',
   'guide.action-step.dismiss': '暫不',
-  'guide.legacy-challenge.title': '你的現有帳戶',
+  'guide.legacy-challenge.title': '設定此次更新之前的帳戶',
   'guide.legacy-challenge.description':
-    '合併曾是同一挑戰各階段的帳戶，或將某個帳戶設為獨立挑戰。',
+    '將舊的評估或已獲資金帳戶轉為挑戰。設定會引導你完成階段與日期，並在最後顯示設定內容供你檢查。',
   'guide.legacy-challenge.action': '設定我的帳戶',
   'account-dashboard.challenges.empty.title': '尚無挑戰',
   'account-dashboard.challenges.empty.message':
@@ -2047,6 +2213,21 @@ const zhTW: Partial<Lang> = {
   'calendar.aria.open-weekly-review': '開啟 {date} 的每週回顧',
   'calendar.aria.open-monthly-review': '開啟 {date} 的月度回顧',
   'calendar.aria.open-quarterly-review': '開啟 {date} 的季度回顧',
+  'filter.menu.whats-new.open.title': '篩選有了新選單',
+  'filter.menu.whats-new.open.description':
+    '所有篩選現在都在一個分層選單中，並新增了兩種縮小交易範圍的方式。打開看看。',
+  'filter.menu.whats-new.exclude.title': '排除不想要的內容',
+  'filter.menu.whats-new.exclude.description':
+    '每個值都有一個 ⊘ 按鈕。排除某個值後，所有帶有該值的交易都會被去掉，無論它還符合什麼。',
+  'filter.menu.whats-new.match.title': '選擇多個值如何比對',
+  'filter.menu.whats-new.match.description':
+    '選取多個值時，決定交易需要符合「任一項」、「全部」、「僅這些」還是「完全一致」。標籤、交易策略、錯誤和自訂欄位都有相同的比對選項。',
+  'filter.menu.whats-new.phases.title': '依挑戰階段篩選',
+  'filter.menu.whats-new.phases.description':
+    '擁有多個階段的自營帳戶會開啟其階段清單。可以只選某些階段，而不是整個帳戶。',
+  'filter.menu.whats-new.done.title': '這就是篩選的新功能',
+  'filter.menu.whats-new.done.description':
+    '同一個選單也用於交易紀錄、儀表板、首頁、交易策略和複盤中。點擊後立即生效。',
 };
 
 export default zhTW;

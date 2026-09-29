@@ -107,6 +107,12 @@ function getUrlExtension(url: string): string {
   }
 }
 
+
+export function hasMediaFileExtension(pathOrUrl: string): boolean {
+  const extension = getUrlExtension(pathOrUrl);
+  return IMAGE_EXTENSIONS.has(extension) || VIDEO_EXTENSIONS.has(extension);
+}
+
 function isRemoteVideoMediaUrl(url: string): boolean {
   return (
     /^https?:\/\//i.test(url) && VIDEO_EXTENSIONS.has(getUrlExtension(url))

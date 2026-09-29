@@ -11,6 +11,7 @@ import {
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { t } from '../../../lang/helpers';
+import { TradeRUnavailableHint } from '../../shared/display/RMultipleUnavailableHint';
 import { getTradeDirectionDisplayKind } from '../../../services/trade/core/TradeDirection';
 import { formatLocalizedDateTime } from '../../../utils/localizedDateTime';
 import {
@@ -23,6 +24,10 @@ import type { PriceMoveValueInput } from '../../../utils/priceMoveValue';
 import { Notice } from 'obsidian';
 import { openReviewPeriod } from '../../../services/tradeOperations/reviewNavigation';
 import type { ReviewPeriodLevel } from '../../../services/tradeOperations/periodGrouping';
+import {
+  shareCaptureExcludeProps,
+  shareDollarAmountProps,
+} from '../../../services/share/brandedCapture';
 
 const HEADER_WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, {
   weekday: 'short',
@@ -438,6 +443,9 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
       ? '+'
       : '';
   const formattedHeaderOutcome = `${privacyAwarePnLPrefix}${formattedPrivacyAwarePnL}`;
+  
+  
+  const outcomeShownInDollars = !displayRMultiples;
   const headerOutcomeParts = splitHeaderOutcomeValue(formattedHeaderOutcome);
 
   const getStatusClass = () => {
@@ -534,6 +542,7 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
                 <button
                   type="button"
                   className="journalit-native-button journalit-native-button--unstyled trade-header-review-indicator"
+                  {...shareCaptureExcludeProps}
                   onClick={onToggleReviewed}
                   onKeyDown={(event) => {
                     if (event.key !== 'Enter' && event.key !== ' ') return;
@@ -577,21 +586,29 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
                         : t('form.unrealized.preview')}
                 </span>
               )}
-              <span className={getTextClass()}>
-                <span className="trade-pnl-primary">
-                  {headerOutcomeParts.main}
-                  {headerOutcomeParts.decimal && (
-                    <span className="trade-pnl-cents">
-                      {headerOutcomeParts.decimal}
+              <TradeRUnavailableHint
+                value={headerPnlValue}
+                rMultiple={effectiveRMultiple}
+              >
+                <span
+                  className={getTextClass()}
+                  {...(outcomeShownInDollars ? shareDollarAmountProps : {})}
+                >
+                  <span className="trade-pnl-primary">
+                    {headerOutcomeParts.main}
+                    {headerOutcomeParts.decimal && (
+                      <span className="trade-pnl-cents">
+                        {headerOutcomeParts.decimal}
+                      </span>
+                    )}
+                  </span>
+                  {headerOutcomeParts.suffix && (
+                    <span className="trade-pnl-suffix">
+                      {headerOutcomeParts.suffix}
                     </span>
                   )}
                 </span>
-                {headerOutcomeParts.suffix && (
-                  <span className="trade-pnl-suffix">
-                    {headerOutcomeParts.suffix}
-                  </span>
-                )}
-              </span>
+              </TradeRUnavailableHint>
             </>
           ) : (
             <span className="open-text">
@@ -692,7 +709,7 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
               </>
             )}
         </div>
-        <div className="trade-header-actions">
+        <div className="trade-header-actions" {...shareCaptureExcludeProps}>
           {sessionNavigation}
           {onEditClick && (
             <button

@@ -3,9 +3,11 @@
 import type { Lang } from './en';
 
 const it: Lang = {
+  'templateEditor.widget.session-log.hide-empty-outside':
+    'Nascondi il registro fuori sessione quando è vuoto',
   'widget.mfeScatter.name': 'MFE vs PnL realizzato',
   'widget.mfeScatter.description':
-    'Escursione favorevole massima rispetto al PnL netto realizzato delle operazioni chiuse',
+    'Massimo profitto aperto vs P&L finale per trade',
   'widget.mfeScatter.y': 'PnL realizzato ({unit})',
   'widget.mfeScatter.winners': 'Vincenti',
   'widget.mfeScatter.losers': 'Perdenti',
@@ -192,6 +194,8 @@ const it: Lang = {
     'Apri prima una vista Journalit supportata, poi esegui questo comando.',
   'notice.guide.no-guide-for-view':
     'Nessuna guida è ancora registrata per questa vista ({viewType}).',
+  'notice.guide.unavailable-in-current-state':
+    'La guida di questa vista non è disponibile nel suo stato attuale.',
   'notice.guide.replay-failed': 'Impossibile avviare la guida. Riprova.',
   'notice.guide.replay-started': 'Guida riavviata per questa vista.',
   'template.switch-title': 'Cambia layout',
@@ -311,6 +315,18 @@ const it: Lang = {
   'form.tab.details': 'Dettagli',
   'form.tab.advanced': 'Avanzate',
   'form.import-shortcut.open': 'Importa operazioni',
+  'form.manual-import-nudge.title.one':
+    'Suggerimento: hai inserito {count} operazione a mano',
+  'form.manual-import-nudge.title.few':
+    'Suggerimento: hai inserito {count} operazioni a mano',
+  'form.manual-import-nudge.title.many':
+    'Suggerimento: hai inserito {count} operazioni a mano',
+  'form.manual-import-nudge.title.other':
+    'Suggerimento: hai inserito {count} operazioni a mano',
+  'form.manual-import-nudge.body':
+    'L’importazione operazioni può portare in blocco lo storico del tuo broker o di un foglio di calcolo, invece di un’operazione alla volta.',
+  'form.manual-import-nudge.cta': 'Anteprima delle mie operazioni',
+  'form.manual-import-nudge.dismiss': 'Non ora',
   'form.layout.customize': 'Personalizza modulo',
   'form.layout.modal-title': 'Personalizza il modulo operazione',
   'form.layout.settings-title': 'Layout del modulo operazione',
@@ -721,6 +737,7 @@ const it: Lang = {
     '{label} contiene valori orari non validi',
 
   'notice.login-success': 'Accesso effettuato!',
+  'notice.pro-access-ready': "L'accesso PRO è pronto.",
 
   'notice.logout-success': 'Disconnessione effettuata',
   'notice.ftp-created': 'Credenziali FTP create con successo',
@@ -894,10 +911,7 @@ const it: Lang = {
   'tradelog.guide.filters.title':
     'Usa i filtri per restringere il Registro operazioni',
   'tradelog.guide.filters.description':
-    'Apri i filtri quando vuoi revisionare solo certi conti, setup, tag, tipi di operazione, stati o date.',
-  'tradelog.guide.filter-modal.title': 'Questi sono i filtri dettagliati',
-  'tradelog.guide.filter-modal.description':
-    'Usa questa finestra quando vuoi più controllo su quali operazioni vengono mostrate. Chiudila quando hai finito di revisionare o modificare i filtri.',
+    'Apri i filtri quando vuoi revisionare solo certi conti, setup, tag, tipi di operazione, stati o date. Puoi anche escludere qualsiasi valore per togliere quelle operazioni.',
   'tradelog.guide.sorting.title':
     'Fai clic sulle intestazioni per ordinare la tabella',
   'tradelog.guide.sorting.description':
@@ -937,7 +951,7 @@ const it: Lang = {
     'Usa questa pagina per seguire il rendimento, revisionare le statistiche e tenere i grafici più utili in un unico posto.',
   'dashboard.guide.main.filters.title': 'I filtri cambiano tutta la Dashboard',
   'dashboard.guide.main.filters.description':
-    'Usa i filtri quando vuoi che ogni statistica e grafico di questa pagina si aggiorni per un altro intervallo di date, conto, setup, tag o tipo di operazione.',
+    'Usa i filtri quando vuoi che ogni statistica e grafico di questa pagina si aggiorni per un altro intervallo di date, conto, setup, tag o tipo di operazione. Puoi anche escludere qualsiasi valore per togliere quelle operazioni.',
   'dashboard.guide.main.edit-layout.title':
     'Attiva la modalità modifica per personalizzare questa pagina',
   'dashboard.guide.main.edit-layout.description':
@@ -947,7 +961,7 @@ const it: Lang = {
     'Fai clic su Aggiungi widget per aggiungere altri grafici e recuperare i widget che hai rimosso.',
   'dashboard.guide.main.widget-picker.title': 'Scegli cosa mostrare',
   'dashboard.guide.main.widget-picker.description':
-    'Questo selettore mostra i grafici e le metriche che non sono attualmente sulla Dashboard. Fai clic su uno per aggiungerlo.',
+    "Questo pannello mostra l'anteprima di ogni grafico e metrica. Fai clic su uno per aggiungerlo; ciò che è già nella Dashboard compare sotto In uso.",
   'dashboard.guide.main.metrics.title':
     'Queste schede in alto sono il riepilogo rapido',
   'dashboard.guide.main.metrics.description':
@@ -984,7 +998,7 @@ const it: Lang = {
   'home.guide.move-and-resize.title': 'Sposta e ridimensiona i widget',
   'home.guide.widget-picker.title': 'Aggiungi widget qui',
   'home.guide.widget-picker.description':
-    'Aggiungi widget, ripristina Collegamenti rapidi o aggiungi collegamenti a conti e setup.',
+    'Visualizza in anteprima e aggiungi widget, ripristina Collegamenti rapidi o aggiungi collegamenti a conti e setup. Tutto ciò che è già in Home compare in «In uso», dove puoi rimuoverlo.',
   'home.guide.move-and-resize.description':
     "Questa è l'area principale che puoi riorganizzare in modalità modifica. Trascina i widget per spostarli, oppure trascina l'angolo in basso a destra per ridimensionarli.",
   'home.guide.add-widget.title': 'Aggiungi elementi a Home',
@@ -1055,28 +1069,17 @@ const it: Lang = {
   'tradelog.node.performance.day': '{indicator} giorno di {week} {year}',
   'tradelog.node.performance.period': '{indicator} periodo',
   'tradelog.filter.all': 'Tutti gli stati',
-  'tradelog.filter.all.desc': 'Tutti gli stati delle operazioni',
-  'tradelog.filter.all-review-statuses': 'Tutti gli stati di revisione',
-  'tradelog.filter.all-directions': 'Tutte le direzioni',
   'tradelog.filter.winners': 'Vincenti',
-  'tradelog.filter.winners.desc': 'Operazioni vincenti',
   'tradelog.filter.losers': 'Perdenti',
-  'tradelog.filter.losers.desc': 'Operazioni perdenti',
   'tradelog.filter.breakeven': 'Pareggio',
   'tradelog.filter.breakeven.desc': 'Operazioni in pareggio',
   'tradelog.filter.open': 'Aperte',
   'tradelog.filter.open.desc': 'Posizioni attualmente aperte',
   'tradelog.filter.closed': 'Chiuse',
-  'tradelog.filter.closed.desc':
-    'Tutte le posizioni chiuse (vincita/perdita/pareggio)',
-  'tradelog.type.all': 'Tutti i tipi',
-  'tradelog.type.all.desc': 'Tutti i tipi di operazione',
   'tradelog.type.regular': 'Regolari',
   'tradelog.type.regular.desc': 'Operazioni normali',
   'tradelog.type.missed': 'Perse',
-  'tradelog.type.missed.desc': 'Opportunità perse',
   'tradelog.type.backtest': 'Backtest',
-  'tradelog.type.backtest.desc': 'Operazioni simulate',
   'tradelog.status.win': 'VINCENTE',
   'tradelog.status.loss': 'PERDENTE',
   'tradelog.status.open': 'APERTA',
@@ -1331,7 +1334,6 @@ const it: Lang = {
   'dashboard.conversion.converted-pnl': 'P&L convertito',
   'dashboard.conversion.details-label': 'Dettagli conversione valuta',
 
-  'dashboard.top-section.add-metric': 'Aggiungi metrica',
   'dashboard.top-section.remove-metric': 'Rimuovi metrica',
   'dashboard.top-section.failed-load': 'Impossibile caricare le metriche',
   'dashboard.filter.date.today': 'Oggi',
@@ -1349,24 +1351,7 @@ const it: Lang = {
   'dashboard.filter.accounts.select-all': 'Seleziona tutto',
 
   'dashboard.filter.accounts.none-found': 'Nessun conto trovato',
-  'dashboard.filter.tags.all': 'Tutti i tag',
-  'dashboard.filter.tags.none': 'Nessun tag',
-  'dashboard.filter.tags.n-selected': '{count} tag',
-  'dashboard.filter.tags.select-all': 'Seleziona tutto',
-  'dashboard.filter.tags.none-found': 'Nessun tag trovato',
-  'dashboard.filter.mistakes.all': 'Tutti gli errori',
-  'dashboard.filter.mistakes.none': 'Nessun errore',
-  'dashboard.filter.mistakes.n-selected': '{count} errori',
-  'dashboard.filter.mistakes.select-all': 'Seleziona tutto',
-  'dashboard.filter.mistakes.none-found': 'Nessun errore trovato',
-  'dashboard.filter.tickers.all': 'Tutti i simboli',
-  'dashboard.filter.tickers.n-selected': '{count} simboli',
-  'dashboard.filter.tickers.select-all': 'Seleziona tutto',
   'dashboard.filter.tickers.none-found': 'Nessun simbolo trovato',
-  'dashboard.filter.setup.all': 'Tutti i setup',
-  'dashboard.filter.setup.none': 'Nessun setup',
-  'dashboard.filter.setup.n-selected': '{count} setup',
-  'dashboard.filter.setup.select-all': 'Seleziona tutto',
 
   'dashboard.widgets.daily-performance.title': 'Prestazioni giornaliere',
   'dashboard.widgets.daily-performance.period-aria': 'Periodo',
@@ -1398,13 +1383,13 @@ const it: Lang = {
 
   'dashboard.widgets.setup-performance.title': 'Prestazioni setup',
   'dashboard.widgets.setup-performance.description':
-    'Grafico a barre classificato che confronta il rendimento per setup',
+    'Classifica della performance per setup',
   'dashboard.widgets.setup-performance.empty':
     'Nessun dato di rendimento per setup',
   'dashboard.widgets.setup-performance.masked-label': 'Setup',
   'dashboard.widgets.tag-performance.title': 'Prestazioni tag',
   'dashboard.widgets.tag-performance.description':
-    'Grafico a barre classificato che confronta il rendimento per tag',
+    'Classifica della performance per tag',
   'dashboard.widgets.tag-performance.empty':
     'Nessun dato di rendimento per tag',
   'dashboard.widgets.tag-performance.masked-label': 'Tag',
@@ -1454,7 +1439,7 @@ const it: Lang = {
     "Calendario della tua attività di trading nell'anno",
   'home.widget.getting-started.name': 'Per iniziare',
   'home.widget.getting-started.description':
-    'Lista di controllo per aggiungere lo storico di trading e configurare Journalit',
+    'Lista di controllo per configurare Journalit',
   'home.widget.getting-started.progress': '{completed}/{total} completati',
   'home.widget.getting-started.progress.loading': 'Verifica dei progressi...',
   'home.widget.getting-started.item.account.title':
@@ -1492,16 +1477,16 @@ const it: Lang = {
   'home.widget.getting-started.item.pro.cta': 'Attiva',
   'home.widget.weekly-summary.name': 'Riepilogo settimanale',
   'home.widget.weekly-summary.description':
-    'Metriche della settimana in corso con sparkline P&L giornaliero',
+    'Metriche della settimana con P&L giornaliero',
   'home.widget.key-events.name': 'Eventi chiave',
   'home.widget.key-events.description':
-    'Notizie ed eventi di mercato importanti dalla Revisione settimanale in corso',
+    'Notizie ed eventi dalla revisione settimanale',
   'home.widget.key-events.empty-title': 'Nessun evento chiave',
   'home.widget.key-events.open-aria':
     'Apri la Revisione settimanale di questa settimana',
   'home.widget.position-size.name': 'Calcolatore dimensione posizione',
   'home.widget.position-size.description':
-    'Calcola la dimensione della posizione in base alla percentuale di rischio del conto',
+    'Dimensiona le posizioni dal rischio del conto',
   'home.widget.embedded-note.name': 'Nota incorporata',
   'home.widget.embedded-note.description':
     'Mostra una qualsiasi nota markdown dal vault',
@@ -1513,7 +1498,7 @@ const it: Lang = {
     "Scopri quando operi meglio in base all'ora del giorno",
   'home.widget.setup-leaderboard.name': 'Ripartizione migliori',
   'home.widget.setup-leaderboard.description':
-    'Confronta i tuoi setup, tag, tipi di asset o simboli migliori',
+    'I tuoi migliori setup, tag, asset o simboli',
   'home.widget.unreviewed-trades.name': 'Operazioni da revisionare',
   'home.widget.unreviewed-trades.description':
     'Operazioni che richiedono la tua revisione',
@@ -1522,13 +1507,12 @@ const it: Lang = {
     'Monitora i progressi verso il tuo obiettivo di trading',
   'home.widget.trading-score.name': 'Punteggio di trading',
   'home.widget.trading-score.description':
-    'Punteggio di prestazioni complessivo con grafico radar',
+    'Un punteggio della tua performance complessiva',
   'home.widget.aum.name': 'AUM',
-  'home.widget.aum.description':
-    'Totale degli asset in gestione, con andamento a 7 giorni',
+  'home.widget.aum.description': 'Saldi totali dei conti con trend a 7 giorni',
   'home.widget.drawdown-monitor.name': 'Monitoraggio drawdown',
   'home.widget.drawdown-monitor.description':
-    'Monitora lo stato del drawdown sui conti con limiti configurati',
+    'Utilizzo del limite di drawdown per conto',
   'home.widget.profit-target-widget.name': 'Target di profitto',
   'home.widget.profit-target-widget.description':
     'Monitora i progressi verso il target di profitto sui conti',
@@ -1642,6 +1626,7 @@ const it: Lang = {
     'Eventi ad alto impatto nella tua nota settimanale.',
   'view.economic-calendar.pro-benefit-trial':
     'Inizia con una prova gratuita di 14 giorni.',
+  'view.economic-calendar.sign-in': 'Hai già Pro? Accedi',
   'settings.economic-calendar.title': 'Calendario economico',
   'settings.economic-calendar.description':
     'Importa automaticamente gli eventi economici della settimana negli eventi chiave della nota settimanale.',
@@ -1750,16 +1735,16 @@ const it: Lang = {
   'csv.mapper.required-badge': 'Obbligatorio',
   'csv.mapper.required-label': 'OBBLIGATORIO',
   'csv.mapper.example': 'Esempio:',
-  'csv.mapper.mode.title': 'Modalità di importazione',
+  'csv.mapper.mode.title': 'Cosa rappresenta ogni riga?',
   'csv.mapper.mode.help':
-    'Scegli come interpretare le righe manuali. La modalità P&L diretto importa le righe come operazioni chiuse usando i valori di P&L mappati.',
+    'I fogli di diario di solito hanno un trade chiuso per riga con una colonna P/L. Gli storici ordini dei broker elencano ogni acquisto e vendita su una riga separata.',
 
   'csv.mapper.asset-type.help':
     'Seleziona il tipo di strumento in questo file. Determina i campi obbligatori e la logica di analisi.',
 
   'csv.mapper.tip.title': 'Suggerimento: mappa altri campi',
   'csv.mapper.tip.desc':
-    "Mappare campi facoltativi come commissioni e profit_loss migliora la qualità dell'importazione. Puoi anche mappare più colonne su campi elenco come tag, immagini, setup ed errori.",
+    "Mappare campi facoltativi come commissioni e P/L migliora la qualità dell'importazione. Puoi anche mappare più colonne su campi elenco come tag, immagini, setup ed errori.",
   'csv.mapper.missing-fields': 'Campi obbligatori mancanti per {assetType}:',
   'csv.mapper.summary.title': 'Riepilogo:',
   'csv.mapper.summary.of': 'di',
@@ -2646,6 +2631,10 @@ const it: Lang = {
     'Journalit ha pronte le regole di ogni challenge {firm} per la precompilazione.',
   'upgrade.prop-profiles.message':
     'Journalit tiene pronte le regole delle prop firm da inserire nella tua challenge.',
+  'upgrade.prop-profiles.message-updates':
+    'Collega la tua challenge alle regole pubblicate della sua firm e Journalit ti avvisa quando la firm le cambia.',
+  'upgrade.prop-profiles.message-updates-firm':
+    'Collega la tua challenge alle regole pubblicate di {firm} e Journalit ti avvisa quando {firm} le cambia.',
   'upgrade.prop-profiles.benefits-title': 'Cosa compila Pro per te:',
   'upgrade.benefit.prop.rules':
     'Limiti di drawdown e perdita giornaliera, presi dalle regole della tua firm',
@@ -2730,30 +2719,20 @@ const it: Lang = {
     'Il grafico del saldo mostra più del solo saldo',
   'account-page.guide.main.balance-chart.description':
     'Questo grafico mostra il conto nel tempo, inclusi depositi e prelievi, più i livelli di Drawdown e di obiettivo di profitto che hai impostato.',
-  'account-page.guide.main.metrics.title':
-    'Queste metriche riassumono solo questo conto',
+  'account-page.guide.main.metrics.title': 'Prestazioni solo di questo conto',
   'account-page.guide.main.metrics.description':
-    'Questi numeri sono calcolati per questo conto, così puoi valutarne le prestazioni da solo.',
+    'Saldo, P&L, win rate e tutti i costi solo di questo conto. I conti prop mostrano i payout al posto del flusso di cassa netto.',
   'account-page.guide.main.risk.title':
     'Qui il progresso del rischio è tracciato a parte',
   'account-page.guide.main.risk.description':
-    "Questa sezione mostra quanto il conto è vicino al limite di Drawdown o all'obiettivo di profitto. Imposti queste regole in Modifica conto, che ti mostriamo dopo.",
+    'Quanto del limite di drawdown hai usato e quanto sei vicino al tuo obiettivo di profitto.',
   'account-page.guide.main.transactions.title':
     'Depositi e prelievi restano in una sezione dedicata',
   'account-page.guide.main.transactions.description':
-    'Ogni voce può essere revisionata in seguito, così separi i movimenti di cassa dalle prestazioni di trading.',
-  'account-page.guide.main.trade-log.title':
-    'Vedi le operazioni di questo conto nel Registro operazioni',
-  'account-page.guide.main.trade-log.description':
-    'Apri il Registro operazioni con questo conto già selezionato per una revisione mirata.',
-  'account-page.guide.main.add-event.title':
-    'Aggiungi evento registra depositi e prelievi',
-  'account-page.guide.main.add-event.description':
-    'Usalo ogni volta che il denaro viene aggiunto o rimosso al di fuori dei risultati delle operazioni, così la cronologia del conto resta accurata.',
-  'account-page.guide.main.edit-account.title':
-    'Modifica conto cambia le impostazioni del conto',
-  'account-page.guide.main.edit-account.description':
-    "Qui aggiorni i dettagli del conto, le regole di rischio, il Drawdown e l'obiettivo di profitto se cambiano nel tempo.",
+    'Depositi e prelievi con il saldo dopo ciascuno, separati dai risultati di trading. I conti prop elencano qui i payout.',
+  'account-page.guide.main.actions.title': 'Trade, liquidità e impostazioni',
+  'account-page.guide.main.actions.description':
+    'Apri i trade di questo conto nel Trade Log, registra un deposito o un prelievo con + oppure modifica il conto e le sue regole.',
   'account-dashboard.title': 'Conti',
   'account-dashboard.copy-badge.base': 'BASE',
   'account-dashboard.copy-badge.copy': 'COPIER',
@@ -2905,6 +2884,33 @@ const it: Lang = {
   'trade.image.no-images': 'Nessuna immagine per questa operazione',
   'trade.image.click-edit': 'Aggiungi immagine',
   'trade.image.alt-prefix': "Immagine dell'operazione",
+  'command.share-note-as-image': 'Condividi la nota corrente come immagine',
+  'trade.share.copy-screenshot': 'Copia screenshot del trade',
+  'trade.share.copied': 'Screenshot del trade copiato negli appunti',
+  'trade.share.failed': 'Impossibile copiare lo screenshot del trade',
+  'trade.share.not-ready':
+    'La nota del trade è ancora in caricamento. Riprova tra un momento.',
+  'share.review.action': 'Condividi scheda revisione',
+  'share.review.modal-title': 'Condividi revisione',
+  'share.review.section.top': 'Inizio della nota',
+  'share.review.select-all': 'Seleziona tutto',
+  'share.review.clear': 'Cancella',
+  'share.review.legend.widget': 'Widget',
+  'share.review.legend.heading': 'Intestazione e testo',
+  'share.review.legend.media': 'Media',
+  'share.review.legend.text': 'Testo',
+  'share.review.copy': 'Copia immagine',
+  'settings.general.hide-dollar-amounts-in-shares':
+    'Nascondi gli importi in dollari nelle immagini condivise',
+  'settings.general.hide-dollar-amounts-in-shares-desc':
+    'Con i multipli R attivi, gli screenshot dei trade e le schede di revisione omettono rischio, commissioni, costi e MAE/MFE in dollari.',
+  'share.review.hide-dollar-amounts': 'Nascondi importi in dollari',
+  'share.review.hide-dollar-amounts-hint':
+    'Omette rischio, commissioni e altri valori in dollari.',
+  'share.review.hide-dollar-amounts-needs-r':
+    'Attiva i multipli R nelle impostazioni per condividere senza importi in dollari.',
+  'share.review.copied': 'Scheda copiata negli appunti',
+  'share.review.failed': 'Impossibile copiare la scheda',
 
   'trade.review.reviewed': 'Revisionata',
   'trade.review.reviewed-on': 'Revisionata il {date}',
@@ -2982,6 +2988,12 @@ const it: Lang = {
     "Maschera i valori sensibili di trading, conto, prezzo e prestazioni nell'interfaccia, senza modificare i dati salvati.",
   'settings.general.privacy-mode-aria':
     'Attiva o disattiva la modalità privacy',
+  'settings.general.appearance': 'Aspetto',
+  'settings.general.accent-color': 'Colore di accento',
+  'settings.general.accent-color-desc':
+    "Colore per pulsanti, interruttori ed evidenziazioni di Journalit. L'accento Journalit viene usato solo finché Obsidian usa l'accento predefinito; un accento scelto nelle impostazioni Aspetto di Obsidian o un tema ha sempre la precedenza.",
+  'settings.general.accent-color-journalit': 'Accento Journalit (predefinito)',
+  'settings.general.accent-color-obsidian': "Segui l'accento di Obsidian",
   'settings.general.home-view-settings': 'Impostazioni della vista Home',
   'settings.general.home-auto-open': 'Apertura automatica della vista Home',
   'settings.general.home-auto-open-desc':
@@ -3763,9 +3775,9 @@ const it: Lang = {
   'onboarding.data-source.option.broker.label': 'Sul mio broker o piattaforma',
   'onboarding.data-source.option.broker.description':
     'Collegalo o importa ciò che esporta.',
-  'onboarding.data-source.option.file.label': 'In un foglio di calcolo o file',
+  'onboarding.data-source.option.file.label': 'Nel mio foglio di calcolo',
   'onboarding.data-source.option.file.description':
-    'Esportazioni CSV, Excel o HTML.',
+    'Un diario che tieni in Excel, Google Sheets o CSV.',
   'onboarding.data-source.option.fresh.label':
     'Da nessuna parte, parto da zero',
   'onboarding.data-source.option.fresh.description':
@@ -4054,6 +4066,17 @@ const it: Lang = {
     'Metriche di prestazioni chiave in formato griglia',
   'widget.stats.no-trades': 'Nessuna operazione chiusa in questo periodo',
   'widget.stats.vs-prev': 'vs prec',
+  'common.r-missing.title': 'Nessun R per questo trade',
+  'common.r-missing.trade':
+    'Questo trade non ha un importo di rischio, quindi il suo risultato non può essere mostrato in R.',
+  'common.r-missing.fix':
+    'Aggiungi un importo di rischio o imposta un importo di rischio predefinito nelle Impostazioni.',
+  'common.r-coverage.partial':
+    'Basato su {valid} di {total} trade. I trade senza importo di rischio non vengono conteggiati in R.',
+  'common.r-coverage.none':
+    "Nessun trade qui ha un importo di rischio, quindi non c'è alcun R da mostrare.",
+  'dashboard.r-coverage.no-comparison':
+    'Nessuna variazione mostrata: il periodo di confronto non ha un valore in R per questa statistica.',
   'dashboard.metrics.past-30d': 'ultimi 30g',
 
   'widget.stats.net-pnl': 'P&L netto',
@@ -4354,12 +4377,12 @@ const it: Lang = {
     'Rapporto tra profitto lordo e perdita lorda',
   'metric.sharpeRatio.name': 'Indice Sharpe',
   'metric.sharpeRatio.description':
-    'Indice Sharpe a livello di operazione: P&L netto medio delle operazioni chiuse diviso per la volatilità del P&L del campione',
+    'Indice Sharpe: P&L medio per trade e volatilità',
   'metric.expectancy.name': 'Aspettativa',
   'metric.expectancy.description': 'Importo medio vinto o perso per operazione',
   'metric.maxDrawdown.name': 'Max Drawdown',
   'metric.maxDrawdown.description':
-    'Maggior importo di Drawdown su operazioni chiuse rispetto a un precedente massimo di P&L realizzato',
+    'Maggior calo da un massimo di P&L precedente',
   'metric.bestDay.name': 'Miglior giorno',
   'metric.bestDay.description': 'P&L più alto in un singolo giorno',
   'metric.largestWin.name': 'Vincita più grande',
@@ -4383,11 +4406,10 @@ const it: Lang = {
   'metric.avgLoss.name': 'Perdita media',
   'metric.avgLoss.description': 'Perdita media delle operazioni perdenti',
   'metric.avgRR.name': 'RR medio (rapporto vincita/perdita)',
-  'metric.avgRR.description':
-    'Rapporto vincita/perdita in valuta: vincita media / perdita media',
+  'metric.avgRR.description': 'Guadagno medio diviso perdita media',
   'metric.avgRRRiskBased.name': 'RR medio (basato su R)',
   'metric.avgRRRiskBased.description':
-    'Rapporto basato sul rischio usando R-multiple: R medio vincente / R medio perdente (richiede dati di stop/rischio)',
+    'R vincente medio vs R perdente (serve lo stop)',
   'metric.avgHoldTime.name': 'Tempo medio in posizione',
   'metric.avgHoldTime.description': 'Tempo medio in tutte le operazioni chiuse',
   'metric.avgWinHoldTime.name': 'Tempo medio in posizione (vincite)',
@@ -4397,41 +4419,34 @@ const it: Lang = {
   'metric.avgLossHoldTime.description':
     'Tempo medio nelle operazioni chiuse perdenti',
   'metric.avgWinnerHeat.name': 'MAE medio vincenti',
-  'metric.avgWinnerHeat.description':
-    "MAE medio delle operazioni chiuse vincenti, nell'unità di visualizzazione MAE/MFE configurata",
+  'metric.avgWinnerHeat.description': 'MAE medio dei trade vincenti',
   'metric.winnerMaeP90.name': 'MAE P90 vincenti',
   'metric.winnerMaeP90.description':
-    "Soglia MAE al 90° percentile per le operazioni chiuse vincenti, nell'unità di visualizzazione MAE/MFE configurata",
+    '90° percentile del MAE dei trade vincenti',
   'metric.winnerMaeMedian.name': 'MAE mediano vincenti',
-  'metric.winnerMaeMedian.description':
-    "MAE mediano delle operazioni chiuse vincenti, nell'unità di visualizzazione MAE/MFE configurata",
+  'metric.winnerMaeMedian.description': 'MAE mediano dei trade vincenti',
   'metric.avgLossHeat.name': 'MAE medio perdenti',
-  'metric.avgLossHeat.description':
-    "MAE medio delle operazioni chiuse perdenti, nell'unità di visualizzazione MAE/MFE configurata",
+  'metric.avgLossHeat.description': 'MAE medio dei trade perdenti',
   'metric.winnerAvgMfe.name': 'MFE medio vincenti',
-  'metric.winnerAvgMfe.description':
-    "MFE medio delle operazioni chiuse vincenti, nell'unità di visualizzazione MAE/MFE configurata",
+  'metric.winnerAvgMfe.description': 'MFE medio dei trade vincenti',
   'metric.loserAvgMfe.name': 'MFE medio perdenti',
-  'metric.loserAvgMfe.description':
-    "MFE medio delle operazioni chiuse perdenti, nell'unità di visualizzazione MAE/MFE configurata",
+  'metric.loserAvgMfe.description': 'MFE medio dei trade perdenti',
   'metric.winnerMfeP90.name': 'MFE P90 vincenti',
   'metric.winnerMfeP90.description':
-    "Soglia MFE al 90° percentile per le operazioni chiuse vincenti, nell'unità di visualizzazione MAE/MFE configurata",
+    '90° percentile del MFE dei trade vincenti',
   'metric.loserMfeP90.name': 'MFE P90 perdenti',
-  'metric.loserMfeP90.description':
-    "Soglia MFE al 90° percentile per le operazioni chiuse perdenti, nell'unità di visualizzazione MAE/MFE configurata",
+  'metric.loserMfeP90.description': '90° percentile del MFE dei trade perdenti',
   'metric.timeInDrawdown.name': 'Tempo in Drawdown',
-  'metric.timeInDrawdown.description':
-    'Percentuale del tempo trascorso sotto il precedente massimo di P&L realizzato',
+  'metric.timeInDrawdown.description': 'Quota di tempo sotto il massimo di P&L',
   'metric.avgRecoveryTime.name': 'Tempo di recupero medio',
   'metric.avgRecoveryTime.description':
-    'Tempo medio necessario ai Drawdown realizzati su operazioni chiuse per recuperare un nuovo massimo',
+    'Tempo medio per recuperare un drawdown',
   'metric.longestDrawdown.name': 'Drawdown più lungo',
   'metric.longestDrawdown.description':
-    'Periodo più lungo trascorso in un episodio di Drawdown realizzato',
+    'Tempo più lungo in un singolo drawdown',
   'metric.drawdownEpisodes.name': 'Episodi di Drawdown',
   'metric.drawdownEpisodes.description':
-    'Numero di periodi di Drawdown realizzato nel set di operazioni filtrato corrente',
+    'Numero di periodi di drawdown distinti',
   'metric.category.performance': 'Prestazioni',
   'metric.category.volume': 'Volume',
 
@@ -4439,6 +4454,8 @@ const it: Lang = {
   'onboarding.wizard.skip-onboarding': 'Salta la configurazione guidata',
 
   'guide.skip-guide': 'Salta guida',
+  'guide.step-count': '{count} passaggi',
+  'guide.step-position': 'Passo {current} di {total}',
 
   'account.linked-trades.setups': 'Setup',
 
@@ -4578,6 +4595,10 @@ const it: Lang = {
   'account.edit-event.delete-confirm.warning':
     'Questa azione non può essere annullata.',
   'account.edit.title': 'Modifica conto',
+  'account.edit.convert.discard-title': 'Scartare le modifiche non salvate?',
+  'account.edit.convert.discard-message':
+    'La configurazione della challenge si apre in una finestra a parte e chiude questo modulo. Le modifiche fatte qui non verranno salvate.',
+  'account.edit.convert.discard-confirm': 'Scarta e continua',
   'account.edit.field.name': 'Nome del conto',
   'account.edit.field.name-desc': 'Il nome univoco di questo conto',
   'account.edit.placeholder.name': 'es. Il mio conto di trading',
@@ -4851,13 +4872,27 @@ const it: Lang = {
   'home.quick-links.move-above': 'Sposta i collegamenti rapidi sopra i widget',
   'home.quick-links.move-below': 'Sposta i collegamenti rapidi sotto i widget',
   'home.widget-selector.title': 'Aggiungi a Home',
-  'home.widget-selector.section.widgets': 'Widget',
+  'home.widget-selector.subtitle':
+    "Sfoglia i widget tramite l'anteprima e fai clic su uno per aggiungerlo alla Home.",
+  'home.widget-selector.sample-note.title': 'Piano di trading',
+  'home.widget-selector.sample-note.intro':
+    'Opera solo setup A+ sui livelli chiave. Max 3 operazioni al giorno.',
+  'home.widget-selector.sample-note.checklist':
+    'Lista di controllo pre-apertura',
+  'home.widget-selector.sample-note.task.calendar':
+    'Controllare il calendario economico',
+  'home.widget-selector.sample-note.task.levels':
+    'Segnare i livelli chiave sul grafico',
+  'home.widget-selector.sample-note.task.max-loss':
+    'Impostare la perdita giornaliera massima',
+  'home.widget-selector.sample-note.task.journal':
+    'Registrare la prima operazione',
+  'home.widget-selector.tab.performance': 'Rendimento',
+  'home.widget-selector.tab.accounts': 'Conti',
+  'home.widget-selector.tab.workflow': 'Flusso di lavoro',
   'home.widget-selector.section.quick-links': 'Collegamenti rapidi',
   'home.widget-selector.restore': 'ripristina',
   'home.widget-selector.add-shortcut': 'Aggiungi collegamento conto/setup',
-  'home.widget-selector.hint.navigate': '↑↓ naviga',
-  'home.widget-selector.hint.select': '↵ seleziona',
-  'home.widget-selector.hint.close': 'esc chiudi',
   'home.period.month': 'Mese',
   'home.period.quarter': 'Trimestre',
   'home.period.year': 'Anno',
@@ -5105,6 +5140,30 @@ const it: Lang = {
   'home.widget.profit-target.remaining': 'rimanente',
   'home.widget.profit-target.unable-to-load': 'Impossibile caricare',
   'home.widget.profit-target.no-accounts': 'Nessun conto con target',
+  'home.widget.account-progress.configure-aria': 'Scegli i conti per {widget}',
+  'home.widget.account-progress.config-title': 'Conti mostrati',
+  'home.widget.account-progress.mode.automatic': 'Automatico',
+  'home.widget.account-progress.mode.selected': 'Scegli conti',
+  'home.widget.account-progress.automatic-drawdown': 'Drawdown più alto prima.',
+  'home.widget.account-progress.automatic-profit-target':
+    'Più vicini all’obiettivo prima.',
+  'home.widget.account-progress.max-label': 'Mostra fino a',
+  'home.widget.account-progress.max-all': 'Tutti',
+  'home.widget.account-progress.select-hint': 'Scegline quanti vuoi.',
+  'home.widget.account-progress.no-eligible':
+    'Ancora nessun conto da scegliere.',
+  'home.widget.account-progress.none-selected':
+    'Nessun conto scelto. Fai clic per scegliere.',
+  'home.widget.account-progress.search': 'Cerca conti',
+  'home.widget.account-progress.select-all': 'Tutti',
+  'home.widget.account-progress.select-none': 'Nessuno',
+  'home.widget.account-progress.select-all-aria':
+    'Scegli tutti i conti mostrati',
+  'home.widget.account-progress.select-none-aria':
+    'Deseleziona i conti mostrati',
+  'home.widget.account-progress.no-match': 'Nessun conto corrisponde.',
+  'home.widget.account-progress.none-available':
+    'Nessuno dei conti scelti può essere mostrato. Fai clic per sceglierne altri.',
   'home.widget.recent.title': 'Recenti',
   'home.widget.recent.unknown': 'Sconosciuto',
   'home.widget.recent.just-now': 'Proprio ora',
@@ -5169,32 +5228,19 @@ const it: Lang = {
   'calendar.month.december': 'Dicembre',
 
   'shared.collapsible.active-filters': '{count} filtri attivi',
-  'filter.modal.title': 'Filtri avanzati',
-  'filter.modal.active-filters': 'Filtri attivi ({count}):',
-  'filter.modal.no-active-filters': 'Nessun filtro attivo',
-  'filter.modal.clear-all': 'Azzera tutto',
-  'filter.modal.section.trading-data': 'Dati di trading',
-  'filter.modal.section.classification': 'Classificazione',
-  'filter.modal.section.trade-criteria': "Criteri dell'operazione",
   'filter.modal.no-setup': 'Nessun Setup',
   'filter.modal.no-tags': 'Nessun tag',
   'filter.modal.no-mistakes': 'Nessun errore',
   'filter.modal.type.regular': 'Regolare',
-  'filter.modal.type.missed': 'Persa',
   'filter.modal.type.backtest': 'Backtest',
   'filter.summary.regular-trades': 'Operazioni regolari',
-  'filter.modal.status.win': 'Vincita',
-  'filter.modal.status.loss': 'Perdita',
   'filter.modal.status.breakeven': 'Pareggio',
-  'filter.modal.status.open': 'Aperta',
-  'filter.modal.status.closed': 'Chiusa',
 
   'filter.modal.review-status.reviewed': 'Revisionata',
   'filter.modal.review-status.unreviewed': 'Non revisionata',
   'filter.modal.direction.long-call': 'Long/Call',
   'filter.modal.direction.short-put': 'Short/Put',
   'filter.modal.section.custom-fields': 'Campi personalizzati',
-  'filter.modal.custom-field.n-selected': '{count} selezionati',
   'filter.modal.custom-field.none-available': 'Nessun valore disponibile',
   'widget.checklist.title': 'Lista di controllo pre-operazione',
   'widget.checklist.weekly-title':
@@ -5382,46 +5428,63 @@ const it: Lang = {
   'manual-drawdown.modal.delete-warning':
     'Questa azione non può essere annullata.',
   'dashboard.selector.title': 'Aggiungi alla Dashboard',
+  'dashboard.selector.subtitle':
+    "Sfoglia grafici e metriche tramite l'anteprima e fai clic su uno per aggiungerlo alla Dashboard.",
+  'dashboard.selector.tab.performance': 'Rendimento',
+  'dashboard.selector.tab.breakdowns': 'Suddivisioni',
+  'dashboard.selector.tab.risk': 'Rischio e analisi',
+  'widget-drawer.tab.all': 'Tutti',
+  'widget-drawer.search.placeholder': 'Cerca widget',
+  'widget-drawer.section.available': 'Disponibili',
+  'widget-drawer.section.in-use': 'In uso',
+  'widget-drawer.empty-search': 'Nessun widget corrisponde alla ricerca',
+  'widget-drawer.added-count': '{count} aggiunti',
+  'widget-drawer.add-aria': 'Aggiungi {name}',
+  'widget-drawer.remove': 'Rimuovi',
+  'widget-drawer.remove-aria': 'Rimuovi {name}',
+  'widget-drawer.close': 'Chiudi',
   'dashboard.selector.metrics': 'Metriche',
-  'dashboard.selector.charts': 'Grafici',
-  'dashboard.selector.empty':
-    'Tutte le metriche e i grafici sono stati aggiunti',
-  'dashboard.selector.hint.navigate': '↑↓ naviga',
-  'dashboard.selector.hint.select': '↵ seleziona',
-  'dashboard.selector.hint.close': 'esc chiudi',
 
-  'dashboard.component-selector.category.performance': 'Prestazioni',
-
-  'dashboard.component-selector.category.journal': 'Diario',
   'widget.pnlChart.name': 'P&L cumulativo',
+  'widget.pnlChart.description': 'P&L cumulativo nel tempo',
 
   'widget.longPnLChart.name': 'Long P&L',
   'widget.longPnLChart.description':
-    'Curva di P&L cumulativo solo per le operazioni Long chiuse',
+    'P&L cumulativo delle operazioni Long chiuse',
   'widget.shortPnLChart.name': 'Short P&L',
   'widget.shortPnLChart.description':
-    'Curva di P&L cumulativo solo per le operazioni Short chiuse',
+    'P&L cumulativo delle operazioni Short chiuse',
   'widget.performanceCalendar.name': 'Calendario prestazioni',
+  'widget.performanceCalendar.description':
+    'Calendario del tuo P&L giornaliero',
 
   'widget.dailyPerformance.name': 'Prestazioni giornaliere',
+  'widget.dailyPerformance.description': 'P&L di ogni giorno di trading',
 
   'widget.tradesChart.name': 'Grafico operazioni',
+  'widget.tradesChart.description': 'P&L di ogni singolo trade',
 
   'widget.weekdayPerformance.name': 'Prestazioni per giorno della settimana',
+  'widget.weekdayPerformance.description': 'P&L per giorno della settimana',
 
   'widget.hourlyPerformance.name': 'Prestazioni orarie',
+  'widget.hourlyPerformance.description': 'P&L per ora del giorno',
 
   'widget.tickerPerformance.name': 'Prestazioni per simbolo',
   'widget.tickerPerformance.description':
-    'Grafico a barre classificato che confronta le prestazioni per simbolo',
+    'Classifica della performance per ticker',
   'widget.tradesChart.limit': '{count} operazioni',
   'widget.drawdownChart.name': 'Grafico Drawdown',
+  'widget.drawdownChart.description':
+    "Calo dall'ultimo massimo di P&L realizzato",
 
   'widget.directionalDrawdownChart.name': 'Drawdown realizzato direzionale',
 
   'widget.longDrawdownChart.name': 'Long Drawdown',
+  'widget.longDrawdownChart.description': 'Drawdown dei soli trade long',
 
   'widget.shortDrawdownChart.name': 'Short Drawdown',
+  'widget.shortDrawdownChart.description': 'Drawdown dei soli trade short',
 
   'widget.drawdownStats.no-conversion':
     'Le statistiche di Drawdown non sono disponibili per valute miste senza conversione FX.',
@@ -5437,10 +5500,13 @@ const it: Lang = {
     'Prova a selezionare un intervallo di date diverso',
   'widget.recentTrades.unknown': 'Sconosciuto',
   'widget.rollingWinRate.name': 'Rapporto vincita/perdita mobile',
+  'widget.rollingWinRate.description':
+    'Rapporto guadagno/perdita medio recente',
 
   'widget.rollingStats.name': 'Vincita/perdita media mobile',
+  'widget.rollingStats.description':
+    'Guadagno e perdita medi dei trade recenti',
 
-  'filter.chip.remove-aria': 'Rimuovi filtro {label}',
   'shared.filter.disabled-preview': 'Filtri disattivati in anteprima',
   'shared.filter.open': 'Apri filtri',
   'shared.filter.active-count': '{count} filtri attivi',
@@ -5529,8 +5595,6 @@ const it: Lang = {
     "Niente da incollare negli appunti. Prova prima a copiare un'immagine.",
   'error.clipboard.no-images':
     "Nessuna immagine trovata negli appunti. Assicurati di aver copiato un'immagine, non testo o altro contenuto.",
-  'error.clipboard.no-target':
-    "Nessuna area di caricamento immagini trovata. Fai prima clic su un'area di caricamento, poi incolla l'immagine.",
   'error.clipboard.network-error':
     "Si è verificato un errore di rete durante l'incolla. Controlla la connessione e riprova.",
   'error.clipboard.paste-failed':
@@ -5865,21 +5929,92 @@ const it: Lang = {
   'trade-import.asset.futures': 'Futures',
   'trade-import.asset.forex': 'Forex',
   'trade-import.asset.crypto': 'Crypto',
-  'trade-import.label.manual-mode': 'Modalità manuale',
-  'trade-import.manual-mode.price-based': 'Basato sui prezzi',
-  'trade-import.manual-mode.direct-pnl': 'P&L diretto',
+  'trade-import.manual-mode.price-based':
+    'Ordini o esecuzioni (raggruppati in trade)',
+  'trade-import.manual-mode.direct-pnl': 'Un trade per riga (usa il P/L)',
   'trade-import.label.ai-mapping': 'Richiedi suggerimenti di mappatura IA',
   'trade-import.privacy.copy':
-    "Trade Import carica l'esportazione del broker selezionata sui server Journalit per l'elaborazione. Le esportazioni del broker possono contenere identificativi del conto, storico operazioni, simboli, timestamp, prezzi, quantità, commissioni, saldi e P&L. Per generare l'anteprima, Journalit invia anche il nome del conto selezionato, le scelte di mappatura/modello, le definizioni dei campi personalizzati e le opzioni salvate, e un contesto locale limitato sulle operazioni aperte per l'abbinamento delle posizioni aperte IBKR. I file originali vengono elaborati per questa importazione e di default non vengono archiviati.",
+    "Trade Import carica l'esportazione del broker selezionata sui server Journalit per l'elaborazione. Le esportazioni del broker possono contenere identificativi del conto, storico operazioni, simboli, timestamp, prezzi, quantità, commissioni, saldi e P&L. Per generare l'anteprima, Journalit invia anche il nome del conto selezionato, le scelte di mappatura/modello, le definizioni dei campi personalizzati e le opzioni salvate, e un contesto locale limitato sulle operazioni aperte per l'abbinamento delle posizioni aperte IBKR. I file originali vengono elaborati per questa importazione e di default non vengono archiviati. Quando i suggerimenti di mappatura IA sono attivi, anche le intestazioni delle colonne e alcune righe di esempio vengono inviate a un modello di IA per suggerire le corrispondenze; deseleziona l'opzione per mappare le colonne da solo.",
 
   'trade-import.action.analyse': 'Analizza file',
   'trade-import.action.choose-file':
     'Fai clic per caricare oppure trascina e rilascia',
   'trade-import.guide.prompt': 'Non sai cosa esportare?',
   'trade-import.guide.link': 'Vedi la guida del broker',
+  'trade-import.hyperliquid.export-guidance':
+    'In Hyperliquid usa Trade History → Export as CSV, non Export More (un report di terze parti). Non usare Funding History né Order History.',
+  'trade-import.hyperliquid.date-us': 'USA: mese/giorno/anno - ora a 24 ore',
+  'trade-import.hyperliquid.date-day-first':
+    'Giorno prima: giorno/mese/anno, con o senza « - » prima dell’ora',
+  'trade-import.hyperliquid.date-german':
+    'Tedesco: giorno.mese.anno - ora a 24 ore',
+  'trade-import.hyperliquid.invalid-time-zone':
+    'Impossibile rilevare il fuso orario di questo dispositivo. Controlla le impostazioni di sistema.',
+  'trade-import.hyperliquid.backend-update-required':
+    'Per l’anteprima Hyperliquid serve un aggiornamento del server. Riprova più tardi.',
   'trade-import.action.drop-file': 'Rilascia il file per caricarlo',
   'trade-import.analyse.detected':
-    'Rilevato {fileType}. Intestazioni e righe di esempio vengono restituite dal backend.',
+    'Abbiamo letto il tuo file {fileType}. Controlla le righe qui sotto, poi abbina ogni colonna a un campo del trade.',
+  'trade-import.table.screenshots': 'Screenshot',
+  'trade-import.preview.screenshot-alt':
+    'Screenshot di {symbol} dalla riga {row} del foglio',
+  'trade-import.preview.screenshots-more': 'altri {count}',
+  'trade-import.preview.include-screenshots':
+    'Aggiungi gli screenshot del tuo foglio di calcolo ai rispettivi trade ({count})',
+  'trade-import.completion.screenshots-added':
+    'Screenshot aggiunti dal tuo foglio di calcolo: {count}',
+  'trade-import.completion.screenshots-failed':
+    'Screenshot del tuo foglio di calcolo non aggiunti: {count}',
+  'trade-import.preview.import-anyway': 'Importa comunque',
+  'trade-import.preview.import-anyway-aria':
+    'Importa comunque {symbol} del {date}',
+  'trade-import.preview.import-all-anyway':
+    'Importa comunque tutti i {count} possibili duplicati',
+  'csv.mapper.missing-fields.pnl-or-prices':
+    'Oppure abbina Prezzo di entrata, Prezzo di uscita e Quantità per calcolare il P/L dai prezzi.',
+  'trade-import.pnl-from-prices.title':
+    'Il P/L verrà calcolato dai tuoi prezzi',
+  'trade-import.pnl-from-prices.body':
+    'Non c’è una colonna P/L, quindi viene calcolato da prezzo di entrata, prezzo di uscita e quantità. È corretto solo con il tipo di asset giusto, quindi scegli cosa sono questi trade.',
+  'trade-import.pnl-from-prices.contract-size':
+    'Forex e futures richiedono anche una colonna Dimensione del contratto per calcolare il P/L. Senza, abbina invece la tua colonna P/L.',
+  'trade-import.diagnostic.choose-date-format': 'Scegli il formato data',
+  'trade-import.date-question.ambiguous':
+    'Le tue date sono come {example}. Che data è?',
+  'trade-import.date-question.mixed':
+    'Alcune date in questa colonna usano un altro ordine, come {example}. Quale ordine usa la maggior parte delle tue date?',
+  'trade-import.date-question.mixed-note':
+    'Le righe scritte nell’altro ordine verranno elencate così potrai correggerle nel file.',
+  'quick-import.message.date-order':
+    'Le tue date si possono leggere in due modi. Apri l’importazione completa per scegliere.',
+  'csv.date-format.eu-dot': 'UE con punti: 25.12.2024 (giorno.mese.anno)',
+  'csv.date-format.ymd-dot': 'Prima l’anno, con punti: 2024.12.25',
+  'trade-import.unmapped.title': 'Non importate ({count})',
+  'trade-import.unmapped.body':
+    'Queste colonne non corrispondono a nessun campo di Journalit e verranno escluse. Se un campo è adatto, abbina la colonna qui sopra.',
+  'trade-import.unmapped.keep': 'Mantieni come campo personalizzato',
+  'trade-import.unmapped.keep-aria':
+    'Mantieni {header} come campo personalizzato',
+  'trade-import.custom-field.title':
+    'Mantieni «{header}» come campo personalizzato',
+  'trade-import.custom-field.hint':
+    'Aggiunge un campo ai tuoi trade e lo compila da questa colonna. Se un campo di Journalit è già adatto, abbina invece la colonna a quel campo.',
+  'trade-import.custom-field.name': 'Nome del campo',
+  'trade-import.custom-field.type': 'Tipo di campo',
+  'trade-import.custom-field.type.text': 'Testo',
+  'trade-import.custom-field.type.number': 'Numero',
+  'trade-import.custom-field.type.dropdown': 'Elenco di scelte',
+  'trade-import.custom-field.create': 'Crea campo',
+  'trade-import.custom-field.error.reserved':
+    'Questo nome è usato da un campo del trade predefinito. Scegli un altro nome.',
+  'trade-import.table.open-closed': 'Aperto/chiuso',
+  'trade-import.status.open': 'Aperto',
+  'trade-import.status.partially-closed': 'Chiuso in parte',
+  'trade-import.status.closed': 'Chiuso',
+  'trade-import.status.cancelled': 'Annullato',
+  'trade-import.diagnostic.column': 'Colonna: {columns}',
+  'trade-import.diagnostic.unmap-column': 'Non importare questa colonna',
+  'trade-import.diagnostic.edit-mapping': 'Modifica mappatura',
   'trade-import.diagnostic.info': 'info',
   'trade-import.label.sheet': 'Foglio',
   'trade-import.label.header-row': 'Riga di intestazione',
@@ -5927,22 +6062,24 @@ const it: Lang = {
     'Journalit richiede il CSV Order History / History di TradingView Paper Trading. Non usare Account History, dati dei grafici, esportazioni di strategie o altri file CSV di TradingView.',
   'trade-import.preview.tradingview-export.guide':
     'Visualizza la guida di esportazione TradingView',
-  'trade-import.source-recovery.deepcharts.title':
-    'Questo file sembra un’esportazione DeepCharts',
+  'trade-import.source-recovery.title':
+    'Questo file sembra un’esportazione {source}',
+  'trade-import.source-recovery.message':
+    'Journalit può importare questo file direttamente con {source} invece di {selected}.',
+  'trade-import.source-recovery.continue': 'Continua con {selected}',
+  'trade-import.source-recovery.switch': 'Passa a {source}',
+  'trade-import.source-recovery.guide':
+    'Vedi la guida di esportazione {source}',
+  'trade-import.source-recovery.metatrader.message':
+    'Journalit può importare direttamente questo estratto conto MetaTrader, senza mappatura delle colonne.',
   'trade-import.source-recovery.deepcharts.rithmic-message':
-    'Il file proviene da DeepCharts anche se il conto esegue tramite Rithmic. Usa DeepCharts affinché la Quantity con segno determini correttamente long o short.',
+    'Il file proviene da DeepCharts anche se il conto esegue tramite Rithmic. Usa DeepCharts affinché i trade long e short vengano letti correttamente dalla Trade List.',
   'trade-import.source-recovery.deepcharts.manual-message':
-    'Usa l’importatore DeepCharts. DeepCharts memorizza la direzione nella Quantity con segno, quindi non mappare Quantity come campo Direzione manuale.',
-  'trade-import.source-recovery.deepcharts.switch': 'Passa a DeepCharts',
-  'trade-import.source-recovery.deepcharts.guide':
-    'Vedi la guida di esportazione DeepCharts',
+    'Usa l’importatore DeepCharts. Legge long e short dalla Quantity con segno o dalla colonna Direction della Trade List, quindi non serve alcuna mappatura manuale.',
   'trade-import.source-recovery.motivewave.title':
     'Questo file sembra un’esportazione di esecuzioni MotiveWave',
   'trade-import.source-recovery.motivewave.message':
     'Usa MotiveWave affinché Journalit possa abbinare correttamente le righe di esecuzione in trade completati.',
-  'trade-import.source-recovery.motivewave.switch': 'Passa a MotiveWave',
-  'trade-import.source-recovery.motivewave.guide':
-    'Vedi la guida di esportazione MotiveWave',
   'quick-import.message.source-mismatch':
     'Journalit ha identificato un’altra fonte di esportazione. Controllala in Trade Import per cambiare fonte senza caricare di nuovo il file.',
   'trade-import.preview.no-eligible':
@@ -5965,6 +6102,60 @@ const it: Lang = {
   'trade-import.table.position': 'Posizione',
   'trade-import.table.result': 'Risultato',
   'trade-import.table.message': 'Messaggio',
+  'trade-import.status.new': 'Nuova',
+  'trade-import.status.already-imported': 'Già importata',
+  'trade-import.status.other-account': 'In un altro conto',
+  'trade-import.status.other-account.detail': 'Già importata in {account}',
+  'trade-import.status.updates-existing': 'Aggiorna un’operazione esistente',
+  'trade-import.status.possible-duplicate': 'Possibile duplicato',
+  'trade-import.status.needs-review': 'Da controllare',
+  'trade-import.status.duplicate-in-file': 'Duplicata nel file',
+  'trade-import.status.invalid': 'Operazione non valida',
+  'trade-import.status.no-open-trade': 'Nessuna operazione aperta da chiudere',
+  'trade-import.status.multiple-open-trades':
+    'Più operazioni aperte corrispondono',
+  'trade-import.status.quantity-mismatch': 'Quantità non corrispondente',
+  'trade-import.server-deletion.deleted':
+    'Operazioni eliminate dal server Journalit: {count}',
+  'trade-import.server-deletion.kept':
+    'Operazioni mantenute perché anche un’altra importazione le contiene: {count}',
+  'trade-import.server-deletion.blocked-broker-connected':
+    'Questo conto è sincronizzato da una connessione al broker. Disconnetti il broker per eliminarne i dati.',
+  'trade-import.server-deletion.blocked-broker-history':
+    'Questo conto contiene la cronologia di sincronizzazione del broker e non può essere eliminato qui. Elimina invece le singole importazioni.',
+  'trade-import.server-deletion.failed':
+    'Impossibile eliminare dal server Journalit. Riprova.',
+  'trade-import.server-deletion.notice':
+    'Note delle operazioni spostate nel cestino dopo un’eliminazione sul server: {count}',
+  'trade-import.server-deletion.account.title':
+    'Eliminare il conto sul server?',
+  'trade-import.server-deletion.account.message':
+    'Questa azione elimina definitivamente «{account}» e le sue operazioni importate ({count} sul server) dal server Journalit e sposta le relative note nel cestino in ogni vault sincronizzato. Potrai importare di nuovo i file in seguito.',
+  'trade-import.server-deletion.account.confirm': 'Elimina dal server',
+  'trade-import.server-deletion.account.button': 'Elimina dal server',
+  'trade-import.history.title': 'Cronologia importazioni',
+  'trade-import.completion.wrong-account': 'Importato nel conto sbagliato?',
+  'trade-import.completion.undo-import': 'Annulla questa importazione',
+  'trade-import.action.manage-imports': 'Gestisci importazioni precedenti',
+  'trade-sync.import.more-actions': 'Altre azioni',
+  'trade-import.history.loading': 'Caricamento della cronologia importazioni…',
+  'trade-import.history.load-failed':
+    'Impossibile caricare la cronologia importazioni.',
+  'trade-import.history.empty': 'Nessuna importazione.',
+  'trade-import.history.trades-on-server': '{count} sul server',
+  'trade-import.history.delete.title': 'Eliminare questa importazione?',
+  'trade-import.history.delete.message':
+    'Questa azione elimina definitivamente dal server Journalit le operazioni che questa importazione ha aggiunto a «{account}» ({count} sul server) e sposta le relative note nel cestino in ogni vault sincronizzato. Le operazioni contenute anche in un’altra importazione vengono mantenute. Potrai importare di nuovo il file in seguito.',
+  'trade-import.history.delete.confirm': 'Elimina importazione',
+  'trade-import.history.load-more': 'Carica altro',
+  'account.edit.modal.delete.delete-server-trades':
+    'Elimina anche le sue operazioni importate dal server Journalit ({count} sul server). Le relative note finiranno nel cestino in ogni vault sincronizzato, anche se le mantieni qui.',
+  'trade-import.preview.other-account.message':
+    'Già in {account} ({count}), quindi verranno saltate.',
+  'trade-import.preview.other-account.import-instead':
+    'Importa invece in {account}',
+  'trade-import.preview.other-account.undo-earlier':
+    'Annulla l’importazione precedente',
   'trade-import.action.confirm': 'Conferma importazione',
   'trade-import.action.activate-pro.one':
     'Attiva PRO per importare {count} operazione',
@@ -5976,6 +6167,35 @@ const it: Lang = {
     'Attiva PRO per importare {count} operazioni',
   'trade-import.action.cancel-preview': 'Annulla anteprima',
   'trade-import.broker.manual': 'Mappatura manuale',
+  'trade-import.source.title': 'Da dove provengono questi trade?',
+  'trade-import.source.subtitle':
+    'Scegli la piattaforma da cui hai esportato. Journalit legge direttamente il suo formato di file, senza mappatura delle colonne.',
+  'trade-import.source.search': 'Cerca broker e piattaforme',
+  'trade-import.source.sync-available':
+    'Supporta anche il Trade Sync automatico',
+  'trade-import.source.manual.tile': 'Foglio di calcolo personale / altro file',
+  'trade-import.source.manual.title':
+    'Foglio di calcolo personale o altro file',
+  'trade-import.source.manual.hint':
+    'Abbinerai le colonne del tuo file ai campi di Journalit.',
+  'trade-import.source.native.hint':
+    'Il formato del file viene letto automaticamente, nessuna mappatura necessaria.',
+  'trade-import.source.guide': 'Come esportare',
+  'trade-import.source.change': 'Cambia',
+  'trade-import.sync-suggestion.full.title':
+    '{broker} può sincronizzarsi automaticamente',
+  'trade-import.sync-suggestion.full.body':
+    'Trade Sync importa i nuovi trade da solo, senza esportazioni. Puoi comunque importare un file qui sotto.',
+  'trade-import.sync-suggestion.partial.title':
+    'Usi {provider}? Sincronizzalo invece',
+  'trade-import.sync-suggestion.partial.body':
+    'Trade Sync importa automaticamente i trade di {provider}. Gli altri estratti conto si importano comunque qui sotto.',
+  'trade-import.sync-suggestion.action': 'Configura Trade Sync',
+  'trade-import.sync-suggestion.sync-only.title':
+    '{broker} si collega tramite Trade Sync',
+  'trade-import.sync-suggestion.sync-only.body':
+    'Nessuna esportazione: Trade Sync importa automaticamente i tuoi trade {broker}. Hai comunque un file {broker}? Scegli Non in elenco / file personalizzato.',
+  'trade-import.sync-suggestion.action.open': 'Apri Trade Sync',
 
   'home.quick-links.quick-import': 'Importazione rapida',
   'home.quick-links.setups': 'Setup',
@@ -6529,13 +6749,7 @@ const it: Lang = {
   'trade-sync.rithmic.connect-another': 'Collega un altro account Rithmic',
   'trade-sync.rithmic.error.sync-failed-detail':
     'La sincronizzazione Rithmic non è riuscita: {message}',
-  'trade-sync.import.card.connection': 'Connessione',
-  'trade-sync.import.card.backup': 'Backup importazioni',
-  'trade-sync.import.card.restorable': 'Operazioni ripristinabili',
-  'trade-sync.import.card.import': 'Trade Import',
 
-  'trade-sync.import.card.open-importer-desc':
-    'Importa nuovi file del broker da lì',
   'trade-sync.import.card.inventory-summary':
     '{accounts} conti · {trades} operazioni',
   'trade-sync.import.action.check': 'Controlla',
@@ -6543,15 +6757,8 @@ const it: Lang = {
   'trade-sync.import.action.open-import': 'Apri Trade Import',
 
   'trade-sync.import.action.create-local-account': 'Crea conto',
-  'trade-sync.import.action.create-local-account-title':
-    'Crea un conto Journalit usando il nome del conto backend.',
-  'trade-sync.import.action.save-mapping': 'Salva',
-  'trade-sync.import.action.save-mapping-title':
-    'Salva la mappatura di questo conto backend sul conto locale.',
 
   'trade-sync.import.action.restore-account': 'Ripristina',
-  'trade-sync.import.action.restore-account-title':
-    'Ripristina le note locali mancanti delle operazioni per questo conto backend.',
   'trade-sync.import.action.restoring': 'Ripristino…',
 
   'trade-sync.import.pending-acks': '{count} ACK in sospeso',
@@ -6567,8 +6774,6 @@ const it: Lang = {
   'trade-sync.import.account.conflict-repair':
     'Trovate note duplicate con canonicalTradeId. Tieni una nota, poi elimina canonicalTradeId dalla nota duplicata o rimuovi quella nota. Rinominare il file non risolve il conflitto.',
   'trade-sync.import.account.local-account': 'Conto Journalit',
-  'trade-sync.import.account.mapping-hint':
-    'Le operazioni ripristinate verranno scritte in questo conto Journalit.',
   'trade-sync.import.notice.restored':
     'Ripristinate {count} operazioni importate.',
 
@@ -7081,11 +7286,7 @@ const it: Lang = {
   'tradelog.guide.gallery-filters.title':
     'Filtra la galleria dallo stesso punto di ingresso',
   'tradelog.guide.gallery-filters.description':
-    'Il pulsante filtro apre ancora i Filtri avanzati. In modalità Galleria include anche filtri specifici per i media, come stato delle annotazioni e tag media.',
-  'tradelog.guide.gallery-filter-modal.title':
-    'I filtri media stanno insieme ai filtri delle operazioni',
-  'tradelog.guide.gallery-filter-modal.description':
-    'Usa questa finestra per combinare i filtri delle operazioni con i filtri media. Ad esempio, filtra un setup e poi mostra solo i media con note o un tag media specifico.',
+    'Il menu dei filtri funziona allo stesso modo. In modalità Galleria include anche una sezione Galleria con filtri per i media, come lo stato delle annotazioni e i tag dei media.',
   'tradelog.guide.gallery-grid.title':
     'Apri i media per una revisione più attenta',
   'tradelog.guide.gallery-grid.description':
@@ -7105,15 +7306,27 @@ const it: Lang = {
     'Ora conosci entrambe le modalità del Registro operazioni',
   'tradelog.guide.gallery-finish.description':
     'Usa Operazioni quando ti servono la tabella e gli strumenti in blocco. Usa Galleria quando vuoi revisionare immagini, GIF, video, link YouTube e annotazioni in tutto il diario.',
+  'filter.menu.whats-new.open.title': 'I filtri hanno un nuovo menu',
+  'filter.menu.whats-new.open.description':
+    'Tutti i filtri ora stanno in un unico menu a livelli, con due nuovi modi per restringere le tue operazioni. Aprilo per vederli.',
+  'filter.menu.whats-new.exclude.title': 'Escludi ciò che non vuoi',
+  'filter.menu.whats-new.exclude.description':
+    'Ogni valore ha un pulsante ⊘. Escludere un valore toglie ogni operazione che lo contiene, qualunque altra cosa corrisponda.',
+  'filter.menu.whats-new.match.title': 'Scegli come corrispondono più valori',
+  'filter.menu.whats-new.match.description':
+    'Se scegli più valori, decidi se un’operazione deve averne «Uno qualsiasi», «Tutti», «Solo questi» o «Esattamente questi». Tag, setup, errori e campi personalizzati hanno tutti questa opzione Corrispondenza.',
+  'filter.menu.whats-new.phases.title': 'Filtra per fase della challenge',
+  'filter.menu.whats-new.phases.description':
+    'I conti prop con più di una fase aprono l’elenco delle loro fasi. Scegli singole fasi invece dell’intero conto.',
+  'filter.menu.whats-new.done.title': 'Ecco le novità dei filtri',
+  'filter.menu.whats-new.done.description':
+    'Lo stesso menu funziona nel Registro operazioni, nella Dashboard, in Home, nei Setup e nelle revisioni. Le modifiche si applicano appena fai clic.',
   'tradelog.guide.image-gallery-empty.intro.title': 'Nessun media',
   'tradelog.guide.image-gallery-empty.intro.description':
     'Aggiungi media alle operazioni o alle note di revisione, oppure configura le cartelle Galleria media nelle Impostazioni di trading. Quando ci sono media, Journalit mostrerà la guida completa della galleria per revisione a schermo intero, tag e note.',
 
   'filter.modal.section.image-gallery': 'Galleria',
   'filter.modal.session-tags.placeholder': 'Tag di sessione',
-  'filter.modal.session-tags.all': 'Tutti i tag di sessione',
-  'filter.modal.session-tags.n-selected': '{count} tag di sessione',
-  'filter.modal.session-tags.select-all': 'Seleziona tutto',
   'filter.modal.session-tags.none-found': 'Nessun tag di sessione trovato',
 
   'home.mode.overview': 'Panoramica',
@@ -7124,6 +7337,40 @@ const it: Lang = {
   'home.filters.accounts': 'Conti',
   'home.filters.back': 'Indietro',
   'filter.reset': 'Reimposta filtri',
+  'filter.menu.title': 'Filtra per',
+  'filter.menu.accounts': 'Conti',
+  'filter.menu.tickers': 'Ticker',
+  'filter.menu.setups': 'Setup',
+  'filter.menu.tags': 'Tag',
+  'filter.menu.mistakes': 'Errori',
+  'filter.menu.trade-type': 'Tipo di trade',
+  'filter.menu.status': 'Stato',
+  'filter.menu.direction': 'Direzione',
+  'filter.menu.review-status': 'Stato revisione',
+  'filter.menu.status.cancelled': 'Annullato',
+  'filter.menu.included-count': '{count} inclusi',
+  'filter.menu.excluded-count': '{count} esclusi',
+  'filter.menu.search': 'Cerca',
+  'filter.menu.no-matches': 'Nessun risultato',
+  'filter.menu.no-options': 'Ancora niente da filtrare',
+  'filter.menu.clear': 'Cancella',
+  'filter.menu.match.label': 'Corrispondenza',
+  'filter.menu.match.any': 'Uno qualsiasi',
+  'filter.menu.match.all': 'Tutti',
+  'filter.menu.match.only': 'Solo questi',
+  'filter.menu.match.exact': 'Esattamente questi',
+  'filter.menu.match.hint.any': 'Trade con almeno uno dei valori selezionati.',
+  'filter.menu.match.hint.all':
+    'Trade con tutti i valori selezionati. Sono ammessi altri valori.',
+  'filter.menu.match.hint.only':
+    'Trade i cui valori sono tutti tra quelli selezionati.',
+  'filter.menu.match.hint.exact':
+    'Trade con esattamente i valori selezionati, né più né meno.',
+  'filter.menu.match.no-value-any-only': 'Solo con «Uno qualsiasi»',
+  'filter.menu.exclude-value': 'Escludi {label}',
+  'filter.menu.match.badge.all': 'Tutti',
+  'filter.menu.match.badge.only': 'Solo',
+  'filter.menu.match.badge.exact': 'Esatto',
   'home.guide.modes.title': "Un'ultima cosa: la Dashboard",
   'home.guide.modes.description':
     'Panoramica e Dashboard condividono questa pagina. Passa ora a Dashboard per continuare con un breve tour delle statistiche di prestazioni.',
@@ -7276,18 +7523,18 @@ const it: Lang = {
   'sample.notice.busy':
     'È già in corso un’altra operazione del diario di esempio.',
   'account.profiles.no-matching-phase':
-    'Nessuna fase corrispondente in questo profilo.',
+    'Nessuna fase corrispondente in queste regole della firm.',
   'account.profiles.history-unchanged':
     'La cronologia precedente resta invariata.',
-  'account.profiles.notice-title': 'Profilo challenge aggiornato disponibile',
+  'account.profiles.notice-title': 'Regole della firm aggiornate disponibili',
   'account.profiles.notice-description':
-    'Il profilo sorgente differisce da quello salvato. Le regole del conto non sono cambiate.',
+    'Le regole pubblicate dalla firm differiscono da quelle salvate su questo conto. Le regole del tuo conto non sono cambiate.',
   'account.profiles.review-changes': 'Esamina le modifiche',
   'account.profiles.check-failed':
     'Impossibile verificare gli aggiornamenti delle regole.',
   'account.profiles.retry': 'Riprova',
   'account.profiles.source-changed':
-    'Il profilo sorgente è cambiato mentre questa revisione era aperta. Riapri la revisione prima di applicare.',
+    'Le regole della firm sono cambiate mentre questa revisione era aperta. Riapri la revisione prima di applicarla.',
   'account.profiles.retain': 'Mantieni le regole attuali',
   'account.profiles.retain-help':
     'Mantieni le regole di questo conto e ignora queste modifiche sorgente. I cambi di policy successivi potranno avvisarti di nuovo.',
@@ -7301,28 +7548,24 @@ const it: Lang = {
     'Nessuna differenza di regole o di policy di payout per questa fase.',
   'account.profiles.accept': 'Applica aggiornamento',
   'account.profiles.cached':
-    'Uso dei profili in cache; non è stato possibile verificare le regole più recenti.',
-  'account.profiles.guide':
-    "Esamina le regole modificate in base all'applicabilità pubblicata o alle condizioni confermate dalla prop firm. Inserisci la data di acquisto originale quando richiesta. Salva i modelli in I miei profili prop firm in Modifica conto.",
+    'Uso delle regole della firm in cache; non è stato possibile verificare le più recenti.',
   'account.profiles.account-phase': 'Fase del conto',
-  'account.profiles.choose': 'Scegli un profilo salvato',
+  'account.profiles.choose': 'Scegli regole salvate',
   'account.profiles.completed':
     'Le fasi completate conservano le regole originali.',
   'account.profiles.confirm': 'Queste regole si applicano al mio conto.',
   'account.profiles.currency':
-    'Scegli una valuta del conto corrispondente al profilo prima di applicarlo.',
+    'Scegli una valuta del conto che corrisponda a queste regole prima di applicarle.',
   'account.profiles.current': 'Regole attuali del conto',
   'account.profiles.custom-transition':
     'Condizioni di transizione personalizzate',
   'account.profiles.cycle-start': 'Inizio ciclo payout (ora locale)',
   'account.profiles.delete-help':
-    'Eliminare questo profilo salvato? I conti che lo usano già non cambieranno.',
+    'Eliminare queste regole salvate? I conti che le usano già non cambieranno.',
   'account.profiles.effective': 'In vigore da (ora locale)',
   'account.profiles.correction-title': 'Correzione del catalogo',
   'account.profiles.correction-source': 'Origine delle regole',
   'account.profiles.correction-period': 'Cronologia interessata',
-  'account.profiles.correction-guide':
-    "Le correzioni del catalogo richiedono l'approvazione prima di ricalcolare la cronologia interessata.",
   'account.profiles.correction-history': 'Cronologia delle correzioni',
   'account.profiles.correction-stale':
     'La cronologia del conto è cambiata. Riapri questa revisione prima di applicare la correzione.',
@@ -7347,47 +7590,51 @@ const it: Lang = {
   'account.profiles.published-date': 'Data di effetto pubblicata',
   'account.profiles.applicability-checking': "Verifica dell'applicabilità…",
   'account.profiles.error':
-    'Impossibile salvare il profilo. Controlla i valori e riprova.',
+    'Impossibile salvare le regole. Controlla i valori e riprova.',
   'account.profiles.floor': 'Floor di Drawdown alla transizione',
   'account.profiles.history': 'Cronologia delle regole',
   'account.profiles.history-help':
-    'Le regole precedenti vengono conservate. Usa Esamina aggiornamento profilo per cambiare una fase versionata; la modifica diretta è bloccata per proteggere la cronologia.',
-  'account.profiles.incoming': 'Regole in arrivo del profilo',
+    'Le regole precedenti sono conservate. Usa Rivedi aggiornamento regole per cambiare una fase versionata; la modifica diretta è bloccata per proteggere lo storico.',
+  'account.profiles.incoming': 'Regole in arrivo dalla firm',
   'account.profiles.independent':
-    'I profili salvati sono locali a questo vault. Applicarne uno crea uno snapshot indipendente del conto; salvare una nuova revisione non modifica mai i conti esistenti.',
+    'Le regole salvate sono locali a questo vault. Applicarle crea una copia indipendente sul conto; salvare una nuova revisione non modifica mai i conti esistenti.',
   'account.profiles.keep-help':
-    'Le regole selezionate conservano i tuoi valori locali invece della regola in arrivo dello stesso tipo. Deseleziona per accettare il valore del profilo. I nuovi tipi di regola vengono aggiunti.',
+    'Le regole selezionate mantengono i tuoi valori locali invece della regola in arrivo di quel tipo. Deseleziona per accettare il valore della firm. I nuovi tipi di regola vengono aggiunti.',
   'account.profiles.keep-local': 'Mantieni le mie:',
   'account.profiles.keep-payout': 'Mantieni la policy di payout attuale',
-  'account.profiles.library': 'I miei profili prop firm',
+  'account.profiles.library': 'Le mie regole salvate',
   'account.profiles.locked': 'Il floor di Drawdown è già bloccato',
-  'account.profiles.missing': 'Questo profilo salvato non esiste più.',
+  'account.profiles.missing': 'Queste regole salvate non esistono più.',
   'account.profiles.peak': 'Saldo di picco riportato',
-  'account.profiles.review': 'Esamina aggiornamento profilo',
-  'account.profiles.link-source': 'Collega profilo prop firm',
-  'account.profiles.save-new': 'Salva come nuovo profilo',
+  'account.profiles.review': 'Rivedi aggiornamento regole',
+  'account.profiles.save-new': 'Salva queste regole',
+  'account.profiles.saved': 'Salvato in Le mie regole salvate.',
+  'account.profiles.update-saved': 'Aggiorna regole salvate',
+  'account.profiles.delete-saved': 'Elimina regole salvate',
   'account.profiles.save-revision':
-    'Salva nuova revisione del profilo selezionato',
-  'account.profiles.source-phase': 'Fase del profilo sorgente',
+    'Salva come nuova revisione delle regole selezionate',
+  'account.profiles.source-phase': 'Fase delle regole della firm',
   'account.profiles.transition-help':
     'Non sono fornite condizioni di transizione verificate. Inserisci i termini confermati dalla prop firm: floor, picco e inizio ciclo payout. Sono contrassegnati come personalizzati. Il profitto di fase e il conteggio payout complessivo restano; le operazioni più vecchie conservano le regole originali.',
   'account.profiles.transition-source':
     'Conferma della prop firm o riferimento',
-  'account.profiles.unknown-baseline':
-    'Questo conto più vecchio non ha uno snapshot sorgente originale. Esamina ogni differenza in modo esplicito; le personalizzazioni locali non possono essere identificate automaticamente.',
+  'account.profiles.link-intro':
+    'Collega questa challenge alle regole della sua firm e Journalit ti avviserà quando la firm le cambia. Prima rivedi in cosa differiscono dalle regole di questo conto; nulla cambia finché non applichi.',
+  'account.profiles.link-title': 'Collega alle regole della firm',
+  'account.profiles.choose-source': 'Scegli regole della firm',
   'account.profiles.update-available':
-    'Le differenze di profilo vanno esaminate. Il conto usa ancora le regole salvate.',
+    'Le regole della firm sono cambiate e vanno riviste. Il tuo conto usa ancora le regole salvate.',
   'account.profiles.up-to-date':
-    "Questa fase usa l'ultima definizione di profilo esaminata; le personalizzazioni locali restano indipendenti.",
+    'Questa fase usa le ultime regole della firm riviste; le modifiche locali restano indipendenti.',
   'form.field.prop-challenge-phase': 'Fase: {name}',
   'form.field.prop-challenge-phase.none': 'Nessuna fase in questo momento',
   'dashboard.filter.accounts.phase-now': 'ora',
   'home.widget.eval-roi.name': 'ROI eval',
   'home.widget.challenge-alerts.name': 'Avvisi challenge',
   'home.widget.challenge-alerts.description':
-    'Conti di challenge prop che richiedono una decisione: non superata, superata o payout pronto',
+    'Conti prop falliti, superati o con payout pronto',
   'home.widget.eval-roi.description':
-    'Spesa di valutazione rispetto ai payout sui conti di challenge prop',
+    'Costi delle challenge prop vs pagamenti ricevuti',
   'account.header.back-to-dashboard': 'Torna alla dashboard',
   'account.header.warning.trades-before-phase.one':
     "{count} operazione trovata prima dell'inizio della Fase 1",
@@ -7418,29 +7665,17 @@ const it: Lang = {
   'account-dashboard.guide.main.settings-stages.description':
     "Scegli il tipo di conto applicato quando una challenge raggiunge valutazione, sim finanziato o live finanziato. Lascia uno stage su nessuna modifica per mantenere il tipo di conto così com'è.",
   'account-dashboard.guide.whats-new.prop-challenges.intro.title':
-    'Novità: challenge prop multi-fase',
+    'Novità: challenge prop firm',
   'account-dashboard.guide.whats-new.prop-challenges.intro.description':
-    'I progressi delle challenge prop ora vivono direttamente in Conti, con nastri di fase, economia della challenge e gli stessi gruppi di conti che usi già.',
+    'Ora un conto può seguire una challenge prop firm: le sue fasi, le regole della firm e i tuoi payout.',
   'account-dashboard.guide.whats-new.prop-challenges.enable.title':
-    'Attiva il tracciamento quando crei o modifichi un conto',
+    'Inizia una nuova challenge',
   'account-dashboard.guide.whats-new.prop-challenges.enable.description':
-    'In Crea conto o Modifica conto, scegli Challenge prop nel selettore della modalità conto. Ogni fase può, in opzione, promuovere il conto a un altro tipo quando avanzi.',
-  'account-dashboard.guide.whats-new.prop-challenges.overview.title':
-    "Prestazioni della challenge a colpo d'occhio",
-  'account-dashboard.guide.whats-new.prop-challenges.overview.description':
-    'Lo scorecard in alto riassume challenge attive, tasso di superamento, costi, payout e risultati netti. Le tabelle di approfondimento confrontano i colli di bottiglia delle fasi e, se tracci più prop firm, le prestazioni per società.',
-  'account-dashboard.guide.whats-new.prop-challenges.ribbons.title':
-    'I nastri di fase rendono ogni challenge scansionabile',
-  'account-dashboard.guide.whats-new.prop-challenges.ribbons.description':
-    'Le schede dei conti prop mostrano in alto le fasi completate, attuale, in attesa e non superate, seguite da target, Drawdown, perdita giornaliera e progressi dei giorni di trading.',
+    'Quando crei un conto, attiva Challenge prop firm e scegli la tua firm. Le sue regole vengono compilate per te.',
   'account-dashboard.guide.whats-new.prop-challenges.mode.title':
-    'Passa tra analisi di portafoglio e delle challenge',
+    'Vedi tutte le tue challenge',
   'account-dashboard.guide.whats-new.prop-challenges.mode.description':
-    "Scegli Challenge per vedere l'economia aggregata delle challenge prop più gli approfondimenti per fase e multi-firm. Panoramica mantiene il grafico AUM e i totali di portafoglio in evidenza.",
-  'account-dashboard.guide.whats-new.prop-challenges.account-page.title':
-    'I conti convertiti restano nello stesso flusso',
-  'account-dashboard.guide.whats-new.prop-challenges.account-page.description':
-    'Quando una challenge avanza o si converte in finanziato, il tipo di conto e la cronologia delle fasi restano collegati. Apri la scheda per le decisioni di compliance, le azioni di ciclo di vita e il dettaglio completo delle regole.',
+    'Passa a Challenge per vedere progressi, tasso di superamento, costi e payout di tutte le tue challenge.',
   'account-dashboard.prop.metrics.total': 'Challenge',
   'account-dashboard.prop.metrics.pass-rate': 'Tasso di superamento',
   'account-dashboard.prop.metrics.costs': 'Costi challenge',
@@ -7508,6 +7743,10 @@ const it: Lang = {
   'account.prop-challenge.title': 'Challenge prop',
   'account.prop-challenge.identity': 'Identità della challenge',
   'account.prop-challenge.prefill.heading-link': 'Precompila dalla tua firm',
+  'account.prop-challenge.prefill.updates-link':
+    'Tieni aggiornate le regole della firm',
+  'account.prop-challenge.prefill.updates-link-firm':
+    'Tieni aggiornate le regole di {firm}',
   'account.prop-challenge.prefill.phase-link': 'Precompila le regole con PRO',
   'account.prop-challenge.prefill.phase-link-firm':
     'Precompila le regole di {firm} con PRO',
@@ -7529,19 +7768,25 @@ const it: Lang = {
   'account.prop-challenge.challenge-name-placeholder': 'es. Valutazione 25K',
   'account.prop-challenge.firm-name': 'Nome prop firm (facoltativo)',
   'account.prop-challenge.firm-name-placeholder': 'es. Apex Trader Funding',
-  'account.prop-challenge.profile.title': 'Applica profilo prop firm',
+  'account.prop-challenge.profile.title': 'Applica le regole della firm',
   'account.prop-challenge.profile.firm': 'Prop firm',
   'account.prop-challenge.profile.challenge': 'Challenge prop',
+  'account.prop-challenge.profile.choose-firm': 'Scegli una firm',
+  'account.prop-challenge.profile.choose-challenge': 'Scegli una challenge',
+  'account.prop-challenge.profile.custom-firm': 'Altra / firm personalizzata',
+  'account.prop-challenge.profile.help':
+    'Scegli la tua firm e il tuo piano per compilare le sue regole: drawdown, obiettivi, payout. Puoi modificarle dopo.',
+  'account.prop-challenge.profile.current': 'Attuale: {identity}',
   'account.prop-challenge.profile.apply': 'Applica',
-  'account.prop-challenge.profile.loading': 'Caricamento profili prop firm…',
+  'account.prop-challenge.profile.loading': 'Caricamento regole della firm…',
   'account.prop-challenge.profile.refreshing':
-    'Verifica aggiornamenti dei profili…',
+    'Ricerca aggiornamenti delle regole…',
   'account.prop-challenge.profile.unavailable':
-    'I profili prop firm non sono disponibili offline.',
+    'Le regole della firm non sono disponibili offline.',
   'account.prop-challenge.profile.confirm-title':
     'Sostituire la configurazione della challenge?',
   'account.prop-challenge.profile.confirm-message':
-    'Applicare questo profilo sostituisce le fasi e le regole attualmente configurate.',
+    'Applicare queste regole della firm sostituisce le fasi e le regole attualmente configurate.',
   'account.prop-challenge.current-phase': 'Fase attuale',
   'account.prop-challenge.phase-rules': 'Regole per {phase}',
   'account.prop-challenge.next-phase': 'Prossima: {phase}',
@@ -7639,6 +7884,10 @@ const it: Lang = {
     'Profitto EOD per contratto aggiuntivo',
   'account.prop-challenge.rule.maximum-contracts':
     'Contratti massimi dopo lo scaling',
+  'account.prop-challenge.rule.micros-per-contract':
+    'Conta 10 micro come 1 contratto',
+  'account.prop-challenge.rule.micros-per-contract-help':
+    'Attiva se la tua firm conta i future micro (MES, MNQ, MGC, ...) come un decimo di un contratto standard per questo limite. Lascia disattivato se ogni micro conta come un contratto intero.',
   'account.prop-challenge.rule.max-contracts': 'Contratti massimi',
   'account.prop-challenge.rule.profit_target': 'Obiettivo di profitto',
   'account.prop-challenge.rule.drawdown': 'Limite di Drawdown',
@@ -7838,9 +8087,9 @@ const it: Lang = {
   'account.prop-challenge.ledger.help.consistency.example-none':
     "Nessun profitto ancora, quindi non c'è un giorno migliore da confrontare.",
   'account.prop-challenge.ledger.help.max_position_size':
-    'Il massimo di contratti che puoi tenere insieme, su tutte le posizioni aperte. Alcune prop firm alzano il limite man mano che il profitto cresce.',
+    'Il numero massimo di contratti consentiti in una posizione. Journalit controlla la dimensione di ogni trade. Alcune firm alzano il limite man mano che il profitto cresce.',
   'account.prop-challenge.ledger.help.max_position_size.example':
-    'Fino a {maximum} contratti insieme in questo momento; posizione più grande finora {current}.',
+    'Fino a {maximum} contratti per trade ora; trade più grande finora {current}.',
   'account.prop-challenge.ledger.help.payout.cycle_days':
     'Giorni di trading nel ciclo payout attuale. Il conteggio riparte dopo un payout approvato.',
   'account.prop-challenge.ledger.help.payout.cycle_days.example':
@@ -7920,6 +8169,8 @@ const it: Lang = {
   'account.prop-challenge.actions.stale':
     'Questa challenge è stata aggiornata altrove. Controllala e riprova.',
   'account.prop-challenge.actions.reopen': 'Riapri',
+  'account.prop-challenge.actions.link-rules':
+    'Collega alle regole della firm…',
   'account.prop-challenge.view-trades': 'Vedi le operazioni di {phase}',
   'account.prop-challenge.actions.manual': 'Azioni manuali',
   'account.prop-challenge.notice.failed-title': '{phase} non superata',
@@ -8019,35 +8270,17 @@ const it: Lang = {
   'account.summary.payouts': 'Payout',
   'account.performance.title': 'Prestazioni',
   'account-page.guide.whats-new.cockpit.intro.title':
-    'Novità nella pagina del conto',
+    'Le regole della tua challenge',
   'account-page.guide.whats-new.cockpit.intro.description':
-    "Il grafico del saldo ora apre l'analisi del conto. Lo segue un unico pannello di metriche collegato, con le regole della challenge prop subito sotto.",
+    'Su un conto prop firm, ogni regola della firm e quanto ci sei vicino si trovano sotto le metriche.',
   'account-page.guide.whats-new.cockpit.cockpit.title':
-    'Le regole della challenge seguono le prestazioni del conto',
+    'Controlla una fase e agisci',
   'account-page.guide.whats-new.cockpit.cockpit.description':
-    "Per i conti prop, scegli una fase dall'intestazione delle regole sotto il pannello metriche per ispezionare ogni requisito e i suoi progressi. Le azioni di ciclo di vita restano nel menu accanto.",
-  'account-page.guide.whats-new.cockpit.payout.title':
-    'Sai quando un payout finanziato è sicuro',
-  'account-page.guide.whats-new.cockpit.payout.description':
-    "I conti finanziati con regole verificate ora mostrano i requisiti di payout, l'importo disponibile e un'anteprima delle conseguenze su saldo e Drawdown prima di richiedere i fondi.",
-  'account-page.guide.whats-new.cockpit.summary.title':
-    'Un unico pannello di metriche collegato',
-  'account-page.guide.whats-new.cockpit.summary.description':
-    'Stato del conto e prestazioni dettagliate condividono ora una sola superficie sotto il grafico: saldo, P&L netto e flusso di cassa vengono prima, e le metriche restanti continuano nella stessa griglia.',
-  'account-page.guide.whats-new.cockpit.risk.title':
-    "Un'unica fonte autorevole di rischio",
-  'account-page.guide.whats-new.cockpit.risk.description':
-    "Mentre una challenge è attiva, superata o non superata, le sue regole di fase sono l'unico rischio mostrato, così nessuna seconda cifra di Drawdown può contraddirle. Il rischio generico del conto torna per i conti normali o archiviati.",
+    "Scegli una fase nell'intestazione delle regole per vederne le regole. Segnala come superata o fallita, o riaprila, dal menu ⋮ accanto.",
   'account-page.guide.main.challenge.title':
     "La tua challenge a colpo d'occhio",
   'account-page.guide.main.challenge.description':
-    "Sotto il pannello di metriche collegato, scegli una fase della challenge dall'intestazione delle regole e ispeziona ogni requisito con i suoi progressi e il suo stato. Le azioni di ciclo di vita stanno accanto al selettore.",
-  'account-page.guide.main.payout.title': 'Pianifica i payout finanziati',
-  'account-page.guide.main.payout.description':
-    "Quando la fase finanziata ha regole di payout verificate, questo pannello traccia l'idoneità e mostra in anteprima l'impatto sul conto di un importo richiesto.",
-  'account-page.guide.main.summary.title': "Stato del conto a colpo d'occhio",
-  'account-page.guide.main.summary.description':
-    'Il pannello di metriche collegato inizia con saldo, P&L netto, crescita, operazioni, tasso di vincita e flusso di cassa netto — o i payout per un conto prop.',
+    'Scegli una fase per vedere ogni regola con il suo avanzamento. Le fasi finanziate con regole di payout verificate monitorano qui anche l’idoneità al payout.',
   'account.transaction.edit-row-label':
     'Modifica o elimina questa transazione: {date}, {amount}',
   'account.deposits-withdrawals.summary':
@@ -8240,7 +8473,7 @@ const it: Lang = {
     'Ore minime trascorse',
   'account.merge.challenge.move-earlier': 'Sposta {account} prima',
   'account.merge.challenge.move-later': 'Sposta {account} dopo',
-  'account.merge.warning.use-profile-balance': 'Usa il saldo del profilo',
+  'account.merge.warning.use-profile-balance': 'Usa il saldo della firm',
   'account.merge.warning.edit-phases': 'Modifica le fasi',
   'account.merge.title': 'Configurazione challenge',
   'account.merge.loading': 'Caricamento...',
@@ -8276,8 +8509,22 @@ const it: Lang = {
   'account.merge.error.unknown': 'Unione non riuscita.',
   'account.merge.action.merge': 'Unisci',
   'account.merge.action.undo': 'Annulla unione',
+  'account.merge.action.looks-right': 'Va bene',
   'account.merge.action.delete': 'Elimina i conti legacy',
   'account.merge.notice.converted': 'Convertito in una challenge',
+  'account.merge.summary.intro':
+    'Controlla che corrisponda alla tua challenge:',
+  'account.merge.summary.phases': 'Fasi: {phases}',
+  'account.merge.summary.current':
+    'Ora in {phase} ({stage}), iniziata il {date}',
+  'account.merge.summary.current-stage': 'Ora in {phase}, iniziata il {date}',
+  'account.merge.summary.trades':
+    '{counted} trade su {total} contano per la challenge',
+  'account.merge.summary.trades-missing':
+    '{counted} trade su {total} contano per la challenge. Gli altri sono fuori dalle date di tutte le fasi.',
+  'account.merge.summary.rules': 'Regole di {phase}: {rules}',
+  'account.merge.summary.no-rules':
+    'Nessuna regola impostata per {phase}. Aggiungi le regole della tua firm in Modifica conto.',
   'account.merge.notice.title': 'Unito da {accounts}',
   'account.merge.notice.error': 'Azione non riuscita.',
   'account.merge.undo.title': 'Annulla unione',
@@ -8291,7 +8538,7 @@ const it: Lang = {
   'account.merge.action.convert': 'Converti',
   'account.merge.profile.applied': 'Applicato: {firm} · {challenge}',
   'account.merge.profile.remove': 'Rimuovi',
-  'account.merge.phase.apply-profile': 'Applica un profilo della società',
+  'account.merge.phase.apply-profile': 'Applica le regole della firm',
   'account.merge.profile.replace-rules.title':
     'Sostituire le regole inserite a mano?',
   'account.merge.profile.replace-rules.body':
@@ -8309,31 +8556,43 @@ const it: Lang = {
   'guide.merge-wizard.target.title': 'Un conto conserva la cronologia',
   'guide.merge-wizard.target.description':
     'Il conto di destinazione resta con tutte le fasi. Gli altri vengono archiviati, non eliminati, e le loro operazioni passano al conto di destinazione.',
-  'guide.merge-wizard.identity.title': 'Dai un nome alla società e alla sfida',
+  'guide.merge-wizard.identity.title': 'Scegli le regole della tua firm',
   'guide.merge-wizard.identity.description':
-    'Applicare un profilo della società inserisce le regole reali e la fase finanziata. Senza profilo, le fasi non hanno regole finché non le aggiungi nella pagina del conto.',
+    "Scegli la tua firm e il tuo piano per compilare fasi e regole. La tua firm non c'è? Scegli Altra / firm personalizzata e imposta le regole nella pagina successiva.",
+  'guide.merge-wizard.identity.free-title': 'Dai un nome alla challenge',
+  'guide.merge-wizard.identity.free-description':
+    'Dalle un nome e, se vuoi, quello della tua firm. Le regole salvate di una challenge precedente compilano fasi e regole; altrimenti le imposti nella pagina successiva.',
   'guide.merge-wizard.phases.title': 'Controlla ogni fase',
   'guide.merge-wizard.phases.description':
     'Imposta il tipo di stadio, segna come Superate le fasi completate e come Attiva quella in corso, e conferma le date.',
   'guide.merge-wizard.review.title': 'Non succede nulla finché non confermi',
   'guide.merge-wizard.review.description':
-    'Controlla le operazioni spostate, i conti archiviati e gli avvisi. Unisci applica tutto; puoi annullare dalla pagina del conto.',
+    'Dopo la conversione, la pagina del conto elenca cosa è stato configurato così puoi controllarlo, e puoi annullarlo da lì.',
   'account.merge.challenge.accounts': 'Conti',
   'account.merge.challenge.order-hint': 'Fase più vecchia per prima',
   'account.merge.challenge.single-hint':
     'Questo conto diventa una challenge da solo',
-  'account.merge.phase.identities-count': '{count} identità',
+  'account.merge.phase.broker-accounts.one': '{count} conto broker',
+  'account.merge.phase.broker-accounts.few': '{count} conti broker',
+  'account.merge.phase.broker-accounts.many': '{count} conti broker',
+  'account.merge.phase.broker-accounts.other': '{count} conti broker',
+  'account.merge.review.phase-count.one': 'fase',
+  'account.merge.review.phase-count.few': 'fasi',
+  'account.merge.review.phase-count.many': 'fasi',
+  'account.merge.review.phase-count.other': 'fasi',
   'account.merge.phase.pending': 'In attesa',
-  'account.merge.review.phases': 'fasi',
+  'account.merge.phase.starts-after': 'Inizia dopo aver superato {phase}',
+  'account.merge.phase.pending-rules': 'Regole: {rules}',
   'account.merge.review.archived': 'archiviati',
-  'account.merge.review.open': 'aperti',
+  'account.merge.review.starts-after': 'Dopo {phase}',
+  'account.merge.review.since': 'Dal {date}',
   'account.merge.sequence': 'Challenge {index} di {total}',
   'account.merge.warning.balance-differs':
-    'Il saldo iniziale differisce dal profilo della prop firm',
+    'Il saldo iniziale differisce dalle regole della firm',
   'account.merge.error.profile-phase-mismatch':
-    'Più conti che fasi nel profilo della prop firm',
+    'Più conti che fasi nelle regole della firm',
   'account.merge.error.profile-currency-mismatch':
-    'La valuta del profilo differisce da quella di questi conti.',
+    'Le regole della firm usano una valuta diversa da questi conti.',
   'account.merge.error.source-changed':
     'Un conto è cambiato. Rivedi la fusione.',
   'account.merge.error.multiple-active-phases':
@@ -8343,17 +8602,20 @@ const it: Lang = {
   'account.merge.error.copy-trading-overlap':
     'I periodi di copy trading si sovrappongono. Chiudi prima un periodo.',
   'onboarding.legacy-challenge.legend':
-    'Raggruppa i conti che erano fasi di una stessa challenge. Un conto da solo diventa una challenge a sé.',
-  'onboarding.legacy-challenge.assign.leave': 'Lascia così',
-  'onboarding.legacy-challenge.assign.own': 'Challenge propria',
-  'onboarding.legacy-challenge.assign.group': 'Challenge prop {letter}',
-  'onboarding.legacy-challenge.assign.new-group': 'Nuova challenge…',
+    'Scegli cosa succede a ogni conto precedente. Avevi un conto separato per ogni fase, come Fase 1 e Finanziato? Mettili nella stessa challenge così diventano un unico conto con fasi.',
+  'onboarding.legacy-challenge.assign.leave': 'Mantieni come conto normale',
+  'onboarding.legacy-challenge.assign.own': 'Trasforma in challenge',
+  'onboarding.legacy-challenge.assign.group':
+    'Aggiungi alla challenge {letter}',
+  'onboarding.legacy-challenge.assign.new-group':
+    'Unisci in una nuova challenge…',
   'onboarding.legacy-challenge.action.continue': 'Continua',
   'onboarding.legacy-challenge.action.continue-count': 'Configura {count}',
   'guide.action-step.dismiss': 'Non ora',
-  'guide.legacy-challenge.title': 'I tuoi conti esistenti',
+  'guide.legacy-challenge.title':
+    'Configura i conti precedenti a questo aggiornamento',
   'guide.legacy-challenge.description':
-    'Unisci i conti che erano fasi di una challenge, oppure trasforma un conto in una challenge da solo.',
+    'Trasforma vecchi conti di valutazione o finanziati in challenge. La configurazione ti guida tra fasi e date e alla fine mostra cosa è stato configurato così puoi controllarlo.',
   'guide.legacy-challenge.action': 'Configura i miei conti',
   'onboarding.legacy-challenge.title': 'Challenge prop',
   'onboarding.legacy-challenge.action.skip': 'Salta',

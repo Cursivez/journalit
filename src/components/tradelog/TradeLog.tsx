@@ -14,7 +14,6 @@ import { ServiceManager } from '../../services/ServiceManager';
 import { TimeNode, TradeLogFilters } from '../../services/tradelog/types';
 import { TradeLogHeader } from './TradeLogHeader';
 import { TradeLogEmptyState } from './TradeLogEmptyState';
-import { TRADE_LOG_MAIN_GUIDE_VERSION } from '../../guides/tradeLogMainGuide';
 import { TradeLogTree } from './TradeLogTree';
 import { TradeLogSkeleton } from './TradeLogSkeleton';
 import {
@@ -91,7 +90,15 @@ import {
   TRADE_LOG_MULTI_SELECT_ENABLED_ACTION_ID,
   TRADE_LOG_TABLE_HEADERS_TARGET_ID,
 } from '../../guides/tradeLogGuideIds';
-import type { PersistedGuideState } from '../../guides/types';
+import { isFilterMenuWhatsNewDue } from '../../guides/filterMenuWhatsNewResolution';
+import {
+  FILTER_MENU_DONE_STEP_ID,
+  FILTER_MENU_EXCLUDE_STEP_ID,
+  FILTER_MENU_MATCH_STEP_ID,
+  FILTER_MENU_OPEN_STEP_ID,
+  FILTER_MENU_PHASES_STEP_ID,
+  TRADE_LOG_WHATS_NEW_FILTER_MENU_GUIDE_ID,
+} from '../../guides/filterMenuWhatsNewGuideIds';
 import { TRADE_LOG_VIEW_TYPE } from '../../views/TradeLogView';
 import {
   AccountChangedPayload,
@@ -124,7 +131,7 @@ import { mergeUserTradeLogFilterChange } from './tradeLogFilterChanges';
 import { clearDrilldownBasisForTradeLogMode } from './tradeLogFilterChanges';
 import { getSessionLogTags } from '../sessionLog/sessionLogUtils';
 import { mergeClassNames } from '../../utils/classNames';
-import { sanitizeCustomFieldFilters } from '../shared/filters/sanitizeCustomFieldFilters';
+import { sanitizeFilterCustomFields } from '../shared/filters/sanitizeCustomFieldFilters';
 
 interface TradeLogProps {
   plugin: JournalitPlugin;
@@ -179,6 +186,11 @@ const TRADE_LOG_GUIDE_TRADE_MODE_STEPS = new Set([
   'sorting',
   'open-trades',
   'switch-to-gallery',
+  FILTER_MENU_OPEN_STEP_ID,
+  FILTER_MENU_EXCLUDE_STEP_ID,
+  FILTER_MENU_MATCH_STEP_ID,
+  FILTER_MENU_PHASES_STEP_ID,
+  FILTER_MENU_DONE_STEP_ID,
 ]);
 
 const TRADE_LOG_GUIDE_IMAGE_GALLERY_STEPS = new Set([
@@ -194,10 +206,6 @@ const TRADE_LOG_IMAGE_GALLERY_GUIDE_IDS = new Set([
   TRADE_LOG_IMAGE_GALLERY_EMPTY_GUIDE_ID,
   TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID,
 ]);
-
-function isTerminalGuideState(state: PersistedGuideState | null): boolean {
-  return state?.status === 'completed' || state?.status === 'skipped';
-}
 
 function normalizeTradeLogMode(value: unknown): TradeLogMode {
   return value === 'imageGallery' ? 'imageGallery' : 'trades';
@@ -815,46 +823,18 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   useEffect(() => {
     
     const currentFilters = filtersRef.current;
-    const sanitizedCustomFieldFilters = sanitizeCustomFieldFilters(
-      currentFilters.customFieldFilters,
-      customFields
-    );
-    const currentEntries = Object.entries(
-      currentFilters.customFieldFilters || {}
-    );
-    const sanitizedEntries = Object.entries(sanitizedCustomFieldFilters);
-
-    let filtersAreUnchanged = currentEntries.length === sanitizedEntries.length;
-
-    if (filtersAreUnchanged) {
-      for (const [fieldId, values] of currentEntries) {
-        const nextValues = sanitizedCustomFieldFilters[fieldId] || [];
-        if (!Array.isArray(values) || values.length !== nextValues.length) {
-          filtersAreUnchanged = false;
-          break;
-        }
-
-        for (let index = 0; index < values.length; index++) {
-          if (values[index] !== nextValues[index]) {
-            filtersAreUnchanged = false;
-            break;
-          }
-        }
-
-        if (!filtersAreUnchanged) break;
-      }
-    }
-
-    if (filtersAreUnchanged) {
+    const sanitized = sanitizeFilterCustomFields(currentFilters, customFields);
+    if (sanitized === currentFilters) {
       return;
     }
-
-    const nextFilters = normalizeTradeLogFilters({
-      ...currentFilters,
-      customFieldFilters: sanitizedCustomFieldFilters,
-    });
-    commitFilters(nextFilters);
-  }, [commitFilters, customFields, filters.customFieldFilters]);
+    commitFilters(normalizeTradeLogFilters(sanitized));
+  }, [
+    commitFilters,
+    customFields,
+    filters.customFieldFilters,
+    filters.exclusions,
+    filters.matchModes,
+  ]);
 
   const effectiveSortConfig = useMemo<SortConfig>(() => {
     if (!sortConfig.column) {
@@ -1184,6 +1164,18 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     if (activeSession?.guideId === TRADE_LOG_MAIN_GUIDE_ID) {
       return TRADE_LOG_MAIN_GUIDE_ID;
     }
+    
+    
+    
+    if (
+      guideService &&
+      activeSession?.guideId === TRADE_LOG_WHATS_NEW_FILTER_MENU_GUIDE_ID &&
+      isFilterMenuWhatsNewDue(TRADE_LOG_WHATS_NEW_FILTER_MENU_GUIDE_ID, (id) =>
+        guideService.getPersistedGuideState(id)
+      )
+    ) {
+      return TRADE_LOG_WHATS_NEW_FILTER_MENU_GUIDE_ID;
+    }
 
     if (tradeLogMode === 'imageGallery') {
       if (imageGalleryItemCount === null) {
@@ -1199,22 +1191,14 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
 
     if (isDataLoaded) {
       if (nodes.length > 0) {
-        if (guideService) {
-          const mainGuideState = guideService.getPersistedGuideState(
-            TRADE_LOG_MAIN_GUIDE_ID
-          );
-          const whatsNewGuideState = guideService.getPersistedGuideState(
-            TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID
-          );
-
-          if (
-            mainGuideState &&
-            isTerminalGuideState(mainGuideState) &&
-            mainGuideState.guideVersion < TRADE_LOG_MAIN_GUIDE_VERSION &&
-            !isTerminalGuideState(whatsNewGuideState)
-          ) {
-            return TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID;
-          }
+        if (
+          guideService &&
+          isFilterMenuWhatsNewDue(
+            TRADE_LOG_WHATS_NEW_FILTER_MENU_GUIDE_ID,
+            (guideId) => guideService.getPersistedGuideState(guideId)
+          )
+        ) {
+          return TRADE_LOG_WHATS_NEW_FILTER_MENU_GUIDE_ID;
         }
 
         return TRADE_LOG_MAIN_GUIDE_ID;
@@ -1485,7 +1469,9 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
           getActiveTreeSessionLogTags(activeFilters),
           activeFilters.analyticsDateBasis,
           activeTradeLogScope?.filePaths,
-          activeFilters.accountPhases
+          activeFilters.accountPhases,
+          activeFilters.exclusions,
+          activeFilters.matchModes
         );
 
         if (loadGenerationRef.current !== loadGeneration) {

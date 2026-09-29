@@ -230,6 +230,7 @@ export interface TradeProjectionRequestOptions {
 export interface TradeProjectionPersistedTradeSummary {
   filePath: string;
   accountName: string;
+  
   brokerLabel?: string;
   change: 'created' | 'updated';
   symbol: string;

@@ -1,5 +1,7 @@
 
 
+import type { SymbolMapping } from '../settings/types';
+
 
 interface NormalizedSymbol {
   
@@ -145,6 +147,22 @@ function normalizeSymbol(symbol: string): NormalizedSymbol | null {
 export function extractBaseSymbol(symbol: string): string {
   const normalized = normalizeSymbol(symbol);
   return normalized ? normalized.baseSymbol : symbol;
+}
+
+
+export function isMicroFuturesTrade(
+  instrument: string,
+  assetType: string | undefined,
+  symbolMappings: readonly SymbolMapping[]
+): boolean {
+  
+  
+  if (assetType?.trim().toLowerCase() !== 'futures') return false;
+  const symbol = instrument.trim().toUpperCase();
+  const mapped = symbolMappings.find(
+    (mapping) => mapping.importedSymbol.toUpperCase() === symbol
+  );
+  return normalizeSymbol(mapped ? mapped.baseSymbol : symbol)?.isMicro === true;
 }
 
 

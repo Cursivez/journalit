@@ -1,4 +1,5 @@
 import React, { useId, useState } from 'react';
+import { DraftInput } from '../../../ui/DraftInput';
 import { t } from '../../../../lang/helpers';
 import type {
   PropChallengeMaximumPayoutOutcome,
@@ -325,7 +326,7 @@ function PayoutPolicyEligibilitySection({
         {policy.cycle.kind !== 'none' && (
           <label className="journalit-prop-challenge-field">
             <span>{t('account.prop-challenge.payout-rules.days')}</span>
-            <input
+            <DraftInput
               type="number"
               min="1"
               step="1"
@@ -349,7 +350,7 @@ function PayoutPolicyEligibilitySection({
             <span>
               {t('account.prop-challenge.payout-rules.minimum-daily-profit')}
             </span>
-            <input
+            <DraftInput
               type="number"
               min="0"
               step="50"
@@ -403,7 +404,7 @@ function PayoutPolicyEligibilitySection({
           <span>
             {t('account.prop-challenge.payout-rules.minimum-elapsed-hours')}
           </span>
-          <input
+          <DraftInput
             type="number"
             min="1"
             step="1"
@@ -490,7 +491,7 @@ function PayoutPolicyEligibilitySection({
           <span>
             {t('account.prop-challenge.payout-rules.minimum-balance')}
           </span>
-          <input
+          <DraftInput
             type="number"
             min="0"
             step="100"
@@ -506,7 +507,7 @@ function PayoutPolicyEligibilitySection({
           <span>
             {t('account.prop-challenge.payout-rules.minimum-cycle-profit')}
           </span>
-          <input
+          <DraftInput
             type="number"
             min="0"
             step="50"
@@ -524,7 +525,7 @@ function PayoutPolicyEligibilitySection({
               'account.prop-challenge.payout-rules.minimum-cycle-profit-schedule'
             )}
           </span>
-          <input
+          <DraftInput
             type="text"
             value={policy.minimumCycleProfitSchedule?.amounts.join(', ') ?? ''}
             onChange={(event) => {
@@ -587,7 +588,7 @@ function PayoutPolicyEligibilitySection({
           <span>
             {t('account.prop-challenge.payout-rules.consistency-percent')}
           </span>
-          <input
+          <DraftInput
             type="number"
             min="0"
             max="100"
@@ -606,7 +607,7 @@ function PayoutPolicyEligibilitySection({
               'account.prop-challenge.payout-rules.consistency-percent-schedule'
             )}
           </span>
-          <input
+          <DraftInput
             type="text"
             value={policy.maxBestDayPercentSchedule?.percents.join(', ') ?? ''}
             onChange={(event) => {
@@ -710,7 +711,7 @@ function PayoutPolicyAvailabilitySection({
             <span>
               {t('account.prop-challenge.payout-rules.balance-floor')}
             </span>
-            <input
+            <DraftInput
               type="number"
               min="0"
               step="100"
@@ -733,7 +734,7 @@ function PayoutPolicyAvailabilitySection({
           <span>
             {t('account.prop-challenge.payout-rules.request-percent')}
           </span>
-          <input
+          <DraftInput
             type="number"
             min="0"
             max="100"
@@ -756,7 +757,7 @@ function PayoutPolicyAvailabilitySection({
           <span>
             {t('account.prop-challenge.payout-rules.new-profit-percent')}
           </span>
-          <input
+          <DraftInput
             type="number"
             min="1"
             max="100"
@@ -783,7 +784,7 @@ function PayoutPolicyAvailabilitySection({
           <span>
             {t('account.prop-challenge.payout-rules.minimum-request')}
           </span>
-          <input
+          <DraftInput
             type="number"
             min="0"
             step="50"
@@ -846,7 +847,7 @@ function PayoutPolicyAvailabilitySection({
             <span>
               {t('account.prop-challenge.payout-rules.maximum-amount')}
             </span>
-            <input
+            <DraftInput
               type="number"
               min="0"
               step="50"
@@ -870,7 +871,7 @@ function PayoutPolicyAvailabilitySection({
             <span>
               {t('account.prop-challenge.payout-rules.maximum-first-amount')}
             </span>
-            <input
+            <DraftInput
               type="number"
               min="1"
               step="50"
@@ -893,7 +894,7 @@ function PayoutPolicyAvailabilitySection({
           <>
             <label className="journalit-prop-challenge-field">
               <span>{t('account.prop-challenge.payout-rules.schedule')}</span>
-              <input
+              <DraftInput
                 value={policy.maximumRequest.amounts.join(', ')}
                 onChange={(event) => {
                   if (policy.maximumRequest.kind !== 'schedule') return;
@@ -939,7 +940,7 @@ function PayoutPolicyAvailabilitySection({
                 'account.prop-challenge.payout-rules.maximum-cycle-profit-percent'
               )}
             </span>
-            <input
+            <DraftInput
               type="number"
               min="1"
               max="100"
@@ -1003,7 +1004,7 @@ function PayoutPolicyAvailabilitySection({
                       'account.prop-challenge.payout-rules.lifetime-unlock-days'
                     )}
                   </span>
-                  <input
+                  <DraftInput
                     type="number"
                     min="1"
                     step="1"
@@ -1068,7 +1069,7 @@ function PayoutPolicyAvailabilitySection({
                         'account.prop-challenge.payout-rules.lifetime-unlock-balance-floor'
                       )}
                     </span>
-                    <input
+                    <DraftInput
                       type="number"
                       min="0"
                       step="100"
@@ -1096,7 +1097,7 @@ function PayoutPolicyAvailabilitySection({
                       'account.prop-challenge.payout-rules.lifetime-unlock-request-percent'
                     )}
                   </span>
-                  <input
+                  <DraftInput
                     type="number"
                     min="1"
                     max="100"
@@ -1179,7 +1180,7 @@ function PayoutPolicyAvailabilitySection({
                         'account.prop-challenge.payout-rules.lifetime-unlock-maximum-amount'
                       )}
                     </span>
-                    <input
+                    <DraftInput
                       type="number"
                       min="1"
                       step="50"
@@ -1207,7 +1208,7 @@ function PayoutPolicyAvailabilitySection({
                         'account.prop-challenge.payout-rules.maximum-first-amount'
                       )}
                     </span>
-                    <input
+                    <DraftInput
                       type="number"
                       min="1"
                       step="50"
@@ -1236,7 +1237,7 @@ function PayoutPolicyAvailabilitySection({
                           'account.prop-challenge.payout-rules.lifetime-unlock-maximum-schedule'
                         )}
                       </span>
-                      <input
+                      <DraftInput
                         type="text"
                         value={lifetimeMaximum.amounts.join(', ')}
                         onChange={(event) =>
@@ -1288,7 +1289,7 @@ function PayoutPolicyAvailabilitySection({
                         'account.prop-challenge.payout-rules.lifetime-unlock-maximum-cycle-profit-percent'
                       )}
                     </span>
-                    <input
+                    <DraftInput
                       type="number"
                       min="1"
                       max="100"
@@ -1388,7 +1389,7 @@ function PayoutPolicyTermsSection({
         {fixedProfitSplit ? (
           <label className="journalit-prop-challenge-field">
             <span>{t('account.prop-challenge.payout-rules.profit-split')}</span>
-            <input
+            <DraftInput
               type="number"
               min="1"
               max="100"
@@ -1412,7 +1413,7 @@ function PayoutPolicyTermsSection({
               <span>
                 {t('account.prop-challenge.payout-rules.profit-split.initial')}
               </span>
-              <input
+              <DraftInput
                 type="number"
                 min="1"
                 max="100"
@@ -1436,7 +1437,7 @@ function PayoutPolicyTermsSection({
                   'account.prop-challenge.payout-rules.profit-split.threshold-amount'
                 )}
               </span>
-              <input
+              <DraftInput
                 type="number"
                 min="1"
                 step="500"
@@ -1459,7 +1460,7 @@ function PayoutPolicyTermsSection({
                   'account.prop-challenge.payout-rules.profit-split.thereafter'
                 )}
               </span>
-              <input
+              <DraftInput
                 type="number"
                 min="1"
                 max="100"
@@ -1489,7 +1490,7 @@ function PayoutPolicyTermsSection({
               <span>
                 {t('account.prop-challenge.payout-rules.profit-split.below')}
               </span>
-              <input
+              <DraftInput
                 type="number"
                 min="1"
                 max="100"
@@ -1513,7 +1514,7 @@ function PayoutPolicyTermsSection({
                   'account.prop-challenge.payout-rules.profit-split.threshold-profit'
                 )}
               </span>
-              <input
+              <DraftInput
                 type="number"
                 min="1"
                 step="500"
@@ -1536,7 +1537,7 @@ function PayoutPolicyTermsSection({
                   'account.prop-challenge.payout-rules.profit-split.at-or-above'
                 )}
               </span>
-              <input
+              <DraftInput
                 type="number"
                 min="1"
                 max="100"
@@ -1561,7 +1562,7 @@ function PayoutPolicyTermsSection({
           <span>
             {t('account.prop-challenge.payout-rules.maximum-payouts')}
           </span>
-          <input
+          <DraftInput
             type="number"
             min="1"
             step="1"
@@ -1635,7 +1636,7 @@ function PayoutPolicyAftermathSection({
             <span>
               {t('account.prop-challenge.payout-rules.drawdown-floor')}
             </span>
-            <input
+            <DraftInput
               type="number"
               min="0"
               step="100"

@@ -30,7 +30,7 @@ export const ENTRY_EXIT_STYLES = `
     .trade-form-view-container .badge {
       display: inline-block;
       background: var(--interactive-accent);
-      color: white;
+      color: var(--text-on-accent);
       font-size: 12px;
       padding: 2px 6px;
       border-radius: 10px;
@@ -503,9 +503,7 @@ export const ENTRY_EXIT_STYLES = `
         padding: 0 2px;
       }
 
-      .trade-form-view-container
-        .journalit-unrealized-snapshot__time-field
-        .journalit-fast-datetime__ampm-button {
+      .trade-form-view-container .journalit-unrealized-snapshot__time-field .journalit-fast-datetime__ampm-button {
         min-width: 28px;
         margin-left: 1px;
         padding: 5px 2px;
@@ -738,6 +736,7 @@ export const ENTRY_EXIT_STYLES = `
 
     .trade-form-view-container .toggle-switch-input:checked + .toggle-switch-label {
       background-color: var(--interactive-accent);
+      color: var(--text-on-accent);
       box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
     }
 

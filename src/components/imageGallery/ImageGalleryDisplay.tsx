@@ -34,6 +34,7 @@ import {
   getImageGalleryFullscreenTitle,
   getImageGalleryVirtualWindow,
 } from './ImageGalleryUtils';
+import { hasFilterExclusions } from '../shared/filters/filterExclusions';
 
 const IMAGE_GALLERY_SKELETON_KEYS = [
   'image-gallery-skeleton-1',
@@ -164,6 +165,7 @@ function hasActiveTradeLogFilters(filters: TradeLogFilters): boolean {
     Object.values(filters.customFieldFilters).some(
       (values) => values.length > 0
     ) ||
+    hasFilterExclusions(filters.exclusions) ||
     filters.tradeTypes.length < 3
   );
 }

@@ -3,6 +3,7 @@ import type JournalitPlugin from '../../main';
 import type {
   AccountMetadata,
   GoalConfig,
+  HomeSettings,
   JournalitSettings,
 } from '../../settings/types';
 import { generateUUID } from '../../utils/uuid';
@@ -47,6 +48,7 @@ interface AccountMergeSettingsSnapshot {
   csvFavoriteAccount?: string;
   copyTradeAdjustments?: JournalitSettings['copyTradeAdjustments'];
   homeGoals?: Record<string, GoalConfig>;
+  homeAccountProgress?: HomeSettings['accountProgress'];
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -400,6 +402,24 @@ export class AccountMergeService {
       accountNames: [record.targetAccountName, ...deletedNames],
     });
     await accountPageService.refreshAllAccountData();
+  }
+
+  
+  public async markReviewed(recordId: string): Promise<void> {
+    const record = this.requireRecord(recordId);
+    const previous = record.reviewedAt;
+    record.reviewedAt = new Date().toISOString();
+    try {
+      await this.plugin.saveSettings();
+    } catch (error) {
+      
+      record.reviewedAt = previous;
+      throw error;
+    }
+    eventBus.publish('account:changed', {
+      action: 'updated',
+      accountName: record.targetAccountName,
+    });
   }
 
   public getRecordForAccount(
@@ -775,6 +795,9 @@ export class AccountMergeService {
         this.plugin.settings.copyTradeAdjustments
       ),
       homeGoals: cloneValue(this.plugin.settings.home?.goals),
+      homeAccountProgress: cloneValue(
+        this.plugin.settings.home?.accountProgress
+      ),
     };
   }
 
@@ -812,6 +835,13 @@ export class AccountMergeService {
         delete this.plugin.settings.home.goals;
       } else {
         this.plugin.settings.home.goals = cloneValue(snapshot.homeGoals);
+      }
+      if (snapshot.homeAccountProgress === undefined) {
+        delete this.plugin.settings.home.accountProgress;
+      } else {
+        this.plugin.settings.home.accountProgress = cloneValue(
+          snapshot.homeAccountProgress
+        );
       }
     }
   }

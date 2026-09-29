@@ -9,8 +9,15 @@ import { useDashboardData } from '../../dashboard/context/DashboardDataContext';
 import { useFilteredByPeriod } from '../context/HomePeriodContext';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { t } from '../../../lang/helpers';
+import {
+  DEFAULT_TOP_BREAKDOWN_CONFIG,
+  getTopBreakdownDimensionLabel,
+} from '../../../utils/topBreakdownConfig';
 import { Trade } from '../../dashboard/utils/dataUtils';
-import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
+import {
+  useDisplayFormatter,
+  useDisplayPolicy,
+} from '../../../hooks/useDisplayPolicy';
 import {
   calculateWinRateExcludingBreakeven,
   classifyPnLWithBreakEvenSettings,
@@ -20,7 +27,6 @@ import {
   isPnlContributingTrade,
 } from '../../../utils/tradeStatusUtils';
 import {
-  TopBreakdownConfig,
   TopBreakdownDimension,
   TopBreakdownValueMode,
 } from '../../../settings/types';
@@ -36,6 +42,7 @@ import {
   getTradeSetupGroups,
   getTradeTagGroups,
 } from '../../../utils/tradeGrouping';
+import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 
 interface SetupLeaderboardWidgetProps {
   plugin: JournalitPlugin;
@@ -46,6 +53,8 @@ interface TopBreakdownStats {
   key: string;
   displayName: string;
   totalPnL: number;
+  
+  totalR: number | undefined;
   tradeCount: number;
   winCount: number;
   lossCount: number;
@@ -74,6 +83,7 @@ interface TopBreakdownRowProps {
   valueMode: TopBreakdownValueMode;
   maxValue: number;
   effectiveCurrency: string;
+  displayRMultiples: boolean;
   formatValue: ReturnType<typeof useDisplayFormatter>['formatValue'];
   shouldMask: ReturnType<typeof useDisplayFormatter>['shouldMask'];
 }
@@ -83,13 +93,10 @@ interface BuildTopBreakdownStatsOptions {
   dimension: TopBreakdownDimension;
   valueMode: TopBreakdownValueMode;
   breakEvenSettings: Parameters<typeof classifyPnLWithBreakEvenSettings>[1];
+  defaultRiskAmount: number | undefined;
+  
+  displayRMultiples: boolean;
 }
-
-const DEFAULT_CONFIG: TopBreakdownConfig = {
-  dimension: 'setups',
-  valueMode: 'currency',
-  createdAt: '',
-};
 
 const ASSET_TYPE_ALIASES: Record<string, string> = {
   stock: 'stock',
@@ -104,21 +111,6 @@ const ASSET_TYPE_ALIASES: Record<string, string> = {
   cryptocurrency: 'crypto',
   cfd: 'cfd',
   cfds: 'cfd',
-};
-
-const getDimensionLabel = (dimension: TopBreakdownDimension): string => {
-  switch (dimension) {
-    case 'setups':
-      return t('tradelog.column.setups');
-    case 'assetTypes':
-      return t('form.field.asset-type');
-    case 'tags':
-      return t('tradelog.column.tags');
-    case 'tickers':
-      return t('tradelog.column.ticker');
-    default:
-      return t('tradelog.column.setups');
-  }
 };
 
 const getAssetTypeDisplayName = (value: string): string => {
@@ -187,11 +179,20 @@ const getDisplayNameForValue = (
   return value;
 };
 
+
+const getTopBreakdownTotal = (
+  stat: TopBreakdownStats,
+  displayRMultiples: boolean
+): number => (displayRMultiples ? (stat.totalR ?? 0) : stat.totalPnL);
+
 const getTopBreakdownValue = (
   stat: TopBreakdownStats,
-  valueMode: TopBreakdownValueMode
+  valueMode: TopBreakdownValueMode,
+  displayRMultiples: boolean
 ): number => {
-  return valueMode === 'currency' ? Math.abs(stat.totalPnL) : stat.winRate;
+  return valueMode === 'currency'
+    ? Math.abs(getTopBreakdownTotal(stat, displayRMultiples))
+    : stat.winRate;
 };
 
 const DIMENSION_OPTIONS: Array<{
@@ -349,6 +350,7 @@ const TopBreakdownRow: React.FC<TopBreakdownRowProps> = ({
   valueMode,
   maxValue,
   effectiveCurrency,
+  displayRMultiples,
   formatValue,
   shouldMask,
 }) => {
@@ -363,12 +365,12 @@ const TopBreakdownRow: React.FC<TopBreakdownRowProps> = ({
       ? hasDecidedTrades
         ? 'var(--text-normal)'
         : 'var(--text-muted)'
-      : setup.totalPnL >= 0
+      : getTopBreakdownTotal(setup, displayRMultiples) >= 0
         ? 'var(--color-green)'
         : 'var(--color-red)';
   const barWidth = Math.max(
     8,
-    (getTopBreakdownValue(setup, valueMode) / maxValue) * 100
+    (getTopBreakdownValue(setup, valueMode, displayRMultiples) / maxValue) * 100
   );
   const valueText = isPercentageMode
     ? formatValue({
@@ -380,6 +382,7 @@ const TopBreakdownRow: React.FC<TopBreakdownRowProps> = ({
     : formatValue({
         kind: 'pnl',
         value: setup.totalPnL,
+        rMultiple: setup.totalR,
         currencyCode: effectiveCurrency,
       });
 
@@ -442,6 +445,8 @@ const buildTopBreakdownStats = ({
   dimension,
   valueMode,
   breakEvenSettings,
+  defaultRiskAmount,
+  displayRMultiples,
 }: BuildTopBreakdownStatsOptions): TopBreakdownStats[] => {
   const pnlContributingTrades = (trades || []).filter((trade) =>
     isPnlContributingTrade(trade)
@@ -454,6 +459,7 @@ const buildTopBreakdownStats = ({
     {
       displayName: string;
       totalPnL: number;
+      totalR: number | undefined;
       tradeCount: number;
       winCount: number;
       lossCount: number;
@@ -465,6 +471,12 @@ const buildTopBreakdownStats = ({
     if (values.length === 0) continue;
 
     const pnl = getEffectivePnL(trade);
+    const tradeR = calculateEffectiveRMultiple(
+      pnl,
+      trade.rMultiple,
+      trade.riskAmount,
+      defaultRiskAmount
+    );
     const outcome = classifyPnLWithBreakEvenSettings(
       pnl,
       breakEvenSettings,
@@ -475,12 +487,16 @@ const buildTopBreakdownStats = ({
       const existing = statsMap.get(value) || {
         displayName: getDisplayNameForValue(value, dimension),
         totalPnL: 0,
+        totalR: undefined,
         tradeCount: 0,
         winCount: 0,
         lossCount: 0,
       };
 
       existing.totalPnL += pnl;
+      if (tradeR !== undefined) {
+        existing.totalR = (existing.totalR ?? 0) + tradeR;
+      }
       existing.tradeCount += 1;
 
       if (outcome === 'win') {
@@ -497,6 +513,7 @@ const buildTopBreakdownStats = ({
     key,
     displayName: value.displayName,
     totalPnL: value.totalPnL,
+    totalR: value.totalR,
     tradeCount: value.tradeCount,
     winCount: value.winCount,
     lossCount: value.lossCount,
@@ -506,7 +523,9 @@ const buildTopBreakdownStats = ({
 
   stats.sort((a, b) => {
     if (valueMode === 'currency') {
-      if (b.totalPnL !== a.totalPnL) return b.totalPnL - a.totalPnL;
+      const aTotal = getTopBreakdownTotal(a, displayRMultiples);
+      const bTotal = getTopBreakdownTotal(b, displayRMultiples);
+      if (bTotal !== aTotal) return bTotal - aTotal;
     } else if (b.winRate !== a.winRate) {
       return b.winRate - a.winRate;
     }
@@ -528,7 +547,7 @@ const SetupLeaderboardWidgetComponent: React.FC<
   useEffect(() => {}, []);
 
   const existingConfig = plugin.settings.home?.topBreakdowns?.[instanceId];
-  const resolvedConfig = existingConfig || DEFAULT_CONFIG;
+  const resolvedConfig = existingConfig || DEFAULT_TOP_BREAKDOWN_CONFIG;
 
   const [draftDimension, setDraftDimension] =
     useState<TopBreakdownDimension | null>(null);
@@ -556,6 +575,8 @@ const SetupLeaderboardWidgetComponent: React.FC<
   const effectiveCurrency =
     dashboardData?.metrics.conversionBaseCurrency || currency;
 
+  const { displayRMultiples } = useDisplayPolicy();
+  const defaultRiskAmount = plugin.settings.trade?.defaultRiskAmount;
   const breakEvenSettings = useMemo(
     () => ({
       breakEvenRangeMin: plugin.settings.trade?.breakEvenRangeMin,
@@ -580,12 +601,16 @@ const SetupLeaderboardWidgetComponent: React.FC<
         dimension: resolvedConfig.dimension,
         valueMode: resolvedConfig.valueMode,
         breakEvenSettings,
+        defaultRiskAmount,
+        displayRMultiples,
       }),
     [
       filteredTrades,
       resolvedConfig.dimension,
       resolvedConfig.valueMode,
       breakEvenSettings,
+      defaultRiskAmount,
+      displayRMultiples,
     ]
   );
 
@@ -594,11 +619,11 @@ const SetupLeaderboardWidgetComponent: React.FC<
 
     return Math.max(
       ...setupStats.map((stat) =>
-        getTopBreakdownValue(stat, resolvedConfig.valueMode)
+        getTopBreakdownValue(stat, resolvedConfig.valueMode, displayRMultiples)
       ),
       1
     );
-  }, [setupStats, resolvedConfig.valueMode]);
+  }, [setupStats, resolvedConfig.valueMode, displayRMultiples]);
 
   const displayedSetups = setupStats.slice(0, 3);
 
@@ -654,15 +679,17 @@ const SetupLeaderboardWidgetComponent: React.FC<
   ]);
 
   const widgetTitle = t('home.widget.top-breakdown.title', {
-    dimension: getDimensionLabel(resolvedConfig.dimension),
+    dimension: getTopBreakdownDimensionLabel(resolvedConfig.dimension),
   });
 
   const widgetCustomizeLabel = t('home.widget.top-breakdown.aria.customize', {
-    dimension: getDimensionLabel(resolvedConfig.dimension),
+    dimension: getTopBreakdownDimensionLabel(resolvedConfig.dimension),
   });
 
   const widgetConfigureTitle = t('home.widget.top-breakdown.configure-title', {
-    dimension: getDimensionLabel(draftDimension ?? resolvedConfig.dimension),
+    dimension: getTopBreakdownDimensionLabel(
+      draftDimension ?? resolvedConfig.dimension
+    ),
   });
 
   if (draftDimension !== null) {
@@ -729,6 +756,7 @@ const SetupLeaderboardWidgetComponent: React.FC<
             valueMode={resolvedConfig.valueMode}
             maxValue={maxValue}
             effectiveCurrency={effectiveCurrency}
+            displayRMultiples={displayRMultiples}
             formatValue={formatValue}
             shouldMask={shouldMask}
           />

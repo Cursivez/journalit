@@ -538,6 +538,7 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
             }}
           />
           <YAxis
+            className="journalit-chart-axis--numeric"
             tickFormatter={formatYAxisTick}
             domain={[actualMinValue, actualMaxValue]}
             allowDataOverflow={false}

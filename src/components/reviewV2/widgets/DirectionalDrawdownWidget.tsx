@@ -5,9 +5,9 @@ import JournalitPlugin from '../../../main';
 import { SharedDrawdownChart } from '../../charts/SharedDrawdownChart';
 import type { Trade } from '../../dashboard/utils/dataUtils';
 import {
-  getDrawdownChartScaleValue,
+  getDrawdownChartPlotValue,
   prepareDrawdownChartState,
-  shouldUseDrawdownPercentScale,
+  getDrawdownChartScale,
 } from '../../../utils/chartUtils';
 import { mapTradesToDisplayPnL } from '../../../utils/pnlUtils';
 import { TradesPreviewData } from '../../../types/reviewV2';
@@ -21,6 +21,7 @@ import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionI
 import { isPnlContributingTrade } from '../../../utils/tradeStatusUtils';
 import { getReviewAnalyticsDateBasis } from '../utils/reviewTradeDates';
 import { resolveDrawdownCapitalBasis } from '../../../utils/drawdownAnalytics';
+import { shareLoadingProps } from '../../../services/share/brandedCapture';
 
 const asDirectionalTrades = (value: unknown): Trade[] =>
   Array.isArray(value)
@@ -83,9 +84,12 @@ export const DirectionalDrawdownWidget: React.FC<DirectionalDrawdownWidgetProps>
         !preview
       );
 
+      const displayRMultiples =
+        plugin?.settings?.trade?.displayRMultiples ?? false;
       const {
         longChart,
         shortChart,
+        scale,
         sharedMinValue,
         sharedMaxValue,
         totalTrades,
@@ -143,18 +147,16 @@ export const DirectionalDrawdownWidget: React.FC<DirectionalDrawdownWidgetProps>
             : []),
         ];
 
-        const usePercentScale = visibleSeries.every((series) =>
-          shouldUseDrawdownPercentScale(series)
-        );
+        
+        const scale = getDrawdownChartScale(visibleSeries, displayRMultiples);
         const drawdownValues = visibleSeries.flatMap((series) =>
-          series.map((point) =>
-            getDrawdownChartScaleValue(point, usePercentScale)
-          )
+          series.map((point) => getDrawdownChartPlotValue(point, scale))
         );
 
         return {
           longChart: longState,
           shortChart: shortState,
+          scale,
           sharedMinValue:
             drawdownValues.length > 0 ? Math.min(...drawdownValues) : undefined,
           sharedMaxValue:
@@ -165,6 +167,7 @@ export const DirectionalDrawdownWidget: React.FC<DirectionalDrawdownWidgetProps>
           shortTrades,
         };
       }, [
+        displayRMultiples,
         trades,
         dateFormat,
         defaultRiskAmount,
@@ -219,6 +222,7 @@ export const DirectionalDrawdownWidget: React.FC<DirectionalDrawdownWidgetProps>
             <div className="journalit-reviewv2-chart-body">
               <div
                 className="journalit-reviewv2-chart-skeleton"
+                {...shareLoadingProps}
                 style={cssVars({
                   '--reviewv2-chart-height': `${mergedConfig.height || 250}px`,
                   '--reviewv2-chart-bar-gap': '4px',
@@ -349,6 +353,7 @@ export const DirectionalDrawdownWidget: React.FC<DirectionalDrawdownWidgetProps>
                     height={mergedConfig.height}
                     minValue={sharedMinValue}
                     maxValue={sharedMaxValue}
+                    scale={scale}
                     plugin={plugin}
                     currencyOverride={currencyOverride}
                   />
@@ -379,6 +384,7 @@ export const DirectionalDrawdownWidget: React.FC<DirectionalDrawdownWidgetProps>
                     height={mergedConfig.height}
                     minValue={sharedMinValue}
                     maxValue={sharedMaxValue}
+                    scale={scale}
                     plugin={plugin}
                     currencyOverride={currencyOverride}
                   />

@@ -10,6 +10,11 @@ import {
 } from '../../settings/types';
 import { eventBus } from '../events/EventBus';
 import { normalizeAccountLookupKey } from '../trade/core/TradeAccountIdentity';
+import {
+  repointHomeAccountProgressReferences,
+  revertAccountReferences,
+} from '../accountPage/accountReferences';
+import type { AccountReferenceChange } from '../accountMerge/types';
 
 interface ApiAccountInfo {
   accountId?: string | number;
@@ -209,6 +214,21 @@ export class AccountManagementService {
   }
 
   
+  private migrateHomeAccountProgress(
+    previousDisplayName: string | undefined,
+    nextDisplayName: string
+  ): AccountReferenceChange[] {
+    const normalizedPrevious = previousDisplayName?.trim();
+    const normalizedNext = nextDisplayName.trim();
+    if (!normalizedPrevious || !normalizedNext) return [];
+    return repointHomeAccountProgressReferences(
+      this.plugin.settings,
+      normalizedPrevious,
+      normalizedNext
+    );
+  }
+
+  
   getAccountDisplayName(accountId: string): string {
     if (
       this.settings.accountMapping &&
@@ -250,10 +270,15 @@ export class AccountManagementService {
       migrationPreviousDisplayName,
       displayName
     );
+    const accountProgressChanges = this.migrateHomeAccountProgress(
+      migrationPreviousDisplayName,
+      displayName
+    );
 
     try {
       await this.plugin.saveSettings();
     } catch (error) {
+      revertAccountReferences(this.plugin.settings, accountProgressChanges);
       this.restoreRecord(this.settings.accountMapping, mappingSnapshot);
       if (accountMetadata && metadataSnapshot) {
         this.restoreRecord(accountMetadata, metadataSnapshot);
@@ -314,6 +339,7 @@ export class AccountManagementService {
       ? { ...accountMetadata }
       : undefined;
     const homeGoalsSnapshot = this.cloneHomeGoals();
+    const accountProgressChanges: AccountReferenceChange[] = [];
     const accountCatalog = await this.plugin.accountPageService
       ?.getAccountCatalog()
       .catch(() => []);
@@ -345,6 +371,12 @@ export class AccountManagementService {
           previousDisplayName,
           account.displayName
         );
+        accountProgressChanges.push(
+          ...this.migrateHomeAccountProgress(
+            previousDisplayName,
+            account.displayName
+          )
+        );
         updatedMappings.push({
           accountId: account.accountId,
           nextDisplayName: account.displayName,
@@ -369,6 +401,7 @@ export class AccountManagementService {
       try {
         await this.plugin.saveSettings();
       } catch (error) {
+        revertAccountReferences(this.plugin.settings, accountProgressChanges);
         this.restoreRecord(this.settings.accountMapping, mappingSnapshot);
         if (accountMetadata && metadataSnapshot) {
           this.restoreRecord(accountMetadata, metadataSnapshot);

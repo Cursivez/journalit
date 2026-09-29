@@ -83,7 +83,7 @@ export const ACCOUNT_MERGE_MODAL_STYLES = `
 .journalit-account-merge-modal__step.is-done
   .journalit-account-merge-modal__step-index {
   border-color: var(--interactive-accent);
-  color: var(--interactive-accent);
+  color: var(--text-accent);
 }
 
 
@@ -359,6 +359,26 @@ export const ACCOUNT_MERGE_MODAL_STYLES = `
   color: var(--text-muted);
 }
 
+.journalit-account-merge-modal__phase-note {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--size-2-1) var(--size-4-2);
+  margin-top: var(--size-2-2);
+  padding-left: calc(18px + var(--size-2-2));
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+}
+
+.journalit-account-merge-modal__phase-note > * + *::before {
+  content: '·';
+  margin-right: var(--size-4-2);
+  color: var(--text-faint);
+}
+
+.journalit-account-merge-modal__table-row.is-pending {
+  color: var(--text-muted);
+}
+
 .journalit-account-merge-modal__phase-head {
   display: flex;
   align-items: center;
@@ -420,15 +440,13 @@ export const ACCOUNT_MERGE_MODAL_STYLES = `
 }
 
 
+
 .journalit-account-merge-modal__summary {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   justify-content: space-between;
   gap: var(--size-4-3);
-  padding: var(--size-4-2) var(--size-4-3);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  background: var(--background-secondary);
+  padding: 0 var(--size-2-1) var(--size-2-3);
 }
 
 .journalit-account-merge-modal__summary-main {
@@ -481,6 +499,13 @@ export const ACCOUNT_MERGE_MODAL_STYLES = `
   gap: var(--size-4-2);
   padding: var(--size-2-2) var(--size-4-2);
   font-size: var(--font-ui-small);
+}
+
+.journalit-account-merge-modal__table--convert
+  .journalit-account-merge-modal__table-row,
+.journalit-account-merge-modal__table--convert
+  .journalit-account-merge-modal__table-head {
+  grid-template-columns: 26px minmax(0, 1.6fr) auto minmax(0, 1.4fr) 92px;
 }
 
 .journalit-account-merge-modal__table-row {
@@ -613,6 +638,44 @@ export const ACCOUNT_MERGE_MODAL_STYLES = `
   align-items: center;
   gap: var(--size-2-2);
   margin-left: auto;
+}
+
+.account-date-warning.journalit-account-merge-notice--summary {
+  align-items: flex-start;
+}
+
+.journalit-account-merge-notice--summary .journalit-account-merge-notice__actions {
+  margin: var(--size-4-2) 0 0;
+}
+
+.journalit-account-merge-notice__summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-2);
+  margin: var(--size-4-2) 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: var(--font-ui-small);
+}
+
+.journalit-account-merge-notice__summary li {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--size-2-3);
+  color: var(--text-normal);
+}
+
+.journalit-account-merge-notice__summary li svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.journalit-account-merge-notice__summary li.is-ok svg {
+  color: var(--color-green);
+}
+
+.journalit-account-merge-notice__summary li.is-warning svg {
+  color: var(--color-orange);
 }
 
 

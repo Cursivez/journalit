@@ -18,6 +18,7 @@ interface ICustomRenderer {
 
 import { TradeNoteProcessor } from './trade';
 import { WidgetCodeblockProcessor } from './reviewV2/WidgetCodeblockProcessor';
+import { ReviewShareAction } from './share/reviewShare/ReviewShareAction';
 import JournalitPlugin from '../main';
 
 export class ProcessorManager {
@@ -29,6 +30,7 @@ export class ProcessorManager {
   
   private _tradeNoteProcessor: TradeNoteProcessor | null = null;
   private _widgetCodeblockProcessor: WidgetCodeblockProcessor | null = null;
+  private _reviewShareAction: ReviewShareAction | null = null;
 
   
   private initializedProcessors: Set<string> = new Set();
@@ -62,6 +64,11 @@ export class ProcessorManager {
     
     
     this.getWidgetCodeblockProcessor();
+
+    if (!this._reviewShareAction) {
+      this._reviewShareAction = new ReviewShareAction(this.app, this.plugin);
+      this._reviewShareAction.initialize();
+    }
   }
 
   
@@ -97,6 +104,14 @@ export class ProcessorManager {
   }
 
   
+  public shareActiveNoteAsImage(checking: boolean): boolean {
+    return (
+      (this._tradeNoteProcessor?.shareActiveNoteAsImage(checking) ?? false) ||
+      (this._reviewShareAction?.runOnActiveView(checking) ?? false)
+    );
+  }
+
+  
   public isProcessorInitialized(processorName: string): boolean {
     return this.initializedProcessors.has(processorName);
   }
@@ -123,6 +138,9 @@ export class ProcessorManager {
       this._widgetCodeblockProcessor.unregisterAll();
       this._widgetCodeblockProcessor = null;
     }
+
+    this._reviewShareAction?.cleanup();
+    this._reviewShareAction = null;
 
     
     this.customProcessors.forEach((processor) => {

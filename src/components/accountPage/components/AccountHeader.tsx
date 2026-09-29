@@ -24,6 +24,7 @@ import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';
 import {
   ACCOUNT_PAGE_ADD_EVENT_BUTTON_TARGET_ID,
   ACCOUNT_PAGE_EDIT_ACCOUNT_BUTTON_TARGET_ID,
+  ACCOUNT_PAGE_ACTIONS_TARGET_ID,
   ACCOUNT_PAGE_HEADER_TARGET_ID,
   ACCOUNT_PAGE_VIEW_TRADES_BUTTON_TARGET_ID,
 } from '../../../guides/accountPageGuideIds';
@@ -195,7 +196,7 @@ function AccountHeaderMeta({
           </span>
         </span>
       )}
-      {challenge && (
+      {challenge?.challengeName.trim() && (
         <span className="journalit-account-identity-meta-item">
           <span className="journalit-account-identity-meta-label">
             {t('account.prop-challenge.profile.challenge')}
@@ -286,6 +287,7 @@ export const AccountHeader: React.FC<{
       : accountPageData?.account.currency || globalCurrency;
   const [isFixingDate, setIsFixingDate] = useState(false);
   const registerHeaderTarget = useGuideTarget(ACCOUNT_PAGE_HEADER_TARGET_ID);
+  const registerActionsTarget = useGuideTarget(ACCOUNT_PAGE_ACTIONS_TARGET_ID);
   const registerAddEventButtonTarget = useGuideTarget(
     ACCOUNT_PAGE_ADD_EVENT_BUTTON_TARGET_ID
   );
@@ -458,31 +460,37 @@ export const AccountHeader: React.FC<{
               onSelectPhase={cockpitState.selectPhase}
             />
           ) : null}
-          <div ref={registerTradeLogButtonTarget}>
-            <AccountTradeLogControl
-              accountName={account.name}
-              selectedPhase={cockpitState?.selectedPhase}
-            />
-          </div>
-          <div ref={registerAddEventButtonTarget}>
-            <IconButton
-              onClick={() => void handleAddEvent()}
-              variant="toolbar"
-              className="add-event-btn"
-              ariaLabel={t('account.header.add-event.aria')}
-            >
-              <Plus size={16} />
-            </IconButton>
-          </div>
-          <div ref={registerEditAccountButtonTarget}>
-            <IconButton
-              onClick={() => void handleEditAccount()}
-              variant="toolbar"
-              className="edit-account-btn"
-              ariaLabel={t('account.header.edit-account.aria')}
-            >
-              <SquarePen size={16} />
-            </IconButton>
+          
+          <div
+            className="journalit-account-identity-action-buttons"
+            ref={registerActionsTarget}
+          >
+            <div ref={registerTradeLogButtonTarget}>
+              <AccountTradeLogControl
+                accountName={account.name}
+                selectedPhase={cockpitState?.selectedPhase}
+              />
+            </div>
+            <div ref={registerAddEventButtonTarget}>
+              <IconButton
+                onClick={() => void handleAddEvent()}
+                variant="toolbar"
+                className="add-event-btn"
+                ariaLabel={t('account.header.add-event.aria')}
+              >
+                <Plus size={16} />
+              </IconButton>
+            </div>
+            <div ref={registerEditAccountButtonTarget}>
+              <IconButton
+                onClick={() => void handleEditAccount()}
+                variant="toolbar"
+                className="edit-account-btn"
+                ariaLabel={t('account.header.edit-account.aria')}
+              >
+                <SquarePen size={16} />
+              </IconButton>
+            </div>
           </div>
         </div>
       </div>

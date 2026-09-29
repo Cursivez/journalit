@@ -23,6 +23,7 @@ import {
   shouldOpenReviewWidgetNotesInNewTab,
 } from '../reviewWidgetNavigation';
 import { resolveYearlyReviewYear } from '../../../utils/yearlyReviewYear';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 interface MentalGameWidgetProps {
   filePath: string;
@@ -610,7 +611,10 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
                   items: 'months',
                 })}
               </span>
-              <div className="journalit-reviewv2-pagination-controls">
+              <div
+                className="journalit-reviewv2-pagination-controls"
+                {...shareCaptureExcludeProps}
+              >
                 <button
                   onClick={goToPrevPage}
                   disabled={effectiveCurrentPage === 0}
@@ -726,7 +730,10 @@ export const MentalGameWidget: React.FC<MentalGameWidgetProps> = React.memo(
                 items: 'weeks',
               })}
             </span>
-            <div className="journalit-reviewv2-pagination-controls">
+            <div
+              className="journalit-reviewv2-pagination-controls"
+              {...shareCaptureExcludeProps}
+            >
               <button
                 onClick={goToPrevPage}
                 disabled={effectiveCurrentPage === 0}

@@ -65,6 +65,7 @@ export const SAMPLE_JOURNAL_POPOUT_STYLES = `
 
 .journalit-sample-popout__button--primary:hover {
   background: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
 }
 
 .journalit-sample-popout__button--secondary {

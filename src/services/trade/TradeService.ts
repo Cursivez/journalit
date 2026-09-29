@@ -37,6 +37,7 @@ import { normalizeStringArray } from '../../utils/dataUtils';
 import {
   readFileContentForMutation,
   replaceFileContent,
+  transformFileContent,
 } from '../../utils/fileMutation';
 import {
   getFirstEntryTime,
@@ -70,15 +71,18 @@ import {
   reserveLocalDeletedTradeProjection,
 } from '../tradeSync/TradeProjectionAckQueue';
 import {
+  isServerDeletedTradeProjection,
   registerTradeProjectionDeletionIntent,
   runWithTradeProjectionWriteLock,
 } from '../tradeSync/TradeProjectionWriteLock';
 import { ObsidianTradeNoteStore } from './core/ObsidianTradeNoteStore';
 import { TradeReadModel } from './core/TradeReadModel';
 import { isTradeIndexEligible } from './TradeIndexEligibility';
+import { isManuallyEnteredTrade } from '../upgrade/manualTradeNudge';
 import {
   TradeCommandService,
   TradeCommitEventBatch,
+  TradeCreationBatchFinalizationError,
   type TradeCreateOptions,
   type TradeCreationBatch,
   type TradeUpdateOptions,
@@ -979,6 +983,8 @@ class TradeCreationBatchImpl implements TradeCreationBatch {
     if (this.flushed) {
       try {
         await this.tradeService.finalizeCreatedTradeFiles([filePath]);
+      } catch (error) {
+        throw new TradeCreationBatchFinalizationError(error);
       } finally {
         this.tradeService.markCreatedTradeFinalized(filePath);
       }
@@ -1066,10 +1072,8 @@ export class TradeService extends CustomDataService {
       canonicalProjectionGeneration?: string;
     }
   >();
-  private tradeReviewQuestionWriteQueueByFile = new Map<
-    string,
-    Promise<void>
-  >();
+  
+  private tradeReviewWriteQueueByFile = new Map<string, Promise<void>>();
 
   
   private static getFolderPath(folderPathService: FolderPathService): string {
@@ -1863,6 +1867,10 @@ export class TradeService extends CustomDataService {
   private folderPathRefreshGeneration = 0;
   
   private vaultRenameBridgeRegistered: boolean = false;
+  
+  private manualTradeCreationTimes: number[] | null = null;
+  private unsubscribeManualTradeCacheInvalidation?: Unsubscribe;
+  private manualTradeCacheVaultEventsRegistered: boolean = false;
   private readonly managedTradeRenameKeys = new Set<string>();
 
   private getManagedTradeRenameKey(oldPath: string, newPath: string): string {
@@ -2498,6 +2506,33 @@ export class TradeService extends CustomDataService {
     }
 
     return count;
+  }
+
+  
+  public getManualTradeCreationTimes(): readonly number[] {
+    if (this.manualTradeCreationTimes) return this.manualTradeCreationTimes;
+
+    const creationTimes: number[] = [];
+
+    for (const file of this.getTrackedMarkdownFiles()) {
+      if (/-M\d+\.md$/.test(file.path)) continue;
+      const frontmatter =
+        this.app.metadataCache.getFileCache(file)?.frontmatter;
+      if (
+        frontmatter &&
+        isTradeIndexEligible(file, frontmatter, this.folderPathService) &&
+        isManuallyEnteredTrade(frontmatter)
+      ) {
+        creationTimes.push(file.stat.ctime);
+      }
+    }
+
+    this.manualTradeCreationTimes = creationTimes;
+    return creationTimes;
+  }
+
+  private invalidateManualTradeCreationTimes(): void {
+    this.manualTradeCreationTimes = null;
   }
 
   
@@ -3161,6 +3196,19 @@ export class TradeService extends CustomDataService {
           }
         })
       );
+    }
+
+    this.unsubscribeManualTradeCacheInvalidation?.();
+    this.unsubscribeManualTradeCacheInvalidation = eventBus.subscribe(
+      'trade:changed',
+      () => this.invalidateManualTradeCreationTimes()
+    );
+    if (!this.manualTradeCacheVaultEventsRegistered) {
+      this.manualTradeCacheVaultEventsRegistered = true;
+      const invalidate = () => this.invalidateManualTradeCreationTimes();
+      plugin.registerEvent(plugin.app.vault.on('create', invalidate));
+      plugin.registerEvent(plugin.app.vault.on('delete', invalidate));
+      plugin.registerEvent(plugin.app.vault.on('rename', invalidate));
     }
 
     this.unsubscribeOptions?.();
@@ -5257,24 +5305,22 @@ export class TradeService extends CustomDataService {
     }>,
     selectedOptionId?: string
   ): Promise<void> {
-    return this.runTradeReviewQuestionWrite(filePath, async () => {
+    return this.runTradeReviewWrite(filePath, async () => {
       const file = this.app.vault.getAbstractFileByPath(filePath);
       if (!(file instanceof TFile)) {
         throw new Error(`Invalid file path: ${filePath}`);
       }
 
-      const currentContent = await readFileContentForMutation(this.app, file);
-      const nextContent = upsertTradeReviewMarkdownQuestion({
-        content: currentContent,
-        questionId,
-        questionLabel,
-        value,
-        selectedOptionId,
-        questionOrder,
-      });
-      if (nextContent !== currentContent) {
-        await replaceFileContent(this.app, file, nextContent);
-      }
+      await transformFileContent(this.app, file, (currentContent) =>
+        upsertTradeReviewMarkdownQuestion({
+          content: currentContent,
+          questionId,
+          questionLabel,
+          value,
+          selectedOptionId,
+          questionOrder,
+        })
+      );
 
       await forceMetadataCacheRefresh(this.app, file);
       eventBus.publish('trade:changed', {
@@ -5290,23 +5336,20 @@ export class TradeService extends CustomDataService {
     });
   }
 
-  private async runTradeReviewQuestionWrite(
+  private async runTradeReviewWrite(
     filePath: string,
     write: () => Promise<void>
   ): Promise<void> {
     const previousWrite =
-      this.tradeReviewQuestionWriteQueueByFile.get(filePath) ??
-      Promise.resolve();
+      this.tradeReviewWriteQueueByFile.get(filePath) ?? Promise.resolve();
     const nextWrite = previousWrite.catch(() => undefined).then(write);
-    this.tradeReviewQuestionWriteQueueByFile.set(filePath, nextWrite);
+    this.tradeReviewWriteQueueByFile.set(filePath, nextWrite);
 
     try {
       await nextWrite;
     } finally {
-      if (
-        this.tradeReviewQuestionWriteQueueByFile.get(filePath) === nextWrite
-      ) {
-        this.tradeReviewQuestionWriteQueueByFile.delete(filePath);
+      if (this.tradeReviewWriteQueueByFile.get(filePath) === nextWrite) {
+        this.tradeReviewWriteQueueByFile.delete(filePath);
       }
     }
   }
@@ -5622,59 +5665,61 @@ export class TradeService extends CustomDataService {
     _source: string = 'unknown'
   ): Promise<void> {
     try {
-      
-      const file = this.app.vault.getAbstractFileByPath(filePath);
-      if (!file || !(file instanceof TFile)) {
-        throw new Error(`Invalid file path: ${filePath}`);
-      }
-
-      let shouldPublishCommittedChange = false;
-
-      await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-        if (!isRecord(frontmatter)) return;
-        const frontmatterRecord = frontmatter;
-        if (isTradeIdentityEligibleNote(frontmatterRecord, file.path)) {
-          const existingIdentity = getTradeIdentityFields(frontmatterRecord);
-          const tradeId =
-            existingIdentity.tradeId ??
-            buildTradeIdentityFields(frontmatterRecord).tradeId;
-          const schemaVersion = Math.max(
-            existingIdentity.schemaVersion ?? 0,
-            this.getTradeSchemaVersion()
-          );
-          const tradeRevision = this.tradeReadModel.getNextRevision(
-            tradeId,
-            this.getTradeRevisionValue(frontmatterRecord.tradeRevision) ?? 0
-          );
-
-          frontmatterRecord.tradeId = tradeId;
-          frontmatterRecord.schemaVersion = schemaVersion;
-          frontmatterRecord.tradeRevision = tradeRevision;
-          shouldPublishCommittedChange = true;
+      await this.runTradeReviewWrite(filePath, async () => {
+        
+        const file = this.app.vault.getAbstractFileByPath(filePath);
+        if (!file || !(file instanceof TFile)) {
+          throw new Error(`Invalid file path: ${filePath}`);
         }
 
-        frontmatterRecord.reviewed = reviewed;
-        if (reviewed) {
-          frontmatterRecord.reviewedAt = reviewedAt;
-        } else {
-          delete frontmatterRecord.reviewedAt;
-        }
-      });
+        let shouldPublishCommittedChange = false;
 
-      
-      await forceMetadataCacheRefresh(this.app, file);
-      if (shouldPublishCommittedChange) {
-        await this.publishCanonicalTradeCommit(filePath, 'updated', {
-          suppressLegacyTradeChanged: true,
+        await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
+          if (!isRecord(frontmatter)) return;
+          const frontmatterRecord = frontmatter;
+          if (isTradeIdentityEligibleNote(frontmatterRecord, file.path)) {
+            const existingIdentity = getTradeIdentityFields(frontmatterRecord);
+            const tradeId =
+              existingIdentity.tradeId ??
+              buildTradeIdentityFields(frontmatterRecord).tradeId;
+            const schemaVersion = Math.max(
+              existingIdentity.schemaVersion ?? 0,
+              this.getTradeSchemaVersion()
+            );
+            const tradeRevision = this.tradeReadModel.getNextRevision(
+              tradeId,
+              this.getTradeRevisionValue(frontmatterRecord.tradeRevision) ?? 0
+            );
+
+            frontmatterRecord.tradeId = tradeId;
+            frontmatterRecord.schemaVersion = schemaVersion;
+            frontmatterRecord.tradeRevision = tradeRevision;
+            shouldPublishCommittedChange = true;
+          }
+
+          frontmatterRecord.reviewed = reviewed;
+          if (reviewed) {
+            frontmatterRecord.reviewedAt = reviewedAt;
+          } else {
+            delete frontmatterRecord.reviewedAt;
+          }
         });
-      }
 
-      
-      eventBus.publish('trade:changed', {
-        action: 'review-status-updated',
-        filePaths: [filePath],
-        reviewed,
-        reviewedAt: reviewed ? reviewedAt : undefined,
+        
+        await forceMetadataCacheRefresh(this.app, file);
+        if (shouldPublishCommittedChange) {
+          await this.publishCanonicalTradeCommit(filePath, 'updated', {
+            suppressLegacyTradeChanged: true,
+          });
+        }
+
+        
+        eventBus.publish('trade:changed', {
+          action: 'review-status-updated',
+          filePaths: [filePath],
+          reviewed,
+          reviewedAt: reviewed ? reviewedAt : undefined,
+        });
       });
     } catch (error) {
       console.error(
@@ -6278,7 +6323,12 @@ export class TradeService extends CustomDataService {
       if (tradeImportId && tradeImportVersion !== undefined) {
         try {
           const plugin = getPluginInstance();
-          if (plugin) {
+          
+          
+          if (
+            plugin &&
+            !isServerDeletedTradeProjection(plugin, tradeImportId)
+          ) {
             const releaseDeletionIntent = registerTradeProjectionDeletionIntent(
               plugin,
               tradeImportId
@@ -6370,6 +6420,9 @@ export class TradeService extends CustomDataService {
   }
 
   public override async cleanup(): Promise<void> {
+    this.unsubscribeManualTradeCacheInvalidation?.();
+    this.unsubscribeManualTradeCacheInvalidation = undefined;
+    this.manualTradeCreationTimes = null;
     this.unsubscribeOptions?.();
     this.unsubscribeOptions = undefined;
     this.unsubscribeFolderPathChanged?.();

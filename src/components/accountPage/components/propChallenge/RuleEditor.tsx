@@ -1,4 +1,5 @@
 import React, { useId } from 'react';
+import { DraftInput } from '../../../ui/DraftInput';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import { t } from '../../../../lang/helpers';
 import type { PropChallengeRule } from '../../../../services/propChallenge/types';
@@ -252,7 +253,7 @@ function amountField(
   return (
     <label className="journalit-prop-challenge-field">
       <span>{t('account.prop-challenge.rule.amount')}</span>
-      <input
+      <DraftInput
         type="number"
         min="0"
         step="100"
@@ -405,7 +406,7 @@ function DailyLossLimitFields({
             <span>
               {t('account.prop-challenge.rule.profit-threshold-percent')}
             </span>
-            <input
+            <DraftInput
               type="number"
               min="0.1"
               step="0.1"
@@ -423,7 +424,7 @@ function DailyLossLimitFields({
             <span>
               {t('account.prop-challenge.rule.amount-after-threshold')}
             </span>
-            <input
+            <DraftInput
               type="number"
               min="0"
               step="100"
@@ -447,7 +448,7 @@ function DailyLossLimitFields({
           </p>
           <label className="journalit-prop-challenge-field">
             <span>{t('account.prop-challenge.rule.scale-at-balance')}</span>
-            <input
+            <DraftInput
               type="number"
               min="0"
               step="100"
@@ -467,7 +468,7 @@ function DailyLossLimitFields({
                 'account.prop-challenge.rule.scaled-percent-of-peak-eod-profit'
               )}
             </span>
-            <input
+            <DraftInput
               type="number"
               min="0.1"
               max="100"
@@ -493,7 +494,7 @@ function DailyLossLimitFields({
           </p>
           <label className="journalit-prop-challenge-field">
             <span>{t('account.prop-challenge.rule.loss-tiers')}</span>
-            <input
+            <DraftInput
               type="text"
               value={formatLossTiers(rule.lossTiers)}
               onChange={(event) =>
@@ -572,20 +573,24 @@ function MaxPositionSizeFields({
               'initialContracts' in rule ? rule.initialContracts : 1;
             const profitBasis =
               'maxContracts' in rule ? undefined : rule.profitBasis;
+            const base = {
+              id: rule.id,
+              enabled: rule.enabled,
+              kind: 'max_position_size' as const,
+              ...(rule.microsPerContract
+                ? { microsPerContract: rule.microsPerContract }
+                : {}),
+            };
             if (kind === 'fixed') {
               onChange({
-                id: rule.id,
-                enabled: rule.enabled,
-                kind: 'max_position_size',
+                ...base,
                 maxContracts: 'maxContracts' in rule ? rule.maxContracts : 1,
               });
               return;
             }
             if (kind === 'eod_profit_tiers') {
               onChange({
-                id: rule.id,
-                enabled: rule.enabled,
-                kind: 'max_position_size',
+                ...base,
                 initialContracts,
                 profitTiers: [
                   { profit: 1_500, maxContracts: initialContracts + 1 },
@@ -595,9 +600,7 @@ function MaxPositionSizeFields({
               return;
             }
             onChange({
-              id: rule.id,
-              enabled: rule.enabled,
-              kind: 'max_position_size',
+              ...base,
               initialContracts,
               profitPerAdditionalContract: 2_000,
               ...(profitBasis ? { profitBasis } : {}),
@@ -633,7 +636,7 @@ function MaxPositionSizeFields({
       {'maxContracts' in rule ? (
         <label className="journalit-prop-challenge-field">
           <span>{t('account.prop-challenge.rule.max-contracts')}</span>
-          <input
+          <DraftInput
             type="number"
             min="0"
             step="1"
@@ -688,7 +691,7 @@ function MaxPositionSizeFields({
           )}
           <label className="journalit-prop-challenge-field">
             <span>{t('account.prop-challenge.rule.initial-contracts')}</span>
-            <input
+            <DraftInput
               type="number"
               min="1"
               step="1"
@@ -709,7 +712,7 @@ function MaxPositionSizeFields({
               </p>
               <label className="journalit-prop-challenge-field">
                 <span>{t('account.prop-challenge.rule.position-tiers')}</span>
-                <input
+                <DraftInput
                   value={formatPositionTiers(rule.profitTiers)}
                   onChange={(event) =>
                     onChange({
@@ -727,7 +730,7 @@ function MaxPositionSizeFields({
                 <span>
                   {t('account.prop-challenge.rule.profit-per-contract')}
                 </span>
-                <input
+                <DraftInput
                   type="number"
                   min="1"
                   step="500"
@@ -747,7 +750,7 @@ function MaxPositionSizeFields({
                 <span>
                   {t('account.prop-challenge.rule.maximum-contracts')}
                 </span>
-                <input
+                <DraftInput
                   type="number"
                   min="1"
                   step="1"
@@ -771,6 +774,23 @@ function MaxPositionSizeFields({
           )}
         </>
       )}
+      <div className="journalit-prop-challenge-field">
+        <span>{t('account.prop-challenge.rule.micros-per-contract')}</span>
+        <Checkbox
+          checked={rule.microsPerContract === 10}
+          ariaLabel={t('account.prop-challenge.rule.micros-per-contract')}
+          onChange={(checked) => {
+            const next = { ...rule };
+            if (checked) next.microsPerContract = 10;
+            else delete next.microsPerContract;
+            onChange(next);
+          }}
+          disabled={disabled}
+        />
+      </div>
+      <p className="setting-item-description">
+        {t('account.prop-challenge.rule.micros-per-contract-help')}
+      </p>
     </>
   );
 }
@@ -883,7 +903,7 @@ function RuleEditorFields({
           {rule.mode !== 'static' && (
             <label className="journalit-prop-challenge-field">
               <span>{t('account.prop-challenge.rule.lock-at-balance')}</span>
-              <input
+              <DraftInput
                 type="number"
                 min="0"
                 step="100"
@@ -921,7 +941,7 @@ function RuleEditorFields({
       fields = (
         <label className="journalit-prop-challenge-field">
           <span>{t('account.prop-challenge.rule.days')}</span>
-          <input
+          <DraftInput
             type="number"
             min="0"
             step="1"
@@ -939,7 +959,7 @@ function RuleEditorFields({
         <>
           <label className="journalit-prop-challenge-field">
             <span>{t('account.prop-challenge.rule.days')}</span>
-            <input
+            <DraftInput
               type="number"
               min="0"
               step="1"
@@ -952,7 +972,7 @@ function RuleEditorFields({
           </label>
           <label className="journalit-prop-challenge-field">
             <span>{t('account.prop-challenge.rule.minimum-daily-profit')}</span>
-            <input
+            <DraftInput
               type="number"
               min="0"
               step="50"
@@ -976,7 +996,7 @@ function RuleEditorFields({
         <>
           <label className="journalit-prop-challenge-field">
             <span>{t('account.prop-challenge.rule.best-day-percent')}</span>
-            <input
+            <DraftInput
               type="number"
               min="0"
               step="1"
@@ -994,7 +1014,7 @@ function RuleEditorFields({
             <span>
               {t('account.prop-challenge.rule.consistency-cushion-percent')}
             </span>
-            <input
+            <DraftInput
               type="number"
               min="0"
               max="100"
@@ -1057,6 +1077,9 @@ export function RuleEditor({
   onRemove: () => void;
 }) {
   const contentId = useId();
+  const titleId = useId();
+  const summaryId = useId();
+  const ordinalId = useId();
   const { formatValue } = useDisplayFormatter();
   const title = t(`account.prop-challenge.rule.${rule.kind}`);
   const summary = getRuleSummary(rule, currencyCode, formatValue);
@@ -1077,13 +1100,22 @@ export function RuleEditor({
           ref={toggleRef}
           type="button"
           className="journalit-prop-challenge-rule-toggle"
-          aria-label={accessibleIdentity}
+          
+          
+          
+          aria-labelledby={`${titleId} ${ordinalId} ${summaryId}`}
           aria-expanded={expanded}
           aria-controls={contentId}
           onClick={onToggle}
         >
-          <strong>{title}</strong>
-          <span className="journalit-prop-challenge-rule-summary">
+          <strong id={titleId}>{title}</strong>
+          <span id={ordinalId} className="journalit-sr-only">
+            ({ordinal})
+          </span>
+          <span
+            id={summaryId}
+            className="journalit-prop-challenge-rule-summary"
+          >
             {summary}
           </span>
           {expanded ? (
@@ -1106,7 +1138,7 @@ export function RuleEditor({
           id={contentId}
           className="journalit-prop-challenge-rule-fields"
           role="region"
-          aria-label={accessibleIdentity}
+          aria-labelledby={`${titleId} ${ordinalId} ${summaryId}`}
         >
           {fields}
         </div>

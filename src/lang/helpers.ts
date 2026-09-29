@@ -11,9 +11,12 @@ import {
 
 
 type PluralBaseKey =
+  | 'account.merge.phase.broker-accounts'
+  | 'account.merge.review.phase-count'
   | 'validation.basic-tab-errors'
   | 'validation.details-tab-errors'
   | 'validation.advanced-tab-errors'
+  | 'form.manual-import-nudge.title'
   | 'notice.csv-symbol-mappings-created'
   | 'notice.trades-deleted'
   | 'notice.trades-duplicated'
@@ -70,7 +73,8 @@ type SupportedLanguageCode =
   | 'ko'
   | 'ru'
   | 'it'
-  | 'ta';
+  | 'ta'
+  | 'ar';
 
 const supportedLanguageCodes = new Set<string>([
   'en',
@@ -89,6 +93,7 @@ const supportedLanguageCodes = new Set<string>([
   'ru',
   'it',
   'ta',
+  'ar',
 ]);
 
 const loadedLocales: Partial<Record<SupportedLanguageCode, Partial<Lang>>> = {};

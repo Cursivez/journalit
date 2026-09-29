@@ -3,10 +3,8 @@ import { ACCOUNT_DASHBOARD_VIEW_TYPE } from '../views/AccountDashboardView';
 import {
   ACCOUNT_DASHBOARD_CHALLENGES_SELECTED_ACTION_ID,
   ACCOUNT_DASHBOARD_CREATE_BUTTON_TARGET_ID,
-  ACCOUNT_DASHBOARD_CHALLENGE_OVERVIEW_TARGET_ID,
   ACCOUNT_DASHBOARD_MAIN_GUIDE_ID,
   ACCOUNT_DASHBOARD_MODE_SWITCH_TARGET_ID,
-  ACCOUNT_DASHBOARD_SECTIONS_TARGET_ID,
   ACCOUNT_DASHBOARD_WHATS_NEW_PROP_CHALLENGES_GUIDE_ID,
 } from './accountDashboardGuideIds';
 import { GuideRegistry } from './GuideRegistry';
@@ -24,7 +22,7 @@ export function registerAccountDashboardWhatsNewPropChallengesGuide(
   guideRegistry.registerGuide({
     id: ACCOUNT_DASHBOARD_WHATS_NEW_PROP_CHALLENGES_GUIDE_ID,
     viewType: ACCOUNT_DASHBOARD_VIEW_TYPE,
-    version: 9,
+    version: 10,
     autoShow: true,
     priority: 105,
     replayGuideId: ACCOUNT_DASHBOARD_MAIN_GUIDE_ID,
@@ -37,66 +35,6 @@ export function registerAccountDashboardWhatsNewPropChallengesGuide(
         ),
         description: t(
           'account-dashboard.guide.whats-new.prop-challenges.intro.description'
-        ),
-        progression: 'manual',
-        placement: 'center',
-      },
-      {
-        id: 'enable-tracking',
-        title: t(
-          'account-dashboard.guide.whats-new.prop-challenges.enable.title'
-        ),
-        description: t(
-          'account-dashboard.guide.whats-new.prop-challenges.enable.description'
-        ),
-        progression: 'manual',
-        targetId: ACCOUNT_DASHBOARD_CREATE_BUTTON_TARGET_ID,
-      },
-      {
-        id: 'mode-switch',
-        title: t(
-          'account-dashboard.guide.whats-new.prop-challenges.mode.title'
-        ),
-        description: t(
-          'account-dashboard.guide.whats-new.prop-challenges.mode.description'
-        ),
-        progression: 'action-required',
-        targetId: ACCOUNT_DASHBOARD_MODE_SWITCH_TARGET_ID,
-        requiredActionId: ACCOUNT_DASHBOARD_CHALLENGES_SELECTED_ACTION_ID,
-        skipIfTargetMissing: true,
-      },
-      {
-        id: 'challenge-overview',
-        title: t(
-          'account-dashboard.guide.whats-new.prop-challenges.overview.title'
-        ),
-        description: t(
-          'account-dashboard.guide.whats-new.prop-challenges.overview.description'
-        ),
-        progression: 'manual',
-        targetId: ACCOUNT_DASHBOARD_CHALLENGE_OVERVIEW_TARGET_ID,
-        skipIfTargetMissing: true,
-      },
-      {
-        id: 'phase-ribbons',
-        title: t(
-          'account-dashboard.guide.whats-new.prop-challenges.ribbons.title'
-        ),
-        description: t(
-          'account-dashboard.guide.whats-new.prop-challenges.ribbons.description'
-        ),
-        progression: 'manual',
-        targetId: ACCOUNT_DASHBOARD_SECTIONS_TARGET_ID,
-        
-        skipIfTargetMissing: true,
-      },
-      {
-        id: 'account-page',
-        title: t(
-          'account-dashboard.guide.whats-new.prop-challenges.account-page.title'
-        ),
-        description: t(
-          'account-dashboard.guide.whats-new.prop-challenges.account-page.description'
         ),
         progression: 'manual',
         placement: 'center',
@@ -124,6 +62,30 @@ export function registerAccountDashboardWhatsNewPropChallengesGuide(
           const plugin = getPluginInstance();
           if (plugin) void markLegacyChallengeOnboarding(plugin, 'skipped');
         },
+      },
+      {
+        id: 'enable-tracking',
+        title: t(
+          'account-dashboard.guide.whats-new.prop-challenges.enable.title'
+        ),
+        description: t(
+          'account-dashboard.guide.whats-new.prop-challenges.enable.description'
+        ),
+        progression: 'manual',
+        targetId: ACCOUNT_DASHBOARD_CREATE_BUTTON_TARGET_ID,
+      },
+      {
+        id: 'mode-switch',
+        title: t(
+          'account-dashboard.guide.whats-new.prop-challenges.mode.title'
+        ),
+        description: t(
+          'account-dashboard.guide.whats-new.prop-challenges.mode.description'
+        ),
+        progression: 'action-required',
+        targetId: ACCOUNT_DASHBOARD_MODE_SWITCH_TARGET_ID,
+        requiredActionId: ACCOUNT_DASHBOARD_CHALLENGES_SELECTED_ACTION_ID,
+        skipIfTargetMissing: true,
       },
     ],
   });

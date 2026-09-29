@@ -1,22 +1,16 @@
 
 
 import React, { memo, useState, useEffect, useCallback, useRef } from 'react';
-import { isDiscreteCustomFieldFilterable } from '../../types/customFields';
-import { App, Modal, WorkspaceLeaf } from 'obsidian';
-import {
-  ViewLevel,
-  TradeLogFilters,
-  SELECTABLE_TRADE_TYPES_COUNT,
-  SELECTABLE_STATUSES_COUNT,
-} from '../../services/tradelog/types';
+import { App, WorkspaceLeaf } from 'obsidian';
+import { ViewLevel, TradeLogFilters } from '../../services/tradelog/types';
 import { DateRangeFilter } from '../dashboard/components/FilterControls/DateRangeFilter';
-import { FilterButton } from '../shared/FilterButton';
 import { SegmentedControl } from '../shared/SegmentedControl';
-import { openFilterModal, UnifiedFilters } from '../shared/filters';
-import type {
-  AvailableCustomFieldFilter,
-  AvailableImageFilterOptions,
-} from '../shared/filters/types';
+import type { UnifiedFilters } from '../shared/filters/types';
+import {
+  FilterMenuButton,
+  type LoadedFilterMenuOptions,
+} from '../shared/filters/menu/FilterMenu';
+import { loadTradeFilterMenuOptions } from '../shared/filters/menu/loadTradeFilterMenuOptions';
 import type { ImageGalleryService } from '../../services/imageGallery';
 import { TradeLogService } from '../../services/tradelog';
 import JournalitPlugin from '../../main';
@@ -54,8 +48,6 @@ import {
   TRADE_LOG_COLUMN_SETTINGS_BUTTON_TARGET_ID,
   TRADE_LOG_COLUMN_SETTINGS_OPENED_ACTION_ID,
   TRADE_LOG_FILTER_BUTTON_TARGET_ID,
-  TRADE_LOG_FILTER_MODAL_CLOSED_ACTION_ID,
-  TRADE_LOG_FILTER_MODAL_OPENED_ACTION_ID,
   TRADE_LOG_IMAGE_GALLERY_CONTROLS_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_GROUPING_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_MODE_BUTTON_TARGET_ID,
@@ -68,10 +60,10 @@ import {
   TRADE_LOG_MULTI_SELECT_BUTTON_TARGET_ID,
   TRADE_LOG_VIEW_SELECTOR_TARGET_ID,
 } from '../../guides/tradeLogGuideIds';
-import { useEventBus } from '../../hooks/useEventBus';
 import { ToolbarButton } from '../shared/ToolbarButton';
 import { DropdownMenu, type DropdownMenuOption } from '../shared/DropdownMenu';
 import { areSessionLogTagsActive } from './tradeLogStateUtils';
+import { useFilterMenuWhatsNewTour } from '../../guides/useFilterMenuWhatsNewTour';
 
 const VIEW_LEVELS: ReadonlySet<string> = new Set([
   'years',
@@ -377,14 +369,9 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
     onToggleMultiSelectMode,
     tradeOnly = false,
   }) => {
-    const [accounts, setAccounts] = useState<string[]>([]);
-    const isMountedRef = useRef(true);
     const [guideVersion, setGuideVersion] = useState(0);
 
-    const activeFilterModalRef = useRef<Modal | null>(null);
     const activeSettingsModalRef = useRef<TradeLogSettingsModal | null>(null);
-    const isClosingGuideFilterModalRef = useRef(false);
-    const isOpeningGuideFilterModalRef = useRef(false);
     const emitGuideAction = useGuideAction();
     const registerModeSelectorTarget = useGuideTarget(
       TRADE_LOG_MODE_SELECTOR_TARGET_ID
@@ -416,34 +403,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
     const registerColumnSettingsTarget = useGuideTarget(
       TRADE_LOG_COLUMN_SETTINGS_BUTTON_TARGET_ID
     );
-
-    const loadAccounts = useCallback(async (): Promise<
-      string[] | undefined
-    > => {
-      try {
-        const availableAccounts = await tradeLogService.getUniqueAccounts();
-        if (isMountedRef.current) {
-          setAccounts(availableAccounts);
-        }
-        return availableAccounts;
-      } catch (error) {
-        console.error(
-          '[TradeLogHeader] Failed to load account filter options:',
-          error
-        );
-        return undefined;
-      }
-    }, [tradeLogService]);
-
-    
-    useEffect(() => {
-      isMountedRef.current = true;
-      void loadAccounts();
-
-      return () => {
-        isMountedRef.current = false;
-      };
-    }, [loadAccounts]);
+    const filterMenuWhatsNew = useFilterMenuWhatsNewTour();
 
     useEffect(() => {
       if (!plugin.viewGuideService) {
@@ -454,19 +414,6 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
         setGuideVersion((prev) => prev + 1);
       });
     }, [plugin]);
-
-    useEventBus('trade:changed', () => {
-      void loadAccounts();
-    });
-    useEventBus('missed-trade:changed', () => {
-      void loadAccounts();
-    });
-    useEventBus('backtest-trade:changed', () => {
-      void loadAccounts();
-    });
-    useEventBus('account:changed', () => {
-      void loadAccounts();
-    });
 
     useEffect(() => {
       void guideVersion;
@@ -490,209 +437,43 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
       }
     }, [emitGuideAction, guideVersion, leaf, mode, plugin]);
 
-    
-    const getActiveFilterCount = (): number => {
-      let count = 0;
-      
-      if (
-        filters.tradeTypes &&
-        filters.tradeTypes.length > 0 &&
-        filters.tradeTypes.length < SELECTABLE_TRADE_TYPES_COUNT
-      )
-        count++;
-      if (
-        filters.statuses &&
-        filters.statuses.length > 0 &&
-        filters.statuses.length < SELECTABLE_STATUSES_COUNT
-      )
-        count++;
-      if (filters.accounts && filters.accounts.length > 0) count++;
-      if (filters.accountPhases && filters.accountPhases.length > 0) {
-        count += filters.accountPhases.length;
-      }
-      if (filters.tickers && filters.tickers.length > 0) count++;
-      if (filters.setups && filters.setups.length > 0) count++;
-      if (filters.tags && filters.tags.length > 0) count++;
-      if (filters.mistakes && filters.mistakes.length > 0) count++;
-      if (filters.reviewStatus && filters.reviewStatus.length > 0) count++;
-      if (filters.directions && filters.directions.length > 0) count++;
-      if (
-        areSessionLogTagsActive(mode, filters.viewLevel) &&
-        filters.sessionLogTags.length > 0
-      )
-        count++;
-      if (
-        filters.customFieldFilters &&
-        Object.values(filters.customFieldFilters).some(
-          (values) => values.length > 0
-        )
-      ) {
-        count += Object.values(filters.customFieldFilters).filter(
-          (values) => values.length > 0
-        ).length;
-      }
-      if (mode === 'imageGallery') {
-        if (filters.imageAnnotationStatus?.length) count++;
-        if (filters.imageTags?.length) count++;
-      }
-      return count;
-    };
+    const loadFilterMenuOptions = useCallback(
+      (): Promise<LoadedFilterMenuOptions> =>
+        loadTradeFilterMenuOptions({
+          plugin,
+          tradeLogService,
+          loadImageTags:
+            mode === 'imageGallery'
+              ? async () =>
+                  (await imageGalleryService.getAvailableFilterOptions()).tags
+              : undefined,
+          logPrefix: '[TradeLogHeader]',
+        }),
+      [imageGalleryService, mode, plugin, tradeLogService]
+    );
 
-    
-    const handleOpenFilterModal = useCallback(async () => {
-      if (
-        activeFilterModalRef.current ||
-        isOpeningGuideFilterModalRef.current
-      ) {
-        return;
-      }
+    const handleFilterMenuChange = useCallback(
+      (menuFilters: UnifiedFilters) => {
+        
+        onFilterChange({ ...filters, ...menuFilters });
+      },
+      [filters, onFilterChange]
+    );
 
-      isOpeningGuideFilterModalRef.current = true;
-
-      let availableCustomFieldFilters: AvailableCustomFieldFilter[] = [];
-      let availableImageFilterOptions: AvailableImageFilterOptions | undefined;
-      let availableAccounts = accounts;
-      const refreshedAccountsPromise = loadAccounts();
-
-      try {
-        availableCustomFieldFilters =
-          await tradeLogService.getAvailableCustomFieldFilters(
-            (plugin.customFieldsService?.getFields() || []).filter(
-              isDiscreteCustomFieldFilterable
-            )
-          );
-        if (mode === 'imageGallery') {
-          availableImageFilterOptions =
-            await imageGalleryService.getAvailableFilterOptions();
-        }
-      } catch (error) {
-        console.error('[TradeLogHeader] Failed to load filter options:', error);
-      }
-
-      const refreshedAccounts = await refreshedAccountsPromise;
-      if (refreshedAccounts) {
-        availableAccounts = refreshedAccounts;
-      }
-
-      if (activeFilterModalRef.current) {
-        isOpeningGuideFilterModalRef.current = false;
-        return;
-      }
-
-      const modal = openFilterModal({
-        app,
-        plugin,
-        context: 'tradelog',
-        currentFilters: {
-          accounts: filters.accounts || [],
-          accountPhases: filters.accountPhases || [],
-          tickers: filters.tickers || [],
-          setups: filters.setups || [],
-          tags: filters.tags || [],
-          mistakes: filters.mistakes || [],
-          tradeTypes: filters.tradeTypes || [],
-          statuses: filters.statuses || [],
-          reviewStatus: filters.reviewStatus || [],
-          directions: filters.directions || [],
-          sessionLogTags: filters.sessionLogTags || [],
-          customFieldFilters: filters.customFieldFilters || {},
-          imageAnnotationStatus: filters.imageAnnotationStatus || [],
-          imageTags: filters.imageTags || [],
-        },
-        availableAccounts,
-        availableCustomFieldFilters,
-        availableImageFilterOptions,
-        showImageFilters: mode === 'imageGallery',
-        showSessionLogFilters: areSessionLogTagsActive(mode, filters.viewLevel),
-        onApply: (newFilters: UnifiedFilters) => {
-          onFilterChange({
-            tradeTypes: newFilters.tradeTypes,
-            statuses: newFilters.statuses,
-            reviewStatus: newFilters.reviewStatus,
-            directions: newFilters.directions,
-            sessionLogTags: newFilters.sessionLogTags || [],
-            accounts: newFilters.accounts,
-            accountPhases: newFilters.accountPhases || [],
-            tickers: newFilters.tickers,
-            setups: newFilters.setups,
-            tags: newFilters.tags,
-            mistakes: newFilters.mistakes,
-            customFieldFilters: newFilters.customFieldFilters,
-            imageAnnotationStatus: newFilters.imageAnnotationStatus,
-            imageTags: newFilters.imageTags,
-          });
-        },
-        onClose: () => {
-          activeFilterModalRef.current = null;
-          isOpeningGuideFilterModalRef.current = false;
-          if (isClosingGuideFilterModalRef.current) {
-            isClosingGuideFilterModalRef.current = false;
-            return;
-          }
-          emitGuideAction(TRADE_LOG_FILTER_MODAL_CLOSED_ACTION_ID);
-        },
-      });
-
-      activeFilterModalRef.current = modal;
-      isOpeningGuideFilterModalRef.current = false;
-      emitGuideAction(TRADE_LOG_FILTER_MODAL_OPENED_ACTION_ID);
-    }, [
-      accounts,
-      app,
-      emitGuideAction,
-      filters,
-      imageGalleryService,
-      loadAccounts,
-      mode,
-      onFilterChange,
-      plugin,
-      tradeLogService,
-    ]);
-
-    useEffect(() => {
-      void guideVersion;
-
-      const guideService = plugin.viewGuideService;
-      if (!guideService) {
-        return;
-      }
-
-      const activeLeaf = guideService.getActiveLeaf();
-      if (!activeLeaf) {
-        return;
-      }
-
-      if (activeLeaf !== leaf) {
-        return;
-      }
-
-      const session = guideService.getSessionForLeaf(
-        activeLeaf,
-        'journalit-trade-log-view'
-      );
-      if (
-        !session ||
-        !TRADE_LOG_GUIDE_IDS_WITH_FILTER_MODAL.has(session.guideId)
-      ) {
-        return;
-      }
-
-      if (
-        session.currentStepId === 'filter-modal' ||
-        session.currentStepId === 'gallery-filter-modal'
-      ) {
-        if (!activeFilterModalRef.current) {
-          void handleOpenFilterModal();
-        }
-        return;
-      }
-
-      if (activeFilterModalRef.current) {
-        isClosingGuideFilterModalRef.current = true;
-        activeFilterModalRef.current.close();
-        activeFilterModalRef.current = null;
-      }
-    }, [guideVersion, handleOpenFilterModal, leaf, plugin]);
+    const filterMenuButton = (
+      <FilterMenuButton
+        plugin={plugin}
+        context="tradelog"
+        filters={filters}
+        onChange={handleFilterMenuChange}
+        loadOptions={loadFilterMenuOptions}
+        className="trade-log-image-gallery-filter-button"
+        showImageFilters={mode === 'imageGallery'}
+        showSessionLogFilters={areSessionLogTagsActive(mode, filters.viewLevel)}
+        onOpenChange={filterMenuWhatsNew.onOpenChange}
+        guideTour={filterMenuWhatsNew.guideTour}
+      />
+    );
 
     const handleOpenSettingsModal = useCallback(() => {
       if (activeSettingsModalRef.current?.modalEl.isConnected) {
@@ -754,18 +535,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
 
     const handleGuideBack = useCallback(
       ({ toStepId }: { toStepId: string }) => {
-        if (toStepId === 'filter-modal') {
-          activeSettingsModalRef.current?.closeWithoutUnsavedChangesCheck();
-          activeSettingsModalRef.current = null;
-          if (!activeFilterModalRef.current) {
-            void handleOpenFilterModal();
-          }
-          return;
-        }
-
         if (toStepId === 'active-columns' || toStepId === 'available-columns') {
-          activeFilterModalRef.current?.close();
-          activeFilterModalRef.current = null;
           if (!activeSettingsModalRef.current?.modalEl.isConnected) {
             handleOpenSettingsModal();
           }
@@ -775,7 +545,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
         activeSettingsModalRef.current?.closeWithoutUnsavedChangesCheck();
         activeSettingsModalRef.current = null;
       },
-      [handleOpenFilterModal, handleOpenSettingsModal]
+      [handleOpenSettingsModal]
     );
 
     useGuideBackHandler(handleGuideBack);
@@ -845,13 +615,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
                   className="trade-log-image-gallery-filter-action"
                   ref={registerFilterButtonTarget}
                 >
-                  <FilterButton
-                    onClick={() => {
-                      void handleOpenFilterModal();
-                    }}
-                    className="trade-log-image-gallery-filter-button"
-                    activeFilterCount={getActiveFilterCount()}
-                  />
+                  {filterMenuButton}
                 </div>
               }
               targetRef={registerImageGalleryControlsTarget}
@@ -880,15 +644,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
               </div>
             ) : null}
             {mode !== 'imageGallery' ? (
-              <div ref={registerFilterButtonTarget}>
-                <FilterButton
-                  onClick={() => {
-                    void handleOpenFilterModal();
-                  }}
-                  className="trade-log-image-gallery-filter-button"
-                  activeFilterCount={getActiveFilterCount()}
-                />
-              </div>
+              <div ref={registerFilterButtonTarget}>{filterMenuButton}</div>
             ) : null}
             {mode === 'trades' && filters.viewLevel === 'trades' && (
               <div

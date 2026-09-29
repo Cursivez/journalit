@@ -1,7 +1,5 @@
 
 
-import { App } from 'obsidian';
-import JournalitPlugin from '../../../main';
 import { TradeType, TradeStatus } from '../../../services/tradelog/types';
 import type {
   DirectionFilter,
@@ -13,8 +11,8 @@ import {
   CustomFieldFilterSelections,
   DropdownOption,
 } from '../../../types/customFields';
-
-type FilterContext = 'dashboard' | 'tradelog' | 'review';
+import type { FilterExclusions } from './filterExclusions';
+import type { FilterMatchModes } from './filterMatchModes';
 
 
 export interface UnifiedFilters {
@@ -55,6 +53,12 @@ export interface UnifiedFilters {
   customFieldFilters: CustomFieldFilterSelections;
 
   
+  exclusions: FilterExclusions;
+
+  
+  matchModes: FilterMatchModes;
+
+  
   imageAnnotationStatus?: ImageAnnotationStatusFilter[];
   imageTags?: string[];
 }
@@ -71,21 +75,4 @@ export interface AvailableImageFilterOptions {
 export interface AvailableCustomFieldFilter {
   field: CustomFieldDefinition;
   options: DropdownOption[];
-}
-
-export interface FilterModalProps {
-  app: App;
-  plugin: JournalitPlugin;
-  context: FilterContext;
-  currentFilters: UnifiedFilters;
-  onApply: (filters: UnifiedFilters) => void | Promise<void>;
-  onClose: () => void;
-  
-  availableAccounts?: string[];
-  
-  availableCustomFieldFilters?: AvailableCustomFieldFilter[];
-  
-  availableImageFilterOptions?: AvailableImageFilterOptions;
-  showImageFilters?: boolean;
-  showSessionLogFilters?: boolean;
 }

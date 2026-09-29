@@ -26,6 +26,7 @@ import {
   isExcalidrawMediaPath,
   resolveMediaDisplayPath,
 } from '../../../utils/imageMediaUtils';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -927,6 +928,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
                         void handleDeleteImage(index, imagePath);
                       }}
                       aria-label={t('widget.images.delete')}
+                      {...shareCaptureExcludeProps}
                     >
                       ×
                     </button>

@@ -403,7 +403,7 @@ export const KEY_EVENTS_WIDGET_STYLES = `
 
 .journalit-key-events .key-events-event-selector .combobox-input:focus {
   border-color: var(--interactive-accent);
-  box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent);
 }
 
 .journalit-key-events .key-events-event-selector .combobox-dropdown {
@@ -519,6 +519,7 @@ export const KEY_EVENTS_WIDGET_STYLES = `
 
 .journalit-key-events .key-events-add-button:hover:not(:disabled) {
   background: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
 }
 
 .journalit-key-events .key-events-add-button:disabled {
@@ -569,7 +570,7 @@ export const KEY_EVENTS_WIDGET_STYLES = `
 .journalit-key-events .key-events-item {
   padding: 7px 10px;
   border-radius: 0;
-  background: rgba(var(--background-secondary-rgb, 34, 34, 34), 0.72);
+  background: color-mix(in srgb, var(--background-secondary) 72%, transparent);
   border-left: 3px solid var(--journalit-key-events-color-gray);
   border-bottom: 1px solid var(--background-modifier-border-hover);
 }
@@ -720,6 +721,7 @@ export const KEY_EVENTS_WIDGET_STYLES = `
 
 .journalit-key-events .key-events-save-button:hover:not(:disabled) {
   background: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
 }
 
 .journalit-key-events .key-events-save-button:disabled {

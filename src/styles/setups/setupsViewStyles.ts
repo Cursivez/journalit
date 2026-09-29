@@ -164,6 +164,7 @@ export const SETUPS_VIEW_STYLES = `
 .journalit-setups-create-button:hover:not(:disabled),
 .journalit-setups-create-button:focus-visible:not(:disabled) {
   background: var(--interactive-accent-hover, var(--interactive-accent));
+  color: var(--text-on-accent);
 }
 
 .journalit-setups-create-button:disabled {
@@ -796,6 +797,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__metric-trig
 
 .journalit-setups-performance-widget__metric-dropdown .journalit-home-period-option--active .journalit-home-period-option__check {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
   border-color: var(--interactive-accent);
 }
 
@@ -1892,11 +1894,11 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 
 .journalit-setup-card--lifecycle-testing {
   border-style: dashed;
-  border-color: rgba(var(--interactive-accent-rgb, 139, 92, 246), 0.42);
+  border-color: color-mix(in srgb, var(--interactive-accent) 42%, transparent);
   background:
     linear-gradient(
       180deg,
-      rgba(var(--interactive-accent-rgb, 139, 92, 246), 0.06),
+      color-mix(in srgb, var(--interactive-accent) 6%, transparent),
       rgba(var(--mono-rgb-100), 0)
     ),
     color-mix(in srgb, var(--background-primary) 88%, black 12%);
@@ -1906,7 +1908,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   background:
     linear-gradient(
       180deg,
-      rgba(var(--interactive-accent-rgb, 139, 92, 246), 0.06),
+      color-mix(in srgb, var(--interactive-accent) 6%, transparent),
       transparent 42%
     ),
     var(--background-primary);
@@ -1915,7 +1917,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 .journalit-setup-card--lifecycle-testing .journalit-setup-card__title {
   color: var(--text-normal);
   text-decoration: underline;
-  text-decoration-color: rgba(var(--interactive-accent-rgb, 139, 92, 246), 0.56);
+  text-decoration-color: color-mix(in srgb, var(--interactive-accent) 56%, transparent);
   text-decoration-style: dotted;
   text-underline-offset: 4px;
 }
@@ -1946,11 +1948,11 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 
 .journalit-setup-card:hover,
 .journalit-setup-card:focus-visible {
-  border-color: rgba(var(--interactive-accent-rgb), 0.55);
+  border-color: color-mix(in srgb, var(--interactive-accent) 55%, transparent);
   background:
     linear-gradient(
       180deg,
-      rgba(var(--interactive-accent-rgb), 0.08),
+      color-mix(in srgb, var(--interactive-accent) 8%, transparent),
       rgba(var(--mono-rgb-100), 0)
     ),
     color-mix(in srgb, var(--background-primary) 88%, black 12%);
@@ -1960,7 +1962,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 .theme-light .journalit-setup-card:hover,
 .theme-light .journalit-setup-card:focus-visible {
   background:
-    linear-gradient(180deg, rgba(var(--interactive-accent-rgb), 0.07), transparent 42%),
+    linear-gradient(180deg, color-mix(in srgb, var(--interactive-accent) 7%, transparent), transparent 42%),
     var(--background-primary);
 }
 
@@ -1973,8 +1975,8 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   background:
     linear-gradient(
       180deg,
-      rgba(var(--interactive-accent-rgb), 0.12),
-      rgba(var(--interactive-accent-rgb), 0.02)
+      color-mix(in srgb, var(--interactive-accent) 12%, transparent),
+      color-mix(in srgb, var(--interactive-accent) 2%, transparent)
     ),
     var(--background-secondary);
 }
@@ -2282,6 +2284,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   height: 100%;
   border-radius: inherit;
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .journalit-setups-privacy-note {
@@ -2831,6 +2834,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 .journalit-setups-view .journalit-setups-rules-panel__empty-actions button.journalit-setups-button--primary:hover {
   border-color: var(--interactive-accent);
   background: color-mix(in srgb, var(--interactive-accent) 82%, var(--background-secondary));
+  color: var(--text-on-accent);
 }
 
 .journalit-setups-view .journalit-setups-rules-panel__empty-actions button.journalit-setups-button--ghost {
@@ -3554,6 +3558,7 @@ button.journalit-setups-detail-performance__tab--active {
 button.journalit-setups-detail-tab--active::after,
 button.journalit-setups-detail-performance__tab--active::after {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .journalit-setups-detail-tab__badge {
@@ -3646,6 +3651,7 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .journalit-setups-detail-performance__chart-mode-dropdown .journalit-home-period-option--active .journalit-home-period-option__check {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
   border-color: var(--interactive-accent);
 }
 
@@ -3697,6 +3703,7 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .journalit-setups-detail-performance__chart-mode-dropdown .journalit-home-period-option--active .journalit-home-period-option__check {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
   border-color: var(--interactive-accent);
 }
 

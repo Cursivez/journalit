@@ -1,6 +1,10 @@
 import { calculateEffectiveRMultiple } from './formatting';
 import { safeGetTime, safeParseDateValue } from './dateUtils';
 import { isTradeOpenWithContext } from './tradeStatusUtils';
+import {
+  type FilterExclusions,
+  hasFilterExclusions,
+} from '../components/shared/filters/filterExclusions';
 
 const MILLISECONDS_PER_DAY = 24 * 60 * 60 * 1000;
 
@@ -165,6 +169,7 @@ interface DrawdownCapitalBasisFilterScope {
   tradeTypes?: string[];
   statuses?: string[];
   customFieldFilters?: Record<string, unknown>;
+  exclusions?: FilterExclusions;
 }
 
 interface ResolveDrawdownCapitalBasisOptions {
@@ -254,7 +259,9 @@ const isNonAccountFilterActive = (
     Object.values(filters.customFieldFilters ?? {}).some((value) => {
       if (Array.isArray(value)) return value.length > 0;
       return value !== undefined && value !== null && value !== '';
-    })
+    }) ||
+    (filters.exclusions !== undefined &&
+      hasFilterExclusions(filters.exclusions))
   );
 };
 

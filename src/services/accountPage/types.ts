@@ -41,6 +41,8 @@ export interface AccountTradeData {
   
   canonicalAccountDisplayName?: string;
   assetType?: string;
+  
+  isMicroFutures?: boolean;
   optionType?: string;
   rMultiple?: number;
   riskAmount?: number;
@@ -117,6 +119,10 @@ export interface AccountMetrics {
   losingTrades: number;
   winRate: number;
   totalPnL: number;
+  
+  totalPnLRMultiple?: number;
+  
+  rMultipleTradeCount: number;
   avgWin: number;
   avgLoss: number;
   avgWinRMultiple?: number;

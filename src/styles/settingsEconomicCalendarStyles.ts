@@ -25,7 +25,7 @@ export const SETTINGS_ECONOMIC_CALENDAR_STYLES = `
   flex: 0 0 auto;
   padding: 1px 5px;
   border-radius: 3px;
-  background: var(--text-accent);
+  background: var(--interactive-accent);
   color: var(--text-on-accent, #ffffff);
   font-size: 10px;
   font-weight: 600;

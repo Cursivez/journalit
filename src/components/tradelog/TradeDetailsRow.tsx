@@ -34,6 +34,10 @@ import {
   getDaysToExpiry,
 } from '../../utils/dateUtils';
 import { Tooltip } from '../shared/Tooltip';
+import {
+  TradeRUnavailableHint,
+  WithTradeRUnavailableNote,
+} from '../shared/display/RMultipleUnavailableHint';
 import { ImageNavigationContext } from '../../types/image';
 import {
   getCurrentRealizedPnL,
@@ -125,6 +129,7 @@ type TradeWithPath = TradeLogTrade & {
   copiedToAccounts?: Array<{
     account: string;
     pnl: number;
+    rMultiple: number | undefined;
     multiplier: number;
   }>;
 };
@@ -378,6 +383,7 @@ const CopiedAccountsTooltipContent = memo<{
         {formatValue({
           kind: 'pnl',
           value: copyAccount.pnl,
+          rMultiple: copyAccount.rMultiple,
           currencyCode: currency,
         })}{' '}
         ({copyAccount.multiplier}x)
@@ -392,42 +398,62 @@ const PartialExitTooltipContent = memo<{
   currency: string;
   assetType?: string;
   totalDividends?: number;
+  
+  toRMultiple: (pnl: number) => number | undefined;
   formatValue: (options: DisplayValueOptions) => string;
-}>(({ partialInfo, currency, assetType, totalDividends = 0, formatValue }) => (
-  <div className="partial-exit-tooltip">
-    <div className="tooltip-title">{t('tradelog.tooltip.partial-exits')}</div>
-    {partialInfo.exits.map((exit, index) => (
-      <div
-        key={JSON.stringify([exit.time, exit.price, exit.size, index])}
-        className="tooltip-item"
-      >
-        • {formatValue({ kind: 'positionSize', value: exit.size })} @{' '}
+}>(
+  ({
+    partialInfo,
+    currency,
+    assetType,
+    totalDividends = 0,
+    toRMultiple,
+    formatValue,
+  }) => (
+    <div className="partial-exit-tooltip">
+      <div className="tooltip-title">{t('tradelog.tooltip.partial-exits')}</div>
+      {partialInfo.exits.map((exit, index) => (
+        <div
+          key={JSON.stringify([exit.time, exit.price, exit.size, index])}
+          className="tooltip-item"
+        >
+          • {formatValue({ kind: 'positionSize', value: exit.size })} @{' '}
+          {formatValue({
+            kind: 'price',
+            value: exit.price,
+            currencyCode: currency,
+            precision: assetType === 'forex' ? 5 : 2,
+          })}{' '}
+          ={' '}
+          {formatValue({
+            kind: 'pnl',
+            value: exit.pnl,
+            rMultiple: toRMultiple(exit.pnl),
+            currencyCode: currency,
+          })}
+        </div>
+      ))}
+      {totalDividends !== 0 && (
+        <div className="tooltip-item">
+          • {t('tradelog.column.dividends')} ={' '}
+          {formatValue({
+            kind: 'pnl',
+            value: totalDividends,
+            rMultiple: toRMultiple(totalDividends),
+            currencyCode: currency,
+          })}
+        </div>
+      )}
+      <div className="tooltip-item tooltip-remaining">
         {formatValue({
-          kind: 'price',
-          value: exit.price,
-          currencyCode: currency,
-          precision: assetType === 'forex' ? 5 : 2,
+          kind: 'positionSize',
+          value: partialInfo.remainingSize,
         })}{' '}
-        ={' '}
-        {formatValue({ kind: 'pnl', value: exit.pnl, currencyCode: currency })}
+        {t('tradelog.tooltip.still-open')}
       </div>
-    ))}
-    {totalDividends !== 0 && (
-      <div className="tooltip-item">
-        • {t('tradelog.column.dividends')} ={' '}
-        {formatValue({
-          kind: 'pnl',
-          value: totalDividends,
-          currencyCode: currency,
-        })}
-      </div>
-    )}
-    <div className="tooltip-item tooltip-remaining">
-      {formatValue({ kind: 'positionSize', value: partialInfo.remainingSize })}{' '}
-      {t('tradelog.tooltip.still-open')}
     </div>
-  </div>
-));
+  )
+);
 PartialExitTooltipContent.displayName = 'PartialExitTooltipContent';
 
 const GenericListTooltipContent = memo<{
@@ -736,6 +762,18 @@ const TradeDetailsContent = memo<{
       isUnknownCanonicalPnL,
       snapshotKeysClaimedByCustomFields,
     ]);
+
+    
+    const partialPnlToRMultiple = useCallback(
+      (pnl: number) =>
+        calculateEffectiveRMultiple(
+          pnl,
+          undefined,
+          trade.riskAmount,
+          defaultRiskAmount
+        ),
+      [trade.riskAmount, defaultRiskAmount]
+    );
 
     const totalDividends = useMemo(
       () => calculateTotalDividends(trade),
@@ -1298,7 +1336,14 @@ const TradeDetailsContent = memo<{
               return (
                 <div key="pnl" className="trade-pnl-cell">
                   <Tooltip
-                    content={openPnlTooltipContent}
+                    content={
+                      <WithTradeRUnavailableNote
+                        value={combinedOpenPnL}
+                        rMultiple={toOpenRMultiple(combinedOpenPnL)}
+                      >
+                        {openPnlTooltipContent}
+                      </WithTradeRUnavailableNote>
+                    }
                     delay={0}
                     preferredPosition="top"
                   >
@@ -1328,13 +1373,19 @@ const TradeDetailsContent = memo<{
                 <div key="pnl" className="trade-pnl-cell">
                   <Tooltip
                     content={
-                      <PartialExitTooltipContent
-                        partialInfo={partialExitInfo}
-                        currency={currency}
-                        assetType={trade.assetType}
-                        totalDividends={totalDividends}
-                        formatValue={formatValue}
-                      />
+                      <WithTradeRUnavailableNote
+                        value={partialPnL}
+                        rMultiple={partialRMultiple}
+                      >
+                        <PartialExitTooltipContent
+                          partialInfo={partialExitInfo}
+                          currency={currency}
+                          assetType={trade.assetType}
+                          totalDividends={totalDividends}
+                          toRMultiple={partialPnlToRMultiple}
+                          formatValue={formatValue}
+                        />
+                      </WithTradeRUnavailableNote>
                     }
                     delay={0}
                     preferredPosition="top"
@@ -1427,10 +1478,17 @@ const TradeDetailsContent = memo<{
               <div key="pnl" className="trade-pnl-cell">
                 {trade.isCopiedTrade && !isPnlMasked ? (
                   <Tooltip
-                    content={t('tradelog.copy-trade.tooltip', {
-                      account: trade.copiedFromAccount || '',
-                      multiplier: String(trade.copyMultiplier ?? ''),
-                    })}
+                    content={
+                      <WithTradeRUnavailableNote
+                        value={getMultipliedPnL}
+                        rMultiple={effectiveRMultiple}
+                      >
+                        {t('tradelog.copy-trade.tooltip', {
+                          account: trade.copiedFromAccount || '',
+                          multiplier: String(trade.copyMultiplier ?? ''),
+                        })}
+                      </WithTradeRUnavailableNote>
+                    }
                     delay={0}
                     preferredPosition="top"
                   >
@@ -1439,11 +1497,16 @@ const TradeDetailsContent = memo<{
                 ) : trade.copiedToAccounts?.length && !isPnlMasked ? (
                   <Tooltip
                     content={
-                      <CopiedAccountsTooltipContent
-                        copiedToAccounts={trade.copiedToAccounts}
-                        currency={currency}
-                        formatValue={formatValue}
-                      />
+                      <WithTradeRUnavailableNote
+                        value={getMultipliedPnL}
+                        rMultiple={effectiveRMultiple}
+                      >
+                        <CopiedAccountsTooltipContent
+                          copiedToAccounts={trade.copiedToAccounts}
+                          currency={currency}
+                          formatValue={formatValue}
+                        />
+                      </WithTradeRUnavailableNote>
                     }
                     delay={0}
                     preferredPosition="top"
@@ -1451,7 +1514,12 @@ const TradeDetailsContent = memo<{
                     {pnlContent}
                   </Tooltip>
                 ) : (
-                  pnlContent
+                  <TradeRUnavailableHint
+                    value={getMultipliedPnL}
+                    rMultiple={effectiveRMultiple}
+                  >
+                    {pnlContent}
+                  </TradeRUnavailableHint>
                 )}
               </div>
             );
@@ -2439,6 +2507,7 @@ const TradeDetailsContent = memo<{
         handleAdjustCopiedPnL,
         handleAdjustCopiedPnLKeyDown,
         partialExitInfo,
+        partialPnlToRMultiple,
         isExpandedMode,
         defaultRiskAmount,
         totalDividends,

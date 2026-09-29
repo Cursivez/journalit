@@ -323,37 +323,21 @@ interface HomeResponsiveGridProps {
 interface GridWidgetItemProps {
   widgetId: string;
   isEditing: boolean;
-  plugin: JournalitPlugin | null;
   children: React.ReactNode;
 }
 
 
 const GridWidgetItem = memo<GridWidgetItemProps>(
-  ({ widgetId, isEditing, plugin, children }) => {
+  ({ widgetId, isEditing, children }) => {
     const setRemoveButtonRef = useCallback(
       (button: HTMLButtonElement | null) => {
         if (!button || !isEditing) return;
 
         button.onclick = (event) => {
           event.stopPropagation();
-          if (!plugin?.settings.home) return;
-          const currentLayoutName =
-            plugin.settings.home.activeLayout || 'Default';
-          const currentLayouts =
-            plugin.settings.home.layouts[currentLayoutName];
-          if (!currentLayouts) return;
-
-          const prunedLayout: HomeLayout = {
-            lg: currentLayouts.lg?.filter((item) => item.i !== widgetId) || [],
-            md: currentLayouts.md?.filter((item) => item.i !== widgetId) || [],
-            sm: currentLayouts.sm?.filter((item) => item.i !== widgetId) || [],
-            xs: currentLayouts.xs?.filter((item) => item.i !== widgetId) || [],
-            xxs:
-              currentLayouts.xxs?.filter((item) => item.i !== widgetId) || [],
-          };
-          window.setTimeout(() => {
-            void saveLayout(plugin, currentLayoutName, prunedLayout);
-          }, 400);
+          
+          
+          
           window.activeDocument.dispatchEvent(
             new CustomEvent('journalit-home-grid-remove-widget', {
               detail: { widgetId },
@@ -366,7 +350,7 @@ const GridWidgetItem = memo<GridWidgetItemProps>(
           event.stopPropagation();
         };
       },
-      [isEditing, plugin, widgetId]
+      [isEditing, widgetId]
     );
 
     return (
@@ -432,9 +416,21 @@ const HomeWidgetContent: React.FC<{
     case 'aum':
       return <AUMWidget plugin={plugin} />;
     case 'drawdownMonitor':
-      return <DrawdownMonitorWidget plugin={plugin} />;
+      return (
+        <DrawdownMonitorWidget
+          plugin={plugin}
+          instanceId={widgetId}
+          isEditing={isEditing}
+        />
+      );
     case 'profitTarget':
-      return <ProfitTargetWidget plugin={plugin} />;
+      return (
+        <ProfitTargetWidget
+          plugin={plugin}
+          instanceId={widgetId}
+          isEditing={isEditing}
+        />
+      );
     case 'evalRoi':
       return <EvalRoiWidget plugin={plugin} />;
     case 'challengeAlerts':
@@ -515,11 +511,7 @@ const HomeResponsiveGrid: React.FC<HomeResponsiveGridProps> = ({
     >
       {widgets.map((widgetId) => (
         <div key={widgetId}>
-          <GridWidgetItem
-            widgetId={widgetId}
-            isEditing={isEditing}
-            plugin={plugin}
-          >
+          <GridWidgetItem widgetId={widgetId} isEditing={isEditing}>
             <HomeWidgetContent
               widgetId={widgetId}
               plugin={plugin}
@@ -828,7 +820,7 @@ function useHomeGridLayoutPersistence({
           });
         });
 
-        void saveLayout(plugin, 'Default', newLayout);
+        void saveLayout(plugin, newLayout);
       } catch (error) {
         console.error('Error saving layout in handleLayoutChange:', error);
       }
