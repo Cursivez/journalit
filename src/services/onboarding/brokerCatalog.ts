@@ -13,7 +13,7 @@ export type OnboardingSyncProviderId = 'metatrader' | BrokerSyncProviderId;
 export const MANUAL_IMPORT_BROKER_ID = 'MANUAL';
 
 
-const getBrokerLogo = (id: string): BrokerLogo | undefined =>
+export const getBrokerLogo = (id: string): BrokerLogo | undefined =>
   BROKER_LOGOS[id.toLowerCase()];
 
 export interface OnboardingBrokerOption {
@@ -35,6 +35,8 @@ interface SyncProviderDefinition {
   label: () => string;
   
   importBrokerIds: string[];
+  
+  partialImportBrokerIds?: string[];
   inferredAssetFocus: OnboardingAssetFocus;
 }
 
@@ -82,6 +84,7 @@ const SYNC_PROVIDERS: readonly SyncProviderDefinition[] = [
     id: 'metatrader',
     label: () => t('onboarding.broker.option.metatrader4.label'),
     importBrokerIds: [],
+    partialImportBrokerIds: ['METATRADER'],
     inferredAssetFocus: 'forex',
   },
 ];
@@ -101,6 +104,55 @@ export function getSyncProviderOptions(
       ...(logo ? { logo } : {}),
     };
   });
+}
+
+
+export interface TradeSyncSuggestion {
+  providerId: OnboardingSyncProviderId;
+  providerLabel: string;
+  
+  coverage: 'full' | 'partial';
+}
+
+export function getTradeSyncSuggestion(
+  importBrokerId: string
+): TradeSyncSuggestion | undefined {
+  const normalized = importBrokerId.toUpperCase();
+  for (const provider of SYNC_PROVIDERS) {
+    const coverage = provider.importBrokerIds.includes(normalized)
+      ? 'full'
+      : provider.partialImportBrokerIds?.includes(normalized)
+        ? 'partial'
+        : undefined;
+    if (coverage) {
+      return {
+        providerId: provider.id,
+        providerLabel: provider.label(),
+        coverage,
+      };
+    }
+  }
+  return undefined;
+}
+
+
+export function getSyncOnlyProviders(
+  importBrokerIds: ReadonlySet<string>
+): TradeSyncSuggestion[] {
+  const providers: TradeSyncSuggestion[] = [];
+  for (const provider of SYNC_PROVIDERS) {
+    const importable = [
+      ...provider.importBrokerIds,
+      ...(provider.partialImportBrokerIds ?? []),
+    ].some((id) => importBrokerIds.has(id));
+    if (importable) continue;
+    providers.push({
+      providerId: provider.id,
+      providerLabel: provider.label(),
+      coverage: 'full',
+    });
+  }
+  return providers;
 }
 
 

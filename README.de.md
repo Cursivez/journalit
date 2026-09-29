@@ -23,7 +23,8 @@ Local-first Trading-Journal für Obsidian.
   <a href="README.it.md">Italiano</a> |
   <a href="README.vi.md">Tiếng Việt</a> |
   <a href="README.hi.md">हिन्दी</a> |
-  <a href="README.ta.md">தமிழ்</a>
+  <a href="README.ta.md">தமிழ்</a> |
+  <a href="README.ar.md">العربية</a>
 </p>
 
 [Installation](#installation) · [Unterstützte Broker](#supported-brokers) · [Datenschutz](PRIVACY.md)

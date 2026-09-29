@@ -12,6 +12,7 @@ import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonCircle } from '../../shared/SkeletonCircle';
 import { t } from '../../../lang/helpers';
 import { mergeClassNames } from '../../../utils/classNames';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 interface MarkReviewedWidgetProps {
   filePath: string;
@@ -358,6 +359,7 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
       </div>
 
       <button
+        {...shareCaptureExcludeProps}
         onClick={() => void toggleReviewStatus()}
         disabled={preview}
         className={mergeClassNames('journalit-native-button', buttonClassName)}

@@ -1,3 +1,4 @@
+import { t } from '../../lang/helpers';
 import { generateUUID } from '../../utils/uuid';
 import type { AccountMetadata, CopyTradingPeriod } from '../../settings/types';
 import { normalizeAccountLookupKey } from '../trade/core/TradeAccountIdentity';
@@ -117,6 +118,7 @@ export function planAccountMerge(
       now,
       profilePhase,
       profilePhaseIndex: index,
+      convertsSingleAccount: sources.length === 1,
     });
   });
   const phases: PropChallengePhase[] = [...sourcePhases];
@@ -403,6 +405,12 @@ function assignBrokerIdentities(sources: readonly AccountMergeSourceInput[]): {
   return { idsBySource, warnings };
 }
 
+const STAGE_NAME_KEYS = {
+  evaluation: 'account.prop-challenge.stage.evaluation',
+  sim_funded: 'account.prop-challenge.stage.sim-funded',
+  live_funded: 'account.prop-challenge.stage.live-funded',
+} as const;
+
 function buildPhase({
   source,
   isLast,
@@ -412,6 +420,7 @@ function buildPhase({
   now,
   profilePhase,
   profilePhaseIndex,
+  convertsSingleAccount,
 }: {
   source: AccountMergeSourceInput;
   isLast: boolean;
@@ -421,12 +430,15 @@ function buildPhase({
   now: Date;
   profilePhase: PropFirmProfilePhase | undefined;
   profilePhaseIndex: number;
+  convertsSingleAccount: boolean;
 }): PropChallengePhase {
   const status =
     source.status ?? (isLast ? ('active' as const) : ('passed' as const));
   const phase: PropChallengePhase = profilePhase
     ? {
         ...buildPhaseFromProfilePhase(profilePhase, profilePhaseIndex),
+        
+        ...(source.rules ? { rules: source.rules } : {}),
         name: source.phaseName ?? profilePhase.name,
         stage: source.stage ?? profilePhase.stage,
         status,
@@ -437,7 +449,13 @@ function buildPhase({
       }
     : {
         id: generateUUID(),
-        name: source.phaseName ?? source.accountName,
+        
+        
+        name:
+          source.phaseName ??
+          (convertsSingleAccount
+            ? t(STAGE_NAME_KEYS[source.stage ?? 'evaluation'])
+            : source.accountName),
         stage: source.stage ?? 'evaluation',
         status,
         startingBalance:

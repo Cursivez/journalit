@@ -5,7 +5,7 @@ export const METRIC_CARD_SKELETON_STYLES = `
   background: transparent;
   padding: 14px;
   border-radius: 8px;
-  border: 1px solid rgba(var(--background-modifier-border-rgb, 0, 0, 0), 0.08);
+  border: 1px solid color-mix(in srgb, var(--text-normal) 8%, transparent);
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.08);
   display: flex;
   flex-direction: column;

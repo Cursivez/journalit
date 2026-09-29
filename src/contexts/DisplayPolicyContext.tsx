@@ -35,20 +35,27 @@ const DisplayPolicyContext = createContext<DisplayPolicyContextValue | null>(
 interface DisplayPolicyProviderProps {
   children?: ReactNode;
   privacyModeOverride?: boolean;
+  
+  hideDollarAmounts?: boolean;
 }
 
 export const DisplayPolicyProvider: React.FC<DisplayPolicyProviderProps> = ({
   children,
   privacyModeOverride,
+  hideDollarAmounts,
 }) => {
   const plugin = usePlugin();
   const createCurrentPolicy = useCallback(() => {
     const settings = plugin?.settings ?? getPluginInstance()?.settings ?? {};
     const currentPolicy = createDisplayPolicy(settings);
-    return privacyModeOverride === undefined
-      ? currentPolicy
-      : { ...currentPolicy, privacyMode: privacyModeOverride };
-  }, [plugin, privacyModeOverride]);
+    return {
+      ...currentPolicy,
+      ...(privacyModeOverride === undefined
+        ? {}
+        : { privacyMode: privacyModeOverride }),
+      ...(hideDollarAmounts ? { hideDollarAmounts } : {}),
+    };
+  }, [plugin, privacyModeOverride, hideDollarAmounts]);
 
   const [policy, setPolicy] = useState<DisplayPolicy>(createCurrentPolicy);
 
@@ -69,7 +76,7 @@ export const DisplayPolicyProvider: React.FC<DisplayPolicyProviderProps> = ({
   const pluginAvailable = Boolean(plugin);
   useEffect(() => {
     refreshPolicyRef.current();
-  }, [pluginAvailable, privacyModeOverride]);
+  }, [pluginAvailable, privacyModeOverride, hideDollarAmounts]);
 
   useEffect(() => {
     const refreshCurrentPolicy = () => {

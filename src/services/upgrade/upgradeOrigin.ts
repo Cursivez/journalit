@@ -7,32 +7,44 @@ import {
 } from '../../constants';
 
 
-export type OnboardingUpgradeFeature = Extract<
-  UpgradeFeature,
-  'csvImport' | 'metatraderSync'
->;
+interface UpgradeOriginSurfaces {
+  onboarding: Extract<UpgradeFeature, 'csvImport' | 'metatraderSync'>;
+  manualTradeNudge: Extract<UpgradeFeature, 'csvImport'>;
+}
+
+type UpgradeOrigin = keyof UpgradeOriginSurfaces;
 
 
-let pendingOrigin: OnboardingUpgradeFeature | null = null;
+type MarkableUpgradeFeature = UpgradeOriginSurfaces[UpgradeOrigin];
 
-export function markOnboardingUpgradeOrigin(
-  feature: OnboardingUpgradeFeature
-): void {
-  pendingOrigin = feature;
+interface PendingUpgradeOrigin {
+  origin: UpgradeOrigin;
+  feature: MarkableUpgradeFeature;
 }
 
 
-export function clearOnboardingUpgradeOrigin(
-  feature?: OnboardingUpgradeFeature
+let pending: PendingUpgradeOrigin | null = null;
+
+export function markUpgradeOrigin<O extends UpgradeOrigin>(
+  origin: O,
+  feature: UpgradeOriginSurfaces[O]
 ): void {
-  if (feature !== undefined && pendingOrigin !== feature) return;
-  pendingOrigin = null;
+  pending = { origin, feature };
+}
+
+
+export function clearUpgradeOrigin(feature?: MarkableUpgradeFeature): void {
+  if (feature !== undefined && pending?.feature !== feature) return;
+  pending = null;
 }
 
 
 export function resolveUpgradeUrl(feature: UpgradeFeature): string {
-  if (pendingOrigin !== feature) return buildUpgradeUrl(feature);
+  if (pending === null || pending.feature !== feature) {
+    return buildUpgradeUrl(feature);
+  }
 
-  pendingOrigin = null;
-  return buildUpgradeUrl(feature, UPGRADE_CAMPAIGNS.onboarding);
+  const { origin } = pending;
+  pending = null;
+  return buildUpgradeUrl(feature, UPGRADE_CAMPAIGNS[origin]);
 }

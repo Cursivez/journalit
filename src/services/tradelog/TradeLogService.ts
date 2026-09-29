@@ -74,6 +74,16 @@ import {
 } from '../trade/core/BreakEvenAccountBalance';
 import { applyTradeFilters } from '../../components/shared/filters/filterUtils';
 import {
+  createFilterExclusions,
+  type FilterExclusions,
+  getFilterExclusionsCacheKey,
+} from '../../components/shared/filters/filterExclusions';
+import {
+  createFilterMatchModes,
+  type FilterMatchModes,
+  getFilterMatchModesCacheKey,
+} from '../../components/shared/filters/filterMatchModes';
+import {
   accountsRequiringCopiedRows,
   resolveAccountPhaseWindowsFromPlugin,
 } from '../../components/shared/filters/accountPhaseScope';
@@ -193,6 +203,8 @@ type TradeLogData = PartialTradeFrontmatter &
     copiedToAccounts?: Array<{
       account: string;
       pnl: number;
+      
+      rMultiple: number | undefined;
       multiplier: number;
     }>;
   };
@@ -220,6 +232,8 @@ interface HierarchicalQueryParams {
   customFieldFilters?: CustomFieldFilterSelections;
   operationFilePaths?: string[];
   accountPhases?: AccountPhaseScope[];
+  exclusions: FilterExclusions;
+  matchModes: FilterMatchModes;
 }
 
 function normalizeCustomFieldFilterValue(value: unknown): string | null {
@@ -570,6 +584,7 @@ export class TradeLogService {
                 ? String(copiedRow.account[0] || '')
                 : String(copiedRow.account || ''),
               pnl: this.getResolvedTradePnL(copiedRow),
+              rMultiple: copiedRow.rMultiple,
               multiplier: copiedRow.copyMultiplier ?? 0,
             })),
           }
@@ -854,6 +869,8 @@ export class TradeLogService {
         query.analyticsDateBasis,
         query.operationFilePaths,
         query.accountPhases,
+        query.exclusions,
+        query.matchModes,
         retryCount + 1
       );
     }
@@ -882,6 +899,8 @@ export class TradeLogService {
     analyticsDateBasis?: AnalyticsDateBasis,
     operationFilePaths?: string[],
     accountPhases?: AccountPhaseScope[],
+    exclusions: FilterExclusions = createFilterExclusions(),
+    matchModes: FilterMatchModes = createFilterMatchModes(),
     retryCount: number = 0
   ): Promise<TimeNode[]> {
     
@@ -918,6 +937,8 @@ export class TradeLogService {
       customFieldFilters,
       operationFilePaths,
       accountPhases,
+      exclusions,
+      matchModes,
     };
 
     const requestRevisionToken = this.tradeCommitRevisionToken;
@@ -931,7 +952,7 @@ export class TradeLogService {
             .map((scope) => `${scope.account}\0${scope.phaseId}`)
             .sort()
             .join(',');
-    const cacheKey = `v${this.CACHE_VERSION}-r${requestRevisionToken}-copy${includeCopyAccountsInAllAccounts}-${viewLevel}-${startDate?.toISOString()}-${endDate?.toISOString()}-${analyticsDateBasis ?? 'calendar-entry'}-${normalizeFilterArray(tradeTypes)}-${normalizeFilterArray(statuses)}-${normalizeFilterArray(reviewStatus)}-${normalizeFilterArray(directions)}-${normalizeFilterArray(sessionLogTags)}-${normalizeFilterArray(accounts)}-${normalizeFilterArray(tickers)}-${normalizeFilterArray(setups)}-${normalizeFilterArray(tags)}-${normalizeFilterArray(mistakes)}-${normalizeCustomFieldFilters(customFieldFilters)}-${normalizeFilterArray(operationFilePaths)}-${accountPhaseCacheKey}`;
+    const cacheKey = `v${this.CACHE_VERSION}-r${requestRevisionToken}-copy${includeCopyAccountsInAllAccounts}-${viewLevel}-${startDate?.toISOString()}-${endDate?.toISOString()}-${analyticsDateBasis ?? 'calendar-entry'}-${normalizeFilterArray(tradeTypes)}-${normalizeFilterArray(statuses)}-${normalizeFilterArray(reviewStatus)}-${normalizeFilterArray(directions)}-${normalizeFilterArray(sessionLogTags)}-${normalizeFilterArray(accounts)}-${normalizeFilterArray(tickers)}-${normalizeFilterArray(setups)}-${normalizeFilterArray(tags)}-${normalizeFilterArray(mistakes)}-${normalizeCustomFieldFilters(customFieldFilters)}-${normalizeFilterArray(operationFilePaths)}-${accountPhaseCacheKey}-${getFilterExclusionsCacheKey(exclusions)}-${getFilterMatchModesCacheKey(matchModes)}`;
     const now = Date.now();
 
     
@@ -977,6 +998,8 @@ export class TradeLogService {
       reviewStatus: reviewStatus || [],
       directions: directions || [],
       customFieldFilters: customFieldFilters || {},
+      exclusions,
+      matchModes,
     });
     if (startDate || endDate || analyticsDateBasis === 'exit') {
       filteredTrades = this.filterTradesByDateRange(

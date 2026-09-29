@@ -56,6 +56,7 @@ class EditEventModal extends Modal {
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
+    this.modalEl.addClass('journalit-modal');
 
     
     this.container = contentEl.createDiv({ cls: 'add-event-modal-container' });

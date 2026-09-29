@@ -17,6 +17,9 @@ export function registerEconomicCalendarMainGuide(
     viewType: ECONOMIC_CALENDAR_VIEW_TYPE,
     version: 2,
     autoShow: true,
+    
+    
+    resolvedByView: true,
     priority: 100,
     initialStepId: 'intro',
     steps: [

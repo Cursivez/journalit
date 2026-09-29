@@ -6,6 +6,7 @@ import {
   getFirstEntryTime,
 } from '../../../utils/tradeStatusUtils';
 import { getTradingDayString } from '../../../utils/tradingDayUtils';
+import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 
 const BEST_HOURS_BUCKET_MINUTES = 30;
 const BEST_HOURS_MIN_RANKING_TRADES = 10;
@@ -28,6 +29,8 @@ export interface BucketStats {
   bucket: TimeBucket;
   netPnl: number;
   averagePnl: number | null;
+  
+  averageR: number | null;
   tradeCount: number;
   distinctDayCount: number;
   wins: number;
@@ -44,6 +47,7 @@ interface TradeObservation {
   occurredAt: Date;
   tradingDay: string;
   pnl: number;
+  rMultiple: number | undefined;
   outcome: 'win' | 'loss' | 'breakeven';
 }
 
@@ -51,6 +55,7 @@ interface PluginWithTradeSettings {
   settings?: {
     trade?: BreakEvenRangeSettings & {
       tradingDayCutoffTime?: string;
+      defaultRiskAmount?: number;
     };
   };
 }
@@ -126,6 +131,12 @@ const buildEntryObservations = (
         occurredAt,
         tradingDay: getTradingDayString(occurredAt, plugin ?? undefined),
         pnl,
+        rMultiple: calculateEffectiveRMultiple(
+          pnl,
+          trade.rMultiple,
+          trade.riskAmount,
+          plugin?.settings?.trade?.defaultRiskAmount
+        ),
         outcome: rawOutcome === 'unknown' ? 'breakeven' : rawOutcome,
       },
     ];
@@ -173,6 +184,8 @@ export const aggregateEntryTimeBuckets = ({
     string,
     {
       netPnl: number;
+      totalR: number;
+      rTradeCount: number;
       tradeKeys: Set<string>;
       tradingDays: Set<string>;
       wins: number;
@@ -184,6 +197,8 @@ export const aggregateEntryTimeBuckets = ({
       bucket.id,
       {
         netPnl: 0,
+        totalR: 0,
+        rTradeCount: 0,
         tradeKeys: new Set<string>(),
         tradingDays: new Set<string>(),
         wins: 0,
@@ -202,6 +217,10 @@ export const aggregateEntryTimeBuckets = ({
     if (!bucketStats) continue;
 
     bucketStats.netPnl += observation.pnl;
+    if (observation.rMultiple !== undefined) {
+      bucketStats.totalR += observation.rMultiple;
+      bucketStats.rTradeCount += 1;
+    }
     bucketStats.tradeKeys.add(observation.tradeKey);
     bucketStats.tradingDays.add(observation.tradingDay);
     if (observation.outcome === 'win') {
@@ -236,6 +255,8 @@ export const aggregateEntryTimeBuckets = ({
         bucket,
         netPnl: stats.netPnl,
         averagePnl: tradeCount > 0 ? stats.netPnl / tradeCount : null,
+        averageR:
+          stats.rTradeCount > 0 ? stats.totalR / stats.rTradeCount : null,
         tradeCount,
         distinctDayCount,
         wins: stats.wins,
@@ -250,26 +271,37 @@ export const aggregateEntryTimeBuckets = ({
   };
 };
 
-const selectBestPositiveBucket = (stats: BucketStats[]): BucketStats | null => {
-  const positiveBuckets = stats.filter(
-    (bucket) => bucket.averagePnl !== null && bucket.averagePnl > 0
-  );
+
+export const getBucketDisplayAverage = (
+  bucket: BucketStats,
+  displayRMultiples: boolean
+): number | null => (displayRMultiples ? bucket.averageR : bucket.averagePnl);
+
+const selectBestPositiveBucket = (
+  stats: BucketStats[],
+  displayRMultiples: boolean
+): BucketStats | null => {
+  const positiveBuckets = stats.flatMap((bucket) => {
+    const average = getBucketDisplayAverage(bucket, displayRMultiples);
+    return average !== null && average > 0 ? [{ bucket, average }] : [];
+  });
 
   if (positiveBuckets.length === 0) {
     return null;
   }
 
   return positiveBuckets.reduce((best, current) =>
-    current.averagePnl! > best.averagePnl! ? current : best
-  );
+    current.average > best.average ? current : best
+  ).bucket;
 };
 
 export const selectBestEntryWindow = (
-  stats: BucketStats[]
+  stats: BucketStats[],
+  displayRMultiples = false
 ): BucketStats | null => {
   const reliableBuckets = stats.filter((bucket) => bucket.isRankingEligible);
   if (reliableBuckets.length >= BEST_HOURS_MIN_ELIGIBLE_BUCKETS) {
-    return selectBestPositiveBucket(reliableBuckets);
+    return selectBestPositiveBucket(reliableBuckets, displayRMultiples);
   }
 
   const developingBuckets = stats.filter(
@@ -279,5 +311,5 @@ export const selectBestEntryWindow = (
     return null;
   }
 
-  return selectBestPositiveBucket(developingBuckets);
+  return selectBestPositiveBucket(developingBuckets, displayRMultiples);
 };

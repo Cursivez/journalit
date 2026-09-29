@@ -3,8 +3,6 @@ import { ACCOUNT_PAGE_VIEW_TYPE } from '../views/AccountPageView';
 import {
   ACCOUNT_PAGE_CHALLENGE_SECTION_TARGET_ID,
   ACCOUNT_PAGE_MAIN_GUIDE_ID,
-  ACCOUNT_PAGE_PAYOUT_SECTION_TARGET_ID,
-  ACCOUNT_PAGE_SUMMARY_BAND_TARGET_ID,
   ACCOUNT_PAGE_WHATS_NEW_COCKPIT_GUIDE_ID,
 } from './accountPageGuideIds';
 import { GuideRegistry } from './GuideRegistry';
@@ -22,7 +20,7 @@ export function registerAccountPageWhatsNewCockpitGuide(
   guideRegistry.registerGuide({
     id: ACCOUNT_PAGE_WHATS_NEW_COCKPIT_GUIDE_ID,
     viewType: ACCOUNT_PAGE_VIEW_TYPE,
-    version: 10,
+    version: 11,
     autoShow: true,
     priority: 105,
     replayGuideId: ACCOUNT_PAGE_MAIN_GUIDE_ID,
@@ -39,18 +37,6 @@ export function registerAccountPageWhatsNewCockpitGuide(
       },
       {
         
-        
-        id: 'summary',
-        title: t('account-page.guide.whats-new.cockpit.summary.title'),
-        description: t(
-          'account-page.guide.whats-new.cockpit.summary.description'
-        ),
-        progression: 'manual',
-        targetId: ACCOUNT_PAGE_SUMMARY_BAND_TARGET_ID,
-        skipIfTargetMissing: true,
-      },
-      {
-        
         id: 'cockpit',
         title: t('account-page.guide.whats-new.cockpit.cockpit.title'),
         description: t(
@@ -59,32 +45,6 @@ export function registerAccountPageWhatsNewCockpitGuide(
         progression: 'manual',
         targetId: ACCOUNT_PAGE_CHALLENGE_SECTION_TARGET_ID,
         skipIfTargetMissing: true,
-      },
-      {
-        id: 'payout-readiness',
-        title: t('account-page.guide.whats-new.cockpit.payout.title'),
-        description: t(
-          'account-page.guide.whats-new.cockpit.payout.description'
-        ),
-        progression: 'manual',
-        targetId: ACCOUNT_PAGE_PAYOUT_SECTION_TARGET_ID,
-        skipIfTargetMissing: true,
-      },
-      {
-        
-        
-        id: 'risk-authority',
-        title: t('account-page.guide.whats-new.cockpit.risk.title'),
-        description: t('account-page.guide.whats-new.cockpit.risk.description'),
-        progression: 'manual',
-        placement: 'center',
-      },
-      {
-        id: 'profile-library',
-        title: t('account.profiles.library'),
-        description: `${t('account.profiles.guide')} ${t('account.profiles.correction-guide')}`,
-        progression: 'manual',
-        placement: 'center',
       },
       {
         

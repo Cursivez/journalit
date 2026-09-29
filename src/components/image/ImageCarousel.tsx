@@ -13,8 +13,78 @@ import {
 } from '../../utils/imageMediaUtils';
 import { ExcalidrawMediaEmbed } from './ExcalidrawMediaEmbed';
 import { MediaPreview } from './MediaPreview';
+import {
+  isInShareEagerMediaArea,
+  shareCaptureExcludeProps,
+  shareLoadingProps,
+} from '../../services/share/brandedCapture';
 
 
+
+type ClickHandler = (e: React.MouseEvent) => void;
+
+
+const CarouselOverlayControls: React.FC<{
+  onDelete?: ClickHandler;
+  onAnnotate?: ClickHandler;
+  isAnnotated: boolean;
+  onPrevious?: ClickHandler;
+  onNext?: ClickHandler;
+}> = ({ onDelete, onAnnotate, isAnnotated, onPrevious, onNext }) => (
+  <>
+    {onDelete && (
+      <button
+        onClick={onDelete}
+        type="button"
+        {...shareCaptureExcludeProps}
+        className="journalit-carousel-delete"
+        aria-label={t('image.viewer.delete-button')}
+      >
+        ×
+      </button>
+    )}
+
+    {onAnnotate && (
+      <button
+        onClick={onAnnotate}
+        type="button"
+        {...shareCaptureExcludeProps}
+        className={`journalit-carousel-annotate${
+          isAnnotated ? ' is-annotated' : ''
+        }`}
+      >
+        <Tag size={15} strokeWidth={2.25} />
+        <span className="journalit-carousel-annotate__accessible-label">
+          {t('imageGallery.annotation.editor-title')}
+        </span>
+      </button>
+    )}
+
+    {onPrevious && (
+      <button
+        onClick={onPrevious}
+        aria-label={t('image.carousel.prev')}
+        type="button"
+        {...shareCaptureExcludeProps}
+        className="journalit-carousel-overlay-button journalit-carousel-overlay-button--prev"
+      >
+        <LeftArrow size={18} strokeWidth={2.25} />
+      </button>
+    )}
+
+    {onNext && (
+      <button
+        onClick={onNext}
+        aria-label={t('image.carousel.next')}
+        type="button"
+        {...shareCaptureExcludeProps}
+        className="journalit-carousel-overlay-button journalit-carousel-overlay-button--next"
+      >
+        <RightArrow size={18} strokeWidth={2.25} />
+      </button>
+    )}
+  </>
+);
 
 export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   images,
@@ -224,53 +294,19 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
             }`}
           />
 
-          {enableDelete && (
-            <button
-              onClick={(e) => handleDelete(currentIndex, e)}
-              type="button"
-              className="journalit-carousel-delete"
-              aria-label={t('image.viewer.delete-button')}
-            >
-              ×
-            </button>
-          )}
-
-          {enableAnnotations && (
-            <button
-              onClick={(e) => handleAnnotate(currentIndex, e)}
-              type="button"
-              className={`journalit-carousel-annotate${
-                isAnnotated?.(currentImage) ? ' is-annotated' : ''
-              }`}
-            >
-              <Tag size={15} strokeWidth={2.25} />
-              <span className="journalit-carousel-annotate__accessible-label">
-                {t('imageGallery.annotation.editor-title')}
-              </span>
-            </button>
-          )}
-
-          {images.length > 1 && (
-            <button
-              onClick={goToPrevious}
-              aria-label={t('image.carousel.prev')}
-              type="button"
-              className="journalit-carousel-overlay-button journalit-carousel-overlay-button--prev"
-            >
-              <LeftArrow size={18} strokeWidth={2.25} />
-            </button>
-          )}
-
-          {images.length > 1 && (
-            <button
-              onClick={goToNext}
-              aria-label={t('image.carousel.next')}
-              type="button"
-              className="journalit-carousel-overlay-button journalit-carousel-overlay-button--next"
-            >
-              <RightArrow size={18} strokeWidth={2.25} />
-            </button>
-          )}
+          <CarouselOverlayControls
+            onDelete={
+              enableDelete ? (e) => handleDelete(currentIndex, e) : undefined
+            }
+            onAnnotate={
+              enableAnnotations
+                ? (e) => handleAnnotate(currentIndex, e)
+                : undefined
+            }
+            isAnnotated={isAnnotated?.(currentImage) ?? false}
+            onPrevious={images.length > 1 ? goToPrevious : undefined}
+            onNext={images.length > 1 ? goToNext : undefined}
+          />
         </div>
       </div>
 
@@ -350,6 +386,12 @@ const LazyThumbnail: React.FC<LazyThumbnailProps> = React.memo(
       const element = thumbnailRef.current;
       if (!element) return;
 
+      
+      if (isInShareEagerMediaArea(element)) {
+        setIsVisible(true);
+        return;
+      }
+
       const observer = new IntersectionObserver(
         ([entry]) => {
           if (entry.isIntersecting) {
@@ -378,7 +420,11 @@ const LazyThumbnail: React.FC<LazyThumbnailProps> = React.memo(
         })}
       >
         {!shouldRenderPreview ? (
-          <span className="journalit-carousel-thumbnail-media" />
+          
+          <span
+            className="journalit-carousel-thumbnail-media"
+            {...shareLoadingProps}
+          />
         ) : isExcalidraw ? (
           <div className="journalit-carousel-thumbnail-excalidraw">
             <ExcalidrawMediaEmbed path={imagePath} sourcePath={sourcePath} />

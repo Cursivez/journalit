@@ -8,6 +8,8 @@ import {
   TRADING_DAY_CUTOFF_END_OF_DAY_MIGRATION_VERSION,
 } from '../utils/tradingDayUtils';
 import { FilterState } from '../components/dashboard/DashboardView';
+import { createFilterExclusions } from '../components/shared/filters/filterExclusions';
+import { createFilterMatchModes } from '../components/shared/filters/filterMatchModes';
 import type { TradeLogFilters } from '../services/tradelog/types';
 import type { PersonalPropFirmProfile } from '../services/propChallenge/PersonalPropFirmProfiles';
 import type { BrokerSyncProviderId } from '../services/tradeSync/types';
@@ -84,6 +86,8 @@ import {
   DEFAULT_TRADELOG_FILTERS,
 } from './viewFiltersDefaults';
 
+export type AccentColorSource = 'journalit' | 'obsidian';
+
 
 interface GeneralSettings {
   
@@ -92,6 +96,8 @@ interface GeneralSettings {
   displayName?: string;
   
   homeStartupBehavior?: 'always' | 'ifNone' | 'never';
+  
+  accentColorSource?: AccentColorSource;
   
   onboardingCompleted?: boolean;
   
@@ -106,6 +112,8 @@ interface DisplaySettings {
   privacyMode: boolean;
   
   privacyMask: string;
+  
+  hideDollarAmountsInShares: boolean;
 }
 
 
@@ -507,6 +515,8 @@ interface TradeSettings {
   galleryFolders: string[];
   
   tradeReviewLayoutMigrationVersion?: string;
+  
+  manualTradeImportNudgeShown?: boolean;
 }
 
 
@@ -866,8 +876,6 @@ interface PositionSizeDefaults {
 export interface EmbeddedNoteConfig {
   
   filePath: string;
-  
-  title?: string;
 }
 
 
@@ -938,6 +946,18 @@ export interface CurrentStreakConfig {
 }
 
 
+export type AccountProgressWidgetMode = 'automatic' | 'selected';
+
+
+export interface AccountProgressWidgetConfig {
+  mode: AccountProgressWidgetMode;
+  
+  maxAccounts: number | null;
+  
+  accounts: string[];
+}
+
+
 export interface HomeSettings {
   
   layouts: {
@@ -975,6 +995,8 @@ export interface HomeSettings {
   topBreakdowns?: Record<string, TopBreakdownConfig>;
   
   streaks?: Record<string, CurrentStreakConfig>;
+  
+  accountProgress?: Record<string, AccountProgressWidgetConfig>;
   
   selectedPeriod?: HomePeriod;
   
@@ -1214,6 +1236,8 @@ export interface BackendIntegrationSettings {
   canonicalTradeProjectionOwners?: Record<string, string>;
   
   restoringCanonicalTradeIds?: string[];
+  
+  serverDeletedTradesCursorByOwner?: Record<string, number>;
   
   secretStorageNamespace?: string;
 
@@ -1553,6 +1577,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     currency: CurrencyCode.USD, 
     displayName: '',
     homeStartupBehavior: 'always',
+    accentColorSource: 'journalit',
     onboardingCompleted: false,
     journalFolderPath: '', 
     debugLogging: false,
@@ -1560,6 +1585,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
   display: {
     privacyMode: false,
     privacyMask: DEFAULT_PRIVACY_MASK,
+    hideDollarAmountsInShares: false,
   },
   trade: {
     autoOpenCreatedTrades: true,
@@ -1755,6 +1781,8 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       reviewStatus: [],
       directions: [],
       customFieldFilters: {},
+      exclusions: createFilterExclusions(),
+      matchModes: createFilterMatchModes(),
     },
     lastUsedFilters: {
       dateRange: [null, null],
@@ -1769,6 +1797,8 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       reviewStatus: [],
       directions: [],
       customFieldFilters: {},
+      exclusions: createFilterExclusions(),
+      matchModes: createFilterMatchModes(),
     },
   },
   home: {

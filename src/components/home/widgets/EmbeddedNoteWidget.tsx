@@ -5,6 +5,7 @@ import { TFile } from 'obsidian';
 import { FolderOpen } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
 import { EmbeddedNoteConfig } from '../../../settings/types';
+import { getEmbeddedNoteFileTitle } from '../../../utils/embeddedNoteConfig';
 import { t } from '../../../lang/helpers';
 import { EmbeddedMarkdownNote } from '../../shared/EmbeddedMarkdownNote';
 import { NoteFilePicker } from '../../shared/NoteFilePicker';
@@ -22,7 +23,6 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
     const config: EmbeddedNoteConfig | undefined =
       plugin.settings.home?.embeddedNotes?.[instanceId];
     const filePath = config?.filePath;
-    const customTitle = config?.title;
 
     const allFiles = useMemo(
       () =>
@@ -46,7 +46,6 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
 
         plugin.settings.home.embeddedNotes[instanceId] = {
           filePath: file.path,
-          title: plugin.settings.home.embeddedNotes[instanceId]?.title,
         };
 
         try {
@@ -81,11 +80,9 @@ export const EmbeddedNoteWidget = memo<EmbeddedNoteWidgetProps>(
       [instanceId, plugin]
     );
 
-    const displayTitle =
-      customTitle ||
-      (filePath
-        ? filePath.split('/').pop()?.replace('.md', '')
-        : t('home.widget.embedded-note.title'));
+    const displayTitle = filePath
+      ? getEmbeddedNoteFileTitle(filePath)
+      : t('home.widget.embedded-note.title');
 
     if (showFilePicker || !filePath) {
       return (

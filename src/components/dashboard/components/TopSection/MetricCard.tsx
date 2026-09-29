@@ -20,6 +20,8 @@ interface MetricCardProps {
   mainPart?: string; 
   decimalPart?: string; 
   tooltip?: React.ReactNode; 
+  
+  tooltipDisclosureLabel?: string;
   hasWarning?: boolean; 
   previousDelta?: StatDelta;
   subline?: string; 
@@ -53,6 +55,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   mainPart,
   decimalPart,
   tooltip,
+  tooltipDisclosureLabel,
   hasWarning = false,
   previousDelta,
   subline,
@@ -79,18 +82,43 @@ export const MetricCard: React.FC<MetricCardProps> = ({
     <div className="journalit-dashboard-metric-card">
       <div className="journalit-dashboard-metric-name">
         {name}
-        {tooltip && (
-          <Info size={10} className="journalit-dashboard-metric-info" />
-        )}
-        {hasWarning && (
-          <AlertTriangle
-            size={10}
-            className="journalit-dashboard-metric-warning"
-          />
+        {tooltip && tooltipDisclosureLabel ? (
+          <Tooltip
+            content={tooltip}
+            delay={200}
+            preferredPosition="bottom"
+            disclosureLabel={tooltipDisclosureLabel}
+            triggerClassName="journalit-dashboard-metric-icons-trigger"
+          >
+            <Info
+              size={10}
+              className="journalit-dashboard-metric-info"
+              aria-hidden="true"
+            />
+            {hasWarning && (
+              <AlertTriangle
+                size={10}
+                className="journalit-dashboard-metric-warning"
+                aria-hidden="true"
+              />
+            )}
+          </Tooltip>
+        ) : (
+          <>
+            {tooltip && (
+              <Info size={10} className="journalit-dashboard-metric-info" />
+            )}
+            {hasWarning && (
+              <AlertTriangle
+                size={10}
+                className="journalit-dashboard-metric-warning"
+              />
+            )}
+          </>
         )}
       </div>
       <div className={`journalit-dashboard-metric-value ${toneClass}`}>
-        <span className="journalit-dashboard-metric-primary">
+        <span className="journalit-dashboard-metric-primary" dir="ltr">
           {mainPart ? (
             <>
               {mainPart}
@@ -106,6 +134,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         </span>
         {valueSuffix && (
           <span
+            dir="ltr"
             className={[
               'journalit-dashboard-metric-suffix',
               suffixToneClass,
@@ -159,7 +188,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
             {previousDelta.direction !== 'flat' && (
               <DeltaArrow direction={previousDelta.direction} />
             )}
-            <span>{previousDelta.value}</span>
+            <span dir="ltr">{previousDelta.value}</span>
             <span className="journalit-dashboard-metric-previous-delta-suffix">
               {t(previousDelta.suffixKey ?? 'widget.stats.vs-prev')}
             </span>
@@ -171,7 +200,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
 
   return (
     <div className="journalit-dashboard-metric-card-frame">
-      {tooltip ? (
+      {tooltip && !tooltipDisclosureLabel ? (
         <Tooltip
           content={tooltip}
           delay={200}

@@ -79,7 +79,12 @@ export function useAccountPageDataEvents({
   useEventBus('folder-path:changed', handleTradeDataChanged);
   useEventBus('account:changed', handleAccountChanged);
   useEventBus('settings:changed', (payload) => {
-    if (payload?.section === 'copyTradeAdjustments') {
+    
+    
+    if (
+      payload?.section === 'copyTradeAdjustments' ||
+      payload?.section === 'symbolMappings'
+    ) {
       void refreshData();
     }
   });

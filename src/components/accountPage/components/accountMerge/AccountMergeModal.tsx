@@ -4,7 +4,7 @@ import { App, Modal } from 'obsidian';
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type JournalitPlugin from '../../../../main';
-import { t, type TranslationKey } from '../../../../lang/helpers';
+import { t, tPlural, type TranslationKey } from '../../../../lang/helpers';
 import { AccountMergePlanError } from '../../../../services/accountMerge/planAccountMerge';
 import type {
   AccountMergeBuildSourceInput,
@@ -59,6 +59,7 @@ import {
   sortCandidatesByCreatedDate,
   type AccountMergeCandidate,
 } from './accountMergeWizardHelpers';
+import { suspendViewGuidesWhileOpen } from '../../../../guides/suspendViewGuides';
 
 type AccountMergeOutcome = 'merged' | 'cancelled';
 
@@ -354,7 +355,7 @@ interface ChallengeStepProps {
   profile: PropFirmProfileSelection | undefined;
   onProfileChange: (
     profile: PropFirmProfileSelection | undefined
-  ) => Promise<void>;
+  ) => Promise<boolean>;
 }
 
 const ChallengeStep: React.FC<ChallengeStepProps> = ({
@@ -523,12 +524,10 @@ interface PhasesStepProps {
   onOverrideChange: (name: string, patch: PhaseOverride) => void;
   planState: PlanState;
   currency?: string;
-  
-  manualRules: boolean;
   showPrefillTeaser: boolean;
   offerCatalog: boolean;
   typedFirmName: string;
-  onApplyProfile: (selection: PropFirmProfileSelection) => void;
+  onApplyProfile: (selection: PropFirmProfileSelection) => Promise<boolean>;
 }
 
 const PhasesStep: React.FC<PhasesStepProps> = ({
@@ -537,7 +536,6 @@ const PhasesStep: React.FC<PhasesStepProps> = ({
   onOverrideChange,
   planState,
   currency,
-  manualRules,
   showPrefillTeaser,
   offerCatalog,
   typedFirmName,
@@ -605,9 +603,10 @@ const PhasesStep: React.FC<PhasesStepProps> = ({
                     : t('account.merge.phase.no-rules')}
                 </span>
                 <span>
-                  {t('account.merge.phase.identities-count', {
-                    count: String(phase?.brokerAccountIds?.length ?? 0),
-                  })}
+                  {tPlural(
+                    'account.merge.phase.broker-accounts',
+                    phase?.brokerAccountIds?.length ?? 0
+                  )}
                 </span>
               </span>
             </div>
@@ -697,43 +696,60 @@ const PhasesStep: React.FC<PhasesStepProps> = ({
                 />
               </div>
             </div>
-            {manualRules && (
-              <AccountMergePhaseRules
-                rules={override.rules ?? phase?.rules ?? []}
-                currencyCode={currency ?? 'USD'}
-                startingBalance={phase?.startingBalance ?? 0}
-                showPrefillTeaser={showPrefillTeaser}
-                offerCatalog={offerCatalog}
-                typedFirmName={typedFirmName}
-                onChange={(rules) => onOverrideChange(name, { rules })}
-                onApplyProfile={onApplyProfile}
-              />
-            )}
+            <AccountMergePhaseRules
+              rules={override.rules ?? phase?.rules ?? []}
+              currencyCode={currency ?? 'USD'}
+              startingBalance={phase?.startingBalance ?? 0}
+              showPrefillTeaser={showPrefillTeaser}
+              offerCatalog={offerCatalog}
+              typedFirmName={typedFirmName}
+              onChange={(rules) => onOverrideChange(name, { rules })}
+              onApplyProfile={onApplyProfile}
+            />
           </section>
         );
       })}
 
-      {trailing.map((phase, offset) => (
-        <section
-          className="journalit-account-merge-modal__phase is-pending"
-          key={phase.id}
-        >
-          <div className="journalit-account-merge-modal__phase-head">
-            <span className="journalit-account-merge-modal__chip-index">
-              {selected.length + offset + 1}
-            </span>
-            <span className="journalit-account-merge-modal__phase-source">
-              {phase.name}
-            </span>
-            <span className="journalit-account-merge-modal__phase-facts">
-              <span className="journalit-account-merge-modal__badge">
-                {t(STAGE_LABEL_KEYS[phase.stage ?? 'evaluation'])}
+      
+      {trailing.map((phase, offset) => {
+        const previous = phases[selected.length + offset - 1];
+        return (
+          <section
+            className="journalit-account-merge-modal__phase is-pending"
+            key={phase.id}
+          >
+            <div className="journalit-account-merge-modal__phase-head">
+              <span className="journalit-account-merge-modal__chip-index">
+                {selected.length + offset + 1}
               </span>
-              <span>{t('account.merge.phase.pending')}</span>
-            </span>
-          </div>
-        </section>
-      ))}
+              <span className="journalit-account-merge-modal__phase-source">
+                {phase.name}
+              </span>
+              <span className="journalit-account-merge-modal__phase-facts">
+                <span>{t(STAGE_LABEL_KEYS[phase.stage ?? 'evaluation'])}</span>
+              </span>
+            </div>
+            <div className="journalit-account-merge-modal__phase-note">
+              <span>
+                {t('account.merge.phase.starts-after', {
+                  phase: previous?.name ?? '',
+                })}
+              </span>
+              {phase.rules.length > 0 && (
+                <span>
+                  {t('account.merge.phase.pending-rules', {
+                    rules: phase.rules
+                      .map((rule) =>
+                        t(`account.prop-challenge.summary.rule.${rule.kind}`)
+                      )
+                      .join(', '),
+                  })}
+                </span>
+              )}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 };
@@ -765,6 +781,8 @@ const ReviewStep: React.FC<{
     if (group) group.push(warning);
     else warningGroups.set(warning.kind, [warning]);
   }
+  
+  const converting = selected.length === 1;
   const notesByAccount = new Map<string, number>();
   const challengeIdentity = plan.targetMetadata.propChallenge;
   for (const name of selected) {
@@ -795,31 +813,41 @@ const ReviewStep: React.FC<{
         <div className="journalit-account-merge-modal__summary-stats">
           <span>
             <strong>{plan.phases.length}</strong>{' '}
-            {t('account.merge.review.phases')}
+            {tPlural('account.merge.review.phase-count', plan.phases.length)}
           </span>
-          <span>
-            <strong>{plan.noteRewrites.length}</strong>{' '}
-            {t('account.merge.review.notes')}
-          </span>
-          <span>
-            <strong>{plan.sourcesToArchive.length}</strong>{' '}
-            {t('account.merge.review.archived')}
-          </span>
+          {!converting && (
+            <>
+              <span>
+                <strong>{plan.noteRewrites.length}</strong>{' '}
+                {t('account.merge.review.notes')}
+              </span>
+              <span>
+                <strong>{plan.sourcesToArchive.length}</strong>{' '}
+                {t('account.merge.review.archived')}
+              </span>
+            </>
+          )}
         </div>
       </div>
 
-      <div className="journalit-account-merge-modal__table">
+      <div
+        className={`journalit-account-merge-modal__table${
+          converting ? ' journalit-account-merge-modal__table--convert' : ''
+        }`}
+      >
         <div className="journalit-account-merge-modal__table-head">
           <span />
           <span>{t('account.merge.step.phases')}</span>
           <span />
           <span />
-          <span>{t('account.merge.review.notes')}</span>
+          {!converting && <span>{t('account.merge.review.notes')}</span>}
           <span>{t('account.merge.review.identities')}</span>
         </div>
         {plan.phases.map((phase, index) => (
           <div
-            className="journalit-account-merge-modal__table-row"
+            className={`journalit-account-merge-modal__table-row${
+              phase.status === 'pending' ? ' is-pending' : ''
+            }`}
             key={phase.id}
           >
             <span className="journalit-account-merge-modal__chip-index">
@@ -840,19 +868,29 @@ const ReviewStep: React.FC<{
                 : t(STATUS_LABEL_KEYS[phase.status])}
             </span>
             <span className="journalit-account-merge-modal__table-dates">
-              {formatShortDate(phase.startedAt)}
-              {' → '}
-              {phase.completedAt
-                ? formatShortDate(phase.completedAt)
-                : t('account.merge.review.open')}
+              {phase.status === 'pending'
+                ? t('account.merge.review.starts-after', {
+                    phase: plan.phases[index - 1]?.name ?? '',
+                  })
+                : phase.completedAt
+                  ? `${formatShortDate(phase.startedAt)} → ${formatShortDate(
+                      phase.completedAt
+                    )}`
+                  : t('account.merge.review.since', {
+                      date: formatShortDate(phase.startedAt),
+                    })}
             </span>
+            {!converting && (
+              <span className="journalit-account-merge-modal__table-count">
+                {phase.legacyAccountName
+                  ? (notesByAccount.get(phase.legacyAccountName) ?? 0)
+                  : '—'}
+              </span>
+            )}
             <span className="journalit-account-merge-modal__table-count">
-              {phase.legacyAccountName
-                ? (notesByAccount.get(phase.legacyAccountName) ?? 0)
-                : '—'}
-            </span>
-            <span className="journalit-account-merge-modal__table-count">
-              {phase.brokerAccountIds?.length ?? 0}
+              {phase.status === 'pending'
+                ? '—'
+                : (phase.brokerAccountIds?.length ?? 0)}
             </span>
           </div>
         ))}
@@ -949,7 +987,10 @@ const AccountMergeModalContent: React.FC<{
 
   
   
-  const applyProfile = async (next: PropFirmProfileSelection | undefined) => {
+  
+  const applyProfile = async (
+    next: PropFirmProfileSelection | undefined
+  ): Promise<boolean> => {
     if (next) {
       const typedRules = hasEditedAccountMergeRules(Object.values(overrides));
       if (
@@ -967,7 +1008,7 @@ const AccountMergeModalContent: React.FC<{
           cancelLabel: t('button.cancel'),
         }))
       ) {
-        return;
+        return false;
       }
       setOverrides((current) =>
         Object.fromEntries(
@@ -984,6 +1025,7 @@ const AccountMergeModalContent: React.FC<{
       });
     }
     setProfile(next);
+    return true;
   };
   const [overrides, setOverrides] = useState<Record<string, PhaseOverride>>({});
   const [planState, setPlanState] = useState<PlanState>({ status: 'idle' });
@@ -1209,7 +1251,11 @@ const AccountMergeModalContent: React.FC<{
         <ModalGuide
           plugin={plugin}
           identity={ACCOUNT_MERGE_CHALLENGE_PAGE_GUIDE.identity}
-          steps={ACCOUNT_MERGE_CHALLENGE_PAGE_GUIDE.steps}
+          steps={
+            isPro
+              ? ACCOUNT_MERGE_CHALLENGE_PAGE_GUIDE.steps
+              : ACCOUNT_MERGE_CHALLENGE_PAGE_GUIDE.freeSteps
+          }
         />
       )}
       {step === 'phases' && (
@@ -1264,11 +1310,10 @@ const AccountMergeModalContent: React.FC<{
               onOverrideChange={patchOverride}
               planState={planState}
               currency={currency}
-              manualRules={!profile}
               showPrefillTeaser={!isPro}
               offerCatalog={isPro && !profile}
               typedFirmName={identity.firmName}
-              onApplyProfile={(selection) => void applyProfile(selection)}
+              onApplyProfile={applyProfile}
             />
             {hasIncompleteRules && (
               <div
@@ -1375,6 +1420,7 @@ class AccountMergeModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     contentEl.empty();
+    suspendViewGuidesWhileOpen(this.modalEl);
     const container = contentEl.createDiv({
       cls: 'journalit-account-merge-modal__body',
     });

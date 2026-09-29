@@ -70,7 +70,10 @@ export function useKeyEventRestore({
         if (cancelled) return;
         if (result.status !== 'ok') {
           dispatchCheck({
-            status: result.status === 'not_entitled' ? 'complete' : 'error',
+            status:
+              result.status === 'not_entitled' || result.status === 'signed_out'
+                ? 'complete'
+                : 'error',
           });
           return;
         }

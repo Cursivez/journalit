@@ -15,6 +15,8 @@ import {
 import { useGuideTarget } from '../../../../guides/GuideRuntimeLayer';
 import { ACCOUNT_PAGE_CHALLENGE_SECTION_TARGET_ID } from '../../../../guides/accountPageGuideIds';
 import { PropChallengePhaseNav } from './PropChallengePhaseNav';
+import { openProfileSourceModal } from './ProfileUpdateModal';
+import { PropFirmRuleUpdatesTeaser } from './PropFirmPrefillTeaser';
 import { PropChallengeRuleLedger } from './PropChallengeRuleLedger';
 import { PropChallengePayoutCard } from './PropChallengePayoutCard';
 import { PropChallengePayoutPlanEditor } from './PropChallengePayoutPlanEditor';
@@ -29,7 +31,7 @@ import type { PropChallengeCockpitState } from './usePropChallengeCockpitState';
 export const PropChallengeSection: React.FC<{
   state: PropChallengeCockpitState;
 }> = ({ state }) => {
-  const { accountPageData } = useAccountPageData();
+  const { accountPageData, refreshData } = useAccountPageData();
   const plugin = usePlugin();
   const { currency: globalCurrency } = useCurrency();
   const { formatValue } = useDisplayFormatter();
@@ -110,6 +112,14 @@ export const PropChallengeSection: React.FC<{
 
   const applyAction = async (action: PropChallengeManualAction) => {
     if (!plugin?.accountPageService) return;
+    if (action === 'link-rules') {
+      openProfileSourceModal({
+        plugin,
+        account: accountPageData.account,
+        onUpdated: refreshData,
+      });
+      return;
+    }
     setIsSaving(true);
     try {
       const context = {
@@ -162,11 +172,40 @@ export const PropChallengeSection: React.FC<{
       disabled: isSaving || isAccountArchived || !isConcluded,
     },
     {
+      
+      
+      
+      
+      
       id: 'reopen',
       label: t('account.prop-challenge.actions.reopen'),
-      disabled: isSaving || !isAccountArchived,
+      disabled:
+        isSaving || (!isAccountArchived && challenge.status !== 'failed'),
     },
+    
+    
+    
+    ...(!challenge.profileRef &&
+    !isAccountArchived &&
+    (plugin?.settings.backendIntegration?.subscriptionTier === 'premium' ||
+      (plugin?.settings.personalPropFirmProfiles?.length ?? 0) > 0)
+      ? [
+          {
+            id: 'link-rules' as const,
+            label: t('account.prop-challenge.actions.link-rules'),
+            disabled: isSaving,
+          },
+        ]
+      : []),
   ];
+
+  
+  const upsell =
+    !challenge.profileRef &&
+    !isAccountArchived &&
+    plugin?.settings.backendIntegration?.subscriptionTier !== 'premium' ? (
+      <PropFirmRuleUpdatesTeaser firmName={challenge.firmName} />
+    ) : undefined;
 
   
   
@@ -180,6 +219,7 @@ export const PropChallengeSection: React.FC<{
           actions={actions}
           challenge={challenge}
           onAction={(action) => void applyAction(action)}
+          upsell={upsell}
           selectedPhase={selectedPhase}
         />
       </section>
@@ -217,6 +257,7 @@ export const PropChallengeSection: React.FC<{
         onAction={(action) => void applyAction(action)}
         selectedPhase={selectedPhase}
         status={statusClass}
+        upsell={upsell}
       />
       <div
         className={`journalit-prop-cockpit-body${payout ? ' has-payout' : ''}`}

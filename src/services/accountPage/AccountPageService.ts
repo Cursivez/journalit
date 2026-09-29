@@ -124,6 +124,7 @@ import {
   normalizeTradeAccountIdentity,
 } from '../trade/core/TradeAccountIdentity';
 import { normalizeTradeExecution } from '../trade/core/TradeExecutionNormalization';
+import { isMicroFuturesTrade } from '../../utils/symbolNormalizer';
 import { TradeType } from '../tradelog/types';
 import {
   remapAccountEntityShortcuts,
@@ -827,6 +828,14 @@ export class AccountPageService extends CustomDataService {
     const dividends = Array.isArray(trade.dividends)
       ? (trade.dividends as EnhancedTradeData['dividends'])
       : undefined;
+    const instrument =
+      typeof trade.instrument === 'string'
+        ? trade.instrument
+        : typeof trade.symbol === 'string'
+          ? trade.symbol
+          : '';
+    const assetType =
+      typeof trade.assetType === 'string' ? trade.assetType : undefined;
 
     return {
       path:
@@ -835,12 +844,7 @@ export class AccountPageService extends CustomDataService {
           : typeof trade.filePath === 'string'
             ? trade.filePath
             : '',
-      instrument:
-        typeof trade.instrument === 'string'
-          ? trade.instrument
-          : typeof trade.symbol === 'string'
-            ? trade.symbol
-            : '',
+      instrument,
       direction: typeof trade.direction === 'string' ? trade.direction : '',
       entryPrice: normalizedExecution.entryPrice ?? 0,
       hasExplicitExitPrice: normalizedExecution.hasExplicitExitPrice ?? false,
@@ -893,8 +897,14 @@ export class AccountPageService extends CustomDataService {
         typeof trade.canonicalAccountDisplayName === 'string'
           ? trade.canonicalAccountDisplayName.trim() || undefined
           : undefined,
-      assetType:
-        typeof trade.assetType === 'string' ? trade.assetType : undefined,
+      assetType,
+      ...(isMicroFuturesTrade(
+        instrument,
+        assetType,
+        this.plugin?.settings.symbolMappings ?? []
+      )
+        ? { isMicroFutures: true }
+        : {}),
       optionType:
         typeof trade.optionType === 'string' ? trade.optionType : undefined,
       rMultiple:
@@ -2217,6 +2227,8 @@ export class AccountPageService extends CustomDataService {
         totalPnL: 0,
         avgWin: 0,
         avgLoss: 0,
+        totalPnLRMultiple: undefined,
+        rMultipleTradeCount: 0,
         avgWinRMultiple: undefined,
         avgLossRMultiple: undefined,
         profitFactor: 0,
@@ -2244,6 +2256,22 @@ export class AccountPageService extends CustomDataService {
       (sum, trade) => sum + getEffectivePnL(trade),
       0
     );
+
+    const defaultRiskAmount = this.plugin?.settings?.trade?.defaultRiskAmount;
+    const tradeRMultiples = trades.flatMap((trade) => {
+      const rMultiple = calculateEffectiveRMultiple(
+        getEffectivePnL(trade),
+        trade.rMultiple,
+        trade.riskAmount,
+        defaultRiskAmount
+      );
+      return rMultiple === undefined ? [] : [rMultiple];
+    });
+    
+    const totalPnLRMultiple =
+      tradeRMultiples.length > 0
+        ? tradeRMultiples.reduce((sum, r) => sum + r, 0)
+        : undefined;
 
     const pnlByCurrency: Record<string, number> = {};
     for (const trade of trades) {
@@ -2298,7 +2326,6 @@ export class AccountPageService extends CustomDataService {
     const avgLoss =
       losingTrades.length > 0 ? totalLossAmount / losingTrades.length : 0;
 
-    const defaultRiskAmount = this.plugin?.settings?.trade?.defaultRiskAmount;
     const winningTradesR = winningTrades.flatMap((t) => {
       const rMultiple = calculateEffectiveRMultiple(
         getEffectivePnL(t),
@@ -2336,6 +2363,8 @@ export class AccountPageService extends CustomDataService {
       losingTrades: losingTrades.length,
       winRate,
       totalPnL,
+      totalPnLRMultiple,
+      rMultipleTradeCount: tradeRMultiples.length,
       avgWin,
       avgLoss,
       avgWinRMultiple,

@@ -4,7 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { TradeFormData, TradeFormErrors, TradeFormProps } from './types';
 import { BasicTab, DetailsTab, AdvancedTab } from './tabs';
 import { useTradeForm } from './hooks';
-import { FormActions } from './components';
+import { FormActions, ManualTradeImportNudge } from './components';
 import { t, tPlural } from '../../../lang/helpers';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { SlidersHorizontal } from '../../shared/icons/ObsidianIcon';
@@ -768,6 +768,11 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     void plugin.viewManager.openCSVImportView();
   };
 
+  const isImportShortcutVisible = isTradeFormLayoutItemVisible(
+    tradeFormLayout,
+    'importShortcut'
+  );
+
   return (
     <form
       ref={formRef}
@@ -787,6 +792,18 @@ export const TradeForm: React.FC<TradeFormProps> = ({
         onOpenLayoutSettings={handleOpenLayoutSettings}
       />
 
+      {plugin &&
+        !isEditMode &&
+        isImportShortcutVisible &&
+        formData.isMissedTrade !== true &&
+        formData.isBacktestTrade !== true && (
+          <ManualTradeImportNudge
+            plugin={plugin}
+            disabled={isSubmitting}
+            closeForm={handleCancel}
+          />
+        )}
+
       
       {getTabContent()}
 
@@ -794,8 +811,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
       <FormActions
         onCancel={() => void handleCancel()}
         onImportTrades={
-          !!plugin &&
-          isTradeFormLayoutItemVisible(tradeFormLayout, 'importShortcut')
+          !!plugin && isImportShortcutVisible
             ? () => void handleOpenTradeImport()
             : undefined
         }

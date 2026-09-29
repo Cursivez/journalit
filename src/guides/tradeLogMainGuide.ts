@@ -5,11 +5,10 @@ import {
   TRADE_LOG_FILTER_BUTTON_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_MODE_BUTTON_TARGET_ID,
   TRADE_LOG_MAIN_GUIDE_ID,
+  TRADE_LOG_MAIN_GUIDE_VERSION,
   TRADE_LOG_TABLE_HEADERS_TARGET_ID,
   TRADE_LOG_VIEW_SELECTOR_TARGET_ID,
 } from './tradeLogGuideIds';
-
-export const TRADE_LOG_MAIN_GUIDE_VERSION = 10;
 
 
 export function registerTradeLogMainGuide(guideRegistry: GuideRegistry): void {

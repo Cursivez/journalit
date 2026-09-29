@@ -199,6 +199,14 @@ export function applyProfilePhaseUpdate(
   delete dismissals[phaseId];
   return structuredClone({
     ...config,
+    
+    
+    ...(config.profileRef
+      ? {}
+      : {
+          firmName: selection.firmName,
+          challengeName: selection.challenge.name,
+        }),
     profileUpdateDismissals: Object.keys(dismissals).length
       ? dismissals
       : undefined,

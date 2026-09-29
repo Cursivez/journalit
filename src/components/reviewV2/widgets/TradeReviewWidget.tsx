@@ -28,7 +28,7 @@ import { cssVars } from '../../../styles/inlineStylePolicy';
 import { t } from '../../../lang/helpers';
 import { ChevronDown, CornerDownRight } from '../../shared/icons/ObsidianIcon';
 import { StickyHeaderPortal, useStickyHeader } from '../../shared/StickyHeader';
-import { scrollToNextReviewItemAfterCollapse } from './shared/reviewScrollUtils';
+import { keepReviewItemHeaderInPlaceOnCollapse } from './shared/reviewScrollUtils';
 import { ReviewWidgetSkeleton } from './shared/ReviewWidgetSkeleton';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 import {
@@ -47,6 +47,7 @@ import {
   type TradeReviewQuestionConfig,
   type TradeReviewWidgetConfig,
 } from './tradeReviewConfig';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 const RESOLVED_SAVE_PROMISE = Promise.resolve();
 
@@ -131,7 +132,6 @@ const RECENT_REVIEW_TOGGLE_VISIBLE_UNTIL_BY_REVIEW = new Map<
   Map<string, number>
 >();
 const REVIEW_TOGGLE_VISIBILITY_GRACE_MS = 5000;
-const SCROLL_RESTORE_DELAYS_MS = [0, 16, 50, 100, 200, 400, 800, 1200];
 const LAST_NON_EMPTY_DISPLAY_TRADES_BY_REVIEW = new Map<
   string,
   { trades: ReviewTrade[]; visibleUntil: number }
@@ -157,102 +157,6 @@ function setStoredCardExpansion(
   REVIEW_CARD_EXPANSION_BY_REVIEW.set(reviewFilePath, reviewExpansion);
 }
 
-type ReviewScrollSnapshot = {
-  leafContent: HTMLElement;
-  cmScrollTop?: number;
-  readingScrollTop?: number;
-  previewScrollTop?: number;
-};
-
-function captureReviewScrollSnapshot(
-  sourceElement: HTMLElement | null = window.activeDocument
-    .activeElement instanceof HTMLElement
-    ? window.activeDocument.activeElement
-    : null
-): ReviewScrollSnapshot | null {
-  if (!sourceElement) return null;
-
-  const leafContent = sourceElement.closest<HTMLElement>(
-    '.workspace-leaf-content'
-  );
-  if (!leafContent) return null;
-
-  const cmScroller = sourceElement.closest<HTMLElement>('.cm-scroller');
-  const readingView = sourceElement.closest<HTMLElement>(
-    '.markdown-reading-view'
-  );
-  const previewView = sourceElement.closest<HTMLElement>(
-    '.markdown-preview-view'
-  );
-
-  return {
-    leafContent,
-    cmScrollTop: cmScroller?.scrollTop,
-    readingScrollTop: readingView?.scrollTop,
-    previewScrollTop: previewView?.scrollTop,
-  };
-}
-
-function restoreReviewScrollSnapshot(
-  snapshot: ReviewScrollSnapshot | null
-): void {
-  if (!snapshot) return;
-
-  SCROLL_RESTORE_DELAYS_MS.forEach((delay) => {
-    window.setTimeout(() => applyReviewScrollSnapshot(snapshot), delay);
-  });
-}
-
-function applyReviewScrollSnapshot(snapshot: ReviewScrollSnapshot): void {
-  const cmScroller =
-    snapshot.leafContent.querySelector<HTMLElement>('.cm-scroller');
-  if (cmScroller && snapshot.cmScrollTop !== undefined) {
-    cmScroller.scrollTop = snapshot.cmScrollTop;
-  }
-
-  const readingView = snapshot.leafContent.querySelector<HTMLElement>(
-    '.markdown-reading-view'
-  );
-  if (readingView && snapshot.readingScrollTop !== undefined) {
-    readingView.scrollTop = snapshot.readingScrollTop;
-  }
-
-  const previewView = snapshot.leafContent.querySelector<HTMLElement>(
-    '.markdown-preview-view'
-  );
-  if (previewView && snapshot.previewScrollTop !== undefined) {
-    previewView.scrollTop = snapshot.previewScrollTop;
-  }
-}
-
-function startReviewScrollGuard(
-  snapshot: ReviewScrollSnapshot | null
-): (restoreAfterRelease?: boolean) => void {
-  if (!snapshot) return () => undefined;
-
-  let released = false;
-  let frameId: number | undefined;
-
-  const guard = () => {
-    applyReviewScrollSnapshot(snapshot);
-    if (released) return;
-
-    frameId = window.requestAnimationFrame(guard);
-  };
-
-  guard();
-
-  return (restoreAfterRelease = true) => {
-    released = true;
-    if (frameId !== undefined) {
-      window.cancelAnimationFrame(frameId);
-    }
-    if (restoreAfterRelease) {
-      restoreReviewScrollSnapshot(snapshot);
-    }
-  };
-}
-
 function focusAdjacentReviewTextarea(
   currentTextarea: HTMLTextAreaElement,
   direction: 1 | -1
@@ -276,10 +180,11 @@ function focusAdjacentReviewTextarea(
 }
 
 function isTradeReviewTextareaFocused(): boolean {
-  const activeElement = window.activeDocument.activeElement;
+  
   return (
-    activeElement instanceof HTMLTextAreaElement &&
-    activeElement.classList.contains('journalit-trade-review-textarea')
+    window.activeDocument.activeElement?.classList.contains(
+      'journalit-trade-review-textarea'
+    ) ?? false
   );
 }
 
@@ -795,6 +700,8 @@ function TradeReviewMoreContext({
   return (
     <div
       className={`journalit-trade-review-more-context ${isExpanded ? 'journalit-trade-review-more-context--expanded' : ''}`}
+      
+      {...(isExpanded ? {} : shareCaptureExcludeProps)}
     >
       <button
         type="button"
@@ -1067,14 +974,13 @@ const TradeReviewQuestionInput = React.memo(function TradeReviewQuestionInput({
   question,
   persistedValue,
   onDraftChange,
+  onFocusLeave,
 }: {
   question: TradeReviewQuestionConfig;
   persistedValue: string;
-  onDraftChange: (
-    question: TradeReviewQuestionConfig,
-    value: string,
-    scrollSnapshot: ReviewScrollSnapshot | null
-  ) => void;
+  onDraftChange: (question: TradeReviewQuestionConfig, value: string) => void;
+  
+  onFocusLeave: () => void;
 }) {
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const hasLocalDraftRef = useRef(false);
@@ -1108,11 +1014,7 @@ const TradeReviewQuestionInput = React.memo(function TradeReviewQuestionInput({
       }}
       onChange={(event) => {
         hasLocalDraftRef.current = true;
-        onDraftChange(
-          question,
-          event.target.value,
-          captureReviewScrollSnapshot(event.currentTarget)
-        );
+        onDraftChange(question, event.target.value);
       }}
       onKeyDownCapture={(event) => {
         if (event.key !== 'Tab') return;
@@ -1126,8 +1028,17 @@ const TradeReviewQuestionInput = React.memo(function TradeReviewQuestionInput({
           event.stopPropagation();
         }
       }}
-      onBlur={() => {
+      onBlur={(event) => {
         isFocusedRef.current = false;
+        
+        if (
+          event.relatedTarget?.classList.contains(
+            'journalit-trade-review-textarea'
+          )
+        ) {
+          return;
+        }
+        onFocusLeave();
       }}
     />
   );
@@ -1196,7 +1107,34 @@ export function shouldRetainTradeReviewChoiceDraft({
   return !persistedMatches;
 }
 
-function useTradeReviewChoiceDrafts({
+type ChoiceDrafts = Record<string, { value: string; optionId?: string }>;
+
+function pruneSettledChoiceDrafts(
+  current: ChoiceDrafts,
+  review: TradeReviewData | undefined,
+  questions: TradeReviewQuestionConfig[],
+  inFlightSaveCounts: Map<string, number>
+): ChoiceDrafts {
+  const questionsById = new Map(
+    questions.map((question) => [question.id, question])
+  );
+  const entries = Object.entries(current).filter(([questionId, draft]) => {
+    const question = questionsById.get(questionId);
+    if (!question) return false;
+    return shouldRetainTradeReviewChoiceDraft({
+      review,
+      question,
+      questions,
+      draft,
+      saveInFlight: inFlightSaveCounts.has(questionId),
+    });
+  });
+  return entries.length === Object.keys(current).length
+    ? current
+    : Object.fromEntries(entries);
+}
+
+export function useTradeReviewChoiceDrafts({
   review,
   questions,
   commitQuestionSave,
@@ -1208,16 +1146,15 @@ function useTradeReviewChoiceDrafts({
     value: string
   ) => Promise<void>;
 }): {
-  choiceDrafts: Record<string, { value: string; optionId?: string }>;
+  choiceDrafts: ChoiceDrafts;
   handleChoiceSelect: (
     question: TradeReviewQuestionConfig,
     value: string
   ) => void;
 } {
-  const [choiceDrafts, setChoiceDrafts] = useState<
-    Record<string, { value: string; optionId?: string }>
-  >({});
+  const [choiceDrafts, setChoiceDrafts] = useState<ChoiceDrafts>({});
   const inFlightSaveCountsRef = useRef<Map<string, number>>(new Map());
+  const latestPersistedRef = useRef({ review, questions });
 
   const handleChoiceSelect = useCallback(
     (question: TradeReviewQuestionConfig, value: string) => {
@@ -1240,7 +1177,18 @@ function useTradeReviewChoiceDrafts({
               delete next[question.id];
               return next;
             });
+            return;
           }
+          
+          
+          setChoiceDrafts((current) =>
+            pruneSettledChoiceDrafts(
+              current,
+              latestPersistedRef.current.review,
+              latestPersistedRef.current.questions,
+              counts
+            )
+          );
         } else {
           counts.set(question.id, remaining);
         }
@@ -1254,25 +1202,15 @@ function useTradeReviewChoiceDrafts({
   );
 
   useEffect(() => {
-    setChoiceDrafts((current) => {
-      const questionsById = new Map(
-        questions.map((question) => [question.id, question])
-      );
-      const entries = Object.entries(current).filter(([questionId, draft]) => {
-        const question = questionsById.get(questionId);
-        if (!question) return false;
-        return shouldRetainTradeReviewChoiceDraft({
-          review,
-          question,
-          questions,
-          draft,
-          saveInFlight: inFlightSaveCountsRef.current.has(questionId),
-        });
-      });
-      return entries.length === Object.keys(current).length
-        ? current
-        : Object.fromEntries(entries);
-    });
+    latestPersistedRef.current = { review, questions };
+    setChoiceDrafts((current) =>
+      pruneSettledChoiceDrafts(
+        current,
+        review,
+        questions,
+        inFlightSaveCountsRef.current
+      )
+    );
   }, [questions, review]);
 
   return { choiceDrafts, handleChoiceSelect };
@@ -1298,7 +1236,6 @@ function TradeReviewQuestions({
       {
         question: TradeReviewQuestionConfig;
         value: string;
-        scrollSnapshot: ReviewScrollSnapshot | null;
       }
     >
   >({});
@@ -1313,38 +1250,28 @@ function TradeReviewQuestions({
   );
 
   const commitQuestionSave = useCallback(
-    (
-      question: TradeReviewQuestionConfig,
-      value: string,
-      scrollSnapshot: ReviewScrollSnapshot | null = captureReviewScrollSnapshot()
-    ) => {
+    (question: TradeReviewQuestionConfig, value: string) => {
       if (!tradePath) return saveQueueRef.current;
 
       const commit = async () => {
-        const releaseScrollGuard = startReviewScrollGuard(scrollSnapshot);
-        try {
-          await plugin.tradeService.updateTradeReviewQuestion(
-            tradePath,
-            question.id,
-            question.label,
-            value,
-            'user-input',
-            orderedQuestions.map(({ id, label }) => ({
-              id,
-              label,
-              depth: questionDepths.get(id) ?? 0,
-              knownLabels: getAllLocalizedDefaultTradeReviewQuestionLabels(id),
-            })),
-            question.type === 'choice'
-              ? question.options?.find(
-                  (option) => option.label.trim() === value.trim()
-                )?.id
-              : undefined
-          );
-        } finally {
-          releaseScrollGuard();
-          restoreReviewScrollSnapshot(scrollSnapshot);
-        }
+        await plugin.tradeService.updateTradeReviewQuestion(
+          tradePath,
+          question.id,
+          question.label,
+          value,
+          'user-input',
+          orderedQuestions.map(({ id, label }) => ({
+            id,
+            label,
+            depth: questionDepths.get(id) ?? 0,
+            knownLabels: getAllLocalizedDefaultTradeReviewQuestionLabels(id),
+          })),
+          question.type === 'choice'
+            ? question.options?.find(
+                (option) => option.label.trim() === value.trim()
+              )?.id
+            : undefined
+        );
       };
 
       saveQueueRef.current = saveQueueRef.current
@@ -1361,11 +1288,9 @@ function TradeReviewQuestions({
     });
     saveTimersRef.current = {};
 
-    Object.values(pendingSavesRef.current).forEach(
-      ({ question, value, scrollSnapshot }) => {
-        void commitQuestionSave(question, value, scrollSnapshot);
-      }
-    );
+    Object.values(pendingSavesRef.current).forEach(({ question, value }) => {
+      void commitQuestionSave(question, value);
+    });
     pendingSavesRef.current = {};
 
     await saveQueueRef.current;
@@ -1379,17 +1304,29 @@ function TradeReviewQuestions({
     [flushPendingSaves]
   );
 
-  useEffect(() => {
-    return () => {
-      void flushPendingSaves();
-    };
+  
+  
+  const saveOnFocusLeave = useCallback(() => {
+    void flushPendingSaves();
   }, [flushPendingSaves]);
 
+  
+  
+  
+  
+  const flushPendingSavesRef = useRef(flushPendingSaves);
+  useEffect(() => {
+    flushPendingSavesRef.current = flushPendingSaves;
+  }, [flushPendingSaves]);
+  useEffect(() => {
+    const flushOnUnmount = flushPendingSavesRef;
+    return () => {
+      void flushOnUnmount.current();
+    };
+  }, []);
+
   const flushQuestionSave = useCallback(
-    (
-      questionId: string,
-      scrollSnapshotOverride: ReviewScrollSnapshot | null = null
-    ) => {
+    (questionId: string) => {
       const timerId = saveTimersRef.current[questionId];
       if (timerId !== undefined) {
         window.clearTimeout(timerId);
@@ -1399,34 +1336,22 @@ function TradeReviewQuestions({
       const pendingSave = pendingSavesRef.current[questionId];
       if (!pendingSave) return;
       delete pendingSavesRef.current[questionId];
-      void commitQuestionSave(
-        pendingSave.question,
-        pendingSave.value,
-        scrollSnapshotOverride ?? pendingSave.scrollSnapshot
-      );
+      void commitQuestionSave(pendingSave.question, pendingSave.value);
     },
     [commitQuestionSave]
   );
 
   const scheduleQuestionSave = useCallback(
-    (
-      question: TradeReviewQuestionConfig,
-      value: string,
-      scrollSnapshot: ReviewScrollSnapshot | null
-    ) => {
+    (question: TradeReviewQuestionConfig, value: string) => {
       const existingTimerId = saveTimersRef.current[question.id];
       if (existingTimerId !== undefined) {
         window.clearTimeout(existingTimerId);
       }
 
-      pendingSavesRef.current[question.id] = {
-        question,
-        value,
-        scrollSnapshot,
-      };
+      pendingSavesRef.current[question.id] = { question, value };
       saveTimersRef.current[question.id] = window.setTimeout(() => {
         if (isTradeReviewTextareaFocused()) {
-          scheduleQuestionSave(question, value, scrollSnapshot);
+          scheduleQuestionSave(question, value);
           return;
         }
 
@@ -1434,17 +1359,6 @@ function TradeReviewQuestions({
       }, 500);
     },
     [flushQuestionSave]
-  );
-
-  const handleQuestionChange = useCallback(
-    (
-      question: TradeReviewQuestionConfig,
-      value: string,
-      scrollSnapshot: ReviewScrollSnapshot | null
-    ) => {
-      scheduleQuestionSave(question, value, scrollSnapshot);
-    },
-    [scheduleQuestionSave]
   );
 
   const { choiceDrafts, handleChoiceSelect } = useTradeReviewChoiceDrafts({
@@ -1513,6 +1427,10 @@ function TradeReviewQuestions({
           <label
             key={question.id}
             className={`journalit-trade-review-question${isFollowUp ? ' is-follow-up' : ''}`}
+            
+            {...(getReviewText(review, question, questions).trim()
+              ? {}
+              : shareCaptureExcludeProps)}
             style={cssVars({
               '--journalit-trade-review-follow-up-depth':
                 visualDepth.toString(),
@@ -1525,7 +1443,8 @@ function TradeReviewQuestions({
             <TradeReviewQuestionInput
               question={question}
               persistedValue={getReviewText(review, question, questions)}
-              onDraftChange={handleQuestionChange}
+              onDraftChange={scheduleQuestionSave}
+              onFocusLeave={saveOnFocusLeave}
             />
           </label>
         );
@@ -1583,7 +1502,10 @@ const TradeReviewCardBody: React.FC<{
           />
         </div>
       ) : (
-        <div className="journalit-trade-review-empty-media">
+        <div
+          className="journalit-trade-review-empty-media"
+          {...shareCaptureExcludeProps}
+        >
           {t('widget.trade-review.no-image')}
         </div>
       ))}
@@ -1602,7 +1524,10 @@ const TradeReviewCardBody: React.FC<{
       review={review}
     />
 
-    <div className="journalit-trade-review-actions">
+    <div
+      className="journalit-trade-review-actions"
+      {...shareCaptureExcludeProps}
+    >
       {trade.path && (
         <button
           type="button"
@@ -1679,6 +1604,7 @@ function TradeReviewCardHeader({
         onClick={onToggleReviewed}
         onKeyDown={(event) => event.stopPropagation()}
         aria-pressed={isReviewed}
+        {...shareCaptureExcludeProps}
       >
         <span
           className={`journalit-weekly-drc-mark-reviewed-icon ${isReviewed ? 'journalit-weekly-drc-mark-reviewed-icon--reviewed' : ''}`}
@@ -1795,7 +1721,6 @@ const TradeReviewCard: React.FC<{
   showInstrument: boolean;
   isInitiallyExpanded: boolean;
   enableStickyHeader: boolean;
-  nextReviewItemKey?: string;
   onSessionVisibilityChange: (filePath: string, keepVisible: boolean) => void;
 }> = ({
   trade,
@@ -1806,7 +1731,6 @@ const TradeReviewCard: React.FC<{
   showInstrument,
   isInitiallyExpanded,
   enableStickyHeader,
-  nextReviewItemKey,
   onSessionVisibilityChange,
 }) => {
   const cardKey = getTradeKey(trade, index);
@@ -1898,12 +1822,19 @@ const TradeReviewCard: React.FC<{
     event.stopPropagation();
     if (!trade.path) return;
     const nextReviewed = !isReviewed;
+    
+    
+    const pendingAnswerSaves =
+      questionSaveRef.current?.flushPendingSaves() ?? Promise.resolve();
+    
+    
+    pendingAnswerSaves.catch(() => undefined);
     setLocalReviewed(nextReviewed);
     if (nextReviewed && isExpanded) {
+      keepReviewItemHeaderInPlaceOnCollapse(cardRef.current);
       setHasExpansionOverride(true);
       setExpansionOverride(false);
       setStoredCardExpansion(filePath, cardKey, false);
-      scrollToNextReviewItemAfterCollapse(cardRef.current, nextReviewItemKey);
     }
     plugin.reviewDataCache?.setSessionReviewedTradeVisibility(
       filePath,
@@ -1914,7 +1845,7 @@ const TradeReviewCard: React.FC<{
     window.setTimeout(() => {
       if (!trade.path) return;
       void (async () => {
-        await questionSaveRef.current?.flushPendingSaves();
+        await pendingAnswerSaves;
         await queueTradeReviewStatusUpdate(plugin, trade, nextReviewed);
       })().catch((error: unknown) => {
         console.error(
@@ -1934,18 +1865,12 @@ const TradeReviewCard: React.FC<{
 
   const toggleExpansion = () => {
     const nextExpanded = !isExpanded;
+    if (!nextExpanded) {
+      keepReviewItemHeaderInPlaceOnCollapse(cardRef.current);
+    }
     setHasExpansionOverride(true);
     setExpansionOverride(nextExpanded);
     setStoredCardExpansion(filePath, cardKey, nextExpanded);
-
-    if (!nextExpanded) {
-      window.requestAnimationFrame(() => {
-        headerRef.current?.scrollIntoView({
-          block: 'nearest',
-          inline: 'nearest',
-        });
-      });
-    }
   };
 
   const factValues = buildFactValues({
@@ -2003,11 +1928,7 @@ const TradeReviewCard: React.FC<{
   });
 
   return (
-    <article
-      ref={cardRef}
-      className="journalit-trade-review-card"
-      data-journalit-review-item-key={cardKey}
-    >
+    <article ref={cardRef} className="journalit-trade-review-card">
       <TradeReviewCardHeader
         headerRef={headerRef}
         index={index}
@@ -2247,11 +2168,6 @@ export const TradeReviewWidget: React.FC<TradeReviewWidgetProps> = React.memo(
                 config.defaultExpanded !== false && index === 0
               }
               enableStickyHeader={!preview}
-              nextReviewItemKey={
-                stableDisplayTrades[index + 1]
-                  ? getTradeKey(stableDisplayTrades[index + 1], index + 1)
-                  : undefined
-              }
               onSessionVisibilityChange={handleSessionVisibilityChange}
             />
           ))}

@@ -5,6 +5,7 @@ import { DemoSyncGate } from '../../demo/DemoSyncGate';
 import { ECONOMIC_CALENDAR_IMPACTS } from '../../settings/types';
 import { logger } from '../../utils/logger';
 import { ApiClient } from '../backend/ApiClient';
+import { BackendSecretStorage } from '../backend/BackendSecretStorage';
 import { ApiError } from '../../types/errors';
 import {
   formatLocalDateString,
@@ -434,6 +435,12 @@ export class EconomicCalendarService {
   public async fetchWeek(
     options: EconomicCalendarFetchOptions = {}
   ): Promise<EconomicCalendarFetchResult> {
+    
+    
+    if (!BackendSecretStorage.hasAuthToken(this.plugin)) {
+      return { status: 'signed_out' };
+    }
+
     const weekDate = options.weekDate ?? new Date();
     const weekStartDay = getWeekStartDaySetting(this.plugin);
     const weekStart = getWeekStartDate(weekDate, weekStartDay);
@@ -498,6 +505,10 @@ export class EconomicCalendarService {
         NOT_ENTITLED_STATUS_CODES.has(error.statusCode)
       ) {
         return { status: 'not_entitled' };
+      }
+      
+      if (error instanceof ApiError && error.statusCode === 401) {
+        return { status: 'signed_out' };
       }
       if (isOfflineError(error)) {
         return { status: 'offline' };

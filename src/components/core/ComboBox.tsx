@@ -12,6 +12,7 @@ import React, {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '../../lang/helpers';
+import { shareCaptureExcludeProps } from '../../services/share/brandedCapture';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import {
   ADD_OPTION_PREFIX,
@@ -778,6 +779,7 @@ function useComboBoxModel({
               })}
               data-remove-button="true"
               data-remove-value={val}
+              {...shareCaptureExcludeProps}
               disabled={disabled}
               className={`${CLASS_NAMES.REMOVE_BUTTON} journalit-combobox-remove-button`}
             >
@@ -988,6 +990,8 @@ export const ComboBox: React.FC<ComboBoxProps> = (props) => {
           role="combobox"
           disabled={disabled}
           className={CLASS_NAMES.INPUT}
+          
+          {...shareCaptureExcludeProps}
         />
 
         

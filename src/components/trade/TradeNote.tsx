@@ -50,6 +50,7 @@ import { CircleHelp } from '../shared/icons/ObsidianIcon';
 import { CustomFieldDefinition } from '../../types/customFields';
 import { useTradeLabelColorData } from '../../hooks/useTradeLabelColorData';
 import { extractPriceMoveValueFields } from '../../utils/priceMoveValue';
+import { shareCaptureExcludeProps } from '../../services/share/brandedCapture';
 
 const TRADE_NAV_CACHE_PREFIX = 'trade-nav-';
 
@@ -854,7 +855,11 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
               case 'reviewButton':
                 return effectiveTradeTemplate?.sections?.reviewButton?.show !==
                   false ? (
-                  <div key={sectionId} className="trade-note-review-section">
+                  <div
+                    key={sectionId}
+                    className="trade-note-review-section"
+                    {...shareCaptureExcludeProps}
+                  >
                     <TradeNoteReviewButton
                       reviewed={reviewStatus.reviewed}
                       reviewedAt={reviewStatus.reviewedAt}

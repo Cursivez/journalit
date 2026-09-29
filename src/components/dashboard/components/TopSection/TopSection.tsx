@@ -1,6 +1,6 @@
 
 
-import React, { useEffect, useState, useCallback, useReducer } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { FilterState } from '../../DashboardView';
 import { formatDuration } from '../../../../utils/formatting';
 import { parseCuratedCurrencyCode } from '../../../../utils/currencyConfig';
@@ -12,10 +12,7 @@ import {
 import { formatHoldTime } from '../../utils/analyticsUtils';
 import { getActiveLayout, saveLayout } from '../../utils/layoutUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
-import {
-  haveDashboardFiltersChanged,
-  useDashboardData,
-} from '../../context/DashboardDataContext';
+import { useDashboardData } from '../../context/DashboardDataContext';
 import { MetricCard } from './MetricCard';
 import {
   DndContext,
@@ -33,6 +30,7 @@ import { MetricCardSkeleton } from '../../../shared/MetricCardSkeleton';
 import { useCurrency } from '../../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import { ConversionSourceLines } from '../../../shared/display/CurrencyConversionInfo';
+import { getRCoverageMessage } from '../../../shared/display/RMultipleUnavailableHint';
 import type {
   DisplayValueKind,
   DisplayValueOptions,
@@ -68,6 +66,60 @@ const PAST_30D_COMPARISON_EXCLUDED_METRICS = new Set([
   'drawdownEpisodes',
   'avgRecoveryTime',
 ]);
+
+
+const R_FORM_METRICS = new Set([
+  'netPnL',
+  'expectancy',
+  'avgWin',
+  'bestDay',
+  'largestWin',
+  'avgLoss',
+  'largestLoss',
+  'maxDrawdown',
+]);
+
+
+
+
+const getRCoverageCounts = (
+  metrics: DashboardData['metrics'],
+  metric: string
+): { withR: number; total: number } => {
+  switch (metric) {
+    case 'avgWin':
+    case 'largestWin':
+      return {
+        withR: metrics.riskBasedWinTradesCount ?? 0,
+        total: metrics.numWinTrades ?? 0,
+      };
+    case 'avgLoss':
+    case 'largestLoss':
+      return {
+        withR: metrics.riskBasedLossTradesCount ?? 0,
+        total: metrics.numLossTrades ?? 0,
+      };
+    case 'netPnL':
+      return {
+        withR:
+          (metrics.riskBasedTradesCount ?? 0) +
+          (metrics.unrealizedRTradeCount ?? 0),
+        total: (metrics.numTrades ?? 0) + (metrics.unrealizedTradeCount ?? 0),
+      };
+    default:
+      return {
+        withR: metrics.riskBasedTradesCount ?? 0,
+        total: metrics.numTrades ?? 0,
+      };
+  }
+};
+
+const getRComparisonNote = (
+  previousDelta: StatDelta | undefined
+): string | undefined =>
+  previousDelta?.rComparisonUnavailable
+    ? t('dashboard.r-coverage.no-comparison')
+    : undefined;
 
 const MONEY_AND_DECIMAL_DELTA_METRICS = new Set([
   'netPnL',
@@ -412,10 +464,7 @@ function getDashboardComparisonDateRange(
 }
 
 interface TopSectionProps {
-  filters: FilterState;
   isEditing: boolean;
-  onShowMetricSelector?: () => void;
-  hideAddButton?: boolean;
 }
 
 
@@ -430,6 +479,7 @@ const SortableMetricCard: React.FC<{
   mainPart?: string;
   decimalPart?: string;
   tooltip?: React.ReactNode;
+  tooltipDisclosureLabel?: string;
   valueSuffixIsPositive?: boolean;
   hasWarning?: boolean;
   previousDelta?: StatDelta;
@@ -447,6 +497,7 @@ const SortableMetricCard: React.FC<{
   mainPart,
   decimalPart,
   tooltip,
+  tooltipDisclosureLabel,
   hasWarning,
   previousDelta,
   subline,
@@ -475,8 +526,9 @@ const SortableMetricCard: React.FC<{
         className="journalit-dashboard-metric-handle"
         data-editing={isEditing ? 'true' : 'false'}
       >
+        
         <div
-          {...attributes}
+          {...(isEditing ? attributes : {})}
           {...(isEditing ? listeners : {})}
           className="journalit-dashboard-metric-handle-inner"
         >
@@ -489,6 +541,7 @@ const SortableMetricCard: React.FC<{
             mainPart={mainPart}
             decimalPart={decimalPart}
             tooltip={tooltip}
+            tooltipDisclosureLabel={tooltipDisclosureLabel}
             hasWarning={hasWarning}
             previousDelta={previousDelta}
             subline={subline}
@@ -669,74 +722,68 @@ const isPositiveMetric = (
   }
 };
 
-function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
+function useTopSectionModel() {
   const plugin = usePlugin();
   const { currency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
-  const { dashboardData: data, error: contextError } = useDashboardData();
+  const {
+    dashboardData: liveData,
+    dataFilters,
+    error: contextError,
+  } = useDashboardData();
   const displayMaeMfeTicks =
     plugin?.settings?.trade?.maeMfeDisplayUnit === 'ticks';
   const [activeMetrics, setActiveMetrics] = useState<string[]>([]);
-  const isUnconvertedGroupedDisplay =
-    Boolean(data?.metrics.isMultiCurrency) &&
-    !data?.metrics.conversionBaseCurrency;
   const error = contextError
     ? contextError.message || t('dashboard.top-section.failed-load')
     : null;
-  const [comparisonState, dispatchComparisonState] = useReducer(
-    (
-      _state: {
-        data: DashboardData | null;
-        mode: 'previous' | 'past30d';
-        filters: FilterState;
-      },
-      action: {
-        data: DashboardData | null;
-        mode: 'previous' | 'past30d';
-        filters: FilterState;
-      }
-    ) => action,
-    { data: null, mode: 'previous' as const, filters }
-  );
   
   
-  const comparisonData = !haveDashboardFiltersChanged(
-    comparisonState.filters,
-    filters
-  )
-    ? comparisonState.data
-    : null;
-  const comparisonMode = comparisonState.mode;
+  
+  
+  
+  const [committed, commitPair] = useState<{
+    data: DashboardData;
+    comparison: DashboardData | null;
+    mode: 'previous' | 'past30d';
+  } | null>(null);
+  const data = committed?.data ?? liveData;
+  
+  const maxDrawdownPercentBasis =
+    data?.metrics.maxDrawdownAmountPercent != null &&
+    Number.isFinite(data.metrics.maxDrawdownAmountPercent)
+      ? data.metrics.maxDrawdownAmountPercent
+      : undefined;
+  const comparisonData = committed?.comparison ?? null;
+  const comparisonMode = committed?.mode ?? 'previous';
+  const isUnconvertedGroupedDisplay =
+    Boolean(data?.metrics.isMultiCurrency) &&
+    !data?.metrics.conversionBaseCurrency;
 
   useEffect(() => {
+    
+    
+    if (!liveData || !dataFilters || !plugin) return;
     const comparisonRange = getDashboardComparisonDateRange(
-      filters,
-      getWeekStartDaySetting(plugin ?? undefined)
+      dataFilters,
+      getWeekStartDaySetting(plugin)
     );
-    if (!plugin?.tradeService || !data) {
-      dispatchComparisonState({
-        data: null,
-        mode: comparisonRange.mode,
-        filters,
-      });
-      return;
-    }
 
     let isMounted = true;
     fetchDashboardData(
       plugin.app,
       plugin.tradeService,
-      { ...filters, dateRange: comparisonRange.dateRange },
+      { ...dataFilters, dateRange: comparisonRange.dateRange },
       plugin.settings?.trade?.defaultRiskAmount,
       plugin,
       { freshTradeQuery: false }
     )
       .then((nextComparisonData) => {
         if (isMounted) {
-          dispatchComparisonState({
-            data: nextComparisonData,
+          commitPair({
+            data: liveData,
+            comparison: nextComparisonData,
             mode: comparisonRange.mode,
-            filters,
           });
         }
       })
@@ -746,10 +793,10 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
           comparisonError
         );
         if (isMounted) {
-          dispatchComparisonState({
-            data: null,
+          commitPair({
+            data: liveData,
+            comparison: null,
             mode: comparisonRange.mode,
-            filters,
           });
         }
       });
@@ -757,7 +804,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
     return () => {
       isMounted = false;
     };
-  }, [data, filters, plugin]);
+  }, [liveData, dataFilters, plugin]);
 
   
   useEffect(() => {
@@ -812,8 +859,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
               topSection: newMetrics,
             };
 
-            
-            void saveLayout(plugin, 'Default', newLayout);
+            void saveLayout(plugin, newLayout);
           } catch (error) {
             console.error('Error saving layout:', error);
           }
@@ -841,7 +887,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
 
         
         try {
-          await saveLayout(plugin, 'Default', newLayout);
+          await saveLayout(plugin, newLayout);
         } catch (err) {
           console.error('Error saving layout:', err);
         }
@@ -900,12 +946,13 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       data?.metrics.isMultiCurrency && data?.metrics.conversionBaseCurrency
         ? parseCuratedCurrencyCode(data.metrics.conversionBaseCurrency)
         : currency;
+    const formattedUnrealized = formatValue({
+      kind: 'pnl',
+      value: unrealized,
+      currencyCode: effectiveCurrency,
+    });
     const subline = t('dashboard.metrics.incl-unrealized', {
-      value: formatValue({
-        kind: 'pnl',
-        value: unrealized,
-        currencyCode: effectiveCurrency,
-      }),
+      value: `\u2066${formattedUnrealized}\u2069`,
     });
     
     
@@ -948,11 +995,8 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
     const kind = getMetricDisplayKind(metric);
 
     if (metric === 'netPnL' && data?.metrics.isMultiCurrency) {
-      if (
-        shouldMask('pnl') ||
-        (plugin?.settings?.trade?.displayRMultiples &&
-          data.metrics.netPnLR !== undefined)
-      ) {
+      
+      if (shouldMask('pnl') || plugin?.settings?.trade?.displayRMultiples) {
         return formatValue({
           kind: 'pnl',
           value,
@@ -1033,11 +1077,10 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
           rMultiple: data?.metrics.largestLossR,
         });
       case 'maxDrawdown':
-        return data?.metrics.maxDrawdownAmountPercent != null &&
-          Number.isFinite(data.metrics.maxDrawdownAmountPercent)
+        return maxDrawdownPercentBasis !== undefined
           ? formatValue({
               kind: 'percentage',
-              value: -Math.abs(data.metrics.maxDrawdownAmountPercent),
+              value: -Math.abs(maxDrawdownPercentBasis),
               signed: true,
               precision: 1,
             })
@@ -1345,6 +1388,25 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
       'avgLossHoldTime',
     ].includes(metric);
 
+    
+    
+    if (
+      plugin?.settings?.trade?.displayRMultiples &&
+      R_FORM_METRICS.has(metric) &&
+      !usesRMultipleDelta &&
+      !usesMaxDrawdownPercentDelta
+    ) {
+      const unknownDelta: StatDelta = {
+        value: '—',
+        direction: 'flat',
+        suffixKey,
+        
+        
+        rComparisonUnavailable: rMultipleDeltaValues?.current !== undefined,
+      };
+      return masked ? undefined : unknownDelta;
+    }
+
     if (comparisonMode === 'past30d') {
       if (PAST_30D_COMPARISON_EXCLUDED_METRICS.has(metric)) {
         return undefined;
@@ -1449,11 +1511,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
 
   
   const isCurrencyMetric = (metric: string): boolean => {
-    if (
-      metric === 'maxDrawdown' &&
-      data?.metrics.maxDrawdownAmountPercent != null &&
-      Number.isFinite(data.metrics.maxDrawdownAmountPercent)
-    ) {
+    if (metric === 'maxDrawdown' && maxDrawdownPercentBasis !== undefined) {
       return false;
     }
 
@@ -1515,7 +1573,9 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   };
 
   
-  const getMetricTooltip = (metric: string): React.ReactNode | undefined => {
+  const getBaseMetricTooltip = (
+    metric: string
+  ): React.ReactNode | undefined => {
     if (!data) return undefined;
 
     const excursionCoverage = getExcursionCoverage(metric);
@@ -1796,7 +1856,71 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   };
 
   
+  
+  const showsRMultiple = (metric: string): boolean =>
+    Boolean(plugin?.settings?.trade?.displayRMultiples) &&
+    R_FORM_METRICS.has(metric) &&
+    !(metric === 'maxDrawdown' && maxDrawdownPercentBasis !== undefined);
+
+  
+  const getRCoverageWarning = (metric: string): string | undefined => {
+    if (
+      !data ||
+      !showsRMultiple(metric) ||
+      shouldMask(getMetricDisplayKind(metric))
+    ) {
+      return undefined;
+    }
+    const { withR, total } = getRCoverageCounts(data.metrics, metric);
+    return getRCoverageMessage(withR, total);
+  };
+
+  
+  
+  const getMetricTooltipDisclosureLabel = (
+    metric: string,
+    previousDelta: StatDelta | undefined
+  ): string | undefined => {
+    const note =
+      getRCoverageWarning(metric) ?? getRComparisonNote(previousDelta);
+    return note ? `${getMetricName(metric)}: ${note}` : undefined;
+  };
+
+  const getMetricTooltip = (
+    metric: string,
+    previousDelta: StatDelta | undefined
+  ): React.ReactNode | undefined => {
+    const coverageWarning = getRCoverageWarning(metric);
+    const comparisonNote = getRComparisonNote(previousDelta);
+    const base = getBaseMetricTooltip(metric);
+    if (!coverageWarning && !comparisonNote) return base;
+
+    return (
+      <>
+        <div className="journalit-dashboard-metric-tooltip">
+          {coverageWarning && (
+            <div className="journalit-dashboard-metric-tooltip__warning">
+              {coverageWarning}
+            </div>
+          )}
+          {comparisonNote && (
+            <div className="journalit-dashboard-metric-tooltip__note">
+              {comparisonNote}
+            </div>
+          )}
+          <div className="journalit-dashboard-metric-tooltip__hint">
+            {t('common.r-missing.fix')}
+          </div>
+        </div>
+        {base}
+      </>
+    );
+  };
+
+  
   const hasMetricWarning = (metric: string): boolean => {
+    if (getRCoverageWarning(metric) !== undefined) return true;
+
     if (metric === 'netPnL') {
       return (
         Boolean(data?.metrics.conversionBaseCurrency) &&
@@ -1929,6 +2053,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
     getMainPart,
     getDecimalPart,
     getMetricTooltip,
+    getMetricTooltipDisclosureLabel,
     hasMetricWarning,
     handleRemoveMetric,
     shouldMask,
@@ -1936,12 +2061,7 @@ function useTopSectionModel({ filters }: Pick<TopSectionProps, 'filters'>) {
   };
 }
 
-export const TopSection: React.FC<TopSectionProps> = ({
-  filters,
-  isEditing,
-  onShowMetricSelector,
-  hideAddButton = false,
-}) => {
+export const TopSection: React.FC<TopSectionProps> = ({ isEditing }) => {
   const {
     data,
     error,
@@ -1956,26 +2076,15 @@ export const TopSection: React.FC<TopSectionProps> = ({
     getMainPart,
     getDecimalPart,
     getMetricTooltip,
+    getMetricTooltipDisclosureLabel,
     hasMetricWarning,
     handleRemoveMetric,
     shouldMask,
     getNetPnLUnrealizedDisplay,
-  } = useTopSectionModel({ filters });
+  } = useTopSectionModel();
 
   return (
     <div className="journalit-dashboard-top-section">
-      {isEditing && !hideAddButton && onShowMetricSelector && (
-        <div className="journalit-dashboard-top-section-header">
-          <button
-            className="journalit-dashboard-add-metric-button"
-            onClick={onShowMetricSelector}
-            type="button"
-          >
-            {t('dashboard.top-section.add-metric')}
-          </button>
-        </div>
-      )}
-
       {!data && !error ? (
         <div className="metric-cards-skeleton">
           {Array.from({ length: 4 }).map((_, idx) => (
@@ -2052,7 +2161,11 @@ export const TopSection: React.FC<TopSectionProps> = ({
                         metricValue,
                         formattedValue
                       )}
-                      tooltip={getMetricTooltip(metric)}
+                      tooltip={getMetricTooltip(metric, previousDelta)}
+                      tooltipDisclosureLabel={getMetricTooltipDisclosureLabel(
+                        metric,
+                        previousDelta
+                      )}
                       hasWarning={hasMetricWarning(metric)}
                       previousDelta={previousDelta}
                       subline={netPnLUnrealized?.subline}

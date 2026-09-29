@@ -3,6 +3,7 @@ import React, {
   use,
   useCallback,
   useEffect,
+  useInsertionEffect,
   useMemo,
   useRef,
   useState,
@@ -16,8 +17,23 @@ import {
   type ContextualGuideCandidate,
 } from './contextualGuideResolution';
 import { GuideDefinition, GuideStepDefinition } from './types';
+import { guidesRequireResolution } from './GuideRegistry';
 import { cssVars } from '../styles/inlineStylePolicy';
 import { t } from '../lang/helpers';
+import {
+  getAnchoredPopoverPosition,
+  getWindowViewport,
+  type GuideViewport,
+} from './viewGuidePopoverPosition';
+import { trackElementRects } from './trackElementRects';
+import {
+  GuideStepProgressBar,
+  useMeasuredPopoverHeight,
+} from './GuidePopoverParts';
+import {
+  VIEW_GUIDE_BLOCKING_SELECTOR,
+  VIEW_GUIDE_SUSPENDING_SELECTOR,
+} from './suspendViewGuides';
 
 interface GuideRuntimeLayerProps {
   leaf: WorkspaceLeaf;
@@ -39,6 +55,7 @@ type GuideBackHandler = (
   transition: GuideBackTransition
 ) => void | GuideBackResult | Promise<void | GuideBackResult>;
 
+
 interface GuideRuntimeContextValue {
   registerTarget: (targetId: string, element: HTMLElement | null) => void;
   registerContextValue: (key: string, value: string | number | boolean) => void;
@@ -48,26 +65,57 @@ interface GuideRuntimeContextValue {
   leaf: WorkspaceLeaf;
   
   setResolvedGuide: (guideId: string | null) => void;
+}
+
+
+interface GuideStepContextValue {
   currentStepId: string | null;
+  
+  isVisible: boolean;
 }
 
 const GuideRuntimeContext = createContext<GuideRuntimeContextValue | null>(
   null
 );
 
+const GuideStepContext = createContext<GuideStepContextValue | null>(null);
+
 const NOOP = (): void => {
   // intentional
 };
 
-const hasModalGuideOverlay = (doc: Document): boolean =>
-  doc.querySelector('[data-journalit-modal-guide-overlay]') !== null;
+interface ViewGuideSuspension {
+  
+  hidden: boolean;
+  
+  blocked: boolean;
+}
 
-const useModalGuideOpen = (leaf: WorkspaceLeaf): boolean => {
-  const doc = leaf.view.containerEl?.ownerDocument ?? window.activeDocument;
-  const [isOpen, setIsOpen] = useState(() => hasModalGuideOverlay(doc));
+
+const readViewGuideSuspension = (doc: Document): ViewGuideSuspension => ({
+  hidden: doc.querySelector(VIEW_GUIDE_SUSPENDING_SELECTOR) !== null,
+  blocked: doc.querySelector(VIEW_GUIDE_BLOCKING_SELECTOR) !== null,
+});
+
+
+const getLeafDocument = (leaf: WorkspaceLeaf): Document =>
+  leaf.view.containerEl?.ownerDocument ?? window.activeDocument;
+
+const useViewGuideSuspension = (leaf: WorkspaceLeaf): ViewGuideSuspension => {
+  const doc = getLeafDocument(leaf);
+  const [suspension, setSuspension] = useState(() =>
+    readViewGuideSuspension(doc)
+  );
 
   useEffect(() => {
-    const update = () => setIsOpen(hasModalGuideOverlay(doc));
+    const update = () => {
+      const next = readViewGuideSuspension(doc);
+      setSuspension((previous) =>
+        previous.hidden === next.hidden && previous.blocked === next.blocked
+          ? previous
+          : next
+      );
+    };
     update();
     const observer = new MutationObserver(update);
     observer.observe(doc.body, {
@@ -77,7 +125,7 @@ const useModalGuideOpen = (leaf: WorkspaceLeaf): boolean => {
     return () => observer.disconnect();
   }, [doc]);
 
-  return isOpen;
+  return suspension;
 };
 
 const externalTargets = new Map<string, HTMLElement>();
@@ -150,10 +198,11 @@ const resolveGuideForLeaf = (
   viewType: string,
   resolvedGuideId: string | null,
   guideIds: string[],
+  viewResolvesGuide: boolean,
   getGuideById: (guideId: string) => GuideDefinition | null,
   getPrimaryGuideForView: (targetViewType: string) => GuideDefinition | null
 ): GuideDefinition | null => {
-  if (guideIds.length <= 1) {
+  if (!viewResolvesGuide) {
     return getPrimaryGuideForView(viewType);
   }
 
@@ -171,79 +220,6 @@ const resolveGuideForLeaf = (
   }
 
   return resolvedGuide;
-};
-
-const getAnchoredPopoverPosition = (
-  targetRect: DOMRect,
-  placement: GuideStepDefinition['placement'] = 'auto'
-): { top: number; left: number } => {
-  const gap = 10;
-  const viewportWidth = window.innerWidth;
-  const viewportHeight = window.innerHeight;
-  const popoverWidth = Math.min(340, viewportWidth - 24);
-  const estimatedPopoverHeight = 170;
-
-  if (placement === 'right' || placement === 'right-top') {
-    let top =
-      placement === 'right-top'
-        ? targetRect.top
-        : targetRect.top + targetRect.height / 2 - estimatedPopoverHeight / 2;
-    let left = targetRect.right + gap;
-
-    if (left + popoverWidth > viewportWidth - 12) {
-      left = Math.max(12, targetRect.left - popoverWidth - gap);
-    }
-
-    if (top < 12) {
-      top = 12;
-    }
-
-    if (top + estimatedPopoverHeight > viewportHeight - 12) {
-      top = Math.max(12, viewportHeight - estimatedPopoverHeight - 12);
-    }
-
-    return { top, left };
-  }
-
-  if (placement === 'left') {
-    let top =
-      targetRect.top + targetRect.height / 2 - estimatedPopoverHeight / 2;
-    let left = targetRect.left - popoverWidth - gap;
-
-    if (left < 12) {
-      left = Math.min(
-        viewportWidth - popoverWidth - 12,
-        targetRect.right + gap
-      );
-    }
-
-    if (top < 12) {
-      top = 12;
-    }
-
-    if (top + estimatedPopoverHeight > viewportHeight - 12) {
-      top = Math.max(12, viewportHeight - estimatedPopoverHeight - 12);
-    }
-
-    return { top, left };
-  }
-
-  let top = targetRect.bottom + gap;
-  let left = targetRect.left;
-
-  if (left + popoverWidth > viewportWidth - 12) {
-    left = viewportWidth - popoverWidth - 12;
-  }
-
-  if (left < 12) {
-    left = 12;
-  }
-
-  if (top > viewportHeight - 190) {
-    top = Math.max(12, targetRect.top - 160 - gap);
-  }
-
-  return { top, left };
 };
 
 export const useGuideTarget = (
@@ -288,8 +264,20 @@ export const useGuideBackHandler = (handler: GuideBackHandler | null): void => {
 };
 
 export const useGuideCurrentStepId = (): string | null => {
-  const context = use(GuideRuntimeContext);
+  const context = use(GuideStepContext);
   return context?.currentStepId ?? null;
+};
+
+
+export const useGuideLeaf = (): WorkspaceLeaf | null => {
+  const context = use(GuideRuntimeContext);
+  return context?.leaf ?? null;
+};
+
+
+export const useVisibleGuideStepId = (): string | null => {
+  const context = use(GuideStepContext);
+  return context?.isVisible ? context.currentStepId : null;
 };
 
 
@@ -375,21 +363,27 @@ export const useContextualGuideResolution = ({
 
 const OFFSCREEN_MARGIN = 24;
 
-const isTargetOffscreen = (targetRect: DOMRect): boolean => {
+const isTargetOffscreen = (
+  targetRect: DOMRect,
+  viewport: GuideViewport
+): boolean => {
   return (
     targetRect.bottom < OFFSCREEN_MARGIN ||
-    targetRect.top > window.innerHeight - OFFSCREEN_MARGIN ||
+    targetRect.top > viewport.height - OFFSCREEN_MARGIN ||
     targetRect.right < OFFSCREEN_MARGIN ||
-    targetRect.left > window.innerWidth - OFFSCREEN_MARGIN
+    targetRect.left > viewport.width - OFFSCREEN_MARGIN
   );
 };
 
-const getOffscreenDirection = (targetRect: DOMRect): 'up' | 'down' | 'side' => {
+const getOffscreenDirection = (
+  targetRect: DOMRect,
+  viewport: GuideViewport
+): 'up' | 'down' | 'side' => {
   if (targetRect.bottom < OFFSCREEN_MARGIN) {
     return 'up';
   }
 
-  if (targetRect.top > window.innerHeight - OFFSCREEN_MARGIN) {
+  if (targetRect.top > viewport.height - OFFSCREEN_MARGIN) {
     return 'down';
   }
 
@@ -399,7 +393,12 @@ const getOffscreenDirection = (targetRect: DOMRect): 'up' | 'down' | 'side' => {
 function useGuideRuntimeModel({
   leaf,
   viewType,
-}: Omit<GuideRuntimeLayerProps, 'children'>) {
+  viewGuidesHidden,
+  viewGuidesBlocked,
+}: Omit<GuideRuntimeLayerProps, 'children'> & {
+  viewGuidesHidden: boolean;
+  viewGuidesBlocked: boolean;
+}) {
   const plugin = getPluginInstance();
   const guideService = plugin?.viewGuideService;
   const guideRegistry = plugin?.guideRegistry;
@@ -434,37 +433,40 @@ function useGuideRuntimeModel({
 
   const resolvedGuideId = guideService?.getResolvedGuideForLeaf(leaf) ?? null;
 
+  
+  
+  const viewResolvesGuide = guidesRequireResolution(guidesForView);
+
   const resolvedGuide = guideRegistry
     ? resolveGuideForLeaf(
         viewType,
         resolvedGuideId,
         guideIdsForView,
+        viewResolvesGuide,
         (guideId) => guideRegistry.getGuideById(guideId),
         (targetViewType) => guideRegistry.getPrimaryGuideForView(targetViewType)
       )
     : null;
 
-  const isMultiGuideView = guideIdsForView.length > 1;
-
   const resolvedSession =
-    isMultiGuideView && resolvedGuide && guideService
+    viewResolvesGuide && resolvedGuide && guideService
       ? (guideService.getSessionForGuideAndLeaf?.(resolvedGuide.id, leaf) ??
         null)
       : null;
 
   const shouldUseRunningSession =
     !!runningSession &&
-    (!isMultiGuideView ||
+    (!viewResolvesGuide ||
       (resolvedGuide !== null && runningSession.guideId === resolvedGuide.id));
 
   const session = shouldUseRunningSession
     ? runningSession
-    : isMultiGuideView
+    : viewResolvesGuide
       ? resolvedSession
       : null;
 
   const guide =
-    isMultiGuideView && !resolvedGuide
+    viewResolvesGuide && !resolvedGuide
       ? null
       : session
         ? (guideRegistry?.getGuideById(session.guideId) ?? null)
@@ -666,35 +668,9 @@ function useGuideRuntimeModel({
       return;
     }
 
-    const updateRect = () => {
-      updateTargetRect(target.getBoundingClientRect());
-    };
-
-    updateRect();
-
-    const handleWindowUpdate = () => {
-      updateRect();
-    };
-
-    window.addEventListener('resize', handleWindowUpdate);
-    window.addEventListener('scroll', handleWindowUpdate, true);
-
-    const resizeObserver =
-      'ResizeObserver' in window
-        ? new ResizeObserver(() => {
-            updateRect();
-          })
-        : null;
-
-    if (resizeObserver) {
-      resizeObserver.observe(target);
-    }
-
-    return () => {
-      window.removeEventListener('resize', handleWindowUpdate);
-      window.removeEventListener('scroll', handleWindowUpdate, true);
-      resizeObserver?.disconnect();
-    };
+    return trackElementRects([target], ([rect]) => {
+      updateTargetRect(rect);
+    });
   }, [
     currentStep?.targetId,
     getTargetElement,
@@ -778,9 +754,27 @@ function useGuideRuntimeModel({
     [advanceStep, currentStep, guideService, session]
   );
 
-  const targetIsOffscreen = !!targetRect && isTargetOffscreen(targetRect);
+  
+  
+  
+  
+  
+  const latestNotifyActionRef = useRef(notifyAction);
+  useInsertionEffect(() => {
+    latestNotifyActionRef.current = notifyAction;
+  }, [notifyAction]);
+  const stableNotifyAction = useCallback((actionId: string) => {
+    latestNotifyActionRef.current(actionId);
+  }, []);
+
+  
+  
+  const guideDocument = getLeafDocument(leaf);
+  const viewport = getWindowViewport(guideDocument.defaultView ?? window);
+  const targetIsOffscreen =
+    !!targetRect && isTargetOffscreen(targetRect, viewport);
   const offscreenDirection = targetRect
-    ? getOffscreenDirection(targetRect)
+    ? getOffscreenDirection(targetRect, viewport)
     : null;
 
   const scrollTargetIntoView = useCallback(() => {
@@ -950,7 +944,14 @@ function useGuideRuntimeModel({
   }, [advanceStep, currentStep]);
 
   useEffect(() => {
-    if (!visible || !isWaitingForTarget || !currentStep?.targetId) {
+    
+    
+    if (
+      !visible ||
+      viewGuidesHidden ||
+      !isWaitingForTarget ||
+      !currentStep?.targetId
+    ) {
       return;
     }
 
@@ -973,9 +974,13 @@ function useGuideRuntimeModel({
     currentStep?.skipIfTargetMissing,
     currentStep?.targetId,
     isWaitingForTarget,
+    viewGuidesHidden,
     visible,
   ]);
 
+  const [popoverRef, popoverHeight] = useMeasuredPopoverHeight();
+  const stepNumber = reachableIndex + 1;
+  const stepCount = reachableSteps.length || 1;
   const popoverPosition = (() => {
     if (
       currentStep?.placement === 'center' ||
@@ -997,6 +1002,8 @@ function useGuideRuntimeModel({
 
     const anchored = getAnchoredPopoverPosition(
       targetRect,
+      popoverHeight,
+      viewport,
       currentStep?.placement
     );
 
@@ -1019,33 +1026,42 @@ function useGuideRuntimeModel({
     () => ({
       registerTarget,
       registerContextValue,
-      notifyAction,
+      notifyAction: stableNotifyAction,
       registerBackHandler,
       leaf,
       setResolvedGuide,
-      currentStepId: currentStep?.id ?? null,
     }),
     [
-      currentStep?.id,
       leaf,
-      notifyAction,
       registerBackHandler,
       registerContextValue,
       registerTarget,
       setResolvedGuide,
+      stableNotifyAction,
     ]
+  );
+
+  const stepContextValue = useMemo<GuideStepContextValue>(
+    () => ({
+      currentStepId: currentStep?.id ?? null,
+      isVisible: visible && !viewGuidesBlocked,
+    }),
+    [currentStep?.id, viewGuidesBlocked, visible]
   );
 
   return {
     contextValue,
+    stepContextValue,
     visible,
     currentStep,
     popoverPosition,
+    popoverRef,
+    guideDocument,
     showOffscreenPrompt,
     isWaitingForTarget,
     offscreenDirection,
-    reachableIndex,
-    reachableSteps,
+    stepNumber,
+    stepCount,
     isLastStep,
     isFirstStep,
     handleSkip,
@@ -1061,17 +1077,20 @@ export const GuideRuntimeLayer: React.FC<GuideRuntimeLayerProps> = ({
   viewType,
   children,
 }) => {
-  const modalGuideOpen = useModalGuideOpen(leaf);
+  const suspension = useViewGuideSuspension(leaf);
   const {
     contextValue,
+    stepContextValue,
     visible,
     currentStep,
     popoverPosition,
+    popoverRef,
+    guideDocument,
     showOffscreenPrompt,
     isWaitingForTarget,
     offscreenDirection,
-    reachableIndex,
-    reachableSteps,
+    stepNumber,
+    stepCount,
     isLastStep,
     isFirstStep,
     handleSkip,
@@ -1079,14 +1098,21 @@ export const GuideRuntimeLayer: React.FC<GuideRuntimeLayerProps> = ({
     handleStepDismiss,
     handleBack,
     handlePrimaryClick,
-  } = useGuideRuntimeModel({ leaf, viewType });
+  } = useGuideRuntimeModel({
+    leaf,
+    viewType,
+    viewGuidesHidden: suspension.hidden,
+    viewGuidesBlocked: suspension.blocked,
+  });
 
   return (
     <GuideRuntimeContext.Provider value={contextValue}>
-      {children}
+      <GuideStepContext.Provider value={stepContextValue}>
+        {children}
+      </GuideStepContext.Provider>
 
       {visible &&
-        !modalGuideOpen &&
+        !suspension.hidden &&
         currentStep &&
         createPortal(
           <div className="journalit-view-guide-overlay">
@@ -1103,6 +1129,7 @@ export const GuideRuntimeLayer: React.FC<GuideRuntimeLayerProps> = ({
             )}
 
             <div
+              ref={popoverRef}
               className={`journalit-view-guide-popover ${popoverPosition.mode === 'anchored' ? 'journalit-view-guide-popover--anchored' : ''}`}
               role="dialog"
               aria-labelledby="journalit-view-guide-title"
@@ -1137,9 +1164,10 @@ export const GuideRuntimeLayer: React.FC<GuideRuntimeLayerProps> = ({
               </p>
 
               <div className="journalit-view-guide-footer">
-                <span className="journalit-view-guide-step">
-                  {`${reachableIndex + 1}/${reachableSteps.length || 1}`}
-                </span>
+                <GuideStepProgressBar
+                  stepNumber={stepNumber}
+                  stepCount={stepCount}
+                />
 
                 <div className="journalit-view-guide-actions">
                   {currentStep.action ? (
@@ -1159,7 +1187,7 @@ export const GuideRuntimeLayer: React.FC<GuideRuntimeLayerProps> = ({
                         </button>
                       )}
                       <button
-                        className="journalit-view-guide-button journalit-view-guide-button--primary"
+                        className="journalit-view-guide-button journalit-view-guide-button--primary mod-cta"
                         onClick={handleStepAction}
                       >
                         {currentStep.action.label}
@@ -1184,7 +1212,7 @@ export const GuideRuntimeLayer: React.FC<GuideRuntimeLayerProps> = ({
                         </button>
                       )}
                       <button
-                        className="journalit-view-guide-button journalit-view-guide-button--primary"
+                        className="journalit-view-guide-button journalit-view-guide-button--primary mod-cta"
                         onClick={handlePrimaryClick}
                         disabled={isWaitingForTarget}
                       >
@@ -1200,7 +1228,7 @@ export const GuideRuntimeLayer: React.FC<GuideRuntimeLayerProps> = ({
               </div>
             </div>
           </div>,
-          window.activeDocument.body
+          guideDocument.body
         )}
     </GuideRuntimeContext.Provider>
   );

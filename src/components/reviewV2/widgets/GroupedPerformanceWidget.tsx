@@ -27,6 +27,7 @@ import {
   getTradeSetupGroups,
   getTradeTagGroups,
 } from '../../../utils/tradeGrouping';
+import { shareLoadingProps } from '../../../services/share/brandedCapture';
 
 type ReviewGroupedTrade = Record<string, unknown> & {
   pnl?: number | null;
@@ -395,6 +396,7 @@ export const GroupedPerformanceWidget: React.FC<GroupedPerformanceWidgetProps> =
               {mergedConfig.showChart && (
                 <div
                   className="journalit-reviewv2-chart-skeleton"
+                  {...shareLoadingProps}
                   style={cssVars({
                     '--reviewv2-chart-height': `${mergedConfig.height}px`,
                     '--reviewv2-chart-bar-gap': '8px',

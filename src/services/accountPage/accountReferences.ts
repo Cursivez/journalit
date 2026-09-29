@@ -176,6 +176,10 @@ export function repointAccountReferences(
     }
   }
 
+  changes.push(
+    ...repointHomeAccountProgressReferences(settings, oldName, newName)
+  );
+
   const csvFavoriteAccount = settings.csvFavoriteAccount;
   if (
     typeof csvFavoriteAccount === 'string' &&
@@ -189,6 +193,50 @@ export function repointAccountReferences(
     settings.csvFavoriteAccount = newName;
   }
 
+  return changes;
+}
+
+
+export function repointHomeAccountProgressReferences(
+  settings: JournalitSettings,
+  oldName: string,
+  newName: string
+): AccountReferenceChange[] {
+  const changes: AccountReferenceChange[] = [];
+  const accountProgress = settings.home?.accountProgress;
+  if (!accountProgress || oldName === newName) return changes;
+  const oldLookupKey = normalizeAccountLookupKey(oldName);
+  for (const [widgetId, config] of Object.entries(accountProgress)) {
+    
+    
+    if (!Array.isArray(config?.accounts)) continue;
+    if (
+      !config.accounts.some(
+        (name) => normalizeAccountLookupKey(name) === oldLookupKey
+      )
+    ) {
+      continue;
+    }
+    const nextAccounts: string[] = [];
+    for (const name of config.accounts) {
+      const next =
+        normalizeAccountLookupKey(name) === oldLookupKey ? newName : name;
+      if (
+        !nextAccounts.some(
+          (entry) =>
+            normalizeAccountLookupKey(entry) === normalizeAccountLookupKey(next)
+        )
+      ) {
+        nextAccounts.push(next);
+      }
+    }
+    changes.push({
+      kind: 'homeAccountProgress',
+      widgetId,
+      previousAccounts: config.accounts,
+    });
+    config.accounts = nextAccounts;
+  }
   return changes;
 }
 
@@ -234,6 +282,14 @@ function revertAccountReferenceChange(
     }
     case 'csvFavoriteAccount': {
       settings.csvFavoriteAccount = change.previous;
+      return;
+    }
+    case 'homeAccountProgress': {
+      const config = settings.home?.accountProgress?.[change.widgetId];
+      if (!config) {
+        return;
+      }
+      config.accounts = change.previousAccounts;
       return;
     }
     case 'copyTradeAdjustment': {

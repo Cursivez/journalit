@@ -2,10 +2,15 @@
 
 import React, { memo } from 'react';
 import { SkeletonText } from './SkeletonText';
+import { shareLoadingProps } from '../../services/share/brandedCapture';
 
 export const MetricCardSkeleton = memo(() => {
   return (
-    <div className="metric-card-skeleton" aria-hidden="true">
+    <div
+      className="metric-card-skeleton"
+      {...shareLoadingProps}
+      aria-hidden="true"
+    >
       
       <div className="metric-card-skeleton-label">
         <SkeletonText width="80px" height="14px" />

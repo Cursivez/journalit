@@ -9,62 +9,19 @@ import {
 } from '../../utils/layoutUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { GridLayout } from './GridLayout';
-import { UnifiedComponentSelector } from '../UnifiedComponentSelector';
-import { AVAILABLE_METRICS } from '../TopSection/types';
 import { eventBus } from '../../../../services/events/EventBus';
 import { useEventBus } from '../../../../hooks/useEventBus';
-import { t } from '../../../../lang/helpers';
 import { normalizeDashboardWidgetIds } from './types';
 
 interface BottomSectionProps {
   filters: FilterState;
   isEditing: boolean;
-  hideAddButton?: boolean;
 }
-
-const ALL_METRIC_IDS = AVAILABLE_METRICS.map((metric) => metric.id);
-
-const BottomSectionEditorControls: React.FC<{
-  activeWidgets: string[];
-}> = ({ activeWidgets }) => {
-  const [showComponentSelector, setShowComponentSelector] = useState(false);
-
-  return (
-    <>
-      <div className="journalit-dashboard-bottom-section-header">
-        <button
-          className="journalit-dashboard-add-widget-button journalit-dashboard-add-widget-button--primary"
-          onClick={() => {
-            setShowComponentSelector((isVisible) => !isVisible);
-          }}
-        >
-          {t('dashboard.button.add-widget')}
-        </button>
-      </div>
-      {showComponentSelector && (
-        <UnifiedComponentSelector
-          activeMetrics={ALL_METRIC_IDS}
-          activeWidgets={activeWidgets}
-          onAddMetric={() => {
-            // intentional
-          }}
-          onAddWidget={() => {
-            setShowComponentSelector(false);
-          }}
-          onClose={() => {
-            setShowComponentSelector(false);
-          }}
-        />
-      )}
-    </>
-  );
-};
 
 
 export const BottomSection: React.FC<BottomSectionProps> = ({
   filters,
   isEditing,
-  hideAddButton = false,
 }) => {
   const plugin = usePlugin();
   const [activeWidgets, setActiveWidgets] = useState<string[]>([]);
@@ -152,8 +109,7 @@ export const BottomSection: React.FC<BottomSectionProps> = ({
         };
 
         
-        
-        void saveLayout(plugin, 'Default', newLayout);
+        void saveLayout(plugin, newLayout);
 
         
         const newWidgets = activeWidgets.filter((id) => id !== widgetId);
@@ -170,9 +126,6 @@ export const BottomSection: React.FC<BottomSectionProps> = ({
 
   return (
     <div className="journalit-dashboard-bottom-section">
-      {isEditing && !hideAddButton && (
-        <BottomSectionEditorControls activeWidgets={activeWidgets} />
-      )}
       <div className="journalit-dashboard-bottom-section-body">
         <GridLayout
           filters={filters}

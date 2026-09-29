@@ -14,6 +14,8 @@ const DATE_FORMAT_VALUES = [
   'dd/MM/yyyy HH:mm:ss', 
   'dd-MM-yyyy', 
   'dd-MM-yyyy HH:mm:ss', 
+  'dd.MM.yyyy', 
+  'yyyy.MM.dd', 
 ] as const;
 
 import { t, type TranslationKey } from '../../lang/helpers';
@@ -34,6 +36,8 @@ const DATE_FORMAT_KEYS: Record<
   'dd/MM/yyyy HH:mm:ss': 'csv.date-format.eu-datetime',
   'dd-MM-yyyy': 'csv.date-format.eu-dash',
   'dd-MM-yyyy HH:mm:ss': 'csv.date-format.eu-dash-datetime',
+  'dd.MM.yyyy': 'csv.date-format.eu-dot',
+  'yyyy.MM.dd': 'csv.date-format.ymd-dot',
 };
 
 

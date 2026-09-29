@@ -14,54 +14,103 @@ export const VIEW_GUIDE_STYLES = `
   height: var(--journalit-guide-highlight-height, 0px);
   border-radius: 8px;
   border: 2px solid var(--interactive-accent, #7c3aed);
-  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.38);
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.55);
   transition: top 120ms ease, left 120ms ease, width 120ms ease, height 120ms ease;
   pointer-events: none;
 }
 
+
 .journalit-view-guide-popover {
+  --journalit-guide-card-bg: #f7f6fb;
+  --journalit-guide-card-text: #16131f;
+  --journalit-guide-card-body: #26232f;
+  --journalit-guide-card-faint: #6b6680;
+  --journalit-guide-card-track: #e3e0ec;
+  --journalit-guide-card-control-bg: #ffffff;
+  --journalit-guide-card-control-border: #d9d6e3;
+  --journalit-guide-card-control-hover: #efedf5;
   position: fixed;
   top: var(--journalit-guide-popover-top, 50%);
   left: var(--journalit-guide-popover-left, 50%);
   transform: translate(-50%, -50%);
   width: min(340px, calc(100vw - 24px));
-  background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 10px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.25);
-  padding: 12px;
+  background: var(--journalit-guide-card-bg);
+  color: var(--journalit-guide-card-text);
+  border-radius: 12px;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  padding: 16px 18px;
   pointer-events: auto;
+}
+
+.theme-light .journalit-view-guide-popover {
+  --journalit-guide-card-bg: #1f1d27;
+  --journalit-guide-card-text: #f5f4fa;
+  --journalit-guide-card-body: #e6e4ee;
+  --journalit-guide-card-faint: #9e9aae;
+  --journalit-guide-card-track: #3a3747;
+  --journalit-guide-card-control-bg: #2c2a36;
+  --journalit-guide-card-control-border: #474456;
+  --journalit-guide-card-control-hover: #37343f;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
 }
 
 .journalit-view-guide-popover--anchored {
   transform: none;
 }
 
+
 .journalit-view-guide-title {
   margin: 0;
-  font-size: 13px;
-  font-weight: 600;
-  color: var(--text-normal);
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: var(--journalit-guide-card-text);
 }
 
 .journalit-view-guide-description {
-  margin: 8px 0 0;
-  font-size: 12px;
-  line-height: 1.4;
-  color: var(--text-muted);
+  margin: 6px 0 0;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--journalit-guide-card-body);
+}
+
+.journalit-view-guide-progress-group {
+  display: flex;
+  flex: 0 1 88px;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 32px;
+}
+
+.journalit-view-guide-step-count {
+  font-size: 11px;
+  line-height: 1.2;
+  white-space: nowrap;
+  color: var(--journalit-guide-card-faint);
 }
 
 .journalit-view-guide-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 8px;
-  margin-top: 12px;
+  gap: 12px;
+  margin-top: 16px;
 }
 
-.journalit-view-guide-step {
-  font-size: 11px;
-  color: var(--text-faint);
+.journalit-view-guide-progress {
+  height: 4px;
+  border-radius: 4px;
+  overflow: hidden;
+  background: var(--journalit-guide-card-track);
+}
+
+.journalit-view-guide-progress-fill {
+  width: var(--journalit-guide-progress, 0%);
+  height: 100%;
+  border-radius: inherit;
+  background: var(--interactive-accent);
+  color: var(--text-on-accent);
+  transition: width 160ms ease;
 }
 
 .journalit-view-guide-actions {
@@ -81,13 +130,13 @@ export const VIEW_GUIDE_STYLES = `
   border: none !important;
   padding: 4px 6px;
   background: transparent !important;
-  color: var(--text-faint) !important;
+  color: var(--journalit-guide-card-faint) !important;
   box-shadow: none !important;
 }
 
 .journalit-view-guide-actions .journalit-view-guide-button--secondary:hover {
   background: transparent !important;
-  color: var(--text-muted) !important;
+  color: var(--journalit-guide-card-text) !important;
   text-decoration: underline;
 }
 
@@ -104,31 +153,21 @@ export const VIEW_GUIDE_STYLES = `
   cursor: not-allowed;
 }
 
-.journalit-view-guide-button--back,
-.journalit-view-guide-button--primary {
-  border: 1px solid var(--interactive-accent);
-  padding: 4px 10px;
+.journalit-view-guide-actions .journalit-view-guide-button--back,
+.journalit-view-guide-actions .journalit-view-guide-button--primary {
+  padding: 4px 12px;
   box-shadow: none;
 }
 
-.journalit-view-guide-button--back {
-  background: var(--background-secondary);
-  border-color: var(--background-modifier-border);
-  color: var(--text-normal);
+
+.journalit-view-guide-actions .journalit-view-guide-button--back {
+  background: var(--journalit-guide-card-control-bg);
+  border: 1px solid var(--journalit-guide-card-control-border);
+  color: var(--journalit-guide-card-text);
 }
 
-.journalit-view-guide-button--back:hover {
-  background: var(--background-modifier-hover);
-}
-
-.journalit-view-guide-button--primary {
-  background: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-  color: var(--text-on-accent, #fff);
-}
-
-.journalit-view-guide-button--primary:hover {
-  filter: brightness(1.03);
+.journalit-view-guide-actions .journalit-view-guide-button--back:hover {
+  background: var(--journalit-guide-card-control-hover);
 }
 
 .journalit-trade-form-guide-orb-layer {
@@ -146,10 +185,10 @@ export const VIEW_GUIDE_STYLES = `
   height: var(--journalit-guide-highlight-height, 0px);
   border: 1px solid var(--interactive-accent, #7c3aed);
   border-radius: 6px;
-  background: rgba(var(--interactive-accent-rgb, 124, 58, 237), 0.12);
+  background: color-mix(in srgb, var(--interactive-accent) 12%, transparent);
   box-shadow:
-    inset 0 0 0 1px rgba(var(--interactive-accent-rgb, 124, 58, 237), 0.16),
-    0 0 0 2px rgba(var(--interactive-accent-rgb, 124, 58, 237), 0.08);
+    inset 0 0 0 1px color-mix(in srgb, var(--interactive-accent) 16%, transparent),
+    0 0 0 2px color-mix(in srgb, var(--interactive-accent) 8%, transparent);
   pointer-events: none;
 }
 `;

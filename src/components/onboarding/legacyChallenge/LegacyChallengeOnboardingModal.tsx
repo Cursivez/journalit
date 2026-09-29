@@ -21,6 +21,7 @@ import {
   LEGACY_CHALLENGE_SETUP_GUIDE_IDENTITY,
   LEGACY_CHALLENGE_SETUP_GUIDE_STEPS,
 } from '../../../guides/accountConversionGuides';
+import { suspendViewGuidesWhileOpen } from '../../../guides/suspendViewGuides';
 
 interface LegacyAccountRow {
   name: string;
@@ -138,6 +139,7 @@ const LegacyAccountRowView: React.FC<{
             account: row.name,
           })}
           disabled={disabled}
+          menuWidth="content"
         />
       </div>
     )}
@@ -423,6 +425,7 @@ class LegacyChallengeOnboardingModal extends Modal {
   onOpen(): void {
     const { contentEl } = this;
     contentEl.empty();
+    suspendViewGuidesWhileOpen(this.modalEl);
     const container = contentEl.createDiv({
       cls: 'journalit-legacy-challenge-onboarding__body',
     });

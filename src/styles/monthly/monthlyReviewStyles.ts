@@ -154,6 +154,7 @@ export const monthlyReviewStyles = `
 
 .monthly-review-view-button:hover {
   background: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
 }
 
 .monthly-review-link-button {
@@ -168,7 +169,7 @@ export const monthlyReviewStyles = `
 }
 
 .monthly-review-link-button:hover {
-  background: var(--text-accent);
+  background: var(--interactive-accent);
   color: var(--text-on-accent);
 }
 

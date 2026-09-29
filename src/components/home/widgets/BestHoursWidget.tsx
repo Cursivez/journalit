@@ -5,7 +5,10 @@ import { useDashboardData } from '../../dashboard/context/DashboardDataContext';
 import { useFilteredByPeriod } from '../context/HomePeriodContext';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { useCurrency } from '../../../contexts/CurrencyContext';
-import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
+import {
+  useDisplayFormatter,
+  useDisplayPolicy,
+} from '../../../hooks/useDisplayPolicy';
 import {
   buildCurrencyConversionMetadata,
   CurrencyConversionInfo,
@@ -19,6 +22,7 @@ import { normalizeBreakEvenRange } from '../../../utils/breakEvenRange';
 import {
   aggregateEntryTimeBuckets,
   formatMinuteOfDay,
+  getBucketDisplayAverage,
   selectBestEntryWindow,
 } from './bestHoursUtils';
 import type { BucketStats, TimeBucket } from './bestHoursUtils';
@@ -70,6 +74,7 @@ interface BestHoursTimelineProps {
   rangeEndMinute: number;
   maxPnL: number;
   minPnL: number;
+  displayRMultiples: boolean;
   isPnlMasked: boolean;
   isReturnPercentMasked: boolean;
   effectiveCurrency: string;
@@ -87,6 +92,7 @@ function BestHoursTimeline({
   rangeEndMinute,
   maxPnL,
   minPnL,
+  displayRMultiples,
   isPnlMasked,
   isReturnPercentMasked,
   effectiveCurrency,
@@ -102,6 +108,9 @@ function BestHoursTimeline({
     return { left, width };
   };
 
+  const hoveredAverage = hoveredStats
+    ? getBucketDisplayAverage(hoveredStats, displayRMultiples)
+    : null;
   const durationMinutes = rangeEndMinute - rangeStartMinute;
   const labelIntervalMinutes =
     durationMinutes > 12 * 60 ? 6 * 60 : durationMinutes > 4 * 60 ? 2 * 60 : 60;
@@ -119,7 +128,8 @@ function BestHoursTimeline({
           const { left, width } = getTimelinePosition(bucket);
           const isHovered = hoveredBucket === bucket.id;
           const isBest = bestBucket?.bucket.id === bucket.id;
-          const averagePnl = stats.averagePnl ?? 0;
+          const averagePnl =
+            getBucketDisplayAverage(stats, displayRMultiples) ?? 0;
           const isEmpty = stats.tradeCount === 0;
           const isLowSample =
             !isEmpty &&
@@ -181,9 +191,9 @@ function BestHoursTimeline({
           <div className="journalit-home-best-hours__tooltip-value-row">
             <span
               className={
-                hoveredStats.averagePnl === null
+                hoveredAverage === null
                   ? 'journalit-home-best-hours__tooltip-pnl'
-                  : hoveredStats.averagePnl >= 0
+                  : hoveredAverage >= 0
                     ? 'journalit-home-best-hours__tooltip-pnl journalit-home-best-hours__tooltip-pnl--positive'
                     : 'journalit-home-best-hours__tooltip-pnl journalit-home-best-hours__tooltip-pnl--negative'
               }
@@ -193,6 +203,7 @@ function BestHoursTimeline({
                 : formatValue({
                     kind: 'pnl',
                     value: hoveredStats.averagePnl,
+                    rMultiple: hoveredStats.averageR,
                     currencyCode: effectiveCurrency,
                   })}
             </span>
@@ -297,22 +308,24 @@ const BestHoursWidgetComponent: React.FC = () => {
     [pnlContributingTrades, plugin, breakEvenSettings]
   );
 
+  const { displayRMultiples } = useDisplayPolicy();
   const bestBucket = useMemo(
-    () => selectBestEntryWindow(bucketStats),
-    [bucketStats]
+    () => selectBestEntryWindow(bucketStats, displayRMultiples),
+    [bucketStats, displayRMultiples]
   );
 
   
   const { maxPnL, minPnL } = useMemo(() => {
-    const averages = bucketStats.flatMap((s) =>
-      s.averagePnl === null || !s.isDevelopingEligible ? [] : [s.averagePnl]
-    );
+    const averages = bucketStats.flatMap((s) => {
+      const average = getBucketDisplayAverage(s, displayRMultiples);
+      return average === null || !s.isDevelopingEligible ? [] : [average];
+    });
     if (averages.length === 0) return { maxPnL: 1, minPnL: 0 };
     return {
       maxPnL: Math.max(...averages),
       minPnL: Math.min(...averages),
     };
-  }, [bucketStats]);
+  }, [bucketStats, displayRMultiples]);
 
   
   const hoveredStats = useMemo(() => {
@@ -375,6 +388,7 @@ const BestHoursWidgetComponent: React.FC = () => {
               {formatValue({
                 kind: 'pnl',
                 value: bestBucket.averagePnl ?? 0,
+                rMultiple: bestBucket.averageR,
                 currencyCode: effectiveCurrency,
               })}
               {bestBucket.sampleTier === 'developing' && (
@@ -412,6 +426,7 @@ const BestHoursWidgetComponent: React.FC = () => {
         rangeEndMinute={rangeEndMinute}
         maxPnL={maxPnL}
         minPnL={minPnL}
+        displayRMultiples={displayRMultiples}
         isPnlMasked={isPnlMasked}
         isReturnPercentMasked={isReturnPercentMasked}
         effectiveCurrency={effectiveCurrency}

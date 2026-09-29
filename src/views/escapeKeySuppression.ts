@@ -8,7 +8,6 @@ export const ESCAPE_DELEGATE_ATTRIBUTE = 'data-journalit-escape-delegate';
 const ESCAPE_DELEGATED_SURFACE_SELECTORS = [
   ...OPEN_FULLSCREEN_PORTAL_SELECTORS,
   '.journalit-shared-selector-overlay',
-  '.journalit-component-selector-overlay',
   '.journalit-widget-picker-overlay',
   '.widget-picker-dropdown--floating',
   '.journalit-modal-overlay',

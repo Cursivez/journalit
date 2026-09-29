@@ -86,6 +86,7 @@ export const UPDATE_TOAST_STYLES = `
 
 .journalit-update-toast--available .journalit-update-toast-button:hover {
   background-color: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
 }
 
 .journalit-update-toast-title {
@@ -189,6 +190,7 @@ export const UPDATE_TOAST_STYLES = `
 
 .journalit-update-toast-button:hover {
   background: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
 }
 
 .journalit-update-toast-secondary-button {

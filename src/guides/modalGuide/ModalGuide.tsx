@@ -5,7 +5,6 @@ import React, {
   useEffect,
   useId,
   useLayoutEffect,
-  useMemo,
   useRef,
   useState,
 } from 'react';
@@ -19,7 +18,6 @@ import {
   shouldAutoShowModalGuide,
 } from './modalGuidePersistence';
 import {
-  getModalGuidePopoverPosition,
   getModalGuideTargetElement,
   type ModalGuidePlacement,
 } from './modalGuidePopover';
@@ -161,11 +159,6 @@ export const ModalGuide: React.FC<ModalGuideProps> = ({
   const handleBack = useCallback(() => moveTo(-1), [moveTo]);
   const handleSkip = useCallback(() => finish('skipped'), [finish]);
 
-  const position = useMemo(
-    () => getModalGuidePopoverPosition(step?.placement, targetRect),
-    [step?.placement, targetRect]
-  );
-
   if (!step) return null;
 
   return (
@@ -176,8 +169,10 @@ export const ModalGuide: React.FC<ModalGuideProps> = ({
           titleId={titleId}
           title={t(step.titleKey)}
           description={t(step.descriptionKey)}
-          stepLabel={`${Math.max(0, navigablePosition) + 1}/${navigableStepIndexes.length}`}
-          position={position}
+          stepNumber={Math.max(0, navigablePosition) + 1}
+          stepCount={navigableStepIndexes.length}
+          placement={step.placement}
+          targetRect={targetRect}
           isWaitingForTarget={isWaitingForTarget}
           isFirstStep={isFirstStep}
           isLastStep={isLastStep}

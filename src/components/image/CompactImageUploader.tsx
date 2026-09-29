@@ -8,6 +8,7 @@ import { PasteManager } from '../../utils/PasteManager';
 import { getApp } from '../../utils/obsidian';
 import { resolveImageInput } from '../../utils/imageMediaUtils';
 import { readClipboardText } from '../../utils/clipboard';
+import { shareCaptureExcludeProps } from '../../services/share/brandedCapture';
 
 const SUPPORTED_MEDIA_FILE_EXTENSION_PATTERN =
   /\.(?:jpe?g|png|gif|bmp|webp|svg|mp4|webm|mov|m4v|ogv|ogg|3gp|mkv)$/i;
@@ -336,6 +337,8 @@ function CompactImageUploaderControls({
   return (
     <div
       ref={containerRef}
+      
+      {...shareCaptureExcludeProps}
       className={`journalit-compact-uploader journalit-compact-uploader-container ${isDragging ? 'dragging' : ''} ${isProcessing ? 'processing' : ''} ${className}`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}

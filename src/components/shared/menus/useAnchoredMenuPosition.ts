@@ -1,5 +1,16 @@
 import { useLayoutEffect, useState } from 'react';
 
+
+export function anchoredMenuPortalRoot(
+  trigger: HTMLElement | null
+): HTMLElement {
+  return (
+    trigger?.closest<HTMLElement>('.modal-container') ??
+    trigger?.ownerDocument.body ??
+    window.activeDocument.body
+  );
+}
+
 export type AnchoredMenuWidth = 'trigger' | 'content' | number;
 
 interface RefCurrent<T> {

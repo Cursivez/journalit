@@ -921,7 +921,7 @@ const useDashboardGridLayoutState = ({
           };
 
           setLayoutState({ layouts: nextLayouts, layoutsReady: true });
-          void saveLayout(plugin, 'Default', newLayout);
+          void saveLayout(plugin, newLayout);
         } catch (error) {
           console.error('Error saving layout in handleLayoutChange:', error);
         }

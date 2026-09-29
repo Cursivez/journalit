@@ -96,10 +96,10 @@ button.journalit-native-button.journalit-collapsible-header:focus {
   padding: 12px 12px 12px 12px;
   display: flex;
   justify-content: center;
-  animation: expandDown 0.2s ease-out;
+  animation: journalit-expand-down 0.2s ease-out;
 }
 
-@keyframes expandDown {
+@keyframes journalit-expand-down {
   from {
     opacity: 0;
     transform: translateY(-4px);

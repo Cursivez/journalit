@@ -23,6 +23,7 @@ import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
 import { PropChallengeAccountCard } from './PropChallengeAccountCard';
 import { applyPropChallengeRuleProjection } from '../../../services/propChallenge/PropChallengeRuleProjection';
+import { formatAccountTypeLabel } from '../../../utils/accountTypeLabel';
 
 type FormatDisplayValue = ReturnType<typeof useDisplayFormatter>['formatValue'];
 type AccountCardMetrics = ReturnType<typeof calculateAccountCardMetrics>;
@@ -93,7 +94,9 @@ function AccountCardHeader({
           account={account}
           copiedByAccounts={copiedByAccounts}
           leading={
-            <div className="account-type-badge">{account.accountType}</div>
+            <div className="account-type-badge">
+              {formatAccountTypeLabel(account.accountType)}
+            </div>
           }
         />
       </div>

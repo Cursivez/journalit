@@ -443,11 +443,6 @@ export class ErrorHandler {
     }
 
     
-    if (operation.includes('target detection')) {
-      return t('error.clipboard.no-target');
-    }
-
-    
     if (
       operation.includes('paste operation') ||
       operation.includes('global paste')

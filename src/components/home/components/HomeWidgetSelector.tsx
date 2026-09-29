@@ -1,332 +1,187 @@
 
 
-import React, {
-  useCallback,
-  useEffect,
-  useRef,
-  useMemo,
-  useState,
-  useEffectEvent,
-} from 'react';
-import { X, Plus } from '../../shared/icons/ObsidianIcon';
-import { AVAILABLE_HOME_WIDGETS } from '../homeTypes';
-import { QuickLinkButton } from '../../../settings/types';
+import React, { useMemo } from 'react';
+import { Plus } from '../../shared/icons/ObsidianIcon';
+import { AVAILABLE_HOME_WIDGETS, type HomeWidgetCategory } from '../homeTypes';
+import type { HomeSettings, QuickLinkButton } from '../../../settings/types';
 import { resolveIcon } from '../../../utils/iconResolver';
-
 import { hasTranslation, t } from '../../../lang/helpers';
 import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';
 import { HOME_WIDGET_SELECTOR_TARGET_ID } from '../../../guides/homeGuideIds';
+import {
+  WidgetPreviewDrawer,
+  type WidgetDrawerAction,
+  type WidgetDrawerItem,
+  type WidgetDrawerTab,
+} from '../../shared/widgetDrawer/WidgetPreviewDrawer';
+import { HOME_WIDGET_PREVIEWS } from './homeWidgetPreviews';
+import { getHomeWidgetInstanceLabel } from './homeWidgetInstanceLabels';
+import { getCurrentStreakConfig } from '../../../utils/currentStreakConfig';
 
 interface HomeWidgetSelectorProps {
   activeWidgets: string[];
+  
+  homeSettings: HomeSettings | undefined;
   hiddenQuickLinks: QuickLinkButton[];
   onAddWidget: (widgetId: string) => void | Promise<void>;
+  onRemoveWidget: (widgetId: string) => void | Promise<void>;
   onRestoreQuickLink: (quickLinkId: string) => void | Promise<void>;
   onOpenEntityShortcuts: () => void;
   onClose: () => void;
 }
 
-type SelectableItem =
-  | { type: 'widget'; id: string }
-  | { type: 'quicklink'; id: string }
-  | { type: 'shortcut' };
+const QUICK_LINKS_TAB_ID = 'quick-links';
+
+const CATEGORY_LABEL_KEYS = {
+  performance: 'home.widget-selector.tab.performance',
+  accounts: 'home.widget-selector.tab.accounts',
+  workflow: 'home.widget-selector.tab.workflow',
+} as const satisfies Record<HomeWidgetCategory, string>;
+
+
+const sortByGridPosition = (
+  instanceIds: string[],
+  homeSettings: HomeSettings | undefined
+): string[] => {
+  const layout =
+    homeSettings?.layouts[homeSettings.activeLayout || 'Default']?.lg ?? [];
+  const position = new Map(layout.map((item) => [item.i, item]));
+  return [...instanceIds].sort((a, b) => {
+    const itemA = position.get(a);
+    const itemB = position.get(b);
+    if (!itemA || !itemB) return 0;
+    return itemA.y - itemB.y || itemA.x - itemB.x;
+  });
+};
 
 export const HomeWidgetSelector: React.FC<HomeWidgetSelectorProps> = React.memo(
   ({
     activeWidgets,
+    homeSettings,
     hiddenQuickLinks,
     onAddWidget,
+    onRemoveWidget,
     onRestoreQuickLink,
     onOpenEntityShortcuts,
     onClose,
   }) => {
-    const [selectedIndex, setSelectedIndex] = useState(0);
-    const listRef = useRef<HTMLDivElement>(null);
-    const onCloseEvent = useEffectEvent(onClose);
-    const onAddWidgetEvent = useEffectEvent(onAddWidget);
-    const onRestoreQuickLinkEvent = useEffectEvent(onRestoreQuickLink);
-    const onOpenEntityShortcutsEvent = useEffectEvent(onOpenEntityShortcuts);
     const registerWidgetSelectorTarget = useGuideTarget(
       HOME_WIDGET_SELECTOR_TARGET_ID
     );
 
-    
-    const instanceCounts = useMemo(() => {
-      const counts: Record<string, number> = {};
-      activeWidgets.forEach((widgetId) => {
+    const tabs = useMemo<WidgetDrawerTab[]>(
+      () => [
+        ...Object.entries(CATEGORY_LABEL_KEYS).map(([id, labelKey]) => ({
+          id,
+          label: t(labelKey),
+        })),
+        {
+          id: QUICK_LINKS_TAB_ID,
+          label: t('home.widget-selector.section.quick-links'),
+        },
+      ],
+      []
+    );
+
+    const items = useMemo<WidgetDrawerItem[]>(() => {
+      
+      
+      
+      
+      const instancesByType: Record<string, string[]> = {};
+      for (const widgetId of activeWidgets) {
         const baseType = widgetId.split('-')[0];
-        counts[baseType] = (counts[baseType] || 0) + 1;
-      });
-      return counts;
-    }, [activeWidgets]);
-
-    
-    const availableWidgets = useMemo(
-      () =>
-        AVAILABLE_HOME_WIDGETS.filter((widget) => {
-          if (widget.configurable) return true; 
-          return !activeWidgets.includes(widget.id); 
-        }),
-      [activeWidgets]
-    );
-
-    
-    const selectableItems = useMemo<SelectableItem[]>(() => {
-      const items: SelectableItem[] = [];
-
-      availableWidgets.forEach((widget) => {
-        items.push({
-          type: 'widget',
-          id: widget.id,
-        });
-      });
-
-      items.push({ type: 'shortcut' });
-
-      hiddenQuickLinks.forEach((ql) => {
-        items.push({ type: 'quicklink', id: ql.id });
-      });
-
-      return items;
-    }, [availableWidgets, hiddenQuickLinks]);
-
-    const currentSelectedIndex = Math.min(
-      selectedIndex,
-      Math.max(0, selectableItems.length - 1)
-    );
-
-    
-    useEffect(() => {
-      const handleKeyDown = (e: KeyboardEvent) => {
-        switch (e.key) {
-          case 'Escape':
-            e.preventDefault();
-            e.stopPropagation();
-            e.stopImmediatePropagation(); 
-            onCloseEvent();
-            break;
-          case 'ArrowDown':
-            e.preventDefault();
-            setSelectedIndex(
-              Math.min(currentSelectedIndex + 1, selectableItems.length - 1)
-            );
-            break;
-          case 'ArrowUp':
-            e.preventDefault();
-            setSelectedIndex(Math.max(currentSelectedIndex - 1, 0));
-            break;
-          case 'Enter': {
-            e.preventDefault();
-            const item = selectableItems[currentSelectedIndex];
-            if (item.type === 'shortcut') {
-              onOpenEntityShortcutsEvent();
-            } else if (item.type === 'widget') {
-              void onAddWidgetEvent(item.id);
-            } else {
-              void onRestoreQuickLinkEvent(item.id);
-            }
-            break;
-          }
-        }
-      };
-
-      window.activeDocument.addEventListener('keydown', handleKeyDown, true);
-      return () =>
-        window.activeDocument.removeEventListener(
-          'keydown',
-          handleKeyDown,
-          true
-        );
-    }, [selectableItems, currentSelectedIndex]);
-
-    
-    useEffect(() => {
-      if (!listRef.current) return;
-      const items = listRef.current.querySelectorAll('[data-selectable]');
-      const selected = items[currentSelectedIndex];
-      if (selected?.instanceOf(HTMLElement)) {
-        selected.scrollIntoView({ block: 'nearest' });
+        (instancesByType[baseType] ??= []).push(widgetId);
       }
-    }, [currentSelectedIndex]);
 
-    
-    const getItemIndex = useCallback(
-      (type: 'widget' | 'quicklink', id: string): number => {
-        return selectableItems.findIndex(
-          (item) =>
-            item.type !== 'shortcut' && item.type === type && item.id === id
+      return AVAILABLE_HOME_WIDGETS.flatMap((widget) => {
+        const renderPreview = HOME_WIDGET_PREVIEWS[widget.id];
+        const base: WidgetDrawerItem = {
+          id: widget.id,
+          name: widget.name,
+          description: widget.description,
+          tabId: widget.category,
+          renderPreview: () => renderPreview(),
+          inUse: !widget.configurable && activeWidgets.includes(widget.id),
+        };
+        if (!widget.configurable) return [base];
+
+        const instances = sortByGridPosition(
+          instancesByType[widget.id] ?? [],
+          homeSettings
         );
-      },
-      [selectableItems]
-    );
-    const shortcutIndex = selectableItems.findIndex(
-      (item) => item.type === 'shortcut'
+        const labels = instances.map(
+          (instanceId) =>
+            getHomeWidgetInstanceLabel(homeSettings, widget.id, instanceId) ??
+            widget.name
+        );
+        return [
+          { ...base, addedCount: instances.length },
+          ...instances.map((instanceId, index) => {
+            
+            const label = labels[index];
+            const duplicates = labels.filter((other) => other === label);
+            const ordinal =
+              duplicates.length > 1
+                ? ` ${labels.slice(0, index + 1).filter((other) => other === label).length}`
+                : '';
+            return {
+              id: instanceId,
+              name: widget.name,
+              detail: `${label}${ordinal}`,
+              description: widget.description,
+              tabId: widget.category,
+              renderPreview: () =>
+                renderPreview({
+                  label,
+                  streakKind:
+                    widget.id === 'currentStreak'
+                      ? getCurrentStreakConfig(homeSettings, instanceId).kind
+                      : undefined,
+                }),
+              inUse: true,
+            };
+          }),
+        ];
+      });
+    }, [activeWidgets, homeSettings]);
+
+    const actions = useMemo<WidgetDrawerAction[]>(
+      () => [
+        {
+          id: 'entity-shortcut',
+          label: t('home.widget-selector.add-shortcut'),
+          icon: Plus,
+          emphasis: true,
+          onSelect: onOpenEntityShortcuts,
+        },
+        ...hiddenQuickLinks.map((quickLink) => {
+          const labelKey = `home.quick-links.${quickLink.id}`;
+          const label = hasTranslation(labelKey) ? t(labelKey) : labelKey;
+          return {
+            id: `quick-link-${quickLink.id}`,
+            label,
+            ariaLabel: `${t('home.widget-selector.restore')}: ${label}`,
+            icon: resolveIcon(quickLink.icon),
+            onSelect: () => onRestoreQuickLink(quickLink.id),
+          };
+        }),
+      ],
+      [hiddenQuickLinks, onOpenEntityShortcuts, onRestoreQuickLink]
     );
 
     return (
-      <div
-        onClick={(e) => e.target === e.currentTarget && onClose()}
-        onKeyDown={(e) => {
-          if (e.key === 'Escape') {
-            onClose();
-          }
-        }}
-        role="presentation"
-        className="journalit-shared-selector-overlay"
-      >
-        <div
-          onClick={(e) => e.stopPropagation()}
-          onKeyDown={(e) => e.stopPropagation()}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="journalit-home-selector-title"
-          className="journalit-shared-selector-modal"
-          ref={registerWidgetSelectorTarget}
-        >
-          
-          <div className="journalit-shared-selector-header">
-            <span
-              id="journalit-home-selector-title"
-              className="journalit-shared-selector-title"
-            >
-              {t('home.widget-selector.title')}
-            </span>
-            <button
-              type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                onClose();
-              }}
-              className="journalit-shared-selector-close"
-            >
-              <X size={16} />
-            </button>
-          </div>
-
-          
-          <div ref={listRef} className="journalit-shared-selector-content">
-            
-            {availableWidgets.length > 0 && (
-              <>
-                <div className="journalit-shared-selector-section">
-                  {t('home.widget-selector.section.widgets')}
-                </div>
-
-                {availableWidgets.map((widget) => {
-                  const count = widget.configurable
-                    ? instanceCounts[widget.id] || 0
-                    : 0;
-                  const currentIndex = getItemIndex('widget', widget.id);
-                  const isSelected = currentIndex === currentSelectedIndex;
-
-                  return (
-                    <div
-                      role="button"
-                      tabIndex={0}
-                      key={widget.id}
-                      data-selectable
-                      onClick={() => void onAddWidget(widget.id)}
-                      onKeyDown={(event) => {
-                        if (event.key !== ' ') return;
-                        event.preventDefault();
-                        void onAddWidget(widget.id);
-                      }}
-                      onMouseEnter={() => setSelectedIndex(currentIndex)}
-                      onFocus={() => setSelectedIndex(currentIndex)}
-                      className={`journalit-shared-selector-item${isSelected ? ' journalit-shared-selector-item--selected' : ''}`}
-                    >
-                      <div className="journalit-shared-selector-icon">
-                        <Plus size={16} />
-                      </div>
-                      <div className="journalit-shared-selector-body">
-                        <div className="journalit-shared-selector-item-title">
-                          {widget.name}
-                          {count > 0 && (
-                            <span className="journalit-shared-selector-widget-category">
-                              ({count})
-                            </span>
-                          )}
-                        </div>
-                        <div className="journalit-shared-selector-item-description">
-                          {widget.description}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                })}
-              </>
-            )}
-
-            <div className="journalit-shared-selector-section journalit-shared-selector-section--spaced">
-              {t('home.widget-selector.section.quick-links')}
-            </div>
-
-            <button
-              type="button"
-              data-selectable
-              onClick={onOpenEntityShortcuts}
-              onMouseEnter={() => setSelectedIndex(shortcutIndex)}
-              onFocus={() => setSelectedIndex(shortcutIndex)}
-              className={`journalit-native-button journalit-native-button--unstyled journalit-home-add-shortcut journalit-shared-selector-item${currentSelectedIndex === shortcutIndex ? ' journalit-shared-selector-item--selected' : ''}`}
-            >
-              <span className="journalit-shared-selector-icon">
-                <Plus size={16} />
-              </span>
-              <span className="journalit-shared-selector-body">
-                <span className="journalit-shared-selector-item-title">
-                  {t('home.widget-selector.add-shortcut')}
-                </span>
-              </span>
-            </button>
-
-            {hiddenQuickLinks.map((quickLink) => {
-              const IconComponent = resolveIcon(quickLink.icon);
-              const currentIndex = getItemIndex('quicklink', quickLink.id);
-              const isSelected = currentIndex === currentSelectedIndex;
-
-              const labelKey = `home.quick-links.${quickLink.id}`;
-              const label = hasTranslation(labelKey) ? t(labelKey) : labelKey;
-
-              return (
-                <div
-                  role="button"
-                  tabIndex={0}
-                  key={quickLink.id}
-                  data-selectable
-                  onClick={() => void onRestoreQuickLink(quickLink.id)}
-                  onKeyDown={(event) => {
-                    if (event.key !== ' ') return;
-                    event.preventDefault();
-                    void onRestoreQuickLink(quickLink.id);
-                  }}
-                  onMouseEnter={() => setSelectedIndex(currentIndex)}
-                  onFocus={() => setSelectedIndex(currentIndex)}
-                  className={`journalit-shared-selector-item${isSelected ? ' journalit-shared-selector-item--selected' : ''}`}
-                >
-                  <div className="journalit-shared-selector-icon">
-                    <IconComponent size={16} />
-                  </div>
-                  <div className="journalit-shared-selector-body">
-                    <div className="journalit-shared-selector-item-title">
-                      {label}
-                    </div>
-                  </div>
-                  <span className="journalit-shared-selector-widget-category">
-                    {t('home.widget-selector.restore')}
-                  </span>
-                </div>
-              );
-            })}
-          </div>
-
-          
-          <div className="journalit-shared-selector-footer">
-            <span>{t('home.widget-selector.hint.navigate')}</span>
-            <span>{t('home.widget-selector.hint.select')}</span>
-            <span>{t('home.widget-selector.hint.close')}</span>
-          </div>
-        </div>
-      </div>
+      <WidgetPreviewDrawer
+        title={t('home.widget-selector.title')}
+        subtitle={t('home.widget-selector.subtitle')}
+        tabs={tabs}
+        items={items}
+        actionGroup={{ tabId: QUICK_LINKS_TAB_ID, actions }}
+        onAdd={onAddWidget}
+        onRemove={onRemoveWidget}
+        onClose={onClose}
+        panelRef={registerWidgetSelectorTarget}
+      />
     );
   }
 );

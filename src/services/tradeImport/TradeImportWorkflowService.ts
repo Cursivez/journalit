@@ -1,3 +1,4 @@
+import { tradeImportClassificationDetail } from './classificationLabels';
 import { t } from '../../lang/helpers';
 import type JournalitPlugin from '../../main';
 import type { TradeData } from '../trade/TradeService';
@@ -5,9 +6,15 @@ import { generateUUID } from '../../utils/uuid';
 import { mapProjectionTradeToTradeData } from '../tradeSync/canonicalTradeMapper';
 import { applyInstrumentCostRulesToProjection } from '../tradeSync/projectionCostRules';
 import {
-  isTradeImportBlocked,
+  attachWorkbookImagesToTrades,
+  type WorkbookImageAttachResult,
+  type WorkbookImageTarget,
+} from './workbookImages';
+import {
+  canImportTradeAnyway,
   isTradeImportCommitEligible,
-  isTradeImportSkipped,
+  isTradeImportDuplicate,
+  needsTradeImportAttention,
 } from './commitEligibility';
 import type {
   ClassifiedPreviewTrade,
@@ -67,7 +74,8 @@ interface TradeImportAnalyseInput {
   brokerCapabilities?: TradeImportBrokerCapabilities;
   broker: string;
   sheetName: string | null;
-  headerRowIndex: number | null;
+  
+  header: { sheetRow: number } | { index: number | null };
   aiMappingEnabled: boolean;
 }
 
@@ -83,6 +91,7 @@ interface TradeImportPreviewInput {
   assetType: string;
   manualMode: TradeImportManualMode;
   dateFormat: string;
+  timeZone?: string;
   columnMappings: Record<string, string[]>;
   manualMappingRequired: boolean;
 }
@@ -96,12 +105,22 @@ export interface TradeImportCompletionResult {
   accountName: string;
   brokerLabel: string;
   importedTrades: TradeProjectionPersistedTradeSummary[];
+  
+  failedItemIds: string[];
+  
+  attachedImageCount: number;
+  
+  failedImageCount: number;
 }
 
 interface TradeImportWriteInput {
   preview: TradeImportPreviewResponse;
   previewOwnerUserId: string;
   classified: ClassifiedPreviewTrade[];
+  
+  importAnywayItemIds?: ReadonlySet<string>;
+  
+  workbookFile?: Blob;
   accountName: string;
   brokerLabel: string;
   localWriteTimeoutMs: number;
@@ -224,8 +243,12 @@ function asMappings(value: unknown): Record<string, string[]> {
   return mappings;
 }
 
+
 function normalizeMappingToken(value: string): string {
-  return value.toLowerCase().replace(/[^a-z0-9]/g, '');
+  return value
+    .normalize('NFKC')
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, '');
 }
 
 function applyCustomFieldMappingSuggestions(
@@ -245,15 +268,18 @@ function applyCustomFieldMappingSuggestions(
       customField.fieldKey,
       customField.id,
     ]) {
-      if (!token) continue;
-      customFieldByHeaderToken.set(normalizeMappingToken(token), mappingKey);
+      const normalized = token ? normalizeMappingToken(token) : '';
+      
+      if (!normalized) continue;
+      customFieldByHeaderToken.set(normalized, mappingKey);
     }
   }
 
   for (const header of headers) {
-    const customMappingKey = customFieldByHeaderToken.get(
-      normalizeMappingToken(header)
-    );
+    const headerToken = normalizeMappingToken(header);
+    const customMappingKey = headerToken
+      ? customFieldByHeaderToken.get(headerToken)
+      : undefined;
     if (!customMappingKey) continue;
     for (const [field, columns] of Object.entries(mappings)) {
       mappings[field] = columns.filter((column) => column !== header);
@@ -287,6 +313,13 @@ export function customFieldDefinitions(
   }));
 }
 
+
+function submittedWrites(
+  items: ReadonlyArray<{ itemId: string; action: string }>
+): string[] {
+  return items.flatMap((item) => (item.action === 'skip' ? [] : [item.itemId]));
+}
+
 export class TradeImportWorkflowService {
   constructor(
     private plugin: JournalitPlugin,
@@ -315,7 +348,7 @@ export class TradeImportWorkflowService {
     brokerCapabilities,
     broker,
     sheetName,
-    headerRowIndex,
+    header,
     aiMappingEnabled,
   }: TradeImportAnalyseInput): Promise<{
     response: TradeImportAnalyseResponse;
@@ -337,7 +370,9 @@ export class TradeImportWorkflowService {
       requestedBroker: broker,
       requestedFileType: fileTypeFor(file),
       sheetName,
-      headerRowIndex,
+      ...('sheetRow' in header
+        ? { headerSheetRow: header.sheetRow }
+        : { headerRowIndex: header.index }),
       timeZone: getTradeImportTimeZone(),
       sampleRowLimit: capabilities.fileLimits.sampleRowLimit,
       aiMapping: {
@@ -370,6 +405,7 @@ export class TradeImportWorkflowService {
     assetType,
     manualMode,
     dateFormat,
+    timeZone,
     columnMappings,
     manualMappingRequired,
   }: TradeImportPreviewInput): Promise<{
@@ -392,7 +428,8 @@ export class TradeImportWorkflowService {
       const missingRequiredFields = missingRequiredFieldsForMappings(
         manualMode,
         columnMappings,
-        analyse.headers
+        analyse.headers,
+        assetType
       );
       if (missingRequiredFields.length > 0) {
         throw new TradeImportMappingValidationError(missingRequiredFields);
@@ -412,7 +449,7 @@ export class TradeImportWorkflowService {
       fileType: fileTypeFor(file),
       sheetName,
       headerRowIndex,
-      timeZone: getTradeImportTimeZone(),
+      timeZone: timeZone ?? getTradeImportTimeZone(),
       accountName,
       assetType,
       manualMode,
@@ -432,7 +469,8 @@ export class TradeImportWorkflowService {
       classification: item.classification,
       defaultAction: item.defaultAction,
       matchedTradeId: item.matchedTradeId,
-      message: item.decisionReasons.map((reason) => reason.code).join(', '),
+      otherAccount: item.otherAccount,
+      message: tradeImportClassificationDetail(item),
     }));
     return { response, classifiedTrades, ownerUserId };
   }
@@ -474,24 +512,109 @@ export class TradeImportWorkflowService {
       accountName: result.accountName,
       brokerLabel: result.brokerLabel,
       importedTrades: result.importedTrades,
+      
+      failedItemIds: [],
+      
+      attachedImageCount: 0,
+      failedImageCount: 0,
     };
     onComplete?.(completionResult);
     return completionResult;
+  }
+
+  
+  private async attachWorkbookImages(
+    workbookFile: Blob,
+    itemResults: ReadonlyArray<{
+      itemId: string;
+      result: string;
+      tradeId?: string | null;
+    }>,
+    projectionResult: {
+      importedTrades: readonly TradeProjectionPersistedTradeSummary[];
+      ackResults: ReadonlyArray<{
+        tradeId: string;
+        filePath?: string;
+        status: string;
+      }>;
+    },
+    previewByItemId: ReadonlyMap<string, ClassifiedPreviewTrade>
+  ): Promise<WorkbookImageAttachResult> {
+    const itemIdByTradeId = new Map<string, string>();
+    for (const result of itemResults) {
+      if (result.result === 'created' && result.tradeId) {
+        itemIdByTradeId.set(result.tradeId, result.itemId);
+      }
+    }
+    const createdPaths = new Set<string>();
+    for (const trade of projectionResult.importedTrades) {
+      if (trade.change === 'created') createdPaths.add(trade.filePath);
+    }
+    const ackByTradeId = new Map(
+      projectionResult.ackResults.map((ack) => [ack.tradeId, ack])
+    );
+    const targets: WorkbookImageTarget[] = [];
+    let unwrittenImages = 0;
+    for (const [tradeId, itemId] of itemIdByTradeId) {
+      const item = previewByItemId.get(itemId);
+      const images = item?.preview.embeddedImages ?? [];
+      if (!item || images.length === 0) continue;
+      const ack = ackByTradeId.get(tradeId);
+      if (
+        ack?.status !== 'synced' ||
+        !ack.filePath ||
+        !createdPaths.has(ack.filePath)
+      ) {
+        unwrittenImages += images.length;
+        continue;
+      }
+      targets.push({
+        filePath: ack.filePath,
+        symbol: item.preview.symbol,
+        images,
+      });
+    }
+    try {
+      const result = await attachWorkbookImagesToTrades(
+        this.plugin.app,
+        workbookFile,
+        targets
+      );
+      return {
+        attachedCount: result.attachedCount,
+        failedCount: result.failedCount + unwrittenImages,
+      };
+    } catch (error) {
+      console.warn('[TradeImport] Failed to add workbook images:', error);
+      return {
+        attachedCount: 0,
+        failedCount:
+          unwrittenImages +
+          targets.reduce((total, target) => total + target.images.length, 0),
+      };
+    }
   }
 
   async writePreview({
     preview,
     previewOwnerUserId,
     classified,
+    importAnywayItemIds = new Set<string>(),
+    workbookFile,
     accountName,
     brokerLabel,
     localWriteTimeoutMs,
     onComplete,
   }: TradeImportWriteInput): Promise<TradeImportCompletionResult> {
+    const isLeftAsDuplicate = (item: ClassifiedPreviewTrade): boolean =>
+      isTradeImportDuplicate(item) && !importAnywayItemIds.has(item.itemId);
     let finalized = false;
     let written = 0;
     let failed = 0;
     const importedTrades: TradeProjectionPersistedTradeSummary[] = [];
+    const failedItemIds: string[] = [];
+    let attachedImageCount = 0;
+    let failedImageCount = 0;
 
     const buildResult = (
       writtenCount: number,
@@ -507,6 +630,9 @@ export class TradeImportWorkflowService {
       accountName,
       brokerLabel,
       importedTrades,
+      failedItemIds,
+      attachedImageCount,
+      failedImageCount,
     });
 
     const finalizeImport = (
@@ -528,7 +654,7 @@ export class TradeImportWorkflowService {
     };
     const abortImport = (): TradeImportCompletionResult => {
       const duplicateCount = classified.filter((item) =>
-        isTradeImportSkipped(item.defaultAction)
+        isLeftAsDuplicate(item)
       ).length;
       return (
         finalizeImport(0, duplicateCount, classified.length - duplicateCount) ??
@@ -537,6 +663,9 @@ export class TradeImportWorkflowService {
     };
 
     const commitItems = classified.map((item) => {
+      if (importAnywayItemIds.has(item.itemId) && canImportTradeAnyway(item)) {
+        return { itemId: item.itemId, action: 'create_new' as const };
+      }
       if (item.defaultAction === 'update' && item.matchedTradeId) {
         return {
           itemId: item.itemId,
@@ -571,8 +700,9 @@ export class TradeImportWorkflowService {
         clientCommitId
       );
     } catch {
+      failedItemIds.push(...submittedWrites(commitItems));
       const duplicateCount = classified.filter((item) =>
-        isTradeImportSkipped(item.defaultAction)
+        isLeftAsDuplicate(item)
       ).length;
       return (
         finalizeImport(0, duplicateCount, classified.length - duplicateCount) ??
@@ -593,8 +723,9 @@ export class TradeImportWorkflowService {
       commitItems.some((item) => !returnedItemIds.has(item.itemId)) ||
       commit.itemResults.some((result) => !submittedItemIds.has(result.itemId))
     ) {
+      failedItemIds.push(...submittedWrites(commitItems));
       const duplicateCount = classified.filter((item) =>
-        isTradeImportSkipped(item.defaultAction)
+        isLeftAsDuplicate(item)
       ).length;
       return (
         finalizeImport(0, duplicateCount, classified.length - duplicateCount) ??
@@ -632,6 +763,16 @@ export class TradeImportWorkflowService {
       localWriteTimeoutMs,
     });
     importedTrades.push(...projectionResult.importedTrades);
+    if (workbookFile) {
+      const images = await this.attachWorkbookImages(
+        workbookFile,
+        commit.itemResults,
+        projectionResult,
+        previewByItemId
+      );
+      attachedImageCount = images.attachedCount;
+      failedImageCount = images.failedCount;
+    }
     written =
       projectionResult.writtenCount + projectionResult.alreadyPresentCount;
     failed = projectionResult.failedCount + projectionResult.ackFailedCount;
@@ -648,9 +789,9 @@ export class TradeImportWorkflowService {
       }
       const item = previewByItemId.get(result.itemId);
       if (!item) continue;
-      if (isTradeImportSkipped(item.defaultAction)) {
+      if (isTradeImportDuplicate(item)) {
         duplicateCount += 1;
-      } else if (isTradeImportBlocked(item.defaultAction)) {
+      } else if (needsTradeImportAttention(item)) {
         failedSkippedResults += 1;
       }
     }
@@ -665,6 +806,20 @@ export class TradeImportWorkflowService {
         (result.result === 'created' || result.result === 'updated') &&
         (!result.tradeId || !ackedTradeIds.has(result.tradeId))
     ).length;
+    for (const result of commit.itemResults) {
+      const written =
+        (result.result === 'created' || result.result === 'updated') &&
+        result.tradeId !== undefined &&
+        ackedTradeIds.has(result.tradeId);
+      if (
+        result.result === 'blocked' ||
+        result.result === 'conflict' ||
+        ((result.result === 'created' || result.result === 'updated') &&
+          !written)
+      ) {
+        failedItemIds.push(result.itemId);
+      }
+    }
     const totalFailed =
       failed +
       failedCommitResults +

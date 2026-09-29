@@ -739,6 +739,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
           tickLine={false}
         />
         <YAxis
+          className="journalit-chart-axis--numeric"
           tickFormatter={formatBalanceAxisTick}
           domain={domain}
           allowDataOverflow={false}

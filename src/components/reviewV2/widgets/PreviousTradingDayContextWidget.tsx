@@ -16,6 +16,10 @@ import type { PreviousTradingDayContextResult } from '../../../services/drc/DRCS
 import { t } from '../../../lang/helpers';
 import { forceMetadataCacheRefresh } from '../../../utils/dataRefresh';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
+import {
+  shareCaptureExcludeProps,
+  shareLoadingProps,
+} from '../../../services/share/brandedCapture';
 
 interface PreviousTradingDayContextConfig {
   headings?: string;
@@ -426,7 +430,9 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
 
     if (loading) {
       return (
-        <div className="journalit-widget-loading">Loading previous DRC…</div>
+        <div className="journalit-widget-loading" {...shareLoadingProps}>
+          Loading previous DRC…
+        </div>
       );
     }
 
@@ -462,6 +468,7 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
           <button
             type="button"
             className="journalit-native-button journalit-native-button--unstyled journalit-previous-drc-reference-link"
+            {...shareCaptureExcludeProps}
             onClick={() => void openSourceDRC()}
             onKeyDown={(event) => void handleSourceHeaderKeyDown(event)}
           >

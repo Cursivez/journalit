@@ -151,9 +151,16 @@ export const Copy: ObsidianIconComponent = createIcon('copy');
 export const Edit: ObsidianIconComponent = createIcon('edit');
 export const ExternalLink: ObsidianIconComponent = createIcon('external-link');
 export const Eye: ObsidianIconComponent = createIcon('eye');
+export const LinkIcon: ObsidianIconComponent = createIcon('link');
 export const EyeOff: ObsidianIconComponent = createIcon('eye-off');
 export const File: ObsidianIconComponent = createIcon('file');
+export const FileSpreadsheet: ObsidianIconComponent =
+  createIcon('file-spreadsheet');
 export const FileText: ObsidianIconComponent = createIcon('file-text');
+export const AlignLeft: ObsidianIconComponent = createIcon('align-left');
+export const Heading: ObsidianIconComponent = createIcon('heading');
+export const LayoutDashboard: ObsidianIconComponent =
+  createIcon('layout-dashboard');
 export const Flame: ObsidianIconComponent = createIcon('flame');
 export const FlaskConical: ObsidianIconComponent = createIcon('flask-conical');
 export const Folder: ObsidianIconComponent = createIcon('folder');
@@ -173,6 +180,7 @@ export const Import: ObsidianIconComponent = createIcon('import');
 export const Info: ObsidianIconComponent = createIcon('info');
 export const Lightbulb: ObsidianIconComponent = createIcon('lightbulb');
 
+export const Layers: ObsidianIconComponent = createIcon('layers');
 export const ListFilter: ObsidianIconComponent = createIcon('list-filter');
 export const Lock: ObsidianIconComponent = createIcon('lock');
 export const MessagesSquare: ObsidianIconComponent =

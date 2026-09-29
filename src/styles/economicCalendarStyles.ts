@@ -571,6 +571,7 @@ export const ECONOMIC_CALENDAR_STYLES = `
 
 .journalit-econ-footer__import:hover:not(:disabled) {
   background-color: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
 }
 
 .journalit-econ-footer__restore:disabled,
@@ -673,7 +674,8 @@ export const ECONOMIC_CALENDAR_STYLES = `
   gap: 6px;
 }
 
-.journalit-econ-gate__cta {
+
+.journalit-econ-gate .journalit-econ-gate__cta {
   padding: 7px 18px;
   border: none;
   border-radius: 5px;
@@ -684,7 +686,23 @@ export const ECONOMIC_CALENDAR_STYLES = `
   cursor: pointer;
 }
 
-.journalit-econ-gate__cta:hover {
+.journalit-econ-gate .journalit-econ-gate__cta:hover {
   background-color: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
+}
+
+.journalit-econ-gate .journalit-econ-gate__secondary {
+  padding: 2px 6px;
+  border: none;
+  background: none;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.journalit-econ-gate .journalit-econ-gate__secondary:hover {
+  background: none;
+  color: var(--text-normal);
 }
 `;

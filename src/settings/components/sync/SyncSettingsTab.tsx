@@ -28,7 +28,6 @@ export const SyncSettingsTab: React.FC<SyncSettingsTabProps> = ({
 }) => {
   const showSectionTabs = !isNativeSubPage;
   const showAccountCard = !isNativeSubPage;
-  const showNotificationsRegardlessOfTier = isNativeSubPage;
   const showEconomicCalendar = !isNativeSubPage;
   const subscribeToAuthentication = useCallback((onStoreChange: () => void) => {
     window.addEventListener('journalit:subscription-changed', onStoreChange);
@@ -60,8 +59,9 @@ export const SyncSettingsTab: React.FC<SyncSettingsTabProps> = ({
   const isPaidSubscriber = ['pro', 'premium', 'enterprise'].includes(
     subscriptionTier.toLowerCase()
   );
-  const shouldShowNotifications =
-    isPaidSubscriber || showNotificationsRegardlessOfTier;
+  
+  
+  const shouldShowNotifications = isPaidSubscriber;
   const [sectionState, setSectionState] = useState(() => ({
     initialSection,
     activeSection: initialSection,

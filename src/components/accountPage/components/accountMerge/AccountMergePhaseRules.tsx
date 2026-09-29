@@ -27,7 +27,7 @@ interface Props {
   offerCatalog: boolean;
   typedFirmName: string;
   onChange: (rules: PropChallengeRule[]) => void;
-  onApplyProfile: (selection: PropFirmProfileSelection) => void;
+  onApplyProfile: (selection: PropFirmProfileSelection) => Promise<boolean>;
 }
 
 export const AccountMergePhaseRules: React.FC<Props> = ({

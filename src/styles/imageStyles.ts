@@ -38,9 +38,10 @@ export const IMAGE_STYLES = `
 
   .journalit-image-upload-paste-area:hover {
     background-color: var(--interactive-accent-hover);
+    color: var(--text-on-accent);
     border-color: var(--interactive-accent-hover);
     transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.2);
+    box-shadow: 0 2px 8px color-mix(in srgb, var(--interactive-accent) 20%, transparent);
   }
 
   .journalit-image-upload-paste-area:disabled {
@@ -95,21 +96,21 @@ export const IMAGE_STYLES = `
 
   button.journalit-native-button.journalit-image-upload-file-area:hover {
     border-color: var(--interactive-accent);
-    background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.05);
+    background-color: color-mix(in srgb, var(--interactive-accent) 5%, transparent);
   }
 
   button.journalit-native-button.journalit-image-upload-file-area:focus {
     outline: 2px solid var(--interactive-accent);
     outline-offset: 2px;
     border-color: var(--interactive-accent);
-    background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.08);
+    background-color: color-mix(in srgb, var(--interactive-accent) 8%, transparent);
   }
 
   button.journalit-native-button.journalit-image-upload-file-area.dragging-over {
     border-color: var(--interactive-accent);
-    background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.1);
+    background-color: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
     transform: scale(1.02);
-    box-shadow: 0 0 12px rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.3);
+    box-shadow: 0 0 12px color-mix(in srgb, var(--interactive-accent) 30%, transparent);
   }
 
   .journalit-image-upload-label {
@@ -122,7 +123,7 @@ export const IMAGE_STYLES = `
   }
 
   .journalit-image-upload-file-area:hover .journalit-image-upload-label {
-    color: var(--interactive-accent);
+    color: var(--text-accent);
   }
 
   .journalit-image-upload-input {
@@ -138,7 +139,7 @@ export const IMAGE_STYLES = `
     transform: translate(-50%, -50%);
     font-size: 16px;
     font-weight: 600;
-    color: var(--interactive-accent);
+    color: var(--text-accent);
     opacity: 0;
     pointer-events: none;
     transition: opacity 0.2s ease;
@@ -630,6 +631,7 @@ export const IMAGE_STYLES = `
     border: 1px solid var(--background-primary);
     border-radius: 50%;
     background: var(--interactive-accent);
+    color: var(--text-on-accent);
     box-shadow: 0 0 0 1px rgba(var(--mono-rgb-0), 0.28);
     pointer-events: none;
   }
@@ -1686,7 +1688,7 @@ export const IMAGE_STYLES = `
 
   .journalit-compact-uploader.dragging {
     border-color: var(--interactive-accent);
-    background-color: rgba(var(--interactive-accent-rgb, 83, 141, 226), 0.05);
+    background-color: color-mix(in srgb, var(--interactive-accent) 5%, transparent);
   }
 
   .journalit-compact-uploader.processing {

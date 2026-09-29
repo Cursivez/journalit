@@ -129,6 +129,11 @@ export type AccountReferenceChange =
     }
   | { kind: 'csvFavoriteAccount'; previous: string }
   | {
+      kind: 'homeAccountProgress';
+      widgetId: string;
+      previousAccounts: string[];
+    }
+  | {
       kind: 'copyTradeAdjustment';
       baseTradeKey: string;
       previousOldLookupKey: string;
@@ -167,6 +172,8 @@ export interface AccountMergeRecord {
     phaseId: string;
   }>;
   notes: Array<{ path: string; previousAccount: string[] }>;
+  
+  reviewedAt?: string;
   referenceChanges: AccountReferenceChange[];
   
   addedAccountOption?: boolean;

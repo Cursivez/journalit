@@ -33,6 +33,7 @@ export const BATCH_ACTION_TOOLBAR_STYLES = `
   .batch-action-toolbar-actions button:hover:not(:disabled) {
     opacity: 0.85;
     background: var(--interactive-accent);
+    color: var(--text-on-accent);
   }
 
   .batch-action-toolbar-actions button:active:not(:disabled) {
@@ -143,6 +144,7 @@ export const BATCH_ACTION_TOOLBAR_STYLES = `
 
   .batch-action-modal-buttons button.primary:hover:not(:disabled) {
     background: var(--interactive-accent-hover);
+    color: var(--text-on-accent);
   }
 
   .journalit-batch-modal-title {
@@ -198,6 +200,7 @@ export const BATCH_ACTION_TOOLBAR_STYLES = `
   .batch-action-select-all-btn:hover:not(:disabled) {
     opacity: 0.85;
     background: var(--interactive-accent);
+    color: var(--text-on-accent);
   }
 
   .batch-action-select-all-btn:disabled {

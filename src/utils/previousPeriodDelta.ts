@@ -3,6 +3,8 @@ export interface StatDelta {
   direction: 'up' | 'down' | 'flat';
   tone?: 'green' | 'red';
   suffixKey?: 'widget.stats.vs-prev' | 'dashboard.metrics.past-30d';
+  
+  rComparisonUnavailable?: boolean;
 }
 
 export function createStatDelta(

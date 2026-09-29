@@ -1,6 +1,7 @@
 import React from 'react';
-import { RotateCcw, Save } from '../../../components/shared/icons/ObsidianIcon';
-import { Button } from '../../../components/ui';
+import { Menu } from 'obsidian';
+import { MoreHorizontal } from '../../../components/shared/icons/ObsidianIcon';
+import { IconButton } from '../../../components/ui/IconButton';
 import { t } from '../../../lang/helpers';
 import type { TradeProjectionAccountInventoryItem } from '../../../services/tradeSync/types';
 import { formatLocalizedDateTime } from '../../../utils/localizedDateTime';
@@ -32,7 +33,7 @@ export function selectDefaultLocalAccount(
   return '';
 }
 
-const TradeImportAccountCard: React.FC<{
+const TradeImportAccountRow: React.FC<{
   account: TradeProjectionAccountInventoryItem;
   localAccounts: ImportAccountOption[];
   selectedLocalAccount: string;
@@ -44,8 +45,9 @@ const TradeImportAccountCard: React.FC<{
   restoreRateLimitMessage?: string;
   onSelectLocalAccount: (accountName: string) => void;
   onCreateLocalAccount: () => void;
-  onSaveMapping: () => void;
   onRestore: () => void;
+  
+  onDeleteFromServer?: () => void;
 }> = ({
   account,
   localAccounts,
@@ -58,30 +60,78 @@ const TradeImportAccountCard: React.FC<{
   restoreRateLimitMessage,
   onSelectLocalAccount,
   onCreateLocalAccount,
-  onSaveMapping,
   onRestore,
+  onDeleteFromServer,
 }) => {
-  const persistedMappingUnchanged = Boolean(
-    account.mapping?.localAccountName === selectedLocalAccount
-  );
   const matchingLocalAccountExists = localAccounts.some(
     (localAccount) => localAccount.name === account.displayName
   );
-  return (
-    <article className="journalit-trade-import-account-card">
-      <div className="journalit-trade-import-account-card__header">
-        <div>
-          <strong>{account.displayName}</strong>
-          <span>{account.broker}</span>
-        </div>
-        <span className="journalit-trade-import-account-card__count">
-          {t('trade-sync.import.account.restorable-count', {
-            count: String(account.restorableCount),
-          })}
-        </span>
-      </div>
+  const issueCount = account.failedCount + account.conflictCount;
+  const pendingCount = account.pendingCount + account.needsRewriteCount;
+  const canRestore =
+    !mappingRateLimited &&
+    !restoreRateLimited &&
+    selectedLocalAccount !== '' &&
+    account.restorableCount > 0;
 
-      <div className="journalit-trade-import-account-card__metrics">
+  const openActions = (event: React.MouseEvent<HTMLButtonElement>) => {
+    const menu = new Menu();
+    menu.addItem((item) =>
+      item
+        .setTitle(
+          isRestoring
+            ? t('trade-sync.import.action.restoring')
+            : t('trade-sync.import.action.restore-account')
+        )
+        .setIcon('rotate-ccw')
+        .setDisabled(!canRestore)
+        .onClick(onRestore)
+    );
+    if (!matchingLocalAccountExists) {
+      menu.addItem((item) =>
+        item
+          .setTitle(t('trade-sync.import.action.create-local-account'))
+          .setIcon('plus')
+          .setDisabled(mappingRateLimited)
+          .onClick(onCreateLocalAccount)
+      );
+    }
+    if (onDeleteFromServer) {
+      menu.addSeparator();
+      menu.addItem((item) =>
+        item
+          .setTitle(t('trade-import.server-deletion.account.button'))
+          .setIcon('trash-2')
+          .setWarning(true)
+          .onClick(onDeleteFromServer)
+      );
+    }
+    menu.showAtMouseEvent(event.nativeEvent);
+  };
+
+  const notes = [
+    account.conflictCount > 0
+      ? t('trade-sync.import.account.conflict-repair')
+      : null,
+    pendingCount > 0
+      ? t('trade-sync.tradovate.pending-projections', {
+          count: String(pendingCount),
+        })
+      : null,
+    account.mapping?.lastSyncedAt
+      ? `${t('trade-sync.tradovate.last-projection')}: ${formatLocalizedDateTime(account.mapping.lastSyncedAt)}`
+      : null,
+    mappingRateLimitMessage ?? null,
+    restoreRateLimitMessage ?? null,
+  ].filter((note): note is string => note !== null);
+
+  return (
+    <li className="journalit-trade-import-account-row">
+      <div className="journalit-trade-import-account-row__identity">
+        <strong>{account.displayName}</strong>
+        <span>{account.broker}</span>
+      </div>
+      <div className="journalit-trade-import-account-row__status">
         <span>
           {t('trade-sync.import.account.synced-count', {
             count: String(account.syncedCount),
@@ -92,103 +142,51 @@ const TradeImportAccountCard: React.FC<{
             count: String(account.missingCount + account.localDeletedCount),
           })}
         </span>
-        {(account.failedCount > 0 || account.conflictCount > 0) && (
-          <span>
+        {account.restorableCount > 0 && (
+          <span className="journalit-trade-import-account-row__restorable">
+            {t('trade-sync.import.account.restorable-count', {
+              count: String(account.restorableCount),
+            })}
+          </span>
+        )}
+        {issueCount > 0 && (
+          <span className="journalit-trade-import-account-row__issues">
             {t('trade-sync.import.account.issue-count', {
-              count: String(account.failedCount + account.conflictCount),
-            })}
-          </span>
-        )}
-        {account.conflictCount > 0 && (
-          <p className="journalit-trade-import-account-card__conflict-help">
-            {t('trade-sync.import.account.conflict-repair')}
-          </p>
-        )}
-        {account.mapping?.lastSyncedAt && (
-          <span>
-            {t('trade-sync.tradovate.last-projection')}:{' '}
-            {formatLocalizedDateTime(account.mapping.lastSyncedAt)}
-          </span>
-        )}
-        {account.pendingCount + account.needsRewriteCount > 0 && (
-          <span>
-            {t('trade-sync.tradovate.pending-projections', {
-              count: String(account.pendingCount + account.needsRewriteCount),
+              count: String(issueCount),
             })}
           </span>
         )}
       </div>
-
-      <div className="journalit-trade-import-account-card__mapping">
-        <label>
-          <span>{t('trade-sync.import.account.local-account')}</span>
-          <select
-            value={selectedLocalAccount}
-            onChange={(event) => onSelectLocalAccount(event.target.value)}
-          >
-            <option value="">{t('account.link-modal.select-account')}</option>
-            {localAccounts.map((localAccount) => (
-              <option key={localAccount.name} value={localAccount.name}>
-                {localAccount.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <small>{t('trade-sync.import.account.mapping-hint')}</small>
-      </div>
-
-      <div className="journalit-trade-import-account-card__actions">
-        <Button
-          variant="secondary"
-          disabled={busy || mappingRateLimited || matchingLocalAccountExists}
-          onClick={onCreateLocalAccount}
-          title={t('trade-sync.import.action.create-local-account-title')}
-        >
-          {t('trade-sync.import.action.create-local-account')}
-        </Button>
-        <Button
-          variant="secondary"
-          disabled={
-            busy ||
-            mappingRateLimited ||
-            !selectedLocalAccount ||
-            persistedMappingUnchanged
-          }
-          onClick={onSaveMapping}
-          title={t('trade-sync.import.action.save-mapping-title')}
-        >
-          <Save size={14} />
-          {t('trade-sync.import.action.save-mapping')}
-        </Button>
-        <Button
-          variant="primary"
-          disabled={
-            busy ||
-            mappingRateLimited ||
-            restoreRateLimited ||
-            !selectedLocalAccount ||
-            account.restorableCount === 0
-          }
-          onClick={onRestore}
-          title={t('trade-sync.import.action.restore-account-title')}
-        >
-          <RotateCcw size={14} />
-          {isRestoring
-            ? t('trade-sync.import.action.restoring')
-            : t('trade-sync.import.action.restore-account')}
-        </Button>
-      </div>
-      {mappingRateLimitMessage && (
-        <p className="journalit-trade-import-account-card__conflict-help">
-          {mappingRateLimitMessage}
-        </p>
+      <select
+        className="journalit-trade-import-account-row__link dropdown"
+        aria-label={t('trade-sync.import.account.local-account')}
+        value={selectedLocalAccount}
+        disabled={busy || mappingRateLimited}
+        onChange={(event) => onSelectLocalAccount(event.target.value)}
+      >
+        <option value="">{t('account.link-modal.select-account')}</option>
+        {localAccounts.map((localAccount) => (
+          <option key={localAccount.name} value={localAccount.name}>
+            {localAccount.name}
+          </option>
+        ))}
+      </select>
+      <IconButton
+        className="journalit-trade-import-account-row__menu"
+        ariaLabel={t('trade-sync.import.more-actions')}
+        disabled={busy}
+        onClick={openActions}
+      >
+        <MoreHorizontal size={16} />
+      </IconButton>
+      {notes.length > 0 && (
+        <div className="journalit-trade-import-account-row__notes">
+          {notes.map((note) => (
+            <p key={note}>{note}</p>
+          ))}
+        </div>
       )}
-      {restoreRateLimitMessage && (
-        <p className="journalit-trade-import-account-card__conflict-help">
-          {restoreRateLimitMessage}
-        </p>
-      )}
-    </article>
+    </li>
   );
 };
 
@@ -204,16 +202,17 @@ interface TradeProjectionInventoryProps {
   mappingRetryAtByAccountId: Record<string, number>;
   restoreRetryAtByAccountId: Record<string, number>;
   now: number;
-  onSelectLocalAccount: (accountId: string, localAccountName: string) => void;
-  onCreateLocalAccount: (account: TradeProjectionAccountInventoryItem) => void;
-  onSaveMapping: (
+  
+  onSelectLocalAccount: (
     account: TradeProjectionAccountInventoryItem,
     localAccountName: string
   ) => void;
+  onCreateLocalAccount: (account: TradeProjectionAccountInventoryItem) => void;
   onRestore: (
     account: TradeProjectionAccountInventoryItem,
     localAccountName: string
   ) => void;
+  onDeleteFromServer?: (account: TradeProjectionAccountInventoryItem) => void;
 }
 
 export const TradeProjectionInventory: React.FC<
@@ -232,8 +231,8 @@ export const TradeProjectionInventory: React.FC<
   now,
   onSelectLocalAccount,
   onCreateLocalAccount,
-  onSaveMapping,
   onRestore,
+  onDeleteFromServer,
 }) => (
   <>
     {showPendingAcks && pendingAckCount > 0 && (
@@ -251,7 +250,7 @@ export const TradeProjectionInventory: React.FC<
     )}
 
     {inventoryLoaded && accounts.length > 0 && (
-      <div className="journalit-trade-import-account-grid">
+      <ul className="journalit-trade-import-account-list">
         {accounts.map((account) => {
           const selectedLocalAccount =
             selectedLocalAccounts[account.accountId] ??
@@ -267,7 +266,7 @@ export const TradeProjectionInventory: React.FC<
             now
           );
           return (
-            <TradeImportAccountCard
+            <TradeImportAccountRow
               key={account.accountId}
               account={account}
               localAccounts={localAccounts}
@@ -279,15 +278,19 @@ export const TradeProjectionInventory: React.FC<
               mappingRateLimitMessage={mappingRateLimit.message}
               restoreRateLimitMessage={restoreRateLimit.message}
               onSelectLocalAccount={(localAccountName) =>
-                onSelectLocalAccount(account.accountId, localAccountName)
+                onSelectLocalAccount(account, localAccountName)
               }
               onCreateLocalAccount={() => onCreateLocalAccount(account)}
-              onSaveMapping={() => onSaveMapping(account, selectedLocalAccount)}
               onRestore={() => onRestore(account, selectedLocalAccount)}
+              onDeleteFromServer={
+                onDeleteFromServer
+                  ? () => onDeleteFromServer(account)
+                  : undefined
+              }
             />
           );
         })}
-      </div>
+      </ul>
     )}
   </>
 );

@@ -1,9 +1,10 @@
 import type JournalitPlugin from '../../main';
 import { OptionType } from '../options/CustomOptionsService';
 import type { TradeData } from '../trade/TradeService';
-import type {
-  TradeCommitEventBatch,
-  TradeCreationBatch,
+import {
+  TradeCreationBatchFinalizationError,
+  type TradeCommitEventBatch,
+  type TradeCreationBatch,
 } from '../trade/core/TradeCommandService';
 import {
   CANONICAL_PROJECTION_CLEAR_FIELDS,
@@ -34,6 +35,7 @@ import { safeParseDateValue } from '../../utils/dateUtils';
 import { deduplicateOptions } from '../../utils/stringNormalization';
 import {
   hasPendingTradeProjectionDeletionIntent,
+  isServerDeletedTradeProjection,
   runWithTradeProjectionWriteLock,
 } from './TradeProjectionWriteLock';
 import type {
@@ -125,7 +127,8 @@ function isProjectedTradeData(value: unknown): value is TradeData {
   );
 }
 
-async function projectedTradesByBackendId(
+
+export async function projectedTradesByBackendId(
   plugin: JournalitPlugin
 ): Promise<Map<string, TradeData[]>> {
   await plugin.tradeService.waitForTradeDataReady?.();
@@ -257,6 +260,12 @@ function failedProjectionResult(
     failed: true,
     pending: false,
   };
+}
+
+function projectionWriteFailureCode(error: unknown): string {
+  return error instanceof TradeCreationBatchFinalizationError
+    ? 'obsidian_projection_finalize_failed'
+    : 'obsidian_write_failed';
 }
 
 function pendingProjectionResult(
@@ -541,10 +550,10 @@ export class TradeProjectionWriter {
               existingPath,
               canonicalTradeData.authoritativePnl
             ),
-          () =>
+          (error: unknown) =>
             failedProjectionResult(
               effectiveCommittedTrade,
-              'obsidian_write_failed'
+              projectionWriteFailureCode(error)
             )
         );
         return pendingResult;
@@ -557,8 +566,11 @@ export class TradeProjectionWriter {
         existingPath,
         canonicalTradeData.authoritativePnl
       );
-    } catch {
-      return failedProjectionResult(committedTrade, 'obsidian_write_failed');
+    } catch (error) {
+      return failedProjectionResult(
+        committedTrade,
+        projectionWriteFailureCode(error)
+      );
     }
   }
 
@@ -625,7 +637,15 @@ export class TradeProjectionWriter {
         this.plugin.canonicalProjectionMigrationService?.run() ??
         Promise.resolve()
       ).then(() => migrateQueuedTradeProjectionTombstones(this.plugin));
-      const completed = await this.performWriteProjections(ownedInput);
+      
+      
+      
+      const completed = await this.performWriteProjections({
+        ...ownedInput,
+        trades: ownedInput.trades.filter(
+          (trade) => !isServerDeletedTradeProjection(this.plugin, trade.id)
+        ),
+      });
       return {
         value: completed.result,
         settlement: completed.settlement,
@@ -792,7 +812,7 @@ export class TradeProjectionWriter {
           if (committedTrade) {
             writeResults[index] = failedProjectionResult(
               committedTrade,
-              'obsidian_write_failed'
+              'obsidian_projection_finalize_failed'
             );
           }
           continue;
@@ -838,7 +858,10 @@ export class TradeProjectionWriter {
       await Promise.all(
         diagnosticCodes.map(async (diagnosticCode) => {
           const count = ackResults.filter(
-            (result) => result.errorCode === diagnosticCode
+            (result) =>
+              result.errorCode === diagnosticCode ||
+              (diagnosticCode === 'obsidian_write_failed' &&
+                result.errorCode === 'obsidian_projection_finalize_failed')
           ).length;
           if (count > 0) {
             await diagnostics.record(clientOperation, {

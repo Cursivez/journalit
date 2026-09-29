@@ -233,7 +233,7 @@ carries fixed campaign parameters:
 
 **What is Transmitted:**
 
-- Constant campaign parameters identifying that the link came from the plugin, which feature's paywall you clicked, and whether that feature was opened by the onboarding import path
+- Constant campaign parameters identifying that the link came from the plugin, which feature's paywall you clicked, and, when that feature was opened from a contextual entry point inside the plugin, which kind of entry point it was (for example the onboarding import path, or the one-time Trade Import suggestion in the new-trade form). The entry point is a fixed value, currently `pro_upgrade` (a paywall you reached yourself), `pro_upgrade_onboarding`, or `pro_upgrade_manual_trade_nudge`; it is never a count, a date, or anything derived from your trades
 - Nothing else; the plugin sends no request of its own for attribution, and the parameters travel only because your browser opened the link
 
 **What is NOT Transmitted:**
@@ -241,6 +241,7 @@ carries fixed campaign parameters:
 - Any generated, random, or per-installation identifier
 - Your email, account ID, or authentication tokens
 - Vault contents, trades, or usage of any other part of the plugin
+- Whether, when, or how often an in-plugin suggestion was shown, or anything the plugin used locally to decide to show it (such as how many trades you entered by hand and on which days)
 
 **Purpose:**
 
@@ -249,7 +250,8 @@ carries fixed campaign parameters:
 **Control:**
 
 - The only control is the click itself. Once an upgrade button is opened, the parameters have already been sent with that first request, so editing the address bar afterwards cannot withdraw them. Not clicking an upgrade button leaves nothing to record at all
-- The onboarding marker is held in memory only and is a fixed word rather than an identifier. It is discarded by the first upgrade click on the feature it was set for, by closing that feature's screen, and by restarting Obsidian or the plugin. An upgrade click on a different feature leaves it untouched, because that click is not the flow onboarding started
+- An entry-point marker is held in memory only and is a fixed word rather than an identifier. Setting it sends nothing. It is discarded by the first upgrade click on the feature it was set for, by closing that feature's screen, and by restarting Obsidian or the plugin. An upgrade click on a different feature leaves it untouched, because that click is not the flow the entry point started
+- Seeing, dismissing, or following an in-plugin suggestion sends no suggestion or attribution data; attribution only travels with an upgrade link you click. Following a suggestion opens the feature normally, so that feature's usual functional requests (for example the subscription check described above) still happen. Whether a suggestion applies is decided entirely on your device, and the only record kept is an "already shown" flag in this vault's local plugin settings, which is never sent to Journalit
 
 Once the link opens, the `journalit.co` website records the upgrade attempt and
 signup origin on our servers, including the campaign parameters above, the page
@@ -322,7 +324,7 @@ When you use sync features, the backend stores:
 
 ### Upgrade and Signup Attribution
 
-- Upgrade attempts started from an upgrade link: the campaign parameters listed above, the feature paywall involved, whether the onboarding import path opened it, the requested billing period, and timestamps for each step of the upgrade page
+- Upgrade attempts started from an upgrade link: the campaign parameters listed above, the feature paywall involved, which in-plugin entry point (if any) opened it, the requested billing period, and timestamps for each step of the upgrade page
 - Signup origin for accounts created from such a visit: landing page, referring site, and the same campaign parameters
 - Used for aggregate conversion reporting; never used for advertising and never sold
 

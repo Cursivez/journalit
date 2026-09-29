@@ -84,12 +84,13 @@ export const LEGACY_CHALLENGE_ONBOARDING_STYLES = `
 
 .journalit-legacy-challenge-onboarding__marker.is-group {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .journalit-legacy-challenge-onboarding__marker.is-suggested {
   background: transparent;
   border-color: var(--interactive-accent);
-  color: var(--interactive-accent);
+  color: var(--text-accent);
 }
 
 .journalit-legacy-challenge-onboarding__row.is-done

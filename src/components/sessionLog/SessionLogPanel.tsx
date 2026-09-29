@@ -41,6 +41,7 @@ import {
   updateSessionLogEntry,
 } from './sessionLogUtils';
 import { t } from '../../lang/helpers';
+import { shareCaptureExcludeProps } from '../../services/share/brandedCapture';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { eventBus } from '../../services/events/EventBus';
 
@@ -561,7 +562,11 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
     );
 
     const filterControl = showFilters ? (
-      <div className="journalit-session-log-filter" ref={filterMenuRef}>
+      <div
+        className="journalit-session-log-filter"
+        ref={filterMenuRef}
+        {...shareCaptureExcludeProps}
+      >
         <button
           ref={filterButtonRef}
           type="button"
@@ -660,6 +665,7 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
           ref={addButtonRef}
           type="button"
           className="journalit-button journalit-button--plain journalit-button--small take-profit-add-button journalit-session-log-add-button"
+          {...shareCaptureExcludeProps}
           onClick={showComposer}
           aria-label={t('session-log.action.add-entry')}
           aria-expanded={false}
@@ -669,7 +675,10 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
       ) : null;
 
     const composer = isComposerVisible ? (
-      <div className="journalit-session-log-composer">
+      <div
+        className="journalit-session-log-composer"
+        {...shareCaptureExcludeProps}
+      >
         <div className="journalit-session-log-composer-bar">
           <div
             className="journalit-session-log-composer-tag-control"
@@ -867,7 +876,10 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                     ? t('session-log.empty-filtered')
                     : t('session-log.empty')}
                 </span>
-                <div className="journalit-session-log-empty__actions">
+                <div
+                  className="journalit-session-log-empty__actions"
+                  {...shareCaptureExcludeProps}
+                >
                   {isFilteredEmpty && (
                     <button
                       type="button"
@@ -938,6 +950,7 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                             className="journalit-session-log-icon-button"
                             onClick={() => void openTrade(entry.tradePath)}
                             aria-label={t('session-log.action.open-trade')}
+                            {...shareCaptureExcludeProps}
                           >
                             <ExternalLink size={14} />
                           </button>
@@ -1032,7 +1045,10 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                               setEditText(event.target.value)
                             }
                           />
-                          <div className="journalit-session-log-edit-actions">
+                          <div
+                            className="journalit-session-log-edit-actions"
+                            {...shareCaptureExcludeProps}
+                          >
                             <button
                               type="button"
                               className="custom-options-compact-icon-button journalit-session-log-edit-icon-button"
@@ -1072,7 +1088,10 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                                 </span>
                               )}
                             </div>
-                            <div className="journalit-session-log-entry__actions">
+                            <div
+                              className="journalit-session-log-entry__actions"
+                              {...shareCaptureExcludeProps}
+                            >
                               {tag?.requiresResolution && !entry.resolved && (
                                 <button
                                   type="button"

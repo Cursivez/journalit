@@ -21,6 +21,7 @@ import {
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { mergeClassNames } from '../../../utils/classNames';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -1107,6 +1108,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               `clickable-icon ${removeButtonClassName}`
             )}
             aria-label={t('widget.key-levels.remove-level')}
+            {...shareCaptureExcludeProps}
           >
             [x]
           </button>
@@ -1142,7 +1144,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
         </div>
 
         {!preview && (
-          <div className="key-levels-input-row">
+          <div className="key-levels-input-row" {...shareCaptureExcludeProps}>
             <input
               ref={supportInputRef}
               type="text"
@@ -1193,7 +1195,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
         </div>
 
         {!preview && (
-          <div className="key-levels-input-row">
+          <div className="key-levels-input-row" {...shareCaptureExcludeProps}>
             <input
               ref={resistanceInputRef}
               type="text"

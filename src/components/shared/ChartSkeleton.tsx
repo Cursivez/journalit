@@ -1,6 +1,7 @@
 import React from 'react';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { SkeletonBox } from './SkeletonBox';
+import { shareLoadingProps } from '../../services/share/brandedCapture';
 
 interface ChartSkeletonProps {
   variant: 'area' | 'line' | 'bar' | 'scatter';
@@ -51,6 +52,7 @@ export const ChartSkeleton: React.FC<ChartSkeletonProps> = ({
   return (
     <div
       className={`journalit-chart-skeleton${variant === 'scatter' ? ' journalit-chart-skeleton--scatter' : ''}`}
+      {...shareLoadingProps}
       style={cssVars({
         '--journalit-chart-skeleton-height': heightValue,
         '--journalit-chart-skeleton-bar-gap': barGap,

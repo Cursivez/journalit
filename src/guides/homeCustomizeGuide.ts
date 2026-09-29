@@ -45,7 +45,8 @@ export function registerHomeCustomizeGuide(guideRegistry: GuideRegistry): void {
         description: t('home.guide.widget-picker.description'),
         progression: 'manual',
         targetId: HOME_WIDGET_SELECTOR_TARGET_ID,
-        placement: 'right',
+        
+        placement: 'left',
         skipIfTargetMissing: false,
       },
       {

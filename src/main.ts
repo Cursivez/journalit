@@ -63,7 +63,7 @@ import { GraphLinkService } from './services/graph/GraphLinkService';
 
 import { ReviewDataCache } from './services/reviewV2/ReviewDataCache';
 import { EventBus } from './services/events';
-import { clearOnboardingUpgradeOrigin } from './services/upgrade/upgradeOrigin';
+import { clearUpgradeOrigin } from './services/upgrade/upgradeOrigin';
 import { GuideRegistry } from './guides/GuideRegistry';
 import { ViewGuideService } from './guides/ViewGuideService';
 import { mergeFreshTradeFormEditData } from './components/forms/trade/tradeFormEditData';
@@ -484,7 +484,7 @@ export default class JournalitPlugin extends Plugin {
 
   
   private async runUnloadCleanup(): Promise<void> {
-    clearOnboardingUpgradeOrigin();
+    clearUpgradeOrigin();
     await this.cleanupManager.cleanup().catch((error: unknown) => {
       console.error('Error during plugin cleanup:', error);
       

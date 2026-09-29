@@ -117,7 +117,7 @@ export const accountLinkModalStyles = `
   .account-link-modal .modal-input:focus,
   .account-link-modal .modal-select:focus {
     border-color: var(--interactive-accent);
-    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent);
     outline: none;
   }
 

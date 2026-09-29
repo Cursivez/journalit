@@ -53,12 +53,17 @@ import { deriveEconomicCalendarImportState } from './economicCalendarImportState
 import { EconomicCalendarHeader } from './EconomicCalendarHeader';
 import { useEconomicCalendarWeek } from './useEconomicCalendarWeek';
 import { Import } from '../shared/icons/ObsidianIcon';
-import { useGuideTarget } from '../../guides/GuideRuntimeLayer';
 import {
+  useGuideTarget,
+  useResolvedViewGuide,
+} from '../../guides/GuideRuntimeLayer';
+import {
+  ECONOMIC_CALENDAR_MAIN_GUIDE_ID,
   ECONOMIC_CALENDAR_MANUAL_IMPORT_TARGET_ID,
   ECONOMIC_CALENDAR_RESTORE_TARGET_ID,
 } from '../../guides/economicCalendarGuideIds';
 import { useEventBus } from '../../hooks/useEventBus';
+import { DeviceFlowSignInModal } from '../auth/DeviceFlowSignInModal';
 
 const ERROR_MESSAGE_KEYS: Record<'offline' | 'error', TranslationKey> = {
   offline: 'view.economic-calendar.error.offline',
@@ -165,6 +170,7 @@ export const EconomicCalendarPanel: React.FC<EconomicCalendarPanelProps> = ({
   );
   const {
     status,
+    settledStatus,
     events,
     fetchedAt,
     weekDate,
@@ -192,6 +198,11 @@ export const EconomicCalendarPanel: React.FC<EconomicCalendarPanelProps> = ({
   const isMountedRef = useRef(false);
   const { ids: selectedIds, isImporting } = selection;
   const { currencies: selectedCurrencies, impacts: selectedImpacts } = filters;
+  
+  
+  useResolvedViewGuide(
+    settledStatus === 'ok' ? ECONOMIC_CALENDAR_MAIN_GUIDE_ID : null
+  );
   const registerManualImportTarget = useGuideTarget(
     ECONOMIC_CALENDAR_MANUAL_IMPORT_TARGET_ID
   );
@@ -203,6 +214,17 @@ export const EconomicCalendarPanel: React.FC<EconomicCalendarPanelProps> = ({
 
   const openSettings = useCallback((): void => {
     plugin.openSettingsToTab(SETTINGS_TAB_IDS.ECONOMIC_CALENDAR);
+  }, [plugin]);
+
+  
+  
+  const openSignIn = useCallback((): void => {
+    new DeviceFlowSignInModal(
+      plugin.app,
+      plugin,
+      () => undefined,
+      () => undefined
+    ).open();
   }, [plugin]);
 
   const handleSettingsChanged = useCallback(
@@ -418,6 +440,9 @@ export const EconomicCalendarPanel: React.FC<EconomicCalendarPanelProps> = ({
 
       {status === 'loading' && <EconomicCalendarLoading />}
       {status === 'not_entitled' && <EconomicCalendarProGate />}
+      {status === 'signed_out' && (
+        <EconomicCalendarProGate onSignIn={openSignIn} />
+      )}
       {(status === 'offline' || status === 'error') && (
         <EconomicCalendarError
           messageKey={ERROR_MESSAGE_KEYS[status]}

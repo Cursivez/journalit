@@ -4,6 +4,7 @@ import React from 'react';
 import { t } from '../../../lang/helpers';
 import { ImageCarousel } from '../../image/ImageCarousel';
 import { Image } from '../../shared/icons/ObsidianIcon';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 interface TradeImageSectionProps {
   images: string[] | undefined;
@@ -15,7 +16,7 @@ export const TradeImageSection: React.FC<TradeImageSectionProps> = React.memo(
   ({ images, onEditClick, sourcePath }) => {
     if (!images || images.length === 0) {
       return (
-        <div className="trade-empty-images">
+        <div className="trade-empty-images" {...shareCaptureExcludeProps}>
           <div className="trade-empty-images-icon" aria-hidden="true">
             <Image size={28} strokeWidth={1.75} />
           </div>

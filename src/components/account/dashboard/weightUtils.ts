@@ -2,6 +2,7 @@
 
 import { AccountData } from '../../../services/account/types';
 import { AccountTypeMetrics, calculateAccountTypeMetrics } from './utils';
+import { formatAccountTypeLabel } from '../../../utils/accountTypeLabel';
 
 
 const ACCOUNT_TYPE_COLORS = [
@@ -51,14 +52,6 @@ function getAccountTypeColor(index: number): string {
 }
 
 
-function formatAccountTypeDisplayName(type: string): string {
-  return type
-    .split('_')
-    .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
-    .join(' ');
-}
-
-
 export function calculateAccountTypeWeights(
   accounts: AccountData[],
   accountsByType: Record<string, AccountData[]>,
@@ -97,7 +90,7 @@ export function calculateAccountTypeWeights(
     if (metrics.aumAmount > 0) {
       weightData.push({
         type,
-        displayName: formatAccountTypeDisplayName(type),
+        displayName: formatAccountTypeLabel(type),
         aumAmount: metrics.aumAmount,
         aumWeightPercent: metrics.aumWeightPercent,
         color: getAccountTypeColor(index),

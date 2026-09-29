@@ -157,6 +157,7 @@ class AddSetupsModal extends Modal {
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
+    this.modalEl.addClass('journalit-modal');
 
     
     contentEl.addClass('batch-action-modal');
@@ -291,6 +292,7 @@ class AddTagsModal extends Modal {
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
+    this.modalEl.addClass('journalit-modal');
     contentEl.addClass('batch-action-modal');
     this.container = contentEl.createDiv({
       cls: 'batch-action-modal-container',
@@ -424,6 +426,7 @@ class AddMistakesModal extends Modal {
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
+    this.modalEl.addClass('journalit-modal');
 
     
     contentEl.addClass('batch-action-modal');

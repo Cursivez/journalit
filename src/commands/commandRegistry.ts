@@ -6,6 +6,8 @@ import { TradeFormModal } from '../components/forms/trade/TradeFormModal';
 import { PositionSizeCalculatorModal } from '../components/modals/PositionSizeCalculatorModal';
 import { openQuickTradeImportModal } from '../components/csv/QuickTradeImportModal';
 import { t } from '../lang/helpers';
+import { guidesRequireResolution } from '../guides/GuideRegistry';
+import type { GuideDefinition } from '../guides/types';
 import { openLegacyChallengeOnboardingModal } from '../components/onboarding/legacyChallenge/LegacyChallengeOnboardingModal';
 
 
@@ -29,6 +31,17 @@ export class CommandRegistry {
     this.registerMaintenanceCommands();
     this.registerTemplateCommands();
     this.registerSampleJournalCommands();
+    this.registerShareCommands();
+  }
+
+  
+  private registerShareCommands(): void {
+    this.plugin.addCommand({
+      id: 'share-note-as-image',
+      name: t('command.share-note-as-image'),
+      checkCallback: (checking) =>
+        this.plugin.processorManager.shareActiveNoteAsImage(checking),
+    });
   }
 
   
@@ -360,29 +373,27 @@ export class CommandRegistry {
           return;
         }
 
-        const guidesForView = guideRegistry.getGuidesForView(
-          activeContext.viewType
+        const viewResolvesGuide = guidesRequireResolution(
+          guideRegistry.getGuidesForView(activeContext.viewType)
         );
 
-        const activeSession = guideService.getSessionForLeaf(
-          activeLeaf,
-          activeContext.viewType
-        );
-
-        const isMultiGuideView = guidesForView.length > 1;
-        const resolvedGuideId = isMultiGuideView
-          ? guideService.getResolvedGuideForLeaf(activeLeaf)
-          : null;
-
-        let guide = resolvedGuideId
-          ? guideRegistry.getGuideById(resolvedGuideId)
-          : null;
-
-        if (!guide && activeSession) {
-          guide = guideRegistry.getGuideById(activeSession.guideId);
-        }
-
-        if (!guide && !isMultiGuideView) {
+        
+        
+        
+        
+        
+        let guide: GuideDefinition | null;
+        if (viewResolvesGuide) {
+          const resolvedGuideId =
+            guideService.getResolvedGuideForLeaf(activeLeaf);
+          guide = resolvedGuideId
+            ? guideRegistry.getGuideById(resolvedGuideId)
+            : null;
+          if (!guide) {
+            new Notice(t('notice.guide.unavailable-in-current-state'));
+            return;
+          }
+        } else {
           guide = guideRegistry.getPrimaryGuideForView(activeContext.viewType);
         }
 

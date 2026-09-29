@@ -3,9 +3,10 @@
 import type { Lang } from './en';
 
 const hi: Lang = {
+  'templateEditor.widget.session-log.hide-empty-outside':
+    'सत्र के बाहर का लॉग खाली होने पर छिपाएँ',
   'widget.mfeScatter.name': 'MFE बनाम प्राप्त लाभ/हानि',
-  'widget.mfeScatter.description':
-    'बंद ट्रेडों की अधिकतम अनुकूल चाल बनाम शुद्ध प्राप्त लाभ/हानि',
+  'widget.mfeScatter.description': 'हर ट्रेड का अधिकतम खुला लाभ बनाम अंतिम P&L',
   'widget.mfeScatter.y': 'प्राप्त लाभ/हानि ({unit})',
   'widget.mfeScatter.winners': 'लाभ वाले',
   'widget.mfeScatter.losers': 'हानि वाले',
@@ -182,6 +183,8 @@ const hi: Lang = {
     'पहले समर्थित Journalit दृश्य खोलें, फिर यह आदेश चलाएँ।',
   'notice.guide.no-guide-for-view':
     'इस दृश्य के लिए अभी तक कोई गाइड पंजीकृत नहीं है ({viewType})।',
+  'notice.guide.unavailable-in-current-state':
+    'इस दृश्य की गाइड इसकी वर्तमान स्थिति में उपलब्ध नहीं है।',
   'notice.guide.replay-failed':
     'गाइड प्रारंभ करने में विफल. कृपया पुन: प्रयास करें।',
   'notice.guide.replay-started':
@@ -304,6 +307,18 @@ const hi: Lang = {
   'form.tab.details': 'डिटेल्स',
   'form.tab.advanced': 'एडवांस्ड',
   'form.import-shortcut.open': 'ट्रेड्स इंपोर्ट करें',
+  'form.manual-import-nudge.title.one':
+    'सुझाव: आपने {count} ट्रेड हाथ से जोड़ा है',
+  'form.manual-import-nudge.title.few':
+    'सुझाव: आपने {count} ट्रेड हाथ से जोड़े हैं',
+  'form.manual-import-nudge.title.many':
+    'सुझाव: आपने {count} ट्रेड हाथ से जोड़े हैं',
+  'form.manual-import-nudge.title.other':
+    'सुझाव: आपने {count} ट्रेड हाथ से जोड़े हैं',
+  'form.manual-import-nudge.body':
+    'ट्रेड इंपोर्ट आपके ब्रोकर या स्प्रेडशीट का इतिहास एक-एक ट्रेड के बजाय एक साथ ला सकता है।',
+  'form.manual-import-nudge.cta': 'मेरे ट्रेड्स का प्रीव्यू देखें',
+  'form.manual-import-nudge.dismiss': 'अभी नहीं',
   'form.layout.customize': 'फ़ॉर्म कस्टमाइज़ करें',
   'form.layout.modal-title': 'ट्रेड फ़ॉर्म कस्टमाइज़ करें',
   'form.layout.settings-title': 'ट्रेड फ़ॉर्म लेआउट',
@@ -859,10 +874,7 @@ const hi: Lang = {
   'tradelog.guide.filters.title':
     'ट्रेड लॉग को संकीर्ण करने के लिए फ़िल्टर्स का उपयोग करें',
   'tradelog.guide.filters.description':
-    'जब आप केवल कुछ अकाउंट्स, सेटअप्स, टैग, ट्रेड प्रकार, स्टेटस या तारीखें रिव्यू करना चाहें तो फ़िल्टर्स खोलें।',
-  'tradelog.guide.filter-modal.title': 'ये आपके विस्तृत फ़िल्टर्स हैं',
-  'tradelog.guide.filter-modal.description':
-    'जब आप ठीक-ठीक नियंत्रित करना चाहें कि कौन से ट्रेड्स दिखें, तब इस मोडल का उपयोग करें। रिव्यू या फ़िल्टर बदलना खत्म होने पर इसे बंद कर दें।',
+    'जब आप केवल कुछ अकाउंट्स, सेटअप्स, टैग, ट्रेड प्रकार, स्टेटस या तारीखें रिव्यू करना चाहें तो फ़िल्टर्स खोलें। आप किसी भी मान को बाहर करके उन ट्रेड्स को हटा भी सकते हैं।',
   'tradelog.guide.sorting.title':
     'तालिका को क्रमबद्ध करने के लिए कॉलम हेडर पर क्लिक करें',
   'tradelog.guide.sorting.description':
@@ -903,7 +915,7 @@ const hi: Lang = {
   'dashboard.guide.main.filters.title':
     'फ़िल्टर्स संपूर्ण डैशबोर्ड को बदल देता है',
   'dashboard.guide.main.filters.description':
-    'जब आप चाहते हैं कि इस पृष्ठ पर प्रत्येक स्टेट और चार्ट एक अलग दिनांक सीमा, अकाउंट, सेटअप, टैग, या ट्रेड प्रकार के लिए अपडेट हो तो फ़िल्टर का उपयोग करें।',
+    'जब आप चाहते हैं कि इस पृष्ठ पर प्रत्येक स्टेट और चार्ट एक अलग दिनांक सीमा, अकाउंट, सेटअप, टैग, या ट्रेड प्रकार के लिए अपडेट हो तो फ़िल्टर का उपयोग करें। आप किसी भी मान को बाहर करके उन ट्रेड्स को हटा भी सकते हैं।',
   'dashboard.guide.main.edit-layout.title':
     'इस पृष्ठ को अनुकूलित करने के लिए संपादन मोड चालू करें',
   'dashboard.guide.main.edit-layout.description':
@@ -914,7 +926,7 @@ const hi: Lang = {
   'dashboard.guide.main.widget-picker.title':
     'आप जो दिखाना चाहते हैं उसे चुनें',
   'dashboard.guide.main.widget-picker.description':
-    'यह पिकर वे चार्ट और मेट्रिक्स दिखाता है जो वर्तमान में आपके डैशबोर्ड पर नहीं हैं। जोड़ने के लिए किसी एक को क्लिक करें।',
+    'यह पैनल हर चार्ट और मेट्रिक का प्रीव्यू दिखाता है। जोड़ने के लिए किसी एक पर क्लिक करें; जो पहले से आपके डैशबोर्ड पर है वह उपयोग में के अंतर्गत दिखता है।',
   'dashboard.guide.main.metrics.title': 'ये शीर्ष कार्ड आपका त्वरित सारांश हैं',
   'dashboard.guide.main.metrics.description':
     'शीर्ष पंक्ति आपको लाभ, विन रेट और कुल ट्रेड्स जैसे त्वरित उत्तर देती है। संपादन मोड में, आप बदल सकते हैं कि कौन से कार्ड दिखाई दें और उन्हें पुन: व्यवस्थित करें।',
@@ -951,7 +963,7 @@ const hi: Lang = {
     'अपने विजेट्स को स्थानांतरित करें और उनका आकार बदलें',
   'home.guide.widget-picker.title': 'यहां विजेट्स जोड़ें',
   'home.guide.widget-picker.description':
-    'विजेट जोड़ें, त्वरित लिंक वापस लाएँ या खाते और सेटअप के शॉर्टकट जोड़ें।',
+    'विजेट का पूर्वावलोकन देखें और जोड़ें, त्वरित लिंक वापस लाएँ या खाते और सेटअप के शॉर्टकट जोड़ें। होम पर पहले से मौजूद सब कुछ "उपयोग में" के तहत दिखता है, जहाँ से आप उसे हटा सकते हैं।',
   'home.guide.move-and-resize.description':
     'यह मुख्य क्षेत्र है जिसे आप संपादन मोड में पुनर्व्यवस्थित कर सकते हैं। विजेट को स्थानांतरित करने के लिए खींचें, या विजेट का आकार बदलने के लिए उसके निचले-दाएं कोने से खींचें।',
   'home.guide.add-widget.title': 'होम में आइटम जोड़ें',
@@ -1027,27 +1039,17 @@ const hi: Lang = {
   'tradelog.node.performance.day': '{indicator} {week} {year} का प्रदर्शन दिवस',
   'tradelog.node.performance.period': '{indicator} प्रदर्शन अवधि',
   'tradelog.filter.all': 'सभी स्टेटस',
-  'tradelog.filter.all.desc': 'सभी ट्रेड स्थितियाँ',
-  'tradelog.filter.all-review-statuses': 'सभी रिव्यूज़',
-  'tradelog.filter.all-directions': 'सभी दिशाएँ',
   'tradelog.filter.winners': 'विनर्स',
-  'tradelog.filter.winners.desc': 'विनिंग ट्रेड्स',
   'tradelog.filter.losers': 'लूज़र्स',
-  'tradelog.filter.losers.desc': 'लूज़िंग ट्रेड्स',
   'tradelog.filter.breakeven': 'ब्रेकईवन',
   'tradelog.filter.breakeven.desc': 'ब्रेकईवन ट्रेड्स',
   'tradelog.filter.open': 'ओपन',
   'tradelog.filter.open.desc': 'अभी ओपन पोजीशन्स',
   'tradelog.filter.closed': 'क्लोज्ड',
-  'tradelog.filter.closed.desc': 'सभी बंद पोजीशन्स (जीत/नुकसान/ब्रेकईवन)',
-  'tradelog.type.all': 'सभी प्रकार',
-  'tradelog.type.all.desc': 'सभी ट्रेड प्रकार',
   'tradelog.type.regular': 'नियमित',
   'tradelog.type.regular.desc': 'मानक ट्रेड्स',
   'tradelog.type.missed': 'मिस्ड',
-  'tradelog.type.missed.desc': 'अवसर चूक गए',
   'tradelog.type.backtest': 'बैकटेस्ट',
-  'tradelog.type.backtest.desc': 'सिम्युलेटेड ट्रेड्स',
   'tradelog.status.win': 'WIN',
   'tradelog.status.loss': 'LOSS',
   'tradelog.status.open': 'खुला',
@@ -1301,7 +1303,6 @@ const hi: Lang = {
   'dashboard.conversion.converted-pnl': 'परिवर्तित P&L',
   'dashboard.conversion.details-label': 'मुद्रा रूपांतरण विवरण',
 
-  'dashboard.top-section.add-metric': 'मेट्रिक जोड़ें',
   'dashboard.top-section.remove-metric': 'मीट्रिक हटाएँ',
   'dashboard.top-section.failed-load': 'मेट्रिक्स लोड करने में विफल',
   'dashboard.filter.date.today': 'आज',
@@ -1319,24 +1320,7 @@ const hi: Lang = {
   'dashboard.filter.accounts.select-all': 'सभी चुनें',
 
   'dashboard.filter.accounts.none-found': 'कोई अकाउंट्स नहीं मिला',
-  'dashboard.filter.tags.all': 'सभी टैग',
-  'dashboard.filter.tags.none': 'कोई टैग नहीं',
-  'dashboard.filter.tags.n-selected': '{count} टैग',
-  'dashboard.filter.tags.select-all': 'सभी चुनें',
-  'dashboard.filter.tags.none-found': 'कोई टैग नहीं मिला',
-  'dashboard.filter.mistakes.all': 'सभी गलतियाँ',
-  'dashboard.filter.mistakes.none': 'कोई गलती नहीं',
-  'dashboard.filter.mistakes.n-selected': '{count} गलतियाँ',
-  'dashboard.filter.mistakes.select-all': 'सभी चुनें',
-  'dashboard.filter.mistakes.none-found': 'कोई ग़लती नहीं मिली',
-  'dashboard.filter.tickers.all': 'सभी सिंबल्स',
-  'dashboard.filter.tickers.n-selected': '{count} सिंबल्स',
-  'dashboard.filter.tickers.select-all': 'सभी चुनें',
   'dashboard.filter.tickers.none-found': 'कोई सिंबल्स नहीं मिला',
-  'dashboard.filter.setup.all': 'सभी सेटअप्स',
-  'dashboard.filter.setup.none': 'कोई सेटअप नहीं',
-  'dashboard.filter.setup.n-selected': '{count} सेटअप्स',
-  'dashboard.filter.setup.select-all': 'सभी चुनें',
 
   'dashboard.widgets.daily-performance.title': 'दैनिक प्रदर्शन',
   'dashboard.widgets.daily-performance.period-aria': 'अवधि',
@@ -1365,12 +1349,12 @@ const hi: Lang = {
 
   'dashboard.widgets.setup-performance.title': 'सेटअप प्रदर्शन',
   'dashboard.widgets.setup-performance.description':
-    'सेटअप द्वारा प्रदर्शन की तुलना करते हुए रैंक किया गया बार चार्ट',
+    'सेटअप के अनुसार प्रदर्शन की रैंकिंग',
   'dashboard.widgets.setup-performance.empty': 'कोई सेटअप प्रदर्शन डेटा नहीं',
   'dashboard.widgets.setup-performance.masked-label': 'सेटअप',
   'dashboard.widgets.tag-performance.title': 'टैग प्रदर्शन',
   'dashboard.widgets.tag-performance.description':
-    'टैग द्वारा प्रदर्शन की तुलना करते हुए रैंक किया गया बार चार्ट',
+    'टैग के अनुसार प्रदर्शन की रैंकिंग',
   'dashboard.widgets.tag-performance.empty': 'कोई टैग प्रदर्शन डेटा नहीं',
   'dashboard.widgets.tag-performance.masked-label': 'टैग',
   'dashboard.widgets.ticker-performance.title': 'सिंबल प्रदर्शन',
@@ -1418,7 +1402,7 @@ const hi: Lang = {
     'वर्ष के लिए आपकी ट्रेडिंग गतिविधि दर्शाने वाला कैलेंडर',
   'home.widget.getting-started.name': 'शुरू करें',
   'home.widget.getting-started.description':
-    'ट्रेडिंग इतिहास जोड़ने और Journalit को कॉन्फ़िगर करने में आपकी सहायता के लिए चेकलिस्ट',
+    'Journalit और ट्रेड सेट करने की चेकलिस्ट',
   'home.widget.getting-started.progress': '{completed}/{total} पूरा हुआ',
   'home.widget.getting-started.progress.loading':
     'प्रगति की जाँच की जा रही है...',
@@ -1458,12 +1442,11 @@ const hi: Lang = {
     'दैनिक P&L स्पार्कलाइन चार्ट के साथ वर्तमान सप्ताह मेट्रिक्स',
   'home.widget.key-events.name': 'प्रमुख घटनाएँ',
   'home.widget.key-events.description':
-    'वर्तमान वीकली रिव्यू से महत्वपूर्ण समाचार और बाज़ार घटनाएँ',
+    'इस सप्ताह की समीक्षा से खबरें और घटनाएँ',
   'home.widget.key-events.empty-title': 'अभी तक कोई महत्वपूर्ण घटनाएँ नहीं',
   'home.widget.key-events.open-aria': 'इस सप्ताह का वीकली रिव्यू खोलें',
   'home.widget.position-size.name': 'पोजीशन साइज़ कैलकुलेटर',
-  'home.widget.position-size.description':
-    'अकाउंट जोखिम प्रतिशत के आधार पर पोजीशन साइज़ की गणना करें',
+  'home.widget.position-size.description': 'खाते के जोखिम % से पोज़िशन साइज़',
   'home.widget.embedded-note.name': 'एंबेडेड नोट',
   'home.widget.embedded-note.description':
     'अपनी तिजोरी से कोई भी मार्कडाउन नोट प्रदर्शित करें',
@@ -1484,13 +1467,12 @@ const hi: Lang = {
     'अपने ट्रेडिंग लक्ष्य की ओर प्रगति को ट्रैक करें',
   'home.widget.trading-score.name': 'ट्रेडिंग स्कोर',
   'home.widget.trading-score.description':
-    'रडार चार्ट विज़ुअलाइज़ेशन के साथ व्यापक प्रदर्शन स्कोर',
+    'आपके कुल ट्रेडिंग प्रदर्शन का एक स्कोर',
   'home.widget.aum.name': 'AUM',
-  'home.widget.aum.description':
-    '7-दिवसीय ट्रेंड स्पार्कलाइन के साथ प्रबंधनाधीन कुल संपत्ति',
+  'home.widget.aum.description': '7-दिन के रुझान के साथ कुल खाता बैलेंस',
   'home.widget.drawdown-monitor.name': 'ड्रॉडाउन मॉनिटर',
   'home.widget.drawdown-monitor.description':
-    'कॉन्फ़िगर की गई सीमाओं के साथ अकाउंट्स में ड्रॉडाउन स्थिति को ट्रैक करें',
+    'हर खाते में ड्रॉडाउन सीमा का उपयोग',
   'home.widget.profit-target-widget.name': 'लाभ लक्ष्य',
   'home.widget.profit-target-widget.description':
     'अकाउंट्स में लाभ लक्ष्य प्रगति को ट्रैक करें',
@@ -1597,6 +1579,7 @@ const hi: Lang = {
     'आपके साप्ताहिक नोट में उच्च-प्रभाव वाले इवेंट।',
   'view.economic-calendar.pro-benefit-trial':
     '14-दिन के निःशुल्क परीक्षण से शुरू करें।',
+  'view.economic-calendar.sign-in': 'पहले से Pro है? साइन इन करें',
   'settings.economic-calendar.title': 'आर्थिक कैलेंडर',
   'settings.economic-calendar.description':
     'इस सप्ताह के आर्थिक इवेंट को आपके साप्ताहिक नोट के मुख्य इवेंट में अपने आप आयात करता है।',
@@ -1701,9 +1684,9 @@ const hi: Lang = {
   'csv.mapper.required-badge': 'आवश्यक',
   'csv.mapper.required-label': 'आवश्यक',
   'csv.mapper.example': 'उदाहरण:',
-  'csv.mapper.mode.title': 'इंपोर्ट मोड',
+  'csv.mapper.mode.title': 'हर पंक्ति क्या है?',
   'csv.mapper.mode.help':
-    'चुनें कि मैन्युअल पंक्तियों की व्याख्या कैसे की जानी चाहिए। डायरेक्ट P&L मोड मैप किए गए P&L मानों का उपयोग करके पंक्तियों को बंद ट्रेड्स के रूप में इंपोर्ट करता है।',
+    'जर्नल स्प्रेडशीट में आमतौर पर हर पंक्ति में एक बंद ट्रेड और P/L कॉलम होता है। ब्रोकर की ऑर्डर हिस्ट्री हर खरीद और बिक्री को अलग पंक्ति में दिखाती है।',
 
   'csv.mapper.asset-type.help':
     'इस फ़ाइल में उपकरण का प्रकार चुनें. यह आवश्यक फ़ील्ड और पार्सिंग तर्क निर्धारित करता है।',
@@ -2576,6 +2559,10 @@ const hi: Lang = {
     'Journalit के पास हर {firm} चैलेंज के नियम प्रीफिल के लिए तैयार हैं।',
   'upgrade.prop-profiles.message':
     'Journalit प्रॉप फर्म के नियम आपकी चैलेंज में भरने के लिए तैयार रखता है।',
+  'upgrade.prop-profiles.message-updates':
+    'अपने चैलेंज को उसकी फर्म के प्रकाशित नियमों से लिंक करें, फर्म जब इन्हें बदलेगी तो Journalit आपको बताएगा।',
+  'upgrade.prop-profiles.message-updates-firm':
+    'अपने चैलेंज को {firm} के प्रकाशित नियमों से लिंक करें, {firm} जब इन्हें बदलेगी तो Journalit आपको बताएगा।',
   'upgrade.prop-profiles.benefits-title': 'Pro आपके लिए क्या भरता है:',
   'upgrade.benefit.prop.rules':
     'आपकी फर्म के नियमों से सीधे ड्रॉडाउन और दैनिक हानि सीमाएं',
@@ -2653,30 +2640,20 @@ const hi: Lang = {
     'बैलेंस चार्ट सिर्फ बैलेंस से कहीं अधिक दिखाता है',
   'account-page.guide.main.balance-chart.description':
     'यह चार्ट समय के साथ अकाउंट दिखाता है, जिसमें जमा और निकासी, साथ ही ड्रॉडाउन और अकाउंट के लिए आपके द्वारा निर्धारित लाभ-लक्ष्य स्तर शामिल हैं।',
-  'account-page.guide.main.metrics.title':
-    'ये मेट्रिक्स केवल इस अकाउंट को सारांशित करते हैं',
+  'account-page.guide.main.metrics.title': 'केवल इस अकाउंट का प्रदर्शन',
   'account-page.guide.main.metrics.description':
-    'इन संख्याओं की गणना इस अकाउंट के लिए की जाती है, इसलिए आप इसके प्रदर्शन का आकलन स्वयं कर सकते हैं।',
+    'केवल इस अकाउंट का बैलेंस, P&L, विन रेट और हर लागत। प्रॉप अकाउंट नेट कैश फ्लो की जगह पेआउट दिखाते हैं।',
   'account-page.guide.main.risk.title':
     'यहां जोखिम प्रगति को अलग से ट्रैक किया जाता है',
   'account-page.guide.main.risk.description':
-    'यह अनुभाग दिखाता है कि अकाउंट अपनी ड्रॉडाउन सीमा या लाभ लक्ष्य के कितने करीब है। आप उन नियमों को अकाउंट संपादित करें में सेट करते हैं, जिसे हम आगे दिखाएंगे।',
+    'आपकी ड्रॉडाउन सीमा का कितना हिस्सा इस्तेमाल हुआ है और आप अपने प्रॉफ़िट टारगेट के कितने क़रीब हैं।',
   'account-page.guide.main.transactions.title':
     'जमा और निकासी अपने-अपने अनुभाग में रहते हैं',
   'account-page.guide.main.transactions.description':
-    'यहां प्रत्येक एंट्री को बाद में रिव्यू किया जा सकता है, ताकि आप नकदी की आवाजाही को ट्रेडिंग प्रदर्शन से अलग कर सकें।',
-  'account-page.guide.main.trade-log.title':
-    'इस अकाउंट के ट्रेड्स को ट्रेड लॉग में देखें',
-  'account-page.guide.main.trade-log.description':
-    'ध्यान केंद्रित ट्रेड रिव्यू के लिए पहले से ही चयनित इस अकाउंट के साथ ट्रेड लॉग खोलें।',
-  'account-page.guide.main.add-event.title':
-    'इवेंट जोड़ें जमा और निकासी रिकॉर्ड करता है',
-  'account-page.guide.main.add-event.description':
-    'जब भी सामान्य ट्रेड परिणामों के बाहर पैसा जोड़ा या हटाया जाए तो इसका उपयोग करें, ताकि अकाउंट इतिहास सटीक रहे।',
-  'account-page.guide.main.edit-account.title':
-    'अकाउंट संपादित करें अकाउंट सेटिंग्स बदलता है',
-  'account-page.guide.main.edit-account.description':
-    'यह वह जगह है जहां आप अकाउंट विवरण, जोखिम नियम, ड्रॉडाउन और लाभ लक्ष्य को अपडेट करते हैं यदि वे समय के साथ बदलते हैं।',
+    'हर जमा और निकासी के बाद का बैलेंस, ट्रेडिंग नतीजों से अलग। प्रॉप अकाउंट यहां अपने पेआउट दिखाते हैं।',
+  'account-page.guide.main.actions.title': 'ट्रेड, नकदी और सेटिंग्स',
+  'account-page.guide.main.actions.description':
+    'इस अकाउंट के ट्रेड Trade Log में खोलें, + से जमा या निकासी दर्ज करें, या अकाउंट और उसके नियम संपादित करें।',
   'account-dashboard.title': 'अकाउंट्स',
   'account-dashboard.copy-badge.base': 'आधार',
   'account-dashboard.copy-badge.copy': 'कापियर',
@@ -2828,6 +2805,33 @@ const hi: Lang = {
   'trade.image.no-images': 'इस ट्रेड के लिए कोई चित्र नहीं',
   'trade.image.click-edit': 'छवि जोड़ें',
   'trade.image.alt-prefix': 'ट्रेड छवि',
+  'command.share-note-as-image': 'वर्तमान नोट को छवि के रूप में साझा करें',
+  'trade.share.copy-screenshot': 'ट्रेड स्क्रीनशॉट कॉपी करें',
+  'trade.share.copied': 'ट्रेड स्क्रीनशॉट क्लिपबोर्ड पर कॉपी हो गया',
+  'trade.share.failed': 'ट्रेड स्क्रीनशॉट कॉपी नहीं हो सका',
+  'trade.share.not-ready':
+    'ट्रेड नोट अभी लोड हो रहा है। थोड़ी देर में फिर से कोशिश करें।',
+  'share.review.action': 'समीक्षा कार्ड साझा करें',
+  'share.review.modal-title': 'समीक्षा साझा करें',
+  'share.review.section.top': 'नोट की शुरुआत',
+  'share.review.select-all': 'सभी चुनें',
+  'share.review.clear': 'साफ़ करें',
+  'share.review.legend.widget': 'विजेट',
+  'share.review.legend.heading': 'शीर्षक और उसका टेक्स्ट',
+  'share.review.legend.media': 'मीडिया',
+  'share.review.legend.text': 'टेक्स्ट',
+  'share.review.copy': 'इमेज कॉपी करें',
+  'settings.general.hide-dollar-amounts-in-shares':
+    'साझा की गई छवियों में डॉलर राशि छिपाएँ',
+  'settings.general.hide-dollar-amounts-in-shares-desc':
+    'R मल्टीपल चालू होने पर, ट्रेड स्क्रीनशॉट और रिव्यू कार्ड जोखिम, फीस, कमीशन और MAE/MFE को डॉलर में नहीं दिखाते।',
+  'share.review.hide-dollar-amounts': 'डॉलर राशि छिपाएँ',
+  'share.review.hide-dollar-amounts-hint':
+    'जोखिम, फीस और अन्य डॉलर मान छोड़ देता है।',
+  'share.review.hide-dollar-amounts-needs-r':
+    'डॉलर राशि के बिना साझा करने के लिए सेटिंग्स में R मल्टीपल चालू करें।',
+  'share.review.copied': 'शेयर कार्ड क्लिपबोर्ड पर कॉपी हो गया',
+  'share.review.failed': 'शेयर कार्ड कॉपी नहीं हो सका',
 
   'trade.review.reviewed': 'रिव्यू हो चुका',
   'trade.review.reviewed-on': '{date} पर रिव्यूड',
@@ -2899,6 +2903,12 @@ const hi: Lang = {
   'settings.general.privacy-mode-desc':
     'सहेजे गए डेटा को बदले बिना यूआई में संवेदनशील ट्रेडिंग, टीएमटीओके0एक्स, कीमत और प्रदर्शन मूल्यों को छिपाएं।',
   'settings.general.privacy-mode-aria': 'गोपनीयता मोड टॉगल करें',
+  'settings.general.appearance': 'रूप-रंग',
+  'settings.general.accent-color': 'एक्सेंट रंग',
+  'settings.general.accent-color-desc':
+    'Journalit बटन, टॉगल और हाइलाइट के लिए रंग। Journalit एक्सेंट केवल तब उपयोग होता है जब Obsidian अपने डिफ़ॉल्ट एक्सेंट पर हो; Obsidian की Appearance सेटिंग्स में चुना गया एक्सेंट या थीम हमेशा प्राथमिकता लेता है।',
+  'settings.general.accent-color-journalit': 'Journalit एक्सेंट (डिफ़ॉल्ट)',
+  'settings.general.accent-color-obsidian': 'Obsidian का एक्सेंट अपनाएँ',
   'settings.general.home-view-settings': 'होम व्यू सेटिंग्स',
   'settings.general.home-auto-open': 'होम व्यू स्वतः-खुला',
   'settings.general.home-auto-open-desc':
@@ -3632,9 +3642,9 @@ const hi: Lang = {
   'onboarding.data-source.option.broker.label': 'मेरे ब्रोकर या प्लेटफ़ॉर्म पर',
   'onboarding.data-source.option.broker.description':
     'उसे कनेक्ट करें, या उसका एक्सपोर्ट इम्पोर्ट करें।',
-  'onboarding.data-source.option.file.label': 'स्प्रेडशीट या फ़ाइल में',
+  'onboarding.data-source.option.file.label': 'मेरी अपनी स्प्रेडशीट में',
   'onboarding.data-source.option.file.description':
-    'CSV, Excel या HTML एक्सपोर्ट।',
+    'Excel, Google Sheets या CSV में रखा आपका जर्नल।',
   'onboarding.data-source.option.fresh.label':
     'अभी कहीं नहीं, मैं नई शुरुआत कर रहा हूँ',
   'onboarding.data-source.option.fresh.description':
@@ -3915,6 +3925,17 @@ const hi: Lang = {
   'widget.stats.description': 'ग्रिड प्रारूप में मुख्य प्रदर्शन मेट्रिक्स',
   'widget.stats.no-trades': 'इस अवधि के लिए कोई बंद ट्रेड्स नहीं',
   'widget.stats.vs-prev': 'बनाम पिछला',
+  'common.r-missing.title': 'इस ट्रेड के लिए कोई R नहीं',
+  'common.r-missing.trade':
+    'इस ट्रेड में जोखिम राशि नहीं है, इसलिए इसका परिणाम R में नहीं दिखाया जा सकता।',
+  'common.r-missing.fix':
+    'जोखिम राशि जोड़ें, या सेटिंग्स में डिफ़ॉल्ट जोखिम राशि सेट करें।',
+  'common.r-coverage.partial':
+    '{total} में से {valid} ट्रेड पर आधारित। बिना जोखिम राशि वाले ट्रेड R में नहीं गिने जाते।',
+  'common.r-coverage.none':
+    'यहाँ किसी भी ट्रेड में जोखिम राशि नहीं है, इसलिए दिखाने के लिए कोई R नहीं है।',
+  'dashboard.r-coverage.no-comparison':
+    'कोई बदलाव नहीं दिखाया गया: तुलना अवधि में इस आँकड़े का कोई R मान नहीं है।',
   'dashboard.metrics.past-30d': 'पिछले 30 दिन',
 
   'widget.stats.net-pnl': 'नेट P&L',
@@ -4199,13 +4220,11 @@ const hi: Lang = {
   'metric.profitFactor.name': 'प्रॉफिट फैक्टर',
   'metric.profitFactor.description': 'सकल लाभ और सकल हानि का अनुपात',
   'metric.sharpeRatio.name': 'शार्प रेशियो',
-  'metric.sharpeRatio.description':
-    'ट्रेड-स्तर शार्प रेशियो: औसत बंद-ट्रेड शुद्ध P&L नमूना P&L अस्थिरता से विभाजित',
+  'metric.sharpeRatio.description': 'अस्थिरता के सापेक्ष औसत ट्रेड P&L',
   'metric.expectancy.name': 'एक्सपेक्टेंसी',
   'metric.expectancy.description': 'प्रति ट्रेड जीती या हारी औसत राशि',
   'metric.maxDrawdown.name': 'मैक्स ड्रॉडाउन',
-  'metric.maxDrawdown.description':
-    'पिछले रियलाइज़्ड P&L हाई से सबसे बड़ी बंद-ट्रेड ड्रॉडाउन राशि',
+  'metric.maxDrawdown.description': 'पिछले P&L शिखर से सबसे बड़ी गिरावट',
   'metric.bestDay.name': 'सबसे अच्छा दिन',
   'metric.bestDay.description': 'उच्चतम एकल दिवस P&L',
   'metric.largestWin.name': 'सबसे बड़ा विन',
@@ -4229,10 +4248,10 @@ const hi: Lang = {
   'metric.avgLoss.name': 'औसत लॉस',
   'metric.avgLoss.description': 'ट्रेड्स खोने का औसत नुकसान',
   'metric.avgRR.name': 'औसत RR (पेऑफ)',
-  'metric.avgRR.description': 'मुद्रा-आधारित अदायगी अनुपात: औसत जीत/औसत हानि',
+  'metric.avgRR.description': 'औसत लाभ को औसत हानि से भाग',
   'metric.avgRRRiskBased.name': 'औसत RR (R-आधारित)',
   'metric.avgRRRiskBased.description':
-    'आर-गुणकों का उपयोग करके जोखिम-आधारित अनुपात: औसत जीतने वाला आर / औसत खोने वाला आर (स्टॉप/जोखिम डेटा की आवश्यकता है)',
+    'औसत जीत R बनाम हार R (स्टॉप डेटा ज़रूरी)',
   'metric.avgHoldTime.name': 'औसत होल्ड टाइम',
   'metric.avgHoldTime.description': 'सभी बंद ट्रेड्स में औसत समय',
   'metric.avgWinHoldTime.name': 'औसत विन होल्ड टाइम',
@@ -4240,41 +4259,32 @@ const hi: Lang = {
   'metric.avgLossHoldTime.name': 'औसत लॉस होल्ड टाइम',
   'metric.avgLossHoldTime.description': 'बंद ट्रेड्स खोने में औसत समय',
   'metric.avgWinnerHeat.name': 'औसत विनर हीट',
-  'metric.avgWinnerHeat.description':
-    'कॉन्फ़िगर MAE/MFE डिस्प्ले यूनिट का उपयोग करके, बंद ट्रेड्स जीतने के लिए औसत MAE',
+  'metric.avgWinnerHeat.description': 'जीतने वाले ट्रेडों का औसत MAE',
   'metric.winnerMaeP90.name': 'विनर MAE P90',
   'metric.winnerMaeP90.description':
-    'कॉन्फ़िगर किए गए MAE/MFE डिस्प्ले यूनिट का उपयोग करके, बंद ट्रेड्स जीतने के लिए 90वीं प्रतिशतक MAE सीमा',
+    'जीतने वाले ट्रेडों का 90वाँ पर्सेंटाइल MAE',
   'metric.winnerMaeMedian.name': 'विनर MAE मीडियन',
-  'metric.winnerMaeMedian.description':
-    'कॉन्फ़िगर किए गए MAE/MFE डिस्प्ले यूनिट का उपयोग करके, बंद ट्रेड्स को जीतने के लिए माध्य MAE',
+  'metric.winnerMaeMedian.description': 'जीतने वाले ट्रेडों का माध्यिका MAE',
   'metric.avgLossHeat.name': 'औसत लॉस हीट',
-  'metric.avgLossHeat.description':
-    'कॉन्फ़िगर किए गए MAE/MFE डिस्प्ले यूनिट का उपयोग करके बंद ट्रेड्स को खोने का औसत MAE',
+  'metric.avgLossHeat.description': 'हारने वाले ट्रेडों का औसत MAE',
   'metric.winnerAvgMfe.name': 'विनर औसत MFE',
-  'metric.winnerAvgMfe.description':
-    'कॉन्फ़िगर MAE/MFE डिस्प्ले यूनिट का उपयोग करके, बंद ट्रेड्स जीतने के लिए औसत MFE',
+  'metric.winnerAvgMfe.description': 'जीतने वाले ट्रेडों का औसत MFE',
   'metric.loserAvgMfe.name': 'लूज़र औसत MFE',
-  'metric.loserAvgMfe.description':
-    'कॉन्फ़िगर किए गए MAE/MFE डिस्प्ले यूनिट का उपयोग करके बंद ट्रेड्स को खोने का औसत MFE',
+  'metric.loserAvgMfe.description': 'हारने वाले ट्रेडों का औसत MFE',
   'metric.winnerMfeP90.name': 'विनर MFE P90',
   'metric.winnerMfeP90.description':
-    'कॉन्फ़िगर MAE/MFE डिस्प्ले यूनिट का उपयोग करके, बंद ट्रेड्स जीतने के लिए 90वीं प्रतिशतक MFE सीमा',
+    'जीतने वाले ट्रेडों का 90वाँ पर्सेंटाइल MFE',
   'metric.loserMfeP90.name': 'लूज़र MFE P90',
   'metric.loserMfeP90.description':
-    'कॉन्फ़िगर किए गए MAE/MFE डिस्प्ले यूनिट का उपयोग करके, बंद ट्रेड्स को खोने के लिए 90वीं प्रतिशतक MFE सीमा',
+    'हारने वाले ट्रेडों का 90वाँ पर्सेंटाइल MFE',
   'metric.timeInDrawdown.name': 'ड्रॉडाउन में समय',
-  'metric.timeInDrawdown.description':
-    'पिछले रियलाइज़्ड P&L हाई से नीचे बिताए गए समय का प्रतिशत',
+  'metric.timeInDrawdown.description': 'P&L शिखर से नीचे बिताया गया समय',
   'metric.avgRecoveryTime.name': 'औसत पुनर्प्राप्ति समय',
-  'metric.avgRecoveryTime.description':
-    'रियलाइज़्ड ड्रॉडाउन के नए हाई तक रिकवर होने का औसत समय',
+  'metric.avgRecoveryTime.description': 'ड्रॉडाउन से उबरने का औसत समय',
   'metric.longestDrawdown.name': 'सबसे लंबा ड्रॉडाउन',
-  'metric.longestDrawdown.description':
-    'रियलाइज़्ड ड्रॉडाउन एपिसोड में बिताया गया सबसे लंबा समय',
+  'metric.longestDrawdown.description': 'एक ड्रॉडाउन में बिताया सबसे लंबा समय',
   'metric.drawdownEpisodes.name': 'ड्रॉडाउन एपिसोड',
-  'metric.drawdownEpisodes.description':
-    'मौजूदा फ़िल्टर किए गए ट्रेड सेट में रियलाइज़्ड ड्रॉडाउन अवधियों की संख्या',
+  'metric.drawdownEpisodes.description': 'अलग-अलग ड्रॉडाउन अवधियों की संख्या',
   'metric.category.performance': 'प्रदर्शन',
   'metric.category.volume': 'वॉल्यूम',
 
@@ -4282,6 +4292,8 @@ const hi: Lang = {
   'onboarding.wizard.skip-onboarding': 'ऑनबोर्डिंग छोड़ें',
 
   'guide.skip-guide': 'गाइड छोड़ें',
+  'guide.step-count': '{count} चरण',
+  'guide.step-position': 'चरण {current} / {total}',
 
   'account.linked-trades.setups': 'सेटअप्स',
 
@@ -4406,6 +4418,10 @@ const hi: Lang = {
   'account.edit-event.delete-confirm.warning':
     'इस एक्शन को वापस नहीं किया जा सकता।',
   'account.edit.title': 'अकाउंट संपादित करें',
+  'account.edit.convert.discard-title': 'बिना सेव किए बदलाव छोड़ें?',
+  'account.edit.convert.discard-message':
+    'चैलेंज सेटअप अपनी अलग विंडो में खुलता है और यह फ़ॉर्म बंद कर देता है। यहाँ किए गए बदलाव सेव नहीं होंगे।',
+  'account.edit.convert.discard-confirm': 'छोड़ें और जारी रखें',
   'account.edit.field.name': 'अकाउंट नाम',
   'account.edit.field.name-desc': 'इस अकाउंट का अनोखा नाम',
   'account.edit.placeholder.name': 'उदाहरण के लिए, मेरी ट्रेडिंग अकाउंट',
@@ -4665,13 +4681,23 @@ const hi: Lang = {
   'home.quick-links.move-above': 'विजेट्स के ऊपर त्वरित लिंक ले जाएँ',
   'home.quick-links.move-below': 'विजेट्स के नीचे त्वरित लिंक ले जाएँ',
   'home.widget-selector.title': 'होम में जोड़ें',
-  'home.widget-selector.section.widgets': 'विजेट्स',
+  'home.widget-selector.subtitle':
+    'प्रीव्यू देखकर विजेट चुनें और होम में जोड़ने के लिए किसी एक पर क्लिक करें।',
+  'home.widget-selector.sample-note.title': 'ट्रेडिंग योजना',
+  'home.widget-selector.sample-note.intro':
+    'केवल मुख्य स्तरों पर A+ सेटअप ट्रेड करें। प्रतिदिन अधिकतम 3 ट्रेड।',
+  'home.widget-selector.sample-note.checklist': 'प्री-मार्केट चेकलिस्ट',
+  'home.widget-selector.sample-note.task.calendar': 'आर्थिक कैलेंडर देखें',
+  'home.widget-selector.sample-note.task.levels':
+    'चार्ट पर मुख्य स्तर चिह्नित करें',
+  'home.widget-selector.sample-note.task.max-loss': 'अधिकतम दैनिक हानि तय करें',
+  'home.widget-selector.sample-note.task.journal': 'पहला ट्रेड जर्नल करें',
+  'home.widget-selector.tab.performance': 'प्रदर्शन',
+  'home.widget-selector.tab.accounts': 'खाते',
+  'home.widget-selector.tab.workflow': 'वर्कफ़्लो',
   'home.widget-selector.section.quick-links': 'त्वरित लिंक',
   'home.widget-selector.restore': 'पुनर्स्थापित करें',
   'home.widget-selector.add-shortcut': 'खाता/सेटअप शॉर्टकट जोड़ें',
-  'home.widget-selector.hint.navigate': '↑↓नेविगेट करें',
-  'home.widget-selector.hint.select': '↵ चयन करें',
-  'home.widget-selector.hint.close': 'Esc बंद करें',
   'home.period.month': 'महीना',
   'home.period.quarter': 'क्वार्टर',
   'home.period.year': 'साल',
@@ -4845,6 +4871,29 @@ const hi: Lang = {
   'home.widget.profit-target.remaining': 'शेष',
   'home.widget.profit-target.unable-to-load': 'भरने में असमर्थ',
   'home.widget.profit-target.no-accounts': 'लक्ष्य के साथ कोई अकाउंट्स नहीं',
+  'home.widget.account-progress.configure-aria': '{widget} के लिए अकाउंट चुनें',
+  'home.widget.account-progress.config-title': 'दिखाए गए अकाउंट',
+  'home.widget.account-progress.mode.automatic': 'स्वचालित',
+  'home.widget.account-progress.mode.selected': 'अकाउंट चुनें',
+  'home.widget.account-progress.automatic-drawdown':
+    'सबसे ज़्यादा ड्रॉडाउन पहले।',
+  'home.widget.account-progress.automatic-profit-target':
+    'लक्ष्य के सबसे करीब पहले।',
+  'home.widget.account-progress.max-label': 'अधिकतम दिखाएँ',
+  'home.widget.account-progress.max-all': 'सभी',
+  'home.widget.account-progress.select-hint': 'जितने चाहें चुनें।',
+  'home.widget.account-progress.no-eligible':
+    'अभी चुनने के लिए कोई अकाउंट नहीं।',
+  'home.widget.account-progress.none-selected':
+    'कोई अकाउंट नहीं चुना। चुनने के लिए क्लिक करें।',
+  'home.widget.account-progress.search': 'अकाउंट खोजें',
+  'home.widget.account-progress.select-all': 'सभी',
+  'home.widget.account-progress.select-none': 'कोई नहीं',
+  'home.widget.account-progress.select-all-aria': 'दिखाए गए सभी अकाउंट चुनें',
+  'home.widget.account-progress.select-none-aria': 'दिखाए गए अकाउंट हटाएँ',
+  'home.widget.account-progress.no-match': 'कोई अकाउंट मेल नहीं खाता।',
+  'home.widget.account-progress.none-available':
+    'चुने गए किसी भी अकाउंट को दिखाया नहीं जा सकता। दूसरे चुनने के लिए क्लिक करें।',
   'home.widget.recent.title': 'हाल ही का',
   'home.widget.recent.unknown': 'अज्ञात',
   'home.widget.recent.just-now': 'बस अब',
@@ -4909,32 +4958,19 @@ const hi: Lang = {
   'calendar.month.december': 'दिसंबर',
 
   'shared.collapsible.active-filters': '{count} सक्रिय फ़िल्टर्स',
-  'filter.modal.title': 'उन्नत फ़िल्टर्स',
-  'filter.modal.active-filters': 'सक्रिय फ़िल्टर्स ({count}):',
-  'filter.modal.no-active-filters': 'कोई सक्रिय फ़िल्टर्स नहीं',
-  'filter.modal.clear-all': 'सभी साफ करें',
-  'filter.modal.section.trading-data': 'ट्रेडिंग डेटा',
-  'filter.modal.section.classification': 'वर्गीकरण',
-  'filter.modal.section.trade-criteria': 'ट्रेड मानदंड',
   'filter.modal.no-setup': 'कोई सेटअप नहीं',
   'filter.modal.no-tags': 'कोई टैग नहीं',
   'filter.modal.no-mistakes': 'कोई गलती नहीं',
   'filter.modal.type.regular': 'नियमित',
-  'filter.modal.type.missed': 'मिस्ड',
   'filter.modal.type.backtest': 'बैकटेस्ट',
   'filter.summary.regular-trades': 'नियमित ट्रेड्स',
-  'filter.modal.status.win': 'विन',
-  'filter.modal.status.loss': 'लॉस',
   'filter.modal.status.breakeven': 'ब्रेकईवन',
-  'filter.modal.status.open': 'ओपन',
-  'filter.modal.status.closed': 'क्लोज्ड',
 
   'filter.modal.review-status.reviewed': 'रिव्यू हो चुका',
   'filter.modal.review-status.unreviewed': 'अनरिव्यूड',
   'filter.modal.direction.long-call': 'लॉन्ग/Call',
   'filter.modal.direction.short-put': 'शॉर्ट/पुट',
   'filter.modal.section.custom-fields': 'कस्टम फ़ील्ड्स',
-  'filter.modal.custom-field.n-selected': '{count} चयनित',
   'filter.modal.custom-field.none-available': 'कोई मान उपलब्ध नहीं है',
   'widget.checklist.title': 'प्री-ट्रेड चेकलिस्ट',
   'widget.checklist.weekly-title': 'साप्ताहिक प्री-चेकलिस्ट',
@@ -5107,17 +5143,25 @@ const hi: Lang = {
   'manual-drawdown.modal.delete-limit': 'ड्रॉडाउन सीमा: {limit}',
   'manual-drawdown.modal.delete-warning': 'इस एक्शन को वापस नहीं किया जा सकता।',
   'dashboard.selector.title': 'डैशबोर्ड में जोड़ें',
+  'dashboard.selector.subtitle':
+    'प्रीव्यू देखकर चार्ट और मेट्रिक्स चुनें और डैशबोर्ड में जोड़ने के लिए किसी एक पर क्लिक करें।',
+  'dashboard.selector.tab.performance': 'प्रदर्शन',
+  'dashboard.selector.tab.breakdowns': 'विश्लेषण विभाजन',
+  'dashboard.selector.tab.risk': 'जोखिम और विश्लेषण',
+  'widget-drawer.tab.all': 'सभी',
+  'widget-drawer.search.placeholder': 'विजेट खोजें',
+  'widget-drawer.section.available': 'उपलब्ध',
+  'widget-drawer.section.in-use': 'उपयोग में',
+  'widget-drawer.empty-search': 'आपकी खोज से कोई विजेट मेल नहीं खाता',
+  'widget-drawer.added-count': '{count} जोड़े गए',
+  'widget-drawer.add-aria': '{name} जोड़ें',
+  'widget-drawer.remove': 'हटाएँ',
+  'widget-drawer.remove-aria': '{name} हटाएँ',
+  'widget-drawer.close': 'बंद करें',
   'dashboard.selector.metrics': 'मेट्रिक्स',
-  'dashboard.selector.charts': 'चार्ट',
-  'dashboard.selector.empty': 'सभी मेट्रिक्स और चार्ट जोड़ दिए गए हैं',
-  'dashboard.selector.hint.navigate': '↑↓नेविगेट करें',
-  'dashboard.selector.hint.select': '↵ चयन करें',
-  'dashboard.selector.hint.close': 'Esc बंद करें',
 
-  'dashboard.component-selector.category.performance': 'प्रदर्शन',
-
-  'dashboard.component-selector.category.journal': 'जर्नल',
   'widget.pnlChart.name': 'संचयी P&L',
+  'widget.pnlChart.description': 'समय के साथ संचयी P&L',
 
   'widget.longPnLChart.name': 'लॉन्ग P&L',
   'widget.longPnLChart.description':
@@ -5126,26 +5170,33 @@ const hi: Lang = {
   'widget.shortPnLChart.description':
     'केवल शॉर्ट बंद ट्रेड्स के लिए संचयी P&L कर्व',
   'widget.performanceCalendar.name': 'परफॉर्मेंस कैलेंडर',
+  'widget.performanceCalendar.description': 'आपके दैनिक P&L का कैलेंडर',
 
   'widget.dailyPerformance.name': 'दैनिक प्रदर्शन',
+  'widget.dailyPerformance.description': 'हर ट्रेडिंग दिन का P&L',
 
   'widget.tradesChart.name': 'ट्रेड्स चार्ट',
+  'widget.tradesChart.description': 'हर ट्रेड का P&L',
 
   'widget.weekdayPerformance.name': 'कार्यदिवस प्रदर्शन',
+  'widget.weekdayPerformance.description': 'सप्ताह के हर दिन का P&L',
 
   'widget.hourlyPerformance.name': 'प्रति घंटा प्रदर्शन',
+  'widget.hourlyPerformance.description': 'दिन के हर घंटे का P&L',
 
   'widget.tickerPerformance.name': 'सिंबल प्रदर्शन',
-  'widget.tickerPerformance.description':
-    'सिंबल द्वारा प्रदर्शन की तुलना करते हुए रैंक किया गया बार चार्ट',
+  'widget.tickerPerformance.description': 'टिकर के अनुसार प्रदर्शन की रैंकिंग',
   'widget.tradesChart.limit': '{count} ट्रेड्स',
   'widget.drawdownChart.name': 'ड्रॉडाउन चार्ट',
+  'widget.drawdownChart.description': 'पिछले वास्तविक P&L शिखर से गिरावट',
 
   'widget.directionalDrawdownChart.name': 'दिशात्मक रियलाइज़्ड ड्रॉडाउन',
 
   'widget.longDrawdownChart.name': 'लॉन्ग ड्रॉडाउन',
+  'widget.longDrawdownChart.description': 'केवल लॉन्ग ट्रेडों का ड्रॉडाउन',
 
   'widget.shortDrawdownChart.name': 'शॉर्ट ड्रॉडाउन',
+  'widget.shortDrawdownChart.description': 'केवल शॉर्ट ट्रेडों का ड्रॉडाउन',
 
   'widget.drawdownStats.no-conversion':
     'ड्रॉडाउन आँकड़े एफएक्स रूपांतरण के बिना मिश्रित मुद्राओं के लिए उपलब्ध नहीं हैं।',
@@ -5160,10 +5211,11 @@ const hi: Lang = {
     'ट्रेड्स जोड़ने के बाद वे यहां दिखाई देंगे',
   'widget.recentTrades.unknown': 'अज्ञात',
   'widget.rollingWinRate.name': 'रोलिंग जीत/हार अनुपात',
+  'widget.rollingWinRate.description': 'हाल के ट्रेडों में औसत लाभ/हानि अनुपात',
 
   'widget.rollingStats.name': 'रोलिंग औसत जीत/हार',
+  'widget.rollingStats.description': 'हाल के ट्रेडों का औसत लाभ और हानि',
 
-  'filter.chip.remove-aria': '{label} फ़िल्टर निकालें',
   'shared.filter.disabled-preview': 'फ़िल्टर्स प्रिव्यू में अक्षम है',
   'shared.filter.open': 'फ़िल्टर्स खोलें',
   'shared.filter.active-count': '{count} सक्रिय फ़िल्टर्स',
@@ -5254,8 +5306,6 @@ const hi: Lang = {
     'चिपकाने के लिए क्लिपबोर्ड में कुछ नहीं मिला. पहले एक छवि कॉपी करने का प्रयास करें.',
   'error.clipboard.no-images':
     'क्लिपबोर्ड में कोई चित्र नहीं मिला. सुनिश्चित करें कि आपने एक छवि कॉपी की है, टेक्स्ट या अन्य सामग्री नहीं।',
-  'error.clipboard.no-target':
-    'कोई छवि अपलोड क्षेत्र नहीं मिला. पहले छवि अपलोड क्षेत्र पर क्लिक करें, फिर अपनी छवि चिपकाएँ।',
   'error.clipboard.network-error':
     'पेस्ट संसाधित करते समय नेटवर्क त्रुटि उत्पन्न हुई. अपने कनेक्शन की जांच करें और पुन: प्रयास करें।',
   'error.clipboard.paste-failed':
@@ -5578,21 +5628,92 @@ const hi: Lang = {
   'trade-import.asset.futures': 'फ्यूचर्स',
   'trade-import.asset.forex': 'Forex',
   'trade-import.asset.crypto': 'क्रिप्टो',
-  'trade-import.label.manual-mode': 'मैनुअल मोड',
-  'trade-import.manual-mode.price-based': 'कीमत आधारित',
-  'trade-import.manual-mode.direct-pnl': 'प्रत्यक्ष P&L',
+  'trade-import.manual-mode.price-based':
+    'ऑर्डर या फ़िल (ट्रेड में जोड़े जाते हैं)',
+  'trade-import.manual-mode.direct-pnl':
+    'हर पंक्ति में एक ट्रेड (P/L का उपयोग)',
   'trade-import.label.ai-mapping': 'एआई मैपिंग सुझावों का अनुरोध करें',
   'trade-import.privacy.copy':
-    'Trade Import प्रसंस्करण के लिए चयनित ब्रोकर एक्सपोर्ट को Journalit सर्वर पर अपलोड करता है। ब्रोकर एक्सपोर्ट में अकाउंट पहचानकर्ता, ट्रेड इतिहास, प्रतीक, टाइमस्टैम्प, मूल्य, मात्रा, शुल्क, शेष राशि और P&L शामिल हो सकते हैं। प्रिव्यू पीढ़ी के लिए, Journalit आपके चयनित अकाउंट नाम, मैपिंग/टेम्पलेट विकल्प, कस्टम फ़ील्ड परिभाषाएँ और सहेजे गए विकल्प, और IBKR ओपन-पोजीशन मिलान के लिए सीमित स्थानीय ओपन-ट्रेड संदर्भ भी भेजता है। इस इंपोर्ट के लिए कच्ची फ़ाइलें संसाधित की जाती हैं और डिफ़ॉल्ट रूप से संग्रहीत नहीं की जाती हैं।',
+    'Trade Import प्रसंस्करण के लिए चयनित ब्रोकर एक्सपोर्ट को Journalit सर्वर पर अपलोड करता है। ब्रोकर एक्सपोर्ट में अकाउंट पहचानकर्ता, ट्रेड इतिहास, प्रतीक, टाइमस्टैम्प, मूल्य, मात्रा, शुल्क, शेष राशि और P&L शामिल हो सकते हैं। प्रिव्यू पीढ़ी के लिए, Journalit आपके चयनित अकाउंट नाम, मैपिंग/टेम्पलेट विकल्प, कस्टम फ़ील्ड परिभाषाएँ और सहेजे गए विकल्प, और IBKR ओपन-पोजीशन मिलान के लिए सीमित स्थानीय ओपन-ट्रेड संदर्भ भी भेजता है। इस इंपोर्ट के लिए कच्ची फ़ाइलें संसाधित की जाती हैं और डिफ़ॉल्ट रूप से संग्रहीत नहीं की जाती हैं। जब AI मैपिंग सुझाव चालू होते हैं, तो कॉलम हेडर और कुछ नमूना पंक्तियाँ भी कॉलम मिलान सुझाने के लिए एक AI मॉडल को भेजी जाती हैं; कॉलम स्वयं मैप करने के लिए यह विकल्प बंद करें।',
 
   'trade-import.action.analyse': 'फ़ाइल का विश्लेषण करें',
   'trade-import.action.choose-file':
     'अपलोड करने या खींचने और छोड़ने के लिए क्लिक करें',
   'trade-import.guide.prompt': 'निश्चित नहीं कि एक्सपोर्ट को क्या करना चाहिए?',
   'trade-import.guide.link': 'ब्रोकर गाइड देखें',
+  'trade-import.hyperliquid.export-guidance':
+    'Hyperliquid में Trade History → Export as CSV चुनें, Export More नहीं (यह अलग तृतीय-पक्ष रिपोर्ट है)। Funding History या Order History का उपयोग न करें।',
+  'trade-import.hyperliquid.date-us':
+    'अमेरिकी: महीना/दिन/वर्ष - 24 घंटे का समय',
+  'trade-import.hyperliquid.date-day-first':
+    'दिन पहले: दिन/महीना/वर्ष, समय से पहले “ - ” के साथ या बिना',
+  'trade-import.hyperliquid.date-german':
+    'जर्मन: दिन.महीना.वर्ष - 24 घंटे का समय',
+  'trade-import.hyperliquid.invalid-time-zone':
+    'इस डिवाइस का समय क्षेत्र पता नहीं चल सका। सिस्टम सेटिंग्स जाँचें।',
+  'trade-import.hyperliquid.backend-update-required':
+    'Hyperliquid पूर्वावलोकन के लिए सर्वर अपडेट ज़रूरी है। कृपया बाद में पुनः प्रयास करें।',
   'trade-import.action.drop-file': 'अपलोड करने के लिए फ़ाइल छोड़ें',
   'trade-import.analyse.detected':
-    '{fileType} का पता चला। हेडर और नमूना पंक्तियाँ बैकएंड द्वारा लौटाई जाती हैं।',
+    'आपकी {fileType} फ़ाइल पढ़ ली गई है। नीचे की पंक्तियाँ जाँचें, फिर हर कॉलम को किसी ट्रेड फ़ील्ड से मिलाएँ।',
+  'trade-import.table.screenshots': 'स्क्रीनशॉट',
+  'trade-import.preview.screenshot-alt':
+    'स्प्रेडशीट की पंक्ति {row} से {symbol} का स्क्रीनशॉट',
+  'trade-import.preview.screenshots-more': '{count} और',
+  'trade-import.preview.include-screenshots':
+    'अपनी स्प्रेडशीट के स्क्रीनशॉट उनके ट्रेड में जोड़ें ({count})',
+  'trade-import.completion.screenshots-added':
+    'आपकी स्प्रेडशीट से जोड़े गए स्क्रीनशॉट: {count}',
+  'trade-import.completion.screenshots-failed':
+    'आपकी स्प्रेडशीट के स्क्रीनशॉट जो जोड़े नहीं जा सके: {count}',
+  'trade-import.preview.import-anyway': 'फिर भी इम्पोर्ट करें',
+  'trade-import.preview.import-anyway-aria':
+    '{date} का {symbol} फिर भी इम्पोर्ट करें',
+  'trade-import.preview.import-all-anyway':
+    'सभी {count} संभावित डुप्लिकेट फिर भी इम्पोर्ट करें',
+  'csv.mapper.missing-fields.pnl-or-prices':
+    'या कीमतों से P/L निकालने के लिए एंट्री प्राइस, एग्ज़िट प्राइस और मात्रा मैप करें।',
+  'trade-import.pnl-from-prices.title': 'P/L आपकी कीमतों से निकाला जाएगा',
+  'trade-import.pnl-from-prices.body':
+    'कोई P/L कॉलम नहीं है, इसलिए P/L एंट्री प्राइस, एग्ज़िट प्राइस और मात्रा से निकाला जाता है। यह सही एसेट प्रकार के साथ ही सही होता है, इसलिए चुनें कि ये ट्रेड क्या हैं।',
+  'trade-import.pnl-from-prices.contract-size':
+    'फ़ॉरेक्स और फ़्यूचर्स में P/L निकालने के लिए कॉन्ट्रैक्ट साइज़ कॉलम भी चाहिए। उसके बिना, अपना P/L कॉलम मैप करें।',
+  'trade-import.diagnostic.choose-date-format': 'तारीख़ का फ़ॉर्मैट चुनें',
+  'trade-import.date-question.ambiguous':
+    'आपकी तारीख़ें {example} जैसी दिखती हैं। यह कौन-सी तारीख़ है?',
+  'trade-import.date-question.mixed':
+    'इस कॉलम की कुछ तारीख़ें अलग क्रम में हैं, जैसे {example}। आपकी ज़्यादातर तारीख़ें किस क्रम में हैं?',
+  'trade-import.date-question.mixed-note':
+    'दूसरे क्रम में लिखी पंक्तियाँ सूची में दिखेंगी ताकि आप उन्हें अपनी फ़ाइल में ठीक कर सकें।',
+  'quick-import.message.date-order':
+    'आपकी तारीख़ें दो तरह से पढ़ी जा सकती हैं। चुनने के लिए पूरा इम्पोर्ट खोलें।',
+  'csv.date-format.eu-dot': 'EU डॉट: 25.12.2024 (दिन.महीना.साल)',
+  'csv.date-format.ymd-dot': 'पहले साल, डॉट के साथ: 2024.12.25',
+  'trade-import.unmapped.title': 'इम्पोर्ट नहीं होंगे ({count})',
+  'trade-import.unmapped.body':
+    'ये कॉलम किसी Journalit फ़ील्ड से मेल नहीं खाते और छोड़ दिए जाएँगे। अगर कोई फ़ील्ड सही बैठता है, तो ऊपर कॉलम को उससे मैप करें।',
+  'trade-import.unmapped.keep': 'कस्टम फ़ील्ड के रूप में रखें',
+  'trade-import.unmapped.keep-aria': '{header} को कस्टम फ़ील्ड के रूप में रखें',
+  'trade-import.custom-field.title':
+    '“{header}” को कस्टम फ़ील्ड के रूप में रखें',
+  'trade-import.custom-field.hint':
+    'आपके ट्रेड में एक फ़ील्ड जोड़ता है और इसे इस कॉलम से भरता है। अगर Journalit का कोई फ़ील्ड पहले से सही बैठता है, तो कॉलम को उसी से मैप करें।',
+  'trade-import.custom-field.name': 'फ़ील्ड का नाम',
+  'trade-import.custom-field.type': 'फ़ील्ड का प्रकार',
+  'trade-import.custom-field.type.text': 'टेक्स्ट',
+  'trade-import.custom-field.type.number': 'संख्या',
+  'trade-import.custom-field.type.dropdown': 'विकल्प सूची',
+  'trade-import.custom-field.create': 'फ़ील्ड बनाएँ',
+  'trade-import.custom-field.error.reserved':
+    'यह नाम एक बिल्ट-इन ट्रेड फ़ील्ड द्वारा उपयोग किया जाता है। कोई दूसरा नाम चुनें।',
+  'trade-import.table.open-closed': 'खुला/बंद',
+  'trade-import.status.open': 'खुला',
+  'trade-import.status.partially-closed': 'आंशिक रूप से बंद',
+  'trade-import.status.closed': 'बंद',
+  'trade-import.status.cancelled': 'रद्द',
+  'trade-import.diagnostic.column': 'कॉलम: {columns}',
+  'trade-import.diagnostic.unmap-column': 'यह कॉलम इम्पोर्ट न करें',
+  'trade-import.diagnostic.edit-mapping': 'मैपिंग बदलें',
   'trade-import.diagnostic.info': 'जानकारी',
   'trade-import.label.sheet': 'चादर',
   'trade-import.label.header-row': 'शीर्ष लेख पंक्ति',
@@ -5639,22 +5760,23 @@ const hi: Lang = {
     'Journalit को TradingView Paper Trading की Order History / History CSV चाहिए। Account History, चार्ट डेटा, स्ट्रैटेजी एक्सपोर्ट या अन्य TradingView CSV फ़ाइलों का उपयोग न करें।',
   'trade-import.preview.tradingview-export.guide':
     'TradingView एक्सपोर्ट गाइड देखें',
-  'trade-import.source-recovery.deepcharts.title':
-    'यह फ़ाइल DeepCharts एक्सपोर्ट जैसी दिखती है',
+  'trade-import.source-recovery.title':
+    'यह फ़ाइल {source} एक्सपोर्ट जैसी दिखती है',
+  'trade-import.source-recovery.message':
+    'Journalit इस फ़ाइल को {selected} के बजाय सीधे {source} से इम्पोर्ट कर सकता है।',
+  'trade-import.source-recovery.continue': '{selected} के साथ जारी रखें',
+  'trade-import.source-recovery.switch': '{source} पर स्विच करें',
+  'trade-import.source-recovery.guide': '{source} एक्सपोर्ट गाइड देखें',
+  'trade-import.source-recovery.metatrader.message':
+    'Journalit इस MetaTrader स्टेटमेंट को सीधे इम्पोर्ट कर सकता है, इसलिए कॉलम मैपिंग की ज़रूरत नहीं है।',
   'trade-import.source-recovery.deepcharts.rithmic-message':
-    'खाता Rithmic के ज़रिए निष्पादित होता हो, फिर भी फ़ाइल DeepCharts से आई है। सही लॉन्ग या शॉर्ट दिशा के लिए साइन वाली Quantity पढ़ने हेतु DeepCharts चुनें।',
+    'यह फ़ाइल DeepCharts से आई है, भले ही खाता Rithmic के ज़रिए निष्पादित होता हो। DeepCharts का उपयोग करें ताकि Trade List से लॉन्ग और शॉर्ट ट्रेड सही ढंग से पढ़े जाएँ।',
   'trade-import.source-recovery.deepcharts.manual-message':
-    'DeepCharts इम्पोर्टर का उपयोग करें। DeepCharts दिशा को साइन वाली Quantity में रखता है, इसलिए Quantity को मैनुअल Direction फ़ील्ड के रूप में मैप न करें।',
-  'trade-import.source-recovery.deepcharts.switch': 'DeepCharts पर स्विच करें',
-  'trade-import.source-recovery.deepcharts.guide':
-    'DeepCharts एक्सपोर्ट गाइड देखें',
+    'DeepCharts इम्पोर्टर का उपयोग करें। यह Trade List की साइन वाली Quantity या Direction कॉलम से लॉन्ग और शॉर्ट पढ़ता है, इसलिए मैनुअल मैपिंग की ज़रूरत नहीं है।',
   'trade-import.source-recovery.motivewave.title':
     'यह फ़ाइल MotiveWave निष्पादन एक्सपोर्ट जैसी दिखती है',
   'trade-import.source-recovery.motivewave.message':
     'MotiveWave का उपयोग करें ताकि Journalit निष्पादन पंक्तियों को सही तरीके से पूर्ण ट्रेड में जोड़ सके।',
-  'trade-import.source-recovery.motivewave.switch': 'MotiveWave पर स्विच करें',
-  'trade-import.source-recovery.motivewave.guide':
-    'MotiveWave एक्सपोर्ट गाइड देखें',
   'quick-import.message.source-mismatch':
     'Journalit ने एक अलग एक्सपोर्ट स्रोत पहचाना है। फ़ाइल दोबारा अपलोड किए बिना स्रोत बदलने के लिए Trade Import में इसकी समीक्षा करें।',
   'trade-import.preview.no-eligible':
@@ -5677,6 +5799,57 @@ const hi: Lang = {
   'trade-import.table.position': 'पोजीशन',
   'trade-import.table.result': 'परिणाम',
   'trade-import.table.message': 'संदेश',
+  'trade-import.status.new': 'नया',
+  'trade-import.status.already-imported': 'पहले से इम्पोर्ट किया गया',
+  'trade-import.status.other-account': 'दूसरे अकाउंट में',
+  'trade-import.status.other-account.detail':
+    '{account} में पहले से इम्पोर्ट किया गया',
+  'trade-import.status.updates-existing': 'मौजूदा ट्रेड अपडेट करता है',
+  'trade-import.status.possible-duplicate': 'संभावित डुप्लिकेट',
+  'trade-import.status.needs-review': 'समीक्षा ज़रूरी',
+  'trade-import.status.duplicate-in-file': 'फ़ाइल में डुप्लिकेट',
+  'trade-import.status.invalid': 'अमान्य ट्रेड',
+  'trade-import.status.no-open-trade': 'बंद करने के लिए कोई ओपन ट्रेड नहीं',
+  'trade-import.status.multiple-open-trades': 'कई ओपन ट्रेड मेल खाते हैं',
+  'trade-import.status.quantity-mismatch': 'मात्रा मेल नहीं खाती',
+  'trade-import.server-deletion.deleted':
+    'Journalit सर्वर से डिलीट किए गए ट्रेड: {count}',
+  'trade-import.server-deletion.kept':
+    'रखे गए ट्रेड, क्योंकि किसी दूसरे इम्पोर्ट में भी ये हैं: {count}',
+  'trade-import.server-deletion.blocked-broker-connected':
+    'यह अकाउंट ब्रोकर कनेक्शन से सिंक होता है। इसका डेटा डिलीट करने के लिए ब्रोकर डिस्कनेक्ट करें।',
+  'trade-import.server-deletion.blocked-broker-history':
+    'इस अकाउंट में ब्रोकर सिंक हिस्ट्री है और इसे यहां डिलीट नहीं किया जा सकता। इसके बजाय अलग-अलग इम्पोर्ट डिलीट करें।',
+  'trade-import.server-deletion.failed':
+    'Journalit सर्वर से डिलीट नहीं हो सका। कृपया फिर से कोशिश करें।',
+  'trade-import.server-deletion.notice':
+    'सर्वर पर डिलीट होने के बाद ट्रैश में भेजे गए ट्रेड नोट्स: {count}',
+  'trade-import.server-deletion.account.title': 'सर्वर अकाउंट डिलीट करें?',
+  'trade-import.server-deletion.account.message':
+    'इससे "{account}" और इसके इम्पोर्ट किए गए ट्रेड ({count} सर्वर पर) Journalit सर्वर से स्थायी रूप से डिलीट हो जाएंगे और हर सिंक किए गए वॉल्ट में उनके नोट्स ट्रैश में चले जाएंगे। बाद में आप फ़ाइलें फिर से इम्पोर्ट कर सकते हैं।',
+  'trade-import.server-deletion.account.confirm': 'सर्वर से डिलीट करें',
+  'trade-import.server-deletion.account.button': 'सर्वर से डिलीट करें',
+  'trade-import.history.title': 'इम्पोर्ट हिस्ट्री',
+  'trade-import.completion.wrong-account': 'गलत अकाउंट में इम्पोर्ट हो गया?',
+  'trade-import.completion.undo-import': 'यह इम्पोर्ट पूर्ववत करें',
+  'trade-import.action.manage-imports': 'पिछले इम्पोर्ट मैनेज करें',
+  'trade-import.history.loading': 'इम्पोर्ट हिस्ट्री लोड हो रही है…',
+  'trade-import.history.load-failed': 'इम्पोर्ट हिस्ट्री लोड नहीं हो सकी।',
+  'trade-import.history.empty': 'अभी कोई इम्पोर्ट नहीं।',
+  'trade-import.history.trades-on-server': '{count} सर्वर पर',
+  'trade-import.history.delete.title': 'यह इम्पोर्ट डिलीट करें?',
+  'trade-import.history.delete.message':
+    'इससे इस इम्पोर्ट द्वारा "{account}" में जोड़े गए ट्रेड ({count} सर्वर पर) Journalit सर्वर से स्थायी रूप से डिलीट हो जाएंगे और हर सिंक किए गए वॉल्ट में उनके नोट्स ट्रैश में चले जाएंगे। जो ट्रेड किसी दूसरे इम्पोर्ट में भी हैं, वे रखे जाएंगे। बाद में आप फ़ाइल फिर से इम्पोर्ट कर सकते हैं।',
+  'trade-import.history.delete.confirm': 'इम्पोर्ट डिलीट करें',
+  'trade-import.history.load-more': 'और लोड करें',
+  'account.edit.modal.delete.delete-server-trades':
+    'इसके इम्पोर्ट किए गए ट्रेड भी Journalit सर्वर से डिलीट करें ({count} सर्वर पर)। उनके नोट्स हर सिंक किए गए वॉल्ट में ट्रैश में चले जाएंगे, भले ही आप उन्हें यहां रखें।',
+  'trade-import.preview.other-account.message':
+    'पहले से {account} में ({count}), इसलिए छोड़ दिए जाएंगे।',
+  'trade-import.preview.other-account.import-instead':
+    'इसके बजाय {account} में इम्पोर्ट करें',
+  'trade-import.preview.other-account.undo-earlier':
+    'पिछला इम्पोर्ट पूर्ववत करें',
   'trade-import.action.confirm': 'इंपोर्ट की पुष्टि करें',
   'trade-import.action.activate-pro.one':
     'PRO को इंपोर्ट {count} ट्रेड पर सक्रिय करें',
@@ -5688,6 +5861,32 @@ const hi: Lang = {
     'PRO को इंपोर्ट {count} ट्रेड्स पर सक्रिय करें',
   'trade-import.action.cancel-preview': 'प्रिव्यू रद्द करें',
   'trade-import.broker.manual': 'मैनुअल मैपिंग',
+  'trade-import.source.title': 'ये ट्रेड कहाँ से हैं?',
+  'trade-import.source.subtitle':
+    'वह प्लेटफ़ॉर्म चुनें जिससे आपने एक्सपोर्ट किया है। Journalit उसका फ़ाइल फ़ॉर्मेट सीधे पढ़ता है, कॉलम मैपिंग की ज़रूरत नहीं।',
+  'trade-import.source.search': 'ब्रोकर और प्लेटफ़ॉर्म खोजें',
+  'trade-import.source.sync-available': 'स्वचालित Trade Sync भी समर्थित है',
+  'trade-import.source.manual.tile': 'अपनी स्प्रेडशीट / अन्य फ़ाइल',
+  'trade-import.source.manual.title': 'अपनी स्प्रेडशीट या अन्य फ़ाइल',
+  'trade-import.source.manual.hint':
+    'आप अपनी फ़ाइल के कॉलम को Journalit फ़ील्ड से मिलाएँगे।',
+  'trade-import.source.native.hint':
+    'फ़ाइल फ़ॉर्मेट अपने आप पढ़ा जाता है, मैपिंग की ज़रूरत नहीं।',
+  'trade-import.source.guide': 'एक्सपोर्ट कैसे करें',
+  'trade-import.source.change': 'बदलें',
+  'trade-import.sync-suggestion.full.title': '{broker} अपने आप सिंक हो सकता है',
+  'trade-import.sync-suggestion.full.body':
+    'Trade Sync नए ट्रेड खुद ले आता है, कोई एक्सपोर्ट नहीं चाहिए। आप फिर भी नीचे फ़ाइल इम्पोर्ट कर सकते हैं।',
+  'trade-import.sync-suggestion.partial.title':
+    '{provider} इस्तेमाल करते हैं? इसके बजाय सिंक करें',
+  'trade-import.sync-suggestion.partial.body':
+    'Trade Sync {provider} ट्रेड अपने आप ले आता है। अन्य स्टेटमेंट नीचे इम्पोर्ट होते रहेंगे।',
+  'trade-import.sync-suggestion.action': 'Trade Sync सेट करें',
+  'trade-import.sync-suggestion.sync-only.title':
+    '{broker} Trade Sync से जुड़ता है',
+  'trade-import.sync-suggestion.sync-only.body':
+    'एक्सपोर्ट की ज़रूरत नहीं: Trade Sync आपके {broker} ट्रेड अपने आप ले आता है। फिर भी {broker} फ़ाइल है? सूची में नहीं / कस्टम फ़ाइल चुनें।',
+  'trade-import.sync-suggestion.action.open': 'Trade Sync खोलें',
 
   'home.quick-links.quick-import': 'क्विक इंपोर्ट',
   'home.quick-links.setups': 'सेटअप्स',
@@ -6232,29 +6431,17 @@ const hi: Lang = {
   'trade-sync.rithmic.connect-another': 'एक और Rithmic खाता कनेक्ट करें',
   'trade-sync.rithmic.error.sync-failed-detail':
     'Rithmic सिंक विफल रहा: {message}',
-  'trade-sync.import.card.connection': 'कनेक्शन',
-  'trade-sync.import.card.backup': 'इंपोर्ट बैकअप',
-  'trade-sync.import.card.restorable': 'पुनर्स्थापित करने योग्य ट्रेड्स',
-  'trade-sync.import.card.import': 'Trade Import',
 
-  'trade-sync.import.card.open-importer-desc':
-    'वहाँ नई ब्रोकर फ़ाइलें इंपोर्ट करें',
   'trade-sync.import.card.inventory-summary':
     '{accounts} अकाउंट(s) · {trades} ट्रेड(s)',
   'trade-sync.import.action.check': 'जाँचें',
+  'trade-sync.import.more-actions': 'और कार्रवाइयां',
 
   'trade-sync.import.action.open-import': 'Trade Import खोलें',
 
   'trade-sync.import.action.create-local-account': 'अकाउंट बनाएं',
-  'trade-sync.import.action.create-local-account-title':
-    'बैकएंड अकाउंट नाम का उपयोग करके एक Journalit अकाउंट बनाएं।',
-  'trade-sync.import.action.save-mapping': 'सहेजें',
-  'trade-sync.import.action.save-mapping-title':
-    'इस बैकएंड अकाउंट को स्थानीय अकाउंट मैपिंग में सहेजें।',
 
   'trade-sync.import.action.restore-account': 'रिस्टोर',
-  'trade-sync.import.action.restore-account-title':
-    'इस बैकएंड अकाउंट के लिए गुम स्थानीय ट्रेड नोट्स को पुनर्स्थापित करें।',
   'trade-sync.import.action.restoring': 'पुनर्स्थापित किया जा रहा है...',
 
   'trade-sync.import.pending-acks': '{count} लंबित ACK',
@@ -6271,8 +6458,6 @@ const hi: Lang = {
   'trade-sync.import.account.conflict-repair':
     'डुप्लिकेट canonicalTradeId नोट पाए गए। एक नोट रखें, फिर डुप्लिकेट नोट से canonicalTradeId हटा दें या उस डुप्लिकेट नोट को हटा दें। फ़ाइल का नाम बदलने से विरोध ठीक नहीं होता.',
   'trade-sync.import.account.local-account': 'Journalit अकाउंट',
-  'trade-sync.import.account.mapping-hint':
-    'पुनर्स्थापित ट्रेड्स को इस Journalit अकाउंट पर लिखा जाएगा।',
   'trade-sync.import.notice.restored':
     '{count} इंपोर्ट किया गया ट्रेड(s) को पुनर्स्थापित किया गया।',
 
@@ -6766,11 +6951,7 @@ const hi: Lang = {
   'tradelog.guide.gallery-filters.title':
     'फ़िल्टर समान एंट्री बिंदु वाली गैलरी',
   'tradelog.guide.gallery-filters.description':
-    'फ़िल्टर बटन अभी भी उन्नत फ़िल्टर्स खोलता है। गैलरी मोड में इसमें मीडिया-विशिष्ट फ़िल्टर्स जैसे एनोटेशन स्थिति और मीडिया टैग भी शामिल हैं।',
-  'tradelog.guide.gallery-filter-modal.title':
-    'मीडिया फ़िल्टर्स आपके ट्रेड फ़िल्टर्स के साथ लाइव',
-  'tradelog.guide.gallery-filter-modal.description':
-    'ट्रेड फ़िल्टर्स को मीडिया फ़िल्टर्स के साथ संयोजित करने के लिए इस मोडल का उपयोग करें। उदाहरण के लिए, फ़िल्टर से एक सेटअप, फिर केवल नोट्स या विशिष्ट मीडिया टैग वाला मीडिया दिखाएं।',
+    'फ़िल्टर मेनू यहाँ भी उसी तरह काम करता है। गैलरी मोड में इसमें एक गैलरी सेक्शन भी होता है, जिसमें एनोटेशन स्थिति और मीडिया टैग जैसे मीडिया फ़िल्टर होते हैं।',
   'tradelog.guide.gallery-grid.title': 'करीब रिव्यू के लिए मीडिया खोलें',
   'tradelog.guide.gallery-grid.description':
     'प्रत्येक कार्ड कॉम्पैक्ट ट्रेड और रिव्यू संदर्भ दिखाते हुए मीडिया को अबाधित रखता है। किसी भी कार्ड पर क्लिक करें, या पहले दृश्यमान आइटम को पूर्णस्क्रीन खोलने के लिए अगला दबाएँ।',
@@ -6787,15 +6968,27 @@ const hi: Lang = {
   'tradelog.guide.gallery-finish.title': 'अब आप दोनों ट्रेड लॉग मोड जानते हैं',
   'tradelog.guide.gallery-finish.description':
     'जब आपको टेबल और बैच टूल की आवश्यकता हो तो ट्रेड्स का उपयोग करें। जब आप अपने जर्नल में रिव्यू छवियां, GIF, वीडियो, YouTube लिंक और एनोटेशन चाहते हैं तो गैलरी का उपयोग करें।',
+  'filter.menu.whats-new.open.title': 'फ़िल्टर्स का नया मेनू',
+  'filter.menu.whats-new.open.description':
+    'अब सारे फ़िल्टर एक स्तरित मेनू में हैं, जिसमें ट्रेड्स को सीमित करने के दो नए तरीके हैं। इन्हें देखने के लिए इसे खोलें।',
+  'filter.menu.whats-new.exclude.title': 'जो नहीं चाहिए उसे बाहर करें',
+  'filter.menu.whats-new.exclude.description':
+    'हर मान के साथ एक ⊘ बटन है। किसी मान को बाहर करने पर वह मान वाला हर ट्रेड हट जाता है, चाहे वह और किसी से भी मेल खाए।',
+  'filter.menu.whats-new.match.title': 'कई मान कैसे मिलें, चुनें',
+  'filter.menu.whats-new.match.description':
+    'कई मान चुनने पर तय करें कि ट्रेड को "इनमें से कोई", "ये सभी", "केवल ये" या "बिल्कुल यही" चाहिए। टैग, सेटअप्स, गलतियों और कस्टम फ़ील्ड्स सभी में यह मिलान विकल्प है।',
+  'filter.menu.whats-new.phases.title': 'चैलेंज फ़ेज़ से फ़िल्टर करें',
+  'filter.menu.whats-new.phases.description':
+    'एक से अधिक फ़ेज़ वाले प्रॉप अकाउंट्स अपने फ़ेज़ की सूची खोलते हैं। पूरे अकाउंट की जगह अलग-अलग फ़ेज़ चुनें।',
+  'filter.menu.whats-new.done.title': 'फ़िल्टर्स में यही नया है',
+  'filter.menu.whats-new.done.description':
+    'यही मेनू ट्रेड लॉग, डैशबोर्ड, होम, सेटअप्स और रिव्यू में भी काम करता है। क्लिक करते ही बदलाव लागू हो जाते हैं।',
   'tradelog.guide.image-gallery-empty.intro.title': 'अभी तक कोई मीडिया नहीं',
   'tradelog.guide.image-gallery-empty.intro.description':
     'ट्रेड्स या रिव्यू नोट्स में मीडिया जोड़ें, या ट्रेडिंग सेटिंग्स में मीडिया गैलरी फ़ोल्डर कॉन्फ़िगर करें। एक बार मीडिया मौजूद हो जाने पर, Journalit फुलस्क्रीन रिव्यू, टैग और नोट्स के लिए पूरी गैलरी गाइड दिखाएगा।',
 
   'filter.modal.section.image-gallery': 'गैलरी',
   'filter.modal.session-tags.placeholder': 'सत्र टैग',
-  'filter.modal.session-tags.all': 'सभी सत्र टैग',
-  'filter.modal.session-tags.n-selected': '{count} सत्र टैग',
-  'filter.modal.session-tags.select-all': 'सभी चुनें',
   'filter.modal.session-tags.none-found': 'कोई सत्र टैग नहीं मिला',
 
   'home.mode.overview': 'ओवरव्यू',
@@ -6806,6 +6999,40 @@ const hi: Lang = {
   'home.filters.accounts': 'अकाउंट्स',
   'home.filters.back': 'वापस',
   'filter.reset': 'फ़िल्टर्स रीसेट करें',
+  'filter.menu.title': 'इसके अनुसार फ़िल्टर करें',
+  'filter.menu.accounts': 'खाते',
+  'filter.menu.tickers': 'टिकर',
+  'filter.menu.setups': 'सेटअप',
+  'filter.menu.tags': 'टैग',
+  'filter.menu.mistakes': 'गलतियाँ',
+  'filter.menu.trade-type': 'ट्रेड प्रकार',
+  'filter.menu.status': 'स्थिति',
+  'filter.menu.direction': 'दिशा',
+  'filter.menu.review-status': 'समीक्षा स्थिति',
+  'filter.menu.status.cancelled': 'रद्द',
+  'filter.menu.included-count': '{count} शामिल',
+  'filter.menu.excluded-count': '{count} बाहर',
+  'filter.menu.search': 'खोजें',
+  'filter.menu.no-matches': 'कोई मिलान नहीं',
+  'filter.menu.no-options': 'अभी फ़िल्टर करने के लिए कुछ नहीं',
+  'filter.menu.clear': 'साफ़ करें',
+  'filter.menu.match.label': 'मिलान',
+  'filter.menu.match.any': 'इनमें से कोई',
+  'filter.menu.match.all': 'ये सभी',
+  'filter.menu.match.only': 'केवल ये',
+  'filter.menu.match.exact': 'बिल्कुल यही',
+  'filter.menu.match.hint.any': 'कम से कम एक चुने गए मान वाले ट्रेड।',
+  'filter.menu.match.hint.all':
+    'हर चुने गए मान वाले ट्रेड। अन्य मान भी हो सकते हैं।',
+  'filter.menu.match.hint.only':
+    'ऐसे ट्रेड जिनके सभी मान चुने गए मानों में से हैं।',
+  'filter.menu.match.hint.exact':
+    'ठीक चुने गए मानों वाले ट्रेड, न कम न ज़्यादा।',
+  'filter.menu.match.no-value-any-only': 'केवल “इनमें से कोई” के साथ',
+  'filter.menu.exclude-value': '{label} बाहर रखें',
+  'filter.menu.match.badge.all': 'सभी',
+  'filter.menu.match.badge.only': 'केवल',
+  'filter.menu.match.badge.exact': 'बिल्कुल',
   'home.guide.modes.title': 'एक और बात: डैशबोर्ड',
   'home.guide.modes.description':
     'अवलोकन और डैशबोर्ड इस पृष्ठ को साझा करते हैं। अपने प्रदर्शन आँकड़ों का संक्षिप्त दौरा जारी रखने के लिए अभी डैशबोर्ड पर स्विच करें।',
@@ -7027,16 +7254,16 @@ const hi: Lang = {
   'command.reset-sample-journal': 'नमूना जर्नल रीसेट करें',
   'sample.notice.busy': 'नमूना जर्नल की एक अन्य कार्रवाई पहले से जारी है।',
   'account.profiles.no-matching-phase':
-    'इस प्रोफ़ाइल में कोई मेल खाता फेज नहीं है।',
+    'इन फर्म नियमों में कोई मेल खाता फेज नहीं है।',
   'account.profiles.history-unchanged': 'पिछला इतिहास अपरिवर्तित रहता है।',
-  'account.profiles.notice-title': 'अपडेटेड चैलेंज प्रोफ़ाइल उपलब्ध है',
+  'account.profiles.notice-title': 'फर्म के अपडेटेड नियम उपलब्ध हैं',
   'account.profiles.notice-description':
-    'स्रोत प्रोफ़ाइल आपकी सहेजी गई प्रोफ़ाइल से अलग है। आपके अकाउंट नियम नहीं बदले हैं।',
+    'फर्म के प्रकाशित नियम इस अकाउंट पर सेव नियमों से अलग हैं। आपके अकाउंट के नियम नहीं बदले हैं।',
   'account.profiles.review-changes': 'बदलाव रिव्यू करें',
   'account.profiles.check-failed': 'नियम अपडेट जाँचे नहीं जा सके।',
   'account.profiles.retry': 'पुनः प्रयास करें',
   'account.profiles.source-changed':
-    'यह रिव्यू खुला होने के दौरान स्रोत प्रोफ़ाइल बदल गई। लागू करने से पहले रिव्यू फिर खोलें।',
+    'यह समीक्षा खुली रहते हुए फर्म के नियम बदल गए। लागू करने से पहले समीक्षा दोबारा खोलें।',
   'account.profiles.retain': 'वर्तमान नियम रखें',
   'account.profiles.retain-help':
     'इस अकाउंट के नियम रखें और ये स्रोत बदलाव खारिज करें। बाद के पॉलिसी बदलाव फिर सूचित कर सकते हैं।',
@@ -7050,26 +7277,22 @@ const hi: Lang = {
     'इस फेज के लिए कोई नियम या पेआउट-पॉलिसी अंतर नहीं है।',
   'account.profiles.accept': 'अपडेट लागू करें',
   'account.profiles.cached':
-    'कैश की गई प्रोफ़ाइलें उपयोग हो रही हैं; नवीनतम नियम जाँचे नहीं जा सके।',
-  'account.profiles.guide':
-    'प्रकाशित लागूता या फर्म-पुष्ट शर्तों से बदले नियमों का रिव्यू करें। अनुरोध होने पर मूल खरीद तिथि दर्ज करें। अकाउंट संपादित करें में मेरी फर्म प्रोफ़ाइल के तहत टेम्पलेट सहेजें।',
+    'कैश किए गए फर्म नियम उपयोग हो रहे हैं; नवीनतम नियम जाँचे नहीं जा सके।',
   'account.profiles.account-phase': 'अकाउंट फेज',
-  'account.profiles.choose': 'सहेजी गई प्रोफ़ाइल चुनें',
+  'account.profiles.choose': 'सेव किए नियम चुनें',
   'account.profiles.completed': 'पूर्ण फेज अपने मूल नियम रखते हैं।',
   'account.profiles.confirm': 'ये नियम मेरे अकाउंट पर लागू होते हैं।',
   'account.profiles.currency':
-    'लागू करने से पहले प्रोफ़ाइल से मेल खाती अकाउंट मुद्रा चुनें।',
+    'लागू करने से पहले इन नियमों से मेल खाती अकाउंट मुद्रा चुनें।',
   'account.profiles.current': 'वर्तमान अकाउंट नियम',
   'account.profiles.custom-transition': 'कस्टम ट्रांज़िशन शर्तें',
   'account.profiles.cycle-start': 'पेआउट चक्र शुरुआत (स्थानीय समय)',
   'account.profiles.delete-help':
-    'यह सहेजी गई प्रोफ़ाइल हटाएँ? पहले से उपयोग कर रहे अकाउंट नहीं बदलेंगे।',
+    'ये सेव किए नियम हटाएँ? जो अकाउंट पहले से इनका उपयोग करते हैं वे नहीं बदलेंगे।',
   'account.profiles.effective': 'प्रभावी से (स्थानीय समय)',
   'account.profiles.correction-title': 'कैटलॉग सुधार',
   'account.profiles.correction-source': 'नियम स्रोत',
   'account.profiles.correction-period': 'प्रभावित इतिहास',
-  'account.profiles.correction-guide':
-    'प्रभावित इतिहास की पुनर्गणना से पहले कैटलॉग सुधारों को स्वीकृति चाहिए।',
   'account.profiles.correction-history': 'सुधार इतिहास',
   'account.profiles.correction-stale':
     'अकाउंट इतिहास बदल गया। सुधार लागू करने से पहले यह रिव्यू फिर खोलें।',
@@ -7092,45 +7315,49 @@ const hi: Lang = {
   'account.profiles.published-date': 'प्रकाशित प्रभावी तिथि',
   'account.profiles.applicability-checking': 'लागूता जाँची जा रही है…',
   'account.profiles.error':
-    'प्रोफ़ाइल सहेजी नहीं जा सकी। मान जाँचें और फिर प्रयास करें।',
+    'नियम सेव नहीं हो सके। मान जाँचें और फिर से प्रयास करें।',
   'account.profiles.floor': 'ट्रांज़िशन पर ड्रॉडाउन फ्लोर',
   'account.profiles.history': 'नियम इतिहास',
   'account.profiles.history-help':
-    'पुराने नियम सुरक्षित रहते हैं। वर्शन्ड फेज बदलने के लिए प्रोफ़ाइल अपडेट रिव्यू करें का उपयोग करें; इतिहास बचाने के लिए सीधे संपादन लॉक है।',
-  'account.profiles.incoming': 'आने वाली प्रोफ़ाइल नियम',
+    'पुराने नियम सुरक्षित रहते हैं। किसी संस्करणित फेज को बदलने के लिए नियम अपडेट की समीक्षा करें का उपयोग करें; इतिहास की सुरक्षा के लिए सीधा संपादन लॉक है।',
+  'account.profiles.incoming': 'फर्म के आने वाले नियम',
   'account.profiles.independent':
-    'सहेजी गई प्रोफ़ाइलें इस वॉल्ट तक सीमित हैं। लागू करने पर स्वतंत्र अकाउंट स्नैपशॉट बनता है; नया रिवीज़न सहेजने से मौजूदा अकाउंट नहीं बदलते।',
+    'सेव किए नियम इस वॉल्ट में ही स्थानीय हैं। इन्हें लागू करने से अकाउंट पर एक स्वतंत्र कॉपी बनती है; नया संशोधन सेव करने से मौजूदा अकाउंट कभी नहीं बदलते।',
   'account.profiles.keep-help':
-    'चेक किए नियम उस तरह के आने वाले नियम की जगह आपके स्थानीय मान रखते हैं। प्रोफ़ाइल मान स्वीकार करने के लिए अनचेक करें। नए नियम प्रकार जोड़े जाते हैं।',
+    'चुने गए नियम उस प्रकार के आने वाले नियम के बजाय आपके स्थानीय मान रखते हैं। फर्म का मान स्वीकार करने के लिए अनचेक करें। नए प्रकार के नियम जोड़े जाते हैं।',
   'account.profiles.keep-local': 'मेरे रखें:',
   'account.profiles.keep-payout': 'वर्तमान पेआउट पॉलिसी रखें',
-  'account.profiles.library': 'मेरी फर्म प्रोफ़ाइलें',
+  'account.profiles.library': 'मेरे सेव किए नियम',
   'account.profiles.locked': 'ड्रॉडाउन फ्लोर पहले से लॉक है',
-  'account.profiles.missing': 'यह सहेजी गई प्रोफ़ाइल अब मौजूद नहीं है।',
+  'account.profiles.missing': 'ये सेव किए नियम अब मौजूद नहीं हैं।',
   'account.profiles.peak': 'ले जाया गया पीक बैलेंस',
-  'account.profiles.review': 'प्रोफ़ाइल अपडेट रिव्यू करें',
-  'account.profiles.link-source': 'फर्म प्रोफ़ाइल लिंक करें',
-  'account.profiles.save-new': 'नई प्रोफ़ाइल के रूप में सहेजें',
-  'account.profiles.save-revision': 'चयनित प्रोफ़ाइल का नया रिवीज़न सहेजें',
-  'account.profiles.source-phase': 'स्रोत प्रोफ़ाइल फेज',
+  'account.profiles.review': 'नियम अपडेट की समीक्षा करें',
+  'account.profiles.save-new': 'ये नियम सेव करें',
+  'account.profiles.saved': 'मेरे सेव किए नियम में सेव किया गया।',
+  'account.profiles.update-saved': 'सेव किए नियम अपडेट करें',
+  'account.profiles.delete-saved': 'सेव किए नियम हटाएँ',
+  'account.profiles.save-revision':
+    'चुने गए नियमों के नए संशोधन के रूप में सेव करें',
+  'account.profiles.source-phase': 'फर्म नियमों का फेज',
   'account.profiles.transition-help':
     'कोई सत्यापित ट्रांज़िशन डिफ़ॉल्ट नहीं दिए गए। फर्म-पुष्ट शर्तें दर्ज करें: फ्लोर, पीक और पेआउट चक्र शुरुआत। इन्हें कस्टम चिह्नित किया जाता है। फेज लाभ और आजीवन पेआउट संख्या बनी रहती है; पुराने ट्रेड अपने मूल नियम रखते हैं।',
   'account.profiles.transition-source': 'फर्म पुष्टि या संदर्भ',
-  'account.profiles.unknown-baseline':
-    'इस पुराने अकाउंट का मूल स्रोत स्नैपशॉट नहीं है। हर अंतर स्पष्ट रूप से रिव्यू करें; स्थानीय ओवरराइड अपने आप पहचाने नहीं जा सकते।',
+  'account.profiles.link-intro':
+    'इस चैलेंज को उसकी फर्म के नियमों से लिंक करें, फर्म जब इन्हें बदलेगी तो Journalit आपको बताएगा। पहले आप देखेंगे कि ये इस अकाउंट के नियमों से कैसे अलग हैं; लागू करने तक कुछ नहीं बदलता।',
+  'account.profiles.link-title': 'फर्म के नियमों से लिंक करें',
+  'account.profiles.choose-source': 'फर्म के नियम चुनें',
   'account.profiles.update-available':
-    'प्रोफ़ाइल अंतर का रिव्यू ज़रूरी है। आपका अकाउंट अभी भी अपने सहेजे नियम उपयोग करता है।',
+    'फर्म के नियम बदल गए हैं और समीक्षा ज़रूरी है। आपका अकाउंट अभी भी अपने सेव किए नियम उपयोग कर रहा है।',
   'account.profiles.up-to-date':
-    'यह फेज अंतिम रिव्यू की गई प्रोफ़ाइल परिभाषा उपयोग करता है; स्थानीय ओवरराइड स्वतंत्र रहते हैं।',
+    'यह फेज फर्म के नवीनतम समीक्षित नियम उपयोग करता है; स्थानीय बदलाव स्वतंत्र रहते हैं।',
   'form.field.prop-challenge-phase': 'फेज: {name}',
   'form.field.prop-challenge-phase.none': 'इस समय कोई फेज नहीं',
   'dashboard.filter.accounts.phase-now': 'अभी',
   'home.widget.eval-roi.name': 'इवैल आरओआई',
   'home.widget.challenge-alerts.name': 'चैलेंज अलर्ट',
   'home.widget.challenge-alerts.description':
-    'प्रॉप चैलेंज अकाउंट जिन्हें निर्णय चाहिए: फेल, पास, या पेआउट तैयार',
-  'home.widget.eval-roi.description':
-    'प्रॉप चैलेंज अकाउंट्स में इवैल्यूएशन खर्च बनाम पेआउट',
+    'विफल, पास या भुगतान-योग्य प्रॉप खाते',
+  'home.widget.eval-roi.description': 'प्रॉप चैलेंज शुल्क बनाम प्राप्त भुगतान',
   'account.header.back-to-dashboard': 'डैशबोर्ड पर वापस',
   'account.header.warning.trades-before-phase.one':
     'फेज 1 शुरू होने से पहले {count} ट्रेड मिला',
@@ -7161,29 +7388,17 @@ const hi: Lang = {
   'account-dashboard.guide.main.settings-stages.description':
     'चैलेंज इवैल्यूएशन, सिम फंडेड या लाइव फंडेड पर पहुँचने पर लागू अकाउंट प्रकार चुनें। प्रकार ज्यों का त्यों रखने के लिए स्टेज को कोई बदलाव नहीं पर छोड़ें।',
   'account-dashboard.guide.whats-new.prop-challenges.intro.title':
-    'नया क्या है: मल्टी-फेज प्रॉप चैलेंज',
+    'नया: प्रॉप फर्म चैलेंज',
   'account-dashboard.guide.whats-new.prop-challenges.intro.description':
-    'प्रॉप-चैलेंज प्रगति अब सीधे अकाउंट डैशबोर्ड में है, फेज रिबन, चैलेंज इकोनॉमिक्स और आपके मौजूदा अकाउंट ग्रुप के साथ।',
+    'अब एक अकाउंट प्रॉप फर्म चैलेंज ट्रैक कर सकता है: उसके फेज, फर्म के नियम और आपके पेआउट।',
   'account-dashboard.guide.whats-new.prop-challenges.enable.title':
-    'अकाउंट बनाते या संपादित करते समय ट्रैकिंग सक्षम करें',
+    'नया चैलेंज शुरू करें',
   'account-dashboard.guide.whats-new.prop-challenges.enable.description':
-    'अकाउंट बनाएँ या अकाउंट संपादित करें में, अकाउंट मोड चयनकर्ता से प्रॉप चैलेंज चुनें। आगे बढ़ाने पर प्रत्येक फेज वैकल्पिक रूप से अकाउंट को दूसरे प्रकार में प्रमोट कर सकता है।',
-  'account-dashboard.guide.whats-new.prop-challenges.overview.title':
-    'चैलेंज परफॉर्मेंस एक नज़र में',
-  'account-dashboard.guide.whats-new.prop-challenges.overview.description':
-    'ऊपरी स्कोर्कार्ड सक्रिय चैलेंज, पास दर, लागत, पेआउट और नेट परिणाम सारांशित करता है। इनसाइट टेबल फेज बाधाएँ और कई फर्म ट्रैक करने पर प्रॉप फर्म के अनुसार परफॉर्मेंस तुलना करती हैं।',
-  'account-dashboard.guide.whats-new.prop-challenges.ribbons.title':
-    'फेज रिबन हर चैलेंज को स्कैन करना आसान बनाते हैं',
-  'account-dashboard.guide.whats-new.prop-challenges.ribbons.description':
-    'प्रॉप अकाउंट कार्ड ऊपर पूर्ण, वर्तमान, लंबित और फेल फेज दिखाते हैं, फिर लाइव टारगेट, ड्रॉडाउन, डेली-लॉस और ट्रेडिंग-दिन प्रगति।',
+    'अकाउंट बनाते समय प्रॉप फर्म चैलेंज चालू करें और अपनी फर्म चुनें। उसके नियम आपके लिए भर दिए जाते हैं।',
   'account-dashboard.guide.whats-new.prop-challenges.mode.title':
-    'पोर्टफोलियो और चैलेंज विश्लेषण के बीच स्विच करें',
+    'अपने सभी चैलेंज देखें',
   'account-dashboard.guide.whats-new.prop-challenges.mode.description':
-    'समग्र प्रॉप-चैलेंज इकोनॉमिक्स तथा फेज और मल्टी-फर्म इनसाइट देखने के लिए चैलेंज चुनें। अवलोकन AUM चार्ट और पोर्टफोलियो योग पर केंद्रित रहता है।',
-  'account-dashboard.guide.whats-new.prop-challenges.account-page.title':
-    'कनवर्ट किए अकाउंट उसी प्रवाह में रहते हैं',
-  'account-dashboard.guide.whats-new.prop-challenges.account-page.description':
-    'चैलेंज आगे बढ़ने या फंडेड में कनवर्ट होने पर उसका अकाउंट प्रकार और फेज इतिहास जुड़े रहते हैं। कंप्लायंस निर्णय, लाइफसाइकल क्रियाएँ और पूरा नियम विवरण देखने के लिए कार्ड खोलें।',
+    'सभी चैलेंज की प्रगति, पास दर, लागत और पेआउट देखने के लिए चैलेंज पर स्विच करें।',
   'account-dashboard.prop.metrics.total': 'चैलेंज',
   'account-dashboard.prop.metrics.pass-rate': 'पास दर',
   'account-dashboard.prop.metrics.costs': 'चैलेंज लागत',
@@ -7251,6 +7466,9 @@ const hi: Lang = {
   'account.prop-challenge.title': 'प्रॉप चैलेंज',
   'account.prop-challenge.identity': 'चैलेंज पहचान',
   'account.prop-challenge.prefill.heading-link': 'अपनी फर्म से प्रीफ़िल करें',
+  'account.prop-challenge.prefill.updates-link': 'फर्म के नियम अपडेट रखें',
+  'account.prop-challenge.prefill.updates-link-firm':
+    '{firm} के नियम अपडेट रखें',
   'account.prop-challenge.prefill.phase-link': 'PRO से नियम पहले से भरें',
   'account.prop-challenge.prefill.phase-link-firm':
     'PRO से {firm} के नियम पहले से भरें',
@@ -7271,18 +7489,23 @@ const hi: Lang = {
   'account.prop-challenge.challenge-name-placeholder': 'उदा. 25K इवैल्यूएशन',
   'account.prop-challenge.firm-name': 'फर्म नाम (वैकल्पिक)',
   'account.prop-challenge.firm-name-placeholder': 'उदा. Apex Trader Funding',
-  'account.prop-challenge.profile.title': 'फर्म प्रोफ़ाइल लागू करें',
+  'account.prop-challenge.profile.title': 'फर्म के नियम लागू करें',
   'account.prop-challenge.profile.firm': 'फर्म',
   'account.prop-challenge.profile.challenge': 'चैलेंज',
+  'account.prop-challenge.profile.choose-firm': 'फर्म चुनें',
+  'account.prop-challenge.profile.choose-challenge': 'चैलेंज चुनें',
+  'account.prop-challenge.profile.custom-firm': 'अन्य / कस्टम फर्म',
+  'account.prop-challenge.profile.help':
+    'नियम भरने के लिए अपनी फर्म और प्लान चुनें: ड्रॉडाउन, लक्ष्य, पेआउट। आप बाद में इन्हें संपादित कर सकते हैं।',
+  'account.prop-challenge.profile.current': 'वर्तमान: {identity}',
   'account.prop-challenge.profile.apply': 'लागू करें',
-  'account.prop-challenge.profile.loading': 'फर्म प्रोफ़ाइल लोड हो रही हैं…',
-  'account.prop-challenge.profile.refreshing':
-    'प्रोफ़ाइल अपडेट जाँचे जा रहे हैं…',
+  'account.prop-challenge.profile.loading': 'फर्म के नियम लोड हो रहे हैं…',
+  'account.prop-challenge.profile.refreshing': 'नियम अपडेट जाँचे जा रहे हैं…',
   'account.prop-challenge.profile.unavailable':
-    'ऑफ़लाइन होने पर फर्म प्रोफ़ाइल उपलब्ध नहीं हैं।',
+    'फर्म के नियम ऑफ़लाइन उपलब्ध नहीं हैं।',
   'account.prop-challenge.profile.confirm-title': 'चैलेंज सेटअप बदलें?',
   'account.prop-challenge.profile.confirm-message':
-    'यह प्रोफ़ाइल लागू करने से वर्तमान में कॉन्फ़िगर फेज और नियम बदल जाते हैं।',
+    'ये फर्म नियम लागू करने से वर्तमान में सेट फेज और नियम बदल जाएँगे।',
   'account.prop-challenge.current-phase': 'वर्तमान फेज',
   'account.prop-challenge.phase-rules': '{phase} के नियम',
   'account.prop-challenge.next-phase': 'अगला: {phase}',
@@ -7374,6 +7597,10 @@ const hi: Lang = {
     'अतिरिक्त कॉन्ट्रैक्ट प्रति EOD लाभ',
   'account.prop-challenge.rule.maximum-contracts':
     'स्केलिंग के बाद अधिकतम कॉन्ट्रैक्ट',
+  'account.prop-challenge.rule.micros-per-contract':
+    '10 माइक्रो को 1 कॉन्ट्रैक्ट गिनें',
+  'account.prop-challenge.rule.micros-per-contract-help':
+    'अगर आपकी फर्म इस सीमा के लिए माइक्रो फ्यूचर्स (MES, MNQ, MGC, ...) को एक स्टैंडर्ड कॉन्ट्रैक्ट का दसवां हिस्सा गिनती है तो इसे चालू करें। अगर हर माइक्रो एक पूरा कॉन्ट्रैक्ट गिना जाता है तो बंद रखें।',
   'account.prop-challenge.rule.max-contracts': 'अधिकतम कॉन्ट्रैक्ट',
   'account.prop-challenge.rule.profit_target': 'लाभ लक्ष्य',
   'account.prop-challenge.rule.drawdown': 'ड्रॉडाउन',
@@ -7560,9 +7787,9 @@ const hi: Lang = {
   'account.prop-challenge.ledger.help.consistency.example-none':
     'अभी कोई लाभ नहीं, इसलिए तुलना के लिए कोई सर्वश्रेष्ठ दिन नहीं।',
   'account.prop-challenge.ledger.help.max_position_size':
-    'सभी खुली पोज़ीशन मिलाकर एक साथ अधिकतम कॉन्ट्रैक्ट। कुछ फर्म लाभ बढ़ने पर सीमा बढ़ाती हैं।',
+    'एक पोज़िशन में अनुमत अधिकतम कॉन्ट्रैक्ट। Journalit हर ट्रेड का आकार जाँचता है। कुछ फर्म मुनाफ़ा बढ़ने पर सीमा बढ़ाती हैं।',
   'account.prop-challenge.ledger.help.max_position_size.example':
-    'अभी एक साथ अधिकतम {maximum} कॉन्ट्रैक्ट; अब तक की सबसे बड़ी पोज़ीशन {current}।',
+    'अभी प्रति ट्रेड अधिकतम {maximum} कॉन्ट्रैक्ट; अब तक का सबसे बड़ा ट्रेड {current}।',
   'account.prop-challenge.ledger.help.payout.cycle_days':
     'वर्तमान पेआउट चक्र के ट्रेडिंग दिन। स्वीकृत पेआउट के बाद गिनती फिर शुरू होती है।',
   'account.prop-challenge.ledger.help.payout.cycle_days.example':
@@ -7641,6 +7868,7 @@ const hi: Lang = {
   'account.prop-challenge.actions.stale':
     'यह चैलेंज कहीं और अपडेट हुआ। जाँचें और फिर प्रयास करें।',
   'account.prop-challenge.actions.reopen': 'फिर खोलें',
+  'account.prop-challenge.actions.link-rules': 'फर्म के नियमों से लिंक करें…',
   'account.prop-challenge.view-trades': '{phase} के ट्रेड्स देखें',
   'account.prop-challenge.actions.manual': 'मैन्युअल क्रियाएँ',
   'account.prop-challenge.notice.failed-title': '{phase} फेल',
@@ -7735,34 +7963,16 @@ const hi: Lang = {
   'account.summary.net-cash-flow': 'नेट कैश फ्लो',
   'account.summary.payouts': 'पेआउट्स',
   'account.performance.title': 'प्रदर्शन',
-  'account-page.guide.whats-new.cockpit.intro.title':
-    'अकाउंट पेज पर नया क्या है',
+  'account-page.guide.whats-new.cockpit.intro.title': 'आपके चैलेंज के नियम',
   'account-page.guide.whats-new.cockpit.intro.description':
-    'अब बैलेंस चार्ट अकाउंट विश्लेषण का नेतृत्व करता है। उसके बाद एक जुड़ा मेट्रिक्स पैनल है, और ठीक नीचे प्रॉप-चैलेंज नियम।',
+    'प्रॉप फर्म अकाउंट पर, फर्म का हर नियम और आप उसके कितने करीब हैं, मेट्रिक्स के नीचे दिखता है।',
   'account-page.guide.whats-new.cockpit.cockpit.title':
-    'चैलेंज नियम अकाउंट परफॉर्मेंस के बाद आते हैं',
+    'एक फेज जाँचें और कार्रवाई करें',
   'account-page.guide.whats-new.cockpit.cockpit.description':
-    'प्रॉप अकाउंट के लिए, प्रत्येक आवश्यकता और उसकी प्रगति देखने को मेट्रिक्स पैनल के नीचे नियम हेडर से फेज चुनें। लाइफसाइकल क्रियाएँ उसके पास मेनू में रहती हैं।',
-  'account-page.guide.whats-new.cockpit.payout.title':
-    'जानें कब फंडेड पेआउट सुरक्षित है',
-  'account-page.guide.whats-new.cockpit.payout.description':
-    'सत्यापित नियमों वाले फंडेड अकाउंट अब पेआउट आवश्यकताएँ, उपलब्ध राशि, और पैसे माँगने से पहले शेष व ड्रॉडाउन परिणामों का प्रिव्यू दिखाते हैं।',
-  'account-page.guide.whats-new.cockpit.summary.title':
-    'एक जुड़ा मेट्रिक्स पैनल',
-  'account-page.guide.whats-new.cockpit.summary.description':
-    'अकाउंट स्थिति और विस्तृत परफॉर्मेंस अब चार्ट के नीचे एक सतह साझा करते हैं: शेष, नेट P&L और कैश फ्लो पहले आते हैं, शेष मेट्रिक्स उसी ग्रिड में जारी रहते हैं।',
-  'account-page.guide.whats-new.cockpit.risk.title': 'एक आधिकारिक जोखिम स्रोत',
-  'account-page.guide.whats-new.cockpit.risk.description':
-    'चैलेंज सक्रिय, पास या फेल होने पर उसके फेज नियम ही दिखाया गया एकमात्र जोखिम हैं, ताकि कोई दूसरा ड्रॉडाउन आँकड़ा उनका विरोध न करे। नियमित या संग्रहीत अकाउंट के लिए सामान्य अकाउंट जोखिम लौटता है।',
+    'नियम देखने के लिए नियम हेडर में एक फेज चुनें। उसके पास के ⋮ मेनू से उसे पास या फेल चिह्नित करें, या दोबारा खोलें।',
   'account-page.guide.main.challenge.title': 'आपका चैलेंज एक नज़र में',
   'account-page.guide.main.challenge.description':
-    'जुड़े मेट्रिक्स पैनल के नीचे, नियम हेडर से चैलेंज फेज चुनें और प्रत्येक आवश्यकता को उसकी प्रगति व स्थिति के साथ देखें। लाइफसाइकल क्रियाएँ चयनकर्ता के पास हैं।',
-  'account-page.guide.main.payout.title': 'फंडेड पेआउट प्लान करें',
-  'account-page.guide.main.payout.description':
-    'जब फंडेड फेज में सत्यापित पेआउट नियम हों, यह पैनल पात्रता ट्रैक करता है और अनुरोधित राशि का अकाउंट प्रभाव प्रिव्यू करता है।',
-  'account-page.guide.main.summary.title': 'अकाउंट स्थिति एक नज़र में',
-  'account-page.guide.main.summary.description':
-    'जुड़ा मेट्रिक्स पैनल शेष, नेट P&L, ग्रोथ, ट्रेड्स, विन रेट और नेट कैश फ्लो से शुरू होता है — या प्रॉप अकाउंट के लिए पेआउट्स।',
+    'हर नियम और उसकी प्रगति देखने के लिए एक फ़ेज़ चुनें। सत्यापित पेआउट नियमों वाले फंडेड फ़ेज़ यहीं पेआउट पात्रता भी ट्रैक करते हैं।',
   'account.transaction.edit-row-label':
     'इस लेन-देन को संपादित या हटाएँ: {date}, {amount}',
   'account.deposits-withdrawals.summary':
@@ -7947,7 +8157,7 @@ const hi: Lang = {
     'न्यूनतम बीते घंटे',
   'account.merge.challenge.move-earlier': '{account} को पहले ले जाएँ',
   'account.merge.challenge.move-later': '{account} को बाद में ले जाएँ',
-  'account.merge.warning.use-profile-balance': 'प्रोफ़ाइल शेष उपयोग करें',
+  'account.merge.warning.use-profile-balance': 'फर्म का बैलेंस उपयोग करें',
   'account.merge.warning.edit-phases': 'फेज संपादित करें',
   'account.merge.title': 'चैलेंज सेटअप',
   'account.merge.loading': 'लोड हो रहा है...',
@@ -7983,8 +8193,20 @@ const hi: Lang = {
   'account.merge.error.unknown': 'मर्ज विफल।',
   'account.merge.action.merge': 'मर्ज करें',
   'account.merge.action.undo': 'पूर्ववत करें',
+  'account.merge.action.looks-right': 'सही है',
   'account.merge.action.delete': 'लेगेसी अकाउंट हटाएँ',
   'account.merge.notice.converted': 'चैलेंज में कनवर्ट किया गया',
+  'account.merge.summary.intro': 'जाँचें कि यह आपके चैलेंज से मेल खाता है:',
+  'account.merge.summary.phases': 'फेज: {phases}',
+  'account.merge.summary.current': 'अभी {phase} ({stage}) में, {date} को शुरू',
+  'account.merge.summary.current-stage': 'अभी {phase} में, {date} को शुरू',
+  'account.merge.summary.trades':
+    '{total} में से {counted} ट्रेड चैलेंज में गिने जाते हैं',
+  'account.merge.summary.trades-missing':
+    '{total} में से {counted} ट्रेड चैलेंज में गिने जाते हैं। बाकी किसी भी फेज की तारीखों में नहीं आते।',
+  'account.merge.summary.rules': '{phase} के नियम: {rules}',
+  'account.merge.summary.no-rules':
+    '{phase} के लिए अभी कोई नियम नहीं। अकाउंट संपादित करें में अपनी फर्म के नियम जोड़ें।',
   'account.merge.notice.title': '{accounts} से मर्ज किया गया',
   'account.merge.notice.error': 'क्रिया विफल।',
   'account.merge.undo.title': 'मर्ज पूर्ववत करें',
@@ -7998,7 +8220,7 @@ const hi: Lang = {
   'account.merge.action.convert': 'कनवर्ट करें',
   'account.merge.profile.applied': 'लागू: {firm} · {challenge}',
   'account.merge.profile.remove': 'हटाएँ',
-  'account.merge.phase.apply-profile': 'फर्म प्रोफ़ाइल लागू करें',
+  'account.merge.phase.apply-profile': 'फर्म के नियम लागू करें',
   'account.merge.profile.replace-rules.title': 'हाथ से लिखे नियम बदलें?',
   'account.merge.profile.replace-rules.body':
     '{firm} की प्रोफ़ाइल हर चरण के नियम तय करती है। इस पृष्ठ पर लिखे नियम बदल दिए जाएँगे।',
@@ -8015,30 +8237,42 @@ const hi: Lang = {
   'guide.merge-wizard.target.title': 'एक खाता इतिहास रखता है',
   'guide.merge-wizard.target.description':
     'लक्ष्य खाता सभी चरणों के साथ बना रहता है। बाकी संग्रहीत होते हैं, हटाए नहीं जाते, और उनके ट्रेड लक्ष्य खाते में चले जाते हैं।',
-  'guide.merge-wizard.identity.title': 'फर्म और चैलेंज का नाम दें',
+  'guide.merge-wizard.identity.title': 'अपनी फर्म के नियम चुनें',
   'guide.merge-wizard.identity.description':
-    'फर्म प्रोफ़ाइल लागू करने से असली नियम और फंडेड चरण भर जाते हैं। बिना प्रोफ़ाइल के, जब तक आप खाता पृष्ठ पर नियम नहीं जोड़ते, चरणों में कोई नियम नहीं होता।',
+    'फेज और नियम भरने के लिए अपनी फर्म और प्लान चुनें। आपकी फर्म सूची में नहीं है? अन्य / कस्टम फर्म चुनें और अगले पेज पर नियम सेट करें।',
+  'guide.merge-wizard.identity.free-title': 'अपने चैलेंज का नाम रखें',
+  'guide.merge-wizard.identity.free-description':
+    'इसे एक नाम दें, और चाहें तो अपनी फर्म का भी। पिछले चैलेंज के सेव किए नियम इसके फेज और नियम भर देते हैं; वरना आप उन्हें अगले पेज पर सेट करें।',
   'guide.merge-wizard.phases.title': 'हर चरण जाँचें',
   'guide.merge-wizard.phases.description':
     'स्टेज प्रकार सेट करें, पूरे किए चरणों को पास और वर्तमान को सक्रिय चिह्नित करें, और तिथियाँ पुष्टि करें।',
   'guide.merge-wizard.review.title': 'पुष्टि से पहले कुछ नहीं होता',
   'guide.merge-wizard.review.description':
-    'स्थानांतरित ट्रेड, संग्रहीत खाते और चेतावनियाँ जाँचें। मर्ज सब कुछ लागू करता है; आप इसे खाता पृष्ठ से पूर्ववत कर सकते हैं।',
+    'बदलने के बाद अकाउंट पेज दिखाता है कि क्या सेट हुआ ताकि आप जाँच सकें, और आप वहीं से पूर्ववत कर सकते हैं।',
   'account.merge.challenge.accounts': 'अकाउंट्स',
   'account.merge.challenge.order-hint': 'सबसे पुराना फेज पहले',
   'account.merge.challenge.single-hint': 'यह अकाउंट स्वयं एक चैलेंज बन जाता है',
-  'account.merge.phase.identities-count': '{count} पहचान',
+  'account.merge.phase.broker-accounts.one': '{count} ब्रोकर अकाउंट',
+  'account.merge.phase.broker-accounts.few': '{count} ब्रोकर अकाउंट',
+  'account.merge.phase.broker-accounts.many': '{count} ब्रोकर अकाउंट',
+  'account.merge.phase.broker-accounts.other': '{count} ब्रोकर अकाउंट',
+  'account.merge.review.phase-count.one': 'फेज',
+  'account.merge.review.phase-count.few': 'फेज',
+  'account.merge.review.phase-count.many': 'फेज',
+  'account.merge.review.phase-count.other': 'फेज',
   'account.merge.phase.pending': 'लंबित',
-  'account.merge.review.phases': 'फेज',
+  'account.merge.phase.starts-after': '{phase} पास होने के बाद शुरू होगा',
+  'account.merge.phase.pending-rules': 'नियम: {rules}',
   'account.merge.review.archived': 'संग्रहीत',
-  'account.merge.review.open': 'खुले',
+  'account.merge.review.starts-after': '{phase} के बाद',
+  'account.merge.review.since': '{date} से',
   'account.merge.sequence': 'चैलेंज {total} में से {index}',
   'account.merge.warning.balance-differs':
-    'प्रारंभिक शेष फर्म प्रोफ़ाइल से भिन्न है',
+    'शुरुआती बैलेंस फर्म के नियमों से अलग है',
   'account.merge.error.profile-phase-mismatch':
-    'फर्म प्रोफ़ाइल के फेज से अधिक अकाउंट',
+    'फर्म नियमों में फेज से ज़्यादा अकाउंट हैं',
   'account.merge.error.profile-currency-mismatch':
-    'प्रोफ़ाइल की मुद्रा इन अकाउंट से भिन्न है।',
+    'फर्म के नियम इन अकाउंट से अलग मुद्रा उपयोग करते हैं।',
   'account.merge.error.source-changed':
     'एक अकाउंट बदल गया। मर्ज की फिर से समीक्षा करें।',
   'account.merge.error.multiple-active-phases':
@@ -8048,17 +8282,17 @@ const hi: Lang = {
   'account.merge.error.copy-trading-overlap':
     'कॉपी-ट्रेडिंग अवधियाँ ओवरलैप हो रही हैं। पहले एक को बंद करें।',
   'onboarding.legacy-challenge.legend':
-    'उन अकाउंट को ग्रुप करें जो एक चैलेंज के फेज थे। अकेला अकाउंट स्वयं चैलेंज बन जाता है।',
-  'onboarding.legacy-challenge.assign.leave': 'जैसा है वैसा छोड़ें',
-  'onboarding.legacy-challenge.assign.own': 'अपना चैलेंज',
-  'onboarding.legacy-challenge.assign.group': 'चैलेंज {letter}',
-  'onboarding.legacy-challenge.assign.new-group': 'नया चैलेंज…',
+    'चुनें कि हर पुराने अकाउंट का क्या होगा। क्या आपके पास हर फेज के लिए अलग अकाउंट था, जैसे फेज 1 और फंडेड? उन्हें एक ही चैलेंज में रखें ताकि वे फेज वाला एक अकाउंट बन जाएँ।',
+  'onboarding.legacy-challenge.assign.leave': 'सामान्य अकाउंट रखें',
+  'onboarding.legacy-challenge.assign.own': 'चैलेंज बनाएँ',
+  'onboarding.legacy-challenge.assign.group': 'चैलेंज {letter} में जोड़ें',
+  'onboarding.legacy-challenge.assign.new-group': 'नए चैलेंज में मिलाएँ…',
   'onboarding.legacy-challenge.action.continue': 'जारी रखें',
   'onboarding.legacy-challenge.action.continue-count': '{count} सेट अप करें',
   'guide.action-step.dismiss': 'अभी नहीं',
-  'guide.legacy-challenge.title': 'आपके मौजूदा अकाउंट',
+  'guide.legacy-challenge.title': 'इस अपडेट से पहले के अकाउंट सेट करें',
   'guide.legacy-challenge.description':
-    'एक चैलेंज के फेज रहे अकाउंट जोड़ें, या अकाउंट को स्वयं चैलेंज बनाएँ।',
+    'पुराने इवैल्यूएशन या फंडेड अकाउंट को चैलेंज में बदलें। सेटअप आपको फेज और तारीखों से गुज़ारता है और अंत में दिखाता है कि क्या सेट हुआ ताकि आप जाँच सकें।',
   'guide.legacy-challenge.action': 'मेरे अकाउंट सेट अप करें',
   'onboarding.legacy-challenge.title': 'प्रॉप चैलेंज',
   'onboarding.legacy-challenge.action.skip': 'छोड़ें',

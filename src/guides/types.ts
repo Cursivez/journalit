@@ -93,6 +93,8 @@ export interface GuideDefinition {
   autoShow?: boolean;
   
   replayGuideId?: string;
+  
+  resolvedByView?: boolean;
 }
 
 export interface ActiveLeafContext {

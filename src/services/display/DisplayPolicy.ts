@@ -25,6 +25,8 @@ export interface DisplayPolicy {
   displayRMultiples: boolean;
   defaultRiskAmount?: number;
   locale?: string;
+  
+  hideDollarAmounts?: boolean;
 }
 
 interface DisplayPolicySettingsInput {
@@ -46,6 +48,7 @@ export interface DisplayValueOptions {
   value: number | null | undefined;
   currencyCode?: string;
   showCents?: boolean;
+  
   rMultiple?: number | null;
   fallback?: string;
   signed?: boolean;
@@ -93,6 +96,33 @@ export function shouldMaskValue(
   return policy.privacyMode && PRIVACY_MASKED_KINDS.has(kind);
 }
 
+
+function hasRForm(
+  options: DisplayValueOptions,
+  policy: DisplayPolicy
+): boolean {
+  return (
+    (options.kind === 'pnl' ||
+      options.kind === 'risk' ||
+      options.kind === 'drawdown') &&
+    policy.displayRMultiples &&
+    'rMultiple' in options
+  );
+}
+
+
+export function isRMultipleUnavailable(
+  options: DisplayValueOptions,
+  policy: DisplayPolicy
+): boolean {
+  return (
+    hasRForm(options, policy) &&
+    isDisplayableNumber(options.value) &&
+    !shouldMaskValue(options.kind, policy) &&
+    !isDisplayableNumber(options.rMultiple)
+  );
+}
+
 export function formatDisplayValue(
   options: DisplayValueOptions,
   policy: DisplayPolicy
@@ -105,6 +135,10 @@ export function formatDisplayValue(
 
   if (shouldMaskValue(options.kind, policy)) {
     return policy.privacyMask;
+  }
+
+  if (policy.hideDollarAmounts && isDollarAmount(options, policy)) {
+    return '';
   }
 
   if (options.kind === 'metric' && !Number.isFinite(options.value)) {
@@ -124,12 +158,27 @@ export function formatDisplayValue(
 
   switch (options.kind) {
     case 'pnl':
+    case 'risk':
+    case 'drawdown':
+      if (hasRForm(options, policy)) {
+        
+        
+        return isDisplayableNumber(options.rMultiple)
+          ? formatPnL(
+              options.value,
+              options.showCents ?? true,
+              currencyCode,
+              true,
+              options.rMultiple
+            )
+          : fallback;
+      }
       return formatPnL(
         options.value,
         options.showCents ?? true,
         currencyCode,
-        shouldDisplayAsRMultiple(options, policy),
-        options.rMultiple ?? undefined
+        false,
+        undefined
       );
     case 'money':
     case 'balance':
@@ -169,15 +218,6 @@ export function formatDisplayValue(
             options.signed ?? false,
             currencyCode
           );
-    case 'risk':
-    case 'drawdown':
-      return formatPnL(
-        options.value,
-        options.showCents ?? true,
-        currencyCode,
-        shouldDisplayAsRMultiple(options, policy),
-        options.rMultiple ?? undefined
-      );
     case 'fee':
       return formatFeeValue(
         options.value,
@@ -243,15 +283,24 @@ function formatCurrencyWithFixedPrecision(
   return signed && value > 0 ? `+${withCurrency}` : withCurrency;
 }
 
-function shouldDisplayAsRMultiple(
+
+function isDollarAmount(
   options: DisplayValueOptions,
   policy: DisplayPolicy
 ): boolean {
-  return (
-    policy.displayRMultiples &&
-    typeof options.rMultiple === 'number' &&
-    Number.isFinite(options.rMultiple)
-  );
+  switch (options.kind) {
+    case 'money':
+    case 'balance':
+    case 'notional':
+    case 'fee':
+      return true;
+    case 'pnl':
+    case 'risk':
+    case 'drawdown':
+      return !hasRForm(options, policy);
+    default:
+      return false;
+  }
 }
 
 function normalizePrivacyMask(mask: string | undefined): string {

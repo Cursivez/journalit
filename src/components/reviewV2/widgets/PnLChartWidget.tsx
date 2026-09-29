@@ -13,6 +13,7 @@ import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
+import { shareLoadingProps } from '../../../services/share/brandedCapture';
 
 const asPnLTrades = (value: unknown): Trade[] =>
   Array.isArray(value)
@@ -90,6 +91,7 @@ export const PnLChartWidget: React.FC<PnLChartWidgetProps> = React.memo(
             
             <div
               className="journalit-reviewv2-chart-skeleton"
+              {...shareLoadingProps}
               style={cssVars({
                 '--reviewv2-chart-height': `${mergedConfig.height || 250}px`,
                 '--reviewv2-chart-bar-gap': '4px',

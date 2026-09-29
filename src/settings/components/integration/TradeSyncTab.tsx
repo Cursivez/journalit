@@ -92,7 +92,7 @@ const TrialOffer: React.FC<TrialOfferProps> = ({
         {t('trade-sync.trial.cta')}
       </Button>
       {onRefresh && (
-        <Button variant="secondary" onClick={onRefresh}>
+        <Button variant="secondary" size="large" onClick={onRefresh}>
           {t('premium.gate.cta.refresh')}
         </Button>
       )}
@@ -605,7 +605,11 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
     waitForCurrentRefresh,
     applyCatalogPresence,
   } = useHasCTraderConnections(plugin, isAuthenticated);
-  const canUseCTraderPanel = canUseCTraderSync || hasCTraderConnections;
+  
+  
+  
+  const canUseCTraderPanel =
+    canUseCTraderSync || (isPro && hasCTraderConnections);
 
   const selectedSourceEnabled = source
     ? source === 'metatrader'
@@ -681,7 +685,9 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
               ? result.entitlements?.features.rithmicSync.enabled === true
               : selectedSource === 'ctrader'
                 ? result.entitlements?.features.ctraderSync?.enabled === true ||
-                  hasCTraderConnectionsNow
+                  ((result.status === 'premium' ||
+                    (result.status === 'unverified' && isPro)) &&
+                    hasCTraderConnectionsNow)
                 : result.entitlements?.features.tradeImport.enabled === true;
 
       if (!selectedFeatureEnabled) {
@@ -692,7 +698,14 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
         );
       }
     },
-    [isAuthenticated, plugin, refreshConnections, source, waitForCurrentRefresh]
+    [
+      isAuthenticated,
+      isPro,
+      plugin,
+      refreshConnections,
+      source,
+      waitForCurrentRefresh,
+    ]
   );
 
   if (!isAuthenticated) {

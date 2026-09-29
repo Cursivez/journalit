@@ -7,13 +7,19 @@ import { getCurrencyConfig } from '../../../utils/currencyConfig';
 import { TradeTemplate, TradeMetricType } from '../../../types/reviewV2';
 import { getSizePrecision, roundToPrecision } from '../../forms/trade/utils';
 import { t } from '../../../lang/helpers';
-import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
+import {
+  useDisplayFormatter,
+  useDisplayPolicy,
+} from '../../../hooks/useDisplayPolicy';
+import { isRMultipleUnavailable } from '../../../services/display/DisplayPolicy';
+import { TradeRUnavailableMessage } from '../../shared/display/RMultipleUnavailableHint';
 import { Tooltip } from '../../shared/Tooltip';
 import { resolveTradeRiskAmount } from '../../../utils/riskCalculation';
 import { FileText } from '../../shared/icons/ObsidianIcon';
 import { calculateTotalCosts } from '../../forms/trade/validation';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import { hasSizedExplicitExitPrice } from '../../../services/trade/core/TradeExecutionNormalization';
+import { shareDollarAmountProps } from '../../../services/share/brandedCapture';
 
 interface ExecutionItem {
   time?: Date;
@@ -28,6 +34,8 @@ interface MetricCardProps {
   subtitle?: React.ReactNode;
   valueClassName?: string;
   tooltipContent?: React.ReactNode;
+  
+  dollarAmount?: boolean;
 }
 
 interface ExecutionBreakdownProps {
@@ -116,6 +124,8 @@ interface PlanMetricStripProps {
     value: React.ReactNode;
     meta?: React.ReactNode;
     valueClassName?: string;
+    
+    dollarAmount?: boolean;
   }>;
 }
 
@@ -125,7 +135,11 @@ const PlanMetricStrip: React.FC<PlanMetricStripProps> = ({ rows }) => {
   return (
     <div className="trade-risk-target-strip">
       {rows.map((row) => (
-        <div key={row.id} className="trade-risk-target-item">
+        <div
+          key={row.id}
+          className="trade-risk-target-item"
+          {...(row.dollarAmount ? shareDollarAmountProps : {})}
+        >
           <span className="trade-risk-target-label">{row.label}</span>
           <span
             className={`trade-risk-target-value ${row.valueClassName ?? ''}`}
@@ -182,9 +196,13 @@ const MetricCard: React.FC<MetricCardProps> = ({
   subtitle,
   valueClassName,
   tooltipContent,
+  dollarAmount,
 }) => {
   const card = (
-    <div className="metric-card">
+    <div
+      className="metric-card"
+      {...(dollarAmount ? shareDollarAmountProps : {})}
+    >
       <div className="metric-label">{label}</div>
       <div
         className={
@@ -305,6 +323,16 @@ const ConfiguredMetricCards: React.FC<ConfiguredMetricCardsProps> = ({
     data.riskAmount,
     defaultRiskAmount
   );
+  const displayPolicy = useDisplayPolicy();
+  
+  
+  const pnlShownInDollars = !displayPolicy.displayRMultiples;
+  const pnlDisplayOptions = {
+    kind: 'pnl' as const,
+    value: pnl,
+    rMultiple: effectiveRMultiple,
+    currencyCode: currency,
+  };
 
   return (
     <>
@@ -319,12 +347,14 @@ const ConfiguredMetricCards: React.FC<ConfiguredMetricCardsProps> = ({
       {isMetricAllowed('pnl') && (
         <MetricCard
           label={t('template.editor.metric.pnl')}
-          value={formatValue({
-            kind: 'pnl',
-            value: pnl,
-            currencyCode: currency,
-          })}
+          value={formatValue(pnlDisplayOptions)}
           valueClassName={shouldMask('pnl') ? 'journalit-privacy-mask' : ''}
+          tooltipContent={
+            isRMultipleUnavailable(pnlDisplayOptions, displayPolicy) ? (
+              <TradeRUnavailableMessage />
+            ) : undefined
+          }
+          dollarAmount={pnlShownInDollars}
         />
       )}
 
@@ -341,6 +371,7 @@ const ConfiguredMetricCards: React.FC<ConfiguredMetricCardsProps> = ({
       {isMetricAllowed('costs') && hasCosts && (
         <MetricCard
           label={t('template.editor.metric.costs')}
+          dollarAmount
           value={formatValue({
             kind: 'fee',
             value: totalCosts,
@@ -469,6 +500,7 @@ export const TradeDetailsSection: React.FC<TradeDetailsSectionProps> = ({
       label: t('form.field.risk-amount'),
       value: formatDisplayRisk(effectiveRiskAmount),
       valueClassName: shouldMask('risk') ? 'journalit-privacy-mask' : undefined,
+      dollarAmount: true,
     });
   }
   if (shouldShowTakeProfitMetric) {

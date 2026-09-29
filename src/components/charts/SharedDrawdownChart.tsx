@@ -15,8 +15,9 @@ import {
   DrawdownChartDataPoint,
   generateNiceAxis,
   calculateYAxisWidth,
-  getDrawdownChartScaleValue,
-  shouldUseDrawdownPercentScale,
+  getDrawdownChartPlotValue,
+  getDrawdownChartScale,
+  type DrawdownChartScale,
 } from '../../utils/chartUtils';
 import { formatDuration } from '../../utils/formatting';
 import { ChartBase } from './ChartBase';
@@ -41,6 +42,8 @@ type DrawdownChartDataPointChartClickEvent = {
 interface SharedDrawdownChartProps extends DrawdownChartProps {
   plugin?: JournalitPlugin | null; 
   currencyOverride?: string; 
+  
+  scale?: DrawdownChartScale;
 }
 
 let drawdownChartIdCounter = 0;
@@ -223,18 +226,22 @@ export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
     onPointClick,
     plugin,
     currencyOverride,
+    scale: scaleProp,
   }) => {
     const chartRef = React.useRef<HTMLDivElement>(null);
     const { currency: globalCurrency } = useCurrency();
     const { formatValue, shouldMask } = useDisplayFormatter();
     const isDrawdownMasked = shouldMask('drawdown');
     const displayCurrency = currencyOverride || globalCurrency;
-    const preferPercent = shouldUseDrawdownPercentScale(data);
-
     
     const displayRMultiples =
       plugin?.settings?.trade?.displayRMultiples ?? false;
     const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
+    
+    
+    const scale = scaleProp ?? getDrawdownChartScale([data], displayRMultiples);
+    const preferPercent = scale === 'percent';
+    const plotR = scale === 'r';
     const chartIdRef = React.useRef(
       `drawdown-chart-${++drawdownChartIdCounter}`
     );
@@ -245,26 +252,32 @@ export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
           ...item,
           displayDrawdown: isDrawdownMasked
             ? 0
-            : getDrawdownChartScaleValue(item, preferPercent),
+            : getDrawdownChartPlotValue(item, scale),
         })),
-      [data, isDrawdownMasked, preferPercent]
+      [data, isDrawdownMasked, scale]
     );
 
     const formatDrawdownTick = React.useCallback(
-      (value: number): string =>
-        preferPercent
-          ? formatValue({
-              kind: 'percentage',
-              value,
-              signed: true,
-              precision: 1,
-            })
-          : formatValue({
-              kind: 'drawdown',
-              value,
-              currencyCode: displayCurrency,
-            }),
-      [displayCurrency, formatValue, preferPercent]
+      (value: number): string => {
+        if (plotR) {
+          return formatValue({ kind: 'rMultiple', value });
+        }
+        if (preferPercent) {
+          return formatValue({
+            kind: 'percentage',
+            value,
+            signed: true,
+            precision: 1,
+          });
+        }
+        return formatValue({
+          kind: 'drawdown',
+          value,
+          currencyCode: displayCurrency,
+          ...(displayRMultiples ? { rMultiple: undefined, fallback: '' } : {}),
+        });
+      },
+      [displayCurrency, displayRMultiples, formatValue, plotR, preferPercent]
     );
 
     
@@ -433,6 +446,7 @@ export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
             }}
           />
           <YAxis
+            className="journalit-chart-axis--numeric"
             tickFormatter={formatDrawdownTick}
             domain={domain}
             allowDataOverflow={false}

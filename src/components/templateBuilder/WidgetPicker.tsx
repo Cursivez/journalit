@@ -38,7 +38,6 @@ import { OPEN_FULLSCREEN_PORTAL_SELECTORS } from '../image/fullscreenPortalPrese
 const COMPETING_ESCAPE_SURFACE_SELECTOR = [
   ...OPEN_FULLSCREEN_PORTAL_SELECTORS,
   '.journalit-shared-selector-overlay',
-  '.journalit-component-selector-overlay',
   '.journalit-modal-overlay',
   '.journalit-combobox[data-is-open="true"]',
   '.journalit-combobox.combobox-dropdown--portal',

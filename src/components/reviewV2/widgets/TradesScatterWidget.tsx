@@ -12,6 +12,7 @@ import { cssVars } from '../../../styles/inlineStylePolicy';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
+import { shareLoadingProps } from '../../../services/share/brandedCapture';
 
 const asScatterTrades = (value: unknown): Trade[] =>
   Array.isArray(value)
@@ -74,6 +75,7 @@ export const TradesScatterWidget: React.FC<TradesScatterWidgetProps> = ({
           
           <div
             className="journalit-reviewv2-chart-skeleton"
+            {...shareLoadingProps}
             style={cssVars({
               '--reviewv2-chart-height': `${height}px`,
               '--reviewv2-chart-bar-gap': '4px',

@@ -82,6 +82,26 @@ export const TradeImportCompletionSummary: React.FC<
           </div>
         </>
       )}
+      {result.attachedImageCount > 0 && (
+        <div className="result-item result-success">
+          <BadgeCheck className="result-icon" size={20} />
+          <span className="result-text">
+            {t('trade-import.completion.screenshots-added', {
+              count: String(result.attachedImageCount),
+            })}
+          </span>
+        </div>
+      )}
+      {result.failedImageCount > 0 && (
+        <div className="result-item result-warning">
+          <AlertTriangle className="result-icon" size={20} />
+          <span className="result-text">
+            {t('trade-import.completion.screenshots-failed', {
+              count: String(result.failedImageCount),
+            })}
+          </span>
+        </div>
+      )}
       {result.duplicateCount > 0 && (
         <div className="result-item result-warning">
           <AlertTriangle className="result-icon" size={20} />

@@ -144,6 +144,14 @@ function normalizePositionProfitBasis(
     : null;
 }
 
+
+function normalizePositionSizeCounting(
+  value: Record<string, unknown>
+): { microsPerContract?: 10 } | null {
+  if (value.microsPerContract === undefined) return {};
+  return value.microsPerContract === 10 ? { microsPerContract: 10 } : null;
+}
+
 function normalizePositionProfitTiers(
   value: unknown,
   initialContracts: number
@@ -313,6 +321,8 @@ function normalizeRule(value: unknown): PropChallengeRule | null {
     case 'max_position_size': {
       const profitBasis = normalizePositionProfitBasis(value.profitBasis);
       if (profitBasis === null) return null;
+      const counting = normalizePositionSizeCounting(value);
+      if (counting === null) return null;
       if (
         isFiniteNumber(value.maxContracts) &&
         value.maxContracts > 0 &&
@@ -327,6 +337,7 @@ function normalizeRule(value: unknown): PropChallengeRule | null {
           enabled: value.enabled,
           kind: value.kind,
           maxContracts: value.maxContracts,
+          ...counting,
         };
       }
       if (
@@ -348,6 +359,7 @@ function normalizeRule(value: unknown): PropChallengeRule | null {
             initialContracts: value.initialContracts,
             profitTiers,
             ...(profitBasis ? { profitBasis } : {}),
+            ...counting,
           };
         }
       }
@@ -370,6 +382,7 @@ function normalizeRule(value: unknown): PropChallengeRule | null {
               ? {}
               : { maximumContracts: value.maximumContracts }),
             ...(profitBasis ? { profitBasis } : {}),
+            ...counting,
           }
         : null;
     }
@@ -492,6 +505,8 @@ function normalizeProfileRule(value: unknown): PropFirmProfileRule | null {
     case 'max_position_size': {
       const profitBasis = normalizePositionProfitBasis(value.profitBasis);
       if (profitBasis === null) return null;
+      const counting = normalizePositionSizeCounting(value);
+      if (counting === null) return null;
       if (
         isFiniteNumber(value.maxContracts) &&
         value.maxContracts > 0 &&
@@ -501,7 +516,11 @@ function normalizeProfileRule(value: unknown): PropFirmProfileRule | null {
         value.profitTiers === undefined &&
         value.profitBasis === undefined
       ) {
-        return { kind: value.kind, maxContracts: value.maxContracts };
+        return {
+          kind: value.kind,
+          maxContracts: value.maxContracts,
+          ...counting,
+        };
       }
       if (
         value.maxContracts === undefined &&
@@ -520,6 +539,7 @@ function normalizeProfileRule(value: unknown): PropFirmProfileRule | null {
             initialContracts: value.initialContracts,
             profitTiers,
             ...(profitBasis ? { profitBasis } : {}),
+            ...counting,
           };
         }
       }
@@ -540,6 +560,7 @@ function normalizeProfileRule(value: unknown): PropFirmProfileRule | null {
               ? {}
               : { maximumContracts: value.maximumContracts }),
             ...(profitBasis ? { profitBasis } : {}),
+            ...counting,
           }
         : null;
     }
@@ -1504,6 +1525,16 @@ function normalizePhase(value: unknown): PropChallengePhase | null {
       ruleKind: value.failure.ruleKind,
       breachedAt: value.failure.breachedAt,
     };
+  }
+  if (Array.isArray(value.waivedFailures)) {
+    const waivedFailures = value.waivedFailures.flatMap((waiver) =>
+      isRecord(waiver) &&
+      typeof waiver.ruleId === 'string' &&
+      isIsoDateString(waiver.breachedAt)
+        ? [{ ruleId: waiver.ruleId, breachedAt: waiver.breachedAt }]
+        : []
+    );
+    if (waivedFailures.length > 0) phase.waivedFailures = waivedFailures;
   }
   return phase;
 }

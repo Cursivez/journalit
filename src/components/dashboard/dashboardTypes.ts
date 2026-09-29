@@ -6,6 +6,8 @@ import type {
 } from '../../services/tradelog/types';
 import type { CustomFieldFilterSelections } from '../../types/customFields';
 import type { AccountPhaseScope } from '../shared/filters/types';
+import type { FilterExclusions } from '../shared/filters/filterExclusions';
+import type { FilterMatchModes } from '../shared/filters/filterMatchModes';
 
 export interface FilterState {
   dateRange: [Date | null, Date | null];
@@ -20,6 +22,8 @@ export interface FilterState {
   reviewStatus: ReviewStatusFilter[];
   directions: DirectionFilter[];
   customFieldFilters: CustomFieldFilterSelections;
+  exclusions: FilterExclusions;
+  matchModes: FilterMatchModes;
   imageAnnotationStatus?: ImageAnnotationStatusFilter[];
   imageTags?: string[];
 }

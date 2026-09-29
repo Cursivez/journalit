@@ -12,7 +12,7 @@ import type { SettingControl, SettingDefinitionItem } from 'obsidian';
 import React, { useEffect, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { eventBus } from '../services/events/EventBus';
-import { clearOnboardingUpgradeOrigin } from '../services/upgrade/upgradeOrigin';
+import { clearUpgradeOrigin } from '../services/upgrade/upgradeOrigin';
 import { t } from '../lang/helpers';
 import JournalitPlugin from '../main';
 import { getBaseCurrencyOptions } from '../utils/currencyConfig';
@@ -234,7 +234,7 @@ export class JournalitSettingsTab extends PluginSettingTab {
       },
     ];
 
-    return homeDefinitions;
+    return withJournalitGroupScope(homeDefinitions);
   }
 
   getControlValue(key: string): unknown {
@@ -295,6 +295,12 @@ export class JournalitSettingsTab extends PluginSettingTab {
         section: 'general',
         source: 'currency',
       });
+      return;
+    }
+
+    if (key === 'general.accentColorSource') {
+      
+      eventBus.publish('appearance:accent-source-changed');
       return;
     }
 
@@ -430,7 +436,7 @@ export class JournalitSettingsTab extends PluginSettingTab {
 
   
   hide(): void {
-    clearOnboardingUpgradeOrigin('metatraderSync');
+    clearUpgradeOrigin('metatraderSync');
     this.unmountReactSettings(this.containerEl);
     this.containerEl.empty();
   }
@@ -731,6 +737,35 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
   ];
 }
 
+
+const JOURNALIT_SETTINGS_GROUP_CLASS = 'journalit-settings-group';
+
+function withJournalitGroupScope(
+  items: NativeSettingDefinitionItem[]
+): NativeSettingDefinitionItem[] {
+  return items.map((item): NativeSettingDefinitionItem => {
+    if ('type' in item && item.type === 'group') {
+      return {
+        ...item,
+        
+        
+        cls: item.cls ?? JOURNALIT_SETTINGS_GROUP_CLASS,
+        items: item.items.map(withNestedPageScope),
+      };
+    }
+    return withNestedPageScope(item);
+  });
+}
+
+function withNestedPageScope<T extends NativeSettingDefinitionItem>(
+  item: T
+): T {
+  if ('type' in item && item.type === 'page' && item.items) {
+    return { ...item, items: withJournalitGroupScope(item.items) };
+  }
+  return item;
+}
+
 function createNativeHomeIntroItems(
   plugin: JournalitPlugin
 ): NativeSettingGroupItem[] {
@@ -815,6 +850,22 @@ function createGeneralNativeSettingItems(
   tab: JournalitSettingsTab
 ): NativeSettingDefinitionItem[] {
   return [
+    {
+      type: 'group',
+      heading: t('settings.general.appearance'),
+      items: [
+        dropdownSetting(
+          t('settings.general.accent-color'),
+          t('settings.general.accent-color-desc'),
+          'general.accentColorSource',
+          {
+            journalit: t('settings.general.accent-color-journalit'),
+            obsidian: t('settings.general.accent-color-obsidian'),
+          },
+          'journalit'
+        ),
+      ],
+    },
     {
       type: 'group',
       heading: t('settings.general.home-view-settings'),
@@ -1100,6 +1151,15 @@ function createTradingNativeSettingItems(
           false
         ),
         toggleSetting(
+          t('settings.general.hide-dollar-amounts-in-shares'),
+          t('settings.general.hide-dollar-amounts-in-shares-desc'),
+          'display.hideDollarAmountsInShares',
+          false,
+          
+          () => !tab.plugin.settings.trade.displayRMultiples,
+          ['share', 'screenshot', 'privacy']
+        ),
+        toggleSetting(
           t('settings.general.include-unrealized-pnl'),
           t('settings.general.include-unrealized-pnl-desc'),
           'trade.includeUnrealizedPnLInCalculations',
@@ -1347,7 +1407,7 @@ function createReactSettingsPage(
     },
     hide: (containerEl) => {
       if (tabId === SETTINGS_TAB_IDS.TRADE_SYNC) {
-        clearOnboardingUpgradeOrigin('metatraderSync');
+        clearUpgradeOrigin('metatraderSync');
       }
       tab.unmountReactSettings(containerEl);
     },

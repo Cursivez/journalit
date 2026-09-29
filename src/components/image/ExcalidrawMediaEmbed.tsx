@@ -6,6 +6,7 @@ import {
   resolveVaultMediaFile,
   toObsidianEmbed,
 } from '../../utils/imageMediaUtils';
+import { markShareLoadingUntil } from '../../services/share/brandedCapture';
 
 interface ExcalidrawMediaEmbedProps {
   path: string;
@@ -37,13 +38,15 @@ export const ExcalidrawMediaEmbed: React.FC<ExcalidrawMediaEmbedProps> = ({
     const component = new Component();
     component.load();
 
-    void MarkdownRenderer.render(
+    const rendering = MarkdownRenderer.render(
       getApp(),
       toObsidianEmbed(file.path, embedWidth),
       container,
       sourcePath || file.path,
       component
     );
+    
+    markShareLoadingUntil(container, rendering);
 
     return () => {
       component.unload();

@@ -12,6 +12,10 @@ import { eventBus } from '../../../services/events/EventBus';
 
 
 let saveLayoutTimer: number | null = null;
+let pendingSaveWaiters: Array<{
+  resolve: () => void;
+  reject: (reason: Error) => void;
+}> = [];
 
 
 export interface DashboardLayout {
@@ -134,7 +138,6 @@ const getLayoutSettings = (
 };
 
 
-
 function safeLayoutSettingsCopy(
   layoutSettings: DashboardLayoutSettings
 ): DashboardLayoutSettings {
@@ -160,35 +163,21 @@ function safeLayoutSettingsCopy(
   };
 }
 
-const saveLayoutSettings = async (
+
+const applyLayoutSettings = (
   plugin: JournalitPlugin,
   layoutSettings: DashboardLayoutSettings
-): Promise<void> => {
-  try {
-    
-    if (!plugin.settings.dashboard) {
-      plugin.settings.dashboard = DEFAULT_SETTINGS.dashboard!;
-    }
-
-    
-    const safeCopy = safeLayoutSettingsCopy(layoutSettings);
-
-    
-    plugin.settings.dashboard.layouts = safeCopy.layouts;
-    plugin.settings.dashboard.activeLayout = safeCopy.activeLayout;
-
-    
-    await plugin.saveSettings();
-
-    
-    eventBus.publish('layout:changed', {
-      view: 'dashboard',
-      layoutName: layoutSettings.activeLayout,
-    });
-  } catch (error) {
-    console.error('Error saving layout settings:', error);
-    throw error; 
+): void => {
+  if (!plugin.settings.dashboard) {
+    plugin.settings.dashboard = DEFAULT_SETTINGS.dashboard!;
   }
+
+  
+  const safeCopy = safeLayoutSettingsCopy(layoutSettings);
+
+  
+  plugin.settings.dashboard.layouts = safeCopy.layouts;
+  plugin.settings.dashboard.activeLayout = safeCopy.activeLayout;
 };
 
 
@@ -314,7 +303,7 @@ export const getActiveLayout = (plugin: JournalitPlugin): DashboardLayout => {
       
       void (async () => {
         try {
-          await saveLayout(plugin, activeLayoutName, fixedLayout);
+          await saveLayout(plugin, fixedLayout);
         } catch (error) {
           console.error(`Failed to save fixed layout: ${error}`);
         }
@@ -343,7 +332,6 @@ export const getActiveLayout = (plugin: JournalitPlugin): DashboardLayout => {
 };
 
 
-
 function normalizeLayoutForSave(layoutItems: Layout[]): Layout[] {
   return validateLayoutItems(layoutItems).map((item) => ({
     ...item,
@@ -364,24 +352,43 @@ function normalizeLayoutForSave(layoutItems: Layout[]): Layout[] {
   }));
 }
 
-export const saveLayout = async (
+
+export const saveLayout = (
   plugin: JournalitPlugin,
-  name: string,
   layout: DashboardLayout
 ): Promise<void> => {
-  
+  try {
+    applyLayout(plugin, layout);
+  } catch (error) {
+    console.error('Error saving dashboard layout:', error);
+    return Promise.reject(
+      error instanceof Error ? error : new Error(String(error))
+    );
+  }
+
   return new Promise((resolve, reject) => {
     if (saveLayoutTimer) {
       window.clearTimeout(saveLayoutTimer);
     }
+    pendingSaveWaiters.push({ resolve, reject });
 
     saveLayoutTimer = window.setTimeout(() => {
+      saveLayoutTimer = null;
+      const waiters = pendingSaveWaiters;
+      pendingSaveWaiters = [];
       void (async () => {
         try {
-          await saveLayoutInternal(plugin, name, layout);
-          resolve();
+          await plugin.saveSettings();
+          eventBus.publish('layout:changed', {
+            view: 'dashboard',
+            layoutName: getLayoutSettings(plugin).activeLayout,
+          });
+          waiters.forEach((waiter) => waiter.resolve());
         } catch (error) {
-          reject(error instanceof Error ? error : new Error(String(error)));
+          console.error('Error saving layout settings:', error);
+          const reason =
+            error instanceof Error ? error : new Error(String(error));
+          waiters.forEach((waiter) => waiter.reject(reason));
         }
       })();
     }, 300);
@@ -389,82 +396,75 @@ export const saveLayout = async (
 };
 
 
-const saveLayoutInternal = async (
+const applyLayout = (
   plugin: JournalitPlugin,
-  name: string,
   layout: DashboardLayout
-): Promise<void> => {
-  try {
-    const settings = getLayoutSettings(plugin);
+): void => {
+  const settings = getLayoutSettings(plugin);
 
-    
-    const layoutCopy: DashboardLayout = {
-      topSection: [...layout.topSection],
-      bottomSection: {
-        lg: normalizeLayoutForSave(layout.bottomSection.lg),
-        md: normalizeLayoutForSave(layout.bottomSection.md),
-        sm: normalizeLayoutForSave(layout.bottomSection.sm),
-        xs: normalizeLayoutForSave(layout.bottomSection.xs || []),
-        xxs: normalizeLayoutForSave(layout.bottomSection.xxs || []),
-      },
-    };
+  
+  const layoutCopy: DashboardLayout = {
+    topSection: [...layout.topSection],
+    bottomSection: {
+      lg: normalizeLayoutForSave(layout.bottomSection.lg),
+      md: normalizeLayoutForSave(layout.bottomSection.md),
+      sm: normalizeLayoutForSave(layout.bottomSection.sm),
+      xs: normalizeLayoutForSave(layout.bottomSection.xs || []),
+      xxs: normalizeLayoutForSave(layout.bottomSection.xxs || []),
+    },
+  };
 
-    
-    const allWidgetIds = new Set<string>();
+  
+  const allWidgetIds = new Set<string>();
 
-    
-    Object.values(layoutCopy.bottomSection).forEach((bpLayout) => {
-      bpLayout.forEach((item: Layout) => allWidgetIds.add(item.i));
-    });
+  
+  Object.values(layoutCopy.bottomSection).forEach((bpLayout) => {
+    bpLayout.forEach((item: Layout) => allWidgetIds.add(item.i));
+  });
 
-    
-    const cols: Record<string, number> = {
-      lg: 12,
-      md: 6,
-      sm: 4,
-      xs: 2,
-      xxs: 1,
-    };
+  
+  const cols: Record<string, number> = {
+    lg: 12,
+    md: 6,
+    sm: 4,
+    xs: 2,
+    xxs: 1,
+  };
 
-    const sourceItemsByWidgetId = new Map<string, Layout>();
-    for (const sourceBp of ['lg', 'md', 'sm', 'xs', 'xxs'] as const) {
-      for (const item of layoutCopy.bottomSection[sourceBp] || []) {
-        if (!sourceItemsByWidgetId.has(item.i)) {
-          sourceItemsByWidgetId.set(item.i, item);
-        }
+  const sourceItemsByWidgetId = new Map<string, Layout>();
+  for (const sourceBp of ['lg', 'md', 'sm', 'xs', 'xxs'] as const) {
+    for (const item of layoutCopy.bottomSection[sourceBp] || []) {
+      if (!sourceItemsByWidgetId.has(item.i)) {
+        sourceItemsByWidgetId.set(item.i, item);
       }
     }
-
-    
-    Object.entries(layoutCopy.bottomSection).forEach(([bp, bpLayout]) => {
-      const bpWidgetIds = new Set(bpLayout.map((item: Layout) => item.i));
-
-      
-      allWidgetIds.forEach((widgetId) => {
-        if (!bpWidgetIds.has(widgetId)) {
-          const sourceItem = sourceItemsByWidgetId.get(widgetId);
-
-          if (sourceItem) {
-            
-            bpLayout.push({
-              i: widgetId,
-              x: 0,
-              y: LAYOUT_BOTTOM_POSITION, 
-              w: Math.min(sourceItem.w, cols[bp]), 
-              h: sourceItem.h, 
-            });
-          }
-        }
-      });
-    });
-
-    
-    settings.layouts[name] = layoutCopy;
-
-    
-    await saveLayoutSettings(plugin, settings);
-  } catch (error) {
-    console.error(`Error saving layout '${name}':`, error);
-    throw error; 
   }
+
+  
+  Object.entries(layoutCopy.bottomSection).forEach(([bp, bpLayout]) => {
+    const bpWidgetIds = new Set(bpLayout.map((item: Layout) => item.i));
+
+    
+    allWidgetIds.forEach((widgetId) => {
+      if (!bpWidgetIds.has(widgetId)) {
+        const sourceItem = sourceItemsByWidgetId.get(widgetId);
+
+        if (sourceItem) {
+          
+          bpLayout.push({
+            i: widgetId,
+            x: 0,
+            y: LAYOUT_BOTTOM_POSITION, 
+            w: Math.min(sourceItem.w, cols[bp]), 
+            h: sourceItem.h, 
+          });
+        }
+      }
+    });
+  });
+
+  
+  settings.layouts[settings.activeLayout] = layoutCopy;
+
+  applyLayoutSettings(plugin, settings);
 };

@@ -23,7 +23,8 @@ Nhật ký giao dịch ưu tiên lưu trữ cục bộ cho Obsidian.
   <a href="README.it.md">Italiano</a> |
   <a href="README.vi.md">Tiếng Việt</a> |
   <a href="README.hi.md">हिन्दी</a> |
-  <a href="README.ta.md">தமிழ்</a>
+  <a href="README.ta.md">தமிழ்</a> |
+  <a href="README.ar.md">العربية</a>
 </p>
 
 [Cài đặt](#cài-đặt) · [Broker được hỗ trợ](#broker-được-hỗ-trợ) · [Quyền riêng tư](PRIVACY.md)

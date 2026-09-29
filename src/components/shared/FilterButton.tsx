@@ -136,7 +136,7 @@ export const FILTER_BUTTON_STYLES = `
     font-weight: 600;
     font-variant-numeric: tabular-nums;
     line-height: 1;
-    color: white;
+    color: var(--text-on-accent);
     background-color: var(--interactive-accent);
     border-radius: 8px;
     pointer-events: none;

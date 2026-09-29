@@ -40,6 +40,25 @@ export function hasPendingTradeProjectionDeletionIntent(
   return (pendingDeletionIntents.get(plugin)?.get(tradeId) ?? 0) > 0;
 }
 
+const serverDeletedTrades = new WeakMap<JournalitPlugin, Set<string>>();
+
+
+export function markServerDeletedTradeProjections(
+  plugin: JournalitPlugin,
+  tradeIds: Iterable<string>
+): void {
+  const deleted = serverDeletedTrades.get(plugin) ?? new Set<string>();
+  for (const tradeId of tradeIds) deleted.add(tradeId);
+  serverDeletedTrades.set(plugin, deleted);
+}
+
+export function isServerDeletedTradeProjection(
+  plugin: JournalitPlugin,
+  tradeId: string
+): boolean {
+  return serverDeletedTrades.get(plugin)?.has(tradeId) === true;
+}
+
 export async function runWithTradeProjectionWriteLock<T>(
   plugin: JournalitPlugin,
   work: () => Promise<TradeProjectionLockedWorkResult<T>>

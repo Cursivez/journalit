@@ -59,8 +59,17 @@ const AccountPageGuideCoordinator: React.FC<{
       finishedMainGuide &&
       mainGuideState.guideVersion < ACCOUNT_PAGE_MAIN_GUIDE_LAYOUT_VERSION;
 
+    
+    
+    
+    const whatsNewApplies =
+      !!accountPageData.account.propChallenge ||
+      plugin.settings.account?.legacyChallengeOnboarding?.status === 'pending';
+
     const resolvedGuideId = finishedBeforeLayoutRedesign
-      ? ACCOUNT_PAGE_WHATS_NEW_COCKPIT_GUIDE_ID
+      ? whatsNewApplies
+        ? ACCOUNT_PAGE_WHATS_NEW_COCKPIT_GUIDE_ID
+        : null
       : accountPageData.trades.length === 0
         ? ACCOUNT_PAGE_EMPTY_GUIDE_ID
         : ACCOUNT_PAGE_MAIN_GUIDE_ID;

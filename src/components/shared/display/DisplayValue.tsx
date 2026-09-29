@@ -86,6 +86,7 @@ export const DisplayValue: React.FC<DisplayValueComponentProps> = ({
 
   return (
     <span
+      dir="ltr"
       className={composeClassName(
         options.kind,
         toneClassName,

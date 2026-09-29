@@ -2,6 +2,8 @@
 
 import type { CustomFieldFilterSelections } from '../../types/customFields';
 import type { AccountPhaseScope } from '../../components/shared/filters/types';
+import type { FilterExclusions } from '../../components/shared/filters/filterExclusions';
+import type { FilterMatchModes } from '../../components/shared/filters/filterMatchModes';
 import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 import type { AnalyticsDateBasis } from '../../settings/types';
 
@@ -122,6 +124,8 @@ export interface TradeLogFilters {
   mistakes: string[];
   reviewStatus: ReviewStatusFilter[];
   customFieldFilters: CustomFieldFilterSelections;
+  exclusions: FilterExclusions;
+  matchModes: FilterMatchModes;
   imageAnnotationStatus: ImageAnnotationStatusFilter[];
   imageTags: string[];
 }

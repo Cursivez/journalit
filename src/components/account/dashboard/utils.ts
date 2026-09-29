@@ -12,12 +12,34 @@ import { DashboardMetricsData, AUMChartDataPoint } from './types';
 import { CurrencyCode } from '../../../utils/currencyConfig';
 import { AccountSettings } from '../../../settings/types';
 import { normalizeLiveBalanceAdjustment } from '../../../services/account/liveBalanceAdjustment';
+import { getCurrentLanguage } from '../../../lang/helpers';
 
 
 type SettingsWithAccount = { account?: AccountSettings };
 
 const DEFAULT_ACCOUNT_TYPE_ORDER = ['funded', 'evaluation', 'demo', 'archived'];
 const DEFAULT_ACCOUNT_TYPE_KEYS = new Set(DEFAULT_ACCOUNT_TYPE_ORDER);
+const accountAgeUnitFormatters = new Map<string, Intl.NumberFormat>();
+
+function formatAccountAgeUnit(
+  locale: string,
+  value: number,
+  unit: 'day' | 'month' | 'year',
+  display: 'long' | 'short' | 'narrow' = 'long'
+): string {
+  const key = `${locale}:${unit}:${display}`;
+  let formatter = accountAgeUnitFormatters.get(key);
+  if (!formatter) {
+    formatter = new Intl.NumberFormat(locale, {
+      style: 'unit',
+      unit,
+      unitDisplay: display,
+      numberingSystem: 'latn',
+    });
+    accountAgeUnitFormatters.set(key, formatter);
+  }
+  return formatter.format(value);
+}
 
 const ensureArchivedLast = (types: string[]): string[] => {
   const archivedIndex = types.findIndex(
@@ -381,19 +403,21 @@ export function calculateAccountAge(createdDate: Date): string {
   const now = new Date();
   const diffTime = Math.abs(now.getTime() - new Date(createdDate).getTime());
   const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+  const locale = getCurrentLanguage();
 
   if (diffDays < 30) {
-    return `${diffDays} day${diffDays === 1 ? '' : 's'}`;
+    return formatAccountAgeUnit(locale, diffDays, 'day');
   } else if (diffDays < 365) {
     const months = Math.floor(diffDays / 30);
-    return `${months} month${months === 1 ? '' : 's'}`;
+    return formatAccountAgeUnit(locale, months, 'month');
   } else {
     const years = Math.floor(diffDays / 365);
     const remainingMonths = Math.floor((diffDays % 365) / 30);
     if (remainingMonths === 0) {
-      return `${years} year${years === 1 ? '' : 's'}`;
+      return formatAccountAgeUnit(locale, years, 'year');
     } else {
-      return `${years}y ${remainingMonths}m`;
+      const display = locale === 'en' ? 'narrow' : 'short';
+      return `${formatAccountAgeUnit(locale, years, 'year', display)} ${formatAccountAgeUnit(locale, remainingMonths, 'month', display)}`;
     }
   }
 }

@@ -473,6 +473,7 @@ export const TRADE_NOTE_STYLES = `
   
   .trade-edit-button:hover {
     background-color: var(--interactive-accent-hover, var(--interactive-accent));
+    color: var(--text-on-accent);
     opacity: 0.9;
   }
   
@@ -1735,7 +1736,7 @@ export const TRADE_NOTE_STYLES = `
   
   .timeline-label.active-ticker {
     font-weight: 600;
-    color: var(--interactive-accent);
+    color: var(--text-accent);
   }
   
   .timeline-items {
@@ -1854,6 +1855,7 @@ export const TRADE_NOTE_STYLES = `
   
   .trade-nav-edit-button:hover {
     background-color: var(--interactive-accent-hover, var(--interactive-accent));
+    color: var(--text-on-accent);
     opacity: 0.9;
     transform: translateY(-1px);
   }
@@ -2093,7 +2095,7 @@ export const TRADE_NOTE_STYLES = `
   .loss-review-textarea-input:focus {
     outline: none;
     border-color: var(--interactive-accent);
-    box-shadow: 0 0 0 2px rgba(var(--interactive-accent-rgb), 0.2);
+    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent);
   }
 
   .trade-review-textarea-input::placeholder,

@@ -3,8 +3,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Button } from '../../ui/Button';
 import { t } from '../../../lang/helpers';
-import { Plus, Search, Zap } from '../../shared/icons/ObsidianIcon';
-import { cssVars } from '../../../styles/inlineStylePolicy';
+import { Plus, Zap } from '../../shared/icons/ObsidianIcon';
+import { BrokerPicker } from '../../shared/brokerPicker/BrokerPicker';
 import { openExternalUrl } from '../../../utils/externalLinks';
 import { JOURNALIT_SETTINGS_RESOURCES } from '../../../settings/settingsResources';
 import { MessagesSquare } from '../../shared/icons/ObsidianIcon';
@@ -21,15 +21,6 @@ interface BrokerStepProps {
   onBack: () => void | Promise<void>;
 }
 
-const monogram = (label: string): string => {
-  const words = label.split(/\s+/).filter(Boolean);
-  const letters =
-    words.length >= 2
-      ? words[0][0] + words[1][0]
-      : label.replace(/[^a-z0-9]/gi, '').slice(0, 2);
-  return letters.toUpperCase();
-};
-
 export const BrokerStep: React.FC<BrokerStepProps> = ({
   options,
   statusText,
@@ -37,7 +28,6 @@ export const BrokerStep: React.FC<BrokerStepProps> = ({
   onChoose,
   onBack,
 }) => {
-  const [query, setQuery] = useState('');
   const [requesting, setRequesting] = useState(false);
   
   
@@ -55,14 +45,6 @@ export const BrokerStep: React.FC<BrokerStepProps> = ({
       ?.focus({ preventScroll: true });
   }, [requesting, requestPulse]);
   const unlistedId = getUnlistedBrokerOption().id;
-  const normalizedQuery = query.trim().toLowerCase();
-  const visible = options.filter(
-    (option) =>
-      option.id === unlistedId ||
-      !normalizedQuery ||
-      option.label.toLowerCase().includes(normalizedQuery)
-  );
-
   return (
     <div className="feature-selection-step choose-path-step choose-path-step-no-graphic broker-step">
       <div className="feature-content-wrapper">
@@ -73,70 +55,44 @@ export const BrokerStep: React.FC<BrokerStepProps> = ({
             <p className="step-subtitle">{t('onboarding.broker.subtitle')}</p>
           </div>
 
-          <label className="broker-search">
-            <Search size={16} aria-hidden="true" />
-            <input
-              type="search"
-              value={query}
-              placeholder={t('onboarding.broker.search')}
-              aria-label={t('onboarding.broker.search')}
-              onChange={(event) => setQuery(event.target.value)}
-            />
-          </label>
-
-          <div className="broker-tiles">
-            {visible.map((option) => {
-              const isUnlisted = option.id === unlistedId;
-              const logo = option.logo;
-              return (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={`journalit-onboarding-broker-tile${isUnlisted ? ' is-unlisted' : ''}${isUnlisted && requesting ? ' is-active' : ''}`}
-                  disabled={busy}
-                  aria-expanded={isUnlisted ? requesting : undefined}
-                  onClick={() => {
-                    if (!isUnlisted) {
-                      void onChoose(option);
-                      return;
-                    }
-                    setRequesting(true);
-                    setRequestPulse((count) => count + 1);
-                  }}
-                >
-                  <span
-                    className={`broker-tile-mark${logo && !logo.monochrome ? ' has-logo' : ''}`}
-                    aria-hidden="true"
-                  >
-                    {isUnlisted ? (
-                      <Plus size={22} />
-                    ) : logo?.monochrome ? (
-                      <span
-                        className="broker-tile-logo"
-                        style={cssVars({
-                          '--journalit-broker-mark': `url("${logo.uri}")`,
-                        })}
-                      />
-                    ) : logo ? (
-                      <img src={logo.uri} alt="" />
-                    ) : (
-                      monogram(option.label)
-                    )}
-                  </span>
-                  <span className="broker-tile-label">{option.label}</span>
-                  {option.method === 'sync' && (
-                    <span
-                      className="broker-tile-badge"
-                      role="img"
-                      aria-label={t('onboarding.broker.badge.sync')}
-                    >
-                      <Zap size={12} />
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+          <BrokerPicker
+            items={options.map((option) =>
+              option.id === unlistedId
+                ? {
+                    id: option.id,
+                    label: option.label,
+                    icon: <Plus size={22} />,
+                    pinned: true,
+                    expanded: requesting,
+                  }
+                : {
+                    id: option.id,
+                    label: option.label,
+                    logo: option.logo,
+                    ...(option.method === 'sync'
+                      ? {
+                          badge: {
+                            icon: <Zap size={12} />,
+                            label: t('onboarding.broker.badge.sync'),
+                          },
+                        }
+                      : {}),
+                  }
+            )}
+            searchPlaceholder={t('onboarding.broker.search')}
+            disabled={busy}
+            onSelect={(item) => {
+              if (item.id !== unlistedId) {
+                const option = options.find(
+                  (candidate) => candidate.id === item.id
+                );
+                if (option) void onChoose(option);
+                return;
+              }
+              setRequesting(true);
+              setRequestPulse((count) => count + 1);
+            }}
+          />
 
           {requesting && (
             <div

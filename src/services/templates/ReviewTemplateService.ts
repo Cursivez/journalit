@@ -103,13 +103,20 @@ export class ReviewTemplateService {
         id: 'builtin-drc-standard',
         name: 'Standard DRC',
         type: 'drc',
-        version: 5,
+        version: 6,
         createdAt: now,
         updatedAt: now,
         isBuiltIn: true,
         widgets: [
           
           { type: 'header', locked: true },
+          {
+            type: 'previous-trading-day-context',
+            config: {
+              headingsJson: JSON.stringify([t('template.question.drc.q3')]),
+              fallbackMode: 'nearest-earlier',
+            },
+          },
           
           { type: 'goals', config: { style: 'checkbox' } },
           { type: 'checklist' },
@@ -129,7 +136,13 @@ export class ReviewTemplateService {
           { type: 'drawdown-chart' },
           { type: 'stats' },
           { type: 'trades' },
-          { type: 'trade-review' },
+          {
+            type: 'trade-review',
+            config: {
+              defaultExpanded: true,
+              showOpenTrades: true,
+            },
+          },
           { type: 'markdown-zone', id: 'trade-notes' },
           
           {
@@ -164,7 +177,7 @@ export class ReviewTemplateService {
         id: 'builtin-weekly-standard',
         name: 'Standard Weekly',
         type: 'weekly',
-        version: 7,
+        version: 8,
         createdAt: now,
         updatedAt: now,
         isBuiltIn: true,
@@ -198,6 +211,18 @@ export class ReviewTemplateService {
           {
             type: 'markdown-header',
             config: { level: 2, text: t('template.section.review') },
+          },
+          {
+            type: 'weekly-drc-context',
+            config: {
+              headingsJson: JSON.stringify([
+                t('template.question.drc.q1'),
+                t('template.question.drc.q2'),
+                t('template.question.drc.q3'),
+              ]),
+              dayScope: 'all',
+              defaultExpanded: false,
+            },
           },
           { type: 'review' },
           {
@@ -242,7 +267,7 @@ export class ReviewTemplateService {
         id: 'builtin-monthly-standard',
         name: 'Standard Monthly',
         type: 'monthly',
-        version: 4,
+        version: 5,
         createdAt: now,
         updatedAt: now,
         isBuiltIn: true,
@@ -267,6 +292,7 @@ export class ReviewTemplateService {
             type: 'markdown-header',
             config: { level: 2, text: t('template.section.review') },
           },
+          { type: 'goals' },
           {
             type: 'demon-tracker',
             config: {
@@ -302,6 +328,7 @@ export class ReviewTemplateService {
             config: { level: 3, text: t('template.question.monthly.q5') },
           },
           { type: 'markdown-zone', id: 'review-q5' },
+          { type: 'review' },
           { type: 'mark-reviewed' },
         ],
       },
@@ -311,12 +338,13 @@ export class ReviewTemplateService {
         id: 'builtin-quarterly-standard',
         name: 'Standard Quarterly',
         type: 'quarterly',
-        version: 3,
+        version: 4,
         createdAt: now,
         updatedAt: now,
         isBuiltIn: true,
         widgets: [
           { type: 'header', locked: true },
+          { type: 'goals' },
           { type: 'stats' },
           { type: 'pnl-chart' },
           { type: 'drawdown-chart' },
@@ -332,6 +360,7 @@ export class ReviewTemplateService {
               trackingMethod: DEFAULT_DEMON_TRACKER_TRACKING_METHOD,
             },
           },
+          { type: 'mark-reviewed' },
         ],
       },
 
@@ -341,12 +370,13 @@ export class ReviewTemplateService {
         id: 'builtin-yearly-standard',
         name: 'Standard Yearly',
         type: 'yearly',
-        version: 1,
+        version: 2,
         createdAt: now,
         updatedAt: now,
         isBuiltIn: true,
         widgets: [
           { type: 'header', locked: true },
+          { type: 'goals' },
           { type: 'stats' },
           { type: 'pnl-chart' },
           { type: 'drawdown-chart' },
@@ -356,6 +386,7 @@ export class ReviewTemplateService {
           { type: 'best-worst', config: { period: 'quarters' } },
           { type: 'markdown-zone', id: 'analysis-notes' },
           { type: 'review' },
+          { type: 'mark-reviewed' },
         ],
       },
 

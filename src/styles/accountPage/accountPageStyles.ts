@@ -102,6 +102,12 @@ export const accountPageStylesCSS = `
   justify-self: end;
 }
 
+.journalit-account-identity-action-buttons {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .journalit-account-identity-meta {
   display: flex;
   align-items: baseline;
@@ -266,6 +272,7 @@ export const accountPageStylesCSS = `
   .toggle-switch-input:checked
   + .toggle-switch-label {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .journalit-account-challenge-toggle
@@ -958,7 +965,7 @@ export const accountPageStylesCSS = `
 
 .edit-account-form .journalit-checkbox-setting-row > .jl-checkbox-wrapper {
   flex: 0 0 auto;
-  margin: 2px 0 0 -24px;
+  margin: 2px 0 0;
 }
 
 .edit-account-form .journalit-checkbox-setting-row .jl-checkbox-label {
@@ -1086,6 +1093,13 @@ export const accountPageStylesCSS = `
   margin-top: 0;
 }
 
+
+.edit-account-form,
+.create-account-form,
+.journalit-account-merge-modal {
+  --journalit-account-control-height: 38px;
+}
+
 .edit-account-form .setting-item-control input:not(.journalit-fast-datetime__segment),
 .edit-account-form .setting-item-control select {
   width: 100%;
@@ -1095,13 +1109,12 @@ export const accountPageStylesCSS = `
   background: var(--background-primary);
   color: var(--text-normal);
   font-size: 16px;
-  height: 30px;
+  height: var(--journalit-account-control-height);
   line-height: 1.2;
   box-sizing: border-box;
 }
 
 .edit-account-form .setting-item-control select {
-  height: 32px;
   padding: 5px 6px;
 }
 
@@ -1202,7 +1215,7 @@ export const accountPageStylesCSS = `
 
 .create-account-form .journalit-checkbox-setting-row > .jl-checkbox-wrapper {
   flex: 0 0 auto;
-  margin: 2px 0 0 -24px;
+  margin: 2px 0 0;
 }
 
 .create-account-form .journalit-checkbox-setting-row .jl-checkbox-label {
@@ -1276,6 +1289,7 @@ export const accountPageStylesCSS = `
 .journalit-account-merge-modal__phase-rules .journalit-prop-prefill-heading-link,
 .journalit-account-merge-modal__identity .journalit-prop-prefill-heading-link,
 .create-account-form .journalit-prop-prefill-heading-link,
+.journalit-prop-phase-controls .journalit-prop-prefill-heading-link,
 .edit-account-form .journalit-prop-prefill-match,
 .journalit-account-merge-modal__phase-rules .journalit-prop-prefill-match ,
 .journalit-account-merge-modal__identity .journalit-prop-prefill-match ,
@@ -1296,6 +1310,7 @@ export const accountPageStylesCSS = `
 .journalit-account-merge-modal__phase-rules .journalit-prop-prefill-heading-link:hover,
 .journalit-account-merge-modal__identity .journalit-prop-prefill-heading-link:hover,
 .create-account-form .journalit-prop-prefill-heading-link:hover,
+.journalit-prop-phase-controls .journalit-prop-prefill-heading-link:hover,
 .edit-account-form .journalit-prop-prefill-match:hover,
 .journalit-account-merge-modal__phase-rules .journalit-prop-prefill-match:hover ,
 .journalit-account-merge-modal__identity .journalit-prop-prefill-match:hover ,
@@ -1316,7 +1331,8 @@ export const accountPageStylesCSS = `
 .edit-account-form .journalit-prop-prefill-heading-link-label,
 .journalit-account-merge-modal__phase-rules .journalit-prop-prefill-heading-link-label ,
 .journalit-account-merge-modal__identity .journalit-prop-prefill-heading-link-label ,
-.create-account-form .journalit-prop-prefill-heading-link-label {
+.create-account-form .journalit-prop-prefill-heading-link-label,
+.journalit-prop-phase-controls .journalit-prop-prefill-heading-link-label {
   padding-bottom: 1px;
   border-bottom: 1px dotted var(--text-faint);
 }
@@ -1327,14 +1343,17 @@ export const accountPageStylesCSS = `
 .edit-account-form .journalit-prop-prefill-heading-link:focus-visible .journalit-prop-prefill-heading-link-label,
 .journalit-account-merge-modal__phase-rules .journalit-prop-prefill-heading-link:focus-visible .journalit-prop-prefill-heading-link-label ,
 .journalit-account-merge-modal__identity .journalit-prop-prefill-heading-link:focus-visible .journalit-prop-prefill-heading-link-label ,
-.create-account-form .journalit-prop-prefill-heading-link:focus-visible .journalit-prop-prefill-heading-link-label {
+.create-account-form .journalit-prop-prefill-heading-link:focus-visible .journalit-prop-prefill-heading-link-label,
+.journalit-prop-phase-controls .journalit-prop-prefill-heading-link:hover .journalit-prop-prefill-heading-link-label,
+.journalit-prop-phase-controls .journalit-prop-prefill-heading-link:focus-visible .journalit-prop-prefill-heading-link-label {
   border-bottom-color: var(--text-muted);
 }
 
 .edit-account-form .journalit-prop-prefill-badge,
 .journalit-account-merge-modal__phase-rules .journalit-prop-prefill-badge ,
 .journalit-account-merge-modal__identity .journalit-prop-prefill-badge ,
-.create-account-form .journalit-prop-prefill-badge {
+.create-account-form .journalit-prop-prefill-badge,
+.journalit-prop-phase-controls .journalit-prop-prefill-badge {
   padding: 0 4px;
   border-radius: 3px;
   background: var(--interactive-accent);
@@ -1431,22 +1450,21 @@ export const accountPageStylesCSS = `
   min-width: 0;
 }
 
-.edit-account-form .journalit-prop-profile-picker__challenge-selection,
-.journalit-account-merge-modal__phase-rules .journalit-prop-profile-picker__challenge-selection ,
-.journalit-account-merge-modal__identity .journalit-prop-profile-picker__challenge-selection ,
-.create-account-form .journalit-prop-profile-picker__challenge-selection {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: end;
-  gap: var(--size-4-3);
-}
-
 .edit-account-form .journalit-prop-profile-status,
 .journalit-account-merge-modal__phase-rules .journalit-prop-profile-status ,
 .journalit-account-merge-modal__identity .journalit-prop-profile-status ,
 .create-account-form .journalit-prop-profile-status {
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
+}
+
+.journalit-account-merge-modal__identity .journalit-prop-profile-picker__help,
+.edit-account-form .journalit-prop-profile-picker__help,
+.create-account-form .journalit-prop-profile-picker__help {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-ui-smaller);
+  line-height: 1.4;
 }
 
 .edit-account-form .journalit-prop-challenge-costs,
@@ -1538,7 +1556,7 @@ export const accountPageStylesCSS = `
 .journalit-account-merge-modal__phase-rules .journalit-prop-challenge-field select ,
 .create-account-form .journalit-prop-challenge-field select {
   width: 100%;
-  height: 30px;
+  height: var(--journalit-account-control-height);
   padding: 6px 8px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 3px;
@@ -1700,6 +1718,7 @@ export const accountPageStylesCSS = `
 .create-account-form .journalit-account-date-input .journalit-fast-datetime__container {
   justify-content: center;
   min-width: 0;
+  height: var(--journalit-account-control-height);
 }
 
 .edit-account-form .journalit-account-date-input .journalit-fast-datetime__container[data-date-only='true'],
@@ -1785,7 +1804,7 @@ export const accountPageStylesCSS = `
 .journalit-create-account-modal .create-account-form .setting-item-control select,
 .journalit-create-account-modal .create-account-form .journalit-prop-challenge-field > input,
 .journalit-create-account-modal .create-account-form .journalit-prop-challenge-field select {
-  min-height: 38px;
+  min-height: var(--journalit-account-control-height);
   border-radius: var(--radius-s);
   font-size: var(--font-ui-medium);
 }
@@ -1850,13 +1869,6 @@ export const accountPageStylesCSS = `
   border-top: 1px solid var(--background-modifier-border);
 }
 
-.journalit-create-account-modal
-  .create-account-form
-  .journalit-drawdown-type-control {
-  width: calc(100% - var(--size-4-8));
-  margin: 0 auto;
-}
-
 .journalit-create-account-modal .create-account-form .create-account-buttons {
   position: sticky;
   bottom: 0;
@@ -1912,47 +1924,6 @@ export const accountPageStylesCSS = `
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
   font-weight: var(--font-medium);
-}
-
-.edit-account-form .journalit-prop-profile-picker__apply,
-.journalit-account-merge-modal__phase-rules .journalit-prop-profile-picker__apply ,
-.journalit-account-merge-modal__identity .journalit-prop-profile-picker__apply ,
-.create-account-form .journalit-prop-profile-picker__apply {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  min-width: 32px;
-  height: 32px;
-  margin: 0;
-  padding: 5px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  background: var(--background-primary);
-  color: var(--text-normal);
-  box-shadow: none;
-  box-sizing: border-box;
-  cursor: pointer;
-  line-height: 1;
-  transition: background-color 0.2s ease, border-color 0.2s ease,
-    color 0.2s ease;
-}
-
-.journalit-create-account-modal
-  .create-account-form
-  .journalit-prop-profile-picker__apply {
-  width: 38px;
-  min-width: 38px;
-  height: 38px;
-}
-
-.edit-account-form .journalit-prop-profile-picker__apply:hover:not(:disabled),
-.journalit-account-merge-modal__phase-rules .journalit-prop-profile-picker__apply:hover:not(:disabled) ,
-.journalit-account-merge-modal__identity .journalit-prop-profile-picker__apply:hover:not(:disabled) ,
-.create-account-form .journalit-prop-profile-picker__apply:hover:not(:disabled) {
-  border-color: var(--interactive-accent);
-  background: var(--background-modifier-hover);
-  color: var(--text-normal);
 }
 
 .edit-account-form .journalit-prop-challenge-phase-workspace,
@@ -2040,7 +2011,7 @@ export const accountPageStylesCSS = `
 
 .edit-account-form .journalit-prop-challenge-phase-step.is-selected,
 .create-account-form .journalit-prop-challenge-phase-step.is-selected {
-  color: var(--interactive-accent);
+  color: var(--text-accent);
 }
 
 .edit-account-form
@@ -2076,6 +2047,7 @@ export const accountPageStylesCSS = `
   height: 8px;
   border-radius: 50%;
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
   content: '';
   transform: translate(-50%, -50%);
 }
@@ -2106,11 +2078,23 @@ export const accountPageStylesCSS = `
   white-space: nowrap;
 }
 
+.edit-account-form .journalit-prop-challenge-linked-identity,
+.create-account-form .journalit-prop-challenge-linked-identity {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+}
+
 .edit-account-form .journalit-prop-challenge-phase-actions,
 .create-account-form .journalit-prop-challenge-phase-actions {
   display: flex;
-  justify-content: space-between;
+  gap: var(--size-4-2);
   align-items: center;
+}
+
+.edit-account-form .journalit-prop-challenge-phase-actions > :last-child,
+.create-account-form .journalit-prop-challenge-phase-actions > :last-child {
+  margin-left: auto;
 }
 
 .edit-account-form .journalit-prop-challenge-phase,
@@ -2153,7 +2137,7 @@ export const accountPageStylesCSS = `
   justify-content: space-between;
   gap: var(--size-2-2);
   width: 100%;
-  min-height: 38px;
+  min-height: var(--journalit-account-control-height);
   padding: 6px 8px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 3px;
@@ -2163,10 +2147,6 @@ export const accountPageStylesCSS = `
   font-size: 16px;
   font-weight: var(--font-normal);
   text-align: left;
-}
-
-.journalit-edit-account-modal .journalit-dropdown-select__trigger {
-  min-height: 32px;
 }
 
 .journalit-account-merge-modal .journalit-dropdown-select__trigger:hover,
@@ -2272,6 +2252,7 @@ export const accountPageStylesCSS = `
 .journalit-dropdown-select__check.is-checked {
   border-color: var(--interactive-accent);
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .edit-account-form .journalit-prop-challenge-rules-heading,
@@ -2556,7 +2537,8 @@ export const accountPageStylesCSS = `
 .edit-account-form .journalit-prop-challenge-cost,
 .create-account-form .journalit-prop-challenge-cost {
   display: grid;
-  grid-template-columns: minmax(0, 1.05fr) minmax(0, 1.25fr) minmax(0, 0.75fr) minmax(0, 1.1fr) 28px;
+  
+  grid-template-columns: minmax(122px, 1fr) minmax(150px, 1.2fr) minmax(0, 0.75fr) minmax(0, 1fr) var(--journalit-account-control-height);
   gap: var(--size-4-2);
   align-items: end;
 }
@@ -2587,7 +2569,7 @@ export const accountPageStylesCSS = `
 
 .edit-account-form .journalit-prop-challenge-cost-date-picker .journalit-fast-datetime__container,
 .create-account-form .journalit-prop-challenge-cost-date-picker .journalit-fast-datetime__container {
-  height: 38px;
+  height: var(--journalit-account-control-height);
   min-width: 0;
   padding: 0 6px;
   border-radius: 3px;
@@ -2599,7 +2581,7 @@ export const accountPageStylesCSS = `
   min-width: 0;
   width: 25px;
   max-width: 25px;
-  height: 36px;
+  height: calc(var(--journalit-account-control-height) - 2px);
   padding: 0 1px;
   border: 0;
   background: transparent;
@@ -2630,7 +2612,7 @@ export const accountPageStylesCSS = `
 .edit-account-form .journalit-prop-challenge-phase-date-picker .journalit-fast-datetime__container,
 .create-account-form .journalit-prop-challenge-phase-date-picker .journalit-fast-datetime__container {
   min-width: 0;
-  height: 38px;
+  height: var(--journalit-account-control-height);
 }
 
 .edit-account-form .journalit-prop-challenge-cost .journalit-prop-challenge-field > span,
@@ -2680,15 +2662,18 @@ export const accountPageStylesCSS = `
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  align-self: center;
-  width: 28px;
-  height: 28px;
-  padding: 4px;
-  border: 0;
+  align-self: end;
+  width: var(--journalit-account-control-height);
+  height: var(--journalit-account-control-height);
+  margin: 0;
+  padding: 0;
+  border: 1px solid var(--background-modifier-border);
   border-radius: 3px;
-  background: transparent;
+  background: var(--background-primary);
+  box-shadow: none;
   color: var(--text-muted);
   cursor: pointer;
+  box-sizing: border-box;
 }
 
 .edit-account-form .journalit-prop-challenge-cost-remove:hover:not(:disabled),
@@ -2769,6 +2754,7 @@ export const accountPageStylesCSS = `
 .edit-account-buttons .journalit-button--primary:hover:not(:disabled),
 .add-event-buttons .journalit-button--primary:hover:not(:disabled) {
   background: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
   border-color: var(--interactive-accent-hover);
 }
 
@@ -2841,6 +2827,7 @@ export const accountPageStylesCSS = `
 
 .journalit-modal-button-container button.mod-cta:hover {
   background: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
 }
 
 .journalit-modal-button-container button.mod-warning {
@@ -3225,8 +3212,9 @@ export const accountPageStylesCSS = `
 
 
 
+
 .journalit-prop-cockpit {
-  overflow: hidden;
+  overflow: visible;
   margin: 0 0 18px;
   padding: 0;
   background: var(--background-primary);
@@ -3687,6 +3675,7 @@ export const accountPageStylesCSS = `
   height: 100%;
   border-radius: 3px;
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .journalit-prop-ledger-row.is-positive .journalit-prop-ledger-progress-fill {
@@ -4280,6 +4269,7 @@ export const accountPageStylesCSS = `
 
 .journalit-account-page-view .journalit-account-risk-bar-fill.is-progress {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 
@@ -4501,11 +4491,6 @@ export const accountPageStylesCSS = `
     align-items: stretch;
   }
 
-  .edit-account-form .journalit-prop-profile-picker__apply,
-  .create-account-form .journalit-prop-profile-picker__apply {
-    justify-self: start;
-  }
-
   .edit-account-form .journalit-prop-challenge-phase-timeline,
   .create-account-form .journalit-prop-challenge-phase-timeline {
     grid-auto-columns: minmax(88px, 1fr);
@@ -4712,6 +4697,7 @@ export const accountPageStylesCSS = `
 
 .account-dashboard-settings-modal-container .add-account-type-btn:hover {
   background: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
 }
 
 .account-dashboard-settings-modal-container .add-account-type-btn:disabled {
@@ -4770,6 +4756,7 @@ export const accountPageStylesCSS = `
 
 .account-dashboard-settings-modal-container .add-account-type-confirm-btn:hover:not(:disabled) {
   background: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
 }
 
 .account-dashboard-settings-modal-container .add-account-type-confirm-btn:disabled {
@@ -4997,7 +4984,7 @@ export const accountPageStylesCSS = `
 }
 
 .migration-option input[type="radio"]:checked + .migration-option-content {
-  color: var(--color-accent);
+  color: var(--text-accent);
 }
 
 .migration-option.checked {
@@ -5109,7 +5096,8 @@ export const accountPageStylesCSS = `
 
 .journalit-account-merge-modal .journalit-prop-prefill-chevron,
 .edit-account-form .journalit-prop-prefill-chevron,
-.create-account-form .journalit-prop-prefill-chevron {
+.create-account-form .journalit-prop-prefill-chevron,
+.journalit-prop-phase-controls .journalit-prop-prefill-chevron {
   flex: 0 0 auto;
   opacity: 0.7;
   transition: transform 120ms ease;
@@ -5120,7 +5108,8 @@ export const accountPageStylesCSS = `
 .edit-account-form .journalit-prop-prefill-match:hover .journalit-prop-prefill-chevron,
 .edit-account-form .journalit-prop-prefill-heading-link:hover .journalit-prop-prefill-chevron,
 .create-account-form .journalit-prop-prefill-match:hover .journalit-prop-prefill-chevron,
-.create-account-form .journalit-prop-prefill-heading-link:hover .journalit-prop-prefill-chevron {
+.create-account-form .journalit-prop-prefill-heading-link:hover .journalit-prop-prefill-chevron,
+.journalit-prop-phase-controls .journalit-prop-prefill-heading-link:hover .journalit-prop-prefill-chevron {
   transform: translateX(2px);
 }
 `;

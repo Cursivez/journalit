@@ -8,9 +8,7 @@ import {
   type TradeImportPreviewResponse,
 } from '../../services/tradeImport/types';
 import type { BrokerImportRecoveryPresentationProps } from './BrokerImportRecoveryNotice';
-import { DeepChartsSourceNotice } from './DeepChartsSourceNotice';
 import { MetaTraderStatementNotice } from './MetaTraderStatementNotice';
-import { MotiveWaveSourceNotice } from './MotiveWaveSourceNotice';
 import { TradovatePerformanceReportNotice } from './TradovatePerformanceReportNotice';
 import { TradingViewExportNotice } from './TradingViewExportNotice';
 
@@ -21,20 +19,23 @@ interface BrokerImportRecovery {
   showQuickImportAnotherFileAction?: boolean;
 }
 
-interface BrokerImportAnalyseRecovery {
-  Notice: FC<BrokerImportRecoveryPresentationProps>;
-  recommendedSource: 'DEEPCHARTS' | 'MOTIVEWAVE';
+
+export interface BrokerImportAnalyseRecovery {
+  
+  recommendedSource: string;
+  
+  recommendedSourceLabel: string;
 }
 
-const HIGH_CONFIDENCE_SOURCE_THRESHOLD = 0.95;
 
-const ANALYSE_SOURCE_RECOVERIES: Record<
-  BrokerImportAnalyseRecovery['recommendedSource'],
-  FC<BrokerImportRecoveryPresentationProps>
-> = {
-  DEEPCHARTS: DeepChartsSourceNotice,
-  MOTIVEWAVE: MotiveWaveSourceNotice,
-};
+export interface BrokerImportSourceOption {
+  id: string;
+  label: string;
+}
+
+
+const HIGH_CONFIDENCE_SOURCE_THRESHOLD = 0.95;
+const MANUAL_SOURCE = 'MANUAL';
 
 function diagnosticCodeRecovery(
   diagnosticCode: string,
@@ -88,26 +89,39 @@ export function resolveBrokerImportRecovery(
   return null;
 }
 
+
 export function resolveBrokerImportAnalyseRecovery(
   analyse: TradeImportAnalyseResponse,
-  selectedSource: string
+  selectedSource: string,
+  sources: readonly BrokerImportSourceOption[]
 ): BrokerImportAnalyseRecovery | null {
   const highConfidenceCandidates = analyse.brokerCandidates.filter(
-    (candidate) => candidate.confidence >= HIGH_CONFIDENCE_SOURCE_THRESHOLD
+    (candidate) =>
+      candidate.broker !== MANUAL_SOURCE &&
+      candidate.confidence >= HIGH_CONFIDENCE_SOURCE_THRESHOLD
   );
   if (highConfidenceCandidates.length !== 1) return null;
 
-  const recommendedSource = highConfidenceCandidates[0]?.broker;
-  if (
-    recommendedSource !== 'DEEPCHARTS' &&
-    recommendedSource !== 'MOTIVEWAVE'
-  ) {
-    return null;
-  }
+  const recommendedSource = highConfidenceCandidates[0].broker;
   if (recommendedSource === selectedSource) return null;
 
+  const recommended = sources.find((source) => source.id === recommendedSource);
+  if (!recommended) return null;
+
   return {
-    Notice: ANALYSE_SOURCE_RECOVERIES[recommendedSource],
-    recommendedSource,
+    recommendedSource: recommended.id,
+    recommendedSourceLabel: recommended.label,
   };
+}
+
+
+export function shouldRouteQuickImportToSourceRecovery(
+  analyse: TradeImportAnalyseResponse,
+  setup: { broker: string; source: string },
+  sources: readonly BrokerImportSourceOption[]
+): boolean {
+  if (setup.source === 'favorite-template') return false;
+  return (
+    resolveBrokerImportAnalyseRecovery(analyse, setup.broker, sources) !== null
+  );
 }

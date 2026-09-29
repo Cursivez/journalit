@@ -19,7 +19,7 @@ export const TRADE_ACCOUNT_CELL_STYLES = `
   text-transform: uppercase;
   white-space: nowrap;
   background: var(--background-modifier-hover);
-  color: var(--interactive-accent);
+  color: var(--text-accent);
 }
 
 .trade-account-text:hover {
@@ -39,7 +39,7 @@ export const TRADE_ACCOUNT_CELL_STYLES = `
 }
 
 .trade-account-icon:hover {
-  color: var(--interactive-accent);
+  color: var(--text-accent);
 }
 
 .trade-account-count-badge {

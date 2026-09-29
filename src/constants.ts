@@ -37,6 +37,8 @@ export const UPGRADE_CAMPAIGNS = {
   default: 'pro_upgrade',
   
   onboarding: 'pro_upgrade_onboarding',
+  
+  manualTradeNudge: 'pro_upgrade_manual_trade_nudge',
 } as const;
 
 type UpgradeCampaign =

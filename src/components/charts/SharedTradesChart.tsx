@@ -322,52 +322,54 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
   const useRValues = valueMode === 'rMultiple';
   const effectiveDisplayRMultiples =
     valueMode === undefined ? displayRMultiples : useRValues;
-  const isValueMasked = shouldMask(useRValues ? 'rMultiple' : 'pnl');
+  
+  
+  const plotTradeR = !useRValues && Boolean(effectiveDisplayRMultiples);
+  const isValueMasked = shouldMask(
+    useRValues || plotTradeR ? 'rMultiple' : 'pnl'
+  );
   const canNavigate = Boolean(onPointClick) && !isValueMasked;
 
   
-  const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
-
   const customTickFormatter = React.useCallback(
-    (value: number): string => {
-      if (useRValues) {
-        return formatValue({ kind: 'rMultiple', value });
-      }
-      const tickRMultiple =
-        effectiveDisplayRMultiples && defaultRiskAmount && defaultRiskAmount > 0
-          ? value / defaultRiskAmount
-          : undefined;
-
-      return formatValue({
-        kind: 'pnl',
-        value,
-        currencyCode: currency,
-        rMultiple: tickRMultiple,
-      });
-    },
-    [
-      currency,
-      defaultRiskAmount,
-      effectiveDisplayRMultiples,
-      formatValue,
-      useRValues,
-    ]
+    (value: number): string =>
+      useRValues || plotTradeR
+        ? formatValue({ kind: 'rMultiple', value })
+        : formatValue({ kind: 'pnl', value, currencyCode: currency }),
+    [currency, formatValue, plotTradeR, useRValues]
   );
   const displayData = React.useMemo(
     () =>
-      data.map((entry) => ({
-        ...entry,
-        displayPnl: isValueMasked ? 1 : entry.pnl,
-        fill: isValueMasked ? 'var(--text-muted)' : entry.fill,
-      })),
-    [data, isValueMasked]
+      data.map((entry) => {
+        
+        const tradeR =
+          entry.rMultiple !== undefined && Number.isFinite(entry.rMultiple)
+            ? entry.rMultiple
+            : null;
+        return {
+          ...entry,
+          displayPnl: isValueMasked ? 1 : plotTradeR ? tradeR : entry.pnl,
+          fill: isValueMasked
+            ? 'var(--text-muted)'
+            : !plotTradeR
+              ? entry.fill
+              : tradeR === null
+                ? 'var(--text-muted)'
+                : tradeR >= 0
+                  ? 'var(--chart-positive)'
+                  : 'var(--chart-negative)',
+        };
+      }),
+    [data, isValueMasked, plotTradeR]
   );
 
   
   const dataMinMax = React.useMemo(() => {
-    const values = displayData.map((item) => item.displayPnl ?? item.pnl);
-    const dataMin = Math.min(...values);
-    const dataMax = Math.max(...values);
+    const values = displayData.flatMap((item) =>
+      item.displayPnl === null ? [] : [item.displayPnl]
+    );
+    const dataMin = values.length > 0 ? Math.min(...values) : 0;
+    const dataMax = values.length > 0 ? Math.max(...values) : 0;
     return { dataMin, dataMax };
   }, [displayData]);
 
@@ -439,6 +441,7 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
           }}
         />
         <YAxis
+          className="journalit-chart-axis--numeric"
           tickFormatter={customTickFormatter}
           domain={domain}
           allowDataOverflow={false}

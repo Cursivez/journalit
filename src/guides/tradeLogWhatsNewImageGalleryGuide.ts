@@ -12,6 +12,7 @@ import {
   TRADE_LOG_IMAGE_GALLERY_SOURCE_SORT_TARGET_ID,
 } from './tradeLogGuideIds';
 
+
 export function registerTradeLogWhatsNewImageGalleryGuide(
   guideRegistry: GuideRegistry
 ): void {

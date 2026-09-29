@@ -72,7 +72,7 @@ export const NAVIGATION_STYLES = `
 
   .journalit-navigation-view-container .journalit-nav-edit-toggle[data-active="true"] {
     opacity: 1;
-    color: var(--interactive-accent);
+    color: var(--text-accent);
   }
 
   .journalit-navigation-view-container .journalit-nav-section {
@@ -339,7 +339,7 @@ export const NAVIGATION_STYLES = `
   .journalit-navigation-view-container .journalit-nav-restore-btn {
     background: none;
     border: none;
-    color: var(--interactive-accent);
+    color: var(--text-accent);
     cursor: pointer;
     font-size: 12px;
     padding: 2px 6px;

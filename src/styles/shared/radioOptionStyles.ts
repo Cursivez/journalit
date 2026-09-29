@@ -56,6 +56,7 @@ export const RADIO_OPTION_STYLES = `
 
 .radio-inner.selected {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .option-content {
@@ -134,6 +135,7 @@ export const RADIO_OPTION_STYLES = `
 
 .goal-radio-inner.selected {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
 }
 
 .goal-content {

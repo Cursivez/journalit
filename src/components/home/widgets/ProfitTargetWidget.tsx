@@ -11,24 +11,16 @@ import {
 import { useHomeAccount } from '../context/HomeAccountContext';
 import { useHomeAccountsData } from '../context/HomeAccountsDataContext';
 import { t } from '../../../lang/helpers';
-import {
-  AccountProgressListItem,
-  AccountProgressListWidget,
-  AccountProgressLoading,
-  AccountProgressState,
-} from './AccountProgressListWidget';
+import { AccountProgressListItem } from './AccountProgressListWidget';
+import { ConfigurableAccountProgressWidget } from './ConfigurableAccountProgressWidget';
 
 interface ProfitTargetWidgetProps {
   plugin: JournalitPlugin;
+  instanceId?: string;
+  isEditing?: boolean;
 }
 
 type ProfitTargetStatus = 'early' | 'progress' | 'achieved';
-
-interface ProfitTargetMetrics {
-  accounts: AccountProgressListItem<ProfitTargetStatus>[];
-}
-
-const MAX_ACCOUNTS = 3;
 const ACHIEVED_THRESHOLD = 100;
 const PROGRESS_THRESHOLD = 50;
 
@@ -49,34 +41,10 @@ function getStatusColor(status: ProfitTargetStatus): string {
   }
 }
 
-interface ProfitTargetContentProps {
-  data: ProfitTargetMetrics;
-  onAccountClick: (accountName: string) => void;
-}
-
-const ProfitTargetContent: React.FC<ProfitTargetContentProps> = ({
-  data,
-  onAccountClick,
-}) => {
-  return (
-    <AccountProgressListWidget
-      title={t('home.widget.profit-target.title')}
-      items={data.accounts}
-      remainingLabel={t('home.widget.profit-target.remaining')}
-      remainingKind="money"
-      maskKinds={['money', 'percentage']}
-      getStatusColor={getStatusColor}
-      getCompleteLabel={(item) =>
-        item.percent >= 100 ? t('home.widget.profit-target.achieved') : ''
-      }
-      completePercentageClassName="journalit-home-account-progress__percentage--achieved"
-      onAccountClick={onAccountClick}
-    />
-  );
-};
-
 const ProfitTargetWidgetComponent: React.FC<ProfitTargetWidgetProps> = ({
   plugin,
+  instanceId = 'profitTarget',
+  isEditing = false,
 }) => {
   const accountContext = useHomeAccount();
   const homeAccountsData = useHomeAccountsData();
@@ -84,6 +52,7 @@ const ProfitTargetWidgetComponent: React.FC<ProfitTargetWidgetProps> = ({
     () => homeAccountsData?.accounts || [],
     [homeAccountsData?.accounts]
   );
+  const challengeProgress = homeAccountsData?.challengeProgress;
   const isLoading = homeAccountsData?.isLoading ?? true;
   const error = homeAccountsData?.error ?? null;
 
@@ -94,79 +63,86 @@ const ProfitTargetWidgetComponent: React.FC<ProfitTargetWidgetProps> = ({
     [plugin]
   );
 
-  const profitTargetMetrics = useMemo((): ProfitTargetMetrics | null => {
-    if (accounts.length === 0) return null;
-
-    const accountsWithTargets = accounts.filter(
-      (acc) =>
-        acc.hasProfitTarget &&
-        acc.profitTarget > 0 &&
-        acc.accountType?.toLowerCase() !== 'archived' &&
-        (accountContext?.matchesAccount(acc.accountName || acc.name) ?? true)
-    );
-
-    if (accountsWithTargets.length === 0) return null;
-
-    const accountInfos: AccountProgressListItem<ProfitTargetStatus>[] =
-      accountsWithTargets.map((acc) => {
-        const progressPercent = calculateProfitTargetProgress(acc);
-        const targetAmount =
-          acc.profitTargetType === ProfitTargetType.PERCENTAGE
-            ? (acc.initialBalance * acc.profitTarget) / 100
-            : acc.profitTarget;
-        const remaining = Math.max(
-          0,
-          targetAmount - calculateAccountGrowthAmount(acc)
-        );
-        const accountName = acc.accountName || acc.name || 'Unknown';
-
-        return {
+  
+  
+  const profitTargetItems = useMemo(() => {
+    const accountInfos: AccountProgressListItem<ProfitTargetStatus>[] = [];
+    for (const acc of accounts) {
+      const accountName = acc.accountName || acc.name || 'Unknown';
+      
+      
+      if (acc.accountType?.toLowerCase() === 'archived') continue;
+      if (acc.propChallenge) {
+        
+        
+        const target = challengeProgress?.get(acc.name)?.profitTarget;
+        if (!target) continue;
+        accountInfos.push({
           name: accountName,
           accountName,
-          currencyCode: acc.metrics.conversionBaseCurrency ?? acc.currency,
-          percent: progressPercent,
-          remaining,
-          status: getProfitTargetStatus(progressPercent),
-        };
+          currencyCode: acc.currency,
+          percent: target.percent,
+          remaining: target.remaining,
+          status: getProfitTargetStatus(target.percent),
+        });
+        continue;
+      }
+      if (!acc.hasProfitTarget || acc.profitTarget <= 0) continue;
+      const progressPercent = calculateProfitTargetProgress(acc);
+      const targetAmount =
+        acc.profitTargetType === ProfitTargetType.PERCENTAGE
+          ? (acc.initialBalance * acc.profitTarget) / 100
+          : acc.profitTarget;
+      accountInfos.push({
+        name: accountName,
+        accountName,
+        currencyCode: acc.metrics.conversionBaseCurrency ?? acc.currency,
+        percent: progressPercent,
+        remaining: Math.max(
+          0,
+          targetAmount - calculateAccountGrowthAmount(acc)
+        ),
+        status: getProfitTargetStatus(progressPercent),
       });
+    }
 
-    accountInfos.sort((a, b) => b.percent - a.percent);
-
-    return { accounts: accountInfos.slice(0, MAX_ACCOUNTS) };
-  }, [accounts, accountContext]);
-
-  if (isLoading) {
-    return <AccountProgressLoading titleWidth={80} />;
-  }
-
-  if (error) {
-    return (
-      <AccountProgressState
-        title={t('home.widget.profit-target.title')}
-        message={t('home.widget.profit-target.unable-to-load')}
-      />
-    );
-  }
-
-  if (!profitTargetMetrics) {
-    return (
-      <AccountProgressState
-        title={t('home.widget.profit-target.title')}
-        message={t('home.widget.profit-target.no-accounts')}
-        icon={
-          <TrendingUp
-            size={24}
-            className="journalit-home-account-progress__state-icon"
-          />
-        }
-      />
-    );
-  }
+    return accountInfos;
+  }, [accounts, challengeProgress]);
 
   return (
-    <ProfitTargetContent
-      data={profitTargetMetrics}
-      onAccountClick={handleAccountClick}
+    <ConfigurableAccountProgressWidget
+      plugin={plugin}
+      instanceId={instanceId}
+      isEditing={isEditing}
+      isShown={(accountName) =>
+        accountContext?.matchesAccount(accountName) ?? true
+      }
+      title={t('home.widget.profit-target.title')}
+      isLoading={isLoading}
+      errorMessage={
+        error ? t('home.widget.profit-target.unable-to-load') : null
+      }
+      loadingTitleWidth={80}
+      items={profitTargetItems}
+      automaticHint={t('home.widget.account-progress.automatic-profit-target')}
+      emptyMessage={t('home.widget.profit-target.no-accounts')}
+      emptyIcon={
+        <TrendingUp
+          size={24}
+          className="journalit-home-account-progress__state-icon"
+        />
+      }
+      listProps={{
+        remainingLabel: t('home.widget.profit-target.remaining'),
+        remainingKind: 'money',
+        maskKinds: ['money', 'percentage'],
+        getStatusColor,
+        getCompleteLabel: (item) =>
+          item.percent >= 100 ? t('home.widget.profit-target.achieved') : '',
+        completePercentageClassName:
+          'journalit-home-account-progress__percentage--achieved',
+        onAccountClick: handleAccountClick,
+      }}
     />
   );
 };

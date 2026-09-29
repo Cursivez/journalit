@@ -40,9 +40,9 @@ import { safeString } from '../../utils/safeString';
 import type { ReviewStreakItem } from '../../utils/reviewStreaks';
 import {
   extractJournalitImageWidgetIds,
-  extractMarkdownSectionsByHeading,
-  stripPreviousTradingDayContextWidgetBlocks,
+  stripEmbeddedReviewWidgetBlocks,
 } from '../../utils/markdownSectionExtractor';
+import { extractReviewContextSections } from '../../utils/reviewContextSections';
 import { normalizeSessionLogEntries } from '../../types/sessionLog';
 
 interface PreviousTradingDayContextSection {
@@ -165,7 +165,13 @@ export class DRCService {
         
         
         
-        if (payload.action === 'trade-review-updated') return;
+        
+        if (
+          payload.action === 'trade-review-updated' ||
+          payload.action === 'review-status-updated'
+        ) {
+          return;
+        }
         void this.onTradeDataChanged();
       }),
       eventBus.subscribe('review:changed', (payload) => {
@@ -758,9 +764,7 @@ export class DRCService {
   public getNextDayDRCPath(currentDate: Date): string {
     
     const skipWeekends = isWeekendSkippingEnabled(this.plugin);
-    const nextDay = skipWeekends
-      ? getNextBusinessDay(currentDate)
-      : new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+    const nextDay = getNextBusinessDay(currentDate, skipWeekends);
 
     return this.getDRCNotePath(nextDay);
   }
@@ -769,9 +773,7 @@ export class DRCService {
   public getPreviousDayDRCPath(currentDate: Date): string {
     
     const skipWeekends = isWeekendSkippingEnabled(this.plugin);
-    const previousDay = skipWeekends
-      ? getPreviousBusinessDay(currentDate)
-      : new Date(currentDate.getTime() - 24 * 60 * 60 * 1000);
+    const previousDay = getPreviousBusinessDay(currentDate, skipWeekends);
 
     return this.getDRCNotePath(previousDay);
   }
@@ -810,14 +812,10 @@ export class DRCService {
 
         if (offset < 0) {
           
-          targetDate = skipWeekends
-            ? getPreviousBusinessDay(currentDate)
-            : new Date(currentDate.getTime() - 24 * 60 * 60 * 1000);
+          targetDate = getPreviousBusinessDay(currentDate, skipWeekends);
         } else {
           
-          targetDate = skipWeekends
-            ? getNextBusinessDay(currentDate)
-            : new Date(currentDate.getTime() + 24 * 60 * 60 * 1000);
+          targetDate = getNextBusinessDay(currentDate, skipWeekends);
         }
 
         
@@ -958,11 +956,9 @@ export class DRCService {
       const frontmatterRecord = asRecord(frontmatter) ?? {};
 
       const content = await this.app.vault.read(previousDRCFile);
-      const sections = extractMarkdownSectionsByHeading(content, headings).map(
+      const sections = extractReviewContextSections(content, headings).map(
         (section) => {
-          const markdown = stripPreviousTradingDayContextWidgetBlocks(
-            section.content
-          );
+          const markdown = stripEmbeddedReviewWidgetBlocks(section.content);
           const imageWidgets = extractJournalitImageWidgetIds(markdown).map(
             (widgetId) => ({
               id: widgetId,

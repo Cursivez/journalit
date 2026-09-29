@@ -289,6 +289,7 @@ export const NumberInput: React.FC<NumberInputProps> = ({
   return (
     <Input
       {...rest}
+      dir="ltr"
       type="text"
       inputMode={allowDecimal ? 'decimal' : 'numeric'}
       value={inputValue}

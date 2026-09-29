@@ -214,3 +214,46 @@ export const PropFirmPrefillPhaseLink: React.FC<{
   );
 };
 PropFirmPrefillPhaseLink.displayName = 'PropFirmPrefillPhaseLink';
+
+
+export const PropFirmRuleUpdatesTeaser: React.FC<{ firmName?: string }> = ({
+  firmName,
+}) => {
+  const plugin = usePlugin();
+  const firms = usePropFirmIndex();
+  if (!plugin) return null;
+  const match = matchFirm(firmName ?? '', firms);
+  return (
+    <button
+      type="button"
+      className="journalit-native-button journalit-prop-prefill-heading-link"
+      onClick={() =>
+        openPropUpgrade(
+          plugin,
+          match
+            ? t('upgrade.prop-profiles.message-updates-firm', {
+                firm: match.name,
+              })
+            : t('upgrade.prop-profiles.message-updates')
+        )
+      }
+    >
+      <span className="journalit-prop-prefill-badge">
+        {t('onboarding.features.badge.pro')}
+      </span>
+      <span className="journalit-prop-prefill-heading-link-label">
+        {match
+          ? t('account.prop-challenge.prefill.updates-link-firm', {
+              firm: match.name,
+            })
+          : t('account.prop-challenge.prefill.updates-link')}
+      </span>
+      <ChevronRight
+        size={12}
+        aria-hidden="true"
+        className="journalit-prop-prefill-chevron"
+      />
+    </button>
+  );
+};
+PropFirmRuleUpdatesTeaser.displayName = 'PropFirmRuleUpdatesTeaser';

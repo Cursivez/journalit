@@ -37,10 +37,6 @@ function normalizeTradeOperationResult(
   result: TradeOperationResult
 ): TradeOperationResult {
   const trades = deduplicateTrades(result.trades);
-  const brokerLabels = [...result.brokerLabels];
-  for (const trade of trades) {
-    if (trade.brokerLabel) brokerLabels.push(trade.brokerLabel);
-  }
   return {
     ...result,
     counts: {
@@ -53,7 +49,7 @@ function normalizeTradeOperationResult(
       ...result.accountNames,
       ...trades.map((trade) => trade.accountName),
     ]),
-    brokerLabels: uniqueSorted(brokerLabels),
+    brokerLabels: uniqueSorted(result.brokerLabels),
   };
 }
 

@@ -137,6 +137,10 @@ import {
   isMarkdownView,
   isViewWithTFile,
 } from '../../types/obsidian-extensions';
+import {
+  isInShareHideDollarAmountsArea,
+  markShareLoadingUntil,
+} from '../../services/share/brandedCapture';
 
 
 class ReactRenderChild extends MarkdownRenderChild {
@@ -340,7 +344,11 @@ export class WidgetCodeblockProcessor {
     const postProcessor = this.plugin.registerMarkdownCodeBlockProcessor(
       codeblockType,
       (source: string, el: HTMLElement, ctx: MarkdownPostProcessorContext) => {
-        return this.processCodeblock(widgetType, source, el, ctx);
+        const rendering = this.processCodeblock(widgetType, source, el, ctx);
+        
+        
+        markShareLoadingUntil(el, rendering);
+        return rendering;
       }
     );
 
@@ -365,6 +373,7 @@ export class WidgetCodeblockProcessor {
         ? await this.getImagesCodeblockContext(
             ctx.sourcePath,
             ctx.docId,
+            source,
             ctx.getSectionInfo(el)
           )
         : undefined;
@@ -394,7 +403,12 @@ export class WidgetCodeblockProcessor {
       createElement(
         CurrencyProvider,
         null,
-        createElement(DisplayPolicyProvider, null, widget)
+        createElement(
+          DisplayPolicyProvider,
+          
+          { hideDollarAmounts: isInShareHideDollarAmountsArea(el) },
+          widget
+        )
       )
     );
 
@@ -1021,9 +1035,20 @@ export class WidgetCodeblockProcessor {
     }
 
     if (widgetType === 'session-log') {
+      let hideEmptyOutsideSession = false;
+      for (const line of source.split('\n')) {
+        const colonIndex = findConfigSeparator(line);
+        if (colonIndex <= 0) continue;
+        const key = line.substring(0, colonIndex).trim();
+        const value = line.substring(colonIndex + 1).trim();
+        if (key === 'hideEmptyOutsideSession') {
+          hideEmptyOutsideSession = value === 'true';
+        }
+      }
       return createElement(SessionLogWidget, {
         filePath,
         plugin: this.plugin,
+        hideEmptyOutsideSession,
       });
     }
 
@@ -1072,7 +1097,8 @@ export class WidgetCodeblockProcessor {
     return this.createPlaceholderWidget(widgetType, source, filePath);
   }
 
-  private async ensureImageWidgetIds(filePath: string): Promise<boolean> {
+  
+  public async ensureImageWidgetIds(filePath: string): Promise<boolean> {
     const existing = this.imageWidgetIdMigration.get(filePath);
     if (existing) {
       return await existing;
@@ -1361,6 +1387,7 @@ export class WidgetCodeblockProcessor {
   private async getImagesCodeblockContext(
     filePath: string,
     docId: string,
+    source: string,
     sectionInfo?: MarkdownSectionInformation | null
   ): Promise<ImageWidgetCodeblockContext> {
     const lines = await this.getFileLines(filePath);
@@ -1377,9 +1404,14 @@ export class WidgetCodeblockProcessor {
       sectionLineStart < lines.length &&
       lines[sectionLineStart]?.trim().startsWith('```journalit-images');
 
+    
+    
+    
+    
     const codeblockStart = sectionIsImage
       ? sectionLineStart
-      : this.getSequentialImagesCodeblockStart(filePath, lines, docId);
+      : (this.findImagesCodeblockStartById(lines, source) ??
+        this.getSequentialImagesCodeblockStart(filePath, lines, docId));
 
     const codeblockEnd =
       codeblockStart !== null
@@ -1494,6 +1526,20 @@ export class WidgetCodeblockProcessor {
       }
     }
     return Math.min(startLine + 1, lines.length - 1);
+  }
+
+  private findImagesCodeblockStartById(
+    lines: string[],
+    source: string
+  ): number | null {
+    const sourceLines = ['```journalit-images', ...source.split('\n'), '```'];
+    const id = this.findCodeblockId(sourceLines, 0, sourceLines.length - 1);
+    if (!id) return null;
+    for (const start of this.collectImageCodeblockStarts(lines)) {
+      const end = this.findCodeblockEndLine(lines, start);
+      if (this.findCodeblockId(lines, start, end) === id) return start;
+    }
+    return null;
   }
 
   private findCodeblockId(

@@ -24,6 +24,8 @@ import {
   type SampleAccountTimeline,
 } from './demoPackCore';
 import type { DemoGenerationInputs } from './DemoManifest';
+import { createFilterExclusions } from '../components/shared/filters/filterExclusions';
+import { createFilterMatchModes } from '../components/shared/filters/filterMatchModes';
 
 function createTemplates(createdAt: string): ReviewTemplate[] {
   const base = (
@@ -309,6 +311,8 @@ export function createSampleSettings(options: {
       reviewStatus: [],
       directions: [],
       customFieldFilters: {},
+      exclusions: createFilterExclusions(),
+      matchModes: createFilterMatchModes(),
       imageAnnotationStatus: [],
       imageTags: [],
     },
@@ -375,7 +379,7 @@ export function createSampleSettings(options: {
       embeddedNoteId,
     ],
     embeddedNotes: {
-      [embeddedNoteId]: { filePath: startHerePath, title: 'Start Here' },
+      [embeddedNoteId]: { filePath: startHerePath },
     },
     streaks: {
       [streakId]: { kind: 'drc-review', createdAt },

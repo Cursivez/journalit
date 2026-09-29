@@ -4,10 +4,6 @@ export const METATRADER_BROKER_GUIDE_URL =
   'https://journalit.co/docs/broker-guides-jdr';
 export const TRADINGVIEW_BROKER_GUIDE_URL =
   'https://journalit.co/docs/broker-guides-tradingview';
-export const DEEPCHARTS_BROKER_GUIDE_URL =
-  'https://journalit.co/docs/broker-guides-deepcharts';
-export const MOTIVEWAVE_BROKER_GUIDE_URL =
-  'https://journalit.co/docs/broker-guides-motivewave';
 
 export const BROKER_GUIDE_URLS: Record<string, string | undefined> = {
   TRADOVATE: TRADOVATE_BROKER_GUIDE_URL,
@@ -19,12 +15,12 @@ export const BROKER_GUIDE_URLS: Record<string, string | undefined> = {
   BLOFIN: 'https://journalit.co/docs/broker-guides-blofin',
   HYPERLIQUID: 'https://journalit.co/docs/broker-guides-hyperliquid',
   SIERRACHART: 'https://journalit.co/docs/broker-guides-sierrachart',
-  MOTIVEWAVE: MOTIVEWAVE_BROKER_GUIDE_URL,
+  MOTIVEWAVE: 'https://journalit.co/docs/broker-guides-motivewave',
   FXREPLAY: 'https://journalit.co/docs/broker-guides-fxreplay',
   ATAS: 'https://journalit.co/docs/broker-guides-atas',
   TRADINGTECHNOLOGIES:
     'https://journalit.co/docs/broker-guides-tradingtechnologies',
   RITHMIC: 'https://journalit.co/docs/broker-guides-rithmic',
-  DEEPCHARTS: DEEPCHARTS_BROKER_GUIDE_URL,
+  DEEPCHARTS: 'https://journalit.co/docs/broker-guides-deepcharts',
   METATRADER: METATRADER_BROKER_GUIDE_URL,
 };

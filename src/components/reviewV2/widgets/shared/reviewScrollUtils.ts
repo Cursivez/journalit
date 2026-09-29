@@ -1,55 +1,50 @@
-export function scrollToNextReviewItemAfterCollapse(
-  currentItem: HTMLElement | null,
-  nextItemKey?: string
+
+const ANCHOR_FRAMES = 3;
+
+
+export function keepReviewItemHeaderInPlaceOnCollapse(
+  currentItem: HTMLElement | null
 ): void {
   if (!currentItem) return;
 
-  const nextItem = findNextReviewItem(currentItem, nextItemKey);
-  const scrollTarget = nextItem instanceof HTMLElement ? nextItem : currentItem;
-  const headerTarget = findReviewHeader(scrollTarget) ?? scrollTarget;
+  const header = findReviewHeader(currentItem) ?? currentItem;
   const scrollContainer = findReviewScrollContainer(currentItem);
-  if (scrollContainer) {
-    scrollContainer.classList.add('journalit-review-scroll-anchor-disabled');
-  }
+  if (!scrollContainer) return;
 
-  window.requestAnimationFrame(() => {
-    window.requestAnimationFrame(() => {
-      if (scrollContainer instanceof HTMLElement) {
-        const targetRect = headerTarget.getBoundingClientRect();
-        const containerRect = scrollContainer.getBoundingClientRect();
-        scrollContainer.scrollTo({
-          top: scrollContainer.scrollTop + targetRect.top - containerRect.top,
-          behavior: 'auto',
-        });
-        window.requestAnimationFrame(() => {
-          scrollContainer.classList.remove(
-            'journalit-review-scroll-anchor-disabled'
-          );
-        });
-        return;
-      }
+  const containerTop = scrollContainer.getBoundingClientRect().top;
+  const maxAnchorTop = Math.max(
+    0,
+    scrollContainer.clientHeight - header.getBoundingClientRect().height
+  );
+  const anchorTop = Math.min(
+    Math.max(header.getBoundingClientRect().top - containerTop, 0),
+    maxAnchorTop
+  );
 
-      headerTarget.scrollIntoView({ block: 'start', behavior: 'auto' });
-    });
-  });
-}
+  scrollContainer.classList.add('journalit-review-scroll-anchor-disabled');
+  
+  
+  const view = scrollContainer.win;
 
-function findNextReviewItem(
-  currentItem: HTMLElement,
-  nextItemKey?: string
-): Element | null {
-  if (nextItemKey) {
-    const parent = currentItem.parentElement;
-    const keyedItem = Array.from(
-      parent?.querySelectorAll('[data-journalit-review-item-key]') ?? []
-    ).find(
-      (item) =>
-        item.getAttribute('data-journalit-review-item-key') === nextItemKey
-    );
-    if (keyedItem) return keyedItem;
-  }
+  let remainingFrames = ANCHOR_FRAMES;
+  const correct = () => {
+    const offset =
+      header.getBoundingClientRect().top -
+      scrollContainer.getBoundingClientRect().top -
+      anchorTop;
+    if (Math.abs(offset) >= 1) {
+      scrollContainer.scrollTop += offset;
+    }
 
-  return currentItem.nextElementSibling;
+    remainingFrames -= 1;
+    if (remainingFrames > 0) {
+      view.requestAnimationFrame(correct);
+      return;
+    }
+    scrollContainer.classList.remove('journalit-review-scroll-anchor-disabled');
+  };
+
+  view.requestAnimationFrame(correct);
 }
 
 function findReviewHeader(item: HTMLElement): HTMLElement | null {
@@ -62,5 +57,6 @@ function findReviewScrollContainer(item: HTMLElement): HTMLElement | null {
   const scrollContainer = item.closest(
     '.cm-scroller, .markdown-preview-view, .markdown-reading-view'
   );
-  return scrollContainer instanceof HTMLElement ? scrollContainer : null;
+  
+  return scrollContainer?.instanceOf(HTMLElement) ? scrollContainer : null;
 }

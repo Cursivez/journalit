@@ -11,6 +11,7 @@ import { Tooltip } from '../../shared/Tooltip';
 import { Edit, Trash2 } from '../../shared/icons/ObsidianIcon';
 import { NoTooltipButton } from '../../ui/NoTooltipButton';
 import { t } from '../../../lang/helpers';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -547,6 +548,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                       onClick={() => void handleSaveEdit()}
                       aria-label={t('button.save')}
                       className="journalit-reviewv2-action-button journalit-reviewv2-action-button--primary"
+                      {...shareCaptureExcludeProps}
                     >
                       {t('button.save')}
                     </button>
@@ -554,6 +556,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                       onClick={() => setEditingIndex(null)}
                       aria-label={t('button.cancel')}
                       className="journalit-reviewv2-action-button journalit-reviewv2-action-button--secondary"
+                      {...shareCaptureExcludeProps}
                     >
                       {t('button.cancel')}
                     </button>
@@ -579,7 +582,10 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
 
                 
                 {!preview && editingIndex !== index && (
-                  <div className="journalit-reviewv2-item-actions">
+                  <div
+                    className="journalit-reviewv2-item-actions"
+                    {...shareCaptureExcludeProps}
+                  >
                     <NoTooltipButton
                       onClick={() => void handleStartEdit(index)}
                       label={t('widget.goals.aria.edit')}
@@ -601,7 +607,10 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
 
             
             {goals.length === 0 && (
-              <div className="journalit-reviewv2-empty">
+              <div
+                className="journalit-reviewv2-empty"
+                {...shareCaptureExcludeProps}
+              >
                 {preview
                   ? t('widget.goals.empty.preview')
                   : t('widget.goals.empty.default')}
@@ -610,7 +619,10 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
 
             
             {!preview && (
-              <div className="journalit-reviewv2-add-row">
+              <div
+                className="journalit-reviewv2-add-row"
+                {...shareCaptureExcludeProps}
+              >
                 <input
                   ref={newGoalInputRef}
                   type="text"

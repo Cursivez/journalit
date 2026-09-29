@@ -1,5 +1,6 @@
 
 
+import { syncServerDeletedTrades } from './ServerDeletedTradeSync';
 import type JournalitPlugin from '../../main';
 import { generateUUID } from '../../utils/uuid';
 import { TradeProjectionClient } from './TradeProjectionClient';
@@ -82,7 +83,16 @@ export class TradeProjectionSyncService {
       if (this.stopped || this.activeSync) return;
       const initiatingOwnerUserId = getTradeProjectionOwnerId(this.plugin);
       if (!initiatingOwnerUserId) return;
-      void this.syncProjections()
+      
+      
+      void syncServerDeletedTrades(this.plugin)
+        .catch((error: unknown) => {
+          console.warn(
+            '[Journalit] Server-deleted trade cleanup failed:',
+            error
+          );
+        })
+        .then(() => this.syncProjections())
         .then((result) => {
           if (
             this.stopped ||

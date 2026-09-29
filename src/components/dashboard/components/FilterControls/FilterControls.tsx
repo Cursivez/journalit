@@ -15,21 +15,20 @@ import { saveLastUsedFilters } from '../../utils/filterUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { useViewportThreshold } from '../../../../hooks/useResizeObserver';
 import { Button } from '../../../../components/ui/Button';
-import { FilterButton } from '../../../shared/FilterButton';
-import { openFilterModal, UnifiedFilters } from '../../../shared/filters';
-import type { AvailableCustomFieldFilter } from '../../../shared/filters/types';
-import { SELECTABLE_STATUSES_COUNT } from '../../../../services/tradelog/types';
+import type { UnifiedFilters } from '../../../shared/filters/types';
+import {
+  FilterMenuButton,
+  type LoadedFilterMenuOptions,
+} from '../../../shared/filters/menu/FilterMenu';
+import { loadTradeFilterMenuOptions } from '../../../shared/filters/menu/loadTradeFilterMenuOptions';
 import {
   type CustomFieldDefinition,
   isDiscreteCustomFieldFilterable,
 } from '../../../../types/customFields';
 import { TradeLogService } from '../../../../services/tradelog/TradeLogService';
 import { useDashboardData } from '../../context/DashboardDataContext';
-import {
-  createDashboardFilters,
-  getTradeTypeFilterActiveCount,
-} from '../../../../settings/viewFiltersDefaults';
 import { useGuideTarget } from '../../../../guides/GuideRuntimeLayer';
+import { useFilterMenuWhatsNewTour } from '../../../../guides/useFilterMenuWhatsNewTour';
 import {
   DASHBOARD_ADD_WIDGET_BUTTON_TARGET_ID,
   DASHBOARD_EDIT_LAYOUT_BUTTON_TARGET_ID,
@@ -39,7 +38,7 @@ import {
   normalizeAccountLookupKey,
   normalizeTradeAccountIdentity,
 } from '../../../../services/trade/core/TradeAccountIdentity';
-import { sanitizeCustomFieldFilters } from '../../../shared/filters/sanitizeCustomFieldFilters';
+import { sanitizeFilterCustomFields } from '../../../shared/filters/sanitizeCustomFieldFilters';
 
 
 
@@ -66,6 +65,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
     const registerAddWidgetTarget = useGuideTarget(
       DASHBOARD_ADD_WIDGET_BUTTON_TARGET_ID
     );
+    const filterMenuWhatsNew = useFilterMenuWhatsNewTour();
 
     
     const isCompactView = useViewportThreshold(1300);
@@ -116,35 +116,21 @@ export const FilterControls = React.memo<FilterControlsProps>(
       [customFields]
     );
 
-    const sanitizedCustomFieldFilters = useMemo(
-      () =>
-        sanitizeCustomFieldFilters(
-          filters.customFieldFilters,
-          discreteCustomFields
-        ),
-      [filters.customFieldFilters, discreteCustomFields]
+    
+    
+    const sanitizedFilters = useMemo(
+      () => sanitizeFilterCustomFields(filters, discreteCustomFields),
+      [filters, discreteCustomFields]
     );
 
     useEffect(() => {
-      if (!plugin) {
+      if (!plugin || sanitizedFilters === filters) {
         return;
       }
 
-      if (
-        JSON.stringify(filters.customFieldFilters || {}) ===
-        JSON.stringify(sanitizedCustomFieldFilters)
-      ) {
-        return;
-      }
-
-      const mergedFilters = {
-        ...filters,
-        customFieldFilters: sanitizedCustomFieldFilters,
-      };
-
-      onFilterChange(mergedFilters);
-      void saveLastUsedFilters(plugin, mergedFilters);
-    }, [plugin, filters, onFilterChange, sanitizedCustomFieldFilters]);
+      onFilterChange(sanitizedFilters);
+      void saveLastUsedFilters(plugin, sanitizedFilters);
+    }, [plugin, filters, onFilterChange, sanitizedFilters]);
 
     
     const availableAccounts = useMemo(() => {
@@ -189,11 +175,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
     
     const handleDateRangeChange = useCallback(
       (dateRange: [Date | null, Date | null]) => {
-        const mergedFilters = {
-          ...filters,
-          dateRange,
-          customFieldFilters: sanitizedCustomFieldFilters,
-        };
+        const mergedFilters = { ...sanitizedFilters, dateRange };
         onFilterChange(mergedFilters);
 
         
@@ -201,129 +183,54 @@ export const FilterControls = React.memo<FilterControlsProps>(
           void saveLastUsedFilters(plugin, mergedFilters);
         }
       },
-      [filters, onFilterChange, plugin, sanitizedCustomFieldFilters]
+      [onFilterChange, plugin, sanitizedFilters]
     );
 
-    
-    const getActiveFilterCount = (): number => {
-      let count = 0;
-      if (filters.accounts.length > 0) count++;
-      if (filters.tickers?.length > 0) count++;
-      if (filters.setups?.length > 0) count++;
-      if (filters.tags?.length > 0) count++;
-      if (filters.mistakes?.length > 0) count++;
-      if (
-        getTradeTypeFilterActiveCount(
-          filters.tradeTypes,
-          createDashboardFilters().tradeTypes
-        ) > 0
-      )
-        count++;
-      if (
-        filters.statuses &&
-        filters.statuses.length > 0 &&
-        filters.statuses.length < SELECTABLE_STATUSES_COUNT
-      )
-        count++;
-      if (filters.directions?.length > 0) count++;
-      if (
-        Object.values(sanitizedCustomFieldFilters).some(
-          (values) => values.length > 0
-        )
-      ) {
-        count += Object.values(sanitizedCustomFieldFilters).filter(
-          (values) => values.length > 0
-        ).length;
-      }
-      return count;
-    };
-
-    
-    const handleOpenFilterModal = useCallback(async () => {
-      if (!plugin || !plugin.app) return;
-
-      let availableCustomFieldFilters: AvailableCustomFieldFilter[] = [];
-
-      const tradeLogService = tradeLogServiceRef.current;
-      const authoritativeAccountsPromise = tradeLogService
-        ? tradeLogService.getUniqueAccounts().catch((error) => {
-            console.error(
-              '[DashboardFilterControls] Failed to load authoritative account filter options; using dashboard accounts as fallback:',
-              error
-            );
-            return undefined;
-          })
-        : Promise.resolve(undefined);
-
-      try {
-        if (tradeLogService) {
-          availableCustomFieldFilters =
-            await tradeLogService.getAvailableCustomFieldFilters(
-              discreteCustomFields
-            );
+    const loadFilterMenuOptions =
+      useCallback(async (): Promise<LoadedFilterMenuOptions> => {
+        const tradeLogService = tradeLogServiceRef.current;
+        if (!plugin || !tradeLogService) {
+          return { accounts: availableAccounts };
         }
-      } catch (error) {
-        console.error(
-          '[DashboardFilterControls] Failed to load custom field filter options:',
-          error
+        
+        return loadTradeFilterMenuOptions({
+          plugin,
+          tradeLogService,
+          fallbackAccounts: availableAccounts,
+          logPrefix: '[DashboardFilterControls]',
+        });
+      }, [availableAccounts, plugin]);
+
+    const handleFilterMenuChange = useCallback(
+      (menuFilters: UnifiedFilters) => {
+        
+        
+        const mergedFilters = sanitizeFilterCustomFields(
+          { ...filters, ...menuFilters },
+          discreteCustomFields
         );
-      }
-
-      let modalAvailableAccounts = availableAccounts;
-      const authoritativeAccounts = await authoritativeAccountsPromise;
-      if (authoritativeAccounts) {
-        modalAvailableAccounts = authoritativeAccounts;
-      }
-
-      openFilterModal({
-        app: plugin.app,
-        plugin,
-        context: 'dashboard',
-        currentFilters: {
-          accounts: filters.accounts,
-          accountPhases: filters.accountPhases || [],
-          tickers: filters.tickers || [],
-          setups: filters.setups || [],
-          tags: filters.tags || [],
-          mistakes: filters.mistakes || [],
-          tradeTypes: filters.tradeTypes || [],
-          statuses: filters.statuses || [],
-          reviewStatus: filters.reviewStatus || [],
-          directions: filters.directions || [],
-          customFieldFilters: sanitizedCustomFieldFilters,
-        },
-        availableAccounts: modalAvailableAccounts,
-        availableCustomFieldFilters,
-        onApply: (newFilters: UnifiedFilters) => {
-          const mergedFilters = {
-            ...filters,
-            accounts: newFilters.accounts,
-            accountPhases: newFilters.accountPhases || [],
-            tickers: newFilters.tickers,
-            setups: newFilters.setups,
-            tags: newFilters.tags,
-            mistakes: newFilters.mistakes,
-            tradeTypes: newFilters.tradeTypes,
-            statuses: newFilters.statuses,
-            directions: newFilters.directions,
-            customFieldFilters: sanitizeCustomFieldFilters(
-              newFilters.customFieldFilters,
-              discreteCustomFields
-            ),
-          };
-          onFilterChange(mergedFilters);
+        onFilterChange(mergedFilters);
+        if (plugin) {
           void saveLastUsedFilters(plugin, mergedFilters);
-        },
-        onClose: () => {},
-      });
-    }, [
-      plugin,
-      filters,
-      onFilterChange,
-      availableAccounts,
-      discreteCustomFields,
-      sanitizedCustomFieldFilters,
-    ]);
+        }
+      },
+      [discreteCustomFields, filters, onFilterChange, plugin]
+    );
+
+    const filterMenuButton = plugin ? (
+      <div ref={registerFilterButtonTarget}>
+        <FilterMenuButton
+          plugin={plugin}
+          context="dashboard"
+          filters={sanitizedFilters}
+          onChange={handleFilterMenuChange}
+          loadOptions={loadFilterMenuOptions}
+          className="journalit-dashboard-filter-button"
+          onOpenChange={filterMenuWhatsNew.onOpenChange}
+          guideTour={filterMenuWhatsNew.guideTour}
+        />
+      </div>
+    ) : null;
 
     return (
       <div
@@ -340,13 +247,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
             </div>
 
             <div className="journalit-dashboard-filter-actions">
-              <div ref={registerFilterButtonTarget}>
-                <FilterButton
-                  onClick={() => void handleOpenFilterModal()}
-                  className="journalit-dashboard-filter-button"
-                  activeFilterCount={getActiveFilterCount()}
-                />
-              </div>
+              {filterMenuButton}
               {isEditing && onOpenAddWidget && (
                 <div ref={registerAddWidgetTarget}>
                   <Button
@@ -394,13 +295,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
             </div>
 
             <div className="journalit-dashboard-filter-actions">
-              <div ref={registerFilterButtonTarget}>
-                <FilterButton
-                  onClick={() => void handleOpenFilterModal()}
-                  className="journalit-dashboard-filter-button"
-                  activeFilterCount={getActiveFilterCount()}
-                />
-              </div>
+              {filterMenuButton}
               {isEditing && onOpenAddWidget && (
                 <div ref={registerAddWidgetTarget}>
                   <Button

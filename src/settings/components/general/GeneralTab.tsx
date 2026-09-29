@@ -28,6 +28,7 @@ import {
 } from '../../../utils/tradingDayUtils';
 import { createDefaultNavigationSettings, DEFAULT_SETTINGS } from '../../types';
 import type {
+  AccentColorSource,
   AnalyticsDateBasis,
   MaeMfeDisplayUnit,
   WeekStartDay,
@@ -905,6 +906,19 @@ function useGeneralTabModel(props: GeneralTabProps) {
     );
   };
 
+  const handleHideDollarAmountsInSharesToggle = async (newValue: boolean) => {
+    plugin.settings.display = {
+      ...(plugin.settings.display ?? DEFAULT_SETTINGS.display!),
+      hideDollarAmountsInShares: newValue,
+    };
+    await plugin.saveSettings();
+    eventBus.publish('settings:changed', {
+      section: 'display',
+      source: 'hide-dollar-amounts-in-shares',
+    });
+    setSettingsVersion((prev) => prev + 1);
+  };
+
   const handleIncludeCopyAccountsToggle = async (newValue: boolean) => {
     plugin.settings.trade.includeCopyAccountsInAllAccountsAnalytics = newValue;
     await plugin.saveSettings();
@@ -999,6 +1013,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
     handleDisplayNameConfirm,
     handleDisplayNameInputChange,
     handleDisplayRMultiplesToggle,
+    handleHideDollarAmountsInSharesToggle,
     handleDollarValueInputToggle,
     handleFilterRecentItemsToggle,
     handleHomeStartupBehaviorChange,
@@ -1034,6 +1049,7 @@ function GeneralRiskDisplaySettings({
   plugin,
   handleDefaultRiskAmountChange,
   handleDisplayRMultiplesToggle,
+  handleHideDollarAmountsInSharesToggle,
   handleIncludeCopyAccountsToggle,
   handleIncludeUnrealizedPnLToggle,
   handleMaeMfeDisplayUnitChange,
@@ -1045,6 +1061,7 @@ function GeneralRiskDisplaySettings({
   | 'plugin'
   | 'handleDefaultRiskAmountChange'
   | 'handleDisplayRMultiplesToggle'
+  | 'handleHideDollarAmountsInSharesToggle'
   | 'handleIncludeCopyAccountsToggle'
   | 'handleIncludeUnrealizedPnLToggle'
   | 'handleMaeMfeDisplayUnitChange'
@@ -1101,6 +1118,28 @@ function GeneralRiskDisplaySettings({
             onChange={handleDisplayRMultiplesToggle}
             id="display-r-multiples-toggle"
             ariaLabel={t('settings.general.display-r-multiples-aria')}
+          />
+        </div>
+      </div>
+
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.general.hide-dollar-amounts-in-shares')}
+          </div>
+          <div className="setting-item-description">
+            {t('settings.general.hide-dollar-amounts-in-shares-desc')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <ToggleSwitch
+            checked={
+              plugin.settings.display?.hideDollarAmountsInShares ?? false
+            }
+            onChange={handleHideDollarAmountsInSharesToggle}
+            disabled={!plugin.settings.trade.displayRMultiples}
+            id="hide-dollar-amounts-in-shares-toggle"
+            ariaLabel={t('settings.general.hide-dollar-amounts-in-shares')}
           />
         </div>
       </div>
@@ -1578,6 +1617,7 @@ function GeneralTradeSettingsSection({
   handleBreakEvenMaxChange,
   handleDefaultRiskAmountChange,
   handleDisplayRMultiplesToggle,
+  handleHideDollarAmountsInSharesToggle,
   handleIncludeCopyAccountsToggle,
   handleIncludeUnrealizedPnLToggle,
   handleMaeMfeDisplayUnitChange,
@@ -1607,6 +1647,7 @@ function GeneralTradeSettingsSection({
   | 'handleBreakEvenMaxChange'
   | 'handleDefaultRiskAmountChange'
   | 'handleDisplayRMultiplesToggle'
+  | 'handleHideDollarAmountsInSharesToggle'
   | 'handleIncludeCopyAccountsToggle'
   | 'handleIncludeUnrealizedPnLToggle'
   | 'handleMaeMfeDisplayUnitChange'
@@ -1648,6 +1689,9 @@ function GeneralTradeSettingsSection({
       plugin={plugin}
       handleDefaultRiskAmountChange={handleDefaultRiskAmountChange}
       handleDisplayRMultiplesToggle={handleDisplayRMultiplesToggle}
+      handleHideDollarAmountsInSharesToggle={
+        handleHideDollarAmountsInSharesToggle
+      }
       handleIncludeCopyAccountsToggle={handleIncludeCopyAccountsToggle}
       handleIncludeUnrealizedPnLToggle={handleIncludeUnrealizedPnLToggle}
       handleMaeMfeDisplayUnitChange={handleMaeMfeDisplayUnitChange}
@@ -2589,6 +2633,61 @@ export function HomeBackgroundSettings({
   );
 }
 
+
+export function AccentColorSetting({ plugin }: { plugin: JournalitPlugin }) {
+  const [source, setSource] = useState<AccentColorSource>(
+    plugin.settings.general?.accentColorSource ?? 'journalit'
+  );
+
+  const handleChange = async (value: string) => {
+    const next: AccentColorSource =
+      value === 'obsidian' ? 'obsidian' : 'journalit';
+    if (!plugin.settings.general) {
+      plugin.settings.general = {
+        currency: CurrencyCode.USD,
+        accentColorSource: next,
+      };
+    } else {
+      plugin.settings.general.accentColorSource = next;
+    }
+    setSource(next);
+    await plugin.saveSettings();
+    
+    eventBus.publish('appearance:accent-source-changed');
+  };
+
+  return (
+    <div className="setting-item">
+      <div className="setting-item-info">
+        <div className="setting-item-name">
+          {t('settings.general.accent-color')}
+        </div>
+        <div className="setting-item-description">
+          {t('settings.general.accent-color-desc')}
+        </div>
+      </div>
+      <div className="setting-item-control">
+        <Select
+          value={source}
+          onChange={(value) => void handleChange(value)}
+          options={[
+            {
+              value: 'journalit',
+              label: t('settings.general.accent-color-journalit'),
+            },
+            {
+              value: 'obsidian',
+              label: t('settings.general.accent-color-obsidian'),
+            },
+          ]}
+          id="accent-color-source-dropdown"
+          aria-label={t('settings.general.accent-color')}
+        />
+      </div>
+    </div>
+  );
+}
+
 const ReviewWidgetNavigationSetting: React.FC<{
   plugin: JournalitPlugin;
   onSaved: () => void;
@@ -2623,6 +2722,80 @@ const ReviewWidgetNavigationSetting: React.FC<{
     </div>
   </div>
 );
+
+function HomeViewSettingsSection({
+  plugin,
+  flat,
+  handleHomeStartupBehaviorChange,
+  handleFilterRecentItemsToggle,
+}: Pick<
+  GeneralTabModel,
+  'plugin' | 'handleHomeStartupBehaviorChange' | 'handleFilterRecentItemsToggle'
+> & { flat: boolean }) {
+  return (
+    <SettingsSectionOrAccordion
+      title={t('settings.general.home-view-settings')}
+      flat={flat}
+    >
+      
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.general.home-auto-open')}
+          </div>
+          <div className="setting-item-description">
+            {t('settings.general.home-auto-open-desc')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <Select
+            value={plugin.settings.general?.homeStartupBehavior || 'always'}
+            onChange={handleHomeStartupBehaviorChange}
+            options={[
+              {
+                value: 'always',
+                label: t('settings.general.home-auto-open-always'),
+              },
+              {
+                value: 'ifNone',
+                label: t('settings.general.home-auto-open-ifnone'),
+              },
+              {
+                value: 'never',
+                label: t('settings.general.home-auto-open-never'),
+              },
+            ]}
+            id="home-startup-behavior-dropdown"
+            aria-label={t('settings.general.home-auto-open-aria')}
+          />
+        </div>
+      </div>
+
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">
+            {t('settings.general.filter-recent')}
+          </div>
+          <div className="setting-item-description">
+            {t('settings.general.filter-recent-desc')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <ToggleSwitch
+            checked={
+              plugin.settings.home?.filterRecentItemsToJournalit ?? false
+            }
+            onChange={handleFilterRecentItemsToggle}
+            id="filter-recent-items-toggle"
+            ariaLabel={t('settings.general.filter-recent-aria')}
+          />
+        </div>
+      </div>
+
+      <HomeBackgroundSettings plugin={plugin} />
+    </SettingsSectionOrAccordion>
+  );
+}
 
 function GeneralCoreSettingsSection({
   plugin,
@@ -2760,66 +2933,18 @@ function GeneralCoreSettingsSection({
       </div>
 
       <SettingsSectionOrAccordion
-        title={t('settings.general.home-view-settings')}
+        title={t('settings.general.appearance')}
         flat={flat}
       >
-        
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.general.home-auto-open')}
-            </div>
-            <div className="setting-item-description">
-              {t('settings.general.home-auto-open-desc')}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <Select
-              value={plugin.settings.general?.homeStartupBehavior || 'always'}
-              onChange={handleHomeStartupBehaviorChange}
-              options={[
-                {
-                  value: 'always',
-                  label: t('settings.general.home-auto-open-always'),
-                },
-                {
-                  value: 'ifNone',
-                  label: t('settings.general.home-auto-open-ifnone'),
-                },
-                {
-                  value: 'never',
-                  label: t('settings.general.home-auto-open-never'),
-                },
-              ]}
-              id="home-startup-behavior-dropdown"
-              aria-label={t('settings.general.home-auto-open-aria')}
-            />
-          </div>
-        </div>
-
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('settings.general.filter-recent')}
-            </div>
-            <div className="setting-item-description">
-              {t('settings.general.filter-recent-desc')}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <ToggleSwitch
-              checked={
-                plugin.settings.home?.filterRecentItemsToJournalit ?? false
-              }
-              onChange={handleFilterRecentItemsToggle}
-              id="filter-recent-items-toggle"
-              ariaLabel={t('settings.general.filter-recent-aria')}
-            />
-          </div>
-        </div>
-
-        <HomeBackgroundSettings plugin={plugin} />
+        <AccentColorSetting plugin={plugin} />
       </SettingsSectionOrAccordion>
+
+      <HomeViewSettingsSection
+        plugin={plugin}
+        flat={flat}
+        handleHomeStartupBehaviorChange={handleHomeStartupBehaviorChange}
+        handleFilterRecentItemsToggle={handleFilterRecentItemsToggle}
+      />
 
       
       <SettingsSectionOrAccordion
@@ -2948,6 +3073,7 @@ export const GeneralTab: React.FC<GeneralTabProps> = (props) => {
     handleDisplayNameConfirm,
     handleDisplayNameInputChange,
     handleDisplayRMultiplesToggle,
+    handleHideDollarAmountsInSharesToggle,
     handleDollarValueInputToggle,
     handleFilterRecentItemsToggle,
     handleHomeStartupBehaviorChange,
@@ -3042,6 +3168,9 @@ export const GeneralTab: React.FC<GeneralTabProps> = (props) => {
           handleBreakEvenMaxChange={handleBreakEvenMaxChange}
           handleDefaultRiskAmountChange={handleDefaultRiskAmountChange}
           handleDisplayRMultiplesToggle={handleDisplayRMultiplesToggle}
+          handleHideDollarAmountsInSharesToggle={
+            handleHideDollarAmountsInSharesToggle
+          }
           handleIncludeCopyAccountsToggle={handleIncludeCopyAccountsToggle}
           handleIncludeUnrealizedPnLToggle={handleIncludeUnrealizedPnLToggle}
           handleMaeMfeDisplayUnitChange={handleMaeMfeDisplayUnitChange}

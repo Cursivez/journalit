@@ -265,6 +265,7 @@ export const TRADE_FORM_LAYOUT_STYLES = `
 
   .journalit-trade-form-layout-editor__footer .journalit-button--primary:hover:not(:disabled) {
     background: var(--interactive-accent-hover);
+    color: var(--text-on-accent);
     border-color: var(--interactive-accent-hover);
   }
 
@@ -295,15 +296,15 @@ export const TRADE_FORM_LAYOUT_STYLES = `
     color: var(--text-normal) !important;
     cursor: pointer !important;
     line-height: 1 !important;
-    box-shadow: inset 0 0 0 1px rgba(var(--interactive-accent-rgb), 0.16) !important;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--interactive-accent) 16%, transparent) !important;
     -webkit-app-region: no-drag !important;
   }
 
   .journalit-trade-form-header-action:hover {
-    color: var(--interactive-accent) !important;
+    color: var(--text-accent) !important;
     border-color: var(--interactive-accent) !important;
-    background: rgba(var(--interactive-accent-rgb), 0.12) !important;
-    box-shadow: inset 0 0 0 1px rgba(var(--interactive-accent-rgb), 0.28) !important;
+    background: color-mix(in srgb, var(--interactive-accent) 12%, transparent) !important;
+    box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--interactive-accent) 28%, transparent) !important;
   }
 
   .journalit-trade-form-header-action:focus-visible {

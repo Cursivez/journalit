@@ -18,17 +18,18 @@ import {
 import { forceMetadataCacheRefresh } from '../../../utils/dataRefresh';
 import {
   extractJournalitImageWidgetIds,
-  extractMarkdownSectionsByHeading,
-  stripPreviousTradingDayContextWidgetBlocks,
+  stripEmbeddedReviewWidgetBlocks,
 } from '../../../utils/markdownSectionExtractor';
+import { extractReviewContextSections } from '../../../utils/reviewContextSections';
 import { ImageCarousel } from '../../image/ImageCarousel';
 import { t } from '../../../lang/helpers';
 import { eventBus } from '../../../services/events/EventBus';
 import { StickyHeaderPortal, useStickyHeader } from '../../shared/StickyHeader';
 import { InvalidContextMessage } from './InvalidContextMessage';
-import { scrollToNextReviewItemAfterCollapse } from './shared/reviewScrollUtils';
+import { keepReviewItemHeaderInPlaceOnCollapse } from './shared/reviewScrollUtils';
 import { ReviewWidgetSkeleton } from './shared/ReviewWidgetSkeleton';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 type WeeklyDRCDayScope =
   | 'all'
@@ -114,10 +115,6 @@ function parseHeadings(config: WeeklyDRCContextConfig | undefined): string[] {
     const normalized = heading.trim();
     return normalized ? [normalized] : [];
   });
-}
-
-function normalizeHeadingText(heading: string): string {
-  return heading.trim().replace(/\s+/g, ' ').toLowerCase();
 }
 
 function formatDateKey(date: Date): string {
@@ -274,7 +271,7 @@ interface WeeklyDRCAccordionHeaderProps {
   openSourceDRC: (event: React.MouseEvent<HTMLElement>) => void | Promise<void>;
   preview?: boolean;
   reviewed: boolean;
-  setIsOpen: React.Dispatch<React.SetStateAction<boolean>>;
+  onToggleOpen: () => void;
   title: string;
   toggleReviewed: (
     event: React.MouseEvent<HTMLButtonElement>
@@ -290,7 +287,7 @@ function WeeklyDRCAccordionHeader({
   openSourceDRC,
   preview,
   reviewed,
-  setIsOpen,
+  onToggleOpen,
   title,
   toggleReviewed,
 }: WeeklyDRCAccordionHeaderProps) {
@@ -311,7 +308,7 @@ function WeeklyDRCAccordionHeader({
         className="journalit-native-button journalit-native-button--unstyled journalit-weekly-drc-accordion-indicator"
         aria-label={title}
         aria-expanded={isOpen}
-        onClick={() => setIsOpen((current) => !current)}
+        onClick={onToggleOpen}
       >
         <svg
           width="16"
@@ -338,7 +335,10 @@ function WeeklyDRCAccordionHeader({
       </span>
       <span className="journalit-weekly-drc-header-spacer" />
       {!preview && (
-        <span className="journalit-weekly-drc-header-actions">
+        <span
+          className="journalit-weekly-drc-header-actions"
+          {...shareCaptureExcludeProps}
+        >
           <button
             className={`journalit-weekly-drc-mark-reviewed-button ${reviewed ? 'journalit-weekly-drc-mark-reviewed-button--reviewed' : ''}`}
             type="button"
@@ -371,9 +371,8 @@ const WeeklyDRCDay: React.FC<{
   day: WeeklyDRCDayContext;
   plugin: JournalitPlugin;
   defaultExpanded: boolean;
-  nextReviewItemKey?: string;
   preview?: boolean;
-}> = ({ day, plugin, defaultExpanded, nextReviewItemKey, preview }) => {
+}> = ({ day, plugin, defaultExpanded, preview }) => {
   const hasContent = day.sections.length > 0;
   const title = formatDayHeading(day.date);
   const [dayState, setDayState] = useState<{
@@ -394,7 +393,10 @@ const WeeklyDRCDay: React.FC<{
   const dayRef = useRef<HTMLElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
 
-  const setIsOpen: React.Dispatch<React.SetStateAction<boolean>> = (update) => {
+  const toggleOpen = () => {
+    if (isOpen) {
+      keepReviewItemHeaderInPlaceOnCollapse(dayRef.current);
+    }
     setDayState((current) => {
       const currentIsOpen =
         current.dateKey === day.dateKey
@@ -408,7 +410,7 @@ const WeeklyDRCDay: React.FC<{
           current.sourceReviewed === day.reviewed
             ? current.reviewed
             : day.reviewed,
-        isOpen: typeof update === 'function' ? update(currentIsOpen) : update,
+        isOpen: !currentIsOpen,
       };
     });
   };
@@ -476,16 +478,15 @@ const WeeklyDRCDay: React.FC<{
     }
 
     const nextReviewed = !reviewed;
+    if (nextReviewed && isOpen) {
+      keepReviewItemHeaderInPlaceOnCollapse(dayRef.current);
+    }
     setDayState({
       dateKey: day.dateKey,
       sourceReviewed: day.reviewed,
       reviewed: nextReviewed,
       isOpen: defaultExpanded && !nextReviewed,
     });
-    if (nextReviewed && isOpen) {
-      scrollToNextReviewItemAfterCollapse(dayRef.current, nextReviewItemKey);
-    }
-
     try {
       const currentEodReview =
         asRecord(
@@ -569,7 +570,6 @@ const WeeklyDRCDay: React.FC<{
     <article
       ref={dayRef}
       className="journalit-weekly-drc-day journalit-weekly-drc-day--accordion journalit-previous-drc-reference"
-      data-journalit-review-item-key={day.dateKey}
     >
       <WeeklyDRCAccordionHeader
         canToggleReviewed={canToggleReviewed}
@@ -579,7 +579,7 @@ const WeeklyDRCDay: React.FC<{
         openSourceDRC={openSourceDRC}
         preview={preview}
         reviewed={reviewed}
-        setIsOpen={setIsOpen}
+        onToggleOpen={toggleOpen}
         title={title}
         toggleReviewed={toggleReviewed}
       />
@@ -595,7 +595,7 @@ const WeeklyDRCDay: React.FC<{
           openSourceDRC={openSourceDRC}
           preview={preview}
           reviewed={reviewed}
-          setIsOpen={setIsOpen}
+          onToggleOpen={toggleOpen}
           title={title}
           toggleReviewed={toggleReviewed}
         />
@@ -736,23 +736,12 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
                 plugin.app.metadataCache.getFileCache(drcFile)?.frontmatter
               );
               const content = await plugin.app.vault.read(drcFile);
-              const extractedSections = extractMarkdownSectionsByHeading(
+              const extractedSections = extractReviewContextSections(
                 content,
                 headings
               );
-              const sectionsByHeading = new Map(
-                extractedSections.map((section) => [
-                  normalizeHeadingText(section.heading),
-                  section,
-                ])
-              );
-              const sections = headings.flatMap((heading) => {
-                const section = sectionsByHeading.get(
-                  normalizeHeadingText(heading)
-                );
-                if (!section) return [];
-
-                const markdown = stripPreviousTradingDayContextWidgetBlocks(
+              const sections = extractedSections.map((section) => {
+                const markdown = stripEmbeddedReviewWidgetBlocks(
                   section.content
                 );
                 const imageWidgets = extractJournalitImageWidgetIds(
@@ -764,12 +753,10 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
                     widgetId
                   ),
                 }));
-                return [
-                  {
-                    heading: section.heading,
-                    blocks: buildContentBlocks(markdown, imageWidgets),
-                  },
-                ];
+                return {
+                  heading: section.heading,
+                  blocks: buildContentBlocks(markdown, imageWidgets),
+                };
               });
               return {
                 date,
@@ -828,7 +815,6 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
               day={day}
               plugin={plugin}
               defaultExpanded={defaultExpanded}
-              nextReviewItemKey={days[index + 1]?.dateKey}
               preview={preview}
             />
           ))}

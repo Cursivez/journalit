@@ -2,7 +2,8 @@ import { WorkspaceLeaf } from 'obsidian';
 import { useEffect, useState } from 'react';
 import { usePlugin } from './usePlugin';
 
-const isLeafVisible = (leaf: WorkspaceLeaf): boolean => {
+const isLeafVisible = (leaf: WorkspaceLeaf | null): boolean => {
+  if (!leaf) return false;
   if (leaf.isDeferred) return false;
 
   const containerEl = leaf.view.containerEl;
@@ -17,7 +18,7 @@ const isLeafVisible = (leaf: WorkspaceLeaf): boolean => {
   return containerEl.getClientRects().length > 0;
 };
 
-export function useLeafActive(leaf: WorkspaceLeaf): boolean {
+export function useLeafActive(leaf: WorkspaceLeaf | null): boolean {
   const plugin = usePlugin();
   const [isActive, setIsActive] = useState(() => isLeafVisible(leaf));
 

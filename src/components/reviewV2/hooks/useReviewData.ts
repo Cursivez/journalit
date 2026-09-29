@@ -43,10 +43,14 @@ const reviewDataReducer = (
         version: action.data?.version ?? 0,
       };
     case 'cache-update':
+      
+      
+      
+      if (action.data === null) return state;
       return {
-        ...state,
         data: action.data,
-        version: action.data?.version ?? 0,
+        loading: false,
+        version: action.data.version,
       };
   }
 };
@@ -117,7 +121,6 @@ export function useReviewData(
       if (!isMountedRef.current || filePathRef.current !== filePath) return;
 
       dispatch({ type: 'cache-update', data: newData });
-      
     });
 
     return () => {

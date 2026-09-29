@@ -1,8 +1,20 @@
+
+
 const HOST_CLASS = 'journalit-bottom-left-notifications';
 
-export function ensureBottomLeftNotificationHost(): HTMLElement {
+type BottomLeftNotificationLayer = 'notice' | 'chrome';
+
+
+
+const hostClassFor = (layer: BottomLeftNotificationLayer): string =>
+  `${HOST_CLASS}--${layer}`;
+
+export function ensureBottomLeftNotificationHost(
+  layer: BottomLeftNotificationLayer = 'notice'
+): HTMLElement {
   const document = window.activeDocument;
-  const existing = document.body.querySelector<HTMLElement>(`.${HOST_CLASS}`);
+  const layerClass = hostClassFor(layer);
+  const existing = document.body.querySelector<HTMLElement>(`.${layerClass}`);
   if (existing) {
     existing.setAttribute('aria-live', 'polite');
     existing.setAttribute('aria-atomic', 'false');
@@ -10,7 +22,7 @@ export function ensureBottomLeftNotificationHost(): HTMLElement {
   }
 
   return document.body.createDiv({
-    cls: HOST_CLASS,
+    cls: [HOST_CLASS, layerClass],
     attr: {
       'aria-live': 'polite',
       'aria-atomic': 'false',
@@ -18,8 +30,11 @@ export function ensureBottomLeftNotificationHost(): HTMLElement {
   });
 }
 
-export function mountBottomLeftNotification(className: string): HTMLElement {
-  return ensureBottomLeftNotificationHost().createDiv({ cls: className });
+export function mountBottomLeftNotification(
+  className: string,
+  layer: BottomLeftNotificationLayer = 'notice'
+): HTMLElement {
+  return ensureBottomLeftNotificationHost(layer).createDiv({ cls: className });
 }
 
 export function removeBottomLeftNotification(element: HTMLElement): void {
@@ -31,8 +46,9 @@ export function removeBottomLeftNotification(element: HTMLElement): void {
 }
 
 export function cleanupBottomLeftNotificationHost(): void {
-  const host = window.activeDocument.body.querySelector<HTMLElement>(
-    `.${HOST_CLASS}`
-  );
-  if (host?.childElementCount === 0) host.remove();
+  window.activeDocument.body
+    .querySelectorAll<HTMLElement>(`.${HOST_CLASS}`)
+    .forEach((host) => {
+      if (host.childElementCount === 0) host.remove();
+    });
 }

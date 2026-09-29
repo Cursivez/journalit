@@ -219,6 +219,7 @@ export const HOME_WIDGET_STYLES = `
 
   .journalit-home-score__legend-item--all::before {
     background: var(--interactive-accent);
+    color: var(--text-on-accent);
   }
 
   .journalit-home-score__loading-header {
@@ -486,7 +487,7 @@ export const HOME_WIDGET_STYLES = `
   }
 
   .journalit-home-score__tooltip-series-row--all .journalit-home-score__tooltip-series-value {
-    color: var(--interactive-accent);
+    color: var(--text-accent);
   }
 
   .journalit-home-score__tooltip-weight {
@@ -664,7 +665,7 @@ export const HOME_WIDGET_STYLES = `
   }
 
   .journalit-home-position__results-value--active {
-    color: var(--interactive-accent);
+    color: var(--text-accent);
   }
 
   .journalit-home-position__results-unit {
@@ -1358,7 +1359,8 @@ export const HOME_WIDGET_STYLES = `
   }
 
   .journalit-home-challenge-alerts__dot.is-unknown {
-    background: var(--text-accent);
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
   }
 
   .journalit-home-challenge-alerts__dot.is-masked {
@@ -2915,11 +2917,162 @@ export const HOME_WIDGET_STYLES = `
     display: flex;
     flex-direction: column;
     gap: 6px;
+    
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  
+  .journalit-home-account-progress.is-configurable,
+  .journalit-home-account-progress__state.is-configurable {
+    cursor: pointer;
+  }
+
+  .journalit-home-account-progress__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .journalit-home-account-progress__configure {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2px;
+    color: var(--text-faint);
+  }
+
+  .journalit-home-account-progress__configure:hover,
+  .journalit-home-account-progress__configure:focus-visible {
+    color: var(--text-muted);
+  }
+
+  
+  .journalit-home-account-progress--configuring {
+    gap: 8px;
+    min-height: 0;
     overflow: hidden;
+    box-sizing: border-box;
+    cursor: default;
+  }
+
+  .journalit-home-account-progress__config-header {
+    flex-wrap: wrap;
+    row-gap: 6px;
+  }
+
+  .journalit-home-account-progress__config-section {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-height: 0;
+    
+    overflow-y: auto;
+  }
+
+  .journalit-home-account-progress__config-section--accounts {
+    flex: 1;
+  }
+
+  .journalit-home-account-progress__account-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .journalit-home-account-progress__account-toolbar
+    .journalit-home-account-progress__config-hint {
+    flex: 1;
+    min-width: 0;
+  }
+
+  
+  .journalit-home-account-progress input.journalit-home-account-progress__account-search {
+    flex: 1;
+    min-width: 0;
+    height: var(--input-height);
+    padding: 0 8px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+
+  .journalit-home-account-progress__config-hint {
+    font-size: 12px;
+    color: var(--text-muted);
+  }
+
+  .journalit-home-account-progress__config-label {
+    font-size: 11px;
+    font-weight: 500;
+    color: var(--text-faint);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .journalit-home-account-progress__account-list {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+
+  
+  button.journalit-native-button--unstyled.journalit-home-account-progress__account-option {
+    display: flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 8px;
+    width: 100%;
+    padding: 4px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: var(--text-muted);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  button.journalit-native-button--unstyled.journalit-home-account-progress__account-option:hover,
+  button.journalit-native-button--unstyled.journalit-home-account-progress__account-option:focus-visible {
+    background: var(--background-modifier-hover);
+  }
+
+  button.journalit-native-button--unstyled.journalit-home-account-progress__account-option.is-selected {
+    color: var(--text-normal);
+  }
+
+  .journalit-home-account-progress__account-check {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 14px;
+    height: 14px;
+    border: 1px solid var(--background-modifier-border-hover);
+    border-radius: 3px;
+  }
+
+  .journalit-home-account-progress__account-option.is-selected
+    .journalit-home-account-progress__account-check {
+    border-color: var(--interactive-accent);
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+  }
+
+  .journalit-home-account-progress__account-name {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .journalit-home-account-progress__row {
     display: flex;
+    flex-shrink: 0;
     flex-direction: column;
     gap: 4px;
     cursor: pointer;
@@ -2929,9 +3082,15 @@ export const HOME_WIDGET_STYLES = `
     display: flex;
     justify-content: space-between;
     align-items: baseline;
+    gap: 8px;
   }
 
   .journalit-account-progress-name {
+    
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
     font-size: 12px;
     color: var(--text-muted);
     font-weight: 400;
@@ -2990,6 +3149,7 @@ export const HOME_WIDGET_STYLES = `
   }
 
   .journalit-home-account-progress__state {
+    position: relative;
     height: 100%;
     display: flex;
     flex-direction: column;
@@ -3008,6 +3168,12 @@ export const HOME_WIDGET_STYLES = `
   .journalit-home-account-progress__state-message {
     font-size: 13px;
     color: var(--text-muted);
+  }
+
+  .journalit-home-account-progress__state-configure {
+    position: absolute;
+    top: 8px;
+    right: 8px;
   }
 
   .journalit-home-account-progress__state-icon {

@@ -244,6 +244,7 @@ export const MfeScatter: React.FC<BaseWidgetProps> = (props) => {
                       strokeDasharray="3 3"
                     />
                     <XAxis
+                      className="journalit-chart-axis--numeric"
                       type="number"
                       dataKey="mfe"
                       name={xLabel}
@@ -260,6 +261,7 @@ export const MfeScatter: React.FC<BaseWidgetProps> = (props) => {
                       tick={{ fill: 'var(--text-muted)', fontSize: 11 }}
                     />
                     <YAxis
+                      className="journalit-chart-axis--numeric"
                       type="number"
                       dataKey="realized"
                       name={yLabel}

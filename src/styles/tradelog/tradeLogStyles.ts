@@ -373,6 +373,7 @@ export const TRADE_LOG_STYLES = `
 .journalit-filter-button-container .journalit-filter-button.active:hover,
 .journalit-filter-button.active:hover {
   background-color: var(--interactive-accent-hover);
+  color: var(--text-on-accent);
 }
 
 .view-level-selector {
@@ -429,80 +430,6 @@ export const TRADE_LOG_STYLES = `
 }
 
 
-.journalit-tradelog-trade-type-filter {
-  position: relative;
-  min-width: 100px !important;
-  max-width: 120px !important;
-  width: 100% !important;
-}
-
-.journalit-tradelog-trade-type-dropdown {
-  position: relative !important;
-  width: 100% !important;
-}
-
-button.journalit-native-button.journalit-tradelog-trade-type-summary {
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  padding: 5px 10px !important;
-  background-color: var(--background-primary) !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: 4px !important;
-  cursor: pointer !important;
-  font-size: 0.9em !important;
-  transition: all 0.2s ease !important;
-  height: 28px !important;
-  line-height: 1 !important;
-  white-space: nowrap !important;
-  gap: 8px !important;
-}
-
-button.journalit-native-button.journalit-tradelog-trade-type-summary:hover {
-  border-color: var(--interactive-accent) !important;
-  background-color: var(--background-modifier-hover) !important;
-}
-
-button.journalit-native-button.journalit-tradelog-trade-type-summary:focus-visible {
-  outline: 2px solid var(--interactive-accent) !important;
-  outline-offset: 2px !important;
-}
-
-.journalit-tradelog-trade-type-summary .dropdown-arrow {
-  font-size: 10px;
-  color: var(--text-muted);
-  transition: transform 0.2s ease;
-}
-
-.journalit-tradelog-trade-type-option-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-.journalit-tradelog-trade-type-option-item:hover {
-  background-color: var(--background-modifier-hover) !important;
-}
-
-.journalit-tradelog-trade-type-option-item:focus-visible {
-  outline: 2px solid var(--interactive-accent) !important;
-  outline-offset: -2px !important;
-}
-
-.journalit-tradelog-trade-type-option-item.select-all {
-  font-weight: 500;
-}
-
-.journalit-tradelog-trade-type-divider {
-  height: 1px;
-  background-color: var(--background-modifier-border);
-  margin: 4px 0;
-}
 
 
 .journalit-tradelog-checkbox {
@@ -521,206 +448,11 @@ button.journalit-native-button.journalit-tradelog-trade-type-summary:focus-visib
 
 .journalit-tradelog-checkbox.checked {
   background-color: var(--interactive-accent) !important;
-  border-color: var(--interactive-accent) !important;
-}
-
-.journalit-tradelog-trade-type-checkbox {
-  
-  
-}
-
-.journalit-tradelog-trade-type-checkbox.checked {
-  
-}
-
-.journalit-trade-log-view-container .journalit-tradelog-trade-type-option-item input[type="checkbox"] {
-  margin: 0 !important;
-  width: 14px !important;
-  height: 14px !important;
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: 2px !important;
-  background: var(--background-primary) !important;
-  cursor: pointer !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: relative !important;
-  padding: 0 !important;
-  font-size: 0 !important;
-  min-width: 14px !important;
-  max-width: 14px !important;
-  min-height: 14px !important;
-  max-height: 14px !important;
-}
-
-.journalit-trade-log-view-container .journalit-tradelog-trade-type-option-item input[type="checkbox"]:checked {
-  background: var(--interactive-accent) !important;
-  border-color: var(--interactive-accent) !important;
-}
-
-.journalit-trade-log-view-container .journalit-tradelog-trade-type-option-item input[type="checkbox"]:checked::after {
-  content: '✓' !important;
   color: var(--text-on-accent) !important;
-  font-size: 11px !important;
-  font-weight: 900 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  text-shadow: none !important;
-  line-height: 1 !important;
-}
-
-.journalit-trade-log-view-container .journalit-tradelog-trade-type-option-item input[type="checkbox"]:checked + span {
-  color: var(--interactive-accent);
-  font-weight: 600;
-}
-
-
-.journalit-tradelog-status-filter {
-  position: relative;
-  min-width: 120px !important;
-  max-width: 150px !important;
-  width: 100% !important;
-}
-
-.journalit-tradelog-status-dropdown {
-  position: relative !important;
-  width: 100% !important;
-}
-
-button.journalit-native-button.journalit-tradelog-status-summary {
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  padding: 5px 10px !important;
-  background-color: var(--background-primary) !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: 4px !important;
-  cursor: pointer !important;
-  font-size: 0.9em !important;
-  transition: all 0.2s ease !important;
-  height: 28px !important;
-  line-height: 1 !important;
-  white-space: nowrap !important;
-  gap: 8px !important;
-}
-
-button.journalit-native-button.journalit-tradelog-status-summary:hover {
-  border-color: var(--interactive-accent) !important;
-  background-color: var(--background-modifier-hover) !important;
-}
-
-button.journalit-native-button.journalit-tradelog-status-summary:focus-visible {
-  outline: 2px solid var(--interactive-accent) !important;
-  outline-offset: 2px !important;
-}
-
-.journalit-tradelog-status-summary .dropdown-arrow {
-  font-size: 10px;
-  color: var(--text-muted);
-  transition: transform 0.2s ease;
-}
-
-.journalit-tradelog-status-option-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  font-size: 13px;
-  white-space: nowrap;
-}
-
-.journalit-tradelog-status-option-item:hover {
-  background-color: var(--background-modifier-hover) !important;
-}
-
-.journalit-tradelog-status-option-item:focus-visible {
-  outline: 2px solid var(--interactive-accent) !important;
-  outline-offset: -2px !important;
-}
-
-.journalit-tradelog-status-option-item.select-all {
-  font-weight: 500;
-}
-
-.journalit-tradelog-status-option-item.sub-option {
-  padding-left: 24px;
-  font-size: 12px;
-  color: var(--text-muted);
-}
-
-.journalit-tradelog-status-divider {
-  height: 1px;
-  background-color: var(--background-modifier-border);
-  margin: 4px 0;
-}
-
-.journalit-tradelog-status-checkbox {
-  
-  
-}
-
-.journalit-tradelog-status-checkbox.checked {
-  
-}
-
-.journalit-trade-log-view-container .journalit-tradelog-status-option-item input[type="checkbox"] {
-  margin: 0 !important;
-  width: 14px !important;
-  height: 14px !important;
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: 2px !important;
-  background: var(--background-primary) !important;
-  cursor: pointer !important;
-  display: inline-flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: relative !important;
-  padding: 0 !important;
-  font-size: 0 !important;
-  min-width: 14px !important;
-  max-width: 14px !important;
-  min-height: 14px !important;
-  max-height: 14px !important;
-}
-
-.journalit-trade-log-view-container .journalit-tradelog-status-option-item input[type="checkbox"]:checked {
-  background: var(--interactive-accent) !important;
   border-color: var(--interactive-accent) !important;
 }
 
-.journalit-trade-log-view-container .journalit-tradelog-status-option-item input[type="checkbox"]:checked::after {
-  content: '✓' !important;
-  color: var(--text-on-accent) !important;
-  font-size: 11px !important;
-  font-weight: 900 !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  position: absolute !important;
-  top: 0 !important;
-  left: 0 !important;
-  width: 100% !important;
-  height: 100% !important;
-  text-shadow: none !important;
-  line-height: 1 !important;
-}
 
-.journalit-trade-log-view-container .journalit-tradelog-status-option-item input[type="checkbox"]:checked + span {
-  color: var(--interactive-accent);
-  font-weight: 600;
-}
 
 
 .trade-log-content {
@@ -737,7 +469,6 @@ button.journalit-native-button.journalit-tradelog-status-summary:focus-visible {
   
   contain: layout;
 }
-
 
 
 
@@ -788,7 +519,6 @@ button.journalit-native-button.journalit-tradelog-status-summary:focus-visible {
 }
 
 
-
 .trade-log-content::-webkit-scrollbar {
   width: 8px;
 }
@@ -820,13 +550,8 @@ button.journalit-native-button.journalit-tradelog-status-summary:focus-visible {
   border: 2px solid var(--text-muted);
   border-top-color: transparent;
   border-radius: 50%;
-  animation: spin 0.8s linear infinite;
+  animation: journalit-spin 0.8s linear infinite;
 }
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
 
 
 
@@ -849,7 +574,6 @@ button.journalit-native-button.journalit-tradelog-status-summary:focus-visible {
   overflow: visible;
 
 }
-
 
 
 .trade-log-tree-wrapper {
@@ -904,10 +628,10 @@ button.journalit-native-button.journalit-tradelog-status-summary:focus-visible {
   min-height: 48px;
   position: relative;
   
-  animation: fadeIn 0.2s ease-out;
+  animation: journalit-trade-log-fade-in 0.2s ease-out;
 }
 
-@keyframes fadeIn {
+@keyframes journalit-trade-log-fade-in {
   from {
     opacity: 0;
   }
@@ -1053,7 +777,6 @@ button.journalit-native-button.journalit-tradelog-status-summary:focus-visible {
   width: 6px;
   transform: translateY(-50%);
 }
-
 
 .node-content {
   display: flex;
@@ -1241,6 +964,8 @@ button.journalit-native-button--unstyled.node-label {
 }
 
 .journalit-trade-log-view-container .metric--winrate {
+  direction: ltr;
+  unicode-bidi: isolate;
   font-weight: 500;
 }
 
@@ -1257,6 +982,8 @@ button.journalit-native-button--unstyled.node-label {
 }
 
 .journalit-trade-log-view-container .metric--pnl {
+  direction: ltr;
+  unicode-bidi: isolate;
   font-weight: 600;
   font-family: var(--font-monospace);
 }
@@ -1323,7 +1050,6 @@ button.journalit-native-button--unstyled.node-label {
   width: 100%;
 }
 
-
 .trade-log-header-row {
 
   display: grid;
@@ -1348,7 +1074,6 @@ button.journalit-native-button--unstyled.node-label {
   text-transform: uppercase;
 
 }
-
 
 .header-cell {
   display: flex;
@@ -1394,7 +1119,7 @@ button.journalit-native-button--unstyled.node-label {
 }
 
 .trade-log-header-row button.journalit-native-button.header-cell.sorted {
-  color: var(--interactive-accent);
+  color: var(--text-accent);
   font-weight: 700;
 }
 
@@ -1653,6 +1378,14 @@ button.journalit-native-button--unstyled.node-label {
   gap: 4px;
 }
 
+.journalit-trade-log-view-container .trade-ticker,
+.journalit-trade-log-view-container .trade-pnl,
+.journalit-trade-log-view-container .trade-duration,
+.journalit-trade-log-view-container .trade-date {
+  direction: ltr;
+  unicode-bidi: isolate;
+}
+
 .trade-ticker {
   font-weight: 600;
   color: var(--text-normal);
@@ -1780,6 +1513,8 @@ button.journalit-native-button--unstyled.node-label {
 }
 
 .journalit-copy-trade-adjustment-modal__preview-value {
+  direction: ltr;
+  unicode-bidi: isolate;
   font-weight: var(--font-semibold);
   font-family: var(--font-monospace);
 }
@@ -1885,7 +1620,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 }
 
 .trade-tags-icon:hover {
-  color: var(--interactive-accent);
+  color: var(--text-accent);
 }
 
 .trade-tags-count-badge {
@@ -1909,7 +1644,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 }
 
 .custom-tags-tooltip .tooltip-title {
-  color: var(--interactive-accent);
+  color: var(--text-accent);
 }
 
 
@@ -2382,7 +2117,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 }
 
 .journalit-tooltip.setups-tooltip .tooltip-title {
-  color: var(--interactive-accent);
+  color: var(--text-accent);
 }
 
 .journalit-tooltip.thesis-tooltip .tooltip-content {
@@ -2418,7 +2153,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 @media (max-width: 900px) {
   
 
-
   
   .trade-account-cell,
 
@@ -2435,7 +2169,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     
 
   }
-
 
   .trade-pnl {
     font-size: 13px;

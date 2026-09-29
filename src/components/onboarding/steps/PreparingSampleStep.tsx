@@ -80,7 +80,7 @@ export const PreparingSampleStep: React.FC<PreparingSampleStepProps> = ({
         )}
 
         {failed && (
-          <div className="first-trade-actions">
+          <div className="first-trade-actions preparing-sample-actions">
             <Button
               variant="primary"
               size="large"
@@ -89,7 +89,12 @@ export const PreparingSampleStep: React.FC<PreparingSampleStepProps> = ({
             >
               {t('onboarding.preparing-sample.retry')}
             </Button>
-            <Button variant="secondary" onClick={onBack} disabled={busy}>
+            <Button
+              variant="secondary"
+              size="large"
+              onClick={onBack}
+              disabled={busy}
+            >
               {t('button.back')}
             </Button>
           </div>

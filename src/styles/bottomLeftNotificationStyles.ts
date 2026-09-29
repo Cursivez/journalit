@@ -12,6 +12,11 @@ export const BOTTOM_LEFT_NOTIFICATION_STYLES = `
     pointer-events: none;
   }
 
+  
+  .journalit-bottom-left-notifications.journalit-bottom-left-notifications--chrome {
+    z-index: calc(var(--layer-popover) - 1);
+  }
+
   .journalit-bottom-left-notifications > * {
     pointer-events: auto;
   }

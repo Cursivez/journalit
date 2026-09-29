@@ -2,6 +2,33 @@
 import type { Lang } from './en';
 
 const ko: Partial<Lang> = {
+  'command.share-note-as-image': '현재 노트를 이미지로 공유',
+  'trade.share.copy-screenshot': '트레이드 스크린샷 복사',
+  'trade.share.copied': '트레이드 스크린샷을 클립보드에 복사했습니다',
+  'trade.share.failed': '트레이드 스크린샷을 복사할 수 없습니다',
+  'trade.share.not-ready':
+    '트레이드 노트를 아직 불러오는 중입니다. 잠시 후 다시 시도하세요.',
+  'share.review.action': '리뷰 카드 공유',
+  'share.review.modal-title': '리뷰 공유',
+  'share.review.section.top': '노트 상단',
+  'share.review.select-all': '모두 선택',
+  'share.review.clear': '지우기',
+  'share.review.legend.widget': '위젯',
+  'share.review.legend.heading': '제목과 본문',
+  'share.review.legend.media': '미디어',
+  'share.review.legend.text': '텍스트',
+  'share.review.copy': '이미지 복사',
+  'settings.general.hide-dollar-amounts-in-shares':
+    '공유 이미지에서 달러 금액 숨기기',
+  'settings.general.hide-dollar-amounts-in-shares-desc':
+    'R 배수가 켜져 있으면 트레이드 스크린샷과 리뷰 카드에서 리스크, 수수료, 커미션, MAE/MFE 달러 금액을 제외합니다.',
+  'share.review.hide-dollar-amounts': '달러 금액 숨기기',
+  'share.review.hide-dollar-amounts-hint':
+    '리스크, 수수료 및 기타 달러 금액을 제외합니다.',
+  'share.review.hide-dollar-amounts-needs-r':
+    '달러 금액 없이 공유하려면 설정에서 R 배수를 켜세요.',
+  'share.review.copied': '공유 카드를 클립보드에 복사했습니다',
+  'share.review.failed': '공유 카드를 복사할 수 없습니다',
   'trade.broker-synced-at': '브로커 동기화 {date}',
   'home.period.month': '월',
   'home.period.quarter': '분기',
@@ -425,7 +452,7 @@ const ko: Partial<Lang> = {
     'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
   'dashboard.guide.main.filters.title': 'Filters change the whole Dashboard',
   'dashboard.guide.main.filters.description':
-    'Use filters when you want every stat and chart on this page to update for a different date range, account, setup, tag, or trade type.',
+    '이 페이지의 모든 통계와 차트를 다른 기간, 계정, 셋업, 태그 또는 거래 유형으로 업데이트하려면 필터를 사용하세요. 어떤 값이든 제외해서 해당 거래를 뺄 수도 있습니다.',
   'dashboard.guide.main.edit-layout.title':
     'Turn on edit mode to customise this page',
   'dashboard.guide.main.edit-layout.description':
@@ -435,7 +462,7 @@ const ko: Partial<Lang> = {
     'Click Add Widget to add more charts and bring back widgets you removed earlier.',
   'dashboard.guide.main.widget-picker.title': 'Pick what you want to show',
   'dashboard.guide.main.widget-picker.description':
-    'This picker shows the metrics and widgets that are not currently on your Dashboard. Click one to add it.',
+    '이 패널에서 모든 차트와 지표를 미리 볼 수 있습니다. 클릭하면 추가되며, 이미 대시보드에 있는 항목은 사용 중 아래에 표시됩니다.',
   'dashboard.guide.main.metrics.title':
     'These top cards are your quick summary',
   'dashboard.guide.main.metrics.description':
@@ -467,7 +494,7 @@ const ko: Partial<Lang> = {
   'home.guide.move-and-resize.title': 'Move and resize your widgets',
   'home.guide.widget-picker.title': 'Add widgets here',
   'home.guide.widget-picker.description':
-    'This picker lets you add more widgets and bring back quick links that you previously hid.',
+    '위젯을 미리 보고 추가하거나, 빠른 링크를 복원하거나, 계정 및 셋업 바로가기를 추가하세요. 홈에 이미 있는 항목은 "사용 중"에 표시되며 거기서 제거할 수 있습니다.',
   'home.guide.move-and-resize.description':
     'This is the main area you can rearrange in edit mode. Drag widgets to move them, or drag a widget from its bottom-right corner to resize it.',
   'home.guide.add-widget.title': 'Add widgets or bring back hidden quick links',
@@ -546,10 +573,7 @@ const ko: Partial<Lang> = {
     'Use this menu to switch between the full trade table and grouped time views like months, weeks, or days. Trades is the default, but grouped views are useful when you want to review by period.',
   'tradelog.guide.filters.title': 'Use filters to narrow the Trade Log',
   'tradelog.guide.filters.description':
-    'Open filters when you want to review only certain accounts, setups, tags, trade types, statuses, or dates.',
-  'tradelog.guide.filter-modal.title': 'These are your detailed filters',
-  'tradelog.guide.filter-modal.description':
-    'Use this modal when you want more control over exactly which trades are shown. Close it when you are done reviewing or changing filters.',
+    '특정 계정, 셋업, 태그, 거래 유형, 상태 또는 날짜만 검토하려면 필터를 여세요. 어떤 값이든 제외해서 해당 거래를 뺄 수도 있습니다.',
   'tradelog.guide.sorting.title': 'Click column headers to sort the table',
   'tradelog.guide.sorting.description':
     'In Trades view, click a sortable column header to reorder the table. For example, click Net P&L to sort by your biggest win and biggest loss.',
@@ -578,7 +602,6 @@ const ko: Partial<Lang> = {
   'tradelog.filter.losers': '손실',
   'tradelog.filter.breakeven': '손익 없음',
   'tradelog.filter.open': '미결제',
-  'tradelog.type.all': '모든 유형',
   'tradelog.type.regular': '일반',
   'tradelog.type.missed': '놓친 거래',
   'tradelog.type.backtest': '백테스트',
@@ -592,12 +615,11 @@ const ko: Partial<Lang> = {
   'dashboard.empty.manual-action': 'Add a trade manually',
   'dashboard.widgets.setup-performance.title': '셋업 성과',
   'dashboard.widgets.setup-performance.description':
-    '셋업별 성과를 비교하는 순위 막대 차트',
+    '셋업별 성과 순위 막대 차트',
   'dashboard.widgets.setup-performance.empty': '셋업 성과 데이터가 없습니다',
   'dashboard.widgets.setup-performance.masked-label': '셋업',
   'dashboard.widgets.tag-performance.title': '태그 성과',
-  'dashboard.widgets.tag-performance.description':
-    '태그별 성과를 비교하는 순위 막대 차트',
+  'dashboard.widgets.tag-performance.description': '태그별 성과 순위 막대 차트',
   'dashboard.widgets.tag-performance.empty': '태그 성과 데이터가 없습니다',
   'dashboard.widgets.tag-performance.masked-label': '태그',
   'dashboard.widgets.ticker-performance.title': '티커 성과',
@@ -621,8 +643,7 @@ const ko: Partial<Lang> = {
   'dashboard.widgets.ticker-performance.omitted-count': '생략: {count}',
 
   'widget.tickerPerformance.name': '티커 성과',
-  'widget.tickerPerformance.description':
-    '티커별 성과를 비교하는 순위 막대 차트',
+  'widget.tickerPerformance.description': '티커별 성과 순위 막대 차트',
 
   
   'dashboard.filter.accounts.all': '모든 계좌',
@@ -632,11 +653,6 @@ const ko: Partial<Lang> = {
   'dashboard.filter.accounts.none-found': '계좌를 찾을 수 없습니다',
 
   
-  'dashboard.filter.mistakes.all': '모든 실수',
-  'dashboard.filter.mistakes.none': '실수 없음',
-  'dashboard.filter.mistakes.n-selected': '{count}개 실수',
-  'dashboard.filter.mistakes.select-all': '모두 선택',
-  'dashboard.filter.mistakes.none-found': '실수를 찾을 수 없습니다',
 
   
   
@@ -737,8 +753,7 @@ const ko: Partial<Lang> = {
   
   
   'home.widget.getting-started.name': 'Getting Started',
-  'home.widget.getting-started.description':
-    'Checklist to help you add trading history and configure Journalit',
+  'home.widget.getting-started.description': 'Journalit과 거래 설정 체크리스트',
   'home.widget.getting-started.progress': '{completed}/{total} completed',
   'home.widget.getting-started.progress.loading': 'Checking progress...',
   'home.widget.getting-started.item.account.title': '거래 계좌를 설정하세요',
@@ -835,13 +850,12 @@ const ko: Partial<Lang> = {
   'dashboard.avgRRRiskBased.tooltip.no-data':
     'R 기반 RR을 계산하기에 데이터가 부족합니다. 손절/위험 금액을 입력하고 유효한 승리/손실 거래가 모두 있도록 해주세요.',
   'metric.avgRR.name': '평균 RR (페이오프)',
-  'metric.avgRR.description': '평균 보상/위험 비율 (평균 수익 / 평균 손실)',
+  'metric.avgRR.description': '평균 수익을 평균 손실로 나눈 값',
   'metric.sharpeRatio.name': '샤프 비율',
-  'metric.sharpeRatio.description':
-    '거래 단위 샤프 비율: 청산 거래 평균 순 P&L을 P&L 표본 변동성으로 나눈 값',
+  'metric.sharpeRatio.description': '변동성 대비 평균 거래 P&L',
   'metric.avgRRRiskBased.name': '평균 RR (R 기반)',
   'metric.avgRRRiskBased.description':
-    'R-배수 기반 비율: 평균 승리 R / 평균 손실 R (손절/위험 데이터 필요)',
+    '평균 수익 R 대 손실 R (손절 데이터 필요)',
   'metric.longestWinStreak.name': '최고 연승',
   'metric.longestWinStreak.description': '청산일 기준 최장 연속 승리',
   'metric.longestLossStreak.name': '최악의 연패',
@@ -884,7 +898,6 @@ const ko: Partial<Lang> = {
   'tradelog.column.maxR': 'Max R',
   'tradelog.column.returnPercent': 'Return %',
   'filter.modal.section.custom-fields': 'Custom Fields',
-  'filter.modal.custom-field.n-selected': '{count} selected',
   'filter.modal.custom-field.none-available': 'No values available',
   'settings.general.analytics-date-basis': '분석 날짜 기준',
   'settings.general.analytics-date-basis-desc':
@@ -939,7 +952,9 @@ const ko: Partial<Lang> = {
   'widget.drawdownStats.no-conversion':
     'Drawdown stats are unavailable for mixed currencies without FX conversion.',
 
-  'guide.skip-guide': 'Skip Guide',
+  'guide.skip-guide': '가이드 건너뛰기',
+  'guide.step-count': '{count}단계',
+  'guide.step-position': '{total}단계 중 {current}단계',
   'settings.general.data-management': '데이터 관리 & 개인정보 보호',
 
   'settings.general.privacy-mode': '개인정보 보호 모드',
@@ -1010,6 +1025,17 @@ const ko: Partial<Lang> = {
   'dashboard.conversion.details-label': '통화 변환 세부 정보',
 
   'widget.stats.vs-prev': 'vs prev',
+  'common.r-missing.title': '이 거래에는 R이 없습니다',
+  'common.r-missing.trade':
+    '이 거래에는 리스크 금액이 없어 결과를 R로 표시할 수 없습니다.',
+  'common.r-missing.fix':
+    '리스크 금액을 추가하거나 설정에서 기본 리스크 금액을 지정하세요.',
+  'common.r-coverage.partial':
+    '{total}건 중 {valid}건의 거래를 기준으로 합니다. 리스크 금액이 없는 거래는 R에 포함되지 않습니다.',
+  'common.r-coverage.none':
+    '여기에는 리스크 금액이 있는 거래가 없어 표시할 R이 없습니다.',
+  'dashboard.r-coverage.no-comparison':
+    '변화 없음: 비교 기간에 이 지표의 R 값이 없습니다.',
   'dashboard.metrics.past-30d': 'past 30d',
 
   'chart.tooltip.drawdown-amount': 'Amount',
@@ -1123,20 +1149,82 @@ const ko: Partial<Lang> = {
   'trade-import.asset.futures': 'Futures',
   'trade-import.asset.forex': 'Forex',
   'trade-import.asset.crypto': 'Crypto',
-  'trade-import.label.manual-mode': 'Manual mode',
-  'trade-import.manual-mode.price-based': 'Price based',
-  'trade-import.manual-mode.direct-pnl': 'Direct P&L',
+  'trade-import.manual-mode.price-based': '주문 또는 체결 (거래로 묶음)',
+  'trade-import.manual-mode.direct-pnl': '한 행에 거래 하나 (손익 사용)',
   'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
   'trade-import.privacy.copy':
-    'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default.',
+    'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default. When AI mapping suggestions are on, the column headers and a few sample rows are also sent to an AI model to suggest column matches; untick the option to map columns yourself.',
 
   'trade-import.action.analyse': 'Analyse file',
   'trade-import.action.choose-file': 'Choose file',
-  'trade-import.guide.prompt': '무엇을 내보내야 할지 모르겠나요?',
-  'trade-import.guide.link': '브로커 가이드 보기',
   'trade-import.action.drop-file': 'Drop file to upload',
   'trade-import.analyse.detected':
-    'Detected {fileType}. Headers and sample rows are returned by the backend.',
+    '{fileType} 파일을 읽었습니다. 아래 행을 확인한 뒤 각 열을 거래 필드에 연결하세요.',
+  'trade-import.table.screenshots': '스크린샷',
+  'trade-import.preview.screenshot-alt':
+    '스프레드시트 {row}행의 {symbol} 스크린샷',
+  'trade-import.preview.screenshots-more': '{count}개 더',
+  'trade-import.preview.include-screenshots':
+    '스프레드시트의 스크린샷을 해당 거래에 추가 ({count})',
+  'trade-import.completion.screenshots-added':
+    '스프레드시트에서 추가한 스크린샷: {count}',
+  'trade-import.completion.screenshots-failed':
+    '추가하지 못한 스프레드시트 스크린샷: {count}',
+  'trade-import.preview.import-anyway': '그래도 가져오기',
+  'trade-import.preview.import-anyway-aria':
+    '{date}의 {symbol} 그래도 가져오기',
+  'trade-import.preview.import-all-anyway':
+    '중복 가능성이 있는 {count}건 모두 그래도 가져오기',
+  'csv.mapper.missing-fields.pnl-or-prices':
+    '또는 진입가, 청산가, 수량을 연결하면 가격으로 손익을 계산합니다.',
+  'trade-import.pnl-from-prices.title': '손익은 가격으로 계산됩니다',
+  'trade-import.pnl-from-prices.body':
+    '손익 열이 없어 진입가, 청산가, 수량으로 손익을 계산합니다. 자산 유형이 맞아야 정확하므로 이 거래가 무엇인지 선택하세요.',
+  'trade-import.pnl-from-prices.contract-size':
+    '외환과 선물은 손익을 계산하려면 계약 크기 열도 필요합니다. 없다면 손익 열을 연결하세요.',
+  'trade-import.diagnostic.choose-date-format': '날짜 형식 선택',
+  'trade-import.date-question.ambiguous':
+    '날짜가 {example} 형태입니다. 어느 날짜인가요?',
+  'trade-import.date-question.mixed':
+    '이 열의 일부 날짜는 {example}처럼 순서가 다릅니다. 대부분의 날짜는 어떤 순서인가요?',
+  'trade-import.date-question.mixed-note':
+    '다른 순서로 적힌 행은 목록으로 보여 드리니 파일에서 고치세요.',
+  'quick-import.message.date-order':
+    '날짜를 두 가지로 읽을 수 있습니다. 전체 가져오기를 열어 선택하세요.',
+  'csv.date-format.eu-dot': 'EU 점 구분: 25.12.2024 (일.월.연)',
+  'csv.date-format.ymd-dot': '연도 먼저, 점 구분: 2024.12.25',
+  'onboarding.data-source.option.file.description':
+    'Excel, Google Sheets 또는 CSV로 관리하는 매매일지.',
+  'onboarding.data-source.option.file.label': '내 스프레드시트',
+  'trade-import.unmapped.title': '가져오지 않음 ({count})',
+  'trade-import.unmapped.body':
+    '이 열들은 Journalit 필드와 연결되지 않아 제외됩니다. 맞는 필드가 있으면 위에서 연결하세요.',
+  'trade-import.unmapped.keep': '사용자 지정 필드로 유지',
+  'trade-import.unmapped.keep-aria': '{header}을(를) 사용자 지정 필드로 유지',
+  'trade-import.custom-field.title': '“{header}”을(를) 사용자 지정 필드로 유지',
+  'trade-import.custom-field.hint':
+    '거래에 필드를 추가하고 이 열의 값으로 채웁니다. 이미 맞는 Journalit 필드가 있다면 그 필드에 연결하세요.',
+  'trade-import.custom-field.name': '필드 이름',
+  'trade-import.custom-field.type': '필드 유형',
+  'trade-import.custom-field.type.text': '텍스트',
+  'trade-import.custom-field.type.number': '숫자',
+  'trade-import.custom-field.type.dropdown': '선택 목록',
+  'trade-import.custom-field.create': '필드 만들기',
+  'trade-import.custom-field.error.reserved':
+    '이 이름은 기본 거래 필드에서 사용 중입니다. 다른 이름을 선택하세요.',
+  'trade-import.table.open-closed': '보유/청산',
+  'trade-import.status.open': '보유 중',
+  'trade-import.status.partially-closed': '일부 청산',
+  'trade-import.status.closed': '청산',
+  'trade-import.status.cancelled': '취소됨',
+  'trade-import.diagnostic.column': '열: {columns}',
+  'trade-import.diagnostic.unmap-column': '이 열은 가져오지 않기',
+  'trade-import.diagnostic.edit-mapping': '매핑 변경',
+  'trade-import.source.manual.tile': '직접 만든 스프레드시트 / 기타 파일',
+  'trade-import.source.manual.title': '직접 만든 스프레드시트 또는 기타 파일',
+  'csv.mapper.mode.title': '각 행은 무엇인가요?',
+  'csv.mapper.mode.help':
+    '매매일지 스프레드시트는 보통 한 행에 청산된 거래 하나와 손익 열이 있습니다. 브로커 주문 내역은 매수와 매도를 각각 별도의 행으로 표시합니다.',
   'trade-import.diagnostic.info': 'info',
   'trade-import.label.sheet': 'Sheet',
   'trade-import.label.header-row': 'Header row',
@@ -1163,6 +1251,56 @@ const ko: Partial<Lang> = {
   'trade-import.table.entry-time': 'Entry time',
   'trade-import.table.quantity': 'Quantity',
   'trade-import.table.message': 'Message',
+  'trade-import.status.new': '신규',
+  'trade-import.status.already-imported': '이미 가져옴',
+  'trade-import.status.other-account': '다른 계좌에 있음',
+  'trade-import.status.other-account.detail': '{account}에 이미 가져옴',
+  'trade-import.status.updates-existing': '기존 거래 업데이트',
+  'trade-import.status.possible-duplicate': '중복 가능성',
+  'trade-import.status.needs-review': '확인 필요',
+  'trade-import.status.duplicate-in-file': '파일 내 중복',
+  'trade-import.status.invalid': '잘못된 거래',
+  'trade-import.status.no-open-trade': '청산할 미결제 거래 없음',
+  'trade-import.status.multiple-open-trades': '여러 미결제 거래가 일치',
+  'trade-import.status.quantity-mismatch': '수량 불일치',
+  'trade-import.server-deletion.deleted':
+    'Journalit 서버에서 삭제된 거래: {count}',
+  'trade-import.server-deletion.kept':
+    '다른 가져오기에도 포함되어 유지된 거래: {count}',
+  'trade-import.server-deletion.blocked-broker-connected':
+    '이 계좌는 브로커 연결로 동기화됩니다. 데이터를 삭제하려면 브로커 연결을 해제하세요.',
+  'trade-import.server-deletion.blocked-broker-history':
+    '이 계좌에는 브로커 동기화 기록이 있어 여기서 삭제할 수 없습니다. 대신 개별 가져오기를 삭제하세요.',
+  'trade-import.server-deletion.failed':
+    'Journalit 서버에서 삭제하지 못했습니다. 다시 시도하세요.',
+  'trade-import.server-deletion.notice':
+    '서버 삭제 후 휴지통으로 이동한 거래 노트: {count}',
+  'trade-import.server-deletion.account.title': '서버 계좌를 삭제할까요?',
+  'trade-import.server-deletion.account.message':
+    '"{account}"과(와) 가져온 거래(서버에 {count}개)를 Journalit 서버에서 영구 삭제하고, 동기화된 모든 볼트에서 해당 노트를 휴지통으로 이동합니다. 이후 파일을 다시 가져올 수 있습니다.',
+  'trade-import.server-deletion.account.confirm': '서버에서 삭제',
+  'trade-import.server-deletion.account.button': '서버에서 삭제',
+  'trade-import.history.title': '가져오기 기록',
+  'trade-import.completion.wrong-account': '잘못된 계좌로 가져왔나요?',
+  'trade-import.completion.undo-import': '이 가져오기 취소',
+  'trade-import.action.manage-imports': '이전 가져오기 관리',
+  'trade-sync.import.more-actions': '추가 작업',
+  'trade-import.history.loading': '가져오기 기록 불러오는 중…',
+  'trade-import.history.load-failed': '가져오기 기록을 불러올 수 없습니다.',
+  'trade-import.history.empty': '아직 가져오기가 없습니다.',
+  'trade-import.history.trades-on-server': '서버에 {count}개',
+  'trade-import.history.delete.title': '이 가져오기를 삭제할까요?',
+  'trade-import.history.delete.message':
+    '이 가져오기가 "{account}"에 추가한 거래(서버에 {count}개)를 Journalit 서버에서 영구 삭제하고, 동기화된 모든 볼트에서 해당 노트를 휴지통으로 이동합니다. 다른 가져오기에도 포함된 거래는 유지됩니다. 이후 파일을 다시 가져올 수 있습니다.',
+  'trade-import.history.delete.confirm': '가져오기 삭제',
+  'trade-import.history.load-more': '더 불러오기',
+  'account.edit.modal.delete.delete-server-trades':
+    '가져온 거래도 Journalit 서버에서 삭제(서버에 {count}개). 여기서 노트를 유지하더라도 동기화된 모든 볼트에서 휴지통으로 이동합니다.',
+  'trade-import.preview.other-account.message':
+    '이미 {account}에 있어({count}개) 건너뜁니다.',
+  'trade-import.preview.other-account.import-instead':
+    '대신 {account}(으)로 가져오기',
+  'trade-import.preview.other-account.undo-earlier': '이전 가져오기 취소',
   'trade-import.action.confirm': 'Confirm import',
   'trade-import.action.activate-pro.one':
     'PRO를 활성화하여 거래 {count}개 가져오기',
@@ -1514,11 +1652,7 @@ const ko: Partial<Lang> = {
   'tradelog.guide.gallery-filters.title':
     '같은 진입점에서 갤러리를 필터링하세요',
   'tradelog.guide.gallery-filters.description':
-    '필터 버튼은 계속 고급 필터를 엽니다. 갤러리 모드에서는 주석 상태와 미디어 태그 같은 미디어 전용 필터도 포함됩니다.',
-  'tradelog.guide.gallery-filter-modal.title':
-    '미디어 필터는 거래 필터와 함께 있습니다',
-  'tradelog.guide.gallery-filter-modal.description':
-    '이 모달에서 거래 필터와 미디어 필터를 함께 사용하세요. 예를 들어 특정 setup으로 필터링한 뒤 메모가 있거나 특정 미디어 태그가 있는 미디어만 볼 수 있습니다.',
+    '필터 메뉴는 여기서도 똑같이 작동합니다. 갤러리 모드에서는 주석 상태와 미디어 태그 같은 미디어 필터가 있는 갤러리 섹션도 표시됩니다.',
   'tradelog.guide.gallery-grid.title': '미디어를 열어 자세히 검토하세요',
   'tradelog.guide.gallery-grid.description':
     '각 카드는 콘텐츠를 가리지 않으면서 거래와 리뷰 맥락을 간단히 보여줍니다. 아무 카드나 클릭하면 전체 화면으로 열립니다.',
@@ -1650,6 +1784,38 @@ const ko: Partial<Lang> = {
   'home.filters.accounts': '계정',
   'home.filters.back': '뒤로',
   'filter.reset': '필터 초기화',
+  'filter.menu.title': '필터 기준',
+  'filter.menu.accounts': '계좌',
+  'filter.menu.tickers': '티커',
+  'filter.menu.setups': '셋업',
+  'filter.menu.tags': '태그',
+  'filter.menu.mistakes': '실수',
+  'filter.menu.trade-type': '거래 유형',
+  'filter.menu.status': '상태',
+  'filter.menu.direction': '방향',
+  'filter.menu.review-status': '리뷰 상태',
+  'filter.menu.status.cancelled': '취소됨',
+  'filter.menu.included-count': '{count}개 포함',
+  'filter.menu.excluded-count': '{count}개 제외',
+  'filter.menu.search': '검색',
+  'filter.menu.no-matches': '일치 항목 없음',
+  'filter.menu.no-options': '아직 필터링할 항목이 없습니다',
+  'filter.menu.clear': '지우기',
+  'filter.menu.match.label': '일치 방식',
+  'filter.menu.match.any': '하나라도',
+  'filter.menu.match.all': '모두',
+  'filter.menu.match.only': '이것만',
+  'filter.menu.match.exact': '정확히 이것',
+  'filter.menu.match.hint.any': '선택한 값 중 하나 이상을 가진 거래.',
+  'filter.menu.match.hint.all':
+    '선택한 값을 모두 가진 거래. 다른 값이 있어도 됩니다.',
+  'filter.menu.match.hint.only': '모든 값이 선택한 값에 속하는 거래.',
+  'filter.menu.match.hint.exact': '선택한 값과 정확히 같은 거래.',
+  'filter.menu.match.no-value-any-only': '“하나라도”에서만 사용 가능',
+  'filter.menu.exclude-value': '{label} 제외',
+  'filter.menu.match.badge.all': '모두',
+  'filter.menu.match.badge.only': '만',
+  'filter.menu.match.badge.exact': '정확히',
   'home.guide.modes.title': '마지막으로 하나 더: 대시보드',
   'home.guide.modes.description':
     '개요와 대시보드는 이 페이지를 공유합니다. 지금 대시보드로 전환하여 성과 통계에 대한 짧은 투어를 계속하세요.',
@@ -1799,15 +1965,6 @@ const ko: Partial<Lang> = {
     'The drawdown floor locks after payout.',
   'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
     'The account and drawdown limits reset after payout.',
-  'account-page.guide.whats-new.cockpit.payout.title':
-    'Know when a funded payout is safe',
-  'account-page.guide.whats-new.cockpit.payout.description':
-    'Funded accounts with verified rules now show payout requirements, the amount available, and a preview of the balance and drawdown consequences before you request money.',
-  'account-page.guide.main.payout.title': 'Plan funded payouts',
-  'account-page.guide.main.payout.description':
-    'When the funded phase has verified payout rules, this panel tracks eligibility and previews the account impact of a requested amount.',
-  'account-page.guide.main.trade-log.description':
-    '이 계정이 선택된 상태로 트레이드 로그를 엽니다. 다단계 챌린지에서는 버튼이 보고 있는 단계를 따르며, 화살표에서 다른 단계 또는 전체 계정을 선택할 수 있습니다.',
   'account.prop-challenge.stage': 'Stage type',
   'account.prop-challenge.stage.evaluation': 'Evaluation',
   'account.prop-challenge.stage.sim-funded': 'Sim funded',
@@ -1935,9 +2092,9 @@ const ko: Partial<Lang> = {
   'account.prop-challenge.ledger.help.consistency.example-none':
     '아직 이익이 없어 비교할 최고일이 없습니다.',
   'account.prop-challenge.ledger.help.max_position_size':
-    '모든 미청산을 합쳐 한 번에 보유할 수 있는 최대 계약 수입니다. 일부 업체는 이익이 늘면 한도를 올립니다.',
+    '한 포지션에서 허용되는 최대 계약 수입니다. Journalit는 각 거래의 규모를 확인합니다. 일부 회사는 수익이 늘면 한도를 올립니다.',
   'account.prop-challenge.ledger.help.max_position_size.example':
-    '지금은 한 번에 최대 {maximum}계약. 지금까지 가장 큰 포지션은 {current}.',
+    '현재 거래당 최대 {maximum}계약, 지금까지 가장 큰 거래 {current}.',
   'account.prop-challenge.ledger.help.payout.cycle_days':
     '현재 출금 주기의 거래일입니다. 승인된 출금 후 다시 셉니다.',
   'account.prop-challenge.ledger.help.payout.cycle_days.example':
@@ -1989,7 +2146,7 @@ const ko: Partial<Lang> = {
   
   'account.merge.challenge.move-earlier': '{account} 앞으로',
   'account.merge.challenge.move-later': '{account} 뒤로',
-  'account.merge.warning.use-profile-balance': '프로필 잔액 사용',
+  'account.merge.warning.use-profile-balance': '회사 잔액 사용',
   'account.merge.warning.edit-phases': '단계 편집',
   'account.merge.title': '챌린지 설정',
   'account.merge.loading': '불러오는 중...',
@@ -2023,8 +2180,20 @@ const ko: Partial<Lang> = {
   'account.merge.error.unknown': '병합에 실패했습니다.',
   'account.merge.action.merge': '병합',
   'account.merge.action.undo': '실행 취소',
+  'account.merge.action.looks-right': '맞습니다',
   'account.merge.action.delete': '이전 계정 삭제',
   'account.merge.notice.converted': '챌린지로 변환됨',
+  'account.merge.summary.intro': '챌린지와 일치하는지 확인하세요:',
+  'account.merge.summary.phases': '단계: {phases}',
+  'account.merge.summary.current': '현재 {phase}({stage}), {date} 시작',
+  'account.merge.summary.current-stage': '현재 {phase}, {date} 시작',
+  'account.merge.summary.trades':
+    '{total}건 중 {counted}건의 거래가 챌린지에 포함됩니다',
+  'account.merge.summary.trades-missing':
+    '{total}건 중 {counted}건의 거래가 챌린지에 포함됩니다. 나머지는 어느 단계의 기간에도 속하지 않습니다.',
+  'account.merge.summary.rules': '{phase} 규칙: {rules}',
+  'account.merge.summary.no-rules':
+    '{phase}에 아직 규칙이 없습니다. 계좌 편집에서 회사 규칙을 추가하세요.',
   'account.merge.notice.title': '{accounts} 에서 병합',
   'account.merge.notice.error': '작업에 실패했습니다.',
   'account.merge.undo.title': '병합 실행 취소',
@@ -2035,21 +2204,30 @@ const ko: Partial<Lang> = {
   'command.open-legacy-challenge-onboarding': '프롭 챌린지 설정',
   'account.merge.step.challenge': '챌린지',
   'account.merge.action.convert': '변환',
+  'account.merge.phase.apply-profile': '회사 규칙 적용',
   'account.merge.challenge.accounts': '계좌',
   'account.merge.challenge.order-hint': '가장 오래된 단계부터',
   'account.merge.challenge.single-hint': '이 계좌는 단독 챌린지가 됩니다',
-  'account.merge.phase.identities-count': '식별자 {count}개',
+  'account.merge.phase.broker-accounts.one': '브로커 계좌 {count}개',
+  'account.merge.phase.broker-accounts.few': '브로커 계좌 {count}개',
+  'account.merge.phase.broker-accounts.many': '브로커 계좌 {count}개',
+  'account.merge.phase.broker-accounts.other': '브로커 계좌 {count}개',
+  'account.merge.review.phase-count.one': '단계',
+  'account.merge.review.phase-count.few': '단계',
+  'account.merge.review.phase-count.many': '단계',
+  'account.merge.review.phase-count.other': '단계',
   'account.merge.phase.pending': '대기 중',
-  'account.merge.review.phases': '단계',
+  'account.merge.phase.starts-after': '{phase} 통과 후 시작',
+  'account.merge.phase.pending-rules': '규칙: {rules}',
   'account.merge.review.archived': '보관됨',
-  'account.merge.review.open': '진행 중',
+  'account.merge.review.starts-after': '{phase} 이후',
+  'account.merge.review.since': '{date}부터',
   'account.merge.sequence': '챌린지 {index} / {total}',
-  'account.merge.warning.balance-differs':
-    '시작 잔액이 프롭사 프로필과 다릅니다',
+  'account.merge.warning.balance-differs': '시작 잔액이 회사 규칙과 다릅니다',
   'account.merge.error.profile-phase-mismatch':
-    '프롭사 프로필의 단계 수보다 계좌가 많습니다',
+    '회사 규칙의 단계보다 계좌가 많습니다',
   'account.merge.error.profile-currency-mismatch':
-    '프로필 통화가 이 계정들과 다릅니다.',
+    '회사 규칙이 이 계좌들과 다른 통화를 사용합니다.',
   'account.merge.error.source-changed':
     '계정이 변경되었습니다. 병합을 다시 검토하세요.',
   'account.merge.error.multiple-active-phases':
@@ -2057,17 +2235,17 @@ const ko: Partial<Lang> = {
   'account.merge.error.copy-trading-overlap':
     '카피 트레이딩 기간이 겹칩니다. 먼저 하나를 종료하세요.',
   'onboarding.legacy-challenge.legend':
-    '한 챌린지의 단계였던 계좌들을 묶으세요. 단독 계좌는 그 자체로 챌린지가 됩니다.',
-  'onboarding.legacy-challenge.assign.leave': '그대로 두기',
-  'onboarding.legacy-challenge.assign.own': '단독 챌린지',
-  'onboarding.legacy-challenge.assign.group': '챌린지 {letter}',
-  'onboarding.legacy-challenge.assign.new-group': '새 챌린지…',
+    '이전 계좌를 각각 어떻게 할지 선택하세요. 1단계와 펀디드처럼 단계마다 별도 계좌가 있었나요? 같은 챌린지에 넣으면 단계가 있는 하나의 계좌가 됩니다.',
+  'onboarding.legacy-challenge.assign.leave': '일반 계좌로 유지',
+  'onboarding.legacy-challenge.assign.own': '챌린지로 전환',
+  'onboarding.legacy-challenge.assign.group': '챌린지 {letter}에 추가',
+  'onboarding.legacy-challenge.assign.new-group': '새 챌린지로 합치기…',
   'onboarding.legacy-challenge.action.continue': '계속',
   'onboarding.legacy-challenge.action.continue-count': '{count}개 설정',
   'guide.action-step.dismiss': '나중에',
-  'guide.legacy-challenge.title': '기존 계좌',
+  'guide.legacy-challenge.title': '이번 업데이트 이전 계좌 설정',
   'guide.legacy-challenge.description':
-    '한 챌린지의 단계였던 계좌들을 합치거나, 계좌 하나를 단독 챌린지로 만드세요.',
+    '이전 평가 또는 펀디드 계좌를 챌린지로 전환하세요. 설정이 단계와 날짜를 안내하고, 마지막에 설정된 내용을 보여 주어 확인할 수 있습니다.',
   'guide.legacy-challenge.action': '계좌 설정',
   'onboarding.legacy-challenge.title': '프롭 챌린지',
   'onboarding.legacy-challenge.action.skip': '건너뛰기',
@@ -2121,6 +2299,21 @@ const ko: Partial<Lang> = {
   'calendar.aria.open-weekly-review': '{date} 주간 리뷰 열기',
   'calendar.aria.open-monthly-review': '{date} 월간 리뷰 열기',
   'calendar.aria.open-quarterly-review': '{date} 분기 리뷰 열기',
+  'filter.menu.whats-new.open.title': '필터에 새 메뉴가 생겼어요',
+  'filter.menu.whats-new.open.description':
+    '이제 모든 필터가 하나의 계층 메뉴에 있고, 거래를 좁히는 새로운 방법 두 가지가 추가되었습니다. 메뉴를 열어 확인해 보세요.',
+  'filter.menu.whats-new.exclude.title': '원하지 않는 항목 제외',
+  'filter.menu.whats-new.exclude.description':
+    '모든 값에는 ⊘ 버튼이 있습니다. 값을 제외하면 그 값을 가진 거래는 다른 조건과 일치하더라도 모두 빠집니다.',
+  'filter.menu.whats-new.match.title': '여러 값의 일치 방식 선택',
+  'filter.menu.whats-new.match.description':
+    '여러 값을 고르면 거래에 "하나라도", "모두", "이것만", "정확히 이것" 중 무엇이 필요한지 정할 수 있습니다. 태그, 셋업, 실수, 사용자 지정 필드 모두 같은 일치 방식 옵션이 있습니다.',
+  'filter.menu.whats-new.phases.title': '챌린지 단계로 필터',
+  'filter.menu.whats-new.phases.description':
+    '단계가 둘 이상인 프랍 계정은 단계 목록을 엽니다. 계정 전체 대신 개별 단계를 선택하세요.',
+  'filter.menu.whats-new.done.title': '필터의 새 기능은 여기까지예요',
+  'filter.menu.whats-new.done.description':
+    '같은 메뉴를 거래 기록, 대시보드, 홈, 셋업, 리뷰에서 사용할 수 있습니다. 클릭하는 즉시 적용됩니다.',
 };
 
 export default ko;

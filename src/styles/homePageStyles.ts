@@ -211,12 +211,8 @@ export const HOME_PAGE_STYLES = `
   }
 
   .journalit-home-page--custom-background .journalit-home-period-selector,
-  .journalit-home-page--custom-background
-    .journalit-home-account-filter__trigger,
-  .journalit-home-page--custom-background
-    .journalit-home-trade-type-filter__trigger,
-  .journalit-home-page--custom-background
-    .journalit-home-quick-links-position-toggle,
+  .journalit-home-page--custom-background .journalit-home-trade-type-filter__trigger,
+  .journalit-home-page--custom-background .journalit-home-quick-links-position-toggle,
   .journalit-home-page--custom-background button.journalit-quick-link-button {
     background-color: color-mix(
       in srgb,
@@ -228,6 +224,7 @@ export const HOME_PAGE_STYLES = `
   .journalit-home-page--custom-background
     .journalit-home-edit-toggle--active {
     background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
   }
 
   .theme-light .journalit-home-page--custom-background {
@@ -370,7 +367,6 @@ export const HOME_PAGE_STYLES = `
   }
 
   .journalit-home-period-wrapper,
-  .journalit-home-account-filter,
   .journalit-home-trade-type-filter {
     position: relative;
     min-width: 0;
@@ -466,6 +462,7 @@ export const HOME_PAGE_STYLES = `
     .journalit-home-period-option--active
     .journalit-home-period-option__check {
     background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
     border-color: var(--interactive-accent);
   }
 
@@ -474,7 +471,6 @@ export const HOME_PAGE_STYLES = `
     background-color: transparent !important;
   }
 
-  .journalit-home-account-filter__trigger,
   .journalit-home-trade-type-filter__trigger,
   .journalit-home-add-widget-button {
     display: flex;
@@ -492,17 +488,6 @@ export const HOME_PAGE_STYLES = `
     background-color: var(--background-primary);
   }
 
-  button.journalit-native-button--unstyled.journalit-home-add-shortcut {
-    box-sizing: border-box;
-    width: 100%;
-    padding: 10px 16px;
-  }
-
-  button.journalit-native-button--unstyled.journalit-home-add-shortcut:hover {
-    background-color: var(--background-secondary);
-  }
-
-  .journalit-home-account-filter__trigger,
   .journalit-home-trade-type-filter__trigger {
     width: fit-content;
     max-width: 180px;
@@ -510,7 +495,6 @@ export const HOME_PAGE_STYLES = `
     gap: 6px;
   }
 
-  .journalit-home-account-filter__summary,
   .journalit-home-trade-type-filter__summary {
     min-width: 0;
     max-width: 140px;
@@ -519,18 +503,15 @@ export const HOME_PAGE_STYLES = `
     white-space: nowrap;
   }
 
-  .journalit-home-account-filter__chevron,
   .journalit-home-trade-type-filter__chevron {
     flex-shrink: 0;
     transition: transform 0.2s ease;
   }
 
-  .journalit-home-account-filter__chevron--open,
   .journalit-home-trade-type-filter__chevron--open {
     transform: rotate(180deg);
   }
 
-  .journalit-home-account-filter__menu,
   .journalit-home-trade-type-filter__menu {
     position: absolute;
     top: 100%;
@@ -548,7 +529,6 @@ export const HOME_PAGE_STYLES = `
     z-index: 100;
   }
 
-  .journalit-home-account-filter .journalit-home-account-filter__option,
   .journalit-home-trade-type-filter .journalit-home-trade-type-filter__option {
     display: flex;
     align-items: center;
@@ -570,25 +550,18 @@ export const HOME_PAGE_STYLES = `
     transition: background-color 0.15s ease;
   }
 
-  .journalit-home-account-filter .journalit-home-account-filter__option:hover,
-  .journalit-home-trade-type-filter
-    .journalit-home-trade-type-filter__option:hover {
+  .journalit-home-trade-type-filter .journalit-home-trade-type-filter__option:hover {
     background: var(--background-modifier-hover) !important;
     background-color: var(--background-modifier-hover) !important;
   }
 
-  .journalit-home-account-filter
-    .journalit-home-account-filter__option--active,
-  .journalit-home-trade-type-filter
-    .journalit-home-trade-type-filter__option--active {
+  .journalit-home-trade-type-filter .journalit-home-trade-type-filter__option--active {
     background: transparent !important;
     background-color: transparent !important;
     color: var(--text-normal) !important;
   }
 
-  .journalit-home-account-filter .journalit-home-account-filter__option-label,
-  .journalit-home-trade-type-filter
-    .journalit-home-trade-type-filter__option-label {
+  .journalit-home-trade-type-filter .journalit-home-trade-type-filter__option-label {
     flex: 1;
     min-width: 0;
     overflow: hidden;
@@ -597,9 +570,7 @@ export const HOME_PAGE_STYLES = `
     text-align: left;
   }
 
-  .journalit-home-account-filter .journalit-home-account-filter__checkbox,
-  .journalit-home-trade-type-filter
-    .journalit-home-trade-type-filter__checkbox {
+  .journalit-home-trade-type-filter .journalit-home-trade-type-filter__checkbox {
     width: 14px;
     height: 14px;
     display: inline-flex;
@@ -613,25 +584,16 @@ export const HOME_PAGE_STYLES = `
     font-size: 10px;
   }
 
-  .journalit-home-account-filter
-    .journalit-home-account-filter__checkbox--checked,
-  .journalit-home-trade-type-filter
-    .journalit-home-trade-type-filter__checkbox--checked {
+  .journalit-home-trade-type-filter .journalit-home-trade-type-filter__checkbox--checked {
     background-color: var(--interactive-accent);
+    color: var(--text-on-accent);
     border-color: var(--interactive-accent);
   }
 
-  .journalit-home-account-filter__divider,
   .journalit-home-trade-type-filter__divider {
     height: 1px;
     background-color: var(--background-modifier-border);
     margin: 4px 0;
-  }
-
-  .journalit-home-account-filter__empty {
-    padding: 10px 12px;
-    color: var(--text-muted);
-    font-size: 12px;
   }
 
   .journalit-home-quick-links-position-toggle,
@@ -814,14 +776,6 @@ export const HOME_PAGE_STYLES = `
       width: 100%;
       justify-content: flex-start;
     }
-
-    
-    .journalit-home-actions
-      .journalit-drilldown-filter
-      .journalit-drilldown-filter__menu {
-      left: 0;
-      right: auto;
-    }
   }
 
   @container journalit-home-page (max-width: 700px) {
@@ -834,7 +788,6 @@ export const HOME_PAGE_STYLES = `
     }
 
     .journalit-home-period-wrapper,
-    .journalit-home-account-filter,
     .journalit-home-trade-type-filter,
     .journalit-home-add-widget-button,
     .journalit-home-quick-links-position-toggle,
@@ -845,7 +798,6 @@ export const HOME_PAGE_STYLES = `
     }
 
     .journalit-home-period-selector,
-    .journalit-home-account-filter__trigger,
     .journalit-home-trade-type-filter__trigger,
     .journalit-home-add-widget-button {
       width: 100%;
@@ -866,7 +818,6 @@ export const HOME_PAGE_STYLES = `
     }
 
     .journalit-home-period-chevron,
-    .journalit-home-account-filter__chevron,
     .journalit-home-trade-type-filter__chevron {
       position: absolute;
       right: 12px;
@@ -875,12 +826,10 @@ export const HOME_PAGE_STYLES = `
     }
 
     .journalit-home-period-chevron--open,
-    .journalit-home-account-filter__chevron--open,
     .journalit-home-trade-type-filter__chevron--open {
       transform: translateY(-50%) rotate(180deg);
     }
 
-    .journalit-home-account-filter__summary,
     .journalit-home-trade-type-filter__summary {
       max-width: none;
       flex: 0 1 auto;
@@ -888,7 +837,6 @@ export const HOME_PAGE_STYLES = `
     }
 
     .journalit-home-period-menu,
-    .journalit-home-account-filter__menu,
     .journalit-home-trade-type-filter__menu {
       left: 0;
       right: 0;
@@ -914,7 +862,6 @@ export const HOME_PAGE_STYLES = `
     }
 
     .journalit-home-period-wrapper,
-    .journalit-home-account-filter,
     .journalit-home-trade-type-filter,
     .journalit-home-add-widget-button {
       flex-basis: 100%;
@@ -927,7 +874,6 @@ export const HOME_PAGE_STYLES = `
     }
 
     .journalit-home-period-selector,
-    .journalit-home-account-filter__trigger,
     .journalit-home-trade-type-filter__trigger,
     .journalit-home-add-widget-button {
       padding: 10px 12px;

@@ -8,6 +8,16 @@ import type {
   TradeStatus,
   TradeType,
 } from '../services/tradelog/types';
+import {
+  cloneFilterExclusions,
+  createFilterExclusions,
+  normalizeFilterExclusions,
+} from '../components/shared/filters/filterExclusions';
+import {
+  cloneFilterMatchModes,
+  createFilterMatchModes,
+  normalizeFilterMatchModes,
+} from '../components/shared/filters/filterMatchModes';
 
 const CONCRETE_TRADE_TYPES = ['regular', 'missed', 'backtest'] as const;
 const CONCRETE_TRADE_TYPE_SET = new Set<TradeType>(CONCRETE_TRADE_TYPES);
@@ -15,11 +25,7 @@ const LEGACY_ALL_STATUSES: TradeStatus[] = ['open', 'win', 'loss', 'breakeven'];
 const ALL_STATUSES: TradeStatus[] = [...LEGACY_ALL_STATUSES, 'cancelled'];
 
 export const DEFAULT_REGULAR_ONLY_TRADE_TYPES: TradeType[] = ['regular'];
-export const DEFAULT_ALL_TRADE_TYPES: TradeType[] = [
-  'regular',
-  'missed',
-  'backtest',
-];
+const DEFAULT_ALL_TRADE_TYPES: TradeType[] = ['regular', 'missed', 'backtest'];
 
 const sanitizeTradeTypes = (tradeTypes?: TradeType[]): TradeType[] => {
   if (!tradeTypes || tradeTypes.length === 0) {
@@ -191,6 +197,8 @@ export const DEFAULT_DASHBOARD_FILTERS: FilterState = {
   reviewStatus: [],
   directions: [],
   customFieldFilters: {},
+  exclusions: createFilterExclusions(),
+  matchModes: createFilterMatchModes(),
   imageAnnotationStatus: [],
   imageTags: [],
 };
@@ -210,6 +218,8 @@ export const DEFAULT_TRADELOG_FILTERS: TradeLogFilters = {
   tags: [],
   mistakes: [],
   customFieldFilters: {},
+  exclusions: createFilterExclusions(),
+  matchModes: createFilterMatchModes(),
   imageAnnotationStatus: [],
   imageTags: [],
 };
@@ -226,6 +236,8 @@ export const DEFAULT_REVIEW_FILTERS: UnifiedFilters = {
   reviewStatus: [],
   directions: [],
   customFieldFilters: {},
+  exclusions: createFilterExclusions(),
+  matchModes: createFilterMatchModes(),
   imageAnnotationStatus: [],
   imageTags: [],
 };
@@ -246,6 +258,8 @@ export const createDashboardFilters = (): FilterState => ({
   reviewStatus: [...DEFAULT_DASHBOARD_FILTERS.reviewStatus],
   directions: [...DEFAULT_DASHBOARD_FILTERS.directions],
   customFieldFilters: { ...DEFAULT_DASHBOARD_FILTERS.customFieldFilters },
+  exclusions: cloneFilterExclusions(DEFAULT_DASHBOARD_FILTERS.exclusions),
+  matchModes: cloneFilterMatchModes(DEFAULT_DASHBOARD_FILTERS.matchModes),
   imageAnnotationStatus: [
     ...(DEFAULT_DASHBOARD_FILTERS.imageAnnotationStatus || []),
   ],
@@ -269,6 +283,8 @@ export const createTradeLogFilters = (): TradeLogFilters => ({
   tags: [...DEFAULT_TRADELOG_FILTERS.tags],
   mistakes: [...DEFAULT_TRADELOG_FILTERS.mistakes],
   customFieldFilters: { ...DEFAULT_TRADELOG_FILTERS.customFieldFilters },
+  exclusions: cloneFilterExclusions(DEFAULT_TRADELOG_FILTERS.exclusions),
+  matchModes: cloneFilterMatchModes(DEFAULT_TRADELOG_FILTERS.matchModes),
   imageAnnotationStatus: [...DEFAULT_TRADELOG_FILTERS.imageAnnotationStatus],
   imageTags: [...DEFAULT_TRADELOG_FILTERS.imageTags],
 });
@@ -288,6 +304,8 @@ export const createReviewFilters = (): UnifiedFilters => ({
   reviewStatus: [...DEFAULT_REVIEW_FILTERS.reviewStatus],
   directions: [...DEFAULT_REVIEW_FILTERS.directions],
   customFieldFilters: { ...DEFAULT_REVIEW_FILTERS.customFieldFilters },
+  exclusions: cloneFilterExclusions(DEFAULT_REVIEW_FILTERS.exclusions),
+  matchModes: cloneFilterMatchModes(DEFAULT_REVIEW_FILTERS.matchModes),
   imageAnnotationStatus: [
     ...(DEFAULT_REVIEW_FILTERS.imageAnnotationStatus || []),
   ],
@@ -320,6 +338,8 @@ export const normalizeDashboardFilters = (
     customFieldFilters: {
       ...(filters?.customFieldFilters || defaults.customFieldFilters),
     },
+    exclusions: normalizeFilterExclusions(filters?.exclusions),
+    matchModes: normalizeFilterMatchModes(filters?.matchModes),
     imageAnnotationStatus: filters?.imageAnnotationStatus
       ? [...filters.imageAnnotationStatus]
       : defaults.imageAnnotationStatus,
@@ -368,6 +388,8 @@ export const normalizeTradeLogFilters = (
     customFieldFilters: {
       ...(filters?.customFieldFilters || defaults.customFieldFilters),
     },
+    exclusions: normalizeFilterExclusions(filters?.exclusions),
+    matchModes: normalizeFilterMatchModes(filters?.matchModes),
     imageAnnotationStatus: filters?.imageAnnotationStatus
       ? [...filters.imageAnnotationStatus]
       : defaults.imageAnnotationStatus,
@@ -400,6 +422,8 @@ export const normalizeReviewFilters = (
     customFieldFilters: {
       ...(filters?.customFieldFilters || defaults.customFieldFilters),
     },
+    exclusions: normalizeFilterExclusions(filters?.exclusions),
+    matchModes: normalizeFilterMatchModes(filters?.matchModes),
     imageAnnotationStatus: filters?.imageAnnotationStatus
       ? [...filters.imageAnnotationStatus]
       : defaults.imageAnnotationStatus,

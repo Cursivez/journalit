@@ -2,6 +2,7 @@
 
 import React, { memo } from 'react';
 import { cssVars } from '../../styles/inlineStylePolicy';
+import { shareLoadingProps } from '../../services/share/brandedCapture';
 
 interface SkeletonBoxProps {
   width?: string | number;
@@ -25,6 +26,7 @@ export const SkeletonBox = memo<SkeletonBoxProps>(
     return (
       <div
         className={`skeleton-shimmer ${className}`.trim()}
+        {...shareLoadingProps}
         style={cssVars({
           '--journalit-skeleton-width': cssWidth,
           '--journalit-skeleton-height': cssHeight,

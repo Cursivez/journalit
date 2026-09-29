@@ -125,6 +125,8 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
         trackingMethod,
         plugin,
         mistakesFilter: filters?.mistakes,
+        excludedMistakes: filters?.exclusions.mistakes,
+        mistakesMatchMode: filters?.matchModes.mistakes,
       });
     }, [
       trades,
@@ -132,6 +134,8 @@ export const DemonTrackerWidget: React.FC<DemonTrackerWidgetProps> = React.memo(
       trackingMethod,
       plugin,
       filters?.mistakes,
+      filters?.exclusions.mistakes,
+      filters?.matchModes.mistakes,
       preview,
       previewData,
     ]);

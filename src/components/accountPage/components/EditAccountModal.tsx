@@ -1,5 +1,10 @@
 
 
+import {
+  deleteTradeImportAccountsFromServer,
+  findServerImportAccountsForLocalAccount,
+  type ServerImportAccount,
+} from '../../../services/tradeImport/tradeImportServerDeletion';
 import { App, Modal, Notice } from 'obsidian';
 import React, { useState, useEffect, useCallback, useId, useRef } from 'react';
 import { createRoot, Root } from 'react-dom/client';
@@ -31,7 +36,11 @@ import { ManualDrawdownManager } from './ManualDrawdownManager';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { eventBus } from '../../../services/events/EventBus';
 import { t } from '../../../lang/helpers';
-import { showActionConfirmationModal } from '../../shared/ConfirmationModal';
+import {
+  showActionConfirmationModal,
+  showConfirmationModal,
+} from '../../shared/ConfirmationModal';
+import { openAccountMergeModal } from './accountMerge/AccountMergeModal';
 import {
   hasLiveBalanceAdjustment,
   parseLiveBalanceInput,
@@ -42,7 +51,6 @@ import type { PropChallengeConfig } from '../../../services/propChallenge/types'
 import { resolveStageAccountType } from '../../../services/propChallenge/stageAccountTypes';
 import { getAvailableAccountTypes } from './propChallenge/propChallengeLifecycleActions';
 import {
-  createPropChallengeFromExistingAccount,
   getCurrentPropChallengePhase,
   isPropChallengeRuleComplete,
   validatePhaseTimeline,
@@ -62,12 +70,13 @@ import {
   isAccountUsedAsActiveCopyBase,
 } from '../../../utils/accountCopyTrading';
 import { formatAccountTypeLabel } from '../../../utils/accountTypeLabel';
+import { suspendViewGuidesWhileOpen } from '../../../guides/suspendViewGuides';
 
 export const EDIT_ACCOUNT_MODAL_STYLES = `
         .edit-account-form .manage-snapshots-button {
           padding: 8px 16px;
           background-color: var(--interactive-accent);
-          color: white;
+          color: var(--text-on-accent);
           border: none;
           border-radius: 4px;
           cursor: pointer;
@@ -124,8 +133,6 @@ interface EditAccountModalProps {
   account: AccountData;
   onClose: () => void;
   onSave: () => void;
-  
-  initialPropChallenge?: boolean;
 }
 
 type NameChangeAction = 'update-notes' | 'keep-old-name' | 'cancel';
@@ -169,6 +176,7 @@ class EditAccountModal extends Modal {
     const { contentEl } = this;
     contentEl.empty();
     this.modalEl.addClass('journalit-edit-account-modal');
+    suspendViewGuidesWhileOpen(this.modalEl);
 
     
     this.container = contentEl.createDiv({
@@ -1167,13 +1175,27 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
 
 
 
+
+function resolveAvailableAccountType(
+  accountType: EditAccountFormState['accountType'],
+  types: string[]
+): EditAccountFormState['accountType'] {
+  const current = String(accountType ?? '').toLowerCase();
+  if (
+    types.length === 0 ||
+    types.some((type) => type.toLowerCase() === current)
+  ) {
+    return accountType;
+  }
+  return types[0];
+}
+
 const useEditAccountModalController = ({
   app,
   plugin,
   account,
   onSave,
   onModalClose,
-  initialPropChallenge,
 }: Omit<EditAccountModalProps, 'onClose'> & { onModalClose: () => void }) => {
   const [isSaving, setIsSaving] = useState(false);
   const [customAccountTypes, setCustomAccountTypes] = useState<string[]>([]);
@@ -1184,9 +1206,13 @@ const useEditAccountModalController = ({
   );
 
   
-  const [editAccount, setEditAccount] = useState<EditAccountFormState>({
+  
+  const [initialForm] = useState<EditAccountFormState>(() => ({
     name: account.name,
-    accountType: account.accountType,
+    accountType: resolveAvailableAccountType(
+      account.accountType,
+      plugin.optionsService?.getOptions(OptionType.ACCOUNT_TYPE) ?? []
+    ),
     initialBalance: account.initialBalance,
     liveBalance: hasLiveBalanceAdjustment(account.liveBalanceAdjustment)
       ? String(account.currentBalance)
@@ -1209,25 +1235,24 @@ const useEditAccountModalController = ({
     copyTradingStartMode: 'date',
     copyTradingStartDate: null,
     copyTradingPeriods: initialCopyTradingPeriods,
-    propChallenge:
-      account.propChallenge ??
-      (initialPropChallenge
-        ? createPropChallengeFromExistingAccount({
-            initialBalance: account.initialBalance,
-            drawdownType: account.drawdownType,
-            drawdownAmount: account.drawdownAmount,
-            hasProfitTarget: account.hasProfitTarget,
-            profitTarget: account.profitTarget,
-            profitTargetType: account.profitTargetType,
-            phaseName: t('account.prop-challenge.default-phase-name', {
-              number: '1',
-            }),
-          })
-        : undefined),
-  });
+    propChallenge: account.propChallenge,
+  }));
+  const [editAccount, setEditAccount] =
+    useState<EditAccountFormState>(initialForm);
   const [manualSnapshots, setManualSnapshots] = useState<
     ManualDrawdownSnapshot[]
   >([]);
+  const [snapshotsEdited, setSnapshotsEdited] = useState(false);
+  const editManualSnapshots = useCallback(
+    (snapshots: ManualDrawdownSnapshot[]) => {
+      setManualSnapshots(snapshots);
+      setSnapshotsEdited(true);
+    },
+    []
+  );
+  const hasUnsavedEdits = () =>
+    snapshotsEdited ||
+    JSON.stringify(editAccount) !== JSON.stringify(initialForm);
 
   
   
@@ -1242,12 +1267,8 @@ const useEditAccountModalController = ({
 
     
     setEditAccount((prev) => {
-      const currentType = String(prev.accountType ?? '');
-      const currentTypeExists = types.some(
-        (type) => type.toLowerCase() === currentType.toLowerCase()
-      );
-      
-      return currentTypeExists ? prev : { ...prev, accountType: types[0] };
+      const accountType = resolveAvailableAccountType(prev.accountType, types);
+      return accountType === prev.accountType ? prev : { ...prev, accountType };
     });
   }, [plugin.optionsService]);
 
@@ -2074,9 +2095,16 @@ const useEditAccountModalController = ({
   };
 
   const showDeleteAccountConfirmation = (
-    accountName: string
-  ): Promise<{ proceed: boolean; deleteAssociatedTrades: boolean }> => {
+    accountName: string,
+    serverAccountsLookup: Promise<ServerImportAccount[]>
+  ): Promise<{
+    proceed: boolean;
+    deleteAssociatedTrades: boolean;
+    serverAccountIds: string[];
+  }> => {
     let deleteAssociatedTrades = false;
+    let deleteServerTrades = false;
+    let serverAccounts: ServerImportAccount[] = [];
     return showActionConfirmationModal<'cancel' | 'delete'>(app, {
       title: t('account.edit.modal.delete.title'),
       destructive: true,
@@ -2119,6 +2147,36 @@ const useEditAccountModalController = ({
           text: t('account.edit.modal.delete.delete-associated-trades'),
         });
 
+        
+        
+        
+        
+        const serverDeleteSlot = container.createDiv();
+        let closed = false;
+        void serverAccountsLookup.then((accounts) => {
+          if (closed || accounts.length === 0) return;
+          serverAccounts = accounts;
+          const serverDeleteOption = serverDeleteSlot.createDiv({
+            cls: 'journalit-confirmation-content__checkbox',
+          });
+          const serverDeleteCheckbox = serverDeleteOption.createEl('input', {
+            type: 'checkbox',
+          });
+          serverDeleteCheckbox.addEventListener('change', () => {
+            deleteServerTrades = serverDeleteCheckbox.checked;
+          });
+          serverDeleteOption.createEl('label', {
+            text: t('account.edit.modal.delete.delete-server-trades', {
+              count: String(
+                accounts.reduce(
+                  (total, serverAccount) => total + serverAccount.tradeCount,
+                  0
+                )
+              ),
+            }),
+          });
+        });
+
         const dangerWarning = container.createEl('p', {
           cls: 'journalit-confirmation-modal__message journalit-confirmation-modal__message--destructive',
         });
@@ -2128,6 +2186,9 @@ const useEditAccountModalController = ({
         dangerWarning.createSpan({
           text: ` ${t('account.edit.delete-warning')}`,
         });
+        return () => {
+          closed = true;
+        };
       },
       actions: [
         {
@@ -2144,8 +2205,18 @@ const useEditAccountModalController = ({
       ],
     }).then((action) =>
       action === 'delete'
-        ? { proceed: true, deleteAssociatedTrades }
-        : { proceed: false, deleteAssociatedTrades: false }
+        ? {
+            proceed: true,
+            deleteAssociatedTrades,
+            serverAccountIds: deleteServerTrades
+              ? serverAccounts.map((serverAccount) => serverAccount.accountId)
+              : [],
+          }
+        : {
+            proceed: false,
+            deleteAssociatedTrades: false,
+            serverAccountIds: [],
+          }
     );
   };
 
@@ -2154,10 +2225,28 @@ const useEditAccountModalController = ({
       setIsSaving(true);
 
       
-      const deleteChoice = await showDeleteAccountConfirmation(account.name);
+      const deleteChoice = await showDeleteAccountConfirmation(
+        account.name,
+        findServerImportAccountsForLocalAccount(plugin, {
+          id: account.id || account.name,
+          name: account.name,
+        })
+      );
 
       if (!deleteChoice.proceed) {
         return; 
+      }
+
+      
+      
+      if (
+        deleteChoice.serverAccountIds.length > 0 &&
+        !(await deleteTradeImportAccountsFromServer(
+          plugin,
+          deleteChoice.serverAccountIds
+        ))
+      ) {
+        return;
       }
 
       
@@ -2206,8 +2295,9 @@ const useEditAccountModalController = ({
     setShowSnapshotManager,
     editAccount,
     setEditAccount,
+    hasUnsavedEdits,
     manualSnapshots,
-    setManualSnapshots,
+    setManualSnapshots: editManualSnapshots,
     handleSave,
     handleDeleteAccount,
   };
@@ -2232,9 +2322,9 @@ const EditAccountModalTree: React.FC<
   );
 };
 
-const EditAccountModalContent: React.FC<
+export const EditAccountModalContent: React.FC<
   EditAccountModalProps & { onModalClose: () => void }
-> = ({ app, plugin, account, onSave, onModalClose, initialPropChallenge }) => {
+> = ({ app, plugin, account, onSave, onModalClose }) => {
   const {
     isSaving,
     customAccountTypes,
@@ -2242,6 +2332,7 @@ const EditAccountModalContent: React.FC<
     setShowSnapshotManager,
     editAccount,
     setEditAccount,
+    hasUnsavedEdits,
     manualSnapshots,
     setManualSnapshots,
     handleSave,
@@ -2252,7 +2343,6 @@ const EditAccountModalContent: React.FC<
     account,
     onSave,
     onModalClose,
-    initialPropChallenge,
   });
 
   
@@ -2260,7 +2350,36 @@ const EditAccountModalContent: React.FC<
     undefined
   );
 
+  
+  
+  
+  
+  const openChallengeSetup = async () => {
+    if (
+      hasUnsavedEdits() &&
+      !(await showConfirmationModal(app, {
+        title: t('account.edit.convert.discard-title'),
+        message: t('account.edit.convert.discard-message'),
+        confirmLabel: t('account.edit.convert.discard-confirm'),
+        cancelLabel: t('button.cancel'),
+      }))
+    ) {
+      return;
+    }
+    onModalClose();
+    const outcome = await openAccountMergeModal(app, plugin, {
+      accounts: [account.name],
+    });
+    if (outcome !== 'cancelled') onSave();
+  };
+
   const handlePropChallengeToggle = (enabled: boolean) => {
+    const restorable =
+      editAccount.propChallenge ?? discardedChallengeRef.current;
+    if (enabled && !restorable) {
+      void openChallengeSetup();
+      return;
+    }
     
     
     
@@ -2296,20 +2415,7 @@ const EditAccountModalContent: React.FC<
                 restoredType ?? (restored ? current.accountType : 'evaluation'),
             }
           : {}),
-        propChallenge: enabled
-          ? (restored ??
-            createPropChallengeFromExistingAccount({
-              initialBalance: current.initialBalance,
-              drawdownType: current.drawdownType,
-              drawdownAmount: current.drawdownAmount,
-              hasProfitTarget: current.hasProfitTarget,
-              profitTarget: current.profitTarget,
-              profitTargetType: current.profitTargetType,
-              phaseName: t('account.prop-challenge.default-phase-name', {
-                number: '1',
-              }),
-            }))
-          : undefined,
+        propChallenge: enabled ? restored : undefined,
       };
     });
   };
@@ -2437,8 +2543,7 @@ export function openEditAccountModal(
   app: App,
   plugin: JournalitPlugin,
   account: AccountData,
-  onSave: () => void,
-  initialPropChallenge?: boolean
+  onSave: () => void
 ): void {
   const modal = new EditAccountModal({
     app,
@@ -2446,7 +2551,6 @@ export function openEditAccountModal(
     account,
     onClose: () => {}, 
     onSave,
-    initialPropChallenge,
   });
   modal.open();
 }

@@ -1,7 +1,10 @@
 import type { TradeData } from '../trade/TradeService';
 
 export type TradeImportFileType = 'csv' | 'xlsx' | 'xls' | 'html';
-export type TradeImportManualMode = 'price_based' | 'direct_pnl';
+export type TradeImportManualMode =
+  | 'price_based'
+  | 'direct_pnl'
+  | 'trade_per_row';
 
 export interface TradeImportCapabilities {
   apiVersion: string;
@@ -26,6 +29,7 @@ export interface TradeImportCapabilities {
     supportsAnalyse: boolean;
     supportsManualMapping: boolean;
     supportsAiMapping: boolean;
+    supportsExportTimeZone: boolean;
   }>;
   manualMapping: {
     supported: boolean;
@@ -47,8 +51,14 @@ export interface TradeImportDiagnostic {
   code: string;
   message: string;
   row?: number;
+  
+  sheetRow?: number;
   field?: string;
   count?: number;
+  
+  example?: string;
+  
+  candidateFormats?: string[];
 }
 
 export const UNSUPPORTED_TRADOVATE_PERFORMANCE_REPORT_DIAGNOSTIC_CODE =
@@ -63,6 +73,8 @@ export interface TradeImportAnalyseRequest {
   requestedFileType: TradeImportFileType;
   sheetName?: string | null;
   headerRowIndex?: number | null;
+  
+  headerSheetRow?: number;
   timeZone: string;
   sampleRowLimit: number;
   aiMapping: { enabled: boolean; mode: 'manual_requested' | 'auto' };
@@ -83,6 +95,10 @@ export interface TradeImportAnalyseResponse {
   headers: string[];
   sampleRows: string[][];
   suggestedHeaderRowIndex?: number;
+  
+  headerRowIndex?: number;
+  
+  headerSheetRow?: number;
   brokerCandidates: Array<{
     broker: string;
     confidence: number;
@@ -101,6 +117,13 @@ interface TradeImportExecution {
   price: number;
   size: number;
 }
+
+export interface TradeImportEmbeddedImage {
+  path: string;
+  row: number;
+  column?: string;
+}
+
 export interface TradeImportPreviewTrade {
   sourceRows: number[];
   symbol: string;
@@ -140,6 +163,8 @@ export interface TradeImportPreviewTrade {
   executionIds: string[];
   tags: string[];
   images: string[];
+  
+  embeddedImages?: TradeImportEmbeddedImage[];
   setup: string[];
   mistake: string[];
   customFields: Record<string, unknown>;
@@ -164,6 +189,7 @@ export type TradeImportPreviewClassification =
   | 'new'
   | 'exact_duplicate'
   | 'already_applied'
+  | 'exists_in_other_account'
   | 'update_existing'
   | 'partial_update_existing'
   | 'likely_duplicate'
@@ -197,12 +223,19 @@ interface TradeImportIdentityCandidate {
   source?: string;
 }
 
+
+export interface TradeImportOtherAccountMatch {
+  accountId: string;
+  accountDisplayName: string;
+}
+
 export interface TradeImportPreviewItem {
   itemId: string;
   itemIndex?: number;
   classification: TradeImportPreviewClassification;
   defaultAction: TradeImportDefaultAction;
   matchedTradeId?: string | null;
+  otherAccount?: TradeImportOtherAccountMatch;
   decisionReasons: Array<{ code: string; message?: string }>;
   identityCandidates: TradeImportIdentityCandidate[];
   previewTrade: TradeImportPreviewTrade;
@@ -262,6 +295,7 @@ export interface ClassifiedPreviewTrade {
   classification: TradeImportPreviewClassification;
   defaultAction: TradeImportDefaultAction;
   matchedTradeId?: string | null;
+  otherAccount?: TradeImportOtherAccountMatch;
   existingPath?: string;
   message?: string;
 }

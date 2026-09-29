@@ -1,7 +1,7 @@
 
 
 export const SKELETON_STYLES = `
-@keyframes shimmer {
+@keyframes journalit-skeleton-shimmer {
   0% {
     background-position: -1000px 0;
   }
@@ -21,7 +21,7 @@ export const SKELETON_STYLES = `
     var(--background-secondary) 100%
   );
   background-size: 1000px 100%;
-  animation: shimmer 2s infinite linear;
+  animation: journalit-skeleton-shimmer 2s infinite linear;
   pointer-events: none;
   user-select: none;
 }

@@ -17,8 +17,11 @@ import {
 } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
 import { InvalidContextMessage } from './InvalidContextMessage';
-import { openFilterModal, UnifiedFilters } from '../../shared/filters';
-import type { AvailableCustomFieldFilter } from '../../shared/filters/types';
+import type { UnifiedFilters } from '../../shared/filters/types';
+import {
+  FilterMenuButton,
+  type LoadedFilterMenuOptions,
+} from '../../shared/filters/menu/FilterMenu';
 import { HeaderPreviewData } from '../../../types/reviewV2';
 import { eventBus } from '../../../services/events/EventBus';
 import { reviewChangeAffectsPath } from '../../../services/events/reviewChangedPaths';
@@ -35,11 +38,7 @@ import {
   parseLocalDateSafe,
 } from '../../../utils/dateUtils';
 import { hasTranslation, t } from '../../../lang/helpers';
-import {
-  createReviewFilters,
-  getTradeTypeFilterActiveCount,
-  normalizeReviewFilters,
-} from '../../../settings/viewFiltersDefaults';
+import { normalizeReviewFilters } from '../../../settings/viewFiltersDefaults';
 import {
   type CustomFieldDefinition,
   isDiscreteCustomFieldFilterable,
@@ -48,12 +47,11 @@ import { TradeLogService } from '../../../services/tradelog/TradeLogService';
 import { remapAccountFilterFromAccountChange } from '../../shared/filters/remapSelectedAccounts';
 import { persistViewFilter } from '../../shared/filters/viewFilterPersistence';
 import { mergeClassNames } from '../../../utils/classNames';
-import { sanitizeCustomFieldFilters } from '../../shared/filters/sanitizeCustomFieldFilters';
+import { sanitizeFilterCustomFields } from '../../shared/filters/sanitizeCustomFieldFilters';
+import { loadTradeFilterMenuOptions } from '../../shared/filters/menu/loadTradeFilterMenuOptions';
 import { openReviewLayoutSwitcher } from '../../../services/templates/openReviewLayoutSwitcher';
-
-const SHORT_WEEKDAY_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  weekday: 'short',
-});
+import { formatLocalizedReviewDate } from '../../../utils/localizedDateTime';
+import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 function frontmatterHeaderValueToString(value: unknown): string {
   if (value === undefined || value === null) return '';
@@ -248,33 +246,25 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       [customFields]
     );
 
-    const sanitizedCustomFieldFilters = useMemo(
-      () =>
-        sanitizeCustomFieldFilters(
-          filters.customFieldFilters,
-          discreteCustomFields
-        ),
-      [discreteCustomFields, filters.customFieldFilters]
+    
+    
+    const sanitizedFilters = useMemo(
+      () => sanitizeFilterCustomFields(filters, discreteCustomFields),
+      [discreteCustomFields, filters]
     );
 
     useEffect(() => {
       
       const currentFilters = filtersRef.current;
-      const latestSanitizedCustomFieldFilters = sanitizeCustomFieldFilters(
-        currentFilters.customFieldFilters,
+      const sanitized = sanitizeFilterCustomFields(
+        currentFilters,
         discreteCustomFields
       );
-      if (
-        JSON.stringify(currentFilters.customFieldFilters || {}) ===
-        JSON.stringify(latestSanitizedCustomFieldFilters)
-      ) {
+      if (sanitized === currentFilters) {
         return;
       }
 
-      const mergedFilters = normalizeReviewFilters({
-        ...currentFilters,
-        customFieldFilters: latestSanitizedCustomFieldFilters,
-      });
+      const mergedFilters = normalizeReviewFilters(sanitized);
       applyFilters(mergedFilters);
 
       persistViewFilter(plugin.uiStateManager, 'reviews', mergedFilters);
@@ -293,6 +283,8 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       discreteCustomFields,
       filePath,
       filters.customFieldFilters,
+      filters.exclusions,
+      filters.matchModes,
       plugin,
     ]);
 
@@ -377,37 +369,6 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
     );
 
     useEventBus('account:changed', handleAccountChanged);
-
-    
-    const formatDRCDate = useCallback((date: Date): string => {
-      const dayKey = `widget.header.day.${date.getDay()}`;
-      const monthKey = `widget.header.month.${date.getMonth()}`;
-      const dayName = hasTranslation(dayKey) ? t(dayKey) : dayKey;
-      const monthName = hasTranslation(monthKey) ? t(monthKey) : monthKey;
-      const day = date.getDate();
-      const year = date.getFullYear();
-
-      return `${dayName}, ${monthName} ${day}, ${year}`;
-    }, []);
-
-    const formatDRCDateMedium = useCallback((date: Date): string => {
-      const monthKey = `widget.header.month-short.${date.getMonth()}`;
-      const monthName = hasTranslation(monthKey) ? t(monthKey) : monthKey;
-      const weekday = SHORT_WEEKDAY_FORMATTER.format(date);
-      const day = date.getDate();
-      const year = date.getFullYear();
-
-      return `${weekday}, ${monthName} ${day}, ${year}`;
-    }, []);
-
-    const formatDRCDateShort = useCallback((date: Date): string => {
-      const monthKey = `widget.header.month-short.${date.getMonth()}`;
-      const monthName = hasTranslation(monthKey) ? t(monthKey) : monthKey;
-      const day = date.getDate();
-      const year = date.getFullYear();
-
-      return `${monthName} ${day}, ${year}`;
-    }, []);
 
     const formatWeeklyDate = useCallback(
       (date: Date, frontmatter: Record<string, unknown>): string => {
@@ -504,7 +465,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
 
         switch (previewData.reviewType) {
           case 'drc':
-            title = formatDRCDate(date);
+            title = formatLocalizedReviewDate(date, 'full');
             break;
           case 'weekly':
             title = formatWeeklyDate(date, mockFrontmatter);
@@ -525,7 +486,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
             title = String(date.getFullYear());
             break;
           default:
-            title = formatDRCDate(date);
+            title = formatLocalizedReviewDate(date, 'full');
         }
 
         setHeaderData({
@@ -610,7 +571,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
 
       switch (frontmatter.type) {
         case 'drc':
-          title = formatDRCDate(date);
+          title = formatLocalizedReviewDate(date, 'full');
           break;
         case 'weekly-review':
           title = formatWeeklyDate(date, frontmatter);
@@ -685,7 +646,6 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       previewData,
       retryCountRef,
       retryTimeoutRef,
-      formatDRCDate,
       formatWeeklyDate,
       formatMonthlyDate,
       formatTradeHeader,
@@ -1012,97 +972,49 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       }
     };
 
-    const handleOpenFilterModal = useCallback(async () => {
-      if (!plugin?.app) return;
+    const loadFilterMenuOptions =
+      useCallback(async (): Promise<LoadedFilterMenuOptions> => {
+        
+        const tradeLogService = new TradeLogService(plugin);
+        try {
+          return await loadTradeFilterMenuOptions({
+            plugin,
+            tradeLogService,
+            logPrefix: '[ReviewHeaderWidget]',
+          });
+        } finally {
+          tradeLogService.destroy();
+        }
+      }, [plugin]);
 
-      let availableAccounts: string[] = [];
-      let availableCustomFieldFilters: AvailableCustomFieldFilter[] = [];
-
-      let tradeLogService: TradeLogService | null = null;
-      try {
-        tradeLogService = new TradeLogService(plugin);
-        [availableAccounts, availableCustomFieldFilters] = await Promise.all([
-          tradeLogService.getUniqueAccounts(),
-          tradeLogService.getAvailableCustomFieldFilters(discreteCustomFields),
-        ]);
-      } catch (error) {
-        console.error(
-          '[ReviewHeaderWidget] Failed to load custom field filter options:',
-          error
+    const handleFilterMenuChange = useCallback(
+      (newFilters: UnifiedFilters) => {
+        const mergedFilters = normalizeReviewFilters(
+          sanitizeFilterCustomFields(newFilters, discreteCustomFields)
         );
-      } finally {
-        tradeLogService?.destroy();
-      }
+        applyFilters(mergedFilters);
 
-      openFilterModal({
-        app: plugin.app,
-        plugin,
-        context: 'review',
-        currentFilters: {
-          ...filters,
-          customFieldFilters: sanitizedCustomFieldFilters,
-        },
-        availableAccounts,
-        availableCustomFieldFilters,
-        onApply: async (newFilters: UnifiedFilters) => {
-          const mergedFilters = normalizeReviewFilters({
-            ...newFilters,
-            customFieldFilters: sanitizeCustomFieldFilters(
-              newFilters.customFieldFilters,
-              discreteCustomFields
-            ),
-          });
-          applyFilters(mergedFilters);
+        persistViewFilter(plugin.uiStateManager, 'reviews', mergedFilters);
 
-          persistViewFilter(plugin.uiStateManager, 'reviews', mergedFilters);
+        
+        eventBus.publish('filter:changed', {
+          filePath,
+          filters: mergedFilters,
+        });
 
-          
-          eventBus.publish('filter:changed', {
-            filePath,
-            filters: mergedFilters,
-          });
-
-          
-          eventBus.publish('review:filter-sync', {
-            sourceFilePath: filePath,
-            filters: mergedFilters,
-          });
-        },
-        onClose: () => {},
-      });
-    }, [
-      applyFilters,
-      plugin,
-      filters,
-      filePath,
-      discreteCustomFields,
-      sanitizedCustomFieldFilters,
-    ]);
+        
+        eventBus.publish('review:filter-sync', {
+          sourceFilePath: filePath,
+          filters: mergedFilters,
+        });
+      },
+      [applyFilters, discreteCustomFields, filePath, plugin]
+    );
 
     const handleSwitchTemplate = useCallback(() => {
       if (preview) return;
       void openReviewLayoutSwitcher(plugin, filePath);
     }, [filePath, plugin, preview]);
-
-    const activeFilterCount = useMemo(() => {
-      return (
-        (filters.accounts?.length || 0) +
-        (filters.accountPhases?.length || 0) +
-        (filters.tickers?.length || 0) +
-        (filters.setups?.length || 0) +
-        (filters.tags?.length || 0) +
-        (filters.mistakes?.length || 0) +
-        getTradeTypeFilterActiveCount(
-          filters.tradeTypes,
-          createReviewFilters().tradeTypes
-        ) +
-        (filters.statuses?.length || 0) +
-        (filters.directions?.length || 0) +
-        Object.values(sanitizedCustomFieldFilters).filter(
-          (values) => values.length > 0
-        ).length
-      );
-    }, [filters, sanitizedCustomFieldFilters]);
 
     if (loading) {
       
@@ -1501,10 +1413,10 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                   {headerData.title}
                 </span>
                 <span className="journalit-header-date-medium">
-                  {formatDRCDateMedium(headerData.date)}
+                  {formatLocalizedReviewDate(headerData.date, 'medium')}
                 </span>
                 <span className="journalit-header-date-short">
-                  {formatDRCDateShort(headerData.date)}
+                  {formatLocalizedReviewDate(headerData.date, 'short')}
                 </span>
               </span>
             ) : (
@@ -1516,6 +1428,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
             {headerData.type !== 'trade' && (
               <button
                 type="button"
+                {...shareCaptureExcludeProps}
                 className={mergeClassNames(
                   'journalit-native-button journalit-native-button--unstyled',
                   `reviewed-indicator ${
@@ -1556,31 +1469,45 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
           )}
           <div className="journalit-header-bottom-row">
             <div className="journalit-header-context">{getContextLinks()}</div>
-            <div className="journalit-header-subtle-controls">
+            <div
+              className="journalit-header-subtle-controls"
+              {...shareCaptureExcludeProps}
+            >
               {headerData.type !== 'trade' && (
-                <button
-                  type="button"
-                  className="journalit-header-icon-button"
-                  onClick={() => void handleOpenFilterModal()}
-                  disabled={preview}
-                  aria-label={
-                    preview
-                      ? t('shared.filter.disabled-preview')
-                      : t('shared.filter.open')
-                  }
-                >
-                  <Funnel size={16} aria-hidden="true" />
-                  {!preview && activeFilterCount > 0 && (
-                    <span
-                      className="journalit-header-filter-badge"
-                      aria-label={t('shared.filter.active-count', {
-                        count: activeFilterCount.toString(),
-                      })}
+                <FilterMenuButton
+                  plugin={plugin}
+                  context="review"
+                  filters={sanitizedFilters}
+                  onChange={handleFilterMenuChange}
+                  loadOptions={loadFilterMenuOptions}
+                  renderTrigger={({ onClick, isOpen, activeFilterCount }) => (
+                    <button
+                      type="button"
+                      className="journalit-header-icon-button"
+                      onClick={onClick}
+                      disabled={preview}
+                      aria-expanded={isOpen}
+                      aria-haspopup="menu"
+                      aria-label={
+                        preview
+                          ? t('shared.filter.disabled-preview')
+                          : t('shared.filter.open')
+                      }
                     >
-                      {activeFilterCount}
-                    </span>
+                      <Funnel size={16} aria-hidden="true" />
+                      {!preview && activeFilterCount > 0 && (
+                        <span
+                          className="journalit-header-filter-badge"
+                          aria-label={t('shared.filter.active-count', {
+                            count: activeFilterCount.toString(),
+                          })}
+                        >
+                          {activeFilterCount}
+                        </span>
+                      )}
+                    </button>
                   )}
-                </button>
+                />
               )}
               {headerData.type !== 'trade' && (
                 <button

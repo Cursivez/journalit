@@ -203,6 +203,8 @@ interface PropChallengeRuleEngineInput {
 }
 
 type ScopedEvent = {
+  
+  source: AccountTransaction;
   date: Date;
   amount: number;
   isTrade: boolean;
@@ -339,6 +341,7 @@ function scopeInput(
       continue;
     }
     events.push({
+      source: transaction,
       date: transaction.date,
       amount: transaction.amount,
       isTrade: transaction.type === TransactionType.TRADE,
@@ -388,6 +391,28 @@ function scopeInput(
   return { events, closedTrades, positionTrades };
 }
 
+
+function waivedThrough(phase: PropChallengePhase, ruleId: string): number {
+  let through = Number.NEGATIVE_INFINITY;
+  for (const waiver of phase.waivedFailures ?? []) {
+    if (waiver.ruleId === ruleId) {
+      through = Math.max(through, Date.parse(waiver.breachedAt));
+    }
+  }
+  return through;
+}
+
+
+function positionContracts(
+  trade: AccountTradeData,
+  microsPerContract: number | undefined
+): number {
+  const size = Math.abs(trade.positionSize);
+  return microsPerContract !== undefined && trade.isMicroFutures
+    ? size / microsPerContract
+    : size;
+}
+
 function applyTrailingFloorLock(
   candidate: number,
   lockAtBalance?: number
@@ -403,13 +428,19 @@ function evaluateDrawdown(
   phase: PropChallengePhase,
   events: readonly ScopedEvent[],
   cutoffTime?: string,
-  revision?: PropChallengePolicyRevision
+  revision?: PropChallengePolicyRevision,
+  
+  endedUnderFloorBefore?: boolean
 ): DrawdownRuleEvaluation {
   let balance = phase.startingBalance;
   let floor = phase.startingBalance - rule.amount;
   let highestBalance = phase.startingBalance;
   let lowestBuffer = balance - floor;
   let breachDate: Date | undefined;
+  const breachesAfter = waivedThrough(phase, rule.id);
+  
+  
+  let insideWaivedBreach = false;
   let trailingFloorLocked = false;
   const carriedRevision = revision
     ? (latestCustomTransition(phase, revision.effectiveAt, rule.id) ?? revision)
@@ -430,7 +461,22 @@ function evaluateDrawdown(
     highestBalance = transition.peakBalance;
     trailingFloorLocked = transition.locked;
     lowestBuffer = balance - floor;
-    if (lowestBuffer <= 0) breachDate = new Date(carriedRevision.effectiveAt);
+    if (lowestBuffer <= 0) {
+      
+      
+      
+      
+      
+      
+      const continuesWaivedExcursion =
+        breachesAfter !== Number.NEGATIVE_INFINITY &&
+        (carriedRevision !== revision || endedUnderFloorBefore !== false);
+      if (continuesWaivedExcursion) {
+        insideWaivedBreach = true;
+      } else {
+        breachDate = new Date(carriedRevision.effectiveAt);
+      }
+    }
   }
 
   const inspectPoint = (event: ScopedEvent) => {
@@ -451,7 +497,13 @@ function evaluateDrawdown(
     }
     const buffer = balance - floor;
     lowestBuffer = Math.min(lowestBuffer, buffer);
-    if (buffer <= 0 && !breachDate) breachDate = event.date;
+    if (buffer > 0) {
+      insideWaivedBreach = false;
+    } else if (event.date.getTime() <= breachesAfter) {
+      insideWaivedBreach = true;
+    } else if (!breachDate && !insideWaivedBreach) {
+      breachDate = event.date;
+    }
   };
 
   if (rule.mode === 'eod_trailing') {
@@ -600,6 +652,13 @@ function evaluateDailyLoss(
   let worstLoss = 0;
   let maximumUsageRatio = 0;
   let breachDate: Date | undefined;
+  const breachesAfter = waivedThrough(phase, rule.id);
+  
+  
+  const waivedTradingDay =
+    breachesAfter === Number.NEGATIVE_INFINITY
+      ? undefined
+      : tradingDayKey(new Date(breachesAfter), cutoffTime);
   const thresholdProfit =
     rule.profitThresholdPercent === undefined
       ? undefined
@@ -705,7 +764,12 @@ function evaluateDailyLoss(
       if (maximumLoss >= effectiveLimit && !dayBreached) {
         dayBreached = true;
         dayBreachDate = event.date;
-        if (!breachDate) breachDate = event.date;
+        if (
+          !breachDate &&
+          (waivedTradingDay === undefined || tradingDay > waivedTradingDay)
+        ) {
+          breachDate = event.date;
+        }
       }
     }
     if (maximumLoss > worstLoss) {
@@ -965,21 +1029,27 @@ function evaluateRule(
           rule.initialContracts + earnedContracts
         );
       };
+      const breachesAfter = waivedThrough(phase, rule.id);
+      const exceedsLimit = ({ trade, closedAt }: ScopedTrade): boolean =>
+        positionContracts(trade, rule.microsPerContract) >
+        positionLimitForDay(tradingDayKey(closedAt, cutoffTime));
+      const isWaived = (item: ScopedTrade): boolean =>
+        item.closedAt.getTime() <= breachesAfter && exceedsLimit(item);
       const violatingTrades = positionTrades.filter(
-        ({ trade, closedAt }) =>
-          Math.abs(trade.positionSize) >
-          positionLimitForDay(tradingDayKey(closedAt, cutoffTime))
+        (item) => item.closedAt.getTime() > breachesAfter && exceedsLimit(item)
       );
       const currentTradingDay = tradingDayKey(evaluatedAt, cutoffTime);
-      const measuredTrades =
-        'maxContracts' in rule
-          ? positionTrades
-          : positionTrades.filter(
-              ({ closedAt }) =>
-                tradingDayKey(closedAt, cutoffTime) === currentTradingDay
-            );
+      
+      
+      const measuredTrades = positionTrades.filter(
+        (item) =>
+          ('maxContracts' in rule ||
+            tradingDayKey(item.closedAt, cutoffTime) === currentTradingDay) &&
+          !isWaived(item)
+      );
       const maximumPositionSize = measuredTrades.reduce(
-        (maximum, { trade }) => Math.max(maximum, Math.abs(trade.positionSize)),
+        (maximum, { trade }) =>
+          Math.max(maximum, positionContracts(trade, rule.microsPerContract)),
         0
       );
       const currentLimit = positionLimitForDay(currentTradingDay);
@@ -1137,7 +1207,9 @@ function withTargetReachFacts(
 
 function evaluateSinglePolicy(
   input: PropChallengeRuleEngineInput,
-  revision?: PropChallengePolicyRevision
+  revision?: PropChallengePolicyRevision,
+  
+  endedUnderFloor?: ReadonlySet<string>
 ): PropChallengePhaseEvaluation {
   
   
@@ -1163,7 +1235,8 @@ function evaluateSinglePolicy(
         input.phase,
         events,
         input.tradingDayCutoffTime,
-        revision
+        revision,
+        endedUnderFloor ? endedUnderFloor.has(rule.id) : undefined
       )
     );
   }
@@ -1336,6 +1409,20 @@ function evaluateSinglePolicy(
 }
 
 
+
+export function propChallengePhaseBalancesAfter(
+  input: PropChallengeRuleEngineInput
+): ReadonlyMap<AccountTransaction, number> {
+  const { events } = scopeInput(input, input.now ?? new Date());
+  const balances = new Map<AccountTransaction, number>();
+  let balance = input.phase.startingBalance;
+  for (const event of events) {
+    balance += event.amount;
+    balances.set(event.source, balance);
+  }
+  return balances;
+}
+
 export function evaluatePropChallengePhase(
   input: PropChallengeRuleEngineInput
 ): PropChallengePhaseEvaluation {
@@ -1347,6 +1434,10 @@ export function evaluatePropChallengePhase(
   );
   let result: PropChallengePhaseEvaluation | undefined;
   let firstFailure: PropChallengePhaseEvaluation['failure'];
+  
+  
+  
+  let endedUnderFloor: Set<string> | undefined;
   for (const [index, revision] of history.entries()) {
     if (Date.parse(revision.effectiveAt) > end) break;
     const next = history[index + 1];
@@ -1364,8 +1455,18 @@ export function evaluatePropChallengePhase(
           payoutPolicy: revision.payoutPolicy,
         },
       },
-      revision
+      revision,
+      endedUnderFloor
     );
+    endedUnderFloor = new Set();
+    for (const rule of result.rules) {
+      if (
+        rule.kind === 'drawdown' &&
+        result.currentBalance - rule.currentFloor <= 0
+      ) {
+        endedUnderFloor.add(rule.ruleId);
+      }
+    }
     if (
       result.failure &&
       (!firstFailure || result.failure.date < firstFailure.date)

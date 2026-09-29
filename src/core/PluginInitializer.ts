@@ -42,6 +42,7 @@ import {
 } from '../components/release-notes/ReleaseNotesView';
 import { ReviewDataCache } from '../services/reviewV2/ReviewDataCache';
 import { EventBus, eventBus } from '../services/events/EventBus';
+import { startDefaultAccentBodyClass } from '../services/appearance/defaultAccent';
 import { startSessionPhaseBodyAttribute } from '../services/sessionMode/sessionPhaseBodyAttribute';
 import { ONBOARDING_VIEW_TYPE } from '../views/OnboardingView';
 import { TEMPLATE_BUILDER_VIEW_TYPE } from '../views/TemplateBuilderView';
@@ -59,6 +60,7 @@ import { registerTradeLogEmptyGuide } from '../guides/tradeLogEmptyGuide';
 import { registerTradeLogImageGalleryEmptyGuide } from '../guides/tradeLogImageGalleryEmptyGuide';
 import { registerTradeLogMainGuide } from '../guides/tradeLogMainGuide';
 import { registerTradeLogWhatsNewImageGalleryGuide } from '../guides/tradeLogWhatsNewImageGalleryGuide';
+import { registerFilterMenuWhatsNewGuides } from '../guides/filterMenuWhatsNewGuide';
 import { registerDashboardEmptyGuide } from '../guides/dashboardEmptyGuide';
 import { registerDashboardMainGuide } from '../guides/dashboardMainGuide';
 import { registerLayoutBuilderMainGuide } from '../guides/layoutBuilderMainGuide';
@@ -191,6 +193,10 @@ export class PluginInitializer {
     this.plugin.settings = await this.plugin.settingsManager.loadSettings();
 
     
+    
+    startDefaultAccentBodyClass(this.plugin);
+
+    
     await this.plugin.uiStateManager.loadState();
 
     
@@ -294,6 +300,7 @@ export class PluginInitializer {
     registerDashboardEmptyGuide(this.plugin.guideRegistry);
     registerDashboardMainGuide(this.plugin.guideRegistry);
     registerDashboardCustomizeGuide(this.plugin.guideRegistry);
+    registerFilterMenuWhatsNewGuides(this.plugin.guideRegistry);
     registerLayoutBuilderMainGuide(this.plugin.guideRegistry);
     registerLayoutBuilderEditorGuide(this.plugin.guideRegistry);
     registerAccountDashboardEmptyGuide(this.plugin.guideRegistry);

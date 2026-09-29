@@ -265,6 +265,7 @@ export class InstrumentSpecService {
     
     try {
       await pluginInstance.saveSettings();
+      this.publishMappingsChanged();
       return true;
     } catch (error) {
       console.error(
@@ -297,6 +298,14 @@ export class InstrumentSpecService {
   }
 
   
+  
+  private publishMappingsChanged(): void {
+    eventBus.publish('settings:changed', {
+      section: 'symbolMappings',
+      source: 'instrument-spec-service',
+    });
+  }
+
   public async deleteMapping(importedSymbol: string): Promise<void> {
     const trimmed = importedSymbol?.trim();
     if (!trimmed) {
@@ -329,6 +338,7 @@ export class InstrumentSpecService {
     
     try {
       await pluginInstance.saveSettings();
+      this.publishMappingsChanged();
     } catch (error) {
       console.error(
         `InstrumentSpecService: Failed to persist deletion of mapping "${upperImportedSymbol}":`,

@@ -56,9 +56,11 @@ class ProfileUpdateModal extends Modal {
     this.modalEl.addClass('journalit-profile-update-modal');
     this.titleEl.setText(
       t(
-        this.options.initialReview?.comparison.corrections?.length
-          ? 'account.profiles.correction-title'
-          : 'account.profiles.review-changes'
+        !this.options.initialReview
+          ? 'account.profiles.link-title'
+          : this.options.initialReview.comparison.corrections?.length
+            ? 'account.profiles.correction-title'
+            : 'account.profiles.review-changes'
       )
     );
     const container = this.contentEl.createDiv({
@@ -231,13 +233,13 @@ function ProfileSourceChooser({
   );
   return (
     <div className="journalit-profile-review">
-      <p>{t('account.profiles.unknown-baseline')}</p>
+      <p>{t('account.profiles.link-intro')}</p>
       <DropdownSelect
         value={selected}
         onChange={setSelected}
         ariaLabel={t('account.prop-challenge.profile.title')}
         options={[
-          { value: '', label: t('account.profiles.choose') },
+          { value: '', label: t('account.profiles.choose-source') },
           ...sources.map((source) => ({
             value: profileSourceIdentity(source),
             label: `${source.firmName} / ${source.challenge.name}`,

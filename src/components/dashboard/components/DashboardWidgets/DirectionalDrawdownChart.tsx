@@ -4,9 +4,9 @@ import React from 'react';
 import { BaseWidget, BaseWidgetProps } from './BaseWidget';
 import { SharedDrawdownChart } from '../../../charts/SharedDrawdownChart';
 import {
-  getDrawdownChartScaleValue,
+  getDrawdownChartPlotValue,
   prepareDrawdownChartState,
-  shouldUseDrawdownPercentScale,
+  getDrawdownChartScale,
 } from '../../../../utils/chartUtils';
 import { mapTradesToDisplayPnL } from '../../../../utils/pnlUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
@@ -95,13 +95,13 @@ const DirectionalDrawdownChartComponent: React.FC<
             ? [shortChart.data]
             : []),
         ];
-        const usePercentScale = visibleSeries.every((series) =>
-          shouldUseDrawdownPercentScale(series)
+        
+        const scale = getDrawdownChartScale(
+          visibleSeries,
+          plugin?.settings?.trade?.displayRMultiples ?? false
         );
         const drawdownValues = visibleSeries.flatMap((series) =>
-          series.map((point) =>
-            getDrawdownChartScaleValue(point, usePercentScale)
-          )
+          series.map((point) => getDrawdownChartPlotValue(point, scale))
         );
         const sharedMinValue =
           drawdownValues.length > 0 ? Math.min(...drawdownValues) : undefined;
@@ -155,6 +155,7 @@ const DirectionalDrawdownChartComponent: React.FC<
                       currencyOverride={currencyOverride}
                       minValue={sharedMinValue}
                       maxValue={sharedMaxValue}
+                      scale={scale}
                       tooltipProps={{
                         wrapperStyle: { zIndex: 1001 },
                       }}
@@ -183,6 +184,7 @@ const DirectionalDrawdownChartComponent: React.FC<
                       currencyOverride={currencyOverride}
                       minValue={sharedMinValue}
                       maxValue={sharedMaxValue}
+                      scale={scale}
                       tooltipProps={{
                         wrapperStyle: { zIndex: 1001 },
                       }}

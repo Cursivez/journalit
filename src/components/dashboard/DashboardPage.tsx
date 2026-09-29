@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useEffectEvent,
+  useMemo,
+  useRef,
+} from 'react';
 import type { WorkspaceLeaf } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import { FilterControls } from './components/FilterControls';
@@ -26,6 +32,8 @@ import {
   DASHBOARD_WIDGET_SELECTOR_OPENED_ACTION_ID,
 } from '../../guides/dashboardGuideIds';
 import { resolveContextualGuideId } from '../../guides/contextualGuideResolution';
+import { isFilterMenuWhatsNewDue } from '../../guides/filterMenuWhatsNewResolution';
+import { DASHBOARD_WHATS_NEW_FILTER_MENU_GUIDE_ID } from '../../guides/filterMenuWhatsNewGuideIds';
 
 interface DashboardGuideCoordinatorProps {
   leaf: WorkspaceLeaf;
@@ -65,15 +73,23 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
           resolvedGuideId = DASHBOARD_EMPTY_GUIDE_ID;
         } else if (tradeCount > 0 && data.trades.length > 0) {
           const guideService = plugin.viewGuideService;
+          const getPersistedState = (guideId: string) =>
+            guideService.getPersistedGuideState(guideId);
+          const baseGuideId = isFilterMenuWhatsNewDue(
+            DASHBOARD_WHATS_NEW_FILTER_MENU_GUIDE_ID,
+            getPersistedState
+          )
+            ? DASHBOARD_WHATS_NEW_FILTER_MENU_GUIDE_ID
+            : DASHBOARD_MAIN_GUIDE_ID;
           const activeSessionGuideId =
-            [DASHBOARD_MAIN_GUIDE_ID, DASHBOARD_CUSTOMIZE_GUIDE_ID]
+            [baseGuideId, DASHBOARD_CUSTOMIZE_GUIDE_ID]
               .map((guideId) =>
                 guideService.getSessionForGuideAndLeaf(guideId, leaf)
               )
               .find((session) => session && session.status !== 'ended')
               ?.guideId ?? null;
           resolvedGuideId = resolveContextualGuideId({
-            baseGuideId: DASHBOARD_MAIN_GUIDE_ID,
+            baseGuideId,
             contextualGuides: [
               {
                 guideId: DASHBOARD_CUSTOMIZE_GUIDE_ID,
@@ -81,8 +97,7 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
               },
             ],
             activeSessionGuideId,
-            getPersistedState: (guideId) =>
-              guideService.getPersistedGuideState(guideId),
+            getPersistedState,
           });
         }
       }
@@ -101,6 +116,7 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
         dashboardSession &&
         resolvedGuideId &&
         resolvedGuideId !== DASHBOARD_CUSTOMIZE_GUIDE_ID &&
+        resolvedGuideId !== DASHBOARD_WHATS_NEW_FILTER_MENU_GUIDE_ID &&
         dashboardSession.guideId !== resolvedGuideId
       ) {
         void plugin.viewGuideService.clearGuideState(dashboardSession.guideId);
@@ -153,6 +169,18 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
     applyResolvedGuide(totalTradeCountRef.current, dashboardData);
   }, [applyResolvedGuide, dashboardData]);
 
+  
+  
+  
+  const reapplyResolvedGuide = useEffectEvent(() =>
+    applyResolvedGuide(totalTradeCountRef.current, dashboardData)
+  );
+  useEffect(() => {
+    const guideService = plugin?.viewGuideService;
+    if (!isActive || !guideService) return;
+    return guideService.subscribe(() => reapplyResolvedGuide());
+  }, [isActive, plugin]);
+
   useEffect(() => {
     if (!isActive) return;
     isEditingRef.current = isEditing;
@@ -184,8 +212,6 @@ interface DashboardBodyProps {
   toggleEditMode: () => void;
   openUnifiedSelector: () => void;
   closeUnifiedSelector: () => void;
-  handleAddMetric: (metricId: string) => void;
-  handleAddWidget: (widgetId: string) => void;
   isActive: boolean;
   isLoading: boolean;
   isEditing: boolean;
@@ -215,8 +241,6 @@ const DashboardBody: React.FC<DashboardBodyProps> = ({
   toggleEditMode,
   openUnifiedSelector,
   closeUnifiedSelector,
-  handleAddMetric,
-  handleAddWidget,
   isActive,
   isLoading,
   isEditing,
@@ -257,8 +281,6 @@ const DashboardBody: React.FC<DashboardBodyProps> = ({
             showUnifiedSelector={showUnifiedSelector}
             activeMetrics={activeMetrics}
             activeWidgets={activeWidgets}
-            onAddMetric={handleAddMetric}
-            onAddWidget={handleAddWidget}
             onCloseSelector={closeUnifiedSelector}
             openUnifiedSelector={openUnifiedSelector}
           />
@@ -298,8 +320,6 @@ export const DashboardPage = React.memo(function DashboardPage({
     openUnifiedSelector,
     closeUnifiedSelector,
     restoreGuideStepState,
-    handleAddMetric,
-    handleAddWidget,
   } = useDashboard();
 
   const handleGuideBack = useCallback(
@@ -373,8 +393,6 @@ export const DashboardPage = React.memo(function DashboardPage({
       toggleEditMode={toggleEditMode}
       openUnifiedSelector={openUnifiedSelector}
       closeUnifiedSelector={closeUnifiedSelector}
-      handleAddMetric={handleAddMetric}
-      handleAddWidget={handleAddWidget}
       isActive={isActive}
       isLoading={isLoading}
       isEditing={isEditing}

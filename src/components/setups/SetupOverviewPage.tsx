@@ -43,6 +43,7 @@ import {
   type SetupDirectionFilter,
   useSetupOverviewTagFilter,
 } from './SetupTags';
+import type { App } from 'obsidian';
 
 function useSetupOverviewFilterActions({
   currentGuideStepId,
@@ -308,6 +309,7 @@ export const SetupOverviewPage: React.FC<{
   return (
     <div className="journalit-setups-view">
       <SetupOverviewHeader
+        app={plugin.app}
         availableTags={availableTags}
         canCompare={effectiveViewModels.length >= 2}
         chartMode={effectiveChartMode}
@@ -414,6 +416,7 @@ export const SetupOverviewPage: React.FC<{
 SetupOverviewPage.displayName = 'SetupOverviewPage';
 
 const SetupOverviewHeader: React.FC<{
+  app: App;
   availableTags: string[];
   canCompare: boolean;
   chartMode: SetupOverviewChartMode;
@@ -435,6 +438,7 @@ const SetupOverviewHeader: React.FC<{
   registerTagFilterTarget: (element: HTMLElement | null) => void;
   registerViewTabsTarget: (element: HTMLElement | null) => void;
 }> = ({
+  app,
   availableTags,
   canCompare,
   chartMode,
@@ -504,6 +508,7 @@ const SetupOverviewHeader: React.FC<{
         ref={registerTagFilterTarget}
       >
         <SetupOverviewFilter
+          app={app}
           availableTags={availableTags}
           selectedDirections={selectedDirectionFilters}
           selectedTags={selectedTagFilters}

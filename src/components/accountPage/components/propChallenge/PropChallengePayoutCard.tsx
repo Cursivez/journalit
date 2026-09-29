@@ -3,8 +3,6 @@
 import React, { useId, useMemo, useState } from 'react';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import { t } from '../../../../lang/helpers';
-import { useGuideTarget } from '../../../../guides/GuideRuntimeLayer';
-import { ACCOUNT_PAGE_PAYOUT_SECTION_TARGET_ID } from '../../../../guides/accountPageGuideIds';
 import {
   previewPropChallengePayout,
   type PropChallengePayoutEvaluation,
@@ -51,9 +49,6 @@ export const PropChallengePayoutCard: React.FC<Props> = ({
   policy,
 }) => {
   const { formatValue } = useDisplayFormatter();
-  const registerPayoutTarget = useGuideTarget(
-    ACCOUNT_PAGE_PAYOUT_SECTION_TARGET_ID
-  );
   const titleId = useId();
   
   
@@ -91,11 +86,7 @@ export const PropChallengePayoutCard: React.FC<Props> = ({
   
   return (
     <>
-      <section
-        aria-labelledby={titleId}
-        className="journalit-prop-payout-head"
-        ref={registerPayoutTarget}
-      >
+      <section aria-labelledby={titleId} className="journalit-prop-payout-head">
         <span className="journalit-account-page-sr-only" id={titleId}>
           {t('account.prop-challenge.payout.title')}
         </span>

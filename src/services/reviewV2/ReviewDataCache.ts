@@ -297,6 +297,7 @@ function patchMarkdownTradeContextInArray(
   let changed = false;
   const nextTrades = trades.map((trade) => {
     if (!isRecord(trade) || trade.path !== tradeFilePath) return trade;
+    if (tradeHasMarkdownContext(trade, context)) return trade;
     changed = true;
     const nextTrade = { ...trade };
     if (context.review) {
@@ -313,6 +314,23 @@ function patchMarkdownTradeContextInArray(
   });
 
   return changed ? nextTrades : trades;
+}
+
+
+function tradeHasMarkdownContext(
+  trade: Record<string, unknown>,
+  context: { review: unknown; notes: string | undefined }
+): boolean {
+  const currentReview =
+    trade.tradeReview === undefined
+      ? undefined
+      : JSON.stringify(trade.tradeReview);
+  const nextReview = context.review
+    ? JSON.stringify(context.review)
+    : undefined;
+  return (
+    currentReview === nextReview && trade.notes === (context.notes || undefined)
+  );
 }
 
 function patchMarkdownTradeContextInRequiredArray(
@@ -1320,23 +1338,34 @@ export class ReviewDataCache {
     for (const [reviewFilePath, cached] of this.cache.entries()) {
       if (!cachedReviewIncludesTradePath(cached, tradeFilePath)) continue;
 
+      const allTrades = patchMarkdownTradeContextInArray(
+        cached.allTrades,
+        tradeFilePath,
+        context
+      );
+      const analyticsBasisTrades = patchMarkdownTradeContextInArray(
+        cached.analyticsBasisTrades,
+        tradeFilePath,
+        context
+      );
+      const trades = patchMarkdownTradeContextInRequiredArray(
+        cached.trades,
+        tradeFilePath,
+        context
+      );
+      if (
+        allTrades === cached.allTrades &&
+        analyticsBasisTrades === cached.analyticsBasisTrades &&
+        trades === cached.trades
+      ) {
+        continue;
+      }
+
       const nextCached: CachedReviewData = {
         ...cached,
-        allTrades: patchMarkdownTradeContextInArray(
-          cached.allTrades,
-          tradeFilePath,
-          context
-        ),
-        analyticsBasisTrades: patchMarkdownTradeContextInArray(
-          cached.analyticsBasisTrades,
-          tradeFilePath,
-          context
-        ),
-        trades: patchMarkdownTradeContextInRequiredArray(
-          cached.trades,
-          tradeFilePath,
-          context
-        ),
+        allTrades,
+        analyticsBasisTrades,
+        trades,
         version: cached.version + 1,
         populatedAt: Date.now(),
       };

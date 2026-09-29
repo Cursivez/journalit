@@ -1,4 +1,5 @@
 import React from 'react';
+import { DraftInput } from '../../../ui/DraftInput';
 import { FastDateTimeInput } from '../../../core/FastDateTimeInput';
 import { t } from '../../../../lang/helpers';
 import {
@@ -132,7 +133,7 @@ export function PropChallengeCostsEditor({ value, disabled, onChange }: Props) {
           </div>
           <label className="journalit-prop-challenge-field">
             <span>{t('account.prop-challenge.costs.amount')}</span>
-            <input
+            <DraftInput
               type="number"
               min="0"
               step="0.01"

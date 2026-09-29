@@ -43,7 +43,7 @@ export function formatCost(
 
   
   const formatted = absValue.toLocaleString(currencyConfig.locale, {
-    minimumFractionDigits: 0,
+    minimumFractionDigits: maxDecimals,
     maximumFractionDigits: maxDecimals,
   });
 

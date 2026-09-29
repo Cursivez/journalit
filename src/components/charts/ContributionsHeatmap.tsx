@@ -27,8 +27,8 @@ export const CONTRIBUTIONS_HEATMAP_STYLES = `
 
         .contributions-heatmap {
           
-          --heatmap-empty: rgba(var(--background-modifier-border-rgb, 55, 53, 47), 0.12);
-          --heatmap-empty-hover: rgba(var(--background-modifier-border-rgb, 55, 53, 47), 0.18);
+          --heatmap-empty: color-mix(in srgb, var(--text-normal) 12%, transparent);
+          --heatmap-empty-hover: color-mix(in srgb, var(--text-normal) 18%, transparent);
 
           
           --heatmap-profit-1: rgba(16, 185, 129, 0.15);
@@ -779,7 +779,7 @@ const HeatmapGrid: React.FC<HeatmapGridProps> = ({
                   '--heatmap-cell-bg': getDayColor(day),
                   '--heatmap-cell-border': day.isEmpty
                     ? 'none'
-                    : `1px solid rgba(var(--background-modifier-border-rgb, 55, 53, 47), 0.08)`,
+                    : `1px solid color-mix(in srgb, var(--text-normal) 8%, transparent)`,
                 })}
                 {...interactiveProps}
               >

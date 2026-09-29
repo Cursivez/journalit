@@ -16,6 +16,7 @@ import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { getReviewAnalyticsDateBasis } from '../utils/reviewTradeDates';
 import { resolveDrawdownCapitalBasis } from '../../../utils/drawdownAnalytics';
+import { shareLoadingProps } from '../../../services/share/brandedCapture';
 
 const asDrawdownTrades = (value: unknown): Trade[] =>
   Array.isArray(value)
@@ -126,6 +127,7 @@ export const DrawdownChartWidget: React.FC<DrawdownChartWidgetProps> =
             
             <div
               className="journalit-reviewv2-chart-skeleton"
+              {...shareLoadingProps}
               role="status"
               aria-label={t('chart.loading')}
               style={cssVars({

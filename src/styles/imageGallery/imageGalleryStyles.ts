@@ -37,7 +37,7 @@ export const imageGalleryStyles = `
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  border: 1px dashed rgba(var(--interactive-accent-rgb), 0.42);
+  border: 1px dashed color-mix(in srgb, var(--interactive-accent) 42%, transparent);
   border-radius: 22px;
   background: transparent;
   color: var(--text-accent);
@@ -246,6 +246,7 @@ export const imageGalleryStyles = `
 
 .journalit-image-gallery-filter-dropdown .journalit-home-period-option--active .journalit-home-period-option__check {
   background: var(--interactive-accent);
+  color: var(--text-on-accent);
   border-color: var(--interactive-accent);
 }
 

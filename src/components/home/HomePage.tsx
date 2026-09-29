@@ -51,6 +51,7 @@ import {
 } from '../../guides/GuideRuntimeLayer';
 import {
   HOME_ADD_WIDGET_BUTTON_TARGET_ID,
+  HOME_CUSTOMIZE_GUIDE_ID,
   HOME_EDIT_BUTTON_TARGET_ID,
   HOME_EDIT_MODE_DISABLED_ACTION_ID,
   HOME_EDIT_MODE_ENABLED_ACTION_ID,
@@ -77,6 +78,8 @@ import {
   type HomeAccountTradeSnapshot,
 } from './utils/homeTradeTypeUtils';
 import { areAccountSelectionsEqual } from '../shared/filters/remapSelectedAccounts';
+import { createFilterExclusions } from '../shared/filters/filterExclusions';
+import { createFilterMatchModes } from '../shared/filters/filterMatchModes';
 import type { TradeChangedPayload } from '../../services/events/types';
 import { t, hasTranslation } from '../../lang/helpers';
 import { HomeBackgroundSurface } from './HomeBackgroundSurface';
@@ -427,15 +430,23 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
   const [showWidgetSelector, setShowWidgetSelector] = useState(false);
   const [showEntityShortcutPicker, setShowEntityShortcutPicker] =
     useState(false);
-  const suppressGuideWidgetSelectorCloseRef = useRef(false);
+  
+  
+  
+  const isWidgetSelectorOpen =
+    showWidgetSelector ||
+    (isActive &&
+      isEditing &&
+      !showEntityShortcutPicker &&
+      currentGuideStepId === 'widget-picker');
 
   useEffect(() => {
-    if (!showWidgetSelector) {
+    if (!isWidgetSelectorOpen) {
       return;
     }
 
     emitGuideAction(HOME_WIDGET_SELECTOR_OPENED_ACTION_ID);
-  }, [emitGuideAction, showWidgetSelector]);
+  }, [emitGuideAction, isWidgetSelectorOpen]);
 
   const handleOpenEntityShortcuts = useCallback(() => {
     setShowWidgetSelector(false);
@@ -445,12 +456,8 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     setShowEntityShortcutPicker(false);
   }, []);
 
+  
   useEffect(() => {
-    if (currentGuideStepId === 'widget-picker') {
-      suppressGuideWidgetSelectorCloseRef.current = false;
-      return;
-    }
-
     if (
       currentGuideStepId !== 'move-and-resize' &&
       currentGuideStepId !== 'save-layout'
@@ -458,21 +465,14 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
       return;
     }
 
-    if (!showWidgetSelector) {
-      return;
-    }
-
-    if (suppressGuideWidgetSelectorCloseRef.current) {
-      return;
-    }
-
     setShowWidgetSelector(false);
-  }, [currentGuideStepId, showWidgetSelector]);
+  }, [currentGuideStepId]);
 
   const handleGuideBack = useCallback(
-    async ({ toStepId, guideId }: { toStepId: string; guideId: string }) => {
+    ({ toStepId, guideId }: { toStepId: string; guideId: string }) => {
       if (
         guideId !== HOME_MAIN_GUIDE_ID &&
+        guideId !== HOME_CUSTOMIZE_GUIDE_ID &&
         guideId !== HOME_WHATS_NEW_DASHBOARD_TOGGLE_GUIDE_ID
       ) {
         return;
@@ -485,10 +485,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
       }
 
       if (toStepId === 'widget-picker') {
-        suppressGuideWidgetSelectorCloseRef.current = true;
         setIsEditing(true);
-        setShowWidgetSelector(true);
-        await new Promise((resolve) => window.setTimeout(resolve, 0));
         return;
       }
 
@@ -499,7 +496,6 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
       }
 
       if (
-        toStepId === 'add-shortcut' ||
         toStepId === 'quick-links-position' ||
         toStepId === 'quick-links' ||
         toStepId === 'add-widget' ||
@@ -1400,6 +1396,10 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
           delete plugin.settings.home.streaks[widgetId];
         }
 
+        if (plugin.settings.home.accountProgress?.[widgetId]) {
+          delete plugin.settings.home.accountProgress[widgetId];
+        }
+
         if (widgetId === 'gettingStarted') {
           setGettingStartedDismissed(true);
           await plugin.uiStateManager.updateState({
@@ -1460,6 +1460,8 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
       tags: [],
       mistakes: [],
       customFieldFilters: {},
+      exclusions: createFilterExclusions(),
+      matchModes: createFilterMatchModes(),
     }),
     [effectiveSelectedAccounts, selectedTradeTypes]
   );
@@ -1473,6 +1475,11 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
       activeWidgets.includes('challengeAlerts'),
     [activeWidgets]
   );
+  
+  
+  const showsChallengeRuleProgress =
+    activeWidgets.includes('drawdownMonitor') ||
+    activeWidgets.includes('profitTarget');
 
   return {
     memoizedGreeting,
@@ -1507,10 +1514,11 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     setQuickLinks,
     registerGridTarget,
     hasAccountBackedHomeWidgets,
+    showsChallengeRuleProgress,
     activeWidgets,
     handleRemoveWidget,
     tradeCount,
-    showWidgetSelector,
+    isWidgetSelectorOpen,
     hiddenQuickLinks,
     handleAddWidget,
     handleRestoreQuickLink,
@@ -1636,6 +1644,7 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
             <div className="journalit-home-actions">
               <div ref={model.registerFiltersTarget}>
                 <HomeFilterPopover
+                  app={plugin.app}
                   periods={HOME_PERIODS}
                   periodLabels={getPeriodLabels()}
                   selectedPeriod={model.selectedPeriod}
@@ -1751,6 +1760,7 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
                 <HomeAccountsDataProvider
                   plugin={plugin}
                   enabled={model.hasAccountBackedHomeWidgets}
+                  includeChallengeProgress={model.showsChallengeRuleProgress}
                   selectedTradeTypes={model.selectedTradeTypes}
                 >
                   <HomeGridLayout
@@ -1818,11 +1828,13 @@ const HomeOverviewSection: React.FC<HomeOverviewSectionProps> = ({
         modeToggle={modeToggle}
       />
 
-      {model.showWidgetSelector && isActive && (
+      {model.isWidgetSelectorOpen && isActive && (
         <HomeWidgetSelector
           activeWidgets={model.activeWidgets}
+          homeSettings={plugin.settings.home}
           hiddenQuickLinks={model.hiddenQuickLinks}
           onAddWidget={model.handleAddWidget}
+          onRemoveWidget={model.handleRemoveWidget}
           onRestoreQuickLink={model.handleRestoreQuickLink}
           onOpenEntityShortcuts={model.handleOpenEntityShortcuts}
           onClose={() => model.setShowWidgetSelector(false)}

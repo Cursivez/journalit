@@ -23,7 +23,8 @@ Obsidian के लिए लोकल-फ़र्स्ट ट्रेडि�
   <a href="README.it.md">Italiano</a> |
   <a href="README.vi.md">Tiếng Việt</a> |
   <a href="README.hi.md">हिन्दी</a> |
-  <a href="README.ta.md">தமிழ்</a>
+  <a href="README.ta.md">தமிழ்</a> |
+  <a href="README.ar.md">العربية</a>
 </p>
 
 [इंस्टॉल](#installation) · [समर्थित ब्रोकर्स](#supported-brokers) · [प्राइवेसी](PRIVACY.md)

@@ -38,6 +38,7 @@ import { resolveStageAccountType } from '../../../services/propChallenge/stageAc
 import { DisplayPolicyProvider } from '../../../contexts/DisplayPolicyContext';
 import { SegmentedControl } from '../../shared/SegmentedControl';
 import { PropChallengeSettingsSection } from './propChallenge/PropChallengeSettingsSection';
+import { markUntouchedChallengeConfig } from './propChallenge/untouchedChallengeConfigs';
 import { getAvailableAccountTypes } from './propChallenge/propChallengeLifecycleActions';
 import { DropdownSelect } from '../../shared/DropdownSelect';
 import { Tooltip } from '../../shared/Tooltip';
@@ -68,6 +69,7 @@ import {
   toLiveBalanceAdjustment,
 } from '../../../services/account/liveBalanceAdjustment';
 import { formatAccountTypeLabel } from '../../../utils/accountTypeLabel';
+import { suspendViewGuidesWhileOpen } from '../../../guides/suspendViewGuides';
 
 interface CreateAccountModalProps {
   app: App;
@@ -96,6 +98,7 @@ class CreateAccountModal extends Modal {
   onOpen() {
     const { contentEl } = this;
     this.modalEl.addClass('journalit-create-account-modal');
+    suspendViewGuidesWhileOpen(this.modalEl);
     contentEl.empty();
 
     
@@ -1098,17 +1101,40 @@ interface CreateAccountModalModelProps {
 }
 
 
+function suggestAccountName(
+  takenNames: Iterable<string>,
+  challenge: PropChallengeConfig
+): string | undefined {
+  const base = [challenge.firmName, challenge.challengeName]
+    .map((part) => part?.trim())
+    .filter(Boolean)
+    .join(' ');
+  if (!base) return undefined;
+  const taken = new Set(
+    Array.from(takenNames, (name) => name.trim().toLowerCase())
+  );
+  let candidate = base;
+  for (let number = 2; taken.has(candidate.toLowerCase()); number += 1) {
+    candidate = `${base} ${number}`;
+  }
+  return candidate;
+}
+
+
 function defaultPropChallengeState(plugin: JournalitPlugin): {
   propChallenge: PropChallengeConfig;
   accountType?: string;
 } {
-  const propChallenge = createDefaultPropChallengeConfig({
-    phaseNames: [
-      t('account.prop-challenge.default-phase-name', { number: '1' }),
-      t('account.prop-challenge.default-phase-name', { number: '2' }),
-      t('account.create.type.funded'),
-    ],
-  });
+  
+  const propChallenge = markUntouchedChallengeConfig(
+    createDefaultPropChallengeConfig({
+      phaseNames: [
+        t('account.prop-challenge.default-phase-name', { number: '1' }),
+        t('account.prop-challenge.default-phase-name', { number: '2' }),
+        t('account.create.type.funded'),
+      ],
+    })
+  );
   const accountType = resolveStageAccountType(
     plugin.settings.account?.challengeStageAccountTypes,
     propChallenge.phases[0]?.stage,
@@ -1487,6 +1513,65 @@ export const CreateAccountModalContent: React.FC<
   });
 
   
+  const suggestedNameRef = useRef('');
+  
+  
+  const catalogNamesRef = useRef<string[]>([]);
+  useEffect(() => {
+    const service = plugin.accountPageService;
+    if (!service) return;
+    let cancelled = false;
+    service
+      .getAccountCatalog()
+      .then((catalog) => {
+        if (!cancelled) {
+          catalogNamesRef.current = catalog.map((account) => account.name);
+        }
+      })
+      .catch((error: unknown) => {
+        console.error('Failed to load account names for suggestions:', error);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [plugin]);
+
+  const handleChallengeChange = (propChallenge: PropChallengeConfig) => {
+    const previousRef = newAccount.propChallenge?.profileRef;
+    const nextRef = propChallenge.profileRef;
+    const profileChanged =
+      nextRef !== undefined &&
+      (nextRef.firmId !== previousRef?.firmId ||
+        nextRef.challengeId !== previousRef?.challengeId);
+    const currentName = newAccount.name.trim();
+    const suggestion =
+      profileChanged &&
+      (currentName === '' || currentName === suggestedNameRef.current)
+        ? suggestAccountName(
+            [
+              ...Object.keys(plugin.settings.account?.accountMetadata ?? {}),
+              ...catalogNamesRef.current,
+            ],
+            propChallenge
+          )
+        : undefined;
+    
+    
+    const withdrawn =
+      previousRef !== undefined &&
+      nextRef === undefined &&
+      currentName !== '' &&
+      currentName === suggestedNameRef.current;
+    if (suggestion) suggestedNameRef.current = suggestion;
+    const name = suggestion ?? (withdrawn ? '' : undefined);
+    setNewAccount((current) => ({
+      ...current,
+      propChallenge,
+      ...(name !== undefined ? { name } : {}),
+    }));
+  };
+
+  
   const detachedChallengeRef = useRef<PropChallengeConfig | undefined>(
     undefined
   );
@@ -1582,9 +1667,7 @@ export const CreateAccountModalContent: React.FC<
             currencyCode={newAccount.currency}
             disabled={isSaving}
             accountType={newAccount.accountType}
-            onChange={(propChallenge) =>
-              setNewAccount((current) => ({ ...current, propChallenge }))
-            }
+            onChange={handleChallengeChange}
             onAccountTypeChange={(accountType) =>
               setNewAccount((current) => ({ ...current, accountType }))
             }
