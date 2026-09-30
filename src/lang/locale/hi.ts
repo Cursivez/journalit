@@ -3075,8 +3075,6 @@ const hi: Lang = {
   'settings.general.break-even-min-aria': 'ब्रेक ईवन रेंज न्यूनतम',
   'settings.general.break-even-max-aria': 'अधिकतम सीमा तोड़ें',
   'settings.general.break-even-to': 'को',
-  'settings.general.break-even-warning':
-    'चेतावनी: न्यूनतम मूल्य अधिकतम मूल्य से अधिक है. यह ट्रेड्स को ब्रेकईवन के रूप में वर्गीकृत होने से रोकेगा।',
   'settings.general.break-even-updated':
     'सम-विषम श्रेणी अपडेट की गई - अगले लोड पर दृश्य ताज़ा हो जाएंगे',
   'settings.general.default-risk': 'डिफ़ॉल्ट जोखिम राशि',

@@ -17,14 +17,21 @@ import {
 } from '../shared/gridLayout/reactGridLayoutCompat';
 import {
   getActiveLayout,
+  getSavedHomeLgLayouts,
   saveLayout,
-  LAYOUT_BOTTOM_POSITION,
   HomeLayout,
 } from './homeLayoutUtils';
-import { sanitizeLayoutItem } from '../shared/gridLayout/gridLayoutUtils';
 import {
-  GRID_COLS as SHARED_GRID_COLS,
-  GRID_ROW_HEIGHT as SHARED_GRID_ROW_HEIGHT,
+  applyWidgetSizeConstraints,
+  type BreakpointKey,
+  fillMissingBreakpointItems,
+  GRID_COLS,
+  GRID_ROW_HEIGHT,
+  isBreakpointKey,
+  LAYOUT_BOTTOM_POSITION,
+  normalizeLayoutItem,
+  sanitizeLayoutItem,
+  syncBreakpointsToCurrentLayout,
 } from '../shared/gridLayout/gridLayoutUtils';
 import { usePlugin } from '../../hooks/usePlugin';
 import { useEventBus } from '../../hooks/useEventBus';
@@ -101,167 +108,20 @@ class GridLayoutErrorBoundary extends React.Component<
   }
 }
 
-
-const findBestWidgetPosition = (
-  layouts: Layout[],
-  widgetId: string,
-  defaultW: number,
-  defaultH: number,
-  pluginInstance: JournalitPlugin | null
-) => {
-  const widgetDef = getHomeWidgetById(widgetId);
-  const constraints: Partial<Layout> = {};
-  if (widgetDef?.maxSize) {
-    constraints.minW = widgetDef.minSize.w;
-    constraints.minH = widgetDef.minSize.h;
-    constraints.maxW = widgetDef.maxSize.w;
-    constraints.maxH = widgetDef.maxSize.h;
-  }
-
-  if (!layouts || layouts.length === 0) {
-    return {
-      i: widgetId,
-      x: 0,
-      y: 0,
-      w: defaultW,
-      h: defaultH,
-      ...constraints,
-    };
-  }
-
-  if (pluginInstance) {
-    try {
-      const allLayouts = pluginInstance.settings?.home?.layouts || {};
-
-      for (const layoutName in allLayouts) {
-        const layout = allLayouts[layoutName];
-        if (!layout) continue;
-        const lgLayout = layout.lg || [];
-
-        let existingWidget: Layout | undefined;
-        for (const item of lgLayout) {
-          if (item.i === widgetId) {
-            existingWidget = item;
-            break;
-          }
-        }
-        if (existingWidget) {
-          const w = widgetDef?.maxSize
-            ? Math.max(
-                widgetDef.minSize.w,
-                Math.min(existingWidget.w, widgetDef.maxSize.w)
-              )
-            : existingWidget.w;
-          const h = widgetDef?.maxSize
-            ? Math.max(
-                widgetDef.minSize.h,
-                Math.min(existingWidget.h, widgetDef.maxSize.h)
-              )
-            : existingWidget.h;
-          const result = {
-            i: widgetId,
-            x: 0,
-            y: LAYOUT_BOTTOM_POSITION,
-            w,
-            h,
-            ...constraints,
-          };
-          return result;
-        }
-      }
-    } catch (error) {
-      console.error('Error finding previous layout:', error);
-    }
-  }
-
-  let maxY = 0;
-  layouts.forEach((item: Layout) => {
-    const y = typeof item.y === 'number' ? item.y : 0;
-    const h = typeof item.h === 'number' ? item.h : 1;
-    const itemBottom = y + h;
-    if (itemBottom > maxY) {
-      maxY = itemBottom;
-    }
-  });
-
-  const result = {
-    i: widgetId,
-    x: 0,
-    y: maxY,
-    w: defaultW,
-    h: defaultH,
-    ...constraints,
-  };
-  return result;
-};
-
-
-
-type BreakpointKey = 'lg' | 'md' | 'sm' | 'xs' | 'xxs';
-
-function isBreakpointKey(value: string): value is BreakpointKey {
-  switch (value) {
-    case 'lg':
-    case 'md':
-    case 'sm':
-    case 'xs':
-    case 'xxs':
-      return true;
-    default:
-      return false;
-  }
-}
-
 function isWidgetRemoveEvent(
   event: Event
 ): event is CustomEvent<{ widgetId?: string }> {
   return event instanceof CustomEvent;
 }
 
-
-const GRID_ROW_HEIGHT = SHARED_GRID_ROW_HEIGHT;
 const GRID_MARGIN = 12; 
-const GRID_COLS = SHARED_GRID_COLS;
 
 
-const validateLayoutItem = (item: Layout): Layout => {
-  const widgetDef = getHomeWidgetById(item.i);
-
-  const validated: Layout = {
-    ...item,
-    i: typeof item.i === 'string' ? item.i : 'unknown',
-    x: typeof item.x === 'number' && isFinite(item.x) ? item.x : 0,
-    y:
-      typeof item.y === 'number' && isFinite(item.y)
-        ? item.y === Infinity || item.y === 10000000 || item.y === 10000
-          ? LAYOUT_BOTTOM_POSITION
-          : item.y
-        : item.y === Infinity
-          ? LAYOUT_BOTTOM_POSITION
-          : 0,
-    w:
-      typeof item.w === 'number' && isFinite(item.w) && item.w > 0 ? item.w : 1,
-    h:
-      typeof item.h === 'number' && isFinite(item.h) && item.h > 0 ? item.h : 1,
-  };
-
-  if (widgetDef?.maxSize) {
-    validated.minW = item.minW ?? widgetDef.minSize.w;
-    validated.minH = item.minH ?? widgetDef.minSize.h;
-    validated.maxW = item.maxW ?? widgetDef.maxSize.w;
-    validated.maxH = item.maxH ?? widgetDef.maxSize.h;
-    validated.w = Math.max(
-      validated.minW,
-      Math.min(validated.w, validated.maxW)
-    );
-    validated.h = Math.max(
-      validated.minH,
-      Math.min(validated.h, validated.maxH)
-    );
-  }
-
-  return validated;
-};
+const validateLayoutItem = (item: Layout): Layout =>
+  applyWidgetSizeConstraints(
+    normalizeLayoutItem(item),
+    getHomeWidgetById(item.i)
+  );
 
 
 const validateLayoutsForGrid = (layouts: { [key: string]: Layout[] }) => {
@@ -544,152 +404,27 @@ const computeLayoutsFromSettings = (
 
   try {
     const activeLayout = getActiveLayout(plugin);
-
-    const widgetsSet = new Set(widgets);
-    const filteredLg = (activeLayout.lg || []).reduce<Layout[]>(
-      (acc, item: Layout) => {
-        if (widgetsSet.has(item.i)) {
+    const widgetIds = new Set(widgets);
+    const activeWidgetItems = (items: Layout[] | undefined): Layout[] =>
+      (items ?? []).reduce<Layout[]>((acc, item) => {
+        if (widgetIds.has(item.i)) {
           acc.push(validateLayoutItem(item));
         }
         return acc;
+      }, []);
+
+    return fillMissingBreakpointItems({
+      layouts: {
+        lg: activeWidgetItems(activeLayout.lg),
+        md: activeWidgetItems(activeLayout.md),
+        sm: activeWidgetItems(activeLayout.sm),
+        xs: activeWidgetItems(activeLayout.xs),
+        xxs: activeWidgetItems(activeLayout.xxs),
       },
-      []
-    );
-
-    const widgetsSet2 = new Set(widgets);
-    const filteredMd = (activeLayout.md || []).reduce<Layout[]>(
-      (acc, item: Layout) => {
-        if (widgetsSet2.has(item.i)) {
-          acc.push(validateLayoutItem(item));
-        }
-        return acc;
-      },
-      []
-    );
-
-    const widgetsSet3 = new Set(widgets);
-    const filteredSm = (activeLayout.sm || []).reduce<Layout[]>(
-      (acc, item: Layout) => {
-        if (widgetsSet3.has(item.i)) {
-          acc.push(validateLayoutItem(item));
-        }
-        return acc;
-      },
-      []
-    );
-
-    const widgetsSet4 = new Set(widgets);
-    const filteredXs = (activeLayout.xs || []).reduce<Layout[]>(
-      (acc, item: Layout) => {
-        if (widgetsSet4.has(item.i)) {
-          acc.push(validateLayoutItem(item));
-        }
-        return acc;
-      },
-      []
-    );
-
-    const widgetsSet5 = new Set(widgets);
-    const filteredXxs = (activeLayout.xxs || []).reduce<Layout[]>(
-      (acc, item: Layout) => {
-        if (widgetsSet5.has(item.i)) {
-          acc.push(validateLayoutItem(item));
-        }
-        return acc;
-      },
-      []
-    );
-
-    const cols = GRID_COLS;
-
-    widgets.forEach((widgetId) => {
-      const inLg = filteredLg.some((item: Layout) => item.i === widgetId);
-      const inMd = filteredMd.some((item: Layout) => item.i === widgetId);
-      const inSm = filteredSm.some((item: Layout) => item.i === widgetId);
-      const inXs = filteredXs.some((item: Layout) => item.i === widgetId);
-      const inXxs = filteredXxs.some((item: Layout) => item.i === widgetId);
-
-      if (!inLg || !inMd || !inSm || !inXs || !inXxs) {
-        const widgetDef = getHomeWidgetById(widgetId);
-        if (widgetDef) {
-          let sourceItem: Layout | undefined;
-
-          if (inLg)
-            sourceItem = filteredLg.find((item: Layout) => item.i === widgetId);
-          else if (inMd)
-            sourceItem = filteredMd.find((item: Layout) => item.i === widgetId);
-          else if (inSm)
-            sourceItem = filteredSm.find((item: Layout) => item.i === widgetId);
-          else if (inXs)
-            sourceItem = filteredXs.find((item: Layout) => item.i === widgetId);
-          else if (inXxs)
-            sourceItem = filteredXxs.find(
-              (item: Layout) => item.i === widgetId
-            );
-
-          if (!sourceItem) {
-            sourceItem = findBestWidgetPosition(
-              filteredLg,
-              widgetId,
-              widgetDef.defaultSize.w,
-              widgetDef.defaultSize.h,
-              plugin
-            );
-          }
-
-          if (!inLg) {
-            const lgItem = findBestWidgetPosition(
-              filteredLg,
-              widgetId,
-              Math.min(sourceItem.w, cols.lg),
-              sourceItem.h,
-              plugin
-            );
-            filteredLg.push(lgItem);
-          }
-          if (!inMd)
-            filteredMd.push({
-              i: widgetId,
-              x: 0,
-              y: LAYOUT_BOTTOM_POSITION,
-              w: Math.min(sourceItem.w, cols.md),
-              h: sourceItem.h,
-            });
-          if (!inSm)
-            filteredSm.push({
-              i: widgetId,
-              x: 0,
-              y: LAYOUT_BOTTOM_POSITION,
-              w: Math.min(sourceItem.w, cols.sm),
-              h: sourceItem.h,
-            });
-          if (!inXs)
-            filteredXs.push({
-              i: widgetId,
-              x: 0,
-              y: LAYOUT_BOTTOM_POSITION,
-              w: Math.min(sourceItem.w, cols.xs),
-              h: sourceItem.h,
-            });
-          if (!inXxs)
-            filteredXxs.push({
-              i: widgetId,
-              x: 0,
-              y: LAYOUT_BOTTOM_POSITION,
-              w: cols.xxs,
-              h: sourceItem.h,
-            });
-        }
-      }
+      widgetIds: widgets,
+      getSizing: getHomeWidgetById,
+      savedLgLayouts: getSavedHomeLgLayouts(plugin),
     });
-
-    return {
-      lg: filteredLg,
-      md: filteredMd,
-      sm: filteredSm,
-      xs: filteredXs,
-      xxs: filteredXxs,
-    };
   } catch (error) {
     console.error('Error computing layouts:', error);
     const createDefaultLayoutItem = (widgetId: string, bp: string): Layout => {
@@ -772,52 +507,16 @@ function useHomeGridLayoutPersistence({
 
       try {
         const activeBreakpointKey: BreakpointKey = currentBreakpoint || 'lg';
-        const currentWidgetIds = sanitizedCurrentLayout.map((item) => item.i);
-        const newLayout: HomeLayout = {
-          lg: sanitizedAllLayouts.lg || [],
-          md: sanitizedAllLayouts.md || [],
-          sm: sanitizedAllLayouts.sm || [],
-          xs: sanitizedAllLayouts.xs || [],
-          xxs: sanitizedAllLayouts.xxs || [],
-        };
-        const allBreakpoints = ['lg', 'md', 'sm', 'xs', 'xxs'] as const;
-
-        allBreakpoints.forEach((bp) => {
-          if (bp === activeBreakpointKey) return;
-
-          const bpLayout = newLayout[bp];
-          const bpWidgetIds = bpLayout.map((item: Layout) => item.i);
-          const currentWidgetIdsSet = new Set(currentWidgetIds);
-          newLayout[bp] = bpLayout.filter((item: Layout) =>
-            currentWidgetIdsSet.has(item.i)
-          );
-
-          const bpWidgetIdsSet = new Set(bpWidgetIds);
-          currentWidgetIds.forEach((widgetId) => {
-            if (bpWidgetIdsSet.has(widgetId)) return;
-
-            const currentItem = sanitizedCurrentLayout.find(
-              (item) => item.i === widgetId
-            );
-            if (!currentItem) return;
-
-            newLayout[bp].push({
-              i: widgetId,
-              x: 0,
-              y: LAYOUT_BOTTOM_POSITION,
-              w: Math.min(
-                Math.max(
-                  1,
-                  Math.floor(
-                    (currentItem.w * GRID_COLS[bp]) /
-                      GRID_COLS[activeBreakpointKey]
-                  )
-                ),
-                GRID_COLS[bp]
-              ),
-              h: currentItem.h,
-            });
-          });
+        const newLayout: HomeLayout = syncBreakpointsToCurrentLayout({
+          layouts: {
+            lg: sanitizedAllLayouts.lg || [],
+            md: sanitizedAllLayouts.md || [],
+            sm: sanitizedAllLayouts.sm || [],
+            xs: sanitizedAllLayouts.xs || [],
+            xxs: sanitizedAllLayouts.xxs || [],
+          },
+          currentLayout: sanitizedCurrentLayout,
+          activeBreakpoint: activeBreakpointKey,
         });
 
         void saveLayout(plugin, newLayout);

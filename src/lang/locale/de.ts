@@ -3365,8 +3365,6 @@ const de: Lang = {
   'settings.general.break-even-min-aria': 'Mindestens Break-Even-Bereich',
   'settings.general.break-even-max-aria': 'Maximaler Break-Even-Bereich',
   'settings.general.break-even-to': 'Zu',
-  'settings.general.break-even-warning':
-    'Warnung: Der Minimalwert ist größer als der Maximalwert. Dadurch wird verhindert, dass Trades als ausgeglichen eingestuft werden.',
   'settings.general.break-even-updated':
     'Break-Even-Bereich aktualisiert – Ansichten werden beim nächsten Laden aktualisiert',
   'settings.general.default-risk': 'Standard-Risikobetrag',

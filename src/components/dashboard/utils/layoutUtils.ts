@@ -1,6 +1,10 @@
 
 
 import type { Layout } from '../../shared/gridLayout/reactGridLayoutCompat';
+import {
+  LAYOUT_BOTTOM_POSITION,
+  normalizeLayoutItem,
+} from '../../shared/gridLayout/gridLayoutUtils';
 import JournalitPlugin from '../../../main';
 import {
   DEFAULT_DASHBOARD_LAYOUT,
@@ -148,11 +152,11 @@ function safeLayoutSettingsCopy(
     layoutsCopy[layoutName] = {
       topSection: [...layout.topSection],
       bottomSection: {
-        lg: normalizeLayoutForSave(layout.bottomSection.lg),
-        md: normalizeLayoutForSave(layout.bottomSection.md),
-        sm: normalizeLayoutForSave(layout.bottomSection.sm),
-        xs: normalizeLayoutForSave(layout.bottomSection.xs || []),
-        xxs: normalizeLayoutForSave(layout.bottomSection.xxs || []),
+        lg: normalizeBreakpointLayout(layout.bottomSection.lg),
+        md: normalizeBreakpointLayout(layout.bottomSection.md),
+        sm: normalizeBreakpointLayout(layout.bottomSection.sm),
+        xs: normalizeBreakpointLayout(layout.bottomSection.xs || []),
+        xxs: normalizeBreakpointLayout(layout.bottomSection.xxs || []),
       },
     };
   });
@@ -181,11 +185,7 @@ const applyLayoutSettings = (
 };
 
 
-
-export const LAYOUT_BOTTOM_POSITION = 9999;
-
-
-function validateLayoutItems(layoutItems: Layout[]): Layout[] {
+function normalizeBreakpointLayout(layoutItems: Layout[]): Layout[] {
   if (!Array.isArray(layoutItems)) {
     return [];
   }
@@ -198,47 +198,25 @@ function validateLayoutItems(layoutItems: Layout[]): Layout[] {
       continue;
     }
 
-    const item = rawItem;
-
-    
-    const normalizedItem: Layout = {
-      ...item,
-      
-      i: typeof item.i === 'string' && item.i.length > 0 ? item.i : 'unknown',
-      
-      x: typeof item.x === 'number' && isFinite(item.x) ? item.x : 0,
-      
-      y:
-        typeof item.y === 'number' && isFinite(item.y)
-          ? item.y === 10000000 || item.y === 10000 || item.y === Infinity
-            ? LAYOUT_BOTTOM_POSITION
-            : item.y
-          : item.y === Infinity
-            ? LAYOUT_BOTTOM_POSITION
-            : 0,
-      
-      w:
-        typeof item.w === 'number' && isFinite(item.w) && item.w > 0
-          ? item.w
-          : 1,
-      
-      h:
-        typeof item.h === 'number' && isFinite(item.h) && item.h > 0
-          ? item.h
-          : 1,
-    };
-
-    
-    if (seenIds.has(normalizedItem.i)) {
+    const item = normalizeLayoutItem(rawItem);
+    if (seenIds.has(item.i)) {
       continue;
     }
 
-    seenIds.add(normalizedItem.i);
-    normalized.push(normalizedItem);
+    seenIds.add(item.i);
+    normalized.push(item);
   }
 
   return normalized;
 }
+
+
+export const getSavedDashboardLgLayouts = (
+  plugin: JournalitPlugin
+): Layout[][] =>
+  Object.values(plugin.settings.dashboard?.layouts ?? {}).map(
+    (layout) => layout?.bottomSection?.lg ?? []
+  );
 
 
 function validateMetricIds(metricIds: string[]): string[] {
@@ -254,6 +232,7 @@ function validateMetricIds(metricIds: string[]): string[] {
 
   return validatedIds;
 }
+
 
 export const getActiveLayout = (plugin: JournalitPlugin): DashboardLayout => {
   try {
@@ -292,11 +271,11 @@ export const getActiveLayout = (plugin: JournalitPlugin): DashboardLayout => {
       const fixedLayout: DashboardLayout = {
         topSection: validateMetricIds(activeLayout.topSection || []),
         bottomSection: {
-          lg: validateLayoutItems(activeLayout.bottomSection.lg || []),
-          md: validateLayoutItems(activeLayout.bottomSection.md || []),
-          sm: validateLayoutItems(activeLayout.bottomSection.sm || []),
-          xs: validateLayoutItems(activeLayout.bottomSection.xs || []),
-          xxs: validateLayoutItems(activeLayout.bottomSection.xxs || []),
+          lg: normalizeBreakpointLayout(activeLayout.bottomSection.lg || []),
+          md: normalizeBreakpointLayout(activeLayout.bottomSection.md || []),
+          sm: normalizeBreakpointLayout(activeLayout.bottomSection.sm || []),
+          xs: normalizeBreakpointLayout(activeLayout.bottomSection.xs || []),
+          xxs: normalizeBreakpointLayout(activeLayout.bottomSection.xxs || []),
         },
       };
 
@@ -316,11 +295,11 @@ export const getActiveLayout = (plugin: JournalitPlugin): DashboardLayout => {
     const normalizedLayout = {
       topSection: validateMetricIds(activeLayout.topSection || []),
       bottomSection: {
-        lg: validateLayoutItems(activeLayout.bottomSection.lg || []),
-        md: validateLayoutItems(activeLayout.bottomSection.md || []),
-        sm: validateLayoutItems(activeLayout.bottomSection.sm || []),
-        xs: validateLayoutItems(activeLayout.bottomSection.xs || []),
-        xxs: validateLayoutItems(activeLayout.bottomSection.xxs || []),
+        lg: normalizeBreakpointLayout(activeLayout.bottomSection.lg || []),
+        md: normalizeBreakpointLayout(activeLayout.bottomSection.md || []),
+        sm: normalizeBreakpointLayout(activeLayout.bottomSection.sm || []),
+        xs: normalizeBreakpointLayout(activeLayout.bottomSection.xs || []),
+        xxs: normalizeBreakpointLayout(activeLayout.bottomSection.xxs || []),
       },
     };
 
@@ -330,27 +309,6 @@ export const getActiveLayout = (plugin: JournalitPlugin): DashboardLayout => {
     return DEFAULT_LAYOUT;
   }
 };
-
-
-function normalizeLayoutForSave(layoutItems: Layout[]): Layout[] {
-  return validateLayoutItems(layoutItems).map((item) => ({
-    ...item,
-    
-    x: typeof item.x === 'number' && isFinite(item.x) ? item.x : 0,
-    y:
-      typeof item.y === 'number' && isFinite(item.y)
-        ? item.y === Infinity
-          ? LAYOUT_BOTTOM_POSITION
-          : item.y
-        : item.y === Infinity
-          ? LAYOUT_BOTTOM_POSITION
-          : 0,
-    w:
-      typeof item.w === 'number' && isFinite(item.w) && item.w > 0 ? item.w : 1,
-    h:
-      typeof item.h === 'number' && isFinite(item.h) && item.h > 0 ? item.h : 1,
-  }));
-}
 
 
 export const saveLayout = (
@@ -406,11 +364,11 @@ const applyLayout = (
   const layoutCopy: DashboardLayout = {
     topSection: [...layout.topSection],
     bottomSection: {
-      lg: normalizeLayoutForSave(layout.bottomSection.lg),
-      md: normalizeLayoutForSave(layout.bottomSection.md),
-      sm: normalizeLayoutForSave(layout.bottomSection.sm),
-      xs: normalizeLayoutForSave(layout.bottomSection.xs || []),
-      xxs: normalizeLayoutForSave(layout.bottomSection.xxs || []),
+      lg: normalizeBreakpointLayout(layout.bottomSection.lg),
+      md: normalizeBreakpointLayout(layout.bottomSection.md),
+      sm: normalizeBreakpointLayout(layout.bottomSection.sm),
+      xs: normalizeBreakpointLayout(layout.bottomSection.xs || []),
+      xxs: normalizeBreakpointLayout(layout.bottomSection.xxs || []),
     },
   };
 

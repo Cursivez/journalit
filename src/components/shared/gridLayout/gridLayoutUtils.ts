@@ -6,7 +6,32 @@ import type { Layout } from './reactGridLayoutCompat';
 export const LAYOUT_BOTTOM_POSITION = 9999;
 
 
-type BreakpointKey = 'lg' | 'md' | 'sm' | 'xs' | 'xxs';
+const LEGACY_BOTTOM_POSITIONS: ReadonlySet<number> = new Set([10000000, 10000]);
+
+export type BreakpointKey = 'lg' | 'md' | 'sm' | 'xs' | 'xxs';
+
+const GRID_BREAKPOINT_KEYS: readonly BreakpointKey[] = [
+  'lg',
+  'md',
+  'sm',
+  'xs',
+  'xxs',
+];
+
+type BreakpointLayouts = Record<BreakpointKey, Layout[]>;
+
+export function isBreakpointKey(value: string): value is BreakpointKey {
+  switch (value) {
+    case 'lg':
+    case 'md':
+    case 'sm':
+    case 'xs':
+    case 'xxs':
+      return true;
+    default:
+      return false;
+  }
+}
 
 
 export const GRID_COLS: Record<BreakpointKey, number> = {
@@ -21,129 +46,237 @@ export const GRID_COLS: Record<BreakpointKey, number> = {
 export const GRID_ROW_HEIGHT = 50;
 
 
-export interface ResponsiveLayouts {
-  lg: Layout[];
-  md: Layout[];
-  sm: Layout[];
-  xs: Layout[];
-  xxs: Layout[];
-  [key: string]: Layout[];
-}
-
-
-export interface WidgetDefinition {
-  id: string;
-  name: string;
-  description?: string;
+interface GridWidgetSizing {
   defaultSize: { w: number; h: number };
   minSize: { w: number; h: number };
   maxSize?: { w: number; h: number };
 }
 
+function isPositiveFinite(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0;
+}
+
+
+export function normalizeLayoutItem(item: Layout): Layout {
+  return {
+    ...item,
+    i: typeof item.i === 'string' && item.i.length > 0 ? item.i : 'unknown',
+    x: typeof item.x === 'number' && Number.isFinite(item.x) ? item.x : 0,
+    y:
+      typeof item.y === 'number' && Number.isFinite(item.y)
+        ? LEGACY_BOTTOM_POSITIONS.has(item.y)
+          ? LAYOUT_BOTTOM_POSITION
+          : item.y
+        : 0,
+    w: isPositiveFinite(item.w) ? item.w : 1,
+    h: isPositiveFinite(item.h) ? item.h : 1,
+  };
+}
+
 
 export function normalizeLayoutForSave(layoutItems: Layout[]): Layout[] {
-  return layoutItems.map((item) => ({
-    ...item,
-    i: item.i || 'unknown',
-    x: typeof item.x === 'number' && isFinite(item.x) ? item.x : 0,
-    y:
-      typeof item.y === 'number' && isFinite(item.y)
-        ? item.y === Infinity || item.y === 10000000 || item.y === 10000
-          ? LAYOUT_BOTTOM_POSITION
-          : item.y
-        : item.y === Infinity
-          ? LAYOUT_BOTTOM_POSITION
-          : 0,
-    w:
-      typeof item.w === 'number' && isFinite(item.w) && item.w > 0 ? item.w : 1,
-    h:
-      typeof item.h === 'number' && isFinite(item.h) && item.h > 0 ? item.h : 1,
-  }));
+  return layoutItems.map(normalizeLayoutItem);
 }
 
 
-export function validateLayoutItem(
+export function applyWidgetSizeConstraints(
   item: Layout,
-  widgetDef?: WidgetDefinition,
-  breakpointCols?: number
+  sizing: GridWidgetSizing | undefined
 ): Layout {
-  const cols = breakpointCols || GRID_COLS.lg;
+  if (!sizing?.maxSize) return item;
 
-  const validated: Layout = {
+  const minW = item.minW ?? sizing.minSize.w;
+  const minH = item.minH ?? sizing.minSize.h;
+  const maxW = item.maxW ?? sizing.maxSize.w;
+  const maxH = item.maxH ?? sizing.maxSize.h;
+
+  return {
     ...item,
-    i: typeof item.i === 'string' ? item.i : 'unknown',
-    x: typeof item.x === 'number' && isFinite(item.x) ? item.x : 0,
-    y:
-      typeof item.y === 'number' && isFinite(item.y)
-        ? item.y === Infinity || item.y === 10000000 || item.y === 10000
-          ? LAYOUT_BOTTOM_POSITION
-          : item.y
-        : item.y === Infinity
-          ? LAYOUT_BOTTOM_POSITION
-          : 0,
-    w:
-      typeof item.w === 'number' && isFinite(item.w) && item.w > 0 ? item.w : 1,
-    h:
-      typeof item.h === 'number' && isFinite(item.h) && item.h > 0 ? item.h : 1,
+    minW,
+    minH,
+    maxW,
+    maxH,
+    w: Math.max(minW, Math.min(item.w, maxW)),
+    h: Math.max(minH, Math.min(item.h, maxH)),
   };
+}
 
-  
-  
-  if (widgetDef?.maxSize) {
-    validated.minW = Math.min(item.minW ?? widgetDef.minSize.w, cols);
-    validated.minH = item.minH ?? widgetDef.minSize.h;
-    validated.maxW = Math.min(item.maxW ?? widgetDef.maxSize.w, cols);
-    validated.maxH = item.maxH ?? widgetDef.maxSize.h;
-    validated.w = Math.max(
-      validated.minW,
-      Math.min(validated.w, validated.maxW)
-    );
-    validated.h = Math.max(
-      validated.minH,
-      Math.min(validated.h, validated.maxH)
-    );
-  } else if (widgetDef?.minSize) {
-    const minW = Math.min(widgetDef.minSize.w, cols);
-    const minH = widgetDef.minSize.h;
-    validated.w = Math.max(validated.w, minW);
-    validated.h = Math.max(validated.h, minH);
+function widgetConstraintProps(
+  sizing: GridWidgetSizing | undefined
+): Partial<Layout> {
+  if (!sizing?.maxSize) return {};
+  return {
+    minW: sizing.minSize.w,
+    minH: sizing.minSize.h,
+    maxW: sizing.maxSize.w,
+    maxH: sizing.maxSize.h,
+  };
+}
+
+function clampToSizing(
+  value: number,
+  min: number,
+  max: number | undefined
+): number {
+  return max === undefined ? value : Math.max(min, Math.min(value, max));
+}
+
+
+export function findBestWidgetPosition({
+  layout,
+  widgetId,
+  w,
+  h,
+  sizing,
+  savedLgLayouts,
+}: {
+  layout: Layout[];
+  widgetId: string;
+  w: number;
+  h: number;
+  sizing: GridWidgetSizing | undefined;
+  savedLgLayouts: readonly Layout[][];
+}): Layout {
+  const constraints = widgetConstraintProps(sizing);
+
+  if (layout.length === 0) {
+    return { i: widgetId, x: 0, y: 0, w, h, ...constraints };
   }
 
-  return validated;
+  for (const savedLayout of savedLgLayouts) {
+    const saved = savedLayout.find((item) => item.i === widgetId);
+    if (saved) {
+      return {
+        i: widgetId,
+        x: 0,
+        y: LAYOUT_BOTTOM_POSITION,
+        w: clampToSizing(saved.w, sizing?.minSize.w ?? 0, sizing?.maxSize?.w),
+        h: clampToSizing(saved.h, sizing?.minSize.h ?? 0, sizing?.maxSize?.h),
+        ...constraints,
+      };
+    }
+  }
+
+  const lowestBottom = layout.reduce(
+    (max, item) => Math.max(max, item.y + item.h),
+    0
+  );
+
+  return { i: widgetId, x: 0, y: lowestBottom, w, h, ...constraints };
 }
 
 
-export function validateLayoutsForGrid(
-  layouts: ResponsiveLayouts,
-  getWidgetDef?: (id: string) => WidgetDefinition | undefined
-): ResponsiveLayouts {
-  const validatedLayouts: ResponsiveLayouts = {
-    lg: [],
-    md: [],
-    sm: [],
-    xs: [],
-    xxs: [],
+export function fillMissingBreakpointItems({
+  layouts,
+  widgetIds,
+  getSizing,
+  savedLgLayouts,
+}: {
+  layouts: BreakpointLayouts;
+  widgetIds: readonly string[];
+  getSizing: (widgetId: string) => GridWidgetSizing | undefined;
+  savedLgLayouts: readonly Layout[][];
+}): BreakpointLayouts {
+  const filled: BreakpointLayouts = {
+    lg: [...layouts.lg],
+    md: [...layouts.md],
+    sm: [...layouts.sm],
+    xs: [...layouts.xs],
+    xxs: [...layouts.xxs],
   };
 
-  const breakpoints: BreakpointKey[] = ['lg', 'md', 'sm', 'xs', 'xxs'];
+  for (const widgetId of widgetIds) {
+    const missing = GRID_BREAKPOINT_KEYS.filter(
+      (bp) => !filled[bp].some((item) => item.i === widgetId)
+    );
+    if (missing.length === 0) continue;
 
-  breakpoints.forEach((bp) => {
-    const layoutArray = layouts[bp];
-    if (!Array.isArray(layoutArray)) {
-      validatedLayouts[bp] = [];
-      return;
+    const sizing = getSizing(widgetId);
+    if (!sizing) continue;
+
+    let sourceItem: Layout | undefined;
+    for (const bp of GRID_BREAKPOINT_KEYS) {
+      sourceItem = filled[bp].find((item) => item.i === widgetId);
+      if (sourceItem) break;
+    }
+    const source =
+      sourceItem ??
+      findBestWidgetPosition({
+        layout: filled.lg,
+        widgetId,
+        w: sizing.defaultSize.w,
+        h: sizing.defaultSize.h,
+        sizing,
+        savedLgLayouts,
+      });
+
+    for (const bp of missing) {
+      if (bp === 'lg') {
+        filled.lg.push(
+          findBestWidgetPosition({
+            layout: filled.lg,
+            widgetId,
+            w: Math.min(source.w, GRID_COLS.lg),
+            h: source.h,
+            sizing,
+            savedLgLayouts,
+          })
+        );
+        continue;
+      }
+
+      filled[bp].push({
+        i: widgetId,
+        x: 0,
+        y: LAYOUT_BOTTOM_POSITION,
+        w: bp === 'xxs' ? GRID_COLS.xxs : Math.min(source.w, GRID_COLS[bp]),
+        h: source.h,
+      });
+    }
+  }
+
+  return filled;
+}
+
+
+export function syncBreakpointsToCurrentLayout({
+  layouts,
+  currentLayout,
+  activeBreakpoint,
+}: {
+  layouts: BreakpointLayouts;
+  currentLayout: Layout[];
+  activeBreakpoint: BreakpointKey;
+}): BreakpointLayouts {
+  const currentWidgetIds = new Set(currentLayout.map((item) => item.i));
+  const synced: BreakpointLayouts = { ...layouts };
+
+  for (const bp of GRID_BREAKPOINT_KEYS) {
+    if (bp === activeBreakpoint) continue;
+
+    const bpWidgetIds = new Set(layouts[bp].map((item) => item.i));
+    const next = layouts[bp].filter((item) => currentWidgetIds.has(item.i));
+    for (const item of currentLayout) {
+      if (bpWidgetIds.has(item.i)) continue;
+      next.push({
+        i: item.i,
+        x: 0,
+        y: LAYOUT_BOTTOM_POSITION,
+        w: Math.min(
+          Math.max(
+            1,
+            Math.floor((item.w * GRID_COLS[bp]) / GRID_COLS[activeBreakpoint])
+          ),
+          GRID_COLS[bp]
+        ),
+        h: item.h,
+      });
     }
 
-    validatedLayouts[bp] = layoutArray.map((item) => {
-      if (!item || typeof item !== 'object') {
-        return { i: 'unknown', x: 0, y: 0, w: 1, h: 1 };
-      }
-      const widgetDef = getWidgetDef ? getWidgetDef(item.i) : undefined;
-      return validateLayoutItem(item, widgetDef, GRID_COLS[bp]);
-    });
-  });
+    synced[bp] = next;
+  }
 
-  return validatedLayouts;
+  return synced;
 }
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -163,8 +296,7 @@ export function sanitizeLayoutItem(item: unknown): Layout | null {
   if (!record) return null;
 
   const x = finiteNumber(record.x, 0);
-  const rawY = finiteNumber(record.y, 0);
-  const y = rawY === Infinity ? LAYOUT_BOTTOM_POSITION : rawY;
+  const y = finiteNumber(record.y, 0);
   const rawW = finiteNumber(record.w, 1);
   const rawH = finiteNumber(record.h, 1);
 
@@ -175,218 +307,4 @@ export function sanitizeLayoutItem(item: unknown): Layout | null {
     w: rawW > 0 ? rawW : 1,
     h: rawH > 0 ? rawH : 1,
   };
-}
-
-
-export function sanitizeAllLayouts(allLayouts: {
-  [key: string]: Layout[];
-}): ResponsiveLayouts {
-  const sanitized: ResponsiveLayouts = {
-    lg: [],
-    md: [],
-    sm: [],
-    xs: [],
-    xxs: [],
-  };
-
-  const breakpoints: BreakpointKey[] = ['lg', 'md', 'sm', 'xs', 'xxs'];
-
-  breakpoints.forEach((bp) => {
-    const layout = allLayouts[bp];
-    if (Array.isArray(layout)) {
-      sanitized[bp] = layout.flatMap((item) => {
-        const sanitizedItem = sanitizeLayoutItem(item);
-        return sanitizedItem === null ? [] : [sanitizedItem];
-      });
-    }
-  });
-
-  return sanitized;
-}
-
-
-export function syncWidgetsAcrossBreakpoints(
-  layouts: ResponsiveLayouts,
-  getWidgetDef?: (id: string) => WidgetDefinition | undefined
-): void {
-  const breakpoints: BreakpointKey[] = ['lg', 'md', 'sm', 'xs', 'xxs'];
-
-  
-  const allWidgetIds = new Set<string>();
-  breakpoints.forEach((bp) => {
-    layouts[bp].forEach((item) => allWidgetIds.add(item.i));
-  });
-
-  const sourceItemsByWidgetId = new Map<string, Layout>();
-  for (const sourceBp of breakpoints) {
-    for (const item of layouts[sourceBp]) {
-      if (!sourceItemsByWidgetId.has(item.i)) {
-        sourceItemsByWidgetId.set(item.i, item);
-      }
-    }
-  }
-
-  
-  breakpoints.forEach((bp) => {
-    const bpWidgetIds = new Set(layouts[bp].map((item) => item.i));
-    const cols = GRID_COLS[bp];
-
-    allWidgetIds.forEach((widgetId) => {
-      if (!bpWidgetIds.has(widgetId)) {
-        const sourceItem = sourceItemsByWidgetId.get(widgetId);
-
-        if (sourceItem) {
-          const widgetDef = getWidgetDef ? getWidgetDef(widgetId) : undefined;
-          const defaultW = widgetDef?.defaultSize.w || sourceItem.w;
-          const defaultH = widgetDef?.defaultSize.h || sourceItem.h;
-
-          layouts[bp].push({
-            i: widgetId,
-            x: 0,
-            y: LAYOUT_BOTTOM_POSITION,
-            w: bp === 'xxs' ? 1 : Math.min(defaultW, cols),
-            h: defaultH,
-          });
-        }
-      }
-    });
-  });
-}
-
-
-export function findBestWidgetPosition(
-  currentLayout: Layout[],
-  widgetId: string,
-  defaultW: number,
-  defaultH: number,
-  widgetDef?: WidgetDefinition
-): Layout {
-  const constraints: Partial<Layout> = {};
-
-  if (widgetDef?.maxSize) {
-    constraints.minW = widgetDef.minSize.w;
-    constraints.minH = widgetDef.minSize.h;
-    constraints.maxW = widgetDef.maxSize.w;
-    constraints.maxH = widgetDef.maxSize.h;
-  }
-
-  
-  if (!currentLayout || currentLayout.length === 0) {
-    return {
-      i: widgetId,
-      x: 0,
-      y: 0,
-      w: defaultW,
-      h: defaultH,
-      ...constraints,
-    };
-  }
-
-  
-  let maxY = 0;
-  currentLayout.forEach((item) => {
-    const y = typeof item.y === 'number' && isFinite(item.y) ? item.y : 0;
-    const h = typeof item.h === 'number' && isFinite(item.h) ? item.h : 1;
-    const itemBottom = y + h;
-    if (itemBottom > maxY) {
-      maxY = itemBottom;
-    }
-  });
-
-  return {
-    i: widgetId,
-    x: 0,
-    y: maxY,
-    w: defaultW,
-    h: defaultH,
-    ...constraints,
-  };
-}
-
-
-export function createDefaultLayouts(
-  widgets: string[],
-  getWidgetDef: (id: string) => WidgetDefinition | undefined
-): ResponsiveLayouts {
-  const layouts: ResponsiveLayouts = {
-    lg: [],
-    md: [],
-    sm: [],
-    xs: [],
-    xxs: [],
-  };
-  const breakpoints: BreakpointKey[] = ['lg', 'md', 'sm', 'xs', 'xxs'];
-
-  widgets.forEach((widgetId) => {
-    const widgetDef = getWidgetDef(widgetId);
-    if (!widgetDef) return;
-
-    breakpoints.forEach((bp) => {
-      const cols = GRID_COLS[bp];
-      layouts[bp].push({
-        i: widgetId,
-        x: 0,
-        y: LAYOUT_BOTTOM_POSITION,
-        w: bp === 'xxs' ? 1 : Math.min(widgetDef.defaultSize.w, cols),
-        h: widgetDef.defaultSize.h,
-      });
-    });
-  });
-
-  return layouts;
-}
-
-
-export function filterLayoutsForWidgets(
-  layouts: ResponsiveLayouts,
-  widgets: string[],
-  getWidgetDef?: (id: string) => WidgetDefinition | undefined
-): ResponsiveLayouts {
-  const widgetSet = new Set(widgets);
-  const filtered: ResponsiveLayouts = {
-    lg: [],
-    md: [],
-    sm: [],
-    xs: [],
-    xxs: [],
-  };
-  const breakpoints: BreakpointKey[] = ['lg', 'md', 'sm', 'xs', 'xxs'];
-
-  breakpoints.forEach((bp) => {
-    filtered[bp] = (layouts[bp] || []).flatMap((item) => {
-      if (!widgetSet.has(item.i)) return [];
-      const widgetDef = getWidgetDef ? getWidgetDef(item.i) : undefined;
-      return [validateLayoutItem(item, widgetDef, GRID_COLS[bp])];
-    });
-  });
-
-  return filtered;
-}
-
-
-export function addMissingWidgetsToLayouts(
-  layouts: ResponsiveLayouts,
-  widgets: string[],
-  getWidgetDef: (id: string) => WidgetDefinition | undefined
-): void {
-  const breakpoints: BreakpointKey[] = ['lg', 'md', 'sm', 'xs', 'xxs'];
-
-  widgets.forEach((widgetId) => {
-    const widgetDef = getWidgetDef(widgetId);
-    if (!widgetDef) return;
-
-    breakpoints.forEach((bp) => {
-      const exists = layouts[bp].some((item) => item.i === widgetId);
-      if (!exists) {
-        const cols = GRID_COLS[bp];
-        layouts[bp].push({
-          i: widgetId,
-          x: 0,
-          y: LAYOUT_BOTTOM_POSITION,
-          w: bp === 'xxs' ? 1 : Math.min(widgetDef.defaultSize.w, cols),
-          h: widgetDef.defaultSize.h,
-        });
-      }
-    });
-  });
 }

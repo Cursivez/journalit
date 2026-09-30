@@ -1,4 +1,10 @@
 {
+  "1.9.2": {
+    "title": "Hotfix",
+    "description": "Hotfix for 1.9.1 update",
+    "features": [],
+    "content": "# **[1.9.2] - 2026/09/30**\n\nHotfix for Journalit failing to load after the 1.9.1 update.\n\n### **Startup Fix**\n\nFixed an error that stopped Journalit from loading when Obsidian starts. Update to 1.9.2 and restart Obsidian to get back in.\n"
+  },
   "1.9.1": {
     "title": "Smarter Filters & Widget Drawer",
     "description": "Smarter filters, a widget preview drawer, easier trade imports, and Arabic support.",

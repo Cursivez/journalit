@@ -1,13 +1,7 @@
 
 
 import * as Obsidian from 'obsidian';
-import {
-  App,
-  Notice,
-  PluginSettingTab,
-  requireApiVersion,
-  setIcon,
-} from 'obsidian';
+import { App, PluginSettingTab, requireApiVersion, setIcon } from 'obsidian';
 import type { SettingControl, SettingDefinitionItem } from 'obsidian';
 import React, { useEffect, useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
@@ -337,17 +331,6 @@ export class JournalitSettingsTab extends PluginSettingTab {
         section: 'trade',
         source: key.slice('trade.'.length),
       });
-
-      if (
-        key === 'trade.breakEvenRangeMin' ||
-        key === 'trade.breakEvenRangeMax'
-      ) {
-        const { breakEvenRangeMin, breakEvenRangeMax } =
-          this.plugin.settings.trade;
-        if ((breakEvenRangeMin ?? 0) > (breakEvenRangeMax ?? 0)) {
-          new Notice(t('settings.general.break-even-warning'), 5000);
-        }
-      }
 
       if (
         key.startsWith('trade.breakEven') ||
@@ -1124,7 +1107,7 @@ function createTradingNativeSettingItems(
             '',
             'trade.breakEvenRangeMax',
             0,
-            { step: 0.01 }
+            { min: 0, step: 0.01 }
           ),
           aliases: ['break-even maximum', 'break-even range'],
           visible: () =>
@@ -1514,8 +1497,13 @@ function applyNativeSettingsControlValue(
 }
 
 function normalizeNativeControlValue(path: string, value: unknown): unknown {
+  
   if (path === 'trade.breakEvenRangeMin' && isFiniteNumber(value)) {
-    return value > 0 ? -value : value;
+    return -Math.abs(value);
+  }
+
+  if (path === 'trade.breakEvenRangeMax' && isFiniteNumber(value)) {
+    return Math.abs(value);
   }
 
   if (path === 'trade.breakEvenThresholdPercent' && isFiniteNumber(value)) {

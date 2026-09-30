@@ -3196,8 +3196,6 @@ const vi: Lang = {
   'settings.general.break-even-min-aria': 'Khoảng hòa vốn tối thiểu',
   'settings.general.break-even-max-aria': 'Khoảng hòa vốn tối đa',
   'settings.general.break-even-to': 'ĐẾN',
-  'settings.general.break-even-warning':
-    'Cảnh báo: Giá trị tối thiểu lớn hơn giá trị tối đa. Điều này sẽ ngăn chặn các giao dịch được phân loại là hòa vốn.',
   'settings.general.break-even-updated':
     'Đã cập nhật phạm vi hòa vốn - lượt xem sẽ làm mới vào lần tải tiếp theo',
   'settings.general.default-risk': 'Số tiền rủi ro mặc định',

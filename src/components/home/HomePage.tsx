@@ -23,7 +23,7 @@ import {
   DEFAULT_HOME_WIDGETS,
   getHomeWidgetById,
 } from './homeTypes';
-import { LAYOUT_BOTTOM_POSITION } from './homeLayoutUtils';
+import { LAYOUT_BOTTOM_POSITION } from '../shared/gridLayout/gridLayoutUtils';
 import { generateUUID } from '../../utils/uuid';
 import { DashboardDataProvider } from '../dashboard/context/DashboardDataContext';
 import { HomePeriodProvider } from './context/HomePeriodContext';

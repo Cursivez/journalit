@@ -3023,8 +3023,6 @@ const ar: Lang = {
   'settings.general.break-even-min-aria': 'الحد الأدنى لنطاق نقطة التعادل',
   'settings.general.break-even-max-aria': 'الحد الأقصى لنطاق نقطة التعادل',
   'settings.general.break-even-to': 'إلى',
-  'settings.general.break-even-warning':
-    'تحذير: القيمة الدنيا أكبر من القيمة القصوى، ولذلك لن تُصنّف أي صفقة عند نقطة التعادل.',
   'settings.general.break-even-updated':
     'تحدّث نطاق نقطة التعادل؛ ستتحدث العروض عند تحميلها مجددًا',
   'settings.general.default-risk': 'مبلغ المخاطرة الافتراضي',

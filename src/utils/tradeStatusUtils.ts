@@ -285,31 +285,6 @@ export function isPnlContributingTrade(
 }
 
 
-function isTradeOpen(trade: {
-  tradeStatus?: string;
-  exitTime?: Date | string | null;
-  pnl?: number | null;
-}): boolean {
-  
-  if (trade.tradeStatus === 'OPEN') {
-    return true;
-  }
-
-  if (trade.tradeStatus === 'PARTIALLY_CLOSED') {
-    return true;
-  }
-
-  if (trade.tradeStatus === 'CLOSED' || trade.tradeStatus === 'CANCELLED') {
-    return false;
-  }
-
-  
-  
-  
-  return !trade.exitTime && (trade.pnl === null || trade.pnl === undefined);
-}
-
-
 export function isTradeOpenWithContext(trade: {
   tradeStatus?: string;
   exitTime?: Date | string | null;
@@ -454,66 +429,6 @@ export function isTradeOpenPreservingNullPnl(trade: {
 }
 
 
-export function getTradeDisplayStatus(
-  trade: {
-    tradeStatus?: string;
-    exitTime?: Date | string | null;
-    pnl?: number | null;
-    isMissedTrade?: boolean;
-    isBacktestTrade?: boolean;
-    useDirectPnLInput?: boolean;
-    directPnL?: number | null;
-    breakEvenAccountCurrentBalance?: number;
-    breakEvenAccountCurrentBalanceTotal?: number;
-  },
-  settings?: {
-    breakEvenRangeMin?: number;
-    breakEvenRangeMax?: number;
-    breakEvenThresholdMode?: 'fixed' | 'percentage_current_balance';
-    breakEvenThresholdPercent?: number;
-  }
-): 'open' | 'win' | 'loss' | 'breakeven' | 'missed' | 'backtest' {
-  
-  if (trade.isBacktestTrade) {
-    return 'backtest';
-  }
-
-  
-  if (trade.isMissedTrade) {
-    return 'missed';
-  }
-
-  
-  if (isTradeOpen(trade)) {
-    return 'open';
-  }
-
-  
-  const effectivePnL = getEffectivePnL(trade);
-  const mode = settings?.breakEvenThresholdMode ?? 'fixed';
-
-  if (mode !== 'percentage_current_balance') {
-    const minBE = settings?.breakEvenRangeMin ?? 0;
-    const maxBE = settings?.breakEvenRangeMax ?? 0;
-    if (effectivePnL > maxBE) return 'win';
-    if (effectivePnL < minBE) return 'loss';
-    return 'breakeven';
-  }
-
-  const breakEvenBalance =
-    trade.breakEvenAccountCurrentBalanceTotal ??
-    trade.breakEvenAccountCurrentBalance;
-
-  const outcome = classifyPnLWithBreakEvenSettings(
-    effectivePnL,
-    settings,
-    breakEvenBalance
-  );
-
-  return outcome === 'unknown' ? 'breakeven' : outcome;
-}
-
-
 export function getTradeDisplayStatusWithContext(
   trade: {
     tradeStatus?: string;
@@ -583,25 +498,12 @@ export function getTradeDisplayStatusWithContext(
   }
 
   
-  const effectivePnL = resolvePnL();
-  const mode = settings?.breakEvenThresholdMode ?? 'fixed';
-
-  if (mode !== 'percentage_current_balance') {
-    const minBE = settings?.breakEvenRangeMin ?? 0;
-    const maxBE = settings?.breakEvenRangeMax ?? 0;
-    if (effectivePnL > maxBE) return 'win';
-    if (effectivePnL < minBE) return 'loss';
-    return 'breakeven';
-  }
-
-  const breakEvenBalance =
-    trade.breakEvenAccountCurrentBalanceTotal ??
-    trade.breakEvenAccountCurrentBalance;
-
+  
   const outcome = classifyPnLWithBreakEvenSettings(
-    effectivePnL,
+    resolvePnL(),
     settings,
-    breakEvenBalance
+    trade.breakEvenAccountCurrentBalanceTotal ??
+      trade.breakEvenAccountCurrentBalance
   );
 
   return outcome === 'unknown' ? 'breakeven' : outcome;

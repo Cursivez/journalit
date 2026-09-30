@@ -207,41 +207,6 @@ export function getPreviousBusinessDay(date: Date, skipWeekends = true): Date {
   return result;
 }
 
-
-export function getAdjacentBusinessDay(
-  date: Date,
-  offset: number,
-  skipWeekends = true
-): Date {
-  if (offset === 0) {
-    return new Date(date);
-  }
-
-  if (!skipWeekends) {
-    
-    const result = new Date(date);
-    result.setDate(result.getDate() + offset);
-    return result;
-  }
-
-  let result = new Date(date);
-
-  
-  if (offset > 0) {
-    for (let i = 0; i < offset; i++) {
-      result = getNextBusinessDay(result, true);
-    }
-  }
-  
-  else {
-    for (let i = 0; i > offset; i--) {
-      result = getPreviousBusinessDay(result, true);
-    }
-  }
-
-  return result;
-}
-
 const weekdayLongFormatterCache = new Map<string, Intl.DateTimeFormat>();
 
 function getWeekdayLongFormatter(timeZone?: string): Intl.DateTimeFormat {

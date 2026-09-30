@@ -3451,8 +3451,6 @@ const es: Lang = {
   'settings.general.break-even-max-aria':
     'Máximo del rango de punto de equilibrio',
   'settings.general.break-even-to': 'a',
-  'settings.general.break-even-warning':
-    'Advertencia: El valor mínimo es mayor que el valor máximo. Esto evitará que las operaciones se clasifiquen como punto de equilibrio.',
   'settings.general.break-even-updated':
     'Rango de punto de equilibrio actualizado - las vistas se actualizarán en la próxima carga',
 

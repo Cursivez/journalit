@@ -11,7 +11,7 @@ export function anchoredMenuPortalRoot(
   );
 }
 
-export type AnchoredMenuWidth = 'trigger' | 'content' | number;
+type AnchoredMenuWidth = 'trigger' | 'content' | number;
 
 interface RefCurrent<T> {
   readonly current: T | null;

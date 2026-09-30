@@ -28,6 +28,14 @@ import { calculateEffectiveRMultiple } from '../../utils/formatting';
 import { getAccountCount, getDisplayPnL } from '../../utils/pnlUtils';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { isTradeOpenWithContext } from '../../utils/tradeStatusUtils';
+import {
+  type BreakEvenRangeSettings,
+  classifyPnLWithBreakEvenSettings,
+} from '../../utils/breakEvenRange';
+import {
+  attachBreakEvenAccountBalancesToTrade,
+  fetchBreakEvenAccountBalanceLookup,
+} from '../../services/trade/core/BreakEvenAccountBalance';
 
 interface TradeSearchResult {
   type: 'trade';
@@ -125,6 +133,8 @@ type SidebarTrade = Record<string, unknown> & {
   riskAmount?: number | null;
   canonicalTradeId?: string;
   _originalPnlWasNull?: boolean;
+  breakEvenAccountCurrentBalance?: number;
+  breakEvenAccountCurrentBalanceTotal?: number;
 };
 
 const isSidebarTrade = (value: unknown): value is SidebarTrade =>
@@ -679,6 +689,9 @@ export const useSidebarSearchData = (plugin: JournalitPlugin) => {
   const [dataRefreshVersion, setDataRefreshVersion] = useState(0);
   const tradesRef = useRef<SidebarTrade[]>([]);
   const tradeLoadGenerationRef = useRef(0);
+  const loadedBreakEvenModeRef = useRef<NonNullable<
+    BreakEvenRangeSettings['breakEvenThresholdMode']
+  > | null>(null);
   const reviewsRef = useRef<ReviewSearchResult[]>([]);
   const tradeDateTokensRef = useRef<Map<string, string[]>>(new Map());
   const reviewSearchIndexRef = useRef<Map<string, ReviewSearchIndexEntry>>(
@@ -700,8 +713,23 @@ export const useSidebarSearchData = (plugin: JournalitPlugin) => {
         }
       );
 
+      const breakEvenMode =
+        plugin.settings.trade.breakEvenThresholdMode ?? 'fixed';
+      const accountBalanceLookup =
+        breakEvenMode === 'percentage_current_balance'
+          ? await fetchBreakEvenAccountBalanceLookup(plugin)
+          : null;
+      const searchableTrades = accountBalanceLookup
+        ? filteredTrades.map((trade) =>
+            attachBreakEvenAccountBalancesToTrade(trade, accountBalanceLookup, {
+              resolveAccountIdDisplayName: (accountId) =>
+                plugin.settings.backendIntegration?.accountMapping?.[accountId],
+            })
+          )
+        : filteredTrades;
+
       const tradeDateTokens = new Map<string, string[]>();
-      for (const trade of filteredTrades) {
+      for (const trade of searchableTrades) {
         const entryDate = new Date(trade.entryTime ?? 0);
         if (isNaN(entryDate.getTime())) {
           tradeDateTokens.set(trade.path, []);
@@ -717,7 +745,8 @@ export const useSidebarSearchData = (plugin: JournalitPlugin) => {
       }
 
       if (loadGeneration !== tradeLoadGenerationRef.current) return;
-      tradesRef.current = filteredTrades;
+      tradesRef.current = searchableTrades;
+      loadedBreakEvenModeRef.current = breakEvenMode;
       tradeDateTokensRef.current = tradeDateTokens;
       setDataRefreshVersion((prev) => prev + 1);
     } catch {
@@ -785,9 +814,25 @@ export const useSidebarSearchData = (plugin: JournalitPlugin) => {
     loadReviews();
   }, [loadReviews]);
 
+  
+  
+  
+  
+  const handleSettingsChanged = useCallback(() => {
+    const breakEvenMode =
+      plugin.settings.trade.breakEvenThresholdMode ?? 'fixed';
+    if (breakEvenMode !== loadedBreakEvenModeRef.current) {
+      void loadTrades();
+      return;
+    }
+    setDataRefreshVersion((prev) => prev + 1);
+  }, [loadTrades, plugin]);
+
   useEventBus('trade:changed', handleTradeChanged);
   useEventBus('backtest-trade:changed', handleTradeChanged);
   useEventBus('folder-path:changed', handleTradeChanged);
+  useEventBus('account:changed', handleTradeChanged);
+  useEventBus('settings:changed', handleSettingsChanged);
   useEventBus('review:changed', handleReviewChanged);
 
   return {
@@ -814,21 +859,33 @@ export function getSidebarTradeStatusKeywords({
   tradeStatus,
   isOpen,
   pnl,
-  breakEvenRangeMin,
-  breakEvenRangeMax,
+  breakEvenSettings,
+  breakEvenBalance,
 }: {
   tradeStatus?: string;
   isOpen: boolean;
   pnl: number | null;
-  breakEvenRangeMin: number;
-  breakEvenRangeMax: number;
+  breakEvenSettings: BreakEvenRangeSettings;
+  breakEvenBalance: number | undefined;
 }): string[] {
   if (tradeStatus === 'CANCELLED') return ['cancelled'];
   if (isOpen) return ['open'];
   if (pnl === null) return ['closed', 'unknown'];
-  if (pnl > breakEvenRangeMax) return ['closed', 'win', 'profit'];
-  if (pnl < breakEvenRangeMin) return ['closed', 'loss'];
-  return ['closed', 'breakeven', 'break even', 'break-even'];
+
+  switch (
+    classifyPnLWithBreakEvenSettings(pnl, breakEvenSettings, breakEvenBalance)
+  ) {
+    case 'win':
+      return ['closed', 'win', 'profit'];
+    case 'loss':
+      return ['closed', 'loss'];
+    case 'breakeven':
+      return ['closed', 'breakeven', 'break even', 'break-even'];
+    case 'unknown':
+      
+      
+      return ['closed'];
+  }
 }
 
 export function getSidebarTradeOutcomePnl(
@@ -873,8 +930,7 @@ const performSidebarSearch = ({
 
   const scoredTrades: Array<{ score: number; result: TradeSearchResult }> = [];
 
-  const breakEvenRangeMin = plugin.settings?.trade?.breakEvenRangeMin ?? 0;
-  const breakEvenRangeMax = plugin.settings?.trade?.breakEvenRangeMax ?? 0;
+  const breakEvenSettings = plugin.settings.trade;
 
   for (const trade of tradesRef.current) {
     const frontmatter = plugin.app.metadataCache.getCache(
@@ -926,8 +982,10 @@ const performSidebarSearch = ({
       tradeStatus: trade.tradeStatus,
       isOpen,
       pnl: rawPnl,
-      breakEvenRangeMin,
-      breakEvenRangeMax,
+      breakEvenSettings,
+      breakEvenBalance:
+        trade.breakEvenAccountCurrentBalanceTotal ??
+        trade.breakEvenAccountCurrentBalance,
     });
 
     const instrument = String(trade.instrument || '').toLowerCase();

@@ -3,7 +3,7 @@
 import type { Layout } from '../shared/gridLayout/reactGridLayoutCompat';
 import JournalitPlugin from '../../main';
 import {
-  normalizeLayoutForSave as sharedNormalizeLayout,
+  normalizeLayoutForSave,
   LAYOUT_BOTTOM_POSITION,
 } from '../shared/gridLayout/gridLayoutUtils';
 import { eventBus } from '../../services/events/EventBus';
@@ -42,9 +42,6 @@ interface HomeLayoutSettings {
   layouts: Record<string, HomeLayout>;
   activeLayout: string;
 }
-
-
-export { LAYOUT_BOTTOM_POSITION } from '../shared/gridLayout/gridLayoutUtils';
 
 
 const DEFAULT_LAYOUT: HomeLayout = {
@@ -99,14 +96,10 @@ const DEFAULT_LAYOUT_SETTINGS: HomeLayoutSettings = {
 };
 
 
-function normalizeLayoutForSave(layoutItems: Layout[]): Layout[] {
-  return sharedNormalizeLayout(layoutItems);
-}
-
-
-function validateLayoutItems(layoutItems: Layout[]): Layout[] {
-  return sharedNormalizeLayout(layoutItems);
-}
+export const getSavedHomeLgLayouts = (plugin: JournalitPlugin): Layout[][] =>
+  Object.values(plugin.settings.home?.layouts ?? {}).map(
+    (layout) => layout?.lg ?? []
+  );
 
 
 function safeLayoutSettingsCopy(
@@ -241,11 +234,11 @@ export const getActiveLayout = (plugin: JournalitPlugin): HomeLayout => {
       );
 
       const fixedLayout: HomeLayout = {
-        lg: validateLayoutItems(activeLayout.lg || []),
-        md: validateLayoutItems(activeLayout.md || []),
-        sm: validateLayoutItems(activeLayout.sm || []),
-        xs: validateLayoutItems(activeLayout.xs || []),
-        xxs: validateLayoutItems(activeLayout.xxs || []),
+        lg: normalizeLayoutForSave(activeLayout.lg || []),
+        md: normalizeLayoutForSave(activeLayout.md || []),
+        sm: normalizeLayoutForSave(activeLayout.sm || []),
+        xs: normalizeLayoutForSave(activeLayout.xs || []),
+        xxs: normalizeLayoutForSave(activeLayout.xxs || []),
       };
 
       void (async () => {
@@ -260,11 +253,11 @@ export const getActiveLayout = (plugin: JournalitPlugin): HomeLayout => {
     }
 
     const normalizedLayout = {
-      lg: validateLayoutItems(activeLayout.lg || []),
-      md: validateLayoutItems(activeLayout.md || []),
-      sm: validateLayoutItems(activeLayout.sm || []),
-      xs: validateLayoutItems(activeLayout.xs || []),
-      xxs: validateLayoutItems(activeLayout.xxs || []),
+      lg: normalizeLayoutForSave(activeLayout.lg || []),
+      md: normalizeLayoutForSave(activeLayout.md || []),
+      sm: normalizeLayoutForSave(activeLayout.sm || []),
+      xs: normalizeLayoutForSave(activeLayout.xs || []),
+      xxs: normalizeLayoutForSave(activeLayout.xxs || []),
     };
 
     return normalizedLayout;

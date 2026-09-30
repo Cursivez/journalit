@@ -3703,8 +3703,6 @@ const en = {
   'settings.general.break-even-min-aria': 'Break even range minimum',
   'settings.general.break-even-max-aria': 'Break even range maximum',
   'settings.general.break-even-to': 'to',
-  'settings.general.break-even-warning':
-    'Warning: Minimum value is greater than maximum value. This will prevent trades from being classified as breakeven.',
   'settings.general.break-even-updated':
     'Break even range updated - views will refresh on next load',
 

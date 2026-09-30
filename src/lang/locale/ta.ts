@@ -3202,8 +3202,6 @@ const ta: Lang = {
   'settings.general.break-even-min-aria': 'பிரேக் ஈவன் வரம்பு குறைந்தபட்சம்',
   'settings.general.break-even-max-aria': 'பிரேக் ஈவன் வரம்பு அதிகபட்சம்',
   'settings.general.break-even-to': 'செய்ய',
-  'settings.general.break-even-warning':
-    'எச்சரிக்கை: குறைந்தபட்ச மதிப்பு அதிகபட்ச மதிப்பை விட அதிகமாக உள்ளது. இது டிரேட்கள் Breakeven என வகைப்படுத்தப்படுவதைத் தடுக்கும்.',
   'settings.general.break-even-updated':
     'பிரேக் ஈவன் வரம்பு புதுப்பிக்கப்பட்டது - அடுத்த ஏற்றத்தில் பார்வைகள் புதுப்பிக்கப்படும்',
   'settings.general.default-risk': 'இயல்புநிலை ஆபத்து அளவு',

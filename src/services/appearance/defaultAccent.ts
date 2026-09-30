@@ -125,17 +125,18 @@ export function stylesheetsDeclareAccent(doc: Document): boolean {
 
 export function startDefaultAccentBodyClass(host: JournalitPlugin): void {
   const { workspace } = host.app;
-  const mainDoc = workspace.rootSplit.doc;
+  
+  
+  
+  
+  const mainDoc = workspace.containerEl.doc;
   const mainWin = mainDoc.win;
   const bodies = new Set<HTMLElement>([mainDoc.body]);
-  
-  workspace.iterateAllLeaves((leaf) => {
-    bodies.add(leaf.getContainer().doc.body);
-  });
 
   let stylesheetAccent = stylesheetsDeclareAccent(mainDoc);
   let rescanPending = false;
   let scheduledTimer: number | null = null;
+  let stopped = false;
 
   const apply = (body: HTMLElement): void => {
     const usesDefaultAccent =
@@ -187,6 +188,18 @@ export function startDefaultAccentBodyClass(host: JournalitPlugin): void {
       if (payload.section === 'all') scheduleEvaluate(false);
     })
   );
+  
+  
+  
+  workspace.onLayoutReady(() => {
+    if (stopped) return;
+    workspace.iterateAllLeaves((leaf) => {
+      const { body } = leaf.getContainer().doc;
+      if (bodies.has(body)) return;
+      bodies.add(body);
+      apply(body);
+    });
+  });
   host.registerEvent(
     workspace.on('window-open', (workspaceWindow) => {
       bodies.add(workspaceWindow.doc.body);
@@ -200,6 +213,7 @@ export function startDefaultAccentBodyClass(host: JournalitPlugin): void {
   );
 
   host.register(() => {
+    stopped = true;
     inlineObserver.disconnect();
     stylesheetObserver.disconnect();
     if (scheduledTimer !== null) mainWin.clearTimeout(scheduledTimer);

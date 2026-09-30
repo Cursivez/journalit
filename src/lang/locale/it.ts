@@ -3179,8 +3179,6 @@ const it: Lang = {
   'settings.general.break-even-max-aria':
     "Massimo dell'intervallo di break-even",
   'settings.general.break-even-to': 'a',
-  'settings.general.break-even-warning':
-    'Attenzione: il valore minimo è maggiore del valore massimo. Le operazioni non potranno essere classificate come break-even.',
   'settings.general.break-even-updated':
     'Intervallo di break-even aggiornato: le viste si aggiorneranno al prossimo caricamento',
   'settings.general.default-risk': 'Importo di rischio predefinito',

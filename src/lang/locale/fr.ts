@@ -3385,8 +3385,6 @@ const fr: Lang = {
   'settings.general.break-even-min-aria': 'Plage de rentabilité minimale',
   'settings.general.break-even-max-aria': 'Plage de rentabilité maximale',
   'settings.general.break-even-to': 'à',
-  'settings.general.break-even-warning':
-    'Attention : la valeur minimale est supérieure à la valeur maximale. Cela empêchera les trades d’être classées comme étant à l’équilibre.',
   'settings.general.break-even-updated':
     'Plage de rentabilité mise à jour - les vues seront actualisées au prochain chargement',
   'settings.general.default-risk': 'Montant du risque de défaut',

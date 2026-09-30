@@ -4656,7 +4656,6 @@ const zh: Lang = {
   'settings.general.break-even-min-aria': '盈亏平衡范围最小值',
   'settings.general.break-even-max-aria': '盈亏平衡范围最大值',
   'settings.general.break-even-to': '至',
-  'settings.general.break-even-warning': '最小值必须小于或等于最大值',
   'settings.general.break-even-updated': '盈亏平衡范围已更新',
   'settings.general.default-risk': '默认风险金额',
   'settings.general.default-risk-desc': '新交易的预填风险金额',

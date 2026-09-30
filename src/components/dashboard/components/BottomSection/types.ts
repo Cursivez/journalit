@@ -170,6 +170,11 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
   },
 ];
 
+export const getDashboardWidgetById = (
+  id: string
+): WidgetDefinition | undefined =>
+  AVAILABLE_WIDGETS.find((widget) => widget.id === id);
+
 const AVAILABLE_WIDGET_IDS = new Set(
   AVAILABLE_WIDGETS.map((widget) => widget.id)
 );
