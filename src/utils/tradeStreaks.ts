@@ -98,21 +98,3 @@ export const calculateHistoricalStreaks = (
 
   return { winStreaks, lossStreaks };
 };
-
-export const getDailyOutcome = (
-  dayPnL: number,
-  tradeCount: number,
-  settings?: BreakEvenRangeSettings,
-  accountCurrentBalance?: number
-): 'win' | 'loss' | 'breakeven' => {
-  if (tradeCount === 0) {
-    return 'breakeven';
-  }
-
-  const outcome = classifyPnLWithBreakEvenSettings(
-    dayPnL,
-    settings,
-    accountCurrentBalance
-  );
-  return outcome === 'unknown' ? 'breakeven' : outcome;
-};

@@ -2065,8 +2065,6 @@ const ru: Lang = {
   'settings.general.break-even-min-aria': 'Минимум диапазона безубыточности',
   'settings.general.break-even-max-aria': 'Максимум диапазона безубыточности',
   'settings.general.break-even-to': 'до',
-  'settings.general.break-even-warning':
-    'Внимание: Минимальное значение больше максимального. Это помешает классификации сделок как безубыточных.',
   'settings.general.break-even-updated':
     'Диапазон безубыточности обновлён - представления обновятся при следующей загрузке',
   'settings.general.default-risk': 'Риск по умолчанию',

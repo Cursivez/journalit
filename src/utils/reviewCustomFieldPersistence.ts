@@ -42,23 +42,6 @@ export function mapReviewCustomFieldsToFrontmatter(
   return mapped;
 }
 
-export function mapReviewCustomFieldsToRootFrontmatter(
-  values: Record<string, unknown> | undefined,
-  fieldDefinitions: CustomReviewFieldDefinition[] = [],
-  options?: { includeClearedFields?: boolean }
-): Record<
-  typeof REVIEW_CUSTOM_FIELDS_FRONTMATTER_KEY,
-  ReviewCustomFieldsFrontmatter
-> {
-  return {
-    [REVIEW_CUSTOM_FIELDS_FRONTMATTER_KEY]: mapReviewCustomFieldsToFrontmatter(
-      values,
-      fieldDefinitions,
-      options
-    ),
-  };
-}
-
 export function readReviewCustomFieldValuesById(
   reviewCustomFields: unknown,
   fieldDefinitions: CustomReviewFieldDefinition[] = []
@@ -106,29 +89,6 @@ export function mergeReviewCustomFieldsFrontmatter(
   return {
     ...existing,
     ...mapReviewCustomFieldsToFrontmatter(
-      updatesById,
-      fieldDefinitions,
-      options
-    ),
-  };
-}
-
-export function mergeReviewCustomFieldsRootFrontmatter(
-  frontmatter: unknown,
-  updatesById: Record<string, unknown>,
-  fieldDefinitions: CustomReviewFieldDefinition[],
-  options?: { includeClearedFields?: boolean }
-): Record<
-  typeof REVIEW_CUSTOM_FIELDS_FRONTMATTER_KEY,
-  ReviewCustomFieldsFrontmatter
-> {
-  const source = isRecord(frontmatter)
-    ? frontmatter[REVIEW_CUSTOM_FIELDS_FRONTMATTER_KEY]
-    : undefined;
-
-  return {
-    [REVIEW_CUSTOM_FIELDS_FRONTMATTER_KEY]: mergeReviewCustomFieldsFrontmatter(
-      source,
       updatesById,
       fieldDefinitions,
       options

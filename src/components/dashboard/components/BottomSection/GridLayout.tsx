@@ -19,13 +19,24 @@ import {
 import { FilterState } from '../../DashboardView';
 import {
   getActiveLayout,
+  getSavedDashboardLgLayouts,
   saveLayout,
-  LAYOUT_BOTTOM_POSITION,
 } from '../../utils/layoutUtils';
+import {
+  applyWidgetSizeConstraints,
+  type BreakpointKey,
+  fillMissingBreakpointItems,
+  GRID_COLS,
+  GRID_ROW_HEIGHT,
+  isBreakpointKey,
+  LAYOUT_BOTTOM_POSITION,
+  normalizeLayoutItem,
+  syncBreakpointsToCurrentLayout,
+} from '../../../shared/gridLayout/gridLayoutUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import type JournalitPlugin from '../../../../main';
 import { getUserDateFormat } from '../../../../utils/dateUtils';
-import { AVAILABLE_WIDGETS, type WidgetDefinition } from './types';
+import { getDashboardWidgetById } from './types';
 import { hasTranslation, t } from '../../../../lang/helpers';
 import { useDashboardData } from '../../context/DashboardDataContext';
 import {
@@ -87,109 +98,6 @@ class GridLayoutErrorBoundary extends React.Component<
 }
 
 
-export const findBestWidgetPosition = (
-  layouts: Layout[],
-  widgetId: string,
-  defaultW: number,
-  defaultH: number,
-  pluginInstance: JournalitPlugin | null
-) => {
-  
-  const widgetDef = AVAILABLE_WIDGETS.find((w) => w.id === widgetId);
-  const constraints: Partial<Layout> = {};
-  if (widgetDef?.maxSize) {
-    constraints.minW = widgetDef.minSize.w;
-    constraints.minH = widgetDef.minSize.h;
-    constraints.maxW = widgetDef.maxSize.w;
-    constraints.maxH = widgetDef.maxSize.h;
-  }
-
-  
-  if (!layouts || layouts.length === 0) {
-    return {
-      i: widgetId,
-      x: 0,
-      y: 0,
-      w: defaultW,
-      h: defaultH,
-      ...constraints,
-    };
-  }
-
-  
-  if (pluginInstance) {
-    try {
-      
-      const allLayouts = pluginInstance.settings?.dashboard?.layouts || {};
-
-      
-      for (const layoutName in allLayouts) {
-        const layout = allLayouts[layoutName];
-        if (!layout) continue;
-        const lgLayout = layout.bottomSection?.lg || [];
-
-        
-        let existingWidget: Layout | undefined;
-        for (const item of lgLayout) {
-          if (item.i === widgetId) {
-            existingWidget = item;
-            break;
-          }
-        }
-        if (existingWidget) {
-          
-          const w = widgetDef?.maxSize
-            ? Math.max(
-                widgetDef.minSize.w,
-                Math.min(existingWidget.w, widgetDef.maxSize.w)
-              )
-            : existingWidget.w;
-          const h = widgetDef?.maxSize
-            ? Math.max(
-                widgetDef.minSize.h,
-                Math.min(existingWidget.h, widgetDef.maxSize.h)
-              )
-            : existingWidget.h;
-          const result = {
-            i: widgetId,
-            x: 0, 
-            y: LAYOUT_BOTTOM_POSITION, 
-            w, 
-            h, 
-            ...constraints,
-          };
-          return result;
-        }
-      }
-    } catch (error) {
-      console.error('Error finding previous layout:', error);
-    }
-  }
-
-  
-  let maxY = 0;
-  layouts.forEach((item: Layout) => {
-    
-    const y = typeof item.y === 'number' ? item.y : 0;
-    const h = typeof item.h === 'number' ? item.h : 1;
-    const itemBottom = y + h;
-    if (itemBottom > maxY) {
-      maxY = itemBottom;
-    }
-  });
-
-  const result = {
-    i: widgetId,
-    x: 0,
-    y: maxY,
-    w: defaultW,
-    h: defaultH,
-    ...constraints,
-  };
-  return result;
-};
-
-
 import { PnLChart } from '../DashboardWidgets/PnLChart';
 import { DirectionalPnLChart } from '../DashboardWidgets/DirectionalPnLChart';
 import { PerformanceCalendar } from '../DashboardWidgets/PerformanceCalendar';
@@ -208,18 +116,7 @@ import { SetupPerformanceChart } from '../DashboardWidgets/SetupPerformanceChart
 import { TagPerformanceChart } from '../DashboardWidgets/TagPerformanceChart';
 
 
-type BreakpointKey = 'lg' | 'md' | 'sm' | 'xs' | 'xxs';
-
-
-const GRID_ROW_HEIGHT = 50;
 const GRID_MARGIN = 4;
-const GRID_COLS: Record<BreakpointKey, number> = {
-  lg: 12,
-  md: 6,
-  sm: 4,
-  xs: 2,
-  xxs: 1,
-};
 
 const GRID_BREAKPOINTS: Record<BreakpointKey, number> = {
   lg: 1200,
@@ -229,18 +126,49 @@ const GRID_BREAKPOINTS: Record<BreakpointKey, number> = {
   xxs: 0,
 };
 
-function isBreakpointKey(value: string): value is BreakpointKey {
-  switch (value) {
-    case 'lg':
-    case 'md':
-    case 'sm':
-    case 'xs':
-    case 'xxs':
-      return true;
-    default:
-      return false;
+
+const validateLayoutItem = (item: Layout): Layout =>
+  applyWidgetSizeConstraints(
+    normalizeLayoutItem(item),
+    getDashboardWidgetById(item.i)
+  );
+
+
+const sanitizeBreakpointLayout = (
+  layoutArray: Layout[] | undefined,
+  allowedWidgetIds?: Set<string>
+): Layout[] => {
+  if (!Array.isArray(layoutArray)) {
+    return [];
   }
-}
+
+  const seenWidgetIds = new Set<string>();
+  const sanitized: Layout[] = [];
+
+  for (const rawItem of Array.from(layoutArray)) {
+    if (!rawItem || typeof rawItem !== 'object') {
+      continue;
+    }
+
+    const itemId =
+      typeof rawItem.i === 'string' && rawItem.i.length > 0
+        ? rawItem.i
+        : 'unknown';
+
+    if (allowedWidgetIds && !allowedWidgetIds.has(itemId)) {
+      continue;
+    }
+
+    if (seenWidgetIds.has(itemId)) {
+      continue;
+    }
+
+    seenWidgetIds.add(itemId);
+    sanitized.push(validateLayoutItem(rawItem));
+  }
+
+  return sanitized;
+};
 
 const calculateGridPixelHeight = (layout: Layout[]): number => {
   const rowCount = layout.reduce(
@@ -432,9 +360,7 @@ export const DashboardWidgetCard: React.FC<DashboardWidgetCardProps> = ({
 };
 
 const DashboardGridWidgetCard: React.FC<DashboardWidgetCardProps> = (props) => {
-  const widgetDef = AVAILABLE_WIDGETS.find(
-    (widget: WidgetDefinition) => widget.id === props.widgetId
-  );
+  const widgetDef = getDashboardWidgetById(props.widgetId);
 
   if (!widgetDef) {
     return (
@@ -508,94 +434,6 @@ const useDashboardGridLayoutState = ({
   }, []);
 
   
-  const validateLayoutItem = useCallback((item: Layout): Layout => {
-    
-    const widgetDef = AVAILABLE_WIDGETS.find((w) => w.id === item.i);
-
-    const validated: Layout = {
-      ...item,
-      i: typeof item.i === 'string' ? item.i : 'unknown',
-      x: typeof item.x === 'number' && isFinite(item.x) ? item.x : 0,
-      y:
-        typeof item.y === 'number' && isFinite(item.y)
-          ? item.y === Infinity || item.y === 10000000 || item.y === 10000
-            ? LAYOUT_BOTTOM_POSITION
-            : item.y
-          : item.y === Infinity
-            ? LAYOUT_BOTTOM_POSITION
-            : 0,
-      w:
-        typeof item.w === 'number' && isFinite(item.w) && item.w > 0
-          ? item.w
-          : 1,
-      h:
-        typeof item.h === 'number' && isFinite(item.h) && item.h > 0
-          ? item.h
-          : 1,
-    };
-
-    
-    
-    if (widgetDef?.maxSize) {
-      validated.minW = item.minW ?? widgetDef.minSize.w;
-      validated.minH = item.minH ?? widgetDef.minSize.h;
-      validated.maxW = item.maxW ?? widgetDef.maxSize.w;
-      validated.maxH = item.maxH ?? widgetDef.maxSize.h;
-      
-      validated.w = Math.max(
-        validated.minW,
-        Math.min(validated.w, validated.maxW)
-      );
-      validated.h = Math.max(
-        validated.minH,
-        Math.min(validated.h, validated.maxH)
-      );
-    }
-
-    return validated;
-  }, []);
-
-  
-  const sanitizeBreakpointLayout = useCallback(
-    (
-      layoutArray: Layout[] | undefined,
-      allowedWidgetIds?: Set<string>
-    ): Layout[] => {
-      if (!Array.isArray(layoutArray)) {
-        return [];
-      }
-
-      const seenWidgetIds = new Set<string>();
-      const sanitized: Layout[] = [];
-
-      for (const rawItem of Array.from(layoutArray)) {
-        if (!rawItem || typeof rawItem !== 'object') {
-          continue;
-        }
-
-        const itemId =
-          typeof rawItem.i === 'string' && rawItem.i.length > 0
-            ? rawItem.i
-            : 'unknown';
-
-        if (allowedWidgetIds && !allowedWidgetIds.has(itemId)) {
-          continue;
-        }
-
-        if (seenWidgetIds.has(itemId)) {
-          continue;
-        }
-
-        seenWidgetIds.add(itemId);
-        sanitized.push(validateLayoutItem(rawItem));
-      }
-
-      return sanitized;
-    },
-    [validateLayoutItem]
-  );
-
-  
   useEffect(() => {
     const loadLayouts = () => {
       try {
@@ -631,132 +469,19 @@ const useDashboardGridLayoutState = ({
             widgetIdSet
           );
 
-          
-          const cols = GRID_COLS;
-
-          
-          widgets.forEach((widgetId) => {
-            
-            const inLg = filteredLg.some((item: Layout) => item.i === widgetId);
-            const inMd = filteredMd.some((item: Layout) => item.i === widgetId);
-            const inSm = filteredSm.some((item: Layout) => item.i === widgetId);
-            const inXs = filteredXs.some((item: Layout) => item.i === widgetId);
-            const inXxs = filteredXxs.some(
-              (item: Layout) => item.i === widgetId
-            );
-
-            
-            if (!inLg || !inMd || !inSm || !inXs || !inXxs) {
-              const widgetDef = AVAILABLE_WIDGETS.find(
-                (w: WidgetDefinition) => w.id === widgetId
-              );
-              if (widgetDef) {
-                
-                let sourceItem: Layout | undefined;
-
-                
-                if (inLg) {
-                  sourceItem = filteredLg.find(
-                    (item: Layout) => item.i === widgetId
-                  );
-                } else if (inMd) {
-                  sourceItem = filteredMd.find(
-                    (item: Layout) => item.i === widgetId
-                  );
-                } else if (inSm) {
-                  sourceItem = filteredSm.find(
-                    (item: Layout) => item.i === widgetId
-                  );
-                } else if (inXs) {
-                  sourceItem = filteredXs.find(
-                    (item: Layout) => item.i === widgetId
-                  );
-                } else if (inXxs) {
-                  sourceItem = filteredXxs.find(
-                    (item: Layout) => item.i === widgetId
-                  );
-                }
-
-                
-                if (!sourceItem) {
-                  sourceItem = findBestWidgetPosition(
-                    filteredLg,
-                    widgetId,
-                    widgetDef.defaultSize.w,
-                    widgetDef.defaultSize.h,
-                    plugin
-                  );
-                }
-
-                
-                if (!inLg) {
-                  
-                  const lgItem = findBestWidgetPosition(
-                    filteredLg,
-                    widgetId,
-                    Math.min(sourceItem.w, cols.lg),
-                    sourceItem.h,
-                    plugin
-                  );
-                  filteredLg.push(lgItem);
-                }
-
-                if (!inMd) {
-                  const mdItem = {
-                    i: widgetId,
-                    x: 0,
-                    y: LAYOUT_BOTTOM_POSITION,
-                    w: Math.min(sourceItem.w, cols.md),
-                    h: sourceItem.h,
-                  };
-                  filteredMd.push(mdItem);
-                }
-
-                if (!inSm) {
-                  const smItem = {
-                    i: widgetId,
-                    x: 0,
-                    y: LAYOUT_BOTTOM_POSITION,
-                    w: Math.min(sourceItem.w, cols.sm),
-                    h: sourceItem.h,
-                  };
-                  filteredSm.push(smItem);
-                }
-
-                if (!inXs) {
-                  const xsItem = {
-                    i: widgetId,
-                    x: 0,
-                    y: LAYOUT_BOTTOM_POSITION,
-                    w: Math.min(sourceItem.w, cols.xs),
-                    h: sourceItem.h,
-                  };
-                  filteredXs.push(xsItem);
-                }
-
-                if (!inXxs) {
-                  const xxsItem = {
-                    i: widgetId,
-                    x: 0,
-                    y: LAYOUT_BOTTOM_POSITION,
-                    w: cols.xxs,
-                    h: sourceItem.h,
-                  };
-                  filteredXxs.push(xxsItem);
-                }
-              }
-            }
-          });
-
-          
           setLayoutState({
-            layouts: {
-              lg: filteredLg,
-              md: filteredMd,
-              sm: filteredSm,
-              xs: filteredXs,
-              xxs: filteredXxs,
-            },
+            layouts: fillMissingBreakpointItems({
+              layouts: {
+                lg: filteredLg,
+                md: filteredMd,
+                sm: filteredSm,
+                xs: filteredXs,
+                xxs: filteredXxs,
+              },
+              widgetIds: widgets,
+              getSizing: getDashboardWidgetById,
+              savedLgLayouts: getSavedDashboardLgLayouts(plugin),
+            }),
             layoutsReady: true,
           });
         }
@@ -769,9 +494,7 @@ const useDashboardGridLayoutState = ({
           widgetId: string,
           bp: string
         ): Layout => {
-          const widgetDef = AVAILABLE_WIDGETS.find(
-            (w: WidgetDefinition) => w.id === widgetId
-          );
+          const widgetDef = getDashboardWidgetById(widgetId);
           const maxCols = isBreakpointKey(bp) ? GRID_COLS[bp] : GRID_COLS.lg;
           const defaultWidth =
             bp === 'xxs' ? 1 : Math.min(widgetDef?.defaultSize.w || 6, maxCols);
@@ -814,9 +537,7 @@ const useDashboardGridLayoutState = ({
     };
 
     loadLayouts();
-  }, [plugin, widgets, sanitizeBreakpointLayout, validateLayoutItem]);
-
-  
+  }, [plugin, widgets]);
 
   const persistLayoutChange = useCallback(
     (currentLayout: Layout[], allLayouts: { [key: string]: Layout[] }) => {
@@ -846,78 +567,17 @@ const useDashboardGridLayoutState = ({
           
           const activeBreakpointKey: BreakpointKey = currentBreakpoint || 'lg';
 
-          
-          const currentWidgetIds = sanitizedCurrentLayout.map((item) => item.i);
-
-          
+          const nextLayouts = syncBreakpointsToCurrentLayout({
+            layouts: sanitizedAllLayouts,
+            currentLayout: sanitizedCurrentLayout,
+            activeBreakpoint: activeBreakpointKey,
+          });
           const newLayout = {
             ...currentSettings,
             bottomSection: {
               ...currentSettings.bottomSection,
-              lg: sanitizedAllLayouts.lg || [],
-              md: sanitizedAllLayouts.md || [],
-              sm: sanitizedAllLayouts.sm || [],
-              xs: sanitizedAllLayouts.xs || [],
-              xxs: sanitizedAllLayouts.xxs || [],
+              ...nextLayouts,
             },
-          };
-
-          
-          const cols = GRID_COLS;
-
-          
-          const allBreakpoints = ['lg', 'md', 'sm', 'xs', 'xxs'] as const;
-
-          allBreakpoints.forEach((bp) => {
-            
-            if (bp === activeBreakpointKey) return;
-
-            
-            const bpLayout = newLayout.bottomSection[bp];
-            const bpWidgetIds = bpLayout.map((item: Layout) => item.i);
-
-            
-            const currentWidgetIdsSet = new Set(currentWidgetIds);
-            newLayout.bottomSection[bp] = bpLayout.filter((item: Layout) =>
-              currentWidgetIdsSet.has(item.i)
-            );
-
-            
-            const bpWidgetIdsSet = new Set(bpWidgetIds);
-            currentWidgetIds.forEach((widgetId) => {
-              if (!bpWidgetIdsSet.has(widgetId)) {
-                
-                const currentItem = sanitizedCurrentLayout.find(
-                  (item) => item.i === widgetId
-                );
-                if (currentItem) {
-                  
-                  newLayout.bottomSection[bp].push({
-                    i: widgetId,
-                    x: 0, 
-                    y: LAYOUT_BOTTOM_POSITION, 
-                    w: Math.min(
-                      Math.max(
-                        1,
-                        Math.floor(
-                          (currentItem.w * cols[bp]) / cols[activeBreakpointKey]
-                        )
-                      ),
-                      cols[bp]
-                    ), 
-                    h: currentItem.h, 
-                  });
-                }
-              }
-            });
-          });
-
-          const nextLayouts = {
-            lg: newLayout.bottomSection.lg,
-            md: newLayout.bottomSection.md,
-            sm: newLayout.bottomSection.sm,
-            xs: newLayout.bottomSection.xs,
-            xxs: newLayout.bottomSection.xxs,
           };
 
           setLayoutState({ layouts: nextLayouts, layoutsReady: true });
@@ -927,7 +587,7 @@ const useDashboardGridLayoutState = ({
         }
       }
     },
-    [currentBreakpoint, isEditing, plugin, sanitizeBreakpointLayout, widgets]
+    [currentBreakpoint, isEditing, plugin, widgets]
   );
 
   useEffect(() => {
@@ -1030,7 +690,7 @@ const useDashboardGridLayoutState = ({
     });
 
     return validated;
-  }, [layouts, sanitizeBreakpointLayout]);
+  }, [layouts]);
 
   useEffect(() => {
     if (isEditing || !layoutsReady || gridWidth <= 0) {
@@ -1262,8 +922,7 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
             mode="absolute"
             initialWidth={gridWidth}
             getDefaultSize={(widgetId) =>
-              AVAILABLE_WIDGETS.find((widget) => widget.id === widgetId)
-                ?.defaultSize
+              getDashboardWidgetById(widgetId)?.defaultSize
             }
             WidgetComponent={DashboardGridWidgetCard}
             widgetProps={staticDashboardWidgetProps}

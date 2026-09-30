@@ -67,17 +67,7 @@ const EMPTY_CATALOG_ERRORS: EntityShortcutCatalogErrors = {
   setup: null,
 };
 
-export function buildEntityShortcutCatalogItems(
-  accounts: AccountCatalogEntry[],
-  setups: Setup[]
-): EntityShortcutCatalogItem[] {
-  return [
-    ...buildAccountCatalogItems(accounts),
-    ...buildSetupCatalogItems(setups),
-  ];
-}
-
-export function resolveEntityShortcutCatalogItem(
+function resolveEntityShortcutCatalogItem(
   items: EntityShortcutCatalogItem[],
   shortcut: EntityShortcut
 ): EntityShortcutCatalogItem | null {

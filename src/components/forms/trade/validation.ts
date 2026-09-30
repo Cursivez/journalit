@@ -14,7 +14,6 @@ import {
 } from '../../../types/customFields';
 import { CustomFieldsService } from '../../../services/CustomFieldsService';
 import { isValidDate, safeGetTime } from '../../../utils/dateUtils';
-import { formatCost } from '../../../utils/formatting';
 import { t } from '../../../lang/helpers';
 import { normalizeTradeExecution } from '../../../services/trade/core/TradeExecutionNormalization';
 import { isUnrealizedSnapshotExecutionValid } from '../../../utils/unrealizedPnl';
@@ -978,79 +977,6 @@ export const calculatePercentageReturn = (
   }
 
   return percentReturn;
-};
-
-
-export const formatCostBreakdown = (
-  data: Partial<TradeFormData>,
-  displayRMultiples?: boolean,
-  riskAmount?: number
-): string => {
-  const costs: string[] = [];
-
-  if (data.commission && data.commission > 0) {
-    const actualCommission = calculateActualCommission(data);
-    const commissionType = data.commissionType || 'fixed';
-
-    let formattedValue: string;
-    if (displayRMultiples === true && riskAmount && riskAmount > 0) {
-      const rValue = actualCommission / riskAmount;
-      formattedValue = `${rValue.toFixed(2)}R`;
-    } else {
-      formattedValue = formatCost(actualCommission);
-    }
-
-    const displayText =
-      commissionType === 'percentage'
-        ? `Commission (${data.commission}%): ${formattedValue}`
-        : `Commission: ${formattedValue}`;
-    costs.push(displayText);
-  }
-
-  if (data.swap !== undefined && data.swap !== null && data.swap !== 0) {
-    const swapLabel = data.swap > 0 ? 'Swap Cost' : 'Swap Credit';
-    const absSwap = Math.abs(data.swap);
-
-    let formattedValue: string;
-    if (displayRMultiples === true && riskAmount && riskAmount > 0) {
-      const rValue = absSwap / riskAmount;
-      formattedValue = `${rValue.toFixed(2)}R`;
-    } else {
-      formattedValue = formatCost(absSwap);
-    }
-
-    costs.push(`${swapLabel}: ${formattedValue}`);
-  }
-
-  if (data.fees && data.fees > 0) {
-    let formattedValue: string;
-    if (displayRMultiples === true && riskAmount && riskAmount > 0) {
-      const rValue = data.fees / riskAmount;
-      formattedValue = `${rValue.toFixed(2)}R`;
-    } else {
-      formattedValue = formatCost(data.fees);
-    }
-
-    costs.push(`Fees: ${formattedValue}`);
-  }
-
-  
-  const credits: string[] = [];
-  if (data.rebate && data.rebate > 0) {
-    let formattedValue: string;
-    if (displayRMultiples === true && riskAmount && riskAmount > 0) {
-      const rValue = data.rebate / riskAmount;
-      formattedValue = `${rValue.toFixed(2)}R`;
-    } else {
-      formattedValue = formatCost(data.rebate);
-    }
-    credits.push(`Rebate: ${formattedValue}`);
-  }
-
-  const breakdown = costs.length > 0 ? costs.join(', ') : 'No costs';
-  return credits.length > 0
-    ? `${breakdown} | ${credits.join(', ')}`
-    : breakdown;
 };
 
 

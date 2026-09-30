@@ -8,11 +8,12 @@ import {
   normalizeDashboardWidgetIds,
   type DashboardWidgetCategory,
 } from './BottomSection/types';
-import { findBestWidgetPosition } from './BottomSection/GridLayout';
+import { findBestWidgetPosition } from '../../shared/gridLayout/gridLayoutUtils';
 import type { Layout } from '../../shared/gridLayout/reactGridLayoutCompat';
 import { usePlugin } from '../../../hooks/usePlugin';
 import {
   getActiveLayout,
+  getSavedDashboardLgLayouts,
   saveLayout,
   DashboardLayout,
 } from '../utils/layoutUtils';
@@ -132,13 +133,14 @@ const UnifiedComponentSelectorBase: React.FC<UnifiedComponentSelectorProps> = ({
           return;
         }
 
-        const newLayoutItem = findBestWidgetPosition(
-          currentLayout.bottomSection.lg,
-          widget.id,
-          widget.defaultSize.w,
-          widget.defaultSize.h,
-          plugin
-        );
+        const newLayoutItem = findBestWidgetPosition({
+          layout: currentLayout.bottomSection.lg,
+          widgetId: widget.id,
+          w: widget.defaultSize.w,
+          h: widget.defaultSize.h,
+          sizing: widget,
+          savedLgLayouts: getSavedDashboardLgLayouts(plugin),
+        });
 
         const newLayout: DashboardLayout = {
           ...currentLayout,

@@ -6,10 +6,8 @@ import {
   ProfitTargetType,
   TransactionType,
 } from '../../../services/account/types';
-import { formatPnL } from '../../../utils/formatting';
 import { formatDateDisplay, getUserDateFormat } from '../../../utils/dateUtils';
 import { DashboardMetricsData, AUMChartDataPoint } from './types';
-import { CurrencyCode } from '../../../utils/currencyConfig';
 import { AccountSettings } from '../../../settings/types';
 import { normalizeLiveBalanceAdjustment } from '../../../services/account/liveBalanceAdjustment';
 import { getCurrentLanguage } from '../../../lang/helpers';
@@ -423,66 +421,6 @@ export function calculateAccountAge(createdDate: Date): string {
 }
 
 
-export function formatDrawdown(
-  account: AccountData,
-  currency: CurrencyCode = CurrencyCode.USD,
-  displayRMultiples?: boolean,
-  defaultRiskAmount?: number
-): string {
-  if (account.drawdownType === DrawdownType.NONE) {
-    return 'N/A';
-  }
-
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  
-  if (
-    account.drawdownType === DrawdownType.MANUAL &&
-    account.currentDrawdownSnapshot
-  ) {
-    const remaining =
-      account.currentBalance - account.currentDrawdownSnapshot.drawdownLimit;
-    const used = Math.min(
-      account.drawdownAmount,
-      Math.max(0, account.drawdownAmount - remaining)
-    );
-    const usedPercentage =
-      account.drawdownAmount > 0
-        ? Math.min(100, Math.max(0, (used / account.drawdownAmount) * 100))
-        : 0;
-
-    
-    const rMultiple =
-      displayRMultiples && defaultRiskAmount && defaultRiskAmount > 0
-        ? used / defaultRiskAmount
-        : undefined;
-
-    return `${formatPnL(used, true, currency, displayRMultiples, rMultiple)} (${usedPercentage.toFixed(2)}%)`;
-  }
-
-  if (account.drawdownAmount <= 0) {
-    return 'N/A';
-  }
-
-  const { used, usedPercentage } = calculateAccountDrawdownUsage(account);
-
-  
-  const rMultiple =
-    displayRMultiples && defaultRiskAmount && defaultRiskAmount > 0
-      ? used / defaultRiskAmount
-      : undefined;
-
-  return `${formatPnL(used, true, currency, displayRMultiples, rMultiple)} (${usedPercentage.toFixed(2)}%)`;
-}
-
-
 function calculateAccountDrawdownFloor(account: AccountData): number {
   if (account.drawdownType === DrawdownType.EOD_TRAILING) {
     const peakBalance = Math.max(
@@ -498,120 +436,6 @@ function calculateAccountDrawdownFloor(account: AccountData): number {
   }
 
   return account.initialBalance - account.drawdownAmount;
-}
-
-function calculateAccountDrawdownUsage(account: AccountData): {
-  remainingDistance: number;
-  used: number;
-  usedPercentage: number;
-} {
-  const drawdownFloor = calculateAccountDrawdownFloor(account);
-  const remainingDistance = account.currentBalance - drawdownFloor;
-  const used = Math.min(
-    account.drawdownAmount,
-    Math.max(0, account.drawdownAmount - remainingDistance)
-  );
-  const usedPercentage = (used / account.drawdownAmount) * 100;
-
-  return { remainingDistance, used, usedPercentage };
-}
-
-export function calculateDrawdownRemaining(account: AccountData): number {
-  if (account.drawdownType === DrawdownType.NONE) {
-    return 0;
-  }
-
-  
-  if (
-    account.drawdownType === DrawdownType.MANUAL &&
-    account.currentDrawdownSnapshot
-  ) {
-    const limit = account.currentDrawdownSnapshot.drawdownLimit;
-
-    
-    if (limit <= 0 || account.initialBalance <= limit) {
-      return 0;
-    }
-
-    
-    const remainingDistance = account.currentBalance - limit;
-
-    
-    const remainingPercentage =
-      account.drawdownAmount > 0
-        ? (remainingDistance / account.drawdownAmount) * 100
-        : 0;
-
-    return Math.min(100, Math.max(0, remainingPercentage));
-  }
-
-  if (account.drawdownAmount <= 0) {
-    return 0;
-  }
-
-  const drawdownFloor = calculateAccountDrawdownFloor(account);
-  const remainingDistance = account.currentBalance - drawdownFloor;
-  const remainingPercentage =
-    (remainingDistance / account.drawdownAmount) * 100;
-
-  return Math.min(100, Math.max(0, remainingPercentage));
-}
-
-
-export function formatDrawdownRemaining(
-  account: AccountData,
-  currency: CurrencyCode = CurrencyCode.USD,
-  displayRMultiples?: boolean,
-  defaultRiskAmount?: number
-): string {
-  if (account.drawdownType === DrawdownType.NONE) {
-    return 'No drawdown set';
-  }
-
-  
-  
-  
-  if (
-    account.drawdownType === DrawdownType.MANUAL &&
-    account.currentDrawdownSnapshot
-  ) {
-    const remaining =
-      account.currentBalance - account.currentDrawdownSnapshot.drawdownLimit;
-    const used = Math.min(
-      account.drawdownAmount,
-      Math.max(0, account.drawdownAmount - remaining)
-    );
-    const usedPercentage =
-      account.drawdownAmount > 0
-        ? Math.min(100, Math.max(0, (used / account.drawdownAmount) * 100))
-        : 0;
-
-    if (displayRMultiples && defaultRiskAmount && defaultRiskAmount > 0) {
-      return `${formatPnL(remaining, true, currency, displayRMultiples, remaining / defaultRiskAmount)}/${formatPnL(account.drawdownAmount, true, currency, displayRMultiples, account.drawdownAmount / defaultRiskAmount)} (${usedPercentage.toFixed(1)}% used)`;
-    }
-
-    return `${formatPnL(remaining, true, currency)}/${formatPnL(account.drawdownAmount, true, currency)} (${usedPercentage.toFixed(1)}% used)`;
-  }
-
-  if (account.drawdownAmount <= 0) {
-    return 'No drawdown set';
-  }
-
-  const drawdownFloor = calculateAccountDrawdownFloor(account);
-  const drawdownDistance = account.currentBalance - drawdownFloor;
-  const remainingPercentage = (drawdownDistance / account.drawdownAmount) * 100;
-
-  
-  const distanceRMultiple =
-    displayRMultiples && defaultRiskAmount && defaultRiskAmount > 0
-      ? drawdownDistance / defaultRiskAmount
-      : undefined;
-  const amountRMultiple =
-    displayRMultiples && defaultRiskAmount && defaultRiskAmount > 0
-      ? account.drawdownAmount / defaultRiskAmount
-      : undefined;
-
-  return `${formatPnL(drawdownDistance, true, currency, displayRMultiples, distanceRMultiple)}/${formatPnL(account.drawdownAmount, true, currency, displayRMultiples, amountRMultiple)} (${remainingPercentage.toFixed(1)}% remaining)`;
 }
 
 
@@ -839,9 +663,14 @@ export function calculateDrawdownUsed(account: AccountData): number {
     return 0;
   }
 
-  const { usedPercentage } = calculateAccountDrawdownUsage(account);
+  const remainingDistance =
+    account.currentBalance - calculateAccountDrawdownFloor(account);
+  const used = Math.min(
+    account.drawdownAmount,
+    Math.max(0, account.drawdownAmount - remainingDistance)
+  );
 
-  return Math.min(100, Math.max(0, usedPercentage));
+  return (used / account.drawdownAmount) * 100;
 }
 
 

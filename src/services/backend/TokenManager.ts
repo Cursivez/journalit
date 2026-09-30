@@ -358,13 +358,6 @@ export async function ensureAuthReady(
   return manager.ensureAuthReady(options);
 }
 
-export function isAuthRefreshUnavailable(plugin: JournalitPlugin): boolean {
-  return (
-    pluginTokenManagers.get(plugin)?.getAuthRefreshCircuit().isBlocked() ??
-    false
-  );
-}
-
 export function subscribeAuthRefreshCircuit(
   plugin: JournalitPlugin,
   listener: (blocked: boolean) => void

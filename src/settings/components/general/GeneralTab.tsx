@@ -834,14 +834,8 @@ function useGeneralTabModel(props: GeneralTabProps) {
   ) => {
     const value = Number(event.target.value);
     
-    plugin.settings.trade.breakEvenRangeMin = value > 0 ? -value : value;
-
     
-    const max = plugin.settings.trade.breakEvenRangeMax ?? 0;
-    const actualMin = value > 0 ? -value : value;
-    if (actualMin > max) {
-      new Notice(t('settings.general.break-even-warning'), 5000);
-    }
+    plugin.settings.trade.breakEvenRangeMin = -Math.abs(value);
 
     await applyBreakEvenSettingsUpdate();
   };
@@ -851,13 +845,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
     event: React.ChangeEvent<HTMLInputElement>
   ) => {
     const value = Number(event.target.value);
-    plugin.settings.trade.breakEvenRangeMax = value;
-
-    
-    const min = plugin.settings.trade.breakEvenRangeMin ?? 0;
-    if (min > value) {
-      new Notice(t('settings.general.break-even-warning'), 5000);
-    }
+    plugin.settings.trade.breakEvenRangeMax = Math.abs(value);
 
     await applyBreakEvenSettingsUpdate();
   };
