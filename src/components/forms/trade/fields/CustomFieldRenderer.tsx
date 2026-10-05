@@ -185,6 +185,7 @@ const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
       return (
         <FastDateTimeInput
           {...commonProps}
+          className="journalit-custom-datetime-field"
           value={dateValue}
           onChange={onChange}
           includeTime={true}
@@ -195,6 +196,7 @@ const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
       return (
         <FastDateTimeInput
           {...commonProps}
+          className="journalit-custom-time-field"
           value={dateValue}
           onChange={onChange}
           timeOnly={true}

@@ -620,6 +620,7 @@ export const SETTINGS_TAB_STYLES = `
   }
 
   .journalit-settings .journalit-session-mode-trade-gate-flow-svg {
+    --no-tooltip: true;
     position: absolute;
     inset: 0;
     display: block;

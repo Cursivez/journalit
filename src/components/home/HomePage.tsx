@@ -27,6 +27,13 @@ import { LAYOUT_BOTTOM_POSITION } from '../shared/gridLayout/gridLayoutUtils';
 import { generateUUID } from '../../utils/uuid';
 import { DashboardDataProvider } from '../dashboard/context/DashboardDataContext';
 import { HomePeriodProvider } from './context/HomePeriodContext';
+import {
+  resolveHomePeriodSelection,
+  type HomePeriodSelection,
+} from '../../settings/homePeriod';
+import { getHomePeriodRange } from './utils/homePeriodRange';
+import { getWeekStartDaySetting } from '../../utils/dateUtils';
+import { getTradingDay } from '../../utils/tradingDayUtils';
 import { HomeAccountProvider } from './context/HomeAccountContext';
 import { HomeGridLayout } from './HomeGridLayout';
 import { HomeAccountsDataProvider } from './context/HomeAccountsDataContext';
@@ -136,10 +143,19 @@ const questionOnlyGreetingKeys = [
   'home.greeting.how-did-today-go',
 ];
 
-const HOME_PERIODS: HomePeriod[] = ['month', 'quarter', 'year', 'lifetime'];
+const HOME_PERIODS: HomePeriod[] = [
+  'week',
+  'month',
+  'quarter',
+  'year',
+  'lifetime',
+  'custom',
+];
 
 
 const getPeriodLabels = (): Record<HomePeriod, string> => ({
+  week: t('home.period.week'),
+  custom: t('home.period.custom'),
   month: t('home.period.month'),
   quarter: t('home.period.quarter'),
   year: t('home.period.year'),
@@ -300,12 +316,16 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
   const [isEditing, setIsEditing] = useState(false);
 
   
-  const [selectedPeriod, setSelectedPeriod] = useState<HomePeriod>(() => {
-    return (
-      plugin.uiStateManager.getState().selectedPeriod ??
-      DEFAULT_HOME_FILTERS.period
-    );
-  });
+  const [periodSelection, setPeriodSelection] = useState<HomePeriodSelection>(
+    () => {
+      const state = plugin.uiStateManager.getState();
+      return resolveHomePeriodSelection(
+        state.selectedPeriod,
+        state.selectedHomeCustomRange
+      );
+    }
+  );
+  const selectedPeriod = periodSelection.period;
   const [selectedAccounts, setSelectedAccounts] = useState<string[]>(() => {
     return (
       plugin.uiStateManager.getState().selectedHomeAccounts ?? [
@@ -367,7 +387,9 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
 
     const activeLayoutName = homeSettings.activeLayout || 'Default';
     const layout = homeSettings.layouts[activeLayoutName];
-    if (!layout?.lg || layout.lg.length === 0) return DEFAULT_HOME_WIDGETS;
+    
+    
+    if (!layout?.lg) return DEFAULT_HOME_WIDGETS;
 
     
     
@@ -710,15 +732,27 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
 
   
   const handlePeriodChange = useCallback(
-    async (period: HomePeriod) => {
-      setSelectedPeriod(period);
+    async (selection: HomePeriodSelection) => {
+      setPeriodSelection(selection);
 
       
       await plugin.uiStateManager.updateState({
-        selectedPeriod: period,
+        selectedPeriod: selection.period,
+        selectedHomeCustomRange:
+          selection.period === 'custom' ? selection.range : undefined,
       });
     },
     [plugin]
+  );
+
+  const getPeriodDateRange = useCallback(
+    () =>
+      getHomePeriodRange(
+        periodSelection,
+        getTradingDay(new Date(), plugin),
+        getWeekStartDaySetting(plugin)
+      ),
+    [periodSelection, plugin]
   );
 
   const handleAccountFilterChange = useCallback(
@@ -757,7 +791,9 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     const defaultTradeTypes = [...DEFAULT_HOME_FILTERS.tradeTypes];
     const defaultAccounts = [...DEFAULT_HOME_FILTERS.accounts];
 
-    setSelectedPeriod(DEFAULT_HOME_FILTERS.period);
+    setPeriodSelection(
+      resolveHomePeriodSelection(DEFAULT_HOME_FILTERS.period, undefined)
+    );
     setSelectedTradeTypes(defaultTradeTypes);
     setSelectedAccounts(defaultAccounts);
     setExplicitAllAccountsSelected(
@@ -766,6 +802,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
 
     await plugin.uiStateManager.updateState({
       selectedPeriod: DEFAULT_HOME_FILTERS.period,
+      selectedHomeCustomRange: undefined,
       selectedHomeTradeTypes: defaultTradeTypes,
       selectedHomeAccounts: defaultAccounts,
       homeAccountFilterSelectAllActive:
@@ -1488,7 +1525,9 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     handleSaveDisplayName,
     registerFiltersTarget,
     selectedPeriod,
+    periodSelection,
     handlePeriodChange,
+    getPeriodDateRange,
     selectedTradeTypes,
     handleTradeTypeFilterChange,
     availableAccounts,
@@ -1648,7 +1687,13 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
                   periods={HOME_PERIODS}
                   periodLabels={getPeriodLabels()}
                   selectedPeriod={model.selectedPeriod}
+                  customRange={
+                    model.periodSelection.period === 'custom'
+                      ? model.periodSelection.range
+                      : undefined
+                  }
                   onPeriodChange={model.handlePeriodChange}
+                  getPeriodDateRange={model.getPeriodDateRange}
                   selectedTradeTypes={model.selectedTradeTypes}
                   onTradeTypesChange={model.handleTradeTypeFilterChange}
                   availableAccounts={model.availableAccounts}
@@ -1733,7 +1778,7 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
             plugin={plugin}
             isActive={isActive}
           >
-            <HomePeriodProvider period={model.selectedPeriod}>
+            <HomePeriodProvider selection={model.periodSelection}>
               {model.quickLinksPosition === 'aboveWidgets' && (
                 <div
                   className="journalit-home-section journalit-home-section--quick-links"

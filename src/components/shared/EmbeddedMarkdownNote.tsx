@@ -11,6 +11,7 @@ import {
   resolveVaultMediaFile,
 } from '../../utils/imageMediaUtils';
 import { ExcalidrawMediaEmbed } from '../image/ExcalidrawMediaEmbed';
+import { registerRenderedMarkdownLinks } from './renderedMarkdownLinks';
 
 interface EmbeddedMarkdownNoteProps {
   plugin: JournalitPlugin;
@@ -282,6 +283,12 @@ export const EmbeddedMarkdownNote = memo<EmbeddedMarkdownNoteProps>(
       const renderComponent = new Component();
       renderComponent.load();
       container.empty();
+      registerRenderedMarkdownLinks({
+        app: plugin.app,
+        component: renderComponent,
+        container,
+        sourcePath: file.path,
+      });
       void MarkdownRenderer.render(
         plugin.app,
         content,

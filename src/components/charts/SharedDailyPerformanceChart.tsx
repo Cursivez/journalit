@@ -373,7 +373,6 @@ export const SharedDailyPerformanceChart =
               }}
             />
             <YAxis
-              className="journalit-chart-axis--numeric"
               tickFormatter={formatYAxisTick}
               tick={{
                 fontSize: 11,

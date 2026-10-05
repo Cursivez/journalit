@@ -14,8 +14,33 @@ import type {
 import { DrawdownType, type ProfitTargetType } from '../account/types';
 import type { evaluatePropChallengePhase } from './PropChallengeRuleEngine';
 import { getTradeBrokerIdentity } from './tradeIdentity';
+import { normalizePropChallengePayoutPolicy } from './normalization';
 
 export type PropChallengeRuleKind = PropChallengeRule['kind'];
+
+export function createPropChallengeQualifyingDaysDraft(): NonNullable<
+  PropChallengePayoutPolicy['qualifyingDays']
+> {
+  return { days: 0, minimumDailyProfit: 0 };
+}
+
+
+export function isPropChallengePayoutPolicyComplete(
+  policy: PropChallengePayoutPolicy | undefined
+): boolean {
+  return (
+    policy === undefined || normalizePropChallengePayoutPolicy(policy) !== null
+  );
+}
+
+export function isPropChallengePhaseComplete(
+  phase: Pick<PropChallengePhase, 'rules' | 'payoutPolicy'>
+): boolean {
+  return (
+    phase.rules.every(isPropChallengeRuleComplete) &&
+    isPropChallengePayoutPolicyComplete(phase.payoutPolicy)
+  );
+}
 
 export function createDefaultPropChallengePayoutPolicy(): PropChallengePayoutPolicy {
   return {
@@ -779,41 +804,6 @@ export function isPropChallengeRuleComplete(rule: PropChallengeRule): boolean {
       );
     }
   }
-}
-
-export function setCurrentPropChallengePhase(
-  config: PropChallengeConfig,
-  phaseId: string,
-  now: Date = new Date()
-): PropChallengeConfig {
-  return {
-    ...config,
-    currentPhaseId: phaseId,
-    phases: config.phases.map((phase) => ({
-      ...phase,
-      status:
-        phase.id === phaseId
-          ? 'active'
-          : phase.status === 'active'
-            ? 'pending'
-            : phase.status,
-      startedAt:
-        phase.id === phaseId
-          ? (phase.startedAt ?? now.toISOString())
-          : phase.startedAt,
-      completedAt:
-        phase.id === phaseId
-          ? undefined
-          : 
-            
-            
-            
-            
-            phase.status === 'active' && phase.startedAt
-            ? (phase.completedAt ?? now.toISOString())
-            : phase.completedAt,
-    })),
-  };
 }
 
 export function addPropChallengeRule(

@@ -13,25 +13,15 @@ export const UPDATE_TOAST_STYLES = `
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  padding: 0;
+  padding: 16px 52px 16px 18px;
   font-family: var(--font-interface);
   position: relative;
-  max-width: 400px;
+  width: 360px;
+  max-width: calc(100% - 48px);
   opacity: 0;
   transform: translateX(-100%);
   transition: opacity 0.3s ease-out, transform 0.3s ease-out;
   overflow: hidden;
-}
-
-.journalit-update-toast--visible {
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.journalit-update-toast--available {
-  width: 360px;
-  max-width: calc(100% - 48px);
-  padding: 16px 52px 16px 18px;
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   grid-template-areas:
@@ -42,20 +32,29 @@ export const UPDATE_TOAST_STYLES = `
   row-gap: 3px;
 }
 
-.journalit-update-toast--available .journalit-update-toast-title {
+.journalit-update-toast--visible {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.journalit-update-toast-title {
+  color: var(--text-normal);
   grid-area: title;
   min-width: 0;
   margin: 0;
   padding: 0;
   font-size: 15px;
   font-weight: 600;
+  letter-spacing: -0.02em;
   line-height: 1.4;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
 }
 
-.journalit-update-toast--available .journalit-update-toast-description {
+.journalit-update-toast-description {
+  color: var(--text-muted);
+  opacity: 0.9;
   grid-area: description;
   min-width: 0;
   margin: 0;
@@ -67,54 +66,10 @@ export const UPDATE_TOAST_STYLES = `
   text-overflow: ellipsis;
 }
 
-.journalit-update-toast--available .journalit-update-toast-close {
-  top: 10px;
-  right: 10px;
-}
-
-.journalit-update-toast--available .journalit-update-toast-button-container {
-  grid-area: actions;
-  align-self: end;
-  padding: 0;
-  flex: 0 0 auto;
-}
-
-.journalit-update-toast--available .journalit-update-toast-button {
-  background-color: var(--interactive-accent);
-  color: var(--text-on-accent);
-}
-
-.journalit-update-toast--available .journalit-update-toast-button:hover {
-  background-color: var(--interactive-accent-hover);
-  color: var(--text-on-accent);
-}
-
-.journalit-update-toast-title {
-  color: var(--text-normal);
-  font-size: 18px;
-  font-weight: 500;
-  margin: 0 0 12px 0;
-  padding: 0 20px;
-  letter-spacing: -0.02em;
-  line-height: 1.3;
-}
-
-.journalit-update-toast-version {
-  color: var(--text-accent);
-  font-size: 11px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  margin: 0 0 4px 0;
-  padding: 0 20px;
-  display: block;
-  opacity: 0.85;
-}
-
 .journalit-update-toast-close {
   position: absolute;
-  top: 8px;
-  right: 8px;
+  top: 10px;
+  right: 10px;
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   border-radius: 50%;
@@ -139,37 +94,14 @@ export const UPDATE_TOAST_STYLES = `
   background: var(--background-secondary);
 }
 
-.journalit-update-toast-image {
-  width: 100%;
-  height: auto;
-  border-radius: 8px 8px 0 0;
-  margin-bottom: 12px;
-  display: block;
-}
-
-.journalit-update-toast-description {
-  color: var(--text-muted);
-  font-size: 13px;
-  line-height: 1.6;
-  margin: 0 0 16px 0;
-  padding: 0 20px;
-  opacity: 0.9;
-}
-
-.journalit-update-toast-separator {
-  border-top: 1px solid var(--background-modifier-border);
-  margin: 0 0 12px 0;
-}
-
 .journalit-update-toast-button-container {
-  padding: 0 20px 16px 20px;
+  grid-area: actions;
+  align-self: end;
+  padding: 0;
+  flex: 0 0 auto;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.journalit-update-toast-button-container--single {
   justify-content: flex-end;
+  align-items: center;
 }
 
 .journalit-update-toast-button {
@@ -193,27 +125,6 @@ export const UPDATE_TOAST_STYLES = `
   color: var(--text-on-accent);
 }
 
-.journalit-update-toast-secondary-button {
-  background: transparent;
-  color: var(--text-muted);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.journalit-update-toast-secondary-button:hover {
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  border-color: var(--background-modifier-border-hover);
-}
-
 .journalit-update-toast-button-icon {
   width: 14px;
   height: 14px;
@@ -225,13 +136,10 @@ export const UPDATE_TOAST_STYLES = `
 @media (max-width: 768px) {
   .journalit-update-toast {
     max-width: none;
-  }
-
-  .journalit-update-toast--available {
     width: auto;
   }
 
-  .journalit-update-toast--available .journalit-update-toast-description {
+  .journalit-update-toast-description {
     white-space: normal;
     overflow: visible;
   }
@@ -242,18 +150,13 @@ interface ToastAction {
   label: string;
   icon: string;
   onClick: () => void;
-  dismissAfterClick?: boolean;
   persistDismissalAfterClick?: boolean;
 }
 
 interface ToastOptions {
-  version?: string;
   title: string;
   description?: string;
-  imageUrl?: string;
-  layout?: 'full' | 'available';
   primaryAction: ToastAction;
-  secondaryAction?: ToastAction;
   
   onDismiss?: () => void | Promise<void>;
 }
@@ -272,7 +175,7 @@ export class CustomUpdateToast {
     this.containerEl = mountBottomLeftNotification('journalit-update-toast');
   }
 
-  async show(options: ToastOptions): Promise<void> {
+  show(options: ToastOptions): void {
     if (this.dismissed) {
       return;
     }
@@ -291,11 +194,6 @@ export class CustomUpdateToast {
     }
 
     this.containerEl!.empty();
-    this.containerEl!.classList.toggle(
-      'journalit-update-toast--available',
-      options.layout === 'available'
-    );
-
     
     const closeBtn = this.containerEl!.createEl('button', {
       cls: 'journalit-update-toast-close',
@@ -303,22 +201,6 @@ export class CustomUpdateToast {
       attr: { 'aria-label': t('button.close') },
     });
     closeBtn.addEventListener('click', () => this.hide());
-
-    
-    if (options.imageUrl) {
-      const image = await this.loadImage(options.imageUrl);
-      if (image) {
-        image.addClass('journalit-update-toast-image');
-        this.containerEl!.appendChild(image);
-      }
-    }
-
-    if (options.version) {
-      this.containerEl!.createDiv({
-        cls: 'journalit-update-toast-version',
-        text: options.version,
-      });
-    }
 
     
     this.containerEl!.createEl('h3', {
@@ -333,39 +215,10 @@ export class CustomUpdateToast {
       });
     }
 
-    if (options.layout !== 'available') {
-      this.containerEl!.createDiv({
-        cls: 'journalit-update-toast-separator',
-      });
-    }
-
     
     const buttonContainer = this.containerEl!.createDiv({
       cls: 'journalit-update-toast-button-container',
     });
-
-    if (options.secondaryAction) {
-      const secondaryButton = buttonContainer.createEl('button', {
-        cls: 'journalit-update-toast-secondary-button',
-      });
-      const secondaryIconSpan = secondaryButton.createSpan({
-        cls: 'journalit-update-toast-button-icon',
-      });
-      setIcon(secondaryIconSpan, options.secondaryAction.icon);
-      secondaryButton.appendText(options.secondaryAction.label);
-      secondaryButton.addEventListener('click', () => {
-        options.secondaryAction?.onClick();
-        if (options.secondaryAction?.dismissAfterClick) {
-          this.hide(
-            options.secondaryAction.persistDismissalAfterClick !== false
-          );
-        }
-      });
-    } else {
-      buttonContainer.addClass(
-        'journalit-update-toast-button-container--single'
-      );
-    }
 
     
     const button = buttonContainer.createEl('button', {
@@ -381,9 +234,7 @@ export class CustomUpdateToast {
 
     button.addEventListener('click', () => {
       options.primaryAction.onClick();
-      if (options.primaryAction.dismissAfterClick !== false) {
-        this.hide(options.primaryAction.persistDismissalAfterClick !== false);
-      }
+      this.hide(options.primaryAction.persistDismissalAfterClick !== false);
     });
 
     
@@ -448,28 +299,5 @@ export class CustomUpdateToast {
       removeBottomLeftNotification(this.containerEl);
       this.containerEl = null;
     }
-  }
-
-  private async loadImage(url: string): Promise<HTMLImageElement | null> {
-    return new Promise((resolve) => {
-      const img = new Image();
-      const timeout = window.setTimeout(() => {
-        img.src = '';
-        resolve(null);
-      }, 5000);
-
-      img.onload = () => {
-        window.clearTimeout(timeout);
-        resolve(img);
-      };
-
-      img.onerror = (error) => {
-        console.error('[CustomUpdateToast] Image load error:', error);
-        window.clearTimeout(timeout);
-        resolve(null);
-      };
-
-      img.src = url;
-    });
   }
 }

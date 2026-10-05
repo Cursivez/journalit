@@ -11,7 +11,7 @@ export function anchoredMenuPortalRoot(
   );
 }
 
-export type AnchoredMenuWidth = 'trigger' | 'content' | number;
+type AnchoredMenuWidth = 'trigger' | 'content' | number;
 
 interface RefCurrent<T> {
   readonly current: T | null;
@@ -37,7 +37,6 @@ interface AnchoredMenuPosition {
 
 const VIEWPORT_MARGIN = 8;
 const FLIP_THRESHOLD = 180;
-const MIN_MAX_HEIGHT = 96;
 const MENU_GAP = 4;
 
 export function useAnchoredMenuPosition({
@@ -66,8 +65,12 @@ export function useAnchoredMenuPosition({
 
       const rect = trigger.getBoundingClientRect();
       const ownerWindow = trigger.ownerDocument.defaultView ?? window;
-      const viewportHeight = ownerWindow.innerHeight;
-      const viewportWidth = ownerWindow.innerWidth;
+      const viewportHeight =
+        ownerWindow.visualViewport?.height ?? ownerWindow.innerHeight;
+      const viewportWidth =
+        ownerWindow.visualViewport?.width ?? ownerWindow.innerWidth;
+      const viewportTop = ownerWindow.visualViewport?.offsetTop ?? 0;
+      const viewportLeft = ownerWindow.visualViewport?.offsetLeft ?? 0;
       const viewportCap = Math.max(0, viewportWidth - VIEWPORT_MARGIN * 2);
 
       let resolvedMenuWidth: number;
@@ -95,11 +98,12 @@ export function useAnchoredMenuPosition({
       }
       resolvedMenuWidth = Math.min(resolvedMenuWidth, viewportCap);
 
-      const spaceBelow = viewportHeight - rect.bottom - VIEWPORT_MARGIN;
-      const spaceAbove = rect.top - VIEWPORT_MARGIN;
+      const spaceBelow =
+        viewportTop + viewportHeight - rect.bottom - VIEWPORT_MARGIN - MENU_GAP;
+      const spaceAbove = rect.top - viewportTop - VIEWPORT_MARGIN - MENU_GAP;
       const openUpward = spaceBelow < FLIP_THRESHOLD && spaceAbove > spaceBelow;
       const clampedMaxHeight = Math.max(
-        MIN_MAX_HEIGHT,
+        0,
         Math.min(maxHeight, openUpward ? spaceAbove : spaceBelow)
       );
       
@@ -109,21 +113,33 @@ export function useAnchoredMenuPosition({
         ? Math.min(measuredHeight, clampedMaxHeight)
         : clampedMaxHeight;
 
-      setPosition({
+      const nextPosition = {
         top: openUpward
-          ? Math.max(VIEWPORT_MARGIN, rect.top - menuHeight - MENU_GAP)
+          ? Math.max(
+              viewportTop + VIEWPORT_MARGIN,
+              rect.top - menuHeight - MENU_GAP
+            )
           : rect.bottom + MENU_GAP,
         left: Math.max(
-          VIEWPORT_MARGIN,
+          viewportLeft + VIEWPORT_MARGIN,
           Math.min(
             rect.left,
-            viewportWidth - resolvedMenuWidth - VIEWPORT_MARGIN
+            viewportLeft + viewportWidth - resolvedMenuWidth - VIEWPORT_MARGIN
           )
         ),
         width: resolvedMenuWidth,
         maxHeight: clampedMaxHeight,
         openUpward,
-      });
+      };
+      setPosition((previous) =>
+        previous.top === nextPosition.top &&
+        previous.left === nextPosition.left &&
+        previous.width === nextPosition.width &&
+        previous.maxHeight === nextPosition.maxHeight &&
+        previous.openUpward === nextPosition.openUpward
+          ? previous
+          : nextPosition
+      );
     };
 
     updatePosition();
@@ -131,11 +147,19 @@ export function useAnchoredMenuPosition({
     const ownerWindow = ownerDocument?.defaultView ?? window;
     if (!ownerDocument) return;
 
+    const observer = new ownerWindow.ResizeObserver(updatePosition);
+    if (triggerRef.current) observer.observe(triggerRef.current);
+    if (menuRef.current) observer.observe(menuRef.current);
     ownerDocument.addEventListener('scroll', updatePosition, true);
     ownerWindow.addEventListener('resize', updatePosition);
+    ownerWindow.visualViewport?.addEventListener('resize', updatePosition);
+    ownerWindow.visualViewport?.addEventListener('scroll', updatePosition);
     return () => {
+      observer.disconnect();
       ownerDocument.removeEventListener('scroll', updatePosition, true);
       ownerWindow.removeEventListener('resize', updatePosition);
+      ownerWindow.visualViewport?.removeEventListener('resize', updatePosition);
+      ownerWindow.visualViewport?.removeEventListener('scroll', updatePosition);
     };
   }, [isOpen, maxHeight, maxWidth, menuRef, minWidth, triggerRef, width]);
 

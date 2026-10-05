@@ -59,6 +59,8 @@ export interface TradeImportDiagnostic {
   example?: string;
   
   candidateFormats?: string[];
+  
+  missingColumns?: string[];
 }
 
 export const UNSUPPORTED_TRADOVATE_PERFORMANCE_REPORT_DIAGNOSTIC_CODE =
@@ -66,6 +68,9 @@ export const UNSUPPORTED_TRADOVATE_PERFORMANCE_REPORT_DIAGNOSTIC_CODE =
 export const UNSUPPORTED_METATRADER_STATEMENT_DIAGNOSTIC_CODE =
   'unsupported-metatrader-statement';
 export const MISSING_COLUMN_DIAGNOSTIC_CODE = 'missing-column';
+export const BYBIT_HEADER_MISMATCH_DIAGNOSTIC_CODE = 'bybit-header-mismatch';
+export const UNSUPPORTED_RITHMIC_ORDER_HISTORY_DIAGNOSTIC_CODE =
+  'unsupported-rithmic-order-history';
 export interface TradeImportAnalyseRequest {
   schemaVersion: 'trade-import-analyse-request-v1';
   pluginVersion: string;

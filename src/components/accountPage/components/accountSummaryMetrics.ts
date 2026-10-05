@@ -5,7 +5,10 @@ import type {
   AccountData,
   AccountTransaction,
 } from '../../../services/account/types';
-import { calculateTotalCosts } from '../../account/dashboard/utils';
+import {
+  estimateRecurringCosts,
+  sumOneTimeCosts,
+} from '../../../services/account/accountCosts';
 import type { AccountTradeData } from '../../../services/accountPage/types';
 import { doesPhaseOwnTransaction } from '../../../services/propChallenge/PropChallengeRuleEngine';
 import type {
@@ -27,11 +30,8 @@ export function calculateAccountCostSummary(
   asOf: Date = new Date()
 ): AccountCostSummary {
   const monthlyCost = Math.max(0, account.monthlyCost || 0);
-  const oneTimeCosts = (account.propChallenge?.oneTimeCosts ?? []).reduce(
-    (total, cost) => total + Math.max(0, cost.amount),
-    0
-  );
-  const estimatedRecurringCosts = calculateTotalCosts(account, asOf);
+  const oneTimeCosts = sumOneTimeCosts(account);
+  const estimatedRecurringCosts = estimateRecurringCosts(account, asOf);
   const estimatedTotalCosts = oneTimeCosts + estimatedRecurringCosts;
 
   return {

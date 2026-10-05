@@ -18,6 +18,7 @@ import type { TradeFormData } from '../../forms/trade/types';
 import type JournalitPlugin from '../../../main';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -339,6 +340,8 @@ export const groupMissedTradesByDay = (
 
 export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
   ({ filePath, plugin, config: _config, preview, previewData }) => {
+    const embeddedReadOnly = useReviewReadOnly();
+    const readOnly = preview || embeddedReadOnly;
     const [missedTrades, setMissedTrades] = useState<MissedTradeDisplayData[]>(
       []
     );
@@ -706,7 +709,7 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
                 {emptyLabel}
               </span>
             )}
-            {!preview && noteType === 'drc' && (
+            {!readOnly && noteType === 'drc' && (
               <button
                 {...shareCaptureExcludeProps}
                 onClick={() => void handleCreateMissedTrade()}

@@ -9,6 +9,7 @@ import { eventBus } from '../../../services/events/EventBus';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
 import { mergeClassNames } from '../../../utils/classNames';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 
 interface ReviewWidgetProps {
   filePath: string;
@@ -322,6 +323,8 @@ export const ReviewWidget: React.FC<ReviewWidgetProps> = ({
   preview,
   previewData,
 }) => {
+  const embeddedReadOnly = useReviewReadOnly();
+  const readOnly = preview || embeddedReadOnly;
   const [reviewState, dispatchReviewState] = useReducer(
     reviewWidgetReducer,
     initialReviewWidgetState
@@ -429,8 +432,7 @@ export const ReviewWidget: React.FC<ReviewWidgetProps> = ({
     field: 'mentalGrade' | 'technicalGrade',
     value: LetterGrade | NumericGrade
   ) => {
-    
-    if (preview) return;
+    if (readOnly) return;
 
     const file = plugin.app.vault.getAbstractFileByPath(filePath);
     if (!(file instanceof TFile)) return;
@@ -556,14 +558,14 @@ export const ReviewWidget: React.FC<ReviewWidgetProps> = ({
             label={t('widget.review.mental-game')}
             selectedGrade={mentalGrade}
             field="mentalGrade"
-            preview={preview}
+            preview={readOnly}
             onUpdateGrade={updateGrade}
           />
           <LetterGradeSection
             label={t('widget.review.technical-game')}
             selectedGrade={technicalGrade}
             field="technicalGrade"
-            preview={preview}
+            preview={readOnly}
             onUpdateGrade={updateGrade}
           />
         </div>
@@ -573,14 +575,14 @@ export const ReviewWidget: React.FC<ReviewWidgetProps> = ({
             label={t('widget.review.mental-game')}
             selectedGrade={mentalGrade}
             field="mentalGrade"
-            preview={preview}
+            preview={readOnly}
             onUpdateGrade={updateGrade}
           />
           <StarRatingSection
             label={t('widget.review.technical-game')}
             selectedGrade={technicalGrade}
             field="technicalGrade"
-            preview={preview}
+            preview={readOnly}
             onUpdateGrade={updateGrade}
           />
         </div>

@@ -95,6 +95,23 @@ function requirementRow(
   };
 
   switch (requirement.kind) {
+    case 'qualifying_days':
+      return {
+        ...base,
+        progressText: pair(
+          count(requirement.current),
+          count(requirement.target)
+        ),
+        progressRatio: ratioOf(requirement.current, requirement.target),
+        count: { current: requirement.current, target: requirement.target },
+        requirementText: t(
+          'account.prop-challenge.ledger.requirement.profitable-days',
+          {
+            days: count(requirement.target),
+            profit: money(requirement.minimumDailyProfit),
+          }
+        ),
+      };
     case 'cycle_days':
     case 'payout_count':
     case 'elapsed_hours': {

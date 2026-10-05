@@ -6,6 +6,7 @@ import React, {
   useRef,
   useMemo,
   useCallback,
+  useEffectEvent,
   useId,
 } from 'react';
 import { createPortal } from 'react-dom';
@@ -28,8 +29,6 @@ import {
   useGuideTarget,
 } from '../../guides/GuideRuntimeLayer';
 import {
-  LAYOUT_BUILDER_EMPTY_WIDGET_PICKER_TRIGGER_TARGET_ID,
-  LAYOUT_BUILDER_WIDGET_PICKER_OPENED_ACTION_ID,
   LAYOUT_BUILDER_WIDGET_PICKER_TARGET_ID,
   LAYOUT_BUILDER_WIDGET_SELECTED_ACTION_ID,
 } from '../../guides/layoutBuilderGuideIds';
@@ -58,6 +57,10 @@ interface WidgetPickerProps {
   
   onChange: (widget: WidgetDefinition) => void;
   placeholder?: string;
+  
+  autoOpen?: boolean;
+  
+  onCancel?: () => void;
 }
 
 const widgetMatchesQuery = (
@@ -71,6 +74,26 @@ const widgetMatchesQuery = (
   );
 };
 
+const flattenGroupedWidgets = (
+  grouped: ReturnType<typeof getWidgetsByCategory>
+): WidgetDefinition[] => Array.from(grouped.values()).flat();
+
+
+const getInitialFocusedIndexFor = (
+  candidateWidgets: WidgetDefinition[],
+  value: string,
+  valueConfig: Record<string, unknown> | undefined
+): number => {
+  const selectedIndex = candidateWidgets.findIndex((widget) =>
+    widgetMatchesPlacement(widget, value, valueConfig)
+  );
+  return selectedIndex >= 0
+    ? selectedIndex
+    : candidateWidgets.length > 0
+      ? 0
+      : -1;
+};
+
 export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
   ({
     value,
@@ -78,10 +101,13 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
     templateType,
     onChange,
     placeholder = t('widget.picker.placeholder'),
+    autoOpen = false,
+    onCancel,
   }) => {
-    const [isOpen, setIsOpen] = useState(false);
+    
+    
+    const [isOpen, setIsOpen] = useState(autoOpen);
     const [searchQuery, setSearchQuery] = useState('');
-    const [focusedIndex, setFocusedIndex] = useState(-1);
     const [dropdownPosition, setDropdownPosition] = useState({
       top: 0,
       bottom: 0,
@@ -92,9 +118,6 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
     });
     const emitGuideAction = useGuideAction();
     const currentGuideStepId = useGuideCurrentStepId();
-    const registerEmptyPickerTriggerTarget = useGuideTarget(
-      LAYOUT_BUILDER_EMPTY_WIDGET_PICKER_TRIGGER_TARGET_ID
-    );
     const registerWidgetPickerTarget = useGuideTarget(
       LAYOUT_BUILDER_WIDGET_PICKER_TARGET_ID
     );
@@ -118,13 +141,15 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
       () => getWidgetsByCategory(widgets),
       [widgets]
     );
-    const allFlatWidgets = useMemo(() => {
-      const flat: WidgetDefinition[] = [];
-      allGroupedWidgets.forEach((categoryWidgets) => {
-        flat.push(...categoryWidgets);
-      });
-      return flat;
-    }, [allGroupedWidgets]);
+    const allFlatWidgets = useMemo(
+      () => flattenGroupedWidgets(allGroupedWidgets),
+      [allGroupedWidgets]
+    );
+    const [focusedIndex, setFocusedIndex] = useState(() =>
+      autoOpen
+        ? getInitialFocusedIndexFor(allFlatWidgets, value, valueConfig)
+        : -1
+    );
 
     const groupedWidgets = useMemo(() => {
       const normalizedQuery = searchQuery.trim().toLocaleLowerCase();
@@ -138,13 +163,10 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
     }, [allGroupedWidgets, searchQuery, widgets]);
 
     
-    const flatWidgets = useMemo(() => {
-      const flat: WidgetDefinition[] = [];
-      groupedWidgets.forEach((categoryWidgets) => {
-        flat.push(...categoryWidgets);
-      });
-      return flat;
-    }, [groupedWidgets]);
+    const flatWidgets = useMemo(
+      () => flattenGroupedWidgets(groupedWidgets),
+      [groupedWidgets]
+    );
 
     
     const isWidgetSelected = useCallback(
@@ -159,17 +181,9 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
     }, [isWidgetSelected, widgets]);
 
     const getInitialFocusedIndex = useCallback(
-      (candidateWidgets: WidgetDefinition[]): number => {
-        const selectedIndex = candidateWidgets.findIndex((widget) =>
-          isWidgetSelected(widget)
-        );
-        return selectedIndex >= 0
-          ? selectedIndex
-          : candidateWidgets.length > 0
-            ? 0
-            : -1;
-      },
-      [isWidgetSelected]
+      (candidateWidgets: WidgetDefinition[]): number =>
+        getInitialFocusedIndexFor(candidateWidgets, value, valueConfig),
+      [value, valueConfig]
     );
 
     const openDropdown = useCallback(() => {
@@ -183,6 +197,19 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
       setFocusedIndex(-1);
       setIsOpen(false);
     }, []);
+
+    const onCancelRef = useRef(onCancel);
+    useEffect(() => {
+      onCancelRef.current = onCancel;
+    }, [onCancel]);
+
+    const cancelDropdown = useCallback(
+      (focusTrigger = false) => {
+        closeDropdown(focusTrigger);
+        onCancelRef.current?.();
+      },
+      [closeDropdown]
+    );
 
     useEffect(() => {
       if (isOpen) {
@@ -255,24 +282,24 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
     }, [isOpen, updateDropdownPosition]);
 
     
+    const onDocumentMouseDown = useEffectEvent((event: MouseEvent) => {
+      const target = event.target;
+      if (
+        target instanceof Node &&
+        (containerRef.current?.contains(target) ||
+          dropdownRef.current?.contains(target))
+      ) {
+        return;
+      }
+
+      cancelDropdown();
+    });
+
     useEffect(() => {
       if (!isOpen) return;
 
       const handleClickOutside = (event: MouseEvent) => {
-        const target = event.target;
-        if (!(target instanceof Node)) {
-          closeDropdown();
-          return;
-        }
-
-        if (
-          containerRef.current?.contains(target) ||
-          dropdownRef.current?.contains(target)
-        ) {
-          return;
-        }
-
-        closeDropdown();
+        onDocumentMouseDown(event);
       };
 
       window.activeDocument.addEventListener('mousedown', handleClickOutside);
@@ -281,7 +308,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
           'mousedown',
           handleClickOutside
         );
-    }, [closeDropdown, isOpen]);
+    }, [isOpen]);
 
     const handleSelect = useCallback(
       (widget: WidgetDefinition) => {
@@ -326,7 +353,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
             event.preventDefault();
             event.stopPropagation();
             event.stopImmediatePropagation();
-            closeDropdown(true);
+            cancelDropdown(true);
             break;
           case 'ArrowDown':
             event.preventDefault();
@@ -348,7 +375,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
             break;
         }
       },
-      [closeDropdown, flatWidgets, focusedIndex, handleSelect]
+      [cancelDropdown, flatWidgets, focusedIndex, handleSelect]
     );
     const handleGlobalKeyDownRef = useRef(handleGlobalKeyDown);
 
@@ -416,38 +443,18 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
       [registerWidgetPickerTarget]
     );
 
-    useEffect(() => {
-      if (!isOpen) {
-        return;
-      }
-
-      emitGuideAction(LAYOUT_BUILDER_WIDGET_PICKER_OPENED_ACTION_ID);
-    }, [emitGuideAction, isOpen]);
-
     const handleGuideBack = useCallback(
       async ({ toStepId }: { toStepId: string }) => {
-        if (toStepId === 'choose-widget') {
-          if (!value) {
-            triggerRef.current?.scrollIntoView({
-              block: 'center',
-              inline: 'nearest',
-            });
-            await new Promise((resolve) => window.setTimeout(resolve, 100));
-            openDropdown();
-            await new Promise((resolve) => window.setTimeout(resolve, 0));
-          }
-          return;
-        }
-
-        if (
-          toStepId === 'open-widget-picker' ||
-          toStepId === 'widget-library-docs'
-        ) {
-          closeDropdown();
-          await new Promise((resolve) => window.setTimeout(resolve, 0));
-        }
+        if (toStepId !== 'choose-widget' || value) return;
+        triggerRef.current?.scrollIntoView({
+          block: 'center',
+          inline: 'nearest',
+        });
+        await new Promise((resolve) => window.setTimeout(resolve, 100));
+        openDropdown();
+        await new Promise((resolve) => window.setTimeout(resolve, 0));
       },
-      [closeDropdown, openDropdown, value]
+      [openDropdown, value]
     );
 
     useGuideBackHandler(handleGuideBack);
@@ -465,14 +472,6 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
         } else {
           openDropdown();
         }
-        return;
-      }
-
-      if (
-        currentGuideStepId === 'open-widget-picker' ||
-        currentGuideStepId === 'widget-library-docs'
-      ) {
-        closeDropdown();
       }
     }, [closeDropdown, currentGuideStepId, openDropdown, value]);
 
@@ -536,12 +535,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
           </div>
         ) : (
           <button
-            ref={(element) => {
-              triggerRef.current = element;
-              if (!value) {
-                registerEmptyPickerTriggerTarget(element);
-              }
-            }}
+            ref={triggerRef}
             type="button"
             onClick={openDropdown}
             onKeyDown={handleTriggerKeyDown}

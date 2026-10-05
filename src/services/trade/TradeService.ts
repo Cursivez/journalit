@@ -135,6 +135,7 @@ import {
   migrateTradeReviewFrontmatterToMarkdown,
   parseTradeReviewMarkdown,
   repairLegacyTradeReviewMarkdown,
+  isLegacyOnlyTradeReviewQuestionId,
   TRADE_REVIEW_MARKDOWN_MIGRATION_VERSION,
   upsertTradeReviewMarkdownQuestion,
 } from './core/TradeReviewMarkdownCodec';
@@ -5496,6 +5497,7 @@ export class TradeService extends CustomDataService {
     const affectedTradingDays = new Set<string>();
     const drcFiles: Array<{ file: TFile; date: string }> = [];
     let scannedTrades = 0;
+    let legacyReviewedTrades = 0;
     let repairedTrades = 0;
     let scannedDrcs = 0;
     let migratedDrcs = 0;
@@ -5531,6 +5533,19 @@ export class TradeService extends CustomDataService {
         const review = parseTradeReviewMarkdown(currentContent);
         if (!review || Object.keys(review.sections).length === 0) continue;
         scannedTrades++;
+
+        
+        
+        
+        
+        
+        if (
+          !plan.hasPersistedQuestionSource &&
+          !Object.keys(review.sections).some(isLegacyOnlyTradeReviewQuestionId)
+        ) {
+          continue;
+        }
+        legacyReviewedTrades++;
 
         for (const tradingDay of getReviewMigrationTradingDays(
           frontmatter,
@@ -5595,9 +5610,16 @@ export class TradeService extends CustomDataService {
 
     const reviewV2Settings = plugin.settings.reviewV2;
     const templateSettings = plugin.settings.templates;
+    
+    
+    
+    
+    const legacyQuestionsInUse =
+      legacyReviewedTrades > 0 || plan.hasPersistedQuestionSource;
     if (
       reviewV2Settings &&
       templateSettings &&
+      legacyQuestionsInUse &&
       Object.keys(plan.widgetConfig).length > 0
     ) {
       const templateService = new ReviewTemplateService(plugin);

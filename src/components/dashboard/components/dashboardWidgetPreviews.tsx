@@ -428,7 +428,7 @@ interface MetricSample {
   mainPart?: string;
   decimalPart?: string;
   isPositive?: boolean;
-  delta: StatDelta;
+  delta?: StatDelta;
 }
 
 const up = (value: string): StatDelta => ({
@@ -461,6 +461,7 @@ export const DASHBOARD_METRIC_PREVIEWS: Record<string, MetricSample> = {
   winRate: { value: '62.5%', delta: up('4.2%') },
   profitFactor: { value: '1.84', isPositive: true, delta: up('0.21') },
   sharpeRatio: { value: '1.12', isPositive: true, delta: up('0.08') },
+  calmarRatio: { value: '1.54', isPositive: true },
   expectancy: money('$57', '.20', true, up('$6.40')),
   maxDrawdown: {
     value: '-8.4%',

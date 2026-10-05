@@ -5,6 +5,10 @@ import React, { useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { t } from '../../../../lang/helpers';
 import { FastDateTimeInput } from '../../../core/FastDateTimeInput';
+import {
+  DateDraftGateContext,
+  useDateDraftGate,
+} from '../../../core/DateDraftGate';
 import { Button } from '../../../ui/Button';
 
 interface TransitionModalOptions {
@@ -41,12 +45,13 @@ export const PropChallengeTransitionModalContent: React.FC<{
   onConfirm,
   onCancel,
 }) => {
+  const dateDraftGate = useDateDraftGate();
   const [at, setAt] = useState(
     () => defaultAt ?? targetReachedAt ?? new Date()
   );
 
   return (
-    <>
+    <DateDraftGateContext.Provider value={dateDraftGate}>
       {context && (
         <p className="journalit-prop-transition-modal__context">{context}</p>
       )}
@@ -93,12 +98,15 @@ export const PropChallengeTransitionModalContent: React.FC<{
           
           
           
-          onClick={() => onConfirm(at.getTime() > Date.now() ? new Date() : at)}
+          onClick={() => {
+            if (dateDraftGate.confirm())
+              onConfirm(at.getTime() > Date.now() ? new Date() : at);
+          }}
         >
           {t('button.confirm')}
         </Button>
       </div>
-    </>
+    </DateDraftGateContext.Provider>
   );
 };
 

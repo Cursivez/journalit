@@ -46,14 +46,13 @@ export const ImageAnnotationFields: React.FC<ImageAnnotationFieldsProps> = ({
           onChange={(tags) =>
             onChange({
               ...value,
-              tags: Array.isArray(tags) ? tags : [tags],
+              tags,
             })
           }
           isMulti
           allowCreate
           placeholder={t('imageGallery.annotation.tags-placeholder')}
           onSaveOption={handleSaveTag}
-          optionType={OptionType.TAG}
         />
       </div>
 

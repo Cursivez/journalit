@@ -116,7 +116,6 @@ export const SetupPairTrendChart: React.FC<SetupPairTrendChartProps> = ({
           strokeWidth={1.4}
         />
         <XAxis
-          className="journalit-chart-axis--numeric"
           dataKey="index"
           domain={['dataMin', 'dataMax']}
           height={16}
@@ -128,7 +127,6 @@ export const SetupPairTrendChart: React.FC<SetupPairTrendChartProps> = ({
           type="number"
         />
         <YAxis
-          className="journalit-chart-axis--numeric"
           domain={axis.domain}
           tickFormatter={formatAxisValue}
           tickLine={true}

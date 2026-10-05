@@ -301,7 +301,6 @@ export const SharedSetupPerformanceChart: React.FC<
         />
 
         <YAxis
-          className="journalit-chart-axis--numeric"
           tickFormatter={formatYAxisTick}
           tick={{ fontSize: 11, fontWeight: 500, fill: 'var(--text-muted)' }}
           domain={domain}
@@ -596,7 +595,6 @@ export const SetupPerformanceRankingChart: React.FC<
           strokeOpacity={0.35}
         />
         <XAxis
-          className="journalit-chart-axis--numeric"
           type="number"
           domain={axisConfig.domain}
           ticks={axisConfig.ticks}
@@ -958,7 +956,6 @@ export const SetupCompareEdgeBreakdownChart: React.FC<{
           strokeOpacity={0.3}
         />
         <XAxis
-          className="journalit-chart-axis--numeric"
           type="number"
           domain={axisConfig.domain}
           ticks={axisConfig.ticks}
@@ -1138,7 +1135,6 @@ export const SetupCompareCumulativeChart: React.FC<{
           />
           <XAxis dataKey="label" tickLine={false} axisLine={false} />
           <YAxis
-            className="journalit-chart-axis--numeric"
             width={yAxisWidth}
             tickLine={false}
             axisLine={false}

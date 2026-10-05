@@ -16,6 +16,7 @@ import { useGuideTarget } from '../../../../guides/GuideRuntimeLayer';
 import { ACCOUNT_PAGE_CHALLENGE_SECTION_TARGET_ID } from '../../../../guides/accountPageGuideIds';
 import { PropChallengePhaseNav } from './PropChallengePhaseNav';
 import { openProfileSourceModal } from './ProfileUpdateModal';
+import { openCorrectionHistoryModal } from './CorrectionHistoryModal';
 import { PropFirmRuleUpdatesTeaser } from './PropFirmPrefillTeaser';
 import { PropChallengeRuleLedger } from './PropChallengeRuleLedger';
 import { PropChallengePayoutCard } from './PropChallengePayoutCard';
@@ -112,6 +113,14 @@ export const PropChallengeSection: React.FC<{
 
   const applyAction = async (action: PropChallengeManualAction) => {
     if (!plugin?.accountPageService) return;
+    if (action === 'rule-corrections') {
+      openCorrectionHistoryModal({
+        app: plugin.app,
+        config: challenge,
+        phase: selectedPhase,
+      });
+      return;
+    }
     if (action === 'link-rules') {
       openProfileSourceModal({
         plugin,
@@ -154,6 +163,18 @@ export const PropChallengeSection: React.FC<{
   const isConcluded =
     challenge.status === 'passed' || challenge.status === 'failed';
   const actions: PropChallengeMenuAction[] = [
+    ...(!outcomeMasked &&
+    challenge.correctionHistory?.some(
+      (audit) => audit.before.id === selectedPhase.id
+    )
+      ? [
+          {
+            id: 'rule-corrections' as const,
+            label: t('account.profiles.correction-history'),
+            disabled: false,
+          },
+        ]
+      : []),
     {
       id: 'advance',
       label: nextPhase

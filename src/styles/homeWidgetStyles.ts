@@ -532,9 +532,15 @@ export const HOME_WIDGET_STYLES = `
   
   .journalit-home-position {
     height: 100%;
+    min-height: 0;
+    overflow: hidden auto;
     display: flex;
     flex-direction: column;
     gap: 8px;
+  }
+
+  .journalit-home-position > * {
+    flex-shrink: 0;
   }
 
   .journalit-home-position__header {
@@ -585,7 +591,7 @@ export const HOME_WIDGET_STYLES = `
 
   .journalit-home-position__grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     gap: 8px;
   }
 
@@ -1436,6 +1442,7 @@ export const HOME_WIDGET_STYLES = `
   }
 
   .journalit-home-eval-roi__gauge-svg {
+    --no-tooltip: true;
     display: block;
     width: 100%;
     height: auto;

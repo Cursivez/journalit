@@ -21,7 +21,6 @@ import {
 import {
   policyAt,
   sameProfileContent,
-  ruleDefinition,
 } from '../../../../services/propChallenge/PropChallengePolicyHistory';
 import { eventBus } from '../../../../services/events/EventBus';
 import { t } from '../../../../lang/helpers';
@@ -31,7 +30,7 @@ import Checkbox from '../../../ui/Checkbox';
 import { DropdownSelect } from '../../../shared/DropdownSelect';
 import { CollapsibleSection } from '../../../shared/CollapsibleSection';
 import { ProfilePolicyComparison } from './ProfilePolicyComparison';
-import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
+import { CorrectionAuditHistory } from './CorrectionAuditHistory';
 
 type Preview = Awaited<ReturnType<typeof previewCatalogCorrection>> & {
   at: Date;
@@ -83,92 +82,6 @@ function CorrectionDetails({
       <a href={sourceUrl} target="_blank" rel="noopener noreferrer">
         {t('account.profiles.correction-source')}
       </a>
-    </CollapsibleSection>
-  );
-}
-
-export function CorrectionAuditHistory({
-  config,
-  standalone = false,
-}: {
-  config: PropChallengeConfig;
-  standalone?: boolean;
-}) {
-  const { shouldMask } = useDisplayFormatter();
-  const masked = shouldMask('money');
-  if (!config.correctionHistory?.length) return null;
-  const content = (
-    <>
-      {config.correctionHistory.map((audit) => (
-        <div key={audit.id}>
-          <p>
-            {new Date(audit.appliedAt).toLocaleDateString()} ·{' '}
-            {audit.before.name}
-          </p>
-          {masked && <p>{t('settings.general.privacy-mode')}</p>}
-          {!masked &&
-            (
-              audit.after.policyHistory ?? [
-                {
-                  effectiveAt: audit.after.startedAt ?? audit.appliedAt,
-                  rules: audit.after.rules,
-                  payoutPolicy: audit.after.payoutPolicy,
-                },
-              ]
-            ).map((revision) => {
-              const original = policyAt(
-                audit.before,
-                new Date(revision.effectiveAt)
-              );
-              if (
-                sameProfileContent(
-                  original.rules.map(ruleDefinition),
-                  revision.rules.map(ruleDefinition)
-                ) &&
-                sameProfileContent(original.payoutPolicy, revision.payoutPolicy)
-              )
-                return null;
-              return (
-                <div key={revision.effectiveAt}>
-                  <p>
-                    {t('account.profiles.correction-period')}:{' '}
-                    {new Date(revision.effectiveAt).toLocaleDateString()}
-                  </p>
-                  <ProfilePolicyComparison
-                    current={{ ...audit.before, ...original }}
-                    incoming={{ ...audit.after, ...revision }}
-                    currencyCode={audit.currencyCode}
-                  />
-                </div>
-              );
-            })}
-          {!masked && (
-            <CorrectionDetails sourceUrl={audit.correction.sourceUrl}>
-              <p>{new Date(audit.appliedAt).toLocaleString()}</p>
-              {(
-                audit.after.policyHistory ??
-                (audit.after.startedAt
-                  ? [{ effectiveAt: audit.after.startedAt }]
-                  : [])
-              ).map((revision) => (
-                <p key={revision.effectiveAt}>
-                  {new Date(revision.effectiveAt).toLocaleString()}
-                </p>
-              ))}
-            </CorrectionDetails>
-          )}
-        </div>
-      ))}
-    </>
-  );
-  return standalone ? (
-    content
-  ) : (
-    <CollapsibleSection
-      title={t('account.profiles.correction-history')}
-      defaultOpen={false}
-    >
-      {content}
     </CollapsibleSection>
   );
 }

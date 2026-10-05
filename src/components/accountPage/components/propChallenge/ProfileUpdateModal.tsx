@@ -19,12 +19,11 @@ import { t } from '../../../../lang/helpers';
 import { Button } from '../../../ui/Button';
 import { CurrencyCode } from '../../../../utils/currencyConfig';
 import { DropdownSelect } from '../../../shared/DropdownSelect';
+import { ModalEscapeProvider } from '../../../shared/disclosureEscape';
 import { personalProfileSelection } from '../../../../services/propChallenge/PersonalPropFirmProfiles';
 import { ProfileUpdateReview } from './ProfileUpdateReview';
-import {
-  ProfileCorrectionReview,
-  CorrectionAuditHistory,
-} from './ProfileCorrectionReview';
+import { ProfileCorrectionReview } from './ProfileCorrectionReview';
+import { CorrectionAuditHistory } from './CorrectionAuditHistory';
 import {
   resolveProfileApplicability,
   profilePolicyHash,
@@ -68,9 +67,11 @@ class ProfileUpdateModal extends Modal {
     });
     this.root = createRoot(container);
     this.root.render(
-      <DisplayPolicyProvider privacyModeOverride={false}>
-        <ProfileReviewFlow {...this.options} onClose={() => this.close()} />
-      </DisplayPolicyProvider>
+      <ModalEscapeProvider app={this.app} scope={this.scope}>
+        <DisplayPolicyProvider privacyModeOverride={false}>
+          <ProfileReviewFlow {...this.options} onClose={() => this.close()} />
+        </DisplayPolicyProvider>
+      </ModalEscapeProvider>
     );
   }
   onClose() {
@@ -95,32 +96,6 @@ export function openProfileUpdateModal(options: Options): void {
       comparison: options.comparison,
     },
   }).open();
-}
-
-export function openCorrectionHistoryModal({
-  plugin,
-  account,
-}: Pick<Options, 'plugin' | 'account'>): void {
-  if (!account.propChallenge?.correctionHistory?.length) return;
-  const config = structuredClone(account.propChallenge);
-  const modal = new Modal(plugin.app);
-  let root: Root | undefined;
-  modal.onOpen = () => {
-    modal.modalEl.addClass('journalit-profile-update-modal');
-    modal.titleEl.setText(
-      `${t('account.profiles.correction-history')} · ${account.name}`
-    );
-    root = createRoot(
-      modal.contentEl.createDiv({ cls: 'journalit-profile-review' })
-    );
-    root.render(
-      <DisplayPolicyProvider>
-        <CorrectionAuditHistory config={config} standalone />
-      </DisplayPolicyProvider>
-    );
-  };
-  modal.onClose = () => root?.unmount();
-  modal.open();
 }
 
 export function openProfileSourceModal(

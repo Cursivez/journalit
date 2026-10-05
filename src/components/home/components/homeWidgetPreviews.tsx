@@ -488,7 +488,7 @@ export const HOME_WIDGET_PREVIEWS: Record<
   ),
   aum: () => (
     <Mini className="journalit-wpd-aum">
-      <Eyebrow aside={t('home.widget.aum.period.all')}>
+      <Eyebrow aside={t('home.widget.aum.current-trend')}>
         {t('home.widget.aum.title')}
       </Eyebrow>
       <svg

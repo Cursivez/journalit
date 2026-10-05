@@ -1,5 +1,5 @@
 import type { AccountData, AccountTransaction } from '../account/types';
-import { parseLocalDateSafe } from '../../utils/dateUtils';
+import { calculateAccountTotalCosts } from '../account/accountCosts';
 import { TransactionType } from '../account/types';
 import type { PropChallengeConfig, PropChallengePhase } from './types';
 import { resolvePropChallengePayoutPhaseAt } from './PropChallengeConfig';
@@ -209,10 +209,7 @@ export function aggregatePropFirmStats(
       >(),
     };
     const outcome = getPropChallengeOutcome(challenge);
-    const totalCosts = (challenge.oneTimeCosts ?? []).reduce(
-      (sum, cost) => sum + cost.amount,
-      0
-    );
+    const totalCosts = calculateAccountTotalCosts(account);
     const totalPayouts = fundedPhasePayoutTotal(
       challenge,
       account.transactions
@@ -313,10 +310,7 @@ export function aggregatePropChallengeStats(
     if (outcome === 'passed') passedChallenges += 1;
     if (outcome === 'failed') failedChallenges += 1;
 
-    const accountCosts = (challenge.oneTimeCosts ?? []).reduce(
-      (sum, cost) => sum + cost.amount,
-      0
-    );
+    const accountCosts = calculateAccountTotalCosts(account);
     const accountPayouts = fundedPhasePayoutTotal(
       challenge,
       account.transactions
@@ -390,7 +384,12 @@ interface PropChallengeEconomics {
 
 export function aggregatePropChallengeEconomics(
   accounts: readonly AccountData[],
-  includeDate: (date: Date) => boolean = () => true
+  period?: {
+    
+    includesCostDate: (date: Date) => boolean;
+    
+    includesPayoutTimestamp: (timestamp: Date) => boolean;
+  }
 ): PropChallengeEconomics {
   let challengeCount = 0;
   const totalsByCurrency = new Map<
@@ -403,17 +402,15 @@ export function aggregatePropChallengeEconomics(
     if (!challenge) continue;
     challengeCount += 1;
 
-    let accountCosts = 0;
-    for (const cost of challenge.oneTimeCosts ?? []) {
-      
-      const costDate = parseLocalDateSafe(cost.date);
-      if (costDate && includeDate(costDate)) accountCosts += cost.amount;
-    }
+    const accountCosts = calculateAccountTotalCosts(
+      account,
+      period?.includesCostDate
+    );
     let accountPayouts = 0;
     for (const transaction of account.transactions) {
       if (transaction.type !== TransactionType.WITHDRAWAL) continue;
       const date = new Date(transaction.date);
-      if (!includeDate(date)) continue;
+      if (period && !period.includesPayoutTimestamp(date)) continue;
       
       
       if (!resolvePropChallengePayoutPhaseAt(challenge, date)) continue;

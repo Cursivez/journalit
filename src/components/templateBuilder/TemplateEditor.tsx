@@ -52,17 +52,16 @@ import {
   useGuideCurrentStepId,
   useGuideBackHandler,
   useGuideTarget,
+  useVisibleGuideStepId,
 } from '../../guides/GuideRuntimeLayer';
 import {
   LAYOUT_BUILDER_ADD_WIDGET_BUTTON_TARGET_ID,
-  LAYOUT_BUILDER_EDITOR_MODE_BUTTON_TARGET_ID,
   LAYOUT_BUILDER_EDITOR_PANEL_TARGET_ID,
-  LAYOUT_BUILDER_PREVIEW_TARGET_ID,
-  LAYOUT_BUILDER_EDITOR_MODE_OPENED_ACTION_ID,
+  LAYOUT_BUILDER_INSERT_SLOT_TARGET_ID,
   LAYOUT_BUILDER_SAVE_BUTTON_TARGET_ID,
+  LAYOUT_BUILDER_WHATS_NEW_INSERT_SLOT_STEP_ID,
   LAYOUT_BUILDER_TEMPLATE_SAVED_ACTION_ID,
   LAYOUT_BUILDER_WIDGET_ADDED_ACTION_ID,
-  LAYOUT_BUILDER_WIDGET_LIBRARY_DOCS_TARGET_ID,
 } from '../../guides/layoutBuilderGuideIds';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { TradeReviewQuestionEditor } from './TradeReviewQuestionEditor';
@@ -77,6 +76,7 @@ import {
   TRADE_REVIEW_QUESTION_CONFIG_KEY_LIST,
 } from '../reviewV2/widgets/tradeReviewConfig';
 import { mergeClassNames } from '../../utils/classNames';
+import { WidgetInsertSlot, getFirstInsertableIndex } from './WidgetInsertSlot';
 
 interface TemplateEditorProps {
   plugin: JournalitPlugin;
@@ -86,7 +86,9 @@ interface TemplateEditorProps {
   onTemplateChange?: () => void;
   onDirtyStateChange?: (isDirty: boolean) => void;
   
-  onViewModeChange?: (viewMode: 'editor' | 'preview') => void;
+  onCanEditChange?: (canEdit: boolean) => void;
+  
+  openInEditor?: boolean;
 }
 
 const parseReviewContextFieldsSelectionMode = (
@@ -306,6 +308,11 @@ interface SortableWidgetItemProps {
   onConfigChange: (index: number, config: Record<string, unknown>) => void;
   onDuplicate: (index: number) => void;
   onRemove: (index: number) => void;
+  
+  isJustAdded: boolean;
+  onPickerCancel: (index: number) => void;
+  
+  insertSlotBefore: React.ReactNode;
 }
 
 const cloneWidgetPlacements = (
@@ -397,6 +404,9 @@ function useSortableWidgetItemContent({
   onConfigChange,
   onDuplicate,
   onRemove,
+  isJustAdded,
+  onPickerCancel,
+  insertSlotBefore,
 }: SortableWidgetItemProps): React.ReactNode {
   const reviewContextDisplayOptions = getReviewContextDisplayOptions();
   const {
@@ -703,8 +713,13 @@ function useSortableWidgetItemContent({
         CSS.Translate.toString(transform),
         isDragging ? transition : undefined
       )}
-      className={`template-section-card${isDragging ? ' is-dragging' : ''}`}
+      className={mergeClassNames(
+        'template-section-card',
+        isDragging && 'is-dragging',
+        isJustAdded && 'template-section-card--just-added'
+      )}
     >
+      {insertSlotBefore}
       
       <div className="template-widget-row">
         
@@ -741,6 +756,8 @@ function useSortableWidgetItemContent({
               templateType={templateType}
               onChange={(w) => onWidgetChange(index, w)}
               placeholder={t('templateEditor.widget.select-placeholder')}
+              autoOpen={isJustAdded && !widget.type}
+              onCancel={() => onPickerCancel(index)}
             />
           ) : (
             <div className="template-widget-info-row">
@@ -1488,14 +1505,21 @@ function useTemplateEditorModel({
   templateType,
   onTemplateChange,
   onDirtyStateChange,
-  onViewModeChange,
+  onCanEditChange,
+  openInEditor = false,
 }: TemplateEditorProps) {
   
   const [template, setTemplate] = useState<ReviewTemplate | null>(null);
-  const [viewMode, setViewMode] = useState<ViewMode>('preview');
-  useEffect(() => {
-    onViewModeChange?.(viewMode);
-  }, [onViewModeChange, viewMode]);
+  const [viewMode, setViewMode] = useState<ViewMode>(
+    openInEditor ? 'editor' : 'preview'
+  );
+  
+  
+  const [lastTemplateId, setLastTemplateId] = useState(templateId);
+  if (templateId !== lastTemplateId) {
+    setLastTemplateId(templateId);
+    if (openInEditor) setViewMode('editor');
+  }
   const [editingName, setEditingName] = useState('');
   const [editingWidgets, setEditingWidgetsState] = useState<WidgetPlacement[]>(
     []
@@ -1522,38 +1546,52 @@ function useTemplateEditorModel({
   const widgetEditorIdsRef = useRef<WeakMap<WidgetPlacement, string>>(
     new WeakMap()
   );
-  const guideAddedWidgetIndexRef = useRef<number | null>(null);
+  
+  const guideAddedWidgetIdRef = useRef<string | null>(null);
+  const [justAddedEditorId, setJustAddedEditorId] = useState<string | null>(
+    null
+  );
+  const [isSorting, setIsSorting] = useState(false);
   const emitGuideAction = useGuideAction();
   const currentGuideStepId = useGuideCurrentStepId();
-  const registerEditorModeButtonTarget = useGuideTarget(
-    LAYOUT_BUILDER_EDITOR_MODE_BUTTON_TARGET_ID
-  );
   const registerEditorPanelTarget = useGuideTarget(
     LAYOUT_BUILDER_EDITOR_PANEL_TARGET_ID
   );
   const registerAddWidgetButtonTarget = useGuideTarget(
     LAYOUT_BUILDER_ADD_WIDGET_BUTTON_TARGET_ID
   );
-  const registerPreviewTarget = useGuideTarget(
-    LAYOUT_BUILDER_PREVIEW_TARGET_ID
-  );
-  const registerWidgetLibraryDocsTarget = useGuideTarget(
-    LAYOUT_BUILDER_WIDGET_LIBRARY_DOCS_TARGET_ID
-  );
   const registerSaveButtonTarget = useGuideTarget(
     LAYOUT_BUILDER_SAVE_BUTTON_TARGET_ID
   );
+  const registerInsertSlotTarget = useGuideTarget(
+    LAYOUT_BUILDER_INSERT_SLOT_TARGET_ID
+  );
+  const isInsertSlotGuideStepVisible =
+    useVisibleGuideStepId() === LAYOUT_BUILDER_WHATS_NEW_INSERT_SLOT_STEP_ID;
 
   
-  const loadTemplate = useCallback(() => {
-    const templates = templateService.getTemplates(templateType);
-    const found = templates.find((t) => t.id === templateId);
-    if (found) {
-      setTemplate(found);
-      setEditingName(found.name);
-      commitEditingWidgets(cloneWidgetPlacements(found.widgets));
-    }
-  }, [commitEditingWidgets, templateService, templateId, templateType]);
+  
+  const loadTemplate = useCallback(
+    (savedWidgets?: WidgetPlacement[]) => {
+      const templates = templateService.getTemplates(templateType);
+      const found = templates.find((t) => t.id === templateId);
+      if (found) {
+        setTemplate(found);
+        setEditingName(found.name);
+        const widgets = cloneWidgetPlacements(found.widgets);
+        if (savedWidgets?.length === widgets.length) {
+          widgets.forEach((widget, index) => {
+            const editorId = widgetEditorIdsRef.current.get(
+              savedWidgets[index]
+            );
+            if (editorId) widgetEditorIdsRef.current.set(widget, editorId);
+          });
+        }
+        commitEditingWidgets(widgets);
+      }
+    },
+    [commitEditingWidgets, templateService, templateId, templateType]
+  );
 
   useEffect(() => {
     loadTemplate();
@@ -1610,6 +1648,14 @@ function useTemplateEditorModel({
 
   
   const canEdit = viewMode === 'editor' && template && !template.isBuiltIn;
+
+  
+  
+  const isEditable = !!canEdit;
+  useEffect(() => {
+    onCanEditChange?.(isEditable);
+    return () => onCanEditChange?.(false);
+  }, [isEditable, onCanEditChange]);
   const getWidgetEditorId = useCallback((widget: WidgetPlacement): string => {
     const existingId = widgetEditorIdsRef.current.get(widget);
     if (existingId) {
@@ -1634,7 +1680,10 @@ function useTemplateEditorModel({
         name: editingName,
         widgets: editingWidgets,
       });
-      loadTemplate();
+      loadTemplate(editingWidgets);
+      
+      
+      guideAddedWidgetIdRef.current = null;
       onTemplateChange?.();
       emitGuideAction(LAYOUT_BUILDER_TEMPLATE_SAVED_ACTION_ID);
       new Notice(t('notice.template-saved'));
@@ -1666,11 +1715,49 @@ function useTemplateEditorModel({
   }, [commitEditingWidgets, template]);
 
   
+  const replaceWidgetPlacement = useCallback(
+    (previous: WidgetPlacement, next: WidgetPlacement): WidgetPlacement => {
+      widgetEditorIdsRef.current.set(next, getWidgetEditorId(previous));
+      return next;
+    },
+    [getWidgetEditorId]
+  );
+
+  
+  const handleInsertWidget = useCallback(
+    (index: number) => {
+      const placement: WidgetPlacement = { type: '' };
+      const editorId = getWidgetEditorId(placement);
+      commitEditingWidgets((currentWidgets) => {
+        const nextWidgets = [...currentWidgets];
+        nextWidgets.splice(index, 0, placement);
+        return nextWidgets;
+      });
+      guideAddedWidgetIdRef.current = editorId;
+      setJustAddedEditorId(editorId);
+      emitGuideAction(LAYOUT_BUILDER_WIDGET_ADDED_ACTION_ID);
+    },
+    [commitEditingWidgets, emitGuideAction, getWidgetEditorId]
+  );
+
   const handleAddWidget = useCallback(() => {
-    guideAddedWidgetIndexRef.current = editingWidgetsRef.current.length;
-    commitEditingWidgets((currentWidgets) => [...currentWidgets, { type: '' }]);
-    emitGuideAction(LAYOUT_BUILDER_WIDGET_ADDED_ACTION_ID);
-  }, [commitEditingWidgets, emitGuideAction]);
+    handleInsertWidget(editingWidgetsRef.current.length);
+  }, [handleInsertWidget]);
+
+  
+  
+  
+  const handlePickerCancel = useCallback(
+    (index: number) => {
+      if (currentGuideStepId === 'choose-widget') return;
+      const widget = editingWidgetsRef.current[index];
+      if (!widget || widget.type) return;
+      commitEditingWidgets((currentWidgets) =>
+        currentWidgets.filter((current) => current !== widget)
+      );
+    },
+    [commitEditingWidgets, currentGuideStepId]
+  );
 
   const handleRemoveWidget = useCallback(
     (index: number) => {
@@ -1729,33 +1816,29 @@ function useTemplateEditorModel({
         nextWidget.id = `images-${generateUUID()}`;
       }
 
-      widgetEditorIdsRef.current.set(
-        nextWidget,
-        getWidgetEditorId(newWidgets[index])
-      );
-      newWidgets[index] = nextWidget;
+      newWidgets[index] = replaceWidgetPlacement(newWidgets[index], nextWidget);
       commitEditingWidgets(newWidgets);
     },
-    [commitEditingWidgets, getWidgetEditorId]
+    [commitEditingWidgets, replaceWidgetPlacement]
   );
 
   const handleWidgetConfigChange = useCallback(
     (index: number, config: Record<string, unknown>) => {
       const newWidgets = [...editingWidgetsRef.current];
       const nextWidget = { ...newWidgets[index], config };
-      widgetEditorIdsRef.current.set(
-        nextWidget,
-        getWidgetEditorId(newWidgets[index])
-      );
-      newWidgets[index] = nextWidget;
+      newWidgets[index] = replaceWidgetPlacement(newWidgets[index], nextWidget);
       commitEditingWidgets(newWidgets);
     },
-    [commitEditingWidgets, getWidgetEditorId]
+    [commitEditingWidgets, replaceWidgetPlacement]
   );
+
+  const handleDragStart = useCallback(() => setIsSorting(true), []);
+  const handleDragCancel = useCallback(() => setIsSorting(false), []);
 
   
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
+      setIsSorting(false);
       const { active, over } = event;
       if (!over || active.id === over.id) return;
 
@@ -1791,76 +1874,70 @@ function useTemplateEditorModel({
 
   const handleGuideBack = useCallback(
     ({ toStepId }: { toStepId: string }) => {
-      if (
-        toStepId === 'intro' ||
-        toStepId === 'sidebar-overview' ||
-        toStepId === 'pick-built-in-template' ||
-        toStepId === 'preview-template'
-      ) {
+      if (toStepId === 'intro' || toStepId === 'create-own-layout') {
+        setJustAddedEditorId(null);
         setViewMode('preview');
         return;
       }
 
+      
+      
+      const targetStepId =
+        toStepId === 'save-template' && !hasChanges ? 'add-widget' : toStepId;
+      const redirect =
+        targetStepId === toStepId ? undefined : { toStepId: targetStepId };
+
       if (
-        toStepId === 'switch-to-editor' ||
-        toStepId === 'editor-overview' ||
-        toStepId === 'duplicate-template' ||
-        toStepId === 'add-widget' ||
-        toStepId === 'open-widget-picker' ||
-        toStepId === 'choose-widget' ||
-        toStepId === 'widget-library-docs' ||
-        toStepId === 'save-template' ||
-        toStepId === 'set-default-template'
+        targetStepId === 'editor-overview' ||
+        targetStepId === 'add-widget' ||
+        targetStepId === 'choose-widget' ||
+        targetStepId === 'save-template' ||
+        targetStepId === 'set-default-template'
       ) {
         setViewMode('editor');
       }
 
-      const guideAddedWidgetIndex = guideAddedWidgetIndexRef.current;
+      const guideAddedWidgetId = guideAddedWidgetIdRef.current;
 
-      if (toStepId === 'add-widget' && guideAddedWidgetIndex !== null) {
+      if (targetStepId === 'add-widget' && guideAddedWidgetId !== null) {
         commitEditingWidgets((currentWidgets) =>
-          currentWidgets.filter((_, index) => index !== guideAddedWidgetIndex)
-        );
-        guideAddedWidgetIndexRef.current = null;
-        return;
-      }
-
-      if (toStepId === 'choose-widget' && guideAddedWidgetIndex !== null) {
-        commitEditingWidgets((currentWidgets) =>
-          currentWidgets.map((widget, index) =>
-            index === guideAddedWidgetIndex ? { ...widget, type: '' } : widget
+          currentWidgets.filter(
+            (widget) => getWidgetEditorId(widget) !== guideAddedWidgetId
           )
         );
-        return;
+        guideAddedWidgetIdRef.current = null;
+        return redirect;
       }
 
-      if (toStepId === 'save-template' && !hasChanges) {
-        return { toStepId: 'widget-library-docs' };
+      if (targetStepId === 'choose-widget' && guideAddedWidgetId !== null) {
+        commitEditingWidgets((currentWidgets) =>
+          currentWidgets.map((widget) =>
+            getWidgetEditorId(widget) === guideAddedWidgetId
+              ? 
+                
+                replaceWidgetPlacement(widget, { type: '' })
+              : widget
+          )
+        );
       }
+
+      return redirect;
     },
-    [commitEditingWidgets, hasChanges]
+    [
+      commitEditingWidgets,
+      getWidgetEditorId,
+      hasChanges,
+      replaceWidgetPlacement,
+    ]
   );
 
   useGuideBackHandler(handleGuideBack);
 
-  const handleViewModeChange = useCallback(
-    (nextViewMode: ViewMode) => {
-      setViewMode(nextViewMode);
-      if (nextViewMode === 'editor') {
-        emitGuideAction(LAYOUT_BUILDER_EDITOR_MODE_OPENED_ACTION_ID);
-      }
-    },
-    [emitGuideAction]
-  );
-
-  
-  
-  
-  useEffect(() => {
-    if (currentGuideStepId === 'switch-to-editor' && viewMode === 'editor') {
-      emitGuideAction(LAYOUT_BUILDER_EDITOR_MODE_OPENED_ACTION_ID);
-    }
-  }, [currentGuideStepId, emitGuideAction, viewMode]);
+  const handleViewModeChange = useCallback((nextViewMode: ViewMode) => {
+    
+    setJustAddedEditorId(null);
+    setViewMode(nextViewMode);
+  }, []);
 
   const handleOpenWidgetLibraryDocs = useCallback(() => {
     openExternalUrl('https://journalit.co/docs/layout-builder#widget-library');
@@ -1889,19 +1966,24 @@ function useTemplateEditorModel({
     handleSave,
     handleDiscard,
     handleAddWidget,
+    handleInsertWidget,
+    handlePickerCancel,
+    justAddedEditorId,
+    isSorting,
     handleRemoveWidget,
     handleDuplicateWidget,
     handleWidgetChange,
     handleWidgetConfigChange,
+    handleDragStart,
+    handleDragCancel,
     handleDragEnd,
     handleViewModeChange,
     handleOpenWidgetLibraryDocs,
-    registerEditorModeButtonTarget,
     registerEditorPanelTarget,
     registerAddWidgetButtonTarget,
-    registerPreviewTarget,
-    registerWidgetLibraryDocsTarget,
     registerSaveButtonTarget,
+    registerInsertSlotTarget,
+    isInsertSlotGuideStepVisible,
   };
 }
 
@@ -1923,19 +2005,24 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
     handleSave,
     handleDiscard,
     handleAddWidget,
+    handleInsertWidget,
+    handlePickerCancel,
+    justAddedEditorId,
+    isSorting,
     handleRemoveWidget,
     handleDuplicateWidget,
     handleWidgetChange,
     handleWidgetConfigChange,
+    handleDragStart,
+    handleDragCancel,
     handleDragEnd,
     handleViewModeChange,
     handleOpenWidgetLibraryDocs,
-    registerEditorModeButtonTarget,
     registerEditorPanelTarget,
     registerAddWidgetButtonTarget,
-    registerPreviewTarget,
-    registerWidgetLibraryDocsTarget,
     registerSaveButtonTarget,
+    registerInsertSlotTarget,
+    isInsertSlotGuideStepVisible,
   } = useTemplateEditorModel(props);
 
   if (!template || !previewTemplate) {
@@ -1947,6 +2034,18 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
   }
 
   const showUnsavedBanner = hasChanges && !template.isBuiltIn;
+  const minInsertIndex = getFirstInsertableIndex(editingWidgets);
+  const renderInsertSlot = (index: number, trailing = false) =>
+    canEdit && index >= minInsertIndex ? (
+      <WidgetInsertSlot
+        index={index}
+        trailing={trailing}
+        
+        ref={index === minInsertIndex ? registerInsertSlotTarget : undefined}
+        revealed={index === minInsertIndex && isInsertSlotGuideStepVisible}
+        onInsert={handleInsertWidget}
+      />
+    ) : null;
 
   return (
     <div
@@ -1960,9 +2059,6 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
             value={viewMode}
             onChange={(v) => handleViewModeChange(v)}
             size="small"
-            getOptionRef={(value) =>
-              value === 'editor' ? registerEditorModeButtonTarget : undefined
-            }
           />
           <div className="template-editor-title-group">
             <span className="template-editor-title-name">
@@ -1983,11 +2079,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
       
       <div className="template-editor-canvas template-editor-canvas-container">
         {viewMode === 'preview' ? (
-          <TemplatePreview
-            template={previewTemplate}
-            plugin={plugin}
-            containerRef={registerPreviewTarget}
-          />
+          <TemplatePreview template={previewTemplate} plugin={plugin} />
         ) : (
           <div
             className="template-editor-content"
@@ -2036,9 +2128,8 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
                 {canEdit && (
                   <div className="template-editor-widget-actions">
                     <button
-                      ref={registerWidgetLibraryDocsTarget}
                       onClick={() => void handleOpenWidgetLibraryDocs()}
-                      className="template-action-button template-action-button--neutral template-action-button--compact"
+                      className="journalit-native-button template-action-button template-action-button--neutral template-action-button--compact"
                     >
                       {t('templateEditor.button.widget-library-docs')}
                     </button>
@@ -2055,13 +2146,20 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
 
               <DndContext
                 collisionDetection={closestCenter}
+                onDragStart={handleDragStart}
+                onDragCancel={handleDragCancel}
                 onDragEnd={handleDragEnd}
               >
                 <SortableContext
                   items={editingWidgets.map(getWidgetEditorId)}
                   strategy={verticalListSortingStrategy}
                 >
-                  <div className="template-editor-widget-list">
+                  <div
+                    className={mergeClassNames(
+                      'template-editor-widget-list',
+                      isSorting && 'is-sorting'
+                    )}
+                  >
                     {editingWidgets.map((widget, index) => (
                       <SortableWidgetItem
                         key={getWidgetEditorId(widget)}
@@ -2082,8 +2180,14 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
                         onConfigChange={handleWidgetConfigChange}
                         onDuplicate={handleDuplicateWidget}
                         onRemove={handleRemoveWidget}
+                        isJustAdded={
+                          justAddedEditorId === getWidgetEditorId(widget)
+                        }
+                        onPickerCancel={handlePickerCancel}
+                        insertSlotBefore={renderInsertSlot(index)}
                       />
                     ))}
+                    {renderInsertSlot(editingWidgets.length, true)}
                   </div>
                 </SortableContext>
               </DndContext>

@@ -12,6 +12,7 @@ import type {
   PropChallengeWeekday,
 } from '../../../../services/propChallenge/types';
 import { isSupportedTimeZone } from '../../../../services/propChallenge/normalization';
+import { createPropChallengeQualifyingDaysDraft } from '../../../../services/propChallenge/PropChallengeConfig';
 import { DropdownSelect } from '../../../shared/DropdownSelect';
 import {
   ChevronDown,
@@ -21,6 +22,7 @@ import {
 import { NoTooltipButton } from '../../../ui/NoTooltipButton';
 import Checkbox from '../../../ui/Checkbox';
 import { numberValue } from './editorOptions';
+import { PayoutPolicyField, PayoutPolicyFieldHelp } from './PayoutPolicyField';
 
 const optionalNumberValue = (value: string): number | undefined =>
   value === '' ? undefined : numberValue(value);
@@ -234,11 +236,11 @@ function PayoutRequestTimeZoneField({
   const invalid = draft.length > 0 && !isSupportedTimeZone(draft);
   return (
     <>
-      <label className="journalit-prop-challenge-field">
-        <span>
-          {t('account.prop-challenge.payout-rules.request-window.time-zone')}
-        </span>
-        <input
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout-rules.request-window.time-zone"
+        kind="input"
+      >
+        <DraftInput
           type="text"
           value={draft}
           onChange={(event) => {
@@ -249,7 +251,7 @@ function PayoutRequestTimeZoneField({
           disabled={disabled}
           aria-invalid={invalid}
         />
-      </label>
+      </PayoutPolicyField>
       {invalid ? (
         <span className="journalit-prop-challenge-field-error" role="alert">
           {t('account.prop-challenge.payout.timezone-invalid')}
@@ -274,21 +276,32 @@ function PayoutPolicyEligibilitySection({
   updateOptionalNumber: UpdateOptionalNumber;
   toggleRequestWeekday: (weekday: PropChallengeWeekday) => void;
 }) {
+  const qualifyingDays = policy.qualifyingDays;
+  const requestDaysId = useId();
   return (
     <section className="journalit-prop-payout-policy-editor__group">
       <strong className="journalit-prop-payout-policy-editor__group-title">
         {t('account.prop-challenge.payout-rules.group.eligibility')}
       </strong>
       <div className="journalit-prop-payout-policy-editor__group-fields">
-        <label className="journalit-prop-challenge-field">
-          <span>{t('account.prop-challenge.payout-rules.cycle')}</span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.cycle"
+          kind="dropdown"
+        >
           <DropdownSelect
             value={policy.cycle.kind}
             onChange={(kind) => {
               const nextPolicy = {
                 ...policy,
-                cycle: createCycle(kind),
+                cycle:
+                  kind === 'qualifying_days' && policy.qualifyingDays
+                    ? {
+                        kind: 'qualifying_days' as const,
+                        ...policy.qualifyingDays,
+                      }
+                    : createCycle(kind),
               };
+              if (kind === 'qualifying_days') delete nextPolicy.qualifyingDays;
               if (kind !== 'qualifying_days') {
                 delete nextPolicy.lifetimeQualifyingDaysUnlock;
               }
@@ -321,11 +334,13 @@ function PayoutPolicyEligibilitySection({
               },
             ]}
           />
-        </label>
+        </PayoutPolicyField>
 
         {policy.cycle.kind !== 'none' && (
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.prop-challenge.payout-rules.days')}</span>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.days"
+            kind="input"
+          >
             <DraftInput
               type="number"
               min="1"
@@ -342,14 +357,14 @@ function PayoutPolicyEligibilitySection({
               }
               disabled={disabled}
             />
-          </label>
+          </PayoutPolicyField>
         )}
 
         {policy.cycle.kind === 'qualifying_days' && (
-          <label className="journalit-prop-challenge-field">
-            <span>
-              {t('account.prop-challenge.payout-rules.minimum-daily-profit')}
-            </span>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.minimum-daily-profit"
+            kind="input"
+          >
             <DraftInput
               type="number"
               min="0"
@@ -366,12 +381,83 @@ function PayoutPolicyEligibilitySection({
               }
               disabled={disabled}
             />
-          </label>
+          </PayoutPolicyField>
+        )}
+
+        {policy.cycle.kind !== 'qualifying_days' && (
+          <>
+            <PayoutPolicyField
+              translationKey="account.prop-challenge.payout.requirement.qualifying-days"
+              kind="checkbox"
+              inline
+            >
+              <Checkbox
+                checked={Boolean(policy.qualifyingDays)}
+                onChange={(checked) => {
+                  const nextPolicy = { ...policy };
+                  if (checked)
+                    nextPolicy.qualifyingDays =
+                      createPropChallengeQualifyingDaysDraft();
+                  else delete nextPolicy.qualifyingDays;
+                  onChange(nextPolicy);
+                }}
+                disabled={disabled}
+              />
+            </PayoutPolicyField>
+            {qualifyingDays && (
+              <>
+                <PayoutPolicyField
+                  translationKey="account.prop-challenge.rule.minimum_profitable_days"
+                  kind="input"
+                >
+                  <DraftInput
+                    type="number"
+                    min="1"
+                    step="1"
+                    value={qualifyingDays.days || ''}
+                    onChange={(event) =>
+                      onChange({
+                        ...policy,
+                        qualifyingDays: {
+                          ...qualifyingDays,
+                          days: positiveNumberValue(event.target.value),
+                        },
+                      })
+                    }
+                    disabled={disabled}
+                  />
+                </PayoutPolicyField>
+                <PayoutPolicyField
+                  translationKey="account.prop-challenge.payout-rules.minimum-daily-profit"
+                  kind="input"
+                >
+                  <DraftInput
+                    type="number"
+                    min="0"
+                    step="50"
+                    value={qualifyingDays.minimumDailyProfit || ''}
+                    onChange={(event) =>
+                      onChange({
+                        ...policy,
+                        qualifyingDays: {
+                          ...qualifyingDays,
+                          minimumDailyProfit: numberValue(event.target.value),
+                        },
+                      })
+                    }
+                    disabled={disabled}
+                  />
+                </PayoutPolicyField>
+              </>
+            )}
+          </>
         )}
 
         {policy.cycle.kind === 'calendar_days' && (
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.prop-challenge.payout-rules.anchor')}</span>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.anchor"
+            kind="dropdown"
+          >
             <DropdownSelect
               value={policy.cycle.anchor}
               onChange={(anchor) =>
@@ -397,13 +483,13 @@ function PayoutPolicyEligibilitySection({
                 },
               ]}
             />
-          </label>
+          </PayoutPolicyField>
         )}
 
-        <label className="journalit-prop-challenge-field">
-          <span>
-            {t('account.prop-challenge.payout-rules.minimum-elapsed-hours')}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.minimum-elapsed-hours"
+          kind="input"
+        >
           <DraftInput
             type="number"
             min="1"
@@ -414,10 +500,12 @@ function PayoutPolicyEligibilitySection({
             }
             disabled={disabled}
           />
-        </label>
+        </PayoutPolicyField>
 
-        <label className="journalit-prop-challenge-field">
-          <span>{t('account.prop-challenge.payout-rules.request-window')}</span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.request-window"
+          kind="dropdown"
+        >
           <DropdownSelect
             value={policy.requestWindow ? 'weekdays' : 'anytime'}
             onChange={(kind) =>
@@ -450,7 +538,7 @@ function PayoutPolicyEligibilitySection({
               },
             ]}
           />
-        </label>
+        </PayoutPolicyField>
 
         {policy.requestWindow && (
           <>
@@ -467,11 +555,17 @@ function PayoutPolicyEligibilitySection({
                 })
               }
             />
-            <fieldset className="journalit-prop-payout-policy-editor__weekdays">
+            <fieldset
+              className="journalit-prop-payout-policy-editor__weekdays"
+              aria-labelledby={`${requestDaysId}-label`}
+              aria-describedby={`${requestDaysId}-description`}
+            >
               <legend>
-                {t(
-                  'account.prop-challenge.payout-rules.request-window.allowed-days'
-                )}
+                <PayoutPolicyFieldHelp
+                  translationKey="account.prop-challenge.payout-rules.request-window.allowed-days"
+                  labelId={`${requestDaysId}-label`}
+                  descriptionId={`${requestDaysId}-description`}
+                />
               </legend>
               {PAYOUT_WEEKDAYS.map((weekday) => (
                 <label key={weekday}>
@@ -487,10 +581,10 @@ function PayoutPolicyEligibilitySection({
           </>
         )}
 
-        <label className="journalit-prop-challenge-field">
-          <span>
-            {t('account.prop-challenge.payout-rules.minimum-balance')}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.minimum-balance"
+          kind="input"
+        >
           <DraftInput
             type="number"
             min="0"
@@ -501,12 +595,12 @@ function PayoutPolicyEligibilitySection({
             }
             disabled={disabled}
           />
-        </label>
+        </PayoutPolicyField>
 
-        <label className="journalit-prop-challenge-field">
-          <span>
-            {t('account.prop-challenge.payout-rules.minimum-cycle-profit')}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.minimum-cycle-profit"
+          kind="input"
+        >
           <DraftInput
             type="number"
             min="0"
@@ -517,14 +611,12 @@ function PayoutPolicyEligibilitySection({
             }
             disabled={disabled}
           />
-        </label>
+        </PayoutPolicyField>
 
-        <label className="journalit-prop-challenge-field">
-          <span>
-            {t(
-              'account.prop-challenge.payout-rules.minimum-cycle-profit-schedule'
-            )}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.minimum-cycle-profit-schedule"
+          kind="input"
+        >
           <DraftInput
             type="text"
             value={policy.minimumCycleProfitSchedule?.amounts.join(', ') ?? ''}
@@ -543,13 +635,13 @@ function PayoutPolicyEligibilitySection({
             }}
             disabled={disabled}
           />
-        </label>
+        </PayoutPolicyField>
 
         {policy.minimumCycleProfitSchedule && (
-          <div className="journalit-prop-challenge-field">
-            <span>
-              {t('account.prop-challenge.payout-rules.schedule-repeat-value')}
-            </span>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.schedule-repeat-value"
+            kind="checkbox"
+          >
             <Checkbox
               checked={policy.minimumCycleProfitSchedule.repeatLast ?? false}
               onChange={(repeatLast) =>
@@ -563,15 +655,13 @@ function PayoutPolicyEligibilitySection({
               }
               disabled={disabled}
             />
-          </div>
+          </PayoutPolicyField>
         )}
 
-        <div className="journalit-prop-challenge-field">
-          <span>
-            {t(
-              'account.prop-challenge.payout-rules.positive-cycle-after-first'
-            )}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.positive-cycle-after-first"
+          kind="checkbox"
+        >
           <Checkbox
             checked={policy.requirePositiveCycleProfitAfterFirst ?? false}
             onChange={(requirePositiveCycleProfitAfterFirst) =>
@@ -582,12 +672,12 @@ function PayoutPolicyEligibilitySection({
             }
             disabled={disabled}
           />
-        </div>
+        </PayoutPolicyField>
 
-        <label className="journalit-prop-challenge-field">
-          <span>
-            {t('account.prop-challenge.payout-rules.consistency-percent')}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.consistency-percent"
+          kind="input"
+        >
           <DraftInput
             type="number"
             min="0"
@@ -599,14 +689,12 @@ function PayoutPolicyEligibilitySection({
             }
             disabled={disabled}
           />
-        </label>
+        </PayoutPolicyField>
 
-        <label className="journalit-prop-challenge-field">
-          <span>
-            {t(
-              'account.prop-challenge.payout-rules.consistency-percent-schedule'
-            )}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.consistency-percent-schedule"
+          kind="input"
+        >
           <DraftInput
             type="text"
             value={policy.maxBestDayPercentSchedule?.percents.join(', ') ?? ''}
@@ -627,13 +715,13 @@ function PayoutPolicyEligibilitySection({
             }}
             disabled={disabled}
           />
-        </label>
+        </PayoutPolicyField>
 
         {policy.maxBestDayPercentSchedule && (
-          <div className="journalit-prop-challenge-field">
-            <span>
-              {t('account.prop-challenge.payout-rules.schedule-repeat-value')}
-            </span>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.schedule-repeat-value"
+            kind="checkbox"
+          >
             <Checkbox
               checked={policy.maxBestDayPercentSchedule.repeatLast ?? false}
               onChange={(repeatLast) =>
@@ -647,7 +735,7 @@ function PayoutPolicyEligibilitySection({
               }
               disabled={disabled}
             />
-          </div>
+          </PayoutPolicyField>
         )}
       </div>
     </section>
@@ -677,8 +765,10 @@ function PayoutPolicyAvailabilitySection({
         {t('account.prop-challenge.payout-rules.group.availability')}
       </strong>
       <div className="journalit-prop-payout-policy-editor__group-fields">
-        <label className="journalit-prop-challenge-field">
-          <span>{t('account.prop-challenge.payout-rules.availability')}</span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.availability"
+          kind="dropdown"
+        >
           <DropdownSelect
             value={policy.availability.kind}
             onChange={(kind) =>
@@ -704,13 +794,13 @@ function PayoutPolicyAvailabilitySection({
               },
             ]}
           />
-        </label>
+        </PayoutPolicyField>
 
         {policy.availability.kind === 'profit_above_balance_floor' && (
-          <label className="journalit-prop-challenge-field">
-            <span>
-              {t('account.prop-challenge.payout-rules.balance-floor')}
-            </span>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.balance-floor"
+            kind="input"
+          >
             <DraftInput
               type="number"
               min="0"
@@ -727,13 +817,13 @@ function PayoutPolicyAvailabilitySection({
               }
               disabled={disabled}
             />
-          </label>
+          </PayoutPolicyField>
         )}
 
-        <label className="journalit-prop-challenge-field">
-          <span>
-            {t('account.prop-challenge.payout-rules.request-percent')}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.request-percent"
+          kind="input"
+        >
           <DraftInput
             type="number"
             min="0"
@@ -751,12 +841,12 @@ function PayoutPolicyAvailabilitySection({
             }
             disabled={disabled}
           />
-        </label>
+        </PayoutPolicyField>
 
-        <label className="journalit-prop-challenge-field">
-          <span>
-            {t('account.prop-challenge.payout-rules.new-profit-percent')}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.new-profit-percent"
+          kind="input"
+        >
           <DraftInput
             type="number"
             min="1"
@@ -775,15 +865,12 @@ function PayoutPolicyAvailabilitySection({
             }}
             disabled={disabled}
           />
-        </label>
-        <p className="setting-item-description">
-          {t('account.prop-challenge.payout-rules.new-profit-percent-help')}
-        </p>
+        </PayoutPolicyField>
 
-        <label className="journalit-prop-challenge-field">
-          <span>
-            {t('account.prop-challenge.payout-rules.minimum-request')}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.minimum-request"
+          kind="input"
+        >
           <DraftInput
             type="number"
             min="0"
@@ -797,10 +884,12 @@ function PayoutPolicyAvailabilitySection({
             }
             disabled={disabled}
           />
-        </label>
+        </PayoutPolicyField>
 
-        <label className="journalit-prop-challenge-field">
-          <span>{t('account.prop-challenge.payout-rules.maximum')}</span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.maximum"
+          kind="dropdown"
+        >
           <DropdownSelect
             value={policy.maximumRequest.kind}
             onChange={(kind) =>
@@ -840,13 +929,13 @@ function PayoutPolicyAvailabilitySection({
               },
             ]}
           />
-        </label>
+        </PayoutPolicyField>
 
         {policy.maximumRequest.kind === 'fixed' && (
-          <label className="journalit-prop-challenge-field">
-            <span>
-              {t('account.prop-challenge.payout-rules.maximum-amount')}
-            </span>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.maximum-amount"
+            kind="input"
+          >
             <DraftInput
               type="number"
               min="0"
@@ -863,14 +952,14 @@ function PayoutPolicyAvailabilitySection({
               }
               disabled={disabled}
             />
-          </label>
+          </PayoutPolicyField>
         )}
 
         {policy.maximumRequest.kind === 'first_fixed_then_none' && (
-          <label className="journalit-prop-challenge-field">
-            <span>
-              {t('account.prop-challenge.payout-rules.maximum-first-amount')}
-            </span>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.maximum-first-amount"
+            kind="input"
+          >
             <DraftInput
               type="number"
               min="1"
@@ -887,13 +976,15 @@ function PayoutPolicyAvailabilitySection({
               }
               disabled={disabled}
             />
-          </label>
+          </PayoutPolicyField>
         )}
 
         {policy.maximumRequest.kind === 'schedule' && (
           <>
-            <label className="journalit-prop-challenge-field">
-              <span>{t('account.prop-challenge.payout-rules.schedule')}</span>
+            <PayoutPolicyField
+              translationKey="account.prop-challenge.payout-rules.schedule"
+              kind="input"
+            >
               <DraftInput
                 value={policy.maximumRequest.amounts.join(', ')}
                 onChange={(event) => {
@@ -909,11 +1000,11 @@ function PayoutPolicyAvailabilitySection({
                 }}
                 disabled={disabled}
               />
-            </label>
-            <div className="journalit-prop-challenge-field">
-              <span>
-                {t('account.prop-challenge.payout-rules.schedule-repeat-last')}
-              </span>
+            </PayoutPolicyField>
+            <PayoutPolicyField
+              translationKey="account.prop-challenge.payout-rules.schedule-repeat-last"
+              kind="checkbox"
+            >
               <Checkbox
                 checked={policy.maximumRequest.repeatLast ?? false}
                 onChange={(repeatLast) => {
@@ -929,17 +1020,15 @@ function PayoutPolicyAvailabilitySection({
                 }}
                 disabled={disabled}
               />
-            </div>
+            </PayoutPolicyField>
           </>
         )}
 
         {policy.maximumRequest.kind === 'cycle_profit_percent' && (
-          <label className="journalit-prop-challenge-field">
-            <span>
-              {t(
-                'account.prop-challenge.payout-rules.maximum-cycle-profit-percent'
-              )}
-            </span>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.maximum-cycle-profit-percent"
+            kind="input"
+          >
             <DraftInput
               type="number"
               min="1"
@@ -957,20 +1046,17 @@ function PayoutPolicyAvailabilitySection({
               }
               disabled={disabled}
             />
-          </label>
+          </PayoutPolicyField>
         )}
 
         {policy.cycle.kind === 'qualifying_days' && (
           <>
-            <div className="journalit-prop-challenge-field">
-              <span>
-                {t('account.prop-challenge.payout-rules.lifetime-unlock')}
-              </span>
+            <PayoutPolicyField
+              translationKey="account.prop-challenge.payout-rules.lifetime-unlock"
+              kind="checkbox"
+            >
               <Checkbox
                 checked={Boolean(lifetimeUnlock)}
-                ariaLabel={t(
-                  'account.prop-challenge.payout-rules.lifetime-unlock'
-                )}
                 onChange={(enabled) => {
                   const nextPolicy = { ...policy };
                   if (enabled) {
@@ -989,21 +1075,14 @@ function PayoutPolicyAvailabilitySection({
                 }}
                 disabled={disabled}
               />
-            </div>
+            </PayoutPolicyField>
 
             {lifetimeUnlock && (
               <>
-                <p className="setting-item-description">
-                  {t(
-                    'account.prop-challenge.payout-rules.lifetime-unlock-help'
-                  )}
-                </p>
-                <label className="journalit-prop-challenge-field">
-                  <span>
-                    {t(
-                      'account.prop-challenge.payout-rules.lifetime-unlock-days'
-                    )}
-                  </span>
+                <PayoutPolicyField
+                  translationKey="account.prop-challenge.payout-rules.lifetime-unlock-days"
+                  kind="input"
+                >
                   <DraftInput
                     type="number"
                     min="1"
@@ -1020,13 +1099,11 @@ function PayoutPolicyAvailabilitySection({
                     }
                     disabled={disabled}
                   />
-                </label>
-                <label className="journalit-prop-challenge-field">
-                  <span>
-                    {t(
-                      'account.prop-challenge.payout-rules.lifetime-unlock-availability'
-                    )}
-                  </span>
+                </PayoutPolicyField>
+                <PayoutPolicyField
+                  translationKey="account.prop-challenge.payout-rules.lifetime-unlock-availability"
+                  kind="dropdown"
+                >
                   <DropdownSelect
                     value={lifetimeUnlock.availability.kind}
                     onChange={(kind) =>
@@ -1060,15 +1137,13 @@ function PayoutPolicyAvailabilitySection({
                       },
                     ]}
                   />
-                </label>
+                </PayoutPolicyField>
                 {lifetimeUnlock.availability.kind ===
                   'profit_above_balance_floor' && (
-                  <label className="journalit-prop-challenge-field">
-                    <span>
-                      {t(
-                        'account.prop-challenge.payout-rules.lifetime-unlock-balance-floor'
-                      )}
-                    </span>
+                  <PayoutPolicyField
+                    translationKey="account.prop-challenge.payout-rules.lifetime-unlock-balance-floor"
+                    kind="input"
+                  >
                     <DraftInput
                       type="number"
                       min="0"
@@ -1089,14 +1164,12 @@ function PayoutPolicyAvailabilitySection({
                       }}
                       disabled={disabled}
                     />
-                  </label>
+                  </PayoutPolicyField>
                 )}
-                <label className="journalit-prop-challenge-field">
-                  <span>
-                    {t(
-                      'account.prop-challenge.payout-rules.lifetime-unlock-request-percent'
-                    )}
-                  </span>
+                <PayoutPolicyField
+                  translationKey="account.prop-challenge.payout-rules.lifetime-unlock-request-percent"
+                  kind="input"
+                >
                   <DraftInput
                     type="number"
                     min="1"
@@ -1117,13 +1190,11 @@ function PayoutPolicyAvailabilitySection({
                     }
                     disabled={disabled}
                   />
-                </label>
-                <label className="journalit-prop-challenge-field">
-                  <span>
-                    {t(
-                      'account.prop-challenge.payout-rules.lifetime-unlock-maximum'
-                    )}
-                  </span>
+                </PayoutPolicyField>
+                <PayoutPolicyField
+                  translationKey="account.prop-challenge.payout-rules.lifetime-unlock-maximum"
+                  kind="dropdown"
+                >
                   <DropdownSelect
                     value={lifetimeUnlock.maximumRequest.kind}
                     onChange={(kind) =>
@@ -1172,14 +1243,12 @@ function PayoutPolicyAvailabilitySection({
                       },
                     ]}
                   />
-                </label>
+                </PayoutPolicyField>
                 {lifetimeUnlock.maximumRequest.kind === 'fixed' && (
-                  <label className="journalit-prop-challenge-field">
-                    <span>
-                      {t(
-                        'account.prop-challenge.payout-rules.lifetime-unlock-maximum-amount'
-                      )}
-                    </span>
+                  <PayoutPolicyField
+                    translationKey="account.prop-challenge.payout-rules.lifetime-unlock-maximum-amount"
+                    kind="input"
+                  >
                     <DraftInput
                       type="number"
                       min="1"
@@ -1199,15 +1268,13 @@ function PayoutPolicyAvailabilitySection({
                       }
                       disabled={disabled}
                     />
-                  </label>
+                  </PayoutPolicyField>
                 )}
                 {lifetimeMaximum?.kind === 'first_fixed_then_none' && (
-                  <label className="journalit-prop-challenge-field">
-                    <span>
-                      {t(
-                        'account.prop-challenge.payout-rules.maximum-first-amount'
-                      )}
-                    </span>
+                  <PayoutPolicyField
+                    translationKey="account.prop-challenge.payout-rules.maximum-first-amount"
+                    kind="input"
+                  >
                     <DraftInput
                       type="number"
                       min="1"
@@ -1227,16 +1294,14 @@ function PayoutPolicyAvailabilitySection({
                       }
                       disabled={disabled}
                     />
-                  </label>
+                  </PayoutPolicyField>
                 )}
                 {lifetimeMaximum?.kind === 'schedule' && (
                   <>
-                    <label className="journalit-prop-challenge-field">
-                      <span>
-                        {t(
-                          'account.prop-challenge.payout-rules.lifetime-unlock-maximum-schedule'
-                        )}
-                      </span>
+                    <PayoutPolicyField
+                      translationKey="account.prop-challenge.payout-rules.lifetime-unlock-maximum-schedule"
+                      kind="input"
+                    >
                       <DraftInput
                         type="text"
                         value={lifetimeMaximum.amounts.join(', ')}
@@ -1255,13 +1320,11 @@ function PayoutPolicyAvailabilitySection({
                         }
                         disabled={disabled}
                       />
-                    </label>
-                    <div className="journalit-prop-challenge-field">
-                      <span>
-                        {t(
-                          'account.prop-challenge.payout-rules.schedule-repeat-last'
-                        )}
-                      </span>
+                    </PayoutPolicyField>
+                    <PayoutPolicyField
+                      translationKey="account.prop-challenge.payout-rules.schedule-repeat-last"
+                      kind="checkbox"
+                    >
                       <Checkbox
                         checked={lifetimeMaximum.repeatLast ?? false}
                         onChange={(repeatLast) =>
@@ -1279,16 +1342,14 @@ function PayoutPolicyAvailabilitySection({
                         }
                         disabled={disabled}
                       />
-                    </div>
+                    </PayoutPolicyField>
                   </>
                 )}
                 {lifetimeMaximum?.kind === 'cycle_profit_percent' && (
-                  <label className="journalit-prop-challenge-field">
-                    <span>
-                      {t(
-                        'account.prop-challenge.payout-rules.lifetime-unlock-maximum-cycle-profit-percent'
-                      )}
-                    </span>
+                  <PayoutPolicyField
+                    translationKey="account.prop-challenge.payout-rules.lifetime-unlock-maximum-cycle-profit-percent"
+                    kind="input"
+                  >
                     <DraftInput
                       type="number"
                       min="1"
@@ -1309,7 +1370,7 @@ function PayoutPolicyAvailabilitySection({
                       }
                       disabled={disabled}
                     />
-                  </label>
+                  </PayoutPolicyField>
                 )}
               </>
             )}
@@ -1347,10 +1408,10 @@ function PayoutPolicyTermsSection({
         {t('account.prop-challenge.payout-rules.group.terms')}
       </strong>
       <div className="journalit-prop-payout-policy-editor__group-fields">
-        <label className="journalit-prop-challenge-field">
-          <span>
-            {t('account.prop-challenge.payout-rules.profit-split-model')}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.profit-split-model"
+          kind="dropdown"
+        >
           <DropdownSelect
             value={policy.profitSplit.kind}
             onChange={(kind) =>
@@ -1384,11 +1445,13 @@ function PayoutPolicyTermsSection({
               },
             ]}
           />
-        </label>
+        </PayoutPolicyField>
 
         {fixedProfitSplit ? (
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.prop-challenge.payout-rules.profit-split')}</span>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.profit-split"
+            kind="input"
+          >
             <DraftInput
               type="number"
               min="1"
@@ -1406,13 +1469,13 @@ function PayoutPolicyTermsSection({
               }
               disabled={disabled}
             />
-          </label>
+          </PayoutPolicyField>
         ) : thresholdProfitSplit ? (
           <>
-            <label className="journalit-prop-challenge-field">
-              <span>
-                {t('account.prop-challenge.payout-rules.profit-split.initial')}
-              </span>
+            <PayoutPolicyField
+              translationKey="account.prop-challenge.payout-rules.profit-split.initial"
+              kind="input"
+            >
               <DraftInput
                 type="number"
                 min="1"
@@ -1430,13 +1493,11 @@ function PayoutPolicyTermsSection({
                 }
                 disabled={disabled}
               />
-            </label>
-            <label className="journalit-prop-challenge-field">
-              <span>
-                {t(
-                  'account.prop-challenge.payout-rules.profit-split.threshold-amount'
-                )}
-              </span>
+            </PayoutPolicyField>
+            <PayoutPolicyField
+              translationKey="account.prop-challenge.payout-rules.profit-split.threshold-amount"
+              kind="input"
+            >
               <DraftInput
                 type="number"
                 min="1"
@@ -1453,13 +1514,11 @@ function PayoutPolicyTermsSection({
                 }
                 disabled={disabled}
               />
-            </label>
-            <label className="journalit-prop-challenge-field">
-              <span>
-                {t(
-                  'account.prop-challenge.payout-rules.profit-split.thereafter'
-                )}
-              </span>
+            </PayoutPolicyField>
+            <PayoutPolicyField
+              translationKey="account.prop-challenge.payout-rules.profit-split.thereafter"
+              kind="input"
+            >
               <DraftInput
                 type="number"
                 min="1"
@@ -1477,19 +1536,14 @@ function PayoutPolicyTermsSection({
                 }
                 disabled={disabled}
               />
-            </label>
+            </PayoutPolicyField>
           </>
         ) : accountProfitThresholdSplit ? (
           <>
-            <p className="setting-item-description">
-              {t(
-                'account.prop-challenge.payout-rules.profit-split.account-profit-help'
-              )}
-            </p>
-            <label className="journalit-prop-challenge-field">
-              <span>
-                {t('account.prop-challenge.payout-rules.profit-split.below')}
-              </span>
+            <PayoutPolicyField
+              translationKey="account.prop-challenge.payout-rules.profit-split.below"
+              kind="input"
+            >
               <DraftInput
                 type="number"
                 min="1"
@@ -1507,13 +1561,11 @@ function PayoutPolicyTermsSection({
                 }
                 disabled={disabled}
               />
-            </label>
-            <label className="journalit-prop-challenge-field">
-              <span>
-                {t(
-                  'account.prop-challenge.payout-rules.profit-split.threshold-profit'
-                )}
-              </span>
+            </PayoutPolicyField>
+            <PayoutPolicyField
+              translationKey="account.prop-challenge.payout-rules.profit-split.threshold-profit"
+              kind="input"
+            >
               <DraftInput
                 type="number"
                 min="1"
@@ -1530,13 +1582,11 @@ function PayoutPolicyTermsSection({
                 }
                 disabled={disabled}
               />
-            </label>
-            <label className="journalit-prop-challenge-field">
-              <span>
-                {t(
-                  'account.prop-challenge.payout-rules.profit-split.at-or-above'
-                )}
-              </span>
+            </PayoutPolicyField>
+            <PayoutPolicyField
+              translationKey="account.prop-challenge.payout-rules.profit-split.at-or-above"
+              kind="input"
+            >
               <DraftInput
                 type="number"
                 min="1"
@@ -1554,14 +1604,14 @@ function PayoutPolicyTermsSection({
                 }
                 disabled={disabled}
               />
-            </label>
+            </PayoutPolicyField>
           </>
         ) : null}
 
-        <label className="journalit-prop-challenge-field">
-          <span>
-            {t('account.prop-challenge.payout-rules.maximum-payouts')}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.maximum-payouts"
+          kind="input"
+        >
           <DraftInput
             type="number"
             min="1"
@@ -1572,7 +1622,7 @@ function PayoutPolicyTermsSection({
             }
             disabled={disabled}
           />
-        </label>
+        </PayoutPolicyField>
       </div>
     </section>
   );
@@ -1595,8 +1645,10 @@ function PayoutPolicyAftermathSection({
         {t('account.prop-challenge.payout-rules.group.aftermath')}
       </strong>
       <div className="journalit-prop-payout-policy-editor__group-fields">
-        <label className="journalit-prop-challenge-field">
-          <span>{t('account.prop-challenge.payout-rules.aftermath')}</span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.aftermath"
+          kind="dropdown"
+        >
           <DropdownSelect
             value={policy.afterPayout.drawdownAction}
             onChange={(kind) =>
@@ -1629,13 +1681,13 @@ function PayoutPolicyAftermathSection({
               },
             ]}
           />
-        </label>
+        </PayoutPolicyField>
 
         {policy.afterPayout.drawdownAction === 'lock_at_balance' && (
-          <label className="journalit-prop-challenge-field">
-            <span>
-              {t('account.prop-challenge.payout-rules.drawdown-floor')}
-            </span>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.drawdown-floor"
+            kind="input"
+          >
             <DraftInput
               type="number"
               min="0"
@@ -1652,12 +1704,12 @@ function PayoutPolicyAftermathSection({
               }
               disabled={disabled}
             />
-          </label>
+          </PayoutPolicyField>
         )}
-        <label className="journalit-prop-challenge-field">
-          <span>
-            {t('account.prop-challenge.payout-rules.maximum-payout-outcome')}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.maximum-payout-outcome"
+          kind="dropdown"
+        >
           <DropdownSelect
             value={policy.afterPayout.maximumPayoutOutcome ?? 'continue'}
             onChange={(maximumPayoutOutcome) =>
@@ -1704,14 +1756,14 @@ function PayoutPolicyAftermathSection({
               },
             ]}
           />
-        </label>
+        </PayoutPolicyField>
       </div>
 
       <div className="journalit-prop-payout-policy-editor__checks">
-        <div className="journalit-prop-challenge-field">
-          <span>
-            {t('account.prop-challenge.payout-rules.first-payout-exempt')}
-          </span>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.first-payout-exempt"
+          kind="checkbox"
+        >
           <Checkbox
             checked={policy.firstPayoutCycleProfitExempt ?? false}
             onChange={(checked) =>
@@ -1722,9 +1774,11 @@ function PayoutPolicyAftermathSection({
             }
             disabled={disabled}
           />
-        </div>
-        <div className="journalit-prop-challenge-field">
-          <span>{t('account.prop-challenge.payout-rules.reset-cycle')}</span>
+        </PayoutPolicyField>
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.reset-cycle"
+          kind="checkbox"
+        >
           <Checkbox
             checked={policy.afterPayout.resetCycle}
             onChange={(checked) =>
@@ -1738,7 +1792,7 @@ function PayoutPolicyAftermathSection({
             }
             disabled={disabled}
           />
-        </div>
+        </PayoutPolicyField>
       </div>
     </section>
   );
@@ -1788,7 +1842,13 @@ export const PayoutPolicyEditor: React.FC<{
         return `${policy.profitSplit.belowPercent}% → ${policy.profitSplit.atOrAbovePercent}%`;
     }
   })();
-  const summary = `${cycleLabel} · ${splitSummary}`;
+  const summary = [
+    cycleLabel,
+    ...(policy.qualifyingDays
+      ? [t('account.prop-challenge.payout.requirement.qualifying-days')]
+      : []),
+    splitSummary,
+  ].join(' · ');
   const accessibleIdentity = `${title} — ${summary}`;
   const updateOptionalNumber: UpdateOptionalNumber = (field, value) => {
     const parsed =

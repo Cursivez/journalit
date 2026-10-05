@@ -4,6 +4,11 @@ import React, { useCallback, useMemo } from 'react';
 import type { App } from 'obsidian';
 import type { TradeType } from '../../../services/tradelog/types';
 import type { HomePeriod } from '../../../settings/types';
+import type {
+  HomeCustomRange,
+  HomePeriodSelection,
+} from '../../../settings/homePeriod';
+import { formatLocalDateString } from '../../../utils/dateUtils';
 import { DEFAULT_REGULAR_ONLY_TRADE_TYPES } from '../../../settings/viewFiltersDefaults';
 import { t } from '../../../lang/helpers';
 import {
@@ -22,7 +27,9 @@ interface HomeFilterPopoverProps {
   periods: HomePeriod[];
   periodLabels: Record<HomePeriod, string>;
   selectedPeriod: HomePeriod;
-  onPeriodChange: (period: HomePeriod) => void | Promise<void>;
+  customRange?: HomeCustomRange;
+  onPeriodChange: (selection: HomePeriodSelection) => void | Promise<void>;
+  getPeriodDateRange: () => [Date | null, Date | null];
   selectedTradeTypes: TradeType[];
   onTradeTypesChange: (tradeTypes: TradeType[]) => void | Promise<void>;
   availableAccounts: string[];
@@ -43,7 +50,9 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
   periods,
   periodLabels,
   selectedPeriod,
+  customRange,
   onPeriodChange,
+  getPeriodDateRange,
   selectedTradeTypes,
   onTradeTypesChange,
   availableAccounts,
@@ -99,8 +108,21 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
     [normalizedTradeTypes, onTradeTypesChange]
   );
 
-  const entries = useMemo<FilterMenuEntry[]>(
-    () => [
+  const entries = useMemo<FilterMenuEntry[]>(() => {
+    
+    
+    let customActivated = selectedPeriod === 'custom';
+    const applyCustom = ([start, end]: [Date, Date]) => {
+      customActivated = true;
+      void onPeriodChange({
+        period: 'custom',
+        range: {
+          start: formatLocalDateString(start),
+          end: formatLocalDateString(end),
+        },
+      });
+    };
+    return [
       checklistNode({
         id: 'period',
         label: t('home.filters.period'),
@@ -109,14 +131,36 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
         options: periods.map((period) => ({
           value: period,
           label: periodLabels[period],
+          description:
+            period === 'custom' && customRange
+              ? `${customRange.start} – ${customRange.end}`
+              : undefined,
         })),
         selected: [selectedPeriod],
         appliedCount: periodChanged ? 1 : 0,
+        optionChildren: new Map([
+          [
+            'custom',
+            {
+              kind: 'date-range',
+              id: 'custom-range',
+              label: periodLabels.custom,
+              getInitialRange: getPeriodDateRange,
+              onActivate: () => {
+                if (customActivated) return;
+                const [start, end] = getPeriodDateRange();
+                if (start && end && start <= end) applyCustom([start, end]);
+              },
+              onApply: applyCustom,
+            },
+          ],
+        ]),
         onToggle: (value) => {
           const period = periods.find((candidate) => candidate === value);
-          if (period) void onPeriodChange(period);
+          if (period && period !== 'custom') void onPeriodChange({ period });
         },
-        onClear: () => void onPeriodChange(DEFAULT_HOME_FILTERS.period),
+        onClear: () =>
+          void onPeriodChange({ period: DEFAULT_HOME_FILTERS.period }),
       }),
       checklistNode({
         id: 'tradeType',
@@ -160,22 +204,23 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
         },
         onClear: () => void onAccountsChange([], true),
       }),
-    ],
-    [
-      accounts,
-      defaultTradeTypesSelected,
-      normalizedTradeTypes,
-      onAccountsChange,
-      onPeriodChange,
-      onTradeTypesChange,
-      periodChanged,
-      periodLabels,
-      periods,
-      selectedPeriod,
-      toggleTradeType,
-      visibleAccountSelection,
-    ]
-  );
+    ];
+  }, [
+    accounts,
+    defaultTradeTypesSelected,
+    normalizedTradeTypes,
+    onAccountsChange,
+    onPeriodChange,
+    getPeriodDateRange,
+    onTradeTypesChange,
+    periodChanged,
+    periodLabels,
+    periods,
+    selectedPeriod,
+    customRange,
+    toggleTradeType,
+    visibleAccountSelection,
+  ]);
 
   return (
     <CascadingFilterMenu

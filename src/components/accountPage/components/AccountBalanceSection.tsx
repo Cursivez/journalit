@@ -66,6 +66,7 @@ export const AccountBalanceSection: React.FC = () => {
       <div className="balance-chart-container">
         <AccountBalanceChart
           account={accountPageData.account}
+          trades={accountPageData.trades}
           height={CHART_HEIGHTS[widthStep]}
           currencyOverride={currencyOverride}
           selectedPhaseId={selectedPhaseId}

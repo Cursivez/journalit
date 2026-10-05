@@ -1354,13 +1354,4 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     width: 170px;
     transform: translate(-50%, -50%) scale(0.72);
   }
-
-  
-  .journalit-wpd-metric-card .journalit-dashboard-metric-card {
-    flex: 1 1 auto;
-    min-width: 100%;
-    min-height: 98px;
-    margin-bottom: 0;
-    padding: 14px;
-  }
 `;

@@ -709,7 +709,6 @@ const CreateSetupFields: React.FC<{
         placeholder={t('setups.create.placeholder.tags')}
         allowCreate
         isMulti
-        optionType={OptionType.TAG}
         onSaveOption={onSaveTag}
         portalDropdown
         selectedItemsPlacement="inside-input"
@@ -835,9 +834,7 @@ const CreateSetupProfileFields: React.FC<{
         options={preferredSessionOptions}
         getOptionLabel={getPreferredSessionLabel}
         value={form.preferredSessions}
-        onChange={(value) =>
-          onChange('preferredSessions', Array.isArray(value) ? value : [])
-        }
+        onChange={(value) => onChange('preferredSessions', value)}
         placeholder={t('setups.create.placeholder.preferred-sessions')}
         isMulti
         portalDropdown
@@ -848,9 +845,7 @@ const CreateSetupProfileFields: React.FC<{
         label={t('setups.create.field.timeframes')}
         options={preferredTimeframeOptions}
         value={form.preferredTimeframes}
-        onChange={(value) =>
-          onChange('preferredTimeframes', Array.isArray(value) ? value : [])
-        }
+        onChange={(value) => onChange('preferredTimeframes', value)}
         placeholder={t('setups.create.placeholder.preferred-timeframes')}
         allowCreate
         isMulti
@@ -862,9 +857,7 @@ const CreateSetupProfileFields: React.FC<{
         label={t('setups.create.field.tickers')}
         options={preferredTickerOptions}
         value={form.preferredTickers}
-        onChange={(value) =>
-          onChange('preferredTickers', Array.isArray(value) ? value : [])
-        }
+        onChange={(value) => onChange('preferredTickers', value)}
         placeholder={t('setups.create.placeholder.preferred-tickers')}
         isMulti
         portalDropdown

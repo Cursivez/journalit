@@ -48,6 +48,8 @@ interface LegacyQuestionSource {
 
 interface LegacyTradeReviewMigrationPlan {
   widgetConfig: LegacyWidgetConfig;
+  
+  hasPersistedQuestionSource: boolean;
   labelsByQuestionId: Map<string, string>;
   labelsByTemplateId: Map<string, Map<string, string>>;
 }
@@ -390,6 +392,10 @@ export function buildLegacyTradeReviewMigrationPlan(
     }
   }
 
+  let hasPersistedQuestionSource =
+    defaultTemplate !== RELEASED_BUILT_IN_TRADE_TEMPLATE &&
+    Object.keys(widgetConfig).length > 0;
+
   const globalLossSource = getLegacyGlobalLossSource(settings, false);
   if (
     widgetConfig.lossQuestions === undefined &&
@@ -400,9 +406,15 @@ export function buildLegacyTradeReviewMigrationPlan(
       globalLossSource,
       labelsByQuestionId
     );
+    hasPersistedQuestionSource = true;
   }
 
-  return { widgetConfig, labelsByQuestionId, labelsByTemplateId };
+  return {
+    widgetConfig,
+    hasPersistedQuestionSource,
+    labelsByQuestionId,
+    labelsByTemplateId,
+  };
 }
 
 function parseCompleteTradeReviewQuestions(

@@ -48,8 +48,6 @@ export const TRADE_LOG_AVAILABLE_COLUMNS_OPENED_ACTION_ID =
   'tradelog.available-columns-opened';
 export const TRADE_LOG_COLUMN_SETTINGS_OPENED_ACTION_ID =
   'tradelog.column-settings-opened';
-export const TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID =
-  'tradelog.image-gallery-selected';
 export const TRADE_LOG_IMAGE_GALLERY_FULLSCREEN_OPENED_ACTION_ID =
   'tradelog.image-gallery-fullscreen-opened';
 export const TRADE_LOG_IMAGE_GALLERY_ANNOTATION_OPENED_ACTION_ID =

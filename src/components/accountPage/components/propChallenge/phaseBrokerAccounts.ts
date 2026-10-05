@@ -4,7 +4,7 @@ import type { AccountTradeData } from '../../../../services/accountPage/types';
 import type { PropChallengePhase } from '../../../../services/propChallenge/types';
 import { getTradeBrokerIdentity } from '../../../../services/propChallenge/tradeIdentity';
 
-export interface PhaseBrokerAccountOption {
+interface PhaseBrokerAccountOption {
   id: string;
   displayName: string;
   tradeCount: number;

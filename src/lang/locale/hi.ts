@@ -3,6 +3,23 @@
 import type { Lang } from './en';
 
 const hi: Lang = {
+  'trade-import.recovery.bybit-header.columns':
+    'आवश्यक कॉलम अनुपस्थित हैं: {columns}।',
+  'trade-import.recovery.bybit-header.title': 'Bybit का हेडर या निर्यात जाँचें',
+  'trade-import.recovery.bybit-header.message':
+    'चुना हुआ हेडर Bybit के ट्रेड इतिहास से मेल नहीं खाता। हेडर पंक्ति जाँचें या केवल ऑर्डर कीमतों के बजाय निष्पादित कीमतों और मात्राओं वाले ट्रेड निर्यात करें। दूसरे प्रारूप की मैपिंग के लिए स्पष्ट रूप से {manualSource} चुनें।',
+  'update.installed.title': 'नया क्या है',
+  'settings.general.available-update-notifications': 'अपडेट अनुस्मारक दिखाएँ',
+  'settings.general.available-update-notifications-desc':
+    'रोज़ नए संस्करण जाँचें और अपडेट अनुस्मारक दिखाएँ। बंद करने पर केवल अपडेट के बाद नई सुविधाएँ दिखाई देंगी।',
+  'account.edit.field.unscoped-live-balance-desc':
+    'पहले किए गए बैलेंस सुधार का चरण निर्धारित नहीं हो सका। सुधार सुरक्षित है; सक्रिय चरण का मिलान करने के लिए ब्रोकर का वर्तमान बैलेंस दर्ज करें।',
+  'account.edit.error.inactive-phase':
+    'लाइव बैलेंस केवल सक्रिय चरण में बदला जा सकता है।',
+  'account.edit.error.phase-changed':
+    'संपादन के दौरान खाते का विवरण बदल गया। सहेजने से पहले खाता संपादक फिर से खोलें।',
+  'account.profiles.profitable-days-conflict':
+    'इन शर्तों को लागू करने से पहले अपनी वर्तमान पेआउट पॉलिसी रखें या लाभदायक दिनों की आवश्यकता बदलें।',
   'templateEditor.widget.session-log.hide-empty-outside':
     'सत्र के बाहर का लॉग खाली होने पर छिपाएँ',
   'widget.mfeScatter.name': 'MFE बनाम प्राप्त लाभ/हानि',
@@ -14,7 +31,6 @@ const hi: Lang = {
   'widget.mfeScatter.empty':
     'इस इकाई में उपयोगी MFE वाले कोई बंद ट्रेड नहीं हैं।',
 
-  'trade.broker-synced-at': 'ब्रोकर सिंक किया गया {date}',
   'trade-sync.tradovate.status.setup-required': 'अकाउंट सेटअप आवश्यक है',
   'trade-sync.tradovate.status.connecting': 'कनेक्ट हो रहा है',
   'trade-sync.tradovate.status.paused': 'पॉज़्ड',
@@ -786,8 +802,6 @@ const hi: Lang = {
     'ऑनबोर्डिंग प्रवाह खोलने में विफल. विवरण के लिए कंसोल जांचें.',
 
   'notice.error.open-release-notes': 'रिलीज़ नोट खोलने में विफल: {error}',
-  'notice.error.open-update-notification':
-    'अद्यतन अधिसूचना खोलने में विफल: {error}',
   'notice.error.open-layout-builder': 'लेआउट बिल्डर खोलने में विफल: {error}',
   'notice.error.switch-template': 'लेआउट स्विच करने में विफल: {error}',
   'notice.error.switch-template-generic': 'लेआउट स्विच करने में विफल',
@@ -979,48 +993,33 @@ const hi: Lang = {
   'layoutBuilder.guide.intro.title': 'यह आपका लेआउट बिल्डर है',
   'layoutBuilder.guide.intro.description':
     'यह पृष्ठ नियंत्रित करता है कि आपके रिव्यू लेआउट कैसे संरचित हैं। शुरू करने का सबसे आसान तरीका एक अंतर्निहित लेआउट की नकल करना है, फिर अपनी कॉपी को कस्टमाइज़ करना है।',
-  'layoutBuilder.guide.sidebar-overview.title':
-    'यह साइडबार वह जगह है जहां आप चुनते हैं कि आप क्या संपादित कर रहे हैं',
-  'layoutBuilder.guide.sidebar-overview.description':
-    'साइडबार में प्रत्येक अनुभाग एक अलग लेआउट प्रकार है। ट्रेड लेआउट आपके रिव्यू लेआउट से अलग हैं, और लाइब्रेरी अनुभाग लेआउट साझा करने के लिए है। अपनी स्वयं की प्रतिलिपि बनाने के बाद, आप इसे नए रिव्यू नोटों के लिए डिफ़ॉल्ट बनाने के लिए तारांकित कर सकते हैं।',
-  'layoutBuilder.guide.pick-built-in.title':
-    'अंतर्निहित DRC लेआउट से प्रारंभ करें',
-  'layoutBuilder.guide.pick-built-in.description':
-    'अपने पहले लेआउट के लिए, अंतर्निहित DRC लेआउट में से एक से शुरुआत करें। अपनी स्वयं की प्रतिलिपि बनाने से पहले यह आपको एक सुरक्षित प्रारंभिक बिंदु देता है।',
-  'layoutBuilder.guide.duplicate.title': 'अंतर्निहित लेआउट को डुप्लिकेट करें',
-  'layoutBuilder.guide.duplicate.description':
-    'अंतर्निर्मित लेआउट शुरुआती बिंदु हैं। पहले एक डुप्लिकेट बनाएं ताकि आप सुरक्षित रूप से अपना स्वयं का संस्करण बना सकें।',
-  'layoutBuilder.guide.preview-template.title':
-    'यह प्रिव्यू दिखाता है कि लेआउट कैसा दिखेगा',
-  'layoutBuilder.guide.preview-template.description':
-    'प्रिव्यू पर स्क्रॉल करें और प्रवाह का अनुभव प्राप्त करें। यह यह जांचने के लिए उपयोगी है कि लेआउट को संपादित करना शुरू करने से पहले वह स्पष्ट रूप से पढ़ रहा है या नहीं।',
-  'layoutBuilder.guide.switch-to-editor.title': 'संपादक पर स्विच करें',
-  'layoutBuilder.guide.switch-to-editor.description':
-    'प्रिव्यू आपको दिखाता है कि लेआउट कैसा दिखेगा। संपादक वह जगह है जहां आप वास्तव में इसे बदलते हैं।',
+  'layoutBuilder.guide.create-own-layout.title': 'अपना लेआउट बनाएँ',
+  'layoutBuilder.guide.create-own-layout.description':
+    'बिल्ट-इन लेआउट केवल पढ़ने योग्य हैं। किसी बिल्ट-इन DRC लेआउट की प्रतिलिपि बनाने के लिए कॉपी आइकन पर क्लिक करें, या नया लेआउट शुरू करने के लिए + दबाएँ। मानक DRC की प्रतिलिपि बनाने के लिए आगे दबाएँ।',
   'layoutBuilder.guide.editor-overview.title':
     'यह वह जगह है जहां आप लेआउट संपादित करते हैं',
   'layoutBuilder.guide.editor-overview.description':
     'यहां लेआउट का नाम बदलें, रिव्यू विजेट सूची, विजेट्स को पुनर्व्यवस्थित करने के लिए बाएं हैंडल को खींचें, इसे बदलने के लिए विजेट पर क्लिक करें, और जो कुछ भी आपको आवश्यकता नहीं है उसे हटा दें।',
-  'layoutBuilder.guide.add-widget.title': 'अपनी कॉपी में एक विजेट जोड़ें',
+  'layoutBuilder.guide.add-widget.title': 'एक विजेट जोड़ें',
   'layoutBuilder.guide.add-widget.description':
-    'अपने लेआउट में नए ब्लॉक डालने के लिए विजेट जोड़ें का उपयोग करें। इसी तरह आप वर्कफ़्लो को अपने रिव्यू से मिलाते हैं।',
-  'layoutBuilder.guide.open-widget-picker.title': 'विजेट पिकर खोलें',
-  'layoutBuilder.guide.open-widget-picker.description':
-    'यह पिकर विजेट दिखाता है जिसे आप इस रिव्यू प्रकार के लिए जोड़ सकते हैं।',
+    'अपने लेआउट के अंत में ब्लॉक जोड़ने के लिए विजेट जोड़ें का उपयोग करें, या दो विजेट के बीच होवर करें और + पर क्लिक करके उसे ठीक वहीं डालें जहाँ आप चाहते हैं।',
   'layoutBuilder.guide.choose-widget.title': 'एक विजेट चुनें',
   'layoutBuilder.guide.choose-widget.description':
     'नाम, विवरण या श्रेणी के आधार पर विजेट खोजने के लिए खोज बॉक्स में टाइप करें, फिर उसे चुनें। आप नेक्स्ट भी दबा सकते हैं और Journalit आपके लिए पहला परिणाम चुन लेगा।',
-  'layoutBuilder.guide.widget-library-docs.title':
-    'यदि आप फंस जाते हैं तो विजेट लाइब्रेरी का उपयोग करें',
-  'layoutBuilder.guide.widget-library-docs.description':
-    'यह प्रत्येक रिव्यू प्रकार के लिए विजेट लाइब्रेरी, उदाहरण और उपलब्धता तालिका के साथ दस्तावेज़ पृष्ठ खोलता है।',
   'layoutBuilder.guide.save-template.title': 'अपना लेआउट सहेजें',
   'layoutBuilder.guide.save-template.description':
     'एक बार जब आपकी कॉपी सही दिखने लगे तो उसे सेव कर लें। आप इसे बाद में परिष्कृत करना जारी रख सकते हैं क्योंकि आपकी रिव्यू प्रक्रिया में सुधार होता है।',
   'layoutBuilder.guide.set-default-template.title':
-    'इस प्रतिलिपि को अपने डिफ़ॉल्ट लेआउट के रूप में सेट करें',
+    'इसे अपना डिफ़ॉल्ट लेआउट बनाएँ',
   'layoutBuilder.guide.set-default-template.description':
     'यदि आप चाहते हैं कि नए रिव्यू नोट स्वचालित रूप से इस लेआउट का उपयोग करें तो अपने नए लेआउट पर स्टार पर क्लिक करें।',
+  'layoutBuilder.guide.whats-new.insert-slot.title': 'कहीं भी विजेट जोड़ें',
+  'layoutBuilder.guide.whats-new.insert-slot.description':
+    'दो विजेट्स के बीच होवर करें और + दबाएँ ताकि विजेट नीचे की बजाय ठीक वहीं जुड़े।',
+  'layoutBuilder.guide.whats-new.add-widget-button.title':
+    'या इसे अंत में जोड़ें',
+  'layoutBuilder.guide.whats-new.add-widget-button.description':
+    'विजेट जोड़ें अब भी लेआउट के नीचे जोड़ता है, और अब नए विजेट तक स्क्रॉल करके उसकी खोज खोलता है।',
   'tradelog.empty': 'कोई ट्रेड्स नहीं मिला',
   'tradelog.empty.submessage':
     'ट्रेड नोट्स बनाना शुरू करें ताकि वे आपके ट्रेड लॉग में दिखाई दें।',
@@ -1469,7 +1468,8 @@ const hi: Lang = {
   'home.widget.trading-score.description':
     'आपके कुल ट्रेडिंग प्रदर्शन का एक स्कोर',
   'home.widget.aum.name': 'AUM',
-  'home.widget.aum.description': '7-दिन के रुझान के साथ कुल खाता बैलेंस',
+  'home.widget.aum.description':
+    '30 दिनों के रुझान के साथ वर्तमान खाते की शेष राशि',
   'home.widget.drawdown-monitor.name': 'ड्रॉडाउन मॉनिटर',
   'home.widget.drawdown-monitor.description':
     'हर खाते में ड्रॉडाउन सीमा का उपयोग',
@@ -1615,7 +1615,6 @@ const hi: Lang = {
   'command.open-economic-calendar': 'आर्थिक कैलेंडर खोलें',
 
   'status-bar.update-available-branded': 'Journalit अपडेट करें',
-  'status-bar.release-notes-branded': 'Journalit · रिलीज़ नोट्स देखें',
   'status-bar.update-aria-label':
     'Journalit {version} - देखने के लिए क्लिक करें',
   'update.available.ready': 'नया संस्करण तैयार है',
@@ -3119,10 +3118,8 @@ const hi: Lang = {
     'नई ट्रेड सूचनाएं {status}',
   'settings.general.update-notifications': 'अद्यतन सूचनाएं दिखाएँ',
   'settings.general.update-notifications-desc':
-    'नया प्लगइन अपडेट उपलब्ध होने पर एक अधिसूचना प्रदर्शित करें',
+    'अपडेट अनुस्मारक और अपडेट के बाद नई सुविधाएँ दिखाएँ।',
   'settings.general.update-notifications-aria': 'अद्यतन सूचनाएं दिखाएँ',
-  'settings.general.update-notifications-toggled':
-    'सूचनाएं अपडेट करें {status}',
   'settings.general.data-management': 'डेटा प्रबंधन और गोपनीयता',
   'settings.general.backup-restore-section': 'बैकअप, पुनर्सेटअप और रीसेट',
   'settings.general.export-settings': 'एक्सपोर्ट सेटिंग्स',
@@ -3762,6 +3759,18 @@ const hi: Lang = {
     'लक्ष्य विजेट के लिए रिव्यू नोट की आवश्यकता होती है (DRC, साप्ताहिक, मासिक, त्रैमासिक या वार्षिक)',
   'widget.goals.aria.edit': 'लक्ष्य संपादित करें',
   'widget.goals.aria.delete': 'लक्ष्य हटाएँ',
+  'review.header.guide.intro.title': 'आपकी समीक्षा यहाँ शुरू होती है',
+  'review.header.guide.intro.description':
+    'इस समीक्षा में नेविगेट करने और इसे प्रबंधित करने के लिए ज़रूरी सभी चीज़ें हेडर में हैं।',
+  'review.header.guide.reviewed.title': 'समीक्षित चिह्नित करें',
+  'review.header.guide.reviewed.description':
+    'इस नोट को समीक्षित चिह्नित करने के लिए गोले पर क्लिक करें। वापस करने के लिए फिर से क्लिक करें।',
+  'review.header.guide.dates.title': 'समीक्षा नोटों के बीच जाएँ',
+  'review.header.guide.dates.description':
+    'जून या 2026 जैसे तारीख लेबल पर क्लिक करके उसका समीक्षा नोट खोलें।',
+  'review.header.guide.controls.title': 'फ़िल्टर, लेआउट और नेविगेशन',
+  'review.header.guide.controls.description':
+    'ट्रेड फ़िल्टर करने के लिए फ़नल, नोट का लेआउट बदलने के लिए «लेआउट स्विच करें» और समीक्षा अवधियों के बीच जाने के लिए «पिछला» / «अगला» इस्तेमाल करें।',
   'widget.header.name': 'हेडर',
 
   'widget.header.invalid-context':
@@ -4217,6 +4226,31 @@ const hi: Lang = {
   'metric.winRate.description': 'ट्रेड्स जीतने का प्रतिशत',
   'metric.profitFactor.name': 'प्रॉफिट फैक्टर',
   'metric.profitFactor.description': 'सकल लाभ और सकल हानि का अनुपात',
+  'metric.calmarRatio.name': 'कैलमर अनुपात',
+  'metric.calmarRatio.description':
+    'अधिकतम प्रतिशत गिरावट के सापेक्ष वार्षिकीकृत वास्तविक रिटर्न',
+  'dashboard.calmarRatio.tooltip.formula':
+    'वार्षिकीकृत रिटर्न को अधिकतम गिरावट से भाग दिया जाता है।',
+  'dashboard.calmarRatio.unavailable.no-history':
+    'अभी वास्तविक ट्रेड परिणामों का इतिहास नहीं है।',
+  'dashboard.calmarRatio.unavailable.capital':
+    'प्रदर्शन मुद्रा में प्रारंभिक इक्विटी उपलब्ध नहीं है।',
+  'dashboard.calmarRatio.unavailable.incomplete-history':
+    'कुछ वास्तविक लाभ/हानि उपलब्ध नहीं है।',
+  'dashboard.calmarRatio.unavailable.dates':
+    'कुछ ट्रेड की तारीखें उपलब्ध नहीं हैं।',
+  'dashboard.calmarRatio.unavailable.short-history':
+    'कम से कम एक दिन का इतिहास चाहिए।',
+  'dashboard.calmarRatio.unavailable.no-drawdown':
+    'अभी कोई गिरावट दर्ज नहीं हुई है।',
+  'dashboard.calmarRatio.unavailable.non-positive-equity':
+    'इक्विटी शून्य या उससे नीचे पहुँची।',
+  'dashboard.calmarRatio.unavailable.non-finite':
+    'परिणाम गणना के लिए बहुत बड़ा है।',
+  'dashboard.calmarRatio.unavailable.scope':
+    'पूरा समय और केवल पूरे खाते चुनें।',
+  'dashboard.calmarRatio.unavailable.conversion':
+    'कुछ मुद्रा रूपांतरण उपलब्ध नहीं हैं।',
   'metric.sharpeRatio.name': 'शार्प रेशियो',
   'metric.sharpeRatio.description': 'अस्थिरता के सापेक्ष औसत ट्रेड P&L',
   'metric.expectancy.name': 'एक्सपेक्टेंसी',
@@ -4577,6 +4611,7 @@ const hi: Lang = {
   'templateEditor.field.template-name': 'लेआउट का नाम',
   'templateEditor.field.widgets': 'विजेट्स ({count})',
   'templateEditor.button.add-widget': '+ विजेट जोड़ें',
+  'templateEditor.button.insert-widget-here': 'यहाँ विजेट जोड़ें',
   'templateEditor.button.widget-library-docs': 'विजेट लाइब्रेरी डॉक्स',
   'templateEditor.widget.locked': 'बंद',
   'templateEditor.widget.select-placeholder': 'एक विजेट चुनें...',
@@ -4697,6 +4732,14 @@ const hi: Lang = {
   'home.widget-selector.restore': 'पुनर्स्थापित करें',
   'home.widget-selector.add-shortcut': 'खाता/सेटअप शॉर्टकट जोड़ें',
   'home.period.month': 'महीना',
+  'home.period.week': 'सप्ताह',
+  'home.period.custom': 'कस्टम अवधि',
+  'home.period.invalid-range':
+    'समाप्ति तिथि आरंभ तिथि के समान या उसके बाद होनी चाहिए।',
+  'date-input.error.day': 'दिन 1 और {max} के बीच होना चाहिए।',
+  'date-input.error.invalid': 'कृपया कोई मान्य दिनांक दर्ज करें',
+  'date-input.error.month': 'महीना 1 और 12 के बीच होना चाहिए।',
+  'date-input.error.year': 'YY (2000–2099) या YYYY (1000–9999) का उपयोग करें।',
   'home.period.quarter': 'क्वार्टर',
   'home.period.year': 'साल',
   'home.period.lifetime': 'ऑल टाइम',
@@ -4828,6 +4871,7 @@ const hi: Lang = {
   'home.widget.best-hours.no-positive-detail': 'नमूनाकृत विंडो नकारात्मक हैं',
 
   'home.widget.aum.title': 'AUM',
+  'home.widget.aum.current-trend': 'वर्तमान · 30 दिनों का रुझान',
   'home.widget.aum.period.month': 'इस महीने',
   'home.widget.aum.period.quarter': 'यह तिमाही',
   'home.widget.aum.period.year': 'इस साल',
@@ -4837,9 +4881,6 @@ const hi: Lang = {
   'home.widget.aum.account-count': '{count} अकाउंट',
   'home.widget.aum.account-count-plural': '{count} अकाउंट्स',
   'home.widget.streak.title': 'धारी',
-  'home.widget.streak.period.month': 'इस महीने',
-  'home.widget.streak.period.quarter': 'इस तिमाही',
-  'home.widget.streak.period.year': 'इस साल',
   'home.widget.streak.period.ever': 'कभी',
   'home.widget.streak.win': 'जीतना',
   'home.widget.streak.wins': 'जीत',
@@ -5428,7 +5469,6 @@ const hi: Lang = {
   'widget.weekly-drc-context.description':
     'साप्ताहिक रिव्यू में प्रत्येक दिन के लिए चयनित DRC अनुभाग दिखाएं',
 
-  'widget.weekly-drc-context.image-alt-prefix': 'साप्ताहिक DRC छवि',
   'widget.weekly-drc-context.no-activity': 'इस दिन के लिए कोई गतिविधि नहीं.',
   'widget.weekly-drc-context.no-sections-configured':
     'लेआउट सेटिंग्स में कम से कम एक DRC अनुभाग चुनें।',
@@ -5551,7 +5591,7 @@ const hi: Lang = {
     'कोई इंपोर्ट योग्य ट्रेड्स नहीं मिला। विवरण के लिए रिव्यू यह फ़ाइल Trade Import में है।',
 
   'quick-import.privacy-note':
-    'फ़ाइलें प्रसंस्करण के लिए Journalit सर्वर पर अपलोड की जाती हैं और डिफ़ॉल्ट रूप से संग्रहीत नहीं होती हैं।',
+    'चुनी गई फ़ाइल और आयात विकल्प Journalit पर अपलोड होते हैं। एन्क्रिप्टेड निदान रिकॉर्ड 1 दिन (मुफ़्त) या 14 दिन (Pro) के बाद और पूर्वावलोकन 7 दिनों के बाद समाप्त होते हैं। वैकल्पिक AI मैपिंग हेडर और नमूना पंक्तियाँ AI मॉडल को भेजती है। Trade Import अलग क्लाइंट टेलीमेट्री या पृष्ठभूमि त्रुटि रिपोर्ट नहीं भेजता।',
   'quick-import.dropzone.title': 'यहां एक ब्रोकर एक्सपोर्ट डालें',
   'quick-import.dropzone.subtitle': 'या फ़ाइल चुनने के लिए क्लिक करें',
 
@@ -5606,7 +5646,7 @@ const hi: Lang = {
   'trade-import.gate.sign-in':
     'साइन इन करें या अपनी फ़ाइल का विश्लेषण करने के लिए एक निःशुल्क Journalit अकाउंट बनाएं। प्रो की आवश्यकता केवल तभी होती है जब आप इंपोर्ट ट्रेड्स होते हैं।',
   'trade-import.gate.sign-in.reassurance':
-    'आपकी फ़ाइल निजी तौर पर संसाधित की जाती है और डिफ़ॉल्ट रूप से संग्रहीत नहीं होती है।',
+    'चुनी गई फ़ाइल और आयात विकल्प Journalit पर अपलोड होते हैं। एन्क्रिप्टेड निदान रिकॉर्ड 1 दिन (मुफ़्त) या 14 दिन (Pro) के बाद और पूर्वावलोकन 7 दिनों के बाद समाप्त होते हैं। वैकल्पिक AI मैपिंग हेडर और नमूना पंक्तियाँ AI मॉडल को भेजती है। Trade Import अलग क्लाइंट टेलीमेट्री या पृष्ठभूमि त्रुटि रिपोर्ट नहीं भेजता।',
   'trade-import.gate.sign-in.no-trial':
     'विश्लेषण और प्रिव्यू के लिए किसी प्रो ट्रायल की आवश्यकता नहीं है।',
   'trade-import.gate.sign-in.cta': 'प्रिव्यू में निःशुल्क साइन इन करें',
@@ -5632,7 +5672,7 @@ const hi: Lang = {
     'हर पंक्ति में एक ट्रेड (P/L का उपयोग)',
   'trade-import.label.ai-mapping': 'एआई मैपिंग सुझावों का अनुरोध करें',
   'trade-import.privacy.copy':
-    'Trade Import प्रसंस्करण के लिए चयनित ब्रोकर एक्सपोर्ट को Journalit सर्वर पर अपलोड करता है। ब्रोकर एक्सपोर्ट में अकाउंट पहचानकर्ता, ट्रेड इतिहास, प्रतीक, टाइमस्टैम्प, मूल्य, मात्रा, शुल्क, शेष राशि और P&L शामिल हो सकते हैं। प्रिव्यू पीढ़ी के लिए, Journalit आपके चयनित अकाउंट नाम, मैपिंग/टेम्पलेट विकल्प, कस्टम फ़ील्ड परिभाषाएँ और सहेजे गए विकल्प, और IBKR ओपन-पोजीशन मिलान के लिए सीमित स्थानीय ओपन-ट्रेड संदर्भ भी भेजता है। इस इंपोर्ट के लिए कच्ची फ़ाइलें संसाधित की जाती हैं और डिफ़ॉल्ट रूप से संग्रहीत नहीं की जाती हैं। जब AI मैपिंग सुझाव चालू होते हैं, तो कॉलम हेडर और कुछ नमूना पंक्तियाँ भी कॉलम मिलान सुझाने के लिए एक AI मॉडल को भेजी जाती हैं; कॉलम स्वयं मैप करने के लिए यह विकल्प बंद करें।',
+    'चुनी गई फ़ाइल और आयात विकल्प Journalit पर अपलोड होते हैं। एन्क्रिप्टेड निदान रिकॉर्ड 1 दिन (मुफ़्त) या 14 दिन (Pro) के बाद और पूर्वावलोकन 7 दिनों के बाद समाप्त होते हैं। वैकल्पिक AI मैपिंग हेडर और नमूना पंक्तियाँ AI मॉडल को भेजती है। Trade Import अलग क्लाइंट टेलीमेट्री या पृष्ठभूमि त्रुटि रिपोर्ट नहीं भेजता। निर्यात में खाता पहचानकर्ता, ट्रेड इतिहास, नोट्स, कीमतें, मात्राएँ, शुल्क, शेष राशि और लाभ/हानि हो सकते हैं। अनुरोध कस्टम फ़ील्ड की परिभाषाएँ और सहेजे गए विकल्प भी भेजते हैं; पूर्वावलोकन में लक्ष्य खाते का नाम होता है। AI प्रसंस्करण से बचने के लिए AI मैपिंग बंद करें।',
 
   'trade-import.action.analyse': 'फ़ाइल का विश्लेषण करें',
   'trade-import.action.choose-file':
@@ -5872,6 +5912,13 @@ const hi: Lang = {
     'फ़ाइल फ़ॉर्मेट अपने आप पढ़ा जाता है, मैपिंग की ज़रूरत नहीं।',
   'trade-import.source.guide': 'एक्सपोर्ट कैसे करें',
   'trade-import.source.change': 'बदलें',
+  'trade-import.recovery.rithmic-order-history.title':
+    'असमर्थित Rithmic प्रारूप',
+  'trade-import.recovery.rithmic-order-history.message':
+    'Rithmic ऑर्डर इतिहास का निर्यात अपलोड करें या वह प्लेटफ़ॉर्म चुनें जिसने यह फ़ाइल बनाई है।',
+  'trade-import.recovery.rithmic-order-history.choose-file':
+    'दूसरी फ़ाइल चुनें',
+  'trade-import.source.change-action': 'स्रोत बदलें',
   'trade-import.sync-suggestion.full.title': '{broker} अपने आप सिंक हो सकता है',
   'trade-import.sync-suggestion.full.body':
     'Trade Sync नए ट्रेड खुद ले आता है, कोई एक्सपोर्ट नहीं चाहिए। आप फिर भी नीचे फ़ाइल इम्पोर्ट कर सकते हैं।',
@@ -6933,10 +6980,6 @@ const hi: Lang = {
     'मीडिया फ़ाइल के बजाय एक फ़ोल्डर चुनें.',
   'settings.gallery-folders.save-failed':
     'गैलरी फ़ोल्डर सहेजने में विफल. कृपया पुन: प्रयास करें।',
-  'tradelog.guide.switch-to-gallery.title': 'ट्रेड्स से गैलरी पर स्विच करें',
-  'tradelog.guide.switch-to-gallery.description':
-    'नियमित ट्रेड लॉग और गैलरी के बीच जाने के लिए इस मोड चयनकर्ता का उपयोग करें। अपनी छवियों, GIF, वीडियो और YouTube लिंक के साथ भ्रमण जारी रखने के लिए गैलरी पर क्लिक करें।',
-
   'tradelog.guide.gallery-grouping.title': 'जर्नल एंट्री द्वारा समूह मीडिया',
   'tradelog.guide.gallery-grouping.description':
     'समूहीकृत प्रत्येक ट्रेड, रिव्यू, या कॉन्फ़िगर किए गए फ़ोल्डर को एक साथ रखता है। व्यक्ति प्रत्येक मीडिया आइटम को अपने कार्ड के रूप में प्रदर्शित करता है।',
@@ -7200,11 +7243,15 @@ const hi: Lang = {
   'trade-handoff.trade-count.other': '{count} ट्रेड',
   'trade-handoff.title.sync': 'सिंक्रनाइज़ेशन पूर्ण',
   'trade-handoff.summary.import-complete': '{trades} आयात किए गए',
+  'trade-handoff.summary.update-complete': '{trades} अपडेट किए गए',
+  'trade-handoff.summary.update-partial':
+    '{trades} समस्याओं के साथ अपडेट किए गए',
+  'trade-handoff.summary.mixed-complete':
+    '{imported} आयात किए गए · {updated} अपडेट किए गए',
+  'trade-handoff.summary.mixed-partial':
+    '{imported} आयात किए गए · {updated} अपडेट किए गए, समस्याओं के साथ',
   'trade-handoff.summary.import-partial':
     '{trades} समस्याओं के साथ आयात किए गए',
-  'trade-handoff.summary.sync-complete': '{trades} सिंक्रनाइज़ किए गए',
-  'trade-handoff.summary.sync-partial':
-    '{trades} समस्याओं के साथ सिंक्रनाइज़ किए गए',
   'trade-handoff.periods.choose': 'दूसरी समीक्षा अवधि चुनें',
   'trade-handoff.periods.recommended': 'अनुशंसित',
   'trade-handoff.action.dismiss': 'हाल का ट्रेड परिणाम हटाएँ',
@@ -7291,7 +7338,9 @@ const hi: Lang = {
   'account.profiles.correction-title': 'कैटलॉग सुधार',
   'account.profiles.correction-source': 'नियम स्रोत',
   'account.profiles.correction-period': 'प्रभावित इतिहास',
-  'account.profiles.correction-history': 'सुधार इतिहास',
+  'account.profiles.correction-history': 'नियमों में सुधार',
+  'account.profiles.correction-before': 'पहले',
+  'account.profiles.correction-after': 'बाद में',
   'account.profiles.correction-stale':
     'अकाउंट इतिहास बदल गया। सुधार लागू करने से पहले यह रिव्यू फिर खोलें।',
   'account.profiles.correction-result': 'कठोर-नियम मूल्यांकन',
@@ -7541,6 +7590,40 @@ const hi: Lang = {
   'account.prop-challenge.rule.drawdown-mode': 'ड्रॉडाउन मोड',
   'account.prop-challenge.rule.lock-at-balance': 'बैलेंस पर लॉक',
   'account.prop-challenge.rule.daily-loss-model': 'दैनिक हानि राशि',
+  'account.prop-challenge.rule.help.target-amount':
+    'पूर्ण लक्ष्य खाते की मुद्रा में हैं; प्रतिशत लक्ष्य इस चरण के शुरुआती बैलेंस पर आधारित हैं। प्रगति दैनिक गिने गए लाभ की सीमा के बाद बैलेंस की वृद्धि से बनती है, अनरियलाइज़्ड P&L से नहीं।',
+  'account.prop-challenge.rule.help.credit-withdrawals':
+    'दर्ज सकल निकासी को पूर्ण लक्ष्य की प्रगति में वापस जोड़ता है। बैलेंस या निकासी पात्रता नहीं बदलता।',
+  'account.prop-challenge.rule.help.drawdown-amount':
+    'शुरुआती बैलेंस (स्थिर) या रियलाइज़्ड बैलेंस के उच्चतम स्तर (ट्रेलिंग) से नीचे मुद्रा में दूरी। न्यूनतम स्तर छूना नियम का उल्लंघन है।',
+  'account.prop-challenge.rule.help.drawdown-mode':
+    'स्थिर मोड न्यूनतम स्तर को स्थिर रखता है। EOD ट्रेलिंग ट्रेडिंग दिन के बंद उच्चतम बैलेंस का, और इंट्राडे ट्रेलिंग दर्ज रियलाइज़्ड बैलेंस लेनदेन का अनुसरण करता है, अनरियलाइज़्ड इक्विटी का नहीं।',
+  'account.prop-challenge.rule.help.lock-balance':
+    'ट्रेलिंग ड्रॉडाउन के न्यूनतम स्तर की ऊपरी सीमा है, सक्रियण बैलेंस नहीं। इस बैलेंस पर स्तर बढ़ना रोक देता है। खाली रखने पर कोई ऊपरी सीमा नहीं।',
+  'account.prop-challenge.rule.help.daily-loss-amount':
+    'ट्रेडिंग दिन में ट्रेडों की सबसे खराब संचयी रियलाइज़्ड शुद्ध हानि की मुद्रा सीमा है, दिन के उच्चतम स्तर से गिरावट नहीं। सीमा छूना उल्लंघन है।',
+  'account.prop-challenge.rule.help.breach-action':
+    'खाता विफल करना ऐतिहासिक उल्लंघन को सक्रिय रखता है। अगले सत्र तक रोकना केवल वर्तमान ट्रेडिंग दिन पर लागू है; पुराने उल्लंघन इतिहास में रहते हैं।',
+  'account.prop-challenge.rule.help.daily-loss-model':
+    'स्थिर सीमा, लाभ सीमा पर स्थायी बदलाव, उच्चतम EOD लाभ के अनुसार वृद्धि या पिछले EOD लाभ के स्तर चुनें। सशर्त फ़ील्ड चुने हुए मॉडल को सेट करते हैं।',
+  'account.prop-challenge.rule.help.profit-basis':
+    'संचयी ट्रेड लाभ में नकदी प्रवाह शामिल नहीं हैं। वर्तमान खाता लाभ में वे शामिल हैं, इसलिए निकासी इसे घटाती है। दोनों पिछले ट्रेडिंग दिनों के बंद मान लेते हैं।',
+  'account.prop-challenge.rule.help.position-model':
+    'प्रति ट्रेड स्थिर सीमा, प्रत्येक लाभ चरण पर एक अतिरिक्त कॉन्ट्रैक्ट या स्पष्ट लाभ स्तर चुनें। वृद्धि पिछले ट्रेडिंग दिनों के बंद मान पर आधारित है।',
+  'account.prop-challenge.rule.help.max-contracts':
+    'वैकल्पिक माइक्रो रूपांतरण के बाद प्रति ट्रेड अधिकतम आकार है, कई ट्रेडों का संयुक्त एक्सपोज़र नहीं। सीमा से अधिक होना उल्लंघन है।',
+  'account.prop-challenge.rule.help.initial-contracts':
+    'दिन के अंत का पूर्ण लाभ बड़ी सीमाएँ देने से पहले प्रति ट्रेड शुरुआती कॉन्ट्रैक्ट सीमा।',
+  'account.prop-challenge.rule.help.maximum-contracts':
+    'लाभ आधारित कॉन्ट्रैक्ट वृद्धि की वैकल्पिक ऊपरी सीमा। खाली रखने पर कोई अतिरिक्त सीमा नहीं।',
+  'account.prop-challenge.rule.help.daily-profit':
+    'योग्य दिन के रियलाइज़्ड शुद्ध ट्रेड P&L की मुद्रा सीमा, जिसमें लाभ, हानि और लागत शामिल हैं। अनरियलाइज़्ड लाभ और नकदी प्रवाह नहीं गिने जाते।',
+  'account.prop-challenge.rule.help.consistency-cushion':
+    'सर्वश्रेष्ठ दिन के अधिकतम हिस्से में प्रतिशत अंक जोड़ता है: 30% + 5 अंक से 35% की अनुमति है। खाली रखने पर कोई अतिरिक्त मार्जिन नहीं।',
+  'account.prop-challenge.rule.help.daily-profit-cap':
+    'चरण के लक्ष्य में गिने जाने वाले प्रत्येक ट्रेडिंग दिन के लाभ की मुद्रा सीमा। अतिरिक्त लाभ बैलेंस में रहता है; हानि पूरी गिनी जाती है।',
+  'account.prop-challenge.rule.help.live-review':
+    'समीक्षा पात्रता के लिए एक ट्रेडिंग दिन में आवश्यक रियलाइज़्ड शुद्ध लाभ। चरण को स्वतः आगे नहीं बढ़ाता और लाइव खाता नहीं देता।',
   'account.prop-challenge.rule.daily-loss-model.fixed': 'निश्चित राशि',
   'account.prop-challenge.rule.daily-loss-model.threshold':
     'अकाउंट लाभ सीमा पर बढ़ती है',
@@ -7558,10 +7641,10 @@ const hi: Lang = {
   'account.prop-challenge.rule.daily-loss-model.profit-tiers':
     'पिछले-EOD लाभ टियर',
   'account.prop-challenge.rule.daily-loss-tiers-help':
-    'लाभ:हानि-सीमा जोड़े उपयोग करें। पिछले EOD अकाउंट लाभ से चुना टियर अगले सेशन पर लागू होता है।',
+    'अल्पविराम से अलग लाभ:हानि-सीमा जोड़े दर्ज करें। पिछले ट्रेडिंग दिन के बंद पर चुना गया लाभ आधार अगले दिन की सीमा तय करता है; सीमा बढ़ या घट सकती है।',
   'account.prop-challenge.rule.loss-tiers': 'लाभ टियर और हानि सीमाएँ',
   'account.prop-challenge.rule.daily-loss-threshold-help':
-    'आजीवन अकाउंट लाभ पहली बार प्रारंभिक शेष के कॉन्फ़िगर प्रतिशत तक पहुँचने पर उच्चतर दैनिक हानि राशि स्थायी रूप से सक्रिय होती है।',
+    'जब इस चरण का संचयी रियलाइज़्ड ट्रेड लाभ पहली बार चरण के शुरुआती बैलेंस के तय प्रतिशत तक पहुँचता है, समायोजित मुद्रा सीमा स्थायी रूप से सक्रिय हो जाती है।',
   'account.prop-challenge.rule.profit-threshold-percent': 'अकाउंट लाभ सीमा (%)',
   'account.prop-challenge.rule.amount-after-threshold':
     'सीमा के बाद दैनिक हानि राशि',
@@ -7739,7 +7822,7 @@ const hi: Lang = {
     'कंसिस्टेंसी लक्ष्य के लिए 0% से अधिक अधिकतम चाहिए।',
   'account.prop-challenge.ledger.help.open': '{rule} के बारे में',
   'account.prop-challenge.ledger.help.profit_target':
-    'फेज पास करने के लिए अकाउंट को इस राशि तक बढ़ाएँ। केवल बंद ट्रेड गिने जाते हैं।',
+    'चरण पास करने के लिए तय बैलेंस वृद्धि तक पहुँचें। गिने गए लाभ की सीमाएँ और वैकल्पिक निकासी क्रेडिट प्रगति पर असर डालते हैं; अनरियलाइज़्ड लाभ नहीं गिना जाता।',
   'account.prop-challenge.ledger.help.profit_target.example':
     'इस अकाउंट को {target} लाभ चाहिए: अभी तक {current}, {remaining} शेष।',
   'account.prop-challenge.ledger.help.profit_target.example-done':
@@ -7769,11 +7852,11 @@ const hi: Lang = {
   'account.prop-challenge.ledger.help.live_review_daily_profit.example':
     '{trigger} या अधिक का एक दिन पात्र बनाता है; अब तक का सर्वश्रेष्ठ दिन {bestDay}।',
   'account.prop-challenge.ledger.help.minimum_trading_days':
-    'कम से कम एक बंद ट्रेड वाले दिन। लक्ष्य कितनी भी जल्दी पूरा हो, इतने दिनों से पहले फेज पास नहीं हो सकता।',
+    'इस चरण में आवश्यक अलग ट्रेड प्रवेश दिनों की संख्या, अभी खुले प्रवेश सहित। तय ट्रेडिंग दिन कटऑफ इस्तेमाल होता है, कैलेंडर की आधी रात नहीं।',
   'account.prop-challenge.ledger.help.minimum_trading_days.example':
     '{target} ट्रेडिंग दिनों में से {current} पूरे, {remaining} शेष।',
   'account.prop-challenge.ledger.help.minimum_profitable_days':
-    'वे ट्रेडिंग दिन जो फर्म के न्यूनतम दैनिक लाभ पर या उससे ऊपर बंद होते हैं। ब्रेक-ईवन या छोटे विन नहीं गिने जाते।',
+    'इस चरण में न्यूनतम दैनिक रियलाइज़्ड शुद्ध लाभ पूरा करने वाले आवश्यक दिन। दर्ज निकासी इस पूरे चरण के नियम को रीसेट नहीं करती।',
   'account.prop-challenge.ledger.help.minimum_profitable_days.example':
     '{minimum} या अधिक पर बंद {target} दिनों में से {current}, {remaining} शेष।',
   'account.prop-challenge.ledger.help.consistency':
@@ -8306,6 +8389,79 @@ const hi: Lang = {
   'onboarding.legacy-challenge.entry.desc':
     'मौजूदा अकाउंट को चैलेंज में जोड़ें या कनवर्ट करें।',
   'onboarding.legacy-challenge.entry.action': 'सेट अप करें',
+  'account.prop-challenge.field.help-label': 'सहायता: {field}',
+  'account.prop-challenge.payout-rules.help.cycle':
+    'प्रवेश वाले दिनों, न्यूनतम शुद्ध लाभ वाले दिनों या बीते कैलेंडर दिनों से प्रतीक्षा मापता है। कोई चक्र नहीं केवल यह दिन-संबंधी शर्त बंद करता है।',
+  'account.prop-challenge.payout-rules.help.days':
+    'चुने चक्र के आवश्यक दिन: प्रवेश दिन, पर्याप्त वास्तविक शुद्ध लाभ वाले दिन या पूरे 24 घंटे की अवधि।',
+  'account.prop-challenge.payout-rules.help.daily-profit':
+    'लागत के बाद न्यूनतम दैनिक वास्तविक शुद्ध लाभ। ट्रेड आपके ट्रेडिंग-दिन की समाप्ति के अनुसार जोड़े जाते हैं। सीमा शून्य से अधिक होनी चाहिए।',
+  'account.prop-challenge.payout-rules.help.qualifying-days':
+    'प्रतीक्षा चक्र के साथ लाभ-योग्य दिनों की शर्त जोड़ता है। मौजूदा भुगतान चक्र में दोनों शर्तें पूरी होनी चाहिए।',
+  'account.prop-challenge.payout-rules.help.profitable-days':
+    'मौजूदा चक्र के अलग-अलग दिन जिनका वास्तविक शुद्ध लाभ दैनिक न्यूनतम तक पहुँचता है।',
+  'account.prop-challenge.payout-rules.help.anchor':
+    'कैलेंडर प्रतीक्षा चक्र की शुरुआत या पहले प्रवेश से शुरू होती है। रीसेट चालू हो तो दर्ज निकासी अगला चक्र शुरू करती है।',
+  'account.prop-challenge.payout-rules.help.elapsed-hours':
+    'मौजूदा चक्र के पहले प्रवेश से बीते घंटे। ट्रेड न हो तो घड़ी शुरू नहीं होती। खाली रखने से शर्त बंद होती है।',
+  'account.prop-challenge.payout-rules.help.request-window':
+    'हर दिन या तय समय क्षेत्र के चुने दिनों में अनुरोध की अनुमति। बाकी शर्तें लागू रहती हैं।',
+  'account.prop-challenge.payout-rules.help.time-zone':
+    'अनुमत अनुरोध-दिन तय करने का समय क्षेत्र, जैसे America/New_York । ट्रेडिंग-दिन की समाप्ति नहीं बदलता।',
+  'account.prop-challenge.payout-rules.help.request-days':
+    'चुने समय क्षेत्र में अनुमत सप्ताह के दिन। कम से कम एक दिन चुनें।',
+  'account.prop-challenge.payout-rules.help.minimum-balance':
+    'भुगतान से पहले आवश्यक बैलेंस; उपलब्ध लाभ की गणना वाला न्यूनतम बैलेंस नहीं। खाली रखने से यह शर्त बंद होती है।',
+  'account.prop-challenge.payout-rules.help.cycle-profit':
+    'मौजूदा चक्र का आवश्यक वास्तविक शुद्ध ट्रेडिंग लाभ। जमा और बैलेंस सुधार नहीं गिने जाते। खाली रखने से शर्त बंद होती है।',
+  'account.prop-challenge.payout-rules.help.profit-schedule':
+    'पहले, दूसरे और बाद के भुगतान के न्यूनतम लाभ कॉमा से अलग करें। यह एकल न्यूनतम चक्र-लाभ की जगह लेता है।',
+  'account.prop-challenge.payout-rules.help.repeat-final':
+    'सूची से आगे के भुगतान क्रमांकों पर अंतिम मान दोहराता है।',
+  'account.prop-challenge.payout-rules.help.positive-cycle':
+    'पहले दर्ज भुगतान के बाद चक्र का वास्तविक शुद्ध ट्रेडिंग लाभ शून्य से अधिक होना चाहिए।',
+  'account.prop-challenge.payout-rules.help.consistency':
+    'सबसे बड़ा दैनिक लाभ भाग वास्तविक शुद्ध चक्र-लाभ। नुकसान वाले दिन कुल घटाकर प्रतिशत बढ़ा सकते हैं। खाली रखने से सीमा बंद होती है।',
+  'account.prop-challenge.payout-rules.help.consistency-schedule':
+    'हर भुगतान क्रमांक के लिए सर्वोत्तम दिन की प्रतिशत सीमाएँ कॉमा से अलग करें। यह एकल स्थिरता सीमा की जगह लेता है।',
+  'account.prop-challenge.payout-rules.help.availability':
+    'चरण के शुरुआती बैलेंस या चुने न्यूनतम से ऊपर अनुरोध योग्य लाभ की गणना। प्रतिशत और अन्य सीमाएँ भी लागू होती हैं।',
+  'account.prop-challenge.payout-rules.help.balance-floor':
+    'उपलब्ध लाभ से बाहर रखा गया बैलेंस। निकासी हिस्सा केवल अतिरिक्त राशि पर लागू होता है; ड्रॉडाउन नियम नहीं बदलता।',
+  'account.prop-challenge.payout-rules.help.request-percent':
+    'चुने न्यूनतम से ऊपर बैलेंस का अनुरोध योग्य प्रतिशत। अनुरोध तथा नए लाभ की सीमाएँ इसे कम कर सकती हैं।',
+  'account.prop-challenge.payout-rules.help.minimum-request':
+    'सबसे छोटा अनुमत भुगतान अनुरोध। गणना की गई उपलब्ध राशि भी इस न्यूनतम तक पहुँचना चाहिए।',
+  'account.prop-challenge.payout-rules.help.maximum':
+    'स्थिर सीमा, सिर्फ पहले भुगतान की सीमा, भुगतान क्रमांक के अनुसार सीमा या चक्र-लाभ का प्रतिशत। कोई अधिकतम नहीं केवल यह सीमा हटाता है।',
+  'account.prop-challenge.payout-rules.help.maximum-amount':
+    'लाभ बाँटने से पहले अधिकतम सकल अनुरोध। उपलब्ध लाभ और अन्य सीमाएँ राशि कम कर सकती हैं।',
+  'account.prop-challenge.payout-rules.help.first-maximum':
+    'इस चरण के सिर्फ पहले भुगतान की सकल सीमा। उसके बाद यह हटती है, पर बाकी सीमाएँ लागू रहती हैं।',
+  'account.prop-challenge.payout-rules.help.maximum-schedule':
+    'हर भुगतान की सकल सीमा कॉमा से अलग करें। अंतिम मान न दोहराने पर आगे के असूचीबद्ध भुगतान की सीमा शून्य होती है।',
+  'account.prop-challenge.payout-rules.help.maximum-percent':
+    'सकल अनुरोध को वास्तविक शुद्ध चक्र-लाभ के इस प्रतिशत तक सीमित करता है। यह बैलेंस के निकासी हिस्से से अलग है।',
+  'account.prop-challenge.payout-rules.help.lifetime-days':
+    'नई उपलब्धता और अनुरोध सीमाओं के लिए पूरे फंडेड चरण के योग्य दिनों का कुल। चक्र रीसेट यह संख्या नहीं मिटाता।',
+  'account.prop-challenge.payout-rules.help.split-model':
+    'स्थिर हिस्सा या संचित सकल भुगतान अथवा खाते के कुल लाभ के अनुसार दरें। बाँटने की दर प्राप्त राशि तय करती है, अनुरोध सीमा नहीं।',
+  'account.prop-challenge.payout-rules.help.trader-share':
+    'इस दर पर ट्रेडर को दिया जाने वाला सकल अनुरोध का प्रतिशत। बाकी फर्म को मिलता है।',
+  'account.prop-challenge.payout-rules.help.cumulative-threshold':
+    'इस चरण के दर्ज सकल भुगतान जहाँ आगे वाली दर शुरू होती है। सीमा पार करने वाले अनुरोध के हिस्सों पर दोनों दरें लगती हैं।',
+  'account.prop-challenge.payout-rules.help.maximum-payouts':
+    'चरण में अनुमत दर्ज भुगतान की संख्या। पहुँचने पर आगे के भुगतान रोक दिए जाते हैं। खाली रखने से संख्या-सीमा हटती है।',
+  'account.prop-challenge.payout-rules.help.maximum-outcome':
+    'अंतिम भुगतान के बाद जारी रखें, खाता समाप्त करें, अगला चरण या लाइव समीक्षा की पात्रता। पात्रता अपने आप स्वीकृति नहीं है।',
+  'account.prop-challenge.payout-rules.help.aftermath':
+    'दर्ज भुगतान के बाद बैलेंस और ड्रॉडाउन: अनुरोध घटाएँ, घटाकर न्यूनतम लॉक करें या शुरुआती बैलेंस और ड्रॉडाउन रीसेट करें।',
+  'account.prop-challenge.payout-rules.help.drawdown-floor':
+    'संबंधित विकल्प में भुगतान के बाद लॉक होने वाला ड्रॉडाउन न्यूनतम। शेष बैलेंस इसके ऊपर रहना चाहिए।',
+  'account.prop-challenge.payout-rules.help.first-exempt':
+    'इस चरण के पहले भुगतान में न्यूनतम चक्र-लाभ शून्य माना जाता है: मौजूदा चक्र का वास्तविक शुद्ध लाभ नकारात्मक नहीं हो सकता। अन्य शर्तें लागू रहती हैं।',
+  'account.prop-challenge.payout-rules.help.reset-cycle':
+    'दर्ज भुगतान के बाद दिन, दैनिक लाभ, चक्र-लाभ और स्थिरता रीसेट करता है। पूरे चरण के योग्य दिन बने रहते हैं; पूर्वावलोकन कुछ रीसेट नहीं करता।',
 };
 
 export default hi;

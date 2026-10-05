@@ -12,6 +12,7 @@ import { Edit, Trash2 } from '../../shared/icons/ObsidianIcon';
 import { NoTooltipButton } from '../../ui/NoTooltipButton';
 import { t } from '../../../lang/helpers';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -110,6 +111,8 @@ interface GoalsWidgetProps {
 
 export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
   ({ filePath, plugin, preview, previewData }) => {
+    const embeddedReadOnly = useReviewReadOnly();
+    const readOnly = preview || embeddedReadOnly;
     const [goalsState, setGoalsState] = useState<{
       goals: GoalItem[];
       loading: boolean;
@@ -288,7 +291,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
     };
 
     const handleToggleGoal = async (index: number) => {
-      if (preview) return; 
+      if (readOnly) return;
       const previousGoals = [...goals];
       const updatedGoals = [...goals];
       updatedGoals[index] = {
@@ -306,13 +309,13 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
     };
 
     const handleStartEdit = (index: number) => {
-      if (preview) return; 
+      if (readOnly) return;
       setEditingIndex(index);
       setEditText(goals[index].text);
     };
 
     const handleSaveEdit = async () => {
-      if (preview) return; 
+      if (readOnly) return;
       if (editingIndex === null) return;
 
       const trimmedText = editText.trim();
@@ -357,7 +360,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
     };
 
     const handleDeleteGoal = async (index: number) => {
-      if (preview) return; 
+      if (readOnly) return;
       const previousGoals = [...goals];
       const updatedGoals = goals.filter((_, i) => i !== index);
       setGoals(updatedGoals);
@@ -378,7 +381,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
     };
 
     const handleAddGoal = async () => {
-      if (preview) return; 
+      if (readOnly) return;
       const trimmedText = newGoalText.trim();
       if (!trimmedText) return;
 
@@ -528,6 +531,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                   aria-label={goal.text}
                   type="checkbox"
                   checked={goal.checked}
+                  disabled={readOnly}
                   onChange={() => void handleToggleGoal(index)}
                   className="journalit-reviewv2-checkbox"
                 />
@@ -561,6 +565,12 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                       {t('button.cancel')}
                     </button>
                   </>
+                ) : readOnly ? (
+                  <span
+                    className={`journalit-reviewv2-item-text journalit-reviewv2-item-text--read-only${goal.checked ? ' journalit-reviewv2-item-text--completed' : ''}`}
+                  >
+                    {goal.text}
+                  </span>
                 ) : (
                   <button
                     type="button"
@@ -581,7 +591,7 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                 )}
 
                 
-                {!preview && editingIndex !== index && (
+                {!readOnly && editingIndex !== index && (
                   <div
                     className="journalit-reviewv2-item-actions"
                     {...shareCaptureExcludeProps}
@@ -611,14 +621,14 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                 className="journalit-reviewv2-empty"
                 {...shareCaptureExcludeProps}
               >
-                {preview
+                {readOnly
                   ? t('widget.goals.empty.preview')
                   : t('widget.goals.empty.default')}
               </div>
             )}
 
             
-            {!preview && (
+            {!readOnly && (
               <div
                 className="journalit-reviewv2-add-row"
                 {...shareCaptureExcludeProps}

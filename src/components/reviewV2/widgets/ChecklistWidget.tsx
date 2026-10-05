@@ -12,6 +12,7 @@ import { Edit, Trash2 } from '../../shared/icons/ObsidianIcon';
 import { NoTooltipButton } from '../../ui/NoTooltipButton';
 import { t } from '../../../lang/helpers';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -86,6 +87,8 @@ interface ChecklistWidgetProps {
 
 export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
   ({ filePath, plugin, preview, previewData, previewReviewType }) => {
+    const embeddedReadOnly = useReviewReadOnly();
+    const readOnly = preview || embeddedReadOnly;
     const [checklistState, setChecklistState] = useState<{
       items: ChecklistItem[];
       loading: boolean;
@@ -272,7 +275,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
     };
 
     const handleToggleItem = async (index: number) => {
-      if (preview) return; 
+      if (readOnly) return;
       const updatedItems = [...items];
       updatedItems[index] = {
         ...updatedItems[index],
@@ -283,13 +286,13 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
     };
 
     const handleStartEdit = (index: number) => {
-      if (preview) return; 
+      if (readOnly) return;
       setEditingIndex(index);
       setEditText(items[index].text);
     };
 
     const handleSaveEdit = async () => {
-      if (preview) return; 
+      if (readOnly) return;
       if (editingIndex === null) return;
 
       const trimmedText = editText.trim();
@@ -325,7 +328,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
     };
 
     const handleDeleteItem = async (index: number) => {
-      if (preview) return; 
+      if (readOnly) return;
       const updatedItems = items.filter((_, i) => i !== index);
       setItems(updatedItems);
       await updateFrontmatter(updatedItems);
@@ -338,7 +341,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
     };
 
     const handleAddItem = async () => {
-      if (preview) return; 
+      if (readOnly) return;
       const trimmedText = newItemText.trim();
       if (!trimmedText) return;
 
@@ -455,7 +458,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                   type="checkbox"
                   checked={item.checked}
                   onChange={() => void handleToggleItem(index)}
-                  disabled={preview}
+                  disabled={readOnly}
                   className="journalit-reviewv2-checkbox"
                 />
 
@@ -488,6 +491,12 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                       {t('button.cancel')}
                     </button>
                   </>
+                ) : readOnly ? (
+                  <span
+                    className={`journalit-reviewv2-item-text journalit-reviewv2-item-text--read-only${item.checked ? ' journalit-reviewv2-item-text--completed' : ''}`}
+                  >
+                    {item.text}
+                  </span>
                 ) : (
                   <button
                     type="button"
@@ -508,7 +517,7 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                 )}
 
                 
-                {!preview && editingIndex !== index && (
+                {!readOnly && editingIndex !== index && (
                   <div
                     className="journalit-reviewv2-item-actions"
                     {...shareCaptureExcludeProps}
@@ -538,14 +547,14 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                 className="journalit-reviewv2-empty"
                 {...shareCaptureExcludeProps}
               >
-                {preview
+                {readOnly
                   ? t('widget.checklist.empty.preview')
                   : t('widget.checklist.empty.add-one')}
               </div>
             )}
 
             
-            {!preview && (
+            {!readOnly && (
               <div
                 className="journalit-reviewv2-add-row"
                 {...shareCaptureExcludeProps}

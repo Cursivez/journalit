@@ -17,6 +17,126 @@ import {
   DrawdownType,
 } from '../../../services/account/types';
 import { hasLiveBalanceAdjustment } from '../../../services/account/liveBalanceAdjustment';
+import type { AccountTradeData } from '../../../services/accountPage/types';
+import { propChallengePhaseBalanceTimeline } from '../../../services/propChallenge/PropChallengeRuleEngine';
+
+function buildPhaseBalanceChartData(
+  account: AccountData,
+  trades: readonly AccountTradeData[],
+  overlay: ProjectedPropChallengeRules,
+  userDateFormat: string,
+  plugin: ReturnType<typeof usePlugin>,
+  getTradingDayKey: (date: Date) => string
+): BalanceChartDataPoint[] {
+  const config = account.propChallenge;
+  const phase = config?.phases.find(
+    (candidate) => candidate.id === overlay.phaseId
+  );
+  if (!phase || overlay.startMs === undefined) return [];
+  const timeline = propChallengePhaseBalanceTimeline({
+    phase,
+    config,
+    trades,
+    transactions: account.transactions,
+    now: new Date(overlay.endMs),
+    tradingDayCutoffTime: plugin?.settings.trade.tradingDayCutoffTime,
+  });
+  const drawdown = overlay.drawdown;
+  let floor = drawdown ? phase.startingBalance - drawdown.amount : undefined;
+  let peak = phase.startingBalance;
+  let locked = false;
+  const opening = new Date(startOfLocalDay(overlay.startMs));
+  const data: BalanceChartDataPoint[] = [
+    {
+      date: formatDateDisplay(opening, userDateFormat),
+      rawDate: opening,
+      balance: phase.startingBalance,
+      isInitialBalance: true,
+      ...(floor !== undefined ? { drawdownLevel: floor } : {}),
+    },
+  ];
+  const days = new Map<string, typeof timeline>();
+  for (const event of timeline) {
+    const day = getTradingDayKey(getTradingDay(event.date, plugin));
+    const events = days.get(day) ?? [];
+    events.push(event);
+    days.set(day, events);
+  }
+  const advanceFloor = (balance: number) => {
+    if (!drawdown || floor === undefined || locked) return;
+    const advanced = advanceTrailingFloor(
+      floor,
+      balance,
+      peak,
+      drawdown.amount,
+      drawdown.lockAtBalance
+    );
+    floor = advanced.floor;
+    peak = advanced.peak;
+  };
+  for (const events of days.values()) {
+    const transactions: AccountTransaction[] = [];
+    for (const event of events) {
+      const aftermath = event.payoutAftermath;
+      if (aftermath?.drawdownAction === 'lock_at_balance') {
+        floor = aftermath.drawdownFloor;
+        locked = true;
+      } else if (aftermath?.drawdownAction === 'reset_from_starting_balance') {
+        floor = drawdown ? phase.startingBalance - drawdown.amount : undefined;
+        peak = phase.startingBalance;
+        locked = false;
+      }
+      if (drawdown?.mode === 'intraday_trailing' && event.advancesTrailingPeak)
+        advanceFloor(event.balance);
+      if (event.transaction) transactions.push(event.transaction);
+      else
+        data.push({
+          date: formatDateDisplay(event.date, userDateFormat),
+          rawDate: event.date,
+          balance: event.balance,
+          ...(floor !== undefined ? { drawdownLevel: floor } : {}),
+        });
+    }
+    const last = events[events.length - 1];
+    if (drawdown?.mode === 'eod_trailing') advanceFloor(last.balance);
+    if (transactions.length > 0) {
+      const tradeTransactions = transactions.filter(
+        (t) => t.type === TransactionType.TRADE
+      );
+      data.push({
+        date: formatDateDisplay(last.date, userDateFormat),
+        rawDate: last.date,
+        balance: last.balance,
+        ...(floor !== undefined ? { drawdownLevel: floor } : {}),
+        isConsolidated: true,
+        tradeCount: tradeTransactions.length,
+        dailyPnL: tradeTransactions.reduce((sum, t) => sum + t.amount, 0),
+        isTrade: tradeTransactions.length > 0,
+        dayTransactions: transactions,
+        hasEvents: transactions.some(
+          (t) =>
+            t.type === TransactionType.DEPOSIT ||
+            t.type === TransactionType.WITHDRAWAL
+        ),
+        isDeposit: transactions.some(
+          (t) => t.type === TransactionType.DEPOSIT && t.amount > 0
+        ),
+        isWithdrawal: transactions.some(
+          (t) =>
+            t.type === TransactionType.WITHDRAWAL ||
+            (t.type === TransactionType.DEPOSIT && t.amount < 0)
+        ),
+      });
+    } else {
+      
+      data[data.length - 1] = {
+        ...data[data.length - 1],
+        ...(floor !== undefined ? { drawdownLevel: floor } : {}),
+      };
+    }
+  }
+  return data;
+}
 
 
 export interface BalanceChartDataPoint {
@@ -75,44 +195,19 @@ export const buildBalanceChartData = (
   plugin: ReturnType<typeof usePlugin>,
   getTradingDayKey: (date: Date) => string,
   
-  propChallengeOverlay?: ProjectedPropChallengeRules
+  propChallengeOverlay: ProjectedPropChallengeRules | undefined,
+  trades: readonly AccountTradeData[]
 ): BalanceChartDataPoint[] => {
-  
-  
-  
-  
-  if (propChallengeOverlay && propChallengeOverlay.startMs === undefined) {
-    return [];
-  }
-  const overlayDrawdown = propChallengeOverlay?.drawdown;
-  
-  
-  
-  
-  const overlayWindowStart =
-    propChallengeOverlay?.startMs === undefined
-      ? -Infinity
-      : startOfLocalDay(propChallengeOverlay.startMs);
-  const overlayWindowEnd = propChallengeOverlay?.endMs ?? Infinity;
-  const isInOverlayWindow = (at: Date): boolean => {
-    const time = at.getTime();
-    return time >= overlayWindowStart && time <= overlayWindowEnd;
-  };
-  
-  
-  
-  
-  const ownsTransaction = (at: Date): boolean => {
-    const time = at.getTime();
-    return (
-      time >= (propChallengeOverlay?.startMs ?? -Infinity) &&
-      time <= overlayWindowEnd
+  if (propChallengeOverlay) {
+    return buildPhaseBalanceChartData(
+      account,
+      trades,
+      propChallengeOverlay,
+      userDateFormat,
+      plugin,
+      getTradingDayKey
     );
-  };
-  const overlayBaseline = propChallengeOverlay?.startingBalance ?? 0;
-  const overlayInitialFloor = overlayDrawdown
-    ? overlayBaseline - overlayDrawdown.amount
-    : undefined;
+  }
   
   if (!account.transactions || account.transactions.length === 0) {
     return [];
@@ -167,16 +262,7 @@ export const buildBalanceChartData = (
   
   
   
-  if (propChallengeOverlay && propChallengeOverlay.startMs !== undefined) {
-    const openedAt = new Date(startOfLocalDay(propChallengeOverlay.startMs));
-    data.push({
-      date: formatDateDisplay(openedAt, userDateFormat),
-      rawDate: openedAt,
-      balance: overlayBaseline,
-      isInitialBalance: true,
-      ...(overlayDrawdown ? { drawdownLevel: overlayInitialFloor } : {}),
-    });
-  } else if (account.createdDate) {
+  if (account.createdDate) {
     
     const createdDate =
       account.createdDate instanceof Date
@@ -206,17 +292,11 @@ export const buildBalanceChartData = (
         data.push({
           date: formatDateDisplay(createdDate, userDateFormat),
           rawDate: createdDate,
-          balance: propChallengeOverlay
-            ? overlayBaseline
-            : account.initialBalance,
+          balance: account.initialBalance,
           
-          ...(overlayDrawdown
-            ? isInOverlayWindow(createdDate) && {
-                drawdownLevel: overlayInitialFloor,
-              }
-            : account.drawdownType !== DrawdownType.NONE && {
-                drawdownLevel: initialDrawdownLevel,
-              }),
+          ...(account.drawdownType !== DrawdownType.NONE && {
+            drawdownLevel: initialDrawdownLevel,
+          }),
         });
       } else {
         
@@ -235,18 +315,12 @@ export const buildBalanceChartData = (
           data.push({
             date: formatDateDisplay(initialBalanceDate, userDateFormat),
             rawDate: initialBalanceDate,
-            balance: propChallengeOverlay
-              ? overlayBaseline
-              : account.initialBalance,
+            balance: account.initialBalance,
             isInitialBalance: true, 
             
-            ...(overlayDrawdown
-              ? isInOverlayWindow(initialBalanceDate) && {
-                  drawdownLevel: overlayInitialFloor,
-                }
-              : account.drawdownType !== DrawdownType.NONE && {
-                  drawdownLevel: initialDrawdownLevel,
-                }),
+            ...(account.drawdownType !== DrawdownType.NONE && {
+              drawdownLevel: initialDrawdownLevel,
+            }),
           });
         }
       }
@@ -268,12 +342,8 @@ export const buildBalanceChartData = (
 
   
   
-  let peakBalance = overlayDrawdown ? overlayBaseline : account.initialBalance;
-  let currentDrawdownLevel = overlayInitialFloor ?? initialDrawdownLevel;
-  
-  
-  
-  let overlayBalance = overlayBaseline;
+  let peakBalance = account.initialBalance;
+  let currentDrawdownLevel = initialDrawdownLevel;
 
   
   
@@ -340,65 +410,7 @@ export const buildBalanceChartData = (
     
     let drawdownLevel: number | undefined = initialDrawdownLevel;
 
-    
-    
-    
-    
-    
-    
-    const ownedTransactions = propChallengeOverlay
-      ? dayRecord.transactions.filter(
-          (transaction) =>
-            transaction.description !== 'Initial deposit' &&
-            ownsTransaction(new Date(transaction.date))
-        )
-      : [];
-
-    if (overlayDrawdown) {
-      if (overlayDrawdown.mode === 'intraday_trailing') {
-        
-        
-        
-        
-        
-        
-        
-        for (const transaction of ownedTransactions) {
-          overlayBalance += transaction.amount;
-          if (transaction.type !== TransactionType.TRADE) continue;
-          ({ floor: currentDrawdownLevel, peak: peakBalance } =
-            advanceTrailingFloor(
-              currentDrawdownLevel,
-              overlayBalance,
-              peakBalance,
-              overlayDrawdown.amount,
-              overlayDrawdown.lockAtBalance
-            ));
-        }
-      } else if (ownedTransactions.length > 0) {
-        for (const transaction of ownedTransactions) {
-          overlayBalance += transaction.amount;
-        }
-        if (overlayDrawdown.mode === 'eod_trailing') {
-          ({ floor: currentDrawdownLevel, peak: peakBalance } =
-            advanceTrailingFloor(
-              currentDrawdownLevel,
-              overlayBalance,
-              peakBalance,
-              overlayDrawdown.amount,
-              overlayDrawdown.lockAtBalance
-            ));
-        }
-      }
-      drawdownLevel = isInOverlayWindow(dayDate)
-        ? currentDrawdownLevel
-        : undefined;
-    } else if (propChallengeOverlay) {
-      
-      for (const transaction of ownedTransactions) {
-        overlayBalance += transaction.amount;
-      }
-    } else if (account.drawdownType === DrawdownType.EOD_TRAILING) {
+    if (account.drawdownType === DrawdownType.EOD_TRAILING) {
       
       if (dayRecord.finalBalance > peakBalance) {
         peakBalance = dayRecord.finalBalance;
@@ -474,11 +486,9 @@ export const buildBalanceChartData = (
       rawDate: dayDate,
       
       
-      balance: propChallengeOverlay ? overlayBalance : dayRecord.finalBalance,
+      balance: dayRecord.finalBalance,
       
-      ...((overlayDrawdown
-        ? drawdownLevel !== undefined
-        : account.drawdownType !== DrawdownType.NONE) && {
+      ...(account.drawdownType !== DrawdownType.NONE && {
         drawdownLevel: drawdownLevel,
       }),
       isConsolidated: true,
@@ -514,12 +524,7 @@ export const buildBalanceChartData = (
       );
     });
 
-  
-  
-  if (
-    !propChallengeOverlay &&
-    hasLiveBalanceAdjustment(account.liveBalanceAdjustment)
-  ) {
+  if (hasLiveBalanceAdjustment(account.liveBalanceAdjustment)) {
     const lastPoint = finalData[finalData.length - 1];
     const needsLiveBalancePoint =
       !lastPoint || lastPoint.balance !== account.currentBalance;

@@ -97,23 +97,21 @@ export const DASHBOARD_STYLES = `
   
   
   .journalit-dashboard-metrics {
-    display: flex !important;
-    flex-direction: row !important; 
-    flex-wrap: wrap !important; 
-    gap: 8px !important; 
+    --journalit-dashboard-metric-columns: var(--journalit-dashboard-metric-medium-columns);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
     width: 100% !important; 
-    overflow-x: hidden !important; 
-    overflow-y: visible !important; 
     align-items: stretch !important; 
     height: auto !important; 
     min-height: auto !important; 
     padding: 0 !important; 
-    justify-content: flex-start !important; 
   }
   
   .journalit-dashboard-top-section-body {
     position: relative !important;
     width: 100% !important;
+    container: journalit-dashboard-metrics / inline-size;
   }
 
   .journalit-dashboard-metric-tooltip {
@@ -144,13 +142,20 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-metric-wrapper {
     position: relative !important;
     display: flex !important;
-    flex: 1 1 180px !important; 
-    min-width: 180px !important; 
-    max-width: 300px !important; 
+    flex: 1 1 calc((100% - (var(--journalit-dashboard-metric-columns) - 1) * 8px) / var(--journalit-dashboard-metric-columns));
+    min-width: 0;
   }
 
   .journalit-dashboard-metric-wrapper--sortable {
     height: 100% !important;
+  }
+
+  .journalit-dashboard-metric-wrapper[data-dragging="true"] {
+    z-index: 3;
+  }
+
+  .journalit-dashboard-metric-handle[data-editing="true"] .journalit-dashboard-metric-handle-inner {
+    touch-action: manipulation;
   }
 
   .journalit-dashboard-metric-handle {
@@ -486,6 +491,33 @@ export const DASHBOARD_STYLES = `
   }
 
   
+  @container journalit-dashboard-metrics (min-width: 1504px) {
+    .journalit-dashboard-metrics {
+      --journalit-dashboard-metric-columns: var(--journalit-dashboard-metric-wide-columns);
+    }
+  }
+
+  @container journalit-dashboard-metrics (max-width: 751px) {
+    .journalit-dashboard-metrics {
+      --journalit-dashboard-metric-columns: var(--journalit-dashboard-metric-narrow-columns);
+    }
+
+    .journalit-dashboard-metric-card {
+      min-height: 94px;
+      padding: 12px;
+    }
+
+    .journalit-dashboard-metric-value {
+      font-size: 20px;
+    }
+  }
+
+  @container journalit-dashboard-metrics (max-width: 375px) {
+    .journalit-dashboard-metrics {
+      --journalit-dashboard-metric-columns: 1;
+    }
+  }
+
   .journalit-dashboard-trades-chart {
     width: 100%;
     height: 100%;
@@ -608,7 +640,8 @@ export const DASHBOARD_STYLES = `
     display: flex !important;
     flex-direction: column !important;
     margin-bottom: 0 !important;
-    padding: 8px var(--journalit-dashboard-toolbar-gutter, 0px) 3px !important;
+    
+    padding: 8px var(--journalit-dashboard-toolbar-gutter, 0px) 10px !important;
     background-color: var(--journalit-dashboard-toolbar-background, var(--background-primary)) !important;
     border-radius: 0 !important;
     box-shadow: none;
@@ -864,38 +897,8 @@ export const DASHBOARD_STYLES = `
     pointer-events: none;
   }
 
-  .journalit-dashboard-date-range-start,
-  .journalit-dashboard-date-range-end {
-    display: grid !important;
-    grid-column: 1 / -1 !important;
-    grid-template-columns: subgrid !important;
-    gap: 8px !important;
-    align-items: center !important;
-  }
-
-  .journalit-dashboard-date-range-start > .journalit-fast-datetime,
-  .journalit-dashboard-date-range-end > .journalit-fast-datetime {
-    display: grid !important;
-    grid-column: 1 / -1 !important;
-    grid-template-columns: subgrid !important;
-    align-items: center !important;
-  }
-
-  .journalit-dashboard-date-range-start .journalit-fast-datetime__label,
-  .journalit-dashboard-date-range-end .journalit-fast-datetime__label {
-    display: block !important;
-    font-size: 11px !important;
-    font-weight: 600 !important;
-    text-transform: uppercase !important;
-    letter-spacing: 0.5px !important;
-    color: var(--text-muted) !important;
-    white-space: nowrap !important;
-    margin: 0 !important;
-  }
-
-  .journalit-dashboard-date-range-start .journalit-fast-datetime__error,
-  .journalit-dashboard-date-range-end .journalit-fast-datetime__error {
-    grid-column: 2;
+  .journalit-dashboard-custom-date-dropdown > .journalit-date-range-editor {
+    grid-column: 1 / -1;
   }
 
   
@@ -909,7 +912,8 @@ export const DASHBOARD_STYLES = `
     width: 100% !important;
     flex-wrap: nowrap !important;
     overflow-x: auto !important;
-    padding: 2px 0 !important;
+    
+    padding: 2px;
     border: none !important;
     border-radius: 0 !important;
     background: transparent !important;
@@ -925,9 +929,9 @@ export const DASHBOARD_STYLES = `
   }
 
   .journalit-date-picker-input .journalit-fast-datetime__segment {
-    width: 40px !important;
-    min-width: 40px !important;
-    max-width: 40px !important;
+    width: 40px;
+    min-width: 40px;
+    max-width: 40px;
     padding: 6px 4px !important;
   }
   
@@ -1664,6 +1668,7 @@ export const DASHBOARD_STYLES = `
     overflow-y: hidden;
     padding: 0 8px 8px 8px !important;
     position: relative !important;
+    container: journalit-recent-trades / inline-size;
   }
   
   .journalit-dashboard-recent-trades-table {
@@ -1714,6 +1719,19 @@ export const DASHBOARD_STYLES = `
     padding: 7px 8px !important;
     border-bottom: 1px solid var(--background-modifier-border) !important;
     font-size: 13px !important;
+  }
+
+  @container journalit-recent-trades (max-width: 360px) {
+    .journalit-dashboard-recent-trades-table th {
+      padding: 7px 4px;
+      font-size: 11px;
+      letter-spacing: 0;
+    }
+
+    .journalit-dashboard-recent-trades-table td {
+      padding: 7px 4px;
+      font-size: 12px;
+    }
   }
   
   .journalit-dashboard-recent-trades-table .trade-row {
@@ -2384,10 +2402,6 @@ export const DASHBOARD_STYLES = `
       --journalit-dashboard-gutter: 12px;
     }
 
-    .journalit-dashboard-metric-card {
-      min-width: 100% !important;
-    }
-
     
     .journalit-dashboard-filter-actions {
       gap: 6px !important;
@@ -2404,16 +2418,6 @@ export const DASHBOARD_STYLES = `
     
     .journalit-dashboard-view-container {
       --journalit-dashboard-gutter: 10px;
-    }
-
-    .journalit-dashboard-metric-card {
-      min-width: 100% !important;
-      min-height: 94px !important;
-      padding: 12px !important;
-    }
-
-    .journalit-dashboard-metric-value {
-      font-size: 20px !important;
     }
 
     
@@ -2530,19 +2534,6 @@ export const DASHBOARD_STYLES = `
     }
     
     
-    .journalit-dashboard-metrics {
-      flex-wrap: wrap !important;
-      justify-content: center !important;
-    }
-    
-    .journalit-dashboard-metric-card {
-      min-width: calc(50% - 8px) !important;
-      max-width: none !important;
-      flex: 0 0 calc(50% - 8px) !important;
-      margin-bottom: 8px !important;
-    }
-
-    
     .journalit-dashboard-filter-actions {
       gap: 4px !important;
       flex-wrap: nowrap !important;
@@ -2568,13 +2559,6 @@ export const DASHBOARD_STYLES = `
     
     .journalit-dashboard-filter-controls.compact-view {
       padding: 8px var(--journalit-dashboard-toolbar-gutter, 0px) !important;
-    }
-    
-    
-    .journalit-dashboard-metric-card {
-      min-width: 100% !important;
-      flex: 0 0 100% !important;
-      margin-bottom: 8px !important;
     }
     
     

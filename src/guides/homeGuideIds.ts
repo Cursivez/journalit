@@ -1,5 +1,5 @@
 export const HOME_MAIN_GUIDE_ID = 'home.main';
-export const HOME_MAIN_GUIDE_VERSION = 7;
+export const HOME_MAIN_GUIDE_VERSION = 8;
 
 export const HOME_CUSTOMIZE_GUIDE_ID = 'home.customize';
 

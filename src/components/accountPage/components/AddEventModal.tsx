@@ -17,7 +17,19 @@ import {
 } from '../../../contexts/CurrencyContext';
 import { t } from '../../../lang/helpers';
 import { FastDateTimeInput } from '../../core/FastDateTimeInput';
+import {
+  DateDraftGateContext,
+  useDateDraftGate,
+} from '../../core/DateDraftGate';
 import { showActionConfirmationModal } from '../../shared/ConfirmationModal';
+import {
+  formatTimeOfDay,
+  getUse24HourTimeSetting,
+} from '../../../utils/timeFormat';
+import {
+  accountEventDateForSave,
+  isFutureAccountEvent,
+} from './accountEventDate';
 
 function isTransactionType(value: string): value is TransactionType {
   return value === 'deposit' || value === 'withdrawal';
@@ -34,7 +46,7 @@ function errorMessage(error: unknown): string {
 interface EventData {
   type: TransactionType;
   amount: string;
-  date: string;
+  date: Date | null;
   description: string;
 }
 
@@ -59,6 +71,9 @@ interface AddEventConfirmationOptions {
   amount: number;
   accountName: string;
   currency: string;
+  eventDate: Date;
+  includeTime: boolean;
+  use24HourTime: boolean;
 }
 
 function showAddEventConfirmation({
@@ -67,6 +82,9 @@ function showAddEventConfirmation({
   amount,
   accountName,
   currency,
+  eventDate: date,
+  includeTime,
+  use24HourTime,
 }: AddEventConfirmationOptions): Promise<boolean> {
   const formatCurrency = (value: number) =>
     value.toLocaleString('en-US', {
@@ -78,10 +96,7 @@ function showAddEventConfirmation({
     eventData.type === TransactionType.DEPOSIT
       ? t('account.add-event.type.deposit').toLowerCase()
       : t('account.add-event.type.withdrawal').toLowerCase();
-  const eventDate = formatDateDisplay(
-    new Date(eventData.date),
-    getUserDateFormat()
-  );
+  const eventDate = `${formatDateDisplay(date, getUserDateFormat())}${includeTime ? ` ${formatTimeOfDay(date, use24HourTime, true)}` : ''}`;
 
   return showActionConfirmationModal(app, {
     title: t('account.add-event.confirm.title'),
@@ -174,14 +189,10 @@ class AddEventModal extends Modal {
 }
 
 
-const getCurrentLocalDateForInput = () => {
-  const today = new Date();
-  return today.toISOString().split('T')[0];
-};
-
 const AddEventModalContent: React.FC<
   AddEventModalProps & { onModalClose: () => void }
 > = ({ app, plugin, accountName, onSave, onModalClose, initial }) => {
+  const dateDraftGate = useDateDraftGate();
   const [isSaving, setIsSaving] = useState(false);
   const { currency: globalCurrency } = useCurrency();
 
@@ -189,6 +200,9 @@ const AddEventModalContent: React.FC<
   const accountCurrency =
     plugin.settings?.account?.accountMetadata?.[accountName]?.currency;
   const currency = accountCurrency || globalCurrency;
+  const includeTime = Boolean(
+    plugin.settings.account?.accountMetadata?.[accountName]?.propChallenge
+  );
 
   
   const formatCurrency = (amount: number): string => {
@@ -199,17 +213,15 @@ const AddEventModalContent: React.FC<
   };
 
   
-  
-
-  
-  const [eventData, setEventData] = useState({
+  const [eventData, setEventData] = useState<EventData>({
     type: initial?.type ?? TransactionType.DEPOSIT,
     amount: initial?.amount !== undefined ? initial.amount.toFixed(2) : '',
-    date: getCurrentLocalDateForInput(),
+    date: new Date(),
     description: initial?.description ?? '',
   });
 
   const handleSave = async () => {
+    if (!dateDraftGate.confirm()) return;
     try {
       setIsSaving(true);
 
@@ -226,18 +238,22 @@ const AddEventModalContent: React.FC<
 
       const amount = parseFloat(eventData.amount);
 
-      
       if (!isValidDate(eventData.date)) {
         new Notice(t('account.add-event.error.invalid-date'));
         return;
       }
 
-      const eventDate = new Date(eventData.date);
-
-      
-      const today = new Date();
-      today.setHours(23, 59, 59, 999); 
-      if (eventDate > today) {
+      const eventDate = accountEventDateForSave({
+        date: eventData.date,
+        includeTime,
+      });
+      if (
+        isFutureAccountEvent({
+          date: eventData.date,
+          includeTime,
+          now: new Date(),
+        })
+      ) {
         new Notice(t('account.add-event.error.future-date'));
         return;
       }
@@ -249,6 +265,9 @@ const AddEventModalContent: React.FC<
         amount,
         accountName,
         currency,
+        eventDate,
+        includeTime,
+        use24HourTime: getUse24HourTimeSetting(plugin),
       });
       if (!shouldProceed) {
         return; 
@@ -260,14 +279,16 @@ const AddEventModalContent: React.FC<
           accountName,
           amount,
           eventDate,
-          eventData.description || undefined
+          eventData.description || undefined,
+          includeTime ? 'instant' : 'day'
         );
       } else {
         await plugin.accountPageService?.addManualWithdrawal(
           accountName,
           amount,
           eventDate,
-          eventData.description || undefined
+          eventData.description || undefined,
+          includeTime ? 'instant' : 'day'
         );
       }
 
@@ -299,166 +320,162 @@ const AddEventModalContent: React.FC<
   };
 
   return (
-    <div className="add-event-form">
-      
-      <div className="setting-item two-column">
-        <div className="column">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('account.add-event.field.type')}
+    <DateDraftGateContext.Provider value={dateDraftGate}>
+      <div className="add-event-form">
+        
+        <div className="setting-item two-column">
+          <div className="column">
+            <div className="setting-item-info">
+              <div className="setting-item-name">
+                {t('account.add-event.field.type')}
+              </div>
+              <div className="setting-item-description">
+                {t('account.add-event.field.type-desc')}
+              </div>
             </div>
-            <div className="setting-item-description">
-              {t('account.add-event.field.type-desc')}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <select
-              aria-label={t('account.add-event.field.type')}
-              value={eventData.type}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                setEventData((currentData) => ({
-                  ...currentData,
-                  type: transactionTypeFromSelect(e.target.value),
-                  description: '', 
-                }))
-              }
-              disabled={isSaving}
-            >
-              <option value={TransactionType.DEPOSIT}>
-                {t('account.add-event.type.deposit')}
-              </option>
-              <option value={TransactionType.WITHDRAWAL}>
-                {t('account.add-event.type.withdrawal')}
-              </option>
-            </select>
-          </div>
-        </div>
-        <div className="column">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('account.add-event.field.amount')}
-            </div>
-            <div className="setting-item-description">
-              {t('account.add-event.field.amount-desc', { currency })}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <input
-              aria-label={t('account.add-event.field.amount')}
-              type="number"
-              value={eventData.amount}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setEventData((currentData) => ({
-                  ...currentData,
-                  amount: e.target.value,
-                }))
-              }
-              onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-                if (eventData.amount === '0' || eventData.amount === '') {
-                  e.target.value = '';
-                }
-              }}
-              min="0.01"
-              step="0.01"
-              placeholder="0.00"
-              disabled={isSaving}
-            />
-          </div>
-        </div>
-      </div>
-
-      
-      <div className="setting-item two-column">
-        <div className="column">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('account.add-event.field.date')}
-            </div>
-            <div className="setting-item-description">
-              {t('account.add-event.field.date-desc')}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <FastDateTimeInput
-              value={
-                eventData.date
-                  ? new Date(eventData.date + 'T00:00:00')
-                  : undefined
-              }
-              onChange={(value) => {
-                if (value instanceof Date) {
-                  const year = value.getFullYear();
-                  const month = String(value.getMonth() + 1).padStart(2, '0');
-                  const day = String(value.getDate()).padStart(2, '0');
+            <div className="setting-item-control">
+              <select
+                aria-label={t('account.add-event.field.type')}
+                value={eventData.type}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                   setEventData((currentData) => ({
                     ...currentData,
-                    date: `${year}-${month}-${day}`,
-                  }));
-                } else {
-                  setEventData((currentData) => ({ ...currentData, date: '' }));
+                    type: transactionTypeFromSelect(e.target.value),
+                    description: '', 
+                  }))
                 }
-              }}
-              disabled={isSaving}
-            />
-          </div>
-        </div>
-        <div className="column">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('account.add-event.field.description')}
-            </div>
-            <div className="setting-item-description">
-              {t('account.add-event.field.description-desc')}
+                disabled={isSaving}
+              >
+                <option value={TransactionType.DEPOSIT}>
+                  {t('account.add-event.type.deposit')}
+                </option>
+                <option value={TransactionType.WITHDRAWAL}>
+                  {t('account.add-event.type.withdrawal')}
+                </option>
+              </select>
             </div>
           </div>
-          <div className="setting-item-control">
-            <input
-              type="text"
-              value={eventData.description}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                setEventData((currentData) => ({
-                  ...currentData,
-                  description: e.target.value,
-                }))
-              }
-              placeholder={
-                eventData.type === TransactionType.DEPOSIT
-                  ? t('account.add-event.placeholder.deposit')
-                  : t('account.add-event.placeholder.withdrawal')
-              }
-              disabled={isSaving}
-            />
+          <div className="column">
+            <div className="setting-item-info">
+              <div className="setting-item-name">
+                {t('account.add-event.field.amount')}
+              </div>
+              <div className="setting-item-description">
+                {t('account.add-event.field.amount-desc', { currency })}
+              </div>
+            </div>
+            <div className="setting-item-control">
+              <input
+                aria-label={t('account.add-event.field.amount')}
+                type="number"
+                value={eventData.amount}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setEventData((currentData) => ({
+                    ...currentData,
+                    amount: e.target.value,
+                  }))
+                }
+                onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
+                  if (eventData.amount === '0' || eventData.amount === '') {
+                    e.target.value = '';
+                  }
+                }}
+                min="0.01"
+                step="0.01"
+                placeholder="0.00"
+                disabled={isSaving}
+              />
+            </div>
           </div>
         </div>
-      </div>
 
-      
-      <div className="add-event-buttons">
-        <div className="button-group-left">
-          
+        
+        <div
+          className={`setting-item two-column${includeTime ? ' journalit-event-date-time' : ''}`}
+        >
+          <div className="column">
+            <div className="setting-item-info">
+              <div className="setting-item-name">
+                {t('account.add-event.field.date')}
+              </div>
+              <div className="setting-item-description">
+                {t('account.add-event.field.date-desc')}
+              </div>
+            </div>
+            <div className="setting-item-control">
+              <FastDateTimeInput
+                value={eventData.date ?? undefined}
+                includeTime={includeTime}
+                showSeconds={includeTime}
+                use24HourTime={getUse24HourTimeSetting(plugin)}
+                onChange={(value) => {
+                  setEventData((currentData) => ({
+                    ...currentData,
+                    date: value instanceof Date ? value : null,
+                  }));
+                }}
+                disabled={isSaving}
+              />
+            </div>
+          </div>
+          <div className="column">
+            <div className="setting-item-info">
+              <div className="setting-item-name">
+                {t('account.add-event.field.description')}
+              </div>
+              <div className="setting-item-description">
+                {t('account.add-event.field.description-desc')}
+              </div>
+            </div>
+            <div className="setting-item-control">
+              <input
+                type="text"
+                value={eventData.description}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  setEventData((currentData) => ({
+                    ...currentData,
+                    description: e.target.value,
+                  }))
+                }
+                placeholder={
+                  eventData.type === TransactionType.DEPOSIT
+                    ? t('account.add-event.placeholder.deposit')
+                    : t('account.add-event.placeholder.withdrawal')
+                }
+                disabled={isSaving}
+              />
+            </div>
+          </div>
         </div>
-        <div className="button-group-right">
-          <Button
-            variant="plain"
-            onClick={onModalClose}
-            disabled={isSaving}
-            className="cancel-button"
-          >
-            {t('button.cancel')}
-          </Button>
-          <Button
-            variant="primary"
-            onClick={handleSave}
-            disabled={isSaving}
-            className="add-event-button accent-button"
-          >
-            {isSaving
-              ? t('account.add-event.button.adding')
-              : t('account.add-event.button.add')}
-          </Button>
+
+        
+        <div className="add-event-buttons">
+          <div className="button-group-left">
+            
+          </div>
+          <div className="button-group-right">
+            <Button
+              variant="plain"
+              onClick={onModalClose}
+              disabled={isSaving}
+              className="cancel-button"
+            >
+              {t('button.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={handleSave}
+              disabled={isSaving}
+              className="add-event-button accent-button"
+            >
+              {isSaving
+                ? t('account.add-event.button.adding')
+                : t('account.add-event.button.add')}
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </DateDraftGateContext.Provider>
   );
 };
 

@@ -27,9 +27,12 @@ import {
   MENU_ITEM_SELECTOR,
   RootPanel,
   ValuesPanel,
+  DateRangePanel,
 } from './FilterMenuPanels';
+import type { DateRangePickerLifecycle } from './DateRangePanelContent';
 import { useFilterMenuDismiss } from './useFilterMenuDismiss';
 import { usePanelPlacement } from './usePanelPlacement';
+import { useFilterMenuGuideTarget } from './useFilterMenuGuideTarget';
 
 const CASCADE_MIN_VIEWPORT_WIDTH = 720;
 const HOVER_SWITCH_DELAY_MS = 140;
@@ -64,11 +67,12 @@ function resolveOpenNodes(
 interface PanelNavigation {
   openChildId: string | undefined;
   onOpenChild: (childId: string, focus: boolean) => void;
+  onCloseChild: () => void;
   onHoverRow: (childId: string | null) => void;
   registerAnchor: (id: string, element: HTMLElement | null) => void;
 }
 
-interface FilterMenuPanelProps {
+interface FilterMenuPanelProps extends DateRangePickerLifecycle {
   node: FilterMenuNode | null;
   frame: PanelFrameProps;
   navigation: PanelNavigation;
@@ -89,6 +93,8 @@ const FilterMenuPanel: React.FC<FilterMenuPanelProps> = ({
   canReset,
   onReset,
   onClear,
+  onPickerOpen,
+  onPickerClose,
 }) => {
   if (!node) {
     return (
@@ -109,6 +115,16 @@ const FilterMenuPanel: React.FC<FilterMenuPanelProps> = ({
         {...navigation}
         title={node.label}
         entries={node.children}
+      />
+    );
+  }
+  if (node.kind === 'date-range') {
+    return (
+      <DateRangePanel
+        {...frame}
+        node={node}
+        onPickerOpen={onPickerOpen}
+        onPickerClose={onPickerClose}
       />
     );
   }
@@ -133,9 +149,6 @@ interface FilterMenuLayerProps {
   guideTour: FilterMenuGuideTour | null;
 }
 
-
-const GUIDE_OPTION_SELECTOR = '[data-filter-menu-guide-option]';
-
 export const FilterMenuLayer: React.FC<FilterMenuLayerProps> = ({
   entries,
   title,
@@ -146,9 +159,22 @@ export const FilterMenuLayer: React.FC<FilterMenuLayerProps> = ({
   guideTour,
 }) => {
   const layerRef = useRef<HTMLDivElement>(null);
+  const calendarSurfaceRef = useRef<
+    Parameters<DateRangePickerLifecycle['onPickerOpen']>[0] | null
+  >(null);
+  const onPickerOpen = useCallback<DateRangePickerLifecycle['onPickerOpen']>(
+    (surface) => {
+      calendarSurfaceRef.current = surface;
+    },
+    []
+  );
+  const onPickerClose = useCallback(() => {
+    calendarSurfaceRef.current = null;
+  }, []);
   const panelRefs = useRef<Array<HTMLDivElement | null>>([]);
   const anchorRefs = useRef(new Map<string, HTMLElement>());
   const hoverTimerRef = useRef<number | null>(null);
+  const dateRangeEditingRef = useRef(false);
   
   const pendingFocusDepthRef = useRef<number | null>(0);
   const [state, dispatch] = useReducer(
@@ -185,6 +211,7 @@ export const FilterMenuLayer: React.FC<FilterMenuLayerProps> = ({
   const setPathAt = useCallback(
     (depth: number, id: string | null, focus = false) => {
       clearHoverTimer();
+      dateRangeEditingRef.current = false;
       dispatch({ type: 'setPath', depth, id });
       if (focus) pendingFocusDepthRef.current = id ? depth + 1 : depth;
     },
@@ -194,6 +221,10 @@ export const FilterMenuLayer: React.FC<FilterMenuLayerProps> = ({
   const scheduleHover = useCallback(
     (depth: number, id: string | null) => {
       if (layout === 'drilldown') return;
+      
+      
+      
+      if (dateRangeEditingRef.current || calendarSurfaceRef.current) return;
       clearHoverTimer();
       if ((openPath[depth] ?? null) === id) return;
       const delay = openPath.length > depth ? HOVER_SWITCH_DELAY_MS : 0;
@@ -242,6 +273,8 @@ export const FilterMenuLayer: React.FC<FilterMenuLayerProps> = ({
 
   const handlePanelKeyDown = useCallback(
     (depth: number, event: React.KeyboardEvent<HTMLDivElement>) => {
+      
+      if (openNodes[depth - 1]?.kind === 'date-range') return;
       const panel = event.currentTarget;
       const active = panel.ownerDocument.activeElement;
       const isTextInput = active instanceof HTMLInputElement;
@@ -283,13 +316,20 @@ export const FilterMenuLayer: React.FC<FilterMenuLayerProps> = ({
         closeLevel(depth);
       }
     },
-    [closeLevel, setPathAt]
+    [closeLevel, setPathAt, openNodes]
   );
 
   useFilterMenuDismiss({
     triggerRef,
     layerRef,
-    onEscape: () => closeLevel(openNodes.length),
+    calendarSurfaceRef,
+    onEscape: () => {
+      if (calendarSurfaceRef.current) {
+        calendarSurfaceRef.current.close();
+      } else {
+        closeLevel(openNodes.length);
+      }
+    },
     onDismiss: () => closeMenu(false),
     onReflow: () =>
       dispatch({ type: 'reflow', layout: resolveLayout(triggerRef.current) }),
@@ -321,49 +361,12 @@ export const FilterMenuLayer: React.FC<FilterMenuLayerProps> = ({
     onPositions: handlePositions,
   });
 
-  
-  
-  
-  const guidePanelDepth = openNodes.length;
-  const guidePanelPosition = positions[guidePanelDepth] ?? null;
-  const guidePathLength = guideTour?.path?.length ?? null;
-  const guideTarget = guideTour?.target ?? null;
-  const registerGuideTarget = guideTour?.registerTarget ?? null;
-  useEffect(() => {
-    if (!registerGuideTarget || guidePathLength !== guidePanelDepth) return;
-    if (!guidePanelPosition) return;
-    const panel = panelRefs.current[guidePanelDepth];
-    if (!panel) return;
-
-    let registered: HTMLElement | null = null;
-    const sync = () => {
-      const next =
-        guideTarget === 'option'
-          ? (panel.querySelector<HTMLElement>(GUIDE_OPTION_SELECTOR) ?? panel)
-          : panel;
-      if (next === registered) return;
-      registered = next;
-      registerGuideTarget(next);
-    };
-    sync();
-    const observer =
-      guideTarget === 'option' ? new MutationObserver(sync) : null;
-    observer?.observe(panel, {
-      childList: true,
-      subtree: true,
-      attributeFilter: ['data-filter-menu-guide-option'],
-    });
-    return () => {
-      observer?.disconnect();
-      registerGuideTarget(null);
-    };
-  }, [
-    guidePanelDepth,
-    guidePanelPosition,
-    guidePathLength,
-    guideTarget,
-    registerGuideTarget,
-  ]);
+  useFilterMenuGuideTarget({
+    guideTour,
+    depth: openNodes.length,
+    position: positions[openNodes.length] ?? null,
+    panelRefs,
+  });
 
   const portalRoot = triggerRef.current?.ownerDocument.body;
   if (!portalRoot) return null;
@@ -393,6 +396,15 @@ export const FilterMenuLayer: React.FC<FilterMenuLayerProps> = ({
               },
               onKeyDown: (event) => handlePanelKeyDown(depth, event),
               onPointerEnter: clearHoverTimer,
+              onFocusCapture:
+                node?.kind === 'date-range'
+                  ? (event) => {
+                      clearHoverTimer();
+                      dateRangeEditingRef.current = true;
+                      if (!event.currentTarget.contains(event.relatedTarget))
+                        node.onActivate?.();
+                    }
+                  : undefined,
               onBack:
                 layout === 'drilldown' && depth > 0
                   ? () => setPathAt(depth - 1, null, true)
@@ -402,14 +414,17 @@ export const FilterMenuLayer: React.FC<FilterMenuLayerProps> = ({
               openChildId: openPath[depth],
               onOpenChild: (childId, focus) =>
                 setPathAt(depth, childId, focus || layout === 'drilldown'),
+              onCloseChild: () => setPathAt(depth, null),
               onHoverRow: (childId) => scheduleHover(depth, childId),
               registerAnchor,
             }}
             title={title}
             canReset={canReset}
+            onPickerOpen={onPickerOpen}
+            onPickerClose={onPickerClose}
             onReset={() => {
+              setPathAt(0, null, true);
               onReset();
-              pendingFocusDepthRef.current = 0;
             }}
             onClear={(valuesNode) => {
               valuesNode.onClear();

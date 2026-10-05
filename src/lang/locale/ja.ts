@@ -2,6 +2,28 @@
 import type { Lang } from './en';
 
 const ja: Partial<Lang> = {
+  'trade-import.recovery.bybit-header.columns':
+    '不足している必須列: {columns}。',
+  'trade-import.recovery.bybit-header.title':
+    'Bybit のヘッダーまたはエクスポートを確認',
+  'trade-import.recovery.bybit-header.message':
+    '選択したヘッダーは Bybit の約定履歴に一致しません。ヘッダー行を確認するか、注文価格だけでなく約定価格と数量を含む取引履歴をエクスポートしてください。別の形式を対応付けるには、明示的に {manualSource} を選択してください。',
+  'update.installed.title': '新機能',
+  'settings.general.available-update-notifications': '更新リマインダーを表示',
+  'settings.general.available-update-notifications-desc':
+    '毎日新しいバージョンを確認し、更新を通知します。オフにすると更新後の変更点のみ表示します。',
+  'account.edit.field.unscoped-live-balance-desc':
+    '以前の残高修正がどのフェーズに属するか特定できませんでした。修正は保持されています。現在のブローカー残高を入力して、進行中のフェーズの残高を合わせてください。',
+  'account.prop-challenge.rule.daily-loss-threshold-help':
+    'このフェーズの累積実現取引利益が開始残高に対する設定割合に初めて達すると、変更後の通貨額上限が恒久的に有効になります。',
+  'account.prop-challenge.rule.daily-loss-tiers-help':
+    '利益:損失上限の組をカンマで区切って入力します。前取引日終値の選択した利益基準で翌日の上限を決めるため、上限は上下します。',
+  'account.edit.error.inactive-phase':
+    'ライブ残高はアクティブなフェーズでのみ変更できます。',
+  'account.edit.error.phase-changed':
+    '編集中に口座情報が変更されました。保存する前に口座エディターを開き直してください。',
+  'account.profiles.profitable-days-conflict':
+    'これらの条件を適用する前に、現在の出金ポリシーを維持するか、利益獲得日の条件を編集してください。',
   'command.share-note-as-image': '現在のノートを画像として共有',
   'trade.share.copy-screenshot': 'トレードのスクリーンショットをコピー',
   'trade.share.copied':
@@ -30,8 +52,17 @@ const ja: Partial<Lang> = {
     'ドル金額なしで共有するには、設定でRマルチプルをオンにしてください。',
   'share.review.copied': '共有カードをクリップボードにコピーしました',
   'share.review.failed': '共有カードをコピーできませんでした',
-  'trade.broker-synced-at': 'ブローカー同期 {date}',
   'home.period.month': '月',
+  'home.period.week': '週',
+  'home.period.custom': 'カスタム期間',
+  'home.period.invalid-range': '終了日は開始日以降にしてください。',
+  'date-input.error.day': '日は1から{max}の範囲で入力してください。',
+  'date-input.error.invalid': 'Please enter a valid date',
+  'date-input.error.month': '月は1から12の範囲で入力してください。',
+  'date-input.error.year':
+    'YY（2000–2099）または YYYY（1000–9999）を入力してください。',
+  'home.widget.aum.current-trend': '現在 · 30日間の推移',
+  'home.widget.aum.description': '現在の口座残高と30日間の推移',
   'home.period.quarter': '四半期',
   'home.period.year': '年',
   'home.period.lifetime': '全期間',
@@ -516,48 +547,34 @@ const ja: Partial<Lang> = {
   'layoutBuilder.guide.intro.title': 'This is your Layout Builder',
   'layoutBuilder.guide.intro.description':
     'This page controls how your review templates are structured. The easiest way to start is to duplicate a built-in template, then customise your copy.',
-  'layoutBuilder.guide.sidebar-overview.title':
-    'This sidebar is where you choose what you are editing',
-  'layoutBuilder.guide.sidebar-overview.description':
-    'Each section in the sidebar is a different template type. Trade templates are separate from your review templates, and the Library section is for sharing templates. After you make your own copy, you can star it to make it the default for new review notes.',
-  'layoutBuilder.guide.pick-built-in.title':
-    'Start with a built-in DRC template',
-  'layoutBuilder.guide.pick-built-in.description':
-    'For your first layout, start with one of the built-in DRC templates. It gives you a safe starting point before you make your own copy.',
-  'layoutBuilder.guide.duplicate.title': 'Duplicate the built-in layout',
-  'layoutBuilder.guide.duplicate.description':
-    'Built-in templates are starting points. Duplicate one first so you can safely make your own version.',
-  'layoutBuilder.guide.preview-template.title':
-    'This preview shows what the template will look like',
-  'layoutBuilder.guide.preview-template.description':
-    'Scroll through the preview and get a feel for the flow. This is useful for checking whether the template reads clearly before you start editing it.',
-  'layoutBuilder.guide.switch-to-editor.title': 'Switch to Editor',
-  'layoutBuilder.guide.switch-to-editor.description':
-    'Preview shows you what the template will look like. Editor is where you actually change it.',
+  'layoutBuilder.guide.create-own-layout.title': '自分のレイアウトを作成',
+  'layoutBuilder.guide.create-own-layout.description':
+    '組み込みレイアウトは読み取り専用です。組み込みのDRCレイアウトのコピーアイコンをクリックして複製するか、+ を押して新しいレイアウトを作成します。「次へ」を押すと標準のDRCを複製します。',
   'layoutBuilder.guide.editor-overview.title':
     'This is where you edit the template',
   'layoutBuilder.guide.editor-overview.description':
     'Rename the template here, review the widget list, drag the left handle to rearrange widgets, click a widget to change it, and remove anything you do not need.',
-  'layoutBuilder.guide.add-widget.title': 'Add a widget to your copy',
+  'layoutBuilder.guide.add-widget.title': 'ウィジェットを追加',
   'layoutBuilder.guide.add-widget.description':
-    'Use Add Widget to put new blocks into your template. This is how you shape the workflow to match how you review.',
-  'layoutBuilder.guide.open-widget-picker.title': 'Open the widget picker',
-  'layoutBuilder.guide.open-widget-picker.description':
-    'This picker shows the widgets you can add for this review type.',
+    '「ウィジェットを追加」でレイアウトの末尾にブロックを追加するか、2つのウィジェットの間にカーソルを合わせて + をクリックすると、好きな位置に挿入できます。',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
     'Type in the search box to find a widget by name, description, or category, then choose it. You can also press Next and Journalit will choose the first result for you.',
-  'layoutBuilder.guide.widget-library-docs.title':
-    'Use the widget library if you get stuck',
-  'layoutBuilder.guide.widget-library-docs.description':
-    'This opens the docs page with the widget library, examples, and availability table for each review type.',
   'layoutBuilder.guide.save-template.title': 'Save your layout',
   'layoutBuilder.guide.save-template.description':
     'Once your copy looks right, save it. You can keep refining it later as your review process improves.',
   'layoutBuilder.guide.set-default-template.title':
-    'Set this copy as your default template',
+    'デフォルトのレイアウトに設定',
   'layoutBuilder.guide.set-default-template.description':
     'Click the star on your new template if you want new review notes to use this layout automatically.',
+  'layoutBuilder.guide.whats-new.insert-slot.title':
+    '好きな位置にウィジェットを追加',
+  'layoutBuilder.guide.whats-new.insert-slot.description':
+    '2つのウィジェットの間にカーソルを合わせて + を押すと、一番下ではなくその位置にウィジェットを追加できます。',
+  'layoutBuilder.guide.whats-new.add-widget-button.title':
+    '最後に追加することもできます',
+  'layoutBuilder.guide.whats-new.add-widget-button.description':
+    'ウィジェットを追加は引き続きレイアウトの最後に追加し、新しいウィジェットまでスクロールして検索を開きます。',
 
   'trade-form.guide.customization-modal.title':
     'フォームをワークフローに合わせる',
@@ -992,7 +1009,6 @@ const ja: Partial<Lang> = {
   'widget.weekly-drc-context.description':
     'Show selected DRC sections for each day in the weekly review',
 
-  'widget.weekly-drc-context.image-alt-prefix': 'Weekly DRC image',
   'widget.weekly-drc-context.no-activity': 'No activity for this day.',
   'widget.weekly-drc-context.no-sections-configured':
     'Choose at least one DRC section in the template settings.',
@@ -1086,7 +1102,7 @@ const ja: Partial<Lang> = {
     'This file needs review in the full Trade Import flow.',
 
   'quick-import.privacy-note':
-    'ファイルは処理のため Journalit サーバーにアップロードされ、既定では保存されません。',
+    '選択したファイルとインポート設定は Journalit に送信されます。暗号化された診断記録は無料で1日、Proで14日、プレビューは7日で期限切れになります。任意のAIマッピングでは、見出しとサンプル行をAIモデルに送信します。Trade Import は個別のクライアントテレメトリやバックグラウンドの障害レポートを送信しません。',
   'quick-import.dropzone.title': 'Drop a broker export here',
   'quick-import.dropzone.subtitle': 'Or click to choose a file',
 
@@ -1131,7 +1147,7 @@ const ja: Partial<Lang> = {
   'trade-import.gate.sign-in':
     'サインインするか無料の Journalit アカウントを作成してファイルを分析できます。Pro が必要なのは取引をインポートするときだけです。',
   'trade-import.gate.sign-in.reassurance':
-    'ファイルは非公開で処理され、標準では保存されません。',
+    '選択したファイルとインポート設定は Journalit に送信されます。暗号化された診断記録は無料で1日、Proで14日、プレビューは7日で期限切れになります。任意のAIマッピングでは、見出しとサンプル行をAIモデルに送信します。Trade Import は個別のクライアントテレメトリやバックグラウンドの障害レポートを送信しません。',
   'trade-import.gate.sign-in.no-trial':
     '分析とプレビューに Pro のトライアルは必要ありません。',
   'trade-import.gate.sign-in.cta': 'サインインして無料でプレビュー',
@@ -1154,8 +1170,14 @@ const ja: Partial<Lang> = {
   'trade-import.manual-mode.price-based': '注文・約定（トレードにまとめる）',
   'trade-import.manual-mode.direct-pnl': '1行 = 1トレード（損益を使用）',
   'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
+  'trade-import.recovery.rithmic-order-history.title': '未対応の Rithmic 形式',
+  'trade-import.recovery.rithmic-order-history.message':
+    'Rithmic の注文履歴をエクスポートしたファイルをアップロードするか、このファイルを作成したプラットフォームを選択してください。',
+  'trade-import.recovery.rithmic-order-history.choose-file':
+    '別のファイルを選択',
+  'trade-import.source.change-action': 'ソースを変更',
   'trade-import.privacy.copy':
-    'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default. When AI mapping suggestions are on, the column headers and a few sample rows are also sent to an AI model to suggest column matches; untick the option to map columns yourself.',
+    '選択したファイルとインポート設定は Journalit に送信されます。暗号化された診断記録は無料で1日、Proで14日、プレビューは7日で期限切れになります。任意のAIマッピングでは、見出しとサンプル行をAIモデルに送信します。Trade Import は個別のクライアントテレメトリやバックグラウンドの障害レポートを送信しません。エクスポートには口座識別子、取引履歴、メモ、価格、数量、手数料、残高、損益が含まれる場合があります。リクエストにはカスタムフィールドの定義と保存済み設定も含まれ、プレビューには対象口座名が含まれます。AI処理を避けるにはAIマッピングを無効にしてください。',
 
   'trade-import.action.analyse': 'Analyse file',
   'trade-import.action.choose-file': 'Choose file',
@@ -1648,11 +1670,6 @@ const ja: Partial<Lang> = {
   
   
   
-  'tradelog.guide.switch-to-gallery.title':
-    'トレードからギャラリーへ切り替える',
-  'tradelog.guide.switch-to-gallery.description':
-    'このモードセレクターで通常のトレードログとギャラリーを切り替えます。ギャラリーをクリックして、画像、GIF、動画、YouTubeリンクのツアーを続けます。',
-
   'tradelog.guide.gallery-source-sort.title': 'メディアのソースと順序を選ぶ',
   'tradelog.guide.gallery-source-sort.description':
     'ソースで全メディア、トレードの添付、レビューノートのメディアに絞れます。並び替えで新しい、古い、成績の良い、悪いトレードから確認できます。',
@@ -1910,6 +1927,7 @@ const ja: Partial<Lang> = {
     'ダッシュボードモードでも同じ背景画像を使用します。',
   'settings.general.home-background-dashboard-aria':
     'ホームの背景をダッシュボードに表示',
+  'datepicker.placeholder.year': 'YY',
   'datepicker.placeholder.second': 'SS',
   'settings.general.show-seconds': '取引時刻に秒を表示',
   'settings.general.show-seconds-desc':
@@ -2057,8 +2075,42 @@ const ja: Partial<Lang> = {
     'Minimum elapsed hours',
 
   'account.prop-challenge.ledger.help.open': '{rule}について',
+  'account.prop-challenge.rule.help.target-amount':
+    '固定目標は口座通貨、割合目標はこのフェーズの開始残高を基準にします。進捗は日次利益計上上限を適用した残高増加で計算し、含み損益は除外します。',
+  'account.prop-challenge.rule.help.credit-withdrawals':
+    '記録済みの出金総額を固定目標の進捗に加算します。残高や出金資格は変更しません。',
+  'account.prop-challenge.rule.help.drawdown-amount':
+    '開始残高（固定）または実現残高の最高値（追従）からの通貨額での距離です。下限に触れると違反です。',
+  'account.prop-challenge.rule.help.drawdown-mode':
+    '固定は下限を維持します。EOD追従は取引日終値の最高値、日中追従は記録された実現残高の取引を追います。含み損益込みの資産は追いません。',
+  'account.prop-challenge.rule.help.lock-balance':
+    '追従ドローダウン下限の上限であり、開始条件の残高ではありません。この残高で下限の上昇が止まります。空欄は上限なしです。',
+  'account.prop-challenge.rule.help.daily-loss-amount':
+    '取引日内の累積実現取引純損失の最大許容通貨額です。日中最高値からの下落ではありません。上限に触れると違反です。',
+  'account.prop-challenge.rule.help.breach-action':
+    '口座失敗では過去の違反が有効なままです。次のセッションまでの停止は現在の取引日のみ対象で、過去の違反は履歴に残ります。',
+  'account.prop-challenge.rule.help.daily-loss-model':
+    '固定上限、利益閾値到達後の恒久変更、最高EOD利益による調整、前日EOD利益階層から選びます。条件付き項目で選択したモデルを設定します。',
+  'account.prop-challenge.rule.help.profit-basis':
+    '累積取引利益は資金移動を除外します。現在の口座利益は資金移動を含み、出金で減少します。どちらも過去の取引日終値を使います。',
+  'account.prop-challenge.rule.help.position-model':
+    '取引ごとの固定上限、利益ステップごとに1枚追加、または明示的な利益階層を選びます。調整には過去の取引日終値を使います。',
+  'account.prop-challenge.rule.help.max-contracts':
+    '任意のマイクロ換算後の取引ごとの最大数量です。複数取引の合計エクスポージャーではありません。上限超過は違反です。',
+  'account.prop-challenge.rule.help.initial-contracts':
+    '日末の確定利益で上限が増える前の、取引ごとの初期契約枚数上限です。',
+  'account.prop-challenge.rule.help.maximum-contracts':
+    '利益による契約枚数増加の任意の上限です。空欄は追加上限なしです。',
+  'account.prop-challenge.rule.help.daily-profit':
+    '達成日に必要な実現取引純損益の通貨額です。利益、損失、費用を合計します。含み益や資金移動は対象外です。',
+  'account.prop-challenge.rule.help.consistency-cushion':
+    '最良日の最大比率にパーセントポイントで加算します。30%＋5ポイントなら35%まで許可します。空欄は余裕なしです。',
+  'account.prop-challenge.rule.help.daily-profit-cap':
+    'フェーズ目標に計上する各取引日の利益の通貨額上限です。超過分は残高に残り、損失は全額計上します。',
+  'account.prop-challenge.rule.help.live-review':
+    '審査資格のために1取引日で必要な実現純利益です。フェーズの自動移行やライブ口座の付与は行いません。',
   'account.prop-challenge.ledger.help.profit_target':
-    'この金額だけ口座を増やしてフェーズに合格します。決済済みのトレードだけが対象です。',
+    '設定したフェーズ残高増加に達すると合格します。利益計上上限と任意の出金加算が進捗に影響し、含み益は計上しません。',
   'account.prop-challenge.ledger.help.profit_target.example':
     'この口座は利益 {target} が必要です。これまでに {current}、残り {remaining}。',
   'account.prop-challenge.ledger.help.profit_target.example-done':
@@ -2088,11 +2140,11 @@ const ja: Partial<Lang> = {
   'account.prop-challenge.ledger.help.live_review_daily_profit.example':
     '{trigger} 以上の日が1日あれば資格あり。これまでの最良日は {bestDay}。',
   'account.prop-challenge.ledger.help.minimum_trading_days':
-    '決済トレードが1件以上ある日数。目標を早く達成しても、この日数までは合格できません。',
+    'このフェーズで必要な異なる取引開始日の数です。未決済の取引も含みます。暦日の午前0時でなく、設定した取引日区切りを使います。',
   'account.prop-challenge.ledger.help.minimum_trading_days.example':
     '取引日 {current} / {target} 完了、残り {remaining}。',
   'account.prop-challenge.ledger.help.minimum_profitable_days':
-    '会社の最低日次利益以上で終えた取引日。損益トントンやそれ未満は数えません。',
+    'このフェーズの最低日次実現純利益に達した必要日数です。記録した出金でこのフェーズ全体のルールはリセットしません。',
   'account.prop-challenge.ledger.help.minimum_profitable_days.example':
     '{minimum} 以上で終えた日 {current} / {target}、残り {remaining}。',
   'account.prop-challenge.ledger.help.consistency':
@@ -2330,6 +2382,82 @@ const ja: Partial<Lang> = {
   'filter.menu.whats-new.done.title': 'フィルターの新機能は以上です',
   'filter.menu.whats-new.done.description':
     '同じメニューがトレードログ、ダッシュボード、ホーム、セットアップ、レビューで使えます。クリックするとすぐに反映されます。',
+  'account.profiles.correction-history': 'ルールの訂正',
+  'account.profiles.correction-before': '訂正前',
+  'account.profiles.correction-after': '訂正後',
+  'account.prop-challenge.field.help-label': '説明：{field}',
+  'account.prop-challenge.payout-rules.help.cycle':
+    '待機期間をエントリー日、最低純利益を満たす日、または経過した暦日で測ります。周期なしはこの日数条件だけを無効にします。',
+  'account.prop-challenge.payout-rules.help.days':
+    '選択した周期で必要な日数：エントリー日、実現純利益の達成日、または完全な24時間の期間です。',
+  'account.prop-challenge.payout-rules.help.daily-profit':
+    '費用控除後の1日あたり最低実現純利益。取引は設定した取引日の区切りで集計します。しきい値はゼロより大きい必要があります。',
+  'account.prop-challenge.payout-rules.help.qualifying-days':
+    '待機周期に利益達成日数を追加します。現在の出金周期で両方の条件を満たす必要があります。',
+  'account.prop-challenge.payout-rules.help.profitable-days':
+    '現在の出金周期で、実現純利益が日次最低額に達した異なる日の日数。',
+  'account.prop-challenge.payout-rules.help.anchor':
+    '暦日の待機期間は周期開始または最初のエントリーから数えます。リセット有効時は記録された出金で次の周期が始まります。',
+  'account.prop-challenge.payout-rules.help.elapsed-hours':
+    '現在の周期の最初のエントリーからの時間数。取引がなければ計時は始まりません。空欄で無効になります。',
+  'account.prop-challenge.payout-rules.help.request-window':
+    '毎日、または指定タイムゾーンの選択曜日だけ申請できます。他の条件も適用されます。',
+  'account.prop-challenge.payout-rules.help.time-zone':
+    '申請可能な曜日を判断するタイムゾーン。例：America/New_York。取引日の区切りは変わりません。',
+  'account.prop-challenge.payout-rules.help.request-days':
+    '選択タイムゾーンで申請を許可する曜日。少なくとも1日選んでください。',
+  'account.prop-challenge.payout-rules.help.minimum-balance':
+    '出金前に必要な残高。出金可能利益の計算に使う下限残高とは別です。空欄で無効。',
+  'account.prop-challenge.payout-rules.help.cycle-profit':
+    '現在の周期で必要な実現純取引利益。入金と残高調整は含みません。空欄で無効。',
+  'account.prop-challenge.payout-rules.help.profit-schedule':
+    '1回目、2回目以降の最低利益をカンマで区切ります。単一の周期最低利益に代わります。',
+  'account.prop-challenge.payout-rules.help.repeat-final':
+    '一覧を超える出金回数でも最後の値を繰り返し使用します。',
+  'account.prop-challenge.payout-rules.help.positive-cycle':
+    '最初の記録済み出金後、周期の実現純取引利益がゼロを超える必要があります。',
+  'account.prop-challenge.payout-rules.help.consistency':
+    '最高の日次利益を周期の実現純利益で割った割合。損失日は合計利益を減らし、割合を上げる場合があります。空欄で無効。',
+  'account.prop-challenge.payout-rules.help.consistency-schedule':
+    '出金回数ごとの最高日利益の割合上限をカンマで区切ります。単一の一貫性上限に代わります。',
+  'account.prop-challenge.payout-rules.help.availability':
+    'フェーズ開始残高または選択した下限を超える出金可能利益を計算します。割合と他の上限も適用されます。',
+  'account.prop-challenge.payout-rules.help.balance-floor':
+    '出金可能利益から除く残高。引き出せる割合は超過分だけに適用され、ドローダウン規則は変更しません。',
+  'account.prop-challenge.payout-rules.help.request-percent':
+    '選択下限を超える残高の申請可能な割合。申請額や新規利益の制限でさらに減る場合があります。',
+  'account.prop-challenge.payout-rules.help.minimum-request':
+    '許可される最低申請額。計算された出金可能額もこの最低額に達する必要があります。',
+  'account.prop-challenge.payout-rules.help.maximum':
+    '固定額、初回のみ、出金回数別、または周期利益の割合を上限にします。上限なしはこの制限だけを除きます。',
+  'account.prop-challenge.payout-rules.help.maximum-amount':
+    '利益分配前の最大申請総額。出金可能利益や他の上限で減る場合があります。',
+  'account.prop-challenge.payout-rules.help.first-maximum':
+    'このフェーズの初回出金だけに適用される申請総額上限。その後は解除されますが、他の制限は残ります。',
+  'account.prop-challenge.payout-rules.help.maximum-schedule':
+    '出金回数ごとの申請総額上限をカンマで区切ります。最後の値を繰り返さない場合、未記載の後続出金は上限ゼロです。',
+  'account.prop-challenge.payout-rules.help.maximum-percent':
+    '申請総額を周期の実現純取引利益のこの割合に制限します。残高に対する出金可能割合とは別です。',
+  'account.prop-challenge.payout-rules.help.lifetime-days':
+    '資金提供フェーズ全体の達成日数で新しい出金可能額と上限を有効にします。周期リセットではこの合計は消えません。',
+  'account.prop-challenge.payout-rules.help.split-model':
+    '固定分配率、累積出金総額または口座総利益による率の切り替え。分配率は受取額を決め、申請上限を決めるものではありません。',
+  'account.prop-challenge.payout-rules.help.trader-share':
+    'この率でトレーダーに支払う申請総額の割合。残りは会社の取り分です。',
+  'account.prop-challenge.payout-rules.help.cumulative-threshold':
+    'このフェーズの記録済み出金総額が達すると以後の率を使います。閾値をまたぐ申請は前後の部分にそれぞれの率を適用します。',
+  'account.prop-challenge.payout-rules.help.maximum-payouts':
+    'このフェーズで許可する記録済み出金回数。到達後は追加出金をブロックします。空欄で回数制限なし。',
+  'account.prop-challenge.payout-rules.help.maximum-outcome':
+    '最後の出金後：継続、口座終了、次フェーズ、またはライブ審査対象。審査資格は自動承認ではありません。',
+  'account.prop-challenge.payout-rules.help.aftermath':
+    '記録済み出金後の残高とドローダウン：申請額を差し引く、差し引いて下限を固定、または開始残高とドローダウンにリセット。',
+  'account.prop-challenge.payout-rules.help.drawdown-floor':
+    '対応する処理を選択した際、出金後に固定するドローダウン下限。残った残高はこの下限を上回る必要があります。',
+  'account.prop-challenge.payout-rules.help.first-exempt':
+    'このフェーズの初回出金では周期最低利益をゼロとして扱います。現在の周期の実現純利益はマイナスであってはなりません。他の条件も適用されます。',
+  'account.prop-challenge.payout-rules.help.reset-cycle':
+    '記録済み出金後、日数、日次利益、周期利益、一貫性をリセット。フェーズ全体の達成日数は保持し、プレビューではリセットしません。',
 };
 
 export default ja;

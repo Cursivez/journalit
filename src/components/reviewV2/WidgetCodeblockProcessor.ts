@@ -125,7 +125,10 @@ function parseReviewWidgetConfig(source: string): {
 import type JournalitPlugin from '../../main';
 import { CurrencyProvider } from '../../contexts/CurrencyContext';
 import { DisplayPolicyProvider } from '../../contexts/DisplayPolicyContext';
+import { ReviewReadOnlyContext } from './ReviewReadOnlyContext';
+import { getEmbeddedReviewAncestorSources } from '../../utils/reviewEmbed';
 import { t } from '../../lang/helpers';
+import { NoteGuideRuntimeLayer } from '../../guides/NoteGuideRuntimeLayer';
 
 const globallyRegisteredCodeblockProcessors = new Map<
   string,
@@ -364,12 +367,15 @@ export class WidgetCodeblockProcessor {
     el: HTMLElement,
     ctx: MarkdownPostProcessorContext
   ): Promise<void> {
-    if (widgetType === 'images') {
+    const ancestorSourcePaths = getEmbeddedReviewAncestorSources(el);
+    const readOnly = ancestorSourcePaths.length > 0;
+    
+    if (widgetType === 'images' && !readOnly) {
       await this.ensureImageWidgetIds(ctx.sourcePath);
     }
 
     const codeblockContext =
-      widgetType === 'images'
+      widgetType === 'images' && !readOnly
         ? await this.getImagesCodeblockContext(
             ctx.sourcePath,
             ctx.docId,
@@ -385,12 +391,25 @@ export class WidgetCodeblockProcessor {
     el.addClass('journalit-widget', `journalit-${widgetType}`);
 
     
-    const widget = this.createWidget(
+    let widget = this.createWidget(
       widgetType,
       source,
       ctx.sourcePath,
-      codeblockContext
+      codeblockContext,
+      ancestorSourcePaths
     );
+
+    if (widgetType === 'header' && !readOnly) {
+      widget = createElement(
+        NoteGuideRuntimeLayer,
+        {
+          plugin: this.plugin,
+          containerEl: el,
+          filePath: ctx.sourcePath,
+        },
+        widget
+      );
+    }
 
     
     const renderChild = new ReactRenderChild(el, () => {
@@ -407,7 +426,11 @@ export class WidgetCodeblockProcessor {
           DisplayPolicyProvider,
           
           { hideDollarAmounts: isInShareHideDollarAmountsArea(el) },
-          widget
+          createElement(
+            ReviewReadOnlyContext.Provider,
+            { value: readOnly },
+            widget
+          )
         )
       )
     );
@@ -425,7 +448,8 @@ export class WidgetCodeblockProcessor {
     widgetType: ReviewWidgetType,
     source: string,
     filePath: string,
-    codeblockContext?: ImageWidgetCodeblockContext
+    codeblockContext?: ImageWidgetCodeblockContext,
+    ancestorSourcePaths: readonly string[] = []
   ): ReactElement {
     
     if (widgetType === 'header') {
@@ -566,6 +590,7 @@ export class WidgetCodeblockProcessor {
         filePath,
         plugin: this.plugin,
         config,
+        ancestorSourcePaths,
       });
     }
 
@@ -593,6 +618,7 @@ export class WidgetCodeblockProcessor {
         filePath,
         plugin: this.plugin,
         config,
+        ancestorSourcePaths,
       });
     }
 

@@ -6,6 +6,7 @@ import {
 interface BreakEvenAccountBalanceAccountSnapshot {
   name: string;
   currentBalance: unknown;
+  lifetimeBalance?: number;
   currency?: string;
   id?: string | number | null;
   accountId?: string | number | null;
@@ -93,7 +94,7 @@ export const buildBreakEvenAccountBalanceLookup = (
   };
 
   for (const account of accounts) {
-    const balance = Number(account.currentBalance);
+    const balance = Number(account.lifetimeBalance ?? account.currentBalance);
     if (!Number.isFinite(balance)) {
       continue;
     }

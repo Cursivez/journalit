@@ -2,6 +2,22 @@
 import type { Lang } from './en';
 
 const ko: Partial<Lang> = {
+  'trade-import.recovery.bybit-header.columns': '누락된 필수 열: {columns}.',
+  'trade-import.recovery.bybit-header.title': 'Bybit 헤더 또는 내보내기 확인',
+  'trade-import.recovery.bybit-header.message':
+    '선택한 헤더가 Bybit 체결 내역과 일치하지 않습니다. 헤더 행을 확인하거나 주문 가격뿐 아니라 체결 가격과 수량을 포함한 거래 내역을 내보내세요. 다른 형식을 매핑하려면 {manualSource}을(를) 명시적으로 선택하세요.',
+  'update.installed.title': '새로운 기능',
+  'settings.general.available-update-notifications': '업데이트 알림 표시',
+  'settings.general.available-update-notifications-desc':
+    '매일 새 버전을 확인하고 업데이트 알림을 표시합니다. 끄면 업데이트 후 변경 사항만 표시합니다.',
+  'account.edit.field.unscoped-live-balance-desc':
+    '이전 잔액 조정이 어느 단계에 속하는지 확인할 수 없습니다. 조정은 보존됩니다. 현재 브로커 잔액을 입력하여 활성 단계의 잔액을 맞추세요.',
+  'account.edit.error.inactive-phase':
+    '실시간 잔액은 활성 단계에서만 변경할 수 있습니다.',
+  'account.edit.error.phase-changed':
+    '편집 중 계좌 정보가 변경되었습니다. 저장하기 전에 계좌 편집기를 다시 여세요.',
+  'account.profiles.profitable-days-conflict':
+    '이 조건을 적용하기 전에 현재 지급 정책을 유지하거나 수익일 요건을 수정하세요.',
   'command.share-note-as-image': '현재 노트를 이미지로 공유',
   'trade.share.copy-screenshot': '트레이드 스크린샷 복사',
   'trade.share.copied': '트레이드 스크린샷을 클립보드에 복사했습니다',
@@ -29,8 +45,16 @@ const ko: Partial<Lang> = {
     '달러 금액 없이 공유하려면 설정에서 R 배수를 켜세요.',
   'share.review.copied': '공유 카드를 클립보드에 복사했습니다',
   'share.review.failed': '공유 카드를 복사할 수 없습니다',
-  'trade.broker-synced-at': '브로커 동기화 {date}',
   'home.period.month': '월',
+  'home.period.week': '주',
+  'home.period.custom': '사용자 지정 기간',
+  'home.period.invalid-range': '종료일은 시작일과 같거나 이후여야 합니다.',
+  'date-input.error.day': '일은 1에서 {max} 사이여야 합니다.',
+  'date-input.error.invalid': 'Please enter a valid date',
+  'date-input.error.month': '월은 1에서 12 사이여야 합니다.',
+  'date-input.error.year': 'YY(2000–2099) 또는 YYYY(1000–9999)를 입력하세요.',
+  'home.widget.aum.current-trend': '현재 · 30일 추이',
+  'home.widget.aum.description': '현재 계좌 잔액과 30일 추이',
   'home.period.quarter': '분기',
   'home.period.year': '년',
   'home.period.lifetime': '전체 기간',
@@ -509,48 +533,31 @@ const ko: Partial<Lang> = {
   'layoutBuilder.guide.intro.title': 'This is your Layout Builder',
   'layoutBuilder.guide.intro.description':
     'This page controls how your review templates are structured. The easiest way to start is to duplicate a built-in template, then customise your copy.',
-  'layoutBuilder.guide.sidebar-overview.title':
-    'This sidebar is where you choose what you are editing',
-  'layoutBuilder.guide.sidebar-overview.description':
-    'Each section in the sidebar is a different template type. Trade templates are separate from your review templates, and the Library section is for sharing templates. After you make your own copy, you can star it to make it the default for new review notes.',
-  'layoutBuilder.guide.pick-built-in.title':
-    'Start with a built-in DRC template',
-  'layoutBuilder.guide.pick-built-in.description':
-    'For your first layout, start with one of the built-in DRC templates. It gives you a safe starting point before you make your own copy.',
-  'layoutBuilder.guide.duplicate.title': 'Duplicate the built-in layout',
-  'layoutBuilder.guide.duplicate.description':
-    'Built-in templates are starting points. Duplicate one first so you can safely make your own version.',
-  'layoutBuilder.guide.preview-template.title':
-    'This preview shows what the template will look like',
-  'layoutBuilder.guide.preview-template.description':
-    'Scroll through the preview and get a feel for the flow. This is useful for checking whether the template reads clearly before you start editing it.',
-  'layoutBuilder.guide.switch-to-editor.title': 'Switch to Editor',
-  'layoutBuilder.guide.switch-to-editor.description':
-    'Preview shows you what the template will look like. Editor is where you actually change it.',
+  'layoutBuilder.guide.create-own-layout.title': '나만의 레이아웃 만들기',
+  'layoutBuilder.guide.create-own-layout.description':
+    '기본 제공 레이아웃은 읽기 전용입니다. 기본 제공 DRC 레이아웃의 복사 아이콘을 클릭해 복제하거나 +를 눌러 새 레이아웃을 시작하세요. 다음을 누르면 기본 DRC를 복제합니다.',
   'layoutBuilder.guide.editor-overview.title':
     'This is where you edit the template',
   'layoutBuilder.guide.editor-overview.description':
     'Rename the template here, review the widget list, drag the left handle to rearrange widgets, click a widget to change it, and remove anything you do not need.',
-  'layoutBuilder.guide.add-widget.title': 'Add a widget to your copy',
+  'layoutBuilder.guide.add-widget.title': '위젯 추가',
   'layoutBuilder.guide.add-widget.description':
-    'Use Add Widget to put new blocks into your template. This is how you shape the workflow to match how you review.',
-  'layoutBuilder.guide.open-widget-picker.title': 'Open the widget picker',
-  'layoutBuilder.guide.open-widget-picker.description':
-    'This picker shows the widgets you can add for this review type.',
+    '위젯 추가를 사용해 레이아웃 끝에 블록을 추가하거나, 두 위젯 사이에 마우스를 올리고 +를 클릭해 원하는 위치에 바로 삽입하세요.',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
     'Type in the search box to find a widget by name, description, or category, then choose it. You can also press Next and Journalit will choose the first result for you.',
-  'layoutBuilder.guide.widget-library-docs.title':
-    'Use the widget library if you get stuck',
-  'layoutBuilder.guide.widget-library-docs.description':
-    'This opens the docs page with the widget library, examples, and availability table for each review type.',
   'layoutBuilder.guide.save-template.title': 'Save your layout',
   'layoutBuilder.guide.save-template.description':
     'Once your copy looks right, save it. You can keep refining it later as your review process improves.',
-  'layoutBuilder.guide.set-default-template.title':
-    'Set this copy as your default template',
+  'layoutBuilder.guide.set-default-template.title': '기본 레이아웃으로 설정',
   'layoutBuilder.guide.set-default-template.description':
     'Click the star on your new template if you want new review notes to use this layout automatically.',
+  'layoutBuilder.guide.whats-new.insert-slot.title': '원하는 곳에 위젯 추가',
+  'layoutBuilder.guide.whats-new.insert-slot.description':
+    '두 위젯 사이에 마우스를 올리고 +를 누르면 맨 아래가 아닌 바로 그 위치에 위젯을 추가할 수 있습니다.',
+  'layoutBuilder.guide.whats-new.add-widget-button.title': '또는 맨 끝에 추가',
+  'layoutBuilder.guide.whats-new.add-widget-button.description':
+    '위젯 추가는 여전히 레이아웃 맨 아래에 추가하며, 이제 새 위젯으로 스크롤하고 검색을 엽니다.',
 
   'trade-form.guide.customization-modal.title': '양식을 내 워크플로에 맞추세요',
   'trade-form.guide.customization-modal.description':
@@ -990,7 +997,6 @@ const ko: Partial<Lang> = {
   'widget.weekly-drc-context.description':
     'Show selected DRC sections for each day in the weekly review',
 
-  'widget.weekly-drc-context.image-alt-prefix': 'Weekly DRC image',
   'widget.weekly-drc-context.no-activity': 'No activity for this day.',
   'widget.weekly-drc-context.no-sections-configured':
     'Choose at least one DRC section in the template settings.',
@@ -1084,7 +1090,7 @@ const ko: Partial<Lang> = {
     'This file needs review in the full Trade Import flow.',
 
   'quick-import.privacy-note':
-    '파일은 처리를 위해 Journalit 서버에 업로드되며 기본적으로 저장되지 않습니다.',
+    '선택한 파일과 가져오기 옵션이 Journalit에 업로드됩니다. 암호화된 진단 기록은 무료 계정에서 1일, Pro에서 14일 후 만료되며 미리보기는 7일 후 만료됩니다. 선택적 AI 매핑은 헤더와 샘플 행을 AI 모델에 전송합니다. Trade Import는 별도의 클라이언트 원격 측정이나 백그라운드 오류 보고서를 전송하지 않습니다.',
   'quick-import.dropzone.title': 'Drop a broker export here',
   'quick-import.dropzone.subtitle': 'Or click to choose a file',
 
@@ -1129,7 +1135,7 @@ const ko: Partial<Lang> = {
   'trade-import.gate.sign-in':
     '로그인하거나 무료 Journalit 계정을 만들어 파일을 분석하세요. 거래를 가져올 때만 Pro가 필요합니다.',
   'trade-import.gate.sign-in.reassurance':
-    '파일은 비공개로 처리되며 기본적으로 저장되지 않습니다.',
+    '선택한 파일과 가져오기 옵션이 Journalit에 업로드됩니다. 암호화된 진단 기록은 무료 계정에서 1일, Pro에서 14일 후 만료되며 미리보기는 7일 후 만료됩니다. 선택적 AI 매핑은 헤더와 샘플 행을 AI 모델에 전송합니다. Trade Import는 별도의 클라이언트 원격 측정이나 백그라운드 오류 보고서를 전송하지 않습니다.',
   'trade-import.gate.sign-in.no-trial':
     '분석과 미리보기에 Pro 체험은 필요하지 않습니다.',
   'trade-import.gate.sign-in.cta': '로그인하고 무료로 미리보기',
@@ -1152,8 +1158,14 @@ const ko: Partial<Lang> = {
   'trade-import.manual-mode.price-based': '주문 또는 체결 (거래로 묶음)',
   'trade-import.manual-mode.direct-pnl': '한 행에 거래 하나 (손익 사용)',
   'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
+  'trade-import.recovery.rithmic-order-history.title':
+    '지원되지 않는 Rithmic 형식',
+  'trade-import.recovery.rithmic-order-history.message':
+    'Rithmic 주문 내역 내보내기 파일을 업로드하거나 이 파일을 만든 플랫폼을 선택하세요.',
+  'trade-import.recovery.rithmic-order-history.choose-file': '다른 파일 선택',
+  'trade-import.source.change-action': '소스 변경',
   'trade-import.privacy.copy':
-    'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default. When AI mapping suggestions are on, the column headers and a few sample rows are also sent to an AI model to suggest column matches; untick the option to map columns yourself.',
+    '선택한 파일과 가져오기 옵션이 Journalit에 업로드됩니다. 암호화된 진단 기록은 무료 계정에서 1일, Pro에서 14일 후 만료되며 미리보기는 7일 후 만료됩니다. 선택적 AI 매핑은 헤더와 샘플 행을 AI 모델에 전송합니다. Trade Import는 별도의 클라이언트 원격 측정이나 백그라운드 오류 보고서를 전송하지 않습니다. 내보내기 파일에는 계좌 식별자, 거래 내역, 메모, 가격, 수량, 수수료, 잔액 및 손익이 포함될 수 있습니다. 요청에는 사용자 정의 필드 정의와 저장된 옵션도 포함되며 미리보기에는 대상 계좌 이름이 포함됩니다. AI 처리를 원하지 않으면 AI 매핑을 끄세요.',
 
   'trade-import.action.analyse': 'Analyse file',
   'trade-import.action.choose-file': 'Choose file',
@@ -1639,10 +1651,6 @@ const ko: Partial<Lang> = {
   
   
   
-  'tradelog.guide.switch-to-gallery.title': '거래에서 갤러리로 전환하기',
-  'tradelog.guide.switch-to-gallery.description':
-    '이 모드 선택기로 일반 Trade Log와 갤러리를 오갈 수 있습니다. 갤러리를 클릭해 이미지, GIF, 동영상, YouTube 링크 안내를 계속하세요.',
-
   'tradelog.guide.gallery-source-sort.title': '미디어 소스와 순서 선택하기',
   'tradelog.guide.gallery-source-sort.description':
     '소스로 전체 미디어, 거래 첨부 파일 또는 리뷰 노트 미디어를 선택하세요. 정렬로 최신, 오래된, 최고 또는 최악의 거래를 먼저 볼 수 있습니다.',
@@ -1899,6 +1907,7 @@ const ko: Partial<Lang> = {
     '대시보드 모드에서도 동일한 배경 이미지를 사용합니다.',
   'settings.general.home-background-dashboard-aria':
     '홈 배경을 대시보드에 표시',
+  'datepicker.placeholder.year': 'YY',
   'datepicker.placeholder.second': 'SS',
   'settings.general.show-seconds': '거래 시간에 초 표시',
   'settings.general.show-seconds-desc':
@@ -2045,8 +2054,46 @@ const ko: Partial<Lang> = {
     'Minimum elapsed hours',
 
   'account.prop-challenge.ledger.help.open': '{rule} 안내',
+  'account.prop-challenge.rule.help.target-amount':
+    '고정 목표는 계좌 통화를, 비율 목표는 이 단계의 시작 잔액을 사용합니다. 진행률은 일일 인정 수익 한도 적용 후 잔액 증가로 계산하며 미실현 손익은 제외합니다.',
+  'account.prop-challenge.rule.help.credit-withdrawals':
+    '기록된 총 출금액을 고정 목표 진행률에 다시 더합니다. 잔액이나 출금 자격은 바꾸지 않습니다.',
+  'account.prop-challenge.rule.help.drawdown-amount':
+    '시작 잔액(고정) 또는 실현 잔액 최고점(추적) 아래의 통화 금액 차이입니다. 하한에 닿으면 위반입니다.',
+  'account.prop-challenge.rule.help.drawdown-mode':
+    '고정은 하한을 유지합니다. EOD 추적은 거래일 마감 최고 잔액을, 일중 추적은 기록된 실현 잔액 거래를 따릅니다. 미실현 평가자산은 추적하지 않습니다.',
+  'account.prop-challenge.rule.help.lock-balance':
+    '추적 드로다운 하한의 상한이지 활성화 잔액이 아닙니다. 하한은 이 잔액에서 상승을 멈춥니다. 빈칸은 상한 없음입니다.',
+  'account.prop-challenge.rule.help.daily-loss-amount':
+    '거래일 내 누적 실현 거래 순손실의 최대 허용 통화 금액입니다. 당일 최고점 대비 하락이 아닙니다. 한도에 닿으면 위반입니다.',
+  'account.prop-challenge.rule.help.breach-action':
+    '계좌 실패는 과거 위반을 계속 유효하게 유지합니다. 다음 세션까지 일시 중지는 현재 거래일에만 적용되며 과거 위반은 기록에 남습니다.',
+  'account.prop-challenge.rule.help.daily-loss-model':
+    '고정 한도, 수익 기준 도달 후 영구 변경, 최고 EOD 수익 비율 또는 이전 EOD 수익 구간을 선택합니다. 조건부 필드로 선택한 모델을 설정합니다.',
+  'account.prop-challenge.rule.help.profit-basis':
+    '누적 거래 수익은 현금흐름을 제외합니다. 현재 계좌 수익은 이를 포함하므로 출금 시 줄어듭니다. 둘 다 이전 거래일 마감 값을 사용합니다.',
+  'account.prop-challenge.rule.help.position-model':
+    '거래별 고정 한도, 수익 단계마다 계약 1개 추가 또는 명시적 수익 구간을 선택합니다. 조정은 이전 거래일 마감 값을 사용합니다.',
+  'account.prop-challenge.rule.help.max-contracts':
+    '선택적 마이크로 환산 후 거래별 최대 규모이며 여러 거래의 합산 노출이 아닙니다. 한도 초과는 위반입니다.',
+  'account.prop-challenge.rule.help.initial-contracts':
+    '완료된 일말 수익으로 더 큰 한도를 얻기 전 거래별 초기 계약 수 한도입니다.',
+  'account.prop-challenge.rule.help.maximum-contracts':
+    '수익에 따른 계약 수 증가의 선택적 상한입니다. 빈칸은 추가 상한 없음입니다.',
+  'account.prop-challenge.rule.help.daily-profit':
+    '충족일의 실현 거래 순손익 금액 기준으로 이익, 손실, 비용을 합산합니다. 미실현 수익과 현금흐름은 제외합니다.',
+  'account.prop-challenge.rule.help.consistency-cushion':
+    '최고 수익일 최대 비율에 퍼센트포인트로 더합니다. 30% + 5포인트는 35%를 허용합니다. 빈칸은 완충 없음입니다.',
+  'account.prop-challenge.rule.help.daily-profit-cap':
+    '단계 목표에 인정되는 거래일별 수익 금액 한도입니다. 초과분은 잔액에 남고 손실은 전액 반영합니다.',
+  'account.prop-challenge.rule.help.live-review':
+    '검토 자격을 위해 한 거래일에 필요한 실현 순수익입니다. 단계를 자동으로 진행하거나 실계좌를 부여하지 않습니다.',
+  'account.prop-challenge.rule.daily-loss-threshold-help':
+    '이 단계의 누적 실현 거래 수익이 단계 시작 잔액의 설정 비율에 처음 도달하면 조정된 금액 한도가 영구 활성화됩니다.',
+  'account.prop-challenge.rule.daily-loss-tiers-help':
+    '수익:손실한도 쌍을 쉼표로 구분해 입력합니다. 이전 거래일 마감의 선택한 수익 기준이 다음 날 한도를 결정하며 오르거나 내릴 수 있습니다.',
   'account.prop-challenge.ledger.help.profit_target':
-    '이 금액만큼 계정을 불려야 단계를 통과합니다. 청산된 거래만 반영됩니다.',
+    '설정한 단계 잔액 증가에 도달하면 통과합니다. 인정 수익 한도와 선택적 출금 가산이 진행률에 영향을 주며 미실현 수익은 제외합니다.',
   'account.prop-challenge.ledger.help.profit_target.example':
     '이 계좌는 이익 {target}이 필요합니다. 지금까지 {current}, 남은 금액 {remaining}.',
   'account.prop-challenge.ledger.help.profit_target.example-done':
@@ -2076,11 +2123,11 @@ const ko: Partial<Lang> = {
   'account.prop-challenge.ledger.help.live_review_daily_profit.example':
     '{trigger} 이상인 날이 하루면 자격. 지금까지 최고일은 {bestDay}.',
   'account.prop-challenge.ledger.help.minimum_trading_days':
-    '청산 거래가 하루 한 건 이상인 날입니다. 목표를 빨리 달성해도 이 일수 전에는 통과할 수 없습니다.',
+    '이 단계에서 필요한 서로 다른 거래 진입일 수이며 아직 열린 진입도 포함합니다. 자정이 아니라 설정된 거래일 구분을 사용합니다.',
   'account.prop-challenge.ledger.help.minimum_trading_days.example':
     '거래일 {current} / {target} 완료, {remaining} 남음.',
   'account.prop-challenge.ledger.help.minimum_profitable_days':
-    '업체의 최소 일일 이익 이상으로 마감한 거래일입니다. 본전이거나 더 작은 이익은 세지 않습니다.',
+    '이 단계의 최소 일일 실현 순수익을 충족한 필요 일수입니다. 기록된 출금은 이 단계 전체 규칙을 초기화하지 않습니다.',
   'account.prop-challenge.ledger.help.minimum_profitable_days.example':
     '{minimum} 이상으로 마감한 날 {current} / {target}, {remaining} 남음.',
   'account.prop-challenge.ledger.help.consistency':
@@ -2314,6 +2361,82 @@ const ko: Partial<Lang> = {
   'filter.menu.whats-new.done.title': '필터의 새 기능은 여기까지예요',
   'filter.menu.whats-new.done.description':
     '같은 메뉴를 거래 기록, 대시보드, 홈, 셋업, 리뷰에서 사용할 수 있습니다. 클릭하는 즉시 적용됩니다.',
+  'account.profiles.correction-history': '규칙 정정',
+  'account.profiles.correction-before': '변경 전',
+  'account.profiles.correction-after': '변경 후',
+  'account.prop-challenge.field.help-label': '도움말: {field}',
+  'account.prop-challenge.payout-rules.help.cycle':
+    '진입일, 최소 순이익 달성일 또는 경과한 달력 일수로 대기 시간을 계산합니다. 주기 없음은 이 일수 조건만 끕니다.',
+  'account.prop-challenge.payout-rules.help.days':
+    '선택한 주기의 필요 일수: 진입일, 충분한 실현 순이익을 낸 날 또는 온전한 24시간 단위입니다.',
+  'account.prop-challenge.payout-rules.help.daily-profit':
+    '비용 차감 후 일일 최소 실현 순이익. 거래일 마감 기준으로 거래를 합산합니다. 기준값은 0보다 커야 합니다.',
+  'account.prop-challenge.payout-rules.help.qualifying-days':
+    '대기 주기에 이익 달성일 조건을 추가합니다. 현재 지급 주기에서 두 조건을 모두 충족해야 합니다.',
+  'account.prop-challenge.payout-rules.help.profitable-days':
+    '현재 지급 주기에서 실현 순이익이 일일 최소액에 도달한 서로 다른 날의 수.',
+  'account.prop-challenge.payout-rules.help.anchor':
+    '달력 대기는 주기 시작 또는 주기의 첫 진입부터 계산합니다. 초기화가 켜져 있으면 기록된 출금이 다음 주기를 시작합니다.',
+  'account.prop-challenge.payout-rules.help.elapsed-hours':
+    '현재 주기의 첫 진입 이후 시간. 거래가 없으면 시계가 시작되지 않습니다. 비워 두면 조건이 꺼집니다.',
+  'account.prop-challenge.payout-rules.help.request-window':
+    '매일 또는 지정 시간대의 선택 요일에만 신청을 허용합니다. 다른 조건은 계속 적용됩니다.',
+  'account.prop-challenge.payout-rules.help.time-zone':
+    '신청 허용 요일을 판단할 시간대. 예: America/New_York. 거래일 마감 기준은 바뀌지 않습니다.',
+  'account.prop-challenge.payout-rules.help.request-days':
+    '선택 시간대에서 신청을 허용할 요일. 최소 하루를 선택해야 합니다.',
+  'account.prop-challenge.payout-rules.help.minimum-balance':
+    '지급 전에 필요한 잔액으로, 인출 가능 이익 계산의 하한과 다릅니다. 비워 두면 조건이 꺼집니다.',
+  'account.prop-challenge.payout-rules.help.cycle-profit':
+    '현재 주기에 필요한 실현 순거래이익. 입금과 잔액 조정은 포함되지 않습니다. 비워 두면 조건이 꺼집니다.',
+  'account.prop-challenge.payout-rules.help.profit-schedule':
+    '첫 번째, 두 번째 이후 지급의 최소 이익을 쉼표로 구분합니다. 단일 주기 최소 이익을 대체합니다.',
+  'account.prop-challenge.payout-rules.help.repeat-final':
+    '목록을 넘어선 지급 번호에 마지막 값을 반복 적용합니다.',
+  'account.prop-challenge.payout-rules.help.positive-cycle':
+    '첫 기록된 지급 후에는 주기의 실현 순거래이익이 반드시 0보다 커야 합니다.',
+  'account.prop-challenge.payout-rules.help.consistency':
+    '최고 일일 이익을 주기 실현 순이익으로 나눈 비율. 손실일은 총이익을 줄여 비율을 높일 수 있습니다. 비워 두면 한도가 꺼집니다.',
+  'account.prop-challenge.payout-rules.help.consistency-schedule':
+    '지급 번호별 최고 일일 이익 비율 한도를 쉼표로 구분합니다. 단일 일관성 한도를 대체합니다.',
+  'account.prop-challenge.payout-rules.help.availability':
+    '단계 시작 잔액 또는 선택 하한을 초과한 신청 가능 이익을 계산합니다. 비율 및 다른 한도도 적용됩니다.',
+  'account.prop-challenge.payout-rules.help.balance-floor':
+    '인출 가능 이익에서 제외되는 잔액. 인출 비율은 초과분에만 적용되며 드로다운 규칙은 변경되지 않습니다.',
+  'account.prop-challenge.payout-rules.help.request-percent':
+    '선택 하한을 넘는 잔액 중 신청할 수 있는 비율. 신청 한도와 신규 이익 조건이 더 줄일 수 있습니다.',
+  'account.prop-challenge.payout-rules.help.minimum-request':
+    '허용되는 최소 신청액. 계산된 신청 가능 금액도 이 최소액에 도달해야 합니다.',
+  'account.prop-challenge.payout-rules.help.maximum':
+    '고정 한도, 첫 지급만의 한도, 지급 번호별 한도 또는 주기 이익 비율. 최대 없음은 이 한도만 제거합니다.',
+  'account.prop-challenge.payout-rules.help.maximum-amount':
+    '이익 배분 전 최대 총 신청액. 인출 가능 이익과 다른 한도가 금액을 줄일 수 있습니다.',
+  'account.prop-challenge.payout-rules.help.first-maximum':
+    '이 단계의 첫 지급에만 적용되는 총액 한도. 이후 이 한도는 사라지지만 다른 한도는 유지됩니다.',
+  'account.prop-challenge.payout-rules.help.maximum-schedule':
+    '지급별 총액 한도를 쉼표로 구분합니다. 마지막 값을 반복하지 않으면 목록 이후 지급의 한도는 0입니다.',
+  'account.prop-challenge.payout-rules.help.maximum-percent':
+    '총 신청액을 주기 실현 순거래이익의 이 비율로 제한합니다. 잔액의 인출 가능 비율과는 별개입니다.',
+  'account.prop-challenge.payout-rules.help.lifetime-days':
+    '펀딩 단계 전체의 달성일 수로 새로운 가용 금액과 한도를 활성화합니다. 주기 초기화로 이 합계는 지워지지 않습니다.',
+  'account.prop-challenge.payout-rules.help.split-model':
+    '고정 배분율 또는 누적 총 지급액이나 계좌 총이익에 따라 바뀌는 비율. 배분율은 수령액을 결정하며 신청 한도와 다릅니다.',
+  'account.prop-challenge.payout-rules.help.trader-share':
+    '이 비율로 트레이더에게 지급하는 총 신청액의 백분율. 나머지는 회사 몫입니다.',
+  'account.prop-challenge.payout-rules.help.cumulative-threshold':
+    '이 단계의 기록된 총 지급액이 도달하면 이후 비율을 적용합니다. 임계값을 넘는 신청은 각 부분에 두 비율을 적용합니다.',
+  'account.prop-challenge.payout-rules.help.maximum-payouts':
+    '이 단계에서 허용되는 기록된 지급 횟수. 도달 후 추가 지급은 차단됩니다. 비워 두면 횟수 제한이 없습니다.',
+  'account.prop-challenge.payout-rules.help.maximum-outcome':
+    '마지막 지급 후 계속, 계좌 종료, 다음 단계 또는 라이브 검토 자격. 검토 자격은 자동 승인과 다릅니다.',
+  'account.prop-challenge.payout-rules.help.aftermath':
+    '기록된 지급 후 잔액과 드로다운: 신청액 차감, 차감 후 하한 고정 또는 시작 잔액과 드로다운 초기화.',
+  'account.prop-challenge.payout-rules.help.drawdown-floor':
+    '해당 처리를 선택하면 지급 후 고정되는 드로다운 하한. 남은 잔액은 이 하한보다 높아야 합니다.',
+  'account.prop-challenge.payout-rules.help.first-exempt':
+    '이 단계의 첫 지급에서는 주기 최소 이익을 0으로 간주합니다. 현재 주기의 실현 순이익은 음수일 수 없습니다. 다른 모든 조건은 유지됩니다.',
+  'account.prop-challenge.payout-rules.help.reset-cycle':
+    '기록된 지급 후 일수, 일일 이익, 주기 이익과 일관성을 초기화합니다. 단계 전체 달성일은 보존되며 미리보기는 초기화하지 않습니다.',
 };
 
 export default ko;

@@ -41,6 +41,7 @@ import {
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { ChartBase } from '../../charts/ChartBase';
 import { RechartsPortalTooltip } from '../../charts/RechartsPortalTooltip';
+import type { AccountTradeData } from '../../../services/accountPage/types';
 
 let accountBalanceChartIdCounter = 0;
 
@@ -48,6 +49,7 @@ let accountBalanceChartIdCounter = 0;
 
 interface AccountBalanceChartProps {
   account: AccountData;
+  trades: readonly AccountTradeData[];
   height?: number;
   
   currencyOverride?: string;
@@ -504,6 +506,7 @@ const AccountBalanceChartSeries: React.FC<AccountBalanceChartSeriesProps> = ({
 
 function useAccountBalanceChartModel(
   account: AccountData,
+  trades: readonly AccountTradeData[],
   currency: CurrencyCode,
   isBalanceMasked: boolean,
   
@@ -539,7 +542,8 @@ function useAccountBalanceChartModel(
       userDateFormat,
       plugin,
       getTradingDayKey,
-      propChallengeOverlay
+      propChallengeOverlay,
+      trades
     );
     
     
@@ -553,7 +557,14 @@ function useAccountBalanceChartModel(
         (endMs === undefined || at <= endMs)
       );
     });
-  }, [account, userDateFormat, plugin, getTradingDayKey, propChallengeOverlay]);
+  }, [
+    account,
+    trades,
+    userDateFormat,
+    plugin,
+    getTradingDayKey,
+    propChallengeOverlay,
+  ]);
 
   const displayChartData = React.useMemo(
     () =>
@@ -625,6 +636,7 @@ function useAccountBalanceChartModel(
 
 export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
   account,
+  trades,
   height = 250,
   currencyOverride,
   selectedPhaseId,
@@ -672,6 +684,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
     defaultRiskAmount,
   } = useAccountBalanceChartModel(
     account,
+    trades,
     currency,
     isBalanceMasked,
     selectedPhaseId
@@ -739,7 +752,6 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
           tickLine={false}
         />
         <YAxis
-          className="journalit-chart-axis--numeric"
           tickFormatter={formatBalanceAxisTick}
           domain={domain}
           allowDataOverflow={false}

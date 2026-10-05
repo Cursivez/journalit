@@ -391,38 +391,6 @@ export const KEY_EVENTS_WIDGET_STYLES = `
   margin-bottom: 0;
 }
 
-
-.journalit-key-events .key-events-event-selector .combobox-input {
-  background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  padding: 8px 12px;
-  padding-right: 30px;
-  font-size: 14px;
-}
-
-.journalit-key-events .key-events-event-selector .combobox-input:focus {
-  border-color: var(--interactive-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent);
-}
-
-.journalit-key-events .key-events-event-selector .combobox-dropdown {
-  margin-top: 0;
-  border-radius: 0 0 6px 6px;
-  border: 1px solid var(--background-modifier-border);
-  border-top: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.journalit-key-events .key-events-event-selector .combobox-option,
-.journalit-key-events .key-events-event-selector .combobox-add-option {
-  padding: 10px 12px;
-}
-
-.journalit-key-events .key-events-event-selector .combobox-option:last-child {
-  border-bottom: none;
-}
-
 .journalit-key-events .key-events-color-picker {
   display: flex;
   align-items: center;

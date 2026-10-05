@@ -1295,6 +1295,10 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     color: var(--text-muted);
   }
 
+  .journalit-reviewv2-item-text--read-only {
+    cursor: default;
+  }
+
   .journalit-reviewv2-edit-input {
     flex: 1;
     min-width: 0;
@@ -3702,7 +3706,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     width: 100%;
   }
 
-  .review-context-fields-inline-control :is(input.input, textarea.input, .select, .combobox-input) {
+  .review-context-fields-inline-control :is(input.input, textarea.input, .select) {
     width: 100%;
     min-width: min(18rem, 100%);
     background: var(--background-secondary);
@@ -3812,7 +3816,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     width: 100%;
   }
 
-  .review-context-fields-control :is(.input, .select, .combobox-input) {
+  .review-context-fields-control :is(.input, .select) {
     width: 100%;
     font-size: 0.85rem;
   }
@@ -3850,12 +3854,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     flex-direction: column;
     gap: 1rem;
     cursor: default;
-    user-select: none;
-  }
-
-  .journalit-weekly-drc-context * {
-    cursor: default !important;
-    user-select: none;
   }
 
   .journalit-weekly-drc-days {
@@ -4096,14 +4094,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-weekly-drc-day .journalit-previous-drc-reference-body > section:first-child > :is(h1, h2, h3, h4, h5, h6):first-child {
     margin-top: 0;
-  }
-
-  .journalit-weekly-drc-day .journalit-previous-drc-rendered-markdown {
-    user-select: none;
-  }
-
-  .journalit-weekly-drc-day .journalit-previous-drc-rendered-markdown * {
-    user-select: none;
   }
 
   .journalit-trade-review-widget {

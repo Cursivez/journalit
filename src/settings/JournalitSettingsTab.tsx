@@ -343,6 +343,12 @@ export class JournalitSettingsTab extends PluginSettingTab {
     }
 
     if (key.startsWith('backendIntegration.')) {
+      if (
+        key === 'backendIntegration.showUpdateNotifications' ||
+        key === 'backendIntegration.showAvailableUpdateNotifications'
+      ) {
+        this.plugin.updateNotificationService?.handleNotificationSettingChanged();
+      }
       eventBus.publish('settings:changed', {
         section: 'backendIntegration',
         source: key.slice('backendIntegration.'.length),
@@ -833,6 +839,27 @@ function createGeneralNativeSettingItems(
   tab: JournalitSettingsTab
 ): NativeSettingDefinitionItem[] {
   return [
+    {
+      type: 'group',
+      heading: t('settings.general.notification-settings'),
+      items: [
+        toggleSetting(
+          t('settings.general.update-notifications'),
+          t('settings.general.update-notifications-desc'),
+          'backendIntegration.showUpdateNotifications',
+          true
+        ),
+        toggleSetting(
+          t('settings.general.available-update-notifications'),
+          t('settings.general.available-update-notifications-desc'),
+          'backendIntegration.showAvailableUpdateNotifications',
+          true,
+          () =>
+            tab.plugin.settings.backendIntegration?.showUpdateNotifications ===
+            false
+        ),
+      ],
+    },
     {
       type: 'group',
       heading: t('settings.general.appearance'),

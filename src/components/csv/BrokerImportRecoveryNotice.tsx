@@ -3,19 +3,16 @@ import React from 'react';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { AlertTriangle, ExternalLink } from '../shared/icons/ObsidianIcon';
 
-export interface BrokerImportRecoveryPresentationProps {
+interface BrokerImportRecoveryNoticeProps {
   className: string;
   disabled?: boolean;
   iconSize: number;
   onSwitchSource?: () => void;
-}
-
-interface BrokerImportRecoveryNoticeProps extends BrokerImportRecoveryPresentationProps {
   actionLabel?: string;
   
   continueLabel?: string;
   onContinue?: () => void;
-  guideLabel: string;
+  guideLabel?: string;
   
   guideUrl?: string;
   message: string;
@@ -63,7 +60,7 @@ export const BrokerImportRecoveryNotice: React.FC<
             {continueLabel}
           </button>
         )}
-        {guideUrl && (
+        {guideUrl && guideLabel && (
           <button
             type="button"
             className="journalit-trade-import-guide-link"

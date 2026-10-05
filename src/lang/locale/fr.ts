@@ -3,12 +3,33 @@
 import type { Lang } from './en';
 
 const fr: Lang = {
+  'trade-import.recovery.bybit-header.columns':
+    'Colonnes obligatoires manquantes : {columns}.',
+  'trade-import.recovery.bybit-header.title':
+    'Vérifier les en-têtes ou l’export Bybit',
+  'trade-import.recovery.bybit-header.message':
+    'Les en-têtes sélectionnés ne correspondent pas à l’historique des transactions Bybit. Vérifiez la ligne d’en-têtes ou exportez les transactions avec leurs prix et quantités exécutés, pas seulement les prix des ordres. Pour associer un autre format, choisissez explicitement {manualSource}.',
+  'update.installed.title': 'Nouveautés',
+  'settings.general.available-update-notifications':
+    'Afficher les rappels de mise à jour',
+  'settings.general.available-update-notifications-desc':
+    'Rechercher de nouvelles versions chaque jour et afficher un rappel. Désactivez pour voir uniquement les nouveautés après une mise à jour.',
+  'account.edit.field.unscoped-live-balance-desc':
+    'Une ancienne correction du solde ne peut pas être attribuée à une phase. Elle est conservée ; saisissez le solde actuel du courtier pour rapprocher la phase active.',
+  'account.edit.error.inactive-phase':
+    'Le solde en direct ne peut être modifié que pendant une phase active.',
+  'account.edit.error.phase-changed':
+    'Les détails du compte ont changé pendant la modification. Rouvrez l’éditeur du compte avant d’enregistrer.',
+  'account.profiles.profitable-days-conflict':
+    'Conservez votre politique de retrait actuelle ou modifiez l’exigence de jours rentables avant d’appliquer ces conditions.',
   'templateEditor.widget.session-log.hide-empty-outside':
     'Masquer le journal hors session lorsqu’il est vide',
   'account.profiles.correction-title': 'Correction du catalogue',
   'account.profiles.correction-source': 'Source des règles',
   'account.profiles.correction-period': 'Historique concerné',
-  'account.profiles.correction-history': 'Historique des corrections',
+  'account.profiles.correction-history': 'Corrections des règles',
+  'account.profiles.correction-before': 'Avant',
+  'account.profiles.correction-after': 'Après',
   'account.profiles.correction-stale':
     'L’historique du compte a changé. Rouvrez cette vérification.',
   'account.profiles.correction-result': 'Évaluation des règles strictes',
@@ -117,7 +138,6 @@ const fr: Lang = {
   'widget.mfeScatter.empty':
     'Aucun trade clôturé avec une MFE exploitable dans cette unité.',
 
-  'trade.broker-synced-at': 'Courtier synchronisé {date}',
   'trade-sync.tradovate.status.connecting': 'Connexion en cours',
   'trade-sync.tradovate.status.setup-required':
     'Configuration du compte requise',
@@ -936,8 +956,6 @@ const fr: Lang = {
 
   'notice.error.open-release-notes':
     "Échec de l'ouverture des notes de version : {error}",
-  'notice.error.open-update-notification':
-    "Échec de l'ouverture de la notification de mise à jour : {error}",
   'notice.error.open-layout-builder':
     "Échec de l'ouverture de Layout Builder : {error}",
   'notice.error.switch-template': 'Échec du changement de layout : {error}',
@@ -1139,49 +1157,34 @@ const fr: Lang = {
   'layoutBuilder.guide.intro.title': 'Ceci est votre Layout Builder',
   'layoutBuilder.guide.intro.description':
     'Cette page contrôle la façon dont vos modèles de revue sont structurés. Le moyen le plus simple de commencer consiste à dupliquer un modèle intégré, puis à personnaliser votre copie.',
-  'layoutBuilder.guide.sidebar-overview.title':
-    "Cette barre latérale est l'endroit où vous choisissez ce que vous modifiez",
-  'layoutBuilder.guide.sidebar-overview.description':
-    'Chaque section de la barre latérale est un type de modèle différent. Les modèles de trade sont distincts de vos modèles de revue et la section Bibliothèque est destinée au partage de modèles. Après avoir créé votre propre copie, vous pouvez la suivre pour en faire la valeur par défaut pour les nouvelles notes de revue.',
-  'layoutBuilder.guide.pick-built-in.title':
-    'Commencez avec un modèle DRC intégré',
-  'layoutBuilder.guide.pick-built-in.description':
-    "Pour votre première mise en page, commencez par l'un des layouts DRC intégrés. Cela vous donne un point de départ sûr avant de créer votre propre copie.",
-  'layoutBuilder.guide.duplicate.title': 'Dupliquer le layout intégré',
-  'layoutBuilder.guide.duplicate.description':
-    'Les modèles intégrés sont des points de départ. Dupliquez-en un d’abord pour pouvoir créer votre propre version en toute sécurité.',
-  'layoutBuilder.guide.preview-template.title':
-    'Cet aperçu montre à quoi ressemblera le modèle',
-  'layoutBuilder.guide.preview-template.description':
-    'Faites défiler l’aperçu et obtenez une idée du flux. Ceci est utile pour vérifier si le modèle est clair avant de commencer à le modifier.',
-  'layoutBuilder.guide.switch-to-editor.title': "Passer à l'éditeur",
-  'layoutBuilder.guide.switch-to-editor.description':
-    "L'aperçu vous montre à quoi ressemblera le layout. L'éditeur est l'endroit où vous le modifiez réellement.",
+  'layoutBuilder.guide.create-own-layout.title': 'Créez votre propre modèle',
+  'layoutBuilder.guide.create-own-layout.description':
+    'Les modèles intégrés sont en lecture seule. Cliquez sur l’icône de copie d’un modèle DRC intégré pour le dupliquer, ou sur + pour en créer un nouveau. Cliquez sur Suivant pour dupliquer le DRC standard.',
   'layoutBuilder.guide.editor-overview.title':
     "C'est ici que vous modifiez le layout",
   'layoutBuilder.guide.editor-overview.description':
     "Renommez le layout ici, examinez la liste des widgets, faites glisser la poignée gauche pour réorganiser les widgets, cliquez sur un widget pour le modifier et supprimez tout ce dont vous n'avez pas besoin.",
-  'layoutBuilder.guide.add-widget.title': 'Ajoutez un widget à votre copie',
+  'layoutBuilder.guide.add-widget.title': 'Ajoutez un widget',
   'layoutBuilder.guide.add-widget.description':
-    "Utilisez Ajouter un widget pour insérer de nouveaux blocs dans votre layout. C'est ainsi que vous façonnez le flux de travail en fonction de la façon dont vous révisez.",
-  'layoutBuilder.guide.open-widget-picker.title':
-    'Ouvrez le sélecteur de widgets',
-  'layoutBuilder.guide.open-widget-picker.description':
-    'Ce sélecteur affiche les widgets que vous pouvez ajouter pour ce type de revue.',
+    'Utilisez « Ajouter un widget » pour ajouter un bloc à la fin de votre mise en page, ou survolez l’espace entre deux widgets et cliquez sur + pour l’insérer exactement où vous voulez.',
   'layoutBuilder.guide.choose-widget.title': 'Choisissez un widget',
   'layoutBuilder.guide.choose-widget.description':
     'Saisissez un nom, une description ou une catégorie dans le champ de recherche, puis choisissez le widget. Vous pouvez aussi appuyer sur Suivant pour sélectionner le premier résultat.',
-  'layoutBuilder.guide.widget-library-docs.title':
-    'Utilisez la bibliothèque de widgets si vous êtes bloqué',
-  'layoutBuilder.guide.widget-library-docs.description':
-    'Cela ouvre la page de documentation avec la bibliothèque de widgets, des exemples et un tableau de disponibilité pour chaque type de revue.',
   'layoutBuilder.guide.save-template.title': 'Enregistrez votre layout',
   'layoutBuilder.guide.save-template.description':
     "Une fois que votre copie semble correcte, enregistrez-la. Vous pourrez continuer à l'affiner plus tard, à mesure que votre processus de revue s'améliore.",
   'layoutBuilder.guide.set-default-template.title':
-    'Définir cette copie comme modèle par défaut',
+    'Faites-en votre modèle par défaut',
   'layoutBuilder.guide.set-default-template.description':
     "Cliquez sur l'étoile sur votre nouveau layout si vous souhaitez que les nouvelles notes de revue utilisent automatiquement cette mise en page.",
+  'layoutBuilder.guide.whats-new.insert-slot.title':
+    "Ajoutez un widget n'importe où",
+  'layoutBuilder.guide.whats-new.insert-slot.description':
+    "Survolez l'espace entre deux widgets et appuyez sur + pour ajouter un widget à cet endroit précis, plutôt qu'en bas.",
+  'layoutBuilder.guide.whats-new.add-widget-button.title':
+    'Ou ajoutez-le à la fin',
+  'layoutBuilder.guide.whats-new.add-widget-button.description':
+    "Ajouter un widget ajoute toujours en bas de la mise en page, et fait désormais défiler jusqu'au nouveau widget en ouvrant sa recherche.",
   'tradelog.empty': 'Aucun trade trouvé',
   'tradelog.empty.submessage':
     'Commencez à créer des notes de trading pour les voir apparaître dans votre journal des trades.',
@@ -1643,7 +1646,7 @@ const fr: Lang = {
     'Un score global de votre performance de trading',
   'home.widget.aum.name': 'Actifs sous gestion',
   'home.widget.aum.description':
-    'Soldes totaux des comptes avec tendance sur 7 jours',
+    'Soldes actuels des comptes avec une tendance sur 30 jours',
   'home.widget.drawdown-monitor.name': 'Moniteur de drawdown',
   'home.widget.drawdown-monitor.description':
     'Utilisation de la limite de drawdown par compte',
@@ -1798,8 +1801,6 @@ const fr: Lang = {
   'settings.economic-calendar.pro-required':
     'Le calendrier économique nécessite un abonnement PRO.',
   'status-bar.update-available-branded': 'Mettre à jour Journalit',
-  'status-bar.release-notes-branded':
-    'Journalit · Afficher les notes de version',
   'status-bar.update-aria-label': 'Journalit {version} - Cliquez pour voir',
   'update.available.ready': 'Une nouvelle version est disponible',
   'template.transformation.orphaned-content.header':
@@ -2021,7 +2022,7 @@ const fr: Lang = {
   'datepicker.button.now': 'Maintenant',
   'datepicker.placeholder.day': 'DD',
   'datepicker.placeholder.month': 'MM',
-  'datepicker.placeholder.year': 'AA',
+  'datepicker.placeholder.year': 'YY',
   'datepicker.placeholder.hour': 'HH',
   'datepicker.placeholder.minute': 'MM',
   'datepicker.placeholder.second': 'SS',
@@ -3417,11 +3418,9 @@ const fr: Lang = {
   'settings.general.update-notifications':
     'Afficher les notifications de mise à jour',
   'settings.general.update-notifications-desc':
-    'Vérifie chaque jour les métadonnées publiques des versions de Journalit sur GitHub et vous avertit lorsqu’une version plus récente est disponible',
+    'Afficher les rappels de mise à jour et les nouveautés après une mise à jour.',
   'settings.general.update-notifications-aria':
     'Afficher les notifications de mise à jour',
-  'settings.general.update-notifications-toggled':
-    'Notifications de mise à jour {status}',
   'settings.general.data-management': 'Gestion des données & confidentialité',
   'settings.general.backup-restore-section':
     'Sauvegarde, restauration et réinitialisation',
@@ -3963,6 +3962,18 @@ const fr: Lang = {
     'Le widget Objectifs nécessite une note de revue (DRC, hebdomadaire, mensuelle, trimestrielle ou annuelle)',
   'widget.goals.aria.edit': "Modifier l'objectif",
   'widget.goals.aria.delete': "Supprimer l'objectif",
+  'review.header.guide.intro.title': 'Votre revue commence ici',
+  'review.header.guide.intro.description':
+    'Tout ce qu’il vous faut pour naviguer et gérer cette revue se trouve dans l’en-tête.',
+  'review.header.guide.reviewed.title': 'Marquer comme revue',
+  'review.header.guide.reviewed.description':
+    'Cliquez sur le cercle pour marquer cette note comme revue. Cliquez à nouveau pour annuler.',
+  'review.header.guide.dates.title': 'Passer à une autre revue',
+  'review.header.guide.dates.description':
+    'Cliquez sur une date, comme juin ou 2026, pour ouvrir la note de revue correspondante.',
+  'review.header.guide.controls.title': 'Filtres, layout et navigation',
+  'review.header.guide.controls.description':
+    'Utilisez l’entonnoir pour filtrer les trades, « Changer de layout » pour modifier la mise en page et « Précédent » / « Suivant » pour changer de période de revue.',
   'widget.header.name': 'En-tête',
 
   'widget.header.invalid-context':
@@ -4445,6 +4456,31 @@ const fr: Lang = {
   'metric.profitFactor.name': 'Ratio gains/pertes',
   'metric.profitFactor.description':
     'Rapport entre le bénéfice brut et la perte brute',
+  'metric.calmarRatio.name': 'Ratio de Calmar',
+  'metric.calmarRatio.description':
+    'Rendement réalisé annualisé rapporté au repli maximal en pourcentage',
+  'dashboard.calmarRatio.tooltip.formula':
+    'Rendement annualisé divisé par le repli maximal.',
+  'dashboard.calmarRatio.unavailable.no-history':
+    'Aucun historique de résultats réalisés.',
+  'dashboard.calmarRatio.unavailable.capital':
+    'Le capital initial dans la devise affichée est indisponible.',
+  'dashboard.calmarRatio.unavailable.incomplete-history':
+    'Certains résultats réalisés sont manquants.',
+  'dashboard.calmarRatio.unavailable.dates':
+    'Certaines dates de transactions sont manquantes.',
+  'dashboard.calmarRatio.unavailable.short-history':
+    'Au moins un jour de données est nécessaire.',
+  'dashboard.calmarRatio.unavailable.no-drawdown':
+    'Aucun repli enregistré pour le moment.',
+  'dashboard.calmarRatio.unavailable.non-positive-equity':
+    'Les fonds propres ont atteint zéro ou moins.',
+  'dashboard.calmarRatio.unavailable.non-finite':
+    'Le résultat est trop élevé pour être calculé.',
+  'dashboard.calmarRatio.unavailable.scope':
+    'Sélectionnez toute la période et uniquement des comptes entiers.',
+  'dashboard.calmarRatio.unavailable.conversion':
+    'Certaines conversions de devises sont indisponibles.',
   'metric.sharpeRatio.name': 'Ratio de Sharpe',
   'metric.sharpeRatio.description':
     'P&L moyen par trade rapporté à sa volatilité',
@@ -4958,6 +4994,7 @@ const fr: Lang = {
   'templateEditor.field.template-name': 'Nom du layout',
   'templateEditor.field.widgets': 'Widgets ({count})',
   'templateEditor.button.add-widget': 'Ajouter un widget',
+  'templateEditor.button.insert-widget-here': 'Ajouter un widget ici',
   'templateEditor.button.widget-library-docs': 'Bibliothèque de widgets',
   'templateEditor.widget.locked': 'Verrouillé',
   'templateEditor.widget.select-placeholder': 'Sélectionnez un widget',
@@ -5106,6 +5143,14 @@ const fr: Lang = {
   'home.widget-selector.add-shortcut':
     'Ajouter un raccourci compte/configuration',
   'home.period.month': 'Mois',
+  'home.period.week': 'Semaine',
+  'home.period.custom': 'Période personnalisée',
+  'home.period.invalid-range':
+    'La date de fin doit être égale ou postérieure à la date de début.',
+  'date-input.error.day': 'Le jour doit être compris entre 1 et {max}.',
+  'date-input.error.invalid': 'Veuillez saisir une date valide',
+  'date-input.error.month': 'Le mois doit être compris entre 1 et 12.',
+  'date-input.error.year': 'Utilisez YY (2000–2099) ou YYYY (1000–9999).',
   'home.period.quarter': 'Trimestre',
   'home.period.year': 'Année',
   'home.period.lifetime': 'Tout le temps',
@@ -5237,6 +5282,7 @@ const fr: Lang = {
     'Les créneaux échantillonnés sont négatifs',
 
   'home.widget.aum.title': 'Actifs sous gestion',
+  'home.widget.aum.current-trend': 'Actuel · tendance sur 30 jours',
   'home.widget.aum.period.month': 'Ce mois',
   'home.widget.aum.period.quarter': 'Ce trimestre',
   'home.widget.aum.period.year': 'Cette année',
@@ -5246,9 +5292,6 @@ const fr: Lang = {
   'home.widget.aum.account-count': '{count} compte',
   'home.widget.aum.account-count-plural': '{count} comptes',
   'home.widget.streak.title': 'Série',
-  'home.widget.streak.period.month': 'ce mois',
-  'home.widget.streak.period.quarter': 'ce trimestre',
-  'home.widget.streak.period.year': 'cette année',
   'home.widget.streak.period.ever': 'déjà',
   'home.widget.streak.win': 'victoire',
   'home.widget.streak.wins': 'victoires',
@@ -5883,7 +5926,6 @@ const fr: Lang = {
   'widget.weekly-drc-context.name': 'Revues quotidiennes par jour',
   'widget.weekly-drc-context.description': 'Sections DRC par jour de semaine',
 
-  'widget.weekly-drc-context.image-alt-prefix': 'Image DRC hebdomadaire',
   'widget.weekly-drc-context.no-activity': 'Aucune activité pour ce jour.',
   'widget.weekly-drc-context.no-sections-configured':
     'Choisissez au moins une section DRC dans les paramètres du modèle.',
@@ -6150,7 +6192,7 @@ const fr: Lang = {
     'No importable trades were found. Review this file in Trade Import for details.',
 
   'quick-import.privacy-note':
-    'Les fichiers sont envoyés aux serveurs Journalit pour traitement et ne sont pas stockés par défaut.',
+    'Le fichier sélectionné et les options d’importation sont envoyés à Journalit. Les captures de diagnostic chiffrées expirent après 1 jour (gratuit) ou 14 jours (Pro), les aperçus après 7 jours. Le mappage IA facultatif envoie les en-têtes et des exemples de lignes à un modèle IA. Trade Import n’envoie aucune télémétrie client séparée ni rapport d’erreur en arrière-plan.',
   'quick-import.dropzone.title': 'Déposez un export broker ici',
   'quick-import.dropzone.subtitle': 'Ou cliquez pour choisir un fichier',
 
@@ -6206,7 +6248,7 @@ const fr: Lang = {
   'trade-import.gate.sign-in':
     'Connectez-vous ou créez un compte Journalit gratuit pour analyser votre fichier. Pro est uniquement requis lorsque vous importez les trades.',
   'trade-import.gate.sign-in.reassurance':
-    'Votre fichier est traité de manière confidentielle et n’est pas enregistré par défaut.',
+    'Le fichier sélectionné et les options d’importation sont envoyés à Journalit. Les captures de diagnostic chiffrées expirent après 1 jour (gratuit) ou 14 jours (Pro), les aperçus après 7 jours. Le mappage IA facultatif envoie les en-têtes et des exemples de lignes à un modèle IA. Trade Import n’envoie aucune télémétrie client séparée ni rapport d’erreur en arrière-plan.',
   'trade-import.gate.sign-in.no-trial':
     'Aucun essai Pro n’est requis pour analyser et prévisualiser.',
   'trade-import.gate.sign-in.cta':
@@ -6232,7 +6274,7 @@ const fr: Lang = {
   'trade-import.manual-mode.direct-pnl': 'Un trade par ligne (utilise le P/L)',
   'trade-import.label.ai-mapping': 'Demander des suggestions de mapping IA',
   'trade-import.privacy.copy':
-    'Trade Import envoie l’export de broker sélectionné aux serveurs Journalit pour traitement. Les exports de broker peuvent contenir des identifiants de compte, l’historique des trades, symboles, horodatages, prix, quantités, frais, soldes et P&L. Pour générer l’aperçu, Journalit envoie aussi le nom du compte sélectionné, les choix de mapping/modèle, les définitions de champs personnalisés et options enregistrées, ainsi qu’un contexte local limité des trades ouverts pour la correspondance des positions IBKR. Les fichiers bruts sont traités pour cet import et ne sont pas stockés par défaut. Lorsque les suggestions de mappage par IA sont activées, les en-têtes de colonnes et quelques lignes d’exemple sont aussi envoyés à un modèle d’IA pour proposer les correspondances ; décochez l’option pour associer les colonnes vous-même.',
+    'Le fichier sélectionné et les options d’importation sont envoyés à Journalit. Les captures de diagnostic chiffrées expirent après 1 jour (gratuit) ou 14 jours (Pro), les aperçus après 7 jours. Le mappage IA facultatif envoie les en-têtes et des exemples de lignes à un modèle IA. Trade Import n’envoie aucune télémétrie client séparée ni rapport d’erreur en arrière-plan. Les exports peuvent contenir des identifiants de compte, un historique de transactions, des notes, des prix, des quantités, des frais, des soldes et des gains/pertes. Les requêtes envoient aussi les définitions de champs personnalisés et les options enregistrées ; l’aperçu inclut le nom du compte cible. Désactivez le mappage IA pour éviter ce traitement.',
 
   'trade-import.action.analyse': 'Analyser le fichier',
   'trade-import.action.choose-file':
@@ -6481,6 +6523,13 @@ const fr: Lang = {
     'Le format du fichier est lu automatiquement, sans mappage.',
   'trade-import.source.guide': 'Comment exporter',
   'trade-import.source.change': 'Changer',
+  'trade-import.recovery.rithmic-order-history.title':
+    'Format Rithmic non pris en charge',
+  'trade-import.recovery.rithmic-order-history.message':
+    'Importez un historique des ordres Rithmic ou choisissez la plateforme qui a créé ce fichier.',
+  'trade-import.recovery.rithmic-order-history.choose-file':
+    'Choisir un autre fichier',
+  'trade-import.source.change-action': 'Changer de source',
   'trade-import.sync-suggestion.full.title':
     '{broker} peut se synchroniser automatiquement',
   'trade-import.sync-suggestion.full.body':
@@ -7546,10 +7595,6 @@ const fr: Lang = {
     'Sélectionnez un dossier plutôt qu’un fichier multimédia.',
   'settings.gallery-folders.save-failed':
     'Impossible d’enregistrer les dossiers de la galerie. Veuillez réessayer.',
-  'tradelog.guide.switch-to-gallery.title': 'Passer des trades à la Galerie',
-  'tradelog.guide.switch-to-gallery.description':
-    'Utilisez ce sélecteur de mode pour passer du journal de trades classique à la Galerie. Cliquez sur Galerie pour continuer la visite avec vos images, GIF, vidéos et liens YouTube.',
-
   'tradelog.guide.gallery-grouping.title':
     'Regrouper les médias par entrée du journal',
   'tradelog.guide.gallery-grouping.description':
@@ -7716,11 +7761,45 @@ const fr: Lang = {
   'account.prop-challenge.rule.daily-loss-model.profit-tiers':
     'Paliers selon l’EOD précédent',
   'account.prop-challenge.rule.daily-loss-tiers-help':
-    'Utilisez des paires profit:limite de perte. Le palier du profit EOD précédent s’applique à la session suivante.',
+    'Saisissez des paires profit:limite-de-perte séparées par des virgules. La base de profit choisie à la clôture précédente fixe la limite du lendemain, qui peut monter ou descendre.',
   'account.prop-challenge.rule.loss-tiers':
     'Paliers de profit et limites de perte',
   'account.prop-challenge.rule.daily-loss-threshold-help':
-    'Le montant de perte quotidienne supérieur est activé définitivement lorsque le profit cumulé du compte atteint pour la première fois le pourcentage configuré du solde initial.',
+    'La limite monétaire ajustée s’active définitivement quand le profit réalisé cumulé des trades de cette phase atteint le pourcentage configuré de son solde initial.',
+  'account.prop-challenge.rule.help.target-amount':
+    'Les objectifs absolus utilisent la devise du compte ; les pourcentages, le solde initial de cette phase. La progression utilise la hausse du solde après plafonnement quotidien du profit crédité, hors P&L latent.',
+  'account.prop-challenge.rule.help.credit-withdrawals':
+    'Ajoute les montants bruts des retraits enregistrés à la progression des objectifs absolus. Ne modifie ni le solde ni l’éligibilité aux retraits.',
+  'account.prop-challenge.rule.help.drawdown-amount':
+    'Écart monétaire sous le solde initial (statique) ou le plus haut solde réalisé (suiveur). Toucher le plancher enfreint la règle.',
+  'account.prop-challenge.rule.help.drawdown-mode':
+    'Le mode statique garde un plancher fixe. Le suivi EOD suit les plus hauts aux clôtures des journées de trading ; l’intraday suit les transactions de solde réalisé, pas les fonds propres latents.',
+  'account.prop-challenge.rule.help.lock-balance':
+    'Plafond du plancher de drawdown suiveur, pas un solde d’activation. Le plancher cesse de monter à ce solde. Vide signifie sans plafond.',
+  'account.prop-challenge.rule.help.daily-loss-amount':
+    'Limite monétaire de la pire perte nette réalisée cumulée des trades dans une journée, pas d’une baisse depuis son sommet. Toucher la limite enfreint la règle.',
+  'account.prop-challenge.rule.help.breach-action':
+    'Échec du compte maintient active une violation historique. Pause jusqu’à la prochaine session ne concerne que la journée de trading actuelle ; les anciennes violations restent dans l’historique.',
+  'account.prop-challenge.rule.help.daily-loss-model':
+    'Choisissez une limite fixe, un changement permanent à un seuil de profit, un suivi du profit EOD maximal ou des paliers EOD antérieurs. Les champs conditionnels règlent le modèle choisi.',
+  'account.prop-challenge.rule.help.profit-basis':
+    'Le profit cumulé des trades exclut les flux de trésorerie. Le profit actuel du compte les inclut : les retraits le réduisent. Les deux utilisent les clôtures des journées précédentes.',
+  'account.prop-challenge.rule.help.position-model':
+    'Choisissez une limite fixe par trade, un contrat supplémentaire par palier de profit ou des paliers explicites. La progression utilise les clôtures des journées précédentes.',
+  'account.prop-challenge.rule.help.max-contracts':
+    'Taille maximale par trade après conversion optionnelle des micros, pas l’exposition cumulée de plusieurs trades. Dépasser la limite enfreint la règle.',
+  'account.prop-challenge.rule.help.initial-contracts':
+    'Limite initiale de contrats par trade avant que les profits à la clôture permettent des limites supérieures.',
+  'account.prop-challenge.rule.help.maximum-contracts':
+    'Plafond optionnel des augmentations de contrats liées au profit. Vide signifie sans plafond supplémentaire.',
+  'account.prop-challenge.rule.help.daily-profit':
+    'Seuil monétaire du P&L net réalisé quotidien, incluant gains, pertes et frais. Les profits latents et flux de trésorerie ne comptent pas.',
+  'account.prop-challenge.rule.help.consistency-cushion':
+    'Ajout en points de pourcentage à la part maximale du meilleur jour : 30% + 5 points autorise 35%. Vide n’ajoute aucune marge.',
+  'account.prop-challenge.rule.help.daily-profit-cap':
+    'Plafond monétaire du profit quotidien crédité à l’objectif de phase. L’excédent reste dans le solde ; les pertes comptent intégralement.',
+  'account.prop-challenge.rule.help.live-review':
+    'Profit net réalisé qu’une journée doit atteindre pour être éligible à une revue. Ne change pas automatiquement de phase et n’accorde pas de compte réel.',
   'account.prop-challenge.rule.profit-threshold-percent':
     'Seuil de profit du compte (%)',
   'account.prop-challenge.rule.amount-after-threshold':
@@ -7855,7 +7934,7 @@ const fr: Lang = {
     'Un objectif de régularité exige un maximum supérieur à 0 %.',
   'account.prop-challenge.ledger.help.open': 'À propos de {rule}',
   'account.prop-challenge.ledger.help.profit_target':
-    'Faire croître le compte de ce montant pour réussir la phase. Seuls les trades clôturés comptent.',
+    'Atteignez la hausse de solde configurée pour réussir la phase. Les plafonds de profit crédité et les crédits optionnels des retraits affectent la progression ; le profit latent ne compte pas.',
   'account.prop-challenge.ledger.help.profit_target.example':
     "Ce compte a besoin de {target} de profit : {current} pour l'instant, {remaining} restants.",
   'account.prop-challenge.ledger.help.profit_target.example-done':
@@ -7885,11 +7964,11 @@ const fr: Lang = {
   'account.prop-challenge.ledger.help.live_review_daily_profit.example':
     "Une journée à {trigger} ou plus qualifie ; meilleure journée jusqu'ici {bestDay}.",
   'account.prop-challenge.ledger.help.minimum_trading_days':
-    "Jours avec au moins un trade clôturé. La phase ne peut pas être réussie avant d'en avoir autant, même si l'objectif est atteint plus tôt.",
+    'Nombre requis de journées distinctes d’entrée en trade dans cette phase, y compris les positions encore ouvertes. Utilise la coupure configurée du jour de trading, pas minuit.',
   'account.prop-challenge.ledger.help.minimum_trading_days.example':
     '{current} sur {target} jours de trading effectués, {remaining} restants.',
   'account.prop-challenge.ledger.help.minimum_profitable_days':
-    "Jours de trading qui clôturent au profit quotidien minimum de la société ou au-dessus. L'équilibre ou de plus petits gains ne comptent pas.",
+    'Journées requises atteignant le profit net réalisé quotidien minimal de cette phase. Les retraits enregistrés ne réinitialisent pas cette règle globale de phase.',
   'account.prop-challenge.ledger.help.minimum_profitable_days.example':
     '{current} sur {target} jours clôturés à {minimum} ou plus, {remaining} restants.',
   'account.prop-challenge.ledger.help.consistency':
@@ -8625,11 +8704,15 @@ const fr: Lang = {
   'trade-handoff.trade-count.other': '{count} trades',
   'trade-handoff.title.sync': 'Synchronisation terminée',
   'trade-handoff.summary.import-complete': '{trades} importés',
+  'trade-handoff.summary.update-complete': '{trades} mis à jour',
+  'trade-handoff.summary.update-partial':
+    '{trades} mis à jour avec des problèmes',
+  'trade-handoff.summary.mixed-complete':
+    '{imported} importés · {updated} mis à jour',
+  'trade-handoff.summary.mixed-partial':
+    '{imported} importés · {updated} mis à jour, avec des problèmes',
   'trade-handoff.summary.import-partial':
     '{trades} importés avec des problèmes',
-  'trade-handoff.summary.sync-complete': '{trades} synchronisés',
-  'trade-handoff.summary.sync-partial':
-    '{trades} synchronisés avec des problèmes',
   'trade-handoff.periods.choose': 'Choisir une autre période de revue',
   'trade-handoff.periods.recommended': 'Recommandé',
   'trade-handoff.action.dismiss': 'Fermer le résultat récent des trades',
@@ -8680,5 +8763,78 @@ const fr: Lang = {
   'command.reset-sample-journal': 'Réinitialiser le journal d’exemple',
   'sample.notice.busy':
     'Une autre opération du journal d’exemple est déjà en cours.',
+  'account.prop-challenge.field.help-label': 'Aide : {field}',
+  'account.prop-challenge.payout-rules.help.cycle':
+    'Mesure l’attente par jours d’entrée en position, jours atteignant un bénéfice net minimal ou jours calendaires écoulés. Sans cycle désactive seulement cette exigence de jours.',
+  'account.prop-challenge.payout-rules.help.days':
+    'Nombre de jours requis : jours d’entrée, jours de bénéfice net suffisant ou périodes complètes de 24 heures selon le cycle.',
+  'account.prop-challenge.payout-rules.help.daily-profit':
+    'Bénéfice réalisé net minimal par jour, après frais. Les opérations sont regroupées selon la clôture de votre journée de trading. Le seuil doit être supérieur à zéro.',
+  'account.prop-challenge.payout-rules.help.qualifying-days':
+    'Ajoute une exigence de jours rentables au cycle d’attente. Les deux exigences doivent être satisfaites dans le cycle de paiement actuel.',
+  'account.prop-challenge.payout-rules.help.profitable-days':
+    'Nombre de jours distincts dont le bénéfice réalisé net atteint le minimum quotidien dans le cycle actuel.',
+  'account.prop-challenge.payout-rules.help.anchor':
+    'L’attente calendaire débute au début du cycle ou à sa première entrée en position. Avec réinitialisation, un retrait enregistré commence le cycle suivant.',
+  'account.prop-challenge.payout-rules.help.elapsed-hours':
+    'Heures depuis la première entrée du cycle actuel. Sans opération, le compteur ne démarre pas. Laisser vide désactive cette exigence.',
+  'account.prop-challenge.payout-rules.help.request-window':
+    'Autorise les demandes tous les jours ou seulement certains jours dans le fuseau choisi. Les autres exigences restent applicables.',
+  'account.prop-challenge.payout-rules.help.time-zone':
+    'Fuseau utilisé pour déterminer les jours autorisés, par exemple America/New_York. Ne modifie pas la clôture de votre journée de trading.',
+  'account.prop-challenge.payout-rules.help.request-days':
+    'Jours de la semaine autorisés dans le fuseau choisi. Sélectionnez au moins un jour.',
+  'account.prop-challenge.payout-rules.help.minimum-balance':
+    'Solde exigé avant un paiement ; ce n’est pas le plancher servant au calcul du bénéfice disponible. Vide désactive cette exigence.',
+  'account.prop-challenge.payout-rules.help.cycle-profit':
+    'Bénéfice réalisé net de trading requis dans le cycle actuel. Dépôts et ajustements de solde ne comptent pas. Vide désactive cette exigence.',
+  'account.prop-challenge.payout-rules.help.profit-schedule':
+    'Bénéfices minimaux séparés par des virgules pour les paiements 1, 2 et suivants. Remplace le minimum unique du cycle.',
+  'account.prop-challenge.payout-rules.help.repeat-final':
+    'Réutilise la dernière valeur pour les numéros de paiement dépassant la liste.',
+  'account.prop-challenge.payout-rules.help.positive-cycle':
+    'Après le premier paiement enregistré, exige un bénéfice réalisé net du cycle strictement supérieur à zéro.',
+  'account.prop-challenge.payout-rules.help.consistency':
+    'Meilleur bénéfice quotidien divisé par le bénéfice réalisé net du cycle. Les pertes réduisent le total et peuvent augmenter ce pourcentage. Vide désactive la limite.',
+  'account.prop-challenge.payout-rules.help.consistency-schedule':
+    'Limites du meilleur jour, séparées par des virgules, pour chaque numéro de paiement. Remplace la limite unique de régularité.',
+  'account.prop-challenge.payout-rules.help.availability':
+    'Calcule le bénéfice demandable au-dessus du solde initial de la phase ou du plancher choisi. Pourcentages et autres plafonds restent applicables.',
+  'account.prop-challenge.payout-rules.help.balance-floor':
+    'Solde exclu du bénéfice disponible. La part retirable porte seulement sur l’excédent ; cela ne change pas la règle de drawdown.',
+  'account.prop-challenge.payout-rules.help.request-percent':
+    'Pourcentage demandable du solde dépassant le plancher choisi. Les plafonds de demande et de nouveau bénéfice peuvent le réduire.',
+  'account.prop-challenge.payout-rules.help.minimum-request':
+    'Plus petite demande autorisée. Le montant disponible calculé doit également atteindre ce minimum.',
+  'account.prop-challenge.payout-rules.help.maximum':
+    'Plafond fixe, uniquement au premier paiement, par numéro de paiement ou en pourcentage du bénéfice du cycle. Sans maximum retire seulement ce plafond.',
+  'account.prop-challenge.payout-rules.help.maximum-amount':
+    'Demande brute maximale avant partage du bénéfice. Le bénéfice disponible et les autres plafonds peuvent la réduire.',
+  'account.prop-challenge.payout-rules.help.first-maximum':
+    'Plafond brut uniquement pour le premier paiement de cette phase. Ensuite ce plafond disparaît, mais les autres limites restent.',
+  'account.prop-challenge.payout-rules.help.maximum-schedule':
+    'Plafonds bruts séparés par des virgules pour chaque paiement. Sans répétition finale, les paiements ultérieurs non listés ont un plafond de zéro.',
+  'account.prop-challenge.payout-rules.help.maximum-percent':
+    'Plafonne la demande brute à ce pourcentage du bénéfice réalisé net du cycle. Distinct de la part retirable du solde.',
+  'account.prop-challenge.payout-rules.help.lifetime-days':
+    'Total de jours qualifiants sur toute la phase financée requis pour activer les nouveaux plafonds et la disponibilité. Les réinitialisations ne l’effacent pas.',
+  'account.prop-challenge.payout-rules.help.split-model':
+    'Part fixe, taux selon paiements bruts cumulés ou bénéfice total du compte. Le partage détermine ce que vous recevez, pas le plafond de demande.',
+  'account.prop-challenge.payout-rules.help.trader-share':
+    'Pourcentage de la demande brute versé au trader avec ce taux. Le reste revient à la société.',
+  'account.prop-challenge.payout-rules.help.cumulative-threshold':
+    'Paiements bruts enregistrés dans cette phase à partir desquels le taux suivant s’applique. Une demande franchissant le seuil utilise les deux taux sur leurs portions respectives.',
+  'account.prop-challenge.payout-rules.help.maximum-payouts':
+    'Nombre de paiements enregistrés autorisés dans cette phase. Une fois atteint, les suivants sont bloqués. Vide retire cette limite.',
+  'account.prop-challenge.payout-rules.help.maximum-outcome':
+    'Au dernier paiement : continuer, clôturer le compte, avancer de phase ou devenir admissible à une revue en réel. L’admissibilité n’est pas une approbation automatique.',
+  'account.prop-challenge.payout-rules.help.aftermath':
+    'Traitement du solde et du drawdown après un paiement enregistré : déduire la demande, déduire et verrouiller le plancher, ou réinitialiser solde et drawdown.',
+  'account.prop-challenge.payout-rules.help.drawdown-floor':
+    'Plancher de drawdown verrouillé après paiement avec ce traitement. Le solde restant doit demeurer au-dessus.',
+  'account.prop-challenge.payout-rules.help.first-exempt':
+    'Pour le premier paiement de cette phase, le bénéfice minimal du cycle vaut zéro : le bénéfice réalisé net du cycle ne doit pas être négatif. Les autres exigences restent applicables.',
+  'account.prop-challenge.payout-rules.help.reset-cycle':
+    'Réinitialise jours, bénéfices quotidiens, bénéfice du cycle et régularité après un paiement enregistré. Conserve les jours qualifiants de toute la phase ; les aperçus ne réinitialisent rien.',
 };
 export default fr;

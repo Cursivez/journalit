@@ -19,8 +19,13 @@ import {
 import { OptionType } from '../../../services/options/CustomOptionsService';
 import { normalizeAccountLookupKey } from '../../../services/trade/core/TradeAccountIdentity';
 import { Button } from '../../ui/Button';
+import { DraftInput } from '../../ui/DraftInput';
 import Checkbox from '../../ui/Checkbox';
 import { FastDateTimeInput } from '../../core/FastDateTimeInput';
+import {
+  DateDraftGateContext,
+  useDateDraftGate,
+} from '../../core/DateDraftGate';
 import {
   formatDateDisplay,
   getUserDateFormat,
@@ -42,7 +47,6 @@ import {
 } from '../../shared/ConfirmationModal';
 import { openAccountMergeModal } from './accountMerge/AccountMergeModal';
 import {
-  hasLiveBalanceAdjustment,
   parseLiveBalanceInput,
   toLiveBalanceAdjustment,
 } from '../../../services/account/liveBalanceAdjustment';
@@ -52,11 +56,12 @@ import { resolveStageAccountType } from '../../../services/propChallenge/stageAc
 import { getAvailableAccountTypes } from './propChallenge/propChallengeLifecycleActions';
 import {
   getCurrentPropChallengePhase,
-  isPropChallengeRuleComplete,
+  isPropChallengePhaseComplete,
   validatePhaseTimeline,
 } from '../../../services/propChallenge/PropChallengeConfig';
 import { DisplayPolicyProvider } from '../../../contexts/DisplayPolicyContext';
 import { SegmentedControl } from '../../shared/SegmentedControl';
+import { ModalEscapeProvider } from '../../shared/disclosureEscape';
 import { PropChallengeSettingsSection } from './propChallenge/PropChallengeSettingsSection';
 import { DropdownSelect } from '../../shared/DropdownSelect';
 import { Tooltip } from '../../shared/Tooltip';
@@ -71,6 +76,16 @@ import {
 } from '../../../utils/accountCopyTrading';
 import { formatAccountTypeLabel } from '../../../utils/accountTypeLabel';
 import { suspendViewGuidesWhileOpen } from '../../../guides/suspendViewGuides';
+import type { AccountTradeData } from '../../../services/accountPage/types';
+import {
+  evaluatePropChallengePhase,
+  InactivePropChallengeBalanceError,
+} from '../../../services/propChallenge/PropChallengeRuleEngine';
+import {
+  applyLiveBalanceToCurrentPhase,
+  getAccountLiveBalanceInput,
+} from '../../../services/propChallenge/PropChallengeBalance';
+import { AccountMetadataConflictError } from '../../../services/accountPage/AccountPageService';
 
 export const EDIT_ACCOUNT_MODAL_STYLES = `
         .edit-account-form .manage-snapshots-button {
@@ -120,7 +135,13 @@ const DRAWDOWN_TYPE_OPTIONS: Array<{
 ];
 
 const getErrorMessage = (error: unknown): string =>
-  error instanceof Error ? error.message : String(error);
+  error instanceof InactivePropChallengeBalanceError
+    ? t('account.edit.error.inactive-phase')
+    : error instanceof AccountMetadataConflictError
+      ? t('account.edit.error.phase-changed')
+      : error instanceof Error
+        ? error.message
+        : String(error);
 
 const profitTargetTypeFromSelect = (value: string): ProfitTargetType =>
   value === 'percentage'
@@ -131,6 +152,7 @@ interface EditAccountModalProps {
   app: App;
   plugin: JournalitPlugin;
   account: AccountData;
+  trades: readonly AccountTradeData[];
   onClose: () => void;
   onSave: () => void;
 }
@@ -199,12 +221,14 @@ class EditAccountModal extends Modal {
   private renderComponent() {
     this.root = createRoot(this.container);
     this.root.render(
-      <CurrencyProvider>
-        <EditAccountModalTree
-          {...this.props}
-          onModalClose={() => this.close()}
-        />
-      </CurrencyProvider>
+      <ModalEscapeProvider app={this.app} scope={this.scope}>
+        <CurrencyProvider>
+          <EditAccountModalTree
+            {...this.props}
+            onModalClose={() => this.close()}
+          />
+        </CurrencyProvider>
+      </ModalEscapeProvider>
     );
   }
 }
@@ -316,7 +340,7 @@ const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
             </div>
           </div>
           <div className="setting-item-control">
-            <input
+            <DraftInput
               type="number"
               value={
                 editAccount.initialBalance === 0
@@ -330,9 +354,6 @@ const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
                   ...currentAccount,
                   initialBalance,
                 }));
-              }}
-              onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-                if (editAccount.initialBalance === 0) e.target.value = '';
               }}
               min="0"
               step="100"
@@ -443,7 +464,7 @@ const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
 
 const PropChallengeAccountBasics: React.FC<
   Omit<AccountBalanceFieldsProps, 'isPropChallenge'>
-> = ({ editAccount, setEditAccount, isSaving }) => (
+> = ({ account, editAccount, setEditAccount, isSaving }) => (
   <div className="setting-item two-column journalit-prop-challenge-account-basics">
     <div className="column">
       <div className="setting-item-info">
@@ -479,12 +500,16 @@ const PropChallengeAccountBasics: React.FC<
         </div>
         <div className="setting-item-description">
           {t('account.edit.field.live-balance-desc')}
+          {account.unscopedLiveBalanceAdjustment !== undefined && (
+            <p>{t('account.edit.field.unscoped-live-balance-desc')}</p>
+          )}
         </div>
       </div>
       <div className="setting-item-control">
         <input
           type="number"
           value={editAccount.liveBalance}
+          aria-label={t('account.edit.field.live-balance')}
           onChange={(event) =>
             setEditAccount((current) => ({
               ...current,
@@ -493,7 +518,14 @@ const PropChallengeAccountBasics: React.FC<
           }
           step="100"
           placeholder={String(editAccount.initialBalance || 0)}
-          disabled={isSaving}
+          disabled={
+            isSaving ||
+            Boolean(
+              editAccount.propChallenge &&
+              getCurrentPropChallengePhase(editAccount.propChallenge)
+                ?.status !== 'active'
+            )
+          }
         />
       </div>
     </div>
@@ -532,7 +564,7 @@ const PropChallengeAccountBasics: React.FC<
         </div>
       </div>
       <div className="setting-item-control">
-        <input
+        <DraftInput
           type="number"
           value={editAccount.monthlyCost === 0 ? '' : editAccount.monthlyCost}
           onChange={(event) => {
@@ -627,7 +659,7 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
             </div>
           </div>
           <div className="setting-item-control">
-            <input
+            <DraftInput
               aria-label={t('account.edit.field.drawdown-amount')}
               type="number"
               value={
@@ -642,9 +674,6 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
                   ...currentAccount,
                   drawdownAmount,
                 }));
-              }}
-              onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-                if (editAccount.drawdownAmount === 0) e.target.value = '';
               }}
               min="0"
               step="100"
@@ -718,7 +747,7 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
           </div>
         </div>
         <div className="setting-item-control">
-          <input
+          <DraftInput
             aria-label={t('account.edit.field.monthly-cost')}
             type="number"
             value={editAccount.monthlyCost === 0 ? '' : editAccount.monthlyCost}
@@ -773,7 +802,7 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
             </div>
           </div>
           <div className="setting-item-control">
-            <input
+            <DraftInput
               type="number"
               value={
                 editAccount.monthlyCost === 0 ? '' : editAccount.monthlyCost
@@ -785,9 +814,6 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
                   ...currentAccount,
                   monthlyCost,
                 }));
-              }}
-              onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-                if (editAccount.monthlyCost === 0) e.target.value = '';
               }}
               min="0"
               step="1"
@@ -851,7 +877,7 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
                 </div>
               </div>
               <div className="setting-item-control">
-                <input
+                <DraftInput
                   type="number"
                   value={
                     editAccount.profitTarget === 0
@@ -859,17 +885,14 @@ const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
                       : editAccount.profitTarget
                   }
                   onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    const profitTarget =
-                      e.target.value === ''
-                        ? 0
-                        : parseFloat(e.target.value) || 0;
+                    
+                    
+                    if (e.target.value === '') return;
+                    const profitTarget = parseFloat(e.target.value) || 0;
                     setEditAccount((currentAccount) => ({
                       ...currentAccount,
                       profitTarget,
                     }));
-                  }}
-                  onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-                    if (editAccount.profitTarget === 0) e.target.value = '';
                   }}
                   min="0"
                   step={
@@ -1084,19 +1107,25 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
                 </div>
               </div>
               <div className="setting-item-control">
-                <input
+                <DraftInput
                   aria-label={t('account.copy-trading.multiplier')}
                   type="number"
                   min="0.1"
                   max="100"
                   step="0.1"
                   value={editAccount.copyTradingMultiplier}
-                  onChange={(e) =>
+                  onChange={(e) => {
+                    
+                    
+                    const multiplier = Number(e.target.value);
+                    if (e.target.value === '' || !Number.isFinite(multiplier)) {
+                      return;
+                    }
                     setEditAccount((currentAccount) => ({
                       ...currentAccount,
-                      copyTradingMultiplier: Number(e.target.value),
-                    }))
-                  }
+                      copyTradingMultiplier: multiplier,
+                    }));
+                  }}
                   disabled={isSaving}
                 />
               </div>
@@ -1194,9 +1223,11 @@ const useEditAccountModalController = ({
   app,
   plugin,
   account,
+  trades,
   onSave,
   onModalClose,
 }: Omit<EditAccountModalProps, 'onClose'> & { onModalClose: () => void }) => {
+  const dateDraftGate = useDateDraftGate();
   const [isSaving, setIsSaving] = useState(false);
   const [customAccountTypes, setCustomAccountTypes] = useState<string[]>([]);
   const [showSnapshotManager, setShowSnapshotManager] = useState(false);
@@ -1214,9 +1245,11 @@ const useEditAccountModalController = ({
       plugin.optionsService?.getOptions(OptionType.ACCOUNT_TYPE) ?? []
     ),
     initialBalance: account.initialBalance,
-    liveBalance: hasLiveBalanceAdjustment(account.liveBalanceAdjustment)
-      ? String(account.currentBalance)
-      : '',
+    liveBalance: getAccountLiveBalanceInput(
+      account,
+      trades,
+      plugin.settings.trade?.tradingDayCutoffTime
+    ),
     currency:
       account.currency ||
       plugin.settings?.general?.currency ||
@@ -1485,6 +1518,7 @@ const useEditAccountModalController = ({
   };
 
   const handleSave = async () => {
+    if (!dateDraftGate.confirm()) return;
     try {
       setIsSaving(true);
 
@@ -1515,10 +1549,11 @@ const useEditAccountModalController = ({
         }
         
         
-        const invalidRule = editAccount.propChallenge.phases
-          .flatMap((phase) => phase.rules)
-          .find((rule) => !isPropChallengeRuleComplete(rule));
-        if (invalidRule) {
+        if (
+          editAccount.propChallenge.phases.some(
+            (phase) => !isPropChallengePhaseComplete(phase)
+          )
+        ) {
           new Notice(t('account.create.error.rule-incomplete'));
           return;
         }
@@ -1540,6 +1575,17 @@ const useEditAccountModalController = ({
         editAccount.drawdownAmount <= 0
       ) {
         new Notice(t('account.edit.error.drawdown-required'));
+        return;
+      }
+
+      
+      
+      if (
+        !editAccount.propChallenge &&
+        editAccount.hasProfitTarget &&
+        editAccount.profitTarget <= 0
+      ) {
+        new Notice(t('account.create.error.profit-target-required'));
         return;
       }
 
@@ -1789,7 +1835,7 @@ const useEditAccountModalController = ({
       
       const effectiveInitialBalance = initialBalance;
       const firstPhase = editAccount.propChallenge?.phases[0];
-      const effectivePropChallenge =
+      let effectivePropChallenge =
         editAccount.propChallenge && firstPhase
           ? {
               ...editAccount.propChallenge,
@@ -1803,14 +1849,89 @@ const useEditAccountModalController = ({
 
       
       const baseCurrentBalanceWithoutAdjustment =
-        account.currentBalance - (account.liveBalanceAdjustment ?? 0);
+        (account.lifetimeBalance ?? account.currentBalance) -
+        (account.liveBalanceAdjustment ?? 0);
       const nextComputedCurrentBalance =
         baseCurrentBalanceWithoutAdjustment +
         (effectiveInitialBalance - account.initialBalance);
-      const liveBalanceAdjustment = toLiveBalanceAdjustment(
-        parsedLiveBalance,
-        nextComputedCurrentBalance
-      );
+      const liveBalanceUntouched =
+        parsedLiveBalance === parseLiveBalanceInput(initialForm.liveBalance);
+      const liveBalanceAdjustment = effectivePropChallenge
+        ? undefined
+        : account.propChallenge && liveBalanceUntouched
+          ? toLiveBalanceAdjustment(
+              account.currentBalance,
+              nextComputedCurrentBalance
+            )
+          : toLiveBalanceAdjustment(
+              parsedLiveBalance,
+              nextComputedCurrentBalance
+            );
+
+      const originalPhase =
+        account.propChallenge &&
+        getCurrentPropChallengePhase(account.propChallenge);
+      const current =
+        effectivePropChallenge &&
+        getCurrentPropChallengePhase(effectivePropChallenge);
+      const baselineChanged =
+        parsedLiveBalance !== null &&
+        originalPhase &&
+        current &&
+        originalPhase.id === current.id &&
+        originalPhase.startingBalance !== current.startingBalance;
+      
+      if (
+        effectivePropChallenge &&
+        (!liveBalanceUntouched || baselineChanged)
+      ) {
+        const fresh = await plugin.accountPageService.getAccountPageData(
+          account.name
+        );
+        if (!fresh) {
+          new Notice(t('account.edit.error.service-unavailable'));
+          return;
+        }
+        if (
+          !current ||
+          (!liveBalanceUntouched && originalPhase?.id !== current.id)
+        )
+          throw new AccountMetadataConflictError();
+        const input = {
+          trades: fresh.trades,
+          transactions: fresh.account.transactions,
+          now: new Date(),
+          tradingDayCutoffTime: plugin.settings.trade?.tradingDayCutoffTime,
+        };
+        const target =
+          liveBalanceUntouched && originalPhase && account.propChallenge
+            ? evaluatePropChallengePhase({
+                ...input,
+                phase: originalPhase,
+                config: account.propChallenge,
+              }).currentBalance
+            : parsedLiveBalance;
+        const reconciled = applyLiveBalanceToCurrentPhase(
+          effectivePropChallenge,
+          input,
+          target
+        );
+        if (
+          reconciled.introducesFailure &&
+          !(await showConfirmationModal(app, {
+            title: t('common.warning'),
+            message: t('account.prop-challenge.confirm.fail', {
+              account: accountName,
+              challenge: effectivePropChallenge.challengeName,
+              phase: current.name,
+            }),
+            confirmLabel: t('account.edit.button.save'),
+            cancelLabel: t('button.cancel'),
+          }))
+        )
+          return;
+        effectivePropChallenge = reconciled.config;
+      }
 
       const updateData: Partial<AccountData> = {
         name: accountName,
@@ -1866,12 +1987,30 @@ const useEditAccountModalController = ({
           await plugin.accountPageService.renameAccountMetadata(
             account.name,
             accountName,
-            metadataUpdates
+            metadataUpdates,
+            account.propChallenge
+              ? {
+                  expectedPropChallenge: account.propChallenge,
+                  reconciledUnscopedBalance:
+                    Boolean(effectivePropChallenge) &&
+                    !liveBalanceUntouched &&
+                    parsedLiveBalance !== null,
+                }
+              : undefined
           );
         } else {
           await plugin.accountPageService.updateAccountMetadata(
             accountName,
-            metadataUpdates
+            metadataUpdates,
+            account.propChallenge
+              ? {
+                  expectedPropChallenge: account.propChallenge,
+                  reconciledUnscopedBalance:
+                    Boolean(effectivePropChallenge) &&
+                    !liveBalanceUntouched &&
+                    parsedLiveBalance !== null,
+                }
+              : undefined
           );
         }
       }
@@ -2300,6 +2439,7 @@ const useEditAccountModalController = ({
     setManualSnapshots: editManualSnapshots,
     handleSave,
     handleDeleteAccount,
+    dateDraftGate,
   };
 };
 
@@ -2324,7 +2464,7 @@ const EditAccountModalTree: React.FC<
 
 export const EditAccountModalContent: React.FC<
   EditAccountModalProps & { onModalClose: () => void }
-> = ({ app, plugin, account, onSave, onModalClose }) => {
+> = ({ app, plugin, account, trades, onSave, onModalClose }) => {
   const {
     isSaving,
     customAccountTypes,
@@ -2337,10 +2477,12 @@ export const EditAccountModalContent: React.FC<
     setManualSnapshots,
     handleSave,
     handleDeleteAccount,
+    dateDraftGate,
   } = useEditAccountModalController({
     app,
     plugin,
     account,
+    trades,
     onSave,
     onModalClose,
   });
@@ -2421,120 +2563,122 @@ export const EditAccountModalContent: React.FC<
   };
 
   return (
-    <div className="edit-account-form">
-      <div className="edit-account-form-body">
-        <AccountIdentityFields
-          editAccount={editAccount}
-          setEditAccount={setEditAccount}
-          customAccountTypes={customAccountTypes}
-          isSaving={isSaving}
-        />
+    <DateDraftGateContext.Provider value={dateDraftGate}>
+      <div className="edit-account-form">
+        <div className="edit-account-form-body">
+          <AccountIdentityFields
+            editAccount={editAccount}
+            setEditAccount={setEditAccount}
+            customAccountTypes={customAccountTypes}
+            isSaving={isSaving}
+          />
 
-        
-        <PropChallengeToggleField
-          checked={Boolean(editAccount.propChallenge)}
-          disabled={isSaving}
-          onChange={handlePropChallengeToggle}
-        />
+          
+          <PropChallengeToggleField
+            checked={Boolean(editAccount.propChallenge)}
+            disabled={isSaving}
+            onChange={handlePropChallengeToggle}
+          />
 
-        {editAccount.propChallenge ? (
-          <PropChallengeAccountBasics
+          {editAccount.propChallenge ? (
+            <PropChallengeAccountBasics
+              account={account}
+              editAccount={editAccount}
+              setEditAccount={setEditAccount}
+              isSaving={isSaving}
+            />
+          ) : (
+            <>
+              <AccountBalanceFields
+                account={account}
+                editAccount={editAccount}
+                setEditAccount={setEditAccount}
+                isSaving={isSaving}
+                isPropChallenge={false}
+              />
+
+              <DrawdownSection
+                app={app}
+                account={account}
+                editAccount={editAccount}
+                setEditAccount={setEditAccount}
+                manualSnapshots={manualSnapshots}
+                setManualSnapshots={setManualSnapshots}
+                showSnapshotManager={showSnapshotManager}
+                setShowSnapshotManager={setShowSnapshotManager}
+                isSaving={isSaving}
+              />
+
+              <ProfitTargetSection
+                editAccount={editAccount}
+                setEditAccount={setEditAccount}
+                isSaving={isSaving}
+                isPropChallenge={false}
+              />
+            </>
+          )}
+
+          {editAccount.propChallenge && (
+            <DisplayPolicyProvider privacyModeOverride={false}>
+              <PropChallengeSettingsSection
+                existingAccount
+                value={editAccount.propChallenge}
+                currencyCode={editAccount.currency}
+                disabled={isSaving}
+                accountType={editAccount.accountType}
+                onChange={(propChallenge) =>
+                  setEditAccount((current) => ({ ...current, propChallenge }))
+                }
+                onAccountTypeChange={(accountType) =>
+                  setEditAccount((current) => ({ ...current, accountType }))
+                }
+              />
+            </DisplayPolicyProvider>
+          )}
+
+          
+          <CopyTradingSection
             account={account}
+            plugin={plugin}
             editAccount={editAccount}
             setEditAccount={setEditAccount}
             isSaving={isSaving}
           />
-        ) : (
-          <>
-            <AccountBalanceFields
-              account={account}
-              editAccount={editAccount}
-              setEditAccount={setEditAccount}
-              isSaving={isSaving}
-              isPropChallenge={false}
-            />
-
-            <DrawdownSection
-              app={app}
-              account={account}
-              editAccount={editAccount}
-              setEditAccount={setEditAccount}
-              manualSnapshots={manualSnapshots}
-              setManualSnapshots={setManualSnapshots}
-              showSnapshotManager={showSnapshotManager}
-              setShowSnapshotManager={setShowSnapshotManager}
-              isSaving={isSaving}
-            />
-
-            <ProfitTargetSection
-              editAccount={editAccount}
-              setEditAccount={setEditAccount}
-              isSaving={isSaving}
-              isPropChallenge={false}
-            />
-          </>
-        )}
-
-        {editAccount.propChallenge && (
-          <DisplayPolicyProvider privacyModeOverride={false}>
-            <PropChallengeSettingsSection
-              existingAccount
-              value={editAccount.propChallenge}
-              currencyCode={editAccount.currency}
-              disabled={isSaving}
-              accountType={editAccount.accountType}
-              onChange={(propChallenge) =>
-                setEditAccount((current) => ({ ...current, propChallenge }))
-              }
-              onAccountTypeChange={(accountType) =>
-                setEditAccount((current) => ({ ...current, accountType }))
-              }
-            />
-          </DisplayPolicyProvider>
-        )}
+        </div>
 
         
-        <CopyTradingSection
-          account={account}
-          plugin={plugin}
-          editAccount={editAccount}
-          setEditAccount={setEditAccount}
-          isSaving={isSaving}
-        />
-      </div>
-
-      
-      <div className="edit-account-buttons">
-        <Button
-          variant="secondary"
-          onClick={() => void handleDeleteAccount()}
-          disabled={isSaving}
-          className="delete-account-button delete-account-danger"
-        >
-          {t('account.edit.button.delete')}
-        </Button>
-        <div className="button-group-right">
+        <div className="edit-account-buttons">
           <Button
-            variant="plain"
-            onClick={onModalClose}
+            variant="secondary"
+            onClick={() => void handleDeleteAccount()}
             disabled={isSaving}
-            className="cancel-button"
+            className="delete-account-button delete-account-danger"
           >
-            {t('button.cancel')}
+            {t('account.edit.button.delete')}
           </Button>
-          <Button
-            variant="primary"
-            onClick={() => void handleSave()}
-            disabled={isSaving}
-            className="save-account-button accent-button modal-save-accent"
-          >
-            {isSaving
-              ? t('account.edit.button.saving')
-              : t('account.edit.button.save')}
-          </Button>
+          <div className="button-group-right">
+            <Button
+              variant="plain"
+              onClick={onModalClose}
+              disabled={isSaving}
+              className="cancel-button"
+            >
+              {t('button.cancel')}
+            </Button>
+            <Button
+              variant="primary"
+              onClick={() => void handleSave()}
+              disabled={isSaving}
+              className="save-account-button accent-button modal-save-accent"
+            >
+              {isSaving
+                ? t('account.edit.button.saving')
+                : t('account.edit.button.save')}
+            </Button>
+          </div>
         </div>
       </div>
-    </div>
+    </DateDraftGateContext.Provider>
   );
 };
 
@@ -2543,12 +2687,14 @@ export function openEditAccountModal(
   app: App,
   plugin: JournalitPlugin,
   account: AccountData,
+  trades: readonly AccountTradeData[],
   onSave: () => void
 ): void {
   const modal = new EditAccountModal({
     app,
     plugin,
     account,
+    trades,
     onClose: () => {}, 
     onSave,
   });

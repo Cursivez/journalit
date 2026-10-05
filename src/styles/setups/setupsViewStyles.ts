@@ -397,45 +397,6 @@ export const SETUPS_VIEW_STYLES = `
   cursor: help;
 }
 
-.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .input-container {
-  display: flex;
-  min-height: 34px;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 3px;
-  padding: 3px 28px 3px 6px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  background: var(--background-primary);
-}
-
-.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .journalit-combobox-selected-items {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 3px;
-}
-
-.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .selected-item {
-  margin: 0;
-  padding: 2px 6px;
-  font-size: 11px;
-}
-
-.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .combobox-input {
-  width: auto;
-  min-width: 72px;
-  height: 26px;
-  flex: 1 1 90px;
-  padding: 3px 4px;
-  border: 0;
-  background: transparent;
-}
-
-.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .combobox-input:focus {
-  box-shadow: none;
-}
-
 .journalit-create-setup-modal .create-setup-form .setting-item-info {
   display: flex;
   flex-direction: column;
@@ -2103,6 +2064,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 }
 
 .journalit-setup-card__sparkline {
+  --no-tooltip: true;
   display: block;
   width: 100%;
   height: 52px;

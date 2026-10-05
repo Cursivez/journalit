@@ -185,7 +185,6 @@ const TRADE_LOG_GUIDE_TRADE_MODE_STEPS = new Set([
   'filters',
   'sorting',
   'open-trades',
-  'switch-to-gallery',
   FILTER_MENU_OPEN_STEP_ID,
   FILTER_MENU_EXCLUDE_STEP_ID,
   FILTER_MENU_MATCH_STEP_ID,
@@ -520,7 +519,7 @@ const TradeLogColumnHeaders: React.FC<TradeLogColumnHeadersProps> = ({
         const IconComponent = iconName ? ICON_COMPONENTS[iconName] : null;
         const label = col.id === 'select' ? '' : getColumnLabel(col);
         const isMoneyColumn = col.id === 'fees' || col.id === 'dividends';
-        const className = `header-cell header-${col.id} ${isMoneyColumn ? 'header-money-cell' : ''} ${isClickable ? 'sortable' : ''} ${isSorted ? 'sorted' : ''}`;
+        const className = `header-cell header-${col.id} ${col.customField ? 'header-custom-field' : ''} ${isMoneyColumn ? 'header-money-cell' : ''} ${isClickable ? 'sortable' : ''} ${isSorted ? 'sorted' : ''}`;
         const content = (
           <>
             <span>{label}</span>
@@ -536,8 +535,6 @@ const TradeLogColumnHeaders: React.FC<TradeLogColumnHeadersProps> = ({
           </>
         );
 
-        
-        
         
         
         const attachHeaderTooltip = (el: HTMLElement | null) => {

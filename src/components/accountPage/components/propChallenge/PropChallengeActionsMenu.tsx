@@ -6,6 +6,7 @@ import { t } from '../../../../lang/helpers';
 import {
   Archive,
   ChevronRight,
+  Clock,
   LinkIcon,
   MoreVertical,
   RotateCcw,
@@ -22,7 +23,8 @@ export type PropChallengeLifecycleAction =
 
 export type PropChallengeManualAction =
   | PropChallengeLifecycleAction
-  | 'link-rules';
+  | 'link-rules'
+  | 'rule-corrections';
 
 export interface PropChallengeMenuAction {
   id: PropChallengeManualAction;
@@ -36,6 +38,7 @@ const ACTION_ICONS: Record<PropChallengeManualAction, ObsidianIconComponent> = {
   archive: Archive,
   reopen: RotateCcw,
   'link-rules': LinkIcon,
+  'rule-corrections': Clock,
 };
 
 export const PropChallengeActionsMenu: React.FC<{

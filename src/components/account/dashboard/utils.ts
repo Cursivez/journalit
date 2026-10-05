@@ -439,51 +439,6 @@ function calculateAccountDrawdownFloor(account: AccountData): number {
 }
 
 
-export function calculateTotalCosts(
-  account: AccountData,
-  asOf: Date = new Date()
-): number {
-  if (!account.monthlyCost || account.monthlyCost <= 0) {
-    return 0;
-  }
-
-  const createdDate = new Date(account.createdDate);
-  let endDate: Date;
-
-  
-  if (account.accountType?.toLowerCase() === 'archived') {
-    if (account.transactions.length > 0) {
-      
-      const sortedTransactions = [...account.transactions].sort(
-        (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
-      );
-      endDate = new Date(
-        sortedTransactions[sortedTransactions.length - 1].date
-      );
-    } else {
-      
-      endDate = createdDate;
-    }
-  } else {
-    
-    endDate = asOf;
-  }
-
-  
-  const diffTime = Math.abs(endDate.getTime() - createdDate.getTime());
-  const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-
-  
-  const monthsElapsed = Math.floor(diffDays / 30);
-
-  
-  
-  const totalCharges = Math.max(1, monthsElapsed);
-
-  return account.monthlyCost * totalCharges;
-}
-
-
 export function calculateProfitTargetProgress(account: AccountData): number {
   if (!account.hasProfitTarget || account.profitTarget <= 0) return 0;
 

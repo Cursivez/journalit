@@ -11,6 +11,10 @@ import {
 } from '../../../utils/dateUtils';
 import { formatPnL } from '../../../utils/formatting';
 import { FastDateTimeInput } from '../../core/FastDateTimeInput';
+import {
+  DateDraftGateContext,
+  useDateDraftGate,
+} from '../../core/DateDraftGate';
 import { t } from '../../../lang/helpers';
 import { showActionConfirmationModal } from '../../shared/ConfirmationModal';
 
@@ -517,6 +521,7 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
   snapshots,
   onSave,
 }: ManualDrawdownManagerProps) {
+  const dateDraftGate = useDateDraftGate();
   const [localSnapshots, setLocalSnapshots] = useState<
     ManualDrawdownSnapshot[]
   >(() =>
@@ -703,6 +708,7 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
 
   
   const handleAddOrUpdate = () => {
+    if (!dateDraftGate.confirm()) return;
     if (!validateForm()) {
       return;
     }
@@ -752,33 +758,35 @@ export const ManualDrawdownManager = function ManualDrawdownManager({
   const userDateFormat = getUserDateFormat();
 
   return (
-    <div className="manual-drawdown-manager">
-      <DrawdownSnapshotsTable
-        snapshots={localSnapshots}
-        editingIndex={editingIndex}
-        userDateFormat={userDateFormat}
-        onEdit={handleEdit}
-        onDelete={handleDelete}
-      />
+    <DateDraftGateContext.Provider value={dateDraftGate}>
+      <div className="manual-drawdown-manager">
+        <DrawdownSnapshotsTable
+          snapshots={localSnapshots}
+          editingIndex={editingIndex}
+          userDateFormat={userDateFormat}
+          onEdit={handleEdit}
+          onDelete={handleDelete}
+        />
 
-      <DrawdownSnapshotForm
-        editingIndex={editingIndex}
-        validationError={validationError}
-        formDate={formDate}
-        formDrawdownLimit={formDrawdownLimit}
-        formNote={formNote}
-        userDateFormat={userDateFormat}
-        onDateChange={(formDate) => dispatchFormState({ formDate })}
-        onDrawdownLimitChange={(formDrawdownLimit) =>
-          dispatchFormState({ formDrawdownLimit })
-        }
-        onNoteChange={(formNote) => dispatchFormState({ formNote })}
-        onClearValidationError={() =>
-          dispatchFormState({ validationError: '' })
-        }
-        onSubmit={handleAddOrUpdate}
-        onCancelEdit={resetForm}
-      />
-    </div>
+        <DrawdownSnapshotForm
+          editingIndex={editingIndex}
+          validationError={validationError}
+          formDate={formDate}
+          formDrawdownLimit={formDrawdownLimit}
+          formNote={formNote}
+          userDateFormat={userDateFormat}
+          onDateChange={(formDate) => dispatchFormState({ formDate })}
+          onDrawdownLimitChange={(formDrawdownLimit) =>
+            dispatchFormState({ formDrawdownLimit })
+          }
+          onNoteChange={(formNote) => dispatchFormState({ formNote })}
+          onClearValidationError={() =>
+            dispatchFormState({ validationError: '' })
+          }
+          onSubmit={handleAddOrUpdate}
+          onCancelEdit={resetForm}
+        />
+      </div>
+    </DateDraftGateContext.Provider>
   );
 };

@@ -24,6 +24,7 @@ import type { JournalitSettings } from '../../../settings/types';
 import { getTradeDirectionDisplayKind } from '../../../services/trade/core/TradeDirection';
 import { hasUnknownCanonicalPnL } from '../../../services/trade/core/CanonicalProjectionFields';
 import { cssVars } from '../../../styles/inlineStylePolicy';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 
 import { t } from '../../../lang/helpers';
 import { ChevronDown, CornerDownRight } from '../../shared/icons/ObsidianIcon';
@@ -982,6 +983,7 @@ const TradeReviewQuestionInput = React.memo(function TradeReviewQuestionInput({
   
   onFocusLeave: () => void;
 }) {
+  const readOnly = useReviewReadOnly();
   const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const hasLocalDraftRef = useRef(false);
   const isFocusedRef = useRef(false);
@@ -1004,6 +1006,7 @@ const TradeReviewQuestionInput = React.memo(function TradeReviewQuestionInput({
       ref={textareaRef}
       className="journalit-trade-review-textarea"
       defaultValue={persistedValue}
+      readOnly={readOnly}
       spellCheck={false}
       placeholder={
         question.placeholder || t('widget.trade-review.placeholder.default')
@@ -1013,6 +1016,7 @@ const TradeReviewQuestionInput = React.memo(function TradeReviewQuestionInput({
         isFocusedRef.current = true;
       }}
       onChange={(event) => {
+        if (readOnly) return;
         hasLocalDraftRef.current = true;
         onDraftChange(question, event.target.value);
       }}
@@ -1055,6 +1059,7 @@ function TradeReviewChoiceInput({
   selectedOptionId?: string;
   onSelect: (question: TradeReviewQuestionConfig, value: string) => void;
 }) {
+  const readOnly = useReviewReadOnly();
   const selectedValue = value.trim();
   return (
     <div
@@ -1074,6 +1079,7 @@ function TradeReviewChoiceInput({
             type="button"
             className={`journalit-trade-review-choice-option${selected ? ' is-selected' : ''}`}
             aria-pressed={selected}
+            disabled={readOnly}
             onClick={() => onSelect(question, selected ? '' : optionLabel)}
           >
             {option.label}
@@ -1229,6 +1235,7 @@ function TradeReviewQuestions({
   review: TradeReviewData | undefined;
   ref?: React.Ref<TradeReviewQuestionSaveHandle>;
 }) {
+  const readOnly = useReviewReadOnly();
   const saveTimersRef = useRef<Record<string, number>>({});
   const pendingSavesRef = useRef<
     Record<
@@ -1251,7 +1258,7 @@ function TradeReviewQuestions({
 
   const commitQuestionSave = useCallback(
     (question: TradeReviewQuestionConfig, value: string) => {
-      if (!tradePath) return saveQueueRef.current;
+      if (readOnly || !tradePath) return saveQueueRef.current;
 
       const commit = async () => {
         await plugin.tradeService.updateTradeReviewQuestion(
@@ -1279,7 +1286,7 @@ function TradeReviewQuestions({
         .then(commit);
       return saveQueueRef.current;
     },
-    [orderedQuestions, plugin.tradeService, questionDepths, tradePath]
+    [orderedQuestions, plugin.tradeService, questionDepths, tradePath, readOnly]
   );
 
   const flushPendingSaves = useCallback(async () => {
@@ -1457,6 +1464,7 @@ TradeReviewQuestions.displayName = 'TradeReviewQuestions';
 
 const TradeReviewCardBody: React.FC<{
   images: string[];
+  readOnly: boolean;
   showMedia: boolean;
   trade: ReviewTrade;
   filePath: string;
@@ -1471,6 +1479,7 @@ const TradeReviewCardBody: React.FC<{
   questionSaveRef: React.RefObject<TradeReviewQuestionSaveHandle | null>;
 }> = ({
   images,
+  readOnly,
   showMedia,
   trade,
   filePath,
@@ -1497,6 +1506,7 @@ const TradeReviewCardBody: React.FC<{
               enableFullscreen: true,
             }}
             deleteOptions={{ enabled: false }}
+            fullscreenAnnotationOptions={{ enabled: !readOnly }}
             useResolveMediaPath={true}
             sourcePath={trade.path || filePath}
           />
@@ -1566,6 +1576,7 @@ function TradeReviewCardHeader({
   title: string;
   trade: ReviewTrade;
 }) {
+  const readOnly = useReviewReadOnly();
   return (
     <div
       ref={headerRef}
@@ -1604,6 +1615,7 @@ function TradeReviewCardHeader({
         onClick={onToggleReviewed}
         onKeyDown={(event) => event.stopPropagation()}
         aria-pressed={isReviewed}
+        disabled={readOnly}
         {...shareCaptureExcludeProps}
       >
         <span
@@ -1733,6 +1745,7 @@ const TradeReviewCard: React.FC<{
   enableStickyHeader,
   onSessionVisibilityChange,
 }) => {
+  const readOnly = useReviewReadOnly();
   const cardKey = getTradeKey(trade, index);
   const storedExpansion = getStoredCardExpansion(filePath, cardKey);
   const cardRef = useRef<HTMLElement | null>(null);
@@ -1820,7 +1833,7 @@ const TradeReviewCard: React.FC<{
 
   const handleToggleReviewed = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
-    if (!trade.path) return;
+    if (readOnly || !trade.path) return;
     const nextReviewed = !isReviewed;
     
     
@@ -1962,6 +1975,7 @@ const TradeReviewCard: React.FC<{
       {isExpanded && (
         <TradeReviewCardBody
           images={images}
+          readOnly={readOnly}
           showMedia={showMedia}
           trade={trade}
           filePath={filePath}

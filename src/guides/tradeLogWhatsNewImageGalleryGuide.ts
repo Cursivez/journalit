@@ -7,8 +7,6 @@ import {
   TRADE_LOG_IMAGE_GALLERY_GRID_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_GROUPING_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID,
-  TRADE_LOG_IMAGE_GALLERY_MODE_BUTTON_TARGET_ID,
-  TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID,
   TRADE_LOG_IMAGE_GALLERY_SOURCE_SORT_TARGET_ID,
 } from './tradeLogGuideIds';
 
@@ -19,19 +17,11 @@ export function registerTradeLogWhatsNewImageGalleryGuide(
   guideRegistry.registerGuide({
     id: TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID,
     viewType: TRADE_LOG_VIEW_TYPE,
-    version: 5,
+    version: 6,
     autoShow: true,
     priority: 105,
-    initialStepId: 'switch-to-gallery',
+    initialStepId: 'gallery-source-sort',
     steps: [
-      {
-        id: 'switch-to-gallery',
-        title: t('tradelog.guide.switch-to-gallery.title'),
-        description: t('tradelog.guide.switch-to-gallery.description'),
-        progression: 'action-required',
-        targetId: TRADE_LOG_IMAGE_GALLERY_MODE_BUTTON_TARGET_ID,
-        requiredActionId: TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID,
-      },
       {
         id: 'gallery-source-sort',
         title: t('tradelog.guide.gallery-source-sort.title'),

@@ -38,10 +38,6 @@ import type { Unsubscribe } from '../events/types';
 import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeExecutionAnalytics';
 import { safeString } from '../../utils/safeString';
 import type { ReviewStreakItem } from '../../utils/reviewStreaks';
-import {
-  extractJournalitImageWidgetIds,
-  stripEmbeddedReviewWidgetBlocks,
-} from '../../utils/markdownSectionExtractor';
 import { extractReviewContextSections } from '../../utils/reviewContextSections';
 import { normalizeSessionLogEntries } from '../../types/sessionLog';
 
@@ -49,8 +45,6 @@ interface PreviousTradingDayContextSection {
   heading: string;
   level: number;
   markdown: string;
-  imageWidgets: Array<{ id: string; images: string[] }>;
-  imageWidgetImages: string[];
 }
 
 export interface PreviousTradingDayContextResult {
@@ -953,33 +947,15 @@ export class DRCService {
       const frontmatter =
         this.app.metadataCache.getFileCache(previousDRCFile)?.frontmatter;
       if (!frontmatter || frontmatter.type !== 'drc') return null;
-      const frontmatterRecord = asRecord(frontmatter) ?? {};
-
       const content = await this.app.vault.read(previousDRCFile);
       const sections = extractReviewContextSections(content, headings).map(
-        (section) => {
-          const markdown = stripEmbeddedReviewWidgetBlocks(section.content);
-          const imageWidgets = extractJournalitImageWidgetIds(markdown).map(
-            (widgetId) => ({
-              id: widgetId,
-              images: this.getImagesForWidget(
-                frontmatterRecord.imagesByWidget,
-                widgetId
-              ),
-            })
-          );
-          const imageWidgetImages = imageWidgets.flatMap(
-            (widget) => widget.images
-          );
-
-          return {
-            heading: section.heading,
-            level: section.level,
-            markdown,
-            imageWidgets,
-            imageWidgetImages,
-          };
-        }
+        (section) => ({
+          heading: section.heading,
+          level: section.level,
+          
+          
+          markdown: section.content,
+        })
       );
 
       return {
@@ -1042,17 +1018,6 @@ export class DRCService {
     }
 
     return nearest?.file ?? null;
-  }
-
-  private getImagesForWidget(
-    imagesByWidget: unknown,
-    widgetId: string
-  ): string[] {
-    const imageRecord = asRecord(imagesByWidget);
-    if (!imageRecord) return [];
-    const images = imageRecord[widgetId];
-    if (!Array.isArray(images)) return [];
-    return images.filter((image): image is string => typeof image === 'string');
   }
 
   

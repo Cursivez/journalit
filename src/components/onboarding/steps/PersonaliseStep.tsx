@@ -1,6 +1,6 @@
 
 
-import React, { useState } from 'react';
+import React, { useId, useState } from 'react';
 import { Button } from '../../ui/Button';
 import { t } from '../../../lang/helpers';
 import type { TranslationKey } from '../../../lang/locale/en';
@@ -43,9 +43,17 @@ function ChipRow<T extends string>({
   disabled,
   columns = 'auto',
 }: ChipRowProps<T>) {
+  const questionId = useId();
+
   return (
-    <div className="personalise-row" role="radiogroup" aria-label={question}>
-      <span className="personalise-question">{question}</span>
+    <div
+      className="personalise-row"
+      role="radiogroup"
+      aria-labelledby={questionId}
+    >
+      <span id={questionId} className="personalise-question">
+        {question}
+      </span>
       <div
         className={`personalise-options${columns === 'two' ? ' personalise-options-two-columns' : ''}`}
       >

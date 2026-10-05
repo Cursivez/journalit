@@ -41,18 +41,28 @@ function unique(values: readonly string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)));
 }
 
-export function combineTradeProjectionSyncResults(
+function mergeImportedTradesByPath(
   results: readonly TradeProjectionSyncResult[]
-): TradeProjectionSyncResult {
+): TradeProjectionPersistedTradeSummary[] {
   const importedByPath = new Map<
     string,
     TradeProjectionPersistedTradeSummary
   >();
   for (const result of results) {
     for (const trade of result.importedTrades ?? []) {
-      importedByPath.set(trade.filePath, trade);
+      const previous = importedByPath.get(trade.filePath);
+      importedByPath.set(trade.filePath, {
+        ...trade,
+        change: previous?.change === 'created' ? 'created' : trade.change,
+      });
     }
   }
+  return Array.from(importedByPath.values());
+}
+
+export function combineTradeProjectionSyncResults(
+  results: readonly TradeProjectionSyncResult[]
+): TradeProjectionSyncResult {
   return {
     accountCount: results.reduce(
       (total, result) => total + result.accountCount,
@@ -81,7 +91,7 @@ export function combineTradeProjectionSyncResults(
         result.pendingCount > 0 ||
         (result.ackFailedCount ?? 0) > 0
     ),
-    importedTrades: Array.from(importedByPath.values()),
+    importedTrades: mergeImportedTradesByPath(results),
   };
 }
 
@@ -91,22 +101,12 @@ export function combineAggregateTradeProjectionSnapshots(
   const latest = results[results.length - 1];
   if (!latest) return null;
 
-  const importedByPath = new Map<
-    string,
-    TradeProjectionPersistedTradeSummary
-  >();
-  for (const result of results) {
-    for (const trade of result.importedTrades ?? []) {
-      importedByPath.set(trade.filePath, trade);
-    }
-  }
-
   
   
   
   return {
     ...latest,
-    importedTrades: Array.from(importedByPath.values()),
+    importedTrades: mergeImportedTradesByPath(results),
   };
 }
 

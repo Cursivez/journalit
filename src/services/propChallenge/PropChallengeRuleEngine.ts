@@ -10,6 +10,7 @@ import type {
 } from './types';
 import { policyAt, latestCustomTransition } from './PropChallengePolicyHistory';
 import { doesPhaseOwnTradeAt } from './PropChallengeConfig';
+import { normalizeLiveBalanceAdjustment } from '../account/liveBalanceAdjustment';
 
 
 const PROP_CHALLENGE_WARNING_THRESHOLD = 0.8;
@@ -204,11 +205,12 @@ interface PropChallengeRuleEngineInput {
 
 type ScopedEvent = {
   
-  source: AccountTransaction;
+  source?: AccountTransaction;
   date: Date;
   amount: number;
   isTrade: boolean;
   isPayout: boolean;
+  advancesTrailingPeak: boolean;
   requestedWithdrawal?: number;
   payoutAftermath?: NonNullable<
     PropChallengePhase['payoutPolicy']
@@ -345,6 +347,7 @@ function scopeInput(
       date: transaction.date,
       amount: transaction.amount,
       isTrade: transaction.type === TransactionType.TRADE,
+      advancesTrailingPeak: transaction.type === TransactionType.TRADE,
       isPayout: transaction.type === TransactionType.WITHDRAWAL,
       ...(transaction.type === TransactionType.WITHDRAWAL
         ? {
@@ -353,6 +356,19 @@ function scopeInput(
               .payoutPolicy?.afterPayout,
           }
         : {}),
+    });
+  }
+  
+  
+  for (const adjustment of input.phase.balanceAdjustments ?? []) {
+    const date = new Date(adjustment.recordedAt);
+    if (date.getTime() > end) continue;
+    events.push({
+      date,
+      amount: adjustment.amount,
+      isTrade: false,
+      isPayout: false,
+      advancesTrailingPeak: true,
     });
   }
   events.sort((left, right) => left.date.getTime() - right.date.getTime());
@@ -533,7 +549,7 @@ function evaluateDrawdown(
       inspectPoint(event);
       if (
         rule.mode === 'intraday_trailing' &&
-        event.isTrade &&
+        event.advancesTrailingPeak &&
         !trailingFloorLocked
       ) {
         highestBalance = Math.max(highestBalance, balance);
@@ -1413,14 +1429,71 @@ function evaluateSinglePolicy(
 export function propChallengePhaseBalancesAfter(
   input: PropChallengeRuleEngineInput
 ): ReadonlyMap<AccountTransaction, number> {
-  const { events } = scopeInput(input, input.now ?? new Date());
   const balances = new Map<AccountTransaction, number>();
-  let balance = input.phase.startingBalance;
-  for (const event of events) {
-    balance += event.amount;
-    balances.set(event.source, balance);
+  for (const event of propChallengePhaseBalanceTimeline(input)) {
+    if (event.transaction) balances.set(event.transaction, event.balance);
   }
   return balances;
+}
+
+
+export function propChallengePhaseBalanceTimeline(
+  input: PropChallengeRuleEngineInput
+) {
+  const { events } = scopeInput(input, input.now ?? new Date());
+  let balance = input.phase.startingBalance;
+  return events.map((event) => {
+    balance += event.amount;
+    return {
+      date: event.date,
+      balance,
+      transaction: event.source,
+      advancesTrailingPeak: event.advancesTrailingPeak,
+      payoutAftermath: event.payoutAftermath,
+    };
+  });
+}
+
+export class InactivePropChallengeBalanceError extends Error {
+  constructor() {
+    super('Live balance can only be changed on an active phase');
+  }
+}
+
+
+export function calibratePropChallengeBalance(
+  input: PropChallengeRuleEngineInput,
+  liveBalance: number | null
+): PropChallengePhase {
+  if (input.phase.status !== 'active')
+    throw new InactivePropChallengeBalanceError();
+  const phase = { ...input.phase };
+  if (liveBalance === null) {
+    delete phase.balanceAdjustments;
+    return phase;
+  }
+  const now = input.now ?? new Date();
+  const delta = normalizeLiveBalanceAdjustment(
+    liveBalance - evaluatePropChallengePhase({ ...input, now }).currentBalance
+  );
+  if (delta === undefined) return phase;
+  const adjustments = [...(phase.balanceAdjustments ?? [])];
+  const last = adjustments[adjustments.length - 1];
+  const hasActivityAfterLast =
+    last &&
+    scopeInput(input, now).events.some(
+      (event) =>
+        event.source && event.date.getTime() >= Date.parse(last.recordedAt)
+    );
+  
+  if (last && !hasActivityAfterLast) {
+    adjustments.pop();
+    const amount = normalizeLiveBalanceAdjustment(last.amount + delta);
+    if (amount !== undefined) adjustments.push({ ...last, amount });
+  } else adjustments.push({ amount: delta, recordedAt: now.toISOString() });
+  if (adjustments.length) phase.balanceAdjustments = adjustments;
+  else delete phase.balanceAdjustments;
+  return phase;
 }
 
 export function evaluatePropChallengePhase(

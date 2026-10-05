@@ -736,7 +736,6 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
         exitTime={data.exitTime}
         exitPrice={data.exitPrice}
         tradeStatus={data.tradeStatus}
-        lastBrokerSyncAt={data.lastBrokerSyncAt}
         entries={data.entries}
         exits={data.exits}
         dividends={data.dividends}

@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { TradeFormData, TradeFormErrors, TradeFormProps } from './types';
 import { BasicTab, DetailsTab, AdvancedTab } from './tabs';
 import { useTradeForm } from './hooks';
+import { DateDraftGateContext } from '../../core/DateDraftGate';
 import { FormActions, ManualTradeImportNudge } from './components';
 import { t, tPlural } from '../../../lang/helpers';
 import { usePlugin } from '../../../hooks/usePlugin';
@@ -579,6 +580,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     errors,
     submissionState,
     formRef,
+    dateDraftGate,
     handleFieldChange,
     handleAddImage,
     deleteImageFile,
@@ -686,7 +688,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
 
   
   const handleTabChange = (newTab: ActiveTradeFormTab) => {
-    if (newTab !== activeTab) {
+    if (newTab !== activeTab && dateDraftGate.confirm()) {
       setActiveTab(newTab);
     }
   };
@@ -774,69 +776,78 @@ export const TradeForm: React.FC<TradeFormProps> = ({
   );
 
   return (
-    <form
-      ref={formRef}
-      className="formContainer"
-      onSubmit={(event) => void handleSubmit(event)}
-    >
-      
-      <TradeFormErrorSummary errors={errors} tabErrorCounts={tabErrorCounts} />
+    <DateDraftGateContext.Provider value={dateDraftGate}>
+      <form
+        ref={formRef}
+        className="formContainer"
+        onSubmit={(event) => void handleSubmit(event)}
+      >
+        
+        <TradeFormErrorSummary
+          errors={errors}
+          tabErrorCounts={tabErrorCounts}
+        />
 
-      
-      <TradeFormTabNav
-        tabs={tabs}
-        activeTab={effectiveActiveTab}
-        isEditMode={isEditMode}
-        showLayoutSettings={!!plugin}
-        onTabChange={handleTabChange}
-        onOpenLayoutSettings={handleOpenLayoutSettings}
-      />
+        
+        <TradeFormTabNav
+          tabs={tabs}
+          activeTab={effectiveActiveTab}
+          isEditMode={isEditMode}
+          showLayoutSettings={!!plugin}
+          onTabChange={handleTabChange}
+          onOpenLayoutSettings={handleOpenLayoutSettings}
+        />
 
-      {plugin &&
-        !isEditMode &&
-        isImportShortcutVisible &&
-        formData.isMissedTrade !== true &&
-        formData.isBacktestTrade !== true && (
-          <ManualTradeImportNudge
-            plugin={plugin}
-            disabled={isSubmitting}
-            closeForm={handleCancel}
-          />
-        )}
-
-      
-      {getTabContent()}
-
-      
-      <FormActions
-        onCancel={() => void handleCancel()}
-        onImportTrades={
-          !!plugin && isImportShortcutVisible
-            ? () => void handleOpenTradeImport()
-            : undefined
-        }
-        isSubmitting={isSubmitting}
-        errors={errors}
-        submissionState={submissionState}
-        isEditMode={isEditMode}
-        hasEntryTime={!!initialData.entryTime}
-        disabledReason={
-          isAccountCreationBlocked
-            ? t('form.account-empty-state.submit-disabled')
-            : undefined
-        }
-        footerSummary={
-          isTradeFormLayoutItemVisible(tradeFormLayout, 'pnlPreview') ? (
-            <TradeFormFooterPnlPreview
-              data={formData}
-              currency={
-                formData.currency || plugin?.settings.general?.currency || 'USD'
-              }
-              defaultRiskAmount={plugin?.settings.trade.defaultRiskAmount ?? 0}
+        {plugin &&
+          !isEditMode &&
+          isImportShortcutVisible &&
+          formData.isMissedTrade !== true &&
+          formData.isBacktestTrade !== true && (
+            <ManualTradeImportNudge
+              plugin={plugin}
+              disabled={isSubmitting}
+              closeForm={handleCancel}
             />
-          ) : null
-        }
-      />
-    </form>
+          )}
+
+        
+        {getTabContent()}
+
+        
+        <FormActions
+          onCancel={() => void handleCancel()}
+          onImportTrades={
+            !!plugin && isImportShortcutVisible
+              ? () => void handleOpenTradeImport()
+              : undefined
+          }
+          isSubmitting={isSubmitting}
+          errors={errors}
+          submissionState={submissionState}
+          isEditMode={isEditMode}
+          hasEntryTime={!!initialData.entryTime}
+          disabledReason={
+            isAccountCreationBlocked
+              ? t('form.account-empty-state.submit-disabled')
+              : undefined
+          }
+          footerSummary={
+            isTradeFormLayoutItemVisible(tradeFormLayout, 'pnlPreview') ? (
+              <TradeFormFooterPnlPreview
+                data={formData}
+                currency={
+                  formData.currency ||
+                  plugin?.settings.general?.currency ||
+                  'USD'
+                }
+                defaultRiskAmount={
+                  plugin?.settings.trade.defaultRiskAmount ?? 0
+                }
+              />
+            ) : null
+          }
+        />
+      </form>
+    </DateDraftGateContext.Provider>
   );
 };

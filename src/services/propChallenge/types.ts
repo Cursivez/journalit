@@ -187,6 +187,8 @@ export interface PropChallengePayoutPolicy {
   version: number;
   source: string;
   cycle: PropChallengePayoutCycle;
+  
+  qualifyingDays?: { days: number; minimumDailyProfit: number };
   minimumElapsedHours?: number;
   minimumBalance?: number;
   minimumCycleProfit?: number;
@@ -219,6 +221,8 @@ export interface PropChallengePhase {
   stage?: PropChallengeStage;
   status: 'pending' | 'active' | 'passed' | 'failed';
   startingBalance: number;
+  
+  balanceAdjustments?: Array<{ amount: number; recordedAt: string }>;
   
   brokerAccountIds?: string[];
   

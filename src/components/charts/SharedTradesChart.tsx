@@ -441,7 +441,6 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
           }}
         />
         <YAxis
-          className="journalit-chart-axis--numeric"
           tickFormatter={customTickFormatter}
           domain={domain}
           allowDataOverflow={false}

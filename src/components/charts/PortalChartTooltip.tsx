@@ -281,13 +281,15 @@ export function PortalChartTooltip({
 
     doc.addEventListener('pointermove', updatePointerState, true);
     doc.addEventListener('pointerdown', hideTooltip, true);
-    doc.addEventListener('mouseleave', hideTooltip, true);
+    
+    
+    chartRoot.addEventListener('mouseleave', hideTooltip);
     doc.defaultView?.addEventListener('blur', hideTooltip);
 
     return () => {
       doc.removeEventListener('pointermove', updatePointerState, true);
       doc.removeEventListener('pointerdown', hideTooltip, true);
-      doc.removeEventListener('mouseleave', hideTooltip, true);
+      chartRoot.removeEventListener('mouseleave', hideTooltip);
       doc.defaultView?.removeEventListener('blur', hideTooltip);
     };
   }, [chartRef, hasActivePayload]);

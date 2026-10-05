@@ -1,6 +1,9 @@
 import { logger } from '../../utils/logger';
 import { sameProfileContent } from '../propChallenge/PropChallengePolicyHistory';
 import type { PropChallengeConfig } from '../propChallenge/types';
+import { getAccountBalanceAdjustment } from '../propChallenge/PropChallengeBalance';
+import { getCurrentPropChallengePhase } from '../propChallenge/PropChallengeConfig';
+import { evaluatePropChallengePhase } from '../propChallenge/PropChallengeRuleEngine';
 import { calculateProfitFactor } from '../../utils/profitFactor';
 
 
@@ -1474,6 +1477,22 @@ export class AccountPageService extends CustomDataService {
         convertedTrades,
         metrics
       );
+      if (enhancedAccount.propChallenge) {
+        const phase = getCurrentPropChallengePhase(
+          enhancedAccount.propChallenge
+        );
+        if (phase) {
+          enhancedAccount.lifetimeBalance = enhancedAccount.currentBalance;
+          enhancedAccount.currentBalance = evaluatePropChallengePhase({
+            phase,
+            config: enhancedAccount.propChallenge,
+            trades: convertedTrades,
+            transactions: enhancedAccount.transactions,
+            tradingDayCutoffTime:
+              this.plugin?.settings.trade.tradingDayCutoffTime,
+          }).currentBalance;
+        }
+      }
 
       const snapshot: AccountAggregateSnapshot = {
         accountName: displayAccountName,
@@ -1750,8 +1769,15 @@ export class AccountPageService extends CustomDataService {
   private buildAccountMetadata(
     accountName: string,
     existingMetadata: AccountMetadata | undefined,
-    updates: Partial<AccountMetadata>
+    updates: Partial<AccountMetadata>,
+    reconciledUnscopedBalance = false
   ): AccountMetadata {
+    const challenge = Object.prototype.hasOwnProperty.call(
+      updates,
+      'propChallenge'
+    )
+      ? updates.propChallenge
+      : existingMetadata?.propChallenge;
     return {
       accountType: existingMetadata?.accountType || AccountType.DEMO,
       createdDate: existingMetadata?.createdDate || new Date(),
@@ -1778,9 +1804,16 @@ export class AccountPageService extends CustomDataService {
         ? { propChallengeQuarantine: undefined }
         : {}),
       liveBalanceAdjustment: normalizeLiveBalanceAdjustment(
-        Object.prototype.hasOwnProperty.call(updates, 'liveBalanceAdjustment')
-          ? updates.liveBalanceAdjustment
-          : existingMetadata?.liveBalanceAdjustment
+        challenge
+          ? reconciledUnscopedBalance
+            ? undefined
+            : existingMetadata?.liveBalanceAdjustment
+          : Object.prototype.hasOwnProperty.call(
+                updates,
+                'liveBalanceAdjustment'
+              )
+            ? updates.liveBalanceAdjustment
+            : existingMetadata?.liveBalanceAdjustment
       ),
       name: accountName,
       lastUpdated: new Date(),
@@ -1827,6 +1860,7 @@ export class AccountPageService extends CustomDataService {
     options?: {
       expectedPropChallenge: PropChallengeConfig;
       expectedCurrency?: CurrencyCode;
+      reconciledUnscopedBalance?: boolean;
     }
   ): Promise<void> {
     const existingMetadata = this.getAccountMetadata(accountName);
@@ -1852,7 +1886,8 @@ export class AccountPageService extends CustomDataService {
     const metadata = this.buildAccountMetadata(
       accountName,
       existingMetadata,
-      updates
+      updates,
+      options?.reconciledUnscopedBalance
     );
 
     await this.saveAccountMetadata(accountName, metadata);
@@ -1862,14 +1897,27 @@ export class AccountPageService extends CustomDataService {
   public async renameAccountMetadata(
     oldAccountName: string,
     newAccountName: string,
-    updates: Partial<AccountMetadata> = {}
+    updates: Partial<AccountMetadata> = {},
+    options?: {
+      expectedPropChallenge: PropChallengeConfig;
+      reconciledUnscopedBalance?: boolean;
+    }
   ): Promise<void> {
     const oldMetadataEntry = this.findAccountMetadataEntry(oldAccountName);
     const existingMetadata = oldMetadataEntry?.metadata;
+    if (
+      options &&
+      !sameProfileContent(
+        existingMetadata?.propChallenge,
+        options.expectedPropChallenge
+      )
+    )
+      throw new AccountMetadataConflictError();
     const metadata = this.buildAccountMetadata(
       newAccountName,
       existingMetadata,
-      updates
+      updates,
+      options?.reconciledUnscopedBalance
     );
 
     if (!this.plugin) {
@@ -1967,7 +2015,7 @@ export class AccountPageService extends CustomDataService {
 
     
     const initialBalance = metadata?.initialBalance ?? 0;
-    const liveBalanceAdjustment = metadata?.liveBalanceAdjustment;
+    const liveBalanceAdjustment = getAccountBalanceAdjustment(metadata);
     const createdDate =
       metadata?.createdDate || this.estimateCreationDate(trades);
     const currentBalanceForBreakEven =
@@ -2003,6 +2051,9 @@ export class AccountPageService extends CustomDataService {
       profitTargetDate: metadata?.profitTargetDate,
       monthlyCost: metadata?.monthlyCost || 0,
       liveBalanceAdjustment,
+      unscopedLiveBalanceAdjustment: metadata?.propChallenge
+        ? normalizeLiveBalanceAdjustment(metadata.liveBalanceAdjustment)
+        : undefined,
       createdDate,
       lastUpdated: new Date(),
       metrics: {
@@ -2403,7 +2454,8 @@ export class AccountPageService extends CustomDataService {
     accountName: string,
     amount: number,
     date: Date,
-    description?: string
+    description?: string,
+    datePrecision: AccountTransaction['datePrecision'] = 'instant'
   ): Promise<void> {
     if (amount <= 0) {
       throw new Error('Deposit amount must be positive');
@@ -2414,6 +2466,7 @@ export class AccountPageService extends CustomDataService {
       id: transactionId,
       date: new Date(date),
       type: TransactionType.DEPOSIT,
+      datePrecision,
       amount: amount,
       description: description || 'Manual deposit',
       balanceAfter: 0, 
@@ -2427,7 +2480,8 @@ export class AccountPageService extends CustomDataService {
     accountName: string,
     amount: number,
     date: Date,
-    description?: string
+    description?: string,
+    datePrecision: AccountTransaction['datePrecision'] = 'instant'
   ): Promise<void> {
     if (amount <= 0) {
       throw new Error('Withdrawal amount must be positive');
@@ -2438,6 +2492,7 @@ export class AccountPageService extends CustomDataService {
       id: transactionId,
       date: new Date(date),
       type: TransactionType.WITHDRAWAL,
+      datePrecision,
       amount: -amount, 
       description: description || 'Manual withdrawal',
       balanceAfter: 0, 
@@ -2625,7 +2680,7 @@ export class AccountPageService extends CustomDataService {
       this.applyLiveBalanceAdjustment(
         enhancedAccount,
         runningBalance,
-        metadata?.liveBalanceAdjustment
+        getAccountBalanceAdjustment(metadata)
       );
 
       
@@ -3000,7 +3055,7 @@ export class AccountPageService extends CustomDataService {
     this.applyLiveBalanceAdjustment(
       enhancedAccount,
       runningBalance,
-      metadata?.liveBalanceAdjustment
+      getAccountBalanceAdjustment(metadata)
     );
 
     
@@ -4221,7 +4276,10 @@ export class AccountPageService extends CustomDataService {
     accountName: string,
     transactionId: string,
     updates: Partial<
-      Pick<AccountTransaction, 'amount' | 'date' | 'description'>
+      Pick<
+        AccountTransaction,
+        'amount' | 'date' | 'datePrecision' | 'description'
+      >
     >
   ): Promise<void> {
     const metadata = this.getAccountMetadata(accountName);

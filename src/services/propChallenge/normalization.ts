@@ -886,7 +886,7 @@ function normalizePayoutAftermath(
   return null;
 }
 
-function normalizePayoutPolicy(
+export function normalizePropChallengePayoutPolicy(
   value: unknown
 ): PropChallengePayoutPolicy | null {
   if (
@@ -899,6 +899,21 @@ function normalizePayoutPolicy(
   )
     return null;
   const cycle = normalizePayoutCycle(value.cycle);
+  let qualifyingDays: PropChallengePayoutPolicy['qualifyingDays'];
+  if (value.qualifyingDays !== undefined) {
+    if (
+      !isRecord(value.qualifyingDays) ||
+      !isPositiveDayCount(value.qualifyingDays.days) ||
+      !isFiniteNumber(value.qualifyingDays.minimumDailyProfit) ||
+      value.qualifyingDays.minimumDailyProfit <= 0 ||
+      cycle?.kind === 'qualifying_days'
+    )
+      return null;
+    qualifyingDays = {
+      days: value.qualifyingDays.days,
+      minimumDailyProfit: value.qualifyingDays.minimumDailyProfit,
+    };
+  }
   const availability = normalizePayoutAvailability(value.availability);
   const maximumRequest = normalizePayoutMaximum(value.maximumRequest);
   const lifetimeQualifyingDaysUnlock =
@@ -1013,6 +1028,7 @@ function normalizePayoutPolicy(
     version: value.version,
     source: value.source,
     cycle,
+    ...(qualifyingDays ? { qualifyingDays } : {}),
     availability,
     minimumRequest: value.minimumRequest,
     maximumRequest,
@@ -1143,7 +1159,7 @@ function normalizeProfilePhase(value: unknown): PropFirmProfilePhase | null {
   )
     return null;
   const stage = value.stage;
-  const payoutPolicy = normalizePayoutPolicy(value.payoutPolicy);
+  const payoutPolicy = normalizePropChallengePayoutPolicy(value.payoutPolicy);
   if (
     value.payoutPolicy !== undefined &&
     (!payoutPolicy || stage === 'evaluation')
@@ -1359,7 +1375,7 @@ function normalizePolicyHistory(
     const payoutPolicy =
       item.payoutPolicy === undefined
         ? undefined
-        : normalizePayoutPolicy(item.payoutPolicy);
+        : normalizePropChallengePayoutPolicy(item.payoutPolicy);
     if (payoutPolicy === null) return null;
     const revision: PropChallengePolicyRevision = {
       effectiveAt: item.effectiveAt,
@@ -1475,6 +1491,28 @@ function normalizePhase(value: unknown): PropChallengePhase | null {
     }),
   };
   const application = normalizeProfileApplication(value.profileApplication);
+  if (value.balanceAdjustments !== undefined) {
+    if (!Array.isArray(value.balanceAdjustments)) return null;
+    const adjustments: NonNullable<PropChallengePhase['balanceAdjustments']> =
+      [];
+    for (const adjustment of value.balanceAdjustments) {
+      if (
+        !isRecord(adjustment) ||
+        !isFiniteNumber(adjustment.amount) ||
+        !isIsoDateString(adjustment.recordedAt)
+      )
+        return null;
+      adjustments.push({
+        amount: adjustment.amount,
+        recordedAt: adjustment.recordedAt,
+      });
+    }
+    if (adjustments.length)
+      phase.balanceAdjustments = adjustments.sort(
+        (left, right) =>
+          Date.parse(left.recordedAt) - Date.parse(right.recordedAt)
+      );
+  }
   if (application === null) return null;
   if (application) phase.profileApplication = application;
   if (value.policyHistory !== undefined) {
@@ -1508,7 +1546,7 @@ function normalizePhase(value: unknown): PropChallengePhase | null {
   if (isIsoDateString(value.startedAt)) phase.startedAt = value.startedAt;
   if (isIsoDateString(value.completedAt)) phase.completedAt = value.completedAt;
   if (value.payoutPolicy !== undefined) {
-    const payoutPolicy = normalizePayoutPolicy(value.payoutPolicy);
+    const payoutPolicy = normalizePropChallengePayoutPolicy(value.payoutPolicy);
     if (!payoutPolicy || phase.stage === 'evaluation') return null;
     phase.payoutPolicy = payoutPolicy;
   }

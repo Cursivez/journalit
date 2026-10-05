@@ -57,9 +57,10 @@ Community page: https://community.obsidian.md/plugins/journalit
 
 - **Local-first core**: core journaling works offline and stores your notes and trades inside your Obsidian vault.
 - **Account required for full access**: a Journalit account is required for authentication-backed and subscription-gated features.
-- **Paid features**: a paid Pro subscription is required for full access to Pro features such as Trade Sync, Trade Import, the Economic Calendar, and prefilled prop-firm profiles.
+- **Paid features**: a paid Pro subscription is required for Trade Sync, committing Trade Imports, the Economic Calendar, and prefilled prop-firm profiles. Signed-in free users can analyse and preview Trade Import files.
 - **Network use**: Journalit checks public GitHub release metadata for updates by default without sending vault or account data. Signed-in features may use Journalit services; MT4 sync uses managed FTP, and currency conversion may use a third-party exchange-rate service. See [PRIVACY.md](PRIVACY.md).
-- **No client-side telemetry**: the plugin collects no usage data from inside Obsidian. Upgrade buttons open journalit.co in your browser when you click them, carrying fixed campaign parameters (no identifiers) so upgrades can be attributed server-side; see [PRIVACY.md](PRIVACY.md).
+- **Trade Import processing**: analyse/preview sends your selected file and import options to Journalit. Server-side encrypted diagnostic captures expire after one day for free accounts or 14 days for Pro accounts; stored previews expire after seven days. Compatibility guidance is returned in those responses and displayed locally, with no separate client failure-report upload. See [PRIVACY.md](PRIVACY.md).
+- **Other network diagnostics**: existing Tradovate Sync code sends client synchronization diagnostic events as disclosed in [PRIVACY.md](PRIVACY.md); this is separate from Trade Import. Upgrade buttons open journalit.co only when clicked, carrying fixed campaign parameters (no identifiers) for server-side attribution.
 - **Source available, proprietary license**: the plugin is proprietary software with reviewable source.
 - **Privacy details**: see [PRIVACY.md](PRIVACY.md) for data handling, retention, and infrastructure details.
 

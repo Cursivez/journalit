@@ -1,956 +1,143 @@
-
-
-import React, {
-  useState,
-  useEffect,
-  useId,
-  useRef,
-  useLayoutEffect,
-  useCallback,
-  useMemo,
-  useReducer,
-} from 'react';
+import React from 'react';
 import { createPortal } from 'react-dom';
 import { t } from '../../lang/helpers';
 import { shareCaptureExcludeProps } from '../../services/share/brandedCapture';
 import { cssVars } from '../../styles/inlineStylePolicy';
-import {
-  ADD_OPTION_PREFIX,
-  getFilteredComboBoxOptions,
-  getSelectedOptionValue,
-  getSelectedValues,
-  isAddOption,
-  normalizeComboBoxOptions,
-  shouldSaveCustomOption,
-  shouldShowAddOption,
-} from './combobox/comboBoxUtils';
-
-
-
-const isHTMLElement = (value: unknown): value is HTMLElement => {
-  if (typeof value !== 'object' || value === null) return false;
-
-  const ownerDocument = (value as { ownerDocument?: Document }).ownerDocument;
-  const HTMLElementConstructor =
-    ownerDocument?.defaultView?.HTMLElement ?? HTMLElement;
-  return value instanceof HTMLElementConstructor;
-};
-
-const CLASS_NAMES = {
-  COMBOBOX_CONTAINER: 'combobox-container',
-  INPUT_CONTAINER: 'input-container',
-  INPUT: 'combobox-input',
-  DROPDOWN: 'combobox-dropdown',
-  OPTION: 'combobox-option',
-  OPTION_HIGHLIGHTED: 'highlighted',
-  ADD_OPTION: 'combobox-add-option',
-  SELECTED_ITEM: 'selected-item',
-  REMOVE_BUTTON: 'remove-button',
-  REMOVE_BUTTON_GLYPH: 'remove-button-glyph',
-};
-
-const DROPDOWN_MAX_HEIGHT_PX = 200;
-const DROPDOWN_MIN_HEIGHT_PX = 96;
-const DROPDOWN_VIEWPORT_GAP_PX = 8;
-const getDefaultOptionLabel = (option: string): string => option;
-
-interface ComboBoxProps {
-  
-  options: string[];
-
-  
-  value: string | string[];
-
-  
-  getOptionLabel?: (option: string) => string;
-
-  
-  onChange: (value: string | string[]) => void;
-
-  
-  allowCreate?: boolean;
-
-  
-  isMulti?: boolean;
-
-  
-  label?: string;
-
-  
-  labelAccessory?: React.ReactNode;
-
-  
-  placeholder?: string;
-
-  
-  error?: string;
-
-  
-  helperText?: string;
-
-  
-  optionType?: string;
-
-  
-  onSaveOption?: (option: string) => void | Promise<void>;
-
-  
-  required?: boolean;
-
-  
-  disabled?: boolean;
-
-  
-  selectedItemsPlacement?: 'before-input' | 'after-input' | 'inside-input';
-
-  
-  portalDropdown?: boolean;
-}
-
-
-function useComboBoxModel({
-  options,
-  value,
-  onChange,
-  allowCreate = false,
-  isMulti = false,
-  optionType,
-  onSaveOption,
-  portalDropdown = true,
-  disabled = false,
-  selectedItemsPlacement = 'before-input',
-  getOptionLabel = getDefaultOptionLabel,
-}: ComboBoxProps) {
-  
-  const uniqueId = useId();
-  const inputId = `combobox-${uniqueId}`;
-  const listId = `combobox-list-${uniqueId}`;
-  const helperId = `helper-${uniqueId}`;
-  const errorId = `error-${uniqueId}`;
-
-  
-  type ComboBoxUiState = {
-    inputValue: string;
-    isOpen: boolean;
-    highlightedIndex: number;
-  };
-  const [uiState, dispatchUiState] = useReducer(
-    (
-      state: ComboBoxUiState,
-      update: Partial<ComboBoxUiState>
-    ): ComboBoxUiState => ({ ...state, ...update }),
-    undefined,
-    (): ComboBoxUiState => ({
-      inputValue:
-        
-        isMulti || value === undefined || value === null ? '' : String(value),
-      isOpen: false,
-      highlightedIndex: -1,
-    })
-  );
-  const { inputValue, isOpen, highlightedIndex } = uiState;
-  const setInputValue = useCallback(
-    (nextInputValue: string) => dispatchUiState({ inputValue: nextInputValue }),
-    []
-  );
-  const setIsOpen = useCallback(
-    (nextIsOpen: boolean) => dispatchUiState({ isOpen: nextIsOpen }),
-    []
-  );
-  const setHighlightedIndex = useCallback(
-    (nextHighlightedIndex: number | ((previous: number) => number)) =>
-      dispatchUiState({
-        highlightedIndex:
-          typeof nextHighlightedIndex === 'function'
-            ? nextHighlightedIndex(highlightedIndex)
-            : nextHighlightedIndex,
-      }),
-    [highlightedIndex]
-  );
-
-  
-  const comboRef = useRef<HTMLDivElement>(null);
-  const inputContainerRef = useRef<HTMLDivElement>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
-  const dropdownRef = useRef<HTMLUListElement>(null);
-  const [portalDropdownRect, setPortalDropdownRect] = useState<{
-    top: number;
-    left: number;
-    width: number;
-    maxHeight: number;
-  } | null>(null);
-
-  const updatePortalDropdownRect = useCallback(() => {
-    const target =
-      selectedItemsPlacement === 'inside-input'
-        ? inputContainerRef.current
-        : inputRef.current;
-    if (!target) return;
-
-    const rect = target.getBoundingClientRect();
-    if (rect.width === 0 || rect.height === 0) {
-      setPortalDropdownRect(null);
-      return;
-    }
-
-    const viewportHeight = window.innerHeight;
-    const availableBelow = Math.max(
-      0,
-      viewportHeight - rect.bottom - DROPDOWN_VIEWPORT_GAP_PX
-    );
-    const availableAbove = Math.max(0, rect.top - DROPDOWN_VIEWPORT_GAP_PX);
-    const shouldOpenAbove =
-      availableBelow < DROPDOWN_MIN_HEIGHT_PX &&
-      availableAbove > availableBelow;
-    const availableSpace = shouldOpenAbove ? availableAbove : availableBelow;
-    const maxHeight = Math.min(
-      DROPDOWN_MAX_HEIGHT_PX,
-      Math.max(DROPDOWN_MIN_HEIGHT_PX, availableSpace)
-    );
-
-    setPortalDropdownRect({
-      top: shouldOpenAbove ? rect.top - maxHeight : rect.bottom,
-      left: rect.left,
-      width: rect.width,
-      maxHeight,
-    });
-  }, [selectedItemsPlacement]);
-  const updatePortalDropdownRectRef = useRef(updatePortalDropdownRect);
-
-  useLayoutEffect(() => {
-    updatePortalDropdownRectRef.current = updatePortalDropdownRect;
-  }, [updatePortalDropdownRect]);
-
-  
-  const isSelectingOption = useRef(false);
-  const isHandlingRemove = useRef(false);
-  const ownedPopupInteractionVersion = useRef(0);
-
-  
-  const normalizedOptions = useMemo(
-    () => normalizeComboBoxOptions(options),
-    [options]
-  );
-
-  
-  const selectedValues = getSelectedValues(value, isMulti);
-
-  
-  
-
-  
-  
-  
-  const displayInputValue = useMemo(() => {
-    if (!isMulti && !isOpen && value !== undefined && value !== null) {
-      return typeof value === 'string' ? value : String(value);
-    }
-    return inputValue;
-  }, [isMulti, isOpen, value, inputValue]);
-
-  
-  const handleInputChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      
-      setInputValue(e.target.value);
-      
-      setIsOpen(true);
-      
-      setHighlightedIndex(-1);
-      
-    },
-    [setHighlightedIndex, setInputValue, setIsOpen]
-  );
-
-  
-  const handleSelect = useCallback(
-    (selected: string) => {
-      if (disabled) return;
-      
-      const newValue = getSelectedOptionValue(selected);
-      const trimmedValue = newValue.trim();
-
-      
-      if (trimmedValue === '') return;
-
-      if (isMulti) {
-        
-        const currentValues = Array.isArray(value) ? [...value] : [];
-
-        if (!currentValues.includes(trimmedValue)) {
-          
-          const updatedValues = [...currentValues, trimmedValue];
-          onChange(updatedValues);
-
-          
-          if (
-            onSaveOption &&
-            isAddOption(selected) &&
-            shouldSaveCustomOption(optionType, trimmedValue)
-          ) {
-            void onSaveOption(trimmedValue);
-          }
-
-          
-          if (isAddOption(selected) || normalizedOptions.includes(selected)) {
-            setInputValue('');
-          }
-        }
-
-        
-        setIsOpen(true);
-
-        
-        if (inputRef.current) {
-          window.setTimeout(() => {
-            if (inputRef.current) inputRef.current.focus();
-          }, 0);
-        }
-      } else {
-        
-        onChange(trimmedValue);
-
-        
-        if (
-          onSaveOption &&
-          isAddOption(selected) &&
-          shouldSaveCustomOption(optionType, trimmedValue)
-        ) {
-          void onSaveOption(trimmedValue);
-        }
-
-        setInputValue(trimmedValue);
-        
-        setIsOpen(false);
-      }
-
-      
-      setHighlightedIndex(-1);
-    },
-    [
-      disabled,
-      isMulti,
-      value,
-      onChange,
-      onSaveOption,
-      optionType,
-      normalizedOptions,
-      setHighlightedIndex,
-      setInputValue,
-      setIsOpen,
-    ]
-  );
-
-  
-  useEffect(() => {
-    const handleOptionSelection = (e: MouseEvent) => {
-      if (disabled) return;
-      
-      const target = e.target;
-      if (!isHTMLElement(target)) return;
-      const isOption = target.closest('[role="option"]');
-
-      const isInsideCombo = comboRef.current?.contains(target);
-      const isInsideDropdown = dropdownRef.current?.contains(target);
-
-      if (isOption && (isInsideCombo || isInsideDropdown)) {
-        if (e.button !== 0) return;
-
-        
-        isSelectingOption.current = true;
-
-        
-        const selection = isOption.hasAttribute('data-add-option')
-          ? `${ADD_OPTION_PREFIX}${inputValue}`
-          : isOption.getAttribute('data-option-value');
-        if (!selection) return;
-
-        
-        handleSelect(selection);
-
-        
-        window.setTimeout(() => {
-          isSelectingOption.current = false;
-
-          if (!isMulti) {
-            dispatchUiState({ isOpen: false });
-          } else {
-            
-            if (inputRef.current) {
-              inputRef.current.focus();
-            }
-            dispatchUiState({ isOpen: true, inputValue: '' });
-          }
-        }, 50);
-      }
-    };
-
-    
-    window.activeDocument.addEventListener(
-      'mousedown',
-      handleOptionSelection,
-      true
-    );
-
-    return () => {
-      window.activeDocument.removeEventListener(
-        'mousedown',
-        handleOptionSelection,
-        true
-      );
-    };
-  }, [disabled, isMulti, inputValue, handleSelect]);
-
-  
-  
-  const handleRemove = useCallback(
-    (val: string) => {
-      if (!isMulti || disabled) return;
-
-      
-      isHandlingRemove.current = true;
-
-      
-      const currentValues = Array.isArray(value) ? [...value] : [];
-      const updatedValues = currentValues.filter((v) => v !== val);
-
-      
-      onChange(updatedValues);
-
-      
-      window.setTimeout(() => {
-        if (inputRef.current) inputRef.current.focus();
-        isHandlingRemove.current = false;
-      }, 50);
-    },
-    [disabled, isMulti, value, onChange]
-  );
-
-  
-  useLayoutEffect(() => {
-    if (!isOpen) return;
-
-    const handleOutsideClick = (e: MouseEvent) => {
-      if (disabled) return;
-      
-      if (isHandlingRemove.current) return;
-
-      
-      const target = e.target;
-      if (!isHTMLElement(target)) return;
-      const isClickingOption = target.closest('[role="option"]');
-      const isClickingOwnedOption =
-        isClickingOption?.closest('[role="listbox"]')?.id === listId;
-      const isClickingRemoveButton = target.closest(
-        '[data-remove-button="true"]'
-      );
-      const isClickingInsideCombo = comboRef.current?.contains(target);
-      const isClickingInsideDropdown = dropdownRef.current?.contains(target);
-
-      
-      
-      
-      if (isClickingInsideDropdown) {
-        ownedPopupInteractionVersion.current += 1;
-        isSelectingOption.current = true;
-        window.activeDocument.addEventListener(
-          'mouseup',
-          () => {
-            isSelectingOption.current = false;
-          },
-          { capture: true, once: true }
-        );
-      }
-
-      if (
-        e.button !== 0 &&
-        (isClickingInsideCombo ||
-          isClickingInsideDropdown ||
-          isClickingOwnedOption)
-      ) {
-        isSelectingOption.current = true;
-        window.setTimeout(() => {
-          isSelectingOption.current = false;
-        }, 150);
-        e.stopPropagation();
-        return;
-      }
-
-      
-      if (isClickingOwnedOption) {
-        e.stopPropagation();
-        return;
-      }
-
-      
-      if (!isClickingInsideCombo && !isClickingInsideDropdown) {
-        setIsOpen(false);
-        return;
-      }
-
-      
-      if (isClickingRemoveButton) {
-        e.preventDefault();
-        e.stopPropagation();
-        const valueToRemove =
-          isClickingRemoveButton.getAttribute('data-remove-value') ?? '';
-        if (valueToRemove) handleRemove(valueToRemove);
-      }
-    };
-
-    
-    window.activeDocument.addEventListener(
-      'mousedown',
-      handleOutsideClick,
-      true
-    );
-
-    return () => {
-      window.activeDocument.removeEventListener(
-        'mousedown',
-        handleOutsideClick,
-        true
-      );
-    };
-  }, [disabled, handleRemove, isOpen, listId, setIsOpen]);
-
-  useLayoutEffect(() => {
-    if (!isOpen || !portalDropdown || !inputRef.current) {
-      setPortalDropdownRect(null);
-      return;
-    }
-
-    const updateCurrentPortalDropdownRect = () => {
-      updatePortalDropdownRectRef.current();
-    };
-
-    updateCurrentPortalDropdownRect();
-    window.addEventListener('resize', updateCurrentPortalDropdownRect);
-    window.addEventListener('scroll', updateCurrentPortalDropdownRect, true);
-    const resizeTarget =
-      selectedItemsPlacement === 'inside-input'
-        ? inputContainerRef.current
-        : inputRef.current;
-    const ResizeObserverConstructor =
-      window.activeDocument.defaultView?.ResizeObserver ??
-      window.ResizeObserver;
-    const resizeObserver =
-      ResizeObserverConstructor && resizeTarget
-        ? new ResizeObserverConstructor(updateCurrentPortalDropdownRect)
-        : null;
-    if (resizeTarget) resizeObserver?.observe(resizeTarget);
-
-    return () => {
-      resizeObserver?.disconnect();
-      window.removeEventListener('resize', updateCurrentPortalDropdownRect);
-      window.removeEventListener(
-        'scroll',
-        updateCurrentPortalDropdownRect,
-        true
-      );
-    };
-  }, [isOpen, portalDropdown, selectedItemsPlacement]);
-
-  
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleEscapeKey = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        e.preventDefault();
-        e.stopPropagation();
-        e.stopImmediatePropagation();
-        setIsOpen(false);
-      }
-    };
-
-    const activeWindow = window.activeDocument.defaultView ?? window;
-    activeWindow.addEventListener('keydown', handleEscapeKey, true);
-
-    return () => {
-      activeWindow.removeEventListener('keydown', handleEscapeKey, true);
-    };
-  }, [isOpen, setIsOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const handleWindowBlur = () => {
-      if (isSelectingOption.current) return;
-
-      const interactionVersionAtBlur = ownedPopupInteractionVersion.current;
-      window.setTimeout(() => {
-        if (
-          ownedPopupInteractionVersion.current === interactionVersionAtBlur &&
-          !isSelectingOption.current
-        ) {
-          setIsOpen(false);
-        }
-      }, 100);
-    };
-
-    window.addEventListener('blur', handleWindowBlur);
-    return () => window.removeEventListener('blur', handleWindowBlur);
-  }, [isOpen, setIsOpen]);
-
-  
-  const filteredOptions = useMemo(
-    () =>
-      getFilteredComboBoxOptions({
-        normalizedOptions,
-        inputValue,
-        isMulti,
-        value,
-        getOptionLabel,
-      }),
-    [normalizedOptions, inputValue, isMulti, value, getOptionLabel]
-  );
-
-  
-  const showAddOption = useMemo(
-    () =>
-      shouldShowAddOption({
-        allowCreate,
-        inputValue,
-        normalizedOptions,
-      }),
-    [allowCreate, inputValue, normalizedOptions]
-  );
-
-  
-  const handleKeyDown = useCallback(
-    (e: React.KeyboardEvent<HTMLInputElement>) => {
-      const optionCount = filteredOptions.length + (showAddOption ? 1 : 0);
-
-      switch (e.key) {
-        case 'ArrowDown':
-          e.preventDefault();
-          setIsOpen(true);
-          setHighlightedIndex((prev) => (prev + 1) % optionCount);
-          break;
-
-        case 'ArrowUp':
-          e.preventDefault();
-          setIsOpen(true);
-          setHighlightedIndex((prev) => (prev - 1 + optionCount) % optionCount);
-          break;
-
-        case 'Enter':
-          e.preventDefault();
-          if (isOpen) {
-            if (
-              highlightedIndex >= 0 &&
-              highlightedIndex < filteredOptions.length
-            ) {
-              
-              handleSelect(filteredOptions[highlightedIndex]);
-            } else if (
-              showAddOption &&
-              highlightedIndex === filteredOptions.length
-            ) {
-              
-              handleSelect(`${ADD_OPTION_PREFIX}${inputValue}`);
-            } else if (allowCreate && inputValue.trim() !== '') {
-              
-              
-              handleSelect(`${ADD_OPTION_PREFIX}${inputValue}`);
-            }
-          } else {
-            setIsOpen(true);
-          }
-          break;
-
-        case 'Tab':
-          
-          if (inputValue.trim() !== '' && filteredOptions.length > 0) {
-            
-            const matchedOption = filteredOptions.find((option) =>
-              getOptionLabel(option)
-                .toLowerCase()
-                .startsWith(inputValue.toLowerCase())
-            );
-
-            if (matchedOption) {
-              e.preventDefault(); 
-              handleSelect(matchedOption);
-            } else {
-              
-              handleSelect(filteredOptions[0]);
-            }
-          } else {
-            
-            
-            if (!isMulti) {
-              setIsOpen(false);
-            }
-          }
-          break;
-
-        case 'Escape':
-          e.preventDefault();
-          e.stopPropagation();
-          setIsOpen(false);
-          break;
-      }
-    },
-    [
-      filteredOptions,
-      showAddOption,
-      isOpen,
-      highlightedIndex,
-      allowCreate,
-      inputValue,
-      isMulti,
-      handleSelect,
-      getOptionLabel,
-      setHighlightedIndex,
-      setIsOpen,
-    ]
-  );
-
-  
-
-  
-  const renderedOptions = React.useMemo(() => {
-    return filteredOptions.map((option, index) => (
-      <li
-        id={`option-${index}`}
-        key={option}
-        role="option"
-        aria-selected={highlightedIndex === index}
-        className={`${CLASS_NAMES.OPTION} ${highlightedIndex === index ? CLASS_NAMES.OPTION_HIGHLIGHTED : ''}`}
-        data-option-value={option}
-        onMouseEnter={() => setHighlightedIndex(index)}
-      >
-        {getOptionLabel(option)}
-      </li>
-    ));
-  }, [filteredOptions, getOptionLabel, highlightedIndex, setHighlightedIndex]);
-
-  
-  const renderedAddOption = React.useMemo(() => {
-    if (!showAddOption) return null;
-
-    return (
-      <li
-        id={`option-${filteredOptions.length}`}
-        role="option"
-        aria-selected={highlightedIndex === filteredOptions.length}
-        data-add-option="true"
-        className={`${CLASS_NAMES.ADD_OPTION} ${highlightedIndex === filteredOptions.length ? CLASS_NAMES.OPTION_HIGHLIGHTED : ''}`}
-        onMouseEnter={() => setHighlightedIndex(filteredOptions.length)}
-      >
-        {t('combobox.add-option', { value: inputValue })}
-      </li>
-    );
-  }, [
-    showAddOption,
-    inputValue,
-    filteredOptions.length,
-    highlightedIndex,
-    setHighlightedIndex,
-  ]);
-
-  
-  const renderedSelectedItems = React.useMemo(() => {
-    if (!isMulti) return null;
-
-    return (
-      <div className="journalit-combobox-selected-items">
-        {(Array.isArray(value) ? value : []).map((val) => (
-          <span key={val} className={CLASS_NAMES.SELECTED_ITEM}>
-            {getOptionLabel(val)}
-            <button
-              type="button"
-              onClick={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (isHandlingRemove.current) return;
-                handleRemove(val);
-              }}
-              onMouseDown={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                if (isHandlingRemove.current) return;
-                handleRemove(val);
-              }}
-              aria-label={t('combobox.aria.remove-item', {
-                item: getOptionLabel(val),
-              })}
-              data-remove-button="true"
-              data-remove-value={val}
-              {...shareCaptureExcludeProps}
-              disabled={disabled}
-              className={`${CLASS_NAMES.REMOVE_BUTTON} journalit-combobox-remove-button`}
-            >
-              <span
-                aria-hidden="true"
-                className={CLASS_NAMES.REMOVE_BUTTON_GLYPH}
-              />
-            </button>
-          </span>
-        ))}
-      </div>
-    );
-  }, [disabled, getOptionLabel, isMulti, value, handleRemove]);
-
-  
-  const handleInputFocus = React.useCallback(() => {
-    setIsOpen(true);
-    
-    if (!isMulti) {
-      setInputValue('');
-    }
-  }, [isMulti, setInputValue, setIsOpen]);
-
-  const handleInputBlur = React.useCallback(
-    (e: React.FocusEvent<HTMLInputElement>) => {
-      if (isSelectingOption.current || isHandlingRemove.current) return;
-
-      const relatedTarget = e.relatedTarget;
-      const isRemoveButton =
-        isHTMLElement(relatedTarget) &&
-        relatedTarget.hasAttribute('data-remove-button');
-      if (isRemoveButton) return;
-
-      if (!relatedTarget || !comboRef.current?.contains(relatedTarget)) {
-        const interactionVersionAtBlur = ownedPopupInteractionVersion.current;
-        window.setTimeout(() => {
-          if (
-            ownedPopupInteractionVersion.current === interactionVersionAtBlur &&
-            !isSelectingOption.current &&
-            !isHandlingRemove.current
-          ) {
-            setIsOpen(false);
-          }
-        }, 100);
-      }
-    },
-    [setIsOpen]
-  );
-
-  const handleInputClick = React.useCallback(
-    (e: React.MouseEvent<HTMLInputElement>) => {
-      e.preventDefault();
-      e.stopPropagation();
-
-      if (portalDropdown) {
-        updatePortalDropdownRect();
-      }
-
-      setIsOpen(true);
-
-      if (inputRef.current) {
-        inputRef.current.focus();
-      }
-    },
-    [portalDropdown, updatePortalDropdownRect, setIsOpen]
-  );
-
-  const handleInputMouseDown = React.useCallback(
-    (e: React.MouseEvent<HTMLInputElement>) => {
-      if (isOpen) {
-        e.preventDefault();
-      }
-    },
-    [isOpen]
-  );
-
-  const dropdownList =
-    isOpen && (filteredOptions.length > 0 || showAddOption) ? (
-      <ul
-        ref={dropdownRef}
-        id={listId}
-        role="listbox"
-        data-dropdown-visible="true"
-        className={`${CLASS_NAMES.DROPDOWN} ${portalDropdown ? 'journalit-combobox combobox-dropdown--portal' : ''}`}
-        style={cssVars({
-          '--combobox-portal-top': portalDropdownRect
-            ? `${portalDropdownRect.top}px`
-            : undefined,
-          '--combobox-portal-left': portalDropdownRect
-            ? `${portalDropdownRect.left}px`
-            : undefined,
-          '--combobox-portal-width': portalDropdownRect
-            ? `${portalDropdownRect.width}px`
-            : undefined,
-          '--combobox-portal-max-height': portalDropdownRect
-            ? `${portalDropdownRect.maxHeight}px`
-            : undefined,
-        })}
-      >
-        {renderedOptions}
-        {renderedAddOption}
-      </ul>
-    ) : null;
-
-  return {
-    comboRef,
-    inputContainerRef,
-    inputRef,
-    inputId,
-    listId,
-    helperId,
-    errorId,
-    isOpen,
-    highlightedIndex,
-    portalDropdownRect,
-    selectedValues,
-    displayInputValue,
-    renderedSelectedItems,
-    handleInputChange,
-    handleInputFocus,
-    handleInputBlur,
-    handleInputMouseDown,
-    handleInputClick,
-    handleKeyDown,
-    dropdownList,
-  };
-}
-
-export const ComboBox: React.FC<ComboBoxProps> = (props) => {
+import { Check, ChevronDown, Plus, X } from '../shared/icons/ObsidianIcon';
+import { anchoredMenuPortalRoot } from '../shared/menus/useAnchoredMenuPosition';
+import { useComboBox, type ComboBoxProps } from './combobox/useComboBox';
+
+export function ComboBox(props: ComboBoxProps) {
   const {
     label,
     labelAccessory,
-    required = false,
-    isMulti = false,
-    placeholder = t('combobox.placeholder.default'),
     error,
     helperText,
-    portalDropdown = true,
     disabled = false,
+    required = false,
+    portalDropdown = true,
     selectedItemsPlacement = 'before-input',
+    placeholder = t('combobox.placeholder.default'),
   } = props;
   const {
-    comboRef,
-    inputContainerRef,
-    inputRef,
     inputId,
     listId,
-    helperId,
-    errorId,
+    rootRef,
+    fieldRef,
+    inputRef,
+    popupRef,
     isOpen,
-    highlightedIndex,
-    portalDropdownRect,
-    selectedValues,
-    displayInputValue,
-    renderedSelectedItems,
-    handleInputChange,
-    handleInputFocus,
-    handleInputBlur,
-    handleInputMouseDown,
-    handleInputClick,
-    handleKeyDown,
-    dropdownList,
-  } = useComboBoxModel(props);
+    selected,
+    items,
+    activeIndex,
+    activeId,
+    inputValue,
+    position,
+    getOptionLabel,
+    openList,
+    select,
+    remove,
+    onKeyDown,
+    changeQuery,
+    clear,
+    toggleList,
+    highlight,
+  } = useComboBox(props);
+
+  const chipItems =
+    props.isMulti && props.value.length > 0
+      ? props.value.map((value) => (
+          <span key={value} className="selected-item">
+            <span className="journalit-combobox-chip-label">
+              {getOptionLabel(value)}
+            </span>
+            <button
+              type="button"
+              className="remove-button journalit-combobox-remove-button"
+              aria-label={t('combobox.aria.remove-item', {
+                item: getOptionLabel(value),
+              })}
+              disabled={disabled}
+              onMouseDown={(event) => event.preventDefault()}
+              onClick={() => remove(value)}
+              {...shareCaptureExcludeProps}
+            >
+              <X size={12} aria-hidden="true" />
+            </button>
+          </span>
+        ))
+      : null;
+  const chips = chipItems ? (
+    <div className="journalit-combobox-selected-items">{chipItems}</div>
+  ) : null;
+
+  const popup = isOpen ? (
+    <ul
+      ref={popupRef}
+      id={listId}
+      role="listbox"
+      aria-label={label || placeholder}
+      data-journalit-escape-delegate="true"
+      className={`journalit-combobox combobox-dropdown${portalDropdown ? ' combobox-dropdown--portal' : ''}`}
+      style={cssVars({
+        '--combobox-portal-top': `${position.top}px`,
+        '--combobox-portal-left': `${position.left}px`,
+        '--combobox-portal-width': `${position.width}px`,
+        '--combobox-portal-max-height': `${position.maxHeight}px`,
+      })}
+      {...shareCaptureExcludeProps}
+    >
+      {items.length === 0 ? (
+        <li role="presentation" className="journalit-combobox-empty">
+          <span role="status">{t('filter.menu.no-matches')}</span>
+        </li>
+      ) : (
+        items.map((item, index) => (
+          <li
+            id={`${listId}-${index}`}
+            key={`${item.kind}:${item.value}`}
+            role="option"
+            aria-selected={activeIndex === index}
+            className={`${item.kind === 'create' ? 'combobox-add-option' : 'combobox-option'}${activeIndex === index ? ' highlighted' : ''}`}
+            onPointerMove={(event) => {
+              if (event.pointerType !== 'touch') highlight(item);
+            }}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={(event) => {
+              if (event.button !== 0) return;
+              
+              
+              inputRef.current?.focus({ preventScroll: true });
+              select(item);
+            }}
+          >
+            <span className="journalit-combobox-option-icon" aria-hidden="true">
+              {item.kind === 'create' ? (
+                <Plus size={14} />
+              ) : selected.has(item.value) ? (
+                <Check size={14} />
+              ) : null}
+            </span>
+            <span>
+              {item.kind === 'create'
+                ? t('combobox.add-option', { value: item.value })
+                : item.label}
+            </span>
+          </li>
+        ))
+      )}
+    </ul>
+  ) : null;
 
   return (
     <div
-      ref={comboRef}
-      data-combobox-type={isMulti ? 'multi' : 'single'}
-      data-is-open={isOpen ? 'true' : 'false'}
+      ref={rootRef}
+      className="combobox-container journalit-combobox"
+      data-combobox-type={props.isMulti ? 'multi' : 'single'}
+      data-is-open={isOpen}
+      data-disabled={disabled}
+      data-invalid={Boolean(error)}
       data-selected-items-placement={selectedItemsPlacement}
-      className={`${CLASS_NAMES.COMBOBOX_CONTAINER} journalit-combobox`}
     >
       {label && (
         <label htmlFor={inputId}>
@@ -959,61 +146,92 @@ export const ComboBox: React.FC<ComboBoxProps> = (props) => {
           {required && <span className="required-indicator">*</span>}
         </label>
       )}
-
-      {selectedItemsPlacement === 'before-input' ? renderedSelectedItems : null}
-
-      
-      <div ref={inputContainerRef} className={CLASS_NAMES.INPUT_CONTAINER}>
-        {selectedItemsPlacement === 'inside-input'
-          ? renderedSelectedItems
-          : null}
+      {selectedItemsPlacement === 'before-input' ? chips : null}
+      <div
+        ref={fieldRef}
+        className="input-container"
+        data-has-clear={!props.isMulti && Boolean(props.value)}
+        {...(selectedItemsPlacement === 'inside-input'
+          ? {}
+          : shareCaptureExcludeProps)}
+      >
+        {selectedItemsPlacement === 'inside-input' ? chipItems : null}
         <input
           ref={inputRef}
           id={inputId}
           type="text"
-          value={displayInputValue}
-          onChange={handleInputChange}
-          onFocus={handleInputFocus}
-          onBlur={handleInputBlur}
-          onMouseDown={handleInputMouseDown}
-          onClick={handleInputClick}
-          onKeyDown={handleKeyDown}
-          placeholder={isMulti && selectedValues.length > 0 ? '' : placeholder}
+          role="combobox"
+          className="combobox-input"
+          value={inputValue}
+          placeholder={
+            props.isMulti && props.value.length > 0 ? undefined : placeholder
+          }
+          disabled={disabled}
+          autoComplete="off"
+          aria-label={label ? undefined : placeholder}
           aria-expanded={isOpen}
           aria-autocomplete="list"
+          aria-haspopup="listbox"
           aria-controls={isOpen ? listId : undefined}
-          aria-activedescendant={
-            highlightedIndex >= 0 ? `option-${highlightedIndex}` : undefined
+          aria-activedescendant={activeId}
+          aria-invalid={Boolean(error)}
+          aria-required={required}
+          aria-describedby={
+            error
+              ? `${inputId}-error`
+              : helperText
+                ? `${inputId}-help`
+                : undefined
           }
-          aria-invalid={!!error}
-          aria-describedby={error ? errorId : helperText ? helperId : undefined}
-          role="combobox"
-          disabled={disabled}
-          className={CLASS_NAMES.INPUT}
-          
+          onFocus={openList}
+          onClick={openList}
+          onKeyDown={onKeyDown}
+          onChange={(event) => changeQuery(event.target.value)}
           {...shareCaptureExcludeProps}
         />
-
-        
-        {portalDropdown && portalDropdownRect
-          ? createPortal(dropdownList, window.activeDocument.body)
-          : dropdownList}
+        {!props.isMulti && props.value && (
+          <button
+            type="button"
+            className="remove-button journalit-combobox-clear"
+            disabled={disabled}
+            aria-label={t('combobox.aria.remove-item', {
+              item: getOptionLabel(props.value),
+            })}
+            onMouseDown={(event) => event.preventDefault()}
+            onClick={clear}
+            {...shareCaptureExcludeProps}
+          >
+            <X size={12} aria-hidden="true" />
+          </button>
+        )}
+        <button
+          type="button"
+          className="journalit-combobox-chevron"
+          tabIndex={-1}
+          aria-label={label || placeholder}
+          aria-haspopup="listbox"
+          aria-expanded={isOpen}
+          aria-controls={isOpen ? listId : undefined}
+          disabled={disabled}
+          onMouseDown={(event) => event.preventDefault()}
+          onClick={toggleList}
+          {...shareCaptureExcludeProps}
+        >
+          <ChevronDown size={14} aria-hidden="true" />
+        </button>
+        {portalDropdown
+          ? popup &&
+            createPortal(popup, anchoredMenuPortalRoot(fieldRef.current))
+          : popup}
       </div>
-
-      {selectedItemsPlacement === 'after-input' ? renderedSelectedItems : null}
-
-      
-      {error && (
-        <div id={errorId} role="alert" className="errorMessage">
+      {selectedItemsPlacement === 'after-input' ? chips : null}
+      {error ? (
+        <div id={`${inputId}-error`} role="alert" className="errorMessage">
           {error}
         </div>
-      )}
-
-      
-      {!error && helperText && <div id={helperId}>{helperText}</div>}
+      ) : helperText ? (
+        <div id={`${inputId}-help`}>{helperText}</div>
+      ) : null}
     </div>
   );
-};
-
-
-ComboBox.displayName = 'ComboBox';
+}

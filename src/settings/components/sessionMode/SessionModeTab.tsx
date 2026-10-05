@@ -10,6 +10,7 @@ import React, {
 import { TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { Button } from '../../../components/ui/Button';
+import { DraftInput } from '../../../components/ui/DraftInput';
 import { NoTooltipButton } from '../../../components/ui/NoTooltipButton';
 import ToggleSwitch from '../../../components/ui/ToggleSwitch';
 import { Tooltip } from '../../../components/shared/Tooltip';
@@ -643,7 +644,7 @@ function SessionModeLeadTimeSetting({
         </div>
       </div>
       <div className="setting-item-control">
-        <input
+        <DraftInput
           type="number"
           min="0"
           step="5"

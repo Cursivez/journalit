@@ -13,7 +13,7 @@ import {
 type HomeTradeType = Extract<TradeType, 'regular' | 'backtest'>;
 
 interface HomeFilterDefaults {
-  period: HomePeriod;
+  period: Exclude<HomePeriod, 'custom'>;
   tradeTypes: readonly TradeType[];
   accounts: readonly string[];
   explicitAllAccountsSelected: boolean;

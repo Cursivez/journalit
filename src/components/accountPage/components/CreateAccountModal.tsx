@@ -17,8 +17,13 @@ import {
 } from '../../../utils/currencyConfig';
 import { OptionType } from '../../../services/options/CustomOptionsService';
 import { Button } from '../../ui/Button';
+import { DraftInput } from '../../ui/DraftInput';
 import Checkbox from '../../ui/Checkbox';
 import { FastDateTimeInput } from '../../core/FastDateTimeInput';
+import {
+  DateDraftGateContext,
+  useDateDraftGate,
+} from '../../core/DateDraftGate';
 import {
   isValidDate,
   parseLocalDateSafe,
@@ -32,11 +37,12 @@ import type { PropChallengeConfig } from '../../../services/propChallenge/types'
 import {
   createDefaultPropChallengeConfig,
   validatePhaseTimeline,
-  isPropChallengeRuleComplete,
+  isPropChallengePhaseComplete,
 } from '../../../services/propChallenge/PropChallengeConfig';
 import { resolveStageAccountType } from '../../../services/propChallenge/stageAccountTypes';
 import { DisplayPolicyProvider } from '../../../contexts/DisplayPolicyContext';
 import { SegmentedControl } from '../../shared/SegmentedControl';
+import { ModalEscapeProvider } from '../../shared/disclosureEscape';
 import { PropChallengeSettingsSection } from './propChallenge/PropChallengeSettingsSection';
 import { markUntouchedChallengeConfig } from './propChallenge/untouchedChallengeConfigs';
 import { getAvailableAccountTypes } from './propChallenge/propChallengeLifecycleActions';
@@ -70,6 +76,9 @@ import {
 } from '../../../services/account/liveBalanceAdjustment';
 import { formatAccountTypeLabel } from '../../../utils/accountTypeLabel';
 import { suspendViewGuidesWhileOpen } from '../../../guides/suspendViewGuides';
+import { applyLiveBalanceToCurrentPhase } from '../../../services/propChallenge/PropChallengeBalance';
+import { getCurrentPropChallengePhase } from '../../../services/propChallenge/PropChallengeConfig';
+import { showConfirmationModal } from '../../shared/ConfirmationModal';
 
 interface CreateAccountModalProps {
   app: App;
@@ -123,11 +132,13 @@ class CreateAccountModal extends Modal {
   private renderComponent() {
     this.root = createRoot(this.container);
     this.root.render(
-      <CreateAccountModalContent
-        {...this.props}
-        onModalClose={() => this.close()}
-        initialPropChallenge={this.props.initialPropChallenge}
-      />
+      <ModalEscapeProvider app={this.app} scope={this.scope}>
+        <CreateAccountModalContent
+          {...this.props}
+          onModalClose={() => this.close()}
+          initialPropChallenge={this.props.initialPropChallenge}
+        />
+      </ModalEscapeProvider>
     );
   }
 }
@@ -303,7 +314,7 @@ function InitialBalanceDateFields({
             </div>
           </div>
           <div className="setting-item-control">
-            <input
+            <DraftInput
               type="number"
               value={account.initialBalance === 0 ? '' : account.initialBalance}
               onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -313,11 +324,6 @@ function InitialBalanceDateFields({
                     e.target.value === '' ? 0 : parseFloat(e.target.value) || 0,
                 })
               }
-              onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-                if (account.initialBalance === 0) {
-                  e.target.value = '';
-                }
-              }}
               min="0"
               step="100"
               placeholder="0"
@@ -540,7 +546,7 @@ function PropChallengeAccountBasics({
           </div>
         </div>
         <div className="setting-item-control">
-          <input
+          <DraftInput
             type="number"
             value={account.monthlyCost === 0 ? '' : account.monthlyCost}
             onChange={(event) =>
@@ -613,7 +619,7 @@ function DrawdownFields({ account, isSaving, onChange }: DrawdownFieldsProps) {
             </div>
           </div>
           <div className="setting-item-control">
-            <input
+            <DraftInput
               aria-label={t('account.create.field.drawdown-amount')}
               type="number"
               value={account.drawdownAmount === 0 ? '' : account.drawdownAmount}
@@ -624,11 +630,6 @@ function DrawdownFields({ account, isSaving, onChange }: DrawdownFieldsProps) {
                     e.target.value === '' ? 0 : parseFloat(e.target.value) || 0,
                 })
               }
-              onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-                if (account.drawdownAmount === 0) {
-                  e.target.value = '';
-                }
-              }}
               min="0"
               step="100"
               placeholder="0"
@@ -670,7 +671,7 @@ function ProfitTargetFields({
           </div>
         </div>
         <div className="setting-item-control">
-          <input
+          <DraftInput
             type="number"
             value={account.monthlyCost === 0 ? '' : account.monthlyCost}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
@@ -680,9 +681,6 @@ function ProfitTargetFields({
                   e.target.value === '' ? 0 : parseFloat(e.target.value) || 0,
               })
             }
-            onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-              if (account.monthlyCost === 0) e.target.value = '';
-            }}
             min="0"
             step="1"
             placeholder="0"
@@ -727,7 +725,7 @@ function ProfitTargetFields({
             </div>
           </div>
           <div className="setting-item-control">
-            <input
+            <DraftInput
               aria-label={t('account.create.field.monthly-cost')}
               type="number"
               value={account.monthlyCost === 0 ? '' : account.monthlyCost}
@@ -738,11 +736,6 @@ function ProfitTargetFields({
                     e.target.value === '' ? 0 : parseFloat(e.target.value) || 0,
                 })
               }
-              onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-                if (account.monthlyCost === 0) {
-                  e.target.value = '';
-                }
-              }}
               min="0"
               step="1"
               placeholder="0"
@@ -802,7 +795,7 @@ function ProfitTargetFields({
                 </div>
               </div>
               <div className="setting-item-control">
-                <input
+                <DraftInput
                   aria-label={
                     account.profitTargetType === ProfitTargetType.PERCENTAGE
                       ? t('account.create.field.target-percent')
@@ -819,11 +812,6 @@ function ProfitTargetFields({
                           : parseFloat(e.target.value) || 0,
                     })
                   }
-                  onFocus={(e: React.FocusEvent<HTMLInputElement>) => {
-                    if (account.profitTarget === 0) {
-                      e.target.value = '';
-                    }
-                  }}
                   min="0"
                   step={
                     account.profitTargetType === ProfitTargetType.PERCENTAGE
@@ -1151,6 +1139,7 @@ function useCreateAccountModalModel({
   initialName,
   initialPropChallenge,
 }: CreateAccountModalModelProps) {
+  const dateDraftGate = useDateDraftGate();
   const [isSaving, setIsSaving] = useState(false);
   const [customAccountTypes, setCustomAccountTypes] = useState<string[]>([]);
   const [profitTargetDateError, setProfitTargetDateError] = useState<
@@ -1240,6 +1229,7 @@ function useCreateAccountModalModel({
   };
 
   const handleCreate = async () => {
+    if (!dateDraftGate.confirm()) return;
     try {
       setIsSaving(true);
       setFormError(null);
@@ -1277,10 +1267,9 @@ function useCreateAccountModalModel({
         
         
         
-        const invalidRule = challengePhases
-          .flatMap((phase) => phase.rules)
-          .find((rule) => !isPropChallengeRuleComplete(rule));
-        if (invalidRule) {
+        if (
+          challengePhases.some((phase) => !isPropChallengePhaseComplete(phase))
+        ) {
           setFormError(t('account.create.error.rule-incomplete'));
           return;
         }
@@ -1405,6 +1394,37 @@ function useCreateAccountModalModel({
       const initialBalance =
         newAccount.propChallenge?.phases[0]?.startingBalance ??
         newAccount.initialBalance;
+      let propChallenge = newAccount.propChallenge;
+      const currentPhase =
+        propChallenge && getCurrentPropChallengePhase(propChallenge);
+      if (propChallenge && currentPhase && parsedLiveBalance !== null) {
+        const input = {
+          trades: [],
+          transactions: [],
+          now: new Date(currentPhase.startedAt ?? new Date().toISOString()),
+          tradingDayCutoffTime: plugin.settings.trade?.tradingDayCutoffTime,
+        };
+        const reconciled = applyLiveBalanceToCurrentPhase(
+          propChallenge,
+          input,
+          parsedLiveBalance
+        );
+        if (
+          reconciled.introducesFailure &&
+          !(await showConfirmationModal(plugin.app, {
+            title: t('common.warning'),
+            message: t('account.prop-challenge.confirm.fail', {
+              account: trimmedName,
+              challenge: propChallenge.challengeName,
+              phase: currentPhase.name,
+            }),
+            confirmLabel: t('account.create.button.create'),
+            cancelLabel: t('button.cancel'),
+          }))
+        )
+          return;
+        propChallenge = reconciled.config;
+      }
 
       
       await plugin.accountPageService.updateAccountMetadata(trimmedName, {
@@ -1412,10 +1432,9 @@ function useCreateAccountModalModel({
         accountType: newAccount.accountType,
         createdDate,
         initialBalance,
-        liveBalanceAdjustment: toLiveBalanceAdjustment(
-          parsedLiveBalance,
-          initialBalance
-        ),
+        liveBalanceAdjustment: propChallenge
+          ? undefined
+          : toLiveBalanceAdjustment(parsedLiveBalance, initialBalance),
         currency: newAccount.currency,
         drawdownType: newAccount.drawdownType,
         drawdownAmount: newAccount.drawdownAmount,
@@ -1427,7 +1446,7 @@ function useCreateAccountModalModel({
           : undefined,
         monthlyCost: newAccount.monthlyCost,
         copyTradingPeriods,
-        propChallenge: newAccount.propChallenge,
+        propChallenge,
         lastUpdated: new Date(),
       });
 
@@ -1479,6 +1498,7 @@ function useCreateAccountModalModel({
     setNewAccount,
     setProfitTargetDateError,
     handleCreate,
+    dateDraftGate,
   };
 }
 
@@ -1503,6 +1523,7 @@ export const CreateAccountModalContent: React.FC<
     setNewAccount,
     setProfitTargetDateError,
     handleCreate,
+    dateDraftGate,
   } = useCreateAccountModalModel({
     plugin,
     onSave,
@@ -1604,107 +1625,109 @@ export const CreateAccountModalContent: React.FC<
   };
 
   return (
-    <div className="create-account-form">
-      <CreateAccountErrorMessage message={formError} />
+    <DateDraftGateContext.Provider value={dateDraftGate}>
+      <div className="create-account-form">
+        <CreateAccountErrorMessage message={formError} />
 
-      <AccountIdentityFields
-        account={newAccount}
-        customAccountTypes={customAccountTypes}
-        isSaving={isSaving}
-        onChange={setNewAccount}
-      />
-
-      
-      <PropChallengeToggleField
-        checked={Boolean(newAccount.propChallenge)}
-        disabled={isSaving}
-        onChange={handlePropChallengeToggle}
-      />
-
-      {newAccount.propChallenge ? (
-        <PropChallengeAccountBasics
+        <AccountIdentityFields
           account={newAccount}
+          customAccountTypes={customAccountTypes}
           isSaving={isSaving}
           onChange={setNewAccount}
         />
-      ) : (
-        <>
-          <InitialBalanceDateFields
-            account={newAccount}
-            isSaving={isSaving}
-            isPropChallenge={false}
-            onChange={setNewAccount}
-          />
 
-          <LiveBalanceCurrencyFields
-            account={newAccount}
-            isSaving={isSaving}
-            onChange={setNewAccount}
-          />
+        
+        <PropChallengeToggleField
+          checked={Boolean(newAccount.propChallenge)}
+          disabled={isSaving}
+          onChange={handlePropChallengeToggle}
+        />
 
-          <DrawdownFields
+        {newAccount.propChallenge ? (
+          <PropChallengeAccountBasics
             account={newAccount}
             isSaving={isSaving}
             onChange={setNewAccount}
           />
+        ) : (
+          <>
+            <InitialBalanceDateFields
+              account={newAccount}
+              isSaving={isSaving}
+              isPropChallenge={false}
+              onChange={setNewAccount}
+            />
 
-          <ProfitTargetFields
-            account={newAccount}
-            isSaving={isSaving}
-            isPropChallenge={false}
-            profitTargetDateError={profitTargetDateError}
-            onProfitTargetDateErrorChange={setProfitTargetDateError}
-            onChange={setNewAccount}
-          />
-        </>
-      )}
+            <LiveBalanceCurrencyFields
+              account={newAccount}
+              isSaving={isSaving}
+              onChange={setNewAccount}
+            />
 
-      {newAccount.propChallenge && (
-        <DisplayPolicyProvider privacyModeOverride={false}>
-          <PropChallengeSettingsSection
-            existingAccount={false}
-            value={newAccount.propChallenge}
-            currencyCode={newAccount.currency}
+            <DrawdownFields
+              account={newAccount}
+              isSaving={isSaving}
+              onChange={setNewAccount}
+            />
+
+            <ProfitTargetFields
+              account={newAccount}
+              isSaving={isSaving}
+              isPropChallenge={false}
+              profitTargetDateError={profitTargetDateError}
+              onProfitTargetDateErrorChange={setProfitTargetDateError}
+              onChange={setNewAccount}
+            />
+          </>
+        )}
+
+        {newAccount.propChallenge && (
+          <DisplayPolicyProvider privacyModeOverride={false}>
+            <PropChallengeSettingsSection
+              existingAccount={false}
+              value={newAccount.propChallenge}
+              currencyCode={newAccount.currency}
+              disabled={isSaving}
+              accountType={newAccount.accountType}
+              onChange={handleChallengeChange}
+              onAccountTypeChange={(accountType) =>
+                setNewAccount((current) => ({ ...current, accountType }))
+              }
+            />
+          </DisplayPolicyProvider>
+        )}
+
+        
+        <CopyTradingFields
+          account={newAccount}
+          plugin={plugin}
+          isSaving={isSaving}
+          onChange={setNewAccount}
+        />
+
+        
+        <div className="journalit-modal-actions create-account-buttons">
+          <Button
+            variant="plain"
+            onClick={onModalClose}
             disabled={isSaving}
-            accountType={newAccount.accountType}
-            onChange={handleChallengeChange}
-            onAccountTypeChange={(accountType) =>
-              setNewAccount((current) => ({ ...current, accountType }))
-            }
-          />
-        </DisplayPolicyProvider>
-      )}
-
-      
-      <CopyTradingFields
-        account={newAccount}
-        plugin={plugin}
-        isSaving={isSaving}
-        onChange={setNewAccount}
-      />
-
-      
-      <div className="journalit-modal-actions create-account-buttons">
-        <Button
-          variant="plain"
-          onClick={onModalClose}
-          disabled={isSaving}
-          className="journalit-modal-actions__cancel cancel-button"
-        >
-          {t('button.cancel')}
-        </Button>
-        <Button
-          variant="primary"
-          onClick={handleCreate}
-          disabled={isSaving}
-          className="journalit-modal-actions__primary create-account-button accent-button modal-save-accent"
-        >
-          {isSaving
-            ? t('account.create.button.creating')
-            : t('account.create.button.create')}
-        </Button>
+            className="journalit-modal-actions__cancel cancel-button"
+          >
+            {t('button.cancel')}
+          </Button>
+          <Button
+            variant="primary"
+            onClick={handleCreate}
+            disabled={isSaving}
+            className="journalit-modal-actions__primary create-account-button accent-button modal-save-accent"
+          >
+            {isSaving
+              ? t('account.create.button.creating')
+              : t('account.create.button.create')}
+          </Button>
+        </div>
       </div>
-    </div>
+    </DateDraftGateContext.Provider>
   );
 };
 

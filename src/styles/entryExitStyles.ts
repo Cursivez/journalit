@@ -79,11 +79,15 @@ export const ENTRY_EXIT_STYLES = `
       min-width: 180px;
     }
 
-    .trade-form-view-container .price-field,
-    .trade-form-view-container .size-field,
     .trade-form-view-container .amount-field {
       flex: 1;
       min-width: 120px;
+    }
+
+    .trade-form-view-container .entry-fields > .inputContainer,
+    .trade-form-view-container .exit-fields > .inputContainer {
+      flex: 1 1 120px;
+      min-width: min(100%, 120px);
     }
 
     .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container:not([data-has-seconds="true"]) {
@@ -120,15 +124,22 @@ export const ENTRY_EXIT_STYLES = `
       display: flex;
       flex-direction: column;
       gap: 2px;
-      min-width: 200px;
+      min-width: 0;
+      max-width: 100%;
     }
 
     .trade-form-view-container .time-field-wrapper[data-has-seconds="true"] {
       flex: 1 1 100%;
       width: 100%;
-      min-width: 0;
-      max-width: 100%;
-      container-type: inline-size;
+      container: journalit-trade-time / inline-size;
+    }
+
+    @container journalit-trade-form (max-width: 520px) {
+      .trade-form-view-container .time-field-wrapper {
+        flex: 1 1 100%;
+        width: 100%;
+        container: journalit-trade-time / inline-size;
+      }
     }
 
     .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] {
@@ -187,11 +198,11 @@ export const ENTRY_EXIT_STYLES = `
     .trade-form-view-container .journalit-direct-pnl-time-input--seconds {
       width: 520px;
       max-width: 100%;
-      container-type: inline-size;
+      container: journalit-trade-time / inline-size;
     }
 
-    @container (max-width: 400px) {
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] {
+    @container journalit-trade-time (max-width: 400px) {
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] {
         display: grid;
         grid-template-areas:
           "date calendar"
@@ -201,17 +212,17 @@ export const ENTRY_EXIT_STYLES = `
         padding: 6px;
       }
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__date-group {
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__date-group {
         grid-area: date;
         gap: 3px;
       }
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__time-group {
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__time-group {
         grid-area: time;
         gap: 3px;
       }
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__segment {
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__segment {
         width: 36px;
         min-width: 36px;
         max-width: 36px;
@@ -220,18 +231,18 @@ export const ENTRY_EXIT_STYLES = `
         font-size: 14px;
       }
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__separator {
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__separator {
         padding-right: 0;
         padding-left: 0;
         font-size: 12px;
       }
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__separator--spacer {
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__separator--spacer {
         width: 0;
         padding: 0;
       }
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__ampm-button {
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__ampm-button {
         width: auto;
         min-width: 36px;
         max-width: none;
@@ -241,7 +252,7 @@ export const ENTRY_EXIT_STYLES = `
         font-size: 12px;
       }
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__calendar-button {
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__calendar-button {
         grid-area: calendar;
         justify-self: end;
         width: 26px;
@@ -311,6 +322,17 @@ export const ENTRY_EXIT_STYLES = `
       margin-bottom: 12px;
     }
 
+    .trade-form-view-container .journalit-entry-exit-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .trade-form-view-container .journalit-entry-exit-actions .add-button {
+      margin: 0;
+    }
+
     .trade-form-view-container .total-size,
     .trade-form-view-container .remaining-size,
     .trade-form-view-container .dividend-total {
@@ -321,6 +343,11 @@ export const ENTRY_EXIT_STYLES = `
       background: var(--background-secondary);
       display: inline-block;
       margin-top: 8px;
+    }
+
+    .trade-form-view-container .journalit-entry-exit-actions .total-size,
+    .trade-form-view-container .journalit-entry-exit-actions .remaining-size {
+      margin: 0;
     }
 
     .trade-form-view-container .remaining-size.positive {
@@ -375,6 +402,7 @@ export const ENTRY_EXIT_STYLES = `
 
     .trade-form-view-container .journalit-unrealized-snapshot__header {
       display: flex;
+      flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
       gap: 12px;
@@ -428,7 +456,7 @@ export const ENTRY_EXIT_STYLES = `
       font-size: 15px;
       line-height: 20px;
       font-weight: 500;
-      white-space: nowrap;
+      white-space: normal;
     }
 
     .trade-form-view-container .journalit-unrealized-snapshot__optional-text {
@@ -479,6 +507,7 @@ export const ENTRY_EXIT_STYLES = `
         .journalit-fast-datetime__container {
         gap: 1px;
         padding: 4px;
+        --journalit-year-segment-width: 40px;
       }
 
       .trade-form-view-container
@@ -700,6 +729,7 @@ export const ENTRY_EXIT_STYLES = `
       display: inline-block;
       width: 40px;
       height: 24px;
+      flex-shrink: 0;
     }
 
     .trade-form-view-container .toggle-switch-input {
@@ -754,21 +784,5 @@ export const ENTRY_EXIT_STYLES = `
 
     .trade-form-view-container .toggle-switch-container.disabled .toggle-switch-label {
       cursor: not-allowed;
-    }
-
-    
-    @media (max-width: 768px) {
-      .trade-form-view-container .entry-fields,
-      .trade-form-view-container .exit-fields {
-        flex-direction: column;
-        gap: 8px;
-      }
-
-      .trade-form-view-container .time-field,
-      .trade-form-view-container .price-field,
-      .trade-form-view-container .size-field {
-        width: 100%;
-        min-width: 0;
-      }
     }
 `;

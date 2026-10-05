@@ -29,6 +29,7 @@ import { FullscreenImageViewer } from '../image/FullscreenImageViewer';
 import { FullscreenPortal } from '../image/FullscreenPortal';
 import { MediaPreview } from '../image/MediaPreview';
 import { EmbeddedMarkdownNote } from '../shared/EmbeddedMarkdownNote';
+import { registerRenderedMarkdownLinks } from '../shared/renderedMarkdownLinks';
 import {
   CheckCircle2,
   Edit,
@@ -255,6 +256,12 @@ export const SetupInlinePlaybook: React.FC<{
     const component = new Component();
     component.load();
     container.replaceChildren();
+    registerRenderedMarkdownLinks({
+      app: plugin.app,
+      component,
+      container,
+      sourcePath: setup.filePath ?? '',
+    });
     void MarkdownRenderer.render(
       plugin.app,
       setup.playbookMarkdown,

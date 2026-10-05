@@ -285,7 +285,14 @@ export const IMAGE_STYLES = `
     pointer-events: none;
   }
 
+  
   .journalit-fullscreen-overlay {
+    --journalit-fullscreen-chrome-fg: #fff;
+    --journalit-fullscreen-chrome-bg: rgba(0, 0, 0, 0.7);
+    --journalit-fullscreen-chrome-bg-strong: rgba(0, 0, 0, 0.9);
+    --journalit-fullscreen-chrome-border: rgba(255, 255, 255, 0.55);
+    --journalit-fullscreen-chrome-border-subtle: rgba(255, 255, 255, 0.35);
+    --journalit-fullscreen-chrome-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);
     position: fixed;
     top: 0;
     left: 0;
@@ -320,10 +327,11 @@ export const IMAGE_STYLES = `
     position: absolute;
     top: 20px;
     left: 20px;
-    color: var(--text-on-accent);
+    color: var(--journalit-fullscreen-chrome-fg);
     font-size: 16px;
     font-weight: 500;
     background-color: rgba(0, 0, 0, 0.8);
+    border: 1px solid var(--journalit-fullscreen-chrome-border-subtle);
     padding: 8px 12px;
     border-radius: 6px;
     pointer-events: auto; 
@@ -335,9 +343,10 @@ export const IMAGE_STYLES = `
     right: 20px;
     width: 40px;
     height: 40px;
-    background-color: rgba(0, 0, 0, 0.8);
-    color: var(--text-on-accent);
-    border: none;
+    background-color: var(--journalit-fullscreen-chrome-bg);
+    color: var(--journalit-fullscreen-chrome-fg);
+    border: 1px solid var(--journalit-fullscreen-chrome-border);
+    box-shadow: var(--journalit-fullscreen-chrome-shadow);
     border-radius: 50%;
     font-size: 24px;
     font-weight: 300;
@@ -352,7 +361,8 @@ export const IMAGE_STYLES = `
   }
 
   .journalit-fullscreen-close-btn:hover {
-    background-color: rgba(0, 0, 0, 1.0);
+    background-color: var(--journalit-fullscreen-chrome-bg-strong);
+    border-color: var(--journalit-fullscreen-chrome-fg);
     transform: scale(1.1);
   }
 
@@ -1533,10 +1543,10 @@ export const IMAGE_STYLES = `
     min-width: 45px;
     min-height: 45px;
     padding: 0;
-    background: rgba(0, 0, 0, 0.35);
-    background-color: rgba(0, 0, 0, 0.35);
-    color: var(--text-on-accent);
-    border: none;
+    background: var(--journalit-fullscreen-chrome-bg);
+    background-color: var(--journalit-fullscreen-chrome-bg);
+    color: var(--journalit-fullscreen-chrome-fg);
+    border: 1px solid var(--journalit-fullscreen-chrome-border);
     border-radius: 50%;
     cursor: pointer;
     z-index: 10;
@@ -1545,9 +1555,9 @@ export const IMAGE_STYLES = `
     align-items: center;
     justify-content: center;
     line-height: 1;
-    box-shadow: none;
+    box-shadow: var(--journalit-fullscreen-chrome-shadow);
     appearance: none;
-    opacity: 0.8;
+    opacity: 1;
     pointer-events: auto; 
   }
 
@@ -1573,10 +1583,11 @@ export const IMAGE_STYLES = `
 
   .journalit-fullscreen-viewer button.journalit-fullscreen-nav-btn:hover,
   .journalit-fullscreen-viewer button.journalit-fullscreen-nav-btn:focus-visible {
-    background: rgba(0, 0, 0, 0.55);
-    background-color: rgba(0, 0, 0, 0.55);
+    background: var(--journalit-fullscreen-chrome-bg-strong);
+    background-color: var(--journalit-fullscreen-chrome-bg-strong);
+    border-color: var(--journalit-fullscreen-chrome-fg);
     transform: translateY(-50%) scale(1.1);
-    box-shadow: none;
+    box-shadow: var(--journalit-fullscreen-chrome-shadow);
     opacity: 1;
   }
 
@@ -1595,7 +1606,8 @@ export const IMAGE_STYLES = `
     left: 50%;
     transform: translateX(-50%);
     background-color: rgba(0, 0, 0, 0.8);
-    color: var(--text-on-accent);
+    color: var(--journalit-fullscreen-chrome-fg);
+    border: 1px solid var(--journalit-fullscreen-chrome-border-subtle);
     padding: 8px 12px;
     border-radius: 20px;
     font-size: 12px;
@@ -1611,7 +1623,8 @@ export const IMAGE_STYLES = `
     bottom: 20px;
     left: 20px;
     background-color: rgba(0, 0, 0, 0.8);
-    color: var(--text-on-accent);
+    color: var(--journalit-fullscreen-chrome-fg);
+    border: 1px solid var(--journalit-fullscreen-chrome-border-subtle);
     padding: 8px 12px;
     border-radius: 20px;
     font-size: 12px;

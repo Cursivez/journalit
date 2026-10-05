@@ -36,6 +36,12 @@ export const AVAILABLE_METRICS: MetricDefinition[] = [
     category: 'performance',
   },
   {
+    id: 'calmarRatio',
+    name: t('metric.calmarRatio.name'),
+    description: t('metric.calmarRatio.description'),
+    category: 'performance',
+  },
+  {
     id: 'expectancy',
     name: t('metric.expectancy.name'),
     description: t('metric.expectancy.description'),

@@ -1,4 +1,5 @@
-import React, { useEffect, useReducer, useState } from 'react';
+import React, { useContext, useEffect, useReducer, useState } from 'react';
+import { DateDraftGateContext } from '../../../core/DateDraftGate';
 import { t } from '../../../../lang/helpers';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { useService } from '../../../../hooks/useService';
@@ -85,6 +86,8 @@ export function PropFirmProfilePicker({
   onChange,
 }: Props) {
   const plugin = usePlugin();
+  const dateDraftGate = useContext(DateDraftGateContext);
+  const canReplace = () => !dateDraftGate || dateDraftGate.confirm();
   const { service, status: serviceStatus } = useService(
     'propFirmProfileCatalogService'
   );
@@ -279,6 +282,7 @@ export function PropFirmProfilePicker({
             <span>{t('account.prop-challenge.profile.firm')}</span>
             <DropdownSelect
               value={firmId}
+              onBeforeChange={(id) => id !== CUSTOM_FIRM || canReplace()}
               onChange={(nextFirmId) => {
                 if (nextFirmId === CUSTOM_FIRM) {
                   chooseCustomFirm();
@@ -317,6 +321,7 @@ export function PropFirmProfilePicker({
               <span>{t('account.prop-challenge.profile.challenge')}</span>
               <DropdownSelect
                 value={selectedChoice?.selection.challenge.id ?? ''}
+                onBeforeChange={canReplace}
                 onChange={(id) => {
                   const choice = challengeChoices.find(
                     (entry) => entry.selection.challenge.id === id

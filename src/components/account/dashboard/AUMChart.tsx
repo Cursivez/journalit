@@ -364,7 +364,6 @@ export const AUMChart: React.FC<AUMChartProps> = ({
           />
           <XAxis dataKey="date" tickMargin={8} tickLine={false} />
           <YAxis
-            className="journalit-chart-axis--numeric"
             tickFormatter={(value: number) =>
               formatAUMYAxisTick(value, currency, formatValue)
             }

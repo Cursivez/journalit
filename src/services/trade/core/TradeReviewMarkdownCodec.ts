@@ -157,6 +157,20 @@ export function isLegacySupplementalTradeReviewQuestionId(
   );
 }
 
+
+export function isLegacyOnlyTradeReviewQuestionId(questionId: string): boolean {
+  if (getCanonicalTradeReviewQuestionId(questionId) !== questionId) return true;
+  if (
+    Object.prototype.hasOwnProperty.call(
+      DEFAULT_QUESTION_LABELS_BY_ID,
+      questionId
+    )
+  ) {
+    return false;
+  }
+  return isLegacySupplementalTradeReviewQuestionId(questionId);
+}
+
 export function getCanonicalTradeReviewQuestionId(questionId: string): string {
   if (questionId.startsWith(LEGACY_CONFLICT_QUESTION_ID_PREFIX)) {
     return questionId;

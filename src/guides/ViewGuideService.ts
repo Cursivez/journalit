@@ -97,6 +97,8 @@ export class ViewGuideService {
   private saveQueue: Promise<void> = Promise.resolve();
   private listeners = new Set<() => void>();
   private resolvedGuideByLeafId = new Map<string, string>();
+  private resolutionOwnerByLeafId = new Map<string, symbol>();
+  private resolutionCandidatesByLeafId = new Map<string, Map<symbol, string>>();
   
   private autoShowGate: (() => boolean) | null = null;
 
@@ -150,6 +152,8 @@ export class ViewGuideService {
     this.guideToSessionId.clear();
     this.resolvedGuideByLeafId.clear();
     this.activeLeaf = null;
+    this.resolutionOwnerByLeafId.clear();
+    this.resolutionCandidatesByLeafId.clear();
     this.activeLeafContext = {
       leafId: null,
       viewType: null,
@@ -179,19 +183,59 @@ export class ViewGuideService {
     this.syncActiveLeafContext(leaf);
   }
 
-  setResolvedGuideForLeaf(leaf: WorkspaceLeaf, guideId: string | null): void {
+  
+  setResolvedGuideForLeaf(
+    leaf: WorkspaceLeaf,
+    guideId: string | null,
+    owner?: symbol
+  ): void {
     const leafId = this.getLeafId(leaf);
     const current = this.resolvedGuideByLeafId.get(leafId) ?? null;
+    const currentOwner = this.resolutionOwnerByLeafId.get(leafId);
 
     if (!guideId) {
+      if (owner) {
+        const candidates = this.resolutionCandidatesByLeafId.get(leafId);
+        if (!candidates?.delete(owner)) return;
+        if (currentOwner !== owner) return;
+        const registered = Array.from(candidates.entries());
+        const replacement = registered[registered.length - 1];
+        if (replacement) {
+          this.resolutionOwnerByLeafId.set(leafId, replacement[0]);
+          this.resolvedGuideByLeafId.set(leafId, replacement[1]);
+          this.emitChange();
+          return;
+        }
+      }
+      this.resolutionCandidatesByLeafId.delete(leafId);
+      this.resolutionOwnerByLeafId.delete(leafId);
       if (current !== null) {
         this.resolvedGuideByLeafId.delete(leafId);
+        
+        
+        const session = this.getSessionForGuide(current);
+        if (session?.leafId === leafId) {
+          session.status = 'ended';
+          this.sessions.delete(session.sessionId);
+          this.guideToSessionId.delete(current);
+        }
         this.emitChange();
       }
       return;
     }
 
-    if (current === guideId) {
+    
+    
+    if (owner) {
+      const candidates =
+        this.resolutionCandidatesByLeafId.get(leafId) ??
+        new Map<symbol, string>();
+      candidates.delete(owner);
+      candidates.set(owner, guideId);
+      this.resolutionCandidatesByLeafId.set(leafId, candidates);
+      this.resolutionOwnerByLeafId.set(leafId, owner);
+    }
+    if (current === guideId && (!owner || currentOwner === owner)) {
       return;
     }
 
@@ -199,8 +243,12 @@ export class ViewGuideService {
     this.emitChange();
   }
 
-  getResolvedGuideForLeaf(leaf: WorkspaceLeaf): string | null {
+  getResolvedGuideForLeaf(leaf: WorkspaceLeaf, owner?: symbol): string | null {
     const leafId = this.getLeafId(leaf);
+    const electedOwner = this.resolutionOwnerByLeafId.get(leafId);
+    
+    
+    if (owner && electedOwner && owner !== electedOwner) return null;
     return this.resolvedGuideByLeafId.get(leafId) ?? null;
   }
 
@@ -277,6 +325,8 @@ export class ViewGuideService {
     this.sessions.clear();
     this.guideToSessionId.clear();
     this.resolvedGuideByLeafId.clear();
+    this.resolutionOwnerByLeafId.clear();
+    this.resolutionCandidatesByLeafId.clear();
     this.emitChange();
   }
 

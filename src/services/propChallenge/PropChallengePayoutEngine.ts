@@ -16,7 +16,23 @@ import type {
 } from './types';
 import { doesPhaseOwnTradeAt } from './PropChallengeConfig';
 
+function countQualifyingDays(
+  dailyProfit: ReadonlyMap<string, number>,
+  minimumDailyProfit: number
+): number {
+  return Array.from(dailyProfit.values()).filter(
+    (profit) => profit >= minimumDailyProfit
+  ).length;
+}
+
 export type PropChallengePayoutRequirement =
+  | {
+      kind: 'qualifying_days';
+      current: number;
+      target: number;
+      satisfied: boolean;
+      minimumDailyProfit: number;
+    }
   | {
       kind: 'cycle_days';
       current: number;
@@ -446,9 +462,7 @@ export function evaluatePropChallengePayout(
     }
     case 'qualifying_days': {
       const minimumDailyProfit = input.policy.cycle.minimumDailyProfit;
-      const current = Array.from(dailyProfit.values()).filter(
-        (profit) => profit >= minimumDailyProfit
-      ).length;
+      const current = countQualifyingDays(dailyProfit, minimumDailyProfit);
       requirements.push({
         kind: 'cycle_days',
         current,
@@ -485,6 +499,18 @@ export function evaluatePropChallengePayout(
       }
       break;
     }
+  }
+
+  if (input.policy.qualifyingDays) {
+    const { days, minimumDailyProfit } = input.policy.qualifyingDays;
+    const current = countQualifyingDays(dailyProfit, minimumDailyProfit);
+    requirements.push({
+      kind: 'qualifying_days',
+      current,
+      target: days,
+      minimumDailyProfit,
+      satisfied: current >= days,
+    });
   }
 
   if (input.policy.requestWindow) {

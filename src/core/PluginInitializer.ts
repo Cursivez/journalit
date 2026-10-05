@@ -26,7 +26,6 @@ const LEGACY_DERIVED_STORAGE_FOLDERS = [
 ];
 import { scheduleSequence } from '../utils/deferredExecution';
 import { GlobalPasteManager } from '../utils/GlobalPasteManager';
-import { injectDropdownFixScript } from '../utils/domUtils';
 import { CommandRegistry } from '../commands/commandRegistry';
 import { RibbonManager } from '../ui/ribbonManager';
 import { OnboardingManager } from '../onboarding/onboardingManager';
@@ -51,7 +50,6 @@ import { GuideRegistry } from '../guides/GuideRegistry';
 import { registerHomeMainGuide } from '../guides/homeMainGuide';
 import { registerHomeCustomizeGuide } from '../guides/homeCustomizeGuide';
 import { registerDashboardCustomizeGuide } from '../guides/dashboardCustomizeGuide';
-import { registerLayoutBuilderEditorGuide } from '../guides/layoutBuilderEditorGuide';
 import { registerAccountDashboardSettingsGuide } from '../guides/accountDashboardSettingsGuide';
 import { registerSetupsDetailGuide } from '../guides/setupsDetailGuide';
 import { registerSetupsCompareGuide } from '../guides/setupsCompareGuide';
@@ -64,6 +62,7 @@ import { registerFilterMenuWhatsNewGuides } from '../guides/filterMenuWhatsNewGu
 import { registerDashboardEmptyGuide } from '../guides/dashboardEmptyGuide';
 import { registerDashboardMainGuide } from '../guides/dashboardMainGuide';
 import { registerLayoutBuilderMainGuide } from '../guides/layoutBuilderMainGuide';
+import { registerLayoutBuilderWhatsNewInsertWidgetGuide } from '../guides/layoutBuilderWhatsNewInsertWidgetGuide';
 import { registerAccountDashboardEmptyGuide } from '../guides/accountDashboardEmptyGuide';
 import { registerAccountDashboardMainGuide } from '../guides/accountDashboardMainGuide';
 import { registerAccountDashboardWhatsNewPropChallengesGuide } from '../guides/accountDashboardWhatsNewPropChallengesGuide';
@@ -72,6 +71,7 @@ import { registerAccountPageEmptyGuide } from '../guides/accountPageEmptyGuide';
 import { registerAccountPageMainGuide } from '../guides/accountPageMainGuide';
 import { registerSetupsMainGuide } from '../guides/setupsMainGuide';
 import { registerEconomicCalendarMainGuide } from '../guides/economicCalendarMainGuide';
+import { registerReviewHeaderGuide } from '../guides/reviewHeaderGuide';
 import type { OnboardingStatus } from '../services/onboarding/types';
 
 export const isOnboardingGuideGateOpen = (
@@ -254,9 +254,6 @@ export class PluginInitializer {
     (this.plugin as JournalitPluginInternal).lastFileOpenTime = Date.now();
 
     
-    injectDropdownFixScript();
-
-    
     const [{ ServiceManager }, { ProcessorManager }, { ViewManager }] =
       await Promise.all([
         import('../services/ServiceManager'),
@@ -302,7 +299,7 @@ export class PluginInitializer {
     registerDashboardCustomizeGuide(this.plugin.guideRegistry);
     registerFilterMenuWhatsNewGuides(this.plugin.guideRegistry);
     registerLayoutBuilderMainGuide(this.plugin.guideRegistry);
-    registerLayoutBuilderEditorGuide(this.plugin.guideRegistry);
+    registerLayoutBuilderWhatsNewInsertWidgetGuide(this.plugin.guideRegistry);
     registerAccountDashboardEmptyGuide(this.plugin.guideRegistry);
     registerAccountDashboardWhatsNewPropChallengesGuide(
       this.plugin.guideRegistry
@@ -316,6 +313,7 @@ export class PluginInitializer {
     registerSetupsDetailGuide(this.plugin.guideRegistry);
     registerSetupsCompareGuide(this.plugin.guideRegistry);
     registerEconomicCalendarMainGuide(this.plugin.guideRegistry);
+    registerReviewHeaderGuide(this.plugin.guideRegistry);
     registerSessionModeGuides(this.plugin.guideRegistry);
 
     this.plugin.viewGuideService = new ViewGuideService(this.plugin);

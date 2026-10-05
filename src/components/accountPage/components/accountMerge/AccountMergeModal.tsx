@@ -34,6 +34,7 @@ import { useWizardProTier } from './useWizardProTier';
 import { showConfirmationModal } from '../../../shared/ConfirmationModal';
 import { DisplayPolicyProvider } from '../../../../contexts/DisplayPolicyContext';
 import { CurrencyProvider } from '../../../../contexts/CurrencyContext';
+import { ModalEscapeProvider } from '../../../shared/disclosureEscape';
 import { formatDateDisplay } from '../../../../utils/dateUtils';
 import { Button } from '../../../ui/Button';
 import Checkbox from '../../../ui/Checkbox';
@@ -41,6 +42,10 @@ import ToggleSwitch from '../../../ui/ToggleSwitch';
 import { DropdownSelect } from '../../../shared/DropdownSelect';
 import { MoneyValue } from '../../../shared/display/DisplayValue';
 import { FastDateTimeInput } from '../../../core/FastDateTimeInput';
+import {
+  DateDraftGateContext,
+  useDateDraftGate,
+} from '../../../core/DateDraftGate';
 import { ensureAccountMergeServices } from '../../../../services/accountMerge/ensureAccountMergeServices';
 import {
   AlertTriangle,
@@ -93,14 +98,18 @@ interface PhaseOverride {
   rules?: PropChallengeRule[];
 }
 
-interface PlanState {
-  status: 'idle' | 'loading' | 'ready' | 'error';
-  
-  plan?: AccountMergePlan;
+type PlanState = (
+  | { status: 'ready'; plan: AccountMergePlan }
+  | {
+      status: 'idle' | 'loading' | 'error';
+      
+      plan?: AccountMergePlan;
+    }
+) & {
   code?: AccountMergePlanErrorCode;
   message?: string;
   row?: number;
-}
+};
 
 const STAGE_LABEL_KEYS: Record<PropChallengeStage, TranslationKey> = {
   evaluation: 'account.prop-challenge.stage.evaluation',
@@ -960,6 +969,7 @@ const AccountMergeModalContent: React.FC<{
   onDone: (outcome: AccountMergeOutcome) => void;
   onStepChange: (step: WizardStep) => void;
 }> = ({ plugin, options, onDone, onStepChange }) => {
+  const dateDraftGate = useDateDraftGate();
   const lockedAccounts = !!options.accounts?.length;
   const steps: WizardStep[] = lockedAccounts
     ? ['challenge', 'phases', 'review']
@@ -967,6 +977,7 @@ const AccountMergeModalContent: React.FC<{
   const [step, setStepState] = useState<WizardStep>(steps[0]);
   
   const setStep = (next: WizardStep) => {
+    if (!dateDraftGate.confirm()) return;
     onStepChange(next);
     setStepState(next);
   };
@@ -1208,7 +1219,10 @@ const AccountMergeModalContent: React.FC<{
   const stepIndex = steps.indexOf(step);
   const hasIncompleteRules = hasIncompleteAccountMergeRules(
     selected.map((name) => overrides[name]?.rules),
-    Boolean(profile)
+    Boolean(profile),
+    planState.status === 'ready'
+      ? planState.plan.phases.map((phase) => phase.payoutPolicy)
+      : []
   );
   const canAdvance =
     step === 'accounts'
@@ -1218,6 +1232,7 @@ const AccountMergeModalContent: React.FC<{
         : planState.status === 'ready' && !hasIncompleteRules;
 
   const runMerge = async () => {
+    if (!dateDraftGate.confirm()) return;
     const plan = planState.status === 'ready' ? planState.plan : undefined;
     if (!plan || !mergeService || hasIncompleteRules) return;
     setRunning(true);
@@ -1245,7 +1260,7 @@ const AccountMergeModalContent: React.FC<{
       : t('button.next');
 
   return (
-    <>
+    <DateDraftGateContext.Provider value={dateDraftGate}>
       <StepperHeader steps={steps} step={step} sequence={options.sequence} />
       {step === 'challenge' && (
         <ModalGuide
@@ -1390,7 +1405,7 @@ const AccountMergeModalContent: React.FC<{
           </Button>
         )}
       </div>
-    </>
+    </DateDraftGateContext.Provider>
   );
 };
 
@@ -1426,16 +1441,18 @@ class AccountMergeModal extends Modal {
     });
     this.root = createRoot(container);
     this.root.render(
-      <CurrencyProvider>
-        <DisplayPolicyProvider privacyModeOverride={false}>
-          <AccountMergeModalContent
-            plugin={this.plugin}
-            options={this.options}
-            onDone={(outcome) => this.settle(outcome)}
-            onStepChange={(step) => this.applyStepWidth(step)}
-          />
-        </DisplayPolicyProvider>
-      </CurrencyProvider>
+      <ModalEscapeProvider app={this.app} scope={this.scope}>
+        <CurrencyProvider>
+          <DisplayPolicyProvider privacyModeOverride={false}>
+            <AccountMergeModalContent
+              plugin={this.plugin}
+              options={this.options}
+              onDone={(outcome) => this.settle(outcome)}
+              onStepChange={(step) => this.applyStepWidth(step)}
+            />
+          </DisplayPolicyProvider>
+        </CurrencyProvider>
+      </ModalEscapeProvider>
     );
   }
 

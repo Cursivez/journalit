@@ -13,7 +13,6 @@ import { usePlugin } from '../../../hooks/usePlugin';
 import { t } from '../../../lang/helpers';
 import { TradeRUnavailableHint } from '../../shared/display/RMultipleUnavailableHint';
 import { getTradeDirectionDisplayKind } from '../../../services/trade/core/TradeDirection';
-import { formatLocalizedDateTime } from '../../../utils/localizedDateTime';
 import {
   getWeekNumberForDate,
   getWeekStartDaySetting,
@@ -168,7 +167,6 @@ interface TradeHeaderProps extends PriceMoveValueInput {
   exitTime?: Date | string | null;
   exitPrice?: number | null;
   tradeStatus?: string;
-  lastBrokerSyncAt?: string;
   exits?: TradeFormData['exits'];
   entries?: TradeFormData['entries'];
   dividends?: TradeFormData['dividends'];
@@ -208,7 +206,6 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
   exitTime,
   exitPrice,
   tradeStatus,
-  lastBrokerSyncAt,
   exits,
   entries,
   dividends,
@@ -266,14 +263,6 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
   const isCancelled = tradeStatus === 'CANCELLED';
   const isAuthoritativeUnknownOutcome =
     tradeStatus === 'CLOSED' && originalPnlWasNull === true;
-
-  const brokerSyncDate = lastBrokerSyncAt ? new Date(lastBrokerSyncAt) : null;
-  const brokerSyncLabel =
-    isOpen && brokerSyncDate && Number.isFinite(brokerSyncDate.getTime())
-      ? t('trade.broker-synced-at', {
-          date: formatLocalizedDateTime(brokerSyncDate),
-        })
-      : null;
 
   const directionDisplayKind = getTradeDirectionDisplayKind({
     direction,
@@ -623,10 +612,6 @@ export const TradeHeader: React.FC<TradeHeaderProps> = ({
       </div>
       <div className="trade-header-context-row">
         <div className="trade-header-meta">
-          {brokerSyncLabel && <span>{brokerSyncLabel}</span>}
-          {brokerSyncLabel && showReviewNavigation && formattedTradeWeekday && (
-            <span className="trade-header-context-separator">·</span>
-          )}
           {showReviewNavigation &&
             formattedTradeWeekday &&
             tradeDayNumber &&

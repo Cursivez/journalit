@@ -50,7 +50,6 @@ export function buildUpgradeUrl(
 ): string {
   const params = new URLSearchParams({
     intent: 'subscribe',
-    billingPeriod: 'yearly',
     utm_source: 'journalit_plugin',
     utm_medium: 'product',
     utm_campaign: campaign,

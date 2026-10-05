@@ -12,6 +12,8 @@ interface CheckboxProps {
   id?: string;
   
   ariaLabel?: string;
+  ariaLabelledBy?: string;
+  ariaDescribedBy?: string;
   
   disabled?: boolean;
   
@@ -26,6 +28,8 @@ const Checkbox: React.FC<CheckboxProps> = ({
   onChange,
   id,
   ariaLabel,
+  ariaLabelledBy,
+  ariaDescribedBy,
   disabled = false,
   label,
   className = '',
@@ -51,6 +55,8 @@ const Checkbox: React.FC<CheckboxProps> = ({
         checked={checked}
         onChange={toggleCheckbox}
         aria-label={ariaLabel || label}
+        aria-labelledby={ariaLabelledBy}
+        aria-describedby={ariaDescribedBy}
         disabled={disabled}
       />
 
