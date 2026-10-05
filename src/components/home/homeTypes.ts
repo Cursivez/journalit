@@ -2,6 +2,8 @@
 
 import { t } from '../../lang/helpers';
 
+export { DEFAULT_HOME_WIDGETS } from './defaultHomeLayout';
+
 export type HomeWidgetCategory = 'performance' | 'accounts' | 'workflow';
 
 interface HomeWidgetDefinition {
@@ -168,9 +170,6 @@ export const AVAILABLE_HOME_WIDGETS: HomeWidgetDefinition[] = [
     defaultSize: { w: 4, h: 3 }, 
   },
 ];
-
-
-export const DEFAULT_HOME_WIDGETS = ['recentItems', 'yearHeatmap'];
 
 
 export const getHomeWidgetById = (

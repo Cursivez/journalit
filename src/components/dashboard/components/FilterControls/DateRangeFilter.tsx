@@ -11,7 +11,7 @@ import React, {
 import { createPortal } from 'react-dom';
 import { t } from '../../../../lang/helpers';
 import { useEventBus } from '../../../../hooks/useEventBus';
-import { FastDateTimeInput } from '../../../../components/core/FastDateTimeInput';
+import { DateRangeEditor } from '../../../shared/filters/DateRangeEditor';
 import { cssVars } from '../../../../styles/inlineStylePolicy';
 import {
   createDateWithoutTime,
@@ -61,8 +61,7 @@ interface CustomDateDropdownProps {
   dropdownRef: React.RefObject<HTMLDivElement | null>;
   dropdownPosition: DropdownPosition | null;
   dateRange: [Date | null, Date | null];
-  onStartDateChange: (date: Date | string | undefined) => void;
-  onEndDateChange: (date: Date | string | undefined) => void;
+  onRangeChange: (range: [Date | null, Date | null]) => void;
 }
 
 const createPresetButtons = (): PresetButtonConfig[] => [
@@ -125,8 +124,7 @@ const CustomDateDropdown: React.FC<CustomDateDropdownProps> = ({
   dropdownRef,
   dropdownPosition,
   dateRange,
-  onStartDateChange,
-  onEndDateChange,
+  onRangeChange,
 }) => (
   <div
     ref={dropdownRef}
@@ -140,26 +138,11 @@ const CustomDateDropdown: React.FC<CustomDateDropdownProps> = ({
         : '0px',
     })}
   >
-    <div className="journalit-dashboard-date-range-start">
-      <FastDateTimeInput
-        label={t('dashboard.filter.date.from')}
-        value={dateRange[0] || undefined}
-        onChange={onStartDateChange}
-        commitValidSegmentChangesImmediately
-        className="journalit-date-picker-input"
-      />
-    </div>
-
-    <div className="journalit-dashboard-date-range-end">
-      <FastDateTimeInput
-        label={t('dashboard.filter.date.to')}
-        value={dateRange[1] || undefined}
-        onChange={onEndDateChange}
-        commitValidSegmentChangesImmediately
-        className="journalit-date-picker-input"
-        minDate={dateRange[0] || undefined}
-      />
-    </div>
+    <DateRangeEditor
+      initialRange={dateRange}
+      policy="open-ended"
+      onChange={onRangeChange}
+    />
   </div>
 );
 
@@ -527,6 +510,14 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
 
       
       if (isCustomDropdownOpen) {
+        const activeElement = ownerDocument.activeElement;
+        if (
+          activeElement?.instanceOf(HTMLElement) &&
+          customDateDropdownRef.current?.contains(activeElement)
+        ) {
+          
+          activeElement.blur();
+        }
         setIsCustomDropdownOpen(false);
       }
     };
@@ -612,42 +603,15 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
     };
   }, [isCustomDropdownOpen, updateDropdownPosition]);
 
-  
-  const handleStartDateChange = useCallback(
-    (date: Date | string | undefined) => {
+  const handleRangeChange = useCallback(
+    ([start, end]: [Date | null, Date | null]) => {
       setPresetOverride(null);
-
-      
-      if (date && date instanceof Date) {
-        
-        const normalizedDate = createDateWithoutTime(date, true); 
-        onChange([normalizedDate, dateRange[1]]);
-      } else {
-        onChange([null, dateRange[1]]);
-      }
-
-      
+      onChange([
+        start ? createDateWithoutTime(start, true) : null,
+        end ? createDateWithoutTime(end, false) : null,
+      ]);
     },
-    [dateRange, onChange]
-  );
-
-  
-  const handleEndDateChange = useCallback(
-    (date: Date | string | undefined) => {
-      setPresetOverride(null);
-
-      
-      if (date && date instanceof Date) {
-        
-        const normalizedDate = createDateWithoutTime(date, false); 
-        onChange([dateRange[0], normalizedDate]);
-      } else {
-        onChange([dateRange[0], null]);
-      }
-
-      
-    },
-    [dateRange, onChange]
+    [onChange]
   );
 
   
@@ -709,8 +673,7 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
               dropdownRef={customDateDropdownRef}
               dropdownPosition={dropdownPosition}
               dateRange={dateRange}
-              onStartDateChange={handleStartDateChange}
-              onEndDateChange={handleEndDateChange}
+              onRangeChange={handleRangeChange}
             />,
             getOwnerDocument(customDateAnchorRef.current).body
           )

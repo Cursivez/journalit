@@ -17,9 +17,12 @@ function deduplicateTrades(
   for (const trade of trades) {
     const filePath = normalizePath(trade.filePath);
     const current = byPath.get(filePath);
-    if (!current || trade.change === 'updated') {
-      byPath.set(filePath, { ...trade, filePath });
-    }
+    
+    byPath.set(filePath, {
+      ...trade,
+      filePath,
+      change: current?.change === 'created' ? 'created' : trade.change,
+    });
   }
   return Array.from(byPath.values());
 }

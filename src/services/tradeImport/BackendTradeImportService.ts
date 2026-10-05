@@ -367,6 +367,9 @@ const diagnosticsArray = (value: unknown): TradeImportDiagnostic[] =>
         candidateFormats: Array.isArray(record.candidateFormats)
           ? stringArray(record.candidateFormats)
           : undefined,
+        missingColumns: Array.isArray(record.missingColumns)
+          ? stringArray(record.missingColumns)
+          : undefined,
       },
     ];
   });

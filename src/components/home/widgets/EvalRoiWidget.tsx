@@ -21,6 +21,10 @@ const EM_DASH = '—';
 
 function getPeriodLabel(period: HomePeriod): string {
   switch (period) {
+    case 'week':
+      return t('dashboard.filter.date.this-week');
+    case 'custom':
+      return t('home.period.custom');
     case 'month':
       return t('home.widget.aum.period.month');
     case 'quarter':
@@ -186,7 +190,6 @@ const EvalRoiWidgetComponent: React.FC<EvalRoiWidgetProps> = ({ plugin }) => {
   const isLoading = homeAccountsData?.isLoading ?? true;
   const error = homeAccountsData?.error ?? null;
   const period = periodContext?.period || 'month';
-  const isDateInPeriod = periodContext?.isDateInPeriod;
 
   const openAccountDashboard = useCallback(() => {
     void plugin.viewManager.openAccountDashboardView();
@@ -200,8 +203,16 @@ const EvalRoiWidgetComponent: React.FC<EvalRoiWidgetProps> = ({ plugin }) => {
           true)
     );
     if (challengeAccounts.length === 0) return null;
-    return aggregatePropChallengeEconomics(challengeAccounts, isDateInPeriod);
-  }, [accounts, accountContext, isDateInPeriod]);
+    return aggregatePropChallengeEconomics(
+      challengeAccounts,
+      periodContext
+        ? {
+            includesCostDate: periodContext.isDateInPeriod,
+            includesPayoutTimestamp: periodContext.isTimestampInPeriod,
+          }
+        : undefined
+    );
+  }, [accounts, accountContext, periodContext]);
 
   if (isLoading) {
     return <EvalRoiLoadingState />;

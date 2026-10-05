@@ -5,9 +5,9 @@ import React, {
   useEffect,
   useMemo,
   useReducer,
-  useRef,
+  useState,
 } from 'react';
-import { Component, MarkdownRenderer, TFile, type App } from 'obsidian';
+import { TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { parseLocalDateSafe } from '../../../utils/dateUtils';
 import { ImageCarousel } from '../../image/ImageCarousel';
@@ -16,6 +16,7 @@ import type { PreviousTradingDayContextResult } from '../../../services/drc/DRCS
 import { t } from '../../../lang/helpers';
 import { forceMetadataCacheRefresh } from '../../../utils/dataRefresh';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
+import { EmbeddedReviewMarkdown } from '../EmbeddedReviewMarkdown';
 import {
   shareCaptureExcludeProps,
   shareLoadingProps,
@@ -39,36 +40,11 @@ interface PreviousTradingDayContextWidgetProps {
   plugin: JournalitPlugin;
   config?: PreviousTradingDayContextConfig;
   preview?: boolean;
-}
-
-export function resolvePreviousDRCInternalLinkPath(
-  app: {
-    metadataCache: Pick<App['metadataCache'], 'getFirstLinkpathDest'>;
-  },
-  target: EventTarget | null,
-  sourcePath: string
-): string | null {
-  if (!(target instanceof Element)) return null;
-
-  const link = target.closest('a.internal-link');
-  if (!(link instanceof HTMLAnchorElement)) return null;
-
-  const linkText = link.dataset.href?.trim();
-  if (!linkText) return null;
-
-  const linkedFile = app.metadataCache.getFirstLinkpathDest(
-    linkText,
-    sourcePath
-  );
-  return linkedFile instanceof TFile ? linkedFile.path : null;
+  ancestorSourcePaths?: readonly string[];
 }
 
 const PREVIEW_HEADING = 'Forecast';
-const IMAGE_WIDGET_BLOCK_PATTERN =
-  /^[\t ]*```journalit-images[^\r\n]*\r?\n[\s\S]*?^[\t ]*```[\t ]*$/gm;
-const IMAGE_WIDGET_BLOCK_WITH_ID_PATTERN =
-  /^[\t ]*```journalit-images[^\r\n]*\r?\n([\s\S]*?)^[\t ]*```[\t ]*$/gm;
-
+const NO_ANCESTOR_SOURCES: readonly string[] = [];
 function parseHeadings(
   config: PreviousTradingDayContextConfig | undefined
 ): string[] {
@@ -93,88 +69,6 @@ function parseHeadings(
   });
 }
 
-function stripImageWidgetBlocks(markdown: string): string {
-  return trimMarkdownBlockBoundaries(
-    markdown.replace(IMAGE_WIDGET_BLOCK_PATTERN, '')
-  );
-}
-
-function trimMarkdownBlockBoundaries(markdown: string): string {
-  return markdown
-    .replace(/^(?:[\t ]*\r?\n)+/, '')
-    .replace(/(?:\r?\n[\t ]*)+$/, '');
-}
-
-type PreviousDRCContentBlock =
-  | { type: 'markdown'; markdown: string }
-  | { type: 'images'; widgetId: string; images: string[] };
-
-function extractImageWidgetId(blockConfig: string): string | null {
-  const idLine = blockConfig
-    .split('\n')
-    .map((line) => line.trim())
-    .find((line) => line.startsWith('id:'));
-  if (!idLine) return null;
-
-  const id = idLine.slice('id:'.length).trim();
-  return id.length > 0 ? id : null;
-}
-
-function buildContentBlocks(
-  markdown: string,
-  imageWidgets: Array<{ id: string; images: string[] }> | undefined,
-  fallbackImages: string[]
-): PreviousDRCContentBlock[] {
-  const imagesByWidget = new Map(
-    (imageWidgets ?? []).map((widget) => [widget.id, widget.images])
-  );
-  const blocks: PreviousDRCContentBlock[] = [];
-  let lastIndex = 0;
-
-  for (const match of markdown.matchAll(IMAGE_WIDGET_BLOCK_WITH_ID_PATTERN)) {
-    const matchIndex = match.index ?? 0;
-    const precedingMarkdown = trimMarkdownBlockBoundaries(
-      markdown.slice(lastIndex, matchIndex)
-    );
-    if (precedingMarkdown) {
-      blocks.push({ type: 'markdown', markdown: precedingMarkdown });
-    }
-
-    const widgetId = extractImageWidgetId(match[1]);
-    const images = widgetId ? imagesByWidget.get(widgetId) || [] : [];
-    if (widgetId && images.length > 0) {
-      blocks.push({ type: 'images', widgetId, images });
-    }
-
-    lastIndex = matchIndex + match[0].length;
-  }
-
-  const trailingMarkdown = trimMarkdownBlockBoundaries(
-    markdown.slice(lastIndex)
-  );
-  if (trailingMarkdown) {
-    blocks.push({ type: 'markdown', markdown: trailingMarkdown });
-  }
-
-  if (blocks.length === 0) {
-    const strippedMarkdown = stripImageWidgetBlocks(markdown);
-    if (strippedMarkdown) {
-      blocks.push({ type: 'markdown', markdown: strippedMarkdown });
-    }
-  }
-
-  const hasRenderedImages = blocks.some((block) => block.type === 'images');
-  if (!hasRenderedImages && fallbackImages.length > 0) {
-    blocks.push({
-      type: 'images',
-      widgetId: 'legacy-image-widget-images',
-      images: fallbackImages,
-    });
-  }
-
-  return blocks;
-}
-
 function formatPreviousDRCDate(sourceDate: string): string {
   const parsedDate = parseLocalDateSafe(sourceDate);
   if (!parsedDate) return sourceDate;
@@ -183,177 +77,207 @@ function formatPreviousDRCDate(sourceDate: string): string {
 }
 
 export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContextWidgetProps> =
-  React.memo(({ filePath, plugin, config, preview }) => {
-    const [state, dispatchState] = useReducer(
-      (
-        current: {
-          context: PreviousTradingDayContextResult | null;
-          loading: boolean;
-          error: string | null;
-        },
-        update: Partial<{
-          context: PreviousTradingDayContextResult | null;
-          loading: boolean;
-          error: string | null;
-        }>
-      ) => ({ ...current, ...update }),
-      { context: null, loading: !preview, error: null }
-    );
-    const { context, loading, error } = state;
-    const markdownRefs = useRef<Map<string, HTMLDivElement>>(new Map());
-    const componentRefs = useRef<Component[]>([]);
+  React.memo(
+    ({
+      filePath,
+      plugin,
+      config,
+      preview,
+      ancestorSourcePaths = NO_ANCESTOR_SOURCES,
+    }) => {
+      const [state, dispatchState] = useReducer(
+        (
+          current: {
+            context: PreviousTradingDayContextResult | null;
+            loading: boolean;
+            error: string | null;
+          },
+          update: Partial<{
+            context: PreviousTradingDayContextResult | null;
+            loading: boolean;
+            error: string | null;
+          }>
+        ) => ({ ...current, ...update }),
+        { context: null, loading: !preview, error: null }
+      );
+      const { context, loading, error } = state;
+      const [nestedExpanded, setNestedExpanded] = useState(false);
+      const isNested = ancestorSourcePaths.length > 0;
+      const hasSourceCycle =
+        context !== null && ancestorSourcePaths.includes(context.sourcePath);
+      
+      
+      const renderSections = !hasSourceCycle && (!isNested || nestedExpanded);
+      const headings = useMemo(() => parseHeadings(config), [config]);
 
-    const headings = useMemo(() => parseHeadings(config), [config]);
-    const sectionBlocks = useMemo(
-      () =>
-        context?.sections.map((section) =>
-          buildContentBlocks(
-            section.markdown,
-            section.imageWidgets,
-            section.imageWidgetImages
-          )
-        ) ?? [],
-      [context]
-    );
+      useEffect(() => {
+        if (preview) return;
 
-    useEffect(() => {
-      if (preview) return;
+        let isMounted = true;
+        const loadContext = async () => {
+          dispatchState({ loading: true, error: null });
+          try {
+            const file = plugin.app.vault.getAbstractFileByPath(filePath);
+            if (!(file instanceof TFile)) {
+              if (isMounted) dispatchState({ error: 'Current DRC not found.' });
+              return;
+            }
 
-      let isMounted = true;
-      const loadContext = async () => {
-        dispatchState({ loading: true, error: null });
-        try {
-          const file = plugin.app.vault.getAbstractFileByPath(filePath);
-          if (!(file instanceof TFile)) {
-            if (isMounted) dispatchState({ error: 'Current DRC not found.' });
-            return;
-          }
+            await forceMetadataCacheRefresh(plugin.app, file);
+            const frontmatter =
+              plugin.app.metadataCache.getFileCache(file)?.frontmatter;
+            const currentDate =
+              typeof frontmatter?.date === 'string'
+                ? parseLocalDateSafe(frontmatter.date)
+                : null;
+            if (!currentDate) {
+              if (isMounted)
+                dispatchState({ error: 'Current DRC date not found.' });
+              return;
+            }
 
-          await forceMetadataCacheRefresh(plugin.app, file);
-          const frontmatter =
-            plugin.app.metadataCache.getFileCache(file)?.frontmatter;
-          const currentDate =
-            typeof frontmatter?.date === 'string'
-              ? parseLocalDateSafe(frontmatter.date)
-              : null;
-          if (!currentDate) {
+            const drcService = plugin.serviceManager
+              ? await plugin.serviceManager.getDRCService()
+              : plugin.drcService;
+            const result = await drcService.getPreviousTradingDayContext(
+              currentDate,
+              headings,
+              config?.fallbackMode ?? 'nearest-earlier'
+            );
+            if (isMounted) dispatchState({ context: result });
+          } catch (err) {
+            console.error('Failed to load previous trading day context:', err);
             if (isMounted)
-              dispatchState({ error: 'Current DRC date not found.' });
-            return;
+              dispatchState({
+                error: 'Failed to load previous trading day context.',
+              });
+          } finally {
+            if (isMounted) dispatchState({ loading: false });
           }
+        };
 
-          const drcService = plugin.serviceManager
-            ? await plugin.serviceManager.getDRCService()
-            : plugin.drcService;
-          const result = await drcService.getPreviousTradingDayContext(
-            currentDate,
-            headings,
-            config?.fallbackMode ?? 'nearest-earlier'
-          );
-          if (isMounted) dispatchState({ context: result });
-        } catch (err) {
-          console.error('Failed to load previous trading day context:', err);
-          if (isMounted)
-            dispatchState({
-              error: 'Failed to load previous trading day context.',
-            });
-        } finally {
-          if (isMounted) dispatchState({ loading: false });
-        }
-      };
+        void loadContext();
+        return () => {
+          isMounted = false;
+        };
+      }, [config?.fallbackMode, filePath, headings, plugin, preview]);
 
-      void loadContext();
-      return () => {
-        isMounted = false;
-      };
-    }, [config?.fallbackMode, filePath, headings, plugin, preview]);
+      const openSourceDRC = useCallback(async () => {
+        if (!context) return;
+        await openReviewWidgetFile(plugin, context.sourcePath);
+      }, [context, plugin]);
 
-    useEffect(() => {
-      componentRefs.current.forEach((component) => component.unload());
-      componentRefs.current = [];
+      const handleSourceHeaderKeyDown = useCallback(
+        (event: React.KeyboardEvent<HTMLSpanElement>) => {
+          if (event.key !== 'Enter' && event.key !== ' ') return;
+          event.preventDefault();
+          void openSourceDRC();
+        },
+        [openSourceDRC]
+      );
 
-      if (!context) return;
+      if (preview) {
+        const previewHeadings =
+          headings.length > 0 ? headings : [PREVIEW_HEADING];
 
-      sectionBlocks.forEach((blocks, sectionIndex) => {
-        blocks.forEach((block, blockIndex) => {
-          if (block.type !== 'markdown') return;
-          const refKey = `${sectionIndex}-${blockIndex}`;
-          const container = markdownRefs.current.get(refKey);
-          if (!container) return;
-          container.empty();
-          if (!block.markdown) return;
+        return (
+          <div className="journalit-previous-trading-day-context journalit-previous-drc-reference">
+            <div className="journalit-previous-drc-reference-header">
+              <div className="journalit-previous-drc-reference-title-group">
+                <div className="journalit-previous-drc-reference-kicker">
+                  {t('widget.previous-trading-day-context.reference-label')}
+                </div>
+                <div className="journalit-previous-drc-reference-date">
+                  Friday, May 1, 2026
+                </div>
+              </div>
+              <div className="journalit-previous-drc-reference-link">
+                {t('widget.previous-trading-day-context.open-source')}
+              </div>
+            </div>
+            <div className="journalit-previous-drc-reference-body">
+              <div className="journalit-widget-empty">
+                {t('widget.previous-trading-day-context.preview-source')}
+              </div>
+              {previewHeadings.map((heading) => (
+                <section key={heading}>
+                  <h4>{heading}</h4>
+                  <p>{t('widget.previous-trading-day-context.preview-note')}</p>
+                  <ul>
+                    <li>
+                      {t(
+                        'widget.previous-trading-day-context.preview-bullet-one'
+                      )}
+                    </li>
+                    <li>
+                      {t(
+                        'widget.previous-trading-day-context.preview-bullet-two'
+                      )}
+                    </li>
+                  </ul>
+                </section>
+              ))}
+              <div className="journalit-images-widget journalit-media-carousel-surface">
+                <ImageCarousel
+                  images={[
+                    createSvgPlaceholderDataUri(
+                      700,
+                      320,
+                      '#1a1a2e',
+                      '#eeeeee',
+                      'Previous DRC Chart'
+                    ),
+                  ]}
+                  altPrefix={t(
+                    'widget.previous-trading-day-context.image-alt-prefix'
+                  )}
+                  displayOptions={{
+                    showThumbnails: false,
+                    showCounter: false,
+                    enableFullscreen: false,
+                  }}
+                  deleteOptions={{ enabled: false }}
+                  useResolveMediaPath={true}
+                />
+              </div>
+            </div>
+          </div>
+        );
+      }
 
-          const component = new Component();
-          component.load();
-          componentRefs.current.push(component);
-          component.registerDomEvent(
-            container,
-            'click',
-            (event) => {
-              if (
-                event.button !== 0 ||
-                event.metaKey ||
-                event.ctrlKey ||
-                event.shiftKey ||
-                event.altKey
-              ) {
-                return;
-              }
+      if (!headings.length) {
+        return (
+          <div className="journalit-widget-empty">
+            {t('widget.previous-trading-day-context.no-sections-configured')}
+          </div>
+        );
+      }
 
-              const linkedPath = resolvePreviousDRCInternalLinkPath(
-                plugin.app,
-                event.target,
-                context.sourcePath
-              );
-              if (!linkedPath) return;
+      if (loading) {
+        return (
+          <div className="journalit-widget-loading" {...shareLoadingProps}>
+            Loading previous DRC…
+          </div>
+        );
+      }
 
-              event.preventDefault();
-              event.stopPropagation();
-              void openReviewWidgetFile(plugin, linkedPath);
-            },
-            { capture: true }
-          );
-          void MarkdownRenderer.render(
-            plugin.app,
-            block.markdown,
-            container,
-            context.sourcePath,
-            component
-          );
-        });
-      });
+      if (error) {
+        return <div className="journalit-widget-empty">{error}</div>;
+      }
 
-      return () => {
-        componentRefs.current.forEach((component) => component.unload());
-        componentRefs.current = [];
-      };
-    }, [context, plugin, sectionBlocks]);
+      if (!context) {
+        return (
+          <div className="journalit-widget-empty">Previous DRC not found.</div>
+        );
+      }
 
-    const openSourceDRC = useCallback(async () => {
-      if (!context) return;
-      await openReviewWidgetFile(plugin, context.sourcePath);
-    }, [context, plugin]);
-
-    const handleSourceHeaderKeyDown = useCallback(
-      (event: React.KeyboardEvent<HTMLSpanElement>) => {
-        if (event.key !== 'Enter' && event.key !== ' ') return;
-        event.preventDefault();
-        void openSourceDRC();
-      },
-      [openSourceDRC]
-    );
-
-    const preventPreviousDRCFormMutation = useCallback(
-      (event: React.SyntheticEvent<HTMLDivElement>) => {
-        event.preventDefault();
-        event.stopPropagation();
-      },
-      []
-    );
-
-    if (preview) {
-      const previewHeadings =
-        headings.length > 0 ? headings : [PREVIEW_HEADING];
+      if (context.sections.length === 0) {
+        return (
+          <div className="journalit-widget-empty">
+            No matching heading found in {context.sourceDate}.
+          </div>
+        );
+      }
 
       return (
         <div className="journalit-previous-trading-day-context journalit-previous-drc-reference">
@@ -363,175 +287,56 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
                 {t('widget.previous-trading-day-context.reference-label')}
               </div>
               <div className="journalit-previous-drc-reference-date">
-                Friday, May 1, 2026
+                {formatPreviousDRCDate(context.sourceDate)}
               </div>
             </div>
-            <div className="journalit-previous-drc-reference-link">
+            {isNested && !hasSourceCycle && (
+              <button
+                type="button"
+                className="journalit-native-button journalit-native-button--unstyled journalit-previous-drc-reference-link"
+                {...shareCaptureExcludeProps}
+                aria-expanded={nestedExpanded}
+                onClick={() => setNestedExpanded((expanded) => !expanded)}
+              >
+                {t(
+                  nestedExpanded
+                    ? 'tradelog.node.collapse'
+                    : 'tradelog.node.expand'
+                )}
+              </button>
+            )}
+            <button
+              type="button"
+              className="journalit-native-button journalit-native-button--unstyled journalit-previous-drc-reference-link"
+              {...shareCaptureExcludeProps}
+              onClick={() => void openSourceDRC()}
+              onKeyDown={(event) => void handleSourceHeaderKeyDown(event)}
+            >
               {t('widget.previous-trading-day-context.open-source')}
-            </div>
+            </button>
           </div>
           <div className="journalit-previous-drc-reference-body">
-            <div className="journalit-widget-empty">
-              {t('widget.previous-trading-day-context.preview-source')}
-            </div>
-            {previewHeadings.map((heading) => (
-              <section key={heading}>
-                <h4>{heading}</h4>
-                <p>{t('widget.previous-trading-day-context.preview-note')}</p>
-                <ul>
-                  <li>
-                    {t(
-                      'widget.previous-trading-day-context.preview-bullet-one'
+            {renderSections &&
+              context.sections.map((section) => {
+                return (
+                  <section key={`${section.heading}-${section.level}`}>
+                    {React.createElement(
+                      `h${Math.min(6, section.level + 1)}`,
+                      null,
+                      section.heading
                     )}
-                  </li>
-                  <li>
-                    {t(
-                      'widget.previous-trading-day-context.preview-bullet-two'
-                    )}
-                  </li>
-                </ul>
-              </section>
-            ))}
-            <div className="journalit-images-widget journalit-media-carousel-surface">
-              <ImageCarousel
-                images={[
-                  createSvgPlaceholderDataUri(
-                    700,
-                    320,
-                    '#1a1a2e',
-                    '#eeeeee',
-                    'Previous DRC Chart'
-                  ),
-                ]}
-                altPrefix={t(
-                  'widget.previous-trading-day-context.image-alt-prefix'
-                )}
-                displayOptions={{
-                  showThumbnails: false,
-                  showCounter: false,
-                  enableFullscreen: false,
-                }}
-                deleteOptions={{ enabled: false }}
-                useResolveMediaPath={true}
-              />
-            </div>
+                    <EmbeddedReviewMarkdown
+                      markdown={section.markdown}
+                      sourcePath={context.sourcePath}
+                      plugin={plugin}
+                    />
+                  </section>
+                );
+              })}
           </div>
         </div>
       );
     }
-
-    if (!headings.length) {
-      return (
-        <div className="journalit-widget-empty">
-          {t('widget.previous-trading-day-context.no-sections-configured')}
-        </div>
-      );
-    }
-
-    if (loading) {
-      return (
-        <div className="journalit-widget-loading" {...shareLoadingProps}>
-          Loading previous DRC…
-        </div>
-      );
-    }
-
-    if (error) {
-      return <div className="journalit-widget-empty">{error}</div>;
-    }
-
-    if (!context) {
-      return (
-        <div className="journalit-widget-empty">Previous DRC not found.</div>
-      );
-    }
-
-    if (context.sections.length === 0) {
-      return (
-        <div className="journalit-widget-empty">
-          No matching heading found in {context.sourceDate}.
-        </div>
-      );
-    }
-
-    return (
-      <div className="journalit-previous-trading-day-context journalit-previous-drc-reference">
-        <div className="journalit-previous-drc-reference-header">
-          <div className="journalit-previous-drc-reference-title-group">
-            <div className="journalit-previous-drc-reference-kicker">
-              {t('widget.previous-trading-day-context.reference-label')}
-            </div>
-            <div className="journalit-previous-drc-reference-date">
-              {formatPreviousDRCDate(context.sourceDate)}
-            </div>
-          </div>
-          <button
-            type="button"
-            className="journalit-native-button journalit-native-button--unstyled journalit-previous-drc-reference-link"
-            {...shareCaptureExcludeProps}
-            onClick={() => void openSourceDRC()}
-            onKeyDown={(event) => void handleSourceHeaderKeyDown(event)}
-          >
-            {t('widget.previous-trading-day-context.open-source')}
-          </button>
-        </div>
-        <div className="journalit-previous-drc-reference-body">
-          {context.sections.map((section, index) => {
-            const blocks = sectionBlocks[index] || [];
-            return (
-              <section key={`${section.heading}-${section.level}`}>
-                {React.createElement(
-                  `h${Math.min(6, section.level + 1)}`,
-                  null,
-                  section.heading
-                )}
-                {blocks.map((block, blockIndex) => {
-                  if (block.type === 'markdown') {
-                    const refKey = `${index}-${blockIndex}`;
-                    return (
-                      <div
-                        key={refKey}
-                        className="journalit-previous-drc-rendered-markdown"
-                        onInputCapture={preventPreviousDRCFormMutation}
-                        onChangeCapture={preventPreviousDRCFormMutation}
-                        onSubmitCapture={preventPreviousDRCFormMutation}
-                        ref={(element) => {
-                          if (element)
-                            markdownRefs.current.set(refKey, element);
-                          else markdownRefs.current.delete(refKey);
-                        }}
-                      />
-                    );
-                  }
-
-                  return (
-                    <div
-                      key={`${block.widgetId}-${blockIndex}`}
-                      className="journalit-images-widget journalit-media-carousel-surface"
-                    >
-                      <ImageCarousel
-                        images={block.images}
-                        altPrefix={t(
-                          'widget.previous-trading-day-context.image-alt-prefix'
-                        )}
-                        displayOptions={{
-                          showThumbnails: block.images.length > 1,
-                          showCounter: block.images.length > 1,
-                          enableFullscreen: true,
-                        }}
-                        deleteOptions={{ enabled: false }}
-                        useResolveMediaPath={true}
-                        sourcePath={context.sourcePath}
-                      />
-                    </div>
-                  );
-                })}
-              </section>
-            );
-          })}
-        </div>
-      </div>
-    );
-  });
+  );
 
 PreviousTradingDayContextWidget.displayName = 'PreviousTradingDayContextWidget';

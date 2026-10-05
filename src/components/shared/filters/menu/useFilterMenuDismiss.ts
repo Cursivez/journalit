@@ -5,6 +5,10 @@ import { type RefObject, useEffect, useEffectEvent } from 'react';
 interface UseFilterMenuDismissInput {
   triggerRef: RefObject<HTMLElement | null>;
   layerRef: RefObject<HTMLElement | null>;
+  calendarSurfaceRef: RefObject<{
+    element: HTMLElement;
+    close: () => void;
+  } | null>;
   onEscape: () => void;
   onDismiss: () => void;
   onReflow: () => void;
@@ -14,6 +18,7 @@ interface UseFilterMenuDismissInput {
 export function useFilterMenuDismiss({
   triggerRef,
   layerRef,
+  calendarSurfaceRef,
   onEscape,
   onDismiss,
   onReflow,
@@ -39,7 +44,11 @@ export function useFilterMenuDismiss({
 
     const isInsideMenu = (target: EventTarget | null): boolean =>
       target instanceof ownerWindow.Node &&
-      Boolean(trigger?.contains(target) || layerRef.current?.contains(target));
+      Boolean(
+        trigger?.contains(target) ||
+        layerRef.current?.contains(target) ||
+        calendarSurfaceRef.current?.element.contains(target)
+      );
 
     const onPointerDown = (event: MouseEvent) => {
       if (!isInsideMenu(event.target)) dismiss();
@@ -70,5 +79,5 @@ export function useFilterMenuDismiss({
       ownerWindow.removeEventListener('resize', onResize);
       ownerWindow.removeEventListener('blur', onBlur);
     };
-  }, [layerRef, triggerRef]);
+  }, [layerRef, triggerRef, calendarSurfaceRef]);
 }

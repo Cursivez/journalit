@@ -1,4 +1,14 @@
-import React, { useEffect, useMemo, useReducer, useState } from 'react';
+import React, {
+  useContext,
+  useEffect,
+  useMemo,
+  useReducer,
+  useState,
+} from 'react';
+import {
+  DateDraftGateContext,
+  useDateDraftGate,
+} from '../../../core/DateDraftGate';
 import { t } from '../../../../lang/helpers';
 import { createConfigFromProfile } from '../../../../services/propChallenge/PropChallengeConfig';
 import type {
@@ -10,6 +20,7 @@ import type {
 import {
   applyProfilePhaseUpdate,
   proposedProfileRules,
+  proposedProfilePayoutPolicy,
 } from '../../../../services/propChallenge/PropChallengeProfileUpdates';
 import {
   sameProfileContent,
@@ -39,6 +50,10 @@ interface Props {
   onSaveFacts?: (config: PropChallengeConfig) => void;
 }
 
+const PERSONAL_APPLICABILITY = {
+  kind: 'personal',
+} satisfies ProfileApplicability;
+
 function definitions(rules: readonly PropChallengeRule[]) {
   return rules.map(({ id: _id, ...rule }) => rule);
 }
@@ -61,6 +76,7 @@ function groupByKind<T extends { kind: PropChallengeRule['kind'] }>(
 }
 
 export function ProfileUpdateReview(props: Props) {
+  const dateDraftGate = useDateDraftGate();
   const [purchaseDate, setPurchaseDate] = useState(
     props.config.purchaseDate ?? ''
   );
@@ -83,82 +99,87 @@ export function ProfileUpdateReview(props: Props) {
   const selectedSource = matching.some((item) => item.value === sourceIndex)
     ? sourceIndex
     : matching[0]?.value;
+  const config = useMemo(
+    () => ({ ...props.config, purchaseDate: purchaseDate || undefined }),
+    [props.config, purchaseDate]
+  );
   return (
-    <section
-      className="journalit-profile-review"
-      aria-label={t('account.profiles.review')}
-    >
-      <div className="journalit-prop-profile-picker__controls">
-        {eligible.length > 1 && (
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.profiles.account-phase')}</span>
-            <DropdownSelect
-              value={phaseId}
-              ariaLabel={t('account.profiles.account-phase')}
-              onChange={(id) => {
-                setPhaseId(id);
-                setSourceIndex(
-                  String(
-                    eligible.find((item) => item.id === id)
-                      ?.profilePhaseIndex ?? 0
-                  )
-                );
-              }}
-              disabled={props.disabled}
-              options={eligible.map((item) => ({
-                value: item.id,
-                label: item.name,
-              }))}
-            />
-          </label>
+    <DateDraftGateContext.Provider value={dateDraftGate}>
+      <section
+        className="journalit-profile-review"
+        aria-label={t('account.profiles.review')}
+      >
+        <div className="journalit-prop-profile-picker__controls">
+          {eligible.length > 1 && (
+            <label className="journalit-prop-challenge-field">
+              <span>{t('account.profiles.account-phase')}</span>
+              <DropdownSelect
+                value={phaseId}
+                ariaLabel={t('account.profiles.account-phase')}
+                onBeforeChange={() => dateDraftGate.confirm()}
+                onChange={(id) => {
+                  setPhaseId(id);
+                  setSourceIndex(
+                    String(
+                      eligible.find((item) => item.id === id)
+                        ?.profilePhaseIndex ?? 0
+                    )
+                  );
+                }}
+                disabled={props.disabled}
+                options={eligible.map((item) => ({
+                  value: item.id,
+                  label: item.name,
+                }))}
+              />
+            </label>
+          )}
+          {matching.length > 1 && (
+            <label className="journalit-prop-challenge-field">
+              <span>{t('account.profiles.source-phase')}</span>
+              <DropdownSelect
+                value={selectedSource ?? ''}
+                ariaLabel={t('account.profiles.source-phase')}
+                onBeforeChange={() => dateDraftGate.confirm()}
+                onChange={setSourceIndex}
+                disabled={props.disabled}
+                options={matching}
+              />
+            </label>
+          )}
+        </div>
+        {phase && selectedSource !== undefined ? (
+          <PhaseUpdateReview
+            key={JSON.stringify([
+              phase,
+              selectedSource,
+              props.selection.source,
+              props.selection.firmId,
+              props.selection.challenge.id,
+              props.selection.challenge.phases[Number(selectedSource)],
+            ])}
+            {...props}
+            config={config}
+            onPurchaseDate={setPurchaseDate}
+            phase={phase}
+            sourceIndex={Number(selectedSource)}
+          />
+        ) : (
+          <>
+            <p>
+              {t(
+                phase
+                  ? 'account.profiles.no-matching-phase'
+                  : 'account.profiles.completed'
+              )}
+            </p>
+            <Button variant="plain" size="small" onClick={props.onCancel}>
+              {t('button.cancel')}
+            </Button>
+          </>
         )}
-        {matching.length > 1 && (
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.profiles.source-phase')}</span>
-            <DropdownSelect
-              value={selectedSource ?? ''}
-              ariaLabel={t('account.profiles.source-phase')}
-              onChange={setSourceIndex}
-              disabled={props.disabled}
-              options={matching}
-            />
-          </label>
-        )}
-      </div>
-      {phase && selectedSource !== undefined ? (
-        <PhaseUpdateReview
-          key={JSON.stringify([
-            phase,
-            selectedSource,
-            props.selection.source,
-            props.selection.firmId,
-            props.selection.challenge.id,
-            props.selection.challenge.phases[Number(selectedSource)],
-          ])}
-          {...props}
-          config={{
-            ...props.config,
-            ...(purchaseDate ? { purchaseDate } : { purchaseDate: undefined }),
-          }}
-          onPurchaseDate={setPurchaseDate}
-          phase={phase}
-          sourceIndex={Number(selectedSource)}
-        />
-      ) : (
-        <>
-          <p>
-            {t(
-              phase
-                ? 'account.profiles.no-matching-phase'
-                : 'account.profiles.completed'
-            )}
-          </p>
-          <Button variant="plain" size="small" onClick={props.onCancel}>
-            {t('button.cancel')}
-          </Button>
-        </>
-      )}
-    </section>
+      </section>
+    </DateDraftGateContext.Provider>
   );
 }
 
@@ -234,31 +255,61 @@ function PhaseUpdateReview({
   sourceIndex: number;
   onPurchaseDate: (value: string) => void;
 }) {
+  const dateDraftGate = useContext(DateDraftGateContext)!;
   const phaseId = phase.id;
   const [step, setStep] = useState<'review' | 'apply'>('review');
   const sourcePhase = selection.challenge.phases[sourceIndex];
   const baseline = phase.profileSnapshot;
-  const [applicability, setApplicability] = useState<
-    ProfileApplicability | { kind: 'checking' | 'check_failed' }
-  >({ kind: selection.source === 'personal' ? 'personal' : 'checking' });
+  
+  
+  const [applicabilityState, setApplicabilityState] = useState<
+    | {
+        kind: 'ready';
+        result: ProfileApplicability;
+        config: PropChallengeConfig;
+      }
+    | { kind: 'checking' | 'failed'; previous: ProfileApplicability | null }
+  >({ kind: 'checking', previous: null });
   useEffect(() => {
-    if (selection.source === 'personal') {
-      setApplicability({ kind: 'personal' });
-      return;
-    }
+    if (selection.source === 'personal') return;
     let cancelled = false;
-    setApplicability({ kind: 'checking' });
+    setApplicabilityState((previous) => ({
+      kind: 'checking',
+      previous: previous.kind === 'ready' ? previous.result : previous.previous,
+    }));
     void resolveProfileApplicability(config, phase, selection, sourceIndex)
       .then((result) => {
-        if (!cancelled) setApplicability(result);
+        if (!cancelled)
+          setApplicabilityState({ kind: 'ready', result, config });
       })
       .catch(() => {
-        if (!cancelled) setApplicability({ kind: 'check_failed' });
+        if (!cancelled)
+          setApplicabilityState((previous) => ({
+            kind: 'failed',
+            previous:
+              previous.kind === 'ready' ? previous.result : previous.previous,
+          }));
       });
     return () => {
       cancelled = true;
     };
   }, [config, phase, selection, sourceIndex]);
+  const applicability =
+    selection.source === 'personal'
+      ? PERSONAL_APPLICABILITY
+      : applicabilityState.kind === 'ready'
+        ? applicabilityState.result
+        : applicabilityState.previous;
+  const actionsDisabled =
+    disabled ||
+    (selection.source !== 'personal' &&
+      (applicabilityState.kind !== 'ready' ||
+        applicabilityState.config !== config));
+  const checking =
+    selection.source !== 'personal' &&
+    (applicabilityState.kind === 'checking' ||
+      (applicabilityState.kind === 'ready' &&
+        applicabilityState.config !== config));
   const phaseRulesByKind = groupByKind(phase.rules);
   const baselineRulesByKind = baseline
     ? groupByKind(baseline.rules)
@@ -334,7 +385,19 @@ function PhaseUpdateReview({
     () => createConfigFromProfile(selection).phases[sourceIndex],
     [selection, sourceIndex]
   );
-  const payoutPolicy = keepPayout ? phase.payoutPolicy : incoming.payoutPolicy;
+  const payoutProposal = proposedProfilePayoutPolicy({
+    phase,
+    source: incoming,
+    keepCurrent: keepPayout,
+  });
+  const payoutConflictError =
+    payoutProposal.kind === 'conflict'
+      ? t('account.profiles.profitable-days-conflict')
+      : '';
+  const payoutPolicy =
+    payoutProposal.kind === 'policy'
+      ? payoutProposal.policy
+      : phase.payoutPolicy;
   const payoutChanged = !sameProfileContent(phase.payoutPolicy, payoutPolicy);
   const drawdownChanged = !canPreserveProfileState(
     { rules: phase.rules },
@@ -346,7 +409,7 @@ function PhaseUpdateReview({
   const custom = drawdownChanged || payoutChanged;
   const active = phase.status === 'active';
   const published =
-    applicability.kind === 'published' &&
+    applicability?.kind === 'published' &&
     sameProfileContent(
       proposed.map(ruleDefinition),
       incoming.rules.map(ruleDefinition)
@@ -396,6 +459,7 @@ function PhaseUpdateReview({
     </label>
   );
   const apply = () => {
+    if (actionsDisabled || !applicability || !dateDraftGate.confirm()) return;
     dispatch({ type: 'error', message: '' });
     try {
       if (needsConsent && !confirmed)
@@ -492,318 +556,346 @@ function PhaseUpdateReview({
       }}
     />
   );
-  if (applicability.kind === 'checking')
-    return <p role="status">{t('account.profiles.applicability-checking')}</p>;
-  if (applicability.kind === 'check_failed')
+  const showPurchaseInput = Boolean(
+    sourcePhase.purchaseEligibility ||
+    config.purchaseDate ||
+    sourcePhase.policyChanges?.some((change) => change.kind === 'new_purchases')
+  );
+  const renderReview = () => {
+    if (!applicability && applicabilityState.kind !== 'failed')
+      return (
+        <p role="status">{t('account.profiles.applicability-checking')}</p>
+      );
+    if (!applicability)
+      return (
+        <>
+          <p role="alert">{t('account.profiles.check-failed')}</p>
+          <Button onClick={onCancel}>{t('button.cancel')}</Button>
+        </>
+      );
+    if (
+      [
+        'needs_purchase_date',
+        'not_applicable',
+        'uncertain',
+        'initial_terms',
+        'scheduled',
+      ].includes(applicability.kind)
+    ) {
+      return (
+        <div className="journalit-profile-review__transition">
+          <p role="status">
+            {applicability.kind === 'scheduled'
+              ? `${t('account.profiles.published-date')}: ${new Date(applicability.effectiveAt).toLocaleString()}`
+              : t(
+                  applicability.kind === 'needs_purchase_date'
+                    ? 'account.profiles.purchase-needed'
+                    : applicability.kind === 'not_applicable'
+                      ? 'account.profiles.purchase-excluded'
+                      : applicability.kind === 'initial_terms'
+                        ? 'account.profiles.initial-terms'
+                        : 'account.profiles.purchase-uncertain'
+                )}
+          </p>
+          {'sourceUrl' in applicability && (
+            <a
+              href={applicability.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              {t('account.profiles.announcement')}
+            </a>
+          )}
+          <div className="journalit-profile-review__actions">
+            <Button variant="plain" size="small" onClick={onCancel}>
+              {t('button.cancel')}
+            </Button>
+            {onSaveFacts && applicability.kind !== 'scheduled' && (
+              <Button
+                size="small"
+                disabled={
+                  !isPurchaseDate(config.purchaseDate) ||
+                  actionsDisabled ||
+                  config.purchaseDate > new Date().toISOString().slice(0, 10)
+                }
+                onClick={() => {
+                  if (!actionsDisabled && dateDraftGate.confirm())
+                    onSaveFacts(config);
+                }}
+              >
+                {t('account.profiles.save-purchase')}
+              </Button>
+            )}
+          </div>
+        </div>
+      );
+    }
     return (
       <>
-        <p role="alert">{t('account.profiles.check-failed')}</p>
-        <Button onClick={onCancel}>{t('button.cancel')}</Button>
+        {step === 'review' ? (
+          <>
+            <ProfilePolicyComparison
+              current={comparisonCurrent}
+              incoming={comparisonIncoming}
+              currencyCode={currencyCode}
+            />
+            <div className="journalit-profile-review__choices">
+              {Array.from(new Set(conflicts.map((rule) => rule.kind))).map(
+                (kind) => (
+                  <Checkbox
+                    key={kind}
+                    disabled={disabled}
+                    label={`${t('account.profiles.keep-local')} ${t(`account.prop-challenge.rule.${kind}`)}`}
+                    checked={phase.rules
+                      .filter((rule) => rule.kind === kind)
+                      .every((rule) => keepRuleIds.has(rule.id))}
+                    onChange={(keep) => {
+                      for (const rule of phase.rules) {
+                        if (rule.kind === kind) {
+                          dispatch({ type: 'rule', id: rule.id, keep });
+                        }
+                      }
+                    }}
+                  />
+                )
+              )}
+              {payoutConflict && (
+                <Checkbox
+                  checked={keepPayout}
+                  onChange={(keep) =>
+                    dispatch({ type: 'edit', values: { keepPayout: keep } })
+                  }
+                  label={t('account.profiles.keep-payout')}
+                  disabled={disabled}
+                />
+              )}
+            </div>
+            <div className="journalit-profile-review__actions">
+              <Button
+                variant="plain"
+                size="small"
+                disabled={onRetain ? actionsDisabled : disabled}
+                onClick={() => {
+                  if (!onRetain) onCancel();
+                  else if (!actionsDisabled && dateDraftGate.confirm())
+                    onRetain(config);
+                }}
+              >
+                {t(onRetain ? 'account.profiles.retain' : 'button.cancel')}
+              </Button>
+              <Button
+                size="small"
+                disabled={
+                  !sourceDiffers ||
+                  actionsDisabled ||
+                  selection.challenge.currency !== currencyCode
+                }
+                onClick={() => {
+                  if (!actionsDisabled && dateDraftGate.confirm())
+                    setStep('apply');
+                }}
+              >
+                {t('button.next')}
+              </Button>
+            </div>
+            {selection.challenge.currency !== currencyCode && (
+              <p role="alert">{t('account.profiles.currency')}</p>
+            )}
+          </>
+        ) : (
+          <>
+            {active && (
+              <section
+                className="journalit-profile-review__transition"
+                aria-label={t('account.profiles.custom-transition')}
+              >
+                <div className="journalit-profile-review__dates">
+                  {published ? (
+                    <div>
+                      <span>{t('account.profiles.published-date')}</span>
+                      <p>{new Date(published.effectiveAt).toLocaleString()}</p>
+                      <a
+                        href={published.sourceUrl}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        {t('account.profiles.announcement')}
+                      </a>
+                    </div>
+                  ) : (
+                    <FastDateTimeInput
+                      label={t(
+                        manualProof
+                          ? 'account.profiles.firm-effective'
+                          : 'account.profiles.effective'
+                      )}
+                      value={effective || undefined}
+                      includeTime
+                      commitValidSegmentChangesImmediately
+                      disabled={disabled}
+                      onChange={(date) =>
+                        dispatch({
+                          type: 'edit',
+                          values: {
+                            effective:
+                              date instanceof Date
+                                ? date.toISOString()
+                                : (date ?? ''),
+                          },
+                        })
+                      }
+                    />
+                  )}
+                  {payoutChanged && payoutPolicy && (
+                    <FastDateTimeInput
+                      label={t('account.profiles.cycle-start')}
+                      value={cycleStart || undefined}
+                      includeTime
+                      commitValidSegmentChangesImmediately
+                      disabled={disabled}
+                      onChange={(date) =>
+                        dispatch({
+                          type: 'edit',
+                          values: {
+                            cycleStart:
+                              date instanceof Date
+                                ? date.toISOString()
+                                : (date ?? ''),
+                          },
+                        })
+                      }
+                    />
+                  )}
+                </div>
+                {(custom || manualProof) && (
+                  <label className="journalit-prop-challenge-field">
+                    <span>{t('account.profiles.transition-source')}</span>
+                    <input
+                      value={source}
+                      disabled={disabled}
+                      onChange={(event) =>
+                        dispatch({
+                          type: 'edit',
+                          values: { source: event.target.value },
+                        })
+                      }
+                    />
+                  </label>
+                )}
+                {drawdowns.map((rule, index) => {
+                  const value = carry[index] ?? {
+                    floor: '',
+                    peak: '',
+                    locked: false,
+                  };
+                  const set = (next: typeof value) => {
+                    dispatch({ type: 'carry', index, value: next });
+                  };
+                  return (
+                    <div
+                      key={rule.id}
+                      className="journalit-profile-review__drawdown"
+                    >
+                      <strong>
+                        {t('account.prop-challenge.rule.drawdown')} {index + 1}
+                      </strong>
+                      {numberField(
+                        t('account.profiles.floor'),
+                        value.floor,
+                        (floor) => set({ ...value, floor })
+                      )}
+                      {numberField(
+                        t('account.profiles.peak'),
+                        value.peak,
+                        (peak) => set({ ...value, peak })
+                      )}
+                      <Checkbox
+                        checked={value.locked}
+                        onChange={(locked) => set({ ...value, locked })}
+                        label={t('account.profiles.locked')}
+                        disabled={disabled}
+                      />
+                    </div>
+                  );
+                })}
+              </section>
+            )}
+            {!active && manualProof && (
+              <label className="journalit-prop-challenge-field">
+                <span>{t('account.profiles.transition-source')}</span>
+                <input
+                  value={source}
+                  disabled={disabled}
+                  onChange={(event) =>
+                    dispatch({
+                      type: 'edit',
+                      values: { source: event.target.value },
+                    })
+                  }
+                />
+              </label>
+            )}
+            {needsConsent && (
+              <Checkbox
+                checked={confirmed}
+                onChange={(value) => dispatch({ type: 'confirm', value })}
+                label={t('account.profiles.confirm')}
+                disabled={disabled}
+              />
+            )}
+            {(payoutConflictError || error) && (
+              <p role="alert">{payoutConflictError || error}</p>
+            )}
+            <div className="journalit-profile-review__actions">
+              <Button
+                variant="plain"
+                size="small"
+                onClick={() => {
+                  if (!dateDraftGate.confirm()) return;
+                  dispatch({ type: 'confirm', value: false });
+                  setStep('review');
+                }}
+              >
+                {t('button.back')}
+              </Button>
+              <Button
+                size="small"
+                onClick={apply}
+                disabled={
+                  actionsDisabled ||
+                  Boolean(payoutConflictError) ||
+                  (needsConsent && !confirmed) ||
+                  (manualProof && !source.trim()) ||
+                  (active &&
+                    (!effectiveValue ||
+                      (custom && !source.trim()) ||
+                      (payoutChanged && Boolean(payoutPolicy) && !cycleStart) ||
+                      drawdowns.some(
+                        (_, index) =>
+                          !carry[index]?.floor.trim() ||
+                          !carry[index]?.peak.trim()
+                      )))
+                }
+              >
+                {t('account.profiles.accept')}
+              </Button>
+            </div>
+            <p>{t('account.profiles.history-unchanged')}</p>
+          </>
+        )}
       </>
     );
-  if (
-    [
-      'needs_purchase_date',
-      'not_applicable',
-      'uncertain',
-      'initial_terms',
-      'scheduled',
-    ].includes(applicability.kind)
-  ) {
-    return (
-      <div className="journalit-profile-review__transition">
-        {(sourcePhase.purchaseEligibility ||
-          sourcePhase.policyChanges?.some(
-            (change) => change.kind === 'new_purchases'
-          )) &&
-          purchaseInput}
-        <p role="status">
-          {applicability.kind === 'scheduled'
-            ? `${t('account.profiles.published-date')}: ${new Date(applicability.effectiveAt).toLocaleString()}`
-            : t(
-                applicability.kind === 'needs_purchase_date'
-                  ? 'account.profiles.purchase-needed'
-                  : applicability.kind === 'not_applicable'
-                    ? 'account.profiles.purchase-excluded'
-                    : applicability.kind === 'initial_terms'
-                      ? 'account.profiles.initial-terms'
-                      : 'account.profiles.purchase-uncertain'
-              )}
-        </p>
-        {'sourceUrl' in applicability && (
-          <a
-            href={applicability.sourceUrl}
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            {t('account.profiles.announcement')}
-          </a>
-        )}
-        <div className="journalit-profile-review__actions">
-          <Button variant="plain" size="small" onClick={onCancel}>
-            {t('button.cancel')}
-          </Button>
-          {onSaveFacts && applicability.kind !== 'scheduled' && (
-            <Button
-              size="small"
-              disabled={
-                disabled ||
-                !isPurchaseDate(config.purchaseDate) ||
-                config.purchaseDate > new Date().toISOString().slice(0, 10)
-              }
-              onClick={() => onSaveFacts(config)}
-            >
-              {t('account.profiles.save-purchase')}
-            </Button>
-          )}
-        </div>
-      </div>
-    );
-  }
+  };
   return (
     <>
-      {step === 'review' ? (
-        <>
-          <ProfilePolicyComparison
-            current={comparisonCurrent}
-            incoming={comparisonIncoming}
-            currencyCode={currencyCode}
-          />
-          {(sourcePhase.purchaseEligibility || config.purchaseDate) &&
-            purchaseInput}
-          <div className="journalit-profile-review__choices">
-            {Array.from(new Set(conflicts.map((rule) => rule.kind))).map(
-              (kind) => (
-                <Checkbox
-                  key={kind}
-                  disabled={disabled}
-                  label={`${t('account.profiles.keep-local')} ${t(`account.prop-challenge.rule.${kind}`)}`}
-                  checked={phase.rules
-                    .filter((rule) => rule.kind === kind)
-                    .every((rule) => keepRuleIds.has(rule.id))}
-                  onChange={(keep) => {
-                    for (const rule of phase.rules) {
-                      if (rule.kind === kind) {
-                        dispatch({ type: 'rule', id: rule.id, keep });
-                      }
-                    }
-                  }}
-                />
-              )
-            )}
-            {payoutConflict && (
-              <Checkbox
-                checked={keepPayout}
-                onChange={(keep) =>
-                  dispatch({ type: 'edit', values: { keepPayout: keep } })
-                }
-                label={t('account.profiles.keep-payout')}
-                disabled={disabled}
-              />
-            )}
-          </div>
-          <div className="journalit-profile-review__actions">
-            <Button
-              variant="plain"
-              size="small"
-              disabled={disabled}
-              onClick={() => (onRetain ? onRetain(config) : onCancel())}
-            >
-              {t(onRetain ? 'account.profiles.retain' : 'button.cancel')}
-            </Button>
-            <Button
-              size="small"
-              disabled={
-                disabled ||
-                !sourceDiffers ||
-                selection.challenge.currency !== currencyCode
-              }
-              onClick={() => setStep('apply')}
-            >
-              {t('button.next')}
-            </Button>
-          </div>
-          {selection.challenge.currency !== currencyCode && (
-            <p role="alert">{t('account.profiles.currency')}</p>
-          )}
-        </>
-      ) : (
-        <>
-          {active && (
-            <section
-              className="journalit-profile-review__transition"
-              aria-label={t('account.profiles.custom-transition')}
-            >
-              <div className="journalit-profile-review__dates">
-                {published ? (
-                  <div>
-                    <span>{t('account.profiles.published-date')}</span>
-                    <p>{new Date(published.effectiveAt).toLocaleString()}</p>
-                    <a
-                      href={published.sourceUrl}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {t('account.profiles.announcement')}
-                    </a>
-                  </div>
-                ) : (
-                  <FastDateTimeInput
-                    label={t(
-                      manualProof
-                        ? 'account.profiles.firm-effective'
-                        : 'account.profiles.effective'
-                    )}
-                    value={effective || undefined}
-                    includeTime
-                    commitValidSegmentChangesImmediately
-                    disabled={disabled}
-                    onChange={(date) =>
-                      dispatch({
-                        type: 'edit',
-                        values: {
-                          effective:
-                            date instanceof Date
-                              ? date.toISOString()
-                              : (date ?? ''),
-                        },
-                      })
-                    }
-                  />
-                )}
-                {payoutChanged && payoutPolicy && (
-                  <FastDateTimeInput
-                    label={t('account.profiles.cycle-start')}
-                    value={cycleStart || undefined}
-                    includeTime
-                    commitValidSegmentChangesImmediately
-                    disabled={disabled}
-                    onChange={(date) =>
-                      dispatch({
-                        type: 'edit',
-                        values: {
-                          cycleStart:
-                            date instanceof Date
-                              ? date.toISOString()
-                              : (date ?? ''),
-                        },
-                      })
-                    }
-                  />
-                )}
-              </div>
-              {(custom || manualProof) && (
-                <label className="journalit-prop-challenge-field">
-                  <span>{t('account.profiles.transition-source')}</span>
-                  <input
-                    value={source}
-                    disabled={disabled}
-                    onChange={(event) =>
-                      dispatch({
-                        type: 'edit',
-                        values: { source: event.target.value },
-                      })
-                    }
-                  />
-                </label>
-              )}
-              {drawdowns.map((rule, index) => {
-                const value = carry[index] ?? {
-                  floor: '',
-                  peak: '',
-                  locked: false,
-                };
-                const set = (next: typeof value) => {
-                  dispatch({ type: 'carry', index, value: next });
-                };
-                return (
-                  <div
-                    key={rule.id}
-                    className="journalit-profile-review__drawdown"
-                  >
-                    <strong>
-                      {t('account.prop-challenge.rule.drawdown')} {index + 1}
-                    </strong>
-                    {numberField(
-                      t('account.profiles.floor'),
-                      value.floor,
-                      (floor) => set({ ...value, floor })
-                    )}
-                    {numberField(
-                      t('account.profiles.peak'),
-                      value.peak,
-                      (peak) => set({ ...value, peak })
-                    )}
-                    <Checkbox
-                      checked={value.locked}
-                      onChange={(locked) => set({ ...value, locked })}
-                      label={t('account.profiles.locked')}
-                      disabled={disabled}
-                    />
-                  </div>
-                );
-              })}
-            </section>
-          )}
-          {!active && manualProof && (
-            <label className="journalit-prop-challenge-field">
-              <span>{t('account.profiles.transition-source')}</span>
-              <input
-                value={source}
-                disabled={disabled}
-                onChange={(event) =>
-                  dispatch({
-                    type: 'edit',
-                    values: { source: event.target.value },
-                  })
-                }
-              />
-            </label>
-          )}
-          {needsConsent && (
-            <Checkbox
-              checked={confirmed}
-              onChange={(value) => dispatch({ type: 'confirm', value })}
-              label={t('account.profiles.confirm')}
-              disabled={disabled}
-            />
-          )}
-          {error && <p role="alert">{error}</p>}
-          <div className="journalit-profile-review__actions">
-            <Button
-              variant="plain"
-              size="small"
-              onClick={() => {
-                dispatch({ type: 'confirm', value: false });
-                setStep('review');
-              }}
-            >
-              {t('button.back')}
-            </Button>
-            <Button
-              size="small"
-              onClick={apply}
-              disabled={
-                disabled ||
-                (needsConsent && !confirmed) ||
-                (manualProof && !source.trim()) ||
-                (active &&
-                  (!effectiveValue ||
-                    (custom && !source.trim()) ||
-                    (payoutChanged && Boolean(payoutPolicy) && !cycleStart) ||
-                    drawdowns.some(
-                      (_, index) =>
-                        !carry[index]?.floor.trim() ||
-                        !carry[index]?.peak.trim()
-                    )))
-              }
-            >
-              {t('account.profiles.accept')}
-            </Button>
-          </div>
-          <p>{t('account.profiles.history-unchanged')}</p>
-        </>
+      {step === 'review' && showPurchaseInput && purchaseInput}
+      {applicability && checking && (
+        <p role="status">{t('account.profiles.applicability-checking')}</p>
       )}
+      {applicability && applicabilityState.kind === 'failed' && (
+        <p role="alert">{t('account.profiles.check-failed')}</p>
+      )}
+      {renderReview()}
     </>
   );
 }

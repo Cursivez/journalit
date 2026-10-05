@@ -48,30 +48,14 @@ export const TRADE_NOTE_STYLES = `
   }
 
   
-  .markdown-reading-view > .journalit-trade-view[data-mode="reading"],
+  .markdown-preview-view > .journalit-trade-view[data-mode="reading"] {
+    margin-bottom: var(--size-4-8, 2rem);
+  }
+
   .markdown-preview-view.is-readable-line-width > .journalit-trade-view[data-mode="reading"] {
     max-width: var(--file-line-width, 700px);
     margin-left: auto;
     margin-right: auto;
-  }
-
-  .markdown-reading-view.journalit-trade-note-reading-view {
-    overflow-y: auto;
-    overflow-x: hidden;
-    height: 100%;
-  }
-
-  .markdown-reading-view.journalit-trade-note-reading-view > .markdown-preview-view {
-    margin-top: var(--size-4-8, 2rem);
-    height: auto;
-    min-height: 0;
-    overflow: visible;
-    contain: none;
-  }
-
-  .markdown-reading-view.journalit-trade-note-reading-view > .markdown-preview-view .markdown-preview-sizer {
-    min-height: 0 !important;
-    padding-bottom: var(--size-4-8, 2rem);
   }
 
   .markdown-source-view.is-live-preview.is-readable-line-width .journalit-trade-view[data-mode="source"] {
@@ -1910,12 +1894,6 @@ export const TRADE_NOTE_STYLES = `
     flex-shrink: 1;
   }
 
-  .workspace-split.mod-vertical .markdown-reading-view > .journalit-trade-view[data-mode="reading"] {
-    max-width: var(--file-line-width, 700px);
-    margin-left: auto;
-    margin-right: auto;
-  }
-  
   
   .workspace-leaf-content .journalit-trade-view .trade-metrics-grid {
     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));

@@ -1,7 +1,6 @@
 import React, {
   useCallback,
   useEffect,
-  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -9,6 +8,7 @@ import React, {
 import { createPortal } from 'react-dom';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { ChevronDown } from './icons/ObsidianIcon';
+import { usePopupDismiss } from './menus/usePopupDismiss';
 import {
   anchoredMenuPortalRoot,
   useAnchoredMenuPosition,
@@ -20,32 +20,42 @@ interface DropdownSelectOption {
 }
 
 interface DropdownSelectProps {
+  id?: string;
   value: string;
   options: DropdownSelectOption[];
   onChange: (value: string) => void;
+  
+  onBeforeChange?: (value: string) => boolean;
   ariaLabel: string;
   
   ariaLabelledBy?: string;
+  ariaDescribedBy?: string;
   placeholder?: string;
   disabled?: boolean;
   className?: string;
   leadingContent?: React.ReactNode;
   triggerRef?: React.Ref<HTMLButtonElement>;
   menuWidth?: 'trigger' | 'content';
+  
+  showOptionTooltips?: boolean;
 }
 
 export function DropdownSelect({
+  id,
   value,
   options,
   onChange,
+  onBeforeChange,
   ariaLabel,
   ariaLabelledBy,
+  ariaDescribedBy,
   placeholder,
   disabled = false,
   className,
   leadingContent,
   triggerRef,
   menuWidth = 'trigger',
+  showOptionTooltips = true,
 }: DropdownSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -102,39 +112,27 @@ export function DropdownSelect({
     (index: number) => {
       const option = options[index];
       if (!option) return;
+      if (
+        option.value !== value &&
+        onBeforeChange &&
+        !onBeforeChange(option.value)
+      ) {
+        
+        closeMenu(false);
+        return;
+      }
       if (option.value !== value) onChange(option.value);
       closeMenu(true);
     },
-    [closeMenu, onChange, options, value]
+    [closeMenu, onBeforeChange, onChange, options, value]
   );
-  const closeMenuFromOutsidePress = useEffectEvent(() => closeMenu());
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const ownerDocument = rootRef.current?.ownerDocument;
-    const ownerWindow = ownerDocument?.defaultView;
-    if (!ownerDocument || !ownerWindow) return;
-    const closeOnOutsidePress = (event: MouseEvent) => {
-      const target = event.target;
-      const NodeConstructor =
-        rootRef.current?.ownerDocument.defaultView?.Node ?? Node;
-      if (
-        rootRef.current &&
-        (!(target instanceof NodeConstructor) ||
-          (!rootRef.current.contains(target) &&
-            !menuRef.current?.contains(target)))
-      ) {
-        closeMenuFromOutsidePress();
-      }
-    };
-    const closeOnWindowBlur = () => closeMenuFromOutsidePress();
-    ownerDocument.addEventListener('mousedown', closeOnOutsidePress);
-    ownerWindow.addEventListener('blur', closeOnWindowBlur);
-    return () => {
-      ownerDocument.removeEventListener('mousedown', closeOnOutsidePress);
-      ownerWindow.removeEventListener('blur', closeOnWindowBlur);
-    };
-  }, [isOpen]);
+  usePopupDismiss({
+    isOpen,
+    rootRef,
+    popupRef: menuRef,
+    onDismiss: closeMenu,
+    onEscape: () => closeMenu(true),
+  });
 
   useEffect(() => {
     if (!isOpen) return;
@@ -156,10 +154,6 @@ export function DropdownSelect({
     } else if (event.key === 'Enter' || event.key === ' ') {
       event.preventDefault();
       selectOption(activeIndex);
-    } else if (event.key === 'Escape') {
-      event.preventDefault();
-      event.stopPropagation();
-      closeMenu(true);
     } else if (event.key === 'Tab') {
       internalTriggerRef.current?.focus();
       setIsOpen(false);
@@ -196,8 +190,10 @@ export function DropdownSelect({
       className={`journalit-dropdown-select${className ? ` ${className}` : ''}`}
     >
       <button
+        id={id}
         ref={setTriggerRef}
         type="button"
+        aria-describedby={ariaDescribedBy}
         className="journalit-dropdown-select__trigger"
         {...(ariaLabelledBy
           ? { 'aria-labelledby': ariaLabelledBy }
@@ -260,7 +256,7 @@ export function DropdownSelect({
                   role="option"
                   
                   
-                  aria-label={option.label}
+                  aria-label={showOptionTooltips ? option.label : undefined}
                   aria-selected={selected}
                   tabIndex={index === activeIndex ? 0 : -1}
                   onMouseEnter={() => setActiveIndex(index)}

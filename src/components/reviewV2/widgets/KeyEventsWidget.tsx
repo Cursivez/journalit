@@ -11,6 +11,7 @@ import { TFile } from 'obsidian';
 import type JournalitPlugin from '../../../main';
 import type { NewsEvent } from '../../../services/weekly/types';
 import { parseNewsEvents } from '../../../services/weekly/parseNewsEvents';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 import type { ReviewChangedPayload } from '../../../services/events/types';
 import {
   CalendarRange,
@@ -238,6 +239,8 @@ KeyEventMetaFields.displayName = 'KeyEventMetaFields';
 
 export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
   ({ filePath, plugin, preview, previewData }) => {
+    const embeddedReadOnly = useReviewReadOnly();
+    const readOnly = preview || embeddedReadOnly;
     
     const [events, setEvents] = useState<NewsEvent[]>([]);
     const [loading, setLoading] = useState(true);
@@ -298,8 +301,8 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     const use24HourTime = getUse24HourTimeSetting(plugin);
 
     
-    const isWeeklyEditable = reviewMode === 'weekly-review' && !preview;
-    const canAddFromDrc = reviewMode === 'drc' && !preview && drcDate !== null;
+    const isWeeklyEditable = reviewMode === 'weekly-review' && !readOnly;
+    const canAddFromDrc = reviewMode === 'drc' && !readOnly && drcDate !== null;
     const isDrcEditable = canAddFromDrc;
     const canAddEvent = isWeeklyEditable || canAddFromDrc;
     const shouldShowAddForm =
@@ -735,8 +738,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     };
 
     
-    const handleEventSelect = (value: string | string[]) => {
-      const eventName = Array.isArray(value) ? value[0] : value;
+    const handleEventSelect = (eventName: string) => {
       setSelectedEvent(eventName);
 
       
@@ -751,18 +753,18 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     };
 
     
-    const handleSaveEventOption = (option: string) => {
+    const handleSaveEventOption = async (option: string) => {
       if (plugin.optionsService) {
-        void plugin.optionsService.addOrUpdateEventOption(
+        await plugin.optionsService.addOrUpdateEventOption(
           option,
           selectedColor
         );
       }
     };
 
-    const handleSaveEditEventOption = (option: string) => {
+    const handleSaveEditEventOption = async (option: string) => {
       if (plugin.optionsService) {
-        void plugin.optionsService.addOrUpdateEventOption(
+        await plugin.optionsService.addOrUpdateEventOption(
           option,
           editEventColor
         );
@@ -829,7 +831,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                 options={eventOptions}
                 value={editEventName}
                 onChange={(value) => {
-                  const eventName = Array.isArray(value) ? value[0] : value;
+                  const eventName = value;
                   setEditEventName(eventName);
 
                   const savedOption =
@@ -842,7 +844,6 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                 placeholder={t('widget.key-events.placeholder')}
                 allowCreate={true}
                 isMulti={false}
-                optionType="event"
                 onSaveOption={handleSaveEditEventOption}
                 error=""
                 helperText=""
@@ -1113,7 +1114,6 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                     placeholder={t('widget.key-events.placeholder')}
                     allowCreate={true}
                     isMulti={false}
-                    optionType="event"
                     onSaveOption={handleSaveEventOption}
                     error=""
                     helperText=""

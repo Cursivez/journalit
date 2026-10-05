@@ -16,7 +16,11 @@ import {
 } from '../../services/tradeImport/types';
 import { getTradeImportTimeZone } from '../../services/tradeImport/timeZone';
 import type { SubscriptionTierRefreshStatus } from '../../services/backend/SubscriptionTierService';
-import { resolveBrokerImportRecovery } from './brokerImportRecovery';
+import {
+  resolveBrokerImportRecovery,
+  type BrokerImportRecovery,
+} from './brokerImportRecovery';
+import { BrokerImportRecoveryNotice } from './BrokerImportRecoveryNotice';
 import { formatTradeImportPreviewDateTime } from './tradeImportPreviewDate';
 import { workbookImageCountForImport } from '../../services/tradeImport/workbookImages';
 import { tradeImportClassificationLabel } from '../../services/tradeImport/classificationLabels';
@@ -508,6 +512,7 @@ interface TradeImportPreviewReviewProps {
   onToggleWorkbookImages?: (included: boolean) => void;
   onCancel: () => void;
   onChooseAnotherFile: () => void;
+  onChangeSource: () => void;
   
   onManageImports: () => void;
   onConfirm: () => void;
@@ -698,6 +703,80 @@ const WorkbookImagesToggle: React.FC<{
 
 export const TradeImportPreviewReview: React.FC<
   TradeImportPreviewReviewProps
+> = (props) => {
+  const recovery = resolveBrokerImportRecovery(props.preview);
+  if (recovery) {
+    return (
+      <TradeImportRecoveryReview
+        recovery={recovery}
+        diagnostics={props.preview.diagnostics}
+        busy={props.busy || props.importCompleted}
+        onChangeSource={props.onChangeSource}
+        onReviewHeader={props.onCancel}
+        onChooseAnotherFile={props.onChooseAnotherFile}
+      />
+    );
+  }
+  return <TradeImportStandardPreviewReview {...props} />;
+};
+
+
+export function TradeImportRecoveryReview({
+  recovery,
+  diagnostics,
+  busy,
+  onChangeSource,
+  onReviewHeader,
+  onChooseAnotherFile,
+}: {
+  recovery: BrokerImportRecovery;
+  diagnostics: TradeImportDiagnostic[];
+  busy: boolean;
+  onChangeSource: () => void;
+  onReviewHeader?: () => void;
+  onChooseAnotherFile: () => void;
+}) {
+  return (
+    <>
+      <BrokerImportRecoveryNotice
+        {...recovery.getNoticeProps(diagnostics)}
+        className="journalit-trade-import-outcome journalit-trade-import-outcome--failed"
+        disabled={busy}
+        iconSize={20}
+        onSwitchSource={recovery.canChangeSource ? onChangeSource : undefined}
+      />
+      <TradeImportDiagnostics
+        diagnostics={diagnostics.filter(
+          (diagnostic) =>
+            !recovery.diagnosticCodesToSuppress.has(diagnostic.code)
+        )}
+        defaultOpen
+        className="journalit-trade-import-preview-diagnostics"
+      />
+      <div className="journalit-trade-import-actions">
+        {recovery.canReviewHeader && onReviewHeader && (
+          <button
+            className="journalit-trade-import-cancel-preview-button"
+            disabled={busy}
+            onClick={onReviewHeader}
+          >
+            {t('trade-import.step.analyse')}
+          </button>
+        )}
+        <button
+          className="journalit-trade-import-confirm-button"
+          disabled={busy}
+          onClick={onChooseAnotherFile}
+        >
+          {t(recovery.anotherFileLabel ?? 'csv.button.import-another')}
+        </button>
+      </div>
+    </>
+  );
+}
+
+const TradeImportStandardPreviewReview: React.FC<
+  TradeImportPreviewReviewProps
 > = ({
   accountCurrency,
   breakEven,
@@ -718,7 +797,6 @@ export const TradeImportPreviewReview: React.FC<
   workbookImagesIncluded = false,
   onToggleWorkbookImages,
   onCancel,
-  onChooseAnotherFile,
   onManageImports,
   onConfirm,
   onImportIntoAccount,
@@ -746,7 +824,6 @@ export const TradeImportPreviewReview: React.FC<
     .slice(MAX_RENDERED_PREVIEW_ROWS)
     .some(canImportTradeAnyway);
   const hasOtherAccountMatches = classified.some((item) => item.otherAccount);
-  const recovery = resolveBrokerImportRecovery(preview);
   const workbookImageCount = workbookImageCountForImport(
     classified,
     importAnywayItemIds
@@ -757,39 +834,6 @@ export const TradeImportPreviewReview: React.FC<
       DATE_ORDER_DIAGNOSTIC_CODES.has(diagnostic.code) &&
       (diagnostic.candidateFormats?.length ?? 0) > 0
   );
-
-  if (recovery) {
-    const remainingDiagnostics = preview.diagnostics.filter(
-      (diagnostic) => !recovery.diagnosticCodesToSuppress.has(diagnostic.code)
-    );
-    const RecoveryNotice = recovery.Notice;
-
-    return (
-      <>
-        <RecoveryNotice
-          className="journalit-trade-import-outcome journalit-trade-import-outcome--failed"
-          disabled={busy}
-          iconSize={20}
-        />
-
-        <TradeImportDiagnostics
-          diagnostics={remainingDiagnostics}
-          defaultOpen
-          className="journalit-trade-import-preview-diagnostics"
-        />
-
-        <div className="journalit-trade-import-actions">
-          <button
-            className="journalit-trade-import-confirm-button"
-            disabled={busy || importCompleted}
-            onClick={onChooseAnotherFile}
-          >
-            {t('csv.button.import-another')}
-          </button>
-        </div>
-      </>
-    );
-  }
 
   const confirmDisabled =
     busy ||

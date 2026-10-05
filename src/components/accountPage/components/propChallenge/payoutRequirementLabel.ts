@@ -3,6 +3,8 @@ import { t } from '../../../../lang/helpers';
 
 export function payoutRequirementLabel(kind: string): string {
   switch (kind) {
+    case 'qualifying_days':
+      return t('account.prop-challenge.payout.requirement.qualifying-days');
     case 'cycle_days':
       return t('account.prop-challenge.payout.requirement.days');
     case 'cycle_profit':

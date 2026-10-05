@@ -5,7 +5,6 @@ interface ReleaseEntry {
   title: string;
   description: string;
   imageUrl?: string;
-  features: string[];
   content?: string;
 }
 
@@ -17,20 +16,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-function isStringArray(value: unknown): value is string[] {
-  if (!Array.isArray(value)) {
-    return false;
-  }
-
-  for (const item of value) {
-    if (typeof item !== 'string') {
-      return false;
-    }
-  }
-
-  return true;
-}
-
 function isReleaseEntry(value: unknown): value is ReleaseEntry {
   if (!isRecord(value)) {
     return false;
@@ -38,13 +23,17 @@ function isReleaseEntry(value: unknown): value is ReleaseEntry {
 
   if (
     typeof value.title !== 'string' ||
+    !value.title.trim() ||
     typeof value.description !== 'string' ||
-    !isStringArray(value.features)
+    !value.description.trim()
   ) {
     return false;
   }
 
-  if ('imageUrl' in value && typeof value.imageUrl !== 'string') {
+  if (
+    'imageUrl' in value &&
+    (typeof value.imageUrl !== 'string' || !value.imageUrl.trim())
+  ) {
     return false;
   }
 
@@ -69,16 +58,20 @@ function isReleaseMetadata(value: unknown): value is ReleaseMetadata {
   return true;
 }
 
+export function parseReleaseMetadata(value: unknown): ReleaseMetadata {
+  if (!isReleaseMetadata(value)) {
+    throw new Error('Invalid generated release data payload');
+  }
+  return value;
+}
+
 export function getReleasesData(): ReleaseMetadata {
   if (releasesDataCache) {
     return releasesDataCache;
   }
 
-  const parsed = decodeCompressedJson(releasesDataPack);
-  if (!isReleaseMetadata(parsed)) {
-    throw new Error('Invalid generated release data payload');
-  }
-
-  releasesDataCache = parsed;
+  releasesDataCache = parseReleaseMetadata(
+    decodeCompressedJson(releasesDataPack)
+  );
   return releasesDataCache;
 }

@@ -3,17 +3,24 @@
 import type JournalitPlugin from '../main';
 
 
-export function formatTimeOfDay(date: Date, use24HourTime: boolean): string {
+export function formatTimeOfDay(
+  date: Date,
+  use24HourTime: boolean,
+  showSeconds = false
+): string {
   const hours = date.getHours();
   const minutes = String(date.getMinutes()).padStart(2, '0');
+  const seconds = showSeconds
+    ? `:${String(date.getSeconds()).padStart(2, '0')}`
+    : '';
 
   if (use24HourTime) {
-    return `${String(hours).padStart(2, '0')}:${minutes}`;
+    return `${String(hours).padStart(2, '0')}:${minutes}${seconds}`;
   }
 
   const period = hours >= 12 ? 'PM' : 'AM';
   const displayHours = hours % 12 || 12;
-  return `${displayHours}:${minutes} ${period}`;
+  return `${displayHours}:${minutes}${seconds} ${period}`;
 }
 
 

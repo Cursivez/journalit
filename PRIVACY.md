@@ -1,6 +1,6 @@
 # Privacy Policy - Journalit
 
-**Last Updated**: 2026-09-23
+**Last Updated**: 2026-10-01
 
 ## Overview
 
@@ -18,10 +18,10 @@ The core functionality of Journalit operates **entirely locally** within your Ob
 - **Daily/Weekly/Monthly Reviews**: Review notes remain local
 - **Account Data**: Account configurations stored in plugin settings
 - **Prop Challenges**: Challenge phases, rules, payouts, and personal firm profiles stay in your vault and plugin settings
-- **Custom Fields & Settings**: Customization data stays local except custom field definitions/options sent when you explicitly use Trade Import preview generation
+- **Custom Fields & Settings**: Customization data stays local except custom field definitions/options sent when you explicitly use Trade Import analysis or preview generation
 - **Analytics & Charts**: Calculated locally from your vault data
 
-**No manual trade data is ever transmitted to any server unless you explicitly use a network-backed feature such as Trade Import, which may send limited local open-trade context for IBKR matching as disclosed below.**
+**Local journal content is not included in Trade Import requests unless it is in the file you select. Custom field definitions and options are sent as described below; the current Trade Import flow does not send local open-trade context.**
 
 ---
 
@@ -131,16 +131,22 @@ When you enable MetaTrader 4 Trade Sync in **Settings → Journalit → Trade Sy
 
 ---
 
-### Trade Import (Optional Pro Feature)
+### Trade Import (Optional Network-Backed Feature)
 
-Trade Import uploads the selected broker export to Journalit servers for processing. Supported inputs may include CSV, XLSX, XLS, HTML, and broker statement files. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. Raw files are processed for the requested import and are not stored by default. For preview generation, the plugin also sends the selected account name, broker/file/mapping choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching.
+Trade Import uploads only the file you select to Journalit servers for the requested analysis or preview. Supported inputs include CSV, XLSX, XLS, HTML, and broker statements. The file may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, notes, and P&L. Requests include the plugin version, selected source/file type, sheet/header selection, timezone and custom field definitions/options; preview also includes the target account name, asset type, date/row-mode choices and column mappings. The current flow does not include local open trades or unrelated journal content.
+
+The backend retains encrypted diagnostic bundles containing the uploaded file, original and effective requests, response and parser decision trace. Captures expire after one day for free accounts or 14 days for Pro accounts; stored previews expire after seven days. Expired captures and previews are swept every 15 minutes. Support access is authorized and audited. Canonical trades created by a confirmed import are retained separately and are not removed by preview expiry. Server-side operational metadata includes request outcomes, parser versions and diagnostic codes; raw file contents do not belong in ordinary logs or metrics.
+
+Compatibility errors and recovery guidance are returned through the same user-requested analyse/preview response and displayed locally. Trade Import does not send separate analytics events, background failure reports or additional journal content when displaying those errors. Changing source requires your selection; the file is then reanalysed with source-dependent options reset. An incompatible result is not automatically retried.
+
+When optional AI mapping suggestions are enabled for a supported source, the backend also sends column headers and a limited sample of rows to its AI model provider to suggest column matches. Disable AI mapping to avoid this additional processing. Rithmic's native adapter does not support or request AI mapping.
 
 When you confirm an import, the backend commits the selected preview items and returns the canonical post-commit trade projection used to create or update local Obsidian trade notes. The plugin then sends a projection acknowledgement containing backend trade IDs, versions, local file paths for successfully written notes, and success/failure status so the backend can track whether the local projection completed.
 
 **Control:**
 
-- Requires sign-in and an active Pro subscription before upload.
-- The plugin shows an upload acknowledgement before processing each view session.
+- Requires sign-in before upload. Free accounts can analyse and preview within rate/storage limits; committing and projecting imports requires Pro.
+- Upload processing is disclosed in the import view. There is no per-session acknowledgement requirement.
 - Final note creation remains local in your Obsidian vault.
 
 ### Tradovate Sync (Optional Pro Feature)
@@ -224,7 +230,7 @@ When multi-currency conversion is needed, Journalit may request exchange rates f
 
 ### Upgrade links and website attribution
 
-Journalit does not include client-side telemetry. Viewing a paywalled feature
+Upgrade prompts do not send client-side telemetry. Viewing a paywalled feature
 sends no analytics or usage event; if you are signed in, the plugin still checks
 your own subscription status so it knows what to show you, which is a functional
 request listed under **Network Endpoints** below. Upgrade buttons open

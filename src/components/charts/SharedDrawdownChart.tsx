@@ -446,7 +446,6 @@ export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
             }}
           />
           <YAxis
-            className="journalit-chart-axis--numeric"
             tickFormatter={formatDrawdownTick}
             domain={domain}
             allowDataOverflow={false}

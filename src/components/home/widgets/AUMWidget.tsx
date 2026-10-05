@@ -1,6 +1,6 @@
 
 
-import React, { memo, useMemo, useEffect, useCallback } from 'react';
+import React, { memo, useMemo, useEffect, useCallback, useState } from 'react';
 import {
   TrendingUp,
   TrendingDown,
@@ -8,14 +8,18 @@ import {
 } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
 import { useCurrency } from '../../../contexts/CurrencyContext';
-import { useHomePeriod } from '../context/HomePeriodContext';
+import { calculateCurrentAumMetrics } from './aumMetrics';
 import { useHomeAccount } from '../context/HomeAccountContext';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
-import { HomePeriod } from '../../../settings/types';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
 import { t } from '../../../lang/helpers';
 import { useHomeAccountsData } from '../context/HomeAccountsDataContext';
+import { formatLocalDateString } from '../../../utils/dateUtils';
+import {
+  createTradingDayFromString,
+  getTradingDay,
+} from '../../../utils/tradingDayUtils';
 
 interface AUMWidgetProps {
   plugin: JournalitPlugin;
@@ -28,37 +32,6 @@ interface AUMMetrics {
   changePercent: number;
   accountCount: number;
   sparklineData: number[];
-  periodLabel: string;
-}
-
-
-function getPeriodLabel(period: HomePeriod): string {
-  switch (period) {
-    case 'month':
-      return t('home.widget.aum.period.month');
-    case 'quarter':
-      return t('home.widget.aum.period.quarter');
-    case 'year':
-      return t('home.widget.aum.period.year');
-    case 'lifetime':
-    default:
-      return t('home.widget.aum.period.all');
-  }
-}
-
-
-function getSparklinePoints(period: HomePeriod): number {
-  switch (period) {
-    case 'month':
-      return 30; 
-    case 'quarter':
-      return 13; 
-    case 'year':
-      return 12; 
-    case 'lifetime':
-    default:
-      return 24; 
-  }
 }
 
 function AUMSparkline({
@@ -163,7 +136,6 @@ function AUMEmptyState({ message }: { message: string }) {
 const AUMWidgetComponent: React.FC<AUMWidgetProps> = ({ plugin }) => {
   const { currency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
-  const periodContext = useHomePeriod();
   const accountContext = useHomeAccount();
   const homeAccountsData = useHomeAccountsData();
   const accounts = useMemo(
@@ -173,14 +145,14 @@ const AUMWidgetComponent: React.FC<AUMWidgetProps> = ({ plugin }) => {
   const isLoading = homeAccountsData?.isLoading ?? true;
   const error = homeAccountsData?.error ?? null;
 
-  useEffect(() => {}, []);
-
-  
-  const period = periodContext?.period || 'month';
-  const dateRange = useMemo(
-    () => periodContext?.dateRange || [null, null],
-    [periodContext?.dateRange]
+  const [now, setNow] = useState(() => Date.now());
+  const currentTradingDayKey = formatLocalDateString(
+    getTradingDay(new Date(now), plugin)
   );
+  useEffect(() => {
+    const interval = window.setInterval(() => setNow(Date.now()), 60_000);
+    return () => window.clearInterval(interval);
+  }, []);
 
   
   const openAccountDashboard = useCallback(() => {
@@ -213,113 +185,20 @@ const AUMWidgetComponent: React.FC<AUMWidgetProps> = ({ plugin }) => {
       return null;
     }
 
-    
-    const totalAUM = includedAccounts.reduce(
-      (sum, acc) => sum + (acc.currentBalance || 0),
-      0
-    );
-
-    
-    const today = new Date();
-    today.setHours(23, 59, 59, 999);
-
-    let startDate: Date;
-    const numPoints = getSparklinePoints(period);
-
-    if (dateRange[0]) {
-      
-      startDate = new Date(dateRange[0]);
-    } else {
-      
-      startDate = new Date(today);
-      startDate.setFullYear(startDate.getFullYear() - 2);
-    }
-    startDate.setHours(0, 0, 0, 0);
-
-    
-    const totalDays =
-      Math.ceil(
-        (today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24)
-      ) + 1;
-
-    
-    const stepDays = Math.max(1, Math.floor(totalDays / numPoints));
-    const actualPoints = Math.min(numPoints, totalDays);
-
-    
-    const dailyTotals: { date: string; total: number }[] = [];
-
-    for (let i = 0; i < actualPoints; i++) {
-      const pointDate = new Date(startDate);
-      pointDate.setDate(pointDate.getDate() + i * stepDays);
-
-      
-      if (pointDate > today) break;
-
-      const dateKey = pointDate.toISOString().split('T')[0];
-      dailyTotals.push({ date: dateKey, total: 0 });
-    }
-
-    
-    for (const account of includedAccounts) {
-      const balances = account.dailyBalances || [];
-
-      
-      const accountBalanceMap = new Map<string, number>();
-      for (const record of balances) {
-        const dateKey = new Date(record.date).toISOString().split('T')[0];
-        accountBalanceMap.set(dateKey, record.balance);
-      }
-
-      
-      const sortedDates = Array.from(accountBalanceMap.keys()).sort();
-
-      
-      for (const point of dailyTotals) {
-        let balanceAtPoint = account.initialBalance || 0;
-
-        
-        for (const balanceDate of sortedDates) {
-          if (balanceDate <= point.date) {
-            balanceAtPoint = accountBalanceMap.get(balanceDate)!;
-          } else {
-            break;
-          }
-        }
-
-        
-        if (point === dailyTotals[dailyTotals.length - 1]) {
-          balanceAtPoint = account.currentBalance || balanceAtPoint;
-        }
-
-        point.total += balanceAtPoint;
-      }
-    }
-
-    
-    const sparklineData = dailyTotals.map((d) => d.total);
-
-    
-    const previousAUM = sparklineData.length > 0 ? sparklineData[0] : totalAUM;
-    const changeAmount = totalAUM - previousAUM;
-    const changePercent =
-      previousAUM !== 0 ? (changeAmount / previousAUM) * 100 : 0;
-
     return {
-      totalAUM,
-      previousAUM,
-      changeAmount,
-      changePercent,
+      ...calculateCurrentAumMetrics(
+        includedAccounts,
+        createTradingDayFromString(currentTradingDayKey),
+        plugin.settings.trade.tradingDayCutoffTime
+      ),
       accountCount: includedAccounts.length,
-      sparklineData,
-      periodLabel: getPeriodLabel(period),
     };
   }, [
     accounts,
     accountContext,
     plugin.settings.account?.excludedAccountTypes,
-    period,
-    dateRange,
+    plugin.settings.trade.tradingDayCutoffTime,
+    currentTradingDayKey,
   ]);
 
   
@@ -335,14 +214,8 @@ const AUMWidgetComponent: React.FC<AUMWidgetProps> = ({ plugin }) => {
     return <AUMEmptyState message={t('home.widget.aum.no-accounts')} />;
   }
 
-  const {
-    totalAUM,
-    changeAmount,
-    changePercent,
-    accountCount,
-    sparklineData,
-    periodLabel,
-  } = aumMetrics;
+  const { totalAUM, changeAmount, changePercent, accountCount, sparklineData } =
+    aumMetrics;
   const isPositive = changeAmount >= 0;
   const isFlat = Math.abs(changePercent) < 0.1;
   const isBalanceMasked = shouldMask('balance');
@@ -403,7 +276,9 @@ const AUMWidgetComponent: React.FC<AUMWidgetProps> = ({ plugin }) => {
         <span className="journalit-aum-label journalit-home-widget__eyebrow">
           {t('home.widget.aum.title')}
         </span>
-        <span className="journalit-home-aum__period">{periodLabel}</span>
+        <span className="journalit-home-aum__period">
+          {t('home.widget.aum.current-trend')}
+        </span>
       </div>
 
       

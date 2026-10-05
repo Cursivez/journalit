@@ -10,6 +10,7 @@ import { createPortal } from 'react-dom';
 import { Notice } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import { FastDateTimeInput } from '../core/FastDateTimeInput';
+import { DateDraftGateContext, useDateDraftGate } from '../core/DateDraftGate';
 import type { Trade } from '../dashboard/utils/dataUtils';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import {
@@ -55,6 +56,7 @@ interface SessionLogPanelProps {
   newestFirst?: boolean;
   composerInitiallyVisible?: boolean;
   showComposerToggle?: boolean;
+  readOnly?: boolean;
   timestampSessionWindow?: ResolvedSessionModeWindow;
   onRefresh?: () => void;
 }
@@ -156,9 +158,11 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
     newestFirst = false,
     composerInitiallyVisible = true,
     showComposerToggle = false,
+    readOnly = false,
     timestampSessionWindow,
     onRefresh,
   }) => {
+    const dateDraftGate = useDateDraftGate();
     const [, setSettingsVersion] = useState(0);
     const tags = getSessionLogTags(plugin);
     const tagById = useMemo(
@@ -465,6 +469,7 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
     }, [plugin, sortedEntries, tagById]);
 
     const submitEntry = useCallback(async () => {
+      if (!dateDraftGate.confirm()) return;
       if (isSubmittingEntryRef.current) return;
       const trimmed = text.trim();
       if (!trimmed) return;
@@ -501,6 +506,7 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
       filePath,
       manualTimestamp,
       manualTimestampEnabled,
+      dateDraftGate,
       onRefresh,
       plugin,
       selectedTagId,
@@ -660,7 +666,7 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
     ) : undefined;
 
     const addNoteButton =
-      showComposerToggle && !isComposerVisible ? (
+      !readOnly && showComposerToggle && !isComposerVisible ? (
         <button
           ref={addButtonRef}
           type="button"
@@ -674,487 +680,494 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
         </button>
       ) : null;
 
-    const composer = isComposerVisible ? (
-      <div
-        className="journalit-session-log-composer"
-        {...shareCaptureExcludeProps}
-      >
-        <div className="journalit-session-log-composer-bar">
-          <div
-            className="journalit-session-log-composer-tag-control"
-            ref={tagMenuRef}
-          >
-            <button
-              ref={tagButtonRef}
-              type="button"
-              className="journalit-session-log-composer-tag-trigger"
-              onClick={toggleTagMenu}
-              aria-label={t('session-log.composer.tag-label')}
-              aria-expanded={isTagMenuOpen}
+    const composer =
+      !readOnly && isComposerVisible ? (
+        <div
+          className="journalit-session-log-composer"
+          {...shareCaptureExcludeProps}
+        >
+          <div className="journalit-session-log-composer-bar">
+            <div
+              className="journalit-session-log-composer-tag-control"
+              ref={tagMenuRef}
             >
-              <Tag size={15} />
-              <span>{selectedTag?.shortLabel ?? 'AN'}</span>
-              <ChevronDown
-                size={12}
-                className={
-                  isTagMenuOpen
-                    ? 'journalit-session-log-composer-tag-chevron is-open'
-                    : 'journalit-session-log-composer-tag-chevron'
-                }
-              />
-            </button>
-            {isTagMenuOpen &&
-              createPortal(
-                <div
-                  ref={tagMenuPortalRef}
-                  className="journalit-session-log-composer-tag-menu journalit-session-log-composer-tag-menu--portal"
-                  style={cssVars({
-                    '--journalit-session-log-tag-menu-left': `${tagMenuPosition.left}px`,
-                    '--journalit-session-log-tag-menu-top': `${tagMenuPosition.top}px`,
-                  })}
-                >
-                  {tags.map((tag) => (
-                    <button
-                      type="button"
-                      key={tag.id}
-                      className={
-                        tag.id === selectedTagId
-                          ? 'journalit-session-log-composer-tag-option is-active'
-                          : 'journalit-session-log-composer-tag-option'
-                      }
-                      onClick={() => {
-                        setSelectedTagId(tag.id);
-                        setIsTagMenuOpen(false);
-                      }}
-                      aria-pressed={tag.id === selectedTagId}
-                    >
-                      <span
+              <button
+                ref={tagButtonRef}
+                type="button"
+                className="journalit-session-log-composer-tag-trigger"
+                onClick={toggleTagMenu}
+                aria-label={t('session-log.composer.tag-label')}
+                aria-expanded={isTagMenuOpen}
+              >
+                <Tag size={15} />
+                <span>{selectedTag?.shortLabel ?? 'AN'}</span>
+                <ChevronDown
+                  size={12}
+                  className={
+                    isTagMenuOpen
+                      ? 'journalit-session-log-composer-tag-chevron is-open'
+                      : 'journalit-session-log-composer-tag-chevron'
+                  }
+                />
+              </button>
+              {isTagMenuOpen &&
+                createPortal(
+                  <div
+                    ref={tagMenuPortalRef}
+                    className="journalit-session-log-composer-tag-menu journalit-session-log-composer-tag-menu--portal"
+                    style={cssVars({
+                      '--journalit-session-log-tag-menu-left': `${tagMenuPosition.left}px`,
+                      '--journalit-session-log-tag-menu-top': `${tagMenuPosition.top}px`,
+                    })}
+                  >
+                    {tags.map((tag) => (
+                      <button
+                        type="button"
+                        key={tag.id}
                         className={
                           tag.id === selectedTagId
-                            ? 'journalit-session-log-composer-tag-checkbox is-checked'
-                            : 'journalit-session-log-composer-tag-checkbox'
+                            ? 'journalit-session-log-composer-tag-option is-active'
+                            : 'journalit-session-log-composer-tag-option'
                         }
-                        aria-hidden="true"
+                        onClick={() => {
+                          setSelectedTagId(tag.id);
+                          setIsTagMenuOpen(false);
+                        }}
+                        aria-pressed={tag.id === selectedTagId}
                       >
-                        {tag.id === selectedTagId ? '✓' : ''}
-                      </span>
-                      <span className="journalit-session-log-composer-tag-option-label">
-                        {tag.label}
-                      </span>
-                    </button>
-                  ))}
-                </div>,
-                tagButtonRef.current?.ownerDocument.body ??
-                  window.activeDocument.body
-              )}
-          </div>
-          <input
-            ref={composerInputRef}
-            type="text"
-            value={text}
-            placeholder={t('session-log.placeholder.entry-short')}
-            onChange={(event) => setText(event.target.value)}
-            onKeyDown={submitEntryFromKeyboard}
-          />
-          <button
-            ref={timestampButtonRef}
-            type="button"
-            className={
-              manualTimestampEnabled
-                ? 'journalit-session-log-icon-button is-active'
-                : 'journalit-session-log-icon-button'
-            }
-            onClick={() => {
-              if (!manualTimestampEnabled) {
-                setManualTimestamp(
-                  getDefaultEntryTimestamp(timestampSessionWindow)
-                );
-                setManualTimestampPickerSignal((signal) => signal + 1);
+                        <span
+                          className={
+                            tag.id === selectedTagId
+                              ? 'journalit-session-log-composer-tag-checkbox is-checked'
+                              : 'journalit-session-log-composer-tag-checkbox'
+                          }
+                          aria-hidden="true"
+                        >
+                          {tag.id === selectedTagId ? '✓' : ''}
+                        </span>
+                        <span className="journalit-session-log-composer-tag-option-label">
+                          {tag.label}
+                        </span>
+                      </button>
+                    ))}
+                  </div>,
+                  tagButtonRef.current?.ownerDocument.body ??
+                    window.activeDocument.body
+                )}
+            </div>
+            <input
+              ref={composerInputRef}
+              type="text"
+              value={text}
+              placeholder={t('session-log.placeholder.entry-short')}
+              onChange={(event) => setText(event.target.value)}
+              onKeyDown={submitEntryFromKeyboard}
+            />
+            <button
+              ref={timestampButtonRef}
+              type="button"
+              className={
+                manualTimestampEnabled
+                  ? 'journalit-session-log-icon-button is-active'
+                  : 'journalit-session-log-icon-button'
               }
-              setManualTimestampEnabled(!manualTimestampEnabled);
-            }}
-            aria-label={
-              manualTimestampEnabled
-                ? t('session-log.action.auto-time')
-                : t('session-log.action.set-time')
-            }
-          >
-            <Clock size={16} />
-          </button>
-          <button
-            type="button"
-            className="journalit-session-log-icon-button journalit-session-log-send-button"
-            onClick={() => void submitEntry()}
-            disabled={!text.trim() || isSubmittingEntry}
-            aria-label={t('session-log.action.add-entry')}
-          >
-            <Send size={16} />
-          </button>
-          {showComposerToggle && (
+              onClick={() => {
+                if (!manualTimestampEnabled) {
+                  setManualTimestamp(
+                    getDefaultEntryTimestamp(timestampSessionWindow)
+                  );
+                  setManualTimestampPickerSignal((signal) => signal + 1);
+                }
+                setManualTimestampEnabled(!manualTimestampEnabled);
+              }}
+              aria-label={
+                manualTimestampEnabled
+                  ? t('session-log.action.auto-time')
+                  : t('session-log.action.set-time')
+              }
+            >
+              <Clock size={16} />
+            </button>
             <button
               type="button"
-              className="journalit-session-log-icon-button"
-              onClick={hideComposer}
-              aria-label={t('session-log.action.hide-composer')}
+              className="journalit-session-log-icon-button journalit-session-log-send-button"
+              onClick={() => void submitEntry()}
+              disabled={!text.trim() || isSubmittingEntry}
+              aria-label={t('session-log.action.add-entry')}
             >
-              <X size={16} />
+              <Send size={16} />
             </button>
+            {showComposerToggle && (
+              <button
+                type="button"
+                className="journalit-session-log-icon-button"
+                onClick={hideComposer}
+                aria-label={t('session-log.action.hide-composer')}
+              >
+                <X size={16} />
+              </button>
+            )}
+          </div>
+          {manualTimestampEnabled && (
+            <FastDateTimeInput
+              className="journalit-session-log-timestamp-input"
+              value={manualTimestamp}
+              includeTime={!compact}
+              timeOnly={compact}
+              hidePickerButton={compact}
+              openPickerSignal={manualTimestampPickerSignal}
+              pickerPositionElement={timestampButtonRef.current}
+              controllerOnly={compact}
+              closePickerOnQuickAction={!compact}
+              onChange={(value) => {
+                if (value instanceof Date) {
+                  setManualTimestamp(value);
+                  return;
+                }
+                if (typeof value === 'string') {
+                  const timestamp = inferTimestampForSessionTime(
+                    value,
+                    manualTimestamp,
+                    timestampSessionWindow
+                  );
+                  if (timestamp) setManualTimestamp(timestamp);
+                }
+              }}
+            />
           )}
         </div>
-        {manualTimestampEnabled && (
-          <FastDateTimeInput
-            className="journalit-session-log-timestamp-input"
-            value={manualTimestamp}
-            includeTime={!compact}
-            timeOnly={compact}
-            hidePickerButton={compact}
-            openPickerSignal={manualTimestampPickerSignal}
-            pickerPositionElement={timestampButtonRef.current}
-            controllerOnly={compact}
-            closePickerOnQuickAction={!compact}
-            onChange={(value) => {
-              if (value instanceof Date) {
-                setManualTimestamp(value);
-                return;
-              }
-              if (typeof value === 'string') {
-                const timestamp = inferTimestampForSessionTime(
-                  value,
-                  manualTimestamp,
-                  timestampSessionWindow
-                );
-                if (timestamp) setManualTimestamp(timestamp);
-              }
-            }}
-          />
-        )}
-      </div>
-    ) : null;
+      ) : null;
 
     return (
-      <div className="journalit-session-log-panel">
-        {!compact && (
-          <div className="journalit-session-log-panel__header">
-            <div>
-              <h3>{t('session-log.title')}</h3>
-              <p>{t('session-log.description')}</p>
+      <DateDraftGateContext.Provider value={dateDraftGate}>
+        <div className="journalit-session-log-panel">
+          {!compact && (
+            <div className="journalit-session-log-panel__header">
+              <div>
+                <h3>{t('session-log.title')}</h3>
+                <p>{t('session-log.description')}</p>
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {alertMessage && (
-          <div className="journalit-session-log-alert">
-            <AlertTriangle size={16} />
-            <span>{alertMessage}</span>
-          </div>
-        )}
+          {alertMessage && (
+            <div className="journalit-session-log-alert">
+              <AlertTriangle size={16} />
+              <span>{alertMessage}</span>
+            </div>
+          )}
 
-        {newestFirst && composer}
+          {newestFirst && composer}
 
-        <div className="journalit-session-log-timeline">
-          {displayedEntries.length === 0 ? (
-            <>
-              {isFilteredEmpty && (
+          <div className="journalit-session-log-timeline">
+            {displayedEntries.length === 0 ? (
+              <>
+                {isFilteredEmpty && (
+                  <TimelineSeparator
+                    label={
+                      newestFirst
+                        ? t('session-log.timeline.most-recent')
+                        : t('session-log.timeline.start')
+                    }
+                    action={filterControl}
+                  />
+                )}
+                <div
+                  className={
+                    isFilteredEmpty ||
+                    (showComposerToggle && !isComposerVisible)
+                      ? 'journalit-session-log-empty'
+                      : 'journalit-session-log-empty journalit-session-log-empty--centered'
+                  }
+                >
+                  <span>
+                    {isFilteredEmpty
+                      ? t('session-log.empty-filtered')
+                      : t('session-log.empty')}
+                  </span>
+                  <div
+                    className="journalit-session-log-empty__actions"
+                    {...shareCaptureExcludeProps}
+                  >
+                    {isFilteredEmpty && (
+                      <button
+                        type="button"
+                        className="journalit-button journalit-button--plain journalit-button--small take-profit-add-button journalit-session-log-clear-filter-button"
+                        onClick={() => setFilterTagId('all')}
+                      >
+                        {t('session-log.filter.clear')}
+                      </button>
+                    )}
+                    {addNoteButton}
+                  </div>
+                </div>
+                {!newestFirst && composer}
+                {isFilteredEmpty && (
+                  <TimelineSeparator
+                    label={
+                      newestFirst
+                        ? t('session-log.timeline.start')
+                        : t('session-log.timeline.most-recent')
+                    }
+                  />
+                )}
+              </>
+            ) : (
+              <>
                 <TimelineSeparator
                   label={
                     newestFirst
                       ? t('session-log.timeline.most-recent')
                       : t('session-log.timeline.start')
                   }
-                  action={filterControl}
+                  action={newestFirst ? addNoteButton : filterControl}
                 />
-              )}
-              <div
-                className={
-                  isFilteredEmpty || (showComposerToggle && !isComposerVisible)
-                    ? 'journalit-session-log-empty'
-                    : 'journalit-session-log-empty journalit-session-log-empty--centered'
-                }
-              >
-                <span>
-                  {isFilteredEmpty
-                    ? t('session-log.empty-filtered')
-                    : t('session-log.empty')}
-                </span>
-                <div
-                  className="journalit-session-log-empty__actions"
-                  {...shareCaptureExcludeProps}
-                >
-                  {isFilteredEmpty && (
-                    <button
-                      type="button"
-                      className="journalit-button journalit-button--plain journalit-button--small take-profit-add-button journalit-session-log-clear-filter-button"
-                      onClick={() => setFilterTagId('all')}
+                {displayedEntries.map((entry) => {
+                  if (entry.kind === 'trade') {
+                    const price = formatValue({
+                      kind: 'price',
+                      value: entry.price,
+                    });
+                    const size = formatValue({
+                      kind: 'positionSize',
+                      value: entry.positionSize,
+                      precision: 2,
+                    });
+                    return (
+                      <div
+                        key={entry.id}
+                        className={`journalit-session-log-entry journalit-session-log-entry--trade ${entryToneClassName(entry)}`}
+                      >
+                        <div className="journalit-session-log-entry__body">
+                          <div className="journalit-session-log-entry__header">
+                            <div className="journalit-session-log-entry__meta">
+                              <span
+                                className={`journalit-session-log-tag ${
+                                  entry.eventType === 'entry'
+                                    ? 'journalit-session-log-tag--green'
+                                    : 'journalit-session-log-tag--red'
+                                }`}
+                              >
+                                {entry.eventType === 'entry' ? 'ENTRY' : 'EXIT'}
+                              </span>
+                              <span className="journalit-session-log-entry__time">
+                                {formatTime(entry.timestamp, use24HourTime)}
+                              </span>
+                            </div>
+                            <button
+                              type="button"
+                              className="journalit-session-log-icon-button"
+                              onClick={() => void openTrade(entry.tradePath)}
+                              aria-label={t('session-log.action.open-trade')}
+                              {...shareCaptureExcludeProps}
+                            >
+                              <ExternalLink size={14} />
+                            </button>
+                          </div>
+                          <div className="journalit-session-log-entry__text">
+                            {entry.eventType === 'entry'
+                              ? t('session-log.trade.entered')
+                              : t('session-log.trade.exited')}{' '}
+                            {entry.direction} {entry.instrument} @ {price} ·{' '}
+                            {t('session-log.trade.size')} {size}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  }
+
+                  const tag = tagById.get(entry.tagId) ?? tags[0];
+                  return (
+                    <div
+                      key={entry.id}
+                      className={`journalit-session-log-entry journalit-session-log-entry--manual ${entryToneClassName(entry, tag)}`}
                     >
-                      {t('session-log.filter.clear')}
-                    </button>
-                  )}
-                  {addNoteButton}
-                </div>
-              </div>
-              {!newestFirst && composer}
-              {isFilteredEmpty && (
+                      <div className="journalit-session-log-entry__body">
+                        {editingId === entry.id ? (
+                          <div className="journalit-session-log-edit-form">
+                            <div
+                              className="journalit-session-log-edit-tag-control"
+                              ref={editTagMenuRef}
+                            >
+                              <button
+                                type="button"
+                                className="journalit-session-log-composer-tag-trigger journalit-session-log-edit-tag-trigger"
+                                onClick={() =>
+                                  setIsEditTagMenuOpen((value) => !value)
+                                }
+                                aria-label={t('session-log.composer.tag-label')}
+                                aria-expanded={isEditTagMenuOpen}
+                              >
+                                <Tag size={15} />
+                                <span>
+                                  {tagById.get(editTagId)?.shortLabel ?? 'AN'}
+                                </span>
+                                <ChevronDown
+                                  size={12}
+                                  className={
+                                    isEditTagMenuOpen
+                                      ? 'journalit-session-log-composer-tag-chevron is-open'
+                                      : 'journalit-session-log-composer-tag-chevron'
+                                  }
+                                />
+                              </button>
+                              {isEditTagMenuOpen && (
+                                <div className="journalit-session-log-composer-tag-menu journalit-session-log-edit-tag-menu">
+                                  {tags.map((tagOption) => (
+                                    <button
+                                      type="button"
+                                      key={tagOption.id}
+                                      className={
+                                        tagOption.id === editTagId
+                                          ? 'journalit-session-log-composer-tag-option is-active'
+                                          : 'journalit-session-log-composer-tag-option'
+                                      }
+                                      onClick={() => {
+                                        setEditTagId(tagOption.id);
+                                        setIsEditTagMenuOpen(false);
+                                      }}
+                                      aria-pressed={tagOption.id === editTagId}
+                                    >
+                                      <span
+                                        className={
+                                          tagOption.id === editTagId
+                                            ? 'journalit-session-log-composer-tag-checkbox is-checked'
+                                            : 'journalit-session-log-composer-tag-checkbox'
+                                        }
+                                        aria-hidden="true"
+                                      >
+                                        {tagOption.id === editTagId ? '✓' : ''}
+                                      </span>
+                                      <span className="journalit-session-log-composer-tag-option-label">
+                                        {tagOption.label}
+                                      </span>
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                            <textarea
+                              aria-label={t('session-log.action.edit')}
+                              value={editText}
+                              rows={1}
+                              onChange={(event) =>
+                                setEditText(event.target.value)
+                              }
+                            />
+                            <div
+                              className="journalit-session-log-edit-actions"
+                              {...shareCaptureExcludeProps}
+                            >
+                              <button
+                                type="button"
+                                className="custom-options-compact-icon-button journalit-session-log-edit-icon-button"
+                                onClick={() => void saveEdit()}
+                                aria-label={t('session-log.action.save')}
+                              >
+                                <Check size={16} aria-hidden="true" />
+                              </button>
+                              <button
+                                type="button"
+                                className="custom-options-compact-icon-button journalit-session-log-edit-icon-button"
+                                onClick={() => {
+                                  setEditingId(null);
+                                  setIsEditTagMenuOpen(false);
+                                }}
+                                aria-label={t('session-log.action.cancel')}
+                              >
+                                <X size={16} aria-hidden="true" />
+                              </button>
+                            </div>
+                          </div>
+                        ) : (
+                          <>
+                            <div className="journalit-session-log-entry__header">
+                              <div className="journalit-session-log-entry__meta">
+                                {tag && (
+                                  <span className={tagClassName(tag)}>
+                                    {tag.shortLabel}
+                                  </span>
+                                )}
+                                <span className="journalit-session-log-entry__time">
+                                  {formatTime(entry.timestamp, use24HourTime)}
+                                </span>
+                                {tag?.requiresResolution && !entry.resolved && (
+                                  <span className="journalit-session-log-unresolved">
+                                    {t('session-log.status.unclassified')}
+                                  </span>
+                                )}
+                              </div>
+                              {!readOnly && (
+                                <div
+                                  className="journalit-session-log-entry__actions"
+                                  {...shareCaptureExcludeProps}
+                                >
+                                  {tag?.requiresResolution &&
+                                    !entry.resolved && (
+                                      <button
+                                        type="button"
+                                        className="journalit-session-log-action-button journalit-session-log-action-button--text"
+                                        onClick={() => beginClassify(entry)}
+                                      >
+                                        <Check size={14} />{' '}
+                                        {t('session-log.action.classify')}
+                                      </button>
+                                    )}
+                                  <button
+                                    type="button"
+                                    className="journalit-session-log-action-button journalit-session-log-action-button--icon"
+                                    onClick={() => beginEdit(entry)}
+                                    aria-label={t('session-log.action.edit')}
+                                  >
+                                    <Edit size={16} />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    className="journalit-session-log-action-button journalit-session-log-action-button--icon"
+                                    onClick={() =>
+                                      void deleteSessionLogEntry({
+                                        plugin,
+                                        filePath,
+                                        entryId: entry.id,
+                                      })
+                                        .then(onRefresh)
+                                        .catch((error) => {
+                                          console.error(
+                                            'Failed to delete session log entry:',
+                                            error
+                                          );
+                                        })
+                                    }
+                                    aria-label={t('session-log.action.delete')}
+                                  >
+                                    <Trash2 size={16} />
+                                  </button>
+                                </div>
+                              )}
+                            </div>
+                            <div className="journalit-session-log-entry__text">
+                              {entry.text}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                {!newestFirst && composer}
                 <TimelineSeparator
                   label={
                     newestFirst
                       ? t('session-log.timeline.start')
                       : t('session-log.timeline.most-recent')
                   }
+                  action={newestFirst ? filterControl : addNoteButton}
                 />
-              )}
-            </>
-          ) : (
-            <>
-              <TimelineSeparator
-                label={
-                  newestFirst
-                    ? t('session-log.timeline.most-recent')
-                    : t('session-log.timeline.start')
-                }
-                action={newestFirst ? addNoteButton : filterControl}
-              />
-              {displayedEntries.map((entry) => {
-                if (entry.kind === 'trade') {
-                  const price = formatValue({
-                    kind: 'price',
-                    value: entry.price,
-                  });
-                  const size = formatValue({
-                    kind: 'positionSize',
-                    value: entry.positionSize,
-                    precision: 2,
-                  });
-                  return (
-                    <div
-                      key={entry.id}
-                      className={`journalit-session-log-entry journalit-session-log-entry--trade ${entryToneClassName(entry)}`}
-                    >
-                      <div className="journalit-session-log-entry__body">
-                        <div className="journalit-session-log-entry__header">
-                          <div className="journalit-session-log-entry__meta">
-                            <span
-                              className={`journalit-session-log-tag ${
-                                entry.eventType === 'entry'
-                                  ? 'journalit-session-log-tag--green'
-                                  : 'journalit-session-log-tag--red'
-                              }`}
-                            >
-                              {entry.eventType === 'entry' ? 'ENTRY' : 'EXIT'}
-                            </span>
-                            <span className="journalit-session-log-entry__time">
-                              {formatTime(entry.timestamp, use24HourTime)}
-                            </span>
-                          </div>
-                          <button
-                            type="button"
-                            className="journalit-session-log-icon-button"
-                            onClick={() => void openTrade(entry.tradePath)}
-                            aria-label={t('session-log.action.open-trade')}
-                            {...shareCaptureExcludeProps}
-                          >
-                            <ExternalLink size={14} />
-                          </button>
-                        </div>
-                        <div className="journalit-session-log-entry__text">
-                          {entry.eventType === 'entry'
-                            ? t('session-log.trade.entered')
-                            : t('session-log.trade.exited')}{' '}
-                          {entry.direction} {entry.instrument} @ {price} ·{' '}
-                          {t('session-log.trade.size')} {size}
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }
-
-                const tag = tagById.get(entry.tagId) ?? tags[0];
-                return (
-                  <div
-                    key={entry.id}
-                    className={`journalit-session-log-entry journalit-session-log-entry--manual ${entryToneClassName(entry, tag)}`}
-                  >
-                    <div className="journalit-session-log-entry__body">
-                      {editingId === entry.id ? (
-                        <div className="journalit-session-log-edit-form">
-                          <div
-                            className="journalit-session-log-edit-tag-control"
-                            ref={editTagMenuRef}
-                          >
-                            <button
-                              type="button"
-                              className="journalit-session-log-composer-tag-trigger journalit-session-log-edit-tag-trigger"
-                              onClick={() =>
-                                setIsEditTagMenuOpen((value) => !value)
-                              }
-                              aria-label={t('session-log.composer.tag-label')}
-                              aria-expanded={isEditTagMenuOpen}
-                            >
-                              <Tag size={15} />
-                              <span>
-                                {tagById.get(editTagId)?.shortLabel ?? 'AN'}
-                              </span>
-                              <ChevronDown
-                                size={12}
-                                className={
-                                  isEditTagMenuOpen
-                                    ? 'journalit-session-log-composer-tag-chevron is-open'
-                                    : 'journalit-session-log-composer-tag-chevron'
-                                }
-                              />
-                            </button>
-                            {isEditTagMenuOpen && (
-                              <div className="journalit-session-log-composer-tag-menu journalit-session-log-edit-tag-menu">
-                                {tags.map((tagOption) => (
-                                  <button
-                                    type="button"
-                                    key={tagOption.id}
-                                    className={
-                                      tagOption.id === editTagId
-                                        ? 'journalit-session-log-composer-tag-option is-active'
-                                        : 'journalit-session-log-composer-tag-option'
-                                    }
-                                    onClick={() => {
-                                      setEditTagId(tagOption.id);
-                                      setIsEditTagMenuOpen(false);
-                                    }}
-                                    aria-pressed={tagOption.id === editTagId}
-                                  >
-                                    <span
-                                      className={
-                                        tagOption.id === editTagId
-                                          ? 'journalit-session-log-composer-tag-checkbox is-checked'
-                                          : 'journalit-session-log-composer-tag-checkbox'
-                                      }
-                                      aria-hidden="true"
-                                    >
-                                      {tagOption.id === editTagId ? '✓' : ''}
-                                    </span>
-                                    <span className="journalit-session-log-composer-tag-option-label">
-                                      {tagOption.label}
-                                    </span>
-                                  </button>
-                                ))}
-                              </div>
-                            )}
-                          </div>
-                          <textarea
-                            aria-label={t('session-log.action.edit')}
-                            value={editText}
-                            rows={1}
-                            onChange={(event) =>
-                              setEditText(event.target.value)
-                            }
-                          />
-                          <div
-                            className="journalit-session-log-edit-actions"
-                            {...shareCaptureExcludeProps}
-                          >
-                            <button
-                              type="button"
-                              className="custom-options-compact-icon-button journalit-session-log-edit-icon-button"
-                              onClick={() => void saveEdit()}
-                              aria-label={t('session-log.action.save')}
-                            >
-                              <Check size={16} aria-hidden="true" />
-                            </button>
-                            <button
-                              type="button"
-                              className="custom-options-compact-icon-button journalit-session-log-edit-icon-button"
-                              onClick={() => {
-                                setEditingId(null);
-                                setIsEditTagMenuOpen(false);
-                              }}
-                              aria-label={t('session-log.action.cancel')}
-                            >
-                              <X size={16} aria-hidden="true" />
-                            </button>
-                          </div>
-                        </div>
-                      ) : (
-                        <>
-                          <div className="journalit-session-log-entry__header">
-                            <div className="journalit-session-log-entry__meta">
-                              {tag && (
-                                <span className={tagClassName(tag)}>
-                                  {tag.shortLabel}
-                                </span>
-                              )}
-                              <span className="journalit-session-log-entry__time">
-                                {formatTime(entry.timestamp, use24HourTime)}
-                              </span>
-                              {tag?.requiresResolution && !entry.resolved && (
-                                <span className="journalit-session-log-unresolved">
-                                  {t('session-log.status.unclassified')}
-                                </span>
-                              )}
-                            </div>
-                            <div
-                              className="journalit-session-log-entry__actions"
-                              {...shareCaptureExcludeProps}
-                            >
-                              {tag?.requiresResolution && !entry.resolved && (
-                                <button
-                                  type="button"
-                                  className="journalit-session-log-action-button journalit-session-log-action-button--text"
-                                  onClick={() => beginClassify(entry)}
-                                >
-                                  <Check size={14} />{' '}
-                                  {t('session-log.action.classify')}
-                                </button>
-                              )}
-                              <button
-                                type="button"
-                                className="journalit-session-log-action-button journalit-session-log-action-button--icon"
-                                onClick={() => beginEdit(entry)}
-                                aria-label={t('session-log.action.edit')}
-                              >
-                                <Edit size={16} />
-                              </button>
-                              <button
-                                type="button"
-                                className="journalit-session-log-action-button journalit-session-log-action-button--icon"
-                                onClick={() =>
-                                  void deleteSessionLogEntry({
-                                    plugin,
-                                    filePath,
-                                    entryId: entry.id,
-                                  })
-                                    .then(onRefresh)
-                                    .catch((error) => {
-                                      console.error(
-                                        'Failed to delete session log entry:',
-                                        error
-                                      );
-                                    })
-                                }
-                                aria-label={t('session-log.action.delete')}
-                              >
-                                <Trash2 size={16} />
-                              </button>
-                            </div>
-                          </div>
-                          <div className="journalit-session-log-entry__text">
-                            {entry.text}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-              {!newestFirst && composer}
-              <TimelineSeparator
-                label={
-                  newestFirst
-                    ? t('session-log.timeline.start')
-                    : t('session-log.timeline.most-recent')
-                }
-                action={newestFirst ? filterControl : addNoteButton}
-              />
-            </>
-          )}
+              </>
+            )}
+          </div>
         </div>
-      </div>
+      </DateDraftGateContext.Provider>
     );
   }
 );

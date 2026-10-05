@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useContext, useState } from 'react';
+import { DateDraftGateContext } from '../../../core/DateDraftGate';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
 import { BackendSecretStorage } from '../../../../services/backend/BackendSecretStorage';
@@ -49,6 +50,7 @@ export function PropChallengeSettingsSection({
   onAccountTypeChange,
 }: Props) {
   const plugin = usePlugin();
+  const dateDraftGate = useContext(DateDraftGateContext);
   const [selectedPhaseId, setSelectedPhaseId] = useState('');
   
   
@@ -81,6 +83,7 @@ export function PropChallengeSettingsSection({
   };
 
   const addPhase = () => {
+    if (dateDraftGate && !dateDraftGate.confirm()) return;
     if (!value) return;
     const phase = createPropChallengePhase(
       t('account.prop-challenge.default-phase-name', {
@@ -225,6 +228,7 @@ export function PropChallengeSettingsSection({
             
             showPicker={!showProfilePicker}
             onChange={(next) => {
+              if (dateDraftGate && !dateDraftGate.confirm()) return;
               onChange(next);
               const firstPhase = next.phases[0];
               if (firstPhase) {
@@ -239,7 +243,10 @@ export function PropChallengeSettingsSection({
             selectedPhaseId={selectedPhase?.id}
             currentPhaseId={value.currentPhaseId}
             disabled={disabled}
-            onSelect={setSelectedPhaseId}
+            onSelect={(id) => {
+              if (dateDraftGate && !dateDraftGate.confirm()) return;
+              setSelectedPhaseId(id);
+            }}
           />
           <div className="journalit-prop-challenge-phase-actions">
             <Button
@@ -279,6 +286,7 @@ export function PropChallengeSettingsSection({
             <PhaseEditor
               key={selectedPhase.id}
               phase={selectedPhase}
+              profileRef={value.profileRef}
               phases={value.phases}
               currencyCode={currencyCode}
               disabled={

@@ -8,6 +8,9 @@ import type {
   PropChallengeConfig,
   PropChallengePolicyRevision,
   PropChallengeRule,
+  PropChallengePhase,
+  PropChallengePayoutPolicy,
+  PropFirmProfilePhase,
   PropFirmProfileSelection,
 } from './types';
 
@@ -23,6 +26,54 @@ interface UpdateOptions {
   effectiveAt: string;
   transition: NonNullable<PropChallengePolicyRevision['transition']>;
   now?: Date;
+}
+
+type PayoutPolicyProposal =
+  | { kind: 'policy'; policy: PropChallengePayoutPolicy | undefined }
+  | { kind: 'conflict' };
+
+
+export function proposedProfilePayoutPolicy({
+  phase,
+  source,
+  keepCurrent,
+}: {
+  phase: Pick<PropChallengePhase, 'payoutPolicy' | 'profileSnapshot'>;
+  source: Pick<PropFirmProfilePhase, 'payoutPolicy'>;
+  keepCurrent: boolean;
+}): PayoutPolicyProposal {
+  if (keepCurrent) return { kind: 'policy', policy: phase.payoutPolicy };
+  const gate = phase.payoutPolicy?.qualifyingDays;
+  const incoming = source.payoutPolicy;
+  if (
+    !gate ||
+    sameProfileContent(
+      gate,
+      phase.profileSnapshot?.payoutPolicy?.qualifyingDays
+    )
+  )
+    return { kind: 'policy', policy: incoming };
+  if (
+    incoming?.qualifyingDays &&
+    sameProfileContent(gate, incoming.qualifyingDays)
+  )
+    return { kind: 'policy', policy: incoming };
+  if (
+    incoming?.cycle.kind === 'qualifying_days' &&
+    sameProfileContent(gate, {
+      days: incoming.cycle.days,
+      minimumDailyProfit: incoming.cycle.minimumDailyProfit,
+    })
+  )
+    return { kind: 'policy', policy: incoming };
+  if (
+    !incoming ||
+    incoming.qualifyingDays ||
+    incoming.cycle.kind === 'qualifying_days'
+  ) {
+    return { kind: 'conflict' };
+  }
+  return { kind: 'policy', policy: { ...incoming, qualifyingDays: gate } };
 }
 
 export function proposedProfileRules(
@@ -104,9 +155,16 @@ export function applyProfilePhaseUpdate(
     sourcePhaseIndex,
     options.keepRuleIds
   );
-  const payoutPolicy = options.keepPayoutPolicy
-    ? phase.payoutPolicy
-    : source.payoutPolicy;
+  const proposal = proposedProfilePayoutPolicy({
+    phase,
+    source,
+    keepCurrent: options.keepPayoutPolicy,
+  });
+  if (proposal.kind === 'conflict')
+    throw new Error(
+      'Keep your current payout policy or edit your profitable-day requirement before applying these terms.'
+    );
+  const payoutPolicy = proposal.policy;
   let history = phase.policyHistory;
   if (phase.status === 'active') {
     const time = Date.parse(effectiveAt);

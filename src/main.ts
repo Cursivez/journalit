@@ -80,18 +80,10 @@ const isCustomEvent = (event: Event): event is CustomEvent<unknown> =>
 
 declare global {
   interface Window {
-    __dropdownClickHandlerAdded?: boolean;
-    __dropdownClickHandlerDocument?: Document;
-    __isHandlingComboBoxRemove?: boolean;
     __obsidianStartTime?: number;
     __REACT_ERROR_OVERLAY__?: boolean;
   }
 }
-
-
-window.__dropdownClickHandlerAdded = false;
-window.__dropdownClickHandlerDocument = undefined;
-window.__isHandlingComboBoxRemove = false;
 
 
 export default class JournalitPlugin extends Plugin {

@@ -1,2 +1,2 @@
 
-export const SHARE_IMAGE_ACTION_ICON = 'share-2';
+export const SHARE_IMAGE_ACTION_ICON = 'camera';

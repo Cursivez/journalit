@@ -17,15 +17,6 @@ declare global {
     __obsidianStartTime?: number;
 
     
-    __dropdownClickHandlerAdded?: boolean;
-
-    
-    __dropdownClickHandlerDocument?: Document;
-
-    
-    __isHandlingComboBoxRemove?: boolean;
-
-    
     requestIdleCallback?: (
       callback: IdleRequestCallback,
       options?: IdleRequestOptions

@@ -236,11 +236,6 @@ export const REVIEW_SHARE_STYLES = `
   }
 
   
-  .journalit-share-card .journalit-combobox .input-container::after {
-    display: none;
-  }
-
-  
   .journalit-share-card > .journalit-share-card-note.markdown-preview-view {
     padding: 0;
     height: auto;

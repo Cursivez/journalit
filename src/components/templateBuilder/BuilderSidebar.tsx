@@ -17,7 +17,6 @@ import type { TemplatesSettings } from '../../settings/types';
 import { showDeleteTemplateModal } from './UnsavedChangesModal';
 import {
   useGuideAction,
-  useGuideBackHandler,
   useGuideContextValue,
   useGuideCurrentStepId,
   useGuideTarget,
@@ -25,12 +24,8 @@ import {
 import {
   LAYOUT_BUILDER_DEFAULT_TEMPLATE_SET_ACTION_ID,
   LAYOUT_BUILDER_DEFAULT_TEMPLATE_STAR_TARGET_ID,
-  LAYOUT_BUILDER_DRC_BUILTIN_TEMPLATE_TARGET_ID,
-  LAYOUT_BUILDER_BUILTIN_DUPLICATE_BUTTON_TARGET_ID,
-  LAYOUT_BUILDER_SIDEBAR_TARGET_ID,
-  LAYOUT_BUILDER_TEMPLATE_DUPLICATED_ACTION_ID,
-  LAYOUT_BUILDER_TEMPLATE_SELECTED_ACTION_ID,
-  LAYOUT_BUILDER_SELECTED_TEMPLATE_IS_BUILT_IN_CONTEXT_KEY,
+  LAYOUT_BUILDER_DRC_SECTION_TARGET_ID,
+  LAYOUT_BUILDER_OWN_LAYOUT_CREATED_ACTION_ID,
   LAYOUT_BUILDER_SELECTED_TEMPLATE_IS_DEFAULT_CONTEXT_KEY,
 } from '../../guides/layoutBuilderGuideIds';
 import { mergeClassNames } from '../../utils/classNames';
@@ -41,6 +36,8 @@ export interface Selection {
   type: SelectionType;
   id: string;
   templateType?: ReviewTemplateType | 'trade';
+  
+  openInEditor?: boolean;
 }
 
 function cloneTradeTemplateValue<T>(value: T): T {
@@ -52,9 +49,12 @@ interface BuilderSidebarProps {
   templateService: ReviewTemplateService;
   tradeTemplateService: TradeTemplateService;
   selection: Selection | null;
-  onSelectionChange: (selection: Selection | null) => void;
+  
+  onSelectionChange: (selection: Selection | null) => Promise<boolean>;
   onTemplatesChange?: () => void;
   refreshKey?: number;
+  
+  onLayoutCreated?: (created: Selection, source: Selection | null) => void;
 }
 
 interface SectionProps {
@@ -65,6 +65,7 @@ interface SectionProps {
   children: React.ReactNode;
   disabled?: boolean;
   disabledMessage?: string;
+  containerRef?: (element: HTMLDivElement | null) => void;
 }
 
 
@@ -76,8 +77,9 @@ const Section: React.FC<SectionProps> = ({
   children,
   disabled,
   disabledMessage,
+  containerRef,
 }) => (
-  <div className="template-builder-section">
+  <div className="template-builder-section" ref={containerRef}>
     <div className="template-builder-section-header">
       <button
         type="button"
@@ -146,10 +148,10 @@ interface TemplateItemProps {
   onSetDefault: () => void | Promise<void>;
   onDuplicate: () => void | Promise<void>;
   onDelete: () => void | Promise<void>;
-  containerRef?: (element: HTMLDivElement | null) => void;
   defaultStarRef?: (element: HTMLButtonElement | null) => void;
-  duplicateButtonRef?: (element: HTMLButtonElement | null) => void;
   forceShowActions?: boolean;
+  
+  isGuideDuplicateAction?: boolean;
 }
 
 const TemplateItem: React.FC<TemplateItemProps> = ({
@@ -160,13 +162,11 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
   onSetDefault,
   onDuplicate,
   onDelete,
-  containerRef,
   defaultStarRef,
-  duplicateButtonRef,
   forceShowActions,
+  isGuideDuplicateAction,
 }) => (
   <div
-    ref={containerRef}
     className={`sidebar-template-item ${isSelected ? 'sidebar-template-item--selected' : ''}${forceShowActions ? ' sidebar-template-item--show-actions' : ''}`}
   >
     <div className="sidebar-template-item-content">
@@ -203,7 +203,6 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
       <button
         type="button"
         className="journalit-native-button journalit-native-button--unstyled sidebar-template-item-select"
-        data-guide-primary-action
         onClick={() => void onClick()}
       >
         <span className="sidebar-template-item-name">{template.name}</span>
@@ -219,7 +218,7 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
     <div className="template-item-actions">
       <button
         aria-label={t('builder.sidebar.duplicate')}
-        ref={duplicateButtonRef}
+        data-guide-primary-action={isGuideDuplicateAction ? true : undefined}
         onClick={(e) => {
           e.stopPropagation();
           void onDuplicate();
@@ -284,17 +283,12 @@ function useBuilderSidebarModel({
   onSelectionChange,
   onTemplatesChange,
   refreshKey,
+  onLayoutCreated,
 }: BuilderSidebarProps) {
   const emitGuideAction = useGuideAction();
   const currentGuideStepId = useGuideCurrentStepId();
-  const registerSidebarTarget = useGuideTarget(
-    LAYOUT_BUILDER_SIDEBAR_TARGET_ID
-  );
-  const registerDrcBuiltInTemplateTarget = useGuideTarget(
-    LAYOUT_BUILDER_DRC_BUILTIN_TEMPLATE_TARGET_ID
-  );
-  const registerBuiltInDuplicateButtonTarget = useGuideTarget(
-    LAYOUT_BUILDER_BUILTIN_DUPLICATE_BUTTON_TARGET_ID
+  const registerDrcSectionTarget = useGuideTarget(
+    LAYOUT_BUILDER_DRC_SECTION_TARGET_ID
   );
   const registerDefaultTemplateStarTarget = useGuideTarget(
     LAYOUT_BUILDER_DEFAULT_TEMPLATE_STAR_TARGET_ID
@@ -402,13 +396,20 @@ function useBuilderSidebarModel({
         widgets: [{ type: 'header', locked: true }],
       });
       loadAllTemplates();
-      onSelectionChange({
+      const created: Selection = {
         type: 'template',
         id: newTemplate.id,
         templateType: type,
-      });
+        openInEditor: true,
+      };
       onTemplatesChange?.();
       new Notice(t('notice.template-created'));
+      
+      
+      if (await onSelectionChange(created)) {
+        onLayoutCreated?.(created, selection);
+        emitGuideAction(LAYOUT_BUILDER_OWN_LAYOUT_CREATED_ACTION_ID);
+      }
     } catch (error) {
       console.error('Failed to create template:', error);
       new Notice(t('notice.error.create-template'));
@@ -429,7 +430,7 @@ function useBuilderSidebarModel({
         display: cloneTradeTemplateValue(defaultTemplate.display),
       });
       loadAllTemplates();
-      onSelectionChange({
+      void onSelectionChange({
         type: 'template',
         id: newTemplate.id,
         templateType: 'trade',
@@ -526,37 +527,27 @@ function useBuilderSidebarModel({
         `${template.name} ${t('builder.sidebar.copy-suffix')}`
       );
       loadAllTemplates();
-      onSelectionChange({
+      const created: Selection = {
         type: 'template',
         id: duplicated.id,
         templateType: type,
-      });
+        openInEditor: true,
+      };
       onTemplatesChange?.();
-      emitGuideAction(LAYOUT_BUILDER_TEMPLATE_DUPLICATED_ACTION_ID);
       new Notice(t('notice.template-duplicated'));
+      if (await onSelectionChange(created)) {
+        onLayoutCreated?.(created, {
+          type: 'template',
+          id: template.id,
+          templateType: type,
+        });
+        emitGuideAction(LAYOUT_BUILDER_OWN_LAYOUT_CREATED_ACTION_ID);
+      }
     } catch (error) {
       console.error('Failed to duplicate template:', error);
       new Notice(t('notice.error.duplicate-template'));
     }
   };
-
-  const handleGuideBack = useCallback(
-    async ({ toStepId }: { toStepId: string }) => {
-      if (
-        toStepId === 'sidebar-overview' ||
-        toStepId === 'pick-built-in-template'
-      ) {
-        onSelectionChange({
-          type: 'template',
-          id: 'builtin-drc-standard',
-          templateType: 'drc',
-        });
-      }
-    },
-    [onSelectionChange]
-  );
-
-  useGuideBackHandler(handleGuideBack);
 
   
   const handleTradeDuplicate = async (id: string) => {
@@ -569,7 +560,7 @@ function useBuilderSidebarModel({
         `${template.name} ${t('builder.sidebar.copy-suffix')}`
       );
       loadAllTemplates();
-      onSelectionChange({
+      void onSelectionChange({
         type: 'template',
         id: duplicated.id,
         templateType: 'trade',
@@ -602,7 +593,7 @@ function useBuilderSidebarModel({
       await templateService.deleteTemplate(id);
       loadAllTemplates();
       if (selection?.id === id) {
-        onSelectionChange(null);
+        void onSelectionChange(null);
       }
       onTemplatesChange?.();
       new Notice(t('notice.template-deleted'));
@@ -631,7 +622,7 @@ function useBuilderSidebarModel({
       await tradeTemplateService.deleteTemplate(id);
       loadAllTemplates();
       if (selection?.id === id) {
-        onSelectionChange(null);
+        void onSelectionChange(null);
       }
       onTemplatesChange?.();
       new Notice(t('notice.trade-template-deleted'));
@@ -654,7 +645,7 @@ function useBuilderSidebarModel({
       );
     }
 
-    const firstBuiltIn = templates.find((t) => t.isBuiltIn);
+    const firstBuiltInId = templates.find((item) => item.isBuiltIn)?.id;
 
     return templates.map((template) => {
       const isDefault = isDefaultTemplate(
@@ -664,14 +655,8 @@ function useBuilderSidebarModel({
         template.id
       );
 
-      const isGuideDrcBuiltIn =
-        type === 'drc' &&
-        template.id === firstBuiltIn?.id &&
-        template.isBuiltIn;
-
       const isSelected =
         selection?.type === 'template' && selection.id === template.id;
-      const isGuideBuiltInSelection = template.isBuiltIn && isSelected;
 
       return (
         <TemplateItem
@@ -680,8 +665,7 @@ function useBuilderSidebarModel({
           isSelected={isSelected}
           isDefault={isDefault}
           onClick={() => {
-            emitGuideAction(LAYOUT_BUILDER_TEMPLATE_SELECTED_ACTION_ID);
-            onSelectionChange({
+            void onSelectionChange({
               type: 'template',
               id: template.id,
               templateType: type,
@@ -690,9 +674,6 @@ function useBuilderSidebarModel({
           onSetDefault={() => handleSetDefault(template.id, type)}
           onDuplicate={() => handleDuplicate(template.id, type)}
           onDelete={() => handleDelete(template.id, type)}
-          containerRef={
-            isGuideDrcBuiltIn ? registerDrcBuiltInTemplateTarget : undefined
-          }
           defaultStarRef={
             !template.isBuiltIn &&
             isSelected &&
@@ -700,14 +681,17 @@ function useBuilderSidebarModel({
               ? registerDefaultTemplateStarTarget
               : undefined
           }
-          duplicateButtonRef={
-            isGuideBuiltInSelection
-              ? registerBuiltInDuplicateButtonTarget
-              : undefined
-          }
+          
+          
           forceShowActions={
-            isGuideBuiltInSelection &&
-            currentGuideStepId === 'duplicate-template'
+            template.isBuiltIn &&
+            type === 'drc' &&
+            currentGuideStepId === 'create-own-layout'
+          }
+          isGuideDuplicateAction={
+            type === 'drc' &&
+            template.id === firstBuiltInId &&
+            currentGuideStepId === 'create-own-layout'
           }
         />
       );
@@ -741,7 +725,7 @@ function useBuilderSidebarModel({
           }
           isDefault={isDefault}
           onClick={() =>
-            onSelectionChange({
+            void onSelectionChange({
               type: 'template',
               id: template.id,
               templateType: 'trade',
@@ -769,10 +753,6 @@ function useBuilderSidebarModel({
       : null;
   
   useGuideContextValue(
-    LAYOUT_BUILDER_SELECTED_TEMPLATE_IS_BUILT_IN_CONTEXT_KEY,
-    selectedReviewTemplate?.isBuiltIn === true
-  );
-  useGuideContextValue(
     LAYOUT_BUILDER_SELECTED_TEMPLATE_IS_DEFAULT_CONTEXT_KEY,
     selectedReviewType !== null &&
       selectedReviewTemplate !== null &&
@@ -789,7 +769,7 @@ function useBuilderSidebarModel({
     onSelectionChange,
     expandedSections,
     toggleSection,
-    registerSidebarTarget,
+    registerDrcSectionTarget,
     getTradeTemplateList,
     getTemplateList,
     drcTemplates,
@@ -808,7 +788,7 @@ export const BuilderSidebar: React.FC<BuilderSidebarProps> = (props) => {
     onSelectionChange,
     expandedSections,
     toggleSection,
-    registerSidebarTarget,
+    registerDrcSectionTarget,
     getTradeTemplateList,
     getTemplateList,
     drcTemplates,
@@ -830,10 +810,7 @@ export const BuilderSidebar: React.FC<BuilderSidebarProps> = (props) => {
       </div>
 
       
-      <div
-        className="template-builder-sidebar-content"
-        ref={registerSidebarTarget}
-      >
+      <div className="template-builder-sidebar-content">
         
         <Section
           title={t('builder.sidebar.section.trade')}
@@ -846,6 +823,7 @@ export const BuilderSidebar: React.FC<BuilderSidebarProps> = (props) => {
 
         
         <Section
+          containerRef={registerDrcSectionTarget}
           title={t('builder.sidebar.section.drc')}
           isExpanded={expandedSections.drc}
           onToggle={() => toggleSection('drc')}
@@ -906,7 +884,7 @@ export const BuilderSidebar: React.FC<BuilderSidebarProps> = (props) => {
           <div className="template-builder-library-wrapper">
             <button
               onClick={() =>
-                onSelectionChange({ type: 'library', id: 'share' })
+                void onSelectionChange({ type: 'library', id: 'share' })
               }
               className={mergeClassNames(
                 'journalit-native-button',

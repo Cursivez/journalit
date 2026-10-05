@@ -48,6 +48,7 @@ import type {
   ClassifiedPreviewTrade,
   TradeImportAnalyseResponse,
   TradeImportCapabilities,
+  TradeImportDiagnostic,
   TradeImportPreviewResponse,
 } from '../../services/tradeImport/types';
 import type { TradeImportCompletionResult } from '../../services/tradeImport/TradeImportWorkflowService';
@@ -70,7 +71,9 @@ import { rememberTradeImportAssetType } from '../../services/tradeImport/tradeIm
 import {
   shouldRouteQuickImportToSourceRecovery,
   resolveBrokerImportRecovery,
+  type BrokerImportRecovery,
 } from './brokerImportRecovery';
+import { BrokerImportRecoveryNotice } from './BrokerImportRecoveryNotice';
 import { TradeOperationResultCard } from '../tradeOperations/TradeOperationResultCard';
 import { buildImportOperationResult } from '../../services/tradeOperations/resultBuilders';
 import type { TradeOperationResult } from '../../services/tradeOperations/types';
@@ -197,7 +200,7 @@ interface QuickImportPreviewSummaryProps {
   plugin: JournalitPlugin;
   preview: TradeImportPreviewResponse;
   previewRows: ClassifiedPreviewTrade[];
-  recovery: ReturnType<typeof resolveBrokerImportRecovery>;
+  recovery: BrokerImportRecovery | null;
   writableCount: number;
 }
 
@@ -219,8 +222,6 @@ const QuickImportPreviewSummary: React.FC<QuickImportPreviewSummaryProps> = ({
   recovery,
   writableCount,
 }) => {
-  const RecoveryNotice = recovery?.Notice;
-
   return (
     <div className="journalit-quick-import-summary">
       <h3>
@@ -245,12 +246,6 @@ const QuickImportPreviewSummary: React.FC<QuickImportPreviewSummaryProps> = ({
           <AlertTriangle size={16} />
           <span>{t('trade-import.preview.failed.message')}</span>
         </div>
-      )}
-      {RecoveryNotice && (
-        <RecoveryNotice
-          className="journalit-quick-import-outcome-callout journalit-quick-import-outcome-callout--error"
-          iconSize={16}
-        />
       )}
       <div className="journalit-quick-import-summary__grid">
         <span>{t('quick-import.summary.to-import')}</span>
@@ -490,6 +485,7 @@ const QuickImportSelectedFileCard: React.FC<
 );
 
 interface QuickImportMainContentProps {
+  recoveryDiagnostics: readonly TradeImportDiagnostic[];
   classified: ClassifiedPreviewTrade[];
   file: File | null;
   fileInputRef: React.RefObject<HTMLInputElement | null>;
@@ -499,7 +495,11 @@ interface QuickImportMainContentProps {
   isDragging: boolean;
   onBeforeNavigate: () => void;
   
-  openFullTradeImport: (accountName?: string) => Promise<void>;
+  openFullTradeImport: (
+    accountName?: string,
+    changeSource?: boolean
+  ) => Promise<void>;
+  recovery: BrokerImportRecovery | null;
   plugin: JournalitPlugin;
   preview: TradeImportPreviewResponse | null;
   result: TradeImportCompletionResult | null;
@@ -512,6 +512,8 @@ interface QuickImportMainContentProps {
 }
 
 export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
+  recovery,
+  recoveryDiagnostics,
   classified,
   file,
   fileInputRef,
@@ -568,10 +570,6 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
       : t('quick-import.action.open-full');
   const previewRows = classified.slice(0, 5);
   const selectedFile = file;
-  const recovery =
-    state.phase === 'ready_to_import' && preview
-      ? resolveBrokerImportRecovery(preview)
-      : null;
 
   return (
     <div className="journalit-quick-import-modal">
@@ -635,43 +633,62 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
         />
       )}
 
-      {(state.phase === 'needs_full_import' ||
-        state.phase === 'unavailable' ||
-        state.phase === 'error') && (
-        <div className="journalit-quick-import-callout">
-          <FileText size={16} />
-          <span>{state.message}</span>
-        </div>
-      )}
-
-      {preview && state.phase === 'ready_to_import' && (
-        <QuickImportPreviewSummary
-          workbookImageCount={workbookImageCountForImport(classified, NO_ITEMS)}
-          workbookImagesIncluded={workbookImagesIncluded}
-          onToggleWorkbookImages={onToggleWorkbookImages}
-          accountCurrency={tradeImportAccountCurrency(
-            plugin.settings,
-            setup?.accountName
-          )}
-          classified={classified}
-          duplicateCount={duplicateCount}
-          failedCount={failedCount}
-          localAccountNames={setup?.accountNames ?? []}
-          onImportIntoAccount={(accountName) =>
-            void openFullTradeImport(accountName)
+      {recovery && (
+        <BrokerImportRecoveryNotice
+          {...recovery.getNoticeProps(recoveryDiagnostics)}
+          className="journalit-quick-import-outcome-callout journalit-quick-import-outcome-callout--error"
+          iconSize={16}
+          disabled={isImporting}
+          onSwitchSource={
+            recovery.canChangeSource
+              ? () => void openFullTradeImport(undefined, true)
+              : undefined
           }
-          noImportablePreview={noImportablePreview}
-          onManageImports={() => {
-            onBeforeNavigate();
-            openImportManagement(plugin);
-          }}
-          plugin={plugin}
-          preview={preview}
-          previewRows={previewRows}
-          recovery={recovery}
-          writableCount={writableCount}
         />
       )}
+      {!recovery &&
+        (state.phase === 'needs_full_import' ||
+          state.phase === 'unavailable' ||
+          state.phase === 'error') && (
+          <div className="journalit-quick-import-callout">
+            <FileText size={16} />
+            <span>{state.message}</span>
+          </div>
+        )}
+
+      {!recovery?.canChangeSource &&
+        preview &&
+        state.phase === 'ready_to_import' && (
+          <QuickImportPreviewSummary
+            workbookImageCount={workbookImageCountForImport(
+              classified,
+              NO_ITEMS
+            )}
+            workbookImagesIncluded={workbookImagesIncluded}
+            onToggleWorkbookImages={onToggleWorkbookImages}
+            accountCurrency={tradeImportAccountCurrency(
+              plugin.settings,
+              setup?.accountName
+            )}
+            classified={classified}
+            duplicateCount={duplicateCount}
+            failedCount={failedCount}
+            localAccountNames={setup?.accountNames ?? []}
+            onImportIntoAccount={(accountName) =>
+              void openFullTradeImport(accountName)
+            }
+            noImportablePreview={noImportablePreview}
+            onManageImports={() => {
+              onBeforeNavigate();
+              openImportManagement(plugin);
+            }}
+            plugin={plugin}
+            preview={preview}
+            previewRows={previewRows}
+            recovery={recovery}
+            writableCount={writableCount}
+          />
+        )}
 
       {result && state.phase === 'complete' && (
         <div
@@ -737,10 +754,10 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
             className="journalit-quick-import-another-file-button"
             onClick={() => fileInputRef.current?.click()}
           >
-            {t('csv.button.import-another')}
+            {t(recovery.anotherFileLabel ?? 'csv.button.import-another')}
           </button>
         )}
-        {showFullTradeImportAction && (
+        {!recovery?.canChangeSource && showFullTradeImportAction && (
           <button type="button" onClick={() => void openFullTradeImport()}>
             {fullTradeImportActionLabel}
           </button>
@@ -1002,7 +1019,7 @@ export const QuickTradeImportModalContent: React.FC<
   );
 
   const openFullTradeImport = useCallback(
-    async (targetAccountName?: string) => {
+    async (targetAccountName?: string, changeSource = false) => {
       
       
       const retarget =
@@ -1016,8 +1033,11 @@ export const QuickTradeImportModalContent: React.FC<
           assetType: setup.assetType,
           manualMode: setup.manualMode,
           dateFormat: setup.dateFormat,
-          sheetName: setup.sheetName,
-          headerRowIndex: setup.headerRowIndex,
+          sheetName:
+            analyse?.selectedSheet ??
+            analyse?.suggestedSheet ??
+            setup.sheetName,
+          headerRowIndex: analyse?.headerRowIndex ?? setup.headerRowIndex,
           templateId: setup.templateId,
           templateName: setup.templateName,
           columnMappings: setup.columnMappings,
@@ -1027,6 +1047,7 @@ export const QuickTradeImportModalContent: React.FC<
           previewOwnerUserId: retarget ? null : previewOwnerUserId,
           classified: retarget ? [] : classified,
           previewOnOpen: retarget,
+          changeSource,
         });
       }
       closeModal();
@@ -1108,6 +1129,13 @@ export const QuickTradeImportModalContent: React.FC<
           updateQuickImportState({
             phase: 'needs_full_import',
             message: t('quick-import.message.source-mismatch'),
+          });
+          return;
+        }
+        if (resolveBrokerImportRecovery(analyseResult.response)) {
+          updateQuickImportState({
+            phase: 'needs_full_import',
+            message: t('quick-import.message.preview-failed'),
           });
           return;
         }
@@ -1301,8 +1329,24 @@ export const QuickTradeImportModalContent: React.FC<
     return accessGate;
   }
 
+  const recoveryResponse =
+    state.phase === 'ready_to_import'
+      ? preview
+      : state.phase === 'needs_full_import'
+        ? analyse
+        : null;
+  const recovery =
+    analyse &&
+    setup &&
+    capabilities &&
+    shouldRouteQuickImportToSourceRecovery(analyse, setup, capabilities.brokers)
+      ? null
+      : resolveBrokerImportRecovery(recoveryResponse);
+
   return (
     <QuickImportMainContent
+      recovery={recovery}
+      recoveryDiagnostics={recoveryResponse?.diagnostics ?? []}
       classified={classified}
       file={file}
       fileInputRef={fileInputRef}

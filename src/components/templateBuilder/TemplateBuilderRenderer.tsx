@@ -1,11 +1,17 @@
 
 
 import React, { useState, useMemo, useCallback, useRef } from 'react';
-import { useContextualGuideResolution } from '../../guides/GuideRuntimeLayer';
 import {
-  LAYOUT_BUILDER_EDITOR_GUIDE_ID,
+  useContextualGuideResolution,
+  useGuideBackHandler,
+  useGuideCurrentStepId,
+} from '../../guides/GuideRuntimeLayer';
+import {
   LAYOUT_BUILDER_MAIN_GUIDE_ID,
+  LAYOUT_BUILDER_WHATS_NEW_INSERT_WIDGET_GUIDE_ID,
 } from '../../guides/layoutBuilderGuideIds';
+import { isLayoutBuilderInsertWidgetWhatsNewEligible } from '../../guides/layoutBuilderWhatsNewInsertWidgetGuide';
+import { useCanHover } from './WidgetInsertSlot';
 import { WorkspaceLeaf, ItemView } from 'obsidian';
 import { usePlugin } from '../../hooks/usePlugin';
 import { BuilderSidebar, Selection } from './BuilderSidebar';
@@ -29,28 +35,31 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
   const plugin = usePlugin();
   const [selection, setSelection] = useState<Selection | null>(null);
   const [refreshKey, setRefreshKey] = useState(0);
-  const [isEditorOpen, setIsEditorOpen] = useState(false);
-  const handleEditorViewModeChange = useCallback(
-    (viewMode: 'editor' | 'preview') => setIsEditorOpen(viewMode === 'editor'),
-    []
-  );
-  const isReviewTemplateSelected =
-    selection?.type === 'template' && selection.templateType !== 'trade';
+
   
+  
+  
+  const [isLayoutEditable, setIsLayoutEditable] = useState(false);
+  const canHover = useCanHover();
+  const isInsertWidgetWhatsNewEligible =
+    isLayoutBuilderInsertWidgetWhatsNewEligible(
+      plugin?.viewGuideService?.getPersistedGuideState(
+        LAYOUT_BUILDER_MAIN_GUIDE_ID
+      ) ?? null
+    );
   const contextualGuides = useMemo(
     () => [
       {
-        guideId: LAYOUT_BUILDER_EDITOR_GUIDE_ID,
-        active: isEditorOpen && isReviewTemplateSelected,
+        guideId: LAYOUT_BUILDER_WHATS_NEW_INSERT_WIDGET_GUIDE_ID,
+        active: isLayoutEditable && canHover && isInsertWidgetWhatsNewEligible,
       },
     ],
-    [isEditorOpen, isReviewTemplateSelected]
+    [canHover, isInsertWidgetWhatsNewEligible, isLayoutEditable]
   );
   useContextualGuideResolution({
     baseGuideId: LAYOUT_BUILDER_MAIN_GUIDE_ID,
     contextualGuides,
   });
-
   
   const templateService = useMemo(() => {
     if (!plugin) return null;
@@ -87,21 +96,17 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
   );
 
   
+  
+  
   const handleSelectionChange = useCallback(
-    async (newSelection: Selection | null) => {
+    async (newSelection: Selection | null): Promise<boolean> => {
       
       if (isSameSelection(selection, newSelection)) {
-        return;
+        return true;
       }
 
       
-      if (!selection) {
-        setSelection(newSelection);
-        return;
-      }
-
-      
-      if (isDirtyRef.current && plugin) {
+      if (selection && isDirtyRef.current && plugin) {
         pendingSelectionRef.current = newSelection;
         const shouldDiscard = await showUnsavedChangesModal(plugin.app);
         if (shouldDiscard) {
@@ -109,9 +114,11 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
           setSelection(pendingSelectionRef.current);
         }
         pendingSelectionRef.current = null;
-      } else {
-        setSelection(newSelection);
+        return shouldDiscard;
       }
+
+      setSelection(newSelection);
+      return true;
     },
     [selection, plugin, isSameSelection]
   );
@@ -127,6 +134,54 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
     
     setRefreshKey((k) => k + 1);
   }, [templateService, tradeTemplateService]);
+
+  
+  
+  
+  
+  const currentGuideStepId = useGuideCurrentStepId();
+  const guideCreatedLayoutRef = useRef<{
+    created: Selection;
+    source: Selection | null;
+  } | null>(null);
+  const handleLayoutCreated = useCallback(
+    (created: Selection, source: Selection | null) => {
+      guideCreatedLayoutRef.current =
+        currentGuideStepId === 'create-own-layout' ? { created, source } : null;
+    },
+    [currentGuideStepId]
+  );
+  const handleGuideBack = useCallback(
+    async ({ toStepId }: { toStepId: string }) => {
+      const made = guideCreatedLayoutRef.current;
+      if (toStepId !== 'create-own-layout' || !made || !templateService) {
+        return;
+      }
+      guideCreatedLayoutRef.current = null;
+      const layoutType = made.created.templateType;
+      if (!layoutType || layoutType === 'trade') return;
+
+      const layout = templateService
+        .getTemplates(layoutType)
+        .find((template) => template.id === made.created.id);
+      if (
+        layout &&
+        !layout.isBuiltIn &&
+        layout.version === 1 &&
+        !isDirtyRef.current
+      ) {
+        await templateService.deleteTemplate(layout.id);
+        handleTemplatesChange();
+        setSelection(made.source);
+        return;
+      }
+      
+      
+      await handleSelectionChange(made.source);
+    },
+    [handleSelectionChange, handleTemplatesChange, templateService]
+  );
+  useGuideBackHandler(handleGuideBack);
 
   
   if (!plugin || !templateService || !tradeTemplateService) {
@@ -190,7 +245,8 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
           templateType={selection.templateType}
           onTemplateChange={handleTemplatesChange}
           onDirtyStateChange={handleDirtyStateChange}
-          onViewModeChange={handleEditorViewModeChange}
+          onCanEditChange={setIsLayoutEditable}
+          openInEditor={selection.openInEditor === true}
         />
       );
     }
@@ -226,9 +282,10 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
         templateService={templateService}
         tradeTemplateService={tradeTemplateService}
         selection={selection}
-        onSelectionChange={(selection) => void handleSelectionChange(selection)}
+        onSelectionChange={handleSelectionChange}
         onTemplatesChange={() => void handleTemplatesChange()}
         refreshKey={refreshKey}
+        onLayoutCreated={handleLayoutCreated}
       />
 
       

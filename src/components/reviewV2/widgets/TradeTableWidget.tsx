@@ -10,6 +10,7 @@ import React, {
 import { TFile } from 'obsidian';
 import { Users } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 import {
   getEffectivePnL,
   getResolvedWeightedAverageExitPrice,
@@ -359,6 +360,7 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
     loadingOverride,
     emptyMessage,
   }) => {
+    const readOnly = useReviewReadOnly();
     const mergedConfig = {
       ...DEFAULT_CONFIG,
       ...config,
@@ -1120,6 +1122,7 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
               })}
               useResolveMediaPath={true}
               sourcePath={currentTradeSourcePath}
+              annotationOptions={{ enabled: !readOnly }}
               navigationContext={navigationContext}
               onClose={closeFullscreen}
             />

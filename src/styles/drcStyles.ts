@@ -19,62 +19,7 @@ export const DRC_STYLES = `
   }
 
   
-  .drc-container .combobox-container,
-  .drc-container [data-combobox-type],
-  .drc-missed-trade .combobox-container,
-  .drc-missed-trade .drc-input-group.field .combobox-container {
-    position: relative !important;
-    width: 100% !important;
-    margin-bottom: 8px !important;
-    z-index: 10 !important;
-  }
-
-  
-  .drc-container .combobox-container[data-is-open="true"],
-  .drc-container [data-combobox-type][data-is-open="true"],
-  .drc-missed-trade .combobox-container[data-is-open="true"],
-  .drc-missed-trade .drc-input-group.field .combobox-container[data-is-open="true"] {
-    z-index: 9999 !important;
-  }
-
-  
-  .drc-container [data-combobox-type] .input-container::after,
-  .drc-missed-trade .combobox-container .input-container::after,
-  .drc-missed-trade .drc-input-group.field .combobox-container .input-container::after {
-    content: "" !important;
-    position: absolute !important;
-    right: 12px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    width: 0 !important;
-    height: 0 !important;
-    border-left: 5px solid transparent !important;
-    border-right: 5px solid transparent !important;
-    border-top: 5px solid var(--text-normal) !important;
-    pointer-events: none !important;
-    z-index: 10 !important;
-  }
-
-  
-  .drc-container [data-combobox-type] input[role="combobox"],
-  .drc-missed-trade .combobox-container input[role="combobox"],
-  .drc-missed-trade .drc-input-group.field .combobox-container input[role="combobox"] {
-    padding-right: 30px !important;
-    width: 100% !important;
-    padding: 8px 12px !important;
-    padding-right: 30px !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: 4px !important;
-    background-color: var(--background-primary) !important;
-    color: var(--text-normal) !important;
-    font-size: 16px !important;
-    cursor: pointer !important;
-  }
-
-  
-  .drc-missed-trade .selected-options,
-  .drc-missed-trade .selected-item,
-  .drc-missed-trade [data-combobox-type="multi"] > div:first-of-type {
+  .drc-missed-trade .selected-options {
     display: flex !important;
     flex-wrap: wrap !important;
     gap: 4px !important;
@@ -86,9 +31,7 @@ export const DRC_STYLES = `
 
   
   .drc-missed-trade .selected-option,
-  .drc-missed-trade .selected-item,
-  .drc-container .selected-option,
-  .drc-container .selected-item {
+  .drc-container .selected-option {
     display: inline-flex !important;
     align-items: center !important;
     background-color: var(--interactive-accent, #7c3aed) !important; 
@@ -105,9 +48,7 @@ export const DRC_STYLES = `
 
   
   .drc-missed-trade .selected-option-remove,
-  .drc-missed-trade .selected-item button,
-  .drc-container .selected-option-remove,
-  .drc-container .selected-item button {
+  .drc-container .selected-option-remove {
     display: inline-flex !important;
     align-items: center !important;
     justify-content: center !important;
@@ -605,74 +546,8 @@ export const DRC_STYLES = `
   }
 
   
-  .drc-container [data-combobox-type] ul[role="listbox"],
-  .drc-missed-trade [data-combobox-type] ul[role="listbox"] {
-    position: absolute !important;
-    top: 100% !important;
-    left: 0 !important;
-    right: 0 !important;
-    max-height: 200px !important;
-    overflow-y: auto !important;
-    background-color: var(--background-primary) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-top: none !important;
-    border-radius: 0 0 4px 4px !important;
-    margin-top: -1px !important;
-    z-index: 9999 !important;
-    list-style: none !important; 
-    padding: 0 !important;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
-    animation: journalit-drc-dropdown-open 0.15s ease forwards !important;
-  }
-  
-  
-  @keyframes journalit-drc-dropdown-open {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
-  }
-
-  
-  .drc-container [data-combobox-type] ul[role="listbox"] li,
-  .drc-missed-trade [data-combobox-type] ul[role="listbox"] li {
-    padding: 8px 12px !important;
-    cursor: pointer !important;
-    transition: background-color 150ms ease !important;
-    margin: 0 !important;
-    list-style: none !important; 
-    border-bottom: 1px solid var(--background-modifier-border-subtle, rgba(127, 127, 127, 0.1)) !important;
-  }
-
-  
-  .drc-container [data-combobox-type] ul[role="listbox"] li:hover,
-  .drc-container [data-combobox-type] ul[role="listbox"] li[aria-selected="true"],
-  .drc-missed-trade [data-combobox-type] ul[role="listbox"] li:hover,
-  .drc-missed-trade [data-combobox-type] ul[role="listbox"] li[aria-selected="true"] {
-    background-color: var(--background-secondary) !important;
-  }
-
-  
-  .drc-container [data-combobox-type] ul[role="listbox"] li[data-add-option="true"],
-  .drc-missed-trade [data-combobox-type] ul[role="listbox"] li[data-add-option="true"] {
-    font-style: italic !important;
-    border-top: 1px dashed var(--background-modifier-border) !important;
-  }
-
-  
-  .drc-container [data-combobox-type][data-is-open="true"] input[role="combobox"],
-  .drc-missed-trade [data-combobox-type][data-is-open="true"] input[role="combobox"] {
-    border-bottom-left-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
-  }
-  
-  
   .drc-missed-trade .selected-option-remove:hover,
-  .drc-missed-trade .selected-item button:hover,
-  .drc-container .selected-option-remove:hover,
-  .drc-container .selected-item button:hover {
+  .drc-container .selected-option-remove:hover {
     background: rgba(255, 255, 255, 0.4) !important; 
   }
 

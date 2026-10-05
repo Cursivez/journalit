@@ -2,7 +2,6 @@
 
 import JournalitPlugin from '../main';
 import { GlobalPasteManager } from '../utils/GlobalPasteManager';
-import { removeDropdownFixScript } from '../utils/domUtils';
 import { resetPluginHookState } from '../hooks/usePlugin';
 import { EventBus } from '../services/events/EventBus';
 import { clearTokenManager } from '../services/backend/TokenManager';
@@ -70,7 +69,6 @@ export class PluginCleanupManager {
 
     
     
-    removeDropdownFixScript();
     window.__obsidianStartTime = undefined;
 
     

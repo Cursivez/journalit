@@ -1,6 +1,10 @@
 
 
 import type { Layout } from '../components/shared/gridLayout/reactGridLayoutCompat';
+import {
+  createDefaultHomeLayout,
+  DEFAULT_HOME_WIDGETS,
+} from '../components/home/defaultHomeLayout';
 import { DEFAULT_PRIVACY_MASK } from '../constants';
 import { DEFAULT_HOME_WIDGET_OPACITY } from './homeWidgetOpacity';
 import {
@@ -885,7 +889,13 @@ export type GoalType = 'pnl' | 'tradesJournaled' | 'winRate';
 export type GoalPeriod = 'daily' | 'weekly' | 'monthly' | 'lifetime';
 
 
-export type HomePeriod = 'month' | 'quarter' | 'year' | 'lifetime';
+export type HomePeriod =
+  | 'week'
+  | 'month'
+  | 'quarter'
+  | 'year'
+  | 'lifetime'
+  | 'custom';
 export type HomeViewMode = 'overview' | 'dashboard';
 
 
@@ -1137,6 +1147,8 @@ export interface BackendIntegrationSettings {
   dismissedAvailableVersion?: string;
   showUpdateNotifications?: boolean;
   
+  showAvailableUpdateNotifications?: boolean;
+  
   tradeSyncMapping?: { [tradeId: number]: string };
   
   accountMapping?: { [accountId: string]: string };
@@ -1264,6 +1276,8 @@ export function createDefaultBackendIntegrationSettings(): BackendIntegrationSet
     userId: '',
     showSyncNotifications: true,
     showNewTradeNotifications: true,
+    showUpdateNotifications: true,
+    showAvailableUpdateNotifications: true,
   };
 }
 
@@ -1434,7 +1448,7 @@ export function createDefaultEconomicCalendarSettings(): EconomicCalendarSetting
 export const DEFAULT_ECONOMIC_CALENDAR_SETTINGS: EconomicCalendarSettings =
   createDefaultEconomicCalendarSettings();
 
-export const CURRENT_SETTINGS_SCHEMA_VERSION = 1;
+export const CURRENT_SETTINGS_SCHEMA_VERSION = 2;
 
 
 export interface JournalitSettings {
@@ -1534,31 +1548,31 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardSettings['layouts'][string] = {
   bottomSection: {
     lg: [
       { i: 'pnlChart', x: 0, y: 0, w: 6, h: 8 },
-      { i: 'performanceCalendar', x: 6, y: 0, w: 4, h: 8 },
-      { i: 'recentTrades', x: 10, y: 0, w: 2, h: 7 },
-      { i: 'longPnLChart', x: 0, y: 8, w: 6, h: 8 },
-      { i: 'shortPnLChart', x: 6, y: 8, w: 6, h: 8 },
+      { i: 'performanceCalendar', x: 6, y: 0, w: 6, h: 8 },
+      { i: 'recentTrades', x: 8, y: 8, w: 4, h: 6 },
+      { i: 'longPnLChart', x: 0, y: 8, w: 4, h: 6 },
+      { i: 'shortPnLChart', x: 4, y: 8, w: 4, h: 6 },
     ],
     md: [
-      { i: 'pnlChart', x: 0, y: 0, w: 6, h: 6 },
-      { i: 'performanceCalendar', x: 0, y: 6, w: 6, h: 3 },
-      { i: 'recentTrades', x: 0, y: 9, w: 6, h: 3 },
-      { i: 'longPnLChart', x: 0, y: 12, w: 6, h: 6 },
-      { i: 'shortPnLChart', x: 0, y: 18, w: 6, h: 6 },
+      { i: 'pnlChart', x: 0, y: 0, w: 3, h: 8 },
+      { i: 'performanceCalendar', x: 3, y: 0, w: 3, h: 8 },
+      { i: 'recentTrades', x: 0, y: 14, w: 6, h: 4 },
+      { i: 'longPnLChart', x: 0, y: 8, w: 3, h: 6 },
+      { i: 'shortPnLChart', x: 3, y: 8, w: 3, h: 6 },
     ],
     sm: [
-      { i: 'pnlChart', x: 0, y: 0, w: 4, h: 6 },
-      { i: 'performanceCalendar', x: 0, y: 6, w: 2, h: 6 },
-      { i: 'recentTrades', x: 2, y: 6, w: 2, h: 6 },
-      { i: 'longPnLChart', x: 0, y: 12, w: 4, h: 6 },
-      { i: 'shortPnLChart', x: 0, y: 18, w: 4, h: 6 },
+      { i: 'pnlChart', x: 0, y: 0, w: 2, h: 8 },
+      { i: 'performanceCalendar', x: 2, y: 0, w: 2, h: 8 },
+      { i: 'recentTrades', x: 0, y: 14, w: 4, h: 4 },
+      { i: 'longPnLChart', x: 0, y: 8, w: 2, h: 6 },
+      { i: 'shortPnLChart', x: 2, y: 8, w: 2, h: 6 },
     ],
     xs: [
       { i: 'pnlChart', x: 0, y: 0, w: 2, h: 6 },
-      { i: 'performanceCalendar', x: 0, y: 6, w: 1, h: 5 },
-      { i: 'recentTrades', x: 1, y: 6, w: 1, h: 5 },
-      { i: 'longPnLChart', x: 0, y: 11, w: 2, h: 6 },
-      { i: 'shortPnLChart', x: 0, y: 17, w: 2, h: 6 },
+      { i: 'performanceCalendar', x: 0, y: 6, w: 2, h: 6 },
+      { i: 'recentTrades', x: 0, y: 12, w: 2, h: 4 },
+      { i: 'longPnLChart', x: 0, y: 16, w: 2, h: 6 },
+      { i: 'shortPnLChart', x: 0, y: 22, w: 2, h: 6 },
     ],
     xxs: [
       { i: 'pnlChart', x: 0, y: 0, w: 1, h: 6 },
@@ -1803,48 +1817,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
   },
   home: {
     layouts: {
-      Default: {
-        lg: [
-          { i: 'weeklySummary', x: 2, y: 4, w: 4, h: 4 },
-          { i: 'gettingStarted', x: 6, y: 2, w: 3, h: 6 },
-          { i: 'unreviewedTrades', x: 6, y: 0, w: 3, h: 2 },
-          { i: 'recentItems', x: 0, y: 4, w: 2, h: 4 },
-          { i: 'positionSize', x: 9, y: 0, w: 3, h: 8 },
-          { i: 'yearHeatmap', x: 0, y: 0, w: 6, h: 4 },
-        ],
-        md: [
-          { i: 'weeklySummary', x: 3, y: 1, w: 3, h: 5 },
-          { i: 'gettingStarted', x: 0, y: 0, w: 3, h: 6 },
-          { i: 'unreviewedTrades', x: 3, y: 0, w: 3, h: 1 },
-          { i: 'recentItems', x: 3, y: 11, w: 3, h: 8 },
-          { i: 'positionSize', x: 0, y: 11, w: 3, h: 8 },
-          { i: 'yearHeatmap', x: 0, y: 6, w: 6, h: 5 },
-        ],
-        sm: [
-          { i: 'weeklySummary', x: 0, y: 1, w: 2, h: 5 },
-          { i: 'gettingStarted', x: 2, y: 0, w: 2, h: 6 },
-          { i: 'unreviewedTrades', x: 0, y: 0, w: 2, h: 1 },
-          { i: 'recentItems', x: 0, y: 11, w: 2, h: 7 },
-          { i: 'positionSize', x: 2, y: 11, w: 2, h: 7 },
-          { i: 'yearHeatmap', x: 0, y: 6, w: 4, h: 5 },
-        ],
-        xs: [
-          { i: 'weeklySummary', x: 0, y: 6, w: 2, h: 4 },
-          { i: 'gettingStarted', x: 0, y: 0, w: 1, h: 6 },
-          { i: 'unreviewedTrades', x: 0, y: 10, w: 2, h: 2 },
-          { i: 'recentItems', x: 1, y: 0, w: 1, h: 6 },
-          { i: 'positionSize', x: 0, y: 17, w: 2, h: 7 },
-          { i: 'yearHeatmap', x: 0, y: 12, w: 2, h: 5 },
-        ],
-        xxs: [
-          { i: 'weeklySummary', x: 0, y: 6, w: 1, h: 4 },
-          { i: 'gettingStarted', x: 0, y: 0, w: 1, h: 6 },
-          { i: 'unreviewedTrades', x: 0, y: 10, w: 1, h: 2 },
-          { i: 'recentItems', x: 0, y: 12, w: 1, h: 5 },
-          { i: 'positionSize', x: 0, y: 22, w: 1, h: 7 },
-          { i: 'yearHeatmap', x: 0, y: 17, w: 1, h: 5 },
-        ],
-      },
+      Default: createDefaultHomeLayout(),
     },
     activeLayout: 'Default',
     recentItems: [],
@@ -2007,7 +1980,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       },
     ],
     quickLinksPosition: 'belowWidgets',
-    activeWidgets: ['recentItems', 'yearHeatmap'],
+    activeWidgets: [...DEFAULT_HOME_WIDGETS],
     embeddedNotes: {},
     goals: {},
     topBreakdowns: {},
@@ -2050,6 +2023,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     showSyncNotifications: true,
     showNewTradeNotifications: true,
     showUpdateNotifications: true,
+    showAvailableUpdateNotifications: true,
     lastSeenVersion: '',
     dismissedVersion: '',
     lastAvailableUpdateCheckAt: '',

@@ -8,6 +8,7 @@ export const TRADE_FORM_STYLES = `
 
   .journalit-trade-form-modal {
     padding-bottom: 0 !important;
+    max-width: calc(100vw - 24px);
   }
 
   
@@ -20,6 +21,7 @@ export const TRADE_FORM_STYLES = `
   
   .trade-form-view-container {
     height: 100% !important;
+    container: journalit-trade-form / inline-size;
     overflow-y: auto !important;
     position: relative !important;
     display: flex !important;
@@ -295,198 +297,6 @@ export const TRADE_FORM_STYLES = `
     background: var(--background-modifier-hover) !important;
   }
 
-  
-  .trade-form-view-container .combobox-container,
-  .trade-form-view-container [data-combobox-type] {
-    position: relative !important;
-    width: 100% !important;
-    margin-bottom: 8px !important;
-    
-    z-index: 10 !important;
-  }
-
-  
-  .trade-form-view-container [data-is-open="true"] {
-    z-index: 9999 !important;
-  }
-
-  
-  .trade-form-view-container [data-combobox-type] > .input-container {
-    position: relative !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    
-    z-index: 1 !important;
-  }
-
-  
-  .trade-form-view-container .selected-item {
-    display: inline-flex !important;
-    align-items: center !important;
-    margin: 0 4px 4px 0 !important;
-    padding: 4px 8px !important;
-    background-color: var(--interactive-accent) !important;
-    color: var(--text-on-accent) !important;
-    border-radius: 4px !important;
-    font-size: 12px !important;
-    gap: 6px !important;
-  }
-
-  .trade-form-view-container .selected-item button {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    width: 16px !important;
-    height: 16px !important;
-    min-width: 16px !important; 
-    min-height: 16px !important; 
-    padding: 0 !important;
-    background: rgba(255, 255, 255, 0.2) !important; 
-    border: none !important;
-    color: white !important;
-    font-size: 16px !important;
-    line-height: 1 !important;
-    cursor: pointer !important;
-    border-radius: 50% !important; 
-    margin-left: 4px !important;
-    position: relative !important; 
-    z-index: 5 !important; 
-    transition: background-color 0.2s !important;
-  }
-
-  .trade-form-view-container .selected-item button:hover {
-    background: rgba(255, 255, 255, 0.4) !important; 
-  }
-
-  .trade-form-view-container [data-combobox-type] > div:nth-child(2) {
-    position: relative !important;
-    width: 100% !important;
-  }
-  
-  .trade-form-view-container [data-combobox-type] .input-container::after {
-    content: "" !important;
-    position: absolute !important;
-    right: 12px !important;
-    top: 50% !important;
-    transform: translateY(-50%) !important;
-    width: 0 !important;
-    height: 0 !important;
-    border-left: 5px solid transparent !important;
-    border-right: 5px solid transparent !important;
-    border-top: 5px solid var(--text-normal) !important;
-    pointer-events: none !important;
-    z-index: 10 !important;
-  }
-  
-  .trade-form-view-container [data-combobox-type][data-is-open="true"] .input-container::after {
-    transform: translateY(-50%) rotate(180deg) !important;
-  }
-  .trade-form-view-container [data-combobox-type] input[role="combobox"] {
-    width: 100% !important;
-    padding: 8px 12px !important;
-    padding-right: 30px !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: 4px !important;
-    background-color: var(--background-primary) !important;
-    color: var(--text-normal) !important;
-    font-size: 16px !important;
-    cursor: pointer !important;
-  }
-  
-  .trade-form-view-container [data-combobox-type][data-is-open="true"] input[role="combobox"] {
-    border-bottom-left-radius: 0 !important;
-    border-bottom-right-radius: 0 !important;
-  }
-  .trade-form-view-container [data-combobox-type] input[role="combobox"]:focus {
-    border-color: var(--interactive-accent) !important;
-    box-shadow: 0 0 0 2px rgba(83, 141, 226, 0.3) !important;
-    outline: none !important;
-  }
-  
-  .trade-form-view-container [data-combobox-type] ul[role="listbox"] {
-    position: absolute !important;
-    top: 38px !important; 
-    left: 0 !important;
-    right: 0 !important;
-    max-height: 200px !important;
-    overflow-y: auto !important;
-    background-color: var(--background-primary) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-top: none !important; 
-    border-radius: 0 0 4px 4px !important; 
-    margin-top: -1px !important; 
-    z-index: 9999 !important; 
-    list-style: none !important;
-    padding: 0 !important;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15) !important;
-    animation: journalit-trade-form-dropdown-fade-in 150ms ease-out !important;
-    pointer-events: auto !important; 
-  }
-  
-  .trade-form-view-container [data-combobox-type] ul[role="listbox"] li {
-    padding: 8px 12px !important;
-    cursor: pointer !important;
-    transition: background-color 150ms ease !important;
-    margin: 0 !important;
-  }
-  
-  .trade-form-view-container [data-combobox-type] ul[role="listbox"] li:hover,
-  .trade-form-view-container [data-combobox-type] ul[role="listbox"] li[aria-selected="true"] {
-    background-color: var(--background-secondary) !important;
-  }
-  
-  .trade-form-view-container [data-combobox-type="multi"] > div:first-of-type {
-    display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 4px !important;
-    margin-bottom: 4px !important;
-  }
-  
-  .trade-form-view-container [data-combobox-type="multi"] > div:first-of-type > span {
-    display: inline-flex !important;
-    align-items: center !important;
-    padding: 2px 8px !important;
-    background-color: var(--interactive-accent) !important;
-    color: var(--text-on-accent) !important;
-    border-radius: 4px !important;
-    font-size: 12px !important;
-  }
-  
-  .trade-form-view-container [data-combobox-type="multi"] > div:first-of-type > span > button {
-    background: none !important;
-    border: none !important;
-    color: white !important;
-    cursor: pointer !important;
-    font-size: 16px !important;
-    line-height: 1 !important;
-    padding: 0 4px !important;
-    margin-left: 4px !important;
-    
-    pointer-events: auto !important;
-    
-    opacity: 0.8 !important;
-    transition: opacity 0.2s !important;
-  }
-  
-  .trade-form-view-container [data-combobox-type="multi"] > div:first-of-type > span > button:hover {
-    opacity: 1 !important;
-  }
-  
-  .trade-form-view-container [data-combobox-type] ul[role="listbox"] li[data-add-option="true"] {
-    font-style: italic !important;
-    border-top: 1px dashed var(--background-modifier-border) !important;
-  }
-  
-  @keyframes journalit-trade-form-dropdown-fade-in {
-    from {
-      opacity: 0;
-      transform: translateY(-10px);
-    }
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
   
   .trade-form-view-container select option {
     padding: 8px 12px !important;
@@ -781,7 +591,7 @@ export const TRADE_FORM_STYLES = `
   
   .trade-form-view-container .asset-type-container {
     display: grid !important;
-    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     grid-template-rows: repeat(2, 1fr) !important;
     gap: 8px !important;
     width: 100% !important;
@@ -793,9 +603,9 @@ export const TRADE_FORM_STYLES = `
     color: var(--text-normal) !important;
     border: 1px solid var(--background-modifier-border) !important;
     border-radius: 6px !important;
-    padding: 8px 4px !important;
+    padding: 8px 4px;
     font-size: 13px !important;
-    height: 34px !important;
+    height: 34px;
     transition: background-color 0.2s, border-color 0.2s !important;
     cursor: pointer !important;
     margin: 0 !important;
@@ -1309,7 +1119,82 @@ export const TRADE_FORM_STYLES = `
     min-width: 18px;
   }
 
-  
+  .trade-form-view-container .journalit-custom-datetime-field {
+    container: journalit-trade-time / inline-size;
+    width: 100%;
+    min-width: 0;
+  }
+
+
+  @container journalit-trade-form (max-width: 480px) {
+    .trade-form-view-container .asset-type-button {
+      min-width: 0;
+      min-height: 34px;
+      height: auto;
+      padding: 6px 4px;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .trade-form-view-container .journalit-tab-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      padding: 4px 0 0;
+    }
+
+    .trade-form-view-container .journalit-tab-wrapper {
+      flex: 1 1 220px;
+      min-width: 0;
+      flex-wrap: wrap;
+    }
+
+    .trade-form-view-container .journalit-tab-button {
+      flex: 1 1 auto;
+      min-width: 0;
+      height: auto;
+      padding: 8px;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .trade-form-view-container .journalit-trade-form-header-actions {
+      flex-wrap: wrap;
+      max-width: 100%;
+      margin-left: auto;
+    }
+
+    .trade-form-view-container .formActions,
+    .trade-form-view-container .formActionsRight {
+      flex-wrap: wrap;
+    }
+
+    .trade-form-view-container .formActionsRight {
+      max-width: 100%;
+      margin-left: auto;
+    }
+
+    .trade-form-view-container .journalit-direct-pnl-section,
+    .trade-form-view-container .journalit-direct-pnl-time-input {
+      width: 100%;
+    }
+
+    .trade-form-view-container .journalit-direct-pnl-time-input {
+      container: journalit-trade-time / inline-size;
+    }
+
+    .trade-form-view-container .journalit-custom-time-field .journalit-fast-datetime__container {
+      flex-wrap: wrap;
+      padding: 6px;
+    }
+
+    .trade-form-view-container .journalit-unrealized-snapshot__time-field .journalit-fast-datetime__container {
+      flex-wrap: wrap;
+    }
+
+  }
+
+
   .trade-form-view-container .journalit-edit-badge {
     font-size: 12px;
     color: var(--text-on-accent);

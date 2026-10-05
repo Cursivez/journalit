@@ -74,17 +74,36 @@ function uniqueLabelSummary(labels: readonly string[]): string {
 export function getTradeOperationResultTitle(
   result: TradeOperationResult
 ): string {
-  const titleKey =
-    result.kind === 'import'
-      ? result.partial
-        ? 'trade-handoff.summary.import-partial'
-        : 'trade-handoff.summary.import-complete'
-      : result.partial
-        ? 'trade-handoff.summary.sync-partial'
-        : 'trade-handoff.summary.sync-complete';
-  return t(titleKey, {
-    trades: tPlural('trade-handoff.trade-count', result.trades.length),
-  });
+  if (result.kind === 'sync') {
+    const { created, updated } = result.counts;
+    if (created > 0 && updated > 0) {
+      return t(
+        result.partial
+          ? 'trade-handoff.summary.mixed-partial'
+          : 'trade-handoff.summary.mixed-complete',
+        {
+          imported: tPlural('trade-handoff.trade-count', created),
+          updated: tPlural('trade-handoff.trade-count', updated),
+        }
+      );
+    }
+    if (updated > 0) {
+      return t(
+        result.partial
+          ? 'trade-handoff.summary.update-partial'
+          : 'trade-handoff.summary.update-complete',
+        { trades: tPlural('trade-handoff.trade-count', updated) }
+      );
+    }
+  }
+  return t(
+    result.partial
+      ? 'trade-handoff.summary.import-partial'
+      : 'trade-handoff.summary.import-complete',
+    {
+      trades: tPlural('trade-handoff.trade-count', result.trades.length),
+    }
+  );
 }
 
 function toPeriodOption(period: AffectedPeriod): {

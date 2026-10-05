@@ -85,12 +85,6 @@ function getOptionsService(): CustomOptionsService {
   return plugin.optionsService ?? new CustomOptionsService(plugin);
 }
 
-function asStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === 'string')
-    : [];
-}
-
 interface CommonFieldsProps {
   
   data: Partial<TradeFormData>;
@@ -273,19 +267,17 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
                 const previousValues = Array.isArray(data.setup)
                   ? data.setup
                   : [];
-                const selectedValues = asStringArray(value);
                 onChange(
                   'setup',
                   rejectNewArchivedTradeFormSetupSelections(
                     previousValues,
-                    selectedValues,
+                    value,
                     archivedSetups
                   )
                 );
               }}
               allowCreate={hasLoadedArchivedSetups}
               isMulti={true}
-              optionType={OptionType.SETUP}
               onSaveOption={handleSaveSetup}
             />
           </div>
@@ -297,13 +289,9 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
               label={t('form.field.mistake')}
               options={mistakeOptions}
               value={Array.isArray(data.mistake) ? data.mistake : []}
-              onChange={(value) => {
-                const selectedValues = asStringArray(value);
-                onChange('mistake', selectedValues);
-              }}
+              onChange={(value) => onChange('mistake', value)}
               allowCreate={true}
               isMulti={true}
-              optionType={OptionType.MISTAKE}
               onSaveOption={handleSaveMistake}
             />
           </div>
@@ -321,7 +309,7 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
                   : [];
                 const selectedValues = canonicalizeTradeTagSelection(
                   previousValues,
-                  asStringArray(value)
+                  value
                 );
                 onChange('customTags', selectedValues);
               }}
@@ -329,7 +317,6 @@ const CommonFieldsComponent: React.FC<CommonFieldsProps> = ({
               allowCreate={true}
               placeholder={t('form.placeholder.custom-tag')}
               onSaveOption={handleSaveTag}
-              optionType={OptionType.TAG}
             />
           </div>
         );

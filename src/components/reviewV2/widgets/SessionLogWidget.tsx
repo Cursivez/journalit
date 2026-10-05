@@ -1,6 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import type JournalitPlugin from '../../../main';
 import { useReviewData } from '../hooks/useReviewData';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 import { SessionLogPanel } from '../../sessionLog/SessionLogPanel';
 import {
   createManualTimelineEntries,
@@ -250,6 +251,7 @@ const LessonSummary: React.FC<{
 
 export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
   ({ filePath, plugin, hideEmptyOutsideSession = false }) => {
+    const readOnly = useReviewReadOnly();
     const { data, loading, refresh } = useReviewData(filePath, plugin);
     const [settingsVersion, setSettingsVersion] = useState(0);
     useEventBus('settings:changed', (payload) => {
@@ -423,6 +425,7 @@ export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
                 plugin={plugin}
                 filePath={filePath}
                 timelineEntries={group.entries}
+                readOnly={readOnly}
                 compact
                 composerInitiallyVisible={false}
                 showComposerToggle
@@ -443,6 +446,7 @@ export const SessionLogWidget: React.FC<SessionLogWidgetProps> = React.memo(
           plugin={plugin}
           filePath={filePath}
           timelineEntries={timelineEntries}
+          readOnly={readOnly}
           compact
           composerInitiallyVisible={false}
           showComposerToggle

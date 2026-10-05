@@ -12,7 +12,9 @@ import { MENU_ITEM_SELECTOR } from './FilterMenuPanels';
 
 
 function naturalPanelHeight(panel: HTMLElement): number {
-  const list = panel.querySelector<HTMLElement>('[role="menu"]');
+  const list = panel.querySelector<HTMLElement>(
+    '.journalit-filter-menu__scroll'
+  );
   if (!list) return panel.offsetHeight;
   return panel.offsetHeight - list.clientHeight + list.scrollHeight;
 }
@@ -105,7 +107,11 @@ export function usePanelPlacement({
     const panel = panelRefs.current[pendingDepth];
     if (!panel) return;
     pendingFocusDepthRef.current = null;
-    panel.querySelector<HTMLElement>(MENU_ITEM_SELECTOR)?.focus();
+    const target =
+      panel.getAttribute('role') === 'dialog'
+        ? panel.querySelector<HTMLElement>('input:not([disabled])')
+        : panel.querySelector<HTMLElement>(MENU_ITEM_SELECTOR);
+    target?.focus();
   }, [
     anchorRefs,
     contentKey,

@@ -1,9 +1,10 @@
-import React, { useRef, useState } from 'react';
+import React, { useId, useRef, useState } from 'react';
 import { DraftInput } from '../../../ui/DraftInput';
 import { t } from '../../../../lang/helpers';
 import {
   addPropChallengeRule,
   createDefaultPropChallengePayoutPolicy,
+  createPropChallengeQualifyingDaysDraft,
   createPropChallengeRule,
   removePropChallengeRule,
   updatePropChallengeRule,
@@ -11,6 +12,7 @@ import {
   type PropChallengeRuleKind,
 } from '../../../../services/propChallenge/PropChallengeConfig';
 import type {
+  PropChallengeConfig,
   PropChallengePhase,
   PropChallengeStage,
 } from '../../../../services/propChallenge/types';
@@ -22,12 +24,10 @@ import { RuleEditor } from './RuleEditor';
 import { RULE_KINDS, numberValue, parseRuleKind } from './editorOptions';
 import { useOptionalAccountPageData } from '../../context/AccountPageDataContext';
 import { usePlugin } from '../../../../hooks/usePlugin';
+import { movePhaseProfitableDaysToPayoutPolicy } from '../../../../services/propChallenge/PropChallengePayoutRequirements';
 import { formatDateDisplay } from '../../../../utils/dateUtils';
 import Checkbox from '../../../ui/Checkbox';
-import {
-  collectPhaseBrokerAccountOptions,
-  type PhaseBrokerAccountOption,
-} from './phaseBrokerAccounts';
+import { collectPhaseBrokerAccountOptions } from './phaseBrokerAccounts';
 
 const PAYOUT_POLICY_RULE_ID = 'payout-policy';
 
@@ -38,18 +38,57 @@ function toIsoDate(value: Date | string | undefined): string | undefined {
 }
 
 function PhaseBrokerAccountsField({
-  options,
-  selectedIds,
-  dateFormat,
+  phase,
+  phases,
   disabled,
-  onToggle,
+  onChange,
 }: {
-  options: readonly PhaseBrokerAccountOption[];
-  selectedIds: ReadonlySet<string>;
-  dateFormat: string | undefined;
+  phase: PropChallengePhase;
+  phases?: readonly PropChallengePhase[];
   disabled: boolean;
-  onToggle: (identity: string, selected: boolean) => void;
+  onChange: (phase: PropChallengePhase) => void;
 }) {
+  const plugin = usePlugin();
+  const dateFormat = plugin?.settings?.trade?.dateFormat;
+  const accountPageData = useOptionalAccountPageData()?.accountPageData;
+  const options = accountPageData
+    ? collectPhaseBrokerAccountOptions({
+        trades: accountPageData.trades,
+        phases: phases ?? [phase],
+        currentPhaseId: phase.id,
+        resolveDisplayName: (identity) => {
+          for (const trade of accountPageData.trades) {
+            if (
+              trade.canonicalAccountId === identity &&
+              trade.canonicalAccountDisplayName
+            ) {
+              return trade.canonicalAccountDisplayName;
+            }
+          }
+          const mapped =
+            plugin?.settings.backendIntegration?.accountMapping?.[identity];
+          return mapped?.trim() || undefined;
+        },
+      })
+    : [];
+  const selectedIds = new Set(phase.brokerAccountIds ?? []);
+
+  const setBrokerAccountSelected = (identity: string, selected: boolean) => {
+    const nextIds: string[] = [];
+    const seen = new Set<string>();
+    for (const id of phase.brokerAccountIds ?? []) {
+      if (id === identity && !selected) continue;
+      if (seen.has(id)) continue;
+      seen.add(id);
+      nextIds.push(id);
+    }
+    if (selected && !seen.has(identity)) nextIds.push(identity);
+    onChange({
+      ...phase,
+      brokerAccountIds: nextIds.length > 0 ? nextIds : undefined,
+    });
+  };
+
   
   
   
@@ -98,7 +137,9 @@ function PhaseBrokerAccountsField({
                 disabled={disabled || assigned}
                 label={title}
                 ariaLabel={title}
-                onChange={(selected) => onToggle(option.id, selected)}
+                onChange={(selected) =>
+                  setBrokerAccountSelected(option.id, selected)
+                }
               />
               {meta.length > 0 && (
                 <div className="journalit-prop-challenge-broker-account-meta">
@@ -161,6 +202,7 @@ function PhaseDateFields({
 
 export function PhaseEditor({
   phase,
+  profileRef,
   phases,
   currencyCode,
   disabled,
@@ -169,6 +211,7 @@ export function PhaseEditor({
   onStageChange,
 }: {
   phase: PropChallengePhase;
+  profileRef?: PropChallengeConfig['profileRef'];
   phases?: readonly PropChallengePhase[];
   currencyCode: string;
   disabled: boolean;
@@ -179,38 +222,31 @@ export function PhaseEditor({
   const dateFieldsDisabled = datesDisabled ?? disabled;
   const stage = phase.stage ?? 'evaluation';
   const isFundedStage = stage === 'sim_funded' || stage === 'live_funded';
-  const plugin = usePlugin();
-  const dateFormat = plugin?.settings?.trade?.dateFormat;
-  const accountPageData = useOptionalAccountPageData()?.accountPageData;
-  const siblingPhases = phases ?? [phase];
-  const brokerAccountOptions = accountPageData
-    ? collectPhaseBrokerAccountOptions({
-        trades: accountPageData.trades,
-        phases: siblingPhases,
-        currentPhaseId: phase.id,
-        resolveDisplayName: (identity) => {
-          for (const trade of accountPageData.trades) {
-            if (
-              trade.canonicalAccountId === identity &&
-              trade.canonicalAccountDisplayName
-            ) {
-              return trade.canonicalAccountDisplayName;
-            }
-          }
-          const mapped =
-            plugin?.settings.backendIntegration?.accountMapping?.[identity];
-          return mapped?.trim() || undefined;
-        },
-      })
-    : [];
+  const profitableDayPayoutPolicy =
+    isFundedStage &&
+    !phase.rules.some((rule) => rule.enabled && rule.kind === 'profit_target')
+      ? phase.payoutPolicy
+      : undefined;
   const [expandedRuleId, setExpandedRuleId] = useState(
     () =>
       phase.rules[0]?.id ?? (phase.payoutPolicy ? PAYOUT_POLICY_RULE_ID : '')
   );
   const ruleToggleRefs = useRef(new Map<string, HTMLButtonElement>());
+  const addRuleLabelId = useId();
   const addRuleTriggerRef = useRef<HTMLButtonElement>(null);
 
   const addRule = (ruleKind: PropChallengeRuleKind) => {
+    if (ruleKind === 'minimum_profitable_days' && profitableDayPayoutPolicy) {
+      setExpandedRuleId(PAYOUT_POLICY_RULE_ID);
+      onChange({
+        ...phase,
+        payoutPolicy: {
+          ...profitableDayPayoutPolicy,
+          qualifyingDays: createPropChallengeQualifyingDaysDraft(),
+        },
+      });
+      return;
+    }
     const rule = createPropChallengeRule(ruleKind);
     setExpandedRuleId(rule.id);
     onChange(addPropChallengeRule(phase, rule));
@@ -218,9 +254,13 @@ export function PhaseEditor({
 
   const addPayoutPolicy = () => {
     setExpandedRuleId(PAYOUT_POLICY_RULE_ID);
-    onChange({
+    const nextPhase = {
       ...phase,
       payoutPolicy: createDefaultPropChallengePayoutPolicy(),
+    };
+    onChange({
+      ...nextPhase,
+      ...movePhaseProfitableDaysToPayoutPolicy(nextPhase, profileRef),
     });
   };
 
@@ -245,22 +285,6 @@ export function PhaseEditor({
     } else {
       window.requestAnimationFrame(() => addRuleTriggerRef.current?.focus());
     }
-  };
-
-  const setBrokerAccountSelected = (identity: string, selected: boolean) => {
-    const nextIds: string[] = [];
-    const seen = new Set<string>();
-    for (const id of phase.brokerAccountIds ?? []) {
-      if (id === identity && !selected) continue;
-      if (seen.has(id)) continue;
-      seen.add(id);
-      nextIds.push(id);
-    }
-    if (selected && !seen.has(identity)) nextIds.push(identity);
-    onChange({
-      ...phase,
-      brokerAccountIds: nextIds.length > 0 ? nextIds : undefined,
-    });
   };
 
   return (
@@ -334,15 +358,12 @@ export function PhaseEditor({
             disabled={disabled}
           />
         </label>
-        {accountPageData ? (
-          <PhaseBrokerAccountsField
-            options={brokerAccountOptions}
-            selectedIds={new Set(phase.brokerAccountIds ?? [])}
-            dateFormat={dateFormat}
-            disabled={disabled}
-            onToggle={setBrokerAccountSelected}
-          />
-        ) : null}
+        <PhaseBrokerAccountsField
+          phase={phase}
+          phases={phases}
+          disabled={disabled}
+          onChange={onChange}
+        />
         <PhaseDateFields
           phase={phase}
           dateFieldsDisabled={dateFieldsDisabled}
@@ -352,13 +373,24 @@ export function PhaseEditor({
       <div className="journalit-prop-challenge-rules">
         <div className="journalit-prop-challenge-rules-heading">
           <strong>{t('account.prop-challenge.rules')}</strong>
+          <span id={addRuleLabelId} className="journalit-sr-only">
+            {t('account.prop-challenge.add-rule')}
+          </span>
           <DropdownSelect
             value=""
             options={[
-              ...RULE_KINDS.map((kind) => ({
-                value: kind,
-                label: t(`account.prop-challenge.rule.${kind}`),
-              })),
+              ...RULE_KINDS.flatMap((kind) =>
+                kind === 'minimum_profitable_days' &&
+                (profitableDayPayoutPolicy?.qualifyingDays ||
+                  profitableDayPayoutPolicy?.cycle.kind === 'qualifying_days')
+                  ? []
+                  : [
+                      {
+                        value: kind,
+                        label: t(`account.prop-challenge.rule.${kind}`),
+                      },
+                    ]
+              ),
               ...(isFundedStage && !phase.payoutPolicy
                 ? [
                     {
@@ -373,9 +405,12 @@ export function PhaseEditor({
               else addRule(parseRuleKind(kind));
             }}
             ariaLabel={t('account.prop-challenge.add-rule')}
+            ariaLabelledBy={addRuleLabelId}
             placeholder={t('account.prop-challenge.add-rule')}
             disabled={disabled}
             className="journalit-prop-challenge-add-rule-menu"
+            showOptionTooltips={false}
+            menuWidth="content"
             leadingContent={<Plus size={15} aria-hidden="true" />}
             triggerRef={addRuleTriggerRef}
           />

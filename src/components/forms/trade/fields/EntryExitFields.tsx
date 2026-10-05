@@ -362,16 +362,18 @@ function EntriesSection({
         </div>
       ))}
 
-      <Button
-        variant="outline"
-        className="add-button clickable-icon"
-        onClick={onAddEntry}
-      >
-        {t('form.entry-exit.add-entry')}
-      </Button>
-      <div className="total-size">
-        {t('form.entry-exit.total-entry-size')}{' '}
-        {totalEntrySize.toFixed(sizePrecision)}
+      <div className="journalit-entry-exit-actions">
+        <Button
+          variant="outline"
+          className="add-button clickable-icon"
+          onClick={onAddEntry}
+        >
+          {t('form.entry-exit.add-entry')}
+        </Button>
+        <div className="total-size">
+          {t('form.entry-exit.total-entry-size')}{' '}
+          {totalEntrySize.toFixed(sizePrecision)}
+        </div>
       </div>
     </div>
   );
@@ -1520,27 +1522,28 @@ function ExitsSection({
         </div>
       ))}
 
-      
-      <Button
-        variant="outline"
-        className="add-button clickable-icon"
-        onClick={() => void onAddExit()}
-      >
-        {t('form.entry-exit.add-exit')}
-      </Button>
-
-      
-      {totalEntrySize > 0 && (
-        <div
-          className={`remaining-size ${remainingSize > 0 ? 'positive' : 'neutral'}`}
+      <div className="journalit-entry-exit-actions">
+        <Button
+          variant="outline"
+          className="add-button clickable-icon"
+          onClick={() => void onAddExit()}
         >
-          {t('form.entry-exit.remaining-position')}{' '}
-          {remainingSize.toFixed(sizePrecision)}{' '}
-          {remainingSize > 0
-            ? t('form.entry-exit.open')
-            : t('form.entry-exit.closed')}
-        </div>
-      )}
+          {t('form.entry-exit.add-exit')}
+        </Button>
+
+        
+        {totalEntrySize > 0 && (
+          <div
+            className={`remaining-size ${remainingSize > 0 ? 'positive' : 'neutral'}`}
+          >
+            {t('form.entry-exit.remaining-position')}{' '}
+            {remainingSize.toFixed(sizePrecision)}{' '}
+            {remainingSize > 0
+              ? t('form.entry-exit.open')
+              : t('form.entry-exit.closed')}
+          </div>
+        )}
+      </div>
 
       {showUnrealizedSnapshot &&
         isOperationallyOpen &&

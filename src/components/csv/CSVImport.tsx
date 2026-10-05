@@ -78,8 +78,12 @@ import {
   TradeImportDiagnostics,
   type TradeImportDiagnosticMappingActions,
   TradeImportPreviewReview,
+  TradeImportRecoveryReview,
 } from './TradeImportPreviewReview';
-import { resolveBrokerImportAnalyseRecovery } from './brokerImportRecovery';
+import {
+  resolveBrokerImportAnalyseRecovery,
+  resolveBrokerImportRecovery,
+} from './brokerImportRecovery';
 import { BROKER_GUIDE_URLS } from './brokerGuides';
 import { NativeSourceRecoveryNotice } from './NativeSourceRecoveryNotice';
 import type { NewColumnCustomField } from './CreateCustomFieldFromColumn';
@@ -1293,6 +1297,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
         : null,
     [analyse, broker, capabilities]
   );
+  const analyseFailureRecovery = resolveBrokerImportRecovery(analyse);
+  const canChangeRecoverySource =
+    (analyseFailureRecovery ?? resolveBrokerImportRecovery(preview))
+      ?.canChangeSource === true;
   
   
   const analyseRecovery =
@@ -1356,11 +1364,16 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     setImportCompleted(false);
     setSelectedTemplateId(handoff.templateId ?? '');
     setTemplateName(handoff.templateName ?? '');
-    setActiveStep(handoff.preview ? 3 : handoff.analyse ? 2 : 1);
+    setActiveStep(
+      handoff.changeSource ? 1 : handoff.preview ? 3 : handoff.analyse ? 2 : 1
+    );
+    setIsChangingSource(handoff.changeSource === true);
     
     
     handoffPreviewPendingRef.current =
-      handoff.previewOnOpen === true && handoff.analyse !== null;
+      !handoff.changeSource &&
+      handoff.previewOnOpen === true &&
+      handoff.analyse !== null;
     return true;
   }, [capabilities, setSource]);
 
@@ -1588,6 +1601,11 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     (brokerId: string) => {
       applyBrokerSelection(brokerId);
       
+      if (brokerId !== broker) {
+        setSelectedSheetName(null);
+        setSelectedHeaderRowIndex(null);
+      }
+      
       
       if (brokerId !== 'MANUAL' || !selectedTemplateId) {
         setColumnMappings({});
@@ -1595,7 +1613,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       }
       invalidateAnalysis();
     },
-    [applyBrokerSelection, invalidateAnalysis, selectedTemplateId]
+    [applyBrokerSelection, broker, invalidateAnalysis, selectedTemplateId]
   );
 
   const selectAssetType = useCallback(
@@ -1606,23 +1624,6 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       invalidatePreview();
     },
     [broker, invalidatePreview, plugin]
-  );
-
-  const selectSource = useCallback(
-    (sourceId: string) => {
-      const option = sourceOptions.find(
-        (candidate) => candidate.id === sourceId
-      );
-      if (option?.syncOnly) {
-        selectBroker('');
-        setSyncOnlySourceId(sourceId);
-        
-        setSyncCardRevealRequest((count) => count + 1);
-        return;
-      }
-      selectBroker(sourceId);
-    },
-    [selectBroker, sourceOptions]
   );
 
   const applyTemplate = useCallback(
@@ -1870,9 +1871,12 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     [analyseFileForSource, broker]
   );
 
-  const switchToRecommendedSource = useCallback(
+  const reanalyseFileForSource = useCallback(
     (source: string) => {
-      setSource(source);
+      applyBrokerSelection(source);
+      setAssetTypeConfirmed(false);
+      setHeaderRowError(null);
+      setDismissedAnalyseRecovery(null);
       setSelectedTemplateId('');
       setTemplateExportCode('');
       setTemplateImportOpen(false);
@@ -1895,7 +1899,34 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
         header: { index: null },
       });
     },
-    [analyseFileForSource, setSource]
+    [analyseFileForSource, applyBrokerSelection]
+  );
+
+  const selectSource = useCallback(
+    (sourceId: string) => {
+      const option = sourceOptions.find(
+        (candidate) => candidate.id === sourceId
+      );
+      if (option?.syncOnly) {
+        selectBroker('');
+        setSyncOnlySourceId(sourceId);
+        
+        setSyncCardRevealRequest((count) => count + 1);
+        return;
+      }
+      if (file && canChangeRecoverySource) {
+        reanalyseFileForSource(sourceId);
+      } else {
+        selectBroker(sourceId);
+      }
+    },
+    [
+      file,
+      reanalyseFileForSource,
+      selectBroker,
+      canChangeRecoverySource,
+      sourceOptions,
+    ]
   );
 
   const runPreview = useCallback(
@@ -1903,7 +1934,13 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       accountName = selectedAccountName,
       dateFormat = selectedDateFormat,
     }: { accountName?: string; dateFormat?: string } = {}) => {
-      if (!file || !accountName || !analyse) return;
+      if (
+        !file ||
+        !accountName ||
+        !analyse ||
+        resolveBrokerImportRecovery(analyse)
+      )
+        return;
       if (!capabilities) return;
       
       const exportTimeZone = resolveHyperliquidExportTimeZone(
@@ -2101,6 +2138,13 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     (nextFile: File | null) => {
       setFile(nextFile);
       setAssetTypeConfirmed(false);
+      setSelectedSheetName(null);
+      setSelectedHeaderRowIndex(
+        selectedTemplateId
+          ? (localTemplateService.getTemplate(selectedTemplateId)
+              ?.header_row_index ?? null)
+          : null
+      );
       
       if (!selectedTemplateId) {
         setColumnMappings({});
@@ -2108,17 +2152,19 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       }
       invalidateAnalysis();
     },
-    [invalidateAnalysis, selectedTemplateId]
+    [invalidateAnalysis, localTemplateService, selectedTemplateId]
   );
 
   const chooseAnotherFile = useCallback(() => {
-    if (!preview || importCompleted) return;
-    if (!selectedTemplateId) {
-      setSelectedSheetName(null);
-      setSelectedHeaderRowIndex(null);
-    }
+    if (!file || importCompleted) return;
     handleFileSelected(null);
-  }, [handleFileSelected, importCompleted, preview, selectedTemplateId]);
+  }, [file, handleFileSelected, importCompleted]);
+
+  const changeIncompatibleSource = useCallback(() => {
+    requestVersionRef.current += 1;
+    setActiveStep(1);
+    setIsChangingSource(true);
+  }, []);
 
   const handleFileDragEnter = useCallback(
     (event: React.DragEvent<HTMLDivElement>) => {
@@ -2262,7 +2308,11 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                   <button
                     type="button"
                     className="journalit-trade-import-source-step__cancel"
-                    onClick={() => setIsChangingSource(false)}
+                    onClick={() => {
+                      setIsChangingSource(false);
+                      if (canChangeRecoverySource)
+                        setActiveStep(preview ? 3 : analyse ? 2 : 1);
+                    }}
                   >
                     {t('button.cancel')}
                   </button>
@@ -2761,11 +2811,13 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
               <Sparkles /> {t('trade-import.step.analyse')}
             </h2>
             <>
-              <p>
-                {t('trade-import.analyse.detected', {
-                  fileType: analyse.fileType,
-                })}
-              </p>
+              {!analyseFailureRecovery && (
+                <p>
+                  {t('trade-import.analyse.detected', {
+                    fileType: analyse.fileType,
+                  })}
+                </p>
+              )}
               {analyseRecovery && (
                 <NativeSourceRecoveryNotice
                   className="journalit-trade-import-outcome journalit-trade-import-outcome--failed"
@@ -2787,14 +2839,29 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                     })
                   }
                   onSwitchSource={() =>
-                    switchToRecommendedSource(analyseRecovery.recommendedSource)
+                    reanalyseFileForSource(analyseRecovery.recommendedSource)
                   }
                 />
               )}
-              <TradeImportDiagnostics
-                diagnostics={analyse.diagnostics}
-                defaultOpen={true}
-              />
+              {analyseFailureRecovery && !analyseRecovery ? (
+                <TradeImportRecoveryReview
+                  recovery={analyseFailureRecovery}
+                  diagnostics={analyse.diagnostics}
+                  busy={busy}
+                  onChangeSource={changeIncompatibleSource}
+                  onChooseAnotherFile={chooseAnotherFile}
+                />
+              ) : (
+                <TradeImportDiagnostics
+                  diagnostics={analyse.diagnostics.filter(
+                    (diagnostic) =>
+                      !analyseFailureRecovery?.diagnosticCodesToSuppress.has(
+                        diagnostic.code
+                      )
+                  )}
+                  defaultOpen={true}
+                />
+              )}
               <div className="journalit-trade-import-review-controls">
                 {analyse.sheets.length > 0 && (
                   <label>
@@ -3227,6 +3294,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                   capabilities &&
                   analyse &&
                   !analyseRecovery &&
+                  !analyseFailureRecovery &&
                   !needsAssetTypeConfirmation &&
                   (!isHyperliquid || hyperliquidPreviewReady)
                 )}
@@ -3353,6 +3421,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                 isRefreshingStatus={isRefreshingStatus}
                 onCancel={() => void cancelPreview()}
                 onChooseAnotherFile={chooseAnotherFile}
+                onChangeSource={changeIncompatibleSource}
                 onManageImports={manageImports}
                 onConfirm={() => void confirmImport()}
                 localAccountNames={accounts}

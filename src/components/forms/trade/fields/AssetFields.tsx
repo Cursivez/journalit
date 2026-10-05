@@ -361,14 +361,7 @@ function AccountSelectField({
       label={t('form.field.account')}
       options={accountOptions}
       value={Array.isArray(data.account) ? data.account : []}
-      onChange={(value) => {
-        
-        const selectedNames = Array.isArray(value)
-          ? [...value]
-          : value
-            ? [value]
-            : [];
-
+      onChange={(selectedNames) => {
         
         
         
@@ -399,7 +392,6 @@ function AccountSelectField({
       
       allowCreate={true}
       isMulti={true}
-      optionType={OptionType.ACCOUNT}
       required={!data.isMissedTrade && !data.isBacktestTrade}
       placeholder={t('form.placeholder.select-accounts')}
     />
@@ -1532,6 +1524,8 @@ function useAssetFieldsModel({
 
   
   const handleSaveInstrument = async (option: string) => {
+    if (!/^[A-Z0-9.]+$/i.test(option)) return;
+
     try {
       
       const plugin = getPluginInstance();
@@ -2317,7 +2311,6 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
           error={errors.instrument}
           allowCreate={true}
           isMulti={false}
-          optionType={OptionType.INSTRUMENT}
           onSaveOption={handleSaveInstrument}
           required={true}
         />

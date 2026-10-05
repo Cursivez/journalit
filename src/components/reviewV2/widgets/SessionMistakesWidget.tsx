@@ -15,6 +15,7 @@ import { InvalidContextMessage } from './InvalidContextMessage';
 import { OptionType } from '../../../services/options/CustomOptionsService';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { t } from '../../../lang/helpers';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 
 interface SessionMistakesPreviewData {
   mistakes: string[];
@@ -60,6 +61,8 @@ const arraysEqual = (a: string[], b: string[]): boolean => {
 
 export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
   React.memo(({ filePath, plugin, preview, previewData }) => {
+    const embeddedReadOnly = useReviewReadOnly();
+    const readOnly = preview || embeddedReadOnly;
     const [sessionMistakes, setSessionMistakes] = useState<string[]>([]);
     const [mistakeOptions, setMistakeOptions] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
@@ -193,15 +196,10 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
     );
 
     const handleMistakesChange = useCallback(
-      async (value: string | string[]) => {
-        if (preview) return;
+      async (value: string[]) => {
+        if (readOnly) return;
 
-        const selectedValues = Array.isArray(value)
-          ? value
-          : value
-            ? [value]
-            : [];
-        const normalized = normalizeMistakes(selectedValues);
+        const normalized = normalizeMistakes(value);
 
         if (arraysEqual(normalized, sessionMistakes)) {
           return;
@@ -240,7 +238,7 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
           );
         }
       },
-      [filePath, plugin, preview, sessionMistakes]
+      [filePath, plugin, readOnly, sessionMistakes]
     );
 
     if (loading) {
@@ -276,7 +274,7 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
           </div>
 
           <div className="journalit-reviewv2-sessionmistakes-input">
-            {preview ? (
+            {readOnly ? (
               sessionMistakes.length > 0 ? (
                 <div className="journalit-reviewv2-list">
                   {sessionMistakes.map((mistake) => (
@@ -300,7 +298,6 @@ export const SessionMistakesWidget: React.FC<SessionMistakesWidgetProps> =
                   onChange={(value) => void handleMistakesChange(value)}
                   allowCreate={true}
                   isMulti={true}
-                  optionType={OptionType.MISTAKE}
                   onSaveOption={handleSaveMistakeOption}
                   placeholder={t('widget.session-mistakes.placeholder')}
                   portalDropdown={true}

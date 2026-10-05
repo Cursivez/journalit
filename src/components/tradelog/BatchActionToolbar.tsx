@@ -20,11 +20,6 @@ import { useEventBus } from '../../hooks/useEventBus';
 import { t, tPlural } from '../../lang/helpers';
 import { showConfirmationModal } from '../shared/ConfirmationModal';
 
-const asStringArray = (value: unknown): string[] =>
-  Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === 'string')
-    : [];
-
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
@@ -99,12 +94,11 @@ const SetupsModalContent: React.FC<SetupsModalContentProps> = ({
           label={t('form.field.setup')}
           options={setupOptions}
           value={selectedSetups}
-          onChange={(value) => setSelectedSetups(asStringArray(value))}
+          onChange={setSelectedSetups}
           allowCreate={true}
           isMulti={true}
           placeholder={t('tradelog.batch.setups.placeholder')}
           onSaveOption={onSaveOption}
-          optionType={OptionType.SETUP}
         />
       </div>
       <div className="batch-action-modal-buttons">
@@ -235,12 +229,11 @@ const TagsModalContent: React.FC<TagsModalContentProps> = ({
           label={t('form.field.custom-tags')}
           options={tagOptions}
           value={selectedTags}
-          onChange={(value) => setSelectedTags(asStringArray(value))}
+          onChange={setSelectedTags}
           allowCreate={true}
           isMulti={true}
           placeholder={t('tradelog.batch.tags.placeholder')}
           onSaveOption={onSaveOption}
-          optionType={OptionType.TAG}
         />
       </div>
       <div className="batch-action-modal-buttons">
@@ -368,12 +361,11 @@ const MistakesModalContent: React.FC<MistakesModalContentProps> = ({
           label={t('form.field.mistake')}
           options={mistakeOptions}
           value={selectedMistakes}
-          onChange={(value) => setSelectedMistakes(asStringArray(value))}
+          onChange={setSelectedMistakes}
           allowCreate={true}
           isMulti={true}
           placeholder={t('tradelog.batch.mistakes.placeholder')}
           onSaveOption={onSaveOption}
-          optionType={OptionType.MISTAKE}
         />
       </div>
       <div className="batch-action-modal-buttons">

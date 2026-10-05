@@ -10,6 +10,7 @@ import { Select } from '../../../components/core/Select';
 import { Accordion } from '../../../components/shared/Accordion';
 import { Folder, X } from '../../../components/shared/icons/ObsidianIcon';
 import { FolderBrowser } from '../../../components/ui/FolderBrowser';
+import { DraftInput } from '../../../components/ui/DraftInput';
 import { openPathChangeInstructionModal } from '../../../components/modals/PathChangeInstructionModal';
 import {
   getBaseCurrencyOptions,
@@ -26,7 +27,12 @@ import {
   DEFAULT_TRADING_DAY_CUTOFF_TIME,
   TRADING_DAY_CUTOFF_END_OF_DAY_MIGRATION_VERSION,
 } from '../../../utils/tradingDayUtils';
-import { createDefaultNavigationSettings, DEFAULT_SETTINGS } from '../../types';
+import {
+  createDefaultBackendIntegrationSettings,
+  createDefaultNavigationSettings,
+  DEFAULT_SETTINGS,
+} from '../../types';
+import { UpdateNotificationSettingsSection } from './UpdateNotificationSettingsSection';
 import type {
   AccentColorSource,
   AnalyticsDateBasis,
@@ -1070,7 +1076,7 @@ function GeneralRiskDisplaySettings({
           </div>
         </div>
         <div className="setting-item-control">
-          <input
+          <DraftInput
             type="number"
             value={plugin.settings.trade.defaultRiskAmount ?? 0}
             onChange={(event) => void handleDefaultRiskAmountChange(event)}
@@ -1281,7 +1287,7 @@ function GeneralBreakEvenSettings({
             </div>
           </div>
           <div className="setting-item-control journalit-settings-range">
-            <input
+            <DraftInput
               type="number"
               min="0"
               step="0.01"
@@ -1316,7 +1322,7 @@ function GeneralBreakEvenSettings({
             </div>
           </div>
           <div className="setting-item-control journalit-settings-range">
-            <input
+            <DraftInput
               type="number"
               value={plugin.settings.trade.breakEvenRangeMin ?? 0}
               onChange={(event) => void handleBreakEvenMinChange(event)}
@@ -1338,7 +1344,7 @@ function GeneralBreakEvenSettings({
             <span className="journalit-settings-muted-text">
               {t('settings.general.break-even-to')}
             </span>
-            <input
+            <DraftInput
               type="number"
               value={plugin.settings.trade.breakEvenRangeMax ?? 0}
               onChange={(event) => void handleBreakEvenMaxChange(event)}
@@ -1895,43 +1901,24 @@ export function SyncNotificationSettingsSection({
       plugin.settings.backendIntegration?.showSyncNotifications ?? true,
     showNewTradeNotifications:
       plugin.settings.backendIntegration?.showNewTradeNotifications ?? true,
-    showUpdateNotifications:
-      plugin.settings.backendIntegration?.showUpdateNotifications ?? true,
   }));
 
   const ensureBackendIntegrationSettings = () => {
-    if (!plugin.settings.backendIntegration) {
-      plugin.settings.backendIntegration = {
-        serverUrl: 'https://api.journalit.co',
-        syncEnabled: false,
-        userId: '',
-        showSyncNotifications: true,
-        showNewTradeNotifications: true,
-        showUpdateNotifications: true,
-        lastSeenVersion: '',
-      };
-    }
-
+    plugin.settings.backendIntegration ??=
+      createDefaultBackendIntegrationSettings();
     return plugin.settings.backendIntegration;
   };
 
   const saveNotificationSetting = async (
-    key:
-      | 'showSyncNotifications'
-      | 'showNewTradeNotifications'
-      | 'showUpdateNotifications',
+    key: 'showSyncNotifications' | 'showNewTradeNotifications',
     value: boolean,
     noticeKey:
       | 'settings.general.sync-notifications-toggled'
       | 'settings.general.new-trade-notifications-toggled'
-      | 'settings.general.update-notifications-toggled'
   ) => {
     const backendIntegration = ensureBackendIntegrationSettings();
     backendIntegration[key] = value;
     await plugin.saveSettings();
-    if (key === 'showUpdateNotifications') {
-      plugin.updateNotificationService?.handleNotificationSettingChanged();
-    }
     setNotificationSettings((current) => ({
       ...current,
       [key]: value,
@@ -1996,31 +1983,6 @@ export function SyncNotificationSettingsSection({
             }
             id="new-trade-notifications-toggle"
             ariaLabel={t('settings.general.new-trade-notifications-aria')}
-          />
-        </div>
-      </div>
-
-      <div className="setting-item">
-        <div className="setting-item-info">
-          <div className="setting-item-name">
-            {t('settings.general.update-notifications')}
-          </div>
-          <div className="setting-item-description">
-            {t('settings.general.update-notifications-desc')}
-          </div>
-        </div>
-        <div className="setting-item-control">
-          <ToggleSwitch
-            checked={notificationSettings.showUpdateNotifications}
-            onChange={(newValue: boolean) =>
-              void saveNotificationSetting(
-                'showUpdateNotifications',
-                newValue,
-                'settings.general.update-notifications-toggled'
-              )
-            }
-            id="show-update-notifications-toggle"
-            ariaLabel={t('settings.general.update-notifications-aria')}
           />
         </div>
       </div>
@@ -3115,6 +3077,10 @@ export const GeneralTab: React.FC<GeneralTabProps> = (props) => {
           showFolderSettings={scope === 'all'}
           flat={scope === 'general'}
         />
+      )}
+
+      {(scope === 'general' || scope === 'all') && (
+        <UpdateNotificationSettingsSection plugin={plugin} />
       )}
 
       {scope === 'general' && (

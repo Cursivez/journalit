@@ -4,6 +4,10 @@ export const FILTER_MENU_STYLES = `
   display: inline-flex;
 }
 
+.journalit-filter-menu .journalit-filter-menu-date-range {
+  padding: 4px 6px 6px;
+}
+
 .journalit-filter-menu .journalit-filter-menu__panel {
   position: fixed;
   top: var(--journalit-filter-menu-top);
@@ -48,6 +52,11 @@ export const FILTER_MENU_STYLES = `
 
 .journalit-filter-menu .journalit-filter-menu__panel--drilldown {
   width: min(320px, calc(100vw - 16px));
+}
+
+.journalit-filter-menu .journalit-filter-menu__panel--date-range {
+  width: 288px;
+  max-width: calc(100vw - 16px);
 }
 
 .journalit-filter-menu .journalit-filter-menu__panel--measuring {

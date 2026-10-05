@@ -12,10 +12,7 @@ import {
 } from '../../../../services/propChallenge/PropChallengeProfileNotice';
 import { Button } from '../../../ui/Button';
 import { Info } from '../../../shared/icons/ObsidianIcon';
-import {
-  openProfileUpdateModal,
-  openCorrectionHistoryModal,
-} from './ProfileUpdateModal';
+import { openProfileUpdateModal } from './ProfileUpdateModal';
 
 type State =
   | { kind: 'checking' | 'unavailable' | 'inactive' | 'missing' }
@@ -28,26 +25,7 @@ type State =
 export function PropChallengeProfileNotice(
   props: Parameters<typeof ProfileNoticeCore>[0]
 ) {
-  const plugin = usePlugin();
-  return (
-    <>
-      <ProfileNoticeCore {...props} />
-      {plugin &&
-        Boolean(props.account.propChallenge?.correctionHistory?.length) && (
-          <div className="journalit-profile-update-status">
-            <Button
-              variant="plain"
-              size="small"
-              onClick={() =>
-                openCorrectionHistoryModal({ plugin, account: props.account })
-              }
-            >
-              {t('account.profiles.correction-history')}
-            </Button>
-          </div>
-        )}
-    </>
-  );
+  return <ProfileNoticeCore {...props} />;
 }
 
 function ProfileNoticeCore({

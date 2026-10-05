@@ -1,6 +1,52 @@
 
 
 const en = {
+  'trade-import.recovery.bybit-header.columns':
+    'Missing required columns: {columns}.',
+  'trade-import.recovery.bybit-header.title':
+    'Check the Bybit header or export',
+  'trade-import.recovery.bybit-header.message':
+    'The selected header does not match Bybit Trade History. Check the header row or export trades with filled prices and quantities, not just order prices. To map another format, explicitly choose {manualSource}.',
+  'update.installed.title': "What's New",
+  'settings.general.available-update-notifications': 'Show Update Reminders',
+  'settings.general.available-update-notifications-desc':
+    'Check for new versions daily and show an update reminder. Turn off to see only post-update release highlights.',
+  'account.edit.field.unscoped-live-balance-desc':
+    'An earlier balance correction could not be assigned to a phase. It is preserved; enter the current broker balance to reconcile the active phase.',
+  'account.prop-challenge.rule.help.target-amount':
+    'Absolute targets use account currency; percentages use this phase’s starting balance. Progress uses phase balance gain after any daily profit-credit cap, excluding unrealized P&L.',
+  'account.prop-challenge.rule.help.credit-withdrawals':
+    'Adds recorded gross withdrawal amounts back to absolute target progress. Does not change the balance or payout eligibility.',
+  'account.prop-challenge.rule.help.drawdown-amount':
+    'Currency distance below the starting balance (static) or realized balance high-water mark (trailing). Touching the floor breaches the rule.',
+  'account.prop-challenge.rule.help.drawdown-mode':
+    'Static keeps a fixed floor. EOD trailing follows trading-day closing highs; intraday trailing follows recorded realized-balance transactions, not unrealized equity.',
+  'account.prop-challenge.rule.help.lock-balance':
+    'Ceiling for the trailing drawdown floor, not an activation balance. The floor stops rising at this balance. Blank means no ceiling.',
+  'account.prop-challenge.rule.help.daily-loss-amount':
+    'Currency limit on the worst cumulative net realized trade loss within a trading day, not a decline from the day’s peak. Touching the limit breaches.',
+  'account.prop-challenge.rule.help.breach-action':
+    'Fail account keeps a historical breach active. Pause until next session applies only to the current trading day; past breaches remain in history.',
+  'account.prop-challenge.rule.help.daily-loss-model':
+    'Choose a fixed limit, permanent profit-threshold change, peak-EOD-profit scaling, or prior-EOD profit tiers. The conditional fields configure the selected model.',
+  'account.prop-challenge.rule.help.profit-basis':
+    'Cumulative trade profit excludes cashflows. Current account profit includes them, so payouts reduce it. Both use prior trading-day closes.',
+  'account.prop-challenge.rule.help.position-model':
+    'Choose a fixed per-trade limit, one additional contract per profit step, or explicit profit tiers. Scaling uses prior trading-day closes.',
+  'account.prop-challenge.rule.help.max-contracts':
+    'Maximum size per trade after optional micro conversion, not combined exposure across trades. Exceeding the limit breaches the rule.',
+  'account.prop-challenge.rule.help.initial-contracts':
+    'Initial per-trade contract limit before completed end-of-day profit earns larger limits.',
+  'account.prop-challenge.rule.help.maximum-contracts':
+    'Optional ceiling on profit-based contract increases. Blank means no additional ceiling.',
+  'account.prop-challenge.rule.help.daily-profit':
+    'Currency threshold for a qualifying day’s net realized trade P&L, including wins, losses and costs. Unrealized profit and cashflows do not qualify.',
+  'account.prop-challenge.rule.help.consistency-cushion':
+    'Added to the maximum best-day share in percentage points: 30% + 5 points permits 35%. Blank adds no cushion.',
+  'account.prop-challenge.rule.help.daily-profit-cap':
+    'Currency cap on each trading day’s profit credited toward the phase target. Excess stays in the balance; losses still count in full.',
+  'account.prop-challenge.rule.help.live-review':
+    'Net realized profit one trading day must reach for review eligibility. Does not automatically advance the phase or grant a live account.',
   'account.profiles.no-matching-phase':
     'No matching phase in these firm rules.',
   'account.profiles.history-unchanged': 'Earlier history stays unchanged.',
@@ -41,7 +87,9 @@ const en = {
   'account.profiles.correction-title': 'Catalog correction',
   'account.profiles.correction-source': 'Rule source',
   'account.profiles.correction-period': 'Affected history',
-  'account.profiles.correction-history': 'Correction history',
+  'account.profiles.correction-history': 'Rule corrections',
+  'account.profiles.correction-before': 'Before',
+  'account.profiles.correction-after': 'After',
   'account.profiles.correction-stale':
     'Account history changed. Reopen this review before applying the correction.',
   'account.profiles.correction-result': 'Hard-rule evaluation',
@@ -99,7 +147,6 @@ const en = {
     "The firm's rules have changed and need review. Your account still uses its saved rules.",
   'account.profiles.up-to-date':
     'This phase uses the last reviewed firm rules; local overrides remain independent.',
-  'trade.broker-synced-at': 'Broker synced {date}',
   'trade-sync.tradovate.status.setup-required': 'Account setup required',
   'trade-sync.tradovate.status.connecting': 'Connecting',
   'trade-sync.tradovate.status.paused': 'Paused',
@@ -958,8 +1005,6 @@ const en = {
     'Failed to open onboarding flow. Check console for details.',
 
   'notice.error.open-release-notes': 'Failed to open release notes: {error}',
-  'notice.error.open-update-notification':
-    'Failed to open update notification: {error}',
   'notice.error.open-layout-builder': 'Failed to open Layout Builder: {error}',
   'notice.error.switch-template': 'Failed to switch layout: {error}',
   'notice.error.switch-template-generic': 'Failed to switch layout',
@@ -1116,7 +1161,7 @@ const en = {
     'This is your main page. It shows your trading stats, quick actions, and shortcuts to the rest of Journalit.',
   'home.guide.filters.title': 'These buttons change what your widgets show',
   'home.guide.filters.description':
-    'Use these to switch the time period, trade type, or account so your Home widgets show the data you want to look at.',
+    'Filter by period, trade type, or account. Choose Week or set inclusive From/To dates with Custom range. Period-aware widgets follow your selection; live widgets stay live.',
   'home.guide.settings.title': 'Your Journalit settings are always close by',
   'home.guide.settings.description':
     'Use this button to open Journalit settings directly.',
@@ -1148,47 +1193,33 @@ const en = {
   'layoutBuilder.guide.intro.title': 'This is your Layout Builder',
   'layoutBuilder.guide.intro.description':
     'This page controls how your review layouts are structured. The easiest way to start is to duplicate a built-in layout, then customise your copy.',
-  'layoutBuilder.guide.sidebar-overview.title':
-    'This sidebar is where you choose what you are editing',
-  'layoutBuilder.guide.sidebar-overview.description':
-    'Each section in the sidebar is a different layout type. Trade layouts are separate from your review layouts, and the Library section is for sharing layouts. After you make your own copy, you can star it to make it the default for new review notes.',
-  'layoutBuilder.guide.pick-built-in.title': 'Start with a built-in DRC layout',
-  'layoutBuilder.guide.pick-built-in.description':
-    'For your first layout, start with one of the built-in DRC layouts. It gives you a safe starting point before you make your own copy.',
-  'layoutBuilder.guide.duplicate.title': 'Duplicate the built-in layout',
-  'layoutBuilder.guide.duplicate.description':
-    'Built-in layouts are starting points. Duplicate one first so you can safely make your own version.',
-  'layoutBuilder.guide.preview-template.title':
-    'This preview shows what the layout will look like',
-  'layoutBuilder.guide.preview-template.description':
-    'Scroll through the preview and get a feel for the flow. This is useful for checking whether the layout reads clearly before you start editing it.',
-  'layoutBuilder.guide.switch-to-editor.title': 'Switch to Editor',
-  'layoutBuilder.guide.switch-to-editor.description':
-    'Preview shows you what the layout will look like. Editor is where you actually change it.',
+  'layoutBuilder.guide.create-own-layout.title': 'Make your own layout',
+  'layoutBuilder.guide.create-own-layout.description':
+    'Built-in layouts are read-only. Click the copy icon on a built-in DRC layout to duplicate it, or press + to start a new one. Press Next to duplicate Standard DRC.',
   'layoutBuilder.guide.editor-overview.title':
     'This is where you edit the layout',
   'layoutBuilder.guide.editor-overview.description':
     'Rename the layout here, review the widget list, drag the left handle to rearrange widgets, click a widget to change it, and remove anything you do not need.',
-  'layoutBuilder.guide.add-widget.title': 'Add a widget to your copy',
+  'layoutBuilder.guide.add-widget.title': 'Add a widget',
   'layoutBuilder.guide.add-widget.description':
-    'Use Add Widget to put new blocks into your layout. This is how you shape the workflow to match how you review.',
-  'layoutBuilder.guide.open-widget-picker.title': 'Open the widget picker',
-  'layoutBuilder.guide.open-widget-picker.description':
-    'This picker shows the widgets you can add for this review type.',
+    'Use Add Widget to add a block at the end of your layout, or hover between two widgets and click + to insert one exactly where you want it.',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
     'Type in the search box to find a widget by name, description, or category, then choose it. You can also press Next and Journalit will choose the first result for you.',
-  'layoutBuilder.guide.widget-library-docs.title':
-    'Use the widget library if you get stuck',
-  'layoutBuilder.guide.widget-library-docs.description':
-    'This opens the docs page with the widget library, examples, and availability table for each review type.',
   'layoutBuilder.guide.save-template.title': 'Save your layout',
   'layoutBuilder.guide.save-template.description':
     'Once your copy looks right, save it. You can keep refining it later as your review process improves.',
   'layoutBuilder.guide.set-default-template.title':
-    'Set this copy as your default layout',
+    'Make it your default layout',
   'layoutBuilder.guide.set-default-template.description':
     'Click the star on your new layout if you want new review notes to use this layout automatically.',
+  'layoutBuilder.guide.whats-new.insert-slot.title': 'Add a widget anywhere',
+  'layoutBuilder.guide.whats-new.insert-slot.description':
+    'Hover between two widgets and press + to add a widget right there, instead of at the bottom.',
+  'layoutBuilder.guide.whats-new.add-widget-button.title':
+    'Or add it at the end',
+  'layoutBuilder.guide.whats-new.add-widget-button.description':
+    'Add Widget still adds to the bottom of the layout, and now scrolls to the new widget and opens its search.',
   'tradelog.empty': 'No trades found',
   'tradelog.empty.submessage':
     'Start creating trade notes to see them appear in your trade log.',
@@ -1674,7 +1705,7 @@ const en = {
   'home.widget.trading-score.description':
     'One score for your overall trading performance',
   'home.widget.aum.name': 'AUM',
-  'home.widget.aum.description': 'Total account balances with a 7-day trend',
+  'home.widget.aum.description': 'Current account balances with a 30-day trend',
   'home.widget.drawdown-monitor.name': 'Drawdown Monitor',
   'home.widget.drawdown-monitor.description':
     'Drawdown limit usage for each account',
@@ -1850,7 +1881,6 @@ const en = {
   
   
   'status-bar.update-available-branded': 'Update Journalit',
-  'status-bar.release-notes-branded': 'Journalit · View release notes',
   'status-bar.update-aria-label': 'Journalit {version} - Click to view',
   'update.available.ready': 'A new version is ready',
 
@@ -3755,10 +3785,8 @@ const en = {
 
   'settings.general.update-notifications': 'Show Update Notifications',
   'settings.general.update-notifications-desc':
-    "Check Journalit's public GitHub release metadata daily and notify you when a newer version is available",
+    'Show update reminders and release highlights after updating.',
   'settings.general.update-notifications-aria': 'Show update notifications',
-  'settings.general.update-notifications-toggled':
-    'Update notifications {status}',
 
   
   'settings.general.data-management': 'Data Management & Privacy',
@@ -4463,6 +4491,18 @@ const en = {
   'widget.goals.aria.delete': 'Delete goal',
 
   
+  'review.header.guide.intro.title': 'Your review starts here',
+  'review.header.guide.intro.description':
+    'Everything you need to navigate and manage this review is in the header.',
+  'review.header.guide.reviewed.title': 'Mark as reviewed',
+  'review.header.guide.reviewed.description':
+    'Click the circle to mark this note as reviewed. Click again to undo.',
+  'review.header.guide.dates.title': 'Jump between reviews',
+  'review.header.guide.dates.description':
+    'Click a date label, like June or 2026, to open its review note.',
+  'review.header.guide.controls.title': 'Filter, layout & navigation',
+  'review.header.guide.controls.description':
+    'Use the funnel to filter trades, Switch Layout to change the note layout, and Previous / Next to move between review periods.',
   'widget.header.name': 'Header',
 
   'widget.header.invalid-context':
@@ -4943,6 +4983,29 @@ const en = {
   'metric.profitFactor.name': 'Profit Factor',
   'metric.profitFactor.description': 'Ratio of gross profit to gross loss',
   'metric.sharpeRatio.name': 'Sharpe Ratio',
+  'metric.calmarRatio.name': 'Calmar Ratio',
+  'metric.calmarRatio.description':
+    'Annualized return relative to max drawdown',
+  'dashboard.calmarRatio.tooltip.formula':
+    'Annualized return divided by maximum drawdown.',
+  'dashboard.calmarRatio.unavailable.no-history':
+    'No realized trade history yet.',
+  'dashboard.calmarRatio.unavailable.capital':
+    'Starting equity in the display currency is unavailable.',
+  'dashboard.calmarRatio.unavailable.incomplete-history':
+    'Some realized P&L is missing.',
+  'dashboard.calmarRatio.unavailable.dates': 'Some trade dates are missing.',
+  'dashboard.calmarRatio.unavailable.short-history':
+    'Requires at least one day of history.',
+  'dashboard.calmarRatio.unavailable.no-drawdown': 'No drawdown recorded yet.',
+  'dashboard.calmarRatio.unavailable.non-positive-equity':
+    'Equity reached zero or below.',
+  'dashboard.calmarRatio.unavailable.non-finite':
+    'The result is too large to calculate.',
+  'dashboard.calmarRatio.unavailable.scope':
+    'Select All Time and whole accounts only.',
+  'dashboard.calmarRatio.unavailable.conversion':
+    'Some currency conversions are unavailable.',
   'metric.sharpeRatio.description':
     'Average trade P&L relative to its volatility',
   'metric.expectancy.name': 'Expectancy',
@@ -5327,10 +5390,10 @@ const en = {
   'account.prop-challenge.rule.daily-loss-model.profit-tiers':
     'Prior-EOD profit tiers',
   'account.prop-challenge.rule.daily-loss-tiers-help':
-    'Use profit:loss-limit pairs. The tier selected from the prior EOD account profit applies to the next session.',
+    'Enter comma-separated profit:loss-limit pairs. The selected profit basis at the prior trading-day close sets the next day’s limit, which can rise or fall.',
   'account.prop-challenge.rule.loss-tiers': 'Profit tiers and loss limits',
   'account.prop-challenge.rule.daily-loss-threshold-help':
-    'The higher daily loss amount activates permanently when lifetime account profit first reaches the configured percentage of starting balance.',
+    'The adjusted currency limit activates permanently when this phase’s cumulative realized trade profit first reaches the configured percentage of phase starting balance.',
   'account.prop-challenge.rule.profit-threshold-percent':
     'Account profit threshold (%)',
   'account.prop-challenge.rule.amount-after-threshold':
@@ -5509,7 +5572,7 @@ const en = {
     'A consistency goal requires a maximum above 0%.',
   'account.prop-challenge.ledger.help.open': 'About {rule}',
   'account.prop-challenge.ledger.help.profit_target':
-    'Grow the account by this amount to pass the phase. Only closed trades count.',
+    'Reach the configured phase balance gain to pass. Daily profit-credit caps and optional withdrawal credits affect progress; unrealized profit does not count.',
   'account.prop-challenge.ledger.help.profit_target.example':
     'This account needs {target} in profit: {current} so far, {remaining} to go.',
   'account.prop-challenge.ledger.help.profit_target.example-done':
@@ -5539,11 +5602,11 @@ const en = {
   'account.prop-challenge.ledger.help.live_review_daily_profit.example':
     'One day at {trigger} or more qualifies; best day so far {bestDay}.',
   'account.prop-challenge.ledger.help.minimum_trading_days':
-    'Days with at least one closed trade. The phase cannot pass before you have this many, however fast you hit the target.',
+    'Required distinct trade-entry days in this phase, including entries still open. Uses the configured trading-day cutoff, not calendar midnight.',
   'account.prop-challenge.ledger.help.minimum_trading_days.example':
     '{current} of {target} trading days done, {remaining} to go.',
   'account.prop-challenge.ledger.help.minimum_profitable_days':
-    "Trading days that close at or above the firm's minimum daily profit. Break-even or smaller wins do not count.",
+    'Required days meeting minimum daily net realized profit in this phase. Recorded payouts do not reset this phase-wide rule.',
   'account.prop-challenge.ledger.help.minimum_profitable_days.example':
     '{current} of {target} days closed at {minimum} or more, {remaining} to go.',
   'account.prop-challenge.ledger.help.consistency':
@@ -5775,6 +5838,12 @@ const en = {
   'account.edit.button.save': 'Save Changes',
   'account.edit.button.delete': 'Delete Account',
   'account.edit.button.delete-name': 'Delete "{name}"',
+  'account.edit.error.inactive-phase':
+    'Live Balance can only be changed on an active phase.',
+  'account.edit.error.phase-changed':
+    'Account details changed while editing. Reopen the account editor before saving.',
+  'account.profiles.profitable-days-conflict':
+    'Keep your current payout policy or edit your profitable-day requirement before applying these terms.',
 
   
   'account.edit.modal.update-notes.title': 'Update Linked Notes?',
@@ -5864,6 +5933,7 @@ const en = {
   'templateEditor.field.template-name': 'Layout Name',
   'templateEditor.field.widgets': 'Widgets ({count})',
   'templateEditor.button.add-widget': '+ Add Widget',
+  'templateEditor.button.insert-widget-here': 'Add widget here',
   'templateEditor.button.widget-library-docs': 'Widget library docs',
   'templateEditor.widget.locked': 'Locked',
   'templateEditor.widget.select-placeholder': 'Select a widget...',
@@ -6036,6 +6106,14 @@ const en = {
   
   
   'home.period.month': 'Month',
+  'home.period.week': 'Week',
+  'home.period.custom': 'Custom range',
+  'home.period.invalid-range':
+    'The end date must be on or after the start date.',
+  'date-input.error.day': 'Day must be between 1 and {max}.',
+  'date-input.error.invalid': 'Please enter a valid date',
+  'date-input.error.month': 'Month must be between 1 and 12.',
+  'date-input.error.year': 'Use YY (2000–2099) or YYYY (1000–9999).',
   'home.period.quarter': 'Quarter',
   'home.period.year': 'Year',
   'home.period.lifetime': 'All Time',
@@ -6193,6 +6271,7 @@ const en = {
 
   
   'home.widget.aum.title': 'AUM',
+  'home.widget.aum.current-trend': 'Current · 30-day trend',
   'home.widget.aum.period.month': 'This Month',
   'home.widget.aum.period.quarter': 'This Quarter',
   'home.widget.aum.period.year': 'This Year',
@@ -6204,9 +6283,6 @@ const en = {
 
   
   'home.widget.streak.title': 'Streak',
-  'home.widget.streak.period.month': 'this month',
-  'home.widget.streak.period.quarter': 'this quarter',
-  'home.widget.streak.period.year': 'this year',
   'home.widget.streak.period.ever': 'ever',
   'home.widget.streak.win': 'win',
   'home.widget.streak.wins': 'wins',
@@ -6940,7 +7016,6 @@ const en = {
   'widget.weekly-drc-context.description':
     'Show selected DRC sections for each day in the weekly review',
 
-  'widget.weekly-drc-context.image-alt-prefix': 'Weekly DRC image',
   'widget.weekly-drc-context.no-activity': 'No activity for this day.',
   'widget.weekly-drc-context.no-sections-configured':
     'Choose at least one DRC section in the layout settings.',
@@ -7066,7 +7141,7 @@ const en = {
     'No importable trades were found. Review this file in Trade Import for details.',
 
   'quick-import.privacy-note':
-    'Files are uploaded to Journalit servers for processing and are not stored by default.',
+    'The selected file and import options are uploaded to Journalit. Encrypted diagnostic captures expire after 1 day (free) or 14 days (Pro); previews expire after 7 days. Optional AI mapping sends headers and sample rows to an AI model. Trade Import sends no separate client telemetry or background failure reports.',
   'quick-import.dropzone.title': 'Drop a broker export here',
   'quick-import.dropzone.subtitle': 'Or click to choose a file',
 
@@ -7121,7 +7196,7 @@ const en = {
   'trade-import.gate.sign-in':
     'Sign in or create a free Journalit account to analyse your file. Pro is only required when you import the trades.',
   'trade-import.gate.sign-in.reassurance':
-    'Your file is processed privately and is not stored by default.',
+    'The selected file and import options are uploaded to Journalit. Encrypted diagnostic captures expire after 1 day (free) or 14 days (Pro); previews expire after 7 days. Optional AI mapping sends headers and sample rows to an AI model. Trade Import sends no separate client telemetry or background failure reports.',
   'trade-import.gate.sign-in.no-trial':
     'No Pro trial is required to analyse and preview.',
   'trade-import.gate.sign-in.cta': 'Sign in to preview free',
@@ -7146,7 +7221,7 @@ const en = {
   'trade-import.manual-mode.direct-pnl': 'One trade per row (uses P/L)',
   'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
   'trade-import.privacy.copy':
-    'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default. When AI mapping suggestions are on, the column headers and a few sample rows are also sent to an AI model to suggest column matches; untick the option to map columns yourself.',
+    'The selected file and import options are uploaded to Journalit. Encrypted diagnostic captures expire after 1 day (free) or 14 days (Pro); previews expire after 7 days. Optional AI mapping sends headers and sample rows to an AI model. Trade Import sends no separate client telemetry or background failure reports. Exports may contain account identifiers, trade history, notes, prices, quantities, fees, balances and P/L. Requests also send custom field definitions and saved options; preview includes the target account name. Disable AI mapping to avoid AI processing.',
 
   'trade-import.action.analyse': 'Analyse file',
   'trade-import.action.choose-file': 'Click to upload or drag and drop',
@@ -7382,6 +7457,13 @@ const en = {
     'File format is read automatically, no mapping needed.',
   'trade-import.source.guide': 'How to export',
   'trade-import.source.change': 'Change',
+  'trade-import.recovery.rithmic-order-history.title':
+    'Unsupported Rithmic format',
+  'trade-import.recovery.rithmic-order-history.message':
+    'Upload a Rithmic order-history export, or choose the platform that created this file.',
+  'trade-import.recovery.rithmic-order-history.choose-file':
+    'Choose another file',
+  'trade-import.source.change-action': 'Change source',
   'trade-import.sync-suggestion.full.title': '{broker} can sync automatically',
   'trade-import.sync-suggestion.full.body':
     'Trade Sync brings new trades in on its own, no exports needed. You can still import a file below.',
@@ -8433,10 +8515,6 @@ const en = {
     'Select a folder rather than a media file.',
   'settings.gallery-folders.save-failed':
     'Failed to save gallery folders. Please try again.',
-  'tradelog.guide.switch-to-gallery.title': 'Switch from trades to the Gallery',
-  'tradelog.guide.switch-to-gallery.description':
-    'Use this mode selector to move between the regular Trade Log and the Gallery. Click Gallery to continue the tour with your images, GIFs, videos, and YouTube links.',
-
   'tradelog.guide.gallery-grouping.title': 'Group media by journal entry',
   'tradelog.guide.gallery-grouping.description':
     'Grouped keeps every trade, review, or configured folder together. Individual displays each media item as its own card.',
@@ -8687,6 +8765,79 @@ const en = {
   'account.prop-challenge.payout.requirement.elapsed-hours': 'Elapsed time',
   'account.prop-challenge.payout-rules.minimum-elapsed-hours':
     'Minimum elapsed hours',
+  'account.prop-challenge.field.help-label': 'Help: {field}',
+  'account.prop-challenge.payout-rules.help.cycle':
+    'Choose how payout waiting is measured: distinct trade-entry days, days meeting a net-profit threshold, or elapsed calendar days. No waiting cycle disables only this day requirement.',
+  'account.prop-challenge.payout-rules.help.days':
+    'Number of days required by the selected cycle. Trading days use trade entries; qualifying days use net realized daily profit; calendar days are complete 24-hour periods.',
+  'account.prop-challenge.payout-rules.help.daily-profit':
+    'Minimum net realized profit for a day to qualify, after trading costs. Multiple trades are combined using your trading-day cutoff. The threshold must be greater than zero.',
+  'account.prop-challenge.payout-rules.help.qualifying-days':
+    'Add a daily-profit requirement alongside the selected waiting cycle. Both requirements must pass within the current payout cycle.',
+  'account.prop-challenge.payout-rules.help.profitable-days':
+    'Number of distinct days whose net realized profit reaches the minimum daily profit within the current payout cycle.',
+  'account.prop-challenge.payout-rules.help.anchor':
+    'Start calendar waiting at the cycle start or the first trade opened in that cycle. With cycle reset enabled, a recorded payout starts the next cycle.',
+  'account.prop-challenge.payout-rules.help.elapsed-hours':
+    'Hours required since the first trade entry in the current cycle. Without a trade, the clock has not started. Leave blank to disable this requirement.',
+  'account.prop-challenge.payout-rules.help.request-window':
+    'Allow requests on any day or only selected weekdays. Day restrictions use the configured time zone and do not replace other eligibility requirements.',
+  'account.prop-challenge.payout-rules.help.time-zone':
+    'Time zone used to determine allowed request weekdays, such as America/New_York. This does not change your trading-day cutoff.',
+  'account.prop-challenge.payout-rules.help.request-days':
+    'Weekdays on which a request is allowed in the selected time zone. At least one day must be selected.',
+  'account.prop-challenge.payout-rules.help.minimum-balance':
+    'Account balance required before a payout. This is an eligibility gate, not the balance floor used to calculate available profit. Leave blank to disable it.',
+  'account.prop-challenge.payout-rules.help.cycle-profit':
+    'Net realized trading profit required in the current payout cycle. Deposits and balance corrections do not count. Leave blank to disable this gate.',
+  'account.prop-challenge.payout-rules.help.profit-schedule':
+    'Comma-separated minimum cycle profits for payout 1, payout 2, and later payouts. A schedule replaces the single minimum cycle-profit amount.',
+  'account.prop-challenge.payout-rules.help.repeat-final':
+    'Reuse the final scheduled value for payout numbers beyond the listed entries.',
+  'account.prop-challenge.payout-rules.help.positive-cycle':
+    'After the first recorded payout, require current-cycle net realized trading profit to be strictly greater than zero.',
+  'account.prop-challenge.payout-rules.help.consistency':
+    'Largest winning day divided by net realized cycle profit. Losing days reduce total profit and can increase this percentage. Leave blank to disable this limit.',
+  'account.prop-challenge.payout-rules.help.consistency-schedule':
+    'Comma-separated best-day percentage limits for payout 1, payout 2, and later payouts. A schedule replaces the single consistency limit.',
+  'account.prop-challenge.payout-rules.help.availability':
+    'Calculate requestable profit above the phase starting balance or a chosen balance floor. Request percentages and other caps still apply.',
+  'account.prop-challenge.payout-rules.help.balance-floor':
+    'Balance excluded from available profit. The withdrawable share is applied only to the amount above this floor; this does not change the drawdown rule.',
+  'account.prop-challenge.payout-rules.help.request-percent':
+    'Percentage of balance above the selected availability floor that can be requested. The maximum-request and new-profit caps may reduce it further.',
+  'account.prop-challenge.payout-rules.help.minimum-request':
+    'Smallest permitted payout request. Eligibility also requires the calculated available amount to reach this minimum.',
+  'account.prop-challenge.payout-rules.help.maximum':
+    'Choose a fixed cap, a first-payout-only cap, amounts by payout number, or a percentage of cycle profit. No maximum removes only this cap.',
+  'account.prop-challenge.payout-rules.help.maximum-amount':
+    'Maximum gross request before the trader profit split. Available profit and other request caps can reduce the amount further.',
+  'account.prop-challenge.payout-rules.help.first-maximum':
+    'Gross request cap for the first payout in this phase only. Later payouts have no cap from this setting; other limits still apply.',
+  'account.prop-challenge.payout-rules.help.maximum-schedule':
+    'Comma-separated gross request caps for payout 1, payout 2, and later payouts. Without repeating the final value, unlisted later payouts have a zero request cap.',
+  'account.prop-challenge.payout-rules.help.maximum-percent':
+    'Cap the gross request at this percentage of current-cycle net realized trading profit. This is separate from the withdrawable share of account balance.',
+  'account.prop-challenge.payout-rules.help.lifetime-days':
+    'Qualifying-day total required across the whole funded phase to activate the replacement availability and maximum-request limits. Payout resets do not erase this count.',
+  'account.prop-challenge.payout-rules.help.split-model':
+    'Use a fixed trader share, change rates after cumulative gross payouts, or select a rate from lifetime account profit. The split determines proceeds, not the request cap.',
+  'account.prop-challenge.payout-rules.help.trader-share':
+    'Percentage of the gross request paid to the trader under this rate. The remaining share belongs to the firm.',
+  'account.prop-challenge.payout-rules.help.cumulative-threshold':
+    'Total recorded gross payouts in this phase at which the later trader-share rate begins. A request crossing the threshold uses both rates for the respective portions.',
+  'account.prop-challenge.payout-rules.help.maximum-payouts':
+    'Number of recorded payouts permitted in this phase. Once reached, another payout is blocked. Leave blank for no payout-count limit.',
+  'account.prop-challenge.payout-rules.help.maximum-outcome':
+    'What happens when the configured final payout is reached: continue, conclude the account, advance stages, or become eligible for live review. Live-review eligibility is not automatic approval.',
+  'account.prop-challenge.payout-rules.help.aftermath':
+    'Balance and drawdown treatment after a recorded payout: deduct the request, deduct and lock the floor, or reset to starting balance and reset drawdown.',
+  'account.prop-challenge.payout-rules.help.drawdown-floor':
+    'Drawdown floor locked in after a payout when that treatment is selected. The remaining balance must stay above the resulting floor.',
+  'account.prop-challenge.payout-rules.help.first-exempt':
+    'For the first payout in this phase, treat the minimum cycle profit as zero: current-cycle net realized profit must not be negative. All other requirements still apply.',
+  'account.prop-challenge.payout-rules.help.reset-cycle':
+    'Restart cycle days, daily-profit counts, cycle profit, and consistency after a recorded payout. Lifetime qualifying-day progress is retained; previews do not reset progress.',
 
   
   'account.merge.challenge.move-earlier': 'Move {account} earlier',
@@ -8966,8 +9117,12 @@ const en = {
   'trade-handoff.title.sync': 'Synchronization complete',
   'trade-handoff.summary.import-complete': '{trades} imported',
   'trade-handoff.summary.import-partial': '{trades} imported with issues',
-  'trade-handoff.summary.sync-complete': '{trades} synchronized',
-  'trade-handoff.summary.sync-partial': '{trades} synchronized with issues',
+  'trade-handoff.summary.update-complete': '{trades} updated',
+  'trade-handoff.summary.update-partial': '{trades} updated with issues',
+  'trade-handoff.summary.mixed-complete':
+    '{imported} imported · {updated} updated',
+  'trade-handoff.summary.mixed-partial':
+    '{imported} imported · {updated} updated, with issues',
   'trade-handoff.periods.choose': 'Choose another review period',
   'trade-handoff.periods.recommended': 'Recommended',
   'trade-handoff.action.dismiss': 'Dismiss recent trade result',

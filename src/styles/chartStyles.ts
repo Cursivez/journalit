@@ -400,6 +400,11 @@ export const CHART_STYLES = `
 }
 
 
+
+.journalit-chart-container svg {
+  --no-tooltip: true;
+}
+
 .journalit-chart-container .recharts-cartesian-grid-horizontal line,
 .journalit-chart-container .recharts-cartesian-grid-vertical line {
   stroke: var(--background-modifier-border);
@@ -447,9 +452,10 @@ export const CHART_STYLES = `
   stroke-opacity: 0.5;
 }
 
-.journalit-chart-container .recharts-cartesian-axis.journalit-chart-axis--numeric .recharts-cartesian-axis-tick-value {
+
+.journalit-chart-container .recharts-surface text {
   direction: ltr;
-  unicode-bidi: isolate;
+  unicode-bidi: plaintext;
 }
 
 .journalit-chart-container .recharts-cartesian-axis-tick-value {

@@ -8,17 +8,14 @@ import {
   setIcon,
 } from 'obsidian';
 import { CustomUpdateToast } from '../components/notifications/CustomUpdateToast';
+import { InstalledUpdatePopup } from '../components/notifications/InstalledUpdatePopup';
 import { RELEASE_NOTES_VIEW_TYPE } from '../components/release-notes/ReleaseNotesView';
 import { getReleasesData, type ReleaseMetadata } from '../data/releasesData';
 import { DemoSyncGate } from '../demo/DemoSyncGate';
 import { t } from '../lang/helpers';
 import type JournalitPlugin from '../main';
-import {
-  openExternalUrl,
-  openObsidianPluginPage,
-} from '../utils/externalLinks';
+import { openObsidianPluginPage } from '../utils/externalLinks';
 import { logger } from '../utils/logger';
-import { HOME_VIEW_TYPE } from '../views/HomeView';
 
 const PUBLIC_MANIFEST_URL =
   'https://raw.githubusercontent.com/Cursivez/journalit/main/manifest.json';
@@ -158,33 +155,27 @@ function hasFreshAvailabilityCheck(lastCheckedAt: string | undefined): boolean {
 
 export class UpdateNotificationService {
   private currentToast: CustomUpdateToast | null = null;
-  private currentToastKind: 'installed' | 'available' | null = null;
-  
-  private pendingNotificationVersion: string | null = null;
-  
-  private installedUpdateStatusBarItem: HTMLElement | null = null;
+  private installedNotice: InstalledUpdatePopup | null = null;
   
   private availableUpdateStatusBarItem: HTMLElement | null = null;
   private availableUpdateStatusBarVersion: string | null = null;
   private isCheckingForUpdates = false;
+  private settingsRecheckPending = false;
   private availabilityCheckIntervalId: number | null = null;
   private availabilityCheckGeneration = 0;
   private availableToastShownForVersion: string | null = null;
-  private openHomeViewTimeoutId: number | null = null;
   private disposed = false;
 
   constructor(private readonly plugin: JournalitPlugin) {}
-
-  getPendingNotificationVersion(): string | null {
-    return this.pendingNotificationVersion;
-  }
 
   
   async checkForUpdates(): Promise<void> {
     if (this.disposed) return;
     if (DemoSyncGate.isActive()) return;
     if (this.isCheckingForUpdates) return;
-    if (!this.plugin.settings.backendIntegration?.showUpdateNotifications) {
+    if (
+      this.plugin.settings.backendIntegration?.showUpdateNotifications === false
+    ) {
       return;
     }
 
@@ -194,7 +185,7 @@ export class UpdateNotificationService {
         await this.checkForInstalledVersionChange();
       await this.checkForAvailableUpdate(!installedNotificationPending);
     } finally {
-      this.isCheckingForUpdates = false;
+      await this.finishCheck();
     }
   }
 
@@ -212,30 +203,52 @@ export class UpdateNotificationService {
     if (this.disposed) return;
     if (DemoSyncGate.isActive()) return;
     if (this.isCheckingForUpdates) return;
-    if (!this.plugin.settings.backendIntegration?.showUpdateNotifications) {
+    if (!this.availableNotificationsEnabled()) {
       return;
     }
 
     this.isCheckingForUpdates = true;
     try {
-      await this.checkForAvailableUpdate(this.currentToastKind !== 'installed');
+      await this.checkForAvailableUpdate(this.installedNotice === null);
     } finally {
-      this.isCheckingForUpdates = false;
+      await this.finishCheck();
     }
   }
 
   handleNotificationSettingChanged(): void {
     this.availabilityCheckGeneration += 1;
-    if (
-      this.plugin.settings.backendIntegration?.showUpdateNotifications !== false
-    ) {
-      void this.refreshAvailableUpdate();
-      return;
+    if (!this.availableNotificationsEnabled()) {
+      this.replaceCurrentToast();
+      this.removeAvailableUpdateStatusBar();
     }
+    if (
+      this.plugin.settings.backendIntegration?.showUpdateNotifications === false
+    ) {
+      this.installedNotice?.cleanup();
+      this.installedNotice = null;
+    } else {
+      if (this.isCheckingForUpdates) {
+        this.settingsRecheckPending = true;
+      } else {
+        void this.checkForUpdates();
+      }
+    }
+  }
 
-    this.replaceCurrentToast();
-    this.removeInstalledUpdateStatusBar();
-    this.removeAvailableUpdateStatusBar();
+  private async finishCheck(): Promise<void> {
+    this.isCheckingForUpdates = false;
+    if (this.settingsRecheckPending) {
+      this.settingsRecheckPending = false;
+      await this.checkForUpdates();
+    }
+  }
+
+  private availableNotificationsEnabled(): boolean {
+    const settings = this.plugin.settings.backendIntegration;
+    return (
+      settings?.showUpdateNotifications !== false &&
+      settings?.showAvailableUpdateNotifications !== false
+    );
   }
 
   
@@ -282,10 +295,19 @@ export class UpdateNotificationService {
     }
 
     if (
+      this.disposed ||
+      DemoSyncGate.isActive() ||
+      settings.showUpdateNotifications === false
+    ) {
+      return false;
+    }
+
+    if (this.installedNotice) return true;
+
+    if (
       lastSeenVersion &&
       this.shouldShowInstalledNotification(currentVersion, dismissedVersion)
     ) {
-      this.pendingNotificationVersion = currentVersion;
       return this.showInstalledUpdateNotification(currentVersion);
     }
 
@@ -303,7 +325,7 @@ export class UpdateNotificationService {
 
   private async checkForAvailableUpdate(allowToast: boolean): Promise<void> {
     const settings = this.plugin.settings.backendIntegration;
-    if (!settings?.showUpdateNotifications || this.disposed) {
+    if (!settings || !this.availableNotificationsEnabled() || this.disposed) {
       return;
     }
 
@@ -318,20 +340,21 @@ export class UpdateNotificationService {
     );
     if (!hasFreshSuccessfulCheck && !hasFreshAttempt) {
       const attemptedAt = new Date().toISOString();
-      settings.lastAvailableUpdateAttemptAt = attemptedAt;
-      await this.saveSettingsSafely();
-      if (!this.isAvailabilityCheckCurrent(checkGeneration)) return;
-
       const lookup = await this.lookupAvailableVersion(checkGeneration);
-      if (lookup.kind === 'cancelled') return;
+      if (
+        lookup.kind === 'cancelled' ||
+        !this.isAvailabilityCheckCurrent(checkGeneration)
+      )
+        return;
+      
+      settings.lastAvailableUpdateAttemptAt = attemptedAt;
       if (lookup.kind === 'success') {
-        if (!this.isAvailabilityCheckCurrent(checkGeneration)) return;
         availableVersion = lookup.version;
         settings.lastAvailableUpdateCheckAt = attemptedAt;
         settings.lastKnownAvailableVersion = lookup.version || '';
-        await this.saveSettingsSafely();
-        if (!this.isAvailabilityCheckCurrent(checkGeneration)) return;
       }
+      await this.saveSettingsSafely();
+      if (!this.isAvailabilityCheckCurrent(checkGeneration)) return;
     }
 
     if (!this.isAvailabilityCheckCurrent(checkGeneration)) return;
@@ -353,7 +376,7 @@ export class UpdateNotificationService {
       isNewerVersion(availableVersion, dismissedVersion)
     ) {
       if (this.availableToastShownForVersion === availableVersion) return;
-      await this.showAvailableUpdateNotification(availableVersion);
+      this.showAvailableUpdateNotification(availableVersion);
       this.availableToastShownForVersion = availableVersion;
     }
   }
@@ -410,7 +433,7 @@ export class UpdateNotificationService {
     return (
       !this.disposed &&
       this.availabilityCheckGeneration === checkGeneration &&
-      this.plugin.settings.backendIntegration?.showUpdateNotifications === true
+      this.availableNotificationsEnabled()
     );
   }
 
@@ -458,70 +481,48 @@ export class UpdateNotificationService {
   private async showInstalledUpdateNotification(
     version: string
   ): Promise<boolean> {
-    if (!this.plugin.settings.backendIntegration?.showUpdateNotifications) {
-      return false;
-    }
-
     try {
       const releaseInfo =
         this.loadReleaseMetadata()[this.normalizeVersionForLookup(version)];
       if (!releaseInfo) {
         new Notice(t('notice.plugin-updated', { version }), 8000);
-        return false;
-      }
-
-      if (!this.hasOpenHomeView()) {
-        this.showInstalledUpdateStatusBar(version);
-        return false;
+        await this.handleInstalledNotificationDismissed(version);
+        return true;
       }
 
       this.replaceCurrentToast();
-      this.currentToast = new CustomUpdateToast();
-      this.currentToastKind = 'installed';
-      await this.currentToast.show({
+      this.installedNotice = new InstalledUpdatePopup({
         version,
-        title: releaseInfo.title,
-        description: releaseInfo.description,
-        imageUrl: releaseInfo.imageUrl,
-        secondaryAction: {
-          label: t('button.discord'),
-          icon: 'messages-square',
-          onClick: () => openExternalUrl('https://discord.gg/AkSw3D9h8b'),
-          dismissAfterClick: false,
-        },
-        primaryAction: {
-          label: t('button.learn-more'),
-          icon: 'corner-down-right',
-          onClick: () => void this.openReleaseNotes(),
-        },
-        onDismiss: () => this.handleInstalledNotificationDismissed(),
+        release: releaseInfo,
+        onLearnMore: () => void this.openReleaseNotes(),
+        onDismiss: () =>
+          void this.handleInstalledNotificationDismissed(version),
       });
+      this.installedNotice.open();
       return true;
     } catch (error) {
-      this.replaceCurrentToast();
+      this.installedNotice?.cleanup();
+      this.installedNotice = null;
       console.error(
         '[UpdateNotification] Failed to show installed update notification:',
         error
       );
       new Notice(t('notice.plugin-updated', { version }), 8000);
-      return false;
+      await this.handleInstalledNotificationDismissed(version);
+      return true;
     }
   }
 
-  private async showAvailableUpdateNotification(
-    version: string
-  ): Promise<void> {
-    if (!this.plugin.settings.backendIntegration?.showUpdateNotifications) {
+  private showAvailableUpdateNotification(version: string): void {
+    if (!this.availableNotificationsEnabled()) {
       return;
     }
 
     this.replaceCurrentToast();
     this.currentToast = new CustomUpdateToast();
-    this.currentToastKind = 'available';
-    await this.currentToast.show({
+    this.currentToast.show({
       title: 'Journalit',
       description: t('update.available.ready'),
-      layout: 'available',
       primaryAction: {
         label: t('button.open'),
         icon: 'download',
@@ -532,10 +533,6 @@ export class UpdateNotificationService {
     });
   }
 
-  private hasOpenHomeView(): boolean {
-    return this.plugin.app.workspace.getLeavesOfType(HOME_VIEW_TYPE).length > 0;
-  }
-
   private loadReleaseMetadata(): ReleaseMetadata {
     return getReleasesData();
   }
@@ -544,39 +541,24 @@ export class UpdateNotificationService {
     return version.replace(/-\d{13}$/, '');
   }
 
-  private async handleInstalledNotificationDismissed(): Promise<void> {
-    const versionToDismiss =
-      this.pendingNotificationVersion ?? this.plugin.manifest.version;
+  private async handleInstalledNotificationDismissed(
+    version: string
+  ): Promise<void> {
+    this.installedNotice = null;
     const settings = this.plugin.settings.backendIntegration;
     if (settings) {
-      settings.dismissedVersion = versionToDismiss;
+      settings.dismissedVersion = version;
       await this.saveSettingsSafely();
     }
-
-    this.pendingNotificationVersion = null;
-    this.currentToastKind = null;
-    this.removeInstalledUpdateStatusBar();
   }
 
   private async handleAvailableNotificationDismissed(
     version: string
   ): Promise<void> {
-    this.currentToastKind = null;
     const settings = this.plugin.settings.backendIntegration;
     if (!settings) return;
     settings.dismissedAvailableVersion = version;
     await this.saveSettingsSafely();
-  }
-
-  private showInstalledUpdateStatusBar(version: string): void {
-    if (!Platform.isDesktopApp) return;
-    if (this.installedUpdateStatusBarItem) return;
-    this.installedUpdateStatusBarItem = this.createStatusBarItem({
-      version,
-      label: t('status-bar.release-notes-branded'),
-      icon: 'gift',
-      onClick: () => this.openHomeViewAndShowInstalledToast(version),
-    });
   }
 
   private showAvailableUpdateStatusBar(version: string): void {
@@ -625,50 +607,10 @@ export class UpdateNotificationService {
     return statusBarItem;
   }
 
-  private removeInstalledUpdateStatusBar(): void {
-    this.installedUpdateStatusBarItem?.remove();
-    this.installedUpdateStatusBarItem = null;
-  }
-
   private removeAvailableUpdateStatusBar(): void {
     this.availableUpdateStatusBarItem?.remove();
     this.availableUpdateStatusBarItem = null;
     this.availableUpdateStatusBarVersion = null;
-  }
-
-  private async openHomeViewAndShowInstalledToast(
-    version: string
-  ): Promise<void> {
-    const { workspace } = this.plugin.app;
-
-    try {
-      let homeLeaves = workspace.getLeavesOfType(HOME_VIEW_TYPE);
-      if (homeLeaves.length === 0) {
-        const leaf = workspace.getLeaf('tab');
-        await leaf.setViewState({ type: HOME_VIEW_TYPE, active: true });
-        homeLeaves = workspace.getLeavesOfType(HOME_VIEW_TYPE);
-      }
-
-      if (homeLeaves.length === 0) return;
-      void workspace.revealLeaf(homeLeaves[0]);
-
-      if (this.openHomeViewTimeoutId !== null) {
-        window.clearTimeout(this.openHomeViewTimeoutId);
-      }
-      this.openHomeViewTimeoutId = window.setTimeout(() => {
-        this.openHomeViewTimeoutId = null;
-        this.removeInstalledUpdateStatusBar();
-        void this.showInstalledUpdateNotification(version);
-      }, 200);
-    } catch (error) {
-      console.error('[UpdateNotification] Failed to open Home view:', error);
-      new Notice(
-        t('notice.error.open-update-notification', {
-          error: error instanceof Error ? error.message : String(error),
-        }),
-        5000
-      );
-    }
   }
 
   async openReleaseNotes(): Promise<void> {
@@ -701,7 +643,6 @@ export class UpdateNotificationService {
   private replaceCurrentToast(): void {
     this.currentToast?.cleanup();
     this.currentToast = null;
-    this.currentToastKind = null;
   }
 
   private async saveSettingsSafely(): Promise<void> {
@@ -720,13 +661,9 @@ export class UpdateNotificationService {
       this.availabilityCheckIntervalId = null;
     }
 
-    if (this.openHomeViewTimeoutId !== null) {
-      window.clearTimeout(this.openHomeViewTimeoutId);
-      this.openHomeViewTimeoutId = null;
-    }
-
     this.replaceCurrentToast();
-    this.removeInstalledUpdateStatusBar();
+    this.installedNotice?.cleanup();
+    this.installedNotice = null;
     this.removeAvailableUpdateStatusBar();
   }
 }

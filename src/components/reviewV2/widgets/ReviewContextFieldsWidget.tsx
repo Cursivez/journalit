@@ -7,6 +7,7 @@ import React, {
 } from 'react';
 import { TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 import { Input } from '../../core/Input';
 import { NumberInput } from '../../core/NumberInput';
 import { Select } from '../../core/Select';
@@ -168,6 +169,8 @@ function getTargetDateFromFrontmatter(
 
 export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps> =
   React.memo(({ filePath, plugin, config, preview, previewReviewType }) => {
+    const embeddedReadOnly = useReviewReadOnly();
+    const readOnly = preview || embeddedReadOnly;
     const [reviewType, setReviewType] = useState<ReviewFieldReviewType | null>(
       previewReviewType ?? null
     );
@@ -415,7 +418,7 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
 
     const persistValues = useCallback(
       async (nextValues: Record<string, unknown>) => {
-        if (preview || !reviewType) return;
+        if (readOnly || !reviewType) return;
         if (!validateValues(nextValues)) return;
 
         const file = plugin.app.vault.getAbstractFileByPath(filePath);
@@ -457,7 +460,7 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
         filePath,
         plugin.app.fileManager,
         plugin.app.vault,
-        preview,
+        readOnly,
         reviewType,
         validateValues,
       ]
@@ -683,7 +686,7 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
           <p {...shareCaptureExcludeProps}>
             {t('widget.review-context-fields.empty-desc')}
           </p>
-          {!preview && (
+          {!readOnly && (
             <Button
               variant="primary"
               onClick={openReviewFieldSettings}
@@ -704,7 +707,7 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
               <div className="review-context-fields-inherited-title">
                 {t('widget.review-context-fields.group.default')}
               </div>
-              {!preview && showLocal && visibleEditableFields.length > 0 ? (
+              {!readOnly && showLocal && visibleEditableFields.length > 0 ? (
                 <Button
                   variant="secondary"
                   size="small"

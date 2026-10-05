@@ -3,6 +3,24 @@
 import type { Lang } from './en';
 
 const ar: Lang = {
+  'trade-import.recovery.bybit-header.columns':
+    'الأعمدة المطلوبة المفقودة: {columns}.',
+  'trade-import.recovery.bybit-header.title':
+    'تحقق من عناوين Bybit أو ملف التصدير',
+  'trade-import.recovery.bybit-header.message':
+    'العناوين المحددة لا تطابق سجل تداول Bybit. تحقق من صف العناوين أو صدّر صفقات بأسعار وكميات التنفيذ، وليس أسعار الأوامر فقط. لربط صيغة أخرى، اختر {manualSource} صراحةً.',
+  'update.installed.title': 'ما الجديد',
+  'settings.general.available-update-notifications': 'عرض تذكيرات التحديث',
+  'settings.general.available-update-notifications-desc':
+    'التحقق من الإصدارات الجديدة يوميًا وعرض تذكير. عطّل هذا الخيار لعرض أبرز التغييرات بعد التحديث فقط.',
+  'account.edit.field.unscoped-live-balance-desc':
+    'تعذّر تحديد المرحلة التي يخصّها تصحيح سابق للرصيد. يبقى التصحيح محفوظًا؛ أدخل الرصيد الحالي لدى الوسيط لتسوية المرحلة النشطة.',
+  'account.edit.error.inactive-phase':
+    'لا يمكن تغيير الرصيد المباشر إلا في مرحلة نشطة.',
+  'account.edit.error.phase-changed':
+    'تغيّرت تفاصيل الحساب أثناء التحرير. أعد فتح محرر الحساب قبل الحفظ.',
+  'account.profiles.profitable-days-conflict':
+    'احتفظ بسياسة دفعات الأرباح الحالية أو عدّل شرط الأيام الرابحة قبل تطبيق هذه الشروط.',
   'command.share-note-as-image': 'مشاركة الملاحظة الحالية كصورة',
   'trade.share.copy-screenshot': 'نسخ لقطة شاشة الصفقة',
   'trade.share.copied': 'تم نسخ لقطة شاشة الصفقة إلى الحافظة',
@@ -69,7 +87,9 @@ const ar: Lang = {
   'account.profiles.correction-title': 'تصحيح دليل الشركات',
   'account.profiles.correction-source': 'مصدر القاعدة',
   'account.profiles.correction-period': 'السجل المتأثر',
-  'account.profiles.correction-history': 'سجل التصحيحات',
+  'account.profiles.correction-history': 'تصحيحات القواعد',
+  'account.profiles.correction-before': 'قبل',
+  'account.profiles.correction-after': 'بعد',
   'account.profiles.correction-stale':
     'تغيّر سجل الحساب. أعد فتح هذه المراجعة قبل تطبيق التصحيح.',
   'account.profiles.correction-result': 'تقييم القواعد الصارمة',
@@ -124,7 +144,6 @@ const ar: Lang = {
     'تغيّرت قواعد الشركة وتحتاج إلى مراجعة. ما زال حسابك يستخدم قواعده المحفوظة.',
   'account.profiles.up-to-date':
     'تستخدم هذه المرحلة آخر قواعد شركة تمت مراجعتها؛ وتظل التجاوزات المحلية مستقلة.',
-  'trade.broker-synced-at': 'تمت المزامنة مع الوسيط في {date}',
   'trade-sync.tradovate.status.setup-required': 'يلزم إعداد الحساب',
   'trade-sync.tradovate.status.connecting': 'جارٍ الاتصال',
   'trade-sync.tradovate.status.paused': 'متوقف مؤقتًا',
@@ -855,7 +874,6 @@ const ar: Lang = {
   'notice.error.open-onboarding':
     'فشل فتح تدفق الانضمام. تحقق من وحدة التحكم للحصول على التفاصيل.',
   'notice.error.open-release-notes': 'فشل في فتح ملاحظات الإصدار: {error}',
-  'notice.error.open-update-notification': 'فشل فتح إشعار التحديث: {error}',
   'notice.error.open-layout-builder': 'تعذّر فتح منشئ التخطيط: {error}',
   'notice.error.switch-template': 'فشل في تغيير التخطيط: {error}',
   'notice.error.switch-template-generic': 'فشل في تغيير التخطيط',
@@ -1024,46 +1042,31 @@ const ar: Lang = {
   'layoutBuilder.guide.intro.title': 'هذا هو منشئ التخطيط الخاص بك',
   'layoutBuilder.guide.intro.description':
     'تتحكم هذه الصفحة في بنية تخطيطات المراجعة. وأسهل طريقة للبدء هي تكرار تخطيط مدمج ثم تخصيص نسختك.',
-  'layoutBuilder.guide.sidebar-overview.title':
-    'هذا الشريط الجانبي هو المكان الذي تختار فيه ما تقوم بتحريره',
-  'layoutBuilder.guide.sidebar-overview.description':
-    'يمثل كل قسم في الشريط الجانبي نوعًا مختلفًا من التخطيط. تخطيطات الصفقات منفصلة عن تخطيطات المراجعة، وقسم المكتبة مخصص لمشاركة التخطيطات. بعد إنشاء نسختك، يمكنك تمييزها بنجمة لتصبح التخطيط الافتراضي لملاحظات المراجعة الجديدة.',
-  'layoutBuilder.guide.pick-built-in.title': 'ابدأ بتخطيط DRC مدمج',
-  'layoutBuilder.guide.pick-built-in.description':
-    'لتخطيطك الأول، ابدأ بأحد تخطيطات DRC المدمجة. يمنحك ذلك نقطة بداية موثوقة قبل إنشاء نسختك الخاصة.',
-  'layoutBuilder.guide.duplicate.title': 'تكرار التخطيط المدمج',
-  'layoutBuilder.guide.duplicate.description':
-    'التخطيطات المدمجة نقاط بداية. كرّر أحدها أولًا لتتمكن من إنشاء نسختك الخاصة وتعديلها بأمان.',
-  'layoutBuilder.guide.preview-template.title':
-    'توضح هذه المعاينة كيف سيبدو التخطيط',
-  'layoutBuilder.guide.preview-template.description':
-    'تصفح المعاينة وتعرف على تدفق الأحداث. هذا مفيد للتحقق مما إذا كان التخطيط واضحا قبل أن تبدأ في التحرير.',
-  'layoutBuilder.guide.switch-to-editor.title': 'الانتقال إلى المحرر',
-  'layoutBuilder.guide.switch-to-editor.description':
-    'تُظهر المعاينة شكل التخطيط، أما المحرر فهو المكان الذي تعدّله فيه.',
+  'layoutBuilder.guide.create-own-layout.title': 'أنشئ تخطيطك الخاص',
+  'layoutBuilder.guide.create-own-layout.description':
+    'التخطيطات المدمجة للقراءة فقط. انقر على أيقونة النسخ في تخطيط DRC مدمج لتكراره، أو اضغط + لبدء تخطيط جديد. اضغط التالي لتكرار DRC القياسي.',
   'layoutBuilder.guide.editor-overview.title': 'هنا تعدّل التخطيط',
   'layoutBuilder.guide.editor-overview.description':
     'أعد تسمية التخطيط هنا، وراجع قائمة الأدوات، واسحب المقبض الأيسر لإعادة ترتيبها، وانقر على أي أداة لتعديلها، وأزل ما لا تحتاج إليه.',
-  'layoutBuilder.guide.add-widget.title': 'أضف أداة إلى نسختك',
+  'layoutBuilder.guide.add-widget.title': 'أضف أداة',
   'layoutBuilder.guide.add-widget.description':
-    'استخدم إضافة الأداة لإضافة كتل جديدة في تخطيطك. هذه هي الطريقة التي تشكل بها سير العمل ليتناسب مع طريقة مراجعتك.',
-  'layoutBuilder.guide.open-widget-picker.title': 'افتح أداة اختيار الأدوات',
-  'layoutBuilder.guide.open-widget-picker.description':
-    'هذا الاختيار يعرض الأدوات التي يمكنك إضافتها لهذا النوع من المراجعة.',
+    'استخدم إضافة الأداة لإضافة كتلة في نهاية تخطيطك، أو مرّر المؤشر بين أداتين وانقر على + لإدراجها في المكان الذي تريده تمامًا.',
   'layoutBuilder.guide.choose-widget.title': 'اختر أداة',
   'layoutBuilder.guide.choose-widget.description':
     'اكتب في مربع البحث للعثور على أداة بالاسم أو الوصف أو الفئة، ثم اخترها. يمكنك أيضا الضغط على التالي وسيختار Journalit النتيجة الأولى لك.',
-  'layoutBuilder.guide.widget-library-docs.title':
-    'استخدم مكتبة الأدوات إذا علقت',
-  'layoutBuilder.guide.widget-library-docs.description':
-    'هذا يفتح صفحة المستندات مع مكتبة الأدوات والأمثلة، وجدول التوفر لكل نوع مراجعة.',
   'layoutBuilder.guide.save-template.title': 'احفظ تخطيطك',
   'layoutBuilder.guide.save-template.description':
     'بمجرد أن تبدو نسختك صحيحة، احفظها. يمكنك الاستمرار في تحسينها لاحقا مع تحسن عملية المراجعة.',
-  'layoutBuilder.guide.set-default-template.title':
-    'عيّن هذه النسخة كتخطيطك الافتراضي',
+  'layoutBuilder.guide.set-default-template.title': 'اجعله تخطيطك الافتراضي',
   'layoutBuilder.guide.set-default-template.description':
     'انقر على النجمة في تخطيطك الجديد إذا أردت استخدامه تلقائيًا في ملاحظات المراجعة الجديدة.',
+  'layoutBuilder.guide.whats-new.insert-slot.title': 'أضف أداة في أي مكان',
+  'layoutBuilder.guide.whats-new.insert-slot.description':
+    'مرّر المؤشر بين أداتين واضغط + لإضافة أداة في ذلك الموضع تمامًا بدلًا من الأسفل.',
+  'layoutBuilder.guide.whats-new.add-widget-button.title':
+    'أو أضفها في النهاية',
+  'layoutBuilder.guide.whats-new.add-widget-button.description':
+    'لا يزال زر إضافة أداة يضيف إلى أسفل التخطيط، وأصبح الآن ينتقل إلى الأداة الجديدة ويفتح البحث الخاص بها.',
   'tradelog.empty': 'لم يُعثر على صفقات',
   'tradelog.empty.submessage':
     'ابدأ بإنشاء ملاحظات الصفقات لتظهر في سجل الصفقات.',
@@ -1509,7 +1512,8 @@ const ar: Lang = {
   'home.widget.trading-score.name': 'درجة التداول',
   'home.widget.trading-score.description': 'درجة واحدة لأداء تداولك الإجمالي',
   'home.widget.aum.name': 'AUM',
-  'home.widget.aum.description': 'إجمالي أرصدة الحسابات مع اتجاه 7 أيام',
+  'home.widget.aum.description':
+    'أرصدة الحسابات الحالية مع اتجاه لمدة 30 يومًا',
   'home.widget.drawdown-monitor.name': 'مراقبة التراجع',
   'home.widget.drawdown-monitor.description': 'استخدام حد التراجع لكل حساب',
   'home.widget.profit-target-widget.name': 'هدف الربح',
@@ -1658,7 +1662,6 @@ const ar: Lang = {
   'settings.economic-calendar.pro-required':
     'يتطلب التقويم الاقتصادي اشتراك PRO.',
   'status-bar.update-available-branded': 'تحديث Journalit',
-  'status-bar.release-notes-branded': 'Journalit · عرض ملاحظات الإصدار',
   'status-bar.update-aria-label': 'Journalit {version} - انقر للعرض',
   'update.available.ready': 'نسخة جديدة جاهزة',
   'template.transformation.orphaned-content.header':
@@ -3065,9 +3068,8 @@ const ar: Lang = {
     'إشعارات الصفقة الجديدة {status}',
   'settings.general.update-notifications': 'عرض إشعارات التحديث',
   'settings.general.update-notifications-desc':
-    'التحقق يوميًا من بيانات إصدارات Journalit العامة على GitHub وإبلاغك عند توفر إصدار أحدث',
+    'عرض تذكيرات التحديث وأبرز التغييرات بعد التحديث.',
   'settings.general.update-notifications-aria': 'عرض إشعارات التحديث',
-  'settings.general.update-notifications-toggled': 'إشعارات التحديث {status}',
   'settings.general.data-management': 'إدارة البيانات والخصوصية',
   'settings.general.backup-restore-section':
     'النسخ الاحتياطي، الاستعادة، وإعادة الضبط',
@@ -3683,6 +3685,18 @@ const ar: Lang = {
     'تتطلب أداة الأهداف ملاحظة مراجعة من نوع DRC أو أسبوعية أو شهرية أو ربع سنوية أو سنوية',
   'widget.goals.aria.edit': 'تعديل الهدف',
   'widget.goals.aria.delete': 'حذف الهدف',
+  'review.header.guide.intro.title': 'تبدأ مراجعتك هنا',
+  'review.header.guide.intro.description':
+    'كل ما تحتاجه للتنقل وإدارة هذه المراجعة موجود في الترويسة.',
+  'review.header.guide.reviewed.title': 'وضع علامة تمت المراجعة',
+  'review.header.guide.reviewed.description':
+    'انقر على الدائرة لوضع علامة تمت المراجعة على هذه الملاحظة. انقر مرة أخرى للتراجع.',
+  'review.header.guide.dates.title': 'التنقل بين المراجعات',
+  'review.header.guide.dates.description':
+    'انقر على تاريخ مثل يونيو أو 2026 لفتح ملاحظة المراجعة المقابلة.',
+  'review.header.guide.controls.title': 'التصفية والتخطيط والتنقل',
+  'review.header.guide.controls.description':
+    'استخدم رمز القمع لتصفية الصفقات، و«تبديل التخطيط» لتغيير تخطيط الملاحظة، و«السابق» / «القادم» للتنقل بين فترات المراجعة.',
   'widget.header.name': 'الترويسة',
   'widget.header.invalid-context':
     'بيانات مقدمة الملاحظة غير صالحة: يلزم حقل "type" (drc/weekly-review/monthly-review/quarterly-review/trade) وحقل التاريخ ("date" للمراجعات أو "entryTime" للصفقات).',
@@ -4135,6 +4149,28 @@ const ar: Lang = {
   'metric.profitFactor.name': 'معامل الربحية',
   'metric.profitFactor.description':
     'نسبة الربح الإجمالي إلى الخسارة الإجمالية',
+  'metric.calmarRatio.name': 'نسبة كالمار',
+  'metric.calmarRatio.description':
+    'العائد المحقق السنوي مقارنة بأقصى تراجع نسبي',
+  'dashboard.calmarRatio.tooltip.formula':
+    'العائد السنوي مقسوماً على أقصى تراجع.',
+  'dashboard.calmarRatio.unavailable.no-history':
+    'لا يوجد سجل لنتائج محققة بعد.',
+  'dashboard.calmarRatio.unavailable.capital':
+    'رأس المال الأولي بعملة العرض غير متاح.',
+  'dashboard.calmarRatio.unavailable.incomplete-history':
+    'بعض الأرباح والخسائر المحققة مفقودة.',
+  'dashboard.calmarRatio.unavailable.dates': 'بعض تواريخ الصفقات مفقودة.',
+  'dashboard.calmarRatio.unavailable.short-history':
+    'يتطلب يوماً واحداً على الأقل من السجل.',
+  'dashboard.calmarRatio.unavailable.no-drawdown': 'لم يُسجل أي تراجع بعد.',
+  'dashboard.calmarRatio.unavailable.non-positive-equity':
+    'وصلت حقوق الملكية إلى الصفر أو أقل.',
+  'dashboard.calmarRatio.unavailable.non-finite': 'النتيجة أكبر من أن تُحسب.',
+  'dashboard.calmarRatio.unavailable.scope':
+    'اختر كامل الفترة والحسابات الكاملة فقط.',
+  'dashboard.calmarRatio.unavailable.conversion':
+    'بعض تحويلات العملات غير متاحة.',
   'metric.sharpeRatio.name': 'نسبة شارب',
   'metric.sharpeRatio.description': 'متوسط ربح وخسارة الصفقة نسبةً إلى تقلبه',
   'metric.expectancy.name': 'القيمة المتوقعة للصفقة',
@@ -4489,10 +4525,10 @@ const ar: Lang = {
   'account.prop-challenge.rule.daily-loss-model.profit-tiers':
     'مستويات الربح حسب نهاية اليوم السابق',
   'account.prop-challenge.rule.daily-loss-tiers-help':
-    'استخدم أزواجًا بصيغة ربح:حد خسارة. يسري المستوى المحدد من ربح الحساب بنهاية اليوم السابق على الجلسة التالية.',
+    'أدخل أزواج ربح:حد-خسارة مفصولة بفواصل. يحدد أساس الربح المختار عند إغلاق يوم التداول السابق حد اليوم التالي، ويمكن أن يرتفع أو ينخفض.',
   'account.prop-challenge.rule.loss-tiers': 'مستويات الربح وحدود الخسائر',
   'account.prop-challenge.rule.daily-loss-threshold-help':
-    'يُفعّل حد الخسارة اليومية الأعلى نهائيًا عندما يبلغ ربح الحساب التراكمي أول مرة النسبة المحددة من الرصيد الابتدائي.',
+    'يتفعّل الحد النقدي المعدل دائمًا عندما يبلغ ربح الصفقات المحقق المتراكم لهذه المرحلة لأول مرة النسبة المحددة من رصيدها الابتدائي.',
   'account.prop-challenge.rule.profit-threshold-percent': 'عتبة ربح الحساب (٪)',
   'account.prop-challenge.rule.amount-after-threshold':
     'مقدار الخسارة اليومية بعد بلوغ العتبة',
@@ -4675,8 +4711,42 @@ const ar: Lang = {
   'account.prop-challenge.ledger.tooltip.consistency.no-maximum':
     'يتطلب هدف الاتساق أن يكون الحد الأقصى فوق 0٪.',
   'account.prop-challenge.ledger.help.open': 'حول {rule}',
+  'account.prop-challenge.rule.help.target-amount':
+    'الأهداف المطلقة بعملة الحساب، والنسب من الرصيد الابتدائي لهذه المرحلة. يُحسب التقدم بزيادة الرصيد بعد سقف الربح اليومي المحتسب، دون الربح والخسارة غير المحققين.',
+  'account.prop-challenge.rule.help.credit-withdrawals':
+    'يضيف مبالغ السحب الإجمالية المسجلة إلى تقدم الهدف المطلق. لا يغيّر الرصيد أو أهلية السحب.',
+  'account.prop-challenge.rule.help.drawdown-amount':
+    'مسافة نقدية دون الرصيد الابتدائي (الثابت) أو أعلى رصيد محقق (المتحرك). ملامسة الحد الأدنى تُعد مخالفة.',
+  'account.prop-challenge.rule.help.drawdown-mode':
+    'الثابت يُبقي الحد الأدنى ثابتًا. تتبع نهاية اليوم يتبع أعلى رصيد عند إغلاق يوم التداول؛ والتتبع خلال اليوم يتبع معاملات الرصيد المحقق المسجلة، لا حقوق الملكية غير المحققة.',
+  'account.prop-challenge.rule.help.lock-balance':
+    'سقف للحد الأدنى للتراجع المتحرك، وليس رصيد تفعيل. يتوقف ارتفاع الحد الأدنى عند هذا الرصيد. تركه فارغًا يعني بلا سقف.',
+  'account.prop-challenge.rule.help.daily-loss-amount':
+    'حد نقدي لأسوأ خسارة صافية محققة متراكمة من الصفقات خلال يوم التداول، لا للهبوط من قمة اليوم. ملامسة الحد تُعد مخالفة.',
+  'account.prop-challenge.rule.help.breach-action':
+    'إفشال الحساب يُبقي المخالفة التاريخية سارية. الإيقاف حتى الجلسة التالية يخص يوم التداول الحالي فقط؛ وتبقى المخالفات السابقة في السجل.',
+  'account.prop-challenge.rule.help.daily-loss-model':
+    'اختر حدًا ثابتًا أو تغييرًا دائمًا عند عتبة الربح أو نسبة من أعلى ربح بنهاية اليوم أو شرائح ربح نهاية اليوم السابق. تضبط الحقول الشرطية النموذج المختار.',
+  'account.prop-challenge.rule.help.profit-basis':
+    'ربح الصفقات المتراكم يستبعد التدفقات النقدية. ربح الحساب الحالي يشملها، لذا تقلله السحوبات. يستخدم كلاهما إغلاقات أيام التداول السابقة.',
+  'account.prop-challenge.rule.help.position-model':
+    'اختر حدًا ثابتًا لكل صفقة أو عقدًا إضافيًا لكل خطوة ربح أو شرائح ربح محددة. يعتمد التدرج على إغلاقات أيام التداول السابقة.',
+  'account.prop-challenge.rule.help.max-contracts':
+    'الحجم الأقصى لكل صفقة بعد التحويل الاختياري للعقود المصغرة، لا مجموع التعرض عبر الصفقات. تجاوز الحد يُعد مخالفة.',
+  'account.prop-challenge.rule.help.initial-contracts':
+    'الحد الابتدائي للعقود لكل صفقة قبل أن تسمح أرباح نهاية اليوم المكتملة بحدود أكبر.',
+  'account.prop-challenge.rule.help.maximum-contracts':
+    'سقف اختياري لزيادة العقود بحسب الربح. تركه فارغًا يعني بلا سقف إضافي.',
+  'account.prop-challenge.rule.help.daily-profit':
+    'عتبة نقدية لصافي الربح والخسارة المحققين يوميًا من الصفقات، تشمل المكاسب والخسائر والتكاليف. لا تُحتسب الأرباح غير المحققة أو التدفقات النقدية.',
+  'account.prop-challenge.rule.help.consistency-cushion':
+    'يُضاف إلى الحصة القصوى لأفضل يوم بالنقاط المئوية: 30% مع 5 نقاط يسمح بـ35%. تركه فارغًا لا يضيف هامشًا.',
+  'account.prop-challenge.rule.help.daily-profit-cap':
+    'سقف نقدي لربح كل يوم تداول المحتسب نحو هدف المرحلة. يبقى الفائض في الرصيد، وتُحتسب الخسائر بالكامل.',
+  'account.prop-challenge.rule.help.live-review':
+    'صافي الربح المحقق الذي يجب أن يبلغه يوم تداول واحد لأهلية المراجعة. لا ينقل المرحلة تلقائيًا ولا يمنح حسابًا حيًا.',
   'account.prop-challenge.ledger.help.profit_target':
-    'نمِّ رصيد الحساب بهذا المبلغ لاجتياز المرحلة. تُحتسب الصفقات المغلقة فقط.',
+    'بلغ زيادة رصيد المرحلة المحددة لاجتيازها. تؤثر سقوف الربح المحتسب وإضافة السحوبات الاختيارية في التقدم؛ ولا تُحتسب الأرباح غير المحققة.',
   'account.prop-challenge.ledger.help.profit_target.example':
     'تحقق {current} من أصل {target}، والمتبقي {remaining}.',
   'account.prop-challenge.ledger.help.profit_target.example-done':
@@ -4706,11 +4776,11 @@ const ar: Lang = {
   'account.prop-challenge.ledger.help.live_review_daily_profit.example':
     'يكفي يوم واحد بقيمة {trigger} أو أكثر؛ وأفضل يوم حتى الآن هو {bestDay}.',
   'account.prop-challenge.ledger.help.minimum_trading_days':
-    'أيام فيها صفقة مغلقة واحدة على الأقل. لا يمكن اجتياز المرحلة قبل بلوغ هذا العدد من الأيام، مهما كانت سرعة بلوغك الهدف.',
+    'عدد أيام دخول الصفقات المختلفة المطلوبة في هذه المرحلة، بما فيها الصفقات التي ما زالت مفتوحة. يستخدم وقت الفصل المحدد ليوم التداول، لا منتصف الليل التقويمي.',
   'account.prop-challenge.ledger.help.minimum_trading_days.example':
     'اكتمل {current} من أصل {target} يوم تداول؛ المتبقي {remaining}.',
   'account.prop-challenge.ledger.help.minimum_profitable_days':
-    'أيام تداول تُغلق عند الحد الأدنى للربح اليومي الذي تحدده الشركة أو أعلى. لا تُحتسب أيام التعادل أو الأرباح الأقل من هذا الحد.',
+    'الأيام المطلوبة التي تحقق الحد الأدنى اليومي لصافي الربح المحقق في هذه المرحلة. لا تعيد السحوبات المسجلة ضبط هذه القاعدة الشاملة للمرحلة.',
   'account.prop-challenge.ledger.help.minimum_profitable_days.example':
     'أُغلق {current} من أصل {target} يوم بربح لا يقل عن {minimum}؛ المتبقي {remaining}.',
   'account.prop-challenge.ledger.help.consistency':
@@ -5003,6 +5073,7 @@ const ar: Lang = {
   'templateEditor.field.template-name': 'اسم التخطيط',
   'templateEditor.field.widgets': 'الأدوات ({count})',
   'templateEditor.button.add-widget': '+ إضافة أداة',
+  'templateEditor.button.insert-widget-here': 'إضافة أداة هنا',
   'templateEditor.button.widget-library-docs': 'مستندات مكتبة الأدوات',
   'templateEditor.widget.locked': 'مقفل',
   'templateEditor.widget.select-placeholder': 'اختر عنصرا...',
@@ -5139,6 +5210,14 @@ const ar: Lang = {
   'home.widget-selector.restore': 'استعادة',
   'home.widget-selector.add-shortcut': 'إضافة اختصار للحساب/نمط التداول',
   'home.period.month': 'الشهر',
+  'home.period.week': 'أسبوع',
+  'home.period.custom': 'نطاق مخصص',
+  'home.period.invalid-range':
+    'يجب أن يكون تاريخ النهاية في تاريخ البداية أو بعده.',
+  'date-input.error.day': 'يجب أن يكون اليوم بين 1 و{max}.',
+  'date-input.error.invalid': 'يرجى إدخال تاريخ صحيح',
+  'date-input.error.month': 'يجب أن يكون الشهر بين 1 و12.',
+  'date-input.error.year': 'استخدم YY ‏(2000–2099) أو YYYY ‏(1000–9999).',
   'home.period.quarter': 'ربع السنة',
   'home.period.year': 'السنة',
   'home.period.lifetime': 'منذ البداية',
@@ -5263,6 +5342,7 @@ const ar: Lang = {
   'home.widget.best-hours.no-positive-detail':
     'جميع الفترات الزمنية في العينة خاسرة',
   'home.widget.aum.title': 'AUM',
+  'home.widget.aum.current-trend': 'الحالي · اتجاه 30 يومًا',
   'home.widget.aum.period.month': 'هذا الشهر',
   'home.widget.aum.period.quarter': 'هذا الربع',
   'home.widget.aum.period.year': 'هذا العام',
@@ -5272,9 +5352,6 @@ const ar: Lang = {
   'home.widget.aum.account-count': 'عدد الحسابات: {count}',
   'home.widget.aum.account-count-plural': '{count} حسابات',
   'home.widget.streak.title': 'السلسلة',
-  'home.widget.streak.period.month': 'هذا الشهر',
-  'home.widget.streak.period.quarter': 'هذا الربع',
-  'home.widget.streak.period.year': 'هذا العام',
   'home.widget.streak.period.ever': 'على الإطلاق',
   'home.widget.streak.win': 'فوز',
   'home.widget.streak.wins': 'صفقات رابحة',
@@ -5862,7 +5939,6 @@ const ar: Lang = {
   'widget.weekly-drc-context.name': 'المراجعات اليومية حسب يوم الأسبوع',
   'widget.weekly-drc-context.description':
     'عرض أقسام DRC المحددة لكل يوم في المراجعة الأسبوعية',
-  'widget.weekly-drc-context.image-alt-prefix': 'صورة DRC الأسبوعية',
   'widget.weekly-drc-context.no-activity': 'لا يوجد نشاط لهذا اليوم.',
   'widget.weekly-drc-context.no-sections-configured':
     'اختر قسم DRC واحدًا على الأقل في إعدادات التخطيط.',
@@ -5979,7 +6055,7 @@ const ar: Lang = {
   'quick-import.message.no-importable':
     'لم يتم العثور على صفقات قابلة للاستيراد. راجع هذا الملف في استيراد الصفقات لمعرفة التفاصيل.',
   'quick-import.privacy-note':
-    'يتم رفع الملفات إلى خوادم Journalit للمعالجة ولا يتم تخزينها افتراضيا.',
+    'يُرفع الملف المحدد وخيارات الاستيراد إلى Journalit. تنتهي صلاحية سجلات التشخيص المشفرة بعد يوم واحد (مجاني) أو 14 يوماً (Pro)، والمعاينات بعد 7 أيام. ترسل المطابقة الاختيارية بالذكاء الاصطناعي العناوين وصفوفاً نموذجية إلى نموذج ذكاء اصطناعي. لا يرسل Trade Import بيانات قياس عن بُعد منفصلة من العميل أو تقارير أخطاء في الخلفية.',
   'quick-import.dropzone.title': 'أفلت ملف تصدير الوسيط هنا',
   'quick-import.dropzone.subtitle': 'أو انقر لاختيار ملف',
   'quick-import.status.checking-subscription': 'أتحقق من حالة الاشتراك...',
@@ -6030,7 +6106,7 @@ const ar: Lang = {
   'trade-import.gate.sign-in':
     'سجل الدخول أو أنشئ حساب Journalit مجاني لتحليل ملفك. Pro مطلوب فقط عند استيراد الصفقات.',
   'trade-import.gate.sign-in.reassurance':
-    'تتم معالجة ملفك بسرية، ولا يُخزَّن افتراضيًا.',
+    'يُرفع الملف المحدد وخيارات الاستيراد إلى Journalit. تنتهي صلاحية سجلات التشخيص المشفرة بعد يوم واحد (مجاني) أو 14 يوماً (Pro)، والمعاينات بعد 7 أيام. ترسل المطابقة الاختيارية بالذكاء الاصطناعي العناوين وصفوفاً نموذجية إلى نموذج ذكاء اصطناعي. لا يرسل Trade Import بيانات قياس عن بُعد منفصلة من العميل أو تقارير أخطاء في الخلفية.',
   'trade-import.gate.sign-in.no-trial':
     'لا تحتاج إلى فترة Pro تجريبية للتحليل والمعاينة.',
   'trade-import.gate.sign-in.cta': 'سجل الدخول للمعاينة مجانا',
@@ -6055,7 +6131,7 @@ const ar: Lang = {
     'صفقة واحدة في كل صف (يستخدم الربح/الخسارة)',
   'trade-import.label.ai-mapping': 'طلب اقتراحات ربط الأعمدة بالذكاء الاصطناعي',
   'trade-import.privacy.copy':
-    'يرفع استيراد الصفقات ملف التصدير المحدد من الوسيط إلى خوادم Journalit لمعالجته. قد يحتوي الملف على معرّفات الحساب وسجل الصفقات والرموز والأوقات والأسعار والكميات والرسوم والأرصدة وP&L. ولإنشاء المعاينة، يرسل Journalit أيضًا اسم الحساب المحدد وخيارات الربط والقالب وتعريفات الحقول المخصصة والخيارات المحفوظة، مع قدر محدود من بيانات الصفقات المفتوحة المحلية لمطابقة مراكز IBKR المفتوحة. تُعالج الملفات الأصلية لهذا الاستيراد ولا تُحفظ افتراضيًا. وعند تفعيل اقتراحات الربط بالذكاء الاصطناعي، تُرسل أيضًا عناوين الأعمدة وبضعة صفوف نموذجية إلى نموذج ذكاء اصطناعي لاقتراح ربط الأعمدة؛ ألغِ تحديد الخيار لتربط الأعمدة بنفسك.',
+    'يُرفع الملف المحدد وخيارات الاستيراد إلى Journalit. تنتهي صلاحية سجلات التشخيص المشفرة بعد يوم واحد (مجاني) أو 14 يوماً (Pro)، والمعاينات بعد 7 أيام. ترسل المطابقة الاختيارية بالذكاء الاصطناعي العناوين وصفوفاً نموذجية إلى نموذج ذكاء اصطناعي. لا يرسل Trade Import بيانات قياس عن بُعد منفصلة من العميل أو تقارير أخطاء في الخلفية. قد تتضمن الملفات معرفات الحساب وسجل التداول والملاحظات والأسعار والكميات والرسوم والأرصدة والأرباح والخسائر. ترسل الطلبات أيضاً تعريفات الحقول المخصصة والخيارات المحفوظة؛ وتتضمن المعاينة اسم الحساب المستهدف. عطّل المطابقة بالذكاء الاصطناعي لتجنب هذه المعالجة.',
   'trade-import.action.analyse': 'تحليل الملف',
   'trade-import.action.choose-file': 'انقر للرفع أو السحب والإفلات',
   'trade-import.guide.prompt': 'لست متأكدًا مما يجب تصديره؟',
@@ -6286,6 +6362,12 @@ const ar: Lang = {
     'يُقرأ تنسيق الملف تلقائيًا، ولا يلزم الربط.',
   'trade-import.source.guide': 'كيفية التصدير',
   'trade-import.source.change': 'تغيير',
+  'trade-import.recovery.rithmic-order-history.title':
+    'تنسيق Rithmic غير مدعوم',
+  'trade-import.recovery.rithmic-order-history.message':
+    'ارفع ملف سجل أوامر Rithmic أو اختر المنصة التي أنشأت هذا الملف.',
+  'trade-import.recovery.rithmic-order-history.choose-file': 'اختيار ملف آخر',
+  'trade-import.source.change-action': 'تغيير المصدر',
   'trade-import.sync-suggestion.full.title': 'يمكن مزامنة {broker} تلقائيًا',
   'trade-import.sync-suggestion.full.body':
     'تجلب مزامنة الصفقات الصفقات الجديدة تلقائيًا من دون الحاجة إلى التصدير. ولا يزال بإمكانك استيراد ملف أدناه.',
@@ -7246,9 +7328,6 @@ const ar: Lang = {
   'settings.gallery-folders.not-a-folder': 'اختر مجلدًا بدلًا من ملف وسائط.',
   'settings.gallery-folders.save-failed':
     'تعذّر حفظ مجلدات المعرض. حاول مجددًا.',
-  'tradelog.guide.switch-to-gallery.title': 'الانتقال من الصفقات إلى المعرض',
-  'tradelog.guide.switch-to-gallery.description':
-    'استخدم محدد العرض للتنقل بين سجل الصفقات العادي والمعرض. انقر «المعرض» لمتابعة الجولة باستخدام صورك وملفات GIF ومقاطع الفيديو وروابط YouTube.',
   'tradelog.guide.gallery-grouping.title': 'تجميع الوسائط حسب ملاحظة التداول',
   'tradelog.guide.gallery-grouping.description':
     '«مجمّعة» يُبقي وسائط كل صفقة أو مراجعة أو مجلد مُهيأ معًا. «فردية» تعرض كل عنصر وسائط كبطاقة مستقلة.',
@@ -7774,9 +7853,13 @@ const ar: Lang = {
   'trade-handoff.trade-count.other': 'عدد الصفقات: {count}',
   'trade-handoff.title.sync': 'اكتملت المزامنة',
   'trade-handoff.summary.import-complete': 'تم استيراد {trades}',
+  'trade-handoff.summary.update-complete': 'تم تحديث {trades}',
+  'trade-handoff.summary.update-partial': 'تم تحديث {trades} مع وجود مشكلات',
+  'trade-handoff.summary.mixed-complete':
+    'تم استيراد {imported} · تم تحديث {updated}',
+  'trade-handoff.summary.mixed-partial':
+    'تم استيراد {imported} · تم تحديث {updated}، مع وجود مشكلات',
   'trade-handoff.summary.import-partial': 'تم استيراد {trades} مع وجود مشكلات',
-  'trade-handoff.summary.sync-complete': 'تمت مزامنة {trades}',
-  'trade-handoff.summary.sync-partial': 'تمت مزامنة {trades} مع وجود مشكلات',
   'trade-handoff.periods.choose': 'اختر فترة مراجعة أخرى',
   'trade-handoff.periods.recommended': 'موصى به',
   'trade-handoff.action.dismiss': 'إخفاء نتيجة العملية الأخيرة',
@@ -7824,6 +7907,79 @@ const ar: Lang = {
   'command.reset-sample-journal': 'إعادة ضبط دفتر التداول التجريبي',
   'sample.notice.busy':
     'هناك عملية أخرى على دفتر التداول التجريبي قيد التنفيذ بالفعل.',
+  'account.prop-challenge.field.help-label': 'مساعدة: {field}',
+  'account.prop-challenge.payout-rules.help.cycle':
+    'يقيس الانتظار بأيام فتح الصفقات أو أيام بلوغ الحد الأدنى للربح الصافي أو الأيام التقويمية المنقضية. عدم وجود دورة يعطّل شرط الأيام هذا فقط.',
+  'account.prop-challenge.payout-rules.help.days':
+    'الأيام المطلوبة للدورة المختارة: أيام فتح الصفقات أو تحقيق ربح صافٍ كافٍ أو فترات كاملة من 24 ساعة.',
+  'account.prop-challenge.payout-rules.help.daily-profit':
+    'أدنى ربح محقق صافٍ يومي بعد التكاليف. تُجمع الصفقات وفق وقت نهاية يوم التداول. يجب أن يكون الحد أكبر من الصفر.',
+  'account.prop-challenge.payout-rules.help.qualifying-days':
+    'يضيف أيام بلوغ الربح إلى دورة الانتظار. يجب استيفاء الشرطين في دورة الدفع الحالية.',
+  'account.prop-challenge.payout-rules.help.profitable-days':
+    'عدد الأيام المختلفة التي يبلغ ربحها المحقق الصافي الحد الأدنى اليومي في الدورة الحالية.',
+  'account.prop-challenge.payout-rules.help.anchor':
+    'يبدأ الانتظار التقويمي من بداية الدورة أو أول فتح صفقة فيها. عند تفعيل إعادة الضبط، يبدأ السحب المسجل الدورة التالية.',
+  'account.prop-challenge.payout-rules.help.elapsed-hours':
+    'الساعات منذ أول فتح صفقة في الدورة الحالية. لا يبدأ المؤقت دون صفقة. اتركه فارغًا لتعطيل الشرط.',
+  'account.prop-challenge.payout-rules.help.request-window':
+    'يسمح بالطلبات يوميًا أو في الأيام المختارة حسب المنطقة الزمنية المحددة. تبقى الشروط الأخرى سارية.',
+  'account.prop-challenge.payout-rules.help.time-zone':
+    'المنطقة الزمنية لتحديد أيام الطلب المسموح بها، مثل America/New_York. لا تغيّر نهاية يوم التداول.',
+  'account.prop-challenge.payout-rules.help.request-days':
+    'أيام الأسبوع المسموح بها في المنطقة الزمنية المختارة. اختر يومًا واحدًا على الأقل.',
+  'account.prop-challenge.payout-rules.help.minimum-balance':
+    'الرصيد المطلوب قبل الدفع، وليس حد الرصيد لحساب الربح المتاح. تركه فارغًا يعطّل هذا الشرط.',
+  'account.prop-challenge.payout-rules.help.cycle-profit':
+    'الربح المحقق الصافي من التداول المطلوب في الدورة الحالية. لا تُحسب الإيداعات أو تعديلات الرصيد. الفراغ يعطّل الشرط.',
+  'account.prop-challenge.payout-rules.help.profit-schedule':
+    'أرباح دنيا تفصلها فواصل للدفعة الأولى والثانية وما يليهما. تحل محل الحد الأدنى الواحد لربح الدورة.',
+  'account.prop-challenge.payout-rules.help.repeat-final':
+    'يكرر آخر قيمة لأرقام الدفعات التي تتجاوز القائمة.',
+  'account.prop-challenge.payout-rules.help.positive-cycle':
+    'بعد أول دفعة مسجلة، يشترط ربحًا محققًا صافيًا للدورة أكبر من الصفر تمامًا.',
+  'account.prop-challenge.payout-rules.help.consistency':
+    'أكبر ربح يومي مقسوم على الربح المحقق الصافي للدورة. تخفض أيام الخسارة الإجمالي وقد تزيد النسبة. الفراغ يعطّل الحد.',
+  'account.prop-challenge.payout-rules.help.consistency-schedule':
+    'حدود نسبة أفضل يوم تفصلها فواصل لكل رقم دفعة. تحل محل حد الاتساق الواحد.',
+  'account.prop-challenge.payout-rules.help.availability':
+    'يحسب الربح القابل للطلب فوق رصيد بداية المرحلة أو الحد المختار. تظل النسب والحدود الأخرى سارية.',
+  'account.prop-challenge.payout-rules.help.balance-floor':
+    'الرصيد المستبعد من الربح المتاح. تطبق نسبة المبلغ المتاح على الزيادة فقط، ولا يغيّر ذلك قاعدة التراجع.',
+  'account.prop-challenge.payout-rules.help.request-percent':
+    'النسبة القابلة للطلب من الرصيد فوق الحد المختار. قد تقللها حدود الطلب والربح الجديد.',
+  'account.prop-challenge.payout-rules.help.minimum-request':
+    'أصغر طلب دفع مسموح. يجب أن يبلغ المبلغ المتاح المحسوب هذا الحد أيضًا.',
+  'account.prop-challenge.payout-rules.help.maximum':
+    'حد ثابت أو للدفعة الأولى فقط أو حسب رقم الدفعة أو نسبة من ربح الدورة. بلا حد أقصى يزيل هذا الحد فقط.',
+  'account.prop-challenge.payout-rules.help.maximum-amount':
+    'أكبر طلب إجمالي قبل تقسيم الأرباح. قد يقلله الربح المتاح والحدود الأخرى.',
+  'account.prop-challenge.payout-rules.help.first-maximum':
+    'حد إجمالي للدفعة الأولى في المرحلة فقط. يزول بعد ذلك، مع بقاء الحدود الأخرى.',
+  'account.prop-challenge.payout-rules.help.maximum-schedule':
+    'حدود إجمالية تفصلها فواصل لكل دفعة. دون تكرار القيمة الأخيرة، يكون حد الدفعات اللاحقة غير المدرجة صفرًا.',
+  'account.prop-challenge.payout-rules.help.maximum-percent':
+    'يحد الطلب الإجمالي بهذه النسبة من ربح التداول المحقق الصافي للدورة. يختلف عن نسبة السحب من الرصيد.',
+  'account.prop-challenge.payout-rules.help.lifetime-days':
+    'إجمالي الأيام المؤهلة طوال المرحلة الممولة لتفعيل إتاحة وحدود طلب جديدة. إعادة ضبط الدورة لا تمسح هذا العدد.',
+  'account.prop-challenge.payout-rules.help.split-model':
+    'حصة ثابتة أو نسب تتغير بحسب إجمالي الدفعات المتراكمة أو الربح الكلي للحساب. التقسيم يحدد ما تستلمه وليس حد الطلب.',
+  'account.prop-challenge.payout-rules.help.trader-share':
+    'نسبة الطلب الإجمالي المدفوعة للمتداول بهذا المعدل. الباقي للشركة.',
+  'account.prop-challenge.payout-rules.help.cumulative-threshold':
+    'إجمالي الدفعات المسجلة في المرحلة الذي يبدأ عنده المعدل اللاحق. يستخدم الطلب المتجاوز للعتبة المعدلين على الجزأين المناسبين.',
+  'account.prop-challenge.payout-rules.help.maximum-payouts':
+    'عدد الدفعات المسجلة المسموح بها في المرحلة. عند بلوغه تُمنع الدفعات التالية. الفراغ يزيل حد العدد.',
+  'account.prop-challenge.payout-rules.help.maximum-outcome':
+    'بعد آخر دفعة: متابعة أو إنهاء الحساب أو تقدم المرحلة أو أهلية مراجعة الحساب الحقيقي. الأهلية ليست موافقة تلقائية.',
+  'account.prop-challenge.payout-rules.help.aftermath':
+    'الرصيد والتراجع بعد دفعة مسجلة: خصم الطلب، أو خصمه وتثبيت الحد، أو إعادة الرصيد والتراجع إلى البداية.',
+  'account.prop-challenge.payout-rules.help.drawdown-floor':
+    'حد التراجع المثبت بعد الدفع عند اختيار هذا الإجراء. يجب أن يظل الرصيد المتبقي أعلى منه.',
+  'account.prop-challenge.payout-rules.help.first-exempt':
+    'في أول دفعة بالمرحلة يُعامل الحد الأدنى لربح الدورة كصفر: يجب ألا يكون الربح المحقق الصافي للدورة سالبًا. تبقى الشروط الأخرى سارية.',
+  'account.prop-challenge.payout-rules.help.reset-cycle':
+    'يعيد ضبط الأيام والأرباح اليومية وربح الدورة والاتساق بعد دفعة مسجلة. يحتفظ بالأيام المؤهلة لكل المرحلة؛ المعاينة لا تعيد ضبط شيء.',
 };
 
 export default ar;

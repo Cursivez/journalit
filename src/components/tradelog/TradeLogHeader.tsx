@@ -51,7 +51,6 @@ import {
   TRADE_LOG_IMAGE_GALLERY_CONTROLS_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_GROUPING_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_MODE_BUTTON_TARGET_ID,
-  TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID,
   TRADE_LOG_IMAGE_GALLERY_SIZE_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_SOURCE_SORT_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID,
@@ -415,28 +414,6 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
       });
     }, [plugin]);
 
-    useEffect(() => {
-      void guideVersion;
-
-      if (mode !== 'imageGallery') {
-        return;
-      }
-
-      const guideService = plugin.viewGuideService;
-      const activeLeaf = guideService?.getActiveLeaf();
-      if (!guideService || !activeLeaf || activeLeaf !== leaf) {
-        return;
-      }
-
-      const session = guideService.getSessionForLeaf(
-        activeLeaf,
-        'journalit-trade-log-view'
-      );
-      if (session?.currentStepId === 'switch-to-gallery') {
-        emitGuideAction(TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID);
-      }
-    }, [emitGuideAction, guideVersion, leaf, mode, plugin]);
-
     const loadFilterMenuOptions = useCallback(
       (): Promise<LoadedFilterMenuOptions> =>
         loadTradeFilterMenuOptions({
@@ -580,12 +557,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
                     ]
               }
               value={mode}
-              onChange={(nextMode) => {
-                onModeChange(nextMode);
-                if (nextMode === 'imageGallery') {
-                  emitGuideAction(TRADE_LOG_IMAGE_GALLERY_SELECTED_ACTION_ID);
-                }
-              }}
+              onChange={onModeChange}
               size="small"
               groupRole="radiogroup"
               ariaLabel={t('tradelog.mode.label')}

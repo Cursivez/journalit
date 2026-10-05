@@ -239,7 +239,7 @@ const normalizeDirection = (direction?: string | null): DrawdownDirection => {
 const normalizeLookupKey = (value: string): string =>
   value.trim().toLowerCase();
 
-const isNonAccountFilterActive = (
+export const isNonAccountFilterActive = (
   filters: DrawdownCapitalBasisFilterScope | null | undefined
 ): boolean => {
   if (!filters) return false;

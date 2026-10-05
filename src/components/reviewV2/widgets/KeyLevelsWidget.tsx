@@ -21,6 +21,7 @@ import {
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { mergeClassNames } from '../../../utils/classNames';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 
 
@@ -519,6 +520,8 @@ function useKeyLevelsWidgetModel({
   preview,
   previewData,
 }: KeyLevelsWidgetProps) {
+  const embeddedReadOnly = useReviewReadOnly();
+  const readOnly = preview || embeddedReadOnly;
   const [levelsState, setLevelsState] = useState<{
     keyLevels: KeyLevels;
     displayLevels: DisplayLevels;
@@ -806,7 +809,7 @@ function useKeyLevelsWidgetModel({
   };
 
   const addSupportLevel = async () => {
-    if (preview) return;
+    if (readOnly) return;
     const price = newSupportLevel.trim();
     if (!price) return;
 
@@ -829,7 +832,7 @@ function useKeyLevelsWidgetModel({
   };
 
   const addResistanceLevel = async () => {
-    if (preview) return;
+    if (readOnly) return;
     const price = newResistanceLevel.trim();
     if (!price) return;
 
@@ -852,7 +855,7 @@ function useKeyLevelsWidgetModel({
   };
 
   const removeSupportLevel = async (index: number) => {
-    if (preview) return;
+    if (readOnly) return;
     const updatedSupport = keyLevels.support.filter((_, i) => i !== index);
     const updatedLevels: KeyLevels = {
       ...keyLevels,
@@ -863,7 +866,7 @@ function useKeyLevelsWidgetModel({
   };
 
   const removeResistanceLevel = async (index: number) => {
-    if (preview) return;
+    if (readOnly) return;
     const updatedResistance = keyLevels.resistance.filter(
       (_, i) => i !== index
     );
@@ -876,7 +879,7 @@ function useKeyLevelsWidgetModel({
   };
 
   const startEditing = (type: KeyLevelType, index: number, level: KeyLevel) => {
-    if (preview) return;
+    if (readOnly) return;
     setEditing({ type, index, value: level.price });
   };
 
@@ -958,6 +961,8 @@ function useKeyLevelsWidgetModel({
 
 export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
   const { plugin, preview } = props;
+  const embeddedReadOnly = useReviewReadOnly();
+  const readOnly = preview || embeddedReadOnly;
   const {
     displayLevels,
     loading,
@@ -1051,7 +1056,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
     const currentIndex = isCurrent ? (level.currentIndex ?? -1) : -1;
     const isEditing =
       editing?.type === type && editing.index === currentIndex && isCurrent;
-    const canEditLevel = isCurrent && !preview && currentIndex >= 0;
+    const canEditLevel = isCurrent && !readOnly && currentIndex >= 0;
 
     return (
       <div
@@ -1096,7 +1101,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
           )}
           {getSourceTag(level)}
         </div>
-        {!preview && isCurrent && currentIndex >= 0 && (
+        {!readOnly && isCurrent && currentIndex >= 0 && (
           <button
             onClick={() =>
               type === 'support'
@@ -1143,7 +1148,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
           )}
         </div>
 
-        {!preview && (
+        {!readOnly && (
           <div className="key-levels-input-row" {...shareCaptureExcludeProps}>
             <input
               ref={supportInputRef}
@@ -1194,7 +1199,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
           )}
         </div>
 
-        {!preview && (
+        {!readOnly && (
           <div className="key-levels-input-row" {...shareCaptureExcludeProps}>
             <input
               ref={resistanceInputRef}

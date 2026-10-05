@@ -18,6 +18,7 @@ import {
   type FilterMenuEntry,
   type FilterMenuNode,
   type FilterMenuValuesNode,
+  type FilterMenuDateRangeNode,
   countNode,
 } from './menuModel';
 import {
@@ -25,6 +26,10 @@ import {
   type PanelPosition,
   SUBMENU_GAP,
 } from './filterMenuPosition';
+import {
+  DateRangePanelContent,
+  type DateRangePickerLifecycle,
+} from './DateRangePanelContent';
 
 
 export const MENU_ITEM_SELECTOR = '[data-filter-menu-item]:not([disabled])';
@@ -73,10 +78,12 @@ export interface PanelFrameProps {
   onBack?: () => void;
   onKeyDown: (event: React.KeyboardEvent<HTMLDivElement>) => void;
   onPointerEnter: () => void;
+  onFocusCapture?: React.FocusEventHandler<HTMLDivElement>;
 }
 
 interface PanelChromeProps extends PanelFrameProps {
   title: string;
+  isForm?: boolean;
   headerAction?: React.ReactNode;
   
   toolbar?: React.ReactNode;
@@ -93,7 +100,9 @@ const PanelChrome: React.FC<PanelChromeProps> = ({
   onBack,
   onKeyDown,
   onPointerEnter,
+  onFocusCapture,
   title,
+  isForm = false,
   headerAction,
   toolbar,
   notice,
@@ -106,6 +115,7 @@ const PanelChrome: React.FC<PanelChromeProps> = ({
       className={[
         'journalit-filter-menu__panel',
         depth === 0 ? 'journalit-filter-menu__panel--root' : '',
+        isForm ? 'journalit-filter-menu__panel--date-range' : '',
         layout === 'drilldown' ? 'journalit-filter-menu__panel--drilldown' : '',
         position ? '' : 'journalit-filter-menu__panel--measuring',
         
@@ -116,8 +126,11 @@ const PanelChrome: React.FC<PanelChromeProps> = ({
         .filter(Boolean)
         .join(' ')}
       data-depth={depth}
+      role={isForm ? 'dialog' : undefined}
+      aria-labelledby={isForm ? titleId : undefined}
       onKeyDown={onKeyDown}
       onPointerEnter={onPointerEnter}
+      onFocusCapture={onFocusCapture}
       style={cssVars({
         '--journalit-filter-menu-top': `${position?.top ?? 0}px`,
         '--journalit-filter-menu-left': `${position?.left ?? 0}px`,
@@ -145,8 +158,8 @@ const PanelChrome: React.FC<PanelChromeProps> = ({
       {toolbar}
       {notice}
       <div
-        role="menu"
-        aria-labelledby={titleId}
+        role={isForm ? undefined : 'menu'}
+        aria-labelledby={isForm ? undefined : titleId}
         className="journalit-filter-menu__scroll"
       >
         {children}
@@ -183,7 +196,7 @@ const BranchRows: React.FC<BranchRowsProps> = ({
           ref={(el) => registerAnchor(entry.id, el)}
           type="button"
           role="menuitem"
-          aria-haspopup="menu"
+          aria-haspopup={entry.kind === 'date-range' ? 'dialog' : 'menu'}
           aria-expanded={isOpen}
           className={`journalit-filter-menu__row${isOpen ? ' is-open' : ''}`}
           onClick={() => onOpenChild(entry.id, false)}
@@ -216,6 +229,7 @@ const BranchRows: React.FC<BranchRowsProps> = ({
 interface NavigationProps {
   openChildId: string | undefined;
   onOpenChild: (childId: string, focus: boolean) => void;
+  onCloseChild: () => void;
   onHoverRow: (childId: string | null) => void;
   registerAnchor: (id: string, element: HTMLElement | null) => void;
 }
@@ -264,6 +278,21 @@ const MATCH_MODE_BADGE_KEYS: Record<
   only: 'filter.menu.match.badge.only',
   exact: 'filter.menu.match.badge.exact',
 };
+
+export const DateRangePanel: React.FC<
+  PanelFrameProps &
+    DateRangePickerLifecycle & {
+      node: FilterMenuDateRangeNode;
+    }
+> = ({ node, onPickerOpen, onPickerClose, ...frame }) => (
+  <PanelChrome {...frame} title={node.label} isForm>
+    <DateRangePanelContent
+      node={node}
+      onPickerOpen={onPickerOpen}
+      onPickerClose={onPickerClose}
+    />
+  </PanelChrome>
+);
 
 export const ValuesPanel: React.FC<
   PanelFrameProps &
@@ -404,6 +433,10 @@ export const ValuesPanel: React.FC<
                 .filter(Boolean)
                 .join(' ')}
               onClick={(event) => {
+                if (child?.kind === 'date-range') {
+                  onOpenChild(child.id, true);
+                  return;
+                }
                 
                 
                 
@@ -424,11 +457,18 @@ export const ValuesPanel: React.FC<
                   onOpenChild(child.id, false);
                   return;
                 }
+                if (node.singleChoice) props.onCloseChild();
                 node.onToggle(option.value, 'include');
               }}
               data-filter-menu-item
               data-filter-menu-opens={child?.id}
-              aria-haspopup={child ? 'menu' : undefined}
+              aria-haspopup={
+                child?.kind === 'date-range'
+                  ? 'dialog'
+                  : child
+                    ? 'menu'
+                    : undefined
+              }
               aria-expanded={child ? openChildId === child.id : undefined}
             >
               <span className="journalit-filter-menu__check" aria-hidden>

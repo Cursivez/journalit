@@ -13,6 +13,7 @@ import { SkeletonCircle } from '../../shared/SkeletonCircle';
 import { t } from '../../../lang/helpers';
 import { mergeClassNames } from '../../../utils/classNames';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 
 interface MarkReviewedWidgetProps {
   filePath: string;
@@ -85,6 +86,8 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
   preview,
   previewData,
 }) => {
+  const embeddedReadOnly = useReviewReadOnly();
+  const readOnly = preview || embeddedReadOnly;
   const [reviewState, setReviewState] = useState<{
     reviewed: boolean;
     reviewedAt: string | null;
@@ -200,7 +203,7 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
   };
 
   const toggleReviewStatus = async () => {
-    if (preview) return;
+    if (readOnly) return;
 
     const file = plugin.app.vault.getAbstractFileByPath(filePath);
     if (!(file instanceof TFile)) return;
@@ -327,7 +330,7 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
     reviewed
       ? 'journalit-reviewv2-mark-reviewed-button--reviewed'
       : 'journalit-reviewv2-mark-reviewed-button--pending',
-    preview ? 'journalit-reviewv2-mark-reviewed-button--disabled' : '',
+    readOnly ? 'journalit-reviewv2-mark-reviewed-button--disabled' : '',
   ]
     .filter(Boolean)
     .join(' ');
@@ -361,7 +364,7 @@ export const MarkReviewedWidget: React.FC<MarkReviewedWidgetProps> = ({
       <button
         {...shareCaptureExcludeProps}
         onClick={() => void toggleReviewStatus()}
-        disabled={preview}
+        disabled={readOnly}
         className={mergeClassNames('journalit-native-button', buttonClassName)}
       >
         {reviewed

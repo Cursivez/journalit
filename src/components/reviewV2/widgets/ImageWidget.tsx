@@ -1,6 +1,7 @@
 
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 import { TFile, normalizePath } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { InvalidContextMessage } from './InvalidContextMessage';
@@ -99,6 +100,8 @@ interface NoteContext {
 
 export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
   ({ filePath, plugin, config, preview, previewData, codeblockContext }) => {
+    const embeddedReadOnly = useReviewReadOnly();
+    const readOnly = preview || embeddedReadOnly;
     const [images, setImages] = useState<string[]>([]);
     const [loading, setLoading] = useState(true);
     const [isValidContext, setIsValidContext] = useState(true);
@@ -113,7 +116,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
     const sessionUploadedImagesRef = useRef(new Set<string>());
     const isLegacyOwner = codeblockContext?.isLegacyOwner ?? false;
 
-    const showUploader = config?.showUploader !== false; 
+    const showUploader = !embeddedReadOnly && config?.showUploader !== false;
     const maxImages = config?.maxImages; 
     const hasReachedMaxImages =
       maxImages !== undefined && images.length >= maxImages;
@@ -612,7 +615,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
     
     const updateFrontmatterImages = useCallback(
       async (newImages: string[]) => {
-        if (preview || !noteContext) return;
+        if (readOnly || !noteContext) return;
 
         try {
           let updates: Record<string, unknown> | null = null;
@@ -703,7 +706,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
         plugin,
         filePath,
         noteContext,
-        preview,
+        readOnly,
         ensureWidgetId,
         getCurrentImagesByWidget,
         getLegacyImages,
@@ -747,7 +750,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
     
     const handleDeleteImage = useCallback(
       async (index: number, imagePath: string) => {
-        if (preview) return;
+        if (readOnly) return;
 
         const previousImages = images;
         const newImages = images.filter((_, i) => i !== index);
@@ -790,7 +793,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
         images,
         isWidgetOwnedUpload,
         plugin,
-        preview,
+        readOnly,
         updateFrontmatterImages,
       ]
     );
@@ -849,10 +852,10 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
               enableFullscreen: true,
             }}
             deleteOptions={{
-              enabled: !preview,
+              enabled: !readOnly,
               onDeleteImage: handleDeleteImage,
             }}
-            fullscreenAnnotationOptions={{ enabled: !preview }}
+            fullscreenAnnotationOptions={{ enabled: !readOnly }}
             useResolveMediaPath={true}
             sourcePath={filePath}
             className={images.length === 1 ? 'single-image-carousel' : ''}
@@ -920,7 +923,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
                       }}
                     />
                   )}
-                  {!preview && (
+                  {!readOnly && (
                     <button
                       className="journalit-stacked-image-delete"
                       onClick={(e) => {
@@ -946,7 +949,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
         >
           {fullscreenIndex !== null && (
             <FullscreenImageViewer
-              annotationOptions={{ enabled: !preview }}
+              annotationOptions={{ enabled: !readOnly }}
               imagePath={images[fullscreenIndex]}
               onClose={() => setFullscreenIndex(null)}
               useResolveMediaPath={true}

@@ -973,6 +973,7 @@ export const HOME_PAGE_STYLES = `
 
   .journalit-home-widget-content {
     flex: 1;
+    min-height: 0;
     padding: 12px;
     height: 100%;
     overflow: hidden;

@@ -2337,10 +2337,29 @@ export const accountPageStylesCSS = `
 .journalit-account-merge-modal__phase-rules .journalit-prop-challenge-rule-toggle strong ,
 .create-account-form .journalit-prop-challenge-rule-toggle strong {
   min-width: 0;
+  max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   line-height: 1.3;
+}
+
+.journalit-prop-challenge-rule-help {
+  justify-self: start;
+  min-width: 0;
+  max-width: 100%;
+  cursor: help;
+}
+
+.journalit-prop-challenge-rule-help strong {
+  padding-bottom: 1px;
+  border-bottom: 1px dotted var(--text-faint);
+  cursor: help;
+}
+
+.journalit-prop-challenge-rule-help:hover strong,
+.journalit-prop-challenge-rule-toggle:focus-visible .journalit-prop-challenge-rule-help strong {
+  border-bottom-color: var(--text-muted);
 }
 
 .edit-account-form .journalit-prop-challenge-rule-toggle:hover,
@@ -2454,6 +2473,33 @@ export const accountPageStylesCSS = `
   gap: var(--size-4-3);
 }
 
+.journalit-prop-challenge-field .journalit-native-button--unstyled.journalit-prop-challenge-field-help,
+.journalit-prop-challenge-checkbox .journalit-native-button--unstyled.journalit-prop-challenge-field-help,
+.journalit-prop-payout-policy-editor .journalit-native-button--unstyled.journalit-prop-challenge-field-help {
+  display: inline-block;
+  justify-self: start;
+  align-self: start;
+  width: fit-content;
+  max-width: 100%;
+  min-height: 0;
+  color: var(--text-muted);
+  font-size: inherit;
+  line-height: 1.3;
+  text-align: start;
+  white-space: normal;
+  cursor: help;
+}
+
+.journalit-prop-challenge-field-help > span {
+  border-bottom: 1px dotted var(--text-faint);
+  padding-bottom: 1px;
+}
+
+.journalit-prop-challenge-field-help:hover > span,
+.journalit-prop-challenge-field-help:focus-visible > span {
+  border-bottom-color: var(--text-muted);
+}
+
 .edit-account-form .journalit-prop-payout-policy-editor__weekdays,
 .create-account-form .journalit-prop-payout-policy-editor__weekdays {
   display: grid;
@@ -2565,6 +2611,7 @@ export const accountPageStylesCSS = `
 .edit-account-form .journalit-prop-challenge-cost-date-picker,
 .create-account-form .journalit-prop-challenge-cost-date-picker {
   min-width: 0;
+  --journalit-year-segment-width: 40px;
 }
 
 .edit-account-form .journalit-prop-challenge-cost-date-picker .journalit-fast-datetime__container,
@@ -2880,6 +2927,10 @@ export const accountPageStylesCSS = `
   display: flex;
   flex-direction: column;
   gap: 4px;
+}
+
+.journalit-modal .add-event-form .setting-item.journalit-event-date-time {
+  grid-template-columns: minmax(0, 1fr);
 }
 
 .add-event-modal-container .add-event-form .setting-item-info {

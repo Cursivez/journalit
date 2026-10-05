@@ -425,7 +425,7 @@ function isCustomColumnSortable(field: CustomFieldDefinition): boolean {
 function getCustomColumnWidth(fieldType: CustomFieldType): number {
   switch (fieldType) {
     case CustomFieldType.NUMBER:
-      return 80;
+      return 120; 
     case CustomFieldType.DATE:
       return 90;
     case CustomFieldType.DATETIME:

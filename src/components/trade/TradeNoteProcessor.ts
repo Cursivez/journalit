@@ -19,6 +19,7 @@ import {
 } from '../../services/events/types';
 import { readFrontmatterFromDisk } from '../../utils/dataRefresh';
 import { TradeNoteShareAction } from './TradeNoteShareAction';
+import { ReadingHostResizeObserver } from './ReadingHostResizeObserver';
 import type JournalitPlugin from '../../main';
 
 const READING_RENDER_GRACE_PERIOD_MS = 3000;
@@ -64,6 +65,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
   
   private observerTimeouts: Map<MutationObserver, number> = new Map();
   private readonly shareAction: TradeNoteShareAction;
+  private readonly readingHostResizeObserver = new ReadingHostResizeObserver();
   constructor(app: App, plugin: JournalitPlugin) {
     super(app, plugin, new TradeNoteRenderer(app));
     this.shareAction = new TradeNoteShareAction(app, plugin, (file) => {
@@ -416,14 +418,13 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     previewRoot: HTMLElement,
     filePath: string
   ): boolean {
-    const readingRoot = this.getStableReadingHostParent(previewRoot);
     const host = Array.from(
-      readingRoot.querySelectorAll<HTMLElement>(
+      previewRoot.querySelectorAll<HTMLElement>(
         `.${this.getComponentClassName()}[data-mode="reading"]`
       )
     ).find(
       (element) =>
-        element.parentElement === readingRoot &&
+        element.parentElement === previewRoot &&
         element.getAttribute('data-file-path') === filePath
     );
     if (!host) return false;
@@ -547,15 +548,13 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
       }
 
       const componentClass = this.getComponentClassName();
-      const readingRoot = this.getStableReadingHostParent(previewRoot);
-      previewRoot.classList.add('journalit-trade-note-native-preview-hidden');
       const existingHosts = Array.from(
-        readingRoot.querySelectorAll<HTMLElement>(
+        previewRoot.querySelectorAll<HTMLElement>(
           `.${componentClass}[data-mode="reading"]`
         )
       );
       const directHosts = existingHosts.filter(
-        (element) => element.parentElement === readingRoot
+        (element) => element.parentElement === previewRoot
       );
 
       this.cleanupSourceEditorTradeNotesForReadingLeaf(markdownView, file.path);
@@ -565,7 +564,10 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
       );
 
       if (!host) {
-        host = readingRoot.createDiv({ prepend: true });
+        
+        
+        
+        host = previewRoot.createDiv({ prepend: true });
         host.className = componentClass;
         host.setAttribute('data-mode', 'reading');
         host.setAttribute('data-file-path', file.path);
@@ -579,6 +581,13 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
       }
 
       const instanceId = this.getReadingInstanceId(host);
+      this.readingHostResizeObserver.observe(host, () => {
+        if (previewRoot.isConnected && markdownView.getMode() === 'preview') {
+          
+          
+          markdownView.previewMode.rerender(false);
+        }
+      });
       host.setAttribute('data-view-id', instanceId);
       if (ctx?.docId) {
         host.setAttribute('data-markdown-view-id', ctx.docId);
@@ -611,35 +620,6 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
         instanceId,
         instanceId
       );
-    });
-  }
-
-  private getStableReadingHostParent(previewRoot: HTMLElement): HTMLElement {
-    const readingRoot =
-      previewRoot.closest<HTMLElement>('.markdown-reading-view') ?? previewRoot;
-    readingRoot.classList.add('journalit-trade-note-reading-view');
-    return readingRoot;
-  }
-
-  private cleanupStaleReadingViewClasses(): void {
-    const componentClass = this.getComponentClassName();
-
-    this.app.workspace.iterateAllLeaves((leaf) => {
-      const root = leaf.view?.containerEl;
-      if (!root) return;
-
-      root
-        .querySelectorAll<HTMLElement>(
-          '.markdown-reading-view.journalit-trade-note-reading-view'
-        )
-        .forEach((readingRoot) => {
-          const hasReadingTradeNote = !!readingRoot.querySelector(
-            `.${componentClass}[data-mode="reading"]`
-          );
-          if (!hasReadingTradeNote) {
-            readingRoot.classList.remove('journalit-trade-note-reading-view');
-          }
-        });
     });
   }
 
@@ -679,7 +659,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     const escapedFilePath = CSS.escape(filePath);
     leafContent
       .querySelectorAll<HTMLElement>(
-        `.markdown-reading-view > .${this.getComponentClassName()}[data-mode="reading"][data-file-path="${escapedFilePath}"]`
+        `.markdown-preview-view > .${this.getComponentClassName()}[data-mode="reading"][data-file-path="${escapedFilePath}"]`
       )
       .forEach((element) => {
         const viewId = element.getAttribute('data-view-id');
@@ -689,8 +669,6 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
         }
         element.remove();
       });
-
-    this.cleanupStaleReadingViewClasses();
   }
 
   private cleanupLegacySourceTradeNotesForSourceLeaf(
@@ -788,14 +766,12 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     
     this.cleanupOrphanedComponents();
     this.cleanupUnrelatedComponents(file.path);
-    this.cleanupStaleReadingViewClasses();
 
     const cachedFrontmatter =
       this.app.metadataCache.getFileCache(file)?.frontmatter;
 
     
     if (cachedFrontmatter && !this.isValidComponentType(cachedFrontmatter)) {
-      this.cleanupStaleReadingViewClasses();
       return;
     }
 
@@ -807,7 +783,6 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
 
     
     if (!frontmatter || !this.isValidComponentType(frontmatter)) {
-      this.cleanupStaleReadingViewClasses();
       return;
     }
     this.scheduleReadingRecoveryScan();
@@ -882,8 +857,6 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
       }
       container.remove();
     });
-
-    this.cleanupStaleReadingViewClasses();
   }
 
   private findTradeNoteElementsForPath(filePath: string): HTMLElement[] {
@@ -1061,6 +1034,7 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
 
   
   public cleanup(): void {
+    this.readingHostResizeObserver.disconnect();
     this.shareAction.cleanup();
     
     for (const [, timeout] of this.observerTimeouts) {
@@ -1085,11 +1059,9 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
     });
     this.inlineRenderHosts.clear();
     this.diskFrontmatterReads.clear();
-    this.cleanupStaleReadingViewClasses();
 
     
     super.cleanup();
-    this.cleanupStaleReadingViewClasses();
 
     
     if (this.unsubscribeTradeListener) {

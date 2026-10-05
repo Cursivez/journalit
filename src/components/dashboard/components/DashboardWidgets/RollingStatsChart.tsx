@@ -454,7 +454,6 @@ export const RollingStatsChart = React.memo<BaseWidgetProps>(
                       interval="preserveStartEnd"
                     />
                     <YAxis
-                      className="journalit-chart-axis--numeric"
                       tickFormatter={formatYAxisTick}
                       width={calculateYAxisWidth(
                         yAxisConfig.ticks,

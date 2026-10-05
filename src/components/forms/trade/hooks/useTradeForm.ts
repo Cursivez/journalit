@@ -1,6 +1,7 @@
 import type JournalitPlugin from '../../../../main';
 import { logger } from '../../../../utils/logger';
 import { t } from '../../../../lang/helpers';
+import { useDateDraftGate } from '../../../core/DateDraftGate';
 
 
 import {
@@ -497,6 +498,7 @@ export const useTradeForm = ({
   onCancel,
   layout,
 }: UseTradeFormProps) => {
+  const dateDraftGate = useDateDraftGate();
   const plugin = usePlugin();
   if (!plugin) {
     throw new Error('Journalit plugin context is required for trade form');
@@ -1251,6 +1253,7 @@ export const useTradeForm = ({
     setSubmissionErrors({});
 
     
+    if (!dateDraftGate.confirm()) return;
     
     
     const dataToSubmit = {
@@ -1894,6 +1897,7 @@ export const useTradeForm = ({
   return {
     formData,
     errors: displayedErrors,
+    dateDraftGate,
     submissionState,
     formRef,
     handleFieldChange,

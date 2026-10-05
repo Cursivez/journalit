@@ -21,6 +21,7 @@ import {
 import { PositionSizeAssetType } from '../../../settings/types';
 import { getSizePrecision } from '../../forms/trade/utils';
 import { hasTranslation, t } from '../../../lang/helpers';
+import { DraftInput } from '../../ui/DraftInput';
 
 interface PositionSizeWidgetProps {
   plugin: JournalitPlugin;
@@ -352,7 +353,7 @@ const CommonInputs: React.FC<CommonInputsProps> = ({
     <div className="journalit-home-position__grid">
       <label className="journalit-home-position__label">
         {t('widget.position-size.account-balance')}
-        <input
+        <DraftInput
           type="number"
           value={accountBalance}
           onChange={(e) =>

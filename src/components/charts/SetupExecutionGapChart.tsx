@@ -154,7 +154,6 @@ export const SetupExecutionGapChart: React.FC<SetupExecutionGapChartProps> = ({
               height={28}
             />
             <YAxis
-              className="journalit-chart-axis--numeric"
               axisLine={false}
               domain={axis.domain}
               ticks={axis.ticks}

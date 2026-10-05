@@ -9,7 +9,10 @@ import React, {
   useState,
 } from 'react';
 import { HomePeriod } from '../../../settings/types';
-import { createDateWithoutTime, getQuarter } from '../../../utils/dateUtils';
+import { getWeekStartDaySetting } from '../../../utils/dateUtils';
+import type { HomePeriodSelection } from '../../../settings/homePeriod';
+import { getHomePeriodRange } from '../utils/homePeriodRange';
+import { useEventBus } from '../../../hooks/useEventBus';
 import { getTradingDay } from '../../../utils/tradingDayUtils';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { getTradeAnalyticsTradingDay } from '../../../utils/tradeAnalyticsDate';
@@ -21,69 +24,37 @@ interface HomePeriodContextValue {
   dateRange: [Date | null, Date | null];
   
   isDateInPeriod: (date: Date) => boolean;
+  
+  isTimestampInPeriod: (timestamp: Date) => boolean;
 }
 
 const HomePeriodContext = createContext<HomePeriodContextValue | null>(null);
 
-
-function getDateRangeForPeriod(
-  period: HomePeriod,
-  currentTradingDay: Date
-): [Date | null, Date | null] {
-  const today = currentTradingDay;
-
-  switch (period) {
-    case 'month': {
-      
-      const firstDayOfMonth = new Date(
-        today.getFullYear(),
-        today.getMonth(),
-        1
-      );
-      const startDate = createDateWithoutTime(firstDayOfMonth, true);
-      const endDate = createDateWithoutTime(today, false);
-      return [startDate, endDate];
-    }
-
-    case 'quarter': {
-      
-      const currentQuarter = getQuarter(today);
-      const quarterStartMonth = (currentQuarter - 1) * 3;
-      const firstDayOfQuarter = new Date(
-        today.getFullYear(),
-        quarterStartMonth,
-        1
-      );
-      const startDate = createDateWithoutTime(firstDayOfQuarter, true);
-      const endDate = createDateWithoutTime(today, false);
-      return [startDate, endDate];
-    }
-
-    case 'year': {
-      
-      const firstDayOfYear = new Date(today.getFullYear(), 0, 1);
-      const startDate = createDateWithoutTime(firstDayOfYear, true);
-      const endDate = createDateWithoutTime(today, false);
-      return [startDate, endDate];
-    }
-
-    case 'lifetime':
-    default:
-      
-      return [null, null];
-  }
-}
-
 interface HomePeriodProviderProps {
-  period: HomePeriod;
+  selection: HomePeriodSelection;
   children: ReactNode;
 }
 
 export const HomePeriodProvider: React.FC<HomePeriodProviderProps> = ({
-  period,
+  selection,
   children,
 }) => {
   const plugin = usePlugin();
+  const period = selection.period;
+  
+  
+  const [, refreshSettings] = useState(0);
+  useEventBus('settings:changed', (payload) => {
+    if (
+      !payload.section ||
+      payload.section === 'trade' ||
+      payload.section === 'all' ||
+      payload.source === 'week-start'
+    ) {
+      refreshSettings((value) => value + 1);
+    }
+  });
+  const weekStartDay = getWeekStartDaySetting(plugin ?? undefined);
   const tradingDayCutoffTime = plugin?.settings?.trade?.tradingDayCutoffTime;
   const [now, setNow] = useState(() => Date.now());
 
@@ -97,18 +68,11 @@ export const HomePeriodProvider: React.FC<HomePeriodProviderProps> = ({
 
   
   const dateRange = useMemo(() => {
-    const currentTradingDay = getTradingDay(
-      new Date(now),
-      plugin ?? {
-        settings: {
-          trade: {
-            tradingDayCutoffTime,
-          },
-        },
-      }
-    );
-    return getDateRangeForPeriod(period, currentTradingDay);
-  }, [now, period, plugin, tradingDayCutoffTime]);
+    const currentTradingDay = getTradingDay(new Date(now), {
+      settings: { trade: { tradingDayCutoffTime } },
+    });
+    return getHomePeriodRange(selection, currentTradingDay, weekStartDay);
+  }, [now, selection, weekStartDay, tradingDayCutoffTime]);
 
   
   const isDateInPeriod = useMemo(() => {
@@ -134,13 +98,24 @@ export const HomePeriodProvider: React.FC<HomePeriodProviderProps> = ({
     };
   }, [dateRange]);
 
+  const isTimestampInPeriod = useMemo(
+    () => (timestamp: Date) =>
+      isDateInPeriod(
+        getTradingDay(timestamp, {
+          settings: { trade: { tradingDayCutoffTime } },
+        })
+      ),
+    [isDateInPeriod, tradingDayCutoffTime]
+  );
+
   const contextValue = useMemo<HomePeriodContextValue>(
     () => ({
       period,
       dateRange,
       isDateInPeriod,
+      isTimestampInPeriod,
     }),
-    [period, dateRange, isDateInPeriod]
+    [period, dateRange, isDateInPeriod, isTimestampInPeriod]
   );
 
   return (

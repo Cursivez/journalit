@@ -3,12 +3,29 @@
 import type { Lang } from './en';
 
 const zh: Lang = {
+  'trade-import.recovery.bybit-header.columns': '缺少必需列：{columns}。',
+  'trade-import.recovery.bybit-header.title': '检查 Bybit 表头或导出格式',
+  'trade-import.recovery.bybit-header.message':
+    '所选表头与 Bybit 成交历史不匹配。请检查表头行，或导出包含成交价格和数量的交易记录，而非只有委托价格的记录。如需映射其他格式，请明确选择 {manualSource}。',
+  'update.installed.title': '新增内容',
+  'settings.general.available-update-notifications': '显示更新提醒',
+  'settings.general.available-update-notifications-desc':
+    '每天检查新版本并显示更新提醒。关闭后仅在更新完成后显示版本亮点。',
+  'account.edit.field.unscoped-live-balance-desc':
+    '无法确定之前的余额调整属于哪个阶段。该调整已保留；请输入当前经纪商余额，以核对当前阶段的余额。',
+  'account.edit.error.inactive-phase': '仅可在当前活动阶段修改实时余额。',
+  'account.edit.error.phase-changed':
+    '编辑期间账户信息已更改。请重新打开账户编辑器后再保存。',
+  'account.profiles.profitable-days-conflict':
+    '应用这些条款前，请保留当前出金政策，或修改盈利天数要求。',
   'templateEditor.widget.session-log.hide-empty-outside':
     '会话之外的日志为空时隐藏',
   'account.profiles.correction-title': '目录勘误',
   'account.profiles.correction-source': '规则来源',
   'account.profiles.correction-period': '受影响的历史',
-  'account.profiles.correction-history': '勘误历史',
+  'account.profiles.correction-history': '规则纠正',
+  'account.profiles.correction-before': '纠正前',
+  'account.profiles.correction-after': '纠正后',
   'account.profiles.correction-stale': '账户历史已更改。请重新打开审核。',
   'account.profiles.correction-result': '硬性规则评估',
   'account.profiles.no-hard-breach': '未发现硬性违规',
@@ -101,7 +118,6 @@ const zh: Lang = {
   'widget.mfeScatter.breakeven': '保本',
   'widget.mfeScatter.empty': '没有具备此单位有效 MFE 的已平仓交易。',
 
-  'trade.broker-synced-at': '券商同步于 {date}',
   'trade-sync.tradovate.status.connecting': '正在连接',
   'trade-sync.tradovate.status.setup-required': '需要设置账户',
   'trade-sync.tradovate.status.paused': '已暂停',
@@ -959,48 +975,31 @@ const zh: Lang = {
   'layoutBuilder.guide.intro.title': 'This is your Layout Builder',
   'layoutBuilder.guide.intro.description':
     'This page controls how your review templates are structured. The easiest way to start is to duplicate a built-in template, then customise your copy.',
-  'layoutBuilder.guide.sidebar-overview.title':
-    'This sidebar is where you choose what you are editing',
-  'layoutBuilder.guide.sidebar-overview.description':
-    'Each section in the sidebar is a different template type. Trade templates are separate from your review templates, and the Library section is for sharing templates. After you make your own copy, you can star it to make it the default for new review notes.',
-  'layoutBuilder.guide.pick-built-in.title':
-    'Start with a built-in DRC template',
-  'layoutBuilder.guide.pick-built-in.description':
-    'For your first layout, start with one of the built-in DRC templates. It gives you a safe starting point before you make your own copy.',
-  'layoutBuilder.guide.duplicate.title': 'Duplicate the built-in layout',
-  'layoutBuilder.guide.duplicate.description':
-    'Built-in templates are starting points. Duplicate one first so you can safely make your own version.',
-  'layoutBuilder.guide.preview-template.title':
-    'This preview shows what the template will look like',
-  'layoutBuilder.guide.preview-template.description':
-    'Scroll through the preview and get a feel for the flow. This is useful for checking whether the template reads clearly before you start editing it.',
-  'layoutBuilder.guide.switch-to-editor.title': 'Switch to Editor',
-  'layoutBuilder.guide.switch-to-editor.description':
-    'Preview shows you what the template will look like. Editor is where you actually change it.',
+  'layoutBuilder.guide.create-own-layout.title': '创建你自己的布局',
+  'layoutBuilder.guide.create-own-layout.description':
+    '内置布局是只读的。点击内置 DRC 布局上的复制图标来复制它，或按 + 新建一个布局。点击“下一步”可复制标准 DRC。',
   'layoutBuilder.guide.editor-overview.title':
     'This is where you edit the template',
   'layoutBuilder.guide.editor-overview.description':
     'Rename the template here, review the widget list, drag the left handle to rearrange widgets, click a widget to change it, and remove anything you do not need.',
-  'layoutBuilder.guide.add-widget.title': 'Add a widget to your copy',
+  'layoutBuilder.guide.add-widget.title': '添加组件',
   'layoutBuilder.guide.add-widget.description':
-    'Use Add Widget to put new blocks into your template. This is how you shape the workflow to match how you review.',
-  'layoutBuilder.guide.open-widget-picker.title': 'Open the widget picker',
-  'layoutBuilder.guide.open-widget-picker.description':
-    'This picker shows the widgets you can add for this review type.',
+    '使用“添加组件”将模块添加到布局末尾，或将鼠标悬停在两个组件之间并点击 +，将其插入到你想要的位置。',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
     '在搜索框中输入组件名称、描述或类别，然后选择所需组件。也可以按“下一步”，让 Journalit 选择第一个搜索结果。',
-  'layoutBuilder.guide.widget-library-docs.title':
-    'Use the widget library if you get stuck',
-  'layoutBuilder.guide.widget-library-docs.description':
-    'This opens the docs page with the widget library, examples, and availability table for each review type.',
   'layoutBuilder.guide.save-template.title': 'Save your layout',
   'layoutBuilder.guide.save-template.description':
     'Once your copy looks right, save it. You can keep refining it later as your review process improves.',
-  'layoutBuilder.guide.set-default-template.title':
-    'Set this copy as your default template',
+  'layoutBuilder.guide.set-default-template.title': '设为默认布局',
   'layoutBuilder.guide.set-default-template.description':
     'Click the star on your new template if you want new review notes to use this layout automatically.',
+  'layoutBuilder.guide.whats-new.insert-slot.title': '在任意位置添加小组件',
+  'layoutBuilder.guide.whats-new.insert-slot.description':
+    '将鼠标悬停在两个小组件之间并按 +，即可在该位置添加小组件，而不是添加到底部。',
+  'layoutBuilder.guide.whats-new.add-widget-button.title': '也可以添加到末尾',
+  'layoutBuilder.guide.whats-new.add-widget-button.description':
+    '添加小组件仍会添加到布局底部，现在还会滚动到新小组件并打开其搜索。',
   'tradelog.empty': '未找到交易记录',
   'tradelog.empty.submessage': '开始创建交易笔记,它们将显示在您的交易日志中。',
   'tradelog.processing': '正在处理交易数据...',
@@ -1692,6 +1691,7 @@ const zh: Lang = {
   'templateEditor.field.template-name': '布局名称',
   'templateEditor.field.widgets': '组件({count})',
   'templateEditor.button.add-widget': '+ 添加组件',
+  'templateEditor.button.insert-widget-here': '在此添加组件',
   'templateEditor.button.widget-library-docs': 'Widget library docs',
   'templateEditor.widget.locked': '已锁定',
   'templateEditor.widget.select-placeholder': '选择组件...',
@@ -1828,7 +1828,6 @@ const zh: Lang = {
 
   
   'status-bar.update-available-branded': '更新 Journalit',
-  'status-bar.release-notes-branded': 'Journalit · 查看更新日志',
   'status-bar.update-aria-label': 'Journalit {version} - 点击查看',
   'update.available.ready': '已有新版本',
 
@@ -1928,7 +1927,6 @@ const zh: Lang = {
   'notice.error.open-account-dashboard': '打开账户失败：{error}',
   'notice.error.open-trade-form-edit': '打开交易表单编辑模式失败:{error}',
   'notice.error.open-onboarding': '打开新手引导失败。请检查控制台了解详情。',
-  'notice.error.open-update-notification': '打开更新通知失败:{error}',
   'notice.error.switch-template-generic': '切换布局失败',
 
   'notice.error.cannot-change-folder-during-sync':
@@ -2932,6 +2930,21 @@ const zh: Lang = {
   'metric.category.performance': '绩效',
   'metric.category.volume': '交易量',
   'metric.expectancy.description': '每笔交易的预期盈亏',
+  'metric.calmarRatio.name': '卡玛比率',
+  'metric.calmarRatio.description': '年化已实现收益相对于最大百分比回撤',
+  'dashboard.calmarRatio.tooltip.formula': '年化收益率除以最大回撤。',
+  'dashboard.calmarRatio.unavailable.no-history': '尚无已实现交易历史。',
+  'dashboard.calmarRatio.unavailable.capital': '缺少显示币种下的初始权益。',
+  'dashboard.calmarRatio.unavailable.incomplete-history':
+    '部分已实现盈亏缺失。',
+  'dashboard.calmarRatio.unavailable.dates': '部分交易日期缺失。',
+  'dashboard.calmarRatio.unavailable.short-history': '至少需要一天的历史。',
+  'dashboard.calmarRatio.unavailable.no-drawdown': '尚未记录到回撤。',
+  'dashboard.calmarRatio.unavailable.non-positive-equity':
+    '权益曾降至零或以下。',
+  'dashboard.calmarRatio.unavailable.non-finite': '结果过大，无法计算。',
+  'dashboard.calmarRatio.unavailable.scope': '请选择全部时间和完整账户。',
+  'dashboard.calmarRatio.unavailable.conversion': '部分货币兑换不可用。',
   'metric.sharpeRatio.name': '夏普比率',
   'metric.sharpeRatio.description': '平均单笔 P&L 相对其波动率',
   'metric.expectancy.name': '期望值',
@@ -2977,6 +2990,13 @@ const zh: Lang = {
   'home.grid.widget.unknown-type': '未知小组件类型:{widgetId}',
   'home.period.lifetime': '全部时间',
   'home.period.month': '月度',
+  'home.period.week': '周',
+  'home.period.custom': '自定义范围',
+  'home.period.invalid-range': '结束日期必须等于或晚于开始日期。',
+  'date-input.error.day': '日期必须在 1 到 {max} 之间。',
+  'date-input.error.invalid': '请输入有效日期',
+  'date-input.error.month': '月份必须在 1 到 12 之间。',
+  'date-input.error.year': '使用 YY（2000–2099）或 YYYY（1000–9999）。',
   'home.period.quarter': '季度',
   'home.period.year': '年度',
 
@@ -3056,7 +3076,7 @@ const zh: Lang = {
 
   
   'home.widget.aum.name': '资产管理规模',
-  'home.widget.aum.description': '账户总余额及 7 日趋势',
+  'home.widget.aum.description': '当前账户余额及30天趋势',
   'home.widget.best-hours.name': '最佳交易时段',
   'home.widget.best-hours.description': '您盈利最多的交易时段',
   'home.widget.current-streak.name': '当前连胜/连败',
@@ -3205,6 +3225,7 @@ const zh: Lang = {
   'home.widget.aum.period.quarter': '本季度',
   'home.widget.aum.period.year': '本年',
   'home.widget.aum.title': '资产管理规模',
+  'home.widget.aum.current-trend': '当前 · 30天趋势',
   'home.widget.aum.unable-to-load': '无法加载',
 
   
@@ -3275,9 +3296,6 @@ const zh: Lang = {
   'home.widget.streak.no-active': '无活跃连胜/连败',
   'home.widget.streak.pause': '下次交易前请暂停思考',
   'home.widget.streak.period.ever': '历史',
-  'home.widget.streak.period.month': '本月',
-  'home.widget.streak.period.quarter': '本季度',
-  'home.widget.streak.period.year': '今年',
   'home.widget.streak.review': '下次交易前请复盘',
   'home.widget.streak.start-trading': '开始交易以建立连胜纪录',
   'home.widget.streak.stay-focused': '保持专注,继续前进',
@@ -3373,6 +3391,18 @@ const zh: Lang = {
   'widget.goals.description': '带完成复选框的每日目标',
 
   
+  'review.header.guide.intro.title': '从这里开始复盘',
+  'review.header.guide.intro.description':
+    '导航和管理本次复盘所需的功能都在页头。',
+  'review.header.guide.reviewed.title': '标记为已复盘',
+  'review.header.guide.reviewed.description':
+    '点击圆圈将此笔记标记为已复盘。再次点击即可撤销。',
+  'review.header.guide.dates.title': '跳转到其他复盘',
+  'review.header.guide.dates.description':
+    '点击日期标签，如六月或2026，即可打开对应的复盘笔记。',
+  'review.header.guide.controls.title': '筛选、布局与导航',
+  'review.header.guide.controls.description':
+    '使用漏斗图标筛选交易，使用“切换布局”更改笔记布局，使用“上一个” / “下一个”切换复盘周期。',
   'widget.header.name': '页头',
 
   'widget.header.invalid-context':
@@ -4676,9 +4706,8 @@ const zh: Lang = {
   'settings.general.new-trade-notifications-toggled': '新交易通知已{status}',
   'settings.general.update-notifications': '显示更新通知',
   'settings.general.update-notifications-desc':
-    '每天检查 GitHub 上公开的 Journalit 发布信息，并在有更新版本时通知你',
+    '显示更新提醒及更新后的版本亮点。',
   'settings.general.update-notifications-aria': '显示更新通知',
-  'settings.general.update-notifications-toggled': '更新通知已{status}',
   'settings.general.data-management': '数据管理 & 隐私',
   'settings.general.backup-restore-section': '备份、还原和重置',
   'settings.general.export-settings': '导出设置',
@@ -5699,7 +5728,6 @@ const zh: Lang = {
   'widget.weekly-drc-context.description':
     'Show selected DRC sections for each day in the weekly review',
 
-  'widget.weekly-drc-context.image-alt-prefix': 'Weekly DRC image',
   'widget.weekly-drc-context.no-activity': 'No activity for this day.',
   'widget.weekly-drc-context.no-sections-configured':
     'Choose at least one DRC section in the template settings.',
@@ -5935,7 +5963,7 @@ const zh: Lang = {
     '未找到可导入的交易。请在 Trade Import 中查看此文件的详细信息。',
 
   'quick-import.privacy-note':
-    '文件会上传到 Journalit 服务器进行处理，默认不会存储。',
+    '所选文件和导入选项将上传至 Journalit。加密诊断记录在 1 天（免费）或 14 天（Pro）后过期，预览在 7 天后过期。可选的 AI 映射会将表头和示例行发送给 AI 模型。Trade Import 不发送单独的客户端遥测或后台错误报告。',
   'quick-import.dropzone.title': 'Drop a broker export here',
   'quick-import.dropzone.subtitle': 'Or click to choose a file',
 
@@ -5989,7 +6017,7 @@ const zh: Lang = {
   'trade-import.gate.sign-in':
     '登录或创建免费的 Journalit 账户即可分析文件。只有导入交易时才需要 Pro。',
   'trade-import.gate.sign-in.reassurance':
-    '你的文件会被私密处理，默认不会存储。',
+    '所选文件和导入选项将上传至 Journalit。加密诊断记录在 1 天（免费）或 14 天（Pro）后过期，预览在 7 天后过期。可选的 AI 映射会将表头和示例行发送给 AI 模型。Trade Import 不发送单独的客户端遥测或后台错误报告。',
   'trade-import.gate.sign-in.no-trial': '分析和预览无需开启 Pro 试用。',
   'trade-import.gate.sign-in.cta': '登录并免费预览',
 
@@ -6012,7 +6040,7 @@ const zh: Lang = {
   'trade-import.manual-mode.direct-pnl': '每行一笔交易（使用盈亏）',
   'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
   'trade-import.privacy.copy':
-    'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default. When AI mapping suggestions are on, the column headers and a few sample rows are also sent to an AI model to suggest column matches; untick the option to map columns yourself.',
+    '所选文件和导入选项将上传至 Journalit。加密诊断记录在 1 天（免费）或 14 天（Pro）后过期，预览在 7 天后过期。可选的 AI 映射会将表头和示例行发送给 AI 模型。Trade Import 不发送单独的客户端遥测或后台错误报告。导出文件可能包含账户标识、交易历史、笔记、价格、数量、费用、余额和盈亏。请求还会发送自定义字段定义和已保存选项；预览包含目标账户名称。关闭 AI 映射即可避免 AI 处理。',
 
   'trade-import.action.analyse': 'Analyse file',
   'trade-import.action.choose-file': 'Choose file',
@@ -6229,6 +6257,11 @@ const zh: Lang = {
   'trade-import.source.native.hint': '文件格式会自动识别，无需映射。',
   'trade-import.source.guide': '如何导出',
   'trade-import.source.change': '更改',
+  'trade-import.recovery.rithmic-order-history.title': '不支持的 Rithmic 格式',
+  'trade-import.recovery.rithmic-order-history.message':
+    '上传 Rithmic 订单历史导出文件，或选择生成此文件的平台。',
+  'trade-import.recovery.rithmic-order-history.choose-file': '选择其他文件',
+  'trade-import.source.change-action': '更改来源',
   'trade-import.sync-suggestion.full.title': '{broker} 可以自动同步',
   'trade-import.sync-suggestion.full.body':
     'Trade Sync 会自动导入新交易，无需导出。你仍可以在下方导入文件。',
@@ -7214,10 +7247,6 @@ const zh: Lang = {
   'settings.gallery-folders.remove-aria': '移除图库文件夹 {path}',
   'settings.gallery-folders.not-a-folder': '请选择文件夹，而不是媒体文件。',
   'settings.gallery-folders.save-failed': '无法保存图库文件夹。请重试。',
-  'tradelog.guide.switch-to-gallery.title': '从交易切换到图库',
-  'tradelog.guide.switch-to-gallery.description':
-    '使用此模式选择器在常规交易日志和图库之间切换。点击图库，继续查看你的图片、GIF、视频和 YouTube 链接导览。',
-
   'tradelog.guide.gallery-grouping.title': '按日志条目分组媒体',
   'tradelog.guide.gallery-grouping.description':
     '分组模式会将每笔交易或每篇复盘保留在一张卡片中。单独模式会将每个附加媒体项目显示为一张独立卡片。',
@@ -7362,10 +7391,10 @@ const zh: Lang = {
   'account.prop-challenge.rule.daily-loss-model.profit-tiers':
     '上一交易日收盘利润分级',
   'account.prop-challenge.rule.daily-loss-tiers-help':
-    '使用“利润:亏损限额”组合。根据上一交易日收盘账户利润确定下一交易时段的限额。',
+    '输入以逗号分隔的利润:亏损限额组合。前一交易日收盘时所选利润基准决定次日限额，限额可升可降。',
   'account.prop-challenge.rule.loss-tiers': '利润层级与亏损限额',
   'account.prop-challenge.rule.daily-loss-threshold-help':
-    'The higher daily loss amount activates permanently when lifetime account profit first reaches the configured percentage of starting balance.',
+    '本阶段累计已实现交易利润首次达到阶段初始余额的设定百分比时，调整后的货币限额永久生效。',
   'account.prop-challenge.rule.profit-threshold-percent':
     'Account profit threshold (%)',
   'account.prop-challenge.rule.amount-after-threshold':
@@ -7479,8 +7508,42 @@ const zh: Lang = {
   'account.prop-challenge.ledger.tooltip.consistency.no-maximum':
     '一致性目标需要大于 0% 的最大值。',
   'account.prop-challenge.ledger.help.open': '关于{rule}',
+  'account.prop-challenge.rule.help.target-amount':
+    '固定目标使用账户货币；百分比目标以本阶段初始余额为基数。进度按每日利润计入上限调整后的阶段余额增幅计算，不含未实现盈亏。',
+  'account.prop-challenge.rule.help.credit-withdrawals':
+    '将已记录的提款总额加回固定目标进度，不改变余额或提款资格。',
+  'account.prop-challenge.rule.help.drawdown-amount':
+    '低于初始余额（固定模式）或已实现余额历史高点（跟踪模式）的货币金额。触及底线即违规。',
+  'account.prop-challenge.rule.help.drawdown-mode':
+    '固定模式保持底线不变。EOD 跟踪交易日收盘余额高点；日内跟踪已记录的已实现余额交易，不跟踪未实现净值。',
+  'account.prop-challenge.rule.help.lock-balance':
+    '这是跟踪回撤底线的上限，不是激活余额。底线升至此余额后不再上升。留空表示无上限。',
+  'account.prop-challenge.rule.help.daily-loss-amount':
+    '交易日内累计已实现交易净亏损的最大允许金额，不是相对日内高点的跌幅。触及限额即违规。',
+  'account.prop-challenge.rule.help.breach-action':
+    '账户失败会保持历史违规有效。暂停至下一场次仅适用于当前交易日；过去违规仍保留在历史中。',
+  'account.prop-challenge.rule.help.daily-loss-model':
+    '选择固定限额、达到利润门槛后的永久调整、最高 EOD 利润比例或前一 EOD 利润档位。条件字段配置所选模型。',
+  'account.prop-challenge.rule.help.profit-basis':
+    '累计交易利润不含现金流。当前账户利润包含现金流，因此提款会减少它。两者均使用前一交易日的收盘值。',
+  'account.prop-challenge.rule.help.position-model':
+    '选择每笔交易的固定限额、每个利润阶梯增加一份合约或明确利润档位。扩容使用此前交易日的收盘值。',
+  'account.prop-challenge.rule.help.max-contracts':
+    '每笔交易在可选微型合约换算后的最大规模，不是多笔交易的合计敞口。超过限额即违规。',
+  'account.prop-challenge.rule.help.initial-contracts':
+    '已完成的日终利润尚未允许提高限额前，每笔交易的初始合约数上限。',
+  'account.prop-challenge.rule.help.maximum-contracts':
+    '按利润提高合约数时的可选上限。留空表示无额外上限。',
+  'account.prop-challenge.rule.help.daily-profit':
+    '达标日的已实现交易净盈亏金额门槛，包含盈利、亏损和费用。未实现利润及现金流不计入。',
+  'account.prop-challenge.rule.help.consistency-cushion':
+    '以百分点加到最佳日最大占比上：30% 加 5 个百分点允许 35%。留空表示不加缓冲。',
+  'account.prop-challenge.rule.help.daily-profit-cap':
+    '每个交易日计入阶段目标的利润金额上限。超额仍保留在余额中；亏损仍全额计入。',
+  'account.prop-challenge.rule.help.live-review':
+    '一个交易日为取得审核资格所需达到的已实现净利润，不会自动推进阶段或授予实盘账户。',
   'account.prop-challenge.ledger.help.profit_target':
-    '把账户增加这个金额以通过该阶段。只计算已平仓交易。',
+    '达到设定的阶段余额增幅即可通过。每日利润计入上限及可选提款加回会影响进度；未实现利润不计入。',
   'account.prop-challenge.ledger.help.profit_target.example':
     '此账户需要 {target} 利润：目前 {current}，还差 {remaining}。',
   'account.prop-challenge.ledger.help.profit_target.example-done':
@@ -7510,11 +7573,11 @@ const zh: Lang = {
   'account.prop-challenge.ledger.help.live_review_daily_profit.example':
     '有一天达到 {trigger} 或以上即合格；目前最佳日 {bestDay}。',
   'account.prop-challenge.ledger.help.minimum_trading_days':
-    '至少有一笔已平仓交易的天数。无论多快达到目标，未满该天数都不能通过阶段。',
+    '本阶段所需的不同开仓交易日数，包括仍未平仓的开仓。使用设定的交易日截止时间，而非日历午夜。',
   'account.prop-challenge.ledger.help.minimum_trading_days.example':
     '已完成 {current} / {target} 个交易日，还差 {remaining}。',
   'account.prop-challenge.ledger.help.minimum_profitable_days':
-    '收盘利润达到或超过公司最低日利润的交易日。打平或更小的盈利不计。',
+    '本阶段达到最低每日已实现净利润的所需日数。记录提款不会重置此阶段级规则。',
   'account.prop-challenge.ledger.help.minimum_profitable_days.example':
     '已有 {current} / {target} 天收盘达到 {minimum} 或以上，还差 {remaining}。',
   'account.prop-challenge.ledger.help.consistency':
@@ -8188,9 +8251,12 @@ const zh: Lang = {
   'trade-handoff.trade-count.other': '{count} 笔交易',
   'trade-handoff.title.sync': '同步完成',
   'trade-handoff.summary.import-complete': '已导入{trades}',
+  'trade-handoff.summary.update-complete': '已更新{trades}',
+  'trade-handoff.summary.update-partial': '已更新{trades}，但存在问题',
+  'trade-handoff.summary.mixed-complete': '已导入{imported} · 已更新{updated}',
+  'trade-handoff.summary.mixed-partial':
+    '已导入{imported} · 已更新{updated}，但存在问题',
   'trade-handoff.summary.import-partial': '已导入{trades}，但存在问题',
-  'trade-handoff.summary.sync-complete': '已同步{trades}',
-  'trade-handoff.summary.sync-partial': '已同步{trades}，但存在问题',
   'trade-handoff.periods.choose': '选择其他复盘周期',
   'trade-handoff.periods.recommended': '推荐',
   'trade-handoff.action.dismiss': '关闭最近的交易结果',
@@ -8232,6 +8298,79 @@ const zh: Lang = {
   'command.exit-sample-journal': '退出示例日志',
   'command.reset-sample-journal': '重置示例日志',
   'sample.notice.busy': '另一项示例日志操作正在进行中。',
+  'account.prop-challenge.field.help-label': '帮助：{field}',
+  'account.prop-challenge.payout-rules.help.cycle':
+    '按开仓日、达到最低净利润的日期或经过的日历天数计算等待时间。无周期仅关闭此天数要求。',
+  'account.prop-challenge.payout-rules.help.days':
+    '所选周期要求的天数：开仓日、已实现净利润达标日或完整的24小时期间。',
+  'account.prop-challenge.payout-rules.help.daily-profit':
+    '扣除费用后每日最低已实现净利润。交易按交易日截止时间汇总。阈值必须大于零。',
+  'account.prop-challenge.payout-rules.help.qualifying-days':
+    '在等待周期之外增加利润达标天数要求。两项要求必须在当前出金周期同时满足。',
+  'account.prop-challenge.payout-rules.help.profitable-days':
+    '当前出金周期内，已实现净利润达到每日最低值的不同日期数量。',
+  'account.prop-challenge.payout-rules.help.anchor':
+    '从周期开始或本周期首次开仓时起算日历等待时间。启用重置后，已记录提款开启下一周期。',
+  'account.prop-challenge.payout-rules.help.elapsed-hours':
+    '当前周期首次开仓后经过的小时数。尚未交易时不开始计时。留空关闭此要求。',
+  'account.prop-challenge.payout-rules.help.request-window':
+    '允许每天申请，或仅在指定时区的所选星期申请。其他条件仍然适用。',
+  'account.prop-challenge.payout-rules.help.time-zone':
+    '判断允许申请星期的时区，例如 America/New_York。不会改变交易日截止时间。',
+  'account.prop-challenge.payout-rules.help.request-days':
+    '所选时区内允许申请的星期。必须至少选择一天。',
+  'account.prop-challenge.payout-rules.help.minimum-balance':
+    '出金前必须达到的余额；不同于计算可提利润的底线。留空关闭此条件。',
+  'account.prop-challenge.payout-rules.help.cycle-profit':
+    '当前周期要求的已实现交易净利润。不计入入金或余额调整。留空关闭此要求。',
+  'account.prop-challenge.payout-rules.help.profit-schedule':
+    '用逗号分隔第1次、第2次及后续出金的最低利润。替代单一周期利润最低值。',
+  'account.prop-challenge.payout-rules.help.repeat-final':
+    '对超出列表的后续出金次数，继续使用最后一个值。',
+  'account.prop-challenge.payout-rules.help.positive-cycle':
+    '首次已记录出金后，要求周期已实现交易净利润严格大于零。',
+  'account.prop-challenge.payout-rules.help.consistency':
+    '最大单日利润除以周期已实现净利润。亏损日降低总利润，可能提高比例。留空关闭上限。',
+  'account.prop-challenge.payout-rules.help.consistency-schedule':
+    '按出金次数用逗号列出最佳单日利润比例上限。替代单一一致性上限。',
+  'account.prop-challenge.payout-rules.help.availability':
+    '按超过阶段初始余额或所选底线的部分计算可申请利润。百分比及其他上限仍适用。',
+  'account.prop-challenge.payout-rules.help.balance-floor':
+    '不计入可提利润的余额。可提比例仅用于超出部分；不改变回撤规则。',
+  'account.prop-challenge.payout-rules.help.request-percent':
+    '所选余额底线以上可申请部分的百分比。申请上限及新增利润条件可进一步降低金额。',
+  'account.prop-challenge.payout-rules.help.minimum-request':
+    '允许的最低申请金额。计算出的可申请金额也必须达到此最低值。',
+  'account.prop-challenge.payout-rules.help.maximum':
+    '选择固定上限、仅首次上限、按出金次数上限或周期利润百分比。无上限仅移除此限制。',
+  'account.prop-challenge.payout-rules.help.maximum-amount':
+    '利润分成前的申请总额上限。可提利润及其他限制可能减少金额。',
+  'account.prop-challenge.payout-rules.help.first-maximum':
+    '仅限制本阶段首次出金的申请总额。之后此上限取消，其他限制仍适用。',
+  'account.prop-challenge.payout-rules.help.maximum-schedule':
+    '用逗号列出各次出金的申请总额上限。不重复最后值时，后续未列出的出金上限为零。',
+  'account.prop-challenge.payout-rules.help.maximum-percent':
+    '将申请总额限制为周期已实现交易净利润的此百分比。不同于余额可提比例。',
+  'account.prop-challenge.payout-rules.help.lifetime-days':
+    '整个资助阶段累计达标天数，用于启用新的可提金额规则和申请上限。周期重置不清除此计数。',
+  'account.prop-challenge.payout-rules.help.split-model':
+    '固定分成，或按累计出金总额、账户总利润切换比例。分成决定到账金额，而不是申请上限。',
+  'account.prop-challenge.payout-rules.help.trader-share':
+    '此比例下，申请总额中支付给交易者的百分比。其余归公司。',
+  'account.prop-challenge.payout-rules.help.cumulative-threshold':
+    '本阶段已记录出金总额达到此值后使用后续比例。跨越门槛的申请对前后部分分别采用两种比例。',
+  'account.prop-challenge.payout-rules.help.maximum-payouts':
+    '本阶段允许的已记录出金次数。达到后阻止后续出金。留空取消次数限制。',
+  'account.prop-challenge.payout-rules.help.maximum-outcome':
+    '最后一次出金后：继续、结束账户、进入下一阶段或获得实盘审核资格。资格不代表自动批准。',
+  'account.prop-challenge.payout-rules.help.aftermath':
+    '已记录出金后的余额与回撤：扣除申请金额、扣除并锁定底线，或重置初始余额及回撤。',
+  'account.prop-challenge.payout-rules.help.drawdown-floor':
+    '选择相应处理方式后，出金后锁定的回撤底线。剩余余额必须保持高于该底线。',
+  'account.prop-challenge.payout-rules.help.first-exempt':
+    '本阶段首次出金时，将周期最低利润视为零：当前周期已实现净利润不能为负。其他要求仍然适用。',
+  'account.prop-challenge.payout-rules.help.reset-cycle':
+    '已记录出金后重置天数、每日利润、周期利润及一致性。保留整个阶段累计达标天数；预览不重置进度。',
 };
 
 export default zh;

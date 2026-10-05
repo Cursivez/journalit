@@ -3,12 +3,33 @@
 import type { Lang } from './en';
 
 const de: Lang = {
+  'trade-import.recovery.bybit-header.columns':
+    'Fehlende erforderliche Spalten: {columns}.',
+  'trade-import.recovery.bybit-header.title':
+    'Bybit-Kopfzeile oder Export prüfen',
+  'trade-import.recovery.bybit-header.message':
+    'Die gewählte Kopfzeile passt nicht zum Bybit-Handelsverlauf. Prüfe die Kopfzeile oder exportiere Ausführungen mit Ausführungspreisen und Mengen, nicht nur Orderpreisen. Um ein anderes Format zuzuordnen, wähle ausdrücklich {manualSource}.',
+  'update.installed.title': 'Was ist neu?',
+  'settings.general.available-update-notifications':
+    'Update-Erinnerungen anzeigen',
+  'settings.general.available-update-notifications-desc':
+    'Täglich nach neuen Versionen suchen und an Updates erinnern. Deaktivieren, um nur die Neuerungen nach einem Update zu sehen.',
+  'account.edit.field.unscoped-live-balance-desc':
+    'Eine frühere Kontostandskorrektur konnte keiner Phase zugeordnet werden. Sie bleibt erhalten; gib den aktuellen Broker-Kontostand ein, um die aktive Phase abzugleichen.',
+  'account.edit.error.inactive-phase':
+    'Der Live-Kontostand kann nur in einer aktiven Phase geändert werden.',
+  'account.edit.error.phase-changed':
+    'Die Kontodaten wurden während der Bearbeitung geändert. Öffne den Kontoeditor vor dem Speichern erneut.',
+  'account.profiles.profitable-days-conflict':
+    'Behalte deine aktuelle Auszahlungsrichtlinie bei oder ändere die Anforderung an profitable Tage, bevor du diese Bedingungen anwendest.',
   'templateEditor.widget.session-log.hide-empty-outside':
     'Protokoll außerhalb der Sitzung ausblenden, wenn es leer ist',
   'account.profiles.correction-title': 'Katalogkorrektur',
   'account.profiles.correction-source': 'Regelquelle',
   'account.profiles.correction-period': 'Betroffener Verlauf',
-  'account.profiles.correction-history': 'Korrekturverlauf',
+  'account.profiles.correction-history': 'Regelkorrekturen',
+  'account.profiles.correction-before': 'Vorher',
+  'account.profiles.correction-after': 'Nachher',
   'account.profiles.correction-stale':
     'Der Kontoverlauf hat sich geändert. Öffne die Prüfung erneut.',
   'account.profiles.correction-result': 'Prüfung harter Regeln',
@@ -118,7 +139,6 @@ const de: Lang = {
   'widget.mfeScatter.empty':
     'Keine abgeschlossenen Trades mit nutzbarer MFE in dieser Einheit.',
 
-  'trade.broker-synced-at': 'Broker synchronisiert {date}',
   'trade-sync.tradovate.status.setup-required': 'Kontoeinrichtung erforderlich',
   'trade-sync.tradovate.status.connecting': 'Verbindung wird hergestellt',
   'trade-sync.tradovate.status.paused': 'Pausiert',
@@ -920,8 +940,6 @@ const de: Lang = {
 
   'notice.error.open-release-notes':
     'Versionshinweise konnten nicht geöffnet werden: {error}',
-  'notice.error.open-update-notification':
-    'Update-Benachrichtigung konnte nicht geöffnet werden: {error}',
   'notice.error.open-layout-builder':
     'Layout-Builder konnte nicht geöffnet werden: {error}',
   'notice.error.switch-template': 'Fehler beim Wechseln der Layout: {error}',
@@ -1127,51 +1145,35 @@ const de: Lang = {
   'layoutBuilder.guide.intro.title': 'Dies ist Ihr Layout-Builder',
   'layoutBuilder.guide.intro.description':
     'Diese Seite steuert, wie Ihre Review-Vorlagen strukturiert sind. Der einfachste Einstieg besteht darin, eine integrierte Vorlage zu duplizieren und dann Ihre Kopie anzupassen.',
-  'layoutBuilder.guide.sidebar-overview.title':
-    'In dieser Seitenleiste wählen Sie aus, was Sie bearbeiten möchten',
-  'layoutBuilder.guide.sidebar-overview.description':
-    'Jeder Abschnitt in der Seitenleiste ist ein anderer Vorlagentyp. Trade-Vorlagen sind von Ihren Review-Vorlagen getrennt und der Abschnitt „Bibliothek“ dient zum Teilen von Vorlagen. Nachdem Sie Ihre eigene Kopie erstellt haben, können Sie sie markieren, um sie als Standard für neue Review-Notizen festzulegen.',
-  'layoutBuilder.guide.pick-built-in.title':
-    'Beginnen Sie mit einer integrierten DRC-Vorlage',
-  'layoutBuilder.guide.pick-built-in.description':
-    'Beginnen Sie für Ihr erstes Layout mit einer der integrierten DRC-Vorlagen. Sie bietet Ihnen einen sicheren Ausgangspunkt, bevor Sie Ihre eigene Kopie erstellen.',
-  'layoutBuilder.guide.duplicate.title':
-    'Duplizieren Sie die integrierte Vorlage',
-  'layoutBuilder.guide.duplicate.description':
-    'Integrierte Vorlagen sind Ausgangspunkte. Duplizieren Sie zunächst eine Vorlage, damit Sie sicher Ihre eigene Version erstellen können.',
-  'layoutBuilder.guide.preview-template.title':
-    'Diese Vorschau zeigt, wie die Vorlage aussehen wird',
-  'layoutBuilder.guide.preview-template.description':
-    'Scrollen Sie durch die Vorschau und bekommen Sie ein Gefühl für den Ablauf. Dies ist nützlich, um zu prüfen, ob die Vorlage klar lesbar ist, bevor Sie mit der Bearbeitung beginnen.',
-  'layoutBuilder.guide.switch-to-editor.title': 'Wechseln Sie zum Editor',
-  'layoutBuilder.guide.switch-to-editor.description':
-    'Die Vorschau zeigt Ihnen, wie die Vorlage aussehen wird. Im Editor ändern Sie es tatsächlich.',
+  'layoutBuilder.guide.create-own-layout.title':
+    'Erstellen Sie Ihre eigene Vorlage',
+  'layoutBuilder.guide.create-own-layout.description':
+    'Integrierte Vorlagen sind schreibgeschützt. Klicken Sie bei einer integrierten DRC-Vorlage auf das Kopiersymbol, um sie zu duplizieren, oder auf +, um eine neue zu beginnen. Klicken Sie auf Weiter, um den Standard-DRC zu duplizieren.',
   'layoutBuilder.guide.editor-overview.title':
     'Hier bearbeiten Sie die Vorlage',
   'layoutBuilder.guide.editor-overview.description':
     'Benennen Sie die Vorlage hier um, überprüfen Sie die Widget-Liste, ziehen Sie den linken Ziehpunkt, um die Widgets neu anzuordnen, klicken Sie auf ein Widget, um es zu ändern, und entfernen Sie alles, was Sie nicht benötigen.',
-  'layoutBuilder.guide.add-widget.title':
-    'Fügen Sie Ihrer Kopie ein Widget hinzu',
+  'layoutBuilder.guide.add-widget.title': 'Ein Widget hinzufügen',
   'layoutBuilder.guide.add-widget.description':
-    'Verwenden Sie „Widget hinzufügen“, um neue Blöcke in Ihre Vorlage einzufügen. So gestalten Sie den Arbeitsablauf so, dass er zu Ihrem Review passt.',
-  'layoutBuilder.guide.open-widget-picker.title':
-    'Öffnen Sie die Widget-Auswahl',
-  'layoutBuilder.guide.open-widget-picker.description':
-    'Dieser Picker zeigt die Widgets an, die Sie für diesen Review-Typ hinzufügen können.',
+    'Verwenden Sie „Widget hinzufügen“, um einen Block am Ende Ihrer Vorlage einzufügen, oder fahren Sie mit der Maus zwischen zwei Widgets und klicken Sie auf +, um ihn genau dort einzufügen.',
   'layoutBuilder.guide.choose-widget.title': 'Wählen Sie ein Widget',
   'layoutBuilder.guide.choose-widget.description':
     'Geben Sie einen Namen, eine Beschreibung oder eine Kategorie in das Suchfeld ein und wählen Sie das Widget aus. Mit „Weiter“ wählt Journalit das erste Ergebnis aus.',
-  'layoutBuilder.guide.widget-library-docs.title':
-    'Verwenden Sie die Widget-Bibliothek, wenn Sie nicht weiterkommen',
-  'layoutBuilder.guide.widget-library-docs.description':
-    'Dadurch wird die Dokumentenseite mit der Widget-Bibliothek, Beispielen und der Verfügbarkeitstabelle für jeden Review-Typ geöffnet.',
   'layoutBuilder.guide.save-template.title': 'Speichern Sie Ihre Layout',
   'layoutBuilder.guide.save-template.description':
     'Sobald Ihre Kopie richtig aussieht, speichern Sie sie. Sie können es später weiter verfeinern, wenn sich Ihr Review-Prozess verbessert.',
   'layoutBuilder.guide.set-default-template.title':
-    'Legen Sie diese Kopie als Ihre Standardvorlage fest',
+    'Als Standardvorlage festlegen',
   'layoutBuilder.guide.set-default-template.description':
     'Klicken Sie auf den Stern Ihrer neuen Vorlage, wenn Sie möchten, dass neue Review-Notizen dieses Layout automatisch verwenden.',
+  'layoutBuilder.guide.whats-new.insert-slot.title':
+    'Widgets überall hinzufügen',
+  'layoutBuilder.guide.whats-new.insert-slot.description':
+    'Fahren Sie mit der Maus zwischen zwei Widgets und drücken Sie +, um genau dort ein Widget einzufügen statt ganz unten.',
+  'layoutBuilder.guide.whats-new.add-widget-button.title':
+    'Oder am Ende hinzufügen',
+  'layoutBuilder.guide.whats-new.add-widget-button.description':
+    'Widget hinzufügen fügt weiterhin am Ende des Layouts hinzu, scrollt jetzt aber zum neuen Widget und öffnet dessen Suche.',
   'tradelog.empty': 'Keine Trades gefunden',
   'tradelog.empty.submessage':
     'Beginnen Sie mit der Erstellung von Trade-Notizen, damit diese in Ihrem Trade-Log angezeigt werden.',
@@ -1635,7 +1637,7 @@ const de: Lang = {
   'home.widget.trading-score.description':
     'Eine Kennzahl für deine gesamte Trading-Leistung',
   'home.widget.aum.name': 'AUM',
-  'home.widget.aum.description': 'Gesamte Kontostände mit 7-Tage-Trend',
+  'home.widget.aum.description': 'Aktuelle Kontostände mit einem 30-Tage-Trend',
   'home.widget.drawdown-monitor.name': 'Drawdown-Monitor',
   'home.widget.drawdown-monitor.description':
     'Auslastung des Drawdown-Limits je Konto',
@@ -1788,7 +1790,6 @@ const de: Lang = {
   'settings.economic-calendar.pro-required':
     'Der Wirtschaftskalender benötigt ein PRO-Abo.',
   'status-bar.update-available-branded': 'Journalit aktualisieren',
-  'status-bar.release-notes-branded': 'Journalit · Versionshinweise anzeigen',
   'status-bar.update-aria-label': 'Journalit {version} – Zum Anzeigen klicken',
   'update.available.ready': 'Eine neue Version ist verfügbar',
   'template.transformation.orphaned-content.header':
@@ -2008,7 +2009,7 @@ const de: Lang = {
   'datepicker.button.now': 'Jetzt',
   'datepicker.placeholder.day': 'DD',
   'datepicker.placeholder.month': 'MM',
-  'datepicker.placeholder.year': 'JJ',
+  'datepicker.placeholder.year': 'YY',
   'datepicker.placeholder.hour': 'HH',
   'datepicker.placeholder.minute': 'MM',
   'datepicker.placeholder.second': 'SS',
@@ -3395,11 +3396,9 @@ const de: Lang = {
     'Neue Trade-Benachrichtigungen {status}',
   'settings.general.update-notifications': 'Update-Benachrichtigungen anzeigen',
   'settings.general.update-notifications-desc':
-    'Prüft täglich die öffentlichen Journalit-Versionsdaten auf GitHub und benachrichtigt dich, wenn eine neuere Version verfügbar ist',
+    'Update-Erinnerungen und Neuerungen nach einem Update anzeigen.',
   'settings.general.update-notifications-aria':
     'Update-Benachrichtigungen anzeigen',
-  'settings.general.update-notifications-toggled':
-    'Update-Benachrichtigungen {status}',
   'settings.general.data-management': 'Datenmanagement & Datenschutz',
   'settings.general.backup-restore-section':
     'Sicherung, Wiederherstellung & Zurücksetzen',
@@ -3935,6 +3934,18 @@ const de: Lang = {
     'Für das Ziel-Widget ist eine Review-Notiz erforderlich (DRC, wöchentlich, monatlich, vierteljährlich oder jährlich).',
   'widget.goals.aria.edit': 'Ziel bearbeiten',
   'widget.goals.aria.delete': 'Ziel löschen',
+  'review.header.guide.intro.title': 'Deine Review beginnt hier',
+  'review.header.guide.intro.description':
+    'In der Kopfzeile findest du alles, um durch diese Review zu navigieren und sie zu verwalten.',
+  'review.header.guide.reviewed.title': 'Als geprüft markieren',
+  'review.header.guide.reviewed.description':
+    'Klicke auf den Kreis, um diese Notiz als geprüft zu markieren. Klicke erneut, um das rückgängig zu machen.',
+  'review.header.guide.dates.title': 'Zwischen Reviews wechseln',
+  'review.header.guide.dates.description':
+    'Klicke auf eine Datumsangabe wie Juni oder 2026, um die zugehörige Review-Notiz zu öffnen.',
+  'review.header.guide.controls.title': 'Filter, Layout und Navigation',
+  'review.header.guide.controls.description':
+    'Nutze den Trichter zum Filtern von Trades, „Layout wechseln“ für ein anderes Notizlayout und „Zurück“ / „Weiter“ zum Wechseln zwischen Review-Zeiträumen.',
   'widget.header.name': 'Kopfzeile',
 
   'widget.header.invalid-context':
@@ -4410,6 +4421,30 @@ const de: Lang = {
   'metric.profitFactor.name': 'Gewinnfaktor',
   'metric.profitFactor.description':
     'Bruttogewinn im Verhältnis zum Bruttoverlust',
+  'metric.calmarRatio.name': 'Calmar-Verhältnis',
+  'metric.calmarRatio.description':
+    'Annualisierte realisierte Rendite im Verhältnis zum maximalen prozentualen Drawdown',
+  'dashboard.calmarRatio.tooltip.formula':
+    'Annualisierte Rendite geteilt durch maximalen Drawdown.',
+  'dashboard.calmarRatio.unavailable.no-history':
+    'Noch keine realisierte Handelshistorie.',
+  'dashboard.calmarRatio.unavailable.capital':
+    'Startkapital in der Anzeigewährung ist nicht verfügbar.',
+  'dashboard.calmarRatio.unavailable.incomplete-history':
+    'Einige realisierte Gewinne oder Verluste fehlen.',
+  'dashboard.calmarRatio.unavailable.dates': 'Einige Handelsdaten fehlen.',
+  'dashboard.calmarRatio.unavailable.short-history':
+    'Mindestens ein Tag Historie erforderlich.',
+  'dashboard.calmarRatio.unavailable.no-drawdown':
+    'Noch kein Drawdown erfasst.',
+  'dashboard.calmarRatio.unavailable.non-positive-equity':
+    'Das Eigenkapital erreichte null oder weniger.',
+  'dashboard.calmarRatio.unavailable.non-finite':
+    'Das Ergebnis ist zu groß für die Berechnung.',
+  'dashboard.calmarRatio.unavailable.scope':
+    'Gesamten Zeitraum und nur ganze Konten auswählen.',
+  'dashboard.calmarRatio.unavailable.conversion':
+    'Einige Währungsumrechnungen sind nicht verfügbar.',
   'metric.sharpeRatio.name': 'Sharpe-Kennzahl',
   'metric.sharpeRatio.description':
     'Durchschnittliches Trade-P&L relativ zur Volatilität',
@@ -4916,6 +4951,7 @@ const de: Lang = {
   'templateEditor.field.template-name': 'Layoutsname',
   'templateEditor.field.widgets': 'Widgets ({count})',
   'templateEditor.button.add-widget': '+ Widget hinzufügen',
+  'templateEditor.button.insert-widget-here': 'Widget hier einfügen',
   'templateEditor.button.widget-library-docs':
     'Dokumente zur Widget-Bibliothek',
   'templateEditor.widget.locked': 'Gesperrt',
@@ -5063,6 +5099,14 @@ const de: Lang = {
   'home.widget-selector.restore': 'wiederherstellen',
   'home.widget-selector.add-shortcut': 'Konto-/Setup-Verknüpfung hinzufügen',
   'home.period.month': 'Monat',
+  'home.period.week': 'Woche',
+  'home.period.custom': 'Benutzerdefinierter Zeitraum',
+  'home.period.invalid-range':
+    'Das Enddatum muss am oder nach dem Startdatum liegen.',
+  'date-input.error.day': 'Der Tag muss zwischen 1 und {max} liegen.',
+  'date-input.error.invalid': 'Bitte geben Sie ein gültiges Datum ein',
+  'date-input.error.month': 'Der Monat muss zwischen 1 und 12 liegen.',
+  'date-input.error.year': 'YY (2000–2099) oder YYYY (1000–9999) verwenden.',
   'home.period.quarter': 'Quartal',
   'home.period.year': 'Jahr',
   'home.period.lifetime': 'Alle Zeit',
@@ -5193,6 +5237,7 @@ const de: Lang = {
   'home.widget.best-hours.no-positive-detail': 'Beprobte Fenster sind negativ',
 
   'home.widget.aum.title': 'AUM',
+  'home.widget.aum.current-trend': 'Aktuell · 30-Tage-Trend',
   'home.widget.aum.period.month': 'Diesen Monat',
   'home.widget.aum.period.quarter': 'Dieses Quartal',
   'home.widget.aum.period.year': 'Dieses Jahr',
@@ -5202,9 +5247,6 @@ const de: Lang = {
   'home.widget.aum.account-count': '{count}-Konto',
   'home.widget.aum.account-count-plural': '{count}-Konten',
   'home.widget.streak.title': 'Strähne',
-  'home.widget.streak.period.month': 'diesen Monat',
-  'home.widget.streak.period.quarter': 'dieses Quartal',
-  'home.widget.streak.period.year': 'dieses Jahr',
   'home.widget.streak.period.ever': 'immer',
   'home.widget.streak.win': 'Gewinn',
   'home.widget.streak.wins': 'gewinnt',
@@ -5840,7 +5882,6 @@ const de: Lang = {
   'widget.weekly-drc-context.description':
     'DRC-Abschnitte pro Wochentag anzeigen',
 
-  'widget.weekly-drc-context.image-alt-prefix': 'Wöchentliches DRC-Bild',
   'widget.weekly-drc-context.no-activity': 'Keine Aktivität für diesen Tag.',
   'widget.weekly-drc-context.no-sections-configured':
     'Wähle mindestens einen DRC-Abschnitt in den Vorlageneinstellungen aus.',
@@ -6102,7 +6143,7 @@ const de: Lang = {
     'No importable trades were found. Review this file in Trade Import for details.',
 
   'quick-import.privacy-note':
-    'Dateien werden zur Verarbeitung auf Journalit-Server hochgeladen und standardmäßig nicht gespeichert.',
+    'Die ausgewählte Datei und Importoptionen werden an Journalit gesendet. Verschlüsselte Diagnoseaufzeichnungen verfallen nach 1 Tag (kostenlos) oder 14 Tagen (Pro), Vorschauen nach 7 Tagen. Die optionale KI-Zuordnung sendet Überschriften und Beispielzeilen an ein KI-Modell. Trade Import sendet keine separate Client-Telemetrie oder Fehlerberichte im Hintergrund.',
   'quick-import.dropzone.title': 'Broker-Export hier ablegen',
   'quick-import.dropzone.subtitle': 'Oder klicken, um eine Datei auszuwählen',
 
@@ -6160,7 +6201,7 @@ const de: Lang = {
   'trade-import.gate.sign-in':
     'Melde dich an oder erstelle ein kostenloses Journalit-Konto, um deine Datei zu analysieren. Pro ist erst erforderlich, wenn du die Trades importierst.',
   'trade-import.gate.sign-in.reassurance':
-    'Deine Datei wird vertraulich verarbeitet und standardmäßig nicht gespeichert.',
+    'Die ausgewählte Datei und Importoptionen werden an Journalit gesendet. Verschlüsselte Diagnoseaufzeichnungen verfallen nach 1 Tag (kostenlos) oder 14 Tagen (Pro), Vorschauen nach 7 Tagen. Die optionale KI-Zuordnung sendet Überschriften und Beispielzeilen an ein KI-Modell. Trade Import sendet keine separate Client-Telemetrie oder Fehlerberichte im Hintergrund.',
   'trade-import.gate.sign-in.no-trial':
     'Für Analyse und Vorschau ist keine Pro-Testphase erforderlich.',
   'trade-import.gate.sign-in.cta': 'Anmelden und kostenlos ansehen',
@@ -6185,7 +6226,7 @@ const de: Lang = {
   'trade-import.manual-mode.direct-pnl': 'Ein Trade pro Zeile (nutzt G/V)',
   'trade-import.label.ai-mapping': 'KI-Zuordnungsvorschläge anfordern',
   'trade-import.privacy.copy':
-    'Trade Import lädt den ausgewählten Broker-Export zur Verarbeitung auf Journalit-Server hoch. Broker-Exporte können Konto-IDs, Handelshistorie, Symbole, Zeitstempel, Preise, Mengen, Gebühren, Salden und GuV enthalten. Für die Vorschau sendet Journalit außerdem den ausgewählten Kontonamen, Zuordnungs-/Vorlagenauswahl, Definitionen benutzerdefinierter Felder und gespeicherte Optionen sowie begrenzten lokalen Kontext offener Trades für IBKR-Positionsabgleiche. Rohdateien werden für diesen Import verarbeitet und standardmäßig nicht gespeichert. Wenn KI-Zuordnungsvorschläge aktiviert sind, werden außerdem die Spaltenüberschriften und einige Beispielzeilen an ein KI-Modell gesendet, um Spaltenzuordnungen vorzuschlagen; deaktiviere die Option, um Spalten selbst zuzuordnen.',
+    'Die ausgewählte Datei und Importoptionen werden an Journalit gesendet. Verschlüsselte Diagnoseaufzeichnungen verfallen nach 1 Tag (kostenlos) oder 14 Tagen (Pro), Vorschauen nach 7 Tagen. Die optionale KI-Zuordnung sendet Überschriften und Beispielzeilen an ein KI-Modell. Trade Import sendet keine separate Client-Telemetrie oder Fehlerberichte im Hintergrund. Exporte können Kontokennungen, Handelshistorie, Notizen, Preise, Mengen, Gebühren, Salden und Gewinn/Verlust enthalten. Anfragen senden auch benutzerdefinierte Felddefinitionen und gespeicherte Optionen; Vorschauen enthalten den Zielkontonamen. Deaktiviere die KI-Zuordnung, um die KI-Verarbeitung zu vermeiden.',
 
   'trade-import.action.analyse': 'Datei analysieren',
   'trade-import.action.choose-file': 'Zum Hochladen klicken oder Datei ablegen',
@@ -6428,6 +6469,13 @@ const de: Lang = {
     'Das Dateiformat wird automatisch gelesen, keine Zuordnung nötig.',
   'trade-import.source.guide': 'So exportierst du',
   'trade-import.source.change': 'Ändern',
+  'trade-import.recovery.rithmic-order-history.title':
+    'Nicht unterstütztes Rithmic-Format',
+  'trade-import.recovery.rithmic-order-history.message':
+    'Lade einen Rithmic-Orderhistorienexport hoch oder wähle die Plattform, die diese Datei erstellt hat.',
+  'trade-import.recovery.rithmic-order-history.choose-file':
+    'Andere Datei wählen',
+  'trade-import.source.change-action': 'Quelle ändern',
   'trade-import.sync-suggestion.full.title':
     '{broker} kann automatisch synchronisieren',
   'trade-import.sync-suggestion.full.body':
@@ -7484,10 +7532,6 @@ const de: Lang = {
     'Wähle einen Ordner statt einer Mediendatei aus.',
   'settings.gallery-folders.save-failed':
     'Galerieordner konnten nicht gespeichert werden. Bitte versuche es erneut.',
-  'tradelog.guide.switch-to-gallery.title': 'Von Trades zur Galerie wechseln',
-  'tradelog.guide.switch-to-gallery.description':
-    'Verwende diesen Modus-Umschalter, um zwischen dem normalen Trade-Log und der Galerie zu wechseln. Klicke auf Galerie, um die Tour mit deinen Bildern, GIFs, Videos und YouTube-Links fortzusetzen.',
-
   'tradelog.guide.gallery-grouping.title':
     'Medien nach Journaleintrag gruppieren',
   'tradelog.guide.gallery-grouping.description':
@@ -7645,10 +7689,44 @@ const de: Lang = {
   'account.prop-challenge.rule.daily-loss-model.profit-tiers':
     'Gewinnstufen nach vorherigem EOD',
   'account.prop-challenge.rule.daily-loss-tiers-help':
-    'Verwende Gewinn:Verlustlimit-Paare. Die Stufe aus dem vorherigen EOD-Kontogewinn gilt für die nächste Sitzung.',
+    'Kommagetrennte Paare Gewinn:Verlustlimit eingeben. Die gewählte Gewinnbasis zum vorherigen Handelstagesschluss bestimmt das Limit des nächsten Tages; es kann steigen oder fallen.',
   'account.prop-challenge.rule.loss-tiers': 'Gewinnstufen und Verlustlimits',
   'account.prop-challenge.rule.daily-loss-threshold-help':
-    'Der höhere tägliche Verlustbetrag wird dauerhaft aktiviert, sobald der lebenslange Kontogewinn erstmals den konfigurierten Prozentsatz des Startguthabens erreicht.',
+    'Das angepasste Geldlimit wird dauerhaft aktiv, sobald der kumulierte realisierte Handelsgewinn dieser Phase den konfigurierten Prozentsatz ihres Startsaldos erreicht.',
+  'account.prop-challenge.rule.help.target-amount':
+    'Absolute Ziele verwenden die Kontowährung; Prozentziele den Startsaldo dieser Phase. Der Fortschritt verwendet den Saldozuwachs nach einem täglichen Gewinnanrechnungslimit, ohne unrealisierten P&L.',
+  'account.prop-challenge.rule.help.credit-withdrawals':
+    'Addiert erfasste Bruttoauszahlungen zum Fortschritt absoluter Ziele. Ändert weder den Saldo noch die Auszahlungsberechtigung.',
+  'account.prop-challenge.rule.help.drawdown-amount':
+    'Geldabstand unter dem Startsaldo (statisch) oder dem Höchststand des realisierten Saldos (nachlaufend). Das Berühren der Untergrenze verletzt die Regel.',
+  'account.prop-challenge.rule.help.drawdown-mode':
+    'Statisch hält die Untergrenze fest. EOD-Trailing folgt den Höchstständen zum Handelstagesschluss; Intraday-Trailing folgt realisierten Saldotransaktionen, nicht unrealisiertem Eigenkapital.',
+  'account.prop-challenge.rule.help.lock-balance':
+    'Obergrenze für die nachlaufende Drawdown-Untergrenze, kein Aktivierungssaldo. Die Untergrenze steigt nur bis zu diesem Saldo. Leer bedeutet keine Obergrenze.',
+  'account.prop-challenge.rule.help.daily-loss-amount':
+    'Geldlimit des schlimmsten kumulierten realisierten Nettoverlusts aus Trades innerhalb eines Handelstages, nicht des Rückgangs vom Tageshoch. Berühren des Limits verletzt die Regel.',
+  'account.prop-challenge.rule.help.breach-action':
+    'Konto scheitern lassen hält einen früheren Verstoß aktiv. Pause bis zur nächsten Sitzung gilt nur für den aktuellen Handelstag; frühere Verstöße bleiben im Verlauf.',
+  'account.prop-challenge.rule.help.daily-loss-model':
+    'Wähle ein festes Limit, eine dauerhafte Änderung ab Gewinnschwelle, Skalierung nach höchstem EOD-Gewinn oder vorherige EOD-Gewinnstufen. Die bedingten Felder konfigurieren das Modell.',
+  'account.prop-challenge.rule.help.profit-basis':
+    'Kumulierter Handelsgewinn schließt Cashflows aus. Aktueller Kontogewinn enthält sie, sodass Auszahlungen ihn verringern. Beide verwenden frühere Handelstagesschlusswerte.',
+  'account.prop-challenge.rule.help.position-model':
+    'Wähle ein festes Limit je Trade, einen zusätzlichen Kontrakt je Gewinnschritt oder ausdrückliche Gewinnstufen. Die Skalierung verwendet frühere Handelstagesschlusswerte.',
+  'account.prop-challenge.rule.help.max-contracts':
+    'Maximale Größe je Trade nach optionaler Micro-Umrechnung, nicht die Gesamtexposition mehrerer Trades. Überschreiten verletzt die Regel.',
+  'account.prop-challenge.rule.help.initial-contracts':
+    'Anfängliches Kontraktlimit je Trade, bevor abgeschlossene Tagesgewinne größere Limits ermöglichen.',
+  'account.prop-challenge.rule.help.maximum-contracts':
+    'Optionale Obergrenze für gewinnabhängige Kontrakterhöhungen. Leer bedeutet keine zusätzliche Obergrenze.',
+  'account.prop-challenge.rule.help.daily-profit':
+    'Geldschwelle für den täglichen realisierten Netto-P&L einschließlich Gewinnen, Verlusten und Kosten. Unrealisierter Gewinn und Cashflows zählen nicht.',
+  'account.prop-challenge.rule.help.consistency-cushion':
+    'Wird in Prozentpunkten zum maximalen Anteil des besten Tages addiert: 30% + 5 Punkte erlaubt 35%. Leer fügt keinen Puffer hinzu.',
+  'account.prop-challenge.rule.help.daily-profit-cap':
+    'Geldlimit des je Handelstag auf das Phasenziel angerechneten Gewinns. Der Überschuss bleibt im Saldo; Verluste zählen vollständig.',
+  'account.prop-challenge.rule.help.live-review':
+    'Realisierter Nettogewinn, den ein Handelstag für die Prüfberechtigung erreichen muss. Wechselt nicht automatisch die Phase und gewährt kein Live-Konto.',
   'account.prop-challenge.rule.profit-threshold-percent':
     'Kontogewinnschwelle (%)',
   'account.prop-challenge.rule.amount-after-threshold':
@@ -7778,7 +7856,7 @@ const de: Lang = {
     'Ein Konsistenzziel erfordert ein Maximum über 0 %.',
   'account.prop-challenge.ledger.help.open': 'Info zu {rule}',
   'account.prop-challenge.ledger.help.profit_target':
-    'Das Konto um diesen Betrag wachsen lassen, um die Phase zu bestehen. Nur geschlossene Trades zählen.',
+    'Erreiche den konfigurierten Saldozuwachs zum Bestehen der Phase. Gewinnanrechnungslimits und optionale Auszahlungsgutschriften beeinflussen den Fortschritt; unrealisierter Gewinn zählt nicht.',
   'account.prop-challenge.ledger.help.profit_target.example':
     'Dieses Konto braucht {target} Gewinn: bisher {current}, noch {remaining}.',
   'account.prop-challenge.ledger.help.profit_target.example-done':
@@ -7808,11 +7886,11 @@ const de: Lang = {
   'account.prop-challenge.ledger.help.live_review_daily_profit.example':
     'Ein Tag mit {trigger} oder mehr qualifiziert; bester Tag bisher {bestDay}.',
   'account.prop-challenge.ledger.help.minimum_trading_days':
-    'Tage mit mindestens einem geschlossenen Trade. Die Phase kann nicht bestanden werden, bevor diese Anzahl erreicht ist, egal wie schnell das Ziel fällt.',
+    'Erforderliche unterschiedliche Trade-Einstiegstage dieser Phase, einschließlich noch offener Einstiege. Verwendet den konfigurierten Handelstagesschnitt, nicht Mitternacht.',
   'account.prop-challenge.ledger.help.minimum_trading_days.example':
     '{current} von {target} Handelstagen erledigt, noch {remaining}.',
   'account.prop-challenge.ledger.help.minimum_profitable_days':
-    'Handelstage, die auf oder über dem Mindesttagesgewinn der Firma schließen. Break-even oder kleinere Gewinne zählen nicht.',
+    'Erforderliche Tage mit mindestens dem täglichen realisierten Nettogewinn dieser Phase. Erfasste Auszahlungen setzen diese phasenweite Regel nicht zurück.',
   'account.prop-challenge.ledger.help.minimum_profitable_days.example':
     '{current} von {target} Tagen mit {minimum} oder mehr geschlossen, noch {remaining}.',
   'account.prop-challenge.ledger.help.consistency':
@@ -8545,9 +8623,13 @@ const de: Lang = {
   'trade-handoff.trade-count.other': '{count} Trades',
   'trade-handoff.title.sync': 'Synchronisierung abgeschlossen',
   'trade-handoff.summary.import-complete': '{trades} importiert',
+  'trade-handoff.summary.update-complete': '{trades} aktualisiert',
+  'trade-handoff.summary.update-partial': '{trades} mit Problemen aktualisiert',
+  'trade-handoff.summary.mixed-complete':
+    '{imported} importiert · {updated} aktualisiert',
+  'trade-handoff.summary.mixed-partial':
+    '{imported} importiert · {updated} aktualisiert, mit Problemen',
   'trade-handoff.summary.import-partial': '{trades} mit Problemen importiert',
-  'trade-handoff.summary.sync-complete': '{trades} synchronisiert',
-  'trade-handoff.summary.sync-partial': '{trades} mit Problemen synchronisiert',
   'trade-handoff.periods.choose': 'Anderen Überprüfungszeitraum auswählen',
   'trade-handoff.periods.recommended': 'Empfohlen',
   'trade-handoff.action.dismiss': 'Letztes Trade-Ergebnis schließen',
@@ -8597,5 +8679,78 @@ const de: Lang = {
   'command.reset-sample-journal': 'Beispieljournal zurücksetzen',
   'sample.notice.busy':
     'Ein anderer Vorgang für das Beispieljournal wird bereits ausgeführt.',
+  'account.prop-challenge.field.help-label': 'Hilfe: {field}',
+  'account.prop-challenge.payout-rules.help.cycle':
+    'Misst die Wartezeit anhand von Einstiegstagen, Tagen mit Mindest-Nettogewinn oder verstrichenen Kalendertagen. Ohne Wartezyklus entfällt nur diese Tagesanforderung.',
+  'account.prop-challenge.payout-rules.help.days':
+    'Erforderliche Tage des gewählten Zyklus: Einstiegstage, Tage mit ausreichendem realisiertem Nettogewinn oder vollständige 24-Stunden-Zeiträume.',
+  'account.prop-challenge.payout-rules.help.daily-profit':
+    'Realisierter Mindest-Nettogewinn pro Tag nach Kosten. Trades werden nach deinem Handelstagesende zusammengefasst. Der Schwellenwert muss größer als null sein.',
+  'account.prop-challenge.payout-rules.help.qualifying-days':
+    'Zusätzliche Gewinntage neben dem Wartezyklus. Beide Anforderungen müssen im aktuellen Auszahlungszyklus erfüllt sein.',
+  'account.prop-challenge.payout-rules.help.profitable-days':
+    'Anzahl verschiedener Tage, deren realisierter Nettogewinn im aktuellen Zyklus den Tagesmindestgewinn erreicht.',
+  'account.prop-challenge.payout-rules.help.anchor':
+    'Kalenderwartezeit beginnt am Zyklusstart oder beim ersten Einstieg im Zyklus. Bei aktivierter Rücksetzung beginnt eine erfasste Auszahlung den nächsten Zyklus.',
+  'account.prop-challenge.payout-rules.help.elapsed-hours':
+    'Stunden seit dem ersten Einstieg im aktuellen Zyklus. Ohne Trade startet die Uhr nicht. Leer deaktiviert diese Anforderung.',
+  'account.prop-challenge.payout-rules.help.request-window':
+    'Anträge an jedem Tag oder nur an ausgewählten Wochentagen in der festgelegten Zeitzone. Andere Anforderungen gelten weiterhin.',
+  'account.prop-challenge.payout-rules.help.time-zone':
+    'Zeitzone für erlaubte Antragstage, etwa America/New_York. Ändert nicht dein Handelstagesende.',
+  'account.prop-challenge.payout-rules.help.request-days':
+    'Erlaubte Wochentage in der gewählten Zeitzone. Mindestens einen Tag auswählen.',
+  'account.prop-challenge.payout-rules.help.minimum-balance':
+    'Erforderlicher Kontostand vor Auszahlung; nicht die Untergrenze zur Berechnung verfügbaren Gewinns. Leer deaktiviert die Anforderung.',
+  'account.prop-challenge.payout-rules.help.cycle-profit':
+    'Erforderlicher realisierter Netto-Handelsgewinn im aktuellen Zyklus. Einzahlungen und Kontostandskorrekturen zählen nicht. Leer deaktiviert diese Anforderung.',
+  'account.prop-challenge.payout-rules.help.profit-schedule':
+    'Kommagetrennte Mindestgewinne für Auszahlung 1, 2 und folgende. Ersetzt den einzelnen Mindest-Zyklusgewinn.',
+  'account.prop-challenge.payout-rules.help.repeat-final':
+    'Verwendet den letzten Planwert auch für spätere, nicht aufgeführte Auszahlungsnummern.',
+  'account.prop-challenge.payout-rules.help.positive-cycle':
+    'Nach der ersten erfassten Auszahlung muss der realisierte Netto-Handelsgewinn des Zyklus strikt über null liegen.',
+  'account.prop-challenge.payout-rules.help.consistency':
+    'Größter Tagesgewinn geteilt durch realisierten Netto-Zyklusgewinn. Verlusttage senken den Gesamtgewinn und können den Prozentsatz erhöhen. Leer deaktiviert das Limit.',
+  'account.prop-challenge.payout-rules.help.consistency-schedule':
+    'Kommagetrennte Grenzen des besten Tages je Auszahlungsnummer. Ersetzt das einzelne Konsistenzlimit.',
+  'account.prop-challenge.payout-rules.help.availability':
+    'Berechnet beantragbaren Gewinn oberhalb des Phasen-Startkontostands oder einer gewählten Untergrenze. Prozentsätze und weitere Limits gelten weiterhin.',
+  'account.prop-challenge.payout-rules.help.balance-floor':
+    'Vom verfügbaren Gewinn ausgeschlossener Kontostand. Der auszahlbare Anteil gilt nur für den Überschuss; die Drawdown-Regel bleibt unverändert.',
+  'account.prop-challenge.payout-rules.help.request-percent':
+    'Beantragbarer Prozentsatz des Kontostands oberhalb der gewählten Untergrenze. Antrags- und Neugewinn-Limits können ihn weiter reduzieren.',
+  'account.prop-challenge.payout-rules.help.minimum-request':
+    'Kleinster erlaubter Auszahlungsantrag. Der berechnete verfügbare Betrag muss ebenfalls dieses Minimum erreichen.',
+  'account.prop-challenge.payout-rules.help.maximum':
+    'Feste Obergrenze, nur erste Auszahlung, Plan je Auszahlungsnummer oder Anteil am Zyklusgewinn. Ohne Maximum entfällt nur diese Obergrenze.',
+  'account.prop-challenge.payout-rules.help.maximum-amount':
+    'Maximaler Bruttoantrag vor Gewinnaufteilung. Verfügbarer Gewinn und weitere Limits können den Betrag reduzieren.',
+  'account.prop-challenge.payout-rules.help.first-maximum':
+    'Bruttolimit nur für die erste Auszahlung dieser Phase. Danach entfällt dieses Limit; andere Grenzen bleiben bestehen.',
+  'account.prop-challenge.payout-rules.help.maximum-schedule':
+    'Kommagetrennte Bruttolimits je Auszahlung. Ohne Wiederholung des letzten Werts gilt für spätere, nicht gelistete Auszahlungen ein Limit von null.',
+  'account.prop-challenge.payout-rules.help.maximum-percent':
+    'Begrenzt den Bruttoantrag auf diesen Anteil des realisierten Netto-Zyklusgewinns. Unabhängig vom auszahlbaren Anteil des Kontostands.',
+  'account.prop-challenge.payout-rules.help.lifetime-days':
+    'Qualifizierende Tage der gesamten finanzierten Phase zur Freischaltung neuer Verfügbarkeits- und Antragslimits. Zyklusrücksetzungen löschen diesen Zähler nicht.',
+  'account.prop-challenge.payout-rules.help.split-model':
+    'Fester Trader-Anteil oder Raten nach kumulierten Bruttoauszahlungen beziehungsweise Gesamt-Kontogewinn. Die Aufteilung bestimmt den Erlös, nicht das Antragslimit.',
+  'account.prop-challenge.payout-rules.help.trader-share':
+    'Mit dieser Rate an den Trader gezahlter Anteil des Bruttoantrags. Der Rest gehört der Firma.',
+  'account.prop-challenge.payout-rules.help.cumulative-threshold':
+    'Erfasste Bruttoauszahlungen dieser Phase, ab denen die spätere Rate gilt. Ein schwellenüberschreitender Antrag wird anteilig mit beiden Raten aufgeteilt.',
+  'account.prop-challenge.payout-rules.help.maximum-payouts':
+    'Erlaubte Anzahl erfasster Auszahlungen in dieser Phase. Danach werden weitere blockiert. Leer bedeutet keine Anzahlbegrenzung.',
+  'account.prop-challenge.payout-rules.help.maximum-outcome':
+    'Nach der letzten Auszahlung: fortfahren, Konto beenden, Phase wechseln oder für Live-Prüfung qualifizieren. Prüfungsberechtigung ist keine automatische Genehmigung.',
+  'account.prop-challenge.payout-rules.help.aftermath':
+    'Kontostand und Drawdown nach erfasster Auszahlung: Antrag abziehen, abziehen und Untergrenze fixieren oder Startkontostand und Drawdown zurücksetzen.',
+  'account.prop-challenge.payout-rules.help.drawdown-floor':
+    'Bei entsprechender Auswahl nach Auszahlung fixierte Drawdown-Untergrenze. Der Restkontostand muss darüber bleiben.',
+  'account.prop-challenge.payout-rules.help.first-exempt':
+    'Für die erste Auszahlung dieser Phase gilt null als Mindest-Zyklusgewinn: Der realisierte Netto-Zyklusgewinn darf nicht negativ sein. Alle anderen Anforderungen gelten weiterhin.',
+  'account.prop-challenge.payout-rules.help.reset-cycle':
+    'Setzt Tage, Tagesgewinne, Zyklusgewinn und Konsistenz nach erfasster Auszahlung zurück. Phasenweite qualifizierende Tage bleiben erhalten; Vorschauen setzen nichts zurück.',
 };
 export default de;

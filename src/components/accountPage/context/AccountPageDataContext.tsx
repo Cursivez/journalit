@@ -362,7 +362,9 @@ const calculateFilteredAccountMetrics = (
     breakEvenRangeMin: options.breakEvenRangeMin,
     breakEvenRangeMax: options.breakEvenRangeMax,
   };
-  const accountCurrentBalance = accountPageData.account.currentBalance;
+  const accountCurrentBalance =
+    accountPageData.account.lifetimeBalance ??
+    accountPageData.account.currentBalance;
 
   const winningTrades = pnlContributingTrades.filter(
     (trade) =>

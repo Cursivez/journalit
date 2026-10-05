@@ -392,6 +392,24 @@ const INITIAL_DEFAULT_OPTIONS: CustomOptionsData = {
         tickValue: 5,
       },
     },
+    {
+      name: 'MNQ',
+      assetType: 'futures',
+      futuresData: {
+        dollarPerPoint: 2,
+        tickSize: 0.25,
+        tickValue: 0.5,
+      },
+    },
+    {
+      name: 'MES',
+      assetType: 'futures',
+      futuresData: {
+        dollarPerPoint: 5,
+        tickSize: 0.25,
+        tickValue: 1.25,
+      },
+    },
     { name: 'EURUSD', assetType: 'forex' },
   ],
   [OptionType.ACCOUNT]: [],

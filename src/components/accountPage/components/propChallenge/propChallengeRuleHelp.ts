@@ -5,13 +5,25 @@ import type { TranslationKey } from '../../../../lang/locale/en';
 import type { DisplayValueOptions } from '../../../../services/display/DisplayPolicy';
 import type { PropChallengePayoutRequirement } from '../../../../services/propChallenge/PropChallengePayoutEngine';
 import type { PropChallengeRuleEvaluation } from '../../../../services/propChallenge/PropChallengeRuleEngine';
-import type { PropChallengeWeekday } from '../../../../services/propChallenge/types';
+import type {
+  PropChallengeRule,
+  PropChallengeWeekday,
+} from '../../../../services/propChallenge/types';
 
 type FormatDisplayValue = (options: DisplayValueOptions) => string;
 
 export interface PropChallengeLedgerHelp {
   description: string;
   example: string;
+}
+
+
+export function propChallengeRuleDescription(
+  rule: PropChallengeRule | PropChallengeRuleEvaluation
+): string {
+  return rule.kind === 'drawdown'
+    ? t(`account.prop-challenge.ledger.help.drawdown.${rule.mode}`)
+    : t(`account.prop-challenge.ledger.help.${rule.kind}`);
 }
 
 function help(
@@ -21,6 +33,17 @@ function help(
 ): PropChallengeLedgerHelp {
   return {
     description: t(description),
+    example: t(example, params),
+  };
+}
+
+function ruleHelp(
+  rule: PropChallengeRuleEvaluation,
+  example: TranslationKey,
+  params?: Record<string, string>
+): PropChallengeLedgerHelp {
+  return {
+    description: propChallengeRuleDescription(rule),
     example: t(example, params),
   };
 }
@@ -72,30 +95,11 @@ function drawdownHelp(
       currency
     ),
   };
-  switch (rule.mode) {
-    case 'static':
-      return help(
-        'account.prop-challenge.ledger.help.drawdown.static',
-        'account.prop-challenge.ledger.help.drawdown.static.example',
-        params
-      );
-    case 'eod_trailing':
-      return help(
-        'account.prop-challenge.ledger.help.drawdown.eod_trailing',
-        'account.prop-challenge.ledger.help.drawdown.eod_trailing.example',
-        params
-      );
-    case 'intraday_trailing':
-      return help(
-        'account.prop-challenge.ledger.help.drawdown.intraday_trailing',
-        'account.prop-challenge.ledger.help.drawdown.intraday_trailing.example',
-        params
-      );
-    default: {
-      const exhaustive: never = rule.mode;
-      return exhaustive;
-    }
-  }
+  return ruleHelp(
+    rule,
+    `account.prop-challenge.ledger.help.drawdown.${rule.mode}.example`,
+    params
+  );
 }
 
 
@@ -106,8 +110,8 @@ export function propChallengeRuleHelp(
 ): PropChallengeLedgerHelp {
   switch (rule.kind) {
     case 'profit_target':
-      return help(
-        'account.prop-challenge.ledger.help.profit_target',
+      return ruleHelp(
+        rule,
         rule.satisfied
           ? 'account.prop-challenge.ledger.help.profit_target.example-done'
           : 'account.prop-challenge.ledger.help.profit_target.example',
@@ -120,8 +124,8 @@ export function propChallengeRuleHelp(
     case 'drawdown':
       return drawdownHelp(rule, formatValue, currency);
     case 'daily_loss_limit':
-      return help(
-        'account.prop-challenge.ledger.help.daily_loss_limit',
+      return ruleHelp(
+        rule,
         'account.prop-challenge.ledger.help.daily_loss_limit.example',
         {
           used: money(formatValue, rule.currentTradingDayMaximumLoss, currency),
@@ -134,8 +138,8 @@ export function propChallengeRuleHelp(
         }
       );
     case 'daily_profit_cap':
-      return help(
-        'account.prop-challenge.ledger.help.daily_profit_cap',
+      return ruleHelp(
+        rule,
         'account.prop-challenge.ledger.help.daily_profit_cap.example',
         {
           cap: money(formatValue, rule.target, currency),
@@ -143,8 +147,8 @@ export function propChallengeRuleHelp(
         }
       );
     case 'live_review_daily_profit':
-      return help(
-        'account.prop-challenge.ledger.help.live_review_daily_profit',
+      return ruleHelp(
+        rule,
         'account.prop-challenge.ledger.help.live_review_daily_profit.example',
         {
           trigger: money(formatValue, rule.target, currency),
@@ -152,8 +156,8 @@ export function propChallengeRuleHelp(
         }
       );
     case 'minimum_trading_days':
-      return help(
-        'account.prop-challenge.ledger.help.minimum_trading_days',
+      return ruleHelp(
+        rule,
         'account.prop-challenge.ledger.help.minimum_trading_days.example',
         {
           current: count(formatValue, rule.current),
@@ -162,8 +166,8 @@ export function propChallengeRuleHelp(
         }
       );
     case 'minimum_profitable_days':
-      return help(
-        'account.prop-challenge.ledger.help.minimum_profitable_days',
+      return ruleHelp(
+        rule,
         'account.prop-challenge.ledger.help.minimum_profitable_days.example',
         {
           current: count(formatValue, rule.current),
@@ -174,14 +178,14 @@ export function propChallengeRuleHelp(
       );
     case 'consistency':
       if (rule.totalProfit <= 0) {
-        return help(
-          'account.prop-challenge.ledger.help.consistency',
+        return ruleHelp(
+          rule,
           'account.prop-challenge.ledger.help.consistency.example-none'
         );
       }
       if (rule.satisfied) {
-        return help(
-          'account.prop-challenge.ledger.help.consistency',
+        return ruleHelp(
+          rule,
           'account.prop-challenge.ledger.help.consistency.example-done',
           {
             bestDay: money(formatValue, rule.bestDayProfit, currency),
@@ -190,8 +194,8 @@ export function propChallengeRuleHelp(
           }
         );
       }
-      return help(
-        'account.prop-challenge.ledger.help.consistency',
+      return ruleHelp(
+        rule,
         'account.prop-challenge.ledger.help.consistency.example',
         {
           bestDay: money(formatValue, rule.bestDayProfit, currency),
@@ -202,8 +206,8 @@ export function propChallengeRuleHelp(
         }
       );
     case 'max_position_size':
-      return help(
-        'account.prop-challenge.ledger.help.max_position_size',
+      return ruleHelp(
+        rule,
         'account.prop-challenge.ledger.help.max_position_size.example',
         {
           maximum: count(formatValue, rule.target),
@@ -223,27 +227,29 @@ export function propChallengePayoutRequirementHelp(
   formatValue: FormatDisplayValue,
   currency: string
 ): PropChallengeLedgerHelp {
-  if (
-    requirement.kind === 'cycle_days' &&
-    requirement.minimumDailyProfit !== undefined
-  ) {
-    return help(
-      'account.prop-challenge.ledger.help.payout.qualifying_days',
-      'account.prop-challenge.ledger.help.payout.qualifying_days.example',
-      {
-        current: count(formatValue, requirement.current),
-        target: count(formatValue, requirement.target),
-        remaining: count(
-          formatValue,
-          nonNegative(requirement.target - requirement.current)
-        ),
-        minimum: money(formatValue, requirement.minimumDailyProfit, currency),
-      }
-    );
-  }
-
   switch (requirement.kind) {
+    case 'qualifying_days':
     case 'cycle_days':
+      if (requirement.minimumDailyProfit !== undefined) {
+        return help(
+          'account.prop-challenge.ledger.help.payout.qualifying_days',
+          'account.prop-challenge.ledger.help.payout.qualifying_days.example',
+          {
+            current: count(formatValue, requirement.current),
+            target: count(formatValue, requirement.target),
+            remaining: count(
+              formatValue,
+              nonNegative(requirement.target - requirement.current)
+            ),
+            minimum: money(
+              formatValue,
+              requirement.minimumDailyProfit,
+              currency
+            ),
+          }
+        );
+      }
+
       return help(
         'account.prop-challenge.ledger.help.payout.cycle_days',
         'account.prop-challenge.ledger.help.payout.cycle_days.example',

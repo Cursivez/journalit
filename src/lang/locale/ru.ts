@@ -3,12 +3,33 @@
 import type { Lang } from './en';
 
 const ru: Lang = {
+  'trade-import.recovery.bybit-header.columns':
+    'Отсутствуют обязательные столбцы: {columns}.',
+  'trade-import.recovery.bybit-header.title':
+    'Проверьте заголовки или экспорт Bybit',
+  'trade-import.recovery.bybit-header.message':
+    'Выбранные заголовки не соответствуют истории сделок Bybit. Проверьте строку заголовков или экспортируйте сделки с ценами и объёмами исполнения, а не только ценами ордеров. Для сопоставления другого формата явно выберите {manualSource}.',
+  'update.installed.title': 'Что нового',
+  'settings.general.available-update-notifications':
+    'Показывать напоминания об обновлениях',
+  'settings.general.available-update-notifications-desc':
+    'Ежедневно проверять новые версии и показывать напоминание. Отключите, чтобы видеть только изменения после обновления.',
+  'account.edit.field.unscoped-live-balance-desc':
+    'Не удалось определить фазу для прежней корректировки баланса. Она сохранена; введите текущий баланс у брокера, чтобы сверить активную фазу.',
+  'account.edit.error.inactive-phase':
+    'Текущий баланс можно изменить только на активном этапе.',
+  'account.edit.error.phase-changed':
+    'Данные счёта изменились во время редактирования. Перед сохранением откройте редактор счёта заново.',
+  'account.profiles.profitable-days-conflict':
+    'Сохраните текущую политику выплат или измените требование к прибыльным дням перед применением этих условий.',
   'templateEditor.widget.session-log.hide-empty-outside':
     'Скрывать журнал вне сессии, если он пуст',
   'account.profiles.correction-title': 'Исправление каталога',
   'account.profiles.correction-source': 'Источник правил',
   'account.profiles.correction-period': 'Затронутая история',
-  'account.profiles.correction-history': 'История исправлений',
+  'account.profiles.correction-history': 'Исправления правил',
+  'account.profiles.correction-before': 'До',
+  'account.profiles.correction-after': 'После',
   'account.profiles.correction-stale':
     'История счёта изменилась. Откройте проверку заново.',
   'account.profiles.correction-result': 'Проверка строгих правил',
@@ -114,7 +135,6 @@ const ru: Lang = {
   'widget.mfeScatter.empty':
     'Нет закрытых сделок с доступным MFE в этой единице.',
 
-  'trade.broker-synced-at': 'Брокер синхронизирован {date}',
   'trade-sync.tradovate.status.connecting': 'Подключение',
   'trade-sync.tradovate.status.setup-required': 'Требуется настройка счёта',
   'trade-sync.tradovate.status.paused': 'Приостановлено',
@@ -877,8 +897,6 @@ const ru: Lang = {
     'Не удалось открыть форму редактирования сделки: {error}',
   'notice.error.open-onboarding':
     'Не удалось открыть мастер настройки. Проверьте консоль.',
-  'notice.error.open-update-notification':
-    'Не удалось открыть уведомление об обновлении: {error}',
 
   'notice.error.cannot-change-folder-during-sync':
     'Невозможно изменить путь папки во время синхронизации. Дождитесь завершения синхронизации.',
@@ -974,48 +992,34 @@ const ru: Lang = {
   'layoutBuilder.guide.intro.title': 'This is your Layout Builder',
   'layoutBuilder.guide.intro.description':
     'This page controls how your review templates are structured. The easiest way to start is to duplicate a built-in template, then customise your copy.',
-  'layoutBuilder.guide.sidebar-overview.title':
-    'This sidebar is where you choose what you are editing',
-  'layoutBuilder.guide.sidebar-overview.description':
-    'Each section in the sidebar is a different template type. Trade templates are separate from your review templates, and the Library section is for sharing templates. After you make your own copy, you can star it to make it the default for new review notes.',
-  'layoutBuilder.guide.pick-built-in.title':
-    'Start with a built-in DRC template',
-  'layoutBuilder.guide.pick-built-in.description':
-    'For your first layout, start with one of the built-in DRC templates. It gives you a safe starting point before you make your own copy.',
-  'layoutBuilder.guide.duplicate.title': 'Duplicate the built-in layout',
-  'layoutBuilder.guide.duplicate.description':
-    'Built-in templates are starting points. Duplicate one first so you can safely make your own version.',
-  'layoutBuilder.guide.preview-template.title':
-    'This preview shows what the template will look like',
-  'layoutBuilder.guide.preview-template.description':
-    'Scroll through the preview and get a feel for the flow. This is useful for checking whether the template reads clearly before you start editing it.',
-  'layoutBuilder.guide.switch-to-editor.title': 'Switch to Editor',
-  'layoutBuilder.guide.switch-to-editor.description':
-    'Preview shows you what the template will look like. Editor is where you actually change it.',
+  'layoutBuilder.guide.create-own-layout.title': 'Создайте свой макет',
+  'layoutBuilder.guide.create-own-layout.description':
+    'Встроенные макеты доступны только для чтения. Нажмите значок копирования у встроенного макета DRC, чтобы продублировать его, или нажмите +, чтобы начать новый. Нажмите «Далее», чтобы продублировать стандартный DRC.',
   'layoutBuilder.guide.editor-overview.title':
     'This is where you edit the template',
   'layoutBuilder.guide.editor-overview.description':
     'Rename the template here, review the widget list, drag the left handle to rearrange widgets, click a widget to change it, and remove anything you do not need.',
-  'layoutBuilder.guide.add-widget.title': 'Add a widget to your copy',
+  'layoutBuilder.guide.add-widget.title': 'Добавьте виджет',
   'layoutBuilder.guide.add-widget.description':
-    'Use Add Widget to put new blocks into your template. This is how you shape the workflow to match how you review.',
-  'layoutBuilder.guide.open-widget-picker.title': 'Open the widget picker',
-  'layoutBuilder.guide.open-widget-picker.description':
-    'This picker shows the widgets you can add for this review type.',
+    'Нажмите «Добавить виджет», чтобы добавить блок в конец макета, или наведите курсор между двумя виджетами и нажмите +, чтобы вставить его точно в нужное место.',
   'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
   'layoutBuilder.guide.choose-widget.description':
     'Введите в строке поиска название, описание или категорию, затем выберите виджет. Можно также нажать «Далее», и Journalit выберет первый результат.',
-  'layoutBuilder.guide.widget-library-docs.title':
-    'Use the widget library if you get stuck',
-  'layoutBuilder.guide.widget-library-docs.description':
-    'This opens the docs page with the widget library, examples, and availability table for each review type.',
   'layoutBuilder.guide.save-template.title': 'Save your layout',
   'layoutBuilder.guide.save-template.description':
     'Once your copy looks right, save it. You can keep refining it later as your review process improves.',
   'layoutBuilder.guide.set-default-template.title':
-    'Set this copy as your default template',
+    'Сделайте его макетом по умолчанию',
   'layoutBuilder.guide.set-default-template.description':
     'Click the star on your new template if you want new review notes to use this layout automatically.',
+  'layoutBuilder.guide.whats-new.insert-slot.title':
+    'Добавляйте виджет куда угодно',
+  'layoutBuilder.guide.whats-new.insert-slot.description':
+    'Наведите курсор между двумя виджетами и нажмите +, чтобы добавить виджет именно туда, а не в конец.',
+  'layoutBuilder.guide.whats-new.add-widget-button.title':
+    'Или добавьте в конец',
+  'layoutBuilder.guide.whats-new.add-widget-button.description':
+    '«Добавить виджет» по-прежнему добавляет в конец макета, а теперь ещё прокручивает к новому виджету и открывает его поиск.',
   'tradelog.empty': 'Сделки не найдены',
   'tradelog.filter.all': 'Все',
   'tradelog.filter.winners': 'Прибыльные',
@@ -2095,11 +2099,9 @@ const ru: Lang = {
     'Уведомления о новых сделках {status}',
   'settings.general.update-notifications': 'Уведомления об обновлениях',
   'settings.general.update-notifications-desc':
-    'Ежедневно проверять общедоступные данные о релизах Journalit на GitHub и уведомлять о выходе новой версии',
+    'Показывать напоминания об обновлениях и изменения после обновления.',
   'settings.general.update-notifications-aria':
     'Показывать уведомления об обновлениях',
-  'settings.general.update-notifications-toggled':
-    'Уведомления об обновлениях {status}',
   'settings.general.data-management': 'Управление данными & конфиденциальность',
   'settings.general.backup-restore-section':
     'Резервное копирование, восстановление и сброс',
@@ -2624,6 +2626,18 @@ const ru: Lang = {
   'widget.goals.description': 'Ежедневные цели с флажками выполнения',
 
   
+  'review.header.guide.intro.title': 'Ваш обзор начинается здесь',
+  'review.header.guide.intro.description':
+    'В заголовке есть всё необходимое для навигации и управления этим обзором.',
+  'review.header.guide.reviewed.title': 'Отметить как проверенную',
+  'review.header.guide.reviewed.description':
+    'Нажмите на кружок, чтобы отметить эту заметку как проверенную. Нажмите ещё раз, чтобы отменить.',
+  'review.header.guide.dates.title': 'Переход между обзорами',
+  'review.header.guide.dates.description':
+    'Нажмите на дату, например июнь или 2026, чтобы открыть соответствующую заметку обзора.',
+  'review.header.guide.controls.title': 'Фильтры, макет и навигация',
+  'review.header.guide.controls.description':
+    'Используйте воронку для фильтрации сделок, «Сменить layout» для изменения макета заметки и «Назад» / «Далее» для перехода между периодами обзора.',
   'widget.header.name': 'Заголовок',
 
   'widget.header.invalid-context':
@@ -4403,7 +4417,8 @@ const ru: Lang = {
   'home.widget.trading-score.description':
     'Общая оценка вашей торговой эффективности',
   'home.widget.aum.name': 'AUM',
-  'home.widget.aum.description': 'Общий баланс счетов с трендом за 7 дней',
+  'home.widget.aum.description':
+    'Текущие балансы счетов с динамикой за 30 дней',
   'home.widget.drawdown-monitor.name': 'Монитор просадки',
   'home.widget.drawdown-monitor.description':
     'Использование лимита просадки по счетам',
@@ -4468,6 +4483,14 @@ const ru: Lang = {
   
   
   'home.period.month': 'Месяц',
+  'home.period.week': 'Неделя',
+  'home.period.custom': 'Произвольный период',
+  'home.period.invalid-range':
+    'Дата окончания должна совпадать с датой начала или быть позже.',
+  'date-input.error.day': 'День должен быть от 1 до {max}.',
+  'date-input.error.invalid': 'Введите корректную дату',
+  'date-input.error.month': 'Месяц должен быть от 1 до 12.',
+  'date-input.error.year': 'Используйте YY (2000–2099) или YYYY (1000–9999).',
   'home.period.quarter': 'Квартал',
   'home.period.year': 'Год',
   'home.period.lifetime': 'Всё время',
@@ -4619,6 +4642,7 @@ const ru: Lang = {
   
   
   'home.widget.aum.title': 'AUM',
+  'home.widget.aum.current-trend': 'Сейчас · динамика за 30 дней',
   'home.widget.aum.period.month': 'В этом месяце',
   'home.widget.aum.period.quarter': 'В этом квартале',
   'home.widget.aum.period.year': 'В этом году',
@@ -4632,9 +4656,6 @@ const ru: Lang = {
   
   
   'home.widget.streak.title': 'Серия',
-  'home.widget.streak.period.month': 'в этом месяце',
-  'home.widget.streak.period.quarter': 'в этом квартале',
-  'home.widget.streak.period.year': 'в этом году',
   'home.widget.streak.period.ever': 'за всё время',
   'home.widget.streak.win': 'победа',
   'home.widget.streak.wins': 'победы',
@@ -4940,6 +4961,31 @@ const ru: Lang = {
   'metric.winRate.description': 'Процент прибыльных сделок',
   'metric.profitFactor.name': 'Профит-фактор',
   'metric.profitFactor.description': 'Валовая прибыль к валовому убытку',
+  'metric.calmarRatio.name': 'Коэффициент Кальмара',
+  'metric.calmarRatio.description':
+    'Среднегодовая реализованная доходность к максимальной процентной просадке',
+  'dashboard.calmarRatio.tooltip.formula':
+    'Годовая доходность, делённая на максимальную просадку.',
+  'dashboard.calmarRatio.unavailable.no-history':
+    'Пока нет истории реализованных результатов.',
+  'dashboard.calmarRatio.unavailable.capital':
+    'Начальный капитал в валюте отображения недоступен.',
+  'dashboard.calmarRatio.unavailable.incomplete-history':
+    'Некоторые реализованные результаты отсутствуют.',
+  'dashboard.calmarRatio.unavailable.dates':
+    'Некоторые даты сделок отсутствуют.',
+  'dashboard.calmarRatio.unavailable.short-history':
+    'Нужен минимум один день истории.',
+  'dashboard.calmarRatio.unavailable.no-drawdown':
+    'Просадка ещё не зафиксирована.',
+  'dashboard.calmarRatio.unavailable.non-positive-equity':
+    'Капитал достиг нуля или стал отрицательным.',
+  'dashboard.calmarRatio.unavailable.non-finite':
+    'Результат слишком велик для расчёта.',
+  'dashboard.calmarRatio.unavailable.scope':
+    'Выберите весь период и только целые счета.',
+  'dashboard.calmarRatio.unavailable.conversion':
+    'Некоторые валютные конвертации недоступны.',
   'metric.sharpeRatio.name': 'Коэффициент Шарпа',
   'metric.sharpeRatio.description': 'Средний P&L сделки к её волатильности',
   'metric.expectancy.name': 'Математическое ожидание',
@@ -5759,6 +5805,7 @@ const ru: Lang = {
   'templateEditor.field.template-name': 'Имя layoutа',
   'templateEditor.field.widgets': 'Виджеты ({count})',
   'templateEditor.button.add-widget': '+ Добавить виджет',
+  'templateEditor.button.insert-widget-here': 'Добавить виджет сюда',
   'templateEditor.button.widget-library-docs': 'Widget library docs',
   'templateEditor.widget.locked': 'Заблокировано',
   'templateEditor.widget.select-placeholder': 'Выберите виджет...',
@@ -5862,7 +5909,7 @@ const ru: Lang = {
   'datepicker.button.now': 'Сейчас',
   'datepicker.placeholder.day': 'ДД',
   'datepicker.placeholder.month': 'ММ',
-  'datepicker.placeholder.year': 'ГГ',
+  'datepicker.placeholder.year': 'YY',
   'datepicker.placeholder.hour': 'ЧЧ',
   'datepicker.placeholder.minute': 'ММ',
   'datepicker.placeholder.second': 'SS',
@@ -6003,8 +6050,6 @@ const ru: Lang = {
   
   
   'status-bar.update-available-branded': 'Обновить Journalit',
-  'status-bar.release-notes-branded':
-    'Journalit · Просмотреть примечания к выпуску',
   'status-bar.update-aria-label': 'Journalit {version} - Нажмите для просмотра',
   'update.available.ready': 'Доступна новая версия',
 
@@ -6374,7 +6419,6 @@ const ru: Lang = {
   'widget.weekly-drc-context.description':
     'Show selected DRC sections for each day in the weekly review',
 
-  'widget.weekly-drc-context.image-alt-prefix': 'Weekly DRC image',
   'widget.weekly-drc-context.no-activity': 'No activity for this day.',
   'widget.weekly-drc-context.no-sections-configured':
     'Choose at least one DRC section in the template settings.',
@@ -6618,7 +6662,7 @@ const ru: Lang = {
     'Сделок для импорта не найдено. Проверьте файл в Trade Import, чтобы узнать подробности.',
 
   'quick-import.privacy-note':
-    'Файлы загружаются на серверы Journalit для обработки и по умолчанию не сохраняются.',
+    'Выбранный файл и параметры импорта отправляются в Journalit. Зашифрованные диагностические данные хранятся 1 день (бесплатно) или 14 дней (Pro), предпросмотры — 7 дней. Необязательное сопоставление с ИИ отправляет заголовки и примеры строк модели ИИ. Trade Import не отправляет отдельную клиентскую телеметрию или фоновые отчёты об ошибках.',
   'quick-import.dropzone.title': 'Drop a broker export here',
   'quick-import.dropzone.subtitle': 'Or click to choose a file',
 
@@ -6672,7 +6716,7 @@ const ru: Lang = {
   'trade-import.gate.sign-in':
     'Войдите или создайте бесплатный аккаунт Journalit, чтобы проанализировать файл. Pro требуется только при импорте сделок.',
   'trade-import.gate.sign-in.reassurance':
-    'Файл обрабатывается конфиденциально и по умолчанию не сохраняется.',
+    'Выбранный файл и параметры импорта отправляются в Journalit. Зашифрованные диагностические данные хранятся 1 день (бесплатно) или 14 дней (Pro), предпросмотры — 7 дней. Необязательное сопоставление с ИИ отправляет заголовки и примеры строк модели ИИ. Trade Import не отправляет отдельную клиентскую телеметрию или фоновые отчёты об ошибках.',
   'trade-import.gate.sign-in.no-trial':
     'Для анализа и предварительного просмотра пробный период Pro не требуется.',
   'trade-import.gate.sign-in.cta': 'Войти и просмотреть бесплатно',
@@ -6698,7 +6742,7 @@ const ru: Lang = {
     'Одна сделка на строку (использует P/L)',
   'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
   'trade-import.privacy.copy':
-    'Trade Import uploads the selected broker export to Journalit servers for processing. Broker exports may contain account identifiers, trade history, symbols, timestamps, prices, quantities, fees, balances, and P&L. For preview generation, Journalit also sends your selected account name, mapping/template choices, custom field definitions and saved options, and limited local open-trade context for IBKR open-position matching. Raw files are processed for this import and are not stored by default. When AI mapping suggestions are on, the column headers and a few sample rows are also sent to an AI model to suggest column matches; untick the option to map columns yourself.',
+    'Выбранный файл и параметры импорта отправляются в Journalit. Зашифрованные диагностические данные хранятся 1 день (бесплатно) или 14 дней (Pro), предпросмотры — 7 дней. Необязательное сопоставление с ИИ отправляет заголовки и примеры строк модели ИИ. Trade Import не отправляет отдельную клиентскую телеметрию или фоновые отчёты об ошибках. Экспорты могут содержать идентификаторы счетов, историю сделок, заметки, цены, объёмы, комиссии, балансы и прибыль/убыток. Запросы также отправляют определения пользовательских полей и сохранённые параметры; предпросмотр включает имя целевого счёта. Отключите сопоставление с ИИ, чтобы избежать обработки ИИ.',
 
   'trade-import.action.analyse': 'Analyse file',
   'trade-import.action.choose-file': 'Choose file',
@@ -6942,6 +6986,13 @@ const ru: Lang = {
     'Формат файла читается автоматически, сопоставление не нужно.',
   'trade-import.source.guide': 'Как экспортировать',
   'trade-import.source.change': 'Изменить',
+  'trade-import.recovery.rithmic-order-history.title':
+    'Неподдерживаемый формат Rithmic',
+  'trade-import.recovery.rithmic-order-history.message':
+    'Загрузите экспорт истории ордеров Rithmic или выберите платформу, создавшую этот файл.',
+  'trade-import.recovery.rithmic-order-history.choose-file':
+    'Выбрать другой файл',
+  'trade-import.source.change-action': 'Изменить источник',
   'trade-import.sync-suggestion.full.title':
     '{broker} может синхронизироваться автоматически',
   'trade-import.sync-suggestion.full.body':
@@ -8001,11 +8052,6 @@ const ru: Lang = {
   'tradelog.guide.image-gallery-empty.intro.description':
     'Добавьте изображения, GIF, видео или ссылки YouTube к сделкам или заметкам обзоров, и они автоматически появятся здесь. Когда появятся медиа, Journalit покажет полный гид по галерее: полноэкранный разбор, теги и заметки.',
 
-  'tradelog.guide.switch-to-gallery.title':
-    'Переключитесь со сделок на Галерею',
-  'tradelog.guide.switch-to-gallery.description':
-    'Используйте этот переключатель режима, чтобы переходить между обычным журналом сделок и Галереей. Нажмите Галерея, чтобы продолжить тур по изображениям, GIF, видео и ссылкам YouTube.',
-
   'tradelog.guide.gallery-grouping.title':
     'Группировать медиа по записи журнала',
   'tradelog.guide.gallery-grouping.description':
@@ -8140,10 +8186,10 @@ const ru: Lang = {
   'account.prop-challenge.rule.daily-loss-model.profit-tiers':
     'Уровни по предыдущему EOD',
   'account.prop-challenge.rule.daily-loss-tiers-help':
-    'Используйте пары прибыль:лимит убытка. Уровень по прибыли предыдущего EOD применяется к следующей сессии.',
+    'Введите пары прибыль:лимит-убытка через запятую. Выбранная база прибыли на закрытии прошлого торгового дня задаёт лимит следующего дня; он может расти или снижаться.',
   'account.prop-challenge.rule.loss-tiers': 'Уровни прибыли и лимиты убытка',
   'account.prop-challenge.rule.daily-loss-threshold-help':
-    'The higher daily loss amount activates permanently when lifetime account profit first reaches the configured percentage of starting balance.',
+    'Изменённый денежный лимит активируется навсегда, когда накопленная реализованная прибыль сделок фазы впервые достигает заданного процента её начального баланса.',
   'account.prop-challenge.rule.profit-threshold-percent':
     'Account profit threshold (%)',
   'account.prop-challenge.rule.amount-after-threshold':
@@ -8205,6 +8251,40 @@ const ru: Lang = {
   'account.prop-challenge.rule.consistency': 'Стабильность',
   'account.prop-challenge.rule.max_position_size':
     'Максимальный размер позиции',
+  'account.prop-challenge.rule.help.target-amount':
+    'Абсолютная цель задана в валюте счёта, процентная — от начального баланса фазы. Прогресс учитывает рост баланса после дневного лимита зачтённой прибыли, без нереализованного P&L.',
+  'account.prop-challenge.rule.help.credit-withdrawals':
+    'Добавляет записанные валовые суммы вывода обратно к прогрессу абсолютной цели. Не меняет баланс или право на вывод.',
+  'account.prop-challenge.rule.help.drawdown-amount':
+    'Денежное расстояние ниже начального баланса (статический режим) или максимума реализованного баланса (скользящий). Касание нижней границы — нарушение.',
+  'account.prop-challenge.rule.help.drawdown-mode':
+    'Статический режим фиксирует границу. EOD следует максимумам баланса на закрытии торгового дня; внутридневной — записанным операциям реализованного баланса, не нереализованному капиталу.',
+  'account.prop-challenge.rule.help.lock-balance':
+    'Потолок нижней границы скользящей просадки, а не баланс активации. На этом балансе граница перестаёт расти. Пусто — без потолка.',
+  'account.prop-challenge.rule.help.daily-loss-amount':
+    'Денежный лимит наибольшего накопленного реализованного чистого убытка сделок за торговый день, не падения от дневного пика. Касание лимита — нарушение.',
+  'account.prop-challenge.rule.help.breach-action':
+    'Провал счёта сохраняет прошлое нарушение активным. Пауза до следующей сессии действует только для текущего торгового дня; прошлые нарушения остаются в истории.',
+  'account.prop-challenge.rule.help.daily-loss-model':
+    'Выберите фиксированный лимит, постоянное изменение при пороге прибыли, масштабирование по пику EOD-прибыли или уровням прошлого EOD. Условные поля настраивают выбранную модель.',
+  'account.prop-challenge.rule.help.profit-basis':
+    'Накопленная прибыль сделок исключает денежные потоки. Текущая прибыль счёта их включает, поэтому выводы её уменьшают. Оба варианта используют закрытия прошлых торговых дней.',
+  'account.prop-challenge.rule.help.position-model':
+    'Выберите фиксированный лимит на сделку, дополнительный контракт за шаг прибыли или явные уровни. Масштабирование использует закрытия прошлых торговых дней.',
+  'account.prop-challenge.rule.help.max-contracts':
+    'Максимальный размер каждой сделки после необязательного пересчёта микроконтрактов, не общая экспозиция нескольких сделок. Превышение лимита — нарушение.',
+  'account.prop-challenge.rule.help.initial-contracts':
+    'Начальный лимит контрактов на сделку до повышения за прибыль завершённых торговых дней.',
+  'account.prop-challenge.rule.help.maximum-contracts':
+    'Необязательный потолок увеличения контрактов по прибыли. Пусто — без дополнительного потолка.',
+  'account.prop-challenge.rule.help.daily-profit':
+    'Денежный порог дневного реализованного чистого P&L сделок с учётом прибыли, убытков и расходов. Нереализованная прибыль и денежные потоки не учитываются.',
+  'account.prop-challenge.rule.help.consistency-cushion':
+    'Добавляется к максимальной доле лучшего дня в процентных пунктах: 30% + 5 пунктов допускает 35%. Пусто — без запаса.',
+  'account.prop-challenge.rule.help.daily-profit-cap':
+    'Денежный потолок дневной прибыли, зачтённой в цель фазы. Излишек остаётся в балансе; убытки учитываются полностью.',
+  'account.prop-challenge.rule.help.live-review':
+    'Реализованная чистая прибыль за один торговый день для допуска к проверке. Не переводит фазу автоматически и не предоставляет реальный счёт.',
   'account.prop-challenge.drawdown.static': 'Фиксированная',
   'account.prop-challenge.drawdown.eod-trailing': 'Скользящая на конец дня',
   'account.prop-challenge.drawdown.intraday-trailing':
@@ -8276,7 +8356,7 @@ const ru: Lang = {
     'Для цели по стабильности нужен максимум больше 0%.',
   'account.prop-challenge.ledger.help.open': 'О правиле: {rule}',
   'account.prop-challenge.ledger.help.profit_target':
-    'Увеличьте счёт на эту сумму, чтобы пройти фазу. Учитываются только закрытые сделки.',
+    'Достигните заданного роста баланса для прохождения фазы. Лимиты зачтённой прибыли и необязательный зачёт выводов влияют на прогресс; нереализованная прибыль не считается.',
   'account.prop-challenge.ledger.help.profit_target.example':
     'Этому счёту нужно {target} прибыли: уже {current}, осталось {remaining}.',
   'account.prop-challenge.ledger.help.profit_target.example-done':
@@ -8306,11 +8386,11 @@ const ru: Lang = {
   'account.prop-challenge.ledger.help.live_review_daily_profit.example':
     'Один день от {trigger} и выше даёт квалификацию; лучший день пока {bestDay}.',
   'account.prop-challenge.ledger.help.minimum_trading_days':
-    'Дни хотя бы с одной закрытой сделкой. Фазу нельзя пройти раньше, сколько бы быстро ни была достигнута цель.',
+    'Требуемое число разных дней входа в сделки этой фазы, включая ещё открытые позиции. Используется заданная граница торгового дня, не календарная полночь.',
   'account.prop-challenge.ledger.help.minimum_trading_days.example':
     '{current} из {target} торговых дней выполнено, осталось {remaining}.',
   'account.prop-challenge.ledger.help.minimum_profitable_days':
-    'Торговые дни, закрытые на минимуме дневной прибыли фирмы или выше. Безубыток и меньшая прибыль не считаются.',
+    'Требуемые дни с минимальной дневной реализованной чистой прибылью этой фазы. Записанные выводы не сбрасывают это правило всей фазы.',
   'account.prop-challenge.ledger.help.minimum_profitable_days.example':
     '{current} из {target} дней закрыты на {minimum} или больше, осталось {remaining}.',
   'account.prop-challenge.ledger.help.consistency':
@@ -9039,10 +9119,13 @@ const ru: Lang = {
   'trade-handoff.trade-count.other': '{count} сделки',
   'trade-handoff.title.sync': 'Синхронизация завершена',
   'trade-handoff.summary.import-complete': '{trades} импортировано',
+  'trade-handoff.summary.update-complete': '{trades} обновлено',
+  'trade-handoff.summary.update-partial': '{trades} обновлено с проблемами',
+  'trade-handoff.summary.mixed-complete':
+    '{imported} импортировано · {updated} обновлено',
+  'trade-handoff.summary.mixed-partial':
+    '{imported} импортировано · {updated} обновлено, с проблемами',
   'trade-handoff.summary.import-partial': '{trades} импортировано с проблемами',
-  'trade-handoff.summary.sync-complete': '{trades} синхронизировано',
-  'trade-handoff.summary.sync-partial':
-    '{trades} синхронизировано с проблемами',
   'trade-handoff.periods.choose': 'Выбрать другой период обзора',
   'trade-handoff.periods.recommended': 'Рекомендуется',
   'trade-handoff.action.dismiss': 'Скрыть результат последней операции',
@@ -9092,6 +9175,79 @@ const ru: Lang = {
   'sample.notice.busy': 'Другая операция с примером журнала уже выполняется.',
   
   
+  'account.prop-challenge.field.help-label': 'Справка: {field}',
+  'account.prop-challenge.payout-rules.help.cycle':
+    'Ожидание измеряется днями входа, днями с минимальной чистой прибылью или прошедшими календарными днями. Без цикла отключает только это требование по дням.',
+  'account.prop-challenge.payout-rules.help.days':
+    'Дни выбранного цикла: дни входа, достаточной реализованной чистой прибыли или полные периоды по 24 часа.',
+  'account.prop-challenge.payout-rules.help.daily-profit':
+    'Минимальная реализованная чистая прибыль за день после издержек. Сделки группируются по границе торгового дня. Порог должен быть больше нуля.',
+  'account.prop-challenge.payout-rules.help.qualifying-days':
+    'Добавляет прибыльные дни к циклу ожидания. Оба требования должны выполняться в текущем цикле выплат.',
+  'account.prop-challenge.payout-rules.help.profitable-days':
+    'Число отдельных дней, достигших минимальной реализованной чистой прибыли в текущем цикле выплат.',
+  'account.prop-challenge.payout-rules.help.anchor':
+    'Календарное ожидание начинается с начала цикла или первого входа. При включённом сбросе зарегистрированное снятие начинает следующий цикл.',
+  'account.prop-challenge.payout-rules.help.elapsed-hours':
+    'Часы с первого входа в текущем цикле. Без сделки отсчёт не начинается. Пустое поле отключает требование.',
+  'account.prop-challenge.payout-rules.help.request-window':
+    'Разрешает запросы ежедневно или в выбранные дни по указанному часовому поясу. Остальные требования сохраняются.',
+  'account.prop-challenge.payout-rules.help.time-zone':
+    'Часовой пояс разрешённых дней, например America/New_York. Не меняет границу торгового дня.',
+  'account.prop-challenge.payout-rules.help.request-days':
+    'Разрешённые дни недели в выбранном часовом поясе. Выберите хотя бы один.',
+  'account.prop-challenge.payout-rules.help.minimum-balance':
+    'Баланс, необходимый до выплаты; не порог расчёта доступной прибыли. Пустое поле отключает требование.',
+  'account.prop-challenge.payout-rules.help.cycle-profit':
+    'Необходимая реализованная чистая торговая прибыль цикла. Депозиты и корректировки баланса не учитываются. Пустое поле отключает требование.',
+  'account.prop-challenge.payout-rules.help.profit-schedule':
+    'Минимумы прибыли через запятую для выплат 1, 2 и далее. Заменяют единый минимум прибыли цикла.',
+  'account.prop-challenge.payout-rules.help.repeat-final':
+    'Повторяет последнее значение для номеров выплат за пределами списка.',
+  'account.prop-challenge.payout-rules.help.positive-cycle':
+    'После первой зарегистрированной выплаты требует реализованную чистую прибыль цикла строго больше нуля.',
+  'account.prop-challenge.payout-rules.help.consistency':
+    'Лучшая дневная прибыль, делённая на реализованную чистую прибыль цикла. Убытки уменьшают итог и могут увеличить процент. Пустое поле отключает лимит.',
+  'account.prop-challenge.payout-rules.help.consistency-schedule':
+    'Процентные ограничения лучшего дня через запятую для каждого номера выплаты. Заменяют единый лимит стабильности.',
+  'account.prop-challenge.payout-rules.help.availability':
+    'Прибыль, доступная к запросу сверх начального баланса фазы или выбранного порога. Проценты и другие лимиты действуют дальше.',
+  'account.prop-challenge.payout-rules.help.balance-floor':
+    'Баланс, исключённый из доступной прибыли. Выводимая доля применяется лишь к превышению; правило просадки не меняется.',
+  'account.prop-challenge.payout-rules.help.request-percent':
+    'Запрашиваемый процент баланса сверх выбранного порога. Лимиты запроса и новой прибыли могут его уменьшить.',
+  'account.prop-challenge.payout-rules.help.minimum-request':
+    'Минимальный разрешённый запрос выплаты. Рассчитанная доступная сумма тоже должна достигать минимума.',
+  'account.prop-challenge.payout-rules.help.maximum':
+    'Фиксированный лимит, только первая выплата, по номеру выплаты или процент прибыли цикла. Без максимума снимает только этот лимит.',
+  'account.prop-challenge.payout-rules.help.maximum-amount':
+    'Максимальный запрос до распределения прибыли. Доступная прибыль и другие лимиты могут уменьшить сумму.',
+  'account.prop-challenge.payout-rules.help.first-maximum':
+    'Лимит до распределения только для первой выплаты этой фазы. Затем он исчезает, остальные ограничения остаются.',
+  'account.prop-challenge.payout-rules.help.maximum-schedule':
+    'Лимиты до распределения через запятую по номеру выплаты. Без повторения последнего значения неуказанные последующие выплаты имеют нулевой лимит.',
+  'account.prop-challenge.payout-rules.help.maximum-percent':
+    'Ограничивает запрос до распределения процентом реализованной чистой прибыли цикла. Отдельно от выводимой доли баланса.',
+  'account.prop-challenge.payout-rules.help.lifetime-days':
+    'Подходящие дни всей финансируемой фазы для новых правил доступности и лимитов. Сбросы циклов не стирают счётчик.',
+  'account.prop-challenge.payout-rules.help.split-model':
+    'Постоянная доля или ставки по накопленным выплатам до распределения либо общей прибыли счёта. Определяет получаемую сумму, не лимит запроса.',
+  'account.prop-challenge.payout-rules.help.trader-share':
+    'Процент запроса до распределения, выплачиваемый трейдеру по этой ставке. Остальное получает фирма.',
+  'account.prop-challenge.payout-rules.help.cumulative-threshold':
+    'Выплаты до распределения в этой фазе, с которых действует следующая ставка. Запрос через порог использует обе ставки для соответствующих частей.',
+  'account.prop-challenge.payout-rules.help.maximum-payouts':
+    'Разрешённое число зарегистрированных выплат в фазе. После достижения дальнейшие выплаты блокируются. Пустое поле снимает лимит.',
+  'account.prop-challenge.payout-rules.help.maximum-outcome':
+    'После последней выплаты: продолжить, завершить счёт, перейти в следующую фазу или получить право на live-проверку. Это не автоматическое одобрение.',
+  'account.prop-challenge.payout-rules.help.aftermath':
+    'Баланс и просадка после выплаты: вычесть запрос, вычесть и закрепить порог либо восстановить начальный баланс и просадку.',
+  'account.prop-challenge.payout-rules.help.drawdown-floor':
+    'Порог просадки, закрепляемый после выплаты при соответствующем выборе. Оставшийся баланс должен быть выше него.',
+  'account.prop-challenge.payout-rules.help.first-exempt':
+    'Для первой выплаты фазы минимальная прибыль цикла считается нулевой: реализованная чистая прибыль цикла не должна быть отрицательной. Остальные требования сохраняются.',
+  'account.prop-challenge.payout-rules.help.reset-cycle':
+    'Сбрасывает дни, дневную прибыль, прибыль цикла и стабильность после зарегистрированной выплаты. Сохраняет подходящие дни всей фазы; предварительные расчёты ничего не сбрасывают.',
 };
 
 export default ru;

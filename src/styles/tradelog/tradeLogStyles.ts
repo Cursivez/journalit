@@ -1123,10 +1123,19 @@ button.journalit-native-button--unstyled.node-label {
   font-weight: 700;
 }
 
-.header-cell:not(.sortable) > span {
+.journalit-trade-log-view-container .header-cell > span {
   display: block;
-  width: 100%;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
   text-align: center;
+}
+
+.journalit-trade-log-view-container .header-custom-field > span {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.3;
 }
 
 .sort-indicator {
@@ -1455,9 +1464,9 @@ button.journalit-native-button--unstyled.node-label {
   color: var(--status-open-color);
 }
 
-.status-backtest {
+.journalit-trade-log-view-container .status-backtest {
   background: rgba(111, 66, 193, 0.15);
-  color: var(--text-accent);
+  color: var(--color-purple, #6f42c1);
 }
 
 .trade-pnl-cell {

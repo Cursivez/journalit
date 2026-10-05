@@ -94,7 +94,6 @@ export const SetupOverviewCumulativePnlChart: React.FC<
             height={28}
           />
           <YAxis
-            className="journalit-chart-axis--numeric"
             axisLine={false}
             domain={axis.domain}
             ticks={axis.ticks}

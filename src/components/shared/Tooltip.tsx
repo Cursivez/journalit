@@ -4,6 +4,11 @@ import React, { useState, useRef, useEffect, useCallback, useId } from 'react';
 import { createPortal } from 'react-dom';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { mergeClassNames } from '../../utils/classNames';
+import { useDisclosureEscape } from './disclosureEscape';
+import {
+  calculateTooltipPosition,
+  type TooltipPosition,
+} from './tooltipPosition';
 
 interface TooltipProps {
   content: React.ReactNode;
@@ -11,13 +16,15 @@ interface TooltipProps {
   className?: string;
   triggerClassName?: string;
   delay?: number;
-  preferredPosition?: 'top' | 'bottom' | 'left' | 'right' | 'auto';
+  preferredPosition?: TooltipPosition;
   
   block?: boolean;
   instantHide?: boolean;
   disabled?: boolean;
   
   disclosureLabel?: string;
+  
+  ariaDescribedBy?: string;
 }
 
 export const Tooltip = React.memo<TooltipProps>(
@@ -32,6 +39,7 @@ export const Tooltip = React.memo<TooltipProps>(
     instantHide = false,
     disabled = false,
     disclosureLabel,
+    ariaDescribedBy,
   }) => {
     const [isVisible, setIsVisible] = useState(false);
     const [position, setPosition] = useState({ top: -9999, left: -9999 });
@@ -51,79 +59,15 @@ export const Tooltip = React.memo<TooltipProps>(
     const calculatePosition = useCallback(() => {
       if (!triggerRef.current || !tooltipRef.current) return;
 
-      const triggerRect = triggerRef.current.getBoundingClientRect();
-      const tooltipRect = tooltipRef.current.getBoundingClientRect();
-      const viewportWidth = window.innerWidth;
-      const viewportHeight = window.innerHeight;
-      const gap = 8; 
-
-      let top = 0;
-      let left = 0;
-
-      
-      const isSmallTrigger = triggerRect.width < 50 && triggerRect.height < 50;
-      const effectivePosition =
-        isSmallTrigger && preferredPosition === 'auto'
-          ? 'top'
-          : preferredPosition;
-
-      switch (effectivePosition) {
-        case 'right':
-          top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
-          left = triggerRect.right + gap;
-          
-          if (left + tooltipRect.width > viewportWidth - 16) {
-            left = triggerRect.left - tooltipRect.width - gap;
-          }
-          break;
-
-        case 'left':
-          top = triggerRect.top + (triggerRect.height - tooltipRect.height) / 2;
-          left = triggerRect.left - tooltipRect.width - gap;
-          
-          if (left < 16) {
-            left = triggerRect.right + gap;
-          }
-          break;
-
-        case 'bottom':
-          top = triggerRect.bottom + gap;
-          left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
-          break;
-
-        case 'top':
-          top = triggerRect.top - tooltipRect.height - gap;
-          left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
-
-          
-          if (top < 16) {
-            top = triggerRect.bottom + gap;
-          }
-          break;
-
-        default: 
-          
-          top = triggerRect.top - tooltipRect.height - gap;
-          left = triggerRect.left + (triggerRect.width - tooltipRect.width) / 2;
-
-          
-          if (top < 16) {
-            top = triggerRect.bottom + gap;
-          }
-      }
-
-      
-      const margin = 16;
-      if (left < margin) left = margin;
-      if (left + tooltipRect.width > viewportWidth - margin) {
-        left = viewportWidth - tooltipRect.width - margin;
-      }
-      if (top < margin) top = margin;
-      if (top + tooltipRect.height > viewportHeight - margin) {
-        top = viewportHeight - tooltipRect.height - margin;
-      }
-
-      setPosition({ top, left });
+      setPosition(
+        calculateTooltipPosition({
+          triggerRect: triggerRef.current.getBoundingClientRect(),
+          tooltipRect: tooltipRef.current.getBoundingClientRect(),
+          preferredPosition,
+          viewportWidth: window.innerWidth,
+          viewportHeight: window.innerHeight,
+        })
+      );
     }, [preferredPosition]);
 
     const scheduleShowTooltip = useCallback(() => {
@@ -179,6 +123,11 @@ export const Tooltip = React.memo<TooltipProps>(
         unmountTimeoutRef.current = null;
       }, 200);
     }, [instantHide]);
+
+    useDisclosureEscape({
+      active: Boolean(disclosureLabel) && isVisible,
+      onEscape: hideTooltip,
+    });
 
     useEffect(() => {
       if (isVisible && isMounted) {
@@ -269,6 +218,7 @@ export const Tooltip = React.memo<TooltipProps>(
               aria-controls={tooltipId}
               aria-expanded={isVisible}
               aria-labelledby={disclosureLabelId}
+              aria-describedby={ariaDescribedBy}
               onClick={handleDisclosureClick}
               onKeyDown={handleDisclosureKeyDown}
               onMouseEnter={showTooltip}

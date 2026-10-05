@@ -418,6 +418,7 @@ export const AccountHeader: React.FC<{
       plugin.app,
       plugin,
       account,
+      accountPageData.trades,
       () => void refreshData() 
     );
   };

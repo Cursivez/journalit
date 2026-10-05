@@ -3,6 +3,25 @@
 import type { Lang } from './en';
 
 const ta: Lang = {
+  'trade-import.recovery.bybit-header.columns':
+    'விடுபட்ட தேவையான நெடுவரிசைகள்: {columns}.',
+  'trade-import.recovery.bybit-header.title':
+    'Bybit தலைப்பு அல்லது ஏற்றுமதியைச் சரிபார்க்கவும்',
+  'trade-import.recovery.bybit-header.message':
+    'தேர்ந்தெடுத்த தலைப்பு Bybit வர்த்தக வரலாற்றுடன் பொருந்தவில்லை. தலைப்பு வரிசையைச் சரிபார்க்கவும் அல்லது ஆர்டர் விலைகள் மட்டுமல்லாமல் நிறைவேற்றப்பட்ட விலைகள் மற்றும் அளவுகளுடன் வர்த்தகங்களை ஏற்றுமதி செய்யவும். மற்றொரு வடிவத்தை இணைக்க, {manualSource} என்பதை வெளிப்படையாகத் தேர்ந்தெடுக்கவும்.',
+  'update.installed.title': 'புதியவை',
+  'settings.general.available-update-notifications':
+    'புதுப்பிப்பு நினைவூட்டல்களைக் காட்டு',
+  'settings.general.available-update-notifications-desc':
+    'தினமும் புதிய பதிப்புகளைச் சரிபார்த்து நினைவூட்டலைக் காட்டு. புதுப்பித்த பிறகு புதிய அம்சங்களை மட்டும் பார்க்க இதை முடக்கு.',
+  'account.edit.field.unscoped-live-balance-desc':
+    'முந்தைய இருப்புத் திருத்தத்தை ஒரு கட்டத்துடன் இணைக்க முடியவில்லை. அது பாதுகாக்கப்படுகிறது; செயலில் உள்ள கட்டத்தைச் சரிசெய்ய தரகரின் தற்போதைய இருப்பை உள்ளிடவும்.',
+  'account.edit.error.inactive-phase':
+    'நேரடி இருப்பை செயலில் உள்ள கட்டத்தில் மட்டுமே மாற்ற முடியும்.',
+  'account.edit.error.phase-changed':
+    'திருத்தும்போது கணக்கு விவரங்கள் மாறிவிட்டன. சேமிப்பதற்கு முன் கணக்குத் திருத்தியை மீண்டும் திறக்கவும்.',
+  'account.profiles.profitable-days-conflict':
+    'இந்த விதிமுறைகளைப் பயன்படுத்தும் முன், தற்போதைய பேஅவுட் கொள்கையை வைத்திருக்கவும் அல்லது லாபகரமான நாட்களின் தேவையை மாற்றவும்.',
   'templateEditor.widget.session-log.hide-empty-outside':
     'அமர்வுக்கு வெளியேயான பதிவு காலியாக இருந்தால் மறை',
   'widget.mfeScatter.name': 'MFE மற்றும் ஈட்டிய லாபம்/நஷ்டம்',
@@ -14,7 +33,6 @@ const ta: Lang = {
   'widget.mfeScatter.empty':
     'இந்த அலகில் பயன்படுத்தக்கூடிய MFE கொண்ட மூடப்பட்ட வர்த்தகங்கள் இல்லை.',
 
-  'trade.broker-synced-at': 'தரகர் ஒத்திசைவு {date}',
   'trade-sync.tradovate.status.setup-required': 'கணக்கை அமைக்க வேண்டும்',
   'trade-sync.tradovate.status.connecting': 'இணைக்கிறது',
   'trade-sync.tradovate.status.paused': 'இடைநிறுத்தப்பட்டது',
@@ -822,8 +840,6 @@ const ta: Lang = {
 
   'notice.error.open-release-notes':
     'வெளியீட்டுக் குறிப்புகளைத் திறக்க முடியவில்லை: {error}',
-  'notice.error.open-update-notification':
-    'புதுப்பிப்பு அறிவிப்பைத் திறக்க முடியவில்லை: {error}',
   'notice.error.open-layout-builder':
     'தளவமைப்பு உருவாக்கியைத் திறக்க முடியவில்லை: {error}',
   'notice.error.switch-template': 'தளவமைப்பை மாற்ற முடியவில்லை: {error}',
@@ -1022,51 +1038,35 @@ const ta: Lang = {
   'layoutBuilder.guide.intro.title': 'இது உங்கள் தளவமைப்பு உருவாக்கி',
   'layoutBuilder.guide.intro.description':
     'உங்கள் மதிப்பாய்வு தளவமைப்புகள் எவ்வாறு கட்டமைக்கப்பட்டுள்ளன என்பதை இந்தப் பக்கம் கட்டுப்படுத்துகிறது. தொடங்குவதற்கான எளிதான வழி, உள்ளமைக்கப்பட்ட தளவமைப்பை நகலெடுத்து, பின்னர் உங்கள் நகலைத் தனிப்பயனாக்குவது.',
-  'layoutBuilder.guide.sidebar-overview.title':
-    'இந்தப் பக்கப்பட்டியில் நீங்கள் எதைத் திருத்துகிறீர்கள் என்பதைத் தேர்வுசெய்யலாம்',
-  'layoutBuilder.guide.sidebar-overview.description':
-    'பக்கப்பட்டியில் உள்ள ஒவ்வொரு பகுதியும் வெவ்வேறு தளவமைப்பு வகையாகும். டிரேட் தளவமைப்புகள் உங்கள் மதிப்பாய்வு தளவமைப்புகளிலிருந்து தனித்தனியாக இருக்கும், மேலும் நூலகப் பிரிவு தளவமைப்புகளைப் பகிர்வதற்காக உள்ளது. நீங்கள் சொந்தமாக நகலை உருவாக்கிய பிறகு, புதிய மதிப்பாய்வுக் குறிப்புகளுக்கு அதை இயல்புநிலையாக மாற்ற நட்சத்திரமிடலாம்.',
-  'layoutBuilder.guide.pick-built-in.title':
-    'உள்ளமைக்கப்பட்ட DRC தளவமைப்புடன் தொடங்கவும்',
-  'layoutBuilder.guide.pick-built-in.description':
-    'உங்கள் முதல் தளவமைப்பிற்கு, உள்ளமைக்கப்பட்ட DRC தளவமைப்புகளில் ஒன்றைத் தொடங்கவும். உங்கள் சொந்த நகலை உருவாக்கும் முன் இது உங்களுக்கு பாதுகாப்பான தொடக்க புள்ளியை வழங்குகிறது.',
-  'layoutBuilder.guide.duplicate.title':
-    'உள்ளமைக்கப்பட்ட தளவமைப்பை நகலெடுக்கவும்',
-  'layoutBuilder.guide.duplicate.description':
-    'உள்ளமைக்கப்பட்ட தளவமைப்புகள் ஆரம்ப புள்ளிகள். முதலில் ஒன்றை நகலெடுக்கவும், எனவே நீங்கள் பாதுகாப்பாக உங்கள் சொந்த பதிப்பை உருவாக்கலாம்.',
-  'layoutBuilder.guide.preview-template.title':
-    'தளவமைப்பு எப்படி இருக்கும் என்பதை இந்த முன்னோட்டம் காட்டுகிறது',
-  'layoutBuilder.guide.preview-template.description':
-    'முன்னோட்டத்தை உருட்டவும், ஓட்டத்தின் உணர்வைப் பெறவும். நீங்கள் திருத்தத் தொடங்கும் முன், தளவமைப்பு தெளிவாகப் படிக்கிறதா என்பதைச் சரிபார்க்க இது பயனுள்ளதாக இருக்கும்.',
-  'layoutBuilder.guide.switch-to-editor.title': 'எடிட்டருக்கு மாறவும்',
-  'layoutBuilder.guide.switch-to-editor.description':
-    'தளவமைப்பு எப்படி இருக்கும் என்பதை முன்னோட்டம் காட்டுகிறது. எடிட்டர் என்பது நீங்கள் உண்மையில் அதை மாற்றும் இடமாகும்.',
+  'layoutBuilder.guide.create-own-layout.title':
+    'உங்கள் சொந்த தளவமைப்பை உருவாக்கவும்',
+  'layoutBuilder.guide.create-own-layout.description':
+    'உள்ளமைந்த தளவமைப்புகள் படிக்க மட்டுமே. ஒரு உள்ளமைந்த DRC தளவமைப்பை நகலெடுக்க நகல் ஐகானைக் கிளிக் செய்யவும், அல்லது புதியதைத் தொடங்க + ஐ அழுத்தவும். நிலையான DRC ஐ நகலெடுக்க அடுத்து என்பதை அழுத்தவும்.',
   'layoutBuilder.guide.editor-overview.title':
     'இங்குதான் நீங்கள் தளவமைப்பைத் திருத்துகிறீர்கள்',
   'layoutBuilder.guide.editor-overview.description':
     'இங்கே தளவமைப்பை மறுபெயரிடவும், விட்ஜெட் பட்டியலை மதிப்பாய்வு செய்யவும், விட்ஜெட்களை மறுசீரமைக்க இடது கைப்பிடியை இழுக்கவும், அதை மாற்ற விட்ஜெட்டைக் கிளிக் செய்யவும் மற்றும் உங்களுக்குத் தேவையில்லாத எதையும் அகற்றவும்.',
-  'layoutBuilder.guide.add-widget.title':
-    'உங்கள் நகலில் விட்ஜெட்டைச் சேர்க்கவும்',
+  'layoutBuilder.guide.add-widget.title': 'ஒரு விட்ஜெட்டைச் சேர்க்கவும்',
   'layoutBuilder.guide.add-widget.description':
-    'உங்கள் தளவமைப்பில் புதிய தொகுதிகளை வைக்க, விட்ஜெட்டைச் சேர் என்பதைப் பயன்படுத்தவும். நீங்கள் எவ்வாறு மதிப்பாய்வு செய்கிறீர்கள் என்பதைப் பொருத்தும் பணிப்பாய்வுகளை இப்படித்தான் வடிவமைக்கிறீர்கள்.',
-  'layoutBuilder.guide.open-widget-picker.title':
-    'விட்ஜெட் பிக்கரைத் திறக்கவும்',
-  'layoutBuilder.guide.open-widget-picker.description':
-    'இந்த மதிப்பாய்வு வகைக்கு நீங்கள் சேர்க்கக்கூடிய விட்ஜெட்களை இந்தத் தேர்வி காட்டுகிறது.',
+    'உங்கள் லேஅவுட்டின் இறுதியில் ஒரு பிளாக்கைச் சேர்க்க விட்ஜெட்டைச் சேர் என்பதைப் பயன்படுத்தவும், அல்லது இரண்டு விட்ஜெட்டுகளுக்கு இடையே ஹோவர் செய்து + ஐக் கிளிக் செய்து நீங்கள் விரும்பும் இடத்தில் சேர்க்கவும்.',
   'layoutBuilder.guide.choose-widget.title': 'விட்ஜெட்டைத் தேர்ந்தெடுக்கவும்',
   'layoutBuilder.guide.choose-widget.description':
     'பெயர், விளக்கம் அல்லது வகையின்படி விட்ஜெட்டைக் கண்டுபிடிக்க தேடல் பெட்டியில் தட்டச்சு செய்து, அதைத் தேர்ந்தெடுக்கவும். நீங்கள் அடுத்ததை அழுத்தவும், Journalit உங்களுக்கான முதல் முடிவைத் தேர்ந்தெடுக்கும்.',
-  'layoutBuilder.guide.widget-library-docs.title':
-    'நீங்கள் சிக்கிக்கொண்டால் விட்ஜெட் நூலகத்தைப் பயன்படுத்தவும்',
-  'layoutBuilder.guide.widget-library-docs.description':
-    'இது ஒவ்வொரு மதிப்பாய்வு வகைக்கும் விட்ஜெட் நூலகம், எடுத்துக்காட்டுகள் மற்றும் கிடைக்கும் அட்டவணையுடன் டாக்ஸ் பக்கத்தைத் திறக்கும்.',
   'layoutBuilder.guide.save-template.title': 'உங்கள் தளவமைப்பைச் சேமிக்கவும்',
   'layoutBuilder.guide.save-template.description':
     'உங்கள் நகல் சரியாகத் தெரிந்ததும், அதைச் சேமிக்கவும். உங்கள் மதிப்பாய்வு செயல்முறை மேம்படும் போது நீங்கள் அதைச் செம்மைப்படுத்தலாம்.',
   'layoutBuilder.guide.set-default-template.title':
-    'இந்த நகலை உங்கள் இயல்புநிலை தளவமைப்பாக அமைக்கவும்',
+    'அதை உங்கள் இயல்புநிலை தளவமைப்பாக்கவும்',
   'layoutBuilder.guide.set-default-template.description':
     'புதிய மதிப்பாய்வுக் குறிப்புகள் இந்தத் தளவமைப்பைத் தானாகப் பயன்படுத்த வேண்டுமெனில், உங்கள் புதிய தளவமைப்பில் உள்ள நட்சத்திரத்தைக் கிளிக் செய்யவும்.',
+  'layoutBuilder.guide.whats-new.insert-slot.title':
+    'எங்கு வேண்டுமானாலும் விட்ஜெட்டைச் சேர்க்கவும்',
+  'layoutBuilder.guide.whats-new.insert-slot.description':
+    'இரண்டு விட்ஜெட்டுகளுக்கு இடையே மவுஸை வைத்து + ஐ அழுத்தினால், கீழே அல்லாமல் அதே இடத்தில் விட்ஜெட் சேர்க்கப்படும்.',
+  'layoutBuilder.guide.whats-new.add-widget-button.title':
+    'அல்லது இறுதியில் சேர்க்கவும்',
+  'layoutBuilder.guide.whats-new.add-widget-button.description':
+    'விட்ஜெட்டைச் சேர் இன்னும் தளவமைப்பின் கீழே சேர்க்கிறது, இப்போது புதிய விட்ஜெட்டுக்கு உருட்டி அதன் தேடலைத் திறக்கிறது.',
   'tradelog.empty': 'டிரேட் இல்லை',
   'tradelog.empty.submessage':
     'டிரேட் குறிப்புகள் உங்கள் டிரேட் பதிவில் தோன்றுவதைக் காண அவற்றை உருவாக்கத் தொடங்குங்கள்.',
@@ -1528,7 +1528,7 @@ const ta: Lang = {
   'home.widget.trading-score.description':
     'உங்கள் மொத்த டிரேடிங் செயல்திறனுக்கான மதிப்பெண்',
   'home.widget.aum.name': 'AUM',
-  'home.widget.aum.description': '7 நாள் போக்குடன் மொத்த கணக்கு இருப்பு',
+  'home.widget.aum.description': '30 நாள் போக்குடன் தற்போதைய கணக்கு இருப்புகள்',
   'home.widget.drawdown-monitor.name': 'Drawdown மானிட்டர்',
   'home.widget.drawdown-monitor.description':
     'ஒவ்வொரு கணக்கின் டிராடவுன் வரம்பு பயன்பாடு',
@@ -1685,8 +1685,6 @@ const ta: Lang = {
   'command.open-economic-calendar': 'பொருளாதார நாட்காட்டியைத் திற',
 
   'status-bar.update-available-branded': 'Journalit-ஐ புதுப்பிக்கவும்',
-  'status-bar.release-notes-branded':
-    'Journalit · வெளியீட்டு குறிப்புகளைக் காண்க',
   'status-bar.update-aria-label':
     'Journalit {version} - பார்க்க கிளிக் செய்யவும்',
   'update.available.ready': 'புதிய பதிப்பு தயாராக உள்ளது',
@@ -3247,11 +3245,9 @@ const ta: Lang = {
     'புதிய டிரேட் அறிவிப்புகள் {status}',
   'settings.general.update-notifications': 'புதுப்பிப்பு அறிவிப்புகளைக் காட்டு',
   'settings.general.update-notifications-desc':
-    'புதிய செருகுநிரல் புதுப்பிப்பு கிடைக்கும்போது அறிவிப்பைக் காண்பி',
+    'புதுப்பிப்பு நினைவூட்டல்களையும் புதுப்பித்த பிறகு புதிய அம்சங்களையும் காட்டு.',
   'settings.general.update-notifications-aria':
     'புதுப்பிப்பு அறிவிப்புகளைக் காட்டு',
-  'settings.general.update-notifications-toggled':
-    'அறிவிப்புகளைப் புதுப்பிக்கவும் {status}',
   'settings.general.data-management': 'தரவு மேலாண்மை & தனியுரிமை',
   'settings.general.backup-restore-section':
     'காப்புப்பிரதி, மீட்டெடு & மீட்டமை',
@@ -3934,6 +3930,19 @@ const ta: Lang = {
     'இலக்கு விட்ஜெட்டுக்கு மதிப்பாய்வு குறிப்பு தேவை (DRC, வாராந்திர, மாதாந்திர, காலாண்டு அல்லது ஆண்டு)',
   'widget.goals.aria.edit': 'இலக்கைத் திருத்தவும்',
   'widget.goals.aria.delete': 'இலக்கை நீக்கு',
+  'review.header.guide.intro.title': 'உங்கள் மதிப்பாய்வு இங்கே தொடங்குகிறது',
+  'review.header.guide.intro.description':
+    'இந்த மதிப்பாய்வில் வழிசெலுத்தவும் அதை நிர்வகிக்கவும் தேவையான அனைத்தும் தலைப்புப் பகுதியில் உள்ளன.',
+  'review.header.guide.reviewed.title': 'மதிப்பாய்வு செய்ததாகக் குறிக்கவும்',
+  'review.header.guide.reviewed.description':
+    'இந்தக் குறிப்பை மதிப்பாய்வு செய்ததாகக் குறிக்க வட்டத்தைக் கிளிக் செய்யவும். அதை ரத்து செய்ய மீண்டும் கிளிக் செய்யவும்.',
+  'review.header.guide.dates.title': 'மதிப்பாய்வுகளுக்கு இடையே செல்லவும்',
+  'review.header.guide.dates.description':
+    'ஜூன் அல்லது 2026 போன்ற தேதி லேபிளைக் கிளிக் செய்து அதன் மதிப்பாய்வுக் குறிப்பைத் திறக்கவும்.',
+  'review.header.guide.controls.title':
+    'வடிகட்டி, தளவமைப்பு மற்றும் வழிசெலுத்தல்',
+  'review.header.guide.controls.description':
+    'வர்த்தகங்களை வடிகட்ட புனல் ஐகானையும், குறிப்பின் தளவமைப்பை மாற்ற «தளவமைப்பை மாற்றவும்» என்பதையும், மதிப்பாய்வுக் காலங்களுக்கு இடையே செல்ல «முந்தைய» / «அடுத்து» என்பதையும் பயன்படுத்தவும்.',
   'widget.header.name': 'தலைப்பு',
 
   'widget.header.invalid-context':
@@ -4406,6 +4415,30 @@ const ta: Lang = {
   'metric.winRate.description': 'வென்ற டிரேட்டின் சதவீதம்',
   'metric.profitFactor.name': 'Profit Factor',
   'metric.profitFactor.description': 'மொத்த லாபம் மற்றும் மொத்த இழப்பு விகிதம்',
+  'metric.calmarRatio.name': 'கால்மர் விகிதம்',
+  'metric.calmarRatio.description':
+    'அதிகபட்ச சதவீதச் சரிவுடன் ஒப்பிடும் வருடாந்திர ஈட்டிய வருமானம்',
+  'dashboard.calmarRatio.tooltip.formula':
+    'வருடாந்திர வருமானத்தை அதிகபட்சச் சரிவால் வகுத்தல்.',
+  'dashboard.calmarRatio.unavailable.no-history':
+    'ஈட்டிய வர்த்தக முடிவுகளின் வரலாறு இன்னும் இல்லை.',
+  'dashboard.calmarRatio.unavailable.capital':
+    'காட்சி நாணயத்தில் தொடக்க மூலதனம் கிடைக்கவில்லை.',
+  'dashboard.calmarRatio.unavailable.incomplete-history':
+    'சில ஈட்டிய லாபம்/நஷ்டம் விடுபட்டுள்ளது.',
+  'dashboard.calmarRatio.unavailable.dates':
+    'சில வர்த்தகத் தேதிகள் விடுபட்டுள்ளன.',
+  'dashboard.calmarRatio.unavailable.short-history':
+    'குறைந்தது ஒரு நாள் வரலாறு தேவை.',
+  'dashboard.calmarRatio.unavailable.no-drawdown': 'இதுவரை சரிவு பதிவாகவில்லை.',
+  'dashboard.calmarRatio.unavailable.non-positive-equity':
+    'மூலதனம் பூஜ்ஜியம் அல்லது அதற்குக் கீழே சென்றது.',
+  'dashboard.calmarRatio.unavailable.non-finite':
+    'முடிவு கணக்கிட முடியாத அளவு பெரியது.',
+  'dashboard.calmarRatio.unavailable.scope':
+    'முழுக் காலத்தையும் முழுக் கணக்குகளையும் மட்டும் தேர்ந்தெடுக்கவும்.',
+  'dashboard.calmarRatio.unavailable.conversion':
+    'சில நாணய மாற்றங்கள் கிடைக்கவில்லை.',
   'metric.sharpeRatio.name': 'Sharpe Ratio',
   'metric.sharpeRatio.description': 'ஏற்ற இறக்கத்துடன் ஒப்பிட்ட சராசரி P&L',
   'metric.expectancy.name': 'Expectancy',
@@ -4782,6 +4815,7 @@ const ta: Lang = {
   'templateEditor.field.template-name': 'தளவமைப்பு பெயர்',
   'templateEditor.field.widgets': 'விட்ஜெட்டுகள் ({count})',
   'templateEditor.button.add-widget': '+ விட்ஜெட்டைச் சேர்க்கவும்',
+  'templateEditor.button.insert-widget-here': 'இங்கே விட்ஜெட்டைச் சேர்க்கவும்',
   'templateEditor.button.widget-library-docs': 'விட்ஜெட் லைப்ரரி டாக்ஸ்',
   'templateEditor.widget.locked': 'பூட்டப்பட்டது',
   'templateEditor.widget.select-placeholder':
@@ -4913,6 +4947,15 @@ const ta: Lang = {
   'home.widget-selector.restore': 'மீட்டமை',
   'home.widget-selector.add-shortcut': 'கணக்கு/அமைப்பு குறுக்குவழி சேர்',
   'home.period.month': 'மாதம்',
+  'home.period.week': 'வாரம்',
+  'home.period.custom': 'தனிப்பயன் கால வரம்பு',
+  'home.period.invalid-range':
+    'முடிவுத் தேதி தொடக்கத் தேதியாகவோ அதற்குப் பின்னரோ இருக்க வேண்டும்.',
+  'date-input.error.day': 'நாள் 1 முதல் {max} வரை இருக்க வேண்டும்.',
+  'date-input.error.invalid': 'சரியான தேதியை உள்ளிடவும்',
+  'date-input.error.month': 'மாதம் 1 முதல் 12 வரை இருக்க வேண்டும்.',
+  'date-input.error.year':
+    'YY (2000–2099) அல்லது YYYY (1000–9999) பயன்படுத்தவும்.',
   'home.period.quarter': 'காலாண்டு',
   'home.period.year': 'ஆண்டு',
   'home.period.lifetime': 'எல்லா நேரமும்',
@@ -5049,6 +5092,7 @@ const ta: Lang = {
   'home.widget.best-hours.no-positive-detail': 'மாதிரி சாளரங்கள் எதிர்மறையானவை',
 
   'home.widget.aum.title': 'AUM',
+  'home.widget.aum.current-trend': 'தற்போது · 30 நாள் போக்கு',
   'home.widget.aum.period.month': 'இந்த மாதம்',
   'home.widget.aum.period.quarter': 'இந்த காலாண்டு',
   'home.widget.aum.period.year': 'இந்த ஆண்டு',
@@ -5058,9 +5102,6 @@ const ta: Lang = {
   'home.widget.aum.account-count': '{count} கணக்கு',
   'home.widget.aum.account-count-plural': '{count} கணக்குகள்',
   'home.widget.streak.title': 'ஸ்ட்ரீக்',
-  'home.widget.streak.period.month': 'இந்த மாதம்',
-  'home.widget.streak.period.quarter': 'இந்த காலாண்டில்',
-  'home.widget.streak.period.year': 'இந்த ஆண்டு',
   'home.widget.streak.period.ever': 'எப்போதும்',
   'home.widget.streak.win': 'வெற்றி',
   'home.widget.streak.wins': 'வெற்றி பெறுகிறது',
@@ -5666,7 +5707,6 @@ const ta: Lang = {
   'widget.weekly-drc-context.description':
     'வாராந்திர மதிப்பாய்வில் ஒவ்வொரு நாளுக்கும் தேர்ந்தெடுக்கப்பட்ட DRC பிரிவுகளைக் காட்டு',
 
-  'widget.weekly-drc-context.image-alt-prefix': 'வாராந்திர DRC படம்',
   'widget.weekly-drc-context.no-activity':
     'இந்த நாளுக்கு எந்த நடவடிக்கையும் இல்லை.',
   'widget.weekly-drc-context.no-sections-configured':
@@ -5802,7 +5842,7 @@ const ta: Lang = {
     'இறக்குமதி செய்யக்கூடிய டிரேட்கள் எதுவும் காணப்படவில்லை. விவரங்களுக்கு இந்தக் கோப்பை Trade Import இல் மதிப்பாய்வு செய்யவும்.',
 
   'quick-import.privacy-note':
-    'கோப்புகள் செயலாக்கத்திற்காக Journalit சேவையகங்களில் பதிவேற்றப்படும் மற்றும் இயல்பாக சேமிக்கப்படாது.',
+    'தேர்ந்தெடுத்த கோப்பும் இறக்குமதி விருப்பங்களும் Journalit-க்கு பதிவேற்றப்படும். மறையாக்கப்பட்ட கண்டறிதல் பதிவுகள் 1 நாள் (இலவசம்) அல்லது 14 நாட்களில் (Pro), முன்னோட்டங்கள் 7 நாட்களில் காலாவதியாகும். விருப்ப AI பொருத்தம் தலைப்புகளையும் மாதிரி வரிசைகளையும் AI மாதிரிக்கு அனுப்பும். Trade Import தனியான கிளையன்ட் டெலிமெட்ரியையோ பின்னணி பிழை அறிக்கைகளையோ அனுப்பாது.',
   'quick-import.dropzone.title': 'ஒரு தரகர் ஏற்றுமதியை இங்கே விடுங்கள்',
   'quick-import.dropzone.subtitle':
     'அல்லது கோப்பைத் தேர்ந்தெடுக்க கிளிக் செய்யவும்',
@@ -5868,7 +5908,7 @@ const ta: Lang = {
   'trade-import.gate.sign-in':
     'உங்கள் கோப்பை பகுப்பாய்வு செய்ய உள்நுழையவும் அல்லது இலவச Journalit கணக்கை உருவாக்கவும். நீங்கள் டிரேட்களை இறக்குமதி செய்யும் போது மட்டுமே புரோ தேவைப்படுகிறது.',
   'trade-import.gate.sign-in.reassurance':
-    'உங்கள் கோப்பு தனிப்பட்ட முறையில் செயலாக்கப்பட்டது மற்றும் இயல்புநிலையாக சேமிக்கப்படவில்லை.',
+    'தேர்ந்தெடுத்த கோப்பும் இறக்குமதி விருப்பங்களும் Journalit-க்கு பதிவேற்றப்படும். மறையாக்கப்பட்ட கண்டறிதல் பதிவுகள் 1 நாள் (இலவசம்) அல்லது 14 நாட்களில் (Pro), முன்னோட்டங்கள் 7 நாட்களில் காலாவதியாகும். விருப்ப AI பொருத்தம் தலைப்புகளையும் மாதிரி வரிசைகளையும் AI மாதிரிக்கு அனுப்பும். Trade Import தனியான கிளையன்ட் டெலிமெட்ரியையோ பின்னணி பிழை அறிக்கைகளையோ அனுப்பாது.',
   'trade-import.gate.sign-in.no-trial':
     'பகுப்பாய்வு செய்வதற்கும் முன்னோட்டமிடுவதற்கும் எந்த ப்ரோ சோதனையும் தேவையில்லை.',
   'trade-import.gate.sign-in.cta': 'இலவச மாதிரிக்காட்சிக்கு உள்நுழையவும்',
@@ -5894,7 +5934,7 @@ const ta: Lang = {
     'ஒரு வரிசைக்கு ஒரு டிரேட் (P/L பயன்படுத்தும்)',
   'trade-import.label.ai-mapping': 'AI மேப்பிங் பரிந்துரைகளைக் கோரவும்',
   'trade-import.privacy.copy':
-    'Trade Import தேர்ந்தெடுக்கப்பட்ட தரகர் ஏற்றுமதியை செயலாக்கத்திற்காக Journalit சேவையகங்களுக்கு பதிவேற்றுகிறது. தரகர் ஏற்றுமதிகளில் கணக்கு அடையாளங்காட்டிகள், டிரேட் வரலாறு, சின்னங்கள், நேர முத்திரைகள், விலைகள், அளவுகள், கட்டணம், இருப்புக்கள் மற்றும் P&L ஆகியவை இருக்கலாம். முன்னோட்ட உருவாக்கத்திற்காக, Journalit நீங்கள் தேர்ந்தெடுத்த கணக்குப் பெயர், மேப்பிங்/வார்ப்புரு தேர்வுகள், தனிப்பயன் புல வரையறைகள் மற்றும் சேமிக்கப்பட்ட விருப்பங்கள் மற்றும் IBKR திறந்த நிலைப் பொருத்தத்திற்கான வரையறுக்கப்பட்ட உள்ளூர் திறந்த டிரேட் சூழலையும் அனுப்புகிறது. இந்த இறக்குமதிக்காக மூலக் கோப்புகள் செயலாக்கப்படுகின்றன, அவை இயல்பாகச் சேமிக்கப்படாது. AI மேப்பிங் பரிந்துரைகள் இயக்கத்தில் இருக்கும்போது, நெடுவரிசைத் தலைப்புகளும் சில மாதிரி வரிசைகளும் நெடுவரிசைப் பொருத்தங்களைப் பரிந்துரைக்க ஒரு AI மாதிரிக்கு அனுப்பப்படும்; நெடுவரிசைகளை நீங்களே பொருத்த இந்த விருப்பத்தை அணைக்கவும்.',
+    'தேர்ந்தெடுத்த கோப்பும் இறக்குமதி விருப்பங்களும் Journalit-க்கு பதிவேற்றப்படும். மறையாக்கப்பட்ட கண்டறிதல் பதிவுகள் 1 நாள் (இலவசம்) அல்லது 14 நாட்களில் (Pro), முன்னோட்டங்கள் 7 நாட்களில் காலாவதியாகும். விருப்ப AI பொருத்தம் தலைப்புகளையும் மாதிரி வரிசைகளையும் AI மாதிரிக்கு அனுப்பும். Trade Import தனியான கிளையன்ட் டெலிமெட்ரியையோ பின்னணி பிழை அறிக்கைகளையோ அனுப்பாது. ஏற்றுமதிகளில் கணக்கு அடையாளங்கள், வர்த்தக வரலாறு, குறிப்புகள், விலைகள், அளவுகள், கட்டணங்கள், இருப்புகள் மற்றும் லாபம்/நஷ்டம் இருக்கலாம். கோரிக்கைகள் தனிப்பயன் புல வரையறைகளையும் சேமித்த விருப்பங்களையும் அனுப்பும்; முன்னோட்டத்தில் இலக்குக் கணக்கின் பெயர் இருக்கும். AI செயலாக்கத்தைத் தவிர்க்க AI பொருத்தத்தை முடக்கவும்.',
 
   'trade-import.action.analyse': 'கோப்பை பகுப்பாய்வு செய்யுங்கள்',
   'trade-import.action.choose-file':
@@ -6142,6 +6182,13 @@ const ta: Lang = {
     'கோப்பு வடிவம் தானாகப் படிக்கப்படும், மேப்பிங் தேவையில்லை.',
   'trade-import.source.guide': 'எப்படி ஏற்றுமதி செய்வது',
   'trade-import.source.change': 'மாற்று',
+  'trade-import.recovery.rithmic-order-history.title':
+    'ஆதரிக்கப்படாத Rithmic வடிவம்',
+  'trade-import.recovery.rithmic-order-history.message':
+    'Rithmic ஆர்டர் வரலாற்றுக் கோப்பைப் பதிவேற்றவும் அல்லது இந்தக் கோப்பை உருவாக்கிய தளத்தைத் தேர்ந்தெடுக்கவும்.',
+  'trade-import.recovery.rithmic-order-history.choose-file':
+    'வேறு கோப்பைத் தேர்ந்தெடு',
+  'trade-import.source.change-action': 'மூலத்தை மாற்று',
   'trade-import.sync-suggestion.full.title':
     '{broker} தானாக ஒத்திசைக்க முடியும்',
   'trade-import.sync-suggestion.full.body':
@@ -7248,11 +7295,6 @@ const ta: Lang = {
     'மீடியா கோப்பைக் காட்டிலும் கோப்புறையைத் தேர்ந்தெடுக்கவும்.',
   'settings.gallery-folders.save-failed':
     'கேலரி கோப்புறைகளைச் சேமிப்பதில் தோல்வி. மீண்டும் முயற்சிக்கவும்.',
-  'tradelog.guide.switch-to-gallery.title':
-    'டிரேட்டில் இருந்து கேலரிக்கு மாறவும்',
-  'tradelog.guide.switch-to-gallery.description':
-    'வழக்கமான டிரேட் பதிவு மற்றும் கேலரிக்கு இடையே செல்ல இந்த பயன்முறை தேர்வியைப் பயன்படுத்தவும். உங்கள் படங்கள், GIFகள், வீடியோக்கள் மற்றும் YouTube இணைப்புகளுடன் உலாவைத் தொடர கேலரியைக் கிளிக் செய்யவும்.',
-
   'tradelog.guide.gallery-grouping.title':
     'ஜர்னல் நுழைவு மூலம் ஊடகத்தைக் குழுவாக்கு',
   'tradelog.guide.gallery-grouping.description':
@@ -7528,11 +7570,15 @@ const ta: Lang = {
   'trade-handoff.trade-count.other': '{count} வர்த்தகங்கள்',
   'trade-handoff.title.sync': 'ஒத்திசைவு முடிந்தது',
   'trade-handoff.summary.import-complete': '{trades} இறக்குமதி செய்யப்பட்டன',
+  'trade-handoff.summary.update-complete': '{trades} புதுப்பிக்கப்பட்டன',
+  'trade-handoff.summary.update-partial':
+    '{trades} சிக்கல்களுடன் புதுப்பிக்கப்பட்டன',
+  'trade-handoff.summary.mixed-complete':
+    '{imported} இறக்குமதி செய்யப்பட்டன · {updated} புதுப்பிக்கப்பட்டன',
+  'trade-handoff.summary.mixed-partial':
+    '{imported} இறக்குமதி செய்யப்பட்டன · {updated} புதுப்பிக்கப்பட்டன, சிக்கல்களுடன்',
   'trade-handoff.summary.import-partial':
     '{trades} சிக்கல்களுடன் இறக்குமதி செய்யப்பட்டன',
-  'trade-handoff.summary.sync-complete': '{trades} ஒத்திசைக்கப்பட்டன',
-  'trade-handoff.summary.sync-partial':
-    '{trades} சிக்கல்களுடன் ஒத்திசைக்கப்பட்டன',
   'trade-handoff.periods.choose':
     'வேறு மதிப்பாய்வுக் காலத்தைத் தேர்ந்தெடுக்கவும்',
   'trade-handoff.periods.recommended': 'பரிந்துரை',
@@ -7624,7 +7670,9 @@ const ta: Lang = {
   'account.profiles.correction-title': 'பட்டியல் திருத்தம்',
   'account.profiles.correction-source': 'விதி மூலம்',
   'account.profiles.correction-period': 'பாதிக்கப்பட்ட வரலாறு',
-  'account.profiles.correction-history': 'திருத்த வரலாறு',
+  'account.profiles.correction-history': 'விதித் திருத்தங்கள்',
+  'account.profiles.correction-before': 'முன்பு',
+  'account.profiles.correction-after': 'பின்பு',
   'account.profiles.correction-stale':
     'கணக்கு வரலாறு மாறியது. திருத்தத்தைப் பயன்படுத்துவதற்கு முன் இந்த மதிப்பாய்வை மீண்டும் திறக்கவும்.',
   'account.profiles.correction-result': 'கடுமையான விதி மதிப்பீடு',
@@ -7883,6 +7931,40 @@ const ta: Lang = {
   'account.prop-challenge.rule.drawdown-mode': 'ட்ராடவுன் முறை',
   'account.prop-challenge.rule.lock-at-balance': 'இருப்பில் பூட்டு',
   'account.prop-challenge.rule.daily-loss-model': 'தினசரி நஷ்டத் தொகை',
+  'account.prop-challenge.rule.help.target-amount':
+    'நிலையான இலக்குகள் கணக்கு நாணயத்தில்; சதவீத இலக்குகள் இக்கட்டத்தின் தொடக்க இருப்பை அடிப்படையாகக் கொண்டவை. தினசரி கணக்கிடும் லாப வரம்புக்குப் பின் இருப்பு உயர்வே முன்னேற்றம்; Unrealized P&L சேராது.',
+  'account.prop-challenge.rule.help.credit-withdrawals':
+    'பதிவான மொத்தப் பணமெடுப்புகளை நிலையான இலக்கு முன்னேற்றத்தில் மீண்டும் சேர்க்கிறது. இருப்பையோ பணமெடுப்பு தகுதியையோ மாற்றாது.',
+  'account.prop-challenge.rule.help.drawdown-amount':
+    'தொடக்க இருப்புக்குக் கீழ் (நிலையானது) அல்லது Realized இருப்பின் உச்சத்திற்குக் கீழ் (தொடர்வது) உள்ள நாணயத் தொகை இடைவெளி. அடித்தளத்தைத் தொடுவது விதிமீறல்.',
+  'account.prop-challenge.rule.help.drawdown-mode':
+    'நிலையான முறை அடித்தளத்தை மாற்றாது. EOD தொடர்வு வர்த்தக நாள் முடிவு உச்சங்களைப் பின்தொடரும்; நாளுக்குள் தொடர்வு பதிவான Realized இருப்புப் பரிவர்த்தனைகளைப் பின்தொடரும், Unrealized ஈக்விட்டியை அல்ல.',
+  'account.prop-challenge.rule.help.lock-balance':
+    'தொடரும் drawdown அடித்தளத்தின் உச்ச வரம்பு; செயல்பாட்டு இருப்பு அல்ல. இந்த இருப்பில் அடித்தளம் உயர்வதை நிறுத்தும். காலி என்றால் உச்ச வரம்பில்லை.',
+  'account.prop-challenge.rule.help.daily-loss-amount':
+    'ஒரு வர்த்தக நாளில் வர்த்தகங்களின் மிக மோசமான திரண்ட Realized நிகர இழப்புக்கான நாணய வரம்பு; நாளின் உச்சத்திலிருந்து சரிவு அல்ல. வரம்பைத் தொடுவது விதிமீறல்.',
+  'account.prop-challenge.rule.help.breach-action':
+    'கணக்கைத் தோல்வியாக்குவது பழைய விதிமீறலைச் செயலிலேயே வைக்கும். அடுத்த அமர்வுவரை இடைநிறுத்துவது தற்போதைய வர்த்தக நாளுக்கு மட்டும்; பழைய மீறல்கள் வரலாற்றில் இருக்கும்.',
+  'account.prop-challenge.rule.help.daily-loss-model':
+    'நிலையான வரம்பு, லாபத் தாழ்வரம்பில் நிரந்தர மாற்றம், உச்ச EOD லாப விகிதம் அல்லது முந்தைய EOD லாபப் படிநிலைகளைத் தேர்ந்தெடுக்கவும். நிபந்தனைப் புலங்கள் தேர்ந்த மாதிரியை அமைக்கும்.',
+  'account.prop-challenge.rule.help.profit-basis':
+    'திரண்ட வர்த்தக லாபம் பணப்பாய்ச்சல்களை விலக்குகிறது. தற்போதைய கணக்கு லாபம் அவற்றைச் சேர்ப்பதால் பணமெடுப்புகள் அதைக் குறைக்கும். இரண்டும் முந்தைய வர்த்தக நாள் முடிவுகளைப் பயன்படுத்தும்.',
+  'account.prop-challenge.rule.help.position-model':
+    'ஒவ்வொரு வர்த்தகத்திற்கும் நிலையான வரம்பு, ஒவ்வொரு லாபப் படிக்கும் கூடுதல் ஒப்பந்தம் அல்லது தெளிவான லாபப் படிநிலைகளைத் தேர்ந்தெடுக்கவும். உயர்வு முந்தைய வர்த்தக நாள் முடிவுகளின் அடிப்படையில் அமையும்.',
+  'account.prop-challenge.rule.help.max-contracts':
+    'விருப்ப மைக்ரோ மாற்றத்திற்குப் பின் ஒவ்வொரு வர்த்தகத்தின் அதிகபட்ச அளவு; பல வர்த்தகங்களின் மொத்த வெளிப்பாடு அல்ல. வரம்பைக் கடப்பது விதிமீறல்.',
+  'account.prop-challenge.rule.help.initial-contracts':
+    'முடிந்த நாள் இறுதி லாபம் பெரிய வரம்புகளை வழங்கும் முன் ஒவ்வொரு வர்த்தகத்திற்குமான தொடக்க ஒப்பந்த வரம்பு.',
+  'account.prop-challenge.rule.help.maximum-contracts':
+    'லாப அடிப்படையிலான ஒப்பந்த உயர்வின் விருப்ப உச்ச வரம்பு. காலி என்றால் கூடுதல் உச்ச வரம்பில்லை.',
+  'account.prop-challenge.rule.help.daily-profit':
+    'தகுதி நாளின் Realized நிகர வர்த்தக P&L நாணயத் தாழ்வரம்பு; லாபம், இழப்பு, செலவுகள் சேரும். Unrealized லாபமும் பணப்பாய்ச்சல்களும் சேராது.',
+  'account.prop-challenge.rule.help.consistency-cushion':
+    'சிறந்த நாளின் அதிகபட்ச பங்கில் சதவீதப் புள்ளிகளாகச் சேர்க்கப்படும்: 30% + 5 புள்ளிகள் 35% அனுமதிக்கும். காலி என்றால் கூடுதல் இடைவெளி இல்லை.',
+  'account.prop-challenge.rule.help.daily-profit-cap':
+    'கட்ட இலக்கில் கணக்கிடும் ஒவ்வொரு வர்த்தக நாள் லாபத்தின் நாணய உச்ச வரம்பு. மீதம் இருப்பில் தொடரும்; இழப்புகள் முழுவதும் கணக்கிடப்படும்.',
+  'account.prop-challenge.rule.help.live-review':
+    'மதிப்பாய்வுத் தகுதிக்கு ஒரு வர்த்தக நாளில் தேவைப்படும் Realized நிகர லாபம். கட்டத்தைத் தானாக முன்னேற்றவோ நேரடிக் கணக்கை வழங்கவோ செய்யாது.',
   'account.prop-challenge.rule.daily-loss-model.fixed': 'நிலையான தொகை',
   'account.prop-challenge.rule.daily-loss-model.threshold':
     'கணக்கு லாப வாசலில் அதிகரிக்கும்',
@@ -7900,11 +7982,11 @@ const ta: Lang = {
   'account.prop-challenge.rule.daily-loss-model.profit-tiers':
     'முந்தைய-EOD லாப நிலைகள்',
   'account.prop-challenge.rule.daily-loss-tiers-help':
-    'லாபம்:நஷ்ட-வரம்பு இணைகளைப் பயன்படுத்தவும். முந்தைய EOD கணக்கு லாபத்திலிருந்து தேர்ந்தெடுக்கப்பட்ட நிலை அடுத்த அமர்வுக்குப் பொருந்தும்.',
+    'காற்புள்ளியால் பிரித்த லாபம்:இழப்பு-வரம்பு இணைகளை உள்ளிடவும். முந்தைய வர்த்தக நாள் முடிவில் தேர்ந்த லாப அடிப்படை அடுத்த நாளின் வரம்பைத் தீர்மானிக்கும்; அது உயரலாம் அல்லது குறையலாம்.',
   'account.prop-challenge.rule.loss-tiers':
     'லாப நிலைகள் மற்றும் நஷ்ட வரம்புகள்',
   'account.prop-challenge.rule.daily-loss-threshold-help':
-    'வாழ்நாள் கணக்கு லாபம் முதல் முறையாகத் தொடக்க இருப்பின் கட்டமைக்கப்பட்ட சதவீதத்தை அடையும்போது உயர்ந்த தினசரி நஷ்டத் தொகை நிரந்தரமாகச் செயல்படும்.',
+    'இக்கட்டத்தின் திரண்ட Realized வர்த்தக லாபம் கட்டத் தொடக்க இருப்பின் அமைத்த சதவீதத்தை முதலில் எட்டும்போது, மாற்றிய நாணய வரம்பு நிரந்தரமாகச் செயல்படும்.',
   'account.prop-challenge.rule.profit-threshold-percent':
     'கணக்கு லாப வாசல் (%)',
   'account.prop-challenge.rule.amount-after-threshold':
@@ -8088,7 +8170,7 @@ const ta: Lang = {
     'நிலைத்தன்மை இலக்குக்கு 0%-க்கு மேல் அதிகபட்சம் தேவை.',
   'account.prop-challenge.ledger.help.open': '{rule} பற்றி',
   'account.prop-challenge.ledger.help.profit_target':
-    'கட்டத்தைத் தேர்ச்சிபெற கணக்கை இந்தத் தொகை வளர்க்கவும். மூடப்பட்ட டிரேட்கள் மட்டுமே கணக்கிடப்படும்.',
+    'கட்டத்தைத் தேர்ச்சி பெற அமைத்த இருப்பு உயர்வை எட்டவும். கணக்கிடும் லாப வரம்புகளும் விருப்பப் பணமெடுப்பு சேர்த்தலும் முன்னேற்றத்தைப் பாதிக்கும்; Unrealized லாபம் சேராது.',
   'account.prop-challenge.ledger.help.profit_target.example':
     'இந்தக் கணக்குக்கு {target} லாபம் தேவை: இதுவரை {current}, இன்னும் {remaining}.',
   'account.prop-challenge.ledger.help.profit_target.example-done':
@@ -8118,11 +8200,11 @@ const ta: Lang = {
   'account.prop-challenge.ledger.help.live_review_daily_profit.example':
     '{trigger} அல்லது அதற்கு மேல் உள்ள ஒரு நாள் தகுதிபெறும்; இதுவரை சிறந்த நாள் {bestDay}.',
   'account.prop-challenge.ledger.help.minimum_trading_days':
-    'குறைந்தது ஒரு மூடிய டிரேட் உள்ள நாட்கள். இலக்கை எவ்வளவு வேகமாக அடைந்தாலும், இந்த எண்ணிக்கை இல்லாமல் கட்டம் தேர்ச்சியடையாது.',
+    'இக்கட்டத்திற்குத் தேவையான வெவ்வேறு வர்த்தக நுழைவு நாட்கள்; இன்னும் திறந்த நுழைவுகளும் சேரும். அமைத்த வர்த்தக நாள் முடிவு நேரம் பயன்படும், நாள்காட்டி நள்ளிரவு அல்ல.',
   'account.prop-challenge.ledger.help.minimum_trading_days.example':
     '{target}-இல் {current} டிரேடிங் நாட்கள் முடிந்தன, இன்னும் {remaining}.',
   'account.prop-challenge.ledger.help.minimum_profitable_days':
-    'நிறுவனத்தின் குறைந்தபட்ச தினசரி லாபத்தில் அல்லது அதற்கு மேல் மூடும் டிரேடிங் நாட்கள். சமநிலை அல்லது சிறிய வெற்றிகள் கணக்கிடப்படாது.',
+    'இக்கட்டத்தில் குறைந்தபட்ச தினசரி Realized நிகர லாபத்தை எட்டும் தேவையான நாட்கள். பதிவான பணமெடுப்புகள் இந்தக் கட்டம் முழுவதற்குமான விதியை மீட்டமைக்காது.',
   'account.prop-challenge.ledger.help.minimum_profitable_days.example':
     '{minimum} அல்லது அதற்கு மேல் மூடிய {target}-இல் {current} நாட்கள், இன்னும் {remaining}.',
   'account.prop-challenge.ledger.help.consistency':
@@ -8682,6 +8764,79 @@ const ta: Lang = {
   'onboarding.legacy-challenge.entry.desc':
     'ஏற்கனவே உள்ள கணக்குகளைச் சவால்களாக இணைக்கவும் அல்லது மாற்றவும்.',
   'onboarding.legacy-challenge.entry.action': 'அமை',
+  'account.prop-challenge.field.help-label': 'உதவி: {field}',
+  'account.prop-challenge.payout-rules.help.cycle':
+    'நுழைவு நாட்கள், குறைந்தபட்ச நிகர லாப நாட்கள் அல்லது கடந்த நாட்காட்டி நாட்களால் காத்திருப்பைக் கணக்கிடுகிறது. சுழற்சி இல்லை இந்த நாள் நிபந்தனையை மட்டும் நிறுத்தும்.',
+  'account.prop-challenge.payout-rules.help.days':
+    'தேர்ந்த சுழற்சிக்குத் தேவையான நாட்கள்: நுழைவு நாட்கள், போதிய ஈட்டிய நிகர லாப நாட்கள் அல்லது முழு 24 மணி நேரங்கள்.',
+  'account.prop-challenge.payout-rules.help.daily-profit':
+    'செலவுகளுக்குப் பின் குறைந்தபட்ச தினசரி ஈட்டிய நிகர லாபம். வர்த்தக நாள் முடிவு நேரப்படி வர்த்தகங்கள் சேர்க்கப்படும். வரம்பு பூஜ்ஜியத்தை விட அதிகமாக இருக்க வேண்டும்.',
+  'account.prop-challenge.payout-rules.help.qualifying-days':
+    'காத்திருப்புச் சுழற்சியுடன் லாபத் தகுதி நாள் நிபந்தனையைச் சேர்க்கிறது. நடப்பு பணம்பெறும் சுழற்சியில் இரண்டையும் நிறைவேற்ற வேண்டும்.',
+  'account.prop-challenge.payout-rules.help.profitable-days':
+    'நடப்புச் சுழற்சியில் தினசரி குறைந்தபட்ச ஈட்டிய நிகர லாபத்தை அடைந்த தனித்தனி நாட்களின் எண்ணிக்கை.',
+  'account.prop-challenge.payout-rules.help.anchor':
+    'நாட்காட்டிக் காத்திருப்பு சுழற்சித் தொடக்கத்திலிருந்து அல்லது முதல் நுழைவிலிருந்து தொடங்கும். மீட்டமைப்பு இருந்தால் பதிவுசெய்த பணமெடுப்பு அடுத்த சுழற்சியைத் தொடங்கும்.',
+  'account.prop-challenge.payout-rules.help.elapsed-hours':
+    'நடப்புச் சுழற்சியின் முதல் நுழைவிலிருந்து கடந்த மணிகள். வர்த்தகம் இல்லையெனில் கடிகாரம் தொடங்காது. காலியாக விட்டால் நிபந்தனை நிறுத்தப்படும்.',
+  'account.prop-challenge.payout-rules.help.request-window':
+    'எல்லா நாட்களிலும் அல்லது குறிப்பிட்ட நேரமண்டலத்தின் தேர்ந்த நாட்களில் மட்டும் கோரிக்கை அனுமதிக்கப்படும். பிற நிபந்தனைகள் தொடரும்.',
+  'account.prop-challenge.payout-rules.help.time-zone':
+    'அனுமதிக்கப்பட்ட கோரிக்கை நாட்களைத் தீர்மானிக்கும் நேரமண்டலம், எ.கா. America/New_York. வர்த்தக நாள் முடிவை மாற்றாது.',
+  'account.prop-challenge.payout-rules.help.request-days':
+    'தேர்ந்த நேரமண்டலத்தில் அனுமதிக்கும் வார நாட்கள். குறைந்தது ஒரு நாளைத் தேர்ந்தெடுக்கவும்.',
+  'account.prop-challenge.payout-rules.help.minimum-balance':
+    'பணம் பெறுவதற்கு முன் தேவையான இருப்பு; கிடைக்கும் லாபத்தைக் கணக்கிடும் இருப்புத் தரை அல்ல. காலியாக விட்டால் நிபந்தனை நிறுத்தப்படும்.',
+  'account.prop-challenge.payout-rules.help.cycle-profit':
+    'நடப்புச் சுழற்சிக்குத் தேவையான ஈட்டிய நிகர வர்த்தக லாபம். வைப்புகள் மற்றும் இருப்புத் திருத்தங்கள் சேராது. காலியாக விட்டால் நிறுத்தப்படும்.',
+  'account.prop-challenge.payout-rules.help.profit-schedule':
+    'முதல், இரண்டாம் மற்றும் அடுத்த பணம்பெறுதல்களுக்கான குறைந்தபட்ச லாபங்களை காற்புள்ளியால் பிரிக்கவும். ஒரே சுழற்சி லாபக் குறைந்தபட்சத்தை மாற்றும்.',
+  'account.prop-challenge.payout-rules.help.repeat-final':
+    'பட்டியலுக்கு அப்பாலான பணம்பெறும் எண்களுக்கு இறுதி மதிப்பை மீண்டும் பயன்படுத்தும்.',
+  'account.prop-challenge.payout-rules.help.positive-cycle':
+    'முதல் பதிவுசெய்த பணம்பெறுதலுக்குப் பின் சுழற்சியின் ஈட்டிய நிகர வர்த்தக லாபம் பூஜ்ஜியத்தைவிட அதிகமாக இருக்க வேண்டும்.',
+  'account.prop-challenge.payout-rules.help.consistency':
+    'சிறந்த தினசரி லாபத்தை சுழற்சியின் ஈட்டிய நிகர லாபத்தால் வகுத்த விகிதம். நஷ்ட நாட்கள் மொத்தத்தைக் குறைத்து விகிதத்தை உயர்த்தலாம். காலியாக விட்டால் வரம்பு நிறுத்தப்படும்.',
+  'account.prop-challenge.payout-rules.help.consistency-schedule':
+    'ஒவ்வொரு பணம்பெறும் எண்ணிற்கான சிறந்த நாள் சதவீத வரம்புகளை காற்புள்ளியால் பிரிக்கவும். ஒரே நிலைத்தன்மை வரம்பை மாற்றும்.',
+  'account.prop-challenge.payout-rules.help.availability':
+    'கட்டத் தொடக்க இருப்பு அல்லது தேர்ந்த தரையை மீறும் கோரக்கூடிய லாபத்தைக் கணக்கிடுகிறது. சதவீதங்களும் மற்ற வரம்புகளும் பொருந்தும்.',
+  'account.prop-challenge.payout-rules.help.balance-floor':
+    'கிடைக்கும் லாபத்தில் சேராத இருப்பு. எடுக்கக்கூடிய பங்கு அதிகப்படியான தொகைக்கு மட்டும் பொருந்தும்; டிராடவுன் விதியை மாற்றாது.',
+  'account.prop-challenge.payout-rules.help.request-percent':
+    'தேர்ந்த தரைக்கு மேலுள்ள இருப்பில் கோரக்கூடிய சதவீதம். கோரிக்கை மற்றும் புதிய லாப வரம்புகள் இதைக் குறைக்கலாம்.',
+  'account.prop-challenge.payout-rules.help.minimum-request':
+    'அனுமதிக்கப்பட்ட மிகச்சிறிய பணம்பெறும் கோரிக்கை. கணக்கிட்ட கிடைக்கும் தொகையும் இக்குறைந்தபட்சத்தை அடைய வேண்டும்.',
+  'account.prop-challenge.payout-rules.help.maximum':
+    'நிலையான உச்சம், முதல் முறைக்கு மட்டும், பணம்பெறும் எண்ணின்படி அல்லது சுழற்சி லாபச் சதவீதம். அதிகபட்சம் இல்லை இந்த வரம்பை மட்டும் நீக்கும்.',
+  'account.prop-challenge.payout-rules.help.maximum-amount':
+    'லாபப் பகிர்விற்கு முந்தைய அதிகபட்ச மொத்தக் கோரிக்கை. கிடைக்கும் லாபமும் பிற வரம்புகளும் தொகையைக் குறைக்கலாம்.',
+  'account.prop-challenge.payout-rules.help.first-maximum':
+    'இக்கட்டத்தின் முதல் பணம்பெறுதலுக்கு மட்டும் மொத்த வரம்பு. பிறகு இது நீங்கும்; மற்ற வரம்புகள் தொடரும்.',
+  'account.prop-challenge.payout-rules.help.maximum-schedule':
+    'ஒவ்வொரு பணம்பெறுதலின் மொத்த உச்சங்களை காற்புள்ளியால் பிரிக்கவும். இறுதி மதிப்பைத் தொடராவிட்டால் பட்டியலுக்கு அப்பாலானவற்றின் உச்சம் பூஜ்ஜியம்.',
+  'account.prop-challenge.payout-rules.help.maximum-percent':
+    'மொத்தக் கோரிக்கையை சுழற்சியின் ஈட்டிய நிகர லாபத்தின் இந்தச் சதவீதமாக வரையறுக்கும். இருப்பின் எடுக்கக்கூடிய பங்கில் இருந்து வேறுபட்டது.',
+  'account.prop-challenge.payout-rules.help.lifetime-days':
+    'புதிய கிடைக்கும் தொகை மற்றும் வரம்புகளுக்கான முழு நிதியளிக்கப்பட்ட கட்டத்தின் தகுதி நாள் மொத்தம். சுழற்சி மீட்டமைப்பு இதை அழிக்காது.',
+  'account.prop-challenge.payout-rules.help.split-model':
+    'நிலையான பங்கு அல்லது மொத்தப் பணம்பெறுதல் அல்லது கணக்கின் மொத்த லாபத்தின்படி விகிதம். பகிர்வு பெறும் தொகையை நிர்ணயிக்கும், கோரிக்கை உச்சத்தை அல்ல.',
+  'account.prop-challenge.payout-rules.help.trader-share':
+    'இவ்விகிதத்தில் வர்த்தகருக்கு வழங்கப்படும் மொத்தக் கோரிக்கையின் சதவீதம். மீதி நிறுவனத்துக்குரியது.',
+  'account.prop-challenge.payout-rules.help.cumulative-threshold':
+    'இக்கட்டத்தின் பதிவுசெய்த மொத்தப் பணம்பெறுதல்கள் இந்தத் தொகையை அடைந்தால் அடுத்த விகிதம் பொருந்தும். எல்லையைக் கடக்கும் கோரிக்கையின் பகுதிகளுக்கு இரு விகிதங்களும் பொருந்தும்.',
+  'account.prop-challenge.payout-rules.help.maximum-payouts':
+    'இக்கட்டத்தில் அனுமதிக்கப்பட்ட பதிவுசெய்த பணம்பெறுதல்களின் எண்ணிக்கை. அடைந்தபின் அடுத்தவை தடுக்கப்படும். காலியாக விட்டால் எண்ணிக்கை வரம்பு இல்லை.',
+  'account.prop-challenge.payout-rules.help.maximum-outcome':
+    'இறுதிப் பணம்பெறுதலுக்குப் பின் தொடருதல், கணக்கு முடிவு, அடுத்த கட்டம் அல்லது நேரடி மதிப்பாய்வுக்குத் தகுதி. தகுதி என்பது தானியங்கி ஒப்புதல் அல்ல.',
+  'account.prop-challenge.payout-rules.help.aftermath':
+    'பதிவுசெய்த பணம்பெறுதலுக்குப் பின் இருப்பும் டிராடவுனும்: கோரிக்கையைக் கழித்தல், கழித்து தரையைப் பூட்டுதல் அல்லது தொடக்க இருப்பையும் டிராடவுனையும் மீட்டமைத்தல்.',
+  'account.prop-challenge.payout-rules.help.drawdown-floor':
+    'தொடர்புடைய செயல்முறையில் பணம்பெறுதலுக்குப் பின் பூட்டப்படும் டிராடவுன் தரை. மீதியிருப்பு இதைவிட மேலிருக்க வேண்டும்.',
+  'account.prop-challenge.payout-rules.help.first-exempt':
+    'இக்கட்டத்தின் முதல் பணம்பெறுதலில் குறைந்தபட்ச சுழற்சி லாபம் பூஜ்ஜியமாகக் கருதப்படும்: நடப்புச் சுழற்சியின் ஈட்டிய நிகர லாபம் எதிர்மறையாக இருக்கக் கூடாது. மற்ற நிபந்தனைகள் தொடரும்.',
+  'account.prop-challenge.payout-rules.help.reset-cycle':
+    'பதிவுசெய்த பணம்பெறுதலுக்குப் பின் நாட்கள், தினசரி லாபம், சுழற்சி லாபம், நிலைத்தன்மையை மீட்டமைக்கும். கட்டத்தின் முழுத் தகுதி நாட்கள் தொடரும்; முன்னோட்டம் மீட்டமைக்காது.',
 };
 
 export default ta;

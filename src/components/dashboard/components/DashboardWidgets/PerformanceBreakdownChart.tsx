@@ -385,7 +385,6 @@ export const PerformanceBreakdownChart =
                         />
                       )}
                       <XAxis
-                        className="journalit-chart-axis--numeric"
                         type="number"
                         tickFormatter={formatXAxisTick}
                         tick={{

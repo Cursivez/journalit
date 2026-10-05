@@ -48,9 +48,22 @@ export interface FilterMenuBranchNode<R = void> {
   children: FilterMenuEntry<R>[];
 }
 
+
+export interface FilterMenuDateRangeNode<R = void> {
+  kind: 'date-range';
+  id: string;
+  label: string;
+  icon?: ObsidianIconComponent;
+  getInitialRange: () => [Date | null, Date | null];
+  
+  onActivate?: () => R;
+  onApply: (range: [Date, Date]) => R;
+}
+
 export type FilterMenuNode<R = void> =
   | FilterMenuValuesNode<R>
-  | FilterMenuBranchNode<R>;
+  | FilterMenuBranchNode<R>
+  | FilterMenuDateRangeNode<R>;
 export type FilterMenuEntry<R = void> =
   | FilterMenuNode<R>
   | { kind: 'divider'; id: string };
@@ -90,6 +103,14 @@ function bindNode<R>(
   node: FilterMenuNode<R>,
   apply: (result: R) => void
 ): FilterMenuNode {
+  if (node.kind === 'date-range') {
+    const activate = node.onActivate;
+    return {
+      ...node,
+      onActivate: activate ? () => apply(activate()) : undefined,
+      onApply: (range) => apply(node.onApply(range)),
+    };
+  }
   return node.kind === 'branch'
     ? { ...node, children: bindEntries(node.children, apply) }
     : bindValues(node, apply);
@@ -115,6 +136,7 @@ export function checklistNode(config: {
   singleChoice?: boolean;
   appliedCount?: number;
   emptyLabel?: string;
+  optionChildren?: ReadonlyMap<string, FilterMenuNode>;
   onToggle: (value: string) => void;
   onClear: () => void;
 }): FilterMenuValuesNode {
@@ -130,6 +152,7 @@ export function checklistNode(config: {
     singleChoice: config.singleChoice,
     appliedCount: config.appliedCount,
     emptyLabel: config.emptyLabel,
+    optionChildren: config.optionChildren,
     onToggle: (value) => config.onToggle(value),
     onClear: config.onClear,
   };
@@ -139,6 +162,7 @@ export function countNode<R>(node: FilterMenuNode<R>): {
   included: number;
   excluded: number;
 } {
+  if (node.kind === 'date-range') return { included: 0, excluded: 0 };
   if (node.kind === 'values') {
     let included = node.appliedCount ?? node.included.size;
     if (node.optionChildren) {
@@ -160,7 +184,7 @@ export function countNode<R>(node: FilterMenuNode<R>): {
   return { included, excluded };
 }
 
-function isValuesNodeApplied(node: FilterMenuValuesNode): boolean {
+function isValuesNodeApplied(node: FilterMenuNode): boolean {
   const { included, excluded } = countNode(node);
   return included > 0 || excluded > 0;
 }
@@ -183,6 +207,7 @@ export function countAppliedFilters(entries: FilterMenuEntry[]): number {
 export function hasAppliedEntries(entries: FilterMenuEntry[]): boolean {
   return entries.some((entry) => {
     if (entry.kind === 'divider') return false;
+    if (entry.kind === 'date-range') return false;
     if (entry.kind === 'branch') return hasAppliedEntries(entry.children);
     return (
       isValuesNodeApplied(entry) ||
@@ -203,6 +228,7 @@ export function findChildNode(
     return undefined;
   }
   if (parent.kind === 'branch') return findChildNode(parent.children, id);
+  if (parent.kind === 'date-range') return undefined;
   if (parent.matchChild?.id === id) return parent.matchChild;
   if (!parent.optionChildren) return undefined;
   for (const child of parent.optionChildren.values()) {

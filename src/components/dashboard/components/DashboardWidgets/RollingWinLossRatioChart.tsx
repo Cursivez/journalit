@@ -799,7 +799,6 @@ export const RollingWinLossRatioChart = React.memo<BaseWidgetProps>(
                       />
 
                       <YAxis
-                        className="journalit-chart-axis--numeric"
                         tickFormatter={(value: number) => {
                           
                           if (!Number.isFinite(value)) {

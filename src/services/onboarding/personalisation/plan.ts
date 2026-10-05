@@ -1,15 +1,19 @@
 
 
-import type { HomeSettings, JournalitSettings } from '../../../settings/types';
+import type { JournalitSettings } from '../../../settings/types';
 import { DEFAULT_SETTINGS } from '../../../settings/types';
 import { AccountType, DrawdownType } from '../../account/types';
+import { AVAILABLE_HOME_WIDGETS } from '../../../components/home/homeTypes';
 import {
-  AVAILABLE_HOME_WIDGETS,
-  getHomeWidgetById,
-} from '../../../components/home/homeTypes';
+  buildHomeLayouts,
+  HOME_LAYOUT_BREAKPOINTS,
+  type HomeDefaultWidgetId,
+  type HomeWidgetPlacement,
+} from '../../../components/home/defaultHomeLayout';
 import { normalizeLayoutForSave } from '../../../components/shared/gridLayout/gridLayoutUtils';
 import type { CurrentStreakKind } from '../../../settings/types';
 import type { OnboardingAnswers } from '../types';
+import { LEGACY_DEFAULT_HOME_LAYOUT } from './legacyHomeLayout';
 
 export type PersonalisationLever =
   | 'homeWidgets'
@@ -28,61 +32,7 @@ interface PersonalisationChange {
   apply: (settings: JournalitSettings) => void;
 }
 
-const HOME_GRID_COLUMNS = { lg: 12, md: 6, sm: 4, xs: 2, xxs: 1 } as const;
-type HomeBreakpoint = keyof typeof HOME_GRID_COLUMNS;
-const HOME_BREAKPOINTS: readonly HomeBreakpoint[] = [
-  'lg',
-  'md',
-  'sm',
-  'xs',
-  'xxs',
-];
-type HomeLayout = HomeSettings['layouts'][string];
-type HomeLayoutItem = HomeLayout['lg'][number];
 const DEFAULT_HOME = DEFAULT_SETTINGS.home;
-
-interface HomeWidgetPlacement {
-  
-  widgetId: string;
-  
-  instanceId: string;
-}
-
-
-function buildHomeLayouts(
-  placements: readonly HomeWidgetPlacement[]
-): HomeLayout {
-  const layouts: Record<HomeBreakpoint, HomeLayoutItem[]> = {
-    lg: [],
-    md: [],
-    sm: [],
-    xs: [],
-    xxs: [],
-  };
-  for (const breakpoint of HOME_BREAKPOINTS) {
-    const cols = HOME_GRID_COLUMNS[breakpoint];
-    const items: HomeLayoutItem[] = [];
-    let x = 0;
-    let y = 0;
-    let rowHeight = 0;
-    for (const placement of placements) {
-      const definition = getHomeWidgetById(placement.widgetId);
-      if (!definition) continue;
-      const w = Math.min(definition.defaultSize.w, cols);
-      const h = definition.defaultSize.h;
-      if (x + w > cols) {
-        x = 0;
-        y += rowHeight;
-        rowHeight = 0;
-      }
-      items.push({ i: placement.instanceId, x, y, w, h });
-      x += w;
-      rowHeight = Math.max(rowHeight, h);
-    }
-    layouts[breakpoint] = items;
-  }
-  return layouts;
-}
 
 const isDefaultHomeLayout = (settings: JournalitSettings): boolean => {
   const home = settings.home;
@@ -91,18 +41,18 @@ const isDefaultHomeLayout = (settings: JournalitSettings): boolean => {
   const activeLayout = home.activeLayout || 'Default';
   const layout = home.layouts[activeLayout];
   if (!layout || activeLayout !== 'Default') return false;
-  return HOME_BREAKPOINTS.every((breakpoint) => {
-    const currentItems = normalizeLayoutForSave(layout[breakpoint] ?? []);
-    const defaultItems = normalizeLayoutForSave(
-      defaultLayout[breakpoint] ?? []
-    );
-    return JSON.stringify(currentItems) === JSON.stringify(defaultItems);
-  });
+  return [defaultLayout, LEGACY_DEFAULT_HOME_LAYOUT].some((candidate) =>
+    HOME_LAYOUT_BREAKPOINTS.every(
+      (breakpoint) =>
+        JSON.stringify(normalizeLayoutForSave(layout[breakpoint] ?? [])) ===
+        JSON.stringify(normalizeLayoutForSave(candidate[breakpoint] ?? []))
+    )
+  );
 };
 
 interface HomePlan {
   
-  widgets: string[];
+  widgets: HomeDefaultWidgetId[];
   streakKind?: CurrentStreakKind;
   goal?: { type: 'tradesJournaled'; target: number };
 }

@@ -59,6 +59,7 @@ import {
 import type JournalitPlugin from '../../../main';
 import {
   analyzeDrawdown,
+  isNonAccountFilterActive,
   resolveDrawdownCapitalBasis,
   type DrawdownCapitalBasis,
 } from '../../../utils/drawdownAnalytics';
@@ -67,7 +68,10 @@ import {
   normalizeAccountLookupKey,
   normalizeTradeAccountIdentity,
 } from '../../../services/trade/core/TradeAccountIdentity';
-import { extractCanonicalProjectionPnlFields } from '../../../services/trade/core/CanonicalProjectionFields';
+import {
+  extractCanonicalProjectionPnlFields,
+  hasUnknownCanonicalPnL,
+} from '../../../services/trade/core/CanonicalProjectionFields';
 import {
   type BreakEvenAccountBalanceLookup,
   type BreakEvenAccountBalanceSnapshot,
@@ -91,6 +95,10 @@ import {
   scaleCopiedTradeExecutionFields,
 } from '../../../utils/copyTradePnL';
 import { getAccountCapitalBasisLookup } from '../../../utils/accountCapitalBasis';
+import {
+  calculateCalmarRatio,
+  type CalmarUnavailableReason,
+} from '../../../utils/calmarRatio';
 
 
 
@@ -438,6 +446,7 @@ const buildMetricsCacheKey = (
     tradingDayCutoffTime?: string;
     drawdownCapitalBasis?: DrawdownCapitalBasis['type'];
     drawdownCapitalBasisAmount?: number | 'none';
+    calmarHistoryIncomplete: boolean;
     maeMfeDisplayUnit: MaeMfeDisplayUnit;
     sharpeRatioTrades: NormalizedMetricsTrade[];
     tickExcursionSupplementTrades: NormalizedMetricsTrade[];
@@ -507,6 +516,7 @@ const buildMetricsCacheKey = (
     options.tradingDayCutoffTime ?? 'none',
     options.drawdownCapitalBasis ?? 'none',
     options.drawdownCapitalBasisAmount ?? 'none',
+    options.calmarHistoryIncomplete,
     options.maeMfeDisplayUnit,
   ].join(':');
 };
@@ -573,6 +583,23 @@ export const isTradeOpenInDashboard = (trade: Trade): boolean =>
     exits: trade.exits,
     entries: trade.entries,
     _originalPnlWasNull: trade._originalPnlWasNull,
+  });
+
+
+const hasIncompleteCalmarHistory = (trades: Trade[]): boolean =>
+  trades.some((trade) => {
+    if (trade.tradeStatus === 'CANCELLED') return false;
+    if (
+      isTradeOpenInDashboard(trade) &&
+      trade.tradeStatus !== 'PARTIALLY_CLOSED'
+    )
+      return false;
+    if (hasUnknownCanonicalPnL(trade)) return true;
+    const missingStoredPnL =
+      trade._originalPnlWasNull === true || !Number.isFinite(trade.pnl);
+    const knownDirectPnL =
+      trade.useDirectPnLInput === true && Number.isFinite(trade.directPnL);
+    return missingStoredPnL && !knownDirectPnL;
   });
 
 
@@ -957,6 +984,8 @@ export interface DashboardData {
     winRate: number;
     profitFactor: number;
     sharpeRatio?: number;
+    calmarRatio?: number;
+    calmarRatioUnavailableReason?: CalmarUnavailableReason;
     
     sharpeRatioTradeCount?: number;
     
@@ -1608,6 +1637,8 @@ interface CalculateMetricsOptions {
   drawdownCapitalBasis?: DrawdownCapitalBasis;
   maeMfeDisplayUnit?: MaeMfeDisplayUnit;
   
+  calmarHistoryIncomplete?: boolean;
+  
   sharpeRatioTrades?: Trade[];
   
   unrealizedPnlTrades?: Trade[];
@@ -1916,6 +1947,10 @@ export const calculateMetrics = (
       winRate: 0,
       profitFactor: 0,
       sharpeRatio: undefined,
+      calmarRatio: undefined,
+      calmarRatioUnavailableReason: options.calmarHistoryIncomplete
+        ? 'incomplete-history'
+        : 'no-history',
       sharpeRatioTradeCount: 0,
       sharpeRatioSourceTradeCount: 0,
       expectancy: 0,
@@ -1971,6 +2006,8 @@ export const calculateMetrics = (
   
   
   
+  const calmarHistoryIncomplete =
+    options.calmarHistoryIncomplete ?? hasIncompleteCalmarHistory(trades);
   const contributingTrades = trades.filter((t) => isPnlContributingTrade(t));
 
   
@@ -2007,6 +2044,7 @@ export const calculateMetrics = (
     analyticsDateBasis,
     tradingDayCutoffTime,
     drawdownCapitalBasis: options.drawdownCapitalBasis?.type ?? 'none',
+    calmarHistoryIncomplete,
     drawdownCapitalBasisAmount:
       options.drawdownCapitalBasis && 'amount' in options.drawdownCapitalBasis
         ? options.drawdownCapitalBasis.amount
@@ -2246,6 +2284,10 @@ export const calculateMetrics = (
     capitalBasis: drawdownCapitalBasis,
   });
   const maxDrawdown = drawdownAnalytics.summary.maxDrawdownAmount;
+  const calmar: ReturnType<typeof calculateCalmarRatio> =
+    calmarHistoryIncomplete
+      ? { reason: 'incomplete-history' }
+      : calculateCalmarRatio(drawdownAnalytics, drawdownCapitalBasis);
   const maxDrawdownAmountPercent =
     drawdownAnalytics.summary.maxDrawdownAmountPercent;
   const maxDrawdownAmountPercentBasisLabel =
@@ -2444,6 +2486,8 @@ export const calculateMetrics = (
     winRate,
     profitFactor,
     sharpeRatio,
+    calmarRatio: calmar.value,
+    calmarRatioUnavailableReason: calmar.reason,
     sharpeRatioTradeCount,
     sharpeRatioSourceTradeCount,
     expectancy,
@@ -2685,6 +2729,8 @@ export const fetchDashboardData = async (
 
     const analyticsDateBasis = getAnalyticsDateBasis(plugin?.settings);
 
+    const calmarHistoryIncomplete = hasIncompleteCalmarHistory(trades);
+
     
     
     
@@ -2880,6 +2926,7 @@ export const fetchDashboardData = async (
       }
     );
     const metrics = calculateMetrics(tradesForMetrics, {
+      calmarHistoryIncomplete,
       defaultRiskAmount,
       breakEvenRangeMin,
       breakEvenRangeMax,
@@ -2902,7 +2949,31 @@ export const fetchDashboardData = async (
     });
 
     
+    
+    if (
+      isNonAccountFilterActive(filters) ||
+      (filters.directions?.length ?? 0) > 0 ||
+      (filters.accountPhases?.length ?? 0) > 0 ||
+      (filters.reviewStatus?.length ?? 0) > 0 ||
+      (filters.imageAnnotationStatus?.length ?? 0) > 0 ||
+      (filters.imageTags?.length ?? 0) > 0
+    ) {
+      metrics.calmarRatio = undefined;
+      metrics.calmarRatioUnavailableReason = 'scope';
+    }
+
+    
     if (conversionMetadata) {
+      if (
+        conversionMetadata.unconvertedCurrencies.length > 0 ||
+        (conversionMetadata.partiallyConvertedCurrencies?.length ?? 0) > 0 ||
+        conversionMetadata.originalTradeCount !==
+          conversionMetadata.convertedTradeCount
+      ) {
+        
+        metrics.calmarRatio = undefined;
+        metrics.calmarRatioUnavailableReason = 'conversion';
+      }
       metrics.convertedNetPnL = metrics.netPnL;
       metrics.conversionBaseCurrency = conversionMetadata.baseCurrency;
       metrics.conversionRateDate = conversionMetadata.rateDate;
@@ -2957,6 +3028,8 @@ export const fetchDashboardData = async (
       metrics.averageRecoveryDurationDays = undefined;
       metrics.longestDrawdownDurationDays = undefined;
       metrics.drawdownEpisodeCount = undefined;
+      metrics.calmarRatio = undefined;
+      metrics.calmarRatioUnavailableReason = 'conversion';
     }
 
     const separateSnapshotOnlyTrades =

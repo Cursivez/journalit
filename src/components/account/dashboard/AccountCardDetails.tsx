@@ -125,11 +125,11 @@ export function AccountCardFooter({
         <span className="footer-label">{t('account-card.footer.monthly')}</span>
         <span className="footer-value">
           {feesMasked || (account.monthlyCost && account.monthlyCost > 0)
-            ? `${formatValue({
+            ? formatValue({
                 kind: 'fee',
                 value: account.monthlyCost ?? 0,
                 currencyCode: currency,
-              })}/month`
+              })
             : 'N/A'}
         </span>
       </div>

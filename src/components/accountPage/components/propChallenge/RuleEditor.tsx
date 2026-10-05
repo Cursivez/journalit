@@ -12,6 +12,15 @@ import {
 import Checkbox from '../../../ui/Checkbox';
 import { NoTooltipButton } from '../../../ui/NoTooltipButton';
 import { numberValue } from './editorOptions';
+import { Tooltip } from '../../../shared/Tooltip';
+import { HelpTooltipContent } from '../../../shared/HelpTooltipContent';
+import { propChallengeRuleDescription } from './propChallengeRuleHelp';
+import { PropChallengeField } from './PropChallengeField';
+import {
+  DrawdownFields,
+  ProfitTargetFields,
+  RuleAmountField,
+} from './AmountRuleFields';
 
 const formatPositionTiers = (
   tiers: Array<{ profit: number; maxContracts: number }>
@@ -245,26 +254,6 @@ function getRuleSummary(
   }
 }
 
-function amountField(
-  amount: number,
-  update: (amount: number) => void,
-  disabled: boolean
-) {
-  return (
-    <label className="journalit-prop-challenge-field">
-      <span>{t('account.prop-challenge.rule.amount')}</span>
-      <DraftInput
-        type="number"
-        min="0"
-        step="100"
-        value={amount === 0 ? '' : amount}
-        onChange={(event) => update(numberValue(event.target.value))}
-        disabled={disabled}
-      />
-    </label>
-  );
-}
-
 function DailyLossLimitFields({
   rule,
   startingBalance,
@@ -278,15 +267,20 @@ function DailyLossLimitFields({
 }) {
   return (
     <>
-      {amountField(
-        rule.amount,
-        (amount) => onChange({ ...rule, amount }),
-        disabled
-      )}
-      <label className="journalit-prop-challenge-field">
-        <span>{t('account.prop-challenge.rule.breach-action')}</span>
+      <RuleAmountField
+        amount={rule.amount}
+        onChange={(amount) => onChange({ ...rule, amount })}
+        disabled={disabled}
+        descriptionKey="account.prop-challenge.rule.help.daily-loss-amount"
+      />
+      <PropChallengeField
+        kind="dropdown"
+        translationKey="account.prop-challenge.rule.breach-action"
+        description={t('account.prop-challenge.rule.help.breach-action')}
+      >
         <DropdownSelect
           value={rule.breachAction ?? 'fail'}
+          ariaLabel={t('account.prop-challenge.rule.breach-action')}
           onChange={(breachAction) => {
             if (
               breachAction === 'fail' ||
@@ -295,7 +289,6 @@ function DailyLossLimitFields({
               onChange({ ...rule, breachAction });
             }
           }}
-          ariaLabel={t('account.prop-challenge.rule.breach-action')}
           disabled={disabled}
           options={[
             {
@@ -308,10 +301,14 @@ function DailyLossLimitFields({
             },
           ]}
         />
-      </label>
-      <label className="journalit-prop-challenge-field">
-        <span>{t('account.prop-challenge.rule.daily-loss-model')}</span>
+      </PropChallengeField>
+      <PropChallengeField
+        kind="dropdown"
+        translationKey="account.prop-challenge.rule.daily-loss-model"
+        description={t('account.prop-challenge.rule.help.daily-loss-model')}
+      >
         <DropdownSelect
+          ariaLabel={t('account.prop-challenge.rule.daily-loss-model')}
           value={
             rule.lossTiers
               ? 'profit_tiers'
@@ -368,7 +365,6 @@ function DailyLossLimitFields({
               amountAfterThreshold: rule.amount,
             });
           }}
-          ariaLabel={t('account.prop-challenge.rule.daily-loss-model')}
           disabled={disabled}
           options={[
             {
@@ -395,17 +391,17 @@ function DailyLossLimitFields({
             },
           ]}
         />
-      </label>
+      </PropChallengeField>
       {rule.profitThresholdPercent !== undefined &&
       rule.amountAfterThreshold !== undefined ? (
         <>
-          <p className="setting-item-description">
-            {t('account.prop-challenge.rule.daily-loss-threshold-help')}
-          </p>
-          <label className="journalit-prop-challenge-field">
-            <span>
-              {t('account.prop-challenge.rule.profit-threshold-percent')}
-            </span>
+          <PropChallengeField
+            kind="input"
+            translationKey="account.prop-challenge.rule.profit-threshold-percent"
+            description={t(
+              'account.prop-challenge.rule.daily-loss-threshold-help'
+            )}
+          >
             <DraftInput
               type="number"
               min="0.1"
@@ -419,11 +415,14 @@ function DailyLossLimitFields({
               }
               disabled={disabled}
             />
-          </label>
-          <label className="journalit-prop-challenge-field">
-            <span>
-              {t('account.prop-challenge.rule.amount-after-threshold')}
-            </span>
+          </PropChallengeField>
+          <PropChallengeField
+            kind="input"
+            translationKey="account.prop-challenge.rule.amount-after-threshold"
+            description={t(
+              'account.prop-challenge.rule.daily-loss-threshold-help'
+            )}
+          >
             <DraftInput
               type="number"
               min="0"
@@ -437,17 +436,19 @@ function DailyLossLimitFields({
               }
               disabled={disabled}
             />
-          </label>
+          </PropChallengeField>
         </>
       ) : null}
       {rule.scaleAtBalance !== undefined &&
       rule.scaledAmountPercentOfPeakEodProfit !== undefined ? (
         <>
-          <p className="setting-item-description">
-            {t('account.prop-challenge.rule.daily-loss-peak-eod-help')}
-          </p>
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.prop-challenge.rule.scale-at-balance')}</span>
+          <PropChallengeField
+            kind="input"
+            translationKey="account.prop-challenge.rule.scale-at-balance"
+            description={t(
+              'account.prop-challenge.rule.daily-loss-peak-eod-help'
+            )}
+          >
             <DraftInput
               type="number"
               min="0"
@@ -461,13 +462,14 @@ function DailyLossLimitFields({
               }
               disabled={disabled}
             />
-          </label>
-          <label className="journalit-prop-challenge-field">
-            <span>
-              {t(
-                'account.prop-challenge.rule.scaled-percent-of-peak-eod-profit'
-              )}
-            </span>
+          </PropChallengeField>
+          <PropChallengeField
+            kind="input"
+            translationKey="account.prop-challenge.rule.scaled-percent-of-peak-eod-profit"
+            description={t(
+              'account.prop-challenge.rule.daily-loss-peak-eod-help'
+            )}
+          >
             <DraftInput
               type="number"
               min="0.1"
@@ -484,16 +486,16 @@ function DailyLossLimitFields({
               }
               disabled={disabled}
             />
-          </label>
+          </PropChallengeField>
         </>
       ) : null}
       {rule.lossTiers ? (
         <>
-          <p className="setting-item-description">
-            {t('account.prop-challenge.rule.daily-loss-tiers-help')}
-          </p>
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.prop-challenge.rule.loss-tiers')}</span>
+          <PropChallengeField
+            kind="input"
+            translationKey="account.prop-challenge.rule.loss-tiers"
+            description={t('account.prop-challenge.rule.daily-loss-tiers-help')}
+          >
             <DraftInput
               type="text"
               value={formatLossTiers(rule.lossTiers)}
@@ -505,13 +507,15 @@ function DailyLossLimitFields({
               }
               disabled={disabled}
             />
-          </label>
-          <label className="journalit-prop-challenge-field">
-            <span>
-              {t('account.prop-challenge.rule.position-profit-basis')}
-            </span>
+          </PropChallengeField>
+          <PropChallengeField
+            kind="dropdown"
+            translationKey="account.prop-challenge.rule.position-profit-basis"
+            description={t('account.prop-challenge.rule.help.profit-basis')}
+          >
             <DropdownSelect
               value={rule.profitBasis ?? 'cumulative_trade_profit'}
+              ariaLabel={t('account.prop-challenge.rule.position-profit-basis')}
               onChange={(profitBasis) =>
                 onChange({
                   ...rule,
@@ -521,7 +525,6 @@ function DailyLossLimitFields({
                       : 'cumulative_trade_profit',
                 })
               }
-              ariaLabel={t('account.prop-challenge.rule.position-profit-basis')}
               disabled={disabled}
               options={[
                 {
@@ -538,7 +541,7 @@ function DailyLossLimitFields({
                 },
               ]}
             />
-          </label>
+          </PropChallengeField>
         </>
       ) : null}
     </>
@@ -558,9 +561,13 @@ function MaxPositionSizeFields({
 }) {
   return (
     <>
-      <label className="journalit-prop-challenge-field">
-        <span>{t('account.prop-challenge.rule.position-limit-model')}</span>
+      <PropChallengeField
+        kind="dropdown"
+        translationKey="account.prop-challenge.rule.position-limit-model"
+        description={t('account.prop-challenge.rule.help.position-model')}
+      >
         <DropdownSelect
+          ariaLabel={t('account.prop-challenge.rule.position-limit-model')}
           value={
             'maxContracts' in rule
               ? 'fixed'
@@ -609,7 +616,6 @@ function MaxPositionSizeFields({
                 : {}),
             });
           }}
-          ariaLabel={t('account.prop-challenge.rule.position-limit-model')}
           disabled={disabled}
           options={[
             {
@@ -632,10 +638,13 @@ function MaxPositionSizeFields({
             },
           ]}
         />
-      </label>
+      </PropChallengeField>
       {'maxContracts' in rule ? (
-        <label className="journalit-prop-challenge-field">
-          <span>{t('account.prop-challenge.rule.max-contracts')}</span>
+        <PropChallengeField
+          kind="input"
+          translationKey="account.prop-challenge.rule.max-contracts"
+          description={t('account.prop-challenge.rule.help.max-contracts')}
+        >
           <DraftInput
             type="number"
             min="0"
@@ -649,15 +658,17 @@ function MaxPositionSizeFields({
             }
             disabled={disabled}
           />
-        </label>
+        </PropChallengeField>
       ) : (
         <>
-          <label className="journalit-prop-challenge-field">
-            <span>
-              {t('account.prop-challenge.rule.position-profit-basis')}
-            </span>
+          <PropChallengeField
+            kind="dropdown"
+            translationKey="account.prop-challenge.rule.position-profit-basis"
+            description={t('account.prop-challenge.rule.help.profit-basis')}
+          >
             <DropdownSelect
               value={rule.profitBasis ?? 'cumulative_trade_profit'}
+              ariaLabel={t('account.prop-challenge.rule.position-profit-basis')}
               onChange={(profitBasis) => {
                 if (
                   profitBasis === 'cumulative_trade_profit' ||
@@ -666,7 +677,6 @@ function MaxPositionSizeFields({
                   onChange({ ...rule, profitBasis });
                 }
               }}
-              ariaLabel={t('account.prop-challenge.rule.position-profit-basis')}
               disabled={disabled}
               options={[
                 {
@@ -683,14 +693,14 @@ function MaxPositionSizeFields({
                 },
               ]}
             />
-          </label>
-          {'profitTiers' in rule ? null : (
-            <p className="setting-item-description">
-              {t('account.prop-challenge.rule.position-scaling-help')}
-            </p>
-          )}
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.prop-challenge.rule.initial-contracts')}</span>
+          </PropChallengeField>
+          <PropChallengeField
+            kind="input"
+            translationKey="account.prop-challenge.rule.initial-contracts"
+            description={t(
+              'account.prop-challenge.rule.help.initial-contracts'
+            )}
+          >
             <DraftInput
               type="number"
               min="1"
@@ -704,14 +714,16 @@ function MaxPositionSizeFields({
               }
               disabled={disabled}
             />
-          </label>
+          </PropChallengeField>
           {'profitTiers' in rule ? (
             <>
-              <p className="setting-item-description">
-                {t('account.prop-challenge.rule.position-tiers-help')}
-              </p>
-              <label className="journalit-prop-challenge-field">
-                <span>{t('account.prop-challenge.rule.position-tiers')}</span>
+              <PropChallengeField
+                kind="input"
+                translationKey="account.prop-challenge.rule.position-tiers"
+                description={t(
+                  'account.prop-challenge.rule.position-tiers-help'
+                )}
+              >
                 <DraftInput
                   value={formatPositionTiers(rule.profitTiers)}
                   onChange={(event) =>
@@ -722,14 +734,17 @@ function MaxPositionSizeFields({
                   }
                   disabled={disabled}
                 />
-              </label>
+              </PropChallengeField>
             </>
           ) : (
             <>
-              <label className="journalit-prop-challenge-field">
-                <span>
-                  {t('account.prop-challenge.rule.profit-per-contract')}
-                </span>
+              <PropChallengeField
+                kind="input"
+                translationKey="account.prop-challenge.rule.profit-per-contract"
+                description={t(
+                  'account.prop-challenge.rule.position-scaling-help'
+                )}
+              >
                 <DraftInput
                   type="number"
                   min="1"
@@ -745,11 +760,14 @@ function MaxPositionSizeFields({
                   }
                   disabled={disabled}
                 />
-              </label>
-              <label className="journalit-prop-challenge-field">
-                <span>
-                  {t('account.prop-challenge.rule.maximum-contracts')}
-                </span>
+              </PropChallengeField>
+              <PropChallengeField
+                kind="input"
+                translationKey="account.prop-challenge.rule.maximum-contracts"
+                description={t(
+                  'account.prop-challenge.rule.help.maximum-contracts'
+                )}
+              >
                 <DraftInput
                   type="number"
                   min="1"
@@ -769,16 +787,18 @@ function MaxPositionSizeFields({
                   }}
                   disabled={disabled}
                 />
-              </label>
+              </PropChallengeField>
             </>
           )}
         </>
       )}
-      <div className="journalit-prop-challenge-field">
-        <span>{t('account.prop-challenge.rule.micros-per-contract')}</span>
+      <PropChallengeField
+        kind="checkbox"
+        translationKey="account.prop-challenge.rule.micros-per-contract"
+        description={t('account.prop-challenge.rule.micros-per-contract-help')}
+      >
         <Checkbox
           checked={rule.microsPerContract === 10}
-          ariaLabel={t('account.prop-challenge.rule.micros-per-contract')}
           onChange={(checked) => {
             const next = { ...rule };
             if (checked) next.microsPerContract = 10;
@@ -787,10 +807,7 @@ function MaxPositionSizeFields({
           }}
           disabled={disabled}
         />
-      </div>
-      <p className="setting-item-description">
-        {t('account.prop-challenge.rule.micros-per-contract-help')}
-      </p>
+      </PropChallengeField>
     </>
   );
 }
@@ -806,119 +823,20 @@ function RuleEditorFields({
   disabled: boolean;
   onChange: (rule: PropChallengeRule) => void;
 }) {
-  const field = (amount: number, update: (amount: number) => void) =>
-    amountField(amount, update, disabled);
   let fields: React.ReactNode;
   switch (rule.kind) {
     case 'profit_target':
       fields = (
-        <>
-          {field(rule.amount, (amount) => onChange({ ...rule, amount }))}
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.prop-challenge.rule.target-type')}</span>
-            <DropdownSelect
-              value={rule.targetType}
-              onChange={(targetType) =>
-                onChange({
-                  ...rule,
-                  targetType:
-                    targetType === 'percentage' ? 'percentage' : 'absolute',
-                  ...(targetType === 'percentage'
-                    ? { creditWithdrawals: undefined }
-                    : {}),
-                })
-              }
-              ariaLabel={t('account.prop-challenge.rule.target-type')}
-              disabled={disabled}
-              options={[
-                {
-                  value: 'absolute',
-                  label: t('account.profit-target.type.absolute'),
-                },
-                {
-                  value: 'percentage',
-                  label: t('account.profit-target.type.percentage'),
-                },
-              ]}
-            />
-          </label>
-          {rule.targetType === 'absolute' && (
-            <div className="journalit-prop-challenge-field">
-              <span>{t('account.prop-challenge.rule.credit-withdrawals')}</span>
-              <Checkbox
-                checked={rule.creditWithdrawals ?? false}
-                ariaLabel={t('account.prop-challenge.rule.credit-withdrawals')}
-                onChange={(creditWithdrawals) =>
-                  onChange({
-                    ...rule,
-                    creditWithdrawals: creditWithdrawals || undefined,
-                  })
-                }
-                disabled={disabled}
-              />
-            </div>
-          )}
-        </>
+        <ProfitTargetFields
+          rule={rule}
+          disabled={disabled}
+          onChange={onChange}
+        />
       );
       break;
     case 'drawdown':
       fields = (
-        <>
-          {field(rule.amount, (amount) => onChange({ ...rule, amount }))}
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.prop-challenge.rule.drawdown-mode')}</span>
-            <DropdownSelect
-              value={rule.mode}
-              onChange={(mode) => {
-                if (
-                  mode === 'static' ||
-                  mode === 'eod_trailing' ||
-                  mode === 'intraday_trailing'
-                ) {
-                  onChange(
-                    mode === 'static'
-                      ? { ...rule, mode, lockAtBalance: undefined }
-                      : { ...rule, mode }
-                  );
-                }
-              }}
-              ariaLabel={t('account.prop-challenge.rule.drawdown-mode')}
-              disabled={disabled}
-              options={[
-                {
-                  value: 'static',
-                  label: t('account.prop-challenge.drawdown.static'),
-                },
-                {
-                  value: 'eod_trailing',
-                  label: t('account.prop-challenge.drawdown.eod-trailing'),
-                },
-                {
-                  value: 'intraday_trailing',
-                  label: t('account.prop-challenge.drawdown.intraday-trailing'),
-                },
-              ]}
-            />
-          </label>
-          {rule.mode !== 'static' && (
-            <label className="journalit-prop-challenge-field">
-              <span>{t('account.prop-challenge.rule.lock-at-balance')}</span>
-              <DraftInput
-                type="number"
-                min="0"
-                step="100"
-                value={rule.lockAtBalance ?? ''}
-                onChange={(event) =>
-                  onChange({
-                    ...rule,
-                    lockAtBalance: numberValue(event.target.value),
-                  })
-                }
-                disabled={disabled}
-              />
-            </label>
-          )}
-        </>
+        <DrawdownFields rule={rule} disabled={disabled} onChange={onChange} />
       );
       break;
     case 'daily_loss_limit':
@@ -932,15 +850,34 @@ function RuleEditorFields({
       );
       break;
     case 'daily_profit_cap':
-      fields = field(rule.amount, (amount) => onChange({ ...rule, amount }));
+      fields = (
+        <RuleAmountField
+          amount={rule.amount}
+          onChange={(amount) => onChange({ ...rule, amount })}
+          disabled={disabled}
+          descriptionKey="account.prop-challenge.rule.help.daily-profit-cap"
+        />
+      );
       break;
     case 'live_review_daily_profit':
-      fields = field(rule.amount, (amount) => onChange({ ...rule, amount }));
+      fields = (
+        <RuleAmountField
+          amount={rule.amount}
+          onChange={(amount) => onChange({ ...rule, amount })}
+          disabled={disabled}
+          descriptionKey="account.prop-challenge.rule.help.live-review"
+        />
+      );
       break;
     case 'minimum_trading_days':
       fields = (
-        <label className="journalit-prop-challenge-field">
-          <span>{t('account.prop-challenge.rule.days')}</span>
+        <PropChallengeField
+          kind="input"
+          translationKey="account.prop-challenge.rule.days"
+          description={t(
+            'account.prop-challenge.ledger.help.minimum_trading_days'
+          )}
+        >
           <DraftInput
             type="number"
             min="0"
@@ -951,14 +888,19 @@ function RuleEditorFields({
             }
             disabled={disabled}
           />
-        </label>
+        </PropChallengeField>
       );
       break;
     case 'minimum_profitable_days':
       fields = (
         <>
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.prop-challenge.rule.days')}</span>
+          <PropChallengeField
+            kind="input"
+            translationKey="account.prop-challenge.rule.days"
+            description={t(
+              'account.prop-challenge.ledger.help.minimum_profitable_days'
+            )}
+          >
             <DraftInput
               type="number"
               min="0"
@@ -969,9 +911,12 @@ function RuleEditorFields({
               }
               disabled={disabled}
             />
-          </label>
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.prop-challenge.rule.minimum-daily-profit')}</span>
+          </PropChallengeField>
+          <PropChallengeField
+            kind="input"
+            translationKey="account.prop-challenge.rule.minimum-daily-profit"
+            description={t('account.prop-challenge.rule.help.daily-profit')}
+          >
             <DraftInput
               type="number"
               min="0"
@@ -987,15 +932,18 @@ function RuleEditorFields({
               }
               disabled={disabled}
             />
-          </label>
+          </PropChallengeField>
         </>
       );
       break;
     case 'consistency':
       fields = (
         <>
-          <label className="journalit-prop-challenge-field">
-            <span>{t('account.prop-challenge.rule.best-day-percent')}</span>
+          <PropChallengeField
+            kind="input"
+            translationKey="account.prop-challenge.rule.best-day-percent"
+            description={t('account.prop-challenge.ledger.help.consistency')}
+          >
             <DraftInput
               type="number"
               min="0"
@@ -1009,11 +957,14 @@ function RuleEditorFields({
               }
               disabled={disabled}
             />
-          </label>
-          <label className="journalit-prop-challenge-field">
-            <span>
-              {t('account.prop-challenge.rule.consistency-cushion-percent')}
-            </span>
+          </PropChallengeField>
+          <PropChallengeField
+            kind="input"
+            translationKey="account.prop-challenge.rule.consistency-cushion-percent"
+            description={t(
+              'account.prop-challenge.rule.help.consistency-cushion'
+            )}
+          >
             <DraftInput
               type="number"
               min="0"
@@ -1034,7 +985,7 @@ function RuleEditorFields({
               }}
               disabled={disabled}
             />
-          </label>
+          </PropChallengeField>
         </>
       );
       break;
@@ -1080,8 +1031,10 @@ export function RuleEditor({
   const titleId = useId();
   const summaryId = useId();
   const ordinalId = useId();
+  const descriptionId = useId();
   const { formatValue } = useDisplayFormatter();
   const title = t(`account.prop-challenge.rule.${rule.kind}`);
+  const description = propChallengeRuleDescription(rule);
   const summary = getRuleSummary(rule, currencyCode, formatValue);
   const accessibleIdentity = `${title} (${ordinal}) — ${summary}`;
   const fields = (
@@ -1106,9 +1059,22 @@ export function RuleEditor({
           aria-labelledby={`${titleId} ${ordinalId} ${summaryId}`}
           aria-expanded={expanded}
           aria-controls={contentId}
+          aria-describedby={descriptionId}
           onClick={onToggle}
         >
-          <strong id={titleId}>{title}</strong>
+          <Tooltip
+            content={
+              <HelpTooltipContent title={title} description={description} />
+            }
+            delay={200}
+            preferredPosition="bottom"
+            triggerClassName="journalit-prop-challenge-rule-help"
+          >
+            <strong id={titleId}>{title}</strong>
+          </Tooltip>
+          <span id={descriptionId} className="journalit-sr-only">
+            {description}
+          </span>
           <span id={ordinalId} className="journalit-sr-only">
             ({ordinal})
           </span>

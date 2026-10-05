@@ -36,7 +36,8 @@ import {
 } from './suspendViewGuides';
 
 interface GuideRuntimeLayerProps {
-  leaf: WorkspaceLeaf;
+  
+  leaf: WorkspaceLeaf | null;
   viewType: string;
   children: React.ReactNode;
 }
@@ -62,7 +63,7 @@ interface GuideRuntimeContextValue {
   notifyAction: (actionId: string) => void;
   registerBackHandler: (handler: GuideBackHandler) => () => void;
   
-  leaf: WorkspaceLeaf;
+  leaf: WorkspaceLeaf | null;
   
   setResolvedGuide: (guideId: string | null) => void;
 }
@@ -98,16 +99,19 @@ const readViewGuideSuspension = (doc: Document): ViewGuideSuspension => ({
 });
 
 
-const getLeafDocument = (leaf: WorkspaceLeaf): Document =>
-  leaf.view.containerEl?.ownerDocument ?? window.activeDocument;
+const getLeafDocument = (leaf: WorkspaceLeaf | null): Document =>
+  leaf?.view.containerEl?.ownerDocument ?? window.activeDocument;
 
-const useViewGuideSuspension = (leaf: WorkspaceLeaf): ViewGuideSuspension => {
+const useViewGuideSuspension = (
+  leaf: WorkspaceLeaf | null
+): ViewGuideSuspension => {
   const doc = getLeafDocument(leaf);
   const [suspension, setSuspension] = useState(() =>
     readViewGuideSuspension(doc)
   );
 
   useEffect(() => {
+    if (!leaf) return;
     const update = () => {
       const next = readViewGuideSuspension(doc);
       setSuspension((previous) =>
@@ -123,7 +127,7 @@ const useViewGuideSuspension = (leaf: WorkspaceLeaf): ViewGuideSuspension => {
       subtree: true,
     });
     return () => observer.disconnect();
-  }, [doc]);
+  }, [doc, leaf]);
 
   return suspension;
 };
@@ -403,6 +407,7 @@ function useGuideRuntimeModel({
   const guideService = plugin?.viewGuideService;
   const guideRegistry = plugin?.guideRegistry;
   const targetsRef = useRef(new Map<string, HTMLElement>());
+  const [resolutionOwner] = useState(() => Symbol('guide-runtime-resolution'));
   const contextValuesRef = useRef(new Map<string, string | number | boolean>());
   const backHandlersRef = useRef(new Set<GuideBackHandler>());
   const [, setVersion] = useState(0);
@@ -428,28 +433,33 @@ function useGuideRuntimeModel({
   const guidesForView = guideRegistry?.getGuidesForView(viewType) || [];
   const guideIdsForView = guidesForView.map((candidate) => candidate.id);
 
-  const runningSession =
-    guideService?.getSessionForLeaf(leaf, viewType) ?? null;
+  const runningSession = leaf
+    ? (guideService?.getSessionForLeaf(leaf, viewType) ?? null)
+    : null;
 
-  const resolvedGuideId = guideService?.getResolvedGuideForLeaf(leaf) ?? null;
+  const resolvedGuideId = leaf
+    ? (guideService?.getResolvedGuideForLeaf(leaf, resolutionOwner) ?? null)
+    : null;
 
   
   
   const viewResolvesGuide = guidesRequireResolution(guidesForView);
 
-  const resolvedGuide = guideRegistry
-    ? resolveGuideForLeaf(
-        viewType,
-        resolvedGuideId,
-        guideIdsForView,
-        viewResolvesGuide,
-        (guideId) => guideRegistry.getGuideById(guideId),
-        (targetViewType) => guideRegistry.getPrimaryGuideForView(targetViewType)
-      )
-    : null;
+  const resolvedGuide =
+    leaf && guideRegistry
+      ? resolveGuideForLeaf(
+          viewType,
+          resolvedGuideId,
+          guideIdsForView,
+          viewResolvesGuide,
+          (guideId) => guideRegistry.getGuideById(guideId),
+          (targetViewType) =>
+            guideRegistry.getPrimaryGuideForView(targetViewType)
+        )
+      : null;
 
   const resolvedSession =
-    viewResolvesGuide && resolvedGuide && guideService
+    leaf && viewResolvesGuide && resolvedGuide && guideService
       ? (guideService.getSessionForGuideAndLeaf?.(resolvedGuide.id, leaf) ??
         null)
       : null;
@@ -472,8 +482,27 @@ function useGuideRuntimeModel({
         ? (guideRegistry?.getGuideById(session.guideId) ?? null)
         : resolvedGuide;
 
+  
+  
+  const canControlGuide = useCallback(
+    () =>
+      !viewResolvesGuide ||
+      (!!leaf &&
+        !!guide &&
+        guideService?.getResolvedGuideForLeaf(leaf, resolutionOwner) ===
+          guide.id),
+    [guide, guideService, leaf, resolutionOwner, viewResolvesGuide]
+  );
+
   useEffect(() => {
-    if (!guide || !guideService || !guide.autoShow || autoShowSuppressed) {
+    if (
+      !leaf ||
+      !guide ||
+      !guideService ||
+      !guide.autoShow ||
+      autoShowSuppressed ||
+      !canControlGuide()
+    ) {
       return;
     }
 
@@ -495,7 +524,15 @@ function useGuideRuntimeModel({
       leaf,
       initialStepId: guide.initialStepId,
     });
-  }, [activeLeaf, autoShowSuppressed, guide, guideService, leaf, session]);
+  }, [
+    activeLeaf,
+    autoShowSuppressed,
+    canControlGuide,
+    guide,
+    guideService,
+    leaf,
+    session,
+  ]);
 
   const visible =
     !!guide && !!session && !!guideService?.isSessionVisible(session.sessionId);
@@ -680,7 +717,13 @@ function useGuideRuntimeModel({
   ]);
 
   const advanceStep = useCallback(async () => {
-    if (!guideService || !guide || !session || stepIndex < 0) {
+    if (
+      !guideService ||
+      !guide ||
+      !session ||
+      stepIndex < 0 ||
+      !canControlGuide()
+    ) {
       return;
     }
 
@@ -728,6 +771,7 @@ function useGuideRuntimeModel({
       throw error;
     }
   }, [
+    canControlGuide,
     findAvailableStepIndex,
     guideService,
     guide,
@@ -759,10 +803,16 @@ function useGuideRuntimeModel({
   
   
   
+  
+  
+  
+  
+  
+  
   const latestNotifyActionRef = useRef(notifyAction);
   useInsertionEffect(() => {
     latestNotifyActionRef.current = notifyAction;
-  }, [notifyAction]);
+  });
   const stableNotifyAction = useCallback((actionId: string) => {
     latestNotifyActionRef.current(actionId);
   }, []);
@@ -823,7 +873,13 @@ function useGuideRuntimeModel({
   const isFirstStep = stepIndex <= 0;
 
   const handleBack = useCallback(() => {
-    if (!guideService || !guide || !session || isFirstStep) {
+    if (
+      !guideService ||
+      !guide ||
+      !session ||
+      isFirstStep ||
+      !canControlGuide()
+    ) {
       return;
     }
 
@@ -861,6 +917,7 @@ function useGuideRuntimeModel({
 
     void runBack();
   }, [
+    canControlGuide,
     findAvailableStepIndex,
     guideService,
     guide,
@@ -878,7 +935,7 @@ function useGuideRuntimeModel({
   }, [advanceStep, currentStep, isStepAvailable, visible]);
 
   const handlePrimaryClick = useCallback(() => {
-    if (!currentStep || isWaitingForTarget) {
+    if (!currentStep || isWaitingForTarget || !canControlGuide()) {
       return;
     }
 
@@ -906,6 +963,7 @@ function useGuideRuntimeModel({
     clickableTarget?.click();
   }, [
     advanceStep,
+    canControlGuide,
     currentStep,
     getTargetElement,
     isWaitingForTarget,
@@ -914,7 +972,7 @@ function useGuideRuntimeModel({
   ]);
 
   const handleSkip = useCallback(() => {
-    if (!guideService || !session) {
+    if (!guideService || !session || !canControlGuide()) {
       return;
     }
 
@@ -927,21 +985,27 @@ function useGuideRuntimeModel({
     }
 
     void guideService.skipSession(session.sessionId);
-  }, [guide, guideService, session]);
+  }, [canControlGuide, guide, guideService, session]);
 
   const handleStepAction = useCallback(() => {
-    if (!currentStep?.action || !guideService || !session) {
+    if (
+      !currentStep?.action ||
+      !guideService ||
+      !session ||
+      !canControlGuide()
+    ) {
       return;
     }
 
     currentStep.action.run();
     void guideService.completeSession(session.sessionId);
-  }, [currentStep, guideService, session]);
+  }, [canControlGuide, currentStep, guideService, session]);
 
   const handleStepDismiss = useCallback(() => {
+    if (!canControlGuide()) return;
     currentStep?.onDismiss?.();
     void advanceStep();
-  }, [advanceStep, currentStep]);
+  }, [advanceStep, canControlGuide, currentStep]);
 
   useEffect(() => {
     
@@ -1017,9 +1081,10 @@ function useGuideRuntimeModel({
 
   const setResolvedGuide = useCallback(
     (guideId: string | null) => {
-      guideService?.setResolvedGuideForLeaf(leaf, guideId);
+      if (leaf)
+        guideService?.setResolvedGuideForLeaf(leaf, guideId, resolutionOwner);
     },
-    [guideService, leaf]
+    [guideService, leaf, resolutionOwner]
   );
 
   const contextValue = useMemo<GuideRuntimeContextValue>(

@@ -18,11 +18,16 @@ import {
   DndContext,
   DragEndEvent,
   closestCenter,
-  Modifier,
+  KeyboardSensor,
+  MouseSensor,
+  TouchSensor,
+  useSensor,
+  useSensors,
 } from '@dnd-kit/core';
 import {
   SortableContext,
-  horizontalListSortingStrategy,
+  rectSortingStrategy,
+  sortableKeyboardCoordinates,
   useSortable,
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -38,7 +43,9 @@ import type {
 import { eventBus } from '../../../../services/events/EventBus';
 import { useEventBus } from '../../../../hooks/useEventBus';
 import { t } from '../../../../lang/helpers';
-import { dndKitStyle } from '../../../../styles/inlineStylePolicy';
+import { cssVars, dndKitStyle } from '../../../../styles/inlineStylePolicy';
+import { getMetricLayoutColumns } from './metricLayoutUtils';
+import { ESCAPE_DELEGATE_ATTRIBUTE } from '../../../../views/escapeKeySuppression';
 import {
   getWeekStartDate,
   getWeekStartDaySetting,
@@ -53,7 +60,6 @@ import {
   signedNumber,
   type StatDelta,
 } from '../../../../utils/previousPeriodDelta';
-
 
 const PAST_30D_COMPARISON_EXCLUDED_METRICS = new Set([
   'maxDrawdown',
@@ -161,6 +167,19 @@ const RATIO_DELTA_METRICS = new Set([
   'avgRR',
   'avgRRRiskBased',
 ]);
+
+export function formatTopSectionCalmarRatio({
+  value,
+  masked,
+  formatValue,
+}: {
+  value: number;
+  masked: boolean;
+  formatValue: (options: DisplayValueOptions) => string;
+}): string {
+  if (!masked && Math.abs(value) > 999) return value < 0 ? '-999+' : '999+';
+  return formatValue({ kind: 'metric', value, precision: 2 });
+}
 
 export function formatTopSectionProfitFactor({
   value,
@@ -298,13 +317,6 @@ function getMetricDeltaZeroThreshold(
   if (metric === 'winRate') return 0.0005;
   return MONEY_AND_DECIMAL_DELTA_METRICS.has(metric) ? 0.005 : undefined;
 }
-
-const restrictToHorizontalAxis: Modifier = ({ transform }) => {
-  return {
-    ...transform,
-    y: 0, 
-  };
-};
 
 function startOfDay(date: Date): Date {
   return new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -503,15 +515,19 @@ const SortableMetricCard: React.FC<{
   subline,
   sublineIsPositive,
 }) => {
-  const { attributes, listeners, setNodeRef, transform, transition } =
-    useSortable({
-      id,
-      disabled: !isEditing,
-    });
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({
+    id,
+    disabled: !isEditing,
+  });
 
-  const transformString = CSS.Transform.toString(
-    transform ? { ...transform, y: 0 } : transform
-  );
+  const transformString = CSS.Transform.toString(transform);
 
   
   
@@ -521,6 +537,8 @@ const SortableMetricCard: React.FC<{
       className="journalit-dashboard-metric-wrapper journalit-dashboard-metric-wrapper--sortable"
       style={dndKitStyle(transformString, transition)}
       data-editing={isEditing ? 'true' : 'false'}
+      data-dragging={isDragging ? 'true' : 'false'}
+      {...(isDragging ? { [ESCAPE_DELEGATE_ATTRIBUTE]: 'true' } : {})}
     >
       <div
         className="journalit-dashboard-metric-handle"
@@ -593,6 +611,7 @@ const getMetricDisplayKind = (metric: string): DisplayValueKind => {
       return 'returnPercent';
     case 'profitFactor':
     case 'sharpeRatio':
+    case 'calmarRatio':
     case 'avgRR':
     case 'avgRRRiskBased':
       return 'metric';
@@ -612,6 +631,8 @@ const getMetricName = (metric: string): string => {
       return t('dashboard.metrics.profitFactor');
     case 'sharpeRatio':
       return t('dashboard.metrics.sharpeRatio');
+    case 'calmarRatio':
+      return t('metric.calmarRatio.name');
     case 'expectancy':
       return t('dashboard.metrics.expectancy');
     case 'numTrades':
@@ -688,6 +709,7 @@ const isPositiveMetric = (
     case 'profitFactor':
     case 'expectancy':
     case 'sharpeRatio':
+    case 'calmarRatio':
       return value > 0;
     case 'avgWin':
     case 'avgLoss':
@@ -984,6 +1006,10 @@ function useTopSectionModel() {
     metric: string,
     value: number | undefined
   ): string => {
+    if (metric === 'calmarRatio' && shouldMask('metric')) {
+      
+      return formatValue({ kind: 'metric', value: 0 });
+    }
     if (value === undefined || value === null || isNaN(value)) {
       return 'N/A';
     }
@@ -1110,6 +1136,12 @@ function useTopSectionModel() {
         return formatTopSectionProfitFactor({
           value,
           masked: shouldMask(kind),
+          formatValue,
+        });
+      case 'calmarRatio':
+        return formatTopSectionCalmarRatio({
+          value,
+          masked: shouldMask('metric'),
           formatValue,
         });
       case 'sharpeRatio':
@@ -1687,6 +1719,25 @@ function useTopSectionModel() {
       );
     }
 
+    if (metric === 'calmarRatio') {
+      const reason = data.metrics.calmarRatioUnavailableReason;
+      return (
+        <div className="journalit-dashboard-metric-tooltip">
+          <div className="journalit-dashboard-metric-tooltip__title">
+            {t('metric.calmarRatio.name')}
+          </div>
+          <div>{t('dashboard.calmarRatio.tooltip.formula')}</div>
+          {!shouldMask('metric') &&
+            data.metrics.calmarRatio === undefined &&
+            reason && (
+              <div className="journalit-dashboard-metric-tooltip__warning">
+                {t(`dashboard.calmarRatio.unavailable.${reason}`)}
+              </div>
+            )}
+        </div>
+      );
+    }
+
     if (metric === 'sharpeRatio') {
       const validTrades = data.metrics.sharpeRatioTradeCount ?? 0;
       const totalClosedTrades =
@@ -1921,6 +1972,14 @@ function useTopSectionModel() {
   const hasMetricWarning = (metric: string): boolean => {
     if (getRCoverageWarning(metric) !== undefined) return true;
 
+    if (metric === 'calmarRatio') {
+      return (
+        !shouldMask('metric') &&
+        (data?.metrics.calmarRatio === undefined ||
+          getConversionExcludedWarningMessage() !== undefined)
+      );
+    }
+
     if (metric === 'netPnL') {
       return (
         Boolean(data?.metrics.conversionBaseCurrency) &&
@@ -2083,6 +2142,17 @@ export const TopSection: React.FC<TopSectionProps> = ({ isEditing }) => {
     getNetPnLUnrealizedDisplay,
   } = useTopSectionModel();
 
+  const metricColumns = getMetricLayoutColumns(activeMetrics.length);
+  const sensors = useSensors(
+    useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
+    }),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
+
   return (
     <div className="journalit-dashboard-top-section">
       {!data && !error ? (
@@ -2094,16 +2164,23 @@ export const TopSection: React.FC<TopSectionProps> = ({ isEditing }) => {
       ) : error ? (
         <div className="journalit-dashboard-error">{error}</div>
       ) : data ? (
-        <div className="journalit-dashboard-top-section-body">
+        <div
+          className="journalit-dashboard-top-section-body"
+          style={cssVars({
+            '--journalit-dashboard-metric-wide-columns': metricColumns.wide,
+            '--journalit-dashboard-metric-medium-columns': metricColumns.medium,
+            '--journalit-dashboard-metric-narrow-columns': metricColumns.narrow,
+          })}
+        >
           <DndContext
+            sensors={sensors}
             collisionDetection={closestCenter}
             onDragEnd={handleDragEnd}
             autoScroll={true}
-            modifiers={[restrictToHorizontalAxis]} 
           >
             <SortableContext
               items={activeMetrics}
-              strategy={horizontalListSortingStrategy}
+              strategy={rectSortingStrategy}
             >
               <div
                 className="journalit-dashboard-metrics"

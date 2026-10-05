@@ -9,8 +9,14 @@ import type {
   AccountMergePlanErrorCode,
   AccountMergePlanInput,
 } from '../../../../services/accountMerge/types';
-import { isPropChallengeRuleComplete } from '../../../../services/propChallenge/PropChallengeConfig';
-import type { PropChallengeRule } from '../../../../services/propChallenge/types';
+import {
+  isPropChallengeRuleComplete,
+  isPropChallengePayoutPolicyComplete,
+} from '../../../../services/propChallenge/PropChallengeConfig';
+import type {
+  PropChallengeRule,
+  PropChallengePayoutPolicy,
+} from '../../../../services/propChallenge/types';
 
 export interface AccountMergeCandidate {
   name: string;
@@ -22,12 +28,16 @@ export interface AccountMergeCandidate {
 
 export function hasIncompleteAccountMergeRules(
   rulesByPhase: readonly (readonly PropChallengeRule[] | undefined)[],
-  profileApplied: boolean
+  profileApplied: boolean,
+  payoutPolicies: readonly (PropChallengePayoutPolicy | undefined)[]
 ): boolean {
   return (
-    !profileApplied &&
-    rulesByPhase.some((rules) =>
-      rules?.some((rule) => !isPropChallengeRuleComplete(rule))
+    (!profileApplied &&
+      rulesByPhase.some((rules) =>
+        rules?.some((rule) => !isPropChallengeRuleComplete(rule))
+      )) ||
+    payoutPolicies.some(
+      (policy) => !isPropChallengePayoutPolicyComplete(policy)
     )
   );
 }

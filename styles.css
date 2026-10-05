@@ -643,61 +643,75 @@
 
   .upgrade-modal .upgrade-modal-actions{display: flex;justify-content: flex-end;gap: 10px;border-top: 1px solid var(--background-modifier-border);padding-top: 15px}
 
-.journalit-update-toast{background: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 8px;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);padding: 0;font-family: var(--font-interface);position: relative;max-width: 400px;opacity: 0;transform: translateX(-100%);transition: opacity 0.3s ease-out, transform 0.3s ease-out;overflow: hidden}
-
-.journalit-update-toast--visible{opacity: 1;transform: translateX(0)}
-
-.journalit-update-toast--available{width: 360px;max-width: calc(100% - 48px);padding: 16px 52px 16px 18px;display: grid;grid-template-columns: minmax(0, 1fr) auto;grid-template-areas:
+.journalit-update-toast{background: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 8px;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);padding: 16px 52px 16px 18px;font-family: var(--font-interface);position: relative;width: 360px;max-width: calc(100% - 48px);opacity: 0;transform: translateX(-100%);transition: opacity 0.3s ease-out, transform 0.3s ease-out;overflow: hidden;display: grid;grid-template-columns: minmax(0, 1fr) auto;grid-template-areas:
     "title actions"
     "description actions";align-items: center;row-gap: 3px}
 
-.journalit-update-toast--available .journalit-update-toast-title{grid-area: title;min-width: 0;margin: 0;padding: 0;font-size: 15px;font-weight: 600;line-height: 1.4;white-space: nowrap;overflow: hidden;text-overflow: ellipsis}
+.journalit-update-toast--visible{opacity: 1;transform: translateX(0)}
 
-.journalit-update-toast--available .journalit-update-toast-description{grid-area: description;min-width: 0;margin: 0;padding: 0;font-size: 13px;line-height: 1.4;white-space: nowrap;overflow: hidden;text-overflow: ellipsis}
+.journalit-update-toast-title{color: var(--text-normal);grid-area: title;min-width: 0;margin: 0;padding: 0;font-size: 15px;font-weight: 600;letter-spacing: -0.02em;line-height: 1.4;white-space: nowrap;overflow: hidden;text-overflow: ellipsis}
 
-.journalit-update-toast--available .journalit-update-toast-close, .journalit-update-toast--available .journalit-update-toast-close:is(button){top: 10px;right: 10px}
+.journalit-update-toast-description{color: var(--text-muted);opacity: 0.9;grid-area: description;min-width: 0;margin: 0;padding: 0;font-size: 13px;line-height: 1.4;white-space: nowrap;overflow: hidden;text-overflow: ellipsis}
 
-.journalit-update-toast--available .journalit-update-toast-button-container{grid-area: actions;align-self: end;padding: 0;flex: 0 0 auto}
-
-.journalit-update-toast--available .journalit-update-toast-button, .journalit-update-toast--available .journalit-update-toast-button:is(button){background-color: var(--interactive-accent);color: var(--text-on-accent)}
-
-.journalit-update-toast--available .journalit-update-toast-button:hover, .journalit-update-toast--available .journalit-update-toast-button:hover:is(button){background-color: var(--interactive-accent-hover);color: var(--text-on-accent)}
-
-.journalit-update-toast-title{color: var(--text-normal);font-size: 18px;font-weight: 500;margin: 0 0 12px 0;padding: 0 20px;letter-spacing: -0.02em;line-height: 1.3}
-
-.journalit-update-toast-version{color: var(--text-accent);font-size: 11px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.08em;margin: 0 0 4px 0;padding: 0 20px;display: block;opacity: 0.85}
-
-.journalit-update-toast-close, .journalit-update-toast-close:is(button){position: absolute;top: 8px;right: 8px;background: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 50%;color: var(--text-muted);cursor: pointer;font-size: 14px;font-weight: 300;font-family: system-ui, -apple-system, sans-serif;line-height: 1;padding: 0;padding-bottom: 1px;width: 20px;height: 20px;display: flex;align-items: center;justify-content: center;z-index: 10}
+.journalit-update-toast-close, .journalit-update-toast-close:is(button){position: absolute;top: 10px;right: 10px;background: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 50%;color: var(--text-muted);cursor: pointer;font-size: 14px;font-weight: 300;font-family: system-ui, -apple-system, sans-serif;line-height: 1;padding: 0;padding-bottom: 1px;width: 20px;height: 20px;display: flex;align-items: center;justify-content: center;z-index: 10}
 
 .journalit-update-toast-close:hover, .journalit-update-toast-close:hover:is(button){color: var(--text-normal);background: var(--background-secondary)}
 
-.journalit-update-toast-image{width: 100%;height: auto;border-radius: 8px 8px 0 0;margin-bottom: 12px;display: block}
-
-.journalit-update-toast-description{color: var(--text-muted);font-size: 13px;line-height: 1.6;margin: 0 0 16px 0;padding: 0 20px;opacity: 0.9}
-
-.journalit-update-toast-separator{border-top: 1px solid var(--background-modifier-border);margin: 0 0 12px 0}
-
-.journalit-update-toast-button-container{padding: 0 20px 16px 20px;display: flex;justify-content: space-between;align-items: center}
-
-.journalit-update-toast-button-container--single{justify-content: flex-end}
+.journalit-update-toast-button-container{grid-area: actions;align-self: end;padding: 0;flex: 0 0 auto;display: flex;justify-content: flex-end;align-items: center}
 
 .journalit-update-toast-button, .journalit-update-toast-button:is(button){background: var(--interactive-accent);color: var(--text-on-accent);border: none;border-radius: 6px;padding: 6px 12px;font-size: 12px;font-weight: 500;cursor: pointer;transition: background 0.2s ease;letter-spacing: 0.01em;display: flex;align-items: center;gap: 6px}
 
 .journalit-update-toast-button:hover, .journalit-update-toast-button:hover:is(button){background: var(--interactive-accent-hover);color: var(--text-on-accent)}
 
-.journalit-update-toast-secondary-button, .journalit-update-toast-secondary-button:is(button){background: transparent;color: var(--text-muted);border: 1px solid var(--background-modifier-border);border-radius: 6px;padding: 6px 10px;font-size: 12px;font-weight: 500;cursor: pointer;transition: color 0.2s ease;display: flex;align-items: center;gap: 6px}
-
-.journalit-update-toast-secondary-button:hover, .journalit-update-toast-secondary-button:hover:is(button){background: var(--background-secondary);color: var(--text-normal);border-color: var(--background-modifier-border-hover)}
-
 .journalit-update-toast-button-icon{width: 14px;height: 14px;display: flex;align-items: center;justify-content: center}
 
 @media (max-width: 768px) {
-  .journalit-update-toast{max-width: none}
+  .journalit-update-toast{max-width: none;width: auto}
 
-  .journalit-update-toast--available{width: auto}
-
-  .journalit-update-toast--available .journalit-update-toast-description{white-space: normal;overflow: visible}
+  .journalit-update-toast-description{white-space: normal;overflow: visible}
 }
+
+.journalit-update-popup-host{position: fixed;inset: 0;z-index: var(--layer-modal);display: flex;align-items: center;justify-content: center;padding: 24px 16px;pointer-events: none}
+
+.journalit-update-popup{position: relative;box-sizing: border-box;width: 420px;max-width: 100%;max-height: 100%;display: flex;flex-direction: column;background: var(--background-primary);color: var(--text-normal);border: 1px solid var(--background-modifier-border-hover);border-radius: 12px;box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15);font-family: var(--font-interface);overflow: hidden;pointer-events: auto}
+
+.journalit-update-popup .journalit-update-popup__close, .journalit-update-popup .journalit-update-popup__close:is(button){position: absolute;top: 12px;inset-inline-end: 12px;z-index: 1;display: flex;align-items: center;justify-content: center;width: 26px;height: 26px;padding: 0;border: 1px solid var(--background-modifier-border);border-radius: 50%;background: var(--background-secondary);color: var(--text-muted);box-shadow: none;cursor: pointer}
+
+.journalit-update-popup .journalit-update-popup__close:hover, .journalit-update-popup .journalit-update-popup__close:hover:is(button){color: var(--text-normal);background: var(--background-modifier-hover)}
+
+.journalit-update-popup__close svg{display: block;width: 16px;height: 16px;flex-shrink: 0}
+
+.journalit-update-popup__scroll{min-height: 0;overflow-y: auto;overscroll-behavior: contain}
+
+.journalit-update-popup .journalit-update-popup__media, .journalit-update-popup .journalit-update-popup__media:is(button){display: block;width: 100%;height: auto;padding: 0;margin: 0;border: none;border-radius: 0;background: transparent;box-shadow: none;overflow: hidden;cursor: zoom-in}
+
+.journalit-update-popup .journalit-update-popup__media[hidden], .journalit-update-popup .journalit-update-popup__media[hidden]:is(button){display: none}
+
+.journalit-update-popup__media img{display: block;width: auto;max-width: 100%;height: auto;max-height: min(260px, 35vh);margin: 0 auto}
+
+.journalit-update-popup__content{padding: 20px}
+
+.journalit-update-popup__eyebrow{padding-inline-end: 22px;color: var(--text-muted);font-size: 12px;line-height: 1.5}
+
+.journalit-update-popup__title{margin: 4px 0 0;font-size: 18px;font-weight: 600;line-height: 1.4;overflow-wrap: anywhere}
+
+.journalit-update-popup__description{margin: 14px 0 0;color: var(--text-muted);font-size: 14px;line-height: 1.6;white-space: pre-wrap;overflow-wrap: anywhere}
+
+.journalit-update-popup__footer{display: flex;align-items: center;justify-content: space-between;flex-shrink: 0;flex-wrap: wrap;gap: 12px;padding: 14px 16px;border-top: 1px solid var(--background-modifier-border);background: var(--background-primary)}
+
+.journalit-update-popup .journalit-update-popup__dismiss, .journalit-update-popup .journalit-update-popup__dismiss:is(button){padding: 0;border: none;background: transparent;box-shadow: none;color: var(--text-muted);font-size: 13px;cursor: pointer}
+
+.journalit-update-popup .journalit-update-popup__dismiss:hover, .journalit-update-popup .journalit-update-popup__dismiss:hover:is(button){color: var(--text-normal)}
+
+.journalit-update-popup .journalit-update-popup__more, .journalit-update-popup .journalit-update-popup__more:is(button){display: flex;align-items: center;gap: 6px;padding: 6px 12px;border: none;border-radius: 6px;background: var(--interactive-accent);box-shadow: none;color: var(--text-on-accent);font-size: 12px;font-weight: 500;letter-spacing: 0.01em;transition: background 0.2s ease;cursor: pointer}
+
+.journalit-update-popup .journalit-update-popup__more:hover, .journalit-update-popup .journalit-update-popup__more:hover:is(button){background: var(--interactive-accent-hover);color: var(--text-on-accent)}
+
+.journalit-update-popup__more-icon{display: flex;align-items: center;justify-content: center;width: 14px;height: 14px}
+
+.journalit-update-popup__more-icon svg{width: 14px;height: 14px}
+
+.journalit-update-popup button:focus-visible:is(button){outline: 2px solid var(--interactive-accent);outline-offset: 2px}
 
 .journalit-legacy-challenge-onboarding-modal{width: min(680px, 94vw);max-width: 94vw}
 
@@ -834,9 +848,6 @@
     [data-journalit-share-exclude][data-journalit-share-exclude]{display: none}
 
   
-  .journalit-share-card .journalit-combobox .input-container::after{display: none}
-
-  
   .journalit-share-card > .journalit-share-card-note.markdown-preview-view{padding: 0;height: auto;overflow: visible;background: transparent}
 
   .journalit-share-card-footer{margin-top: auto;padding-top: 16px;display: flex;justify-content: center;align-items: center;gap: 14px}
@@ -928,6 +939,8 @@ button.journalit-native-button.journalit-collapsible-header:focus:is(button){out
 
 .journalit-filter-menu-trigger{display: inline-flex}
 
+.journalit-filter-menu .journalit-filter-menu-date-range{padding: 4px 6px 6px}
+
 .journalit-filter-menu .journalit-filter-menu__panel{position: fixed;top: var(--journalit-filter-menu-top);left: var(--journalit-filter-menu-left);z-index: var(--layer-menu);display: flex;flex-direction: column;box-sizing: border-box;width: 264px;max-height: var(--journalit-filter-menu-max-height);padding: var(--size-2-3);border: var(--border-width) solid var(--background-modifier-border-hover);border-radius: var(--radius-m);background-color: var(--background-primary);box-shadow: var(--shadow-s);color: var(--text-normal);font-size: var(--font-ui-small)}
 
 
@@ -941,6 +954,8 @@ button.journalit-native-button.journalit-collapsible-header:focus:is(button){out
 .journalit-filter-menu .journalit-filter-menu__panel--root{width: 248px}
 
 .journalit-filter-menu .journalit-filter-menu__panel--drilldown{width: min(320px, calc(100vw - 16px))}
+
+.journalit-filter-menu .journalit-filter-menu__panel--date-range{width: 288px;max-width: calc(100vw - 16px)}
 
 .journalit-filter-menu .journalit-filter-menu__panel--measuring{visibility: hidden}
 
@@ -1511,9 +1526,6 @@ button.journalit-native-button.journalit-collapsible-header:focus:is(button){out
   .journalit-wpd-metric-row{position: relative;height: 100%}
 
   .journalit-wpd-metric-card{position: absolute;top: 50%;left: 50%;width: 170px;transform: translate(-50%, -50%) scale(0.72)}
-
-  
-  .journalit-wpd-metric-card .journalit-dashboard-metric-card{flex: 1 1 auto;min-width: 100%;min-height: 98px;margin-bottom: 0;padding: 14px}
 
 .journalit-template-builder-container .template-preview-widget{position: relative;border-radius: var(--radius-m)}
           .journalit-template-builder-container .template-preview-widget::after{content: '';position: absolute;inset: -2px;border: 2px dashed transparent;border-radius: var(--radius-m);pointer-events: none;z-index: 100;transition: border-color 0.15s ease}
@@ -4188,7 +4200,14 @@ button.journalit-native-button.journalit-collapsible-header:focus:is(button){out
 
 .edit-account-form .journalit-prop-challenge-rule-toggle strong,
 .journalit-account-merge-modal__phase-rules .journalit-prop-challenge-rule-toggle strong ,
-.create-account-form .journalit-prop-challenge-rule-toggle strong{min-width: 0;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;line-height: 1.3}
+.create-account-form .journalit-prop-challenge-rule-toggle strong{min-width: 0;max-width: 100%;overflow: hidden;text-overflow: ellipsis;white-space: nowrap;line-height: 1.3}
+
+.journalit-prop-challenge-rule-help{justify-self: start;min-width: 0;max-width: 100%;cursor: help}
+
+.journalit-prop-challenge-rule-help strong{padding-bottom: 1px;border-bottom: 1px dotted var(--text-faint);cursor: help}
+
+.journalit-prop-challenge-rule-help:hover strong,
+.journalit-prop-challenge-rule-toggle:focus-visible .journalit-prop-challenge-rule-help strong{border-bottom-color: var(--text-muted)}
 
 .edit-account-form .journalit-prop-challenge-rule-toggle:hover, .edit-account-form .journalit-prop-challenge-rule-toggle:hover:is(button), .journalit-account-merge-modal__phase-rules .journalit-prop-challenge-rule-toggle:hover, .journalit-account-merge-modal__phase-rules .journalit-prop-challenge-rule-toggle:hover:is(button), .create-account-form .journalit-prop-challenge-rule-toggle:hover, .create-account-form .journalit-prop-challenge-rule-toggle:hover:is(button){background: transparent;color: var(--text-normal)}
 
@@ -4232,6 +4251,13 @@ button.journalit-native-button.journalit-collapsible-header:focus:is(button){out
 
 .edit-account-form .journalit-prop-payout-policy-editor__group-fields,
 .create-account-form .journalit-prop-payout-policy-editor__group-fields{display: grid;gap: var(--size-4-3)}
+
+.journalit-prop-challenge-field .journalit-native-button--unstyled.journalit-prop-challenge-field-help, .journalit-prop-challenge-field .journalit-native-button--unstyled.journalit-prop-challenge-field-help:is(button), .journalit-prop-challenge-checkbox .journalit-native-button--unstyled.journalit-prop-challenge-field-help, .journalit-prop-challenge-checkbox .journalit-native-button--unstyled.journalit-prop-challenge-field-help:is(button), .journalit-prop-payout-policy-editor .journalit-native-button--unstyled.journalit-prop-challenge-field-help, .journalit-prop-payout-policy-editor .journalit-native-button--unstyled.journalit-prop-challenge-field-help:is(button){display: inline-block;justify-self: start;align-self: start;width: fit-content;max-width: 100%;min-height: 0;color: var(--text-muted);font-size: inherit;line-height: 1.3;text-align: start;white-space: normal;cursor: help}
+
+.journalit-prop-challenge-field-help > span{border-bottom: 1px dotted var(--text-faint);padding-bottom: 1px}
+
+.journalit-prop-challenge-field-help:hover > span,
+.journalit-prop-challenge-field-help:focus-visible > span{border-bottom-color: var(--text-muted)}
 
 .edit-account-form .journalit-prop-payout-policy-editor__weekdays,
 .create-account-form .journalit-prop-payout-policy-editor__weekdays{display: grid;grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));gap: var(--size-4-2);min-width: 0;margin: 0;padding: var(--size-4-3);border: 1px solid var(--background-modifier-border);border-radius: var(--radius-s)}
@@ -4284,7 +4310,7 @@ button.journalit-native-button.journalit-collapsible-header:focus:is(button){out
 .create-account-form .journalit-prop-challenge-cost-date-field{min-width: 0}
 
 .edit-account-form .journalit-prop-challenge-cost-date-picker,
-.create-account-form .journalit-prop-challenge-cost-date-picker{min-width: 0}
+.create-account-form .journalit-prop-challenge-cost-date-picker{min-width: 0;--journalit-year-segment-width: 40px}
 
 .edit-account-form .journalit-prop-challenge-cost-date-picker .journalit-fast-datetime__container,
 .create-account-form .journalit-prop-challenge-cost-date-picker .journalit-fast-datetime__container{height: var(--journalit-account-control-height);min-width: 0;padding: 0 6px;border-radius: 3px;gap: 2px}
@@ -4377,6 +4403,8 @@ button.journalit-native-button.journalit-collapsible-header:focus:is(button){out
 .add-event-modal-container .add-event-form .setting-item.two-column{display: grid;grid-template-columns: 1fr 1fr;gap: 16px;align-items: start}
 
 .add-event-modal-container .add-event-form .setting-item.two-column .column{display: flex;flex-direction: column;gap: 4px}
+
+.journalit-modal .add-event-form .setting-item.journalit-event-date-time{grid-template-columns: minmax(0, 1fr)}
 
 .add-event-modal-container .add-event-form .setting-item-info{display: flex;flex-direction: column;gap: 2px}
 
@@ -5674,6 +5702,9 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
 }
 
 
+
+.journalit-chart-container svg{--no-tooltip: true}
+
 .journalit-chart-container .recharts-cartesian-grid-horizontal line,
 .journalit-chart-container .recharts-cartesian-grid-vertical line{stroke: var(--background-modifier-border);stroke-opacity: 0.4;stroke-dasharray: 3}
 
@@ -5693,7 +5724,8 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
 .journalit-chart-container .recharts-xAxis .recharts-cartesian-axis-line,
 .journalit-chart-container .recharts-yAxis .recharts-cartesian-axis-line{stroke: var(--background-modifier-border);stroke-opacity: 0.5}
 
-.journalit-chart-container .recharts-cartesian-axis.journalit-chart-axis--numeric .recharts-cartesian-axis-tick-value{direction: ltr;unicode-bidi: isolate}
+
+.journalit-chart-container .recharts-surface text{direction: ltr;unicode-bidi: plaintext}
 
 .journalit-chart-container .recharts-cartesian-axis-tick-value{font-size: 11px;font-weight: 500;fill: var(--text-muted)}
 
@@ -5757,70 +5789,63 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
 .journalit-dashboard-calendar-day:hover,
 .journalit-dashboard-calendar-weekly-pnl:hover{transform: scale(1.05);transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, opacity 0.2s ease-out;opacity: 1;z-index: 5}
 
-.journalit-combobox.combobox-container{position: relative;width: 100%;margin-bottom: 8px;z-index: 10}
+.journalit-combobox.combobox-container{position: relative;width: 100%;min-width: 0;margin-bottom: 8px}
 
-.journalit-combobox.combobox-container[data-is-open="true"]{z-index: 9999}
+.journalit-combobox.combobox-container[data-is-open="true"]{z-index: 10}
 
+.journalit-combobox .input-container{position: relative;display: flex;flex-wrap: wrap;align-items: center;gap: 4px;width: 100%;min-height: 36px;box-sizing: border-box;padding: 4px 30px 4px 8px;border: 1px solid var(--background-modifier-border);border-radius: var(--input-radius, 6px);background: var(--background-primary);cursor: text}
 
-.journalit-combobox .input-container{position: relative;width: 100%}
+.journalit-combobox .input-container:hover{border-color: var(--background-modifier-border-hover)}
 
+.journalit-combobox .input-container:focus-within{border-color: var(--interactive-accent);box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 18%, transparent)}
 
-.journalit-combobox .input-container::after{content: "";position: absolute;right: 12px;top: 50%;transform: translateY(-50%);width: 0;height: 0;border-left: 5px solid transparent;border-right: 5px solid transparent;border-top: 5px solid var(--text-normal, #333);pointer-events: none;transition: transform 0.15s ease;will-change: transform}
+.journalit-combobox .combobox-input, .journalit-combobox .combobox-input:is(input:enabled, input:disabled){flex: 1 1 80px;width: 0;min-width: 0;max-width: 100%;height: 26px;padding: 2px;border: 0;border-radius: 0;background: transparent;box-shadow: none;color: var(--text-normal);font-family: var(--font-interface);font-size: var(--font-ui-small)}
 
+.journalit-combobox .combobox-input:focus, .journalit-combobox .combobox-input:focus:is(input:enabled, input:disabled){outline: none;box-shadow: none}
 
-.journalit-combobox[data-is-open="true"] .input-container::after{transform: translateY(-50%) rotate(180deg)}
+.journalit-combobox .combobox-input::placeholder, .journalit-combobox .combobox-input:is(input:enabled, input:disabled)::placeholder{color: var(--text-faint)}
 
+.journalit-combobox .journalit-combobox-chevron, .journalit-combobox .journalit-combobox-chevron:is(button){position: absolute;right: 4px;top: 18px;display: flex;align-items: center;justify-content: center;width: 24px;height: 24px;padding: 0;border: 0;border-radius: 3px;background: transparent;box-shadow: none;color: var(--text-muted);cursor: pointer;transform: translateY(-50%)}
 
-.journalit-combobox .combobox-input, .journalit-combobox .combobox-input:is(input:enabled, input:disabled){position: relative;z-index: 1;width: 100%;padding: 8px 12px;padding-right: 30px;border: 1px solid var(--background-modifier-border, #ddd);border-radius: 4px;background-color: var(--background-primary, #fff);color: var(--text-normal, #333);font-size: 14px;transition: border-color 0.15s ease}
+.journalit-combobox .journalit-combobox-chevron:hover, .journalit-combobox .journalit-combobox-chevron:hover:is(button){background: var(--background-modifier-hover)}
 
+.journalit-combobox[data-is-open="true"] .journalit-combobox-chevron, .journalit-combobox[data-is-open="true"] .journalit-combobox-chevron:is(button){transform: translateY(-50%) rotate(180deg)}
 
-.journalit-combobox .combobox-dropdown,
-.journalit-combobox.combobox-dropdown{position: absolute;top: 100%;left: 0;right: 0;margin-top: -1px;z-index: 9999;background-color: var(--background-primary, #fff);border: 1px solid var(--background-modifier-border, #ddd);border-top: none;border-radius: 0 0 4px 4px;max-height: 200px;overflow-y: auto;margin-left: 0;margin-right: 0;padding: 0;list-style: none;box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);transition: opacity 0.15s ease;animation: journalit-combobox-dropdown-open 0.15s ease forwards}
+.journalit-combobox.combobox-dropdown{position: absolute;top: calc(100% + 4px);left: 0;width: 100%;box-sizing: border-box;margin: 0;padding: 4px;border: 1px solid var(--background-modifier-border);border-radius: 8px;background: var(--background-primary);color: var(--text-normal);box-shadow: var(--shadow-s);max-height: 240px;overflow-y: auto;overscroll-behavior: contain;list-style: none;z-index: 100000}
 
-.journalit-combobox.combobox-dropdown.combobox-dropdown--portal{position: fixed;top: var(--combobox-portal-top);left: var(--combobox-portal-left);right: auto;width: var(--combobox-portal-width);max-height: var(--combobox-portal-max-height, 200px);z-index: 100000}
+.journalit-combobox.combobox-dropdown--portal{position: fixed;top: var(--combobox-portal-top);left: var(--combobox-portal-left);width: var(--combobox-portal-width);max-height: var(--combobox-portal-max-height)}
 
-@keyframes journalit-combobox-dropdown-open {
-  from {opacity: 0}
-  to {opacity: 1}
-}
-
-
-.journalit-combobox .combobox-option{padding: 8px 12px;cursor: pointer;margin: 0;background-color: var(--background-primary, #fff);color: var(--text-normal, #333);font-size: 14px;line-height: 1.5;border-bottom: 1px solid var(--background-modifier-border-subtle, rgba(127, 127, 127, 0.1));transition: background-color 0.15s ease}
+.journalit-combobox .combobox-option,
+.journalit-combobox .combobox-add-option{display: flex;align-items: center;gap: 8px;min-height: 32px;box-sizing: border-box;margin: 0;padding: 6px 8px;border-radius: 4px;cursor: pointer;font-size: var(--font-ui-small);line-height: 1.4;overflow-wrap: anywhere}
 
 .journalit-combobox .combobox-option.highlighted,
-.journalit-combobox .combobox-option:hover{background-color: var(--background-secondary, #f5f5f5)}
+.journalit-combobox .combobox-add-option.highlighted{background: var(--background-modifier-hover)}
 
+.journalit-combobox .combobox-add-option{color: var(--text-accent)}
 
-.journalit-combobox .combobox-add-option{padding: 8px 12px;cursor: pointer;margin: 0;background-color: var(--background-primary, #fff);color: var(--text-normal, #333);font-size: 14px;line-height: 1.5;border-bottom: 1px solid var(--background-modifier-border-subtle, rgba(127, 127, 127, 0.1));font-style: italic;border-top: 1px dashed var(--background-modifier-border, #ddd);transition: background-color 0.15s ease}
+.journalit-combobox .journalit-combobox-option-icon{display: flex;flex: 0 0 14px;color: var(--text-accent)}
 
-.journalit-combobox .combobox-add-option.highlighted,
-.journalit-combobox .combobox-add-option:hover{background-color: var(--background-secondary, #f5f5f5)}
+.journalit-combobox .journalit-combobox-empty{padding: 12px;margin: 0;text-align: center;font-size: var(--font-ui-small);color: var(--text-muted);list-style: none}
 
+.journalit-combobox .journalit-combobox-selected-items{display: flex;flex-wrap: wrap;align-items: center;gap: 4px;margin: 4px 0}
 
-.journalit-combobox .selected-item{display: inline-flex;align-items: center;margin: 0 4px 4px 0;padding: 4px 8px;background-color: var(--interactive-accent, #5183e4);color: var(--text-on-accent);border-radius: 4px;font-size: 12px;gap: 6px}
+.journalit-combobox .selected-item{display: inline-flex;align-items: center;gap: 4px;max-width: 100%;padding: 2px 4px 2px 8px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background: var(--background-secondary);color: var(--text-normal);font-size: var(--font-ui-smaller);line-height: 1.4}
 
+.journalit-combobox .journalit-combobox-chip-label{min-width: 0;overflow-wrap: anywhere}
 
-.journalit-combobox .remove-button, .journalit-combobox .remove-button:is(button){display: inline-flex;align-items: center;justify-content: center;width: 16px;height: 16px;min-width: 16px;min-height: 16px;padding: 0;background: rgba(255, 255, 255, 0.2);border: none;color: white;cursor: pointer;border-radius: 50%;margin-left: 4px;position: relative;z-index: 5;line-height: 0;transition: background-color 0.15s ease}
+.journalit-combobox .remove-button, .journalit-combobox .remove-button:is(button){display: inline-flex;flex: 0 0 20px;align-items: center;justify-content: center;width: 20px;height: 20px;min-height: 20px;margin: 0;padding: 0;border: 0;border-radius: 3px;background: transparent;box-shadow: none;color: var(--text-muted);cursor: pointer}
 
-.journalit-combobox .remove-button-glyph{width: 10px;height: 10px;display: block;position: relative}
+.journalit-combobox .remove-button:hover, .journalit-combobox .remove-button:hover:is(button){background: var(--background-modifier-hover);color: var(--text-normal)}
 
-.journalit-combobox .remove-button-glyph::before,
-.journalit-combobox .remove-button-glyph::after{content: '';position: absolute;top: 50%;left: 50%;width: 9px;height: 2px;border-radius: 999px;background: currentColor;transform-origin: center}
+.journalit-combobox .input-container[data-has-clear="true"]{padding-right: 54px}
 
-.journalit-combobox .remove-button-glyph::before{transform: translate(-50%, -50%) rotate(45deg)}
+.journalit-combobox .journalit-combobox-clear, .journalit-combobox .journalit-combobox-clear:is(button){position: absolute;right: 28px;top: 18px;transform: translateY(-50%)}
 
-.journalit-combobox .remove-button-glyph::after{transform: translate(-50%, -50%) rotate(-45deg)}
+.journalit-combobox .remove-button:focus-visible, .journalit-combobox .remove-button:focus-visible:is(button){outline: 2px solid var(--interactive-accent);outline-offset: 1px}
 
-.journalit-combobox .remove-button:hover, .journalit-combobox .remove-button:hover:is(button){background: rgba(255, 255, 255, 0.4)}
+.journalit-combobox[data-disabled="true"] .input-container{opacity: 0.6;cursor: not-allowed}
 
-
-.journalit-combobox[data-is-open="true"] .combobox-input, .journalit-combobox[data-is-open="true"] .combobox-input:is(input:enabled, input:disabled){border-bottom-left-radius: 0;border-bottom-right-radius: 0}
-
-
-.journalit-combobox .combobox-input:focus, .journalit-combobox .combobox-input:focus:is(input:enabled, input:disabled){border-color: var(--interactive-accent, #5183e4);box-shadow: 0 0 0 2px rgba(83, 141, 226, 0.3);outline: none}
-
-
-.journalit-combobox .combobox-input.error, .journalit-combobox .combobox-input.error:is(input:enabled, input:disabled), .journalit-combobox .combobox-input.error:is(select):not(:disabled):not(.mod-disabled), .journalit-combobox .combobox-input.error:is(textarea:enabled, textarea:disabled){border-color: var(--text-error, #e53935)}
+.journalit-combobox[data-invalid="true"] .input-container{border-color: var(--text-error)}
 
 .journalit-csv-import-view-container .view-content{padding: 0;margin: 0}
 
@@ -6630,9 +6655,9 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
   .journalit-dashboard-top-section{display: flex;flex-wrap: wrap;gap: 4px;margin-bottom: 0;padding: 0 4px;background-color: transparent;border-radius: 0;box-shadow: none}
   
   
-  .journalit-dashboard-metrics{display: flex;flex-direction: row;flex-wrap: wrap;gap: 8px;width: 100%;overflow-x: hidden;overflow-y: visible;align-items: stretch;height: auto;min-height: auto;padding: 0;justify-content: flex-start}
+  .journalit-dashboard-metrics{--journalit-dashboard-metric-columns: var(--journalit-dashboard-metric-medium-columns);display: flex;flex-wrap: wrap;gap: 8px;width: 100%;align-items: stretch;height: auto;min-height: auto;padding: 0}
   
-  .journalit-dashboard-top-section-body{position: relative;width: 100%}
+  .journalit-dashboard-top-section-body{position: relative;width: 100%;container: journalit-dashboard-metrics / inline-size}
 
   .journalit-dashboard-metric-tooltip{max-width: 250px;font-size: 12px}
 
@@ -6645,9 +6670,13 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
   .journalit-dashboard-metric-tooltip__hint{margin-top: 6px;color: var(--text-muted)}
 
   
-  .journalit-dashboard-metric-wrapper{position: relative;display: flex;flex: 1 1 180px;min-width: 180px;max-width: 300px}
+  .journalit-dashboard-metric-wrapper{position: relative;display: flex;flex: 1 1 calc((100% - (var(--journalit-dashboard-metric-columns) - 1) * 8px) / var(--journalit-dashboard-metric-columns));min-width: 0}
 
   .journalit-dashboard-metric-wrapper--sortable{height: 100%}
+
+  .journalit-dashboard-metric-wrapper[data-dragging="true"]{z-index: 3}
+
+  .journalit-dashboard-metric-handle[data-editing="true"] .journalit-dashboard-metric-handle-inner{touch-action: manipulation}
 
   .journalit-dashboard-metric-handle{position: relative;height: 100%;width: 100%;display: flex;flex-direction: column}
 
@@ -6750,6 +6779,22 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
   .journalit-dashboard-metric-previous-delta-suffix{color: var(--text-muted);font-weight: 400}
 
   
+  @container journalit-dashboard-metrics (min-width: 1504px) {
+    .journalit-dashboard-metrics{--journalit-dashboard-metric-columns: var(--journalit-dashboard-metric-wide-columns)}
+  }
+
+  @container journalit-dashboard-metrics (max-width: 751px) {
+    .journalit-dashboard-metrics{--journalit-dashboard-metric-columns: var(--journalit-dashboard-metric-narrow-columns)}
+
+    .journalit-dashboard-metric-card{min-height: 94px;padding: 12px}
+
+    .journalit-dashboard-metric-value{font-size: 20px}
+  }
+
+  @container journalit-dashboard-metrics (max-width: 375px) {
+    .journalit-dashboard-metrics{--journalit-dashboard-metric-columns: 1}
+  }
+
   .journalit-dashboard-trades-chart{width: 100%;height: 100%;display: flex;flex-direction: column;position: relative}
 
   .journalit-dashboard-trades-chart__header{display: flex;justify-content: center;align-items: center;padding: 8px 12px;border-bottom: 1px solid color-mix(in srgb, var(--background-modifier-border) 40%, transparent);position: relative}
@@ -6783,7 +6828,7 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
   
   
   
-  .journalit-dashboard-filter-controls{flex-shrink: 0;display: flex;flex-direction: column;margin-bottom: 0;padding: 8px var(--journalit-dashboard-toolbar-gutter, 0px) 3px;background-color: var(--journalit-dashboard-toolbar-background, var(--background-primary));border-radius: 0;box-shadow: none;position: sticky;top: 0;z-index: 30}
+  .journalit-dashboard-filter-controls{flex-shrink: 0;display: flex;flex-direction: column;margin-bottom: 0;padding: 8px var(--journalit-dashboard-toolbar-gutter, 0px) 10px;background-color: var(--journalit-dashboard-toolbar-background, var(--background-primary));border-radius: 0;box-shadow: none;position: sticky;top: 0;z-index: 30}
 
   @supports (animation-timeline: scroll()) {
     .journalit-dashboard-view{scroll-timeline: --journalit-dashboard-scroll block}
@@ -6872,23 +6917,13 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
 
   .journalit-dashboard-custom-date-dropdown--measuring{visibility: hidden;pointer-events: none}
 
-  .journalit-dashboard-date-range-start,
-  .journalit-dashboard-date-range-end{display: grid;grid-column: 1 / -1;grid-template-columns: subgrid;gap: 8px;align-items: center}
-
-  .journalit-dashboard-date-range-start > .journalit-fast-datetime,
-  .journalit-dashboard-date-range-end > .journalit-fast-datetime{display: grid;grid-column: 1 / -1;grid-template-columns: subgrid;align-items: center}
-
-  .journalit-dashboard-date-range-start .journalit-fast-datetime__label,
-  .journalit-dashboard-date-range-end .journalit-fast-datetime__label{display: block;font-size: 11px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;color: var(--text-muted);white-space: nowrap;margin: 0}
-
-  .journalit-dashboard-date-range-start .journalit-fast-datetime__error,
-  .journalit-dashboard-date-range-end .journalit-fast-datetime__error{grid-column: 2}
+  .journalit-dashboard-custom-date-dropdown > .journalit-date-range-editor{grid-column: 1 / -1}
 
   
   .journalit-date-picker-input{width: auto;min-width: 0}
   
   
-  .journalit-date-picker-input .journalit-fast-datetime__container{width: 100%;flex-wrap: nowrap;overflow-x: auto;padding: 2px 0;border: none;border-radius: 0;background: transparent}
+  .journalit-date-picker-input .journalit-fast-datetime__container{width: 100%;flex-wrap: nowrap;overflow-x: auto;padding: 2px;border: none;border-radius: 0;background: transparent}
   
   .journalit-date-picker-input input:is(input:enabled, input:disabled){font-size: 13px;border-radius: 4px;border: 1px solid var(--background-modifier-border);background-color: var(--background-secondary);color: var(--text-normal);transition: border-color 0.15s ease, box-shadow 0.15s ease}
 
@@ -7136,7 +7171,7 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
   .journalit-dashboard-calendar-grid .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-weekly-trades{font-size: 10px;width: 100%;position: absolute;top: 70%;left: 50%;transform: translate(-50%, -50%);font-weight: 400;text-align: center;color: var(--text-muted)}
   
   
-  .journalit-dashboard-recent-trades{width: 100%;height: 100%;overflow-x: auto;overflow-y: hidden;padding: 0 8px 8px 8px;position: relative}
+  .journalit-dashboard-recent-trades{width: 100%;height: 100%;overflow-x: auto;overflow-y: hidden;padding: 0 8px 8px 8px;position: relative;container: journalit-recent-trades / inline-size}
   
   .journalit-dashboard-recent-trades-table{width: 100%;height: 100%;display: grid;grid-template-columns: repeat(4, minmax(max-content, 1fr));grid-template-rows: auto minmax(0, 1fr);margin-top: 0}
 
@@ -7151,6 +7186,12 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
   .journalit-dashboard-recent-trades-table th{text-align: center;padding: 7px 8px;border-bottom: 1px solid var(--background-modifier-border);font-size: 12px;font-weight: 500;color: var(--text-muted);text-transform: uppercase;letter-spacing: 0.5px;background-color: transparent}
 
   .journalit-dashboard-recent-trades-table td{text-align: center;padding: 7px 8px;border-bottom: 1px solid var(--background-modifier-border);font-size: 13px}
+
+  @container journalit-recent-trades (max-width: 360px) {
+    .journalit-dashboard-recent-trades-table th{padding: 7px 4px;font-size: 11px;letter-spacing: 0}
+
+    .journalit-dashboard-recent-trades-table td{padding: 7px 4px;font-size: 12px}
+  }
   
   .journalit-dashboard-recent-trades-table .trade-row{cursor: pointer;transition: background-color 0.15s ease}
 
@@ -7414,8 +7455,6 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
     
     .journalit-dashboard-view-container{--journalit-dashboard-gutter: 12px}
 
-    .journalit-dashboard-metric-card{min-width: 100%}
-
     
     .journalit-dashboard-filter-actions{gap: 6px}
 
@@ -7426,10 +7465,6 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
   @media (max-width: 1000px) {
     
     .journalit-dashboard-view-container{--journalit-dashboard-gutter: 10px}
-
-    .journalit-dashboard-metric-card{min-width: 100%;min-height: 94px;padding: 12px}
-
-    .journalit-dashboard-metric-value{font-size: 20px}
 
     
     .journalit-dashboard-primary-filters{max-width: 500px}
@@ -7499,11 +7534,6 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
     .journalit-dashboard-date-range-section{margin-right: 0;width: 100%;min-width: auto}
     
     
-    .journalit-dashboard-metrics{flex-wrap: wrap;justify-content: center}
-    
-    .journalit-dashboard-metric-card{min-width: calc(50% - 8px);max-width: none;flex: 0 0 calc(50% - 8px);margin-bottom: 8px}
-
-    
     .journalit-dashboard-filter-actions{gap: 4px;flex-wrap: nowrap}
 
     .journalit-dashboard-filter-actions button:is(button){padding: 4px 6px;font-size: 11px}
@@ -7518,9 +7548,6 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
     
     
     .journalit-dashboard-filter-controls.compact-view{padding: 8px var(--journalit-dashboard-toolbar-gutter, 0px)}
-    
-    
-    .journalit-dashboard-metric-card{min-width: 100%;flex: 0 0 100%;margin-bottom: 8px}
     
     
     .journalit-dashboard-reset-button, .journalit-dashboard-edit-mode-button, .journalit-dashboard-edit-mode-button:is(button){padding: 10px;height: auto;min-height: 40px}
@@ -7597,6 +7624,13 @@ button.journalit-button:is(button), button.journalit-icon-button:is(button), but
   
   .journalit-dashboard-recent-trades-table td .journalit-empty-state{padding: 16px;min-height: 100px;background-color: transparent}
 
+.journalit-date-range-editor{display: grid;grid-template-columns: max-content minmax(0, 1fr);align-items: center;gap: 8px;min-width: 0}
+.journalit-date-range-editor .journalit-date-range-editor__row,
+.journalit-date-range-editor .journalit-date-input{display: grid;grid-column: 1 / -1;grid-template-columns: subgrid;align-items: center;gap: 8px}
+.journalit-date-range-editor .journalit-fast-datetime__label{margin: 0;font-size: 11px;font-weight: 600;text-transform: uppercase;letter-spacing: 0.5px;color: var(--text-muted);white-space: nowrap}
+.journalit-date-range-editor .journalit-fast-datetime__error{grid-column: 2;font-size: var(--font-ui-smaller)}
+.journalit-date-range-editor .journalit-date-range-editor__error{grid-column: 1 / -1;margin: 0;font-size: var(--font-ui-smaller);color: var(--text-error)}
+
 body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 90%;--accent-l: 42%;--text-on-accent: hsl(var(--accent-h), 80%, 10%);--color-accent-hsl: var(--accent-h), var(--accent-s), var(--accent-l);--color-accent: hsl(var(--accent-h), var(--accent-s), var(--accent-l));--text-accent: var(--color-accent);--text-accent-hover: var(--color-accent-2);--interactive-accent: var(--color-accent-1);--interactive-accent-hover: var(--color-accent-2);--interactive-accent-hsl: var(--color-accent-hsl);--text-selection: color-mix(in oklch, var(--interactive-accent) 20%, transparent);--checkbox-color: var(--interactive-accent);--checkbox-color-hover: var(--interactive-accent-hover);--link-color: var(--text-accent);--link-color-hover: var(--text-accent-hover);--link-external-color: var(--text-accent);--link-external-color-hover: var(--text-accent-hover);--link-unresolved-color: var(--text-accent);--link-unresolved-decoration-color: color-mix(in oklch, var(--interactive-accent) 30%, transparent);--tag-color: var(--text-accent);--tag-color-hover: var(--text-accent);--tag-background: color-mix(in oklch, var(--interactive-accent) 10%, transparent);--tag-background-hover: color-mix(in oklch, var(--interactive-accent) 20%, transparent);--tag-border-color: color-mix(in oklch, var(--interactive-accent) 15%, transparent);--tag-border-color-hover: color-mix(in oklch, var(--interactive-accent) 15%, transparent);--slider-fill-background: var(--interactive-accent);--icon-color-active: var(--text-accent);--nav-item-color-highlighted: var(--text-accent);--nav-item-background-selected: color-mix(in oklch, var(--color-accent) 15%, transparent);--background-modifier-active-hover: color-mix(in oklch, var(--interactive-accent) 10%, transparent);--blockquote-border-color: var(--interactive-accent);--collapse-icon-color-collapsed: var(--text-accent);--list-marker-color-collapsed: var(--text-accent);--divider-color-hover: var(--interactive-accent);--embed-border-start: 2px solid var(--interactive-accent);--table-selection: color-mix(in oklch, var(--color-accent) 10%, transparent);--table-selection-border-color: var(--interactive-accent);--pill-color-remove-hover: var(--text-accent)}
 
   body.theme-light.journalit-default-accent [class*="journalit-"]{--color-accent-1: hsl(calc(var(--accent-h) - 1), calc(var(--accent-s) * 1.01), calc(var(--accent-l) * 1.075));--color-accent-2: hsl(calc(var(--accent-h) - 3), calc(var(--accent-s) * 1.02), calc(var(--accent-l) * 1.15));--text-accent: hsl(var(--accent-h), var(--accent-s), 24%);--text-accent-hover: hsl(var(--accent-h), var(--accent-s), 20%)}
@@ -7606,38 +7640,15 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 .drc-container{background-color: transparent;border-radius: 0;box-shadow: none;margin: 0;overflow: hidden;display: flex;flex-direction: column;font-family: var(--font-interface, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif);position: relative;z-index: 1;transform: translateZ(0);will-change: auto;contain: layout style}
 
   
-  .drc-container .combobox-container,
-  .drc-container [data-combobox-type],
-  .drc-missed-trade .combobox-container,
-  .drc-missed-trade .drc-input-group.field .combobox-container{position: relative;width: 100%;margin-bottom: 8px;z-index: 10}
-
-  
-  .drc-container .combobox-container[data-is-open="true"],
-  .drc-container [data-combobox-type][data-is-open="true"],
-  .drc-missed-trade .combobox-container[data-is-open="true"],
-  .drc-missed-trade .drc-input-group.field .combobox-container[data-is-open="true"]{z-index: 9999}
-
-  
-  .drc-container [data-combobox-type] .input-container::after,
-  .drc-missed-trade .combobox-container .input-container::after,
-  .drc-missed-trade .drc-input-group.field .combobox-container .input-container::after{content: "";position: absolute;right: 12px;top: 50%;transform: translateY(-50%);width: 0;height: 0;border-left: 5px solid transparent;border-right: 5px solid transparent;border-top: 5px solid var(--text-normal);pointer-events: none;z-index: 10}
-
-  
-  .drc-container [data-combobox-type] input[role="combobox"]:is(input:enabled, input:disabled), .drc-missed-trade .combobox-container input[role="combobox"]:is(input:enabled, input:disabled), .drc-missed-trade .drc-input-group.field .combobox-container input[role="combobox"]:is(input:enabled, input:disabled){padding-right: 30px;width: 100%;padding: 8px 12px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: var(--background-primary);color: var(--text-normal);font-size: 16px;cursor: pointer}
-
-  
-  .drc-missed-trade .selected-options,
-  .drc-missed-trade .selected-item,
-  .drc-missed-trade [data-combobox-type="multi"] > div:first-of-type{display: flex;flex-wrap: wrap;gap: 4px;max-width: 100%;padding: 2px 0;z-index: 5;position: relative}
+  .drc-missed-trade .selected-options{display: flex;flex-wrap: wrap;gap: 4px;max-width: 100%;padding: 2px 0;z-index: 5;position: relative}
 
   
   .drc-missed-trade .selected-option,
-  .drc-missed-trade .selected-item,
-  .drc-container .selected-option,
-  .drc-container .selected-item{display: inline-flex;align-items: center;background-color: var(--interactive-accent, #7c3aed);color: var(--text-on-accent, white);border-radius: 4px;padding: 4px 8px;font-size: 12px;margin: 0 4px 4px 0;font-weight: 500;z-index: 6;position: relative;gap: 6px}
+  .drc-container .selected-option{display: inline-flex;align-items: center;background-color: var(--interactive-accent, #7c3aed);color: var(--text-on-accent, white);border-radius: 4px;padding: 4px 8px;font-size: 12px;margin: 0 4px 4px 0;font-weight: 500;z-index: 6;position: relative;gap: 6px}
 
   
-  .drc-missed-trade .selected-option-remove, .drc-missed-trade .selected-item button:is(button), .drc-container .selected-option-remove, .drc-container .selected-item button:is(button){display: inline-flex;align-items: center;justify-content: center;width: 16px;height: 16px;min-width: 16px;min-height: 16px;padding: 0;margin-left: 4px;cursor: pointer;background: rgba(255, 255, 255, 0.2);border: none;border-radius: 50%;color: var(--text-on-accent, white);font-size: 16px;line-height: 1;text-align: center;z-index: 7;position: relative;transition: background-color 0.2s}
+  .drc-missed-trade .selected-option-remove,
+  .drc-container .selected-option-remove{display: inline-flex;align-items: center;justify-content: center;width: 16px;height: 16px;min-width: 16px;min-height: 16px;padding: 0;margin-left: 4px;cursor: pointer;background: rgba(255, 255, 255, 0.2);border: none;border-radius: 50%;color: var(--text-on-accent, white);font-size: 16px;line-height: 1;text-align: center;z-index: 7;position: relative;transition: background-color 0.2s}
 
   
   .drc-header{padding: 16px 20px 12px;background-color: var(--background-secondary);text-align: center;border-bottom: 1px solid var(--background-modifier-border)}
@@ -7792,34 +7803,8 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
   .drc-reflection-item textarea:is(textarea:enabled, textarea:disabled){width: 100%;min-height: 100px;padding: 12px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: var(--background-primary);color: var(--text-normal);resize: vertical}
 
   
-  .drc-container [data-combobox-type] ul[role="listbox"],
-  .drc-missed-trade [data-combobox-type] ul[role="listbox"]{position: absolute;top: 100%;left: 0;right: 0;max-height: 200px;overflow-y: auto;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-top: none;border-radius: 0 0 4px 4px;margin-top: -1px;z-index: 9999;list-style: none;padding: 0;box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);animation: journalit-drc-dropdown-open 0.15s ease forwards}
-  
-  
-  @keyframes journalit-drc-dropdown-open {
-    from {opacity: 0}
-    to {opacity: 1}
-  }
-
-  
-  .drc-container [data-combobox-type] ul[role="listbox"] li,
-  .drc-missed-trade [data-combobox-type] ul[role="listbox"] li{padding: 8px 12px;cursor: pointer;transition: background-color 150ms ease;margin: 0;list-style: none;border-bottom: 1px solid var(--background-modifier-border-subtle, rgba(127, 127, 127, 0.1))}
-
-  
-  .drc-container [data-combobox-type] ul[role="listbox"] li:hover,
-  .drc-container [data-combobox-type] ul[role="listbox"] li[aria-selected="true"],
-  .drc-missed-trade [data-combobox-type] ul[role="listbox"] li:hover,
-  .drc-missed-trade [data-combobox-type] ul[role="listbox"] li[aria-selected="true"]{background-color: var(--background-secondary)}
-
-  
-  .drc-container [data-combobox-type] ul[role="listbox"] li[data-add-option="true"],
-  .drc-missed-trade [data-combobox-type] ul[role="listbox"] li[data-add-option="true"]{font-style: italic;border-top: 1px dashed var(--background-modifier-border)}
-
-  
-  .drc-container [data-combobox-type][data-is-open="true"] input[role="combobox"]:is(input:enabled, input:disabled), .drc-missed-trade [data-combobox-type][data-is-open="true"] input[role="combobox"]:is(input:enabled, input:disabled){border-bottom-left-radius: 0;border-bottom-right-radius: 0}
-  
-  
-  .drc-missed-trade .selected-option-remove:hover, .drc-missed-trade .selected-item button:hover:is(button), .drc-container .selected-option-remove:hover, .drc-container .selected-item button:hover:is(button){background: rgba(255, 255, 255, 0.4)}
+  .drc-missed-trade .selected-option-remove:hover,
+  .drc-container .selected-option-remove:hover{background: rgba(255, 255, 255, 0.4)}
 
   
 .drc-missed-trade{padding: 16px;padding-top: 42px;margin-bottom: 16px;background-color: var(--background-secondary);border-radius: 6px;position: relative}
@@ -8426,7 +8411,10 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
     .trade-form-view-container .time-field{flex: 2;min-width: 180px}
 
-    .trade-form-view-container .price-field, .trade-form-view-container .price-field:is(input:enabled, input:disabled), .trade-form-view-container .price-field:is(textarea:enabled, textarea:disabled), .trade-form-view-container .size-field, .trade-form-view-container .size-field:is(input:enabled, input:disabled), .trade-form-view-container .size-field:is(textarea:enabled, textarea:disabled), .trade-form-view-container .amount-field, .trade-form-view-container .amount-field:is(input:enabled, input:disabled), .trade-form-view-container .amount-field:is(textarea:enabled, textarea:disabled){flex: 1;min-width: 120px}
+    .trade-form-view-container .amount-field, .trade-form-view-container .amount-field:is(input:enabled, input:disabled), .trade-form-view-container .amount-field:is(textarea:enabled, textarea:disabled){flex: 1;min-width: 120px}
+
+    .trade-form-view-container .entry-fields > .inputContainer,
+    .trade-form-view-container .exit-fields > .inputContainer{flex: 1 1 120px;min-width: min(100%, 120px)}
 
     .trade-form-view-container .journalit-direct-pnl-time-input .journalit-fast-datetime__container:not([data-has-seconds="true"]){width: fit-content;max-width: 100%;padding-right: 12px;gap: 6px}
 
@@ -8440,9 +8428,13 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
     .trade-form-view-container .journalit-direct-pnl-value-field,
     .trade-form-view-container .journalit-direct-pnl-value-field .inputContainer{width: 100%}
 
-    .trade-form-view-container .time-field-wrapper{display: flex;flex-direction: column;gap: 2px;min-width: 200px}
+    .trade-form-view-container .time-field-wrapper{display: flex;flex-direction: column;gap: 2px;min-width: 0;max-width: 100%}
 
-    .trade-form-view-container .time-field-wrapper[data-has-seconds="true"]{flex: 1 1 100%;width: 100%;min-width: 0;max-width: 100%;container-type: inline-size}
+    .trade-form-view-container .time-field-wrapper[data-has-seconds="true"]{flex: 1 1 100%;width: 100%;container: journalit-trade-time / inline-size}
+
+    @container journalit-trade-form (max-width: 520px) {
+      .trade-form-view-container .time-field-wrapper{flex: 1 1 100%;width: 100%;container: journalit-trade-time / inline-size}
+    }
 
     .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"]{justify-content: space-between;gap: 4px;max-width: 520px;padding-right: 6px;padding-left: 6px}
 
@@ -8459,26 +8451,26 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
     .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__calendar-button, .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__calendar-button:is(button){width: auto;min-width: 0;max-width: none;margin-left: 0;padding: 4px}
 
-    .trade-form-view-container .journalit-direct-pnl-time-input--seconds{width: 520px;max-width: 100%;container-type: inline-size}
+    .trade-form-view-container .journalit-direct-pnl-time-input--seconds{width: 520px;max-width: 100%;container: journalit-trade-time / inline-size}
 
-    @container (max-width: 400px) {
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"]{display: grid;grid-template-areas:
+    @container journalit-trade-time (max-width: 400px) {
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"]{display: grid;grid-template-areas:
           "date calendar"
           "time time";grid-template-columns: minmax(0, 1fr) auto;gap: 6px 8px;padding: 6px}
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__date-group{grid-area: date;gap: 3px}
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__date-group{grid-area: date;gap: 3px}
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__time-group{grid-area: time;gap: 3px}
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__time-group{grid-area: time;gap: 3px}
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__segment, .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__segment:is(input:enabled, input:disabled){width: 36px;min-width: 36px;max-width: 36px;padding-right: 2px;padding-left: 2px;font-size: 14px}
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__segment, .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__segment:is(input:enabled, input:disabled){width: 36px;min-width: 36px;max-width: 36px;padding-right: 2px;padding-left: 2px;font-size: 14px}
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__separator{padding-right: 0;padding-left: 0;font-size: 12px}
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__separator{padding-right: 0;padding-left: 0;font-size: 12px}
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__separator--spacer{width: 0;padding: 0}
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__separator--spacer{width: 0;padding: 0}
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__ampm-button, .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__ampm-button:is(button){width: auto;min-width: 36px;max-width: none;margin-left: 3px;padding-right: 4px;padding-left: 4px;font-size: 12px}
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__ampm-button, .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__ampm-button:is(button){width: auto;min-width: 36px;max-width: none;margin-left: 3px;padding-right: 4px;padding-left: 4px;font-size: 12px}
 
-      .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__calendar-button, .trade-form-view-container .journalit-fast-datetime__container[data-has-seconds="true"] .journalit-fast-datetime__calendar-button:is(button){grid-area: calendar;justify-self: end;width: 26px;min-width: 26px;max-width: 26px;margin-left: 0}
+      .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__calendar-button, .trade-form-view-container .journalit-fast-datetime__container[data-date-only="false"] .journalit-fast-datetime__calendar-button:is(button){grid-area: calendar;justify-self: end;width: 26px;min-width: 26px;max-width: 26px;margin-left: 0}
     }
 
     .trade-form-view-container .time-field-header{display: flex;align-items: center;justify-content: space-between;gap: 8px}
@@ -8496,9 +8488,16 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
     .trade-form-view-container .add-button, .trade-form-view-container .add-button:is(button){margin-top: 8px;margin-bottom: 12px}
 
+    .trade-form-view-container .journalit-entry-exit-actions{display: flex;flex-wrap: wrap;align-items: center;gap: 8px}
+
+    .trade-form-view-container .journalit-entry-exit-actions .add-button, .trade-form-view-container .journalit-entry-exit-actions .add-button:is(button){margin: 0}
+
     .trade-form-view-container .total-size,
     .trade-form-view-container .remaining-size,
     .trade-form-view-container .dividend-total{font-size: 14px;font-weight: 600;padding: 4px 8px;border-radius: 4px;background: var(--background-secondary);display: inline-block;margin-top: 8px}
+
+    .trade-form-view-container .journalit-entry-exit-actions .total-size,
+    .trade-form-view-container .journalit-entry-exit-actions .remaining-size{margin: 0}
 
     .trade-form-view-container .remaining-size.positive, .trade-form-view-container .remaining-size.positive:is(button){color: var(--text-success)}
 
@@ -8517,7 +8516,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
     .trade-form-view-container .journalit-unrealized-snapshot{margin-top: 12px;padding-top: 10px;border-top: 1px solid var(--background-modifier-border)}
 
-    .trade-form-view-container .journalit-unrealized-snapshot__header{display: flex;align-items: center;justify-content: space-between;gap: 12px;margin-bottom: 8px}
+    .trade-form-view-container .journalit-unrealized-snapshot__header{display: flex;flex-wrap: wrap;align-items: center;justify-content: space-between;gap: 12px;margin-bottom: 8px}
 
     .trade-form-view-container .journalit-unrealized-snapshot__title-group{display: flex;align-items: center;gap: 6px;min-width: 0}
 
@@ -8529,7 +8528,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
     .trade-form-view-container .journalit-unrealized-snapshot__captured:hover, .trade-form-view-container .journalit-unrealized-snapshot__captured:hover:is(button){color: var(--text-normal)}
 
-    .trade-form-view-container .journalit-unrealized-snapshot__title{color: var(--text-normal);font-size: 15px;line-height: 20px;font-weight: 500;white-space: nowrap}
+    .trade-form-view-container .journalit-unrealized-snapshot__title{color: var(--text-normal);font-size: 15px;line-height: 20px;font-weight: 500;white-space: normal}
 
     .trade-form-view-container .journalit-unrealized-snapshot__optional-text{color: var(--text-muted);font-size: 13px;font-weight: 400}
 
@@ -8551,7 +8550,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
       .trade-form-view-container
         .journalit-unrealized-snapshot__time-field
-        .journalit-fast-datetime__container{gap: 1px;padding: 4px}
+        .journalit-fast-datetime__container{gap: 1px;padding: 4px;--journalit-year-segment-width: 40px}
 
       .trade-form-view-container
         .journalit-unrealized-snapshot__time-field
@@ -8628,7 +8627,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
     .trade-form-view-container .journalit-pnl-toggle-description{color: var(--text-muted);font-size: 0.9em;line-height: 1.4;margin: 0}
 
     
-    .trade-form-view-container .toggle-switch-container{position: relative;display: inline-block;width: 40px;height: 24px}
+    .trade-form-view-container .toggle-switch-container{position: relative;display: inline-block;width: 40px;height: 24px;flex-shrink: 0}
 
     .trade-form-view-container .toggle-switch-input, .trade-form-view-container .toggle-switch-input:is(input:enabled, input:disabled){opacity: 0;width: 0;height: 0;position: absolute}
 
@@ -8645,14 +8644,6 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
     .trade-form-view-container .toggle-switch-container.disabled, .trade-form-view-container .toggle-switch-container.disabled:is(button){opacity: 0.6}
 
     .trade-form-view-container .toggle-switch-container.disabled .toggle-switch-label{cursor: not-allowed}
-
-    
-    @media (max-width: 768px) {
-      .trade-form-view-container .entry-fields,
-      .trade-form-view-container .exit-fields{flex-direction: column;gap: 8px}
-
-      .trade-form-view-container .time-field, .trade-form-view-container .price-field, .trade-form-view-container .price-field:is(input:enabled, input:disabled), .trade-form-view-container .price-field:is(textarea:enabled, textarea:disabled), .trade-form-view-container .size-field, .trade-form-view-container .size-field:is(input:enabled, input:disabled), .trade-form-view-container .size-field:is(textarea:enabled, textarea:disabled){width: 100%;min-width: 0}
-    }
 
 .flatpickr-calendar.journalit-flatpickr-calendar{background:#fff;opacity:0;display:none;text-align:center;visibility:hidden;padding:0;-webkit-animation:none;animation:none;direction:ltr;border:0;font-size:14px;line-height:24px;border-radius:5px;position:absolute;width:307.875px;-webkit-box-sizing:border-box;box-sizing:border-box;-ms-touch-action:manipulation;touch-action:manipulation;-webkit-box-shadow:1px 0 0 #e6e6e6,-1px 0 0 #e6e6e6,0 1px 0 #e6e6e6,0 -1px 0 #e6e6e6,0 3px 13px rgba(0,0,0,0.08);box-shadow:1px 0 0 #e6e6e6,-1px 0 0 #e6e6e6,0 1px 0 #e6e6e6,0 -1px 0 #e6e6e6,0 3px 13px rgba(0,0,0,0.08)}.flatpickr-calendar.journalit-flatpickr-calendar.open, .flatpickr-calendar.journalit-flatpickr-calendar.inline{opacity:1;max-height:640px;visibility:visible}.flatpickr-calendar.journalit-flatpickr-calendar.open{display:inline-block;z-index:99999}.flatpickr-calendar.journalit-flatpickr-calendar.animate.open{-webkit-animation:journalit-fp-fade-in-down 300ms cubic-bezier(.23,1,.32,1);animation:journalit-fp-fade-in-down 300ms cubic-bezier(.23,1,.32,1)}.flatpickr-calendar.journalit-flatpickr-calendar.inline{display:block;position:relative;top:2px}.flatpickr-calendar.journalit-flatpickr-calendar.static{position:absolute;top:calc(100% + 2px)}.flatpickr-calendar.journalit-flatpickr-calendar.static.open{z-index:999;display:block}.flatpickr-calendar.journalit-flatpickr-calendar.multiMonth .flatpickr-days .dayContainer:nth-child(n+1) .flatpickr-day.inRange:nth-child(7n+7){-webkit-box-shadow:none;box-shadow:none}.flatpickr-calendar.journalit-flatpickr-calendar.multiMonth .flatpickr-days .dayContainer:nth-child(n+2) .flatpickr-day.inRange:nth-child(7n+1){-webkit-box-shadow:-2px 0 0 #e6e6e6,5px 0 0 #e6e6e6;box-shadow:-2px 0 0 #e6e6e6,5px 0 0 #e6e6e6}.flatpickr-calendar.journalit-flatpickr-calendar .hasWeeks .dayContainer, .flatpickr-calendar.journalit-flatpickr-calendar .hasTime .dayContainer{border-bottom:0;border-bottom-right-radius:0;border-bottom-left-radius:0}.flatpickr-calendar.journalit-flatpickr-calendar .hasWeeks .dayContainer{border-left:0}.flatpickr-calendar.journalit-flatpickr-calendar.hasTime .flatpickr-time{height:40px;border-top:1px solid #e6e6e6}.flatpickr-calendar.journalit-flatpickr-calendar.noCalendar.hasTime .flatpickr-time{height:auto}.flatpickr-calendar.journalit-flatpickr-calendar:before, .flatpickr-calendar.journalit-flatpickr-calendar:after{position:absolute;display:block;pointer-events:none;border:solid transparent;content:'';height:0;width:0;left:22px}.flatpickr-calendar.journalit-flatpickr-calendar.rightMost:before, .flatpickr-calendar.journalit-flatpickr-calendar.arrowRight:before, .flatpickr-calendar.journalit-flatpickr-calendar.rightMost:after, .flatpickr-calendar.journalit-flatpickr-calendar.arrowRight:after{left:auto;right:22px}.flatpickr-calendar.journalit-flatpickr-calendar.arrowCenter:before, .flatpickr-calendar.journalit-flatpickr-calendar.arrowCenter:after{left:50%;right:50%}.flatpickr-calendar.journalit-flatpickr-calendar:before{border-width:5px;margin:0 -5px}.flatpickr-calendar.journalit-flatpickr-calendar:after{border-width:4px;margin:0 -4px}.flatpickr-calendar.journalit-flatpickr-calendar.arrowTop:before, .flatpickr-calendar.journalit-flatpickr-calendar.arrowTop:after{bottom:100%}.flatpickr-calendar.journalit-flatpickr-calendar.arrowTop:before{border-bottom-color:#e6e6e6}.flatpickr-calendar.journalit-flatpickr-calendar.arrowTop:after{border-bottom-color:#fff}.flatpickr-calendar.journalit-flatpickr-calendar.arrowBottom:before, .flatpickr-calendar.journalit-flatpickr-calendar.arrowBottom:after{top:100%}.flatpickr-calendar.journalit-flatpickr-calendar.arrowBottom:before{border-top-color:#e6e6e6}.flatpickr-calendar.journalit-flatpickr-calendar.arrowBottom:after{border-top-color:#fff}.flatpickr-calendar.journalit-flatpickr-calendar:focus{outline:0}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-wrapper{position:relative;display:inline-block}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months{display:flex}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-month{background:transparent;color:rgba(0,0,0,0.9);fill:rgba(0,0,0,0.9);height:34px;line-height:1;text-align:center;position:relative;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;overflow:hidden;-webkit-box-flex:1;-webkit-flex:1;-ms-flex:1;flex:1}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-prev-month, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-next-month{-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;cursor:pointer;position:absolute;top:0;height:34px;padding:10px;z-index:3;color:rgba(0,0,0,0.9);fill:rgba(0,0,0,0.9)}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-prev-month.flatpickr-disabled, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-next-month.flatpickr-disabled{display:none}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-prev-month i, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-next-month i{position:relative}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-prev-month.flatpickr-prev-month, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-next-month.flatpickr-prev-month{left:0}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-prev-month.flatpickr-next-month, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-next-month.flatpickr-next-month{right:0}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-prev-month:hover, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-next-month:hover{color:#959ea9}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-prev-month:hover svg, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-next-month:hover svg{fill:#f64747}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-prev-month svg, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-next-month svg{width:14px;height:14px}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-prev-month svg path, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-months .flatpickr-next-month svg path{-webkit-transition:fill .1s;transition:fill .1s;fill:inherit}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper{position:relative;height:auto}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper input:is(input:enabled, input:disabled), .flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper span{display:inline-block}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper input:is(input:enabled, input:disabled){width:100%}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper input:is(input:enabled, input:disabled)::-ms-clear{display:none}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper input:is(input:enabled, input:disabled)::-webkit-outer-spin-button, .flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper input:is(input:enabled, input:disabled)::-webkit-inner-spin-button{margin:0;-webkit-appearance:none}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper span{position:absolute;right:0;width:14px;padding:0 4px 0 2px;height:50%;line-height:50%;opacity:0;cursor:pointer;border:1px solid rgba(57,57,57,0.15);-webkit-box-sizing:border-box;box-sizing:border-box}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper span:hover{background:rgba(0,0,0,0.1)}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper span:active{background:rgba(0,0,0,0.2)}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper span:after{display:block;content:"";position:absolute}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper span.arrowUp{top:0;border-bottom:0}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper span.arrowUp:after{border-left:4px solid transparent;border-right:4px solid transparent;border-bottom:4px solid rgba(57,57,57,0.6);top:26%}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper span.arrowDown{top:50%}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper span.arrowDown:after{border-left:4px solid transparent;border-right:4px solid transparent;border-top:4px solid rgba(57,57,57,0.6);top:40%}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper span svg{width:inherit;height:auto}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper span svg path{fill:rgba(0,0,0,0.5)}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper:hover{background:rgba(0,0,0,0.05)}.flatpickr-calendar.journalit-flatpickr-calendar .numInputWrapper:hover span{opacity:1}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month{font-size:135%;line-height:1;font-weight:300;color:inherit;position:absolute;width:75%;left:12.5%;padding:7.48px 0 0 0;height:34px;display:inline-block;text-align:center;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0)}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month span.cur-month{font-family:inherit;font-weight:700;color:inherit;display:inline-block;margin-left:.5ch;padding:0}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month span.cur-month:hover{background:rgba(0,0,0,0.05)}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month .numInputWrapper{width:6ch;display:inline-block}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month .numInputWrapper span.arrowUp:after{border-bottom-color:rgba(0,0,0,0.9)}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month .numInputWrapper span.arrowDown:after{border-top-color:rgba(0,0,0,0.9)}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month input.cur-year:is(input:enabled, input:disabled){background:transparent;-webkit-box-sizing:border-box;box-sizing:border-box;color:inherit;cursor:text;padding:0 0 0 .5ch;margin:0;display:inline-block;font-size:inherit;font-family:inherit;font-weight:300;line-height:inherit;height:auto;border:0;border-radius:0;vertical-align:initial;-webkit-appearance:textfield;-moz-appearance:textfield;appearance:textfield}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month input.cur-year:focus:is(input:enabled, input:disabled){outline:0}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month input.cur-year[disabled]:is(input:enabled, input:disabled), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month input.cur-year[disabled]:hover:is(input:enabled, input:disabled){font-size:100%;color:rgba(0,0,0,0.5);background:transparent;pointer-events:none}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month .flatpickr-monthDropdown-months{appearance:menulist;background:transparent;border:none;border-radius:0;box-sizing:border-box;color:inherit;cursor:pointer;font-size:inherit;font-family:inherit;font-weight:300;height:auto;line-height:inherit;margin:-1px 0 0 0;outline:none;padding:0 0 0 .5ch;position:relative;vertical-align:initial;-webkit-box-sizing:border-box;-webkit-appearance:menulist;-moz-appearance:menulist;width:auto}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month .flatpickr-monthDropdown-months:focus, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month .flatpickr-monthDropdown-months:active{outline:none}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month .flatpickr-monthDropdown-months:hover{background:rgba(0,0,0,0.05)}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-current-month .flatpickr-monthDropdown-months .flatpickr-monthDropdown-month{background-color:transparent;outline:none;padding:0}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-weekdays{background:transparent;text-align:center;overflow:hidden;width:100%;display:flex;-webkit-box-align:center;-webkit-align-items:center;-ms-flex-align:center;align-items:center;height:28px}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-weekdays .flatpickr-weekdaycontainer{display:flex;-webkit-box-flex:1;-webkit-flex:1;-ms-flex:1;flex:1}.flatpickr-calendar.journalit-flatpickr-calendar span.flatpickr-weekday{cursor:default;font-size:90%;background:transparent;color:rgba(0,0,0,0.54);line-height:1;margin:0;text-align:center;display:block;-webkit-box-flex:1;-webkit-flex:1;-ms-flex:1;flex:1;font-weight:bolder}.flatpickr-calendar.journalit-flatpickr-calendar .dayContainer, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-weeks{padding:1px 0 0 0}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-days{position:relative;overflow:hidden;display:flex;-webkit-box-align:start;-webkit-align-items:flex-start;-ms-flex-align:start;align-items:flex-start;width:307.875px}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-days:focus{outline:0}.flatpickr-calendar.journalit-flatpickr-calendar .dayContainer{padding:0;outline:0;text-align:left;width:307.875px;min-width:307.875px;max-width:307.875px;-webkit-box-sizing:border-box;box-sizing:border-box;display:flex;-webkit-flex-wrap:wrap;flex-wrap:wrap;-ms-flex-wrap:wrap;-ms-flex-pack:justify;-webkit-justify-content:space-around;justify-content:space-around;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0);opacity:1}.flatpickr-calendar.journalit-flatpickr-calendar .dayContainer + .dayContainer{-webkit-box-shadow:-1px 0 0 #e6e6e6;box-shadow:-1px 0 0 #e6e6e6}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day{background:none;border:1px solid transparent;border-radius:150px;-webkit-box-sizing:border-box;box-sizing:border-box;color:#393939;cursor:pointer;font-weight:400;width:14.2857143%;-webkit-flex-basis:14.2857143%;-ms-flex-preferred-size:14.2857143%;flex-basis:14.2857143%;max-width:39px;height:39px;line-height:39px;margin:0;display:inline-block;position:relative;-webkit-box-pack:center;-webkit-justify-content:center;-ms-flex-pack:center;justify-content:center;text-align:center}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.inRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.prevMonthDay.inRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.nextMonthDay.inRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.today.inRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.prevMonthDay.today.inRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.nextMonthDay.today.inRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day:hover, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.prevMonthDay:hover, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.nextMonthDay:hover, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day:focus, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.prevMonthDay:focus, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.nextMonthDay:focus{cursor:pointer;outline:0;background:#e6e6e6;border-color:#e6e6e6}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.today{border-color:#959ea9}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.today:hover, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.today:focus{border-color:#959ea9;background:#959ea9;color:#fff}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected:is(button), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.startRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.endRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.inRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.inRange:is(button), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.startRange.inRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.endRange.inRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected:focus, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected:focus:is(button), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.startRange:focus, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.endRange:focus, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected:hover, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected:hover:is(button), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.startRange:hover, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.endRange:hover, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.prevMonthDay, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.prevMonthDay:is(button), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.startRange.prevMonthDay, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.endRange.prevMonthDay, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.nextMonthDay, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.nextMonthDay:is(button), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.startRange.nextMonthDay, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.endRange.nextMonthDay{background:#569ff7;-webkit-box-shadow:none;box-shadow:none;color:#fff;border-color:#569ff7}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.startRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.startRange:is(button), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.startRange.startRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.endRange.startRange{border-radius:50px 0 0 50px}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.endRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.endRange:is(button), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.startRange.endRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.endRange.endRange{border-radius:0 50px 50px 0}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.startRange + .endRange:not(:nth-child(7n+1)), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.startRange.startRange + .endRange:not(:nth-child(7n+1)), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.endRange.startRange + .endRange:not(:nth-child(7n+1)){-webkit-box-shadow:-10px 0 0 #569ff7;box-shadow:-10px 0 0 #569ff7}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.startRange.endRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.selected.startRange.endRange:is(button), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.startRange.startRange.endRange, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.endRange.startRange.endRange{border-radius:50px}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.inRange{border-radius:0;-webkit-box-shadow:-5px 0 0 #e6e6e6,5px 0 0 #e6e6e6;box-shadow:-5px 0 0 #e6e6e6,5px 0 0 #e6e6e6}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.flatpickr-disabled, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.flatpickr-disabled:hover, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.prevMonthDay, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.nextMonthDay, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.notAllowed, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.notAllowed.prevMonthDay, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.notAllowed.nextMonthDay{color:rgba(57,57,57,0.3);background:transparent;border-color:transparent;cursor:default}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.flatpickr-disabled, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.flatpickr-disabled:hover{cursor:not-allowed;color:rgba(57,57,57,0.1)}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.week.selected, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.week.selected:is(button){border-radius:0;-webkit-box-shadow:-5px 0 0 #569ff7,5px 0 0 #569ff7;box-shadow:-5px 0 0 #569ff7,5px 0 0 #569ff7}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-day.hidden{visibility:hidden}.flatpickr-calendar.journalit-flatpickr-calendar .rangeMode .flatpickr-day{margin-top:1px}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-weekwrapper{float:left}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-weekwrapper .flatpickr-weeks{padding:0 12px;-webkit-box-shadow:1px 0 0 #e6e6e6;box-shadow:1px 0 0 #e6e6e6}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-weekwrapper .flatpickr-weekday{float:none;width:100%;line-height:28px}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-weekwrapper span.flatpickr-day, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-weekwrapper span.flatpickr-day:hover{display:block;width:100%;max-width:none;color:rgba(57,57,57,0.3);background:transparent;cursor:default;border:none}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-innerContainer{display:flex;-webkit-box-sizing:border-box;box-sizing:border-box;overflow:hidden}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-rContainer{display:inline-block;padding:0;-webkit-box-sizing:border-box;box-sizing:border-box}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time{text-align:center;outline:0;display:flex;height:0;line-height:40px;max-height:40px;-webkit-box-sizing:border-box;box-sizing:border-box;overflow:hidden}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time:after{content:"";display:table;clear:both}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time .numInputWrapper{-webkit-box-flex:1;-webkit-flex:1;-ms-flex:1;flex:1;width:40%;height:40px;float:left}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time .numInputWrapper span.arrowUp:after{border-bottom-color:#393939}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time .numInputWrapper span.arrowDown:after{border-top-color:#393939}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time.hasSeconds .numInputWrapper{width:26%}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time.time24hr .numInputWrapper{width:49%}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time input:is(input:enabled, input:disabled){background:transparent;-webkit-box-shadow:none;box-shadow:none;border:0;border-radius:0;text-align:center;margin:0;padding:0;height:inherit;line-height:inherit;color:#393939;font-size:14px;position:relative;-webkit-box-sizing:border-box;box-sizing:border-box;-webkit-appearance:textfield;-moz-appearance:textfield;appearance:textfield}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time input.flatpickr-hour:is(input:enabled, input:disabled){font-weight:bold}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time input.flatpickr-minute:is(input:enabled, input:disabled), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time input.flatpickr-second:is(input:enabled, input:disabled){font-weight:400}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time input:focus:is(input:enabled, input:disabled){outline:0;border:0}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time .flatpickr-time-separator, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time .flatpickr-am-pm{height:inherit;float:left;line-height:inherit;color:#393939;font-weight:bold;width:2%;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;user-select:none;-webkit-align-self:center;-ms-flex-item-align:center;align-self:center}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time .flatpickr-am-pm{outline:0;width:18%;cursor:pointer;text-align:center;font-weight:400}.flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time input:hover:is(input:enabled, input:disabled), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time .flatpickr-am-pm:hover, .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time input:focus:is(input:enabled, input:disabled), .flatpickr-calendar.journalit-flatpickr-calendar .flatpickr-time .flatpickr-am-pm:focus{background:#eee}.flatpickr-input.journalit-flatpickr-temp-input[readonly], .flatpickr-input.journalit-flatpickr-temp-input[readonly]:is(input:enabled, input:disabled){cursor:pointer}@-webkit-keyframes journalit-fp-fade-in-down{from{opacity:0;-webkit-transform:translate3d(0,-20px,0);transform:translate3d(0,-20px,0)}to{opacity:1;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0)}}@keyframes journalit-fp-fade-in-down{from{opacity:0;-webkit-transform:translate3d(0,-20px,0);transform:translate3d(0,-20px,0)}to{opacity:1;-webkit-transform:translate3d(0,0,0);transform:translate3d(0,0,0)}}
 
@@ -9173,7 +9164,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
   .journalit-home-grid-layout.is-editing .react-grid-item:hover .journalit-home-widget-remove, .journalit-home-grid-layout.is-editing .react-grid-item:hover .journalit-home-widget-remove:is(button){opacity: 1}
 
-  .journalit-home-widget-content{flex: 1;padding: 12px;height: 100%;overflow: hidden}
+  .journalit-home-widget-content{flex: 1;min-height: 0;padding: 12px;height: 100%;overflow: hidden}
 
   .journalit-home-grid-layout.is-editing .journalit-home-widget-content{pointer-events: none;user-select: none}
 
@@ -9362,7 +9353,9 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
   .journalit-score-phase--established{color: var(--journalit-score-phase-established, #0ea5e9)}
 
   
-  .journalit-home-position{height: 100%;display: flex;flex-direction: column;gap: 8px}
+  .journalit-home-position{height: 100%;min-height: 0;overflow: hidden auto;display: flex;flex-direction: column;gap: 8px}
+
+  .journalit-home-position > *{flex-shrink: 0}
 
   .journalit-home-position__header{display: flex;align-items: center;justify-content: space-between}
 
@@ -9376,7 +9369,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
   .journalit-home-position__tab--active, .journalit-home-position__tab--active:is(button){border-bottom-color: var(--interactive-accent);color: var(--text-normal)}
 
-  .journalit-home-position__grid{display: grid;grid-template-columns: 1fr 1fr;gap: 8px}
+  .journalit-home-position__grid{display: grid;grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);gap: 8px}
 
   .journalit-home-position__label{font-size: 12px;color: var(--text-muted);display: block}
 
@@ -9643,7 +9636,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
   .journalit-home-eval-roi__gauge{position: relative;flex: 0 0 auto;width: 132px;display: flex;flex-direction: column;align-items: center}
 
-  .journalit-home-eval-roi__gauge-svg{display: block;width: 100%;height: auto;overflow: visible}
+  .journalit-home-eval-roi__gauge-svg{--no-tooltip: true;display: block;width: 100%;height: auto;overflow: visible}
 
   .journalit-home-eval-roi__gauge-track{stroke: var(--background-modifier-border)}
 
@@ -10643,16 +10636,17 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
   
   .journalit-fullscreen-portal-container{position: fixed;top: 0;left: 0;width: 0;height: 0;z-index: 4000;pointer-events: none}
 
-  .journalit-fullscreen-overlay{position: fixed;top: 0;left: 0;width: 100vw;height: 100vh;background-color: rgba(0, 0, 0, 0.9);z-index: 10000;display: flex;align-items: center;justify-content: center;animation: journalit-fade-in 0.3s ease-in-out;cursor: pointer;pointer-events: auto;contain: layout style paint}
+  
+  .journalit-fullscreen-overlay{--journalit-fullscreen-chrome-fg: #fff;--journalit-fullscreen-chrome-bg: rgba(0, 0, 0, 0.7);--journalit-fullscreen-chrome-bg-strong: rgba(0, 0, 0, 0.9);--journalit-fullscreen-chrome-border: rgba(255, 255, 255, 0.55);--journalit-fullscreen-chrome-border-subtle: rgba(255, 255, 255, 0.35);--journalit-fullscreen-chrome-shadow: 0 2px 10px rgba(0, 0, 0, 0.5);position: fixed;top: 0;left: 0;width: 100vw;height: 100vh;background-color: rgba(0, 0, 0, 0.9);z-index: 10000;display: flex;align-items: center;justify-content: center;animation: journalit-fade-in 0.3s ease-in-out;cursor: pointer;pointer-events: auto;contain: layout style paint}
 
   
   .journalit-fullscreen-overlay-ui{position: fixed;top: 0;left: 0;width: 100vw;height: 100vh;pointer-events: none;z-index: 10001;contain: layout style paint}
 
-  .journalit-fullscreen-title{position: absolute;top: 20px;left: 20px;color: var(--text-on-accent);font-size: 16px;font-weight: 500;background-color: rgba(0, 0, 0, 0.8);padding: 8px 12px;border-radius: 6px;pointer-events: auto}
+  .journalit-fullscreen-title{position: absolute;top: 20px;left: 20px;color: var(--journalit-fullscreen-chrome-fg);font-size: 16px;font-weight: 500;background-color: rgba(0, 0, 0, 0.8);border: 1px solid var(--journalit-fullscreen-chrome-border-subtle);padding: 8px 12px;border-radius: 6px;pointer-events: auto}
 
-  .journalit-fullscreen-close-btn, .journalit-fullscreen-close-btn:is(button){position: absolute;top: 20px;right: 20px;width: 40px;height: 40px;background-color: rgba(0, 0, 0, 0.8);color: var(--text-on-accent);border: none;border-radius: 50%;font-size: 24px;font-weight: 300;line-height: 1;padding: 0 0 2px 0;cursor: pointer;display: flex;align-items: center;justify-content: center;transition: color 0.2s ease;pointer-events: auto}
+  .journalit-fullscreen-close-btn, .journalit-fullscreen-close-btn:is(button){position: absolute;top: 20px;right: 20px;width: 40px;height: 40px;background-color: var(--journalit-fullscreen-chrome-bg);color: var(--journalit-fullscreen-chrome-fg);border: 1px solid var(--journalit-fullscreen-chrome-border);box-shadow: var(--journalit-fullscreen-chrome-shadow);border-radius: 50%;font-size: 24px;font-weight: 300;line-height: 1;padding: 0 0 2px 0;cursor: pointer;display: flex;align-items: center;justify-content: center;transition: color 0.2s ease;pointer-events: auto}
 
-  .journalit-fullscreen-close-btn:hover, .journalit-fullscreen-close-btn:hover:is(button){background-color: rgba(0, 0, 0, 1.0);transform: scale(1.1)}
+  .journalit-fullscreen-close-btn:hover, .journalit-fullscreen-close-btn:hover:is(button){background-color: var(--journalit-fullscreen-chrome-bg-strong);border-color: var(--journalit-fullscreen-chrome-fg);transform: scale(1.1)}
 
   .journalit-fullscreen-content-wrapper{width: 100vw;height: 100vh;display: flex;align-items: center;justify-content: center;overflow: hidden;pointer-events: none;contain: layout style paint;isolation: isolate}
 
@@ -10958,7 +10952,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
   .journalit-fullscreen-zoomable-image--transform-active, .journalit-fullscreen-zoomable-media--transform-active, .journalit-fullscreen-zoomable-media--transform-active:is(button){will-change: transform}
 
   
-  .journalit-fullscreen-viewer button.journalit-fullscreen-nav-btn:is(button){position: absolute;top: 50%;transform: translateY(-50%);width: 45px;height: 45px;min-width: 45px;min-height: 45px;padding: 0;background: rgba(0, 0, 0, 0.35);background-color: rgba(0, 0, 0, 0.35);color: var(--text-on-accent);border: none;border-radius: 50%;cursor: pointer;z-index: 10;transition: background-color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;display: flex;align-items: center;justify-content: center;line-height: 1;box-shadow: none;appearance: none;opacity: 0.8;pointer-events: auto}
+  .journalit-fullscreen-viewer button.journalit-fullscreen-nav-btn:is(button){position: absolute;top: 50%;transform: translateY(-50%);width: 45px;height: 45px;min-width: 45px;min-height: 45px;padding: 0;background: var(--journalit-fullscreen-chrome-bg);background-color: var(--journalit-fullscreen-chrome-bg);color: var(--journalit-fullscreen-chrome-fg);border: 1px solid var(--journalit-fullscreen-chrome-border);border-radius: 50%;cursor: pointer;z-index: 10;transition: background-color 0.3s ease, transform 0.3s ease, opacity 0.3s ease;display: flex;align-items: center;justify-content: center;line-height: 1;box-shadow: var(--journalit-fullscreen-chrome-shadow);appearance: none;opacity: 1;pointer-events: auto}
 
   .journalit-fullscreen-viewer button.journalit-fullscreen-nav-btn .journalit-obsidian-icon,
   .journalit-fullscreen-viewer button.journalit-fullscreen-nav-btn .journalit-obsidian-icon svg{display: block}
@@ -10967,17 +10961,17 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
   .journalit-fullscreen-viewer button.journalit-fullscreen-nav-btn .journalit-obsidian-icon svg{width: 20px;height: 20px}
 
-  .journalit-fullscreen-viewer button.journalit-fullscreen-nav-btn:hover:is(button), .journalit-fullscreen-viewer button.journalit-fullscreen-nav-btn:focus-visible:is(button){background: rgba(0, 0, 0, 0.55);background-color: rgba(0, 0, 0, 0.55);transform: translateY(-50%) scale(1.1);box-shadow: none;opacity: 1}
+  .journalit-fullscreen-viewer button.journalit-fullscreen-nav-btn:hover:is(button), .journalit-fullscreen-viewer button.journalit-fullscreen-nav-btn:focus-visible:is(button){background: var(--journalit-fullscreen-chrome-bg-strong);background-color: var(--journalit-fullscreen-chrome-bg-strong);border-color: var(--journalit-fullscreen-chrome-fg);transform: translateY(-50%) scale(1.1);box-shadow: var(--journalit-fullscreen-chrome-shadow);opacity: 1}
 
   .journalit-fullscreen-nav-prev, .journalit-fullscreen-nav-prev:is(button){left: 20px}
 
   .journalit-fullscreen-nav-next, .journalit-fullscreen-nav-next:is(button){right: 20px}
 
   
-  .journalit-fullscreen-nav-indicator{position: absolute;bottom: 20px;left: 50%;transform: translateX(-50%);background-color: rgba(0, 0, 0, 0.8);color: var(--text-on-accent);padding: 8px 12px;border-radius: 20px;font-size: 12px;font-weight: 500;font-variant-numeric: tabular-nums;z-index: 10;pointer-events: none}
+  .journalit-fullscreen-nav-indicator{position: absolute;bottom: 20px;left: 50%;transform: translateX(-50%);background-color: rgba(0, 0, 0, 0.8);color: var(--journalit-fullscreen-chrome-fg);border: 1px solid var(--journalit-fullscreen-chrome-border-subtle);padding: 8px 12px;border-radius: 20px;font-size: 12px;font-weight: 500;font-variant-numeric: tabular-nums;z-index: 10;pointer-events: none}
 
   
-  .journalit-fullscreen-zoom-indicator{position: absolute;bottom: 20px;left: 20px;background-color: rgba(0, 0, 0, 0.8);color: var(--text-on-accent);padding: 8px 12px;border-radius: 20px;font-size: 12px;font-weight: 500;z-index: 10;opacity: 0;transition: opacity 0.3s ease;pointer-events: none}
+  .journalit-fullscreen-zoom-indicator{position: absolute;bottom: 20px;left: 20px;background-color: rgba(0, 0, 0, 0.8);color: var(--journalit-fullscreen-chrome-fg);border: 1px solid var(--journalit-fullscreen-chrome-border-subtle);padding: 8px 12px;border-radius: 20px;font-size: 12px;font-weight: 500;z-index: 10;opacity: 0;transition: opacity 0.3s ease;pointer-events: none}
 
   .journalit-fullscreen-viewer:hover .journalit-fullscreen-zoom-indicator{opacity: 1}
 
@@ -11244,18 +11238,6 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
 
 .journalit-key-events .key-events-event-selector .combobox-container{margin-bottom: 0}
-
-
-.journalit-key-events .key-events-event-selector .combobox-input, .journalit-key-events .key-events-event-selector .combobox-input:is(input:enabled, input:disabled){background: var(--background-primary);border: 1px solid var(--background-modifier-border);border-radius: 6px;padding: 8px 12px;padding-right: 30px;font-size: 14px}
-
-.journalit-key-events .key-events-event-selector .combobox-input:focus, .journalit-key-events .key-events-event-selector .combobox-input:focus:is(input:enabled, input:disabled){border-color: var(--interactive-accent);box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent)}
-
-.journalit-key-events .key-events-event-selector .combobox-dropdown{margin-top: 0;border-radius: 0 0 6px 6px;border: 1px solid var(--background-modifier-border);border-top: none;box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15)}
-
-.journalit-key-events .key-events-event-selector .combobox-option,
-.journalit-key-events .key-events-event-selector .combobox-add-option{padding: 10px 12px}
-
-.journalit-key-events .key-events-event-selector .combobox-option:last-child{border-bottom: none}
 
 .journalit-key-events .key-events-color-picker{display: flex;align-items: center;gap: 8px}
 
@@ -13114,6 +13096,8 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
   .journalit-reviewv2-item-text--completed, .journalit-reviewv2-item-text--completed:is(button){color: var(--text-muted)}
 
+  .journalit-reviewv2-item-text--read-only{cursor: default}
+
   .journalit-reviewv2-edit-input, .journalit-reviewv2-edit-input:is(input:enabled, input:disabled){flex: 1;min-width: 0;padding: 0.25rem 0.5rem;background: var(--background-primary);border: 1px solid var(--interactive-accent);border-radius: var(--radius-s);color: var(--text-normal);font-size: 0.9em}
 
   .journalit-reviewv2-action-button, .journalit-reviewv2-action-button:is(button){padding: 0.25rem 0.5rem;border-radius: var(--radius-s);font-size: 0.8em;font-weight: 500;cursor: pointer}
@@ -13836,7 +13820,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
   .review-context-fields-inline-control :is(.inputContainer, .selectContainer, .combobox-container){width: 100%}
 
-  .review-context-fields-inline-control :is(input.input, textarea.input, .select, .combobox-input), .review-context-fields-inline-control :is(input.input, textarea.input, .select, .combobox-input):is(input:enabled, input:disabled), .review-context-fields-inline-control :is(input.input, textarea.input, .select, .combobox-input):is(select):not(:disabled):not(.mod-disabled), .review-context-fields-inline-control :is(input.input, textarea.input, .select, .combobox-input):is(textarea:enabled, textarea:disabled){width: 100%;min-width: min(18rem, 100%);background: var(--background-secondary);border: 1px solid var(--background-modifier-border);border-radius: 4px}
+  .review-context-fields-inline-control :is(input.input, textarea.input, .select), .review-context-fields-inline-control :is(input.input, textarea.input, .select):is(input:enabled, input:disabled), .review-context-fields-inline-control :is(input.input, textarea.input, .select):is(select):not(:disabled):not(.mod-disabled), .review-context-fields-inline-control :is(input.input, textarea.input, .select):is(textarea:enabled, textarea:disabled){width: 100%;min-width: min(18rem, 100%);background: var(--background-secondary);border: 1px solid var(--background-modifier-border);border-radius: 4px}
 
   @media (max-width: 640px) {
     .review-context-fields-field-group,
@@ -13871,7 +13855,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
   .review-context-fields-control :is(.inputContainer, .selectContainer, .combobox-container){width: 100%}
 
-  .review-context-fields-control :is(.input, .select, .combobox-input), .review-context-fields-control :is(.input, .select, .combobox-input):is(input:enabled, input:disabled), .review-context-fields-control :is(.input, .select, .combobox-input):is(select):not(:disabled):not(.mod-disabled), .review-context-fields-control :is(.input, .select, .combobox-input):is(textarea:enabled, textarea:disabled){width: 100%;font-size: 0.85rem}
+  .review-context-fields-control :is(.input, .select), .review-context-fields-control :is(.input, .select):is(input:enabled, input:disabled), .review-context-fields-control :is(.input, .select):is(select):not(:disabled):not(.mod-disabled), .review-context-fields-control :is(.input, .select):is(textarea:enabled, textarea:disabled){width: 100%;font-size: 0.85rem}
 
   .review-context-fields-control textarea.input:is(textarea:enabled, textarea:disabled){min-height: 3.8rem}
 
@@ -13884,9 +13868,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
   .review-context-fields-error{color: var(--text-error)}
 
-  .journalit-weekly-drc-context{display: flex;flex-direction: column;gap: 1rem;cursor: default;user-select: none}
-
-  .journalit-weekly-drc-context *{cursor: default;user-select: none}
+  .journalit-weekly-drc-context{display: flex;flex-direction: column;gap: 1rem;cursor: default}
 
   .journalit-weekly-drc-days{display: flex;flex-direction: column;gap: 0.85rem}
 
@@ -13957,10 +13939,6 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
   .journalit-weekly-drc-day .journalit-previous-drc-reference-body{padding-top: 1rem}
 
   .journalit-weekly-drc-day .journalit-previous-drc-reference-body > section:first-child > :is(h1, h2, h3, h4, h5, h6):first-child{margin-top: 0}
-
-  .journalit-weekly-drc-day .journalit-previous-drc-rendered-markdown{user-select: none}
-
-  .journalit-weekly-drc-day .journalit-previous-drc-rendered-markdown *{user-select: none}
 
   .journalit-trade-review-widget{display: flex;flex-direction: column;gap: 0.75rem}
 
@@ -15263,7 +15241,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
       )
       scale(var(--trade-gate-flow-scale, 1));transform-origin: 0 0}
 
-  .journalit-settings .journalit-session-mode-trade-gate-flow-svg{position: absolute;inset: 0;display: block;pointer-events: none}
+  .journalit-settings .journalit-session-mode-trade-gate-flow-svg{--no-tooltip: true;position: absolute;inset: 0;display: block;pointer-events: none}
 
   .journalit-settings .journalit-session-mode-trade-gate-flow-edge path{fill: none;stroke: rgba(var(--mono-rgb-100), 0.28);stroke-linecap: round;stroke-width: 1.6}
 
@@ -16753,17 +16731,7 @@ body.journalit-default-accent [class*="journalit-"]{--accent-h: 76;--accent-s: 9
 
 .journalit-create-setup-combobox-fields > .journalit-combobox > label{display: inline-flex;min-height: 34px;align-items: center;gap: 4px}
 
-.journalit-create-setup-profile__info, .journalit-create-setup-profile__info:is(input:enabled, input:disabled){display: inline-flex;align-items: center;justify-content: center;color: var(--text-muted);cursor: help}
-
-.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .input-container{display: flex;min-height: 34px;flex-wrap: wrap;align-items: center;gap: 3px;padding: 3px 28px 3px 6px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background: var(--background-primary)}
-
-.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .journalit-combobox-selected-items{display: flex;flex-wrap: wrap;align-items: center;gap: 3px}
-
-.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .selected-item{margin: 0;padding: 2px 6px;font-size: 11px}
-
-.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .combobox-input, .journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .combobox-input:is(input:enabled, input:disabled){width: auto;min-width: 72px;height: 26px;flex: 1 1 90px;padding: 3px 4px;border: 0;background: transparent}
-
-.journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .combobox-input:focus, .journalit-create-setup-combobox-fields .journalit-combobox[data-selected-items-placement='inside-input'] .combobox-input:focus:is(input:enabled, input:disabled){box-shadow: none}
+.journalit-create-setup-profile__info, .journalit-create-setup-profile__info:is(button), .journalit-create-setup-profile__info:is(input:enabled, input:disabled){display: inline-flex;align-items: center;justify-content: center;color: var(--text-muted);cursor: help}
 
 .journalit-create-setup-modal .create-setup-form .setting-item-info{display: flex;flex-direction: column;gap: 2px;overflow: visible;min-width: auto;width: 100%;align-items: flex-start;text-align: left}
 
@@ -17312,7 +17280,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 .journalit-setup-card__expectancy-value--neutral,
 .journalit-setup-card__win-rate-value{color: var(--text-normal)}
 
-.journalit-setup-card__sparkline{display: block;width: 100%;height: 52px;margin: 0 0 -2px;overflow: visible}
+.journalit-setup-card__sparkline{--no-tooltip: true;display: block;width: 100%;height: 52px;margin: 0 0 -2px;overflow: visible}
 
 .journalit-setup-card__sparkline-baseline{stroke: var(--background-modifier-border);stroke-dasharray: 2 3;stroke-width: 1}
 
@@ -18971,6 +18939,18 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
   .journalit-fast-datetime__segment, .journalit-fast-datetime__segment:is(input:enabled, input:disabled){width: 42px;min-width: 42px;max-width: 42px;padding: 6px 4px;text-align: center;border: 1px solid var(--background-modifier-border);border-radius: 4px;background: var(--background-primary);color: var(--text-normal);font-size: 14px;box-sizing: border-box;flex-shrink: 0;flex-grow: 0}
 
+  .journalit-fast-datetime .journalit-fast-datetime__container .journalit-fast-datetime__date-group .journalit-fast-datetime__segment[data-year-extended="true"], .journalit-fast-datetime .journalit-fast-datetime__container .journalit-fast-datetime__date-group .journalit-fast-datetime__segment[data-year-extended="true"]:is(input:enabled, input:disabled){width: var(--journalit-year-segment-width, 56px);min-width: var(--journalit-year-segment-width, 56px);max-width: var(--journalit-year-segment-width, 56px)}
+
+  @media (max-width: 640px) {
+    .journalit-fast-datetime .journalit-fast-datetime__container[data-timestamp="true"]{display: flex;flex-wrap: wrap;justify-content: flex-start;gap: 4px;padding: 4px;--journalit-year-segment-width: 44px}
+    .journalit-fast-datetime .journalit-fast-datetime__container[data-timestamp="true"] .journalit-fast-datetime__segment:not([data-year-extended="true"]), .journalit-fast-datetime .journalit-fast-datetime__container[data-timestamp="true"] .journalit-fast-datetime__segment:not([data-year-extended="true"]):is(input:enabled, input:disabled){width: 28px;min-width: 28px;max-width: 28px}
+    .journalit-fast-datetime .journalit-fast-datetime__container[data-timestamp="true"] .journalit-fast-datetime__segment, .journalit-fast-datetime .journalit-fast-datetime__container[data-timestamp="true"] .journalit-fast-datetime__segment:is(input:enabled, input:disabled){padding-right: 2px;padding-left: 2px;font-size: 12px}
+    .journalit-fast-datetime .journalit-fast-datetime__container[data-timestamp="true"] .journalit-fast-datetime__date-group,
+    .journalit-fast-datetime .journalit-fast-datetime__container[data-timestamp="true"] .journalit-fast-datetime__time-group{gap: 2px}
+    .journalit-fast-datetime .journalit-fast-datetime__container[data-timestamp="true"] .journalit-fast-datetime__ampm-button, .journalit-fast-datetime .journalit-fast-datetime__container[data-timestamp="true"] .journalit-fast-datetime__ampm-button:is(button){width: auto;min-width: 28px;padding: 4px 2px;margin-left: 2px;font-size: 12px}
+    .journalit-fast-datetime .journalit-fast-datetime__container[data-timestamp="true"] .journalit-fast-datetime__calendar-button, .journalit-fast-datetime .journalit-fast-datetime__container[data-timestamp="true"] .journalit-fast-datetime__calendar-button:is(button){width: 24px;min-width: 24px;margin-left: 0;padding: 2px}
+  }
+
   .journalit-fast-datetime__separator{color: var(--text-muted);padding: 0 1px;user-select: none;flex: 0 0 auto}
 
   .journalit-fast-datetime__separator--spacer{padding: 0 8px}
@@ -19562,7 +19542,15 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .journalit-template-builder-container .template-input.is-disabled, .journalit-template-builder-container .template-input.is-disabled:is(button), .journalit-template-builder-container .template-input.is-disabled:is(input:enabled, input:disabled), .journalit-template-builder-container .template-input.is-disabled:is(textarea:enabled, textarea:disabled){opacity: 0.5}
 
-.journalit-template-builder-container .template-section-card{background: var(--background-secondary);border-radius: var(--radius-s);border: 1px solid var(--background-modifier-border)}
+.journalit-template-builder-container .template-section-card{position: relative;background: var(--background-secondary);border-radius: var(--radius-s);border: 1px solid var(--background-modifier-border)}
+
+.journalit-template-builder-container .template-section-card--just-added{animation: journalit-template-widget-just-added 1.6s ease-out}
+
+@keyframes journalit-template-widget-just-added {
+  0%,
+  35% {border-color: var(--interactive-accent);box-shadow: 0 0 0 3px hsla(var(--interactive-accent-hsl), 0.35)}
+  100% {box-shadow: 0 0 0 0 hsla(var(--interactive-accent-hsl), 0)}
+}
 
 .journalit-template-builder-container .template-section-card.is-dragging, .journalit-template-builder-container .template-section-card.is-dragging:is(button){background: var(--background-primary);border-color: var(--interactive-accent);opacity: 0.5;z-index: 1000}
 
@@ -19698,7 +19686,36 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .journalit-template-builder-container .template-editor-widget-actions{display: flex;align-items: center;gap: 8px}
 
-.journalit-template-builder-container .template-editor-widget-list{display: flex;flex-direction: column;gap: 6px}
+.journalit-template-builder-container .template-editor-widget-list{--template-insert-slot-gap: 6px;--template-insert-slot-hit: 18px;display: flex;flex-direction: column;gap: var(--template-insert-slot-gap)}
+
+
+.journalit-template-builder-container button.template-insert-slot:is(button){position: absolute;left: 0;right: 0;top: calc(
+    -1 * (var(--template-insert-slot-gap) + var(--template-insert-slot-hit)) / 2 -
+      1px
+  );z-index: 3;display: flex;align-items: center;gap: 6px;height: var(--template-insert-slot-hit);padding: 0;cursor: pointer}
+
+.journalit-template-builder-container button.template-insert-slot--trailing:is(button){position: relative;top: auto;margin-top: calc(-1 * var(--template-insert-slot-gap) / 2)}
+
+.journalit-template-builder-container .template-insert-slot-line{flex: 1;border-top: 2px solid transparent;transition: border-color 120ms ease}
+
+.journalit-template-builder-container .template-insert-slot-pill{display: inline-flex;align-items: center;justify-content: center;width: 20px;height: 20px;border-radius: 50%;background: var(--interactive-accent);color: var(--text-on-accent);opacity: 0;transform: scale(0.8);transition:
+    opacity 120ms ease,
+    transform 120ms ease}
+
+.journalit-template-builder-container .template-insert-slot:hover .template-insert-slot-pill,
+.journalit-template-builder-container .template-insert-slot:focus-visible .template-insert-slot-pill,
+.journalit-template-builder-container .template-insert-slot.is-revealed .template-insert-slot-pill{opacity: 1;transform: scale(1)}
+
+.journalit-template-builder-container .template-insert-slot:hover .template-insert-slot-line,
+.journalit-template-builder-container .template-insert-slot:focus-visible .template-insert-slot-line,
+.journalit-template-builder-container .template-insert-slot.is-revealed .template-insert-slot-line{border-top-color: var(--interactive-accent)}
+
+.journalit-template-builder-container .template-editor-widget-list.is-sorting .template-insert-slot, .journalit-template-builder-container .template-editor-widget-list.is-sorting .template-insert-slot:is(button){visibility: hidden}
+
+
+@media (hover: none) {
+  .journalit-template-builder-container button.template-insert-slot:is(button){display: none}
+}
 
 .journalit-template-builder-container .template-editor-field{margin-bottom: 24px}
 
@@ -20240,14 +20257,14 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
 .trade-form-modal-container .modal-title{margin-bottom: 16px}
 
-  .journalit-trade-form-modal{padding-bottom: 0}
+  .journalit-trade-form-modal{padding-bottom: 0;max-width: calc(100vw - 24px)}
 
   
   .trade-form-modal-container{max-height: var(--modal-content-height);overflow-y: auto}
 
   
   
-  .trade-form-view-container{height: 100%;overflow-y: auto;position: relative;display: flex;flex-direction: column;padding: 0;margin: 0;box-sizing: border-box}
+  .trade-form-view-container{height: 100%;container: journalit-trade-form / inline-size;overflow-y: auto;position: relative;display: flex;flex-direction: column;padding: 0;margin: 0;box-sizing: border-box}
   .trade-form-view-container .formContainer{display: flex;flex-direction: column;gap: 12px;max-width: 800px;margin: 0 auto;padding: 16px 20px;width: 100%;flex: 1 1 auto;min-height: min-content;box-sizing: border-box}
   .trade-form-view-container .formSection{display: flex;flex-direction: column;padding: 0;margin: 0;position: relative}
   
@@ -20340,54 +20357,6 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
   .trade-form-view-container .setup-create-confirmation-button:hover{background: var(--background-modifier-hover)}
 
   
-  .trade-form-view-container .combobox-container,
-  .trade-form-view-container [data-combobox-type]{position: relative;width: 100%;margin-bottom: 8px;z-index: 10}
-
-  
-  .trade-form-view-container [data-is-open="true"]{z-index: 9999}
-
-  
-  .trade-form-view-container [data-combobox-type] > .input-container{position: relative;margin: 0;padding: 0;z-index: 1}
-
-  
-  .trade-form-view-container .selected-item{display: inline-flex;align-items: center;margin: 0 4px 4px 0;padding: 4px 8px;background-color: var(--interactive-accent);color: var(--text-on-accent);border-radius: 4px;font-size: 12px;gap: 6px}
-
-  .trade-form-view-container .selected-item button:is(button){display: inline-flex;align-items: center;justify-content: center;width: 16px;height: 16px;min-width: 16px;min-height: 16px;padding: 0;background: rgba(255, 255, 255, 0.2);border: none;color: white;font-size: 16px;line-height: 1;cursor: pointer;border-radius: 50%;margin-left: 4px;position: relative;z-index: 5;transition: background-color 0.2s}
-
-  .trade-form-view-container .selected-item button:hover:is(button){background: rgba(255, 255, 255, 0.4)}
-
-  .trade-form-view-container [data-combobox-type] > div:nth-child(2){position: relative;width: 100%}
-  
-  .trade-form-view-container [data-combobox-type] .input-container::after{content: "";position: absolute;right: 12px;top: 50%;transform: translateY(-50%);width: 0;height: 0;border-left: 5px solid transparent;border-right: 5px solid transparent;border-top: 5px solid var(--text-normal);pointer-events: none;z-index: 10}
-  
-  .trade-form-view-container [data-combobox-type][data-is-open="true"] .input-container::after{transform: translateY(-50%) rotate(180deg)}
-  .trade-form-view-container [data-combobox-type] input[role="combobox"]:is(input:enabled, input:disabled){width: 100%;padding: 8px 12px;padding-right: 30px;border: 1px solid var(--background-modifier-border);border-radius: 4px;background-color: var(--background-primary);color: var(--text-normal);font-size: 16px;cursor: pointer}
-  
-  .trade-form-view-container [data-combobox-type][data-is-open="true"] input[role="combobox"]:is(input:enabled, input:disabled){border-bottom-left-radius: 0;border-bottom-right-radius: 0}
-  .trade-form-view-container [data-combobox-type] input[role="combobox"]:focus:is(input:enabled, input:disabled){border-color: var(--interactive-accent);box-shadow: 0 0 0 2px rgba(83, 141, 226, 0.3);outline: none}
-  
-  .trade-form-view-container [data-combobox-type] ul[role="listbox"]{position: absolute;top: 38px;left: 0;right: 0;max-height: 200px;overflow-y: auto;background-color: var(--background-primary);border: 1px solid var(--background-modifier-border);border-top: none;border-radius: 0 0 4px 4px;margin-top: -1px;z-index: 9999;list-style: none;padding: 0;box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);animation: journalit-trade-form-dropdown-fade-in 150ms ease-out;pointer-events: auto}
-  
-  .trade-form-view-container [data-combobox-type] ul[role="listbox"] li{padding: 8px 12px;cursor: pointer;transition: background-color 150ms ease;margin: 0}
-  
-  .trade-form-view-container [data-combobox-type] ul[role="listbox"] li:hover,
-  .trade-form-view-container [data-combobox-type] ul[role="listbox"] li[aria-selected="true"]{background-color: var(--background-secondary)}
-  
-  .trade-form-view-container [data-combobox-type="multi"] > div:first-of-type{display: flex;flex-wrap: wrap;gap: 4px;margin-bottom: 4px}
-  
-  .trade-form-view-container [data-combobox-type="multi"] > div:first-of-type > span{display: inline-flex;align-items: center;padding: 2px 8px;background-color: var(--interactive-accent);color: var(--text-on-accent);border-radius: 4px;font-size: 12px}
-  
-  .trade-form-view-container [data-combobox-type="multi"] > div:first-of-type > span > button:is(button){background: none;border: none;color: white;cursor: pointer;font-size: 16px;line-height: 1;padding: 0 4px;margin-left: 4px;pointer-events: auto;opacity: 0.8;transition: opacity 0.2s}
-  
-  .trade-form-view-container [data-combobox-type="multi"] > div:first-of-type > span > button:hover:is(button){opacity: 1}
-  
-  .trade-form-view-container [data-combobox-type] ul[role="listbox"] li[data-add-option="true"]{font-style: italic;border-top: 1px dashed var(--background-modifier-border)}
-  
-  @keyframes journalit-trade-form-dropdown-fade-in {
-    from {opacity: 0;transform: translateY(-10px)}
-    to {opacity: 1;transform: translateY(0)}
-  }
-  
   .trade-form-view-container select option{padding: 8px 12px;font-size: 16px;line-height: 1.5;background-color: var(--background-primary);color: var(--text-normal)}
 
   
@@ -20455,7 +20424,7 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
   .trade-form-view-container .neutral, .trade-form-view-container .neutral:is(button){color: var(--text-normal)}
 
   
-  .trade-form-view-container .asset-type-container{display: grid;grid-template-columns: repeat(3, 1fr);grid-template-rows: repeat(2, 1fr);gap: 8px;width: 100%;margin-bottom: 12px}
+  .trade-form-view-container .asset-type-container{display: grid;grid-template-columns: repeat(3, minmax(0, 1fr));grid-template-rows: repeat(2, 1fr);gap: 8px;width: 100%;margin-bottom: 12px}
 
   .trade-form-view-container .asset-type-button, .trade-form-view-container .asset-type-button:is(button){background-color: var(--background-primary);color: var(--text-normal);border: 1px solid var(--background-modifier-border);border-radius: 6px;padding: 8px 4px;font-size: 13px;height: 34px;transition: background-color 0.2s, border-color 0.2s;cursor: pointer;margin: 0}
 
@@ -20612,7 +20581,37 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
   .trade-form-view-container .journalit-tab-error-badge{display: inline-flex;align-items: center;justify-content: center;background-color: var(--text-error);color: white;border-radius: 10px;font-size: 10px;font-weight: 600;padding: 2px 6px;margin-left: 6px;min-width: 18px}
 
-  
+  .trade-form-view-container .journalit-custom-datetime-field{container: journalit-trade-time / inline-size;width: 100%;min-width: 0}
+
+
+  @container journalit-trade-form (max-width: 480px) {
+    .trade-form-view-container .asset-type-button, .trade-form-view-container .asset-type-button:is(button){min-width: 0;min-height: 34px;height: auto;padding: 6px 4px;white-space: normal;overflow-wrap: anywhere}
+
+    .trade-form-view-container .journalit-tab-nav{display: flex;flex-wrap: wrap;gap: 8px;padding: 4px 0 0}
+
+    .trade-form-view-container .journalit-tab-wrapper{flex: 1 1 220px;min-width: 0;flex-wrap: wrap}
+
+    .trade-form-view-container .journalit-tab-button, .trade-form-view-container .journalit-tab-button:is(button){flex: 1 1 auto;min-width: 0;height: auto;padding: 8px;white-space: normal;overflow-wrap: anywhere}
+
+    .trade-form-view-container .journalit-trade-form-header-actions{flex-wrap: wrap;max-width: 100%;margin-left: auto}
+
+    .trade-form-view-container .formActions,
+    .trade-form-view-container .formActionsRight{flex-wrap: wrap}
+
+    .trade-form-view-container .formActionsRight{max-width: 100%;margin-left: auto}
+
+    .trade-form-view-container .journalit-direct-pnl-section,
+    .trade-form-view-container .journalit-direct-pnl-time-input{width: 100%}
+
+    .trade-form-view-container .journalit-direct-pnl-time-input{container: journalit-trade-time / inline-size}
+
+    .trade-form-view-container .journalit-custom-time-field .journalit-fast-datetime__container{flex-wrap: wrap;padding: 6px}
+
+    .trade-form-view-container .journalit-unrealized-snapshot__time-field .journalit-fast-datetime__container{flex-wrap: wrap}
+
+  }
+
+
   .trade-form-view-container .journalit-edit-badge{font-size: 12px;color: var(--text-on-accent);background-color: var(--interactive-accent);padding: 4px 10px;border-radius: 12px;font-weight: 700;letter-spacing: 0.8px;text-transform: uppercase;box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);white-space: nowrap}
 
   
@@ -20716,14 +20715,9 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
   .markdown-source-view.is-live-preview.is-readable-line-width .journalit-trade-view{max-width: var(--file-line-width, 700px);margin-left: auto;margin-right: auto}
 
   
-  .markdown-reading-view > .journalit-trade-view[data-mode="reading"],
+  .markdown-preview-view > .journalit-trade-view[data-mode="reading"]{margin-bottom: var(--size-4-8, 2rem)}
+
   .markdown-preview-view.is-readable-line-width > .journalit-trade-view[data-mode="reading"]{max-width: var(--file-line-width, 700px);margin-left: auto;margin-right: auto}
-
-  .markdown-reading-view.journalit-trade-note-reading-view{overflow-y: auto;overflow-x: hidden;height: 100%}
-
-  .markdown-reading-view.journalit-trade-note-reading-view > .markdown-preview-view{margin-top: var(--size-4-8, 2rem);height: auto;min-height: 0;overflow: visible;contain: none}
-
-  .markdown-reading-view.journalit-trade-note-reading-view > .markdown-preview-view .markdown-preview-sizer{min-height: 0;padding-bottom: var(--size-4-8, 2rem)}
 
   .markdown-source-view.is-live-preview.is-readable-line-width .journalit-trade-view[data-mode="source"]{max-width: var(--file-line-width, 700px);margin-left: auto;margin-right: auto}
 
@@ -21259,8 +21253,6 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
   
   .workspace-split.mod-vertical .journalit-trade-view{max-width: 100%;flex-shrink: 1}
 
-  .workspace-split.mod-vertical .markdown-reading-view > .journalit-trade-view[data-mode="reading"]{max-width: var(--file-line-width, 700px);margin-left: auto;margin-right: auto}
-  
   
   .workspace-leaf-content .journalit-trade-view .trade-metrics-grid{grid-template-columns: repeat(auto-fit, minmax(120px, 1fr))}
   
@@ -22115,7 +22107,9 @@ button.journalit-native-button--unstyled.node-label:is(button){flex: 0 0 auto;di
 
 .trade-log-header-row button.journalit-native-button.header-cell.sorted:is(button){color: var(--text-accent);font-weight: 700}
 
-.header-cell:not(.sortable) > span{display: block;width: 100%;text-align: center}
+.journalit-trade-log-view-container .header-cell > span{display: block;min-width: 0;white-space: nowrap;overflow: hidden;text-overflow: ellipsis;text-align: center}
+
+.journalit-trade-log-view-container .header-custom-field > span{white-space: normal;overflow-wrap: anywhere;line-height: 1.3}
 
 .sort-indicator, .sort-indicator:is(button){flex-shrink: 0}
 
@@ -22223,7 +22217,7 @@ button.journalit-native-button--unstyled.node-label:is(button){flex: 0 0 auto;di
 
 .status-open, .status-open:is(button){background: rgba(33, 150, 243, 0.15);color: var(--status-open-color)}
 
-.status-backtest{background: rgba(111, 66, 193, 0.15);color: var(--text-accent)}
+.journalit-trade-log-view-container .status-backtest{background: rgba(111, 66, 193, 0.15);color: var(--color-purple, #6f42c1)}
 
 .trade-pnl-cell{display: flex;align-items: center;justify-content: center}
 

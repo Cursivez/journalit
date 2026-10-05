@@ -22,16 +22,12 @@ import { t } from '../../../lang/helpers';
 import { getTradeAnalyticsDate } from '../../../utils/tradeAnalyticsDate';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 import { useDashboardData } from '../../dashboard/context/DashboardDataContext';
-import {
-  useFilteredByPeriod,
-  useHomePeriod,
-} from '../context/HomePeriodContext';
 import type { Trade } from '../../dashboard/utils/dataUtils';
 import {
   isPnlContributingTrade,
   isTradeOpenWithContext,
 } from '../../../utils/tradeStatusUtils';
-import type { CurrentStreakKind, HomePeriod } from '../../../settings/types';
+import type { CurrentStreakKind } from '../../../settings/types';
 import {
   calculateCurrentStreak,
   calculateHistoricalStreaks,
@@ -85,20 +81,6 @@ type UiAction =
   | { type: 'saved' }
   | { type: 'save-failed'; kind: CurrentStreakKind }
   | { type: 'settings-updated'; kind: CurrentStreakKind };
-
-const getPeriodLabel = (period: HomePeriod | undefined): string => {
-  switch (period) {
-    case 'month':
-      return t('home.widget.streak.period.month');
-    case 'quarter':
-      return t('home.widget.streak.period.quarter');
-    case 'year':
-      return t('home.widget.streak.period.year');
-    case 'lifetime':
-    default:
-      return t('home.widget.streak.period.ever');
-  }
-};
 
 const createInitialUiState = ({
   plugin,
@@ -249,11 +231,8 @@ const getOutcomeDisplay = (streakData: StreakData) => {
   };
 };
 
-const getOutcomeInsight = (
-  streakData: StreakData,
-  currentPeriod: HomePeriod | undefined
-): string => {
-  const periodLabel = getPeriodLabel(currentPeriod);
+const getOutcomeInsight = (streakData: StreakData): string => {
+  const periodLabel = t('home.widget.streak.period.ever');
 
   if (streakData.streakType === 'none') {
     return t('home.widget.streak.start-trading');
@@ -388,12 +367,10 @@ const CurrentStreakConfigPanel: React.FC<ConfigPanelProps> = ({
 };
 
 interface OutcomeViewProps {
-  currentPeriod: HomePeriod | undefined;
   streakData: StreakData;
 }
 
 const CurrentOutcomeStreakView: React.FC<OutcomeViewProps> = ({
-  currentPeriod,
   streakData,
 }) => {
   const display = getOutcomeDisplay(streakData);
@@ -432,7 +409,7 @@ const CurrentOutcomeStreakView: React.FC<OutcomeViewProps> = ({
             : display.contextLabel}
         </div>
         <div className="journalit-home-streak__insight">
-          {getOutcomeInsight(streakData, currentPeriod)}
+          {getOutcomeInsight(streakData)}
         </div>
       </div>
     </>
@@ -445,8 +422,6 @@ const CurrentStreakWidgetComponent: React.FC<CurrentStreakWidgetProps> = ({
   isEditing = false,
 }) => {
   const { dashboardData } = useDashboardData();
-  const periodContext = useHomePeriod();
-  const currentPeriod = periodContext?.period;
   const [uiState, dispatchUi] = useReducer(
     uiReducer,
     { plugin, instanceId },
@@ -477,13 +452,14 @@ const CurrentStreakWidgetComponent: React.FC<CurrentStreakWidgetProps> = ({
     }
   });
 
-  const filteredTrades = useFilteredByPeriod(dashboardData?.trades);
+  
+  
   const closedTrades = useMemo(
     () =>
-      (filteredTrades ?? []).filter((trade: Trade) =>
+      (dashboardData?.trades ?? []).filter((trade: Trade) =>
         isPnlContributingTrade(trade)
       ),
-    [filteredTrades]
+    [dashboardData?.trades]
   );
   const tradeReviewItems = useMemo<ReviewStreakItem[]>(() => {
     if (!dashboardData?.trades || uiState.selectedKind !== 'trade-review') {
@@ -644,10 +620,7 @@ const CurrentStreakWidgetComponent: React.FC<CurrentStreakWidgetProps> = ({
           summary={reviewStreakSummary}
         />
       ) : (
-        <CurrentOutcomeStreakView
-          currentPeriod={currentPeriod}
-          streakData={streakData}
-        />
+        <CurrentOutcomeStreakView streakData={streakData} />
       )}
     </CurrentStreakFrame>
   );

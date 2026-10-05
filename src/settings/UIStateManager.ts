@@ -1,6 +1,11 @@
 
 
 import { Plugin } from 'obsidian';
+import {
+  normalizeHomeCustomRange,
+  resolveHomePeriodSelection,
+  type HomeCustomRange,
+} from './homePeriod';
 import { debounceAsync } from '../utils/debounce';
 import { FilterState } from '../components/dashboard/DashboardView';
 import {
@@ -48,6 +53,7 @@ interface UIState {
 
   
   selectedPeriod?: HomePeriod;
+  selectedHomeCustomRange?: HomeCustomRange;
 
   
   homeViewMode?: HomeViewMode;
@@ -347,11 +353,22 @@ export class UIStateManager {
       const content = await this.plugin.app.vault.adapter.read(statePath);
       const data: unknown = JSON.parse(content);
       const persistedState = isRecord(data) ? data : {};
+      const homePeriod = resolveHomePeriodSelection(
+        persistedState.selectedPeriod,
+        persistedState.selectedHomeCustomRange
+      );
 
       
       this.state = {
         ...createDefaultUIState(),
         ...persistedState,
+        selectedPeriod:
+          persistedState.selectedPeriod === undefined
+            ? undefined
+            : homePeriod.period,
+        selectedHomeCustomRange: normalizeHomeCustomRange(
+          persistedState.selectedHomeCustomRange
+        ),
         setupOverviewSelectedTags: normalizeSetupOverviewSelectedTags(
           persistedState.setupOverviewSelectedTags
         ),

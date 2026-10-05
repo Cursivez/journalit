@@ -1,7 +1,8 @@
 
 
 import React, {
-  useReducer,
+  useState,
+  useContext,
   useCallback,
   useMemo,
   useRef,
@@ -10,118 +11,23 @@ import React, {
   useLayoutEffect,
 } from 'react';
 import { CalendarIcon, ClockIcon } from '../shared/icons/ObsidianIcon';
-import flatpickr from 'flatpickr';
-import type { Instance as FlatpickrInstance } from 'flatpickr/dist/types/instance';
-import type { CustomLocale } from 'flatpickr/dist/types/locale';
-import { Spanish } from 'flatpickr/dist/l10n/es';
-import { German } from 'flatpickr/dist/l10n/de';
-import { French } from 'flatpickr/dist/l10n/fr';
-import { Vietnamese } from 'flatpickr/dist/l10n/vn';
-import { Hindi } from 'flatpickr/dist/l10n/hi';
-import { Portuguese } from 'flatpickr/dist/l10n/pt';
-import { Mandarin } from 'flatpickr/dist/l10n/zh';
-import { MandarinTraditional } from 'flatpickr/dist/l10n/zh-tw';
-import { Japanese } from 'flatpickr/dist/l10n/ja';
-import { Korean } from 'flatpickr/dist/l10n/ko';
-import { Russian } from 'flatpickr/dist/l10n/ru';
-import { Italian } from 'flatpickr/dist/l10n/it';
-import { Arabic } from 'flatpickr/dist/l10n/ar';
-import {
-  getUserDateFormat,
-  getWeekStartDayIndex,
-  getWeekStartDaySetting,
-} from '../../utils/dateUtils';
+import { getUserDateFormat } from '../../utils/dateUtils';
 import { parseStoredDateLikeValue } from '../../utils/customFieldPersistence';
 import { getPluginInstance } from '../../utils/pluginContext';
+import { useDateTimePicker } from './useDateTimePicker';
+import { DateDraftGateContext, type DateDraftCheck } from './DateDraftGate';
+import { dateInputError } from './dateInputError';
+import {
+  dateToDraft,
+  dateSegmentOrder,
+  normalizeDateDigits,
+  padDateDraft,
+  parseDatePaste,
+  resolveDateDraft,
+  type DateSegment,
+} from './dateInputDraft';
 
-const Tamil: CustomLocale = {
-  weekdays: {
-    shorthand: ['ஞாயி', 'திங்', 'செவ்', 'புத', 'வியா', 'வெள்', 'சனி'],
-    longhand: [
-      'ஞாயிறு',
-      'திங்கள்',
-      'செவ்வாய்',
-      'புதன்',
-      'வியாழன்',
-      'வெள்ளி',
-      'சனி',
-    ],
-  },
-  months: {
-    shorthand: [
-      'ஜன',
-      'பிப்',
-      'மார்',
-      'ஏப்',
-      'மே',
-      'ஜூன்',
-      'ஜூலை',
-      'ஆக',
-      'செப்',
-      'அக்',
-      'நவ',
-      'டிச',
-    ],
-    longhand: [
-      'ஜனவரி',
-      'பிப்ரவரி',
-      'மார்ச்',
-      'ஏப்ரல்',
-      'மே',
-      'ஜூன்',
-      'ஜூலை',
-      'ஆகஸ்ட்',
-      'செப்டம்பர்',
-      'அக்டோபர்',
-      'நவம்பர்',
-      'டிசம்பர்',
-    ],
-  },
-  firstDayOfWeek: 0,
-  rangeSeparator: ' முதல் ',
-  weekAbbreviation: 'வா',
-  scrollTitle: 'மாற்ற உருட்டவும்',
-  toggleTitle: 'மாற்ற கிளிக் செய்யவும்',
-  time_24hr: false,
-};
-
-function getFlatpickrDayDate(value: EventTarget | null): Date | undefined {
-  if (typeof value !== 'object' || value === null) return undefined;
-
-  const ownerDocument: unknown = Reflect.get(value, 'ownerDocument');
-  const defaultView: unknown =
-    typeof ownerDocument === 'object' && ownerDocument !== null
-      ? Reflect.get(ownerDocument, 'defaultView')
-      : undefined;
-  const HTMLElementConstructor: unknown =
-    typeof defaultView === 'object' && defaultView !== null
-      ? Reflect.get(defaultView, 'HTMLElement')
-      : undefined;
-  if (typeof HTMLElementConstructor !== 'function') return undefined;
-  if (!(value instanceof HTMLElementConstructor)) return undefined;
-
-  const dateObj: unknown = Reflect.get(value, 'dateObj');
-  return dateObj instanceof Date ? dateObj : undefined;
-}
-
-
-const flatpickrLocales: Record<string, CustomLocale> = {
-  es: Spanish,
-  de: German,
-  fr: French,
-  vi: Vietnamese,
-  hi: Hindi,
-  'pt-BR': Portuguese,
-  zh: Mandarin,
-  'zh-TW': MandarinTraditional,
-  ja: Japanese,
-  ko: Korean,
-  ru: Russian,
-  it: Italian,
-  ta: Tamil,
-  ar: Arabic,
-};
-import { t, getCurrentLanguage } from '../../lang/helpers';
+import { t } from '../../lang/helpers';
 
 
 function getUse24HourTime(): boolean {
@@ -190,6 +96,18 @@ const INITIAL_SEGMENTS: SegmentState = {
   ampm: 'AM',
 };
 
+function valueKey(value: Date | string | undefined): string {
+  return value instanceof Date
+    ? `date:${value.getTime()}`
+    : value === undefined
+      ? 'empty'
+      : `time:${value}`;
+}
+
+function timeString(date: Date): string {
+  return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
+
 export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
   ({
     label,
@@ -231,42 +149,49 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
 
     const shouldDisplayBlankTime = !value && Boolean(defaultDateWhenEmpty);
 
-    const [segments, dispatchSegments] = useReducer(
-      (state: SegmentState, update: Partial<SegmentState>): SegmentState => ({
-        ...state,
-        ...update,
-      }),
-      INITIAL_SEGMENTS
-    );
+    const [segments, setSegments] = useState(INITIAL_SEGMENTS);
+    
+    
+    const segmentsRef = useRef(segments);
+    const draftDirty = useRef(false);
+    const dispatchSegments = useCallback((update: Partial<SegmentState>) => {
+      const next = { ...segmentsRef.current, ...update };
+      segmentsRef.current = next;
+      setSegments(next);
+    }, []);
+    const [dateTouched, setDateTouched] = useState(false);
+    const dateGate = useContext(DateDraftGateContext);
+    const draftId = useId();
+    const lastEmission = useRef<string | null>(null);
     const { day, month, year, hour, minute, second, ampm } = segments;
 
     const setDay = useCallback(
       (nextDay: string) => dispatchSegments({ day: nextDay }),
-      []
+      [dispatchSegments]
     );
     const setMonth = useCallback(
       (nextMonth: string) => dispatchSegments({ month: nextMonth }),
-      []
+      [dispatchSegments]
     );
     const setYear = useCallback(
       (nextYear: string) => dispatchSegments({ year: nextYear }),
-      []
+      [dispatchSegments]
     );
     const setHour = useCallback(
       (nextHour: string) => dispatchSegments({ hour: nextHour }),
-      []
+      [dispatchSegments]
     );
     const setMinute = useCallback(
       (nextMinute: string) => dispatchSegments({ minute: nextMinute }),
-      []
+      [dispatchSegments]
     );
     const setSecond = useCallback(
       (nextSecond: string) => dispatchSegments({ second: nextSecond }),
-      []
+      [dispatchSegments]
     );
     const setAmpm = useCallback(
       (nextAmpm: 'AM' | 'PM') => dispatchSegments({ ampm: nextAmpm }),
-      []
+      [dispatchSegments]
     );
 
     
@@ -279,33 +204,13 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     const ampmButtonRef = useRef<HTMLButtonElement>(null);
     const calendarButtonRef = useRef<HTMLButtonElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
-    const flatpickrRef = useRef<FlatpickrInstance | null>(null);
-    const tempInputRef = useRef<HTMLInputElement | null>(null);
     const lastOpenPickerSignalRef = useRef(0);
-    const normalizedValueRef = useRef(normalizedValue);
-    const shouldDisplayBlankTimeRef = useRef(shouldDisplayBlankTime);
-
-    
-    const hourValueRef = useRef(hour);
-    const minuteValueRef = useRef(minute);
-    const secondValueRef = useRef(second);
-    const ampmValueRef = useRef(ampm);
-    useLayoutEffect(() => {
-      normalizedValueRef.current = normalizedValue;
-      shouldDisplayBlankTimeRef.current = shouldDisplayBlankTime;
-      hourValueRef.current = hour;
-      minuteValueRef.current = minute;
-      secondValueRef.current = second;
-      ampmValueRef.current = ampm;
-    }, [ampm, hour, minute, normalizedValue, second, shouldDisplayBlankTime]);
 
     const syncSegmentsWithValue = useCallback(
       (nextValue: Date | undefined, blankTime: boolean) => {
         if (nextValue) {
           const nextSegments: Partial<SegmentState> = {
-            day: String(nextValue.getDate()).padStart(2, '0'),
-            month: String(nextValue.getMonth() + 1).padStart(2, '0'),
-            year: String(nextValue.getFullYear()).slice(-2),
+            ...dateToDraft(nextValue),
           };
 
           if (includeTime || timeOnly) {
@@ -342,46 +247,41 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           dispatchSegments(INITIAL_SEGMENTS);
         }
       },
-      [includeTime, timeOnly, use24HourTime]
+      [dispatchSegments, includeTime, timeOnly, use24HourTime]
     );
 
     
+    
+    const normalizedTimestamp = normalizedValue?.getTime();
+    const usesBlankTimeDate = Boolean(onBlankTimeDateChange);
     useEffect(() => {
-      if (commitValidSegmentChangesImmediately) {
-        const activeElement = window.activeDocument.activeElement;
-        const isSegmentFocused = [
-          dayRef,
-          monthRef,
-          yearRef,
-          hourRef,
-          minuteRef,
-          secondRef,
-        ].some((ref) => ref.current === activeElement);
-        if (isSegmentFocused) return;
-      }
-
-      syncSegmentsWithValue(normalizedValue, shouldDisplayBlankTime);
+      const next =
+        normalizedTimestamp === undefined
+          ? undefined
+          : new Date(normalizedTimestamp);
+      const key =
+        shouldDisplayBlankTime && usesBlankTimeDate && next
+          ? `blank:${next.getTime()}`
+          : valueKey(timeOnly && next ? timeString(next) : next);
+      const focused = [
+        dayRef,
+        monthRef,
+        yearRef,
+        hourRef,
+        minuteRef,
+        secondRef,
+      ].some((ref) => ref.current === window.activeDocument.activeElement);
+      if (focused && lastEmission.current === key) return;
+      lastEmission.current = key;
+      draftDirty.current = false;
+      syncSegmentsWithValue(next, shouldDisplayBlankTime);
     }, [
-      commitValidSegmentChangesImmediately,
-      normalizedValue,
+      normalizedTimestamp,
       shouldDisplayBlankTime,
       syncSegmentsWithValue,
+      timeOnly,
+      usesBlankTimeDate,
     ]);
-
-    
-    useEffect(() => {
-      return () => {
-        if (flatpickrRef.current) {
-          flatpickrRef.current.destroy();
-          flatpickrRef.current = null;
-        }
-        
-        if (tempInputRef.current?.parentNode) {
-          tempInputRef.current.remove();
-          tempInputRef.current = null;
-        }
-      };
-    }, []);
 
     
     const validateTime = useCallback(
@@ -454,23 +354,13 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           return { kind: 'empty' };
         }
 
-        const d = parseInt(candidateDay, 10);
-        const mo = parseInt(candidateMonth, 10);
-        let y = parseInt(candidateYear, 10);
-
-        if (isNaN(d) || isNaN(mo) || isNaN(y)) {
-          return { kind: 'invalid' };
-        }
-
-        
-        y = y > 50 ? 1900 + y : 2000 + y;
-
-        const date = new Date(y, mo - 1, d);
-
-        
-        if (date.getDate() !== d || date.getMonth() !== mo - 1) {
-          return { kind: 'invalid' };
-        }
+        const resolved = resolveDateDraft({
+          day: candidateDay,
+          month: candidateMonth,
+          year: candidateYear,
+        });
+        if (resolved.kind !== 'valid') return { kind: 'invalid' };
+        const date = resolved.date;
 
         if (includeTime) {
           if (!candidateHour || !candidateMinute) {
@@ -492,25 +382,31 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
 
     const emitValue = useCallback(
       (result: SegmentValueResult) => {
+        if (result.kind === 'invalid') return false;
+        const key =
+          result.kind === 'blank-time' && onBlankTimeDateChange
+            ? `blank:${result.value.getTime()}`
+            : valueKey(result.kind === 'empty' ? undefined : result.value);
+        draftDirty.current = false;
+        if (lastEmission.current === key) return false;
+        lastEmission.current = key;
         switch (result.kind) {
-          case 'invalid':
-            return;
           case 'empty':
             onChange?.(undefined);
-            return;
+            return true;
           case 'value':
             onChange?.(result.value);
-            return;
+            return true;
           case 'blank-time':
             if (onBlankTimeDateChange) {
               onChange?.(undefined);
               onBlankTimeDateChange(result.value);
-              return;
+              return true;
             }
 
             result.value.setHours(0, 0, 0, 0);
             onChange?.(result.value);
-            return;
+            return true;
           default: {
             const exhaustiveResult: never = result;
             return exhaustiveResult;
@@ -523,13 +419,120 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     
     const updateValue = useCallback(
       (meridiem?: 'AM' | 'PM') => {
-        emitValue(buildValueFromSegments(segments, meridiem));
+        emitValue(buildValueFromSegments(segmentsRef.current, meridiem));
       },
-      [buildValueFromSegments, emitValue, segments]
+      [buildValueFromSegments, emitValue]
     );
+
+    const reconcileTimeDraft = useCallback(() => {
+      const current = segmentsRef.current;
+      if (!(includeTime || timeOnly) || !current.hour || !current.minute)
+        return;
+      const { hours, minutes, seconds } = validateTime(
+        parseInt(current.hour, 10),
+        parseInt(current.minute, 10),
+        current.ampm,
+        parseInt(current.second || '0', 10)
+      );
+      
+      dispatchSegments({
+        hour: String(use24HourTime ? hours : hours % 12 || 12).padStart(2, '0'),
+        minute: String(minutes).padStart(2, '0'),
+        second: String(seconds).padStart(2, '0'),
+        ampm: hours >= 12 ? 'PM' : 'AM',
+      });
+    }, [dispatchSegments, includeTime, timeOnly, use24HourTime, validateTime]);
+
+    const commitDraft = useCallback(() => {
+      setDateTouched(true);
+      const edited = draftDirty.current;
+      dispatchSegments(padDateDraft(segmentsRef.current));
+      reconcileTimeDraft();
+      
+      if (!edited) return false;
+      return emitValue(buildValueFromSegments(segmentsRef.current));
+    }, [
+      buildValueFromSegments,
+      dispatchSegments,
+      emitValue,
+      reconcileTimeDraft,
+    ]);
+
+    const draftCheck: DateDraftCheck = {
+      check: () => {
+        const current = segmentsRef.current;
+        if (timeOnly) {
+          const result = buildValueFromSegments(current);
+          if (
+            result.kind === 'invalid' ||
+            (required && result.kind === 'empty')
+          ) {
+            setDateTouched(true);
+            return 'invalid';
+          }
+        } else {
+          const result = resolveDateDraft(padDateDraft(current));
+          const dateMissingWithTime =
+            result.kind === 'empty' &&
+            includeTime &&
+            Boolean(current.hour || current.minute || current.second);
+          if (
+            result.kind !== 'valid' &&
+            !(result.kind === 'empty' && !required && !dateMissingWithTime)
+          ) {
+            setDateTouched(true);
+            return 'invalid';
+          }
+        }
+        return draftDirty.current && commitDraft() ? 'committed' : 'valid';
+      },
+      focus: () => {
+        const current = segmentsRef.current;
+        if (timeOnly) {
+          (current.hour ? minuteRef : hourRef).current?.focus();
+          return;
+        }
+        const result = resolveDateDraft(current);
+        const field =
+          result.kind === 'invalid'
+            ? result.field
+            : (dateSegmentOrder(getUserDateFormat()).find(
+                (part) =>
+                  !current[part] ||
+                  (part === 'year' &&
+                    current.year.length !== 2 &&
+                    current.year.length !== 4)
+              ) ?? 'day');
+        ({ day: dayRef, month: monthRef, year: yearRef })[
+          field
+        ].current?.focus();
+      },
+    };
+    const latestDraftCheck = useRef(draftCheck);
+    useLayoutEffect(() => {
+      latestDraftCheck.current = draftCheck;
+    });
+    useLayoutEffect(() => {
+      if (!dateGate || controllerOnly || disabled) return;
+      return dateGate.register(draftId, {
+        check: () => latestDraftCheck.current.check(),
+        focus: () => latestDraftCheck.current.focus(),
+      });
+    }, [controllerOnly, dateGate, disabled, draftId]);
+
+    const handleSegmentKeyDown = (
+      event: React.KeyboardEvent<HTMLInputElement>
+    ) => {
+      if (event.key !== 'Enter' || event.nativeEvent.isComposing) return;
+      if (commitDraft()) {
+        event.preventDefault();
+        event.stopPropagation();
+      }
+    };
 
     const handleAmpmToggle = useCallback(() => {
       const nextAmpm = ampm === 'AM' ? 'PM' : 'AM';
+      draftDirty.current = true;
       setAmpm(nextAmpm);
       if (hour && minute && (includeTime || timeOnly)) {
         updateValue(nextAmpm);
@@ -544,43 +547,40 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
       maxLength: number,
       nextRef?: React.RefObject<HTMLInputElement | null>
     ) => {
-      const digits = value.replace(/\D/g, '').slice(0, maxLength);
+      const dateSegment =
+        segment === 'day' || segment === 'month' || segment === 'year';
+      const digits = dateSegment
+        ? normalizeDateDigits(value)
+        : value.replace(/\D/g, '').slice(0, maxLength);
+      draftDirty.current = true;
       setter(digits);
 
-      if (commitValidSegmentChangesImmediately) {
-        const candidateSegments: SegmentState = {
-          ...segments,
-          [segment]: digits,
-        };
-        emitValue(buildValueFromSegments(candidateSegments));
+      
+      if (
+        (dateSegment || commitValidSegmentChangesImmediately) &&
+        !(segment === 'year' && digits.length === 2)
+      ) {
+        emitValue(buildValueFromSegments(segmentsRef.current));
       }
 
-      if (digits.length === maxLength && nextRef?.current) {
+      const dateResult = dateSegment
+        ? resolveDateDraft(segmentsRef.current)
+        : undefined;
+      if (
+        digits.length === maxLength &&
+        /^\d+$/.test(digits) &&
+        nextRef?.current &&
+        !(dateResult?.kind === 'invalid' && dateResult.field === segment)
+      ) {
         nextRef.current.focus();
         nextRef.current.select();
       }
     };
 
     
-    const commitDateTimeSegments = useCallback(() => {
-      
-      window.setTimeout(() => {
-        const activeEl = window.activeDocument.activeElement;
-
-        if (commitValidSegmentChangesImmediately) {
-          if (!containerRef.current) return;
-
-          const isStillInComponent = containerRef.current.contains(activeEl);
-          if (!isStillInComponent) {
-            syncSegmentsWithValue(
-              normalizedValueRef.current,
-              shouldDisplayBlankTimeRef.current
-            );
-          }
-          return;
-        }
-
-        const isStillInComponent = [
+    const commitDateTimeSegments = useCallback(
+      (event: React.FocusEvent<HTMLDivElement>) => {
+        const isStillEditing = [
           dayRef,
           monthRef,
           yearRef,
@@ -588,395 +588,142 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           minuteRef,
           secondRef,
           ampmButtonRef,
-        ].some((ref) => ref.current === activeEl);
-        if (!isStillInComponent) {
-          updateValue();
+        ].some(
+          (ref) => ref.current !== null && ref.current === event.relatedTarget
+        );
+        if (isStillEditing) {
+          if (
+            draftDirty.current &&
+            [dayRef, monthRef, yearRef].some(
+              (ref) => ref.current === event.target
+            )
+          ) {
+            dispatchSegments(padDateDraft(segmentsRef.current));
+            updateValue();
+          }
+          return;
         }
-      }, 100);
-    }, [
-      commitValidSegmentChangesImmediately,
-      syncSegmentsWithValue,
-      updateValue,
-    ]);
+        commitDraft();
+      },
+      [commitDraft, dispatchSegments, updateValue]
+    );
 
-    
-    const openPicker = useCallback(() => {
-      if (disabled) return;
+    const handleDatePaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+      const pasted = parseDatePaste(
+        event.clipboardData.getData('text'),
+        userDateFormat
+      );
+      if (!pasted) return;
+      event.preventDefault();
+      draftDirty.current = true;
+      setDateTouched(true);
+      dispatchSegments(pasted);
+      updateValue();
+    };
 
-      if (flatpickrRef.current) {
-        flatpickrRef.current.destroy();
-        flatpickrRef.current = null;
-      }
+    const dateResult = resolveDateDraft({ day, month, year });
+    const draftError = timeOnly
+      ? undefined
+      : dateInputError(
+          dateResult,
+          dateTouched,
+          required || (includeTime && Boolean(hour || minute || second))
+        );
+    const timeResult = timeOnly ? buildValueFromSegments(segments) : undefined;
+    const timeDraftError =
+      dateTouched &&
+      timeResult &&
+      (timeResult.kind === 'invalid' ||
+        (required && timeResult.kind === 'empty'))
+        ? t('validation.custom-field.time', {
+            label: label ?? ariaLabel ?? 'HH:MM',
+          })
+        : undefined;
+    const displayedError = draftError ?? timeDraftError ?? error;
+    const errorId = useId();
+    const dateAria = (field: DateSegment) => ({
+      'aria-invalid': Boolean(
+        draftError &&
+        (dateResult.kind !== 'invalid' || dateResult.field === field)
+      ),
+      'aria-describedby': displayedError ? errorId : undefined,
+    });
 
-      let wasHandledByButton = false; 
-      const tempInput = window.activeDocument.body.createEl('input', {
-        cls: 'journalit-flatpickr-temp-input',
-      });
-      tempInputRef.current = tempInput; 
-
+    const acceptPickerDate = (date: Date | undefined, blankTime = false) => {
       
-      const cleanup = () => {
-        if (tempInput.parentNode) {
-          tempInput.remove();
-        }
-        tempInputRef.current = null;
-      };
+      
+      
+      
+      if (date || !normalizedValue) syncSegmentsWithValue(date, blankTime);
+      setDateTouched(true);
+      emitValue(
+        !date
+          ? { kind: 'empty' }
+          : blankTime
+            ? { kind: 'blank-time', value: date }
+            : { kind: 'value', value: timeOnly ? timeString(date) : date }
+      );
+    };
 
-      const timeFormat = use24HourTime
-        ? shouldShowSeconds
-          ? 'H:i:S'
-          : 'H:i'
-        : shouldShowSeconds
-          ? 'h:i:S K'
-          : 'h:i K';
-      const pickerDateFormat = timeOnly
-        ? timeFormat
-        : includeTime
-          ? `Y-m-d ${timeFormat}`
-          : 'Y-m-d';
-
-      flatpickrRef.current = flatpickr(tempInput, {
-        defaultDate: normalizedValue, 
-        enableTime: includeTime || timeOnly,
-        enableSeconds: shouldShowSeconds,
-        noCalendar: timeOnly,
-        time_24hr: use24HourTime,
-        dateFormat: pickerDateFormat,
-        minDate: minDate,
-        disableMobile: true,
-        appendTo: window.activeDocument.body,
-        positionElement:
-          pickerPositionElement ??
-          calendarButtonRef.current ??
-          containerRef.current ??
-          undefined,
-        monthSelectorType: 'static',
-
-        locale: (() => {
-          const lang = getCurrentLanguage();
-          const weekStartDay = getWeekStartDaySetting();
-          const firstDayOfWeek = getWeekStartDayIndex(weekStartDay);
-
-          
-          const langLocale = flatpickrLocales[lang];
-          if (langLocale) {
-            return { ...langLocale, firstDayOfWeek };
-          }
-
-          return { firstDayOfWeek };
-        })(),
-
-        onChange: (selectedDates: Date[]) => {
-          
-          if (wasHandledByButton) {
-            wasHandledByButton = false;
-            return;
-          }
-
-          if (selectedDates.length > 0 && onChange) {
-            if (timeOnly) {
-              
-              const date = selectedDates[0];
-              const timeString = `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
-              onChange(timeString);
-            } else {
-              const selectedDate = new Date(selectedDates[0]);
-              if (includeTime && !shouldShowSeconds) {
-                selectedDate.setSeconds(
-                  parseInt(secondValueRef.current, 10) || 0,
-                  0
-                );
-              }
-              onChange(selectedDate);
-            }
-          }
-        },
-
-        onClose: (
-          _selectedDates: Date[],
-          _dateStr: string,
-          instance: FlatpickrInstance & {
-            _dayClickHandler?: (e: Event) => void;
-            _reattachHandler?: () => void;
-            _clearBtn?: HTMLButtonElement;
-            _todayBtn?: HTMLButtonElement;
-            _clearBtnHandler?: () => void;
-            _todayBtnHandler?: () => void;
-          }
-        ) => {
-          
-          if (instance._dayClickHandler) {
-            instance.calendarContainer
-              ?.querySelectorAll('.flatpickr-day')
-              .forEach((day: Element) => {
-                day.removeEventListener('click', instance._dayClickHandler!);
-              });
-          }
-          if (instance._reattachHandler) {
-            
-            instance.calendarContainer
-              ?.querySelector('.flatpickr-prev-month')
-              ?.removeEventListener('click', instance._reattachHandler);
-            instance.calendarContainer
-              ?.querySelector('.flatpickr-next-month')
-              ?.removeEventListener('click', instance._reattachHandler);
-            
-            instance.calendarContainer
-              ?.querySelector('.numInputWrapper .arrowUp')
-              ?.removeEventListener('click', instance._reattachHandler);
-            instance.calendarContainer
-              ?.querySelector('.numInputWrapper .arrowDown')
-              ?.removeEventListener('click', instance._reattachHandler);
-            instance.calendarContainer
-              ?.querySelector('.cur-year')
-              ?.removeEventListener('input', instance._reattachHandler);
-          }
-          if (instance._clearBtn && instance._clearBtnHandler) {
-            instance._clearBtn.removeEventListener(
-              'click',
-              instance._clearBtnHandler
-            );
-          }
-          if (instance._todayBtn && instance._todayBtnHandler) {
-            instance._todayBtn.removeEventListener(
-              'click',
-              instance._todayBtnHandler
-            );
-          }
-          instance.destroy();
-          flatpickrRef.current = null;
-          cleanup();
-          onPickerClose?.();
-        },
-
-        onReady: (
-          _selectedDates: Date[],
-          _dateStr: string,
-          instance: FlatpickrInstance & {
-            _dayClickHandler?: (e: Event) => void;
-            _reattachHandler?: () => void;
-            _clearBtn?: HTMLButtonElement;
-            _todayBtn?: HTMLButtonElement;
-            _clearBtnHandler?: () => void;
-            _todayBtnHandler?: () => void;
-          }
-        ) => {
-          
-          
-          const handleDayClick = (e: Event) => {
-            const dayEl = e.currentTarget;
-            const dayDate = getFlatpickrDayDate(dayEl);
-            const ownerDocument: unknown =
-              typeof dayEl === 'object' && dayEl !== null
-                ? Reflect.get(dayEl, 'ownerDocument')
-                : undefined;
-            const defaultView: unknown =
-              typeof ownerDocument === 'object' && ownerDocument !== null
-                ? Reflect.get(ownerDocument, 'defaultView')
-                : undefined;
-            const HTMLElementCtor: unknown =
-              typeof defaultView === 'object' && defaultView !== null
-                ? Reflect.get(defaultView, 'HTMLElement')
-                : undefined;
-            const className: unknown =
-              typeof dayEl === 'object' && dayEl !== null
-                ? Reflect.get(dayEl, 'className')
-                : undefined;
-            const isDisabled =
-              typeof className === 'string' &&
-              className.split(/\s+/).includes('flatpickr-disabled');
-            if (
-              typeof HTMLElementCtor === 'function' &&
-              dayEl instanceof HTMLElementCtor &&
-              dayDate &&
-              onChange &&
-              !isDisabled
-            ) {
-              wasHandledByButton = true; 
-              const selectedDate = new Date(dayDate);
-
-              
-              
-              if (includeTime && !timeOnly) {
-                if (
-                  onBlankTimeDateChange &&
-                  (!hourValueRef.current || !minuteValueRef.current)
-                ) {
-                  onChange(undefined);
-                  onBlankTimeDateChange(selectedDate);
-                  instance.close();
-                  return;
-                }
-
-                const currentHour = parseInt(hourValueRef.current, 10) || 0;
-                const currentMinute = parseInt(minuteValueRef.current, 10) || 0;
-                const currentSecond = parseInt(secondValueRef.current, 10) || 0;
-                let hours = currentHour;
-
-                
-                if (!use24HourTime) {
-                  if (ampmValueRef.current === 'PM' && hours !== 12)
-                    hours += 12;
-                  if (ampmValueRef.current === 'AM' && hours === 12) hours = 0;
-                }
-
-                selectedDate.setHours(hours, currentMinute, currentSecond, 0);
-              }
-
-              if (timeOnly) {
-                const timeString = `${String(selectedDate.getHours()).padStart(2, '0')}:${String(selectedDate.getMinutes()).padStart(2, '0')}`;
-                onChange(timeString);
-              } else {
-                onChange(selectedDate);
-              }
-              instance.close();
-            }
-          };
-
-          
-          instance.calendarContainer
-            .querySelectorAll('.flatpickr-day')
-            .forEach((day: Element) => {
-              day.addEventListener('click', handleDayClick);
-            });
-
-          
-          const reattachHandlers = () => {
-            window.requestAnimationFrame(() => {
-              instance.calendarContainer
-                .querySelectorAll('.flatpickr-day')
-                .forEach((day: Element) => {
-                  day.removeEventListener('click', handleDayClick);
-                  day.addEventListener('click', handleDayClick);
-                });
-            });
-          };
-
-          
-          instance.calendarContainer
-            .querySelector('.flatpickr-prev-month')
-            ?.addEventListener('click', reattachHandlers);
-          instance.calendarContainer
-            .querySelector('.flatpickr-next-month')
-            ?.addEventListener('click', reattachHandlers);
-
-          
-          
-          instance.calendarContainer
-            .querySelector('.numInputWrapper .arrowUp')
-            ?.addEventListener('click', reattachHandlers);
-          instance.calendarContainer
-            .querySelector('.numInputWrapper .arrowDown')
-            ?.addEventListener('click', reattachHandlers);
-          
-          instance.calendarContainer
-            .querySelector('.cur-year')
-            ?.addEventListener('input', reattachHandlers);
-
-          
-          instance._dayClickHandler = handleDayClick;
-          instance._reattachHandler = reattachHandlers;
-
-          
-          const clearBtnHandler = () => {
-            wasHandledByButton = true;
-            instance.clear(false);
-            if (onChange) onChange(undefined);
-            if (closePickerOnQuickAction) instance.close();
-          };
-
-          const todayBtnHandler = () => {
-            wasHandledByButton = true;
-            const now = new Date();
-            if (onChange) {
-              if (timeOnly) {
-                
-                const timeString = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}`;
-                onChange(timeString);
-              } else {
-                onChange(now);
-              }
-            }
-            instance.setDate(now, false);
-            if (closePickerOnQuickAction) instance.close();
-          };
-
-          
-          const timeContainer =
-            instance.calendarContainer.querySelector('.flatpickr-time');
-          let clearBtn: HTMLButtonElement;
-          let todayBtn: HTMLButtonElement;
-
-          if (timeContainer instanceof HTMLElement) {
-            const existingTimeNodes = Array.from(timeContainer.childNodes);
-            
-            const timeContent = timeContainer.createDiv({
-              cls: 'journalit-flatpickr-time-content',
-            });
-            timeContent.append(...existingTimeNodes);
-
-            
-            timeContainer.classList.add('journalit-flatpickr-time-container');
-            clearBtn = timeContainer.createEl('button', {
-              cls: 'flatpickr-button',
-              text: t('datepicker.button.clear'),
-              attr: { type: 'button' },
-              prepend: true,
-            });
-            todayBtn = timeContainer.createEl('button', {
-              cls: 'flatpickr-button flatpickr-button-primary',
-              text: timeOnly
-                ? t('datepicker.button.now')
-                : t('datepicker.button.today'),
-              attr: { type: 'button' },
-            });
-          } else {
-            const buttonContainer = instance.calendarContainer.createDiv({
-              cls: 'journalit-flatpickr-button-container',
-            });
-            clearBtn = buttonContainer.createEl('button', {
-              cls: 'flatpickr-button',
-              text: t('datepicker.button.clear'),
-              attr: { type: 'button' },
-            });
-            todayBtn = buttonContainer.createEl('button', {
-              cls: 'flatpickr-button flatpickr-button-primary',
-              text: timeOnly
-                ? t('datepicker.button.now')
-                : t('datepicker.button.today'),
-              attr: { type: 'button' },
-            });
-          }
-
-          clearBtn.addEventListener('click', clearBtnHandler);
-          todayBtn.addEventListener('click', todayBtnHandler);
-
-          instance._clearBtn = clearBtn;
-          instance._todayBtn = todayBtn;
-          instance._clearBtnHandler = clearBtnHandler;
-          instance._todayBtnHandler = todayBtnHandler;
-        },
-      });
-
-      const fp = flatpickrRef.current;
-      if (fp?.calendarContainer) {
-        fp.calendarContainer.classList.add('journalit-flatpickr-calendar');
-      }
-      fp?.open();
-    }, [
+    const openPicker = useDateTimePicker({
+      containerRef,
+      triggerRef: calendarButtonRef,
+      positionElement: pickerPositionElement,
+      value: normalizedValue,
       disabled,
-      normalizedValue,
       includeTime,
       timeOnly,
-      shouldShowSeconds,
+      showSeconds: shouldShowSeconds,
       use24HourTime,
       minDate,
-      onChange,
-      onBlankTimeDateChange,
-      pickerPositionElement,
-      onPickerClose,
-      closePickerOnQuickAction,
-    ]);
+      closeOnQuickAction: closePickerOnQuickAction,
+      onClose: onPickerClose,
+      onChange: (date) => {
+        if (!date) {
+          acceptPickerDate(undefined);
+          return;
+        }
+        if (timeOnly) {
+          acceptPickerDate(date);
+        } else {
+          if (includeTime && !shouldShowSeconds)
+            date.setSeconds(parseInt(segmentsRef.current.second, 10) || 0, 0);
+          acceptPickerDate(date);
+        }
+      },
+      onSelectDay: (date, pickerTime) => {
+        const current = segmentsRef.current;
+        if (includeTime && !timeOnly) {
+          if (
+            onBlankTimeDateChange &&
+            !pickerTime &&
+            (!current.hour || !current.minute)
+          ) {
+            acceptPickerDate(date, true);
+            return;
+          }
+          let hours =
+            pickerTime?.getHours() ?? (parseInt(current.hour, 10) || 0);
+          if (!pickerTime && !use24HourTime) {
+            if (current.ampm === 'PM' && hours !== 12) hours += 12;
+            if (current.ampm === 'AM' && hours === 12) hours = 0;
+          }
+          date.setHours(
+            hours,
+            pickerTime?.getMinutes() ?? (parseInt(current.minute, 10) || 0),
+            shouldShowSeconds && pickerTime
+              ? pickerTime.getSeconds()
+              : parseInt(current.second, 10) || 0,
+            0
+          );
+        }
+        acceptPickerDate(date);
+        return date;
+      },
+      onToday: (date) => {
+        acceptPickerDate(date);
+      },
+    });
 
     const handleOpenCalendar = useCallback(
       (e: React.MouseEvent) => {
@@ -1021,8 +768,10 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
                     :  timeRef
               )
             }
-            onBlur={commitDateTimeSegments}
+            onKeyDown={handleSegmentKeyDown}
             placeholder={t('datepicker.placeholder.day')}
+            onPaste={handleDatePaste}
+            {...dateAria('day')}
             data-segment="day"
             disabled={disabled}
             className="segment-input journalit-fast-datetime__segment"
@@ -1047,8 +796,10 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
                     :  dayRef
               )
             }
-            onBlur={commitDateTimeSegments}
+            onKeyDown={handleSegmentKeyDown}
             placeholder={t('datepicker.placeholder.month')}
+            onPaste={handleDatePaste}
+            {...dateAria('month')}
             data-segment="month"
             disabled={disabled}
             className="segment-input journalit-fast-datetime__segment"
@@ -1065,13 +816,16 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
                 e.target.value,
                 'year',
                 setYear,
-                2,
+                4,
                 userDateFormat === 'YYMMDD' ? monthRef : timeRef
               )
             }
-            onBlur={commitDateTimeSegments}
             placeholder={t('datepicker.placeholder.year')}
+            onPaste={handleDatePaste}
+            {...dateAria('year')}
             data-segment="year"
+            onKeyDown={handleSegmentKeyDown}
+            data-year-extended={year.length > 2 ? 'true' : undefined}
             disabled={disabled}
             className="segment-input journalit-fast-datetime__segment"
           />
@@ -1130,8 +884,11 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           aria-labelledby={label ? labelId : undefined}
           className="journalit-fast-datetime__container"
           data-date-only={isDateOnly ? 'true' : 'false'}
+          data-timestamp={includeTime && !timeOnly ? 'true' : 'false'}
           data-has-seconds={shouldShowSeconds ? 'true' : 'false'}
-          data-has-error={error ? 'true' : 'false'}
+          data-has-error={displayedError ? 'true' : 'false'}
+          aria-describedby={displayedError ? errorId : undefined}
+          onBlur={commitDateTimeSegments}
         >
           
           {!controllerOnly && !timeOnly && (
@@ -1172,7 +929,9 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
                     minuteRef
                   )
                 }
-                onBlur={commitDateTimeSegments}
+                onKeyDown={handleSegmentKeyDown}
+                aria-invalid={Boolean(timeDraftError)}
+                aria-describedby={displayedError ? errorId : undefined}
                 placeholder={t('datepicker.placeholder.hour')}
                 data-segment="hour"
                 disabled={disabled}
@@ -1193,7 +952,9 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
                     shouldShowSeconds ? secondRef : undefined
                   )
                 }
-                onBlur={commitDateTimeSegments}
+                onKeyDown={handleSegmentKeyDown}
+                aria-invalid={Boolean(timeDraftError)}
+                aria-describedby={displayedError ? errorId : undefined}
                 placeholder={t('datepicker.placeholder.minute')}
                 data-segment="minute"
                 disabled={disabled}
@@ -1215,7 +976,9 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
                         2
                       )
                     }
-                    onBlur={commitDateTimeSegments}
+                    onKeyDown={handleSegmentKeyDown}
+                    aria-invalid={Boolean(timeDraftError)}
+                    aria-describedby={displayedError ? errorId : undefined}
                     placeholder={t('datepicker.placeholder.second')}
                     data-segment="second"
                     disabled={disabled}
@@ -1252,8 +1015,14 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           )}
         </div>
 
-        {error && (
-          <span className="journalit-fast-datetime__error">{error}</span>
+        {displayedError && (
+          <span
+            id={errorId}
+            role="alert"
+            className="journalit-fast-datetime__error"
+          >
+            {displayedError}
+          </span>
         )}
       </div>
     );

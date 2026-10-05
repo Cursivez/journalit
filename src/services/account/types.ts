@@ -45,6 +45,8 @@ export enum ProfitTargetType {
 export interface AccountTransaction {
   id: string; 
   date: Date; 
+  
+  datePrecision?: 'day' | 'instant';
   type: TransactionType; 
   amount: number; 
   description?: string; 
@@ -90,6 +92,10 @@ export interface AccountData {
   accountType: AccountType | string; 
   initialBalance: number; 
   currentBalance: number; 
+  
+  lifetimeBalance?: number;
+  
+  unscopedLiveBalanceAdjustment?: number;
 
   
   drawdownType: DrawdownType; 
@@ -124,22 +130,5 @@ export interface AccountData {
   copyTradingPeriods?: CopyTradingPeriod[]; 
   propChallenge?: PropChallengeConfig;
 }
-
-
-export const DEFAULT_ACCOUNT_METRICS: AccountMetrics = {
-  totalTrades: 0,
-  winningTrades: 0,
-  losingTrades: 0,
-  breakEvenTrades: 0,
-  winRate: 0,
-  totalPnL: 0,
-  bestTrade: 0,
-  worstTrade: 0,
-  profitFactor: 0,
-  averageWin: 0,
-  averageLoss: 0,
-  maxDrawdown: 0,
-  totalWithdrawals: 0,
-};
 
 export {};

@@ -9,6 +9,8 @@ import {
   tradeAttributionTimestamp,
 } from '../propChallenge/PropChallengeConfig';
 import { getTradeBrokerIdentity } from '../propChallenge/tradeIdentity';
+import { normalizeLiveBalanceAdjustment } from '../account/liveBalanceAdjustment';
+import { liveBalanceAdjustmentAnchor } from '../propChallenge/PropChallengeBalance';
 import type {
   PropChallengeConfig,
   PropChallengePhase,
@@ -481,6 +483,20 @@ function buildPhase({
     now,
   });
   if (completedAt) phase.completedAt = completedAt;
+  const balanceAdjustment = normalizeLiveBalanceAdjustment(
+    source.metadata.liveBalanceAdjustment
+  );
+  if (balanceAdjustment !== undefined)
+    phase.balanceAdjustments = [
+      {
+        amount: balanceAdjustment,
+        recordedAt: liveBalanceAdjustmentAnchor(
+          source.metadata.lastUpdated,
+          phase,
+          now
+        ),
+      },
+    ];
   return phase;
 }
 
@@ -742,12 +758,7 @@ function foldTargetMetadata({
     delete targetMetadata.profitTargetDate;
   }
 
-  const liveBalanceAdjustment = sumLiveBalanceAdjustments(sources);
-  if (liveBalanceAdjustment !== undefined) {
-    targetMetadata.liveBalanceAdjustment = liveBalanceAdjustment;
-  } else {
-    delete targetMetadata.liveBalanceAdjustment;
-  }
+  delete targetMetadata.liveBalanceAdjustment;
 
   const manualTransactions = concatSortedByDate(
     sources,
@@ -790,20 +801,6 @@ function earliestCreatedDate(
     if (created < earliest) earliest = created;
   }
   return new Date(earliest);
-}
-
-function sumLiveBalanceAdjustments(
-  sources: readonly AccountMergeSourceInput[]
-): number | undefined {
-  let sum = 0;
-  let defined = false;
-  for (const source of sources) {
-    const value = source.metadata.liveBalanceAdjustment;
-    if (value === undefined) continue;
-    sum += value;
-    defined = true;
-  }
-  return defined ? sum : undefined;
 }
 
 function concatSortedByDate<T>(

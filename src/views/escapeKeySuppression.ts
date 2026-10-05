@@ -5,7 +5,7 @@ import { OPEN_FULLSCREEN_PORTAL_SELECTORS } from '../components/image/fullscreen
 
 export const ESCAPE_DELEGATE_ATTRIBUTE = 'data-journalit-escape-delegate';
 
-const ESCAPE_DELEGATED_SURFACE_SELECTORS = [
+const ESCAPE_DELEGATED_SURFACE_SELECTOR = [
   ...OPEN_FULLSCREEN_PORTAL_SELECTORS,
   '.journalit-shared-selector-overlay',
   '.journalit-widget-picker-overlay',
@@ -20,17 +20,35 @@ const ESCAPE_DELEGATED_SURFACE_SELECTORS = [
   '.suggestion-container',
   '.menu',
   `[${ESCAPE_DELEGATE_ATTRIBUTE}="true"]`,
-];
+].join(',');
 
 interface ReactViewEscapeSuppressionContext {
   active: boolean;
   viewDocument: Document;
 }
 
-export function hasDelegatedEscapeSurface(viewDocument: Document): boolean {
-  return ESCAPE_DELEGATED_SURFACE_SELECTORS.some((selector) =>
-    Boolean(viewDocument.querySelector(selector))
-  );
+export function hasDelegatedEscapeSurface(
+  viewDocument: Document,
+  excludedSurface: Element | null = null,
+  eventPath: EventTarget[] = []
+): boolean {
+  
+  
+  const ElementCtor = viewDocument.defaultView?.Element ?? Element;
+  for (const target of eventPath) {
+    if (
+      target instanceof ElementCtor &&
+      target !== excludedSurface &&
+      target.matches(ESCAPE_DELEGATED_SURFACE_SELECTOR)
+    )
+      return true;
+  }
+  for (const surface of viewDocument.querySelectorAll(
+    ESCAPE_DELEGATED_SURFACE_SELECTOR
+  )) {
+    if (surface !== excludedSurface) return true;
+  }
+  return false;
 }
 
 function isEditableEscapeTarget(

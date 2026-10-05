@@ -26,7 +26,9 @@ const eslintArgs = [
   '--cache-strategy',
   'content',
   '--cache-location',
-  '.cache/eslint-review/.eslintcache',
+  
+  
+  '.cache/eslint-review/',
   ...passThroughArgs,
 ];
 

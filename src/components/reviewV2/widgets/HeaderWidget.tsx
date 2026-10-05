@@ -16,6 +16,7 @@ import {
   Repeat2,
 } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
+import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import type { UnifiedFilters } from '../../shared/filters/types';
 import {
@@ -52,6 +53,18 @@ import { loadTradeFilterMenuOptions } from '../../shared/filters/menu/loadTradeF
 import { openReviewLayoutSwitcher } from '../../../services/templates/openReviewLayoutSwitcher';
 import { formatLocalizedReviewDate } from '../../../utils/localizedDateTime';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
+import {
+  useGuideTarget,
+  useGuideLeaf,
+  useResolvedViewGuide,
+} from '../../../guides/GuideRuntimeLayer';
+import {
+  REVIEW_HEADER_GUIDE_ID,
+  REVIEW_HEADER_INTRO_TARGET_ID,
+  REVIEW_HEADER_REVIEWED_TARGET_ID,
+  REVIEW_HEADER_DATES_TARGET_ID,
+  REVIEW_HEADER_CONTROLS_TARGET_ID,
+} from '../../../guides/reviewHeaderGuideIds';
 
 function frontmatterHeaderValueToString(value: unknown): string {
   if (value === undefined || value === null) return '';
@@ -175,6 +188,11 @@ interface HeaderData {
 const MAX_FRONTMATTER_RETRIES = 5;
 const FRONTMATTER_RETRY_DELAY_MS = 150;
 
+const ReviewHeaderGuideResolution: React.FC = () => {
+  useResolvedViewGuide(REVIEW_HEADER_GUIDE_ID);
+  return null;
+};
+
 const getFrontmatterNumber = (
   frontmatter: Record<string, unknown>,
   key: string
@@ -197,8 +215,19 @@ const getFrontmatterNumber = (
 
 export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
   ({ filePath, plugin, preview, previewData }) => {
+    const embeddedReadOnly = useReviewReadOnly();
+    const readOnly = preview || embeddedReadOnly;
     const [headerData, setHeaderData] = useState<HeaderData | null>(null);
     const [loading, setLoading] = useState(true);
+    const introGuideTarget = useGuideTarget(REVIEW_HEADER_INTRO_TARGET_ID);
+    const reviewedGuideTarget = useGuideTarget(
+      REVIEW_HEADER_REVIEWED_TARGET_ID
+    );
+    const datesGuideTarget = useGuideTarget(REVIEW_HEADER_DATES_TARGET_ID);
+    const controlsGuideTarget = useGuideTarget(
+      REVIEW_HEADER_CONTROLS_TARGET_ID
+    );
+    const guideLeaf = useGuideLeaf();
     const headerDataRef = useRef<HeaderData | null>(null);
     
     const [filters, setFilters] = useState<UnifiedFilters>(() => {
@@ -255,6 +284,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
 
     useEffect(() => {
       
+      if (readOnly) return;
       const currentFilters = filtersRef.current;
       const sanitized = sanitizeFilterCustomFields(
         currentFilters,
@@ -286,6 +316,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       filters.exclusions,
       filters.matchModes,
       plugin,
+      readOnly,
     ]);
 
     
@@ -368,6 +399,8 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       [applyFilters, filePath, plugin]
     );
 
+    
+    
     useEventBus('account:changed', handleAccountChanged);
 
     const formatWeeklyDate = useCallback(
@@ -686,7 +719,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
     ]);
 
     const toggleReviewedStatus = async () => {
-      if (preview || !headerData) return;
+      if (readOnly || !headerData) return;
 
       const file = plugin.app.vault.getAbstractFileByPath(filePath);
       if (!(file instanceof TFile)) return;
@@ -1012,9 +1045,9 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
     );
 
     const handleSwitchTemplate = useCallback(() => {
-      if (preview) return;
+      if (readOnly) return;
       void openReviewLayoutSwitcher(plugin, filePath);
-    }, [filePath, plugin, preview]);
+    }, [filePath, plugin, readOnly]);
 
     if (loading) {
       
@@ -1404,7 +1437,12 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
 
     
     return (
-      <div className="journalit-header-content layout-e">
+      <div ref={introGuideTarget} className="journalit-header-content layout-e">
+        {!readOnly &&
+          headerData.type !== 'trade' &&
+          guideLeaf?.view.getViewType() === 'markdown' && (
+            <ReviewHeaderGuideResolution />
+          )}
         <div className="journalit-header-main">
           <div className="journalit-header-title">
             {headerData.type === 'drc' ? (
@@ -1427,15 +1465,17 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
             
             {headerData.type !== 'trade' && (
               <button
+                ref={reviewedGuideTarget}
                 type="button"
                 {...shareCaptureExcludeProps}
                 className={mergeClassNames(
                   'journalit-native-button journalit-native-button--unstyled',
                   `reviewed-indicator ${
-                    preview ? 'reviewed-indicator--disabled' : ''
+                    readOnly ? 'reviewed-indicator--disabled' : ''
                   }`
                 )}
-                aria-disabled={preview || undefined}
+                disabled={readOnly}
+                aria-disabled={readOnly || undefined}
                 onKeyDown={(e) => {
                   if (e.key !== 'Enter' && e.key !== ' ') return;
                   e.preventDefault();
@@ -1468,8 +1508,11 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
             </div>
           )}
           <div className="journalit-header-bottom-row">
-            <div className="journalit-header-context">{getContextLinks()}</div>
+            <div ref={datesGuideTarget} className="journalit-header-context">
+              {getContextLinks()}
+            </div>
             <div
+              ref={controlsGuideTarget}
               className="journalit-header-subtle-controls"
               {...shareCaptureExcludeProps}
             >
@@ -1485,7 +1528,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                       type="button"
                       className="journalit-header-icon-button"
                       onClick={onClick}
-                      disabled={preview}
+                      disabled={readOnly}
                       aria-expanded={isOpen}
                       aria-haspopup="menu"
                       aria-label={
@@ -1514,7 +1557,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                   type="button"
                   className="journalit-header-icon-button"
                   onClick={handleSwitchTemplate}
-                  disabled={preview}
+                  disabled={readOnly}
                   aria-label={t('template.switch-title')}
                 >
                   <Repeat2 size={16} aria-hidden="true" />
