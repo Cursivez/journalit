@@ -8,6 +8,7 @@ const UPGRADE_FEATURE_CONTENT = {
   metatraderSync: 'metatrader_sync',
   economicCalendar: 'economic_calendar',
   propFirmProfiles: 'prop_firm_profiles',
+  mcpAccess: 'mcp_access',
   genericUpgradeModal: 'generic_upgrade_modal',
 } as const;
 

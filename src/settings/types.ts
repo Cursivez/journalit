@@ -16,7 +16,11 @@ import { createFilterExclusions } from '../components/shared/filters/filterExclu
 import { createFilterMatchModes } from '../components/shared/filters/filterMatchModes';
 import type { TradeLogFilters } from '../services/tradelog/types';
 import type { PersonalPropFirmProfile } from '../services/propChallenge/PersonalPropFirmProfiles';
-import type { BrokerSyncProviderId } from '../services/tradeSync/types';
+import type {
+  BrokerClientDiagnosticBatch,
+  BrokerSyncProviderId,
+} from '../services/tradeSync/types';
+import type { TradeImportDestination } from '../services/tradeImport/types';
 
 export const SETTINGS_TAB_IDS = {
   GENERAL: 'general',
@@ -32,6 +36,7 @@ export const SETTINGS_TAB_IDS = {
   TRADE_SYNC: 'tradeSync',
   TRADE_IMPORT_SYNC: 'tradeImportSync',
   ACCOUNTS: 'accounts',
+  MCP_ACCESS: 'mcpAccess',
 } as const;
 
 export type SettingsTabId =
@@ -84,11 +89,6 @@ import {
 import type { SessionModeSettings } from '../types/sessionMode';
 import { DEFAULT_SESSION_MODE_SETTINGS } from '../types/sessionMode';
 import type { UnifiedFilters } from '../components/shared/filters/types';
-import {
-  DEFAULT_DASHBOARD_FILTERS,
-  DEFAULT_REVIEW_FILTERS,
-  DEFAULT_TRADELOG_FILTERS,
-} from './viewFiltersDefaults';
 
 export type AccentColorSource = 'journalit' | 'obsidian';
 
@@ -209,6 +209,7 @@ export type TradeFormInputMode = 'prices' | 'pnl-risk';
 export type TradeFormAssetTypeMode = 'show' | 'fixed';
 
 export type TradeFormTakeProfitUnit = 'percent' | 'size';
+export type TradeFormStopLossUnit = 'percent' | 'size';
 const TRADE_FORM_DEFAULT_ASSET_TYPES = [
   'stock',
   'options',
@@ -239,8 +240,9 @@ const TRADE_FORM_LAYOUT_ITEM_IDS = [
   'importShortcut',
   'setup',
   'mistake',
-  'customTags',
+  'tags',
   'thesis',
+  'rating',
   'attachments',
   'customFields',
 ] as const;
@@ -262,6 +264,8 @@ export interface TradeFormLayoutSettings {
   showManualFxRate: boolean;
   
   takeProfitUnit: TradeFormTakeProfitUnit;
+  
+  stopLossUnit: TradeFormStopLossUnit;
 }
 
 
@@ -285,7 +289,7 @@ const TRADE_FORM_LAYOUT_ITEMS_HIDDEN_ON_FRESH_INSTALL: readonly TradeFormLayoutI
   ];
 
 
-export const LEGACY_TRADE_FORM_LAYOUT_VISIBLE_ITEMS: readonly TradeFormLayoutItemId[] =
+const LEGACY_TRADE_FORM_LAYOUT_VISIBLE_ITEMS: readonly TradeFormLayoutItemId[] =
   [
     'assetSpecific',
     'exchange',
@@ -301,7 +305,7 @@ export const LEGACY_TRADE_FORM_LAYOUT_VISIBLE_ITEMS: readonly TradeFormLayoutIte
     'importShortcut',
     'setup',
     'mistake',
-    'customTags',
+    'tags',
     'thesis',
     'attachments',
     'customFields',
@@ -324,6 +328,7 @@ export const DEFAULT_TRADE_FORM_LAYOUT_SETTINGS: TradeFormLayoutSettings = {
   ),
   showManualFxRate: false,
   takeProfitUnit: 'percent',
+  stopLossUnit: 'percent',
 };
 
 const TRADE_FORM_LAYOUT_ITEM_ID_SET = new Set<string>(
@@ -376,13 +381,31 @@ interface ResolveTradeFormLayoutOptions {
   existingInstall?: boolean;
 }
 
+
+type StoredTradeFormLayoutSettings = Omit<
+  Partial<TradeFormLayoutSettings>,
+  'itemOrder' | 'visibleItems'
+> & {
+  itemOrder?: unknown;
+  visibleItems?: unknown;
+};
+
 export function resolveTradeFormLayoutSettings(
-  settings: Partial<TradeFormLayoutSettings> | null | undefined,
+  settings: StoredTradeFormLayoutSettings | null | undefined,
   options?: ResolveTradeFormLayoutOptions
 ): TradeFormLayoutSettings {
-  const baselineVisibleItems = options?.existingInstall
-    ? LEGACY_TRADE_FORM_LAYOUT_VISIBLE_ITEMS
-    : DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems;
+  
+  
+  let baselineVisibleItems = DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems;
+  if (options?.existingInstall) {
+    const kept = new Set<TradeFormLayoutItemId>([
+      ...LEGACY_TRADE_FORM_LAYOUT_VISIBLE_ITEMS,
+      ...DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems,
+    ]);
+    baselineVisibleItems = DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.itemOrder.filter(
+      (itemId) => kept.has(itemId)
+    );
+  }
 
   if (!settings) {
     return {
@@ -393,6 +416,7 @@ export function resolveTradeFormLayoutSettings(
       visibleItems: [...baselineVisibleItems],
       showManualFxRate: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.showManualFxRate,
       takeProfitUnit: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.takeProfitUnit,
+      stopLossUnit: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.stopLossUnit,
     };
   }
 
@@ -417,15 +441,7 @@ export function resolveTradeFormLayoutSettings(
   
   
   
-  
-  const introducedVisibleItems = options?.existingInstall
-    ? new Set<TradeFormLayoutItemId>([
-        ...LEGACY_TRADE_FORM_LAYOUT_VISIBLE_ITEMS,
-        ...DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems,
-      ])
-    : DEFAULT_TRADE_FORM_LAYOUT_SETTINGS.visibleItems;
-
-  for (const itemId of introducedVisibleItems) {
+  for (const itemId of baselineVisibleItems) {
     if (savedOrderSet.has(itemId)) continue;
 
     const splitSource = TRADE_FORM_LAYOUT_ITEM_SPLIT_SOURCES.get(itemId);
@@ -459,6 +475,7 @@ export function resolveTradeFormLayoutSettings(
         : resolvedVisibleItems,
     showManualFxRate: settings.showManualFxRate === true,
     takeProfitUnit: settings.takeProfitUnit === 'size' ? 'size' : 'percent',
+    stopLossUnit: settings.stopLossUnit === 'size' ? 'size' : 'percent',
   };
 }
 
@@ -475,8 +492,6 @@ interface TradeSettings {
   skipWeekends: boolean;
   
   weekStartDay?: WeekStartDay;
-  
-  lastAssetType?: string;
   
   useDirectPnLInput?: boolean;
   
@@ -497,8 +512,6 @@ interface TradeSettings {
   breakEvenThresholdMode?: BreakEvenThresholdMode;
   
   breakEvenThresholdPercent?: number;
-  
-  includeMissedTradesInCalculations?: boolean;
   
   includeUnrealizedPnLInCalculations?: boolean;
   
@@ -548,6 +561,8 @@ export type PerformanceBreakdownViewMode = 'bestAndWorst' | 'best' | 'worst';
 
 export interface DashboardSettings {
   
+  expectancyBenchmarkR?: number | null;
+  
   layouts: {
     
     [name: string]: {
@@ -580,9 +595,9 @@ export interface DashboardSettings {
   
   tagPerformanceViewMode?: PerformanceBreakdownViewMode;
   
-  defaultFilters: FilterState;
+  ratingPerformanceMetric?: PerformanceBreakdownMetric;
   
-  lastUsedFilters?: FilterState;
+  defaultFilters: FilterState;
 }
 
 
@@ -956,7 +971,7 @@ export interface CurrentStreakConfig {
 }
 
 
-export type AccountProgressWidgetMode = 'automatic' | 'selected';
+type AccountProgressWidgetMode = 'automatic' | 'selected';
 
 
 export interface AccountProgressWidgetConfig {
@@ -984,8 +999,6 @@ export interface HomeSettings {
   
   activeLayout: string;
   
-  recentItems?: RecentItem[];
-  
   filterRecentItemsToJournalit?: boolean;
   
   quickLinks?: QuickLinkButton[];
@@ -1007,8 +1020,6 @@ export interface HomeSettings {
   streaks?: Record<string, CurrentStreakConfig>;
   
   accountProgress?: Record<string, AccountProgressWidgetConfig>;
-  
-  selectedPeriod?: HomePeriod;
   
   backgroundImagePath?: string;
   
@@ -1094,6 +1105,8 @@ export interface AccountSettings {
   
   accountMetadata?: Record<string, AccountMetadata>;
   
+  agentAccountIds?: Record<string, string>;
+  
   accountMerges?: Record<string, AccountMergeRecord>;
   
   legacyChallengeOnboarding?: LegacyChallengeOnboardingState;
@@ -1105,7 +1118,7 @@ export type LegacyChallengeOnboardingStatus =
   | 'completed'
   | 'skipped';
 
-export interface LegacyChallengeOnboardingState {
+interface LegacyChallengeOnboardingState {
   status: LegacyChallengeOnboardingStatus;
   
   detectedAt: string;
@@ -1210,6 +1223,9 @@ export interface BackendIntegrationSettings {
   }>;
 
   
+  pendingHyperliquidClientDiagnostics?: BrokerClientDiagnosticBatch<'hyperliquid-client-diagnostics-v2'>[];
+
+  
   pendingTradovateClientDiagnostics?: Array<{
     ownerUserId: string;
     schemaVersion: 'tradovate-client-diagnostics-v2';
@@ -1256,6 +1272,8 @@ export interface BackendIntegrationSettings {
   
   
   authToken?: string;
+  
+  refreshToken?: string;
   
   accessTokenExpiresAt?: string;
   
@@ -1348,6 +1366,7 @@ type StaticTradeLogColumnId =
   | 'mistakes'
   | 'tags'
   | 'reviewed'
+  | 'tradeRating'
   | 'thesis'
   | 'mtComment';
 
@@ -1377,6 +1396,20 @@ interface ReviewV2Settings {
   templates?: ReviewTemplate[];
   
   tradeTemplates?: TradeTemplate[];
+}
+
+interface AgentInstallationSettings {
+  deviceId: string;
+  vaultId: string;
+  installationId: string;
+}
+
+interface AgentAccessSettings {
+  enabled: boolean;
+  
+  fullAccess: boolean;
+  
+  installation?: AgentInstallationSettings;
 }
 
 
@@ -1448,7 +1481,7 @@ export function createDefaultEconomicCalendarSettings(): EconomicCalendarSetting
 export const DEFAULT_ECONOMIC_CALENDAR_SETTINGS: EconomicCalendarSettings =
   createDefaultEconomicCalendarSettings();
 
-export const CURRENT_SETTINGS_SCHEMA_VERSION = 2;
+export const CURRENT_SETTINGS_SCHEMA_VERSION = 3;
 
 
 export interface JournalitSettings {
@@ -1464,8 +1497,6 @@ export interface JournalitSettings {
   trade: TradeSettings;
   
   display?: DisplaySettings;
-  
-  tradeLog?: TradeLogSettings;
   
   reviewV2?: ReviewV2Settings;
   
@@ -1488,8 +1519,6 @@ export interface JournalitSettings {
   
   home?: HomeSettings;
   
-  viewFilters?: PersistedViewFilters;
-  
   customOptions?: CustomOptionsData;
   
   customTradeFields?: CustomFieldsData;
@@ -1501,6 +1530,9 @@ export interface JournalitSettings {
   customReviewFieldOptions?: CustomFieldOptionsStorage;
   
   account?: AccountSettings;
+
+  
+  agentAccess: AgentAccessSettings;
 
   
   backendIntegration?: BackendIntegrationSettings;
@@ -1516,6 +1548,8 @@ export interface JournalitSettings {
   csvFavoriteTemplateId?: string;
   
   csvLastAssetType?: Record<string, string>;
+  
+  csvImportDestinations?: Record<string, TradeImportDestination>;
   
   initializedOptionTypes?: string[];
   
@@ -1619,7 +1653,6 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     breakEvenRangeMax: 0, 
     breakEvenThresholdMode: 'fixed',
     breakEvenThresholdPercent: 0.05,
-    includeMissedTradesInCalculations: false, 
     includeUnrealizedPnLInCalculations: false, 
     defaultRiskAmount: 0,
     displayRMultiples: false,
@@ -1627,55 +1660,6 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     analyticsDateBasis: 'entry',
     tradeFormLayout: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS,
     galleryFolders: [],
-  },
-  tradeLog: {
-    expandedMode: false,
-    columnVisibility: {
-      select: false,
-      image: true,
-      account: true,
-      ticker: true,
-      status: true,
-      pnl: true,
-      direction: true,
-      setups: true,
-      mistakes: true,
-      tags: true,
-      date: true,
-      reviewed: true,
-      duration: false,
-      positionSize: false,
-      priceMove: false,
-      expirationDate: false,
-      daysToExpiry: false,
-      thesis: false,
-      mtComment: false,
-    },
-    columnOrder: [
-      'select',
-      'image',
-      'account',
-      'ticker',
-      'status',
-      'pnl',
-      'direction',
-      'setups',
-      'mistakes',
-      'tags',
-      'date',
-      'reviewed',
-      'duration',
-      'positionSize',
-      'entryPrice',
-      'exitPrice',
-      'priceMove',
-      'stopLoss',
-      'expirationDate',
-      'daysToExpiry',
-      'thesis',
-      'mtComment',
-    ],
-    columnWidths: {},
   },
   reviewV2: {
     openNoteLinksInNewTab: true,
@@ -1771,6 +1755,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
   },
   sessionMode: DEFAULT_SESSION_MODE_SETTINGS,
   dashboard: {
+    expectancyBenchmarkR: null,
     layouts: {
       Default: DEFAULT_DASHBOARD_LAYOUT,
     },
@@ -1782,6 +1767,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     setupPerformanceViewMode: 'bestAndWorst',
     tagPerformanceMetric: 'net',
     tagPerformanceViewMode: 'bestAndWorst',
+    ratingPerformanceMetric: 'net',
     defaultFilters: {
       dateRange: [null, null],
       accounts: [],
@@ -1793,22 +1779,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       tradeTypes: [],
       statuses: [],
       reviewStatus: [],
-      directions: [],
-      customFieldFilters: {},
-      exclusions: createFilterExclusions(),
-      matchModes: createFilterMatchModes(),
-    },
-    lastUsedFilters: {
-      dateRange: [null, null],
-      accounts: [],
-      accountPhases: [],
-      tickers: [],
-      setups: [],
-      tags: [],
-      mistakes: [],
-      tradeTypes: [],
-      statuses: [],
-      reviewStatus: [],
+      ratings: [],
       directions: [],
       customFieldFilters: {},
       exclusions: createFilterExclusions(),
@@ -1820,7 +1791,6 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       Default: createDefaultHomeLayout(),
     },
     activeLayout: 'Default',
-    recentItems: [],
     entityShortcuts: [],
     quickLinks: [
       {
@@ -1992,16 +1962,10 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       lastFuturesSymbol: 'ES',
       lastForexSymbol: 'EURUSD',
     },
-    selectedPeriod: 'lifetime',
     backgroundImagePath: '',
     widgetOpacityLight: DEFAULT_HOME_WIDGET_OPACITY,
     widgetOpacityDark: DEFAULT_HOME_WIDGET_OPACITY,
     showBackgroundInDashboard: false,
-  },
-  viewFilters: {
-    dashboard: DEFAULT_DASHBOARD_FILTERS,
-    tradelog: DEFAULT_TRADELOG_FILTERS,
-    reviews: DEFAULT_REVIEW_FILTERS,
   },
   account: {
     defaultAccountType: AccountType.DEMO,
@@ -2013,6 +1977,12 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     accountTypeOrder: ['funded', 'evaluation', 'demo', 'archived'],
     challengeStageAccountTypes: DEFAULT_CHALLENGE_STAGE_ACCOUNT_TYPES,
     accountMetadata: {},
+    agentAccountIds: {},
+  },
+
+  agentAccess: {
+    enabled: false,
+    fullAccess: false,
   },
 
   copyTradeAdjustments: {},
@@ -2040,6 +2010,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
   csvFavoriteAccount: undefined,
   csvFavoriteTemplateId: undefined,
   csvLastAssetType: {},
+  csvImportDestinations: {},
   initializedOptionTypes: [],
   symbolMappings: [],
   navigation: createDefaultNavigationSettings(),

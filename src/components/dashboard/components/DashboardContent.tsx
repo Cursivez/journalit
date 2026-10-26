@@ -8,7 +8,7 @@ import { BottomSection } from './BottomSection';
 import { UnifiedComponentSelector } from './UnifiedComponentSelector';
 import { FilterState } from '../DashboardView';
 import { DashboardData } from '../utils/dataUtils';
-import { TradeFormModal } from '../../forms/trade/TradeFormModal';
+import { TradeFormDrawer } from '../../forms/trade/TradeFormDrawer';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { t } from '../../../lang/helpers';
 import { SampleJournalEntryButton } from '../../shared/SampleJournalControls';
@@ -74,8 +74,8 @@ export const DashboardContent: React.FC<DashboardContentProps> = React.memo(
     
     const handleOpenTradeForm = () => {
       if (!plugin || !plugin.app) return;
-      const modal = new TradeFormModal({ app: plugin.app, plugin });
-      modal.open();
+      const drawer = new TradeFormDrawer({ app: plugin.app, plugin });
+      drawer.open();
     };
 
     const handleOpenTradeImport = () => {
@@ -128,7 +128,7 @@ export const DashboardContent: React.FC<DashboardContentProps> = React.memo(
             className="journalit-dashboard-section-wrapper"
             targetId={DASHBOARD_BOTTOM_SECTION_TARGET_ID}
           >
-            <BottomSection filters={filters} isEditing={isEditing} />
+            <BottomSection isEditing={isEditing} />
           </GuideTargetContainer>
         </div>
 

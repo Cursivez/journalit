@@ -38,6 +38,7 @@ import { Tooltip } from '../../shared/Tooltip';
 import type { ImageNavigationContext } from '../../../types/image';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
+import { readReviewTradeSettings } from './shared/reviewWidgetSettings';
 import { t } from '../../../lang/helpers';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { calculateDirectionalPriceDiff } from '../../../utils/pnlCalculation';
@@ -349,6 +350,255 @@ const formatEntryTime = (date: Date): string => {
   });
 };
 
+type TradeTableColumn =
+  | 'images'
+  | 'time'
+  | 'account'
+  | 'ticker'
+  | 'pnl'
+  | 'direction'
+  | 'setup'
+  | 'mistakes';
+
+const TRADE_TABLE_COLUMN_ORDER: readonly TradeTableColumn[] = [
+  'images',
+  'time',
+  'account',
+  'ticker',
+  'pnl',
+  'direction',
+  'setup',
+  'mistakes',
+];
+
+
+function visibleTradeTableColumns(
+  columns: TradeTableWidgetConfig['columns'] = {},
+  showAccountColumn: boolean
+): TradeTableColumn[] {
+  const enabled: Record<TradeTableColumn, boolean | undefined> = {
+    images: columns.images,
+    time: columns.time,
+    account: showAccountColumn,
+    ticker: columns.ticker,
+    pnl: columns.pnl,
+    direction: columns.direction,
+    setup: columns.setup,
+    mistakes: columns.mistakes,
+  };
+  return TRADE_TABLE_COLUMN_ORDER.filter((column) => enabled[column]);
+}
+
+
+function showsEntryTime(noteType: unknown): boolean {
+  return noteType ? isDrcReviewType(noteType) : true;
+}
+
+function tradePageWindow(
+  totalTrades: number,
+  pageSize: number,
+  currentPage: number
+) {
+  const totalPages = pageSize > 0 ? Math.ceil(totalTrades / pageSize) : 1;
+  return {
+    totalPages,
+    isPaginated: pageSize > 0 && totalTrades > pageSize,
+    
+    effectiveCurrentPage: Math.min(currentPage, Math.max(0, totalPages - 1)),
+  };
+}
+
+const COLUMN_LABEL_KEYS = {
+  images: 'widget.trade-table.column.images',
+  account: 'widget.trade-table.column.account',
+  ticker: 'widget.trade-table.column.ticker',
+  pnl: 'widget.trade-table.column.pnl',
+  direction: 'widget.trade-table.column.direction',
+  setup: 'widget.trade-table.column.setups',
+  mistakes: 'widget.trade-table.column.mistakes',
+} as const;
+
+const TradeTableHeaderRow: React.FC<{
+  columns: TradeTableColumn[];
+  shouldShowEntryTime: boolean;
+}> = ({ columns, shouldShowEntryTime }) => (
+  <thead>
+    <tr>
+      {columns.map((column) => (
+        <th
+          key={column}
+          className={`journalit-reviewv2-table-header-cell journalit-reviewv2-col-${column}`}
+        >
+          {column === 'time'
+            ? t(
+                shouldShowEntryTime
+                  ? 'widget.trade-table.column.entry'
+                  : 'widget.trade-table.column.date'
+              )
+            : t(COLUMN_LABEL_KEYS[column])}
+        </th>
+      ))}
+    </tr>
+  </thead>
+);
+
+function renderSkeletonCellContent(column: TradeTableColumn, row: number) {
+  switch (column) {
+    case 'images':
+      return <SkeletonBox width={48} height={36} borderRadius="4px" />;
+    case 'time':
+      return (
+        <div className="journalit-reviewv2-skeleton-time">
+          <SkeletonBox width={45} height={14} borderRadius="4px" />
+          <SkeletonBox width={35} height={10} borderRadius="4px" />
+        </div>
+      );
+    case 'account':
+      return <SkeletonBox width={70} height={18} borderRadius="9px" />;
+    case 'ticker':
+      return <SkeletonBox width={50} height={16} borderRadius="4px" />;
+    case 'pnl':
+      return <SkeletonBox width={60} height={16} borderRadius="4px" />;
+    case 'direction':
+      return <SkeletonBox width={45} height={14} borderRadius="4px" />;
+    case 'setup':
+      return (
+        <div className="journalit-reviewv2-skeleton-tags">
+          <SkeletonBox width={50} height={20} borderRadius="10px" />
+          {row % 2 === 0 && (
+            <SkeletonBox width={40} height={20} borderRadius="10px" />
+          )}
+        </div>
+      );
+    case 'mistakes':
+      return (
+        row % 3 === 0 && (
+          <SkeletonBox width={55} height={20} borderRadius="10px" />
+        )
+      );
+  }
+}
+
+const SKELETON_ROW_COUNT = 5;
+
+const TradeTableSkeleton: React.FC<{
+  columns: TradeTableColumn[];
+  shouldShowEntryTime: boolean;
+}> = ({ columns, shouldShowEntryTime }) => (
+  <div className="weekly-review-trades-table journalit-reviewv2-table-wrapper">
+    <table className="journalit-reviewv2-table">
+      <TradeTableHeaderRow
+        columns={columns}
+        shouldShowEntryTime={shouldShowEntryTime}
+      />
+      <tbody>
+        {Array.from({ length: SKELETON_ROW_COUNT }).map((_, i) => (
+          <tr
+            key={i}
+            className="journalit-reviewv2-table-row journalit-reviewv2-table-row--static"
+          >
+            {columns.map((column) => (
+              <td
+                key={column}
+                className={`journalit-reviewv2-table-cell journalit-reviewv2-col-${column}`}
+              >
+                {renderSkeletonCellContent(column, i)}
+              </td>
+            ))}
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  </div>
+);
+
+
+function padTo(value: number, widthOf: number): string {
+  return String(value).padStart(String(widthOf).length, '0');
+}
+
+const TradeTablePagination: React.FC<{
+  page: number;
+  pageSize: number;
+  totalTrades: number;
+  totalPages: number;
+  onPrev: () => void;
+  onNext: () => void;
+}> = ({ page, pageSize, totalTrades, totalPages, onPrev, onNext }) => (
+  <div className="journalit-reviewv2-pagination">
+    <span className="journalit-reviewv2-pagination-showing">
+      {t('widget.trade-table.pagination.showing', {
+        start: padTo(page * pageSize + 1, totalTrades),
+        end: padTo(Math.min((page + 1) * pageSize, totalTrades), totalTrades),
+        total: String(totalTrades),
+      })}
+    </span>
+    <div
+      className="journalit-reviewv2-pagination-controls"
+      {...shareCaptureExcludeProps}
+    >
+      <button
+        onClick={onPrev}
+        disabled={page === 0}
+        className="journalit-reviewv2-pagination-button"
+      >
+        {t('widget.trade-table.pagination.prev')}
+      </button>
+      <span className="journalit-reviewv2-pagination-status">
+        {t('widget.trade-table.pagination.page', {
+          current: padTo(page + 1, totalPages),
+          total: String(totalPages),
+        })}
+      </span>
+      <button
+        onClick={onNext}
+        disabled={page >= totalPages - 1}
+        className="journalit-reviewv2-pagination-button"
+      >
+        {t('widget.trade-table.pagination.next')}
+      </button>
+    </div>
+  </div>
+);
+
+const TradeImageFullscreen: React.FC<{
+  images: string[];
+  index: number;
+  tradeId: string | number;
+  sourcePath: string;
+  readOnly: boolean;
+  navigationContext: ImageNavigationContext | undefined;
+  onClose: () => void;
+}> = ({
+  images,
+  index,
+  tradeId,
+  sourcePath,
+  readOnly,
+  navigationContext,
+  onClose,
+}) => (
+  <FullscreenPortal
+    isOpen={true}
+    onClose={onClose}
+    title={t('widget.trade-table.fullscreen-title', { id: String(tradeId) })}
+    portalId="trade-table-widget-image-portal"
+  >
+    <FullscreenImageViewer
+      imagePath={images[index]}
+      alt={t('widget.trade-table.fullscreen-alt', {
+        id: String(tradeId),
+        index: String(index + 1),
+      })}
+      useResolveMediaPath={true}
+      sourcePath={sourcePath}
+      annotationOptions={{ enabled: !readOnly }}
+      navigationContext={navigationContext}
+      onClose={onClose}
+    />
+  </FullscreenPortal>
+);
+
 export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
   ({
     filePath,
@@ -370,8 +620,8 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
     const { currency } = useCurrency();
     const { formatValue, shouldMask } = useDisplayFormatter();
     const isPnlMasked = shouldMask('pnl');
-    const tradeDateFormat = plugin?.settings?.trade?.dateFormat || 'DDMMYY';
-    const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
+    const { dateFormat: tradeDateFormat, defaultRiskAmount } =
+      readReviewTradeSettings(plugin);
     const applyAccountCountMultiplier = false;
     const breakEvenSettings = plugin?.settings?.trade;
 
@@ -392,25 +642,17 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
         plugin.app.metadataCache.getFileCache(file)?.frontmatter;
       return isRecord(frontmatter) ? frontmatter : null;
     }, [cachedNoteType, filePath, plugin.app, previewData?.noteType]);
-    const effectiveNoteType =
-      previewData?.noteType ?? cachedNoteType ?? noteFrontmatter?.type;
-    const shouldShowEntryTime = effectiveNoteType
-      ? isDrcReviewType(effectiveNoteType)
-      : true;
+    const shouldShowEntryTime = showsEntryTime(
+      previewData?.noteType ?? cachedNoteType ?? noteFrontmatter?.type
+    );
 
     
     const trades =
-      tradesOverride !== undefined
-        ? tradesOverride
-        : asReviewTableTrades(
-            preview && previewData ? previewData.trades : cachedTrades
-          );
-    const loading =
-      loadingOverride !== undefined
-        ? loadingOverride
-        : preview
-          ? false
-          : cacheLoading;
+      tradesOverride ??
+      asReviewTableTrades(
+        preview && previewData ? previewData.trades : cachedTrades
+      );
+    const loading = loadingOverride ?? (!preview && cacheLoading);
 
     
     const [isFullscreenOpen, setIsFullscreenOpen] = useState(false);
@@ -504,22 +746,11 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
     const [currentPage, setCurrentPage] = useState(0);
     const pageSize = mergedConfig.pageSize || 20;
     const totalTrades = displayTrades.length;
-    const totalPages = pageSize > 0 ? Math.ceil(totalTrades / pageSize) : 1;
-    const isPaginated = pageSize > 0 && totalTrades > pageSize;
-    const effectiveCurrentPage = Math.min(
-      currentPage,
-      Math.max(0, totalPages - 1)
+    const { totalPages, isPaginated, effectiveCurrentPage } = tradePageWindow(
+      totalTrades,
+      pageSize,
+      currentPage
     );
-    const paginationCurrentPage = String(effectiveCurrentPage + 1).padStart(
-      String(totalPages).length,
-      '0'
-    );
-    const paginationStart = String(
-      effectiveCurrentPage * pageSize + 1
-    ).padStart(String(totalTrades).length, '0');
-    const paginationEnd = String(
-      Math.min((effectiveCurrentPage + 1) * pageSize, totalTrades)
-    ).padStart(String(totalTrades).length, '0');
 
     
     const sortedTrades = useMemo(() => {
@@ -557,139 +788,17 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
       setCurrentPage(Math.min(totalPages - 1, effectiveCurrentPage + 1));
     }, [effectiveCurrentPage, totalPages]);
 
+    const visibleColumns = visibleTradeTableColumns(
+      mergedConfig.columns,
+      showAccountColumn
+    );
+
     if (loading) {
-      const { columns } = mergedConfig;
-      const rowCount = 5; 
       return (
-        <div className="weekly-review-trades-table journalit-reviewv2-table-wrapper">
-          <table className="journalit-reviewv2-table">
-            <thead>
-              <tr>
-                {columns?.images && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-images">
-                    {t('widget.trade-table.column.images')}
-                  </th>
-                )}
-                {columns?.time && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-time">
-                    {shouldShowEntryTime
-                      ? t('widget.trade-table.column.entry')
-                      : t('widget.trade-table.column.date')}
-                  </th>
-                )}
-                {showAccountColumn && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-account">
-                    {t('widget.trade-table.column.account')}
-                  </th>
-                )}
-                {columns?.ticker && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-ticker">
-                    {t('widget.trade-table.column.ticker')}
-                  </th>
-                )}
-                {columns?.pnl && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-pnl">
-                    {t('widget.trade-table.column.pnl')}
-                  </th>
-                )}
-                {columns?.direction && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-direction">
-                    {t('widget.trade-table.column.direction')}
-                  </th>
-                )}
-                {columns?.setup && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-setup">
-                    {t('widget.trade-table.column.setups')}
-                  </th>
-                )}
-                {columns?.mistakes && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-mistakes">
-                    {t('widget.trade-table.column.mistakes')}
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: rowCount }).map((_, i) => (
-                <tr
-                  key={i}
-                  className="journalit-reviewv2-table-row journalit-reviewv2-table-row--static"
-                >
-                  {columns?.images && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-col-images">
-                      <SkeletonBox width={48} height={36} borderRadius="4px" />
-                    </td>
-                  )}
-                  {columns?.time && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-col-time">
-                      <div className="journalit-reviewv2-skeleton-time">
-                        <SkeletonBox
-                          width={45}
-                          height={14}
-                          borderRadius="4px"
-                        />
-                        <SkeletonBox
-                          width={35}
-                          height={10}
-                          borderRadius="4px"
-                        />
-                      </div>
-                    </td>
-                  )}
-                  {showAccountColumn && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-col-account">
-                      <SkeletonBox width={70} height={18} borderRadius="9px" />
-                    </td>
-                  )}
-                  {columns?.ticker && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-col-ticker">
-                      <SkeletonBox width={50} height={16} borderRadius="4px" />
-                    </td>
-                  )}
-                  {columns?.pnl && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-col-pnl">
-                      <SkeletonBox width={60} height={16} borderRadius="4px" />
-                    </td>
-                  )}
-                  {columns?.direction && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-col-direction">
-                      <SkeletonBox width={45} height={14} borderRadius="4px" />
-                    </td>
-                  )}
-                  {columns?.setup && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-col-setup">
-                      <div className="journalit-reviewv2-skeleton-tags">
-                        <SkeletonBox
-                          width={50}
-                          height={20}
-                          borderRadius="10px"
-                        />
-                        {i % 2 === 0 && (
-                          <SkeletonBox
-                            width={40}
-                            height={20}
-                            borderRadius="10px"
-                          />
-                        )}
-                      </div>
-                    </td>
-                  )}
-                  {columns?.mistakes && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-col-mistakes">
-                      {i % 3 === 0 && (
-                        <SkeletonBox
-                          width={55}
-                          height={20}
-                          borderRadius="10px"
-                        />
-                      )}
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <TradeTableSkeleton
+          columns={visibleColumns}
+          shouldShowEntryTime={shouldShowEntryTime}
+        />
       );
     }
 
@@ -703,59 +812,13 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
 
     const { columns } = mergedConfig;
 
-    
-
-    
-
     return (
       <div className="weekly-review-trades-table journalit-reviewv2-table-wrapper">
         <table className="journalit-reviewv2-table">
-          <thead>
-            <tr>
-              {columns?.images && (
-                <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-images">
-                  {t('widget.trade-table.column.images')}
-                </th>
-              )}
-              {columns?.time && (
-                <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-time">
-                  {shouldShowEntryTime
-                    ? t('widget.trade-table.column.entry')
-                    : t('widget.trade-table.column.date')}
-                </th>
-              )}
-              {showAccountColumn && (
-                <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-account">
-                  {t('widget.trade-table.column.account')}
-                </th>
-              )}
-              {columns?.ticker && (
-                <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-ticker">
-                  {t('widget.trade-table.column.ticker')}
-                </th>
-              )}
-              {columns?.pnl && (
-                <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-pnl">
-                  {t('widget.trade-table.column.pnl')}
-                </th>
-              )}
-              {columns?.direction && (
-                <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-direction">
-                  {t('widget.trade-table.column.direction')}
-                </th>
-              )}
-              {columns?.setup && (
-                <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-setup">
-                  {t('widget.trade-table.column.setups')}
-                </th>
-              )}
-              {columns?.mistakes && (
-                <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-mistakes">
-                  {t('widget.trade-table.column.mistakes')}
-                </th>
-              )}
-            </tr>
-          </thead>
+          <TradeTableHeaderRow
+            columns={visibleColumns}
+            shouldShowEntryTime={shouldShowEntryTime}
+          />
           <tbody>
             {paginatedTrades.map((trade, index) => {
               const tradeId = getReviewTableTradeKey(trade);
@@ -1066,67 +1129,27 @@ export const TradeTableWidget: React.FC<TradeTableWidgetProps> = React.memo(
           </tbody>
         </table>
 
-        
         {isPaginated && (
-          <div className="journalit-reviewv2-pagination">
-            <span className="journalit-reviewv2-pagination-showing">
-              {t('widget.trade-table.pagination.showing', {
-                start: paginationStart,
-                end: paginationEnd,
-                total: String(totalTrades),
-              })}
-            </span>
-            <div
-              className="journalit-reviewv2-pagination-controls"
-              {...shareCaptureExcludeProps}
-            >
-              <button
-                onClick={goToPrevPage}
-                disabled={effectiveCurrentPage === 0}
-                className="journalit-reviewv2-pagination-button"
-              >
-                {t('widget.trade-table.pagination.prev')}
-              </button>
-              <span className="journalit-reviewv2-pagination-status">
-                {t('widget.trade-table.pagination.page', {
-                  current: paginationCurrentPage,
-                  total: String(totalPages),
-                })}
-              </span>
-              <button
-                onClick={goToNextPage}
-                disabled={effectiveCurrentPage >= totalPages - 1}
-                className="journalit-reviewv2-pagination-button"
-              >
-                {t('widget.trade-table.pagination.next')}
-              </button>
-            </div>
-          </div>
+          <TradeTablePagination
+            page={effectiveCurrentPage}
+            pageSize={pageSize}
+            totalTrades={totalTrades}
+            totalPages={totalPages}
+            onPrev={goToPrevPage}
+            onNext={goToNextPage}
+          />
         )}
 
-        
         {isFullscreenOpen && currentTradeImages.length > 0 && (
-          <FullscreenPortal
-            isOpen={isFullscreenOpen}
+          <TradeImageFullscreen
+            images={currentTradeImages}
+            index={currentImageIndex}
+            tradeId={currentTradeId}
+            sourcePath={currentTradeSourcePath}
+            readOnly={readOnly}
+            navigationContext={navigationContext}
             onClose={closeFullscreen}
-            title={t('widget.trade-table.fullscreen-title', {
-              id: String(currentTradeId),
-            })}
-            portalId="trade-table-widget-image-portal"
-          >
-            <FullscreenImageViewer
-              imagePath={currentTradeImages[currentImageIndex]}
-              alt={t('widget.trade-table.fullscreen-alt', {
-                id: String(currentTradeId),
-                index: String(currentImageIndex + 1),
-              })}
-              useResolveMediaPath={true}
-              sourcePath={currentTradeSourcePath}
-              annotationOptions={{ enabled: !readOnly }}
-              navigationContext={navigationContext}
-              onClose={closeFullscreen}
-            />
-          </FullscreenPortal>
+          />
         )}
       </div>
     );

@@ -8,6 +8,7 @@ import type { CustomFieldFilterSelections } from '../../types/customFields';
 import type { AccountPhaseScope } from '../shared/filters/types';
 import type { FilterExclusions } from '../shared/filters/filterExclusions';
 import type { FilterMatchModes } from '../shared/filters/filterMatchModes';
+import type { RatingFilter } from '../../utils/tradeRating';
 
 export interface FilterState {
   dateRange: [Date | null, Date | null];
@@ -20,6 +21,7 @@ export interface FilterState {
   tradeTypes: TradeType[];
   statuses: TradeStatus[];
   reviewStatus: ReviewStatusFilter[];
+  ratings: RatingFilter[];
   directions: DirectionFilter[];
   customFieldFilters: CustomFieldFilterSelections;
   exclusions: FilterExclusions;

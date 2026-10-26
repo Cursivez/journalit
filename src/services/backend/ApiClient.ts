@@ -1,10 +1,10 @@
 
 
 import { safeString } from '../../utils/safeString';
-import { requestUrl } from 'obsidian';
 import { ErrorHandler, ErrorContext } from '../../utils/errorHandler';
 import { ApiError } from '../../types/errors';
 import { getPluginInstance } from '../../utils/pluginContext';
+import { BackendHttpClient } from './BackendHttpClient';
 import {
   DemoSyncGate,
   SampleJournalNetworkBlockedError,
@@ -131,8 +131,18 @@ function getBackendServerUrl(): string {
 }
 
 
+
+export type SyncResponseStatus =
+  | 'success'
+  
+  | 'partial'
+  
+  | 'cancelled'
+  | 'not-entitled'
+  | 'entitlement-unverified';
+
 export interface SyncResponse {
-  status: string;
+  status: SyncResponseStatus;
   synced_trades: number;
   new_files: number;
   updated_files: number;
@@ -179,7 +189,6 @@ export interface Trade {
   tags?: string[];
 
   setup?: string[];
-  mistakeIds?: string[];
   mistake?: string[];
   images?: string[];
   customFields?: Record<string, unknown>;
@@ -426,6 +435,7 @@ export class ApiClient {
       '/api/v1/me/entitlements',
       '/api/v1/prop-firm-profiles',
       '/api/v1/economic-events',
+      '/api/v1/mcp/usage',
     ];
 
     return authEndpoints.some((endpoint) => url.includes(endpoint));
@@ -585,7 +595,7 @@ export class ApiClient {
         'x-endpoint': request.url,
       });
       requestAuthToken = this.getAuthorizationToken(requestHeaders);
-      const response = await requestUrl({
+      const response = await BackendHttpClient.request({
         url: request.url,
         method: request.options.method || 'GET',
         headers: requestHeaders,
@@ -957,7 +967,7 @@ export class ApiClient {
   static async checkHealth(): Promise<boolean> {
     if (DemoSyncGate.isActive()) return false;
     try {
-      const response = await requestUrl({
+      const response = await BackendHttpClient.request({
         url: ApiClient.buildUrl('/api/v1/health'),
         method: 'GET',
         throw: false,
@@ -983,6 +993,10 @@ export class ApiClient {
     }
 
     return url.toString();
+  }
+
+  static getNormalizedBackendServerAuthority(value: unknown): string {
+    return new URL(normalizeBackendServerUrl(value)).origin;
   }
 
   

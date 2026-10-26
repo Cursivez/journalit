@@ -2,7 +2,10 @@
 
 import React, { useMemo } from 'react';
 import JournalitPlugin from '../../../main';
-import { SharedDailyPerformanceChart } from '../../charts/SharedDailyPerformanceChart';
+import {
+  PeriodPerformanceChartCard,
+  type PeriodBarSkeletonShape,
+} from './shared/PeriodPerformanceChartCard';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import { getDisplayPnL, getAccountCount } from '../../../utils/pnlUtils';
@@ -16,11 +19,8 @@ import {
   getReviewTradeTradingDay,
 } from '../utils/reviewTradeDates';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
-import { cssVars } from '../../../styles/inlineStylePolicy';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
-import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { getTradeAccountNames } from './shared/accountDisplay';
 import { formatAccountTooltipSummary } from './shared/accountTooltipSummary';
 import {
@@ -34,7 +34,6 @@ import {
   getReviewWidgetPeriodAriaLabel,
   openReviewWidgetPeriod,
 } from '../reviewWidgetNavigation';
-import { shareLoadingProps } from '../../../services/share/brandedCapture';
 
 type ReviewPeriodTrade = Record<string, unknown> & {
   tradeId?: string;
@@ -93,6 +92,13 @@ interface WeeklyDataPoint {
   rMultiple?: number;
   accountSummary?: string;
 }
+
+const CHART_SKELETON: PeriodBarSkeletonShape = {
+  barWidth: 18,
+  barHeights: ['45%', '25%', '60%', '15%', '35%'],
+  labelCount: 4,
+  labelWidth: 20,
+};
 
 export const TradesWeeklyWidget: React.FC<TradesWeeklyWidgetProps> = ({
   filePath,
@@ -224,104 +230,32 @@ export const TradesWeeklyWidget: React.FC<TradesWeeklyWidgetProps> = ({
     );
   }
 
-  if (loading) {
-    return (
-      <div className="journalit-reviewv2-chart-container">
-        <div className="journalit-reviewv2-chart-header">
-          <div className="journalit-reviewv2-chart-title">
-            {t('widget.trades-chart-weekly.name')}
-          </div>
-        </div>
-        <div className="journalit-reviewv2-chart-body">
-          
-          <div
-            className="journalit-reviewv2-chart-skeleton"
-            {...shareLoadingProps}
-            style={cssVars({
-              '--reviewv2-chart-height': `${height}px`,
-              '--reviewv2-chart-bar-gap': '4px',
-            })}
-          >
-            
-            <div className="journalit-reviewv2-chart-skeleton-axis">
-              <SkeletonBox width={30} height={10} borderRadius="4px" />
-              <SkeletonBox width={25} height={10} borderRadius="4px" />
-              <SkeletonBox width={28} height={10} borderRadius="4px" />
-            </div>
-            
-            <div className="journalit-reviewv2-chart-skeleton-bars">
-              <SkeletonBox width={18} height="45%" borderRadius="2px" />
-              <SkeletonBox width={18} height="25%" borderRadius="2px" />
-              <SkeletonBox width={18} height="60%" borderRadius="2px" />
-              <SkeletonBox width={18} height="15%" borderRadius="2px" />
-              <SkeletonBox width={18} height="35%" borderRadius="2px" />
-            </div>
-            
-            <div className="journalit-reviewv2-chart-skeleton-xline" />
-            
-            <div className="journalit-reviewv2-chart-skeleton-xlabels">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <SkeletonBox
-                  key={i}
-                  width={20}
-                  height={10}
-                  borderRadius="4px"
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (chartData.length === 0) {
-    return (
-      <div className="journalit-reviewv2-chart-container">
-        <div className="journalit-reviewv2-chart-header">
-          <div className="journalit-reviewv2-chart-title">
-            {t('widget.trades-chart-weekly.name')}
-            <CurrencyConversionInfo metadata={currencyConversion} />
-          </div>
-        </div>
-        <div className="journalit-reviewv2-chart-empty">
-          {t('widget.empty.no-weekly-data')}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="journalit-reviewv2-chart-container">
-      <div className="journalit-reviewv2-chart-header">
-        <div className="journalit-reviewv2-chart-title">
-          {t('widget.trades-chart-weekly.name')}
-          <CurrencyConversionInfo metadata={currencyConversion} />
-        </div>
-      </div>
-      <div className="journalit-reviewv2-chart-body">
-        <SharedDailyPerformanceChart
-          data={chartData}
-          height={height}
-          currencyOverride={getSingleExplicitCurrency(trades)}
-          navigation={
-            preview
-              ? undefined
-              : {
-                  getPointAriaLabel: (point) =>
-                    getReviewWidgetPeriodAriaLabel('weekly', point.date),
-                  onPointClick: (point) => {
-                    if (!point.originalDate) return;
-                    const date = parseLocalDateSafe(point.originalDate);
-                    if (date) {
-                      void openReviewWidgetPeriod(plugin, 'weekly', date);
-                    }
-                  },
+    <PeriodPerformanceChartCard
+      title={t('widget.trades-chart-weekly.name')}
+      emptyMessage={t('widget.empty.no-weekly-data')}
+      loading={loading}
+      height={height}
+      skeleton={CHART_SKELETON}
+      currencyConversion={currencyConversion}
+      data={chartData}
+      currencyOverride={getSingleExplicitCurrency(trades)}
+      navigation={
+        preview
+          ? undefined
+          : {
+              getPointAriaLabel: (point) =>
+                getReviewWidgetPeriodAriaLabel('weekly', point.date),
+              onPointClick: (point) => {
+                if (!point.originalDate) return;
+                const date = parseLocalDateSafe(point.originalDate);
+                if (date) {
+                  void openReviewWidgetPeriod(plugin, 'weekly', date);
                 }
-          }
-        />
-      </div>
-    </div>
+              },
+            }
+      }
+    />
   );
 };
 

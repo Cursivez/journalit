@@ -223,6 +223,11 @@ export const TradeImportSyncSuggestion: React.FC<{
       <div className="journalit-trade-import-sync-suggestion__text">
         <strong>{title}</strong>
         <span>{body}</span>
+        {suggestion.scopeDescription && (
+          <span className="journalit-trade-import-sync-suggestion__scope">
+            {suggestion.scopeDescription}
+          </span>
+        )}
       </div>
       <button
         type="button"

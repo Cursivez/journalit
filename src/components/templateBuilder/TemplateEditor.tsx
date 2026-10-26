@@ -8,6 +8,8 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
+import { useEventBus } from '../../hooks/useEventBus';
+import { resolveDefaultTradeTemplate } from '../../services/templates/defaultTradeTemplateMetadata';
 import { Notice } from 'obsidian';
 import { DndContext, DragEndEvent, closestCenter } from '@dnd-kit/core';
 import {
@@ -65,14 +67,18 @@ import {
 } from '../../guides/layoutBuilderGuideIds';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { TradeReviewQuestionEditor } from './TradeReviewQuestionEditor';
+import { TradeReviewFieldLayoutEditor } from './TradeReviewFieldLayoutEditor';
 import type {
-  TradeReviewCardField,
+  TradeReviewFieldLayout,
   TradeReviewQuestionConfig,
   TradeReviewQuestionConfigKey,
   TradeReviewWidgetConfig,
 } from '../reviewV2/widgets/tradeReviewConfig';
 import {
   isValidTradeReviewQuestionGraph,
+  resolveTradeReviewFieldLayout,
+  TRADE_REVIEW_FIELD_PLACEMENT_CONFIG_KEYS,
+  TRADE_REVIEW_FIELD_PLACEMENTS,
   TRADE_REVIEW_QUESTION_CONFIG_KEY_LIST,
 } from '../reviewV2/widgets/tradeReviewConfig';
 import { mergeClassNames } from '../../utils/classNames';
@@ -141,140 +147,6 @@ const getDemonTrackerTrackingMethodDescription = (
   }
 };
 
-const TRADE_REVIEW_PRIMARY_METRIC_OPTIONS: TradeReviewCardField[] = [
-  'entry',
-  'exit',
-  'duration',
-  'risk',
-  'positionSize',
-  'stopLoss',
-  'takeProfit',
-  'fees',
-  'commission',
-  'mae',
-  'mfe',
-];
-
-const TRADE_REVIEW_CLASSIFICATION_OPTIONS: TradeReviewCardField[] = [
-  'account',
-  'setup',
-  'mistakes',
-  'tags',
-];
-
-const TRADE_REVIEW_MORE_CONTEXT_OPTIONS: TradeReviewCardField[] = [
-  'thesis',
-  'notes',
-  'customFields',
-  'positionSize',
-  'stopLoss',
-  'takeProfit',
-  'fees',
-  'commission',
-  'mae',
-  'mfe',
-];
-
-const getTradeReviewFieldLabel = (field: TradeReviewCardField): string => {
-  switch (field) {
-    case 'entry':
-      return t('widget.trade-review.field.entry');
-    case 'exit':
-      return t('widget.trade-review.field.exit');
-    case 'duration':
-      return t('widget.trade-review.field.duration');
-    case 'risk':
-      return t('widget.trade-review.field.risk');
-    case 'positionSize':
-      return t('widget.trade-review.field.position-size');
-    case 'stopLoss':
-      return t('widget.trade-review.field.stop-loss');
-    case 'takeProfit':
-      return t('widget.trade-review.field.take-profit');
-    case 'fees':
-      return t('widget.trade-review.field.fees');
-    case 'commission':
-      return t('widget.trade-review.field.commission');
-    case 'mae':
-      return t('widget.trade-review.field.mae');
-    case 'mfe':
-      return t('widget.trade-review.field.mfe');
-    case 'account':
-      return t('widget.trade-review.field.account');
-    case 'setup':
-      return t('widget.trade-review.field.setup');
-    case 'mistakes':
-      return t('widget.trade-review.field.mistakes');
-    case 'tags':
-      return t('widget.trade-review.field.tags');
-    case 'thesis':
-      return t('widget.trade-review.field.thesis');
-    case 'notes':
-      return t('widget.trade-review.field.notes');
-    case 'customFields':
-      return t('widget.trade-review.field.custom-fields');
-  }
-};
-
-const parseTradeReviewFieldList = (
-  value: unknown,
-  fallback: TradeReviewCardField[]
-): TradeReviewCardField[] => {
-  if (!Array.isArray(value)) return fallback;
-  return value.filter(
-    (field): field is TradeReviewCardField => typeof field === 'string'
-  );
-};
-
-const getTradeReviewFieldsSummary = (
-  selectedValues: string[],
-  options: Array<{ value: string; label: string }>
-): string => {
-  if (selectedValues.length === 0) {
-    return t('templateEditor.widget.trade-review.fields-none');
-  }
-  if (selectedValues.length === options.length) {
-    return t('templateEditor.widget.trade-review.fields-all');
-  }
-  if (selectedValues.length === 1) {
-    return (
-      options.find((option) => option.value === selectedValues[0])?.label ??
-      selectedValues[0]
-    );
-  }
-  return t('templateEditor.widget.trade-review.fields-count', {
-    count: String(selectedValues.length),
-  });
-};
-
-const filterTradeReviewFieldOptions = (
-  options: Array<{ value: string; label: string }>,
-  selectedValues: string[],
-  excludedValues: string[]
-): Array<{ value: string; label: string }> => {
-  const selected = new Set(selectedValues);
-  const excluded = new Set(excludedValues);
-  return options.filter(
-    (option) => selected.has(option.value) || !excluded.has(option.value)
-  );
-};
-
-const removeTradeReviewFields = (
-  fields: TradeReviewCardField[],
-  fieldsToRemove: string[]
-): TradeReviewCardField[] => {
-  const removed = new Set(fieldsToRemove);
-  return fields.filter((field) => !removed.has(field));
-};
-
-const getRemovedTradeReviewFields = (
-  previousFields: TradeReviewCardField[],
-  nextFields: string[]
-): TradeReviewCardField[] => {
-  const next = new Set(nextFields);
-  return previousFields.filter((field) => !next.has(field));
-};
-
 const hasIncompleteTradeReviewQuestion = (
   widgets: WidgetPlacement[]
 ): boolean =>
@@ -303,6 +175,8 @@ interface SortableWidgetItemProps {
   templateType: ReviewTemplateType;
   availableMarkdownHeadings: string[];
   availableDrcMarkdownHeadings: string[];
+  
+  availableTradeNoteHeadings: string[];
   skipWeekends: boolean;
   onWidgetChange: (index: number, widget: WidgetDefinition) => void;
   onConfigChange: (index: number, config: Record<string, unknown>) => void;
@@ -390,42 +264,481 @@ const getReviewContextDisplayOptions =
       label: t(labelKey),
     }));
 
-function useSortableWidgetItemContent({
-  id,
+interface WidgetConfigEditorProps {
+  id: string;
+  index: number;
+  widget: WidgetPlacement;
+  plugin: JournalitPlugin;
+  templateType: ReviewTemplateType;
+  availableMarkdownHeadings: string[];
+  availableDrcMarkdownHeadings: string[];
+  availableTradeNoteHeadings: string[];
+  skipWeekends: boolean;
+  onConfigChange: (index: number, config: Record<string, unknown>) => void;
+}
+
+const SessionLogConfigEditor: React.FC<WidgetConfigEditorProps> = ({
   index,
   widget,
-  plugin,
-  isEditing,
-  templateType,
-  availableMarkdownHeadings,
-  availableDrcMarkdownHeadings,
-  skipWeekends,
-  onWidgetChange,
   onConfigChange,
-  onDuplicate,
-  onRemove,
-  isJustAdded,
-  onPickerCancel,
-  insertSlotBefore,
-}: SortableWidgetItemProps): React.ReactNode {
-  const reviewContextDisplayOptions = getReviewContextDisplayOptions();
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id, disabled: !isEditing || widget.locked });
+}) => {
+  return (
+    <div className="template-widget-config-row">
+      <label className="template-review-context-toggle-row">
+        <input
+          type="checkbox"
+          checked={widget.config?.hideEmptyOutsideSession === true}
+          onChange={(event) =>
+            onConfigChange(index, {
+              ...widget.config,
+              hideEmptyOutsideSession: event.target.checked,
+            })
+          }
+        />
+        {t('templateEditor.widget.session-log.hide-empty-outside')}
+      </label>
+    </div>
+  );
+};
 
+const MarkdownHeaderConfigEditor: React.FC<WidgetConfigEditorProps> = ({
+  index,
+  widget,
+  onConfigChange,
+}) => {
   
   const headerConfig = widget.config as
     | { level?: number; text?: string }
     | undefined;
   const headerLevel = headerConfig?.level ?? 2;
   const headerText = headerConfig?.text ?? '';
+  return (
+    <div className="template-widget-config-row">
+      <select
+        aria-label={t('widget.markdown-header.name')}
+        value={headerLevel}
+        onChange={(e) =>
+          onConfigChange(index, {
+            ...widget.config,
+            level: parseInt(e.target.value, 10),
+            text: headerText,
+          })
+        }
+        className="template-select"
+      >
+        <option value={1}>H1</option>
+        <option value={2}>H2</option>
+        <option value={3}>H3</option>
+        <option value={4}>H4</option>
+        <option value={5}>H5</option>
+        <option value={6}>H6</option>
+      </select>
+      <input
+        type="text"
+        value={headerText}
+        onChange={(e) =>
+          onConfigChange(index, {
+            ...widget.config,
+            level: headerLevel,
+            text: e.target.value,
+          })
+        }
+        placeholder={t('templateEditor.widget.header-text-placeholder')}
+        className="template-input template-input--compact template-widget-config-input"
+      />
+    </div>
+  );
+};
+
+const MarkdownZoneConfigEditor: React.FC<WidgetConfigEditorProps> = ({
+  index,
+  widget,
+  onConfigChange,
+}) => {
   const markdownZoneConfig = widget.config as { text?: string } | undefined;
   const markdownZoneText = markdownZoneConfig?.text ?? '';
+  return (
+    <div className="template-widget-config-row template-widget-config-row--markdown-zone">
+      <textarea
+        value={markdownZoneText}
+        onChange={(e) =>
+          onConfigChange(index, {
+            ...widget.config,
+            text: e.target.value,
+          })
+        }
+        aria-label={t('templateEditor.widget.markdown-zone-text-label')}
+        placeholder={t('templateEditor.widget.markdown-zone-text-placeholder')}
+        className="template-input template-widget-config-textarea"
+        rows={3}
+      />
+    </div>
+  );
+};
+
+const ReviewContextFieldsConfigEditor: React.FC<WidgetConfigEditorProps> = ({
+  index,
+  widget,
+  plugin,
+  templateType,
+  onConfigChange,
+}) => {
+  const reviewContextDisplayOptions = getReviewContextDisplayOptions();
+  const reviewContextConfig = widget.config as
+    | ReviewContextFieldsWidgetConfig
+    | undefined;
+  const reviewContextFields = useMemo(
+    () =>
+      (plugin.customReviewFieldsService?.getFields() ?? []).filter(
+        (field) =>
+          field.scope.reviewTypes.includes(templateType) ||
+          field.scope.inheritTo.includes(templateType)
+      ),
+    [plugin.customReviewFieldsService, templateType]
+  );
+  const reviewContextGroupIdsWithFields = useMemo(
+    () =>
+      new Set(
+        reviewContextFields.flatMap((field) =>
+          field.groupId ? [field.groupId] : []
+        )
+      ),
+    [reviewContextFields]
+  );
+  const reviewContextGroups = useMemo(
+    () =>
+      (plugin.customReviewFieldsService?.getGroups() ?? []).filter((group) =>
+        reviewContextGroupIdsWithFields.has(group.id)
+      ),
+    [plugin.customReviewFieldsService, reviewContextGroupIdsWithFields]
+  );
+  const reviewContextSelectionMode =
+    reviewContextConfig?.selectionMode ?? 'all';
+  const reviewContextSelectedFieldIds = useMemo(
+    () =>
+      new Set(
+        (reviewContextConfig?.fieldIds || '').split(',').flatMap((fieldId) => {
+          const trimmed = fieldId.trim();
+          return trimmed ? [trimmed] : [];
+        })
+      ),
+    [reviewContextConfig?.fieldIds]
+  );
+
+  const reviewContextFieldsSummary = useMemo(() => {
+    const selectedFields = reviewContextFields.filter((field) =>
+      reviewContextSelectedFieldIds.has(field.id)
+    );
+    if (selectedFields.length === 0) {
+      return t(
+        'templateEditor.widget.review-context-fields.fields-placeholder'
+      );
+    }
+    if (selectedFields.length === 1) return selectedFields[0].label;
+    return t('templateEditor.widget.review-context-fields.fields-selected', {
+      count: String(selectedFields.length),
+    });
+  }, [reviewContextFields, reviewContextSelectedFieldIds]);
+  const updateReviewContextConfig = (
+    updates: Partial<ReviewContextFieldsWidgetConfig>
+  ) => {
+    onConfigChange(index, {
+      selectionMode: 'all',
+      showInherited: true,
+      showLocal: true,
+      hideEmpty: false,
+      ...widget.config,
+      ...updates,
+    });
+  };
+  const reviewContextDisplayMode: ReviewContextDisplayMode =
+    (reviewContextConfig?.showInherited ?? true) &&
+    (reviewContextConfig?.showLocal ?? true)
+      ? 'both'
+      : reviewContextConfig?.showInherited === false
+        ? 'current'
+        : 'inherited';
+
+  return (
+    <div className="template-review-context-config">
+      <div className="template-review-context-config-row">
+        <div className="template-review-context-config-label">
+          {t('templateEditor.widget.review-context-fields.selection')}
+        </div>
+        <div className="template-review-context-config-control">
+          <select
+            aria-label={t(
+              'templateEditor.widget.review-context-fields.selection'
+            )}
+            value={reviewContextSelectionMode}
+            onChange={(event) =>
+              updateReviewContextConfig({
+                selectionMode: parseReviewContextFieldsSelectionMode(
+                  event.target.value
+                ),
+                groupId: undefined,
+                fieldIds: undefined,
+              })
+            }
+            className="template-select template-select--compact"
+          >
+            <option value="all">
+              {t('templateEditor.widget.review-context-fields.selection.all')}
+            </option>
+            <option value="group">
+              {t('templateEditor.widget.review-context-fields.selection.group')}
+            </option>
+            <option value="fields">
+              {t(
+                'templateEditor.widget.review-context-fields.selection.fields'
+              )}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      {reviewContextSelectionMode === 'group' && (
+        <div className="template-review-context-config-row">
+          <div className="template-review-context-config-label">
+            {t('templateEditor.widget.review-context-fields.group')}
+          </div>
+          <div className="template-review-context-config-control">
+            <select
+              aria-label={t(
+                'templateEditor.widget.review-context-fields.group'
+              )}
+              value={reviewContextConfig?.groupId || ''}
+              onChange={(event) =>
+                updateReviewContextConfig({ groupId: event.target.value })
+              }
+              className="template-select template-select--compact"
+            >
+              <option value="">
+                {t(
+                  'templateEditor.widget.review-context-fields.group-placeholder'
+                )}
+              </option>
+              {reviewContextGroups.map((group) => (
+                <option key={group.id} value={group.id}>
+                  {group.name}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+      )}
+
+      {reviewContextSelectionMode === 'fields' && (
+        <div className="template-review-context-config-row template-review-context-config-row--fields">
+          <div className="template-review-context-config-label">
+            {t('templateEditor.widget.review-context-fields.fields')}
+          </div>
+          <div className="template-review-context-config-control template-review-context-field-list">
+            {reviewContextFields.length === 0 ? (
+              <div className="template-widget-config-help">
+                {t('templateEditor.widget.review-context-fields.no-fields')}
+              </div>
+            ) : (
+              <MultiSelectDropdownFilter
+                options={reviewContextFields.map((field) => ({
+                  value: field.id,
+                  label: field.label,
+                }))}
+                selectedValues={Array.from(reviewContextSelectedFieldIds)}
+                summary={reviewContextFieldsSummary}
+                emptyMessage={t(
+                  'templateEditor.widget.review-context-fields.no-fields'
+                )}
+                classNamePrefix="template-review-context-field-filter"
+                onChange={(fieldIds) =>
+                  updateReviewContextConfig({
+                    fieldIds: fieldIds.join(','),
+                  })
+                }
+              />
+            )}
+          </div>
+        </div>
+      )}
+
+      <div className="template-review-context-config-row">
+        <div className="template-review-context-config-label">
+          {t('templateEditor.widget.review-context-fields.context')}
+        </div>
+        <div className="template-review-context-config-control template-review-context-pills">
+          <SegmentedControl
+            options={reviewContextDisplayOptions}
+            value={reviewContextDisplayMode}
+            size="small"
+            onChange={(value) =>
+              updateReviewContextConfig({
+                showInherited: value === 'both' || value === 'inherited',
+                showLocal: value === 'both' || value === 'current',
+              })
+            }
+          />
+        </div>
+      </div>
+
+      <div className="template-review-context-config-row">
+        <div className="template-review-context-config-label">
+          {t('templateEditor.widget.review-context-fields.empty-values')}
+        </div>
+        <div className="template-review-context-config-control">
+          <label className="template-review-context-toggle-row">
+            <input
+              type="checkbox"
+              checked={reviewContextConfig?.hideEmpty ?? false}
+              onChange={(event) =>
+                updateReviewContextConfig({
+                  hideEmpty: event.target.checked,
+                })
+              }
+            />
+            {t('templateEditor.widget.review-context-fields.hide-empty')}
+          </label>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const TradeReviewConfigEditor: React.FC<WidgetConfigEditorProps> = ({
+  index,
+  widget,
+  plugin,
+  availableTradeNoteHeadings,
+  onConfigChange,
+}) => {
+  const tradeReviewConfig = (widget.config ?? {}) as TradeReviewWidgetConfig;
+  const tradeReviewCustomFieldDefinitions =
+    plugin.customFieldsService?.getFields() ?? [];
+  const fieldLayout = resolveTradeReviewFieldLayout(tradeReviewConfig);
+  const notesShown =
+    fieldLayout.visible.includes('notes') ||
+    fieldLayout.collapsed.includes('notes');
+  const notesSectionValues = tradeReviewConfig.notesSections ?? [];
+  
+  const notesSectionOptions = [
+    ...new Set([...availableTradeNoteHeadings, ...notesSectionValues]),
+  ].map((heading) => ({ value: heading, label: heading }));
+  const updateTradeReviewConfig = (updates: Record<string, unknown>): void => {
+    onConfigChange(index, {
+      ...widget.config,
+      ...updates,
+    });
+  };
+  const updateTradeReviewQuestions = (
+    key: TradeReviewQuestionConfigKey,
+    questions: TradeReviewQuestionConfig[]
+  ): void => {
+    updateTradeReviewConfig({ [key]: questions });
+  };
+  const resetTradeReviewQuestions = (
+    key: TradeReviewQuestionConfigKey
+  ): void => {
+    const nextConfig = { ...(widget.config ?? {}) };
+    delete nextConfig[key];
+    onConfigChange(index, nextConfig);
+  };
+  const updateTradeReviewFieldLayout = (
+    layout: TradeReviewFieldLayout
+  ): void => {
+    const nextConfig: Record<string, unknown> = { ...(widget.config ?? {}) };
+    
+    delete nextConfig.fields;
+    for (const placement of TRADE_REVIEW_FIELD_PLACEMENTS) {
+      nextConfig[TRADE_REVIEW_FIELD_PLACEMENT_CONFIG_KEYS[placement]] =
+        layout[placement];
+    }
+    if (layout.hidden.length > 0) {
+      nextConfig.hiddenFields = layout.hidden;
+    } else {
+      delete nextConfig.hiddenFields;
+    }
+    onConfigChange(index, nextConfig);
+  };
+
+  return (
+    <div className="template-review-context-config template-trade-review-config">
+      <TradeReviewFieldLayoutEditor
+        config={tradeReviewConfig}
+        customFieldDefinitions={tradeReviewCustomFieldDefinitions}
+        onChange={updateTradeReviewFieldLayout}
+      />
+
+      {notesShown && (
+        <div className="template-review-context-config-row template-review-context-config-row--fields">
+          <div className="template-review-context-config-label">
+            {t('templateEditor.widget.trade-review.notes-sections')}
+          </div>
+          <div className="template-review-context-config-control template-review-context-field-list">
+            <MultiSelectDropdownFilter
+              options={notesSectionOptions}
+              selectedValues={notesSectionValues}
+              summary={
+                notesSectionValues.length === 0
+                  ? t('templateEditor.widget.trade-review.notes-all')
+                  : notesSectionValues.join(', ')
+              }
+              emptyMessage={t(
+                'templateEditor.widget.trade-review.notes-sections-empty'
+              )}
+              classNamePrefix="template-review-context-field-filter"
+              onChange={(headings) =>
+                updateTradeReviewConfig({
+                  notesSections: headings.length > 0 ? headings : undefined,
+                })
+              }
+            />
+          </div>
+        </div>
+      )}
+
+      <div className="template-review-context-config-row">
+        <div className="template-review-context-config-label">
+          {t('templateEditor.widget.trade-review.display')}
+        </div>
+        <div className="template-review-context-config-control template-trade-review-toggle-list">
+          <label className="template-review-context-toggle-row">
+            <input
+              type="checkbox"
+              checked={tradeReviewConfig.showImages !== false}
+              onChange={(event) =>
+                updateTradeReviewConfig({
+                  showImages: event.target.checked,
+                })
+              }
+            />
+            {t('templateEditor.widget.trade-review.show-images')}
+          </label>
+          <label className="template-review-context-toggle-row">
+            <input
+              type="checkbox"
+              checked={tradeReviewConfig.defaultExpanded === false}
+              onChange={(event) =>
+                updateTradeReviewConfig({
+                  defaultExpanded: !event.target.checked,
+                })
+              }
+            />
+            {t('templateEditor.widget.weekly-drc-start-collapsed')}
+          </label>
+        </div>
+      </div>
+
+      <TradeReviewQuestionEditor
+        config={tradeReviewConfig}
+        onChange={updateTradeReviewQuestions}
+        onReset={resetTradeReviewQuestions}
+      />
+    </div>
+  );
+};
+
+const PreviousTradingDayContextConfigEditor: React.FC<
+  WidgetConfigEditorProps
+> = ({ id, index, widget, availableMarkdownHeadings, onConfigChange }) => {
   const previousContextConfig = widget.config as
     | { headings?: string; headingsJson?: string; fallbackMode?: string }
     | undefined;
@@ -437,6 +750,150 @@ function useSortableWidgetItemContent({
   const previousContextSectionRows =
     previousContextHeadings.length > 0 ? previousContextHeadings : [''];
   const previousContextDatalistId = `previous-context-heading-options-${id}`;
+  const updatePreviousContextHeading = (
+    headingIndex: number,
+    value: string
+  ) => {
+    const nextHeadings = [...previousContextSectionRows];
+    nextHeadings[headingIndex] = value;
+    onConfigChange(
+      index,
+      buildPreviousContextConfig(
+        widget.config,
+        nextHeadings,
+        previousContextFallbackMode
+      )
+    );
+  };
+
+  const removePreviousContextHeading = (headingIndex: number) => {
+    const nextHeadings = previousContextSectionRows.filter(
+      (_, currentIndex) => currentIndex !== headingIndex
+    );
+    onConfigChange(
+      index,
+      buildPreviousContextConfig(
+        widget.config,
+        nextHeadings,
+        previousContextFallbackMode
+      )
+    );
+  };
+
+  const addPreviousContextHeading = () => {
+    onConfigChange(
+      index,
+      buildPreviousContextConfig(
+        widget.config,
+        [...previousContextSectionRows, ''],
+        previousContextFallbackMode
+      )
+    );
+  };
+
+  return (
+    <div className="template-widget-config-row--previous-context">
+      <datalist id={previousContextDatalistId}>
+        {availableMarkdownHeadings.map((heading) => (
+          <option key={heading} value={heading} />
+        ))}
+      </datalist>
+
+      <div className="template-previous-context-controls">
+        <button
+          type="button"
+          className="template-previous-context-add-button"
+          onClick={addPreviousContextHeading}
+        >
+          {t('templateEditor.widget.previous-context-add-section')}
+        </button>
+
+        <select
+          value={previousContextFallbackMode}
+          onChange={(e) =>
+            onConfigChange(
+              index,
+              buildPreviousContextConfig(
+                widget.config,
+                previousContextHeadings,
+                e.target.value
+              )
+            )
+          }
+          className="template-select template-select--compact template-previous-context-fallback-select"
+          aria-label={t(
+            'templateEditor.widget.previous-context-fallback-label'
+          )}
+        >
+          <option value="nearest-earlier">
+            {t('templateEditor.widget.previous-context-fallback-nearest')}
+          </option>
+          <option value="expected-only">
+            {t('templateEditor.widget.previous-context-fallback-expected')}
+          </option>
+        </select>
+      </div>
+
+      <div className="template-previous-context-sections">
+        <div className="template-widget-config-label">
+          {t('templateEditor.widget.previous-context-sections-label')}
+        </div>
+        {previousContextSectionRows.map((heading, headingIndex) => (
+          <div
+            key={`previous-context-heading-${headingIndex}`}
+            className="template-previous-context-section-row"
+          >
+            <div className="template-previous-context-select-wrapper">
+              <select
+                value={heading}
+                onChange={(e) =>
+                  updatePreviousContextHeading(headingIndex, e.target.value)
+                }
+                aria-label={t(
+                  'templateEditor.widget.previous-context-heading-label'
+                )}
+                className="template-select template-select--compact template-previous-context-heading-input"
+              >
+                <option value="">
+                  {t(
+                    'templateEditor.widget.previous-context-heading-placeholder'
+                  )}
+                </option>
+                {availableMarkdownHeadings.map((availableHeading) => (
+                  <option key={availableHeading} value={availableHeading}>
+                    {availableHeading}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={14}
+                className="widget-picker-icon template-previous-context-select-icon"
+                aria-hidden="true"
+              />
+            </div>
+            <button
+              type="button"
+              className="template-previous-context-remove"
+              onClick={() => removePreviousContextHeading(headingIndex)}
+              aria-label={t('button.remove')}
+            >
+              {t('button.remove')}
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const WeeklyDrcContextConfigEditor: React.FC<WidgetConfigEditorProps> = ({
+  id,
+  index,
+  widget,
+  availableDrcMarkdownHeadings,
+  skipWeekends,
+  onConfigChange,
+}) => {
   const weeklyDrcDayOptions = skipWeekends
     ? ['monday', 'tuesday', 'wednesday', 'thursday', 'friday']
     : [
@@ -484,47 +941,6 @@ function useSortableWidgetItemContent({
     };
   };
 
-  const updatePreviousContextHeading = (
-    headingIndex: number,
-    value: string
-  ) => {
-    const nextHeadings = [...previousContextSectionRows];
-    nextHeadings[headingIndex] = value;
-    onConfigChange(
-      index,
-      buildPreviousContextConfig(
-        widget.config,
-        nextHeadings,
-        previousContextFallbackMode
-      )
-    );
-  };
-
-  const removePreviousContextHeading = (headingIndex: number) => {
-    const nextHeadings = previousContextSectionRows.filter(
-      (_, currentIndex) => currentIndex !== headingIndex
-    );
-    onConfigChange(
-      index,
-      buildPreviousContextConfig(
-        widget.config,
-        nextHeadings,
-        previousContextFallbackMode
-      )
-    );
-  };
-
-  const addPreviousContextHeading = () => {
-    onConfigChange(
-      index,
-      buildPreviousContextConfig(
-        widget.config,
-        [...previousContextSectionRows, ''],
-        previousContextFallbackMode
-      )
-    );
-  };
-
   const updateWeeklyDrcHeading = (headingIndex: number, value: string) => {
     const nextHeadings = [...weeklyDrcSectionRows];
     nextHeadings[headingIndex] = value;
@@ -542,169 +958,362 @@ function useSortableWidgetItemContent({
     onConfigChange(index, buildWeeklyDrcConfig([...weeklyDrcSectionRows, '']));
   };
 
+  return (
+    <div className="template-widget-config-row--previous-context template-weekly-drc-config">
+      <datalist id={weeklyDrcDatalistId}>
+        {availableDrcMarkdownHeadings.map((heading) => (
+          <option key={heading} value={heading} />
+        ))}
+      </datalist>
+
+      <div className="template-weekly-drc-options">
+        <label className="template-weekly-drc-field">
+          <span className="template-widget-config-label">
+            {t('templateEditor.widget.weekly-drc-day-label')}
+          </span>
+          <select
+            value={weeklyDrcDayScope}
+            onChange={(e) =>
+              onConfigChange(
+                index,
+                buildWeeklyDrcConfig(weeklyDrcHeadings, {
+                  dayScope: e.target.value,
+                })
+              )
+            }
+            className="template-select template-select--compact"
+          >
+            <option value="all">
+              {t('templateEditor.widget.weekly-drc-day-all')}
+            </option>
+            {weeklyDrcDayOptions.map((day) => (
+              <option key={day} value={day}>
+                {day.charAt(0).toUpperCase() + day.slice(1)}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        <label className="template-weekly-drc-collapse-toggle">
+          <input
+            type="checkbox"
+            checked={!(weeklyDrcConfig?.defaultExpanded ?? true)}
+            onChange={(e) =>
+              onConfigChange(
+                index,
+                buildWeeklyDrcConfig(weeklyDrcHeadings, {
+                  defaultExpanded: !e.target.checked,
+                })
+              )
+            }
+          />
+          {t('templateEditor.widget.weekly-drc-start-collapsed')}
+        </label>
+      </div>
+
+      <div className="template-previous-context-sections">
+        <div className="template-weekly-drc-sections-header">
+          <div className="template-weekly-drc-sections-title">
+            {t('templateEditor.widget.previous-context-sections-label')}
+          </div>
+          <button
+            type="button"
+            className="template-previous-context-add-button"
+            onClick={addWeeklyDrcHeading}
+          >
+            {t('templateEditor.widget.previous-context-add-section')}
+          </button>
+        </div>
+        {weeklyDrcSectionRows.map((heading, headingIndex) => (
+          <div
+            key={`weekly-drc-heading-${headingIndex}`}
+            className="template-previous-context-section-row"
+          >
+            <div className="template-previous-context-select-wrapper">
+              <select
+                aria-label={t(
+                  'templateEditor.widget.previous-context-heading-label'
+                )}
+                value={heading}
+                onChange={(e) =>
+                  updateWeeklyDrcHeading(headingIndex, e.target.value)
+                }
+                className="template-select template-select--compact template-previous-context-heading-input"
+              >
+                <option value="">
+                  {t(
+                    'templateEditor.widget.previous-context-heading-placeholder'
+                  )}
+                </option>
+                {availableDrcMarkdownHeadings.map((availableHeading) => (
+                  <option key={availableHeading} value={availableHeading}>
+                    {availableHeading}
+                  </option>
+                ))}
+              </select>
+              <ChevronDown
+                size={14}
+                className="widget-picker-icon template-previous-context-select-icon"
+                aria-hidden="true"
+              />
+            </div>
+            <button
+              type="button"
+              className="template-previous-context-remove template-previous-context-remove--icon"
+              onClick={() => removeWeeklyDrcHeading(headingIndex)}
+              aria-label={t('button.remove')}
+            >
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <line x1="18" y1="6" x2="6" y2="18" />
+                <line x1="6" y1="6" x2="18" y2="18" />
+              </svg>
+            </button>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const GameConfigEditor: React.FC<WidgetConfigEditorProps> = ({
+  index,
+  widget,
+  onConfigChange,
+}) => {
+  const gameConfig = widget.config as
+    | { pageSize?: number; showRating?: boolean }
+    | undefined;
+  const pageSize = gameConfig?.pageSize ?? 5;
+  const showRating = gameConfig?.showRating ?? true;
+  return (
+    <div className="template-widget-config-row template-widget-config-row--wide">
+      <label className="template-widget-config-label">
+        {t('templateEditor.widget.page-size')}
+        <select
+          value={pageSize}
+          onChange={(e) =>
+            onConfigChange(index, {
+              ...widget.config,
+              pageSize: parseInt(e.target.value, 10),
+              showRating,
+            })
+          }
+          className="template-select template-select--compact"
+        >
+          <option value={5}>5</option>
+          <option value={10}>10</option>
+          <option value={15}>15</option>
+          <option value={20}>20</option>
+        </select>
+      </label>
+      <label className="template-widget-config-label template-widget-config-label--clickable">
+        <input
+          type="checkbox"
+          checked={showRating}
+          onChange={(e) =>
+            onConfigChange(index, {
+              ...widget.config,
+              pageSize,
+              showRating: e.target.checked,
+            })
+          }
+          className="template-widget-config-checkbox"
+        />
+        {t('templateEditor.widget.show-rating-column')}
+      </label>
+    </div>
+  );
+};
+
+const DemonTrackerConfigEditor: React.FC<WidgetConfigEditorProps> = ({
+  id,
+  index,
+  widget,
+  templateType,
+  onConfigChange,
+}) => {
   const demonConfig = widget.config as DemonTrackerWidgetConfig | undefined;
   const demonOptions = resolveDemonTrackerOptions(demonConfig);
   const demonTrackingMethodDescription =
     getDemonTrackerTrackingMethodDescription(demonOptions.trackingMethod);
   const demonTrackingMethodSelectId = `${id}-demon-tracking-method`;
-  const reviewContextConfig = widget.config as
-    | ReviewContextFieldsWidgetConfig
-    | undefined;
-  const reviewContextFields = useMemo(
-    () =>
-      (plugin.customReviewFieldsService?.getFields() ?? []).filter(
-        (field) =>
-          field.scope.reviewTypes.includes(templateType) ||
-          field.scope.inheritTo.includes(templateType)
-      ),
-    [plugin.customReviewFieldsService, templateType]
-  );
-  const reviewContextGroupIdsWithFields = useMemo(
-    () =>
-      new Set(
-        reviewContextFields.flatMap((field) =>
-          field.groupId ? [field.groupId] : []
-        )
-      ),
-    [reviewContextFields]
-  );
-  const reviewContextGroups = useMemo(
-    () =>
-      (plugin.customReviewFieldsService?.getGroups() ?? []).filter((group) =>
-        reviewContextGroupIdsWithFields.has(group.id)
-      ),
-    [plugin.customReviewFieldsService, reviewContextGroupIdsWithFields]
-  );
-  const reviewContextSelectionMode =
-    reviewContextConfig?.selectionMode ?? 'all';
-  const reviewContextSelectedFieldIds = useMemo(
-    () =>
-      new Set(
-        (reviewContextConfig?.fieldIds || '').split(',').flatMap((fieldId) => {
-          const trimmed = fieldId.trim();
-          return trimmed ? [trimmed] : [];
-        })
-      ),
-    [reviewContextConfig?.fieldIds]
-  );
+  return (
+    <div className="template-widget-config-row template-widget-config-row--wide template-widget-config-row--demon-tracker">
+      <div className="template-widget-config-label">
+        <span className="template-widget-config-label-heading">
+          <label htmlFor={demonTrackingMethodSelectId}>
+            {t('templateEditor.widget.demon-tracker.tracking-method')}
+          </label>
+          <Tooltip
+            content={demonTrackingMethodDescription}
+            preferredPosition="top"
+            disclosureLabel={demonTrackingMethodDescription}
+          >
+            <span
+              className="journalit-template-widget-config-info journalit-dashboard-metric-info"
+              aria-hidden="true"
+            >
+              <Info size={13} />
+            </span>
+          </Tooltip>
+        </span>
+        <select
+          id={demonTrackingMethodSelectId}
+          value={demonOptions.trackingMethod}
+          onChange={(event) => {
+            const trackingMethod = event.target.value;
+            if (isDemonTrackerTrackingMethod(trackingMethod)) {
+              onConfigChange(index, {
+                ...widget.config,
+                trackingMethod,
+              });
+            }
+          }}
+          className="template-select template-select--compact"
+        >
+          {DEMON_TRACKER_TRACKING_METHODS.map((method) => (
+            <option key={method} value={method}>
+              {getDemonTrackerTrackingMethodLabel(method)}
+            </option>
+          ))}
+        </select>
+      </div>
 
-  const tradeReviewConfig = widget.config as
-    | TradeReviewWidgetConfig
-    | undefined;
+      {(templateType === 'weekly' || templateType === 'monthly') && (
+        <label className="template-widget-config-label">
+          {t('templateEditor.widget.demon-tracker.stop-after')}
+          <select
+            value={demonOptions.stopThreshold}
+            onChange={(event) => {
+              const stopThreshold = Number(event.target.value);
+              if (isDemonTrackerStopThreshold(stopThreshold)) {
+                onConfigChange(index, {
+                  ...widget.config,
+                  stopThreshold,
+                });
+              }
+            }}
+            aria-label={t('templateEditor.widget.demon-tracker.stop-after')}
+            className="template-select template-select--compact"
+          >
+            {DEMON_TRACKER_STOP_THRESHOLDS.map((threshold) => (
+              <option key={threshold} value={threshold}>
+                {threshold}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+    </div>
+  );
+};
 
-  const primaryMetricValues = parseTradeReviewFieldList(
-    tradeReviewConfig?.primaryMetrics,
-    ['entry', 'exit', 'duration', 'risk']
-  );
-  const classificationFieldValues = parseTradeReviewFieldList(
-    tradeReviewConfig?.classificationFields,
-    ['account', 'setup', 'mistakes', 'tags']
-  );
-  const moreContextFieldValues = parseTradeReviewFieldList(
-    tradeReviewConfig?.moreContextFields,
-    ['thesis', 'notes', 'customFields']
-  );
-  const primaryMetricOptions = TRADE_REVIEW_PRIMARY_METRIC_OPTIONS.map(
-    (field) => ({ value: field, label: getTradeReviewFieldLabel(field) })
-  );
-  const classificationFieldOptions = TRADE_REVIEW_CLASSIFICATION_OPTIONS.map(
-    (field) => ({ value: field, label: getTradeReviewFieldLabel(field) })
-  );
-  const moreContextFieldOptions = [
-    ...TRADE_REVIEW_MORE_CONTEXT_OPTIONS.map((field) => ({
-      value: field,
-      label: getTradeReviewFieldLabel(field),
-    })),
-  ];
-  const availablePrimaryMetricOptions = filterTradeReviewFieldOptions(
-    primaryMetricOptions,
-    primaryMetricValues,
-    moreContextFieldValues
-  );
-  const availableMoreContextFieldOptions = filterTradeReviewFieldOptions(
-    moreContextFieldOptions,
-    moreContextFieldValues,
-    primaryMetricValues
-  );
-  const updateTradeReviewConfig = (updates: Record<string, unknown>): void => {
-    onConfigChange(index, {
-      ...widget.config,
-      ...updates,
-    });
-  };
-  const updateTradeReviewQuestions = (
-    key: TradeReviewQuestionConfigKey,
-    questions: TradeReviewQuestionConfig[]
-  ): void => {
-    updateTradeReviewConfig({ [key]: questions });
-  };
-  const resetTradeReviewQuestions = (
-    key: TradeReviewQuestionConfigKey
-  ): void => {
-    const nextConfig = { ...(widget.config ?? {}) };
-    delete nextConfig[key];
-    onConfigChange(index, nextConfig);
-  };
-  const updateTradeReviewPrimaryMetrics = (fields: string[]): void => {
-    const removedPrimaryFields = getRemovedTradeReviewFields(
-      primaryMetricValues,
-      fields
-    );
-    updateTradeReviewConfig({
-      primaryMetrics: fields,
-      moreContextFields: removeTradeReviewFields(
-        moreContextFieldValues,
-        fields.concat(removedPrimaryFields)
-      ),
-    });
-  };
-  const updateTradeReviewMoreContextFields = (fields: string[]): void => {
-    const removedMoreContextFields = getRemovedTradeReviewFields(
-      moreContextFieldValues,
-      fields
-    );
-    updateTradeReviewConfig({
-      moreContextFields: fields,
-      primaryMetrics: removeTradeReviewFields(
-        primaryMetricValues,
-        fields.concat(removedMoreContextFields)
-      ),
-    });
-  };
+const WIDGET_CONFIG_EDITORS = new Map<
+  string,
+  React.FC<WidgetConfigEditorProps>
+>(
+  Object.entries({
+    'session-log': SessionLogConfigEditor,
+    'markdown-header': MarkdownHeaderConfigEditor,
+    'markdown-zone': MarkdownZoneConfigEditor,
+    'review-context-fields': ReviewContextFieldsConfigEditor,
+    'trade-review': TradeReviewConfigEditor,
+    'previous-trading-day-context': PreviousTradingDayContextConfigEditor,
+    'weekly-drc-context': WeeklyDrcContextConfigEditor,
+    'technical-game': GameConfigEditor,
+    'mental-game': GameConfigEditor,
+    'demon-tracker': DemonTrackerConfigEditor,
+  })
+);
 
-  const reviewContextFieldsSummary = useMemo(() => {
-    const selectedFields = reviewContextFields.filter((field) =>
-      reviewContextSelectedFieldIds.has(field.id)
-    );
-    if (selectedFields.length === 0) {
-      return t(
-        'templateEditor.widget.review-context-fields.fields-placeholder'
-      );
-    }
-    if (selectedFields.length === 1) return selectedFields[0].label;
-    return t('templateEditor.widget.review-context-fields.fields-selected', {
-      count: String(selectedFields.length),
-    });
-  }, [reviewContextFields, reviewContextSelectedFieldIds]);
-  const updateReviewContextConfig = (
-    updates: Partial<ReviewContextFieldsWidgetConfig>
-  ) => {
-    onConfigChange(index, {
-      selectionMode: 'all',
-      showInherited: true,
-      showLocal: true,
-      hideEmpty: false,
-      ...widget.config,
-      ...updates,
-    });
-  };
-  const reviewContextDisplayMode: ReviewContextDisplayMode =
-    (reviewContextConfig?.showInherited ?? true) &&
-    (reviewContextConfig?.showLocal ?? true)
-      ? 'both'
-      : reviewContextConfig?.showInherited === false
-        ? 'current'
-        : 'inherited';
+const WidgetRowActions: React.FC<{
+  index: number;
+  onDuplicate: (index: number) => void;
+  onRemove: (index: number) => void;
+}> = ({ index, onDuplicate, onRemove }) => (
+  <div className="template-section-actions">
+    <button
+      onClick={() => onDuplicate(index)}
+      className="template-section-action template-section-duplicate"
+      aria-label={t('builder.sidebar.duplicate')}
+    >
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+      >
+        <rect x="9" y="9" width="13" height="13" rx="2" />
+        <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
+      </svg>
+    </button>
+    <button
+      onClick={() => onRemove(index)}
+      className="template-section-action template-section-remove"
+      aria-label={t('button.remove')}
+    >
+      <svg
+        width="12"
+        height="12"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <path d="M3 6h18" />
+        <path d="M8 6V4h8v2" />
+        <path d="M19 6l-1 14H6L5 6" />
+        <path d="M10 11v5" />
+        <path d="M14 11v5" />
+      </svg>
+    </button>
+  </div>
+);
+
+function useSortableWidgetItemContent({
+  id,
+  index,
+  widget,
+  plugin,
+  isEditing,
+  templateType,
+  availableMarkdownHeadings,
+  availableDrcMarkdownHeadings,
+  availableTradeNoteHeadings,
+  skipWeekends,
+  onWidgetChange,
+  onConfigChange,
+  onDuplicate,
+  onRemove,
+  isJustAdded,
+  onPickerCancel,
+  insertSlotBefore,
+}: SortableWidgetItemProps): React.ReactNode {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id, disabled: !isEditing || widget.locked });
+  const canEditWidget = isEditing && !widget.locked;
+  const ConfigEditor = isEditing
+    ? WIDGET_CONFIG_EDITORS.get(widget.type)
+    : undefined;
 
   return (
     <div
@@ -749,7 +1358,7 @@ function useSortableWidgetItemContent({
         {widget.locked && <div className="template-widget-handle-spacer" />}
 
         <div className="template-widget-info">
-          {isEditing && !widget.locked ? (
+          {canEditWidget ? (
             <WidgetPicker
               value={widget.type}
               valueConfig={widget.config}
@@ -773,716 +1382,28 @@ function useSortableWidgetItemContent({
           )}
         </div>
 
-        {isEditing && !widget.locked && (
-          <div className="template-section-actions">
-            <button
-              onClick={() => onDuplicate(index)}
-              className="template-section-action template-section-duplicate"
-              aria-label={t('builder.sidebar.duplicate')}
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-              >
-                <rect x="9" y="9" width="13" height="13" rx="2" />
-                <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-              </svg>
-            </button>
-            <button
-              onClick={() => onRemove(index)}
-              className="template-section-action template-section-remove"
-              aria-label={t('button.remove')}
-            >
-              <svg
-                width="12"
-                height="12"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              >
-                <path d="M3 6h18" />
-                <path d="M8 6V4h8v2" />
-                <path d="M19 6l-1 14H6L5 6" />
-                <path d="M10 11v5" />
-                <path d="M14 11v5" />
-              </svg>
-            </button>
-          </div>
+        {canEditWidget && (
+          <WidgetRowActions
+            index={index}
+            onDuplicate={onDuplicate}
+            onRemove={onRemove}
+          />
         )}
       </div>
 
-      
-      {widget.type === 'session-log' && isEditing && (
-        <div className="template-widget-config-row">
-          <label className="template-review-context-toggle-row">
-            <input
-              type="checkbox"
-              checked={widget.config?.hideEmptyOutsideSession === true}
-              onChange={(event) =>
-                onConfigChange(index, {
-                  ...widget.config,
-                  hideEmptyOutsideSession: event.target.checked,
-                })
-              }
-            />
-            {t('templateEditor.widget.session-log.hide-empty-outside')}
-          </label>
-        </div>
-      )}
-
-      
-      {widget.type === 'markdown-header' && isEditing && (
-        <div className="template-widget-config-row">
-          <select
-            aria-label={t('widget.markdown-header.name')}
-            value={headerLevel}
-            onChange={(e) =>
-              onConfigChange(index, {
-                ...widget.config,
-                level: parseInt(e.target.value, 10),
-                text: headerText,
-              })
-            }
-            className="template-select"
-          >
-            <option value={1}>H1</option>
-            <option value={2}>H2</option>
-            <option value={3}>H3</option>
-            <option value={4}>H4</option>
-            <option value={5}>H5</option>
-            <option value={6}>H6</option>
-          </select>
-          <input
-            type="text"
-            value={headerText}
-            onChange={(e) =>
-              onConfigChange(index, {
-                ...widget.config,
-                level: headerLevel,
-                text: e.target.value,
-              })
-            }
-            placeholder={t('templateEditor.widget.header-text-placeholder')}
-            className="template-input template-input--compact template-widget-config-input"
-          />
-        </div>
-      )}
-
-      
-      {widget.type === 'markdown-zone' && isEditing && (
-        <div className="template-widget-config-row template-widget-config-row--markdown-zone">
-          <textarea
-            value={markdownZoneText}
-            onChange={(e) =>
-              onConfigChange(index, {
-                ...widget.config,
-                text: e.target.value,
-              })
-            }
-            aria-label={t('templateEditor.widget.markdown-zone-text-label')}
-            placeholder={t(
-              'templateEditor.widget.markdown-zone-text-placeholder'
-            )}
-            className="template-input template-widget-config-textarea"
-            rows={3}
-          />
-        </div>
-      )}
-
-      {widget.type === 'review-context-fields' && isEditing && (
-        <div className="template-review-context-config">
-          <div className="template-review-context-config-row">
-            <div className="template-review-context-config-label">
-              {t('templateEditor.widget.review-context-fields.selection')}
-            </div>
-            <div className="template-review-context-config-control">
-              <select
-                aria-label={t(
-                  'templateEditor.widget.review-context-fields.selection'
-                )}
-                value={reviewContextSelectionMode}
-                onChange={(event) =>
-                  updateReviewContextConfig({
-                    selectionMode: parseReviewContextFieldsSelectionMode(
-                      event.target.value
-                    ),
-                    groupId: undefined,
-                    fieldIds: undefined,
-                  })
-                }
-                className="template-select template-select--compact"
-              >
-                <option value="all">
-                  {t(
-                    'templateEditor.widget.review-context-fields.selection.all'
-                  )}
-                </option>
-                <option value="group">
-                  {t(
-                    'templateEditor.widget.review-context-fields.selection.group'
-                  )}
-                </option>
-                <option value="fields">
-                  {t(
-                    'templateEditor.widget.review-context-fields.selection.fields'
-                  )}
-                </option>
-              </select>
-            </div>
-          </div>
-
-          {reviewContextSelectionMode === 'group' && (
-            <div className="template-review-context-config-row">
-              <div className="template-review-context-config-label">
-                {t('templateEditor.widget.review-context-fields.group')}
-              </div>
-              <div className="template-review-context-config-control">
-                <select
-                  aria-label={t(
-                    'templateEditor.widget.review-context-fields.group'
-                  )}
-                  value={reviewContextConfig?.groupId || ''}
-                  onChange={(event) =>
-                    updateReviewContextConfig({ groupId: event.target.value })
-                  }
-                  className="template-select template-select--compact"
-                >
-                  <option value="">
-                    {t(
-                      'templateEditor.widget.review-context-fields.group-placeholder'
-                    )}
-                  </option>
-                  {reviewContextGroups.map((group) => (
-                    <option key={group.id} value={group.id}>
-                      {group.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
-            </div>
-          )}
-
-          {reviewContextSelectionMode === 'fields' && (
-            <div className="template-review-context-config-row template-review-context-config-row--fields">
-              <div className="template-review-context-config-label">
-                {t('templateEditor.widget.review-context-fields.fields')}
-              </div>
-              <div className="template-review-context-config-control template-review-context-field-list">
-                {reviewContextFields.length === 0 ? (
-                  <div className="template-widget-config-help">
-                    {t('templateEditor.widget.review-context-fields.no-fields')}
-                  </div>
-                ) : (
-                  <MultiSelectDropdownFilter
-                    options={reviewContextFields.map((field) => ({
-                      value: field.id,
-                      label: field.label,
-                    }))}
-                    selectedValues={Array.from(reviewContextSelectedFieldIds)}
-                    summary={reviewContextFieldsSummary}
-                    emptyMessage={t(
-                      'templateEditor.widget.review-context-fields.no-fields'
-                    )}
-                    classNamePrefix="template-review-context-field-filter"
-                    onChange={(fieldIds) =>
-                      updateReviewContextConfig({
-                        fieldIds: fieldIds.join(','),
-                      })
-                    }
-                  />
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="template-review-context-config-row">
-            <div className="template-review-context-config-label">
-              {t('templateEditor.widget.review-context-fields.context')}
-            </div>
-            <div className="template-review-context-config-control template-review-context-pills">
-              <SegmentedControl
-                options={reviewContextDisplayOptions}
-                value={reviewContextDisplayMode}
-                size="small"
-                onChange={(value) =>
-                  updateReviewContextConfig({
-                    showInherited: value === 'both' || value === 'inherited',
-                    showLocal: value === 'both' || value === 'current',
-                  })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="template-review-context-config-row">
-            <div className="template-review-context-config-label">
-              {t('templateEditor.widget.review-context-fields.empty-values')}
-            </div>
-            <div className="template-review-context-config-control">
-              <label className="template-review-context-toggle-row">
-                <input
-                  type="checkbox"
-                  checked={reviewContextConfig?.hideEmpty ?? false}
-                  onChange={(event) =>
-                    updateReviewContextConfig({
-                      hideEmpty: event.target.checked,
-                    })
-                  }
-                />
-                {t('templateEditor.widget.review-context-fields.hide-empty')}
-              </label>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {widget.type === 'trade-review' && isEditing && (
-        <div className="template-review-context-config template-trade-review-config">
-          <div className="template-review-context-config-row template-review-context-config-row--fields">
-            <div className="template-review-context-config-label">
-              {t('templateEditor.widget.trade-review.primary-metrics')}
-            </div>
-            <div className="template-review-context-config-control template-review-context-field-list">
-              <MultiSelectDropdownFilter
-                options={availablePrimaryMetricOptions}
-                selectedValues={primaryMetricValues}
-                summary={getTradeReviewFieldsSummary(
-                  primaryMetricValues,
-                  availablePrimaryMetricOptions
-                )}
-                emptyMessage={t('templateEditor.widget.trade-review.no-fields')}
-                classNamePrefix="template-review-context-field-filter"
-                onChange={updateTradeReviewPrimaryMetrics}
-              />
-            </div>
-          </div>
-
-          <div className="template-review-context-config-row template-review-context-config-row--fields">
-            <div className="template-review-context-config-label">
-              {t('templateEditor.widget.trade-review.classification')}
-            </div>
-            <div className="template-review-context-config-control template-review-context-field-list">
-              <MultiSelectDropdownFilter
-                options={classificationFieldOptions}
-                selectedValues={classificationFieldValues}
-                summary={getTradeReviewFieldsSummary(
-                  classificationFieldValues,
-                  classificationFieldOptions
-                )}
-                emptyMessage={t('templateEditor.widget.trade-review.no-fields')}
-                classNamePrefix="template-review-context-field-filter"
-                onChange={(fields) =>
-                  updateTradeReviewConfig({ classificationFields: fields })
-                }
-              />
-            </div>
-          </div>
-
-          <div className="template-review-context-config-row template-review-context-config-row--fields">
-            <div className="template-review-context-config-label">
-              {t('templateEditor.widget.trade-review.more-context')}
-            </div>
-            <div className="template-review-context-config-control template-review-context-field-list">
-              <MultiSelectDropdownFilter
-                options={availableMoreContextFieldOptions}
-                selectedValues={moreContextFieldValues}
-                summary={getTradeReviewFieldsSummary(
-                  moreContextFieldValues,
-                  availableMoreContextFieldOptions
-                )}
-                emptyMessage={t('templateEditor.widget.trade-review.no-fields')}
-                classNamePrefix="template-review-context-field-filter"
-                onChange={updateTradeReviewMoreContextFields}
-              />
-            </div>
-          </div>
-
-          <div className="template-review-context-config-row">
-            <div className="template-review-context-config-label">
-              {t('templateEditor.widget.trade-review.display')}
-            </div>
-            <div className="template-review-context-config-control template-trade-review-toggle-list">
-              <label className="template-review-context-toggle-row">
-                <input
-                  type="checkbox"
-                  checked={tradeReviewConfig?.showImages !== false}
-                  onChange={(event) =>
-                    updateTradeReviewConfig({
-                      showImages: event.target.checked,
-                    })
-                  }
-                />
-                {t('templateEditor.widget.trade-review.show-images')}
-              </label>
-              <label className="template-review-context-toggle-row">
-                <input
-                  type="checkbox"
-                  checked={tradeReviewConfig?.defaultExpanded === false}
-                  onChange={(event) =>
-                    updateTradeReviewConfig({
-                      defaultExpanded: !event.target.checked,
-                    })
-                  }
-                />
-                {t('templateEditor.widget.weekly-drc-start-collapsed')}
-              </label>
-            </div>
-          </div>
-
-          <TradeReviewQuestionEditor
-            config={tradeReviewConfig ?? {}}
-            onChange={updateTradeReviewQuestions}
-            onReset={resetTradeReviewQuestions}
-          />
-        </div>
-      )}
-
-      
-      {widget.type === 'previous-trading-day-context' && isEditing && (
-        <div className="template-widget-config-row--previous-context">
-          <datalist id={previousContextDatalistId}>
-            {availableMarkdownHeadings.map((heading) => (
-              <option key={heading} value={heading} />
-            ))}
-          </datalist>
-
-          <div className="template-previous-context-controls">
-            <button
-              type="button"
-              className="template-previous-context-add-button"
-              onClick={addPreviousContextHeading}
-            >
-              {t('templateEditor.widget.previous-context-add-section')}
-            </button>
-
-            <select
-              value={previousContextFallbackMode}
-              onChange={(e) =>
-                onConfigChange(
-                  index,
-                  buildPreviousContextConfig(
-                    widget.config,
-                    previousContextHeadings,
-                    e.target.value
-                  )
-                )
-              }
-              className="template-select template-select--compact template-previous-context-fallback-select"
-              aria-label={t(
-                'templateEditor.widget.previous-context-fallback-label'
-              )}
-            >
-              <option value="nearest-earlier">
-                {t('templateEditor.widget.previous-context-fallback-nearest')}
-              </option>
-              <option value="expected-only">
-                {t('templateEditor.widget.previous-context-fallback-expected')}
-              </option>
-            </select>
-          </div>
-
-          <div className="template-previous-context-sections">
-            <div className="template-widget-config-label">
-              {t('templateEditor.widget.previous-context-sections-label')}
-            </div>
-            {previousContextSectionRows.map((heading, headingIndex) => (
-              <div
-                key={`previous-context-heading-${headingIndex}`}
-                className="template-previous-context-section-row"
-              >
-                <div className="template-previous-context-select-wrapper">
-                  <select
-                    value={heading}
-                    onChange={(e) =>
-                      updatePreviousContextHeading(headingIndex, e.target.value)
-                    }
-                    aria-label={t(
-                      'templateEditor.widget.previous-context-heading-label'
-                    )}
-                    className="template-select template-select--compact template-previous-context-heading-input"
-                  >
-                    <option value="">
-                      {t(
-                        'templateEditor.widget.previous-context-heading-placeholder'
-                      )}
-                    </option>
-                    {availableMarkdownHeadings.map((availableHeading) => (
-                      <option key={availableHeading} value={availableHeading}>
-                        {availableHeading}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={14}
-                    className="widget-picker-icon template-previous-context-select-icon"
-                    aria-hidden="true"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="template-previous-context-remove"
-                  onClick={() => removePreviousContextHeading(headingIndex)}
-                  aria-label={t('button.remove')}
-                >
-                  {t('button.remove')}
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      
-      {widget.type === 'weekly-drc-context' && isEditing && (
-        <div className="template-widget-config-row--previous-context template-weekly-drc-config">
-          <datalist id={weeklyDrcDatalistId}>
-            {availableDrcMarkdownHeadings.map((heading) => (
-              <option key={heading} value={heading} />
-            ))}
-          </datalist>
-
-          <div className="template-weekly-drc-options">
-            <label className="template-weekly-drc-field">
-              <span className="template-widget-config-label">
-                {t('templateEditor.widget.weekly-drc-day-label')}
-              </span>
-              <select
-                value={weeklyDrcDayScope}
-                onChange={(e) =>
-                  onConfigChange(
-                    index,
-                    buildWeeklyDrcConfig(weeklyDrcHeadings, {
-                      dayScope: e.target.value,
-                    })
-                  )
-                }
-                className="template-select template-select--compact"
-              >
-                <option value="all">
-                  {t('templateEditor.widget.weekly-drc-day-all')}
-                </option>
-                {weeklyDrcDayOptions.map((day) => (
-                  <option key={day} value={day}>
-                    {day.charAt(0).toUpperCase() + day.slice(1)}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="template-weekly-drc-collapse-toggle">
-              <input
-                type="checkbox"
-                checked={!(weeklyDrcConfig?.defaultExpanded ?? true)}
-                onChange={(e) =>
-                  onConfigChange(
-                    index,
-                    buildWeeklyDrcConfig(weeklyDrcHeadings, {
-                      defaultExpanded: !e.target.checked,
-                    })
-                  )
-                }
-              />
-              {t('templateEditor.widget.weekly-drc-start-collapsed')}
-            </label>
-          </div>
-
-          <div className="template-previous-context-sections">
-            <div className="template-weekly-drc-sections-header">
-              <div className="template-weekly-drc-sections-title">
-                {t('templateEditor.widget.previous-context-sections-label')}
-              </div>
-              <button
-                type="button"
-                className="template-previous-context-add-button"
-                onClick={addWeeklyDrcHeading}
-              >
-                {t('templateEditor.widget.previous-context-add-section')}
-              </button>
-            </div>
-            {weeklyDrcSectionRows.map((heading, headingIndex) => (
-              <div
-                key={`weekly-drc-heading-${headingIndex}`}
-                className="template-previous-context-section-row"
-              >
-                <div className="template-previous-context-select-wrapper">
-                  <select
-                    aria-label={t(
-                      'templateEditor.widget.previous-context-heading-label'
-                    )}
-                    value={heading}
-                    onChange={(e) =>
-                      updateWeeklyDrcHeading(headingIndex, e.target.value)
-                    }
-                    className="template-select template-select--compact template-previous-context-heading-input"
-                  >
-                    <option value="">
-                      {t(
-                        'templateEditor.widget.previous-context-heading-placeholder'
-                      )}
-                    </option>
-                    {availableDrcMarkdownHeadings.map((availableHeading) => (
-                      <option key={availableHeading} value={availableHeading}>
-                        {availableHeading}
-                      </option>
-                    ))}
-                  </select>
-                  <ChevronDown
-                    size={14}
-                    className="widget-picker-icon template-previous-context-select-icon"
-                    aria-hidden="true"
-                  />
-                </div>
-                <button
-                  type="button"
-                  className="template-previous-context-remove template-previous-context-remove--icon"
-                  onClick={() => removeWeeklyDrcHeading(headingIndex)}
-                  aria-label={t('button.remove')}
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <line x1="18" y1="6" x2="6" y2="18" />
-                    <line x1="6" y1="6" x2="18" y2="18" />
-                  </svg>
-                </button>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      
-      {(widget.type === 'technical-game' || widget.type === 'mental-game') &&
-        isEditing &&
-        (() => {
-          const gameConfig = widget.config as
-            | { pageSize?: number; showRating?: boolean }
-            | undefined;
-          const pageSize = gameConfig?.pageSize ?? 5;
-          const showRating = gameConfig?.showRating ?? true;
-          return (
-            <div className="template-widget-config-row template-widget-config-row--wide">
-              <label className="template-widget-config-label">
-                {t('templateEditor.widget.page-size')}
-                <select
-                  value={pageSize}
-                  onChange={(e) =>
-                    onConfigChange(index, {
-                      ...widget.config,
-                      pageSize: parseInt(e.target.value, 10),
-                      showRating,
-                    })
-                  }
-                  className="template-select template-select--compact"
-                >
-                  <option value={5}>5</option>
-                  <option value={10}>10</option>
-                  <option value={15}>15</option>
-                  <option value={20}>20</option>
-                </select>
-              </label>
-              <label className="template-widget-config-label template-widget-config-label--clickable">
-                <input
-                  type="checkbox"
-                  checked={showRating}
-                  onChange={(e) =>
-                    onConfigChange(index, {
-                      ...widget.config,
-                      pageSize,
-                      showRating: e.target.checked,
-                    })
-                  }
-                  className="template-widget-config-checkbox"
-                />
-                {t('templateEditor.widget.show-rating-column')}
-              </label>
-            </div>
-          );
-        })()}
-
-      
-      {widget.type === 'demon-tracker' && isEditing && (
-        <div className="template-widget-config-row template-widget-config-row--wide template-widget-config-row--demon-tracker">
-          <div className="template-widget-config-label">
-            <span className="template-widget-config-label-heading">
-              <label htmlFor={demonTrackingMethodSelectId}>
-                {t('templateEditor.widget.demon-tracker.tracking-method')}
-              </label>
-              <Tooltip
-                content={demonTrackingMethodDescription}
-                preferredPosition="top"
-                disclosureLabel={demonTrackingMethodDescription}
-              >
-                <span
-                  className="journalit-template-widget-config-info journalit-dashboard-metric-info"
-                  aria-hidden="true"
-                >
-                  <Info size={13} />
-                </span>
-              </Tooltip>
-            </span>
-            <select
-              id={demonTrackingMethodSelectId}
-              value={demonOptions.trackingMethod}
-              onChange={(event) => {
-                const trackingMethod = event.target.value;
-                if (isDemonTrackerTrackingMethod(trackingMethod)) {
-                  onConfigChange(index, {
-                    ...widget.config,
-                    trackingMethod,
-                  });
-                }
-              }}
-              className="template-select template-select--compact"
-            >
-              {DEMON_TRACKER_TRACKING_METHODS.map((method) => (
-                <option key={method} value={method}>
-                  {getDemonTrackerTrackingMethodLabel(method)}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {(templateType === 'weekly' || templateType === 'monthly') && (
-            <label className="template-widget-config-label">
-              {t('templateEditor.widget.demon-tracker.stop-after')}
-              <select
-                value={demonOptions.stopThreshold}
-                onChange={(event) => {
-                  const stopThreshold = Number(event.target.value);
-                  if (isDemonTrackerStopThreshold(stopThreshold)) {
-                    onConfigChange(index, {
-                      ...widget.config,
-                      stopThreshold,
-                    });
-                  }
-                }}
-                aria-label={t('templateEditor.widget.demon-tracker.stop-after')}
-                className="template-select template-select--compact"
-              >
-                {DEMON_TRACKER_STOP_THRESHOLDS.map((threshold) => (
-                  <option key={threshold} value={threshold}>
-                    {threshold}
-                  </option>
-                ))}
-              </select>
-            </label>
-          )}
-        </div>
+      {ConfigEditor && (
+        <ConfigEditor
+          id={id}
+          index={index}
+          widget={widget}
+          plugin={plugin}
+          templateType={templateType}
+          availableMarkdownHeadings={availableMarkdownHeadings}
+          availableDrcMarkdownHeadings={availableDrcMarkdownHeadings}
+          availableTradeNoteHeadings={availableTradeNoteHeadings}
+          skipWeekends={skipWeekends}
+          onConfigChange={onConfigChange}
+        />
       )}
     </div>
   );
@@ -1640,6 +1561,27 @@ function useTemplateEditorModel({
       return trimmed ? [trimmed] : [];
     });
   }, [availableMarkdownHeadings, templateService, templateType]);
+
+  
+  
+  const [tradeLayoutVersion, setTradeLayoutVersion] = useState(0);
+  useEventBus('trade-template:changed', () =>
+    setTradeLayoutVersion((version) => version + 1)
+  );
+  useEventBus('default-template:changed', ({ type }) => {
+    if (type === 'trade') setTradeLayoutVersion((version) => version + 1);
+  });
+  const availableTradeNoteHeadings = useMemo(() => {
+    void tradeLayoutVersion;
+    const headings = (
+      resolveDefaultTradeTemplate(plugin).noteSections ?? []
+    ).flatMap((section) =>
+      section.type === 'header' && section.text.trim()
+        ? [section.text.trim()]
+        : []
+    );
+    return [...new Set(headings)];
+  }, [plugin, tradeLayoutVersion]);
 
   
   useEffect(() => {
@@ -1960,6 +1902,7 @@ function useTemplateEditorModel({
     hasChanges,
     availableMarkdownHeadings,
     availableDrcMarkdownHeadings,
+    availableTradeNoteHeadings,
     canEdit,
     getWidgetEditorId,
     previewTemplate,
@@ -1999,6 +1942,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
     hasChanges,
     availableMarkdownHeadings,
     availableDrcMarkdownHeadings,
+    availableTradeNoteHeadings,
     canEdit,
     getWidgetEditorId,
     previewTemplate,
@@ -2173,6 +2117,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
                         availableDrcMarkdownHeadings={
                           availableDrcMarkdownHeadings
                         }
+                        availableTradeNoteHeadings={availableTradeNoteHeadings}
                         skipWeekends={
                           plugin.settings.trade.skipWeekends ?? true
                         }

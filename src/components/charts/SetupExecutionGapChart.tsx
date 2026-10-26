@@ -17,6 +17,7 @@ import type {
 } from '../../services/setup/types';
 import { t } from '../../lang/helpers';
 import { calculateYAxisWidth, generateNiceAxis } from '../../utils/chartUtils';
+import { skipVerticalGridCoordinates } from './chartGrid';
 
 const SVG_TEXT_ANCHOR_MIDDLE = 'middle';
 
@@ -137,6 +138,7 @@ export const SetupExecutionGapChart: React.FC<SetupExecutionGapChartProps> = ({
               strokeDasharray="3 3"
               strokeOpacity={0.45}
               vertical={false}
+              verticalCoordinatesGenerator={skipVerticalGridCoordinates}
             />
             <ReferenceLine
               y={0}
@@ -338,7 +340,7 @@ function getExecutionGapBucketValue(
   return valueMode === 'rMultiple' ? bucket.totalR : bucket.totalPnL;
 }
 
-export function buildSetupExecutionGapAxis(values: {
+function buildSetupExecutionGapAxis(values: {
   live: number;
   missed: number;
   livePlusMissed: number;

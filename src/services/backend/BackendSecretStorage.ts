@@ -2,6 +2,11 @@
 
 import type JournalitPlugin from '../../main';
 import { ApiClient } from './ApiClient';
+import {
+  normalizeSecretStorageValue,
+  readSecretStorageValue,
+  writeSecretStorageValue,
+} from './SecretStorageAccess';
 
 const AUTH_TOKEN_SECRET_NAME = 'auth-token';
 const REFRESH_TOKEN_SECRET_NAME = 'refresh-token';
@@ -15,24 +20,12 @@ function createNamespaceId(): string {
   return `${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 }
 
-function normalizeSecret(value: string | null | undefined): string | null {
-  if (!value) {
-    return null;
-  }
-
-  const trimmed = value.trim();
-  return trimmed ? value : null;
-}
-
 function getSecret(plugin: JournalitPlugin, id: string): string | null {
-  return normalizeSecret(plugin.app.secretStorage?.getSecret(id));
+  return readSecretStorageValue(plugin.app, id);
 }
 
 function setSecret(plugin: JournalitPlugin, id: string, value: string): void {
-  if (!plugin.app.secretStorage) {
-    throw new Error('Obsidian SecretStorage is unavailable');
-  }
-  plugin.app.secretStorage.setSecret(id, value);
+  writeSecretStorageValue(plugin.app, id, value);
 }
 
 function clearSecret(plugin: JournalitPlugin, id: string): void {
@@ -68,6 +61,12 @@ function getVaultNamespace(plugin: JournalitPlugin): string {
   return hashNamespace(backend.secretStorageNamespace);
 }
 
+
+function readProvisionedRefreshToken(plugin: JournalitPlugin): string | null {
+  const value: unknown = plugin.settings.backendIntegration?.refreshToken;
+  return typeof value === 'string' ? normalizeSecretStorageValue(value) : null;
+}
+
 function getSecretId(plugin: JournalitPlugin, secretName: string): string {
   return `journalit-${getVaultNamespace(plugin)}-${secretName}`;
 }
@@ -82,7 +81,9 @@ export class BackendSecretStorage {
       return storedToken;
     }
 
-    return normalizeSecret(plugin.settings.backendIntegration?.authToken);
+    return normalizeSecretStorageValue(
+      plugin.settings.backendIntegration?.authToken
+    );
   }
 
   static hasAuthToken(plugin: JournalitPlugin): boolean {
@@ -90,7 +91,12 @@ export class BackendSecretStorage {
   }
 
   static getRefreshToken(plugin: JournalitPlugin): string | null {
-    return getSecret(plugin, getSecretId(plugin, REFRESH_TOKEN_SECRET_NAME));
+    
+    
+    return (
+      getSecret(plugin, getSecretId(plugin, REFRESH_TOKEN_SECRET_NAME)) ??
+      readProvisionedRefreshToken(plugin)
+    );
   }
 
   static hasRefreshToken(plugin: JournalitPlugin): boolean {
@@ -115,6 +121,9 @@ export class BackendSecretStorage {
       getSecretId(plugin, REFRESH_TOKEN_SECRET_NAME),
       refreshToken
     );
+    if (plugin.settings.backendIntegration) {
+      plugin.settings.backendIntegration.refreshToken = undefined;
+    }
     try {
       this.setAuthToken(plugin, accessToken);
     } catch (error) {
@@ -170,11 +179,15 @@ export class BackendSecretStorage {
     setSecret(plugin, getSecretId(plugin, AUTH_TOKEN_SECRET_NAME), accessToken);
     if (plugin.settings.backendIntegration) {
       plugin.settings.backendIntegration.authToken = undefined;
+      plugin.settings.backendIntegration.refreshToken = undefined;
     }
     return ApiClient.replaceAuthToken(expectedAccessToken, accessToken);
   }
 
   static clearRefreshToken(plugin: JournalitPlugin): void {
+    if (plugin.settings.backendIntegration) {
+      plugin.settings.backendIntegration.refreshToken = undefined;
+    }
     clearSecret(plugin, getSecretId(plugin, REFRESH_TOKEN_SECRET_NAME));
   }
 
@@ -214,7 +227,9 @@ export class BackendSecretStorage {
       return storedPassword;
     }
 
-    return normalizeSecret(plugin.settings.backendIntegration?.ftpPassword);
+    return normalizeSecretStorageValue(
+      plugin.settings.backendIntegration?.ftpPassword
+    );
   }
 
   static hasFTPPassword(plugin: JournalitPlugin): boolean {
@@ -249,7 +264,7 @@ export class BackendSecretStorage {
     let migratedFTPPassword = false;
     let shouldSave = false;
 
-    const legacyAuthToken = normalizeSecret(backend.authToken);
+    const legacyAuthToken = normalizeSecretStorageValue(backend.authToken);
     if (legacyAuthToken) {
       try {
         const authTokenSecretId = getSecretId(plugin, AUTH_TOKEN_SECRET_NAME);
@@ -267,7 +282,33 @@ export class BackendSecretStorage {
       }
     }
 
-    const legacyFTPPassword = normalizeSecret(backend.ftpPassword);
+    
+    
+    
+    const provisionedRefreshToken = readProvisionedRefreshToken(plugin);
+    if (backend.refreshToken !== undefined && !provisionedRefreshToken) {
+      backend.refreshToken = undefined;
+      shouldSave = true;
+    } else if (provisionedRefreshToken) {
+      try {
+        const refreshTokenSecretId = getSecretId(
+          plugin,
+          REFRESH_TOKEN_SECRET_NAME
+        );
+        if (
+          options.overwriteExistingSecrets ||
+          !getSecret(plugin, refreshTokenSecretId)
+        ) {
+          setSecret(plugin, refreshTokenSecretId, provisionedRefreshToken);
+        }
+        backend.refreshToken = undefined;
+        shouldSave = true;
+      } catch (error) {
+        console.warn('[Journalit] Failed to migrate refresh token:', error);
+      }
+    }
+
+    const legacyFTPPassword = normalizeSecretStorageValue(backend.ftpPassword);
     if (legacyFTPPassword) {
       try {
         const ftpPasswordSecretId = getSecretId(

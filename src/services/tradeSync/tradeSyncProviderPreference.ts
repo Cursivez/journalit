@@ -6,7 +6,8 @@ type TradeSyncProviderPreference =
   | 'metatrader'
   | 'tradovate'
   | 'rithmic'
-  | 'ctrader';
+  | 'ctrader'
+  | 'hyperliquid';
 
 const STORAGE_KEY = 'journalit:trade-sync-provider';
 
@@ -17,6 +18,7 @@ export function readTradeSyncProviderPreference(
   if (stored === 'tradovate') return 'tradovate';
   if (stored === 'rithmic') return 'rithmic';
   if (stored === 'ctrader') return 'ctrader';
+  if (stored === 'hyperliquid') return 'hyperliquid';
   return 'metatrader';
 }
 

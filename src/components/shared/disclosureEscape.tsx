@@ -41,6 +41,11 @@ export function ModalEscapeProvider({
   );
 }
 
+
+export function useEscapeRegistrar(): EscapeRegistrar | null {
+  return useContext(EscapeInterceptorContext);
+}
+
 export function useDisclosureEscape({
   active,
   onEscape,

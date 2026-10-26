@@ -12,7 +12,19 @@ import {
   normalizeViewMode,
 } from './performanceBreakdownChartModel';
 
-export type PerformanceBreakdownKind = 'ticker' | 'setup' | 'tag';
+export type PerformanceBreakdownKind = 'ticker' | 'setup' | 'tag' | 'rating';
+
+type PerformanceBreakdownMetricKey =
+  | 'tickerPerformanceMetric'
+  | 'setupPerformanceMetric'
+  | 'tagPerformanceMetric'
+  | 'ratingPerformanceMetric';
+
+type PerformanceBreakdownViewModeKey =
+  | 'tickerPerformanceViewMode'
+  | 'setupPerformanceViewMode'
+  | 'tagPerformanceViewMode';
+
 
 const SETTINGS_KEYS = {
   ticker: {
@@ -27,17 +39,15 @@ const SETTINGS_KEYS = {
     metric: 'tagPerformanceMetric',
     viewMode: 'tagPerformanceViewMode',
   },
+  rating: {
+    metric: 'ratingPerformanceMetric',
+    viewMode: null,
+  },
 } as const satisfies Record<
   PerformanceBreakdownKind,
   {
-    metric:
-      | 'tickerPerformanceMetric'
-      | 'setupPerformanceMetric'
-      | 'tagPerformanceMetric';
-    viewMode:
-      | 'tickerPerformanceViewMode'
-      | 'setupPerformanceViewMode'
-      | 'tagPerformanceViewMode';
+    metric: PerformanceBreakdownMetricKey;
+    viewMode: PerformanceBreakdownViewModeKey | null;
   }
 >;
 
@@ -106,15 +116,16 @@ export const usePerformanceBreakdownPreferences = (
     persistMetric
   );
 
+  const viewModeKey = settingsKeys.viewMode;
   const persistedViewMode = normalizeViewMode(
-    plugin?.settings?.dashboard?.[settingsKeys.viewMode]
+    viewModeKey ? plugin?.settings?.dashboard?.[viewModeKey] : undefined
   );
   const persistViewMode = React.useCallback(
     async (viewMode: PerformanceBreakdownViewMode): Promise<void> => {
       const dashboard = plugin?.settings.dashboard;
-      if (!plugin || !dashboard) return;
+      if (!plugin || !dashboard || !viewModeKey) return;
 
-      dashboard[settingsKeys.viewMode] = viewMode;
+      dashboard[viewModeKey] = viewMode;
       try {
         await plugin.saveSettings();
       } catch (error) {
@@ -124,7 +135,7 @@ export const usePerformanceBreakdownPreferences = (
         );
       }
     },
-    [kind, plugin, settingsKeys.viewMode]
+    [kind, plugin, viewModeKey]
   );
   const [selectedViewMode, handleViewModeChange] = usePersistedSelection(
     persistedViewMode,

@@ -21,7 +21,10 @@ import {
   getQuarterForMonth,
 } from '../../utils/dateUtils';
 import { getTradingDay } from '../../utils/tradingDayUtils';
-import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
+import {
+  forceMetadataCacheRefresh,
+  waitForFileIndexed,
+} from '../../utils/dataRefresh';
 import {
   addSampleOwnershipToMarkdown,
   appendSampleReviewBody,
@@ -35,6 +38,13 @@ import { TemplateTransformationService } from '../templates/TemplateTransformati
 import { eventBus } from '../events/EventBus';
 import { registerPathIndexInvalidator } from '../indexing/pathIndexInvalidator';
 import type { Unsubscribe } from '../events/types';
+import {
+  applyReviewFrontmatterUpdates,
+  applyReviewInitialContent,
+  type ReviewCreationReceipt,
+  type ReviewFrontmatterGuard,
+  type ReviewInitialContent,
+} from '../reviews';
 import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeExecutionAnalytics';
 import { safeString } from '../../utils/safeString';
 import type { ReviewStreakItem } from '../../utils/reviewStreaks';
@@ -162,6 +172,7 @@ export class DRCService {
         
         if (
           payload.action === 'trade-review-updated' ||
+          payload.journalFields ||
           payload.action === 'review-status-updated'
         ) {
           return;
@@ -486,6 +497,7 @@ export class DRCService {
       
       const generatedContent = await this.generateInitialDRCContent(
         date,
+        undefined,
         options.sampleMaterialization
       );
       const content = claimedOwnership
@@ -517,6 +529,41 @@ export class DRCService {
       console.error('Error creating DRC:', error);
       throw error;
     }
+  }
+
+  public async createDRCWithReceipt(
+    date: Date,
+    initialContent?: ReviewInitialContent,
+    source?: string
+  ): Promise<ReviewCreationReceipt> {
+    const path = this.getDRCNotePath(date);
+    const existingAtPath = this.app.vault.getAbstractFileByPath(path);
+    if (existingAtPath instanceof TFile)
+      return { file: existingAtPath, created: false };
+
+    const existingDRC = await this.findDRCByFrontmatterDate(date);
+    if (existingDRC) return { file: existingDRC, created: false };
+
+    await this.ensureDirectoryExists(path);
+    const content = await this.generateInitialDRCContent(date, initialContent);
+    let newFile: TFile;
+    try {
+      newFile = await this.app.vault.create(path, content);
+    } catch (error) {
+      const racedFile = this.app.vault.getAbstractFileByPath(path);
+      if (racedFile instanceof TFile)
+        return { file: racedFile, created: false };
+      throw error;
+    }
+
+    await forceMetadataCacheRefresh(this.app, newFile);
+    eventBus.publish('review:changed', {
+      type: 'drc',
+      action: 'created',
+      filePath: path,
+      ...(source === undefined ? {} : { source }),
+    });
+    return { file: newFile, created: true };
   }
 
   
@@ -612,61 +659,61 @@ export class DRCService {
     source: string = 'unknown'
   ): Promise<void> {
     try {
-      
-      const file = this.app.vault.getAbstractFileByPath(filePath);
-
-      if (!file || !(file instanceof TFile)) {
-        throw new Error(`DRC file not found: ${filePath}`);
-      }
-
-      
-      await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-        const frontmatterRecord = asRecord(frontmatter) ?? {};
-        const { imagesByWidget, ...rest } = updates;
-        Object.assign(frontmatterRecord, rest);
-
-        if (
-          imagesByWidget &&
-          typeof imagesByWidget === 'object' &&
-          !Array.isArray(imagesByWidget)
-        ) {
-          const existingByWidget =
-            frontmatterRecord.imagesByWidget &&
-            typeof frontmatterRecord.imagesByWidget === 'object' &&
-            !Array.isArray(frontmatterRecord.imagesByWidget)
-              ? frontmatterRecord.imagesByWidget
-              : {};
-          frontmatterRecord.imagesByWidget = {
-            ...existingByWidget,
-            ...imagesByWidget,
-          };
-        } else if (imagesByWidget !== undefined) {
-          frontmatterRecord.imagesByWidget = imagesByWidget;
-        }
-      });
-
-      
-      await forceMetadataCacheRefresh(this.app, file);
-
-      
-      
-      if (source === 'user-input') {
-        return;
-      }
-
-      
-      eventBus.publish('review:changed', {
-        type: 'drc',
-        action: 'updated',
+      await this.updateDRCFrontmatterGuarded(
         filePath,
-        source,
-      });
-
-      return;
+        updates,
+        () => undefined,
+        source
+      );
     } catch (error) {
       console.error(`Error updating DRC frontmatter in ${filePath}:`, error);
       throw error;
     }
+  }
+
+  public async updateDRCFrontmatterGuarded(
+    filePath: string,
+    updates: Partial<Record<string, unknown>>,
+    guard: ReviewFrontmatterGuard,
+    source: string = 'unknown'
+  ): Promise<void> {
+    await this.updateDRCFrontmatterWith(
+      filePath,
+      (frontmatter) => {
+        guard(frontmatter);
+        return updates;
+      },
+      source
+    );
+  }
+
+  
+  public async updateDRCFrontmatterWith(
+    filePath: string,
+    compute: (
+      frontmatter: Readonly<Record<string, unknown>>
+    ) => Partial<Record<string, unknown>>,
+    source: string = 'unknown'
+  ): Promise<void> {
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile))
+      throw new Error(`DRC file not found: ${filePath}`);
+
+    await this.app.fileManager.processFrontMatter(
+      file,
+      (frontmatter: Record<string, unknown>) => {
+        applyReviewFrontmatterUpdates(frontmatter, compute(frontmatter));
+      }
+    );
+
+    await forceMetadataCacheRefresh(this.app, file);
+    if (source === 'user-input') return;
+    eventBus.publish('review:changed', {
+      type: 'drc',
+      action: 'updated',
+      filePath,
+      source,
+    });
   }
 
   
@@ -826,17 +873,6 @@ export class DRCService {
   }
 
   
-  private getDRCFile(path: string): TFile | null {
-    const file = this.app.vault.getAbstractFileByPath(path);
-
-    if (!file || !(file instanceof TFile)) {
-      return null;
-    }
-
-    return file;
-  }
-
-  
   public extractDRCData(file: TFile): ExtractedDRCData | null {
     try {
       
@@ -862,9 +898,6 @@ export class DRCService {
       }
       if (Array.isArray(record.tags)) {
         drcData.tags = getStringArray(record, 'tags');
-      }
-      if (Array.isArray(record.previousDayGoals)) {
-        drcData.previousDayGoals = getStringArray(record, 'previousDayGoals');
       }
       if (Array.isArray(record.sessionMistakes)) {
         drcData.sessionMistakes = getStringArray(record, 'sessionMistakes');
@@ -895,42 +928,6 @@ export class DRCService {
     }
   }
 
-  
-  public async getPreviousDayGoals(
-    currentDate: Date
-  ): Promise<string[] | null> {
-    try {
-      
-      const previousDRCPath = this.getPreviousDayDRCPath(currentDate);
-
-      
-      const exists = await this.app.vault.adapter.exists(previousDRCPath);
-
-      if (!exists) {
-        return null;
-      }
-
-      
-      const previousDRCFile =
-        this.app.vault.getAbstractFileByPath(previousDRCPath);
-
-      if (!previousDRCFile || !(previousDRCFile instanceof TFile)) {
-        return null;
-      }
-
-      
-      await forceMetadataCacheRefresh(this.app, previousDRCFile);
-
-      
-      const drcData = this.extractDRCData(previousDRCFile);
-
-      return drcData?.dailyGoals || null;
-    } catch (error) {
-      console.error('Error getting previous day goals:', error);
-      return null;
-    }
-  }
-
   public async getPreviousTradingDayContext(
     currentDate: Date,
     headings: string[],
@@ -943,7 +940,6 @@ export class DRCService {
       );
       if (!previousDRCFile) return null;
 
-      await forceMetadataCacheRefresh(this.app, previousDRCFile);
       const frontmatter =
         this.app.metadataCache.getFileCache(previousDRCFile)?.frontmatter;
       if (!frontmatter || frontmatter.type !== 'drc') return null;
@@ -979,7 +975,7 @@ export class DRCService {
     const previousDRCPath = this.getPreviousDayDRCPath(currentDate);
     const expectedFile = this.app.vault.getAbstractFileByPath(previousDRCPath);
     if (expectedFile instanceof TFile) {
-      await forceMetadataCacheRefresh(this.app, expectedFile);
+      await waitForFileIndexed(this.app, expectedFile);
       const expectedFrontmatter =
         this.app.metadataCache.getFileCache(expectedFile)?.frontmatter;
       if (expectedFrontmatter?.type === 'drc') return expectedFile;
@@ -1023,6 +1019,7 @@ export class DRCService {
   
   private async generateInitialDRCContent(
     date: Date,
+    initialContent?: ReviewInitialContent,
     sampleMaterialization?: SampleReviewMaterialization
   ): Promise<string> {
     
@@ -1064,6 +1061,13 @@ export class DRCService {
     
     drcData.templateId = template.id;
     drcData.templateVersion = template.version;
+
+    applyReviewInitialContent(
+      drcData,
+      initialContent,
+      'dailyGoals',
+      'dailyGoalStatus'
+    );
 
     
     const authoredData = sampleMaterialization

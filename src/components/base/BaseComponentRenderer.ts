@@ -2,8 +2,8 @@
 
 import { App, TFile, WorkspaceLeaf } from 'obsidian';
 import { Root } from 'react-dom/client';
+import { createWorkspaceRoot } from '../../core/libraryGlobals';
 import React from 'react';
-import { createRoot } from 'react-dom/client';
 import { CurrencyProvider } from '../../contexts/CurrencyContext';
 import { DisplayPolicyProvider } from '../../contexts/DisplayPolicyContext';
 
@@ -38,6 +38,8 @@ interface RootContext {
   root: Root;
   domContainer: HTMLElement;
   leafId?: string;
+  
+  retainWhenDetached: boolean;
 }
 
 export abstract class BaseComponentRenderer {
@@ -273,66 +275,44 @@ export abstract class BaseComponentRenderer {
 
   
   public unmountAllComponents(): void {
-    
-    const rootsSnapshot: Record<
-      string,
-      { domContainer: string; isConnected: boolean; ageSeconds: string }
-    > = {};
-    const now = Date.now();
+    for (const [rootId, rootContext] of Array.from(this.reactRoots.entries())) {
+      this.disposeRoot(rootId, rootContext);
+    }
 
-    
-    const activeFile = this.app.workspace.getActiveFile();
-    const activeFilePath = activeFile?.path;
+    this.cleanupOrphanedDomElements();
+  }
 
-    for (const [rootId, rootContext] of this.reactRoots.entries()) {
-      try {
-        
-        if (activeFilePath && rootId.startsWith(activeFilePath)) {
-          continue;
-        }
-
-        
-        const creationTime = this.rootCreationTimes.get(rootId) || now;
-        const ageInSeconds = ((now - creationTime) / 1000).toFixed(1);
-
-        
-        rootsSnapshot[rootId] = {
-          domContainer: rootContext.domContainer?.tagName || 'unknown',
-          isConnected: rootContext.domContainer?.isConnected || false,
-          ageSeconds: ageInSeconds,
-        };
-
-        
-        try {
-          rootContext.root.unmount();
-        } catch {
-          // intentional
-        }
-
-        
-        if (rootContext.domContainer && rootContext.domContainer.isConnected) {
-          try {
-            rootContext.domContainer.remove();
-          } catch {
-            // intentional
-          }
-        }
-      } catch (error: unknown) {
-        console.error(`[${this.constructor.name}] Error unmounting root:`, {
-          rootId,
-          error,
-        });
+  
+  public unmountDetachedRoots(): void {
+    for (const [rootId, rootContext] of Array.from(this.reactRoots.entries())) {
+      if (
+        !rootContext.retainWhenDetached &&
+        !rootContext.domContainer.isConnected
+      ) {
+        this.disposeRoot(rootId, rootContext);
       }
     }
+  }
 
-    
-    for (const rootId of Object.keys(rootsSnapshot)) {
-      this.reactRoots.delete(rootId);
-      this.rootCreationTimes.delete(rootId);
+  
+  protected allowsDetachedHost(_container: HTMLElement): boolean {
+    return false;
+  }
+
+  private disposeRoot(rootId: string, rootContext: RootContext): void {
+    this.reactRoots.delete(rootId);
+    this.rootCreationTimes.delete(rootId);
+
+    try {
+      rootContext.root.unmount();
+    } catch (error: unknown) {
+      console.error(`[${this.constructor.name}] Error unmounting root:`, {
+        rootId,
+        error,
+      });
     }
 
-    
-    this.cleanupOrphanedDomElements();
+    rootContext.domContainer.remove();
   }
 
   
@@ -537,6 +517,14 @@ export abstract class BaseComponentRenderer {
     filePath: string
   ): RootContext {
     
+    
+    const previousRoot = this.reactRoots.get(rootId);
+    if (previousRoot) {
+      this.disposeRoot(rootId, previousRoot);
+    }
+    this.unmountDetachedRoots();
+
+    
     const reactContainer = container.createDiv({
       cls: this.getWrapperClassName(),
       attr: {
@@ -558,13 +546,14 @@ export abstract class BaseComponentRenderer {
     reactContainer.setAttribute('data-protected', 'true');
 
     
-    const root = createRoot(reactContainer);
+    const root = createWorkspaceRoot(reactContainer);
 
     
     const rootContext: RootContext = {
       root,
       domContainer: reactContainer,
       leafId,
+      retainWhenDetached: this.allowsDetachedHost(container),
     };
 
     

@@ -1,17 +1,19 @@
 
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ImageCarouselProps, ImageNavigationContext } from '../../types/image';
 import { FullscreenPortal } from './FullscreenPortal';
 import { FullscreenImageViewer } from './FullscreenImageViewer';
-import { LeftArrow, RightArrow, Tag } from '../shared/icons/ObsidianIcon';
+import { LeftArrow, RightArrow, Tag, X } from '../shared/icons/ObsidianIcon';
 import { t } from '../../lang/helpers';
 import { getApp } from '../../utils/obsidian';
 import {
+  getMediaKind,
   isExcalidrawMediaPath,
   resolveMediaDisplayPath,
 } from '../../utils/imageMediaUtils';
 import { ExcalidrawMediaEmbed } from './ExcalidrawMediaEmbed';
+import { isInPdfExportRender } from '../../utils/pdfExportRender';
 import { MediaPreview } from './MediaPreview';
 import {
   isInShareEagerMediaArea,
@@ -40,7 +42,7 @@ const CarouselOverlayControls: React.FC<{
         className="journalit-carousel-delete"
         aria-label={t('image.viewer.delete-button')}
       >
-        ×
+        <X size={16} aria-hidden="true" />
       </button>
     )}
 
@@ -86,8 +88,149 @@ const CarouselOverlayControls: React.FC<{
   </>
 );
 
+interface CarouselSelection {
+  imagePath: string | null;
+  
+  fallbackPath: string | null;
+}
+
+const selectionAt = (
+  images: readonly string[],
+  index: number,
+  fallbackPath: string | undefined
+): CarouselSelection => ({
+  imagePath: images[index] ?? null,
+  fallbackPath: fallbackPath ?? null,
+});
+
+const indexOfPath = (images: readonly string[], path: string | null) =>
+  path ? images.indexOf(path) : -1;
+
+
+const currentCarouselIndex = (
+  images: readonly string[],
+  selection: CarouselSelection
+): number => {
+  const selectedPathIndex = indexOfPath(images, selection.imagePath);
+  if (selectedPathIndex >= 0) return selectedPathIndex;
+  return Math.max(indexOfPath(images, selection.fallbackPath), 0);
+};
+
+const resolveCarouselOptions = ({
+  displayOptions,
+  deleteOptions,
+  annotationOptions,
+}: Pick<
+  ImageCarouselProps,
+  'displayOptions' | 'deleteOptions' | 'annotationOptions'
+>) => ({
+  showThumbnails: displayOptions?.showThumbnails ?? true,
+  showCounter: displayOptions?.showCounter ?? true,
+  enableFullscreen: displayOptions?.enableFullscreen ?? true,
+  enableDelete: deleteOptions?.enabled ?? false,
+  onDeleteImage: deleteOptions?.onDeleteImage,
+  enableAnnotations: annotationOptions?.enabled ?? false,
+  onAnnotateImage: annotationOptions?.onAnnotateImage,
+  isAnnotated: annotationOptions?.isAnnotated,
+});
+
+const CarouselCurrentMedia: React.FC<{
+  path: string;
+  sourcePath: string;
+  alt: string;
+  useResolveMediaPath: boolean;
+  enableFullscreen: boolean;
+  onOpen: (event: React.SyntheticEvent) => void;
+  onKeyDown: (event: React.KeyboardEvent<HTMLElement>) => void;
+}> = ({
+  path,
+  sourcePath,
+  alt,
+  useResolveMediaPath,
+  enableFullscreen,
+  onOpen,
+  onKeyDown,
+}) => {
+  const app = getApp();
+  const clickable = enableFullscreen ? ' is-clickable' : '';
+  return (
+    <MediaPreview
+      app={app}
+      path={path}
+      sourcePath={sourcePath}
+      displayPath={resolveMediaDisplayPath(app, path, sourcePath)}
+      alt={alt}
+      useResolveMediaPath={useResolveMediaPath}
+      onClick={onOpen}
+      onKeyDown={onKeyDown}
+      role={enableFullscreen ? 'button' : undefined}
+      tabIndex={enableFullscreen ? 0 : undefined}
+      imageClassName={`journalit-carousel-image${clickable}`}
+      videoClassName={`journalit-carousel-image journalit-carousel-video${clickable}`}
+      videoPreload="metadata"
+      excalidrawClassName={`journalit-carousel-excalidraw${clickable}`}
+    />
+  );
+};
+
+
+const CarouselThumbnails: React.FC<{
+  thumbnailsRef: React.RefObject<HTMLDivElement | null>;
+  images: string[];
+  currentIndex: number;
+  altPrefix: string;
+  useResolveMediaPath: boolean;
+  sourcePath: string;
+  isAnnotated: ((imagePath: string) => boolean) | undefined;
+  thumbnailActions: React.ReactNode;
+  onSelect: (index: number, e: React.MouseEvent) => void;
+}> = ({
+  thumbnailsRef,
+  images,
+  currentIndex,
+  altPrefix,
+  useResolveMediaPath,
+  sourcePath,
+  isAnnotated,
+  thumbnailActions,
+  onSelect,
+}) => {
+  const hasMultipleImages = images.length > 1;
+  if (!hasMultipleImages && !thumbnailActions) return null;
+  return (
+    <div
+      className="journalit-carousel-thumbnails"
+      ref={thumbnailsRef}
+      {...(hasMultipleImages ? {} : shareCaptureExcludeProps)}
+    >
+      {images.map((img, idx) => (
+        <LazyThumbnail
+          key={img}
+          imagePath={img}
+          index={idx}
+          isActive={idx === currentIndex}
+          altPrefix={altPrefix}
+          useResolveMediaPath={useResolveMediaPath}
+          sourcePath={sourcePath}
+          isAnnotated={isAnnotated?.(img) ?? false}
+          onClick={(e) => onSelect(idx, e)}
+        />
+      ))}
+      {thumbnailActions && (
+        <div
+          className="journalit-carousel-thumbnail-actions"
+          {...shareCaptureExcludeProps}
+        >
+          {thumbnailActions}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   images,
+  thumbnailActions,
   altPrefix = t('image.viewer.alt-default'),
   displayOptions,
   deleteOptions,
@@ -98,41 +241,34 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   useResolveMediaPath = false,
   sourcePath = '',
 }) => {
-  const showThumbnails = displayOptions?.showThumbnails ?? true;
-  const showCounter = displayOptions?.showCounter ?? true;
-  const enableFullscreen = displayOptions?.enableFullscreen ?? true;
-  const enableDelete = deleteOptions?.enabled ?? false;
-  const onDeleteImage = deleteOptions?.onDeleteImage;
-  const enableAnnotations = annotationOptions?.enabled ?? false;
-  const onAnnotateImage = annotationOptions?.onAnnotateImage;
-  const isAnnotated = annotationOptions?.isAnnotated;
-  const [selection, setSelection] = useState({
-    imagePath: images[0] ?? null,
-    fallbackPath: images[1] ?? null,
+  const {
+    showThumbnails,
+    showCounter,
+    enableFullscreen,
+    enableDelete,
+    onDeleteImage,
+    enableAnnotations,
+    onAnnotateImage,
+    isAnnotated,
+  } = resolveCarouselOptions({
+    displayOptions,
+    deleteOptions,
+    annotationOptions,
   });
+  const [selection, setSelection] = useState<CarouselSelection>(() =>
+    selectionAt(images, 0, images[1])
+  );
   const [isFullscreen, setIsFullscreen] = useState(false);
   const thumbnailsRef = useRef<HTMLDivElement | null>(null);
   const shouldScrollThumbnailRef = useRef(false);
 
-  const selectedPathIndex = selection.imagePath
-    ? images.indexOf(selection.imagePath)
-    : -1;
-  const fallbackPathIndex = selection.fallbackPath
-    ? images.indexOf(selection.fallbackPath)
-    : -1;
-  const currentIndex =
-    selectedPathIndex >= 0
-      ? selectedPathIndex
-      : fallbackPathIndex >= 0
-        ? fallbackPathIndex
-        : 0;
+  const currentIndex = currentCarouselIndex(images, selection);
 
   const selectUserNavigatedIndex = (index: number) => {
     shouldScrollThumbnailRef.current = true;
-    setSelection({
-      imagePath: images[index] ?? null,
-      fallbackPath: images[index + 1] ?? images[index - 1] ?? null,
-    });
+    setSelection(
+      selectionAt(images, index, images[index + 1] ?? images[index - 1])
+    );
     if (images[index]) {
       onSelectedImageChange?.(index, images[index]);
     }
@@ -256,12 +392,7 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
   }
 
   const currentImage = images[currentIndex];
-  const currentDisplayPath = resolveMediaDisplayPath(
-    getApp(),
-    currentImage,
-    sourcePath
-  );
-  const app = getApp();
+  const hasMultipleImages = images.length > 1;
   const currentAlt = t('image.carousel.image-alt', {
     prefix: altPrefix,
     index: (currentIndex + 1).toString(),
@@ -271,27 +402,14 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
     <div className={containerClassName}>
       <div className="journalit-carousel-main">
         <div className="journalit-carousel-image-container">
-          <MediaPreview
-            app={app}
+          <CarouselCurrentMedia
             path={currentImage}
             sourcePath={sourcePath}
-            displayPath={currentDisplayPath}
             alt={currentAlt}
             useResolveMediaPath={useResolveMediaPath}
-            onClick={handleFullscreenOpen}
+            enableFullscreen={enableFullscreen}
+            onOpen={handleFullscreenOpen}
             onKeyDown={handleImageKeyDown}
-            role={enableFullscreen ? 'button' : undefined}
-            tabIndex={enableFullscreen ? 0 : undefined}
-            imageClassName={`journalit-carousel-image${
-              enableFullscreen ? ' is-clickable' : ''
-            }`}
-            videoClassName={`journalit-carousel-image journalit-carousel-video${
-              enableFullscreen ? ' is-clickable' : ''
-            }`}
-            videoPreload="metadata"
-            excalidrawClassName={`journalit-carousel-excalidraw${
-              enableFullscreen ? ' is-clickable' : ''
-            }`}
           />
 
           <CarouselOverlayControls
@@ -304,34 +422,30 @@ export const ImageCarousel: React.FC<ImageCarouselProps> = ({
                 : undefined
             }
             isAnnotated={isAnnotated?.(currentImage) ?? false}
-            onPrevious={images.length > 1 ? goToPrevious : undefined}
-            onNext={images.length > 1 ? goToNext : undefined}
+            onPrevious={hasMultipleImages ? goToPrevious : undefined}
+            onNext={hasMultipleImages ? goToNext : undefined}
           />
         </div>
       </div>
 
-      {showCounter && images.length > 1 && (
+      {showCounter && hasMultipleImages && (
         <div className="journalit-carousel-counter">
           {currentIndex + 1}/{images.length}
         </div>
       )}
 
-      {showThumbnails && images.length > 1 && (
-        <div className="journalit-carousel-thumbnails" ref={thumbnailsRef}>
-          {images.map((img, idx) => (
-            <LazyThumbnail
-              key={img}
-              imagePath={img}
-              index={idx}
-              isActive={idx === currentIndex}
-              altPrefix={altPrefix}
-              useResolveMediaPath={useResolveMediaPath}
-              sourcePath={sourcePath}
-              isAnnotated={isAnnotated?.(img) ?? false}
-              onClick={(e) => selectImage(idx, e)}
-            />
-          ))}
-        </div>
+      {showThumbnails && (
+        <CarouselThumbnails
+          thumbnailsRef={thumbnailsRef}
+          images={images}
+          currentIndex={currentIndex}
+          altPrefix={altPrefix}
+          useResolveMediaPath={useResolveMediaPath}
+          sourcePath={sourcePath}
+          isAnnotated={isAnnotated}
+          thumbnailActions={thumbnailActions}
+          onSelect={selectImage}
+        />
       )}
 
       <FullscreenPortal
@@ -377,12 +491,25 @@ const LazyThumbnail: React.FC<LazyThumbnailProps> = React.memo(
   }) => {
     const thumbnailRef = useRef<HTMLButtonElement>(null);
     const [isVisible, setIsVisible] = useState(isActive);
+    
+    
+    const [isPdfExport, setIsPdfExport] = useState(false);
+    const [isImageSettled, setIsImageSettled] = useState(false);
     const app = getApp();
     const isExcalidraw = isExcalidrawMediaPath(app, imagePath, sourcePath);
     const displayPath = resolveMediaDisplayPath(app, imagePath, sourcePath);
+    const awaitsImage =
+      isPdfExport &&
+      !isImageSettled &&
+      getMediaKind(app, imagePath, sourcePath) === 'image';
+
+    useLayoutEffect(() => {
+      const element = thumbnailRef.current;
+      if (element && isInPdfExportRender(element)) setIsPdfExport(true);
+    }, []);
 
     useEffect(() => {
-      if (isVisible) return;
+      if (isVisible || isPdfExport) return;
       const element = thumbnailRef.current;
       if (!element) return;
 
@@ -403,9 +530,9 @@ const LazyThumbnail: React.FC<LazyThumbnailProps> = React.memo(
       );
       observer.observe(element);
       return () => observer.disconnect();
-    }, [isVisible]);
+    }, [isPdfExport, isVisible]);
 
-    const shouldRenderPreview = isVisible || isActive;
+    const shouldRenderPreview = isVisible || isActive || isPdfExport;
 
     return (
       <button
@@ -414,6 +541,7 @@ const LazyThumbnail: React.FC<LazyThumbnailProps> = React.memo(
         className={`journalit-carousel-thumbnail${isActive ? ' active' : ''}`}
         data-active-thumbnail={isActive ? 'true' : undefined}
         onClick={onClick}
+        {...(awaitsImage ? shareLoadingProps : {})}
         aria-label={t('image.carousel.image-alt', {
           prefix: altPrefix,
           index: (index + 1).toString(),
@@ -443,6 +571,8 @@ const LazyThumbnail: React.FC<LazyThumbnailProps> = React.memo(
             videoClassName="journalit-carousel-thumbnail-media"
             videoPreload="metadata"
             showVideoBadge={false}
+            loading={isPdfExport ? 'eager' : 'lazy'}
+            onImageSettled={() => setIsImageSettled(true)}
           />
         )}
         {isAnnotated ? (

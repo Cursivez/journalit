@@ -6,7 +6,7 @@ import {
   MoreHorizontal,
 } from '../../../components/shared/icons/ObsidianIcon';
 import { showConfirmationModal } from '../../../components/shared/ConfirmationModal';
-import { Button } from '../../../components/ui';
+import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
 import { t } from '../../../lang/helpers';
 import type JournalitPlugin from '../../../main';
@@ -83,6 +83,100 @@ interface TradeImportHistorySectionProps {
   revision: number;
 }
 
+function historyCountLabel(state: HistoryState): string {
+  if (state.status !== 'loaded') return '';
+  return ` (${String(state.imports.length)}${state.nextCursor ? '+' : ''})`;
+}
+
+const TradeImportHistoryBody: React.FC<{
+  state: HistoryState;
+  busy: boolean;
+  onOpenActions: (
+    event: React.MouseEvent<HTMLButtonElement>,
+    entry: TradeImportHistoryEntry
+  ) => void;
+  onLoadMore: (cursor: string) => void;
+}> = ({ state, busy, onOpenActions, onLoadMore }) => {
+  const loaded = state.status === 'loaded';
+  const { nextCursor } = state;
+  return (
+    <>
+      {state.status === 'loading' && (
+        <div className="journalit-trade-import-sync-placeholder">
+          {t('trade-import.history.loading')}
+        </div>
+      )}
+      {state.status === 'failed' && (
+        <div className="journalit-trade-import-sync-placeholder">
+          {t('trade-import.history.load-failed')}
+        </div>
+      )}
+      {loaded && state.imports.length === 0 && (
+        <div className="journalit-trade-import-sync-placeholder">
+          {t('trade-import.history.empty')}
+        </div>
+      )}
+      {loaded && state.imports.length > 0 && (
+        <ul className="journalit-trade-import-history__list">
+          {state.imports.map((entry) => (
+            <li
+              key={entry.importId}
+              className="journalit-trade-import-history__row"
+            >
+              <div className="journalit-trade-import-history__details">
+                <strong>{entry.accountDisplayName}</strong>
+                <span>
+                  {formatLocalizedDateTime(entry.committedAt)} · {entry.broker}{' '}
+                  ·{' '}
+                  {t('trade-import.history.trades-on-server', {
+                    count: String(entry.liveTradeCount),
+                  })}
+                </span>
+              </div>
+              <IconButton
+                ariaLabel={t('trade-sync.import.more-actions')}
+                disabled={busy}
+                onClick={(event) => onOpenActions(event, entry)}
+              >
+                <MoreHorizontal size={16} />
+              </IconButton>
+            </li>
+          ))}
+        </ul>
+      )}
+      {loaded && nextCursor && (
+        <Button
+          variant="secondary"
+          size="small"
+          disabled={busy}
+          loading={state.loadingMore}
+          onClick={() => onLoadMore(nextCursor)}
+        >
+          {t('trade-import.history.load-more')}
+        </Button>
+      )}
+    </>
+  );
+};
+
+
+
+
+function deleteImportMessage(entry: TradeImportHistoryEntry): string {
+  if (entry.deletableTradeCount === 0) {
+    return entry.createdCount === 0 && entry.updatedCount > 0
+      ? t('trade-import.history.delete.message-updates-only')
+      : t('trade-import.history.delete.message-none-deleted');
+  }
+  const message = t('trade-import.history.delete.message', {
+    count: String(entry.deletableTradeCount),
+    account: entry.accountDisplayName,
+  });
+  return entry.updatedCount > 0
+    ? `${message} ${t('trade-import.history.delete.updates-kept')}`
+    : message;
+}
+
 
 export const TradeImportHistorySection: React.FC<
   TradeImportHistorySectionProps
@@ -124,10 +218,7 @@ export const TradeImportHistorySection: React.FC<
   const deleteImport = async (entry: TradeImportHistoryEntry) => {
     const confirmed = await showConfirmationModal(plugin.app, {
       title: t('trade-import.history.delete.title'),
-      message: t('trade-import.history.delete.message', {
-        count: String(entry.liveTradeCount),
-        account: entry.accountDisplayName,
-      }),
+      message: deleteImportMessage(entry),
       confirmLabel: t('trade-import.history.delete.confirm'),
       cancelLabel: t('button.cancel'),
       destructive: true,
@@ -166,10 +257,7 @@ export const TradeImportHistorySection: React.FC<
     );
     menu.showAtMouseEvent(event.nativeEvent);
   };
-  const countLabel =
-    state.status === 'loaded'
-      ? ` (${String(state.imports.length)}${state.nextCursor ? '+' : ''})`
-      : '';
+  const countLabel = historyCountLabel(state);
 
   return (
     <section className="journalit-trade-import-history">
@@ -185,62 +273,16 @@ export const TradeImportHistorySection: React.FC<
           {countLabel}
         </span>
       </button>
-      {open && state.status === 'loading' && (
-        <div className="journalit-trade-import-sync-placeholder">
-          {t('trade-import.history.loading')}
-        </div>
-      )}
-      {open && state.status === 'failed' && (
-        <div className="journalit-trade-import-sync-placeholder">
-          {t('trade-import.history.load-failed')}
-        </div>
-      )}
-      {open && state.status === 'loaded' && state.imports.length === 0 && (
-        <div className="journalit-trade-import-sync-placeholder">
-          {t('trade-import.history.empty')}
-        </div>
-      )}
-      {open && state.status === 'loaded' && state.imports.length > 0 && (
-        <ul className="journalit-trade-import-history__list">
-          {state.imports.map((entry) => (
-            <li
-              key={entry.importId}
-              className="journalit-trade-import-history__row"
-            >
-              <div className="journalit-trade-import-history__details">
-                <strong>{entry.accountDisplayName}</strong>
-                <span>
-                  {formatLocalizedDateTime(entry.committedAt)} · {entry.broker}{' '}
-                  ·{' '}
-                  {t('trade-import.history.trades-on-server', {
-                    count: String(entry.liveTradeCount),
-                  })}
-                </span>
-              </div>
-              <IconButton
-                ariaLabel={t('trade-sync.import.more-actions')}
-                disabled={busy}
-                onClick={(event) => openActions(event, entry)}
-              >
-                <MoreHorizontal size={16} />
-              </IconButton>
-            </li>
-          ))}
-        </ul>
-      )}
-      {open && state.status === 'loaded' && state.nextCursor && (
-        <Button
-          variant="secondary"
-          size="small"
-          disabled={busy}
-          loading={state.loadingMore}
-          onClick={() => {
+      {open && (
+        <TradeImportHistoryBody
+          state={state}
+          busy={busy}
+          onOpenActions={openActions}
+          onLoadMore={(cursor) => {
             dispatch({ type: 'load-more' });
-            void loadPage(state.nextCursor);
+            void loadPage(cursor);
           }}
-        >
-          {t('trade-import.history.load-more')}
-        </Button>
+        />
       )}
     </section>
   );

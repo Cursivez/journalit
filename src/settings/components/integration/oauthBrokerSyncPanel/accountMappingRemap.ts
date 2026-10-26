@@ -11,11 +11,11 @@ import type {
   TradeProjectionSyncResult,
 } from '../../../../services/tradeSync/types';
 import { createTradeSyncLocalAccountResolver } from '../../../../services/tradeSync/TradeSyncAccountMappings';
-import type { LocalAccountOption } from '../brokerSyncKit';
+import type { LocalAccountOption } from '../brokerSyncKit/types';
 import type { OAuthBrokerConnection } from './types';
 import { oauthBrokerAccountDraftKey, type AccountDrafts } from './drafts';
 
-export type OAuthBrokerMappingExistingNotesChoice = 'update' | 'leave';
+type OAuthBrokerMappingExistingNotesChoice = 'update' | 'leave';
 export type OAuthBrokerMappingRemapDecision =
   | OAuthBrokerMappingExistingNotesChoice
   | 'cancel';
@@ -117,6 +117,7 @@ export function isNoOpTradeProjectionSyncResult(
   );
 }
 
+
 function deliverableOutstandingCount(
   account: TradeProjectionAccountInventoryItem
 ): number {
@@ -124,7 +125,6 @@ function deliverableOutstandingCount(
     account.needsRewriteCount +
     account.failedCount +
     account.pendingCount +
-    account.staleCount +
     account.missingCount
   );
 }

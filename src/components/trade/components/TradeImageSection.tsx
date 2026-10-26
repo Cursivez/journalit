@@ -3,17 +3,22 @@
 import React from 'react';
 import { t } from '../../../lang/helpers';
 import { ImageCarousel } from '../../image/ImageCarousel';
+import { StackedMediaList } from '../../image/StackedMediaList';
+import { getApp } from '../../../utils/obsidian';
+import type { TradeImageLayout } from '../../../types/reviewV2';
 import { Image } from '../../shared/icons/ObsidianIcon';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
+import { tradeShareSectionProps } from '../../share/tradeShare/tradeShareModel';
 
 interface TradeImageSectionProps {
   images: string[] | undefined;
   onEditClick?: () => void;
-  sourcePath?: string;
+  sourcePath: string;
+  layout: TradeImageLayout;
 }
 
 export const TradeImageSection: React.FC<TradeImageSectionProps> = React.memo(
-  ({ images, onEditClick, sourcePath }) => {
+  ({ images, onEditClick, sourcePath, layout }) => {
     if (!images || images.length === 0) {
       return (
         <div className="trade-empty-images" {...shareCaptureExcludeProps}>
@@ -38,10 +43,29 @@ export const TradeImageSection: React.FC<TradeImageSectionProps> = React.memo(
       );
     }
 
+    if (layout === 'stacked') {
+      return (
+        <div
+          className="trade-images-section"
+          data-image-count={images.length}
+          {...tradeShareSectionProps('images')}
+        >
+          <StackedMediaList
+            app={getApp()}
+            images={images}
+            sourcePath={sourcePath}
+            altPrefix={t('trade.image.alt-prefix')}
+            annotationsEnabled={true}
+          />
+        </div>
+      );
+    }
+
     return (
       <div
         className="trade-images-section journalit-media-carousel-surface"
         data-image-count={images.length}
+        {...tradeShareSectionProps('images')}
       >
         <ImageCarousel
           images={images}
@@ -65,7 +89,8 @@ export const TradeImageSection: React.FC<TradeImageSectionProps> = React.memo(
     return (
       JSON.stringify(prevProps.images) === JSON.stringify(nextProps.images) &&
       prevProps.onEditClick === nextProps.onEditClick &&
-      prevProps.sourcePath === nextProps.sourcePath
+      prevProps.sourcePath === nextProps.sourcePath &&
+      prevProps.layout === nextProps.layout
     );
   }
 );

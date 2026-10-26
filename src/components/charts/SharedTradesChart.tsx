@@ -27,6 +27,8 @@ import { cssVars } from '../../styles/inlineStylePolicy';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { handleRovingChartMarkKeyDown } from './chartKeyboardNavigation';
 import { useTwoStageTouchNavigation } from './useTwoStageTouchNavigation';
+import { shouldAnimateSeries, useChartAnimationActive } from './chartAnimation';
+import { skipVerticalGridCoordinates } from './chartGrid';
 
 type TradesPointClickHandler = (
   data: TradesChartDataPoint,
@@ -212,6 +214,55 @@ function TradesChartDefs() {
   );
 }
 
+function tradesBarFill(
+  isValueMasked: boolean,
+  payload: TradesChartDataPoint | undefined,
+  isPositive: boolean
+): string {
+  if (isValueMasked) return 'var(--text-muted)';
+  return (
+    payload?.fill ||
+    (isPositive ? 'var(--chart-positive)' : 'var(--chart-negative)')
+  );
+}
+
+
+function tradesBarRect({ x, y, width, height }: TradesBarShapeProps) {
+  const safeY = y || 0;
+  const safeHeight = height || 0;
+  return {
+    x: x || 0,
+    y: safeHeight < 0 ? safeY + safeHeight : safeY,
+    width: width || 0,
+    height: Math.abs(safeHeight),
+  };
+}
+
+
+function interactiveTradesBarProps(
+  props: TradesBarShapeProps,
+  isInitialTabStop: boolean,
+  onKeyboardActivate: TradesBarKeyboardHandler | undefined
+) {
+  const { payload: keyboardPoint, index: keyboardIndex } = props;
+  const accessibleTradeNumber =
+    (keyboardPoint?.tradeIndex ?? keyboardIndex ?? 0) + 1;
+  return {
+    cursor: 'pointer',
+    role: 'button',
+    tabIndex: isInitialTabStop ? 0 : -1,
+    'data-journalit-chart-mark': 'true',
+    'aria-label': `${t('widget.trade-review.open-trade-note')} ${accessibleTradeNumber}`,
+    onKeyDown:
+      keyboardPoint !== undefined && keyboardIndex !== undefined
+        ? (event: React.KeyboardEvent<SVGRectElement>) =>
+            handleRovingChartMarkKeyDown(event, () =>
+              onKeyboardActivate?.(keyboardPoint, keyboardIndex, event)
+            )
+        : undefined,
+  };
+}
+
 function TradesBarShape({
   isValueMasked,
   isInteractive,
@@ -224,64 +275,56 @@ function TradesBarShape({
   isInitialTabStop: boolean;
   onKeyboardActivate?: TradesBarKeyboardHandler;
 }) {
-  const { x, y, width, height } = props;
-  const pnlValue = props.payload?.pnl ?? 0;
-  const isPositive = pnlValue >= 0;
-  const fill = isValueMasked
-    ? 'var(--text-muted)'
-    : props.payload?.fill ||
-      (isPositive ? 'var(--chart-positive)' : 'var(--chart-negative)');
-  const safeX = x || 0;
-  const safeY = y || 0;
-  const safeWidth = width || 0;
-  const safeHeight = height || 0;
-  const adjustedHeight = safeHeight < 0 ? Math.abs(safeHeight) : safeHeight;
-  const adjustedY = safeHeight < 0 ? safeY + safeHeight : safeY;
-  const radius = isValueMasked
-    ? [2, 2, 0, 0]
-    : isPositive
-      ? [2, 2, 0, 0]
-      : [0, 0, 2, 2];
-  const keyboardPoint = props.payload;
-  const keyboardIndex = props.index;
-  const accessibleTradeNumber =
-    (keyboardPoint?.tradeIndex ?? keyboardIndex ?? 0) + 1;
-  const canActivate =
-    isInteractive && keyboardPoint !== undefined && keyboardIndex !== undefined;
+  const isPositive = (props.payload?.pnl ?? 0) >= 0;
+  
+  const radius = isValueMasked || isPositive ? 2 : 0;
   return (
     <rect
-      x={safeX}
-      y={adjustedY}
-      width={safeWidth}
-      height={adjustedHeight > 0 ? adjustedHeight : 0}
-      fill={fill}
+      {...tradesBarRect(props)}
+      fill={tradesBarFill(isValueMasked, props.payload, isPositive)}
       stroke={props.stroke}
       strokeWidth={props.strokeWidth}
       strokeOpacity={props.strokeOpacity}
       fillOpacity={isValueMasked ? 0.45 : 1}
-      filter={isValueMasked ? undefined : isPositive ? props.filter : undefined}
-      rx={radius[0]}
-      ry={radius[0]}
-      cursor={isInteractive ? 'pointer' : undefined}
-      role={isInteractive ? 'button' : undefined}
-      tabIndex={isInteractive ? (isInitialTabStop ? 0 : -1) : undefined}
-      data-journalit-chart-mark={isInteractive ? 'true' : undefined}
-      aria-label={
-        isInteractive
-          ? `${t('widget.trade-review.open-trade-note')} ${accessibleTradeNumber}`
-          : undefined
-      }
-      onKeyDown={
-        canActivate
-          ? (event) =>
-              handleRovingChartMarkKeyDown(event, () =>
-                onKeyboardActivate?.(keyboardPoint, keyboardIndex, event)
-              )
-          : undefined
-      }
+      filter={!isValueMasked && isPositive ? props.filter : undefined}
+      rx={radius}
+      ry={radius}
+      {...(isInteractive
+        ? interactiveTradesBarProps(props, isInitialTabStop, onKeyboardActivate)
+        : {})}
     />
   );
 }
+
+
+function tradesChartPlotMode(
+  valueMode: SharedTradesChartProps['valueMode'],
+  displayRMultiples: boolean | undefined
+) {
+  const useRValues = valueMode === 'rMultiple';
+  const effectiveDisplayRMultiples =
+    valueMode === undefined ? displayRMultiples : useRValues;
+  
+  
+  const plotTradeR = !useRValues && Boolean(effectiveDisplayRMultiples);
+  return {
+    effectiveDisplayRMultiples,
+    plotTradeR,
+    plotsR: useRValues || plotTradeR,
+  };
+}
+
+
+const tradesBarStyle = (isValueMasked: boolean, canNavigate: boolean) => ({
+  fillOpacity: isValueMasked ? 0.45 : 1,
+  filter: isValueMasked ? undefined : 'url(#tradesChartBarShadow)',
+  activeBar: {
+    filter: isValueMasked ? undefined : 'url(#tradesChartBarGlow)',
+    strokeWidth: 1.2,
+    strokeOpacity: isValueMasked ? 0.4 : 0.8,
+    cursor: canNavigate ? 'pointer' : undefined,
+  },
+});
 
 
 export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
@@ -304,6 +347,7 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
   showAccountTooltip = false,
   valueMode,
 }) => {
+  const isAnimationActive = useChartAnimationActive();
   const chartRef = React.useRef<HTMLDivElement>(null);
   const touchResetKey = React.useMemo(
     () =>
@@ -319,24 +363,18 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
   const plugin = usePlugin();
   const displayRMultiples = plugin?.settings?.trade?.displayRMultiples;
   const { formatValue, shouldMask } = useDisplayFormatter();
-  const useRValues = valueMode === 'rMultiple';
-  const effectiveDisplayRMultiples =
-    valueMode === undefined ? displayRMultiples : useRValues;
-  
-  
-  const plotTradeR = !useRValues && Boolean(effectiveDisplayRMultiples);
-  const isValueMasked = shouldMask(
-    useRValues || plotTradeR ? 'rMultiple' : 'pnl'
-  );
+  const { effectiveDisplayRMultiples, plotTradeR, plotsR } =
+    tradesChartPlotMode(valueMode, displayRMultiples);
+  const isValueMasked = shouldMask(plotsR ? 'rMultiple' : 'pnl');
   const canNavigate = Boolean(onPointClick) && !isValueMasked;
 
   
   const customTickFormatter = React.useCallback(
     (value: number): string =>
-      useRValues || plotTradeR
+      plotsR
         ? formatValue({ kind: 'rMultiple', value })
         : formatValue({ kind: 'pnl', value, currencyCode: currency }),
-    [currency, formatValue, plotTradeR, useRValues]
+    [currency, formatValue, plotsR]
   );
   const displayData = React.useMemo(
     () =>
@@ -418,6 +456,7 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
         <CartesianGrid
           strokeDasharray="3 3"
           vertical={false}
+          verticalCoordinatesGenerator={skipVerticalGridCoordinates}
           stroke="var(--background-modifier-border)"
           strokeOpacity={0.5}
         />
@@ -486,7 +525,9 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
           fill="var(--interactive-accent)" 
           minPointSize={5}
           
-          isAnimationActive={true}
+          isAnimationActive={
+            isAnimationActive && shouldAnimateSeries(displayData.length)
+          }
           animationDuration={800}
           
           
@@ -494,17 +535,10 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
           stroke="var(--background-primary)" 
           strokeWidth={0.8} 
           strokeOpacity={0.5} 
-          fillOpacity={isValueMasked ? 0.45 : 1}
-          filter={isValueMasked ? undefined : 'url(#tradesChartBarShadow)'} 
+          
+          {...tradesBarStyle(isValueMasked, canNavigate)}
           
           radius={[2, 2, 0, 0]}
-          
-          activeBar={{
-            filter: isValueMasked ? undefined : 'url(#tradesChartBarGlow)',
-            strokeWidth: 1.2,
-            strokeOpacity: isValueMasked ? 0.4 : 0.8,
-            cursor: canNavigate ? 'pointer' : undefined,
-          }}
           onClick={
             canNavigate && onPointClick
               ? (bar, index, event) => {

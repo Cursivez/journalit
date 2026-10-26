@@ -1,7 +1,6 @@
 
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
-import { Notice } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { Select } from '../../core/Select';
 import { SegmentedControl } from '../../shared/SegmentedControl';
@@ -14,7 +13,7 @@ import {
 import { Info } from '../../shared/icons/ObsidianIcon';
 import { Button } from '../../ui/Button';
 import { t } from '../../../lang/helpers';
-import { eventBus } from '../../../services/events/EventBus';
+import { useTradeFormLayoutSave } from './hooks/useTradeFormLayoutSave';
 import {
   DEFAULT_TRADE_FORM_LAYOUT_SETTINGS,
   TradeFormAssetTypeMode,
@@ -22,6 +21,7 @@ import {
   TradeFormInputMode,
   TradeFormLayoutItemId,
   TradeFormLayoutSettings,
+  TradeFormStopLossUnit,
   TradeFormTakeProfitUnit,
   resolveTradeFormLayoutSettings,
 } from '../../../settings/types';
@@ -149,6 +149,8 @@ interface TradeFormLayoutEditorProps {
   onCancel?: () => void;
   compactFooter?: boolean;
   dirtyStateRef?: { current: (() => boolean) | null };
+  savingStateRef?: { current: boolean };
+  saveLabel?: string;
 }
 
 const createEditorItems = (
@@ -319,6 +321,7 @@ interface RiskFieldsVisibilitySelectorProps {
   layout: TradeFormLayoutSettings;
   onChange: (itemId: string, isVisible: boolean) => void;
   onTakeProfitUnitChange: (unit: TradeFormTakeProfitUnit) => void;
+  onStopLossUnitChange: (unit: TradeFormStopLossUnit) => void;
 }
 
 interface CostFieldsVisibilitySelectorProps {
@@ -360,7 +363,7 @@ CostFieldsVisibilitySelector.displayName = 'CostFieldsVisibilitySelector';
 
 const RiskFieldsVisibilitySelector: React.FC<
   RiskFieldsVisibilitySelectorProps
-> = ({ layout, onChange, onTakeProfitUnitChange }) => {
+> = ({ layout, onChange, onTakeProfitUnitChange, onStopLossUnitChange }) => {
   const riskItems = getTradeFormLayoutItemDefinitions().reduce<
     ReturnType<typeof getTradeFormLayoutItemDefinitions>
   >((items, item) => {
@@ -383,9 +386,33 @@ const RiskFieldsVisibilitySelector: React.FC<
             />
             <span>{item.label}</span>
           </label>
+          {item.id === 'riskPlanning' &&
+            visibleItemsSet2.has('riskPlanning') && (
+              <div className="journalit-trade-form-layout-editor__target-unit">
+                <span className="journalit-trade-form-layout-editor__target-unit-label">
+                  {t('form.layout.stop-loss-unit')}
+                </span>
+                <SegmentedControl<TradeFormStopLossUnit>
+                  options={[
+                    {
+                      value: 'percent',
+                      label: t('form.layout.stop-loss-unit-percent'),
+                    },
+                    {
+                      value: 'size',
+                      label: t('form.layout.stop-loss-unit-size'),
+                    },
+                  ]}
+                  value={layout.stopLossUnit}
+                  onChange={onStopLossUnitChange}
+                  size="small"
+                  fullWidth={false}
+                />
+              </div>
+            )}
           {item.id === 'takeProfits' && visibleItemsSet2.has('takeProfits') && (
-            <div className="journalit-trade-form-layout-editor__take-profit-unit">
-              <span className="journalit-trade-form-layout-editor__take-profit-unit-label">
+            <div className="journalit-trade-form-layout-editor__target-unit">
+              <span className="journalit-trade-form-layout-editor__target-unit-label">
                 {t('form.layout.take-profit-unit')}
               </span>
               <SegmentedControl<TradeFormTakeProfitUnit>
@@ -537,6 +564,7 @@ interface LayoutEditorFooterProps {
   onReset: () => void;
   onCancel?: () => void;
   onSave: () => void;
+  saveLabel: string;
 }
 
 const LayoutEditorFooter: React.FC<LayoutEditorFooterProps> = ({
@@ -545,6 +573,7 @@ const LayoutEditorFooter: React.FC<LayoutEditorFooterProps> = ({
   onReset,
   onCancel,
   onSave,
+  saveLabel,
 }) => (
   <div
     className={`journalit-trade-form-layout-editor__footer ${compactFooter ? 'is-compact' : ''}`}
@@ -577,7 +606,7 @@ const LayoutEditorFooter: React.FC<LayoutEditorFooterProps> = ({
       onClick={onSave}
       disabled={isSaving}
     >
-      {isSaving ? t('tradelog.settings.saving') : t('button.save')}
+      {isSaving ? t('tradelog.settings.saving') : saveLabel}
     </Button>
   </div>
 );
@@ -662,6 +691,8 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
   onCancel,
   compactFooter = false,
   dirtyStateRef,
+  savingStateRef,
+  saveLabel = t('button.save'),
 }) => {
   const initialLayout = useMemo(
     () => resolveTradeFormLayoutSettings(plugin.settings.trade.tradeFormLayout),
@@ -669,7 +700,12 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
   );
   const [layout, setLayout] = useState<TradeFormLayoutSettings>(initialLayout);
   const [activeTab, setActiveTab] = useState<VisibilityEditorTab>('active');
-  const [isSaving, setIsSaving] = useState(false);
+  const { isSaving, saveLayout } = useTradeFormLayoutSave({
+    plugin,
+    applySavedLayout: setLayout,
+    onSave,
+    savingStateRef,
+  });
   const isDirty = useCallback(
     (): boolean =>
       JSON.stringify(resolveTradeFormLayoutSettings(layout)) !==
@@ -765,6 +801,10 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
     setLayout((previous) => ({ ...previous, takeProfitUnit }));
   };
 
+  const handleStopLossUnitChange = (stopLossUnit: TradeFormStopLossUnit) => {
+    setLayout((previous) => ({ ...previous, stopLossUnit }));
+  };
+
   const { activeItems, availableItems } = useMemo(
     () =>
       createEditorItems(
@@ -777,6 +817,7 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
           layout={layout}
           onChange={handleRiskGroupVisibilityChange}
           onTakeProfitUnitChange={handleTakeProfitUnitChange}
+          onStopLossUnitChange={handleStopLossUnitChange}
         />,
         <ManualFxRateToggle
           layout={layout}
@@ -872,28 +913,6 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
     );
   };
 
-  const handleSave = async () => {
-    const resolvedLayout = resolveTradeFormLayoutSettings(layout);
-    try {
-      setIsSaving(true);
-      plugin.settings.trade.tradeFormLayout = resolvedLayout;
-      await plugin.saveSettings();
-      setLayout(resolvedLayout);
-      eventBus.publish('settings:changed', {
-        section: 'trade',
-        source: 'trade-form-layout',
-      });
-      new Notice(t('form.layout.saved'));
-      onSave?.(resolvedLayout);
-    } catch (error) {
-      console.error('Failed to save trade form layout settings:', error);
-      const message = error instanceof Error ? error.message : String(error);
-      new Notice(t('notice.error.save-settings', { error: message }));
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
   return (
     <div className="journalit-trade-form-layout-editor">
       <div className="journalit-trade-form-layout-editor__mode-stack">
@@ -936,10 +955,11 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
 
       <LayoutEditorFooter
         compactFooter={compactFooter}
+        saveLabel={saveLabel}
         isSaving={isSaving}
         onReset={handleReset}
         onCancel={onCancel}
-        onSave={() => void handleSave()}
+        onSave={() => void saveLayout(layout)}
       />
     </div>
   );

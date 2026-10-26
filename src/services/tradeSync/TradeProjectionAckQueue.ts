@@ -1,8 +1,8 @@
 import type JournalitPlugin from '../../main';
-import { generateUUID } from '../../utils/uuid';
 import { logger } from '../../utils/logger';
 import { ApiClient } from '../backend/ApiClient';
 import { TradeProjectionClient } from './TradeProjectionClient';
+import { getOrCreateVaultIdentifier } from '../backend/VaultIdentity';
 import {
   consumeActiveProjectionAckPermanentFailures,
   deliverProjectionAck,
@@ -42,6 +42,7 @@ import type {
 } from './types';
 
 export { countPendingTradeProjectionAcksForCurrentOwner } from './TradeProjectionAckPersistence';
+export { getOrCreateVaultIdentifier as getTradeProjectionVaultId } from '../backend/VaultIdentity';
 
 type PendingAck = TradeProjectionAckRequest & { ownerUserId?: string };
 type TradeProjectionAckSendStatus = 'sent' | 'queued' | 'failed';
@@ -56,42 +57,6 @@ interface FlushOutcome extends ProjectionAckDrainStep {
 }
 
 const QUEUED_ACK_PACING_MS = 650;
-const vaultIdWorkByPlugin = new WeakMap<JournalitPlugin, Promise<string>>();
-
-export async function getTradeProjectionVaultId(
-  plugin: JournalitPlugin
-): Promise<string> {
-  const backendSettings = plugin.settings.backendIntegration;
-  const existing = backendSettings?.vaultIdentifier;
-  if (existing) return existing;
-  const pending = vaultIdWorkByPlugin.get(plugin);
-  if (pending) return pending;
-
-  const work = (async () => {
-    const persistedDuringWait = backendSettings?.vaultIdentifier;
-    if (persistedDuringWait) return persistedDuringWait;
-    const vaultId = `vault_${generateUUID()}`;
-    if (!backendSettings) return vaultId;
-    backendSettings.vaultIdentifier = vaultId;
-    try {
-      await plugin.saveSettings?.();
-      return vaultId;
-    } catch (error) {
-      if (backendSettings.vaultIdentifier === vaultId) {
-        delete backendSettings.vaultIdentifier;
-      }
-      throw error;
-    }
-  })();
-  vaultIdWorkByPlugin.set(plugin, work);
-  try {
-    return await work;
-  } finally {
-    if (vaultIdWorkByPlugin.get(plugin) === work) {
-      vaultIdWorkByPlugin.delete(plugin);
-    }
-  }
-}
 
 function pendingQueue(plugin: JournalitPlugin): PendingAck[] {
   return (
@@ -728,7 +693,7 @@ export async function acknowledgeLocalDeletedTradeProjection(
       );
     }
   }
-  const vaultId = await getTradeProjectionVaultId(plugin);
+  const vaultId = await getOrCreateVaultIdentifier(plugin);
   const rememberedOwner =
     settings?.canonicalTradeProjectionOwners?.[tradeId]?.trim() ?? '';
   await sendTradeProjectionAckWithStatus(

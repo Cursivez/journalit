@@ -40,9 +40,7 @@ export function getActiveTreeSessionLogTags(
   return filters.viewLevel === 'days' ? filters.sessionLogTags : [];
 }
 
-export function hasActiveTradeLogResultFilters(
-  filters: TradeLogFilters
-): boolean {
+function hasActiveTradeLogResultFilters(filters: TradeLogFilters): boolean {
   return (
     filters.dateRange.some((date) => date !== null) ||
     (filters.tradeTypes.length > 0 &&
@@ -58,6 +56,7 @@ export function hasActiveTradeLogResultFilters(
     filters.tags.length > 0 ||
     filters.mistakes.length > 0 ||
     filters.reviewStatus.length > 0 ||
+    filters.ratings.length > 0 ||
     Object.values(filters.customFieldFilters).some(
       (values) => values.length > 0
     ) ||

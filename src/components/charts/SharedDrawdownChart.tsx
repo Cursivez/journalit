@@ -1,14 +1,7 @@
 
 
 import React, { useMemo } from 'react';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ReferenceLine,
-} from 'recharts';
+import { AreaChart, Area, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 import type { TooltipProps } from 'recharts';
 import type JournalitPlugin from '../../main';
 import {
@@ -21,12 +14,15 @@ import {
 } from '../../utils/chartUtils';
 import { formatDuration } from '../../utils/formatting';
 import { ChartBase } from './ChartBase';
+import { DateXAxis } from './DateXAxis';
 import { ChartTooltip } from './ChartTooltip';
 import { RechartsPortalTooltip } from './RechartsPortalTooltip';
 import { DrawdownChartProps } from './types';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { t } from '../../lang/helpers';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
+import { skipVerticalGridCoordinates } from './chartGrid';
+import { shouldAnimateSeries, useChartAnimationActive } from './chartAnimation';
 
 type DrawdownChartDataPointTooltipProps = Partial<
   TooltipProps<number, string>
@@ -207,6 +203,39 @@ const renderDrawdownTooltip = (
 };
 
 
+function DrawdownChartDefs({
+  chartId,
+  color,
+}: {
+  chartId: string;
+  color: string;
+}) {
+  return (
+    <defs>
+      <linearGradient id={`${chartId}-gradient`} x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stopColor={color} stopOpacity={0.1} />
+        <stop offset="100%" stopColor={color} stopOpacity={0.4} />
+      </linearGradient>
+      
+      <filter id={`${chartId}-shadow`} height="120%">
+        <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
+      </filter>
+      
+      <filter id={`${chartId}-glow`} height="130%">
+        <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+        <feColorMatrix
+          in="blur"
+          mode="matrix"
+          values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
+          result="glow"
+        />
+        <feComposite in="SourceGraphic" in2="glow" operator="over" />
+      </filter>
+    </defs>
+  );
+}
+
+
 export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
   ({
     data,
@@ -228,6 +257,7 @@ export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
     currencyOverride,
     scale: scaleProp,
   }) => {
+    const isAnimationActive = useChartAnimationActive();
     const chartRef = React.useRef<HTMLDivElement>(null);
     const { currency: globalCurrency } = useCurrency();
     const { formatValue, shouldMask } = useDisplayFormatter();
@@ -340,18 +370,11 @@ export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
     
 
     const handleChartClick = (event: DrawdownChartDataPointChartClickEvent) => {
-      if (onChartClick) {
-        onChartClick(event);
-      }
+      onChartClick?.(event);
 
       
       
-      if (
-        onPointClick &&
-        event &&
-        event.activePayload &&
-        event.activePayload.length > 0
-      ) {
+      if (onPointClick && event?.activePayload?.length) {
         const payload = event.activePayload[0].payload;
         const activeTooltipIndex = Number(event.activeTooltipIndex);
         const indexFromTooltip = Number.isInteger(activeTooltipIndex)
@@ -386,40 +409,11 @@ export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
           margin={margin}
           onClick={handleChartClick}
         >
-          <defs>
-            <linearGradient
-              id={`${chartId}-gradient`}
-              x1="0"
-              y1="0"
-              x2="0"
-              y2="1"
-            >
-              <stop offset="0%" stopColor={negativeColor} stopOpacity={0.1} />
-              <stop offset="100%" stopColor={negativeColor} stopOpacity={0.4} />
-            </linearGradient>
-            
-            <filter id={`${chartId}-shadow`} height="120%">
-              <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
-            </filter>
-            
-            <filter id={`${chartId}-glow`} height="130%">
-              <feGaussianBlur
-                in="SourceGraphic"
-                stdDeviation="2"
-                result="blur"
-              />
-              <feColorMatrix
-                in="blur"
-                mode="matrix"
-                values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
-                result="glow"
-              />
-              <feComposite in="SourceGraphic" in2="glow" operator="over" />
-            </filter>
-          </defs>
+          <DrawdownChartDefs chartId={chartId} color={negativeColor} />
           <CartesianGrid
             strokeDasharray="3 3"
             vertical={false}
+            verticalCoordinatesGenerator={skipVerticalGridCoordinates}
             stroke="var(--background-modifier-border)"
             strokeOpacity={0.5}
           />
@@ -431,8 +425,8 @@ export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
             strokeWidth={1.5}
             ifOverflow="hidden"
           />
-          <XAxis
-            dataKey="dateKey"
+          <DateXAxis
+            chartData={displayData}
             height={16}
             tickMargin={4}
             tickLine={false}
@@ -499,6 +493,9 @@ export const SharedDrawdownChart = React.memo<SharedDrawdownChartProps>(
               fill: negativeColor,
               filter: `url(#${chartId}-glow)`,
             }}
+            isAnimationActive={
+              isAnimationActive && shouldAnimateSeries(displayData.length)
+            }
             animationDuration={1000}
             animationEasing="ease-out"
             filter={`url(#${chartId}-shadow)`}

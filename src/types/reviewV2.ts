@@ -40,6 +40,8 @@ export interface TradeTemplate {
       }
     >
   >;
+  
+  noteSections?: TradeNoteBodySection[];
   assetOverrides?: Partial<
     Record<
       TradeTemplateAssetType,
@@ -55,7 +57,8 @@ export interface TradeTemplate {
     navigation: { show: boolean };
     images: {
       show: boolean;
-      position: 'top' | 'side' | 'bottom';
+      
+      layout?: TradeImageLayout;
     };
     metadata: {
       show: boolean;
@@ -76,6 +79,10 @@ export interface TradeTemplate {
     missedReason?: {
       show: boolean;
     };
+    
+    rating?: {
+      show: boolean;
+    };
   };
 
   display: {
@@ -85,6 +92,12 @@ export interface TradeTemplate {
     showBacktestBadge: boolean;
   };
 }
+export type TradeImageLayout = 'carousel' | 'stacked';
+
+export type TradeNoteBodySection =
+  | { id: string; type: 'header'; level: number; text: string }
+  | { id: string; type: 'zone'; text: string };
+
 export type TradeNoteSectionId =
   | 'navigation'
   | 'images'
@@ -215,6 +228,7 @@ type DRCWidgetType =
   | 'goals'
   | 'checklist'
   | 'session-mistakes'
+  | 'day-trade-fields'
   | 'session-log'
   | 'key-levels'
   | 'trades'

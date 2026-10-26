@@ -1,15 +1,22 @@
-import {
+import React, {
+  createRef,
   useCallback,
   useEffect,
   useLayoutEffect,
   useRef,
   type RefObject,
 } from 'react';
-import flatpickr from 'flatpickr';
-import type { Instance } from 'flatpickr/dist/types/instance';
-import { t } from '../../lang/helpers';
-import { createDateWithoutTime } from '../../utils/dateUtils';
+import { createRoot, type Root } from 'react-dom/client';
+import { Scope } from 'obsidian';
+import { useEscapeRegistrar } from '../shared/disclosureEscape';
+import { getPluginInstance } from '../../utils/pluginContext';
+import { ESCAPE_DELEGATE_ATTRIBUTE } from '../../views/escapeKeySuppression';
+import { anchoredMenuPortalRoot } from '../shared/menus/useAnchoredMenuPosition';
 import { getDatePickerLocale } from './datePickerLocales';
+import {
+  DateTimePickerPopup,
+  type DateTimePickerPopupConfig,
+} from './DateTimePickerPopup';
 
 export interface DatePickerSurface {
   element: HTMLElement;
@@ -36,239 +43,160 @@ interface DateTimePickerOptions {
 }
 
 
+const isNode = (target: EventTarget | null): target is Node =>
+  target !== null && 'nodeType' in target;
+
+interface OpenPicker {
+  render: () => void;
+  close: (restoreFocus: boolean) => void;
+}
+
+
 export function useDateTimePicker(options: DateTimePickerOptions): () => void {
   const optionsRef = useRef(options);
+  const active = useRef<OpenPicker | null>(null);
+  const escapeRegistrar = useEscapeRegistrar();
+  const escapeRegistrarRef = useRef(escapeRegistrar);
   useLayoutEffect(() => {
     optionsRef.current = options;
-  }, [options]);
-  const active = useRef<Instance | null>(null);
-  const resources = useRef(new Set<() => void>());
+    escapeRegistrarRef.current = escapeRegistrar;
+    
+    active.current?.render();
+  }, [options, escapeRegistrar]);
 
-  useEffect(() => {
-    const pending = resources.current;
-    return () => {
-      
-      
-      for (const dispose of pending) queueMicrotask(dispose);
-      active.current = null;
-    };
-  }, []);
+  useEffect(
+    () => () => {
+      active.current?.close(false);
+    },
+    []
+  );
 
   return useCallback(() => {
-    const {
-      containerRef,
-      triggerRef,
-      positionElement,
-      value,
-      disabled,
-      includeTime = false,
-      timeOnly = false,
-      showSeconds = false,
-      use24HourTime = false,
-      minDate,
-      closeOnQuickAction = true,
-    } = optionsRef.current;
+    if (active.current) {
+      active.current.close(true);
+      return;
+    }
+    const { containerRef, triggerRef, positionElement, disabled } =
+      optionsRef.current;
     const container = containerRef.current;
     if (disabled || !container) return;
-    active.current?.close();
-    for (const dispose of resources.current) queueMicrotask(dispose);
     const doc = container.ownerDocument;
-    const win = doc.defaultView;
-    if (!win) return;
-    const trigger = positionElement ?? triggerRef.current;
+    const trigger = triggerRef.current;
+    const anchor = positionElement ?? trigger ?? container;
     
-    
-    const input = container.createEl('input', {
-      cls: 'journalit-flatpickr-temp-input',
-      attr: { tabindex: '-1', 'aria-hidden': 'true' },
+    const focusTarget = positionElement ?? trigger;
+    const host = anchoredMenuPortalRoot(anchor).createDiv({
+      cls: 'journalit-date-picker-host',
+      
+      attr: { [ESCAPE_DELEGATE_ATTRIBUTE]: 'true' },
     });
-    let instance: Instance | undefined;
-    let lastNotifiedTime: number | undefined;
-    let popupTimeEdited = false;
-    let timeBaseline = '';
-    let disposed = false;
+    const root: Root = createRoot(host);
+    const popupRef = createRef<HTMLDivElement>();
+    const locale = getDatePickerLocale();
     const listeners: Array<() => void> = [];
-    const dispose = () => {
-      if (disposed) return;
-      disposed = true;
-      for (const remove of listeners) remove();
-      instance?.destroy();
-      input.remove();
-      resources.current.delete(dispose);
-    };
-    resources.current.add(dispose);
-    const restoreFocus = () => {
-      if (trigger?.isConnected) trigger.focus();
-    };
-    const timeFormat = use24HourTime
-      ? showSeconds
-        ? 'H:i:S'
-        : 'H:i'
-      : showSeconds
-        ? 'h:i:S K'
-        : 'h:i K';
-    const todayAllowed = (now: Date) =>
-      !minDate ||
-      (includeTime || timeOnly
-        ? now >= minDate
-        : createDateWithoutTime(now, true) >=
-          createDateWithoutTime(minDate, true));
-    instance = flatpickr(input, {
-      defaultDate: value,
-      enableTime: includeTime || timeOnly,
-      enableSeconds: showSeconds,
-      noCalendar: timeOnly,
-      time_24hr: use24HourTime,
-      dateFormat: timeOnly
-        ? timeFormat
-        : includeTime
-          ? `Y-m-d ${timeFormat}`
-          : 'Y-m-d',
-      minDate,
-      disableMobile: true,
-      clickOpens: false,
-      closeOnSelect: false,
-      appendTo: doc.body,
-      positionElement: trigger ?? container,
-      monthSelectorType: 'static',
-      locale: getDatePickerLocale(),
-      onChange: (selected) => {
-        if (selected.length > 0 && selected[0].getTime() !== lastNotifiedTime) {
-          lastNotifiedTime = selected[0].getTime();
-          optionsRef.current.onChange(new Date(selected[0]));
-        }
-      },
-      onValueUpdate: (_dates, text) => {
-        
-        
-        if ((includeTime || timeOnly) && text !== timeBaseline)
-          popupTimeEdited = true;
-      },
-      onClose: (_dates, _text, picker) => {
-        if (active.current === picker) active.current = null;
-        const focused = doc.activeElement;
-        if (
-          focused === input ||
-          (focused && picker.calendarContainer.contains(focused))
-        )
-          restoreFocus();
-        optionsRef.current.onClose?.();
-        
-        
-        
-        if (!includeTime && !timeOnly) queueMicrotask(dispose);
-      },
-      onReady: (_dates, text, picker) => {
-        timeBaseline = text;
-        const calendar = picker.calendarContainer;
-        calendar.classList.add('journalit-flatpickr-calendar');
-        
-        
-        const selectDay = (event: Event) => {
-          if (
-            event.type === 'keydown' &&
-            (!(event instanceof win.KeyboardEvent) || event.key !== 'Enter')
-          )
-            return;
-          const day =
-            event.target instanceof win.Element
-              ? event.target.closest('.flatpickr-day')
-              : null;
-          if (!day || day.classList.contains('flatpickr-disabled')) return;
-          const date: unknown = Reflect.get(day, 'dateObj');
-          if (!(date instanceof Date) || Number.isNaN(date.getTime())) return;
-          event.preventDefault();
-          event.stopPropagation();
-          const emitted = optionsRef.current.onSelectDay(
-            new Date(date),
-            popupTimeEdited ? picker.selectedDates[0] : undefined
-          );
-          
-          
-          if (emitted) {
-            picker.setDate(emitted, false);
-            lastNotifiedTime = emitted.getTime();
-          } else {
-            picker.clear(false);
-            lastNotifiedTime = undefined;
-          }
-          timeBaseline = picker.input.value;
-          popupTimeEdited = false;
-          picker.close();
-          restoreFocus();
-        };
-        calendar.addEventListener('click', selectDay, true);
-        calendar.addEventListener('keydown', selectDay, true);
-        listeners.push(() => {
-          calendar.removeEventListener('click', selectDay, true);
-          calendar.removeEventListener('keydown', selectDay, true);
-        });
+    let releaseScope: (() => void) | undefined;
 
-        const timeContainer =
-          calendar.querySelector<HTMLElement>('.flatpickr-time');
-        let buttonContainer: HTMLElement;
-        if (timeContainer) {
-          const nodes = Array.from(timeContainer.childNodes);
-          const content = timeContainer.createDiv({
-            cls: 'journalit-flatpickr-time-content',
-          });
-          content.append(...nodes);
-          timeContainer.classList.add('journalit-flatpickr-time-container');
-          buttonContainer = timeContainer;
-        } else {
-          buttonContainer = calendar.createDiv({
-            cls: 'journalit-flatpickr-button-container',
-          });
-        }
-        const clear = buttonContainer.createEl('button', {
-          cls: 'flatpickr-button',
-          text: t('datepicker.button.clear'),
-          attr: { type: 'button' },
-          prepend: Boolean(timeContainer),
-        });
-        const today = buttonContainer.createEl('button', {
-          cls: 'flatpickr-button flatpickr-button-primary',
-          text: t(
-            timeOnly ? 'datepicker.button.now' : 'datepicker.button.today'
-          ),
-          attr: { type: 'button' },
-        });
-        today.disabled = !todayAllowed(new Date());
-        const clearValue = () => {
-          picker.clear(false);
-          timeBaseline = picker.input.value;
-          popupTimeEdited = false;
-          lastNotifiedTime = undefined;
-          optionsRef.current.onChange(undefined);
-          if (closeOnQuickAction) picker.close();
-        };
-        const todayValue = () => {
-          const now = new Date();
-          if (!todayAllowed(now)) return;
-          optionsRef.current.onToday(now);
-          picker.setDate(now, false);
-          timeBaseline = picker.input.value;
-          popupTimeEdited = false;
-          lastNotifiedTime = now.getTime();
-          if (closeOnQuickAction) picker.close();
-        };
-        clear.addEventListener('click', clearValue);
-        today.addEventListener('click', todayValue);
-        listeners.push(() => {
-          clear.removeEventListener('click', clearValue);
-          today.removeEventListener('click', todayValue);
-        });
-      },
-    });
-    const picker = instance;
+    const contains = (target: EventTarget | null) =>
+      isNode(target) && host.contains(target);
+
+    const close = (restoreFocus: boolean) => {
+      if (active.current !== picker) return;
+      active.current = null;
+      releaseScope?.();
+      for (const remove of listeners) remove();
+      const focusWasInside = contains(doc.activeElement);
+      host.remove();
+      
+      queueMicrotask(() => root.unmount());
+      if ((restoreFocus || focusWasInside) && focusTarget?.isConnected)
+        focusTarget.focus();
+      optionsRef.current.onClose?.();
+    };
+
+    const render = () => {
+      const current = optionsRef.current;
+      const config: DateTimePickerPopupConfig = {
+        value: current.value,
+        includeTime: current.includeTime ?? false,
+        timeOnly: current.timeOnly ?? false,
+        showSeconds: current.showSeconds ?? false,
+        use24HourTime: current.use24HourTime ?? false,
+        minDate: current.minDate,
+        closeOnQuickAction: current.closeOnQuickAction ?? true,
+        locale,
+        onChange: (date) => optionsRef.current.onChange(date),
+        onSelectDay: (date, time) => optionsRef.current.onSelectDay(date, time),
+        onToday: (date) => optionsRef.current.onToday(date),
+      };
+      root.render(
+        React.createElement(DateTimePickerPopup, {
+          config,
+          anchor,
+          popupRef,
+          onDismiss: close,
+        })
+      );
+    };
+
+    const picker: OpenPicker = { render, close };
     active.current = picker;
-    optionsRef.current.onOpen?.({
-      element: picker.calendarContainer,
-      close: () => {
-        picker.close();
-        restoreFocus();
+
+    const listen = <K extends keyof DocumentEventMap>(
+      type: K,
+      handler: (event: DocumentEventMap[K]) => void,
+      capture: boolean
+    ) => {
+      doc.addEventListener(type, handler, capture);
+      listeners.push(() => doc.removeEventListener(type, handler, capture));
+    };
+    
+    
+    const isOwnControl = (target: EventTarget | null) =>
+      isNode(target) &&
+      (anchor.contains(target) || Boolean(trigger?.contains(target)));
+    const dismissFrom = (target: EventTarget | null) => {
+      if (contains(target) || isOwnControl(target)) return;
+      const focused = doc.activeElement;
+      if (focused?.instanceOf(HTMLElement) && contains(focused)) focused.blur();
+      close(false);
+    };
+    listen('mousedown', (event) => dismissFrom(event.target), true);
+    listen('focusin', (event) => dismissFrom(event.target), true);
+    
+    
+    listen(
+      'keydown',
+      (event) => {
+        if (event.key !== 'Escape' || event.isComposing) return;
+        event.preventDefault();
+        close(true);
       },
-    });
-    picker.open();
+      false
+    );
+
+    
+    
+    
+    
+    const registrar = escapeRegistrarRef.current;
+    const app = getPluginInstance()?.app;
+    if (registrar) {
+      releaseScope = registrar(() => close(true));
+    } else if (app) {
+      
+      
+      const inModal = host.closest('.modal-container') !== null;
+      const scope = new Scope(inModal ? undefined : app.scope);
+      scope.register(null, 'Escape', (event) => {
+        if (event.isComposing) return;
+        close(true);
+        return false;
+      });
+      app.keymap.pushScope(scope);
+      releaseScope = () => app.keymap.popScope(scope);
+    }
+
+    render();
+    optionsRef.current.onOpen?.({ element: host, close: () => close(true) });
   }, []);
 }

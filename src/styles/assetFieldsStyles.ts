@@ -22,13 +22,6 @@ export const ASSET_FIELDS_STYLES = `
     }
 
     
-    .trade-form-view-container .asset-error-message {
-      font-size: 12px;
-      color: var(--text-error);
-      margin-top: 4px;
-    }
-
-    
     .trade-form-view-container .trade-form-account-empty-state {
       margin-top: 8px;
       padding: 10px 12px;
@@ -126,12 +119,12 @@ export const ASSET_FIELDS_STYLES = `
       gap: 16px;
     }
 
-    .trade-form-view-container .take-profits-section {
+    .trade-form-view-container .planned-targets-section {
       grid-column: 1 / -1;
       padding: 0;
     }
 
-    .trade-form-view-container .take-profits-header {
+    .trade-form-view-container .planned-targets-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
@@ -139,36 +132,32 @@ export const ASSET_FIELDS_STYLES = `
       margin-bottom: 8px;
     }
 
-    .trade-form-view-container .take-profits-list {
+    .trade-form-view-container .planned-targets-list {
       display: flex;
       flex-direction: column;
       gap: 6px;
       margin-bottom: 10px;
     }
 
-    .trade-form-view-container .take-profit-row {
+    .trade-form-view-container .planned-target-row {
       display: grid;
       grid-template-columns: 40px minmax(0, 1fr) 140px 32px;
       gap: 6px;
       align-items: start;
     }
 
-    .trade-form-view-container .take-profit-row-header {
+    .trade-form-view-container .planned-target-row-header {
       color: var(--text-muted);
       font-size: 12px;
       font-weight: 600;
       align-items: center;
     }
 
-    .trade-form-view-container .take-profit-row .form-group {
-      margin-bottom: 0;
-    }
-
-    .trade-form-view-container .take-profit-row .input {
+    .trade-form-view-container .planned-target-row .input {
       min-height: 32px;
     }
 
-    .trade-form-view-container .take-profit-index-label {
+    .trade-form-view-container .planned-target-index-label {
       display: flex;
       align-items: center;
       min-height: 32px;
@@ -177,7 +166,7 @@ export const ASSET_FIELDS_STYLES = `
       padding-left: 2px;
     }
 
-    .trade-form-view-container .take-profit-remove-button {
+    .trade-form-view-container .planned-target-remove-button {
       width: 32px;
       height: 32px;
       padding: 0;
@@ -186,12 +175,12 @@ export const ASSET_FIELDS_STYLES = `
       line-height: 1;
     }
 
-    .trade-form-view-container .take-profit-remove-button:hover {
+    .trade-form-view-container .planned-target-remove-button:hover {
       color: var(--text-error);
       border-color: var(--text-error);
     }
 
-    .trade-form-view-container .take-profit-add-button {
+    .trade-form-view-container .planned-target-add-button {
       margin: 0;
       padding: 2px 6px;
       color: var(--text-muted);
@@ -204,13 +193,13 @@ export const ASSET_FIELDS_STYLES = `
       border-radius: 4px;
     }
 
-    .trade-form-view-container .take-profit-add-button:hover {
+    .trade-form-view-container .planned-target-add-button:hover {
       color: var(--text-normal);
       background: var(--background-modifier-hover);
       text-decoration: none;
     }
 
-    .trade-form-view-container .take-profits-empty-state {
+    .trade-form-view-container .planned-targets-empty-state {
       display: flex;
       align-items: center;
       justify-content: center;
@@ -223,13 +212,18 @@ export const ASSET_FIELDS_STYLES = `
       font-size: 13px;
     }
 
+    .trade-form-view-container .planned-targets-footer {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
     @media (max-width: 600px) {
       .trade-form-view-container .risk-fields,
-      .trade-form-view-container .take-profit-row {
+      .trade-form-view-container .planned-target-row {
         grid-template-columns: 1fr;
       }
 
-      .trade-form-view-container .take-profit-row-header {
+      .trade-form-view-container .planned-target-row-header {
         display: none;
       }
     }

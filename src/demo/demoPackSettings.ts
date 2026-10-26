@@ -14,7 +14,6 @@ import {
   DEMO_REVIEW_FIELD_IDS,
   DEMO_TRADE_FIELD_IDS,
   MISTAKES,
-  SETUP_NAMES,
   TAGS,
   atZonedTime,
   createSampleAccountMetadata,
@@ -138,7 +137,6 @@ function createOptions(): CustomOptionsData {
     
     
     [OptionType.ACCOUNT_TYPE]: ['Demo', 'Evaluation', 'Funded'],
-    [OptionType.SETUP]: [...SETUP_NAMES],
     [OptionType.MISTAKE]: [...MISTAKES],
     [OptionType.TAG]: [...TAGS],
     [OptionType.EVENT]: [
@@ -184,8 +182,9 @@ export function createSampleSettings(options: {
     'maeMfe',
     'setup',
     'mistake',
-    'customTags',
+    'tags',
     'thesis',
+    'rating',
     'attachments',
     'customFields',
   ];
@@ -309,6 +308,7 @@ export function createSampleSettings(options: {
       tradeTypes: ['regular'],
       statuses: [],
       reviewStatus: [],
+      ratings: [],
       directions: [],
       customFieldFilters: {},
       exclusions: createFilterExclusions(),
@@ -399,8 +399,6 @@ export function createSampleSettings(options: {
         createdAt,
       },
     },
-    selectedPeriod: 'lifetime',
-    recentItems: [],
   };
   settings.customReviewFields = {
     groups: [
@@ -464,7 +462,6 @@ export function createSampleSettings(options: {
   const scoped: Partial<JournalitSettings> = {};
   for (const key of [
     'trade',
-    'tradeLog',
     'reviewV2',
     'templates',
     'drc',
@@ -475,7 +472,6 @@ export function createSampleSettings(options: {
     'reviews',
     'dashboard',
     'home',
-    'viewFilters',
     'customReviewFields',
     'customReviewFieldOptions',
     'account',

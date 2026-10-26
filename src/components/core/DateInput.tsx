@@ -32,7 +32,6 @@ export function DateInput({
   initialValue,
   onDraftChange,
   minDate,
-  required = false,
   onPickerOpen,
   onPickerClose,
 }: {
@@ -40,7 +39,6 @@ export function DateInput({
   initialValue: Date | null;
   onDraftChange: (result: DateDraftResult) => void;
   minDate?: Date;
-  required?: boolean;
   onPickerOpen?: (surface: DatePickerSurface) => void;
   onPickerClose?: () => void;
 }) {
@@ -49,6 +47,9 @@ export function DateInput({
   const lastValid = useRef(initialValue);
   const containerRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  
+  
+  const pickerRef = useRef<DatePickerSurface | null>(null);
   const segmentRefs = useRef<
     Partial<Record<DateSegment, HTMLInputElement | null>>
   >({});
@@ -57,7 +58,10 @@ export function DateInput({
   const format = getUserDateFormat();
   const order = dateSegmentOrder(format);
   const result = resolveDateDraft(draft);
-  const error = dateInputError(result, showIncomplete, required);
+  
+  
+  
+  const error = dateInputError(result, showIncomplete, false);
 
   const update = (next: DateDraft, deferShortYear = false) => {
     setDraft(next);
@@ -88,8 +92,20 @@ export function DateInput({
     onChange: selectDate,
     onSelectDay: selectDate,
     onToday: selectDate,
-    onOpen: onPickerOpen,
-    onClose: onPickerClose,
+    onOpen: (surface) => {
+      pickerRef.current = surface;
+      onPickerOpen?.(surface);
+    },
+    onClose: () => {
+      pickerRef.current = null;
+      const container = containerRef.current;
+      if (
+        container &&
+        !container.contains(container.ownerDocument.activeElement)
+      )
+        finishSegments();
+      onPickerClose?.();
+    },
   });
 
   return (
@@ -106,7 +122,11 @@ export function DateInput({
         aria-labelledby={labelId}
         aria-describedby={error ? errorId : undefined}
         onBlur={(event) => {
-          if (!event.currentTarget.contains(event.relatedTarget))
+          const next = event.relatedTarget;
+          if (
+            !event.currentTarget.contains(next) &&
+            !(next && pickerRef.current?.element.contains(next))
+          )
             finishSegments();
         }}
       >

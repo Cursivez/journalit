@@ -111,13 +111,11 @@ function useAuthTabModel({ plugin }: AuthTabProps) {
       }));
     };
 
-    window.activeDocument.addEventListener(
-      'journalit:auth-error',
-      handleAuthError
-    );
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('journalit:auth-error', handleAuthError);
 
     return () => {
-      window.activeDocument.removeEventListener(
+      listenerDocument.removeEventListener(
         'journalit:auth-error',
         handleAuthError
       );
@@ -280,12 +278,14 @@ const PRO_FEATURE_KEYS = [
   'settings.auth.feature.ai-mapping',
   'settings.auth.feature.trade-sync',
   'settings.auth.feature.economic-calendar',
+  'settings.auth.feature.ai-tool-calls-pro',
 ] as const;
 
 const FREE_FEATURE_KEYS = [
   'settings.auth.feature.basic-tracking',
   'settings.auth.feature.manual-entry',
   'settings.auth.feature.analytics-reviews',
+  'settings.auth.feature.ai-tool-calls-free',
 ] as const;
 
 const AuthTabComponent: React.FC<AuthTabProps> = ({ plugin }) => {
@@ -413,7 +413,11 @@ const AuthTabComponent: React.FC<AuthTabProps> = ({ plugin }) => {
             )}
             {tier.toLowerCase() === 'enterprise' &&
               [
-                ...PRO_FEATURE_KEYS,
+                
+                
+                ...PRO_FEATURE_KEYS.filter(
+                  (key) => key !== 'settings.auth.feature.ai-tool-calls-pro'
+                ),
                 'settings.auth.feature.priority-support' as const,
               ].map((key) => (
                 <span key={key} className="feature-tag">

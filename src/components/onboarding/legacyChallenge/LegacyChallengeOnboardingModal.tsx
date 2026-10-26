@@ -1,6 +1,6 @@
 
 
-import { App, Modal } from 'obsidian';
+import { App } from 'obsidian';
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type JournalitPlugin from '../../../main';
@@ -22,6 +22,7 @@ import {
   LEGACY_CHALLENGE_SETUP_GUIDE_STEPS,
 } from '../../../guides/accountConversionGuides';
 import { suspendViewGuidesWhileOpen } from '../../../guides/suspendViewGuides';
+import { JournalitModal } from '../../modals/JournalitModal';
 
 interface LegacyAccountRow {
   name: string;
@@ -410,7 +411,7 @@ const LegacyChallengeSetupContent: React.FC<{
   );
 };
 
-class LegacyChallengeOnboardingModal extends Modal {
+class LegacyChallengeOnboardingModal extends JournalitModal {
   private root: Root | null = null;
 
   constructor(
@@ -446,9 +447,11 @@ class LegacyChallengeOnboardingModal extends Modal {
     
     
     
+    
     if (
+      !this.closingForUnload &&
       this.plugin.settings.account?.legacyChallengeOnboarding?.status ===
-      'pending'
+        'pending'
     ) {
       void markLegacyChallengeOnboarding(this.plugin, 'skipped');
     }

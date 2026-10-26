@@ -23,7 +23,7 @@ type ForexPnlConversionPlan =
   | { kind: 'preserve' }
   | { kind: 'fetch'; quoteCurrency: string; baseCurrency: string };
 
-export function resolveFormForexQuoteCurrency(
+function resolveFormForexQuoteCurrency(
   instrument: string | undefined,
   initialInstrument: string | undefined,
   resolvedQuoteCurrency: string | null,
@@ -38,7 +38,7 @@ export function resolveFormForexQuoteCurrency(
     : null;
 }
 
-export function resolveForexPnlConversionPlan(
+function resolveForexPnlConversionPlan(
   data: Partial<ForexConversionFields>,
   globalCurrency: string,
   quoteCurrency: string | null

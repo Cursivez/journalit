@@ -45,6 +45,136 @@ interface Props {
 const SAVED_PROFILES = '__saved-profiles';
 const CUSTOM_FIRM = '__custom-firm';
 
+type CatalogFirm = PropFirmProfileCatalog['firms'][number];
+type ProfileChoice = { label: string; selection: PropFirmProfileSelection };
+
+
+function initialFirmIdFor(
+  catalog: PropFirmProfileCatalog,
+  initialFirmName: string | undefined
+): string {
+  if (!initialFirmName) return '';
+  const match = matchFirm(
+    initialFirmName,
+    catalog.firms.map((entry) => ({
+      id: entry.id,
+      name: entry.name,
+      challenges: entry.challenges.length,
+    }))
+  );
+  return match?.id ?? '';
+}
+
+const catalogChallengeChoices = (
+  catalog: PropFirmProfileCatalog,
+  firm: CatalogFirm
+): ProfileChoice[] =>
+  firm.challenges.map((entry) => ({
+    label: entry.name,
+    selection: {
+      firmId: firm.id,
+      firmName: firm.name,
+      verifiedAt: firm.verifiedAt,
+      catalogVersion: catalog.version,
+      challenge: entry,
+    },
+  }));
+
+function profileChoices(
+  catalog: PropFirmProfileCatalog,
+  shownFirmId: string,
+  savedProfiles: readonly PersonalPropFirmProfile[]
+): ProfileChoice[] {
+  if (shownFirmId === SAVED_PROFILES) {
+    return savedProfiles.map((entry) => ({
+      label: `${entry.firmName} / ${entry.challenge.name}`,
+      selection: personalProfileSelection(entry),
+    }));
+  }
+  const firm = catalog.firms.find((entry) => entry.id === shownFirmId);
+  return firm ? catalogChallengeChoices(catalog, firm) : [];
+}
+
+function firmOptions(
+  catalog: PropFirmProfileCatalog,
+  hasSavedProfiles: boolean,
+  canChooseCustomFirm: boolean
+): Array<{ value: string; label: string }> {
+  return [
+    ...(hasSavedProfiles
+      ? [{ value: SAVED_PROFILES, label: t('account.profiles.library') }]
+      : []),
+    ...catalog.firms.map((entry) => ({ value: entry.id, label: entry.name })),
+    ...(canChooseCustomFirm
+      ? [
+          {
+            value: CUSTOM_FIRM,
+            label: t('account.prop-challenge.profile.custom-firm'),
+          },
+        ]
+      : []),
+  ];
+}
+
+const CatalogUnavailable: React.FC<{
+  loading: boolean;
+  children: React.ReactNode;
+}> = ({ loading, children }) => (
+  <div className="journalit-prop-profile-picker">
+    <div className="journalit-account-merge-modal__loading">
+      {loading
+        ? t('account.prop-challenge.profile.loading')
+        : t('account.prop-challenge.profile.unavailable')}
+    </div>
+    {children}
+  </div>
+);
+
+
+function catalogFooterVisibility(args: {
+  canChooseCustomFirm: boolean;
+  isCustomFirm: boolean;
+  hasAppliedProfile: boolean;
+  hasNameFields: boolean;
+}): { showHelp: boolean; showNameFields: boolean } {
+  const {
+    canChooseCustomFirm,
+    isCustomFirm,
+    hasAppliedProfile,
+    hasNameFields,
+  } = args;
+  return {
+    showHelp: canChooseCustomFirm && !isCustomFirm && !hasAppliedProfile,
+    showNameFields: hasNameFields && (isCustomFirm || !canChooseCustomFirm),
+  };
+}
+
+
+const CatalogPickerFooter: React.FC<{
+  showHelp: boolean;
+  showNameFields: boolean;
+  currencyMismatch: boolean;
+  children: React.ReactNode;
+}> = ({ showHelp, showNameFields, currencyMismatch, children }) => (
+  <>
+    {showHelp && (
+      <p className="journalit-prop-profile-picker__help">
+        {t('account.prop-challenge.profile.help')}
+      </p>
+    )}
+    {showNameFields && children}
+    {currencyMismatch && (
+      <p
+        role="status"
+        className="journalit-account-merge-modal__hint is-warning"
+      >
+        <AlertTriangle size={12} />
+        {t('account.profiles.currency')}
+      </p>
+    )}
+  </>
+);
+
 export const CatalogPicker: React.FC<{
   currency?: string;
   
@@ -109,49 +239,16 @@ export const CatalogPicker: React.FC<{
   );
   if (!catalog) {
     return (
-      <div className="journalit-prop-profile-picker">
-        <div className="journalit-account-merge-modal__loading">
-          {status === 'loading'
-            ? t('account.prop-challenge.profile.loading')
-            : t('account.prop-challenge.profile.unavailable')}
-        </div>
+      <CatalogUnavailable loading={status === 'loading'}>
         {nameFields}
-      </div>
+      </CatalogUnavailable>
     );
   }
   
   
-  const initialFirmId = initialFirmName
-    ? matchFirm(
-        initialFirmName,
-        catalog.firms.map((entry) => ({
-          id: entry.id,
-          name: entry.name,
-          challenges: entry.challenges.length,
-        }))
-      )?.id
-    : undefined;
-  const shownFirmId = firmId || initialFirmId || '';
+  const shownFirmId = firmId || initialFirmIdFor(catalog, initialFirmName);
   const isCustomFirm = shownFirmId === CUSTOM_FIRM;
-  const firm = catalog.firms.find((entry) => entry.id === shownFirmId);
-  const choices: Array<{ label: string; selection: PropFirmProfileSelection }> =
-    shownFirmId === SAVED_PROFILES
-      ? savedProfiles.map((entry) => ({
-          label: `${entry.firmName} / ${entry.challenge.name}`,
-          selection: personalProfileSelection(entry),
-        }))
-      : firm
-        ? firm.challenges.map((entry) => ({
-            label: entry.name,
-            selection: {
-              firmId: firm.id,
-              firmName: firm.name,
-              verifiedAt: firm.verifiedAt,
-              catalogVersion: catalog.version,
-              challenge: entry,
-            },
-          }))
-        : [];
+  const choices = profileChoices(catalog, shownFirmId, savedProfiles);
   const chosen = choices.find(
     (choice) => choice.selection.challenge.id === challengeId
   );
@@ -171,28 +268,11 @@ export const CatalogPicker: React.FC<{
             <DropdownSelect
               value={shownFirmId}
               ariaLabel={t('account.prop-challenge.profile.firm')}
-              options={[
-                ...(savedProfiles.length > 0
-                  ? [
-                      {
-                        value: SAVED_PROFILES,
-                        label: t('account.profiles.library'),
-                      },
-                    ]
-                  : []),
-                ...catalog.firms.map((entry) => ({
-                  value: entry.id,
-                  label: entry.name,
-                })),
-                ...(onChooseCustomFirm
-                  ? [
-                      {
-                        value: CUSTOM_FIRM,
-                        label: t('account.prop-challenge.profile.custom-firm'),
-                      },
-                    ]
-                  : []),
-              ]}
+              options={firmOptions(
+                catalog,
+                savedProfiles.length > 0,
+                onChooseCustomFirm !== undefined
+              )}
               placeholder={t('account.prop-challenge.profile.choose-firm')}
               onChange={(id) => {
                 setFirmId(id);
@@ -243,23 +323,17 @@ export const CatalogPicker: React.FC<{
           </div>
         )}
       </div>
-      {onChooseCustomFirm && !isCustomFirm && !appliedProfile && (
-        <p className="journalit-prop-profile-picker__help">
-          {t('account.prop-challenge.profile.help')}
-        </p>
-      )}
-      {(firmNameField || challengeNameField) &&
-        (isCustomFirm || !onChooseCustomFirm) &&
-        nameFields}
-      {currencyMismatch && (
-        <p
-          role="status"
-          className="journalit-account-merge-modal__hint is-warning"
-        >
-          <AlertTriangle size={12} />
-          {t('account.profiles.currency')}
-        </p>
-      )}
+      <CatalogPickerFooter
+        {...catalogFooterVisibility({
+          canChooseCustomFirm: onChooseCustomFirm !== undefined,
+          isCustomFirm,
+          hasAppliedProfile: appliedProfile !== undefined,
+          hasNameFields: Boolean(firmNameField || challengeNameField),
+        })}
+        currencyMismatch={currencyMismatch}
+      >
+        {nameFields}
+      </CatalogPickerFooter>
     </div>
   );
 };
@@ -305,7 +379,12 @@ export const AccountMergeIdentitySection: React.FC<Props> = ({
 
   const firmNameField = (
     <label className="journalit-prop-challenge-field">
-      <span>{t('account.prop-challenge.firm-name')}</span>
+      <span>
+        {t('account.prop-challenge.firm-name')}{' '}
+        <span className="setting-item-name-optional">
+          {t('form.field.optional')}
+        </span>
+      </span>
       <input
         value={identity.firmName}
         placeholder={t('account.prop-challenge.firm-name-placeholder')}

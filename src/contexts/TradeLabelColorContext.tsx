@@ -8,6 +8,17 @@ export interface TradeLabelColors {
   tags: Readonly<Record<string, LabelColor>>;
 }
 
+
+export function normalizeTradeTagColors(
+  colors: Readonly<Record<string, LabelColor>>
+): Record<string, LabelColor> {
+  const normalized: Record<string, LabelColor> = {};
+  for (const [label, color] of Object.entries(colors)) {
+    normalized[normalizeOptionKey(label)] = color;
+  }
+  return normalized;
+}
+
 const EMPTY_TRADE_LABEL_COLORS: TradeLabelColors = {
   setups: {},
   tags: {},

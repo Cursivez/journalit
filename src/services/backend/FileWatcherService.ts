@@ -68,6 +68,9 @@ export class FileWatcherService {
   
   public batchModifiedFiles = new Set<string>();
   private ignoredModifyCounts = new Map<string, number>();
+  
+  private createdAt = new Map<string, number>();
+  private static readonly NEW_TRADE_WINDOW_MS = 2 * 60 * 1000;
 
   constructor(
     plugin: JournalitPlugin,
@@ -110,6 +113,7 @@ export class FileWatcherService {
     this.plugin.registerEvent(
       this.plugin.app.vault.on('create', (file) => {
         if (file instanceof TFile && this.tradeSyncService.isTradeFile(file)) {
+          this.createdAt.set(file.path, Date.now());
           void this.processNewTradeFile(file);
         }
       })
@@ -139,6 +143,7 @@ export class FileWatcherService {
       this.plugin.app.vault.on('delete', (file) => {
         if (file instanceof TFile) {
           this.removeFileFromTracking(file.path);
+          this.createdAt.delete(file.path);
         }
       })
     );
@@ -148,6 +153,11 @@ export class FileWatcherService {
       this.plugin.app.vault.on('rename', (file, oldPath) => {
         if (file instanceof TFile) {
           this.removeFileFromTracking(oldPath);
+          const created = this.createdAt.get(oldPath);
+          if (created !== undefined) {
+            this.createdAt.delete(oldPath);
+            this.createdAt.set(file.path, created);
+          }
           
           
           
@@ -294,6 +304,7 @@ export class FileWatcherService {
         
         if (
           this.settings.showNewTradeNotifications &&
+          this.wasCreatedRecently(file.path) &&
           getStringValue(tradeForNotificationRecord, 'instrument') &&
           getStringValue(tradeForNotificationRecord, 'direction') &&
           !isFromSync
@@ -331,6 +342,16 @@ export class FileWatcherService {
         error
       );
     }
+  }
+
+  private wasCreatedRecently(path: string): boolean {
+    const created = this.createdAt.get(path);
+    if (created === undefined) return false;
+    if (Date.now() - created <= FileWatcherService.NEW_TRADE_WINDOW_MS) {
+      return true;
+    }
+    this.createdAt.delete(path);
+    return false;
   }
 
   

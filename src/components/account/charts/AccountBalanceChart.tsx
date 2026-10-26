@@ -9,7 +9,10 @@ import {
   parseCuratedCurrencyCode,
 } from '../../../utils/currencyConfig';
 import { usePlugin } from '../../../hooks/usePlugin';
-import { projectCurrentPropChallengeRules } from '../../../services/propChallenge/PropChallengeRuleProjection';
+import {
+  projectCurrentPropChallengeRules,
+  type ProjectedPropChallengeRules,
+} from '../../../services/propChallenge/PropChallengeRuleProjection';
 import {
   buildBalanceChartData,
   calculateBalanceChartParams,
@@ -22,11 +25,7 @@ import { AccountBalanceOffScaleLevels } from './AccountBalanceOffScaleLevels';
 import { AccountBalanceChartDefs } from './AccountBalanceChartDefs';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { calculateYAxisWidth } from '../../../utils/chartUtils';
-import {
-  AccountData,
-  TransactionType,
-  DrawdownType,
-} from '../../../services/account/types';
+import { AccountData, DrawdownType } from '../../../services/account/types';
 import { EmptyState } from '../../shared/EmptyState';
 import {
   ComposedChart,
@@ -42,6 +41,12 @@ import { useCurrency } from '../../../contexts/CurrencyContext';
 import { ChartBase } from '../../charts/ChartBase';
 import { RechartsPortalTooltip } from '../../charts/RechartsPortalTooltip';
 import type { AccountTradeData } from '../../../services/accountPage/types';
+import { skipVerticalGridCoordinates } from '../../charts/chartGrid';
+import {
+  shouldAnimateSeries,
+  useChartAnimationActive,
+} from '../../charts/chartAnimation';
+import { CustomTooltip } from './AccountBalanceChartTooltip';
 
 let accountBalanceChartIdCounter = 0;
 
@@ -58,250 +63,8 @@ interface AccountBalanceChartProps {
 }
 
 
-interface CustomTooltipContentProps extends TooltipProps<number, string> {
-  active?: boolean;
-  payload?: Array<{
-    value: number;
-    name: string;
-    dataKey: string;
-    payload: BalanceChartDataPoint;
-  }>;
-  currency: CurrencyCode;
-  defaultRiskAmount?: number;
-}
-
-
-const formatTradeDescription = (description: string | undefined): string => {
-  if (!description) return '-';
-
-  
-  if (!description.startsWith('Trade P&L:')) return description;
-
-  
-  const regex = /Trade P&L: .+\/([A-Z0-9]+)-(\d{6})-([^.]+)\.md/;
-  const match = description.match(regex);
-
-  if (!match || match.length < 4) return description;
-
-  const [, ticker, dateCode, tradeNumber] = match;
-
-  
-  try {
-    
-    const year = '20' + dateCode.substring(0, 2); 
-    const month = dateCode.substring(2, 4);
-    const day = dateCode.substring(4, 6);
-
-    
-    const date = new Date(`${year}-${month}-${day}`);
-    const formattedDate = date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
-
-    
-    return `${ticker} ${tradeNumber} (${formattedDate})`;
-  } catch {
-    
-    return `${ticker} ${tradeNumber}`;
-  }
-};
-
-const CustomTooltip: React.FC<CustomTooltipContentProps> = React.memo(
-  ({ active, payload, currency, defaultRiskAmount }) => {
-    const { formatValue, shouldMask } = useDisplayFormatter();
-
-    if (!active || !payload || payload.length === 0) return null;
-
-    const data = payload[0].payload;
-    const isPnlMasked = shouldMask('pnl');
-    const isMoneyMasked = shouldMask('money');
-    const isDrawdownMasked = shouldMask('drawdown');
-
-    const formatChartValue = (
-      kind: 'balance' | 'pnl' | 'money' | 'drawdown',
-      value: number,
-      rMultiple?: number
-    ): string =>
-      formatValue({
-        kind,
-        value,
-        currencyCode: currency,
-        rMultiple,
-      });
-
-    return (
-      <div className="journalit-account-chart-tooltip">
-        <div className="journalit-account-chart-tooltip-date">{data.date}</div>
-        <div className="journalit-account-chart-tooltip-value">
-          Balance: {formatChartValue('balance', data.balance)}
-        </div>
-
-        
-        {data.isConsolidated && (
-          <div className="journalit-account-chart-tooltip-section">
-            {data.tradeCount && data.tradeCount > 0 && (
-              <div className="journalit-account-chart-tooltip-row journalit-account-chart-tooltip-row--spaced">
-                <span className="journalit-account-chart-tooltip-label">
-                  Trades:
-                </span>{' '}
-                {data.tradeCount}
-              </div>
-            )}
-            {data.dailyPnL !== undefined && (
-              <div
-                className={`journalit-account-chart-tooltip-row journalit-account-chart-tooltip-row--emphasis ${
-                  isPnlMasked
-                    ? ''
-                    : data.dailyPnL >= 0
-                      ? 'journalit-account-chart-tooltip-row--positive'
-                      : 'journalit-account-chart-tooltip-row--negative'
-                }`}
-              >
-                Day P&L:{' '}
-                {formatChartValue(
-                  'pnl',
-                  data.dailyPnL,
-                  defaultRiskAmount && defaultRiskAmount > 0
-                    ? data.dailyPnL / defaultRiskAmount
-                    : undefined
-                )}
-              </div>
-            )}
-            {data.hasEvents && data.dayTransactions && (
-              <div className="journalit-account-chart-tooltip-list">
-                {data.dayTransactions.flatMap((transaction) => {
-                  if (
-                    transaction.type !== TransactionType.DEPOSIT &&
-                    transaction.type !== TransactionType.WITHDRAWAL
-                  ) {
-                    return [];
-                  }
-                  if (
-                    transaction.type === TransactionType.DEPOSIT &&
-                    transaction.description === 'Initial deposit'
-                  ) {
-                    return [];
-                  }
-
-                  const isDeposit =
-                    transaction.type === TransactionType.DEPOSIT &&
-                    transaction.amount > 0;
-                  const isWithdrawal =
-                    transaction.type === TransactionType.WITHDRAWAL ||
-                    (transaction.type === TransactionType.DEPOSIT &&
-                      transaction.amount < 0);
-
-                  const transactionClass = isMoneyMasked
-                    ? 'journalit-account-chart-tooltip-row--neutral'
-                    : isDeposit
-                      ? 'journalit-account-chart-tooltip-row--deposit'
-                      : isWithdrawal
-                        ? 'journalit-account-chart-tooltip-row--withdrawal'
-                        : 'journalit-account-chart-tooltip-row--neutral';
-
-                  return [
-                    <div
-                      key={transaction.id}
-                      className={`journalit-account-chart-tooltip-row journalit-account-chart-tooltip-row--compact ${transactionClass}`}
-                    >
-                      {isDeposit &&
-                        `• ${isMoneyMasked ? 'Cashflow' : 'Deposit'}: ${formatChartValue('money', transaction.amount)}`}
-                      {isWithdrawal &&
-                        `• ${isMoneyMasked ? 'Cashflow' : 'Withdrawal'}: ${formatChartValue('money', Math.abs(transaction.amount))}`}
-                      {transaction.description &&
-                        transaction.description !== 'Manual deposit' &&
-                        transaction.description !== 'Manual withdrawal' && (
-                          <span className="journalit-account-chart-tooltip-muted">
-                            {' - ' + transaction.description}
-                          </span>
-                        )}
-                    </div>,
-                  ];
-                })}
-              </div>
-            )}
-          </div>
-        )}
-
-        
-        {data.transaction && (
-          <div className="journalit-account-chart-tooltip-section">
-            {data.isDeposit && (
-              <div
-                className={`journalit-account-chart-tooltip-row ${
-                  isMoneyMasked
-                    ? 'journalit-account-chart-tooltip-row--neutral'
-                    : 'journalit-account-chart-tooltip-row--deposit'
-                }`}
-              >
-                {isMoneyMasked ? 'Cashflow' : 'Deposit'}:{' '}
-                {formatChartValue('money', data.transaction.amount)}
-              </div>
-            )}
-            {data.isWithdrawal && (
-              <div
-                className={`journalit-account-chart-tooltip-row ${
-                  isMoneyMasked
-                    ? 'journalit-account-chart-tooltip-row--neutral'
-                    : 'journalit-account-chart-tooltip-row--withdrawal'
-                }`}
-              >
-                {isMoneyMasked ? 'Cashflow' : 'Withdrawal'}:{' '}
-                {formatChartValue('money', Math.abs(data.transaction.amount))}
-              </div>
-            )}
-            {data.isTrade && !data.isConsolidated && (
-              <div
-                className={`journalit-account-chart-tooltip-row ${
-                  isPnlMasked
-                    ? ''
-                    : data.transaction && data.transaction.amount >= 0
-                      ? 'journalit-account-chart-tooltip-row--positive'
-                      : 'journalit-account-chart-tooltip-row--negative'
-                }`}
-              >
-                
-                {formatTradeDescription(data.transaction.description)}:{' '}
-                {formatChartValue(
-                  'pnl',
-                  data.transaction.amount,
-                  defaultRiskAmount && defaultRiskAmount > 0
-                    ? data.transaction.amount / defaultRiskAmount
-                    : undefined
-                )}
-              </div>
-            )}
-            
-            {data.transaction.description && !data.isTrade && (
-              <div className="journalit-account-chart-tooltip-description">
-                {data.transaction.description}
-              </div>
-            )}
-          </div>
-        )}
-
-        {data.drawdownLevel !== undefined && (
-          <div
-            className={`journalit-account-chart-tooltip-drawdown ${
-              isDrawdownMasked
-                ? 'journalit-account-chart-tooltip-drawdown--masked'
-                : ''
-            }`}
-          >
-            Drawdown Level: {formatChartValue('drawdown', data.drawdownLevel)}
-          </div>
-        )}
-      </div>
-    );
-  }
-);
-CustomTooltip.displayName = 'AccountBalanceChartTooltip';
-
-
 
 interface BalanceDotContext {
-  showDots: boolean;
   isPnlMasked: boolean;
   depositStrokeColor: string;
   withdrawalStrokeColor: string;
@@ -366,8 +129,7 @@ const renderBalanceDot = (
   context: BalanceDotContext
 ) => {
   const { cx, cy, payload } = props;
-  if (cx === undefined || cy === undefined || !payload || !context.showDots)
-    return hiddenDot;
+  if (cx === undefined || cy === undefined || !payload) return hiddenDot;
   if (payload.isDeposit) {
     return renderCashflowDot(cx, cy, context.depositStrokeColor, false);
   }
@@ -460,40 +222,41 @@ const calculateBalanceColorTransitionOffsets = (
 
 interface AccountBalanceChartSeriesProps {
   balanceStrokeGradientId: string;
+  isAnimationActive: boolean;
   showDots: boolean;
   isPnlMasked: boolean;
   depositStrokeColor: string;
   withdrawalStrokeColor: string;
-  transactionSignature: string;
-  onDotsReady: (signature: string) => void;
+  onAnimationEnd: () => void;
 }
 
 const AccountBalanceChartSeries: React.FC<AccountBalanceChartSeriesProps> = ({
   balanceStrokeGradientId,
+  isAnimationActive,
   showDots,
   isPnlMasked,
   depositStrokeColor,
   withdrawalStrokeColor,
-  transactionSignature,
-  onDotsReady,
+  onAnimationEnd,
 }) => (
   <Line
     type="monotone"
     dataKey="displayBalance"
     stroke={`url(#${balanceStrokeGradientId})`}
     strokeWidth={3}
-    onAnimationEnd={() => onDotsReady(transactionSignature)}
-    dot={(props: BalanceDotProps) =>
-      renderBalanceDot(props, {
-        showDots,
-        isPnlMasked,
-        depositStrokeColor,
-        withdrawalStrokeColor,
-      })
+    isAnimationActive={isAnimationActive}
+    onAnimationEnd={onAnimationEnd}
+    dot={
+      showDots &&
+      ((props: BalanceDotProps) =>
+        renderBalanceDot(props, {
+          isPnlMasked,
+          depositStrokeColor,
+          withdrawalStrokeColor,
+        }))
     }
     activeDot={(props: BalanceDotProps) =>
       renderActiveBalanceDot(props, {
-        showDots,
         isPnlMasked,
         depositStrokeColor,
         withdrawalStrokeColor,
@@ -634,6 +397,64 @@ function useAccountBalanceChartModel(
   };
 }
 
+const resolveChartCurrency = (
+  currencyOverride: string | undefined,
+  accountCurrency: CurrencyCode | undefined,
+  globalCurrency: CurrencyCode
+): CurrencyCode =>
+  currencyOverride
+    ? parseCuratedCurrencyCode(currencyOverride)
+    : accountCurrency || globalCurrency;
+
+const cashflowStrokeColors = (isMoneyMasked: boolean) =>
+  isMoneyMasked
+    ? {
+        depositStrokeColor: 'var(--text-muted)',
+        withdrawalStrokeColor: 'var(--text-muted)',
+      }
+    : {
+        depositStrokeColor: 'var(--interactive-accent)',
+        withdrawalStrokeColor: 'var(--text-warning, gold)',
+      };
+
+const showsDrawdownSeries = (
+  propChallengeOverlay: ProjectedPropChallengeRules | undefined,
+  drawdownType: DrawdownType
+): boolean =>
+  propChallengeOverlay
+    ? propChallengeOverlay.drawdown !== undefined
+    : drawdownType !== DrawdownType.NONE;
+
+const ProfitTargetReferenceLine: React.FC<{
+  value: number;
+  isBalanceMasked: boolean;
+}> = ({ value, isBalanceMasked }) => (
+  <ReferenceLine
+    y={value}
+    stroke={
+      isBalanceMasked ? 'var(--text-muted)' : 'var(--text-success, #00b300)'
+    }
+    strokeOpacity={isBalanceMasked ? 0.5 : 1.0}
+    strokeDasharray="5 5"
+    strokeWidth={2}
+    className={
+      isBalanceMasked
+        ? 'profit-target-line profit-target-line--masked'
+        : 'profit-target-line'
+    }
+    label={
+      isBalanceMasked
+        ? undefined
+        : {
+            value: 'Profit Target',
+            fill: 'var(--text-success, #00b300)',
+            fontSize: 12,
+            position: 'insideTopLeft',
+          }
+    }
+  />
+);
+
 export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
   account,
   trades,
@@ -649,9 +470,11 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
   const balanceStrokeGradientId = `${chartIdRef.current}-balance-stroke-gradient`;
   const { currency: globalCurrency } = useCurrency();
   
-  const currency = currencyOverride
-    ? parseCuratedCurrencyCode(currencyOverride)
-    : account.currency || globalCurrency;
+  const currency = resolveChartCurrency(
+    currencyOverride,
+    account.currency,
+    globalCurrency
+  );
 
   const transactionSignature = (account.transactions || [])
     .map(
@@ -659,19 +482,15 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
     )
     .join('|');
   const [dotsReadyForSignature, setDotsReadyForSignature] = useState('');
-  const showDots = dotsReadyForSignature === transactionSignature;
+  const isChartAnimationActive = useChartAnimationActive();
 
   const { shouldMask } = useDisplayFormatter();
   const isBalanceMasked = shouldMask('balance');
   const isPnlMasked = shouldMask('pnl');
   const isMoneyMasked = shouldMask('money');
   const isDrawdownMasked = shouldMask('drawdown');
-  const depositStrokeColor = isMoneyMasked
-    ? 'var(--text-muted)'
-    : 'var(--interactive-accent)';
-  const withdrawalStrokeColor = isMoneyMasked
-    ? 'var(--text-muted)'
-    : 'var(--text-warning, gold)';
+  const { depositStrokeColor, withdrawalStrokeColor } =
+    cashflowStrokeColors(isMoneyMasked);
 
   const {
     propChallengeOverlay,
@@ -689,9 +508,21 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
     isBalanceMasked,
     selectedPhaseId
   );
-  const hasDrawdownSeries = propChallengeOverlay
-    ? propChallengeOverlay.drawdown !== undefined
-    : account.drawdownType !== DrawdownType.NONE;
+  const hasDrawdownSeries = showsDrawdownSeries(
+    propChallengeOverlay,
+    account.drawdownType
+  );
+  const animateSeries =
+    isChartAnimationActive && shouldAnimateSeries(renderedChartData.length);
+  
+  const showDots =
+    !animateSeries || dotsReadyForSignature === transactionSignature;
+  
+  
+  const handleBalanceAnimationEnd = React.useCallback(
+    () => setDotsReadyForSignature(transactionSignature),
+    [transactionSignature]
+  );
 
   
   if (chartData.length === 0) {
@@ -742,6 +573,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
         <CartesianGrid
           strokeDasharray="3 3"
           vertical={false}
+          verticalCoordinatesGenerator={skipVerticalGridCoordinates}
           stroke="var(--background-modifier-border)"
           strokeOpacity={0.5}
         />
@@ -803,34 +635,13 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
         )}
 
         
-        {profitTargetValue && profitTargetOffScaleBy === undefined && (
-          <ReferenceLine
-            y={profitTargetValue}
-            stroke={
-              isBalanceMasked
-                ? 'var(--text-muted)'
-                : 'var(--text-success, #00b300)'
-            }
-            strokeOpacity={isBalanceMasked ? 0.5 : 1.0}
-            strokeDasharray="5 5"
-            strokeWidth={2}
-            className={
-              isBalanceMasked
-                ? 'profit-target-line profit-target-line--masked'
-                : 'profit-target-line'
-            }
-            label={
-              isBalanceMasked
-                ? undefined
-                : {
-                    value: 'Profit Target',
-                    fill: 'var(--text-success, #00b300)',
-                    fontSize: 12,
-                    position: 'insideTopLeft',
-                  }
-            }
-          />
-        )}
+        {profitTargetValue !== undefined &&
+          profitTargetOffScaleBy === undefined && (
+            <ProfitTargetReferenceLine
+              value={profitTargetValue}
+              isBalanceMasked={isBalanceMasked}
+            />
+          )}
 
         
         <Area
@@ -842,6 +653,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
           dot={false}
           activeDot={false}
           baseValue={balanceColorBaseline}
+          isAnimationActive={animateSeries}
           
         />
 
@@ -857,6 +669,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
             strokeDasharray="5 5"
             dot={false}
             activeDot={false}
+            isAnimationActive={animateSeries}
             name="Drawdown Level"
           />
         )}
@@ -879,17 +692,18 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
             stroke="none"
             fill="url(#drawdownGradient)"
             fillOpacity={1}
+            isAnimationActive={animateSeries}
           />
         )}
 
         <AccountBalanceChartSeries
           balanceStrokeGradientId={balanceStrokeGradientId}
+          isAnimationActive={animateSeries}
           showDots={showDots}
           isPnlMasked={isPnlMasked}
           depositStrokeColor={depositStrokeColor}
           withdrawalStrokeColor={withdrawalStrokeColor}
-          transactionSignature={transactionSignature}
-          onDotsReady={setDotsReadyForSignature}
+          onAnimationEnd={handleBalanceAnimationEnd}
         />
       </ComposedChart>
     </ChartBase>

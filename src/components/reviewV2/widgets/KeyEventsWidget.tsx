@@ -62,6 +62,8 @@ import {
 } from './keyEventFields';
 import { mergeClassNames } from '../../../utils/classNames';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
+import { KeyEventsDayPicker } from './KeyEventsDayPicker';
+import { useKeyEventDayPicker } from './useKeyEventDayPicker';
 
 
 interface KeyEventsPreviewData {
@@ -237,6 +239,402 @@ const KeyEventMetaFields: React.FC<KeyEventMetaFieldsProps> = ({
 
 KeyEventMetaFields.displayName = 'KeyEventMetaFields';
 
+function addFormVisibility(
+  canAddEvent: boolean,
+  eventCount: number,
+  isAddFormOpen: boolean
+) {
+  return {
+    shouldShowAddForm: canAddEvent && (eventCount === 0 || isAddFormOpen),
+    shouldShowCompactAdd: canAddEvent && eventCount > 0 && !isAddFormOpen,
+  };
+}
+
+type RestoreCheck = ReturnType<typeof useKeyEventRestore>['check'];
+
+function canRestoreAutoImport(check: RestoreCheck): boolean {
+  return check.status === 'missing' || check.status === 'error';
+}
+
+const KeyEventsSkeleton: React.FC = () => (
+  <div className="key-events-wrapper">
+    <div className="key-events-widget key-events-widget--loading">
+      <div className="key-events-header key-events-header--skeleton">
+        <SkeletonBox width={100} height={14} borderRadius="4px" />
+      </div>
+      <div className="key-events-skeleton-list">
+        {['first', 'second', 'third'].map((key) => (
+          <div key={key} className="key-events-skeleton-item">
+            <div className="key-events-skeleton-item-header">
+              <SkeletonBox width={120} height={14} borderRadius="4px" />
+              <SkeletonBox width={50} height={12} borderRadius="4px" />
+            </div>
+            <SkeletonBox width="70%" height={10} borderRadius="4px" />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+const KeyEventColorPicker: React.FC<{
+  selected: KeyEventColor;
+  onSelect: (color: KeyEventColor) => void;
+}> = ({ selected, onSelect }) => (
+  <div className="key-events-color-picker">
+    <span className="key-events-color-label">
+      {t('widget.key-events.color-label')}
+    </span>
+    {KEY_EVENT_COLORS.map((color) => (
+      <button
+        type="button"
+        key={color}
+        className={mergeClassNames(
+          'journalit-native-button',
+          `key-events-color-option ${selected === color ? 'selected' : ''}`
+        )}
+        onClick={() => onSelect(color)}
+        aria-label={t('widget.key-events.color-aria', {
+          color: color.charAt(0).toUpperCase() + color.slice(1),
+        })}
+        aria-pressed={selected === color}
+      >
+        <span
+          className={`key-events-color-dot key-events-color-dot--${color}`}
+          aria-hidden="true"
+        />
+      </button>
+    ))}
+  </div>
+);
+
+const KeyEventDaySelect: React.FC<{
+  value: string;
+  onChange: (day: string) => void;
+}> = ({ value, onChange }) => (
+  <div className="key-events-day-selector">
+    <span className="key-events-day-label">
+      {t('widget.key-events.day-label')}
+    </span>
+    <select
+      aria-label={t('widget.key-events.day-label')}
+      value={value}
+      onChange={(e) => onChange(e.target.value)}
+      className="key-events-day-select"
+    >
+      <option value="">{t('common.day.all-week')}</option>
+      {KEY_EVENT_DAYS.map((day) => (
+        <option key={day} value={day}>
+          {getKeyEventDayLabel(day)}
+        </option>
+      ))}
+    </select>
+  </div>
+);
+
+const InfoTooltip: React.FC<{ content: string }> = ({ content }) => (
+  <Tooltip
+    content={<div className="key-events-tooltip-content">{content}</div>}
+    preferredPosition="top"
+  >
+    <Info className="key-events-tooltip-icon" size={13} aria-hidden="true" />
+  </Tooltip>
+);
+
+const KeyEventsHeader: React.FC<{
+  eventCount: number;
+  isDrc: boolean;
+  showCompactAdd: boolean;
+  onOpenAddForm: () => void;
+}> = ({ eventCount, isDrc, showCompactAdd, onOpenAddForm }) => (
+  <div className="key-events-header">
+    <div className="key-events-title-group">
+      <span className="key-events-title">
+        {t('widget.key-events.title')} {eventCount > 0 && `(${eventCount})`}
+      </span>
+      {isDrc && <InfoTooltip content={t('widget.key-events.tooltip')} />}
+    </div>
+    {showCompactAdd && (
+      <div className="key-events-header-actions" {...shareCaptureExcludeProps}>
+        <button
+          className="journalit-key-events-header-add-button"
+          onClick={onOpenAddForm}
+        >
+          <Plus size={12} aria-hidden="true" />
+          {t('widget.key-events.add-button')}
+        </button>
+      </div>
+    )}
+  </div>
+);
+
+interface RestoreAutoImportState {
+  visible: boolean;
+  disabled: boolean;
+  check: RestoreCheck;
+  onRestore: () => void;
+}
+
+const RestoreAutoImportButton: React.FC<{
+  restore: RestoreAutoImportState;
+}> = ({ restore: { disabled, check, onRestore } }) => (
+  <button
+    type="button"
+    className="journalit-key-events-source-button key-events-source-button--restore"
+    disabled={disabled}
+    onClick={onRestore}
+  >
+    <Import size={13} aria-hidden="true" />
+    {check.status === 'missing'
+      ? t('widget.key-events.restore-missing-events', {
+          count: String(check.missingCount),
+        })
+      : t('widget.key-events.restore-auto-import')}
+  </button>
+);
+
+interface KeyEventsAddFormProps {
+  
+  mode: ReviewMode;
+  restore: RestoreAutoImportState;
+  onOpenCalendar: () => void;
+  eventOptions: string[];
+  selectedEvent: string;
+  onEventSelect: (eventName: string) => void;
+  onSaveOption: (option: string) => Promise<void>;
+  selectedColor: KeyEventColor;
+  onColorChange: (color: KeyEventColor) => void;
+  selectedDay: string;
+  onDayChange: (day: string) => void;
+  draft: ManualKeyEventDraft;
+  onDraftChange: (draft: ManualKeyEventDraft) => void;
+  use24HourTime: boolean;
+  notes: string;
+  onNotesChange: (notes: string) => void;
+  canCancel: boolean;
+  onCancel: () => void;
+  onAdd: () => void;
+  isSaving: boolean;
+}
+
+const KeyEventsAddForm: React.FC<KeyEventsAddFormProps> = ({
+  mode,
+  restore,
+  onOpenCalendar,
+  eventOptions,
+  selectedEvent,
+  onEventSelect,
+  onSaveOption,
+  selectedColor,
+  onColorChange,
+  selectedDay,
+  onDayChange,
+  draft,
+  onDraftChange,
+  use24HourTime,
+  notes,
+  onNotesChange,
+  canCancel,
+  onCancel,
+  onAdd,
+  isSaving,
+}) => {
+  const isDrc = mode === 'drc';
+  const isWeekly = mode === 'weekly-review';
+  return (
+    <div
+      className={`key-events-form ${isDrc ? 'key-events-form--drc' : ''}`}
+      {...shareCaptureExcludeProps}
+    >
+      {isWeekly && (
+        <div className="key-events-source-actions">
+          <button
+            type="button"
+            className="journalit-key-events-source-button key-events-source-button--calendar"
+            onClick={onOpenCalendar}
+          >
+            <CalendarRange size={13} aria-hidden="true" />
+            {t('view.economic-calendar.title')}
+          </button>
+          {restore.visible && <RestoreAutoImportButton restore={restore} />}
+        </div>
+      )}
+      <div className="key-events-form-row">
+        <div className="key-events-event-selector">
+          <ComboBox
+            label=""
+            options={eventOptions}
+            value={selectedEvent}
+            onChange={onEventSelect}
+            placeholder={t('widget.key-events.placeholder')}
+            allowCreate={true}
+            isMulti={false}
+            onSaveOption={onSaveOption}
+            error=""
+            helperText=""
+            required={false}
+            portalDropdown={isDrc}
+          />
+        </div>
+      </div>
+
+      <KeyEventColorPicker selected={selectedColor} onSelect={onColorChange} />
+
+      {isWeekly && (
+        <KeyEventDaySelect value={selectedDay} onChange={onDayChange} />
+      )}
+
+      <KeyEventMetaFields
+        idPrefix="key-events-add"
+        draft={draft}
+        onChange={onDraftChange}
+        use24HourTime={use24HourTime}
+        showTime={isDrc || selectedDay !== ''}
+      />
+
+      <div className="key-events-notes-header">
+        <span className="key-events-notes-label">
+          {t('widget.key-events.notes-label')}
+        </span>
+        <InfoTooltip content={t('widget.key-events.default-notes-tooltip')} />
+      </div>
+      <textarea
+        value={notes}
+        onChange={(e) => onNotesChange(e.target.value)}
+        placeholder={t('widget.key-events.notes-placeholder')}
+        className="key-events-notes-input"
+      />
+
+      <div className="key-events-form-actions">
+        {canCancel && (
+          <button
+            className="journalit-key-events-secondary-button"
+            onClick={onCancel}
+          >
+            {t('button.cancel')}
+          </button>
+        )}
+        <button
+          className="journalit-key-events-add-button"
+          onClick={onAdd}
+          disabled={!selectedEvent.trim() || isSaving}
+        >
+          {t('widget.key-events.add-button')}
+        </button>
+      </div>
+    </div>
+  );
+};
+
+type RenderKeyEventCard = (
+  event: NewsEvent,
+  index: number,
+  key: string,
+  knownIsPast?: boolean
+) => React.ReactNode;
+
+const WeeklyKeyEventsList: React.FC<{
+  dayPicker: ReturnType<typeof useKeyEventDayPicker<KeyEventDayGroup>>;
+  renderEventCard: RenderKeyEventCard;
+}> = ({ dayPicker, renderEventCard }) => (
+  <div className="key-events-list">
+    {dayPicker.tiles && (
+      <KeyEventsDayPicker
+        tiles={dayPicker.tiles}
+        selectedDay={dayPicker.selectedDay}
+        onSelect={dayPicker.select}
+      />
+    )}
+    {dayPicker.visibleGroups.map((group) => (
+      <section
+        key={group.key}
+        className={`key-events-day-group${
+          group.entries.every(({ isPast }) => isPast)
+            ? ' key-events-day-group--past'
+            : ''
+        }`}
+      >
+        <h3 className="key-events-day-group__label">
+          <span className="key-events-day-group__weekday">
+            {getKeyEventDayLabel(group.day)}
+          </span>
+          {group.date && (
+            <span className="key-events-day-group__date">
+              {formatDateDisplay(group.date, getUserDateFormat())}
+            </span>
+          )}
+        </h3>
+        <div className="key-events-day-group__events">
+          {group.entries.map(({ event, originalIndex, key, isPast }) =>
+            renderEventCard(event, originalIndex, key, isPast)
+          )}
+        </div>
+      </section>
+    ))}
+    {dayPicker.tiles && (
+      <button
+        type="button"
+        className="journalit-key-events-show-all-toggle"
+        aria-expanded={dayPicker.showAllDays}
+        onClick={dayPicker.toggleShowAllDays}
+        {...shareCaptureExcludeProps}
+      >
+        {dayPicker.showAllDays
+          ? t('widget.key-events.show-one-day')
+          : t('widget.key-events.show-all-days')}
+      </button>
+    )}
+  </div>
+);
+
+const KeyEventsList: React.FC<{
+  reviewMode: ReviewMode | null;
+  sortedEvents: KeyEventListEntry[];
+  dayPicker: ReturnType<typeof useKeyEventDayPicker<KeyEventDayGroup>>;
+  renderEventCard: RenderKeyEventCard;
+  canAddFromDrc: boolean;
+}> = ({
+  reviewMode,
+  sortedEvents,
+  dayPicker,
+  renderEventCard,
+  canAddFromDrc,
+}) => {
+  if (sortedEvents.length === 0) {
+    
+    return reviewMode === 'drc' && !canAddFromDrc ? (
+      <KeyEventsDrcEmptyState />
+    ) : null;
+  }
+  if (reviewMode === 'weekly-review') {
+    return (
+      <WeeklyKeyEventsList
+        dayPicker={dayPicker}
+        renderEventCard={renderEventCard}
+      />
+    );
+  }
+  return (
+    <div className="key-events-list">
+      {sortedEvents.map(({ event, originalIndex, key }) =>
+        renderEventCard(event, originalIndex, key)
+      )}
+    </div>
+  );
+};
+
+const KeyEventsDrcEmptyState: React.FC = () => (
+  <div className="key-events-empty">
+    <Ghost size={32} className="key-events-empty-icon" />
+    <div className="key-events-empty-title">
+      {t('widget.key-events.empty-state')}
+    </div>
+    <div className="key-events-empty-subtitle">
+      {t('widget.key-events.empty-state-sub')}
+    </div>
+  </div>
+);
+
 export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
   ({ filePath, plugin, preview, previewData }) => {
     const embeddedReadOnly = useReviewReadOnly();
@@ -305,10 +703,11 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     const canAddFromDrc = reviewMode === 'drc' && !readOnly && drcDate !== null;
     const isDrcEditable = canAddFromDrc;
     const canAddEvent = isWeeklyEditable || canAddFromDrc;
-    const shouldShowAddForm =
-      canAddEvent && (events.length === 0 || isAddFormOpen);
-    const shouldShowCompactAdd =
-      canAddEvent && events.length > 0 && !isAddFormOpen;
+    const { shouldShowAddForm, shouldShowCompactAdd } = addFormVisibility(
+      canAddEvent,
+      events.length,
+      isAddFormOpen
+    );
     
     useEffect(() => {
       if (!plugin.optionsService) return;
@@ -431,9 +830,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       reloadEvents: loadEvents,
     });
     const showRestoreAutoImport =
-      isWeeklyEditable &&
-      isPro &&
-      (restoreCheck.status === 'missing' || restoreCheck.status === 'error');
+      isWeeklyEditable && isPro && canRestoreAutoImport(restoreCheck);
 
     
     useEffect(() => {
@@ -532,6 +929,12 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       });
     }, [currentDateTime, reviewMode, sortedEvents, weekStartDate]);
 
+    const dayPicker = useKeyEventDayPicker(
+      weeklyEventGroups,
+      weekStartDate,
+      currentDateTime
+    );
+
     
     const getWeeklyReviewService = async () => {
       return plugin.serviceManager
@@ -619,6 +1022,8 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
         } else {
           const updatedEvents = [...events, newEvent];
           setEvents(updatedEvents);
+          
+          if (day) dayPicker.reveal(day);
           await updateFrontmatter(updatedEvents);
         }
 
@@ -705,6 +1110,8 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       );
 
       setEvents(updatedEvents);
+      
+      if (!isDrcEditable && day) dayPicker.reveal(day);
       if (isDrcEditable) {
         await updateDrcEventInWeeklyReview(
           editingEventIndex,
@@ -771,30 +1178,8 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
       }
     };
 
-    
     if (loading) {
-      return (
-        <div className="key-events-wrapper">
-          <div className="key-events-widget key-events-widget--loading">
-            
-            <div className="key-events-header key-events-header--skeleton">
-              <SkeletonBox width={100} height={14} borderRadius="4px" />
-            </div>
-            
-            <div className="key-events-skeleton-list">
-              {['first', 'second', 'third'].map((key) => (
-                <div key={key} className="key-events-skeleton-item">
-                  <div className="key-events-skeleton-item-header">
-                    <SkeletonBox width={120} height={14} borderRadius="4px" />
-                    <SkeletonBox width={50} height={12} borderRadius="4px" />
-                  </div>
-                  <SkeletonBox width="70%" height={10} borderRadius="4px" />
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      );
+      return <KeyEventsSkeleton />;
     }
 
     
@@ -851,51 +1236,16 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                 portalDropdown={canAddFromDrc}
               />
 
-              <div className="key-events-color-picker">
-                <span className="key-events-color-label">
-                  {t('widget.key-events.color-label')}
-                </span>
-                {KEY_EVENT_COLORS.map((color) => (
-                  <button
-                    type="button"
-                    key={color}
-                    className={mergeClassNames(
-                      'journalit-native-button',
-                      `key-events-color-option ${editEventColor === color ? 'selected' : ''}`
-                    )}
-                    onClick={() => setEditEventColor(color)}
-                    aria-label={t('widget.key-events.color-aria', {
-                      color: color.charAt(0).toUpperCase() + color.slice(1),
-                    })}
-                    aria-pressed={editEventColor === color}
-                  >
-                    <span
-                      className={`key-events-color-dot key-events-color-dot--${color}`}
-                      aria-hidden="true"
-                    />
-                  </button>
-                ))}
-              </div>
+              <KeyEventColorPicker
+                selected={editEventColor}
+                onSelect={setEditEventColor}
+              />
 
               {isWeeklyEditable && (
-                <div className="key-events-day-selector">
-                  <span className="key-events-day-label">
-                    {t('widget.key-events.day-label')}
-                  </span>
-                  <select
-                    aria-label={t('widget.key-events.day-label')}
-                    value={editEventDay}
-                    onChange={(e) => setEditEventDay(e.target.value)}
-                    className="key-events-day-select"
-                  >
-                    <option value="">{t('common.day.all-week')}</option>
-                    {KEY_EVENT_DAYS.map((day) => (
-                      <option key={day} value={day}>
-                        {getKeyEventDayLabel(day)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <KeyEventDaySelect
+                  value={editEventDay}
+                  onChange={setEditEventDay}
+                />
               )}
 
               <KeyEventMetaFields
@@ -923,7 +1273,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                 {...shareCaptureExcludeProps}
               >
                 <button
-                  className="key-events-secondary-button"
+                  className="journalit-key-events-secondary-button"
                   onClick={() => void handleCancelEditEvent()}
                 >
                   {t('button.cancel')}
@@ -1029,251 +1379,52 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     return (
       <div className="key-events-wrapper">
         <div className="key-events-widget">
-          
-          <div className="key-events-header">
-            <div className="key-events-title-group">
-              <span className="key-events-title">
-                {t('widget.key-events.title')}{' '}
-                {events.length > 0 && `(${events.length})`}
-              </span>
-              {reviewMode === 'drc' && (
-                <Tooltip
-                  content={
-                    <div className="key-events-tooltip-content">
-                      {t('widget.key-events.tooltip')}
-                    </div>
-                  }
-                  preferredPosition="top"
-                >
-                  <Info
-                    className="key-events-tooltip-icon"
-                    size={13}
-                    aria-hidden="true"
-                  />
-                </Tooltip>
-              )}
-            </div>
-            {shouldShowCompactAdd && (
-              <div
-                className="key-events-header-actions"
-                {...shareCaptureExcludeProps}
-              >
-                <button
-                  className="key-events-header-add-button"
-                  onClick={() => setIsAddFormOpen(true)}
-                >
-                  <Plus size={12} aria-hidden="true" />
-                  {t('widget.key-events.add-button')}
-                </button>
-              </div>
-            )}
-          </div>
+          <KeyEventsHeader
+            eventCount={events.length}
+            isDrc={reviewMode === 'drc'}
+            showCompactAdd={shouldShowCompactAdd}
+            onOpenAddForm={() => setIsAddFormOpen(true)}
+          />
 
-          
           {shouldShowAddForm && (
-            <div
-              className={`key-events-form ${canAddFromDrc ? 'key-events-form--drc' : ''}`}
-              {...shareCaptureExcludeProps}
-            >
-              {isWeeklyEditable && (
-                <div className="key-events-source-actions">
-                  <button
-                    type="button"
-                    className="journalit-key-events-source-button key-events-source-button--calendar"
-                    onClick={() =>
-                      void plugin.viewManager.openEconomicCalendarView()
-                    }
-                  >
-                    <CalendarRange size={13} aria-hidden="true" />
-                    {t('view.economic-calendar.title')}
-                  </button>
-                  {showRestoreAutoImport && (
-                    <button
-                      type="button"
-                      className="journalit-key-events-source-button key-events-source-button--restore"
-                      disabled={isRestoringAutoImport || weekStartDate === null}
-                      onClick={() => void handleRestoreAutoImport()}
-                    >
-                      <Import size={13} aria-hidden="true" />
-                      {restoreCheck.status === 'missing'
-                        ? t('widget.key-events.restore-missing-events', {
-                            count: String(restoreCheck.missingCount),
-                          })
-                        : t('widget.key-events.restore-auto-import')}
-                    </button>
-                  )}
-                </div>
-              )}
-              <div className="key-events-form-row">
-                <div className="key-events-event-selector">
-                  <ComboBox
-                    label=""
-                    options={eventOptions}
-                    value={selectedEvent}
-                    onChange={handleEventSelect}
-                    placeholder={t('widget.key-events.placeholder')}
-                    allowCreate={true}
-                    isMulti={false}
-                    onSaveOption={handleSaveEventOption}
-                    error=""
-                    helperText=""
-                    required={false}
-                    portalDropdown={canAddFromDrc}
-                  />
-                </div>
-              </div>
-
-              
-              <div className="key-events-color-picker">
-                <span className="key-events-color-label">
-                  {t('widget.key-events.color-label')}
-                </span>
-                {KEY_EVENT_COLORS.map((color) => (
-                  <button
-                    type="button"
-                    key={color}
-                    className={mergeClassNames(
-                      'journalit-native-button',
-                      `key-events-color-option ${selectedColor === color ? 'selected' : ''}`
-                    )}
-                    onClick={() => setSelectedColor(color)}
-                    aria-label={t('widget.key-events.color-aria', {
-                      color: color.charAt(0).toUpperCase() + color.slice(1),
-                    })}
-                    aria-pressed={selectedColor === color}
-                  >
-                    <span
-                      className={`key-events-color-dot key-events-color-dot--${color}`}
-                      aria-hidden="true"
-                    />
-                  </button>
-                ))}
-              </div>
-
-              {isWeeklyEditable && (
-                <div className="key-events-day-selector">
-                  <span className="key-events-day-label">
-                    {t('widget.key-events.day-label')}
-                  </span>
-                  <select
-                    aria-label={t('widget.key-events.day-label')}
-                    value={selectedDay}
-                    onChange={(e) => setSelectedDay(e.target.value)}
-                    className="key-events-day-select"
-                  >
-                    <option value="">{t('common.day.all-week')}</option>
-                    {KEY_EVENT_DAYS.map((day) => (
-                      <option key={day} value={day}>
-                        {getKeyEventDayLabel(day)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
-              <KeyEventMetaFields
-                idPrefix="key-events-add"
-                draft={eventDraft}
-                onChange={setEventDraft}
-                use24HourTime={use24HourTime}
-                showTime={canAddFromDrc || selectedDay !== ''}
-              />
-
-              
-              <div className="key-events-notes-header">
-                <span className="key-events-notes-label">
-                  {t('widget.key-events.notes-label')}
-                </span>
-                <Tooltip
-                  content={
-                    <div className="key-events-tooltip-content">
-                      {t('widget.key-events.default-notes-tooltip')}
-                    </div>
-                  }
-                  preferredPosition="top"
-                >
-                  <Info
-                    className="key-events-tooltip-icon"
-                    size={13}
-                    aria-hidden="true"
-                  />
-                </Tooltip>
-              </div>
-              <textarea
-                value={eventNotes}
-                onChange={(e) => setEventNotes(e.target.value)}
-                placeholder={t('widget.key-events.notes-placeholder')}
-                className="key-events-notes-input"
-              />
-
-              
-              <div className="key-events-form-actions">
-                {events.length > 0 && (
-                  <button
-                    className="key-events-secondary-button"
-                    onClick={() => void handleCancelAddEvent()}
-                  >
-                    {t('button.cancel')}
-                  </button>
-                )}
-                <button
-                  className="key-events-add-button"
-                  onClick={() => void handleAddEvent()}
-                  disabled={!selectedEvent.trim() || isSavingEvent}
-                >
-                  {t('widget.key-events.add-button')}
-                </button>
-              </div>
-            </div>
+            <KeyEventsAddForm
+              mode={canAddFromDrc ? 'drc' : 'weekly-review'}
+              restore={{
+                visible: showRestoreAutoImport,
+                disabled: isRestoringAutoImport || weekStartDate === null,
+                check: restoreCheck,
+                onRestore: () => void handleRestoreAutoImport(),
+              }}
+              onOpenCalendar={() =>
+                void plugin.viewManager.openEconomicCalendarView()
+              }
+              eventOptions={eventOptions}
+              selectedEvent={selectedEvent}
+              onEventSelect={handleEventSelect}
+              onSaveOption={handleSaveEventOption}
+              selectedColor={selectedColor}
+              onColorChange={setSelectedColor}
+              selectedDay={selectedDay}
+              onDayChange={setSelectedDay}
+              draft={eventDraft}
+              onDraftChange={setEventDraft}
+              use24HourTime={use24HourTime}
+              notes={eventNotes}
+              onNotesChange={setEventNotes}
+              canCancel={events.length > 0}
+              onCancel={handleCancelAddEvent}
+              onAdd={() => void handleAddEvent()}
+              isSaving={isSavingEvent}
+            />
           )}
 
-          
-          {events.length > 0 ? (
-            <div className="key-events-list">
-              {reviewMode === 'weekly-review'
-                ? weeklyEventGroups.map((group) => (
-                    <section
-                      key={group.key}
-                      className={`key-events-day-group${
-                        group.entries.every(({ isPast }) => isPast)
-                          ? ' key-events-day-group--past'
-                          : ''
-                      }`}
-                    >
-                      <h3 className="key-events-day-group__label">
-                        <span className="key-events-day-group__weekday">
-                          {getKeyEventDayLabel(group.day)}
-                        </span>
-                        {group.date && (
-                          <span className="key-events-day-group__date">
-                            {formatDateDisplay(group.date, getUserDateFormat())}
-                          </span>
-                        )}
-                      </h3>
-                      <div className="key-events-day-group__events">
-                        {group.entries.map(
-                          ({ event, originalIndex, key, isPast }) =>
-                            renderEventCard(event, originalIndex, key, isPast)
-                        )}
-                      </div>
-                    </section>
-                  ))
-                : sortedEvents.map(({ event, originalIndex, key }) =>
-                    renderEventCard(event, originalIndex, key)
-                  )}
-            </div>
-          ) : reviewMode === 'drc' && !canAddFromDrc ? (
-            
-            <div className="key-events-empty">
-              <Ghost size={32} className="key-events-empty-icon" />
-              <div className="key-events-empty-title">
-                {t('widget.key-events.empty-state')}
-              </div>
-              <div className="key-events-empty-subtitle">
-                {t('widget.key-events.empty-state-sub')}
-              </div>
-            </div>
-          ) : null}
+          <KeyEventsList
+            reviewMode={reviewMode}
+            sortedEvents={sortedEvents}
+            dayPicker={dayPicker}
+            renderEventCard={renderEventCard}
+            canAddFromDrc={canAddFromDrc}
+          />
         </div>
       </div>
     );

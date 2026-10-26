@@ -99,18 +99,17 @@ const TradeTypeSelectorComponent: React.FC<TradeTypeSelectorProps> = ({
   const handleTradeTypeChange = useCallback(
     (type: TradeType) => {
       
-      onChange('isMissedTrade', false);
-      onChange('isBacktestTrade', false);
-
       
-      if (type === 'missed') {
-        onChange('isMissedTrade', true);
-      } else if (type === 'backtest') {
-        onChange('isBacktestTrade', true);
+      const isMissedTrade = type === 'missed';
+      const isBacktestTrade = type === 'backtest';
+      if ((data.isMissedTrade === true) !== isMissedTrade) {
+        onChange('isMissedTrade', isMissedTrade);
       }
-      
+      if ((data.isBacktestTrade === true) !== isBacktestTrade) {
+        onChange('isBacktestTrade', isBacktestTrade);
+      }
     },
-    [onChange]
+    [data.isBacktestTrade, data.isMissedTrade, onChange]
   );
 
   

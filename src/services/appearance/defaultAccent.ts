@@ -2,11 +2,12 @@
 
 import type JournalitPlugin from '../../main';
 import { eventBus } from '../events/EventBus';
+import { isPluginStylesheetRules } from '../../core/pluginStylesheet';
 
 const DEFAULT_ACCENT_BODY_CLASS = 'journalit-default-accent';
 
 
-export const DEFAULT_ACCENT_OVERRIDDEN_PROPERTIES = [
+const DEFAULT_ACCENT_OVERRIDDEN_PROPERTIES = [
   '--accent-h',
   '--accent-s',
   '--accent-l',
@@ -101,12 +102,12 @@ function rulesDeclareRootAccent(rules: CSSRuleList, doc: Document): boolean {
 }
 
 
-export function hasInlineAccent(doc: Document): boolean {
+function hasInlineAccent(doc: Document): boolean {
   return doc.body.style.getPropertyValue('--accent-h') !== '';
 }
 
 
-export function stylesheetsDeclareAccent(doc: Document): boolean {
+function stylesheetsDeclareAccent(doc: Document): boolean {
   for (const sheet of Array.from(doc.styleSheets)) {
     if (isObsidianAppStylesheet(sheet)) continue;
     let rules: CSSRuleList;
@@ -117,6 +118,10 @@ export function stylesheetsDeclareAccent(doc: Document): boolean {
       
       continue;
     }
+    
+    
+    
+    if (isPluginStylesheetRules(rules)) continue;
     if (rulesDeclareRootAccent(rules, doc)) return true;
   }
   return false;

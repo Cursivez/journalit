@@ -87,97 +87,6 @@ function readTemplateLiteral(source, start) {
   return null;
 }
 
-const FLATPICKR_CALENDAR_CLASS = 'journalit-flatpickr-calendar';
-const FLATPICKR_INPUT_CLASS = 'journalit-flatpickr-temp-input';
-
-function scopeFlatpickrSelector(selector) {
-  const sel = selector.trim();
-  if (!sel) return '';
-  if (sel.startsWith('@')) return sel;
-  if (sel.includes('.journalit-')) return sel;
-  if (sel.includes('.flatpickr-input')) {
-    return sel.includes(`.${FLATPICKR_INPUT_CLASS}`)
-      ? sel
-      : sel.replace(
-          /\.flatpickr-input\b/g,
-          `.flatpickr-input.${FLATPICKR_INPUT_CLASS}`
-        );
-  }
-  if (sel.includes('.flatpickr-calendar')) {
-    return sel.includes(`.${FLATPICKR_CALENDAR_CLASS}`)
-      ? sel
-      : sel.replace(
-          /\.flatpickr-calendar\b/g,
-          `.flatpickr-calendar.${FLATPICKR_CALENDAR_CLASS}`
-        );
-  }
-  return `.flatpickr-calendar.${FLATPICKR_CALENDAR_CLASS} ${sel}`;
-}
-
-function scopeFlatpickrSelectors(selectors) {
-  return selectors
-    .split(',')
-    .map(scopeFlatpickrSelector)
-    .filter(Boolean)
-    .join(', ');
-}
-
-function scopeFlatpickrCss(css) {
-  let out = '';
-  let i = 0;
-  while (i < css.length) {
-    if (css[i] === '/' && css[i + 1] === '*') {
-      const end = css.indexOf('*/', i + 2);
-      if (end === -1) {
-        out += css.slice(i);
-        break;
-      }
-      out += css.slice(i, end + 2);
-      i = end + 2;
-      continue;
-    }
-    if (css[i] === '@') {
-      const brace = css.indexOf('{', i);
-      if (brace === -1) {
-        out += css.slice(i);
-        break;
-      }
-      out += css.slice(i, brace + 1);
-      i = brace + 1;
-      let depth = 1;
-      while (i < css.length && depth > 0) {
-        const ch = css[i];
-        out += ch;
-        if (ch === '{') depth += 1;
-        else if (ch === '}') depth -= 1;
-        i += 1;
-      }
-      continue;
-    }
-    if (/\s/.test(css[i])) {
-      out += css[i];
-      i += 1;
-      continue;
-    }
-    const brace = css.indexOf('{', i);
-    if (brace === -1) {
-      out += css.slice(i);
-      break;
-    }
-    out += scopeFlatpickrSelectors(css.slice(i, brace)) + '{';
-    i = brace + 1;
-    let depth = 1;
-    while (i < css.length && depth > 0) {
-      const ch = css[i];
-      out += ch;
-      if (ch === '{') depth += 1;
-      else if (ch === '}') depth -= 1;
-      i += 1;
-    }
-  }
-  return out;
-}
-
 const styleConstants = new Map();
 const styleEntries = [];
 for (const file of sourceFiles) {
@@ -188,13 +97,7 @@ for (const file of sourceFiles) {
   while ((match = regex.exec(source))) {
     const literal = readTemplateLiteral(source, regex.lastIndex - 1);
     if (!literal) continue;
-    let css = literal.value.trim();
-    if (
-      relative(ROOT, file) === 'src/styles/flatpickrStyles.ts' &&
-      (match[1] === 'FLATPICKR_BASE_CSS' || match[1] === 'FLATPICKR_STYLES')
-    ) {
-      css = scopeFlatpickrCss(css);
-    }
+    const css = literal.value.trim();
     if (css) {
       styleConstants.set(match[1], css);
       styleEntries.push({ file: relative(ROOT, file), name: match[1], css });
@@ -270,13 +173,7 @@ function sanitizeForObsidianReview(css) {
     )
     .replace(/;\s*all\s*:[^;]+/g, '')
     .replace(/transition\s*:\s*all\b/g, 'transition: color')
-    .replace(/,?\s*text-decoration-color\s+[^,;}]+/g, '')
-    .replace(/;width:7ch\\0/g, '')
-    .replace(/;width:7ch\0/g, '')
-    .replace(/;width:7ch\\\\0/g, '')
-    .replace(/width:\s*7ch\\0;?/g, '')
-    .replace(/width:\s*7ch\0;?/g, '')
-    .replace(/width:\s*7ch\\\\0;?/g, '');
+    .replace(/,?\s*text-decoration-color\s+[^,;}]+/g, '');
   return sanitized.replace(/\{([^{}]*)\}/g, (_match, body) => {
     const declarations = String(body)
       .split(';')
@@ -314,13 +211,23 @@ const { collectControlClasses, enforceControlPrecedence } = await import(
 );
 const isStyleSource = (file) =>
   /(^|\/)styles\//.test(relative(SRC, file)) || /Styles\.tsx?$/.test(file);
-const controlClasses = collectControlClasses(
-  sourceFiles
-    .filter((file) => !isStyleSource(file) && !file.includes('/lang/'))
-    .map((file) => ({ text: readFileSync(file, 'utf8') })),
-  [{ text: sanitizedCss }]
-);
-const nextCss = `${enforceControlPrecedence(sanitizedCss, controlClasses)}\n`;
+const componentSources = [];
+for (const file of sourceFiles) {
+  if (!isStyleSource(file) && !file.includes('/lang/')) {
+    componentSources.push({ text: readFileSync(file, 'utf8') });
+  }
+}
+const controlClasses = collectControlClasses(componentSources, [
+  { text: sanitizedCss },
+]);
+
+
+
+
+
+const STYLESHEET_MARKER_RULE =
+  '.journalit-stylesheet-marker{--journalit-stylesheet-marker:1}';
+const nextCss = `${STYLESHEET_MARKER_RULE}\n\n${enforceControlPrecedence(sanitizedCss, controlClasses)}\n`;
 
 if (existsSync(OUT) && readFileSync(OUT, 'utf8') === nextCss) {
   console.log(

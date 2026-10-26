@@ -1,6 +1,6 @@
 import type { JournalitSettings } from '../../settings/types';
 
-export const METATRADER_BROKER_ID = 'METATRADER';
+const METATRADER_BROKER_ID = 'METATRADER';
 const LEGACY_METATRADER_BROKER_IDS = new Set(['JDR']);
 
 export function canonicalTradeImportBrokerId(broker: string): string {

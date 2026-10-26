@@ -1,7 +1,7 @@
 
 
 import React, { useState, memo, useCallback, useMemo } from 'react';
-import { Modal, Notice } from 'obsidian';
+import { Notice } from 'obsidian';
 import { t } from '../../lang/helpers';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import {
@@ -44,9 +44,9 @@ import {
   isTradeOpenWithContext,
   getTradeDisplayStatusWithContext,
   getEffectivePnL,
-  hasRealizedStoredPnL,
   getPartialExitInfo,
   PartialExitInfo,
+  getExecutionFillPrices,
   getWeightedAverageEntryPrice,
   getResolvedWeightedAverageExitPrice,
   calculateTradePriceMove,
@@ -58,7 +58,11 @@ import {
   calculateTradeReturnPercent,
 } from './tradeMetricUtils';
 import { hasUnknownCanonicalPnL } from '../../services/trade/core/CanonicalProjectionFields';
-import { getTradeLogDisplayedPnL, getTradeLogFloatingPnL } from './tradeLogPnl';
+import {
+  getTradeLogDisplayedPnL,
+  getTradeLogFloatingPnL,
+  getTradeLogPnlValue,
+} from './tradeLogPnl';
 import {
   getTradeMaeTicks,
   getTradeMaeValue,
@@ -82,11 +86,16 @@ import {
 import {
   calculateStopLossRiskAmount,
   canCalculateStopLossRiskAmount,
+  resolveTradeEffectiveStopPrice,
   resolveTradeRiskAmount,
 } from '../../utils/riskCalculation';
 import { calculateTotalDividends } from '../../utils/pnlCalculation';
 import { ColumnDefinition } from './columnConfig';
 import type { TradeLogTrade } from '../../services/tradelog/types';
+import {
+  isPricedStopLoss,
+  type StopLossTarget,
+} from '../../services/trade/core/StopLossTargets';
 import JournalitPlugin from '../../main';
 import { CustomFieldType } from '../../types/customFields';
 import { parseStoredDateLikeValue } from '../../utils/customFieldPersistence';
@@ -114,6 +123,8 @@ import {
   getLabelColorForeground,
 } from '../../types/labelColor';
 import { mergeClassNames } from '../../utils/classNames';
+import { StarRating } from '../shared/StarRating';
+import { JournalitModal } from '../modals/JournalitModal';
 
 
 type TradeWithPath = TradeLogTrade & {
@@ -138,7 +149,7 @@ type TradeLogFilterSyncWindow = Window & {
   journalitSyncTradeLogFilters?: () => void;
 };
 
-class CopyTradePnlAdjustmentModal extends Modal {
+class CopyTradePnlAdjustmentModal extends JournalitModal {
   private readonly currentAdjustment: number;
   private readonly currentNetPnl: number;
   private readonly formatPnl: (value: number) => string;
@@ -322,10 +333,10 @@ const SetupsTooltipContent = memo<{ setups: string[] }>(({ setups }) => {
 });
 SetupsTooltipContent.displayName = 'SetupsTooltipContent';
 
-const CustomTagsTooltipContent = memo<{ tags: string[] }>(({ tags }) => {
+const TagsTooltipContent = memo<{ tags: string[] }>(({ tags }) => {
   const tagKeys = getDuplicateAwareStringKeys(tags);
   return (
-    <div className="custom-tags-tooltip">
+    <div className="journalit-trade-tags-tooltip">
       <div className="tooltip-title">{t('tradelog.tooltip.tags')}</div>
       {tags.map((tag, index) => (
         <div key={tagKeys[index]} className="tooltip-item">
@@ -335,7 +346,7 @@ const CustomTagsTooltipContent = memo<{ tags: string[] }>(({ tags }) => {
     </div>
   );
 });
-CustomTagsTooltipContent.displayName = 'CustomTagsTooltipContent';
+TagsTooltipContent.displayName = 'TagsTooltipContent';
 
 const ThesisTooltipContent = memo<{ thesis: string }>(({ thesis }) => (
   <div className="thesis-tooltip">
@@ -456,13 +467,53 @@ const PartialExitTooltipContent = memo<{
 );
 PartialExitTooltipContent.displayName = 'PartialExitTooltipContent';
 
+const EMPTY_STOP_LOSSES: readonly StopLossTarget[] = [];
+
+
+const StopLossesTooltipContent = memo<{
+  stopLosses: readonly StopLossTarget[];
+  formatPrice: (price: number) => string;
+  formatValue: (options: DisplayValueOptions) => string;
+}>(({ stopLosses, formatPrice, formatValue }) => (
+  <div className="journalit-trade-tags-tooltip">
+    <div className="tooltip-title">{t('tradelog.tooltip.stop-losses')}</div>
+    {stopLosses.flatMap((stop, index) =>
+      isPricedStopLoss(stop)
+        ? [
+            <div
+              key={JSON.stringify([
+                stop.price,
+                stop.size,
+                stop.closePercent,
+                index,
+              ])}
+              className="tooltip-item"
+            >
+              • {formatPrice(stop.price)} ·{' '}
+              {stop.size !== undefined
+                ? `${t('form.field.stop-loss-size')} ${formatValue({ kind: 'positionSize', value: stop.size })}`
+                : stop.closePercent !== undefined
+                  ? formatValue({
+                      kind: 'percentage',
+                      value: stop.closePercent,
+                      precision: Number.isInteger(stop.closePercent) ? 0 : 1,
+                    })
+                  : t('form.placeholder.stop-loss-rest')}
+            </div>,
+          ]
+        : []
+    )}
+  </div>
+));
+StopLossesTooltipContent.displayName = 'StopLossesTooltipContent';
+
 const GenericListTooltipContent = memo<{
   title: string;
   values: string[];
 }>(({ title, values }) => {
   const valueKeys = getDuplicateAwareStringKeys(values);
   return (
-    <div className="custom-tags-tooltip">
+    <div className="journalit-trade-tags-tooltip">
       <div className="tooltip-title">{title}</div>
       {values.map((value, index) => (
         <div key={valueKeys[index]} className="tooltip-item">
@@ -799,11 +850,11 @@ const TradeDetailsContent = memo<{
     const getMultipliedPnL = useMemo(() => {
       if (isUnknownCanonicalPnL) return null;
 
-      const basePnL = getTradeLogDisplayedPnL(
+      const basePnL = getTradeLogPnlValue(
         trade,
         snapshotKeysClaimedByCustomFields
       );
-      if (!applyAccountCountMultiplier) {
+      if (basePnL === null || !applyAccountCountMultiplier) {
         return basePnL;
       }
       const accountCount = getAccountCount(trade);
@@ -826,7 +877,7 @@ const TradeDetailsContent = memo<{
       return Array.isArray(trade.setup) ? trade.setup : [trade.setup];
     }, [trade.setup]);
 
-    const customTagsArray = useMemo(() => {
+    const tagsArray = useMemo(() => {
       if (!trade.tags || !Array.isArray(trade.tags)) return [];
       
       return trade.tags.reduce<string[]>((acc, tag) => {
@@ -1417,7 +1468,7 @@ const TradeDetailsContent = memo<{
             
             if (
               status.className === 'status-open' &&
-              !hasRealizedStoredPnL(trade)
+              getMultipliedPnL === null
             ) {
               return openPnlPlaceholder;
             }
@@ -1629,6 +1680,21 @@ const TradeDetailsContent = memo<{
                   <Circle
                     size={16}
                     className="trade-reviewed-icon trade-reviewed-icon--no"
+                  />
+                )}
+              </div>
+            );
+
+          case 'tradeRating':
+            return (
+              <div key="tradeRating" className="journalit-trade-rating-cell">
+                {trade.tradeRating === undefined ? (
+                  <span className="trade-no-data">-</span>
+                ) : (
+                  <StarRating
+                    value={trade.tradeRating}
+                    label={t('trade.rating.label')}
+                    size="sm"
                   />
                 )}
               </div>
@@ -1864,7 +1930,7 @@ const TradeDetailsContent = memo<{
             );
 
           case 'tags': {
-            if (customTagsArray.length === 0) {
+            if (tagsArray.length === 0) {
               return (
                 <div key="tags" className="trade-tags-cell">
                   <span className="trade-no-data">-</span>
@@ -1877,13 +1943,11 @@ const TradeDetailsContent = memo<{
               return (
                 <div key="tags" className="trade-tags-cell expanded">
                   <div className="expanded-pills">
-                    {customTagsArray.map((tag: string, index: number) => {
+                    {tagsArray.map((tag: string, index: number) => {
                       const color = getTagLabelColor(labelColors.tags, tag);
                       return (
                         <span
-                          key={
-                            getDuplicateAwareStringKeys(customTagsArray)[index]
-                          }
+                          key={getDuplicateAwareStringKeys(tagsArray)[index]}
                           className={`pill pill--tag ${getLabelColorClassName(color)}`}
                           style={cssVars({
                             '--journalit-label-color': color,
@@ -1904,14 +1968,14 @@ const TradeDetailsContent = memo<{
             return (
               <div key="tags" className="trade-tags-cell">
                 <Tooltip
-                  content={<CustomTagsTooltipContent tags={customTagsArray} />}
+                  content={<TagsTooltipContent tags={tagsArray} />}
                   delay={0}
                   preferredPosition="top"
                 >
                   <div className="trade-tags-icon-wrapper">
                     <Tag size={20} className="trade-tags-icon" />
                     <span className="trade-tags-count-badge">
-                      {customTagsArray.length}
+                      {tagsArray.length}
                     </span>
                   </div>
                 </Tooltip>
@@ -2000,13 +2064,13 @@ const TradeDetailsContent = memo<{
                   <span
                     className={`trade-entry-price ${isPriceMasked ? 'journalit-privacy-mask' : ''}`}
                   >
-                    {isPriceMasked
-                      ? formatValue({ kind: 'price', value: avgEntryPrice })
-                      : avgEntryPrice.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits:
-                            trade.assetType === 'forex' ? 5 : 2,
-                        })}
+                    {formatValue({
+                      kind: 'price',
+                      value: avgEntryPrice,
+                      currencyCode: currency,
+                      priceStyle: 'decimal',
+                      fillPrices: getExecutionFillPrices(trade).entry,
+                    })}
                   </span>
                 ) : (
                   <span className="trade-no-data">-</span>
@@ -2023,13 +2087,13 @@ const TradeDetailsContent = memo<{
                   <span
                     className={`trade-exit-price ${isPriceMasked ? 'journalit-privacy-mask' : ''}`}
                   >
-                    {isPriceMasked
-                      ? formatValue({ kind: 'price', value: avgExitPrice })
-                      : avgExitPrice.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits:
-                            trade.assetType === 'forex' ? 5 : 2,
-                        })}
+                    {formatValue({
+                      kind: 'price',
+                      value: avgExitPrice,
+                      currencyCode: currency,
+                      priceStyle: 'decimal',
+                      fillPrices: getExecutionFillPrices(trade).exit,
+                    })}
                   </span>
                 ) : (
                   <span className="trade-no-data">-</span>
@@ -2095,26 +2159,52 @@ const TradeDetailsContent = memo<{
             );
           }
 
-          case 'stopLoss':
+          case 'stopLoss': {
+            const stopLossTargets = (trade.stopLosses ?? []).filter(
+              isPricedStopLoss
+            );
+            const [firstStopLoss] = stopLossTargets;
+            const formatStopPrice = (price: number) =>
+              isPriceMasked
+                ? formatValue({ kind: 'price', value: price })
+                : price.toLocaleString(undefined, {
+                    minimumFractionDigits: 2,
+                    maximumFractionDigits: trade.assetType === 'forex' ? 5 : 2,
+                  });
+            const stopLossValue = firstStopLoss && (
+              <span
+                className={`trade-stop-loss ${isPriceMasked ? 'journalit-privacy-mask' : ''}`}
+              >
+                {formatStopPrice(firstStopLoss.price)}
+                {stopLossTargets.length > 1 &&
+                  ` +${stopLossTargets.length - 1}`}
+              </span>
+            );
             return (
               <div key="stopLoss" className="trade-stop-loss-cell">
-                {trade.stopLoss ? (
-                  <span
-                    className={`trade-stop-loss ${isPriceMasked ? 'journalit-privacy-mask' : ''}`}
-                  >
-                    {isPriceMasked
-                      ? formatValue({ kind: 'price', value: trade.stopLoss })
-                      : trade.stopLoss.toLocaleString(undefined, {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits:
-                            trade.assetType === 'forex' ? 5 : 2,
-                        })}
-                  </span>
-                ) : (
+                {!stopLossValue ? (
                   <span className="trade-no-data">-</span>
+                ) : stopLossTargets.length > 1 ? (
+                  <Tooltip
+                    content={
+                      <StopLossesTooltipContent
+                        stopLosses={trade.stopLosses ?? EMPTY_STOP_LOSSES}
+                        formatPrice={formatStopPrice}
+                        formatValue={formatValue}
+                      />
+                    }
+                    delay={0}
+                    preferredPosition="top"
+                    disclosureLabel={t('tradelog.tooltip.stop-losses')}
+                  >
+                    {stopLossValue}
+                  </Tooltip>
+                ) : (
+                  stopLossValue
                 )}
               </div>
             );
+          }
 
           case 'slDistanceDollar': {
             if (!canCalculateStopLossRiskAmount(trade)) {
@@ -2143,8 +2233,9 @@ const TradeDetailsContent = memo<{
           }
 
           case 'slDistancePercent': {
+            const effectiveStopPrice = resolveTradeEffectiveStopPrice(trade);
             if (
-              !trade.stopLoss ||
+              effectiveStopPrice === undefined ||
               !trade.entryPrice ||
               trade.entryPrice === 0
             ) {
@@ -2158,8 +2249,9 @@ const TradeDetailsContent = memo<{
               );
             }
             const slDistancePercent =
-              Math.abs((trade.entryPrice - trade.stopLoss) / trade.entryPrice) *
-              100;
+              Math.abs(
+                (trade.entryPrice - effectiveStopPrice) / trade.entryPrice
+              ) * 100;
             return (
               <div
                 key="slDistancePercent"
@@ -2496,7 +2588,7 @@ const TradeDetailsContent = memo<{
         accountsArray,
         mistakesArray,
         setupsArray,
-        customTagsArray,
+        tagsArray,
         labelColors.setups,
         labelColors.tags,
         duration,

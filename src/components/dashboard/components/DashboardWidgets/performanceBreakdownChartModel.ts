@@ -122,6 +122,8 @@ export const getDisplayValue = (
 
 const isWideCodePoint = (codePoint: number): boolean =>
   (codePoint >= 0x1100 && codePoint <= 0x115f) ||
+  
+  (codePoint >= 0x2605 && codePoint <= 0x2606) ||
   (codePoint >= 0x2329 && codePoint <= 0x232a) ||
   (codePoint >= 0x2e80 && codePoint <= 0x303e) ||
   (codePoint >= 0x3040 && codePoint <= 0xa4cf) ||

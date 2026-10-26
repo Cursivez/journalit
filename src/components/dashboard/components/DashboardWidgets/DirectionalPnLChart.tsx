@@ -7,6 +7,7 @@ import { preparePnLChartData } from '../../../../utils/chartUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
 import { isPnlContributingTrade } from '../../../../utils/tradeStatusUtils';
+import type { Trade } from '../../utils/dataUtils';
 
 interface DirectionalPnLChartProps extends BaseWidgetProps {
   direction: 'long' | 'short';
@@ -21,8 +22,29 @@ const directionTranslationKeys = {
   },
 } as const;
 
+
+const directionTradesByList = new WeakMap<
+  readonly Trade[],
+  Partial<Record<'long' | 'short', Trade[]>>
+>();
+
+function getDirectionTrades(
+  trades: Trade[],
+  direction: 'long' | 'short'
+): Trade[] {
+  let byDirection = directionTradesByList.get(trades);
+  if (!byDirection) {
+    byDirection = {};
+    directionTradesByList.set(trades, byDirection);
+  }
+  return (byDirection[direction] ??= trades.filter(
+    (trade) =>
+      isPnlContributingTrade(trade) &&
+      trade.direction?.toLowerCase() === direction
+  ));
+}
+
 const DirectionalPnLChartComponent: React.FC<DirectionalPnLChartProps> = ({
-  filters,
   dateFormat,
   direction,
 }) => {
@@ -30,13 +52,9 @@ const DirectionalPnLChartComponent: React.FC<DirectionalPnLChartProps> = ({
   const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
 
   return (
-    <BaseWidget filters={filters} dateFormat={dateFormat}>
+    <BaseWidget dateFormat={dateFormat}>
       {(data, userDateFormat) => {
-        const directionTrades = data.trades.filter(
-          (trade) =>
-            isPnlContributingTrade(trade) &&
-            trade.direction?.toLowerCase() === direction
-        );
+        const directionTrades = getDirectionTrades(data.trades, direction);
 
         if (directionTrades.length === 0) {
           return (

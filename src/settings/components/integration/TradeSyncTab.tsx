@@ -27,12 +27,13 @@ import { TradeImportSyncPanel } from './TradeImportSyncPanel';
 import { TradovateSyncPanel } from './TradovateSyncPanel';
 import { RithmicSyncPanel } from './RithmicSyncPanel';
 import { CTraderSyncPanel } from './CTraderSyncPanel';
+import { HyperliquidSyncPanel } from './HyperliquidSyncPanel';
 import { CTraderBrokerSyncClient } from '../../../services/tradeSync/CTraderBrokerSyncClient';
 import { getTradeProjectionOwnerId } from '../../../services/tradeSync/TradeProjectionOwnership';
 import { useBackendProEntitlement } from '../../../hooks/useBackendProEntitlement';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { Check } from '../../../components/shared/icons/ObsidianIcon';
-import { useAuthRefreshRecovery } from './brokerSyncKit';
+import { useAuthRefreshRecovery } from './brokerSyncKit/useAuthRefreshRecovery';
 
 interface TradeSyncTabProps {
   plugin: JournalitPlugin;
@@ -46,6 +47,7 @@ type TradeSyncSource =
   | 'tradovate'
   | 'rithmic'
   | 'ctrader'
+  | 'hyperliquid'
   | 'tradeImport';
 
 interface TrialOfferProps {
@@ -85,6 +87,12 @@ const TrialOffer: React.FC<TrialOfferProps> = ({
           <Check size={16} />
         </span>
         {t('trade-sync.trial.benefit.import')}
+      </li>
+      <li>
+        <span aria-hidden="true">
+          <Check size={16} />
+        </span>
+        {t('upgrade.benefit.ai-tool-calls')}
       </li>
     </ul>
     <div className="journalit-trade-sync-trial-actions">
@@ -141,6 +149,7 @@ interface TradeSyncEntitlements {
   tradovate: boolean;
   rithmic: boolean;
   ctrader: boolean;
+  hyperliquid: boolean;
 }
 
 
@@ -399,6 +408,59 @@ const EntitlementGate: React.FC<EntitlementGateProps> = ({
 
 EntitlementGate.displayName = 'EntitlementGate';
 
+const SOURCE_DESCRIPTION_KEYS = {
+  metatrader: 'trade-sync.source.metatrader.description',
+  tradovate: 'trade-sync.source.tradovate.description',
+  rithmic: 'trade-sync.source.rithmic.description',
+  ctrader: 'trade-sync.source.ctrader.description',
+  hyperliquid: 'trade-sync.source.hyperliquid.description',
+  tradeImport: 'trade-sync.source.trade-import.description',
+} as const satisfies Record<TradeSyncSource, string>;
+
+interface TradeSyncSourcePanelProps {
+  plugin: JournalitPlugin;
+  mode: 'full' | 'sync' | 'accounts';
+  source: TradeSyncSource;
+  canCreateCTraderConnections: boolean;
+  onCTraderCatalogLoaded: (hasConnections: boolean) => void;
+}
+
+
+const TradeSyncSourcePanel: React.FC<TradeSyncSourcePanelProps> = ({
+  plugin,
+  mode,
+  source,
+  canCreateCTraderConnections,
+  onCTraderCatalogLoaded,
+}) => {
+  switch (source) {
+    case 'metatrader':
+      return (
+        <BackendIntegrationTab plugin={plugin} embedded contentMode={mode} />
+      );
+    case 'tradovate':
+      return <TradovateSyncPanel plugin={plugin} />;
+    case 'rithmic':
+      return <RithmicSyncPanel plugin={plugin} />;
+    case 'ctrader':
+      return (
+        <CTraderSyncPanel
+          plugin={plugin}
+          canCreateConnections={canCreateCTraderConnections}
+          onCatalogLoaded={onCTraderCatalogLoaded}
+        />
+      );
+    case 'hyperliquid':
+      return <HyperliquidSyncPanel plugin={plugin} />;
+    case 'tradeImport':
+      return <TradeImportSyncPanel plugin={plugin} />;
+  }
+};
+
+const openTradeSyncUpgrade = () => {
+  openExternalUrl(resolveUpgradeUrl('metatraderSync'));
+};
+
 interface ProviderSectionProps {
   plugin: JournalitPlugin;
   mode: 'full' | 'sync' | 'accounts';
@@ -409,7 +471,12 @@ interface ProviderSectionProps {
   onRefresh: (source: TradeSyncSource) => Promise<void>;
 }
 
-type TradeSyncProvider = 'metatrader' | 'tradovate' | 'rithmic' | 'ctrader';
+type TradeSyncProvider =
+  | 'metatrader'
+  | 'tradovate'
+  | 'rithmic'
+  | 'ctrader'
+  | 'hyperliquid';
 
 const ProviderSection: React.FC<ProviderSectionProps> = ({
   plugin,
@@ -474,6 +541,10 @@ const ProviderSection: React.FC<ProviderSectionProps> = ({
               value: 'ctrader',
               label: t('trade-sync.source.ctrader'),
             },
+            {
+              value: 'hyperliquid',
+              label: t('trade-sync.source.hyperliquid'),
+            },
           ]}
           value={provider}
           onChange={selectProvider}
@@ -484,20 +555,15 @@ const ProviderSection: React.FC<ProviderSectionProps> = ({
         isPro={isPro}
         onRefresh={() => onRefresh(provider)}
       />
-      {enabled &&
-        (provider === 'metatrader' ? (
-          <BackendIntegrationTab plugin={plugin} embedded contentMode={mode} />
-        ) : provider === 'tradovate' ? (
-          <TradovateSyncPanel plugin={plugin} />
-        ) : provider === 'rithmic' ? (
-          <RithmicSyncPanel plugin={plugin} />
-        ) : (
-          <CTraderSyncPanel
-            plugin={plugin}
-            canCreateConnections={canCreateCTraderConnections}
-            onCatalogLoaded={onCTraderCatalogLoaded}
-          />
-        ))}
+      {enabled && (
+        <TradeSyncSourcePanel
+          plugin={plugin}
+          mode={mode}
+          source={provider}
+          canCreateCTraderConnections={canCreateCTraderConnections}
+          onCTraderCatalogLoaded={onCTraderCatalogLoaded}
+        />
+      )}
     </section>
   );
 };
@@ -527,33 +593,18 @@ const FocusedTradeSyncContent: React.FC<FocusedTradeSyncContentProps> = ({
 }) => (
   <>
     <p className="journalit-trade-sync-source-description">
-      {source === 'metatrader'
-        ? t('trade-sync.source.metatrader.description')
-        : source === 'tradovate'
-          ? t('trade-sync.source.tradovate.description')
-          : source === 'rithmic'
-            ? t('trade-sync.source.rithmic.description')
-            : source === 'ctrader'
-              ? t('trade-sync.source.ctrader.description')
-              : t('trade-sync.source.trade-import.description')}
+      {t(SOURCE_DESCRIPTION_KEYS[source])}
     </p>
     <EntitlementGate enabled={enabled} isPro={isPro} onRefresh={onRefresh} />
-    {enabled &&
-      (source === 'metatrader' ? (
-        <BackendIntegrationTab plugin={plugin} embedded contentMode={mode} />
-      ) : source === 'tradovate' ? (
-        <TradovateSyncPanel plugin={plugin} />
-      ) : source === 'rithmic' ? (
-        <RithmicSyncPanel plugin={plugin} />
-      ) : source === 'ctrader' ? (
-        <CTraderSyncPanel
-          plugin={plugin}
-          canCreateConnections={canCreateCTraderConnections}
-          onCatalogLoaded={onCTraderCatalogLoaded}
-        />
-      ) : (
-        <TradeImportSyncPanel plugin={plugin} />
-      ))}
+    {enabled && (
+      <TradeSyncSourcePanel
+        plugin={plugin}
+        mode={mode}
+        source={source}
+        canCreateCTraderConnections={canCreateCTraderConnections}
+        onCTraderCatalogLoaded={onCTraderCatalogLoaded}
+      />
+    )}
   </>
 );
 
@@ -611,25 +662,28 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
   const canUseCTraderPanel =
     canUseCTraderSync || (isPro && hasCTraderConnections);
 
-  const selectedSourceEnabled = source
-    ? source === 'metatrader'
-      ? canUseMetatraderSync
-      : source === 'tradovate'
-        ? isPro
-        : source === 'rithmic'
-          ? canUseRithmicSync
-          : source === 'ctrader'
-            ? canUseCTraderPanel
-            : canUseTradeImportSync
-    : true;
+  
+  
+  const sourceEnabled: Record<TradeSyncSource, boolean> = {
+    metatrader: canUseMetatraderSync,
+    tradovate: isPro,
+    rithmic: canUseRithmicSync,
+    ctrader: canUseCTraderPanel,
+    hyperliquid: isPro,
+    tradeImport: canUseTradeImportSync,
+  };
+  const selectedSourceEnabled = source ? sourceEnabled[source] : true;
+  
+  const sourceEntitlementChecking: Record<TradeSyncSource, boolean> = {
+    metatrader: isCheckingMetatraderEntitlement,
+    tradovate: isCheckingMetatraderEntitlement,
+    rithmic: isCheckingRithmicEntitlement,
+    ctrader: isCheckingCTraderEntitlement,
+    hyperliquid: isCheckingMetatraderEntitlement,
+    tradeImport: isCheckingTradeImportEntitlement,
+  };
   const isCheckingSelectedEntitlement = source
-    ? source === 'tradeImport'
-      ? isCheckingTradeImportEntitlement
-      : source === 'rithmic'
-        ? isCheckingRithmicEntitlement
-        : source === 'ctrader'
-          ? isCheckingCTraderEntitlement
-          : isCheckingMetatraderEntitlement
+    ? sourceEntitlementChecking[source]
     : isCheckingMetatraderEntitlement;
 
   const handleSignIn = useCallback(() => {
@@ -650,10 +704,6 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
 
     modal.open();
   }, [isAuthenticated, plugin]);
-
-  const handleUpgrade = () => {
-    openExternalUrl(resolveUpgradeUrl('metatraderSync'));
-  };
 
   const handleRefresh = useCallback(
     async (refreshSource?: TradeSyncSource) => {
@@ -679,7 +729,7 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
       const selectedFeatureEnabled =
         selectedSource === 'metatrader'
           ? result.entitlements?.features.metatraderSync.enabled === true
-          : selectedSource === 'tradovate'
+          : selectedSource === 'tradovate' || selectedSource === 'hyperliquid'
             ? result.status === 'premium'
             : selectedSource === 'rithmic'
               ? result.entitlements?.features.rithmicSync.enabled === true
@@ -711,7 +761,7 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
   if (!isAuthenticated) {
     return (
       <div className="journalit-settings-tab backend-integration-settings">
-        <TrialOffer onRedeem={handleUpgrade} onSignIn={handleSignIn} />
+        <TrialOffer onRedeem={openTradeSyncUpgrade} onSignIn={handleSignIn} />
       </div>
     );
   }
@@ -720,7 +770,7 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
     return (
       <div className="journalit-settings-tab backend-integration-settings">
         <TrialOffer
-          onRedeem={handleUpgrade}
+          onRedeem={openTradeSyncUpgrade}
           onRefresh={() => handleRefresh(source)}
         />
       </div>
@@ -773,6 +823,7 @@ export const TradeSyncTab: React.FC<TradeSyncTabProps> = ({
             tradovate: isPro,
             rithmic: canUseRithmicSync,
             ctrader: canUseCTraderPanel,
+            hyperliquid: isPro,
           }}
           canCreateCTraderConnections={canUseCTraderSync}
           onCTraderCatalogLoaded={applyCatalogPresence}

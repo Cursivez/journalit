@@ -1,13 +1,14 @@
 import React from 'react';
-import { App, Modal } from 'obsidian';
+import { App } from 'obsidian';
 import type { Root } from 'react-dom/client';
 import JournalitPlugin from '../../main';
 import { CurrencyProvider } from '../../contexts/CurrencyContext';
 import { DisplayPolicyProvider } from '../../contexts/DisplayPolicyContext';
 import { PositionSizeWidget } from '../home/widgets/PositionSizeWidget';
 import { t } from '../../lang/helpers';
+import { JournalitModal } from './JournalitModal';
 
-export class PositionSizeCalculatorModal extends Modal {
+export class PositionSizeCalculatorModal extends JournalitModal {
   private readonly plugin: JournalitPlugin;
   private root: Root | null = null;
 

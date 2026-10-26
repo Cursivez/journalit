@@ -34,16 +34,30 @@ export function isBreakpointKey(value: string): value is BreakpointKey {
 }
 
 
-export const GRID_COLS: Record<BreakpointKey, number> = {
+export const GRID_COLS = {
   lg: 12,
   md: 6,
   sm: 4,
   xs: 2,
   xxs: 1,
-};
+} as const satisfies Record<BreakpointKey, number>;
 
 
-export const GRID_ROW_HEIGHT = 50;
+export const GRID_ROW_HEIGHT = 50 as const;
+
+
+export function fitLayoutItemToBreakpoint(
+  item: Layout,
+  breakpoint: BreakpointKey
+): Layout {
+  const columns = GRID_COLS[breakpoint];
+  const width = Math.min(columns, Math.max(1, item.w));
+  return {
+    ...item,
+    x: Math.min(columns - width, Math.max(0, item.x)),
+    w: width,
+  };
+}
 
 
 interface GridWidgetSizing {

@@ -1,5 +1,11 @@
 
 
+import dagre, {
+  type EdgeLabel,
+  type Graph,
+  type GraphLabel,
+  type NodeLabel,
+} from '@dagrejs/dagre';
 import { t } from '../../../../lang/helpers';
 import {
   DEFAULT_TRADE_GATE_QUESTIONS,
@@ -14,6 +20,7 @@ import type {
   TradeGateWorkflowNode,
 } from '../../../../types/sessionMode';
 import { generateUUID } from '../../../../utils/uuid';
+import { removeNodeFromTradeGateWorkflow } from '../../../../components/sessionMode/tradeGateUtils';
 
 
 export function createEmptyTradeGateWorkflow(): TradeGateWorkflow {
@@ -170,49 +177,7 @@ export function addNodeToTradeGateWorkflow(
 }
 
 
-export function removeNodeFromTradeGateWorkflow(
-  workflow: TradeGateWorkflow,
-  nodeId: string
-): TradeGateWorkflow {
-  if (!workflow.nodes.some((node) => node.id === nodeId)) return workflow;
-  const nodes = workflow.nodes.filter((node) => node.id !== nodeId);
-  return {
-    ...workflow,
-    startNodeId:
-      workflow.startNodeId === nodeId
-        ? (nodes[0]?.id ?? '')
-        : workflow.startNodeId,
-    nodes,
-    routes: workflow.routes.filter(
-      (route) =>
-        route.nodeId !== nodeId &&
-        !(route.target.kind === 'node' && route.target.nodeId === nodeId)
-    ),
-  };
-}
-
-
-export function deleteTradeGateQuestionFromLibrary(
-  questions: TradeGateQuestion[],
-  workflows: TradeGateWorkflow[],
-  questionId: string
-): { questions: TradeGateQuestion[]; workflows: TradeGateWorkflow[] } {
-  return {
-    questions: questions.filter((question) => question.id !== questionId),
-    workflows: workflows.map((workflow) => {
-      let nextWorkflow = workflow;
-      for (const node of workflow.nodes) {
-        if (node.questionId === questionId) {
-          nextWorkflow = removeNodeFromTradeGateWorkflow(nextWorkflow, node.id);
-        }
-      }
-      return nextWorkflow;
-    }),
-  };
-}
-
-
-export function replaceTradeGateNodeRoutes(
+function replaceTradeGateNodeRoutes(
   workflow: TradeGateWorkflow,
   nodeId: string,
   optionTargets: ReadonlyArray<{
@@ -234,7 +199,7 @@ export function replaceTradeGateNodeRoutes(
 }
 
 
-export function pruneTradeGateRoutesForQuestion(
+function pruneTradeGateRoutesForQuestion(
   workflow: TradeGateWorkflow,
   question: TradeGateQuestion
 ): TradeGateWorkflow {
@@ -339,11 +304,31 @@ export function applyTradeGateQuestionEdit(
 
 
 const TRADE_GATE_FLOW_NODE_WIDTH = 132;
-const TRADE_GATE_FLOW_NODE_HEIGHT = 84;
+const TRADE_GATE_FLOW_QUESTION_HEIGHT = 84;
+
+const TRADE_GATE_FLOW_OUTCOME_HEIGHT = 24;
+const TRADE_GATE_FLOW_UNWIRED_HEIGHT = 40;
 const TRADE_GATE_FLOW_HORIZONTAL_GAP = 48;
-const TRADE_GATE_FLOW_VERTICAL_GAP = 72;
 const TRADE_GATE_FLOW_PADDING = 60;
-export const TRADE_GATE_FLOW_MAX_PLACED_NODES = 200;
+
+
+
+export const TRADE_GATE_FLOW_EDGE_LABEL_MAX_CHARS = 18;
+const TRADE_GATE_FLOW_EDGE_LABEL_MAX_WIDTH = 112;
+
+const TRADE_GATE_FLOW_EDGE_LABEL_HEIGHT = 22;
+
+
+function estimateTradeGateFlowLabelWidth(label: string): number {
+  let width = 16;
+  for (const character of truncateTradeGateFlowLabel(
+    label,
+    TRADE_GATE_FLOW_EDGE_LABEL_MAX_CHARS
+  )) {
+    width += /[⺀-￿]/u.test(character) ? 11 : 7;
+  }
+  return Math.min(TRADE_GATE_FLOW_EDGE_LABEL_MAX_WIDTH, width);
+}
 
 export type TradeGateFlowLayoutNode =
   | {
@@ -375,12 +360,13 @@ export type TradeGateFlowLayoutNode =
 
 export interface TradeGateFlowLayoutEdge {
   id: string;
-  sourceX: number;
-  sourceY: number;
-  targetX: number;
-  targetY: number;
+  
+  points: Array<{ x: number; y: number }>;
+  
   labelX: number;
   labelY: number;
+  
+  labelMaxWidth: number;
   label: string;
   sourceNodeId: string;
   sourceOptionId: string;
@@ -392,8 +378,17 @@ interface TradeGateFlowLayout {
   edges: TradeGateFlowLayoutEdge[];
   width: number;
   height: number;
-  truncated: boolean;
 }
+
+interface TradeGateFlowGraphEdge {
+  width: number;
+  height: number;
+  labelpos: 'c';
+  points?: Array<{ x: number; y: number }>;
+  x?: number;
+  y?: number;
+}
+
 
 export function buildTradeGateFlowLayout(
   workflow: TradeGateWorkflow,
@@ -404,234 +399,362 @@ export function buildTradeGateFlowLayout(
     questions.map((question) => [question.id, question])
   );
   const nodesById = new Map(workflow.nodes.map((node) => [node.id, node]));
-  const layoutNodes: TradeGateFlowLayoutNode[] = [];
-  const edges: TradeGateFlowLayoutEdge[] = [];
-  let leafCursor = 0;
-  let maxDepth = 0;
-  let placedNodeCount = 0;
-  let truncated = false;
-  const occurrenceIds = new Set<string>();
-
-  const getUniqueOccurrenceId = (baseId: string): string => {
-    let occurrenceId = baseId;
-    let suffix = 1;
-    while (occurrenceIds.has(occurrenceId)) {
-      occurrenceId = `${baseId}-${suffix}`;
-      suffix += 1;
-    }
-    occurrenceIds.add(occurrenceId);
-    return occurrenceId;
-  };
-
-  const reserveNode = (): void => {
-    if (placedNodeCount < TRADE_GATE_FLOW_MAX_PLACED_NODES) {
-      placedNodeCount += 1;
-      return;
-    }
-
-    
-    
-    truncated = true;
-  };
-
-  const toX = (center: number): number =>
-    TRADE_GATE_FLOW_PADDING +
-    center * (TRADE_GATE_FLOW_NODE_WIDTH + TRADE_GATE_FLOW_HORIZONTAL_GAP);
-  const toY = (depth: number): number =>
-    TRADE_GATE_FLOW_PADDING +
-    depth * (TRADE_GATE_FLOW_NODE_HEIGHT + TRADE_GATE_FLOW_VERTICAL_GAP);
-
-  const placeLeaf = (
-    node:
-      | Omit<Extract<TradeGateFlowLayoutNode, { kind: 'outcome' }>, 'x' | 'y'>
-      | Omit<Extract<TradeGateFlowLayoutNode, { kind: 'unwired' }>, 'x' | 'y'>,
-    depth: number
-  ): { center: number; x: number; y: number } => {
-    reserveNode();
-    maxDepth = Math.max(maxDepth, depth);
-    const center = leafCursor++;
-    const x = toX(center);
-    const y = toY(depth);
-    layoutNodes.push({ ...node, x, y });
-    return { center, x, y };
-  };
-
-  const placeNode = (
-    node: TradeGateWorkflowNode,
-    question: TradeGateQuestion,
-    depth: number,
-    ancestorNodeIds: string[]
-  ): { center: number; x: number; y: number } => {
-    reserveNode();
-    maxDepth = Math.max(maxDepth, depth);
-    const occurrenceId = getUniqueOccurrenceId(node.id);
-    
-    
-    const isRepeated = ancestorNodeIds.includes(node.id);
-
-    interface ChildPlacement {
-      optionId: string;
-      optionLabel: string;
-      wired: boolean;
-      placement: { center: number; x: number; y: number };
-    }
-    const childPlacements: ChildPlacement[] = [];
-
-    if (!isRepeated && !truncated) {
-      for (const option of question.options) {
-        if (truncated) break;
-        const target = getTradeGateRouteTarget(workflow, node.id, option.id);
-        if (!target) {
-          childPlacements.push({
-            optionId: option.id,
-            optionLabel: option.label,
-            wired: false,
-            placement: placeLeaf(
-              {
-                kind: 'unwired',
-                occurrenceId: getUniqueOccurrenceId(
-                  `unwired-${node.id}-${option.id}`
-                ),
-                sourceNodeId: node.id,
-                sourceOptionId: option.id,
-                optionLabel: option.label,
-              },
-              depth + 1
-            ),
-          });
-          continue;
-        }
-        if (target.kind === 'outcome') {
-          childPlacements.push({
-            optionId: option.id,
-            optionLabel: option.label,
-            wired: true,
-            placement: placeLeaf(
-              {
-                kind: 'outcome',
-                occurrenceId: getUniqueOccurrenceId(
-                  `outcome-${node.id}-${option.id}`
-                ),
-                outcome: target.outcome,
-                sourceNodeId: node.id,
-                sourceOptionId: option.id,
-              },
-              depth + 1
-            ),
-          });
-          continue;
-        }
-        const targetNode = nodesById.get(target.nodeId);
-        const targetQuestion = targetNode
-          ? questionsById.get(targetNode.questionId)
-          : undefined;
-        if (!targetNode || !targetQuestion) {
-          continue;
-        }
-        childPlacements.push({
-          optionId: option.id,
-          optionLabel: option.label,
-          wired: true,
-          placement: placeNode(targetNode, targetQuestion, depth + 1, [
-            ...ancestorNodeIds,
-            node.id,
-          ]),
-        });
-      }
-    }
-
-    const childCenters = childPlacements.map((child) => child.placement.center);
-    const center =
-      childCenters.length > 0
-        ? (childCenters[0] + childCenters[childCenters.length - 1]) / 2
-        : leafCursor++;
-    const x = toX(center);
-    const y = toY(depth);
-
-    layoutNodes.push({
-      kind: 'question',
-      occurrenceId,
-      nodeId: node.id,
-      question,
-      x,
-      y,
-    });
-
-    for (const child of childPlacements) {
-      const sourceX = x + TRADE_GATE_FLOW_NODE_WIDTH / 2;
-      const sourceY = y + TRADE_GATE_FLOW_NODE_HEIGHT;
-      const targetX = child.placement.x + TRADE_GATE_FLOW_NODE_WIDTH / 2;
-      const targetY = child.placement.y;
-      const labelPosition = getTradeGateFlowEdgeLabelPosition({
-        sourceX,
-        sourceY,
-        targetX,
-        targetY,
-      });
-      edges.push({
-        id: `${occurrenceId}-${child.optionId}`,
-        sourceX,
-        sourceY,
-        targetX,
-        targetY,
-        labelX: labelPosition.x,
-        labelY: labelPosition.y,
-        label:
-          child.optionLabel || t('settings.session-mode.trade-gate.option'),
-        sourceNodeId: node.id,
-        sourceOptionId: child.optionId,
-        wired: child.wired,
-      });
-    }
-
-    return { center, x, y };
-  };
-
   const startQuestion = questionsById.get(startNode.questionId);
-  if (startQuestion) {
-    placeNode(startNode, startQuestion, 0, []);
+  if (!startQuestion) {
+    return { nodes: [], edges: [], width: 0, height: 0 };
   }
 
-  const usedLeaves = Math.max(leafCursor, 1);
-  return {
-    nodes: layoutNodes,
-    edges,
-    width:
-      TRADE_GATE_FLOW_PADDING * 2 +
-      usedLeaves * TRADE_GATE_FLOW_NODE_WIDTH +
-      Math.max(0, usedLeaves - 1) * TRADE_GATE_FLOW_HORIZONTAL_GAP,
-    height:
-      TRADE_GATE_FLOW_PADDING * 2 +
-      (maxDepth + 1) * TRADE_GATE_FLOW_NODE_HEIGHT +
-      maxDepth * TRADE_GATE_FLOW_VERTICAL_GAP,
-    truncated,
+  const graph = new dagre.graphlib.Graph<
+    GraphLabel,
+    NodeLabel,
+    TradeGateFlowGraphEdge
+  >({ multigraph: true });
+  graph.setGraph({
+    rankdir: 'TB',
+    nodesep: TRADE_GATE_FLOW_HORIZONTAL_GAP,
+    edgesep: 24,
+    
+    
+    
+    ranksep: 36,
+    marginx: TRADE_GATE_FLOW_PADDING,
+    marginy: TRADE_GATE_FLOW_PADDING,
+  });
+
+  const questionKey = (nodeId: string) => `question:${nodeId}`;
+  const leafKey = (nodeId: string, optionId: string) =>
+    `leaf:${nodeId}:${optionId}`;
+  const layoutNodes: TradeGateFlowLayoutNode[] = [];
+  const pendingEdges: Array<{
+    from: string;
+    to: string;
+    edge: Omit<TradeGateFlowLayoutEdge, 'points' | 'labelX' | 'labelY'>;
+  }> = [];
+
+  
+  
+  const visited = new Set<string>();
+  
+  
+  const walkOrder = new Map<string, number>();
+  const visit = (nodeId: string, question: TradeGateQuestion): void => {
+    visited.add(nodeId);
+    walkOrder.set(questionKey(nodeId), walkOrder.size);
+    graph.setNode(questionKey(nodeId), {
+      width: TRADE_GATE_FLOW_NODE_WIDTH,
+      height: TRADE_GATE_FLOW_QUESTION_HEIGHT,
+    });
+    layoutNodes.push({
+      kind: 'question',
+      occurrenceId: nodeId,
+      nodeId,
+      question,
+      x: 0,
+      y: 0,
+    });
+
+    for (const option of question.options) {
+      const label =
+        option.label || t('settings.session-mode.trade-gate.option');
+      const edge = {
+        id: `${nodeId}-${option.id}`,
+        labelMaxWidth: estimateTradeGateFlowLabelWidth(label),
+        label,
+        sourceNodeId: nodeId,
+        sourceOptionId: option.id,
+        wired: true,
+      };
+      const target = getTradeGateRouteTarget(workflow, nodeId, option.id);
+      walkOrder.set(edge.id, walkOrder.size);
+
+      if (!target || target.kind === 'outcome') {
+        const key = leafKey(nodeId, option.id);
+        walkOrder.set(key, walkOrder.size);
+        graph.setNode(key, {
+          width: TRADE_GATE_FLOW_NODE_WIDTH,
+          height: target
+            ? TRADE_GATE_FLOW_OUTCOME_HEIGHT
+            : TRADE_GATE_FLOW_UNWIRED_HEIGHT,
+        });
+        layoutNodes.push(
+          target
+            ? {
+                kind: 'outcome',
+                occurrenceId: `outcome-${nodeId}-${option.id}`,
+                outcome: target.outcome,
+                sourceNodeId: nodeId,
+                sourceOptionId: option.id,
+                x: 0,
+                y: 0,
+              }
+            : {
+                kind: 'unwired',
+                occurrenceId: `unwired-${nodeId}-${option.id}`,
+                sourceNodeId: nodeId,
+                sourceOptionId: option.id,
+                optionLabel: option.label,
+                x: 0,
+                y: 0,
+              }
+        );
+        
+        pendingEdges.push({
+          from: questionKey(nodeId),
+          to: key,
+          edge: target ? edge : { ...edge, wired: false },
+        });
+        continue;
+      }
+
+      const targetNode = nodesById.get(target.nodeId);
+      const targetQuestion = targetNode
+        ? questionsById.get(targetNode.questionId)
+        : undefined;
+      if (!targetQuestion) continue;
+      pendingEdges.push({
+        from: questionKey(nodeId),
+        to: questionKey(target.nodeId),
+        edge,
+      });
+      if (!visited.has(target.nodeId)) visit(target.nodeId, targetQuestion);
+    }
   };
+  visit(startNode.id, startQuestion);
+
+  for (const { from, to, edge } of pendingEdges) {
+    graph.setEdge(
+      from,
+      to,
+      {
+        width: edge.wired ? edge.labelMaxWidth : 0,
+        height: edge.wired ? TRADE_GATE_FLOW_EDGE_LABEL_HEIGHT : 0,
+        labelpos: 'c',
+      },
+      edge.id
+    );
+  }
+
+  dagre.layout(graph, {
+    customOrder: (layered) => {
+      orderTradeGateFlowRows(layered, (key) => {
+        const { edgeObj } = layered.node(key);
+        return walkOrder.get(edgeObj?.name ?? key) ?? 0;
+      });
+    },
+  });
+
+  const positionOf = (key: string): { x: number; y: number } => {
+    const { x, y, width, height } = graph.node(key);
+    
+    return { x: (x ?? 0) - width / 2, y: (y ?? 0) - height / 2 };
+  };
+  const positionedNodes = layoutNodes.map((node) => ({
+    ...node,
+    ...positionOf(
+      node.kind === 'question'
+        ? questionKey(node.nodeId)
+        : leafKey(node.sourceNodeId, node.sourceOptionId)
+    ),
+  }));
+
+  const edges = pendingEdges.map(({ from, to, edge }) => {
+    const { points = [], x = 0, y = 0 } = graph.edge(from, to, edge.id);
+    
+    
+    const source = graph.node(from);
+    const target = graph.node(to);
+    return {
+      ...edge,
+      points: [
+        { x: source.x ?? 0, y: (source.y ?? 0) + source.height / 2 },
+        ...points.slice(1, -1),
+        { x: target.x ?? 0, y: (target.y ?? 0) - target.height / 2 },
+      ],
+      labelX: x,
+      labelY: y - TRADE_GATE_FLOW_EDGE_LABEL_HEIGHT / 2,
+    };
+  });
+
+  const { width = 0, height = 0 } = graph.graph();
+  return { nodes: positionedNodes, edges, width, height };
 }
 
-function getTradeGateFlowEdgeLabelPosition({
-  sourceX,
-  sourceY,
-  targetX,
-  targetY,
-}: Pick<
-  TradeGateFlowLayoutEdge,
-  'sourceX' | 'sourceY' | 'targetX' | 'targetY'
->): { x: number; y: number } {
-  const midpoint = 0.5;
-  const inverse = 1 - midpoint;
-  const controlY = sourceY + (targetY - sourceY) * 0.52;
-  const x =
-    inverse ** 3 * sourceX +
-    3 * inverse ** 2 * midpoint * sourceX +
-    3 * inverse * midpoint ** 2 * targetX +
-    midpoint ** 3 * targetX;
-  const y =
-    inverse ** 3 * sourceY +
-    3 * inverse ** 2 * midpoint * controlY +
-    3 * inverse * midpoint ** 2 * controlY +
-    midpoint ** 3 * targetY;
 
-  return { x, y: y - 11 };
+function orderTradeGateFlowRows(
+  layered: Graph<GraphLabel, NodeLabel, EdgeLabel>,
+  preference: (key: string) => number
+): void {
+  const rowsByRank = new Map<number, string[]>();
+  for (const key of layered.nodes()) {
+    const rank = layered.node(key).rank ?? 0;
+    rowsByRank.set(rank, [...(rowsByRank.get(rank) ?? []), key]);
+  }
+  const rows = [...rowsByRank.entries()]
+    .sort(([left], [right]) => left - right)
+    .map(([, row]) =>
+      row.sort((left, right) => preference(left) - preference(right))
+    );
+
+  const position = new Map<string, number>();
+  const index = (row: string[]) =>
+    row.forEach((key, at) => position.set(key, at));
+  rows.forEach(index);
+  const positionOf = (key: string) => position.get(key) ?? 0;
+  const predecessors = (key: string) => layered.predecessors(key) ?? [];
+  const successors = (key: string) => layered.successors(key) ?? [];
+
+  
+  
+  const pairCrossings = (
+    left: string,
+    right: string,
+    neighbours: (key: string) => string[]
+  ): number => {
+    let crossings = 0;
+    for (const leftNeighbour of neighbours(left)) {
+      for (const rightNeighbour of neighbours(right)) {
+        if (positionOf(leftNeighbour) > positionOf(rightNeighbour)) {
+          crossings += 1;
+        }
+      }
+    }
+    return crossings;
+  };
+  const totalCrossings = (): number => {
+    let crossings = 0;
+    for (const row of rows) {
+      row.forEach((left, at) => {
+        for (const right of row.slice(at + 1)) {
+          crossings += pairCrossings(left, right, successors);
+        }
+      });
+    }
+    return crossings;
+  };
+
+  const transpose = (): void => {
+    let improved = true;
+    while (improved) {
+      improved = false;
+      for (const row of rows) {
+        for (let at = 0; at < row.length - 1; at += 1) {
+          const left = row[at];
+          const right = row[at + 1];
+          const kept =
+            pairCrossings(left, right, predecessors) +
+            pairCrossings(left, right, successors);
+          const swapped =
+            pairCrossings(right, left, predecessors) +
+            pairCrossings(right, left, successors);
+          if (
+            swapped < kept ||
+            (swapped === kept && preference(left) > preference(right))
+          ) {
+            row[at] = right;
+            row[at + 1] = left;
+            index(row);
+            improved = true;
+          }
+        }
+      }
+    }
+  };
+
+  
+  
+  
+  const sortByNeighbours = (
+    row: string[],
+    neighbours: (key: string) => string[],
+    tieDirection: 1 | -1
+  ): void => {
+    const weight = new Map<string, number>();
+    for (const key of row) {
+      const placed = neighbours(key);
+      weight.set(
+        key,
+        placed.length > 0
+          ? placed.reduce((sum, other) => sum + positionOf(other), 0) /
+              placed.length
+          : positionOf(key)
+      );
+    }
+    row.sort(
+      (left, right) =>
+        (weight.get(left) ?? 0) - (weight.get(right) ?? 0) ||
+        (positionOf(left) - positionOf(right)) * tieDirection
+    );
+    index(row);
+  };
+
+  transpose();
+  const initial = rows.map((row) => [...row]);
+  let best = initial;
+  let bestCrossings = totalCrossings();
+  
+  
+  for (const tieDirection of [1, -1] as const) {
+    initial.forEach((row, at) => {
+      rows[at].splice(0, rows[at].length, ...row);
+      index(rows[at]);
+    });
+    for (let pass = 0; pass < 8 && bestCrossings > 0; pass += 1) {
+      if (pass % 2 === 0) {
+        for (const row of rows.slice(1)) {
+          sortByNeighbours(row, predecessors, tieDirection);
+        }
+      } else {
+        for (const row of rows.slice(0, -1).reverse()) {
+          sortByNeighbours(row, successors, tieDirection);
+        }
+      }
+      transpose();
+      const crossings = totalCrossings();
+      if (crossings < bestCrossings) {
+        best = rows.map((row) => [...row]);
+        bestCrossings = crossings;
+      }
+    }
+  }
+
+  
+  
+  let inOrderPairs = 0;
+  let outOfOrderPairs = 0;
+  for (const row of best) {
+    row.forEach((left, at) => {
+      for (const right of row.slice(at + 1)) {
+        const difference = preference(right) - preference(left);
+        if (difference > 0) inOrderPairs += 1;
+        if (difference < 0) outOfOrderPairs += 1;
+      }
+    });
+  }
+  if (outOfOrderPairs > inOrderPairs) {
+    for (const row of best) row.reverse();
+  }
+
+  for (const row of best) {
+    row.forEach((key, at) => {
+      layered.node(key).order = at;
+    });
+  }
+}
+
+
+export function getTradeGateFlowEdgePath(
+  edge: TradeGateFlowLayoutEdge
+): string {
+  const [start, ...rest] = edge.points;
+  if (!start) return '';
+  const segments = [`M ${start.x} ${start.y}`];
+  let from = start;
+  for (const to of rest) {
+    const midY = from.y + (to.y - from.y) / 2;
+    segments.push(`C ${from.x} ${midY}, ${to.x} ${midY}, ${to.x} ${to.y}`);
+    from = to;
+  }
+  return segments.join(' ');
 }
 
 export function truncateTradeGateFlowLabel(

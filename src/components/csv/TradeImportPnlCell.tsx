@@ -17,8 +17,14 @@ export const TradeImportPnlCell: React.FC<{
   const { preview, tradeData } = item;
   
   
-  const value =
-    typeof tradeData.authoritativePnl === 'number'
+  
+  
+  
+  
+  
+  const value = preview.closeOnly
+    ? item.closeProfitLoss
+    : typeof tradeData.authoritativePnl === 'number'
       ? tradeData.authoritativePnl
       : (preview.profitLoss ?? preview.directPnL);
   const outcome =

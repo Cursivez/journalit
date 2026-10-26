@@ -1,17 +1,19 @@
 
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { TradeFormData, TradeFormErrors, TradeFormProps } from './types';
 import { BasicTab, DetailsTab, AdvancedTab } from './tabs';
 import { useTradeForm } from './hooks';
+import { useTradeFormNavigation } from './hooks/useTradeFormNavigation';
 import { DateDraftGateContext } from '../../core/DateDraftGate';
+import { BacktestSessionDayContext } from './executionDates';
 import { FormActions, ManualTradeImportNudge } from './components';
 import { t, tPlural } from '../../../lang/helpers';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { SlidersHorizontal } from '../../shared/icons/ObsidianIcon';
 import { ForexPnlConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { PercentValue, PnLValue } from '../../shared/display/DisplayValue';
-import { openTradeFormLayoutSettingsModal } from './TradeFormLayoutSettingsModal';
+import type { TradeFormLayoutSettings } from '../../../settings/types';
 import {
   getResolvedTradeFormLayout,
   hasPopulatedTradeFormLayoutItem,
@@ -34,7 +36,6 @@ import {
   calculateTotalCosts,
   resolveEffectiveRiskAmount,
 } from './validation';
-import type JournalitPlugin from '../../../main';
 
 const EMPTY_INITIAL_TRADE_DATA: Partial<TradeFormData> = {};
 type ResolvedTradeFormLayout = ReturnType<typeof getResolvedTradeFormLayout>;
@@ -79,8 +80,10 @@ const BASIC_TAB_ERROR_FIELDS: Array<keyof TradeFormErrors> = [
   'tradingPair',
   'leverageRatio',
   'directPnL',
-  'stopLoss',
+  'stopLosses',
+  'stopLossesTotal',
   'takeProfits',
+  'takeProfitsTotal',
   'riskAmount',
   'unrealizedPriceSnapshot',
 ];
@@ -316,16 +319,225 @@ function TradeFormTabNav({
   );
 }
 
-function TradeFormFooterPnlPreview({
+
+const showsManualImportNudge = ({
+  isEditMode,
+  isImportShortcutVisible,
+  formData,
+}: {
+  isEditMode: boolean;
+  isImportShortcutVisible: boolean;
+  formData: Partial<TradeFormData>;
+}): boolean =>
+  !isEditMode &&
+  isImportShortcutVisible &&
+  formData.isMissedTrade !== true &&
+  formData.isBacktestTrade !== true;
+
+const pnlPreviewDefaults = (
+  data: Partial<TradeFormData>,
+  plugin: ReturnType<typeof usePlugin>
+) => ({
+  currency: data.currency || plugin?.settings.general?.currency || 'USD',
+  defaultRiskAmount: plugin?.settings.trade.defaultRiskAmount ?? 0,
+});
+
+const hasForexPnlConversion = (data: Partial<TradeFormData>): boolean =>
+  data.assetType === 'forex' &&
+  data.useDirectPnLInput !== true &&
+  typeof data.lotSize === 'number' &&
+  data.lotSize > 0 &&
+  typeof data.forexPnlConversionRate === 'number' &&
+  data.forexPnlConversionRate > 0;
+
+const rMultipleConverter =
+  (effectiveRiskAmount: number | undefined) =>
+  (value: number): number | undefined =>
+    effectiveRiskAmount && effectiveRiskAmount > 0
+      ? value / effectiveRiskAmount
+      : undefined;
+
+const hasSyncedTradeIdentity = (data: Partial<TradeFormData>): boolean =>
+  data.backendTradeId !== undefined ||
+  (typeof data.canonicalTradeId === 'string' &&
+    data.canonicalTradeId.trim().length > 0);
+
+
+const currentRealizedPnLOf = (
+  data: Partial<TradeFormData>,
+  formPnL: number
+): number =>
+  hasSyncedTradeIdentity(data) &&
+  typeof data.pnl === 'number' &&
+  Number.isFinite(data.pnl)
+    ? data.pnl
+    : formPnL;
+
+const closedCountSuffixOf = (data: Partial<TradeFormData>): string => {
+  const partialInfo = getPartialExitInfo(data);
+  return partialInfo.isPartialExit
+    ? ` (${partialInfo.closedSize}/${partialInfo.totalSize} ${t('form.field.closed')})`
+    : '';
+};
+
+const openPnlHeadline = (
+  showBreakdown: boolean,
+  hasUnrealized: boolean,
+  closedCountSuffix: string
+): string => {
+  if (showBreakdown) return t('form.field.floating-pnl');
+  if (hasUnrealized) return t('form.unrealized.preview');
+  return `${t('form.field.realized-pnl')}${closedCountSuffix}`;
+};
+
+const canShowClosedPnlPreview = (data: Partial<TradeFormData>): boolean =>
+  (data.useDirectPnLInput === true && data.directPnL !== undefined) ||
+  (data.entryPrice !== undefined &&
+    data.exitPrice !== undefined &&
+    data.positionSize !== undefined &&
+    data.direction !== undefined);
+
+interface PnlPreviewContext {
+  currency: string;
+  toRMultiple: (value: number) => number | undefined;
+  costsSuffix: string;
+  forexConversionInfo: React.ReactNode;
+  costsLine: React.ReactNode;
+}
+
+function OpenTradePnlPreview({
   data,
-  currency,
-  defaultRiskAmount,
+  formPnL,
+  unrealizedPnL,
+  hasRealizedComponents,
+  context,
 }: {
   data: Partial<TradeFormData>;
-  currency: string;
-  defaultRiskAmount: number;
+  formPnL: number;
+  unrealizedPnL: number | null;
+  hasRealizedComponents: boolean;
+  context: PnlPreviewContext;
 }) {
+  const { currency, toRMultiple } = context;
+  const realizedPnL = hasRealizedComponents
+    ? calculateSnapshotRealizedPnL(data, currentRealizedPnLOf(data, formPnL))
+    : 0;
+  const combinedPnL = realizedPnL + (unrealizedPnL ?? 0);
+  const closedCountSuffix = closedCountSuffixOf(data);
+  const breakdownUnrealizedPnL = hasRealizedComponents ? unrealizedPnL : null;
+  const showBreakdown = breakdownUnrealizedPnL !== null;
+
+  return (
+    <div className="calculatedValue calculatedValue--footer">
+      <span className="calculatedLabel">
+        {openPnlHeadline(
+          showBreakdown,
+          unrealizedPnL !== null,
+          closedCountSuffix
+        )}
+        {context.costsSuffix}
+        {context.forexConversionInfo}
+      </span>
+      <PnLValue
+        className="calculatedAmount"
+        value={combinedPnL}
+        currencyCode={currency}
+        showCents={true}
+        rMultiple={toRMultiple(combinedPnL)}
+      />
+      {breakdownUnrealizedPnL !== null && (
+        <>
+          <span className="calculatedLabel">
+            {t('form.field.realized-pnl')}
+            {closedCountSuffix}{' '}
+            <PnLValue
+              value={realizedPnL}
+              currencyCode={currency}
+              showCents={true}
+              rMultiple={toRMultiple(realizedPnL)}
+            />
+          </span>
+          <span className="calculatedLabel">
+            {t('form.unrealized.preview')}{' '}
+            <PnLValue
+              value={breakdownUnrealizedPnL}
+              currencyCode={currency}
+              showCents={true}
+              rMultiple={toRMultiple(breakdownUnrealizedPnL)}
+            />
+          </span>
+        </>
+      )}
+      {context.costsLine}
+    </div>
+  );
+}
+
+function ClosedTradePnlPreview({
+  data,
+  formPnL,
+  context,
+}: {
+  data: Partial<TradeFormData>;
+  formPnL: number;
+  context: PnlPreviewContext;
+}) {
+  return (
+    <div className="calculatedValue calculatedValue--footer">
+      <span className="calculatedLabel">
+        {t('form.field.profit-loss')}
+        {context.costsSuffix}
+        {context.forexConversionInfo}
+      </span>
+      <PnLValue
+        className="calculatedAmount"
+        value={formPnL}
+        currencyCode={context.currency}
+        showCents={true}
+        rMultiple={context.toRMultiple(formPnL)}
+      />
+      {!data.useDirectPnLInput && (
+        <span className="calculatedLabel">
+          (
+          <PercentValue
+            kind="returnPercent"
+            value={calculatePercentageReturn(data)}
+            tone="none"
+          />
+          )
+        </span>
+      )}
+      {context.costsLine}
+    </div>
+  );
+}
+
+function TradeCostsLine({
+  totalCosts,
+  currency,
+  toRMultiple,
+}: {
+  totalCosts: number;
+  currency: string;
+  toRMultiple: (value: number) => number | undefined;
+}) {
+  return (
+    <span className="calculatedLabel">
+      {t('form.field.total-costs')}{' '}
+      <PnLValue
+        value={totalCosts}
+        currencyCode={currency}
+        showCents={true}
+        rMultiple={toRMultiple(totalCosts)}
+        tone="none"
+      />
+    </span>
+  );
+}
+
+function TradeFormFooterPnlPreview({ data }: { data: Partial<TradeFormData> }) {
   const plugin = usePlugin();
+  const { currency, defaultRiskAmount } = pnlPreviewDefaults(data, plugin);
   const isOpen = isTradeOpenWithContext({
     tradeStatus: data.tradeStatus,
     exitTime: data.exitTime,
@@ -344,159 +556,57 @@ function TradeFormFooterPnlPreview({
     )
       ? calculateUnrealizedPnL(data)
       : null;
-  const hasRealizedComponents = isOpen ? hasRealizedPnLComponents(data) : false;
+  const hasRealizedComponents = isOpen && hasRealizedPnLComponents(data);
 
-  const pnl = calculatePnL(data);
-  const forexConversionInfo =
-    data.assetType === 'forex' &&
-    data.useDirectPnLInput !== true &&
-    typeof data.lotSize === 'number' &&
-    data.lotSize > 0 &&
-    typeof data.forexPnlConversionRate === 'number' &&
-    data.forexPnlConversionRate > 0 ? (
+  const formPnL = calculatePnL(data);
+  const toRMultiple = rMultipleConverter(
+    resolveEffectiveRiskAmount(data, defaultRiskAmount)
+  );
+  const hasCosts = Boolean(data.commission || data.swap || data.fees);
+  const context: PnlPreviewContext = {
+    currency,
+    toRMultiple,
+    costsSuffix: hasCosts ? ` ${t('form.field.incl-costs')}` : '',
+    forexConversionInfo: hasForexPnlConversion(data) ? (
       <ForexPnlConversionInfo
         quoteCurrency={data.forexQuoteCurrency}
         accountCurrency={currency}
         rateDate={data.forexPnlConversionRateDate}
         source={data.forexPnlConversionRateSource}
       />
-    ) : null;
-  const effectiveRiskAmount = resolveEffectiveRiskAmount(
-    data,
-    defaultRiskAmount
-  );
-  const toRMultiple = (value: number): number | undefined =>
-    effectiveRiskAmount && effectiveRiskAmount > 0
-      ? value / effectiveRiskAmount
-      : undefined;
-  const hasCosts = Boolean(data.commission || data.swap || data.fees);
-  const totalCosts = calculateTotalCosts(data);
-  const costsLine = hasCosts ? (
-    <span className="calculatedLabel">
-      {t('form.field.total-costs')}{' '}
-      <PnLValue
-        value={totalCosts}
-        currencyCode={currency}
-        showCents={true}
-        rMultiple={toRMultiple(totalCosts)}
-        tone="none"
+    ) : null,
+    costsLine: hasCosts ? (
+      <TradeCostsLine
+        totalCosts={calculateTotalCosts(data)}
+        currency={currency}
+        toRMultiple={toRMultiple}
       />
-    </span>
-  ) : null;
+    ) : null,
+  };
 
   
   
   if (isOpen && (unrealizedPnL !== null || hasRealizedComponents)) {
-    const hasSyncedIdentity =
-      data.backendTradeId !== undefined ||
-      (typeof data.canonicalTradeId === 'string' &&
-        data.canonicalTradeId.trim().length > 0);
-    const currentRealizedPnL =
-      hasSyncedIdentity &&
-      typeof data.pnl === 'number' &&
-      Number.isFinite(data.pnl)
-        ? data.pnl
-        : pnl;
-    const realizedPnL = hasRealizedComponents
-      ? calculateSnapshotRealizedPnL(data, currentRealizedPnL)
-      : 0;
-    const combinedPnL = realizedPnL + (unrealizedPnL ?? 0);
-    const partialInfo = getPartialExitInfo(data);
-    const closedCountSuffix = partialInfo.isPartialExit
-      ? ` (${partialInfo.closedSize}/${partialInfo.totalSize} ${t('form.field.closed')})`
-      : '';
-    const showBreakdown = unrealizedPnL !== null && hasRealizedComponents;
-    const headlineLabel = showBreakdown
-      ? t('form.field.floating-pnl')
-      : unrealizedPnL !== null
-        ? t('form.unrealized.preview')
-        : `${t('form.field.realized-pnl')}${closedCountSuffix}`;
-
     return (
-      <div className="calculatedValue calculatedValue--footer">
-        <span className="calculatedLabel">
-          {headlineLabel}
-          {hasCosts ? ` ${t('form.field.incl-costs')}` : ''}
-          {forexConversionInfo}
-        </span>
-        <PnLValue
-          className="calculatedAmount"
-          value={combinedPnL}
-          currencyCode={currency}
-          showCents={true}
-          rMultiple={toRMultiple(combinedPnL)}
-        />
-        {showBreakdown && (
-          <span className="calculatedLabel">
-            {t('form.field.realized-pnl')}
-            {closedCountSuffix}{' '}
-            <PnLValue
-              value={realizedPnL}
-              currencyCode={currency}
-              showCents={true}
-              rMultiple={toRMultiple(realizedPnL)}
-            />
-          </span>
-        )}
-        {showBreakdown && unrealizedPnL !== null && (
-          <span className="calculatedLabel">
-            {t('form.unrealized.preview')}{' '}
-            <PnLValue
-              value={unrealizedPnL}
-              currencyCode={currency}
-              showCents={true}
-              rMultiple={toRMultiple(unrealizedPnL)}
-            />
-          </span>
-        )}
-        {costsLine}
-      </div>
+      <OpenTradePnlPreview
+        data={data}
+        formPnL={formPnL}
+        unrealizedPnL={unrealizedPnL}
+        hasRealizedComponents={hasRealizedComponents}
+        context={context}
+      />
     );
   }
 
-  const canShowPnlPreview =
-    (data.useDirectPnLInput && data.directPnL !== undefined) ||
-    (data.entryPrice !== undefined &&
-      data.exitPrice !== undefined &&
-      data.positionSize !== undefined &&
-      data.direction !== undefined);
-
-  if (!canShowPnlPreview) return null;
-
-  const percentReturn = calculatePercentageReturn(data);
+  if (!canShowClosedPnlPreview(data)) return null;
 
   return (
-    <div className="calculatedValue calculatedValue--footer">
-      <span className="calculatedLabel">
-        {t('form.field.profit-loss')}
-        {hasCosts ? ` ${t('form.field.incl-costs')}` : ''}
-        {forexConversionInfo}
-      </span>
-      <PnLValue
-        className="calculatedAmount"
-        value={pnl}
-        currencyCode={currency}
-        showCents={true}
-        rMultiple={toRMultiple(pnl)}
-      />
-      {!data.useDirectPnLInput && (
-        <span className="calculatedLabel">
-          (
-          <PercentValue
-            kind="returnPercent"
-            value={percentReturn}
-            tone="none"
-          />
-          )
-        </span>
-      )}
-      {costsLine}
-    </div>
+    <ClosedTradePnlPreview data={data} formPnL={formPnL} context={context} />
   );
 }
 
-function openLayoutSettingsForTradeForm({
-  plugin,
+function applySavedLayoutToTradeForm({
+  layout,
   isEditMode,
   startedAsOpenTrade,
   initialData,
@@ -504,7 +614,7 @@ function openLayoutSettingsForTradeForm({
   setLayoutOverride,
   handleFieldChange,
 }: {
-  plugin: JournalitPlugin;
+  layout: TradeFormLayoutSettings;
   isEditMode: boolean;
   startedAsOpenTrade: boolean;
   initialData: Partial<TradeFormData>;
@@ -514,31 +624,25 @@ function openLayoutSettingsForTradeForm({
   >;
   handleFieldChange: TradeFormFieldChangeHandler;
 }) {
-  openTradeFormLayoutSettingsModal({
-    app: plugin.app,
-    plugin,
-    onSave: (layout) => {
-      setLayoutOverride(layout);
-      if (
-        layout.inputMode === 'pnl-risk' &&
-        !isEditMode &&
-        !startedAsOpenTrade &&
-        !isOpenTradeFormData(formData)
-      ) {
-        if (!('directPnL' in initialData) && formData.directPnL === 0) {
-          handleFieldChange('directPnL', undefined);
-        }
-        handleFieldChange('useDirectPnLInput', true);
-      }
-      if (
-        !isEditMode &&
-        layout.assetTypeMode === 'fixed' &&
-        formData.assetType !== layout.defaultAssetType
-      ) {
-        handleFieldChange('assetType', layout.defaultAssetType);
-      }
-    },
-  });
+  setLayoutOverride(layout);
+  if (
+    layout.inputMode === 'pnl-risk' &&
+    !isEditMode &&
+    !startedAsOpenTrade &&
+    !isOpenTradeFormData(formData)
+  ) {
+    if (!('directPnL' in initialData) && formData.directPnL === 0) {
+      handleFieldChange('directPnL', undefined);
+    }
+    handleFieldChange('useDirectPnLInput', true);
+  }
+  if (
+    !isEditMode &&
+    layout.assetTypeMode === 'fixed' &&
+    formData.assetType !== layout.defaultAssetType
+  ) {
+    handleFieldChange('assetType', layout.defaultAssetType);
+  }
 }
 
 
@@ -560,8 +664,9 @@ export const TradeForm: React.FC<TradeFormProps> = ({
   onSubmit,
   onCancel,
   dirtyStateRef,
+  onOpenCustomization,
+  active = true,
 }) => {
-  const initialActiveTabRef = useRef(initialTab);
   const plugin = usePlugin();
   const [layoutOverride, setLayoutOverride] =
     useState<ResolvedTradeFormLayout | null>(null);
@@ -577,6 +682,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
   
   const {
     formData,
+    backtestSessionDay,
     errors,
     submissionState,
     formRef,
@@ -599,10 +705,6 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     dirtyStateRef.current = isDirty;
   }
 
-  
-  const [activeTab, setActiveTab] = useState<ActiveTradeFormTab>(
-    initialActiveTabRef.current
-  );
   const [isAccountCreationBlocked, setIsAccountCreationBlocked] =
     useState(false);
   const customFieldValues = formData.customFields ?? {};
@@ -664,13 +766,25 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     tradeFormLayout.defaultAssetType,
   ]);
 
-  
-  
-  const effectiveActiveTab =
-    (activeTab === 'details' && !canShowDetailsTab) ||
-    (activeTab === 'advanced' && !canShowAdvancedTab)
-      ? 'basic'
-      : activeTab;
+  const { effectiveActiveTab, handleTabChange, handleOpenLayoutSettings } =
+    useTradeFormNavigation({
+      initialTab,
+      canShowDetailsTab,
+      canShowAdvancedTab,
+      isSubmitting,
+      dateDraftGate,
+      onOpenCustomization,
+      applySavedLayout: (layout) =>
+        applySavedLayoutToTradeForm({
+          layout,
+          isEditMode,
+          startedAsOpenTrade,
+          initialData,
+          formData,
+          setLayoutOverride,
+          handleFieldChange,
+        }),
+    });
 
   
   
@@ -684,13 +798,6 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     };
 
     handleFieldChange('customFields', newCustomFieldValues);
-  };
-
-  
-  const handleTabChange = (newTab: ActiveTradeFormTab) => {
-    if (newTab !== activeTab && dateDraftGate.confirm()) {
-      setActiveTab(newTab);
-    }
   };
 
   
@@ -718,6 +825,7 @@ export const TradeForm: React.FC<TradeFormProps> = ({
       case 'details':
         return (
           <DetailsTab
+            active={active}
             data={formData}
             errors={errors}
             onChange={handleFieldChange}
@@ -748,20 +856,6 @@ export const TradeForm: React.FC<TradeFormProps> = ({
     }
   };
 
-  const handleOpenLayoutSettings = () => {
-    if (!plugin) return;
-
-    openLayoutSettingsForTradeForm({
-      plugin,
-      isEditMode,
-      startedAsOpenTrade,
-      initialData,
-      formData,
-      setLayoutOverride,
-      handleFieldChange,
-    });
-  };
-
   const handleOpenTradeImport = async () => {
     if (!plugin) return;
     const didClose = await handleCancel();
@@ -777,77 +871,69 @@ export const TradeForm: React.FC<TradeFormProps> = ({
 
   return (
     <DateDraftGateContext.Provider value={dateDraftGate}>
-      <form
-        ref={formRef}
-        className="formContainer"
-        onSubmit={(event) => void handleSubmit(event)}
-      >
-        
-        <TradeFormErrorSummary
-          errors={errors}
-          tabErrorCounts={tabErrorCounts}
-        />
+      <BacktestSessionDayContext.Provider value={backtestSessionDay}>
+        <form
+          ref={formRef}
+          className="formContainer"
+          onSubmit={(event) => void handleSubmit(event)}
+        >
+          
+          <TradeFormTabNav
+            tabs={tabs}
+            activeTab={effectiveActiveTab}
+            isEditMode={isEditMode}
+            showLayoutSettings={!!plugin && !!onOpenCustomization}
+            onTabChange={handleTabChange}
+            onOpenLayoutSettings={handleOpenLayoutSettings}
+          />
 
-        
-        <TradeFormTabNav
-          tabs={tabs}
-          activeTab={effectiveActiveTab}
-          isEditMode={isEditMode}
-          showLayoutSettings={!!plugin}
-          onTabChange={handleTabChange}
-          onOpenLayoutSettings={handleOpenLayoutSettings}
-        />
+          <TradeFormErrorSummary
+            errors={errors}
+            tabErrorCounts={tabErrorCounts}
+          />
 
-        {plugin &&
-          !isEditMode &&
-          isImportShortcutVisible &&
-          formData.isMissedTrade !== true &&
-          formData.isBacktestTrade !== true && (
-            <ManualTradeImportNudge
-              plugin={plugin}
-              disabled={isSubmitting}
-              closeForm={handleCancel}
-            />
-          )}
-
-        
-        {getTabContent()}
-
-        
-        <FormActions
-          onCancel={() => void handleCancel()}
-          onImportTrades={
-            !!plugin && isImportShortcutVisible
-              ? () => void handleOpenTradeImport()
-              : undefined
-          }
-          isSubmitting={isSubmitting}
-          errors={errors}
-          submissionState={submissionState}
-          isEditMode={isEditMode}
-          hasEntryTime={!!initialData.entryTime}
-          disabledReason={
-            isAccountCreationBlocked
-              ? t('form.account-empty-state.submit-disabled')
-              : undefined
-          }
-          footerSummary={
-            isTradeFormLayoutItemVisible(tradeFormLayout, 'pnlPreview') ? (
-              <TradeFormFooterPnlPreview
-                data={formData}
-                currency={
-                  formData.currency ||
-                  plugin?.settings.general?.currency ||
-                  'USD'
-                }
-                defaultRiskAmount={
-                  plugin?.settings.trade.defaultRiskAmount ?? 0
-                }
+          {plugin &&
+            showsManualImportNudge({
+              isEditMode,
+              isImportShortcutVisible,
+              formData,
+            }) && (
+              <ManualTradeImportNudge
+                plugin={plugin}
+                disabled={isSubmitting}
+                closeForm={handleCancel}
               />
-            ) : null
-          }
-        />
-      </form>
+            )}
+
+          
+          {getTabContent()}
+
+          
+          <FormActions
+            onCancel={() => void handleCancel()}
+            onImportTrades={
+              !!plugin && isImportShortcutVisible
+                ? () => void handleOpenTradeImport()
+                : undefined
+            }
+            isSubmitting={isSubmitting}
+            errors={errors}
+            submissionState={submissionState}
+            isEditMode={isEditMode}
+            hasEntryTime={!!initialData.entryTime}
+            disabledReason={
+              isAccountCreationBlocked
+                ? t('form.account-empty-state.submit-disabled')
+                : undefined
+            }
+            footerSummary={
+              isTradeFormLayoutItemVisible(tradeFormLayout, 'pnlPreview') ? (
+                <TradeFormFooterPnlPreview data={formData} />
+              ) : null
+            }
+          />
+        </form>
+      </BacktestSessionDayContext.Provider>
     </DateDraftGateContext.Provider>
   );
 };

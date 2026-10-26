@@ -168,6 +168,7 @@ interface DrawdownCapitalBasisFilterScope {
   mistakes?: string[];
   tradeTypes?: string[];
   statuses?: string[];
+  ratings?: string[];
   customFieldFilters?: Record<string, unknown>;
   exclusions?: FilterExclusions;
 }
@@ -256,6 +257,7 @@ export const isNonAccountFilterActive = (
     (filters.mistakes?.length ?? 0) > 0 ||
     nonDefaultTradeTypeFilterActive ||
     (filters.statuses?.length ?? 0) > 0 ||
+    (filters.ratings?.length ?? 0) > 0 ||
     Object.values(filters.customFieldFilters ?? {}).some((value) => {
       if (Array.isArray(value)) return value.length > 0;
       return value !== undefined && value !== null && value !== '';
@@ -265,54 +267,62 @@ export const isNonAccountFilterActive = (
   );
 };
 
-const getTradeAccountLookupKeys = (
-  trade: DrawdownCapitalBasisResolvableTrade
-): string[] => {
-  const explicitKeys = (trade.accountLookupKeys ?? []).flatMap((key) => {
-    const normalized = normalizeLookupKey(key);
-    return normalized ? [normalized] : [];
-  });
-  if (explicitKeys.length > 0) {
-    return Array.from(new Set(explicitKeys));
-  }
 
-  const accountValues = Array.isArray(trade.account)
-    ? trade.account
-    : typeof trade.account === 'string'
-      ? [trade.account]
-      : [];
-
-  return Array.from(
-    new Set(
-      accountValues.flatMap((key) => {
-        const normalized = normalizeLookupKey(key);
-        return normalized ? [normalized] : [];
-      })
-    )
+const addTradeAccountLookupKeys = (
+  trade: DrawdownCapitalBasisResolvableTrade,
+  keys: Set<string>
+): number => {
+  const explicitCount = addNormalizedLookupKeys(trade.accountLookupKeys, keys);
+  if (explicitCount > 0) return explicitCount;
+  return addNormalizedLookupKeys(
+    typeof trade.account === 'string' ? [trade.account] : trade.account,
+    keys
   );
 };
 
-export const resolveDrawdownCapitalBasis = (
+const addNormalizedLookupKeys = (
+  values: readonly string[] | null | undefined,
+  keys: Set<string>
+): number => {
+  if (!values) return 0;
+  let count = 0;
+  for (const value of values) {
+    const normalized = normalizeLookupKey(value);
+    if (normalized) {
+      keys.add(normalized);
+      count++;
+    }
+  }
+  return count;
+};
+
+type DrawdownCapitalAccountMetadataByKey = Map<
+  string,
+  { canonicalKey: string; metadata: DrawdownCapitalBasisAccountMetadata }
+>;
+
+
+const collectDrawdownCapitalAccounts = (
   trades: DrawdownCapitalBasisResolvableTrade[],
   accountMetadata:
     | Record<string, DrawdownCapitalBasisAccountMetadata>
     | null
     | undefined,
-  options: ResolveDrawdownCapitalBasisOptions = {}
-): DrawdownCapitalBasis => {
+  filters: DrawdownCapitalBasisFilterScope | null | undefined
+): {
+  accountKeys: Set<string>;
+  metadataByLookupKey: DrawdownCapitalAccountMetadataByKey;
+} | null => {
   if (
     !Array.isArray(trades) ||
     trades.length === 0 ||
     !accountMetadata ||
-    isNonAccountFilterActive(options.filters)
+    isNonAccountFilterActive(filters)
   ) {
-    return { type: 'none' };
+    return null;
   }
 
-  const metadataByLookupKey = new Map<
-    string,
-    { canonicalKey: string; metadata: DrawdownCapitalBasisAccountMetadata }
-  >();
+  const metadataByLookupKey: DrawdownCapitalAccountMetadataByKey = new Map();
   for (const [accountName, metadata] of Object.entries(accountMetadata)) {
     const canonicalKey = normalizeLookupKey(accountName);
     metadataByLookupKey.set(canonicalKey, { canonicalKey, metadata });
@@ -323,18 +333,9 @@ export const resolveDrawdownCapitalBasis = (
       });
     }
   }
-  const capitalByLookupKey = new Map<
-    string,
-    DrawdownCapitalBasisAccountCapital
-  >();
-  for (const [accountName, capital] of Object.entries(
-    options.accountCapitalByLookupKey ?? {}
-  )) {
-    capitalByLookupKey.set(normalizeLookupKey(accountName), capital);
-  }
 
   const accountKeys = new Set<string>();
-  const scopedAccountKeys = (options.filters?.accounts ?? []).flatMap((key) => {
+  const scopedAccountKeys = (filters?.accounts ?? []).flatMap((key) => {
     const normalized = normalizeLookupKey(key);
     return normalized ? [normalized] : [];
   });
@@ -342,9 +343,7 @@ export const resolveDrawdownCapitalBasis = (
   if (scopedAccountKeys.length > 0) {
     const tradeAccountKeys = new Set<string>();
     for (const trade of trades) {
-      getTradeAccountLookupKeys(trade).forEach((key) =>
-        tradeAccountKeys.add(key)
-      );
+      addTradeAccountLookupKeys(trade, tradeAccountKeys);
     }
 
     scopedAccountKeys.forEach((key) => {
@@ -354,16 +353,65 @@ export const resolveDrawdownCapitalBasis = (
     });
   } else {
     for (const trade of trades) {
-      const tradeAccountKeys = getTradeAccountLookupKeys(trade);
-      if (tradeAccountKeys.length === 0) {
-        return { type: 'none' };
+      if (addTradeAccountLookupKeys(trade, accountKeys) === 0) {
+        return null;
       }
-      tradeAccountKeys.forEach((key) => accountKeys.add(key));
     }
   }
 
-  if (accountKeys.size === 0) {
+  return accountKeys.size > 0 ? { accountKeys, metadataByLookupKey } : null;
+};
+
+
+export const drawdownCapitalBasisNeedsComputedCapital = (
+  trades: DrawdownCapitalBasisResolvableTrade[],
+  accountMetadata:
+    | Record<string, DrawdownCapitalBasisAccountMetadata>
+    | null
+    | undefined,
+  filters: DrawdownCapitalBasisFilterScope | null | undefined
+): boolean => {
+  const accounts = collectDrawdownCapitalAccounts(
+    trades,
+    accountMetadata,
+    filters
+  );
+  if (!accounts) return false;
+  for (const accountKey of accounts.accountKeys) {
+    const metadata = accounts.metadataByLookupKey.get(accountKey)?.metadata;
+    if (getPositiveFiniteNumber(metadata?.initialBalance) === null) {
+      return true;
+    }
+  }
+  return false;
+};
+
+export const resolveDrawdownCapitalBasis = (
+  trades: DrawdownCapitalBasisResolvableTrade[],
+  accountMetadata:
+    | Record<string, DrawdownCapitalBasisAccountMetadata>
+    | null
+    | undefined,
+  options: ResolveDrawdownCapitalBasisOptions = {}
+): DrawdownCapitalBasis => {
+  const accounts = collectDrawdownCapitalAccounts(
+    trades,
+    accountMetadata,
+    options.filters
+  );
+  if (!accounts) {
     return { type: 'none' };
+  }
+  const { accountKeys, metadataByLookupKey } = accounts;
+
+  const capitalByLookupKey = new Map<
+    string,
+    DrawdownCapitalBasisAccountCapital
+  >();
+  for (const [accountName, capital] of Object.entries(
+    options.accountCapitalByLookupKey ?? {}
+  )) {
+    capitalByLookupKey.set(normalizeLookupKey(accountName), capital);
   }
 
   let resolvedCapital = 0;
@@ -850,7 +898,7 @@ const buildSummary = <TTrade extends DrawdownAnalyzableTrade>(
 };
 
 
-export function getRealizedTradeTimestamp(
+function getRealizedTradeTimestamp(
   trade: DrawdownAnalyzableTrade
 ): Date | null {
   return (

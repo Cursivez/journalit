@@ -22,6 +22,8 @@ export interface TradeImportHistoryEntry {
   failedCount: number;
   
   liveTradeCount: number;
+  
+  deletableTradeCount: number;
 }
 
 interface TradeImportHistoryPage {
@@ -35,12 +37,12 @@ export interface TradeImportDeletionResult {
   keptTradeCount: number;
 }
 
-export interface ServerDeletedTrade {
+interface ServerDeletedTrade {
   cursor: number;
   tradeId: string;
 }
 
-export interface ServerDeletedTradesPage {
+interface ServerDeletedTradesPage {
   trades: ServerDeletedTrade[];
   nextCursor: number;
   hasMore: boolean;
@@ -118,6 +120,7 @@ export function decodeTradeImportHistoryPage(
       skippedCount: requiredCount(item, 'skippedCount'),
       failedCount: requiredCount(item, 'failedCount'),
       liveTradeCount: requiredCount(item, 'liveTradeCount'),
+      deletableTradeCount: requiredCount(item, 'deletableTradeCount'),
     };
   });
   const nextCursor =

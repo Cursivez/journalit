@@ -33,10 +33,7 @@ function normalizeStringArray(value: unknown): string[] {
 }
 
 export function normalizeTradeAccountIdentity(
-  tradeLike: Record<string, unknown>,
-  ..._ignoredLegacyOptions: Array<{
-    resolveAccountIdDisplayName?: (accountId: string) => string | undefined;
-  }>
+  tradeLike: object & { account?: unknown }
 ): TradeAccountIdentity {
   const refs: TradeAccountRef[] = [];
   const seen = new Set<string>();

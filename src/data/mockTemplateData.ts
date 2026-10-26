@@ -14,7 +14,7 @@ import { decodeCompressedJson } from '../utils/compressedData';
 
 let mockTemplateDataCache: MockTemplateStaticData | null = null;
 
-export function getMockTemplateData(): MockTemplateStaticData {
+function getMockTemplateData(): MockTemplateStaticData {
   if (mockTemplateDataCache) {
     return mockTemplateDataCache;
   }
@@ -47,10 +47,10 @@ function toWeeklyGamePerformance(
 }
 
 function toMissedTrade(trade: MissedTradeSource) {
-  return {
-    ...trade,
-    entryTime: new Date(trade.entryTime),
-  };
+  const entryTime = new Date(trade.entryTime);
+  const tradingDay = new Date(entryTime);
+  tradingDay.setHours(0, 0, 0, 0);
+  return { ...trade, entryTime, tradingDay };
 }
 
 
@@ -151,8 +151,13 @@ const generateMockTrades = (
           tradeStatus: 'CLOSED',
           rMultiple: Math.round((pnl / 200) * 100) / 100,
           riskAmount: 200,
-          stopLoss:
-            Math.round((isLong ? entryPrice - 2 : entryPrice + 2) * 100) / 100,
+          stopLosses: [
+            {
+              price:
+                Math.round((isLong ? entryPrice - 2 : entryPrice + 2) * 100) /
+                100,
+            },
+          ],
           images: [],
         });
 
@@ -260,7 +265,7 @@ const PREVIEW_TAGS = [
 function withPreviewTradeDefaults(trades: Trade[]): Trade[] {
   return trades.map((trade, index) => ({
     ...trade,
-    customTags: [...PREVIEW_TAGS[index % PREVIEW_TAGS.length]],
+    tags: [...PREVIEW_TAGS[index % PREVIEW_TAGS.length]],
     breakEvenAccountCurrentBalanceTotal: PREVIEW_BREAK_EVEN_ACCOUNT_BALANCE,
   }));
 }

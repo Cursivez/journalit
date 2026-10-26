@@ -40,12 +40,10 @@ export const RegularBacktestTradeTypeFilter: React.FC<RegularBacktestTradeTypeFi
         }
       };
 
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
+      const listenerDocument = window.activeDocument;
+      listenerDocument.addEventListener('mousedown', handleClickOutside);
       return () => {
-        window.activeDocument.removeEventListener(
-          'mousedown',
-          handleClickOutside
-        );
+        listenerDocument.removeEventListener('mousedown', handleClickOutside);
       };
     }, []);
 

@@ -30,6 +30,13 @@ import { ReviewChangedPayload } from '../events/types';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
 import { extractCanonicalProjectionPnlFields } from '../trade/core/CanonicalProjectionFields';
 import {
+  applyReviewFrontmatterUpdates,
+  applyReviewInitialContent,
+  type ReviewCreationReceipt,
+  type ReviewFrontmatterGuard,
+  type ReviewInitialContent,
+} from '../reviews';
+import {
   getQuarterForMonth,
   getQuarterStartDate,
   getQuarterEndDate,
@@ -46,18 +53,6 @@ const getPnlContributingTrades = (trades: Trade[]): Trade[] =>
 
 const sumEffectivePnL = (trades: Trade[]): number =>
   trades.reduce((sum, trade) => sum + getEffectivePnL(trade), 0);
-
-interface CachedYearlyData {
-  timestamp: number;
-  data: {
-    trades: Trade[];
-    quarterlyPerformance: QuarterlyPerformanceData[];
-    quarterlyGamePerformance: QuarterlyGamePerformance[];
-    demonTrackerData: YearlyDemonTrackerEntry[];
-    bestQuarter: QuarterlyPerformanceData | null;
-    worstQuarter: QuarterlyPerformanceData | null;
-  };
-}
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -109,8 +104,6 @@ export class YearlyReviewService extends CustomDataService {
 
   private lastCacheClear: number = 0;
 
-  private yearlyDataCache: Map<string, CachedYearlyData> = new Map();
-
   private templateService: ReviewTemplateService | null = null;
   private transformService: TemplateTransformationService | null = null;
 
@@ -142,7 +135,6 @@ export class YearlyReviewService extends CustomDataService {
           const now = Date.now();
           if (!this.lastCacheClear || now - this.lastCacheClear > 5000) {
             await this.clearCache();
-            this.yearlyDataCache.clear();
             this.lastCacheClear = now;
           }
         }
@@ -220,12 +212,6 @@ export class YearlyReviewService extends CustomDataService {
   }
 
   
-  async clearCache(): Promise<void> {
-    await super.clearCache();
-    this.yearlyDataCache.clear();
-  }
-
-  
   private async ensureDirectoryExists(filePath: string): Promise<void> {
     const dirPath = filePath.substring(0, filePath.lastIndexOf('/'));
     if (!(await this.app.vault.adapter.exists(dirPath))) {
@@ -291,6 +277,7 @@ export class YearlyReviewService extends CustomDataService {
     
     const generatedContent = this.generateInitialContent(
       frontmatter,
+      undefined,
       options.sampleMaterialization
     );
     const claimedOwnership = options.sampleMaterialization
@@ -315,6 +302,44 @@ export class YearlyReviewService extends CustomDataService {
       console.error('Error creating yearly review:', error);
       return null;
     }
+  }
+
+  async createYearlyReviewWithReceipt(
+    date: Date,
+    initialContent?: ReviewInitialContent,
+    source?: string
+  ): Promise<ReviewCreationReceipt> {
+    const filePath = await this.getYearlyReviewPath(date);
+    const existingFile = this.app.vault.getAbstractFileByPath(filePath);
+    if (existingFile instanceof TFile)
+      return { file: existingFile, created: false };
+    await this.ensureDirectoryExists(filePath);
+    const frontmatter: YearlyReviewFrontmatter = {
+      ...this.defaultFrontmatter(),
+      date: this.formatDateForDisplay(date),
+      year: date.getFullYear(),
+    };
+    const content = this.generateInitialContent(frontmatter, initialContent);
+    let file: TFile;
+    try {
+      file = await this.app.vault.create(filePath, content);
+    } catch (error) {
+      const racedFile = this.app.vault.getAbstractFileByPath(filePath);
+      if (racedFile instanceof TFile)
+        return { file: racedFile, created: false };
+      throw error;
+    }
+    await Promise.all([
+      forceMetadataCacheRefresh(this.app, file),
+      this.clearCache(),
+    ]);
+    eventBus.publish('review:changed', {
+      type: 'yearly',
+      action: 'created',
+      filePath,
+      ...(source === undefined ? {} : { source }),
+    });
+    return { file, created: true };
   }
 
   
@@ -395,6 +420,7 @@ export class YearlyReviewService extends CustomDataService {
   
   private generateInitialContent(
     frontmatter: YearlyReviewFrontmatter,
+    initialContent?: ReviewInitialContent,
     sampleMaterialization?: SampleReviewMaterialization
   ): string {
     
@@ -411,6 +437,13 @@ export class YearlyReviewService extends CustomDataService {
 
     yearlyData.templateId = template.id;
     yearlyData.templateVersion = template.version;
+
+    applyReviewInitialContent(
+      yearlyData,
+      initialContent,
+      'yearlyGoals',
+      'yearlyGoalStatus'
+    );
 
     const authoredData = sampleMaterialization
       ? materializeSampleReviewFrontmatter(yearlyData, sampleMaterialization)
@@ -805,207 +838,17 @@ export class YearlyReviewService extends CustomDataService {
   }
 
   
-  async getYearlyDataOptimized(year: number): Promise<{
-    trades: Trade[];
-    quarterlyPerformance: QuarterlyPerformanceData[];
-    quarterlyGamePerformance: QuarterlyGamePerformance[];
-    demonTrackerData: YearlyDemonTrackerEntry[];
-    bestQuarter: QuarterlyPerformanceData | null;
-    worstQuarter: QuarterlyPerformanceData | null;
-  }> {
-    const cacheKey = `${year}`;
-    const cached = this.yearlyDataCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) {
-      return cached.data;
-    }
-
-    try {
-      const trades = await this.getYearlyTrades(year);
-      const quarterlyPerformance = await this.calculateQuarterlyPerformance(
-        trades,
-        year
-      );
-      const demonTrackerData = this.getDemonTrackerDataFromTrades(trades);
-      const quarterlyGamePerformance =
-        await this.getQuarterlyGamePerformance(year);
-
-      const bestQuarter =
-        quarterlyPerformance.length > 0
-          ? quarterlyPerformance.reduce((best, current) =>
-              current.pnl > best.pnl ? current : best
-            )
-          : null;
-
-      const worstQuarter =
-        quarterlyPerformance.length > 0
-          ? quarterlyPerformance.reduce((worst, current) =>
-              current.pnl < worst.pnl ? current : worst
-            )
-          : null;
-
-      const result = {
-        trades,
-        quarterlyPerformance,
-        quarterlyGamePerformance,
-        demonTrackerData,
-        bestQuarter,
-        worstQuarter,
-      };
-
-      this.yearlyDataCache.set(cacheKey, {
-        data: result,
-        timestamp: Date.now(),
-      });
-
-      return result;
-    } catch (error) {
-      console.error('Error getting optimized yearly data:', error);
-      return {
-        trades: [],
-        quarterlyPerformance: [],
-        quarterlyGamePerformance: [],
-        demonTrackerData: [],
-        bestQuarter: null,
-        worstQuarter: null,
-      };
-    }
-  }
-
-  
-  private async calculateQuarterlyPerformance(
-    trades: Trade[],
-    year: number
-  ): Promise<QuarterlyPerformanceData[]> {
-    try {
-      const quarterlyData = new Map<number, QuarterlyPerformanceData>();
-
-      const quarterEntries = await Promise.all(
-        [1, 2, 3, 4].map(async (quarter) => {
-          const quarterStart = getQuarterStartDate(year, quarter);
-          const quarterEnd = getQuarterEndDate(year, quarter);
-
-          let quarterlyReviewPath: string | undefined;
-          if (this.folderPathService) {
-            quarterlyReviewPath =
-              await this.folderPathService.getQuarterlyReviewPath(
-                year,
-                quarter
-              );
-          }
-
-          return [
-            quarter,
-            {
-              quarter,
-              quarterStartDate: quarterStart,
-              quarterEndDate: quarterEnd,
-              trades: 0,
-              winRate: 0,
-              profitFactor: 0,
-              pnl: 0,
-              quarterlyReviewPath,
-            },
-          ] as const;
-        })
-      );
-      quarterEntries.forEach(([quarter, quarterData]) => {
-        quarterlyData.set(quarter, quarterData);
-      });
-
-      const pnlContributingTrades = getPnlContributingTrades(trades);
-
-      pnlContributingTrades.forEach((trade: Trade) => {
-        const tradeDate = new Date(trade.entryTime);
-        const tradeQuarter = getQuarterForMonth(tradeDate.getMonth() + 1);
-
-        if (quarterlyData.has(tradeQuarter)) {
-          const quarterStats = quarterlyData.get(tradeQuarter)!;
-          quarterStats.trades++;
-          quarterStats.pnl += getEffectivePnL(trade);
-        }
-      });
-
-      quarterlyData.forEach((quarterStats, quarter) => {
-        const quarterTrades = pnlContributingTrades.filter((trade) => {
-          const tradeDate = new Date(trade.entryTime);
-          return getQuarterForMonth(tradeDate.getMonth() + 1) === quarter;
-        });
-
-        const pnlContributingQuarterTrades =
-          getPnlContributingTrades(quarterTrades);
-        const winningTrades = pnlContributingQuarterTrades.filter(
-          (t) => getEffectivePnL(t) > 0
-        );
-        const losingTrades = pnlContributingQuarterTrades.filter(
-          (t) => getEffectivePnL(t) < 0
-        );
-
-        quarterStats.winRate = calculateWinRateExcludingBreakeven(
-          winningTrades.length,
-          losingTrades.length
-        );
-
-        const totalWins = sumEffectivePnL(winningTrades);
-        const totalLosses = Math.abs(sumEffectivePnL(losingTrades));
-
-        quarterStats.profitFactor =
-          totalLosses > 0
-            ? totalWins / totalLosses
-            : totalWins > 0
-              ? Infinity
-              : 0;
-      });
-
-      return Array.from(quarterlyData.values()).sort(
-        (a, b) => a.quarter - b.quarter
-      );
-    } catch (error) {
-      console.error('Error calculating quarterly performance:', error);
-      return [];
-    }
-  }
-
-  
   public async updateYearlyReviewFrontmatter(
     filePath: string,
-
     updates: Partial<Record<string, unknown>>
   ): Promise<void> {
     try {
-      const file = this.app.vault.getAbstractFileByPath(filePath);
-
-      if (!file || !(file instanceof TFile)) {
-        throw new Error(`Yearly Review file not found: ${filePath}`);
-      }
-
-      await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-        const frontmatterRecord = asRecord(frontmatter) ?? {};
-        const { imagesByWidget, ...rest } = updates;
-        Object.assign(frontmatterRecord, rest);
-
-        if (
-          imagesByWidget &&
-          typeof imagesByWidget === 'object' &&
-          !Array.isArray(imagesByWidget)
-        ) {
-          const existingByWidget =
-            asRecord(frontmatterRecord.imagesByWidget) ?? {};
-          frontmatterRecord.imagesByWidget = {
-            ...existingByWidget,
-            ...imagesByWidget,
-          };
-        } else if (imagesByWidget !== undefined) {
-          frontmatterRecord.imagesByWidget = imagesByWidget;
-        }
-      });
-
-      await Promise.all([
-        forceMetadataCacheRefresh(this.app, file),
-        this.clearCache(),
-      ]);
-      this.yearlyDataCache.clear();
-
-      return;
+      await this.updateYearlyReviewFrontmatterCore(
+        filePath,
+        updates,
+        () => undefined,
+        undefined
+      );
     } catch (error) {
       console.error(
         `Error updating Yearly Review frontmatter in ${filePath}:`,
@@ -1013,5 +856,47 @@ export class YearlyReviewService extends CustomDataService {
       );
       throw error;
     }
+  }
+
+  public async updateYearlyReviewFrontmatterGuarded(
+    filePath: string,
+    updates: Partial<Record<string, unknown>>,
+    guard: ReviewFrontmatterGuard,
+    source?: string
+  ): Promise<void> {
+    await this.updateYearlyReviewFrontmatterCore(
+      filePath,
+      updates,
+      guard,
+      source
+    );
+  }
+
+  private async updateYearlyReviewFrontmatterCore(
+    filePath: string,
+    updates: Partial<Record<string, unknown>>,
+    guard: ReviewFrontmatterGuard,
+    source: string | undefined
+  ): Promise<void> {
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile))
+      throw new Error(`Yearly Review file not found: ${filePath}`);
+    await this.app.fileManager.processFrontMatter(
+      file,
+      (frontmatter: Record<string, unknown>) => {
+        guard(frontmatter);
+        applyReviewFrontmatterUpdates(frontmatter, updates);
+      }
+    );
+    await Promise.all([
+      forceMetadataCacheRefresh(this.app, file),
+      this.clearCache(),
+    ]);
+    eventBus.publish('review:changed', {
+      type: 'yearly',
+      action: 'updated',
+      filePath,
+      ...(source === undefined ? {} : { source }),
+    });
   }
 }

@@ -6,6 +6,7 @@ import { resetPluginHookState } from '../hooks/usePlugin';
 import { EventBus } from '../services/events/EventBus';
 import { clearTokenManager } from '../services/backend/TokenManager';
 import { cleanupBottomLeftNotificationHost } from '../components/notifications/BottomLeftNotificationHost';
+import { teardownCalendarStyleFixes } from '../components/dashboard/utils/calendarStyles';
 
 
 interface ElementWithEmpty {
@@ -21,7 +22,17 @@ export class PluginCleanupManager {
 
   
   async cleanup(): Promise<void> {
+    if (this.plugin.serviceManager) {
+      try {
+        await this.plugin.serviceManager.shutdownAgentRelaySessionService();
+      } catch {
+        // intentional
+      }
+    }
+
     this.plugin.graphLinkService?.destroy();
+    this.plugin.dayTradeFieldsService?.destroy();
+    this.plugin.externalTradeEditWatcher?.destroy();
     this.plugin.tradeSyncCoordinator?.destroy();
     this.plugin.tradeSyncCoordinator = null;
     this.plugin.tradeOperationSyncToast?.cleanup();
@@ -204,5 +215,9 @@ export class PluginCleanupManager {
       this.plugin.updateNotificationService = null;
     }
     cleanupBottomLeftNotificationHost();
+
+    
+    
+    teardownCalendarStyleFixes();
   }
 }

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Component, Modal, TFile } from 'obsidian';
+import { Component, TFile } from 'obsidian';
 import { createRoot, type Root } from 'react-dom/client';
 
 import type JournalitPlugin from '../../main';
@@ -76,6 +76,7 @@ import type {
   SetupViewModel,
   TradeRecordForSetups,
 } from './setupsViewTypes';
+import { JournalitModal } from '../modals/JournalitModal';
 
 const OVERVIEW_R_METRIC_KEYS = new Set<MetricKey>([
   'cumulativeR',
@@ -403,7 +404,7 @@ export async function openSetupLinkedNotePath(
   await plugin.app.workspace.openLinkText(notePath, sourcePath, true);
 }
 
-class SetupLinkedNotesModal extends Modal {
+class SetupLinkedNotesModal extends JournalitModal {
   constructor(
     private plugin: JournalitPlugin,
     private setupName: string,
@@ -448,7 +449,7 @@ class SetupLinkedNotesModal extends Modal {
   }
 }
 
-class SetupPlaybookNoteModal extends Modal {
+class SetupPlaybookNoteModal extends JournalitModal {
   private root: Root | null = null;
 
   constructor(
@@ -512,7 +513,7 @@ class SetupPlaybookNoteModal extends Modal {
   }
 }
 
-export function prioritizeSetupLinkedNote(
+function prioritizeSetupLinkedNote(
   linkedNotes: string[],
   playbookNotePath: string
 ): string[] {

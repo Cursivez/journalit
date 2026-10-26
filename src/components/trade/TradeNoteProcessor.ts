@@ -7,7 +7,7 @@ import {
   MarkdownView,
   TFile,
 } from 'obsidian';
-import { isViewWithTFile } from '../../types/obsidian-extensions';
+
 import { TradeNoteRenderer } from './TradeNoteRenderer';
 import { BaseComponentProcessor } from '../base/BaseComponentProcessor';
 import { eventBus } from '../../services/events/EventBus';
@@ -21,6 +21,7 @@ import { readFrontmatterFromDisk } from '../../utils/dataRefresh';
 import { TradeNoteShareAction } from './TradeNoteShareAction';
 import { ReadingHostResizeObserver } from './ReadingHostResizeObserver';
 import type JournalitPlugin from '../../main';
+import { NOTE_EXCERPT_ATTRIBUTE } from '../../utils/noteExcerpt';
 
 const READING_RENDER_GRACE_PERIOD_MS = 3000;
 const INLINE_RENDER_COMMIT_TIMEOUT_MS = 5000;
@@ -46,6 +47,34 @@ class InlineTradeNoteRenderChild extends MarkdownRenderChild {
   }
 }
 
+const FOCUSABLE_CONTROL_SELECTOR =
+  'button, input, select, textarea, a[href], [tabindex]';
+
+
+function getFocusedControlIndex(container: HTMLElement): number {
+  const active = container.ownerDocument.activeElement;
+  if (!active || !container.contains(active)) return -1;
+  return Array.from(
+    container.querySelectorAll(FOCUSABLE_CONTROL_SELECTOR)
+  ).indexOf(active);
+}
+
+
+function restoreFocusedControl(container: HTMLElement, index: number): void {
+  if (index === -1) return;
+  const active = container.ownerDocument.activeElement;
+  if (
+    active &&
+    active !== container.ownerDocument.body &&
+    !container.contains(active)
+  )
+    return;
+  const controls = container.querySelectorAll<HTMLElement>(
+    FOCUSABLE_CONTROL_SELECTOR
+  );
+  controls[index]?.focus({ preventScroll: true });
+}
+
 export class TradeNoteProcessor extends BaseComponentProcessor {
   
   private unsubscribeTradeListener: Unsubscribe | null = null;
@@ -67,13 +96,19 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
   private readonly shareAction: TradeNoteShareAction;
   private readonly readingHostResizeObserver = new ReadingHostResizeObserver();
   constructor(app: App, plugin: JournalitPlugin) {
-    super(app, plugin, new TradeNoteRenderer(app));
-    this.shareAction = new TradeNoteShareAction(app, plugin, (file) => {
-      const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
-      return (
-        frontmatter !== undefined && this.isValidComponentType(frontmatter)
-      );
-    });
+    const renderer = new TradeNoteRenderer(app);
+    super(app, plugin, renderer);
+    this.shareAction = new TradeNoteShareAction(
+      app,
+      plugin,
+      (file) => {
+        const frontmatter = app.metadataCache.getFileCache(file)?.frontmatter;
+        return (
+          frontmatter !== undefined && this.isValidComponentType(frontmatter)
+        );
+      },
+      renderer
+    );
 
     
     this.setupTradeUpdateListener();
@@ -210,7 +245,8 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
       element.closest('.markdown-embed') ||
       element.closest('.markdown-source-view') ||
       element.closest('.cm-editor') ||
-      element.closest(`.${this.getComponentClassName()}`)
+      element.closest(`.${this.getComponentClassName()}`) ||
+      element.closest(`[${NOTE_EXCERPT_ATTRIBUTE}]`)
     ) {
       return;
     }
@@ -738,25 +774,6 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
   }
 
   
-  private disconnectObserverSafely(observer: MutationObserver): void {
-    
-    const timeout = this.observerTimeouts.get(observer);
-    if (timeout) {
-      window.clearTimeout(timeout);
-      this.observerTimeouts.delete(observer);
-    }
-
-    
-    observer.disconnect();
-
-    
-    const index = this.activeObservers.indexOf(observer);
-    if (index > -1) {
-      this.activeObservers.splice(index, 1);
-    }
-  }
-
-  
   protected async handleFileOpen(
     file: TFile | null,
     _isInitialLoad: boolean = false
@@ -808,38 +825,6 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
   }
 
   
-  private renderAllActiveTradeNotes(): void {
-    
-    this.app.workspace.iterateAllLeaves((leaf) => {
-      try {
-        
-        if (!leaf.view || !isViewWithTFile(leaf.view)) return;
-
-        
-        const file = leaf.view.file;
-
-        
-        if (!this.isLikelyTradeCandidate(file)) return;
-
-        
-        window.setTimeout(() => {
-          if (leaf.view instanceof MarkdownView) {
-            void this.renderTradeNoteInView(leaf.view);
-            return;
-          }
-
-          this.invokeHandleFileOpenSafely(file, true);
-        }, 300);
-      } catch (error) {
-        console.error(
-          '[TradeNote] Error rendering active trade note at startup:',
-          error
-        );
-      }
-    });
-  }
-
-  
   public async renderActiveComponent(): Promise<void> {
     await this.renderActiveTradeNote();
   }
@@ -857,6 +842,19 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
       }
       container.remove();
     });
+  }
+
+  private isOpenInMarkdownView(filePath: string): boolean {
+    let isOpen = false;
+    this.app.workspace.iterateAllLeaves((leaf) => {
+      if (
+        leaf.view instanceof MarkdownView &&
+        leaf.view.file?.path === filePath
+      ) {
+        isOpen = true;
+      }
+    });
+    return isOpen;
   }
 
   private findTradeNoteElementsForPath(filePath: string): HTMLElement[] {
@@ -897,6 +895,11 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
           payload.action === 'trade-review-updated' ||
           payload.action === 'loss-review-updated'
         ) {
+          return;
+        }
+        
+        
+        if ('journalFieldsOnly' in payload && payload.journalFieldsOnly) {
           return;
         }
 
@@ -944,6 +947,16 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
 
   
   private async refreshTradeNote(file: TFile): Promise<void> {
+    
+    
+    
+    
+    if (
+      this.findTradeNoteElementsForPath(file.path).length === 0 &&
+      !this.isOpenInMarkdownView(file.path)
+    ) {
+      return;
+    }
     try {
       
       const frontmatter = await readFrontmatterFromDisk(this.app, file);
@@ -971,6 +984,15 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
           container.getAttribute('data-editor-id');
 
         if (viewId) {
+          
+          
+          
+          const editorScroller = container.closest<HTMLElement>('.cm-scroller');
+          const preservedScrollTop = editorScroller?.scrollTop ?? 0;
+          
+          
+          const focusedControlIndex = getFocusedControlIndex(container);
+
           this.renderer.unmountContainer(container);
           container.classList.remove('trade-note-mounted');
           container.removeAttribute('data-mounted-at');
@@ -994,6 +1016,10 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
               viewId,
               viewId
             );
+            if (focusedControlIndex !== -1) {
+              await this.waitForTradeNoteCommit(container);
+              restoreFocusedControl(container, focusedControlIndex);
+            }
             continue;
           }
 
@@ -1018,6 +1044,13 @@ export class TradeNoteProcessor extends BaseComponentProcessor {
               }
             }, 50);
           });
+
+          const restoreScroll = editorScroller && preservedScrollTop > 0;
+          if (restoreScroll || focusedControlIndex !== -1) {
+            await this.waitForTradeNoteCommit(container);
+            if (restoreScroll) editorScroller.scrollTop = preservedScrollTop;
+            restoreFocusedControl(container, focusedControlIndex);
+          }
         }
       }
 

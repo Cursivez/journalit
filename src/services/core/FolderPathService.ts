@@ -7,10 +7,18 @@ import { Unsubscribe } from '../events/types';
 import { getQuarterForMonth, getQuarterString } from '../../utils/dateUtils';
 import type { JournalSettingsContext } from '../../demo/DemoSettingsScope';
 
+
+const MAX_JOURNAL_PATH_RESULTS = 100_000;
+
 export class FolderPathService {
   private app: App;
   private plugin: JournalitPlugin;
   private _currentPath: string;
+  
+  private journalPathResults: { root: string; byPath: Map<string, boolean> } = {
+    root: '',
+    byPath: new Map(),
+  };
   private _callbacks: Set<(newPath: string) => void> = new Set();
   private unsubscribeSettings?: Unsubscribe;
   private activeContext: JournalSettingsContext = 'real';
@@ -207,18 +215,24 @@ export class FolderPathService {
 
   
   public isJournalPath(path: string): boolean {
-    const normalizedPath = normalizePath(path);
     const journalPath = this._currentPath;
-
     
-    if (normalizedPath.includes('-backup-')) {
-      return false;
+    if (this.journalPathResults.root !== journalPath) {
+      this.journalPathResults = { root: journalPath, byPath: new Map() };
     }
+    const results = this.journalPathResults.byPath;
+    const known = results.get(path);
+    if (known !== undefined) return known;
 
-    return (
-      normalizedPath.startsWith(journalPath + '/') ||
-      normalizedPath === journalPath
-    );
+    const normalizedPath = normalizePath(path);
+    const isJournal =
+      
+      !normalizedPath.includes('-backup-') &&
+      (normalizedPath.startsWith(journalPath + '/') ||
+        normalizedPath === journalPath);
+    if (results.size >= MAX_JOURNAL_PATH_RESULTS) results.clear();
+    results.set(path, isJournal);
+    return isJournal;
   }
 
   

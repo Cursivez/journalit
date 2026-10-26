@@ -2,7 +2,10 @@
 
 import type {
   ReviewTemplate,
+  TradeNoteBodySection,
+  TradeNoteSectionId,
   TradeTemplate,
+  TradeTemplateAssetType,
   WidgetPlacement,
 } from '../../types/reviewV2';
 import {
@@ -26,7 +29,13 @@ interface TradeTemplateExportPayload {
   type: 'trade';
   sections: TradeTemplate['sections'];
   display: TradeTemplate['display'];
+  sectionOrder?: TradeTemplate['sectionOrder'];
+  assetDefaults?: TradeTemplate['assetDefaults'];
+  assetOverrides?: TradeTemplate['assetOverrides'];
+  noteSections?: TradeTemplate['noteSections'];
 }
+
+type TradeAssetLayouts = NonNullable<TradeTemplate['assetOverrides']>;
 
 
 type TemplateExportPayload =
@@ -97,10 +106,130 @@ function hasValidTradeReviewQuestionGraphs(
   });
 }
 
+
+function hasValidTradeReviewNotesSections(widgets: WidgetPlacement[]): boolean {
+  return widgets.every((widget) => {
+    const value = widget.config?.notesSections;
+    if (widget.type !== 'trade-review' || value === undefined) return true;
+    return (
+      Array.isArray(value) && value.every((item) => typeof item === 'string')
+    );
+  });
+}
+
 function isTradeTemplateSections(
   value: unknown
 ): value is TradeTemplateExportPayload['sections'] {
   return isRecord(value);
+}
+
+
+const TRADE_NOTE_SECTION_IDS: Record<TradeNoteSectionId, true> = {
+  navigation: true,
+  images: true,
+  metrics: true,
+  thesis: true,
+  missedReason: true,
+  metadata: true,
+  reviewButton: true,
+};
+
+const TRADE_TEMPLATE_ASSET_TYPES: Record<TradeTemplateAssetType, true> = {
+  stock: true,
+  options: true,
+  futures: true,
+  forex: true,
+  crypto: true,
+  cfd: true,
+};
+
+const TRADE_NOTE_SECTION_ID_SET: ReadonlySet<string> = new Set(
+  Object.keys(TRADE_NOTE_SECTION_IDS)
+);
+const TRADE_TEMPLATE_ASSET_TYPE_SET: ReadonlySet<string> = new Set(
+  Object.keys(TRADE_TEMPLATE_ASSET_TYPES)
+);
+
+function isTradeNoteSectionId(value: unknown): value is TradeNoteSectionId {
+  return typeof value === 'string' && TRADE_NOTE_SECTION_ID_SET.has(value);
+}
+
+function isTradeTemplateAssetType(
+  value: string
+): value is TradeTemplateAssetType {
+  return TRADE_TEMPLATE_ASSET_TYPE_SET.has(value);
+}
+
+
+function parseSectionOrder(value: unknown): TradeNoteSectionId[] | null {
+  if (!Array.isArray(value) || !value.every(isTradeNoteSectionId)) return null;
+  return new Set(value).size === value.length ? value : null;
+}
+
+function isPartialTradeTemplateSections(
+  value: unknown
+): value is Partial<TradeTemplate['sections']> {
+  return isRecord(value);
+}
+
+function parseAssetLayouts(value: unknown): TradeAssetLayouts | null {
+  if (!isRecord(value)) return null;
+  const layouts: TradeAssetLayouts = {};
+  for (const [assetType, layout] of Object.entries(value)) {
+    if (!isTradeTemplateAssetType(assetType) || !isRecord(layout)) return null;
+    const sectionOrder =
+      layout.sectionOrder === undefined
+        ? undefined
+        : parseSectionOrder(layout.sectionOrder);
+    if (sectionOrder === null) return null;
+    const { sections } = layout;
+    if (sections !== undefined && !isPartialTradeTemplateSections(sections)) {
+      return null;
+    }
+    layouts[assetType] = { sectionOrder, sections };
+  }
+  return layouts;
+}
+
+function parseNoteSections(value: unknown): TradeNoteBodySection[] | null {
+  if (!Array.isArray(value)) return null;
+  const sections: TradeNoteBodySection[] = [];
+  for (const item of value) {
+    if (
+      !isRecord(item) ||
+      typeof item.id !== 'string' ||
+      typeof item.text !== 'string'
+    ) {
+      return null;
+    }
+    if (item.type === 'zone') {
+      sections.push({ id: item.id, type: 'zone', text: item.text });
+    } else if (
+      item.type === 'header' &&
+      typeof item.level === 'number' &&
+      Number.isInteger(item.level) &&
+      item.level >= 1 &&
+      item.level <= 6
+    ) {
+      sections.push({
+        id: item.id,
+        type: 'header',
+        level: item.level,
+        text: item.text,
+      });
+    } else {
+      return null;
+    }
+  }
+  return sections;
+}
+
+
+function parseOptional<T>(
+  value: unknown,
+  parse: (value: unknown) => T | null
+): T | undefined | null {
+  return value === undefined ? undefined : parse(value);
 }
 
 function isTradeTemplateDisplay(
@@ -124,11 +253,31 @@ function parseTemplateExportPayload(
       return null;
     }
 
+    const sectionOrder = parseOptional(value.sectionOrder, parseSectionOrder);
+    const assetDefaults = parseOptional(value.assetDefaults, parseAssetLayouts);
+    const assetOverrides = parseOptional(
+      value.assetOverrides,
+      parseAssetLayouts
+    );
+    const noteSections = parseOptional(value.noteSections, parseNoteSections);
+    if (
+      sectionOrder === null ||
+      assetDefaults === null ||
+      assetOverrides === null ||
+      noteSections === null
+    ) {
+      return null;
+    }
+
     return {
       name: value.name,
       type: 'trade',
       sections: value.sections,
       display: value.display,
+      sectionOrder,
+      assetDefaults,
+      assetOverrides,
+      noteSections,
     };
   }
 
@@ -184,6 +333,10 @@ export class TemplateSharingService {
       type: 'trade',
       sections: template.sections,
       display: template.display,
+      sectionOrder: template.sectionOrder,
+      assetDefaults: template.assetDefaults,
+      assetOverrides: template.assetOverrides,
+      noteSections: template.noteSections,
     };
 
     return this.encodePayload(payload);
@@ -286,6 +439,12 @@ export class TemplateSharingService {
           error: 'Invalid template: malformed Trade Review question graph',
         };
       }
+      if (!hasValidTradeReviewNotesSections(reviewPayload.widgets)) {
+        return {
+          valid: false,
+          error: 'Invalid template: malformed Trade Review notes sections',
+        };
+      }
     } else {
       return {
         valid: false,
@@ -331,6 +490,10 @@ export class TemplateSharingService {
         isBuiltIn: false,
         sections: tradePayload.sections,
         display: tradePayload.display,
+        sectionOrder: tradePayload.sectionOrder,
+        assetDefaults: tradePayload.assetDefaults,
+        assetOverrides: tradePayload.assetOverrides,
+        noteSections: tradePayload.noteSections,
       });
     } else {
       const existingTemplates = reviewTemplateService.getTemplates(

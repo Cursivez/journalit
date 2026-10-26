@@ -1,6 +1,7 @@
 
 
 import { App, TFile, parseYaml } from 'obsidian';
+import { isMetadataCacheCurrent } from '../services/base/metadataCacheReadiness';
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
   value && typeof value === 'object' && !Array.isArray(value)
@@ -32,83 +33,45 @@ export function parseFrontmatterFromContentOrThrow(
     /^---\r?\n([\s\S]*?)\r?\n---(?:\r?\n|$)/
   );
   if (!frontmatterMatch) {
-    throw new Error('Trade note frontmatter is missing');
+    throw new Error('Note frontmatter is missing');
   }
 
   const parsed: unknown = parseYaml(frontmatterMatch[1]);
   const record = asRecord(parsed);
   if (!record) {
-    throw new Error('Trade note frontmatter must be a YAML mapping');
+    throw new Error('Note frontmatter must be a YAML mapping');
   }
   return record;
 }
 
-function snapshotFrontmatter(
-  appInstance: App,
-  file: TFile
-): string | undefined {
-  const frontmatter = appInstance.metadataCache.getFileCache(file)?.frontmatter;
-  if (!frontmatter) {
-    return undefined;
-  }
 
-  try {
-    return JSON.stringify(frontmatter);
-  } catch {
-    return undefined;
-  }
-}
-
-
-async function waitForMetadataCacheChanged(
+export function waitForMetadataReparse(
   appInstance: App,
   file: TFile,
-  timeoutMs: number,
-  initialSnapshot?: string
+  timeoutMs: number = 100,
+  write?: Promise<unknown>
 ): Promise<void> {
-  const metadataCache =
-    appInstance.metadataCache as typeof appInstance.metadataCache & {
-      on?: (
-        eventName: string,
-        callback: (...args: unknown[]) => void
-      ) => unknown;
-      off?: (
-        eventName: string,
-        callback: (...args: unknown[]) => void
-      ) => unknown;
+  const { metadataCache } = appInstance;
+  return new Promise((resolve) => {
+    let settled = false;
+    let timer: number | undefined;
+    const onChanged = (changedFile: TFile) => {
+      if (changedFile.path === file.path) finish();
     };
-
-  const deadline = Date.now() + Math.max(0, timeoutMs);
-  let observedChangedEvent = false;
-
-  const handleChanged = (changedFile: TFile | null) => {
-    if (changedFile?.path === file.path) {
-      observedChangedEvent = true;
+    metadataCache.on('changed', onChanged);
+    const startTimeout = () => {
+      if (!settled) timer = window.setTimeout(finish, Math.max(0, timeoutMs));
+    };
+    
+    if (write) void write.then(startTimeout, startTimeout);
+    else startTimeout();
+    function finish(): void {
+      settled = true;
+      window.clearTimeout(timer);
+      metadataCache.off('changed', onChanged);
+      resolve();
     }
-  };
-
-  if (typeof metadataCache.on === 'function') {
-    metadataCache.on('changed', handleChanged);
-  }
-
-  try {
-    while (Date.now() < deadline) {
-      if (observedChangedEvent) {
-        return;
-      }
-
-      const currentSnapshot = snapshotFrontmatter(appInstance, file);
-      if (currentSnapshot !== initialSnapshot) {
-        return;
-      }
-
-      await new Promise((resolve) => window.setTimeout(resolve, 25));
-    }
-  } finally {
-    if (typeof metadataCache.off === 'function') {
-      metadataCache.off('changed', handleChanged);
-    }
-  }
+  });
 }
 
 
@@ -117,19 +80,23 @@ export async function forceMetadataCacheRefresh(
   file: TFile,
   delay: number = 100
 ): Promise<void> {
-  const initialSnapshot = snapshotFrontmatter(appInstance, file);
+  const reparsed = waitForMetadataReparse(appInstance, file, delay);
 
   
   
   
   await appInstance.vault.cachedRead(file);
+  await reparsed;
+}
 
-  await waitForMetadataCacheChanged(
-    appInstance,
-    file,
-    Math.max(0, delay),
-    initialSnapshot
-  );
+
+export async function waitForFileIndexed(
+  appInstance: App,
+  file: TFile,
+  timeoutMs: number = 100
+): Promise<void> {
+  if (appInstance.metadataCache.getFileCache(file)) return;
+  await waitForMetadataReparse(appInstance, file, timeoutMs);
 }
 
 
@@ -144,6 +111,18 @@ export async function readFileContentFromDisk(
   return typeof vault.read === 'function'
     ? vault.read(file)
     : appInstance.vault.cachedRead(file);
+}
+
+
+export async function readCurrentFrontmatter(
+  appInstance: App,
+  file: TFile
+): Promise<Readonly<Record<string, unknown>>> {
+  const cache = appInstance.metadataCache.getFileCache(file);
+  if (cache && isMetadataCacheCurrent(appInstance, file)) {
+    return cache.frontmatter ?? {};
+  }
+  return readFrontmatterFromDisk(appInstance, file);
 }
 
 

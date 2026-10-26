@@ -91,6 +91,8 @@ const FIELD_HELP = {
     'account.prop-challenge.payout-rules.help.trader-share',
   'account.prop-challenge.payout-rules.profit-split.below':
     'account.prop-challenge.payout-rules.help.trader-share',
+  'account.prop-challenge.payout-rules.profit-split.above':
+    'account.prop-challenge.payout-rules.help.trader-share',
   'account.prop-challenge.payout-rules.profit-split.at-or-above':
     'account.prop-challenge.payout-rules.help.trader-share',
   'account.prop-challenge.payout-rules.profit-split.threshold-amount':
@@ -133,13 +135,15 @@ export function PayoutPolicyFieldHelp({
 }
 
 type FieldProps = Pick<HelpLabelProps, 'translationKey'> &
-  PropChallengeFieldControlProps;
+  PropChallengeFieldControlProps & {
+    description?: string;
+  };
 
 export function PayoutPolicyField(props: FieldProps) {
   return (
     <PropChallengeField
       {...props}
-      description={t(FIELD_HELP[props.translationKey])}
+      description={props.description ?? t(FIELD_HELP[props.translationKey])}
     />
   );
 }

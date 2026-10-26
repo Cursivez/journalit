@@ -13,6 +13,6 @@ export const ANCHORED_MENU_STYLES = `
   border: 1px solid var(--background-modifier-border);
   border-radius: 4px;
   background: var(--background-primary);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-s);
 }
 `;

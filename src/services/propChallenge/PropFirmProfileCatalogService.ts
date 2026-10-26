@@ -75,6 +75,7 @@ export class PropFirmProfileCatalogService {
     const url = ApiClient.buildUrl('/api/v1/prop-firm-profiles');
     let responseStatus = 0;
     let responseEtag: string | undefined;
+    let responseContract: string | undefined;
     try {
       const response = await ApiClient.makeRequest<unknown>(
         url,
@@ -82,6 +83,7 @@ export class PropFirmProfileCatalogService {
           method: 'GET',
           headers: {
             'x-endpoint': '/api/v1/prop-firm-profiles',
+            'X-Prop-Catalog-Contract': '4',
             ...(cache?.etag ? { 'If-None-Match': cache.etag } : {}),
           },
         },
@@ -94,6 +96,7 @@ export class PropFirmProfileCatalogService {
           onResponse: (metadata) => {
             responseStatus = metadata.status;
             responseEtag = metadata.getHeader('etag');
+            responseContract = metadata.getHeader('X-Prop-Catalog-Contract');
           },
         }
       );
@@ -105,6 +108,10 @@ export class PropFirmProfileCatalogService {
       ) {
         return { kind: 'unavailable' };
       }
+      
+      
+      if (responseContract !== '4')
+        return { kind: 'unavailable', catalog: cache?.catalog };
       if (responseStatus === 304 && cache) {
         await this.persistCache({
           ...cache,
@@ -115,6 +122,7 @@ export class PropFirmProfileCatalogService {
       const catalog = normalizePropFirmProfileCatalog(response);
       if (!catalog) return { kind: 'unavailable', catalog: cache?.catalog };
       await this.persistCache({
+        contractVersion: 4,
         catalog,
         etag: responseEtag,
         fetchedAt: new Date().toISOString(),
@@ -205,7 +213,9 @@ export class PropFirmProfileCatalogService {
   }
 
   private getCache(): PropFirmProfileCatalogCache | undefined {
-    return this.plugin.settings.backendIntegration?.propFirmProfileCatalogCache;
+    const cache =
+      this.plugin.settings.backendIntegration?.propFirmProfileCatalogCache;
+    return cache?.contractVersion === 4 ? cache : undefined;
   }
 
   private async persistCache(

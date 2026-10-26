@@ -6,6 +6,15 @@ export const VIEW_GUIDE_STYLES = `
   pointer-events: none;
 }
 
+
+body.is-frameless > .journalit-view-guide-overlay {
+  -webkit-app-region: initial;
+}
+
+body.is-frameless .journalit-view-guide-popover {
+  -webkit-app-region: no-drag;
+}
+
 .journalit-view-guide-highlight {
   position: fixed;
   top: var(--journalit-guide-highlight-top, -9999px);
@@ -37,7 +46,7 @@ export const VIEW_GUIDE_STYLES = `
   background: var(--journalit-guide-card-bg);
   color: var(--journalit-guide-card-text);
   border-radius: 12px;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
+  box-shadow: var(--shadow-l);
   padding: 16px 18px;
   pointer-events: auto;
 }
@@ -51,7 +60,6 @@ export const VIEW_GUIDE_STYLES = `
   --journalit-guide-card-control-bg: #2c2a36;
   --journalit-guide-card-control-border: #474456;
   --journalit-guide-card-control-hover: #37343f;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.3);
 }
 
 .journalit-view-guide-popover--anchored {

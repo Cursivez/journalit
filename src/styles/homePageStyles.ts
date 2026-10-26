@@ -97,15 +97,20 @@ export const HOME_PAGE_STYLES = `
     overflow-x: hidden;
     opacity: 0;
     visibility: hidden;
+    
+    content-visibility: hidden;
     pointer-events: none;
     transition:
       opacity 140ms ease,
-      visibility 0s linear 140ms;
+      visibility 0s linear 140ms,
+      content-visibility 0s linear 140ms;
+    transition-behavior: allow-discrete;
   }
 
   .journalit-home-mode-panel.is-active {
     opacity: 1;
     visibility: visible;
+    content-visibility: visible;
     pointer-events: auto;
     transition-delay: 0s;
   }
@@ -131,6 +136,7 @@ export const HOME_PAGE_STYLES = `
     --journalit-dashboard-scrollbar-gutter: auto;
     --journalit-dashboard-content-overflow: hidden auto;
     --journalit-dashboard-content-scrollbar-gutter: stable;
+    --journalit-dashboard-content-contain: paint;
     --journalit-dashboard-widget-background: var(--journalit-home-widget-background);
     --journalit-dashboard-widget-header-opacity: 1;
     --journalit-dashboard-widget-title-color: var(--text-normal);
@@ -141,6 +147,8 @@ export const HOME_PAGE_STYLES = `
     box-sizing: border-box;
     min-height: 0;
     overflow: hidden auto;
+    
+    contain: paint;
     align-items: safe center;
   }
 
@@ -407,7 +415,7 @@ export const HOME_PAGE_STYLES = `
     background-color: var(--background-primary) !important;
     border: 1px solid var(--background-modifier-border) !important;
     border-radius: 4px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: var(--shadow-s) !important;
     z-index: 100;
     overflow: hidden;
   }
@@ -525,7 +533,7 @@ export const HOME_PAGE_STYLES = `
     border: 1px solid var(--background-modifier-border) !important;
     border-radius: 4px;
     margin-top: 4px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+    box-shadow: var(--shadow-s) !important;
     z-index: 100;
   }
 
@@ -924,7 +932,6 @@ export const HOME_PAGE_STYLES = `
     flex-direction: column;
     background-color: var(--background-primary);
     border-radius: 6px;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     overflow: hidden;
     border: 1px solid var(--background-modifier-border);
   }
@@ -982,30 +989,6 @@ export const HOME_PAGE_STYLES = `
   .journalit-home-grid-layout.is-editing .journalit-home-widget-content {
     pointer-events: none;
     user-select: none;
-  }
-
-  .journalit-home-static-grid {
-    display: grid;
-    grid-template-columns: repeat(var(--jit-grid-cols), minmax(0, 1fr));
-    grid-auto-rows: var(--jit-grid-row-height);
-    gap: var(--jit-grid-gap);
-    align-items: stretch;
-    width: 100%;
-    padding: 12px 0;
-    box-sizing: border-box;
-  }
-
-  .journalit-home-static-grid-item {
-    grid-column: var(--jit-grid-column);
-    grid-row: var(--jit-grid-row);
-    min-width: 0;
-    min-height: 0;
-    box-sizing: border-box;
-  }
-
-  .journalit-home-static-grid-item > .journalit-home-widget {
-    width: 100%;
-    height: 100%;
   }
 
   

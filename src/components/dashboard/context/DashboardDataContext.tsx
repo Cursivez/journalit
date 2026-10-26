@@ -18,6 +18,7 @@ import { areFilterMatchModesEqual } from '../../shared/filters/filterMatchModes'
 import { useEventBus } from '../../../hooks/useEventBus';
 import { t } from '../../../lang/helpers';
 import type JournalitPlugin from '../../../main';
+import type { SettingsChangedPayload } from '../../../services/events/types';
 
 
 interface MetricValue {
@@ -26,13 +27,19 @@ interface MetricValue {
   type: 'pnl' | 'percentage' | 'ratio' | 'number';
 }
 
+
+interface DashboardSnapshot {
+  data: DashboardData;
+  filters: FilterState;
+}
+
 interface DashboardDataContextValue {
   
+  
+  dashboardSnapshot: DashboardSnapshot | null;
   dashboardData: DashboardData | null;
   
   dataFilters: FilterState | null;
-  isLoading: boolean;
-  isStale: boolean;
   error: Error | null;
 
   
@@ -44,15 +51,16 @@ interface DashboardDataContextValue {
   getMetricData: (metricId: string) => MetricValue[];
 
   getWidgetData: (widgetId: string) => unknown;
-
-  
-  lastFetchTime: number;
-  isCacheValid: (maxAge?: number) => boolean;
 }
 
 const DashboardDataContext = createContext<DashboardDataContextValue | null>(
   null
 );
+
+interface DashboardDataState {
+  snapshot: DashboardSnapshot | null;
+  error: Error | null;
+}
 
 interface DashboardDataProviderProps {
   app: App;
@@ -67,7 +75,15 @@ interface DashboardDataProviderProps {
 
 const DEFAULT_CACHE_DURATION = 5000;
 
-const haveDashboardFiltersChanged = (
+
+export const isDashboardSettingsChange = (
+  payload: SettingsChangedPayload | undefined
+): boolean =>
+  payload?.section === 'trade' ||
+  payload?.section === 'general' ||
+  payload?.section === 'copyTradeAdjustments';
+
+export const haveDashboardFiltersChanged = (
   prevFilters: FilterState,
   currentFilters: FilterState
 ): boolean => {
@@ -119,6 +135,11 @@ const haveDashboardFiltersChanged = (
     prevFilters.directions.length !== currentFilters.directions.length ||
     !prevFilters.directions.every((direction) => directionsSet.has(direction));
 
+  const ratingsSet = new Set(currentFilters.ratings);
+  const ratingsChanged =
+    prevFilters.ratings.length !== currentFilters.ratings.length ||
+    !prevFilters.ratings.every((rating) => ratingsSet.has(rating));
+
   const mistakesSet = new Set(currentFilters.mistakes || []);
   const mistakesChanged =
     (prevFilters.mistakes?.length || 0) !==
@@ -154,6 +175,7 @@ const haveDashboardFiltersChanged = (
     tradeTypesChanged ||
     statusesChanged ||
     directionsChanged ||
+    ratingsChanged ||
     mistakesChanged ||
     tagsChanged ||
     customFieldFiltersChanged
@@ -264,6 +286,26 @@ const getDashboardWidgetData = (
   }
 };
 
+
+function useDashboardDataInvalidation(
+  invalidate: () => void,
+  filtersRef: React.RefObject<FilterState>
+): void {
+  useEventBus('trade-data:changed', invalidate);
+  useEventBus('backtest-trade:changed', invalidate);
+  useEventBus('missed-trade-data:changed', () => {
+    if (filtersRef.current.tradeTypes.includes('missed')) {
+      invalidate();
+    }
+  });
+  useEventBus('account:changed', invalidate);
+  
+  useEventBus('folder-path:changed', invalidate);
+  useEventBus('settings:changed', (payload) => {
+    if (isDashboardSettingsChange(payload)) invalidate();
+  });
+}
+
 export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   app,
   tradeService,
@@ -273,48 +315,36 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   plugin,
   isActive = true,
 }) => {
+  
+  
   const [state, dispatchState] = useReducer(
-    (
-      current: {
-        dashboardData: DashboardData | null;
-        dataFilters: FilterState | null;
-        isLoading: boolean;
-        isStale: boolean;
-        error: Error | null;
-        lastFetchTime: number;
-      },
-      update: Partial<{
-        dashboardData: DashboardData | null;
-        dataFilters: FilterState | null;
-        isLoading: boolean;
-        isStale: boolean;
-        error: Error | null;
-        lastFetchTime: number;
-      }>
-    ) => ({ ...current, ...update }),
-    {
-      dashboardData: null,
-      dataFilters: null,
-      isLoading: false,
-      isStale: false,
-      error: null,
-      lastFetchTime: 0,
-    }
+    (current: DashboardDataState, update: Partial<DashboardDataState>) => {
+      const next = { ...current, ...update };
+      if (
+        next.snapshot &&
+        current.snapshot &&
+        next.snapshot.data === current.snapshot.data &&
+        next.snapshot.filters === current.snapshot.filters
+      ) {
+        next.snapshot = current.snapshot;
+      }
+      return next.snapshot === current.snapshot && next.error === current.error
+        ? current
+        : next;
+    },
+    { snapshot: null, error: null }
   );
-  const {
-    dashboardData,
-    dataFilters,
-    isLoading,
-    isStale,
-    error,
-    lastFetchTime,
-  } = state;
+  const { snapshot: dashboardSnapshot, error } = state;
+  const dashboardData = dashboardSnapshot?.data ?? null;
+  const dataFilters = dashboardSnapshot?.filters ?? null;
 
   
   const fetchingRef = useRef(false);
   const pendingForceRefreshRef = useRef(false);
   const activeRefreshPromiseRef = useRef<Promise<void> | null>(null);
   const dataReadyRef = useRef(false);
+  
+  const authoritativeLoadPendingRef = useRef(false);
   const filtersRef = useRef(filters);
   const previousFiltersRef = useRef(filters);
   const wasActiveRef = useRef(isActive);
@@ -379,9 +409,9 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
           previousFiltersRef.current = filtersRef.current;
 
           fetchingRef.current = true;
-          dispatchState({ isLoading: true, error: null });
 
           const fetchFilters = filtersRef.current;
+          const freshTradeQuery = authoritativeLoadPendingRef.current;
           try {
             const data = await fetchDashboardData(
               app,
@@ -389,17 +419,16 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
               fetchFilters,
               defaultRiskAmount,
               plugin,
-              {
-                freshTradeQuery: dataReadyRef.current,
-              }
+              { freshTradeQuery }
             );
-            const timestamp = Date.now();
-            completedFetchRef.current = { hasData: true, timestamp };
+            if (freshTradeQuery) authoritativeLoadPendingRef.current = false;
+            completedFetchRef.current = {
+              hasData: true,
+              timestamp: Date.now(),
+            };
             dispatchState({
-              dashboardData: data,
-              dataFilters: fetchFilters,
-              lastFetchTime: timestamp,
-              isStale: false,
+              snapshot: { data, filters: fetchFilters },
+              error: null,
             });
           } catch (err) {
             console.error('Error fetching dashboard data:', err);
@@ -410,7 +439,6 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
                   : new Error('Failed to fetch dashboard data'),
             });
           } finally {
-            dispatchState({ isLoading: false, isStale: false });
             fetchingRef.current = false;
           }
 
@@ -451,17 +479,6 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   
   React.useEffect(() => {
     
-    const filtersChanged = haveDashboardFiltersChanged(
-      previousFiltersRef.current,
-      filters
-    );
-
-    if (filtersChanged && completedFetchRef.current.hasData) {
-      
-      dispatchState({ isStale: true });
-    }
-
-    
     
     
     if (!isActive) return;
@@ -485,23 +502,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
     }
   }, [refreshData]);
 
-  
-  useEventBus('trade:changed', handleDataInvalidation);
-  useEventBus('backtest-trade:changed', handleDataInvalidation);
-  useEventBus('account:changed', handleDataInvalidation);
-
-  
-  useEventBus('folder-path:changed', handleDataInvalidation);
-
-  useEventBus('settings:changed', (payload) => {
-    if (
-      payload?.section === 'trade' ||
-      payload?.section === 'general' ||
-      payload?.section === 'copyTradeAdjustments'
-    ) {
-      handleDataInvalidation();
-    }
-  });
+  useDashboardDataInvalidation(handleDataInvalidation, filtersRef);
 
   React.useEffect(() => {
     if (!isActive || dataReadyRef.current) return;
@@ -510,6 +511,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
     void tradeService.waitForTradeDataReady().then(() => {
       if (cancelled) return;
       dataReadyRef.current = true;
+      authoritativeLoadPendingRef.current = true;
       void refreshData(true);
     });
 
@@ -529,31 +531,25 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   
   const contextValue = useMemo<DashboardDataContextValue>(
     () => ({
+      dashboardSnapshot,
       dashboardData,
       dataFilters,
-      isLoading,
-      isStale,
       error,
       filters,
       refreshData: () => refreshData(false),
       forceRefreshData: () => refreshData(true),
       getMetricData,
       getWidgetData,
-      lastFetchTime,
-      isCacheValid,
     }),
     [
+      dashboardSnapshot,
       dashboardData,
       dataFilters,
-      isLoading,
-      isStale,
       error,
       filters,
       refreshData,
       getMetricData,
       getWidgetData,
-      lastFetchTime,
-      isCacheValid,
     ]
   );
 

@@ -68,3 +68,16 @@ export function getSizePrecision(assetType?: string): number {
       return 2;
   }
 }
+
+
+export function formatTradePositionSize(
+  value: number,
+  assetType: string | undefined,
+  locale: string
+): string {
+  const precision = getSizePrecision(assetType);
+  return roundToPrecision(value, precision).toLocaleString(locale, {
+    minimumFractionDigits: 0,
+    maximumFractionDigits: precision,
+  });
+}

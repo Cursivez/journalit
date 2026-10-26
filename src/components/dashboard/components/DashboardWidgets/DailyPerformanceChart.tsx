@@ -42,16 +42,12 @@ const parseDailyPeriod = (value: number): DailyPeriod | null => {
 
 
 export const DailyPerformanceChart = React.memo<BaseWidgetProps>(
-  ({ filters, dateFormat }) => {
+  ({ dateFormat }) => {
     const plugin = usePlugin();
     const [selectedPeriod, setSelectedPeriod] = useState<DailyPeriod>(20);
 
     return (
-      <BaseWidget
-        filters={filters}
-        dateFormat={dateFormat}
-        skeletonType="bar-chart"
-      >
+      <BaseWidget dateFormat={dateFormat} skeletonType="bar-chart">
         {(data, userDateFormat) => {
           
           const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;

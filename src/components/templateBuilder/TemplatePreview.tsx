@@ -54,6 +54,7 @@ import { KeyEventsWidget } from '../reviewV2/widgets/KeyEventsWidget';
 import { MissedTradesWidget } from '../reviewV2/widgets/MissedTradesWidget';
 import { BacktestTradesWidget } from '../reviewV2/widgets/BacktestTradesWidget';
 import { SessionMistakesWidget } from '../reviewV2/widgets/SessionMistakesWidget';
+import { DayTradeFieldsWidget } from '../reviewV2/widgets/DayTradeFieldsWidget';
 import { PreviousTradingDayContextWidget } from '../reviewV2/widgets/PreviousTradingDayContextWidget';
 import { WeeklyDRCContextWidget } from '../reviewV2/widgets/WeeklyDRCContextWidget';
 import { TradeReviewWidget } from '../reviewV2/widgets/TradeReviewWidget';
@@ -723,6 +724,29 @@ function getWidgetPreviewContent({
           <SessionMistakesWidget
             {...commonProps}
             previewData={{ mistakes: sessionMistakes }}
+          />
+        </div>
+      );
+
+    case 'day-trade-fields':
+      return (
+        <div className="journalit-widget journalit-day-trade-fields">
+          <DayTradeFieldsWidget
+            {...commonProps}
+            previewData={{
+              rows: [
+                {
+                  kind: 'setup',
+                  label: t('form.field.setup'),
+                  values: ['Opening Range Breakout'],
+                },
+                {
+                  kind: 'tags',
+                  label: t('widget.day-trade-fields.tags'),
+                  values: ['A+ Day', 'NFP'],
+                },
+              ],
+            }}
           />
         </div>
       );

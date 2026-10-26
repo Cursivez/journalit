@@ -2,11 +2,13 @@
 
 import { UnifiedFilters } from '../../components/shared/filters/types';
 import type { TradeCommittedPayload } from '../trade/core/tradeCoreTypes';
+import type { TradeJournalCommit } from '../trade/core/TradeJournalFields';
 
 export type { TradeCommittedPayload } from '../trade/core/tradeCoreTypes';
 
 
 export interface TradeChangedPayload {
+  journalFields?: TradeJournalCommit;
   action:
     | 'created'
     | 'updated'
@@ -26,6 +28,19 @@ export interface TradeChangedPayload {
 }
 
 
+export interface TradeDataChangedPayload {
+  
+  filePaths: string[] | 'all';
+}
+
+
+export interface TradeApplyingInPlacePayload {
+  filePaths: string[];
+  
+  keys: string[];
+}
+
+
 interface TradeFormOpenedPayload {
   mode: 'create' | 'edit';
   filePath?: string;
@@ -33,6 +48,7 @@ interface TradeFormOpenedPayload {
 
 
 export interface MissedTradeChangedPayload {
+  journalFieldsOnly?: boolean;
   action: 'created' | 'updated' | 'deleted';
   filePath?: string;
   timestamp?: number;
@@ -42,6 +58,7 @@ export interface MissedTradeChangedPayload {
 
 
 export interface BacktestTradeChangedPayload {
+  journalFieldsOnly?: boolean;
   action: 'created' | 'updated' | 'deleted';
   filePath?: string;
   timestamp?: number;
@@ -65,7 +82,7 @@ export interface SettingsChangedPayload {
   settings?: unknown;
 }
 
-export interface EntityShortcutsChangedPayload {
+interface EntityShortcutsChangedPayload {
   surface: 'home' | 'navigation' | 'all';
 }
 
@@ -169,6 +186,7 @@ interface RecentItemsChangedPayload {
 interface LayoutChangedPayload {
   view: 'home' | 'dashboard';
   layoutName: string;
+  source: 'ui' | 'agent';
 }
 
 
@@ -176,8 +194,12 @@ export interface EventMap {
   
   'trade:changed': TradeChangedPayload;
   'trade:committed': TradeCommittedPayload;
+  'trade-data:changed': TradeDataChangedPayload;
+  'trade:applying-in-place': TradeApplyingInPlacePayload;
   'trade-form:opened': TradeFormOpenedPayload;
   'missed-trade:changed': MissedTradeChangedPayload;
+  
+  'missed-trade-data:changed': TradeDataChangedPayload;
   'backtest-trade:changed': BacktestTradeChangedPayload;
 
   

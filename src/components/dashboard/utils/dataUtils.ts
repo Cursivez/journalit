@@ -1,5 +1,13 @@
 
 
+import {
+  createTimeSlicer,
+  startEachInSlices,
+} from '../../../utils/mainThreadYield';
+import {
+  parseStopLossTargets,
+  type StopLossTarget,
+} from '../../../services/trade/core/StopLossTargets';
 import { App, TFile } from 'obsidian';
 
 import { TradeService } from '../../../services/trade/TradeService';
@@ -14,6 +22,7 @@ import {
   isPnlContributingTrade,
   isTradeOpenPreservingNullPnl,
 } from '../../../utils/tradeStatusUtils';
+import { parseTradeRating } from '../../../utils/tradeRating';
 import {
   areSnapshotKeysClaimedByCustomFields,
   calculateUnrealizedPnL,
@@ -29,9 +38,13 @@ import {
   getTradeAnalyticsTradingDay,
 } from '../../../utils/tradeAnalyticsDate';
 import { getTradingDay } from '../../../utils/tradingDayUtils';
+import { CurrencyCode } from '../../../utils/currencyConfig';
+import {
+  analyticsDayContext,
+  createTradeDerivationCache,
+} from './tradeDerivationCache';
 import {
   type BreakEvenRangeSettings,
-  calculateWinRateExcludingBreakeven,
   classifyPnLByBreakEvenRange,
   classifyPnLWithBreakEvenSettings,
   normalizeBreakEvenRange,
@@ -44,11 +57,21 @@ import {
 } from '../../../utils/dateUtils';
 import { parseTradeDividendTransactions } from '../../../utils/tradeUtils';
 import { aggregatePnLByCurrency } from '../../../utils/currencyAggregation';
-import { ExchangeRateService } from '../../../services/exchangeRate/ExchangeRateService';
+import {
+  ExchangeRateService,
+  SameCurrencyConversionMemo,
+} from '../../../services/exchangeRate/ExchangeRateService';
 import { resolveScopedConversionRateDate } from '../../../services/exchangeRate/conversionAttribution';
 import { calculateHistoricalStreaks } from '../../../utils/tradeStreaks';
 import { inferStoredTradeType } from '../../../utils/tradeTypeRouting';
-import { calculateTradeReturnPercent } from '../../tradelog/tradeMetricUtils';
+import {
+  calculateExpectancySample,
+  type ExpectancySample,
+} from './expectancyGap';
+import {
+  calculateTradeReturnPercent,
+  type TradeMetricInput,
+} from '../../tradelog/tradeMetricUtils';
 import {
   getTradeMaeTicks,
   getTradeMaeValue,
@@ -60,6 +83,7 @@ import type JournalitPlugin from '../../../main';
 import {
   analyzeDrawdown,
   isNonAccountFilterActive,
+  drawdownCapitalBasisNeedsComputedCapital,
   resolveDrawdownCapitalBasis,
   type DrawdownCapitalBasis,
 } from '../../../utils/drawdownAnalytics';
@@ -80,7 +104,6 @@ import {
   resolveBreakEvenAccountBalances,
 } from '../../../services/trade/core/BreakEvenAccountBalance';
 import { normalizeTradeExecutionForAnalytics } from '../../../services/trade/core/TradeExecutionAnalytics';
-import { calculateProfitFactor } from '../../../utils/profitFactor';
 import { applyTradeFilters } from '../../shared/filters/filterUtils';
 import {
   accountsRequiringCopiedRows,
@@ -99,6 +122,19 @@ import {
   calculateCalmarRatio,
   type CalmarUnavailableReason,
 } from '../../../utils/calmarRatio';
+import {
+  AnalyticsService,
+  type AnalyticsConversionIssueTrades,
+  type AnalyticsPreparedDataset,
+  type DashboardMetricCalculationOptions,
+} from '../../../services/analytics/AnalyticsService';
+import {
+  createAnalyticsContext,
+  type AnalyticsContext,
+} from '../../../services/analytics/AnalyticsContext';
+import type { AnalyticsGroupingResolvers } from '../../../services/analytics/grouping';
+import { calculateCoreTradeMetrics } from '../../../services/analytics/metrics';
+import type { CustomFieldDefinition } from '../../../types/customFields';
 
 
 
@@ -112,9 +148,6 @@ const createValidDate = (dateInput: unknown, fallback?: Date): Date => {
 
 const formatScalarId = (value: unknown): string | null =>
   typeof value === 'string' || typeof value === 'number' ? String(value) : null;
-
-const toRecord = (value: object): Record<string, unknown> =>
-  Object.fromEntries(Object.entries(value));
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -240,6 +273,66 @@ interface DashboardDataFetchOptions {
   executionScopedDateRange?: boolean;
 }
 
+export class AnalyticsPreparationError extends Error {
+  constructor() {
+    super('Analytics data is temporarily unavailable.');
+    this.name = 'AnalyticsPreparationError';
+  }
+}
+
+interface PreparedDashboardAnalytics {
+  dataset: AnalyticsPreparedDataset;
+  context: AnalyticsContext;
+  customFieldDefinitions: readonly Readonly<CustomFieldDefinition>[];
+  skippedTradeFileCount: number;
+  createAnalyticsService: (options?: {
+    groupingResolvers?: AnalyticsGroupingResolvers;
+  }) => AnalyticsService;
+}
+
+interface StrictAnalyticsPreparationOptions {
+  signal?: AbortSignal;
+  freshTradeQuery?: boolean;
+}
+
+type AnalyticsPreparationMode =
+  | { kind: 'tolerant' }
+  | { kind: 'strict'; signal?: AbortSignal };
+
+const throwIfAnalyticsPreparationAborted = (
+  mode: AnalyticsPreparationMode
+): void => {
+  if (mode.kind === 'strict' && mode.signal?.aborted) {
+    throw mode.signal.reason;
+  }
+};
+
+const copyCustomFieldDefinitions = (
+  definitions: CustomFieldDefinition[]
+): CustomFieldDefinition[] => {
+  const copied = definitions.map((definition) => {
+    const copy: CustomFieldDefinition = {
+      ...definition,
+      ...(definition.validation
+        ? { validation: { ...definition.validation } }
+        : {}),
+      ...(definition.options
+        ? { options: definition.options.map((option) => ({ ...option })) }
+        : {}),
+      ...(definition.tradeLog ? { tradeLog: { ...definition.tradeLog } } : {}),
+    };
+    if (copy.validation) Object.freeze(copy.validation);
+    if (copy.options) {
+      copy.options.forEach(Object.freeze);
+      Object.freeze(copy.options);
+    }
+    if (copy.tradeLog) Object.freeze(copy.tradeLog);
+    return Object.freeze(copy);
+  });
+  Object.freeze(copied);
+  return copied;
+};
+
 const hasTimestampInRange = (
   value: unknown,
   startDate: Date,
@@ -314,32 +407,6 @@ const getExecutionScopedTradeFiles = async (
   return tradeFiles;
 };
 
-const appendHash = (hash: number, value: unknown): number => {
-  const text =
-    value === undefined || value === null
-      ? ''
-      : typeof value === 'string' ||
-          typeof value === 'number' ||
-          typeof value === 'boolean'
-        ? String(value)
-        : JSON.stringify(value);
-  let nextHash = hash;
-
-  for (let i = 0; i < text.length; i++) {
-    nextHash = (nextHash * 31 + text.charCodeAt(i)) >>> 0;
-  }
-
-  return (nextHash * 31 + 124) >>> 0;
-};
-
-const hashJsonValue = (hash: number, value: unknown): number => {
-  if (value === undefined || value === null) {
-    return appendHash(hash, '');
-  }
-
-  return appendHash(hash, JSON.stringify(value));
-};
-
 type NormalizedMetricsTrade = Omit<
   Trade,
   'entryTime' | 'exitTime' | 'path' | 'currency'
@@ -351,7 +418,29 @@ type NormalizedMetricsTrade = Omit<
   _dashboardRealizedTradingDay?: Date;
 };
 
+
+const metricsTradeViews = new WeakMap<
+  Trade,
+  Map<string, NormalizedMetricsTrade>
+>();
+
 const normalizeTradeForMetrics = (
+  trade: Trade,
+  defaultCurrency: string
+): NormalizedMetricsTrade => {
+  const byCurrency = metricsTradeViews.get(trade);
+  const cached = byCurrency?.get(defaultCurrency);
+  if (cached) return cached;
+  const normalized = buildMetricsTradeView(trade, defaultCurrency);
+  if (byCurrency) {
+    byCurrency.set(defaultCurrency, normalized);
+  } else {
+    metricsTradeViews.set(trade, new Map([[defaultCurrency, normalized]]));
+  }
+  return normalized;
+};
+
+const buildMetricsTradeView = (
   trade: Trade,
   defaultCurrency: string
 ): NormalizedMetricsTrade => {
@@ -373,205 +462,22 @@ const normalizeTradeForMetrics = (
   };
 };
 
-const appendMetricsTradeFingerprint = (
-  fingerprint: number,
-  trade: NormalizedMetricsTrade
-): number => {
-  fingerprint = appendHash(fingerprint, trade.path);
-  fingerprint = appendHash(fingerprint, trade.entryTime.toISOString());
-  fingerprint = appendHash(
-    fingerprint,
-    trade.exitTime ? trade.exitTime.toISOString() : ''
-  );
-  fingerprint = appendHash(
-    fingerprint,
-    trade._dashboardRealizedTradingDay?.toISOString() ?? ''
-  );
-  fingerprint = appendHash(
-    fingerprint,
-    trade._dashboardExcursionSourceKey ?? ''
-  );
-  fingerprint = appendHash(fingerprint, trade._dashboardExcursionPnL ?? '');
-  fingerprint = appendHash(fingerprint, trade.pnl);
-  fingerprint = appendHash(fingerprint, trade.directPnL);
-  fingerprint = appendHash(fingerprint, trade.useDirectPnLInput);
-  fingerprint = appendHash(fingerprint, trade.entryPrice);
-  fingerprint = appendHash(fingerprint, trade.exitPrice);
-  fingerprint = appendHash(fingerprint, trade.positionSize);
-  fingerprint = appendHash(fingerprint, trade.direction);
-  fingerprint = appendHash(fingerprint, trade.assetType);
-  fingerprint = appendHash(fingerprint, trade.leverageRatio);
-  fingerprint = appendHash(fingerprint, trade.contractSize);
-  fingerprint = appendHash(fingerprint, trade.dollarPerPoint);
-  fingerprint = appendHash(fingerprint, trade.tickSize);
-  fingerprint = appendHash(fingerprint, trade.tickValue);
-  fingerprint = appendHash(fingerprint, trade.lotSize);
-  fingerprint = appendHash(fingerprint, trade.pipValue);
-  fingerprint = hashJsonValue(fingerprint, trade.entries ?? []);
-  fingerprint = hashJsonValue(fingerprint, trade.exits ?? []);
-  fingerprint = appendHash(fingerprint, trade.rMultiple);
-  fingerprint = appendHash(fingerprint, trade.riskAmount);
-  fingerprint = appendHash(fingerprint, trade.mae);
-  fingerprint = appendHash(fingerprint, trade.mfe);
-  fingerprint = appendHash(fingerprint, trade.originalMaeBeforeConversion);
-  fingerprint = appendHash(fingerprint, trade.originalMfeBeforeConversion);
-  fingerprint = appendHash(fingerprint, trade.maeAmountDerivedFromPrice);
-  fingerprint = appendHash(fingerprint, trade.mfeAmountDerivedFromPrice);
-  fingerprint = appendHash(fingerprint, trade.maeTicksBeforeConversion);
-  fingerprint = appendHash(fingerprint, trade.mfeTicksBeforeConversion);
-  fingerprint = appendHash(fingerprint, trade.maePrice);
-  fingerprint = appendHash(fingerprint, trade.mfePrice);
-  fingerprint = appendHash(fingerprint, trade.currency);
-  fingerprint = appendHash(
-    fingerprint,
-    trade.breakEvenAccountCurrentBalance ?? 'na'
-  );
-  fingerprint = appendHash(
-    fingerprint,
-    trade.breakEvenAccountCurrentBalanceTotal ?? 'na'
-  );
-  return fingerprint;
+
+const dashboardTradesByFrontmatter = new WeakMap<
+  object,
+  Map<string, Trade | null>
+>();
+
+const MAX_DASHBOARD_TRADE_CONTEXTS = 4;
+
+
+const dashboardConversions = new SameCurrencyConversionMemo<Trade>();
+
+const endOfLocalDay = (date: Date): Date => {
+  const end = new Date(date);
+  end.setHours(23, 59, 59, 999);
+  return end;
 };
-
-const buildMetricsCacheKey = (
-  trades: NormalizedMetricsTrade[],
-  options: {
-    defaultRiskAmount?: number;
-    breakEvenRangeMin: number;
-    breakEvenRangeMax: number;
-    breakEvenThresholdMode?: 'fixed' | 'percentage_current_balance';
-    breakEvenThresholdPercent?: number;
-    defaultCurrency: string;
-    analyticsDateBasis: 'entry' | 'exit';
-    tradingDayCutoffTime?: string;
-    drawdownCapitalBasis?: DrawdownCapitalBasis['type'];
-    drawdownCapitalBasisAmount?: number | 'none';
-    calmarHistoryIncomplete: boolean;
-    maeMfeDisplayUnit: MaeMfeDisplayUnit;
-    sharpeRatioTrades: NormalizedMetricsTrade[];
-    tickExcursionSupplementTrades: NormalizedMetricsTrade[];
-  }
-): string => {
-  let tradeFingerprint = 0;
-  for (const trade of trades) {
-    tradeFingerprint = appendMetricsTradeFingerprint(tradeFingerprint, trade);
-  }
-
-  let sharpeRatioFingerprint = 0;
-  for (const trade of options.sharpeRatioTrades) {
-    sharpeRatioFingerprint = appendHash(sharpeRatioFingerprint, trade.path);
-    sharpeRatioFingerprint = appendHash(
-      sharpeRatioFingerprint,
-      trade.entryTime.toISOString()
-    );
-    sharpeRatioFingerprint = appendHash(
-      sharpeRatioFingerprint,
-      trade.exitTime ? trade.exitTime.toISOString() : ''
-    );
-    sharpeRatioFingerprint = appendHash(sharpeRatioFingerprint, trade.pnl);
-    sharpeRatioFingerprint = appendHash(
-      sharpeRatioFingerprint,
-      trade.directPnL
-    );
-    sharpeRatioFingerprint = appendHash(
-      sharpeRatioFingerprint,
-      trade.useDirectPnLInput
-    );
-    sharpeRatioFingerprint = hashJsonValue(
-      sharpeRatioFingerprint,
-      trade.dividends ?? []
-    );
-    sharpeRatioFingerprint = appendHash(
-      sharpeRatioFingerprint,
-      trade.commission
-    );
-    sharpeRatioFingerprint = appendHash(sharpeRatioFingerprint, trade.swap);
-    sharpeRatioFingerprint = appendHash(sharpeRatioFingerprint, trade.fees);
-    sharpeRatioFingerprint = appendHash(sharpeRatioFingerprint, trade.rebate);
-    sharpeRatioFingerprint = appendHash(sharpeRatioFingerprint, trade.currency);
-  }
-
-  let tickExcursionSupplementFingerprint = 0;
-  for (const trade of options.tickExcursionSupplementTrades) {
-    tickExcursionSupplementFingerprint = appendMetricsTradeFingerprint(
-      tickExcursionSupplementFingerprint,
-      trade
-    );
-  }
-
-  return [
-    trades.length,
-    tradeFingerprint,
-    options.sharpeRatioTrades.length,
-    sharpeRatioFingerprint,
-    options.tickExcursionSupplementTrades.length,
-    tickExcursionSupplementFingerprint,
-    options.defaultRiskAmount ?? 'none',
-    options.breakEvenRangeMin,
-    options.breakEvenRangeMax,
-    options.breakEvenThresholdMode ?? 'fixed',
-    options.breakEvenThresholdPercent ?? 'na',
-    options.defaultCurrency,
-    options.analyticsDateBasis,
-    options.tradingDayCutoffTime ?? 'none',
-    options.drawdownCapitalBasis ?? 'none',
-    options.drawdownCapitalBasisAmount ?? 'none',
-    options.calmarHistoryIncomplete,
-    options.maeMfeDisplayUnit,
-  ].join(':');
-};
-
-
-class LRUCache<K, V> {
-  private maxSize: number;
-  private cache: Map<K, V>;
-
-  constructor(maxSize: number = 50) {
-    this.maxSize = maxSize;
-    this.cache = new Map();
-  }
-
-  get(key: K): V | undefined {
-    if (this.cache.has(key)) {
-      
-      const value = this.cache.get(key)!;
-      this.cache.delete(key);
-      this.cache.set(key, value);
-      return value;
-    }
-    return undefined;
-  }
-
-  set(key: K, value: V): void {
-    if (this.cache.has(key)) {
-      
-      this.cache.delete(key);
-    } else if (this.cache.size >= this.maxSize) {
-      
-      const firstKey = Array.from(this.cache.keys())[0];
-      if (firstKey !== undefined) {
-        this.cache.delete(firstKey);
-      }
-    }
-    this.cache.set(key, value);
-  }
-
-  has(key: K): boolean {
-    return this.cache.has(key);
-  }
-
-  clear(): void {
-    this.cache.clear();
-  }
-
-  size(): number {
-    return this.cache.size;
-  }
-}
-
-
-
-const metricsCache = new LRUCache<string, DashboardData['metrics']>(50);
 
 
 export const isTradeOpenInDashboard = (trade: Trade): boolean =>
@@ -603,7 +509,7 @@ const hasIncompleteCalmarHistory = (trades: Trade[]): boolean =>
   });
 
 
-export const getSnapshotTimelineRealizedAdjustment = (
+const getSnapshotTimelineRealizedAdjustment = (
   trade: Trade,
   plugin?: Parameters<typeof getAllocatedRealizedPnlEvents>[2],
   analyticsDateBasis: AnalyticsDateBasis = 'entry'
@@ -800,11 +706,10 @@ export interface Trade {
   commissionType?: 'fixed' | 'percentage';
   swap?: number;
   fees?: number;
-  tags?: string[]; 
-  customTags?: string[]; 
+  tags?: string[];
   assetType?: string; 
   optionType?: string; 
-  stopLoss?: number; 
+  stopLosses?: StopLossTarget[]; 
   takeProfits?: Array<{
     price?: number;
     closePercent?: number;
@@ -844,6 +749,8 @@ export interface Trade {
   mfeTicksBeforeConversion?: number;
   conversionUsedManualRate?: boolean;
   conversionUsedFetchedRates?: boolean;
+  
+  conversionPartialCurrencies?: string[];
   mae?: number; 
   mfe?: number; 
   maePrice?: number; 
@@ -872,6 +779,9 @@ export interface Trade {
 
   
   reviewed?: boolean;
+
+  
+  tradeRating?: number;
 
   
   customFields?: Record<string, unknown>;
@@ -920,10 +830,9 @@ const TRADE_PROPERTY_KEYS = new Set<string>([
   'swap',
   'fees',
   'tags',
-  'customTags',
   'assetType',
   'optionType',
-  'stopLoss',
+  'stopLosses',
   'riskAmount',
   'rMultiple',
   'leverageRatio',
@@ -967,11 +876,16 @@ const TRADE_PROPERTY_KEYS = new Set<string>([
   'isMissedTrade',
   'isBacktestTrade',
   'reviewed',
+  'tradeRating',
   'customFields',
 ]);
 
 export interface DashboardData {
+  
+  expectancySample?: ExpectancySample;
   trades: Trade[];
+  
+  currency: CurrencyCode;
   
   excursionTrades?: Trade[];
   
@@ -1082,14 +996,271 @@ export interface DashboardData {
 }
 
 
-const fetchTradeData = async (
+interface DashboardTradeBuildContext {
+  startDate: Date;
+  analyticsRangeEnd: Date;
+  customFields: ReadonlyArray<{ id: string; fieldKey: string }>;
+  snapshotKeysClaimedByCustomFields: boolean;
+}
+
+
+const buildDashboardTrade = (
+  path: string,
+  frontmatter: Record<string, unknown>,
+  context: DashboardTradeBuildContext
+): Trade | null => {
+  if (!hasDashboardEntryDate(frontmatter)) {
+    return null;
+  }
+
+  const customFields = context.customFields.reduce<Record<string, unknown>>(
+    (acc, fieldDef) => {
+      if (fieldDef.fieldKey && frontmatter[fieldDef.fieldKey] !== undefined) {
+        acc[fieldDef.id] = frontmatter[fieldDef.fieldKey];
+      }
+      return acc;
+    },
+    {}
+  );
+
+  const originalPnlWasNull =
+    frontmatter.pnl === undefined || frontmatter.pnl === null;
+  const storedTradeType = inferStoredTradeType({
+    filePath: path,
+    type: frontmatter.type,
+    isMissedTrade: frontmatter.isMissedTrade,
+    isBacktestTrade: frontmatter.isBacktestTrade,
+  });
+  const normalizedExecution = preserveDateOnlyExecutionTimes(
+    normalizeTradeExecutionForAnalytics(frontmatter),
+    frontmatter
+  );
+
+  const trade: Trade = {
+    path,
+    ...normalizedExecution,
+    direction: getStringField(frontmatter, 'direction') ?? '',
+    pnl:
+      frontmatter.pnl !== undefined && frontmatter.pnl !== null
+        ? Number(frontmatter.pnl)
+        : 0,
+    directPnL:
+      frontmatter.directPnL !== undefined &&
+      frontmatter.directPnL !== null &&
+      Number.isFinite(Number(frontmatter.directPnL))
+        ? Number(frontmatter.directPnL)
+        : undefined,
+    ...extractCanonicalProjectionPnlFields(frontmatter),
+    tradeStatus: getStringField(frontmatter, 'tradeStatus'),
+    useDirectPnLInput: getBooleanField(frontmatter, 'useDirectPnLInput'),
+    dividends: parseTradeDividendTransactions(frontmatter.dividends),
+    rebate:
+      frontmatter.rebate !== undefined && frontmatter.rebate !== null
+        ? Number(frontmatter.rebate)
+        : undefined,
+    _originalPnlWasNull: originalPnlWasNull,
+    _analyticsRangeStart: context.startDate,
+    _analyticsRangeEnd: context.analyticsRangeEnd,
+    instrument: getStringField(frontmatter, 'instrument'),
+    setup: normalizeStringArray(frontmatter.setup),
+    mistake: normalizeStringArray(frontmatter.mistake),
+    account: normalizeStringArray(frontmatter.account),
+
+    accountId:
+      typeof frontmatter.accountId === 'string'
+        ? frontmatter.accountId.trim() || undefined
+        : typeof frontmatter.accountId === 'number' &&
+            Number.isFinite(frontmatter.accountId)
+          ? String(frontmatter.accountId)
+          : undefined,
+    canonicalAccountId:
+      getStringField(frontmatter, 'canonicalAccountId')?.trim() || undefined,
+    canonicalAccountIdentity: (() => {
+      const identity = getStringField(frontmatter, 'canonicalAccountIdentity');
+      return identity === 'broker' || identity === 'name'
+        ? identity
+        : undefined;
+    })(),
+    backendTradeId:
+      frontmatter.backendTradeId !== undefined &&
+      frontmatter.backendTradeId !== null
+        ? (() => {
+            const value = Number(frontmatter.backendTradeId);
+            return Number.isFinite(value) ? value : undefined;
+          })()
+        : undefined,
+    commission:
+      frontmatter.commission !== undefined
+        ? (() => {
+            const value = Number(frontmatter.commission);
+            return isNaN(value) ? 0 : value;
+          })()
+        : undefined,
+    commissionType: getCommissionTypeField(frontmatter),
+    swap:
+      frontmatter.swap !== undefined
+        ? (() => {
+            const value = Number(frontmatter.swap);
+            return isNaN(value) ? 0 : value;
+          })()
+        : undefined,
+    fees:
+      frontmatter.fees !== undefined
+        ? (() => {
+            const value = Number(frontmatter.fees);
+            return isNaN(value) ? 0 : value;
+          })()
+        : undefined,
+    tags: normalizeStringArray(frontmatter.tags),
+    assetType: getStringField(frontmatter, 'assetType'),
+    optionType: getStringField(frontmatter, 'optionType'),
+    stopLosses: parseStopLossTargets(frontmatter.stopLosses),
+    takeProfits: Array.isArray(frontmatter.takeProfits)
+      ? frontmatter.takeProfits.flatMap((target) => {
+          if (!isRecord(target)) return [];
+          return [
+            {
+              ...(target.price !== undefined && {
+                price: Number(target.price),
+              }),
+              ...(target.closePercent !== undefined && {
+                closePercent: Number(target.closePercent),
+              }),
+              ...(target.size !== undefined && {
+                size: Number(target.size),
+              }),
+            },
+          ];
+        })
+      : [],
+    riskAmount:
+      frontmatter.riskAmount !== undefined
+        ? Number(frontmatter.riskAmount)
+        : undefined,
+    rMultiple:
+      frontmatter.rMultiple !== undefined
+        ? Number(frontmatter.rMultiple)
+        : undefined,
+    leverageRatio:
+      frontmatter.leverageRatio !== undefined
+        ? Number(frontmatter.leverageRatio)
+        : undefined,
+    contractSize:
+      frontmatter.contractSize !== undefined
+        ? Number(frontmatter.contractSize)
+        : undefined,
+    dollarPerPoint:
+      frontmatter.dollarPerPoint !== undefined
+        ? Number(frontmatter.dollarPerPoint)
+        : undefined,
+    tickSize:
+      frontmatter.tickSize !== undefined
+        ? Number(frontmatter.tickSize)
+        : undefined,
+    tickValue:
+      frontmatter.tickValue !== undefined
+        ? Number(frontmatter.tickValue)
+        : undefined,
+    lotSize:
+      frontmatter.lotSize !== undefined
+        ? Number(frontmatter.lotSize)
+        : undefined,
+    pipValue:
+      frontmatter.pipValue !== undefined
+        ? Number(frontmatter.pipValue)
+        : undefined,
+    pipSize:
+      frontmatter.pipSize !== undefined
+        ? Number(frontmatter.pipSize)
+        : undefined,
+    forexQuoteCurrency: getStringField(frontmatter, 'forexQuoteCurrency'),
+    forexPnlConversionRate:
+      frontmatter.forexPnlConversionRate !== undefined
+        ? Number(frontmatter.forexPnlConversionRate)
+        : undefined,
+    forexPnlConversionBaseCurrency: getStringField(
+      frontmatter,
+      'forexPnlConversionBaseCurrency'
+    ),
+    forexPnlConversionRateDate: getStringField(
+      frontmatter,
+      'forexPnlConversionRateDate'
+    ),
+    forexPnlConversionRateSource: getForexPnlConversionRateSource(frontmatter),
+    currency: getStringField(frontmatter, 'currency'),
+    fxRate:
+      frontmatter.fxRate !== undefined ? Number(frontmatter.fxRate) : undefined,
+    fxRateBaseCurrency: getStringField(frontmatter, 'fxRateBaseCurrency'),
+    brokerBaseCurrencyPnl:
+      frontmatter.brokerBaseCurrencyPnl !== undefined
+        ? Number(frontmatter.brokerBaseCurrencyPnl)
+        : undefined,
+    brokerBaseCurrency: getStringField(frontmatter, 'brokerBaseCurrency'),
+    brokerBaseCurrencyPnlSource: getStringField(
+      frontmatter,
+      'brokerBaseCurrencyPnlSource'
+    ),
+    mae: frontmatter.mae !== undefined ? Number(frontmatter.mae) : undefined,
+    mfe: frontmatter.mfe !== undefined ? Number(frontmatter.mfe) : undefined,
+    maePrice:
+      frontmatter.maePrice !== undefined
+        ? Number(frontmatter.maePrice)
+        : undefined,
+    mfePrice:
+      frontmatter.mfePrice !== undefined
+        ? Number(frontmatter.mfePrice)
+        : undefined,
+    
+    
+    unrealizedPriceSnapshot: !context.snapshotKeysClaimedByCustomFields
+      ? getFiniteNonNegativeNumberField(frontmatter, 'unrealizedPriceSnapshot')
+      : undefined,
+    unrealizedPriceSnapshotTime: context.snapshotKeysClaimedByCustomFields
+      ? undefined
+      : getStringField(frontmatter, 'unrealizedPriceSnapshotTime'),
+    isMissedTrade: storedTradeType === 'missed',
+    isBacktestTrade: storedTradeType === 'backtest',
+    reviewed: getBooleanField(frontmatter, 'reviewed') ?? false,
+    tradeRating: parseTradeRating(frontmatter.tradeRating),
+    customFields:
+      Object.keys(customFields).length > 0 ? customFields : undefined,
+    ...Object.fromEntries(
+      context.customFields.flatMap((fieldDef) =>
+        fieldDef.fieldKey &&
+        frontmatter[fieldDef.fieldKey] !== undefined &&
+        !TRADE_PROPERTY_KEYS.has(fieldDef.fieldKey)
+          ? [[fieldDef.fieldKey, frontmatter[fieldDef.fieldKey]]]
+          : []
+      )
+    ),
+  };
+
+  const accountIdentity = normalizeTradeAccountIdentity(trade);
+
+  trade.accountRefs = accountIdentity.refs;
+  trade.accountLookupKeys = accountIdentity.lookupKeys;
+  trade.accountNamesNormalized = accountIdentity.accountNames;
+
+  return trade;
+};
+
+
+interface PreparedTradeData {
+  trades: Trade[];
+  customFieldDefinitions: CustomFieldDefinition[];
+  skippedTradeFileCount: number;
+}
+
+const prepareTradeData = async (
   app: App,
   tradeService: TradeService,
   filters: FilterState,
   plugin?: JournalitPlugin,
-  options?: DashboardDataFetchOptions
-): Promise<Trade[]> => {
+  options?: DashboardDataFetchOptions,
+  mode: AnalyticsPreparationMode = { kind: 'tolerant' }
+): Promise<PreparedTradeData> => {
   try {
+    throwIfAnalyticsPreparationAborted(mode);
     
     const startDate = filters.dateRange[0] || new Date(0); 
     const endDate = filters.dateRange[1] || new Date(); 
@@ -1099,320 +1270,174 @@ const fetchTradeData = async (
 
     const analyticsDateBasis =
       options?.dateBasisOverride ?? getAnalyticsDateBasis(plugin?.settings);
+    let skippedTradeFileCount = 0;
+    const skippedTradeFilePaths = new Set<string>();
+    const markTradeFileSkipped = (filePath: string): void => {
+      if (skippedTradeFilePaths.has(filePath)) return;
+      skippedTradeFilePaths.add(filePath);
+      skippedTradeFileCount += 1;
+    };
 
     
-    const tradeFiles = options?.executionScopedDateRange
-      ? await getExecutionScopedTradeFiles(
-          app,
-          tradeService,
-          startDate,
-          endDate,
-          options.freshTradeQuery,
-          plugin
-        )
-      : await tradeService.getTrades(startDate, endDate, {
-          dateBasis: analyticsDateBasis,
-          fresh: options?.freshTradeQuery,
-          includeUnrealizedPnL:
-            plugin?.settings?.trade?.includeUnrealizedPnLInCalculations ===
-            true,
-        });
-    const customFieldDefinitions =
+    
+    
+    const [tradeFiles, missedTradeFiles] = await Promise.all([
+      options?.executionScopedDateRange
+        ? getExecutionScopedTradeFiles(
+            app,
+            tradeService,
+            startDate,
+            endDate,
+            options.freshTradeQuery,
+            plugin
+          )
+        : tradeService.getTrades(startDate, endDate, {
+            dateBasis: analyticsDateBasis,
+            fresh: options?.freshTradeQuery,
+            includeUnrealizedPnL:
+              plugin?.settings?.trade?.includeUnrealizedPnLInCalculations ===
+              true,
+            ...(mode.kind === 'strict'
+              ? {
+                  diagnostics: {
+                    mode: 'silent',
+                    onFileError: (file) => {
+                      throwIfAnalyticsPreparationAborted(mode);
+                      markTradeFileSkipped(file.path);
+                    },
+                  },
+                }
+              : {}),
+          }),
+      plugin && filters.tradeTypes.includes('missed')
+        ? plugin.serviceManager
+            .getMissedTradeService()
+            .then((missedTradeService) =>
+              missedTradeService.getMissedTrades(startDate, endDate, {
+                
+                dateBasis: options?.executionScopedDateRange
+                  ? 'entry'
+                  : analyticsDateBasis,
+              })
+            )
+        : Promise.resolve([]),
+    ]);
+    throwIfAnalyticsPreparationAborted(mode);
+    const scopedTradeFiles = [...tradeFiles, ...missedTradeFiles];
+    const serviceCustomFieldDefinitions =
       plugin?.customFieldsService?.getFields() || [];
+    const customFieldDefinitions =
+      mode.kind === 'strict'
+        ? copyCustomFieldDefinitions(serviceCustomFieldDefinitions)
+        : serviceCustomFieldDefinitions;
     const snapshotKeysClaimedByCustomFields =
       areSnapshotKeysClaimedByCustomFields(customFieldDefinitions);
     const breakEvenThresholdMode =
       plugin?.settings?.trade?.breakEvenThresholdMode ?? 'fixed';
     const accountBalanceLookup =
       breakEvenThresholdMode === 'percentage_current_balance'
-        ? await fetchBreakEvenAccountBalanceLookup(plugin)
+        ? await fetchBreakEvenAccountBalanceLookup(
+            plugin,
+            mode.kind === 'strict' ? { errorMode: 'throw' } : undefined
+          )
         : null;
+    throwIfAnalyticsPreparationAborted(mode);
 
+    
+    
+    
+    
+    
+    const analyticsRangeEnd =
+      filters.dateRange[1] ?? endOfLocalDay(getTradingDay(endDate, plugin));
+
+    const tradeBuildContext: DashboardTradeBuildContext = {
+      startDate,
+      analyticsRangeEnd,
+      customFields: customFieldDefinitions.map(({ id, fieldKey }) => ({
+        id,
+        fieldKey,
+      })),
+      snapshotKeysClaimedByCustomFields,
+    };
+    
+    const tradeContextKey = accountBalanceLookup
+      ? null
+      : JSON.stringify(tradeBuildContext);
+
+    
+    
     const processTradeFile = async (file: TFile): Promise<Trade | null> => {
       try {
-        const cachedFrontmatter =
-          app.metadataCache.getFileCache(file)?.frontmatter;
-        const frontmatter =
-          cachedFrontmatter ?? (await tradeService.readFrontmatter(file));
-
-        if (!frontmatter || !hasDashboardEntryDate(frontmatter)) {
-          return null;
-        }
-
-        const customFields = customFieldDefinitions.reduce<
-          Record<string, unknown>
-        >((acc, fieldDef) => {
-          if (
-            fieldDef.fieldKey &&
-            frontmatter[fieldDef.fieldKey] !== undefined
-          ) {
-            acc[fieldDef.id] = frontmatter[fieldDef.fieldKey];
-          }
-          return acc;
-        }, {});
-
-        const originalPnlWasNull =
-          frontmatter.pnl === undefined || frontmatter.pnl === null;
-        const storedTradeType = inferStoredTradeType({
-          filePath: file.path,
-          type: frontmatter.type,
-          isMissedTrade: frontmatter.isMissedTrade,
-          isBacktestTrade: frontmatter.isBacktestTrade,
-        });
-        const normalizedExecution = preserveDateOnlyExecutionTimes(
-          normalizeTradeExecutionForAnalytics(frontmatter),
-          frontmatter
-        );
-
-        const trade: Trade = {
-          path: file.path,
-          ...normalizedExecution,
-          direction: getStringField(frontmatter, 'direction') ?? '',
-          pnl:
-            frontmatter.pnl !== undefined && frontmatter.pnl !== null
-              ? Number(frontmatter.pnl)
-              : 0,
-          directPnL:
-            frontmatter.directPnL !== undefined &&
-            frontmatter.directPnL !== null &&
-            Number.isFinite(Number(frontmatter.directPnL))
-              ? Number(frontmatter.directPnL)
-              : undefined,
-          ...extractCanonicalProjectionPnlFields(frontmatter),
-          tradeStatus: getStringField(frontmatter, 'tradeStatus'),
-          useDirectPnLInput: getBooleanField(frontmatter, 'useDirectPnLInput'),
-          dividends: parseTradeDividendTransactions(frontmatter.dividends),
-          rebate:
-            frontmatter.rebate !== undefined && frontmatter.rebate !== null
-              ? Number(frontmatter.rebate)
-              : undefined,
-          _originalPnlWasNull: originalPnlWasNull,
-          _analyticsRangeStart: startDate,
-          _analyticsRangeEnd: endDate,
-          instrument: getStringField(frontmatter, 'instrument'),
-          setup: normalizeStringArray(frontmatter.setup),
-          mistake: normalizeStringArray(frontmatter.mistake),
-          account: normalizeStringArray(frontmatter.account),
-
-          accountId:
-            typeof frontmatter.accountId === 'string'
-              ? frontmatter.accountId.trim() || undefined
-              : typeof frontmatter.accountId === 'number' &&
-                  Number.isFinite(frontmatter.accountId)
-                ? String(frontmatter.accountId)
-                : undefined,
-          canonicalAccountId:
-            getStringField(frontmatter, 'canonicalAccountId')?.trim() ||
-            undefined,
-          canonicalAccountIdentity: (() => {
-            const identity = getStringField(
-              frontmatter,
-              'canonicalAccountIdentity'
-            );
-            return identity === 'broker' || identity === 'name'
-              ? identity
-              : undefined;
-          })(),
-          backendTradeId:
-            frontmatter.backendTradeId !== undefined &&
-            frontmatter.backendTradeId !== null
-              ? (() => {
-                  const value = Number(frontmatter.backendTradeId);
-                  return Number.isFinite(value) ? value : undefined;
-                })()
-              : undefined,
-          commission:
-            frontmatter.commission !== undefined
-              ? (() => {
-                  const value = Number(frontmatter.commission);
-                  return isNaN(value) ? 0 : value;
-                })()
-              : undefined,
-          commissionType: getCommissionTypeField(frontmatter),
-          swap:
-            frontmatter.swap !== undefined
-              ? (() => {
-                  const value = Number(frontmatter.swap);
-                  return isNaN(value) ? 0 : value;
-                })()
-              : undefined,
-          fees:
-            frontmatter.fees !== undefined
-              ? (() => {
-                  const value = Number(frontmatter.fees);
-                  return isNaN(value) ? 0 : value;
-                })()
-              : undefined,
-          tags: normalizeStringArray(frontmatter.tags),
-          customTags: normalizeStringArray(frontmatter.tags),
-          assetType: getStringField(frontmatter, 'assetType'),
-          optionType: getStringField(frontmatter, 'optionType'),
-          stopLoss:
-            frontmatter.stopLoss !== undefined
-              ? Number(frontmatter.stopLoss)
-              : undefined,
-          takeProfits: Array.isArray(frontmatter.takeProfits)
-            ? frontmatter.takeProfits.flatMap((target) => {
-                if (!isRecord(target)) return [];
-                return [
-                  {
-                    ...(target.price !== undefined && {
-                      price: Number(target.price),
-                    }),
-                    ...(target.closePercent !== undefined && {
-                      closePercent: Number(target.closePercent),
-                    }),
-                    ...(target.size !== undefined && {
-                      size: Number(target.size),
-                    }),
-                  },
-                ];
-              })
-            : [],
-          riskAmount:
-            frontmatter.riskAmount !== undefined
-              ? Number(frontmatter.riskAmount)
-              : undefined,
-          rMultiple:
-            frontmatter.rMultiple !== undefined
-              ? Number(frontmatter.rMultiple)
-              : undefined,
-          leverageRatio:
-            frontmatter.leverageRatio !== undefined
-              ? Number(frontmatter.leverageRatio)
-              : undefined,
-          contractSize:
-            frontmatter.contractSize !== undefined
-              ? Number(frontmatter.contractSize)
-              : undefined,
-          dollarPerPoint:
-            frontmatter.dollarPerPoint !== undefined
-              ? Number(frontmatter.dollarPerPoint)
-              : undefined,
-          tickSize:
-            frontmatter.tickSize !== undefined
-              ? Number(frontmatter.tickSize)
-              : undefined,
-          tickValue:
-            frontmatter.tickValue !== undefined
-              ? Number(frontmatter.tickValue)
-              : undefined,
-          lotSize:
-            frontmatter.lotSize !== undefined
-              ? Number(frontmatter.lotSize)
-              : undefined,
-          pipValue:
-            frontmatter.pipValue !== undefined
-              ? Number(frontmatter.pipValue)
-              : undefined,
-          pipSize:
-            frontmatter.pipSize !== undefined
-              ? Number(frontmatter.pipSize)
-              : undefined,
-          forexQuoteCurrency: getStringField(frontmatter, 'forexQuoteCurrency'),
-          forexPnlConversionRate:
-            frontmatter.forexPnlConversionRate !== undefined
-              ? Number(frontmatter.forexPnlConversionRate)
-              : undefined,
-          forexPnlConversionBaseCurrency: getStringField(
-            frontmatter,
-            'forexPnlConversionBaseCurrency'
-          ),
-          forexPnlConversionRateDate: getStringField(
-            frontmatter,
-            'forexPnlConversionRateDate'
-          ),
-          forexPnlConversionRateSource:
-            getForexPnlConversionRateSource(frontmatter),
-          currency: getStringField(frontmatter, 'currency'),
-          fxRate:
-            frontmatter.fxRate !== undefined
-              ? Number(frontmatter.fxRate)
-              : undefined,
-          fxRateBaseCurrency: getStringField(frontmatter, 'fxRateBaseCurrency'),
-          brokerBaseCurrencyPnl:
-            frontmatter.brokerBaseCurrencyPnl !== undefined
-              ? Number(frontmatter.brokerBaseCurrencyPnl)
-              : undefined,
-          brokerBaseCurrency: getStringField(frontmatter, 'brokerBaseCurrency'),
-          brokerBaseCurrencyPnlSource: getStringField(
-            frontmatter,
-            'brokerBaseCurrencyPnlSource'
-          ),
-          mae:
-            frontmatter.mae !== undefined ? Number(frontmatter.mae) : undefined,
-          mfe:
-            frontmatter.mfe !== undefined ? Number(frontmatter.mfe) : undefined,
-          maePrice:
-            frontmatter.maePrice !== undefined
-              ? Number(frontmatter.maePrice)
-              : undefined,
-          mfePrice:
-            frontmatter.mfePrice !== undefined
-              ? Number(frontmatter.mfePrice)
-              : undefined,
-          
-          
-          unrealizedPriceSnapshot: !snapshotKeysClaimedByCustomFields
-            ? getFiniteNonNegativeNumberField(
-                frontmatter,
-                'unrealizedPriceSnapshot'
-              )
-            : undefined,
-          unrealizedPriceSnapshotTime: snapshotKeysClaimedByCustomFields
-            ? undefined
-            : getStringField(frontmatter, 'unrealizedPriceSnapshotTime'),
-          isMissedTrade: storedTradeType === 'missed',
-          isBacktestTrade: storedTradeType === 'backtest',
-          reviewed: getBooleanField(frontmatter, 'reviewed') ?? false,
-          customFields:
-            Object.keys(customFields).length > 0 ? customFields : undefined,
-          ...Object.fromEntries(
-            customFieldDefinitions.flatMap((fieldDef) =>
-              fieldDef.fieldKey &&
-              frontmatter[fieldDef.fieldKey] !== undefined &&
-              !TRADE_PROPERTY_KEYS.has(fieldDef.fieldKey)
-                ? [[fieldDef.fieldKey, frontmatter[fieldDef.fieldKey]]]
-                : []
-            )
-          ),
-        };
-
-        const accountIdentity = normalizeTradeAccountIdentity(toRecord(trade), {
-          resolveAccountIdDisplayName: (accountId) =>
-            plugin?.settings?.backendIntegration?.accountMapping?.[accountId],
-        });
-
-        trade.accountRefs = accountIdentity.refs;
-        trade.accountLookupKeys = accountIdentity.lookupKeys;
-        trade.accountNamesNormalized = accountIdentity.accountNames;
-
-        if (accountBalanceLookup) {
-          Object.assign(
-            trade,
-            getBreakEvenAccountBalanceFields(
-              resolveBreakEvenAccountBalances(
-                toRecord(trade),
-                accountBalanceLookup,
-                {
-                  resolveAccountIdDisplayName: (accountId) =>
-                    plugin?.settings?.backendIntegration?.accountMapping?.[
-                      accountId
-                    ],
-                }
-              )
-            )
-          );
-        }
-
-        return trade;
+        return await buildOrReuseTrade(file);
       } catch (error) {
-        console.error(`Error processing trade file ${file.path}:`, error);
+        if (mode.kind === 'strict') {
+          if (mode.signal?.aborted) throw mode.signal.reason;
+          markTradeFileSkipped(file.path);
+        } else {
+          console.error(`Error processing trade file ${file.path}:`, error);
+        }
         return null;
       }
     };
 
-    const baseTrades = await Promise.all(tradeFiles.map(processTradeFile));
+    const buildOrReuseTrade = async (file: TFile): Promise<Trade | null> => {
+      const cachedFrontmatter =
+        app.metadataCache.getFileCache(file)?.frontmatter;
+      if (!cachedFrontmatter || tradeContextKey === null) {
+        return buildTrade(file, cachedFrontmatter);
+      }
+      const key = `${tradeContextKey}\u0000${file.path}`;
+      let built = dashboardTradesByFrontmatter.get(cachedFrontmatter);
+      if (built?.has(key)) return built.get(key) ?? null;
+      const trade = await buildTrade(file, cachedFrontmatter);
+      if (!built) {
+        built = new Map();
+        dashboardTradesByFrontmatter.set(cachedFrontmatter, built);
+      } else if (built.size >= MAX_DASHBOARD_TRADE_CONTEXTS) {
+        const [oldestKey] = built.keys();
+        built.delete(oldestKey);
+      }
+      built.set(key, trade);
+      return trade;
+    };
+
+    const buildTrade = async (
+      file: TFile,
+      cachedFrontmatter: Record<string, unknown> | undefined
+    ): Promise<Trade | null> => {
+      const frontmatter =
+        cachedFrontmatter ??
+        (mode.kind === 'strict'
+          ? await tradeService.readFrontmatter(file, {
+              diagnostics: 'silent',
+              errorMode: 'throw',
+            })
+          : await tradeService.readFrontmatter(file));
+      if (!frontmatter) return null;
+      const trade = buildDashboardTrade(
+        file.path,
+        frontmatter,
+        tradeBuildContext
+      );
+      if (trade && accountBalanceLookup) {
+        Object.assign(
+          trade,
+          getBreakEvenAccountBalanceFields(
+            resolveBreakEvenAccountBalances(trade, accountBalanceLookup)
+          )
+        );
+      }
+      return trade;
+    };
+
+    
+    
+    
+    const baseTrades = await Promise.all(
+      await startEachInSlices(scopedTradeFiles, processTradeFile)
+    );
+    throwIfAnalyticsPreparationAborted(mode);
 
     
     
@@ -1446,20 +1471,32 @@ const fetchTradeData = async (
       (trade): trade is Trade => trade !== null
     );
 
-    return applyTradeFilters(nonNullTrades, filters, customFieldDefinitions, {
-      resolveAccountIdDisplayName: (accountId) =>
-        plugin?.settings?.backendIntegration?.accountMapping?.[accountId],
-      isTradeOpen: isTradeOpenInDashboard,
-      breakEvenSettings,
-      getBreakEvenBalance: (trade) => trade.breakEvenAccountCurrentBalance,
-      accountPhaseWindows: resolveAccountPhaseWindowsFromPlugin(
-        filters.accountPhases,
-        plugin
+    return {
+      trades: applyTradeFilters(
+        nonNullTrades,
+        filters,
+        customFieldDefinitions,
+        {
+          isTradeOpen: isTradeOpenInDashboard,
+          breakEvenSettings,
+          getBreakEvenBalance: (trade) => trade.breakEvenAccountCurrentBalance,
+          accountPhaseWindows: resolveAccountPhaseWindowsFromPlugin(
+            filters.accountPhases,
+            plugin
+          ),
+        }
       ),
-    });
+      customFieldDefinitions,
+      skippedTradeFileCount,
+    };
   } catch (error) {
+    if (mode.kind === 'strict') throw error;
     console.error('Error fetching trade data:', error);
-    return [];
+    return {
+      trades: [],
+      customFieldDefinitions: [],
+      skippedTradeFileCount: 0,
+    };
   }
 };
 
@@ -1489,7 +1526,7 @@ const createCopiedDashboardTrades = (
     return [];
   }
 
-  const baseIdentity = normalizeTradeAccountIdentity(toRecord(baseTrade));
+  const baseIdentity = normalizeTradeAccountIdentity(baseTrade);
   const baseAccountLookupKeys = new Set(baseIdentity.lookupKeys);
   if (baseAccountLookupKeys.size === 0) {
     return [];
@@ -1609,10 +1646,7 @@ const createCopiedDashboardTrades = (
       Object.assign(
         copiedTrade,
         getBreakEvenAccountBalanceFields(
-          resolveBreakEvenAccountBalances(
-            toRecord(copiedTrade),
-            accountBalanceLookup
-          )
+          resolveBreakEvenAccountBalances(copiedTrade, accountBalanceLookup)
         )
       );
     }
@@ -1624,7 +1658,7 @@ const createCopiedDashboardTrades = (
 };
 
 
-interface CalculateMetricsOptions {
+export interface CalculateMetricsOptions extends DashboardMetricCalculationOptions {
   defaultRiskAmount?: number;
   breakEvenRangeMin?: number;
   breakEvenRangeMax?: number;
@@ -1683,7 +1717,25 @@ type ExcursionMetrics = Pick<
 >;
 
 
+const wholeTradeInAnalyticsRange = createTradeDerivationCache<boolean>();
+
 const isWholeTradeInAnalyticsRange = (
+  trade: Trade,
+  analyticsDateBasis: AnalyticsDateBasis,
+  tradingDayPlugin: Parameters<typeof getTradeAnalyticsTradingDay>[2]
+): boolean =>
+  wholeTradeInAnalyticsRange(
+    trade,
+    analyticsDayContext(analyticsDateBasis, tradingDayPlugin),
+    () =>
+      checkWholeTradeInAnalyticsRange(
+        trade,
+        analyticsDateBasis,
+        tradingDayPlugin
+      )
+  );
+
+const checkWholeTradeInAnalyticsRange = (
   trade: Trade,
   analyticsDateBasis: AnalyticsDateBasis,
   tradingDayPlugin: Parameters<typeof getTradeAnalyticsTradingDay>[2]
@@ -1708,6 +1760,33 @@ const isWholeTradeInAnalyticsRange = (
     (!rangeEnd || analyticsTradingDay <= rangeEnd)
   );
 };
+
+const drawdownAnalyticsTradeCopies =
+  createTradeDerivationCache<DrawdownAnalyticsTrade>();
+
+type DrawdownAnalyticsTrade = Omit<NormalizedMetricsTrade, 'exits'> & {
+  exits: undefined;
+};
+
+
+const getDrawdownAnalyticsTrade = (
+  trade: NormalizedMetricsTrade,
+  analyticsDateBasis: AnalyticsDateBasis
+): DrawdownAnalyticsTrade =>
+  drawdownAnalyticsTradeCopies(trade, analyticsDateBasis, () => ({
+    ...trade,
+    exitTime:
+      getTradeAnalyticsDate(trade, analyticsDateBasis) ??
+      trade._dashboardRealizedTradingDay ??
+      (analyticsDateBasis === 'entry' ? trade.entryTime : trade.exitTime),
+    exits: undefined,
+  }));
+
+const tradeExcursionValues = createTradeDerivationCache<number | undefined>();
+const tradeReturnPercents = createTradeDerivationCache<number | undefined>();
+
+const getTradeReturnPercent = (trade: TradeMetricInput): number | undefined =>
+  tradeReturnPercents(trade, '', () => calculateTradeReturnPercent(trade));
 
 const calculateExcursionMetrics = (
   sourceTrades: NormalizedMetricsTrade[],
@@ -1740,65 +1819,67 @@ const calculateExcursionMetrics = (
     formatScalarId(trade.tradeId) ??
     formatScalarId(trade.backendTradeId) ??
     trade.path;
-  const collectValues = (
-    outcomeBucket: 'win' | 'loss',
-    getter: (trade: NormalizedMetricsTrade) => number | undefined
-  ): { values: number[]; sourceTradeCount: number } => {
-    const values: number[] = [];
-    const seenSourceKeys = new Set<string>();
-    let sourceTradeCount = 0;
-
-    for (const trade of sourceTrades) {
-      const sourceKey = getExcursionSourceKey(trade);
-      if (seenSourceKeys.has(sourceKey)) continue;
-      seenSourceKeys.add(sourceKey);
-
-      const excursionPnL =
-        trade._dashboardExcursionPnL ?? getEffectivePnL(trade);
-      
-      
-      const outcome = trade._dashboardExcursionFxExcluded
-        ? classifyPnLByBreakEvenRange(excursionPnL, { min: 0, max: 0 })
-        : classifyPnLWithBreakEvenSettings(
-            excursionPnL,
-            breakEvenSettings,
-            trade.breakEvenAccountCurrentBalance
-          );
-      if (outcome !== outcomeBucket) continue;
-      sourceTradeCount++;
-
-      const value = getter(trade);
-      if (value !== undefined && Number.isFinite(value)) {
-        values.push(Math.abs(value));
-      }
+  const getMae = displayUnit === 'ticks' ? getTradeMaeTicks : getTradeMaeValue;
+  const getMfe = displayUnit === 'ticks' ? getTradeMfeTicks : getTradeMfeValue;
+  const createBucket = () => ({
+    mae: [] as number[],
+    mfe: [] as number[],
+    sourceTradeCount: 0,
+  });
+  const winners = createBucket();
+  const losers = createBucket();
+  const pushFinite = (values: number[], value: number | undefined) => {
+    if (value !== undefined && Number.isFinite(value)) {
+      values.push(Math.abs(value));
     }
-
-    return { values, sourceTradeCount };
   };
-  const maeGetter =
-    displayUnit === 'ticks' ? getTradeMaeTicks : getTradeMaeValue;
-  const mfeGetter =
-    displayUnit === 'ticks' ? getTradeMfeTicks : getTradeMfeValue;
-  const winnerMae = collectValues('win', maeGetter);
-  const loserMae = collectValues('loss', maeGetter);
-  const winnerMfe = collectValues('win', mfeGetter);
-  const loserMfe = collectValues('loss', mfeGetter);
+  const maeContext = `mae\u0000${displayUnit}`;
+  const mfeContext = `mfe\u0000${displayUnit}`;
+  
+  const seenSourceKeys = new Set<string>();
+  for (const trade of sourceTrades) {
+    const sourceKey = getExcursionSourceKey(trade);
+    if (seenSourceKeys.has(sourceKey)) continue;
+    seenSourceKeys.add(sourceKey);
 
+    const excursionPnL = trade._dashboardExcursionPnL ?? getEffectivePnL(trade);
+    
+    
+    const outcome = trade._dashboardExcursionFxExcluded
+      ? classifyPnLByBreakEvenRange(excursionPnL, { min: 0, max: 0 })
+      : classifyPnLWithBreakEvenSettings(
+          excursionPnL,
+          breakEvenSettings,
+          trade.breakEvenAccountCurrentBalance
+        );
+    const bucket =
+      outcome === 'win' ? winners : outcome === 'loss' ? losers : null;
+    if (!bucket) continue;
+    bucket.sourceTradeCount++;
+    pushFinite(
+      bucket.mae,
+      tradeExcursionValues(trade, maeContext, () => getMae(trade))
+    );
+    pushFinite(
+      bucket.mfe,
+      tradeExcursionValues(trade, mfeContext, () => getMfe(trade))
+    );
+  }
   return {
-    avgWinnerHeat: averageFinite(winnerMae.values),
-    winnerMaeP90: percentileFinite(winnerMae.values, 90),
-    winnerMaeMedian: medianFinite(winnerMae.values),
-    avgLossHeat: averageFinite(loserMae.values),
-    winnerAvgMfe: averageFinite(winnerMfe.values),
-    loserAvgMfe: averageFinite(loserMfe.values),
-    winnerMfeP90: percentileFinite(winnerMfe.values, 90),
-    loserMfeP90: percentileFinite(loserMfe.values, 90),
-    winnerExcursionSourceTradeCount: winnerMae.sourceTradeCount,
-    loserExcursionSourceTradeCount: loserMae.sourceTradeCount,
-    winnerMaeEligibleTradeCount: winnerMae.values.length,
-    loserMaeEligibleTradeCount: loserMae.values.length,
-    winnerMfeEligibleTradeCount: winnerMfe.values.length,
-    loserMfeEligibleTradeCount: loserMfe.values.length,
+    avgWinnerHeat: averageFinite(winners.mae),
+    winnerMaeP90: percentileFinite(winners.mae, 90),
+    winnerMaeMedian: medianFinite(winners.mae),
+    avgLossHeat: averageFinite(losers.mae),
+    winnerAvgMfe: averageFinite(winners.mfe),
+    loserAvgMfe: averageFinite(losers.mfe),
+    winnerMfeP90: percentileFinite(winners.mfe, 90),
+    loserMfeP90: percentileFinite(losers.mfe, 90),
+    winnerExcursionSourceTradeCount: winners.sourceTradeCount,
+    loserExcursionSourceTradeCount: losers.sourceTradeCount,
+    winnerMaeEligibleTradeCount: winners.mae.length,
+    loserMaeEligibleTradeCount: losers.mae.length,
+    winnerMfeEligibleTradeCount: winners.mfe.length,
+    loserMfeEligibleTradeCount: losers.mfe.length,
   };
 };
 
@@ -2034,47 +2115,6 @@ export const calculateMetrics = (
   
   const netPnLValues = closedTrades.map((t) => getEffectivePnL(t));
 
-  const cacheKey = buildMetricsCacheKey(closedTrades, {
-    defaultRiskAmount,
-    breakEvenRangeMin,
-    breakEvenRangeMax,
-    breakEvenThresholdMode: options.breakEvenThresholdMode,
-    breakEvenThresholdPercent: options.breakEvenThresholdPercent,
-    defaultCurrency,
-    analyticsDateBasis,
-    tradingDayCutoffTime,
-    drawdownCapitalBasis: options.drawdownCapitalBasis?.type ?? 'none',
-    calmarHistoryIncomplete,
-    drawdownCapitalBasisAmount:
-      options.drawdownCapitalBasis && 'amount' in options.drawdownCapitalBasis
-        ? options.drawdownCapitalBasis.amount
-        : 'none',
-    maeMfeDisplayUnit,
-    sharpeRatioTrades,
-    tickExcursionSupplementTrades,
-  });
-
-  const cachedResult = metricsCache.get(cacheKey);
-  if (cachedResult !== undefined) {
-    return {
-      ...cachedResult,
-      unrealizedPnL,
-      unrealizedPnLR,
-      unrealizedTradeCount,
-      unrealizedRTradeCount,
-      snapshotTimelineRealizedPnLContribution,
-      netPnLR:
-        unrealizedPnLR === undefined &&
-        snapshotTimelineRAdjustment === undefined
-          ? cachedResult.netPnLR
-          : (cachedResult.netPnLR ?? 0) +
-            (unrealizedPnLR ?? 0) +
-            (snapshotTimelineRAdjustment ?? 0),
-    };
-  }
-
-  const totalNetPnL = netPnLValues.reduce((sum, pnl) => sum + pnl, 0);
-
   
   
   const winningNetPnL: number[] = [];
@@ -2113,36 +2153,26 @@ export const calculateMetrics = (
   };
 
   for (const trade of winningTrades) {
-    const returnPercent = calculateTradeReturnPercent(trade);
+    const returnPercent = getTradeReturnPercent(trade);
     if (hasMatchingReturnPercentSign('win', returnPercent)) {
       winningReturnPercents.push(returnPercent);
     }
   }
 
   for (const trade of losingTrades) {
-    const returnPercent = calculateTradeReturnPercent(trade);
+    const returnPercent = getTradeReturnPercent(trade);
     if (hasMatchingReturnPercentSign('loss', returnPercent)) {
       losingReturnPercents.push(returnPercent);
     }
   }
 
-  
-  const totalProfit = winningNetPnL.reduce((sum, pnl) => sum + pnl, 0);
-  const totalLoss = Math.abs(losingNetPnL.reduce((sum, pnl) => sum + pnl, 0));
-
-  
-  
-  const netPnL = totalNetPnL;
-  const winRate = calculateWinRateExcludingBreakeven(
-    winningNetPnL.length,
-    losingNetPnL.length
-  );
-  const profitFactor = calculateProfitFactor(totalProfit, totalLoss);
-
-  
-  const avgWin =
-    winningNetPnL.length > 0 ? totalProfit / winningNetPnL.length : 0;
-  const avgLoss = losingNetPnL.length > 0 ? totalLoss / losingNetPnL.length : 0;
+  const coreMetrics = calculateCoreTradeMetrics({
+    netPnLValues,
+    winningNetPnL,
+    losingNetPnL,
+  });
+  const { netPnL, winRate, profitFactor, expectancy, avgWin, avgLoss, avgRR } =
+    coreMetrics;
   const avgWinPercent =
     winningReturnPercents.length > 0 &&
     winningReturnPercents.length === winningNetPnL.length
@@ -2156,9 +2186,6 @@ export const calculateMetrics = (
         losingReturnPercents.length
       : undefined;
 
-  
-  const expectancy = winRate * avgWin - (1 - winRate) * avgLoss;
-
   const sharpeRatioValues: number[] = [];
   for (const trade of sharpeRatioTrades) {
     const pnl = getEffectivePnL(trade);
@@ -2169,10 +2196,6 @@ export const calculateMetrics = (
   const sharpeRatioSourceTradeCount = sharpeRatioTrades.length;
   const sharpeRatioTradeCount = sharpeRatioValues.length;
   const sharpeRatio = calculateTradeLevelSharpeRatio(sharpeRatioValues);
-
-  
-  
-  const avgRR = avgWin > 0 && avgLoss > 0 ? avgWin / avgLoss : undefined;
 
   
   let avgWinR: number | undefined = undefined;
@@ -2269,14 +2292,9 @@ export const calculateMetrics = (
     expectancyR = rWinRate * avgWinR - (1 - rWinRate) * avgLossR;
   }
 
-  const drawdownAnalyticsTrades = closedTrades.map((trade) => ({
-    ...trade,
-    exitTime:
-      getTradeAnalyticsDate(trade, analyticsDateBasis) ??
-      trade._dashboardRealizedTradingDay ??
-      (analyticsDateBasis === 'entry' ? trade.entryTime : trade.exitTime),
-    exits: undefined,
-  }));
+  const drawdownAnalyticsTrades = closedTrades.map((trade) =>
+    getDrawdownAnalyticsTrade(trade, analyticsDateBasis)
+  );
 
   const drawdownAnalytics = analyzeDrawdown(drawdownAnalyticsTrades, {
     defaultRiskAmount,
@@ -2303,16 +2321,15 @@ export const calculateMetrics = (
   
   const dailyPnL = new Map<string, number>();
   closedTrades.forEach((trade) => {
-    const analyticsDate = getMetricsTradingDay(
+    const dateStr = getMetricsTradingDayKey(
       trade,
       analyticsDateBasis,
       tradingDayPlugin
     );
-    if (!analyticsDate) {
+    if (!dateStr) {
       return;
     }
 
-    const dateStr = formatLocalDateString(analyticsDate);
     dailyPnL.set(
       dateStr,
       (dailyPnL.get(dateStr) || 0) + getEffectivePnL(trade)
@@ -2335,7 +2352,7 @@ export const calculateMetrics = (
     }
 
     const computedPercents = tiedTrades.map((trade) =>
-      calculateTradeReturnPercent(trade)
+      getTradeReturnPercent(trade)
     );
 
     if (
@@ -2456,16 +2473,15 @@ export const calculateMetrics = (
         defaultRiskAmount
       );
       if (effectiveR !== undefined && !isNaN(effectiveR)) {
-        const analyticsDate = getMetricsTradingDay(
+        const dateStr = getMetricsTradingDayKey(
           trade,
           analyticsDateBasis,
           tradingDayPlugin
         );
-        if (!analyticsDate) {
+        if (!dateStr) {
           return;
         }
 
-        const dateStr = formatLocalDateString(analyticsDate);
         dailyRMultiples.set(
           dateStr,
           (dailyRMultiples.get(dateStr) || 0) + effectiveR
@@ -2491,9 +2507,9 @@ export const calculateMetrics = (
     sharpeRatioTradeCount,
     sharpeRatioSourceTradeCount,
     expectancy,
-    numTrades: closedTrades.length, 
-    numWinTrades: winningNetPnL.length,
-    numLossTrades: losingNetPnL.length,
+    numTrades: coreMetrics.numTrades,
+    numWinTrades: coreMetrics.numWinTrades,
+    numLossTrades: coreMetrics.numLossTrades,
     avgWin,
     avgLoss,
     avgWinPercent,
@@ -2535,10 +2551,6 @@ export const calculateMetrics = (
     isMultiCurrency: currencyGrouped.isMultiCurrency,
     primaryCurrency: currencyGrouped.defaultCurrency,
   };
-
-  
-  
-  metricsCache.set(cacheKey, metrics);
 
   return {
     ...metrics,
@@ -2649,6 +2661,29 @@ const projectExitDateTradesToRealizedEvents = (
   return projectedTrades;
 };
 
+const metricsTradingDayKeys = createTradeDerivationCache<string | null>();
+
+
+const getMetricsTradingDayKey = (
+  trade: NormalizedMetricsTrade,
+  analyticsDateBasis: 'entry' | 'exit',
+  tradingDayPlugin:
+    | { settings: { trade: { tradingDayCutoffTime: string } } }
+    | undefined
+): string | null =>
+  metricsTradingDayKeys(
+    trade,
+    analyticsDayContext(analyticsDateBasis, tradingDayPlugin),
+    () => {
+      const tradingDay = getMetricsTradingDay(
+        trade,
+        analyticsDateBasis,
+        tradingDayPlugin
+      );
+      return tradingDay ? formatLocalDateString(tradingDay) : null;
+    }
+  );
+
 const getMetricsTradingDay = (
   trade: NormalizedMetricsTrade,
   analyticsDateBasis: 'entry' | 'exit',
@@ -2697,6 +2732,416 @@ const applyUnconvertedDisplayMetadata = (
   }
 };
 
+interface DashboardAnalyticsBuild extends PreparedDashboardAnalytics {
+  trades: Trade[];
+  tradesForDisplay: Trade[];
+  excursionTrades: Trade[];
+  tradesForUnrealized: Trade[];
+  analyticsDateBasis: AnalyticsDateBasis;
+  includeUnrealizedPnL: boolean;
+  conversionMetadata: {
+    baseCurrency: string;
+    rateDate: string;
+    unconvertedCurrencies: string[];
+    partiallyConvertedCurrencies?: string[];
+    originalTradeCount: number;
+    convertedTradeCount: number;
+    brokerBaseCurrencyTradeCount?: number;
+    manualFxRateTradeCount?: number;
+  } | null;
+  currencyGrouped: ReturnType<typeof aggregatePnLByCurrency>;
+  userCurrency: string;
+  
+  baseCurrencyCode: CurrencyCode;
+  needsCurrencyConversion: boolean;
+  drawdownCapitalBasis: DrawdownCapitalBasis;
+  executionScopedDateRange: boolean;
+}
+
+const resolveRuntimeTimezone = (): string | undefined =>
+  Intl.DateTimeFormat().resolvedOptions().timeZone || undefined;
+
+const buildDashboardAnalytics = async (
+  app: App,
+  tradeService: TradeService,
+  filters: FilterState,
+  defaultRiskAmount: number | undefined,
+  plugin: JournalitPlugin | undefined,
+  options: DashboardDataFetchOptions | undefined,
+  mode: AnalyticsPreparationMode
+): Promise<DashboardAnalyticsBuild> => {
+  
+  
+  const slicer = createTimeSlicer();
+  
+  const { trades, customFieldDefinitions, skippedTradeFileCount } =
+    await prepareTradeData(app, tradeService, filters, plugin, options, mode);
+  await slicer.maybeYield();
+
+  const breakEvenRangeMin = plugin?.settings?.trade?.breakEvenRangeMin;
+  const breakEvenRangeMax = plugin?.settings?.trade?.breakEvenRangeMax;
+  const breakEvenThresholdMode =
+    plugin?.settings?.trade?.breakEvenThresholdMode;
+  const breakEvenThresholdPercent =
+    plugin?.settings?.trade?.breakEvenThresholdPercent;
+
+  
+  
+  const baseCurrencyCode =
+    plugin?.settings?.general?.currency || CurrencyCode.USD;
+  const userCurrency: string = baseCurrencyCode;
+
+  const analyticsDateBasis = getAnalyticsDateBasis(plugin?.settings);
+
+  const calmarHistoryIncomplete = hasIncompleteCalmarHistory(trades);
+
+  
+  
+  
+  
+  const rawTradesForMetrics =
+    analyticsDateBasis === 'exit'
+      ? projectExitDateTradesToRealizedEvents(trades, plugin)
+      : trades;
+
+  
+  
+  
+  
+  const currencyGrouped = aggregatePnLByCurrency(
+    rawTradesForMetrics,
+    userCurrency
+  );
+
+  const includeUnrealizedPnL =
+    plugin?.settings?.trade?.includeUnrealizedPnLInCalculations === true;
+
+  let tradesForDisplay = trades;
+  let tradesForSharpe = trades;
+  let excursionTrades = trades;
+  let tradesForUnrealized = trades;
+  let tradesForMetrics = rawTradesForMetrics;
+  let tickExcursionSupplementTrades: Trade[] = [];
+  const conversionIssueTrades: AnalyticsConversionIssueTrades = {};
+  let conversionMetadata: {
+    baseCurrency: string;
+    rateDate: string;
+    unconvertedCurrencies: string[];
+    partiallyConvertedCurrencies?: string[];
+    originalTradeCount: number;
+    convertedTradeCount: number;
+    brokerBaseCurrencyTradeCount?: number;
+    manualFxRateTradeCount?: number;
+  } | null = null;
+
+  
+  
+  
+  const needsCurrencyConversion = trades.length > 0;
+
+  if (needsCurrencyConversion && plugin) {
+    const baseCurrency = userCurrency;
+    const exchangeRateService = new ExchangeRateService(plugin);
+    
+    
+    
+    
+    const withExplicitExcursions = (list: Trade[]): Trade[] =>
+      list.map((trade) => {
+        if ((trade.currency || userCurrency) === userCurrency) return trade;
+        const resolution = resolvePreConversionExcursionFields(trade);
+        return resolution.changed ? { ...trade, ...resolution.fields } : trade;
+      });
+    const conversionIssues = (
+      converted: Trade[],
+      excluded: Trade[]
+    ): Trade[] => [
+      ...converted.filter(
+        (trade) => (trade.conversionPartialCurrencies?.length ?? 0) > 0
+      ),
+      ...excluded,
+    ];
+    
+    
+    
+    
+    const convertedDisplay = await exchangeRateService.convertTrades(
+      withExplicitExcursions(trades),
+      baseCurrency,
+      baseCurrency,
+      {
+        includeUnrealizedPnl: includeUnrealizedPnL,
+        sameCurrencyMemo: dashboardConversions,
+      }
+    );
+    throwIfAnalyticsPreparationAborted(mode);
+    if (convertedDisplay) {
+      tradesForDisplay = convertedDisplay.trades;
+      tradesForSharpe = convertedDisplay.trades;
+      excursionTrades = [
+        ...convertedDisplay.trades,
+        ...convertedDisplay.excludedTrades,
+      ];
+      tradesForUnrealized = convertedDisplay.trades;
+      const displayIssues = conversionIssues(
+        convertedDisplay.trades,
+        convertedDisplay.excludedTrades
+      );
+      conversionIssueTrades.sharpeRatioTrades = displayIssues;
+      conversionIssueTrades.unrealizedPnlTrades = includeUnrealizedPnL
+        ? displayIssues
+        : [];
+      
+      
+      
+      
+      conversionMetadata = {
+        baseCurrency: convertedDisplay.baseCurrency,
+        rateDate: convertedDisplay.rateDate,
+        unconvertedCurrencies: convertedDisplay.unconvertedCurrencies,
+        partiallyConvertedCurrencies:
+          convertedDisplay.partiallyConvertedCurrencies,
+        originalTradeCount: convertedDisplay.originalTradeCount,
+        convertedTradeCount: convertedDisplay.convertedTradeCount,
+        brokerBaseCurrencyTradeCount:
+          convertedDisplay.brokerBaseCurrencyTradeCount,
+        manualFxRateTradeCount: convertedDisplay.manualFxRateTradeCount,
+      };
+    } else {
+      
+      
+      
+      tradesForUnrealized = trades.filter((trade) =>
+        hasDisplayableUnrealizedContribution(trade, userCurrency)
+      );
+    }
+
+    
+    
+    const convertedMetrics =
+      rawTradesForMetrics === trades
+        ? convertedDisplay
+        : await exchangeRateService.convertTrades(
+            withExplicitExcursions(rawTradesForMetrics),
+            baseCurrency,
+            baseCurrency,
+            {
+              includeUnrealizedPnl: includeUnrealizedPnL,
+              sameCurrencyMemo: dashboardConversions,
+            }
+          );
+    throwIfAnalyticsPreparationAborted(mode);
+    if (convertedMetrics) {
+      tradesForMetrics = convertedMetrics.trades;
+      tickExcursionSupplementTrades = convertedMetrics.excludedTrades;
+      conversionIssueTrades.metricTrades = conversionIssues(
+        convertedMetrics.trades,
+        convertedMetrics.excludedTrades
+      );
+      conversionIssueTrades.tickExcursionSupplementTrades =
+        convertedMetrics.excludedTrades;
+      if (
+        analyticsDateBasis === 'exit' &&
+        options?.executionScopedDateRange !== true
+      ) {
+        
+        
+        tradesForDisplay = convertedMetrics.trades;
+      }
+      if (conversionMetadata) {
+        const realizedSourceRows = convertedMetrics.trades.filter((trade) =>
+          isPnlContributingTrade(trade)
+        );
+        const unrealizedSourceRows = tradesForUnrealized.filter(
+          (trade) =>
+            (analyticsDateBasis !== 'exit' ||
+              isSnapshotCaptureInExitRange(trade, plugin)) &&
+            calculateUnrealizedPnL(trade) !== null
+        );
+        const scopedSourceRows = [
+          ...realizedSourceRows,
+          ...unrealizedSourceRows,
+        ];
+        const brokerSourceKeys = new Set<string>();
+        const manualSourceKeys = new Set<string>();
+        for (const trade of realizedSourceRows) {
+          const sourceKey =
+            trade.tradeId ?? trade._dashboardExcursionSourceKey ?? trade.path;
+          if (
+            typeof trade.brokerBaseCurrencyPnl === 'number' &&
+            Number.isFinite(trade.brokerBaseCurrencyPnl) &&
+            trade.brokerBaseCurrencyPnl !== 0 &&
+            trade.brokerBaseCurrency === convertedMetrics.baseCurrency &&
+            trade.originalCurrency !== convertedMetrics.baseCurrency
+          ) {
+            brokerSourceKeys.add(sourceKey);
+          }
+        }
+        for (const trade of scopedSourceRows) {
+          const sourceKey =
+            trade.tradeId ?? trade._dashboardExcursionSourceKey ?? trade.path;
+          if (trade.conversionUsedManualRate === true) {
+            manualSourceKeys.add(sourceKey);
+          }
+        }
+        conversionMetadata.rateDate = resolveScopedConversionRateDate(
+          scopedSourceRows,
+          convertedMetrics.rateDate,
+          manualSourceKeys.size
+        );
+        conversionMetadata.unconvertedCurrencies = Array.from(
+          new Set([
+            ...conversionMetadata.unconvertedCurrencies,
+            ...convertedMetrics.unconvertedCurrencies,
+          ])
+        );
+        conversionMetadata.partiallyConvertedCurrencies = Array.from(
+          new Set([
+            ...(conversionMetadata.partiallyConvertedCurrencies ?? []),
+            ...(convertedMetrics.partiallyConvertedCurrencies ?? []),
+          ])
+        );
+        conversionMetadata.brokerBaseCurrencyTradeCount = brokerSourceKeys.size;
+        conversionMetadata.manualFxRateTradeCount = manualSourceKeys.size;
+      }
+    }
+  }
+
+  
+  
+  const accountCapitalByLookupKey = drawdownCapitalBasisNeedsComputedCapital(
+    tradesForMetrics,
+    plugin?.settings?.account?.accountMetadata,
+    filters
+  )
+    ? await getAccountCapitalBasisLookup(plugin)
+    : undefined;
+  throwIfAnalyticsPreparationAborted(mode);
+
+  
+  const drawdownCapitalBasis = resolveDrawdownCapitalBasis(
+    tradesForMetrics,
+    plugin?.settings?.account?.accountMetadata,
+    {
+      filters,
+      displayCurrency: conversionMetadata?.baseCurrency ?? userCurrency,
+      accountCapitalByLookupKey,
+    }
+  );
+  const context = createAnalyticsContext({
+    currency: userCurrency,
+    analyticsDateBasis,
+    tradingDayCutoffTime: plugin?.settings?.trade?.tradingDayCutoffTime,
+    breakEvenRangeMin,
+    breakEvenRangeMax,
+    breakEvenThresholdMode,
+    breakEvenThresholdPercent,
+    defaultRiskAmount,
+    drawdownCapitalBasis,
+    maeMfeDisplayUnit: plugin?.settings?.trade?.maeMfeDisplayUnit ?? 'dollar',
+    weekStartDay: plugin?.settings?.trade?.weekStartDay ?? 'monday',
+    timezone: resolveRuntimeTimezone(),
+  });
+  const dataset: AnalyticsPreparedDataset = {
+    metricTrades: tradesForMetrics,
+    calmarHistoryIncomplete,
+    conversionIssueTrades,
+    ...(conversionMetadata
+      ? {
+          conversionMetadata: {
+            unconvertedCurrencies: conversionMetadata.unconvertedCurrencies,
+            partiallyConvertedCurrencies:
+              conversionMetadata.partiallyConvertedCurrencies,
+            originalTradeCount: conversionMetadata.originalTradeCount,
+            convertedTradeCount: conversionMetadata.convertedTradeCount,
+          },
+        }
+      : {}),
+    preparedFor: {
+      currency: context.currency,
+      analyticsDateBasis: context.analyticsDateBasis,
+    },
+    sharpeRatioTrades: tradesForSharpe,
+    unrealizedPnlTrades: includeUnrealizedPnL
+      ? analyticsDateBasis === 'exit'
+        ? tradesForUnrealized.filter((trade) =>
+            isSnapshotCaptureInExitRange(trade, plugin)
+          )
+        : tradesForUnrealized
+      : [],
+    tickExcursionSupplementTrades,
+  };
+  const createAnalyticsService = (factoryOptions?: {
+    groupingResolvers?: AnalyticsGroupingResolvers;
+  }): AnalyticsService =>
+    new AnalyticsService({
+      context,
+      calculateDashboardMetrics: calculateMetrics,
+      isTradeOpen: isTradeOpenInDashboard,
+      customFieldDefinitions,
+      groupingResolvers: factoryOptions?.groupingResolvers,
+    });
+
+  
+  await slicer.maybeYield();
+  throwIfAnalyticsPreparationAborted(mode);
+  return {
+    dataset,
+    context,
+    customFieldDefinitions,
+    skippedTradeFileCount,
+    createAnalyticsService,
+    trades,
+    tradesForDisplay,
+    excursionTrades,
+    tradesForUnrealized,
+    analyticsDateBasis,
+    includeUnrealizedPnL,
+    conversionMetadata,
+    currencyGrouped,
+    userCurrency,
+    baseCurrencyCode,
+    needsCurrencyConversion,
+    drawdownCapitalBasis,
+    executionScopedDateRange: options?.executionScopedDateRange === true,
+  };
+};
+
+export const prepareDashboardAnalytics = async (
+  app: App,
+  tradeService: TradeService,
+  filters: FilterState,
+  plugin: JournalitPlugin,
+  options?: StrictAnalyticsPreparationOptions
+): Promise<PreparedDashboardAnalytics> => {
+  const mode: AnalyticsPreparationMode = {
+    kind: 'strict',
+    signal: options?.signal,
+  };
+  try {
+    const prepared = await buildDashboardAnalytics(
+      app,
+      tradeService,
+      filters,
+      plugin.settings.trade?.defaultRiskAmount,
+      plugin,
+      { freshTradeQuery: options?.freshTradeQuery },
+      mode
+    );
+    throwIfAnalyticsPreparationAborted(mode);
+    return {
+      dataset: prepared.dataset,
+      context: prepared.context,
+      customFieldDefinitions: prepared.customFieldDefinitions,
+      skippedTradeFileCount: prepared.skippedTradeFileCount,
+      createAnalyticsService: prepared.createAnalyticsService,
+    };
+  } catch {
+    if (options?.signal?.aborted) throw options.signal.reason;
+    throw new AnalyticsPreparationError();
+  }
+};
+
 
 export const fetchDashboardData = async (
   app: App,
@@ -2707,246 +3152,33 @@ export const fetchDashboardData = async (
   options?: DashboardDataFetchOptions
 ): Promise<DashboardData> => {
   try {
-    
-    const trades = await fetchTradeData(
+    const prepared = await buildDashboardAnalytics(
       app,
       tradeService,
       filters,
-      plugin,
-      options
-    );
-
-    const breakEvenRangeMin = plugin?.settings?.trade?.breakEvenRangeMin;
-    const breakEvenRangeMax = plugin?.settings?.trade?.breakEvenRangeMax;
-    const breakEvenThresholdMode =
-      plugin?.settings?.trade?.breakEvenThresholdMode;
-    const breakEvenThresholdPercent =
-      plugin?.settings?.trade?.breakEvenThresholdPercent;
-
-    
-    
-    const userCurrency: string = plugin?.settings?.general?.currency || 'USD';
-
-    const analyticsDateBasis = getAnalyticsDateBasis(plugin?.settings);
-
-    const calmarHistoryIncomplete = hasIncompleteCalmarHistory(trades);
-
-    
-    
-    
-    
-    const rawTradesForMetrics =
-      analyticsDateBasis === 'exit'
-        ? projectExitDateTradesToRealizedEvents(trades, plugin)
-        : trades;
-
-    
-    
-    
-    
-    const currencyGrouped = aggregatePnLByCurrency(
-      rawTradesForMetrics,
-      userCurrency
-    );
-
-    const includeUnrealizedPnL =
-      plugin?.settings?.trade?.includeUnrealizedPnLInCalculations === true;
-
-    let tradesForDisplay = trades;
-    let tradesForSharpe = trades;
-    let excursionTrades = trades;
-    let tradesForUnrealized = trades;
-    let tradesForMetrics = rawTradesForMetrics;
-    let tickExcursionSupplementTrades: Trade[] = [];
-    let conversionMetadata: {
-      baseCurrency: string;
-      rateDate: string;
-      unconvertedCurrencies: string[];
-      partiallyConvertedCurrencies?: string[];
-      originalTradeCount: number;
-      convertedTradeCount: number;
-      brokerBaseCurrencyTradeCount?: number;
-      manualFxRateTradeCount?: number;
-    } | null = null;
-
-    
-    
-    
-    const needsCurrencyConversion = trades.length > 0;
-
-    if (needsCurrencyConversion && plugin) {
-      const baseCurrency = userCurrency;
-      const exchangeRateService = new ExchangeRateService(plugin);
-      
-      
-      
-      
-      const withExplicitExcursions = (list: Trade[]): Trade[] =>
-        list.map((trade) => {
-          if ((trade.currency || userCurrency) === userCurrency) return trade;
-          const resolution = resolvePreConversionExcursionFields(trade);
-          return resolution.changed
-            ? { ...trade, ...resolution.fields }
-            : trade;
-        });
-      
-      
-      
-      
-      const convertedDisplay = await exchangeRateService.convertTrades(
-        withExplicitExcursions(trades),
-        baseCurrency,
-        baseCurrency,
-        { includeUnrealizedPnl: includeUnrealizedPnL }
-      );
-      if (convertedDisplay) {
-        tradesForDisplay = convertedDisplay.trades;
-        tradesForSharpe = convertedDisplay.trades;
-        
-        excursionTrades = [
-          ...convertedDisplay.trades,
-          ...convertedDisplay.excludedTrades,
-        ];
-        tradesForUnrealized = convertedDisplay.trades;
-        
-        
-        
-        
-        conversionMetadata = {
-          baseCurrency: convertedDisplay.baseCurrency,
-          rateDate: convertedDisplay.rateDate,
-          unconvertedCurrencies: convertedDisplay.unconvertedCurrencies,
-          partiallyConvertedCurrencies:
-            convertedDisplay.partiallyConvertedCurrencies,
-          originalTradeCount: convertedDisplay.originalTradeCount,
-          convertedTradeCount: convertedDisplay.convertedTradeCount,
-          brokerBaseCurrencyTradeCount:
-            convertedDisplay.brokerBaseCurrencyTradeCount,
-          manualFxRateTradeCount: convertedDisplay.manualFxRateTradeCount,
-        };
-      } else {
-        
-        
-        
-        tradesForUnrealized = trades.filter((trade) =>
-          hasDisplayableUnrealizedContribution(trade, userCurrency)
-        );
-      }
-
-      const metricsConversionInput =
-        withExplicitExcursions(rawTradesForMetrics);
-      const convertedMetrics = await exchangeRateService.convertTrades(
-        metricsConversionInput,
-        baseCurrency,
-        baseCurrency,
-        { includeUnrealizedPnl: includeUnrealizedPnL }
-      );
-      if (convertedMetrics) {
-        tradesForMetrics = convertedMetrics.trades;
-        tickExcursionSupplementTrades = convertedMetrics.excludedTrades;
-        if (
-          analyticsDateBasis === 'exit' &&
-          options?.executionScopedDateRange !== true
-        ) {
-          
-          
-          tradesForDisplay = convertedMetrics.trades;
-        }
-        if (conversionMetadata) {
-          const realizedSourceRows = convertedMetrics.trades.filter((trade) =>
-            isPnlContributingTrade(trade)
-          );
-          const unrealizedSourceRows = tradesForUnrealized.filter(
-            (trade) =>
-              (analyticsDateBasis !== 'exit' ||
-                isSnapshotCaptureInExitRange(trade, plugin)) &&
-              calculateUnrealizedPnL(trade) !== null
-          );
-          const scopedSourceRows = [
-            ...realizedSourceRows,
-            ...unrealizedSourceRows,
-          ];
-          const brokerSourceKeys = new Set<string>();
-          const manualSourceKeys = new Set<string>();
-          for (const trade of realizedSourceRows) {
-            const sourceKey =
-              trade.tradeId ?? trade._dashboardExcursionSourceKey ?? trade.path;
-            if (
-              typeof trade.brokerBaseCurrencyPnl === 'number' &&
-              Number.isFinite(trade.brokerBaseCurrencyPnl) &&
-              trade.brokerBaseCurrencyPnl !== 0 &&
-              trade.brokerBaseCurrency === convertedMetrics.baseCurrency &&
-              trade.originalCurrency !== convertedMetrics.baseCurrency
-            ) {
-              brokerSourceKeys.add(sourceKey);
-            }
-          }
-          for (const trade of scopedSourceRows) {
-            const sourceKey =
-              trade.tradeId ?? trade._dashboardExcursionSourceKey ?? trade.path;
-            if (trade.conversionUsedManualRate === true) {
-              manualSourceKeys.add(sourceKey);
-            }
-          }
-          conversionMetadata.rateDate = resolveScopedConversionRateDate(
-            scopedSourceRows,
-            convertedMetrics.rateDate,
-            manualSourceKeys.size
-          );
-          conversionMetadata.unconvertedCurrencies = Array.from(
-            new Set([
-              ...conversionMetadata.unconvertedCurrencies,
-              ...convertedMetrics.unconvertedCurrencies,
-            ])
-          );
-          conversionMetadata.partiallyConvertedCurrencies = Array.from(
-            new Set([
-              ...(conversionMetadata.partiallyConvertedCurrencies ?? []),
-              ...(convertedMetrics.partiallyConvertedCurrencies ?? []),
-            ])
-          );
-          conversionMetadata.brokerBaseCurrencyTradeCount =
-            brokerSourceKeys.size;
-          conversionMetadata.manualFxRateTradeCount = manualSourceKeys.size;
-        }
-      }
-    }
-
-    const accountCapitalByLookupKey =
-      await getAccountCapitalBasisLookup(plugin);
-
-    
-    const drawdownCapitalBasis = resolveDrawdownCapitalBasis(
-      tradesForMetrics,
-      plugin?.settings?.account?.accountMetadata,
-      {
-        filters,
-        displayCurrency: conversionMetadata?.baseCurrency ?? userCurrency,
-        accountCapitalByLookupKey,
-      }
-    );
-    const metrics = calculateMetrics(tradesForMetrics, {
-      calmarHistoryIncomplete,
       defaultRiskAmount,
-      breakEvenRangeMin,
-      breakEvenRangeMax,
-      breakEvenThresholdMode,
-      breakEvenThresholdPercent,
-      defaultCurrency: userCurrency,
+      plugin,
+      options,
+      { kind: 'tolerant' }
+    );
+    const {
+      dataset,
+      createAnalyticsService,
+      trades,
+      tradesForDisplay,
+      excursionTrades,
+      tradesForUnrealized,
       analyticsDateBasis,
-      tradingDayCutoffTime: plugin?.settings?.trade?.tradingDayCutoffTime,
+      includeUnrealizedPnL,
+      conversionMetadata,
+      currencyGrouped,
+      userCurrency,
+      baseCurrencyCode,
+      needsCurrencyConversion,
       drawdownCapitalBasis,
-      maeMfeDisplayUnit: plugin?.settings?.trade?.maeMfeDisplayUnit ?? 'dollar',
-      sharpeRatioTrades: tradesForSharpe,
-      unrealizedPnlTrades: includeUnrealizedPnL
-        ? analyticsDateBasis === 'exit'
-          ? tradesForUnrealized.filter((trade) =>
-              isSnapshotCaptureInExitRange(trade, plugin)
-            )
-          : tradesForUnrealized
-        : [],
-      tickExcursionSupplementTrades,
-    });
+      executionScopedDateRange,
+    } = prepared;
+    const metrics = createAnalyticsService().calculateDashboardMetrics(dataset);
 
     
     
@@ -3033,8 +3265,7 @@ export const fetchDashboardData = async (
     }
 
     const separateSnapshotOnlyTrades =
-      analyticsDateBasis === 'exit' &&
-      options?.executionScopedDateRange !== true;
+      analyticsDateBasis === 'exit' && !executionScopedDateRange;
     const unrealizedTrades =
       separateSnapshotOnlyTrades && includeUnrealizedPnL
         ? tradesForUnrealized.filter(
@@ -3051,20 +3282,27 @@ export const fetchDashboardData = async (
 
     return {
       trades: displayTrades,
+      expectancySample: calculateExpectancySample(
+        trades.filter((trade) =>
+          isWholeTradeInAnalyticsRange(trade, analyticsDateBasis, plugin)
+        )
+      ),
       excursionTrades: excursionTrades.filter((trade) =>
         isWholeTradeInAnalyticsRange(trade, analyticsDateBasis, plugin)
       ),
       unrealizedTrades,
       drawdownCapitalBasis,
       realizedEventTrades:
-        analyticsDateBasis === 'exit' ? tradesForMetrics : undefined,
+        analyticsDateBasis === 'exit' ? dataset.metricTrades : undefined,
       metrics,
+      currency: baseCurrencyCode,
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);
     return {
       trades: [],
       metrics: calculateMetrics([], defaultRiskAmount),
+      currency: plugin?.settings?.general?.currency || CurrencyCode.USD,
     };
   }
 };

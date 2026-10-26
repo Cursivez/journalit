@@ -12,10 +12,11 @@ interface ModalGuidePopoverPosition {
 }
 
 export const getModalGuideTargetElement = (
-  selector?: string
+  selector?: string,
+  doc: Document = window.activeDocument
 ): HTMLElement | null => {
   if (!selector) return null;
-  return window.activeDocument.querySelector<HTMLElement>(selector);
+  return doc.querySelector<HTMLElement>(selector);
 };
 
 export function getModalGuidePopoverPosition(

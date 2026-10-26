@@ -1,3 +1,7 @@
+import {
+  parseStopLossTargets,
+  type StopLossTarget,
+} from '../services/trade/core/StopLossTargets';
 import { safeString } from './safeString';
 
 
@@ -79,7 +83,7 @@ export function parseTradeFinancialFields(
 ): {
   rMultiple: number | undefined;
   riskAmount: number | undefined;
-  stopLoss: number | undefined;
+  stopLosses: StopLossTarget[];
   commission: number;
   swap: number;
   fees: number;
@@ -93,7 +97,7 @@ export function parseTradeFinancialFields(
     
     rMultiple: parseOptionalNumber(frontmatter.rMultiple),
     riskAmount: parseOptionalNumber(frontmatter.riskAmount),
-    stopLoss: parseOptionalNumber(frontmatter.stopLoss),
+    stopLosses: parseStopLossTargets(frontmatter.stopLosses),
     rebate: parseOptionalNumber(frontmatter.rebate),
     directPnL: parseOptionalNumber(frontmatter.directPnL),
     dividends,

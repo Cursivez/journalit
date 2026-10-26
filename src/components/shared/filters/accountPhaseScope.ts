@@ -16,7 +16,7 @@ export interface ResolvedAccountPhaseWindow {
   foreignIdentities: string[];
 }
 
-export interface AccountPhaseOption {
+interface AccountPhaseOption {
   id: string;
   name: string;
   startedAt: string;

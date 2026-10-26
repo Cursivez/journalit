@@ -1,5 +1,13 @@
 
 
+import {
+  SESSION_LOG_TAG_COLORS,
+  SESSION_LOG_TAG_SHORT_LABEL_MAX_LENGTH,
+  isSessionLogTagDraftComplete,
+  normalizeSessionLogTagDraft,
+  persistSessionLogTags,
+  type SessionLogTagDraft,
+} from '../../../services/sessionLog/sessionLogTagCatalog';
 import React, {
   useEffect,
   useLayoutEffect,
@@ -122,20 +130,7 @@ function SessionModeWindowNameInput({
   );
 }
 
-const SESSION_LOG_TAG_COLORS = [
-  'blue',
-  'indigo',
-  'purple',
-  'green',
-  'pink',
-  'amber',
-  'red',
-  'orange',
-] as const;
-
 const NEW_SESSION_LOG_TAG_PREFIX = 'new-session-log-tag';
-
-type SessionLogTagDraft = Omit<SessionLogTagDefinition, 'id'>;
 
 const createEmptyTagDraft = (): SessionLogTagDraft => ({
   label: '',
@@ -143,14 +138,6 @@ const createEmptyTagDraft = (): SessionLogTagDraft => ({
   color: 'blue',
   requiresResolution: false,
   lessonTag: false,
-});
-
-const normalizeTagDraft = (draft: SessionLogTagDraft): SessionLogTagDraft => ({
-  label: draft.label.trim(),
-  shortLabel: draft.shortLabel.trim().toUpperCase(),
-  color: draft.color,
-  requiresResolution: draft.requiresResolution,
-  lessonTag: draft.lessonTag,
 });
 
 function ensureSessionModeSettings(plugin: JournalitPlugin): void {
@@ -193,18 +180,6 @@ function getAvailableResourceFiles(
     )
     .sort((a, b) => a.path.localeCompare(b.path))
     .slice(0, 50);
-}
-
-async function saveSessionLogTags(
-  plugin: JournalitPlugin,
-  tags: SessionLogTagDefinition[]
-): Promise<void> {
-  plugin.settings.drc = { ...plugin.settings.drc, sessionLogTags: tags };
-  await plugin.saveSettings();
-  eventBus.publish('settings:changed', {
-    section: 'drc',
-    source: 'session-log-tag-settings',
-  });
 }
 
 async function saveSessionModeSettings(
@@ -340,6 +315,17 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
   useLayoutEffect(() => {
     sessionModeSettingsRef.current = sessionModeSettings;
   }, [sessionModeSettings]);
+  useEffect(
+    () =>
+      eventBus.subscribe('settings:changed', (payload) => {
+        if (payload.section !== 'sessionMode' && payload.section !== 'all') {
+          return;
+        }
+        sessionModeSettingsRef.current = plugin.settings.sessionMode;
+        setSettingsVersion((previous) => previous + 1);
+      }),
+    [plugin]
+  );
 
   const availableResourceFiles = useMemo(
     () =>
@@ -440,8 +426,8 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
     await persistSessionModeSettings({ phaseLayouts: layouts });
   };
 
-  const persistSessionLogTags = async (tags: SessionLogTagDefinition[]) => {
-    await saveSessionLogTags(plugin, tags);
+  const saveSessionLogTags = async (tags: SessionLogTagDefinition[]) => {
+    await persistSessionLogTags(plugin, tags, 'session-log-tag-settings');
     setSettingsVersion((previous) => previous + 1);
   };
 
@@ -561,7 +547,7 @@ function SessionModeSettingsSection({ plugin }: SessionModeTabProps) {
 
       <SessionLogTagsSettings
         tags={sessionLogTags}
-        persistTags={persistSessionLogTags}
+        persistTags={saveSessionLogTags}
       />
     </div>
   );
@@ -1070,8 +1056,8 @@ function SessionLogTagsSettings({
   };
 
   const saveEditing = async (id: string) => {
-    const normalized = normalizeTagDraft(editDraft);
-    if (!normalized.label || !normalized.shortLabel) return;
+    const normalized = normalizeSessionLogTagDraft(editDraft);
+    if (!isSessionLogTagDraftComplete(normalized)) return;
     await persistTags(
       tags.map((tag) =>
         tag.id === id
@@ -1086,8 +1072,8 @@ function SessionLogTagsSettings({
   };
 
   const addTag = async () => {
-    const normalized = normalizeTagDraft(newDraft);
-    if (!normalized.label || !normalized.shortLabel) return;
+    const normalized = normalizeSessionLogTagDraft(newDraft);
+    if (!isSessionLogTagDraftComplete(normalized)) return;
     await persistTags([
       ...tags,
       {
@@ -1126,13 +1112,13 @@ function SessionLogTagsSettings({
         {tags.map((tag) =>
           editingTagId === tag.id ? (
             <div key={tag.id} className="setting-item option-item">
-              <div className="setting-item-control journalit-session-log-tag-edit-grid">
+              <div className="journalit-session-log-tag-edit-row">
                 <SessionLogTagDraftFields
                   draft={editDraft}
                   setDraft={setEditDraft}
                   labelPrefix={tag.id}
                 />
-                <div className="option-actions">
+                <div className="option-actions journalit-session-log-tag-edit-actions">
                   <NoTooltipButton
                     label={t(
                       'settings.customization.options.label.save-changes'
@@ -1269,7 +1255,7 @@ function SessionLogTagDraftFields({
           id={`${labelPrefix}-short-label`}
           type="text"
           value={draft.shortLabel}
-          maxLength={6}
+          maxLength={SESSION_LOG_TAG_SHORT_LABEL_MAX_LENGTH}
           onChange={(event) =>
             setDraft((current) => ({
               ...current,
@@ -1298,38 +1284,40 @@ function SessionLogTagDraftFields({
           ))}
         </select>
       </label>
-      <label className="journalit-session-log-tag-toggle">
-        <input
-          type="checkbox"
-          checked={draft.requiresResolution ?? false}
-          onChange={(event) =>
-            setDraft((current) => ({
-              ...current,
-              requiresResolution: event.target.checked,
-            }))
-          }
-        />
-        <span>{t('settings.session-mode.tag-requires-resolution')}</span>
-        <SessionLogTagSettingInfoTooltip
-          content={t('settings.session-mode.tag-requires-resolution-tooltip')}
-        />
-      </label>
-      <label className="journalit-session-log-tag-toggle">
-        <input
-          type="checkbox"
-          checked={draft.lessonTag ?? false}
-          onChange={(event) =>
-            setDraft((current) => ({
-              ...current,
-              lessonTag: event.target.checked,
-            }))
-          }
-        />
-        <span>{t('settings.session-mode.tag-lesson')}</span>
-        <SessionLogTagSettingInfoTooltip
-          content={t('settings.session-mode.tag-lesson-tooltip')}
-        />
-      </label>
+      <div className="journalit-session-log-tag-toggles">
+        <label className="journalit-session-log-tag-toggle">
+          <input
+            type="checkbox"
+            checked={draft.requiresResolution ?? false}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                requiresResolution: event.target.checked,
+              }))
+            }
+          />
+          <span>{t('settings.session-mode.tag-requires-resolution')}</span>
+          <SessionLogTagSettingInfoTooltip
+            content={t('settings.session-mode.tag-requires-resolution-tooltip')}
+          />
+        </label>
+        <label className="journalit-session-log-tag-toggle">
+          <input
+            type="checkbox"
+            checked={draft.lessonTag ?? false}
+            onChange={(event) =>
+              setDraft((current) => ({
+                ...current,
+                lessonTag: event.target.checked,
+              }))
+            }
+          />
+          <span>{t('settings.session-mode.tag-lesson')}</span>
+          <SessionLogTagSettingInfoTooltip
+            content={t('settings.session-mode.tag-lesson-tooltip')}
+          />
+        </label>
+      </div>
     </div>
   );
 }

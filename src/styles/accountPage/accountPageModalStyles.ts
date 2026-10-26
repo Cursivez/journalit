@@ -12,6 +12,7 @@ export const ACCOUNT_PAGE_MODAL_STYLES = `
   }
 
   .journalit-manual-drawdown-date-input-wrapper {
+    width: 100%;
     display: flex;
     align-items: center;
     position: relative;

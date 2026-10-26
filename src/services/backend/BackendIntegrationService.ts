@@ -1,5 +1,13 @@
+import {
+  hasStopLossAmount,
+  isPricedStopLoss,
+  parseStopLossTargets,
+  type StopLossTarget,
+} from '../trade/core/StopLossTargets';
+import type { TakeProfitTarget } from '../../components/forms/trade/types';
+import { parseTakeProfitTargets } from '../trade/core/TakeProfitTargets';
+import { hasStopLossRiskBasis } from '../../utils/riskCalculation';
 import { logger } from '../../utils/logger';
-import { generateUUID } from '../../utils/uuid';
 
 
 import {
@@ -26,6 +34,7 @@ import { TradeSyncService } from './TradeSyncService';
 import { AccountManagementService } from './AccountManagementService';
 import { FTPManagementService } from './FTPManagementService';
 import { BackendSecretStorage } from './BackendSecretStorage';
+import { getOrCreateVaultIdentifier } from './VaultIdentity';
 import { FileWatcherService } from './FileWatcherService';
 import {
   buildProjectionSyncOperationResult,
@@ -42,6 +51,7 @@ import {
   METATRADER_SYNC_ENTITLEMENT_UNVERIFIED_STATUS,
   METATRADER_SYNC_NOT_ENTITLED_STATUS,
   type MetaTraderSyncResult,
+  type TradeMetadata,
 } from './types';
 import { debounceAsync } from '../../utils/debounce';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
@@ -65,6 +75,7 @@ import {
 } from '../trade/core/TradeNoteDocumentCodec';
 import { normalizeAccountLookupKey } from '../trade/core/TradeAccountIdentity';
 import { deduplicateOptions } from '../../utils/stringNormalization';
+import { normalizeTradeSelectionForWrite } from '../../utils/tradeTagNormalization';
 import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
 import { formatTagForYAML } from '../../utils/tagSchema';
 
@@ -107,9 +118,6 @@ const getErrorMessage = (error: unknown): string =>
 const asUnknownArray = (value: unknown): unknown[] | null =>
   Array.isArray(value) ? value : null;
 
-const hasOwnRecordKey = (record: object, key: string): boolean =>
-  Object.keys(record).includes(key);
-
 function findYamlSeparator(line: string): number {
   return line.search(/:/);
 }
@@ -128,6 +136,28 @@ interface RelinkRollbackSnapshot {
   originalContent: string;
   originalTradeData?: TradeData;
 }
+
+
+const getSyncOwnedStopLossPrice = (value: unknown): number | null => {
+  const stops = parseStopLossTargets(value).filter(isPricedStopLoss);
+  if (stops.length > 1 || stops.some(hasStopLossAmount)) return null;
+  return stops[0]?.price ?? Number.NaN;
+};
+
+
+const getSyncOwnedTakeProfitPrice = (value: unknown): number | null => {
+  const targets = parseTakeProfitTargets(value);
+  if (targets.length > 1) return null;
+  const [target] = targets;
+  if (!target) return Number.NaN;
+  if (
+    target.size !== undefined ||
+    (target.closePercent !== undefined && target.closePercent !== 100)
+  ) {
+    return null;
+  }
+  return target.price ?? Number.NaN;
+};
 
 
 export class BackendIntegrationService {
@@ -353,18 +383,6 @@ export class BackendIntegrationService {
   }
 
   
-  private async getVaultIdentifier(): Promise<string> {
-    const existingVaultId =
-      this.plugin.settings.backendIntegration?.vaultIdentifier;
-    if (existingVaultId) return existingVaultId;
-
-    const vaultId = `vault_${generateUUID()}`;
-    this.settings.vaultIdentifier = vaultId;
-    await this.plugin.saveSettings();
-    return vaultId;
-  }
-
-  
   async registerVault(
     options: { suppressPremiumPrompt?: boolean } = {}
   ): Promise<boolean> {
@@ -382,7 +400,7 @@ export class BackendIntegrationService {
     const authToken = preAuthToken;
     
     const userId = this.settings.ftpUsername || this.getUserId();
-    const vaultIdentifier = await this.getVaultIdentifier();
+    const vaultIdentifier = await getOrCreateVaultIdentifier(this.plugin);
 
     const registrationData: VaultRegistrationData = {
       vault_path: vaultIdentifier,
@@ -907,8 +925,11 @@ export class BackendIntegrationService {
                   continue;
                 }
 
-                const storedStopLoss = Number(frontmatter.stopLoss);
-                const hasBackendStopLoss = trade.stop_loss !== undefined;
+                const storedStopLoss = getSyncOwnedStopLossPrice(
+                  frontmatter.stopLosses
+                );
+                const hasBackendStopLoss =
+                  trade.stop_loss !== undefined && storedStopLoss !== null;
                 const backendStopLoss = this.normalizeMetaTraderRiskTarget(
                   trade.stop_loss
                 );
@@ -916,38 +937,25 @@ export class BackendIntegrationService {
                   hasBackendStopLoss &&
                   (backendStopLoss === undefined
                     ? Number.isFinite(storedStopLoss)
-                    : !Number.isFinite(storedStopLoss) ||
-                      storedStopLoss !== backendStopLoss)
+                    : storedStopLoss !== backendStopLoss)
                 ) {
                   batchResults.push(trade);
                   continue;
                 }
 
-                const hasStoredTakeProfits = hasOwnRecordKey(
-                  frontmatter,
-                  'takeProfits'
-                );
-                const takeProfitsValue = asUnknownArray(
+                const storedTakeProfit = getSyncOwnedTakeProfitPrice(
                   frontmatter.takeProfits
                 );
-                const storedTakeProfit = takeProfitsValue
-                  ? (() => {
-                      const firstTakeProfit = takeProfitsValue[0];
-                      return isRecord(firstTakeProfit)
-                        ? Number(firstTakeProfit.price)
-                        : Number.NaN;
-                    })()
-                  : Number.NaN;
-                const hasBackendTakeProfit = trade.take_profit !== undefined;
+                const hasBackendTakeProfit =
+                  trade.take_profit !== undefined && storedTakeProfit !== null;
                 const backendTakeProfit = this.normalizeMetaTraderRiskTarget(
                   trade.take_profit
                 );
                 if (
                   hasBackendTakeProfit &&
                   (backendTakeProfit === undefined
-                    ? hasStoredTakeProfits
-                    : !Number.isFinite(storedTakeProfit) ||
-                      storedTakeProfit !== backendTakeProfit)
+                    ? Number.isFinite(storedTakeProfit)
+                    : storedTakeProfit !== backendTakeProfit)
                 ) {
                   batchResults.push(trade);
                   continue;
@@ -1206,19 +1214,23 @@ export class BackendIntegrationService {
       let updatedFiles = 0;
       let failedTradeWriteCount = 0;
       const importedFiles: MetaTraderSyncResult['importedTrades'] = [];
+      
+      
+      const finishCancelledWrites = (): SyncResponse => {
+        session.importedTrades.push(...importedFiles);
+        session.failedTradeWriteCount += failedTradeWriteCount;
+        return this.finishCancelledSync(session);
+      };
 
       for (let i = 0; i < trades.length; i++) {
         if (session.cancelled) {
-          return this.finishCancelledSync(session);
+          return finishCancelledWrites();
         }
 
         const trade = trades[i];
         try {
           const tradeStartTime = Date.now();
           const result = await this.createTradeFile(trade);
-          if (session.cancelled) {
-            return this.finishCancelledSync(session);
-          }
           const tradeTime = Date.now() - tradeStartTime;
 
           if (result.status === 'created') {
@@ -1266,7 +1278,7 @@ export class BackendIntegrationService {
       }
 
       if (session.cancelled) {
-        return this.finishCancelledSync(session);
+        return finishCancelledWrites();
       }
 
       
@@ -1957,7 +1969,14 @@ export class BackendIntegrationService {
 
   private async mapBackendTradeToTradeData(
     trade: Trade,
-    currentTrade?: { tradeId?: unknown; schemaVersion?: unknown }
+    currentTrade?: Pick<
+      TradeMetadata,
+      'tradeId' | 'schemaVersion' | 'riskAmount'
+    >,
+    
+    userOwnedStopLosses?: StopLossTarget[],
+    
+    userOwnedTakeProfits?: TakeProfitTarget[]
   ): Promise<TradeData> {
     const entryTime = safeParseDateValue(trade.entry_time);
     if (!entryTime) {
@@ -2013,9 +2032,14 @@ export class BackendIntegrationService {
     const account = [fallbackName];
     const accountId = trade.mt_account_number || undefined;
 
-    const setupNames = this.normalizeStringList(trade.setup);
-    const mistakeNames = this.normalizeStringList(
-      trade.mistake ?? trade.mistakeIds ?? []
+    
+    const setupNames = normalizeTradeSelectionForWrite(
+      trade.setup ?? [],
+      'setup'
+    );
+    const mistakeNames = normalizeTradeSelectionForWrite(
+      trade.mistake ?? [],
+      'mistake'
     );
     const tags = this.normalizeStringList(trade.tags);
     if (tags.length > 0) {
@@ -2100,7 +2124,6 @@ export class BackendIntegrationService {
       setup: [...setupNames],
       mistake: [...mistakeNames],
       tags,
-      customTags: [...tags],
       images,
       thesis: trade.thesis?.trim() || '',
       notes: trade.notes?.trim(),
@@ -2112,13 +2135,19 @@ export class BackendIntegrationService {
       commissionType: 'fixed',
       swap: trade.swap ?? 0,
       fees: trade.fees ?? 0,
-      ...(hasBackendStopLoss && { stopLoss }),
-      ...(hasBackendTakeProfit && {
-        takeProfits:
-          takeProfit !== undefined
-            ? [{ price: takeProfit, closePercent: 100 }]
-            : [],
-      }),
+      ...(userOwnedStopLosses !== undefined
+        ? { stopLosses: userOwnedStopLosses }
+        : hasBackendStopLoss && {
+            stopLosses: stopLoss !== undefined ? [{ price: stopLoss }] : [],
+          }),
+      ...(userOwnedTakeProfits !== undefined
+        ? { takeProfits: userOwnedTakeProfits }
+        : hasBackendTakeProfit && {
+            takeProfits:
+              takeProfit !== undefined
+                ? [{ price: takeProfit, closePercent: 100 }]
+                : [],
+          }),
       currency: trade.currency,
       customFields: trade.customFields,
       useDirectPnLInput,
@@ -2157,6 +2186,17 @@ export class BackendIntegrationService {
       mapped.tradeId = existingTradeId;
     } else if (backendTradeId) {
       mapped.tradeId = backendTradeId;
+    }
+
+    
+    
+    
+    if (
+      typeof currentTrade?.riskAmount === 'number' &&
+      Number.isFinite(currentTrade.riskAmount) &&
+      currentTrade.riskAmount > 0
+    ) {
+      mapped.riskAmount = currentTrade.riskAmount;
     }
 
     if (
@@ -2358,6 +2398,12 @@ export class BackendIntegrationService {
     );
     const nextMTComment = this.normalizeBackendMTComment(trade.mt_comment);
     const mtCommentChanged = currentMTComment !== nextMTComment;
+    const storedStopLoss = getSyncOwnedStopLossPrice(
+      existingFrontmatter?.stopLosses
+    );
+    const storedTakeProfit = getSyncOwnedTakeProfitPrice(
+      existingFrontmatter?.takeProfits
+    );
 
     if (wasOpen && isNowClosed) {
       const tradeService = this.plugin.tradeService;
@@ -2367,7 +2413,13 @@ export class BackendIntegrationService {
 
       const tradeData = await this.mapBackendTradeToTradeData(
         trade,
-        currentTrade
+        currentTrade,
+        storedStopLoss === null
+          ? parseStopLossTargets(existingFrontmatter?.stopLosses)
+          : undefined,
+        storedTakeProfit === null
+          ? parseTakeProfitTargets(existingFrontmatter?.takeProfits)
+          : undefined
       );
       if (tradeData.instrument && tradeData.assetType) {
         await this.ensureSyncedInstrumentOption(
@@ -2397,40 +2449,24 @@ export class BackendIntegrationService {
       return 'updated';
     }
 
-    const hasBackendStopLoss = trade.stop_loss !== undefined;
-    const hasBackendTakeProfit = trade.take_profit !== undefined;
+    const hasBackendStopLoss =
+      trade.stop_loss !== undefined && storedStopLoss !== null;
+    const hasBackendTakeProfit =
+      trade.take_profit !== undefined && storedTakeProfit !== null;
     const backendStopLoss = this.normalizeMetaTraderRiskTarget(trade.stop_loss);
     const backendTakeProfit = this.normalizeMetaTraderRiskTarget(
       trade.take_profit
     );
-    const storedStopLoss = Number(existingFrontmatter?.stopLoss);
     const stopLossChanged =
       hasBackendStopLoss &&
       (backendStopLoss === undefined
         ? Number.isFinite(storedStopLoss)
-        : !Number.isFinite(storedStopLoss) ||
-          storedStopLoss !== backendStopLoss);
-    const hasStoredTakeProfits = hasOwnRecordKey(
-      existingFrontmatter ?? {},
-      'takeProfits'
-    );
-    const existingTakeProfits = asUnknownArray(
-      existingFrontmatter?.takeProfits
-    );
-    const storedTakeProfit = existingTakeProfits
-      ? (() => {
-          const firstTakeProfit = existingTakeProfits[0];
-          return isRecord(firstTakeProfit)
-            ? Number(firstTakeProfit.price)
-            : Number.NaN;
-        })()
-      : Number.NaN;
+        : storedStopLoss !== backendStopLoss);
     const takeProfitChanged =
       hasBackendTakeProfit &&
       (backendTakeProfit === undefined
-        ? hasStoredTakeProfits
-        : !Number.isFinite(storedTakeProfit) ||
-          storedTakeProfit !== backendTakeProfit);
+        ? Number.isFinite(storedTakeProfit)
+        : storedTakeProfit !== backendTakeProfit);
     const forexLotSizeMissing =
       backendStopLoss !== undefined &&
       this.resolveAssetTypeForSync(trade) === 'forex' &&
@@ -2459,7 +2495,10 @@ export class BackendIntegrationService {
           trade.status === 'CLOSED'
             ? (trade.profit_loss ?? existingTradeData.originalPnl)
             : undefined,
-        ...(hasBackendStopLoss && { stopLoss: backendStopLoss }),
+        ...(hasBackendStopLoss && {
+          stopLosses:
+            backendStopLoss !== undefined ? [{ price: backendStopLoss }] : [],
+        }),
         ...(hasBackendTakeProfit && {
           takeProfits:
             backendTakeProfit !== undefined
@@ -2655,7 +2694,7 @@ export class BackendIntegrationService {
     }
 
     return (
-      tradeData.riskAmount === undefined && tradeData.stopLoss === undefined
+      tradeData.riskAmount === undefined && !hasStopLossRiskBasis(tradeData)
     );
   }
 

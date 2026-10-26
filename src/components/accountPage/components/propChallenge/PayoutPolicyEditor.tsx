@@ -82,6 +82,11 @@ function createAvailability(
 
 function createMaximum(kind: string): PropChallengePayoutMaximum {
   switch (kind) {
+    case 'unresolved':
+      return {
+        kind,
+        reason: t('account.prop-challenge.payout.unresolved-cap'),
+      };
     case 'fixed':
       return { kind, amount: 1_000 };
     case 'first_fixed_then_none':
@@ -97,6 +102,13 @@ function createMaximum(kind: string): PropChallengePayoutMaximum {
 
 function createProfitSplit(kind: string): PropChallengeProfitSplit {
   switch (kind) {
+    case 'account_profit_marginal':
+      return {
+        kind,
+        belowPercent: 50,
+        thresholdProfit: 4000,
+        abovePercent: 80,
+      };
     case 'cumulative_payout_threshold':
       return {
         kind,
@@ -124,6 +136,13 @@ function createAftermath(
 ): PropChallengePayoutAftermath {
   const outcome = maximumPayoutOutcome ? { maximumPayoutOutcome } : {};
   switch (kind) {
+    case 'raise_to_starting_balance':
+      return {
+        balanceAction: 'deduct_request',
+        drawdownAction: kind,
+        resetCycle,
+        ...outcome,
+      };
     case 'lock_at_balance':
       return {
         balanceAction: 'deduct_request',
@@ -261,7 +280,445 @@ function PayoutRequestTimeZoneField({
   );
 }
 
+type PayoutPolicyFieldsProps = {
+  policy: PropChallengePayoutPolicy;
+  disabled: boolean;
+  onChange: (policy: PropChallengePayoutPolicy) => void;
+};
 
+
+function PayoutCycleFields({
+  policy,
+  disabled,
+  onChange,
+}: PayoutPolicyFieldsProps) {
+  return (
+    <>
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout-rules.cycle"
+        kind="dropdown"
+      >
+        <DropdownSelect
+          value={policy.cycle.kind}
+          onChange={(kind) => {
+            const nextPolicy = {
+              ...policy,
+              cycle:
+                kind === 'qualifying_days' && policy.qualifyingDays
+                  ? {
+                      kind: 'qualifying_days' as const,
+                      ...policy.qualifyingDays,
+                    }
+                  : createCycle(kind),
+            };
+            if (kind === 'qualifying_days') delete nextPolicy.qualifyingDays;
+            if (kind !== 'qualifying_days') {
+              delete nextPolicy.lifetimeQualifyingDaysUnlock;
+            }
+            onChange(nextPolicy);
+          }}
+          ariaLabel={t('account.prop-challenge.payout-rules.cycle')}
+          disabled={disabled}
+          options={[
+            {
+              value: 'none',
+              label: t('account.prop-challenge.payout-rules.cycle.none'),
+            },
+            {
+              value: 'trading_days',
+              label: t(
+                'account.prop-challenge.payout-rules.cycle.trading-days'
+              ),
+            },
+            {
+              value: 'qualifying_days',
+              label: t(
+                'account.prop-challenge.payout-rules.cycle.qualifying-days'
+              ),
+            },
+            {
+              value: 'calendar_days',
+              label: t(
+                'account.prop-challenge.payout-rules.cycle.calendar-days'
+              ),
+            },
+          ]}
+        />
+      </PayoutPolicyField>
+
+      {policy.cycle.kind !== 'none' && (
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.days"
+          kind="input"
+        >
+          <DraftInput
+            type="number"
+            min="1"
+            step="1"
+            value={policy.cycle.days}
+            onChange={(event) =>
+              onChange({
+                ...policy,
+                cycle: updateCycleDays(
+                  policy.cycle,
+                  positiveNumberValue(event.target.value)
+                ),
+              })
+            }
+            disabled={disabled}
+          />
+        </PayoutPolicyField>
+      )}
+
+      {policy.cycle.kind === 'qualifying_days' && (
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.minimum-daily-profit"
+          kind="input"
+        >
+          <DraftInput
+            type="number"
+            min="0"
+            step="50"
+            value={policy.cycle.minimumDailyProfit || ''}
+            onChange={(event) =>
+              onChange({
+                ...policy,
+                cycle: updateQualifyingDailyProfit(
+                  policy.cycle,
+                  positiveNumberValue(event.target.value)
+                ),
+              })
+            }
+            disabled={disabled}
+          />
+        </PayoutPolicyField>
+      )}
+
+      {policy.cycle.kind !== 'qualifying_days' && (
+        <StandaloneQualifyingDaysFields
+          policy={policy}
+          disabled={disabled}
+          onChange={onChange}
+        />
+      )}
+
+      {policy.cycle.kind === 'calendar_days' && (
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.anchor"
+          kind="dropdown"
+        >
+          <DropdownSelect
+            value={policy.cycle.anchor}
+            onChange={(anchor) =>
+              onChange({
+                ...policy,
+                cycle: updateCalendarAnchor(policy.cycle, anchor),
+              })
+            }
+            ariaLabel={t('account.prop-challenge.payout-rules.anchor')}
+            disabled={disabled}
+            options={[
+              {
+                value: 'phase_start',
+                label: t(
+                  'account.prop-challenge.payout-rules.anchor.phase-start'
+                ),
+              },
+              {
+                value: 'first_trade',
+                label: t(
+                  'account.prop-challenge.payout-rules.anchor.first-trade'
+                ),
+              },
+            ]}
+          />
+        </PayoutPolicyField>
+      )}
+    </>
+  );
+}
+
+
+function StandaloneQualifyingDaysFields({
+  policy,
+  disabled,
+  onChange,
+}: PayoutPolicyFieldsProps) {
+  const qualifyingDays = policy.qualifyingDays;
+  return (
+    <>
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout.requirement.qualifying-days"
+        kind="checkbox"
+        inline
+      >
+        <Checkbox
+          checked={Boolean(policy.qualifyingDays)}
+          onChange={(checked) => {
+            const nextPolicy = { ...policy };
+            if (checked)
+              nextPolicy.qualifyingDays =
+                createPropChallengeQualifyingDaysDraft();
+            else delete nextPolicy.qualifyingDays;
+            onChange(nextPolicy);
+          }}
+          disabled={disabled}
+        />
+      </PayoutPolicyField>
+      {qualifyingDays && (
+        <>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.rule.minimum_profitable_days"
+            kind="input"
+          >
+            <DraftInput
+              type="number"
+              min="1"
+              step="1"
+              value={qualifyingDays.days || ''}
+              onChange={(event) =>
+                onChange({
+                  ...policy,
+                  qualifyingDays: {
+                    ...qualifyingDays,
+                    days: positiveNumberValue(event.target.value),
+                  },
+                })
+              }
+              disabled={disabled}
+            />
+          </PayoutPolicyField>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.minimum-daily-profit"
+            kind="input"
+          >
+            <DraftInput
+              type="number"
+              min="0"
+              step="50"
+              value={qualifyingDays.minimumDailyProfit || ''}
+              onChange={(event) =>
+                onChange({
+                  ...policy,
+                  qualifyingDays: {
+                    ...qualifyingDays,
+                    minimumDailyProfit: numberValue(event.target.value),
+                  },
+                })
+              }
+              disabled={disabled}
+            />
+          </PayoutPolicyField>
+        </>
+      )}
+    </>
+  );
+}
+
+function PayoutRequestWindowFields({
+  policy,
+  disabled,
+  onChange,
+  toggleRequestWeekday,
+}: PayoutPolicyFieldsProps & {
+  toggleRequestWeekday: (weekday: PropChallengeWeekday) => void;
+}) {
+  const requestDaysId = useId();
+  return (
+    <>
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout-rules.request-window"
+        kind="dropdown"
+      >
+        <DropdownSelect
+          value={policy.requestWindow ? 'weekdays' : 'anytime'}
+          onChange={(kind) =>
+            onChange({
+              ...policy,
+              requestWindow:
+                kind === 'weekdays'
+                  ? {
+                      kind,
+                      weekdays: ['tuesday'],
+                      timeZone: 'America/New_York',
+                    }
+                  : undefined,
+            })
+          }
+          ariaLabel={t('account.prop-challenge.payout-rules.request-window')}
+          disabled={disabled}
+          options={[
+            {
+              value: 'anytime',
+              label: t(
+                'account.prop-challenge.payout-rules.request-window.anytime'
+              ),
+            },
+            {
+              value: 'weekdays',
+              label: t(
+                'account.prop-challenge.payout-rules.request-window.weekdays'
+              ),
+            },
+          ]}
+        />
+      </PayoutPolicyField>
+
+      {policy.requestWindow && (
+        <>
+          <PayoutRequestTimeZoneField
+            timeZone={policy.requestWindow.timeZone}
+            disabled={disabled}
+            onTimeZoneChange={(timeZone) =>
+              onChange({
+                ...policy,
+                requestWindow: {
+                  ...policy.requestWindow!,
+                  timeZone,
+                },
+              })
+            }
+          />
+          <fieldset
+            className="journalit-prop-payout-policy-editor__weekdays"
+            aria-labelledby={`${requestDaysId}-label`}
+            aria-describedby={`${requestDaysId}-description`}
+          >
+            <legend>
+              <PayoutPolicyFieldHelp
+                translationKey="account.prop-challenge.payout-rules.request-window.allowed-days"
+                labelId={`${requestDaysId}-label`}
+                descriptionId={`${requestDaysId}-description`}
+              />
+            </legend>
+            {PAYOUT_WEEKDAYS.map((weekday) => (
+              <label key={weekday}>
+                <Checkbox
+                  checked={policy.requestWindow!.weekdays.includes(weekday)}
+                  onChange={() => toggleRequestWeekday(weekday)}
+                  disabled={disabled}
+                />
+                <span>{t(`common.day.${weekday}`)}</span>
+              </label>
+            ))}
+          </fieldset>
+        </>
+      )}
+    </>
+  );
+}
+
+function CycleProfitScheduleFields({
+  policy,
+  disabled,
+  onChange,
+}: PayoutPolicyFieldsProps) {
+  return (
+    <>
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout-rules.minimum-cycle-profit-schedule"
+        kind="input"
+      >
+        <DraftInput
+          type="text"
+          value={policy.minimumCycleProfitSchedule?.amounts.join(', ') ?? ''}
+          onChange={(event) => {
+            const nextPolicy = { ...policy };
+            if (event.target.value.trim() === '') {
+              delete nextPolicy.minimumCycleProfitSchedule;
+            } else {
+              delete nextPolicy.minimumCycleProfit;
+              nextPolicy.minimumCycleProfitSchedule = {
+                amounts: parseSchedule(event.target.value),
+                repeatLast: policy.minimumCycleProfitSchedule?.repeatLast,
+              };
+            }
+            onChange(nextPolicy);
+          }}
+          disabled={disabled}
+        />
+      </PayoutPolicyField>
+
+      {policy.minimumCycleProfitSchedule && (
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.schedule-repeat-value"
+          kind="checkbox"
+        >
+          <Checkbox
+            checked={policy.minimumCycleProfitSchedule.repeatLast ?? false}
+            onChange={(repeatLast) =>
+              onChange({
+                ...policy,
+                minimumCycleProfitSchedule: {
+                  ...policy.minimumCycleProfitSchedule!,
+                  repeatLast,
+                },
+              })
+            }
+            disabled={disabled}
+          />
+        </PayoutPolicyField>
+      )}
+    </>
+  );
+}
+
+function ConsistencyScheduleFields({
+  policy,
+  disabled,
+  onChange,
+}: PayoutPolicyFieldsProps) {
+  return (
+    <>
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout-rules.consistency-percent-schedule"
+        kind="input"
+      >
+        <DraftInput
+          type="text"
+          value={policy.maxBestDayPercentSchedule?.percents.join(', ') ?? ''}
+          onChange={(event) => {
+            const nextPolicy = { ...policy };
+            if (event.target.value.trim() === '') {
+              delete nextPolicy.maxBestDayPercentSchedule;
+            } else {
+              delete nextPolicy.maxBestDayPercent;
+              nextPolicy.maxBestDayPercentSchedule = {
+                percents: parseSchedule(event.target.value).map((percent) =>
+                  Math.min(100, percent)
+                ),
+                repeatLast: policy.maxBestDayPercentSchedule?.repeatLast,
+              };
+            }
+            onChange(nextPolicy);
+          }}
+          disabled={disabled}
+        />
+      </PayoutPolicyField>
+
+      {policy.maxBestDayPercentSchedule && (
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.schedule-repeat-value"
+          kind="checkbox"
+        >
+          <Checkbox
+            checked={policy.maxBestDayPercentSchedule.repeatLast ?? false}
+            onChange={(repeatLast) =>
+              onChange({
+                ...policy,
+                maxBestDayPercentSchedule: {
+                  ...policy.maxBestDayPercentSchedule!,
+                  repeatLast,
+                },
+              })
+            }
+            disabled={disabled}
+          />
+        </PayoutPolicyField>
+      )}
+    </>
+  );
+}
 
 function PayoutPolicyEligibilitySection({
   policy,
@@ -276,215 +733,17 @@ function PayoutPolicyEligibilitySection({
   updateOptionalNumber: UpdateOptionalNumber;
   toggleRequestWeekday: (weekday: PropChallengeWeekday) => void;
 }) {
-  const qualifyingDays = policy.qualifyingDays;
-  const requestDaysId = useId();
   return (
     <section className="journalit-prop-payout-policy-editor__group">
       <strong className="journalit-prop-payout-policy-editor__group-title">
         {t('account.prop-challenge.payout-rules.group.eligibility')}
       </strong>
       <div className="journalit-prop-payout-policy-editor__group-fields">
-        <PayoutPolicyField
-          translationKey="account.prop-challenge.payout-rules.cycle"
-          kind="dropdown"
-        >
-          <DropdownSelect
-            value={policy.cycle.kind}
-            onChange={(kind) => {
-              const nextPolicy = {
-                ...policy,
-                cycle:
-                  kind === 'qualifying_days' && policy.qualifyingDays
-                    ? {
-                        kind: 'qualifying_days' as const,
-                        ...policy.qualifyingDays,
-                      }
-                    : createCycle(kind),
-              };
-              if (kind === 'qualifying_days') delete nextPolicy.qualifyingDays;
-              if (kind !== 'qualifying_days') {
-                delete nextPolicy.lifetimeQualifyingDaysUnlock;
-              }
-              onChange(nextPolicy);
-            }}
-            ariaLabel={t('account.prop-challenge.payout-rules.cycle')}
-            disabled={disabled}
-            options={[
-              {
-                value: 'none',
-                label: t('account.prop-challenge.payout-rules.cycle.none'),
-              },
-              {
-                value: 'trading_days',
-                label: t(
-                  'account.prop-challenge.payout-rules.cycle.trading-days'
-                ),
-              },
-              {
-                value: 'qualifying_days',
-                label: t(
-                  'account.prop-challenge.payout-rules.cycle.qualifying-days'
-                ),
-              },
-              {
-                value: 'calendar_days',
-                label: t(
-                  'account.prop-challenge.payout-rules.cycle.calendar-days'
-                ),
-              },
-            ]}
-          />
-        </PayoutPolicyField>
-
-        {policy.cycle.kind !== 'none' && (
-          <PayoutPolicyField
-            translationKey="account.prop-challenge.payout-rules.days"
-            kind="input"
-          >
-            <DraftInput
-              type="number"
-              min="1"
-              step="1"
-              value={policy.cycle.days}
-              onChange={(event) =>
-                onChange({
-                  ...policy,
-                  cycle: updateCycleDays(
-                    policy.cycle,
-                    positiveNumberValue(event.target.value)
-                  ),
-                })
-              }
-              disabled={disabled}
-            />
-          </PayoutPolicyField>
-        )}
-
-        {policy.cycle.kind === 'qualifying_days' && (
-          <PayoutPolicyField
-            translationKey="account.prop-challenge.payout-rules.minimum-daily-profit"
-            kind="input"
-          >
-            <DraftInput
-              type="number"
-              min="0"
-              step="50"
-              value={policy.cycle.minimumDailyProfit || ''}
-              onChange={(event) =>
-                onChange({
-                  ...policy,
-                  cycle: updateQualifyingDailyProfit(
-                    policy.cycle,
-                    positiveNumberValue(event.target.value)
-                  ),
-                })
-              }
-              disabled={disabled}
-            />
-          </PayoutPolicyField>
-        )}
-
-        {policy.cycle.kind !== 'qualifying_days' && (
-          <>
-            <PayoutPolicyField
-              translationKey="account.prop-challenge.payout.requirement.qualifying-days"
-              kind="checkbox"
-              inline
-            >
-              <Checkbox
-                checked={Boolean(policy.qualifyingDays)}
-                onChange={(checked) => {
-                  const nextPolicy = { ...policy };
-                  if (checked)
-                    nextPolicy.qualifyingDays =
-                      createPropChallengeQualifyingDaysDraft();
-                  else delete nextPolicy.qualifyingDays;
-                  onChange(nextPolicy);
-                }}
-                disabled={disabled}
-              />
-            </PayoutPolicyField>
-            {qualifyingDays && (
-              <>
-                <PayoutPolicyField
-                  translationKey="account.prop-challenge.rule.minimum_profitable_days"
-                  kind="input"
-                >
-                  <DraftInput
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={qualifyingDays.days || ''}
-                    onChange={(event) =>
-                      onChange({
-                        ...policy,
-                        qualifyingDays: {
-                          ...qualifyingDays,
-                          days: positiveNumberValue(event.target.value),
-                        },
-                      })
-                    }
-                    disabled={disabled}
-                  />
-                </PayoutPolicyField>
-                <PayoutPolicyField
-                  translationKey="account.prop-challenge.payout-rules.minimum-daily-profit"
-                  kind="input"
-                >
-                  <DraftInput
-                    type="number"
-                    min="0"
-                    step="50"
-                    value={qualifyingDays.minimumDailyProfit || ''}
-                    onChange={(event) =>
-                      onChange({
-                        ...policy,
-                        qualifyingDays: {
-                          ...qualifyingDays,
-                          minimumDailyProfit: numberValue(event.target.value),
-                        },
-                      })
-                    }
-                    disabled={disabled}
-                  />
-                </PayoutPolicyField>
-              </>
-            )}
-          </>
-        )}
-
-        {policy.cycle.kind === 'calendar_days' && (
-          <PayoutPolicyField
-            translationKey="account.prop-challenge.payout-rules.anchor"
-            kind="dropdown"
-          >
-            <DropdownSelect
-              value={policy.cycle.anchor}
-              onChange={(anchor) =>
-                onChange({
-                  ...policy,
-                  cycle: updateCalendarAnchor(policy.cycle, anchor),
-                })
-              }
-              ariaLabel={t('account.prop-challenge.payout-rules.anchor')}
-              disabled={disabled}
-              options={[
-                {
-                  value: 'phase_start',
-                  label: t(
-                    'account.prop-challenge.payout-rules.anchor.phase-start'
-                  ),
-                },
-                {
-                  value: 'first_trade',
-                  label: t(
-                    'account.prop-challenge.payout-rules.anchor.first-trade'
-                  ),
-                },
-              ]}
-            />
-          </PayoutPolicyField>
-        )}
+        <PayoutCycleFields
+          policy={policy}
+          disabled={disabled}
+          onChange={onChange}
+        />
 
         <PayoutPolicyField
           translationKey="account.prop-challenge.payout-rules.minimum-elapsed-hours"
@@ -502,84 +761,12 @@ function PayoutPolicyEligibilitySection({
           />
         </PayoutPolicyField>
 
-        <PayoutPolicyField
-          translationKey="account.prop-challenge.payout-rules.request-window"
-          kind="dropdown"
-        >
-          <DropdownSelect
-            value={policy.requestWindow ? 'weekdays' : 'anytime'}
-            onChange={(kind) =>
-              onChange({
-                ...policy,
-                requestWindow:
-                  kind === 'weekdays'
-                    ? {
-                        kind,
-                        weekdays: ['tuesday'],
-                        timeZone: 'America/New_York',
-                      }
-                    : undefined,
-              })
-            }
-            ariaLabel={t('account.prop-challenge.payout-rules.request-window')}
-            disabled={disabled}
-            options={[
-              {
-                value: 'anytime',
-                label: t(
-                  'account.prop-challenge.payout-rules.request-window.anytime'
-                ),
-              },
-              {
-                value: 'weekdays',
-                label: t(
-                  'account.prop-challenge.payout-rules.request-window.weekdays'
-                ),
-              },
-            ]}
-          />
-        </PayoutPolicyField>
-
-        {policy.requestWindow && (
-          <>
-            <PayoutRequestTimeZoneField
-              timeZone={policy.requestWindow.timeZone}
-              disabled={disabled}
-              onTimeZoneChange={(timeZone) =>
-                onChange({
-                  ...policy,
-                  requestWindow: {
-                    ...policy.requestWindow!,
-                    timeZone,
-                  },
-                })
-              }
-            />
-            <fieldset
-              className="journalit-prop-payout-policy-editor__weekdays"
-              aria-labelledby={`${requestDaysId}-label`}
-              aria-describedby={`${requestDaysId}-description`}
-            >
-              <legend>
-                <PayoutPolicyFieldHelp
-                  translationKey="account.prop-challenge.payout-rules.request-window.allowed-days"
-                  labelId={`${requestDaysId}-label`}
-                  descriptionId={`${requestDaysId}-description`}
-                />
-              </legend>
-              {PAYOUT_WEEKDAYS.map((weekday) => (
-                <label key={weekday}>
-                  <Checkbox
-                    checked={policy.requestWindow!.weekdays.includes(weekday)}
-                    onChange={() => toggleRequestWeekday(weekday)}
-                    disabled={disabled}
-                  />
-                  <span>{t(`common.day.${weekday}`)}</span>
-                </label>
-              ))}
-            </fieldset>
-          </>
-        )}
+        <PayoutRequestWindowFields
+          policy={policy}
+          disabled={disabled}
+          onChange={onChange}
+          toggleRequestWeekday={toggleRequestWeekday}
+        />
 
         <PayoutPolicyField
           translationKey="account.prop-challenge.payout-rules.minimum-balance"
@@ -613,50 +800,11 @@ function PayoutPolicyEligibilitySection({
           />
         </PayoutPolicyField>
 
-        <PayoutPolicyField
-          translationKey="account.prop-challenge.payout-rules.minimum-cycle-profit-schedule"
-          kind="input"
-        >
-          <DraftInput
-            type="text"
-            value={policy.minimumCycleProfitSchedule?.amounts.join(', ') ?? ''}
-            onChange={(event) => {
-              const nextPolicy = { ...policy };
-              if (event.target.value.trim() === '') {
-                delete nextPolicy.minimumCycleProfitSchedule;
-              } else {
-                delete nextPolicy.minimumCycleProfit;
-                nextPolicy.minimumCycleProfitSchedule = {
-                  amounts: parseSchedule(event.target.value),
-                  repeatLast: policy.minimumCycleProfitSchedule?.repeatLast,
-                };
-              }
-              onChange(nextPolicy);
-            }}
-            disabled={disabled}
-          />
-        </PayoutPolicyField>
-
-        {policy.minimumCycleProfitSchedule && (
-          <PayoutPolicyField
-            translationKey="account.prop-challenge.payout-rules.schedule-repeat-value"
-            kind="checkbox"
-          >
-            <Checkbox
-              checked={policy.minimumCycleProfitSchedule.repeatLast ?? false}
-              onChange={(repeatLast) =>
-                onChange({
-                  ...policy,
-                  minimumCycleProfitSchedule: {
-                    ...policy.minimumCycleProfitSchedule!,
-                    repeatLast,
-                  },
-                })
-              }
-              disabled={disabled}
-            />
-          </PayoutPolicyField>
-        )}
+        <CycleProfitScheduleFields
+          policy={policy}
+          disabled={disabled}
+          onChange={onChange}
+        />
 
         <PayoutPolicyField
           translationKey="account.prop-challenge.payout-rules.positive-cycle-after-first"
@@ -691,58 +839,545 @@ function PayoutPolicyEligibilitySection({
           />
         </PayoutPolicyField>
 
-        <PayoutPolicyField
-          translationKey="account.prop-challenge.payout-rules.consistency-percent-schedule"
-          kind="input"
-        >
-          <DraftInput
-            type="text"
-            value={policy.maxBestDayPercentSchedule?.percents.join(', ') ?? ''}
-            onChange={(event) => {
-              const nextPolicy = { ...policy };
-              if (event.target.value.trim() === '') {
-                delete nextPolicy.maxBestDayPercentSchedule;
-              } else {
-                delete nextPolicy.maxBestDayPercent;
-                nextPolicy.maxBestDayPercentSchedule = {
-                  percents: parseSchedule(event.target.value).map((percent) =>
-                    Math.min(100, percent)
-                  ),
-                  repeatLast: policy.maxBestDayPercentSchedule?.repeatLast,
-                };
-              }
-              onChange(nextPolicy);
-            }}
-            disabled={disabled}
-          />
-        </PayoutPolicyField>
-
-        {policy.maxBestDayPercentSchedule && (
-          <PayoutPolicyField
-            translationKey="account.prop-challenge.payout-rules.schedule-repeat-value"
-            kind="checkbox"
-          >
-            <Checkbox
-              checked={policy.maxBestDayPercentSchedule.repeatLast ?? false}
-              onChange={(repeatLast) =>
-                onChange({
-                  ...policy,
-                  maxBestDayPercentSchedule: {
-                    ...policy.maxBestDayPercentSchedule!,
-                    repeatLast,
-                  },
-                })
-              }
-              disabled={disabled}
-            />
-          </PayoutPolicyField>
-        )}
+        <ConsistencyScheduleFields
+          policy={policy}
+          disabled={disabled}
+          onChange={onChange}
+        />
       </div>
     </section>
   );
 }
 
 
+function MaximumRequestFields({
+  policy,
+  disabled,
+  onChange,
+}: PayoutPolicyFieldsProps) {
+  return (
+    <>
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout-rules.maximum"
+        kind="dropdown"
+      >
+        <DropdownSelect
+          value={policy.maximumRequest.kind}
+          onChange={(kind) =>
+            onChange({
+              ...policy,
+              maximumRequest: createMaximum(kind),
+            })
+          }
+          ariaLabel={t('account.prop-challenge.payout-rules.maximum')}
+          disabled={disabled}
+          options={[
+            {
+              value: 'unresolved',
+              label: t('account.prop-challenge.payout.unresolved-cap'),
+            },
+            {
+              value: 'none',
+              label: t('account.prop-challenge.payout-rules.maximum.none'),
+            },
+            {
+              value: 'fixed',
+              label: t('account.prop-challenge.payout-rules.maximum.fixed'),
+            },
+            {
+              value: 'first_fixed_then_none',
+              label: t(
+                'account.prop-challenge.payout-rules.maximum.first-fixed-then-none'
+              ),
+            },
+            {
+              value: 'schedule',
+              label: t('account.prop-challenge.payout-rules.maximum.schedule'),
+            },
+            {
+              value: 'cycle_profit_percent',
+              label: t(
+                'account.prop-challenge.payout-rules.maximum.cycle-profit-percent'
+              ),
+            },
+          ]}
+        />
+      </PayoutPolicyField>
+
+      {policy.maximumRequest.kind === 'fixed' && (
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.maximum-amount"
+          kind="input"
+        >
+          <DraftInput
+            type="number"
+            min="0"
+            step="50"
+            value={policy.maximumRequest.amount || ''}
+            onChange={(event) =>
+              onChange({
+                ...policy,
+                maximumRequest: {
+                  kind: 'fixed',
+                  amount: positiveNumberValue(event.target.value),
+                },
+              })
+            }
+            disabled={disabled}
+          />
+        </PayoutPolicyField>
+      )}
+
+      {policy.maximumRequest.kind === 'first_fixed_then_none' && (
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.maximum-first-amount"
+          kind="input"
+        >
+          <DraftInput
+            type="number"
+            min="1"
+            step="50"
+            value={policy.maximumRequest.amount}
+            onChange={(event) =>
+              onChange({
+                ...policy,
+                maximumRequest: {
+                  kind: 'first_fixed_then_none',
+                  amount: positiveNumberValue(event.target.value),
+                },
+              })
+            }
+            disabled={disabled}
+          />
+        </PayoutPolicyField>
+      )}
+
+      {policy.maximumRequest.kind === 'schedule' && (
+        <>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.schedule"
+            kind="input"
+          >
+            <DraftInput
+              value={policy.maximumRequest.amounts.join(', ')}
+              onChange={(event) => {
+                if (policy.maximumRequest.kind !== 'schedule') return;
+                onChange({
+                  ...policy,
+                  maximumRequest: {
+                    kind: 'schedule',
+                    amounts: parseSchedule(event.target.value),
+                    repeatLast: policy.maximumRequest.repeatLast,
+                  },
+                });
+              }}
+              disabled={disabled}
+            />
+          </PayoutPolicyField>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.schedule-repeat-last"
+            kind="checkbox"
+          >
+            <Checkbox
+              checked={policy.maximumRequest.repeatLast ?? false}
+              onChange={(repeatLast) => {
+                if (policy.maximumRequest.kind !== 'schedule') return;
+                onChange({
+                  ...policy,
+                  maximumRequest: {
+                    kind: 'schedule',
+                    amounts: policy.maximumRequest.amounts,
+                    repeatLast,
+                  },
+                });
+              }}
+              disabled={disabled}
+            />
+          </PayoutPolicyField>
+        </>
+      )}
+
+      {policy.maximumRequest.kind === 'cycle_profit_percent' && (
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.maximum-cycle-profit-percent"
+          kind="input"
+        >
+          <DraftInput
+            type="number"
+            min="1"
+            max="100"
+            step="1"
+            value={policy.maximumRequest.percent}
+            onChange={(event) =>
+              onChange({
+                ...policy,
+                maximumRequest: {
+                  kind: 'cycle_profit_percent',
+                  percent: percentageValue(event.target.value),
+                },
+              })
+            }
+            disabled={disabled}
+          />
+        </PayoutPolicyField>
+      )}
+    </>
+  );
+}
+
+type LifetimeUnlock = NonNullable<
+  PropChallengePayoutPolicy['lifetimeQualifyingDaysUnlock']
+>;
+
+
+function LifetimeUnlockMaximumFields({
+  policy,
+  lifetimeUnlock,
+  disabled,
+  onChange,
+}: PayoutPolicyFieldsProps & { lifetimeUnlock: LifetimeUnlock }) {
+  const lifetimeMaximum = lifetimeUnlock.maximumRequest;
+  return (
+    <>
+      {lifetimeUnlock.maximumRequest.kind === 'fixed' && (
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.lifetime-unlock-maximum-amount"
+          kind="input"
+        >
+          <DraftInput
+            type="number"
+            min="1"
+            step="50"
+            value={lifetimeUnlock.maximumRequest.amount}
+            onChange={(event) =>
+              onChange({
+                ...policy,
+                lifetimeQualifyingDaysUnlock: {
+                  ...lifetimeUnlock,
+                  maximumRequest: {
+                    kind: 'fixed',
+                    amount: positiveNumberValue(event.target.value),
+                  },
+                },
+              })
+            }
+            disabled={disabled}
+          />
+        </PayoutPolicyField>
+      )}
+      {lifetimeMaximum.kind === 'first_fixed_then_none' && (
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.maximum-first-amount"
+          kind="input"
+        >
+          <DraftInput
+            type="number"
+            min="1"
+            step="50"
+            value={lifetimeMaximum.amount}
+            onChange={(event) =>
+              onChange({
+                ...policy,
+                lifetimeQualifyingDaysUnlock: {
+                  ...lifetimeUnlock,
+                  maximumRequest: {
+                    kind: 'first_fixed_then_none',
+                    amount: positiveNumberValue(event.target.value),
+                  },
+                },
+              })
+            }
+            disabled={disabled}
+          />
+        </PayoutPolicyField>
+      )}
+      {lifetimeMaximum.kind === 'schedule' && (
+        <>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.lifetime-unlock-maximum-schedule"
+            kind="input"
+          >
+            <DraftInput
+              type="text"
+              value={lifetimeMaximum.amounts.join(', ')}
+              onChange={(event) =>
+                onChange({
+                  ...policy,
+                  lifetimeQualifyingDaysUnlock: {
+                    ...lifetimeUnlock,
+                    maximumRequest: {
+                      kind: 'schedule',
+                      amounts: parseSchedule(event.target.value),
+                      repeatLast: lifetimeMaximum.repeatLast,
+                    },
+                  },
+                })
+              }
+              disabled={disabled}
+            />
+          </PayoutPolicyField>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.schedule-repeat-last"
+            kind="checkbox"
+          >
+            <Checkbox
+              checked={lifetimeMaximum.repeatLast ?? false}
+              onChange={(repeatLast) =>
+                onChange({
+                  ...policy,
+                  lifetimeQualifyingDaysUnlock: {
+                    ...lifetimeUnlock,
+                    maximumRequest: {
+                      kind: 'schedule',
+                      amounts: lifetimeMaximum.amounts,
+                      repeatLast,
+                    },
+                  },
+                })
+              }
+              disabled={disabled}
+            />
+          </PayoutPolicyField>
+        </>
+      )}
+      {lifetimeMaximum.kind === 'cycle_profit_percent' && (
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.lifetime-unlock-maximum-cycle-profit-percent"
+          kind="input"
+        >
+          <DraftInput
+            type="number"
+            min="1"
+            max="100"
+            step="1"
+            value={lifetimeMaximum.percent}
+            onChange={(event) =>
+              onChange({
+                ...policy,
+                lifetimeQualifyingDaysUnlock: {
+                  ...lifetimeUnlock,
+                  maximumRequest: {
+                    kind: 'cycle_profit_percent',
+                    percent: percentageValue(event.target.value),
+                  },
+                },
+              })
+            }
+            disabled={disabled}
+          />
+        </PayoutPolicyField>
+      )}
+    </>
+  );
+}
+
+
+function LifetimeUnlockFields({
+  policy,
+  disabled,
+  onChange,
+  startingBalance,
+}: PayoutPolicyFieldsProps & { startingBalance: number }) {
+  const lifetimeUnlock = policy.lifetimeQualifyingDaysUnlock;
+  return (
+    <>
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout-rules.lifetime-unlock"
+        kind="checkbox"
+      >
+        <Checkbox
+          checked={Boolean(lifetimeUnlock)}
+          onChange={(enabled) => {
+            const nextPolicy = { ...policy };
+            if (enabled) {
+              nextPolicy.lifetimeQualifyingDaysUnlock = {
+                days: 30,
+                availability: {
+                  kind: 'profit_above_starting_balance',
+                  requestPercent: 100,
+                },
+                maximumRequest: { kind: 'none' },
+              };
+            } else {
+              delete nextPolicy.lifetimeQualifyingDaysUnlock;
+            }
+            onChange(nextPolicy);
+          }}
+          disabled={disabled}
+        />
+      </PayoutPolicyField>
+
+      {lifetimeUnlock && (
+        <>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.lifetime-unlock-days"
+            kind="input"
+          >
+            <DraftInput
+              type="number"
+              min="1"
+              step="1"
+              value={lifetimeUnlock.days}
+              onChange={(event) =>
+                onChange({
+                  ...policy,
+                  lifetimeQualifyingDaysUnlock: {
+                    ...lifetimeUnlock,
+                    days: positiveNumberValue(event.target.value),
+                  },
+                })
+              }
+              disabled={disabled}
+            />
+          </PayoutPolicyField>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.lifetime-unlock-availability"
+            kind="dropdown"
+          >
+            <DropdownSelect
+              value={lifetimeUnlock.availability.kind}
+              onChange={(kind) =>
+                onChange({
+                  ...policy,
+                  lifetimeQualifyingDaysUnlock: {
+                    ...lifetimeUnlock,
+                    availability: createAvailability(kind, startingBalance),
+                  },
+                })
+              }
+              ariaLabel={t(
+                'account.prop-challenge.payout-rules.lifetime-unlock-availability'
+              )}
+              disabled={disabled}
+              options={[
+                {
+                  value: 'profit_above_starting_balance',
+                  label: t(
+                    'account.prop-challenge.payout-rules.availability.starting-balance'
+                  ),
+                },
+                {
+                  value: 'profit_above_balance_floor',
+                  label: t(
+                    'account.prop-challenge.payout-rules.availability.balance-floor'
+                  ),
+                },
+              ]}
+            />
+          </PayoutPolicyField>
+          {lifetimeUnlock.availability.kind ===
+            'profit_above_balance_floor' && (
+            <PayoutPolicyField
+              translationKey="account.prop-challenge.payout-rules.lifetime-unlock-balance-floor"
+              kind="input"
+            >
+              <DraftInput
+                type="number"
+                min="0"
+                step="100"
+                value={lifetimeUnlock.availability.balanceFloor || ''}
+                onChange={(event) => {
+                  const unlock = lifetimeUnlock;
+                  onChange({
+                    ...policy,
+                    lifetimeQualifyingDaysUnlock: {
+                      ...unlock,
+                      availability: updateBalanceFloor(
+                        unlock.availability,
+                        Math.max(0, numberValue(event.target.value))
+                      ),
+                    },
+                  });
+                }}
+                disabled={disabled}
+              />
+            </PayoutPolicyField>
+          )}
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.lifetime-unlock-request-percent"
+            kind="input"
+          >
+            <DraftInput
+              type="number"
+              min="1"
+              max="100"
+              step="1"
+              value={lifetimeUnlock.availability.requestPercent}
+              onChange={(event) =>
+                onChange({
+                  ...policy,
+                  lifetimeQualifyingDaysUnlock: {
+                    ...lifetimeUnlock,
+                    availability: {
+                      ...lifetimeUnlock.availability,
+                      requestPercent: percentageValue(event.target.value),
+                    },
+                  },
+                })
+              }
+              disabled={disabled}
+            />
+          </PayoutPolicyField>
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.lifetime-unlock-maximum"
+            kind="dropdown"
+          >
+            <DropdownSelect
+              value={lifetimeUnlock.maximumRequest.kind}
+              onChange={(kind) =>
+                onChange({
+                  ...policy,
+                  lifetimeQualifyingDaysUnlock: {
+                    ...lifetimeUnlock,
+                    maximumRequest: createMaximum(kind),
+                  },
+                })
+              }
+              ariaLabel={t(
+                'account.prop-challenge.payout-rules.lifetime-unlock-maximum'
+              )}
+              disabled={disabled}
+              options={[
+                {
+                  value: 'none',
+                  label: t('account.prop-challenge.payout-rules.maximum.none'),
+                },
+                {
+                  value: 'fixed',
+                  label: t('account.prop-challenge.payout-rules.maximum.fixed'),
+                },
+                {
+                  value: 'first_fixed_then_none',
+                  label: t(
+                    'account.prop-challenge.payout-rules.maximum.first-fixed-then-none'
+                  ),
+                },
+                {
+                  value: 'schedule',
+                  label: t(
+                    'account.prop-challenge.payout-rules.maximum.schedule'
+                  ),
+                },
+                {
+                  value: 'cycle_profit_percent',
+                  label: t(
+                    'account.prop-challenge.payout-rules.maximum.cycle-profit-percent'
+                  ),
+                },
+              ]}
+            />
+          </PayoutPolicyField>
+          <LifetimeUnlockMaximumFields
+            policy={policy}
+            lifetimeUnlock={lifetimeUnlock}
+            disabled={disabled}
+            onChange={onChange}
+          />
+        </>
+      )}
+    </>
+  );
+}
 
 function PayoutPolicyAvailabilitySection({
   policy,
@@ -757,8 +1392,6 @@ function PayoutPolicyAvailabilitySection({
   updateOptionalNumber: UpdateOptionalNumber;
   startingBalance: number;
 }) {
-  const lifetimeUnlock = policy.lifetimeQualifyingDaysUnlock;
-  const lifetimeMaximum = lifetimeUnlock?.maximumRequest;
   return (
     <section className="journalit-prop-payout-policy-editor__group">
       <strong className="journalit-prop-payout-policy-editor__group-title">
@@ -886,499 +1519,292 @@ function PayoutPolicyAvailabilitySection({
           />
         </PayoutPolicyField>
 
-        <PayoutPolicyField
-          translationKey="account.prop-challenge.payout-rules.maximum"
-          kind="dropdown"
-        >
-          <DropdownSelect
-            value={policy.maximumRequest.kind}
-            onChange={(kind) =>
-              onChange({
-                ...policy,
-                maximumRequest: createMaximum(kind),
-              })
-            }
-            ariaLabel={t('account.prop-challenge.payout-rules.maximum')}
-            disabled={disabled}
-            options={[
-              {
-                value: 'none',
-                label: t('account.prop-challenge.payout-rules.maximum.none'),
-              },
-              {
-                value: 'fixed',
-                label: t('account.prop-challenge.payout-rules.maximum.fixed'),
-              },
-              {
-                value: 'first_fixed_then_none',
-                label: t(
-                  'account.prop-challenge.payout-rules.maximum.first-fixed-then-none'
-                ),
-              },
-              {
-                value: 'schedule',
-                label: t(
-                  'account.prop-challenge.payout-rules.maximum.schedule'
-                ),
-              },
-              {
-                value: 'cycle_profit_percent',
-                label: t(
-                  'account.prop-challenge.payout-rules.maximum.cycle-profit-percent'
-                ),
-              },
-            ]}
-          />
-        </PayoutPolicyField>
-
-        {policy.maximumRequest.kind === 'fixed' && (
-          <PayoutPolicyField
-            translationKey="account.prop-challenge.payout-rules.maximum-amount"
-            kind="input"
-          >
-            <DraftInput
-              type="number"
-              min="0"
-              step="50"
-              value={policy.maximumRequest.amount || ''}
-              onChange={(event) =>
-                onChange({
-                  ...policy,
-                  maximumRequest: {
-                    kind: 'fixed',
-                    amount: positiveNumberValue(event.target.value),
-                  },
-                })
-              }
-              disabled={disabled}
-            />
-          </PayoutPolicyField>
-        )}
-
-        {policy.maximumRequest.kind === 'first_fixed_then_none' && (
-          <PayoutPolicyField
-            translationKey="account.prop-challenge.payout-rules.maximum-first-amount"
-            kind="input"
-          >
-            <DraftInput
-              type="number"
-              min="1"
-              step="50"
-              value={policy.maximumRequest.amount}
-              onChange={(event) =>
-                onChange({
-                  ...policy,
-                  maximumRequest: {
-                    kind: 'first_fixed_then_none',
-                    amount: positiveNumberValue(event.target.value),
-                  },
-                })
-              }
-              disabled={disabled}
-            />
-          </PayoutPolicyField>
-        )}
-
-        {policy.maximumRequest.kind === 'schedule' && (
-          <>
-            <PayoutPolicyField
-              translationKey="account.prop-challenge.payout-rules.schedule"
-              kind="input"
-            >
-              <DraftInput
-                value={policy.maximumRequest.amounts.join(', ')}
-                onChange={(event) => {
-                  if (policy.maximumRequest.kind !== 'schedule') return;
-                  onChange({
-                    ...policy,
-                    maximumRequest: {
-                      kind: 'schedule',
-                      amounts: parseSchedule(event.target.value),
-                      repeatLast: policy.maximumRequest.repeatLast,
-                    },
-                  });
-                }}
-                disabled={disabled}
-              />
-            </PayoutPolicyField>
-            <PayoutPolicyField
-              translationKey="account.prop-challenge.payout-rules.schedule-repeat-last"
-              kind="checkbox"
-            >
-              <Checkbox
-                checked={policy.maximumRequest.repeatLast ?? false}
-                onChange={(repeatLast) => {
-                  if (policy.maximumRequest.kind !== 'schedule') return;
-                  onChange({
-                    ...policy,
-                    maximumRequest: {
-                      kind: 'schedule',
-                      amounts: policy.maximumRequest.amounts,
-                      repeatLast,
-                    },
-                  });
-                }}
-                disabled={disabled}
-              />
-            </PayoutPolicyField>
-          </>
-        )}
-
-        {policy.maximumRequest.kind === 'cycle_profit_percent' && (
-          <PayoutPolicyField
-            translationKey="account.prop-challenge.payout-rules.maximum-cycle-profit-percent"
-            kind="input"
-          >
-            <DraftInput
-              type="number"
-              min="1"
-              max="100"
-              step="1"
-              value={policy.maximumRequest.percent}
-              onChange={(event) =>
-                onChange({
-                  ...policy,
-                  maximumRequest: {
-                    kind: 'cycle_profit_percent',
-                    percent: percentageValue(event.target.value),
-                  },
-                })
-              }
-              disabled={disabled}
-            />
-          </PayoutPolicyField>
-        )}
+        <MaximumRequestFields
+          policy={policy}
+          disabled={disabled}
+          onChange={onChange}
+        />
 
         {policy.cycle.kind === 'qualifying_days' && (
-          <>
-            <PayoutPolicyField
-              translationKey="account.prop-challenge.payout-rules.lifetime-unlock"
-              kind="checkbox"
-            >
-              <Checkbox
-                checked={Boolean(lifetimeUnlock)}
-                onChange={(enabled) => {
-                  const nextPolicy = { ...policy };
-                  if (enabled) {
-                    nextPolicy.lifetimeQualifyingDaysUnlock = {
-                      days: 30,
-                      availability: {
-                        kind: 'profit_above_starting_balance',
-                        requestPercent: 100,
-                      },
-                      maximumRequest: { kind: 'none' },
-                    };
-                  } else {
-                    delete nextPolicy.lifetimeQualifyingDaysUnlock;
-                  }
-                  onChange(nextPolicy);
-                }}
-                disabled={disabled}
-              />
-            </PayoutPolicyField>
-
-            {lifetimeUnlock && (
-              <>
-                <PayoutPolicyField
-                  translationKey="account.prop-challenge.payout-rules.lifetime-unlock-days"
-                  kind="input"
-                >
-                  <DraftInput
-                    type="number"
-                    min="1"
-                    step="1"
-                    value={lifetimeUnlock.days}
-                    onChange={(event) =>
-                      onChange({
-                        ...policy,
-                        lifetimeQualifyingDaysUnlock: {
-                          ...lifetimeUnlock,
-                          days: positiveNumberValue(event.target.value),
-                        },
-                      })
-                    }
-                    disabled={disabled}
-                  />
-                </PayoutPolicyField>
-                <PayoutPolicyField
-                  translationKey="account.prop-challenge.payout-rules.lifetime-unlock-availability"
-                  kind="dropdown"
-                >
-                  <DropdownSelect
-                    value={lifetimeUnlock.availability.kind}
-                    onChange={(kind) =>
-                      onChange({
-                        ...policy,
-                        lifetimeQualifyingDaysUnlock: {
-                          ...lifetimeUnlock,
-                          availability: createAvailability(
-                            kind,
-                            startingBalance
-                          ),
-                        },
-                      })
-                    }
-                    ariaLabel={t(
-                      'account.prop-challenge.payout-rules.lifetime-unlock-availability'
-                    )}
-                    disabled={disabled}
-                    options={[
-                      {
-                        value: 'profit_above_starting_balance',
-                        label: t(
-                          'account.prop-challenge.payout-rules.availability.starting-balance'
-                        ),
-                      },
-                      {
-                        value: 'profit_above_balance_floor',
-                        label: t(
-                          'account.prop-challenge.payout-rules.availability.balance-floor'
-                        ),
-                      },
-                    ]}
-                  />
-                </PayoutPolicyField>
-                {lifetimeUnlock.availability.kind ===
-                  'profit_above_balance_floor' && (
-                  <PayoutPolicyField
-                    translationKey="account.prop-challenge.payout-rules.lifetime-unlock-balance-floor"
-                    kind="input"
-                  >
-                    <DraftInput
-                      type="number"
-                      min="0"
-                      step="100"
-                      value={lifetimeUnlock.availability.balanceFloor || ''}
-                      onChange={(event) => {
-                        const unlock = lifetimeUnlock;
-                        onChange({
-                          ...policy,
-                          lifetimeQualifyingDaysUnlock: {
-                            ...unlock,
-                            availability: updateBalanceFloor(
-                              unlock.availability,
-                              Math.max(0, numberValue(event.target.value))
-                            ),
-                          },
-                        });
-                      }}
-                      disabled={disabled}
-                    />
-                  </PayoutPolicyField>
-                )}
-                <PayoutPolicyField
-                  translationKey="account.prop-challenge.payout-rules.lifetime-unlock-request-percent"
-                  kind="input"
-                >
-                  <DraftInput
-                    type="number"
-                    min="1"
-                    max="100"
-                    step="1"
-                    value={lifetimeUnlock.availability.requestPercent}
-                    onChange={(event) =>
-                      onChange({
-                        ...policy,
-                        lifetimeQualifyingDaysUnlock: {
-                          ...lifetimeUnlock,
-                          availability: {
-                            ...lifetimeUnlock.availability,
-                            requestPercent: percentageValue(event.target.value),
-                          },
-                        },
-                      })
-                    }
-                    disabled={disabled}
-                  />
-                </PayoutPolicyField>
-                <PayoutPolicyField
-                  translationKey="account.prop-challenge.payout-rules.lifetime-unlock-maximum"
-                  kind="dropdown"
-                >
-                  <DropdownSelect
-                    value={lifetimeUnlock.maximumRequest.kind}
-                    onChange={(kind) =>
-                      onChange({
-                        ...policy,
-                        lifetimeQualifyingDaysUnlock: {
-                          ...lifetimeUnlock,
-                          maximumRequest: createMaximum(kind),
-                        },
-                      })
-                    }
-                    ariaLabel={t(
-                      'account.prop-challenge.payout-rules.lifetime-unlock-maximum'
-                    )}
-                    disabled={disabled}
-                    options={[
-                      {
-                        value: 'none',
-                        label: t(
-                          'account.prop-challenge.payout-rules.maximum.none'
-                        ),
-                      },
-                      {
-                        value: 'fixed',
-                        label: t(
-                          'account.prop-challenge.payout-rules.maximum.fixed'
-                        ),
-                      },
-                      {
-                        value: 'first_fixed_then_none',
-                        label: t(
-                          'account.prop-challenge.payout-rules.maximum.first-fixed-then-none'
-                        ),
-                      },
-                      {
-                        value: 'schedule',
-                        label: t(
-                          'account.prop-challenge.payout-rules.maximum.schedule'
-                        ),
-                      },
-                      {
-                        value: 'cycle_profit_percent',
-                        label: t(
-                          'account.prop-challenge.payout-rules.maximum.cycle-profit-percent'
-                        ),
-                      },
-                    ]}
-                  />
-                </PayoutPolicyField>
-                {lifetimeUnlock.maximumRequest.kind === 'fixed' && (
-                  <PayoutPolicyField
-                    translationKey="account.prop-challenge.payout-rules.lifetime-unlock-maximum-amount"
-                    kind="input"
-                  >
-                    <DraftInput
-                      type="number"
-                      min="1"
-                      step="50"
-                      value={lifetimeUnlock.maximumRequest.amount}
-                      onChange={(event) =>
-                        onChange({
-                          ...policy,
-                          lifetimeQualifyingDaysUnlock: {
-                            ...lifetimeUnlock,
-                            maximumRequest: {
-                              kind: 'fixed',
-                              amount: positiveNumberValue(event.target.value),
-                            },
-                          },
-                        })
-                      }
-                      disabled={disabled}
-                    />
-                  </PayoutPolicyField>
-                )}
-                {lifetimeMaximum?.kind === 'first_fixed_then_none' && (
-                  <PayoutPolicyField
-                    translationKey="account.prop-challenge.payout-rules.maximum-first-amount"
-                    kind="input"
-                  >
-                    <DraftInput
-                      type="number"
-                      min="1"
-                      step="50"
-                      value={lifetimeMaximum.amount}
-                      onChange={(event) =>
-                        onChange({
-                          ...policy,
-                          lifetimeQualifyingDaysUnlock: {
-                            ...lifetimeUnlock,
-                            maximumRequest: {
-                              kind: 'first_fixed_then_none',
-                              amount: positiveNumberValue(event.target.value),
-                            },
-                          },
-                        })
-                      }
-                      disabled={disabled}
-                    />
-                  </PayoutPolicyField>
-                )}
-                {lifetimeMaximum?.kind === 'schedule' && (
-                  <>
-                    <PayoutPolicyField
-                      translationKey="account.prop-challenge.payout-rules.lifetime-unlock-maximum-schedule"
-                      kind="input"
-                    >
-                      <DraftInput
-                        type="text"
-                        value={lifetimeMaximum.amounts.join(', ')}
-                        onChange={(event) =>
-                          onChange({
-                            ...policy,
-                            lifetimeQualifyingDaysUnlock: {
-                              ...lifetimeUnlock,
-                              maximumRequest: {
-                                kind: 'schedule',
-                                amounts: parseSchedule(event.target.value),
-                                repeatLast: lifetimeMaximum.repeatLast,
-                              },
-                            },
-                          })
-                        }
-                        disabled={disabled}
-                      />
-                    </PayoutPolicyField>
-                    <PayoutPolicyField
-                      translationKey="account.prop-challenge.payout-rules.schedule-repeat-last"
-                      kind="checkbox"
-                    >
-                      <Checkbox
-                        checked={lifetimeMaximum.repeatLast ?? false}
-                        onChange={(repeatLast) =>
-                          onChange({
-                            ...policy,
-                            lifetimeQualifyingDaysUnlock: {
-                              ...lifetimeUnlock,
-                              maximumRequest: {
-                                kind: 'schedule',
-                                amounts: lifetimeMaximum.amounts,
-                                repeatLast,
-                              },
-                            },
-                          })
-                        }
-                        disabled={disabled}
-                      />
-                    </PayoutPolicyField>
-                  </>
-                )}
-                {lifetimeMaximum?.kind === 'cycle_profit_percent' && (
-                  <PayoutPolicyField
-                    translationKey="account.prop-challenge.payout-rules.lifetime-unlock-maximum-cycle-profit-percent"
-                    kind="input"
-                  >
-                    <DraftInput
-                      type="number"
-                      min="1"
-                      max="100"
-                      step="1"
-                      value={lifetimeMaximum.percent}
-                      onChange={(event) =>
-                        onChange({
-                          ...policy,
-                          lifetimeQualifyingDaysUnlock: {
-                            ...lifetimeUnlock,
-                            maximumRequest: {
-                              kind: 'cycle_profit_percent',
-                              percent: percentageValue(event.target.value),
-                            },
-                          },
-                        })
-                      }
-                      disabled={disabled}
-                    />
-                  </PayoutPolicyField>
-                )}
-              </>
-            )}
-          </>
+          <LifetimeUnlockFields
+            policy={policy}
+            disabled={disabled}
+            onChange={onChange}
+            startingBalance={startingBalance}
+          />
         )}
       </div>
     </section>
   );
+}
+
+
+function PayoutPolicyNotes({ policy }: { policy: PropChallengePayoutPolicy }) {
+  return (
+    <>
+      {policy.reviewRequired && (
+        <p className="setting-item-description">
+          {t('account.prop-challenge.payout.not-calculated')}
+        </p>
+      )}
+      {policy.maximumRequest.kind === 'unresolved' && (
+        <p className="setting-item-description">
+          {policy.maximumRequest.reason}
+        </p>
+      )}
+      {policy.consistencyBasis === 'lifetime_gross_profit' && (
+        <p className="setting-item-description">
+          {t('account.prop-challenge.payout.lifetime-gross')}
+        </p>
+      )}
+    </>
+  );
+}
+
+function FixedProfitSplitField({
+  policy,
+  fixedProfitSplit,
+  disabled,
+  onChange,
+}: PayoutPolicyFieldsProps & {
+  fixedProfitSplit: Extract<PropChallengeProfitSplit, { kind: 'fixed' }>;
+}) {
+  return (
+    <PayoutPolicyField
+      translationKey="account.prop-challenge.payout-rules.profit-split"
+      kind="input"
+    >
+      <DraftInput
+        type="number"
+        min="1"
+        max="100"
+        step="1"
+        value={fixedProfitSplit.percent}
+        onChange={(event) =>
+          onChange({
+            ...policy,
+            profitSplit: {
+              kind: 'fixed',
+              percent: percentageValue(event.target.value),
+            },
+          })
+        }
+        disabled={disabled}
+      />
+    </PayoutPolicyField>
+  );
+}
+
+function ThresholdProfitSplitFields({
+  policy,
+  thresholdProfitSplit,
+  disabled,
+  onChange,
+}: PayoutPolicyFieldsProps & {
+  thresholdProfitSplit: Extract<
+    PropChallengeProfitSplit,
+    { kind: 'cumulative_payout_threshold' }
+  >;
+}) {
+  return (
+    <>
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout-rules.profit-split.initial"
+        kind="input"
+      >
+        <DraftInput
+          type="number"
+          min="1"
+          max="100"
+          step="1"
+          value={thresholdProfitSplit.initialPercent}
+          onChange={(event) =>
+            onChange({
+              ...policy,
+              profitSplit: {
+                ...thresholdProfitSplit,
+                initialPercent: percentageValue(event.target.value),
+              },
+            })
+          }
+          disabled={disabled}
+        />
+      </PayoutPolicyField>
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout-rules.profit-split.threshold-amount"
+        kind="input"
+      >
+        <DraftInput
+          type="number"
+          min="1"
+          step="500"
+          value={thresholdProfitSplit.thresholdAmount}
+          onChange={(event) =>
+            onChange({
+              ...policy,
+              profitSplit: {
+                ...thresholdProfitSplit,
+                thresholdAmount: positiveNumberValue(event.target.value),
+              },
+            })
+          }
+          disabled={disabled}
+        />
+      </PayoutPolicyField>
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout-rules.profit-split.thereafter"
+        kind="input"
+      >
+        <DraftInput
+          type="number"
+          min="1"
+          max="100"
+          step="1"
+          value={thresholdProfitSplit.thereafterPercent}
+          onChange={(event) =>
+            onChange({
+              ...policy,
+              profitSplit: {
+                ...thresholdProfitSplit,
+                thereafterPercent: percentageValue(event.target.value),
+              },
+            })
+          }
+          disabled={disabled}
+        />
+      </PayoutPolicyField>
+    </>
+  );
+}
+
+function AccountProfitSplitFields({
+  policy,
+  accountProfitThresholdSplit,
+  disabled,
+  onChange,
+}: PayoutPolicyFieldsProps & {
+  accountProfitThresholdSplit: Extract<
+    PropChallengeProfitSplit,
+    { kind: 'account_profit_threshold' | 'account_profit_marginal' }
+  >;
+}) {
+  return (
+    <>
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout-rules.profit-split.below"
+        kind="input"
+      >
+        <DraftInput
+          type="number"
+          min="1"
+          max="100"
+          step="1"
+          value={accountProfitThresholdSplit.belowPercent}
+          onChange={(event) =>
+            onChange({
+              ...policy,
+              profitSplit: {
+                ...accountProfitThresholdSplit,
+                belowPercent: percentageValue(event.target.value),
+              },
+            })
+          }
+          disabled={disabled}
+        />
+      </PayoutPolicyField>
+      <PayoutPolicyField
+        translationKey="account.prop-challenge.payout-rules.profit-split.threshold-profit"
+        kind="input"
+        description={t(
+          accountProfitThresholdSplit.kind === 'account_profit_marginal'
+            ? 'account.prop-challenge.payout-rules.profit-split.marginal-help'
+            : 'account.prop-challenge.payout-rules.profit-split.account-profit-help'
+        )}
+      >
+        <DraftInput
+          type="number"
+          min="1"
+          step="500"
+          value={accountProfitThresholdSplit.thresholdProfit}
+          onChange={(event) =>
+            onChange({
+              ...policy,
+              profitSplit: {
+                ...accountProfitThresholdSplit,
+                thresholdProfit: positiveNumberValue(event.target.value),
+              },
+            })
+          }
+          disabled={disabled}
+        />
+      </PayoutPolicyField>
+      <PayoutPolicyField
+        translationKey={
+          accountProfitThresholdSplit.kind === 'account_profit_marginal'
+            ? 'account.prop-challenge.payout-rules.profit-split.above'
+            : 'account.prop-challenge.payout-rules.profit-split.at-or-above'
+        }
+        kind="input"
+      >
+        <DraftInput
+          type="number"
+          min="1"
+          max="100"
+          step="1"
+          value={
+            accountProfitThresholdSplit.kind === 'account_profit_marginal'
+              ? accountProfitThresholdSplit.abovePercent
+              : accountProfitThresholdSplit.atOrAbovePercent
+          }
+          onChange={(event) =>
+            onChange({
+              ...policy,
+              profitSplit:
+                accountProfitThresholdSplit.kind === 'account_profit_marginal'
+                  ? {
+                      ...accountProfitThresholdSplit,
+                      abovePercent: percentageValue(event.target.value),
+                    }
+                  : {
+                      ...accountProfitThresholdSplit,
+                      atOrAbovePercent: percentageValue(event.target.value),
+                    },
+            })
+          }
+          disabled={disabled}
+        />
+      </PayoutPolicyField>
+    </>
+  );
+}
+
+
+function ProfitSplitFields({
+  policy,
+  disabled,
+  onChange,
+}: PayoutPolicyFieldsProps) {
+  const split = policy.profitSplit;
+  const fieldProps = { policy, disabled, onChange };
+  switch (split.kind) {
+    case 'fixed':
+      return <FixedProfitSplitField {...fieldProps} fixedProfitSplit={split} />;
+    case 'cumulative_payout_threshold':
+      return (
+        <ThresholdProfitSplitFields
+          {...fieldProps}
+          thresholdProfitSplit={split}
+        />
+      );
+    case 'account_profit_threshold':
+    case 'account_profit_marginal':
+      return (
+        <AccountProfitSplitFields
+          {...fieldProps}
+          accountProfitThresholdSplit={split}
+        />
+      );
+  }
 }
 
 function PayoutPolicyTermsSection({
@@ -1392,16 +1818,6 @@ function PayoutPolicyTermsSection({
   onChange: (policy: PropChallengePayoutPolicy) => void;
   updateOptionalNumber: UpdateOptionalNumber;
 }) {
-  const thresholdProfitSplit =
-    policy.profitSplit.kind === 'cumulative_payout_threshold'
-      ? policy.profitSplit
-      : undefined;
-  const fixedProfitSplit =
-    policy.profitSplit.kind === 'fixed' ? policy.profitSplit : undefined;
-  const accountProfitThresholdSplit =
-    policy.profitSplit.kind === 'account_profit_threshold'
-      ? policy.profitSplit
-      : undefined;
   return (
     <section className="journalit-prop-payout-policy-editor__group">
       <strong className="journalit-prop-payout-policy-editor__group-title">
@@ -1443,170 +1859,20 @@ function PayoutPolicyTermsSection({
                   'account.prop-challenge.payout-rules.profit-split.account-profit-threshold'
                 ),
               },
+              {
+                value: 'account_profit_marginal',
+                label: t('account.prop-challenge.payout.marginal-split'),
+              },
             ]}
           />
         </PayoutPolicyField>
 
-        {fixedProfitSplit ? (
-          <PayoutPolicyField
-            translationKey="account.prop-challenge.payout-rules.profit-split"
-            kind="input"
-          >
-            <DraftInput
-              type="number"
-              min="1"
-              max="100"
-              step="1"
-              value={fixedProfitSplit.percent}
-              onChange={(event) =>
-                onChange({
-                  ...policy,
-                  profitSplit: {
-                    kind: 'fixed',
-                    percent: percentageValue(event.target.value),
-                  },
-                })
-              }
-              disabled={disabled}
-            />
-          </PayoutPolicyField>
-        ) : thresholdProfitSplit ? (
-          <>
-            <PayoutPolicyField
-              translationKey="account.prop-challenge.payout-rules.profit-split.initial"
-              kind="input"
-            >
-              <DraftInput
-                type="number"
-                min="1"
-                max="100"
-                step="1"
-                value={thresholdProfitSplit.initialPercent}
-                onChange={(event) =>
-                  onChange({
-                    ...policy,
-                    profitSplit: {
-                      ...thresholdProfitSplit,
-                      initialPercent: percentageValue(event.target.value),
-                    },
-                  })
-                }
-                disabled={disabled}
-              />
-            </PayoutPolicyField>
-            <PayoutPolicyField
-              translationKey="account.prop-challenge.payout-rules.profit-split.threshold-amount"
-              kind="input"
-            >
-              <DraftInput
-                type="number"
-                min="1"
-                step="500"
-                value={thresholdProfitSplit.thresholdAmount}
-                onChange={(event) =>
-                  onChange({
-                    ...policy,
-                    profitSplit: {
-                      ...thresholdProfitSplit,
-                      thresholdAmount: positiveNumberValue(event.target.value),
-                    },
-                  })
-                }
-                disabled={disabled}
-              />
-            </PayoutPolicyField>
-            <PayoutPolicyField
-              translationKey="account.prop-challenge.payout-rules.profit-split.thereafter"
-              kind="input"
-            >
-              <DraftInput
-                type="number"
-                min="1"
-                max="100"
-                step="1"
-                value={thresholdProfitSplit.thereafterPercent}
-                onChange={(event) =>
-                  onChange({
-                    ...policy,
-                    profitSplit: {
-                      ...thresholdProfitSplit,
-                      thereafterPercent: percentageValue(event.target.value),
-                    },
-                  })
-                }
-                disabled={disabled}
-              />
-            </PayoutPolicyField>
-          </>
-        ) : accountProfitThresholdSplit ? (
-          <>
-            <PayoutPolicyField
-              translationKey="account.prop-challenge.payout-rules.profit-split.below"
-              kind="input"
-            >
-              <DraftInput
-                type="number"
-                min="1"
-                max="100"
-                step="1"
-                value={accountProfitThresholdSplit.belowPercent}
-                onChange={(event) =>
-                  onChange({
-                    ...policy,
-                    profitSplit: {
-                      ...accountProfitThresholdSplit,
-                      belowPercent: percentageValue(event.target.value),
-                    },
-                  })
-                }
-                disabled={disabled}
-              />
-            </PayoutPolicyField>
-            <PayoutPolicyField
-              translationKey="account.prop-challenge.payout-rules.profit-split.threshold-profit"
-              kind="input"
-            >
-              <DraftInput
-                type="number"
-                min="1"
-                step="500"
-                value={accountProfitThresholdSplit.thresholdProfit}
-                onChange={(event) =>
-                  onChange({
-                    ...policy,
-                    profitSplit: {
-                      ...accountProfitThresholdSplit,
-                      thresholdProfit: positiveNumberValue(event.target.value),
-                    },
-                  })
-                }
-                disabled={disabled}
-              />
-            </PayoutPolicyField>
-            <PayoutPolicyField
-              translationKey="account.prop-challenge.payout-rules.profit-split.at-or-above"
-              kind="input"
-            >
-              <DraftInput
-                type="number"
-                min="1"
-                max="100"
-                step="1"
-                value={accountProfitThresholdSplit.atOrAbovePercent}
-                onChange={(event) =>
-                  onChange({
-                    ...policy,
-                    profitSplit: {
-                      ...accountProfitThresholdSplit,
-                      atOrAbovePercent: percentageValue(event.target.value),
-                    },
-                  })
-                }
-                disabled={disabled}
-              />
-            </PayoutPolicyField>
-          </>
-        ) : null}
+        <PayoutPolicyNotes policy={policy} />
+        <ProfitSplitFields
+          policy={policy}
+          disabled={disabled}
+          onChange={onChange}
+        />
 
         <PayoutPolicyField
           translationKey="account.prop-challenge.payout-rules.maximum-payouts"
@@ -1665,6 +1931,10 @@ function PayoutPolicyAftermathSection({
             ariaLabel={t('account.prop-challenge.payout-rules.aftermath')}
             disabled={disabled}
             options={[
+              {
+                value: 'raise_to_starting_balance',
+                label: t('account.prop-challenge.payout.raise-floor'),
+              },
               {
                 value: 'unchanged',
                 label: t(
@@ -1840,6 +2110,8 @@ export const PayoutPolicyEditor: React.FC<{
         return `${policy.profitSplit.initialPercent}% → ${policy.profitSplit.thereafterPercent}%`;
       case 'account_profit_threshold':
         return `${policy.profitSplit.belowPercent}% → ${policy.profitSplit.atOrAbovePercent}%`;
+      case 'account_profit_marginal':
+        return `${t('account.prop-challenge.payout.marginal-split')}: ${policy.profitSplit.belowPercent}% / ${policy.profitSplit.abovePercent}%`;
     }
   })();
   const summary = [

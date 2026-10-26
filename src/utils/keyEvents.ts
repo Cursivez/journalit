@@ -25,6 +25,16 @@ const DAY_TO_KEY: Partial<Record<string, TranslationKey>> = {
   Sunday: 'common.day.sunday',
 };
 
+const DAY_TO_SHORT_KEY: Partial<Record<string, TranslationKey>> = {
+  Monday: 'calendar.day.mon',
+  Tuesday: 'calendar.day.tue',
+  Wednesday: 'calendar.day.wed',
+  Thursday: 'calendar.day.thu',
+  Friday: 'calendar.day.fri',
+  Saturday: 'calendar.day.sat',
+  Sunday: 'calendar.day.sun',
+};
+
 export function getKeyEventColor(value: unknown): KeyEventColor {
   switch (value) {
     case 'red':
@@ -40,6 +50,15 @@ export function getKeyEventDayLabel(day: string | undefined): string {
   if (!day) return t('common.day.all-week');
   const dayKey = DAY_TO_KEY[day];
   return dayKey ? t(dayKey) : day;
+}
+
+export function getKeyEventShortDayLabel(day: string): string {
+  const dayKey = DAY_TO_SHORT_KEY[day];
+  return dayKey ? t(dayKey) : day;
+}
+
+export function isKnownKeyEventDay(day: string): boolean {
+  return KEY_EVENT_DAYS.some((candidate) => candidate === day);
 }
 
 export function compareKeyEventDays(
@@ -113,4 +132,54 @@ function getKeyEventDayIndex(day: string | undefined): number {
   if (!day) return -1;
   const index = KEY_EVENT_DAYS.findIndex((candidate) => candidate === day);
   return index === -1 ? KEY_EVENT_DAYS.length : index;
+}
+
+interface KeyEventPickerDay {
+  day: string;
+  
+  date: Date | null;
+  hasEvents: boolean;
+  isToday: boolean;
+  isPast: boolean;
+}
+
+
+export function buildKeyEventPickerDays(
+  daysWithEvents: ReadonlySet<string>,
+  weekStartDate: Date | null,
+  currentDate: Date
+): KeyEventPickerDay[] {
+  const today = new Date(currentDate);
+  today.setHours(0, 0, 0, 0);
+  const days: KeyEventPickerDay[] = [];
+  for (const day of KEY_EVENT_DAYS) {
+    const hasEvents = daysWithEvents.has(day);
+    if ((day === 'Saturday' || day === 'Sunday') && !hasEvents) continue;
+    const date = weekStartDate
+      ? getKeyEventDateForWeek(weekStartDate, day)
+      : null;
+    days.push({
+      day,
+      date,
+      hasEvents,
+      isToday: date !== null && date.getTime() === today.getTime(),
+      isPast: date !== null && date.getTime() < today.getTime(),
+    });
+  }
+  if (!weekStartDate) return days;
+  return days.sort(
+    (first, second) =>
+      (first.date?.getTime() ?? 0) - (second.date?.getTime() ?? 0)
+  );
+}
+
+
+export function resolveDefaultKeyEventPickerDay(
+  days: readonly KeyEventPickerDay[]
+): string | null {
+  const eventful = days.filter((entry) => entry.hasEvents);
+  if (eventful.length === 0) return null;
+  return (
+    eventful.find((entry) => !entry.isPast) ?? eventful[eventful.length - 1]
+  ).day;
 }

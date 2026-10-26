@@ -18,6 +18,7 @@ import { useDateTimePicker } from './useDateTimePicker';
 import { DateDraftGateContext, type DateDraftCheck } from './DateDraftGate';
 import { dateInputError } from './dateInputError';
 import {
+  type DateDraftResult,
   dateToDraft,
   dateSegmentOrder,
   normalizeDateDigits,
@@ -108,31 +109,261 @@ function timeString(date: Date): string {
   return `${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
 }
 
+
+function withFastDateTimeDefaults(props: FastDateTimeInputProps) {
+  return {
+    ...props,
+    commitValidSegmentChangesImmediately:
+      props.commitValidSegmentChangesImmediately ?? false,
+    includeTime: props.includeTime ?? false,
+    showSeconds: props.showSeconds ?? false,
+    timeOnly: props.timeOnly ?? false,
+    required: props.required ?? false,
+    disabled: props.disabled ?? false,
+    hidePickerButton: props.hidePickerButton ?? false,
+    openPickerSignal: props.openPickerSignal ?? 0,
+    pickerPositionElement: props.pickerPositionElement ?? null,
+    controllerOnly: props.controllerOnly ?? false,
+    closePickerOnQuickAction: props.closePickerOnQuickAction ?? true,
+  };
+}
+
+
+function resolveDraftErrors({
+  segments,
+  dateResult,
+  timeResult,
+  dateTouched,
+  required,
+  includeTime,
+  label,
+  ariaLabel,
+  error,
+}: {
+  segments: SegmentState;
+  dateResult: DateDraftResult;
+  
+  timeResult: SegmentValueResult | undefined;
+  dateTouched: boolean;
+  required: boolean;
+  includeTime: boolean;
+  label: string | undefined;
+  ariaLabel: string | undefined;
+  error: string | undefined;
+}) {
+  const hasTime = Boolean(segments.hour || segments.minute || segments.second);
+  const draftError = timeResult
+    ? undefined
+    : dateInputError(
+        dateResult,
+        dateTouched,
+        required || (includeTime && hasTime)
+      );
+  const timeInvalid =
+    timeResult !== undefined &&
+    (timeResult.kind === 'invalid' ||
+      (required && timeResult.kind === 'empty'));
+  const timeDraftError =
+    dateTouched && timeInvalid
+      ? t('validation.custom-field.time', {
+          label: label ?? ariaLabel ?? 'HH:MM',
+        })
+      : undefined;
+  return {
+    draftError,
+    timeDraftError,
+    displayedError: draftError ?? timeDraftError ?? error,
+  };
+}
+
+const flag = (value: boolean) => (value ? 'true' : 'false');
+
+
+const groupLabelling = (
+  label: string | undefined,
+  ariaLabel: string | undefined,
+  labelId: string
+) => (label ? { 'aria-labelledby': labelId } : { 'aria-label': ariaLabel });
+
+
+const visibleParts = ({
+  controllerOnly,
+  timeOnly,
+  hasTimeContent,
+  hidePickerButton,
+}: {
+  controllerOnly: boolean;
+  timeOnly: boolean;
+  hasTimeContent: boolean;
+  hidePickerButton: boolean;
+}) => ({
+  date: !controllerOnly && !timeOnly,
+  time: !controllerOnly && hasTimeContent,
+  picker: !controllerOnly && !hidePickerButton,
+});
+
+function FastDateTimeError({
+  id,
+  error,
+}: {
+  id: string;
+  error: string | undefined;
+}) {
+  if (!error) return null;
+  return (
+    <span id={id} role="alert" className="journalit-fast-datetime__error">
+      {error}
+    </span>
+  );
+}
+
+function FastDateTimeLabel({
+  id,
+  label,
+  required,
+}: {
+  id: string;
+  label: string | undefined;
+  required: boolean;
+}) {
+  if (!label) return null;
+  return (
+    <div id={id} className="journalit-fast-datetime__label">
+      {label}
+      {required && <span className="journalit-fast-datetime__required">*</span>}
+    </div>
+  );
+}
+
+type SegmentInputProps = {
+  inputRef: React.Ref<HTMLInputElement>;
+  segment: EditableSegment;
+  onValueChange: (value: string) => void;
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, 'onChange' | 'ref'>;
+
+function SegmentInput({
+  inputRef,
+  segment,
+  onValueChange,
+  ...inputProps
+}: SegmentInputProps) {
+  return (
+    <input
+      ref={inputRef}
+      type="text"
+      inputMode="numeric"
+      onChange={(e) => onValueChange(e.target.value)}
+      data-segment={segment}
+      className="segment-input journalit-fast-datetime__segment"
+      {...inputProps}
+    />
+  );
+}
+
+type TimeSegment = 'hour' | 'minute' | 'second';
+
+
+function TimeSegmentGroup({
+  values,
+  refs,
+  layout,
+  inputProps,
+  disabled,
+  onSegmentChange,
+  onAmpmToggle,
+}: {
+  values: Pick<SegmentState, TimeSegment | 'ampm'>;
+  refs: Record<TimeSegment, React.Ref<HTMLInputElement>> & {
+    ampm: React.Ref<HTMLButtonElement>;
+  };
+  layout: { spacer: boolean; seconds: boolean; ampm: boolean };
+  inputProps: Pick<
+    React.InputHTMLAttributes<HTMLInputElement>,
+    'aria-invalid' | 'aria-describedby' | 'onKeyDown' | 'disabled'
+  >;
+  disabled: boolean;
+  onSegmentChange: (segment: TimeSegment, value: string) => void;
+  onAmpmToggle: () => void;
+}) {
+  return (
+    <div className="journalit-fast-datetime__time-group">
+      {layout.spacer && (
+        <span
+          className="journalit-fast-datetime__separator journalit-fast-datetime__separator--spacer"
+          aria-hidden="true"
+        />
+      )}
+      <SegmentInput
+        inputRef={refs.hour}
+        segment="hour"
+        value={values.hour}
+        onValueChange={(value) => onSegmentChange('hour', value)}
+        placeholder={t('datepicker.placeholder.hour')}
+        {...inputProps}
+      />
+      <span className="journalit-fast-datetime__separator">:</span>
+      <SegmentInput
+        inputRef={refs.minute}
+        segment="minute"
+        value={values.minute}
+        onValueChange={(value) => onSegmentChange('minute', value)}
+        placeholder={t('datepicker.placeholder.minute')}
+        {...inputProps}
+      />
+      {layout.seconds && (
+        <>
+          <span className="journalit-fast-datetime__separator">:</span>
+          <SegmentInput
+            inputRef={refs.second}
+            segment="second"
+            value={values.second}
+            onValueChange={(value) => onSegmentChange('second', value)}
+            placeholder={t('datepicker.placeholder.second')}
+            {...inputProps}
+          />
+        </>
+      )}
+      {layout.ampm && (
+        <button
+          ref={refs.ampm}
+          type="button"
+          onClick={onAmpmToggle}
+          disabled={disabled}
+          className="journalit-fast-datetime__ampm-button"
+        >
+          {values.ampm}
+        </button>
+      )}
+    </div>
+  );
+}
+
 export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
-  ({
-    label,
-    ariaLabel,
-    value,
-    onChange,
-    commitValidSegmentChangesImmediately = false,
-    includeTime = false,
-    showSeconds = false,
-    timeOnly = false,
-    use24HourTime: use24HourTimeOverride,
-    required = false,
-    error,
-    disabled = false,
-    className,
-    minDate,
-    defaultDateWhenEmpty,
-    onBlankTimeDateChange,
-    hidePickerButton = false,
-    openPickerSignal = 0,
-    pickerPositionElement = null,
-    controllerOnly = false,
-    onPickerClose,
-    closePickerOnQuickAction = true,
-  }) => {
+  (props) => {
+    const {
+      label,
+      ariaLabel,
+      value,
+      onChange,
+      commitValidSegmentChangesImmediately,
+      includeTime,
+      showSeconds,
+      timeOnly,
+      use24HourTime: use24HourTimeOverride,
+      required,
+      error,
+      disabled,
+      className,
+      minDate,
+      defaultDateWhenEmpty,
+      onBlankTimeDateChange,
+      hidePickerButton,
+      openPickerSignal,
+      pickerPositionElement,
+      controllerOnly,
+      onPickerClose,
+      closePickerOnQuickAction,
+    } = withFastDateTimeDefaults(props);
     
     const userDateFormat = getUserDateFormat();
     const use24HourTime = useMemo(
@@ -507,6 +738,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           field
         ].current?.focus();
       },
+      pending: () => draftDirty.current,
     };
     const latestDraftCheck = useRef(draftCheck);
     useLayoutEffect(() => {
@@ -517,6 +749,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
       return dateGate.register(draftId, {
         check: () => latestDraftCheck.current.check(),
         focus: () => latestDraftCheck.current.focus(),
+        pending: () => latestDraftCheck.current.pending(),
       });
     }, [controllerOnly, dateGate, disabled, draftId]);
 
@@ -622,31 +855,25 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
     };
 
     const dateResult = resolveDateDraft({ day, month, year });
-    const draftError = timeOnly
-      ? undefined
-      : dateInputError(
-          dateResult,
-          dateTouched,
-          required || (includeTime && Boolean(hour || minute || second))
-        );
-    const timeResult = timeOnly ? buildValueFromSegments(segments) : undefined;
-    const timeDraftError =
-      dateTouched &&
-      timeResult &&
-      (timeResult.kind === 'invalid' ||
-        (required && timeResult.kind === 'empty'))
-        ? t('validation.custom-field.time', {
-            label: label ?? ariaLabel ?? 'HH:MM',
-          })
-        : undefined;
-    const displayedError = draftError ?? timeDraftError ?? error;
+    const { draftError, timeDraftError, displayedError } = resolveDraftErrors({
+      segments,
+      dateResult,
+      timeResult: timeOnly ? buildValueFromSegments(segments) : undefined,
+      dateTouched,
+      required,
+      includeTime,
+      label,
+      ariaLabel,
+      error,
+    });
     const errorId = useId();
+    const describedBy = displayedError ? errorId : undefined;
     const dateAria = (field: DateSegment) => ({
       'aria-invalid': Boolean(
         draftError &&
         (dateResult.kind !== 'invalid' || dateResult.field === field)
       ),
-      'aria-describedby': displayedError ? errorId : undefined,
+      'aria-describedby': describedBy,
     });
 
     const acceptPickerDate = (date: Date | undefined, blankTime = false) => {
@@ -716,6 +943,8 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
               : parseInt(current.second, 10) || 0,
             0
           );
+          
+          if (minDate && date < minDate) date.setTime(minDate.getTime());
         }
         acceptPickerDate(date);
         return date;
@@ -855,43 +1084,56 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
       }
     };
 
+    const handleTimeSegmentChange = (segment: TimeSegment, value: string) => {
+      if (segment === 'hour') {
+        handleSegmentChange(value, 'hour', setHour, 2, minuteRef);
+      } else if (segment === 'minute') {
+        handleSegmentChange(
+          value,
+          'minute',
+          setMinute,
+          2,
+          shouldShowSeconds ? secondRef : undefined
+        );
+      } else {
+        handleSegmentChange(value, 'second', setSecond, 2);
+      }
+    };
+
     
     const labelId = useId();
     const hasTimeContent = includeTime || timeOnly;
-    const isDateOnly = !hasTimeContent;
+    const visible = visibleParts({
+      controllerOnly,
+      timeOnly,
+      hasTimeContent,
+      hidePickerButton,
+    });
 
     return (
       <div
         className={['journalit-fast-datetime', className]
           .filter(Boolean)
           .join(' ')}
-        data-controller-only={controllerOnly ? 'true' : 'false'}
+        data-controller-only={flag(controllerOnly)}
       >
-        {label && (
-          <div id={labelId} className="journalit-fast-datetime__label">
-            {label}
-            {required && (
-              <span className="journalit-fast-datetime__required">*</span>
-            )}
-          </div>
-        )}
+        <FastDateTimeLabel id={labelId} label={label} required={required} />
 
         <div
           ref={containerRef}
           dir="ltr"
           role="group"
-          aria-label={label ? undefined : ariaLabel}
-          aria-labelledby={label ? labelId : undefined}
+          {...groupLabelling(label, ariaLabel, labelId)}
           className="journalit-fast-datetime__container"
-          data-date-only={isDateOnly ? 'true' : 'false'}
-          data-timestamp={includeTime && !timeOnly ? 'true' : 'false'}
-          data-has-seconds={shouldShowSeconds ? 'true' : 'false'}
-          data-has-error={displayedError ? 'true' : 'false'}
-          aria-describedby={displayedError ? errorId : undefined}
+          data-date-only={flag(!hasTimeContent)}
+          data-timestamp={flag(includeTime && !timeOnly)}
+          data-has-seconds={flag(shouldShowSeconds)}
+          data-has-error={flag(Boolean(displayedError))}
+          aria-describedby={describedBy}
           onBlur={commitDateTimeSegments}
         >
           
-          {!controllerOnly && !timeOnly && (
+          {visible.date && (
             <div className="journalit-fast-datetime__date-group">
               {getDateSegments().map((segment, i) => (
                 <React.Fragment key={segment.key}>
@@ -907,101 +1149,34 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           )}
 
           
-          {!controllerOnly && (includeTime || timeOnly) && (
-            <div className="journalit-fast-datetime__time-group">
-              {!timeOnly && (
-                <span
-                  className="journalit-fast-datetime__separator journalit-fast-datetime__separator--spacer"
-                  aria-hidden="true"
-                />
-              )}
-              <input
-                ref={hourRef}
-                type="text"
-                inputMode="numeric"
-                value={hour}
-                onChange={(e) =>
-                  handleSegmentChange(
-                    e.target.value,
-                    'hour',
-                    setHour,
-                    2,
-                    minuteRef
-                  )
-                }
-                onKeyDown={handleSegmentKeyDown}
-                aria-invalid={Boolean(timeDraftError)}
-                aria-describedby={displayedError ? errorId : undefined}
-                placeholder={t('datepicker.placeholder.hour')}
-                data-segment="hour"
-                disabled={disabled}
-                className="segment-input journalit-fast-datetime__segment"
-              />
-              <span className="journalit-fast-datetime__separator">:</span>
-              <input
-                ref={minuteRef}
-                type="text"
-                inputMode="numeric"
-                value={minute}
-                onChange={(e) =>
-                  handleSegmentChange(
-                    e.target.value,
-                    'minute',
-                    setMinute,
-                    2,
-                    shouldShowSeconds ? secondRef : undefined
-                  )
-                }
-                onKeyDown={handleSegmentKeyDown}
-                aria-invalid={Boolean(timeDraftError)}
-                aria-describedby={displayedError ? errorId : undefined}
-                placeholder={t('datepicker.placeholder.minute')}
-                data-segment="minute"
-                disabled={disabled}
-                className="segment-input journalit-fast-datetime__segment"
-              />
-              {shouldShowSeconds && (
-                <>
-                  <span className="journalit-fast-datetime__separator">:</span>
-                  <input
-                    ref={secondRef}
-                    type="text"
-                    inputMode="numeric"
-                    value={second}
-                    onChange={(e) =>
-                      handleSegmentChange(
-                        e.target.value,
-                        'second',
-                        setSecond,
-                        2
-                      )
-                    }
-                    onKeyDown={handleSegmentKeyDown}
-                    aria-invalid={Boolean(timeDraftError)}
-                    aria-describedby={displayedError ? errorId : undefined}
-                    placeholder={t('datepicker.placeholder.second')}
-                    data-segment="second"
-                    disabled={disabled}
-                    className="segment-input journalit-fast-datetime__segment"
-                  />
-                </>
-              )}
-              {!use24HourTime && (
-                <button
-                  ref={ampmButtonRef}
-                  type="button"
-                  onClick={handleAmpmToggle}
-                  disabled={disabled}
-                  className="journalit-fast-datetime__ampm-button"
-                >
-                  {ampm}
-                </button>
-              )}
-            </div>
+          {visible.time && (
+            <TimeSegmentGroup
+              values={{ hour, minute, second, ampm }}
+              refs={{
+                hour: hourRef,
+                minute: minuteRef,
+                second: secondRef,
+                ampm: ampmButtonRef,
+              }}
+              layout={{
+                spacer: !timeOnly,
+                seconds: shouldShowSeconds,
+                ampm: !use24HourTime,
+              }}
+              inputProps={{
+                onKeyDown: handleSegmentKeyDown,
+                'aria-invalid': Boolean(timeDraftError),
+                'aria-describedby': describedBy,
+                disabled,
+              }}
+              disabled={disabled}
+              onSegmentChange={handleTimeSegmentChange}
+              onAmpmToggle={handleAmpmToggle}
+            />
           )}
 
           
-          {!controllerOnly && !hidePickerButton && (
+          {visible.picker && (
             <button
               ref={calendarButtonRef}
               type="button"
@@ -1015,15 +1190,7 @@ export const FastDateTimeInput: React.FC<FastDateTimeInputProps> = React.memo(
           )}
         </div>
 
-        {displayedError && (
-          <span
-            id={errorId}
-            role="alert"
-            className="journalit-fast-datetime__error"
-          >
-            {displayedError}
-          </span>
-        )}
+        <FastDateTimeError id={errorId} error={displayedError} />
       </div>
     );
   }

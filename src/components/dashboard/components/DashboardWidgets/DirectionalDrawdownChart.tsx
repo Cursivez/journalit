@@ -23,7 +23,6 @@ interface DirectionalDrawdownChartProps extends BaseWidgetProps {
 const DirectionalDrawdownChartComponent: React.FC<
   DirectionalDrawdownChartProps
 > = ({
-  filters,
   dateFormat,
   showLong = true,
   showShort = true,
@@ -33,8 +32,8 @@ const DirectionalDrawdownChartComponent: React.FC<
   const plugin = usePlugin();
 
   return (
-    <BaseWidget filters={filters} dateFormat={dateFormat}>
-      {(data, userDateFormat) => {
+    <BaseWidget dateFormat={dateFormat}>
+      {(data, userDateFormat, filters) => {
         const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
         const applyAccountCountMultiplier = false;
 

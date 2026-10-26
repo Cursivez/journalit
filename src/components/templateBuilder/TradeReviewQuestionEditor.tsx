@@ -87,9 +87,10 @@ const QuestionEditorDropdown: React.FC<QuestionEditorDropdownProps> = ({
       }
       setIsOpen(false);
     };
-    activeDocument.addEventListener('mousedown', handlePointerDown);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('mousedown', handlePointerDown);
     return () =>
-      activeDocument.removeEventListener('mousedown', handlePointerDown);
+      listenerDocument.removeEventListener('mousedown', handlePointerDown);
   }, [isOpen]);
 
   useEffect(() => {

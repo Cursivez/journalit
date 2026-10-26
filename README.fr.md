@@ -27,7 +27,7 @@ Journal de trading local-first pour Obsidian.
   <a href="README.ar.md">العربية</a>
 </p>
 
-[Installation](#installation) · [Courtiers pris en charge](#supported-brokers) · [Confidentialité](PRIVACY.md)
+[Installation](#installation) · [Apps d'IA (MCP)](#ai-apps-mcp) · [Courtiers pris en charge](#supported-brokers) · [Confidentialité](PRIVACY.md)
 
 </div>
 
@@ -54,15 +54,7 @@ Page communautaire: https://community.obsidian.md/plugins/journalit
 - **Système de revue (V2)** : modèles quotidiens → annuels avec constructeur de mise en page.
 - **[Trade Import](https://journalit.co/csv-import)** : imports alimentés par le backend pour CSV, feuilles de calcul, HTML et relevés de courtiers.
 - **[Trade Sync](https://journalit.co/docs/trade-sync)** : synchronisation automatique des trades pour les courtiers pris en charge.
-
-## Informations importantes
-
-- **Cœur local-first** : le journal principal fonctionne hors ligne et stocke vos notes et trades dans votre coffre Obsidian.
-- **Compte requis pour l’accès complet** : un compte Journalit est requis pour les fonctionnalités avec authentification et abonnement.
-- **Fonctionnalités payantes** : un abonnement Pro est requis pour l’accès complet aux fonctionnalités Pro comme Trade Sync, Trade Import, le calendrier économique et les profils de prop firms préremplis.
-- **Utilisation du réseau** : Journalit vérifie par défaut les métadonnées publiques des versions GitHub pour les mises à jour, sans envoyer de données du coffre ni du compte. Les fonctionnalités utilisées après connexion peuvent faire appel aux services Journalit; la synchronisation MT4 utilise un FTP géré, et la conversion de devises peut utiliser un service de taux de change tiers. Consultez [PRIVACY.md](PRIVACY.md).
-- **Source disponible, licence propriétaire** : le plugin est un logiciel propriétaire dont le code source peut être consulté.
-- **Détails de confidentialité** : consultez [PRIVACY.md](PRIVACY.md) pour les informations sur le traitement et la conservation des données, ainsi que sur l’infrastructure.
+- **[Apps d'IA (MCP)](https://journalit.co/docs/ai-apps)**: connectez votre app d’IA pour analyser vos trades, préparer des bilans et mettre à jour votre journal.
 
 <a id="screenshots"></a>
 
@@ -102,17 +94,44 @@ Page communautaire: https://community.obsidian.md/plugins/journalit
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
+<a id="ai-apps-mcp"></a>
+
+## Apps d'IA (MCP)
+
+Connectez Claude, Claude Code, ChatGPT, Codex, Hermes, Grok Bot ou une autre app compatible à votre journal via MCP (Model Context Protocol). Demandez-lui d’analyser vos trades, de préparer un bilan hebdomadaire ou de modifier les champs du journal sans copier vos notes dans une conversation.
+
+1. Connectez-vous à Journalit dans Obsidian. Ouvrez **Paramètres → Journalit → Apps d'IA (MCP)** et activez **Activer l'accès MCP**.
+2. Ajoutez `https://api.journalit.co/mcp` comme serveur MCP distant dans votre app d’IA.
+3. Connectez-vous à Journalit lorsque cela vous est demandé, choisissez votre coffre, vérifiez les autorisations demandées et approuvez la connexion.
+
+Gardez Obsidian ouvert avec Journalit en cours d’exécution. Par défaut, les suppressions, les fusions et les modifications de grande ampleur nécessitent votre approbation.
+
+Consultez le **[guide de configuration des apps d’IA](https://journalit.co/docs/ai-apps)** pour les étapes propres à chaque client, les autorisations, l’annulation des modifications et les limites mensuelles.
+
 <a id="supported-brokers"></a>
 
 ## Courtiers pris en charge
 
-Formats d’import de courtiers pris en charge :
+Trade Sync établit une connexion continue. Trade Import lit des fichiers exportés. La prise en charge de l’un n’implique pas celle de l’autre.
+
+### Trade Sync automatique
+
+- [MetaTrader 4](https://journalit.co/docs/trade-sync-metatrader)
+- [Tradovate](https://journalit.co/docs/trade-sync-tradovate)
+- [cTrader](https://journalit.co/docs/trade-sync-ctrader)
+- [Hyperliquid](https://journalit.co/docs/trade-sync-hyperliquid): contrats perpétuels réglés en USDC, en lecture seule
+
+[Rithmic Trade Sync](https://journalit.co/docs/trade-sync-rithmic) est une préversion réservée aux testeurs approuvés. Les relevés MetaTrader 5 passent par Trade Import, et non par Trade Sync via FTP.
+
+### Trade Import à partir de fichiers
+
+Sources et formats d’export pris en charge :
 
 - [IBKR](https://journalit.co/docs/broker-guides-ibkr)
 - [Tradovate](https://journalit.co/docs/broker-guides-tradovate)
 - [TopStepX](https://journalit.co/docs/broker-guides-topstepx)
 - [TradeZero](https://journalit.co/docs/broker-guides-tradezero)
-- [TradingView](https://journalit.co/docs/broker-guides-tradingview)
+- TradingView: [historique des ordres Paper Trading](https://journalit.co/docs/broker-guides-tradingview) et List of Trades de Strategy Tester (backtests)
 - [Bybit](https://journalit.co/docs/broker-guides-bybit)
 - [BloFin](https://journalit.co/docs/broker-guides-blofin)
 - [Hyperliquid](https://journalit.co/docs/broker-guides-hyperliquid)
@@ -123,13 +142,23 @@ Formats d’import de courtiers pris en charge :
 - [Trading Technologies (TT)](https://journalit.co/docs/broker-guides-tradingtechnologies)
 - [Rithmic](https://journalit.co/docs/broker-guides-rithmic)
 - [MetaTrader 4/5](https://journalit.co/docs/broker-guides-jdr)
+- [DeepCharts](https://journalit.co/docs/broker-guides-deepcharts): Trade List du Strategy Report
+- [Breakout Terminal](https://journalit.co/docs/broker-guides-breakout-terminal): `trades.csv`
+- Merrill Edge: activité du compte au format CSV
+- PropReports: rapport Executions pour les actions
+
+Utilisez Manual Mapping pour les autres fichiers compatibles. Consultez la [présentation de Trade Import](https://journalit.co/csv-import) et le guide de chaque source pour connaître l’export requis.
 
 Votre courtier manque ? Rejoignez [Discord](https://discord.gg/AkSw3D9h8b) et dites-nous lequel vous voulez ensuite.
 
 <details>
 <summary>Mots-clés de recherche</summary>
 
-Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, MetaTrader, MT4 sync, MT5 sync, Trade Import, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown, prop challenge, evaluation, funded phase, payout rules, daily loss limit
+Mots-clés: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, Trade Import, Trade Sync, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown, prop challenge, evaluation, funded phase, payout rules, daily loss limit
+
+IA: MCP, Model Context Protocol, Obsidian MCP, AI trading journal, AI-assisted journaling, Claude, Claude Code, ChatGPT, Codex, Hermes, Grok Bot
+
+Courtiers et plateformes: MetaTrader, MetaTrader 4, MT4 sync, MetaTrader 5 imports, IBKR, Interactive Brokers, Tradovate, cTrader, Hyperliquid, Rithmic, TopStepX, TradeZero, TradingView, TradingView Strategy Tester, Bybit, BloFin, Sierra Chart, MotiveWave, FX Replay, ATAS, Trading Technologies, DeepCharts, Breakout Terminal, Merrill Edge, PropReports
 
 </details>
 
@@ -143,6 +172,18 @@ Keywords: obsidian trading journal, trading plugin, trade tracker, obsidian trad
 - [Guide des prop challenges](https://journalit.co/docs/prop-challenges)
 
 </details>
+
+## Informations importantes
+
+- **Cœur local-first** : le journal principal fonctionne hors ligne et stocke vos notes et trades dans votre coffre Obsidian.
+- **Compte requis pour l’accès complet** : un compte Journalit est requis pour les fonctionnalités avec authentification et abonnement.
+- **Fonctionnalités payantes** : un abonnement Pro est requis pour Trade Sync, la validation des imports Trade Import, le calendrier économique et les profils de prop firms préremplis. Les utilisateurs gratuits connectés peuvent analyser les fichiers Trade Import et en afficher un aperçu.
+- **Utilisation du réseau** : Journalit vérifie par défaut les métadonnées publiques des versions GitHub pour les mises à jour, sans envoyer de données du coffre ni du compte. Les fonctionnalités utilisées après connexion peuvent faire appel aux services Journalit; la synchronisation MT4 utilise un FTP géré, et la conversion de devises peut utiliser un service de taux de change tiers. Consultez [PRIVACY.md](PRIVACY.md).
+- **Accès facultatif à l’IA** : lorsque vous activez MCP et autorisez une app d’IA, les données demandées du journal lui sont transmises via les services de Journalit. Les conditions de confidentialité du fournisseur d’IA s’appliquent à toutes les données qu’elle lit. Vous pouvez déconnecter l’app ou désactiver l’accès MCP à tout moment.
+- **Traitement de Trade Import** : l’analyse et l’aperçu envoient le fichier sélectionné et les options d’import à Journalit. Les captures de diagnostic chiffrées côté serveur expirent après 1 jour pour les comptes gratuits ou 14 jours pour Pro ; les aperçus enregistrés expirent après 7 jours. Les indications de compatibilité sont renvoyées dans ces réponses et affichées localement, sans envoi séparé de rapports d’erreur depuis le client. Voir [PRIVACY.md](PRIVACY.md).
+- **Autres diagnostics réseau** : le code existant de Tradovate Sync transmet des événements de diagnostic de synchronisation du client comme indiqué dans [PRIVACY.md](PRIVACY.md), indépendamment de Trade Import. Les boutons de passage à une offre supérieure ouvrent journalit.co uniquement lors d’un clic, avec des paramètres de campagne fixes sans identifiants pour l’attribution côté serveur.
+- **Source disponible, licence propriétaire** : le plugin est un logiciel propriétaire dont le code source peut être consulté.
+- **Détails de confidentialité** : consultez [PRIVACY.md](PRIVACY.md) pour les informations sur le traitement et la conservation des données, ainsi que sur l’infrastructure.
 
 ## Licence
 

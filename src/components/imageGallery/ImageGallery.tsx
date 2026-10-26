@@ -88,9 +88,8 @@ export const IMAGE_GALLERY_SIZES: ImageGallerySize[] = [
   'large',
 ];
 const IMAGE_GALLERY_CHANGE_EVENTS: EventName[] = [
-  'trade:committed',
-  'trade:changed',
-  'missed-trade:changed',
+  'trade-data:changed',
+  'missed-trade-data:changed',
   'backtest-trade:changed',
   'review:changed',
   'options:changed',
@@ -99,10 +98,14 @@ const IMAGE_GALLERY_CHANGE_EVENTS: EventName[] = [
   'image-gallery:changed',
 ];
 
+
+const IMAGE_GALLERY_RELOAD_BATCH_MS = 150;
+
 interface ImageGalleryState {
   items: ImageGalleryItem[];
   totalItemCount: number;
-  loading: boolean;
+  
+  hasLoaded: boolean;
   loadError: string | null;
   viewport: { width: number; height: number; scrollTop: number };
 }
@@ -120,7 +123,7 @@ type ImageGalleryAction =
 const INITIAL_IMAGE_GALLERY_STATE: ImageGalleryState = {
   items: [],
   totalItemCount: 0,
-  loading: true,
+  hasLoaded: false,
   loadError: null,
   viewport: { width: 0, height: 0, scrollTop: 0 },
 };
@@ -170,17 +173,17 @@ function imageGalleryReducer(
 ): ImageGalleryState {
   switch (action.type) {
     case 'load-start':
-      return { ...state, loading: true, loadError: null };
+      return state.hasLoaded ? state : { ...state, loadError: null };
     case 'load-success':
       return {
         ...state,
         items: action.items,
         totalItemCount: action.totalItemCount,
-        loading: false,
+        hasLoaded: true,
         loadError: null,
       };
     case 'load-error':
-      return { ...state, loading: false, loadError: action.error };
+      return { ...state, loadError: action.error };
     case 'viewport':
       return { ...state, viewport: action.viewport };
   }
@@ -203,6 +206,78 @@ function useImageGalleryGuideTargets() {
     ),
   };
 }
+
+const galleryTradeSettings = (plugin: ImageGalleryProps['plugin']) => ({
+  useRMultiples: plugin.settings.trade?.displayRMultiples ?? false,
+  dateFormat: plugin.settings.trade?.dateFormat,
+});
+
+
+const galleryMasking = (
+  shouldMask: (kind: string) => boolean,
+  useRMultiples: boolean
+) => ({
+  isPerformanceMasked: shouldMask(useRMultiples ? 'rMultiple' : 'pnl'),
+  shouldBlurImages: shouldMask('pnl') || shouldMask('rMultiple'),
+});
+
+const itemAtIndex = <T,>(
+  items: readonly T[],
+  index: number | null
+): T | null => (index === null ? null : (items[index] ?? null));
+
+const ImageGalleryContent: React.FC<{
+  loading: boolean;
+  loadError: string | null;
+  totalItemCount: number;
+  visibleItemCount: number;
+  emptyStateKind: React.ComponentProps<typeof ImageGalleryEmptyState>['kind'];
+  registerEmptyStateTarget: React.ComponentProps<
+    typeof ImageGalleryEmptyState
+  >['registerTarget'];
+  onClearFilters: ImageGalleryProps['onClearFilters'];
+  onShowAllImages: ImageGalleryProps['onShowAllImages'];
+  grid: React.ComponentProps<typeof ImageGalleryGrid>;
+}> = ({
+  loading,
+  loadError,
+  totalItemCount,
+  visibleItemCount,
+  emptyStateKind,
+  registerEmptyStateTarget,
+  onClearFilters,
+  onShowAllImages,
+  grid,
+}) => {
+  if (loading) return <ImageGallerySkeleton size={grid.size} />;
+  if (loadError) {
+    return (
+      <ImageGalleryEmptyState
+        description={loadError}
+        title={t('imageGallery.empty.error.title')}
+      />
+    );
+  }
+  if (totalItemCount === 0) {
+    return (
+      <ImageGalleryEmptyState
+        kind="no-images"
+        registerTarget={registerEmptyStateTarget}
+      />
+    );
+  }
+  if (visibleItemCount === 0) {
+    return (
+      <ImageGalleryEmptyState
+        kind={emptyStateKind}
+        onClearFilters={onClearFilters}
+        registerTarget={registerEmptyStateTarget}
+        onShowAllImages={onShowAllImages}
+      />
+    );
+  }
+  return <ImageGalleryGrid {...grid} />;
+};
 
 export const ImageGallery: React.FC<ImageGalleryProps> = ({
   plugin,
@@ -229,7 +304,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     registerTagButtonTarget,
     registerAnnotationPanelTarget,
   } = useImageGalleryGuideTargets();
-  const [{ items, totalItemCount, loading, loadError, viewport }, dispatch] =
+  const [{ items, totalItemCount, hasLoaded, loadError, viewport }, dispatch] =
     useReducer(imageGalleryReducer, INITIAL_IMAGE_GALLERY_STATE);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const lastFullscreenIndexRef = useRef(0);
@@ -248,21 +323,23 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     viewMode,
   });
 
-  const useRMultiples = plugin.settings.trade?.displayRMultiples ?? false;
-  const dateFormat = plugin.settings.trade?.dateFormat;
-  const isPerformanceMasked = shouldMask(useRMultiples ? 'rMultiple' : 'pnl');
-  const shouldBlurImages = shouldMask('pnl') || shouldMask('rMultiple');
+  const { useRMultiples, dateFormat } = galleryTradeSettings(plugin);
+  const { isPerformanceMasked, shouldBlurImages } = galleryMasking(
+    shouldMask,
+    useRMultiples
+  );
 
   useEffect(() => {
     void loadItems();
   }, [loadItems, tradeLogFilters]);
 
+  const scheduleReload = useBatchedImageGalleryReload(loadItems);
   useImageGalleryInvalidation(
     serviceRef,
-    loadItems,
+    scheduleReload,
     tradeLogFilters.sessionLogTags.length > 0
   );
-  useImageGalleryCustomFieldInvalidation(plugin, serviceRef, loadItems);
+  useImageGalleryCustomFieldInvalidation(plugin, serviceRef, scheduleReload);
 
   useEffect(() => {
     const container = scrollContainerRef.current;
@@ -325,10 +402,7 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
     tradeLogFilters,
     viewMode,
   });
-  const fullscreenItem =
-    fullscreenIndex === null
-      ? null
-      : (fullscreenItems[fullscreenIndex] ?? null);
+  const fullscreenItem = itemAtIndex(fullscreenItems, fullscreenIndex);
   fullscreenItemIdRef.current = fullscreenItem?.id ?? null;
   const emptyStateKind = getImageGalleryEmptyStateKind({
     allItemCount: totalItemCount,
@@ -442,40 +516,29 @@ export const ImageGallery: React.FC<ImageGalleryProps> = ({
 
   return (
     <div className="journalit-image-gallery-page" ref={scrollContainerRef}>
-      {loading ? (
-        <ImageGallerySkeleton size={size} />
-      ) : loadError ? (
-        <ImageGalleryEmptyState
-          description={loadError}
-          title={t('imageGallery.empty.error.title')}
-        />
-      ) : totalItemCount === 0 ? (
-        <ImageGalleryEmptyState
-          kind="no-images"
-          registerTarget={registerEmptyStateTarget}
-        />
-      ) : visibleItems.length === 0 ? (
-        <ImageGalleryEmptyState
-          kind={emptyStateKind}
-          onClearFilters={onClearFilters}
-          registerTarget={registerEmptyStateTarget}
-          onShowAllImages={onShowAllImages}
-        />
-      ) : (
-        <ImageGalleryGrid
-          app={plugin.app}
-          dateFormat={dateFormat}
-          groups={visibleGroups}
-          isPerformanceMasked={isPerformanceMasked}
-          onOpenFullscreen={handleOpenFullscreen}
-          onOpenSource={handleOpenSource}
-          registerGridTarget={registerGridTarget}
-          shouldBlurImages={shouldBlurImages}
-          size={size}
-          useRMultiples={useRMultiples}
-          viewport={viewport}
-        />
-      )}
+      <ImageGalleryContent
+        loading={!hasLoaded && loadError === null}
+        loadError={loadError}
+        totalItemCount={totalItemCount}
+        visibleItemCount={visibleItems.length}
+        emptyStateKind={emptyStateKind}
+        registerEmptyStateTarget={registerEmptyStateTarget}
+        onClearFilters={onClearFilters}
+        onShowAllImages={onShowAllImages}
+        grid={{
+          app: plugin.app,
+          dateFormat,
+          groups: visibleGroups,
+          isPerformanceMasked,
+          onOpenFullscreen: handleOpenFullscreen,
+          onOpenSource: handleOpenSource,
+          registerGridTarget,
+          shouldBlurImages,
+          size,
+          useRMultiples,
+          viewport,
+        }}
+      />
 
       <ImageGalleryFullscreen
         currentIndex={fullscreenIndex ?? 0}
@@ -601,19 +664,44 @@ function useImageGalleryLoader(input: {
   return { loadItems, fullscreenItemIdRef };
 }
 
+
+function useBatchedImageGalleryReload(
+  loadItems: () => Promise<void>
+): () => void {
+  const timerRef = useRef<number | null>(null);
+  const loadItemsRef = useRef(loadItems);
+  useLayoutEffect(() => {
+    loadItemsRef.current = loadItems;
+  }, [loadItems]);
+  useEffect(
+    () => () => {
+      if (timerRef.current !== null) window.clearTimeout(timerRef.current);
+    },
+    []
+  );
+
+  return useCallback(() => {
+    if (timerRef.current !== null) return;
+    timerRef.current = window.setTimeout(() => {
+      timerRef.current = null;
+      void loadItemsRef.current();
+    }, IMAGE_GALLERY_RELOAD_BATCH_MS);
+  }, []);
+}
+
 function useImageGalleryInvalidation(
   serviceRef: React.RefObject<ImageGalleryService | null>,
-  loadItems: () => Promise<void>,
+  scheduleReload: () => void,
   sessionLogFilterActive: boolean
 ): void {
   const invalidateAndReload = useCallback(() => {
     serviceRef.current?.invalidate();
-    void loadItems();
-  }, [loadItems, serviceRef]);
+    scheduleReload();
+  }, [scheduleReload, serviceRef]);
   useEventBusMultiple(IMAGE_GALLERY_CHANGE_EVENTS, invalidateAndReload);
   useEventBus('drc:session-log-index-invalidated', () => {
     if (!sessionLogFilterActive) return;
-    void loadItems();
+    scheduleReload();
   });
   useEventBus('settings:changed', (payload) => {
     
@@ -625,12 +713,12 @@ function useImageGalleryInvalidation(
 function useImageGalleryCustomFieldInvalidation(
   plugin: JournalitPlugin,
   serviceRef: React.RefObject<ImageGalleryService | null>,
-  loadItems: () => Promise<void>
+  scheduleReload: () => void
 ): void {
   useEffect(() => {
     const handleCustomFieldsChanged = () => {
       serviceRef.current?.invalidate();
-      void loadItems();
+      scheduleReload();
     };
 
     plugin.app.workspace.on(
@@ -644,7 +732,7 @@ function useImageGalleryCustomFieldInvalidation(
         handleCustomFieldsChanged
       );
     };
-  }, [loadItems, plugin.app.workspace, serviceRef]);
+  }, [plugin.app.workspace, scheduleReload, serviceRef]);
 }
 
 export {

@@ -17,6 +17,7 @@ import { ReviewTemplateService } from '../../../services/templates/ReviewTemplat
 import { TradeTemplateService } from '../../../services/templates/TradeTemplateService';
 import type { ReviewTemplate, TradeTemplate } from '../../../types/reviewV2';
 import { eventBus } from '../../../services/events/EventBus';
+import { createReloadReviewTemplatesHandler } from '../reviewTemplateEventUtils';
 import { t } from '../../../lang/helpers';
 import { writeClipboardText } from '../../../utils/clipboard';
 export const LIBRARY_TAB_STYLES = `
@@ -303,12 +304,16 @@ function useLibraryTabModel({
     const loadCurrentTemplates = () => {
       loadTemplatesRef.current();
     };
+    const reloadReviewTemplates = createReloadReviewTemplatesHandler({
+      service: reviewTemplateService,
+      loadTemplates: loadCurrentTemplates,
+    });
 
     loadCurrentTemplates();
 
     const unsubReview = eventBus.subscribe(
       'review-template:changed',
-      loadCurrentTemplates
+      reloadReviewTemplates
     );
     const unsubTrade = eventBus.subscribe(
       'trade-template:changed',
@@ -319,7 +324,7 @@ function useLibraryTabModel({
       unsubReview();
       unsubTrade();
     };
-  }, []);
+  }, [reviewTemplateService]);
 
   
   const handleValidate = () => {

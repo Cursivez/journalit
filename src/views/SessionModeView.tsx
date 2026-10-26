@@ -14,7 +14,7 @@ import JournalitPlugin from '../main';
 import { t } from '../lang/helpers';
 import { getTradingDay, getTradingDayRange } from '../utils/tradingDayUtils';
 import { formatLocalDateString } from '../utils/dateUtils';
-import { TradeFormModal } from '../components/forms/trade/TradeFormModal';
+import { TradeFormDrawer } from '../components/forms/trade/TradeFormDrawer';
 import {
   fetchDashboardData,
   Trade,
@@ -35,7 +35,6 @@ import {
   SESSION_MODE_CHECKLIST_TARGET_ID,
   SESSION_MODE_CONFIGURE_BUTTON_TARGET_ID,
   SESSION_MODE_EDIT_BUTTON_TARGET_ID,
-  SESSION_MODE_ENDED_ACTIONS_TARGET_ID,
   SESSION_MODE_HEADER_TARGET_ID,
   SESSION_MODE_GOALS_TARGET_ID,
   SESSION_MODE_SESSION_LOG_TARGET_ID,
@@ -231,6 +230,117 @@ const openSessionModeFile = async (
   await plugin.openFile(path, false, true, 'sidebar');
 };
 
+
+const loadSessionTrades = async (
+  plugin: JournalitPlugin,
+  backingTradingDay: Date,
+  phaseState: SessionModePhaseState,
+  freshTradeQuery: boolean
+): Promise<Trade[]> => {
+  const tradeService = plugin.serviceManager.getTradeService();
+  await tradeService.waitForTradeDataReady();
+  const tradeLoadRange = getSessionTradeLoadRange(
+    phaseState,
+    getTradingDayRange(backingTradingDay, plugin)
+  );
+  const sessionFilters = createDashboardFilters();
+  sessionFilters.dateRange = [tradeLoadRange.start, tradeLoadRange.end];
+  const data = await fetchDashboardData(
+    plugin.app,
+    tradeService,
+    sessionFilters,
+    plugin.settings.trade?.defaultRiskAmount,
+    plugin,
+    { freshTradeQuery, executionScopedDateRange: true }
+  );
+  return data.trades;
+};
+
+
+const liveSessionTimelineEntries = (
+  phaseState: SessionModePhaseState,
+  entries: SessionLogTimelineEntry[]
+): SessionLogTimelineEntry[] =>
+  phaseState.phase === 'live' && phaseState.currentSession
+    ? filterTimelineEntriesBySessionWindow(entries, phaseState.currentSession)
+    : entries;
+
+const timestampSessionWindowOf = (phaseState: SessionModePhaseState) =>
+  phaseState.currentSession ??
+  phaseState.previousSession ??
+  phaseState.nextSession;
+
+const showsPhaseStatus = (phase: SessionModePhaseState['phase']): boolean =>
+  phase !== 'unconfigured' &&
+  phase !== 'live' &&
+  phase !== 'waiting' &&
+  phase !== 'break' &&
+  phase !== 'ended';
+
+const SessionModeHeader: React.FC<{
+  plugin: JournalitPlugin;
+  phaseState: SessionModePhaseState;
+  filePath: string;
+  tradingDay: Date;
+  drcButton: React.ReactNode;
+  editButton: React.ReactNode;
+  onStartUnplanned: () => void;
+  onStopUnplanned: ReturnType<
+    typeof useUnplannedSessionActions
+  >['stopUnplanned'];
+}> = ({
+  plugin,
+  phaseState,
+  filePath,
+  tradingDay,
+  drcButton,
+  editButton,
+  onStartUnplanned,
+  onStopUnplanned,
+}) => {
+  if (phaseState.phase === 'ended' || phaseState.phase === 'unconfigured') {
+    return null;
+  }
+  const runningUnplannedSession = getRunningUnplannedSession(phaseState);
+
+  return (
+    <SessionModeGuideHeader>
+      <div className="journalit-session-mode-header__top">
+        <div className="journalit-session-mode-header__title-group">
+          <h3>{getSessionModeViewTitle(phaseState)}</h3>
+          {phaseState.phase === 'live' && drcButton}
+        </div>
+        <div className="journalit-session-mode-header__actions">
+          {editButton}
+        </div>
+      </div>
+      {runningUnplannedSession && (
+        <UnplannedSessionStrip
+          session={runningUnplannedSession}
+          timeSinceStartMs={phaseState.timeSinceStartMs}
+          use24HourTime={plugin.settings.trade.use24HourTime ?? false}
+          onStop={() => onStopUnplanned(runningUnplannedSession)}
+        />
+      )}
+      {phaseState.phase === 'preparation' && (
+        <SessionModeDRCLink
+          plugin={plugin}
+          filePath={filePath}
+          tradingDay={tradingDay}
+        />
+      )}
+      {phaseState.phase === 'preparation' && (
+        <div className="journalit-session-mode-header__preparation-action">
+          <Button variant="secondary" size="small" onClick={onStartUnplanned}>
+            <Play size={14} aria-hidden="true" />
+            {t('session-mode.unplanned.start')}
+          </Button>
+        </div>
+      )}
+    </SessionModeGuideHeader>
+  );
+};
+
 const SessionMode: React.FC<{
   plugin: JournalitPlugin;
   hoverParent: Component;
@@ -243,6 +353,9 @@ const SessionMode: React.FC<{
   const loadedBackingTradingDayKeyRef = useRef<string | null>(null);
   const [trades, setTrades] = useState<Trade[]>([]);
   const loadRequestIdRef = useRef(0);
+  
+  
+  const authoritativeLoadDoneRef = useRef(false);
   const currentTradingDayKey = formatLocalDateString(
     getTradingDay(now, plugin)
   );
@@ -325,24 +438,14 @@ const SessionMode: React.FC<{
       setLoadedBackingTradingDayKey(requestBackingTradingDayKey);
     }
 
-    const tradeService = plugin.serviceManager.getTradeService();
-    await tradeService.waitForTradeDataReady();
-    const tradingDayRange = getTradingDayRange(backingTradingDay, plugin);
-    const tradeLoadRange = getSessionTradeLoadRange(
-      phaseStateRef.current,
-      tradingDayRange
-    );
-    const sessionFilters = createDashboardFilters();
-    sessionFilters.dateRange = [tradeLoadRange.start, tradeLoadRange.end];
-    const data = await fetchDashboardData(
-      plugin.app,
-      tradeService,
-      sessionFilters,
-      plugin.settings.trade?.defaultRiskAmount,
+    const sessionTrades = await loadSessionTrades(
       plugin,
-      { freshTradeQuery: true, executionScopedDateRange: true }
+      backingTradingDay,
+      phaseStateRef.current,
+      !authoritativeLoadDoneRef.current
     );
-    if (isCurrentRequest()) setTrades(data.trades);
+    authoritativeLoadDoneRef.current = true;
+    if (isCurrentRequest()) setTrades(sessionTrades);
   }, [backingTradingDay, backingTradingDayKey, plugin]);
 
   useEffect(() => {
@@ -367,7 +470,7 @@ const SessionMode: React.FC<{
     void loadSession();
   });
   useEffect(() => {
-    const unsubscribeTrade = eventBus.subscribe('trade:changed', () => {
+    const unsubscribeTrade = eventBus.subscribe('trade-data:changed', () => {
       onTradeChanged();
     });
     const unsubscribeReview = eventBus.subscribe(
@@ -425,19 +528,11 @@ const SessionMode: React.FC<{
       plugin={plugin}
       filePath={resolvedFilePath}
       trades={trades}
-      timelineEntries={
-        phaseState.phase === 'live' && phaseState.currentSession
-          ? filterTimelineEntriesBySessionWindow(
-              visibleTimelineEntries,
-              phaseState.currentSession
-            )
-          : visibleTimelineEntries
-      }
-      timestampSessionWindow={
-        phaseState.currentSession ??
-        phaseState.previousSession ??
-        phaseState.nextSession
-      }
+      timelineEntries={liveSessionTimelineEntries(
+        phaseState,
+        visibleTimelineEntries
+      )}
+      timestampSessionWindow={timestampSessionWindowOf(phaseState)}
       onRefresh={() => {
         void loadSession();
       }}
@@ -459,7 +554,6 @@ const SessionMode: React.FC<{
   const drcButton = (
     <SessionModeHeaderDRCButton filePath={resolvedFilePath} plugin={plugin} />
   );
-  const runningUnplannedSession = getRunningUnplannedSession(phaseState);
   const getCurrentPhaseState = useCallback(() => phaseStateRef.current, []);
   const { startUnplanned, stopUnplanned } = useUnplannedSessionActions(
     plugin,
@@ -467,52 +561,22 @@ const SessionMode: React.FC<{
   );
   return shouldRenderLoadedSession ? (
     <div className="journalit-session-mode">
-      {phaseState.phase !== 'ended' && phaseState.phase !== 'unconfigured' && (
-        <SessionModeGuideHeader>
-          <div className="journalit-session-mode-header__top">
-            <div className="journalit-session-mode-header__title-group">
-              <h3>{getSessionModeViewTitle(phaseState)}</h3>
-              {phaseState.phase === 'live' && drcButton}
-            </div>
-            <div className="journalit-session-mode-header__actions">
-              {editButton}
-            </div>
-          </div>
-          {runningUnplannedSession && (
-            <UnplannedSessionStrip
-              session={runningUnplannedSession}
-              timeSinceStartMs={phaseState.timeSinceStartMs}
-              use24HourTime={plugin.settings.trade.use24HourTime ?? false}
-              onStop={() => stopUnplanned(runningUnplannedSession)}
-            />
-          )}
-          {phaseState.phase === 'preparation' && (
-            <SessionModeDRCLink
-              plugin={plugin}
-              filePath={resolvedFilePath}
-              tradingDay={backingTradingDay ?? tradingDay}
-            />
-          )}
-          {phaseState.phase === 'preparation' && (
-            <div className="journalit-session-mode-header__preparation-action">
-              <Button variant="secondary" size="small" onClick={startUnplanned}>
-                <Play size={14} aria-hidden="true" />
-                {t('session-mode.unplanned.start')}
-              </Button>
-            </div>
-          )}
-        </SessionModeGuideHeader>
+      <SessionModeHeader
+        plugin={plugin}
+        phaseState={phaseState}
+        filePath={resolvedFilePath}
+        tradingDay={backingTradingDay ?? tradingDay}
+        drcButton={drcButton}
+        editButton={editButton}
+        onStartUnplanned={startUnplanned}
+        onStopUnplanned={stopUnplanned}
+      />
+      {showsPhaseStatus(phaseState.phase) && (
+        <SessionModeStatus
+          phaseState={phaseState}
+          use24HourTime={plugin.settings.trade.use24HourTime ?? false}
+        />
       )}
-      {phaseState.phase !== 'unconfigured' &&
-        phaseState.phase !== 'live' &&
-        phaseState.phase !== 'waiting' &&
-        phaseState.phase !== 'break' &&
-        phaseState.phase !== 'ended' && (
-          <SessionModeStatus
-            phaseState={phaseState}
-            use24HourTime={plugin.settings.trade.use24HourTime ?? false}
-          />
-        )}
       <SessionModePhaseContent
         phaseState={phaseState}
         plugin={plugin}
@@ -664,7 +728,7 @@ const SessionModeSkeleton: React.FC<{
   return (
     <div className="journalit-session-mode journalit-session-mode-skeleton">
       <div className="journalit-session-mode-header">
-        <div className="skeleton-shimmer journalit-session-mode-skeleton__title" />
+        <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__title" />
       </div>
       <div
         className={`journalit-session-mode-skeleton__body is-${phase}`}
@@ -677,46 +741,46 @@ const SessionModeSkeleton: React.FC<{
         {phase === 'preparation' ? (
           <>
             <div className="journalit-session-mode-skeleton__countdown">
-              <div className="skeleton-shimmer journalit-session-mode-skeleton__eyebrow" />
+              <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__eyebrow" />
               <div className="journalit-session-mode-skeleton__countdown-row">
-                <div className="skeleton-shimmer journalit-session-mode-skeleton__countdown-number" />
-                <div className="skeleton-shimmer journalit-session-mode-skeleton__countdown-separator" />
-                <div className="skeleton-shimmer journalit-session-mode-skeleton__countdown-number" />
+                <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__countdown-number" />
+                <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__countdown-separator" />
+                <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__countdown-number" />
               </div>
-              <div className="skeleton-shimmer journalit-session-mode-skeleton__meta" />
+              <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__meta" />
             </div>
             <SessionModeSkeletonCard lines={3} />
             <SessionModeSkeletonCard lines={5} />
           </>
         ) : phase === 'live' ? (
           <>
-            <div className="skeleton-shimmer journalit-session-mode-skeleton__selector" />
+            <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__selector" />
             <SessionModeSkeletonCard lines={2} />
-            <div className="skeleton-shimmer journalit-session-mode-skeleton__section-label" />
-            <div className="skeleton-shimmer journalit-session-mode-skeleton__composer" />
+            <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__section-label" />
+            <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__composer" />
             <SessionModeSkeletonTimeline />
           </>
         ) : phase === 'waiting' || phase === 'break' ? (
           <div className="journalit-session-mode-skeleton__center-state">
             {phase === 'break' && (
-              <div className="skeleton-shimmer journalit-session-mode-skeleton__small-icon" />
+              <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__small-icon" />
             )}
-            <div className="skeleton-shimmer journalit-session-mode-skeleton__eyebrow" />
-            <div className="skeleton-shimmer journalit-session-mode-skeleton__hero-line" />
-            <div className="skeleton-shimmer journalit-session-mode-skeleton__meta" />
-            <div className="skeleton-shimmer journalit-session-mode-skeleton__button" />
+            <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__eyebrow" />
+            <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__hero-line" />
+            <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__meta" />
+            <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__button" />
           </div>
         ) : phase === 'ended' ? (
           <div className="journalit-session-mode-skeleton__ended">
-            <div className="skeleton-shimmer journalit-session-mode-skeleton__hero-line" />
-            <div className="skeleton-shimmer journalit-session-mode-skeleton__meta" />
-            <div className="skeleton-shimmer journalit-session-mode-skeleton__action-row" />
-            <div className="skeleton-shimmer journalit-session-mode-skeleton__action-row" />
-            <div className="skeleton-shimmer journalit-session-mode-skeleton__action-row" />
+            <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__hero-line" />
+            <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__meta" />
+            <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__action-row" />
+            <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__action-row" />
+            <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__action-row" />
             <div className="journalit-session-mode-skeleton__stats-row">
-              <div className="skeleton-shimmer journalit-session-mode-skeleton__stat" />
-              <div className="skeleton-shimmer journalit-session-mode-skeleton__stat" />
-              <div className="skeleton-shimmer journalit-session-mode-skeleton__stat" />
+              <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__stat" />
+              <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__stat" />
+              <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__stat" />
             </div>
           </div>
         ) : (
@@ -730,13 +794,13 @@ const SessionModeSkeleton: React.FC<{
 const SessionModeSkeletonCard: React.FC<{ lines: number }> = ({ lines }) => (
   <div className="journalit-session-mode-skeleton__card">
     <div className="journalit-session-mode-skeleton__card-header">
-      <div className="skeleton-shimmer journalit-session-mode-skeleton__card-title" />
-      <div className="skeleton-shimmer journalit-session-mode-skeleton__card-pill" />
+      <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__card-title" />
+      <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__card-pill" />
     </div>
     {['one', 'two', 'three', 'four', 'five'].slice(0, lines).map((key) => (
       <div
         key={key}
-        className="skeleton-shimmer journalit-session-mode-skeleton__line"
+        className="journalit-skeleton-shimmer journalit-session-mode-skeleton__line"
       />
     ))}
   </div>
@@ -744,10 +808,10 @@ const SessionModeSkeletonCard: React.FC<{ lines: number }> = ({ lines }) => (
 
 const SessionModeSkeletonTimeline: React.FC = () => (
   <div className="journalit-session-mode-skeleton__timeline">
-    <div className="skeleton-shimmer journalit-session-mode-skeleton__timeline-label" />
-    <div className="skeleton-shimmer journalit-session-mode-skeleton__timeline-entry" />
-    <div className="skeleton-shimmer journalit-session-mode-skeleton__timeline-entry" />
-    <div className="skeleton-shimmer journalit-session-mode-skeleton__timeline-entry" />
+    <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__timeline-label" />
+    <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__timeline-entry" />
+    <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__timeline-entry" />
+    <div className="journalit-skeleton-shimmer journalit-session-mode-skeleton__timeline-entry" />
   </div>
 );
 
@@ -1146,17 +1210,10 @@ const SessionModePhaseContent: React.FC<{
   onStartUnplannedSession,
   unplannedWindows,
 }) => {
-  
-  
   const phaseLayouts = normalizeSessionModePhaseLayouts(
     plugin.settings.sessionMode.phaseLayouts
   );
-  useResolvedViewGuide(
-    resolveSessionModeGuideId(
-      phaseState.phase,
-      phaseLayouts.ended.includes('endedActions')
-    )
-  );
+  useResolvedViewGuide(resolveSessionModeGuideId(phaseState.phase));
   if (phaseState.phase === 'unconfigured') {
     return (
       <SessionModeUnconfiguredState
@@ -1323,17 +1380,13 @@ const SessionModeLayoutModule: React.FC<{
       ) : null;
     case 'endedActions':
       return phaseState.phase === 'ended' ? (
-        <SessionModeGuideSection
-          targetId={SESSION_MODE_ENDED_ACTIONS_TARGET_ID}
-        >
-          <SessionModeEndedActions
-            plugin={plugin}
-            filePath={filePath}
-            editButton={editButton}
-            previousSession={phaseState.previousSession}
-            onStartUnplannedSession={onStartUnplannedSession}
-          />
-        </SessionModeGuideSection>
+        <SessionModeEndedActions
+          plugin={plugin}
+          filePath={filePath}
+          editButton={editButton}
+          previousSession={phaseState.previousSession}
+          onStartUnplannedSession={onStartUnplannedSession}
+        />
       ) : null;
     case 'endedStats':
       return phaseState.phase === 'ended' ? (
@@ -1489,8 +1542,8 @@ const SessionModeEndedActions: React.FC<{
   };
 
   const addTradeManually = () => {
-    const modal = new TradeFormModal({ app: plugin.app, plugin });
-    modal.open();
+    const drawer = new TradeFormDrawer({ app: plugin.app, plugin });
+    drawer.open();
   };
 
   const actions = [

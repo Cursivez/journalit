@@ -24,6 +24,8 @@ import { t } from '../../lang/helpers';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { useTwoStageTouchNavigation } from './useTwoStageTouchNavigation';
 import { handleRovingChartMarkKeyDown } from './chartKeyboardNavigation';
+import { useChartAnimationActive } from './chartAnimation';
+import { skipVerticalGridCoordinates } from './chartGrid';
 
 const EPSILON = 1e-6; 
 const SVG_TEXT_ANCHOR_START = 'start';
@@ -140,6 +142,7 @@ export const SharedSetupPerformanceChart: React.FC<
   currencyOverride,
   plugin,
 }) => {
+  const isAnimationActive = useChartAnimationActive();
   const chartRef = React.useRef<HTMLDivElement>(null);
   const { currency: globalCurrency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
@@ -269,6 +272,7 @@ export const SharedSetupPerformanceChart: React.FC<
         <CartesianGrid
           strokeDasharray="3 3"
           vertical={false}
+          verticalCoordinatesGenerator={skipVerticalGridCoordinates}
           stroke="var(--background-modifier-border)"
           strokeOpacity={0.5}
         />
@@ -336,7 +340,7 @@ export const SharedSetupPerformanceChart: React.FC<
           dataKey="displayPnl"
           fill="var(--interactive-accent)" 
           minPointSize={0} 
-          isAnimationActive={true}
+          isAnimationActive={isAnimationActive}
           animationDuration={800}
           animationEasing="ease-out"
           stroke="var(--background-primary)"
@@ -528,6 +532,7 @@ export const SetupPerformanceRankingChart: React.FC<
   isChartMasked,
   onPointClick,
 }) => {
+  const isAnimationActive = useChartAnimationActive();
   const chartRef = React.useRef<HTMLDivElement>(null);
   const touchResetKey = React.useMemo(
     () => data.map((point) => point.id).join('\u0000'),
@@ -667,7 +672,7 @@ export const SetupPerformanceRankingChart: React.FC<
             }
           }}
           minPointSize={0}
-          isAnimationActive={true}
+          isAnimationActive={isAnimationActive}
           animationDuration={700}
           animationEasing="ease-out"
           stroke="var(--background-primary)"
@@ -1130,6 +1135,7 @@ export const SetupCompareCumulativeChart: React.FC<{
             className="journalit-chart-grid"
             strokeDasharray="3 3"
             vertical={false}
+            verticalCoordinatesGenerator={skipVerticalGridCoordinates}
             stroke="var(--background-modifier-border)"
             strokeOpacity={0.5}
           />

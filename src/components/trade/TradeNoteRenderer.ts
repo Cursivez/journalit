@@ -1,11 +1,15 @@
 
 
+import { parseStopLossTargets } from '../../services/trade/core/StopLossTargets';
 import { App } from 'obsidian';
 import React from 'react';
 import { TradeNote } from './TradeNote';
+import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
+import type { TradeShareOptions } from '../share/tradeShare/tradeShareModel';
 import { TradeFormData, TradeFormOpenOptions } from '../forms/trade/types';
 import { BaseComponentRenderer } from '../base/BaseComponentRenderer';
 import { normalizeStringArray } from '../../utils/dataUtils';
+import { parseTradeRating } from '../../utils/tradeRating';
 import { parseDisplayText } from '../../utils/tagSchema';
 import { CustomFieldDefinition } from '../../types/customFields';
 import { parseTradeDividendTransactions } from '../../utils/tradeUtils';
@@ -78,6 +82,16 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
     super(app);
   }
 
+  public createShareElement(
+    data: PartialTradeFrontmatter,
+    shareOptions: TradeShareOptions
+  ): React.ReactElement {
+    return this.wrapWithSharedProviders(
+      React.createElement(TradeNote, { data, shareOptions }),
+      this.getDisplayPolicyPrivacyModeOverride(data)
+    );
+  }
+
   
   public renderComponent(
     container: HTMLElement,
@@ -111,8 +125,7 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
       
       if (
         !container ||
-        (!container.isConnected &&
-          container.getAttribute('data-mode') !== 'export')
+        (!container.isConnected && !this.allowsDetachedHost(container))
       ) {
         return;
       }
@@ -401,6 +414,11 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
   }
 
   
+  protected override allowsDetachedHost(container: HTMLElement): boolean {
+    return container.getAttribute('data-mode') === 'export';
+  }
+
+  
   public unmountAllTradeNotes(): void {
     this.unmountAllComponents();
   }
@@ -411,7 +429,7 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
   }
 
   
-  private processTradeData(
+  public processTradeData(
     frontmatter: Record<string, unknown>
   ): Partial<TradeFormData> {
     
@@ -428,16 +446,13 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
     }
 
     
-    for (const field of ['setup', 'mistake', 'account', 'tags', 'customTags']) {
+    for (const field of ['setup', 'mistake', 'account', 'tags']) {
       tradeData[field] = normalizeStringArray(
         normalizeFrontmatterStringArray(tradeData[field])
       );
     }
 
-    
-    if (tradeData.tags && Array.isArray(tradeData.tags)) {
-      tradeData.customTags = tradeData.tags;
-    }
+    tradeData.tradeRating = parseTradeRating(frontmatter.tradeRating);
 
     const normalizedExecution = normalizeTradeExecution(frontmatter, {
       deriveMissingExplicitness: true,
@@ -508,6 +523,8 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
       tradeData._originalPnlWasNull = true;
     }
 
+    tradeData.stopLosses = parseStopLossTargets(frontmatter.stopLosses);
+
     
     ['entryTime', 'exitTime', 'unrealizedPriceSnapshotTime'].forEach(
       (field) => {
@@ -530,7 +547,6 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
       'pnl',
       'directPnL',
       'riskAmount',
-      'stopLoss',
       'commission',
       'fees',
       'swap',

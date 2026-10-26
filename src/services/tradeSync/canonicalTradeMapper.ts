@@ -56,7 +56,6 @@ export function mapProjectionTradeToTradeData(
     mistake: trade.mistake ?? [],
     images: trade.images ?? [],
     tags: trade.tags ?? [],
-    customTags: trade.tags ?? [],
     commission: definedNumber(trade.commission),
     fees: definedNumber(trade.fees),
     swap: definedNumber(trade.swap),

@@ -34,7 +34,7 @@ function createStandardTradeSections(
   return {
     header: { show: true },
     navigation: { show: true },
-    images: { show: true, position: 'top' },
+    images: { show: true, layout: 'carousel' },
     metadata: {
       show: true,
       showAccounts: true,
@@ -50,6 +50,7 @@ function createStandardTradeSections(
     },
     reviewButton: { show: true },
     missedReason: { show: true },
+    rating: { show: true },
   };
 }
 
@@ -412,6 +413,9 @@ export class TradeTemplateService {
         : undefined,
       assetOverrides: template.assetOverrides
         ? structuredClone(template.assetOverrides)
+        : undefined,
+      noteSections: template.noteSections
+        ? structuredClone(template.noteSections)
         : undefined,
       
       display: structuredClone(template.display),

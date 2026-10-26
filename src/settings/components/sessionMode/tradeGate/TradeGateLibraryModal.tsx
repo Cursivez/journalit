@@ -1,6 +1,5 @@
 
 
-import { Modal } from 'obsidian';
 import type { App } from 'obsidian';
 import React, { useEffect, useState } from 'react';
 import { Root, createRoot } from 'react-dom/client';
@@ -18,6 +17,7 @@ import type {
   TradeGateWorkflow,
 } from '../../../../types/sessionMode';
 import { getTradeGateQuestionUsage } from './tradeGateEditorUtils';
+import { JournalitModal } from '../../../../components/modals/JournalitModal';
 
 interface TradeGateLibraryState {
   questions: TradeGateQuestion[];
@@ -167,7 +167,7 @@ const TradeGateLibraryModalContent: React.FC<{
   );
 };
 
-class TradeGateLibraryModal extends Modal {
+class TradeGateLibraryModal extends JournalitModal {
   private params: TradeGateLibraryModalParams;
   private root: Root | null = null;
 

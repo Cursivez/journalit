@@ -9,7 +9,7 @@ import {
   CheckCircle2,
   AlertCircle,
 } from '../../../components/shared/icons/ObsidianIcon';
-import { Button } from '../../../components/ui';
+import { Button } from '../../../components/ui/Button';
 import { t } from '../../../lang/helpers';
 
 interface StatusCardsProps {
@@ -30,6 +30,31 @@ interface StatusCardsProps {
   onManageAccounts: () => void | Promise<void>;
 }
 
+function formatLastSync(timestamp?: string): string {
+  if (!timestamp) return t('backend.sync.never');
+
+  try {
+    const date = new Date(timestamp);
+    const now = new Date();
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+
+    if (diffMins < 1) return t('backend.sync.just-now');
+    if (diffMins < 60)
+      return t('backend.sync.minutes-ago', { count: String(diffMins) });
+    if (diffHours < 24)
+      return t('backend.sync.hours-ago', { count: String(diffHours) });
+    if (diffDays < 7)
+      return t('backend.sync.days-ago', { count: String(diffDays) });
+
+    return date.toLocaleDateString();
+  } catch {
+    return t('backend.sync.invalid-date');
+  }
+}
+
 export const StatusCards: React.FC<StatusCardsProps> = ({
   connectionStatus,
   onRefreshConnection,
@@ -42,31 +67,6 @@ export const StatusCards: React.FC<StatusCardsProps> = ({
   accountCount,
   onManageAccounts,
 }) => {
-  const formatLastSync = (timestamp?: string): string => {
-    if (!timestamp) return t('backend.sync.never');
-
-    try {
-      const date = new Date(timestamp);
-      const now = new Date();
-      const diffMs = now.getTime() - date.getTime();
-      const diffMins = Math.floor(diffMs / 60000);
-      const diffHours = Math.floor(diffMs / 3600000);
-      const diffDays = Math.floor(diffMs / 86400000);
-
-      if (diffMins < 1) return t('backend.sync.just-now');
-      if (diffMins < 60)
-        return t('backend.sync.minutes-ago', { count: String(diffMins) });
-      if (diffHours < 24)
-        return t('backend.sync.hours-ago', { count: String(diffHours) });
-      if (diffDays < 7)
-        return t('backend.sync.days-ago', { count: String(diffDays) });
-
-      return date.toLocaleDateString();
-    } catch {
-      return t('backend.sync.invalid-date');
-    }
-  };
-
   const getConnectionIcon = () => {
     switch (connectionStatus) {
       case 'connected':

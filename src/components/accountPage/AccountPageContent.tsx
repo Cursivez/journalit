@@ -10,6 +10,7 @@ import { AccountBalanceSection } from './components/AccountBalanceSection';
 import { AccountRiskMetricsSection } from './components/AccountRiskMetricsSection';
 import { PropChallengeSection } from './components/propChallenge/PropChallengeSection';
 import { DepositsWithdrawalsSection } from './components/DepositsWithdrawalsSection';
+import { AccountMonthlyReturnsSection } from './components/AccountMonthlyReturnsSection';
 import { usePropChallengeCockpitState } from './components/propChallenge/usePropChallengeCockpitState';
 import { resolveAccountPageTopState } from './components/propChallenge/propChallengeCockpitState';
 import { AccountPageSkeleton } from './AccountPageSkeleton';
@@ -170,6 +171,9 @@ export const AccountPageContent: React.FC<{ leaf: WorkspaceLeaf }> = ({
 
       
       {showGenericRisk && <AccountRiskMetricsSection />}
+
+      
+      <AccountMonthlyReturnsSection />
 
       
       <DepositsWithdrawalsSection />

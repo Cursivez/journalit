@@ -2,7 +2,6 @@ import { extractBaseSymbol } from './symbolNormalizer';
 
 interface GroupableTrade {
   setup?: unknown;
-  customTags?: unknown;
   tags?: unknown;
   instrument?: string;
   assetType?: string;
@@ -33,12 +32,8 @@ const normalizeUniqueValues = (values: readonly unknown[]): string[] =>
 export const getTradeSetupGroups = (trade: GroupableTrade): string[] =>
   normalizeUniqueValues(Array.isArray(trade.setup) ? trade.setup : []);
 
-export const getTradeTagGroups = (trade: GroupableTrade): string[] => {
-  const customTags = Array.isArray(trade.customTags) ? trade.customTags : [];
-  const fallbackTags = Array.isArray(trade.tags) ? trade.tags : [];
-  const tags = customTags.length > 0 ? customTags : fallbackTags;
-  return normalizeUniqueValues(tags);
-};
+export const getTradeTagGroups = (trade: GroupableTrade): string[] =>
+  normalizeUniqueValues(Array.isArray(trade.tags) ? trade.tags : []);
 
 
 export const getTradeTickerGroups = (trade: GroupableTrade): string[] => {

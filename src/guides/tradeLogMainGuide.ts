@@ -3,6 +3,7 @@ import { t } from '../lang/helpers';
 import { GuideRegistry } from './GuideRegistry';
 import {
   TRADE_LOG_FILTER_BUTTON_TARGET_ID,
+  TRADE_LOG_EXPORT_TARGET_ID,
   TRADE_LOG_IMAGE_GALLERY_MODE_BUTTON_TARGET_ID,
   TRADE_LOG_MAIN_GUIDE_ID,
   TRADE_LOG_MAIN_GUIDE_VERSION,
@@ -47,6 +48,13 @@ export function registerTradeLogMainGuide(guideRegistry: GuideRegistry): void {
         description: t('tradelog.guide.sorting.description'),
         progression: 'manual',
         targetId: TRADE_LOG_TABLE_HEADERS_TARGET_ID,
+      },
+      {
+        id: 'export',
+        title: t('tradelog.export.title'),
+        description: t('tradelog.export.guide'),
+        progression: 'manual',
+        targetId: TRADE_LOG_EXPORT_TARGET_ID,
       },
       {
         id: 'gallery-mode',

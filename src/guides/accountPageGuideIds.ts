@@ -19,6 +19,8 @@ export const ACCOUNT_PAGE_BALANCE_SECTION_TARGET_ID =
 export const ACCOUNT_PAGE_METRICS_SECTION_TARGET_ID =
   'account-page.metrics-section';
 export const ACCOUNT_PAGE_RISK_SECTION_TARGET_ID = 'account-page.risk-section';
+export const ACCOUNT_PAGE_MONTHLY_RETURNS_SECTION_TARGET_ID =
+  'account-page.monthly-returns-section';
 export const ACCOUNT_PAGE_TRANSACTIONS_SECTION_TARGET_ID =
   'account-page.transactions-section';
 export const ACCOUNT_PAGE_VIEW_TRADES_BUTTON_TARGET_ID =

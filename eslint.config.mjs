@@ -6,15 +6,7 @@ import tsPlugin from '@typescript-eslint/eslint-plugin';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import obsidianmd from 'eslint-plugin-obsidianmd';
 import eslintConfigPrettier from 'eslint-config-prettier/flat';
-import { noNativeCreateElementRule } from './scripts/eslint/no-native-create-element.mjs';
-import { noRangeDetachRule } from './scripts/eslint/no-range-detach.mjs';
-
-const journalitLintPlugin = {
-  rules: {
-    'no-native-create-element': noNativeCreateElementRule,
-    'no-range-detach': noRangeDetachRule,
-  },
-};
+import journalitLintPlugin from './scripts/eslint/journalit-plugin.mjs';
 
 export default defineConfig([
   {
@@ -24,6 +16,7 @@ export default defineConfig([
       'node_modules/',
       '.cache/',
       'coverage/',
+      'src/services/agent/protocol/generated/',
       '**/*.test.{ts,tsx}',
       '**/*.integration.test.{ts,tsx}',
     ],
@@ -434,6 +427,13 @@ export default defineConfig([
   },
   {
     files: ['src/services/tradeImport/BackendTradeImportService.ts'],
+    rules: {
+      
+      'no-restricted-globals': 'off',
+    },
+  },
+  {
+    files: ['src/services/agent/relay/AgentRelayClient.ts'],
     rules: {
       
       'no-restricted-globals': 'off',

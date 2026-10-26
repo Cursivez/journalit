@@ -3,7 +3,6 @@
 import {
   AccountData,
   DrawdownType,
-  ProfitTargetType,
   TransactionType,
 } from '../../../services/account/types';
 import { formatDateDisplay, getUserDateFormat } from '../../../utils/dateUtils';
@@ -11,6 +10,7 @@ import { DashboardMetricsData, AUMChartDataPoint } from './types';
 import { AccountSettings } from '../../../settings/types';
 import { normalizeLiveBalanceAdjustment } from '../../../services/account/liveBalanceAdjustment';
 import { getCurrentLanguage } from '../../../lang/helpers';
+import { resolveProfitTargetAmount } from '../../../services/account/accountDefinitionRules';
 
 
 type SettingsWithAccount = { account?: AccountSettings };
@@ -440,12 +440,8 @@ function calculateAccountDrawdownFloor(account: AccountData): number {
 
 
 export function calculateProfitTargetProgress(account: AccountData): number {
-  if (!account.hasProfitTarget || account.profitTarget <= 0) return 0;
-
-  const targetAmount =
-    account.profitTargetType === ProfitTargetType.PERCENTAGE
-      ? (account.initialBalance * account.profitTarget) / 100
-      : account.profitTarget;
+  const targetAmount = resolveProfitTargetAmount(account);
+  if (targetAmount === undefined) return 0;
 
   const currentPnL = calculateAccountGrowthAmount(account);
   const progress = (currentPnL / targetAmount) * 100;

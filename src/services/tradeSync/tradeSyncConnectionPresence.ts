@@ -2,6 +2,7 @@
 
 import { logger } from '../../utils/logger';
 import { CTraderBrokerSyncClient } from './CTraderBrokerSyncClient';
+import { HyperliquidBrokerSyncClient } from './HyperliquidBrokerSyncClient';
 import { RithmicBrokerSyncClient } from './RithmicBrokerSyncClient';
 import { TradovateBrokerSyncClient } from './TradovateBrokerSyncClient';
 import type { BrokerSyncProviderId } from './types';
@@ -14,6 +15,12 @@ const loadConnectionCount = async (
   
   const options = { interactiveEntitlement: false };
   switch (providerId) {
+    case 'hyperliquid':
+      return (
+        await new HyperliquidBrokerSyncClient().getHyperliquidConnections(
+          options
+        )
+      ).connections.length;
     case 'tradovate':
       return (
         await new TradovateBrokerSyncClient().getTradovateConnections(options)

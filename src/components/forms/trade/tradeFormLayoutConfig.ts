@@ -1,5 +1,6 @@
 
 
+import { hasPricedStopLoss } from '../../../services/trade/core/StopLossTargets';
 import { t } from '../../../lang/helpers';
 import {
   TradeFormLayoutItemId,
@@ -22,8 +23,9 @@ interface TradeFormLayoutItemDefinition {
 export const TRADE_FORM_DETAILS_ITEM_IDS: TradeFormLayoutItemId[] = [
   'setup',
   'mistake',
-  'customTags',
+  'tags',
   'thesis',
+  'rating',
   'attachments',
 ];
 
@@ -149,14 +151,19 @@ export function getTradeFormLayoutItemDefinitions(): TradeFormLayoutItemDefiniti
       label: t('form.field.mistake'),
     },
     {
-      id: 'customTags',
+      id: 'tags',
       category: 'details',
-      label: t('form.field.custom-tags'),
+      label: t('form.field.tags'),
     },
     {
       id: 'thesis',
       category: 'details',
       label: t('form.field.trade-thesis'),
+    },
+    {
+      id: 'rating',
+      category: 'details',
+      label: t('trade.rating.label'),
     },
     {
       id: 'attachments',
@@ -257,7 +264,7 @@ export function hasPopulatedTradeFormLayoutItem(
     case 'tradingCostFees':
       return hasNonZeroNumber(data.fees);
     case 'riskPlanning':
-      return hasNumber(data.stopLoss) || hasNumber(data.riskAmount);
+      return hasPricedStopLoss(data.stopLosses) || hasNumber(data.riskAmount);
     case 'takeProfits':
       return hasArrayEntries(data.takeProfits);
     case 'idealExits':
@@ -285,10 +292,12 @@ export function hasPopulatedTradeFormLayoutItem(
       return hasArrayEntries(data.setup);
     case 'mistake':
       return hasArrayEntries(data.mistake);
-    case 'customTags':
-      return hasArrayEntries(data.customTags) || hasArrayEntries(data.tags);
+    case 'tags':
+      return hasArrayEntries(data.tags);
     case 'thesis':
       return hasNonEmptyString(data.thesis);
+    case 'rating':
+      return data.tradeRating !== undefined;
     case 'attachments':
       return hasArrayEntries(data.images);
     case 'customFields':

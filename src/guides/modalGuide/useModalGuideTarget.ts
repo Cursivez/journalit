@@ -10,7 +10,8 @@ interface ModalGuideTargetState {
 
 export function useModalGuideTarget(
   selector: string | undefined,
-  isActive: boolean
+  isActive: boolean,
+  doc: Document = window.activeDocument
 ): ModalGuideTargetState {
   const [state, setState] = useState<ModalGuideTargetState>({
     targetRect: null,
@@ -24,22 +25,23 @@ export function useModalGuideTarget(
       return;
     }
     const update = () => {
-      const target = getModalGuideTargetElement(selector);
+      const target = getModalGuideTargetElement(selector, doc);
       setState({
         targetRect: target?.getBoundingClientRect() ?? null,
         isWaitingForTarget: !target,
       });
     };
     update();
-    const interval = window.setInterval(update, 150);
-    window.addEventListener('resize', update);
-    window.addEventListener('scroll', update, true);
+    const ownerWindow = doc.defaultView;
+    const interval = ownerWindow?.setInterval(update, 150);
+    ownerWindow?.addEventListener('resize', update);
+    ownerWindow?.addEventListener('scroll', update, true);
     return () => {
-      window.clearInterval(interval);
-      window.removeEventListener('resize', update);
-      window.removeEventListener('scroll', update, true);
+      ownerWindow?.clearInterval(interval);
+      ownerWindow?.removeEventListener('resize', update);
+      ownerWindow?.removeEventListener('scroll', update, true);
     };
-  }, [isActive, selector]);
+  }, [isActive, selector, doc]);
 
   return state;
 }

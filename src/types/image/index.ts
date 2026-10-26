@@ -1,6 +1,7 @@
 
 
 import type { ImageAnnotation } from '../imageAnnotations';
+import type { ReactNode } from 'react';
 
 
 interface ImageBaseProps {
@@ -10,6 +11,10 @@ interface ImageBaseProps {
 
 
 export interface ImageUploadProps extends ImageBaseProps {
+  
+  variant?: 'dropzone' | 'thumbnail';
+  
+  onUploadStart?: () => void;
   
   onImageUploaded: (path: string) => void | Promise<void>;
 
@@ -81,6 +86,8 @@ export interface ImageUploadProps extends ImageBaseProps {
 
 
 export interface ImageCarouselProps extends ImageBaseProps {
+  
+  thumbnailActions?: ReactNode;
   
   images: string[];
 

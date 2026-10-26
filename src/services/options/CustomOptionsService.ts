@@ -2,8 +2,15 @@ import { logger } from '../../utils/logger';
 
 
 import { App, TFile, parseYaml } from 'obsidian';
-import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
-import { readFileContentForMutation } from '../../utils/fileMutation';
+import {
+  forceMetadataCacheRefresh,
+  waitForMetadataReparse,
+} from '../../utils/dataRefresh';
+import { isMetadataCacheCurrent } from '../base/metadataCacheReadiness';
+import {
+  isOpenInEditor,
+  readFileContentForMutation,
+} from '../../utils/fileMutation';
 
 import {
   normalizedEquals,
@@ -11,22 +18,75 @@ import {
   normalizeOptionKey,
 } from '../../utils/stringNormalization';
 import { TAG_BUCKETS, formatTagForYAML } from '../../utils/tagSchema';
+import {
+  normalizeTradeSelectionForWrite,
+  readTradeSelectionEntry,
+  type TradeSelectionField,
+} from '../../utils/tradeTagNormalization';
 import { isSyntheticSetupTagFilterValue } from '../../utils/setupTagFilter';
 import {
   ensureTradeIdentityFrontmatter,
   getTradeIdentityFields,
   isTradeIdentityEligibleNote,
 } from '../../utils/tradeIdentity';
-import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
 import { eventBus } from '../events/EventBus';
 import { OptionsChangedPayload } from '../events/types';
+import {
+  isJournalitJournalPath,
+  isSetupDefinitionNote,
+  isTagOptionTradeEligibleNote,
+  resolveJournalFolderPath,
+} from '../../utils/tagOptionNoteEligibility';
+import {
+  selectionOptionKey,
+  storedTagDedupeKey,
+  storedTagValuesMatch,
+} from '../../utils/tradeTagNormalization';
 import { LabelColor, normalizeLabelColor } from '../../types/labelColor';
-import { SETUP_FRONTMATTER_KEY } from '../setup/constants';
 import {
   normalizeChallengeStageAccountTypes,
   removeAccountTypeFromStageMapping,
   replaceAccountTypeInStageMapping,
 } from '../propChallenge/stageAccountTypes';
+import {
+  OptionCatalogMutationError,
+  type OwnedOptionFields,
+} from '../agent/configuration/optionCatalogMutation';
+import type { NoteRewritePlan } from '../agent/configuration/noteRewritePlan';
+import {
+  isEventRewriteChange,
+  isMistakeRewriteChange,
+  isTagRewriteChange,
+} from '../agent/configuration/noteRewritePlan';
+import {
+  installNoteRewriteNotes,
+  type NoteRewriteNoteInstall,
+} from './noteRewriteWriter';
+import {
+  withSetupOptionWriter,
+  type SetupOptionWriter,
+  type SetupOptionMutationResult,
+} from './setupOptionWriter';
+import { SetupInUseError } from '../setup/setupDeletionErrors';
+import {
+  galleryAnnotationNotePath,
+  resolveGalleryAnnotationNotePath,
+} from '../imageGallery/ImageGalleryAnnotationStore';
+import {
+  isReviewNoteType,
+  REVIEW_TYPE_TO_SOURCE,
+  type ReviewSourceType,
+} from '../imageGallery/ImageGalleryInternal';
+import { rewriteImageAnnotationTags } from '../../utils/imageAnnotations';
+import {
+  DAY_TRADE_FIELDS_KEY,
+  applyDayTradeFieldOptionWrites,
+  planDayTradeFieldOptionRewrite,
+  type DayTradeFieldOptionRewrite,
+  type DayTradeFieldRetainedValues,
+  type DayTradeSelectionField,
+} from '../drc/dayTradeFields';
+import { DAY_TRADE_FIELD_SOURCES_KEY } from '../trade/core/TradeJournalFields';
 
 interface PluginWithSettings {
   app: App;
@@ -40,26 +100,79 @@ interface PluginWithSettings {
   serviceManager?: {
     getFolderPathService(): {
       isJournalPath(path: string): boolean;
+      getPath(...segments: string[]): string;
     };
   };
 }
 
+export type AgentOptionsPersistenceCommand =
+  | {
+      kind: 'settings_only';
+      ownedFields: OwnedOptionFields;
+      prepareVerification?(): Promise<void>;
+      verifyCurrent(
+        rawOptions: unknown,
+        rawAccountSettings: unknown
+      ): Promise<void>;
+    }
+  | {
+      kind: 'note_rewrite';
+      ownedFields:
+        | Extract<OwnedOptionFields, { catalog: 'tags' }>
+        | Extract<OwnedOptionFields, { catalog: 'mistakes' }>
+        | Extract<OwnedOptionFields, { catalog: 'events' }>;
+      plan: NoteRewritePlan;
+      verifyCurrent(
+        rawOptions: unknown,
+        rawAccountSettings: unknown
+      ): Promise<void>;
+    };
+
+const AGENT_OPTIONS_INTERNAL_ERROR =
+  'Agent option settings persistence is temporarily unavailable';
+
+type SetupOptionMutation =
+  | {
+      kind: 'rename';
+      oldValue: string;
+      newValue: string;
+      updateNotes: boolean;
+    }
+  | { kind: 'delete'; oldValue: string; expectNone: boolean };
+
 interface OptionNoteSnapshot {
   file: TFile;
+  
+  reviewNote?: boolean;
+  guardedKeys: readonly string[];
   frontmatterBefore?: Record<string, unknown>;
   frontmatterAfter?: Record<string, unknown>;
   mutationApplied: boolean;
 }
 
 type OptionNoteTransaction = Map<string, OptionNoteSnapshot>;
-const RESERVED_JOURNALIT_TAG_BUCKETS = new Set<string>(
-  Object.values(TAG_BUCKETS)
-);
+type PeriodicReviewSourceType = Exclude<ReviewSourceType, 'drc'>;
 
+const SETUP_REFERENCE_IDENTITY_FIELDS = [
+  'tradeId',
+  'schemaVersion',
+  'type',
+  'isMissedTrade',
+  'isBacktestTrade',
+] as const;
 function cloneOptionFrontmatter(
-  frontmatter: Record<string, unknown>
+  frontmatter: Record<string, unknown>,
+  keys?: readonly string[]
 ): Record<string, unknown> {
-  const cloned: unknown = structuredClone(frontmatter);
+  let source = frontmatter;
+  if (keys) {
+    source = {};
+    for (const key of keys) {
+      if (optionFrontmatterHasKey(frontmatter, key))
+        source[key] = frontmatter[key];
+    }
+  }
+  const cloned: unknown = structuredClone(source);
   const clone = asRecord(cloned);
   if (!clone) {
     throw new Error('Failed to clone option frontmatter');
@@ -81,51 +194,34 @@ function optionFrontmatterHasKey(
   return Object.keys(frontmatter).includes(key);
 }
 
-function normalizeFrontmatterTagValues(value: unknown): string[] {
-  const values = Array.isArray(value)
-    ? value
-    : typeof value === 'string'
-      ? [value]
-      : [];
-  return deduplicateOptions(
-    values.flatMap((entry) => {
-      if (typeof entry !== 'string') return [];
-      const trimmed = entry.trim();
-      return trimmed ? [trimmed] : [];
-    })
-  );
-}
-
-function isTradeOptionUpdateEligibleNote(
-  frontmatter: Record<string, unknown>,
-  filePath: string
-): boolean {
-  if (isTradeIdentityEligibleNote(frontmatter, filePath)) {
-    return true;
-  }
-
-  return (
-    inferStoredTradeType({
-      filePath,
-      type: frontmatter.type,
-      isMissedTrade:
-        frontmatter.isMissedTrade === true ||
-        frontmatter.isMissedTrade === 'true',
-      isBacktestTrade: frontmatter.isBacktestTrade,
-    }) === 'missed'
-  );
-}
-
-function isSetupDefinitionNote(frontmatter: Record<string, unknown>): boolean {
-  return frontmatter[SETUP_FRONTMATTER_KEY] === true;
-}
-
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return isRecord(value) ? value : undefined;
+}
+
+function snapshotAgentRewriteCatalog(
+  rawOptions: unknown,
+  ownedFields: Extract<
+    OwnedOptionFields,
+    { catalog: 'tags' | 'mistakes' | 'events' }
+  >
+): unknown {
+  const options = asRecord(rawOptions) ?? {};
+  const field = (key: string): unknown =>
+    Object.prototype.hasOwnProperty.call(options, key)
+      ? { present: true, value: structuredClone(options[key]) }
+      : { present: false };
+  switch (ownedFields.catalog) {
+    case 'tags':
+      return { tag: field(OptionType.TAG), tagColors: field('tagColors') };
+    case 'mistakes':
+      return { mistake: field(OptionType.MISTAKE) };
+    case 'events':
+      return { event: field(OptionType.EVENT) };
+  }
 }
 
 function normalizeNumberProperty(value: unknown): number | undefined {
@@ -207,12 +303,14 @@ function normalizeCommissionRules(
   return rules.length > 0 ? rules : undefined;
 }
 
+function stringOptionValues(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [];
+}
+
 function normalizeStringOptions(value: unknown): string[] {
-  return deduplicateOptions(
-    Array.isArray(value)
-      ? value.filter((item): item is string => typeof item === 'string')
-      : []
-  );
+  return deduplicateOptions(stringOptionValues(value));
 }
 
 function normalizeTagColors(
@@ -285,6 +383,44 @@ export enum OptionType {
 }
 
 
+export type StoredOptionType = Exclude<OptionType, OptionType.SETUP>;
+
+const STORED_OPTION_TYPES: readonly StoredOptionType[] = [
+  OptionType.INSTRUMENT,
+  OptionType.ACCOUNT,
+  OptionType.ACCOUNT_TYPE,
+  OptionType.MISTAKE,
+  OptionType.TAG,
+  OptionType.EVENT,
+];
+
+
+const LEGACY_SETUP_OPTIONS_KEY = 'setup';
+
+
+const LEGACY_SEEDED_SETUP_NAMES = ['Breakout Setup', 'Reversal Pattern'];
+
+
+function getSelectionOptionField(type: OptionType): TradeSelectionField | null {
+  if (type === OptionType.SETUP) return 'setup';
+  if (type === OptionType.MISTAKE) return 'mistake';
+  return null;
+}
+
+function normalizeOptionList(type: OptionType, values: string[]): string[] {
+  const field = getSelectionOptionField(type);
+  return field
+    ? normalizeTradeSelectionForWrite(values, field)
+    : deduplicateOptions(values);
+}
+
+function optionValuesEqual(type: OptionType, a: string, b: string): boolean {
+  const field = getSelectionOptionField(type);
+  if (!field) return normalizedEquals(a, b);
+  return selectionOptionKey(a, field) === selectionOptionKey(b, field);
+}
+
+
 export interface FuturesInstrumentData {
   dollarPerPoint?: number;
   tickSize?: number;
@@ -335,7 +471,6 @@ export interface CustomOptionsData {
   [OptionType.INSTRUMENT]: InstrumentData[];
   [OptionType.ACCOUNT]: string[];
   [OptionType.ACCOUNT_TYPE]: string[];
-  [OptionType.SETUP]: string[];
   [OptionType.MISTAKE]: string[];
   [OptionType.TAG]: string[];
   [OptionType.EVENT]: EventOptionData[];
@@ -361,7 +496,6 @@ export const DEFAULT_OPTIONS_DATA: CustomOptionsData = {
   [OptionType.INSTRUMENT]: [],
   [OptionType.ACCOUNT]: [],
   [OptionType.ACCOUNT_TYPE]: [],
-  [OptionType.SETUP]: [],
   [OptionType.MISTAKE]: [],
   [OptionType.TAG]: [],
   [OptionType.EVENT]: [], 
@@ -414,7 +548,6 @@ const INITIAL_DEFAULT_OPTIONS: CustomOptionsData = {
   ],
   [OptionType.ACCOUNT]: [],
   [OptionType.ACCOUNT_TYPE]: ['Demo', 'Evaluation', 'Funded', 'Archived'],
-  [OptionType.SETUP]: ['Breakout Setup', 'Reversal Pattern'],
   [OptionType.MISTAKE]: ['Early Entry', 'Poor Position Sizing'],
   [OptionType.TAG]: [
     'Swing Trade',
@@ -445,12 +578,14 @@ export type PreviousTagAssignments =
 
 
 export class CustomOptionsService {
-  private tagMutationTail: Promise<void> = Promise.resolve();
+  private optionMutationTail: Promise<void> = Promise.resolve();
   private readonly tagRetirementVersions = new Map<string, number>();
+  private readonly mistakeRetirementVersions = new Map<string, number>();
+  private readonly eventRetirementVersions = new Map<string, number>();
 
-  private enqueueTagMutation<T>(operation: () => Promise<T>): Promise<T> {
-    const result = this.tagMutationTail.then(operation, operation);
-    this.tagMutationTail = result.then(
+  private enqueueOptionMutation<T>(operation: () => Promise<T>): Promise<T> {
+    const result = this.optionMutationTail.then(operation, operation);
+    this.optionMutationTail = result.then(
       () => undefined,
       () => undefined
     );
@@ -462,13 +597,53 @@ export class CustomOptionsService {
     operation: () => Promise<T>,
     previousTags: PreviousTagAssignments = []
   ): Promise<T> {
+    return this.runTagAssignmentOperation(tags, operation, previousTags, false);
+  }
+
+  public runWithSetupTagAssignments<T>(
+    tags: readonly string[],
+    operation: (writer: SetupOptionWriter) => Promise<T>,
+    previousTags: PreviousTagAssignments = []
+  ): Promise<T> {
+    return this.runTagAssignmentOperation(
+      tags,
+      () =>
+        withSetupOptionWriter(
+          {
+            rename: (oldName, newName, updateNotes) =>
+              this.mutateSetupReferences({
+                kind: 'rename',
+                oldValue: oldName,
+                newValue: newName.trim(),
+                updateNotes,
+              }),
+            remove: (name, options) =>
+              this.mutateSetupReferences({
+                kind: 'delete',
+                oldValue: name,
+                expectNone: options?.expectNone ?? false,
+              }),
+          },
+          operation
+        ),
+      previousTags,
+      true
+    );
+  }
+
+  private runTagAssignmentOperation<T>(
+    tags: readonly string[],
+    operation: () => Promise<T>,
+    previousTags: PreviousTagAssignments,
+    queueEmptyAssignment: boolean
+  ): Promise<T> {
     const requestedTags = deduplicateOptions(
       tags.flatMap((tag) => {
         const cleanTag = tag.trim();
         return cleanTag ? [cleanTag] : [];
       })
     );
-    if (requestedTags.length === 0) return operation();
+    if (requestedTags.length === 0 && !queueEmptyAssignment) return operation();
 
     const staticPreviousTags =
       typeof previousTags === 'function' ? undefined : previousTags;
@@ -488,7 +663,8 @@ export class CustomOptionsService {
       }
     }
 
-    return this.enqueueTagMutation(async () => {
+    return this.enqueueOptionMutation(async () => {
+      if (requestedTags.length === 0) return operation();
       const resolvedPreviousTags =
         typeof previousTags === 'function'
           ? await previousTags()
@@ -534,6 +710,78 @@ export class CustomOptionsService {
       key,
       (this.tagRetirementVersions.get(key) ?? 0) + 1
     );
+  }
+
+  private recordMistakeRetirement(value: string): void {
+    const key = normalizeOptionKey(value);
+    this.mistakeRetirementVersions.set(
+      key,
+      (this.mistakeRetirementVersions.get(key) ?? 0) + 1
+    );
+  }
+
+  private mistakeRetirementKey(value: string): string | undefined {
+    const cleaned = value.trim();
+    if (!cleaned) return undefined;
+    return normalizeOptionKey(cleaned);
+  }
+
+  private mistakeVersionChangedWhileWaiting(
+    key: string,
+    versionAtRequest: number
+  ): boolean {
+    return (this.mistakeRetirementVersions.get(key) ?? 0) !== versionAtRequest;
+  }
+
+  private recordEventRetirement(name: string): void {
+    const key = this.eventRetirementKey(name);
+    if (key === undefined) return;
+    this.eventRetirementVersions.set(
+      key,
+      (this.eventRetirementVersions.get(key) ?? 0) + 1
+    );
+  }
+
+  private eventRetirementKey(name: string): string | undefined {
+    const cleaned = name.trim();
+    if (!cleaned) return undefined;
+    return cleaned.toLowerCase();
+  }
+
+  private eventVersionChangedWhileWaiting(
+    key: string,
+    versionAtRequest: number
+  ): boolean {
+    return (this.eventRetirementVersions.get(key) ?? 0) !== versionAtRequest;
+  }
+
+  private recordRewriteRetirement(plan: NoteRewritePlan): void {
+    if (isTagRewriteChange(plan.change)) {
+      this.recordTagRetirement(
+        plan.change.kind === 'delete_tag'
+          ? plan.change.value
+          : plan.change.source_value
+      );
+      return;
+    }
+    if (isMistakeRewriteChange(plan.change)) {
+      this.recordMistakeRetirement(
+        plan.change.kind === 'delete_mistake'
+          ? plan.change.value
+          : plan.change.source_value
+      );
+      return;
+    }
+    if (isEventRewriteChange(plan.change)) {
+      this.recordEventRetirement(
+        plan.change.kind === 'delete_event'
+          ? plan.change.name
+          : plan.change.source_name
+      );
+      return;
+    }
+    const exhaustive: never = plan.change;
+    return exhaustive;
   }
 
   private appendAccountTypeToDashboardOrder(accountType: string): void {
@@ -702,6 +950,9 @@ export class CustomOptionsService {
     tagColors: {},
   };
   private namespace: string = '';
+  
+  private legacySetupNames: string[] | null = null;
+  private readonly initialLoad: Promise<void>;
 
   
   constructor(plugin: PluginWithSettings, config?: CustomOptionsServiceConfig) {
@@ -713,10 +964,11 @@ export class CustomOptionsService {
     }
 
     
-    void this.loadOptions();
-
     
-    void this.initializeDefaultOptionsIfNeeded();
+    this.initialLoad = this.enqueueOptionMutation(async () => {
+      await this.loadOptions();
+      await this.initializeDefaultOptionsIfNeeded();
+    });
 
     
     this.cleanupCorruptedOptions().catch((error) => {
@@ -732,11 +984,43 @@ export class CustomOptionsService {
     return this.namespace ? `customOptions_${this.namespace}` : 'customOptions';
   }
 
-  private getPersistedOptions(): CustomOptionsData {
+  private getPersistedOptions(): CustomOptionsData & {
+    [LEGACY_SETUP_OPTIONS_KEY]?: string[];
+  } {
     return {
       ...this.options,
       tagColors: { ...this.options.tagColors },
+      
+      ...(this.legacySetupNames
+        ? { [LEGACY_SETUP_OPTIONS_KEY]: [...this.legacySetupNames] }
+        : {}),
     };
+  }
+
+  
+  public async migrateLegacySetupOptions(
+    createSetupNotes: (names: string[]) => Promise<boolean>
+  ): Promise<void> {
+    await this.initialLoad;
+    const legacyNames = this.legacySetupNames;
+    if (legacyNames === null) return;
+
+    const namespace = this.namespace;
+    const seededKeys = new Set(
+      LEGACY_SEEDED_SETUP_NAMES.map((name) => name.toLowerCase())
+    );
+    const migrated = await createSetupNotes(
+      legacyNames.filter((name) => !seededKeys.has(name.toLowerCase()))
+    );
+    if (!migrated) return;
+
+    await this.enqueueOptionMutation(async () => {
+      if (this.namespace !== namespace || this.legacySetupNames === null) {
+        return;
+      }
+      this.legacySetupNames = null;
+      await this.saveOptions(true);
+    });
   }
 
   private applyLoadedOptions(rawOptions: unknown): void {
@@ -757,11 +1041,16 @@ export class CustomOptionsService {
     this.options[OptionType.ACCOUNT_TYPE] = normalizeStringOptions(
       loadedOptions[OptionType.ACCOUNT_TYPE]
     );
-    this.options[OptionType.SETUP] = normalizeStringOptions(
-      loadedOptions[OptionType.SETUP]
-    );
-    this.options[OptionType.MISTAKE] = normalizeStringOptions(
-      loadedOptions[OptionType.MISTAKE]
+    this.legacySetupNames =
+      LEGACY_SETUP_OPTIONS_KEY in loadedOptions
+        ? normalizeOptionList(
+            OptionType.SETUP,
+            stringOptionValues(loadedOptions[LEGACY_SETUP_OPTIONS_KEY])
+          )
+        : null;
+    this.options[OptionType.MISTAKE] = normalizeOptionList(
+      OptionType.MISTAKE,
+      stringOptionValues(loadedOptions[OptionType.MISTAKE])
     );
     this.options[OptionType.TAG] = normalizeStringOptions(
       loadedOptions[OptionType.TAG]
@@ -777,6 +1066,7 @@ export class CustomOptionsService {
 
   
   private async loadOptions(): Promise<void> {
+    this.legacySetupNames = null;
     try {
       
       const optionsKey = this.getOptionsKey();
@@ -853,7 +1143,7 @@ export class CustomOptionsService {
           } else {
             this.options = { ...DEFAULT_OPTIONS_DATA, tagColors: {} };
             
-            void this.initializeDefaultOptionsIfNeeded();
+            await this.initializeDefaultOptionsIfNeeded();
 
             
             if (settingsRecord && pluginInstance.saveSettings) {
@@ -873,7 +1163,7 @@ export class CustomOptionsService {
 
   
   public async cleanupCorruptedOptions(): Promise<number> {
-    return this.enqueueTagMutation(() =>
+    return this.enqueueOptionMutation(() =>
       this.cleanupCorruptedOptionsInternal()
     );
   }
@@ -884,23 +1174,16 @@ export class CustomOptionsService {
     const typesToClean = [
       OptionType.TAG,
       OptionType.MISTAKE,
-      OptionType.SETUP,
       OptionType.ACCOUNT,
       OptionType.ACCOUNT_TYPE,
-    ];
+    ] as const;
 
     for (const type of typesToClean) {
-      
-      if (type === OptionType.EVENT) continue;
-
-      
-      if (type === OptionType.INSTRUMENT) continue;
-
       const options = this.options[type];
       const originalCount = options.length;
 
       
-      const cleaned = deduplicateOptions(options);
+      const cleaned = normalizeOptionList(type, options);
 
       this.options[type] = cleaned;
       removedCount += originalCount - cleaned.length;
@@ -960,7 +1243,7 @@ export class CustomOptionsService {
   }
 
   
-  public getOptions(type: OptionType): string[] {
+  public getOptions(type: StoredOptionType): string[] {
     if (type === OptionType.EVENT) {
       
       return this.options[OptionType.EVENT].map((option) => option.name);
@@ -979,17 +1262,6 @@ export class CustomOptionsService {
 
     
     return [...this.options[type]];
-  }
-
-  public getUserDefinedSetupOptions(): string[] {
-    const shippedDefaults = new Set(
-      INITIAL_DEFAULT_OPTIONS[OptionType.SETUP].map((option) =>
-        option.toLowerCase()
-      )
-    );
-    return this.options[OptionType.SETUP].filter(
-      (option) => !shippedDefaults.has(option.toLowerCase())
-    );
   }
 
   
@@ -1068,6 +1340,20 @@ export class CustomOptionsService {
     cfdData: CfdInstrumentData,
     applyToTrades: boolean = false
   ): Promise<boolean> {
+    return this.enqueueOptionMutation(() =>
+      this.setCfdDataForInstrumentInternal(
+        instrumentName,
+        cfdData,
+        applyToTrades
+      )
+    );
+  }
+
+  private async setCfdDataForInstrumentInternal(
+    instrumentName: string,
+    cfdData: CfdInstrumentData,
+    applyToTrades: boolean
+  ): Promise<boolean> {
     if (!instrumentName) return false;
 
     const instrumentIndex = this.options[OptionType.INSTRUMENT].findIndex(
@@ -1112,6 +1398,20 @@ export class CustomOptionsService {
     instrumentName: string,
     futuresData: FuturesInstrumentData,
     applyToTrades: boolean = false
+  ): Promise<boolean> {
+    return this.enqueueOptionMutation(() =>
+      this.setFuturesDataForInstrumentInternal(
+        instrumentName,
+        futuresData,
+        applyToTrades
+      )
+    );
+  }
+
+  private async setFuturesDataForInstrumentInternal(
+    instrumentName: string,
+    futuresData: FuturesInstrumentData,
+    applyToTrades: boolean
   ): Promise<boolean> {
     if (!instrumentName) return false;
 
@@ -1161,6 +1461,20 @@ export class CustomOptionsService {
     instrumentName: string,
     forexData: ForexInstrumentData,
     applyToTrades: boolean = false
+  ): Promise<boolean> {
+    return this.enqueueOptionMutation(() =>
+      this.setForexDataForInstrumentInternal(
+        instrumentName,
+        forexData,
+        applyToTrades
+      )
+    );
+  }
+
+  private async setForexDataForInstrumentInternal(
+    instrumentName: string,
+    forexData: ForexInstrumentData,
+    applyToTrades: boolean
   ): Promise<boolean> {
     if (!instrumentName) return false;
 
@@ -1326,6 +1640,316 @@ export class CustomOptionsService {
     };
   }
 
+  public persistAgentOptionsCommand(
+    command: AgentOptionsPersistenceCommand
+  ): Promise<void> {
+    return this.enqueueOptionMutation(async () => {
+      try {
+        if (command.kind === 'note_rewrite') {
+          await this.persistNoteRewriteCommand(command);
+          return;
+        }
+        await this.persistSettingsOnlyCommand(command);
+      } catch (error) {
+        if (error instanceof OptionCatalogMutationError) throw error;
+        if (
+          error instanceof Error &&
+          error.message === AGENT_OPTIONS_INTERNAL_ERROR
+        ) {
+          throw error;
+        }
+        throw new Error(AGENT_OPTIONS_INTERNAL_ERROR);
+      }
+    });
+  }
+
+  private requireAgentSettings(): Record<string, unknown> {
+    const settings = asRecord(this.plugin.settings);
+    if (!settings || !this.plugin.saveSettings) {
+      throw new Error(AGENT_OPTIONS_INTERNAL_ERROR);
+    }
+    return settings;
+  }
+
+  private async persistSettingsOnlyCommand(
+    command: Extract<AgentOptionsPersistenceCommand, { kind: 'settings_only' }>
+  ): Promise<void> {
+    if (command.prepareVerification) {
+      await command.prepareVerification();
+    }
+    const settings = this.requireAgentSettings();
+    const optionsKey = this.getOptionsKey();
+    const rawOptions = settings[optionsKey];
+    const rawAccountSettings = settings.account;
+    await command.verifyCurrent(rawOptions, rawAccountSettings);
+    const latest = this.requireAgentSettings();
+    if (
+      latest !== settings ||
+      latest[optionsKey] !== rawOptions ||
+      latest.account !== rawAccountSettings
+    ) {
+      throw new OptionCatalogMutationError('conflict');
+    }
+    const nextOptions = await this.persistOwnedSettings(
+      latest,
+      command.ownedFields
+    );
+    this.applyLoadedOptions(nextOptions);
+  }
+
+  private async persistNoteRewriteCommand(
+    command: Extract<AgentOptionsPersistenceCommand, { kind: 'note_rewrite' }>
+  ): Promise<void> {
+    const settings = this.requireAgentSettings();
+    const optionsKey = this.getOptionsKey();
+    const rawOptions = settings[optionsKey];
+    await command.verifyCurrent(rawOptions, settings.account);
+    const latest = this.requireAgentSettings();
+    if (latest !== settings || latest[optionsKey] !== rawOptions) {
+      throw new OptionCatalogMutationError('conflict');
+    }
+    const verifiedCatalogSnapshot = snapshotAgentRewriteCatalog(
+      rawOptions,
+      command.ownedFields
+    );
+    const installedNotes: NoteRewriteNoteInstall =
+      await installNoteRewriteNotes(this.getApp(), command.plan);
+    const afterInstall = this.requireAgentSettings();
+    if (
+      afterInstall !== latest ||
+      afterInstall[optionsKey] !== rawOptions ||
+      !optionFrontmatterValuesEqual(
+        verifiedCatalogSnapshot,
+        snapshotAgentRewriteCatalog(rawOptions, command.ownedFields)
+      )
+    ) {
+      const incomplete = await installedNotes.rollback();
+      if (incomplete) {
+        console.error('Agent option settings rollback was incomplete.');
+      }
+      throw new OptionCatalogMutationError('conflict');
+    }
+    let nextOptions: unknown;
+    try {
+      nextOptions = await this.persistOwnedSettings(
+        afterInstall,
+        command.ownedFields
+      );
+    } catch {
+      const incomplete = await installedNotes.rollback();
+      if (incomplete) {
+        console.error('Agent option settings rollback was incomplete.');
+      }
+      throw new OptionCatalogMutationError('internal_error');
+    }
+    this.recordRewriteRetirement(command.plan);
+    try {
+      this.applyLoadedOptions(nextOptions);
+    } catch {
+      console.error('Agent option settings reconciliation was incomplete.');
+    }
+  }
+
+  private async persistOwnedSettings(
+    settings: Record<string, unknown>,
+    ownedFields: OwnedOptionFields
+  ): Promise<unknown> {
+    const optionsKey = this.getOptionsKey();
+    const currentRawOptions = settings[optionsKey];
+    const currentAccount = settings.account;
+    const currentOptionsRecord = asRecord(currentRawOptions) ?? {};
+    const nextOptions: Record<string, unknown> = {
+      ...currentOptionsRecord,
+    };
+    const previous = new Map<string, { present: boolean; value: unknown }>();
+    const installed = new Map<string, unknown>();
+    const cloneUnknown = (value: unknown): unknown => {
+      const cloned: unknown = structuredClone(value);
+      return cloned;
+    };
+    const installOptionField = (key: string, value: unknown): void => {
+      previous.set(key, {
+        present:
+          Object.prototype.hasOwnProperty.call(currentOptionsRecord, key) ===
+          true,
+        value: cloneUnknown(currentOptionsRecord[key]),
+      });
+      const cloned = cloneUnknown(value);
+      nextOptions[key] = cloned;
+      installed.set(key, cloned);
+    };
+    switch (ownedFields.catalog) {
+      case 'tags':
+        installOptionField(OptionType.TAG, ownedFields.tag);
+        installOptionField('tagColors', ownedFields.tagColors);
+        break;
+      case 'mistakes':
+        installOptionField(OptionType.MISTAKE, ownedFields.mistake);
+        break;
+      case 'account_types':
+        installOptionField(OptionType.ACCOUNT_TYPE, ownedFields.account_type);
+        break;
+      case 'events':
+        installOptionField(OptionType.EVENT, ownedFields.event);
+        break;
+    }
+
+    const currentAccountRecord = asRecord(currentAccount) ?? {};
+    const accountFieldInstalls: {
+      key: string;
+      had: boolean;
+      previous: unknown;
+      installed: unknown;
+    }[] = [];
+    const metadataInstalls: {
+      key: string;
+      previousType: unknown;
+      installedType: string;
+    }[] = [];
+    let nextMetadata: Record<string, unknown> | undefined;
+    if (ownedFields.catalog === 'account_types') {
+      const installAccountField = (key: string, value: unknown): void => {
+        accountFieldInstalls.push({
+          key,
+          had:
+            Object.prototype.hasOwnProperty.call(currentAccountRecord, key) ===
+            true,
+          previous: cloneUnknown(currentAccountRecord[key]),
+          installed: cloneUnknown(value),
+        });
+      };
+      installAccountField('accountTypeOrder', ownedFields.accountTypeOrder);
+      if (ownedFields.defaultAccountType !== undefined) {
+        installAccountField(
+          'defaultAccountType',
+          ownedFields.defaultAccountType
+        );
+      }
+      if (ownedFields.excludedAccountTypes !== undefined) {
+        installAccountField(
+          'excludedAccountTypes',
+          ownedFields.excludedAccountTypes
+        );
+      }
+      if (ownedFields.includeWithdrawalsFromExcluded !== undefined) {
+        installAccountField(
+          'includeWithdrawalsFromExcluded',
+          ownedFields.includeWithdrawalsFromExcluded
+        );
+      }
+      const patch = ownedFields.metadataAccountTypePatch;
+      if (patch !== undefined) {
+        const patchKeys = Object.keys(patch);
+        if (patchKeys.length > 0) {
+          const currentMetadata = asRecord(
+            currentAccountRecord.accountMetadata
+          );
+          if (!currentMetadata) {
+            throw new OptionCatalogMutationError('conflict');
+          }
+          nextMetadata = { ...currentMetadata };
+          for (let index = 0; index < patchKeys.length; index += 1) {
+            const key = patchKeys[index];
+            const assignment = patch[key];
+            const entry = asRecord(currentMetadata[key]);
+            if (!entry || entry.accountType !== assignment.from) {
+              throw new OptionCatalogMutationError('conflict');
+            }
+            nextMetadata[key] = {
+              ...entry,
+              accountType: assignment.to,
+            };
+            metadataInstalls.push({
+              key,
+              previousType: cloneUnknown(entry.accountType),
+              installedType: assignment.to,
+            });
+          }
+        }
+      }
+    }
+    let nextAccount: unknown = currentAccount;
+    if (ownedFields.catalog === 'account_types') {
+      const nextAccountRecord: Record<string, unknown> = {
+        ...currentAccountRecord,
+      };
+      for (let index = 0; index < accountFieldInstalls.length; index += 1) {
+        const field = accountFieldInstalls[index];
+        nextAccountRecord[field.key] = cloneUnknown(field.installed);
+      }
+      if (nextMetadata !== undefined) {
+        nextAccountRecord.accountMetadata = nextMetadata;
+      }
+      nextAccount = nextAccountRecord;
+    }
+
+    settings[optionsKey] = nextOptions;
+    if (ownedFields.catalog === 'account_types') settings.account = nextAccount;
+    try {
+      await this.plugin.saveSettings?.();
+    } catch {
+      let rollbackNeeded = false;
+      const latestOptions = asRecord(settings[optionsKey]);
+      if (latestOptions) {
+        for (const [key, installedValue] of installed) {
+          if (
+            JSON.stringify(latestOptions[key]) !==
+            JSON.stringify(installedValue)
+          ) {
+            continue;
+          }
+          const original = previous.get(key);
+          if (!original) continue;
+          if (original.present)
+            latestOptions[key] = cloneUnknown(original.value);
+          else delete latestOptions[key];
+          rollbackNeeded = true;
+        }
+      }
+      if (ownedFields.catalog === 'account_types') {
+        const latestAccount = asRecord(settings.account);
+        if (latestAccount) {
+          for (let index = 0; index < accountFieldInstalls.length; index += 1) {
+            const field = accountFieldInstalls[index];
+            if (
+              JSON.stringify(latestAccount[field.key]) !==
+              JSON.stringify(field.installed)
+            ) {
+              continue;
+            }
+            if (field.had) {
+              latestAccount[field.key] = cloneUnknown(field.previous);
+            } else {
+              delete latestAccount[field.key];
+            }
+            rollbackNeeded = true;
+          }
+          const latestMetadata = asRecord(latestAccount.accountMetadata);
+          if (latestMetadata) {
+            for (let index = 0; index < metadataInstalls.length; index += 1) {
+              const install = metadataInstalls[index];
+              const entry = asRecord(latestMetadata[install.key]);
+              if (!entry || entry.accountType !== install.installedType) {
+                continue;
+              }
+              entry.accountType = cloneUnknown(install.previousType);
+              latestMetadata[install.key] = entry;
+              rollbackNeeded = true;
+            }
+          }
+        }
+      }
+      try {
+        if (rollbackNeeded) await this.plugin.saveSettings?.();
+        this.applyLoadedOptions(settings[optionsKey]);
+      } catch {
+        console.error('Agent option settings rollback was incomplete.');
+      }
+      throw new Error(AGENT_OPTIONS_INTERNAL_ERROR);
+    }
+    return nextOptions;
+  }
+
   public getTagColor(tag: string): LabelColor | undefined {
     const storedTag = this.options[OptionType.TAG].find((option) =>
       normalizedEquals(option, tag)
@@ -1341,7 +1965,9 @@ export class CustomOptionsService {
     tag: string,
     color: LabelColor | undefined
   ): Promise<boolean> {
-    return this.enqueueTagMutation(() => this.setTagColorInternal(tag, color));
+    return this.enqueueOptionMutation(() =>
+      this.setTagColorInternal(tag, color)
+    );
   }
 
   private async setTagColorInternal(
@@ -1370,7 +1996,7 @@ export class CustomOptionsService {
 
   
   public async addOption(
-    type: OptionType,
+    type: StoredOptionType,
     value: string,
     assetType?: string,
     futuresData?: FuturesInstrumentData,
@@ -1379,8 +2005,23 @@ export class CustomOptionsService {
     instrumentCurrency?: string,
     commissionRules?: InstrumentCommissionRule[]
   ): Promise<boolean> {
-    const operation = () =>
-      this.addOptionInternal(
+    const retirementKey =
+      type === OptionType.MISTAKE
+        ? this.mistakeRetirementKey(value)
+        : undefined;
+    const versionAtRequest =
+      retirementKey === undefined
+        ? undefined
+        : (this.mistakeRetirementVersions.get(retirementKey) ?? 0);
+    return this.enqueueOptionMutation(async () => {
+      if (
+        retirementKey !== undefined &&
+        versionAtRequest !== undefined &&
+        this.mistakeVersionChangedWhileWaiting(retirementKey, versionAtRequest)
+      ) {
+        return false;
+      }
+      return this.addOptionInternal(
         type,
         value,
         assetType,
@@ -1390,13 +2031,11 @@ export class CustomOptionsService {
         instrumentCurrency,
         commissionRules
       );
-    return type === OptionType.TAG
-      ? this.enqueueTagMutation(operation)
-      : operation();
+    });
   }
 
   private async addOptionInternal(
-    type: OptionType,
+    type: StoredOptionType,
     value: string,
     assetType?: string,
     futuresData?: FuturesInstrumentData,
@@ -1412,10 +2051,14 @@ export class CustomOptionsService {
     }
 
     
+    
+    const selectionField = getSelectionOptionField(type);
     const cleanValue =
       type === OptionType.TAG
         ? (deduplicateOptions([value])[0] ?? '')
-        : value.trim();
+        : selectionField
+          ? (readTradeSelectionEntry(value, selectionField) ?? '')
+          : value.trim();
 
     
     if (!cleanValue) {
@@ -1476,7 +2119,7 @@ export class CustomOptionsService {
 
       
       const exists = this.options[type].some((option) =>
-        normalizedEquals(option, cleanValue)
+        optionValuesEqual(type, option, cleanValue)
       );
 
       if (exists) {
@@ -1546,6 +2189,28 @@ export class CustomOptionsService {
     color: string,
     notes?: string
   ): Promise<boolean> {
+    const retirementKey = this.eventRetirementKey(name);
+    const versionAtRequest =
+      retirementKey === undefined
+        ? undefined
+        : (this.eventRetirementVersions.get(retirementKey) ?? 0);
+    return this.enqueueOptionMutation(async () => {
+      if (
+        retirementKey !== undefined &&
+        versionAtRequest !== undefined &&
+        this.eventVersionChangedWhileWaiting(retirementKey, versionAtRequest)
+      ) {
+        return false;
+      }
+      return this.addOrUpdateEventOptionInternal(name, color, notes);
+    });
+  }
+
+  private async addOrUpdateEventOptionInternal(
+    name: string,
+    color: string,
+    notes?: string
+  ): Promise<boolean> {
     const cleanName = name.trim();
     const validColors = ['red', 'orange', 'yellow', 'gray'];
     const cleanColor = validColors.includes(color) ? color : 'gray'; 
@@ -1580,12 +2245,12 @@ export class CustomOptionsService {
 
   
   public async addOptions(
-    type: OptionType,
+    type: StoredOptionType,
     values: string[],
     assetType?: string
   ): Promise<number> {
     if (type === OptionType.TAG) {
-      return this.enqueueTagMutation(async () => {
+      return this.enqueueOptionMutation(async () => {
         let addedCount = 0;
         for (const value of deduplicateOptions(values)) {
           if (await this.addOptionInternal(type, value)) addedCount++;
@@ -1593,11 +2258,36 @@ export class CustomOptionsService {
         return addedCount;
       });
     }
-    return this.addOptionsInternal(type, values, assetType);
+    const versionsAtRequest = new Map<string, number>();
+    if (type === OptionType.MISTAKE) {
+      for (let index = 0; index < values.length; index += 1) {
+        const key = this.mistakeRetirementKey(values[index]);
+        if (key === undefined || versionsAtRequest.has(key)) continue;
+        versionsAtRequest.set(
+          key,
+          this.mistakeRetirementVersions.get(key) ?? 0
+        );
+      }
+    }
+    return this.enqueueOptionMutation(() => {
+      const accepted =
+        type === OptionType.MISTAKE
+          ? values.filter((value) => {
+              const key = this.mistakeRetirementKey(value);
+              if (key === undefined) return false;
+              const versionAtRequest = versionsAtRequest.get(key);
+              return (
+                versionAtRequest !== undefined &&
+                !this.mistakeVersionChangedWhileWaiting(key, versionAtRequest)
+              );
+            })
+          : values;
+      return this.addOptionsInternal(type, accepted, assetType);
+    });
   }
 
   private async addOptionsInternal(
-    type: OptionType,
+    type: StoredOptionType,
     values: string[],
     assetType?: string
   ): Promise<number> {
@@ -1672,12 +2362,12 @@ export class CustomOptionsService {
 
         
         return !this.options[type].some((existing) =>
-          normalizedEquals(existing, trimmed)
+          optionValuesEqual(type, existing, trimmed)
         );
       });
 
       
-      const uniqueValues = deduplicateOptions(filteredValues);
+      const uniqueValues = normalizeOptionList(type, filteredValues);
 
       if (!uniqueValues.length) {
         return 0;
@@ -1694,7 +2384,21 @@ export class CustomOptionsService {
   }
 
   
-  public async removeOption(type: OptionType, value: string): Promise<boolean> {
+  public async removeOption(
+    type: StoredOptionType,
+    value: string
+  ): Promise<boolean> {
+    return this.enqueueOptionMutation(() =>
+      type === OptionType.TAG
+        ? this.removeTagOption(value)
+        : this.removeOptionInternal(type, value)
+    );
+  }
+
+  private async removeOptionInternal(
+    type: StoredOptionType,
+    value: string
+  ): Promise<boolean> {
     
     if (
       type === OptionType.ACCOUNT_TYPE &&
@@ -1702,10 +2406,6 @@ export class CustomOptionsService {
     ) {
       console.warn('Cannot remove reserved "archived" account type');
       return false;
-    }
-
-    if (type === OptionType.TAG) {
-      return this.enqueueTagMutation(() => this.removeTagOption(value));
     }
 
     let removed = false;
@@ -1741,10 +2441,9 @@ export class CustomOptionsService {
 
       
       await this.saveOptions();
-
-      
-      
-      await new Promise((resolve) => window.setTimeout(resolve, 200));
+      if (type === OptionType.MISTAKE) {
+        this.recordMistakeRetirement(value);
+      }
 
       
       this.notifyOptionsChanged();
@@ -1790,7 +2489,6 @@ export class CustomOptionsService {
 
       await this.saveOptions(true);
       this.recordTagRetirement(value);
-      await new Promise((resolve) => window.setTimeout(resolve, 200));
       this.notifyOptionsChanged();
       return true;
     } catch (error) {
@@ -1830,6 +2528,59 @@ export class CustomOptionsService {
     instrumentCurrency?: string | null,
     commissionRules?: InstrumentCommissionRule[]
   ): Promise<{ success: boolean; updatedNotes?: number }> {
+    return this.enqueueOptionMutation(async () => {
+      const result = await this.updateInstrumentInternal(
+        oldName,
+        newName,
+        assetType,
+        futuresData,
+        updateNotes,
+        forexData,
+        cfdData,
+        oldAssetType,
+        instrumentCurrency,
+        commissionRules
+      );
+      if (!result.success) return { success: false };
+      const updatedNotes =
+        updateNotes && result.identityChanged
+          ? await this.updateNotesWithOption(
+              OptionType.INSTRUMENT,
+              oldName,
+              result.instrument
+            )
+          : 0;
+      this.notifyOptionsChanged({
+        optionType: OptionType.INSTRUMENT,
+        action: 'updated',
+        instrument: result.instrument,
+        assetType,
+        applyToTrades: result.shouldApplyToTrades,
+      });
+      return { success: true, updatedNotes };
+    });
+  }
+
+  private async updateInstrumentInternal(
+    oldName: string,
+    newName: string,
+    assetType: string,
+    futuresData?: FuturesInstrumentData,
+    updateNotes: boolean = false,
+    forexData?: ForexInstrumentData,
+    cfdData?: CfdInstrumentData,
+    oldAssetType?: string,
+    instrumentCurrency?: string | null,
+    commissionRules?: InstrumentCommissionRule[]
+  ): Promise<
+    | { success: false }
+    | {
+        success: true;
+        identityChanged: boolean;
+        instrument: string;
+        shouldApplyToTrades: boolean;
+      }
+  > {
     const cleanNewName = newName.trim();
 
     
@@ -1940,16 +2691,6 @@ export class CustomOptionsService {
     
     await this.saveOptions();
 
-    
-    let updatedNotes = 0;
-    if (updateNotes && identityChanged) {
-      updatedNotes = await this.updateNotesWithOption(
-        OptionType.INSTRUMENT,
-        oldName,
-        cleanNewName
-      );
-    }
-
     const hasValidSpecs =
       (assetType === 'futures' &&
         this.hasValidFuturesSpecs(updatedInstrument.futuresData)) ||
@@ -1960,22 +2701,152 @@ export class CustomOptionsService {
     const shouldApplyToTrades =
       hasValidSpecs && specsChanged && (!identityChanged || updateNotes);
 
-    this.notifyOptionsChanged({
-      optionType: OptionType.INSTRUMENT,
-      action: 'updated',
+    return {
+      success: true,
+      identityChanged,
       instrument: cleanNewName,
-      assetType,
-      applyToTrades: shouldApplyToTrades,
-    });
-    return { success: true, updatedNotes };
+      shouldApplyToTrades,
+    };
   }
 
   
   public async updateOption(
-    type: OptionType,
+    type: StoredOptionType,
     oldValue: string,
     newValue: string,
     updateNotes: boolean = false
+  ): Promise<{ success: boolean; updatedNotes?: number }> {
+    if (type === OptionType.TAG) {
+      const cleanNewValue = deduplicateOptions([newValue])[0] ?? '';
+      if (!cleanNewValue || isSyntheticSetupTagFilterValue(cleanNewValue)) {
+        return { success: false };
+      }
+      return this.enqueueOptionMutation(() =>
+        this.updateTagOption(oldValue, cleanNewValue, updateNotes)
+      );
+    }
+    const cleanNewValue = newValue.trim();
+    return this.enqueueOptionMutation(() =>
+      this.updateOptionWithNotes(type, oldValue, cleanNewValue, updateNotes)
+    );
+  }
+
+  private async installSetupReferenceChanges(
+    oldValue: string,
+    newValue: string | null,
+    expectNone = false
+  ) {
+    const transaction: OptionNoteTransaction = new Map();
+    try {
+      const updatedNotes = await this.updateNotesWithOption(
+        OptionType.SETUP,
+        oldValue,
+        newValue,
+        true,
+        transaction,
+        expectNone
+      );
+      return {
+        updatedNotes,
+        rollback: () => this.rollbackOptionNoteTransaction(transaction),
+      };
+    } catch (error) {
+      await this.rollbackOptionNoteTransaction(transaction, error);
+      throw error;
+    }
+  }
+
+  
+  public listSetupReferenceNotePaths(name: string): string[] {
+    if (!name.trim()) return [];
+    const folderPathService =
+      this.plugin.serviceManager?.getFolderPathService();
+    if (!folderPathService) {
+      throw new Error('FolderPathService is unavailable');
+    }
+    const paths: string[] = [];
+    
+    const dayFieldRewrite = this.dayTradeFieldOptionRewrite(
+      OptionType.SETUP,
+      name,
+      null
+    );
+    for (const file of this.getApp().vault.getMarkdownFiles()) {
+      if (!folderPathService.isJournalPath(file.path)) continue;
+      const frontmatter = asRecord(
+        this.getApp().metadataCache.getFileCache(file)?.frontmatter
+      );
+      if (!frontmatter) continue;
+      const referencesSetup =
+        this.isNoteEligibleForOptionUpdate(
+          OptionType.SETUP,
+          frontmatter,
+          file.path
+        ) &&
+        this.frontmatterContainsOptionValue(
+          OptionType.SETUP,
+          this.getOptionUpdatePropertyNames(
+            OptionType.SETUP,
+            ['setup'],
+            frontmatter
+          ),
+          frontmatter,
+          name
+        );
+      if (
+        referencesSetup ||
+        (dayFieldRewrite &&
+          Object.keys(
+            planDayTradeFieldOptionRewrite(frontmatter, dayFieldRewrite)
+          ).length > 0)
+      ) {
+        paths.push(file.path);
+      }
+    }
+    return paths;
+  }
+
+  
+  private async mutateSetupReferences(
+    command: SetupOptionMutation
+  ): Promise<SetupOptionMutationResult> {
+    const { oldValue } = command;
+    if (!oldValue.trim()) return { success: false };
+    const newValue = command.kind === 'rename' ? command.newValue : null;
+    if (command.kind === 'rename' && !newValue) return { success: false };
+    if (command.kind === 'rename' && !command.updateNotes)
+      return { success: true, updatedNotes: 0, rollback: async () => {} };
+    const notes = await this.installSetupReferenceChanges(
+      oldValue,
+      newValue,
+      command.kind === 'delete' && command.expectNone
+    );
+    return {
+      success: true,
+      updatedNotes: notes.updatedNotes,
+      rollback: notes.rollback,
+    };
+  }
+
+  private async updateOptionWithNotes(
+    type: StoredOptionType,
+    oldValue: string,
+    newValue: string,
+    updateNotes: boolean
+  ): Promise<{ success: boolean; updatedNotes?: number }> {
+    const result = await this.updateOptionInternal(type, oldValue, newValue);
+    if (!result.success) return result;
+    const updatedNotes = updateNotes
+      ? await this.updateNotesWithOption(type, oldValue, newValue)
+      : 0;
+    this.notifyOptionsChanged();
+    return { success: true, updatedNotes };
+  }
+
+  private async updateOptionInternal(
+    type: StoredOptionType,
+    oldValue: string,
+    newValue: string
   ): Promise<{ success: boolean; updatedNotes?: number }> {
     const cleanNewValue =
       type === OptionType.TAG
@@ -1997,12 +2868,6 @@ export class CustomOptionsService {
     if (type === OptionType.INSTRUMENT) {
       console.warn(`Use updateInstrument method for instruments`);
       return { success: false };
-    }
-
-    if (type === OptionType.TAG) {
-      return this.enqueueTagMutation(() =>
-        this.updateTagOption(oldValue, cleanNewValue, updateNotes)
-      );
     }
 
     let success = false;
@@ -2063,15 +2928,11 @@ export class CustomOptionsService {
 
     
     await this.saveOptions();
-
-    
-    let updatedNotes = 0;
-    if (updateNotes) {
-      updatedNotes = await this.updateNotesWithOption(type, oldValue, newValue);
+    if (type === OptionType.MISTAKE) {
+      this.recordMistakeRetirement(oldValue);
     }
 
-    this.notifyOptionsChanged(); 
-    return { success: true, updatedNotes };
+    return { success: true };
   }
 
   private async updateTagOption(
@@ -2154,6 +3015,16 @@ export class CustomOptionsService {
       return 0;
     }
 
+    if (type === OptionType.SETUP) {
+      return this.enqueueOptionMutation(async () => {
+        const result = await this.installSetupReferenceChanges(
+          oldValue,
+          cleanNewValue
+        );
+        this.notifyOptionsChanged();
+        return result.updatedNotes;
+      });
+    }
     const transaction: OptionNoteTransaction | undefined =
       type === OptionType.TAG ? new Map() : undefined;
     let updatedNotes: number;
@@ -2184,6 +3055,12 @@ export class CustomOptionsService {
         'Removing note option values is only supported for setups and tags'
       );
     }
+    if (type === OptionType.SETUP) {
+      return this.enqueueOptionMutation(
+        async () =>
+          (await this.installSetupReferenceChanges(value, null)).updatedNotes
+      );
+    }
     const transaction: OptionNoteTransaction = new Map();
     try {
       return await this.updateNotesWithOption(
@@ -2201,10 +3078,11 @@ export class CustomOptionsService {
 
   private async rollbackOptionNoteTransaction(
     transaction: OptionNoteTransaction,
-    operationError: unknown
+    operationError?: unknown
   ): Promise<void> {
     const rollbackErrors: unknown[] = [];
-    const restoredPaths: string[] = [];
+    const refreshedPaths: string[] = [];
+    const refreshedReviewPaths: string[] = [];
     const snapshots = Array.from(transaction.values()).reverse();
 
     for (const snapshot of snapshots) {
@@ -2220,6 +3098,20 @@ export class CustomOptionsService {
         await this.getApp().fileManager.processFrontMatter(
           file,
           (currentFrontmatter: Record<string, unknown>) => {
+            for (const key of snapshot.guardedKeys) {
+              if (
+                optionFrontmatterHasKey(currentFrontmatter, key) !==
+                  optionFrontmatterHasKey(frontmatterAfter, key) ||
+                !optionFrontmatterValuesEqual(
+                  currentFrontmatter[key],
+                  frontmatterAfter[key]
+                )
+              ) {
+                throw new Error(
+                  `Cannot safely roll back ${file.path}: note identity changed`
+                );
+              }
+            }
             const changedKeys = new Set([
               ...Object.keys(frontmatterBefore),
               ...Object.keys(frontmatterAfter),
@@ -2303,8 +3195,15 @@ export class CustomOptionsService {
             }
           }
         );
+      } catch (error) {
+        rollbackErrors.push(error);
+      }
+      try {
+        
+        
         await forceMetadataCacheRefresh(this.getApp(), file);
-        restoredPaths.push(file.path);
+        if (snapshot.reviewNote) refreshedReviewPaths.push(file.path);
+        else refreshedPaths.push(file.path);
         window.activeDocument.dispatchEvent(
           new CustomEvent(`journalit:${this.namespace}-updated`, {
             detail: { id: file.path },
@@ -2315,19 +3214,126 @@ export class CustomOptionsService {
       }
     }
 
-    if (restoredPaths.length > 0) {
+    if (refreshedPaths.length > 0) {
       eventBus.publish('trade:changed', {
         action: 'updated',
-        filePaths: restoredPaths,
+        filePaths: refreshedPaths,
+      });
+    }
+    for (const filePath of refreshedReviewPaths) {
+      eventBus.publish('review:changed', {
+        type: 'drc',
+        action: 'updated',
+        filePath,
       });
     }
 
     if (rollbackErrors.length > 0) {
       throw new AggregateError(
-        [operationError, ...rollbackErrors],
+        operationError === undefined
+          ? rollbackErrors
+          : [operationError, ...rollbackErrors],
         'Option note update failed and rollback was incomplete'
       );
     }
+  }
+
+  
+  private dayTradeFieldOptionRewrite(
+    type: OptionType,
+    oldValue: string,
+    newValue: string | null
+  ): DayTradeFieldOptionRewrite | undefined {
+    const fields: Partial<Record<OptionType, DayTradeSelectionField>> = {
+      [OptionType.SETUP]: 'setup',
+      [OptionType.MISTAKE]: 'mistake',
+      [OptionType.TAG]: 'tags',
+    };
+    const field = fields[type];
+    if (!field) return undefined;
+    return {
+      field,
+      matches: (value) =>
+        this.storedOptionValueMatches(type, field, value, oldValue),
+      rewrite: (values) =>
+        (
+          this.rewriteOptionEntries(type, field, values, oldValue, newValue) ??
+          values
+        ).filter((value): value is string => typeof value === 'string'),
+    };
+  }
+
+  
+  private retainedDayFieldValues(
+    type: OptionType,
+    frontmatter: Record<string, unknown>,
+    oldValue: string,
+    newValue: string | null
+  ): DayTradeFieldRetainedValues | undefined {
+    const selectionField = getSelectionOptionField(type);
+    const propertyNames =
+      type === OptionType.TAG
+        ? ['tags']
+        : selectionField
+          ? [selectionField]
+          : [];
+    if (!propertyNames.length) return undefined;
+    const values: string[] = [];
+    for (const propertyName of propertyNames) {
+      const raw = frontmatter[propertyName];
+      const entries: unknown[] = Array.isArray(raw) ? raw : [raw];
+      const rewritten =
+        this.rewriteOptionEntries(
+          type,
+          propertyName,
+          entries,
+          oldValue,
+          newValue
+        ) ?? entries;
+      for (const entry of rewritten) {
+        if (typeof entry === 'string') values.push(entry);
+      }
+    }
+    return {
+      values,
+      key: selectionField
+        ? (value) => selectionOptionKey(value, selectionField)
+        : storedTagDedupeKey,
+    };
+  }
+
+  
+  private rewriteOptionEntries(
+    type: OptionType,
+    propertyName: string,
+    entries: readonly unknown[],
+    oldValue: string,
+    newValue: string | null
+  ): unknown[] | undefined {
+    const matches = (entry: unknown): entry is string =>
+      typeof entry === 'string' &&
+      this.storedOptionValueMatches(type, propertyName, entry, oldValue);
+    if (!entries.some(matches)) return undefined;
+    const selectionField = getSelectionOptionField(type);
+    const dedupeKey: ((value: string) => string) | null =
+      type === OptionType.TAG
+        ? storedTagDedupeKey
+        : selectionField
+          ? (value) => selectionOptionKey(value, selectionField)
+          : null;
+    const seen = new Set<string>();
+    const next: unknown[] = [];
+    for (const entry of entries) {
+      const rewritten = matches(entry) ? newValue : entry;
+      if (rewritten === null) continue;
+      if (dedupeKey && typeof rewritten === 'string') {
+        const key = dedupeKey(rewritten);
+        if (seen.has(key)) continue;
+        seen.add(key);
+      }
+      next.push(rewritten);
+    }
+    return next;
   }
 
   private isNoteEligibleForOptionUpdate(
@@ -2337,12 +3343,12 @@ export class CustomOptionsService {
   ): boolean {
     if (type === OptionType.TAG) {
       return (
-        isTradeOptionUpdateEligibleNote(frontmatter, filePath) ||
+        isTagOptionTradeEligibleNote(frontmatter, filePath) ||
         isSetupDefinitionNote(frontmatter)
       );
     }
     if (type === OptionType.SETUP) {
-      return isTradeOptionUpdateEligibleNote(frontmatter, filePath);
+      return isTagOptionTradeEligibleNote(frontmatter, filePath);
     }
     return true;
   }
@@ -2352,9 +3358,14 @@ export class CustomOptionsService {
     propertyNames: string[],
     frontmatter: Record<string, unknown>
   ): string[] {
-    return type === OptionType.SETUP && frontmatter.setup !== undefined
-      ? ['setup']
-      : propertyNames;
+    if (type === OptionType.SETUP && frontmatter.setup !== undefined) {
+      return ['setup'];
+    }
+    
+    if (type === OptionType.MISTAKE && frontmatter.type === 'drc') {
+      return ['sessionMistakes'];
+    }
+    return propertyNames;
   }
 
   private storedOptionValueMatches(
@@ -2368,15 +3379,11 @@ export class CustomOptionsService {
         ? value.trim()
         : value;
     if (type === OptionType.TAG) {
-      const pathSeparator = candidate.indexOf('/');
-      const isReservedJournalitTag =
-        pathSeparator > 0 &&
-        RESERVED_JOURNALIT_TAG_BUCKETS.has(
-          candidate.slice(0, pathSeparator).toLowerCase()
-        );
-      return isReservedJournalitTag
-        ? this.optionValueMatches(candidate, oldValue)
-        : normalizedEquals(candidate, oldValue);
+      return storedTagValuesMatch(candidate, oldValue);
+    }
+    
+    if (getSelectionOptionField(type)) {
+      return optionValuesEqual(type, candidate, oldValue);
     }
     return this.optionValueMatches(candidate, oldValue);
   }
@@ -2421,28 +3428,30 @@ export class CustomOptionsService {
     });
   }
 
-  private needsLegacyTagNormalization(
-    type: OptionType,
-    frontmatter: Record<string, unknown>
-  ): boolean {
-    return (
-      type === OptionType.TAG &&
-      !isSetupDefinitionNote(frontmatter) &&
-      'customTags' in frontmatter
-    );
-  }
-
-  private assertCanonicalSetupTagFrontmatter(
+  private assertOptionRewriteFrontmatter(
     type: OptionType,
     frontmatter: Record<string, unknown>,
     filePath: string
   ): void {
-    if (type !== OptionType.TAG || !isSetupDefinitionNote(frontmatter)) return;
-    if ('customTags' in frontmatter) {
-      throw new Error(
-        `Invalid setup tags in ${filePath}: customTags is not supported`
-      );
+    if (
+      type === OptionType.SETUP &&
+      isTagOptionTradeEligibleNote(frontmatter, filePath)
+    ) {
+      const value = frontmatter.setup;
+      if (
+        value !== undefined &&
+        value !== null &&
+        typeof value !== 'string' &&
+        (!Array.isArray(value) ||
+          !value.every((entry) => typeof entry === 'string'))
+      ) {
+        throw new Error(
+          'Invalid setup references. Repair the affected trade note before retrying.'
+        );
+      }
+      return;
     }
+    if (type !== OptionType.TAG || !isSetupDefinitionNote(frontmatter)) return;
     const tags = frontmatter.tags;
     if (
       tags !== undefined &&
@@ -2495,11 +3504,12 @@ export class CustomOptionsService {
     oldValue: string,
     newValue: string | null,
     failOnError: boolean = false,
-    transaction?: OptionNoteTransaction
+    transaction?: OptionNoteTransaction,
+    
+    expectNone: boolean = false
   ): Promise<number> {
     try {
       
-      const files = this.getApp().vault.getMarkdownFiles();
       const folderPathService =
         this.plugin.serviceManager?.getFolderPathService();
       if (!folderPathService) {
@@ -2507,6 +3517,34 @@ export class CustomOptionsService {
       }
       const isJournalPath = (filePath: string): boolean =>
         folderPathService.isJournalPath(filePath);
+      
+      
+      const galleryNotePath =
+        type === OptionType.TAG
+          ? resolveGalleryAnnotationNotePath(
+              this.getApp().vault,
+              galleryAnnotationNotePath(
+                resolveJournalFolderPath(this.plugin.settings)
+              )
+            )
+          : undefined;
+      const isRewrittenPath = (filePath: string): boolean =>
+        isJournalPath(filePath) || filePath === galleryNotePath;
+      const files = this.getApp()
+        .vault.getMarkdownFiles()
+        .filter((file) => isRewrittenPath(file.path));
+      const journalFolderPath = resolveJournalFolderPath(this.plugin.settings);
+      const rewriteAnnotations = (
+        frontmatter: Record<string, unknown>,
+        filePath: string
+      ) =>
+        type === OptionType.TAG
+          ? rewriteImageAnnotationTags(frontmatter.imageAnnotations, {
+              source: oldValue,
+              target: newValue ?? undefined,
+              emptied: filePath === galleryNotePath ? 'remove' : 'tombstone',
+            })
+          : ({ changed: false } as const);
 
       
       
@@ -2515,7 +3553,7 @@ export class CustomOptionsService {
         [OptionType.ACCOUNT]: ['account'],
         [OptionType.SETUP]: ['setup'],
         [OptionType.MISTAKE]: ['mistake'],
-        [OptionType.TAG]: ['tags', 'customTags'],
+        [OptionType.TAG]: ['tags'],
         [OptionType.EVENT]: ['keyEvents'],
       };
 
@@ -2529,15 +3567,49 @@ export class CustomOptionsService {
       
       let updatedCount = 0;
       const updatedFilePaths: string[] = [];
+      const updatedReviewPaths: string[] = [];
+      const updatedPeriodicReviews: Array<{
+        filePath: string;
+        type: PeriodicReviewSourceType;
+      }> = [];
+      let annotationsChanged = false;
+      const snapshotKeys =
+        type === OptionType.SETUP
+          ? [
+              'setup',
+              DAY_TRADE_FIELDS_KEY,
+              DAY_TRADE_FIELD_SOURCES_KEY,
+              ...SETUP_REFERENCE_IDENTITY_FIELDS,
+            ]
+          : undefined;
+      
+      const dayFieldRewrite = this.dayTradeFieldOptionRewrite(
+        type,
+        oldValue,
+        newValue
+      );
+      const referencesDayField = (frontmatter: Record<string, unknown>) =>
+        dayFieldRewrite !== undefined &&
+        Object.keys(
+          planDayTradeFieldOptionRewrite(frontmatter, dayFieldRewrite)
+        ).length > 0;
+      
+      
+      const pendingReparses: Promise<void>[] = [];
 
       
       for (const file of files) {
-        if (!isJournalPath(file.path)) {
+        if (!isRewrittenPath(file.path)) {
           continue;
         }
 
         let fileUpdated = false;
         let noteModified = false;
+        let isDrcNote = false;
+        let periodicReviewType: PeriodicReviewSourceType | undefined;
+        let isTradeNote = false;
+        let annotationsModified = false;
+        let expectedSetupReference: Record<string, unknown> | undefined;
 
         try {
           const cache = this.getApp().metadataCache.getFileCache(file);
@@ -2547,15 +3619,12 @@ export class CustomOptionsService {
             validateCanonical: boolean
           ): boolean => {
             if (validateCanonical) {
-              this.assertCanonicalSetupTagFrontmatter(
-                type,
-                frontmatter,
-                file.path
-              );
+              this.assertOptionRewriteFrontmatter(type, frontmatter, file.path);
             }
             const identityFields = getTradeIdentityFields(frontmatter);
             const needsIdentityBackfill =
-              isJournalPath(file.path) &&
+              type !== OptionType.SETUP &&
+              isJournalitJournalPath(file.path, journalFolderPath) &&
               isTradeIdentityEligibleNote(frontmatter, file.path) &&
               (!identityFields.tradeId || !identityFields.schemaVersion);
             const isEligibleForOptionUpdate =
@@ -2571,8 +3640,6 @@ export class CustomOptionsService {
               frontmatter,
               oldValue
             );
-            const needsLegacyTagNormalization =
-              this.needsLegacyTagNormalization(type, frontmatter);
             const containsAccountTag = this.frontmatterContainsAccountTag(
               type,
               frontmatter,
@@ -2582,20 +3649,37 @@ export class CustomOptionsService {
 
             return (
               needsIdentityBackfill ||
+              referencesDayField(frontmatter) ||
+              rewriteAnnotations(frontmatter, file.path).changed ||
               (isEligibleForOptionUpdate &&
-                (containsOptionValue ||
-                  needsLegacyTagNormalization ||
-                  containsAccountTag))
+                (containsOptionValue || containsAccountTag))
             );
           };
 
           const cacheRequiresUpdate = cachedFrontmatter
             ? frontmatterRequiresUpdate(cachedFrontmatter, false)
             : false;
-          if (!cacheRequiresUpdate) {
+          if (type === OptionType.SETUP) {
+            const current = await this.readCurrentOptionFrontmatter(file);
+            if (!current || !frontmatterRequiresUpdate(current, true)) continue;
+            
+            if (expectNone) throw new SetupInUseError();
+            expectedSetupReference = cloneOptionFrontmatter(
+              current,
+              snapshotKeys
+            );
+          } else if (!cacheRequiresUpdate) {
             if (type !== OptionType.TAG) {
               if (cache) continue;
+            } else if (
+              cache &&
+              !isOpenInEditor(this.getApp(), file) &&
+              isMetadataCacheCurrent(this.getApp(), file)
+            ) {
+              continue;
             } else {
+              
+              
               const currentFrontmatter =
                 await this.readCurrentOptionFrontmatter(file);
               if (
@@ -2610,26 +3694,40 @@ export class CustomOptionsService {
           if (transaction && !transaction.has(file.path)) {
             transaction.set(file.path, {
               file,
+              guardedKeys:
+                type === OptionType.SETUP
+                  ? SETUP_REFERENCE_IDENTITY_FIELDS
+                  : [],
               mutationApplied: false,
             });
           }
 
-          await this.getApp().fileManager.processFrontMatter(
+          const write = this.getApp().fileManager.processFrontMatter(
             file,
             (frontmatter: Record<string, unknown>) => {
               const snapshot = transaction?.get(file.path);
               if (snapshot && !snapshot.frontmatterBefore) {
-                snapshot.frontmatterBefore =
-                  cloneOptionFrontmatter(frontmatter);
+                snapshot.frontmatterBefore = cloneOptionFrontmatter(
+                  frontmatter,
+                  snapshotKeys
+                );
               }
-              this.assertCanonicalSetupTagFrontmatter(
-                type,
-                frontmatter,
-                file.path
-              );
+              this.assertOptionRewriteFrontmatter(type, frontmatter, file.path);
+              if (
+                expectedSetupReference &&
+                !optionFrontmatterValuesEqual(
+                  expectedSetupReference,
+                  cloneOptionFrontmatter(frontmatter, snapshotKeys)
+                )
+              ) {
+                throw new Error(
+                  'Setup references changed during the update. Review them before retrying.'
+                );
+              }
               let identityBackfilled = false;
               if (
-                isJournalPath(file.path) &&
+                type !== OptionType.SETUP &&
+                isJournalitJournalPath(file.path, journalFolderPath) &&
                 isTradeIdentityEligibleNote(frontmatter, file.path)
               ) {
                 const identityResult =
@@ -2637,17 +3735,73 @@ export class CustomOptionsService {
                 identityBackfilled = identityResult.changed;
               }
 
-              if (
-                !this.isNoteEligibleForOptionUpdate(
-                  type,
+              const reviewSource =
+                typeof frontmatter.type === 'string' &&
+                isReviewNoteType(frontmatter.type)
+                  ? REVIEW_TYPE_TO_SOURCE[frontmatter.type]
+                  : undefined;
+              isDrcNote = reviewSource === 'drc';
+              periodicReviewType =
+                reviewSource === 'drc' ? undefined : reviewSource;
+              if (snapshot) snapshot.reviewNote = isDrcNote;
+              const recordChange = (modified: boolean) => {
+                if (modified) {
+                  noteModified = true;
+                }
+
+                if (modified || identityBackfilled) {
+                  fileUpdated = true;
+                  if (snapshot) {
+                    snapshot.mutationApplied = true;
+                    snapshot.frontmatterAfter = cloneOptionFrontmatter(
+                      frontmatter,
+                      snapshotKeys
+                    );
+                  }
+                }
+              };
+
+              
+              
+              let modified =
+                dayFieldRewrite !== undefined &&
+                applyDayTradeFieldOptionWrites(
                   frontmatter,
-                  file.path
-                )
-              ) {
+                  planDayTradeFieldOptionRewrite(
+                    frontmatter,
+                    dayFieldRewrite,
+                    isDrcNote
+                      ? undefined
+                      : this.retainedDayFieldValues(
+                          type,
+                          frontmatter,
+                          oldValue,
+                          newValue
+                        )
+                  )
+                );
+
+              const annotations = rewriteAnnotations(frontmatter, file.path);
+              if (annotations.changed) {
+                if (annotations.value === undefined) {
+                  delete frontmatter.imageAnnotations;
+                } else {
+                  frontmatter.imageAnnotations = annotations.value;
+                }
+                annotationsModified = true;
+                modified = true;
+              }
+
+              isTradeNote = this.isNoteEligibleForOptionUpdate(
+                type,
+                frontmatter,
+                file.path
+              );
+              if (!isTradeNote) {
+                recordChange(modified);
                 return;
               }
 
-              let modified = false;
               const updatePropertyNames = this.getOptionUpdatePropertyNames(
                 type,
                 propertyNames,
@@ -2699,25 +3853,14 @@ export class CustomOptionsService {
 
                 const value = frontmatter[propName];
                 if (Array.isArray(value)) {
-                  let changed = false;
-                  const valueEntries = value as unknown[];
-                  const updatedValues = valueEntries.flatMap((entry) => {
-                    if (
-                      typeof entry === 'string' &&
-                      this.storedOptionValueMatches(
-                        type,
-                        propName,
-                        entry,
-                        oldValue
-                      )
-                    ) {
-                      changed = true;
-                      return newValue === null ? [] : [newValue];
-                    }
-                    return [entry];
-                  });
-
-                  if (changed) {
+                  const updatedValues = this.rewriteOptionEntries(
+                    type,
+                    propName,
+                    value as unknown[],
+                    oldValue,
+                    newValue
+                  );
+                  if (updatedValues) {
                     frontmatter[propName] = updatedValues;
                     modified = true;
                   }
@@ -2737,22 +3880,6 @@ export class CustomOptionsService {
                         : newValue;
                     modified = true;
                   }
-                }
-              }
-
-              if (type === OptionType.TAG) {
-                const hasLegacyCustomTags = this.needsLegacyTagNormalization(
-                  type,
-                  frontmatter
-                );
-
-                if (hasLegacyCustomTags) {
-                  frontmatter.tags = deduplicateOptions([
-                    ...normalizeFrontmatterTagValues(frontmatter.tags),
-                    ...normalizeFrontmatterTagValues(frontmatter.customTags),
-                  ]);
-                  frontmatter.customTags = undefined;
-                  modified = true;
                 }
               }
 
@@ -2779,24 +3906,19 @@ export class CustomOptionsService {
                 }
               }
 
-              if (modified) {
-                noteModified = true;
-              }
-
-              if (modified || identityBackfilled) {
-                fileUpdated = true;
-                if (snapshot) {
-                  snapshot.mutationApplied = true;
-                  snapshot.frontmatterAfter =
-                    cloneOptionFrontmatter(frontmatter);
-                }
-              }
+              recordChange(modified);
             }
           );
+          const reparsed = waitForMetadataReparse(
+            this.getApp(),
+            file,
+            100,
+            write
+          );
+          await write;
 
           if (fileUpdated) {
-            
-            await forceMetadataCacheRefresh(this.getApp(), file);
+            pendingReparses.push(reparsed);
 
             
             const event = new CustomEvent(
@@ -2810,7 +3932,18 @@ export class CustomOptionsService {
             if (noteModified) {
               updatedCount++;
             }
-            updatedFilePaths.push(file.path);
+            if (annotationsModified) annotationsChanged = true;
+            
+            
+            
+            if (isDrcNote) updatedReviewPaths.push(file.path);
+            else if (periodicReviewType)
+              updatedPeriodicReviews.push({
+                filePath: file.path,
+                type: periodicReviewType,
+              });
+            else if (isTradeNote || !annotationsModified)
+              updatedFilePaths.push(file.path);
 
             
             if (
@@ -2828,12 +3961,28 @@ export class CustomOptionsService {
         }
       }
 
+      await Promise.all(pendingReparses);
       if (updatedFilePaths.length > 0) {
         eventBus.publish('trade:changed', {
           action: 'updated',
           filePaths: updatedFilePaths,
         });
       }
+      for (const filePath of updatedReviewPaths) {
+        eventBus.publish('review:changed', {
+          type: 'drc',
+          action: 'updated',
+          filePath,
+        });
+      }
+      for (const review of updatedPeriodicReviews) {
+        eventBus.publish('review:changed', {
+          type: review.type,
+          action: 'updated',
+          filePath: review.filePath,
+        });
+      }
+      if (annotationsChanged) eventBus.publish('image-gallery:changed');
 
       return updatedCount;
     } catch (error) {
@@ -2966,7 +4115,6 @@ export class CustomOptionsService {
     type:
       | OptionType.ACCOUNT
       | OptionType.ACCOUNT_TYPE
-      | OptionType.SETUP
       | OptionType.MISTAKE
       | OptionType.TAG
   ): string[] {
@@ -2974,14 +4122,11 @@ export class CustomOptionsService {
   }
 
   
-  public async clearOptions(type: OptionType): Promise<number> {
-    const operation = () => this.clearOptionsInternal(type);
-    return type === OptionType.TAG
-      ? this.enqueueTagMutation(operation)
-      : operation();
+  public async clearOptions(type: StoredOptionType): Promise<number> {
+    return this.enqueueOptionMutation(() => this.clearOptionsInternal(type));
   }
 
-  private async clearOptionsInternal(type: OptionType): Promise<number> {
+  private async clearOptionsInternal(type: StoredOptionType): Promise<number> {
     const count = this.options[type].length;
 
     if (count === 0) {
@@ -2997,25 +4142,22 @@ export class CustomOptionsService {
     await this.saveOptions();
 
     
-    
-    await new Promise((resolve) => window.setTimeout(resolve, 200));
-
-    
     this.notifyOptionsChanged();
 
     return count;
   }
 
   
-  public async resetOptionsToDefaults(type: OptionType): Promise<boolean> {
-    const operation = () => this.resetOptionsToDefaultsInternal(type);
-    return type === OptionType.TAG
-      ? this.enqueueTagMutation(operation)
-      : operation();
+  public async resetOptionsToDefaults(
+    type: StoredOptionType
+  ): Promise<boolean> {
+    return this.enqueueOptionMutation(() =>
+      this.resetOptionsToDefaultsInternal(type)
+    );
   }
 
   private async resetOptionsToDefaultsInternal(
-    type: OptionType
+    type: StoredOptionType
   ): Promise<boolean> {
     const currentOptions = this.options[type];
     const defaultOptions =
@@ -3043,7 +4185,6 @@ export class CustomOptionsService {
         break;
       case OptionType.ACCOUNT:
       case OptionType.ACCOUNT_TYPE:
-      case OptionType.SETUP:
       case OptionType.MISTAKE:
       case OptionType.TAG:
         this.options[type] = this.getInitialStringOptionsForType(type);
@@ -3056,10 +4197,6 @@ export class CustomOptionsService {
     await this.saveOptions();
 
     
-    
-    await new Promise((resolve) => window.setTimeout(resolve, 200));
-
-    
     this.notifyOptionsChanged();
 
     return true;
@@ -3067,7 +4204,7 @@ export class CustomOptionsService {
 
   
   public async resetAllOptions(): Promise<void> {
-    return this.enqueueTagMutation(() => this.resetAllOptionsInternal());
+    return this.enqueueOptionMutation(() => this.resetAllOptionsInternal());
   }
 
   private async resetAllOptionsInternal(): Promise<void> {
@@ -3079,7 +4216,6 @@ export class CustomOptionsService {
       [OptionType.ACCOUNT_TYPE]: this.getInitialStringOptionsForType(
         OptionType.ACCOUNT_TYPE
       ),
-      [OptionType.SETUP]: this.getInitialStringOptionsForType(OptionType.SETUP),
       [OptionType.MISTAKE]: this.getInitialStringOptionsForType(
         OptionType.MISTAKE
       ),
@@ -3090,16 +4226,12 @@ export class CustomOptionsService {
     await this.saveOptions();
 
     
-    
-    await new Promise((resolve) => window.setTimeout(resolve, 200));
-
-    
     this.notifyOptionsChanged();
   }
 
   
   public async reloadOptions(): Promise<void> {
-    return this.enqueueTagMutation(() => this.loadOptions());
+    return this.enqueueOptionMutation(() => this.loadOptions());
   }
 
   
@@ -3117,7 +4249,7 @@ export class CustomOptionsService {
       const newlyInitializedTypes: string[] = [];
       const initializedTypeSet = new Set(initializedTypes);
 
-      for (const type of Object.values(OptionType)) {
+      for (const type of STORED_OPTION_TYPES) {
         if (
           this.options[type].length === 0 &&
           INITIAL_DEFAULT_OPTIONS[type].length > 0 &&
@@ -3248,7 +4380,9 @@ export class CustomOptionsService {
 
   
   public async setNamespace(namespace: string): Promise<void> {
-    return this.enqueueTagMutation(() => this.setNamespaceInternal(namespace));
+    return this.enqueueOptionMutation(() =>
+      this.setNamespaceInternal(namespace)
+    );
   }
 
   private async setNamespaceInternal(namespace: string): Promise<void> {

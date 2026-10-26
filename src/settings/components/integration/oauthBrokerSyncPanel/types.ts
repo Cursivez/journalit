@@ -12,7 +12,10 @@ import type {
   CTraderConnectionAccount,
   TradovateConnection,
 } from '../../../../services/tradeSync/types';
-import type { BrokerStatusState, LocalAccountOption } from '../brokerSyncKit';
+import type {
+  BrokerStatusState,
+  LocalAccountOption,
+} from '../brokerSyncKit/types';
 import type {
   AccountDraft,
   AccountDrafts,
@@ -23,7 +26,7 @@ import type {
 export type OAuthBrokerConnectionAccount = CTraderConnectionAccount;
 export type OAuthBrokerConnection = TradovateConnection;
 
-export interface OAuthBrokerConnectionList {
+interface OAuthBrokerConnectionList {
   connections: OAuthBrokerConnection[];
 }
 
@@ -32,7 +35,8 @@ export interface OAuthBrokerAccountConfiguration {
   created: boolean;
 }
 
-export interface OAuthBrokerSyncCopy {
+
+export interface OAuthBrokerSharedCopy {
   sourceTitle: TranslationKey;
   pluginSyncDescription: TranslationKey;
   pendingAcks: TranslationKey;
@@ -42,23 +46,12 @@ export interface OAuthBrokerSyncCopy {
   syncAll: TranslationKey;
   never: TranslationKey;
   lastSync: TranslationKey;
-  syncAccount: TranslationKey;
   claimedByConnection: TranslationKey;
-  historyLabel: TranslationKey;
-  historyAll: TranslationKey;
-  historyRecent: TranslationKey;
-  historyCustom: TranslationKey;
-  historyNew: TranslationKey;
-  startDate: TranslationKey;
   recoveryCount: TranslationKey;
   recoverySelectAccount: TranslationKey;
   websiteConnectionDescription: TranslationKey;
   pausedWebsiteDescription?: TranslationKey;
-  discoveryDescription: TranslationKey;
   manageConnection: TranslationKey;
-  discovering: TranslationKey;
-  discoverAccounts: TranslationKey;
-  setupAndSync: TranslationKey;
   syncToVault: TranslationKey;
   reconciliationIssues: TranslationKey;
   statusFailed: TranslationKey;
@@ -69,25 +62,53 @@ export interface OAuthBrokerSyncCopy {
   statusReauthorizationRequired: TranslationKey;
   statusDeleting: TranslationKey;
   statusError: TranslationKey;
-  discoveryFailed: TranslationKey;
   recoveryTitle: TranslationKey;
   recoveryConfirm: TranslationKey;
-  customDateRequired: TranslationKey;
   mappingRequired: TranslationKey;
-  claimConflict: TranslationKey;
   syncPartialConnection: TranslationKey;
   syncCompleteConnection: TranslationKey;
   syncAllPartial: TranslationKey;
+  
+  syncAllProviderPartial: TranslationKey;
   syncAllComplete: TranslationKey;
   docsUrl: string;
   integrationsUrl: string;
   localAccountFieldPrefix: string;
 }
 
-export interface OAuthBrokerClientOperations {
+
+export interface OAuthBrokerSyncCopy extends OAuthBrokerSharedCopy {
+  syncAccount: TranslationKey;
+  historyLabel: TranslationKey;
+  historyAll: TranslationKey;
+  historyRecent: TranslationKey;
+  historyCustom: TranslationKey;
+  historyNew: TranslationKey;
+  startDate: TranslationKey;
+  discoveryDescription: TranslationKey;
+  discovering: TranslationKey;
+  discoverAccounts: TranslationKey;
+  setupAndSync: TranslationKey;
+  discoveryFailed: TranslationKey;
+  customDateRequired: TranslationKey;
+  claimConflict: TranslationKey;
+}
+
+
+export interface OAuthBrokerWebsiteSelectionCopy extends OAuthBrokerSharedCopy {
+  
+  setupRequiredDescription: TranslationKey;
+  accountSelected: TranslationKey;
+  accountNotSelected: TranslationKey;
+}
+
+interface OAuthBrokerCatalogClientOperations {
   getConnections: (
     options?: TradeProjectionRequestOptions
   ) => Promise<OAuthBrokerConnectionList>;
+}
+
+interface OAuthBrokerClientOperations extends OAuthBrokerCatalogClientOperations {
   configureAccounts: (
     connectionId: string,
     accounts: OAuthBrokerAccountSelection[],
@@ -100,7 +121,7 @@ export interface OAuthBrokerClientOperations {
   ) => Promise<BrokerSyncJob>;
 }
 
-export interface OAuthBrokerDiagnosticsOperations {
+interface OAuthBrokerDiagnosticsOperations {
   flush: () => void;
   createConnectionOperation: (
     vaultId: string,
@@ -111,7 +132,19 @@ export interface OAuthBrokerDiagnosticsOperations {
   ) => Promise<BrokerClientOperationContext> | BrokerClientOperationContext;
 }
 
-export interface OAuthBrokerSyncServiceOperations {
+interface OAuthBrokerProjectionSyncOperations {
+  syncConnection: (
+    connectionId: string,
+    operation: BrokerClientOperationContext
+  ) => Promise<TradeProjectionSyncResult>;
+  syncRemappedAccountProjections: (
+    accountBindings: BrokerSyncAccountBinding[],
+    operation: BrokerClientOperationContext
+  ) => Promise<TradeProjectionSyncResult>;
+  syncAllConnections: (connectionIds: string[]) => Promise<BrokerSyncAllResult>;
+}
+
+export interface OAuthBrokerSyncServiceOperations extends OAuthBrokerProjectionSyncOperations {
   waitForCloudSync: (
     connectionId: string,
     jobId: string,
@@ -127,32 +160,49 @@ export interface OAuthBrokerSyncServiceOperations {
     jobId: string,
     operation: BrokerClientOperationContext
   ) => Promise<unknown>;
-  syncConnection: (
-    connectionId: string,
-    operation: BrokerClientOperationContext
-  ) => Promise<TradeProjectionSyncResult>;
-  syncRemappedAccountProjections: (
-    accountBindings: BrokerSyncAccountBinding[],
-    operation: BrokerClientOperationContext
-  ) => Promise<TradeProjectionSyncResult>;
-  syncAllConnections: (connectionIds: string[]) => Promise<BrokerSyncAllResult>;
 }
 
-export interface OAuthBrokerSyncPanelAdapter {
-  copy: OAuthBrokerSyncCopy;
-  client: OAuthBrokerClientOperations;
+interface OAuthBrokerSyncPanelAdapterBase {
   diagnostics: OAuthBrokerDiagnosticsOperations;
-  syncService: OAuthBrokerSyncServiceOperations;
   
   onCatalogLoaded: (hasConnections: boolean) => void;
-  isClaimConflictError: (error: unknown) => boolean;
   logRefreshFailed: string;
-  logDiscoveryFailed: string;
   logLocalAccountCreateFailed: string;
   logSyncFailed: string;
   localAccountNameUnavailableError: string;
   createdLocalAccountUnavailableError: string;
 }
+
+
+interface OAuthBrokerPluginSelectionAdapter extends OAuthBrokerSyncPanelAdapterBase {
+  accountSelection?: 'plugin';
+  copy: OAuthBrokerSyncCopy;
+  client: OAuthBrokerClientOperations;
+  syncService: OAuthBrokerSyncServiceOperations;
+  isClaimConflictError: (error: unknown) => boolean;
+  logDiscoveryFailed: string;
+}
+
+
+interface OAuthBrokerWebsiteSelectionAdapter extends OAuthBrokerSyncPanelAdapterBase {
+  accountSelection: 'website';
+  copy: OAuthBrokerWebsiteSelectionCopy;
+  client: OAuthBrokerCatalogClientOperations;
+  syncService: OAuthBrokerProjectionSyncOperations;
+}
+
+export type OAuthBrokerSyncPanelAdapter =
+  | OAuthBrokerPluginSelectionAdapter
+  | OAuthBrokerWebsiteSelectionAdapter;
+
+
+export type OAuthBrokerPanelSelection =
+  | {
+      mode: 'plugin';
+      copy: OAuthBrokerSyncCopy;
+      discoverAccounts: (connectionId: string) => Promise<void>;
+    }
+  | { mode: 'website'; copy: OAuthBrokerWebsiteSelectionCopy };
 
 export interface ConnectionUiState {
   canSync: boolean;
@@ -167,7 +217,7 @@ export type OAuthBrokerStatusState = BrokerStatusState<{
 }>;
 
 export interface OAuthBrokerSyncPanelContentProps {
-  copy: OAuthBrokerSyncCopy;
+  selection: OAuthBrokerPanelSelection;
   canCreateConnections: boolean;
   statusState: OAuthBrokerStatusState;
   drafts: AccountDrafts;
@@ -189,7 +239,6 @@ export interface OAuthBrokerSyncPanelContentProps {
   refresh: (options?: { background?: boolean }) => Promise<boolean | void>;
   syncConnection: (connectionId: string) => Promise<void>;
   syncAll: () => Promise<void>;
-  discoverAccounts: (connectionId: string) => Promise<void>;
   createLocalAccount: (
     connectionId: string,
     account: OAuthBrokerConnectionAccount

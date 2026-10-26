@@ -11,7 +11,6 @@ import { Grid2x2Plus, Check, Plus } from '../../../shared/icons/ObsidianIcon';
 import { t } from '../../../../lang/helpers';
 import { DateRangeFilter } from './DateRangeFilter';
 import { FilterControlsProps } from './types';
-import { saveLastUsedFilters } from '../../utils/filterUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { useViewportThreshold } from '../../../../hooks/useResizeObserver';
 import { Button } from '../../../../components/ui/Button';
@@ -43,6 +42,24 @@ import { sanitizeFilterCustomFields } from '../../../shared/filters/sanitizeCust
 
 
 
+
+const EditLayoutButton: React.FC<{
+  isEditing: boolean;
+  onClick: () => void;
+}> = ({ isEditing, onClick }) => (
+  <Button
+    className={`journalit-dashboard-edit-mode-button ${isEditing ? 'active' : ''}`}
+    onClick={onClick}
+    variant="plain"
+    aria-label={
+      isEditing
+        ? t('dashboard.button.save-layout')
+        : t('dashboard.button.edit-layout')
+    }
+  >
+    {isEditing ? <Check size={16} /> : <Grid2x2Plus size={16} />}
+  </Button>
+);
 
 
 export const FilterControls = React.memo<FilterControlsProps>(
@@ -124,13 +141,12 @@ export const FilterControls = React.memo<FilterControlsProps>(
     );
 
     useEffect(() => {
-      if (!plugin || sanitizedFilters === filters) {
+      if (sanitizedFilters === filters) {
         return;
       }
 
       onFilterChange(sanitizedFilters);
-      void saveLastUsedFilters(plugin, sanitizedFilters);
-    }, [plugin, filters, onFilterChange, sanitizedFilters]);
+    }, [filters, onFilterChange, sanitizedFilters]);
 
     
     const availableAccounts = useMemo(() => {
@@ -145,15 +161,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
           trade.accountNamesNormalized &&
           trade.accountNamesNormalized.length > 0
             ? trade.accountNamesNormalized
-            : normalizeTradeAccountIdentity(
-                Object.fromEntries(Object.entries(trade)),
-                {
-                  resolveAccountIdDisplayName: (accountId) =>
-                    plugin?.settings?.backendIntegration?.accountMapping?.[
-                      accountId
-                    ],
-                }
-              ).accountNames;
+            : normalizeTradeAccountIdentity(trade).accountNames;
 
         accountNames.forEach((accountName) => {
           const lookupKey = normalizeAccountLookupKey(accountName);
@@ -164,11 +172,7 @@ export const FilterControls = React.memo<FilterControlsProps>(
         });
       });
       return Array.from(accountByLookupKey.values()).sort();
-    }, [
-      dashboardData?.trades,
-      dashboardData?.unrealizedTrades,
-      plugin?.settings?.backendIntegration?.accountMapping,
-    ]);
+    }, [dashboardData?.trades, dashboardData?.unrealizedTrades]);
 
     
 
@@ -177,13 +181,8 @@ export const FilterControls = React.memo<FilterControlsProps>(
       (dateRange: [Date | null, Date | null]) => {
         const mergedFilters = { ...sanitizedFilters, dateRange };
         onFilterChange(mergedFilters);
-
-        
-        if (plugin) {
-          void saveLastUsedFilters(plugin, mergedFilters);
-        }
       },
-      [onFilterChange, plugin, sanitizedFilters]
+      [onFilterChange, sanitizedFilters]
     );
 
     const loadFilterMenuOptions =
@@ -210,11 +209,8 @@ export const FilterControls = React.memo<FilterControlsProps>(
           discreteCustomFields
         );
         onFilterChange(mergedFilters);
-        if (plugin) {
-          void saveLastUsedFilters(plugin, mergedFilters);
-        }
       },
-      [discreteCustomFields, filters, onFilterChange, plugin]
+      [discreteCustomFields, filters, onFilterChange]
     );
 
     const filterMenuButton = plugin ? (
@@ -236,103 +232,46 @@ export const FilterControls = React.memo<FilterControlsProps>(
       <div
         className={`journalit-dashboard-filter-controls ${isCompactView ? 'compact-view' : ''}`}
       >
-        {isCompactView ? (
-          
-          <div className="journalit-dashboard-header-compact">
-            <div className="journalit-dashboard-primary-filters">
-              <DateRangeFilter
-                dateRange={filters.dateRange}
-                onChange={handleDateRangeChange}
-              />
-            </div>
-
-            <div className="journalit-dashboard-filter-actions">
-              {filterMenuButton}
-              {isEditing && onOpenAddWidget && (
-                <div ref={registerAddWidgetTarget}>
-                  <Button
-                    className="journalit-dashboard-add-widget-button"
-                    onClick={onOpenAddWidget}
-                    variant="plain"
-                    aria-label={t('dashboard.button.add-widget')}
-                  >
-                    <Plus size={16} />
-                    <span>{t('dashboard.button.add-widget')}</span>
-                  </Button>
-                </div>
-              )}
-              {onToggleEditMode && (
-                <div ref={registerEditLayoutTarget}>
-                  <Button
-                    className={`journalit-dashboard-edit-mode-button ${isEditing ? 'active' : ''}`}
-                    onClick={onToggleEditMode}
-                    variant="plain"
-                    aria-label={
-                      isEditing
-                        ? t('dashboard.button.save-layout')
-                        : t('dashboard.button.edit-layout')
-                    }
-                  >
-                    {isEditing ? (
-                      <Check size={16} />
-                    ) : (
-                      <Grid2x2Plus size={16} />
-                    )}
-                  </Button>
-                </div>
-              )}
-              {modeToggle}
-            </div>
+        <div
+          className={
+            isCompactView
+              ? 'journalit-dashboard-header-compact'
+              : 'journalit-dashboard-header'
+          }
+        >
+          <div className="journalit-dashboard-primary-filters">
+            <DateRangeFilter
+              dateRange={filters.dateRange}
+              onChange={handleDateRangeChange}
+            />
           </div>
-        ) : (
-          
-          <div className="journalit-dashboard-header">
-            <div className="journalit-dashboard-primary-filters">
-              <DateRangeFilter
-                dateRange={filters.dateRange}
-                onChange={handleDateRangeChange}
-              />
-            </div>
 
-            <div className="journalit-dashboard-filter-actions">
-              {filterMenuButton}
-              {isEditing && onOpenAddWidget && (
-                <div ref={registerAddWidgetTarget}>
-                  <Button
-                    className="journalit-dashboard-add-widget-button"
-                    onClick={onOpenAddWidget}
-                    variant="plain"
-                    aria-label={t('dashboard.button.add-widget')}
-                  >
-                    <Plus size={16} />
-                    <span>{t('dashboard.button.add-widget')}</span>
-                  </Button>
-                </div>
-              )}
-              {onToggleEditMode && (
-                <div ref={registerEditLayoutTarget}>
-                  <Button
-                    className={`journalit-dashboard-edit-mode-button ${isEditing ? 'active' : ''}`}
-                    onClick={onToggleEditMode}
-                    variant="plain"
-                    aria-label={
-                      isEditing
-                        ? t('dashboard.button.save-layout')
-                        : t('dashboard.button.edit-layout')
-                    }
-                  >
-                    {isEditing ? (
-                      <Check size={16} />
-                    ) : (
-                      <Grid2x2Plus size={16} />
-                    )}
-                  </Button>
-                </div>
-              )}
-              {modeToggle}
-            </div>
+          <div className="journalit-dashboard-filter-actions">
+            {filterMenuButton}
+            {isEditing && onOpenAddWidget && (
+              <div ref={registerAddWidgetTarget}>
+                <Button
+                  className="journalit-dashboard-add-widget-button"
+                  onClick={onOpenAddWidget}
+                  variant="plain"
+                  aria-label={t('dashboard.button.add-widget')}
+                >
+                  <Plus size={16} />
+                  <span>{t('dashboard.button.add-widget')}</span>
+                </Button>
+              </div>
+            )}
+            {onToggleEditMode && (
+              <div ref={registerEditLayoutTarget}>
+                <EditLayoutButton
+                  isEditing={isEditing}
+                  onClick={onToggleEditMode}
+                />
+              </div>
+            )}
+            {modeToggle}
           </div>
-        )}
+        </div>
       </div>
     );
   }

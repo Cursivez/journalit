@@ -264,12 +264,10 @@ function ImageGalleryControlDropdown<T extends string>({
       }
     };
 
-    window.activeDocument.addEventListener('mousedown', handleClickOutside);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('mousedown', handleClickOutside);
     return () =>
-      window.activeDocument.removeEventListener(
-        'mousedown',
-        handleClickOutside
-      );
+      listenerDocument.removeEventListener('mousedown', handleClickOutside);
   }, [isOpen]);
 
   const selectDropdownOption = (nextValue: T) => {

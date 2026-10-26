@@ -1,29 +1,31 @@
 
 
 export const SKELETON_STYLES = `
-@keyframes journalit-skeleton-shimmer {
-  0% {
-    background-position: -1000px 0;
-  }
+
+@keyframes journalit-skeleton-pulse {
+  0%,
   100% {
-    background-position: 1000px 0;
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.45;
   }
 }
 
-.skeleton-shimmer {
+.journalit-skeleton-shimmer {
   width: var(--journalit-skeleton-width, 100%);
   height: var(--journalit-skeleton-height, 20px);
   border-radius: var(--journalit-skeleton-radius, 4px);
-  background: linear-gradient(
-    90deg,
-    var(--background-secondary) 0%,
-    var(--background-modifier-border) 50%,
-    var(--background-secondary) 100%
-  );
-  background-size: 1000px 100%;
-  animation: journalit-skeleton-shimmer 2s infinite linear;
+  background: var(--background-modifier-border);
+  animation: journalit-skeleton-pulse 1.6s ease-in-out infinite;
   pointer-events: none;
   user-select: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .journalit-skeleton-shimmer {
+    animation: none;
+  }
 }
 
 .journalit-skeleton-screenreader-status {

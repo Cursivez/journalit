@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { Button } from '../../../../components/ui';
+import { Button } from '../../../../components/ui/Button';
 import {
   AlertCircle,
   Download,
@@ -17,25 +17,32 @@ import { formatLocalizedDateTime } from '../../../../utils/localizedDateTime';
 import { isRateLimitActive } from '../../../../services/tradeSync/TradeSyncRateLimit';
 import {
   BrokerAccountCard,
+  BrokerLocalAccountSelect,
+} from '../brokerSyncKit/BrokerAccountCard';
+import {
   BrokerActionsRow,
   BrokerConnectionList,
-  BrokerConnectionStatus,
-  BrokerLocalAccountSelect,
-  BrokerUnsavedMappingHint,
-  BrokerOverviewCard,
   BrokerStatusPlaceholder,
+} from '../brokerSyncKit/BrokerLayout';
+import {
+  BrokerConnectionStatus,
+  type BrokerConnectionTone,
+} from '../brokerSyncKit/BrokerConnectionStatus';
+import { BrokerUnsavedMappingHint } from '../brokerSyncKit/BrokerMappingHint';
+import { BrokerOverviewCard } from '../brokerSyncKit/BrokerOverviewCard';
+import {
   rateLimitUiState,
   useRateLimitCountdown,
-  type BrokerConnectionTone,
-  type LocalAccountOption,
-} from '../brokerSyncKit';
+} from '../brokerSyncKit/rateLimitCooldowns';
+import { type LocalAccountOption } from '../brokerSyncKit/types';
 import type { AccountDraft, AccountDrafts, HistoryChoice } from './drafts';
 import { oauthBrokerAccountDraftKey } from './drafts';
 import type {
   ConnectionUiState,
   OAuthBrokerConnection,
   OAuthBrokerConnectionAccount,
-  OAuthBrokerSyncCopy,
+  OAuthBrokerPanelSelection,
+  OAuthBrokerSharedCopy,
   OAuthBrokerSyncPanelContentProps,
 } from './types';
 
@@ -50,7 +57,7 @@ function isHistoryChoice(value: string): value is HistoryChoice {
 
 function formatSyncTime(
   value: string | undefined,
-  copy: OAuthBrokerSyncCopy
+  copy: OAuthBrokerSharedCopy
 ): string {
   return value ? formatLocalizedDateTime(value) : t(copy.never);
 }
@@ -66,7 +73,7 @@ function formatAccountMetadata(account: OAuthBrokerConnectionAccount): string {
 
 function formatConnectionStatus(
   status: string,
-  copy: OAuthBrokerSyncCopy
+  copy: OAuthBrokerSharedCopy
 ): string {
   switch (status) {
     case 'active':
@@ -102,8 +109,9 @@ function connectionStatusTone(status: string): BrokerConnectionTone {
 
 function formatConnectionStatusTooltip(
   status: string,
-  copy: OAuthBrokerSyncCopy
+  selection: OAuthBrokerPanelSelection
 ): string | null {
+  const { copy } = selection;
   switch (status) {
     case 'reauthorization_required':
       return t(copy.websiteConnectionDescription);
@@ -112,14 +120,18 @@ function formatConnectionStatusTooltip(
         ? t(copy.pausedWebsiteDescription)
         : null;
     case 'setup_required':
-      return t(copy.discoveryDescription);
+      return t(
+        selection.mode === 'website'
+          ? selection.copy.setupRequiredDescription
+          : selection.copy.discoveryDescription
+      );
     default:
       return null;
   }
 }
 
 interface OAuthBrokerAccountCardProps {
-  copy: OAuthBrokerSyncCopy;
+  selection: OAuthBrokerPanelSelection;
   connection: OAuthBrokerConnection;
   account: OAuthBrokerConnectionAccount;
   draft: AccountDraft;
@@ -140,8 +152,190 @@ interface OAuthBrokerAccountCardProps {
   updateDraft: OAuthBrokerSyncPanelContentProps['updateDraft'];
 }
 
-const OAuthBrokerAccountCard: React.FC<OAuthBrokerAccountCardProps> = ({
+const OAuthBrokerAccountToggle: React.FC<
+  Pick<
+    OAuthBrokerAccountCardProps,
+    'selection' | 'connection' | 'account' | 'draft' | 'updateDraft'
+  > & { disabled: boolean }
+> = ({ selection, connection, account, draft, disabled, updateDraft }) =>
+  selection.mode === 'website' ? (
+    <span className="journalit-tradovate-account-toggle">
+      {t(
+        account.syncEnabled
+          ? selection.copy.accountSelected
+          : selection.copy.accountNotSelected
+      )}
+    </span>
+  ) : (
+    <label className="journalit-tradovate-account-toggle">
+      <input
+        type="checkbox"
+        checked={draft.syncEnabled}
+        disabled={disabled}
+        onChange={(event) =>
+          updateDraft(connection.id, account.id, {
+            syncEnabled: event.target.checked,
+          })
+        }
+      />
+      {t(selection.copy.syncAccount)}
+    </label>
+  );
+
+const OAuthBrokerHistoryFields: React.FC<
+  Pick<
+    OAuthBrokerAccountCardProps,
+    'selection' | 'connection' | 'account' | 'draft' | 'updateDraft'
+  > & { disabled: boolean }
+> = ({ selection, connection, account, draft, disabled, updateDraft }) => {
+  if (selection.mode !== 'plugin') {
+    return null;
+  }
+
+  return (
+    <div className="journalit-tradovate-account-field">
+      <label>
+        <span>{t(selection.copy.historyLabel)}</span>
+        <select
+          value={draft.historyChoice}
+          disabled={disabled}
+          onChange={(event) => {
+            if (isHistoryChoice(event.target.value)) {
+              updateDraft(connection.id, account.id, {
+                historyChoice: event.target.value,
+              });
+            }
+          }}
+        >
+          <option value="all_available">{t(selection.copy.historyAll)}</option>
+          <option value="recent_90_days">
+            {t(selection.copy.historyRecent)}
+          </option>
+          <option value="custom_date">{t(selection.copy.historyCustom)}</option>
+          <option value="new_trades_only">
+            {t(selection.copy.historyNew)}
+          </option>
+        </select>
+      </label>
+      {draft.historyChoice === 'custom_date' && (
+        <label>
+          <span>{t(selection.copy.startDate)}</span>
+          <input
+            type="date"
+            value={draft.historyFrom}
+            disabled={disabled}
+            onChange={(event) =>
+              updateDraft(connection.id, account.id, {
+                historyFrom: event.target.value,
+              })
+            }
+          />
+        </label>
+      )}
+    </div>
+  );
+};
+
+const OAuthBrokerAccountRecovery: React.FC<
+  Pick<
+    OAuthBrokerAccountCardProps,
+    | 'connection'
+    | 'account'
+    | 'draft'
+    | 'busy'
+    | 'restoringAccountIds'
+    | 'mappingRateLimited'
+    | 'restoreRateLimited'
+    | 'restoreRateLimitMessage'
+    | 'restoreAccount'
+  > & {
+    copy: OAuthBrokerSharedCopy;
+    inventoryAccount: TradeProjectionAccountInventoryItem;
+  }
+> = ({
   copy,
+  connection,
+  account,
+  draft,
+  inventoryAccount,
+  busy,
+  restoringAccountIds,
+  mappingRateLimited,
+  restoreRateLimited,
+  restoreRateLimitMessage,
+  restoreAccount,
+}) => {
+  const restorableCount = inventoryAccount.restorableCount;
+  if (restorableCount <= 0) {
+    return null;
+  }
+
+  return (
+    <div className="journalit-tradovate-account-recovery">
+      <div className="journalit-tradovate-account-recovery__status">
+        <span className="journalit-tradovate-account-recovery__count">
+          {t(copy.recoveryCount, {
+            count: String(restorableCount),
+          })}
+        </span>
+        {!draft.localAccountId && (
+          <span className="journalit-broker-account-action__hint">
+            {t(copy.recoverySelectAccount)}
+          </span>
+        )}
+      </div>
+      <Button
+        variant="secondary"
+        size="small"
+        disabled={
+          busy ||
+          mappingRateLimited ||
+          restoreRateLimited ||
+          !draft.localAccountId ||
+          Boolean(restoringAccountIds[inventoryAccount.accountId])
+        }
+        onClick={() =>
+          void restoreAccount(connection.id, account, inventoryAccount)
+        }
+      >
+        <RotateCcw size={14} />
+        {restoringAccountIds[inventoryAccount.accountId]
+          ? t('trade-sync.import.action.restoring')
+          : t('trade-sync.import.action.restore-account')}
+      </Button>
+      {restoreRateLimitMessage && (
+        <span className="journalit-broker-account-action__hint">
+          {restoreRateLimitMessage}
+        </span>
+      )}
+    </div>
+  );
+};
+
+const OAuthBrokerClaimConflict: React.FC<{
+  copy: OAuthBrokerSharedCopy;
+  claimOwnerDisplayName: string;
+}> = ({ copy, claimOwnerDisplayName }) => (
+  <div className="journalit-tradovate-claim-conflict" role="status">
+    <AlertCircle size={15} />
+    <span>
+      {t(copy.claimedByConnection, {
+        connection: claimOwnerDisplayName,
+      })}
+    </span>
+  </div>
+);
+
+function accountMappingClassName(selection: OAuthBrokerPanelSelection): string {
+  return `journalit-tradovate-account-mapping${
+    selection.mode === 'website'
+      ? ' journalit-tradovate-account-mapping--website'
+      : ''
+  }`;
+}
+
+const OAuthBrokerAccountCard: React.FC<OAuthBrokerAccountCardProps> = ({
+  selection,
   connection,
   account,
   draft,
@@ -161,8 +355,8 @@ const OAuthBrokerAccountCard: React.FC<OAuthBrokerAccountCardProps> = ({
   restoreAccount,
   updateDraft,
 }) => {
+  const { copy } = selection;
   const historyLocked = Boolean(account.lastSuccessfulSyncAt);
-  const restorableCount = inventoryAccount?.restorableCount ?? 0;
   const claimedElsewhere = Boolean(claimOwnerDisplayName);
   const localAccountFieldId = `${copy.localAccountFieldPrefix}-${connection.id}-${account.id}`;
 
@@ -171,19 +365,14 @@ const OAuthBrokerAccountCard: React.FC<OAuthBrokerAccountCardProps> = ({
       className={compact ? 'journalit-tradovate-account-card--single' : ''}
       title={account.displayName ?? t('backend.cards.accounts.title')}
       headerTrailing={
-        <label className="journalit-tradovate-account-toggle">
-          <input
-            type="checkbox"
-            checked={draft.syncEnabled}
-            disabled={busy || !canSync || claimedElsewhere}
-            onChange={(event) =>
-              updateDraft(connection.id, account.id, {
-                syncEnabled: event.target.checked,
-              })
-            }
-          />
-          {t(copy.syncAccount)}
-        </label>
+        <OAuthBrokerAccountToggle
+          selection={selection}
+          connection={connection}
+          account={account}
+          draft={draft}
+          disabled={busy || !canSync || claimedElsewhere}
+          updateDraft={updateDraft}
+        />
       }
       contentClassName="journalit-tradovate-account-card__content"
     >
@@ -197,52 +386,20 @@ const OAuthBrokerAccountCard: React.FC<OAuthBrokerAccountCardProps> = ({
         </span>
       </div>
       {claimOwnerDisplayName && (
-        <div className="journalit-tradovate-claim-conflict" role="status">
-          <AlertCircle size={15} />
-          <span>
-            {t(copy.claimedByConnection, {
-              connection: claimOwnerDisplayName,
-            })}
-          </span>
-        </div>
+        <OAuthBrokerClaimConflict
+          copy={copy}
+          claimOwnerDisplayName={claimOwnerDisplayName}
+        />
       )}
-      <div className="journalit-tradovate-account-mapping">
-        <div className="journalit-tradovate-account-field">
-          <label>
-            <span>{t(copy.historyLabel)}</span>
-            <select
-              value={draft.historyChoice}
-              disabled={busy || historyLocked || !canSync || claimedElsewhere}
-              onChange={(event) => {
-                if (isHistoryChoice(event.target.value)) {
-                  updateDraft(connection.id, account.id, {
-                    historyChoice: event.target.value,
-                  });
-                }
-              }}
-            >
-              <option value="all_available">{t(copy.historyAll)}</option>
-              <option value="recent_90_days">{t(copy.historyRecent)}</option>
-              <option value="custom_date">{t(copy.historyCustom)}</option>
-              <option value="new_trades_only">{t(copy.historyNew)}</option>
-            </select>
-          </label>
-          {draft.historyChoice === 'custom_date' && (
-            <label>
-              <span>{t(copy.startDate)}</span>
-              <input
-                type="date"
-                value={draft.historyFrom}
-                disabled={busy || historyLocked || !canSync || claimedElsewhere}
-                onChange={(event) =>
-                  updateDraft(connection.id, account.id, {
-                    historyFrom: event.target.value,
-                  })
-                }
-              />
-            </label>
-          )}
-        </div>
+      <div className={accountMappingClassName(selection)}>
+        <OAuthBrokerHistoryFields
+          selection={selection}
+          connection={connection}
+          account={account}
+          draft={draft}
+          disabled={busy || historyLocked || !canSync || claimedElsewhere}
+          updateDraft={updateDraft}
+        />
         <div className="journalit-tradovate-account-field journalit-tradovate-local-account-field">
           <div className="journalit-tradovate-local-account-heading">
             <label htmlFor={localAccountFieldId}>
@@ -285,45 +442,20 @@ const OAuthBrokerAccountCard: React.FC<OAuthBrokerAccountCardProps> = ({
           )}
         </div>
       </div>
-      {inventoryAccount && restorableCount > 0 && (
-        <div className="journalit-tradovate-account-recovery">
-          <div className="journalit-tradovate-account-recovery__status">
-            <span className="journalit-tradovate-account-recovery__count">
-              {t(copy.recoveryCount, {
-                count: String(restorableCount),
-              })}
-            </span>
-            {!draft.localAccountId && (
-              <span className="journalit-broker-account-action__hint">
-                {t(copy.recoverySelectAccount)}
-              </span>
-            )}
-          </div>
-          <Button
-            variant="secondary"
-            size="small"
-            disabled={
-              busy ||
-              mappingRateLimited ||
-              restoreRateLimited ||
-              !draft.localAccountId ||
-              Boolean(restoringAccountIds[inventoryAccount.accountId])
-            }
-            onClick={() =>
-              void restoreAccount(connection.id, account, inventoryAccount)
-            }
-          >
-            <RotateCcw size={14} />
-            {restoringAccountIds[inventoryAccount.accountId]
-              ? t('trade-sync.import.action.restoring')
-              : t('trade-sync.import.action.restore-account')}
-          </Button>
-          {restoreRateLimitMessage && (
-            <span className="journalit-broker-account-action__hint">
-              {restoreRateLimitMessage}
-            </span>
-          )}
-        </div>
+      {inventoryAccount && (
+        <OAuthBrokerAccountRecovery
+          copy={copy}
+          connection={connection}
+          account={account}
+          draft={draft}
+          inventoryAccount={inventoryAccount}
+          busy={busy}
+          restoringAccountIds={restoringAccountIds}
+          mappingRateLimited={mappingRateLimited}
+          restoreRateLimited={restoreRateLimited}
+          restoreRateLimitMessage={restoreRateLimitMessage}
+          restoreAccount={restoreAccount}
+        />
       )}
     </BrokerAccountCard>
   );
@@ -332,7 +464,7 @@ const OAuthBrokerAccountCard: React.FC<OAuthBrokerAccountCardProps> = ({
 OAuthBrokerAccountCard.displayName = 'OAuthBrokerAccountCard';
 
 interface OAuthBrokerConnectionCardProps {
-  copy: OAuthBrokerSyncCopy;
+  selection: OAuthBrokerPanelSelection;
   connection: OAuthBrokerConnection;
   allConnections: OAuthBrokerConnection[];
   state: ConnectionUiState;
@@ -346,14 +478,135 @@ interface OAuthBrokerConnectionCardProps {
   restoreRetryAtByAccountId: Record<string, number>;
   now: number;
   syncConnection: OAuthBrokerSyncPanelContentProps['syncConnection'];
-  discoverAccounts: OAuthBrokerSyncPanelContentProps['discoverAccounts'];
   createLocalAccount: OAuthBrokerSyncPanelContentProps['createLocalAccount'];
   restoreAccount: OAuthBrokerSyncPanelContentProps['restoreAccount'];
   updateDraft: OAuthBrokerSyncPanelContentProps['updateDraft'];
 }
 
+const OAuthBrokerConnectionStatusBadge: React.FC<{
+  selection: OAuthBrokerPanelSelection;
+  status: string;
+}> = ({ selection, status }) => {
+  const connectionStatusLabel = formatConnectionStatus(status, selection.copy);
+  const connectionStatus = (
+    <BrokerConnectionStatus
+      tone={connectionStatusTone(status)}
+      label={connectionStatusLabel}
+    />
+  );
+  const connectionStatusTooltip = formatConnectionStatusTooltip(
+    status,
+    selection
+  );
+
+  if (!connectionStatusTooltip) {
+    return connectionStatus;
+  }
+
+  return (
+    
+    
+    <Tooltip
+      content={connectionStatusTooltip}
+      disclosureLabel={`${connectionStatusLabel}: ${connectionStatusTooltip}`}
+      preferredPosition="bottom"
+      delay={150}
+    >
+      {connectionStatus}
+    </Tooltip>
+  );
+};
+
+const OAuthBrokerConnectionActions: React.FC<
+  Pick<
+    OAuthBrokerConnectionCardProps,
+    'selection' | 'connection' | 'state' | 'busy' | 'syncConnection'
+  > & {
+    websiteSetupRequired: boolean;
+    compact: boolean;
+    mappingRateLimited: boolean;
+  }
+> = ({
+  selection,
+  connection,
+  state,
+  busy,
+  websiteSetupRequired,
+  compact,
+  mappingRateLimited,
+  syncConnection,
+}) => {
+  const { copy } = selection;
+  return (
+    <BrokerActionsRow
+      className={`journalit-tradovate-connection-actions${
+        compact ? ' journalit-tradovate-connection-actions--single' : ''
+      }`}
+    >
+      {state.requiresWebsite && (
+        <Button
+          variant="secondary"
+          size="small"
+          onClick={() => openExternalUrl(copy.integrationsUrl)}
+        >
+          {t(copy.manageConnection)}
+        </Button>
+      )}
+      {selection.mode === 'plugin' &&
+        state.setupRequired &&
+        state.discoveryRetryAvailable && (
+          <Button
+            variant="secondary"
+            size="small"
+            disabled={busy || state.hasRunningJob}
+            onClick={() => void selection.discoverAccounts(connection.id)}
+          >
+            <RefreshCw size={14} />
+            {state.hasRunningJob
+              ? t(selection.copy.discovering)
+              : t(selection.copy.discoverAccounts)}
+          </Button>
+        )}
+      {connection.accounts.length > 0 && !websiteSetupRequired && (
+        <Button
+          variant="primary"
+          size="small"
+          disabled={
+            busy || mappingRateLimited || !state.canSync || state.hasRunningJob
+          }
+          onClick={() => void syncConnection(connection.id)}
+        >
+          <Download size={14} />
+          {selection.mode === 'plugin' && state.setupRequired
+            ? t(selection.copy.setupAndSync)
+            : t(copy.syncToVault)}
+        </Button>
+      )}
+    </BrokerActionsRow>
+  );
+};
+
+const OAuthBrokerConnectionSyncMeta: React.FC<{
+  copy: OAuthBrokerSharedCopy;
+  connection: OAuthBrokerConnection;
+}> = ({ copy, connection }) => (
+  <div className="journalit-tradovate-connection-meta">
+    <span>
+      {t(copy.lastSync)}:{' '}
+      {formatSyncTime(connection.lastSuccessfulSyncAt, copy)}
+    </span>
+    {connection.reconciliationIssueCount > 0 && (
+      <span>
+        {t(copy.reconciliationIssues, {
+          count: String(connection.reconciliationIssueCount),
+        })}
+      </span>
+    )}
+  </div>
+);
+
 const OAuthBrokerConnectionCard: React.FC<OAuthBrokerConnectionCardProps> = ({
-  copy,
+  selection,
   connection,
   allConnections,
   state,
@@ -367,23 +620,15 @@ const OAuthBrokerConnectionCard: React.FC<OAuthBrokerConnectionCardProps> = ({
   restoreRetryAtByAccountId,
   now,
   syncConnection,
-  discoverAccounts,
   createLocalAccount,
   restoreAccount,
   updateDraft,
 }) => {
+  const { copy } = selection;
+  
+  const websiteSetupRequired =
+    selection.mode === 'website' && connection.status === 'setup_required';
   const hasSingleAccount = connection.accounts.length === 1;
-  const connectionStatusLabel = formatConnectionStatus(connection.status, copy);
-  const connectionStatus = (
-    <BrokerConnectionStatus
-      tone={connectionStatusTone(connection.status)}
-      label={connectionStatusLabel}
-    />
-  );
-  const connectionStatusTooltip = formatConnectionStatusTooltip(
-    connection.status,
-    copy
-  );
   const mappingRateLimitedForConnection = connection.accounts.some(
     (account) =>
       mappingDirty[account.canonicalAccountId] &&
@@ -392,53 +637,6 @@ const OAuthBrokerConnectionCard: React.FC<OAuthBrokerConnectionCardProps> = ({
         now
       )
   );
-  const actions = (
-    <BrokerActionsRow
-      className={`journalit-tradovate-connection-actions${
-        hasSingleAccount
-          ? ' journalit-tradovate-connection-actions--single'
-          : ''
-      }`}
-    >
-      {state.requiresWebsite && (
-        <Button
-          variant="secondary"
-          size="small"
-          onClick={() => openExternalUrl(copy.integrationsUrl)}
-        >
-          {t(copy.manageConnection)}
-        </Button>
-      )}
-      {state.setupRequired && state.discoveryRetryAvailable && (
-        <Button
-          variant="secondary"
-          size="small"
-          disabled={busy || state.hasRunningJob}
-          onClick={() => void discoverAccounts(connection.id)}
-        >
-          <RefreshCw size={14} />
-          {state.hasRunningJob ? t(copy.discovering) : t(copy.discoverAccounts)}
-        </Button>
-      )}
-      {connection.accounts.length > 0 && (
-        <Button
-          variant="primary"
-          size="small"
-          disabled={
-            busy ||
-            mappingRateLimitedForConnection ||
-            !state.canSync ||
-            state.hasRunningJob
-          }
-          onClick={() => void syncConnection(connection.id)}
-        >
-          <Download size={14} />
-          {state.setupRequired ? t(copy.setupAndSync) : t(copy.syncToVault)}
-        </Button>
-      )}
-    </BrokerActionsRow>
-  );
-
   return (
     <details
       className={`journalit-tradovate-connection-card${
@@ -451,37 +649,25 @@ const OAuthBrokerConnectionCard: React.FC<OAuthBrokerConnectionCardProps> = ({
           <Server size={20} />
           <strong>{connection.displayName}</strong>
         </span>
-        {connectionStatusTooltip ? (
-          
-          
-          <Tooltip
-            content={connectionStatusTooltip}
-            disclosureLabel={`${connectionStatusLabel}: ${connectionStatusTooltip}`}
-            preferredPosition="bottom"
-            delay={150}
-          >
-            {connectionStatus}
-          </Tooltip>
-        ) : (
-          connectionStatus
-        )}
+        <OAuthBrokerConnectionStatusBadge
+          selection={selection}
+          status={connection.status}
+        />
       </summary>
       <div className="journalit-tradovate-connection-body">
-        {connection.accounts.length === 0 && !state.setupRequired && (
+        {websiteSetupRequired && selection.mode === 'website' && (
           <div className="journalit-tradovate-connection-meta">
-            <span>
-              {t(copy.lastSync)}:{' '}
-              {formatSyncTime(connection.lastSuccessfulSyncAt, copy)}
-            </span>
-            {connection.reconciliationIssueCount > 0 && (
-              <span>
-                {t(copy.reconciliationIssues, {
-                  count: String(connection.reconciliationIssueCount),
-                })}
-              </span>
-            )}
+            <span>{t(selection.copy.setupRequiredDescription)}</span>
           </div>
         )}
+        {connection.accounts.length === 0 &&
+          !state.setupRequired &&
+          !websiteSetupRequired && (
+            <OAuthBrokerConnectionSyncMeta
+              copy={copy}
+              connection={connection}
+            />
+          )}
         {connection.accounts.length > 0 && (
           <div
             className={`journalit-trade-import-account-grid journalit-tradovate-connection-accounts${
@@ -520,7 +706,7 @@ const OAuthBrokerConnectionCard: React.FC<OAuthBrokerConnectionCardProps> = ({
               return (
                 <OAuthBrokerAccountCard
                   key={oauthBrokerAccountDraftKey(connection.id, account.id)}
-                  copy={copy}
+                  selection={selection}
                   connection={connection}
                   account={account}
                   draft={draft}
@@ -546,7 +732,16 @@ const OAuthBrokerConnectionCard: React.FC<OAuthBrokerConnectionCardProps> = ({
             })}
           </div>
         )}
-        {actions}
+        <OAuthBrokerConnectionActions
+          selection={selection}
+          connection={connection}
+          state={state}
+          busy={busy}
+          websiteSetupRequired={websiteSetupRequired}
+          compact={hasSingleAccount}
+          mappingRateLimited={mappingRateLimitedForConnection}
+          syncConnection={syncConnection}
+        />
       </div>
     </details>
   );
@@ -554,10 +749,102 @@ const OAuthBrokerConnectionCard: React.FC<OAuthBrokerConnectionCardProps> = ({
 
 OAuthBrokerConnectionCard.displayName = 'OAuthBrokerConnectionCard';
 
+const OAuthBrokerOverviewActions: React.FC<
+  Pick<
+    OAuthBrokerSyncPanelContentProps,
+    | 'canCreateConnections'
+    | 'refreshing'
+    | 'syncAllBusy'
+    | 'syncAllAvailable'
+    | 'syncAllBlockedMessage'
+    | 'busyConnections'
+    | 'refresh'
+    | 'syncAll'
+  > & {
+    copy: OAuthBrokerPanelSelection['copy'];
+    statusLoaded: boolean;
+    hasConnections: boolean;
+  }
+> = ({
+  copy,
+  statusLoaded,
+  hasConnections,
+  canCreateConnections,
+  refreshing,
+  syncAllBusy,
+  syncAllAvailable,
+  syncAllBlockedMessage,
+  busyConnections,
+  refresh,
+  syncAll,
+}) => (
+  <>
+    {statusLoaded && !hasConnections ? (
+      canCreateConnections ? (
+        <Button
+          variant="primary"
+          size="small"
+          onClick={() => openExternalUrl(copy.integrationsUrl)}
+        >
+          {t(copy.connect)}
+        </Button>
+      ) : null
+    ) : statusLoaded ? (
+      <Button
+        variant="primary"
+        size="small"
+        disabled={
+          refreshing ||
+          syncAllBusy ||
+          !syncAllAvailable ||
+          Object.keys(busyConnections).length > 0
+        }
+        title={syncAllAvailable ? undefined : syncAllBlockedMessage}
+        onClick={() => void syncAll()}
+      >
+        <Download size={14} />
+        {t(copy.syncAll)}
+      </Button>
+    ) : null}
+    <Button
+      variant="secondary"
+      size="small"
+      disabled={refreshing || syncAllBusy}
+      onClick={() => void refresh()}
+    >
+      <RefreshCw size={14} />
+      {t('backend.cards.connection.refresh')}
+    </Button>
+  </>
+);
+
+const OAuthBrokerStatusNotice: React.FC<{
+  copy: OAuthBrokerPanelSelection['copy'];
+  statusState: OAuthBrokerSyncPanelContentProps['statusState'];
+  hasConnections: boolean;
+}> = ({ copy, statusState, hasConnections }) => {
+  const statusLoaded = statusState.kind === 'loaded';
+  const statusUnavailable = statusState.kind === 'failed';
+  return (
+    <>
+      {!statusLoaded && (
+        <BrokerStatusPlaceholder
+          role={statusUnavailable ? 'alert' : 'status'}
+          message={t(statusUnavailable ? copy.statusFailed : 'common.loading')}
+        />
+      )}
+
+      {statusLoaded && !hasConnections && (
+        <BrokerStatusPlaceholder message={t(copy.noConnections)} />
+      )}
+    </>
+  );
+};
+
 export const OAuthBrokerSyncPanelContent: React.FC<
   OAuthBrokerSyncPanelContentProps
 > = ({
-  copy,
+  selection,
   canCreateConnections,
   statusState,
   drafts,
@@ -577,15 +864,14 @@ export const OAuthBrokerSyncPanelContent: React.FC<
   refresh,
   syncConnection,
   syncAll,
-  discoverAccounts,
   createLocalAccount,
   restoreAccount,
   updateDraft,
 }) => {
+  const { copy } = selection;
   const connections =
     statusState.kind === 'loaded' ? statusState.data.connections : [];
   const statusLoaded = statusState.kind === 'loaded';
-  const statusUnavailable = statusState.kind === 'failed';
   const now = useRateLimitCountdown(
     mappingRetryAtByAccountId,
     restoreRetryAtByAccountId
@@ -610,44 +896,19 @@ export const OAuthBrokerSyncPanelContent: React.FC<
         }}
         actionsHint={syncAllAvailable ? undefined : syncAllBlockedMessage}
         actions={
-          <>
-            {statusLoaded && connections.length === 0 ? (
-              canCreateConnections ? (
-                <Button
-                  variant="primary"
-                  size="small"
-                  onClick={() => openExternalUrl(copy.integrationsUrl)}
-                >
-                  {t(copy.connect)}
-                </Button>
-              ) : null
-            ) : statusLoaded ? (
-              <Button
-                variant="primary"
-                size="small"
-                disabled={
-                  refreshing ||
-                  syncAllBusy ||
-                  !syncAllAvailable ||
-                  Object.keys(busyConnections).length > 0
-                }
-                title={syncAllAvailable ? undefined : syncAllBlockedMessage}
-                onClick={() => void syncAll()}
-              >
-                <Download size={14} />
-                {t(copy.syncAll)}
-              </Button>
-            ) : null}
-            <Button
-              variant="secondary"
-              size="small"
-              disabled={refreshing || syncAllBusy}
-              onClick={() => void refresh()}
-            >
-              <RefreshCw size={14} />
-              {t('backend.cards.connection.refresh')}
-            </Button>
-          </>
+          <OAuthBrokerOverviewActions
+            copy={copy}
+            statusLoaded={statusLoaded}
+            hasConnections={connections.length > 0}
+            canCreateConnections={canCreateConnections}
+            refreshing={refreshing}
+            syncAllBusy={syncAllBusy}
+            syncAllAvailable={syncAllAvailable}
+            syncAllBlockedMessage={syncAllBlockedMessage}
+            busyConnections={busyConnections}
+            refresh={refresh}
+            syncAll={syncAll}
+          />
         }
         footerLink={
           statusLoaded && connections.length > 0 && canCreateConnections
@@ -659,22 +920,17 @@ export const OAuthBrokerSyncPanelContent: React.FC<
         }
       />
 
-      {!statusLoaded && (
-        <BrokerStatusPlaceholder
-          role={statusUnavailable ? 'alert' : 'status'}
-          message={t(statusUnavailable ? copy.statusFailed : 'common.loading')}
-        />
-      )}
-
-      {statusLoaded && connections.length === 0 && (
-        <BrokerStatusPlaceholder message={t(copy.noConnections)} />
-      )}
+      <OAuthBrokerStatusNotice
+        copy={copy}
+        statusState={statusState}
+        hasConnections={connections.length > 0}
+      />
 
       <BrokerConnectionList>
         {connections.map((connection) => (
           <OAuthBrokerConnectionCard
             key={connection.id}
-            copy={copy}
+            selection={selection}
             connection={connection}
             allConnections={connections}
             state={connectionStates[connection.id]}
@@ -688,7 +944,6 @@ export const OAuthBrokerSyncPanelContent: React.FC<
             restoreRetryAtByAccountId={restoreRetryAtByAccountId}
             now={now}
             syncConnection={syncConnection}
-            discoverAccounts={discoverAccounts}
             createLocalAccount={createLocalAccount}
             restoreAccount={restoreAccount}
             updateDraft={updateDraft}

@@ -1,12 +1,3 @@
-export interface RawExecutionLegInput {
-  time?: unknown;
-  price?: unknown;
-  size?: unknown;
-  quantity?: unknown;
-  notional?: unknown;
-  hasExplicitPrice?: unknown;
-}
-
 import { calculateTradeDirectionPriceDiff } from './TradeDirection';
 import { parseTradeTimestampValue } from '../../../utils/dateUtils';
 import { safeString } from '../../../utils/safeString';
@@ -26,12 +17,12 @@ export interface TradeExecutionNormalizationInput {
   hasExplicitExitPrice?: unknown;
 }
 
-export interface NormalizeTradeExecutionOptions {
+interface NormalizeTradeExecutionOptions {
   
   deriveMissingExplicitness: boolean;
 }
 
-export interface NormalizedExecutionEntry {
+interface NormalizedExecutionEntry {
   time: Date | null;
   price: number | null;
   size: number | null;
@@ -111,7 +102,7 @@ export function normalizeTradeExecution(
   };
 }
 
-export function deriveLegacyExitPriceExplicitness(input: {
+function deriveLegacyExitPriceExplicitness(input: {
   exitPrice?: unknown;
   useDirectPnLInput?: unknown;
 }): boolean | undefined {
@@ -307,6 +298,118 @@ function hasExplicitPriceFlagKnown(exit: {
   hasExplicitPrice?: boolean;
 }): boolean {
   return 'hasExplicitPrice' in exit;
+}
+
+
+export function getWeightedEntryPriceOf(
+  entries: unknown,
+  fallbackEntryPrice: unknown
+): number | null {
+  let totalValue = 0;
+  let totalSize = 0;
+  if (Array.isArray(entries)) {
+    for (const entry of entries) {
+      if (!isRecord(entry)) continue;
+      const price = parseFiniteNumber(entry.price);
+      const size = parseFiniteNumber(entry.size ?? entry.quantity);
+      if (price !== null && price > 0 && size !== null && size > 0) {
+        totalValue += price * size;
+        totalSize += size;
+      }
+    }
+  }
+  if (totalSize > 0) return totalValue / totalSize;
+  const entryPrice = parseFiniteNumber(fallbackEntryPrice);
+  return entryPrice !== null && entryPrice > 0 ? entryPrice : null;
+}
+
+
+export function getTotalEntrySizeOf(
+  entries: unknown,
+  fallbackPositionSize: unknown
+): number | null {
+  let entriesSize = 0;
+  if (Array.isArray(entries)) {
+    for (const entry of entries) {
+      if (!isRecord(entry)) continue;
+      const size = parseFiniteNumber(entry.size ?? entry.quantity);
+      if (size !== null && size > 0) entriesSize += size;
+    }
+  }
+  return entriesSize > 0
+    ? entriesSize
+    : parseFiniteNumber(fallbackPositionSize);
+}
+
+
+export function getResolvedExitPriceOf(
+  input: Pick<
+    TradeExecutionNormalizationInput,
+    'exits' | 'exitPrice' | 'useDirectPnLInput' | 'hasExplicitExitPrice'
+  >,
+  options: NormalizeTradeExecutionOptions
+): number | null {
+  const hasExplicitExitPrice = normalizeTradeLevelExplicitness(input, options);
+  const exits: WeightedExitLeg[] = [];
+  if (Array.isArray(input.exits)) {
+    for (const exit of input.exits) {
+      if (!isRecord(exit)) continue;
+      const price = parseFiniteNumber(exit.price);
+      const hasExplicitPrice = normalizeExitLegExplicitness(
+        exit,
+        price,
+        hasExplicitExitPrice,
+        options
+      );
+      const size = parseFiniteNumber(exit.size ?? exit.quantity);
+      exits.push(
+        hasExplicitPrice !== undefined
+          ? { price, size, hasExplicitPrice }
+          : { price, size }
+      );
+    }
+  }
+  return resolveExitPrice({
+    exits,
+    exitPrice: calculateWeightedAverageExitPrice(
+      exits,
+      parseFiniteNumber(input.exitPrice)
+    ),
+    useDirectPnLInput: isTruthyValue(input.useDirectPnLInput),
+    hasExplicitExitPrice,
+  });
+}
+
+
+export function getFirstEntryTimeOf(
+  entries: unknown,
+  fallbackEntryTime: unknown
+): Date | null {
+  let earliest: Date | null = null;
+  if (Array.isArray(entries)) {
+    for (const entry of entries) {
+      if (!isRecord(entry)) continue;
+      earliest = getEarlierDate(earliest, parseTradeTimestampValue(entry.time));
+    }
+  }
+  return earliest ? new Date(earliest) : parseDateValue(fallbackEntryTime);
+}
+
+
+export function getLastExitTimeOf(
+  exits: unknown,
+  fallbackExitTime: unknown
+): Date | null {
+  let latest: Date | null = null;
+  if (Array.isArray(exits)) {
+    for (const exit of exits) {
+      if (!isRecord(exit)) continue;
+      const size = parseFiniteNumber(exit.size ?? exit.quantity);
+      if (size !== null && size <= 0) continue;
+      latest = getLaterDate(latest, parseTradeTimestampValue(exit.time));
+    }
+  }
+  return latest ? new Date(latest) : parseDateValue(fallbackExitTime);
 }
 
 function getFirstExecutionTime(

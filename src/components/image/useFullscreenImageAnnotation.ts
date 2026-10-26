@@ -64,6 +64,33 @@ interface UseFullscreenImageAnnotationOptions {
   sourcePath: string;
 }
 
+
+const resolveVaultAnnotationAdapters = (
+  plugin: ReturnType<typeof usePlugin>,
+  sourcePath: string,
+  imagePath: string
+): { hasNoteAdapter: boolean; hasMediaAdapter: boolean } => {
+  const sourceFile =
+    plugin && sourcePath
+      ? plugin.app.vault.getAbstractFileByPath(sourcePath)
+      : null;
+  if (!plugin || !(sourceFile instanceof TFile)) {
+    return { hasNoteAdapter: false, hasMediaAdapter: false };
+  }
+  if (sourceFile.extension === 'md') {
+    return { hasNoteAdapter: true, hasMediaAdapter: false };
+  }
+  const resolvedMediaFile = resolveVaultMediaFile(
+    plugin.app,
+    imagePath,
+    sourcePath
+  );
+  return {
+    hasNoteAdapter: false,
+    hasMediaAdapter: resolvedMediaFile?.path === sourceFile.path,
+  };
+};
+
 export function useFullscreenImageAnnotation({
   annotationOptions,
   imagePath,
@@ -85,20 +112,11 @@ export function useFullscreenImageAnnotation({
   const hasCustomAdapter = Boolean(
     customLoadAnnotation && customSaveAnnotation
   );
-  const sourceFile =
-    plugin && sourcePath
-      ? plugin.app.vault.getAbstractFileByPath(sourcePath)
-      : null;
-  const hasNoteAdapter =
-    sourceFile instanceof TFile && sourceFile.extension === 'md';
-  const resolvedMediaFile =
-    plugin && sourceFile instanceof TFile && sourceFile.extension !== 'md'
-      ? resolveVaultMediaFile(plugin.app, imagePath, sourcePath)
-      : null;
-  const hasMediaAdapter =
-    sourceFile instanceof TFile &&
-    sourceFile.extension !== 'md' &&
-    resolvedMediaFile?.path === sourceFile.path;
+  const { hasNoteAdapter, hasMediaAdapter } = resolveVaultAnnotationAdapters(
+    plugin,
+    sourcePath,
+    imagePath
+  );
 
   const canAnnotate =
     annotationOptions?.enabled !== false &&

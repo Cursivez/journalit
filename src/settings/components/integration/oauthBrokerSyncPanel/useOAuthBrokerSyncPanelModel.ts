@@ -5,12 +5,7 @@ import { Notice } from 'obsidian';
 import { showConfirmationModal } from '../../../../components/shared/ConfirmationModal';
 import { t } from '../../../../lang/helpers';
 import type JournalitPlugin from '../../../../main';
-import {
-  isTradeProjectionAccountNotFoundError,
-  isTradeProjectionAccountRemapUnavailableError,
-  isTradeProjectionAccountRemapConflictError,
-  TradeProjectionClient,
-} from '../../../../services/tradeSync/TradeProjectionClient';
+import { TradeProjectionClient } from '../../../../services/tradeSync/TradeProjectionClient';
 import { TradeProjectionAccountRecoveryService } from '../../../../services/tradeSync/TradeProjectionAccountRecoveryService';
 import { getTradeProjectionVaultId } from '../../../../services/tradeSync/TradeProjectionAckQueue';
 import { refreshTradeProjectionCatalog } from '../../../../services/tradeSync/TradeProjectionCatalogRefresh';
@@ -28,30 +23,28 @@ import {
   connectionHasRunningJob,
   oauthBrokerConnectionSyncEligibility,
 } from '../../../../services/tradeSync/TradeSyncEligibility';
-import type {
-  TradeProjectionAccountInventoryItem,
-  TradeProjectionAccountVaultRemapResponse,
-  BrokerClientOperationContext,
-  TradeProjectionSyncResult,
-} from '../../../../services/tradeSync/types';
+import type { TradeProjectionAccountInventoryItem } from '../../../../services/tradeSync/types';
 import { logger } from '../../../../utils/logger';
-import { generateUUID } from '../../../../utils/uuid';
 import { recordBrokerPanelHandoff } from '../../../../services/tradeOperations/recordBrokerPanelHandoff';
 import { combineTradeProjectionSyncResults } from '../../../../services/tradeOperations/resultBuilders';
+import { useAuthRefreshRecovery } from '../brokerSyncKit/useAuthRefreshRecovery';
+import { useBrokerRefreshSequence } from '../brokerSyncKit/useBrokerRefreshSequence';
 import {
-  useAuthRefreshRecovery,
-  useBrokerRefreshSequence,
   useBrokerStatusFailureState,
   useBrokerStatusPolling,
+} from '../brokerSyncKit/useBrokerStatusPolling';
+import {
   useBrokerSyncAll,
-  useConnectionBusyState,
-  useMappingUpdateQueue,
-  withRateLimitRetry,
-  type BrokerDataOwnership,
   type BrokerSyncAllEligibility,
   type BrokerSyncAllSummary,
+} from '../brokerSyncKit/useBrokerSyncAll';
+import { useConnectionBusyState } from '../brokerSyncKit/useConnectionBusyState';
+import { useMappingUpdateQueue } from '../brokerSyncKit/useMappingUpdateQueue';
+import { withRateLimitRetry } from '../brokerSyncKit/rateLimitRetry';
+import {
+  type BrokerDataOwnership,
   type LocalAccountOption,
-} from '../brokerSyncKit';
+} from '../brokerSyncKit/types';
 import {
   isRateLimitActive,
   isTradeSyncRateLimitError,
@@ -66,26 +59,27 @@ import {
 } from './drafts';
 import {
   confirmOAuthBrokerAccountRemap,
-  collectPendingRewriteAccountUpdates,
-  deliverableOutstandingCountForAccounts,
-  expectedScheduledRewriteCount,
-  isNoOpTradeProjectionSyncResult,
-  mergePendingRewriteWork,
-  oauthBrokerRemapRestoreBindings,
-  planOAuthBrokerMappingWrites,
   reconcilePendingRewriteWork,
-  remapRestoreAccountIds,
-  removePendingRewriteAccounts,
-  type OAuthBrokerPendingRewriteAccount,
   type OAuthBrokerPendingRewriteWork,
 } from './accountMappingRemap';
+import {
+  applyCanonicalMappingChanges,
+  applyCanonicalRewriteSettlement,
+  prepareCanonicalPendingRewrite,
+  canonicalMappingFailureNotice,
+  noticeUniqueMappingFailures,
+  projectionResultHasIssues,
+} from './canonicalMappingWorkflow';
 import type {
   ConnectionUiState,
+  OAuthBrokerAccountConfiguration,
   OAuthBrokerConnection,
   OAuthBrokerConnectionAccount,
+  OAuthBrokerPanelSelection,
   OAuthBrokerStatusState,
   OAuthBrokerSyncPanelAdapter,
   OAuthBrokerSyncPanelModel,
+  OAuthBrokerSyncServiceOperations,
 } from './types';
 
 interface OAuthBrokerPanelState {
@@ -162,14 +156,22 @@ async function createOAuthLocalAccount(
   return { accountName, accounts };
 }
 
-function connectionCanSync(connection: OAuthBrokerConnection): boolean {
+function connectionCanSync(
+  connection: OAuthBrokerConnection,
+  websiteSelection: boolean
+): boolean {
   return (
-    connection.status === 'active' || connection.status === 'setup_required'
+    connection.status === 'active' ||
+    (!websiteSelection && connection.status === 'setup_required')
   );
 }
 
-function connectionRequiresWebsite(connection: OAuthBrokerConnection): boolean {
+function connectionRequiresWebsite(
+  connection: OAuthBrokerConnection,
+  websiteSelection: boolean
+): boolean {
   return (
+    (websiteSelection && connection.status === 'setup_required') ||
     connection.status === 'disconnected' ||
     connection.status === 'pending' ||
     connection.status === 'paused' ||
@@ -234,37 +236,6 @@ function reconcileMappingDirty(
   return next;
 }
 
-function projectionResultHasIssues(
-  result: TradeProjectionSyncResult | undefined
-): boolean {
-  return Boolean(
-    result &&
-    (result.partial || result.failedCount > 0 || result.pendingCount > 0)
-  );
-}
-
-function updateModeRemapReceipts(
-  receipts: TradeProjectionAccountVaultRemapResponse[]
-): TradeProjectionAccountVaultRemapResponse[] {
-  const updateReceipts: TradeProjectionAccountVaultRemapResponse[] = [];
-  for (const receipt of receipts) {
-    if (receipt.existingNotes === 'update') {
-      updateReceipts.push(receipt);
-    }
-  }
-  return updateReceipts;
-}
-
-function preservedConflictCountFromUpdateReceipts(
-  receipts: TradeProjectionAccountVaultRemapResponse[]
-): number {
-  let preservedConflictCount = 0;
-  for (const receipt of receipts) {
-    preservedConflictCount += receipt.preservedConflictCount;
-  }
-  return preservedConflictCount;
-}
-
 function remainingMappingDirty(
   currentDirty: Record<string, true>,
   persistedLocalAccountIds: Map<string, string>,
@@ -296,47 +267,21 @@ function oauthBrokerMappingFailureNotice(
   error: unknown,
   adapter: OAuthBrokerSyncPanelAdapter
 ): string {
-  if (isTradeSyncRateLimitError(error)) {
-    return tradeSyncRateLimitMessage(error.retryAt, error.action);
-  }
-  if (adapter.isClaimConflictError(error)) {
-    return t(adapter.copy.claimConflict);
-  }
-  if (isTradeProjectionAccountNotFoundError(error)) {
-    return t('trade-sync.oauth.remap.account-unavailable');
-  }
-  if (isTradeProjectionAccountRemapUnavailableError(error)) {
-    return t('trade-sync.oauth.remap.unavailable');
-  }
-  if (isTradeProjectionAccountRemapConflictError(error)) {
-    switch (error.conflict) {
-      case 'projection_restore_in_progress':
-        return t('trade-sync.oauth.remap.restore-in-progress');
-      case 'remap_operation_conflict':
-        return t('trade-sync.oauth.remap.operation-conflict');
-      case 'account_remap_busy':
-        return t('trade-sync.oauth.remap.account-busy');
-      default: {
-        const _exhaustive: never = error.conflict;
-        return _exhaustive;
-      }
-    }
-  }
-  return t('trade-sync.import.notice.sync-cloud-failed');
+  return canonicalMappingFailureNotice(error, (fallbackError) =>
+    adapter.accountSelection !== 'website' &&
+    adapter.isClaimConflictError(fallbackError)
+      ? t(adapter.copy.claimConflict)
+      : t('trade-sync.import.notice.sync-cloud-failed')
+  );
 }
 
 function noticeUniqueFailures(
   errors: unknown[],
   adapter: OAuthBrokerSyncPanelAdapter
 ): void {
-  const seen = new Set<string>();
-  for (const error of errors) {
-    logger.error(adapter.logSyncFailed, error);
-    const text = oauthBrokerMappingFailureNotice(error, adapter);
-    if (seen.has(text)) continue;
-    seen.add(text);
-    new Notice(text);
-  }
+  noticeUniqueMappingFailures(errors, adapter.logSyncFailed, (error) =>
+    oauthBrokerMappingFailureNotice(error, adapter)
+  );
 }
 
 function connectionSyncAllEligibility(
@@ -649,6 +594,7 @@ export function useOAuthBrokerSyncPanelModel(
 
   const discoverAccounts = useCallback(
     async (connectionId: string) => {
+      if (adapter.accountSelection === 'website') return;
       const dataOwnership = state.dataOwnership;
       if (!dataOwnership?.isCurrent()) {
         patchState(INITIAL_PANEL_STATE);
@@ -690,139 +636,6 @@ export function useOAuthBrokerSyncPanelModel(
       refresh,
       state.dataOwnership,
       state.vaultId,
-    ]
-  );
-
-  const persistMappings = useCallback(
-    async (
-      connection: OAuthBrokerConnection,
-      operation: BrokerClientOperationContext,
-      assertOwnership: () => void
-    ) => {
-      const vaultId = operation.vaultId;
-      const drafts = state.drafts;
-      const mappingDirty = state.mappingDirty;
-      const localAccounts = state.localAccounts;
-      assertOwnership();
-      const inventory = await backend.getAccountInventory(vaultId, {
-        interactiveEntitlement: false,
-      });
-      assertOwnership();
-      const plan = await planOAuthBrokerMappingWrites({
-        connection,
-        drafts,
-        mappingDirty,
-        localAccounts,
-        inventoryAccounts: inventory.accounts,
-        confirm: async ({ newAccountName }) => {
-          assertOwnership();
-          const decision = await confirmOAuthBrokerAccountRemap(
-            plugin.app,
-            newAccountName
-          );
-          if (decision !== 'cancel') {
-            assertOwnership();
-          }
-          return decision;
-        },
-        createOperationId: generateUUID,
-      });
-      if (plan.status === 'cancelled') {
-        return { status: 'cancelled' as const };
-      }
-      const writes = plan.writes;
-      assertOwnership();
-      const persistedLocalAccountIds = new Map<string, string>();
-      const remapReceiptsByAccountId = new Map<
-        string,
-        TradeProjectionAccountVaultRemapResponse
-      >();
-      const writePromises: Promise<void>[] = [];
-      for (const write of writes) {
-        assertOwnership();
-        writePromises.push(
-          mappingUpdates.enqueue(write.canonicalAccountId, async () => {
-            assertOwnership();
-            try {
-              if (write.kind === 'remap') {
-                const receipt = await backend.remapAccountVaultMapping(
-                  write.canonicalAccountId,
-                  {
-                    vaultId,
-                    localAccountId: write.localAccountId,
-                    localAccountName: write.localAccountName,
-                    existingNotes: write.existingNotes,
-                    clientOperationId: write.clientOperationId,
-                    pluginVersion: operation.pluginVersion,
-                    deviceId: operation.deviceId,
-                  }
-                );
-                remapReceiptsByAccountId.set(write.canonicalAccountId, receipt);
-              } else {
-                await backend.updateAccountVaultMapping(
-                  write.canonicalAccountId,
-                  {
-                    vaultId,
-                    localAccountId: write.localAccountId,
-                    localAccountName: write.localAccountName,
-                    mappingStatus: 'mapped',
-                    pluginVersion: operation.pluginVersion,
-                    clientOperationId: operation.clientOperationId,
-                  }
-                );
-              }
-              persistedLocalAccountIds.set(
-                write.canonicalAccountId,
-                write.localAccountId
-              );
-            } catch (error) {
-              if (isTradeSyncRateLimitError(error)) {
-                patchState((current) => ({
-                  mappingRetryAtByAccountId: {
-                    ...current.mappingRetryAtByAccountId,
-                    [write.canonicalAccountId]: error.retryAt,
-                  },
-                }));
-              }
-              throw error;
-            }
-          })
-        );
-      }
-      const settledWrites = await Promise.allSettled(writePromises);
-      assertOwnership();
-      const mappingFailures: Array<{
-        canonicalAccountId: string;
-        error: unknown;
-      }> = [];
-      for (let index = 0; index < writes.length; index += 1) {
-        const write = writes[index];
-        const result = settledWrites[index];
-        if (!write || result?.status !== 'rejected') continue;
-        mappingFailures.push({
-          canonicalAccountId: write.canonicalAccountId,
-          error: result.reason,
-        });
-      }
-      const remapReceipts: TradeProjectionAccountVaultRemapResponse[] = [];
-      for (const receipt of remapReceiptsByAccountId.values()) {
-        remapReceipts.push(receipt);
-      }
-      return {
-        status: 'applied' as const,
-        persistedLocalAccountIds,
-        remapReceipts,
-        mappingFailures,
-        inventoryAccounts: inventory.accounts,
-      };
-    },
-    [
-      backend,
-      mappingUpdates,
-      plugin,
-      state.drafts,
-      state.localAccounts,
-      state.mappingDirty,
     ]
   );
 
@@ -993,7 +806,12 @@ export function useOAuthBrokerSyncPanelModel(
       const connection = loadedStatus(state.statusState)?.connections.find(
         (candidate) => candidate.id === connectionId
       );
-      if (!connection || !connectionCanSync(connection)) return;
+      if (
+        !connection ||
+        !connectionCanSync(connection, adapter.accountSelection === 'website')
+      ) {
+        return;
+      }
       if (
         connection.accounts.some(
           (account) =>
@@ -1011,12 +829,21 @@ export function useOAuthBrokerSyncPanelModel(
         void refresh();
         return;
       }
-      const selections = connection.accounts.map((account) => {
-        const draft =
-          state.drafts[oauthBrokerAccountDraftKey(connectionId, account.id)];
-        return draft ? oauthBrokerAccountSelection(account, draft) : null;
-      });
-      if (selections.some((selection) => selection === null)) {
+      
+      const selections =
+        adapter.accountSelection === 'website'
+          ? []
+          : connection.accounts.map((account) => {
+              const draft =
+                state.drafts[
+                  oauthBrokerAccountDraftKey(connectionId, account.id)
+                ];
+              return draft ? oauthBrokerAccountSelection(account, draft) : null;
+            });
+      if (
+        adapter.accountSelection !== 'website' &&
+        selections.some((selection) => selection === null)
+      ) {
         new Notice(t(adapter.copy.customDateRequired));
         return;
       }
@@ -1051,191 +878,93 @@ export function useOAuthBrokerSyncPanelModel(
           }
         };
         assertOwnership();
-        const persistResult = await persistMappings(
+        const outcome = await applyCanonicalMappingChanges({
           connection,
+          drafts: state.drafts,
+          mappingDirty: state.mappingDirty,
+          localAccounts: state.localAccounts,
+          pendingWork: state.pendingRewriteWork,
           operation,
-          assertOwnership
-        );
-        if (persistResult.status === 'cancelled') {
+          backend,
+          enqueue: (canonicalAccountId, update) =>
+            mappingUpdates.enqueue(canonicalAccountId, update),
+          confirmRemap: async (newAccountName) => {
+            assertOwnership();
+            const decision = await confirmOAuthBrokerAccountRemap(
+              plugin.app,
+              newAccountName
+            );
+            if (decision !== 'cancel') {
+              assertOwnership();
+            }
+            return decision;
+          },
+          assertOwnership,
+          createProjectionOperation: async () =>
+            adapter.diagnostics.createProjectionOperation(operation.vaultId),
+          restore: (bindings, projectionOperation) =>
+            adapter.syncService.syncRemappedAccountProjections(
+              bindings,
+              projectionOperation
+            ),
+          onRateLimited: (canonicalAccountId, retryAt) => {
+            patchState((current) => ({
+              mappingRetryAtByAccountId: {
+                ...current.mappingRetryAtByAccountId,
+                [canonicalAccountId]: retryAt,
+              },
+            }));
+          },
+          onMappingsPersisted: (persisted) => {
+            const pending = prepareCanonicalPendingRewrite(
+              persisted,
+              pendingRewriteEpochRef.current,
+              {
+                vaultId: operation.vaultId,
+                ownerUserId: operation.ownerUserId,
+              }
+            );
+            pendingRewriteEpochRef.current = pending.epoch;
+            patchState((current) => ({
+              mappingDirty: remainingMappingDirty(
+                current.mappingDirty,
+                persisted.persistedLocalAccountIds,
+                loadedStatus(current.statusState)?.connections ?? [],
+                current.drafts
+              ),
+              pendingRewriteWork: pending.transition(
+                current.pendingRewriteWork
+              ),
+            }));
+          },
+          logLabel: adapter.logSyncFailed,
+        });
+        if (outcome.status === 'cancelled') {
           return;
         }
-        const persistedLocalAccountIds = persistResult.persistedLocalAccountIds;
-        const updateReceipts = updateModeRemapReceipts(
-          persistResult.remapReceipts
-        );
-        const preservedConflictCount =
-          preservedConflictCountFromUpdateReceipts(updateReceipts);
-        assertOwnership();
-        const mappingFailures = persistResult.mappingFailures;
-        const { pendingAccounts, completedAccountIds } =
-          collectPendingRewriteAccountUpdates({
-            updateReceipts,
-            pendingWork: state.pendingRewriteWork,
-            connectionId,
-            vaultId: operation.vaultId,
-            ownerUserId: operation.ownerUserId,
-            inventoryAccounts: persistResult.inventoryAccounts,
-            connectionCanonicalAccountIds: connection.accounts.map(
-              (account) => account.canonicalAccountId
-            ),
-          });
-        if (Object.keys(pendingAccounts).length > 0) {
-          pendingRewriteEpochRef.current += 1;
-        }
-        const pendingEpoch = pendingRewriteEpochRef.current;
-        patchState((current) => ({
-          mappingDirty: remainingMappingDirty(
-            current.mappingDirty,
-            persistedLocalAccountIds,
-            loadedStatus(current.statusState)?.connections ?? [],
-            current.drafts
-          ),
-          pendingRewriteWork: mergePendingRewriteWork({
-            current: removePendingRewriteAccounts(
+        const {
+          mappingFailures,
+          remapProjection,
+          restoreFailure,
+          rewriteUnfinished,
+          unfinishedCount,
+          preservedConflictCount,
+          remapHasIssues: remapProjectionHasIssues,
+          settlement,
+        } = outcome;
+        if (settlement) {
+          patchState((current) => ({
+            pendingRewriteWork: applyCanonicalRewriteSettlement(
               current.pendingRewriteWork,
-              completedAccountIds,
+              settlement,
               {
                 vaultId: operation.vaultId,
                 ownerUserId: operation.ownerUserId,
-              }
+              },
+              pendingRewriteEpochRef.current
             ),
-            vaultId: operation.vaultId,
-            ownerUserId: operation.ownerUserId,
-            epoch: pendingEpoch,
-            accounts: pendingAccounts,
-          }),
-        }));
-        let remapProjection: TradeProjectionSyncResult | undefined;
-        let restoreFailure: unknown;
-        const remapBindings = oauthBrokerRemapRestoreBindings({
-          connection,
-          provider: operation.provider,
-          remappedCanonicalAccountIds: remapRestoreAccountIds({
-            updateReceipts,
-            pendingWork: state.pendingRewriteWork,
-            connectionId,
-            vaultId: operation.vaultId,
-            ownerUserId: operation.ownerUserId,
-          }),
-          inventoryAccounts: persistResult.inventoryAccounts,
-        });
-        if (remapBindings.length > 0) {
-          try {
-            const projectionOperation =
-              await adapter.diagnostics.createProjectionOperation(
-                operation.vaultId
-              );
-            assertOwnership();
-            remapProjection =
-              await adapter.syncService.syncRemappedAccountProjections(
-                remapBindings,
-                projectionOperation
-              );
-            assertOwnership();
-          } catch (error) {
-            assertOwnership();
-            restoreFailure = error;
-          }
+          }));
         }
-        const expectedRewriteCount = expectedScheduledRewriteCount({
-          updateReceipts,
-          pendingWork: state.pendingRewriteWork,
-          connectionId,
-          vaultId: operation.vaultId,
-          ownerUserId: operation.ownerUserId,
-          inventoryAccounts: persistResult.inventoryAccounts,
-          connectionCanonicalAccountIds: connection.accounts.map(
-            (account) => account.canonicalAccountId
-          ),
-        });
-        let rewriteUnfinished = false;
-        let unfinishedCount = 0;
-        let latestInventoryAccounts:
-          | TradeProjectionAccountInventoryItem[]
-          | undefined;
-        if (restoreFailure) {
-          rewriteUnfinished = expectedRewriteCount > 0;
-          unfinishedCount = expectedRewriteCount;
-        } else if (expectedRewriteCount > 0) {
-          if (
-            !remapProjection ||
-            isNoOpTradeProjectionSyncResult(remapProjection)
-          ) {
-            rewriteUnfinished = true;
-            unfinishedCount = expectedRewriteCount;
-          } else if (projectionResultHasIssues(remapProjection)) {
-            rewriteUnfinished = true;
-            const issueCount =
-              remapProjection.pendingCount + remapProjection.failedCount;
-            unfinishedCount =
-              issueCount > 0 ? issueCount : expectedRewriteCount;
-          } else {
-            assertOwnership();
-            try {
-              const latestInventory = await backend.getAccountInventory(
-                operation.vaultId,
-                { interactiveEntitlement: false }
-              );
-              assertOwnership();
-              latestInventoryAccounts = latestInventory.accounts;
-              unfinishedCount = deliverableOutstandingCountForAccounts(
-                latestInventory.accounts,
-                remapBindings.map((binding) => binding.canonicalAccountId)
-              );
-              rewriteUnfinished = unfinishedCount > 0;
-            } catch (error) {
-              assertOwnership();
-              logger.error(adapter.logSyncFailed, error);
-              rewriteUnfinished = true;
-              unfinishedCount = expectedRewriteCount;
-            }
-          }
-        }
-        patchState((current) => {
-          if (rewriteUnfinished) {
-            if (!latestInventoryAccounts) return {};
-            const updates: Record<string, OAuthBrokerPendingRewriteAccount> =
-              {};
-            for (const binding of remapBindings) {
-              const remaining = deliverableOutstandingCountForAccounts(
-                latestInventoryAccounts,
-                [binding.canonicalAccountId]
-              );
-              if (remaining <= 0) continue;
-              updates[binding.canonicalAccountId] = {
-                connectionId,
-                scheduledCount: remaining,
-              };
-            }
-            if (Object.keys(updates).length === 0) return {};
-            return {
-              pendingRewriteWork: mergePendingRewriteWork({
-                current: current.pendingRewriteWork,
-                vaultId: operation.vaultId,
-                ownerUserId: operation.ownerUserId,
-                epoch:
-                  current.pendingRewriteWork?.epoch ??
-                  pendingRewriteEpochRef.current,
-                accounts: updates,
-              }),
-            };
-          }
-          return {
-            pendingRewriteWork: removePendingRewriteAccounts(
-              current.pendingRewriteWork,
-              remapBindings.map((binding) => binding.canonicalAccountId),
-              {
-                vaultId: operation.vaultId,
-                ownerUserId: operation.ownerUserId,
-              }
-            ),
-          };
-        });
-        const remapProjectionHasIssues =
-          projectionResultHasIssues(remapProjection) ||
-          preservedConflictCount > 0 ||
-          rewriteUnfinished ||
-          Boolean(restoreFailure);
         const validSelections = selections.filter(
           (selection) => selection !== null
         );
@@ -1244,17 +973,27 @@ export function useOAuthBrokerSyncPanelModel(
           !rewriteUnfinished &&
           !restoreFailure
         ) {
-          let configuration = null;
+          
+          
+          let configured: {
+            configuration: OAuthBrokerAccountConfiguration;
+            syncService: OAuthBrokerSyncServiceOperations;
+          } | null = null;
           if (
-            state.configurationDirty[connectionId] ||
-            connection.status === 'setup_required'
+            adapter.accountSelection !== 'website' &&
+            (state.configurationDirty[connectionId] ||
+              connection.status === 'setup_required')
           ) {
-            configuration = await adapter.client.configureAccounts(
-              connectionId,
-              validSelections,
-              operation
-            );
+            configured = {
+              configuration: await adapter.client.configureAccounts(
+                connectionId,
+                validSelections,
+                operation
+              ),
+              syncService: adapter.syncService,
+            };
           }
+          const configuredJob = configured?.configuration.job;
           assertOwnership();
           if (enabledAccounts.length === 0) {
             const message = remapProjectionHasIssues
@@ -1269,18 +1008,18 @@ export function useOAuthBrokerSyncPanelModel(
             }
           } else {
             const result =
-              configuration?.job && configuration.created
-                ? await adapter.syncService.projectAfterJob(
+              configured && configuredJob && configured.configuration.created
+                ? await configured.syncService.projectAfterJob(
                     connectionId,
-                    configuration.job.id,
+                    configuredJob.id,
                     operation
                   )
                 : await (async () => {
-                    if (configuration?.job) {
-                      await adapter.syncService.waitForCloudSyncTerminal(
+                    if (configured && configuredJob) {
+                      await configured.syncService.waitForCloudSyncTerminal(
                         connectionId,
-                        configuration.job.id,
-                        { ...operation, jobId: configuration.job.id }
+                        configuredJob.id,
+                        { ...operation, jobId: configuredJob.id }
                       );
                     }
                     return adapter.syncService.syncConnection(
@@ -1334,8 +1073,8 @@ export function useOAuthBrokerSyncPanelModel(
         }
         const failureErrors: unknown[] = [];
         if (restoreFailure) failureErrors.push(restoreFailure);
-        for (const failure of mappingFailures) {
-          failureErrors.push(failure.error);
+        for (const error of mappingFailures) {
+          failureErrors.push(error);
         }
         noticeUniqueFailures(failureErrors, adapter);
         await refresh();
@@ -1351,12 +1090,13 @@ export function useOAuthBrokerSyncPanelModel(
       adapter,
       backend,
       markConnectionBusy,
-      persistMappings,
+      mappingUpdates,
       plugin,
       refresh,
       state.configurationDirty,
       state.dataOwnership,
       state.drafts,
+      state.localAccounts,
       state.mappingDirty,
       state.mappingRetryAtByAccountId,
       state.pendingRewriteWork,
@@ -1383,9 +1123,13 @@ export function useOAuthBrokerSyncPanelModel(
     [state.configurationDirty, state.drafts, state.mappingDirty]
   );
   const completionNotice = useCallback(
-    ({ succeeded, total, hasIssues }: BrokerSyncAllSummary) =>
+    ({ succeeded, total, hasIssues, partlyFinished }: BrokerSyncAllSummary) =>
       t(
-        hasIssues ? adapter.copy.syncAllPartial : adapter.copy.syncAllComplete,
+        hasIssues
+          ? adapter.copy.syncAllPartial
+          : partlyFinished
+            ? adapter.copy.syncAllProviderPartial
+            : adapter.copy.syncAllComplete,
         { succeeded: String(succeeded), total: String(total) }
       ),
     [adapter]
@@ -1405,15 +1149,21 @@ export function useOAuthBrokerSyncPanelModel(
     }
   );
 
+  const websiteSelection = adapter.accountSelection === 'website';
   const connectionStates = Object.fromEntries(
     (loadedStatus(state.statusState)?.connections ?? []).map((connection) => {
       const latestDiscovery = connection.jobs.find(
         (job) => job.kind === 'discovery'
       );
-      const setupRequired = connection.status === 'setup_required';
+      
+      const setupRequired =
+        !websiteSelection && connection.status === 'setup_required';
       const uiState: ConnectionUiState = {
-        canSync: connectionCanSync(connection),
-        requiresWebsite: connectionRequiresWebsite(connection),
+        canSync: connectionCanSync(connection, websiteSelection),
+        requiresWebsite: connectionRequiresWebsite(
+          connection,
+          websiteSelection
+        ),
         setupRequired,
         discoveryRetryAvailable:
           setupRequired &&
@@ -1427,8 +1177,13 @@ export function useOAuthBrokerSyncPanelModel(
     })
   );
 
+  const selection: OAuthBrokerPanelSelection =
+    adapter.accountSelection === 'website'
+      ? { mode: 'website', copy: adapter.copy }
+      : { mode: 'plugin', copy: adapter.copy, discoverAccounts };
+
   return {
-    copy: adapter.copy,
+    selection,
     statusState: state.statusState,
     drafts: state.drafts,
     localAccounts: state.localAccounts,
@@ -1447,7 +1202,6 @@ export function useOAuthBrokerSyncPanelModel(
     refresh,
     syncConnection,
     syncAll,
-    discoverAccounts,
     createLocalAccount,
     restoreAccount,
     updateDraft,

@@ -133,17 +133,27 @@ export function planTradeRelocation(params: {
   );
   const dateChanged = oldDate ? !areDatesOnSameDay(oldDate, nextDate) : true;
   const tickerChanged = nextTicker !== oldTicker;
-  const hasRegularTradeFilename = /-T\d+\.md$/i.test(params.current.filePath);
-  const needsRegularTradePath =
-    !hasRegularTradeFilename ||
-    params.current.existingType === 'backtest-trade' ||
+  
+  
+  const targetKind = params.current.targetKind ?? 'trade';
+  const hasTargetKindFilename =
+    targetKind === 'backtest-trade'
+      ? /-B\d+\.md$/i.test(params.current.filePath)
+      : /-T\d+\.md$/i.test(params.current.filePath);
+  const existingKind =
+    params.current.existingType === 'backtest-trade'
+      ? 'backtest-trade'
+      : 'trade';
+  const needsNoteKindPath =
+    !hasTargetKindFilename ||
+    existingKind !== targetKind ||
     params.current.isMissedTrade === true;
 
   return {
-    required: dateChanged || tickerChanged || needsRegularTradePath,
+    required: dateChanged || tickerChanged || needsNoteKindPath,
     dateChanged,
     tickerChanged,
-    needsRegularTradePath,
+    needsNoteKindPath,
     normalizedEntryTime: nextDate,
     normalizedTicker: nextTicker,
   };

@@ -31,7 +31,7 @@ export interface InputProps
   
   size?: 'sm' | 'md' | 'lg';
   
-  variant?: 'default' | 'filled' | 'outlined';
+  variant?: 'default' | 'filled' | 'outlined' | 'modal';
   
   onChange?: (value: string) => void | Promise<void>;
   

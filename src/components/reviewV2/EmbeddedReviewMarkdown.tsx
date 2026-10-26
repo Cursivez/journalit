@@ -1,9 +1,14 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Component, MarkdownRenderer, TFile, type App } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import { openReviewWidgetFile } from './reviewWidgetNavigation';
+import { shareLoadingProps } from '../../services/share/brandedCapture';
+import {
+  preventMutation,
+  readOnlyTaskCheckboxProps,
+} from './readOnlyTaskCheckboxes';
 
-export function resolveEmbeddedReviewInternalLinkPath(
+function resolveEmbeddedReviewInternalLinkPath(
   app: { metadataCache: Pick<App['metadataCache'], 'getFirstLinkpathDest'> },
   target: EventTarget | null,
   sourcePath: string
@@ -20,15 +25,6 @@ export function resolveEmbeddedReviewInternalLinkPath(
   return linkedFile instanceof TFile ? linkedFile.path : null;
 }
 
-const preventMutation = (event: React.SyntheticEvent) => {
-  event.preventDefault();
-  event.stopPropagation();
-};
-
-const isNativeTaskCheckbox = (target: EventTarget | null): boolean =>
-  target instanceof HTMLInputElement &&
-  target.classList.contains('task-list-item-checkbox');
-
 
 export function EmbeddedReviewMarkdown({
   markdown,
@@ -40,9 +36,16 @@ export function EmbeddedReviewMarkdown({
   plugin: JournalitPlugin;
 }) {
   const ref = useRef<HTMLDivElement>(null);
+  const renderKey = `${sourcePath}\n${markdown}`;
+  
+  
+  
+  const [renderedKey, setRenderedKey] = useState<string | null>(null);
   useEffect(() => {
     const container = ref.current;
     if (!container) return;
+    let cancelled = false;
+    let frame = 0;
     container.empty();
     const component = new Component();
     component.load();
@@ -76,28 +79,29 @@ export function EmbeddedReviewMarkdown({
       container,
       sourcePath,
       component
-    );
-    return () => component.unload();
-  }, [markdown, plugin, sourcePath]);
+    ).finally(() => {
+      if (cancelled) return;
+      frame = container.win.requestAnimationFrame(() =>
+        setRenderedKey(renderKey)
+      );
+    });
+    return () => {
+      cancelled = true;
+      container.win.cancelAnimationFrame(frame);
+      component.unload();
+    };
+  }, [markdown, plugin, renderKey, sourcePath]);
 
   return (
     <div
       ref={ref}
       className="journalit-previous-drc-rendered-markdown"
       data-journalit-review-source={sourcePath}
+      {...(renderedKey === renderKey ? {} : shareLoadingProps)}
       onInputCapture={preventMutation}
       onChangeCapture={preventMutation}
       onSubmitCapture={preventMutation}
-      onClickCapture={(event) => {
-        if (isNativeTaskCheckbox(event.target)) preventMutation(event);
-      }}
-      onKeyDownCapture={(event) => {
-        if (
-          (event.key === ' ' || event.key === 'Enter') &&
-          isNativeTaskCheckbox(event.target)
-        )
-          preventMutation(event);
-      }}
+      {...readOnlyTaskCheckboxProps}
     />
   );
 }

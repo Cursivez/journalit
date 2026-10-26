@@ -21,6 +21,299 @@ export type TradeReviewCardField =
   | 'notes'
   | 'customFields';
 
+
+export type TradeReviewCustomFieldRef = `custom:${string}`;
+
+export type TradeReviewFieldId =
+  | TradeReviewCardField
+  | TradeReviewCustomFieldRef;
+
+
+export type TradeReviewFieldPlacement = 'cards' | 'visible' | 'collapsed';
+
+export type TradeReviewFieldLayout = Record<
+  TradeReviewFieldPlacement,
+  TradeReviewFieldId[]
+> & {
+  
+  hidden: TradeReviewCustomFieldRef[];
+};
+
+
+export type TradeReviewFieldGroup = TradeReviewFieldPlacement | 'hidden';
+
+export type TradeReviewFieldGroups = Record<
+  TradeReviewFieldGroup,
+  TradeReviewFieldId[]
+>;
+
+export const TRADE_REVIEW_FIELD_PLACEMENTS: readonly TradeReviewFieldPlacement[] =
+  ['cards', 'visible', 'collapsed'];
+
+
+export const TRADE_REVIEW_FIELD_PLACEMENT_CONFIG_KEYS = {
+  cards: 'primaryMetrics',
+  visible: 'classificationFields',
+  collapsed: 'moreContextFields',
+} as const satisfies Record<
+  TradeReviewFieldPlacement,
+  keyof TradeReviewWidgetConfig
+>;
+
+const TRADE_REVIEW_METRIC_FIELDS: readonly TradeReviewCardField[] = [
+  'entry',
+  'exit',
+  'duration',
+  'risk',
+  'positionSize',
+  'stopLoss',
+  'takeProfit',
+  'fees',
+  'commission',
+  'mae',
+  'mfe',
+];
+
+const TRADE_REVIEW_CHIP_FIELDS: readonly TradeReviewCardField[] = [
+  'account',
+  'setup',
+  'mistakes',
+  'tags',
+];
+
+
+export const TRADE_REVIEW_BUILT_IN_FIELDS: readonly TradeReviewCardField[] = [
+  ...TRADE_REVIEW_METRIC_FIELDS,
+  ...TRADE_REVIEW_CHIP_FIELDS,
+  'thesis',
+  'notes',
+  'customFields',
+];
+
+const TRADE_REVIEW_BUILT_IN_FIELD_SET: ReadonlySet<string> = new Set(
+  TRADE_REVIEW_BUILT_IN_FIELDS
+);
+const TRADE_REVIEW_METRIC_FIELD_SET: ReadonlySet<string> = new Set(
+  TRADE_REVIEW_METRIC_FIELDS
+);
+const TRADE_REVIEW_CUSTOM_FIELD_PREFIX = 'custom:';
+
+const DEFAULT_TRADE_REVIEW_FIELD_LAYOUT: Record<
+  TradeReviewFieldPlacement,
+  readonly TradeReviewFieldId[]
+> = {
+  cards: ['entry', 'exit', 'duration', 'risk'],
+  visible: ['account', 'setup', 'mistakes', 'tags'],
+  collapsed: ['thesis', 'notes', 'customFields'],
+};
+
+
+const LEGACY_FIELDS_PLACEMENT_SETS: Record<
+  TradeReviewFieldPlacement,
+  ReadonlySet<string>
+> = {
+  cards: TRADE_REVIEW_METRIC_FIELD_SET,
+  visible: new Set(TRADE_REVIEW_CHIP_FIELDS),
+  collapsed: new Set<string>([
+    'positionSize',
+    'stopLoss',
+    'takeProfit',
+    'fees',
+    'commission',
+    'mae',
+    'mfe',
+    'thesis',
+    'notes',
+    'customFields',
+  ]),
+};
+
+export function toTradeReviewCustomFieldRef(
+  customFieldId: string
+): TradeReviewCustomFieldRef {
+  return `${TRADE_REVIEW_CUSTOM_FIELD_PREFIX}${customFieldId}`;
+}
+
+export function isTradeReviewCustomFieldRef(
+  field: TradeReviewFieldId
+): field is TradeReviewCustomFieldRef {
+  return field.startsWith(TRADE_REVIEW_CUSTOM_FIELD_PREFIX);
+}
+
+export function getTradeReviewCustomFieldId(
+  field: TradeReviewCustomFieldRef
+): string {
+  return field.slice(TRADE_REVIEW_CUSTOM_FIELD_PREFIX.length);
+}
+
+function isTradeReviewFieldId(value: unknown): value is TradeReviewFieldId {
+  if (typeof value !== 'string') return false;
+  if (TRADE_REVIEW_BUILT_IN_FIELD_SET.has(value)) return true;
+  return (
+    value.startsWith(TRADE_REVIEW_CUSTOM_FIELD_PREFIX) &&
+    value.length > TRADE_REVIEW_CUSTOM_FIELD_PREFIX.length &&
+    !/[\s,]/.test(value)
+  );
+}
+
+
+export function canPlaceTradeReviewField(
+  field: TradeReviewFieldId,
+  placement: TradeReviewFieldPlacement
+): boolean {
+  if (placement !== 'cards') return true;
+  return (
+    TRADE_REVIEW_METRIC_FIELD_SET.has(field) ||
+    isTradeReviewCustomFieldRef(field)
+  );
+}
+
+
+export function parseTradeReviewFieldList(value: string): TradeReviewFieldId[] {
+  return value.split(',').flatMap((field): TradeReviewFieldId[] => {
+    const normalizedField = field
+      .trim()
+      .replaceAll('[', '')
+      .replaceAll(']', '')
+      .replaceAll('"', '')
+      .replaceAll("'", '');
+    return isTradeReviewFieldId(normalizedField) ? [normalizedField] : [];
+  });
+}
+
+
+export function resolveTradeReviewFieldLayout(
+  config: TradeReviewWidgetConfig
+): TradeReviewFieldLayout {
+  const placed = new Set<TradeReviewFieldId>();
+  const resolvePlacement = (
+    placement: TradeReviewFieldPlacement
+  ): TradeReviewFieldId[] => {
+    const configured: unknown =
+      config[TRADE_REVIEW_FIELD_PLACEMENT_CONFIG_KEYS[placement]];
+    const source: readonly unknown[] = Array.isArray(configured)
+      ? configured
+      : Array.isArray(config.fields)
+        ? config.fields.filter((field) =>
+            LEGACY_FIELDS_PLACEMENT_SETS[placement].has(field)
+          )
+        : DEFAULT_TRADE_REVIEW_FIELD_LAYOUT[placement];
+    const fields: TradeReviewFieldId[] = [];
+    for (const field of source) {
+      if (
+        !isTradeReviewFieldId(field) ||
+        placed.has(field) ||
+        !canPlaceTradeReviewField(field, placement)
+      ) {
+        continue;
+      }
+      placed.add(field);
+      fields.push(field);
+    }
+    return fields;
+  };
+  const cards = resolvePlacement('cards');
+  const visible = resolvePlacement('visible');
+  const collapsed = resolvePlacement('collapsed');
+  const hidden: TradeReviewCustomFieldRef[] = [];
+  for (const field of Array.isArray(config.hiddenFields)
+    ? config.hiddenFields
+    : []) {
+    if (
+      isTradeReviewFieldId(field) &&
+      isTradeReviewCustomFieldRef(field) &&
+      !placed.has(field)
+    ) {
+      placed.add(field);
+      hidden.push(field);
+    }
+  }
+  return { cards, visible, collapsed, hidden };
+}
+
+
+export function expandTradeReviewFieldGroups(
+  layout: TradeReviewFieldLayout,
+  customFieldIds: readonly string[]
+): TradeReviewFieldGroups {
+  const groups: TradeReviewFieldGroups = {
+    cards: [...layout.cards],
+    visible: [...layout.visible],
+    collapsed: [...layout.collapsed],
+    hidden: [...layout.hidden],
+  };
+  const grouped = new Set<TradeReviewFieldId>([
+    ...groups.cards,
+    ...groups.visible,
+    ...groups.collapsed,
+    ...groups.hidden,
+  ]);
+  const unassignedCustomFields = customFieldIds.flatMap((id) => {
+    const field = toTradeReviewCustomFieldRef(id);
+    return grouped.has(field) ? [] : [field];
+  });
+  const catchAllPlacement = TRADE_REVIEW_FIELD_PLACEMENTS.find((placement) =>
+    groups[placement].includes('customFields')
+  );
+  if (catchAllPlacement) {
+    const catchAll = groups[catchAllPlacement];
+    catchAll.splice(
+      catchAll.indexOf('customFields'),
+      0,
+      ...unassignedCustomFields
+    );
+  } else {
+    groups.hidden.push(...unassignedCustomFields);
+  }
+  for (const field of TRADE_REVIEW_BUILT_IN_FIELDS) {
+    if (!grouped.has(field)) groups.hidden.push(field);
+  }
+  return groups;
+}
+
+export function getTradeReviewBuiltInFieldLabel(
+  field: TradeReviewCardField
+): string {
+  switch (field) {
+    case 'entry':
+      return t('widget.trade-review.field.entry');
+    case 'exit':
+      return t('widget.trade-review.field.exit');
+    case 'duration':
+      return t('widget.trade-review.field.duration');
+    case 'risk':
+      return t('widget.trade-review.field.risk');
+    case 'positionSize':
+      return t('widget.trade-review.field.position-size');
+    case 'stopLoss':
+      return t('widget.trade-review.field.stop-loss');
+    case 'takeProfit':
+      return t('widget.trade-review.field.take-profit');
+    case 'fees':
+      return t('widget.trade-review.field.fees');
+    case 'commission':
+      return t('widget.trade-review.field.commission');
+    case 'mae':
+      return t('widget.trade-review.field.mae');
+    case 'mfe':
+      return t('widget.trade-review.field.mfe');
+    case 'account':
+      return t('widget.trade-review.field.account');
+    case 'setup':
+      return t('widget.trade-review.field.setup');
+    case 'mistakes':
+      return t('widget.trade-review.field.mistakes');
+    case 'tags':
+      return t('widget.trade-review.field.tags');
+    case 'thesis':
+      return t('widget.trade-review.field.thesis');
+    case 'notes':
+      return t('widget.trade-review.field.notes');
+    case 'customFields':
+      return t('widget.trade-review.field.custom-fields');
+  }
+}
+
 type TradeReviewQuestionType = 'text' | 'choice';
 
 export interface TradeReviewChoiceOption {
@@ -49,11 +342,19 @@ export interface TradeReviewWidgetConfig {
   defaultExpanded?: boolean;
   showReviewedTrades?: boolean;
   showOpenTrades?: boolean;
-  fields?: TradeReviewCardField[];
-  primaryMetrics?: TradeReviewCardField[];
-  classificationFields?: TradeReviewCardField[];
-  moreContextFields?: TradeReviewCardField[];
+  
+  fields?: TradeReviewFieldId[];
+  
+  primaryMetrics?: TradeReviewFieldId[];
+  
+  classificationFields?: TradeReviewFieldId[];
+  
+  moreContextFields?: TradeReviewFieldId[];
+  
+  hiddenFields?: TradeReviewCustomFieldRef[];
   showImages?: boolean;
+  
+  notesSections?: string[];
   winQuestions?: TradeReviewQuestionConfig[];
   lossQuestions?: TradeReviewQuestionConfig[];
   breakevenQuestions?: TradeReviewQuestionConfig[];
@@ -622,4 +923,30 @@ export function parseTradeReviewQuestions(
       return [{ id, label, placeholder: placeholder || undefined }];
     });
   return questions.length > 0 ? questions : undefined;
+}
+
+function toNotesSectionHeadings(value: unknown): string[] | undefined {
+  if (!Array.isArray(value)) return undefined;
+  const headings = value.filter(
+    (item): item is string => typeof item === 'string' && item.trim() !== ''
+  );
+  return headings.length > 0 ? headings : undefined;
+}
+
+
+export function serializeTradeReviewNotesSections(
+  value: unknown
+): string | undefined {
+  const headings = toNotesSectionHeadings(value);
+  return headings ? JSON.stringify(headings) : undefined;
+}
+
+export function parseTradeReviewNotesSections(
+  value: string
+): string[] | undefined {
+  try {
+    return toNotesSectionHeadings(JSON.parse(value));
+  } catch {
+    return undefined;
+  }
 }

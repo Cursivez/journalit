@@ -11,13 +11,50 @@ import {
 
 
 type PluralBaseKey =
+  | 'agent-requests.changes'
+  | 'actions.review.answers'
+  | 'actions.review.goals'
+  | 'actions.review.checklist'
+  | 'actions.review.session-log.add'
+  | 'actions.review.images.add'
+  | 'actions.review.images.remove'
+  | 'actions.images.annotate'
+  | 'actions.review.key-events.add'
+  | 'actions.review.day-trade-fields.set'
+  | 'actions.custom-field.delete'
+  | 'actions.options.rename'
+  | 'actions.options.rename-account-type'
+  | 'actions.options.merge'
+  | 'actions.options.delete'
+  | 'actions.configuration.delete-question'
+  | 'actions.configuration.delete-question-workflows'
+  | 'actions.trade.entries'
+  | 'actions.trade.exits'
+  | 'actions.session-log-tag.delete'
+  | 'actions.account.rename-trades'
+  | 'actions.prop-challenge.configure.create'
+  | 'actions.prop-challenge.configure.update'
+  | 'settings.customization.custom-fields.convert.unreadable'
+  | 'settings.customization.custom-fields.convert.conflict'
+  | 'settings.customization.custom-fields.convert.summary-rate'
+  | 'settings.customization.custom-fields.convert.summary-done'
+  | 'settings.customization.custom-fields.convert.summary-skip'
+  | 'settings.customization.custom-fields.convert.submit'
+  | 'settings.customization.custom-fields.convert.done'
+  | 'settings.customization.custom-fields.convert.changed'
+  | 'settings.customization.custom-fields.convert.failed'
+  | 'settings.customization.custom-fields.convert.remove-desc'
+  | 'settings.customization.custom-fields.convert.remove-keeps'
+  | 'settings.customization.custom-fields.convert.remove-confirm'
   | 'account.merge.phase.broker-accounts'
   | 'account.merge.review.phase-count'
   | 'validation.basic-tab-errors'
+  | 'widget.day-trade-fields.apply'
+  | 'widget.day-trade-fields.notice-updated'
+  | 'widget.day-trade-fields.notice-failed'
   | 'validation.details-tab-errors'
   | 'validation.advanced-tab-errors'
   | 'form.manual-import-nudge.title'
-  | 'notice.csv-symbol-mappings-created'
   | 'notice.trades-deleted'
   | 'notice.trades-duplicated'
   | 'tradelog.batch.duplicate-skipped'
@@ -27,9 +64,7 @@ type PluralBaseKey =
   | 'account.header.warning.trades-before-creation'
   | 'account.header.warning.trades-before-phase'
   | 'csv.results.success'
-  | 'csv.results.updated'
   | 'csv.results.skipped'
-  | 'csv.results.more-trades'
   | 'trade-import.pro-gate.title'
   | 'trade-import.preview.found'
   | 'trade-import.action.activate-pro'
@@ -49,13 +84,9 @@ type PluralBaseKey =
   | 'home.widget.streak.missed-weeks'
   | 'home.widget.streak.missed-months'
   | 'view.economic-calendar.import-count'
+  | 'widget.key-events.event-count'
   | 'trade-handoff.trade-count'
   | 'trade-handoff.action.view-trades-count';
-
-const localeAliases = {
-  pt: 'pt-BR',
-  'zh-CN': 'zh',
-} as const;
 
 type SupportedLanguageCode =
   | 'en'
@@ -64,13 +95,7 @@ type SupportedLanguageCode =
   | 'fr'
   | 'vi'
   | 'hi'
-  | 'pt-BR'
-  | 'pt'
   | 'zh'
-  | 'zh-CN'
-  | 'zh-TW'
-  | 'ja'
-  | 'ko'
   | 'ru'
   | 'it'
   | 'ta'
@@ -83,13 +108,7 @@ const supportedLanguageCodes = new Set<string>([
   'fr',
   'vi',
   'hi',
-  'pt-BR',
-  'pt',
   'zh',
-  'zh-CN',
-  'zh-TW',
-  'ja',
-  'ko',
   'ru',
   'it',
   'ta',
@@ -104,25 +123,26 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
+function isLocaleRecord(
+  value: Record<string, unknown>
+): value is Partial<Lang> {
+  for (const key in value) {
+    if (typeof value[key] !== 'string') return false;
+  }
+  return true;
+}
+
 function parseEnglishLocale(): Partial<Lang> {
   const parsed = decodeCompressedJson(englishPack);
-  const locale: Partial<Lang> = {};
   if (!isRecord(parsed)) {
-    return locale;
+    return {};
   }
-
-  for (const [key, value] of Object.entries(parsed)) {
-    if (typeof value === 'string') {
-      Object.defineProperty(locale, key, {
-        value,
-        enumerable: true,
-        configurable: true,
-        writable: true,
-      });
-    }
+  
+  
+  for (const key of Object.keys(parsed)) {
+    if (typeof parsed[key] !== 'string') delete parsed[key];
   }
-
-  return locale;
+  return isLocaleRecord(parsed) ? parsed : {};
 }
 
 function parseLocalePack(
@@ -138,8 +158,7 @@ function parseLocalePack(
     return null;
   }
   const values = parsedValues.filter(
-    (value): value is string | null | 0 =>
-      value === null || value === 0 || typeof value === 'string'
+    (value): value is string | 0 => value === 0 || typeof value === 'string'
   );
   const englishKeys = getAllTranslationKeys();
   if (values.length !== localeBuildInfo.keyCount) {
@@ -152,9 +171,7 @@ function parseLocalePack(
   
   for (let i = 0; i < values.length; i++) {
     const value = values[i];
-    if (value !== null) {
-      locale[englishKeys[i]] = value === 0 ? en[englishKeys[i]] : value;
-    }
+    locale[englishKeys[i]] = value === 0 ? en[englishKeys[i]] : value;
   }
 
   return locale;
@@ -205,21 +222,9 @@ function normalizeLanguageCode(
     return canonicalLang;
   }
 
-  const [baseLanguage, ...subtags] = canonicalLang.split('-');
-
-  if (baseLanguage === 'zh') {
-    const lowerSubtags = subtags.map((subtag) => subtag.toLowerCase());
-    const isTraditionalChinese = lowerSubtags.some((subtag) =>
-      ['tw', 'hk', 'mo', 'hant'].includes(subtag)
-    );
-
-    return isTraditionalChinese ? 'zh-TW' : 'zh';
-  }
-
-  if (baseLanguage === 'pt') {
-    return 'pt';
-  }
-
+  
+  
+  const [baseLanguage] = canonicalLang.split('-');
   if (isSupportedLanguageCode(baseLanguage)) {
     return baseLanguage;
   }
@@ -295,19 +300,12 @@ function getLocale(): Partial<Lang> {
     return getEnglishLocale();
   }
 
-  const compressedLocaleCode =
-    lang === 'pt'
-      ? localeAliases.pt
-      : lang === 'zh-CN'
-        ? localeAliases['zh-CN']
-        : lang;
-
   try {
-    if (!(compressedLocaleCode in localePacks)) {
+    if (!(lang in localePacks)) {
       return getEnglishLocale();
     }
 
-    const locale = parseLocalePack(compressedLocaleCode);
+    const locale = parseLocalePack(lang);
     if (!locale) {
       return getEnglishLocale();
     }

@@ -1,14 +1,14 @@
 import type { EntityShortcut, JournalitSettings } from '../settings/types';
 import { DEFAULT_SETTINGS } from '../settings/types';
 import { migrateRetiredSettings } from '../settings/settingsSchema';
+import { normalizeExpectancyBenchmark } from '../settings/expectancyBenchmark';
 
 export type JournalSettingsContext = 'real' | 'sample';
 
-export const SAMPLE_SETTINGS_SCHEMA_VERSION = 1;
+const SAMPLE_SETTINGS_SCHEMA_VERSION = 1;
 
 const JOURNAL_SCOPED_KEYS = new Set([
   'trade',
-  'tradeLog',
   'sessionMode',
   'reviewV2',
   'templates',
@@ -20,7 +20,6 @@ const JOURNAL_SCOPED_KEYS = new Set([
   'reviews',
   'dashboard',
   'home',
-  'viewFilters',
   'customOptions',
   'customTradeFields',
   'customFieldOptions',
@@ -110,6 +109,8 @@ function normalizeSettingValue(
   fallback: unknown,
   path: string
 ): unknown {
+  if (path === 'dashboard.expectancyBenchmarkR')
+    return normalizeExpectancyBenchmark(value);
   if (fallback === undefined) return structuredClone(value);
   if (fallback === null) return null;
   if (Array.isArray(fallback)) {

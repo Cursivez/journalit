@@ -76,7 +76,7 @@ const isRoundedPrecisionEquivalent = (
   );
 };
 
-export const formatNumberInputValue = (
+const formatNumberInputValue = (
   value: number,
   precision: number,
   allowDecimal: boolean

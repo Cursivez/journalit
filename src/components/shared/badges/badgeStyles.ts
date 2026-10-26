@@ -30,13 +30,13 @@ export const badgeStyles = `
 }
 
 .journalit-count-badge--setups {
-  background: rgba(33, 150, 243, 0.15);
-  color: var(--color-info);
-  border: 1px solid rgba(33, 150, 243, 0.3);
+  background: rgba(var(--color-blue-rgb), 0.15);
+  color: var(--color-blue);
+  border: 1px solid rgba(var(--color-blue-rgb), 0.3);
 }
 
 .journalit-count-badge--setups:hover {
-  background: rgba(33, 150, 243, 0.25);
+  background: rgba(var(--color-blue-rgb), 0.25);
 }
 
 
@@ -55,20 +55,6 @@ export const badgeStyles = `
 
 .trade-no-data {
   color: var(--text-muted);
-}
-
-
-.journalit-tooltip {
-  background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  padding: 8px 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  max-width: 250px;
-  min-width: 120px;
-  font-size: 13px;
-  color: var(--text-normal);
-  z-index: 9999;
 }
 
 

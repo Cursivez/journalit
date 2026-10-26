@@ -37,6 +37,8 @@ export interface TradeOperationResult {
   accountNames: string[];
   brokerLabels: string[];
   partial: boolean;
+  
+  providerPartialOnly: boolean;
 }
 
 export interface TradeOperationScope {

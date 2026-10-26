@@ -1,6 +1,6 @@
 
 
-import React, { useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import { AUMChartProps, AUMChartDataPoint } from './types';
 import { EmptyState } from '../../shared/EmptyState';
 import { t } from '../../../lang/helpers';
@@ -22,6 +22,16 @@ import { CurrencyCode } from '../../../utils/currencyConfig';
 import { ChartBase } from '../../charts/ChartBase';
 import { RechartsPortalTooltip } from '../../charts/RechartsPortalTooltip';
 import { generateNiceAxis } from '../../../utils/chartUtils';
+import { skipVerticalGridCoordinates } from '../../charts/chartGrid';
+import {
+  SeriesGlowFilter,
+  SeriesShadowFilter,
+  SignedStrokeGradientStops,
+} from '../../charts/SignedSeriesDefs';
+import {
+  shouldAnimateSeries,
+  useChartAnimationActive,
+} from '../../charts/chartAnimation';
 
 const POSITIVE_AUM_COLOR = 'var(--chart-positive, #43a047)';
 const NEGATIVE_AUM_COLOR = 'var(--chart-negative, #e53935)';
@@ -48,6 +58,120 @@ interface AUMDotProps extends Omit<DotItemDotProps, 'payload'> {
 }
 
 const asAUMDotProps = (props: DotItemDotProps): AUMDotProps => props;
+
+const renderAUMDot = (props: DotItemDotProps) => {
+  const { cx, cy, payload } = asAUMDotProps(props);
+  if (!payload || cx == null || cy == null)
+    return <circle cx={0} cy={0} r={0} opacity={0} />;
+
+  
+  if (payload.accountCreated) {
+    return (
+      <g>
+        <line
+          x1={cx}
+          y1={cy - 15}
+          x2={cx}
+          y2={cy + 15}
+          stroke="var(--text-success)"
+          strokeWidth="2"
+        />
+        <circle
+          cx={cx}
+          cy={cy}
+          r="5"
+          fill="var(--background-primary)"
+          stroke="var(--text-success)"
+          strokeWidth="2"
+        />
+      </g>
+    );
+  }
+
+  
+  if (payload.accountArchived) {
+    return (
+      <g>
+        <line
+          x1={cx}
+          y1={cy - 15}
+          x2={cx}
+          y2={cy + 15}
+          stroke="var(--text-error)"
+          strokeWidth="2"
+        />
+        <circle
+          cx={cx}
+          cy={cy}
+          r="5"
+          fill="var(--background-primary)"
+          stroke="var(--text-error)"
+          strokeWidth="2"
+        />
+      </g>
+    );
+  }
+
+  
+  if (payload.isDeposit) {
+    return (
+      <g>
+        <line
+          x1={cx}
+          y1={cy - 15}
+          x2={cx}
+          y2={cy + 15}
+          stroke="var(--interactive-accent)"
+          strokeWidth="2"
+        />
+        <circle
+          cx={cx}
+          cy={cy}
+          r="5"
+          fill="var(--background-primary)"
+          stroke="var(--interactive-accent)"
+          strokeWidth="2"
+        />
+      </g>
+    );
+  }
+
+  
+  if (payload.isWithdrawal) {
+    return (
+      <g>
+        <line
+          x1={cx}
+          y1={cy - 15}
+          x2={cx}
+          y2={cy + 15}
+          stroke="var(--text-warning, gold)"
+          strokeWidth="2"
+        />
+        <circle
+          cx={cx}
+          cy={cy}
+          r="5"
+          fill="var(--background-primary)"
+          stroke="var(--text-warning, gold)"
+          strokeWidth="2"
+        />
+      </g>
+    );
+  }
+
+  
+  return (
+    <circle
+      cx={cx}
+      cy={cy}
+      r="3"
+      fill="var(--text-muted)"
+      stroke="var(--background-primary)"
+      strokeWidth="1"
+    />
+  );
+};
 
 
 interface CustomTooltipContentProps extends TooltipProps<number, string> {
@@ -89,14 +213,83 @@ const asAUMTooltipPayload = (
 ): CustomTooltipContentProps['payload'] =>
   payload?.filter(isAUMTooltipPayloadEntry);
 
+type AUMTooltipPoint = NonNullable<
+  CustomTooltipContentProps['payload']
+>[number]['payload'];
+
+const AUMCashflowRow: React.FC<{
+  direction: 'deposit' | 'withdrawal';
+  amount: number | undefined;
+  currency: CurrencyCode;
+}> = ({ direction, amount, currency }) => {
+  const { formatValue, shouldMask } = useDisplayFormatter();
+  const isMoneyMasked = shouldMask('money');
+  const label = direction === 'deposit' ? 'Deposit: ' : 'Withdrawal: ';
+  return (
+    <div
+      className={`journalit-account-chart-tooltip-row ${isMoneyMasked ? 'journalit-account-chart-tooltip-row--neutral' : `journalit-account-chart-tooltip-row--${direction}`}`}
+    >
+      {isMoneyMasked ? 'Cashflow: ' : label}
+      {formatValue({
+        kind: 'money',
+        value: amount,
+        currencyCode: currency,
+        notation: 'compact',
+      })}
+    </div>
+  );
+};
+
+const hasAUMTooltipEvents = (data: AUMTooltipPoint): boolean =>
+  Boolean(
+    data.isDeposit ||
+    data.isWithdrawal ||
+    data.accountCreated ||
+    data.accountArchived
+  );
+
+const AUMTooltipEvents: React.FC<{
+  data: AUMTooltipPoint;
+  currency: CurrencyCode;
+}> = ({ data, currency }) => (
+  <div className="journalit-account-chart-tooltip-section">
+    {data.isDeposit && (
+      <AUMCashflowRow
+        direction="deposit"
+        amount={data.depositAmount}
+        currency={currency}
+      />
+    )}
+
+    {data.isWithdrawal && (
+      <AUMCashflowRow
+        direction="withdrawal"
+        amount={data.withdrawalAmount}
+        currency={currency}
+      />
+    )}
+
+    {data.accountCreated && (
+      <div className="journalit-account-chart-tooltip-row journalit-account-chart-tooltip-row--positive">
+        {t('account.chart.event.added')}
+      </div>
+    )}
+
+    {data.accountArchived && (
+      <div className="journalit-account-chart-tooltip-row journalit-account-chart-tooltip-row--negative">
+        {t('account.chart.event.archived')}
+      </div>
+    )}
+  </div>
+);
+
 const CustomTooltip: React.FC<CustomTooltipContentProps> = ({
   active,
   payload,
   currency,
   displayRMultiples: _displayRMultiples,
 }) => {
-  const { formatValue, shouldMask } = useDisplayFormatter();
-  const isMoneyMasked = shouldMask('money');
+  const { formatValue } = useDisplayFormatter();
 
   if (!active || !payload || payload.length === 0) return null;
 
@@ -116,51 +309,8 @@ const CustomTooltip: React.FC<CustomTooltipContentProps> = ({
       </div>
 
       
-      {(data.isDeposit ||
-        data.isWithdrawal ||
-        data.accountCreated ||
-        data.accountArchived) && (
-        <div className="journalit-account-chart-tooltip-section">
-          {data.isDeposit && (
-            <div
-              className={`journalit-account-chart-tooltip-row ${isMoneyMasked ? 'journalit-account-chart-tooltip-row--neutral' : 'journalit-account-chart-tooltip-row--deposit'}`}
-            >
-              {isMoneyMasked ? 'Cashflow: ' : 'Deposit: '}
-              {formatValue({
-                kind: 'money',
-                value: data.depositAmount,
-                currencyCode: currency,
-                notation: 'compact',
-              })}
-            </div>
-          )}
-
-          {data.isWithdrawal && (
-            <div
-              className={`journalit-account-chart-tooltip-row ${isMoneyMasked ? 'journalit-account-chart-tooltip-row--neutral' : 'journalit-account-chart-tooltip-row--withdrawal'}`}
-            >
-              {isMoneyMasked ? 'Cashflow: ' : 'Withdrawal: '}
-              {formatValue({
-                kind: 'money',
-                value: data.withdrawalAmount,
-                currencyCode: currency,
-                notation: 'compact',
-              })}
-            </div>
-          )}
-
-          {data.accountCreated && (
-            <div className="journalit-account-chart-tooltip-row journalit-account-chart-tooltip-row--positive">
-              {t('account.chart.event.added')}
-            </div>
-          )}
-
-          {data.accountArchived && (
-            <div className="journalit-account-chart-tooltip-row journalit-account-chart-tooltip-row--negative">
-              {t('account.chart.event.archived')}
-            </div>
-          )}
-        </div>
+      {hasAUMTooltipEvents(data) && (
+        <AUMTooltipEvents data={data} currency={currency} />
       )}
     </div>
   );
@@ -215,92 +365,23 @@ const AUMChartDefs: React.FC<{
       x2="0"
       y2="1"
     >
-      {strokeTransitionOffset <= 0.1 ? (
-        <>
-          <stop offset="0%" stopColor={negativeColor} />
-          <stop offset="100%" stopColor={negativeColor} />
-        </>
-      ) : strokeTransitionOffset >= 99.9 ? (
-        <>
-          <stop offset="0%" stopColor={positiveColor} />
-          <stop offset="100%" stopColor={positiveColor} />
-        </>
-      ) : (
-        <>
-          <stop offset="0%" stopColor={positiveColor} />
-          <stop
-            offset={`${Math.max(0.1, strokeTransitionOffset - 0.1)}%`}
-            stopColor={positiveColor}
-          />
-          <stop
-            offset={`${Math.min(99.9, strokeTransitionOffset + 0.1)}%`}
-            stopColor={negativeColor}
-          />
-          <stop offset="100%" stopColor={negativeColor} />
-        </>
-      )}
+      <SignedStrokeGradientStops
+        transitionOffset={strokeTransitionOffset}
+        positiveColor={positiveColor}
+        negativeColor={negativeColor}
+      />
     </linearGradient>
 
-    <filter id="aumShadow" height="120%">
-      <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
-    </filter>
+    <SeriesShadowFilter id="aumShadow" />
 
-    <filter id="aumGlow" height="130%">
-      <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
-      <feColorMatrix
-        in="blur"
-        mode="matrix"
-        values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
-        result="glow"
-      />
-      <feComposite in="SourceGraphic" in2="glow" operator="over" />
-    </filter>
+    <SeriesGlowFilter id="aumGlow" />
   </defs>
 );
 
-
-export const AUMChart: React.FC<AUMChartProps> = ({
-  data,
-  height = '100%',
-  plugin: _plugin,
-}) => {
-  const chartRef = React.useRef<HTMLDivElement>(null);
-  const chartIdRef = React.useRef(`aum-chart-${++aumChartIdCounter}`);
-  const chartId = chartIdRef.current;
-  const { currency } = useCurrency();
-  const { formatValue, shouldMask } = useDisplayFormatter();
-  const isBalanceMasked = shouldMask('balance');
-  const positiveColor = isBalanceMasked
-    ? 'var(--text-muted)'
-    : POSITIVE_AUM_COLOR;
-  const negativeColor = isBalanceMasked
-    ? 'var(--text-muted)'
-    : NEGATIVE_AUM_COLOR;
-
-  const dataSignature = data
-    .map((point) => `${point.date}:${point.balance}`)
-    .join('|');
-  const [dotsReadyForSignature, setDotsReadyForSignature] = useState('');
-  const showDots = dotsReadyForSignature === dataSignature;
-
-  
-  if (!data || data.length === 0) {
-    return (
-      <div
-        className="journalit-account-chart-empty"
-        style={cssVars({
-          '--account-chart-empty-height':
-            typeof height === 'number' ? `${height}px` : height,
-        })}
-      >
-        <EmptyState
-          message={t('account.aum-chart.empty')}
-          subMessage={t('account.aum-chart.empty-sub')}
-        />
-      </div>
-    );
-  }
-
+function buildAUMSeries(
+  data: readonly AUMChartDataPoint[],
+  isBalanceMasked: boolean
+) {
   const chartData = isBalanceMasked
     ? data.map((point) => ({ ...point, displayBalance: 1 }))
     : data.map((point) => ({ ...point, displayBalance: point.balance }));
@@ -342,6 +423,81 @@ export const AUMChart: React.FC<AUMChartProps> = ({
             )
           );
 
+  return {
+    chartData,
+    baselineValue,
+    domain,
+    ticks,
+    aumTransitionOffset,
+    strokeTransitionOffset,
+  };
+}
+
+
+export const AUMChart: React.FC<AUMChartProps> = ({
+  data,
+  height = '100%',
+  plugin: _plugin,
+}) => {
+  const chartRef = React.useRef<HTMLDivElement>(null);
+  const chartIdRef = React.useRef(`aum-chart-${++aumChartIdCounter}`);
+  const chartId = chartIdRef.current;
+  const { currency } = useCurrency();
+  const { formatValue, shouldMask } = useDisplayFormatter();
+  const isBalanceMasked = shouldMask('balance');
+  const positiveColor = isBalanceMasked
+    ? 'var(--text-muted)'
+    : POSITIVE_AUM_COLOR;
+  const negativeColor = isBalanceMasked
+    ? 'var(--text-muted)'
+    : NEGATIVE_AUM_COLOR;
+
+  const dataSignature = data
+    .map((point) => `${point.date}:${point.balance}`)
+    .join('|');
+  const animateSeries =
+    useChartAnimationActive() && shouldAnimateSeries(data.length);
+  const [dotsReadyForSignature, setDotsReadyForSignature] = useState('');
+  
+  const showDots = !animateSeries || dotsReadyForSignature === dataSignature;
+  
+  
+  const series = useMemo(
+    () => (data.length === 0 ? null : buildAUMSeries(data, isBalanceMasked)),
+    [data, isBalanceMasked]
+  );
+  const handleLineAnimationEnd = useCallback(
+    () => setDotsReadyForSignature(dataSignature),
+    [dataSignature]
+  );
+
+  
+  if (!series) {
+    return (
+      <div
+        className="journalit-account-chart-empty"
+        style={cssVars({
+          '--account-chart-empty-height':
+            typeof height === 'number' ? `${height}px` : height,
+        })}
+      >
+        <EmptyState
+          message={t('account.aum-chart.empty')}
+          subMessage={t('account.aum-chart.empty-sub')}
+        />
+      </div>
+    );
+  }
+
+  const {
+    chartData,
+    baselineValue,
+    domain,
+    ticks,
+    aumTransitionOffset,
+    strokeTransitionOffset,
+  } = series;
+
   return (
     <div className="aum-chart">
       <ChartBase height={height} width="100%" chartRef={chartRef}>
@@ -359,6 +515,7 @@ export const AUMChart: React.FC<AUMChartProps> = ({
           <CartesianGrid
             strokeDasharray="3 3"
             vertical={false}
+            verticalCoordinatesGenerator={skipVerticalGridCoordinates}
             stroke="var(--background-modifier-border)"
             strokeOpacity={0.5}
           />
@@ -415,6 +572,7 @@ export const AUMChart: React.FC<AUMChartProps> = ({
             activeDot={false}
             baseValue={domain[0]}
             filter="url(#aumShadow)"
+            isAnimationActive={animateSeries}
           />
 
           
@@ -423,123 +581,9 @@ export const AUMChart: React.FC<AUMChartProps> = ({
             dataKey="displayBalance"
             stroke={`url(#${chartId}-stroke-gradient)`}
             strokeWidth={2.5}
-            onAnimationEnd={() => setDotsReadyForSignature(dataSignature)}
-            dot={(props: DotItemDotProps) => {
-              const { cx, cy, payload } = asAUMDotProps(props);
-              if (!payload || cx == null || cy == null)
-                return <circle cx={0} cy={0} r={0} opacity={0} />;
-
-              
-              if (!showDots) return <circle cx={0} cy={0} r={0} opacity={0} />;
-
-              
-              if (payload.accountCreated) {
-                return (
-                  <g>
-                    <line
-                      x1={cx}
-                      y1={cy - 15}
-                      x2={cx}
-                      y2={cy + 15}
-                      stroke="var(--text-success)"
-                      strokeWidth="2"
-                    />
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r="5"
-                      fill="var(--background-primary)"
-                      stroke="var(--text-success)"
-                      strokeWidth="2"
-                    />
-                  </g>
-                );
-              }
-
-              
-              if (payload.accountArchived) {
-                return (
-                  <g>
-                    <line
-                      x1={cx}
-                      y1={cy - 15}
-                      x2={cx}
-                      y2={cy + 15}
-                      stroke="var(--text-error)"
-                      strokeWidth="2"
-                    />
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r="5"
-                      fill="var(--background-primary)"
-                      stroke="var(--text-error)"
-                      strokeWidth="2"
-                    />
-                  </g>
-                );
-              }
-
-              
-              if (payload.isDeposit) {
-                return (
-                  <g>
-                    <line
-                      x1={cx}
-                      y1={cy - 15}
-                      x2={cx}
-                      y2={cy + 15}
-                      stroke="var(--interactive-accent)"
-                      strokeWidth="2"
-                    />
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r="5"
-                      fill="var(--background-primary)"
-                      stroke="var(--interactive-accent)"
-                      strokeWidth="2"
-                    />
-                  </g>
-                );
-              }
-
-              
-              if (payload.isWithdrawal) {
-                return (
-                  <g>
-                    <line
-                      x1={cx}
-                      y1={cy - 15}
-                      x2={cx}
-                      y2={cy + 15}
-                      stroke="var(--text-warning, gold)"
-                      strokeWidth="2"
-                    />
-                    <circle
-                      cx={cx}
-                      cy={cy}
-                      r="5"
-                      fill="var(--background-primary)"
-                      stroke="var(--text-warning, gold)"
-                      strokeWidth="2"
-                    />
-                  </g>
-                );
-              }
-
-              
-              return (
-                <circle
-                  cx={cx}
-                  cy={cy}
-                  r="3"
-                  fill="var(--text-muted)"
-                  stroke="var(--background-primary)"
-                  strokeWidth="1"
-                />
-              );
-            }}
+            isAnimationActive={animateSeries}
+            onAnimationEnd={handleLineAnimationEnd}
+            dot={showDots ? renderAUMDot : false}
             activeDot={{
               r: 7,
               stroke: 'var(--background-primary)',

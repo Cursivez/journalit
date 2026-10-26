@@ -1,4 +1,10 @@
-import { TFile } from 'obsidian';
+import {
+  addSessionLogEntries,
+  deleteSessionLogEntry as deleteStoredSessionLogEntry,
+  readSessionLogEntries,
+  updateSessionLogEntry as updateStoredSessionLogEntry,
+  type SessionLogStore,
+} from '../../services/sessionLog/sessionLogEntries';
 import type JournalitPlugin from '../../main';
 import {
   isTradeOpenInDashboard,
@@ -13,8 +19,6 @@ import {
   formatLocalDateString,
   parseTradeTimestampValue,
 } from '../../utils/dateUtils';
-import { generateUUID } from '../../utils/uuid';
-import { enqueueFileMutation } from '../../utils/fileMutationQueue';
 import type { ResolvedSessionModeWindow } from '../../types/sessionMode';
 import type {
   SessionLogAlertRule,
@@ -25,18 +29,12 @@ import type {
 import {
   DEFAULT_SESSION_LOG_ALERT_RULE,
   DEFAULT_SESSION_LOG_TAGS,
-  normalizeSessionLogEntries,
 } from '../../types/sessionLog';
 export { normalizeSessionLogEntries } from '../../types/sessionLog';
 import { t } from '../../lang/helpers';
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-
-const enqueueSessionLogMutation = (
-  filePath: string,
-  task: () => Promise<void>
-): Promise<void> => enqueueFileMutation('session-log', filePath, task);
 
 function getEntryTimelineEvents(
   trade: TimelineTrade,
@@ -136,14 +134,24 @@ export function getSessionLogAlertRule(
   );
 }
 
+
+function sessionLogStore(plugin: JournalitPlugin): SessionLogStore {
+  return {
+    app: plugin.app,
+    updateSessionLog: async (filePath, compute, source) => {
+      const drcService = plugin.drcService
+        ? plugin.drcService
+        : await plugin.serviceManager.getDRCService();
+      await drcService.updateDRCFrontmatterWith(filePath, compute, source);
+    },
+  };
+}
+
 export function getSessionLogEntriesFromFile(
   plugin: JournalitPlugin,
   filePath: string
 ): SessionLogEntry[] {
-  const file = plugin.app.vault.getAbstractFileByPath(filePath);
-  if (!(file instanceof TFile)) return [];
-  const frontmatter = plugin.app.metadataCache.getFileCache(file)?.frontmatter;
-  return normalizeSessionLogEntries(frontmatter?.sessionLog);
+  return readSessionLogEntries(sessionLogStore(plugin), filePath);
 }
 
 export async function addSessionLogEntry(params: {
@@ -153,29 +161,12 @@ export async function addSessionLogEntry(params: {
   text: string;
   timestamp?: Date;
 }): Promise<void> {
-  await enqueueSessionLogMutation(params.filePath, async () => {
-    const drcService = params.plugin.drcService
-      ? params.plugin.drcService
-      : await params.plugin.serviceManager.getDRCService();
-    const entries = getSessionLogEntriesFromFile(
-      params.plugin,
-      params.filePath
-    );
-    const newEntry: SessionLogEntry = {
-      id: generateUUID(),
-      timestamp: (params.timestamp ?? new Date()).toISOString(),
-      tagId: params.tagId,
-      text: params.text.trim(),
-      resolved: false,
-      promoted: false,
-    };
-
-    await drcService.updateDRCFrontmatter(
-      params.filePath,
-      { sessionLog: [...entries, newEntry] },
-      'session-log'
-    );
-  });
+  await addSessionLogEntries(
+    sessionLogStore(params.plugin),
+    params.filePath,
+    [{ tagId: params.tagId, text: params.text, timestamp: params.timestamp }],
+    'session-log'
+  );
 }
 
 export async function updateSessionLogEntry(params: {
@@ -189,24 +180,13 @@ export async function updateSessionLogEntry(params: {
     >
   >;
 }): Promise<void> {
-  await enqueueSessionLogMutation(params.filePath, async () => {
-    const drcService = params.plugin.drcService
-      ? params.plugin.drcService
-      : await params.plugin.serviceManager.getDRCService();
-    const entries = getSessionLogEntriesFromFile(
-      params.plugin,
-      params.filePath
-    );
-    const nextEntries = entries.map((entry) =>
-      entry.id === params.entryId ? { ...entry, ...params.updates } : entry
-    );
-
-    await drcService.updateDRCFrontmatter(
-      params.filePath,
-      { sessionLog: nextEntries },
-      'session-log'
-    );
-  });
+  await updateStoredSessionLogEntry(
+    sessionLogStore(params.plugin),
+    params.filePath,
+    params.entryId,
+    params.updates,
+    'session-log'
+  );
 }
 
 export async function deleteSessionLogEntry(params: {
@@ -214,20 +194,12 @@ export async function deleteSessionLogEntry(params: {
   filePath: string;
   entryId: string;
 }): Promise<void> {
-  await enqueueSessionLogMutation(params.filePath, async () => {
-    const drcService = params.plugin.drcService
-      ? params.plugin.drcService
-      : await params.plugin.serviceManager.getDRCService();
-    const entries = getSessionLogEntriesFromFile(
-      params.plugin,
-      params.filePath
-    );
-    await drcService.updateDRCFrontmatter(
-      params.filePath,
-      { sessionLog: entries.filter((entry) => entry.id !== params.entryId) },
-      'session-log'
-    );
-  });
+  await deleteStoredSessionLogEntry(
+    sessionLogStore(params.plugin),
+    params.filePath,
+    params.entryId,
+    'session-log'
+  );
 }
 
 export function createManualTimelineEntries(

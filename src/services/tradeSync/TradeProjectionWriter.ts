@@ -21,7 +21,7 @@ import {
   sendTradeProjectionAckWithResult,
 } from './TradeProjectionAckQueue';
 import { getTradeProjectionOwnerId } from './TradeProjectionOwnership';
-import { TradovateClientDiagnosticsService } from './TradovateClientDiagnosticsService';
+import { BrokerClientDiagnostics } from './BrokerClientDiagnostics';
 import {
   isRestoreTradeProjectionGeneration,
   parseTradeProjectionGenerationOrder,
@@ -478,10 +478,7 @@ export class TradeProjectionWriter {
       ) {
         return failedProjectionResult(effectiveCommittedTrade, 'local_deleted');
       }
-      const projectionTags = deduplicateOptions([
-        ...(canonicalTradeData.tags ?? []),
-        ...(canonicalTradeData.customTags ?? []),
-      ]);
+      const projectionTags = deduplicateOptions(canonicalTradeData.tags ?? []);
       if (projectionTags.length > 0) {
         await this.plugin.optionsService.addOptions(
           OptionType.TAG,
@@ -494,43 +491,30 @@ export class TradeProjectionWriter {
         existingTrade.tradeRevision > 0
           ? existingTrade.tradeRevision
           : undefined;
+      
+      
+      const noteKind =
+        committedTrade.destination === 'backtest' ? 'backtest-trade' : 'trade';
       const write = existingPath
-        ? expectedTradeRevision !== undefined
-          ? this.plugin.tradeService.updateTrade(
-              projectedTradeData,
-              existingPath,
-              'trade-import',
-              commitEventBatch
-                ? { expectedTradeRevision, commitEventBatch }
-                : { expectedTradeRevision }
-            )
-          : commitEventBatch
-            ? this.plugin.tradeService.updateTrade(
-                projectedTradeData,
-                existingPath,
-                'trade-import',
-                { commitEventBatch }
-              )
-            : this.plugin.tradeService.updateTrade(
-                projectedTradeData,
-                existingPath,
-                'trade-import'
-              )
-        : this.plugin.tradeService.createTrade(
+        ? this.plugin.tradeService.updateTrade(
             projectedTradeData,
-            commitEventBatch
-              ? {
-                  suppressAutoOpen: true,
-                  suppressPostCreateTasks: true,
-                  commitEventBatch,
-                  creationBatch,
-                }
-              : {
-                  suppressAutoOpen: true,
-                  suppressPostCreateTasks: true,
-                  creationBatch,
-                }
-          );
+            existingPath,
+            'trade-import',
+            {
+              noteKind,
+              ...(expectedTradeRevision !== undefined && {
+                expectedTradeRevision,
+              }),
+              ...(commitEventBatch && { commitEventBatch }),
+            }
+          )
+        : this.plugin.tradeService.createTrade(projectedTradeData, {
+            noteKind,
+            suppressAutoOpen: true,
+            suppressPostCreateTasks: true,
+            creationBatch,
+            ...(commitEventBatch && { commitEventBatch }),
+          });
       const writeOutcome = await withLocalWriteTimeout(
         write,
         localWriteTimeoutMs
@@ -845,10 +829,8 @@ export class TradeProjectionWriter {
     const failedCount = writeResults.filter((result) => result.failed).length;
     const pendingCount = writeResults.filter((result) => result.pending).length;
 
-    
-    
-    if (clientOperation?.provider === 'tradovate') {
-      const diagnostics = new TradovateClientDiagnosticsService(this.plugin);
+    if (clientOperation) {
+      const diagnostics = new BrokerClientDiagnostics(this.plugin);
       const diagnosticCodes: BrokerClientDiagnosticErrorCode[] = [
         'obsidian_write_timeout',
         'blocked_by_obsidian_write_timeout',

@@ -156,7 +156,12 @@ export function reconcilePropChallengeMaximumPayoutOutcome(
   payoutEvaluation: PropChallengePayoutEvaluation | undefined,
   at: Date
 ): PropChallengeConfig {
-  if (config.status !== 'active' || !payoutEvaluation) return config;
+  if (
+    config.status !== 'active' ||
+    !payoutEvaluation ||
+    payoutEvaluation.status === 'needs_review'
+  )
+    return config;
   const phase = getCurrentPropChallengePhase(config);
   if (!phase || phase.status !== 'active') return config;
   const policy = effectivePayoutPolicyAt(phase, at);

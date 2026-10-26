@@ -27,8 +27,9 @@ export function useCloseOnOutsideMouseDown(
       }
     };
 
-    window.activeDocument.addEventListener('mousedown', handleMouseDown);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('mousedown', handleMouseDown);
     return () =>
-      window.activeDocument.removeEventListener('mousedown', handleMouseDown);
+      listenerDocument.removeEventListener('mousedown', handleMouseDown);
   }, [enabled, rootRef]);
 }

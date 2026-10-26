@@ -10,7 +10,7 @@ import type {
 } from '../../../settings/homePeriod';
 import { formatLocalDateString } from '../../../utils/dateUtils';
 import { DEFAULT_REGULAR_ONLY_TRADE_TYPES } from '../../../settings/viewFiltersDefaults';
-import { t } from '../../../lang/helpers';
+import { t, type TranslationKey } from '../../../lang/helpers';
 import {
   DEFAULT_HOME_FILTERS,
   normalizeHomeTradeTypes,
@@ -43,7 +43,14 @@ interface HomeFilterPopoverProps {
   onOpen?: () => void;
 }
 
-const TRADE_TYPES: TradeType[] = ['regular', 'backtest'];
+const TRADE_TYPE_OPTIONS: Array<{
+  value: TradeType;
+  labelKey: TranslationKey;
+}> = [
+  { value: 'regular', labelKey: 'tradelog.type.regular' },
+  { value: 'missed', labelKey: 'tradelog.type.missed' },
+  { value: 'backtest', labelKey: 'tradelog.type.backtest' },
+];
 
 export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
   app,
@@ -91,19 +98,19 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
   const toggleTradeType = useCallback(
     (tradeType: TradeType) => {
       
+      
+      const next = normalizeHomeTradeTypes(
+        normalizedTradeTypes.includes(tradeType)
+          ? normalizedTradeTypes.filter((value) => value !== tradeType)
+          : [...normalizedTradeTypes, tradeType]
+      );
       if (
-        normalizedTradeTypes.length === 1 &&
-        normalizedTradeTypes[0] === tradeType
+        next.length === normalizedTradeTypes.length &&
+        next.every((value, index) => value === normalizedTradeTypes[index])
       ) {
-        void onTradeTypesChange([
-          tradeType === 'regular' ? 'backtest' : 'regular',
-        ]);
         return;
       }
-      const next = normalizedTradeTypes.includes(tradeType)
-        ? normalizedTradeTypes.filter((value) => value !== tradeType)
-        : [...normalizedTradeTypes, tradeType];
-      void onTradeTypesChange(normalizeHomeTradeTypes(next));
+      void onTradeTypesChange(next);
     },
     [normalizedTradeTypes, onTradeTypesChange]
   );
@@ -166,21 +173,18 @@ export const HomeFilterPopover: React.FC<HomeFilterPopoverProps> = ({
         id: 'tradeType',
         label: t('home.filters.trade-type'),
         icon: FILTER_MENU_ICONS.tradeType,
-        options: TRADE_TYPES.map((tradeType) => ({
-          value: tradeType,
-          label:
-            tradeType === 'backtest'
-              ? t('filter.modal.type.backtest')
-              : t('filter.modal.type.regular'),
+        options: TRADE_TYPE_OPTIONS.map((option) => ({
+          value: option.value,
+          label: t(option.labelKey),
         })),
         selected: normalizedTradeTypes,
         appliedCount: defaultTradeTypesSelected
           ? 0
           : normalizedTradeTypes.length,
         onToggle: (value) => {
-          const tradeType = TRADE_TYPES.find(
-            (candidate) => candidate === value
-          );
+          const tradeType = TRADE_TYPE_OPTIONS.find(
+            (option) => option.value === value
+          )?.value;
           if (tradeType) toggleTradeType(tradeType);
         },
         onClear: () =>

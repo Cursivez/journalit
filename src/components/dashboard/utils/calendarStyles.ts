@@ -496,14 +496,6 @@ function applyCalendarHeaderFix(): void {
 }
 
 
-
-const calendarStyleUpdateListener = () => {
-  applyCalendarGridFix();
-  applyCalendarHeaderFix();
-  applyCalendarCellStyling(); 
-};
-
-
 export function applyConsistentGridStructure(): void {
   try {
     const plugin = getPluginInstance();
@@ -830,17 +822,13 @@ export function applyAllCalendarFixes(): void {
         setupCalendarResizeObserver();
       }
     });
-
-    
-    window.activeDocument.removeEventListener(
-      'dashboard-styles-updated',
-      calendarStyleUpdateListener
-    );
-    window.activeDocument.addEventListener(
-      'dashboard-styles-updated',
-      calendarStyleUpdateListener
-    );
   } catch (error) {
     console.error('Error applying calendar style fixes:', error);
   }
+}
+
+
+export function teardownCalendarStyleFixes(): void {
+  window.__journalitCalendarResizeObserver?.disconnect();
+  delete window.__journalitCalendarResizeObserver;
 }

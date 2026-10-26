@@ -299,9 +299,6 @@ const formatTradeAccountLabel = (trade: { account?: string | string[] }) => {
   return typeof trade.account === 'string' ? trade.account.trim() : '';
 };
 
-
-const pnlChartDataCache = new Map<string, PnLChartDataPoint[]>();
-
 const isEventWithinTradeAnalyticsRange = (
   trade: Trade,
   date: Date
@@ -311,7 +308,45 @@ const isEventWithinTradeAnalyticsRange = (
   return (!rangeStart || date >= rangeStart) && (!rangeEnd || date <= rangeEnd);
 };
 
+
+const pnlChartDataByTrades = new WeakMap<
+  readonly Trade[],
+  Map<string, PnLChartDataPoint[]>
+>();
+
 export const preparePnLChartData = (
+  trades: Trade[],
+  dateFormat: string,
+  defaultRiskAmount?: number,
+  plugin?: JournalitPlugin | null
+): PnLChartDataPoint[] => {
+  if (!Array.isArray(trades)) {
+    return buildPnLChartData(trades, dateFormat, defaultRiskAmount, plugin);
+  }
+  const key = JSON.stringify([
+    dateFormat,
+    defaultRiskAmount ?? null,
+    getAnalyticsDateBasis(plugin?.settings),
+    plugin?.settings?.trade?.tradingDayCutoffTime ?? null,
+  ]);
+  let byKey = pnlChartDataByTrades.get(trades);
+  const cached = byKey?.get(key);
+  if (cached) return cached;
+  const chartData = buildPnLChartData(
+    trades,
+    dateFormat,
+    defaultRiskAmount,
+    plugin
+  );
+  if (!byKey) {
+    byKey = new Map();
+    pnlChartDataByTrades.set(trades, byKey);
+  }
+  byKey.set(key, chartData);
+  return chartData;
+};
+
+const buildPnLChartData = (
   trades: Trade[],
   dateFormat: string,
   defaultRiskAmount?: number,
@@ -335,21 +370,6 @@ export const preparePnLChartData = (
   );
 
   const analyticsDateBasis = getAnalyticsDateBasis(plugin?.settings);
-
-  
-  const tradeSignature =
-    pnlContributingTrades.length > 0
-      ? `${pnlContributingTrades[0]?.path || ''}:${pnlContributingTrades[pnlContributingTrades.length - 1]?.path || ''}:${pnlContributingTrades.map((t) => (Array.isArray(t.account) ? t.account.join(',') : t.account || '')).join(',')}`
-      : 'empty';
-  const analyticsRangeSignature = pnlContributingTrades
-    .map(
-      (trade) =>
-        `${safeGetTime(trade._analyticsRangeStart)}-${safeGetTime(trade._analyticsRangeEnd)}`
-    )
-    .join(',');
-  const cacheKey = `pnl:${pnlContributingTrades.length}:${dateFormat}:${tradeSignature}:${defaultRiskAmount ?? 'none'}:${analyticsDateBasis}:${analyticsRangeSignature}`;
-  const cached = pnlChartDataCache.get(cacheKey);
-  if (cached) return cached;
 
   const pnlEvents = pnlContributingTrades.flatMap((trade) => {
     const events = getTradeRealizedPnlEvents(trade, analyticsDateBasis, plugin);
@@ -472,17 +492,6 @@ export const preparePnLChartData = (
     ...point,
     date: optimizedLabels[i] ?? formatDateDisplay(originalDates[i], dateFormat),
   }));
-
-  
-  pnlChartDataCache.set(cacheKey, chartData);
-
-  
-  if (pnlChartDataCache.size > 50) {
-    for (const firstKey of pnlChartDataCache.keys()) {
-      pnlChartDataCache.delete(firstKey);
-      break;
-    }
-  }
 
   return chartData;
 };

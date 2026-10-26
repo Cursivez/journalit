@@ -28,6 +28,84 @@ export function PropChallengeProfileNotice(
   return <ProfileNoticeCore {...props} />;
 }
 
+type PropChallengeConfigValue = NonNullable<AccountData['propChallenge']>;
+
+
+const archivedWithoutCorrections = (
+  account: AccountData,
+  config: PropChallengeConfigValue,
+  state: State
+): boolean =>
+  account.accountType === 'archived' &&
+  !(
+    state.kind === 'ready' &&
+    (state.comparison.corrections?.length || config.correctionHistory?.length)
+  );
+
+function UnmatchedPhasesNotice({
+  config,
+  comparison,
+}: {
+  config: PropChallengeConfigValue;
+  comparison: ProfileNoticeComparison;
+}) {
+  const unmatchedIds = new Set(comparison.unmatchedPhaseIds);
+  if (unmatchedIds.size === 0) return null;
+  const names = config.phases
+    .flatMap((phase) => (unmatchedIds.has(phase.id) ? [phase.name] : []))
+    .join(', ');
+  return (
+    <div className="journalit-profile-update-status" role="status">
+      <span>
+        <strong>{t('account.profiles.no-matching-phase')}</strong> {names}
+        <br />
+        {t('account.profiles.history-unchanged')}{' '}
+        {t('account.profiles.purchase-uncertain')}
+      </span>
+    </div>
+  );
+}
+
+function ProfileReviewNotice({
+  comparison,
+  onOpen,
+}: {
+  comparison: ProfileNoticeComparison;
+  onOpen: () => void;
+}) {
+  const hasCorrections = Boolean(comparison.corrections?.length);
+  return (
+    <div
+      className="account-date-warning journalit-profile-update-notice"
+      role="status"
+    >
+      <Info size={20} className="account-date-warning__icon" />
+      <div className="account-date-warning__content">
+        <div className="account-date-warning__title">
+          {t(
+            hasCorrections
+              ? 'account.profiles.correction-title'
+              : 'account.profiles.notice-title'
+          )}
+        </div>
+        {!hasCorrections && (
+          <div className="account-date-warning__desc">
+            {t('account.profiles.notice-description')}
+          </div>
+        )}
+      </div>
+      <Button
+        variant="secondary"
+        size="small"
+        className="account-date-warning__button"
+        onClick={onOpen}
+      >
+        {t('account.profiles.review-changes')}
+      </Button>
+    </div>
+  );
+}
+
 function ProfileNoticeCore({
   account,
   onUpdated,
@@ -107,16 +185,7 @@ function ProfileNoticeCore({
     };
   }, [config, plugin, service]);
 
-  if (
-    !plugin ||
-    !config ||
-    (account.accountType === 'archived' &&
-      !(
-        state.kind === 'ready' &&
-        (state.comparison.corrections?.length ||
-          config.correctionHistory?.length)
-      ))
-  )
+  if (!plugin || !config || archivedWithoutCorrections(account, config, state))
     return null;
   
   if (!config.profileRef) return null;
@@ -142,37 +211,16 @@ function ProfileNoticeCore({
       comparison: state.comparison,
       onUpdated,
     });
+  const unmatchedNotice = (
+    <UnmatchedPhasesNotice config={config} comparison={state.comparison} />
+  );
   
   
-  if (!state.comparison.unreviewedPhaseIds.length) return null;
+  if (!state.comparison.unreviewedPhaseIds.length) return unmatchedNotice;
   return (
-    <div
-      className="account-date-warning journalit-profile-update-notice"
-      role="status"
-    >
-      <Info size={20} className="account-date-warning__icon" />
-      <div className="account-date-warning__content">
-        <div className="account-date-warning__title">
-          {t(
-            state.comparison.corrections?.length
-              ? 'account.profiles.correction-title'
-              : 'account.profiles.notice-title'
-          )}
-        </div>
-        {!state.comparison.corrections?.length && (
-          <div className="account-date-warning__desc">
-            {t('account.profiles.notice-description')}
-          </div>
-        )}
-      </div>
-      <Button
-        variant="secondary"
-        size="small"
-        className="account-date-warning__button"
-        onClick={open}
-      >
-        {t('account.profiles.review-changes')}
-      </Button>
-    </div>
+    <>
+      {unmatchedNotice}
+      <ProfileReviewNotice comparison={state.comparison} onOpen={open} />
+    </>
   );
 }

@@ -3,12 +3,86 @@
 import React from 'react';
 import { useAccountPageData } from '../context/AccountPageDataContext';
 import { useCurrency } from '../../../contexts/CurrencyContext';
-import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
+import {
+  type CurrencyCode,
+  parseCuratedCurrencyCode,
+} from '../../../utils/currencyConfig';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { t } from '../../../lang/helpers';
 import { AccountStatCell, statTone, type MetricTile } from './AccountStatCell';
 import { AccountNetPnLStatCell } from './AccountNetPnLStatCell';
 import { calculateAccountCostSummary } from './accountSummaryMetrics';
+
+type FormatDisplayValue = ReturnType<typeof useDisplayFormatter>['formatValue'];
+
+
+function accountCostTiles(
+  accountCosts: ReturnType<typeof calculateAccountCostSummary>,
+  formatValue: FormatDisplayValue,
+  effectiveCurrency: CurrencyCode
+): MetricTile[] {
+  
+  
+  
+  if (!accountCosts.hasCosts) return [];
+  const tiles: MetricTile[] = [];
+  tiles.push(
+    <AccountStatCell
+      key="total-costs"
+      label={t(
+        accountCosts.monthlyCost > 0
+          ? 'account.metrics.total-account-costs'
+          : 'account.metrics.total-costs'
+      )}
+      value={formatValue({
+        kind: 'fee',
+        value: accountCosts.estimatedTotalCosts,
+        currencyCode: effectiveCurrency,
+      })}
+      muted
+    />
+  );
+  if (accountCosts.oneTimeCosts > 0) {
+    tiles.push(
+      <AccountStatCell
+        key="one-time-costs"
+        label={t('account.metrics.one-time-costs')}
+        value={formatValue({
+          kind: 'fee',
+          value: accountCosts.oneTimeCosts,
+          currencyCode: effectiveCurrency,
+        })}
+        muted
+      />
+    );
+  }
+  if (accountCosts.monthlyCost > 0) {
+    tiles.push(
+      <AccountStatCell
+        key="recurring-costs"
+        label={t('account.metrics.recurring-costs-to-date')}
+        value={formatValue({
+          kind: 'fee',
+          value: accountCosts.estimatedRecurringCosts,
+          currencyCode: effectiveCurrency,
+        })}
+        muted
+      />,
+      <AccountStatCell
+        key="monthly-cost"
+        label={t('account.metrics.monthly-cost')}
+        value={formatValue({
+          kind: 'fee',
+          value: accountCosts.monthlyCost,
+          currencyCode: effectiveCurrency,
+        })}
+        muted
+      />
+    );
+  }
+
+  return tiles;
+}
 
 
 export function useAccountMetricsTiles(
@@ -141,64 +215,10 @@ export function useAccountMetricsTiles(
     />
   );
 
-  
-  
-  
-  if (accountCosts?.hasCosts) {
+  if (accountCosts) {
     tiles.push(
-      <AccountStatCell
-        key="total-costs"
-        label={t(
-          accountCosts.monthlyCost > 0
-            ? 'account.metrics.total-account-costs'
-            : 'account.metrics.total-costs'
-        )}
-        value={formatValue({
-          kind: 'fee',
-          value: accountCosts.estimatedTotalCosts,
-          currencyCode: effectiveCurrency,
-        })}
-        muted
-      />
+      ...accountCostTiles(accountCosts, formatValue, effectiveCurrency)
     );
-    if (accountCosts.oneTimeCosts > 0) {
-      tiles.push(
-        <AccountStatCell
-          key="one-time-costs"
-          label={t('account.metrics.one-time-costs')}
-          value={formatValue({
-            kind: 'fee',
-            value: accountCosts.oneTimeCosts,
-            currencyCode: effectiveCurrency,
-          })}
-          muted
-        />
-      );
-    }
-    if (accountCosts.monthlyCost > 0) {
-      tiles.push(
-        <AccountStatCell
-          key="recurring-costs"
-          label={t('account.metrics.recurring-costs-to-date')}
-          value={formatValue({
-            kind: 'fee',
-            value: accountCosts.estimatedRecurringCosts,
-            currencyCode: effectiveCurrency,
-          })}
-          muted
-        />,
-        <AccountStatCell
-          key="monthly-cost"
-          label={t('account.metrics.monthly-cost')}
-          value={formatValue({
-            kind: 'fee',
-            value: accountCosts.monthlyCost,
-            currencyCode: effectiveCurrency,
-          })}
-          muted
-        />
-      );
-    }
   }
 
   return tiles;

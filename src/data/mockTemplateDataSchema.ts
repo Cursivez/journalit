@@ -18,7 +18,7 @@ export interface MockTradeSource {
   tradeStatus: string;
   rMultiple: number;
   riskAmount: number;
-  stopLoss: number;
+  stopLosses: Array<{ price: number }>;
   images: string[];
 }
 
@@ -64,7 +64,6 @@ interface DrcFrontmatterBaseSource {
   date: string;
   mentalGrade: string;
   technicalGrade: string;
-  previousDayGoals: string[];
   preTradeChecklist: Record<string, boolean>;
   tradeRatings: Record<string, string>;
   reviewQuestions: Record<string, string>;
@@ -185,6 +184,7 @@ export interface MissedTradeSource {
   reviewed: boolean;
   entryTime: string;
   path: string;
+  outcome: { pnl: number; rMultiple: number | null } | null;
 }
 
 export interface MockTemplateStaticData {

@@ -272,10 +272,89 @@ function BestHoursTimeline({
   );
 }
 
+function BestHoursNoWindow({
+  sampledBucketCount,
+}: {
+  sampledBucketCount: number;
+}) {
+  
+  const canCompare = sampledBucketCount >= 2;
+  return (
+    <>
+      <div className="journalit-home-best-hours__hero-label">
+        {canCompare
+          ? t('home.widget.best-hours.no-positive-window')
+          : t('home.widget.best-hours.insufficient-history')}
+      </div>
+      <div className="journalit-home-widget__muted">
+        {canCompare
+          ? t('home.widget.best-hours.no-positive-detail')
+          : t('home.widget.best-hours.sample-requirement', {
+              count: String(sampledBucketCount),
+            })}
+      </div>
+    </>
+  );
+}
+
+
+function BestHoursHero({
+  isPnlMasked,
+  bestBucket,
+  sampledBucketCount,
+  effectiveCurrency,
+  formatValue,
+}: {
+  isPnlMasked: boolean;
+  bestBucket: ReturnType<typeof selectBestEntryWindow>;
+  sampledBucketCount: number;
+  effectiveCurrency: string;
+  formatValue: ReturnType<typeof useDisplayFormatter>['formatValue'];
+}) {
+  if (isPnlMasked) {
+    return (
+      <>
+        <div className="journalit-home-best-hours__hero-label">
+          {t('home.widget.best-hours.hidden')}
+        </div>
+        <div className="journalit-home-widget__muted">
+          {t('home.widget.best-hours.hidden-detail')}
+        </div>
+      </>
+    );
+  }
+  if (!bestBucket) {
+    return <BestHoursNoWindow sampledBucketCount={sampledBucketCount} />;
+  }
+  return (
+    <>
+      <div className="journalit-home-best-hours__hero-window">
+        {bestBucket.bucket.label}
+      </div>
+      <div className="journalit-home-best-hours__hero-value journalit-home-best-hours__hero-value--positive">
+        {formatValue({
+          kind: 'pnl',
+          value: bestBucket.averagePnl ?? 0,
+          rMultiple: bestBucket.averageR,
+          currencyCode: effectiveCurrency,
+        })}
+        {bestBucket.sampleTier === 'developing' && (
+          <span className="journalit-home-best-hours__hero-badge">
+            {t('home.widget.best-hours.developing')}
+          </span>
+        )}
+      </div>
+    </>
+  );
+}
+
 const BestHoursWidgetComponent: React.FC = () => {
   const { dashboardData } = useDashboardData();
   const plugin = usePlugin();
-  const { currency } = useCurrency();
+  const { currency: liveCurrency } = useCurrency();
+  
+  
+  const currency = dashboardData?.currency ?? liveCurrency;
   const { formatValue, shouldMask } = useDisplayFormatter();
   const [hoveredBucket, setHoveredBucket] = React.useState<string | null>(null);
   const tradeSettings = plugin?.settings?.trade;
@@ -353,10 +432,6 @@ const BestHoursWidgetComponent: React.FC = () => {
   const sampledBucketCount = bucketStats.filter(
     (bucket) => bucket.isDevelopingEligible
   ).length;
-  const heroValueClassName =
-    bestBucket && !isPnlMasked
-      ? 'journalit-home-best-hours__hero-value journalit-home-best-hours__hero-value--positive'
-      : 'journalit-home-best-hours__hero-value';
 
   return (
     <div className="journalit-home-best-hours">
@@ -370,50 +445,13 @@ const BestHoursWidgetComponent: React.FC = () => {
 
       
       <div className="journalit-home-best-hours__hero">
-        {isPnlMasked ? (
-          <>
-            <div className="journalit-home-best-hours__hero-label">
-              {t('home.widget.best-hours.hidden')}
-            </div>
-            <div className="journalit-home-widget__muted">
-              {t('home.widget.best-hours.hidden-detail')}
-            </div>
-          </>
-        ) : bestBucket ? (
-          <>
-            <div className="journalit-home-best-hours__hero-window">
-              {bestBucket.bucket.label}
-            </div>
-            <div className={heroValueClassName}>
-              {formatValue({
-                kind: 'pnl',
-                value: bestBucket.averagePnl ?? 0,
-                rMultiple: bestBucket.averageR,
-                currencyCode: effectiveCurrency,
-              })}
-              {bestBucket.sampleTier === 'developing' && (
-                <span className="journalit-home-best-hours__hero-badge">
-                  {t('home.widget.best-hours.developing')}
-                </span>
-              )}
-            </div>
-          </>
-        ) : (
-          <>
-            <div className="journalit-home-best-hours__hero-label">
-              {sampledBucketCount >= 2
-                ? t('home.widget.best-hours.no-positive-window')
-                : t('home.widget.best-hours.insufficient-history')}
-            </div>
-            <div className="journalit-home-widget__muted">
-              {sampledBucketCount >= 2
-                ? t('home.widget.best-hours.no-positive-detail')
-                : t('home.widget.best-hours.sample-requirement', {
-                    count: String(sampledBucketCount),
-                  })}
-            </div>
-          </>
-        )}
+        <BestHoursHero
+          isPnlMasked={isPnlMasked}
+          bestBucket={bestBucket}
+          sampledBucketCount={sampledBucketCount}
+          effectiveCurrency={effectiveCurrency}
+          formatValue={formatValue}
+        />
       </div>
 
       <BestHoursTimeline

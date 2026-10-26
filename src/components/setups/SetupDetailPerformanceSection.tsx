@@ -166,19 +166,138 @@ function useGuideExecutionGapMode({
   ]);
 }
 
+const setupDetailTradeSettings = (plugin: JournalitPlugin) => ({
+  useRMultiples: plugin.settings.trade?.displayRMultiples ?? false,
+  dateFormat: plugin.settings.trade?.dateFormat ?? 'DDMMYY',
+  defaultRiskAmount: plugin.settings.trade?.defaultRiskAmount,
+});
+
+const hasSetupExecutionGap = (
+  stats: SetupOpportunityStats | undefined
+): boolean =>
+  (stats?.missed.recordCount ?? 0) > 0 ||
+  (stats?.backtest.recordCount ?? 0) > 0;
+
+const performanceLineToneClass = (
+  isMasked: boolean,
+  total: number | null
+): string => {
+  if (isMasked) return 'journalit-setups-detail-performance--masked';
+  if (total === null) return 'journalit-setups-detail-performance--neutral';
+  return total < 0
+    ? 'journalit-setups-detail-performance--negative'
+    : 'journalit-setups-detail-performance--positive';
+};
+
+const chartModeLabelOf = (
+  options: Array<DropdownMenuOption<SetupDetailChartMode>>,
+  chartMode: SetupDetailChartMode
+): string =>
+  options.find((option) => option.value === chartMode)?.label ??
+  options[0].label;
+
+const SetupDetailExecutionGapChart: React.FC<{
+  stats: SetupOpportunityStats;
+  valueMode: 'rMultiple' | 'pnl';
+}> = ({ stats, valueMode }) => {
+  const { formatValue, shouldMask } = useDisplayFormatter();
+  return (
+    <LazySetupExecutionGapChart
+      stats={stats}
+      formatValue={(value) =>
+        formatValue({
+          kind: valueMode,
+          value,
+          ...(valueMode === 'rMultiple' ? {} : { showCents: false }),
+        })
+      }
+      isMasked={shouldMask(valueMode)}
+      valueMode={valueMode}
+    />
+  );
+};
+
+
+const SetupDetailPerformanceChart: React.FC<{
+  plugin: JournalitPlugin;
+  
+  executionGapStats: SetupOpportunityStats | undefined;
+  useRMultiples: boolean;
+  hasData: boolean;
+  chartMode: SetupDetailChartMode;
+  chartData: ReturnType<typeof buildSetupDetailPnlChartData>;
+  tradesChartData: ReturnType<typeof buildSetupDetailTradesChartData>;
+  drawdownChartData: ReturnType<typeof buildSetupDetailDrawdownChartData>;
+}> = ({
+  plugin,
+  executionGapStats,
+  useRMultiples,
+  hasData,
+  chartMode,
+  chartData,
+  tradesChartData,
+  drawdownChartData,
+}) => {
+  const valueMode = useRMultiples ? 'rMultiple' : 'pnl';
+  return executionGapStats ? (
+    <SetupDetailExecutionGapChart
+      stats={executionGapStats}
+      valueMode={valueMode}
+    />
+  ) : hasData ? (
+    chartMode === 'trades' ? (
+      <SharedTradesChart
+        className="journalit-setups-detail-performance__shared-chart"
+        data={tradesChartData}
+        valueMode={valueMode}
+        height="100%"
+        margin={{ top: 8, right: 8, bottom: 2, left: 0 }}
+        onPointClick={(point) => {
+          if (point.path) {
+            const tradeNotePath = getTradeNotePath(point.path);
+            void plugin.openFile(tradeNotePath, true);
+          }
+        }}
+      />
+    ) : chartMode === 'drawdown' ? (
+      <SharedDrawdownChart
+        className="journalit-setups-detail-performance__shared-chart"
+        data={drawdownChartData}
+        height="100%"
+        plugin={plugin}
+        margin={{ top: 8, right: 8, bottom: 2, left: 0 }}
+      />
+    ) : (
+      <SharedPnLChart
+        className="journalit-setups-detail-performance__shared-chart"
+        data={chartData}
+        height="100%"
+        plugin={plugin}
+        margin={{ top: 8, right: 8, bottom: 2, left: 0 }}
+      />
+    )
+  ) : (
+    <EmptyState
+      className="journalit-setups-detail-performance__empty"
+      iconSize={34}
+      message={t('setups.view.detail.performance.empty')}
+      subMessage={t('setups.view.detail.performance.empty-submessage')}
+    />
+  );
+};
+
 export const SetupDetailPerformanceSection: React.FC<{
   plugin: JournalitPlugin;
   viewModel: SetupViewModel;
   linkedTrades: SetupLinkedTrade[];
 }> = ({ plugin, viewModel, linkedTrades }) => {
-  const { formatValue, shouldMask } = useDisplayFormatter();
+  const { shouldMask } = useDisplayFormatter();
   const registerDetailPerformanceTarget = useGuideTarget(
     SETUPS_DETAIL_PERFORMANCE_TARGET_ID
   );
   const currentGuideStepId = useGuideCurrentStepId();
-  const useRMultiples = plugin.settings.trade?.displayRMultiples ?? false;
-  const dateFormat = plugin.settings.trade?.dateFormat ?? 'DDMMYY';
-  const defaultRiskAmount = plugin.settings.trade?.defaultRiskAmount;
+  const { useRMultiples, dateFormat, defaultRiskAmount } =
+    setupDetailTradeSettings(plugin);
   const [chartMode, setChartMode] =
     useState<SetupDetailChartMode>('cumulative');
   const [analysisMode, setAnalysisMode] = useState<SetupDetailAnalysisMode>(
@@ -187,9 +306,7 @@ export const SetupDetailPerformanceSection: React.FC<{
   );
   const [chartModeMenuOpen, setChartModeMenuOpen] = useState(false);
   const chartModeMenuRef = useRef<HTMLDivElement>(null);
-  const hasExecutionGap =
-    (viewModel.opportunityStats?.missed.recordCount ?? 0) > 0 ||
-    (viewModel.opportunityStats?.backtest.recordCount ?? 0) > 0;
+  const hasExecutionGap = hasSetupExecutionGap(viewModel.opportunityStats);
   useGuideContextValue(
     SETUPS_DETAIL_HAS_EXECUTION_GAP_CONTEXT_KEY,
     hasExecutionGap
@@ -209,13 +326,10 @@ export const SetupDetailPerformanceSection: React.FC<{
   const isMetricMasked = shouldMask('metric');
   const isPercentageMasked = shouldMask('percentage');
   const isDrawdownMasked = shouldMask('drawdown');
-  const lineToneClass = isPerformanceMasked
-    ? 'journalit-setups-detail-performance--masked'
-    : displayedTotal === null
-      ? 'journalit-setups-detail-performance--neutral'
-      : displayedTotal < 0
-        ? 'journalit-setups-detail-performance--negative'
-        : 'journalit-setups-detail-performance--positive';
+  const lineToneClass = performanceLineToneClass(
+    isPerformanceMasked,
+    displayedTotal
+  );
   const chartData = useMemo(
     () => buildSetupDetailPnlChartData(points),
     [points]
@@ -252,9 +366,7 @@ export const SetupDetailPerformanceSection: React.FC<{
     ],
     [useRMultiples]
   );
-  const currentChartModeLabel =
-    chartModeOptions.find((option) => option.value === chartMode)?.label ??
-    chartModeOptions[0].label;
+  const currentChartModeLabel = chartModeLabelOf(chartModeOptions, chartMode);
   const maxDrawdown = useMemo(
     () => calculateSetupDetailMaxDrawdown(linkedTrades, defaultRiskAmount),
     [defaultRiskAmount, linkedTrades]
@@ -288,12 +400,10 @@ export const SetupDetailPerformanceSection: React.FC<{
       setChartModeMenuOpen(false);
     };
 
-    window.activeDocument.addEventListener('pointerdown', handlePointerDown);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('pointerdown', handlePointerDown);
     return () =>
-      window.activeDocument.removeEventListener(
-        'pointerdown',
-        handlePointerDown
-      );
+      listenerDocument.removeEventListener('pointerdown', handlePointerDown);
   }, [chartModeMenuOpen]);
 
   return (
@@ -360,66 +470,100 @@ export const SetupDetailPerformanceSection: React.FC<{
             onMenuOpenChange={setChartModeMenuOpen}
           />
         ) : null}
-        {effectiveAnalysisMode === 'execution-gap' &&
-        viewModel.opportunityStats ? (
-          <LazySetupExecutionGapChart
-            stats={viewModel.opportunityStats}
-            formatValue={(value) =>
-              formatValue({
-                kind: useRMultiples ? 'rMultiple' : 'pnl',
-                value,
-                ...(useRMultiples ? {} : { showCents: false }),
-              })
-            }
-            isMasked={shouldMask(useRMultiples ? 'rMultiple' : 'pnl')}
-            valueMode={useRMultiples ? 'rMultiple' : 'pnl'}
-          />
-        ) : hasData ? (
-          chartMode === 'trades' ? (
-            <SharedTradesChart
-              className="journalit-setups-detail-performance__shared-chart"
-              data={tradesChartData}
-              valueMode={useRMultiples ? 'rMultiple' : 'pnl'}
-              height="100%"
-              margin={{ top: 8, right: 8, bottom: 2, left: 0 }}
-              onPointClick={(point) => {
-                if (point.path) {
-                  const tradeNotePath = getTradeNotePath(point.path);
-                  void plugin.openFile(tradeNotePath, true);
-                }
-              }}
-            />
-          ) : chartMode === 'drawdown' ? (
-            <SharedDrawdownChart
-              className="journalit-setups-detail-performance__shared-chart"
-              data={drawdownChartData}
-              height="100%"
-              plugin={plugin}
-              margin={{ top: 8, right: 8, bottom: 2, left: 0 }}
-            />
-          ) : (
-            <SharedPnLChart
-              className="journalit-setups-detail-performance__shared-chart"
-              data={chartData}
-              height="100%"
-              plugin={plugin}
-              margin={{ top: 8, right: 8, bottom: 2, left: 0 }}
-            />
-          )
-        ) : (
-          <EmptyState
-            className="journalit-setups-detail-performance__empty"
-            iconSize={34}
-            message={t('setups.view.detail.performance.empty')}
-            subMessage={t('setups.view.detail.performance.empty-submessage')}
-          />
-        )}
+        <SetupDetailPerformanceChart
+          plugin={plugin}
+          executionGapStats={
+            effectiveAnalysisMode === 'execution-gap'
+              ? viewModel.opportunityStats
+              : undefined
+          }
+          useRMultiples={useRMultiples}
+          hasData={hasData}
+          chartMode={chartMode}
+          chartData={chartData}
+          tradesChartData={tradesChartData}
+          drawdownChartData={drawdownChartData}
+        />
       </div>
     </section>
   );
 };
 
 SetupDetailPerformanceSection.displayName = 'SetupDetailPerformanceSection';
+
+
+const toneUnlessMasked = (
+  isMasked: boolean,
+  value: number | null
+): SetupDetailMetricTone =>
+  isMasked || value === null ? 'neutral' : getMetricTone(value);
+
+const maskedTone = (
+  isMasked: boolean,
+  tone: SetupDetailMetricTone
+): SetupDetailMetricTone => (isMasked ? 'neutral' : tone);
+
+const drawdownTone = (
+  isMasked: boolean,
+  amount: number
+): 'neutral' | 'negative' => (isMasked || amount <= 0 ? 'neutral' : 'negative');
+
+const captureRateTone = (captureRate: number): SetupDetailMetricTone => {
+  if (captureRate >= 75) return 'positive';
+  return captureRate >= 40 ? 'warning' : 'negative';
+};
+
+
+const executionGapValues = (
+  stats: SetupOpportunityStats,
+  useRMultiples: boolean
+) => {
+  const totalOf = (bucket: { totalR: number; totalPnL: number }) =>
+    useRMultiples ? bucket.totalR : bucket.totalPnL;
+  const liveValue = totalOf(stats.live);
+  const missedValue = totalOf(stats.missed);
+  const capturedEdge = Math.max(0, liveValue);
+  const availableEdge = capturedEdge + Math.max(0, missedValue);
+  return {
+    liveValue,
+    missedValue,
+    livePlusMissedValue: totalOf(stats.livePlusMissed),
+    backtestValue: totalOf(stats.backtest),
+    captureRate: availableEdge > 0 ? (capturedEdge / availableEdge) * 100 : 0,
+    liveVsBacktestAverageRDelta:
+      stats.backtestVsLiveAverageRDelta === null
+        ? null
+        : stats.backtestVsLiveAverageRDelta * -1,
+  };
+};
+
+const SetupDetailOutcomeValue: React.FC<{
+  useRMultiples: boolean;
+  rValue: number | null;
+  pnlValue: number;
+}> = ({ useRMultiples, rValue, pnlValue }) =>
+  useRMultiples ? (
+    <RMultipleValue value={rValue} />
+  ) : (
+    <SetupDetailPnlMetricValue value={pnlValue} />
+  );
+
+const SetupAverageRDeltaStat: React.FC<{
+  delta: number | null;
+  isMasked: boolean;
+}> = ({ delta, isMasked }) => (
+  <SetupDetailPerformanceStat
+    label={t('setups.view.detail.execution-gap.average-r-delta')}
+    tone={toneUnlessMasked(isMasked, delta)}
+    value={
+      delta === null ? (
+        <span>{SETUP_METRIC_NOT_AVAILABLE}</span>
+      ) : (
+        <RMultipleValue value={delta} precision={2} />
+      )
+    }
+  />
+);
 
 const SetupDetailPerformanceStats: React.FC<{
   displayedExpectancy: number | null;
@@ -455,11 +599,10 @@ const SetupDetailPerformanceStats: React.FC<{
         <>
           <SetupDetailPerformanceStat
             label={t('setups.view.metric.profit-factor')}
-            tone={
-              masking.metric
-                ? 'neutral'
-                : getMetricTone(viewModel.metrics.profitFactor - 1)
-            }
+            tone={toneUnlessMasked(
+              masking.metric,
+              viewModel.metrics.profitFactor - 1
+            )}
             value={
               <MetricValue
                 kind="metric"
@@ -470,26 +613,21 @@ const SetupDetailPerformanceStats: React.FC<{
           />
           <SetupDetailPerformanceStat
             label={t('setups.view.metric.total-pnl')}
-            tone={
-              masking.performance || displayedTotal === null
-                ? 'neutral'
-                : getMetricTone(displayedTotal)
-            }
+            tone={toneUnlessMasked(masking.performance, displayedTotal)}
             value={
-              useRMultiples ? (
-                <RMultipleValue value={displayedTotal} />
-              ) : (
-                <SetupDetailPnlMetricValue value={viewModel.metrics.totalPnL} />
-              )
+              <SetupDetailOutcomeValue
+                useRMultiples={useRMultiples}
+                rValue={displayedTotal}
+                pnlValue={viewModel.metrics.totalPnL}
+              />
             }
           />
           <SetupDetailPerformanceStat
             label={t('setups.view.metric.win-rate')}
-            tone={
-              masking.percentage
-                ? 'neutral'
-                : getMetricTone(viewModel.metrics.winRate - 50)
-            }
+            tone={toneUnlessMasked(
+              masking.percentage,
+              viewModel.metrics.winRate - 50
+            )}
             value={
               <PercentValue
                 kind="percentage"
@@ -499,39 +637,23 @@ const SetupDetailPerformanceStats: React.FC<{
           />
           <SetupDetailPerformanceStat
             label={t('metric.expectancy.name')}
-            tone={
-              masking.performance
-                ? 'neutral'
-                : displayedExpectancy === null
-                  ? 'neutral'
-                  : getMetricTone(displayedExpectancy)
-            }
+            tone={toneUnlessMasked(masking.performance, displayedExpectancy)}
             value={
-              useRMultiples ? (
-                <RMultipleValue value={displayedExpectancy} />
-              ) : (
-                <SetupDetailPnlMetricValue
-                  value={viewModel.metrics.expectedValue}
-                />
-              )
+              <SetupDetailOutcomeValue
+                useRMultiples={useRMultiples}
+                rValue={displayedExpectancy}
+                pnlValue={viewModel.metrics.expectedValue}
+              />
             }
           />
           <SetupDetailPerformanceStat
             label={t('dashboard.metrics.maxDrawdown')}
-            tone={
-              masking.drawdown || maxDrawdown.amount <= 0
-                ? 'neutral'
-                : 'negative'
-            }
+            tone={drawdownTone(masking.drawdown, maxDrawdown.amount)}
             value={
               <DisplayValue
                 kind="drawdown"
                 rMultiple={maxDrawdown.rMultiple}
-                tone={
-                  masking.drawdown || maxDrawdown.amount <= 0
-                    ? 'neutral'
-                    : 'negative'
-                }
+                tone={drawdownTone(masking.drawdown, maxDrawdown.amount)}
                 value={Math.abs(maxDrawdown.amount)}
               />
             }
@@ -605,25 +727,14 @@ const SetupExecutionGapStats: React.FC<{
   const isRMultipleMasked = shouldMask('rMultiple');
   const hasMissedTrades = stats.missed.recordCount > 0;
   const hasBacktestTrades = stats.backtest.recordCount > 0;
-  const liveValue = useRMultiples ? stats.live.totalR : stats.live.totalPnL;
-  const missedValue = useRMultiples
-    ? stats.missed.totalR
-    : stats.missed.totalPnL;
-  const livePlusMissedValue = useRMultiples
-    ? stats.livePlusMissed.totalR
-    : stats.livePlusMissed.totalPnL;
-  const backtestValue = useRMultiples
-    ? stats.backtest.totalR
-    : stats.backtest.totalPnL;
-  const capturedEdge = Math.max(0, liveValue);
-  const missedEdge = Math.max(0, missedValue);
-  const availableEdge = capturedEdge + missedEdge;
-  const captureRate =
-    availableEdge > 0 ? (capturedEdge / availableEdge) * 100 : 0;
-  const liveVsBacktestAverageRDelta =
-    stats.backtestVsLiveAverageRDelta === null
-      ? null
-      : stats.backtestVsLiveAverageRDelta * -1;
+  const {
+    liveValue,
+    missedValue,
+    livePlusMissedValue,
+    backtestValue,
+    captureRate,
+    liveVsBacktestAverageRDelta,
+  } = executionGapValues(stats, useRMultiples);
   return (
     <>
       <SetupDetailPerformanceStat
@@ -632,39 +743,37 @@ const SetupExecutionGapStats: React.FC<{
             ? 'setups.view.detail.execution-gap.live-r'
             : 'setups.view.detail.execution-gap.live-pnl'
         )}
-        tone={isValueMasked ? 'neutral' : getMetricTone(liveValue)}
+        tone={toneUnlessMasked(isValueMasked, liveValue)}
         value={
-          useRMultiples ? (
-            <RMultipleValue value={liveValue} />
-          ) : (
-            <SetupDetailPnlMetricValue value={liveValue} />
-          )
+          <SetupDetailOutcomeValue
+            useRMultiples={useRMultiples}
+            rValue={liveValue}
+            pnlValue={liveValue}
+          />
         }
       />
       {hasMissedTrades ? (
         <>
           <SetupDetailPerformanceStat
             label={t('setups.view.detail.execution-gap.missed-edge')}
-            tone={isValueMasked ? 'neutral' : 'warning'}
+            tone={maskedTone(isValueMasked, 'warning')}
             value={
-              useRMultiples ? (
-                <RMultipleValue value={missedValue} />
-              ) : (
-                <SetupDetailPnlMetricValue value={missedValue} />
-              )
+              <SetupDetailOutcomeValue
+                useRMultiples={useRMultiples}
+                rValue={missedValue}
+                pnlValue={missedValue}
+              />
             }
           />
           <SetupDetailPerformanceStat
             label={t('setups.view.detail.execution-gap.live-plus-missed')}
-            tone={
-              isValueMasked ? 'neutral' : getMetricTone(livePlusMissedValue)
-            }
+            tone={toneUnlessMasked(isValueMasked, livePlusMissedValue)}
             value={
-              useRMultiples ? (
-                <RMultipleValue value={livePlusMissedValue} />
-              ) : (
-                <SetupDetailPnlMetricValue value={livePlusMissedValue} />
-              )
+              <SetupDetailOutcomeValue
+                useRMultiples={useRMultiples}
+                rValue={livePlusMissedValue}
+                pnlValue={livePlusMissedValue}
+              />
             }
           />
         </>
@@ -672,48 +781,26 @@ const SetupExecutionGapStats: React.FC<{
       {hasBacktestTrades ? (
         <SetupDetailPerformanceStat
           label={t('setups.view.detail.execution-gap.backtest')}
-          tone={isValueMasked ? 'neutral' : 'info'}
+          tone={maskedTone(isValueMasked, 'info')}
           value={
-            useRMultiples ? (
-              <RMultipleValue value={backtestValue} />
-            ) : (
-              <SetupDetailPnlMetricValue value={backtestValue} />
-            )
+            <SetupDetailOutcomeValue
+              useRMultiples={useRMultiples}
+              rValue={backtestValue}
+              pnlValue={backtestValue}
+            />
           }
         />
       ) : null}
       {hasMissedTrades ? (
         <SetupDetailPerformanceStat
           label={<SetupExecutionGapCaptureRateLabel />}
-          tone={
-            isPercentageMasked
-              ? 'neutral'
-              : captureRate >= 75
-                ? 'positive'
-                : captureRate >= 40
-                  ? 'warning'
-                  : 'negative'
-          }
+          tone={maskedTone(isPercentageMasked, captureRateTone(captureRate))}
           value={<PercentValue kind="percentage" value={captureRate} />}
         />
       ) : hasBacktestTrades ? (
-        <SetupDetailPerformanceStat
-          label={t('setups.view.detail.execution-gap.average-r-delta')}
-          tone={
-            isRMultipleMasked || liveVsBacktestAverageRDelta === null
-              ? 'neutral'
-              : getMetricTone(liveVsBacktestAverageRDelta)
-          }
-          value={
-            liveVsBacktestAverageRDelta === null ? (
-              <span>{SETUP_METRIC_NOT_AVAILABLE}</span>
-            ) : (
-              <RMultipleValue
-                value={liveVsBacktestAverageRDelta}
-                precision={2}
-              />
-            )
-          }
+        <SetupAverageRDeltaStat
+          delta={liveVsBacktestAverageRDelta}
+          isMasked={isRMultipleMasked}
         />
       ) : null}
     </>

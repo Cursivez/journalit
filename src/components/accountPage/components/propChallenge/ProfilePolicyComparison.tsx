@@ -2,12 +2,17 @@ import React, { useState } from 'react';
 import type {
   PropChallengePhase,
   PropChallengeRule,
+  ExecutablePropChallengeRule,
 } from '../../../../services/propChallenge/types';
 import { sameProfileContent } from '../../../../services/propChallenge/PropChallengePolicyHistory';
+import { isExecutableRule } from '../../../../services/propChallenge/PropChallengeRuleReview';
 import { t } from '../../../../lang/helpers';
 import { RuleEditor } from './RuleEditor';
 import { PayoutPolicyEditor } from './PayoutPolicyEditor';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
+import { Tooltip } from '../../../shared/Tooltip';
+import { HelpTooltipContent } from '../../../shared/HelpTooltipContent';
+import { propChallengeRuleDescription } from './propChallengeRuleHelp';
 
 function AmountChange({
   before,
@@ -73,7 +78,7 @@ function ReadOnlyRule({
   phase,
   currencyCode,
 }: {
-  rule: PropChallengeRule;
+  rule: ExecutablePropChallengeRule;
   index: number;
   phase: PropChallengePhase;
   currencyCode: string;
@@ -109,7 +114,75 @@ function ReadOnlyPayout({ phase }: { phase: PropChallengePhase }) {
       onRemove={noChange}
     />
   ) : (
-    <span>{t('account.profiles.not-configured')}</span>
+    <span className="journalit-profile-policy-empty">
+      {t('account.profiles.not-configured')}
+    </span>
+  );
+}
+
+
+function RuleChangeHeading({ rule }: { rule: ExecutablePropChallengeRule }) {
+  const title = t(`account.prop-challenge.rule.${rule.kind}`);
+  return (
+    <div className="journalit-profile-policy-change__heading">
+      <Tooltip
+        content={
+          <HelpTooltipContent
+            title={title}
+            description={propChallengeRuleDescription(rule)}
+          />
+        }
+        delay={200}
+        preferredPosition="bottom"
+        triggerClassName="journalit-prop-challenge-rule-help"
+      >
+        <strong>{title}</strong>
+      </Tooltip>
+    </div>
+  );
+}
+
+function ComparisonSide({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
+  
+  return (
+    <>
+      <span className="journalit-profile-policy-column-label">{label}</span>
+      <div className="journalit-profile-policy-side__rules">{children}</div>
+    </>
+  );
+}
+
+function ReadOnlyRules({
+  rules,
+  phase,
+  currencyCode,
+}: {
+  rules: ExecutablePropChallengeRule[];
+  phase: PropChallengePhase;
+  currencyCode: string;
+}) {
+  return rules.length ? (
+    <>
+      {rules.map((rule, index) => (
+        <ReadOnlyRule
+          key={rule.id}
+          rule={rule}
+          index={index}
+          phase={phase}
+          currencyCode={currencyCode}
+        />
+      ))}
+    </>
+  ) : (
+    <span className="journalit-profile-policy-empty">
+      {t('account.profiles.not-configured')}
+    </span>
   );
 }
 
@@ -118,17 +191,23 @@ export function ProfilePolicyComparison({
   current,
   incoming,
   currencyCode,
+  currentLabel = t('account.profiles.current'),
+  incomingLabel = t('account.profiles.incoming'),
 }: {
   current: PropChallengePhase;
   incoming: PropChallengePhase;
   currencyCode: string;
+  currentLabel?: string;
+  incomingLabel?: string;
 }) {
+  const currentRules = current.rules.filter(isExecutableRule);
+  const incomingRules = incoming.rules.filter(isExecutableRule);
   const kinds = new Set(
-    [...current.rules, ...incoming.rules].map((rule) => rule.kind)
+    [...currentRules, ...incomingRules].map((rule) => rule.kind)
   );
   const changes = Array.from(kinds).flatMap((kind) => {
-    const before = current.rules.filter((rule) => rule.kind === kind);
-    const after = incoming.rules.filter((rule) => rule.kind === kind);
+    const before = currentRules.filter((rule) => rule.kind === kind);
+    const after = incomingRules.filter((rule) => rule.kind === kind);
     return sameProfileContent(ruleDefinitions(before), ruleDefinitions(after))
       ? []
       : [{ kind, before, after }];
@@ -141,9 +220,7 @@ export function ProfilePolicyComparison({
     <div className="journalit-profile-policy-diff">
       {changes.map(({ kind, before, after }) => (
         <section className="journalit-profile-policy-change" key={kind}>
-          <div className="journalit-profile-policy-change__heading">
-            <strong>{t(`account.prop-challenge.rule.${kind}`)}</strong>
-          </div>
+          <RuleChangeHeading rule={after[0] ?? before[0]} />
           {amountOnly(before, after) ? (
             <AmountChange
               before={before[0]}
@@ -152,62 +229,36 @@ export function ProfilePolicyComparison({
             />
           ) : (
             <div className="journalit-profile-policy-change__columns">
-              <div>
-                <span className="journalit-profile-policy-column-label">
-                  {t('account.profiles.current')}
-                </span>
-                {before.length ? (
-                  before.map((rule, index) => (
-                    <ReadOnlyRule
-                      key={rule.id}
-                      rule={rule}
-                      index={index}
-                      phase={current}
-                      currencyCode={currencyCode}
-                    />
-                  ))
-                ) : (
-                  <span>{t('account.profiles.not-configured')}</span>
-                )}
-              </div>
-              <div>
-                <span className="journalit-profile-policy-column-label">
-                  {t('account.profiles.incoming')}
-                </span>
-                {after.length ? (
-                  after.map((rule, index) => (
-                    <ReadOnlyRule
-                      key={rule.id}
-                      rule={rule}
-                      index={index}
-                      phase={incoming}
-                      currencyCode={currencyCode}
-                    />
-                  ))
-                ) : (
-                  <span>{t('account.profiles.not-configured')}</span>
-                )}
-              </div>
+              <ComparisonSide label={currentLabel}>
+                <ReadOnlyRules
+                  rules={before}
+                  phase={current}
+                  currencyCode={currencyCode}
+                />
+              </ComparisonSide>
+              <ComparisonSide label={incomingLabel}>
+                <ReadOnlyRules
+                  rules={after}
+                  phase={incoming}
+                  currencyCode={currencyCode}
+                />
+              </ComparisonSide>
             </div>
           )}
         </section>
       ))}
       {payoutChanged && (
         <section className="journalit-profile-policy-change">
-          <strong>{t('account.prop-challenge.payout-rules.title')}</strong>
+          <div className="journalit-profile-policy-change__heading">
+            <strong>{t('account.prop-challenge.payout-rules.title')}</strong>
+          </div>
           <div className="journalit-profile-policy-change__columns">
-            <div>
-              <span className="journalit-profile-policy-column-label">
-                {t('account.profiles.current')}
-              </span>
+            <ComparisonSide label={currentLabel}>
               <ReadOnlyPayout phase={current} />
-            </div>
-            <div>
-              <span className="journalit-profile-policy-column-label">
-                {t('account.profiles.incoming')}
-              </span>
+            </ComparisonSide>
+            <ComparisonSide label={incomingLabel}>
               <ReadOnlyPayout phase={incoming} />
-            </div>
+            </ComparisonSide>
           </div>
         </section>
       )}

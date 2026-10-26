@@ -2,6 +2,7 @@
 
 import React, { useRef, useState } from 'react';
 import { t } from '../../../../lang/helpers';
+import { isEditableRule } from '../../../../services/propChallenge/PropChallengeRuleReview';
 import type {
   PropChallengeRule,
   PropFirmProfileSelection,
@@ -44,6 +45,7 @@ export const AccountMergePhaseRules: React.FC<Props> = ({
   const [pickerOpen, setPickerOpen] = useState(false);
   const addRuleTriggerRef = useRef<HTMLButtonElement>(null);
   const firms = usePropFirmIndex();
+  const editableRules = rules.filter(isEditableRule);
 
   return (
     <div className="journalit-account-merge-modal__phase-rules journalit-prop-challenge-rules">
@@ -67,7 +69,7 @@ export const AccountMergePhaseRules: React.FC<Props> = ({
           triggerRef={addRuleTriggerRef}
         />
       </div>
-      {rules.length === 0 && (
+      {editableRules.length === 0 && (
         <div className="journalit-prop-challenge-rules-empty">
           {t('account.prop-challenge.rules.empty')}
           {showPrefillTeaser && (
@@ -99,7 +101,7 @@ export const AccountMergePhaseRules: React.FC<Props> = ({
           onApply={onApplyProfile}
         />
       )}
-      {rules.map((rule, index) => (
+      {editableRules.map((rule, index) => (
         <RuleEditor
           key={rule.id}
           rule={rule}

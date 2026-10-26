@@ -5,6 +5,7 @@ import { DEFAULT_PRIVACY_MASK } from '../../../constants';
 import { useAccountPageData } from '../context/AccountPageDataContext';
 import { usePlugin } from '../../../hooks/usePlugin';
 import {
+  AccountData,
   AccountTransaction,
   TransactionType,
 } from '../../../services/account/types';
@@ -34,6 +35,81 @@ import {
 
 
 const EMPTY_TRADES_BY_PATH: ReadonlyMap<string, AccountTradeData> = new Map();
+
+type LedgerTone = 'neutral' | 'payout' | 'deposit' | 'withdrawal';
+
+function ledgerTone(
+  isMoneyMasked: boolean,
+  isPayout: boolean,
+  isDeposit: boolean
+): LedgerTone {
+  if (isMoneyMasked) return 'neutral';
+  if (isPayout) return 'payout';
+  return isDeposit ? 'deposit' : 'withdrawal';
+}
+
+function ledgerAmountSign(
+  isMoneyMasked: boolean,
+  isPayout: boolean,
+  isDeposit: boolean
+): string {
+  if (isMoneyMasked || isPayout) return '';
+  return isDeposit ? '+' : '−';
+}
+
+const LedgerTypeBadge: React.FC<{
+  tone: LedgerTone;
+  payoutNumber: number | undefined;
+  isMoneyMasked: boolean;
+  isDeposit: boolean;
+}> = ({ tone, payoutNumber, isMoneyMasked, isDeposit }) => {
+  const className = `journalit-account-ledger-type journalit-account-ledger-type-${tone}`;
+  if (payoutNumber !== undefined && !isMoneyMasked) {
+    return (
+      <span className={className}>
+        <HandCoins size={13} />
+        {`#${payoutNumber}`}
+      </span>
+    );
+  }
+  if (isMoneyMasked) {
+    return (
+      <span className={className}>
+        <ArrowUpDown size={13} />
+        {DEFAULT_PRIVACY_MASK}
+      </span>
+    );
+  }
+  return (
+    <span className={className}>
+      {isDeposit ? <ArrowDown size={13} /> : <ArrowUp size={13} />}
+      {isDeposit
+        ? t('account.transaction.deposit')
+        : t('account.transaction.withdrawal')}
+    </span>
+  );
+};
+
+const PayoutNetLine: React.FC<{
+  transaction: AccountTransaction;
+  currency: string;
+}> = ({ transaction, currency }) => {
+  const { formatValue } = useDisplayFormatter();
+  const traderNetAmount = transaction.payoutReceipt?.traderNetAmount;
+  return (
+    <div>
+      {t('account.prop-challenge.payout.estimated-net')}:{' '}
+      {traderNetAmount != null
+        ? formatValue({
+            kind: 'money',
+            value: traderNetAmount,
+            currencyCode: currency,
+            signed: false,
+          })
+        : t('common.unknown')}
+    </div>
+  );
+};
 
 
 const LedgerRow: React.FC<{
@@ -77,14 +153,8 @@ const LedgerRow: React.FC<{
     signed: false,
   });
 
-  const tone = isMoneyMasked
-    ? 'neutral'
-    : isPayout
-      ? 'payout'
-      : isDeposit
-        ? 'deposit'
-        : 'withdrawal';
-  const amountSign = isMoneyMasked || isPayout ? '' : isDeposit ? '+' : '−';
+  const tone = ledgerTone(isMoneyMasked, isPayout, isDeposit);
+  const amountSign = ledgerAmountSign(isMoneyMasked, isPayout, isDeposit);
   const dateText = formatDateDisplay(transaction.date, getUserDateFormat());
 
   return (
@@ -107,34 +177,18 @@ const LedgerRow: React.FC<{
         </button>
       </td>
       <td className="journalit-account-ledger-cell-type">
-        {isPayout && !isMoneyMasked ? (
-          <span
-            className={`journalit-account-ledger-type journalit-account-ledger-type-${tone}`}
-          >
-            <HandCoins size={13} />
-            {`#${payoutNumber}`}
-          </span>
-        ) : (
-          <span
-            className={`journalit-account-ledger-type journalit-account-ledger-type-${tone}`}
-          >
-            {isMoneyMasked ? (
-              <ArrowUpDown size={13} />
-            ) : isDeposit ? (
-              <ArrowDown size={13} />
-            ) : (
-              <ArrowUp size={13} />
-            )}
-            {isMoneyMasked
-              ? DEFAULT_PRIVACY_MASK
-              : isDeposit
-                ? t('account.transaction.deposit')
-                : t('account.transaction.withdrawal')}
-          </span>
-        )}
+        <LedgerTypeBadge
+          tone={tone}
+          payoutNumber={payoutNumber}
+          isMoneyMasked={isMoneyMasked}
+          isDeposit={isDeposit}
+        />
       </td>
       <td className="journalit-account-ledger-cell-description">
         {transaction.description}
+        {isPayout && !isMoneyMasked && (
+          <PayoutNetLine transaction={transaction} currency={currency} />
+        )}
       </td>
       <td
         className={`journalit-account-ledger-cell-amount journalit-account-ledger-amount-${tone}`}
@@ -153,25 +207,20 @@ const LedgerRow: React.FC<{
   );
 };
 
+interface Ledger {
+  
+  sortedTransactions: AccountTransaction[];
+  payoutNumbers: Map<AccountTransaction, number>;
+  
+  payouts: AccountTransaction[];
+  phaseBalances: ReadonlyMap<AccountTransaction, number> | undefined;
+}
 
-export const DepositsWithdrawalsSection: React.FC = () => {
-  const { accountPageData, refreshData, selectedPhaseId } =
-    useAccountPageData();
-  const plugin = usePlugin();
-  const { currency: globalCurrency } = useCurrency();
-  const { formatValue, shouldMask } = useDisplayFormatter();
-  const registerTransactionsSectionTarget = useGuideTarget(
-    ACCOUNT_PAGE_TRANSACTIONS_SECTION_TARGET_ID
-  );
-
-  if (!accountPageData || !plugin) {
-    return null;
-  }
-
-  const { account } = accountPageData;
-  const isProp = account.propChallenge !== undefined;
-  const currency = account.currency || globalCurrency;
-
+function buildLedger(
+  account: AccountData,
+  trades: AccountTradeData[],
+  selectedPhaseId: string | null | undefined
+): Ledger {
   
   
   
@@ -225,7 +274,7 @@ export const DepositsWithdrawalsSection: React.FC = () => {
       ? propChallengePhaseBalancesAfter({
           phase: phaseWindow,
           config: account.propChallenge,
-          trades: accountPageData.trades,
+          trades: trades,
           transactions: account.transactions,
           now: ledgerEvaluatedAt,
         })
@@ -268,12 +317,20 @@ export const DepositsWithdrawalsSection: React.FC = () => {
   const payouts = [...payoutNumbers.keys()];
 
   const sortedTransactions = [...chronological].reverse();
+  return { sortedTransactions, payoutNumbers, payouts, phaseBalances };
+}
 
-  
-  
-  const readsAsPayouts =
-    isProp && (payouts.length > 0 || sortedTransactions.length === 0);
 
+const movesOut = (transaction: AccountTransaction): boolean =>
+  transaction.type === TransactionType.WITHDRAWAL || transaction.amount < 0;
+
+const LedgerSummary: React.FC<{
+  readsAsPayouts: boolean;
+  payouts: AccountTransaction[];
+  sortedTransactions: AccountTransaction[];
+  currency: string;
+}> = ({ readsAsPayouts, payouts, sortedTransactions, currency }) => {
+  const { formatValue, shouldMask } = useDisplayFormatter();
   const formatMoney = (value: number): string =>
     formatValue({
       kind: 'money',
@@ -282,46 +339,95 @@ export const DepositsWithdrawalsSection: React.FC = () => {
       signed: false,
     });
 
-  const renderSummary = (): string => {
-    if (readsAsPayouts) {
-      
-      
-      if (shouldMask('money')) return t('account.payouts.summary-masked');
-      const total = payouts.reduce(
-        (sum, transaction) => sum + Math.abs(transaction.amount),
-        0
-      );
-      const params = {
-        count: String(payouts.length),
-        total: formatMoney(total),
-        date: formatDateDisplay(
-          payouts[payouts.length - 1].date,
-          getUserDateFormat()
-        ),
-      };
-      return payouts.length === 1
-        ? t('account.payouts.summary-one', params)
-        : t('account.payouts.summary', params);
-    }
+  if (readsAsPayouts) {
+    
+    
+    if (shouldMask('money')) return t('account.payouts.summary-masked');
+    const total = payouts.reduce(
+      (sum, transaction) => sum + Math.abs(transaction.amount),
+      0
+    );
+    const params = {
+      count: String(payouts.length),
+      total: formatMoney(total),
+      date: formatDateDisplay(
+        payouts[payouts.length - 1].date,
+        getUserDateFormat()
+      ),
+    };
+    return (
+      <>
+        <span>{t('account.prop-challenge.payout.gross-withdrawals')}</span>{' '}
+        <span>
+          {payouts.length === 1
+            ? t('account.payouts.summary-one', params)
+            : t('account.payouts.summary', params)}
+        </span>
+      </>
+    );
+  }
 
-    
-    
-    
-    const movesOut = (transaction: AccountTransaction): boolean =>
-      transaction.type === TransactionType.WITHDRAWAL || transaction.amount < 0;
-    const deposited = sortedTransactions
-      .filter((transaction) => !movesOut(transaction))
-      .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
-    const withdrawn = sortedTransactions
-      .filter(movesOut)
-      .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
+  const deposited = sortedTransactions
+    .filter((transaction) => !movesOut(transaction))
+    .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
+  const withdrawn = sortedTransactions
+    .filter(movesOut)
+    .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
 
-    return t('account.deposits-withdrawals.summary', {
-      deposits: formatMoney(deposited),
-      withdrawn: formatMoney(withdrawn),
-      date: formatDateDisplay(sortedTransactions[0].date, getUserDateFormat()),
-    });
-  };
+  return t('account.deposits-withdrawals.summary', {
+    deposits: formatMoney(deposited),
+    withdrawn: formatMoney(withdrawn),
+    date: formatDateDisplay(sortedTransactions[0].date, getUserDateFormat()),
+  });
+};
+
+const LedgerEmptyState: React.FC<{ readsAsPayouts: boolean }> = ({
+  readsAsPayouts,
+}) => (
+  <p className="journalit-account-ledger-empty">
+    {readsAsPayouts ? (
+      <HandCoins className="journalit-account-ledger-empty-icon" />
+    ) : (
+      <ArrowUpDown className="journalit-account-ledger-empty-icon" />
+    )}
+    <span>
+      {readsAsPayouts
+        ? t('account.payouts.empty')
+        : t('account.deposits-withdrawals.empty')}
+    </span>
+    <span className="journalit-account-ledger-empty-hint">
+      {readsAsPayouts
+        ? t('account.payouts.empty-sub')
+        : t('account.deposits-withdrawals.empty-sub')}
+    </span>
+  </p>
+);
+
+
+export const DepositsWithdrawalsSection: React.FC = () => {
+  const { accountPageData, refreshData, selectedPhaseId } =
+    useAccountPageData();
+  const plugin = usePlugin();
+  const { currency: globalCurrency } = useCurrency();
+  const registerTransactionsSectionTarget = useGuideTarget(
+    ACCOUNT_PAGE_TRANSACTIONS_SECTION_TARGET_ID
+  );
+
+  if (!accountPageData || !plugin) {
+    return null;
+  }
+
+  const { account } = accountPageData;
+  const isProp = account.propChallenge !== undefined;
+  const currency = account.currency || globalCurrency;
+
+  const { sortedTransactions, payoutNumbers, payouts, phaseBalances } =
+    buildLedger(account, accountPageData.trades, selectedPhaseId);
+
+  
+  
+  const readsAsPayouts =
+    isProp && (payouts.length > 0 || sortedTransactions.length === 0);
 
   return (
     <div
@@ -336,29 +442,18 @@ export const DepositsWithdrawalsSection: React.FC = () => {
         </h3>
         {sortedTransactions.length > 0 && (
           <span className="journalit-account-ledger-summary">
-            {renderSummary()}
+            <LedgerSummary
+              readsAsPayouts={readsAsPayouts}
+              payouts={payouts}
+              sortedTransactions={sortedTransactions}
+              currency={currency}
+            />
           </span>
         )}
       </div>
 
       {sortedTransactions.length === 0 ? (
-        <p className="journalit-account-ledger-empty">
-          {readsAsPayouts ? (
-            <HandCoins className="journalit-account-ledger-empty-icon" />
-          ) : (
-            <ArrowUpDown className="journalit-account-ledger-empty-icon" />
-          )}
-          <span>
-            {readsAsPayouts
-              ? t('account.payouts.empty')
-              : t('account.deposits-withdrawals.empty')}
-          </span>
-          <span className="journalit-account-ledger-empty-hint">
-            {readsAsPayouts
-              ? t('account.payouts.empty-sub')
-              : t('account.deposits-withdrawals.empty-sub')}
-          </span>
-        </p>
+        <LedgerEmptyState readsAsPayouts={readsAsPayouts} />
       ) : (
         <table className="journalit-account-ledger">
           <thead>

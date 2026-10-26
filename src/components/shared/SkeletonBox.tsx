@@ -25,7 +25,7 @@ export const SkeletonBox = memo<SkeletonBoxProps>(
 
     return (
       <div
-        className={`skeleton-shimmer ${className}`.trim()}
+        className={`journalit-skeleton-shimmer ${className}`.trim()}
         {...shareLoadingProps}
         style={cssVars({
           '--journalit-skeleton-width': cssWidth,

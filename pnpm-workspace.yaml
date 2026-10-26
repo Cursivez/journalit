@@ -1,4 +1,9 @@
 minimumReleaseAge: 10080
+minimumReleaseAgeExclude:
+  # tsrs (Cloudflare/VoidZero TypeScript port) ships near-daily; we track it
+  # deliberately for typecheck speed.
+  - tsrs
+  - '@tsrs/*'
 engineStrict: true
 
 # pnpm v10 blocks dependency lifecycle scripts unless explicitly trusted.
@@ -12,3 +17,9 @@ peerDependencyRules:
 
 # Reject package-resolution metadata that weakens previously established trust.
 trustPolicy: no-downgrade
+
+# Exact versions published by the same maintainer from release branches without provenance
+# tooling, after newer releases gained provenance. Reviewed individually; never widen to ranges.
+trustPolicyExclude:
+  - synckit@0.9.3
+  - semver@6.3.1

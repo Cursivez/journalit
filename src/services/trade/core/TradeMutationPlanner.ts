@@ -20,9 +20,11 @@ export function planTradeMutation<TData extends TradeMutationInput>(params: {
   defaultRiskAmount?: number;
   financialFieldsChanged?: boolean;
   existingPathContext?: ExistingTradePathContext;
+  allowEmptyAccount?: boolean;
 }): TradeMutationPlan<TData> {
   const validation = validateAndNormalizeTradeMutationInput(params.data, {
     allowClosedTradeWithoutExitTimeInDirectPnlMode: true,
+    allowEmptyAccount: params.allowEmptyAccount,
   });
   const normalizedData = applyDefaultRiskAmount(
     validation.normalizedData,

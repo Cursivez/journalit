@@ -243,7 +243,7 @@ const SetupDetailScaffold: React.FC<{
 
 SetupDetailScaffold.displayName = 'SetupDetailScaffold';
 
-export const SetupInlinePlaybook: React.FC<{
+const SetupInlinePlaybook: React.FC<{
   plugin: JournalitPlugin;
   setup: Setup;
 }> = ({ plugin, setup }) => {
@@ -288,7 +288,7 @@ export const SetupInlinePlaybook: React.FC<{
 
 SetupInlinePlaybook.displayName = 'SetupInlinePlaybook';
 
-export const SetupPlaybookPanel: React.FC<{
+const SetupPlaybookPanel: React.FC<{
   plugin: JournalitPlugin;
   setup: Setup;
 }> = ({ plugin, setup }) => {
@@ -417,7 +417,7 @@ export const SetupPlaybookPanel: React.FC<{
 
 SetupPlaybookPanel.displayName = 'SetupPlaybookPanel';
 
-export const SetupBriefPanel: React.FC<{
+const SetupBriefPanel: React.FC<{
   hoverParent: Component;
   plugin: JournalitPlugin;
   viewModel: SetupViewModel;

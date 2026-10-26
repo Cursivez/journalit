@@ -17,7 +17,7 @@ import {
   getWeekStartDaySetting,
   parseLocalDateSafe,
 } from '../../../utils/dateUtils';
-import { forceMetadataCacheRefresh } from '../../../utils/dataRefresh';
+import { waitForFileIndexed } from '../../../utils/dataRefresh';
 import { extractReviewContextSections } from '../../../utils/reviewContextSections';
 import { t } from '../../../lang/helpers';
 import { eventBus } from '../../../services/events/EventBus';
@@ -523,7 +523,7 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
               return;
             }
 
-            await forceMetadataCacheRefresh(plugin.app, file);
+            await waitForFileIndexed(plugin.app, file);
             const frontmatter = asRecord(
               plugin.app.metadataCache.getFileCache(file)?.frontmatter
             );
@@ -581,7 +581,6 @@ export const WeeklyDRCContextWidget: React.FC<WeeklyDRCContextWidgetProps> =
                   return { date, dateKey, reviewed: false, sections: [] };
                 }
 
-                await forceMetadataCacheRefresh(plugin.app, drcFile);
                 const drcFrontmatter = asRecord(
                   plugin.app.metadataCache.getFileCache(drcFile)?.frontmatter
                 );

@@ -16,6 +16,48 @@ const isRecord = (value: unknown): value is Record<string, unknown> =>
   Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 
 
+export function removeNodeFromTradeGateWorkflow(
+  workflow: TradeGateWorkflow,
+  nodeId: string
+): TradeGateWorkflow {
+  if (!workflow.nodes.some((node) => node.id === nodeId)) return workflow;
+  const nodes = workflow.nodes.filter((node) => node.id !== nodeId);
+  return {
+    ...workflow,
+    startNodeId:
+      workflow.startNodeId === nodeId
+        ? (nodes[0]?.id ?? '')
+        : workflow.startNodeId,
+    nodes,
+    routes: workflow.routes.filter(
+      (route) =>
+        route.nodeId !== nodeId &&
+        !(route.target.kind === 'node' && route.target.nodeId === nodeId)
+    ),
+  };
+}
+
+
+export function deleteTradeGateQuestionFromLibrary(
+  questions: TradeGateQuestion[],
+  workflows: TradeGateWorkflow[],
+  questionId: string
+): { questions: TradeGateQuestion[]; workflows: TradeGateWorkflow[] } {
+  return {
+    questions: questions.filter((question) => question.id !== questionId),
+    workflows: workflows.map((workflow) => {
+      let nextWorkflow = workflow;
+      for (const node of workflow.nodes) {
+        if (node.questionId === questionId) {
+          nextWorkflow = removeNodeFromTradeGateWorkflow(nextWorkflow, node.id);
+        }
+      }
+      return nextWorkflow;
+    }),
+  };
+}
+
+
 export function getTradeGateQuestion(
   workflow: TradeGateWorkflow,
   questions: TradeGateQuestion[],

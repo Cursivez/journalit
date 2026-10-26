@@ -1,6 +1,8 @@
+import type { StopLossTarget } from '../../services/trade/core/StopLossTargets';
 import type { TradeFormData } from '../forms/trade/types';
 import { resolveEffectiveRiskAmount } from '../../utils/riskCalculation';
 import {
+  getTotalEntrySize,
   getResolvedWeightedAverageExitPrice,
   getWeightedAverageEntryPrice,
   isTradeOpenWithContext,
@@ -13,11 +15,11 @@ import {
 } from '../../utils/tradeExcursion';
 import { extractPriceMoveValueFields } from '../../utils/priceMoveValue';
 
-type TradeMetricInput = TradeExcursionInput & {
+export type TradeMetricInput = TradeExcursionInput & {
   exitPrice?: number;
   hasExplicitExitPrice?: boolean;
   leverageRatio?: number;
-  stopLoss?: number;
+  stopLosses?: StopLossTarget[];
   riskAmount?: number;
   tradeStatus?: string;
   exitTime?: Date | string | null;
@@ -46,7 +48,8 @@ const toRiskCalculationInput = (
     },
     []
   ),
-  stopLoss: trade.stopLoss,
+  stopLosses: trade.stopLosses,
+  direction: trade.direction,
   riskAmount: trade.riskAmount,
 });
 
@@ -158,4 +161,77 @@ export function calculateTradeReturnPercent(
   }
 
   return Number.isFinite(percentReturn) ? percentReturn : undefined;
+}
+
+type MaeMfePercentTrade = {
+  entries?: Array<{
+    price?: number | string | null;
+    size?: number | string | null;
+  }>;
+  entryPrice?: number | string | null;
+  positionSize?: number | string | null;
+  direction?: string;
+  assetType?: string;
+  mae?: number | string | null;
+  mfe?: number | string | null;
+  maePrice?: number | string | null;
+  mfePrice?: number | string | null;
+};
+
+function parseFiniteSortNumber(value: unknown): number | null {
+  if (value === undefined || value === null || value === '') {
+    return null;
+  }
+
+  const parsed = typeof value === 'number' ? value : Number(safeString(value));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+export function getMaeMfePercent(
+  trade: Record<string, unknown> | undefined,
+  valueField: 'mae' | 'mfe',
+  priceField: 'maePrice' | 'mfePrice'
+): number | null {
+  const metricTrade = trade as MaeMfePercentTrade | undefined;
+  if (!metricTrade) {
+    return null;
+  }
+
+  const entryPrice = getWeightedAverageEntryPrice(metricTrade);
+  if (entryPrice === null || entryPrice === 0) {
+    return null;
+  }
+
+  const metricPrice = parseFiniteSortNumber(metricTrade[priceField]);
+  if (metricPrice !== null) {
+    const priceDiff = calculateDirectionalPriceDiff(
+      {
+        assetType: metricTrade.assetType,
+        direction: getMaeMfeSortDirection(metricTrade.direction),
+      },
+      entryPrice,
+      metricPrice
+    );
+
+    if (priceDiff !== null) {
+      const percent = (priceDiff / entryPrice) * 100;
+      return Number.isFinite(percent) ? percent : null;
+    }
+  }
+
+  const metricValue = parseFiniteSortNumber(metricTrade[valueField]);
+  const positionSize = getTotalEntrySize(metricTrade);
+  if (metricValue === null || positionSize === null || positionSize === 0) {
+    return null;
+  }
+
+  const percent = (metricValue / (entryPrice * positionSize)) * 100;
+  return Number.isFinite(percent) ? percent : null;
+}
+
+function getMaeMfeSortDirection(direction: unknown): string {
+  const normalizedDirection = safeString(direction).toLowerCase();
+  return normalizedDirection === 'short' || normalizedDirection === 'sell'
+    ? normalizedDirection
+    : 'long';
 }

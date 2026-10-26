@@ -1,60 +1,8 @@
 
 export const WIDGET_PREVIEW_DRAWER_STYLES = `
-  .journalit-wpd-overlay {
-    position: fixed;
-    inset: 0;
-    z-index: var(--layer-modal);
-    display: flex;
-    justify-content: flex-end;
-    background-color: rgba(0, 0, 0, 0.28);
-    animation: journalit-wpd-fade-in 160ms ease-out;
-  }
-
-  .journalit-wpd-panel {
-    box-sizing: border-box;
-    width: min(640px, calc(100vw - 48px));
-    height: 100%;
-  }
-
-  .journalit-wpd-panel-inner {
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    background-color: var(--background-primary);
-    border-left: 1px solid var(--background-modifier-border);
-    box-shadow: -16px 0 48px rgba(0, 0, 0, 0.22);
-    animation: journalit-wpd-slide-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
-  }
-
-  @keyframes journalit-wpd-slide-in {
-    from { transform: translateX(32px); opacity: 0; }
-    to { transform: translateX(0); opacity: 1; }
-  }
-
-  @keyframes journalit-wpd-fade-in {
-    from { opacity: 0; }
-    to { opacity: 1; }
-  }
-
-  @media (prefers-reduced-motion: reduce) {
-    .journalit-wpd-overlay,
-    .journalit-wpd-panel-inner {
-      animation: none;
-    }
-  }
-
   @media (max-width: 600px) {
-    .journalit-wpd-panel {
-      width: 100vw;
-    }
-
-    .journalit-wpd-panel-inner {
-      border-left: none;
-    }
-
     
-    .journalit-wpd-panel .journalit-wpd-tabs-row {
+    .journalit-widget-drawer .journalit-wpd-tabs-row {
       flex-wrap: nowrap;
       overflow-x: auto;
       scrollbar-width: none;
@@ -62,57 +10,13 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
       scroll-padding-inline: 48px;
     }
 
-    .journalit-wpd-panel .journalit-wpd-tab-button {
+    .journalit-widget-drawer .journalit-wpd-tab-button {
       flex: 0 0 auto;
       white-space: nowrap;
     }
   }
 
-  .journalit-wpd-header {
-    display: flex;
-    align-items: flex-start;
-    justify-content: space-between;
-    gap: 16px;
-    padding: 20px 20px 12px;
-  }
-
   
-  @media (max-height: 500px) {
-    .journalit-wpd-header {
-      padding: 12px 20px 8px;
-    }
-
-    .journalit-wpd-panel .journalit-wpd-subtitle {
-      display: none;
-    }
-  }
-
-  .journalit-wpd-heading {
-    min-width: 0;
-  }
-
-  .journalit-wpd-panel .journalit-wpd-title {
-    margin: 0 0 4px;
-    font-size: var(--font-ui-large);
-    font-weight: 600;
-    line-height: 1.3;
-    color: var(--text-normal);
-  }
-
-  .journalit-wpd-panel .journalit-wpd-subtitle {
-    margin: 0;
-    font-size: var(--font-ui-small);
-    line-height: 1.45;
-    color: var(--text-muted);
-  }
-
-  .journalit-wpd-panel .journalit-wpd-close {
-    flex: 0 0 auto;
-    color: var(--text-muted);
-  }
-
-  
-  .journalit-wpd-header,
   .journalit-wpd-tabs,
   .journalit-wpd-search {
     flex-shrink: 0;
@@ -129,7 +33,7 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     position: relative;
   }
 
-  .journalit-wpd-panel .journalit-wpd-tabs-arrow {
+  .journalit-widget-drawer .journalit-wpd-tabs-arrow {
     position: absolute;
     top: 0;
     bottom: 12px;
@@ -145,11 +49,11 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     cursor: var(--cursor);
   }
 
-  .journalit-wpd-panel .journalit-wpd-tabs-arrow:hover {
+  .journalit-widget-drawer .journalit-wpd-tabs-arrow:hover {
     color: var(--text-accent);
   }
 
-  .journalit-wpd-panel .journalit-wpd-tabs-arrow.is-left {
+  .journalit-widget-drawer .journalit-wpd-tabs-arrow.is-left {
     left: 0;
     justify-content: flex-start;
     background: linear-gradient(
@@ -159,7 +63,7 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     );
   }
 
-  .journalit-wpd-panel .journalit-wpd-tabs-arrow.is-right {
+  .journalit-widget-drawer .journalit-wpd-tabs-arrow.is-right {
     right: 0;
     justify-content: flex-end;
     background: linear-gradient(
@@ -169,7 +73,7 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     );
   }
 
-  .journalit-wpd-panel .journalit-wpd-tab-button {
+  .journalit-widget-drawer .journalit-wpd-tab-button {
     height: auto;
     padding: 5px 10px;
     border: none;
@@ -182,12 +86,12 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     cursor: pointer;
   }
 
-  .journalit-wpd-panel .journalit-wpd-tab-button:hover {
+  .journalit-widget-drawer .journalit-wpd-tab-button:hover {
     background-color: var(--background-modifier-hover);
     color: var(--text-normal);
   }
 
-  .journalit-wpd-panel .journalit-wpd-tab-button.is-active {
+  .journalit-widget-drawer .journalit-wpd-tab-button.is-active {
     background-color: var(--background-modifier-active-hover);
     color: var(--text-normal);
   }
@@ -217,10 +121,10 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
   }
 
   
-  .journalit-wpd-panel .journalit-wpd-search .journalit-wpd-search-input,
-  .journalit-wpd-panel .journalit-wpd-search .journalit-wpd-search-input:hover,
-  .journalit-wpd-panel .journalit-wpd-search .journalit-wpd-search-input:focus,
-  .journalit-wpd-panel .journalit-wpd-search .journalit-wpd-search-input:active {
+  .journalit-widget-drawer .journalit-wpd-search .journalit-wpd-search-input,
+  .journalit-widget-drawer .journalit-wpd-search .journalit-wpd-search-input:hover,
+  .journalit-widget-drawer .journalit-wpd-search .journalit-wpd-search-input:focus,
+  .journalit-widget-drawer .journalit-wpd-search .journalit-wpd-search-input:active {
     flex: 1;
     min-width: 0;
     height: 34px;
@@ -245,7 +149,7 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     margin-top: 14px;
   }
 
-  .journalit-wpd-panel .journalit-wpd-section-title {
+  .journalit-widget-drawer .journalit-wpd-section-title {
     margin: 0 0 10px;
     font-size: var(--font-ui-smaller);
     font-weight: 600;
@@ -266,7 +170,7 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
 
   
 
-  .journalit-wpd-panel .journalit-wpd-card {
+  .journalit-widget-drawer .journalit-wpd-card {
     display: flex;
     flex-direction: column;
     align-items: stretch;
@@ -286,11 +190,11 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     cursor: pointer;
   }
 
-  .journalit-wpd-panel .journalit-wpd-card--in-use {
+  .journalit-widget-drawer .journalit-wpd-card--in-use {
     cursor: default;
   }
 
-  .journalit-wpd-panel .journalit-wpd-card:focus-visible {
+  .journalit-widget-drawer .journalit-wpd-card:focus-visible {
     outline: none;
     box-shadow: none;
   }
@@ -311,16 +215,16 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     aspect-ratio: 16 / 8;
   }
 
-  .journalit-wpd-panel .journalit-wpd-card:hover .journalit-wpd-preview {
+  .journalit-widget-drawer .journalit-wpd-card:hover .journalit-wpd-preview {
     background-color: var(--background-secondary-alt);
   }
 
-  .journalit-wpd-panel .journalit-wpd-card:focus-visible .journalit-wpd-preview {
+  .journalit-widget-drawer .journalit-wpd-card:focus-visible .journalit-wpd-preview {
     outline: 2px solid var(--interactive-accent);
     outline-offset: 2px;
   }
 
-  .journalit-wpd-panel .journalit-wpd-card--in-use:hover .journalit-wpd-preview {
+  .journalit-widget-drawer .journalit-wpd-card--in-use:hover .journalit-wpd-preview {
     background-color: var(--background-secondary);
   }
 
@@ -333,7 +237,7 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     position: relative;
   }
 
-  .journalit-wpd-panel .journalit-wpd-remove {
+  .journalit-widget-drawer .journalit-wpd-remove {
     position: absolute;
     z-index: 1;
     top: calc(50% - 2px);
@@ -346,7 +250,7 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     border: none;
     border-radius: var(--radius-m);
     background-color: var(--interactive-accent);
-    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.3);
+    box-shadow: var(--shadow-s);
     font-size: var(--font-ui-small);
     font-weight: 600;
     color: var(--text-on-accent);
@@ -357,18 +261,18 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     cursor: pointer;
   }
 
-  .journalit-wpd-panel .journalit-wpd-remove:hover {
+  .journalit-widget-drawer .journalit-wpd-remove:hover {
     background-color: var(--interactive-accent-hover);
     color: var(--text-on-accent);
   }
 
-  .journalit-wpd-panel .journalit-wpd-card--in-use:hover .journalit-wpd-remove,
-  .journalit-wpd-panel .journalit-wpd-remove:focus-visible {
+  .journalit-widget-drawer .journalit-wpd-card--in-use:hover .journalit-wpd-remove,
+  .journalit-widget-drawer .journalit-wpd-remove:focus-visible {
     opacity: 1;
     pointer-events: auto;
   }
 
-  .journalit-wpd-panel .journalit-wpd-remove:focus-visible {
+  .journalit-widget-drawer .journalit-wpd-remove:focus-visible {
     outline: 2px solid var(--text-on-accent);
     outline-offset: 2px;
   }
@@ -380,7 +284,7 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
   }
 
   @media (hover: none) {
-    .journalit-wpd-panel .journalit-wpd-remove {
+    .journalit-widget-drawer .journalit-wpd-remove {
       opacity: 1;
       pointer-events: auto;
     }
@@ -403,11 +307,11 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     line-height: 1.35;
   }
 
-  .journalit-wpd-panel .journalit-wpd-card:hover .journalit-wpd-card-name {
+  .journalit-widget-drawer .journalit-wpd-card:hover .journalit-wpd-card-name {
     color: var(--text-accent);
   }
 
-  .journalit-wpd-panel .journalit-wpd-card--in-use:hover .journalit-wpd-card-name {
+  .journalit-widget-drawer .journalit-wpd-card--in-use:hover .journalit-wpd-card-name {
     color: var(--text-normal);
   }
 
@@ -430,13 +334,13 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     color: var(--text-faint);
   }
 
-  .journalit-wpd-panel .journalit-wpd-card:hover .journalit-wpd-card-action,
-  .journalit-wpd-panel .journalit-wpd-card:focus-visible .journalit-wpd-card-action {
+  .journalit-widget-drawer .journalit-wpd-card:hover .journalit-wpd-card-action,
+  .journalit-widget-drawer .journalit-wpd-card:focus-visible .journalit-wpd-card-action {
     color: var(--text-accent);
   }
 
   .journalit-wpd-card--in-use .journalit-wpd-card-action,
-  .journalit-wpd-panel .journalit-wpd-card--in-use:hover .journalit-wpd-card-action {
+  .journalit-widget-drawer .journalit-wpd-card--in-use:hover .journalit-wpd-card-action {
     color: var(--color-green);
   }
 
@@ -461,7 +365,7 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     gap: 8px;
   }
 
-  .journalit-wpd-panel .journalit-wpd-pill {
+  .journalit-widget-drawer .journalit-wpd-pill {
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -477,18 +381,18 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     cursor: pointer;
   }
 
-  .journalit-wpd-panel .journalit-wpd-pill .journalit-obsidian-icon {
+  .journalit-widget-drawer .journalit-wpd-pill .journalit-obsidian-icon {
     display: inline-flex;
     color: var(--text-muted);
   }
 
-  .journalit-wpd-panel .journalit-wpd-pill:hover,
-  .journalit-wpd-panel .journalit-wpd-pill:focus-visible {
+  .journalit-widget-drawer .journalit-wpd-pill:hover,
+  .journalit-widget-drawer .journalit-wpd-pill:focus-visible {
     border-color: var(--interactive-accent);
     background-color: var(--background-modifier-hover);
   }
 
-  .journalit-wpd-panel .journalit-wpd-pill--add {
+  .journalit-widget-drawer .journalit-wpd-pill--add {
     border-style: dashed;
     background-color: transparent;
     color: var(--text-muted);

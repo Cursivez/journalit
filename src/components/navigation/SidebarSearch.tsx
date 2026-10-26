@@ -155,6 +155,26 @@ const REVIEW_ICONS: Record<string, ObsidianIconComponent> = {
   'yearly-review': CalendarHeart,
 };
 
+
+
+const DATE_FORMATS = {
+  monthLong: new Intl.DateTimeFormat('en-US', { month: 'long' }),
+  monthShort: new Intl.DateTimeFormat('en-US', { month: 'short' }),
+  weekdayLong: new Intl.DateTimeFormat('en-US', { weekday: 'long' }),
+  weekdayShort: new Intl.DateTimeFormat('en-US', { weekday: 'short' }),
+  shortDate: new Intl.DateTimeFormat('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }),
+  reviewDay: new Intl.DateTimeFormat('en-US', {
+    weekday: 'short',
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  }),
+};
+
 const MONTH_NAMES = [
   'January',
   'February',
@@ -259,11 +279,7 @@ function getTradeIcon(
 }
 
 function formatShortDate(date: Date): string {
-  return date.toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return DATE_FORMATS.shortDate.format(date);
 }
 
 function getReviewDateInfo(
@@ -277,12 +293,7 @@ function getReviewDateInfo(
       const [y, m, d] = dateStr.split('-').map(Number);
       const parsed = new Date(y, m - 1, d);
       if (isNaN(parsed.getTime())) return dateStr;
-      return parsed.toLocaleDateString('en-US', {
-        weekday: 'short',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-      });
+      return DATE_FORMATS.reviewDay.format(parsed);
     }
     case 'weekly-review': {
       const week = stringFrontmatterValue(frontmatter, 'week');
@@ -306,7 +317,7 @@ function getReviewDateInfo(
         const parsed = new Date(y, m - 1, d);
         if (!isNaN(parsed.getTime())) {
           if (!monthName) {
-            monthName = parsed.toLocaleDateString('en-US', { month: 'long' });
+            monthName = DATE_FORMATS.monthLong.format(parsed);
           }
           if (!yearText) {
             yearText = String(parsed.getFullYear());
@@ -358,8 +369,8 @@ function getDateSearchTerms(date: Date, includeWeekday: boolean): string[] {
   const month = date.getMonth();
   const day = date.getDate();
 
-  const monthLong = date.toLocaleDateString('en-US', { month: 'long' });
-  const monthShort = date.toLocaleDateString('en-US', { month: 'short' });
+  const monthLong = DATE_FORMATS.monthLong.format(date);
+  const monthShort = DATE_FORMATS.monthShort.format(date);
 
   const terms: string[] = [
     `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`,
@@ -376,10 +387,8 @@ function getDateSearchTerms(date: Date, includeWeekday: boolean): string[] {
   ];
 
   if (includeWeekday) {
-    const weekdayLong = date.toLocaleDateString('en-US', { weekday: 'long' });
-    const weekdayShort = date.toLocaleDateString('en-US', {
-      weekday: 'short',
-    });
+    const weekdayLong = DATE_FORMATS.weekdayLong.format(date);
+    const weekdayShort = DATE_FORMATS.weekdayShort.format(date);
     terms.push(
       `${weekdayLong} ${monthLong} ${day} ${year}`,
       `${weekdayShort} ${monthLong} ${day} ${year}`,
@@ -685,7 +694,7 @@ const SidebarSearchResults: React.FC<SidebarSearchResultsProps> = ({
   </div>
 );
 
-export const useSidebarSearchData = (plugin: JournalitPlugin) => {
+const useSidebarSearchData = (plugin: JournalitPlugin) => {
   const [dataRefreshVersion, setDataRefreshVersion] = useState(0);
   const tradesRef = useRef<SidebarTrade[]>([]);
   const tradeLoadGenerationRef = useRef(0);
@@ -721,10 +730,7 @@ export const useSidebarSearchData = (plugin: JournalitPlugin) => {
           : null;
       const searchableTrades = accountBalanceLookup
         ? filteredTrades.map((trade) =>
-            attachBreakEvenAccountBalancesToTrade(trade, accountBalanceLookup, {
-              resolveAccountIdDisplayName: (accountId) =>
-                plugin.settings.backendIntegration?.accountMapping?.[accountId],
-            })
+            attachBreakEvenAccountBalancesToTrade(trade, accountBalanceLookup)
           )
         : filteredTrades;
 
@@ -828,7 +834,7 @@ export const useSidebarSearchData = (plugin: JournalitPlugin) => {
     setDataRefreshVersion((prev) => prev + 1);
   }, [loadTrades, plugin]);
 
-  useEventBus('trade:changed', handleTradeChanged);
+  useEventBus('trade-data:changed', handleTradeChanged);
   useEventBus('backtest-trade:changed', handleTradeChanged);
   useEventBus('folder-path:changed', handleTradeChanged);
   useEventBus('account:changed', handleTradeChanged);
@@ -855,7 +861,7 @@ interface SidebarSearchExecutionContext {
   setHasSearched: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export function getSidebarTradeStatusKeywords({
+function getSidebarTradeStatusKeywords({
   tradeStatus,
   isOpen,
   pnl,
@@ -888,7 +894,7 @@ export function getSidebarTradeStatusKeywords({
   }
 }
 
-export function getSidebarTradeOutcomePnl(
+function getSidebarTradeOutcomePnl(
   trade: Pick<
     SidebarTrade,
     | 'canonicalTradeId'

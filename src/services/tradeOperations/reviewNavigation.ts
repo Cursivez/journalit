@@ -49,9 +49,9 @@ function fileMatchesReviewPeriod(
       return (
         frontmatter.type === 'weekly-review' &&
         frontmatter.week === getWeekStringForDate(weekAnchor) &&
-        frontmatter.month ===
-          String(weekAnchorThursday.getMonth() + 1).padStart(2, '0') &&
-        frontmatter.year === String(weekAnchorThursday.getFullYear())
+        
+        Number(frontmatter.month) === weekAnchorThursday.getMonth() + 1 &&
+        Number(frontmatter.year) === weekAnchorThursday.getFullYear()
       );
     }
     case 'months':

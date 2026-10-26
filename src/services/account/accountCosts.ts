@@ -14,7 +14,7 @@ type CostAccount = Pick<
 };
 
 
-export function estimateRecurringChargeDates(
+function estimateRecurringChargeDates(
   account: CostAccount,
   asOf: Date = new Date()
 ): Date[] {

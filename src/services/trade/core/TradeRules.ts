@@ -1,5 +1,8 @@
 import { calculatePnL } from '../../../utils/pnlCalculation';
-import { calculateStopLossRiskAmount } from '../../../utils/riskCalculation';
+import {
+  calculateStopLossRiskAmount,
+  hasStopLossRiskBasis,
+} from '../../../utils/riskCalculation';
 import {
   hasRealizedPnLComponents,
   isTradeOpenWithContext,
@@ -30,7 +33,10 @@ export function validateAndNormalizeTradeMutationInput<
   TData extends TradeMutationInput,
 >(
   input: TData,
-  options?: { allowClosedTradeWithoutExitTimeInDirectPnlMode?: boolean }
+  options?: {
+    allowClosedTradeWithoutExitTimeInDirectPnlMode?: boolean;
+    allowEmptyAccount?: boolean;
+  }
 ): { normalizedData: TData; isOpen: boolean } {
   const normalizedData = { ...input };
 
@@ -79,7 +85,9 @@ export function validateAndNormalizeTradeMutationInput<
 
   const hasAccount =
     normalizedData.account && normalizedData.account.length > 0;
-  if (!hasAccount) throw new Error('At least one account is required');
+  if (!hasAccount && options?.allowEmptyAccount !== true) {
+    throw new Error('At least one account is required');
+  }
 
   return { normalizedData, isOpen };
 }
@@ -205,7 +213,7 @@ export function applyDefaultRiskAmount<TData extends TradeMutationInput>(
   if (
     !input.skipDefaultRiskAmount &&
     input.riskAmount === undefined &&
-    input.stopLoss === undefined &&
+    !hasStopLossRiskBasis(input) &&
     defaultRiskAmount &&
     defaultRiskAmount > 0
   ) {

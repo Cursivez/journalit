@@ -10,22 +10,20 @@ import {
   Trade,
 } from '../components/dashboard/utils/dataUtils';
 import { createDashboardFilters } from '../settings/viewFiltersDefaults';
+import type { FilterState } from '../components/dashboard/DashboardView';
 import { eventBus } from '../services/events/EventBus';
-import type { TradeChangedPayload } from '../services/events/types';
 import { t } from '../lang/helpers';
 
 export const CALENDAR_SIDEBAR_VIEW_TYPE = 'journalit-calendar-sidebar-view';
 
-function shouldRefreshCalendarForTradeChange(
-  payload: TradeChangedPayload
-): boolean {
-  return (
-    payload.action !== 'review-status-updated' &&
-    payload.action !== 'trade-review-updated'
-  );
-}
 
-export function useCalendarTrades(plugin: JournalitPlugin): {
+
+const SIDEBAR_CALENDAR_FILTERS: FilterState = {
+  ...createDashboardFilters(),
+  tradeTypes: ['regular', 'missed'],
+};
+
+function useCalendarTrades(plugin: JournalitPlugin): {
   trades: Trade[];
   isLoading: boolean;
 } {
@@ -33,6 +31,9 @@ export function useCalendarTrades(plugin: JournalitPlugin): {
   const [isLoading, setIsLoading] = useState(true);
   const hasLoadedRef = useRef(false);
   const loadGenerationRef = useRef(0);
+  
+  
+  const authoritativeLoadDoneRef = useRef(false);
 
   const loadTrades = useCallback(
     async (showSkeleton: boolean) => {
@@ -48,11 +49,12 @@ export function useCalendarTrades(plugin: JournalitPlugin): {
       return fetchDashboardData(
         plugin.app,
         tradeService,
-        createDashboardFilters(),
+        SIDEBAR_CALENDAR_FILTERS,
         plugin.settings.trade?.defaultRiskAmount,
         plugin,
-        { freshTradeQuery: true }
+        { freshTradeQuery: !authoritativeLoadDoneRef.current }
       ).then((data) => {
+        authoritativeLoadDoneRef.current = true;
         if (generation !== loadGenerationRef.current) {
           return;
         }
@@ -66,22 +68,24 @@ export function useCalendarTrades(plugin: JournalitPlugin): {
 
   useEffect(() => {
     void loadTrades(true);
-    const unsubscribe = eventBus.subscribe('trade:changed', (payload) => {
-      if (!shouldRefreshCalendarForTradeChange(payload)) return;
+    const unsubscribeTrades = eventBus.subscribe('trade-data:changed', () => {
       void loadTrades(false);
     });
+    const unsubscribeMissedTrades = eventBus.subscribe(
+      'missed-trade-data:changed',
+      () => void loadTrades(false)
+    );
     return () => {
       loadGenerationRef.current += 1;
-      unsubscribe();
+      unsubscribeTrades();
+      unsubscribeMissedTrades();
     };
   }, [loadTrades]);
 
   return { trades, isLoading };
 }
 
-export const CalendarSidebar: React.FC<{ plugin: JournalitPlugin }> = ({
-  plugin,
-}) => {
+const CalendarSidebar: React.FC<{ plugin: JournalitPlugin }> = ({ plugin }) => {
   const { trades, isLoading } = useCalendarTrades(plugin);
 
   return (

@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { Menu, Notice } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import { t, tPlural } from '../../lang/helpers';
+import type { TranslationKey } from '../../lang/locale/en';
 import {
   buildTradeOperationPeriodDistribution,
   type AffectedPeriod,
@@ -71,39 +72,56 @@ function uniqueLabelSummary(labels: readonly string[]): string {
     .join(', ');
 }
 
+const SUMMARY_KEYS = {
+  import: {
+    complete: 'trade-handoff.summary.import-complete',
+    partial: 'trade-handoff.summary.import-partial',
+    providerPartial: 'trade-handoff.summary.import-provider-partial',
+  },
+  update: {
+    complete: 'trade-handoff.summary.update-complete',
+    partial: 'trade-handoff.summary.update-partial',
+    providerPartial: 'trade-handoff.summary.update-provider-partial',
+  },
+  mixed: {
+    complete: 'trade-handoff.summary.mixed-complete',
+    partial: 'trade-handoff.summary.mixed-partial',
+    providerPartial: 'trade-handoff.summary.mixed-provider-partial',
+  },
+} as const satisfies Record<string, Record<string, TranslationKey>>;
+
+
+
+
+function summaryKey(
+  kind: keyof typeof SUMMARY_KEYS,
+  result: TradeOperationResult
+): TranslationKey {
+  const keys = SUMMARY_KEYS[kind];
+  if (!result.partial) return keys.complete;
+  return result.providerPartialOnly ? keys.providerPartial : keys.partial;
+}
+
 export function getTradeOperationResultTitle(
   result: TradeOperationResult
 ): string {
   if (result.kind === 'sync') {
     const { created, updated } = result.counts;
     if (created > 0 && updated > 0) {
-      return t(
-        result.partial
-          ? 'trade-handoff.summary.mixed-partial'
-          : 'trade-handoff.summary.mixed-complete',
-        {
-          imported: tPlural('trade-handoff.trade-count', created),
-          updated: tPlural('trade-handoff.trade-count', updated),
-        }
-      );
+      return t(summaryKey('mixed', result), {
+        imported: tPlural('trade-handoff.trade-count', created),
+        updated: tPlural('trade-handoff.trade-count', updated),
+      });
     }
     if (updated > 0) {
-      return t(
-        result.partial
-          ? 'trade-handoff.summary.update-partial'
-          : 'trade-handoff.summary.update-complete',
-        { trades: tPlural('trade-handoff.trade-count', updated) }
-      );
+      return t(summaryKey('update', result), {
+        trades: tPlural('trade-handoff.trade-count', updated),
+      });
     }
   }
-  return t(
-    result.partial
-      ? 'trade-handoff.summary.import-partial'
-      : 'trade-handoff.summary.import-complete',
-    {
-      trades: tPlural('trade-handoff.trade-count', result.trades.length),
-    }
-  );
+  return t(summaryKey('import', result), {
+    trades: tPlural('trade-handoff.trade-count', result.trades.length),
+  });
 }
 
 function toPeriodOption(period: AffectedPeriod): {
@@ -117,6 +135,92 @@ function toPeriodOption(period: AffectedPeriod): {
     label: `${periodLevelName(period.level)} — ${period.label}`,
   };
 }
+
+
+
+function tradingDayRangeLabel(
+  days: readonly AffectedPeriod[]
+): string | undefined {
+  const first = days[0];
+  const last = days[days.length - 1];
+  if (!first || !last) return undefined;
+  return first === last ? first.label : `${first.label} – ${last.label}`;
+}
+
+function resultSubtitle(
+  result: TradeOperationResult,
+  tradingDays: readonly AffectedPeriod[]
+): string {
+  const accountSummary =
+    result.accountNames.length <= 1
+      ? result.accountNames.join('')
+      : `${result.accountNames[0]} +${result.accountNames.length - 1}`;
+  const brokerSummary = uniqueLabelSummary(result.brokerLabels);
+  const subtitleParts = [
+    tradingDayRangeLabel(tradingDays),
+    accountSummary,
+    result.kind === 'import' ? brokerSummary : '',
+  ].filter(Boolean);
+  return subtitleParts.join(' · ');
+}
+
+function resultSectionClassName(
+  presentation: TradeOperationResultPresentation,
+  hasExternalHeading: boolean,
+  partial: boolean
+): string {
+  return `journalit-trade-operation-result journalit-trade-operation-result--${presentation}${hasExternalHeading ? ' journalit-trade-operation-result--external-heading' : ''}${partial ? ' journalit-trade-operation-result--partial' : ''}`;
+}
+
+function liveRegionAttributes(
+  announces: boolean
+): Pick<
+  React.HTMLAttributes<HTMLElement>,
+  'role' | 'aria-live' | 'aria-atomic'
+> {
+  return announces
+    ? { role: 'status', 'aria-live': 'polite', 'aria-atomic': 'true' }
+    : {};
+}
+
+const TradeOperationResultHeading: React.FC<{
+  titleId: string;
+  title: string;
+  subtitle: string;
+  partial: boolean;
+  hasExternalHeading: boolean;
+}> = ({ titleId, title, subtitle, partial, hasExternalHeading }) =>
+  hasExternalHeading ? (
+    <>
+      <span
+        className="journalit-sr-only"
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {title}
+      </span>
+      {subtitle ? (
+        <p className="journalit-trade-operation-result__external-subtitle">
+          {subtitle}
+        </p>
+      ) : null}
+    </>
+  ) : (
+    <div className="journalit-trade-operation-result__header">
+      <span className="journalit-trade-operation-result__status-icon">
+        {partial ? (
+          <AlertTriangle size={18} aria-hidden="true" />
+        ) : (
+          <CheckCircle2 size={18} aria-hidden="true" />
+        )}
+      </span>
+      <div className="journalit-trade-operation-result__heading-copy">
+        <h3 id={titleId}>{title}</h3>
+        {subtitle ? <p>{subtitle}</p> : null}
+      </div>
+    </div>
+  );
 
 export const TradeOperationResultCard: React.FC<
   TradeOperationResultCardProps
@@ -180,18 +284,8 @@ export const TradeOperationResultCard: React.FC<
     return options;
   }, [distribution, recommendedPeriods]);
   const isInline = presentation !== 'toast';
-  const accountSummary =
-    result.accountNames.length <= 1
-      ? result.accountNames.join('')
-      : `${result.accountNames[0]} +${result.accountNames.length - 1}`;
   const title = getTradeOperationResultTitle(result);
-  const brokerSummary = uniqueLabelSummary(result.brokerLabels);
-  const subtitleParts = [
-    recommendedPeriod?.label,
-    accountSummary,
-    result.kind === 'import' ? brokerSummary : '',
-  ].filter(Boolean);
-  const subtitle = subtitleParts.join(' · ');
+  const subtitle = resultSubtitle(result, distribution.groupsByLevel.days);
   const visibleRecommendedPeriods =
     isInline && recommendedPeriods.length <= MAX_PERIODS_PER_MENU_LEVEL
       ? recommendedPeriods
@@ -267,14 +361,17 @@ export const TradeOperationResultCard: React.FC<
 
   const titleId =
     externalHeadingId ?? `trade-operation-result-title-${result.id}`;
+  const hasExternalHeading = Boolean(externalHeadingId);
 
   return (
     <section
-      className={`journalit-trade-operation-result journalit-trade-operation-result--${presentation}${externalHeadingId ? ' journalit-trade-operation-result--external-heading' : ''}${result.partial ? ' journalit-trade-operation-result--partial' : ''}`}
+      className={resultSectionClassName(
+        presentation,
+        hasExternalHeading,
+        result.partial
+      )}
       aria-labelledby={titleId}
-      role={isInline && !externalHeadingId ? 'status' : undefined}
-      aria-live={isInline && !externalHeadingId ? 'polite' : undefined}
-      aria-atomic={isInline && !externalHeadingId ? 'true' : undefined}
+      {...liveRegionAttributes(isInline && !hasExternalHeading)}
     >
       {onDismiss ? (
         <button
@@ -287,37 +384,13 @@ export const TradeOperationResultCard: React.FC<
         </button>
       ) : null}
 
-      {externalHeadingId ? (
-        <>
-          <span
-            className="journalit-sr-only"
-            role="status"
-            aria-live="polite"
-            aria-atomic="true"
-          >
-            {title}
-          </span>
-          {subtitle ? (
-            <p className="journalit-trade-operation-result__external-subtitle">
-              {subtitle}
-            </p>
-          ) : null}
-        </>
-      ) : (
-        <div className="journalit-trade-operation-result__header">
-          <span className="journalit-trade-operation-result__status-icon">
-            {result.partial ? (
-              <AlertTriangle size={18} aria-hidden="true" />
-            ) : (
-              <CheckCircle2 size={18} aria-hidden="true" />
-            )}
-          </span>
-          <div className="journalit-trade-operation-result__heading-copy">
-            <h3 id={titleId}>{title}</h3>
-            {subtitle ? <p>{subtitle}</p> : null}
-          </div>
-        </div>
-      )}
+      <TradeOperationResultHeading
+        titleId={titleId}
+        title={title}
+        subtitle={subtitle}
+        partial={result.partial}
+        hasExternalHeading={hasExternalHeading}
+      />
 
       <div className="journalit-trade-operation-result__actions">
         {recommendedPeriod ? (

@@ -158,10 +158,24 @@ export class TradovateBrokerSyncClient {
         'Tradovate',
         options.interactiveEntitlement ?? true
       );
-      throw new ApiError(
+      const error = new ApiError(
         `Tradovate status unavailable (${response.status})`,
         response.status
       );
+      if (response.status === 404) {
+        try {
+          const body: unknown = response.json;
+          if (tradeSyncApiErrorCode(body) === 'tradovate_disabled') {
+            error.context = {
+              operation: 'getTradovateConnections',
+              responseBody: { error: 'tradovate_disabled' },
+            };
+          }
+        } catch {
+          // intentional
+        }
+      }
+      throw error;
     }
     return decodeTradovateConnectionsResponse(response.json);
   }

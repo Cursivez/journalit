@@ -6,7 +6,7 @@ import JournalitPlugin from '../../../main';
 import { DrawdownType } from '../../../services/account/types';
 import { calculateDrawdownUsed as calculateDrawdownPercent } from '../../account/dashboard/utils';
 import { useHomeAccount } from '../context/HomeAccountContext';
-import { useHomeAccountsData } from '../context/HomeAccountsDataContext';
+import { useHomeAccountsState } from '../context/HomeAccountsDataContext';
 import { t } from '../../../lang/helpers';
 import { AccountProgressListItem } from './AccountProgressListWidget';
 import { ConfigurableAccountProgressWidget } from './ConfigurableAccountProgressWidget';
@@ -51,14 +51,8 @@ const DrawdownMonitorWidgetComponent: React.FC<DrawdownMonitorWidgetProps> = ({
   isEditing = false,
 }) => {
   const accountContext = useHomeAccount();
-  const homeAccountsData = useHomeAccountsData();
-  const accounts = useMemo(
-    () => homeAccountsData?.accounts || [],
-    [homeAccountsData?.accounts]
-  );
-  const challengeProgress = homeAccountsData?.challengeProgress;
-  const isLoading = homeAccountsData?.isLoading ?? true;
-  const error = homeAccountsData?.error ?? null;
+  const { accounts, challengeProgress, isLoading, error } =
+    useHomeAccountsState();
 
   
   const handleAccountClick = useCallback(

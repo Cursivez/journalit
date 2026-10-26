@@ -58,7 +58,7 @@ function isReleaseMetadata(value: unknown): value is ReleaseMetadata {
   return true;
 }
 
-export function parseReleaseMetadata(value: unknown): ReleaseMetadata {
+function parseReleaseMetadata(value: unknown): ReleaseMetadata {
   if (!isReleaseMetadata(value)) {
     throw new Error('Invalid generated release data payload');
   }

@@ -8,8 +8,10 @@ import { cssVars } from '../../../styles/inlineStylePolicy';
 import { SharedSetupPerformanceChart } from '../../charts/SharedSetupPerformanceChart';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
-import { CurrencyCode } from '../../../utils/currencyConfig';
-import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
+import {
+  readReviewTradeSettings,
+  resolveReviewCurrency,
+} from './shared/reviewWidgetSettings';
 import {
   getEffectivePnL,
   isPnlContributingTrade,
@@ -45,7 +47,6 @@ type ReviewGroupedTrade = Record<string, unknown> & {
   brokerBaseCurrency?: string;
   setup?: string | string[];
   tags?: string[];
-  customTags?: string[];
   rMultiple?: number;
   riskAmount?: number;
   breakEvenAccountCurrentBalance?: number;
@@ -132,7 +133,7 @@ interface BuildGroupedPerformanceOptions {
   sortBy: NonNullable<GroupedPerformanceWidgetConfig['sortBy']>;
 }
 
-export const buildGroupedPerformanceData = (
+const buildGroupedPerformanceData = (
   trades: readonly ReviewGroupedTrade[],
   options: BuildGroupedPerformanceOptions
 ): SetupPerformanceDataPoint[] => {
@@ -240,7 +241,7 @@ export const buildGroupedPerformanceData = (
   return groupedData;
 };
 
-export const selectGroupedPerformanceRows = (
+const selectGroupedPerformanceRows = (
   data: readonly SetupPerformanceDataPoint[],
   kind: GroupedPerformanceKind,
   topN: number | undefined,
@@ -263,7 +264,7 @@ export const selectGroupedPerformanceRows = (
   };
 };
 
-export const formatGroupedProfitFactor = (
+const formatGroupedProfitFactor = (
   profitFactor: number | undefined,
   isMasked: boolean,
   formatMetric: (value: number) => string
@@ -296,6 +297,153 @@ const GroupedPerformanceTableHead: React.FC<{ columnHeader: string }> = ({
     </tr>
   </thead>
 );
+
+const GroupedPerformanceSkeleton: React.FC<{
+  title: string;
+  columnHeader: string;
+  config: GroupedPerformanceWidgetConfig;
+  tableContainerClassName: string;
+}> = ({
+  title,
+  columnHeader,
+  config: mergedConfig,
+  tableContainerClassName,
+}) => (
+  <div className="journalit-reviewv2-chart-container">
+    <div className="journalit-reviewv2-chart-header">
+      <div className="journalit-reviewv2-chart-title">{title}</div>
+    </div>
+    <div className="journalit-reviewv2-chart-body journalit-reviewv2-chart-body--compact">
+      {mergedConfig.showChart && (
+        <div
+          className="journalit-reviewv2-chart-skeleton"
+          {...shareLoadingProps}
+          style={cssVars({
+            '--reviewv2-chart-height': `${mergedConfig.height}px`,
+            '--reviewv2-chart-bar-gap': '8px',
+          })}
+        >
+          
+          <div className="journalit-reviewv2-chart-skeleton-axis">
+            <SkeletonBox width={30} height={10} borderRadius="4px" />
+            <SkeletonBox width={25} height={10} borderRadius="4px" />
+            <SkeletonBox width={28} height={10} borderRadius="4px" />
+          </div>
+          
+          <div className="journalit-reviewv2-chart-skeleton-bars">
+            <SkeletonBox width={28} height="70%" borderRadius="2px" />
+            <SkeletonBox width={28} height="45%" borderRadius="2px" />
+            <SkeletonBox width={28} height="60%" borderRadius="2px" />
+            <SkeletonBox width={28} height="30%" borderRadius="2px" />
+            <SkeletonBox width={28} height="50%" borderRadius="2px" />
+          </div>
+          
+          <div className="journalit-reviewv2-chart-skeleton-xline" />
+          
+          <div className="journalit-reviewv2-chart-skeleton-xlabels">
+            {['one', 'two', 'three', 'four', 'five'].map((key) => (
+              <SkeletonBox
+                key={key}
+                width={40}
+                height={10}
+                borderRadius="4px"
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
+      {mergedConfig.showTable && (
+        <div className={tableContainerClassName}>
+          <table className="journalit-reviewv2-table">
+            <GroupedPerformanceTableHead columnHeader={columnHeader} />
+            <tbody>
+              {['first', 'second', 'third', 'fourth'].map((key) => (
+                <tr key={key}>
+                  <td className="journalit-reviewv2-table-cell">
+                    <SkeletonBox width={70} height={14} borderRadius="4px" />
+                  </td>
+                  <td className="journalit-reviewv2-table-cell">
+                    <SkeletonBox width={25} height={14} borderRadius="4px" />
+                  </td>
+                  <td className="journalit-reviewv2-table-cell">
+                    <SkeletonBox width={55} height={14} borderRadius="4px" />
+                  </td>
+                  <td className="journalit-reviewv2-table-cell">
+                    <SkeletonBox width={40} height={14} borderRadius="4px" />
+                  </td>
+                  <td className="journalit-reviewv2-table-cell">
+                    <SkeletonBox width={30} height={14} borderRadius="4px" />
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  </div>
+);
+
+type GroupedPerformanceRow = ReturnType<
+  typeof selectGroupedPerformanceRows
+>['tableRows'][number];
+
+const GroupedPerformanceTableRow: React.FC<{
+  row: GroupedPerformanceRow;
+  currency: string;
+  formatter: ReturnType<typeof useDisplayFormatter>;
+}> = ({ row, currency, formatter: { formatValue, shouldMask } }) => {
+  const isPnlMasked = shouldMask('pnl');
+  const isMetricMasked = shouldMask('metric');
+  return (
+    <tr>
+      <td className="journalit-reviewv2-table-cell">{row.name}</td>
+      <td className="journalit-reviewv2-table-cell">{row.tradeCount}</td>
+      <td
+        className={`journalit-reviewv2-table-cell journalit-reviewv2-table-cell--emphasis ${
+          isPnlMasked
+            ? ''
+            : row.pnl >= 0
+              ? 'journalit-reviewv2-table-cell--positive'
+              : 'journalit-reviewv2-table-cell--negative'
+        }`}
+      >
+        {formatValue({
+          kind: 'pnl',
+          value: row.pnl,
+          currencyCode: currency,
+          rMultiple: row.totalRMultiple,
+        })}
+      </td>
+      <td className="journalit-reviewv2-table-cell">
+        {formatValue({
+          kind: 'returnPercent',
+          value: row.winRate,
+          signed: false,
+          precision: 1,
+        })}
+      </td>
+      <td
+        className={`journalit-reviewv2-table-cell journalit-reviewv2-table-cell--emphasis ${
+          isMetricMasked
+            ? ''
+            : (row.profitFactor ?? 0) >= 1
+              ? 'journalit-reviewv2-table-cell--positive'
+              : 'journalit-reviewv2-table-cell--negative'
+        }`}
+      >
+        {formatGroupedProfitFactor(row.profitFactor, isMetricMasked, (value) =>
+          formatValue({
+            kind: 'metric',
+            value,
+            precision: 2,
+          })
+        )}
+      </td>
+    </tr>
+  );
+};
 
 export const GroupedPerformanceWidget: React.FC<GroupedPerformanceWidgetProps> =
   React.memo(
@@ -335,13 +483,13 @@ export const GroupedPerformanceWidget: React.FC<GroupedPerformanceWidgetProps> =
       const maskTagIdentities =
         kind === 'tag' && (isPnlMasked || isMetricMasked || isWinRateMasked);
       const applyAccountCountMultiplier = false;
-      const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
-      const breakEvenThresholdMode =
-        plugin?.settings?.trade?.breakEvenThresholdMode;
-      const breakEvenThresholdPercent =
-        plugin?.settings?.trade?.breakEvenThresholdPercent;
-      const breakEvenRangeMin = plugin?.settings?.trade?.breakEvenRangeMin;
-      const breakEvenRangeMax = plugin?.settings?.trade?.breakEvenRangeMax;
+      const {
+        defaultRiskAmount,
+        breakEvenThresholdMode,
+        breakEvenThresholdPercent,
+        breakEvenRangeMin,
+        breakEvenRangeMax,
+      } = readReviewTradeSettings(plugin);
 
       
       const groupedPerformance = useMemo(() => {
@@ -385,104 +533,12 @@ export const GroupedPerformanceWidget: React.FC<GroupedPerformanceWidgetProps> =
 
       if (loading) {
         return (
-          <div className="journalit-reviewv2-chart-container">
-            <div className="journalit-reviewv2-chart-header">
-              <div className="journalit-reviewv2-chart-title">
-                {widgetTitle}
-              </div>
-            </div>
-            <div className="journalit-reviewv2-chart-body journalit-reviewv2-chart-body--compact">
-              
-              {mergedConfig.showChart && (
-                <div
-                  className="journalit-reviewv2-chart-skeleton"
-                  {...shareLoadingProps}
-                  style={cssVars({
-                    '--reviewv2-chart-height': `${mergedConfig.height}px`,
-                    '--reviewv2-chart-bar-gap': '8px',
-                  })}
-                >
-                  
-                  <div className="journalit-reviewv2-chart-skeleton-axis">
-                    <SkeletonBox width={30} height={10} borderRadius="4px" />
-                    <SkeletonBox width={25} height={10} borderRadius="4px" />
-                    <SkeletonBox width={28} height={10} borderRadius="4px" />
-                  </div>
-                  
-                  <div className="journalit-reviewv2-chart-skeleton-bars">
-                    <SkeletonBox width={28} height="70%" borderRadius="2px" />
-                    <SkeletonBox width={28} height="45%" borderRadius="2px" />
-                    <SkeletonBox width={28} height="60%" borderRadius="2px" />
-                    <SkeletonBox width={28} height="30%" borderRadius="2px" />
-                    <SkeletonBox width={28} height="50%" borderRadius="2px" />
-                  </div>
-                  
-                  <div className="journalit-reviewv2-chart-skeleton-xline" />
-                  
-                  <div className="journalit-reviewv2-chart-skeleton-xlabels">
-                    {['one', 'two', 'three', 'four', 'five'].map((key) => (
-                      <SkeletonBox
-                        key={key}
-                        width={40}
-                        height={10}
-                        borderRadius="4px"
-                      />
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              
-              {mergedConfig.showTable && (
-                <div className={tableContainerClassName}>
-                  <table className="journalit-reviewv2-table">
-                    <GroupedPerformanceTableHead columnHeader={columnHeader} />
-                    <tbody>
-                      {['first', 'second', 'third', 'fourth'].map((key) => (
-                        <tr key={key}>
-                          <td className="journalit-reviewv2-table-cell">
-                            <SkeletonBox
-                              width={70}
-                              height={14}
-                              borderRadius="4px"
-                            />
-                          </td>
-                          <td className="journalit-reviewv2-table-cell">
-                            <SkeletonBox
-                              width={25}
-                              height={14}
-                              borderRadius="4px"
-                            />
-                          </td>
-                          <td className="journalit-reviewv2-table-cell">
-                            <SkeletonBox
-                              width={55}
-                              height={14}
-                              borderRadius="4px"
-                            />
-                          </td>
-                          <td className="journalit-reviewv2-table-cell">
-                            <SkeletonBox
-                              width={40}
-                              height={14}
-                              borderRadius="4px"
-                            />
-                          </td>
-                          <td className="journalit-reviewv2-table-cell">
-                            <SkeletonBox
-                              width={30}
-                              height={14}
-                              borderRadius="4px"
-                            />
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-            </div>
-          </div>
+          <GroupedPerformanceSkeleton
+            title={widgetTitle}
+            columnHeader={columnHeader}
+            config={mergedConfig}
+            tableContainerClassName={tableContainerClassName}
+          />
         );
       }
 
@@ -501,10 +557,7 @@ export const GroupedPerformanceWidget: React.FC<GroupedPerformanceWidgetProps> =
         );
       }
 
-      const currency =
-        getSingleExplicitCurrency(trades) ||
-        plugin?.settings?.general?.currency ||
-        CurrencyCode.USD;
+      const currency = resolveReviewCurrency(trades, plugin);
       const { chartRows, tableRows } = selectGroupedPerformanceRows(
         groupedPerformance,
         kind,
@@ -544,58 +597,12 @@ export const GroupedPerformanceWidget: React.FC<GroupedPerformanceWidgetProps> =
                   <GroupedPerformanceTableHead columnHeader={columnHeader} />
                   <tbody>
                     {tableRows.map((row) => (
-                      <tr key={row.name}>
-                        <td className="journalit-reviewv2-table-cell">
-                          {row.name}
-                        </td>
-                        <td className="journalit-reviewv2-table-cell">
-                          {row.tradeCount}
-                        </td>
-                        <td
-                          className={`journalit-reviewv2-table-cell journalit-reviewv2-table-cell--emphasis ${
-                            isPnlMasked
-                              ? ''
-                              : row.pnl >= 0
-                                ? 'journalit-reviewv2-table-cell--positive'
-                                : 'journalit-reviewv2-table-cell--negative'
-                          }`}
-                        >
-                          {formatValue({
-                            kind: 'pnl',
-                            value: row.pnl,
-                            currencyCode: currency,
-                            rMultiple: row.totalRMultiple,
-                          })}
-                        </td>
-                        <td className="journalit-reviewv2-table-cell">
-                          {formatValue({
-                            kind: 'returnPercent',
-                            value: row.winRate,
-                            signed: false,
-                            precision: 1,
-                          })}
-                        </td>
-                        <td
-                          className={`journalit-reviewv2-table-cell journalit-reviewv2-table-cell--emphasis ${
-                            isMetricMasked
-                              ? ''
-                              : (row.profitFactor ?? 0) >= 1
-                                ? 'journalit-reviewv2-table-cell--positive'
-                                : 'journalit-reviewv2-table-cell--negative'
-                          }`}
-                        >
-                          {formatGroupedProfitFactor(
-                            row.profitFactor,
-                            isMetricMasked,
-                            (value) =>
-                              formatValue({
-                                kind: 'metric',
-                                value,
-                                precision: 2,
-                              })
-                          )}
-                        </td>
-                      </tr>
+                      <GroupedPerformanceTableRow
+                        key={row.name}
+                        row={row}
+                        currency={currency}
+                        formatter={{ formatValue, shouldMask }}
+                      />
                     ))}
                   </tbody>
                 </table>

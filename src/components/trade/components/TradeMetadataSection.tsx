@@ -1,6 +1,7 @@
 
 
 import React from 'react';
+import { tradeShareSectionProps } from '../../share/tradeShare/tradeShareModel';
 import { TradeFormData } from '../../forms/trade/types';
 import { TradeTemplate } from '../../../types/reviewV2';
 import { t } from '../../../lang/helpers';
@@ -64,6 +65,144 @@ function MetadataRow({
   );
 }
 
+
+function resolveMetadataRows(
+  data: Partial<TradeFormData>,
+  config: TradeMetadataSectionProps['config']
+) {
+  const shown = (visible: boolean | undefined, values: string[] | undefined) =>
+    visible !== false && values ? values : [];
+  return {
+    accounts: shown(config?.showAccounts, data.account),
+    setups: shown(config?.showSetups, data.setup),
+    mistakes: shown(config?.showMistakes, data.mistake),
+    tags: shown(config?.showTags, data.tags),
+    mtComment: typeof data.mtComment === 'string' ? data.mtComment.trim() : '',
+  };
+}
+
+const ColoredMetadataChip: React.FC<{
+  className: string;
+  color: ReturnType<typeof getTagLabelColor>;
+  children: React.ReactNode;
+}> = ({ className, color, children }) => (
+  <span
+    className={`${className} ${getLabelColorClassName(color)}`}
+    style={cssVars({
+      '--journalit-label-color': color,
+      '--journalit-label-foreground': getLabelColorForeground(color),
+    })}
+  >
+    {children}
+  </span>
+);
+
+const AccountMetadataRow: React.FC<{
+  accounts: string[];
+  onAccountClick: TradeMetadataSectionProps['onAccountClick'];
+}> = ({ accounts, onAccountClick }) => {
+  if (accounts.length === 0) return null;
+  return (
+    <MetadataRow icon={<User size={18} />} label={t('trade.metadata.account')}>
+      {accounts.map((account) => (
+        <button
+          key={account}
+          type="button"
+          className="journalit-button account-tag trade-context-chip trade-context-chip--account"
+          onClick={() => void onAccountClick(account)}
+        >
+          {account}
+        </button>
+      ))}
+    </MetadataRow>
+  );
+};
+
+const SetupMetadataRow: React.FC<{
+  setups: string[];
+  labelColors: TradeLabelColors;
+}> = ({ setups, labelColors }) => {
+  if (setups.length === 0) return null;
+  return (
+    <MetadataRow
+      icon={<FlaskConical size={18} />}
+      label={t('trade.metadata.setups')}
+      variant="setup"
+    >
+      {setups.map((setup) => (
+        <ColoredMetadataChip
+          key={setup}
+          className="tag setup-tag trade-context-chip trade-context-chip--setup"
+          color={getSetupLabelColor(labelColors.setups, setup)}
+        >
+          {setup}
+        </ColoredMetadataChip>
+      ))}
+    </MetadataRow>
+  );
+};
+
+const MistakeMetadataRow: React.FC<{ mistakes: string[] }> = ({ mistakes }) => {
+  if (mistakes.length === 0) return null;
+  return (
+    <MetadataRow
+      icon={<AlertTriangle size={18} />}
+      label={t('trade.metadata.mistakes')}
+      variant="mistake"
+    >
+      {mistakes.map((mistake) => (
+        <span
+          key={mistake}
+          className="tag mistake-tag trade-context-chip trade-context-chip--mistake"
+        >
+          {mistake}
+        </span>
+      ))}
+    </MetadataRow>
+  );
+};
+
+const TagMetadataRow: React.FC<{
+  tags: string[];
+  labelColors: TradeLabelColors;
+}> = ({ tags, labelColors }) => {
+  if (tags.length === 0) return null;
+  return (
+    <MetadataRow
+      icon={<Tag size={18} />}
+      label={t('tradelog.column.tags')}
+      variant="tag"
+    >
+      {tags.map((tag) => (
+        <ColoredMetadataChip
+          key={tag}
+          className="tag trade-context-chip trade-context-chip--tag"
+          color={getTagLabelColor(labelColors.tags, tag)}
+        >
+          {tag}
+        </ColoredMetadataChip>
+      ))}
+    </MetadataRow>
+  );
+};
+
+const BrokerCommentSection: React.FC<{ comment: string }> = ({ comment }) => {
+  if (comment.length === 0) return null;
+  return (
+    <div
+      className="trade-broker-metadata-section"
+      {...tradeShareSectionProps('metadata')}
+    >
+      <div className="details-card trade-broker-metadata-card">
+        <div className="details-header">
+          <h4>{t('trade.metadata.broker-comment')}</h4>
+        </div>
+        <div className="trade-broker-metadata-value">{comment}</div>
+      </div>
+    </div>
+  );
+};
+
 export const TradeMetadataSection: React.FC<TradeMetadataSectionProps> = ({
   data,
   onAccountClick,
@@ -73,143 +212,39 @@ export const TradeMetadataSection: React.FC<TradeMetadataSectionProps> = ({
 }) => {
   const contextLabelColors = useTradeLabelColors();
   const labelColors = providedLabelColors ?? contextLabelColors;
-  const hasAccounts = data.account && data.account.length > 0;
-  const hasCustomTags = data.customTags && data.customTags.length > 0;
-  const hasSetups = data.setup && data.setup.length > 0;
-  const mistakes = data.mistake || [];
-  const hasMistakes = mistakes.length > 0;
-  const mtComment =
-    typeof data.mtComment === 'string' ? data.mtComment.trim() : '';
-  const hasMTComment = mtComment.length > 0;
-
-  
-  const showAccounts = config?.showAccounts !== false;
-  const showTags = config?.showTags !== false;
-  const showSetups = config?.showSetups !== false;
-  const showMistakes = config?.showMistakes !== false;
+  const rows = resolveMetadataRows(data, config);
   const hasContextRows =
-    (showAccounts && hasAccounts) ||
-    (showTags && hasCustomTags) ||
-    (showSetups && hasSetups) ||
-    (showMistakes && hasMistakes);
+    rows.accounts.length > 0 ||
+    rows.setups.length > 0 ||
+    rows.mistakes.length > 0 ||
+    rows.tags.length > 0;
 
   
-  if (
-    (!hasAccounts || !showAccounts) &&
-    (!hasCustomTags || !showTags) &&
-    !hasMTComment &&
-    (!hasSetups || !showSetups) &&
-    (!hasMistakes || !showMistakes) &&
-    !children
-  ) {
+  if (!hasContextRows && rows.mtComment.length === 0 && !children) {
     return null;
   }
 
   return (
     <>
       {(hasContextRows || children) && (
-        <div className="trade-context-section">
+        <div
+          className="trade-context-section"
+          {...tradeShareSectionProps('metadata')}
+        >
           <div className="trade-context-card">
-            {showAccounts && hasAccounts && (
-              <MetadataRow
-                icon={<User size={18} />}
-                label={t('trade.metadata.account')}
-              >
-                {(data.account || []).map((account) => (
-                  <button
-                    key={account}
-                    type="button"
-                    className="journalit-button account-tag trade-context-chip trade-context-chip--account"
-                    onClick={() => void onAccountClick(account)}
-                  >
-                    {account}
-                  </button>
-                ))}
-              </MetadataRow>
-            )}
-
-            {showSetups && hasSetups && (
-              <MetadataRow
-                icon={<FlaskConical size={18} />}
-                label={t('trade.metadata.setups')}
-                variant="setup"
-              >
-                {(data.setup || []).map((setup) => {
-                  const color = getSetupLabelColor(labelColors.setups, setup);
-                  return (
-                    <span
-                      key={setup}
-                      className={`tag setup-tag trade-context-chip trade-context-chip--setup ${getLabelColorClassName(color)}`}
-                      style={cssVars({
-                        '--journalit-label-color': color,
-                        '--journalit-label-foreground':
-                          getLabelColorForeground(color),
-                      })}
-                    >
-                      {setup}
-                    </span>
-                  );
-                })}
-              </MetadataRow>
-            )}
-
-            {showMistakes && hasMistakes && (
-              <MetadataRow
-                icon={<AlertTriangle size={18} />}
-                label={t('trade.metadata.mistakes')}
-                variant="mistake"
-              >
-                {mistakes.map((mistake) => (
-                  <span
-                    key={mistake}
-                    className="tag mistake-tag trade-context-chip trade-context-chip--mistake"
-                  >
-                    {mistake}
-                  </span>
-                ))}
-              </MetadataRow>
-            )}
-
-            {showTags && hasCustomTags && (
-              <MetadataRow
-                icon={<Tag size={18} />}
-                label={t('tradelog.column.tags')}
-                variant="tag"
-              >
-                {data.customTags!.map((tag) => {
-                  const color = getTagLabelColor(labelColors.tags, tag);
-                  return (
-                    <span
-                      key={tag}
-                      className={`tag trade-context-chip trade-context-chip--tag ${getLabelColorClassName(color)}`}
-                      style={cssVars({
-                        '--journalit-label-color': color,
-                        '--journalit-label-foreground':
-                          getLabelColorForeground(color),
-                      })}
-                    >
-                      {tag}
-                    </span>
-                  );
-                })}
-              </MetadataRow>
-            )}
-
+            <AccountMetadataRow
+              accounts={rows.accounts}
+              onAccountClick={onAccountClick}
+            />
+            <SetupMetadataRow setups={rows.setups} labelColors={labelColors} />
+            <MistakeMetadataRow mistakes={rows.mistakes} />
+            <TagMetadataRow tags={rows.tags} labelColors={labelColors} />
             {children}
           </div>
         </div>
       )}
 
-      {hasMTComment && (
-        <div className="trade-broker-metadata-section">
-          <div className="details-card trade-broker-metadata-card">
-            <div className="details-header">
-              <h4>{t('trade.metadata.broker-comment')}</h4>
-            </div>
-            <div className="trade-broker-metadata-value">{mtComment}</div>
-          </div>
-        </div>
-      )}
+      <BrokerCommentSection comment={rows.mtComment} />
     </>
   );
 };

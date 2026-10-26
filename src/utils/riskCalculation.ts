@@ -3,28 +3,36 @@ import {
   calculateAssetAdjustedPriceMoveValue,
   hasAuthoritativePriceMoveMultiplier,
 } from './priceMoveValue';
-import { normalizeTradeExecution } from '../services/trade/core/TradeExecutionNormalization';
+import {
+  normalizeTradeExecution,
+  type TradeExecutionNormalizationInput,
+} from '../services/trade/core/TradeExecutionNormalization';
+import {
+  calculateStopLossPriceDistance,
+  hasPricedStopLoss,
+  resolveEffectiveStopPrice,
+  resolveStopLossCoverage,
+} from '../services/trade/core/StopLossTargets';
+import type {
+  StopLossCoverage,
+  StopLossLeg,
+  StopLossTarget,
+} from '../services/trade/core/StopLossTargets';
+
+
+type StopLossCoverageInput = TradeExecutionNormalizationInput & {
+  stopLosses?: readonly StopLossTarget[];
+};
 
 interface StopLossRiskContext {
-  stopLoss: number;
+  legs: StopLossLeg[];
   referenceEntryPrice: number;
   totalSize: number;
 }
 
-const resolveStopLossRiskContext = (
-  data: Partial<TradeFormData>
-): StopLossRiskContext | null => {
-  if (
-    data.stopLoss === undefined ||
-    data.stopLoss === null ||
-    !Number.isFinite(data.stopLoss)
-  ) {
-    return null;
-  }
-
-  const execution = normalizeTradeExecution(data, {
-    deriveMissingExplicitness: true,
-  });
+const resolveExecutionRiskPositionSize = (
+  execution: ReturnType<typeof normalizeTradeExecution>
+): number => {
   const totalEntrySize = execution.entries.reduce(
     (sum, entry) =>
       entry.price !== null &&
@@ -35,18 +43,74 @@ const resolveStopLossRiskContext = (
         : sum,
     0
   );
+  return totalEntrySize || execution.positionSize || 0;
+};
+
+const resolveStopLossRiskContext = (
+  data: Partial<TradeFormData>
+): StopLossRiskContext | null => {
+  if (!hasPricedStopLoss(data.stopLosses)) {
+    return null;
+  }
+
+  const execution = normalizeTradeExecution(data, {
+    deriveMissingExplicitness: true,
+  });
   const referenceEntryPrice = execution.weightedEntryPrice ?? undefined;
-  const totalSize = totalEntrySize || execution.positionSize || 0;
+  const totalSize = resolveExecutionRiskPositionSize(execution);
 
   if (referenceEntryPrice === undefined || totalSize <= 0) {
     return null;
   }
 
+  const coverage = resolveStopLossCoverage(data.stopLosses, totalSize);
+  if (coverage.status !== 'complete') {
+    return null;
+  }
+
   return {
-    stopLoss: data.stopLoss,
+    legs: coverage.legs,
     referenceEntryPrice,
     totalSize,
   };
+};
+
+
+export const resolveTradeRiskPositionSize = (
+  data: StopLossCoverageInput
+): number | undefined =>
+  resolveExecutionRiskPositionSize(
+    normalizeTradeExecution(data, { deriveMissingExplicitness: true })
+  ) || undefined;
+
+
+export const resolveTradeStopLossCoverage = (
+  data: StopLossCoverageInput
+): StopLossCoverage => {
+  if (!hasPricedStopLoss(data.stopLosses)) {
+    return { status: 'none' };
+  }
+
+  return resolveStopLossCoverage(
+    data.stopLosses,
+    resolveTradeRiskPositionSize(data)
+  );
+};
+
+
+export const hasStopLossRiskBasis = (data: StopLossCoverageInput): boolean => {
+  const { status } = resolveTradeStopLossCoverage(data);
+  return status === 'complete' || status === 'no-position-size';
+};
+
+
+export const resolveTradeEffectiveStopPrice = (
+  data: Partial<TradeFormData>
+): number | undefined => {
+  const coverage = resolveTradeStopLossCoverage(data);
+  return coverage.status === 'complete'
+    ? resolveEffectiveStopPrice(coverage.legs)
+    : undefined;
 };
 
 
@@ -65,8 +129,12 @@ export const calculateStopLossRiskAmount = (
     return 0;
   }
 
-  const { stopLoss, referenceEntryPrice, totalSize } = context;
-  const stopDistance = Math.abs(referenceEntryPrice - stopLoss);
+  const { legs, referenceEntryPrice, totalSize } = context;
+  const stopDistance = calculateStopLossPriceDistance(
+    legs,
+    referenceEntryPrice,
+    data
+  );
   const riskAmount = calculateAssetAdjustedPriceMoveValue(
     data,
     stopDistance,

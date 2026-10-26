@@ -10,6 +10,15 @@ export const INSTALLED_UPDATE_POPUP_STYLES = `
   pointer-events: none;
 }
 
+
+body.is-frameless > .journalit-update-popup-host {
+  -webkit-app-region: initial;
+}
+
+body.is-frameless .journalit-update-popup {
+  -webkit-app-region: no-drag;
+}
+
 .journalit-update-popup {
   position: relative;
   box-sizing: border-box;
@@ -22,7 +31,7 @@ export const INSTALLED_UPDATE_POPUP_STYLES = `
   color: var(--text-normal);
   border: 1px solid var(--background-modifier-border-hover);
   border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-l);
   font-family: var(--font-interface);
   overflow: hidden;
   pointer-events: auto;

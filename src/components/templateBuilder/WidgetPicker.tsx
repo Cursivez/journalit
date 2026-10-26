@@ -302,12 +302,10 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
         onDocumentMouseDown(event);
       };
 
-      window.activeDocument.addEventListener('mousedown', handleClickOutside);
+      const listenerDocument = window.activeDocument;
+      listenerDocument.addEventListener('mousedown', handleClickOutside);
       return () =>
-        window.activeDocument.removeEventListener(
-          'mousedown',
-          handleClickOutside
-        );
+        listenerDocument.removeEventListener('mousedown', handleClickOutside);
     }, [isOpen]);
 
     const handleSelect = useCallback(

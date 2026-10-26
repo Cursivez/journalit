@@ -3,12 +3,9 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Component, MarkdownRenderer } from 'obsidian';
 import JournalitPlugin from '../../../main';
-import { LOGO_DATA_URI } from '../../../assets/logoData';
-import { cssVars } from '../../../styles/inlineStylePolicy';
+import { ShareCard } from '../ShareCard';
 import {
   shareCaptureUnwrapProps,
-  shareEagerMediaProps,
-  shareHideDollarAmountsProps,
   shareLoadingProps,
 } from '../../../services/share/brandedCapture';
 import type { ReviewNoteBlock } from './reviewNoteBlocks';
@@ -81,13 +78,7 @@ export const ReviewShareCard = React.forwardRef<
   ref
 ) {
   return (
-    <div
-      ref={ref}
-      className="journalit-share-card"
-      {...shareEagerMediaProps}
-      {...(hideDollarAmounts ? shareHideDollarAmountsProps : {})}
-      style={cssVars({ '--journalit-share-logo': `url("${LOGO_DATA_URI}")` })}
-    >
+    <ShareCard ref={ref} hideDollarAmounts={hideDollarAmounts}>
       
       <div className="journalit-share-card-note markdown-preview-view markdown-rendered">
         {blocks.map((block) => (
@@ -102,11 +93,6 @@ export const ReviewShareCard = React.forwardRef<
           />
         ))}
       </div>
-
-      <div className="journalit-share-card-footer">
-        <span className="journalit-share-card-mark" aria-hidden="true" />
-        <span className="journalit-share-card-url">journalit.co</span>
-      </div>
-    </div>
+    </ShareCard>
   );
 });

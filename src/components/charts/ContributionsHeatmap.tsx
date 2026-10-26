@@ -49,10 +49,8 @@ export const CONTRIBUTIONS_HEATMAP_STYLES = `
           --heatmap-font-weight-semibold: 600;
 
           
-          --heatmap-transition-quick: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
-          --heatmap-transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-          --heatmap-shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.05);
-          --heatmap-shadow-elevated: 0 4px 12px rgba(0, 0, 0, 0.12);
+          --heatmap-transition-quick: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1),
+            opacity 0.15s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
         .contributions-heatmap.heatmap-container {
@@ -108,7 +106,6 @@ export const CONTRIBUTIONS_HEATMAP_STYLES = `
 
         .contributions-heatmap .heatmap-cell:hover {
           transform: scale(1.15);
-          box-shadow: var(--heatmap-shadow-elevated);
           z-index: 10;
         }
 
@@ -221,7 +218,6 @@ export const CONTRIBUTIONS_HEATMAP_STYLES = `
 
         .contributions-heatmap .heatmap-legend-cell:hover {
           transform: scale(1.1);
-          box-shadow: var(--heatmap-shadow-subtle);
         }
 
         
@@ -231,7 +227,7 @@ export const CONTRIBUTIONS_HEATMAP_STYLES = `
           padding: 14px 18px;
           min-width: 140px;
           border: 1px solid var(--background-modifier-border);
-          box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+          box-shadow: var(--shadow-s);
           position: fixed;
           top: var(--heatmap-tooltip-top, 0px);
           left: var(--heatmap-tooltip-left, 0px);
@@ -319,6 +315,8 @@ interface DayData {
   tradeCount: number;
   intensity: number; 
   isEmpty: boolean;
+  
+  isInRange: boolean;
   rMultiple?: number;
 }
 
@@ -463,6 +461,7 @@ const buildHeatmapWeeks = (
         tradeCount,
         intensity,
         isEmpty: !isInRange || tradeCount === 0,
+        isInRange,
         rMultiple: dayData?.rMultiple,
       });
       currentDate.setDate(currentDate.getDate() + 1);
@@ -755,7 +754,7 @@ const HeatmapGrid: React.FC<HeatmapGridProps> = ({
       {displayWeeks.map((week, weekIndex) => (
         <div key={weekIndex} className="heatmap-week">
           {week.days.map((day, dayIndex) => {
-            const isActionable = Boolean(onDayClick && day.tradeCount > 0);
+            const isActionable = Boolean(onDayClick && day.isInRange);
             const interactiveProps = isActionable
               ? {
                   onClick: () => handleDayClick(day),
@@ -1136,7 +1135,7 @@ const ContributionsHeatmapComponent: React.FC<ContributionsHeatmapProps> = ({
 
   const handleDayClick = useCallback(
     (day: DayData) => {
-      if (day.tradeCount > 0 && onDayClick) {
+      if (day.isInRange && onDayClick) {
         onDayClick(day.date);
       }
     },

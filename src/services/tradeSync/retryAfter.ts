@@ -15,7 +15,7 @@ function headerValue(headers: unknown, name: string): string | undefined {
   return undefined;
 }
 
-export function parseRetryAfterHeader(
+function parseRetryAfterHeader(
   value: string | undefined,
   now = Date.now()
 ): RetryAfterParseResult {

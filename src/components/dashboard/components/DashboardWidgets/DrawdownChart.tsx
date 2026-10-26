@@ -9,15 +9,12 @@ import { usePlugin } from '../../../../hooks/usePlugin';
 import { resolveDrawdownCapitalBasis } from '../../../../utils/drawdownAnalytics';
 
 
-const DrawdownChartComponent: React.FC<BaseWidgetProps> = ({
-  filters,
-  dateFormat,
-}) => {
+const DrawdownChartComponent: React.FC<BaseWidgetProps> = ({ dateFormat }) => {
   const plugin = usePlugin();
 
   return (
-    <BaseWidget filters={filters} dateFormat={dateFormat}>
-      {(data, userDateFormat) => {
+    <BaseWidget dateFormat={dateFormat}>
+      {(data, userDateFormat, filters) => {
         const applyAccountCountMultiplier = false;
 
         

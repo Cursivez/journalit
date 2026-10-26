@@ -4,8 +4,6 @@ import React, { useState, useMemo, useCallback } from 'react';
 import JournalitPlugin from '../../../main';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
-import { CurrencyCode } from '../../../utils/currencyConfig';
-import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import {
   getEffectivePnL,
   isPnlContributingTrade,
@@ -20,12 +18,18 @@ import {
   getQuarterStartDate,
   getQuarterEndDate,
 } from '../../../utils/dateUtils';
-import { BestWorstCard } from './shared/BestWorstCard';
+import {
+  BestWorstPeriodGrid,
+  BestWorstSkeletonGrid,
+} from './shared/BestWorstPeriodGrid';
+import {
+  readReviewTradeSettings,
+  resolveReviewCurrency,
+} from './shared/reviewWidgetSettings';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
 import { useEventBus } from '../../../hooks/useEventBus';
-import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
@@ -108,34 +112,6 @@ const formatQuarterName = (quarterData: QuarterStats): string => {
   return `Q${quarterData.quarter} ${quarterData.year}`;
 };
 
-const renderSkeletonCard = (isPositive: boolean, title: string) => (
-  <div>
-    <div className="journalit-reviewv2-bestworst-label">{title}</div>
-    <div
-      className={[
-        'journalit-reviewv2-bestworst-card',
-        isPositive
-          ? 'journalit-reviewv2-bestworst-card--positive'
-          : 'journalit-reviewv2-bestworst-card--negative',
-        'journalit-reviewv2-bestworst-card--preview',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
-      <div className="journalit-reviewv2-bestworst-pnl-col">
-        <SkeletonBox width={70} height={20} borderRadius="4px" />
-      </div>
-      <div className="journalit-reviewv2-bestworst-details">
-        <SkeletonBox width={80} height={16} borderRadius="4px" />
-        <div className="journalit-u-flex journalit-u-gap-8 journalit-u-mt-4">
-          <SkeletonBox width={50} height={12} borderRadius="4px" />
-          <SkeletonBox width={70} height={12} borderRadius="4px" />
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 export const BestWorstQuartersWidget: React.FC<BestWorstQuartersWidgetProps> =
   React.memo(
     ({ filePath, plugin, config = {}, preview = false, previewData }) => {
@@ -167,21 +143,18 @@ export const BestWorstQuartersWidget: React.FC<BestWorstQuartersWidgetProps> =
       );
 
       
-      const currency =
-        getSingleExplicitCurrency(trades) ||
-        plugin?.settings?.general?.currency ||
-        CurrencyCode.USD;
+      const currency = resolveReviewCurrency(trades, plugin);
       const { formatValue, shouldMask } = useDisplayFormatter();
       const isPnlMasked = shouldMask('pnl');
       const isReturnPercentMasked = shouldMask('returnPercent');
       const applyAccountCountMultiplier = false;
-      const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
-      const breakEvenThresholdMode =
-        plugin?.settings?.trade?.breakEvenThresholdMode;
-      const breakEvenThresholdPercent =
-        plugin?.settings?.trade?.breakEvenThresholdPercent;
-      const breakEvenRangeMin = plugin?.settings?.trade?.breakEvenRangeMin;
-      const breakEvenRangeMax = plugin?.settings?.trade?.breakEvenRangeMax;
+      const {
+        defaultRiskAmount,
+        breakEvenThresholdMode,
+        breakEvenThresholdPercent,
+        breakEvenRangeMin,
+        breakEvenRangeMax,
+      } = readReviewTradeSettings(plugin);
       
       const { bestQuarter, worstQuarter } = useMemo(() => {
         const closedTrades = asReviewBestWorstTrades(
@@ -364,32 +337,13 @@ export const BestWorstQuartersWidget: React.FC<BestWorstQuartersWidgetProps> =
       
 
       if (loading) {
-        const showBoth = Boolean(
-          mergedConfig.showBest && mergedConfig.showWorst
-        );
-
         return (
-          <div
-            className={[
-              'journalit-reviewv2-bestworst-grid',
-              showBoth
-                ? 'journalit-reviewv2-bestworst-grid--both'
-                : 'journalit-reviewv2-bestworst-grid--single',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            {mergedConfig.showBest &&
-              renderSkeletonCard(
-                true,
-                t('widget.best-worst-quarters.best-quarter')
-              )}
-            {mergedConfig.showWorst &&
-              renderSkeletonCard(
-                false,
-                t('widget.best-worst-quarters.worst-quarter')
-              )}
-          </div>
+          <BestWorstSkeletonGrid
+            config={mergedConfig}
+            bestTitle={t('widget.best-worst-quarters.best-quarter')}
+            worstTitle={t('widget.best-worst-quarters.worst-quarter')}
+            primaryWidth={80}
+          />
         );
       }
 
@@ -468,74 +422,34 @@ export const BestWorstQuartersWidget: React.FC<BestWorstQuartersWidgetProps> =
         );
       }
 
+      const formatPeriodPnl = (period: QuarterStats): string =>
+        formatValue({
+          kind: 'pnl',
+          value: period.pnl,
+          currencyCode: currency,
+          rMultiple: period.pnlR,
+        });
+
       return (
-        <div
-          className={[
-            'journalit-reviewv2-bestworst-grid',
-            mergedConfig.showBest && mergedConfig.showWorst
-              ? 'journalit-reviewv2-bestworst-grid--both'
-              : 'journalit-reviewv2-bestworst-grid--single',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-        >
-          {mergedConfig.showBest && (
-            <BestWorstCard
-              title={t('widget.best-worst-quarters.best-quarter')}
-              isPositive={true}
-              isMasked={isPnlMasked}
-              isEmpty={!bestQuarter}
-              emptyMessage={t('widget.best-worst-quarters.no-profitable')}
-              pnl={
-                bestQuarter
-                  ? formatValue({
-                      kind: 'pnl',
-                      value: bestQuarter.pnl,
-                      currencyCode: currency,
-                      rMultiple: bestQuarter.pnlR,
-                    })
-                  : ''
-              }
-              primaryText={bestQuarter ? formatQuarterName(bestQuarter) : ''}
-              metaItems={bestQuarter ? buildMetaItems(bestQuarter) : []}
-              onClick={
-                bestQuarter
-                  ? () => void openQuarterlyReview(bestQuarter)
-                  : undefined
-              }
-              currencyConversion={currencyConversion}
-              conversionTrades={bestQuarter?.trades}
-            />
-          )}
-          {mergedConfig.showWorst && (
-            <BestWorstCard
-              title={t('widget.best-worst-quarters.worst-quarter')}
-              isPositive={false}
-              isMasked={isPnlMasked}
-              isEmpty={!worstQuarter}
-              emptyMessage={t('widget.best-worst-quarters.no-losing')}
-              pnl={
-                worstQuarter
-                  ? formatValue({
-                      kind: 'pnl',
-                      value: worstQuarter.pnl,
-                      currencyCode: currency,
-                      rMultiple: worstQuarter.pnlR,
-                    })
-                  : ''
-              }
-              primaryText={worstQuarter ? formatQuarterName(worstQuarter) : ''}
-              metaItems={worstQuarter ? buildMetaItems(worstQuarter) : []}
-              onClick={
-                worstQuarter
-                  ? () => void openQuarterlyReview(worstQuarter)
-                  : undefined
-              }
-              currencyConversion={currencyConversion}
-              conversionTrades={worstQuarter?.trades}
-            />
-          )}
-        </div>
+        <BestWorstPeriodGrid
+          config={mergedConfig}
+          best={{
+            title: t('widget.best-worst-quarters.best-quarter'),
+            emptyMessage: t('widget.best-worst-quarters.no-profitable'),
+            period: bestQuarter,
+          }}
+          worst={{
+            title: t('widget.best-worst-quarters.worst-quarter'),
+            emptyMessage: t('widget.best-worst-quarters.no-losing'),
+            period: worstQuarter,
+          }}
+          isPnlMasked={isPnlMasked}
+          currencyConversion={currencyConversion}
+          formatPnl={formatPeriodPnl}
+          formatName={formatQuarterName}
+          buildMetaItems={buildMetaItems}
+          onOpen={(quarterData) => void openQuarterlyReview(quarterData)}
+        />
       );
     }
   );

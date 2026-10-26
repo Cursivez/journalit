@@ -2,9 +2,10 @@
 
 import { Plugin, Notice, TFile, requireApiVersion } from 'obsidian';
 import { t } from './lang/helpers';
+import { JournalitModal } from './components/modals/JournalitModal';
 import { JournalitSettingsTab } from './settings';
 import { JournalitSettings, SettingsTabId } from './settings/types';
-import { TradeFormModal } from './components/forms/trade/TradeFormModal';
+import { TradeFormDrawer } from './components/forms/trade/TradeFormDrawer';
 import type {
   TradeFormData,
   TradeFormOpenOptions,
@@ -38,6 +39,7 @@ import { OnboardingManager } from './onboarding/onboardingManager';
 import { AccountPageService } from './services/accountPage';
 import { AccountMergeService } from './services/accountMerge';
 import { BackendIntegrationService } from './services/backend';
+import { BackendHttpClient } from './services/backend/BackendHttpClient';
 import { SubscriptionTierService } from './services/backend/SubscriptionTierService';
 import { ensureAuthReady } from './services/backend/TokenManager';
 import { TradeProjectionSyncService } from './services/tradeSync/TradeProjectionSyncService';
@@ -54,16 +56,23 @@ import { InstrumentSpecService } from './services/InstrumentSpecService';
 import { RecentItem } from './settings/types';
 
 import { PluginCleanupManager } from './core/PluginCleanupManager';
+import {
+  claimLibraryGlobals,
+  releaseLibraryGlobals,
+} from './core/libraryGlobals';
 import { SettingsManager } from './settings/SettingsManager';
 import { UIStateManager } from './settings/UIStateManager';
 import { NavigationManager } from './navigation/NavigationManager';
 import { PluginInitializer } from './core/PluginInitializer';
 import { UpdateNotificationService } from './services/UpdateNotificationService';
 import { GraphLinkService } from './services/graph/GraphLinkService';
+import type { DayTradeFieldsService } from './services/drc/DayTradeFieldsService';
+import type { ExternalTradeEditWatcher } from './services/trade/ExternalTradeEditWatcher';
 
 import { ReviewDataCache } from './services/reviewV2/ReviewDataCache';
 import { EventBus } from './services/events';
 import { clearUpgradeOrigin } from './services/upgrade/upgradeOrigin';
+import { clearBacktestSessionDay } from './services/backtestTrade/backtestSessionDay';
 import { GuideRegistry } from './guides/GuideRegistry';
 import { ViewGuideService } from './guides/ViewGuideService';
 import { mergeFreshTradeFormEditData } from './components/forms/trade/tradeFormEditData';
@@ -145,6 +154,10 @@ export default class JournalitPlugin extends Plugin {
 
   
   graphLinkService: GraphLinkService;
+  dayTradeFieldsService: DayTradeFieldsService | null = null;
+
+  
+  externalTradeEditWatcher: ExternalTradeEditWatcher | null = null;
 
   
   settings: JournalitSettings;
@@ -215,7 +228,19 @@ export default class JournalitPlugin extends Plugin {
   }
 
   
+  whenInitialized(): Promise<void> {
+    return this.initializationReady ?? Promise.resolve();
+  }
+
+  
   async onload() {
+    BackendHttpClient.configurePluginVersion(this.manifest.version);
+
+    
+    
+    
+    claimLibraryGlobals(this);
+
     
     this.settingsManager = new SettingsManager(this);
 
@@ -476,11 +501,21 @@ export default class JournalitPlugin extends Plugin {
 
   
   private async runUnloadCleanup(): Promise<void> {
+    
+    JournalitModal.closeAllForUnload();
     clearUpgradeOrigin();
-    await this.cleanupManager.cleanup().catch((error: unknown) => {
+    clearBacktestSessionDay();
+    try {
+      await this.cleanupManager.cleanup();
+    } catch (error: unknown) {
       console.error('Error during plugin cleanup:', error);
       
-    });
+    } finally {
+      BackendHttpClient.configurePluginVersion(null);
+    }
+    
+    
+    releaseLibraryGlobals();
   }
 
   onunload() {
@@ -539,7 +574,7 @@ export default class JournalitPlugin extends Plugin {
         }
       }
 
-      const modal = new TradeFormModal({
+      const drawer = new TradeFormDrawer({
         app: this.app,
         plugin: this,
         isEditMode: true,
@@ -547,7 +582,7 @@ export default class JournalitPlugin extends Plugin {
         filePath: filePath || '',
         openOptions,
       });
-      modal.open();
+      drawer.open();
     } catch (error) {
       console.error('Failed to open trade form in edit mode:', error);
       new Notice(

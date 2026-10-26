@@ -1,5 +1,8 @@
 import { openImportManagement } from '../../services/tradeImport/importManagementNavigation';
-import { tradeImportClassificationLabel } from '../../services/tradeImport/classificationLabels';
+import {
+  tradeImportClassificationLabel,
+  tradeImportCommitFailureLabel,
+} from '../../services/tradeImport/classificationLabels';
 import React, {
   memo,
   useCallback,
@@ -109,6 +112,17 @@ import {
   type TradeImportAssetType,
 } from '../../services/tradeImport/tradeImportSources';
 import {
+  getImportFormatOptions,
+  importFormatForTile,
+  importSourceTileId,
+} from '../../services/onboarding/brokerCatalog';
+import {
+  rememberTradeImportDestination,
+  resolveTradeImportDestination,
+} from '../../services/tradeImport/importDestination';
+import type { TradeImportDestination } from '../../services/tradeImport/types';
+import { SegmentedControl } from '../shared/SegmentedControl';
+import {
   getTradeImportCompletionTitle,
   TradeImportCompletionSummary,
 } from './TradeImportCompletionSummary';
@@ -205,7 +219,7 @@ function previewErrorDetails(error: unknown): string | null {
   return typeof message === 'string' && message.trim() ? message : null;
 }
 
-export function tradeImportPreviewErrorPresentation(error: unknown): {
+function tradeImportPreviewErrorPresentation(error: unknown): {
   message: string;
   details: string | null;
   showGuidance: boolean;
@@ -222,7 +236,7 @@ interface DropdownOption {
   label: string;
 }
 
-export const TradeImportSignInGate: React.FC<{ onSignIn: () => void }> = ({
+const TradeImportSignInGate: React.FC<{ onSignIn: () => void }> = ({
   onSignIn,
 }) => (
   <div className="journalit-csv-import journalit-trade-import-gate-view">
@@ -240,17 +254,6 @@ export const TradeImportSignInGate: React.FC<{ onSignIn: () => void }> = ({
         <p className="journalit-trade-import-gate-description">
           {t('trade-import.gate.sign-in')}
         </p>
-      </div>
-
-      <div className="journalit-trade-import-gate-benefits">
-        <div>
-          <BadgeCheck size={16} />
-          <span>{t('trade-import.gate.sign-in.reassurance')}</span>
-        </div>
-        <div>
-          <BadgeCheck size={16} />
-          <span>{t('trade-import.gate.sign-in.no-trial')}</span>
-        </div>
       </div>
 
       <div className="journalit-trade-import-gate-actions">
@@ -390,9 +393,10 @@ const TradeImportDropdown: React.FC<{
       }
     }, 150);
     const activeWindow = window.activeDocument.defaultView ?? window;
-    window.activeDocument.addEventListener('pointerdown', handlePointerDown);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('pointerdown', handlePointerDown);
     activeWindow.addEventListener('keydown', handleKeyDown, true);
-    window.activeDocument.addEventListener(
+    listenerDocument.addEventListener(
       'visibilitychange',
       handleVisibilityChange
     );
@@ -401,12 +405,9 @@ const TradeImportDropdown: React.FC<{
     window.addEventListener('scroll', handleScroll, true);
     window.addEventListener('blur', handleWindowBlur);
     return () => {
-      window.activeDocument.removeEventListener(
-        'pointerdown',
-        handlePointerDown
-      );
+      listenerDocument.removeEventListener('pointerdown', handlePointerDown);
       activeWindow.removeEventListener('keydown', handleKeyDown, true);
-      window.activeDocument.removeEventListener(
+      listenerDocument.removeEventListener(
         'visibilitychange',
         handleVisibilityChange
       );
@@ -685,6 +686,13 @@ function visibleFieldCategories(
       'contract_size',
       'expiration_date',
     ];
+  } else if (
+    assetType === 'forex' &&
+    !requiredFields.includes('contract_size')
+  ) {
+    
+    
+    categories[t('csv.mapper.category.optional-core')].push('contract_size');
   }
   if (customFields.length > 0) {
     categories[t('form.section.custom-fields')] = customFields.map(
@@ -738,6 +746,9 @@ function updateColumnAssignment(
   return next;
 }
 
+
+const TRADE_IMPORT_SYMBOL_EXAMPLE = 'CME_MINI:ES1!';
+
 interface TradeImportPreviewActionProps {
   assetType: AssetType;
   busy: boolean;
@@ -745,19 +756,21 @@ interface TradeImportPreviewActionProps {
   
   pnlFromPricesAccepted?: boolean;
   ready: boolean;
+  
+  replacedByRecovery: boolean;
   onPreview: () => void;
 }
 
-export const TradeImportPreviewAction: React.FC<
-  TradeImportPreviewActionProps
-> = ({
+const TradeImportPreviewAction: React.FC<TradeImportPreviewActionProps> = ({
   assetType,
   busy,
   missingRequiredFields,
   pnlFromPricesAccepted = false,
   ready,
+  replacedByRecovery,
   onPreview,
 }) => {
+  if (replacedByRecovery) return null;
   const mappingIncomplete = missingRequiredFields.length > 0;
 
   return (
@@ -791,8 +804,1778 @@ export const TradeImportPreviewAction: React.FC<
   );
 };
 
+
+const csvImportFavorites = (settings: JournalitPlugin['settings']) => ({
+  account: settings.csvFavoriteAccount ?? '',
+  broker: settings.csvFavoriteBroker ?? '',
+  templateId: settings.csvFavoriteTemplateId ?? '',
+});
+
+const initialImportAccount = (
+  favoriteAccount: string,
+  accounts: readonly string[]
+): string =>
+  favoriteAccount && accounts.includes(favoriteAccount)
+    ? favoriteAccount
+    : accounts[0];
+
+const onboardingAssetFocusOf = (plugin: JournalitPlugin) =>
+  plugin.serviceManager.getInitializedOnboardingService()?.getState().answers
+    .assetFocus;
+
+
+const isBrokerDateFormatValid = (broker: string, dateFormat: string) =>
+  !isHyperliquidTradeHistory(broker) ||
+  isDateFormatAllowedForBroker(broker, dateFormat);
+
+
+const workbookImagesIncludedFor = (
+  preview: TradeImportPreviewResponse | null,
+  excludedForImportId: string | null
+): boolean => !preview || excludedForImportId !== preview.importId;
+
+type ImportBrokerCapabilities = TradeImportCapabilities['brokers'][number];
+
+const brokerCapabilitiesFor = (
+  capabilities: TradeImportCapabilities | null,
+  broker: string
+): ImportBrokerCapabilities | undefined =>
+  capabilities?.brokers.find((item) => item.id === broker);
+
+const DEFAULT_IMPORT_EXTENSIONS = '.csv,.txt,.xlsx,.xls,.html,.htm';
+
+
+function acceptedImportExtensions(
+  capabilities: TradeImportCapabilities | null,
+  brokerCapabilities: ImportBrokerCapabilities | undefined
+): string[] {
+  if (!capabilities) return DEFAULT_IMPORT_EXTENSIONS.split(',');
+  const supported = brokerCapabilities
+    ? new Set(brokerCapabilities.supportedFileTypes)
+    : null;
+  return capabilities.fileTypes.flatMap((type) =>
+    !supported || supported.has(type.id)
+      ? type.extensions.map((ext) => `.${ext}`)
+      : []
+  );
+}
+
+
+const supportsManualMappingFor = (
+  broker: string,
+  selectedTemplateId: string,
+  brokerCapabilities: ImportBrokerCapabilities | undefined
+): boolean => {
+  const isManualBroker = broker === 'MANUAL';
+  if (!isManualBroker && selectedTemplateId === '') return false;
+  return brokerCapabilities?.supportsManualMapping ?? isManualBroker;
+};
+
+const manualModesOf = (capabilities: TradeImportCapabilities | null) =>
+  capabilities?.manualMapping.modes ?? [];
+
+
+const effectiveManualMode = (
+  supportsManualMapping: boolean,
+  choice: ManualImportMode | null,
+  mappings: Record<string, string[]>,
+  supportedModes: readonly string[]
+): ManualImportMode =>
+  supportsManualMapping
+    ? resolveManualImportMode(
+        choice,
+        mappings,
+        supportedModes.includes('trade_per_row')
+      )
+    : 'price_based';
+
+interface DismissedAnalyseRecovery {
+  file: File | null;
+  selectedSource: string;
+  recommendedSource: string;
+}
+
+
+function undismissedAnalyseRecovery(
+  recovery: ReturnType<typeof resolveBrokerImportAnalyseRecovery> | null,
+  dismissed: DismissedAnalyseRecovery | null,
+  file: File | null,
+  broker: string
+) {
+  if (!recovery || !dismissed) return recovery;
+  const isDismissed =
+    dismissed.file === file &&
+    dismissed.selectedSource === broker &&
+    dismissed.recommendedSource === recovery.recommendedSource;
+  return isDismissed ? null : recovery;
+}
+
+
+function failedRowsOf(
+  classified: readonly ClassifiedPreviewTrade[],
+  importResult: TradeImportCompletionResult | null
+): FailedImportRow[] {
+  const failedItems = new Map(
+    importResult?.failedItems.map((failed) => [failed.itemId, failed])
+  );
+  return classified.flatMap((item) => {
+    const failed = failedItems.get(item.itemId);
+    return failed || needsTradeImportAttention(item)
+      ? [{ item, errorCode: failed?.errorCode }]
+      : [];
+  });
+}
+
+interface FailedImportRow {
+  item: ClassifiedPreviewTrade;
+  
+  errorCode?: string;
+}
+
+const importDestinationFor = (
+  capabilities: TradeImportCapabilities | null,
+  destinations: NonNullable<
+    JournalitPlugin['settings']['csvImportDestinations']
+  >,
+  broker: string
+): TradeImportDestination | undefined =>
+  capabilities
+    ? resolveTradeImportDestination(
+        { csvImportDestinations: destinations },
+        capabilities,
+        broker
+      )
+    : undefined;
+
+const selectedSourceTileId = (
+  syncOnlySourceId: string | null,
+  broker: string,
+  capabilities: TradeImportCapabilities | null
+): string => syncOnlySourceId ?? importSourceTileId(broker, capabilities);
+
+const templateNameOf = (
+  service: LocalTemplateService,
+  templateId: string
+): string | undefined => service.getTemplate(templateId)?.name;
+
+
+const offersAiMapping = (
+  supportsManualMapping: boolean,
+  brokerCapabilities: ImportBrokerCapabilities | undefined,
+  canUseAiMapping: boolean
+): boolean =>
+  supportsManualMapping &&
+  brokerCapabilities?.supportsAiMapping === true &&
+  canUseAiMapping;
+
+const canAnalyse = (
+  file: File | null,
+  capabilities: TradeImportCapabilities | null,
+  busy: boolean
+): boolean => !busy && file !== null && capabilities !== null;
+
+const importDateFormatOptions = (isHyperliquid: boolean): DropdownOption[] =>
+  isHyperliquid ? hyperliquidDateFormatOptions() : getDateFormatOptions();
+
+function ManualTemplateSection({
+  picker,
+  actions,
+  aiMapping,
+  importPanel,
+  exportPanel,
+}: {
+  picker: React.ComponentProps<typeof TemplatePicker>;
+  actions: React.ComponentProps<typeof TemplateActionsMenu>;
+  aiMapping: React.ComponentProps<typeof AiMappingToggle> & {
+    offered: boolean;
+  };
+  importPanel: React.ComponentProps<typeof TemplateImportPanel> & {
+    open: boolean;
+  };
+  
+  exportPanel: React.ComponentProps<typeof TemplateExportPanel>;
+}) {
+  const { offered: aiMappingOffered, ...aiMappingToggle } = aiMapping;
+  const { open: importPanelOpen, ...importPanelProps } = importPanel;
+  return (
+    <div className="journalit-trade-import-template-section">
+      <div className="journalit-trade-import-template-picker-row">
+        <TemplatePicker {...picker} />
+        <TemplateActionsMenu {...actions} />
+        {aiMappingOffered && <AiMappingToggle {...aiMappingToggle} />}
+      </div>
+      {importPanelOpen && <TemplateImportPanel {...importPanelProps} />}
+      {exportPanel.code && <TemplateExportPanel {...exportPanel} />}
+    </div>
+  );
+}
+
+
+function hyperliquidReadiness(
+  broker: string,
+  brokerCapabilities: ImportBrokerCapabilities | undefined,
+  dateFormatValid: boolean
+) {
+  const exportTimeZoneStatus = resolveHyperliquidExportTimeZone(
+    broker,
+    brokerCapabilities?.supportsExportTimeZone === true
+  );
+  return {
+    exportTimeZoneStatus,
+    hyperliquidPreviewReady: !exportTimeZoneStatus.errorKey && dateFormatValid,
+  };
+}
+
+const canChangeSourceFromRecovery = (
+  analyseFailureRecovery: ReturnType<typeof resolveBrokerImportRecovery>,
+  preview: TradeImportPreviewResponse | null
+): boolean =>
+  (analyseFailureRecovery ?? resolveBrokerImportRecovery(preview))
+    ?.canChangeSource === true;
+
+
+const completedImportResult = (
+  importCompleted: boolean,
+  importResult: TradeImportCompletionResult | null
+): TradeImportCompletionResult | null =>
+  importCompleted ? importResult : null;
+
+
+const furthestWizardStep = (
+  importCompleted: boolean,
+  preview: TradeImportPreviewResponse | null,
+  analyse: TradeImportAnalyseResponse | null
+): TradeImportWizardStep => {
+  if (importCompleted || preview) return 3;
+  return analyse ? 2 : 1;
+};
+
+
+const needsPnlFromPricesConfirmation = ({
+  supportsManualMapping,
+  backendManualMode,
+  requiredMappingFields,
+  selectedTemplateId,
+  assetTypeConfirmed,
+}: {
+  supportsManualMapping: boolean;
+  backendManualMode: TradeImportManualMode;
+  requiredMappingFields: readonly TradeField[];
+  selectedTemplateId: string;
+  assetTypeConfirmed: boolean;
+}): boolean =>
+  supportsManualMapping &&
+  backendManualMode === 'trade_per_row' &&
+  requiredMappingFields.includes('exit_price') &&
+  !selectedTemplateId &&
+  !assetTypeConfirmed;
+
+type TradeImportSyncCard = ReturnType<
+  typeof useTradeImportSyncSuggestion
+>['card'];
+type TradeImportSourceChoice = ReturnType<
+  typeof buildTradeImportSourceOptions
+>[number];
+
+const STEP_LABEL_KEYS = {
+  1: 'trade-import.step.select',
+  2: 'trade-import.step.analyse',
+  3: 'trade-import.step.preview',
+} as const;
+
+function TradeImportStepper({
+  maxStep,
+  activeStep,
+  busy,
+  onSelect,
+}: {
+  maxStep: TradeImportWizardStep;
+  activeStep: TradeImportWizardStep;
+  busy: boolean;
+  onSelect: (step: TradeImportWizardStep) => void;
+}) {
+  return (
+    <div className="journalit-trade-import-stepper">
+      {TRADE_IMPORT_STEP_NUMBERS.map((stepNumber) => {
+        const label = t(STEP_LABEL_KEYS[stepNumber]);
+        return (
+          <button
+            type="button"
+            disabled={stepNumber > maxStep || busy}
+            onClick={() => onSelect(stepNumber)}
+            key={label}
+            className={`journalit-trade-import-step ${maxStep >= stepNumber ? 'is-active' : ''} ${activeStep === stepNumber ? 'is-current' : ''}`}
+          >
+            <span>{stepNumber}</span>
+            <strong>{label}</strong>
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+function SourceChoiceStep({
+  syncCard,
+  syncCardRevealRequest,
+  sources,
+  selectedId,
+  busy,
+  sourcesUnavailable,
+  onOpenTradeSync,
+  onSelect,
+  changing,
+  onCancel,
+}: {
+  syncCard: TradeImportSyncCard;
+  syncCardRevealRequest: number;
+  sources: TradeImportSourceChoice[];
+  selectedId: string;
+  busy: boolean;
+  sourcesUnavailable: boolean;
+  onOpenTradeSync: () => void;
+  onSelect: (sourceId: string) => void;
+  
+  changing: boolean;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="journalit-trade-import-source-step">
+      <div className="journalit-trade-import-source-step__header">
+        <h3>{t('trade-import.source.title')}</h3>
+        <p>{t('trade-import.source.subtitle')}</p>
+      </div>
+      
+      {syncCard && (
+        <TradeImportSyncSuggestion
+          {...syncCard}
+          busy={busy}
+          revealRequest={syncCardRevealRequest}
+          onOpenTradeSync={onOpenTradeSync}
+        />
+      )}
+      <TradeImportSourceGrid
+        sources={sources}
+        selectedId={selectedId}
+        busy={busy || sourcesUnavailable}
+        
+        autoFocusSearch={!Platform.isMobile}
+        onSelect={onSelect}
+      />
+      {changing && (
+        <button
+          type="button"
+          className="journalit-trade-import-source-step__cancel"
+          onClick={onCancel}
+        >
+          {t('button.cancel')}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ChosenSourceHeader({
+  source,
+  brokerId,
+  isFavorite,
+  guideUrl,
+  busy,
+  showsHyperliquidGuidance,
+  syncCard,
+  onToggleFavorite,
+  onChange,
+  onOpenTradeSync,
+}: {
+  source: TradeImportSourceChoice | undefined;
+  brokerId: string;
+  isFavorite: boolean;
+  guideUrl: string | undefined;
+  busy: boolean;
+  showsHyperliquidGuidance: boolean;
+  syncCard: TradeImportSyncCard;
+  onToggleFavorite: () => void;
+  onChange: () => void;
+  onOpenTradeSync: () => void;
+}) {
+  return (
+    <>
+      <TradeImportSourceSummary
+        source={source}
+        brokerId={brokerId}
+        isFavorite={isFavorite}
+        guideUrl={guideUrl}
+        busy={busy}
+        onOpenGuide={openExternalUrl}
+        onToggleFavorite={onToggleFavorite}
+        onChange={onChange}
+      />
+      {showsHyperliquidGuidance && (
+        <p className="journalit-trade-import-hyperliquid-guidance">
+          {t('trade-import.hyperliquid.export-guidance')}
+        </p>
+      )}
+      {syncCard && (
+        <TradeImportSyncSuggestion
+          {...syncCard}
+          busy={busy}
+          onOpenTradeSync={onOpenTradeSync}
+        />
+      )}
+    </>
+  );
+}
+
+const chevronClass = (isOpen: boolean) =>
+  `journalit-home-period-chevron${isOpen ? ' journalit-home-period-chevron--open' : ''}`;
+
+
+function FavoriteOptionRow({
+  label,
+  selected,
+  favorite,
+  onSelect,
+  onToggleFavorite,
+}: {
+  label: string;
+  selected: boolean;
+  
+  favorite: boolean | undefined;
+  onSelect: () => void;
+  onToggleFavorite?: () => void;
+}) {
+  return (
+    <div
+      className={`journalit-home-period-option journalit-trade-import-favorite-option${selected ? ' journalit-home-period-option--active' : ''}`}
+    >
+      <button
+        type="button"
+        onClick={onSelect}
+        className="journalit-trade-import-favorite-option__select"
+      >
+        <span
+          className="journalit-home-period-option__check"
+          aria-hidden="true"
+        >
+          {selected ? <Check size={10} strokeWidth={3} /> : null}
+        </span>
+        <span className="journalit-home-period-option__label">{label}</span>
+      </button>
+      {favorite !== undefined && onToggleFavorite && (
+        <button
+          type="button"
+          className={`journalit-trade-import-favorite-button${favorite ? ' is-favorite' : ''}`}
+          aria-label={
+            favorite
+              ? t('csv.account-selector.favorite.remove')
+              : t('csv.account-selector.favorite.set')
+          }
+          onClick={(event) => {
+            event.stopPropagation();
+            onToggleFavorite();
+          }}
+        >
+          <Star size={13} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function ImportAccountPicker({
+  accounts,
+  selectedAccount,
+  favoriteAccount,
+  isOpen,
+  busy,
+  containerRef,
+  onToggleOpen,
+  onSelect,
+  onToggleFavorite,
+}: {
+  accounts: readonly string[];
+  selectedAccount: string;
+  favoriteAccount: string;
+  isOpen: boolean;
+  busy: boolean;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  onToggleOpen: () => void;
+  onSelect: (account: string) => void;
+  onToggleFavorite: (account: string) => void;
+}) {
+  return (
+    <label>
+      {t('trade-import.label.account')}
+      <div
+        className="journalit-home-period-wrapper journalit-trade-import-account-picker"
+        ref={containerRef}
+      >
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onToggleOpen}
+          className="journalit-home-period-selector journalit-trade-import-account-trigger clickable-icon"
+          aria-label={t('trade-import.label.account')}
+        >
+          <span>{selectedAccount}</span>
+          <ChevronDown size={14} className={chevronClass(isOpen)} />
+        </button>
+        {isOpen && (
+          <div className="journalit-home-period-menu journalit-trade-import-account-menu">
+            {accounts.map((account) => (
+              <FavoriteOptionRow
+                key={account}
+                label={account}
+                selected={account === selectedAccount}
+                favorite={favoriteAccount === account}
+                onSelect={() => onSelect(account)}
+                onToggleFavorite={() => onToggleFavorite(account)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </label>
+  );
+}
+
+const ASSET_TYPE_OPTIONS = [
+  ['stock', 'trade-import.asset.stock'],
+  ['options', 'trade-import.asset.options'],
+  ['futures', 'trade-import.asset.futures'],
+  ['forex', 'trade-import.asset.forex'],
+  ['crypto', 'trade-import.asset.crypto'],
+] as const;
+
+function AssetTypeField({
+  assetType,
+  busy,
+  onSelect,
+}: {
+  assetType: AssetType;
+  busy: boolean;
+  onSelect: (assetType: AssetType) => void;
+}) {
+  return (
+    <label>
+      {t('trade-import.label.asset-type')}
+      <TradeImportDropdown
+        label={t('trade-import.label.asset-type')}
+        disabled={busy}
+        value={assetType}
+        options={ASSET_TYPE_OPTIONS.map(([value, labelKey]) => ({
+          value,
+          label: t(labelKey),
+        }))}
+        onChange={(value) => {
+          if (isTradeImportAssetType(value)) {
+            onSelect(value);
+          }
+        }}
+      />
+    </label>
+  );
+}
+
+function ImportFormatField({
+  labelId,
+  formats,
+  broker,
+  busy,
+  onChange,
+}: {
+  labelId: string;
+  formats: ReturnType<typeof getImportFormatOptions>;
+  broker: string;
+  busy: boolean;
+  onChange: (brokerId: string) => void;
+}) {
+  if (formats.length === 0) return null;
+  return (
+    <div className="journalit-trade-import-choice-field">
+      <span id={labelId}>{t('trade-import.label.export-format')}</span>
+      <SegmentedControl<string>
+        groupRole="radiogroup"
+        ariaLabelledBy={labelId}
+        size="small"
+        fullWidth
+        disabled={busy}
+        value={broker}
+        options={formats.map((format) => ({
+          value: format.brokerId,
+          label: format.label,
+        }))}
+        onChange={onChange}
+      />
+      <small>
+        {formats.find((format) => format.brokerId === broker)?.hint}
+      </small>
+    </div>
+  );
+}
+
+function ImportDestinationField({
+  labelId,
+  destination,
+  busy,
+  onChange,
+}: {
+  labelId: string;
+  
+  destination: TradeImportDestination | undefined;
+  busy: boolean;
+  onChange: (destination: TradeImportDestination) => void;
+}) {
+  if (!destination) return null;
+  return (
+    <div className="journalit-trade-import-choice-field">
+      <span id={labelId}>{t('trade-import.label.destination')}</span>
+      <SegmentedControl<TradeImportDestination>
+        groupRole="radiogroup"
+        ariaLabelledBy={labelId}
+        size="small"
+        fullWidth
+        disabled={busy}
+        value={destination}
+        options={[
+          {
+            value: 'live',
+            label: t('trade-import.destination.live'),
+          },
+          {
+            value: 'backtest',
+            label: t('trade-import.destination.backtest'),
+          },
+        ]}
+        onChange={onChange}
+      />
+      {destination === 'backtest' && (
+        <small>{t('trade-import.destination.backtest-hint')}</small>
+      )}
+    </div>
+  );
+}
+
+function filePickerLabel(file: File | null, isDragging: boolean): string {
+  if (file) return file.name;
+  return isDragging
+    ? t('trade-import.action.drop-file')
+    : t('trade-import.action.choose-file');
+}
+
+function TradeImportFilePicker({
+  file,
+  isDragging,
+  busy,
+  inputRef,
+  acceptedExtensions,
+  acceptedExtensionList,
+  onFileSelected,
+  onDragEnter,
+  onDragLeave,
+  onDrop,
+}: {
+  file: File | null;
+  isDragging: boolean;
+  busy: boolean;
+  inputRef: React.RefObject<HTMLInputElement | null>;
+  acceptedExtensions: string;
+  acceptedExtensionList: readonly string[];
+  onFileSelected: (file: File | null) => void;
+  onDragEnter: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDragLeave: (event: React.DragEvent<HTMLDivElement>) => void;
+  onDrop: (event: React.DragEvent<HTMLDivElement>) => void;
+}) {
+  return (
+    <div
+      className={`journalit-trade-import-file-picker ${isDragging ? 'is-dragging' : ''}`}
+      role="button"
+      tabIndex={busy ? -1 : 0}
+      onClick={() => inputRef.current?.click()}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          inputRef.current?.click();
+        }
+      }}
+      onDragEnter={onDragEnter}
+      onDragOver={(event) => event.preventDefault()}
+      onDragLeave={onDragLeave}
+      onDrop={onDrop}
+    >
+      <input
+        aria-label={t('trade-import.action.choose-file')}
+        ref={inputRef}
+        type="file"
+        accept={acceptedExtensions}
+        disabled={busy}
+        onChange={(event) => onFileSelected(event.target.files?.[0] ?? null)}
+      />
+      <FileText size={36} />
+      <span className="journalit-trade-import-file-picker-label">
+        {filePickerLabel(file, isDragging)}
+      </span>
+      <div className="journalit-trade-import-file-types" aria-hidden>
+        {acceptedExtensionList.map((extension) => (
+          <span key={extension}>{extension}</span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function TemplatePicker({
+  templates,
+  selectedTemplateId,
+  selectedTemplateName,
+  favoriteTemplateId,
+  isOpen,
+  busy,
+  containerRef,
+  onToggleOpen,
+  onClear,
+  onApply,
+  onToggleFavorite,
+}: {
+  templates: readonly LocalCSVTemplate[];
+  selectedTemplateId: string;
+  selectedTemplateName: string | undefined;
+  favoriteTemplateId: string;
+  isOpen: boolean;
+  busy: boolean;
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  onToggleOpen: () => void;
+  onClear: () => void;
+  onApply: (template: LocalCSVTemplate) => void;
+  onToggleFavorite: (templateId: string) => void;
+}) {
+  return (
+    <label>
+      {t('trade-import.label.template')}
+      <div
+        className="journalit-home-period-wrapper journalit-trade-import-template-picker"
+        ref={containerRef}
+      >
+        <button
+          type="button"
+          disabled={busy}
+          onClick={onToggleOpen}
+          className="journalit-home-period-selector journalit-trade-import-template-trigger clickable-icon"
+          aria-label={t('trade-import.label.template')}
+        >
+          <span>
+            {selectedTemplateId
+              ? selectedTemplateName
+              : t('trade-import.template.none')}
+          </span>
+          <ChevronDown size={14} className={chevronClass(isOpen)} />
+        </button>
+        {isOpen && (
+          <div className="journalit-home-period-menu journalit-trade-import-template-select-menu">
+            <FavoriteOptionRow
+              label={t('trade-import.template.none')}
+              selected={selectedTemplateId === ''}
+              favorite={undefined}
+              onSelect={onClear}
+            />
+            {templates.map((template) => (
+              <FavoriteOptionRow
+                key={template.id}
+                label={template.name}
+                selected={template.id === selectedTemplateId}
+                favorite={favoriteTemplateId === template.id}
+                onSelect={() => onApply(template)}
+                onToggleFavorite={() => onToggleFavorite(template.id)}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </label>
+  );
+}
+
+function TemplateActionsMenu({
+  containerRef,
+  menuRef,
+  isOpen,
+  position,
+  busy,
+  hasSelection,
+  onToggle,
+  onImport,
+  onExport,
+  onDelete,
+}: {
+  containerRef: React.RefObject<HTMLDivElement | null>;
+  menuRef: React.RefObject<HTMLDivElement | null>;
+  isOpen: boolean;
+  
+  position: PortalMenuPosition | null;
+  busy: boolean;
+  hasSelection: boolean;
+  onToggle: () => void;
+  onImport: () => void;
+  onExport: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <div
+      ref={containerRef}
+      className="journalit-trade-import-template-menu-wrapper"
+    >
+      <button
+        type="button"
+        className="journalit-trade-import-template-menu-trigger"
+        disabled={busy}
+        aria-label={t('trade-import.label.template-actions')}
+        onClick={onToggle}
+      >
+        <MoreHorizontal size={16} />
+      </button>
+      {isOpen &&
+        position &&
+        createPortal(
+          <div
+            ref={menuRef}
+            className="journalit-trade-import-template-menu journalit-trade-import-template-menu--portal"
+            style={cssVars({
+              '--trade-import-menu-top': `${position.top}px`,
+              '--trade-import-menu-left': `${position.left}px`,
+              '--trade-import-menu-width': `${position.width}px`,
+              '--trade-import-menu-max-height': `${position.maxHeight}px`,
+            })}
+          >
+            <button type="button" onClick={onImport}>
+              <Upload size={15} aria-hidden="true" />
+              {t('csv.template-import.button.import')}
+            </button>
+            <button type="button" disabled={!hasSelection} onClick={onExport}>
+              <Download size={15} aria-hidden="true" />
+              {t('csv.button.export-template')}
+            </button>
+            <button type="button" disabled={!hasSelection} onClick={onDelete}>
+              <Trash2 size={15} aria-hidden="true" />
+              {t('csv.button.delete-template')}
+            </button>
+          </div>,
+          window.activeDocument.body
+        )}
+    </div>
+  );
+}
+
+function AiMappingToggle({
+  checked,
+  busy,
+  onChange,
+}: {
+  checked: boolean;
+  busy: boolean;
+  onChange: (enabled: boolean) => void;
+}) {
+  return (
+    <label className="journalit-trade-import-ai-toggle">
+      <input
+        type="checkbox"
+        disabled={busy}
+        checked={checked}
+        onChange={(event) => {
+          onChange(event.target.checked);
+        }}
+      />
+      <span>{t('trade-import.label.ai-mapping')}</span>
+    </label>
+  );
+}
+
+function TemplateImportPanel({
+  shareCode,
+  busy,
+  onChange,
+  onImport,
+  onCancel,
+}: {
+  shareCode: string;
+  busy: boolean;
+  onChange: (shareCode: string) => void;
+  onImport: () => void;
+  onCancel: () => void;
+}) {
+  return (
+    <div className="journalit-trade-import-template-panel">
+      <label>
+        {t('csv.template-import.label.share-code')}
+        <input
+          type="text"
+          disabled={busy}
+          value={shareCode}
+          onChange={(event) => onChange(event.target.value)}
+          placeholder={t('csv.template-import.placeholder.share-code')}
+        />
+      </label>
+      <div className="journalit-trade-import-template-actions">
+        <button disabled={!shareCode.trim() || busy} onClick={onImport}>
+          {t('csv.template-import.button.import')}
+        </button>
+        <button disabled={busy} onClick={onCancel}>
+          {t('button.cancel')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function TemplateExportPanel({
+  code,
+  copied,
+  onCopy,
+}: {
+  code: string;
+  copied: boolean;
+  onCopy: () => void;
+}) {
+  return (
+    <div className="journalit-trade-import-template-panel">
+      <label>
+        {t('csv.export-template.label.share-code')}
+        <textarea readOnly value={code} />
+      </label>
+      <button onClick={onCopy}>
+        {copied
+          ? t('csv.export-template.button.copied')
+          : t('csv.export-template.button.copy')}
+      </button>
+    </div>
+  );
+}
+
+function TradeImportPrivacyNote() {
+  return (
+    <Accordion
+      title={t('trade-import.step.privacy')}
+      defaultExpanded={false}
+      className="journalit-trade-import-accordion"
+    >
+      <p className="journalit-trade-import-privacy-note">
+        {t(PRIVACY_COPY_KEY)}{' '}
+        <button
+          type="button"
+          className="journalit-trade-import-inline-link"
+          onClick={() => openExternalUrl(PRIVACY_URL)}
+        >
+          {t('button.learn-more')}
+        </button>
+      </p>
+    </Accordion>
+  );
+}
+
+type ManualMappingCustomFields = ReturnType<typeof customFieldDefinitions>;
+
+
+function mappingOptionsForHeader(
+  selectedField: string,
+  assignments: Record<string, string>,
+  customFields: ManualMappingCustomFields,
+  perRowMode: boolean
+): DropdownOption[] {
+  const usedSingleFields = new Set(
+    Object.values(assignments).filter(
+      (field) =>
+        field !== selectedField &&
+        !isMultiColumnMappingField(field, customFields)
+    )
+  );
+  const isOffered = (field: string) =>
+    field === selectedField || !usedSingleFields.has(field);
+  
+  const tradeFieldOptions = TRADE_FIELDS.flatMap((field) =>
+    (field !== 'status' || !perRowMode) && isOffered(field)
+      ? [{ value: field, label: fieldLabel(field) }]
+      : []
+  );
+  const customFieldOptions = customFields.flatMap((field) => {
+    const fieldKey = field.fieldKey || field.id;
+    const option = {
+      value: `custom:${fieldKey}`,
+      label: `${field.label || fieldKey} (${fieldKey})`,
+    };
+    return isOffered(option.value) ? [option] : [];
+  });
+  return [
+    { value: '', label: t('csv.mapper.do-not-import') },
+    ...tradeFieldOptions,
+    ...customFieldOptions,
+  ];
+}
+
+function ColumnMappingRow({
+  header,
+  selectedField,
+  required,
+  sampleValue,
+  options,
+  busy,
+  onChange,
+}: {
+  header: string;
+  selectedField: string;
+  required: boolean;
+  sampleValue: string | undefined;
+  options: DropdownOption[];
+  busy: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <div className="csv-mapper-row">
+      <div className="csv-mapper-source">
+        <div className="csv-column-header">
+          <div className="csv-column-name">
+            <span>{header}</span>
+            {required && (
+              <span className="csv-required-badge csv-required-badge--source">
+                {t('csv.mapper.required-badge')}
+              </span>
+            )}
+          </div>
+          {sampleValue && (
+            <div className="csv-column-sample">
+              {t('csv.mapper.example')}{' '}
+              <span className="csv-sample-value">{sampleValue}</span>
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="csv-mapper-arrow">→</div>
+      <div className="csv-mapper-target">
+        <TradeImportDropdown
+          label={t('csv.mapper.aria.map-column', { header })}
+          disabled={busy}
+          value={selectedField}
+          options={options}
+          onChange={onChange}
+        />
+      </div>
+    </div>
+  );
+}
+
+const MANUAL_MODE_OPTIONS = [
+  ['direct_pnl', 'trade-import.manual-mode.direct-pnl'],
+  ['price_based', 'trade-import.manual-mode.price-based'],
+] as const;
+
+function ManualModePicker({
+  titleId,
+  manualMode,
+  busy,
+  onChange,
+}: {
+  titleId: string;
+  manualMode: ManualImportMode;
+  busy: boolean;
+  onChange: (mode: ManualImportMode) => void;
+}) {
+  return (
+    <div className="journalit-trade-import-manual-mode">
+      <div id={titleId} className="journalit-trade-import-manual-mode-title">
+        {t('csv.mapper.mode.title')}
+      </div>
+      <p>{t('csv.mapper.mode.help')}</p>
+      <div
+        className="journalit-trade-import-manual-mode-options"
+        role="radiogroup"
+        aria-labelledby={titleId}
+      >
+        {MANUAL_MODE_OPTIONS.map(([value, labelKey]) => (
+          <label
+            key={value}
+            className={`journalit-trade-import-manual-mode-option${manualMode === value ? ' is-selected' : ''}${busy ? ' is-disabled' : ''}`}
+          >
+            <input
+              type="radio"
+              name="journalit-trade-import-manual-mode"
+              value={value}
+              disabled={busy}
+              checked={manualMode === value}
+              onChange={(event) => {
+                if (isManualImportMode(event.target.value)) {
+                  onChange(event.target.value);
+                }
+              }}
+            />
+            <span>{t(labelKey)}</span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function MappingSummary({
+  assignments,
+  headerCount,
+  requiredMappingFields,
+}: {
+  assignments: Record<string, string>;
+  headerCount: number;
+  requiredMappingFields: readonly TradeField[];
+}) {
+  const mappedFields = new Set(Object.values(assignments));
+  const allRequiredMapped = requiredMappingFields.every((field) =>
+    mappedFields.has(field)
+  );
+  return (
+    <div className="csv-mapper-summary csv-mapper-summary--box">
+      <strong>{t('csv.mapper.summary.title')}</strong>{' '}
+      {Object.values(assignments).filter(Boolean).length}{' '}
+      {t('csv.mapper.summary.of')} {headerCount}{' '}
+      {t('csv.mapper.summary.columns-mapped')}
+      {allRequiredMapped && (
+        <span className="csv-mapper-summary-success">
+          ✓ {t('csv.mapper.summary.all-mapped')}
+        </span>
+      )}
+    </div>
+  );
+}
+
+function MappingFieldItem({
+  mapped,
+  required,
+  label,
+  helpText,
+}: {
+  mapped: boolean;
+  required: boolean;
+  label: string;
+  helpText: string | undefined;
+}) {
+  const state = mapped ? 'mapped' : 'unmapped';
+  return (
+    <div className={`csv-field-item csv-field-item--${state}`}>
+      <span className="csv-field-item-icon">{mapped ? '✓' : '○'}</span>
+      <strong>{label}</strong>
+      {required && (
+        <span className={`csv-field-required csv-field-required--${state}`}>
+          {t('csv.mapper.required-label')}
+        </span>
+      )}
+      {helpText && <span className="csv-field-help">: {helpText}</span>}
+    </div>
+  );
+}
+
+function MappingFieldsReference({
+  assignments,
+  requiredMappingFields,
+  backendManualMode,
+  assetType,
+  customFields,
+}: {
+  assignments: Record<string, string>;
+  requiredMappingFields: readonly TradeField[];
+  backendManualMode: TradeImportManualMode;
+  assetType: AssetType;
+  customFields: ManualMappingCustomFields;
+}) {
+  const mappedFields = new Set(Object.values(assignments));
+  const helpText = fieldHelpText();
+  const requiredFields = new Set<string>(requiredMappingFields);
+  return (
+    <div className="csv-mapper-fields-reference">
+      <p className="csv-mapper-fields-desc">
+        {t('csv.mapper.available-fields.desc')}
+      </p>
+      {Object.entries(
+        visibleFieldCategories(
+          requiredMappingFields,
+          backendManualMode,
+          assetType,
+          customFields
+        )
+      ).map(([category, fields]) => (
+        <div key={category} className="csv-field-category">
+          <h4 className="csv-field-category-title">{category}</h4>
+          <div className="csv-field-category-list">
+            {fields.map((field) => (
+              <MappingFieldItem
+                key={field}
+                mapped={mappedFields.has(field)}
+                required={isTradeField(field) && requiredFields.has(field)}
+                label={mappingFieldLabel(field, customFields)}
+                helpText={helpText[field]}
+              />
+            ))}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function ManualColumnMapper({
+  plugin,
+  analyse,
+  columnMappings,
+  requiredMappingFields,
+  backendManualMode,
+  manualMode,
+  assetType,
+  perRowMode,
+  busy,
+  modeTitleId,
+  templateName,
+  onManualModeChange,
+  onAssignColumn,
+  onCreateCustomField,
+  onTemplateNameChange,
+  onSaveTemplate,
+}: {
+  plugin: JournalitPlugin;
+  analyse: TradeImportAnalyseResponse;
+  
+  columnMappings: Record<string, string[]>;
+  requiredMappingFields: readonly TradeField[];
+  backendManualMode: TradeImportManualMode;
+  manualMode: ManualImportMode;
+  assetType: AssetType;
+  perRowMode: boolean;
+  busy: boolean;
+  modeTitleId: string;
+  templateName: string;
+  onManualModeChange: (mode: ManualImportMode) => void;
+  onAssignColumn: (header: string, field: string) => void;
+  onCreateCustomField: (
+    header: string,
+    field: NewColumnCustomField,
+    samples: readonly string[]
+  ) => Promise<boolean>;
+  onTemplateNameChange: (name: string) => void;
+  onSaveTemplate: () => void;
+}) {
+  const { headers, sampleRows } = analyse;
+  const assignments = columnAssignmentsFromMappings(columnMappings, headers);
+  const customFields = customFieldDefinitions(plugin);
+  const requiredFields = new Set<string>(requiredMappingFields);
+  return (
+    <div className="csv-column-mapper journalit-trade-import-inline-mapper">
+      <div className="csv-mapper-header">
+        <h3>{t('csv.mapper.title')}</h3>
+        <p>{t('csv.mapper.subtitle')}</p>
+      </div>
+      <ManualModePicker
+        titleId={modeTitleId}
+        manualMode={manualMode}
+        busy={busy}
+        onChange={onManualModeChange}
+      />
+      <div className="csv-message csv-message--info csv-tip-message">
+        <strong>{t('csv.mapper.tip.title')}</strong>
+        <p className="csv-tip-text">{t('csv.mapper.tip.desc')}</p>
+      </div>
+      <div className="csv-mapper-grid-container">
+        <div className="csv-mapper-grid">
+          {headers.map((header) => {
+            const selectedField = assignments[header] ?? '';
+            return (
+              <ColumnMappingRow
+                key={header}
+                header={header}
+                selectedField={selectedField}
+                required={
+                  isTradeField(selectedField) &&
+                  requiredFields.has(selectedField)
+                }
+                sampleValue={sampleValueForHeader(header, headers, sampleRows)}
+                options={mappingOptionsForHeader(
+                  selectedField,
+                  assignments,
+                  customFields,
+                  perRowMode
+                )}
+                busy={busy}
+                onChange={(value) => onAssignColumn(header, value)}
+              />
+            );
+          })}
+        </div>
+      </div>
+      <TradeImportUnmappedColumns
+        headers={headers}
+        sampleRows={sampleRows}
+        assignments={assignments}
+        busy={busy}
+        onKeep={(header, samples) =>
+          openCustomFieldFromColumnModal(plugin.app, {
+            header,
+            sampleValues: samples,
+            existingLabels: customFields.map((field) => field.label),
+            onCreate: (field) => onCreateCustomField(header, field, samples),
+          })
+        }
+      />
+      <MappingSummary
+        assignments={assignments}
+        headerCount={headers.length}
+        requiredMappingFields={requiredMappingFields}
+      />
+      <div className="csv-mapper-fields-section">
+        <Accordion
+          title={t('csv.mapper.available-fields.title')}
+          defaultExpanded={false}
+        >
+          <MappingFieldsReference
+            assignments={assignments}
+            requiredMappingFields={requiredMappingFields}
+            backendManualMode={backendManualMode}
+            assetType={assetType}
+            customFields={customFields}
+          />
+        </Accordion>
+      </div>
+      <div className="journalit-trade-import-save-template-row">
+        <label>
+          {t('trade-import.label.save-template')}
+          <input
+            type="text"
+            disabled={busy}
+            value={templateName}
+            onChange={(event) => onTemplateNameChange(event.target.value)}
+            placeholder={t('trade-import.placeholder.template-name')}
+          />
+        </label>
+        <button
+          disabled={!templateName.trim() || busy}
+          onClick={onSaveTemplate}
+        >
+          {t('trade-import.action.save-template')}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+type AnalyseFailureRecovery = ReturnType<typeof resolveBrokerImportRecovery>;
+type AnalyseSourceRecovery = ReturnType<
+  typeof resolveBrokerImportAnalyseRecovery
+>;
+
+
+function AnalyseSourceReview({
+  analyse,
+  broker,
+  selectedBrokerLabel,
+  supportsManualMapping,
+  analyseRecovery,
+  failureRecovery,
+  busy,
+  onContinueWithSelectedSource,
+  onSwitchSource,
+  onChangeSource,
+  onChooseAnotherFile,
+}: {
+  analyse: TradeImportAnalyseResponse;
+  broker: string;
+  selectedBrokerLabel: string;
+  supportsManualMapping: boolean;
+  analyseRecovery: AnalyseSourceRecovery;
+  failureRecovery: AnalyseFailureRecovery;
+  busy: boolean;
+  onContinueWithSelectedSource: (recommendedSource: string) => void;
+  onSwitchSource: (source: string) => void;
+  onChangeSource: () => void;
+  onChooseAnotherFile: () => void;
+}) {
+  return (
+    <>
+      {!failureRecovery && (
+        <p>
+          {t(
+            supportsManualMapping
+              ? 'trade-import.analyse.detected'
+              : 'trade-import.analyse.detected-native',
+            { fileType: analyse.fileType }
+          )}
+        </p>
+      )}
+      {analyseRecovery && (
+        <NativeSourceRecoveryNotice
+          className="journalit-trade-import-outcome journalit-trade-import-outcome--failed"
+          disabled={busy}
+          iconSize={20}
+          recovery={analyseRecovery}
+          selectedSource={broker}
+          selectedSourceLabel={
+            
+            broker === 'MANUAL'
+              ? t('trade-import.broker.manual')
+              : selectedBrokerLabel
+          }
+          onContinueWithSelectedSource={() =>
+            onContinueWithSelectedSource(analyseRecovery.recommendedSource)
+          }
+          onSwitchSource={() =>
+            onSwitchSource(analyseRecovery.recommendedSource)
+          }
+        />
+      )}
+      {failureRecovery && !analyseRecovery ? (
+        <TradeImportRecoveryReview
+          recovery={failureRecovery}
+          diagnostics={analyse.diagnostics}
+          busy={busy}
+          onChangeSource={onChangeSource}
+          onChooseAnotherFile={onChooseAnotherFile}
+        />
+      ) : (
+        <TradeImportDiagnostics
+          diagnostics={analyse.diagnostics.filter(
+            (diagnostic) => !failureRecovery?.suppressesDiagnostic(diagnostic)
+          )}
+          defaultOpen={true}
+        />
+      )}
+    </>
+  );
+}
+
+function AnalyseReviewControls({
+  analyse,
+  busy,
+  selectedSheetName,
+  headerRowError,
+  dateFormat,
+  dateFormatOptions,
+  onSelectSheet,
+  onClearHeaderRowError,
+  onCommitHeaderRow,
+  onDateFormatChange,
+}: {
+  analyse: TradeImportAnalyseResponse;
+  busy: boolean;
+  selectedSheetName: string | null;
+  headerRowError: string | null;
+  dateFormat: string;
+  dateFormatOptions: DropdownOption[];
+  onSelectSheet: (sheetName: string) => void;
+  onClearHeaderRowError: () => void;
+  onCommitHeaderRow: (sheetRow: number) => void;
+  onDateFormatChange: (format: string) => void;
+}) {
+  
+  if (analyse.sheets.length === 0) return null;
+  return (
+    <div className="journalit-trade-import-review-controls">
+      {analyse.sheets.length > 1 && (
+        <label>
+          <span>{t('trade-import.label.sheet')}</span>
+          <TradeImportDropdown
+            label={t('trade-import.label.sheet')}
+            disabled={busy}
+            value={selectedSheetName ?? ''}
+            options={analyse.sheets.map((sheet) => ({
+              value: sheet.name,
+              label: sheet.name,
+            }))}
+            onChange={onSelectSheet}
+          />
+        </label>
+      )}
+      {analyse.headerSheetRow !== undefined && (
+        <TradeImportHeaderRowInput
+          key={`${analyse.importId}:${analyse.headerSheetRow}`}
+          sheetRow={analyse.headerSheetRow}
+          disabled={busy}
+          error={headerRowError}
+          onClearError={onClearHeaderRowError}
+          onCommit={onCommitHeaderRow}
+        />
+      )}
+      <label className="journalit-trade-import-date-format-control">
+        <span>{t('trade-import.label.date-format')}</span>
+        <TradeImportDropdown
+          label={t('trade-import.label.date-format')}
+          disabled={busy}
+          value={dateFormat}
+          options={dateFormatOptions}
+          menuClassName="journalit-trade-import-date-format-menu"
+          menuMinWidth={520}
+          onChange={onDateFormatChange}
+        />
+      </label>
+    </div>
+  );
+}
+
+function ExportTimeZoneError({
+  errorKey,
+}: {
+  errorKey: ReturnType<typeof resolveHyperliquidExportTimeZone>['errorKey'];
+}) {
+  if (!errorKey) return null;
+  return (
+    <div className="csv-message csv-message--error" role="alert">
+      {t(errorKey)}
+    </div>
+  );
+}
+
+function AnalyseSampleTable({
+  analyse,
+}: {
+  analyse: TradeImportAnalyseResponse;
+}) {
+  
+  if (analyse.headers.length === 0) return null;
+  return (
+    <div className="csv-preview-table-wrapper journalit-trade-import-sample">
+      <table className="csv-preview-table">
+        <thead>
+          <tr>
+            {analyse.headers.map((header) => (
+              <th key={header}>{header}</th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {analyse.sampleRows.map((row) => (
+            <tr key={row.join('\u001f')}>
+              {row.map((cell, cellIndex) => (
+                <td key={`${analyse.headers[cellIndex] ?? cellIndex}:${cell}`}>
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+interface PreviewErrorState {
+  message: string;
+  details: string | null;
+  showGuidance: boolean;
+}
+
+function PreviewErrorMessage({ error }: { error: PreviewErrorState | null }) {
+  if (!error) return null;
+  return (
+    <div className="csv-message csv-message--error journalit-trade-import-preview-error">
+      <strong>{error.message}</strong>
+      {error.details && <p>{error.details}</p>}
+      {error.showGuidance && <p>{t('trade-import.preview-error.guidance')}</p>}
+    </div>
+  );
+}
+
+function ImportSymbolField({
+  required,
+  value,
+  busy,
+  onChange,
+}: {
+  
+  required: boolean;
+  value: string;
+  busy: boolean;
+  onChange: (value: string) => void;
+}) {
+  if (!required) return null;
+  return (
+    <label className="journalit-trade-import-symbol-field">
+      {t('trade-import.label.symbol')}
+      <input
+        type="text"
+        disabled={busy}
+        value={value}
+        placeholder={TRADE_IMPORT_SYMBOL_EXAMPLE}
+        autoComplete="off"
+        spellCheck={false}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      <small>{t('trade-import.symbol.hint')}</small>
+    </label>
+  );
+}
+
+
+function isPreviewReady({
+  file,
+  capabilities,
+  analyse,
+  analyseRecovery,
+  failureRecovery,
+  needsAssetTypeConfirmation,
+  isHyperliquid,
+  hyperliquidPreviewReady,
+  importSymbol,
+}: {
+  file: File | null;
+  capabilities: TradeImportCapabilities | null;
+  analyse: TradeImportAnalyseResponse;
+  
+  analyseRecovery: AnalyseSourceRecovery;
+  failureRecovery: AnalyseFailureRecovery;
+  needsAssetTypeConfirmation: boolean;
+  isHyperliquid: boolean;
+  hyperliquidPreviewReady: boolean;
+  importSymbol: string;
+}): boolean {
+  if (!file || !capabilities) return false;
+  if (analyseRecovery || failureRecovery) return false;
+  if (needsAssetTypeConfirmation) return false;
+  if (isHyperliquid && !hyperliquidPreviewReady) return false;
+  return !analyse.requiresSymbol || importSymbol.trim() !== '';
+}
+
+
+function TradeImportPreviewHeader({
+  completedResult,
+  operationResult,
+  headingId,
+  onReset,
+}: {
+  completedResult: TradeImportCompletionResult | null;
+  operationResult: TradeOperationResult | null;
+  headingId: string;
+  onReset: () => void;
+}) {
+  if (!completedResult) {
+    return (
+      <div>
+        <h2>
+          <BadgeCheck /> {t('trade-import.step.preview')}
+        </h2>
+      </div>
+    );
+  }
+  const hasIssues =
+    operationResult?.partial === true ||
+    completedResult.failedCount > 0 ||
+    completedResult.pendingCount > 0;
+  return (
+    <div className="journalit-trade-import-completion-header">
+      <h2 id={headingId}>
+        {hasIssues ? <AlertTriangle /> : <BadgeCheck />}{' '}
+        {getTradeImportCompletionTitle(completedResult, operationResult)}
+      </h2>
+      <button
+        type="button"
+        className="journalit-trade-import-completion-header__reset"
+        onClick={onReset}
+      >
+        {t('csv.button.import-another')}
+      </button>
+    </div>
+  );
+}
+
+function FailedPreviewRow({
+  item,
+  errorCode,
+}: {
+  item: ClassifiedPreviewTrade;
+  errorCode?: string;
+}) {
+  
+  const rows = item.preview.sourceSheetRows ?? item.preview.sourceRows;
+  return (
+    <div className="csv-error-group-example">
+      {rows.length > 0 && (
+        <>
+          {t('csv.errors.rows', {
+            rows: rows.join(', '),
+          })}
+          {' — '}
+        </>
+      )}
+      <strong>{item.preview.symbol || '—'}</strong>
+      {' — '}
+      {tradeImportCommitFailureLabel(errorCode) ??
+        item.message ??
+        tradeImportClassificationLabel(item.classification)}
+    </div>
+  );
+}
+
+function TradeImportCompletedResults({
+  plugin,
+  result,
+  operationResult,
+  headingId,
+  diagnostics,
+  failedRows,
+  onManageImports,
+}: {
+  plugin: JournalitPlugin;
+  result: TradeImportCompletionResult;
+  operationResult: TradeOperationResult | null;
+  headingId: string;
+  diagnostics: TradeImportPreviewResponse['diagnostics'];
+  failedRows: readonly FailedImportRow[];
+  onManageImports: () => void;
+}) {
+  
+  const problemsOpen = result.writtenCount === 0;
+  return (
+    <div className="csv-import-results journalit-trade-import-results">
+      <TradeImportCompletionSummary
+        plugin={plugin}
+        result={result}
+        operationResult={operationResult}
+        headingId={headingId}
+      />
+      
+      {result.createdOnServer && (
+        <p className="journalit-trade-import-undo-hint">
+          {t('trade-import.completion.wrong-account')}{' '}
+          <button
+            type="button"
+            className="journalit-trade-import-inline-link"
+            onClick={onManageImports}
+          >
+            {t('trade-import.completion.undo-import')}
+          </button>
+        </p>
+      )}
+      <TradeImportDiagnostics
+        diagnostics={diagnostics}
+        defaultOpen={problemsOpen}
+        className="csv-results-problems"
+      />
+      {failedRows.length > 0 && (
+        <CollapsibleSection
+          title={t('csv.results.errors-header', {
+            count: String(failedRows.length),
+          })}
+          defaultOpen={problemsOpen}
+          className="csv-results-problems"
+        >
+          <div className="import-results-errors">
+            <div className="csv-error-group-body">
+              {failedRows.map(({ item, errorCode }) => (
+                <FailedPreviewRow
+                  key={item.itemId}
+                  item={item}
+                  errorCode={errorCode}
+                />
+              ))}
+            </div>
+          </div>
+        </CollapsibleSection>
+      )}
+    </div>
+  );
+}
+
 export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   const tradeImportCompletionHeadingId = useId();
+  const importDestinationLabelId = useId();
+  const importFormatLabelId = useId();
   const backendTradeImportService = useMemo(
     () => new BackendTradeImportService(),
     []
@@ -825,23 +2608,19 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   );
   const [capabilities, setCapabilities] =
     useState<TradeImportCapabilities | null>(null);
-  const [selectedAccountName, setSelectedAccountName] = useState(
-    plugin.settings.csvFavoriteAccount &&
-      accounts.includes(plugin.settings.csvFavoriteAccount)
-      ? plugin.settings.csvFavoriteAccount
-      : accounts[0]
+  const favorites = csvImportFavorites(plugin.settings);
+  const [selectedAccountName, setSelectedAccountName] = useState(() =>
+    initialImportAccount(favorites.account, accounts)
   );
   
   
   
-  const [broker, setBroker] = useState(plugin.settings.csvFavoriteBroker ?? '');
-  const onboardingAssetFocus = plugin.serviceManager
-    .getInitializedOnboardingService()
-    ?.getState().answers.assetFocus;
+  const [broker, setBroker] = useState(favorites.broker);
+  const onboardingAssetFocus = onboardingAssetFocusOf(plugin);
   const [assetType, setAssetType] = useState<AssetType>(() =>
     defaultTradeImportAssetType(
       plugin.settings,
-      plugin.settings.csvFavoriteBroker ?? '',
+      favorites.broker,
       onboardingAssetFocus
     )
   );
@@ -864,14 +2643,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     setSyncOnlySourceId(null);
     setIsChangingSource(false);
   }, []);
-  const [favoriteAccount, setFavoriteAccount] = useState(
-    plugin.settings.csvFavoriteAccount ?? ''
-  );
-  const [favoriteBroker, setFavoriteBroker] = useState(
-    plugin.settings.csvFavoriteBroker ?? ''
-  );
+  const [favoriteAccount, setFavoriteAccount] = useState(favorites.account);
+  const [favoriteBroker, setFavoriteBroker] = useState(favorites.broker);
   const [favoriteTemplateId, setFavoriteTemplateId] = useState(
-    plugin.settings.csvFavoriteTemplateId ?? ''
+    favorites.templateId
   );
   
   const manualModeTitleId = useId();
@@ -879,6 +2654,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     useState<ManualImportMode | null>(null);
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [templateName, setTemplateName] = useState('');
+  
+  
+  const [importSymbol, setImportSymbol] = useState('');
   const [templateShareCode, setTemplateShareCode] = useState('');
   const [templateExportCode, setTemplateExportCode] = useState('');
   const [templateCopied, setTemplateCopied] = useState(false);
@@ -909,8 +2687,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   
   const [headerRowError, setHeaderRowError] = useState<string | null>(null);
   const isHyperliquid = isHyperliquidTradeHistory(broker);
-  const hyperliquidDateFormatValid =
-    !isHyperliquid || isDateFormatAllowedForBroker(broker, selectedDateFormat);
+  const hyperliquidDateFormatValid = isBrokerDateFormatValid(
+    broker,
+    selectedDateFormat
+  );
   const [aiMappingRequested, setAiMappingRequested] = useState(true);
   const [file, setFile] = useState<File | null>(null);
   const [dismissedAnalyseRecovery, setDismissedAnalyseRecovery] = useState<{
@@ -955,8 +2735,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
   const [workbookImagesExcludedFor, setWorkbookImagesExcludedFor] = useState<
     string | null
   >(null);
-  const includeWorkbookImages =
-    !preview || workbookImagesExcludedFor !== preview.importId;
+  const includeWorkbookImages = workbookImagesIncludedFor(
+    preview,
+    workbookImagesExcludedFor
+  );
   const workbookImageUrls = useWorkbookImageUrls(file, classified);
   const toggleImportAnyway = useCallback(
     (itemIds: readonly string[], importAnyway: boolean) => {
@@ -1073,9 +2855,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       }
     }, 150);
     const activeWindow = window.activeDocument.defaultView ?? window;
-    window.activeDocument.addEventListener('pointerdown', handlePointerDown);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('pointerdown', handlePointerDown);
     activeWindow.addEventListener('keydown', handleKeyDown, true);
-    window.activeDocument.addEventListener(
+    listenerDocument.addEventListener(
       'visibilitychange',
       handleVisibilityChange
     );
@@ -1084,12 +2867,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     window.addEventListener('scroll', handleScroll, true);
     window.addEventListener('blur', handleWindowBlur);
     return () => {
-      window.activeDocument.removeEventListener(
-        'pointerdown',
-        handlePointerDown
-      );
+      listenerDocument.removeEventListener('pointerdown', handlePointerDown);
       activeWindow.removeEventListener('keydown', handleKeyDown, true);
-      window.activeDocument.removeEventListener(
+      listenerDocument.removeEventListener(
         'visibilitychange',
         handleVisibilityChange
       );
@@ -1119,12 +2899,10 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       }
     };
 
-    window.activeDocument.addEventListener('mousedown', handleClickOutside);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('mousedown', handleClickOutside);
     return () =>
-      window.activeDocument.removeEventListener(
-        'mousedown',
-        handleClickOutside
-      );
+      listenerDocument.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   useEffect(() => {
@@ -1181,19 +2959,16 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       ],
     [capabilities]
   );
-  const supportedExtensions =
-    capabilities?.fileTypes
-      .flatMap((type) => type.extensions.map((ext) => `.${ext}`))
-      .join(',') ?? '.csv,.txt,.xlsx,.xls,.html,.htm';
-  const selectedBrokerCapabilities = capabilities?.brokers.find(
-    (item) => item.id === broker
+  const selectedBrokerCapabilities = brokerCapabilitiesFor(
+    capabilities,
+    broker
   );
-  const exportTimeZoneStatus = resolveHyperliquidExportTimeZone(
-    broker,
-    selectedBrokerCapabilities?.supportsExportTimeZone === true
-  );
-  const hyperliquidPreviewReady =
-    !exportTimeZoneStatus.errorKey && hyperliquidDateFormatValid;
+  const { exportTimeZoneStatus, hyperliquidPreviewReady } =
+    hyperliquidReadiness(
+      broker,
+      selectedBrokerCapabilities,
+      hyperliquidDateFormatValid
+    );
   const selectedBrokerLabel = tradeImportSourceLabel(broker, capabilities);
   const brokerGuideUrl = BROKER_GUIDE_URLS[broker];
   const sourceOptions = useMemo(
@@ -1204,8 +2979,9 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     [capabilities, favoriteBroker]
   );
   const selectedSourceOption = sourceOptions.find(
-    (option) => option.id === broker
+    (option) => option.id === importSourceTileId(broker, capabilities)
   );
+  const importFormats = getImportFormatOptions(broker, capabilities);
   const hasSource = broker !== '';
   
   const showSourceFirstGrid = !hasSource || isChangingSource;
@@ -1221,10 +2997,11 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     formVisible: !showSourceFirstGrid,
   });
   const isManualBroker = broker === 'MANUAL';
-  const isManualMappingFlow = broker === 'MANUAL' || selectedTemplateId !== '';
-  const supportsManualMapping =
-    isManualMappingFlow &&
-    (selectedBrokerCapabilities?.supportsManualMapping ?? broker === 'MANUAL');
+  const supportsManualMapping = supportsManualMappingFor(
+    broker,
+    selectedTemplateId,
+    selectedBrokerCapabilities
+  );
   const normalizedColumnMappings = useMemo(
     () =>
       analyse
@@ -1232,16 +3009,13 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
         : {},
     [analyse, columnMappings]
   );
-  const supportedManualModes = capabilities?.manualMapping.modes ?? [];
-  
-  
-  const manualMode = supportsManualMapping
-    ? resolveManualImportMode(
-        manualModeChoice,
-        normalizedColumnMappings,
-        supportedManualModes.includes('trade_per_row')
-      )
-    : 'price_based';
+  const supportedManualModes = manualModesOf(capabilities);
+  const manualMode = effectiveManualMode(
+    supportsManualMapping,
+    manualModeChoice,
+    normalizedColumnMappings,
+    supportedManualModes
+  );
   const backendManualMode = manualModeForBackend(
     manualMode,
     supportedManualModes
@@ -1298,38 +3072,21 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     [analyse, broker, capabilities]
   );
   const analyseFailureRecovery = resolveBrokerImportRecovery(analyse);
-  const canChangeRecoverySource =
-    (analyseFailureRecovery ?? resolveBrokerImportRecovery(preview))
-      ?.canChangeSource === true;
-  
-  
-  const analyseRecovery =
-    resolvedAnalyseRecovery &&
-    !(
-      dismissedAnalyseRecovery?.file === file &&
-      dismissedAnalyseRecovery.selectedSource === broker &&
-      dismissedAnalyseRecovery.recommendedSource ===
-        resolvedAnalyseRecovery.recommendedSource
-    )
-      ? resolvedAnalyseRecovery
-      : null;
-  
-  
-  const failedItemIds = new Set(importResult?.failedItemIds);
-  const failedPreviewRows = classified.filter(
-    (item) => needsTradeImportAttention(item) || failedItemIds.has(item.itemId)
+  const canChangeRecoverySource = canChangeSourceFromRecovery(
+    analyseFailureRecovery,
+    preview
   );
-
-  const supportedFileTypesSet = new Set(
-    selectedBrokerCapabilities?.supportedFileTypes ?? []
+  const analyseRecovery = undismissedAnalyseRecovery(
+    resolvedAnalyseRecovery,
+    dismissedAnalyseRecovery,
+    file,
+    broker
   );
-  const acceptedExtensionList = selectedBrokerCapabilities
-    ? capabilities?.fileTypes.flatMap((type) =>
-        supportedFileTypesSet.has(type.id)
-          ? type.extensions.map((ext) => `.${ext}`)
-          : []
-      ) || []
-    : supportedExtensions.split(',').filter(Boolean);
+  const failedPreviewRows = failedRowsOf(classified, importResult);
+  const acceptedExtensionList = acceptedImportExtensions(
+    capabilities,
+    selectedBrokerCapabilities
+  );
   const acceptedExtensions = acceptedExtensionList.join(',');
 
   const applyQuickImportHandoff = useCallback(() => {
@@ -1355,6 +3112,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     setAiMappingRequested(handoff.aiMappingEnabled);
     setFile(handoff.file);
     setAssetTypeConfirmed(false);
+    setImportSymbol('');
     setAnalyse(handoff.analyse ?? null);
     setPreview(handoff.preview ?? null);
     setPreviewOwnerUserId(handoff.previewOwnerUserId ?? null);
@@ -1614,6 +3372,27 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       invalidateAnalysis();
     },
     [applyBrokerSelection, broker, invalidateAnalysis, selectedTemplateId]
+  );
+
+  
+  const [importDestinations, setImportDestinations] = useState(
+    () => plugin.settings.csvImportDestinations ?? {}
+  );
+  const importDestination = importDestinationFor(
+    capabilities,
+    importDestinations,
+    broker
+  );
+  const selectImportDestination = useCallback(
+    (destination: TradeImportDestination) => {
+      setImportDestinations((current) => ({
+        ...current,
+        [broker]: destination,
+      }));
+      void rememberTradeImportDestination(plugin, broker, destination);
+      invalidatePreview();
+    },
+    [broker, invalidatePreview, plugin]
   );
 
   const selectAssetType = useCallback(
@@ -1902,6 +3681,19 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     [analyseFileForSource, applyBrokerSelection]
   );
 
+  
+  
+  const selectSourceFormat = useCallback(
+    (brokerId: string) => {
+      if (file && canChangeRecoverySource) {
+        reanalyseFileForSource(brokerId);
+      } else {
+        selectBroker(brokerId);
+      }
+    },
+    [canChangeRecoverySource, file, reanalyseFileForSource, selectBroker]
+  );
+
   const selectSource = useCallback(
     (sourceId: string) => {
       const option = sourceOptions.find(
@@ -1914,17 +3706,20 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
         setSyncCardRevealRequest((count) => count + 1);
         return;
       }
-      if (file && canChangeRecoverySource) {
-        reanalyseFileForSource(sourceId);
-      } else {
-        selectBroker(sourceId);
-      }
+      
+      
+      selectSourceFormat(
+        importSourceTileId(broker, capabilities) === sourceId
+          ? broker
+          : importFormatForTile(sourceId, favoriteBroker, capabilities)
+      );
     },
     [
-      file,
-      reanalyseFileForSource,
+      broker,
+      capabilities,
+      favoriteBroker,
       selectBroker,
-      canChangeRecoverySource,
+      selectSourceFormat,
       sourceOptions,
     ]
   );
@@ -1948,6 +3743,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
         selectedBrokerCapabilities?.supportsExportTimeZone === true
       );
       if (exportTimeZone.errorKey || !hyperliquidDateFormatValid) return;
+      if (analyse.requiresSymbol && importSymbol.trim() === '') return;
       if (missingRequiredMappingFields.length > 0) {
         new Notice(t('notice.csv-missing-fields'));
         return;
@@ -1971,6 +3767,8 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
             timeZone: exportTimeZone.timeZone,
             columnMappings: applicableColumnMappings,
             manualMappingRequired: supportsManualMapping,
+            destination: importDestination,
+            symbol: importSymbol,
           });
         if (requestVersion !== requestVersionRef.current) return;
         setPreview(response);
@@ -2000,6 +3798,8 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
       backendManualMode,
       capabilities,
       file,
+      importDestination,
+      importSymbol,
       missingRequiredMappingFields,
       selectedDateFormat,
       hyperliquidDateFormatValid,
@@ -2138,6 +3938,7 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     (nextFile: File | null) => {
       setFile(nextFile);
       setAssetTypeConfirmed(false);
+      setImportSymbol('');
       setSelectedSheetName(null);
       setSelectedHeaderRowIndex(
         selectedTemplateId
@@ -2238,42 +4039,27 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
     return <TradeImportSignInGate onSignIn={handleSignIn} />;
   }
 
-  const maxStep = importCompleted || preview ? 3 : analyse ? 2 : 1;
+  const maxStep = furthestWizardStep(importCompleted, preview, analyse);
+  const completedImport = completedImportResult(importCompleted, importResult);
   
   const manageImports = () => openImportManagement(plugin);
 
-  const requiredFieldsForModeSet = new Set<string>(requiredMappingFields);
   
-  const needsAssetTypeConfirmation =
-    supportsManualMapping &&
-    backendManualMode === 'trade_per_row' &&
-    requiredMappingFields.includes('exit_price') &&
-    !selectedTemplateId &&
-    !assetTypeConfirmed;
+  const needsAssetTypeConfirmation = needsPnlFromPricesConfirmation({
+    supportsManualMapping,
+    backendManualMode,
+    requiredMappingFields,
+    selectedTemplateId,
+    assetTypeConfirmed,
+  });
   return (
     <div className="journalit-csv-import journalit-trade-import-simple">
-      <div className="journalit-trade-import-stepper">
-        {TRADE_IMPORT_STEP_NUMBERS.map((stepNumber) => {
-          const label =
-            stepNumber === 1
-              ? t('trade-import.step.select')
-              : stepNumber === 2
-                ? t('trade-import.step.analyse')
-                : t('trade-import.step.preview');
-          return (
-            <button
-              type="button"
-              disabled={stepNumber > maxStep || busy}
-              onClick={() => setActiveStep(stepNumber)}
-              key={label}
-              className={`journalit-trade-import-step ${maxStep >= stepNumber ? 'is-active' : ''} ${activeStep === stepNumber ? 'is-current' : ''}`}
-            >
-              <span>{stepNumber}</span>
-              <strong>{label}</strong>
-            </button>
-          );
-        })}
-      </div>
+      <TradeImportStepper
+        maxStep={maxStep}
+        activeStep={activeStep}
+        busy={busy}
+        onSelect={setActiveStep}
+      />
 
       <div className="journalit-trade-import-layout">
         {activeStep === 1 && (
@@ -2281,521 +4067,201 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
             <h2>
               <Settings2 /> {t('trade-import.step.select')}
             </h2>
-            {showSourceFirstGrid && (
-              <div className="journalit-trade-import-source-step">
-                <div className="journalit-trade-import-source-step__header">
-                  <h3>{t('trade-import.source.title')}</h3>
-                  <p>{t('trade-import.source.subtitle')}</p>
-                </div>
-                
-                {syncCard && (
-                  <TradeImportSyncSuggestion
-                    {...syncCard}
-                    busy={busy}
-                    revealRequest={syncCardRevealRequest}
-                    onOpenTradeSync={openTradeSync}
-                  />
+            {showSourceFirstGrid ? (
+              <SourceChoiceStep
+                syncCard={syncCard}
+                syncCardRevealRequest={syncCardRevealRequest}
+                sources={sourceOptions}
+                selectedId={selectedSourceTileId(
+                  syncOnlySourceId,
+                  broker,
+                  capabilities
                 )}
-                <TradeImportSourceGrid
-                  sources={sourceOptions}
-                  selectedId={syncOnlySourceId ?? broker}
-                  busy={busy || !capabilities}
-                  
-                  autoFocusSearch={!Platform.isMobile}
-                  onSelect={selectSource}
-                />
-                {isChangingSource && (
-                  <button
-                    type="button"
-                    className="journalit-trade-import-source-step__cancel"
-                    onClick={() => {
-                      setIsChangingSource(false);
-                      if (canChangeRecoverySource)
-                        setActiveStep(preview ? 3 : analyse ? 2 : 1);
-                    }}
-                  >
-                    {t('button.cancel')}
-                  </button>
-                )}
-              </div>
-            )}
-
-            {hasSource && !showSourceFirstGrid && (
-              <TradeImportSourceSummary
-                source={selectedSourceOption}
-                brokerId={broker}
-                isFavorite={favoriteBroker === broker}
-                guideUrl={brokerGuideUrl}
                 busy={busy}
-                onOpenGuide={openExternalUrl}
-                onToggleFavorite={() => void toggleFavoriteBroker(broker)}
-                onChange={() => setIsChangingSource(true)}
-              />
-            )}
-
-            {isHyperliquid && !showSourceFirstGrid && (
-              <p className="journalit-trade-import-hyperliquid-guidance">
-                {t('trade-import.hyperliquid.export-guidance')}
-              </p>
-            )}
-
-            {syncCard && !showSourceFirstGrid && (
-              <TradeImportSyncSuggestion
-                {...syncCard}
-                busy={busy}
+                sourcesUnavailable={!capabilities}
                 onOpenTradeSync={openTradeSync}
+                onSelect={selectSource}
+                changing={isChangingSource}
+                onCancel={() => {
+                  setIsChangingSource(false);
+                  if (canChangeRecoverySource)
+                    setActiveStep(furthestWizardStep(false, preview, analyse));
+                }}
               />
-            )}
-
-            {!showSourceFirstGrid && (
+            ) : (
               <>
+                <ChosenSourceHeader
+                  source={selectedSourceOption}
+                  brokerId={broker}
+                  isFavorite={favoriteBroker === broker}
+                  guideUrl={brokerGuideUrl}
+                  busy={busy}
+                  showsHyperliquidGuidance={isHyperliquid}
+                  syncCard={syncCard}
+                  onToggleFavorite={() => void toggleFavoriteBroker(broker)}
+                  onChange={() => setIsChangingSource(true)}
+                  onOpenTradeSync={openTradeSync}
+                />
                 <div className="journalit-trade-import-form-grid">
-                  <label>
-                    {t('trade-import.label.account')}
-                    <div
-                      className="journalit-home-period-wrapper journalit-trade-import-account-picker"
-                      ref={accountDropdownRef}
-                    >
-                      <button
-                        type="button"
-                        disabled={busy}
-                        onClick={() =>
-                          dispatchDropdownState({
-                            isAccountDropdownOpen: !isAccountDropdownOpen,
-                          })
-                        }
-                        className="journalit-home-period-selector journalit-trade-import-account-trigger clickable-icon"
-                        aria-label={t('trade-import.label.account')}
-                      >
-                        <span>{selectedAccountName}</span>
-                        <ChevronDown
-                          size={14}
-                          className={`journalit-home-period-chevron${isAccountDropdownOpen ? ' journalit-home-period-chevron--open' : ''}`}
-                        />
-                      </button>
-                      {isAccountDropdownOpen && (
-                        <div className="journalit-home-period-menu journalit-trade-import-account-menu">
-                          {accounts.map((account) => {
-                            const isSelected = account === selectedAccountName;
-                            return (
-                              <div
-                                key={account}
-                                className={`journalit-home-period-option journalit-trade-import-favorite-option${isSelected ? ' journalit-home-period-option--active' : ''}`}
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedAccountName(account);
-                                    dispatchDropdownState({
-                                      isAccountDropdownOpen: false,
-                                    });
-                                    invalidatePreview();
-                                  }}
-                                  className="journalit-trade-import-favorite-option__select"
-                                >
-                                  <span
-                                    className="journalit-home-period-option__check"
-                                    aria-hidden="true"
-                                  >
-                                    {isSelected ? (
-                                      <Check size={10} strokeWidth={3} />
-                                    ) : null}
-                                  </span>
-                                  <span className="journalit-home-period-option__label">
-                                    {account}
-                                  </span>
-                                </button>
-                                <button
-                                  type="button"
-                                  className={`journalit-trade-import-favorite-button${favoriteAccount === account ? ' is-favorite' : ''}`}
-                                  aria-label={
-                                    favoriteAccount === account
-                                      ? t(
-                                          'csv.account-selector.favorite.remove'
-                                        )
-                                      : t('csv.account-selector.favorite.set')
-                                  }
-                                  onClick={(event) => {
-                                    event.stopPropagation();
-                                    void toggleFavoriteAccount(account);
-                                  }}
-                                >
-                                  <Star size={13} />
-                                </button>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
-                    </div>
-                  </label>
-                  <label>
-                    {t('trade-import.label.asset-type')}
-                    <TradeImportDropdown
-                      label={t('trade-import.label.asset-type')}
-                      disabled={busy}
-                      value={assetType}
-                      options={[
-                        {
-                          value: 'stock',
-                          label: t('trade-import.asset.stock'),
-                        },
-                        {
-                          value: 'options',
-                          label: t('trade-import.asset.options'),
-                        },
-                        {
-                          value: 'futures',
-                          label: t('trade-import.asset.futures'),
-                        },
-                        {
-                          value: 'forex',
-                          label: t('trade-import.asset.forex'),
-                        },
-                        {
-                          value: 'crypto',
-                          label: t('trade-import.asset.crypto'),
-                        },
-                      ]}
-                      onChange={(value) => {
-                        if (isTradeImportAssetType(value)) {
-                          selectAssetType(value);
-                        }
-                      }}
-                    />
-                  </label>
+                  <ImportAccountPicker
+                    accounts={accounts}
+                    selectedAccount={selectedAccountName}
+                    favoriteAccount={favoriteAccount}
+                    isOpen={isAccountDropdownOpen}
+                    busy={busy}
+                    containerRef={accountDropdownRef}
+                    onToggleOpen={() =>
+                      dispatchDropdownState({
+                        isAccountDropdownOpen: !isAccountDropdownOpen,
+                      })
+                    }
+                    onSelect={(account) => {
+                      setSelectedAccountName(account);
+                      dispatchDropdownState({ isAccountDropdownOpen: false });
+                      invalidatePreview();
+                    }}
+                    onToggleFavorite={(account) =>
+                      void toggleFavoriteAccount(account)
+                    }
+                  />
+                  <AssetTypeField
+                    assetType={assetType}
+                    busy={busy}
+                    onSelect={selectAssetType}
+                  />
+                  <ImportFormatField
+                    labelId={importFormatLabelId}
+                    formats={importFormats}
+                    broker={broker}
+                    busy={busy}
+                    onChange={selectSourceFormat}
+                  />
+                  <ImportDestinationField
+                    labelId={importDestinationLabelId}
+                    destination={importDestination}
+                    busy={busy}
+                    onChange={selectImportDestination}
+                  />
                 </div>
 
-                <div
-                  className={`journalit-trade-import-file-picker ${isDraggingFile ? 'is-dragging' : ''}`}
-                  role="button"
-                  tabIndex={busy ? -1 : 0}
-                  onClick={() => fileInputRef.current?.click()}
-                  onKeyDown={(event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault();
-                      fileInputRef.current?.click();
-                    }
-                  }}
+                <TradeImportFilePicker
+                  file={file}
+                  isDragging={isDraggingFile}
+                  busy={busy}
+                  inputRef={fileInputRef}
+                  acceptedExtensions={acceptedExtensions}
+                  acceptedExtensionList={acceptedExtensionList}
+                  onFileSelected={handleFileSelected}
                   onDragEnter={handleFileDragEnter}
-                  onDragOver={(event) => event.preventDefault()}
                   onDragLeave={handleFileDragLeave}
                   onDrop={handleFileDrop}
-                >
-                  <input
-                    aria-label={t('trade-import.action.choose-file')}
-                    ref={fileInputRef}
-                    type="file"
-                    accept={acceptedExtensions}
-                    disabled={busy}
-                    onChange={(event) =>
-                      handleFileSelected(event.target.files?.[0] ?? null)
-                    }
-                  />
-                  <FileText size={36} />
-                  <span className="journalit-trade-import-file-picker-label">
-                    {file
-                      ? file.name
-                      : isDraggingFile
-                        ? t('trade-import.action.drop-file')
-                        : t('trade-import.action.choose-file')}
-                  </span>
-                  <div
-                    className="journalit-trade-import-file-types"
-                    aria-hidden
-                  >
-                    {acceptedExtensionList.map((extension) => (
-                      <span key={extension}>{extension}</span>
-                    ))}
-                  </div>
-                </div>
+                />
 
                 {isManualBroker && (
-                  <div className="journalit-trade-import-template-section">
-                    <div className="journalit-trade-import-template-picker-row">
-                      <label>
-                        {t('trade-import.label.template')}
-                        <div
-                          className="journalit-home-period-wrapper journalit-trade-import-template-picker"
-                          ref={templateDropdownRef}
-                        >
-                          <button
-                            type="button"
-                            disabled={busy}
-                            onClick={() =>
-                              dispatchDropdownState({
-                                isTemplateDropdownOpen: !isTemplateDropdownOpen,
-                              })
-                            }
-                            className="journalit-home-period-selector journalit-trade-import-template-trigger clickable-icon"
-                            aria-label={t('trade-import.label.template')}
-                          >
-                            <span>
-                              {selectedTemplateId
-                                ? localTemplateService.getTemplate(
-                                    selectedTemplateId
-                                  )?.name
-                                : t('trade-import.template.none')}
-                            </span>
-                            <ChevronDown
-                              size={14}
-                              className={`journalit-home-period-chevron${isTemplateDropdownOpen ? ' journalit-home-period-chevron--open' : ''}`}
-                            />
-                          </button>
-                          {isTemplateDropdownOpen && (
-                            <div className="journalit-home-period-menu journalit-trade-import-template-select-menu">
-                              <div
-                                className={`journalit-home-period-option journalit-trade-import-favorite-option${selectedTemplateId === '' ? ' journalit-home-period-option--active' : ''}`}
-                              >
-                                <button
-                                  type="button"
-                                  onClick={() => {
-                                    setSelectedTemplateId('');
-                                    setColumnMappings({});
-                                    setManualModeChoice(null);
-                                    
-                                    
-                                    setSelectedSheetName(null);
-                                    setSelectedHeaderRowIndex(null);
-                                    setTemplateExportCode('');
-                                    dispatchDropdownState({
-                                      isTemplateDropdownOpen: false,
-                                    });
-                                    invalidateAnalysis();
-                                  }}
-                                  className="journalit-trade-import-favorite-option__select"
-                                >
-                                  <span
-                                    className="journalit-home-period-option__check"
-                                    aria-hidden="true"
-                                  >
-                                    {selectedTemplateId === '' ? (
-                                      <Check size={10} strokeWidth={3} />
-                                    ) : null}
-                                  </span>
-                                  <span className="journalit-home-period-option__label">
-                                    {t('trade-import.template.none')}
-                                  </span>
-                                </button>
-                              </div>
-                              {templates.map((template) => {
-                                const isSelected =
-                                  template.id === selectedTemplateId;
-                                return (
-                                  <div
-                                    key={template.id}
-                                    className={`journalit-home-period-option journalit-trade-import-favorite-option${isSelected ? ' journalit-home-period-option--active' : ''}`}
-                                  >
-                                    <button
-                                      type="button"
-                                      onClick={() => {
-                                        void applyTemplate(template);
-                                        dispatchDropdownState({
-                                          isTemplateDropdownOpen: false,
-                                        });
-                                      }}
-                                      className="journalit-trade-import-favorite-option__select"
-                                    >
-                                      <span
-                                        className="journalit-home-period-option__check"
-                                        aria-hidden="true"
-                                      >
-                                        {isSelected ? (
-                                          <Check size={10} strokeWidth={3} />
-                                        ) : null}
-                                      </span>
-                                      <span className="journalit-home-period-option__label">
-                                        {template.name}
-                                      </span>
-                                    </button>
-                                    <button
-                                      type="button"
-                                      className={`journalit-trade-import-favorite-button${favoriteTemplateId === template.id ? ' is-favorite' : ''}`}
-                                      aria-label={
-                                        favoriteTemplateId === template.id
-                                          ? t(
-                                              'csv.account-selector.favorite.remove'
-                                            )
-                                          : t(
-                                              'csv.account-selector.favorite.set'
-                                            )
-                                      }
-                                      onClick={(event) => {
-                                        event.stopPropagation();
-                                        void toggleFavoriteTemplate(
-                                          template.id
-                                        );
-                                      }}
-                                    >
-                                      <Star size={13} />
-                                    </button>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </label>
-                      <div
-                        ref={templateActionsRef}
-                        className="journalit-trade-import-template-menu-wrapper"
-                      >
-                        <button
-                          type="button"
-                          className="journalit-trade-import-template-menu-trigger"
-                          disabled={busy}
-                          aria-label={t('trade-import.label.template-actions')}
-                          onClick={() =>
-                            dispatchTemplateActionMenuState({
-                              templateActionsOpen: !templateActionsOpen,
-                            })
-                          }
-                        >
-                          <MoreHorizontal size={16} />
-                        </button>
-                        {templateActionsOpen &&
-                          templateMenuPosition &&
-                          createPortal(
-                            <div
-                              ref={templateMenuRef}
-                              className="journalit-trade-import-template-menu journalit-trade-import-template-menu--portal"
-                              style={cssVars({
-                                '--trade-import-menu-top': `${templateMenuPosition.top}px`,
-                                '--trade-import-menu-left': `${templateMenuPosition.left}px`,
-                                '--trade-import-menu-width': `${templateMenuPosition.width}px`,
-                                '--trade-import-menu-max-height': `${templateMenuPosition.maxHeight}px`,
-                              })}
-                            >
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setTemplateImportOpen(true);
-                                  setTemplateExportCode('');
-                                  dispatchTemplateActionMenuState({
-                                    templateActionsOpen: false,
-                                  });
-                                }}
-                              >
-                                <Upload size={15} aria-hidden="true" />
-                                {t('csv.template-import.button.import')}
-                              </button>
-                              <button
-                                type="button"
-                                disabled={!selectedTemplateId}
-                                onClick={() => {
-                                  exportSelectedTemplate();
-                                  dispatchTemplateActionMenuState({
-                                    templateActionsOpen: false,
-                                  });
-                                }}
-                              >
-                                <Download size={15} aria-hidden="true" />
-                                {t('csv.button.export-template')}
-                              </button>
-                              <button
-                                type="button"
-                                disabled={!selectedTemplateId}
-                                onClick={() => {
-                                  dispatchTemplateActionMenuState({
-                                    templateActionsOpen: false,
-                                  });
-                                  void deleteSelectedTemplate();
-                                }}
-                              >
-                                <Trash2 size={15} aria-hidden="true" />
-                                {t('csv.button.delete-template')}
-                              </button>
-                            </div>,
-                            window.activeDocument.body
-                          )}
-                      </div>
-                      {supportsManualMapping &&
-                        selectedBrokerCapabilities?.supportsAiMapping &&
-                        canUseAiMapping && (
-                          <label className="journalit-trade-import-ai-toggle">
-                            <input
-                              type="checkbox"
-                              disabled={busy}
-                              checked={aiMappingEnabled}
-                              onChange={(event) => {
-                                handleAiMappingChange(event.target.checked);
-                              }}
-                            />
-                            <span>{t('trade-import.label.ai-mapping')}</span>
-                          </label>
-                        )}
-                    </div>
-                    {templateImportOpen && (
-                      <div className="journalit-trade-import-template-panel">
-                        <label>
-                          {t('csv.template-import.label.share-code')}
-                          <input
-                            type="text"
-                            disabled={busy}
-                            value={templateShareCode}
-                            onChange={(event) =>
-                              setTemplateShareCode(event.target.value)
-                            }
-                            placeholder={t(
-                              'csv.template-import.placeholder.share-code'
-                            )}
-                          />
-                        </label>
-                        <div className="journalit-trade-import-template-actions">
-                          <button
-                            disabled={!templateShareCode.trim() || busy}
-                            onClick={() => void importTemplate()}
-                          >
-                            {t('csv.template-import.button.import')}
-                          </button>
-                          <button
-                            disabled={busy}
-                            onClick={() => {
-                              setTemplateImportOpen(false);
-                              setTemplateShareCode('');
-                            }}
-                          >
-                            {t('button.cancel')}
-                          </button>
-                        </div>
-                      </div>
-                    )}
-                    {templateExportCode && (
-                      <div className="journalit-trade-import-template-panel">
-                        <label>
-                          {t('csv.export-template.label.share-code')}
-                          <textarea readOnly value={templateExportCode} />
-                        </label>
-                        <button onClick={() => void copyTemplateExportCode()}>
-                          {templateCopied
-                            ? t('csv.export-template.button.copied')
-                            : t('csv.export-template.button.copy')}
-                        </button>
-                      </div>
-                    )}
-                  </div>
+                  <ManualTemplateSection
+                    picker={{
+                      templates,
+                      selectedTemplateId,
+                      selectedTemplateName: templateNameOf(
+                        localTemplateService,
+                        selectedTemplateId
+                      ),
+                      favoriteTemplateId,
+                      isOpen: isTemplateDropdownOpen,
+                      busy,
+                      containerRef: templateDropdownRef,
+                      onToggleOpen: () =>
+                        dispatchDropdownState({
+                          isTemplateDropdownOpen: !isTemplateDropdownOpen,
+                        }),
+                      onClear: () => {
+                        setSelectedTemplateId('');
+                        setColumnMappings({});
+                        setManualModeChoice(null);
+                        
+                        
+                        setSelectedSheetName(null);
+                        setSelectedHeaderRowIndex(null);
+                        setTemplateExportCode('');
+                        dispatchDropdownState({
+                          isTemplateDropdownOpen: false,
+                        });
+                        invalidateAnalysis();
+                      },
+                      onApply: (template) => {
+                        void applyTemplate(template);
+                        dispatchDropdownState({
+                          isTemplateDropdownOpen: false,
+                        });
+                      },
+                      onToggleFavorite: (templateId) =>
+                        void toggleFavoriteTemplate(templateId),
+                    }}
+                    actions={{
+                      containerRef: templateActionsRef,
+                      menuRef: templateMenuRef,
+                      isOpen: templateActionsOpen,
+                      position: templateMenuPosition,
+                      busy,
+                      hasSelection: selectedTemplateId !== '',
+                      onToggle: () =>
+                        dispatchTemplateActionMenuState({
+                          templateActionsOpen: !templateActionsOpen,
+                        }),
+                      onImport: () => {
+                        setTemplateImportOpen(true);
+                        setTemplateExportCode('');
+                        dispatchTemplateActionMenuState({
+                          templateActionsOpen: false,
+                        });
+                      },
+                      onExport: () => {
+                        exportSelectedTemplate();
+                        dispatchTemplateActionMenuState({
+                          templateActionsOpen: false,
+                        });
+                      },
+                      onDelete: () => {
+                        dispatchTemplateActionMenuState({
+                          templateActionsOpen: false,
+                        });
+                        void deleteSelectedTemplate();
+                      },
+                    }}
+                    aiMapping={{
+                      offered: offersAiMapping(
+                        supportsManualMapping,
+                        selectedBrokerCapabilities,
+                        canUseAiMapping
+                      ),
+                      checked: aiMappingEnabled,
+                      busy,
+                      onChange: handleAiMappingChange,
+                    }}
+                    importPanel={{
+                      open: templateImportOpen,
+                      shareCode: templateShareCode,
+                      busy,
+                      onChange: setTemplateShareCode,
+                      onImport: () => void importTemplate(),
+                      onCancel: () => {
+                        setTemplateImportOpen(false);
+                        setTemplateShareCode('');
+                      },
+                    }}
+                    exportPanel={{
+                      code: templateExportCode,
+                      copied: templateCopied,
+                      onCopy: () => void copyTemplateExportCode(),
+                    }}
+                  />
                 )}
 
-                <Accordion
-                  title={t('trade-import.step.privacy')}
-                  defaultExpanded={false}
-                  className="journalit-trade-import-accordion"
-                >
-                  <p className="journalit-trade-import-privacy-note">
-                    {t(PRIVACY_COPY_KEY)}{' '}
-                    <button
-                      type="button"
-                      className="journalit-trade-import-inline-link"
-                      onClick={() => openExternalUrl(PRIVACY_URL)}
-                    >
-                      {t('button.learn-more')}
-                    </button>
-                  </p>
-                </Accordion>
+                <TradeImportPrivacyNote />
 
                 <button
                   className="journalit-trade-import-primary"
-                  disabled={!file || !capabilities || busy}
+                  disabled={!canAnalyse(file, capabilities, busy)}
                   onClick={() => void runAnalyse()}
                 >
                   {t('trade-import.action.analyse')}
@@ -2811,469 +4277,87 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
               <Sparkles /> {t('trade-import.step.analyse')}
             </h2>
             <>
-              {!analyseFailureRecovery && (
-                <p>
-                  {t('trade-import.analyse.detected', {
-                    fileType: analyse.fileType,
-                  })}
-                </p>
-              )}
-              {analyseRecovery && (
-                <NativeSourceRecoveryNotice
-                  className="journalit-trade-import-outcome journalit-trade-import-outcome--failed"
-                  disabled={busy}
-                  iconSize={20}
-                  recovery={analyseRecovery}
-                  selectedSource={broker}
-                  selectedSourceLabel={
+              <AnalyseSourceReview
+                analyse={analyse}
+                broker={broker}
+                selectedBrokerLabel={selectedBrokerLabel}
+                supportsManualMapping={supportsManualMapping}
+                analyseRecovery={analyseRecovery}
+                failureRecovery={analyseFailureRecovery}
+                busy={busy}
+                onContinueWithSelectedSource={(recommendedSource) =>
+                  setDismissedAnalyseRecovery({
+                    file,
+                    selectedSource: broker,
+                    recommendedSource,
+                  })
+                }
+                onSwitchSource={reanalyseFileForSource}
+                onChangeSource={changeIncompatibleSource}
+                onChooseAnotherFile={chooseAnotherFile}
+              />
+              <AnalyseReviewControls
+                analyse={analyse}
+                busy={busy}
+                selectedSheetName={selectedSheetName}
+                headerRowError={headerRowError}
+                dateFormat={selectedDateFormat}
+                dateFormatOptions={importDateFormatOptions(isHyperliquid)}
+                onSelectSheet={(value) => {
+                  
+                  
+                  void analyseFileForSource(broker, {
+                    sheetName: value || null,
+                    header: { index: null },
                     
-                    broker === 'MANUAL'
-                      ? t('trade-import.broker.manual')
-                      : selectedBrokerLabel
-                  }
-                  onContinueWithSelectedSource={() =>
-                    setDismissedAnalyseRecovery({
-                      file,
-                      selectedSource: broker,
-                      recommendedSource: analyseRecovery.recommendedSource,
-                    })
-                  }
-                  onSwitchSource={() =>
-                    reanalyseFileForSource(analyseRecovery.recommendedSource)
-                  }
-                />
-              )}
-              {analyseFailureRecovery && !analyseRecovery ? (
-                <TradeImportRecoveryReview
-                  recovery={analyseFailureRecovery}
-                  diagnostics={analyse.diagnostics}
-                  busy={busy}
-                  onChangeSource={changeIncompatibleSource}
-                  onChooseAnotherFile={chooseAnotherFile}
-                />
-              ) : (
-                <TradeImportDiagnostics
-                  diagnostics={analyse.diagnostics.filter(
-                    (diagnostic) =>
-                      !analyseFailureRecovery?.diagnosticCodesToSuppress.has(
-                        diagnostic.code
-                      )
-                  )}
-                  defaultOpen={true}
-                />
-              )}
-              <div className="journalit-trade-import-review-controls">
-                {analyse.sheets.length > 0 && (
-                  <label>
-                    <span>{t('trade-import.label.sheet')}</span>
-                    <TradeImportDropdown
-                      label={t('trade-import.label.sheet')}
-                      disabled={busy}
-                      value={selectedSheetName ?? ''}
-                      options={analyse.sheets.map((sheet) => ({
-                        value: sheet.name,
-                        label: sheet.name,
-                      }))}
-                      onChange={(value) => {
-                        
-                        
-                        void analyseFileForSource(broker, {
-                          sheetName: value || null,
-                          header: { index: null },
-                          
-                          freshMapping: !selectedTemplateId,
-                        });
-                      }}
-                    />
-                  </label>
-                )}
-                {analyse.headerSheetRow !== undefined && (
-                  <TradeImportHeaderRowInput
-                    key={`${analyse.importId}:${analyse.headerSheetRow}`}
-                    sheetRow={analyse.headerSheetRow}
-                    disabled={busy}
-                    error={headerRowError}
-                    onClearError={() => setHeaderRowError(null)}
-                    onCommit={(sheetRow) => {
-                      void analyseFileForSource(broker, {
-                        sheetName: selectedSheetName,
-                        header: { sheetRow },
-                        
-                        freshMapping: !selectedTemplateId,
-                      });
-                    }}
-                  />
-                )}
-                <label className="journalit-trade-import-date-format-control">
-                  <span>{t('trade-import.label.date-format')}</span>
-                  <TradeImportDropdown
-                    label={t('trade-import.label.date-format')}
-                    disabled={busy}
-                    value={selectedDateFormat}
-                    options={
-                      isHyperliquid
-                        ? hyperliquidDateFormatOptions()
-                        : getDateFormatOptions()
-                    }
-                    menuClassName="journalit-trade-import-date-format-menu"
-                    menuMinWidth={520}
-                    onChange={(value) => {
-                      setSelectedDateFormat(value);
-                      invalidatePreview();
-                    }}
-                  />
-                </label>
-              </div>
-              {exportTimeZoneStatus.errorKey && (
-                <div className="csv-message csv-message--error" role="alert">
-                  {t(exportTimeZoneStatus.errorKey)}
-                </div>
-              )}
-              <div className="csv-preview-table-wrapper journalit-trade-import-sample">
-                <table className="csv-preview-table">
-                  <thead>
-                    <tr>
-                      {analyse.headers.map((header) => (
-                        <th key={header}>{header}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {analyse.sampleRows.map((row) => (
-                      <tr key={row.join('\u001f')}>
-                        {row.map((cell, cellIndex) => (
-                          <td
-                            key={`${analyse.headers[cellIndex] ?? cellIndex}:${cell}`}
-                          >
-                            {cell}
-                          </td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+                    freshMapping: !selectedTemplateId,
+                  });
+                }}
+                onClearHeaderRowError={() => setHeaderRowError(null)}
+                onCommitHeaderRow={(sheetRow) => {
+                  void analyseFileForSource(broker, {
+                    sheetName: selectedSheetName,
+                    header: { sheetRow },
+                    
+                    freshMapping: !selectedTemplateId,
+                  });
+                }}
+                onDateFormatChange={(value) => {
+                  setSelectedDateFormat(value);
+                  invalidatePreview();
+                }}
+              />
+              <ExportTimeZoneError errorKey={exportTimeZoneStatus.errorKey} />
+              <AnalyseSampleTable analyse={analyse} />
               {supportsManualMapping && (
-                <div className="csv-column-mapper journalit-trade-import-inline-mapper">
-                  <div className="csv-mapper-header">
-                    <h3>{t('csv.mapper.title')}</h3>
-                    <p>{t('csv.mapper.subtitle')}</p>
-                  </div>
-                  <div className="journalit-trade-import-manual-mode">
-                    <div
-                      id={manualModeTitleId}
-                      className="journalit-trade-import-manual-mode-title"
-                    >
-                      {t('csv.mapper.mode.title')}
-                    </div>
-                    <p>{t('csv.mapper.mode.help')}</p>
-                    <div
-                      className="journalit-trade-import-manual-mode-options"
-                      role="radiogroup"
-                      aria-labelledby={manualModeTitleId}
-                    >
-                      {(
-                        [
-                          [
-                            'direct_pnl',
-                            t('trade-import.manual-mode.direct-pnl'),
-                          ],
-                          [
-                            'price_based',
-                            t('trade-import.manual-mode.price-based'),
-                          ],
-                        ] as const
-                      ).map(([value, label]) => (
-                        <label
-                          key={value}
-                          className={`journalit-trade-import-manual-mode-option${manualMode === value ? ' is-selected' : ''}${busy ? ' is-disabled' : ''}`}
-                        >
-                          <input
-                            type="radio"
-                            name="journalit-trade-import-manual-mode"
-                            value={value}
-                            disabled={busy}
-                            checked={manualMode === value}
-                            onChange={(event) => {
-                              if (isManualImportMode(event.target.value)) {
-                                setManualModeChoice(event.target.value);
-                                invalidatePreview();
-                              }
-                            }}
-                          />
-                          <span>{label}</span>
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                  <div className="csv-message csv-message--info csv-tip-message">
-                    <strong>{t('csv.mapper.tip.title')}</strong>
-                    <p className="csv-tip-text">{t('csv.mapper.tip.desc')}</p>
-                  </div>
-                  <div className="csv-mapper-grid-container">
-                    <div className="csv-mapper-grid">
-                      {analyse.headers.map((header) => {
-                        const assignments = columnAssignmentsFromMappings(
-                          displayColumnMappings,
-                          analyse.headers
-                        );
-                        const selectedField = assignments[header] ?? '';
-                        const customFields = customFieldDefinitions(plugin);
-                        const usedSingleFields = new Set(
-                          Object.values(assignments).filter(
-                            (field) =>
-                              field !== selectedField &&
-                              !isMultiColumnMappingField(field, customFields)
-                          )
-                        );
-                        const tradeFieldOptions = TRADE_FIELDS.flatMap(
-                          (field) =>
-                            (field !== 'status' || !perRowMode) &&
-                            (field === selectedField ||
-                              !usedSingleFields.has(field))
-                              ? [
-                                  {
-                                    value: field,
-                                    label: fieldLabel(field),
-                                  },
-                                ]
-                              : []
-                        );
-                        const customFieldOptions = customFieldDefinitions(
-                          plugin
-                        ).flatMap((field) => {
-                          const fieldKey = field.fieldKey || field.id;
-                          const option = {
-                            value: `custom:${fieldKey}`,
-                            label: `${field.label || fieldKey} (${fieldKey})`,
-                          };
-                          return option.value === selectedField ||
-                            !usedSingleFields.has(option.value)
-                            ? [option]
-                            : [];
-                        });
-                        const sampleValue = sampleValueForHeader(
-                          header,
-                          analyse.headers,
-                          analyse.sampleRows
-                        );
-                        return (
-                          <div key={header} className="csv-mapper-row">
-                            <div className="csv-mapper-source">
-                              <div className="csv-column-header">
-                                <div className="csv-column-name">
-                                  <span>{header}</span>
-                                  {isTradeField(selectedField) &&
-                                    requiredFieldsForModeSet.has(
-                                      selectedField
-                                    ) && (
-                                      <span className="csv-required-badge csv-required-badge--source">
-                                        {t('csv.mapper.required-badge')}
-                                      </span>
-                                    )}
-                                </div>
-                                {sampleValue && (
-                                  <div className="csv-column-sample">
-                                    {t('csv.mapper.example')}{' '}
-                                    <span className="csv-sample-value">
-                                      {sampleValue}
-                                    </span>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                            <div className="csv-mapper-arrow">→</div>
-                            <div className="csv-mapper-target">
-                              <TradeImportDropdown
-                                label={t('csv.mapper.aria.map-column', {
-                                  header,
-                                })}
-                                disabled={busy}
-                                value={selectedField}
-                                options={[
-                                  {
-                                    value: '',
-                                    label: t('csv.mapper.do-not-import'),
-                                  },
-                                  ...tradeFieldOptions,
-                                  ...customFieldOptions,
-                                ]}
-                                onChange={(value) => {
-                                  invalidatePreview();
-                                  setColumnMappings((current) =>
-                                    updateColumnAssignment(
-                                      current,
-                                      header,
-                                      value
-                                    )
-                                  );
-                                }}
-                              />
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <TradeImportUnmappedColumns
-                    headers={analyse.headers}
-                    sampleRows={analyse.sampleRows}
-                    assignments={columnAssignmentsFromMappings(
-                      displayColumnMappings,
-                      analyse.headers
-                    )}
-                    busy={busy}
-                    onKeep={(header, samples) =>
-                      openCustomFieldFromColumnModal(plugin.app, {
-                        header,
-                        sampleValues: samples,
-                        existingLabels: customFieldDefinitions(plugin).map(
-                          (field) => field.label
-                        ),
-                        onCreate: (field) =>
-                          createCustomFieldForColumn(header, field, samples),
-                      })
-                    }
-                  />
-                  <div className="csv-mapper-summary csv-mapper-summary--box">
-                    {(() => {
-                      const assignments = columnAssignmentsFromMappings(
-                        displayColumnMappings,
-                        analyse.headers
-                      );
-                      const mappedFields = new Set(Object.values(assignments));
-                      const allRequiredMapped = requiredMappingFields.every(
-                        (field) => mappedFields.has(field)
-                      );
-                      return (
-                        <>
-                          <strong>{t('csv.mapper.summary.title')}</strong>{' '}
-                          {Object.values(assignments).filter(Boolean).length}{' '}
-                          {t('csv.mapper.summary.of')} {analyse.headers.length}{' '}
-                          {t('csv.mapper.summary.columns-mapped')}
-                          {allRequiredMapped && (
-                            <span className="csv-mapper-summary-success">
-                              ✓ {t('csv.mapper.summary.all-mapped')}
-                            </span>
-                          )}
-                        </>
-                      );
-                    })()}
-                  </div>
-                  <div className="csv-mapper-fields-section">
-                    <Accordion
-                      title={t('csv.mapper.available-fields.title')}
-                      defaultExpanded={false}
-                    >
-                      {(() => {
-                        const assignments = columnAssignmentsFromMappings(
-                          displayColumnMappings,
-                          analyse.headers
-                        );
-                        const mappedFields = new Set(
-                          Object.values(assignments)
-                        );
-                        const customFields = customFieldDefinitions(plugin);
-                        const helpText = fieldHelpText();
-                        const requiredFieldsForModeSet2 = new Set<string>(
-                          requiredMappingFields
-                        );
-                        return (
-                          <div className="csv-mapper-fields-reference">
-                            <p className="csv-mapper-fields-desc">
-                              {t('csv.mapper.available-fields.desc')}
-                            </p>
-                            {Object.entries(
-                              visibleFieldCategories(
-                                requiredMappingFields,
-                                backendManualMode,
-                                assetType,
-                                customFields
-                              )
-                            ).map(([category, fields]) => (
-                              <div
-                                key={category}
-                                className="csv-field-category"
-                              >
-                                <h4 className="csv-field-category-title">
-                                  {category}
-                                </h4>
-                                <div className="csv-field-category-list">
-                                  {fields.map((field) => {
-                                    const mapped = mappedFields.has(field);
-                                    const required =
-                                      isTradeField(field) &&
-                                      requiredFieldsForModeSet2.has(field);
-                                    return (
-                                      <div
-                                        key={field}
-                                        className={`csv-field-item ${mapped ? 'csv-field-item--mapped' : 'csv-field-item--unmapped'}`}
-                                      >
-                                        <span className="csv-field-item-icon">
-                                          {mapped ? '✓' : '○'}
-                                        </span>
-                                        <strong>
-                                          {mappingFieldLabel(
-                                            field,
-                                            customFields
-                                          )}
-                                        </strong>
-                                        {required && (
-                                          <span
-                                            className={`csv-field-required ${mapped ? 'csv-field-required--mapped' : 'csv-field-required--unmapped'}`}
-                                          >
-                                            {t('csv.mapper.required-label')}
-                                          </span>
-                                        )}
-                                        {helpText[field] && (
-                                          <span className="csv-field-help">
-                                            : {helpText[field]}
-                                          </span>
-                                        )}
-                                      </div>
-                                    );
-                                  })}
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        );
-                      })()}
-                    </Accordion>
-                  </div>
-                  <div className="journalit-trade-import-save-template-row">
-                    <label>
-                      {t('trade-import.label.save-template')}
-                      <input
-                        type="text"
-                        disabled={busy}
-                        value={templateName}
-                        onChange={(event) =>
-                          setTemplateName(event.target.value)
-                        }
-                        placeholder={t(
-                          'trade-import.placeholder.template-name'
-                        )}
-                      />
-                    </label>
-                    <button
-                      disabled={!templateName.trim() || busy}
-                      onClick={() => void saveTemplate()}
-                    >
-                      {t('trade-import.action.save-template')}
-                    </button>
-                  </div>
-                </div>
+                <ManualColumnMapper
+                  plugin={plugin}
+                  analyse={analyse}
+                  columnMappings={displayColumnMappings}
+                  requiredMappingFields={requiredMappingFields}
+                  backendManualMode={backendManualMode}
+                  manualMode={manualMode}
+                  assetType={assetType}
+                  perRowMode={perRowMode}
+                  busy={busy}
+                  modeTitleId={manualModeTitleId}
+                  templateName={templateName}
+                  onManualModeChange={(mode) => {
+                    setManualModeChoice(mode);
+                    invalidatePreview();
+                  }}
+                  onAssignColumn={(header, value) => {
+                    invalidatePreview();
+                    setColumnMappings((current) =>
+                      updateColumnAssignment(current, header, value)
+                    );
+                  }}
+                  onCreateCustomField={createCustomFieldForColumn}
+                  onTemplateNameChange={setTemplateName}
+                  onSaveTemplate={() => void saveTemplate()}
+                />
               )}
-              {previewError && (
-                <div className="csv-message csv-message--error journalit-trade-import-preview-error">
-                  <strong>{previewError.message}</strong>
-                  {previewError.details && <p>{previewError.details}</p>}
-                  {previewError.showGuidance && (
-                    <p>{t('trade-import.preview-error.guidance')}</p>
-                  )}
-                </div>
-              )}
+              <PreviewErrorMessage error={previewError} />
               {needsAssetTypeConfirmation && (
                 <TradeImportPnlFromPricesConfirm
                   assetType={assetType}
@@ -3284,20 +4368,32 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
                   onConfirm={selectAssetType}
                 />
               )}
+              <ImportSymbolField
+                required={analyse.requiresSymbol === true}
+                value={importSymbol}
+                busy={busy}
+                onChange={(value) => {
+                  setImportSymbol(value);
+                  invalidatePreview();
+                }}
+              />
               <TradeImportPreviewAction
+                replacedByRecovery={analyseFailureRecovery !== null}
                 assetType={assetType}
                 busy={busy}
                 missingRequiredFields={missingRequiredMappingFields}
                 pnlFromPricesAccepted={backendManualMode === 'trade_per_row'}
-                ready={Boolean(
-                  file &&
-                  capabilities &&
-                  analyse &&
-                  !analyseRecovery &&
-                  !analyseFailureRecovery &&
-                  !needsAssetTypeConfirmation &&
-                  (!isHyperliquid || hyperliquidPreviewReady)
-                )}
+                ready={isPreviewReady({
+                  file,
+                  capabilities,
+                  analyse,
+                  analyseRecovery,
+                  failureRecovery: analyseFailureRecovery,
+                  needsAssetTypeConfirmation,
+                  isHyperliquid,
+                  hyperliquidPreviewReady,
+                  importSymbol,
+                })}
                 onPreview={() => void runPreview()}
               />
             </>
@@ -3306,104 +4402,22 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
 
         {activeStep === 3 && preview && (
           <section className="csv-import-card journalit-trade-import-panel">
-            <div
-              className={
-                importCompleted && importResult
-                  ? 'journalit-trade-import-completion-header'
-                  : undefined
-              }
-            >
-              <h2
-                id={
-                  importCompleted && importResult
-                    ? tradeImportCompletionHeadingId
-                    : undefined
-                }
-              >
-                {importCompleted &&
-                importResult &&
-                (operationResult?.partial ||
-                  importResult.failedCount > 0 ||
-                  importResult.pendingCount > 0) ? (
-                  <AlertTriangle />
-                ) : (
-                  <BadgeCheck />
-                )}{' '}
-                {importCompleted && importResult
-                  ? getTradeImportCompletionTitle(importResult, operationResult)
-                  : t('trade-import.step.preview')}
-              </h2>
-              {importCompleted && importResult && (
-                <button
-                  type="button"
-                  className="journalit-trade-import-completion-header__reset"
-                  onClick={resetImportFlow}
-                >
-                  {t('csv.button.import-another')}
-                </button>
-              )}
-            </div>
-            {importCompleted && importResult ? (
-              <div className="csv-import-results journalit-trade-import-results">
-                <TradeImportCompletionSummary
-                  plugin={plugin}
-                  result={importResult}
-                  operationResult={operationResult}
-                  headingId={tradeImportCompletionHeadingId}
-                />
-                {importResult.writtenCount > 0 && (
-                  <p className="journalit-trade-import-undo-hint">
-                    {t('trade-import.completion.wrong-account')}{' '}
-                    <button
-                      type="button"
-                      className="journalit-trade-import-inline-link"
-                      onClick={manageImports}
-                    >
-                      {t('trade-import.completion.undo-import')}
-                    </button>
-                  </p>
-                )}
-                <TradeImportDiagnostics
-                  diagnostics={preview.diagnostics}
-                  defaultOpen={importResult.writtenCount === 0}
-                  className="csv-results-problems"
-                />
-                {failedPreviewRows.length > 0 && (
-                  <CollapsibleSection
-                    title={t('csv.results.errors-header', {
-                      count: String(failedPreviewRows.length),
-                    })}
-                    defaultOpen={importResult.writtenCount === 0}
-                    className="csv-results-problems"
-                  >
-                    <div className="import-results-errors">
-                      <div className="csv-error-group-body">
-                        {failedPreviewRows.map((item) => (
-                          <div
-                            key={item.itemId}
-                            className="csv-error-group-example"
-                          >
-                            {item.preview.sourceRows.length > 0 && (
-                              <>
-                                {t('csv.errors.rows', {
-                                  rows: item.preview.sourceRows.join(', '),
-                                })}
-                                {' — '}
-                              </>
-                            )}
-                            <strong>{item.preview.symbol || '—'}</strong>
-                            {' — '}
-                            {item.message ??
-                              tradeImportClassificationLabel(
-                                item.classification
-                              )}
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  </CollapsibleSection>
-                )}
-              </div>
+            <TradeImportPreviewHeader
+              completedResult={completedImport}
+              operationResult={operationResult}
+              headingId={tradeImportCompletionHeadingId}
+              onReset={resetImportFlow}
+            />
+            {completedImport ? (
+              <TradeImportCompletedResults
+                plugin={plugin}
+                result={completedImport}
+                operationResult={operationResult}
+                headingId={tradeImportCompletionHeadingId}
+                diagnostics={preview.diagnostics}
+                failedRows={failedPreviewRows}
+                onManageImports={manageImports}
+              />
             ) : (
               <TradeImportPreviewReview
                 accountCurrency={tradeImportAccountCurrency(

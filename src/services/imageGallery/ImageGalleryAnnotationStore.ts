@@ -1,4 +1,4 @@
-import { normalizePath, TFile } from 'obsidian';
+import { normalizePath, TFile, type Vault } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import {
   forceMetadataCacheRefresh,
@@ -31,6 +31,29 @@ function hasAnnotationEntry(
 }
 
 
+export function galleryAnnotationNotePath(journalFolder: string): string {
+  return normalizePath(`${journalFolder}/Gallery Media Annotations.md`);
+}
+
+
+export function resolveGalleryAnnotationNotePath(
+  vault: Vault,
+  canonicalPath: string
+): string {
+  const relocatedPath = relocatedAnnotationNotePaths.get(vault);
+  if (!relocatedPath) return canonicalPath;
+  if (relocatedPath === canonicalPath) {
+    relocatedAnnotationNotePaths.delete(vault);
+    return canonicalPath;
+  }
+  if (vault.getAbstractFileByPath(relocatedPath) instanceof TFile) {
+    return relocatedPath;
+  }
+  relocatedAnnotationNotePaths.delete(vault);
+  return canonicalPath;
+}
+
+
 export function isOwnedAnnotationWriteActive(path: string): boolean {
   return (ownedAnnotationWriteCounts.get(normalizePath(path)) ?? 0) > 0;
 }
@@ -39,19 +62,10 @@ export class ImageGalleryAnnotationStore {
   constructor(private plugin: JournalitPlugin) {}
 
   getNotePath(): string {
-    const canonicalPath = this.getCanonicalNotePath();
-    const queueOwner = this.plugin.app.vault;
-    const relocatedPath = relocatedAnnotationNotePaths.get(queueOwner);
-    if (!relocatedPath) return canonicalPath;
-    if (relocatedPath === canonicalPath) {
-      relocatedAnnotationNotePaths.delete(queueOwner);
-      return canonicalPath;
-    }
-    const relocatedNote =
-      this.plugin.app.vault.getAbstractFileByPath(relocatedPath);
-    if (relocatedNote instanceof TFile) return relocatedPath;
-    relocatedAnnotationNotePaths.delete(queueOwner);
-    return canonicalPath;
+    return resolveGalleryAnnotationNotePath(
+      this.plugin.app.vault,
+      this.getCanonicalNotePath()
+    );
   }
 
   trackRelocatedNotePath(path: string): void {
@@ -66,7 +80,7 @@ export class ImageGalleryAnnotationStore {
       this.plugin.serviceManager?.getFolderPathService()?.journalFolderPath ||
       this.plugin.settings.general?.journalFolderPath ||
       '!Journalit';
-    return normalizePath(`${journalFolder}/Gallery Media Annotations.md`);
+    return galleryAnnotationNotePath(journalFolder);
   }
 
   getAnnotationMap(): unknown {

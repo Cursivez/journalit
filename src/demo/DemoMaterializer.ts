@@ -5,7 +5,6 @@ import { ReviewCreationBatch } from '../services/review/ReviewCreationBatch';
 import { parseFrontmatterFromContentOrThrow } from '../utils/dataRefresh';
 import {
   appendSampleReviewBody,
-  getDemoOwnedEntityKind,
   getSampleInstanceId,
   materializeSampleReviewFrontmatter,
 } from './DemoOwnership';
@@ -27,8 +26,13 @@ import {
 } from './DemoStaticContent';
 import type { CompiledDemoPack, DemoReviewRecipe } from './compileDemoPack';
 import { createSampleReviewAuthoring } from './DemoReviewAuthoring';
+import {
+  discoverOwnedMarkdownFiles,
+  discoverOwnedMediaFiles,
+  type DiscoveredOwnedEntities,
+} from './demoOwnedDiscovery';
 
-export type DemoMaterializationStage =
+type DemoMaterializationStage =
   | 'materializing'
   
   | 'verifying'
@@ -44,7 +48,6 @@ export interface DemoMaterializationProgress {
 }
 
 type ProgressListener = (progress: DemoMaterializationProgress) => void;
-type DiscoveredOwnedEntities = Map<string, DemoOwnedEntity[]>;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   value !== null && typeof value === 'object' && !Array.isArray(value);
@@ -94,7 +97,8 @@ export class DemoMaterializer {
     const recordsByEntityId = new Map(
       manifest.owned.map((entity) => [entity.entityId, entity])
     );
-    const discovered = await this.discoverOwnedMarkdownFiles(
+    const discovered = await discoverOwnedMarkdownFiles(
+      this.plugin.app,
       manifest.instanceId,
       manifest.root
     );
@@ -338,9 +342,9 @@ export class DemoMaterializer {
     await this.manifestStore.save(manifest);
     eventBus.publish('trade:changed', {
       action: 'created',
-      filePaths: manifest.owned
-        .filter((entity) => entity.kind === 'trade')
-        .map((entity) => entity.path),
+      filePaths: manifest.owned.flatMap((entity) =>
+        entity.kind === 'trade' ? [entity.path] : []
+      ),
     });
     eventBus.publish('settings:changed', { source: 'sample-journal' });
     report('Sample journal ready');
@@ -356,10 +360,10 @@ export class DemoMaterializer {
     const preserved = new Set<string>();
     const missing = new Set<string>();
     let removed = 0;
-    const movedMarkdown = await this.discoverOwnedMarkdownFiles(
-      manifest.instanceId
-    );
-    const movedMedia = await this.discoverOwnedMediaFiles(manifest.instanceId);
+    const [movedMarkdown, movedMedia] = await Promise.all([
+      discoverOwnedMarkdownFiles(this.plugin.app, manifest.instanceId),
+      discoverOwnedMediaFiles(this.plugin.app, manifest.instanceId),
+    ]);
     const removalCandidates = new Map(
       manifest.owned.map((entity) => [entity.path, entity])
     );
@@ -507,12 +511,14 @@ export class DemoMaterializer {
     discovered: DiscoveredOwnedEntities,
     onCreated: () => void
   ): Promise<void> {
-    const drc = await this.plugin.serviceManager.getDRCService();
-    const weekly = await this.plugin.serviceManager.getWeeklyReviewService();
-    const monthly = await this.plugin.serviceManager.getMonthlyReviewService();
-    const quarterly =
-      await this.plugin.serviceManager.getQuarterlyReviewService();
-    const yearly = await this.plugin.serviceManager.getYearlyReviewService();
+    const { serviceManager } = this.plugin;
+    const [drc, weekly, monthly, quarterly, yearly] = await Promise.all([
+      serviceManager.getDRCService(),
+      serviceManager.getWeeklyReviewService(),
+      serviceManager.getMonthlyReviewService(),
+      serviceManager.getQuarterlyReviewService(),
+      serviceManager.getYearlyReviewService(),
+    ]);
     this.plugin.drcService = drc;
     this.plugin.weeklyReviewService = weekly;
     this.plugin.monthlyReviewService = monthly;
@@ -717,65 +723,6 @@ export class DemoMaterializer {
     manifest.owned = Array.from(recordsByEntityId.values()).sort(
       (left, right) => left.entityId.localeCompare(right.entityId)
     );
-  }
-
-  private async discoverOwnedMarkdownFiles(
-    instanceId: string,
-    root?: string
-  ): Promise<DiscoveredOwnedEntities> {
-    const discovered: DiscoveredOwnedEntities = new Map();
-    for (const file of this.plugin.app.vault.getMarkdownFiles()) {
-      if (root && !isPathWithinRoot(file.path, root)) continue;
-      const cache = this.plugin.app.metadataCache.getFileCache(file);
-      let rawFrontmatter: unknown;
-      if (cache) {
-        rawFrontmatter = cache.frontmatter;
-        if (!isRecord(rawFrontmatter)) continue;
-      } else {
-        const content = await this.plugin.app.vault.read(file);
-        try {
-          rawFrontmatter = parseFrontmatterFromContentOrThrow(content);
-        } catch {
-          continue;
-        }
-      }
-      if (
-        !isRecord(rawFrontmatter) ||
-        getSampleInstanceId(rawFrontmatter) !== instanceId
-      ) {
-        continue;
-      }
-      const entityId = rawFrontmatter.journalitSampleEntityId;
-      if (typeof entityId !== 'string' || !entityId.trim()) continue;
-      const entity: DemoOwnedEntity = {
-        entityId,
-        kind: getDemoOwnedEntityKind(rawFrontmatter, file.path),
-        path: file.path,
-      };
-      discovered.set(entityId, [...(discovered.get(entityId) ?? []), entity]);
-    }
-    return discovered;
-  }
-
-  private async discoverOwnedMediaFiles(
-    instanceId: string
-  ): Promise<DiscoveredOwnedEntities> {
-    const discovered: DiscoveredOwnedEntities = new Map();
-    for (const file of this.plugin.app.vault.getFiles()) {
-      if (file.extension.toLowerCase() !== 'svg') continue;
-      const content = await this.plugin.app.vault.read(file);
-      const marker = content.match(
-        /journalit-sample-instance:([^\s]+) journalit-sample-entity:([^\s]+)/
-      );
-      if (marker?.[1] !== instanceId || !marker[2]) continue;
-      const entity: DemoOwnedEntity = {
-        entityId: marker[2],
-        kind: 'media',
-        path: file.path,
-      };
-      discovered.set(marker[2], [...(discovered.get(marker[2]) ?? []), entity]);
-    }
-    return discovered;
   }
 
   private async hasPlanningOwnershipEvidence(

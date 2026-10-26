@@ -480,7 +480,7 @@ export const SESSION_MODE_STYLES = `
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
   background: var(--background-primary);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-s);
   animation: none;
   transform: none;
   will-change: auto;
@@ -841,14 +841,6 @@ export const SESSION_MODE_STYLES = `
   line-height: 1.35;
 }
 
-
-
-.journalit-session-mode-prep-grid {
-  display: flex;
-  flex-direction: column;
-  gap: var(--size-4-3);
-}
-
 .journalit-session-mode-prep-card {
   min-width: 0;
 }
@@ -1168,15 +1160,6 @@ export const SESSION_MODE_STYLES = `
   color: var(--text-muted);
 }
 
-.journalit-session-mode-break-state__eyebrow {
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-  font-weight: var(--font-semibold);
-  letter-spacing: 0.08em;
-  line-height: 1.2;
-  text-transform: uppercase;
-}
-
 .journalit-session-mode-break-state__title {
   max-width: 28rem;
   color: var(--text-normal);
@@ -1421,7 +1404,6 @@ export const SESSION_MODE_STYLES = `
   font-size: var(--font-ui-small);
   line-height: 1.35;
 }
-
 
 @media (max-width: 320px) {
   .journalit-session-mode {
@@ -1697,7 +1679,7 @@ export const SESSION_MODE_STYLES = `
   border-radius: 4px;
   background: var(--background-primary) !important;
   background-color: var(--background-primary) !important;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
+  box-shadow: var(--shadow-s) !important;
 }
 
 .journalit-session-log-composer-tag-menu--portal {
@@ -1842,8 +1824,6 @@ export const SESSION_MODE_STYLES = `
   resize: vertical;
 }
 
-.journalit-session-log-primary-button,
-.journalit-session-log-ghost-button,
 .journalit-session-log-filter-trigger,
 .journalit-session-log-entry__actions button,
 .journalit-session-log-icon-button {
@@ -1851,10 +1831,6 @@ export const SESSION_MODE_STYLES = `
   align-items: center;
   justify-content: center;
   gap: var(--size-2-1);
-}
-
-.journalit-session-log-primary-button {
-  width: 100%;
 }
 
 .journalit-session-log-filter {
@@ -1945,7 +1921,6 @@ export const SESSION_MODE_STYLES = `
   pointer-events: none;
   z-index: 1;
 }
-
 
 .journalit-session-log-filter-menu {
   left: auto;
@@ -2071,30 +2046,6 @@ export const SESSION_MODE_STYLES = `
   background: transparent;
   background-color: transparent;
   box-shadow: none;
-  color: var(--text-normal);
-}
-
-
-.journalit-session-log-separator__action {
-  display: inline-flex;
-  flex: 0 0 auto;
-  align-items: center;
-  gap: var(--size-2-1);
-  min-height: 24px;
-  padding: 2px 8px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s);
-  background: var(--background-secondary);
-  color: var(--text-muted);
-  font-size: var(--font-ui-smaller);
-  font-weight: var(--font-semibold);
-  letter-spacing: 0;
-  text-transform: none;
-}
-
-.journalit-session-log-separator__action:hover,
-.journalit-session-log-separator__action:focus-visible {
-  background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
 
@@ -2350,7 +2301,7 @@ export const SESSION_MODE_STYLES = `
   height: 16px;
   border-radius: 50%;
   background: var(--background-primary);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.25);
+  box-shadow: var(--toggle-thumb-shadow);
 }
 
 .journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-input:checked + .toggle-switch-label {
@@ -2386,6 +2337,7 @@ export const SESSION_MODE_STYLES = `
 }
 
 .journalit-settings .journalit-session-log-tag-settings-list .option-item.setting-item {
+  align-items: center !important;
   margin: 0 !important;
   padding: var(--size-4-3) !important;
   border: 0 !important;
@@ -2651,13 +2603,28 @@ export const SESSION_MODE_STYLES = `
   }
 }
 
-.journalit-session-log-tag-edit-grid,
+.journalit-session-log-tag-edit-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: var(--size-4-2);
+  width: 100%;
+}
+
 .journalit-session-log-tag-draft-fields {
   display: grid;
-  grid-template-columns: minmax(120px, 0.85fr) 126px 112px;
+  grid-template-columns: minmax(140px, 220px) 100px 112px;
   gap: var(--size-2-2);
   align-items: start;
   width: 100%;
+}
+
+.journalit-session-log-tag-toggles {
+  display: flex;
+  flex-wrap: wrap;
+  grid-column: 1 / -1;
+  align-items: center;
+  gap: var(--size-2-2) var(--size-4-4);
 }
 
 .journalit-session-log-tag-field {
@@ -2678,9 +2645,19 @@ export const SESSION_MODE_STYLES = `
   width: 100%;
 }
 
-.journalit-session-log-tag-edit-grid .option-actions {
-  grid-column: 1 / -1;
+.journalit-settings .journalit-session-log-tag-field > input.journalit-settings-input {
+  height: 36px;
+  min-height: 36px;
+  box-sizing: border-box;
+}
+
+
+.journalit-session-log-tag-edit-row .journalit-session-log-tag-edit-actions {
+  display: flex;
+  align-items: center;
   justify-content: flex-end;
+  height: 36px;
+  margin-top: calc(var(--font-ui-smaller) * 1.2 + var(--size-2-1));
 }
 
 .journalit-session-log-tag-short-input {
@@ -2702,6 +2679,7 @@ export const SESSION_MODE_STYLES = `
   gap: var(--size-2-1);
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
+  white-space: nowrap;
 }
 
 .journalit-session-log-tag-setting-info {
@@ -2823,32 +2801,6 @@ export const SESSION_MODE_STYLES = `
   max-width: 70px !important;
 }
 
-.journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-toggle {
-  display: inline-grid;
-  grid-template-columns: auto max-content auto;
-  align-items: center;
-  justify-self: start;
-  column-gap: var(--size-2-2);
-  max-width: 100%;
-}
-
-.journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-toggle:nth-child(4) {
-  grid-column: 1;
-}
-
-.journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-toggle:nth-child(5) {
-  grid-column: 2;
-}
-
-.journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-toggle input[type='checkbox'],
-.journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-toggle .journalit-session-log-tag-setting-info {
-  flex: 0 0 auto;
-}
-
-.journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-toggle .journalit-session-log-tag-setting-info {
-  justify-self: start;
-}
-
 @media (max-width: 760px) {
   .journalit-settings .journalit-session-log-tag-add-row.setting-item {
     grid-template-columns: minmax(0, 1fr);
@@ -2867,18 +2819,24 @@ export const SESSION_MODE_STYLES = `
 }
 
 @media (max-width: 700px) {
-  .journalit-session-log-tag-edit-grid,
-  .journalit-session-log-tag-draft-fields {
-    grid-template-columns: 1fr;
-  }
-
+  .journalit-session-log-tag-draft-fields,
   .journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-draft-fields {
     grid-template-columns: 1fr;
   }
 
-  .journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-toggle:nth-child(4),
-  .journalit-settings .journalit-session-log-tag-add-row .journalit-session-log-tag-toggle:nth-child(5) {
-    grid-column: 1;
+  
+  .journalit-session-log-tag-edit-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .journalit-session-log-tag-edit-row .journalit-session-log-tag-edit-actions {
+    margin-top: 0;
+  }
+
+  
+  .journalit-session-log-tag-toggle {
+    min-width: 0;
+    white-space: normal;
   }
 }
 
@@ -3080,7 +3038,6 @@ export const SESSION_MODE_STYLES = `
   color: var(--text-normal);
   overflow-wrap: anywhere;
 }
-
 
 .journalit-unplanned-session-modal__description {
   margin: 0 0 var(--size-4-2);

@@ -11,11 +11,16 @@ import {
 } from '../../../core/DateDraftGate';
 import { t } from '../../../../lang/helpers';
 import { createConfigFromProfile } from '../../../../services/propChallenge/PropChallengeConfig';
+import {
+  isAuthoritativeDrawdown,
+  isExecutableRule,
+} from '../../../../services/propChallenge/PropChallengeRuleReview';
 import type {
   PropChallengeConfig,
   PropChallengePhase,
   PropChallengeRule,
   PropFirmProfileSelection,
+  PropFirmProfileRule,
 } from '../../../../services/propChallenge/types';
 import {
   applyProfilePhaseUpdate,
@@ -63,11 +68,12 @@ function sourceDefinitions(
   return rules.map((rule) => ({ ...rule, enabled: true }));
 }
 
-function groupByKind<T extends { kind: PropChallengeRule['kind'] }>(
+function groupByKind<T extends PropChallengeRule | PropFirmProfileRule>(
   rules: readonly T[]
 ): Map<PropChallengeRule['kind'], T[]> {
   const grouped = new Map<PropChallengeRule['kind'], T[]>();
   for (const rule of rules) {
+    if (!isExecutableRule(rule)) continue;
     const list = grouped.get(rule.kind);
     if (list) list.push(rule);
     else grouped.set(rule.kind, [rule]);
@@ -236,6 +242,190 @@ function reviewDraftReducer(
   }
 }
 
+type ApplicabilityState =
+  | {
+      kind: 'ready';
+      result: ProfileApplicability;
+      config: PropChallengeConfig;
+    }
+  | { kind: 'checking' | 'failed'; previous: ProfileApplicability | null };
+
+
+function readApplicability(
+  selection: PropFirmProfileSelection,
+  state: ApplicabilityState,
+  config: PropChallengeConfig
+): {
+  applicability: ProfileApplicability | null;
+  awaitingCheck: boolean;
+  checking: boolean;
+} {
+  if (selection.source === 'personal') {
+    return {
+      applicability: PERSONAL_APPLICABILITY,
+      awaitingCheck: false,
+      checking: false,
+    };
+  }
+  const stale = state.kind === 'ready' && state.config !== config;
+  return {
+    applicability: state.kind === 'ready' ? state.result : state.previous,
+    awaitingCheck: state.kind !== 'ready' || stale,
+    checking: state.kind === 'checking' || stale,
+  };
+}
+
+
+function analyzeLocalChanges(
+  phase: PropChallengePhase,
+  sourcePhase: PropFirmProfileSelection['challenge']['phases'][number]
+) {
+  const baseline = phase.profileSnapshot;
+  const phaseRulesByKind = groupByKind(phase.rules);
+  const baselineRulesByKind = baseline
+    ? groupByKind(baseline.rules)
+    : undefined;
+  const localKinds = new Set<PropChallengeRule['kind']>();
+  for (const [kind, rules] of phaseRulesByKind) {
+    if (
+      !baseline ||
+      !sameProfileContent(
+        definitions(rules),
+        sourceDefinitions(baselineRulesByKind?.get(kind) ?? [])
+      )
+    ) {
+      localKinds.add(kind);
+    }
+  }
+  const conflicts = phase.rules.filter(
+    (rule) =>
+      isExecutableRule(rule) &&
+      localKinds.has(rule.kind) &&
+      !sameProfileContent(
+        definitions(phase.rules.filter((item) => item.kind === rule.kind)),
+        sourceDefinitions(
+          sourcePhase.rules.filter((item) => item.kind === rule.kind)
+        )
+      ) &&
+      (!baseline ||
+        !sameProfileContent(
+          baseline.rules.filter((item) => item.kind === rule.kind),
+          sourcePhase.rules.filter((item) => item.kind === rule.kind)
+        ))
+  );
+  const localPayout =
+    !baseline || !sameProfileContent(phase.payoutPolicy, baseline.payoutPolicy);
+  const payoutConflict =
+    localPayout &&
+    !sameProfileContent(phase.payoutPolicy, sourcePhase.payoutPolicy) &&
+    (!baseline ||
+      !sameProfileContent(baseline.payoutPolicy, sourcePhase.payoutPolicy));
+  return { localKinds, conflicts, localPayout, payoutConflict };
+}
+
+function readPayoutProposal(
+  payoutProposal: ReturnType<typeof proposedProfilePayoutPolicy>,
+  phase: PropChallengePhase
+) {
+  return {
+    payoutConflictError:
+      payoutProposal.kind === 'conflict'
+        ? t('account.profiles.profitable-days-conflict')
+        : '',
+    payoutPolicy:
+      payoutProposal.kind === 'policy'
+        ? payoutProposal.policy
+        : phase.payoutPolicy,
+  };
+}
+
+
+function publishedChangeFor(
+  applicability: ProfileApplicability | null,
+  proposed: PropChallengeRule[],
+  incoming: PropChallengePhase,
+  payoutPolicy: PropChallengePhase['payoutPolicy']
+) {
+  return applicability?.kind === 'published' &&
+    sameProfileContent(
+      proposed.map(ruleDefinition),
+      incoming.rules.map(ruleDefinition)
+    ) &&
+    sameProfileContent(payoutPolicy, incoming.payoutPolicy)
+    ? applicability.change
+    : undefined;
+}
+
+
+function compareWithSource(
+  phase: PropChallengePhase,
+  incoming: PropChallengePhase,
+  sourcePhase: PropFirmProfileSelection['challenge']['phases'][number]
+) {
+  const baseline = phase.profileSnapshot;
+  const sourceDiffers =
+    !baseline ||
+    !sameProfileContent(
+      baseline.rules.filter(isExecutableRule),
+      sourcePhase.rules.filter(isExecutableRule)
+    ) ||
+    !sameProfileContent(baseline.payoutPolicy, sourcePhase.payoutPolicy);
+  const sourceChanged = (kind: PropChallengeRule['kind']) =>
+    !baseline ||
+    !sameProfileContent(
+      baseline.rules.filter((rule) => rule.kind === kind),
+      sourcePhase.rules.filter((rule) => rule.kind === kind)
+    );
+  const comparisonCurrent = {
+    ...phase,
+    rules: phase.rules.filter(
+      (rule) => isExecutableRule(rule) && sourceChanged(rule.kind)
+    ),
+  };
+  const comparisonIncoming = {
+    ...incoming,
+    rules: incoming.rules.filter(
+      (rule) => isExecutableRule(rule) && sourceChanged(rule.kind)
+    ),
+    payoutPolicy:
+      baseline &&
+      sameProfileContent(baseline.payoutPolicy, sourcePhase.payoutPolicy)
+        ? phase.payoutPolicy
+        : incoming.payoutPolicy,
+  };
+  return { sourceDiffers, comparisonCurrent, comparisonIncoming };
+}
+
+const needsPurchaseInput = (
+  sourcePhase: PropFirmProfileSelection['challenge']['phases'][number],
+  config: PropChallengeConfig
+): boolean =>
+  Boolean(
+    sourcePhase.purchaseEligibility ||
+    config.purchaseDate ||
+    sourcePhase.policyChanges?.some((change) => change.kind === 'new_purchases')
+  );
+
+const purchaseDateValue = (config: PropChallengeConfig): Date | undefined =>
+  config.purchaseDate ? new Date(`${config.purchaseDate}T12:00:00`) : undefined;
+
+function ApplicabilityRefreshStatus({
+  checking,
+  failed,
+}: {
+  checking: boolean;
+  failed: boolean;
+}) {
+  return (
+    <>
+      {checking && (
+        <p role="status">{t('account.profiles.applicability-checking')}</p>
+      )}
+      {failed && <p role="alert">{t('account.profiles.check-failed')}</p>}
+    </>
+  );
+}
+
 
 
 function PhaseUpdateReview({
@@ -259,17 +449,10 @@ function PhaseUpdateReview({
   const phaseId = phase.id;
   const [step, setStep] = useState<'review' | 'apply'>('review');
   const sourcePhase = selection.challenge.phases[sourceIndex];
-  const baseline = phase.profileSnapshot;
   
   
-  const [applicabilityState, setApplicabilityState] = useState<
-    | {
-        kind: 'ready';
-        result: ProfileApplicability;
-        config: PropChallengeConfig;
-      }
-    | { kind: 'checking' | 'failed'; previous: ProfileApplicability | null }
-  >({ kind: 'checking', previous: null });
+  const [applicabilityState, setApplicabilityState] =
+    useState<ApplicabilityState>({ kind: 'checking', previous: null });
   useEffect(() => {
     if (selection.source === 'personal') return;
     let cancelled = false;
@@ -294,60 +477,14 @@ function PhaseUpdateReview({
       cancelled = true;
     };
   }, [config, phase, selection, sourceIndex]);
-  const applicability =
-    selection.source === 'personal'
-      ? PERSONAL_APPLICABILITY
-      : applicabilityState.kind === 'ready'
-        ? applicabilityState.result
-        : applicabilityState.previous;
-  const actionsDisabled =
-    disabled ||
-    (selection.source !== 'personal' &&
-      (applicabilityState.kind !== 'ready' ||
-        applicabilityState.config !== config));
-  const checking =
-    selection.source !== 'personal' &&
-    (applicabilityState.kind === 'checking' ||
-      (applicabilityState.kind === 'ready' &&
-        applicabilityState.config !== config));
-  const phaseRulesByKind = groupByKind(phase.rules);
-  const baselineRulesByKind = baseline
-    ? groupByKind(baseline.rules)
-    : undefined;
-  const localKinds = new Set<PropChallengeRule['kind']>();
-  for (const [kind, rules] of phaseRulesByKind) {
-    if (
-      !baseline ||
-      !sameProfileContent(
-        definitions(rules),
-        sourceDefinitions(baselineRulesByKind?.get(kind) ?? [])
-      )
-    ) {
-      localKinds.add(kind);
-    }
-  }
-  const conflicts = phase.rules.filter(
-    (rule) =>
-      localKinds.has(rule.kind) &&
-      !sameProfileContent(
-        definitions(phase.rules.filter((item) => item.kind === rule.kind)),
-        sourceDefinitions(
-          sourcePhase.rules.filter((item) => item.kind === rule.kind)
-        )
-      ) &&
-      (!baseline ||
-        !sameProfileContent(
-          baseline.rules.filter((item) => item.kind === rule.kind),
-          sourcePhase.rules.filter((item) => item.kind === rule.kind)
-        ))
+  const { applicability, awaitingCheck, checking } = readApplicability(
+    selection,
+    applicabilityState,
+    config
   );
-  const localPayout =
-    !baseline || !sameProfileContent(phase.payoutPolicy, baseline.payoutPolicy);
-  const payoutConflict =
-    localPayout &&
-    !sameProfileContent(phase.payoutPolicy, sourcePhase.payoutPolicy) &&
-    (!baseline ||
-      !sameProfileContent(baseline.payoutPolicy, sourcePhase.payoutPolicy));
+  const actionsDisabled = disabled || awaitingCheck;
+  const { localKinds, conflicts, localPayout, payoutConflict } =
+    analyzeLocalChanges(phase, sourcePhase);
   const [draft, dispatch] = useReducer(
     reviewDraftReducer,
     phase,
@@ -390,59 +527,31 @@ function PhaseUpdateReview({
     source: incoming,
     keepCurrent: keepPayout,
   });
-  const payoutConflictError =
-    payoutProposal.kind === 'conflict'
-      ? t('account.profiles.profitable-days-conflict')
-      : '';
-  const payoutPolicy =
-    payoutProposal.kind === 'policy'
-      ? payoutProposal.policy
-      : phase.payoutPolicy;
+  const { payoutConflictError, payoutPolicy } = readPayoutProposal(
+    payoutProposal,
+    phase
+  );
   const payoutChanged = !sameProfileContent(phase.payoutPolicy, payoutPolicy);
   const drawdownChanged = !canPreserveProfileState(
     { rules: phase.rules },
     { rules: proposed }
   );
   const drawdowns = drawdownChanged
-    ? proposed.filter((rule) => rule.kind === 'drawdown')
+    ? proposed.filter(isAuthoritativeDrawdown)
     : [];
   const custom = drawdownChanged || payoutChanged;
   const active = phase.status === 'active';
-  const published =
-    applicability?.kind === 'published' &&
-    sameProfileContent(
-      proposed.map(ruleDefinition),
-      incoming.rules.map(ruleDefinition)
-    ) &&
-    sameProfileContent(payoutPolicy, incoming.payoutPolicy)
-      ? applicability.change
-      : undefined;
+  const published = publishedChangeFor(
+    applicability,
+    proposed,
+    incoming,
+    payoutPolicy
+  );
   const manualProof = selection.source !== 'personal' && !published;
   const needsConsent = !published || (active && custom);
   const effectiveValue = published?.effectiveAt ?? effective;
-  const sourceDiffers =
-    !baseline ||
-    !sameProfileContent(baseline.rules, sourcePhase.rules) ||
-    !sameProfileContent(baseline.payoutPolicy, sourcePhase.payoutPolicy);
-  const sourceChanged = (kind: PropChallengeRule['kind']) =>
-    !baseline ||
-    !sameProfileContent(
-      baseline.rules.filter((rule) => rule.kind === kind),
-      sourcePhase.rules.filter((rule) => rule.kind === kind)
-    );
-  const comparisonCurrent = {
-    ...phase,
-    rules: phase.rules.filter((rule) => sourceChanged(rule.kind)),
-  };
-  const comparisonIncoming = {
-    ...incoming,
-    rules: incoming.rules.filter((rule) => sourceChanged(rule.kind)),
-    payoutPolicy:
-      baseline &&
-      sameProfileContent(baseline.payoutPolicy, sourcePhase.payoutPolicy)
-        ? phase.payoutPolicy
-        : incoming.payoutPolicy,
-  };
+  const { sourceDiffers, comparisonCurrent, comparisonIncoming } =
+    compareWithSource(phase, incoming, sourcePhase);
   const numberField = (
     label: string,
     value: string,
@@ -538,11 +647,7 @@ function PhaseUpdateReview({
   const purchaseInput = (
     <FastDateTimeInput
       label={t('account.profiles.purchase-date')}
-      value={
-        config.purchaseDate
-          ? new Date(`${config.purchaseDate}T12:00:00`)
-          : undefined
-      }
+      value={purchaseDateValue(config)}
       disabled={disabled}
       onChange={(value) => {
         const date = value ? new Date(value) : undefined;
@@ -556,11 +661,7 @@ function PhaseUpdateReview({
       }}
     />
   );
-  const showPurchaseInput = Boolean(
-    sourcePhase.purchaseEligibility ||
-    config.purchaseDate ||
-    sourcePhase.policyChanges?.some((change) => change.kind === 'new_purchases')
-  );
+  const showPurchaseInput = needsPurchaseInput(sourcePhase, config);
   const renderReview = () => {
     if (!applicability && applicabilityState.kind !== 'failed')
       return (
@@ -889,11 +990,11 @@ function PhaseUpdateReview({
   return (
     <>
       {step === 'review' && showPurchaseInput && purchaseInput}
-      {applicability && checking && (
-        <p role="status">{t('account.profiles.applicability-checking')}</p>
-      )}
-      {applicability && applicabilityState.kind === 'failed' && (
-        <p role="alert">{t('account.profiles.check-failed')}</p>
+      {applicability && (
+        <ApplicabilityRefreshStatus
+          checking={checking}
+          failed={applicabilityState.kind === 'failed'}
+        />
       )}
       {renderReview()}
     </>

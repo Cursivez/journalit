@@ -142,12 +142,12 @@ export const ChartSkeleton: React.FC<ChartSkeletonProps> = ({
               {variant === 'area' && (
                 <path
                   d="M0,180 Q50,160 100,140 T200,100 T300,80 T400,60 L400,200 L0,200 Z"
-                  className="skeleton-shimmer journalit-chart-skeleton-wave-fill"
+                  className="journalit-skeleton-shimmer journalit-chart-skeleton-wave-fill"
                 />
               )}
               <path
                 d="M0,180 Q50,160 100,140 T200,100 T300,80 T400,60"
-                className="skeleton-shimmer journalit-chart-skeleton-wave-line"
+                className="journalit-skeleton-shimmer journalit-chart-skeleton-wave-line"
               />
             </svg>
           </div>

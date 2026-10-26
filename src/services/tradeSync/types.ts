@@ -1,4 +1,7 @@
-import type { TradeImportPreviewTrade } from '../tradeImport/types';
+import type {
+  TradeImportDestination,
+  TradeImportPreviewTrade,
+} from '../tradeImport/types';
 
 export interface TradovateConnectionAccount {
   id: string;
@@ -48,6 +51,25 @@ export interface TradovateConnection {
   reconciliationIssueCount: number;
   accounts: TradovateConnectionAccount[];
   jobs: BrokerSyncJob[];
+}
+
+export function tradovateConnectionCanSync(
+  connection: TradovateConnection
+): boolean {
+  return (
+    connection.status === 'active' || connection.status === 'setup_required'
+  );
+}
+
+export function tradovateConnectionRequiresWebsite(
+  connection: TradovateConnection
+): boolean {
+  return (
+    connection.status === 'disconnected' ||
+    connection.status === 'pending' ||
+    connection.status === 'reauthorization_required' ||
+    connection.status === 'error'
+  );
 }
 
 export interface TradovateConnections {
@@ -101,7 +123,77 @@ export interface CTraderConnections {
 }
 
 
-export type BrokerSyncProviderId = 'tradovate' | 'rithmic' | 'ctrader';
+export type BrokerSyncProviderId =
+  | 'tradovate'
+  | 'rithmic'
+  | 'ctrader'
+  | 'hyperliquid';
+
+export interface HyperliquidConfig {
+  enabled: boolean;
+  eligible: boolean;
+  networks: Array<'mainnet' | 'testnet'>;
+  supportedProducts: Array<'usdc_perpetuals'>;
+  maxConnections: number;
+  fillHistoryLimit: number;
+  historyCapacityBytes: number;
+}
+
+export interface HyperliquidConnectionAccount {
+  id: string;
+  connectionId: string;
+  canonicalAccountId: string;
+  environment: 'live' | 'demo';
+  displayName?: string;
+  currency?: string;
+  providerAvailable: boolean;
+  syncEnabled: boolean;
+  historyMode: 'all_available' | 'from_date' | 'from_connection';
+  historyFrom?: string;
+  providerHistoryBoundaryStatus: string;
+  providerHistoryBoundaryDate?: string;
+  providerHistoryBoundaryObservedAt?: string;
+  providerHistoryBoundaryErrorCode?: string;
+  tradeHistoryComplete: boolean;
+  performanceCoverageThrough?: string;
+  cashHistoryCoverageThrough?: string;
+  feeDataIncomplete: boolean;
+  lastSuccessfulSyncAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  syncClaim:
+    | { state: 'available'; holderConnectionId: null }
+    | { state: 'held'; holderConnectionId: string }
+    | { state: 'held_elsewhere'; holderConnectionId: string };
+}
+
+export interface HyperliquidConnection {
+  id: string;
+  displayName: string;
+  providerName?: string;
+  status:
+    | 'pending'
+    | 'setup_required'
+    | 'active'
+    | 'paused'
+    | 'reauthorization_required'
+    | 'disconnected'
+    | 'error'
+    | 'deleting';
+  connectedAt?: string;
+  lastSuccessfulSyncAt?: string;
+  lastErrorAt?: string;
+  nextSyncAt?: string;
+  lastErrorCode?: string;
+  reconciliationIssueCount: number;
+  accounts: HyperliquidConnectionAccount[];
+  jobs: BrokerSyncJob[];
+}
+
+export interface HyperliquidConnections {
+  schemaVersion: 'hyperliquid-connections-v2';
+  connections: HyperliquidConnection[];
+}
 
 interface BrokerClientOperationBase {
   clientOperationId: string;
@@ -158,8 +250,23 @@ export interface BrokerClientDiagnosticEventInput {
   count?: number;
 }
 
-export interface TradovateClientDiagnosticPayload {
-  schemaVersion: 'tradovate-client-diagnostics-v2';
+export type BrokerConnectionOperationContext = Extract<
+  BrokerClientOperationContext,
+  { scope: 'connection' }
+>;
+export type BrokerProjectionOperationContext = Extract<
+  BrokerClientOperationContext,
+  { scope: 'projection' }
+>;
+
+export type BrokerClientDiagnosticSchema =
+  | 'tradovate-client-diagnostics-v2'
+  | 'hyperliquid-client-diagnostics-v2';
+
+export interface BrokerClientDiagnosticPayload<
+  Schema extends BrokerClientDiagnosticSchema,
+> {
+  schemaVersion: Schema;
   pluginVersion: string;
   vaultId: string;
   deviceId?: string;
@@ -170,9 +277,32 @@ export interface TradovateClientDiagnosticPayload {
   events: BrokerClientDiagnosticEvent[];
 }
 
+export type BrokerClientDiagnosticBatch<
+  Schema extends BrokerClientDiagnosticSchema,
+> = BrokerClientDiagnosticPayload<Schema> & { ownerUserId: string };
+
+export type TradovateClientDiagnosticPayload =
+  BrokerClientDiagnosticPayload<'tradovate-client-diagnostics-v2'>;
+export type HyperliquidClientDiagnosticPayload =
+  BrokerClientDiagnosticPayload<'hyperliquid-client-diagnostics-v2'>;
+
 export interface BrokerConnectionSyncOutcome {
   connectionId: string;
   status: 'succeeded' | 'partial' | 'failed' | 'cancelled' | 'request_failed';
+}
+
+
+export function partialIsProviderOnly(
+  result: Pick<TradeProjectionSyncResult, 'partial' | 'providerPartial'>
+): boolean {
+  return !result.partial || result.providerPartial === true;
+}
+
+
+export function brokerConnectionSyncFailed(
+  status: BrokerConnectionSyncOutcome['status']
+): boolean {
+  return status !== 'succeeded' && status !== 'partial';
 }
 
 export interface BrokerSyncAllResult {
@@ -206,6 +336,8 @@ export interface TradeProjection {
   importedAt?: string | null;
   projectionStatus: TradeProjectionStatus;
   projectionGeneration?: string;
+  
+  destination?: TradeImportDestination;
   previewTrade: TradeImportPreviewTrade;
 }
 
@@ -274,6 +406,8 @@ export interface TradeProjectionAccountInventoryItem {
   restorableCount: number;
   lastImportedAt?: string | null;
   mapping?: TradeProjectionAccountVaultMapping | null;
+  
+  destination?: TradeImportDestination;
 }
 
 export interface TradeProjectionAccountInventoryResponse {
@@ -291,7 +425,7 @@ export interface TradeProjectionAccountVaultMappingRequest {
   clientOperationId?: string;
 }
 
-export type TradeProjectionExistingNotesMode = 'update' | 'leave';
+type TradeProjectionExistingNotesMode = 'update' | 'leave';
 
 export interface TradeProjectionAccountVaultRemapRequest {
   vaultId: string;
@@ -303,7 +437,7 @@ export interface TradeProjectionAccountVaultRemapRequest {
   deviceId?: string;
 }
 
-export interface TradeProjectionAccountVaultRemapMapping extends TradeProjectionAccountVaultMapping {
+interface TradeProjectionAccountVaultRemapMapping extends TradeProjectionAccountVaultMapping {
   accountId: string;
 }
 
@@ -412,6 +546,8 @@ export interface TradeProjectionCommittedTrade {
   accountDisplayName?: string | null;
   broker?: string | null;
   importId?: string;
+  
+  destination?: TradeImportDestination;
   previewTrade?: TradeImportPreviewTrade;
 }
 
@@ -423,4 +559,6 @@ export interface TradeProjectionSyncResult {
   importedTrades?: TradeProjectionPersistedTradeSummary[];
   ackFailedCount?: number;
   partial?: boolean;
+  
+  providerPartial?: boolean;
 }

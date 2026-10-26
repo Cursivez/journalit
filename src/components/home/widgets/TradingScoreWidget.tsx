@@ -267,7 +267,7 @@ const TradingScoreLoadingState: React.FC = () => (
       <svg width="120" height="120" viewBox="0 0 120 120">
         <polygon
           points="60,10 105,35 105,85 60,110 15,85 15,35"
-          className="skeleton-shimmer journalit-home-score__skeleton-outer"
+          className="journalit-skeleton-shimmer journalit-home-score__skeleton-outer"
         />
         <polygon
           points="60,30 85,45 85,75 60,90 35,75 35,45"
@@ -386,14 +386,208 @@ const TradingScoreInsufficientState: React.FC<{
   );
 };
 
+
+const differsFromAllAccounts = (
+  series: readonly RadarSeries[],
+  allAccountsScoreResult: TradingScoreResult | null | undefined
+): boolean => {
+  if (!allAccountsScoreResult) return false;
+  return series.some(
+    (entry) => !scoreAxesAreSame(entry.scoreResult, allAccountsScoreResult)
+  );
+};
+
+
+const renderScoreRadars = ({
+  showAccountComparison,
+  visibleAccountRadarSeries,
+  scoreResult,
+  color,
+}: {
+  showAccountComparison: boolean;
+  visibleAccountRadarSeries: readonly RadarSeries[];
+  scoreResult: TradingScoreResult;
+  color: string;
+}) => {
+  if (!showAccountComparison) {
+    const isDeveloping = scoreResult.phase === 'developing';
+    return (
+      <Radar
+        name={t('widget.trading-score.title')}
+        dataKey="value"
+        stroke={color}
+        fill={color}
+        fillOpacity={isDeveloping ? 0.3 : 0.4}
+        strokeWidth={isDeveloping ? 1.5 : 2}
+        strokeDasharray={isDeveloping ? '4 2' : undefined}
+      />
+    );
+  }
+  return (
+    <>
+      <Radar
+        name={`${t('common.all')} accounts`}
+        dataKey="allAccountsValue"
+        stroke="var(--interactive-accent)"
+        fill="var(--interactive-accent)"
+        fillOpacity={0.18}
+        strokeWidth={1.75}
+      />
+      {visibleAccountRadarSeries.map((series) => (
+        <Radar
+          key={series.key}
+          name={series.label}
+          dataKey={series.key}
+          stroke={series.color}
+          fill={series.color}
+          fillOpacity={0.24}
+          strokeWidth={1.75}
+          strokeDasharray={
+            series.scoreResult.phase === 'developing' ? '4 2' : undefined
+          }
+        />
+      ))}
+    </>
+  );
+};
+
+const TradingScoreLegend: React.FC<{
+  visibleLegendSeries: readonly RadarSeries[];
+  hiddenLegendSeriesCount: number;
+}> = ({ visibleLegendSeries, hiddenLegendSeriesCount }) => (
+  <div className="journalit-home-score__legend journalit-home-score__legend--status-left">
+    {visibleLegendSeries.map((series) => (
+      <span
+        key={series.key}
+        className="journalit-home-score__legend-item journalit-home-score__legend-item--selected"
+        style={cssVars({
+          '--journalit-home-score-legend-color': series.color,
+        })}
+      >
+        {series.legendLabel}
+      </span>
+    ))}
+    {hiddenLegendSeriesCount > 0 && (
+      <span className="journalit-home-score__legend-more">
+        +{hiddenLegendSeriesCount}
+      </span>
+    )}
+    <span className="journalit-home-score__legend-item journalit-home-score__legend-item--all">
+      {t('common.all')}
+    </span>
+  </div>
+);
+
+const TradingScoreBreakdown: React.FC<{
+  scoreResult: TradingScoreResult;
+  hoveredAxis: keyof AxisScores | null;
+  setHoveredAxis: (axis: keyof AxisScores | null) => void;
+  onClose: () => void;
+}> = ({ scoreResult, hoveredAxis, setHoveredAxis, onClose }) => {
+  const phaseClass = getPhaseClass(scoreResult.phase);
+  const scoreClass = getScoreColorClass(scoreResult.compositeScore);
+  return (
+    <div className="journalit-home-score journalit-home-score--expanded">
+      
+      <div className="journalit-home-score__header">
+        <span className="journalit-home-widget__eyebrow">
+          {t('widget.trading-score.breakdown-title')}
+        </span>
+        <button
+          onClick={onClose}
+          className="journalit-home-score__close-button"
+          aria-label={t('widget.trading-score.close-breakdown')}
+        >
+          <X size={14} />
+        </button>
+      </div>
+
+      
+      <div className="journalit-home-score__axis-list">
+        {AXIS_SCORE_KEYS.map((axisKey) => {
+          const score = scoreResult.axisScores[axisKey];
+          const axisScoreClass = getScoreColorClass(score);
+          const weight = Math.round(AXIS_WEIGHTS[axisKey] * 100);
+          const isHovered = hoveredAxis === axisKey;
+          const axisName = t(`widget.trading-score.axis.${axisKey}` as const);
+          const axisDescription = t(
+            `widget.trading-score.axis.${axisKey}.desc` as const
+          );
+
+          return (
+            <div
+              key={axisKey}
+              className="journalit-home-score__axis-item"
+              tabIndex={0}
+              role="button"
+              aria-label={t('widget.trading-score.axis-aria', {
+                axis: axisName,
+                score: String(score),
+                weight: String(weight),
+              })}
+              onMouseEnter={() => setHoveredAxis(axisKey)}
+              onMouseLeave={() => setHoveredAxis(null)}
+              onFocus={() => setHoveredAxis(axisKey)}
+              onBlur={() => setHoveredAxis(null)}
+            >
+              <div className="journalit-home-score__axis-row">
+                <span className="journalit-home-score__axis-name">
+                  {axisName}{' '}
+                  <span className="journalit-home-score__axis-weight">
+                    ({weight}%)
+                  </span>
+                </span>
+                <span
+                  className={`journalit-home-score__axis-score ${axisScoreClass}`}
+                >
+                  {score}
+                </span>
+              </div>
+              <div className="journalit-home-score__axis-track">
+                <div
+                  className={`journalit-home-score__axis-fill ${axisScoreClass}`}
+                  style={cssVars({
+                    '--journalit-home-score-axis-width': `${score}%`,
+                  })}
+                />
+              </div>
+              
+              {isHovered && (
+                <div className="journalit-home-score__axis-tooltip">
+                  {axisDescription}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      
+      <div className="journalit-home-score__footer">
+        <div className="journalit-home-score__footer-score">
+          <span className={`journalit-home-score__footer-value ${scoreClass}`}>
+            {scoreResult.compositeScore}
+          </span>
+          <span className={`journalit-home-score__footer-phase ${phaseClass}`}>
+            {t(`widget.trading-score.phase.${scoreResult.phase}` as const)}
+          </span>
+        </div>
+        <span className="journalit-home-score__footer-trades">
+          {t('widget.trading-score.trades-count', {
+            count: String(scoreResult.tradeCount),
+          })}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
   const { dashboardData, filters } = useDashboardData();
   const { formatValue, shouldMask } = useDisplayFormatter();
   const chartRef = React.useRef<HTMLDivElement>(null);
   const [isExpanded, setIsExpanded] = useState(false);
   const [hoveredAxis, setHoveredAxis] = useState<keyof AxisScores | null>(null);
-
-  useEffect(() => {}, []);
 
   const scoreResult = useMemo((): TradingScoreResult | null => {
     if (!dashboardData?.trades || dashboardData.trades.length === 0) {
@@ -457,16 +651,12 @@ const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
     }));
   }, [accountScoreResults, filters.accounts, isComparisonCurrent, scoreResult]);
 
-  const showAccountComparison = Boolean(
-    scoreResult &&
+  const showAccountComparison =
+    scoreResult !== null &&
     !isMetricMasked &&
     filters.accounts.length > 0 &&
     isComparisonCurrent &&
-    allAccountsScoreResult &&
-    accountRadarSeries.some(
-      (series) => !scoreAxesAreSame(series.scoreResult, allAccountsScoreResult)
-    )
-  );
+    differsFromAllAccounts(accountRadarSeries, allAccountsScoreResult);
 
   const visibleAccountRadarSeries = useMemo(
     () => (showAccountComparison ? accountRadarSeries : []),
@@ -544,102 +734,12 @@ const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
   
   if (isExpanded) {
     return (
-      <div className="journalit-home-score journalit-home-score--expanded">
-        
-        <div className="journalit-home-score__header">
-          <span className="journalit-home-widget__eyebrow">
-            {t('widget.trading-score.breakdown-title')}
-          </span>
-          <button
-            onClick={() => setIsExpanded(false)}
-            className="journalit-home-score__close-button"
-            aria-label={t('widget.trading-score.close-breakdown')}
-          >
-            <X size={14} />
-          </button>
-        </div>
-
-        
-        <div className="journalit-home-score__axis-list">
-          {AXIS_SCORE_KEYS.map((axisKey) => {
-            const score = scoreResult.axisScores[axisKey];
-            const axisScoreClass = getScoreColorClass(score);
-            const weight = Math.round(AXIS_WEIGHTS[axisKey] * 100);
-            const isHovered = hoveredAxis === axisKey;
-            const axisName = t(`widget.trading-score.axis.${axisKey}` as const);
-            const axisDescription = t(
-              `widget.trading-score.axis.${axisKey}.desc` as const
-            );
-
-            return (
-              <div
-                key={axisKey}
-                className="journalit-home-score__axis-item"
-                tabIndex={0}
-                role="button"
-                aria-label={t('widget.trading-score.axis-aria', {
-                  axis: axisName,
-                  score: String(score),
-                  weight: String(weight),
-                })}
-                onMouseEnter={() => setHoveredAxis(axisKey)}
-                onMouseLeave={() => setHoveredAxis(null)}
-                onFocus={() => setHoveredAxis(axisKey)}
-                onBlur={() => setHoveredAxis(null)}
-              >
-                <div className="journalit-home-score__axis-row">
-                  <span className="journalit-home-score__axis-name">
-                    {axisName}{' '}
-                    <span className="journalit-home-score__axis-weight">
-                      ({weight}%)
-                    </span>
-                  </span>
-                  <span
-                    className={`journalit-home-score__axis-score ${axisScoreClass}`}
-                  >
-                    {score}
-                  </span>
-                </div>
-                <div className="journalit-home-score__axis-track">
-                  <div
-                    className={`journalit-home-score__axis-fill ${axisScoreClass}`}
-                    style={cssVars({
-                      '--journalit-home-score-axis-width': `${score}%`,
-                    })}
-                  />
-                </div>
-                
-                {isHovered && (
-                  <div className="journalit-home-score__axis-tooltip">
-                    {axisDescription}
-                  </div>
-                )}
-              </div>
-            );
-          })}
-        </div>
-
-        
-        <div className="journalit-home-score__footer">
-          <div className="journalit-home-score__footer-score">
-            <span
-              className={`journalit-home-score__footer-value ${scoreClass}`}
-            >
-              {scoreResult.compositeScore}
-            </span>
-            <span
-              className={`journalit-home-score__footer-phase ${phaseClass}`}
-            >
-              {t(`widget.trading-score.phase.${scoreResult.phase}` as const)}
-            </span>
-          </div>
-          <span className="journalit-home-score__footer-trades">
-            {t('widget.trading-score.trades-count', {
-              count: String(scoreResult.tradeCount),
-            })}
-          </span>
-        </div>
-      </div>
+      <TradingScoreBreakdown
+        scoreResult={scoreResult}
+        hoveredAxis={hoveredAxis}
+        setHoveredAxis={setHoveredAxis}
+        onClose={() => setIsExpanded(false)}
+      />
     );
   }
 
@@ -696,46 +796,12 @@ const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
               tick={false}
               axisLine={false}
             />
-            {showAccountComparison ? (
-              <>
-                <Radar
-                  name={`${t('common.all')} accounts`}
-                  dataKey="allAccountsValue"
-                  stroke="var(--interactive-accent)"
-                  fill="var(--interactive-accent)"
-                  fillOpacity={0.18}
-                  strokeWidth={1.75}
-                />
-                {visibleAccountRadarSeries.map((series) => (
-                  <Radar
-                    key={series.key}
-                    name={series.label}
-                    dataKey={series.key}
-                    stroke={series.color}
-                    fill={series.color}
-                    fillOpacity={0.24}
-                    strokeWidth={1.75}
-                    strokeDasharray={
-                      series.scoreResult.phase === 'developing'
-                        ? '4 2'
-                        : undefined
-                    }
-                  />
-                ))}
-              </>
-            ) : (
-              <Radar
-                name={t('widget.trading-score.title')}
-                dataKey="value"
-                stroke={scoreLabel.color}
-                fill={scoreLabel.color}
-                fillOpacity={scoreResult.phase === 'developing' ? 0.3 : 0.4}
-                strokeWidth={scoreResult.phase === 'developing' ? 1.5 : 2}
-                strokeDasharray={
-                  scoreResult.phase === 'developing' ? '4 2' : undefined
-                }
-              />
-            )}
+            {renderScoreRadars({
+              showAccountComparison,
+              visibleAccountRadarSeries,
+              scoreResult,
+              color: scoreLabel.color,
+            })}
             <RechartsPortalTooltip chartRef={chartRef}>
               {({ active, payload }: TooltipContentLike<RadarDataPoint>) => {
                 const data = payload?.[0]?.payload;
@@ -822,27 +888,10 @@ const TradingScoreWidgetComponent: React.FC<TradingScoreWidgetProps> = () => {
           {scoreResult.compositeScore}
         </div>
         {showAccountComparison && (
-          <div className="journalit-home-score__legend journalit-home-score__legend--status-left">
-            {visibleLegendSeries.map((series) => (
-              <span
-                key={series.key}
-                className="journalit-home-score__legend-item journalit-home-score__legend-item--selected"
-                style={cssVars({
-                  '--journalit-home-score-legend-color': series.color,
-                })}
-              >
-                {series.legendLabel}
-              </span>
-            ))}
-            {hiddenLegendSeriesCount > 0 && (
-              <span className="journalit-home-score__legend-more">
-                +{hiddenLegendSeriesCount}
-              </span>
-            )}
-            <span className="journalit-home-score__legend-item journalit-home-score__legend-item--all">
-              {t('common.all')}
-            </span>
-          </div>
+          <TradingScoreLegend
+            visibleLegendSeries={visibleLegendSeries}
+            hiddenLegendSeriesCount={hiddenLegendSeriesCount}
+          />
         )}
         <div className="journalit-home-score__phase-row">
           <span className={`journalit-home-score__phase-label ${phaseClass}`}>

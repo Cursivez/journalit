@@ -16,8 +16,8 @@ export interface WidgetDefinition {
 }
 
 
-const LEGACY_DIRECTIONAL_DRAWDOWN_WIDGET_ID = 'directionalDrawdownChart';
-const DIRECTIONAL_DRAWDOWN_REPLACEMENT_WIDGET_IDS = [
+export const LEGACY_DIRECTIONAL_DRAWDOWN_WIDGET_ID = 'directionalDrawdownChart';
+export const DIRECTIONAL_DRAWDOWN_REPLACEMENT_WIDGET_IDS = [
   'longDrawdownChart',
   'shortDrawdownChart',
 ];
@@ -112,6 +112,14 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     defaultSize: { w: 6, h: 10 },
   },
   {
+    id: 'ratingPerformance',
+    name: t('dashboard.widgets.rating-performance.title'),
+    description: t('dashboard.widgets.rating-performance.description'),
+    category: 'breakdowns',
+    minSize: { w: 4, h: 6 },
+    defaultSize: { w: 6, h: 8 },
+  },
+  {
     id: 'drawdownChart',
     name: t('widget.drawdownChart.name'),
     description: t('widget.drawdownChart.description'),
@@ -148,6 +156,14 @@ export const AVAILABLE_WIDGETS: WidgetDefinition[] = [
     id: 'mfeScatter',
     name: t('widget.mfeScatter.name'),
     description: t('widget.mfeScatter.description'),
+    category: 'risk',
+    minSize: { w: 4, h: 5 },
+    defaultSize: { w: 6, h: 8 },
+  },
+  {
+    id: 'maeScatter',
+    name: t('widget.maeScatter.name'),
+    description: t('widget.maeScatter.description'),
     category: 'risk',
     minSize: { w: 4, h: 5 },
     defaultSize: { w: 6, h: 8 },

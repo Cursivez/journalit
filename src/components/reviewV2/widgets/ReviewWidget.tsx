@@ -10,6 +10,7 @@ import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
 import { mergeClassNames } from '../../../utils/classNames';
 import { useReviewReadOnly } from '../ReviewReadOnlyContext';
+import { StarRating } from '../../shared/StarRating';
 
 interface ReviewWidgetProps {
   filePath: string;
@@ -26,7 +27,6 @@ type NumericGrade = 0 | 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
 const NUMERIC_GRADES: NumericGrade[] = [
   0, 0.5, 1, 1.5, 2, 2.5, 3, 3.5, 4, 4.5, 5,
 ];
-const STAR_GRADES: NumericGrade[] = [1, 2, 3, 4, 5];
 
 
 type SupportedReviewWidgetType =
@@ -249,69 +249,18 @@ const StarRatingSection: React.FC<LetterGradeSectionProps> = ({
 }) => (
   <div className="journalit-reviewv2-grade-column">
     <div className="journalit-reviewv2-grade-label">{label}</div>
-    <div
-      className="journalit-reviewv2-star-rating"
-      aria-label={t('widget.review.star-hint')}
-    >
-      {STAR_GRADES.map((star) => {
-        const grade = typeof selectedGrade === 'number' ? selectedGrade : 0;
-        const isFull = grade >= star;
-        const isHalf = !isFull && grade >= star - 0.5;
-        const starClassName = [
-          'journalit-reviewv2-star',
-          preview
-            ? 'journalit-reviewv2-star--preview'
-            : 'journalit-reviewv2-star--interactive',
-          isFull
-            ? 'journalit-reviewv2-star--full'
-            : isHalf
-              ? ''
-              : 'journalit-reviewv2-star--empty',
-        ]
-          .filter(Boolean)
-          .join(' ');
-
-        return (
-          <button
-            aria-label={`${label}: ${star}`}
-            type="button"
-            disabled={preview}
-            key={`${field}-${star}`}
-            onClick={() => !preview && void onUpdateGrade(field, star)}
-            onKeyDown={(event) => {
-              if (preview || (event.key !== 'Enter' && event.key !== ' ')) {
-                return;
-              }
-              event.preventDefault();
-              void onUpdateGrade(field, star);
-            }}
-            onContextMenu={(e) => {
-              e.preventDefault();
-              const halfGrade = star - 0.5;
-              if (!preview && isNumericGrade(halfGrade)) {
-                void onUpdateGrade(field, halfGrade);
-              }
-            }}
-            className={mergeClassNames(
-              'journalit-native-button',
-              starClassName
-            )}
-          >
-            {isHalf ? (
-              <span className="journalit-reviewv2-star-half">
-                <span className="journalit-reviewv2-star-half-base">★</span>
-                <span className="journalit-reviewv2-star-half-muted">★</span>
-                <span className="journalit-reviewv2-star-half-fill">★</span>
-              </span>
-            ) : (
-              '★'
-            )}
-          </button>
-        );
-      })}
-      <span className="journalit-reviewv2-star-score">
-        {selectedGrade ?? 0}/5
-      </span>
+    <div className="journalit-reviewv2-star-rating">
+      <StarRating
+        value={typeof selectedGrade === 'number' ? selectedGrade : 0}
+        label={label}
+        hint={t('widget.review.star-hint')}
+        size="lg"
+        showScore
+        disabled={preview}
+        onChange={(grade) => {
+          if (isNumericGrade(grade)) void onUpdateGrade(field, grade);
+        }}
+      />
     </div>
   </div>
 );

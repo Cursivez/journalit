@@ -79,10 +79,7 @@ export const formatMinuteOfDay = (minute: number): string => {
     : `${displayHour}:${String(minutes).padStart(2, '0')}${period}`;
 };
 
-export const formatBucketLabel = (
-  startMinute: number,
-  endMinute: number
-): string =>
+const formatBucketLabel = (startMinute: number, endMinute: number): string =>
   `${formatMinuteOfDay(startMinute)}-${formatMinuteOfDay(endMinute)}`;
 
 const createBucket = (

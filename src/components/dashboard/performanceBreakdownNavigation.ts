@@ -1,6 +1,10 @@
 import type JournalitPlugin from '../../main';
 import type { AnalyticsDateBasis } from '../../settings/types';
 import { openTradeLogWithFilters } from '../../utils/openTradeLogWithFilters';
+import {
+  getRatingFilterValue,
+  parseTradeRatingBucketLabel,
+} from '../../utils/tradeRating';
 import type { FilterState } from './dashboardTypes';
 import type { Trade } from './utils/dataUtils';
 import { createDashboardTradeLogDrilldownFilters } from './tradeLogDrilldown';
@@ -84,6 +88,18 @@ export async function openDashboardPerformanceBreakdownTarget({
           })
         );
         return;
+      case 'rating': {
+        const bucket = parseTradeRatingBucketLabel(label);
+        if (bucket === undefined) return;
+        await openTradeLogWithFilters(
+          plugin,
+          createDashboardTradeLogDrilldownFilters(filters, {
+            analyticsDateBasis,
+            ratings: [getRatingFilterValue(bucket)],
+          })
+        );
+        return;
+      }
       default: {
         const _exhaustive: never = kind;
         return _exhaustive;

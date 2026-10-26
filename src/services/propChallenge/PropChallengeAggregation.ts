@@ -3,6 +3,15 @@ import { calculateAccountTotalCosts } from '../account/accountCosts';
 import { TransactionType } from '../account/types';
 import type { PropChallengeConfig, PropChallengePhase } from './types';
 import { resolvePropChallengePayoutPhaseAt } from './PropChallengeConfig';
+import { payoutReceiptTotals } from './PayoutReceipt';
+
+function addPayouts(left: number | null, right: number | null): number | null {
+  return left === null || right === null ? null : left + right;
+}
+
+function netAfterCosts(payouts: number | null, costs: number): number | null {
+  return payouts === null ? null : payouts - costs;
+}
 
 const MS_PER_DAY = 86_400_000;
 
@@ -17,8 +26,8 @@ interface PropChallengeStats {
   completedChallenges: number;
   passRate: number;
   totalCosts: number;
-  totalPayouts: number;
-  netPayouts: number;
+  totalPayouts: number | null;
+  netPayouts: number | null;
   passedChallengesWithPayouts: number;
   payoutConversionRate: number | undefined;
   monetaryTotals: Array<{
@@ -26,8 +35,8 @@ interface PropChallengeStats {
     challengeCount: number;
     passedChallenges: number;
     totalCosts: number;
-    totalPayouts: number;
-    netPayouts: number;
+    totalPayouts: number | null;
+    netPayouts: number | null;
   }>;
 }
 
@@ -63,8 +72,8 @@ interface PropFirmStats {
     monetaryTotals: Array<{
       currencyCode?: string;
       totalCosts: number;
-      totalPayouts: number;
-      netPayouts: number;
+      totalPayouts: number | null;
+      netPayouts: number | null;
     }>;
   }>;
 }
@@ -76,7 +85,7 @@ interface FirmAccumulator {
   failed: number;
   monetaryTotalsByCurrency: Map<
     string,
-    { totalCosts: number; totalPayouts: number }
+    { totalCosts: number; totalPayouts: number | null }
   >;
 }
 
@@ -90,7 +99,7 @@ interface PhaseNameAccumulator {
 }
 
 
-export function getPropPhaseDurationDays(
+function getPropPhaseDurationDays(
   phase: PropChallengePhase
 ): number | undefined {
   if (phase.status !== 'passed' && phase.status !== 'failed') return undefined;
@@ -205,7 +214,7 @@ export function aggregatePropFirmStats(
       failed: 0,
       monetaryTotalsByCurrency: new Map<
         string,
-        { totalCosts: number; totalPayouts: number }
+        { totalCosts: number; totalPayouts: number | null }
       >(),
     };
     const outcome = getPropChallengeOutcome(challenge);
@@ -224,7 +233,10 @@ export function aggregatePropFirmStats(
     if (outcome === 'passed') firm.passed += 1;
     if (outcome === 'failed') firm.failed += 1;
     monetaryTotals.totalCosts += totalCosts;
-    monetaryTotals.totalPayouts += totalPayouts;
+    monetaryTotals.totalPayouts = addPayouts(
+      monetaryTotals.totalPayouts,
+      totalPayouts
+    );
     firm.monetaryTotalsByCurrency.set(currencyKey, monetaryTotals);
     byFirm.set(key, firm);
   }
@@ -247,7 +259,7 @@ export function aggregatePropFirmStats(
             ([currencyCode, totals]) => ({
               currencyCode: currencyCode || undefined,
               ...totals,
-              netPayouts: totals.totalPayouts - totals.totalCosts,
+              netPayouts: netAfterCosts(totals.totalPayouts, totals.totalCosts),
             })
           ),
         };
@@ -259,17 +271,14 @@ export function aggregatePropFirmStats(
 function fundedPhasePayoutTotal(
   challenge: PropChallengeConfig,
   transactions: readonly AccountTransaction[]
-): number {
-  let total = 0;
-  for (const transaction of transactions) {
-    if (transaction.type !== TransactionType.WITHDRAWAL) continue;
-    if (
-      !resolvePropChallengePayoutPhaseAt(challenge, new Date(transaction.date))
+): number | null {
+  return payoutReceiptTotals(
+    transactions.filter(
+      (transaction) =>
+        transaction.type === TransactionType.WITHDRAWAL &&
+        resolvePropChallengePayoutPhaseAt(challenge, new Date(transaction.date))
     )
-      continue;
-    total += Math.abs(transaction.amount);
-  }
-  return total;
+  ).traderNet;
 }
 
 export function aggregatePropChallengeStats(
@@ -281,7 +290,7 @@ export function aggregatePropChallengeStats(
   let failedChallenges = 0;
   let archivedChallenges = 0;
   let totalCosts = 0;
-  let totalPayouts = 0;
+  let totalPayouts: number | null = 0;
   let passedChallengesWithPayouts = 0;
   const monetaryTotalsByCurrency = new Map<
     string,
@@ -289,7 +298,7 @@ export function aggregatePropChallengeStats(
       challengeCount: number;
       passedChallenges: number;
       totalCosts: number;
-      totalPayouts: number;
+      totalPayouts: number | null;
     }
   >();
 
@@ -316,8 +325,19 @@ export function aggregatePropChallengeStats(
       account.transactions
     );
     totalCosts += accountCosts;
-    totalPayouts += accountPayouts;
-    if (outcome === 'passed' && accountPayouts > 0) {
+    totalPayouts = addPayouts(totalPayouts, accountPayouts);
+    if (
+      outcome === 'passed' &&
+      account.transactions.some(
+        (transaction) =>
+          transaction.type === TransactionType.WITHDRAWAL &&
+          transaction.amount !== 0 &&
+          resolvePropChallengePayoutPhaseAt(
+            challenge,
+            new Date(transaction.date)
+          )
+      )
+    ) {
       passedChallengesWithPayouts += 1;
     }
     const currencyKey = account.currency ?? '';
@@ -330,7 +350,10 @@ export function aggregatePropChallengeStats(
     currencyTotals.challengeCount += 1;
     if (outcome === 'passed') currencyTotals.passedChallenges += 1;
     currencyTotals.totalCosts += accountCosts;
-    currencyTotals.totalPayouts += accountPayouts;
+    currencyTotals.totalPayouts = addPayouts(
+      currencyTotals.totalPayouts,
+      accountPayouts
+    );
     monetaryTotalsByCurrency.set(currencyKey, currencyTotals);
   }
 
@@ -348,7 +371,7 @@ export function aggregatePropChallengeStats(
         : (passedChallenges / completedChallenges) * 100,
     totalCosts,
     totalPayouts,
-    netPayouts: totalPayouts - totalCosts,
+    netPayouts: netAfterCosts(totalPayouts, totalCosts),
     passedChallengesWithPayouts,
     payoutConversionRate:
       passedChallenges === 0
@@ -359,7 +382,7 @@ export function aggregatePropChallengeStats(
       ([currencyCode, totals]) => ({
         currencyCode: currencyCode || undefined,
         ...totals,
-        netPayouts: totals.totalPayouts - totals.totalCosts,
+        netPayouts: netAfterCosts(totals.totalPayouts, totals.totalCosts),
       })
     ),
   };
@@ -368,8 +391,8 @@ export function aggregatePropChallengeStats(
 interface PropChallengeEconomicsTotals {
   currencyCode?: string;
   totalCosts: number;
-  totalPayouts: number;
-  netPayouts: number;
+  totalPayouts: number | null;
+  netPayouts: number | null;
   
   roi: number | undefined;
 }
@@ -394,7 +417,7 @@ export function aggregatePropChallengeEconomics(
   let challengeCount = 0;
   const totalsByCurrency = new Map<
     string,
-    { totalCosts: number; totalPayouts: number }
+    { totalCosts: number; totalPayouts: number | null }
   >();
 
   for (const account of accounts) {
@@ -406,16 +429,14 @@ export function aggregatePropChallengeEconomics(
       account,
       period?.includesCostDate
     );
-    let accountPayouts = 0;
-    for (const transaction of account.transactions) {
-      if (transaction.type !== TransactionType.WITHDRAWAL) continue;
-      const date = new Date(transaction.date);
-      if (period && !period.includesPayoutTimestamp(date)) continue;
-      
-      
-      if (!resolvePropChallengePayoutPhaseAt(challenge, date)) continue;
-      accountPayouts += Math.abs(transaction.amount);
-    }
+    const accountPayouts = fundedPhasePayoutTotal(
+      challenge,
+      account.transactions.filter((transaction) => {
+        if (transaction.type !== TransactionType.WITHDRAWAL) return false;
+        const date = new Date(transaction.date);
+        return !period || period.includesPayoutTimestamp(date);
+      })
+    );
 
     const currencyKey = account.currency ?? '';
     const totals = totalsByCurrency.get(currencyKey) ?? {
@@ -423,20 +444,20 @@ export function aggregatePropChallengeEconomics(
       totalPayouts: 0,
     };
     totals.totalCosts += accountCosts;
-    totals.totalPayouts += accountPayouts;
+    totals.totalPayouts = addPayouts(totals.totalPayouts, accountPayouts);
     totalsByCurrency.set(currencyKey, totals);
   }
 
   return {
     challengeCount,
     totalsByCurrency: Array.from(totalsByCurrency, ([currencyCode, totals]) => {
-      const netPayouts = totals.totalPayouts - totals.totalCosts;
+      const netPayouts = netAfterCosts(totals.totalPayouts, totals.totalCosts);
       return {
         currencyCode: currencyCode || undefined,
         ...totals,
         netPayouts,
         roi:
-          totals.totalCosts > 0
+          netPayouts !== null && totals.totalCosts > 0
             ? (netPayouts / totals.totalCosts) * 100
             : undefined,
       };

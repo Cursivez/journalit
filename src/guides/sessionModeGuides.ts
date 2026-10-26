@@ -6,8 +6,6 @@ import {
   SESSION_MODE_CONFIGURE_BUTTON_TARGET_ID,
   SESSION_MODE_EDIT_BUTTON_TARGET_ID,
   SESSION_MODE_EMPTY_GUIDE_ID,
-  SESSION_MODE_ENDED_ACTIONS_TARGET_ID,
-  SESSION_MODE_ENDED_GUIDE_ID,
   SESSION_MODE_HEADER_TARGET_ID,
   SESSION_MODE_LIVE_GUIDE_ID,
   SESSION_MODE_PREPARATION_GUIDE_ID,
@@ -121,26 +119,6 @@ export function registerSessionModeGuides(guideRegistry: GuideRegistry): void {
         description: t('session-mode.guide.live.settings.description'),
         progression: 'manual',
         targetId: SESSION_MODE_EDIT_BUTTON_TARGET_ID,
-        skipIfTargetMissing: true,
-      },
-    ],
-  });
-
-  guideRegistry.registerGuide({
-    id: SESSION_MODE_ENDED_GUIDE_ID,
-    viewType: SESSION_MODE_VIEW_TYPE,
-    version: 1,
-    autoShow: true,
-    priority: 100,
-    initialStepId: 'review',
-    steps: [
-      {
-        id: 'review',
-        title: t('session-mode.guide.ended.review.title'),
-        description: t('session-mode.guide.ended.review.description'),
-        progression: 'manual',
-        targetId: SESSION_MODE_ENDED_ACTIONS_TARGET_ID,
-        placement: 'right',
         skipIfTargetMissing: true,
       },
     ],

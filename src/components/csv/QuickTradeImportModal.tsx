@@ -8,7 +8,7 @@ import React, {
   useRef,
 } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { App, Modal, Notice } from 'obsidian';
+import { App, Notice } from 'obsidian';
 import {
   AlertTriangle,
   CheckCircle,
@@ -68,6 +68,7 @@ import {
   setQuickImportTradeImportHandoff,
 } from '../../services/tradeImport/quickImportHandoff';
 import { rememberTradeImportAssetType } from '../../services/tradeImport/tradeImportSources';
+import { resolveTradeImportDestination } from '../../services/tradeImport/importDestination';
 import {
   shouldRouteQuickImportToSourceRecovery,
   resolveBrokerImportRecovery,
@@ -83,6 +84,7 @@ import {
   TradeImportOtherAccountNotice,
 } from './TradeImportPreviewReview';
 import { openImportManagement } from '../../services/tradeImport/importManagementNavigation';
+import { JournalitModal } from '../modals/JournalitModal';
 
 const LOCAL_WRITE_TIMEOUT_MS = 10000;
 const PRIVACY_URL = 'https://journalit.co/privacy';
@@ -511,7 +513,277 @@ interface QuickImportMainContentProps {
   onToggleWorkbookImages: (included: boolean) => void;
 }
 
-export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
+
+function fullReviewReasons({
+  state,
+  file,
+  preview,
+  classified,
+  writableCount,
+}: {
+  state: TradeImportQuickImportState;
+  file: File | null;
+  preview: TradeImportPreviewResponse | null;
+  classified: readonly ClassifiedPreviewTrade[];
+  writableCount: number;
+}) {
+  const readyToImport = state.phase === 'ready_to_import';
+  return {
+    needsQuickImportSetup: state.phase === 'needs_full_import' && !file,
+    noImportablePreview: readyToImport && preview !== null && writableCount < 1,
+    parsingNeedsFullReview:
+      readyToImport &&
+      (preview?.outcome === 'partially_completed' ||
+        preview?.outcome === 'failed'),
+    
+    
+    
+    hasOtherAccountMatches:
+      readyToImport && classified.some((item) => item.otherAccount),
+    phaseNeedsFullImport:
+      state.phase === 'needs_full_import' || state.phase === 'error',
+  };
+}
+
+type FullReviewReasons = ReturnType<typeof fullReviewReasons>;
+
+const needsFullReview = (reasons: FullReviewReasons): boolean =>
+  reasons.phaseNeedsFullImport ||
+  reasons.noImportablePreview ||
+  reasons.parsingNeedsFullReview ||
+  reasons.hasOtherAccountMatches;
+
+function fullTradeImportActionLabel(reasons: FullReviewReasons): string {
+  if (reasons.needsQuickImportSetup)
+    return t('quick-import.action.setup-in-trade-import');
+  return needsFullReview(reasons)
+    ? t('quick-import.action.review-in-trade-import')
+    : t('quick-import.action.open-full');
+}
+
+const showsDropzone = (
+  state: TradeImportQuickImportState,
+  file: File | null,
+  needsQuickImportSetup: boolean
+): boolean =>
+  !needsQuickImportSetup &&
+  (state.phase === 'idle' || state.phase === 'loading') &&
+  !file;
+
+
+const showsImportButton = (
+  state: TradeImportQuickImportState,
+  preview: TradeImportPreviewResponse | null,
+  writableCount: number
+): boolean =>
+  (state.phase === 'ready_to_import' &&
+    writableCount > 0 &&
+    preview?.outcome !== 'failed') ||
+  state.phase === 'importing';
+
+const showsStateMessage = (
+  state: TradeImportQuickImportState,
+  recovery: BrokerImportRecovery | null
+): boolean =>
+  !recovery &&
+  (state.phase === 'needs_full_import' ||
+    state.phase === 'unavailable' ||
+    state.phase === 'error');
+
+function QuickImportSetupSummary({ setup }: { setup: TradeImportQuickSetup }) {
+  return (
+    <div className="journalit-quick-import-setup">
+      <span>{setup.accountName}</span>
+      <span>{setup.brokerLabel}</span>
+      <span>{t(`trade-import.asset.${setup.assetType}`)}</span>
+      {setup.templateName && <span>{setup.templateName}</span>}
+    </div>
+  );
+}
+
+function QuickImportAnalysing({ file }: { file: File }) {
+  return (
+    <div className="journalit-quick-import-processing">
+      <div className="journalit-quick-import-file-card">
+        <FileText size={18} />
+        <div>
+          <strong>{file.name}</strong>
+          <span>{t('quick-import.processing.sent-to-server')}</span>
+        </div>
+      </div>
+      <div className="journalit-quick-import-skeleton" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+      </div>
+      <p className="journalit-quick-import-status">
+        {t('quick-import.status.analysing')}
+      </p>
+    </div>
+  );
+}
+
+function QuickImportCompletion({
+  plugin,
+  result,
+  operationResult,
+  onBeforeNavigate,
+}: {
+  plugin: JournalitPlugin;
+  result: TradeImportCompletionResult;
+  operationResult: TradeOperationResult | null;
+  onBeforeNavigate: () => void;
+}) {
+  
+  
+  const showsTotals =
+    !operationResult || result.duplicateCount > 0 || result.failedCount > 0;
+  return (
+    <div
+      className={`journalit-quick-import-summary${
+        operationResult
+          ? ' journalit-quick-import-summary--operation-result'
+          : ''
+      }`}
+    >
+      {operationResult ? (
+        <TradeOperationResultCard
+          plugin={plugin}
+          result={operationResult}
+          presentation="inline-compact"
+          onBeforeNavigate={onBeforeNavigate}
+        />
+      ) : (
+        <h3>
+          {result.pendingCount > 0
+            ? t('csv.results.pending-title')
+            : t('quick-import.complete.title')}
+        </h3>
+      )}
+      {showsTotals && (
+        <p>
+          {t('quick-import.complete.message', {
+            written: String(result.writtenCount),
+            duplicates: String(result.duplicateCount),
+            failed: String(result.failedCount),
+          })}
+        </p>
+      )}
+      {result.pendingCount > 0 && (
+        <p>
+          {t('csv.results.pending-local-writes', {
+            count: String(result.pendingCount),
+          })}
+        </p>
+      )}
+      {result.attachedImageCount > 0 && (
+        <p>
+          {t('trade-import.completion.screenshots-added', {
+            count: String(result.attachedImageCount),
+          })}
+        </p>
+      )}
+      {result.failedImageCount > 0 && (
+        <p>
+          {t('trade-import.completion.screenshots-failed', {
+            count: String(result.failedImageCount),
+          })}
+        </p>
+      )}
+    </div>
+  );
+}
+
+
+const reviewablePreview = (
+  state: TradeImportQuickImportState,
+  preview: TradeImportPreviewResponse | null,
+  recovery: BrokerImportRecovery | null
+): TradeImportPreviewResponse | null =>
+  !recovery?.canChangeSource && state.phase === 'ready_to_import'
+    ? preview
+    : null;
+
+
+function fullImportActionLabel(
+  reasons: FullReviewReasons,
+  recovery: BrokerImportRecovery | null
+): string | null {
+  if (recovery?.canChangeSource) return null;
+  if (!reasons.needsQuickImportSetup && !needsFullReview(reasons)) return null;
+  return fullTradeImportActionLabel(reasons);
+}
+
+function QuickImportActions({
+  anotherFileLabel,
+  fullImportLabel,
+  importButton,
+  onChooseAnotherFile,
+  onOpenFullImport,
+}: {
+  
+  anotherFileLabel: string | null;
+  fullImportLabel: string | null;
+  importButton: React.ReactNode;
+  onChooseAnotherFile: () => void;
+  onOpenFullImport: () => void;
+}) {
+  return (
+    <div className="journalit-quick-import-actions">
+      {anotherFileLabel && (
+        <button
+          type="button"
+          className="journalit-quick-import-another-file-button"
+          onClick={onChooseAnotherFile}
+        >
+          {anotherFileLabel}
+        </button>
+      )}
+      {fullImportLabel && (
+        <button type="button" onClick={onOpenFullImport}>
+          {fullImportLabel}
+        </button>
+      )}
+      <div className="journalit-quick-import-actions__primary">
+        {importButton}
+      </div>
+    </div>
+  );
+}
+
+const anotherFileActionLabel = (
+  recovery: BrokerImportRecovery | null
+): string | null =>
+  recovery?.showQuickImportAnotherFileAction
+    ? t(recovery.anotherFileLabel ?? 'csv.button.import-another')
+    : null;
+
+function QuickImportImportButton({
+  importing,
+  disabled,
+  writableCount,
+  onImport,
+}: {
+  importing: boolean;
+  disabled: boolean;
+  writableCount: number;
+  onImport: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      className="mod-cta"
+      disabled={disabled}
+      onClick={onImport}
+    >
+      {importing
+        ? t('quick-import.status.importing')
+        : tPlural('quick-import.action.import-count', writableCount)}
+    </button>
+  );
+}
+
+const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
   recovery,
   recoveryDiagnostics,
   classified,
@@ -540,36 +812,16 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
   ).length;
   const isImporting = state.phase === 'importing';
   const isPreparingSetup = state.phase === 'loading';
-  const needsQuickImportSetup = state.phase === 'needs_full_import' && !file;
-  const noImportablePreview =
-    state.phase === 'ready_to_import' && preview !== null && writableCount < 1;
-  const parsingNeedsFullReview =
-    state.phase === 'ready_to_import' &&
-    (preview?.outcome === 'partially_completed' ||
-      preview?.outcome === 'failed');
-  
-  
-  const hasOtherAccountMatches =
-    state.phase === 'ready_to_import' &&
-    classified.some((item) => item.otherAccount);
-  const showFullTradeImportAction =
-    hasOtherAccountMatches ||
-    needsQuickImportSetup ||
-    state.phase === 'error' ||
-    state.phase === 'needs_full_import' ||
-    noImportablePreview ||
-    parsingNeedsFullReview;
-  const fullTradeImportActionLabel = needsQuickImportSetup
-    ? t('quick-import.action.setup-in-trade-import')
-    : state.phase === 'needs_full_import' ||
-        state.phase === 'error' ||
-        noImportablePreview ||
-        parsingNeedsFullReview ||
-        hasOtherAccountMatches
-      ? t('quick-import.action.review-in-trade-import')
-      : t('quick-import.action.open-full');
+  const reasons = fullReviewReasons({
+    state,
+    file,
+    preview,
+    classified,
+    writableCount,
+  });
   const previewRows = classified.slice(0, 5);
   const selectedFile = file;
+  const summaryPreview = reviewablePreview(state, preview, recovery);
 
   return (
     <div className="journalit-quick-import-modal">
@@ -580,58 +832,32 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
         </div>
       </div>
 
-      {setup && (
-        <div className="journalit-quick-import-setup">
-          <span>{setup.accountName}</span>
-          <span>{setup.brokerLabel}</span>
-          <span>{t(`trade-import.asset.${setup.assetType}`)}</span>
-          {setup.templateName && <span>{setup.templateName}</span>}
-        </div>
-      )}
+      {setup && <QuickImportSetupSummary setup={setup} />}
 
-      {!needsQuickImportSetup &&
-        (state.phase === 'idle' || isPreparingSetup) &&
-        !file && (
-          <QuickImportDropzone
-            fileInputRef={fileInputRef}
-            isDragging={isDragging}
-            isImporting={isImporting}
-            isPreparingSetup={isPreparingSetup}
-            onDragStateChange={setDragging}
-            onDrop={handleDrop}
-            onFileSelected={handleFileSelected}
-          />
-        )}
-
-      {selectedFile && state.phase === 'analysing' && (
-        <div className="journalit-quick-import-processing">
-          <div className="journalit-quick-import-file-card">
-            <FileText size={18} />
-            <div>
-              <strong>{selectedFile.name}</strong>
-              <span>{t('quick-import.processing.sent-to-server')}</span>
-            </div>
-          </div>
-          <div className="journalit-quick-import-skeleton" aria-hidden="true">
-            <span />
-            <span />
-            <span />
-          </div>
-          <p className="journalit-quick-import-status">
-            {t('quick-import.status.analysing')}
-          </p>
-        </div>
-      )}
-
-      {selectedFile && state.phase !== 'analysing' && (
-        <QuickImportSelectedFileCard
+      {showsDropzone(state, file, reasons.needsQuickImportSetup) && (
+        <QuickImportDropzone
           fileInputRef={fileInputRef}
+          isDragging={isDragging}
           isImporting={isImporting}
+          isPreparingSetup={isPreparingSetup}
+          onDragStateChange={setDragging}
+          onDrop={handleDrop}
           onFileSelected={handleFileSelected}
-          phase={state.phase}
-          selectedFile={selectedFile}
         />
       )}
+
+      {selectedFile &&
+        (state.phase === 'analysing' ? (
+          <QuickImportAnalysing file={selectedFile} />
+        ) : (
+          <QuickImportSelectedFileCard
+            fileInputRef={fileInputRef}
+            isImporting={isImporting}
+            onFileSelected={handleFileSelected}
+            phase={state.phase}
+            selectedFile={selectedFile}
+          />
+        ))}
 
       {recovery && (
         <BrokerImportRecoveryNotice
@@ -646,140 +872,67 @@ export const QuickImportMainContent: React.FC<QuickImportMainContentProps> = ({
           }
         />
       )}
-      {!recovery &&
-        (state.phase === 'needs_full_import' ||
-          state.phase === 'unavailable' ||
-          state.phase === 'error') && (
-          <div className="journalit-quick-import-callout">
-            <FileText size={16} />
-            <span>{state.message}</span>
-          </div>
-        )}
-
-      {!recovery?.canChangeSource &&
-        preview &&
-        state.phase === 'ready_to_import' && (
-          <QuickImportPreviewSummary
-            workbookImageCount={workbookImageCountForImport(
-              classified,
-              NO_ITEMS
-            )}
-            workbookImagesIncluded={workbookImagesIncluded}
-            onToggleWorkbookImages={onToggleWorkbookImages}
-            accountCurrency={tradeImportAccountCurrency(
-              plugin.settings,
-              setup?.accountName
-            )}
-            classified={classified}
-            duplicateCount={duplicateCount}
-            failedCount={failedCount}
-            localAccountNames={setup?.accountNames ?? []}
-            onImportIntoAccount={(accountName) =>
-              void openFullTradeImport(accountName)
-            }
-            noImportablePreview={noImportablePreview}
-            onManageImports={() => {
-              onBeforeNavigate();
-              openImportManagement(plugin);
-            }}
-            plugin={plugin}
-            preview={preview}
-            previewRows={previewRows}
-            recovery={recovery}
-            writableCount={writableCount}
-          />
-        )}
-
-      {result && state.phase === 'complete' && (
-        <div
-          className={`journalit-quick-import-summary${
-            operationResult
-              ? ' journalit-quick-import-summary--operation-result'
-              : ''
-          }`}
-        >
-          {operationResult ? (
-            <TradeOperationResultCard
-              plugin={plugin}
-              result={operationResult}
-              presentation="inline-compact"
-              onBeforeNavigate={onBeforeNavigate}
-            />
-          ) : (
-            <h3>
-              {result.pendingCount > 0
-                ? t('csv.results.pending-title')
-                : t('quick-import.complete.title')}
-            </h3>
-          )}
-          {(!operationResult ||
-            result.duplicateCount > 0 ||
-            result.failedCount > 0) && (
-            <p>
-              {t('quick-import.complete.message', {
-                written: String(result.writtenCount),
-                duplicates: String(result.duplicateCount),
-                failed: String(result.failedCount),
-              })}
-            </p>
-          )}
-          {result.pendingCount > 0 && (
-            <p>
-              {t('csv.results.pending-local-writes', {
-                count: String(result.pendingCount),
-              })}
-            </p>
-          )}
-          {result.attachedImageCount > 0 && (
-            <p>
-              {t('trade-import.completion.screenshots-added', {
-                count: String(result.attachedImageCount),
-              })}
-            </p>
-          )}
-          {result.failedImageCount > 0 && (
-            <p>
-              {t('trade-import.completion.screenshots-failed', {
-                count: String(result.failedImageCount),
-              })}
-            </p>
-          )}
+      {showsStateMessage(state, recovery) && (
+        <div className="journalit-quick-import-callout">
+          <FileText size={16} />
+          <span>{state.message}</span>
         </div>
       )}
 
-      <div className="journalit-quick-import-actions">
-        {recovery?.showQuickImportAnotherFileAction && (
-          <button
-            type="button"
-            className="journalit-quick-import-another-file-button"
-            onClick={() => fileInputRef.current?.click()}
-          >
-            {t(recovery.anotherFileLabel ?? 'csv.button.import-another')}
-          </button>
-        )}
-        {!recovery?.canChangeSource && showFullTradeImportAction && (
-          <button type="button" onClick={() => void openFullTradeImport()}>
-            {fullTradeImportActionLabel}
-          </button>
-        )}
-        <div className="journalit-quick-import-actions__primary">
-          {((state.phase === 'ready_to_import' &&
-            writableCount > 0 &&
-            preview?.outcome !== 'failed') ||
-            state.phase === 'importing') && (
-            <button
-              type="button"
-              className="mod-cta"
-              disabled={state.phase !== 'ready_to_import' || writableCount < 1}
-              onClick={() => void handleImport()}
-            >
-              {state.phase === 'importing'
-                ? t('quick-import.status.importing')
-                : tPlural('quick-import.action.import-count', writableCount)}
-            </button>
+      {summaryPreview && (
+        <QuickImportPreviewSummary
+          workbookImageCount={workbookImageCountForImport(classified, NO_ITEMS)}
+          workbookImagesIncluded={workbookImagesIncluded}
+          onToggleWorkbookImages={onToggleWorkbookImages}
+          accountCurrency={tradeImportAccountCurrency(
+            plugin.settings,
+            setup?.accountName
           )}
-        </div>
-      </div>
+          classified={classified}
+          duplicateCount={duplicateCount}
+          failedCount={failedCount}
+          localAccountNames={setup?.accountNames ?? []}
+          onImportIntoAccount={(accountName) =>
+            void openFullTradeImport(accountName)
+          }
+          noImportablePreview={reasons.noImportablePreview}
+          onManageImports={() => {
+            onBeforeNavigate();
+            openImportManagement(plugin);
+          }}
+          plugin={plugin}
+          preview={summaryPreview}
+          previewRows={previewRows}
+          recovery={recovery}
+          writableCount={writableCount}
+        />
+      )}
+
+      {result && state.phase === 'complete' && (
+        <QuickImportCompletion
+          plugin={plugin}
+          result={result}
+          operationResult={operationResult}
+          onBeforeNavigate={onBeforeNavigate}
+        />
+      )}
+
+      <QuickImportActions
+        anotherFileLabel={anotherFileActionLabel(recovery)}
+        fullImportLabel={fullImportActionLabel(reasons, recovery)}
+        onChooseAnotherFile={() => fileInputRef.current?.click()}
+        onOpenFullImport={() => void openFullTradeImport()}
+        importButton={
+          showsImportButton(state, preview, writableCount) && (
+            <QuickImportImportButton
+              importing={isImporting}
+              disabled={state.phase !== 'ready_to_import' || writableCount < 1}
+              writableCount={writableCount}
+              onImport={() => void handleImport()}
+            />
+          )
+        }
+      />
     </div>
   );
 };
@@ -793,7 +946,7 @@ interface QuickImportAccessGateProps {
   onUpgrade: () => void;
 }
 
-export function renderQuickImportAccessGate({
+function renderQuickImportAccessGate({
   canUseQuickTradeImport,
   isAuthenticated,
   isCheckingEntitlement,
@@ -1139,6 +1292,15 @@ export const QuickTradeImportModalContent: React.FC<
           });
           return;
         }
+        
+        
+        if (analyseResult.response.requiresSymbol) {
+          updateQuickImportState({
+            phase: 'needs_full_import',
+            message: t('quick-import.message.symbol-required'),
+          });
+          return;
+        }
         const isHyperliquid = isHyperliquidTradeHistory(setup.broker);
         const exportTimeZone = resolveHyperliquidExportTimeZone(
           setup.broker,
@@ -1189,6 +1351,11 @@ export const QuickTradeImportModalContent: React.FC<
           columnMappings,
           manualMappingRequired:
             setup.broker === 'MANUAL' || setup.source === 'favorite-template',
+          destination: resolveTradeImportDestination(
+            plugin.settings,
+            capabilities,
+            setup.broker
+          ),
         });
         if (requestVersionRef.current !== requestVersion) return;
         
@@ -1248,6 +1415,7 @@ export const QuickTradeImportModalContent: React.FC<
     },
     [
       capabilities,
+      plugin.settings,
       selectedBrokerCapabilities,
       setup,
       updateQuickImportState,
@@ -1374,7 +1542,7 @@ export const QuickTradeImportModalContent: React.FC<
     />
   );
 };
-class QuickTradeImportModal extends Modal {
+class QuickTradeImportModal extends JournalitModal {
   private root: Root | null = null;
 
   constructor(

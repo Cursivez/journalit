@@ -1,11 +1,4 @@
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
-
+import React, { useCallback, useMemo, useRef, useState } from 'react';
 import type JournalitPlugin from '../../main';
 import type { Setup } from '../../services/setup/types';
 import { t } from '../../lang/helpers';
@@ -28,7 +21,6 @@ import {
   OVERVIEW_R_METRIC_KEYS,
   PAIR_R_METRIC_KEYS,
   SETUP_PAIR_METRIC_OPTIONS,
-  SETUP_PAIR_MIN_TRADES,
 } from './setupOverviewMetrics';
 import {
   SetupPairMetricSelect,
@@ -47,124 +39,136 @@ import type {
 } from './setupsViewTypes';
 import {
   buildSetupOverviewPnlChartModel,
-  buildSetupPairSummary,
-  buildSetupPairViewModels,
-  buildSetupPairRankingChartData,
   buildSetupRankingChartData,
   calculateCompareMetrics,
   getMetricLeader,
   getMetricValue,
-  sortSetupPairViewModels,
 } from './setupsViewModel';
+import {
+  useSetupPairPerformanceModel,
+  useCloseSetupChartMenusOnOutsidePointer,
+} from './useSetupOverviewPerformance';
 
 const LazySetupPerformanceRankingChart = React.lazy(async () => {
   const module = await import('../charts/SharedSetupPerformanceChart');
   return { default: module.SetupPerformanceRankingChart };
 });
 
-function useSetupPairPerformanceModel({
-  displayRMultiples,
-  pairMetricKey,
-  selectedPairKey,
-  tradeIndex,
-  viewModels,
-}: {
-  displayRMultiples: boolean;
-  pairMetricKey: SetupPairMetricKey;
-  selectedPairKey: string | null;
-  tradeIndex: SetupTradeIndex;
-  viewModels: SetupViewModel[];
-}) {
-  const { shouldMask } = useDisplayFormatter();
-  const pairModels = useMemo(
-    () => buildSetupPairViewModels(viewModels, tradeIndex),
-    [tradeIndex, viewModels]
-  );
-  const eligiblePairModels = useMemo(
-    () =>
-      pairModels.filter(
-        (pair) => pair.metrics.totalTrades >= SETUP_PAIR_MIN_TRADES
-      ),
-    [pairModels]
-  );
-  const effectivePairMetricKey =
-    displayRMultiples || !PAIR_R_METRIC_KEYS.has(pairMetricKey)
-      ? pairMetricKey
+const displaysRMultiples = (plugin: JournalitPlugin): boolean =>
+  plugin.settings.trade?.displayRMultiples ?? false;
+
+
+const resolveOverviewMetric = (
+  metricKey: MetricKey,
+  displayRMultiples: boolean,
+  shouldMask: ReturnType<typeof useDisplayFormatter>['shouldMask']
+) => {
+  const effectiveMetricKey: MetricKey =
+    displayRMultiples || !OVERVIEW_R_METRIC_KEYS.has(metricKey)
+      ? metricKey
       : 'profitFactor';
-  const pairMetric =
-    SETUP_PAIR_METRIC_OPTIONS.find(
-      (option) => option.key === effectivePairMetricKey
-    ) ?? SETUP_PAIR_METRIC_OPTIONS[0];
-  const isPairChartMasked =
-    pairMetric.displayKind !== 'count' && shouldMask(pairMetric.displayKind);
-  const sortedPairModels = useMemo(
-    () =>
-      sortSetupPairViewModels(
-        eligiblePairModels,
-        effectivePairMetricKey,
-        isPairChartMasked
-      ),
-    [effectivePairMetricKey, eligiblePairModels, isPairChartMasked]
-  );
-  const pairChartData = useMemo(
-    () =>
-      buildSetupPairRankingChartData(
-        sortedPairModels,
-        effectivePairMetricKey,
-        isPairChartMasked
-      ),
-    [effectivePairMetricKey, isPairChartMasked, sortedPairModels]
-  );
-  const selectedPair = useMemo(
-    () =>
-      selectedPairKey
-        ? (sortedPairModels.find((pair) => pair.key === selectedPairKey) ??
-          sortedPairModels[0] ??
-          null)
-        : (sortedPairModels[0] ?? null),
-    [selectedPairKey, sortedPairModels]
-  );
-  const pairSummary = useMemo(
-    () => buildSetupPairSummary(eligiblePairModels),
-    [eligiblePairModels]
-  );
-
+  const metric =
+    METRIC_OPTIONS.find((option) => option.key === effectiveMetricKey) ??
+    METRIC_OPTIONS[0];
+  const cumulativeMetricKind: 'pnl' | 'rMultiple' =
+    effectiveMetricKey === 'cumulativeR' ? 'rMultiple' : 'pnl';
   return {
-    effectivePairMetricKey,
-    isPairChartMasked,
-    pairChartData,
-    pairMetric,
-    pairSummary,
-    selectedPair,
-    sortedPairModels,
+    effectiveMetricKey,
+    metric,
+    isChartMasked:
+      metric.displayKind !== 'count' && shouldMask(metric.displayKind),
+    isCumulativeMetric:
+      effectiveMetricKey === 'cumulativePnl' ||
+      effectiveMetricKey === 'cumulativeR',
+    cumulativeMetricKind,
   };
-}
+};
 
-function useCloseSetupChartMenusOnOutsidePointer(
-  metricMenuOpen: boolean,
-  setupMenuOpen: boolean,
-  metricMenuRef: React.RefObject<HTMLDivElement | null>,
-  setupMenuRef: React.RefObject<HTMLDivElement | null>,
-  closeMenus: () => void
-): void {
-  useEffect(() => {
-    if (!metricMenuOpen && !setupMenuOpen) return undefined;
-    const handlePointerDown = (event: PointerEvent) => {
-      const target = event.target;
-      if (!(target instanceof Node)) return;
-      if (metricMenuRef.current?.contains(target)) return;
-      if (setupMenuRef.current?.contains(target)) return;
-      closeMenus();
-    };
 
-    window.activeDocument.addEventListener('pointerdown', handlePointerDown);
-    return () =>
-      window.activeDocument.removeEventListener(
-        'pointerdown',
-        handlePointerDown
+const performanceChartDisplay = ({
+  isPairsMode,
+  isCumulativeMetric,
+  pairModelCount,
+  pairChartCount,
+  cumulativeCount,
+  rankingCount,
+  isMasked,
+}: {
+  isPairsMode: boolean;
+  isCumulativeMetric: boolean;
+  pairModelCount: number;
+  pairChartCount: number;
+  cumulativeCount: number;
+  rankingCount: number;
+  isMasked: boolean;
+}) => {
+  const seriesCount = isCumulativeMetric ? cumulativeCount : rankingCount;
+  const hasUsableData = (isPairsMode ? pairModelCount : seriesCount) > 0;
+  const isEmpty = (isPairsMode ? pairChartCount : seriesCount) === 0;
+  return {
+    showEmpty: isEmpty || (!hasUsableData && !isMasked),
+    showPrivacyNote: !isEmpty && isMasked,
+    showChart: !isEmpty && (hasUsableData || isMasked),
+  };
+};
+
+const leaderMetricValueOf = (
+  leader: SetupViewModel | null,
+  metricKey: MetricKey,
+  rMetricsBySetupId: Map<string, ReturnType<typeof calculateCompareMetrics>>
+) =>
+  leader
+    ? getMetricValue(
+        leader.metrics,
+        metricKey,
+        rMetricsBySetupId.get(leader.setup.id)
+      )
+    : null;
+
+const setupSelectionLabelOf = (
+  allSelected: boolean,
+  selectedCount: number
+): string =>
+  allSelected
+    ? t('setups.view.overview.setup-filter.all')
+    : t('setups.view.overview.setup-filter.selected').replace(
+        '{count}',
+        String(selectedCount)
       );
-  }, [closeMenus, metricMenuOpen, metricMenuRef, setupMenuOpen, setupMenuRef]);
-}
+
+const performanceWidgetClassName = (isPairsMode: boolean): string =>
+  isPairsMode
+    ? 'journalit-chart-widget journalit-setups-performance-widget journalit-setups-performance-widget--pairs'
+    : 'journalit-chart-widget journalit-setups-performance-widget';
+
+const SetupPerformanceEmptyState: React.FC<{ isPairsMode: boolean }> = ({
+  isPairsMode,
+}) => (
+  <EmptyState
+    className="journalit-setups-chart-empty-state"
+    iconSize={34}
+    message={
+      isPairsMode
+        ? t('setups.view.pairs.empty')
+        : t('setups.view.ranking.empty')
+    }
+    subMessage={
+      isPairsMode
+        ? t('setups.view.pairs.empty-submessage')
+        : t('setups.view.ranking.empty-submessage')
+    }
+  />
+);
+
+const SetupPerformancePrivacyNote: React.FC<{ isPairsMode: boolean }> = ({
+  isPairsMode,
+}) => (
+  <p className="journalit-setups-privacy-note">
+    {isPairsMode
+      ? t('setups.view.pairs.privacy')
+      : t('setups.view.ranking.privacy')}
+  </p>
+);
 
 export const SetupPerformanceChartSection: React.FC<{
   plugin: JournalitPlugin;
@@ -217,22 +221,15 @@ export const SetupPerformanceChartSection: React.FC<{
     setupMenuRef,
     closeMenus
   );
-  const displayRMultiples = plugin.settings.trade?.displayRMultiples ?? false;
-  const effectiveMetricKey =
-    displayRMultiples || !OVERVIEW_R_METRIC_KEYS.has(metricKey)
-      ? metricKey
-      : 'profitFactor';
-  const metric =
-    METRIC_OPTIONS.find((option) => option.key === effectiveMetricKey) ??
-    METRIC_OPTIONS[0];
-  const isChartMasked =
-    metric.displayKind !== 'count' && shouldMask(metric.displayKind);
+  const displayRMultiples = displaysRMultiples(plugin);
+  const {
+    effectiveMetricKey,
+    metric,
+    isChartMasked,
+    isCumulativeMetric,
+    cumulativeMetricKind,
+  } = resolveOverviewMetric(metricKey, displayRMultiples, shouldMask);
   const isPairSummaryMasked = shouldMask('rMultiple');
-  const isCumulativeMetric =
-    effectiveMetricKey === 'cumulativePnl' ||
-    effectiveMetricKey === 'cumulativeR';
-  const cumulativeMetricKind: 'pnl' | 'rMultiple' =
-    effectiveMetricKey === 'cumulativeR' ? 'rMultiple' : 'pnl';
   const availableSetupIds = useMemo(
     () => viewModels.map(({ setup }) => setup.id),
     [viewModels]
@@ -242,6 +239,9 @@ export const SetupPerformanceChartSection: React.FC<{
     const available = new Set(availableSetupIds);
     return selectedSetupIds.filter((setupId) => available.has(setupId));
   }, [availableSetupIds, selectedSetupIds]);
+  const allSetupsSelected =
+    selectedSetupIds === undefined ||
+    effectiveSelectedSetupIds.length === availableSetupIds.length;
   const filteredViewModels = useMemo(() => {
     const selected = new Set(effectiveSelectedSetupIds);
     return viewModels.filter(({ setup }) => selected.has(setup.id));
@@ -261,18 +261,10 @@ export const SetupPerformanceChartSection: React.FC<{
       buildSetupOverviewPnlChartModel(
         filteredViewModels,
         tradeIndex,
-        selectedSetupIds === undefined ||
-          effectiveSelectedSetupIds.length === availableSetupIds.length,
+        allSetupsSelected,
         cumulativeMetricKind
       ),
-    [
-      availableSetupIds.length,
-      effectiveSelectedSetupIds.length,
-      filteredViewModels,
-      cumulativeMetricKind,
-      selectedSetupIds,
-      tradeIndex,
-    ]
+    [allSetupsSelected, filteredViewModels, cumulativeMetricKind, tradeIndex]
   );
   const {
     effectivePairMetricKey,
@@ -310,16 +302,15 @@ export const SetupPerformanceChartSection: React.FC<{
   );
 
   const isPairsMode = chartMode === 'pairs';
-  const hasUsableData = isPairsMode
-    ? sortedPairModels.length > 0
-    : isCumulativeMetric
-      ? pnlChartModel.data.length > 0
-      : chartData.length > 0;
-  const isEmpty = isPairsMode
-    ? pairChartData.length === 0
-    : isCumulativeMetric
-      ? pnlChartModel.data.length === 0
-      : chartData.length === 0;
+  const display = performanceChartDisplay({
+    isPairsMode,
+    isCumulativeMetric,
+    pairModelCount: sortedPairModels.length,
+    pairChartCount: pairChartData.length,
+    cumulativeCount: pnlChartModel.data.length,
+    rankingCount: chartData.length,
+    isMasked: isPairsMode ? isPairChartMasked : isChartMasked,
+  });
   const chartHeight = getOverviewChartHeight(filteredViewModels.length);
   const performanceLeader = useMemo(
     () =>
@@ -332,13 +323,11 @@ export const SetupPerformanceChartSection: React.FC<{
           ),
     [effectiveMetricKey, filteredViewModels, isChartMasked, rMetricsBySetupId]
   );
-  const performanceLeaderMetricValue = performanceLeader
-    ? getMetricValue(
-        performanceLeader.metrics,
-        effectiveMetricKey,
-        rMetricsBySetupId.get(performanceLeader.setup.id)
-      )
-    : null;
+  const performanceLeaderMetricValue = leaderMetricValueOf(
+    performanceLeader,
+    effectiveMetricKey,
+    rMetricsBySetupId
+  );
   const needsReviewCount = useMemo(
     () =>
       filteredViewModels.filter(
@@ -373,18 +362,14 @@ export const SetupPerformanceChartSection: React.FC<{
     useSetupPerformanceMetricOptions(displayRMultiples);
   const currentMetricLabel = t(metric.labelKey);
   const currentPairMetricLabel = t(pairMetric.labelKey);
-  const setupSelectionLabel =
-    selectedSetupIds === undefined ||
-    effectiveSelectedSetupIds.length === availableSetupIds.length
-      ? t('setups.view.overview.setup-filter.all')
-      : t('setups.view.overview.setup-filter.selected').replace(
-          '{count}',
-          String(effectiveSelectedSetupIds.length)
-        );
+  const setupSelectionLabel = setupSelectionLabelOf(
+    allSetupsSelected,
+    effectiveSelectedSetupIds.length
+  );
 
   return (
     <section
-      className={`journalit-chart-widget journalit-setups-performance-widget${isPairsMode ? ' journalit-setups-performance-widget--pairs' : ''}`}
+      className={performanceWidgetClassName(isPairsMode)}
       ref={registerChartTarget}
     >
       {!isPairsMode ? (
@@ -406,32 +391,13 @@ export const SetupPerformanceChartSection: React.FC<{
           onSetupMenuOpenChange={handleSetupMenuOpenChange}
         />
       ) : null}
-      {isEmpty ||
-      (!hasUsableData && !(isPairsMode ? isPairChartMasked : isChartMasked)) ? (
-        <EmptyState
-          className="journalit-setups-chart-empty-state"
-          iconSize={34}
-          message={
-            isPairsMode
-              ? t('setups.view.pairs.empty')
-              : t('setups.view.ranking.empty')
-          }
-          subMessage={
-            isPairsMode
-              ? t('setups.view.pairs.empty-submessage')
-              : t('setups.view.ranking.empty-submessage')
-          }
-        />
+      {display.showEmpty ? (
+        <SetupPerformanceEmptyState isPairsMode={isPairsMode} />
       ) : null}
-      {!isEmpty && (isPairsMode ? isPairChartMasked : isChartMasked) ? (
-        <p className="journalit-setups-privacy-note">
-          {isPairsMode
-            ? t('setups.view.pairs.privacy')
-            : t('setups.view.ranking.privacy')}
-        </p>
+      {display.showPrivacyNote ? (
+        <SetupPerformancePrivacyNote isPairsMode={isPairsMode} />
       ) : null}
-      {!isEmpty &&
-      (hasUsableData || (isPairsMode ? isPairChartMasked : isChartMasked)) ? (
+      {display.showChart ? (
         isPairsMode ? (
           <SetupPairsSplitInsight
             isMasked={isPairChartMasked}
@@ -523,7 +489,7 @@ function getSetupPerformanceHeaderSummaryMode({
     : { kind: 'ranking' };
 }
 
-export const SetupPerformanceHeaderSummary: React.FC<{
+const SetupPerformanceHeaderSummary: React.FC<{
   leader: SetupViewModel | null;
   leaderMetricValue: number | null;
   metric: (typeof METRIC_OPTIONS)[number];

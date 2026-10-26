@@ -191,7 +191,7 @@ const createScheduledUnits = ({
 };
 
 
-export const buildTradeReviewUnits = (
+const buildTradeReviewUnits = (
   items: readonly ReviewStreakItem[],
   options: ReviewStreakCalculationOptions = {}
 ): ReviewStreakUnit[] => {
@@ -213,7 +213,7 @@ export const buildTradeReviewUnits = (
 };
 
 
-export const buildDRCReviewUnits = (
+const buildDRCReviewUnits = (
   items: readonly ReviewStreakItem[],
   options: ReviewStreakCalculationOptions = {}
 ): ReviewStreakUnit[] => {
@@ -239,7 +239,7 @@ export const buildDRCReviewUnits = (
 };
 
 
-export const buildWeeklyReviewUnits = (
+const buildWeeklyReviewUnits = (
   items: readonly ReviewStreakItem[],
   options: ReviewStreakCalculationOptions = {}
 ): ReviewStreakUnit[] => {
@@ -264,7 +264,7 @@ export const buildWeeklyReviewUnits = (
 };
 
 
-export const buildMonthlyReviewUnits = (
+const buildMonthlyReviewUnits = (
   items: readonly ReviewStreakItem[],
   options: ReviewStreakCalculationOptions = {}
 ): ReviewStreakUnit[] => {
@@ -291,7 +291,7 @@ export const buildMonthlyReviewUnits = (
 };
 
 
-export const buildReviewStreakUnits = (
+const buildReviewStreakUnits = (
   kind: ReviewStreakKind,
   items: readonly ReviewStreakItem[],
   options: ReviewStreakCalculationOptions = {}

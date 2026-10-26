@@ -56,6 +56,8 @@ export interface DisplayValueOptions {
   notation?: 'standard' | 'compact';
   
   priceStyle?: 'decimal' | 'currency';
+  
+  fillPrices?: readonly number[];
 }
 
 const PRIVACY_MASKED_KINDS: ReadonlySet<DisplayValueKind> = new Set([
@@ -206,7 +208,8 @@ export function formatDisplayValue(
         return formatDecimalQuotePrice(
           options.value,
           policy.locale ?? getCurrencyConfig(currencyCode).locale,
-          options.signed ?? false
+          options.signed ?? false,
+          options.fillPrices
         );
       }
 
@@ -351,11 +354,49 @@ function formatNumberValue(
 function formatDecimalQuotePrice(
   value: number,
   locale: string | undefined,
-  signed: boolean
+  signed: boolean,
+  fillPrices: readonly number[] | undefined
 ): string {
-  const formatted = value.toLocaleString(locale, {
-    maximumSignificantDigits: DECIMAL_QUOTE_MAX_SIGNIFICANT_DIGITS,
-  });
+  let formatted: string;
+  const fillDecimals = fillPrices
+    ? getFillPriceDecimals(fillPrices.length > 0 ? fillPrices : [value])
+    : undefined;
+  
+  
+  if (fillDecimals !== undefined && fillDecimals <= MAX_FILL_PRICE_DECIMALS) {
+    formatted = value.toLocaleString(locale, {
+      minimumFractionDigits: fillDecimals,
+      maximumFractionDigits: fillDecimals,
+    });
+  } else {
+    formatted = value.toLocaleString(locale, {
+      maximumSignificantDigits: DECIMAL_QUOTE_MAX_SIGNIFICANT_DIGITS,
+    });
+  }
 
   return signed && value > 0 ? `+${formatted}` : formatted;
+}
+
+const MIN_FILL_PRICE_DECIMALS = 2;
+
+const MAX_FILL_PRICE_DECIMALS = 20;
+
+
+function getFillPriceDecimals(prices: readonly number[]): number {
+  let decimals = MIN_FILL_PRICE_DECIMALS;
+  for (const price of prices) {
+    decimals = Math.max(decimals, countDecimals(price));
+  }
+  return decimals;
+}
+
+function countDecimals(value: number): number {
+  const normalized = Math.abs(
+    Number(value.toPrecision(DECIMAL_QUOTE_MAX_SIGNIFICANT_DIGITS))
+  ).toString();
+  const match = /^\d+(?:\.(\d+))?(?:e([+-]\d+))?$/.exec(normalized);
+  if (!match) return 0;
+  const fractionDigits = match[1]?.length ?? 0;
+  const exponent = match[2] ? Number(match[2]) : 0;
+  return Math.max(0, fractionDigits - exponent);
 }

@@ -7,7 +7,10 @@ import { useCurrency } from '../../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
-import { hasFundedLimitWarning } from '../../../../services/propChallenge/PropChallengeRuleEngine';
+import {
+  hasFundedLimitWarning,
+  isReviewOnlyWarning,
+} from '../../../../services/propChallenge/PropChallengeRuleEngine';
 import {
   applyPropChallengeLifecycleAction,
   runPropChallengeAdvance,
@@ -29,13 +32,259 @@ import type {
 } from './PropChallengeActionsMenu';
 import type { PropChallengeCockpitState } from './usePropChallengeCockpitState';
 
+type PropChallengeStatusClass =
+  | PropChallengeCockpitState['selectedEvaluation']['status']
+  | PropChallengeCockpitState['challenge']['status']
+  | 'pending'
+  | 'warning';
+
+const isFundedStage = (phase: PropChallengeCockpitState['selectedPhase']) =>
+  phase.stage === 'sim_funded' || phase.stage === 'live_funded';
+
+
+function fundedPhaseStatus(
+  state: PropChallengeCockpitState,
+  treatAsPassed: boolean
+): PropChallengeStatusClass {
+  const { challenge, selectedEvaluation } = state;
+  if (
+    challenge.status === 'failed' ||
+    (selectedEvaluation.status === 'failed' && !treatAsPassed)
+  )
+    return 'failed';
+  return hasFundedLimitWarning(selectedEvaluation.rules) ? 'warning' : 'active';
+}
+
+
+function evaluationPhaseStatus(
+  state: PropChallengeCockpitState,
+  treatAsPassed: boolean
+): PropChallengeStatusClass {
+  if (state.challenge.status !== 'active') return state.challenge.status;
+  return treatAsPassed ? 'passed' : state.selectedEvaluation.status;
+}
+
+
+function selectedPhaseStatus(state: PropChallengeCockpitState): {
+  selectedIsFunded: boolean;
+  statusClass: PropChallengeStatusClass;
+} {
+  const { challenge, currentPhase, selectedEvaluation, selectedPhase } = state;
+  const selectedIsFunded = isFundedStage(selectedPhase);
+  const selectedIndex = challenge.phases.findIndex(
+    (phase) => phase.id === selectedPhase.id
+  );
+  const selectedNextPhase = challenge.phases[selectedIndex + 1];
+  const treatAsPassed =
+    selectedEvaluation.failureAfterTargetReached && Boolean(selectedNextPhase);
+  
+  
+  
+  if (selectedPhase.status === 'pending' && !selectedPhase.startedAt) {
+    return { selectedIsFunded, statusClass: 'pending' };
+  }
+  
+  
+  
+  
+  
+  
+  
+  const isCurrentPhase = selectedPhase.id === currentPhase.id;
+  const hasStoredOutcome =
+    selectedPhase.status === 'passed' || selectedPhase.status === 'failed';
+  if (hasStoredOutcome && (!isCurrentPhase || challenge.status !== 'active')) {
+    return { selectedIsFunded, statusClass: selectedPhase.status };
+  }
+  return {
+    selectedIsFunded,
+    statusClass: selectedIsFunded
+      ? fundedPhaseStatus(state, treatAsPassed)
+      : evaluationPhaseStatus(state, treatAsPassed),
+  };
+}
+
+type PluginInstance = ReturnType<typeof usePlugin>;
+
+const hasPremium = (plugin: PluginInstance): boolean =>
+  plugin?.settings.backendIntegration?.subscriptionTier === 'premium';
+
+
+const offersRuleLinking = (
+  plugin: PluginInstance,
+  challenge: PropChallengeCockpitState['challenge'],
+  isAccountArchived: boolean
+): boolean =>
+  !challenge.profileRef &&
+  !isAccountArchived &&
+  (hasPremium(plugin) ||
+    (plugin?.settings.personalPropFirmProfiles?.length ?? 0) > 0);
+
+
+const showsRuleUpdatesTeaser = (
+  plugin: PluginInstance,
+  challenge: PropChallengeCockpitState['challenge'],
+  isAccountArchived: boolean
+): boolean =>
+  !challenge.profileRef && !isAccountArchived && !hasPremium(plugin);
+
+
+function buildChallengeMenuActions({
+  challenge,
+  selectedPhase,
+  outcomeMasked,
+  hasNextPhase,
+  isSaving,
+  isAccountArchived,
+  canLinkRules,
+}: {
+  challenge: PropChallengeCockpitState['challenge'];
+  selectedPhase: PropChallengeCockpitState['selectedPhase'];
+  outcomeMasked: boolean;
+  hasNextPhase: boolean;
+  isSaving: boolean;
+  isAccountArchived: boolean;
+  canLinkRules: boolean;
+}): PropChallengeMenuAction[] {
+  const isConcluded =
+    challenge.status === 'passed' || challenge.status === 'failed';
+  const lifecycleLocked =
+    isSaving || isAccountArchived || challenge.status !== 'active';
+  const hasCorrections =
+    !outcomeMasked &&
+    challenge.correctionHistory?.some(
+      (audit) => audit.before.id === selectedPhase.id
+    ) === true;
+  return [
+    ...(hasCorrections
+      ? [
+          {
+            id: 'rule-corrections' as const,
+            label: t('account.profiles.correction-history'),
+            disabled: false,
+          },
+        ]
+      : []),
+    {
+      id: 'advance',
+      label: hasNextPhase
+        ? t('account.prop-challenge.actions.progress')
+        : t('account.prop-challenge.actions.mark-passed'),
+      disabled: lifecycleLocked,
+    },
+    {
+      id: 'fail',
+      label: t('account.prop-challenge.actions.mark-failed'),
+      disabled: lifecycleLocked,
+    },
+    {
+      id: 'archive',
+      label: t('account.prop-challenge.actions.archive'),
+      disabled: isSaving || isAccountArchived || !isConcluded,
+    },
+    {
+      
+      
+      
+      
+      
+      id: 'reopen',
+      label: t('account.prop-challenge.actions.reopen'),
+      disabled:
+        isSaving || (!isAccountArchived && challenge.status !== 'failed'),
+    },
+    ...(canLinkRules
+      ? [
+          {
+            id: 'link-rules' as const,
+            label: t('account.prop-challenge.actions.link-rules'),
+            disabled: isSaving,
+          },
+        ]
+      : []),
+  ];
+}
+
+
+const PropChallengeCockpitBody: React.FC<{
+  state: PropChallengeCockpitState;
+  currency: string;
+}> = ({ state, currency }) => {
+  const { formatValue } = useDisplayFormatter();
+  const {
+    challenge,
+    currentPhase,
+    evaluation,
+    payoutEvaluation,
+    selectedEvaluation,
+    selectedPhase,
+  } = state;
+  const ledgerRows = buildPropChallengeLedgerRows(
+    selectedEvaluation.rules,
+    formatValue,
+    currency
+  );
+
+  
+  
+  const payoutPolicy =
+    selectedPhase.id === currentPhase.id
+      ? currentPhase.payoutPolicy
+      : undefined;
+  const payout =
+    payoutPolicy && payoutEvaluation
+      ? { policy: payoutPolicy, evaluation: payoutEvaluation }
+      : undefined;
+  const payoutRows = payout
+    ? buildPayoutRequirementLedgerRows(payout.evaluation, formatValue, currency)
+    : [];
+  const payoutCalculated =
+    payout && payout.evaluation.status !== 'needs_review';
+  return (
+    <>
+      <div
+        className={`journalit-prop-cockpit-body${payoutCalculated ? ' has-payout' : ''}`}
+      >
+        {payout ? (
+          <PropChallengePayoutCard
+            currency={currency}
+            evaluation={evaluation}
+            payout={payout.evaluation}
+            phase={currentPhase}
+            policy={payout.policy}
+          />
+        ) : null}
+        {ledgerRows.length > 0 || payoutRows.length > 0 ? (
+          <PropChallengeRuleLedger
+            caption={t('account.prop-challenge.phase-rules', {
+              phase: selectedPhase.name,
+            })}
+            payoutSection={{
+              label: t('account.prop-challenge.ledger.section.payout'),
+              rows: payoutRows,
+            }}
+            rows={ledgerRows}
+          />
+        ) : null}
+      </div>
+      {payoutCalculated ? (
+        <div className="journalit-prop-cockpit-footer">
+          <PropChallengePayoutPlanEditor
+            challenge={challenge}
+            currency={currency}
+          />
+        </div>
+      ) : null}
+    </>
+  );
+};
+
 export const PropChallengeSection: React.FC<{
   state: PropChallengeCockpitState;
 }> = ({ state }) => {
   const { accountPageData, refreshData } = useAccountPageData();
   const plugin = usePlugin();
   const { currency: globalCurrency } = useCurrency();
-  const { formatValue } = useDisplayFormatter();
   const [isSaving, setIsSaving] = useState(false);
   const registerChallengeSectionTarget = useGuideTarget(
     ACCOUNT_PAGE_CHALLENGE_SECTION_TARGET_ID
@@ -46,7 +295,6 @@ export const PropChallengeSection: React.FC<{
     currentPhase,
     evaluation,
     outcomeMasked,
-    payoutEvaluation,
     selectedEvaluation,
     selectedPhase,
     selectPhase,
@@ -67,49 +315,7 @@ export const PropChallengeSection: React.FC<{
   
   const currency = accountPageData.account.currency || globalCurrency;
 
-  const selectedIsFunded =
-    selectedPhase.stage === 'sim_funded' ||
-    selectedPhase.stage === 'live_funded';
-  const selectedIndex = challenge.phases.findIndex(
-    (phase) => phase.id === selectedPhase.id
-  );
-  const selectedNextPhase = challenge.phases[selectedIndex + 1];
-  const treatAsPassed =
-    selectedEvaluation.failureAfterTargetReached && Boolean(selectedNextPhase);
-  
-  
-  
-  const isCurrentPhase = selectedPhase.id === currentPhase?.id;
-  
-  
-  
-  
-  const storedStatus =
-    selectedPhase.status === 'passed' || selectedPhase.status === 'failed'
-      ? selectedPhase.status
-      : undefined;
-  const historicalStatus =
-    !isCurrentPhase || challenge.status !== 'active' ? storedStatus : undefined;
-  
-  
-  
-  const isUnstartedPhase =
-    selectedPhase.status === 'pending' && !selectedPhase.startedAt;
-  const statusClass = isUnstartedPhase
-    ? 'pending'
-    : (historicalStatus ??
-      (selectedIsFunded
-        ? challenge.status === 'failed' ||
-          (selectedEvaluation.status === 'failed' && !treatAsPassed)
-          ? 'failed'
-          : hasFundedLimitWarning(selectedEvaluation.rules)
-            ? 'warning'
-            : 'active'
-        : challenge.status === 'active'
-          ? treatAsPassed
-            ? 'passed'
-            : selectedEvaluation.status
-          : challenge.status));
+  const { selectedIsFunded, statusClass } = selectedPhaseStatus(state);
 
   const applyAction = async (action: PropChallengeManualAction) => {
     if (!plugin?.accountPageService) return;
@@ -157,76 +363,25 @@ export const PropChallengeSection: React.FC<{
     }
   };
 
-  
-  
-  
-  const isConcluded =
-    challenge.status === 'passed' || challenge.status === 'failed';
-  const actions: PropChallengeMenuAction[] = [
-    ...(!outcomeMasked &&
-    challenge.correctionHistory?.some(
-      (audit) => audit.before.id === selectedPhase.id
-    )
-      ? [
-          {
-            id: 'rule-corrections' as const,
-            label: t('account.profiles.correction-history'),
-            disabled: false,
-          },
-        ]
-      : []),
-    {
-      id: 'advance',
-      label: nextPhase
-        ? t('account.prop-challenge.actions.progress')
-        : t('account.prop-challenge.actions.mark-passed'),
-      disabled: isSaving || isAccountArchived || challenge.status !== 'active',
-    },
-    {
-      id: 'fail',
-      label: t('account.prop-challenge.actions.mark-failed'),
-      disabled: isSaving || isAccountArchived || challenge.status !== 'active',
-    },
-    {
-      id: 'archive',
-      label: t('account.prop-challenge.actions.archive'),
-      disabled: isSaving || isAccountArchived || !isConcluded,
-    },
-    {
-      
-      
-      
-      
-      
-      id: 'reopen',
-      label: t('account.prop-challenge.actions.reopen'),
-      disabled:
-        isSaving || (!isAccountArchived && challenge.status !== 'failed'),
-    },
-    
-    
-    
-    ...(!challenge.profileRef &&
-    !isAccountArchived &&
-    (plugin?.settings.backendIntegration?.subscriptionTier === 'premium' ||
-      (plugin?.settings.personalPropFirmProfiles?.length ?? 0) > 0)
-      ? [
-          {
-            id: 'link-rules' as const,
-            label: t('account.prop-challenge.actions.link-rules'),
-            disabled: isSaving,
-          },
-        ]
-      : []),
-  ];
+  const canLinkRules = offersRuleLinking(plugin, challenge, isAccountArchived);
+  const actions = buildChallengeMenuActions({
+    challenge,
+    selectedPhase,
+    outcomeMasked,
+    hasNextPhase: nextPhase !== undefined,
+    isSaving,
+    isAccountArchived,
+    canLinkRules,
+  });
 
   
-  const upsell =
-    !challenge.profileRef &&
-    !isAccountArchived &&
-    plugin?.settings.backendIntegration?.subscriptionTier !== 'premium' ? (
-      <PropFirmRuleUpdatesTeaser firmName={challenge.firmName} />
-    ) : undefined;
+  const upsell = showsRuleUpdatesTeaser(
+    plugin,
+    challenge,
+    isAccountArchived
+  ) ? (
+    <PropFirmRuleUpdatesTeaser firmName={challenge.firmName} />
+  ) : undefined;
 
   
   
@@ -247,26 +402,6 @@ export const PropChallengeSection: React.FC<{
     );
   }
 
-  const ledgerRows = buildPropChallengeLedgerRows(
-    selectedEvaluation.rules,
-    formatValue,
-    currency
-  );
-
-  
-  
-  const payoutPolicy =
-    selectedPhase.id === currentPhase.id
-      ? currentPhase.payoutPolicy
-      : undefined;
-  const payout =
-    payoutPolicy && payoutEvaluation
-      ? { policy: payoutPolicy, evaluation: payoutEvaluation }
-      : undefined;
-  const payoutRows = payout
-    ? buildPayoutRequirementLedgerRows(payout.evaluation, formatValue, currency)
-    : [];
-
   return (
     <section
       className={`journalit-prop-cockpit is-${statusClass}`}
@@ -278,41 +413,13 @@ export const PropChallengeSection: React.FC<{
         onAction={(action) => void applyAction(action)}
         selectedPhase={selectedPhase}
         status={statusClass}
+        reviewRequired={isReviewOnlyWarning(
+          selectedEvaluation.rules,
+          selectedIsFunded
+        )}
         upsell={upsell}
       />
-      <div
-        className={`journalit-prop-cockpit-body${payout ? ' has-payout' : ''}`}
-      >
-        {payout ? (
-          <PropChallengePayoutCard
-            currency={currency}
-            evaluation={evaluation}
-            payout={payout.evaluation}
-            phase={currentPhase}
-            policy={payout.policy}
-          />
-        ) : null}
-        {ledgerRows.length > 0 || payoutRows.length > 0 ? (
-          <PropChallengeRuleLedger
-            caption={t('account.prop-challenge.phase-rules', {
-              phase: selectedPhase.name,
-            })}
-            payoutSection={{
-              label: t('account.prop-challenge.ledger.section.payout'),
-              rows: payoutRows,
-            }}
-            rows={ledgerRows}
-          />
-        ) : null}
-      </div>
-      {payout ? (
-        <div className="journalit-prop-cockpit-footer">
-          <PropChallengePayoutPlanEditor
-            challenge={challenge}
-            currency={currency}
-          />
-        </div>
-      ) : null}
+      <PropChallengeCockpitBody state={state} currency={currency} />
     </section>
   );
 };

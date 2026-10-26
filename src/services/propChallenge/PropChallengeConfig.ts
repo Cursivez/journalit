@@ -7,16 +7,21 @@ import type {
   PropChallengePhase,
   PropChallengePayoutPolicy,
   PropChallengeRule,
+  ExecutablePropChallengeRule,
   PropFirmProfilePhase,
   PropFirmProfileRule,
   PropFirmProfileSelection,
 } from './types';
 import { DrawdownType, type ProfitTargetType } from '../account/types';
 import type { evaluatePropChallengePhase } from './PropChallengeRuleEngine';
+import { isExecutableRule } from './PropChallengeRuleReview';
 import { getTradeBrokerIdentity } from './tradeIdentity';
 import { normalizePropChallengePayoutPolicy } from './normalization';
 
-export type PropChallengeRuleKind = PropChallengeRule['kind'];
+export type PropChallengeRuleKind = Exclude<
+  PropChallengeRule['kind'],
+  'max_position_size'
+>;
 
 export function createPropChallengeQualifyingDaysDraft(): NonNullable<
   PropChallengePayoutPolicy['qualifyingDays']
@@ -30,6 +35,32 @@ export function isPropChallengePayoutPolicyComplete(
 ): boolean {
   return (
     policy === undefined || normalizePropChallengePayoutPolicy(policy) !== null
+  );
+}
+
+
+export function resolvePhaseProfitTarget(
+  rule: Pick<
+    Extract<PropChallengeRule, { kind: 'profit_target' }>,
+    'targetType' | 'amount'
+  >,
+  startingBalance: number
+): number | undefined {
+  if (rule.targetType !== 'percentage') return rule.amount;
+  return startingBalance > 0
+    ? (startingBalance * rule.amount) / 100
+    : undefined;
+}
+
+
+export function phaseProfitTargetNeedsBalance(
+  phase: Pick<PropChallengePhase, 'rules' | 'startingBalance'>
+): boolean {
+  return phase.rules.some(
+    (rule) =>
+      rule.enabled &&
+      rule.kind === 'profit_target' &&
+      resolvePhaseProfitTarget(rule, phase.startingBalance) === undefined
   );
 }
 
@@ -64,9 +95,16 @@ export function createDefaultPropChallengePayoutPolicy(): PropChallengePayoutPol
 
 export function createPropChallengeRule(
   kind: PropChallengeRuleKind
-): PropChallengeRule {
+): ExecutablePropChallengeRule {
   const base = { id: generateUUID(), enabled: true };
   switch (kind) {
+    case 'manual_review':
+      return {
+        ...base,
+        kind,
+        reason:
+          'Confirm account-specific terms with the firm before relying on calculations.',
+      };
     case 'profit_target':
       return { ...base, kind, amount: 0, targetType: 'absolute' };
     case 'drawdown':
@@ -83,8 +121,6 @@ export function createPropChallengeRule(
       return { ...base, kind, days: 0, minimumDailyProfit: 0 };
     case 'consistency':
       return { ...base, kind, maxBestDayPercent: 0 };
-    case 'max_position_size':
-      return { ...base, kind, maxContracts: 0 };
   }
 }
 
@@ -186,7 +222,9 @@ export function buildPhaseFromProfilePhase(
     stage: cloned.stage,
     status: 'pending',
     startingBalance: cloned.startingBalance,
-    rules: cloned.rules.map(createRuleFromProfile),
+    rules: cloned.rules.flatMap((rule) =>
+      isExecutableRule(rule) ? [createRuleFromProfile(rule)] : []
+    ),
     profileSnapshot: structuredClone(cloned),
     profilePhaseIndex: index,
     ...(cloned.payoutPolicy ? { payoutPolicy: cloned.payoutPolicy } : {}),
@@ -740,8 +778,14 @@ export function removePropChallengePhase(
 
 
 export function isPropChallengeRuleComplete(rule: PropChallengeRule): boolean {
-  if (!rule.enabled) return true;
+  if (!rule.enabled || rule.kind === 'max_position_size') return true;
   switch (rule.kind) {
+    case 'manual_review':
+      return (
+        Boolean(rule.reason.trim()) &&
+        (rule.amount === undefined ||
+          (Number.isFinite(rule.amount) && rule.amount > 0))
+      );
     case 'profit_target':
     case 'drawdown':
     case 'daily_loss_limit':
@@ -763,52 +807,12 @@ export function isPropChallengeRuleComplete(rule: PropChallengeRule): boolean {
         rule.maxBestDayPercent > 0 &&
         rule.maxBestDayPercent <= 100
       );
-    case 'max_position_size': {
-      if ('maxContracts' in rule) {
-        return Number.isFinite(rule.maxContracts) && rule.maxContracts > 0;
-      }
-      if (
-        !Number.isFinite(rule.initialContracts) ||
-        rule.initialContracts <= 0
-      ) {
-        return false;
-      }
-      
-      
-      
-      
-      if ('profitTiers' in rule) {
-        if (rule.profitTiers.length === 0) return false;
-        let previousProfit = 0;
-        let previousContracts = rule.initialContracts;
-        for (const tier of rule.profitTiers) {
-          if (
-            !Number.isFinite(tier.profit) ||
-            tier.profit <= previousProfit ||
-            !Number.isFinite(tier.maxContracts) ||
-            tier.maxContracts <= previousContracts
-          ) {
-            return false;
-          }
-          previousProfit = tier.profit;
-          previousContracts = tier.maxContracts;
-        }
-        return true;
-      }
-      return (
-        Number.isFinite(rule.profitPerAdditionalContract) &&
-        rule.profitPerAdditionalContract > 0 &&
-        (rule.maximumContracts === undefined ||
-          (Number.isFinite(rule.maximumContracts) &&
-            rule.maximumContracts >= rule.initialContracts))
-      );
-    }
   }
 }
 
 export function addPropChallengeRule(
   phase: PropChallengePhase,
-  rule: PropChallengeRule
+  rule: ExecutablePropChallengeRule
 ): PropChallengePhase {
   return { ...phase, rules: [...phase.rules, rule] };
 }

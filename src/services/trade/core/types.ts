@@ -1,3 +1,4 @@
+import type { StopLossTarget } from './StopLossTargets';
 import { CustomFieldValues } from '../../../types/customFields';
 import type { ImageAnnotations } from '../../../types/imageAnnotations';
 import type { CanonicalProjectionClearField } from './CanonicalProjectionFields';
@@ -43,9 +44,10 @@ export interface TradeMutationInput {
   instrument?: string;
   assetType?: string;
   account?: string[];
+  
+  clearAccountAssignment?: boolean;
   setup?: string[];
   mistake?: string[];
-  customTags?: string[];
   tags?: string[];
   commission?: number;
   hasExplicitCommission?: boolean;
@@ -53,7 +55,7 @@ export interface TradeMutationInput {
   swap?: number;
   fees?: number;
   rebate?: number;
-  stopLoss?: number;
+  stopLosses?: StopLossTarget[];
   takeProfits?: Array<{
     price?: number;
     closePercent?: number;
@@ -96,6 +98,7 @@ export interface TradeMutationInput {
   tradeReview?: unknown;
   reviewed?: boolean;
   reviewedAt?: string;
+  tradeRating?: number;
   notes?: string;
   mtComment?: string;
   originalPnl?: number;
@@ -135,12 +138,17 @@ export interface TradeMutationInput {
   [key: string]: unknown;
 }
 
+
+export type TradeNoteKind = 'trade' | 'backtest-trade';
+
 export interface ExistingTradePathContext {
   filePath: string;
   existingEntryTime?: Date | string | null;
   existingTicker?: string;
   existingType?: string;
   isMissedTrade?: boolean;
+  
+  targetKind?: TradeNoteKind;
 }
 
 export interface TradeMutationPlan<
@@ -156,6 +164,6 @@ export interface TradeMutationPlan<
     required: boolean;
     dateChanged: boolean;
     tickerChanged: boolean;
-    needsRegularTradePath: boolean;
+    needsNoteKindPath: boolean;
   };
 }

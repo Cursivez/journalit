@@ -13,6 +13,8 @@ import { RechartsPortalTooltip } from './RechartsPortalTooltip';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { t } from '../../lang/helpers';
 import { generateNiceAxis } from '../../utils/chartUtils';
+import { useChartAnimationActive } from './chartAnimation';
+import { skipVerticalGridCoordinates } from './chartGrid';
 
 interface SetupPairTrendPoint {
   index: number;
@@ -35,6 +37,7 @@ export const SetupPairTrendChart: React.FC<SetupPairTrendChartProps> = ({
   displayKind,
   points,
 }) => {
+  const isAnimationActive = useChartAnimationActive();
   const chartRef = useRef<HTMLDivElement>(null);
   const { formatValue } = useDisplayFormatter();
   const chartData = buildSignedTrendChartData(points, baseline);
@@ -107,6 +110,7 @@ export const SetupPairTrendChart: React.FC<SetupPairTrendChartProps> = ({
           strokeDasharray="3 3"
           strokeOpacity={0.5}
           vertical={false}
+          verticalCoordinatesGenerator={skipVerticalGridCoordinates}
         />
         <ReferenceLine
           y={baseline}
@@ -158,6 +162,7 @@ export const SetupPairTrendChart: React.FC<SetupPairTrendChartProps> = ({
               stroke: 'var(--background-primary)',
               strokeWidth: 1,
             }}
+            isAnimationActive={isAnimationActive}
             animationDuration={500}
             dataKey="value"
             dot={{
@@ -199,6 +204,7 @@ export const SetupPairTrendChart: React.FC<SetupPairTrendChartProps> = ({
                 stroke: 'var(--background-primary)',
                 strokeWidth: 1,
               }}
+              isAnimationActive={isAnimationActive}
               animationDuration={500}
               connectNulls={false}
               dataKey="positiveValue"

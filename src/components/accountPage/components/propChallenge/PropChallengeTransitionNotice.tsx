@@ -51,6 +51,186 @@ const ICON: Record<PropChallengeNotice['kind'], typeof AlertTriangle> = {
   payout_lost: Info,
 };
 
+type NoticeAction = { label: string; onClick: () => void };
+
+interface NoticeContent {
+  title: string;
+  description?: string;
+  extraDescription?: string;
+  primary: NoticeAction & { destructive?: boolean };
+  
+  secondaryLabel: string;
+  middleAction?: NoticeAction;
+}
+
+interface NoticeHandlers {
+  lifecycle: (action: 'advance' | 'archive' | 'reopen') => void;
+  dismiss: () => void;
+  recordPayout: () => void;
+  assignIdentityToPhase: () => void;
+  progressWithIdentity: () => void;
+  money: (value: number) => string;
+  moneyMasked: boolean;
+}
+
+type NoticeContentBuilder = (
+  notice: PropChallengeNotice,
+  handlers: NoticeHandlers
+) => NoticeContent;
+
+const phaseFailedContent: NoticeContentBuilder = (notice, { lifecycle }) => ({
+  title: t('account.prop-challenge.notice.failed-title', {
+    phase: notice.phase.name,
+  }),
+  description: notice.failure
+    ? t('account.prop-challenge.notice.failed-description', {
+        rule: t(
+          `account.prop-challenge.summary.rule.${notice.failure.ruleKind}`
+        ),
+        date: formatDateDisplay(new Date(notice.failure.breachedAt)),
+      })
+    : t('account.prop-challenge.notice.failed-manual'),
+  primary: {
+    label: t('account.prop-challenge.actions.archive'),
+    onClick: () => lifecycle('archive'),
+    destructive: true,
+  },
+  middleAction: {
+    label: t('account.prop-challenge.actions.reopen'),
+    onClick: () => lifecycle('reopen'),
+  },
+  secondaryLabel: t('account.prop-challenge.notice.keep-open'),
+});
+
+
+function unknownAccountActions(
+  notice: PropChallengeNotice,
+  { assignIdentityToPhase, progressWithIdentity }: NoticeHandlers
+): Pick<NoticeContent, 'primary' | 'middleAction'> {
+  const samePhase = {
+    label: t('account.prop-challenge.notice.same-phase'),
+    onClick: assignIdentityToPhase,
+  };
+  if (!notice.nextPhase) return { primary: samePhase };
+  return {
+    middleAction: samePhase,
+    primary: {
+      label: t('account.prop-challenge.actions.progress-to', {
+        phase: notice.nextPhase.name,
+      }),
+      onClick: progressWithIdentity,
+    },
+  };
+}
+
+const unknownAccountContent: NoticeContentBuilder = (notice, handlers) => ({
+  title: t('account.prop-challenge.notice.unknown-title', {
+    label: notice.identityLabel ?? notice.identity ?? '',
+  }),
+  description: t(
+    notice.tradeCount === 1
+      ? 'account.prop-challenge.notice.unknown-description-one'
+      : 'account.prop-challenge.notice.unknown-description',
+    {
+      count: String(notice.tradeCount ?? 0),
+      date: notice.firstTradeAt
+        ? formatDateDisplay(new Date(notice.firstTradeAt))
+        : '',
+    }
+  ),
+  secondaryLabel: t('account.prop-challenge.notice.not-now'),
+  ...unknownAccountActions(notice, handlers),
+});
+
+const targetReachedContent: NoticeContentBuilder = (notice, { lifecycle }) => {
+  const next = notice.nextPhase?.name ?? '';
+  return {
+    title: t('account.prop-challenge.notice.target-title', {
+      phase: notice.phase.name,
+    }),
+    description: t('account.prop-challenge.notice.target-description', {
+      next,
+    }),
+    extraDescription:
+      notice.breachAfterReached && notice.reachedAt
+        ? t('account.prop-challenge.notice.breach-after-reached', {
+            time: new Date(notice.reachedAt).toLocaleString(),
+          })
+        : undefined,
+    primary: {
+      label: t('account.prop-challenge.actions.progress-to', { phase: next }),
+      onClick: () => lifecycle('advance'),
+    },
+    secondaryLabel: t('account.prop-challenge.notice.not-yet'),
+  };
+};
+
+const evaluationPassedContent: NoticeContentBuilder = (
+  _notice,
+  { lifecycle }
+) => ({
+  title: t('account.prop-challenge.notice.passed-title'),
+  description: t('account.prop-challenge.notice.passed-description'),
+  primary: {
+    label: t('account.prop-challenge.actions.mark-passed'),
+    onClick: () => lifecycle('advance'),
+  },
+  secondaryLabel: t('account.prop-challenge.notice.not-yet'),
+});
+
+const payoutAvailableContent: NoticeContentBuilder = (
+  notice,
+  { money, moneyMasked, recordPayout }
+) => ({
+  title: t('account.prop-challenge.notice.payout-title', {
+    amount: money(notice.amount ?? 0),
+  }),
+  description:
+    !moneyMasked &&
+    notice.suggestedAmount !== undefined &&
+    notice.suggestedAmount !== notice.amount
+      ? t('account.prop-challenge.notice.payout-plan', {
+          amount: money(notice.suggestedAmount),
+        })
+      : undefined,
+  primary: {
+    label: t('account.prop-challenge.notice.record-payout'),
+    onClick: recordPayout,
+  },
+  secondaryLabel: t('account.prop-challenge.notice.skip-cycle'),
+});
+
+const payoutLostContent: NoticeContentBuilder = (notice, { dismiss }) => ({
+  title: t('account.prop-challenge.notice.lost-title'),
+  description: notice.requirements?.length
+    ? t('account.prop-challenge.notice.lost-description', {
+        requirements: notice.requirements
+          .map((kind) => payoutRequirementLabel(kind))
+          .join(', '),
+      })
+    : undefined,
+  primary: {
+    label: t('account.prop-challenge.notice.dismiss'),
+    onClick: dismiss,
+  },
+  secondaryLabel: '',
+});
+
+const NOTICE_CONTENT: Record<
+  PropChallengeNotice['kind'],
+  NoticeContentBuilder
+> = {
+  phase_failed: phaseFailedContent,
+  unknown_account: unknownAccountContent,
+  target_reached: targetReachedContent,
+  evaluation_passed: evaluationPassedContent,
+  payout_available: payoutAvailableContent,
+  payout_lost: payoutLostContent,
+};
+
+const buildNoticeContent: NoticeContentBuilder = (notice, handlers) =>
+  NOTICE_CONTENT[notice.kind](notice, handlers);
+
 function TransitionNoticeActions({
   busy,
   secondaryLabel,
@@ -194,172 +374,55 @@ export const PropChallengeTransitionNotice: React.FC<{
     );
   };
 
-  let title: string;
-  let description: string | undefined;
-  let extraDescription: string | undefined = undefined;
-  let primary: { label: string; onClick: () => void; destructive?: boolean };
-  let secondaryLabel: string;
-  let middleAction: { label: string; onClick: () => void } | undefined =
-    undefined;
-
-  switch (notice.kind) {
-    case 'phase_failed': {
-      title = t('account.prop-challenge.notice.failed-title', {
-        phase: notice.phase.name,
-      });
-      description = notice.failure
-        ? t('account.prop-challenge.notice.failed-description', {
-            rule: t(
-              `account.prop-challenge.summary.rule.${notice.failure.ruleKind}`
-            ),
-            date: formatDateDisplay(new Date(notice.failure.breachedAt)),
-          })
-        : t('account.prop-challenge.notice.failed-manual');
-      primary = {
-        label: t('account.prop-challenge.actions.archive'),
-        onClick: () => void lifecycle('archive'),
-        destructive: true,
-      };
-      middleAction = {
-        label: t('account.prop-challenge.actions.reopen'),
-        onClick: () => void lifecycle('reopen'),
-      };
-      secondaryLabel = t('account.prop-challenge.notice.keep-open');
-      break;
-    }
-    case 'unknown_account': {
-      const label = notice.identityLabel ?? notice.identity ?? '';
-      const assignCurrent = () =>
-        void run(async () => {
-          if (!notice.identity) return;
-          const next = assignBrokerIdentityToPhase(
-            state.challenge,
-            notice.phase.id,
-            notice.identity
-          );
-          if (next === state.challenge) return;
-          await savePropChallengeConfig({
-            accountPageService: plugin.accountPageService,
-            accountName: account.name,
-            accountId: account.accountId,
-            config: next,
-            expectedConfig: state.challenge,
-          });
-        });
-      const progress = () =>
-        void run(async () => {
-          if (!notice.identity) return;
-          const at = await promptPropChallengeAdvanceTime(context, {
-            defaultAt: notice.firstTradeAt
-              ? new Date(notice.firstTradeAt)
-              : undefined,
-          });
-          if (!at) return;
-          await applyPropChallengeAdvanceWithIdentity(context, {
-            identity: notice.identity,
-            at,
-          });
-        });
-      title = t('account.prop-challenge.notice.unknown-title', { label });
-      description = t(
-        notice.tradeCount === 1
-          ? 'account.prop-challenge.notice.unknown-description-one'
-          : 'account.prop-challenge.notice.unknown-description',
-        {
-          count: String(notice.tradeCount ?? 0),
-          date: notice.firstTradeAt
-            ? formatDateDisplay(new Date(notice.firstTradeAt))
-            : '',
-        }
+  const assignIdentityToPhase = () =>
+    void run(async () => {
+      if (!notice.identity) return;
+      const next = assignBrokerIdentityToPhase(
+        state.challenge,
+        notice.phase.id,
+        notice.identity
       );
-      secondaryLabel = t('account.prop-challenge.notice.not-now');
-      if (notice.nextPhase) {
-        middleAction = {
-          label: t('account.prop-challenge.notice.same-phase'),
-          onClick: assignCurrent,
-        };
-        primary = {
-          label: t('account.prop-challenge.actions.progress-to', {
-            phase: notice.nextPhase.name,
-          }),
-          onClick: progress,
-        };
-      } else {
-        primary = {
-          label: t('account.prop-challenge.notice.same-phase'),
-          onClick: assignCurrent,
-        };
-      }
-      break;
-    }
-    case 'target_reached': {
-      title = t('account.prop-challenge.notice.target-title', {
-        phase: notice.phase.name,
+      if (next === state.challenge) return;
+      await savePropChallengeConfig({
+        accountPageService: plugin.accountPageService,
+        accountName: account.name,
+        accountId: account.accountId,
+        config: next,
+        expectedConfig: state.challenge,
       });
-      description = t('account.prop-challenge.notice.target-description', {
-        next: notice.nextPhase?.name ?? '',
+    });
+
+  const progressWithIdentity = () =>
+    void run(async () => {
+      if (!notice.identity) return;
+      const at = await promptPropChallengeAdvanceTime(context, {
+        defaultAt: notice.firstTradeAt
+          ? new Date(notice.firstTradeAt)
+          : undefined,
       });
-      extraDescription =
-        notice.breachAfterReached && notice.reachedAt
-          ? t('account.prop-challenge.notice.breach-after-reached', {
-              time: new Date(notice.reachedAt).toLocaleString(),
-            })
-          : undefined;
-      primary = {
-        label: t('account.prop-challenge.actions.progress-to', {
-          phase: notice.nextPhase?.name ?? '',
-        }),
-        onClick: () => void lifecycle('advance'),
-      };
-      secondaryLabel = t('account.prop-challenge.notice.not-yet');
-      break;
-    }
-    case 'evaluation_passed': {
-      title = t('account.prop-challenge.notice.passed-title');
-      description = t('account.prop-challenge.notice.passed-description');
-      primary = {
-        label: t('account.prop-challenge.actions.mark-passed'),
-        onClick: () => void lifecycle('advance'),
-      };
-      secondaryLabel = t('account.prop-challenge.notice.not-yet');
-      break;
-    }
-    case 'payout_available': {
-      title = t('account.prop-challenge.notice.payout-title', {
-        amount: money(notice.amount ?? 0),
+      if (!at) return;
+      await applyPropChallengeAdvanceWithIdentity(context, {
+        identity: notice.identity,
+        at,
       });
-      description =
-        !moneyMasked &&
-        notice.suggestedAmount !== undefined &&
-        notice.suggestedAmount !== notice.amount
-          ? t('account.prop-challenge.notice.payout-plan', {
-              amount: money(notice.suggestedAmount),
-            })
-          : undefined;
-      primary = {
-        label: t('account.prop-challenge.notice.record-payout'),
-        onClick: recordPayout,
-      };
-      secondaryLabel = t('account.prop-challenge.notice.skip-cycle');
-      break;
-    }
-    case 'payout_lost': {
-      title = t('account.prop-challenge.notice.lost-title');
-      description = notice.requirements?.length
-        ? t('account.prop-challenge.notice.lost-description', {
-            requirements: notice.requirements
-              .map((kind) => payoutRequirementLabel(kind))
-              .join(', '),
-          })
-        : undefined;
-      primary = {
-        label: t('account.prop-challenge.notice.dismiss'),
-        onClick: () => void dismiss(),
-      };
-      secondaryLabel = '';
-      break;
-    }
-  }
+    });
+
+  const {
+    title,
+    description,
+    extraDescription,
+    primary,
+    secondaryLabel,
+    middleAction,
+  } = buildNoticeContent(notice, {
+    lifecycle: (action) => void lifecycle(action),
+    dismiss: () => void dismiss(),
+    recordPayout,
+    assignIdentityToPhase,
+    progressWithIdentity,
+    money,
+    moneyMasked,
+  });
 
   const Icon = ICON[notice.kind];
   return (

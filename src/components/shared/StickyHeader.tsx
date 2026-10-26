@@ -68,12 +68,13 @@ export function useStickyHeader({
     updateStickyHeader();
     window.addEventListener('scroll', updateStickyHeader, true);
     window.addEventListener('resize', updateStickyHeader);
-    window.activeDocument.addEventListener(
-      'visibilitychange',
-      updateStickyHeader
-    );
-
     const containerEl = containerRef.current;
+    
+    
+    
+    const headerDocument = containerEl?.ownerDocument ?? window.activeDocument;
+    headerDocument.addEventListener('visibilitychange', updateStickyHeader);
+
     const workspaceRoot =
       containerEl?.closest('.workspace') ?? window.activeDocument.body;
     const activeLeafObserver = new MutationObserver(updateStickyHeader);
@@ -87,7 +88,7 @@ export function useStickyHeader({
       activeLeafObserver.disconnect();
       window.removeEventListener('scroll', updateStickyHeader, true);
       window.removeEventListener('resize', updateStickyHeader);
-      window.activeDocument.removeEventListener(
+      headerDocument.removeEventListener(
         'visibilitychange',
         updateStickyHeader
       );

@@ -10,7 +10,7 @@ import React, {
 } from 'react';
 import JournalitPlugin from '../../main';
 import { TradeLogService } from '../../services/tradelog/TradeLogService';
-import { ServiceManager } from '../../services/ServiceManager';
+import { isServiceCleanupCancellation } from '../../services/ServiceManager';
 import { TimeNode, TradeLogFilters } from '../../services/tradelog/types';
 import { TradeLogHeader } from './TradeLogHeader';
 import { TradeLogEmptyState } from './TradeLogEmptyState';
@@ -28,7 +28,7 @@ import { useDebounced } from '../../hooks/useDebounced';
 import { useEventBus, useEventBusMultiple } from '../../hooks/useEventBus';
 import { useLeafActive } from '../../hooks/useLeafActive';
 import { useTradeOperationResult } from '../../hooks/useTradeOperationResult';
-import { TradeFormModal } from '../forms/trade/TradeFormModal';
+import { TradeFormDrawer } from '../forms/trade/TradeFormDrawer';
 import { Notice, WorkspaceLeaf, setTooltip } from 'obsidian';
 import { t, tPlural } from '../../lang/helpers';
 import {
@@ -44,6 +44,9 @@ import {
   resolveTradeLogSettings,
 } from './columnConfig';
 import { SortConfig, applySorting } from './sortUtils';
+import { queryTradeLog } from './tradeLogQuery';
+import { useTradeLogExport } from './useTradeLogExport';
+import { useTradeLogExportAction } from './useTradeLogExportAction';
 import {
   ArrowUp01,
   ArrowDown10,
@@ -56,14 +59,7 @@ import {
   type ObsidianIconComponent,
 } from '../shared/icons/ObsidianIcon';
 import { BatchActionToolbar } from './BatchActionToolbar';
-import {
-  batchMarkAsReviewed,
-  batchAddSetups,
-  batchAddTags,
-  batchAddMistakes,
-  batchDeleteTrades,
-  batchDuplicateTrades,
-} from './batchOperations';
+import { batchDeleteTrades, batchDuplicateTrades } from './batchOperations';
 import { OptionType } from '../../services/options';
 import { getTradeIdsInRange } from './selectionUtils';
 import { createTradingDayFromString } from '../../utils/tradingDayUtils';
@@ -120,7 +116,6 @@ import {
 } from '../../types/labelColor';
 import {
   clearInactiveTreeSessionLogTags,
-  getActiveTreeSessionLogTags,
   pruneUnknownSessionLogTags,
   refreshSessionLogTagDefinitionNodeIdentities,
   shouldShowTradeLogFilteredEmptyState,
@@ -148,28 +143,30 @@ function getDuplicateAwareStringKeys(values: string[]): string[] {
 }
 
 const GUIDE_REFRESH_EVENTS: Array<
-  | 'trade:changed'
-  | 'missed-trade:changed'
+  | 'trade-data:changed'
+  | 'missed-trade-data:changed'
   | 'backtest-trade:changed'
   | 'folder-path:changed'
 > = [
-  'trade:changed',
-  'missed-trade:changed',
+  'trade-data:changed',
+  'missed-trade-data:changed',
   'backtest-trade:changed',
   'folder-path:changed',
 ];
 
+
+
+const TRADE_DATA_RELOAD_DEBOUNCE_MS = 150;
+
 const TRADE_DATA_CHANGE_EVENTS: Array<
-  | 'trade:committed'
-  | 'trade:changed'
-  | 'missed-trade:changed'
+  | 'trade-data:changed'
+  | 'missed-trade-data:changed'
   | 'backtest-trade:changed'
   | 'folder-path:changed'
   | 'drc:session-log-index-invalidated'
 > = [
-  'trade:committed',
-  'trade:changed',
-  'missed-trade:changed',
+  'trade-data:changed',
+  'missed-trade-data:changed',
   'backtest-trade:changed',
   'folder-path:changed',
   'drc:session-log-index-invalidated',
@@ -1069,9 +1066,8 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         let count = tradeCount;
 
         if (tradeCount === 0) {
-          const serviceManager = ServiceManager.getInstance(plugin.app, plugin);
           const missedTradeService =
-            await serviceManager.getMissedTradeService();
+            await plugin.serviceManager.getMissedTradeService();
           count += await missedTradeService.getMissedTradeCount();
         }
 
@@ -1079,6 +1075,8 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
           setTradeCountResolution({ status: 'ready', count });
         }
       } catch (error) {
+        
+        if (isServiceCleanupCancellation(error)) return;
         if (!ignoreUnmount || !ignoreUnmount()) {
           setTradeCountResolution((previousResolution) =>
             previousResolution.status === 'ready'
@@ -1128,9 +1126,8 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
 
   useEventBusMultiple(
     [
-      'trade:committed',
-      'trade:changed',
-      'missed-trade:changed',
+      'trade-data:changed',
+      'missed-trade-data:changed',
       'backtest-trade:changed',
       'review:changed',
       'settings:changed',
@@ -1367,16 +1364,6 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   }, [emitGuideAction, guideVersion, isMultiSelectMode]);
 
   
-  const setupOptions = useMemo(() => {
-    void optionsVersion;
-    try {
-      return plugin.optionsService?.getOptions(OptionType.SETUP) || [];
-    } catch (error) {
-      console.error('Failed to load setup options:', error);
-      return [];
-    }
-  }, [plugin.optionsService, optionsVersion]);
-
   const mistakeOptions = useMemo(() => {
     void optionsVersion;
     try {
@@ -1449,26 +1436,10 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         
         
         isLoadingRef.current = true;
-        const data = await tradeLogService.getHierarchicalData(
-          activeFilters.viewLevel,
-          activeFilters.dateRange[0] || undefined,
-          activeFilters.dateRange[1] || undefined,
-          activeFilters.tradeTypes,
-          activeFilters.statuses,
-          activeFilters.accounts,
-          activeFilters.tickers,
-          activeFilters.setups,
-          activeFilters.tags,
-          activeFilters.mistakes,
-          activeFilters.customFieldFilters,
-          activeFilters.reviewStatus,
-          activeFilters.directions,
-          getActiveTreeSessionLogTags(activeFilters),
-          activeFilters.analyticsDateBasis,
-          activeTradeLogScope?.filePaths,
-          activeFilters.accountPhases,
-          activeFilters.exclusions,
-          activeFilters.matchModes
+        const data = await queryTradeLog(
+          tradeLogService,
+          activeFilters,
+          activeTradeLogScope?.filePaths
         );
 
         if (loadGenerationRef.current !== loadGeneration) {
@@ -1522,6 +1493,24 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
       operationScopeTransitionFiltersRef.current ?? debouncedFilters
     );
   }, [debouncedFilters, loadDataForFilters]);
+
+  const { handleExport, isExporting } = useTradeLogExport({
+    plugin,
+    leaf,
+    tradeLogService,
+    filters,
+    operationFilePaths: activeTradeLogScope?.filePaths,
+    visibleColumns,
+    allColumns,
+    sortConfig: effectiveSortConfig,
+    snapshotKeysClaimedByCustomFields,
+  });
+  useTradeLogExportAction({
+    leaf,
+    enabled: tradeLogMode === 'trades',
+    isExporting,
+    onExport: handleExport,
+  });
 
   const syncAndLoadPersistedFilters = useCallback(() => {
     if (activeTradeLogScope) {
@@ -1733,7 +1722,10 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
   
   const handleBatchMarkReviewed = useCallback(async () => {
     const paths = Array.from(selectedTrades);
-    const result = await batchMarkAsReviewed(plugin.app, paths);
+    const result = await plugin.tradeService.applyJournalEditToTrades(paths, {
+      type: 'mark-reviewed',
+      reviewedAt: new Date().toISOString(),
+    });
 
     
     if (result.errors > 0 && result.processed === 0) {
@@ -1771,17 +1763,16 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     if (result.processed > 0) {
       setIsMultiSelectMode(false);
     }
-  }, [selectedTrades, plugin.app]);
+  }, [selectedTrades, plugin.tradeService]);
 
   const handleBatchAddSetups = useCallback(
     async (setupIds: string[]) => {
       const paths = Array.from(selectedTrades);
-      const result = await batchAddSetups(
-        plugin.app,
-        paths,
-        setupIds,
-        setupIds
-      );
+      const result = await plugin.tradeService.applyJournalEditToTrades(paths, {
+        type: 'add',
+        field: 'setup',
+        values: setupIds,
+      });
 
       
       if (result.errors > 0 && result.processed === 0) {
@@ -1826,13 +1817,17 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         setIsMultiSelectMode(false);
       }
     },
-    [selectedTrades, plugin.app]
+    [selectedTrades, plugin.tradeService]
   );
 
   const handleBatchAddMistakes = useCallback(
     async (mistakes: string[]) => {
       const paths = Array.from(selectedTrades);
-      const result = await batchAddMistakes(plugin.app, paths, mistakes);
+      const result = await plugin.tradeService.applyJournalEditToTrades(paths, {
+        type: 'add',
+        field: 'mistake',
+        values: mistakes,
+      });
 
       
       if (result.errors > 0 && result.processed === 0) {
@@ -1877,13 +1872,17 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         setIsMultiSelectMode(false);
       }
     },
-    [selectedTrades, plugin.app]
+    [selectedTrades, plugin.tradeService]
   );
 
   const handleBatchAddTags = useCallback(
     async (tags: string[]) => {
       const paths = Array.from(selectedTrades);
-      const result = await batchAddTags(plugin.app, paths, tags);
+      const result = await plugin.tradeService.applyJournalEditToTrades(paths, {
+        type: 'add',
+        field: 'tags',
+        values: tags,
+      });
 
       if (result.errors > 0 && result.processed === 0) {
         new Notice(
@@ -1924,7 +1923,7 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
         setIsMultiSelectMode(false);
       }
     },
-    [selectedTrades, plugin.app]
+    [selectedTrades, plugin.tradeService]
   );
 
   const handleBatchDuplicate = useCallback(async () => {
@@ -1996,18 +1995,10 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
       window.clearTimeout(reloadTimerRef.current);
     }
     reloadTimerRef.current = window.setTimeout(() => {
-      void (async () => {
-        
-        if (plugin.app.workspace.trigger) {
-          plugin.app.workspace.trigger('layout-change');
-        }
-        
-        await new Promise((resolve) => window.setTimeout(resolve, 80));
-        await loadData();
-        reloadTimerRef.current = null;
-      })();
-    }, 400);
-  }, [loadData, plugin.app.workspace]);
+      reloadTimerRef.current = null;
+      void loadData();
+    }, TRADE_DATA_RELOAD_DEBOUNCE_MS);
+  }, [loadData]);
 
   
   useEventBusMultiple(
@@ -2372,7 +2363,6 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     handleBatchDelete,
     handleSelectAll,
     handleClearSelection,
-    setupOptions,
     tagOptions,
     mistakeOptions,
     tradesMinWidth,
@@ -2425,7 +2415,6 @@ const TradeLogContent: React.FC<{
     handleBatchDelete,
     handleSelectAll,
     handleClearSelection,
-    setupOptions,
     tagOptions,
     mistakeOptions,
     tradesMinWidth,
@@ -2471,8 +2460,8 @@ const TradeLogContent: React.FC<{
     isTradeCountResolved
   ) {
     const handleOpenTradeForm = () => {
-      const modal = new TradeFormModal({ app: plugin.app, plugin });
-      modal.open();
+      const drawer = new TradeFormDrawer({ app: plugin.app, plugin });
+      drawer.open();
     };
 
     const handleOpenTradeImport = () => {
@@ -2556,7 +2545,6 @@ const TradeLogContent: React.FC<{
             onDelete={handleBatchDelete}
             onSelectAll={handleSelectAll}
             onClearSelection={handleClearSelection}
-            setupOptions={setupOptions}
             tagOptions={tagOptions}
             mistakeOptions={mistakeOptions}
           />

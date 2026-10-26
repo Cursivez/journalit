@@ -8,12 +8,14 @@ import type { Trade } from '../../dashboard/utils/dataUtils';
 import { preparePnLChartData } from '../../../utils/chartUtils';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
-import { cssVars } from '../../../styles/inlineStylePolicy';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
-import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
-import { shareLoadingProps } from '../../../services/share/brandedCapture';
+import {
+  DirectionalChartSkeleton,
+  DirectionalContainer,
+  DirectionalSection,
+  type TradeDirection,
+} from './shared/DirectionalChartLayout';
 
 const asDirectionalTrades = (value: unknown): Trade[] =>
   Array.isArray(value)
@@ -24,6 +26,36 @@ const asDirectionalTrades = (value: unknown): Trade[] =>
 
 const normalizeDirectionValue = (value: unknown): string =>
   typeof value === 'string' ? value.toLowerCase() : '';
+
+const DIRECTION_TITLE_KEYS = {
+  long: 'widget.directional-pnl.title.long',
+  short: 'widget.directional-pnl.title.short',
+} as const;
+
+const DIRECTION_EMPTY_KEYS = {
+  long: 'widget.directional-pnl.empty.no-long',
+  short: 'widget.directional-pnl.empty.no-short',
+} as const;
+
+const SKELETON_AXIS_WIDTHS = [30, 25, 35] as const;
+const SKELETON_LINE_PATH = 'M0,150 Q80,130 160,100 T320,80 T400,50';
+const SKELETON_AREA_PATH = `${SKELETON_LINE_PATH} L400,200 L0,200 Z`;
+
+
+function directionalPnLEmptyKey(
+  noteType: string | null | undefined,
+  longCount: number,
+  shortCount: number
+) {
+  
+  if (noteType === 'drc' && longCount + shortCount < 2) {
+    return 'widget.directional-pnl.empty.not-enough' as const;
+  }
+  if (longCount === 0 && shortCount === 0) {
+    return 'widget.directional-pnl.empty.no-closed' as const;
+  }
+  return null;
+}
 
 interface DirectionalPnLWidgetProps {
   filePath: string;
@@ -120,12 +152,8 @@ export const DirectionalPnLWidget: React.FC<DirectionalPnLWidgetProps> =
         };
       }, [trades, userDateFormat, defaultRiskAmount, plugin]);
 
-      const containerClassName =
-        mergedConfig.layout === 'side-by-side'
-          ? 'journalit-reviewv2-directional-container journalit-reviewv2-directional-container--row'
-          : 'journalit-reviewv2-directional-container journalit-reviewv2-directional-container--column';
       const currencyOverride = getSingleExplicitCurrency(trades);
-      const getDirectionalConversionTrades = (direction: 'long' | 'short') => [
+      const getDirectionalConversionTrades = (direction: TradeDirection) => [
         ...(direction === 'long' ? longTrades : shortTrades),
         ...asDirectionalTrades(currencyConversion?.unconvertedTrades).filter(
           (trade) => normalizeDirectionValue(trade.direction) === direction
@@ -133,154 +161,68 @@ export const DirectionalPnLWidget: React.FC<DirectionalPnLWidgetProps> =
       ];
 
       if (loading) {
-        
-        const ChartSkeleton = ({ title }: { title: string }) => (
-          <div className="journalit-reviewv2-directional-section">
-            <div className="journalit-reviewv2-chart-header">
-              <div className="journalit-reviewv2-chart-title">{title}</div>
-            </div>
-            <div className="journalit-reviewv2-chart-body">
-              <div
-                className="journalit-reviewv2-chart-skeleton"
-                {...shareLoadingProps}
-                style={cssVars({
-                  '--reviewv2-chart-height': `${mergedConfig.height || 250}px`,
-                  '--reviewv2-chart-bar-gap': '4px',
-                })}
-              >
-                
-                <div className="journalit-reviewv2-chart-skeleton-axis">
-                  <SkeletonBox width={30} height={10} borderRadius="4px" />
-                  <SkeletonBox width={25} height={10} borderRadius="4px" />
-                  <SkeletonBox width={35} height={10} borderRadius="4px" />
-                </div>
-                
-                <div className="journalit-reviewv2-chart-skeleton-wave journalit-reviewv2-chart-skeleton-wave--wide">
-                  <svg
-                    width="100%"
-                    height="100%"
-                    viewBox="0 0 400 200"
-                    preserveAspectRatio="none"
-                  >
-                    <path
-                      d="M0,150 Q80,130 160,100 T320,80 T400,50 L400,200 L0,200 Z"
-                      fill="var(--background-modifier-border)"
-                      className="skeleton-shimmer journalit-reviewv2-chart-skeleton-wave-fill"
-                    />
-                    <path
-                      d="M0,150 Q80,130 160,100 T320,80 T400,50"
-                      fill="none"
-                      stroke="var(--background-modifier-border)"
-                      strokeWidth="2"
-                      className="skeleton-shimmer journalit-reviewv2-chart-skeleton-wave-line"
-                    />
-                  </svg>
-                </div>
-                
-                <div className="journalit-reviewv2-chart-skeleton-xlabels journalit-reviewv2-chart-skeleton-xlabels--between journalit-reviewv2-chart-skeleton-xlabels--wide">
-                  <SkeletonBox width={20} height={10} borderRadius="4px" />
-                  <SkeletonBox width={20} height={10} borderRadius="4px" />
-                  <SkeletonBox width={20} height={10} borderRadius="4px" />
-                </div>
-              </div>
-            </div>
-          </div>
-        );
-
         return (
-          <div className={containerClassName}>
-            {mergedConfig.showLong && (
-              <ChartSkeleton title={t('widget.directional-pnl.title.long')} />
+          <DirectionalContainer
+            {...mergedConfig}
+            renderDirection={(direction) => (
+              <DirectionalSection title={t(DIRECTION_TITLE_KEYS[direction])}>
+                <DirectionalChartSkeleton
+                  height={mergedConfig.height || 250}
+                  axisWidths={SKELETON_AXIS_WIDTHS}
+                  areaPath={SKELETON_AREA_PATH}
+                  linePath={SKELETON_LINE_PATH}
+                />
+              </DirectionalSection>
             )}
-            {mergedConfig.showShort && (
-              <ChartSkeleton title={t('widget.directional-pnl.title.short')} />
-            )}
-          </div>
+          />
         );
       }
 
-      
-      if (noteType === 'drc') {
-        
-        const totalTrades = longCount + shortCount;
-        if (totalTrades < 2) {
-          return (
-            <div className="journalit-reviewv2-chart-empty journalit-reviewv2-chart-empty--small">
-              {t('widget.directional-pnl.empty.not-enough')}
-            </div>
-          );
-        }
-      }
-
-      
-      if (longCount === 0 && shortCount === 0) {
+      const emptyMessageKey = directionalPnLEmptyKey(
+        noteType,
+        longCount,
+        shortCount
+      );
+      if (emptyMessageKey) {
         return (
           <div className="journalit-reviewv2-chart-empty journalit-reviewv2-chart-empty--small">
-            {t('widget.directional-pnl.empty.no-closed')}
+            {t(emptyMessageKey)}
           </div>
         );
       }
 
-      return (
-        <div className={containerClassName}>
-          {mergedConfig.showLong && (
-            <div className="journalit-reviewv2-directional-section">
-              <div className="journalit-reviewv2-chart-header">
-                <div className="journalit-reviewv2-chart-title">
-                  {t('widget.directional-pnl.title.long')}
-                  <CurrencyConversionInfo
-                    metadata={currencyConversion}
-                    trades={getDirectionalConversionTrades('long')}
-                  />
-                </div>
-              </div>
-              {longChartData.length > 0 ? (
-                <div className="journalit-reviewv2-chart-body">
-                  <SharedPnLChart
-                    showAccountTooltip={true}
-                    data={longChartData}
-                    height={mergedConfig.height}
-                    plugin={plugin}
-                    currencyOverride={currencyOverride}
-                  />
-                </div>
-              ) : (
-                <div className="journalit-reviewv2-chart-empty journalit-reviewv2-chart-empty--small">
-                  {t('widget.directional-pnl.empty.no-long')}
-                </div>
-              )}
-            </div>
-          )}
+      const chartDataByDirection = {
+        long: longChartData,
+        short: shortChartData,
+      };
 
-          {mergedConfig.showShort && (
-            <div className="journalit-reviewv2-directional-section">
-              <div className="journalit-reviewv2-chart-header">
-                <div className="journalit-reviewv2-chart-title">
-                  {t('widget.directional-pnl.title.short')}
-                  <CurrencyConversionInfo
-                    metadata={currencyConversion}
-                    trades={getDirectionalConversionTrades('short')}
-                  />
-                </div>
-              </div>
-              {shortChartData.length > 0 ? (
-                <div className="journalit-reviewv2-chart-body">
+      return (
+        <DirectionalContainer
+          {...mergedConfig}
+          renderDirection={(direction) => {
+            const data = chartDataByDirection[direction];
+            return (
+              <DirectionalSection
+                title={t(DIRECTION_TITLE_KEYS[direction])}
+                conversion={{
+                  metadata: currencyConversion,
+                  trades: getDirectionalConversionTrades(direction),
+                }}
+                emptyMessage={t(DIRECTION_EMPTY_KEYS[direction])}
+              >
+                {data.length > 0 && (
                   <SharedPnLChart
                     showAccountTooltip={true}
-                    data={shortChartData}
+                    data={data}
                     height={mergedConfig.height}
                     plugin={plugin}
                     currencyOverride={currencyOverride}
                   />
-                </div>
-              ) : (
-                <div className="journalit-reviewv2-chart-empty journalit-reviewv2-chart-empty--small">
-                  {t('widget.directional-pnl.empty.no-short')}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
+                )}
+              </DirectionalSection>
+            );
+          }}
+        />
       );
     }
   );

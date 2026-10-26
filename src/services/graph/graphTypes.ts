@@ -17,6 +17,8 @@ export interface GraphTarget {
 }
 
 export interface GraphIndex {
+  
+  nestedVaultRoots: string[];
   frontmatterByPath: Map<string, Record<string, unknown>>;
   readErrors: Array<{ filePath: string; message: string }>;
   reviewTargetSignaturesByPath: Map<string, string>;
@@ -177,4 +179,11 @@ export function createEmptyResult(): GraphLinkRebuildResult {
     errors: [],
     conflicts: [],
   };
+}
+
+export function isInsideNestedVault(
+  path: string,
+  nestedVaultRoots: readonly string[]
+): boolean {
+  return nestedVaultRoots.some((root) => path.startsWith(`${root}/`));
 }

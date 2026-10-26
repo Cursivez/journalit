@@ -6,77 +6,120 @@ import { cssVars } from '../../styles/inlineStylePolicy';
 import { Check, ChevronDown, Plus, X } from '../shared/icons/ObsidianIcon';
 import { anchoredMenuPortalRoot } from '../shared/menus/useAnchoredMenuPosition';
 import { useComboBox, type ComboBoxProps } from './combobox/useComboBox';
+import type { ComboBoxItem } from './combobox/comboBoxOptions';
 
-export function ComboBox(props: ComboBoxProps) {
-  const {
-    label,
-    labelAccessory,
-    error,
-    helperText,
-    disabled = false,
-    required = false,
-    portalDropdown = true,
-    selectedItemsPlacement = 'before-input',
-    placeholder = t('combobox.placeholder.default'),
-  } = props;
-  const {
-    inputId,
-    listId,
-    rootRef,
-    fieldRef,
-    inputRef,
-    popupRef,
-    isOpen,
-    selected,
-    items,
-    activeIndex,
-    activeId,
-    inputValue,
-    position,
-    getOptionLabel,
-    openList,
-    select,
-    remove,
-    onKeyDown,
-    changeQuery,
-    clear,
-    toggleList,
-    highlight,
-  } = useComboBox(props);
+type ComboBoxModel = ReturnType<typeof useComboBox>;
 
-  const chipItems =
-    props.isMulti && props.value.length > 0
-      ? props.value.map((value) => (
-          <span key={value} className="selected-item">
-            <span className="journalit-combobox-chip-label">
-              {getOptionLabel(value)}
-            </span>
-            <button
-              type="button"
-              className="remove-button journalit-combobox-remove-button"
-              aria-label={t('combobox.aria.remove-item', {
+const preventFocusLoss = (event: React.MouseEvent) => event.preventDefault();
+
+function ComboBoxChips({
+  values,
+  disabled,
+  getOptionLabel,
+  remove,
+}: {
+  values: readonly string[];
+  disabled: boolean;
+  getOptionLabel: (value: string) => string;
+  remove: (value: string) => void;
+}) {
+  return (
+    <>
+      {values.map((value) => (
+        <span key={value} className="selected-item">
+          <span className="journalit-combobox-chip-label">
+            {getOptionLabel(value)}
+          </span>
+          <button
+            type="button"
+            className="remove-button journalit-combobox-remove-button"
+            disabled={disabled}
+            onMouseDown={preventFocusLoss}
+            onClick={() => remove(value)}
+            {...shareCaptureExcludeProps}
+          >
+            <X size={12} aria-hidden="true" />
+            
+            <span className="journalit-sr-only">
+              {t('combobox.aria.remove-item', {
                 item: getOptionLabel(value),
               })}
-              disabled={disabled}
-              onMouseDown={(event) => event.preventDefault()}
-              onClick={() => remove(value)}
-              {...shareCaptureExcludeProps}
-            >
-              <X size={12} aria-hidden="true" />
-            </button>
-          </span>
-        ))
-      : null;
-  const chips = chipItems ? (
-    <div className="journalit-combobox-selected-items">{chipItems}</div>
-  ) : null;
+            </span>
+          </button>
+        </span>
+      ))}
+    </>
+  );
+}
 
-  const popup = isOpen ? (
+function ComboBoxOptionIcon({
+  item,
+  selected,
+}: {
+  item: ComboBoxItem;
+  selected: ReadonlySet<string>;
+}) {
+  if (item.kind === 'create') return <Plus size={14} />;
+  return selected.has(item.value) ? <Check size={14} /> : null;
+}
+
+function ComboBoxOption({
+  item,
+  index,
+  model,
+}: {
+  item: ComboBoxItem;
+  index: number;
+  model: ComboBoxModel;
+}) {
+  const { listId, activeIndex, highlight, inputRef, select, selected } = model;
+  const isCreate = item.kind === 'create';
+  return (
+    <li
+      id={`${listId}-${index}`}
+      role="option"
+      aria-selected={activeIndex === index}
+      className={`${isCreate ? 'combobox-add-option' : 'combobox-option'}${activeIndex === index ? ' highlighted' : ''}`}
+      onPointerMove={(event) => {
+        if (event.pointerType !== 'touch') highlight(item);
+      }}
+      onMouseDown={preventFocusLoss}
+      onClick={(event) => {
+        if (event.button !== 0) return;
+        
+        
+        inputRef.current?.focus({ preventScroll: true });
+        select(item);
+      }}
+    >
+      <span className="journalit-combobox-option-icon" aria-hidden="true">
+        <ComboBoxOptionIcon item={item} selected={selected} />
+      </span>
+      <span>
+        {isCreate
+          ? t('combobox.add-option', { value: item.value })
+          : item.label}
+      </span>
+    </li>
+  );
+}
+
+function ComboBoxListbox({
+  model,
+  ariaLabel,
+  portalDropdown,
+}: {
+  model: ComboBoxModel;
+  ariaLabel: string;
+  portalDropdown: boolean;
+}) {
+  const { popupRef, listId, position, items } = model;
+  return (
     <ul
       ref={popupRef}
       id={listId}
       role="listbox"
-      aria-label={label || placeholder}
+      aria-label={ariaLabel}
       data-journalit-escape-delegate="true"
       className={`journalit-combobox combobox-dropdown${portalDropdown ? ' combobox-dropdown--portal' : ''}`}
       style={cssVars({
@@ -93,40 +136,123 @@ export function ComboBox(props: ComboBoxProps) {
         </li>
       ) : (
         items.map((item, index) => (
-          <li
-            id={`${listId}-${index}`}
+          <ComboBoxOption
             key={`${item.kind}:${item.value}`}
-            role="option"
-            aria-selected={activeIndex === index}
-            className={`${item.kind === 'create' ? 'combobox-add-option' : 'combobox-option'}${activeIndex === index ? ' highlighted' : ''}`}
-            onPointerMove={(event) => {
-              if (event.pointerType !== 'touch') highlight(item);
-            }}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={(event) => {
-              if (event.button !== 0) return;
-              
-              
-              inputRef.current?.focus({ preventScroll: true });
-              select(item);
-            }}
-          >
-            <span className="journalit-combobox-option-icon" aria-hidden="true">
-              {item.kind === 'create' ? (
-                <Plus size={14} />
-              ) : selected.has(item.value) ? (
-                <Check size={14} />
-              ) : null}
-            </span>
-            <span>
-              {item.kind === 'create'
-                ? t('combobox.add-option', { value: item.value })
-                : item.label}
-            </span>
-          </li>
+            item={item}
+            index={index}
+            model={model}
+          />
         ))
       )}
     </ul>
+  );
+}
+
+function ComboBoxClearButton({
+  value,
+  disabled,
+  model,
+}: {
+  value: string;
+  disabled: boolean;
+  model: ComboBoxModel;
+}) {
+  return (
+    <button
+      type="button"
+      className="remove-button journalit-combobox-clear"
+      disabled={disabled}
+      onMouseDown={preventFocusLoss}
+      onClick={model.clear}
+      {...shareCaptureExcludeProps}
+    >
+      <X size={12} aria-hidden="true" />
+      <span className="journalit-sr-only">
+        {t('combobox.aria.remove-item', {
+          item: model.getOptionLabel(value),
+        })}
+      </span>
+    </button>
+  );
+}
+
+const describedById = (
+  inputId: string,
+  error: string | undefined,
+  helperText: string | undefined
+): string | undefined => {
+  if (error) return `${inputId}-error`;
+  return helperText ? `${inputId}-help` : undefined;
+};
+
+function ComboBoxMessage({
+  inputId,
+  error,
+  helperText,
+}: {
+  inputId: string;
+  error: string | undefined;
+  helperText: string | undefined;
+}) {
+  if (error)
+    return (
+      <div id={`${inputId}-error`} role="alert" className="errorMessage">
+        {error}
+      </div>
+    );
+  return helperText ? <div id={`${inputId}-help`}>{helperText}</div> : null;
+}
+
+
+const selectionParts = (props: ComboBoxProps) =>
+  props.isMulti
+    ? {
+        chips: props.value,
+        clearValue: '',
+        hasSelection: props.value.length > 0,
+      }
+    : {
+        chips: [],
+        clearValue: props.value,
+        hasSelection: Boolean(props.value),
+      };
+
+export function ComboBox(props: ComboBoxProps) {
+  const {
+    label,
+    labelAccessory,
+    error,
+    helperText,
+    disabled = false,
+    required = false,
+    portalDropdown = true,
+    placeholder = t('combobox.placeholder.default'),
+  } = props;
+  const model = useComboBox(props);
+  const {
+    inputId,
+    listId,
+    rootRef,
+    fieldRef,
+    inputRef,
+    isOpen,
+    activeId,
+    inputValue,
+    getOptionLabel,
+    openList,
+    remove,
+    onKeyDown,
+    changeQuery,
+    toggleList,
+  } = model;
+  const { chips, clearValue, hasSelection } = selectionParts(props);
+
+  const popup = isOpen ? (
+    <ComboBoxListbox
+      model={model}
+      ariaLabel={label || placeholder}
+      portalDropdown={portalDropdown}
+    />
   ) : null;
 
   return (
@@ -137,7 +263,6 @@ export function ComboBox(props: ComboBoxProps) {
       data-is-open={isOpen}
       data-disabled={disabled}
       data-invalid={Boolean(error)}
-      data-selected-items-placement={selectedItemsPlacement}
     >
       {label && (
         <label htmlFor={inputId}>
@@ -146,16 +271,18 @@ export function ComboBox(props: ComboBoxProps) {
           {required && <span className="required-indicator">*</span>}
         </label>
       )}
-      {selectedItemsPlacement === 'before-input' ? chips : null}
       <div
         ref={fieldRef}
         className="input-container"
-        data-has-clear={!props.isMulti && Boolean(props.value)}
-        {...(selectedItemsPlacement === 'inside-input'
-          ? {}
-          : shareCaptureExcludeProps)}
+        data-has-clear={Boolean(clearValue)}
+        {...(props.isMulti ? {} : shareCaptureExcludeProps)}
       >
-        {selectedItemsPlacement === 'inside-input' ? chipItems : null}
+        <ComboBoxChips
+          values={chips}
+          disabled={disabled}
+          getOptionLabel={getOptionLabel}
+          remove={remove}
+        />
         <input
           ref={inputRef}
           id={inputId}
@@ -163,9 +290,8 @@ export function ComboBox(props: ComboBoxProps) {
           role="combobox"
           className="combobox-input"
           value={inputValue}
-          placeholder={
-            props.isMulti && props.value.length > 0 ? undefined : placeholder
-          }
+          
+          placeholder={props.isMulti && hasSelection ? undefined : placeholder}
           disabled={disabled}
           autoComplete="off"
           aria-label={label ? undefined : placeholder}
@@ -176,62 +302,43 @@ export function ComboBox(props: ComboBoxProps) {
           aria-activedescendant={activeId}
           aria-invalid={Boolean(error)}
           aria-required={required}
-          aria-describedby={
-            error
-              ? `${inputId}-error`
-              : helperText
-                ? `${inputId}-help`
-                : undefined
-          }
+          aria-describedby={describedById(inputId, error, helperText)}
           onFocus={openList}
           onClick={openList}
           onKeyDown={onKeyDown}
           onChange={(event) => changeQuery(event.target.value)}
           {...shareCaptureExcludeProps}
         />
-        {!props.isMulti && props.value && (
-          <button
-            type="button"
-            className="remove-button journalit-combobox-clear"
+        {clearValue && (
+          <ComboBoxClearButton
+            value={clearValue}
             disabled={disabled}
-            aria-label={t('combobox.aria.remove-item', {
-              item: getOptionLabel(props.value),
-            })}
-            onMouseDown={(event) => event.preventDefault()}
-            onClick={clear}
-            {...shareCaptureExcludeProps}
-          >
-            <X size={12} aria-hidden="true" />
-          </button>
+            model={model}
+          />
         )}
         <button
           type="button"
           className="journalit-combobox-chevron"
+          
+          
           tabIndex={-1}
-          aria-label={label || placeholder}
-          aria-haspopup="listbox"
-          aria-expanded={isOpen}
-          aria-controls={isOpen ? listId : undefined}
+          aria-hidden="true"
           disabled={disabled}
-          onMouseDown={(event) => event.preventDefault()}
+          onMouseDown={preventFocusLoss}
           onClick={toggleList}
           {...shareCaptureExcludeProps}
         >
           <ChevronDown size={14} aria-hidden="true" />
         </button>
-        {portalDropdown
-          ? popup &&
-            createPortal(popup, anchoredMenuPortalRoot(fieldRef.current))
+        {portalDropdown && popup
+          ? createPortal(popup, anchoredMenuPortalRoot(fieldRef.current))
           : popup}
       </div>
-      {selectedItemsPlacement === 'after-input' ? chips : null}
-      {error ? (
-        <div id={`${inputId}-error`} role="alert" className="errorMessage">
-          {error}
-        </div>
-      ) : helperText ? (
-        <div id={`${inputId}-help`}>{helperText}</div>
-      ) : null}
+      <ComboBoxMessage
+        inputId={inputId}
+        error={error}
+        helperText={helperText}
+      />
     </div>
   );
 }

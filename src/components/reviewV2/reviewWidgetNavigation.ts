@@ -2,7 +2,7 @@ import type JournalitPlugin from '../../main';
 import { t } from '../../lang/helpers';
 import { openCanonicalReviewIfAllowed } from '../../utils/reviewNavigation';
 
-export interface ReviewWidgetNavigationHost {
+interface ReviewWidgetNavigationHost {
   settings: Pick<JournalitPlugin['settings'], 'reviewV2'>;
   openFile: JournalitPlugin['openFile'];
 }

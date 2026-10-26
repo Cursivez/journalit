@@ -11,7 +11,7 @@ function normalizeText(value: unknown): string {
   return typeof value === 'string' ? value.trim().toLowerCase() : '';
 }
 
-function normalizeTradeDirectionSide(
+export function resolveTradePositionSide(
   input: TradeDirectionInput
 ): TradePositionSide | null {
   const direction = normalizeText(input.direction);
@@ -57,7 +57,7 @@ export function getTradeDirectionDisplayKind(
     return direction;
   }
 
-  return normalizeTradeDirectionSide(input) ?? 'unknown';
+  return resolveTradePositionSide(input) ?? 'unknown';
 }
 
 export function calculateTradeDirectionPriceDiff(
@@ -74,7 +74,7 @@ export function calculateTradeDirectionPriceDiff(
     return null;
   }
 
-  const side = normalizeTradeDirectionSide(input);
+  const side = resolveTradePositionSide(input);
   if (side === null) {
     return null;
   }

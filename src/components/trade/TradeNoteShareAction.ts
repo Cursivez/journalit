@@ -3,28 +3,29 @@
 import { App, MarkdownView, Notice, TFile } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import { t } from '../../lang/helpers';
-import { captureBrandedPng } from '../../services/share/brandedCapture';
-import { writeClipboardPendingPng } from '../../utils/clipboard';
+import { TradeShareModal } from '../share/tradeShare/TradeShareModal';
+import { availableTradeShareSections } from '../share/tradeShare/tradeShareModel';
 import { MarkdownViewHeaderAction } from '../share/MarkdownViewHeaderAction';
 import { SHARE_IMAGE_ACTION_ICON } from '../share/shareActionIcon';
+import type { TradeNoteRenderer } from './TradeNoteRenderer';
 
 const TRADE_NOTE_HOST_SELECTOR = '.journalit-trade-view';
 const TRADE_NOTE_CARD_SELECTOR = '.journalit-trade-note-wrapper';
 
 export class TradeNoteShareAction {
   private readonly headerAction: MarkdownViewHeaderAction;
-  private readonly capturingViews = new WeakSet<MarkdownView>();
 
   constructor(
-    app: App,
+    private readonly app: App,
     private readonly plugin: JournalitPlugin,
-    isTradeNote: (file: TFile) => boolean
+    isTradeNote: (file: TFile) => boolean,
+    private readonly renderer: TradeNoteRenderer
   ) {
     this.headerAction = new MarkdownViewHeaderAction(app, plugin, {
       icon: SHARE_IMAGE_ACTION_ICON,
-      title: () => t('trade.share.copy-screenshot'),
+      title: () => t('share.trade.modal-title'),
       appliesTo: isTradeNote,
-      onClick: (view, file) => this.copyScreenshot(view, file),
+      onClick: (view, file) => this.openShareComposer(view, file),
     });
   }
 
@@ -57,9 +58,7 @@ export class TradeNoteShareAction {
     );
   }
 
-  private copyScreenshot(view: MarkdownView, file: TFile): void {
-    if (this.capturingViews.has(view)) return;
-
+  private openShareComposer(view: MarkdownView, file: TFile): void {
     const host = this.findVisibleTradeNoteHost(view, file);
     const card = host?.querySelector<HTMLElement>(TRADE_NOTE_CARD_SELECTOR);
     if (!host || !card) {
@@ -67,31 +66,12 @@ export class TradeNoteShareAction {
       return;
     }
 
-    this.capturingViews.add(view);
-    
-    
-    const { display, trade } = this.plugin.settings;
-    const png = captureBrandedPng(card, host, {
-      
-      hideDollarAmounts:
-        (display?.hideDollarAmountsInShares ?? false) &&
-        Boolean(trade.displayRMultiples),
-    });
-    
-    
-    png.catch((error: unknown) => {
-      console.error('[Journalit] Failed to render trade screenshot:', error);
-    });
-    writeClipboardPendingPng(png)
-      .then(() => {
-        new Notice(t('trade.share.copied'));
-      })
-      .catch((error: unknown) => {
-        console.error('[Journalit] Failed to copy trade screenshot:', error);
-        new Notice(t('trade.share.failed'));
-      })
-      .finally(() => {
-        this.capturingViews.delete(view);
-      });
+    new TradeShareModal(
+      this.app,
+      this.plugin,
+      file,
+      availableTradeShareSections(card),
+      this.renderer
+    ).open();
   }
 }

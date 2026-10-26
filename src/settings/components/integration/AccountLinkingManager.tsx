@@ -3,13 +3,13 @@
 import React, { useState, useEffect } from 'react';
 import { Notice } from 'obsidian';
 import JournalitPlugin from '../../../main';
-import { Button } from '../../../components/ui';
-import { Select } from '../../../components/core';
+import { Button } from '../../../components/ui/Button';
+import { Select } from '../../../components/core/Select';
 import { AccountInfo } from '../../../settings/types';
 import { t } from '../../../lang/helpers';
 import { ErrorHandler } from '../../../utils/errorHandler';
 import { SupportErrorDetails } from '../../../utils/supportReport';
-import { eventBus } from '../../../services/events';
+import { eventBus } from '../../../services/events/EventBus';
 
 interface AccountLinkingManagerProps {
   plugin: JournalitPlugin;

@@ -127,7 +127,7 @@ function isValidYouTubeId(value: string | null | undefined): value is string {
   return typeof value === 'string' && /^[a-zA-Z0-9_-]{11}$/.test(value);
 }
 
-export function parseYouTubeVideoId(url: string): string | null {
+function parseYouTubeVideoId(url: string): string | null {
   try {
     const parsed = new URL(normalizeMediaInput(url));
     const hostname = parsed.hostname.toLowerCase().replace(/^www\./, '');
@@ -210,6 +210,13 @@ export function getYouTubeThumbnailFallbackUrl(url: string): string {
   return videoId ? `https://img.youtube.com/vi/${videoId}/mqdefault.jpg` : '';
 }
 
+export const YOUTUBE_WATCH_HOSTNAME = 'www.youtube.com';
+
+export function getYouTubeWatchUrl(url: string): string {
+  const videoId = parseYouTubeVideoId(url);
+  return videoId ? `https://www.youtube.com/watch?v=${videoId}` : '';
+}
+
 export function getYouTubeEmbedUrl(url: string): string {
   const videoId = parseYouTubeVideoId(url);
   const startSeconds = getYouTubeStartSeconds(url);
@@ -218,7 +225,7 @@ export function getYouTubeEmbedUrl(url: string): string {
     : '';
 }
 
-export function isVideoMediaPath(
+function isVideoMediaPath(
   app: App,
   pathOrLink: string,
   sourcePath = ''

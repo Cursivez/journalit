@@ -294,14 +294,11 @@ function useFolderBrowserModel({
       }
     };
 
-    window.activeDocument.addEventListener(
-      'mousedown',
-      handleFolderSelection,
-      true
-    );
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('mousedown', handleFolderSelection, true);
 
     return () => {
-      window.activeDocument.removeEventListener(
+      listenerDocument.removeEventListener(
         'mousedown',
         handleFolderSelection,
         true
@@ -323,14 +320,11 @@ function useFolderBrowserModel({
       }
     };
 
-    window.activeDocument.addEventListener(
-      'mousedown',
-      handleOutsideClick,
-      true
-    );
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('mousedown', handleOutsideClick, true);
 
     return () => {
-      window.activeDocument.removeEventListener(
+      listenerDocument.removeEventListener(
         'mousedown',
         handleOutsideClick,
         true

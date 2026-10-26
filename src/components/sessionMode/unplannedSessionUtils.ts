@@ -95,7 +95,8 @@ export async function resolveUnplannedSessionDrcPath(
   return drcService.resolveDRCNotePath(tradingDay);
 }
 
-async function resolveCurrentSessionModePhase(
+
+export async function resolveCurrentSessionModePhase(
   plugin: JournalitPlugin,
   now: Date = new Date()
 ): Promise<SessionModePhaseState> {
@@ -157,11 +158,11 @@ export async function stopUnplannedSession(params: {
   plugin: JournalitPlugin;
   session: Pick<ResolvedUnplannedSessionWindow, 'id' | 'start'>;
   now?: Date;
-}): Promise<boolean> {
+}): Promise<string | null> {
   const drcService = await getDRCService(params.plugin);
   const sessionTradingDay = getTradingDay(params.session.start, params.plugin);
   const queueKey = formatLocalDateString(sessionTradingDay);
-  let stopped = false;
+  let stopped: string | null = null;
   await enqueueFileMutation(MUTATION_NAMESPACE, queueKey, async () => {
     const now = params.now ?? new Date();
     const filePath = await drcService.resolveDRCNotePath(sessionTradingDay);
@@ -182,7 +183,7 @@ export async function stopUnplannedSession(params: {
       },
       'session-mode'
     );
-    stopped = true;
+    stopped = stoppedAt;
   });
   return stopped;
 }

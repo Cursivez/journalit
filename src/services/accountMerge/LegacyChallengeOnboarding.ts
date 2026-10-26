@@ -12,7 +12,7 @@ export const LEGACY_CHALLENGE_ONBOARDING_GUIDE_CONTEXT_KEY =
   'legacyChallengeOnboardingPending';
 
 
-export const LEGACY_CHALLENGE_ONBOARDING_MIN_VERSION = '1.9.0';
+const LEGACY_CHALLENGE_ONBOARDING_MIN_VERSION = '1.9.0';
 
 interface LegacyChallengeOnboardingEligibilityInput {
   
@@ -33,7 +33,7 @@ export function hasLegacyChallengeCandidates(
 }
 
 
-export function isEligibleForLegacyChallengeOnboarding({
+function isEligibleForLegacyChallengeOnboarding({
   previousVersion,
   accountMetadata,
 }: LegacyChallengeOnboardingEligibilityInput): boolean {

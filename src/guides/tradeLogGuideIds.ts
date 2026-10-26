@@ -3,7 +3,9 @@ export const TRADE_LOG_MAIN_GUIDE_ID = 'tradelog.main';
 
 
 
-export const TRADE_LOG_MAIN_GUIDE_VERSION = 11;
+
+export const TRADE_LOG_MAIN_GUIDE_VERSION = 12;
+export const TRADE_LOG_EXPORT_TARGET_ID = 'tradelog.export';
 export const TRADE_LOG_IMAGE_GALLERY_EMPTY_GUIDE_ID =
   'tradelog.imageGallery.empty';
 export const TRADE_LOG_IMAGE_GALLERY_MAIN_GUIDE_ID =

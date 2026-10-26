@@ -5,7 +5,9 @@ export function anchoredMenuPortalRoot(
   trigger: HTMLElement | null
 ): HTMLElement {
   return (
-    trigger?.closest<HTMLElement>('.modal-container') ??
+    trigger?.closest<HTMLElement>(
+      '.modal-container, .journalit-drawer-overlay'
+    ) ??
     trigger?.ownerDocument.body ??
     window.activeDocument.body
   );

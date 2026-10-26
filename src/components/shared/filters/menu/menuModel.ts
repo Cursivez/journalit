@@ -40,7 +40,7 @@ export interface FilterMenuValuesNode<R = void> {
   onClear: () => R;
 }
 
-export interface FilterMenuBranchNode<R = void> {
+interface FilterMenuBranchNode<R = void> {
   kind: 'branch';
   id: string;
   label: string;

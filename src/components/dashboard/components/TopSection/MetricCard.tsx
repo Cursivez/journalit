@@ -12,6 +12,8 @@ import { t } from '../../../../lang/helpers';
 import type { StatDelta } from '../../../../utils/previousPeriodDelta';
 
 interface MetricCardProps {
+  
+  headerAction?: React.ReactNode;
   name: string;
   value: string;
   valueSuffix?: string;
@@ -46,7 +48,137 @@ const DeltaArrow: React.FC<{ direction: 'up' | 'down' }> = ({ direction }) => {
 };
 
 
+const toneClassOf = (isPositive: boolean | undefined): string => {
+  if (isPositive === undefined) return '';
+  return isPositive ? 'positive' : 'negative';
+};
+
+const classNames = (...names: string[]) => names.filter(Boolean).join(' ');
+
+
+const splitSuffixArrow = (
+  suffix: string
+): { direction: 'up' | 'down' | undefined; text: string } => {
+  if (suffix.startsWith('↑')) {
+    return { direction: 'up', text: suffix.slice(1).trimStart() };
+  }
+  if (suffix.startsWith('↓')) {
+    return { direction: 'down', text: suffix.slice(1).trimStart() };
+  }
+  return { direction: undefined, text: suffix };
+};
+
+const DELTA_TONE_CLASS: Record<NonNullable<StatDelta['tone']>, string> = {
+  green: 'journalit-dashboard-metric-previous-delta--positive',
+  red: 'journalit-dashboard-metric-previous-delta--negative',
+};
+
+const MetricCardIcons: React.FC<{
+  tooltip: React.ReactNode;
+  tooltipDisclosureLabel: string | undefined;
+  hasWarning: boolean;
+}> = ({ tooltip, tooltipDisclosureLabel, hasWarning }) => {
+  if (tooltip && tooltipDisclosureLabel) {
+    return (
+      <Tooltip
+        content={tooltip}
+        delay={200}
+        preferredPosition="bottom"
+        disclosureLabel={tooltipDisclosureLabel}
+        triggerClassName="journalit-dashboard-metric-icons-trigger"
+      >
+        <Info
+          size={10}
+          className="journalit-dashboard-metric-info"
+          aria-hidden="true"
+        />
+        {hasWarning && (
+          <AlertTriangle
+            size={10}
+            className="journalit-dashboard-metric-warning"
+            aria-hidden="true"
+          />
+        )}
+      </Tooltip>
+    );
+  }
+  return (
+    <>
+      {tooltip && (
+        <Info size={10} className="journalit-dashboard-metric-info" />
+      )}
+      {hasWarning && (
+        <AlertTriangle
+          size={10}
+          className="journalit-dashboard-metric-warning"
+        />
+      )}
+    </>
+  );
+};
+
+const MetricCardSuffix: React.FC<{
+  suffix: string;
+  isPositive: boolean | undefined;
+  hasCents: boolean;
+}> = ({ suffix, isPositive, hasCents }) => {
+  const { direction, text } = splitSuffixArrow(suffix);
+  return (
+    <span
+      dir="ltr"
+      className={classNames(
+        'journalit-dashboard-metric-suffix',
+        toneClassOf(isPositive),
+        hasCents
+          ? 'journalit-dashboard-metric-suffix--with-cents'
+          : 'journalit-dashboard-metric-suffix--without-cents'
+      )}
+    >
+      {direction && <DeltaArrow direction={direction} />}
+      {text}
+    </span>
+  );
+};
+
+const MetricCardPrimaryValue: React.FC<{
+  value: string;
+  mainPart: string | undefined;
+  decimalPart: string | undefined;
+}> = ({ value, mainPart, decimalPart }) => (
+  <span className="journalit-dashboard-metric-primary" dir="ltr">
+    {mainPart ? (
+      <>
+        {mainPart}
+        {decimalPart && (
+          <span className="journalit-dashboard-metric-cents">
+            {decimalPart}
+          </span>
+        )}
+      </>
+    ) : (
+      value
+    )}
+  </span>
+);
+
+const MetricPreviousDelta: React.FC<{ delta: StatDelta }> = ({ delta }) => (
+  <div
+    className={classNames(
+      'journalit-dashboard-metric-previous-delta',
+      delta.tone ? DELTA_TONE_CLASS[delta.tone] : ''
+    )}
+  >
+    {delta.direction !== 'flat' && <DeltaArrow direction={delta.direction} />}
+    <span dir="ltr">{delta.value}</span>
+    <span className="journalit-dashboard-metric-previous-delta-suffix">
+      {t(delta.suffixKey ?? 'widget.stats.vs-prev')}
+    </span>
+  </div>
+);
+
+
 export const MetricCard: React.FC<MetricCardProps> = ({
+  headerAction,
   name,
   value,
   valueSuffix,
@@ -61,109 +193,39 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   subline,
   sublineIsPositive,
 }) => {
-  const valueSuffixDirection = valueSuffix?.startsWith('↑')
-    ? 'up'
-    : valueSuffix?.startsWith('↓')
-      ? 'down'
-      : undefined;
-  const valueSuffixWithoutArrow = valueSuffixDirection
-    ? valueSuffix?.slice(1).trimStart()
-    : valueSuffix;
-  const toneClass =
-    isPositive !== undefined ? (isPositive ? 'positive' : 'negative') : '';
-  const suffixToneClass =
-    valueSuffixIsPositive !== undefined
-      ? valueSuffixIsPositive
-        ? 'positive'
-        : 'negative'
-      : '';
-
   const metricCard = (
     <div className="journalit-dashboard-metric-card">
       <div className="journalit-dashboard-metric-name">
         {name}
-        {tooltip && tooltipDisclosureLabel ? (
-          <Tooltip
-            content={tooltip}
-            delay={200}
-            preferredPosition="bottom"
-            disclosureLabel={tooltipDisclosureLabel}
-            triggerClassName="journalit-dashboard-metric-icons-trigger"
-          >
-            <Info
-              size={10}
-              className="journalit-dashboard-metric-info"
-              aria-hidden="true"
-            />
-            {hasWarning && (
-              <AlertTriangle
-                size={10}
-                className="journalit-dashboard-metric-warning"
-                aria-hidden="true"
-              />
-            )}
-          </Tooltip>
-        ) : (
-          <>
-            {tooltip && (
-              <Info size={10} className="journalit-dashboard-metric-info" />
-            )}
-            {hasWarning && (
-              <AlertTriangle
-                size={10}
-                className="journalit-dashboard-metric-warning"
-              />
-            )}
-          </>
-        )}
+        <MetricCardIcons
+          tooltip={tooltip}
+          tooltipDisclosureLabel={tooltipDisclosureLabel}
+          hasWarning={hasWarning}
+        />
+        {headerAction}
       </div>
-      <div className={`journalit-dashboard-metric-value ${toneClass}`}>
-        <span className="journalit-dashboard-metric-primary" dir="ltr">
-          {mainPart ? (
-            <>
-              {mainPart}
-              {decimalPart && (
-                <span className="journalit-dashboard-metric-cents">
-                  {decimalPart}
-                </span>
-              )}
-            </>
-          ) : (
-            value
-          )}
-        </span>
+      <div
+        className={`journalit-dashboard-metric-value ${toneClassOf(isPositive)}`}
+      >
+        <MetricCardPrimaryValue
+          value={value}
+          mainPart={mainPart}
+          decimalPart={decimalPart}
+        />
         {valueSuffix && (
-          <span
-            dir="ltr"
-            className={[
-              'journalit-dashboard-metric-suffix',
-              suffixToneClass,
-              decimalPart
-                ? 'journalit-dashboard-metric-suffix--with-cents'
-                : 'journalit-dashboard-metric-suffix--without-cents',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            {valueSuffixDirection && (
-              <DeltaArrow direction={valueSuffixDirection} />
-            )}
-            {valueSuffixWithoutArrow}
-          </span>
+          <MetricCardSuffix
+            suffix={valueSuffix}
+            isPositive={valueSuffixIsPositive}
+            hasCents={Boolean(decimalPart)}
+          />
         )}
       </div>
       {subline && (
         <div
-          className={[
+          className={classNames(
             'journalit-dashboard-metric-unrealized',
-            sublineIsPositive !== undefined
-              ? sublineIsPositive
-                ? 'positive'
-                : 'negative'
-              : '',
-          ]
-            .filter(Boolean)
-            .join(' ')}
+            toneClassOf(sublineIsPositive)
+          )}
         >
           {subline}
         </div>
@@ -172,28 +234,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         className="journalit-dashboard-metric-previous-delta-slot"
         aria-hidden={previousDelta ? undefined : true}
       >
-        {previousDelta && (
-          <div
-            className={[
-              'journalit-dashboard-metric-previous-delta',
-              previousDelta.tone === 'green'
-                ? 'journalit-dashboard-metric-previous-delta--positive'
-                : previousDelta.tone === 'red'
-                  ? 'journalit-dashboard-metric-previous-delta--negative'
-                  : '',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            {previousDelta.direction !== 'flat' && (
-              <DeltaArrow direction={previousDelta.direction} />
-            )}
-            <span dir="ltr">{previousDelta.value}</span>
-            <span className="journalit-dashboard-metric-previous-delta-suffix">
-              {t(previousDelta.suffixKey ?? 'widget.stats.vs-prev')}
-            </span>
-          </div>
-        )}
+        {previousDelta && <MetricPreviousDelta delta={previousDelta} />}
       </div>
     </div>
   );

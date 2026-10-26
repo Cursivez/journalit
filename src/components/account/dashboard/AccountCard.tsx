@@ -20,7 +20,10 @@ import { AccountCardProps } from './types';
 import { AccountData, DrawdownType } from '../../../services/account/types';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
-import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
+import {
+  type CurrencyCode,
+  parseCuratedCurrencyCode,
+} from '../../../utils/currencyConfig';
 import { PropChallengeAccountCard } from './PropChallengeAccountCard';
 import { applyPropChallengeRuleProjection } from '../../../services/propChallenge/PropChallengeRuleProjection';
 import { formatAccountTypeLabel } from '../../../utils/accountTypeLabel';
@@ -130,6 +133,68 @@ function AccountCardHeader({
   );
 }
 
+const hasProfitTargetRule = (account: AccountData): boolean =>
+  account.hasProfitTarget && account.profitTarget > 0;
+
+const hasDrawdownRule = (account: AccountData): boolean =>
+  account.drawdownType !== DrawdownType.NONE && account.drawdownAmount > 0;
+
+
+const accountDisplayCurrency = (
+  account: AccountData,
+  globalCurrency: CurrencyCode
+): CurrencyCode =>
+  account.metrics.isMultiCurrency && account.metrics.conversionBaseCurrency
+    ? parseCuratedCurrencyCode(account.metrics.conversionBaseCurrency)
+    : globalCurrency;
+
+const signedClass = (isMasked: boolean, value: number): string => {
+  if (isMasked) return '';
+  return value >= 0 ? 'positive' : 'negative';
+};
+
+
+function AccountProgressItem({
+  label,
+  isSet,
+  isMasked,
+  progress,
+  barModifier,
+  formattedValue,
+}: {
+  label: string;
+  isSet: boolean;
+  isMasked: boolean;
+  progress: number;
+  barModifier: string;
+  formattedValue: string;
+}) {
+  const showsProgress = !isMasked && isSet;
+  const isFilled = showsProgress && progress > 0;
+  const notSetClass = isSet ? '' : 'not-set';
+  return (
+    <div className={`progress-item ${notSetClass}`}>
+      <div className="progress-header">
+        <span className="progress-label">{label}</span>
+        <div className={`progress-value ${notSetClass}`}>
+          {isSet ? formattedValue : t('account-card.progress.not-set')}
+        </div>
+      </div>
+      <div className="progress-bar-container">
+        <div
+          className={`progress-bar ${isFilled ? barModifier : 'empty'}`}
+          data-is-zero={!isFilled}
+          style={cssVars({
+            '--journalit-account-progress-width': showsProgress
+              ? `${progress}%`
+              : '0%',
+          })}
+        />
+      </div>
+    </div>
+  );
+}
+
 
 const RegularAccountCard: React.FC<{
   account: AccountData;
@@ -147,10 +212,7 @@ const RegularAccountCard: React.FC<{
   const { formatValue, shouldMask } = useDisplayFormatter();
 
   
-  const currency =
-    account.metrics.isMultiCurrency && account.metrics.conversionBaseCurrency
-      ? parseCuratedCurrencyCode(account.metrics.conversionBaseCurrency)
-      : globalCurrency;
+  const currency = accountDisplayCurrency(account, globalCurrency);
 
   const isPnlMasked = shouldMask('pnl');
   const isReturnPercentMasked = shouldMask('returnPercent');
@@ -165,11 +227,7 @@ const RegularAccountCard: React.FC<{
 
   const copiedByAccounts = useCopiedByAccounts(account.name);
 
-  const growthClass = isPnlMasked
-    ? ''
-    : calculatedMetrics.growthAmount >= 0
-      ? 'positive'
-      : 'negative';
+  const growthClass = signedClass(isPnlMasked, calculatedMetrics.growthAmount);
 
   return (
     
@@ -197,89 +255,34 @@ const RegularAccountCard: React.FC<{
         
         <div className="progress-section">
           
-          <div
-            className={`progress-item ${!(account.hasProfitTarget && account.profitTarget > 0) ? 'not-set' : ''}`}
-          >
-            <div className="progress-header">
-              <span className="progress-label">
-                {t('account.prop-challenge.rule.profit_target')}
-              </span>
-              <div
-                className={`progress-value ${!(account.hasProfitTarget && account.profitTarget > 0) ? 'not-set' : ''}`}
-              >
-                {account.hasProfitTarget && account.profitTarget > 0
-                  ? formatValue({
-                      kind: 'returnPercent',
-                      value: calculatedMetrics.profitTargetProgress,
-                      signed: false,
-                      precision: 1,
-                    })
-                  : t('account-card.progress.not-set')}
-              </div>
-            </div>
-            <div className="progress-bar-container">
-              <div
-                className={`progress-bar ${!isProfitTargetMasked && account.hasProfitTarget && account.profitTarget > 0 && calculatedMetrics.profitTargetProgress > 0 ? `profit-target ${calculatedMetrics.profitTargetProgressClass}` : 'empty'}`}
-                data-is-zero={
-                  isProfitTargetMasked ||
-                  !account.hasProfitTarget ||
-                  account.profitTarget <= 0 ||
-                  calculatedMetrics.profitTargetProgress <= 0
-                }
-                style={cssVars({
-                  '--journalit-account-progress-width':
-                    !isProfitTargetMasked &&
-                    account.hasProfitTarget &&
-                    account.profitTarget > 0
-                      ? `${calculatedMetrics.profitTargetProgress}%`
-                      : '0%',
-                })}
-              />
-            </div>
-          </div>
+          <AccountProgressItem
+            label={t('account.prop-challenge.rule.profit_target')}
+            isSet={hasProfitTargetRule(account)}
+            isMasked={isProfitTargetMasked}
+            progress={calculatedMetrics.profitTargetProgress}
+            barModifier={`profit-target ${calculatedMetrics.profitTargetProgressClass}`}
+            formattedValue={formatValue({
+              kind: 'returnPercent',
+              value: calculatedMetrics.profitTargetProgress,
+              signed: false,
+              precision: 1,
+            })}
+          />
 
           
-          <div
-            className={`progress-item ${!(account.drawdownType !== DrawdownType.NONE && account.drawdownAmount > 0) ? 'not-set' : ''}`}
-          >
-            <div className="progress-header">
-              <span className="progress-label">
-                {t('account.prop-challenge.rule.drawdown')}
-              </span>
-              <div
-                className={`progress-value ${!(account.drawdownType !== DrawdownType.NONE && account.drawdownAmount > 0) ? 'not-set' : ''}`}
-              >
-                {account.drawdownType !== DrawdownType.NONE &&
-                account.drawdownAmount > 0
-                  ? formatValue({
-                      kind: 'percentage',
-                      value: calculatedMetrics.drawdownUsed,
-                      signed: false,
-                      precision: 1,
-                    })
-                  : t('account-card.progress.not-set')}
-              </div>
-            </div>
-            <div className="progress-bar-container">
-              <div
-                className={`progress-bar ${!isDrawdownMasked && account.drawdownType !== DrawdownType.NONE && account.drawdownAmount > 0 && calculatedMetrics.drawdownUsed > 0 ? `drawdown ${calculatedMetrics.drawdownProgressClass}` : 'empty'}`}
-                data-is-zero={
-                  isDrawdownMasked ||
-                  account.drawdownType === DrawdownType.NONE ||
-                  account.drawdownAmount <= 0 ||
-                  calculatedMetrics.drawdownUsed <= 0
-                }
-                style={cssVars({
-                  '--journalit-account-progress-width':
-                    !isDrawdownMasked &&
-                    account.drawdownType !== DrawdownType.NONE &&
-                    account.drawdownAmount > 0
-                      ? `${calculatedMetrics.drawdownUsed}%`
-                      : '0%',
-                })}
-              />
-            </div>
-          </div>
+          <AccountProgressItem
+            label={t('account.prop-challenge.rule.drawdown')}
+            isSet={hasDrawdownRule(account)}
+            isMasked={isDrawdownMasked}
+            progress={calculatedMetrics.drawdownUsed}
+            barModifier={`drawdown ${calculatedMetrics.drawdownProgressClass}`}
+            formattedValue={formatValue({
+              kind: 'percentage',
+              value: calculatedMetrics.drawdownUsed,
+              signed: false,
+              precision: 1,
+            })}
+          />
         </div>
 
         <AccountCardFooter

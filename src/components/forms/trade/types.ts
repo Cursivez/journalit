@@ -1,6 +1,7 @@
 
 
 import { ReactNode } from 'react';
+import { DEFAULT_OPTION_CONTRACT_SIZE } from '../../../services/trade/instrumentContractDefaults';
 import {
   LossReviewData,
   TradeReviewData,
@@ -8,6 +9,8 @@ import {
 import { CustomFieldValues } from '../../../types/customFields';
 import type { ImageAnnotations } from '../../../types/imageAnnotations';
 import type { TradeId } from '../../../utils/tradeIdentity';
+import type { TradeFormLayoutSettings } from '../../../settings/types';
+import type { StopLossTarget } from '../../../services/trade/core/StopLossTargets';
 
 
 export enum AssetType {
@@ -131,8 +134,6 @@ export interface TradeFormData {
   
   imageAnnotations?: ImageAnnotations;
   
-  customTags?: string[];
-  
   tags?: string[];
   
   setup?: string[];
@@ -183,7 +184,7 @@ export interface TradeFormData {
   
   rebate?: number;
   
-  stopLoss?: number;
+  stopLosses?: StopLossTarget[];
   
   takeProfits?: TakeProfitTarget[];
   
@@ -267,6 +268,10 @@ export interface TradeFormData {
   reviewed?: boolean;
   
   reviewedAt?: string;
+  
+  tradeRating?: number;
+  
+  clearTradeRating?: boolean;
 
   
   
@@ -339,8 +344,7 @@ export const DEFAULT_TRADE_FORM_DATA: TradeFormData = {
   thesis: '',
   images: [],
   imageAnnotations: {},
-  customTags: [],
-  tags: [], 
+  tags: [],
   
   setup: [],
   mistake: [],
@@ -354,7 +358,7 @@ export const DEFAULT_TRADE_FORM_DATA: TradeFormData = {
   swap: 0, 
   fees: 0, 
   rebate: undefined, 
-  stopLoss: undefined,
+  stopLosses: [],
   takeProfits: [],
   riskAmount: undefined,
   rMultiple: undefined,
@@ -366,7 +370,7 @@ export const DEFAULT_TRADE_FORM_DATA: TradeFormData = {
   expirationDate: new Date(),
   strikePrice: 0,
   optionType: 'call',
-  contractSize: 100,
+  contractSize: DEFAULT_OPTION_CONTRACT_SIZE,
 
   
   contractSymbol: '',
@@ -422,6 +426,12 @@ export interface TradeFormProps {
   
   onCancel?: () => Promise<boolean> | boolean | void;
   
+  onOpenCustomization?: (
+    applyLayout: (layout: TradeFormLayoutSettings) => void
+  ) => void;
+  
+  active?: boolean;
+  
   dirtyStateRef?: { current: (() => boolean) | null };
 }
 
@@ -463,12 +473,20 @@ export interface TradeFormErrors {
   swap?: string;
   fees?: string;
   rebate?: string;
-  stopLoss?: string;
+  stopLosses?: Array<{
+    price?: string;
+    closePercent?: string;
+    size?: string;
+  }>;
+  
+  stopLossesTotal?: string;
   takeProfits?: Array<{
     price?: string;
     closePercent?: string;
     size?: string;
   }>;
+  
+  takeProfitsTotal?: string;
   riskAmount?: string;
   fxRate?: string;
   mae?: string;

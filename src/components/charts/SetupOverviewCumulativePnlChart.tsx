@@ -13,6 +13,8 @@ import { RechartsPortalTooltip } from './RechartsPortalTooltip';
 import { t } from '../../lang/helpers';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { calculateYAxisWidth, generateNiceAxis } from '../../utils/chartUtils';
+import { useChartAnimationActive } from './chartAnimation';
+import { skipVerticalGridCoordinates } from './chartGrid';
 
 interface SetupOverviewPnlSeries {
   key: string;
@@ -38,6 +40,7 @@ interface SetupOverviewCumulativePnlChartProps {
 export const SetupOverviewCumulativePnlChart: React.FC<
   SetupOverviewCumulativePnlChartProps
 > = ({ data, series, height = 340, formatPnl, isMasked }) => {
+  const isAnimationActive = useChartAnimationActive();
   const chartRef = useRef<HTMLDivElement>(null);
 
   if (isMasked) {
@@ -76,6 +79,7 @@ export const SetupOverviewCumulativePnlChart: React.FC<
             strokeDasharray="3 3"
             strokeOpacity={0.35}
             vertical={false}
+            verticalCoordinatesGenerator={skipVerticalGridCoordinates}
           />
           <ReferenceLine
             y={0}
@@ -128,6 +132,7 @@ export const SetupOverviewCumulativePnlChart: React.FC<
               dot={false}
               activeDot={{ r: item.isCombined ? 4 : 3 }}
               connectNulls
+              isAnimationActive={isAnimationActive}
             />
           ))}
         </LineChart>
@@ -198,7 +203,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
 }
 
-export function buildCumulativePnlAxis(
+function buildCumulativePnlAxis(
   minValue: number,
   maxValue: number
 ): { domain: [number, number]; ticks: number[] } {

@@ -1,12 +1,8 @@
 
 
-import React, { useState, useEffect } from 'react';
+import React, { useReducer, useEffect } from 'react';
 import { TradeFormData, TradeFormErrors, TradeFormValue } from '../types';
-import {
-  CustomFieldValues,
-  CustomFieldDefinition,
-  CustomFieldType,
-} from '../../../../types/customFields';
+import type { CustomFieldValues } from '../../../../types/customFields';
 import { CustomFieldsRenderer } from '../fields/CustomFieldRenderer';
 import { FormSection } from '../FormSection';
 import { usePlugin } from '../../../../hooks/usePlugin';
@@ -17,22 +13,6 @@ import {
   hasPopulatedTradeFormLayoutItem,
   isTradeFormLayoutItemVisible,
 } from '../tradeFormLayoutConfig';
-
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  Boolean(value) && typeof value === 'object' && !Array.isArray(value);
-
-const isCustomFieldType = (value: unknown): value is CustomFieldType =>
-  Object.values<unknown>(CustomFieldType).includes(value);
-
-const isCustomFieldDefinition = (
-  value: unknown
-): value is CustomFieldDefinition =>
-  isRecord(value) &&
-  typeof value.id === 'string' &&
-  typeof value.label === 'string' &&
-  typeof value.fieldKey === 'string' &&
-  isCustomFieldType(value.type) &&
-  typeof value.order === 'number';
 
 interface AdvancedTabProps {
   data: Partial<TradeFormData>;
@@ -55,56 +35,41 @@ export const AdvancedTab: React.FC<AdvancedTabProps> = ({
   isEditMode,
 }) => {
   const plugin = usePlugin();
-  const { service: customFieldsService, status } = useService(
-    'customFieldsService'
+  const { error } = useService('customFieldsService');
+  const [, invalidateFields] = useReducer(
+    (revision: number) => revision + 1,
+    0
   );
-  const [customFields, setCustomFields] = useState<CustomFieldDefinition[]>([]);
+  const manager = plugin?.serviceManager;
+  
+  
+  
+  const customFieldsService = manager?.isServiceInitialized(
+    'customFieldsService'
+  )
+    ? manager.getCustomFieldsService()
+    : null;
+  const customFields = customFieldsService?.getFields() ?? null;
 
   
+  
   useEffect(() => {
-    const loadCustomFields = async () => {
-      try {
-        if (customFieldsService && status === 'ready') {
-          const fields = customFieldsService.getFields();
-          setCustomFields(fields);
-        }
-        
-      } catch (error) {
-        console.error('Failed to load custom fields:', error);
-      }
-    };
-
-    void loadCustomFields();
-
-    
     const app = plugin?.app;
-    const handleCustomFieldsChanged = (payload: unknown) => {
-      if (!payload || typeof payload !== 'object') return;
-      if (!('fields' in payload)) return;
-
-      const fields = payload.fields;
-      if (Array.isArray(fields) && fields.every(isCustomFieldDefinition)) {
-        setCustomFields(fields);
-      }
-    };
-
-    if (app) {
-      app.workspace.on(
+    if (!app) return;
+    const handleCustomFieldsChanged = () => invalidateFields();
+    app.workspace.on(
+      'journalit-custom-fields-changed',
+      handleCustomFieldsChanged
+    );
+    
+    invalidateFields();
+    return () => {
+      app.workspace.off(
         'journalit-custom-fields-changed',
         handleCustomFieldsChanged
       );
-    }
-
-    
-    return () => {
-      if (app) {
-        app.workspace.off(
-          'journalit-custom-fields-changed',
-          handleCustomFieldsChanged
-        );
-      }
     };
-  }, [plugin, customFieldsService, status]); 
+  }, [plugin]);
 
   const shouldShowCustomFields =
     isTradeFormLayoutItemVisible(layout, 'customFields') ||
@@ -116,12 +81,20 @@ export const AdvancedTab: React.FC<AdvancedTabProps> = ({
     <div className="trade-form-advanced-tab">
       {shouldShowCustomFields && (
         <FormSection title={t('form.section.custom-fields')}>
-          <CustomFieldsRenderer
-            fields={customFields}
-            values={customFieldValues}
-            onChange={onCustomFieldChange}
-            errors={errors.customFields || {}}
-          />
+          {customFields ? (
+            <CustomFieldsRenderer
+              fields={customFields}
+              values={customFieldValues}
+              onChange={onCustomFieldChange}
+              errors={errors.customFields || {}}
+            />
+          ) : error ? (
+            <div role="alert" className="errorMessage">
+              {error.message}
+            </div>
+          ) : (
+            <div role="status">{t('common.loading')}</div>
+          )}
         </FormSection>
       )}
     </div>

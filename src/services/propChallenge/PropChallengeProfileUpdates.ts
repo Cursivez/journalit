@@ -1,5 +1,10 @@
 import { generateUUID } from '../../utils/uuid';
 import {
+  isAuthoritativeDrawdown,
+  isExecutableRule,
+} from './PropChallengeRuleReview';
+import { matchesSavedProfilePhase } from './profilePhaseIdentity';
+import {
   canPreserveProfileState,
   ruleDefinition,
   sameProfileContent,
@@ -87,6 +92,10 @@ export function proposedProfileRules(
   const source = selection.challenge.phases[sourcePhaseIndex];
   if (!phase || !source)
     throw new Error('Select an account phase and a source phase.');
+  if (!matchesSavedProfilePhase(config, phase, selection, sourcePhaseIndex))
+    throw new Error(
+      'The source phase no longer matches the saved profile identity. Select an unambiguous matching phase.'
+    );
   const keepRuleIdSet = new Set(keepRuleIds);
   const kept = phase.rules.filter((rule) => keepRuleIdSet.has(rule.id));
   if (kept.length !== keepRuleIdSet.size)
@@ -96,6 +105,7 @@ export function proposedProfileRules(
   return structuredClone([
     ...kept,
     ...source.rules.flatMap((rule) => {
+      if (!isExecutableRule(rule)) return [];
       if (keptKinds.has(rule.kind)) return [];
       const index = available.findIndex((existing) =>
         sameProfileContent(ruleDefinition(existing), { ...rule, enabled: true })
@@ -167,6 +177,7 @@ export function applyProfilePhaseUpdate(
   const payoutPolicy = proposal.policy;
   let history = phase.policyHistory;
   if (phase.status === 'active') {
+    const drawdowns = rules.filter(isAuthoritativeDrawdown);
     const time = Date.parse(effectiveAt);
     const prior = phase.policyHistory;
     const last = prior?.[prior.length - 1]?.effectiveAt ?? phase.startedAt;
@@ -198,7 +209,6 @@ export function applyProfilePhaseUpdate(
           'Payout cycle start must be between the phase start and effective date.'
         );
       }
-      const drawdowns = rules.filter((rule) => rule.kind === 'drawdown');
       const preserveDrawdowns =
         transition.drawdowns.length === 0 &&
         canPreserveProfileState({ rules: phase.rules }, { rules });
@@ -243,9 +253,7 @@ export function applyProfilePhaseUpdate(
                 ...transition,
                 drawdowns: transition.drawdowns.map((state, index) => ({
                   ...state,
-                  ruleId: rules.filter((rule) => rule.kind === 'drawdown')[
-                    index
-                  ].id,
+                  ruleId: drawdowns[index].id,
                 })),
               },
       },

@@ -99,6 +99,18 @@ interface WeeklyMetrics {
   contextMessage: string;
 }
 
+const TOOLTIP_OUTCOME_CLASS: Partial<Record<PnLOutcomeWithUnknown, string>> = {
+  win: 'journalit-home-weekly__tooltip-value--positive',
+  loss: 'journalit-home-weekly__tooltip-value--negative',
+};
+
+const tradeCountLabel = (tradeCount: number): string =>
+  `${tradeCount} ${
+    tradeCount !== 1
+      ? t('home.widget.weekly.trades')
+      : t('home.widget.weekly.trade')
+  }`;
+
 
 function DayBarTooltipComponent({
   hoveredDay,
@@ -136,21 +148,14 @@ function DayBarTooltipComponent({
             className={`journalit-home-weekly__tooltip-value ${
               isPnlMasked
                 ? ''
-                : hoveredData.outcome === 'win'
-                  ? 'journalit-home-weekly__tooltip-value--positive'
-                  : hoveredData.outcome === 'loss'
-                    ? 'journalit-home-weekly__tooltip-value--negative'
-                    : ''
+                : (TOOLTIP_OUTCOME_CLASS[hoveredData.outcome] ?? '')
             }`}
           >
             {formattedVal}
           </span>
           <span className="journalit-home-weekly__tooltip-separator">·</span>
           <span className="journalit-home-weekly__tooltip-muted">
-            {hoveredData.tradeCount}{' '}
-            {hoveredData.tradeCount !== 1
-              ? t('home.widget.weekly.trades')
-              : t('home.widget.weekly.trade')}
+            {tradeCountLabel(hoveredData.tradeCount)}
           </span>
         </>
       ) : (
@@ -620,7 +625,10 @@ const WeeklySummaryWidgetComponent: React.FC<WeeklySummaryWidgetProps> = ({
   plugin,
 }) => {
   const dashboardData = useDashboardData();
-  const { currency } = useCurrency();
+  const { currency: liveCurrency } = useCurrency();
+  
+  
+  const currency = dashboardData.dashboardData?.currency ?? liveCurrency;
   const { formatValue, shouldMask } = useDisplayFormatter();
 
   

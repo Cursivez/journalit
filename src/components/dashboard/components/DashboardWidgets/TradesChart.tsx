@@ -31,20 +31,13 @@ const parseTradeLimit = (value: number): TradeLimit | null => {
 };
 
 
-export const TradesChart: React.FC<BaseWidgetProps> = ({
-  filters,
-  dateFormat,
-}) => {
+const TradesChartComponent: React.FC<BaseWidgetProps> = ({ dateFormat }) => {
   const plugin = usePlugin();
   const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
   const [selectedLimit, setSelectedLimit] = useState<TradeLimit>(50);
 
   return (
-    <BaseWidget
-      filters={filters}
-      dateFormat={dateFormat}
-      skeletonType="bar-chart"
-    >
+    <BaseWidget dateFormat={dateFormat} skeletonType="bar-chart">
       {(data, _userDateFormat) => {
         
         const allChartData = prepareTradesChartData(
@@ -126,3 +119,6 @@ export const TradesChart: React.FC<BaseWidgetProps> = ({
     </BaseWidget>
   );
 };
+
+
+export const TradesChart = React.memo(TradesChartComponent);

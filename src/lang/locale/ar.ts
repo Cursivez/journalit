@@ -3,6 +3,27 @@
 import type { Lang } from './en';
 
 const ar: Lang = {
+  'tradelog.export.button': 'تصدير',
+  'tradelog.export.title': 'تصدير الصفقات',
+  'tradelog.export.format': 'التنسيق',
+  'tradelog.export.scope':
+    '{count} من الصفقات المطابقة · {columns} من الأعمدة الظاهرة',
+  'tradelog.export.raw':
+    'القيم غير مخفية، حتى في وضع الخصوصية. الربح والخسارة مبلغ نقدي وليس R؛ الصور مسارات فقط.',
+  'tradelog.export.mobile': 'على الهاتف، يُحفظ الملف في المجلد الرئيسي للخزنة.',
+  'tradelog.export.saved': 'تم حفظ التصدير في الخزنة: {filename}',
+  'tradelog.export.failed': 'تعذر تصدير الصفقات. يرجى المحاولة مرة أخرى.',
+  'tradelog.export.empty':
+    'لا توجد صفقات مطابقة أو أعمدة بيانات ظاهرة لتصديرها.',
+  'tradelog.export.guide':
+    'استخدم التصدير لحفظ جميع الصفقات المطابقة بصيغة CSV أو JSON أو Markdown بالأعمدة الظاهرة وترتيبها. تحتوي الملفات على بيانات غير مخفية، حتى في وضع الخصوصية.',
+  'expectancy-gap.benchmark-help':
+    'متوسط النموذج/الاختبار. مشترك بين المرشحات؛ اتركه فارغًا للمسح.',
+  'expectancy-gap.formula': 'الفجوة = المحقق − المتوقع',
+  'expectancy-gap.realized-help':
+    'المحقق = متوسط صافي R للصفقات المغلقة ذات بيانات مخاطرة صالحة.',
+  'expectancy-gap.interpretation':
+    'السالب = أقل من النموذج؛ الموجب = أعلى. هذا لا يفسر السبب.',
   'trade-import.recovery.bybit-header.columns':
     'الأعمدة المطلوبة المفقودة: {columns}.',
   'trade-import.recovery.bybit-header.title':
@@ -21,13 +42,36 @@ const ar: Lang = {
     'تغيّرت تفاصيل الحساب أثناء التحرير. أعد فتح محرر الحساب قبل الحفظ.',
   'account.profiles.profitable-days-conflict':
     'احتفظ بسياسة دفعات الأرباح الحالية أو عدّل شرط الأيام الرابحة قبل تطبيق هذه الشروط.',
+  'account.prop-challenge.rule.manual_review':
+    'مراجعة الشركة / شروط غير مدعومة',
+  'account.prop-challenge.summary.rule.manual_review': 'مراجعة الشركة',
+  'account.prop-challenge.ledger.state.needs-review': 'يلزم مراجعة الشركة',
+  'account.prop-challenge.payout.estimated-net': 'صافي المتداول التقديري',
+  'account.prop-challenge.payout.gross-withdrawals':
+    'إجمالي السحوبات من الحساب',
+  'account.prop-challenge.payout.lifetime-gross':
+    'ربح المرحلة الحالي + جميع السحوبات الإجمالية السابقة للمرحلة (وليس دورة الدفع فقط)',
+  'account.prop-challenge.payout.unresolved-cap': 'تأكيد الحد مع الشركة',
+  'account.prop-challenge.payout.marginal-split': 'التقسيم حسب شريحة الربح',
+  'account.prop-challenge.payout-rules.profit-split.above':
+    'حصة المتداول فوق الحد (%)',
+  'account.prop-challenge.payout.not-calculated': 'غير محسوب',
+  'account.prop-challenge.payout.manual-only':
+    'حسابات السحب غير متاحة لهذه الشروط. لا يزال بإمكانك تسجيل السحوبات الفعلية.',
+  'account.prop-challenge.payout.raise-floor':
+    'رفع الحد الأدنى إلى الرصيد الابتدائي دون خفضه',
+  'account.prop-challenge.rule.comparison': 'المقارنة',
   'command.share-note-as-image': 'مشاركة الملاحظة الحالية كصورة',
-  'trade.share.copy-screenshot': 'نسخ لقطة شاشة الصفقة',
   'trade.share.copied': 'تم نسخ لقطة شاشة الصفقة إلى الحافظة',
   'trade.share.failed': 'تعذّر نسخ لقطة شاشة الصفقة',
   'trade.share.not-ready':
     'لا تزال ملاحظة الصفقة قيد التحميل. حاول مرة أخرى بعد قليل.',
   'share.review.action': 'مشاركة بطاقة المراجعة',
+  'share.trade.modal-title': 'مشاركة الصفقة',
+  'share.trade.position-return': 'عائد المركز % (قبل التكاليف)',
+  'share.trade.account-return': 'عائد الحساب % (الرصيد الحالي)',
+  'share.trade.hide-dollar-hint':
+    'اختر R أو % لإخفاء المبالغ النقدية. تُعرض القيم غير المتاحة بشرطة.',
   'share.review.modal-title': 'مشاركة المراجعة',
   'share.review.section.top': 'أعلى الملاحظة',
   'share.review.select-all': 'تحديد الكل',
@@ -60,13 +104,6 @@ const ar: Lang = {
   'account.profiles.source-changed':
     'تغيّرت قواعد الشركة أثناء فتح هذه المراجعة. أعد فتح المراجعة قبل التطبيق.',
   'account.profiles.retain': 'الاحتفاظ بالقواعد الحالية',
-  'account.profiles.retain-help':
-    'احتفظ بقواعد هذا الحساب وتجاهل تغييرات الملف المصدر. قد تُعلمك تغييرات لاحقة في السياسات مجددًا.',
-  'account.profiles.comparison-help':
-    'تظهر الاختلافات فقط. وسّع أي قاعدة لفحص حقولها. وقد تفسّر التجاوزات المحلية بعض الاختلافات.',
-  'account.profiles.added': 'تمت الإضافة',
-  'account.profiles.removed': 'تمت إزالتها',
-  'account.profiles.changed': 'تغير',
   'account.profiles.not-configured': 'غير مهيأ',
   'account.profiles.no-rule-changes':
     'لا توجد اختلافات في القواعد أو سياسة دفعات الأرباح لهذه المرحلة.',
@@ -92,9 +129,12 @@ const ar: Lang = {
   'account.profiles.correction-after': 'بعد',
   'account.profiles.correction-stale':
     'تغيّر سجل الحساب. أعد فتح هذه المراجعة قبل تطبيق التصحيح.',
-  'account.profiles.correction-result': 'تقييم القواعد الصارمة',
-  'account.profiles.no-hard-breach': 'لم يُكتشف خرق لقاعدة صارمة',
+  'account.profiles.correction-effect': 'التأثير على هذا الحساب',
+  'account.profiles.not-failed': 'لم يفشل',
   'account.profiles.correction-consent': 'إعادة حساب السجل',
+  'account.profiles.correction-consent-help':
+    'يستبدل قواعد هذه المرحلة للسجل المتأثر ويعيد التحقق من نتيجتها. لا تتغير الصفقات والمدفوعات.',
+  'account.profiles.correction-period-open': 'من {date}',
   'account.profiles.correction-details': 'تفاصيل',
   'account.profiles.correction-apply': 'تطبيق التصحيح',
   'account.profiles.purchase-date': 'تاريخ الشراء الأصلي',
@@ -118,8 +158,6 @@ const ar: Lang = {
   'account.profiles.incoming': 'قواعد الشركة الواردة',
   'account.profiles.independent':
     'القواعد المحفوظة محلية في هذا المخزن. يؤدي تطبيقها إلى إنشاء نسخة مستقلة في الحساب؛ ولا يغيّر حفظ إصدار جديد الحسابات الحالية.',
-  'account.profiles.keep-help':
-    'تحتفظ القواعد المحددة بقيمك المحلية بدلًا من القاعدة الواردة من النوع نفسه. ألغِ التحديد لقبول قيمة الشركة. تُضاف أنواع القواعد الجديدة.',
   'account.profiles.keep-local': 'الاحتفاظ بقيمي:',
   'account.profiles.keep-payout': 'الاحتفاظ بسياسة دفعات الأرباح الحالية',
   'account.profiles.library': 'قواعدي المحفوظة',
@@ -140,10 +178,6 @@ const ar: Lang = {
     'اربط هذا التحدي بقواعد الشركة، وسيخبرك Journalit عندما تغيّرها الشركة. راجع أولًا أوجه اختلافها عن قواعد هذا الحساب؛ لن يتغير شيء حتى تطبّق التحديث.',
   'account.profiles.link-title': 'الربط بقواعد الشركة',
   'account.profiles.choose-source': 'اختيار قواعد الشركة',
-  'account.profiles.update-available':
-    'تغيّرت قواعد الشركة وتحتاج إلى مراجعة. ما زال حسابك يستخدم قواعده المحفوظة.',
-  'account.profiles.up-to-date':
-    'تستخدم هذه المرحلة آخر قواعد شركة تمت مراجعتها؛ وتظل التجاوزات المحلية مستقلة.',
   'trade-sync.tradovate.status.setup-required': 'يلزم إعداد الحساب',
   'trade-sync.tradovate.status.connecting': 'جارٍ الاتصال',
   'trade-sync.tradovate.status.paused': 'متوقف مؤقتًا',
@@ -159,6 +193,8 @@ const ar: Lang = {
     'تمت مزامنة {succeeded} من أصل {total} من اتصالات Tradovate.',
   'trade-sync.tradovate.sync-all-partial':
     'تمت مزامنة {succeeded} من أصل {total} من اتصالات Tradovate. راجع الاتصالات التي بها مشكلات.',
+  'trade-sync.tradovate.sync-all-provider-partial':
+    'تمت مزامنة {succeeded} من أصل {total} من اتصالات Tradovate · اكتملت المزامنة جزئيًا',
   'trade-sync.tradovate.connect-another': 'اربط حسابا Tradovate آخر',
   'trade-sync.tradovate.no-connections':
     'اربط حساب Tradovate على Journalit.co لإعداده ومزامنته هنا.',
@@ -215,6 +251,8 @@ const ar: Lang = {
     'تمت مزامنة {succeeded} من أصل {total} من اتصالات cTrader.',
   'trade-sync.ctrader.sync-all-partial':
     'تمت مزامنة {succeeded} من أصل {total} من اتصالات cTrader. راجع الاتصالات التي بها مشكلات.',
+  'trade-sync.ctrader.sync-all-provider-partial':
+    'تمت مزامنة {succeeded} من أصل {total} من اتصالات cTrader · اكتملت المزامنة جزئيًا',
   'trade-sync.ctrader.connect-another': 'اربط حسابا cTrader آخر',
   'trade-sync.ctrader.no-connections':
     'اربط حساب cTrader على Journalit.co لإعداده ومزامنته هنا.',
@@ -274,6 +312,62 @@ const ar: Lang = {
   'trade-sync.oauth.remap.notes-pending':
     'لا يزال تحديث {count} من الملاحظات الموجودة معلقًا. زامن مرة أخرى لإعادة المحاولة.',
   'trade-sync.source.ctrader': 'cTrader',
+  'trade-sync.source.hyperliquid': 'Hyperliquid',
+  'trade-sync.source.hyperliquid.description':
+    'مزامنة للمراقبة فقط لعقود Hyperliquid الدائمة بعملة USDC، تُعدّ على Journalit.co وتُكتب في هذه الخزنة.',
+  'onboarding.broker.option.hyperliquid-sync.label':
+    'Hyperliquid (عقود USDC الدائمة)',
+  'trade-sync.hyperliquid.recovery-title': 'استعادة ملاحظات الصفقات المفقودة',
+  'trade-sync.hyperliquid.recovery-count': 'استعادة {count} من ملاحظات الصفقات',
+  'trade-sync.hyperliquid.recovery-select-account':
+    'اختر حسابا محليا قبل استعادة ملاحظات الصفقات.',
+  'trade-sync.hyperliquid.recovery-confirm':
+    'هل تريد استعادة {count} من ملاحظات الصفقات إلى {account}؟',
+  'trade-sync.hyperliquid.scope-description':
+    'تغطي المزامنة العقود الدائمة المسوّاة بـ USDC فقط، وقد يكون السجل الذي يتيحه Hyperliquid عبر واجهته البرمجية غير مكتمل. يبقى استيراد CSV متاحًا، لكن الصفقات المتداخلة بين CSV والمزامنة لا تُزال تكراراتها تلقائيًا.',
+  'trade-sync.hyperliquid.description':
+    'للمراقبة فقط: اربط عنوان محفظة واختر الحسابات والسجل على Journalit.co. هنا تربط كل حساب بحساب في Journalit وتزامن الصفقات إلى هذه الخزنة.',
+  'trade-sync.hyperliquid.manage-on-website': 'الإدارة على Journalit.co',
+  'trade-sync.hyperliquid.connect-on-website': 'الربط على Journalit.co',
+  'trade-sync.hyperliquid.manage-connection': 'الإدارة على الموقع',
+  'trade-sync.hyperliquid.pending-acks':
+    '{count} من تحديثات الخزنة بانتظار التأكيد.',
+  'trade-sync.hyperliquid.disabled': 'مزامنة Hyperliquid غير متاحة بعد.',
+  'trade-sync.hyperliquid.status-failed': 'تعذّر تحميل حالة Hyperliquid.',
+  'trade-sync.hyperliquid.no-connections':
+    'لا توجد اتصالات Hyperliquid بعد. اربط عنوان محفظة على Journalit.co ثم عد إلى هنا.',
+  'trade-sync.hyperliquid.never': 'أبدًا',
+  'trade-sync.hyperliquid.last-sync': 'آخر مزامنة',
+  'trade-sync.hyperliquid.reconciliation-issues': '{count} من مشكلات المطابقة',
+  'trade-sync.hyperliquid.status.pending': 'جارٍ اكتشاف الحسابات',
+  'trade-sync.hyperliquid.status.setup-required': 'يلزم الإعداد',
+  'trade-sync.hyperliquid.status.paused': 'متوقفة مؤقتًا',
+  'trade-sync.hyperliquid.status.attention': 'تحتاج إلى مراجعة',
+  'trade-sync.hyperliquid.status.error': 'خطأ في الاتصال',
+  'trade-sync.hyperliquid.status.deleting': 'جارٍ حذف البيانات السحابية',
+  'trade-sync.hyperliquid.notice.setup-required':
+    'اختر الحسابات والسجل المراد مزامنتها على Journalit.co.',
+  'trade-sync.hyperliquid.notice.paused':
+    'المزامنة متوقفة مؤقتًا. تُحفظ الملاحظات الموجودة. استأنفها على Journalit.co.',
+  'trade-sync.hyperliquid.notice.attention':
+    'يحتاج هذا الاتصال إلى مراجعة. راجعه على Journalit.co أو تواصل مع الدعم.',
+  'trade-sync.hyperliquid.account.selected': 'محدد للمزامنة',
+  'trade-sync.hyperliquid.account.not-selected': 'غير محدد',
+  'trade-sync.hyperliquid.claimed-by-connection':
+    'تتم مزامنته عبر {connection}.',
+  'trade-sync.hyperliquid.mapping-required':
+    'اختر أولًا حسابًا في Journalit لكل حساب محدد.',
+  'trade-sync.hyperliquid.sync-to-vault': 'مزامنة',
+  'trade-sync.hyperliquid.sync-all': 'مزامنة الكل',
+  'trade-sync.hyperliquid.sync-complete': 'اكتملت مزامنة {connection}.',
+  'trade-sync.hyperliquid.sync-partial':
+    'اكتملت مزامنة {connection} مع وجود مشكلات.',
+  'trade-sync.hyperliquid.sync-all-complete':
+    'تمت مزامنة {succeeded} من {total} من اتصالات Hyperliquid.',
+  'trade-sync.hyperliquid.sync-all-partial':
+    'تمت مزامنة {succeeded} من {total} من اتصالات Hyperliquid. راجع الاتصالات التي بها مشكلات.',
+  'trade-sync.hyperliquid.sync-all-provider-partial':
+    'تمت مزامنة {succeeded} من {total} من اتصالات Hyperliquid · اكتملت المزامنة جزئيًا',
   'trade-sync.source.ctrader.description':
     'زامن صفقات cTrader في السحابة ثم اعرضها في هذا المخزن.',
   'trade-sync.ctrader.status-failed': 'تعذّر تحميل حالة cTrader.',
@@ -351,16 +445,6 @@ const ar: Lang = {
   'template-picker.badge.default': 'الافتراضي',
   'template-picker.badge.current': 'الحالي',
   'template-picker.cancel': 'إلغاء',
-  'auth.title.already-logged-in': 'لقد سجلت الدخول بالفعل',
-  'auth.desc.already-logged-in': 'لقد سجّلت الدخول بالفعل{email}.',
-  'auth.title.sign-in': 'سجل الدخول إلى Journalit',
-  'auth.label.email': 'عنوان البريد الإلكتروني',
-  'auth.button.send-code': 'أرسل رمز التحقق',
-  'auth.label.code': 'رمز التحقق',
-  'auth.button.verify': 'تحقق وتسجيل الدخول',
-  'auth.button.resend': 'إعادة إرسال الرمز',
-  'auth.error.needs-premium': 'ميزة Pro',
-  'auth.error.network-error': 'خطأ في الاتصال',
   'form.modal.unsaved-changes.title': 'التغييرات غير المحفوظة',
   'form.modal.unsaved-changes.body1':
     'لديك تغييرات غير محفوظة في نموذج الصفقة.',
@@ -383,14 +467,9 @@ const ar: Lang = {
     'لديك تغييرات غير محفوظة في إعدادات العمود.',
   'tradelog.settings.modal.unsaved-changes.body2':
     'هل تريد بالتأكيد الإغلاق دون حفظ؟',
-  'notice.error.missed-trade-service-init':
-    'لم تُهيّأ خدمة الصفقات الفائتة بعد. انتظر قليلًا وحاول مجددًا.',
-  'notice.error.backtest-trade-service-init':
-    'خدمة صفقات الاختبار التاريخي غير مهيأة. انتظر قليلًا وحاول مجددًا.',
   'notice.trade-updated': 'حُدّث {type}: {path}',
   'notice.trade-created': 'أُنشئ {type}: {path}',
-  'notice.new-trade-created':
-    '📈 تم إنشاء صفقة جديدة: {instrument} {direction}',
+  'notice.new-trade-created': 'تم إنشاء صفقة جديدة: {instrument} {direction}',
   'notice.error.trade-update-failed': 'فشل في تحديث {type}: {error}',
   'notice.error.trade-create-failed': 'فشل في إنشاء {type}: {error}',
   'form.section.trade-details': 'تفاصيل الصفقة',
@@ -421,6 +500,10 @@ const ar: Lang = {
   'form.manual-import-nudge.dismiss': 'ليس الآن',
   'form.layout.customize': 'تخصيص النموذج',
   'form.layout.modal-title': 'تخصيص نموذج الصفقة',
+  'form.layout.back-to-trade': 'العودة إلى الصفقة',
+  'form.layout.save-layout': 'حفظ التخطيط',
+  'form.layout.discard-changes.body':
+    'هل تريد تجاهل التخصيص غير المحفوظ؟ سيتم الاحتفاظ بمسودة الصفقة.',
   'form.layout.settings-title': 'تخطيط نموذج الصفقة',
   'form.layout.input-mode': 'وضع الإدخال',
   'form.layout.input-mode-prices': 'الأسعار',
@@ -496,7 +579,7 @@ const ar: Lang = {
   'form.field.total-costs': 'التكاليف الإجمالية:',
   'form.field.setup': 'نمط تداول',
   'form.field.mistake': 'خطأ',
-  'form.field.custom-tags': 'الوسوم المخصصة',
+  'form.field.tags': 'الوسوم',
   'form.field.trade-thesis': 'مبررات الصفقة',
   'form.field.time': 'الوقت',
   'form.field.price': 'السعر',
@@ -514,10 +597,8 @@ const ar: Lang = {
   'form.account-empty-state.description':
     'تتتبع الحسابات رصيدك ليتمكّن Journalit من حساب العوائد والمخاطرة والتراجع. لا يتطلب إنشاء حساب سوى الاسم.',
   'form.account-empty-state.create-account': 'إنشاء حساب',
-  'form.account-empty-state.submit-disabled':
-    'أنشئ حسابًا أولًا لحفظ هذه الصفقة.',
+  'form.account-empty-state.submit-disabled': 'أنشئ حسابًا أولًا لحفظ هذه الصفقة.',
   'form.empty.take-profits': 'لا توجد أهداف لجني الربح بعد',
-  'form.action.add-take-profit': 'إضافة هدف لجني الربح',
   'form.action.remove-take-profit': 'إزالة هدف جني الربح',
   'form.field.position-size': 'حجم المركز',
   'form.field.position-size.shares': 'أسهم',
@@ -569,7 +650,36 @@ const ar: Lang = {
   'form.placeholder.swap': 'التمويل الليلي',
   'form.placeholder.other-fees': 'رسوم المنصة أو الرسوم التنظيمية',
   'form.placeholder.dividend-amount': 'المبلغ النقدي، موجب أو سالب',
-  'form.placeholder.stop-loss': 'سعر وقف الخسارة الاختياري',
+  'form.placeholder.stop-loss': 'سعر الإيقاف',
+  'form.layout.stop-loss-unit': 'وحدة كمية وقف الخسارة',
+  'form.layout.stop-loss-unit-percent': 'نسبة من المركز',
+  'form.layout.stop-loss-unit-size': 'الحجم',
+  'form.field.stop-loss-short': 'SL',
+  'form.field.stop-price': 'سعر الإيقاف',
+  'form.field.stop-loss-percent': 'نسبة من المركز',
+  'form.field.stop-loss-size': 'الحجم',
+  'form.action.remove-stop-loss': 'إزالة وقف الخسارة',
+  'form.stop-loss.coverage': 'تغطي أوامر الإيقاف {percent} من المركز.',
+  'form.stop-loss.coverage-partial':
+    'تُستخدم قيمة مبلغ المخاطرة إلى أن يكون لكل وحدة أمر إيقاف.',
+  'form.placeholder.stop-loss-rest': 'الباقي',
+  'form.empty.stop-losses': 'لا توجد أوامر وقف خسارة بعد',
+  'tradelog.tooltip.stop-losses': 'أوامر وقف الخسارة',
+  'form.placeholder.stop-loss-size-amount': '{size} وحدة',
+  'trade.validation.stop-loss-price-required': 'سعر وقف الخسارة مطلوب.',
+  'trade.validation.stop-loss-close-percent-number':
+    'يجب أن تكون نسبة وقف الخسارة رقمًا صالحًا.',
+  'trade.validation.stop-loss-close-percent-range':
+    'يجب أن تكون نسبة وقف الخسارة بين 1 و100.',
+  'trade.validation.stop-loss-size-number':
+    'يجب أن يكون حجم وقف الخسارة رقمًا صالحًا.',
+  'trade.validation.stop-loss-size-positive':
+    'يجب أن يكون حجم وقف الخسارة أكبر من 0.',
+  'trade.validation.stop-loss-single-blank-amount':
+    'يمكن ترك كمية وقف خسارة واحد فقط فارغة.',
+  'trade.validation.stop-loss-total-over-position':
+    'أوامر وقف الخسارة تغطي أكثر من المركز.',
+  'trade.details.stop-loss-count': 'أوامر الإيقاف: {count}',
   'form.placeholder.target-price': 'السعر المستهدف',
   'form.placeholder.close-percent': '50%',
   'form.placeholder.close-size': '0.5',
@@ -583,6 +693,8 @@ const ar: Lang = {
   'form.placeholder.futures-point-value': 'مثال: 50 لعقد ES1',
   'form.placeholder.leverage': 'مثلًا: 100 للرافعة 1:100',
   'form.entry-exit.add-entry': '+ إضافة دخول',
+  'form.entry-exit.backtest-day': 'بتاريخ {date}، يوم آخر صفقة اختبار رجعي لك.',
+  'form.entry-exit.use-today': 'استخدم اليوم',
   'form.entry-exit.add-exit': '+ إضافة عملية خروج',
   'form.entry-exit.remove-entry': 'إزالة عملية الدخول',
   'form.entry-exit.remove-exit': 'إزالة عملية الخروج',
@@ -649,7 +761,6 @@ const ar: Lang = {
   'button.add-trade': 'إضافة صفقة',
   'button.update-trade': 'تحديث الصفقة',
   'button.save-changes': 'حفظ التغييرات',
-  'button.create-trade': 'إنشاء الصفقة',
   'button.delete-all': 'حذف الكل',
   'button.clear-all': 'مسح الكل',
   'button.cancel-reset': 'إلغاء إعادة التعيين',
@@ -657,7 +768,6 @@ const ar: Lang = {
   'button.mark-reviewed': 'وضع علامة «تمت المراجعة»',
   'button.maybe-later': 'ربما لاحقًا',
   'button.upgrade-now': 'الترقية الآن',
-  'button.apply': 'تطبيق',
   'button.learn-more': 'تعرف على المزيد',
   'button.upload-image': 'رفع الوسائط',
   'button.discord': 'ديسكورد',
@@ -670,12 +780,10 @@ const ar: Lang = {
   'validation.basic-tab-errors.one': 'عدد الأخطاء في التبويب الأساسي: {count}',
   'validation.basic-tab-errors.few': 'عدد الأخطاء في التبويب الأساسي: {count}',
   'validation.basic-tab-errors.many': 'عدد الأخطاء في التبويب الأساسي: {count}',
-  'validation.basic-tab-errors.other':
-    'عدد الأخطاء في التبويب الأساسي: {count}',
+  'validation.basic-tab-errors.other': 'عدد الأخطاء في التبويب الأساسي: {count}',
   'validation.details-tab-errors.one': 'عدد الأخطاء في تبويب التفاصيل: {count}',
   'validation.details-tab-errors.few': 'عدد الأخطاء في تبويب التفاصيل: {count}',
-  'validation.details-tab-errors.many':
-    'عدد الأخطاء في تبويب التفاصيل: {count}',
+  'validation.details-tab-errors.many': 'عدد الأخطاء في تبويب التفاصيل: {count}',
   'validation.details-tab-errors.other':
     'عدد الأخطاء في تبويب التفاصيل: {count}',
   'validation.advanced-tab-errors.one':
@@ -744,8 +852,7 @@ const ar: Lang = {
   'trade.validation.swap-invalid': 'مبلغ المبادلة غير صالح.',
   'trade.validation.fees-number': 'يجب أن تكون الرسوم رقما.',
   'trade.validation.risk-number': 'يجب أن يكون مبلغ المخاطرة رقمًا.',
-  'trade.validation.risk-valid-number':
-    'يجب أن يكون مبلغ المخاطرة رقمًا صالحًا.',
+  'trade.validation.risk-valid-number': 'يجب أن يكون مبلغ المخاطرة رقمًا صالحًا.',
   'trade.validation.risk-positive': 'يجب أن يكون مقدار المخاطرة أكبر من الصفر.',
   'trade.validation.fx-rate-number': 'يجب أن يكون سعر الصرف رقما صالحا.',
   'trade.validation.fx-rate-positive': 'يجب أن يكون سعر الصرف أكبر من الصفر.',
@@ -820,7 +927,6 @@ const ar: Lang = {
   'notice.settings-imported':
     'تم استيراد الإعدادات بنجاح من v{version}. أعد تشغيل Obsidian لتطبيق جميع التغييرات.',
   'notice.template-switched': 'تم التحويل إلى: {name}',
-  'notice.hotkey-set': 'تم تعيين الاختصار: {hotkey}',
   'notice.auto-sync-toggled': '{status} المزامنة التلقائية',
   'notice.auto-sync-enabled': 'مفعّلة',
   'notice.auto-sync-disabled': 'معطّل',
@@ -829,15 +935,6 @@ const ar: Lang = {
   'notice.csv-template-deleted': 'حُذف القالب «{name}»',
   'notice.csv-template-delete-failed': 'تعذّر حذف القالب: {error}',
   'notice.csv-template-imported': 'استُورد القالب «{name}» بنجاح',
-  'notice.csv-symbol-mappings-created.one':
-    'عدد روابط الرموز التي أُنشئت: {count}',
-  'notice.csv-symbol-mappings-created.few':
-    'عدد روابط الرموز التي أُنشئت: {count}',
-  'notice.csv-symbol-mappings-created.many':
-    'عدد روابط الرموز التي أُنشئت: {count}',
-  'notice.csv-symbol-mappings-created.other':
-    'عدد روابط الرموز التي أُنشئت: {count}',
-  'notice.csv-symbol-mapping-skipped': 'تم تخطي تعيين الرموز',
   'notice.csv-missing-fields': 'اربط جميع الحقول المطلوبة قبل إنشاء المعاينة.',
   'notice.setups-added': 'أُضيفت أنماط تداول إلى {count} صفقة',
   'notice.tags-added': 'أُضيفت وسوم إلى {count} صفقة',
@@ -877,9 +974,7 @@ const ar: Lang = {
   'notice.error.open-layout-builder': 'تعذّر فتح منشئ التخطيط: {error}',
   'notice.error.switch-template': 'فشل في تغيير التخطيط: {error}',
   'notice.error.switch-template-generic': 'فشل في تغيير التخطيط',
-  'notice.error.no-active-file': 'لا يوجد ملف نشط. افتح ملاحظة أولًا.',
-  'notice.error.no-template-support':
-    'هذا النوع من الملاحظات لا يدعم التخطيطات.',
+  'notice.error.no-template-support': 'هذا النوع من الملاحظات لا يدعم التخطيطات.',
   'notice.error.no-templates': 'لا توجد تخطيطات متاحة لنوع الملاحظة هذا.',
   'notice.error.asset-type-required': 'نوع الأصل مطلوب عند إضافة أداة',
   'notice.error.column-required': 'يجب إبقاء عمود واحد ظاهرًا على الأقل',
@@ -903,11 +998,6 @@ const ar: Lang = {
   'notice.error.add-mistakes': 'خطأ في إضافة الأخطاء: {error}',
   'notice.error.delete-trades': 'خطأ في حذف الصفقات: {error}',
   'notice.error.duplicate-trades': 'خطأ في تكرار الصفقات: {error}',
-  'notice.error.csv-validation': 'فشل التحقق من ملفات CSV/XLSX/XLS: {errors}',
-  'notice.error.import-failed': 'فشل الاستيراد: {error}',
-  'notice.error.file-too-large':
-    'الملف كبير جدًا. الحد الأقصى للحجم 10 ميجابايت',
-  'notice.error.select-csv': 'يرجى اختيار ملف CSV أو XLSX أو XLS أو HTML',
   'notice.error.cannot-delete-builtin': 'لا يمكن حذف التخطيطات المدمجة',
   'notice.error.duplicate-to-customize': 'كرّر هذا التخطيط لتخصيصه',
   'notice.error.sign-out': 'فشل تسجيل الخروج. يرجى المحاولة مرة أخرى.',
@@ -925,8 +1015,8 @@ const ar: Lang = {
   'tradelog.title': 'سجل الصفقات',
   'tradelog.root.all-trades': 'جميع الصفقات',
   'tradelog.view.selector.label': 'العرض',
-  'trade-form.guide.customization-modal.title': 'خصص النموذج ليناسب سير عملك',
-  'trade-form.guide.customization-modal.description':
+  'trade-form.guide.customization-page.title': 'خصص النموذج ليناسب سير عملك',
+  'trade-form.guide.customization-page.description':
     'يمكنك هنا إظهار الكتل الاختيارية أو إخفاءها أو إعادة ترتيبها. أبقِ النموذج مقتصرًا على الحقول التي تستخدمها فعلًا.',
   'trade-form.guide.finish.title': 'هذه هي ميزة التخصيص',
   'trade-form.guide.finish.description':
@@ -952,23 +1042,6 @@ const ar: Lang = {
   'tradelog.guide.gallery-mode.title': 'هناك أيضا معرض صور',
   'tradelog.guide.gallery-mode.description':
     'بدّل العرض هنا لتصفح صور صفقاتك في معرض. سيظهر لك دليل قصير عند فتح المعرض للمرة الأولى.',
-  'tradelog.guide.multi-select.title': 'تفعيل الاختيار المتعدد',
-  'tradelog.guide.multi-select.description':
-    'انقر هذا الزر لتحديد عدة صفقات معًا. عند تفعيل التحديد المتعدد، يؤدي النقر على الصف إلى تحديد الصفقة بدلًا من فتحها.',
-  'tradelog.guide.batch-actions.title': 'إجراءات الصفقات المجمّعة',
-  'tradelog.guide.batch-actions.description':
-    'استخدم هذا الشريط لتحديد الصفقات الظاهرة كلها، أو مسح التحديد، أو وضع علامة مراجعة، أو إضافة أنماط التداول والأخطاء، أو نسخ الصفقات وحذف عدة صفقات دفعة واحدة. ويمكنك الضغط على Shift والنقر لتحديد نطاق من الصفقات.',
-  'tradelog.guide.column-settings.title': 'افتح إعدادات الأعمدة',
-  'tradelog.guide.column-settings.description':
-    'انقر هذا الزر لاختيار الأعمدة الظاهرة ومستوى كثافة التفاصيل في الجدول.',
-  'tradelog.guide.active-columns.title':
-    'إعادة ترتيب الأعمدة المستخدمة أو إزالتها',
-  'tradelog.guide.active-columns.description':
-    'في «الأعمدة النشطة»، اسحب أي عمود لنقله، أو أزل الأعمدة التي لا تحتاج إليها. يؤدي ذلك إلى تغيير ترتيب الأعمدة في الجدول.',
-  'tradelog.guide.available-columns.title':
-    'أضف الأعمدة المخفية عندما تحتاج إلى مزيد من التفاصيل',
-  'tradelog.guide.available-columns.description':
-    'افتح الأعمدة المتاحة لإضافة الحقول مرة أخرى إلى الجدول. هنا تعيد أي شيء أزلته سابقا.',
   'tradelog.guide.open-trades.title': 'انقر على صفقة لفتح ملاحظتها',
   'tradelog.guide.open-trades.description':
     'في الوضع العادي، يؤدي النقر على الصفقة إلى فتحها. وفي وضع التحديد المتعدد، يؤدي إلى تحديدها بدلًا من ذلك. بدّل بين السلوكين حسب الإجراء المطلوب.',
@@ -985,8 +1058,7 @@ const ar: Lang = {
     'تؤثر المرشحات في لوحة المعلومات بأكملها',
   'dashboard.guide.main.filters.description':
     'استخدم المرشحات لتحديث جميع الإحصاءات والمخططات في الصفحة وفق نطاق تاريخ أو حساب أو نمط تداول أو وسم أو نوع صفقة مختلف. يمكنك أيضاً استبعاد أي قيمة لإخراج تلك الصفقات.',
-  'dashboard.guide.main.edit-layout.title':
-    'فعّل وضع التحرير لتخصيص هذه الصفحة',
+  'dashboard.guide.main.edit-layout.title': 'فعّل وضع التحرير لتخصيص هذه الصفحة',
   'dashboard.guide.main.edit-layout.description':
     'انقر «تعديل التخطيط» للسماح بنقل أدوات لوحة المعلومات وتغيير أحجامها وإزالتها وإضافة أدوات جديدة.',
   'dashboard.guide.main.open-widget-selector.title': 'افتح إضافة أداة',
@@ -1009,10 +1081,7 @@ const ar: Lang = {
     'هذه صفحتك الرئيسية. تعرض إحصاءات تداولك والإجراءات السريعة والاختصارات المؤدية إلى بقية Journalit.',
   'home.guide.filters.title': 'تغيّر هذه الأزرار البيانات التي تعرضها أدواتك',
   'home.guide.filters.description':
-    'استخدم هذه المرشحات لتغيير الفترة الزمنية أو نوع الصفقة أو الحساب، كي تعرض أدوات الصفحة الرئيسية البيانات التي تريد تحليلها.',
-  'home.guide.settings.title': 'إعدادات Journalit في متناولك دائمًا',
-  'home.guide.settings.description':
-    'استخدم هذا الزر لفتح إعدادات Journalit مباشرةً.',
+    'صفِّ حسب الفترة أو نوع الصفقة أو الحساب. اختر الأسبوع أو حدّد تاريخَي من/إلى شاملين باستخدام النطاق المخصص. تتبع الأدوات المرتبطة بالفترة اختيارك؛ وتبقى الأدوات المباشرة مباشرة.',
   'home.guide.customize.title': 'فعّل وضع التحرير لتخصيص الصفحة الرئيسية',
   'home.guide.customize.description':
     'انقر هذا الزر لبدء التخصيص. يتيح وضع التحرير نقل الأدوات وتغيير أحجامها وإزالتها وإضافة أدوات جديدة.',
@@ -1035,10 +1104,6 @@ const ar: Lang = {
   'home.guide.save-layout.title': 'احفظ التخطيط عند الانتهاء',
   'home.guide.save-layout.description':
     'عندما يصبح التخطيط كما تريد، انقر هذا الزر لحفظ تغييراتك والخروج من وضع التحرير.',
-  'home.guide.widget-interactions.title':
-    'هذه هي فكرة الصفحة الرئيسية الأساسية',
-  'home.guide.widget-interactions.description':
-    'الصفحة الرئيسية هي لوحة معلوماتك القابلة للتخصيص. استخدم وضع التحرير لتغيير التخطيط، وانقر الأدوات لفتح وظائفها أو إعداداتها أو صفحاتها التفصيلية.',
   'layoutBuilder.guide.intro.title': 'هذا هو منشئ التخطيط الخاص بك',
   'layoutBuilder.guide.intro.description':
     'تتحكم هذه الصفحة في بنية تخطيطات المراجعة. وأسهل طريقة للبدء هي تكرار تخطيط مدمج ثم تخصيص نسختك.',
@@ -1068,8 +1133,6 @@ const ar: Lang = {
   'layoutBuilder.guide.whats-new.add-widget-button.description':
     'لا يزال زر إضافة أداة يضيف إلى أسفل التخطيط، وأصبح الآن ينتقل إلى الأداة الجديدة ويفتح البحث الخاص بها.',
   'tradelog.empty': 'لم يُعثر على صفقات',
-  'tradelog.empty.submessage':
-    'ابدأ بإنشاء ملاحظات الصفقات لتظهر في سجل الصفقات.',
   'tradelog.processing': 'جارٍ معالجة بيانات الصفقات...',
   'tradelog.node.file-not-found': 'ملف الصفقة غير موجود: {path}',
   'tradelog.node.expand': 'توسيع',
@@ -1079,26 +1142,20 @@ const ar: Lang = {
   'tradelog.node.performance.quarter': 'ربع السنة {indicator} أداءً في {year}',
   'tradelog.node.performance.month':
     'شهر الأداء {indicator} في {quarter} {year}',
-  'tradelog.node.performance.week':
-    'أسبوع الأداء {indicator} في {month} {year}',
+  'tradelog.node.performance.week': 'أسبوع الأداء {indicator} في {month} {year}',
   'tradelog.node.performance.day': 'يوم الأداء {indicator} في {week} {year}',
   'tradelog.node.performance.period': 'فترة الأداء {indicator}',
-  'tradelog.filter.all': 'جميع الحالات',
   'tradelog.filter.winners': 'الرابحة',
   'tradelog.filter.losers': 'الخاسرة',
   'tradelog.filter.breakeven': 'نقطة التعادل',
-  'tradelog.filter.breakeven.desc': 'صفقات التعادل',
   'tradelog.filter.open': 'مفتوحة',
-  'tradelog.filter.open.desc': 'المراكز المفتوحة حاليًا',
   'tradelog.filter.closed': 'مغلقة',
   'tradelog.type.regular': 'عادية',
-  'tradelog.type.regular.desc': 'صفقات عادية',
   'tradelog.type.missed': 'فائتة',
   'tradelog.type.backtest': 'اختبار تاريخي',
   'tradelog.status.win': 'ربح',
   'tradelog.status.loss': 'خسارة',
   'tradelog.status.open': 'مفتوحة',
-  'tradelog.status.partially-closed': 'مغلقة جزئيًا',
   'tradelog.status.cancelled': 'ملغاة',
   'tradelog.status.breakeven': 'تعادل',
   'tradelog.status.missed': 'فائتة',
@@ -1122,8 +1179,7 @@ const ar: Lang = {
   'tradelog.copy-trade.adjustment-description-secondary':
     'استخدم رقمًا سالبًا لأسعار تنفيذ أو تكاليف أسوأ.',
   'tradelog.copy-trade.adjustment-preview': 'معاينة صافي الربح والخسارة:',
-  'tradelog.copy-trade.adjustment-invalid':
-    'أدخل تعديلًا صالحًا للربح والخسارة.',
+  'tradelog.copy-trade.adjustment-invalid': 'أدخل تعديلًا صالحًا للربح والخسارة.',
   'tradelog.copy-trade.adjustment-saved':
     'تم حفظ تعديل الربح والخسارة للصفقة المنسوخة.',
   'tradelog.tooltip.still-open': 'لا يزال مفتوحا',
@@ -1249,6 +1305,7 @@ const ar: Lang = {
   'tradelog.column.mistakes': 'الأخطاء',
   'tradelog.column.tags': 'الوسوم',
   'tradelog.column.reviewed': 'تمت المراجعة',
+  'tradelog.column.tradeRating': 'التقييم',
   'tradelog.column.thesis': 'مبررات الصفقة',
   'tradelog.column.mtComment': 'تعليق MT',
   'dashboard.title': 'لوحة المعلومات',
@@ -1356,9 +1413,6 @@ const ar: Lang = {
   'dashboard.filter.date.custom': 'مخصص',
   'dashboard.filter.date.from': 'من',
   'dashboard.filter.date.to': 'إلى',
-  'dashboard.filter.accounts.all': 'جميع الحسابات',
-  'dashboard.filter.accounts.n-selected': 'الحسابات المحددة: {count}',
-  'dashboard.filter.accounts.select-all': 'تحديد الكل',
   'dashboard.filter.accounts.none-found': 'لم يُعثر على حسابات',
   'dashboard.filter.accounts.phase-now': 'الآن',
   'dashboard.filter.tickers.none-found': 'لم يُعثر على رموز تداول',
@@ -1390,14 +1444,19 @@ const ar: Lang = {
   'dashboard.widgets.setup-performance.title': 'أداء أنماط التداول',
   'dashboard.widgets.setup-performance.description':
     'أشرطة مرتّبة تقارن الأداء حسب نمط التداول',
-  'dashboard.widgets.setup-performance.empty':
-    'لا توجد بيانات أداء نمط التداول',
+  'dashboard.widgets.setup-performance.empty': 'لا توجد بيانات أداء نمط التداول',
   'dashboard.widgets.setup-performance.masked-label': 'نمط تداول',
   'dashboard.widgets.tag-performance.title': 'أداء الوسوم',
   'dashboard.widgets.tag-performance.description':
     'أشرطة مرتّبة تقارن الأداء حسب الوسم',
   'dashboard.widgets.tag-performance.empty': 'لا توجد بيانات أداء للوسم',
   'dashboard.widgets.tag-performance.masked-label': 'الوسم',
+  'dashboard.widgets.rating-performance.title': 'الأداء حسب التقييم',
+  'dashboard.widgets.rating-performance.description':
+    'صافي الربح والخسارة أو نسبة الربح لكل تقييم بالنجوم منحته لصفقاتك',
+  'dashboard.widgets.rating-performance.empty':
+    'لا توجد صفقات مقيّمة بعد. قيّم الصفقات من ملاحظة الصفقة لمقارنتها هنا.',
+  'dashboard.widgets.rating-performance.masked-label': 'التقييم',
   'dashboard.widgets.ticker-performance.title': 'أداء رموز التداول',
   'dashboard.widgets.ticker-performance.metric-aria': 'المقياس',
   'dashboard.widgets.ticker-performance.view-aria': 'عرض',
@@ -1409,15 +1468,11 @@ const ar: Lang = {
   'dashboard.widgets.ticker-performance.metric.total-r': 'إجمالي R',
   'dashboard.widgets.ticker-performance.metric.win-rate':
     'نسبة الصفقات الرابحة',
-  'dashboard.widgets.ticker-performance.tooltip.ticker':
-    'رمز التداول: {ticker}',
   'dashboard.widgets.ticker-performance.tooltip.trades': 'الصفقات: {count}',
   'dashboard.widgets.ticker-performance.tooltip.win-rate':
     'نسبة الصفقات الرابحة: {rate} ({wins}فوز / {losses}خسارة)',
   'dashboard.widgets.ticker-performance.empty':
     'لا توجد بيانات أداء لرموز التداول',
-  'dashboard.widgets.ticker-performance.empty-submessage':
-    'لا تطابق المرشحات الحالية أي صفقات مغلقة لها رمز تداول.',
   'dashboard.widgets.ticker-performance.masked-ticker': 'رمز التداول',
   'dashboard.widgets.ticker-performance.omitted-count': '{count} غير معروضة',
   'dashboard.widgets.rollingStats.title': 'المتوسط المتحرك للأرباح والخسائر',
@@ -1441,8 +1496,7 @@ const ar: Lang = {
     'يتطلب {count} صفقة مغلقة على الأقل',
   'dashboard.rolling_win_loss.avg_loss_label': 'متوسط الخسارة: {value}',
   'home.widget.recent-items.name': 'العناصر الأخيرة',
-  'home.widget.recent-items.description':
-    'يعرض الملفات والعروض المفتوحة مؤخرًا',
+  'home.widget.recent-items.description': 'يعرض الملفات والعروض المفتوحة مؤخرًا',
   'home.widget.year-heatmap.name': 'خريطة نشاط التداول',
   'home.widget.year-heatmap.description':
     'تقويم يوضح نشاطك في التداول خلال السنة',
@@ -1479,7 +1533,7 @@ const ar: Lang = {
   'home.widget.getting-started.item.sidebar.cta': 'افتح الشريط الجانبي',
   'home.widget.getting-started.item.pro.title': 'تفعيل PRO',
   'home.widget.getting-started.item.pro.description':
-    'فعّل استيراد الصفقات ومزامنة الصفقات والتقويم الاقتصادي.',
+    'فعّل استيراد الصفقات ومزامنة الصفقات والتقويم الاقتصادي، واحصل على مزيد من استدعاءات أدوات الذكاء الاصطناعي شهريًا.',
   'home.widget.getting-started.item.pro.time': 'دقيقة واحدة',
   'home.widget.getting-started.item.pro.cta': 'تفعيل',
   'home.widget.weekly-summary.name': 'الملخص الأسبوعي',
@@ -1512,8 +1566,7 @@ const ar: Lang = {
   'home.widget.trading-score.name': 'درجة التداول',
   'home.widget.trading-score.description': 'درجة واحدة لأداء تداولك الإجمالي',
   'home.widget.aum.name': 'AUM',
-  'home.widget.aum.description':
-    'أرصدة الحسابات الحالية مع اتجاه لمدة 30 يومًا',
+  'home.widget.aum.description': 'أرصدة الحسابات الحالية مع اتجاه لمدة 30 يومًا',
   'home.widget.drawdown-monitor.name': 'مراقبة التراجع',
   'home.widget.drawdown-monitor.description': 'استخدام حد التراجع لكل حساب',
   'home.widget.profit-target-widget.name': 'هدف الربح',
@@ -1525,14 +1578,12 @@ const ar: Lang = {
     'حسابات شركات التداول المموّل التي فشلت أو نجحت أو يمكن طلب دفعة أرباح منها',
   'home.widget.eval-roi.description':
     'رسوم تحديات شركات التداول المموّل مقابل دفعات الأرباح المستلمة',
-  'account.header.title': 'الحساب: {name}',
   'account.header.back-to-dashboard': 'العودة إلى لوحة التحكم',
   'account.header.add-event.aria': 'إضافة إيداع أو سحب',
   'account.header.edit-account.aria': 'تعديل الحساب',
   'account.header.view-trades.aria': 'عرض الصفقات في سجل الصفقات',
   'account.header.type': 'النوع:',
   'account.header.initial-balance': 'الرصيد الأولي:',
-  'account.header.current-balance': 'الرصيد الحالي:',
   'account.header.account-id': 'معرف الحساب:',
   'account.header.warning.trades-before-creation.one':
     'عدد الصفقات التي سبقت تاريخ إنشاء الحساب: {count}',
@@ -1609,8 +1660,7 @@ const ar: Lang = {
   'view.economic-calendar.forecast': 'التوقعات',
   'view.economic-calendar.previous': 'السابق',
   'view.economic-calendar.actual': 'الفعلي',
-  'view.economic-calendar.import-success':
-    'استُورد {imported} وحُدّث {updated}',
+  'view.economic-calendar.import-success': 'استُورد {imported} وحُدّث {updated}',
   'view.economic-calendar.import-failed': 'تعذّر استيراد الأحداث.',
   'view.economic-calendar.restore-missing-events':
     'استعادة الأحداث المفقودة ({count})',
@@ -1627,8 +1677,7 @@ const ar: Lang = {
   'economicCalendar.guide.main.manual-import.title': 'الاستيراد اليدوي اختياري',
   'economicCalendar.guide.main.manual-import.description':
     'حدّد الصفوف الظاهرة واستخدم «استيراد الأحداث» لاستيرادها مرة واحدة. لا تحتاج إلى تكرار ذلك أسبوعيًا عند تفعيل الاستيراد التلقائي.',
-  'economicCalendar.guide.main.restore.title':
-    'استعادة الأحداث المُعدّة الناقصة',
+  'economicCalendar.guide.main.restore.title': 'استعادة الأحداث المُعدّة الناقصة',
   'economicCalendar.guide.main.restore.description':
     'يصبح هذا الزر متاحا عندما تفقد الأحداث من نطاق الاستيراد التلقائي المحفوظ الخاص بك. يبقى مرئيا لكنه معطل بمجرد انتهاء الأسبوع مرة أخرى.',
   'economicCalendar.guide.main.summary.title': 'ضبطها مرة واحدة، ثم راجعها',
@@ -1675,8 +1724,6 @@ const ar: Lang = {
   'template.editor.unsaved-changes': 'تغييرات غير محفوظة',
   'template.editor.built-in-notice':
     'لا يمكن تعديل التخطيطات المدمجة. كرّر هذا التخطيط أو أنشئ تخطيطًا جديدًا لتخصيصه.',
-  'template.editor.show-review-desc':
-    'تحديد وقت عرض قسم المراجعة في ملاحظات الصفقات',
   'template.editor.section-visibility': 'ظهور الأقسام',
   'template.editor.trade-note-layout': 'تخطيط ملاحظة الصفقة',
   'template.editor.other-asset-types': 'أخرى',
@@ -1686,6 +1733,11 @@ const ar: Lang = {
   'template.editor.nav-bar-desc': 'عرض الجدول الزمني للصفقة وروابط المراجعة',
   'template.editor.images': 'الصور',
   'template.editor.images-desc': 'عرض صور الرسم البياني للصفقة',
+  'template.editor.image-layout': 'تخطيط الصور',
+  'template.editor.image-layout-desc':
+    'عرض الصور واحدة تلو الأخرى أو جميعها معًا',
+  'template.editor.image-layout-carousel': 'عرض دوّار',
+  'template.editor.image-layout-stacked': 'مكدّس',
   'template.editor.metrics': 'المقاييس',
   'template.editor.metrics-desc':
     'عرض بطاقات مقاييس الدخول والخروج والمدة والخطة',
@@ -1697,6 +1749,11 @@ const ar: Lang = {
   'template.editor.metadata-desc': 'عرض الحسابات وأنماط التداول والأخطاء',
   'template.editor.metric-cards': 'بطاقات المقاييس',
   'template.editor.metadata-rows': 'صفوف البيانات الوصفية',
+  'template.editor.note-sections': 'أقسام الملاحظة',
+  'template.editor.note-sections-desc':
+    'عناوين ونصوص تُكتب أسفل الصفقة في ملاحظات الصفقات الجديدة، لكل أنواع الأصول. يمكنك تعديلها في الملاحظة لاحقًا.',
+  'template.editor.note-sections-zone-placeholder':
+    'نص يُكتب في ملاحظات الصفقات الجديدة...',
   'template.editor.accounts': 'الحسابات',
   'template.editor.setups': 'أنماط التداول',
   'template.editor.mistakes': 'الأخطاء',
@@ -1711,6 +1768,8 @@ const ar: Lang = {
   'template.editor.review-button': 'زر وضع علامة «تمت المراجعة»',
   'template.editor.review-button-desc':
     'إظهار زر لوضع علامة «تمت المراجعة» على الصفقة',
+  'template.editor.rating': 'التقييم',
+  'template.editor.rating-desc': 'عرض التقييم بالنجوم الذي تمنحه للصفقة',
   'csv.mapper.title': 'ربط الأعمدة بحقول الصفقة',
   'csv.mapper.subtitle': 'طابق أعمدتك مع حقول الصفقة التي تمثلها.',
   'csv.mapper.do-not-import': 'لا تستورد',
@@ -1720,8 +1779,6 @@ const ar: Lang = {
   'csv.mapper.mode.title': 'ماذا يمثل كل صف؟',
   'csv.mapper.mode.help':
     'تحتوي جداول اليوميات عادةً على صفقة مغلقة واحدة في كل صف مع عمود للربح والخسارة. أما سجلات أوامر الوسطاء فتُدرج كل عملية شراء وبيع في صف مستقل.',
-  'csv.mapper.asset-type.help':
-    'اختر نوع الأداة في هذا الملف. هذا يحدد الحقول المطلوبة ومنطق التحليل.',
   'csv.mapper.tip.title': 'نصيحة: اربط حقولًا إضافية',
   'csv.mapper.tip.desc':
     'يساعد ربط الحقول الاختيارية مثل العمولة والربح/الخسارة على تحسين جودة الاستيراد. ويمكنك أيضًا ربط عدة أعمدة بحقول القوائم مثل الوسوم والصور وأنماط التداول والأخطاء.',
@@ -1754,7 +1811,7 @@ const ar: Lang = {
   'csv.mapper.help.option-type-required':
     'مطلوب للخيارات (خيار شراء Call أو خيار بيع Put)',
   'csv.mapper.help.contract-size':
-    'المضاعف للخيارات (عادة 100) أو العقود الآجلة',
+    'المضاعف للخيارات (عادة 100) أو العقود الآجلة أو الفوركس (الوحدات لكل لوت، عادة 100,000)',
   'csv.mapper.help.order-id': 'يُستخدم لتجميع عمليات التنفيذ الجزئية',
   'csv.mapper.help.asset-types':
     'أسهم، عقود خيارات، عقود آجلة، فوركس، عملات رقمية',
@@ -1765,31 +1822,15 @@ const ar: Lang = {
   'csv.mapper.category.other': 'أخرى',
   'csv.mapper.category.options': 'حقول عقود الخيارات',
   'csv.mapper.category.futures': 'حقول العقود الآجلة',
-  'csv.broker.label': 'الوسيط / تنسيق الاستيراد',
   'csv.broker.remove-favorite-aria': 'إزالة من المفضلات',
   'csv.broker.set-favorite-aria': 'تعيين كمفضّل',
-  'csv.broker.ibkr': 'Interactive Brokers (IBKR)',
-  'csv.broker.tradovate': 'Tradovate',
-  'csv.broker.tradezero': 'TradeZero',
-  'csv.broker.tradingview': 'TradingView (التداول الورقي)',
-  'csv.broker.bybit': 'Bybit (عقود USDT الدائمة)',
-  'csv.broker.blofin': 'Blofin',
-  'csv.broker.hyperliquid': 'Hyperliquid (العقود الدائمة)',
-  'csv.broker.sierrachart': 'سييرا تشارت (العقود الآجلة)',
-  'csv.broker.motivewave': 'MotiveWave',
-  'csv.broker.fxreplay': 'FX Replay (التحليلات)',
-  'csv.broker.atas': 'ATAS (الإحصائيات في الوقت الحقيقي)',
-  'csv.broker.rithmic': 'Rithmic',
-  'csv.broker.jdr': 'MetaTrader 4 / 5',
   'csv.account-selector.favorite.remove': 'إزالة من المفضلات',
   'csv.account-selector.favorite.set': 'تعيين كمفضّل',
-  'csv.results.successfully-imported-suffix': ' الصفقات',
   'csv.results.failed-to-import-prefix': 'تعذّر استيراد ',
   'csv.results.failed-to-import-suffix': ' من الصفوف (انظر التفاصيل أدناه)',
   'csv.results.pending-local-writes':
     'لا تزال كتابة {count} من ملاحظات الصفقات قيد الانتظار. سيطابق Journalit عمليات الكتابة المكتملة، ويُبقي ما لم يكتمل منها متاحًا للاستعادة.',
   'csv.results.pending-title': 'لا تزال مزامنة الاستيراد جارية',
-  'csv.image-review.count': 'عدد الصور: {count}',
   'image.uploader.paste-title': 'لصق الوسائط من الحافظة (Ctrl+V)',
   'image.uploader.pasting': 'ألصق...',
   'image.uploader.paste': 'لصق',
@@ -1807,6 +1848,9 @@ const ar: Lang = {
   'image.viewer.nav-next': 'الصورة التالية',
   'image.viewer.zoom-in-hint': 'اضغط أو انقر للتكبير',
   'image.viewer.zoom-out-hint': '{scale}x (اضغط أو انقر للتكبير)',
+  'image.youtube.unavailable-title': 'فيديو YouTube',
+  'image.youtube.unavailable-description': 'خاص أو غير متاح',
+  'image.youtube.open': 'فتح على YouTube',
   'image.viewer.close-aria': 'إغلاق ملء الشاشة',
   'image.viewer.copy-image': 'نسخ الصورة',
   'image.viewer.copied': 'تم النسخ',
@@ -1827,19 +1871,23 @@ const ar: Lang = {
   'image.carousel.next': 'الصورة التالية',
   'image.carousel.image-alt': '{prefix} {index}',
   'image.carousel.thumbnail-alt': 'صورة مصغرة {index}',
-  'paste.notice.image-pasted': '📋 تم لصق الصورة بنجاح',
-  'paste.notice.images-pasted': '📋 لُصقت {count} صورة بنجاح',
+  'paste.notice.image-pasted': 'تم لصق الصورة بنجاح',
+  'paste.notice.images-pasted': 'لُصقت {count} صورة بنجاح',
   'paste.error.clipboard-not-supported':
     'واجهة برمجة تطبيقات الحافظة غير مدعومة',
   'paste.error.clipboard-empty': 'لم أجد أي شيء في الحافظة للصقها',
-  'paste.error.file-size-exceeds':
-    'حجم الملف {size}ميجابايت يتجاوز الحد الأقصى',
+  'paste.error.file-size-exceeds': 'حجم الملف {size}ميجابايت يتجاوز الحد الأقصى',
   'paste.error.no-images-found':
     'لم يُعثر على صور في الحافظة. انسخ صورة أولًا ثم حاول مجددًا.',
   'paste.error.permission-denied': 'تم رفض الإذن',
   'datepicker.button.clear': 'مسح',
   'datepicker.button.today': 'اليوم',
   'datepicker.button.now': 'الآن',
+  'datepicker.aria.hour': 'ساعة',
+  'datepicker.aria.minute': 'دقيقة',
+  'datepicker.aria.second': 'ثانية',
+  'datepicker.aria.previous-month': 'الشهر السابق',
+  'datepicker.aria.next-month': 'الشهر التالي',
   'datepicker.placeholder.day': 'DD',
   'datepicker.placeholder.month': 'MM',
   'datepicker.placeholder.year': 'YY',
@@ -1848,11 +1896,12 @@ const ar: Lang = {
   'datepicker.placeholder.second': 'SS',
   'common.loading': 'جار التحميل...',
   'common.error': 'خطأ',
+  'common.section-error': 'حدث خطأ في هذا القسم.',
+  'common.retry': 'إعادة المحاولة',
   'common.warning': 'تحذير',
   'common.info': 'معلومات',
   'common.yes': 'نعم',
   'common.no': 'لا',
-  'common.ok': 'موافق',
   'common.select-option': 'اختر خيارًا',
   'common.none': 'لا شيء',
   'common.other': 'أخرى',
@@ -1865,7 +1914,6 @@ const ar: Lang = {
   'common.n-types': 'عدد الأنواع: {count}',
   'common.select-item': 'اختر {item}',
   'common.header': 'العنوان',
-  'common.date': 'التاريخ',
   'common.days': 'الأيام',
   'common.week': 'الأسبوع',
   'common.weeks': 'أسابيع',
@@ -1875,14 +1923,10 @@ const ar: Lang = {
   'common.years': 'السنوات',
   'common.quarter': 'ربع سنة',
   'common.quarters': 'أرباع',
-  'common.min': 'الحد الأدنى',
-  'common.max': 'الحد الأقصى',
   'common.best': 'الأفضل',
   'common.worst': 'الأسوأ',
-  'common.profit': 'الربح',
   'common.trade': 'صفقة',
   'common.trades': 'صفقات',
-  'common.statuses': 'الحالات',
   'common.enabled': 'مفعل',
   'common.disabled': 'معطّل',
   'common.color.gray': 'الرمادي',
@@ -1989,11 +2033,8 @@ const ar: Lang = {
   'settings.ftp.error.reset-failed': 'تعذّرت إعادة تعيين كلمة المرور',
   'settings.auth.status-offline': 'غير متصل',
   'settings.auth.status-online': 'متصل',
-  'settings.auth.signed-in': 'تم تسجيل الدخول',
   'settings.auth.sign-in-up': 'تسجيل الدخول / التسجيل',
   'settings.auth.sign-out': 'تسجيل الخروج',
-  'settings.auth.subscription-features': 'ميزات الاشتراك',
-  'settings.auth.offline-mode': 'وضع عدم الاتصال',
   'settings.auth.guest': 'ضيف',
   'settings.auth.your-plan': 'خطتك',
   'settings.auth.manage-subscription': 'إدارة الاشتراك',
@@ -2001,34 +2042,32 @@ const ar: Lang = {
   'settings.tab.reviews': 'مراجعة',
   'settings.tab.customization': 'التخصيص',
   'settings.tab.journal-setup': 'دفتر التداول',
-  'settings.tab.backend': 'مزامنة الصفقات',
   'settings.tab.trading': 'الإعدادات الافتراضية للتداول',
   'settings.tab.sync': 'الحساب والمزامنة',
-  'settings.tab.accounts': 'الحساب',
+  'settings.page.reviews.title': 'تخطيطات المراجعة والأهداف وقوائم التحقق',
+  'settings.page.reviews.desc':
+    'افتح إعدادات المراجعة كاملة للتخطيطات والأهداف المتكررة وقوائم التحقق.',
+  'settings.page.customization.desc':
+    'افتح الحقول المخصصة وتخطيط النموذج والرموز والتعيينات وأنماط التداول والأخطاء والوسوم والأحداث.',
+  'settings.page.trade-sync.desc':
+    'افتح مزودي مزامنة الوسطاء وبيانات اعتماد FTP وإدارة الحسابات والتشخيصات وتفضيلات إشعارات المزامنة.',
+  'settings.page.general.desc':
+    'العملة واسم العرض وشاشة البدء والعناصر الأخيرة وتفضيلات التنقل.',
+  'settings.page.sync.desc':
+    'حساب Journalit والاشتراك ومزامنة الصفقات واستيراد الصفقات والتقويم الاقتصادي.',
+  'settings.page.trading.desc':
+    'الإعدادات الافتراضية للصفقات الجديدة ومعالجة التواريخ والمخاطرة ومنطق نقطة التعادل وتفضيلات عرض التحليلات.',
+  'settings.page.journal.desc':
+    'قوالب المراجعة والأتمتة والحقول المخصصة وتخطيط النموذج والرموز وأنماط التداول والأخطاء والوسوم والأحداث.',
+  'settings.page.advanced.desc':
+    'مجلد دفتر التداول وصيانة مسارات الصور والنسخ الاحتياطي للإعدادات والاستيراد والتصدير وإعادة التعيين.',
+  'settings.page.mcp-access.desc':
+    'اسمح لتطبيقات الذكاء الاصطناعي التي تربطها عبر MCP باستخدام هذا المخزن، واختر ما يحتاج إلى موافقتك، وراجع نشاط الوكلاء.',
   'settings.reviews.drc': 'DRC',
   'settings.reviews.weekly': 'مراجعة أسبوعية',
   'settings.reviews.monthly': 'مراجعة شهرية',
   'settings.reviews.quarterly': 'مراجعة ربع سنوية',
   'settings.reviews.yearly': 'مراجعة سنوية',
-  'settings.reviews.default-templates': 'التخطيطات الافتراضية',
-  'settings.reviews.trade-template': 'تخطيط الصفقة',
-  'settings.reviews.trade-template-desc':
-    'التخطيط المستخدم لملاحظات الصفقات الجديدة',
-  'settings.reviews.drc-template': 'تخطيط DRC',
-  'settings.reviews.drc-template-desc':
-    'التخطيط المستخدم لبطاقات التقرير اليومية الجديدة',
-  'settings.reviews.weekly-template': 'التخطيط الأسبوعي',
-  'settings.reviews.weekly-template-desc':
-    'التخطيط المستخدم للمراجعات الأسبوعية الجديدة',
-  'settings.reviews.monthly-template': 'التخطيط الشهري',
-  'settings.reviews.monthly-template-desc':
-    'التخطيط المستخدم للمراجعات الشهرية الجديدة',
-  'settings.reviews.quarterly-template': 'تخطيط المراجعة ربع السنوية',
-  'settings.reviews.quarterly-template-desc':
-    'التخطيط المستخدم للمراجعات ربع السنوية الجديدة',
-  'settings.reviews.yearly-template': 'التخطيط السنوي',
-  'settings.reviews.yearly-template-desc':
-    'التخطيط المستخدم للمراجعات السنوية الجديدة',
   'settings.reviews.template-builder': 'منشئ التخطيط',
   'settings.reviews.template-builder-desc':
     'أنشئ تخطيطاتك وعدّلها وأدرها بصريًا. يتيح لك عرض منشئ التخطيط سحب الأقسام وإفلاتها، وضبط الخيارات، ومعاينة التخطيط مباشرةً.',
@@ -2047,11 +2086,11 @@ const ar: Lang = {
   'settings.reviews.daily-goal-placeholder': 'أضف هدفا يوميا متكررا...',
   'settings.reviews.weekly-goals': 'الأهداف الأسبوعية',
   'settings.reviews.weekly-goal-placeholder': 'أضف هدفا أسبوعيا متكررا...',
-  'settings.reviews.pre-trade-checklist': 'قائمة DRC للتحقق قبل التداول',
-  'settings.reviews.pre-trade-checklist-desc':
+  'settings.reviews.checklist': 'قائمة تحقق DRC',
+  'settings.reviews.checklist-desc':
     'حدّد عناصر قائمة التحقق التي تظهر تلقائيًا في كل بطاقة تقرير يومية جديدة. تُنسخ إلى كل DRC عند إنشائها، ويمكن تعديلها لكل يوم على حدة.',
   'settings.reviews.checklist-placeholder': 'أضف عنصر قائمة تحقق...',
-  'settings.reviews.weekly-checklist': 'قائمة التحضير الأسبوعية',
+  'settings.reviews.weekly-checklist': 'قائمة التحقق الأسبوعية',
   'settings.reviews.weekly-checklist-desc':
     'حدّد عناصر قائمة تحقق تظهر تلقائيًا في كل مراجعة أسبوعية جديدة. تُنسخ عند إنشاء كل مراجعة ويمكن تعديلها لكل أسبوع.',
   'settings.reviews.weekly-checklist-placeholder':
@@ -2060,8 +2099,7 @@ const ar: Lang = {
   'settings.reviews.global-auto-create': 'الإنشاء التلقائي العام للمراجعات',
   'settings.reviews.global-auto-create-desc':
     'إنشاء المراجعة تلقائيًا عند تسجيل أول صفقة في الفترة المقابلة. ينطبق ذلك على المراجعات اليومية والأسبوعية والشهرية وربع السنوية والسنوية.',
-  'settings.reviews.global-auto-create-aria':
-    'الإنشاء التلقائي العام للمراجعات',
+  'settings.reviews.global-auto-create-aria': 'الإنشاء التلقائي العام للمراجعات',
   'settings.reviews.auto-create-drc-nav': 'إنشاء DRC تلقائيًا عند التنقل',
   'settings.reviews.auto-create-drc-nav-desc':
     'إنشاء بطاقة تقرير يومية جديدة تلقائيًا عند الانتقال إلى يوم لا توجد له بطاقة',
@@ -2096,8 +2134,6 @@ const ar: Lang = {
     'الإنشاء التلقائي لجميع المراجعات {status}',
   'settings.reviews.notice.auto-create-nav':
     'إنشاء {type} تلقائيًا عند التنقل: {status}',
-  'settings.reviews.daily.checklist-title': 'عناصر قائمة التحقق قبل التداول',
-  'settings.reviews.daily.questions-title': 'أسئلة المراجعة',
   'library.type.drc': 'DRC',
   'library.type.weekly': 'الأسبوعي',
   'library.type.monthly': 'شهريا',
@@ -2133,16 +2169,7 @@ const ar: Lang = {
   'library.option.select-template': '-- اختر تخطيطا --',
   'library.button.generate-code': 'توليد كود المشاركة',
   'library.button.copy-code': 'نسخ إلى الحافظة',
-  'settings.reviews.daily.timeframes-title': 'الأطر الزمنية للتوقعات',
-  'settings.reviews.daily.timeframes-placeholder':
-    'إطار زمني جديد (مثل 15M أو 5M)',
-  'settings.weekly.review-questions': 'أسئلة المراجعة',
-  'settings.weekly.forecast-timeframes': 'الأطر الزمنية للتوقعات',
-  'settings.shared.timeframes.title': 'الأطر الزمنية للتوقعات',
-  'settings.shared.timeframes.placeholder': 'إطار زمني جديد (مثل 15M أو 5M)',
   'shared.empty-state.message': 'لا توجد بيانات متاحة',
-  'weekly.tab.review': 'مراجعة',
-  'weekly.review.drcs.title': 'مراجعات يومية لهذا الأسبوع',
   'account.settings.modal.title': 'إعدادات لوحة تحكم الحساب',
   'account.settings.notice.name-empty': 'لا يمكن أن يكون اسم نوع الحساب فارغا',
   'account.settings.notice.type-exists': 'نوع الحساب «{name}» موجود بالفعل',
@@ -2195,8 +2222,7 @@ const ar: Lang = {
     'ضع علامة على جميع الحسابات كمحذوفة',
   'account.settings.migration.button.migrate': 'ترحيل الحسابات وحذف النوع',
   'account.settings.migration.button.migrating': 'جارٍ الترحيل...',
-  'account.settings.migration.action.reassigned':
-    'أُعيد تعيينها إلى "{target}"',
+  'account.settings.migration.action.reassigned': 'أُعيد تعيينها إلى "{target}"',
   'account.settings.migration.action.archived': 'نُقلت إلى حالة الأرشفة',
   'account.settings.migration.action.deleted': 'تم وضع علامة للحذف',
   'account.settings.delete.title': 'حذف نوع الحساب',
@@ -2239,31 +2265,10 @@ const ar: Lang = {
     'ضمن إحصائيات لوحة المعلومات',
   'account.settings.section.inclusion.include-withdrawals': 'السحوبات',
   'account.settings.section.inclusion.empty': 'لا تتوفر أنواع حسابات لضبطها.',
-  'account.settings.section.order.title': 'ترتيب العرض',
   'account.settings.section.order.move-up': 'نقل لأعلى',
   'account.settings.section.order.move-down': 'نقل لأسفل',
   'account.settings.button.save': 'حفظ الإعدادات',
   'account.settings.button.saving': 'جارٍ الحفظ...',
-  'weekly.review.performance.title': 'تقييم الأداء الذاتي',
-  'weekly.review.performance.mental': 'الأداء الذهني',
-  'weekly.review.performance.technical': 'التنفيذ الفني',
-  'weekly.review.questions.title': 'أسئلة المراجعة الأسبوعية',
-  'weekly.review.goals.title': 'الأهداف للأسبوع القادم',
-  'weekly.preparation.goals.title': 'الأهداف الأسبوعية',
-  'weekly.preparation.events.title': 'الأحداث الرئيسية',
-  'weekly.preparation.events.add-button': 'إضافة حدث',
-  'weekly.preparation.forecast.title': 'التوقعات الأسبوعية',
-  'weekly.overview.pnl-chart.title': 'الربح والخسارة التراكميان للأسبوع',
-  'weekly.overview.drawdown-chart.title': 'التراجع',
-  'weekly.overview.performance.title': 'الأداء الأسبوعي',
-  'weekly.overview.setup-performance.title': 'أداء نمط التداول',
-  'weekly.overview.trades-chart.title': 'صفقات الأسبوع',
-  'weekly.overview.best-trade.title': 'أفضل صفقة في الأسبوع',
-  'weekly.overview.worst-trade.title': 'أسوأ صفقة في الأسبوع',
-  'weekly.overview.daily-performance.title': 'الأداء اليومي',
-  'weekly.overview.button.create-trade': 'إنشاء صفقة',
-  'weekly.overview.button.view-trade-details': 'عرض تفاصيل الصفقة',
-  'monthly.tab.review': 'مراجعة',
   'backend.title': 'مزامنة الصفقات',
   'backend.description':
     'أعدّ مزامنة الصفقات للوسطاء المدعومين لتحديث مخزنك تلقائيًا.',
@@ -2328,21 +2333,21 @@ const ar: Lang = {
   'backend.sync.total-syncs': 'إجمالي عمليات المزامنة',
   'backend.sync.never': 'أبدًا',
   'backend.sync.invalid-date': 'تاريخ غير صالح',
-  'backend.notice.vault-registered': '✅ المخزن مسجل في خادم التداول',
+  'backend.notice.vault-registered': 'المخزن مسجل في خادم التداول',
   'backend.notice.sync-cancelled': '⏹️ أُلغيت المزامنة',
-  'backend.notice.sync-in-progress': '⚠️ المزامنة جارية بالفعل',
-  'backend.notice.account-info-failed': '❌ فشل في الحصول على معلومات الحساب',
+  'backend.notice.sync-in-progress': 'المزامنة جارية بالفعل',
+  'backend.notice.account-info-failed': 'فشل في الحصول على معلومات الحساب',
   'backend.notice.sync-batch-progress':
     '⏳ جارٍ مزامنة الدفعة: {count} صفقة (اكتمل {progress}٪، والمتبقي {remaining})',
-  'backend.notice.all-trades-synced': '✅ جميع {count} الصفقات متزامنة بالفعل',
-  'backend.notice.account-created': '📊 تم إنشاء حساب: {name}',
+  'backend.notice.all-trades-synced': 'جميع {count} الصفقات متزامنة بالفعل',
+  'backend.notice.account-created': 'تم إنشاء حساب: {name}',
   'backend.notice.batch-complete':
     '⏳ اكتملت الدفعة: {processed}/{total} صفقات ({progress}٪). متابع...',
   'backend.notice.sync-complete':
-    '✅ اكتملت المزامنة: تمت معالجة {total} صفقة ({newFiles} جديدة، {updated} محدّثة) عبر {accounts} حساب',
+    'اكتملت المزامنة: تمت معالجة {total} صفقة ({newFiles} جديدة، {updated} محدّثة) عبر {accounts} حساب',
   'backend.notice.sync-complete-no-trades':
-    '✅ اكتملت المزامنة؛ لم يُعثر على صفقات جديدة',
-  'backend.notice.sync-failed': '❌ فشلت المزامنة: {error}',
+    'اكتملت المزامنة؛ لم يُعثر على صفقات جديدة',
+  'backend.notice.sync-failed': 'فشلت المزامنة: {error}',
   'backend.accounts.linked': 'حسابات MT المرتبطة',
   'backend.accounts.linked-desc':
     'MetaTrader الحسابات التي تم اكتشافها من خلال التقارير المتزامنة',
@@ -2389,16 +2394,18 @@ const ar: Lang = {
   'settings.auth.feature.basic-tracking': 'التتبع الأساسي للصفقات',
   'settings.auth.feature.manual-entry': 'إدخال الصفقات يدويًا',
   'settings.auth.feature.analytics-reviews': 'التحليلات والمراجعات',
+  'settings.auth.feature.ai-tool-calls-free':
+    '100 استدعاء لأدوات الذكاء الاصطناعي شهريًا',
+  'settings.auth.feature.ai-tool-calls-pro':
+    'مزيد من استدعاءات أدوات الذكاء الاصطناعي',
   'settings.auth.feature.priority-support': 'الدعم ذو الأولوية',
   'backend.sync.just-now': 'الآن',
   'backend.sync.minutes-ago': 'منذ {count} دقيقة',
   'backend.sync.hours-ago': 'منذ {count} ساعة',
   'backend.sync.days-ago': 'منذ {count} أيام',
-  'csv.format': 'تنسيق الاستيراد: ',
   'csv.button.export-template': 'تصدير القالب',
   'csv.button.delete-template': 'حذف القالب',
   'csv.button.import-another': 'استيراد ملف آخر',
-  'csv.results.complete': 'اكتمل الاستيراد',
   'csv.results.history-ready': 'تاريخ تداولك جاهز',
   'csv.results.completed-with-issues': 'اكتمل الاستيراد مع وجود مشكلات',
   'csv.results.failed': 'فشل الاستيراد',
@@ -2410,10 +2417,6 @@ const ar: Lang = {
     'الصفقات المستوردة بنجاح إلى الحساب {account}: {count}',
   'csv.results.success.other':
     'الصفقات المستوردة بنجاح إلى الحساب {account}: {count}',
-  'csv.results.updated.one': 'الصفقات الحالية التي حُدّثت: {count}',
-  'csv.results.updated.few': 'الصفقات الحالية التي حُدّثت: {count}',
-  'csv.results.updated.many': 'الصفقات الحالية التي حُدّثت: {count}',
-  'csv.results.updated.other': 'الصفقات الحالية التي حُدّثت: {count}',
   'csv.results.skipped.one':
     'الصفقات المكررة التي تم تخطيها (موجودة في المخزن): {count}',
   'csv.results.skipped.few':
@@ -2423,39 +2426,14 @@ const ar: Lang = {
   'csv.results.skipped.other':
     'الصفقات المكررة التي تم تخطيها (موجودة في المخزن): {count}',
   'csv.results.broker': 'وسيط: {broker}',
-  'csv.results.more-trades.one': 'وعدد الصفقات الإضافية: {count}...',
-  'csv.results.more-trades.few': 'وعدد الصفقات الإضافية: {count}...',
-  'csv.results.more-trades.many': 'وعدد الصفقات الإضافية: {count}...',
-  'csv.results.more-trades.other': 'وعدد الصفقات الإضافية: {count}...',
   'csv.results.errors-header': 'انقر لرؤية الأخطاء ({count})',
   'csv.results.discord-note':
     'اختياري: إذا احتجت إلى مساعدة، انقر «نسخ التقرير» والصقه في Discord.',
   'csv.errors.copy-report': 'نسخ التقرير',
   'csv.errors.copied': 'تم النسخ',
   'csv.errors.rows': 'الصفوف: {rows}',
-  'csv.errors.suggestion': 'اقتراح: ',
   'csv.errors.raw-errors-limit': 'عرض أول {shown} من {total} الأخطاء',
-  'csv.report.plugin-version': 'نسخة الإضافة: {version}',
-  'csv.report.broker': 'وسيط: {broker}',
   'csv.report.top-issues': 'أهم القضايا:',
-  'csv.broker-guide.tradovate.step-2':
-    'انقر على تبويب "Orders" (الأوامر)، وليس تبويب "Performance" (الأداء)',
-  'csv.broker-guide.tradovate.warning.emphasis': 'مهم:',
-  'csv.broker-guide.tradovate.warning.message':
-    'استخدم تبويب الأوامر فقط. تبويب الأداء غير متوافق.',
-  'csv.broker-guide.ibkr.warning.emphasis': 'يجب استخدام Orders',
-  'csv.broker-guide.tradingview.step-3':
-    'اختر "Order History" (سجل الأوامر) من القائمة المنسدلة',
-  'csv.broker-guide.tradingview.warning.message':
-    'أنواع التصدير الأخرى (مثل Positions أو Orders) لن تعمل في الاستيراد.',
-  'csv.broker-guide.hyperliquid.warning.emphasis': 'حد أقصى 10,000 سجل.',
-  'csv.broker-guide.sierrachart.step-1':
-    'افتح Trade Activity Log (‏Trade → Trade Activity Log أو Ctrl+Shift+A).',
-  'csv.broker-guide.atas.warning.emphasis': 'مهم:',
-  'csv.broker-guide.atas.warning.message':
-    'لا تعدّل الملف المُصدَّر. يحتفظ Journalit بالصفقات من ورقة "Journal"، وعند توفرها يُكمل العمولة من عمليات التنفيذ المطابقة في ورقة "Executions".',
-  'csv.broker-guide.rithmic.warning.emphasis': 'مهم:',
-  'csv.broker-guide.jdr.warning.emphasis': 'مهم:',
   'csv.date-format.auto-detect': 'الكشف التلقائي (موصى به لصيغ ISO/القياسية)',
   'csv.date-format.us-date':
     'تاريخ أمريكي: 12/25/2024 (Schwab وFidelity وE*TRADE)',
@@ -2465,7 +2443,7 @@ const ar: Lang = {
   'csv.date-format.us-short-datetime':
     'تاريخ ووقت أمريكي مختصران: 1/5/2024 14:30:00',
   'csv.date-format.iso-datetime':
-    'تاريخ ووقت ISO: 2024-12-25 14:30:00 (Bybit وTradovate)',
+    'تاريخ ووقت ISO: 2024-12-25 14:30:00 (Tradovate)',
   'csv.date-format.iso-date': 'تاريخ ISO: 2024-12-25 (Interactive Brokers)',
   'csv.date-format.eu-date':
     'تاريخ الاتحاد الأوروبي: 25/12/2024 (اليوم/الشهر/السنة)',
@@ -2477,12 +2455,13 @@ const ar: Lang = {
   'upgrade.feature-message':
     'ميزة {featureName} متاحة ضمن Pro. رقِّ حسابك لفتح الميزات والأتمتة المتقدمة.',
   'upgrade.benefits-title': 'تشمل ميزات Pro:',
-  'upgrade.benefit.csv':
-    'استيراد CSV مع تعيين الأعمدة بمساعدة الذكاء الاصطناعي',
+  'upgrade.benefit.csv': 'استيراد CSV مع تعيين الأعمدة بمساعدة الذكاء الاصطناعي',
   'upgrade.benefit.economic-calendar':
     'التقويم الاقتصادي مع استيراد الأحداث الأسبوعية التلقائية',
   'upgrade.benefit.trade-sync': 'مزامنة الصفقات للوسطاء المدعومين',
   'upgrade.benefit.multi-account': 'دعم الحسابات المتعددة',
+  'upgrade.benefit.ai-tool-calls':
+    'مزيد من استدعاءات أدوات الذكاء الاصطناعي شهريًا لتطبيقات الذكاء الاصطناعي المتصلة',
   'upgrade.prop-profiles.message-firms':
     'يحتفظ Journalit بقواعد {count} من شركات التداول المموّل جاهزةً لملء بيانات التحدي مسبقًا.',
   'upgrade.prop-profiles.message-firm':
@@ -2501,8 +2480,6 @@ const ar: Lang = {
   'upgrade.benefit.prop.updates': 'تحديث القواعد عندما تغيرها شركتك',
   'upgrade.trial-notice':
     'احصل على تجربة مجانية لمدة أسبوعين لاستيراد جميع صفقاتك التاريخية وجرب جميع ميزات Pro بدون مخاطر.',
-  'monthly.overview.drawdown': 'التراجع',
-  'monthly.overview.no-drawdown-data': 'لا توجد بيانات تراجع لعرضها',
   'settings.account-linking.title': 'تغيير ربط الحساب',
   'settings.account-linking.description':
     'نقل جميع الصفقات من حساب MT إلى حساب مختلف في Obsidian',
@@ -2575,6 +2552,21 @@ const ar: Lang = {
     'تبقى حركات النقود في قسمها الخاص',
   'account-page.guide.main.transactions.description':
     'الإيداعات والسحوبات مع الرصيد بعد كل منها، منفصلة عن نتائج التداول. وتعرض حسابات التداول الممولة دفعات الأرباح هنا.',
+  'account.monthly-returns.title': 'العوائد الشهرية',
+  'account.monthly-returns.total': 'الإجمالي',
+  'account.monthly-returns.view-trades': 'عرض صفقات {period}',
+  'account.monthly-returns.unconverted':
+    'غير مشمولة: حسابات {currencies} (لا يتوفر سعر صرف).',
+  'account.monthly-returns.empty': 'لا توجد عوائد شهرية بعد.',
+  'account.monthly-returns.empty-sub':
+    'تظهر عندما يكون للحساب رأس مال وتُغلق صفقة.',
+  'account.monthly-returns.error': 'تعذّر تحميل العوائد الشهرية.',
+  'account-page.guide.main.monthly-returns.title': 'العوائد الشهرية',
+  'account-page.guide.main.monthly-returns.description':
+    'عائد كل شهر على رأس مال هذا الحساب. تُستبعد الإيداعات والسحوبات فلا تُحسب ربحًا أبدًا، ويجمع عمود الإجمالي الأشهر بشكل مركب. اختر شهرًا أو سنة لفتح صفقاتهما.',
+  'account-dashboard.guide.main.monthly-returns.title': 'العوائد الشهرية',
+  'account-dashboard.guide.main.monthly-returns.description':
+    'العائد الشهري المجمّع للحسابات المحتسبة أعلاه، مرجّحًا برأس مال كل حساب. تُحوَّل الحسابات بعملات أخرى بسعر صرف اليوم. اختر شهرًا أو سنة لفتح صفقاتهما.',
   'account-page.guide.main.actions.title': 'الصفقات والأموال والإعدادات',
   'account-page.guide.main.actions.description':
     'افتح صفقات هذا الحساب في Trade Log، أو سجّل إيداعًا أو سحبًا بزر +، أو عدّل الحساب وقواعده.',
@@ -2677,12 +2669,9 @@ const ar: Lang = {
   'account-dashboard.metrics.total-withdrawals': 'إجمالي السحوبات',
   'account-dashboard.metrics.no-withdrawals': 'لا توجد عمليات سحب',
   'account-dashboard.metrics.total-trades': 'إجمالي الصفقات',
-  'account-dashboard.prop.metrics.total': 'التحديات',
   'account-dashboard.prop.metrics.pass-rate': 'معدل النجاح',
   'account-dashboard.prop.metrics.costs': 'تكاليف التحدي',
-  'account-dashboard.prop.metrics.payouts': 'دفعات الأرباح',
   'account-dashboard.prop.metrics.net': 'الصافي',
-  'account-dashboard.prop.tabs.overview': 'نظرة عامة',
   'account-dashboard.mode.selector': 'وضع لوحة تحكم الحساب',
   'account-dashboard.mode.account-overview': 'نظرة عامة',
   'account-dashboard.mode.challenges': 'التحديات',
@@ -2747,8 +2736,6 @@ const ar: Lang = {
   'account-card.metric.trades': 'الصفقات',
   'account-card.metric.withdrawals': 'السحوبات',
   'account-card.metric.age': 'المدة',
-  'account-card.progress.profit-target': 'هدف الربح',
-  'account-card.progress.drawdown-used': 'المستخدم من حد التراجع',
   'account-card.progress.not-set': 'غير محدد',
   'account-card.footer.monthly': 'شهريًا:',
   'account-card.footer.total-costs': 'التكاليف الإجمالية:',
@@ -2785,7 +2772,6 @@ const ar: Lang = {
   'account.link-modal.button.linking': 'جارٍ الربط...',
   'account.link-modal.notice.select-existing': 'يرجى اختيار حساب قائم',
   'account.link-modal.notice.failed': 'تعذّر ربط الحساب: {error}',
-  'trade.review.title': 'مراجعة الصفقة',
   'trade.details.entry': 'الدخول',
   'trade.details.exit': 'الخروج',
   'trade.details.duration': 'المدة',
@@ -2801,13 +2787,14 @@ const ar: Lang = {
   'trade.image.alt-prefix': 'صورة الصفقة',
   'trade.review.reviewed': 'تمت المراجعة',
   'trade.review.reviewed-on': 'تمت المراجعة في {date}',
-  'timeline.status.loss': 'الخسارة',
+  'trade.rating.label': 'التقييم',
+  'trade.rating.hint':
+    'انقر على نجمة للتقييم، وانقر عليها مرة أخرى لنصف نجمة، ومرة أخرى لمسح التقييم',
   'timeline.aria.session-navigation': 'التنقل بين الصفقات في نفس اليوم',
   'timeline.aria.previous-trade': 'الصفقة السابقة: {trade}',
   'timeline.aria.next-trade': 'الصفقة التالية: {trade}',
   'timeline.aria.no-previous-trade': 'لم يكن هناك أي صفقة سابقة في هذا اليوم',
   'timeline.aria.no-next-trade': 'لا توجد صفقة قادمة في هذا اليوم',
-  'drc.tab.review': 'مراجعة',
   'drc.missed-trades.label.reason': 'السبب:',
   'missed-trade.reason-title': 'لماذا فاتتني هذه الصفقة',
   'settings.general.title': 'الإعدادات العامة',
@@ -2820,8 +2807,7 @@ const ar: Lang = {
   'settings.general.currency-aria': 'اختر العملة لعرض القيم النقدية',
   'settings.general.currency-changed':
     'تغيّرت العملة إلى {currency}. ستُحدّث جميع المكونات فورًا.',
-  'settings.general.currency-save-failed':
-    'تعذّر حفظ إعداد العملة. حاول مجددًا.',
+  'settings.general.currency-save-failed': 'تعذّر حفظ إعداد العملة. حاول مجددًا.',
   'settings.general.path-change.title': 'تغيّر موقع مجلد دفتر التداول',
   'settings.general.path-change.new-trades-title':
     'ستُنشأ الصفقات الجديدة في موقع المجلد الجديد',
@@ -2934,8 +2920,7 @@ const ar: Lang = {
     'افتح ملاحظات الصفقات تلقائيًا في تبويب جديد بعد إنشائها.',
   'settings.general.auto-open-trades-aria':
     'فتح ملاحظات الصفقات الجديدة تلقائيًا',
-  'settings.general.auto-open-toggled':
-    'فتح الصفقات المُنشأة تلقائيًا: {status}',
+  'settings.general.auto-open-toggled': 'فتح الصفقات المُنشأة تلقائيًا: {status}',
   'settings.general.date-format': 'تنسيق التاريخ',
   'settings.general.date-format-desc':
     'تنسيق عرض التواريخ في جميع أنحاء الإضافة',
@@ -3081,8 +3066,7 @@ const ar: Lang = {
   'settings.general.import-settings-desc':
     'استعد الإعدادات من ملف JSON سبق تصديره. ستُدمج الإعدادات مع القيم الحالية.',
   'settings.general.import-settings-importing': 'جارٍ الاستيراد...',
-  'settings.general.reset-to-defaults':
-    'إعادة التعيين إلى الإعدادات الافتراضية',
+  'settings.general.reset-to-defaults': 'إعادة التعيين إلى الإعدادات الافتراضية',
   'settings.general.reset-to-defaults-desc':
     'إعادة جميع إعدادات الإضافة إلى قيمها الافتراضية. ستُنشأ نسخة احتياطية تلقائيًا.',
   'settings.general.reset-to-defaults-warning':
@@ -3109,7 +3093,6 @@ const ar: Lang = {
   'settings.customization.options.type.tickers': 'رموز التداول',
   'settings.customization.options.type.accounts': 'الحسابات',
   'settings.customization.options.type.account-types': 'أنواع الحسابات',
-  'settings.customization.options.type.setups': 'أنماط التداول',
   'settings.customization.options.type.mistakes': 'الأخطاء',
   'settings.customization.options.type.tags': 'الوسوم',
   'settings.customization.options.type.events': 'الأحداث',
@@ -3162,8 +3145,6 @@ const ar: Lang = {
   'settings.customization.options.label.cancel-editing': 'إلغاء التحرير',
   'settings.customization.options.label.edit-option': 'تعديل {option}',
   'settings.customization.options.label.remove-option': 'إزالة {option}',
-  'settings.customization.options.placeholder.select-asset':
-    'اختر نوع الأصل...',
   'settings.customization.options.field.pip-size': 'حجم البيب',
   'settings.customization.options.field.priority': 'الأولوية:',
   'settings.customization.options.field.default-event-notes':
@@ -3172,7 +3153,6 @@ const ar: Lang = {
     'الملاحظات التي تُعبّأ تلقائيًا عند اختيار هذا الحدث',
   'settings.customization.options.aria.confirm-add': 'تأكيد إضافة {type}',
   'settings.customization.options.label.locked': 'مقفل',
-  'settings.customization.options.label.archived-reserved': 'مؤرشف (محجوز)',
   'settings.customization.options.aria.reset-all':
     'إزالة جميع عناصر {type} المخصصة',
   'settings.customization.options.button.reset-all': 'إعادة ضبط كل {type}',
@@ -3216,7 +3196,6 @@ const ar: Lang = {
   'settings.customization.options.commission.exit': 'الخروج',
   'settings.customization.options.commission.round-trip':
     'ذهابًا وإيابًا (دخول وخروج)',
-  'settings.customization.options.commission.actions': 'الإجراءات',
   'settings.customization.options.commission.all-accounts': 'جميع الحسابات',
   'settings.customization.options.commission.per-side': 'لكل جهة تنفيذ',
   'settings.customization.options.commission.remove-rule':
@@ -3362,6 +3341,97 @@ const ar: Lang = {
     'هل تريد بالتأكيد حذف الحقل المخصص «{fieldLabel}»؟',
   'settings.customization.custom-fields.delete.cannot-undo':
     'لا يمكن التراجع عن هذا الإجراء.',
+  'settings.customization.custom-fields.convert.action':
+    'تحويل {fieldLabel} إلى تقييم',
+  'settings.customization.custom-fields.convert.title':
+    'تحويل {fieldLabel} إلى تقييم',
+  'settings.customization.custom-fields.convert.editor-name': 'التقييم المدمج',
+  'settings.customization.custom-fields.convert.editor-desc':
+    'يوفّر Journalit تقييمًا بالنجوم لكل صفقة. انقل قيمة {fieldLabel} لكل صفقة إليه.',
+  'settings.customization.custom-fields.convert.intro':
+    'تصبح قيمة {fieldLabel} لكل صفقة تقييمها بالنجوم. تبقى قيم {fieldLabel} حتى تزيل الحقل.',
+  'settings.customization.custom-fields.convert.empty':
+    'لا توجد صفقات لها قيمة {fieldLabel}.',
+  'settings.customization.custom-fields.convert.scale-label':
+    'مقياس {fieldLabel}',
+  'settings.customization.custom-fields.convert.scale-out-of': 'من {max}',
+  'settings.customization.custom-fields.convert.scale-custom': 'مخصص',
+  'settings.customization.custom-fields.convert.scale-custom-max': 'أعلى قيمة',
+  'settings.customization.custom-fields.convert.table':
+    'قيم {fieldLabel} وتقييماتها',
+  'settings.customization.custom-fields.convert.col-trades': 'الصفقات',
+  'settings.customization.custom-fields.convert.value-rating': 'تقييم {value}',
+  'settings.customization.custom-fields.convert.skip': 'لن يُحوَّل',
+  'settings.customization.custom-fields.convert.unreadable.one':
+    '{count} صفقة لها قيمة لا يمكن قراءتها كتقييم ولن تُحوَّل.',
+  'settings.customization.custom-fields.convert.unreadable.other':
+    '{count} صفقات لها قيمة لا يمكن قراءتها كتقييم ولن تُحوَّل.',
+  'settings.customization.custom-fields.convert.conflict.one':
+    '{count} صفقة لها تقييم مختلف بالفعل',
+  'settings.customization.custom-fields.convert.conflict.other':
+    '{count} صفقات لها تقييم مختلف بالفعل',
+  'settings.customization.custom-fields.convert.conflict-keep':
+    'الإبقاء على تقييمها',
+  'settings.customization.custom-fields.convert.conflict-overwrite':
+    'استخدام {fieldLabel}',
+  'settings.customization.custom-fields.convert.summary-rate.one':
+    'سيُقيِّم {count} صفقة',
+  'settings.customization.custom-fields.convert.summary-rate.other':
+    'سيُقيِّم {count} صفقات',
+  'settings.customization.custom-fields.convert.summary-done.one':
+    '{count} محوَّلة بالفعل',
+  'settings.customization.custom-fields.convert.summary-done.other':
+    '{count} محوَّلة بالفعل',
+  'settings.customization.custom-fields.convert.summary-skip.one':
+    '{count} لن تُحوَّل',
+  'settings.customization.custom-fields.convert.summary-skip.other':
+    '{count} لن تُحوَّل',
+  'settings.customization.custom-fields.convert.submit.one':
+    'تقييم {count} صفقة',
+  'settings.customization.custom-fields.convert.submit.other':
+    'تقييم {count} صفقات',
+  'settings.customization.custom-fields.convert.continue': 'متابعة',
+  'settings.customization.custom-fields.convert.progress':
+    'جارٍ تقييم الصفقات: {done} من {total}',
+  'settings.customization.custom-fields.convert.done.one':
+    'تم تقييم {count} صفقة.',
+  'settings.customization.custom-fields.convert.done.other':
+    'تم تقييم {count} صفقات.',
+  'settings.customization.custom-fields.convert.changed.one':
+    'تغيّرت {count} صفقة بعد فتح هذه النافذة ولم تُعدَّل. افتحها مرة أخرى لتضمينها.',
+  'settings.customization.custom-fields.convert.changed.other':
+    'تغيّرت {count} صفقات بعد فتح هذه النافذة ولم تُعدَّل. افتحها مرة أخرى لتضمينها.',
+  'settings.customization.custom-fields.convert.failed.one':
+    'تعذّر تحديث {count} صفقة:',
+  'settings.customization.custom-fields.convert.failed.other':
+    'تعذّر تحديث {count} صفقات:',
+  'settings.customization.custom-fields.convert.remove-title':
+    'إزالة {fieldLabel}؟',
+  'settings.customization.custom-fields.convert.remove-desc.one':
+    'يحذف {fieldLabel} من {count} صفقة أصبح تقييمها يحمل القيمة، ثم يحذف الحقل.',
+  'settings.customization.custom-fields.convert.remove-desc.other':
+    'يحذف {fieldLabel} من {count} صفقات أصبح تقييمها يحمل القيمة، ثم يحذف الحقل.',
+  'settings.customization.custom-fields.convert.remove-keeps.one':
+    'تحتفظ {count} صفقة بقيمة {fieldLabel} لأنها لم تُحوَّل.',
+  'settings.customization.custom-fields.convert.remove-keeps.other':
+    'تحتفظ {count} صفقات بقيمة {fieldLabel} لأنها لم تُحوَّل.',
+  'settings.customization.custom-fields.convert.remove-confirm.one':
+    'حذف {fieldLabel} من {count} صفقة وحذف الحقل؟',
+  'settings.customization.custom-fields.convert.remove-confirm.other':
+    'حذف {fieldLabel} من {count} صفقات وحذف الحقل؟',
+  'settings.customization.custom-fields.convert.remove-views':
+    'ستتوقف أعمدة سجل الصفقات والفلاتر وكتل التخطيط التي تستخدم {fieldLabel} عن عرضه.',
+  'settings.customization.custom-fields.convert.remove': 'إزالة {fieldLabel}',
+  'settings.customization.custom-fields.convert.remove-progress':
+    'جارٍ إزالة {fieldLabel}: {done} من {total}',
+  'settings.customization.custom-fields.convert.removed':
+    'تمت إزالة {fieldLabel}. تم الاحتفاظ بتقييماتك.',
+  'settings.customization.custom-fields.convert.remove-incomplete':
+    'لم يتم تحديث بعض الصفقات، لذلك تم الإبقاء على {fieldLabel}. افتح هذه النافذة مرة أخرى لإكمال الإزالة.',
+  'settings.customization.custom-fields.convert.remove-field-failed':
+    'تمت إزالة {fieldLabel} من كل الصفقات، لكن تعذّر حذف الحقل. احذفه من حقول الصفقات المخصصة.',
+  'settings.customization.custom-fields.convert.field-changed':
+    'تم تغيير {fieldLabel} أو حذفه في مكان آخر، لذا لم يتم تحديث الصفقات المتبقية. افتح هذه النافذة مرة أخرى للمتابعة.',
   'settings.customization.custom-fields.reset.confirm-message':
     'هل تريد بالتأكيد حذف جميع الحقول المخصصة؟',
   'settings.customization.custom-fields.saved-options.title':
@@ -3526,8 +3596,7 @@ const ar: Lang = {
   'onboarding.activation.success.title': 'تسجيل الدخول اكتمل!',
   'onboarding.notice.complete-failed':
     'تعذّر حفظ اكتمال الإعداد الأولي. حاول مرة أخرى لاحقًا.',
-  'onboarding.notice.completed':
-    'أصبح دفتر تداولك جاهزًا. اكتمل الإعداد الأولي.',
+  'onboarding.notice.completed': 'أصبح دفتر تداولك جاهزًا. اكتمل الإعداد الأولي.',
   'onboarding.familiarity.kicker': 'سؤال سريع',
   'onboarding.familiarity.title': 'هل استخدمت Obsidian من قبل؟',
   'onboarding.familiarity.subtitle':
@@ -3708,13 +3777,6 @@ const ar: Lang = {
   'widget.header.drc': 'DRC',
   'widget.header.nav.prev': '← السابق',
   'widget.header.nav.next': '→ القادم',
-  'widget.header.day.0': 'الأحد',
-  'widget.header.day.1': 'الاثنين',
-  'widget.header.day.2': 'الثلاثاء',
-  'widget.header.day.3': 'الأربعاء',
-  'widget.header.day.4': 'الخميس',
-  'widget.header.day.5': 'الجمعة',
-  'widget.header.day.6': 'السبت',
   'widget.header.month.0': 'يناير',
   'widget.header.month.1': 'فبراير',
   'widget.header.month.2': 'مارس',
@@ -3775,8 +3837,7 @@ const ar: Lang = {
   'widget.review.title': 'مراجعة الأداء',
   'widget.review.mental-game': 'الأداء الذهني',
   'widget.review.technical-game': 'التقييم الفني للتداول',
-  'widget.review.star-hint':
-    'انقر لإعطاء نجمة كاملة، أو انقر بزر الفأرة الأيمن لإعطاء نصف نجمة',
+  'widget.review.star-hint': 'انقر لنجمة كاملة، وانقر مرة أخرى لنصف نجمة',
   'widget.review.invalid-context':
     "تتطلب أداة المراجعة ملاحظة DRC أو مراجعة أسبوعية (نوع بيانات المقدمة: 'drc' أو 'weekly-review').",
   'widget.checklist.name': 'قائمة التحقق',
@@ -3803,6 +3864,14 @@ const ar: Lang = {
   'widget.key-events.default-notes-tooltip':
     'تُدار الملاحظات الافتراضية من الإعدادات ← التخصيص ← الأحداث. يؤدي اختيار حدث هنا إلى تعبئة ملاحظاته الافتراضية المحفوظة تلقائيًا.',
   'widget.key-events.add-button': 'إضافة حدث',
+  'widget.key-events.today': 'اليوم',
+  'widget.key-events.day-picker-label': 'اليوم',
+  'widget.key-events.show-all-days': 'عرض الأسبوع كاملًا',
+  'widget.key-events.show-one-day': 'عرض يوم واحد',
+  'widget.key-events.event-count.one': '{count} حدث',
+  'widget.key-events.event-count.few': '{count} أحداث',
+  'widget.key-events.event-count.many': '{count} حدثًا',
+  'widget.key-events.event-count.other': '{count} حدث',
   'widget.key-events.empty-state': 'لا توجد أحداث رئيسية اليوم',
   'widget.key-events.empty-state-sub': 'أضف الأحداث في مراجعتك الأسبوعية',
   'widget.key-events.open-calendar-aria': 'افتح التقويم الاقتصادي',
@@ -3816,7 +3885,6 @@ const ar: Lang = {
   'widget.images.invalid-context':
     "تتطلب أداة الوسائط ملاحظة مراجعة (النوع: 'drc' أو 'weekly-review' أو 'monthly-review' أو 'quarterly-review' أو 'yearly-review').",
   'widget.images.alt-prefix': 'وسائط المراجعة',
-  'widget.images.stacked-alt': 'وسائط المراجعة {index}',
   'widget.images.open-fullscreen': 'افتح الوسائط {index} بملء الشاشة',
   'widget.images.delete': 'حذف الوسائط',
   'widget.images.empty': 'لا توجد وسائط',
@@ -3850,8 +3918,7 @@ const ar: Lang = {
   'widget.trades-chart-daily.name': 'الربح والخسارة اليوميان',
   'widget.trades-chart-daily.description': 'الربح والخسارة مجمّعان حسب اليوم',
   'widget.trades-chart-weekly.name': 'الربح والخسارة الأسبوعيان',
-  'widget.trades-chart-weekly.description':
-    'الربح والخسارة مجمّعان حسب الأسبوع',
+  'widget.trades-chart-weekly.description': 'الربح والخسارة مجمّعان حسب الأسبوع',
   'widget.trades-chart-monthly.name': 'الربح والخسارة الشهريان',
   'widget.trades-chart-monthly.description': 'الربح والخسارة مجمّعان حسب الشهر',
   'widget.trades-chart-quarterly.name': 'الربح والخسارة ربع السنويان',
@@ -3921,8 +3988,7 @@ const ar: Lang = {
     'هذه الأداة متوفرة فقط في المراجعات الأسبوعية والشهرية',
   'widget.position-size.title': 'حجم المركز',
   'widget.position-size.save-defaults': 'حفظ كإعداد افتراضي',
-  'widget.position-size.reset-defaults':
-    'إعادة التعيين إلى الإعدادات الافتراضية',
+  'widget.position-size.reset-defaults': 'إعادة التعيين إلى الإعدادات الافتراضية',
   'widget.position-size.stock-crypto': 'الأسهم/العملات الرقمية',
   'widget.position-size.futures': 'العقود الآجلة',
   'widget.position-size.forex': 'الفوركس',
@@ -3946,10 +4012,8 @@ const ar: Lang = {
     '${dollar}/نقطة | حجم التيك: {size} = ${value}',
   'widget.position-size.investment-dollar': 'الاستثمار ($)',
   'widget.position-size.investment': 'الاستثمار',
-  'widget.position-size.at-price': '@ ${price}',
   'widget.best-worst-weeks.name': 'أفضل وأسوأ الأسابيع',
-  'widget.best-worst-weeks.description':
-    'الأسابيع الأعلى والأدنى ربحًا وخسارةً',
+  'widget.best-worst-weeks.description': 'الأسابيع الأعلى والأدنى ربحًا وخسارةً',
   'widget.best-worst-weeks.best-week': 'أفضل أسبوع',
   'widget.best-worst-weeks.worst-week': 'أسوأ أسبوع',
   'widget.best-worst-weeks.no-profitable': 'لا توجد أسابيع مربحة',
@@ -4147,8 +4211,7 @@ const ar: Lang = {
   'metric.winRate.name': 'نسبة الصفقات الرابحة',
   'metric.winRate.description': 'نسبة الصفقات الفائزة',
   'metric.profitFactor.name': 'معامل الربحية',
-  'metric.profitFactor.description':
-    'نسبة الربح الإجمالي إلى الخسارة الإجمالية',
+  'metric.profitFactor.description': 'نسبة الربح الإجمالي إلى الخسارة الإجمالية',
   'metric.calmarRatio.name': 'نسبة كالمار',
   'metric.calmarRatio.description':
     'العائد المحقق السنوي مقارنة بأقصى تراجع نسبي',
@@ -4237,66 +4300,59 @@ const ar: Lang = {
   'metric.longestDrawdown.description': 'أطول مدة قُضيت في تراجع واحد',
   'metric.drawdownEpisodes.name': 'حلقات التراجع',
   'metric.drawdownEpisodes.description': 'عدد فترات التراجع المنفصلة',
-  'metric.category.performance': 'الأداء',
-  'metric.category.volume': 'الحجم',
   'onboarding.wizard.skip-aria': 'تخطي هذه الخطوة',
   'onboarding.wizard.skip-onboarding': 'تخطي الإعداد الأولي',
   'guide.skip-guide': 'تخطي الدليل',
   'guide.step-count': 'عدد الخطوات: {count}',
   'guide.step-position': 'الخطوة {current} من {total}',
-  'account.linked-trades.setups': 'أنماط التداول',
   'account.create.title': 'إنشاء حساب',
-  'account.create.field.name': 'اسم الحساب',
-  'account.create.field.name-desc': 'اسم فريد لحساب التداول',
-  'account.create.placeholder.name': 'حساب التداول الخاص بي',
-  'account.create.field.type': 'نوع الحساب',
-  'account.create.field.type-desc': 'نوع حساب التداول',
-  'account.create.field.initial-balance': 'الرصيد الأولي',
-  'account.create.field.initial-balance-desc':
-    'رصيد الحساب الابتدائي (اختياري، والقيمة الافتراضية 0)',
-  'account.create.field.live-balance': 'الرصيد الفعلي',
-  'account.create.field.live-balance-desc': 'رصيد حساب الوسيط الحالي',
-  'account.create.field.creation-date': 'تاريخ الإنشاء',
-  'account.create.field.creation-date-desc': 'متى تم إنشاء الحساب',
-  'account.create.field.currency': 'العملة',
-  'account.create.field.currency-desc':
-    'عملة الحساب الأصلية المستخدمة في العرض',
-  'account.create.field.drawdown-type': 'نوع التراجع',
-  'account.create.field.drawdown-type-desc':
-    'لا يوجد | ثابت | تراجع متحرك عند نهاية اليوم (EOD) | يدوي',
-  'account.create.field.drawdown-amount': 'مبلغ التراجع',
-  'account.create.field.drawdown-amount-desc': 'الحد الأقصى للتراجع',
-  'account.create.field.profit-target-desc': 'تحديد هدف ربح للحساب',
-  'account.create.field.monthly-cost': 'التكلفة الشهرية',
-  'account.create.field.monthly-cost-desc': 'رسوم الاشتراك، تكاليف المنصة',
-  'account.create.field.target-type': 'نوع الهدف',
-  'account.create.field.target-type-desc': 'قيمة مطلقة أو نسبة مئوية',
-  'account.create.field.target-percent': 'الهدف (٪)',
-  'account.create.field.target-dollar': 'هدف الربح ($)',
-  'account.create.field.target-percent-desc': 'نسبة الربح المستهدفة',
-  'account.create.field.target-dollar-desc': 'قيمة الهدف النقدية',
-  'account.create.field.target-date': 'التاريخ المستهدف (اختياري)',
-  'account.create.field.target-date-desc': 'تاريخ تحقيق هدف الربح',
-  'account.create.type.demo': 'تجريبي',
-  'account.create.type.evaluation': 'تقييم',
-  'account.create.type.funded': 'مموّل',
+  'account.form.field.name': 'اسم الحساب',
+  'account.form.placeholder.name': 'حساب التداول الخاص بي',
+  'account.form.field.type': 'نوع الحساب',
+  'account.form.type.demo': 'تجريبي',
+  'account.form.type.evaluation': 'تقييم',
+  'account.form.type.funded': 'مموّل',
+  'account.form.field.initial-balance': 'الرصيد الأولي',
+  'account.form.field.initial-balance-desc':
+    'رصيد الحساب الابتدائي (القيمة الافتراضية 0)',
+  'account.form.field.live-balance': 'الرصيد الفعلي',
+  'account.form.field.live-balance-desc': 'رصيد حساب الوسيط الحالي',
+  'account.form.field.creation-date': 'تاريخ الإنشاء',
+  'account.form.field.creation-date-desc': 'عندما تم إنشاء الحساب',
+  'account.form.field.currency': 'العملة',
+  'account.form.field.currency-desc': 'عملة الحساب الأصلية المستخدمة في العرض',
+  'account.form.field.drawdown-type': 'نوع التراجع',
+  'account.form.field.drawdown-amount': 'مبلغ التراجع',
+  'account.form.field.drawdown-amount-desc': 'الحد الأقصى للتراجع',
+  'account.form.field.monthly-cost': 'التكلفة الشهرية',
+  'account.form.field.monthly-cost-desc': 'رسوم الاشتراك، تكاليف المنصة',
+  'account.form.field.target-type': 'نوع الهدف',
+  'account.form.field.target-type-desc': 'قيمة مطلقة أو نسبة مئوية',
+  'account.form.field.target-percent': 'الهدف (٪)',
+  'account.form.field.target-dollar': 'هدف الربح ($)',
+  'account.form.field.target-percent-desc': 'نسبة الربح المستهدفة',
+  'account.form.field.target-dollar-desc': 'قيمة الهدف النقدية',
+  'account.form.field.target-date': 'التاريخ المستهدف',
+  'account.form.field.target-date-desc': 'تاريخ تحقيق هدف الربح',
+  'account.form.unsaved-changes.body': 'لديك تغييرات غير محفوظة في هذا الحساب.',
   'account.create.success': 'أُنشئ الحساب «{name}» بنجاح',
   'account.create.error.name-required': 'اسم الحساب مطلوب',
   'account.create.error.name-exists': 'يوجد حساب باسم «{name}» بالفعل',
   'account.create.error.rule-incomplete':
     'كل قاعدة مفعلة تحتاج إلى قيمة أعلى من الصفر',
-  'account.create.error.balance-negative':
-    'لا يمكن أن يكون الرصيد الأولي سالبا',
+  'account.create.error.balance-negative': 'لا يمكن أن يكون الرصيد الأولي سالبا',
   'account.create.error.invalid-live-balance': 'الرصيد الفعلي غير صالح',
   'account.create.error.drawdown-required':
     'مبلغ التراجع مطلوب عند تفعيل نوع التراجع',
   'account.create.error.profit-target-required':
     'مقدار الربح المستهدف مطلوب عند تفعيل هدف الربح',
+  'account.create.error.profit-target-needs-balance':
+    'هدف الربح بالنسبة المئوية يحتاج إلى رصيد أولي. أدخل رصيدًا أوليًا أو استخدم هدفًا بالمبلغ.',
+  'account.create.error.phase-profit-target-needs-balance':
+    'هدف الربح بالنسبة المئوية يحتاج إلى رصيد بداية للمرحلة. أدخل رصيدًا أو استخدم هدفًا بالمبلغ.',
   'account.create.error.invalid-date': 'تاريخ إنشاء غير صالح',
-  'account.create.error.future-date':
-    'لا يمكن أن يكون تاريخ الإنشاء في المستقبل',
-  'account.create.error.cost-negative':
-    'لا يمكن أن تكون التكلفة الشهرية سالبة.',
+  'account.create.error.future-date': 'لا يمكن أن يكون تاريخ الإنشاء في المستقبل',
+  'account.create.error.cost-negative': 'لا يمكن أن تكون التكلفة الشهرية سالبة.',
   'account.create.error.service-unavailable':
     'خدمة الحساب غير متوفرة. يرجى المحاولة مرة أخرى.',
   'account.create.error.fix-target-date':
@@ -4329,16 +4385,14 @@ const ar: Lang = {
   'account.add-event.confirm.message':
     'هل تريد إضافة {type} بمبلغ {amount} إلى الحساب "{account}" بتاريخ {date}؟',
   'account.add-event.confirm.description': 'الوصف: {description}',
-  'account.risk-metrics.loading': 'جارٍ تحميل مؤشرات المخاطر...',
   'account.risk-metrics.title': 'إدارة المخاطر',
   'account.risk-metrics.drawdown-used': 'المستخدم من حد التراجع',
   'account.risk-metrics.profit-target': 'هدف الربح',
+  'account.risk-metrics.profit-target-needs-balance':
+    'يحتاج الهدف بالنسبة المئوية إلى رصيد أولي ليُقاس عليه. أدخله من تعديل الحساب أو استخدم هدفًا بالمبلغ.',
   'account.risk-metrics.status.breached': 'مخترَق',
   'account.risk-metrics.status.achieved': 'تم تحقيقه',
   'account.risk-metrics.status.in-progress': 'قيد التقدّم',
-  'account.risk-metrics.not-set': 'غير محدد',
-  'account.risk-metrics.no-drawdown': 'لم يُحدّد حد للتراجع',
-  'account.risk-metrics.no-profit-target': 'لا يوجد هدف ربحي محدد',
   'account.risk-metrics.label.used': 'المستخدم:',
   'account.risk-metrics.label.limit': 'الحد:',
   'account.risk-metrics.label.remaining': 'المتبقي:',
@@ -4365,39 +4419,15 @@ const ar: Lang = {
   'account.edit-event.delete-confirm.title': 'حذف {type}',
   'account.edit-event.delete-confirm.message':
     'هل أنت متأكد أنك تريد حذف {type} بمبلغ {amount} بتاريخ {date}؟',
-  'account.edit-event.delete-confirm.warning':
-    'لا يمكن التراجع عن هذا الإجراء.',
+  'account.edit-event.delete-confirm.warning': 'لا يمكن التراجع عن هذا الإجراء.',
   'account.edit.title': 'تعديل الحساب',
   'account.edit.convert.discard-title': 'تجاهل التغييرات غير المحفوظة؟',
   'account.edit.convert.discard-message':
     'يُفتح إعداد التحدي في نافذة مستقلة ويُغلق هذا النموذج. لن تُحفظ التغييرات التي أجريتها هنا.',
   'account.edit.convert.discard-confirm': 'تجاهل ومتابعة',
-  'account.edit.field.name': 'اسم الحساب',
-  'account.edit.field.name-desc': 'الاسم الفريد لهذا الحساب',
-  'account.edit.placeholder.name': 'مثل: حساب التداول الخاص بي',
-  'account.edit.field.type': 'نوع الحساب',
-  'account.edit.field.type-desc': 'نوع حساب التداول',
-  'account.edit.type.demo': 'تجريبي',
-  'account.edit.type.evaluation': 'تقييم',
-  'account.edit.type.funded': 'مموّل',
-  'account.edit.field.initial-balance': 'الرصيد الأولي',
-  'account.edit.field.initial-balance-desc': 'رصيد الحساب الابتدائي',
-  'account.edit.field.live-balance': 'الرصيد الفعلي',
-  'account.edit.field.live-balance-desc': 'رصيد حساب الوسيط الحالي',
-  'account.edit.field.creation-date': 'تاريخ الإنشاء',
-  'account.edit.field.creation-date-desc': 'عندما تم إنشاء الحساب',
-  'account.edit.field.currency': 'العملة',
-  'account.edit.field.currency-desc': 'عملة الحساب الأصلية المستخدمة في العرض',
-  'account.edit.field.drawdown-type': 'نوع التراجع',
-  'account.edit.field.drawdown-amount': 'مبلغ التراجع',
-  'account.edit.field.drawdown-amount-desc':
-    'أقصى خسارة مسموح بها من الرصيد الابتدائي',
   'account.edit.field.manual-snapshots': 'لقطات التراجع اليدوية',
   'account.edit.field.manual-snapshots-desc':
-    'إدارة لقطات الرصيد اليومية لحساب التراجع المتحرك عند نهاية اليوم (EOD)',
-  'account.edit.field.profit-target-desc': 'تحديد هدف ربح للحساب',
-  'account.edit.field.monthly-cost': 'التكلفة الشهرية',
-  'account.edit.field.monthly-cost-desc': 'رسوم الاشتراك، تكاليف المنصة',
+    'سجّل حدود التراجع التي يصدرها الوسيط بمرور الوقت',
   'account.copy-trading.title': 'نسخ التداول',
   'account.copy-trading.description':
     'احسب أداء هذا الحساب انطلاقًا من حساب آخر باستخدام فترات النسخ التاريخية.',
@@ -4405,16 +4435,14 @@ const ar: Lang = {
   'account.copy-trading.existing-trades-warning':
     'يحتوي هذا الحساب بالفعل على صفقات مباشرة. ستبقى كما هي، وستُضاف الصفقات المنسوخة بدءًا من تاريخ البدء المحدد.',
   'account.copy-trading.base-account': 'الحساب الأساسي',
-  'account.copy-trading.base-account-desc':
-    'لا يمكن اختيار سوى الحسابات التي تستخدم العملة نفسها ولا تنسخ حسابًا آخر.',
+  'account.copy-trading.base-account-desc': 'نفس العملة، وليس حساب نسخ',
   'account.copy-trading.base-account-placeholder': 'اختر الحساب الأساسي',
   'account.copy-trading.multiplier': 'المضاعف',
   'account.copy-trading.multiplier-desc': 'النطاق المسموح: من 0.1x إلى 100x',
   'account.copy-trading.all-history': 'نسخ جميع الصفقات التاريخية',
   'account.copy-trading.start-date': 'النسخ ابتداءً من التاريخ',
   'account.copy-trading.history': 'سجل النسخ',
-  'account.copy-trading.error.base-required':
-    'اختر حسابًا أساسيًا لنسخ التداول.',
+  'account.copy-trading.error.base-required': 'اختر حسابًا أساسيًا لنسخ التداول.',
   'account.copy-trading.error.multiplier-range':
     'يجب أن يكون مضاعف نسخ التداول بين 0.1x و100x.',
   'account.copy-trading.error.start-date-required':
@@ -4434,8 +4462,7 @@ const ar: Lang = {
   'account.prop-challenge.prefill.updates-link': 'إبقاء قواعد الشركة محدّثة',
   'account.prop-challenge.prefill.updates-link-firm':
     'إبقاء قواعد {firm} محدّثة',
-  'account.prop-challenge.prefill.phase-link':
-    'املأ القواعد مسبقًا باستخدام PRO',
+  'account.prop-challenge.prefill.phase-link': 'املأ القواعد مسبقًا باستخدام PRO',
   'account.prop-challenge.prefill.phase-link-firm':
     'املأ قواعد {firm} مسبقًا باستخدام PRO',
   'account.prop-challenge.prefill.heading-link-firms':
@@ -4448,12 +4475,9 @@ const ar: Lang = {
     'لم تُضف قواعد بعد. استخدم «إضافة قاعدة» لتحديد هذه المرحلة.',
   'account.prop-challenge.rules': 'القواعد',
   'account.prop-challenge.costs.empty': 'لا توجد تكاليف مضافة حتى الآن.',
-  'account.prop-challenge.description':
-    'تابع هذا الحساب عبر تحدٍّ متعدد المراحل لشركة تداول مموّل.',
-  'account.prop-challenge.enable': 'تمكين تتبع تحدي شركة التداول المموّل',
   'account.prop-challenge.challenge-name': 'اسم التحدي',
   'account.prop-challenge.challenge-name-placeholder': 'مثلا: تقييم 25K',
-  'account.prop-challenge.firm-name': 'اسم الشركة (اختياري)',
+  'account.prop-challenge.firm-name': 'اسم الشركة',
   'account.prop-challenge.firm-name-placeholder': 'مثل Apex Trader Funding',
   'account.prop-challenge.profile.title': 'تطبيق قواعد الشركة',
   'account.prop-challenge.profile.firm': 'الشركة',
@@ -4472,18 +4496,11 @@ const ar: Lang = {
   'account.prop-challenge.profile.confirm-title': 'استبدال إعدادات التحدي؟',
   'account.prop-challenge.profile.confirm-message':
     'سيؤدي تطبيق قواعد الشركة هذه إلى استبدال المراحل والقواعد المضبوطة حاليًا.',
-  'account.prop-challenge.current-phase': 'المرحلة الحالية',
   'account.prop-challenge.phase-rules': 'قواعد {phase}',
   'account.prop-challenge.next-phase': 'التالي: {phase}',
   'account.prop-challenge.view-phase': 'عرض المرحلة',
   'account.prop-challenge.unnamed-phase': 'مرحلة غير مسماة',
   'account.prop-challenge.phase-name': 'اسم المرحلة',
-  'account.prop-challenge.phase-type': 'نوع المرحلة',
-  'account.prop-challenge.phase-type.evaluation': 'التقييم',
-  'account.prop-challenge.phase-type.verification': 'التحقق',
-  'account.prop-challenge.phase-type.sim_funded': 'مموّل تجريبي (محاكاة)',
-  'account.prop-challenge.phase-type.live_funded': 'مموّل حقيقي',
-  'account.prop-challenge.phase-type.custom': 'مخصصة',
   'account.prop-challenge.starting-balance': 'الرصيد الابتدائي',
   'account.prop-challenge.broker-account-id': 'حسابات الوسطاء',
   'account.prop-challenge.broker-accounts.assigned': 'مُسند إلى {phase}',
@@ -4537,39 +4554,20 @@ const ar: Lang = {
   'account.prop-challenge.rule.breach-action.soft':
     'إيقاف التداول مؤقتًا حتى الجلسة القادمة',
   'account.prop-challenge.rule.days': 'أيام التداول',
-  'account.prop-challenge.rule.minimum-daily-profit':
-    'الحد الأدنى للربح اليومي',
+  'account.prop-challenge.rule.minimum-daily-profit': 'الحد الأدنى للربح اليومي',
   'account.prop-challenge.rule.minimum-daily-profit-summary':
     '{value}+ في اليوم',
   'account.prop-challenge.rule.best-day-percent':
     'الحد الأقصى لحصة أفضل يوم (٪)',
-  'account.prop-challenge.rule.position-limit-model': 'نموذج حد حجم المركز',
-  'account.prop-challenge.rule.position-limit-model.fixed': 'الحد الثابت',
-  'account.prop-challenge.rule.position-limit-model.eod-profit-tiers':
-    'مستويات الربح بنهاية اليوم',
-  'account.prop-challenge.rule.position-profit-basis':
-    'أساس ربح المركز عند زيادة حجمه',
-  'account.prop-challenge.rule.position-profit-basis.cumulative':
+  'account.prop-challenge.rule.strict-help':
+    'يجب أن يكون صافي ربح أفضل يوم أقل تمامًا من الحد. المساواة لا تؤهل.',
+  'account.prop-challenge.position-limits-not-monitored':
+    'لا يراقب Journalit حدود حجم المراكز أو قواعد زيادة عدد العقود. راجع قواعد شركتك ومنصة التداول.',
+  'account.prop-challenge.rule.profit-basis': 'أساس الربح لتعديل الحد',
+  'account.prop-challenge.rule.profit-basis.cumulative':
     'الربح التراكمي من الصفقات (لا تُنقصه الدفعات)',
-  'account.prop-challenge.rule.position-profit-basis.current-account':
+  'account.prop-challenge.rule.profit-basis.current-account':
     'ربح الحساب الحالي (تُنقصه الدفعات)',
-  'account.prop-challenge.rule.position-limit-model.eod-profit':
-    'يتدرج وفق ربح نهاية اليوم',
-  'account.prop-challenge.rule.position-tiers': 'مستويات الربح',
-  'account.prop-challenge.rule.position-tiers-help':
-    'أدخل كل عتبة ربح مكتملة بنهاية اليوم وحدّ العقود الجديد لها بصيغة ربح:عقود، مفصولة بفواصل. يسري المستوى من يوم التداول التالي.',
-  'account.prop-challenge.rule.position-scaling-help':
-    'تضيف كل درجة ربح مكتملة عقدًا واحدًا ابتداءً من يوم التداول التالي، حتى بلوغ الحد الأقصى.',
-  'account.prop-challenge.rule.initial-contracts': 'العقود الأولية',
-  'account.prop-challenge.rule.profit-per-contract':
-    'ربح نهاية اليوم لكل عقد إضافي',
-  'account.prop-challenge.rule.maximum-contracts':
-    'الحد الأقصى للعقود بعد التوسع',
-  'account.prop-challenge.rule.micros-per-contract':
-    'احتساب 10 عقود مصغّرة كعقد واحد',
-  'account.prop-challenge.rule.micros-per-contract-help':
-    'فعّل هذا الخيار إذا كانت الشركة تحتسب عقود الميكرو الآجلة (MES وMNQ وMGC وغيرها) كعُشر عقد قياسي ضمن هذا الحد. اتركه معطّلًا إذا كان كل عقد ميكرو يُحتسب عقدًا كاملًا.',
-  'account.prop-challenge.rule.max-contracts': 'الحد الأقصى للعقود',
   'account.prop-challenge.rule.profit_target': 'هدف الربح',
   'account.prop-challenge.rule.drawdown': 'التراجع',
   'account.prop-challenge.rule.daily_loss_limit': 'حد الخسارة اليومي',
@@ -4578,8 +4576,7 @@ const ar: Lang = {
   'account.prop-challenge.rule.best-profitable-day': 'محفز اليوم المربح',
   'account.prop-challenge.rule.daily_profit_cap': 'سقف الربح المحتسب يوميًا',
   'account.prop-challenge.rule.per-trading-day': 'لكل يوم تداول',
-  'account.prop-challenge.rule.minimum_trading_days':
-    'الحد الأدنى لأيام التداول',
+  'account.prop-challenge.rule.minimum_trading_days': 'الحد الأدنى لأيام التداول',
   'account.prop-challenge.rule.minimum_profitable_days':
     'الحد الأدنى للأيام الربحية',
   'account.prop-challenge.rule.consistency-cushion-percent':
@@ -4627,10 +4624,7 @@ const ar: Lang = {
   'account.prop-challenge.summary.status.archived': 'مؤرشف',
   'account.prop-challenge.summary.status.hidden': 'مخفي',
   'account.prop-challenge.payout.title': 'جاهزية طلب الدفعة',
-  'account.prop-challenge.payout.eligible': 'جاهز لطلب الدفعة',
   'account.prop-challenge.payout.available': 'متوفر الآن',
-  'account.prop-challenge.payout.cycle-profit': 'ربح الدورة',
-  'account.prop-challenge.payout.history': 'سجل دفعات الأرباح',
   'account.prop-challenge.payout.lifetime-qualifying-days':
     'أيام التأهل منذ بدء المرحلة المموّلة',
   'account.prop-challenge.payout.requirement.days': 'أيام التداول',
@@ -4660,16 +4654,6 @@ const ar: Lang = {
     'تنقل هذه الدفعة الحساب إلى المرحلة التالية المحددة.',
   'account.prop-challenge.payout.live-review-after-payout':
     'تؤهّل هذه الدفعة الحساب لمراجعة الحساب الحقيقي.',
-  'account.prop-challenge.payout.cycle-resets':
-    'يُعاد ضبط تقدّم دورة الدفعات بعد الموافقة على الدفعة.',
-  'account.prop-challenge.payout.cycle-continues':
-    'يستمر تقدّم دورة الدفعات بعد الموافقة على الدفعة.',
-  'account.prop-challenge.payout.drawdown.unchanged':
-    'يبقى حد التراجع الأدنى الحالي كما هو.',
-  'account.prop-challenge.payout.drawdown.lock_at_balance':
-    'يُثبّت حد التراجع الأدنى بعد دفعة الأرباح.',
-  'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
-    'تُعاد حدود الحساب والتراجع إلى قيمها الابتدائية بعد دفعة الأرباح.',
   'account.prop-challenge.ledger.value.of': '{current} من {target}',
   'account.prop-challenge.ledger.section.payout': 'متطلبات الدفعات',
   'account.prop-challenge.ledger.requirement.minimum': 'الحد الأدنى {value}',
@@ -4713,6 +4697,8 @@ const ar: Lang = {
   'account.prop-challenge.ledger.help.open': 'حول {rule}',
   'account.prop-challenge.rule.help.target-amount':
     'الأهداف المطلقة بعملة الحساب، والنسب من الرصيد الابتدائي لهذه المرحلة. يُحسب التقدم بزيادة الرصيد بعد سقف الربح اليومي المحتسب، دون الربح والخسارة غير المحققين.',
+  'account.prop-challenge.rule.target-needs-balance':
+    'يحتاج الهدف بالنسبة المئوية إلى رصيد بداية أكبر من 0.',
   'account.prop-challenge.rule.help.credit-withdrawals':
     'يضيف مبالغ السحب الإجمالية المسجلة إلى تقدم الهدف المطلق. لا يغيّر الرصيد أو أهلية السحب.',
   'account.prop-challenge.rule.help.drawdown-amount':
@@ -4791,10 +4777,6 @@ const ar: Lang = {
     'أفضل يوم {bestDay} يمثل {share} من إجمالي الربح، ضمن الحد {maximum}.',
   'account.prop-challenge.ledger.help.consistency.example-none':
     'لا يوجد ربح حتى الآن، لذا لا يوجد أفضل يوم للمقارنة.',
-  'account.prop-challenge.ledger.help.max_position_size':
-    'أقصى عدد من العقود المسموح به في مركز واحد. يتحقق Journalit من حجم كل صفقة. ترفع بعض الشركات الحد مع نمو الربح.',
-  'account.prop-challenge.ledger.help.max_position_size.example':
-    'حتى {maximum} عقود لكل صفقة حاليًا؛ أكبر صفقة حتى الآن {current}.',
   'account.prop-challenge.ledger.help.payout.cycle_days':
     'أيام التداول في دورة دفعات الأرباح الحالية. يبدأ العد من جديد بعد اعتماد دفعة أرباح.',
   'account.prop-challenge.ledger.help.payout.cycle_days.example':
@@ -4950,6 +4932,7 @@ const ar: Lang = {
   'account.prop-challenge.transition.when-target-reached': 'عند بلوغ الهدف',
   'account.prop-challenge.transition.too-early':
     'لا يمكن أن يكون وقت الانتقال قبل بدء هذه المرحلة.',
+  'account.prop-challenge.costs.section-title': 'التكاليف',
   'account.prop-challenge.costs.title': 'التكاليف لمرة واحدة',
   'account.prop-challenge.costs.description':
     'تتبّع رسوم الشراء وإعادة الضبط والتفعيل كلًا على حدة.',
@@ -4967,7 +4950,6 @@ const ar: Lang = {
   'account.header.created': 'تاريخ الإنشاء:',
   'account.summary.current-balance': 'الرصيد الحالي',
   'account.summary.net-cash-flow': 'صافي التدفق النقدي',
-  'account.summary.payouts': 'دفعات الأرباح',
   'account.performance.title': 'الأداء',
   'account-page.guide.whats-new.cockpit.intro.title': 'قواعد تحديك',
   'account-page.guide.whats-new.cockpit.intro.description':
@@ -4979,22 +4961,14 @@ const ar: Lang = {
   'account-page.guide.main.challenge.title': 'ملخص تحديك',
   'account-page.guide.main.challenge.description':
     'اختر مرحلة لعرض كل قاعدة مع تقدّمها. وتتتبّع المراحل المموّلة ذات قواعد دفعات الأرباح الموثّقة جاهزية طلب الدفعة هنا أيضًا.',
-  'account.edit.field.target-type': 'نوع الهدف',
-  'account.edit.field.target-type-desc': 'قيمة مطلقة أو نسبة مئوية',
-  'account.edit.field.target-percent': 'الهدف (٪)',
-  'account.edit.field.target-dollar': 'الهدف ($)',
-  'account.edit.field.target-percent-desc': 'نسبة الربح المستهدفة',
-  'account.edit.field.target-dollar-desc': 'قيمة الهدف النقدية',
-  'account.edit.field.target-date': 'التاريخ المستهدف (اختياري)',
-  'account.edit.field.target-date-desc': 'تاريخ تحقيق هدف الربح',
   'account.edit.button.show-snapshots': 'إظهار مدير اللقطات ({count} مسجلة)',
   'account.edit.button.hide-snapshots': 'إخفاء مدير اللقطات (المسجّل: {count})',
   'account.edit.delete-warning': 'هذا إجراء دائم لا يمكن التراجع عنه!',
   'account.drawdown.none': 'لا شيء',
   'account.drawdown.fixed': 'ثابت',
-  'account.drawdown.eod-trailing': 'حد تراجع متحرك عند نهاية اليوم (EOD)',
+  'account.drawdown.eod-trailing': 'تراجع متحرك عند نهاية اليوم',
   'account.drawdown.manual': 'يدوي',
-  'account.profit-target.enable': 'تمكين هدف الربح',
+  'account.profit-target.title': 'هدف الربح',
   'account.profit-target.type.absolute': 'مبلغ مطلق',
   'account.profit-target.type.percentage': 'النسبة المئوية',
   'account.create.button.creating': 'جارٍ الإنشاء...',
@@ -5038,7 +5012,6 @@ const ar: Lang = {
   'account.edit.modal.delete.delete-associated-trades':
     'حذف جميع الصفقات المرتبطة بهذا الحساب من مخزني أيضًا',
   'common.note-label': 'ملاحظة:',
-  'common.backups-label': 'النسخ الاحتياطية:',
   'account.edit.error.name-required': 'اسم الحساب مطلوب',
   'account.edit.error.name-exists': 'الحساب "{name}" موجود بالفعل',
   'account.edit.error.creation-date-required': 'يجب تحديد تاريخ الإنشاء',
@@ -5127,7 +5100,6 @@ const ar: Lang = {
   'account.weight-legend.item-aria-label': '{name}: {percent}',
   'account.transaction.deposit': 'الإيداع',
   'account.transaction.withdrawal': 'السحب',
-  'account.transaction.click-to-edit': 'انقر لتعديل هذه المعاملة أو حذفها',
   'account.transaction.edit-row-label':
     'تعديل أو حذف هذه المعاملة: {date}، {amount}',
   'account.deposits-withdrawals.title': 'الإيداعات والسحوبات',
@@ -5196,7 +5168,7 @@ const ar: Lang = {
   'home.widget-selector.sample-note.title': 'خطة التداول',
   'home.widget-selector.sample-note.intro':
     'تداول فقط أنماط A+ عند المستويات المهمة، وبحد أقصى 3 صفقات يوميًا.',
-  'home.widget-selector.sample-note.checklist': 'قائمة التحقق قبل السوق',
+  'home.widget-selector.sample-note.checklist': 'قائمة التحقق',
   'home.widget-selector.sample-note.task.calendar': 'راجع التقويم الاقتصادي',
   'home.widget-selector.sample-note.task.levels':
     'حدد المستويات الرئيسية على المخطط',
@@ -5324,8 +5296,6 @@ const ar: Lang = {
   'home.widget.goals-progress.aria.change-goal': 'انقر لتغيير الهدف',
   'home.widget.best-hours.title': 'أفضل الساعات',
   'home.widget.best-hours.no-data': 'لا توجد بيانات تداول',
-  'home.widget.best-hours.period-aria':
-    '{label}: متوسط الربح والخسارة لكل صفقة {pnl}، وعدد الصفقات {count}',
   'home.widget.best-hours.trades-count': 'عدد الصفقات: {count}',
   'home.widget.best-hours.win-rate': 'نسبة الصفقات الرابحة {rate}٪',
   'home.widget.best-hours.win-rate-na': 'نسبة الصفقات الرابحة غير متاحة',
@@ -5390,8 +5360,7 @@ const ar: Lang = {
   'home.widget.account-progress.max-label': 'عرض حتى',
   'home.widget.account-progress.max-all': 'الجميع',
   'home.widget.account-progress.select-hint': 'اختر ما تشاء.',
-  'home.widget.account-progress.no-eligible':
-    'لا توجد حسابات للاختيار منها بعد.',
+  'home.widget.account-progress.no-eligible': 'لا توجد حسابات للاختيار منها بعد.',
   'home.widget.account-progress.none-selected':
     'لا توجد حسابات محددة. انقر للاختيار.',
   'home.widget.account-progress.search': 'البحث في الحسابات',
@@ -5409,7 +5378,6 @@ const ar: Lang = {
   'home.widget.eval-roi.challenge-count-plural': 'عدد التقييمات: {count}',
   'home.widget.eval-roi.net': 'الصافي',
   'home.widget.eval-roi.spent': 'المنفق',
-  'home.widget.eval-roi.payouts': 'دفعات الأرباح',
   'home.widget.eval-roi.break-even': 'نقطة التعادل',
   'home.widget.challenge-alerts.title': 'تنبيهات التحدي',
   'home.widget.challenge-alerts.unable-to-load':
@@ -5436,7 +5404,6 @@ const ar: Lang = {
   'home.widget.top-breakdown.title': 'أفضل {dimension}',
   'home.widget.top-breakdown.configure-title': 'تخصيص أفضل {dimension}',
   'home.widget.top-breakdown.aria.customize': 'انقر لتخصيص أفضل {dimension}',
-  'home.widget.setups.title': 'أفضل أنماط التداول',
   'home.widget.setups.trades-count': 'عدد الصفقات: {count}',
   'home.widget.setups.win-rate': 'نسبة الصفقات الرابحة: {rate}٪',
   'home.widget.weekly.title': 'هذا الأسبوع',
@@ -5472,6 +5439,9 @@ const ar: Lang = {
   'calendar.week': 'الأسبوع',
   'calendar.trade': '{count} صفقة',
   'calendar.trades': '{count} صفقة',
+  'calendar.missed': '{count} فائتة',
+  'calendar.trades-short': '{count} ص',
+  'calendar.missed-short': '{count} ف',
   'calendar.reviewed': 'تمت المراجعة',
   'calendar.month.january': 'يناير',
   'calendar.month.february': 'فبراير',
@@ -5491,14 +5461,13 @@ const ar: Lang = {
   'filter.modal.type.regular': 'منتظم',
   'filter.modal.type.backtest': 'اختبار تاريخي',
   'filter.summary.regular-trades': 'الصفقات المنتظمة',
-  'filter.modal.status.breakeven': 'نقطة التعادل',
   'filter.modal.review-status.reviewed': 'مراجعة',
   'filter.modal.review-status.unreviewed': 'غير مراجع',
   'filter.modal.direction.long-call': 'شراء / خيار شراء',
   'filter.modal.direction.short-put': 'بيع / خيار بيع',
   'filter.modal.section.custom-fields': 'الحقول المخصصة',
   'filter.modal.custom-field.none-available': 'لا توجد قيم متاحة',
-  'widget.checklist.title': 'قائمة التحقق قبل التداول',
+  'widget.checklist.title': 'قائمة تحقق DRC',
   'widget.checklist.weekly-title': 'قائمة التحقق الأسبوعية',
   'widget.checklist.tooltip.day-only': 'تنطبق على هذا اليوم فقط',
   'widget.checklist.tooltip.weekly':
@@ -5521,6 +5490,33 @@ const ar: Lang = {
     'سجّل أخطاء الجلسة مرة واحدة بدلًا من تكرارها في كل صفقة.',
   'widget.session-mistakes.placeholder': 'اختر أو أنشئ أخطاء',
   'widget.session-mistakes.empty': 'لم تُسجّل أخطاء للجلسة',
+  'widget.day-trade-fields.name': 'حقول صفقات اليوم',
+  'widget.day-trade-fields.description': 'حقول تُطبَّق على كل صفقات اليوم',
+  'widget.day-trade-fields.title': 'حقول صفقات اليوم',
+  'widget.day-trade-fields.mistakes': 'الأخطاء',
+  'widget.day-trade-fields.tags': 'الوسوم',
+  'widget.day-trade-fields.not-set': 'غير محدد',
+  'widget.day-trade-fields.apply.one': 'تطبيق على {count} صفقة',
+  'widget.day-trade-fields.apply.few': 'تطبيق على {count} صفقات',
+  'widget.day-trade-fields.apply.many': 'تطبيق على {count} صفقة',
+  'widget.day-trade-fields.apply.other': 'تطبيق على {count} صفقة',
+  'widget.day-trade-fields.add-field': 'إضافة حقل',
+  'widget.day-trade-fields.empty':
+    'حدد حقلاً مرة واحدة ليُطبَّق على كل صفقات هذا اليوم، بما فيها الصفقات اللاحقة.',
+  'widget.day-trade-fields.invalid-context':
+    "تتطلب أداة حقول صفقات اليوم ملاحظة DRC (frontmatter type: 'drc')",
+  'widget.day-trade-fields.notice-updated.one': 'تم تحديث {count} صفقة',
+  'widget.day-trade-fields.notice-updated.few': 'تم تحديث {count} صفقات',
+  'widget.day-trade-fields.notice-updated.many': 'تم تحديث {count} صفقة',
+  'widget.day-trade-fields.notice-updated.other': 'تم تحديث {count} صفقة',
+  'widget.day-trade-fields.notice-failed.one': 'تعذر تحديث {count} صفقة',
+  'widget.day-trade-fields.notice-failed.few': 'تعذر تحديث {count} صفقات',
+  'widget.day-trade-fields.notice-failed.many': 'تعذر تحديث {count} صفقة',
+  'widget.day-trade-fields.notice-failed.other': 'تعذر تحديث {count} صفقة',
+  'widget.day-trade-fields.notice-save-failed': 'تعذر حفظ حقل اليوم',
+  'widget.day-trade-fields.notice-conflict':
+    'تم تغيير حقول صفقات اليوم في عرض آخر. راجعها وطبّقها مرة أخرى.',
+  'widget.day-trade-fields.retry': 'إعادة المحاولة',
   'widget.session-mistakes.invalid-context':
     'تتطلب أداة أخطاء الجلسة ملاحظة DRC (نوع بيانات المقدمة: drc)',
   'widget.directional-pnl.title.long': 'ربح وخسارة صفقات الشراء',
@@ -5647,11 +5643,11 @@ const ar: Lang = {
   'manual-drawdown.button.delete': 'حذف',
   'manual-drawdown.header.edit': 'تحرير لقطة',
   'manual-drawdown.header.add': 'إضافة لقطة جديدة',
-  'manual-drawdown.field.date': 'تاريخ التراجع *',
+  'manual-drawdown.field.date': 'تاريخ التراجع',
   'manual-drawdown.field.date-desc': 'عندما أصدر الوسيط هذا الحد',
-  'manual-drawdown.field.limit': 'الحد الأدنى للرصيد ($) *',
+  'manual-drawdown.field.limit': 'الحد الأدنى للرصيد ($)',
   'manual-drawdown.field.limit-desc': 'أقل رصيد مسموح به',
-  'manual-drawdown.field.note': 'ملاحظة (اختياري)',
+  'manual-drawdown.field.note': 'ملاحظة',
   'manual-drawdown.field.note-desc': 'سياق إضافي لهذه اللقطة',
   'manual-drawdown.placeholder.note': 'مثلا، بيان نهاية الشهر',
   'manual-drawdown.button.update': 'تحديث اللقطة',
@@ -5676,8 +5672,18 @@ const ar: Lang = {
   'widget-drawer.add-aria': 'أضف {name}',
   'widget-drawer.remove': 'إزالة',
   'widget-drawer.remove-aria': 'إزالة {name}',
-  'widget-drawer.close': 'إغلاق',
   'dashboard.selector.metrics': 'المقاييس',
+  'metric.expectancyGap.name': 'فجوة التوقع',
+  'metric.expectancyGap.description': 'R المحقق مقابل المتوقع لكل صفقة.',
+  'expectancy-gap.expected': 'المتوقع (R/صفقة)',
+  'expectancy-gap.realized': 'المحقق (R/صفقة)',
+  'expectancy-gap.sample':
+    'تتوفر قيمة صافي R صالحة في {included} من أصل {total} صفقة مغلقة.',
+  'expectancy-gap.method-title': 'طريقة الحساب',
+  'expectancy-gap.method':
+    'الفجوة = المحقق − المتوقع. المحقق هو متوسط صافي R للصفقات الفعلية المغلقة بالكامل، بما فيها صفقات التعادل. تُستبعد الصفقات المفتوحة والفائتة وصفقات الاختبار التاريخي. تُستبعد بيانات الربح أو المخاطرة المفقودة ولا تُحسب كصفر. يُستخدم R المسجل أو مخاطرة الصفقة، وليس المخاطرة الافتراضية الحالية. تحسب مرشحات تاريخ الخروج كل صفقة مرة واحدة عند إغلاقها النهائي. استخدم نموذجًا مستقلًا أو معيارًا تاريخيًا بتكاليف متطابقة. الفجوة السلبية تعني أداءً أقل، وليست دليلًا على سوء التنفيذ. أفرغ الحقل لإزالة المعيار.',
+  'expectancy-gap.invalid': 'أدخل عددًا محدودًا أو اترك الحقل فارغًا للمسح.',
+  'expectancy-gap.save-failed': 'تعذر حفظ المعيار. حاول مجددًا.',
   'widget.pnlChart.name': 'الربح والخسارة التراكميان',
   'widget.pnlChart.description': 'الأرباح والخسائر التراكمية على مدى الزمن',
   'widget.longPnLChart.name': 'ربح وخسارة صفقات الشراء',
@@ -5696,12 +5702,18 @@ const ar: Lang = {
     'الحركة المواتية القصوى مقابل الربح والخسارة المحققين',
   'widget.mfeScatter.description':
     'أفضل ربح مفتوح مقابل الربح والخسارة النهائيين لكل صفقة',
-  'widget.mfeScatter.y': 'الربح والخسارة المحققان ({unit})',
-  'widget.mfeScatter.winners': 'الرابحة',
-  'widget.mfeScatter.losers': 'الخاسرة',
-  'widget.mfeScatter.breakeven': 'نقطة التعادل',
+  'widget.excursionScatter.y': 'الربح والخسارة المحققان ({unit})',
+  'widget.excursionScatter.winners': 'الرابحة',
+  'widget.excursionScatter.losers': 'الخاسرة',
+  'widget.excursionScatter.breakeven': 'نقطة التعادل',
   'widget.mfeScatter.empty':
     'لا توجد صفقات مغلقة ذات قيمة MFE صالحة بهذه الوحدة.',
+  'widget.maeScatter.name':
+    'الحركة المعاكسة القصوى مقابل الربح والخسارة المحققين',
+  'widget.maeScatter.description':
+    'أسوأ خسارة مفتوحة مقابل الربح والخسارة النهائيين لكل صفقة',
+  'widget.maeScatter.empty':
+    'لا توجد صفقات مغلقة ذات قيمة MAE صالحة بهذه الوحدة.',
   'widget.weekdayPerformance.name': 'أداء أيام الأسبوع',
   'widget.weekdayPerformance.description':
     'الأرباح والخسائر لكل يوم من أيام الأسبوع',
@@ -5744,8 +5756,6 @@ const ar: Lang = {
   'ui.folder-browser.placeholder': 'اختر مجلدا...',
   'ui.folder-browser.root': 'الجذر',
   'ui.folder-browser.clear-aria': 'مسح التحديد لاستخدام الموقع الافتراضي',
-  'ui.folder-browser.expand-folder': 'توسيع المجلد',
-  'ui.folder-browser.collapse-folder': 'طيّ المجلد',
   'combobox.placeholder.default': 'اختر أو اكتب...',
   'combobox.aria.remove-item': 'إزالة {item}',
   'combobox.add-option': 'أضف "{value}"',
@@ -5803,8 +5813,7 @@ const ar: Lang = {
     'تعذّرت إضافة الخيار. قد يكون موجودًا بالفعل أو غير صالح.',
   'error.options.update-failed':
     'لا يمكن تحديث الخيار. قد يكون موجودا بالفعل أو غير صالح.',
-  'error.options.remove-failed':
-    'لا يمكن إزالة الخيار. يرجى المحاولة مرة أخرى.',
+  'error.options.remove-failed': 'لا يمكن إزالة الخيار. يرجى المحاولة مرة أخرى.',
   'error.options.no-options-reset':
     'لا توجد خيارات لإعادة ضبطها. الفئة فارغة بالفعل.',
   'error.options.reset-failed':
@@ -5851,11 +5860,6 @@ const ar: Lang = {
   'skeleton.dashboard-widget.loading': 'تحميل بيانات الأداة',
   'skeleton.account-page.loading': 'تحميل صفحة الحساب',
   'grid.aria.remove-widget': 'إزالة الأداة',
-  'csv.broker.tradingtechnologies': 'Trading Technologies (TT)',
-  'csv.broker-guide.tradingtechnologies.description': 'تصدير CSV من أداة Fills',
-  'csv.broker-guide.tradingtechnologies.step-1':
-    'افتح أداة Fills في TT وانتقل إلى عرض Detail أو Continuous أو Price with Detail',
-  'csv.broker-guide.tradingtechnologies.warning.emphasis': 'مهم:',
   'trade.metadata.broker-comment': 'تعليق الوسيط',
   'navigation.title': 'Journalit',
   'calendar.sidebar.title': 'تقويم الأداء',
@@ -5966,8 +5970,7 @@ const ar: Lang = {
   'templateEditor.widget.review-context-fields.group-placeholder':
     'اختر مجموعة',
   'templateEditor.widget.review-context-fields.fields': 'الحقول',
-  'templateEditor.widget.review-context-fields.fields-placeholder':
-    'اختر حقولًا',
+  'templateEditor.widget.review-context-fields.fields-placeholder': 'اختر حقولًا',
   'templateEditor.widget.review-context-fields.fields-selected':
     '{count} الحقول المختارة',
   'templateEditor.widget.review-context-fields.no-fields':
@@ -5981,15 +5984,18 @@ const ar: Lang = {
     'إخفاء القيم الفارغة',
   'templateEditor.widget.session-log.hide-empty-outside':
     'إخفاء سجل الجلسة الخارجية عندما يكون فارغا',
-  'templateEditor.widget.trade-review.primary-metrics': 'المقاييس الأساسية',
-  'templateEditor.widget.trade-review.classification': 'التصنيف',
   'templateEditor.widget.trade-review.more-context': 'مزيد من السياق',
+  'templateEditor.widget.trade-review.notes-sections': 'أقسام الملاحظات',
+  'templateEditor.widget.trade-review.notes-all': 'كل الملاحظات',
+  'templateEditor.widget.trade-review.notes-sections-empty':
+    'أضف عناوين أقسام ضمن أقسام الملاحظة في تخطيط الصفقة',
+  'templateEditor.widget.trade-review.placement.cards': 'بطاقات الإحصاءات',
+  'templateEditor.widget.trade-review.placement.visible': 'ظاهر دائمًا',
+  'templateEditor.widget.trade-review.future-custom-fields':
+    'الحقول المخصصة المضافة لاحقًا',
   'templateEditor.widget.trade-review.display': 'العرض',
   'templateEditor.widget.trade-review.show-images': 'عرض الصور',
   'templateEditor.widget.trade-review.fields-none': 'لا توجد حقول',
-  'templateEditor.widget.trade-review.fields-all': 'جميع الحقول',
-  'templateEditor.widget.trade-review.fields-count': 'عدد الحقول: {count}',
-  'templateEditor.widget.trade-review.no-fields': 'لا توجد حقول متاحة',
   'templateEditor.widget.trade-review.questions': 'أسئلة المراجعة',
   'templateEditor.widget.trade-review.questions-help':
     'اختر الأسئلة الإرشادية المعروضة لكل نتيجة صفقة. تبقى معرّفات الأسئلة ثابتة كي تظل الإجابات المحفوظة مرتبطة بها عند تعديل الأسئلة أو إعادة ترتيبها.',
@@ -6078,7 +6084,6 @@ const ar: Lang = {
   'quick-import.action.review-in-trade-import': 'مراجعة في استيراد الصفقات',
   'quick-import.action.setup-in-trade-import': 'الإعداد في استيراد الصفقات',
   'quick-import.action.replace-file': 'استبدال الملف',
-  'quick-import.action.import': 'استيراد الصفقات',
   'quick-import.action.import-count.one': 'استيراد الصفقات ({count})',
   'quick-import.action.import-count.few': 'استيراد الصفقات ({count})',
   'quick-import.action.import-count.many': 'استيراد الصفقات ({count})',
@@ -6105,10 +6110,6 @@ const ar: Lang = {
   'trade-import.gate.sign-in.title': 'عاين سجل تداولك مجانًا',
   'trade-import.gate.sign-in':
     'سجل الدخول أو أنشئ حساب Journalit مجاني لتحليل ملفك. Pro مطلوب فقط عند استيراد الصفقات.',
-  'trade-import.gate.sign-in.reassurance':
-    'يُرفع الملف المحدد وخيارات الاستيراد إلى Journalit. تنتهي صلاحية سجلات التشخيص المشفرة بعد يوم واحد (مجاني) أو 14 يوماً (Pro)، والمعاينات بعد 7 أيام. ترسل المطابقة الاختيارية بالذكاء الاصطناعي العناوين وصفوفاً نموذجية إلى نموذج ذكاء اصطناعي. لا يرسل Trade Import بيانات قياس عن بُعد منفصلة من العميل أو تقارير أخطاء في الخلفية.',
-  'trade-import.gate.sign-in.no-trial':
-    'لا تحتاج إلى فترة Pro تجريبية للتحليل والمعاينة.',
   'trade-import.gate.sign-in.cta': 'سجل الدخول للمعاينة مجانا',
   'trade-import.step.select': 'رفع',
   'trade-import.step.privacy': 'ملاحظة الخصوصية',
@@ -6120,6 +6121,21 @@ const ar: Lang = {
   'trade-import.label.account': 'الحساب',
   'trade-import.label.broker': 'مصدر التصدير / المنصة',
   'trade-import.label.asset-type': 'نوع الأصل',
+  'trade-import.label.destination': 'الاستيراد كـ',
+  'trade-import.destination.live': 'صفقات حقيقية',
+  'trade-import.destination.backtest': 'صفقات اختبار رجعي',
+  'trade-import.destination.backtest-hint':
+    'تُحفظ كصفقات اختبار رجعي، منفصلة عن صفقاتك الحقيقية.',
+  'trade-import.label.export-format': 'نوع التصدير',
+  'trade-import.format.tradingview.paper': 'التداول الورقي',
+  'trade-import.format.tradingview.strategy': 'مختبر الاستراتيجيات',
+  'trade-import.format.tradingview.paper-hint':
+    'تصدير Order History من لوحة التداول الورقي.',
+  'trade-import.format.tradingview.strategy-hint':
+    'تصدير List of Trades من مختبر الاستراتيجيات.',
+  'trade-import.label.symbol': 'الرمز',
+  'trade-import.symbol.hint':
+    'لا يذكر هذا التصدير الرمز الذي تم اختباره. أدخله كما يعرضه TradingView، مثل CME_MINI:ES1!.',
   'trade-import.asset.stock': 'الأسهم',
   'trade-import.asset.options': 'عقود الخيارات',
   'trade-import.asset.futures': 'العقود الآجلة',
@@ -6134,8 +6150,6 @@ const ar: Lang = {
     'يُرفع الملف المحدد وخيارات الاستيراد إلى Journalit. تنتهي صلاحية سجلات التشخيص المشفرة بعد يوم واحد (مجاني) أو 14 يوماً (Pro)، والمعاينات بعد 7 أيام. ترسل المطابقة الاختيارية بالذكاء الاصطناعي العناوين وصفوفاً نموذجية إلى نموذج ذكاء اصطناعي. لا يرسل Trade Import بيانات قياس عن بُعد منفصلة من العميل أو تقارير أخطاء في الخلفية. قد تتضمن الملفات معرفات الحساب وسجل التداول والملاحظات والأسعار والكميات والرسوم والأرصدة والأرباح والخسائر. ترسل الطلبات أيضاً تعريفات الحقول المخصصة والخيارات المحفوظة؛ وتتضمن المعاينة اسم الحساب المستهدف. عطّل المطابقة بالذكاء الاصطناعي لتجنب هذه المعالجة.',
   'trade-import.action.analyse': 'تحليل الملف',
   'trade-import.action.choose-file': 'انقر للرفع أو السحب والإفلات',
-  'trade-import.guide.prompt': 'لست متأكدًا مما يجب تصديره؟',
-  'trade-import.guide.link': 'عرض دليل التصدير',
   'trade-import.hyperliquid.export-guidance':
     'استخدم Trade History ← Export as CSV في Hyperliquid، وليس Export More (وهو تقرير منفصل من جهة خارجية). لا تستخدم Funding History أو Order History.',
   'trade-import.hyperliquid.date-us': 'أمريكي: شهر/يوم/سنة — بتوقيت 24 ساعة',
@@ -6150,6 +6164,8 @@ const ar: Lang = {
   'trade-import.action.drop-file': 'أفلت الملف لرفعه',
   'trade-import.analyse.detected':
     'تمت قراءة ملف {fileType}. راجع الصفوف أدناه، ثم اربط كل عمود بحقل من حقول الصفقة.',
+  'trade-import.analyse.detected-native':
+    'تمت قراءة ملف {fileType}. راجع الصفوف أدناه، ثم اختر «توليد معاينة».',
   'trade-import.table.screenshots': 'لقطات الشاشة',
   'trade-import.preview.screenshot-alt':
     'لقطة شاشة لـ {symbol} من الصف {row} في جدول البيانات',
@@ -6181,6 +6197,8 @@ const ar: Lang = {
     'ستُدرج الصفوف المكتوبة بالترتيب الآخر لتتمكن من تصحيحها في ملفك.',
   'quick-import.message.date-order':
     'يمكن قراءة تواريخك بطريقتين. افتح الاستيراد الكامل لتختار الطريقة الصحيحة.',
+  'quick-import.message.symbol-required':
+    'لا يذكر هذا التصدير رمزه. افتح الاستيراد الكامل لإدخاله.',
   'csv.date-format.eu-dot': 'تنسيق أوروبي بنقاط: 25.12.2024 (يوم.شهر.سنة)',
   'csv.date-format.ymd-dot': 'السنة أولًا بنقاط: 2024.12.25',
   'trade-import.unmapped.title': 'لن يتم استيرادها ({count})',
@@ -6207,7 +6225,6 @@ const ar: Lang = {
   'trade-import.diagnostic.column': 'العمود: {columns}',
   'trade-import.diagnostic.unmap-column': 'عدم استيراد هذا العمود',
   'trade-import.diagnostic.edit-mapping': 'تغيير الربط',
-  'trade-import.diagnostic.info': 'معلومات',
   'trade-import.label.sheet': 'الورقة',
   'trade-import.label.header-row': 'صف الترويسة',
   'trade-import.placeholder.auto': 'تلقائي',
@@ -6225,8 +6242,6 @@ const ar: Lang = {
   'trade-import.preview.metric.ready': 'جاهز للاستيراد',
   'trade-import.preview.metric.duplicates': 'التكرارات المحتملة',
   'trade-import.preview.metric.attention': 'بحاجة إلى مراجعة',
-  'trade-import.preview.completed.message':
-    'الصفقات الجاهزة للاستيراد: {count}.',
   'trade-import.preview.partial.message':
     'الصفقات الجاهزة: {count}. الصفوف غير المستوردة: {failed}. الصفوف غير المكتملة المتجاوزة: {incomplete}.',
   'trade-import.preview.partial.guidance':
@@ -6287,7 +6302,6 @@ const ar: Lang = {
   'trade-import.table.entry-time': 'وقت الدخول',
   'trade-import.table.date': 'التاريخ',
   'trade-import.table.quantity': 'الكمية',
-  'trade-import.table.position': 'المركز',
   'trade-import.table.result': 'النتيجة',
   'trade-import.table.message': 'الرسالة',
   'trade-import.status.new': 'جديدة',
@@ -6295,6 +6309,8 @@ const ar: Lang = {
   'trade-import.status.other-account': 'في حساب آخر',
   'trade-import.status.other-account.detail':
     'تم استيرادها بالفعل إلى {account}',
+  'trade-import.status.split-across-trades.detail':
+    'صفقاتها المنفذة موجودة بالفعل في دفترك، موزعة على عدة صفقات. لإضافة الصفقات المنفذة الناقصة، استورد نفس النطاقات الزمنية كما في السابق.',
   'trade-import.status.updates-existing': 'تحدّث صفقة موجودة',
   'trade-import.status.possible-duplicate': 'احتمال تكرار',
   'trade-import.status.needs-review': 'يحتاج إلى مراجعة',
@@ -6303,6 +6319,10 @@ const ar: Lang = {
   'trade-import.status.no-open-trade': 'لا توجد صفقة مفتوحة لإغلاقها',
   'trade-import.status.multiple-open-trades': 'توجد عدة صفقات مفتوحة مطابقة',
   'trade-import.status.quantity-mismatch': 'عدم تطابق الكمية',
+  'trade-import.commit-failure.update-target-changed':
+    'تم تغيير الصفقة التي يحدّثها هذا الصف أو حذفها بعد المعاينة. استورد الملف مرة أخرى.',
+  'trade-import.commit-failure.tradovate-overlap':
+    'يتداخل مع صفقة تمت مزامنتها بالفعل من Tradovate ولم يمكن مطابقته معها.',
   'trade-import.server-deletion.deleted':
     'تم حذف الصفقات من خادم Journalit: {count}',
   'trade-import.server-deletion.kept':
@@ -6331,6 +6351,12 @@ const ar: Lang = {
   'trade-import.history.delete.title': 'هل أحذف هذا الاستيراد؟',
   'trade-import.history.delete.message':
     'سيؤدي هذا إلى حذف الصفقات التي أضافها هذا الاستيراد إلى «{account}» ({count} على الخادم) نهائيًا من خادم Journalit، ونقل ملاحظاتها إلى سلة المهملات في كل مخزن متزامن. ستبقى الصفقات التي يتضمنها استيراد آخر أيضًا. ويمكنك إعادة استيراد الملف لاحقًا.',
+  'trade-import.history.delete.updates-kept':
+    'تبقى التغييرات التي أجراها على صفقات مستوردة سابقًا، مثل إغلاقها.',
+  'trade-import.history.delete.message-updates-only':
+    'غيّر هذا الاستيراد صفقات مستوردة سابقًا فقط، مثل إغلاقها. يؤدي حذفه إلى إزالته من سجل الاستيراد، وتبقى تلك التغييرات.',
+  'trade-import.history.delete.message-none-deleted':
+    'لن تُحذف أي صفقات: كل صفقة في هذا الاستيراد موجودة أيضًا في استيراد آخر. حذفه يزيله من سجل الاستيراد فقط.',
   'trade-import.history.delete.confirm': 'حذف الاستيراد',
   'trade-import.history.load-more': 'تحميل المزيد',
   'account.edit.modal.delete.delete-server-trades':
@@ -6344,10 +6370,8 @@ const ar: Lang = {
   'trade-import.action.confirm': 'تأكيد الاستيراد',
   'trade-import.action.activate-pro.one': 'فعّل PRO لاستيراد الصفقات ({count})',
   'trade-import.action.activate-pro.few': 'فعّل PRO لاستيراد الصفقات ({count})',
-  'trade-import.action.activate-pro.many':
-    'فعّل PRO لاستيراد الصفقات ({count})',
-  'trade-import.action.activate-pro.other':
-    'فعّل PRO لاستيراد الصفقات ({count})',
+  'trade-import.action.activate-pro.many': 'فعّل PRO لاستيراد الصفقات ({count})',
+  'trade-import.action.activate-pro.other': 'فعّل PRO لاستيراد الصفقات ({count})',
   'trade-import.action.cancel-preview': 'إلغاء المعاينة',
   'trade-import.broker.manual': 'الربط اليدوي',
   'trade-import.source.title': 'من أين تأتي هذه الصفقات؟',
@@ -6358,15 +6382,18 @@ const ar: Lang = {
   'trade-import.source.manual.tile': 'جدول بياناتي / ملف آخر',
   'trade-import.source.manual.title': 'جدول بياناتي أو ملف آخر',
   'trade-import.source.manual.hint': 'ستربط أعمدة ملفك بحقول Journalit.',
-  'trade-import.source.native.hint':
-    'يُقرأ تنسيق الملف تلقائيًا، ولا يلزم الربط.',
+  'trade-import.source.native.hint': 'يُقرأ تنسيق الملف تلقائيًا، ولا يلزم الربط.',
   'trade-import.source.guide': 'كيفية التصدير',
   'trade-import.source.change': 'تغيير',
   'trade-import.recovery.rithmic-order-history.title':
     'تنسيق Rithmic غير مدعوم',
   'trade-import.recovery.rithmic-order-history.message':
     'ارفع ملف سجل أوامر Rithmic أو اختر المنصة التي أنشأت هذا الملف.',
-  'trade-import.recovery.rithmic-order-history.choose-file': 'اختيار ملف آخر',
+  'trade-import.recovery.no-trade-rows.title':
+    'لا يحتوي هذا الملف على صفقات للاستيراد',
+  'trade-import.recovery.no-trade-rows.message':
+    'أصلِح ذلك في ملف مُصدَّر جديد، ثم اختر الملف الجديد.',
+  'trade-import.action.choose-another-file': 'اختيار ملف آخر',
   'trade-import.source.change-action': 'تغيير المصدر',
   'trade-import.sync-suggestion.full.title': 'يمكن مزامنة {broker} تلقائيًا',
   'trade-import.sync-suggestion.full.body':
@@ -6446,7 +6473,6 @@ const ar: Lang = {
   'setups.edit.delete.error': 'تعذّر حذف نمط التداول',
   'setups.edit.success': 'حُدّث نمط التداول «{name}» بنجاح',
   'setups.edit.error.failed': 'تعذّر تحديث نمط التداول',
-  'setups.view.action.compare-selected': 'قارن بين أنماط التداول المختارة',
   'setups.view.tabs.aria': 'تبويبات عرض أنماط التداول',
   'setups.view.tab.overview': 'نظرة عامة',
   'setups.view.tab.compare': 'قارن',
@@ -6511,12 +6537,6 @@ const ar: Lang = {
   'setups.guide.view-tabs.title': 'التبديل بين عروض أنماط التداول',
   'setups.guide.view-tabs.description':
     'استخدم هذه التبويبات للتنقل بين النظرة العامة وأزواج أنماط التداول ومسار المقارنة عندما تتوفر أنماط تداول كافية.',
-  'setups.guide.overview-chart.title': 'ترتيب الأداء',
-  'setups.guide.overview-chart.description':
-    'يرتّب مخطط النظرة العامة أنماط التداول حسب المقياس المحدد. استخدم الأدوات أعلى اليمين لتغيير المقياس أو التركيز على أنماط تداول معينة.',
-  'setups.guide.tag-filter.title': 'تصفية أنماط التداول',
-  'setups.guide.tag-filter.description':
-    'صفِّ البطاقات والمخطط والأزواج وخيارات المقارنة حسب وسوم أنماط التداول أو الاتجاه. تعمل الاختيارات داخل كل مجموعة بمنطق OR، بينما يُجمع بين مرشحي الوسوم والاتجاه.',
   'setups.guide.setup-cards.title': 'بطاقات نمط التداول',
   'setups.guide.setup-cards.description':
     'تلخّص البطاقات كل نمط تداول باستخدام المقاييس الرئيسية والحالة والوسوم وتاريخ آخر تداول ومخطط مصغر لاتجاه الأداء.',
@@ -6535,21 +6555,7 @@ const ar: Lang = {
   'setups.guide.detail-rules.title': 'قواعد التنفيذ',
   'setups.guide.detail-rules.description':
     'حدّد شروط الدخول والإبطال والمخاطر والأخطاء لنمط التداول.',
-  'setups.guide.finish.title': 'دليل أنماط التداول مكتمل',
-  'setups.guide.finish.description':
-    'تعرّفت على أقسام أنماط التداول الرئيسية: نظرة عامة، والأزواج، والمقارنة، وصفحة نمط التداول.',
-  'setups.guide.pairs-mode.title': 'افتح أزواج أنماط التداول',
-  'setups.guide.pairs-mode.description':
-    'افتح «الأزواج» لمعرفة تركيبات أنماط التداول التي لديها عدد كافٍ من الصفقات المشتركة للمقارنة.',
-  'setups.guide.pairs-chart.title': 'ترتيب الأزواج',
-  'setups.guide.pairs-chart.description':
-    'يُبرز وضع الأزواج التركيبات التي قد يكون أداؤها معًا أفضل أو أسوأ. انقر على شريط لفتح تحليل أعمق لذلك الزوج.',
-  'setups.guide.compare-mode.title': 'ابدأ وضع المقارنة',
-  'setups.guide.compare-mode.description':
-    'يتيح لك وضع المقارنة اختيار بطاقتين لنمطَي تداول ومراجعتهما جنبًا إلى جنب.',
   'setups.guide.compare-select.title': 'اختر نمطَي تداول',
-  'setups.guide.compare-select.description':
-    'اختر بطاقتين لنمطَي تداول لفتح صفحة المقارنة.',
   'setups.guide.compare-summary.title': 'هذه هي صفحة المقارنة',
   'setups.guide.compare-summary.description':
     'تقارن هذه الصفحة بين نمطَي تداول جنبًا إلى جنب. يُظهر الصف العلوي الأفضل، وميزة القيمة المتوقعة، ودرجة الثقة، وسبب تفوق أحد النمطين.',
@@ -6562,9 +6568,6 @@ const ar: Lang = {
   'setups.guide.detail-execution-gap.title': 'تحليل فجوة التنفيذ',
   'setups.guide.detail-execution-gap.description':
     'عند توفر بيانات الصفقات الفائتة أو الاختبار التاريخي، يقارن هذا التبويب التنفيذ الفعلي بالفرص الفائتة أو المرجعية.',
-  'setups.guide.back-to-overview.title': 'العودة إلى بطاقات نمط التداول',
-  'setups.guide.back-to-overview.description':
-    'عد إلى بطاقات نمط التداول عندما تنتهي من المقارنة.',
   'setups.view.title': 'أنماط التداول',
   'setups.view.open-as-markdown': 'فتح بصيغة Markdown',
   'setups.view.open-as-setup': 'افتح كنمط تداول في Journalit',
@@ -6638,8 +6641,7 @@ const ar: Lang = {
     'اربط ملاحظة دليل استراتيجية لمعاينتها هنا.',
   'setups.view.detail.link-playbook-note': 'ربط ملاحظة',
   'setups.view.detail.change-playbook-note': 'تغيير الملاحظة',
-  'setups.view.detail.playbook-note-modal.empty':
-    'لم يُعثر على ملاحظات مطابقة.',
+  'setups.view.detail.playbook-note-modal.empty': 'لم يُعثر على ملاحظات مطابقة.',
   'setups.view.detail.empty-playbook-note':
     'ملاحظة دليل الاستراتيجية المرتبطة فارغة.',
   'setups.view.detail.rules': 'القواعد',
@@ -6755,8 +6757,7 @@ const ar: Lang = {
   'setups.view.detail.attention.empty': 'لم تُكتشف مشكلات في نمط التداول.',
   'setups.view.detail.attention.show-more': '+{count} أكثر',
   'setups.view.detail.attention.show-less': 'عرض أقل',
-  'setups.view.detail.attention.no-playbook-title':
-    'ربط ملاحظة دليل استراتيجية',
+  'setups.view.detail.attention.no-playbook-title': 'ربط ملاحظة دليل استراتيجية',
   'setups.view.detail.attention.no-playbook-detail':
     'اربط ملاحظة مصدر واحدة لتوفير السياق والأمثلة.',
   'setups.view.detail.attention.no-rules-title': 'إنشاء دليل قواعد التنفيذ',
@@ -6792,8 +6793,6 @@ const ar: Lang = {
   'setups.view.date.today': 'اليوم',
   'setups.view.date.yesterday': 'أمس',
   'setups.view.date.days-ago': 'منذ {count} أيام',
-  'settings.general.copy-trading-pnl-toggled':
-    'الربح والخسارة لحسابات النسخ: {status}',
   'trade-import.restore.complete':
     'استُعيدت {written} من الصفقات المستوردة؛ وتعذّرت استعادة {failed}.',
   'trade-import.restore.broker-label': 'استعادة من الخادم',
@@ -6853,6 +6852,8 @@ const ar: Lang = {
     'تمت مزامنة {succeeded} من أصل {total} من اتصالات Rithmic.',
   'trade-sync.rithmic.sync-all-partial':
     'تمت مزامنة {succeeded} من أصل {total} من اتصالات Rithmic. راجع الاتصالات التي بها مشكلات.',
+  'trade-sync.rithmic.sync-all-provider-partial':
+    'تمت مزامنة {succeeded} من أصل {total} من اتصالات Rithmic · اكتملت المزامنة جزئيًا',
   'trade-sync.rithmic.error.session-conflict':
     'يسمح Rithmic بجلسة نشطة واحدة فقط. أغلق R|Trader أو NinjaTrader أو أي منصة أخرى تستخدم بيانات دخول Rithmic هذه.',
   'trade-sync.rithmic.error.auto-retry': 'Journalit يعيد المحاولة تلقائيا.',
@@ -6871,8 +6872,7 @@ const ar: Lang = {
     'اختر أولًا حساب Journalit لكل حساب تريد مزامنته.',
   'trade-sync.broker.sync-all-blocked.running-job':
     'هناك مزامنة قيد التشغيل بالفعل.',
-  'trade-sync.broker.sync-all-blocked.not-ready':
-    'لا يوجد اتصال جاهز للمزامنة.',
+  'trade-sync.broker.sync-all-blocked.not-ready': 'لا يوجد اتصال جاهز للمزامنة.',
   'trade-sync.rithmic.connect-another': 'اربط حسابا Rithmic آخر',
   'trade-sync.rithmic.error.sync-failed-detail':
     'فشلت مزامنة Rithmic: {message}',
@@ -7021,9 +7021,6 @@ const ar: Lang = {
   'session-mode.guide.live.settings.title': 'ضبطها في أي وقت',
   'session-mode.guide.live.settings.description':
     'يفتح «تعديل» إعدادات وضع الجلسة: أوقات الجلسات، وتخطيط المراحل، ومسارات بوابة التداول، ووسوم السجل.',
-  'session-mode.guide.ended.review.title': 'الآن راجع الجلسة',
-  'session-mode.guide.ended.review.description':
-    'افتح مراجعة DRC لليوم. أضف أداة سجل الجلسة إلى تخطيط DRC لتظهر فيها كل ملاحظة مع توقيتها.',
   'settings.session-mode.guide.setting-name': 'الجولة',
   'settings.session-mode.guide.setting-desc':
     'جولة قصيرة في هذه الإعدادات، من أوقات الجلسات إلى بوابة التداول الأولى.',
@@ -7245,8 +7242,6 @@ const ar: Lang = {
   'settings.session-mode.trade-gate.flow-fit': 'ملاءمة العرض',
   'settings.session-mode.trade-gate.flow-click-hint':
     'انقر بطاقة أو تسمية مسار أو نتيجة لتعديلها.',
-  'settings.session-mode.trade-gate.flow-truncated':
-    'هذا المسار كبير جدًا بحيث يتعذر عرضه كاملًا. أُخفيت بعض الفروع المتكررة.',
   'settings.session-mode.trade-gate.no-start': 'اختر سؤال بداية لعرض المسار.',
   'settings.session-mode.trade-gate.no-questions':
     'أضف السؤال الأول لبدء سير العمل هذا.',
@@ -7326,35 +7321,19 @@ const ar: Lang = {
   'settings.gallery-folders.add': 'إضافة',
   'settings.gallery-folders.remove-aria': 'إزالة مجلد المعرض {path}',
   'settings.gallery-folders.not-a-folder': 'اختر مجلدًا بدلًا من ملف وسائط.',
-  'settings.gallery-folders.save-failed':
-    'تعذّر حفظ مجلدات المعرض. حاول مجددًا.',
+  'settings.gallery-folders.save-failed': 'تعذّر حفظ مجلدات المعرض. حاول مجددًا.',
   'tradelog.guide.gallery-grouping.title': 'تجميع الوسائط حسب ملاحظة التداول',
   'tradelog.guide.gallery-grouping.description':
     '«مجمّعة» يُبقي وسائط كل صفقة أو مراجعة أو مجلد مُهيأ معًا. «فردية» تعرض كل عنصر وسائط كبطاقة مستقلة.',
   'tradelog.guide.gallery-source-sort.title': 'اختر مصدر الوسائط والترتيب',
   'tradelog.guide.gallery-source-sort.description':
     'استخدم «المصدر» لعرض جميع الوسائط أو مرفقات الصفقات أو وسائط ملاحظات المراجعة أو مجلدات المخزن المحددة. واستخدم «الفرز» لترتيب العناصر من الأحدث إلى الأقدم أو حسب أداء الصفقة.',
-  'tradelog.guide.gallery-size.title': 'ضبط حجم معاينة المعرض',
-  'tradelog.guide.gallery-size.description':
-    'استخدم أزرار الحجم للتبديل بين عرض مدمج سريع ومعاينات أكبر للوسائط.',
   'tradelog.guide.gallery-filters.title': 'صفِّ المعرض من الزر نفسه',
   'tradelog.guide.gallery-filters.description':
     'تعمل قائمة المرشحات بالطريقة نفسها هنا. وفي وضع المعرض، تتضمن أيضًا قسم «المعرض» بمرشحات وسائط مثل حالة التعليقات ووسوم الوسائط.',
   'tradelog.guide.gallery-grid.title': 'افتح الوسائط لمراجعتها بالتفصيل',
   'tradelog.guide.gallery-grid.description':
     'تعرض كل بطاقة الوسائط بوضوح مع سياق موجز للصفقة والمراجعة. انقر أي بطاقة، أو اضغط «التالي» لفتح أول عنصر ظاهر بملء الشاشة.',
-  'tradelog.guide.gallery-fullscreen-actions.title':
-    'إضافة تعليقات توضيحية إلى الوسائط من وضع ملء الشاشة',
-  'tradelog.guide.gallery-fullscreen-actions.description':
-    'استخدم الوسم لإضافة وسوم وملاحظات للوسائط أثناء عرضها بحجم يتيح فحصها. يفتح فتح المصدر ملف وسائط الصفقة أو المراجعة أو المجلد.',
-  'tradelog.guide.gallery-open-annotation.title':
-    'افتح لوحة التعليقات التوضيحية',
-  'tradelog.guide.gallery-open-annotation.description':
-    'انقر على «وسم» لإضافة تعليق توضيحي إلى عنصر الوسائط هذا تحديدًا. تصف وسوم الوسائط وملاحظاتها المرفق، لا الصفقة بأكملها.',
-  'tradelog.guide.gallery-annotation-panel.title':
-    'إضافة وسوم وملاحظات للوسائط',
-  'tradelog.guide.gallery-annotation-panel.description':
-    'استخدم وسوم الوسائط لأفكار خاصة بالمخطط، مثل سحب السيولة أو الاختراق الفاشل، واستخدم الملاحظات لتسجيل سياق بنية السوق الذي تريد تذكّره.',
   'tradelog.guide.gallery-finish.title': 'تعرّفت الآن على وضعي سجل الصفقات',
   'tradelog.guide.gallery-finish.description':
     'استخدم عرض «الصفقات» عندما تحتاج إلى الجدول وأدوات الإجراءات المجمّعة. واستخدم «المعرض» لمراجعة الصور وملفات GIF ومقاطع الفيديو وروابط YouTube والتعليقات على الوسائط.',
@@ -7397,6 +7376,8 @@ const ar: Lang = {
   'filter.menu.status': 'الحالة',
   'filter.menu.direction': 'الاتجاه',
   'filter.menu.review-status': 'حالة المراجعة',
+  'filter.menu.rating': 'التقييم',
+  'filter.menu.rating.unrated': 'غير مقيّمة',
   'filter.menu.status.cancelled': 'تم الإلغاء',
   'filter.menu.included-count': '{count} مدرجة',
   'filter.menu.excluded-count': '{count} مستثنا',
@@ -7438,8 +7419,6 @@ const ar: Lang = {
   'account.prop-challenge.stage.sim-funded': 'مموّل تجريبي (محاكاة)',
   'account.prop-challenge.stage.live-funded': 'مموّل حقيقي',
   'account.prop-challenge.payout-rules.title': 'قواعد الدفعات',
-  'account.prop-challenge.payout-rules.add': 'إضافة قواعد الدفعات',
-  'account.prop-challenge.payout-rules.remove': 'إزالة قواعد الدفعات',
   'account.prop-challenge.payout-rules.cycle': 'دورة الأهلية',
   'account.prop-challenge.payout-rules.request-window': 'توقيت الطلب',
   'account.prop-challenge.payout-rules.request-window.anytime': 'أي يوم',
@@ -7539,6 +7518,8 @@ const ar: Lang = {
     'حصة المتداول بعد العتبة (٪)',
   'account.prop-challenge.payout-rules.profit-split.account-profit-help':
     'يساوي ربح الحساب مدى الحياة الرصيد الحالي ناقص الرصيد الابتدائي زائد السحوبات السابقة. تنطبق نسبة «دون العتبة» أو «عند العتبة أو فوقها» على كامل الطلب.',
+  'account.prop-challenge.payout-rules.profit-split.marginal-help':
+    'يستخدم جزء الطلب الواقع دون حد ربح الحساب هذه النسبة الأدنى، بينما يستخدم الجزء الذي يتجاوزه النسبة الأعلى.',
   'account.prop-challenge.payout-rules.profit-split.below':
     'حصة المتداول دون العتبة (٪)',
   'account.prop-challenge.payout-rules.profit-split.threshold-profit':
@@ -7605,6 +7586,8 @@ const ar: Lang = {
   'account.merge.warning.identity-shared': 'هوية تطالب بها عدة حسابات',
   'account.merge.warning.copy-trading-dropped': 'تم إلغاء فترات تداول النسخ',
   'account.merge.error.too-few-sources': 'اختر على الأقل حسابين.',
+  'account.merge.error.target-needs-balance':
+    'رصيد البداية لهذا الحساب هو 0، لذلك لا يمكن قياس هدف بالنسبة المئوية. استخدم هدفًا بالمبلغ، أو ألغِ وأدخل الرصيد الأولي للحساب أولًا.',
   'account.merge.error.duplicate-source': 'أُدرج الحساب مرتين.',
   'account.merge.error.target-exists': 'هذا الاسم يعود إلى حساب آخر.',
   'account.merge.error.currency-mismatch': 'تستخدم الحسابات عملات مختلفة.',
@@ -7731,43 +7714,8 @@ const ar: Lang = {
   'onboarding.legacy-challenge.entry.desc':
     'ادمج الحسابات الحالية في تحديات أو حوّلها إليها.',
   'onboarding.legacy-challenge.entry.action': 'إعداد',
-  'view.home': 'الصفحة الرئيسية',
-  'common.lose': 'خسارة',
   'dashboard.conversion.requires-conversion':
     'تتطلب مخططات الربح والخسارة متعددة العملات تحويل أسعار الصرف.',
-  'auth.error.invalid-email': 'يرجى إدخال بريد إلكتروني صالح',
-  'auth.error.invalid-code': 'رمز التحقق غير الصحيح',
-  'form.layout.guide-trigger-label': 'تخصيص النموذج',
-  'dashboard.filter.setup.none-found': 'لم يُعثر على أنماط تداول',
-  'nav.weekly': 'مراجعة أسبوعية',
-  'weekly.overview.drawdown-chart.empty': 'لا توجد بيانات تراجع لعرضها',
-  'trade-sync.gate.signin.cta': 'تسجيل الدخول',
-  'backend.progress.ftp.desc': 'إنشاء بيانات اعتماد',
-  'csv.errors.group.close-only': 'تُم تخطي عمليات التنفيذ الخاصة بالإغلاق فقط',
-  'csv.report.file': 'الملف: {file}',
-  'csv.broker-guide.sierrachart.warning.message':
-    'خيار Export يحفظ أسعارًا غير معدّلة، أما Save Log As فيحافظ على الأسعار كما تظهر على الشاشة.',
-  'csv.broker-guide.rithmic.step-1':
-    'افتح سجل الأوامر في R | Trader Pro وصفِّ الأوامر إلى المكتملة/المنفذة لحسابك والتاريخ المحدد.',
-  'csv.broker-guide.rithmic.step-2':
-    'استخدم Add/Remove Columns وتأكد من ظهور Side وSymbol وQty Filled وAvg Fill Price وFill/Update Time',
-  'trade.details.execution': 'التنفيذ',
-  'drc.preparation.checklist.title': 'قائمة التحقق قبل التداول',
-  'onboarding.welcome.insight.timing.title': 'أنماط التوقيت',
-  'onboarding.wizard.error.account-service':
-    'خدمة AccountPageService غير متوفرة',
-  'account.edit.field.drawdown-type-desc':
-    'لا يوجد | ثابت | تراجع متحرك عند نهاية اليوم (EOD) | يدوي',
-  'monthly.game.header.a-games': 'أيام بمستوى A',
-  'trade-import.preview.message.no-open-match':
-    'لم يتم العثور على صفقة مفتوحة مطابقة لمعاينة الإغلاق فقط',
-  'setups.view.action.refresh': 'تحديث',
-  'setups.view.detail.no-playbook': 'لم يُكتب دليل استراتيجية بعد.',
-  'setups.view.detail.execution-gap.title': 'فجوة التنفيذ',
-  'trade-sync.import.action.sync-cloud': 'مزامنة صفقات السحابة',
-  'session-mode.unconfigured.step.gate.description':
-    'قائمة التحقق IF/THEN البداية جاهزة.',
-  'session-log.placeholder.entry': 'ماذا ترى، تفكر، أو تشعر به؟',
   'home.widget.streak.kind.trade-outcome': 'نتائج الصفقات',
   'home.widget.streak.kind.trade-review': 'مراجعات الصفقات',
   'home.widget.streak.kind.drc-review': 'مراجعات DRC',
@@ -7787,8 +7735,7 @@ const ar: Lang = {
     'صفقة متتالية تمت مراجعتها',
   'home.widget.streak.reviewed-days-in-a-row.one': 'يوم تمت مراجعته',
   'home.widget.streak.reviewed-days-in-a-row.few': 'أيام متتالية تمت مراجعتها',
-  'home.widget.streak.reviewed-days-in-a-row.many':
-    'يومًا متتاليًا تمت مراجعته',
+  'home.widget.streak.reviewed-days-in-a-row.many': 'يومًا متتاليًا تمت مراجعته',
   'home.widget.streak.reviewed-days-in-a-row.other': 'يوم متتالي تمت مراجعته',
   'home.widget.streak.reviewed-weeks-in-a-row.one': 'أسبوع تمت مراجعته',
   'home.widget.streak.reviewed-weeks-in-a-row.few':
@@ -7811,10 +7758,8 @@ const ar: Lang = {
     'صفقات لم تُراجَع منذ آخر مراجعة: {count}',
   'home.widget.streak.missed-trades.other':
     'صفقات لم تُراجَع منذ آخر مراجعة: {count}',
-  'home.widget.streak.missed-days.one':
-    'أيام لم تُراجَع منذ آخر مراجعة: {count}',
-  'home.widget.streak.missed-days.few':
-    'أيام لم تُراجَع منذ آخر مراجعة: {count}',
+  'home.widget.streak.missed-days.one': 'أيام لم تُراجَع منذ آخر مراجعة: {count}',
+  'home.widget.streak.missed-days.few': 'أيام لم تُراجَع منذ آخر مراجعة: {count}',
   'home.widget.streak.missed-days.many':
     'أيام لم تُراجَع منذ آخر مراجعة: {count}',
   'home.widget.streak.missed-days.other':
@@ -7860,6 +7805,12 @@ const ar: Lang = {
   'trade-handoff.summary.mixed-partial':
     'تم استيراد {imported} · تم تحديث {updated}، مع وجود مشكلات',
   'trade-handoff.summary.import-partial': 'تم استيراد {trades} مع وجود مشكلات',
+  'trade-handoff.summary.import-provider-partial':
+    'تم استيراد {trades} · اكتملت المزامنة جزئيًا',
+  'trade-handoff.summary.update-provider-partial':
+    'تم تحديث {trades} · اكتملت المزامنة جزئيًا',
+  'trade-handoff.summary.mixed-provider-partial':
+    'تم استيراد {imported} · تم تحديث {updated} · اكتملت المزامنة جزئيًا',
   'trade-handoff.periods.choose': 'اختر فترة مراجعة أخرى',
   'trade-handoff.periods.recommended': 'موصى به',
   'trade-handoff.action.dismiss': 'إخفاء نتيجة العملية الأخيرة',
@@ -7980,6 +7931,464 @@ const ar: Lang = {
     'في أول دفعة بالمرحلة يُعامل الحد الأدنى لربح الدورة كصفر: يجب ألا يكون الربح المحقق الصافي للدورة سالبًا. تبقى الشروط الأخرى سارية.',
   'account.prop-challenge.payout-rules.help.reset-cycle':
     'يعيد ضبط الأيام والأرباح اليومية وربح الدورة والاتساق بعد دفعة مسجلة. يحتفظ بالأيام المؤهلة لكل المرحلة؛ المعاينة لا تعيد ضبط شيء.',
+  'actions.value.cleared': 'تم المسح',
+  'actions.trade.set.account_id': 'الحساب: {value}',
+  'actions.trade.set.setup_id': 'الإعداد: {value}',
+  'actions.trade.set.stop_loss': 'وقف الخسارة: {value}',
+  'actions.trade.thesis.set': 'تحديث الأطروحة',
+  'actions.trade.thesis.clear': 'إزالة الأطروحة',
+  'actions.trade.reviewed.mark': 'وضع علامة كمُراجَع',
+  'actions.trade.reviewed.unmark': 'وضع علامة كغير مُراجَع',
+  'actions.trade.notes.set': 'استبدال الملاحظات',
+  'actions.trade.stop-losses': 'أوامر وقف الخسارة: {value}',
+  'actions.trade.stop-losses.clear': 'إزالة أوامر وقف الخسارة',
+  'actions.trade.take-profits': 'أهداف جني الأرباح: {value}',
+  'actions.trade.take-profits.clear': 'إزالة أهداف جني الأرباح',
+  'actions.trade.set.take_profit': 'جني الأرباح: {value}',
+  'actions.trade.set.risk_amount': 'مبلغ المخاطرة: {value}',
+  'actions.trade.add-tags': 'إضافة وسوم: {labels}',
+  'actions.trade.remove-tags': 'إزالة وسوم: {labels}',
+  'actions.trade.add-mistakes': 'إضافة أخطاء: {labels}',
+  'actions.trade.remove-mistakes': 'إزالة أخطاء: {labels}',
+  'actions.review.summary': 'استبدال الملخص',
+  'actions.review.target.day': 'المراجعة اليومية {date}',
+  'actions.review.target.week': 'المراجعة الأسبوعية {date}',
+  'actions.review.target.month': 'المراجعة الشهرية {date}',
+  'actions.review.target.quarter': 'المراجعة الربعية {date}',
+  'actions.review.target.year': 'المراجعة السنوية {date}',
+  'agent-requests.deny': 'رفض',
+  'agent-requests.approve': 'موافقة',
+  'actions.options.catalog.tags': 'الوسوم',
+  'actions.options.catalog.mistakes': 'الأخطاء',
+  'actions.options.catalog.account_types': 'أنواع الحسابات',
+  'actions.options.catalog.events': 'الأحداث',
+  'actions.options.create': 'إنشاء: {labels}',
+  'actions.options.set-color': 'تعيين لون {value}',
+  'actions.options.clear-color': 'إزالة لون {value}',
+  'actions.options.update-style': 'تحديث نمط {value}',
+  'actions.options.rename.one':
+    'إعادة تسمية {source} إلى {target} في {count} ملاحظة',
+  'actions.options.rename.other':
+    'إعادة تسمية {source} إلى {target} في {count} ملاحظة',
+  'actions.options.rename-account-type.one':
+    'إعادة تسمية {source} إلى {target} لـ {count} حساب',
+  'actions.options.rename-account-type.other':
+    'إعادة تسمية {source} إلى {target} لـ {count} حساب',
+  'actions.options.merge.one': 'دمج {source} في {target} في {count} ملاحظة',
+  'actions.options.merge.other': 'دمج {source} في {target} في {count} ملاحظة',
+  'actions.options.delete.one': 'حذف {value} من {count} ملاحظة',
+  'actions.options.delete.other': 'حذف {value} من {count} ملاحظة',
+  'actions.options.delete-entry': 'حذف {value}',
+  'actions.options.move': 'نقل {value} قبل {before}',
+  'actions.options.move-last': 'نقل {value} إلى النهاية',
+  'actions.configuration.target.settings': 'الإعدادات',
+  'actions.configuration.target.dashboard_layouts': 'تخطيطات لوحة المعلومات',
+  'actions.configuration.target.home_layouts': 'تخطيطات الصفحة الرئيسية',
+  'actions.configuration.target.review_templates': 'قوالب المراجعة',
+  'actions.configuration.target.session_workflows': 'مسارات عمل الجلسة',
+  'actions.configuration.settings': 'تغيير {count} من الإعدادات',
+  'actions.configuration.create': 'إنشاء {name}',
+  'actions.configuration.duplicate': 'إنشاء {name} كنسخة',
+  'actions.configuration.replace': 'استبدال {name}',
+  'actions.configuration.rename': 'إعادة التسمية إلى {name}',
+  'actions.configuration.delete': 'حذف {name}',
+  'actions.configuration.delete-question.one':
+    'حذف «{name}» ومواضعه ({count}) {workflows}',
+  'actions.configuration.delete-question.other':
+    'حذف «{name}» ومواضعه ({count}) {workflows}',
+  'actions.configuration.delete-question-workflows.one':
+    'في مسارات العمل ({count})',
+  'actions.configuration.delete-question-workflows.other':
+    'في مسارات العمل ({count})',
+  'actions.configuration.delete-question-unused':
+    'حذف «{name}» (غير مستخدم في أي مسار عمل)',
+  'actions.configuration.set-active': 'جعل {name} التخطيط النشط',
+  'actions.configuration.set-default': 'تغيير قالب {type} الافتراضي',
+  'actions.configuration.reset-default': 'استخدام قالب {type} المدمج افتراضيًا',
+  'actions.setup.target': 'الإعداد {name}',
+  'actions.setup.update': 'تحديث: {fields}',
+  'actions.setup.field.status': 'الحالة',
+  'actions.setup.field.direction': 'الاتجاه',
+  'actions.setup.field.color': 'اللون',
+  'actions.setup.field.tags': 'الوسوم',
+  'actions.setup.field.preferred_sessions': 'الجلسات المفضلة',
+  'actions.setup.field.preferred_timeframes': 'الأطر الزمنية المفضلة',
+  'actions.setup.field.preferred_tickers': 'الرموز المفضلة',
+  'actions.setup.field.playbook': 'دليل التداول',
+  'actions.setup.field.rules': 'القواعد',
+  'actions.setup.field.linked_notes': 'الملاحظات المرتبطة',
+  'actions.trade.set.direction': 'الاتجاه: {value}',
+  'actions.trade.set.direct_pnl': 'الربح/الخسارة المباشرة: {value}',
+  'actions.trade.set.commission': 'العمولة: {value}',
+  'actions.trade.set.fees': 'الرسوم: {value}',
+  'actions.trade.set.swap': 'المبادلة: {value}',
+  'actions.trade.executions': 'استبدال التنفيذات: {entries}، {exits}',
+  'actions.trade.set.missed_reason': 'سبب تفويت الصفقة: {value}',
+  'actions.trade.create':
+    'إنشاء {type}: {direction} {instrument}، {entries}، {exits}',
+  'actions.trade.create.new-instrument': 'إضافة {instrument} إلى الأدوات',
+  'actions.trade.set-type': 'تغيير النوع: من {source} إلى {target}',
+  'actions.trade.delete': 'نقل ملاحظة الصفقة إلى سلة المهملات',
+  'actions.trade.custom-fields': 'الحقول المخصصة: {labels}',
+  'actions.custom-field.create': 'إنشاء الحقل {label} ({type})',
+  'actions.custom-field.field.label': 'التسمية',
+  'actions.custom-field.field.options': 'الخيارات',
+  'actions.custom-field.field.validation': 'التحقق',
+  'actions.custom-field.field.placeholder': 'النص النائب',
+  'actions.custom-field.field.helper_text': 'نص المساعدة',
+  'actions.custom-field.field.allow_create_options': 'خيارات جديدة من الصفقات',
+  'actions.custom-field.order-target': 'الحقول المخصصة',
+  'actions.custom-field.reorder': 'الترتيب الجديد: {labels}',
+  'actions.session-log-tag.create': 'إنشاء الوسم {short} {label}',
+  'actions.session-log-tag.field.label': 'الاسم',
+  'actions.session-log-tag.field.short_label': 'التسمية المختصرة',
+  'actions.session-log-tag.field.color': 'اللون',
+  'actions.session-log-tag.field.requires_resolution': 'يحتاج إلى تصنيف',
+  'actions.session-log-tag.field.lesson': 'وسم درس',
+  'actions.session-log-tag.delete-alert-rule':
+    'تحتسب قاعدة تنبيه سجل الجلسة هذا الوسم',
+  'actions.custom-field.delete.one':
+    'حذف الحقل؛ عدد الصفقات التي تحتفظ بقيمها: {count}',
+  'actions.custom-field.delete.other':
+    'حذف الحقل؛ عدد الصفقات التي تحتفظ بقيمها: {count}',
+  'actions.session-log-tag.delete.one':
+    'إزالة الوسم من المحرر؛ عدد أيام سجل الجلسة التي تحتفظ به: {count}',
+  'actions.session-log-tag.delete.other':
+    'إزالة الوسم من المحرر؛ عدد أيام سجل الجلسة التي تحتفظ به: {count}',
+  'actions.review.answers.one': 'الإجابة عن الأسئلة: {count}',
+  'actions.review.answers.other': 'الإجابة عن الأسئلة: {count}',
+  'actions.review.goals.one': 'تعيين الأهداف: {count}',
+  'actions.review.goals.other': 'تعيين الأهداف: {count}',
+  'actions.review.checklist.one': 'تعيين عناصر قائمة التحقق: {count}',
+  'actions.review.checklist.other': 'تعيين عناصر قائمة التحقق: {count}',
+  'actions.review.key-levels':
+    'تعيين المستويات الرئيسية: دعم {support}، مقاومة {resistance}',
+  'actions.review.grade.mental': 'التقييم الذهني: {value}',
+  'actions.review.grade.technical': 'التقييم الفني: {value}',
+  'actions.review.reviewed': 'وضع علامة تمت المراجعة',
+  'actions.review.not-reviewed': 'وضع علامة لم تتم المراجعة',
+  'actions.review.session-log.add.one': 'إضافة إدخالات إلى سجل الجلسة: {count}',
+  'actions.review.session-log.add.other':
+    'إضافة إدخالات إلى سجل الجلسة: {count}',
+  'actions.review.session-log.update': 'تحديث إدخال في سجل الجلسة: {fields}',
+  'actions.review.session-log.field.time': 'الوقت',
+  'actions.review.session-log.field.tag_id': 'الوسم',
+  'actions.review.session-log.field.text': 'النص',
+  'actions.review.session-log.field.resolved': 'التصنيف',
+  'actions.review.session-log.delete': 'حذف إدخال من سجل الجلسة',
+  'actions.review.images.add.one': 'إضافة صور: {count}',
+  'actions.review.images.add.other': 'إضافة صور: {count}',
+  'actions.review.images.remove.one': 'إزالة صور: {count}',
+  'actions.review.images.remove.other': 'إزالة صور: {count}',
+  'actions.images.annotate.one': 'تغيير وسوم أو ملاحظات الصور: {count}',
+  'actions.images.annotate.other': 'تغيير وسوم أو ملاحظات الصور: {count}',
+  'actions.review.key-events.add.one': 'إضافة أحداث رئيسية: {count}',
+  'actions.review.key-events.add.other': 'إضافة أحداث رئيسية: {count}',
+  'actions.review.key-events.update': 'تحديث الحدث الرئيسي {name}',
+  'actions.review.key-events.delete': 'حذف الحدث الرئيسي {name}',
+  'actions.review.day-trade-fields.set.one':
+    'تعيين حقول اليوم وتحديث الصفقات: {count}',
+  'actions.review.day-trade-fields.set.other':
+    'تعيين حقول اليوم وتحديث الصفقات: {count}',
+  'actions.session.unplanned.start': 'بدء جلسة غير مخططة: {reason}',
+  'actions.session.unplanned.stop': 'إيقاف الجلسة غير المخططة',
+  'actions.account.create':
+    'إنشاء حساب {type} بعملة {currency} برصيد افتتاحي {balance}',
+  'actions.account.field.account_type': 'النوع',
+  'actions.account.field.currency': 'العملة',
+  'actions.account.field.created_date': 'تاريخ البدء',
+  'actions.account.field.initial_balance': 'الرصيد الافتتاحي',
+  'actions.account.field.live_balance': 'الرصيد الفعلي',
+  'actions.account.field.drawdown': 'التراجع',
+  'actions.account.field.profit_target': 'هدف الربح',
+  'actions.account.field.monthly_cost': 'التكلفة الشهرية',
+  'actions.account.field.copy_trading': 'نسخ التداول',
+  'actions.account.rename': 'إعادة التسمية إلى {name}',
+  'actions.account.rename-trades.one': 'تحديث الصفقات التي تشير إليه: {count}',
+  'actions.account.rename-trades.other':
+    'تحديث الصفقات التي تشير إليه: {count}',
+  'actions.account.delete': 'حذف الحساب',
+  'actions.account.transaction.deposit':
+    'تسجيل إيداع بقيمة {amount} بتاريخ {date}',
+  'actions.account.transaction.withdrawal':
+    'تسجيل سحب بقيمة {amount} بتاريخ {date}',
+  'actions.account.transaction.delete-deposit':
+    'حذف الإيداع بقيمة {amount} بتاريخ {date}',
+  'actions.account.transaction.delete-withdrawal':
+    'حذف السحب بقيمة {amount} بتاريخ {date}',
+  'actions.prop-challenge.advance': 'اجتياز {from} وبدء {to}',
+  'actions.prop-challenge.conclude': 'اجتياز {phase} وإنهاء التحدي كناجح',
+  'actions.prop-challenge.account-type': 'نقل الحساب إلى {type}',
+  'actions.prop-challenge.fail': 'تمييز {phase} والتحدي كفاشلين',
+  'actions.prop-challenge.reopen': 'إعادة فتح {phase}',
+  'actions.prop-challenge.cost.purchase':
+    'تسجيل شراء بقيمة {amount} بتاريخ {date}',
+  'actions.prop-challenge.cost.reset':
+    'تسجيل رسوم إعادة ضبط بقيمة {amount} بتاريخ {date}',
+  'actions.prop-challenge.cost.activation':
+    'تسجيل رسوم تفعيل بقيمة {amount} بتاريخ {date}',
+  'actions.prop-challenge.cost.other':
+    'تسجيل تكلفة بقيمة {amount} بتاريخ {date}',
+  'actions.prop-challenge.cost.delete':
+    'حذف التكلفة بقيمة {amount} بتاريخ {date}',
+  'actions.prop-challenge.configure.create.one':
+    'إعداد {name} بعدد مراحل: {count}',
+  'actions.prop-challenge.configure.create.other':
+    'إعداد {name} بعدد مراحل: {count}',
+  'actions.prop-challenge.configure.update.one':
+    'تحديث {name}: المراحل ({count}) وقواعدها',
+  'actions.prop-challenge.configure.update.other':
+    'تحديث {name}: المراحل ({count}) وقواعدها',
+  'actions.prop-challenge.configure.remove-phase':
+    'إزالة المرحلة المعلقة {phase}',
+  'agent-history.title': 'أحدث تغييرات الوكلاء',
+  'agent-history.empty':
+    'تظهر هنا التغييرات التي يجريها وكلاء الذكاء الاصطناعي على هذا الجهاز.',
+  'agent-history.undo': 'تراجع',
+  'agent-history.undone': 'تم التراجع',
+  'agent-history.undone-notice': 'تم التراجع عن تغيير الوكيل.',
+  'agent-history.undo-failed':
+    'تعذّر التراجع عن جزء من هذا التغيير لأنه عُدّل لاحقًا.',
+  'agent-history.undo-in-use':
+    'تعذّر التراجع عن جزء من هذا التغيير لأن العنصر أصبح مستخدمًا في يومياتك.',
+  'agent-history.partly-applied': 'طُبّق جزء فقط من هذا التغيير.',
+  'agent-history.not-applied': 'لم يُطبَّق هذا التغيير.',
+  'agent-action.title.trade.create': 'إنشاء صفقة',
+  'agent-action.title.trade.update': 'تحديث الصفقة',
+  'agent-action.title.trade.set_type': 'تغيير نوع الصفقة',
+  'agent-action.title.trade.delete': 'حذف الصفقة',
+  'agent-action.title.review.create': 'إنشاء مراجعة',
+  'agent-action.title.review.update': 'تحديث المراجعة',
+  'agent-action.title.review.add_session_log_entries':
+    'إضافة إدخالات إلى سجل الجلسة',
+  'agent-action.title.review.update_session_log_entry':
+    'تحديث إدخال في سجل الجلسة',
+  'agent-action.title.review.delete_session_log_entry':
+    'حذف إدخال من سجل الجلسة',
+  'agent-action.title.review.add_images': 'إضافة صور إلى المراجعة',
+  'agent-action.title.review.set_image_annotations':
+    'تعيين وسوم وملاحظات صور المراجعة',
+  'agent-action.title.trade.set_image_annotations':
+    'تعيين وسوم وملاحظات صور الصفقة',
+  'agent-action.title.review.add_key_events': 'إضافة أحداث رئيسية',
+  'agent-action.title.review.update_key_event': 'تحديث حدث رئيسي',
+  'agent-action.title.review.delete_key_event': 'حذف حدث رئيسي',
+  'agent-action.title.review.set_day_trade_fields': 'تعيين حقول صفقات اليوم',
+  'agent-action.title.session.start_unplanned': 'بدء جلسة غير مخططة',
+  'agent-action.title.session.stop_unplanned': 'إيقاف جلسة غير مخططة',
+  'agent-action.title.review.remove_images': 'إزالة صور من المراجعة',
+  'agent-action.title.tag.create': 'إنشاء وسوم',
+  'agent-action.title.tag.set_color': 'تعيين لون الوسم',
+  'agent-action.title.tag.clear_color': 'مسح لون الوسم',
+  'agent-action.title.tag.rename': 'إعادة تسمية الوسم',
+  'agent-action.title.tag.merge': 'دمج الوسوم',
+  'agent-action.title.tag.delete': 'حذف الوسم',
+  'agent-action.title.mistake.create': 'إنشاء أخطاء',
+  'agent-action.title.mistake.rename': 'إعادة تسمية الخطأ',
+  'agent-action.title.mistake.merge': 'دمج الأخطاء',
+  'agent-action.title.mistake.delete': 'حذف الخطأ',
+  'agent-action.title.account_type.create': 'إنشاء أنواع حسابات',
+  'agent-action.title.account_type.rename': 'إعادة تسمية نوع الحساب',
+  'agent-action.title.account_type.move': 'نقل نوع الحساب',
+  'agent-action.title.account_type.delete': 'حذف نوع الحساب',
+  'agent-action.title.event.create': 'إنشاء أحداث',
+  'agent-action.title.event.update_style': 'تحديث نمط الحدث',
+  'agent-action.title.event.rename': 'إعادة تسمية الحدث',
+  'agent-action.title.event.merge': 'دمج الأحداث',
+  'agent-action.title.event.delete': 'حذف الحدث',
+  'agent-action.title.settings.set_analytics_calculation':
+    'تعيين طريقة حساب التحليلات',
+  'agent-action.title.settings.set_date_time_display':
+    'تعيين عرض التاريخ والوقت',
+  'agent-action.title.settings.set_display_preferences': 'تعيين تفضيلات العرض',
+  'agent-action.title.settings.set_trading_day': 'تعيين يوم التداول',
+  'agent-action.title.settings.set_risk_display': 'تعيين المخاطرة والعرض',
+  'agent-action.title.settings.set_break_even': 'تعيين حد التعادل',
+  'agent-action.title.settings.set_trade_entry': 'تعيين تفضيلات إدخال الصفقات',
+  'agent-action.title.settings.set_review_automation': 'تعيين أتمتة المراجعات',
+  'agent-action.title.settings.set_economic_calendar':
+    'تعيين استيراد التقويم الاقتصادي',
+  'agent-action.title.settings.set_session_schedule': 'تعيين جدول الجلسات',
+  'agent-action.title.dashboard_layout.create': 'إنشاء تخطيط للوحة المعلومات',
+  'agent-action.title.dashboard_layout.duplicate': 'نسخ تخطيط لوحة المعلومات',
+  'agent-action.title.dashboard_layout.update': 'استبدال تخطيط لوحة المعلومات',
+  'agent-action.title.dashboard_layout.rename':
+    'إعادة تسمية تخطيط لوحة المعلومات',
+  'agent-action.title.dashboard_layout.delete': 'حذف تخطيط لوحة المعلومات',
+  'agent-action.title.dashboard_layout.set_active':
+    'تعيين تخطيط لوحة المعلومات النشط',
+  'agent-action.title.home_layout.create': 'إنشاء تخطيط للصفحة الرئيسية',
+  'agent-action.title.home_layout.duplicate': 'نسخ تخطيط الصفحة الرئيسية',
+  'agent-action.title.home_layout.update': 'استبدال تخطيط الصفحة الرئيسية',
+  'agent-action.title.home_layout.rename': 'إعادة تسمية تخطيط الصفحة الرئيسية',
+  'agent-action.title.home_layout.delete': 'حذف تخطيط الصفحة الرئيسية',
+  'agent-action.title.home_layout.set_active':
+    'تعيين تخطيط الصفحة الرئيسية النشط',
+  'agent-action.title.review_template.create': 'إنشاء قالب مراجعة',
+  'agent-action.title.review_template.duplicate': 'نسخ قالب المراجعة',
+  'agent-action.title.review_template.update': 'استبدال قالب المراجعة',
+  'agent-action.title.review_template.delete': 'حذف قالب المراجعة',
+  'agent-action.title.review_template.set_default':
+    'تعيين قالب المراجعة الافتراضي',
+  'agent-action.title.session_workflow.create': 'إنشاء مسار عمل للجلسة',
+  'agent-action.title.session_workflow.update': 'استبدال مسار عمل الجلسة',
+  'agent-action.title.session_workflow.delete': 'حذف مسار عمل الجلسة',
+  'agent-action.title.session_workflow.delete_question':
+    'حذف سؤال الجلسة من المكتبة',
+  'agent-action.title.setup.create': 'إنشاء إعداد',
+  'agent-action.title.setup.update': 'تحديث الإعداد',
+  'agent-action.title.setup.rename': 'إعادة تسمية الإعداد',
+  'agent-action.title.setup.delete': 'حذف الإعداد',
+  'agent-action.title.custom_field.create': 'إنشاء حقل مخصص',
+  'agent-action.title.custom_field.update': 'تحديث الحقل المخصص',
+  'agent-action.title.custom_field.delete': 'حذف الحقل المخصص',
+  'agent-action.title.custom_field.reorder': 'إعادة ترتيب الحقول المخصصة',
+  'agent-action.title.session_log_tag.create': 'إنشاء وسم لسجل الجلسة',
+  'agent-action.title.session_log_tag.update': 'تحديث وسم سجل الجلسة',
+  'agent-action.title.session_log_tag.delete': 'حذف وسم سجل الجلسة',
+  'agent-action.title.account.create': 'إنشاء حساب',
+  'agent-action.title.account.update': 'تحديث الحساب',
+  'agent-action.title.account.rename': 'إعادة تسمية الحساب',
+  'agent-action.title.account.delete': 'حذف الحساب',
+  'agent-action.title.account.add_transaction': 'تسجيل إيداع أو سحب',
+  'agent-action.title.account.delete_transaction': 'حذف إيداع أو سحب',
+  'agent-action.title.prop_challenge.advance':
+    'الانتقال إلى مرحلة التحدي التالية',
+  'agent-action.title.prop_challenge.fail': 'وضع علامة فشل على التحدي',
+  'agent-action.title.prop_challenge.reopen': 'إعادة فتح التحدي',
+  'agent-action.title.prop_challenge.add_cost': 'تسجيل تكلفة التحدي',
+  'agent-action.title.prop_challenge.delete_cost': 'حذف تكلفة التحدي',
+  'agent-action.title.prop_challenge.configure': 'إعداد التحدي',
+  'agent-history.undo-confirm.title': 'التراجع عن تغيير الوكيل؟',
+  'agent-history.undo-confirm.message':
+    'يتراجع Journalit عن هذا التغيير. يبقى ما عُدّل لاحقًا كما هو.',
+  'agent-approval.eyebrow': 'طلب من وكيل ذكاء اصطناعي',
+  'agent-approval.position': '{index} من {total}',
+  'agent-approval.previous': 'الطلب السابق',
+  'agent-approval.next': 'الطلب التالي',
+  'agent-approval.hide': 'إخفاء الآن',
+  'agent-approval.details': 'التفاصيل',
+  'agent-approval.hide-details': 'إخفاء التفاصيل',
+  'agent-approval.approved': 'تمت الموافقة. اطلب من الوكيل المتابعة.',
+  'agent-approval.denied': 'تم الرفض. لن يُجري الوكيل هذه التغييرات.',
+  'agent-approval.expired':
+    'انتهت صلاحية هذا الطلب. اطلب من الوكيل المحاولة مرة أخرى.',
+  'agent-activity.title': 'نشاط وكلاء الذكاء الاصطناعي',
+  'agent-activity.waiting': 'بانتظارك',
+  'command.open-agent-activity': 'فتح نشاط وكلاء الذكاء الاصطناعي',
+  'settings.mcp-access.title': 'تطبيقات الذكاء الاصطناعي (MCP)',
+  'settings.mcp-access.description':
+    'اسمح لتطبيقات الذكاء الاصطناعي التي تربطها بحسابك في Journalit، مثل Claude أو ChatGPT، بقراءة هذا المخزن وتحديثه عبر MCP.',
+  'settings.mcp-access.loading': 'جارٍ تحميل وصول MCP…',
+  'settings.mcp-access.unavailable':
+    'وصول MCP غير متاح حاليًا. أعد فتح الإعدادات للمحاولة مرة أخرى.',
+  'settings.mcp-access.toggle.label': 'تفعيل وصول MCP',
+  'settings.mcp-access.toggle.description':
+    'اجعل هذا المخزن متاحًا لتطبيقات الذكاء الاصطناعي التي توافق عليها في journalit.co.',
+  'settings.mcp-access.status.label': 'الحالة',
+  'settings.mcp-access.status.off': 'متوقف',
+  'settings.mcp-access.status.off-detail':
+    'لا يمكن لأي تطبيق ذكاء اصطناعي استخدام هذا المخزن. فعّله لتتمكن تطبيقات مثل Claude وChatGPT من قراءته وتحديثه، وستظهر هنا طريقة ربط أحدها.',
+  'settings.mcp-access.status.connecting': 'جارٍ الاتصال',
+  'settings.mcp-access.status.connecting-detail':
+    'جارٍ تسجيل هذا المخزن في حسابك على Journalit.',
+  'settings.mcp-access.status.connected': 'متصل',
+  'settings.mcp-access.status.connected-detail':
+    'يمكن لتطبيقات الذكاء الاصطناعي التي وافقت عليها استخدام هذا المخزن.',
+  'settings.mcp-access.status.failed': 'غير متصل',
+  'settings.mcp-access.status.lost-detail':
+    'لم يعد Journalit يتعرّف على اتصال هذا المخزن، لذا لا يمكن لتطبيقات الذكاء الاصطناعي استخدامه. أعد الاتصال للسماح لها مجددًا.',
+  'settings.mcp-access.failed.account-unavailable':
+    'لا يمكن لحسابك في Journalit استخدام وصول MCP حاليًا.',
+  'settings.mcp-access.failed.vault-limit-reached':
+    'لم يعد في خطتك وصول MCP لمخزن آخر.',
+  'settings.mcp-access.failed.vault-limit-move':
+    'تطبيقات الذكاء الاصطناعي متصلة بمخزن آخر، "{vault}" (آخر استخدام: {lastUsed})، وقد بلغت خطتك حد المخازن.',
+  'settings.mcp-access.failed.vault-limit-move-never-used':
+    'تطبيقات الذكاء الاصطناعي متصلة بمخزن آخر، "{vault}" (لم يُستخدم قط)، وقد بلغت خطتك حد المخازن.',
+  'settings.mcp-access.action.move-here':
+    'نقل وصول الذكاء الاصطناعي إلى هذا المخزن',
+  'settings.mcp-access.move.confirm-title':
+    'نقل وصول الذكاء الاصطناعي إلى هذا المخزن؟',
+  'settings.mcp-access.move.confirm-message':
+    'ستتوقف تطبيقات الذكاء الاصطناعي المتصلة بـ"{vault}" عن العمل هناك. ستحتاج إلى إعادة توصيلها بهذا المخزن.',
+  'settings.mcp-access.move.confirm': 'نقل وصول الذكاء الاصطناعي',
+  'settings.mcp-access.failed.temporarily-unavailable':
+    'وصول MCP غير متاح مؤقتًا. حاول مرة أخرى بعد قليل.',
+  'settings.mcp-access.failed.settings-unavailable':
+    'تعذّر حفظ إعداد وصول MCP في هذا المخزن. حاول مرة أخرى.',
+  'settings.mcp-access.activity.description':
+    'وافق على الطلبات المعلّقة وراجع تغييرات الوكلاء الأخيرة أو تراجع عنها.',
+  'settings.mcp-access.activity.open': 'فتح',
+  'settings.mcp-access.action.retry': 'إعادة المحاولة',
+  'settings.mcp-access.action.reconnect': 'إعادة الاتصال',
+  'settings.mcp-access.failed.sign-in-required':
+    'سجّل الدخول إلى حسابك في Journalit، ثم حاول مجددًا.',
+  'settings.mcp-access.failed.vault-identity':
+    'تعذّر تحديد هوية هذه الخزنة. أعد تشغيل Obsidian، ثم حاول مجددًا.',
+  'settings.mcp-access.failed.request-rejected':
+    'تعذّر تسجيل هذه الخزنة. تحقّق من حسابك وحاول مجددًا.',
+  'settings.mcp-access.failed.unexpected-response':
+    'أرسل Journalit استجابة غير متوقعة. حاول مجددًا بعد قليل.',
+  'settings.mcp-access.failed.rate-limited':
+    'محاولات كثيرة جدًا. انتظر قليلًا قبل المحاولة مجددًا.',
+  'settings.mcp-access.failed.connection':
+    'تعذّر الاتصال بـ Journalit. تحقّق من اتصالك، ثم حاول مجددًا.',
+  'settings.mcp-access.full-access.label': 'وصول كامل',
+  'settings.mcp-access.full-access.description':
+    'يسمح لوكلاء الذكاء الاصطناعي بإجراء أي تغيير دون سؤالك. عند إيقافه، تنتظر عمليات الحذف والدمج والتغييرات الكبيرة موافقتك.',
+  'settings.mcp-access.full-access.warning':
+    'مع الوصول الكامل، يستطيع الوكيل حذف وتعديل الصفقات والحسابات والمراجعات والإعدادات وإعادة كتابة ملاحظات كثيرة دون موافقتك. فعّله فقط للوكلاء الذين تثق بهم.',
+  'settings.mcp-access.usage.label': 'الاستخدام الشهري',
+  'settings.mcp-access.usage.loading': 'جارٍ تحميل الاستخدام…',
+  'settings.mcp-access.usage.unavailable': 'الاستخدام غير متاح حاليًا.',
+  'settings.mcp-access.usage.limited':
+    'تم استخدام {consumed} من {limit} استدعاءً لأدوات الذكاء الاصطناعي هذا الشهر. يُعاد التعيين في {date}.',
+  'settings.mcp-access.usage.unlimited':
+    '{consumed} استدعاءً لأدوات الذكاء الاصطناعي هذا الشهر. يُعاد التعيين في {date}.',
+  'settings.mcp-access.usage.reached':
+    'تم استخدام جميع استدعاءات أدوات الذكاء الاصطناعي البالغة {limit} هذا الشهر. يُعاد التعيين في {date}.',
+  'settings.mcp-access.usage.upgrade': 'ترقية',
+  'settings.mcp-access.usage.not-counted':
+    'لا تُحتسب عمليات الفحص والمعاينة والتنقل وعرض الصور والبحث في الوثائق.',
+  'settings.mcp-access.usage.pro-offer':
+    'رقِّ إلى Pro للحصول على مزيد من استدعاءات أدوات الذكاء الاصطناعي',
+  'settings.mcp-access.connect.title': 'ربط تطبيق ذكاء اصطناعي',
+  'settings.mcp-access.connect.url-label': 'عنوان URL لخادم MCP',
+  'settings.mcp-access.connect.copy': 'نسخ',
+  'settings.mcp-access.connect.copied': 'تم النسخ',
+  'settings.mcp-access.connect.copy-failed': 'تعذّر النسخ',
+  'settings.mcp-access.connect.copy-url': 'نسخ عنوان URL لخادم MCP',
+  'settings.mcp-access.connect.copy-command': 'نسخ الأمر',
+  'settings.mcp-access.connect.app-label': 'تطبيق الذكاء الاصطناعي',
+  'settings.mcp-access.connect.claude.open':
+    'في Claude (الويب أو سطح المكتب)، افتح Customize ← Connectors.',
+  'settings.mcp-access.connect.claude.add':
+    'اختر + Add ← Add custom connector والصق عنوان URL لخادم MCP.',
+  'settings.mcp-access.connect.chatgpt.open':
+    'في ChatGPT على الويب، افتح Plugins (chatgpt.com/plugins).',
+  'settings.mcp-access.connect.chatgpt.add':
+    'اختر + ← Add custom MCP server، والصق عنوان URL لخادم MCP، ثم اختر OAuth.',
+  'settings.mcp-access.connect.step.approve':
+    'سجّل الدخول إلى Journalit ووافق على الوصول.',
+  'settings.mcp-access.connect.claude-code.run': 'شغّل هذا الأمر في الطرفية:',
+  'settings.mcp-access.connect.claude-code.sign-in':
+    'في Claude Code، شغّل /mcp وسجّل الدخول إلى Journalit.',
+  'settings.mcp-access.connect.sign-in-note':
+    'سيفتح تطبيق الذكاء الاصطناعي journalit.co لتسجّل الدخول وتختار هذا المخزن.',
+  'settings.mcp-access.connect.manage': 'إدارة التطبيقات المتصلة',
+  'actions.options.rename-none': 'إعادة تسمية {source} إلى {target}',
+  'actions.options.merge-none': 'دمج {source} في {target}',
+  'actions.custom-field.delete-unused': 'حذف الحقل؛ لا توجد صفقات تحمل قيمة له',
+  'actions.session-log-tag.delete-unused':
+    'إزالة الوسم من المحرر؛ لا يستخدمه أي سجل جلسة',
+  'actions.trade.entries.one': '{count} دخول',
+  'actions.trade.entries.other': '{count} دخول',
+  'actions.trade.exits.one': '{count} خروج',
+  'actions.trade.exits.other': '{count} خروج',
+  'agent-requests.changes.one': 'التغييرات: {count}',
+  'agent-requests.changes.other': 'التغييرات: {count}',
+  'agent-requests.kind-count': '{title} ×{count}',
 };
 
 export default ar;

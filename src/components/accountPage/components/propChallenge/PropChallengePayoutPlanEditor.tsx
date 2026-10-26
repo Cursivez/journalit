@@ -45,6 +45,93 @@ function planFromForm(form: {
   return Object.keys(plan).length ? plan : undefined;
 }
 
+type PayoutPlanForm = {
+  minimum: string;
+  kind: WithdrawalKind;
+  value: string;
+};
+
+const formFromPlan = (
+  plan: PropChallengePayoutPlan | undefined
+): PayoutPlanForm => ({
+  minimum: plan?.notifyMinimumAmount?.toString() ?? '',
+  kind: plan?.withdrawal?.kind ?? 'full',
+  value: plan?.withdrawal?.value.toString() ?? '',
+});
+
+function withdrawalSummary(
+  plan: PropChallengePayoutPlan,
+  money: (value: number) => string
+): string {
+  if (plan.withdrawal?.kind === 'percent') {
+    return t('account.prop-challenge.payout.plan.summary-percent', {
+      percent: String(plan.withdrawal.value),
+    });
+  }
+  if (plan.withdrawal?.kind === 'amount') {
+    return t('account.prop-challenge.payout.plan.summary-amount', {
+      amount: money(plan.withdrawal.value),
+    });
+  }
+  return t('account.prop-challenge.payout.plan.summary-full');
+}
+
+
+function payoutPlanSummary(
+  plan: PropChallengePayoutPlan | undefined,
+  money: (value: number) => string
+): string[] {
+  if (!plan) return [];
+  return [
+    plan.notifyMinimumAmount !== undefined
+      ? t('account.prop-challenge.payout.plan.summary-notify', {
+          amount: money(plan.notifyMinimumAmount),
+        })
+      : undefined,
+    withdrawalSummary(plan, money),
+  ].filter((part): part is string => Boolean(part));
+}
+
+function WithdrawalValueField({
+  kind,
+  value,
+  currency,
+  valueError,
+  onChange,
+}: {
+  kind: Exclude<WithdrawalKind, 'full'>;
+  value: string;
+  currency: string;
+  valueError: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label>
+      <span>
+        {kind === 'percent'
+          ? t('account.prop-challenge.payout.plan.percent-value')
+          : t('account.prop-challenge.payout.plan.amount-value', {
+              currency,
+            })}
+      </span>
+      <input
+        type="number"
+        min={0}
+        max={kind === 'percent' ? 100 : undefined}
+        step={kind === 'percent' ? '1' : '0.01'}
+        value={value}
+        aria-invalid={valueError ? true : undefined}
+        onChange={(event) => onChange(event.target.value)}
+      />
+      {valueError && (
+        <span className="journalit-prop-payout-plan__error" role="alert">
+          {valueError}
+        </span>
+      )}
+    </label>
+  );
+}
+
 export const PropChallengePayoutPlanEditor: React.FC<{
   challenge: PropChallengeConfig;
   currency: string;
@@ -53,15 +140,7 @@ export const PropChallengePayoutPlanEditor: React.FC<{
   const plugin = usePlugin();
   const { formatValue } = useDisplayFormatter();
   const plan = challenge.payoutPlan;
-  const [form, setForm] = useState<{
-    minimum: string;
-    kind: WithdrawalKind;
-    value: string;
-  }>({
-    minimum: plan?.notifyMinimumAmount?.toString() ?? '',
-    kind: plan?.withdrawal?.kind ?? 'full',
-    value: plan?.withdrawal?.value.toString() ?? '',
-  });
+  const [form, setForm] = useState<PayoutPlanForm>(() => formFromPlan(plan));
   const [saving, setSaving] = useState(false);
   const [valueError, setValueError] = useState('');
 
@@ -121,24 +200,7 @@ export const PropChallengePayoutPlanEditor: React.FC<{
       currencyCode: currency,
       showCents: false,
     });
-  const planSummary = [
-    plan?.notifyMinimumAmount !== undefined
-      ? t('account.prop-challenge.payout.plan.summary-notify', {
-          amount: money(plan.notifyMinimumAmount),
-        })
-      : undefined,
-    plan?.withdrawal?.kind === 'percent'
-      ? t('account.prop-challenge.payout.plan.summary-percent', {
-          percent: String(plan.withdrawal.value),
-        })
-      : plan?.withdrawal?.kind === 'amount'
-        ? t('account.prop-challenge.payout.plan.summary-amount', {
-            amount: money(plan.withdrawal.value),
-          })
-        : plan
-          ? t('account.prop-challenge.payout.plan.summary-full')
-          : undefined,
-  ].filter((part): part is string => Boolean(part));
+  const planSummary = payoutPlanSummary(plan, money);
   const planTitle = [
     t('account.prop-challenge.payout.plan.title'),
     ...planSummary,
@@ -187,35 +249,16 @@ export const PropChallengePayoutPlanEditor: React.FC<{
           />
         </label>
         {form.kind !== 'full' && (
-          <label>
-            <span>
-              {form.kind === 'percent'
-                ? t('account.prop-challenge.payout.plan.percent-value')
-                : t('account.prop-challenge.payout.plan.amount-value', {
-                    currency,
-                  })}
-            </span>
-            <input
-              type="number"
-              min={0}
-              max={form.kind === 'percent' ? 100 : undefined}
-              step={form.kind === 'percent' ? '1' : '0.01'}
-              value={form.value}
-              aria-invalid={valueError ? true : undefined}
-              onChange={(event) => {
-                setValueError('');
-                setForm((current) => ({
-                  ...current,
-                  value: event.target.value,
-                }));
-              }}
-            />
-            {valueError && (
-              <span className="journalit-prop-payout-plan__error" role="alert">
-                {valueError}
-              </span>
-            )}
-          </label>
+          <WithdrawalValueField
+            kind={form.kind}
+            value={form.value}
+            currency={currency}
+            valueError={valueError}
+            onChange={(value) => {
+              setValueError('');
+              setForm((current) => ({ ...current, value }));
+            }}
+          />
         )}
       </div>
       <div className="journalit-prop-payout-plan__actions">

@@ -5,6 +5,12 @@ interface PropChallengeRuleBase {
 
 export type PropChallengeRule =
   | (PropChallengeRuleBase & {
+      
+      kind: 'manual_review';
+      reason: string;
+      amount?: number;
+    })
+  | (PropChallengeRuleBase & {
       kind: 'profit_target';
       amount: number;
       targetType: 'absolute' | 'percentage';
@@ -13,6 +19,8 @@ export type PropChallengeRule =
     })
   | (PropChallengeRuleBase & {
       kind: 'drawdown';
+      
+      reviewRequired?: string;
       mode: 'static' | 'eod_trailing' | 'intraday_trailing';
       amount: number;
       lockAtBalance?: number;
@@ -55,10 +63,13 @@ export type PropChallengeRule =
       kind: 'consistency';
       maxBestDayPercent: number;
       
+      comparison?: 'strictly_below';
+      
       consistencyCushionPercent?: number;
     })
-  | (PropChallengeRuleBase &
-      PositionSizeCounting &
+  | (PropChallengeRuleBase & {
+      reviewRequired?: string;
+    } & PositionSizeCounting &
       (
         | {
             kind: 'max_position_size';
@@ -81,6 +92,12 @@ export type PropChallengeRule =
             profitBasis?: 'cumulative_trade_profit' | 'current_account_profit';
           }
       ));
+
+
+export type ExecutablePropChallengeRule = Exclude<
+  PropChallengeRule,
+  { kind: 'max_position_size' }
+>;
 
 interface PositionSizeCounting {
   
@@ -115,6 +132,7 @@ export type PropChallengePayoutAvailability =
     };
 
 export type PropChallengePayoutMaximum =
+  | { kind: 'unresolved'; reason: string }
   | { kind: 'none' }
   | { kind: 'fixed'; amount: number }
   | { kind: 'first_fixed_then_none'; amount: number }
@@ -140,6 +158,13 @@ export type PropChallengeProfitSplit =
       belowPercent: number;
       thresholdProfit: number;
       atOrAbovePercent: number;
+    }
+  | {
+      
+      kind: 'account_profit_marginal';
+      belowPercent: number;
+      thresholdProfit: number;
+      abovePercent: number;
     };
 
 export type PropChallengeWeekday =
@@ -165,7 +190,7 @@ export type PropChallengeMaximumPayoutOutcome =
 export type PropChallengePayoutAftermath =
   | {
       balanceAction: 'deduct_request';
-      drawdownAction: 'unchanged';
+      drawdownAction: 'unchanged' | 'raise_to_starting_balance';
       resetCycle: boolean;
       maximumPayoutOutcome?: PropChallengeMaximumPayoutOutcome;
     }
@@ -184,6 +209,9 @@ export type PropChallengePayoutAftermath =
     };
 
 export interface PropChallengePayoutPolicy {
+  
+  reviewRequired?: string;
+  consistencyBasis?: 'lifetime_gross_profit';
   version: number;
   source: string;
   cycle: PropChallengePayoutCycle;
@@ -325,7 +353,7 @@ export interface PropChallengeNoticeState {
   payoutObserved?: {
     phaseId: string;
     payoutCount: number;
-    status: 'eligible' | 'not_eligible';
+    status: 'eligible' | 'not_eligible' | 'needs_review';
     at: string;
   };
   payoutLost?: {
@@ -355,7 +383,7 @@ export interface PropChallengeConfig {
   oneTimeCosts?: PropChallengeCost[];
 }
 
-export interface PropChallengeProfileRef {
+interface PropChallengeProfileRef {
   firmId: string;
   challengeId: string;
   catalogVersion: number;
@@ -399,7 +427,7 @@ export interface PropFirmCatalogCorrection {
   };
 }
 
-export interface PropChallengeCorrectionAudit {
+interface PropChallengeCorrectionAudit {
   currencyCode: string;
   id: string;
   appliedAt: string;
@@ -456,6 +484,7 @@ export interface PropFirmProfileSelection {
 }
 
 export interface PropFirmProfileCatalogCache {
+  contractVersion: 4;
   catalog: PropFirmProfileCatalog;
   etag?: string;
   fetchedAt: string;

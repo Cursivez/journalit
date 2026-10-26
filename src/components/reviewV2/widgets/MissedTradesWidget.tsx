@@ -8,6 +8,11 @@ import { Tooltip } from '../../shared/Tooltip';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { getTradingDay } from '../../../utils/tradingDayUtils';
 import {
+  getAnalyticsDateBasis,
+  getMissedTradeFrontmatterTradingDay,
+} from '../../../utils/tradeAnalyticsDate';
+import type { AnalyticsDateBasis } from '../../../settings/types';
+import {
   getWeekStartDaySetting,
   safeParseDateValue,
 } from '../../../utils/dateUtils';
@@ -19,6 +24,21 @@ import type JournalitPlugin from '../../../main';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 import { useReviewReadOnly } from '../ReviewReadOnlyContext';
+import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
+import { calculateEffectiveRMultiple } from '../../../utils/formatting';
+import {
+  getEffectivePnL,
+  hasMissedTradeOutcome,
+} from '../../../utils/tradeStatusUtils';
+import {
+  classifyPnLWithBreakEvenSettings,
+  type BreakEvenRangeSettings,
+} from '../../../utils/breakEvenRange';
+import {
+  fetchBreakEvenAccountBalanceLookup,
+  resolveBreakEvenAccountBalances,
+  type BreakEvenAccountBalanceLookup,
+} from '../../../services/trade/core/BreakEvenAccountBalance';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -91,6 +111,35 @@ interface MissedTradeFrontmatter {
   thesis?: string;
   entryTime?: string | Date;
   reviewed?: boolean;
+  currency?: string;
+  pnl?: number | null;
+  rMultiple?: number | null;
+  tradeStatus?: string;
+  exitTime?: string | Date | null;
+  exitPrice?: number | null;
+  exits?: MissedTradeExecutionLeg[];
+  entries?: MissedTradeExecutionLeg[];
+  useDirectPnLInput?: boolean;
+  directPnL?: number | null;
+  riskAmount?: number | null;
+  commission?: number | null;
+  fees?: number | null;
+  swap?: number | null;
+  rebate?: number | null;
+}
+
+interface MissedTradeExecutionLeg {
+  time?: string | Date | null;
+  price?: number | null;
+  size?: number | null;
+}
+
+
+interface MissedTradeOutcome {
+  pnl: number;
+  rMultiple: number | null;
+  
+  breakEvenBalance?: number;
 }
 
 export interface MissedTradeDisplayData {
@@ -103,8 +152,13 @@ export interface MissedTradeDisplayData {
   missedReason?: string;
   thesis?: string;
   entryTime: Date;
+  
+  tradingDay: Date;
   reviewed: boolean;
   path: string;
+  
+  outcome: MissedTradeOutcome | null;
+  currency?: string;
 }
 
 interface MissedTradesWidgetProps {
@@ -143,14 +197,76 @@ const getValidDate = (value: string | Date | undefined): Date => {
   return new Date();
 };
 
+const resolveMissedTradeOutcome = (
+  frontmatter: MissedTradeFrontmatter,
+  context: MissedTradeDisplayContext
+): MissedTradeOutcome | null => {
+  
+  
+  const pnl = typeof frontmatter.pnl === 'number' ? frontmatter.pnl : null;
+  const trade = { ...frontmatter, pnl, _originalPnlWasNull: pnl === null };
+  if (!hasMissedTradeOutcome(trade)) {
+    return null;
+  }
+
+  
+  const outcomePnl = getEffectivePnL(trade);
+  const rMultiple = calculateEffectiveRMultiple(
+    outcomePnl,
+    typeof frontmatter.rMultiple === 'number'
+      ? frontmatter.rMultiple
+      : undefined,
+    typeof frontmatter.riskAmount === 'number'
+      ? frontmatter.riskAmount
+      : undefined,
+    context.settings.trade?.defaultRiskAmount
+  );
+  return {
+    pnl: outcomePnl,
+    rMultiple:
+      rMultiple !== undefined && Number.isFinite(rMultiple) ? rMultiple : null,
+    breakEvenBalance: context.breakEvenAccountBalances
+      ? resolveBreakEvenAccountBalances(
+          { ...frontmatter },
+          context.breakEvenAccountBalances
+        ).singleBalance
+      : undefined,
+  };
+};
+
+interface MissedTradeDisplayContext {
+  settings: {
+    trade?: BreakEvenRangeSettings & {
+      defaultRiskAmount?: number;
+      analyticsDateBasis?: AnalyticsDateBasis;
+      tradingDayCutoffTime?: string;
+    };
+  };
+  
+  breakEvenAccountBalances?: BreakEvenAccountBalanceLookup;
+}
+
+const usesBalanceBreakEven = (context: MissedTradeDisplayContext): boolean =>
+  context.settings.trade?.breakEvenThresholdMode ===
+  'percentage_current_balance';
+
 export const buildMissedTradeDisplayData = (
   frontmatter: MissedTradeFrontmatter | undefined,
-  file: TFile
+  file: TFile,
+  context: MissedTradeDisplayContext
 ): MissedTradeDisplayData | null => {
   if (!frontmatter) return null;
   if (frontmatter.type !== 'missed-trade' && !frontmatter.isMissedTrade) {
     return null;
   }
+
+  
+  const tradingDay = getMissedTradeFrontmatterTradingDay(
+    frontmatter,
+    getAnalyticsDateBasis(context.settings),
+    context
+  );
+  if (!tradingDay) return null;
 
   return {
     file,
@@ -163,8 +279,14 @@ export const buildMissedTradeDisplayData = (
     missedReason: parseDisplayText(frontmatter.missedReason) || '',
     thesis: parseDisplayText(frontmatter.thesis) || '',
     entryTime: getValidDate(frontmatter.entryTime),
+    tradingDay,
     reviewed: frontmatter.reviewed === true,
     path: file.path,
+    outcome: resolveMissedTradeOutcome(frontmatter, context),
+    currency:
+      typeof frontmatter.currency === 'string' && frontmatter.currency
+        ? frontmatter.currency
+        : undefined,
   };
 };
 
@@ -323,7 +445,7 @@ export const groupMissedTradesByDay = (
   }
 
   for (const trade of trades) {
-    const dayName = getDayName(trade.entryTime);
+    const dayName = getDayName(trade.tradingDay);
     const dayTrades = grouped.get(dayName) || [];
     dayTrades.push(trade);
     grouped.set(dayName, dayTrades);
@@ -342,6 +464,9 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
   ({ filePath, plugin, config: _config, preview, previewData }) => {
     const embeddedReadOnly = useReviewReadOnly();
     const readOnly = preview || embeddedReadOnly;
+    const { formatValue, shouldMask } = useDisplayFormatter();
+    const isPnlMasked = shouldMask('pnl');
+    const defaultCurrency = plugin.settings.general?.currency || 'USD';
     const [missedTrades, setMissedTrades] = useState<MissedTradeDisplayData[]>(
       []
     );
@@ -445,17 +570,26 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
           return;
         }
 
+        
         const missedTradeFiles = await missedTradeService.getMissedTrades(
           startDate,
-          endDate
+          endDate,
+          { dateBasis: getAnalyticsDateBasis(plugin.settings) }
         );
 
+        const displayContext: MissedTradeDisplayContext = {
+          settings: plugin.settings,
+          breakEvenAccountBalances: usesBalanceBreakEven(plugin)
+            ? await fetchBreakEvenAccountBalanceLookup(plugin)
+            : undefined,
+        };
         const processedMissedTrades = missedTradeFiles
           .flatMap((mtFile) => {
             const mtCache = plugin.app.metadataCache.getFileCache(mtFile);
             const missedTrade = buildMissedTradeDisplayData(
               mtCache?.frontmatter,
-              mtFile
+              mtFile,
+              displayContext
             );
             return missedTrade ? [missedTrade] : [];
           })
@@ -483,7 +617,11 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
       void loadMissedTrades();
     }, [loadMissedTrades]);
 
-    useEventBus('missed-trade:changed', handleMissedTradeChanged, !preview);
+    useEventBus(
+      'missed-trade-data:changed',
+      handleMissedTradeChanged,
+      !preview
+    );
     useEventBus(
       'settings:changed',
       (payload) => {
@@ -514,15 +652,15 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
         };
 
         try {
-          const { TradeFormModal } =
-            await import('../../forms/trade/TradeFormModal');
-          const modal = new TradeFormModal({
+          const { TradeFormDrawer } =
+            await import('../../forms/trade/TradeFormDrawer');
+          const drawer = new TradeFormDrawer({
             app: plugin.app,
             plugin: plugin,
             isEditMode: false,
             initialData,
           });
-          modal.open();
+          drawer.open();
         } catch {
           void plugin.viewManager?.openTradeFormView(initialData);
         }
@@ -567,6 +705,20 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
       );
     }
 
+    const getPnlToneClass = (outcome: MissedTradeOutcome): string => {
+      if (isPnlMasked) return 'journalit-reviewv2-pnl--muted';
+      const result = classifyPnLWithBreakEvenSettings(
+        outcome.pnl,
+        plugin.settings.trade,
+        outcome.breakEvenBalance
+      );
+      return result === 'win'
+        ? 'journalit-reviewv2-pnl--positive'
+        : result === 'loss'
+          ? 'journalit-reviewv2-pnl--negative'
+          : 'journalit-reviewv2-pnl--muted';
+    };
+
     const renderMissedTradeCard = (trade: MissedTradeDisplayData) => {
       const directionClass = getDirectionClass(trade.direction);
       const accountLabel = trade.account.join(', ');
@@ -601,17 +753,31 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
                     {formatEntryTime(trade.entryTime)}
                   </span>
                 </div>
-                {trade.reviewed && (
+                {(trade.outcome || trade.reviewed) && (
                   <div className="journalit-reviewv2-missed-statuses">
-                    <span className="journalit-reviewv2-missed-reviewed-status">
+                    {trade.outcome && (
                       <span
-                        className="journalit-reviewv2-missed-reviewed-dot"
-                        aria-hidden="true"
-                      />
-                      <span className="journalit-reviewv2-missed-reviewed-text">
-                        {t('trade.review.reviewed')}
+                        className={`journalit-reviewv2-missed-outcome journalit-reviewv2-pnl ${getPnlToneClass(trade.outcome)}`}
+                      >
+                        {formatValue({
+                          kind: 'pnl',
+                          value: trade.outcome.pnl,
+                          rMultiple: trade.outcome.rMultiple,
+                          currencyCode: trade.currency || defaultCurrency,
+                        })}
                       </span>
-                    </span>
+                    )}
+                    {trade.reviewed && (
+                      <span className="journalit-reviewv2-missed-reviewed-status">
+                        <span
+                          className="journalit-reviewv2-missed-reviewed-dot"
+                          aria-hidden="true"
+                        />
+                        <span className="journalit-reviewv2-missed-reviewed-text">
+                          {t('trade.review.reviewed')}
+                        </span>
+                      </span>
+                    )}
                   </div>
                 )}
               </div>

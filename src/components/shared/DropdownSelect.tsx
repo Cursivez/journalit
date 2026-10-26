@@ -32,12 +32,16 @@ interface DropdownSelectProps {
   ariaDescribedBy?: string;
   placeholder?: string;
   disabled?: boolean;
+  
+  invalid?: boolean;
   className?: string;
   leadingContent?: React.ReactNode;
   triggerRef?: React.Ref<HTMLButtonElement>;
   menuWidth?: 'trigger' | 'content';
   
   showOptionTooltips?: boolean;
+  
+  showSelectionIndicator?: boolean;
 }
 
 export function DropdownSelect({
@@ -51,11 +55,13 @@ export function DropdownSelect({
   ariaDescribedBy,
   placeholder,
   disabled = false,
+  invalid = false,
   className,
   leadingContent,
   triggerRef,
   menuWidth = 'trigger',
   showOptionTooltips = true,
+  showSelectionIndicator = true,
 }: DropdownSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -92,12 +98,14 @@ export function DropdownSelect({
 
   const openMenu = useCallback(
     (index = selectedIndex) => {
+      
+      if (!options.length) return;
       typeaheadBufferRef.current = '';
       lastTypeaheadAtRef.current = 0;
       setActiveIndex(index);
       setIsOpen(true);
     },
-    [selectedIndex]
+    [options.length, selectedIndex]
   );
   const menuPosition = useAnchoredMenuPosition({
     isOpen,
@@ -142,6 +150,7 @@ export function DropdownSelect({
   }, [activeIndex, isOpen]);
 
   const handleMenuKeyDown = (event: React.KeyboardEvent) => {
+    if (!options.length) return;
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       const direction = event.key === 'ArrowDown' ? 1 : -1;
@@ -200,6 +209,7 @@ export function DropdownSelect({
           : { 'aria-label': ariaLabel })}
         aria-haspopup="listbox"
         aria-expanded={isOpen}
+        aria-invalid={invalid || undefined}
         disabled={disabled}
         onClick={() => (isOpen ? closeMenu() : openMenu())}
         onKeyDown={(event) => {
@@ -262,12 +272,14 @@ export function DropdownSelect({
                   onMouseEnter={() => setActiveIndex(index)}
                   onClick={() => selectOption(index)}
                 >
-                  <span
-                    className={`journalit-dropdown-select__check${selected ? ' is-checked' : ''}`}
-                    aria-hidden="true"
-                  >
-                    {selected ? '✓' : ''}
-                  </span>
+                  {showSelectionIndicator && (
+                    <span
+                      className={`journalit-dropdown-select__check${selected ? ' is-checked' : ''}`}
+                      aria-hidden="true"
+                    >
+                      {selected ? '✓' : ''}
+                    </span>
+                  )}
                   <span className="journalit-dropdown-select__option-label">
                     {option.label}
                   </span>

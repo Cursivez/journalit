@@ -181,7 +181,7 @@ function createTradeData(options: {
     account: [options.account ?? profile.account],
     setup: [setup],
     mistake: options.mistake ? [options.mistake] : [],
-    customTags: [
+    tags: [
       options.index % 2 === 0 ? 'Trend Day' : 'Range Day',
       options.index % 3 === 0 ? 'High Volatility' : 'Planned Trade',
       ...(options.partialExit ? ['Scale Out'] : []),
@@ -195,7 +195,7 @@ function createTradeData(options: {
     commissionType: 'fixed',
     hasExplicitCommission: true,
     fees,
-    stopLoss,
+    stopLosses: [{ price: stopLoss }],
     riskAmount:
       Math.abs(entryPrice - stopLoss) * positionSize * profile.dollarPerPoint,
     dollarPerPoint:

@@ -421,11 +421,8 @@ function TradeLogTreeComponent({
     const timer = window.setTimeout(updateHeight, 300);
 
     
-    let resizeObserver: ResizeObserver | null = null;
-    if (containerRef.current && 'ResizeObserver' in window) {
-      resizeObserver = new ResizeObserver(updateHeight);
-      resizeObserver.observe(containerRef.current);
-    }
+    const resizeObserver = new ResizeObserver(updateHeight);
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
 
     
     window.addEventListener('resize', updateHeight);
@@ -433,9 +430,7 @@ function TradeLogTreeComponent({
     return () => {
       window.clearTimeout(timer);
       window.removeEventListener('resize', updateHeight);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
+      resizeObserver.disconnect();
     };
   }, []);
 
@@ -484,18 +479,13 @@ function TradeLogTreeComponent({
     const frameId = window.requestAnimationFrame(measureScrollbarWidth);
     window.addEventListener('resize', measureScrollbarWidth);
 
-    let resizeObserver: ResizeObserver | null = null;
-    if (containerRef.current && 'ResizeObserver' in window) {
-      resizeObserver = new ResizeObserver(measureScrollbarWidth);
-      resizeObserver.observe(containerRef.current);
-    }
+    const resizeObserver = new ResizeObserver(measureScrollbarWidth);
+    if (containerRef.current) resizeObserver.observe(containerRef.current);
 
     return () => {
       window.cancelAnimationFrame(frameId);
       window.removeEventListener('resize', measureScrollbarWidth);
-      if (resizeObserver) {
-        resizeObserver.disconnect();
-      }
+      resizeObserver.disconnect();
     };
   }, [
     flattenedNodes.length,

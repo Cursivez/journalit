@@ -10,13 +10,13 @@ import { clearUpgradeOrigin } from '../services/upgrade/upgradeOrigin';
 import { t } from '../lang/helpers';
 import JournalitPlugin from '../main';
 import { getBaseCurrencyOptions } from '../utils/currencyConfig';
-import {
-  DEFAULT_SETTINGS,
-  SETTINGS_TAB_IDS,
-  type JournalitSettings,
-  type SettingsTabId,
-} from './types';
+import { SETTINGS_TAB_IDS, type SettingsTabId } from './types';
 import { saveDisplayName } from './displayName';
+import {
+  applySettingsControlValue,
+  getSettingsPath,
+  publishSettingsControlChange,
+} from './settingsControlWrites';
 
 
 import {
@@ -249,19 +249,10 @@ export class JournalitSettingsTab extends PluginSettingTab {
       return;
     }
 
-    const didSet = applyNativeSettingsControlValue(
-      this.plugin.settings,
-      key,
-      value
-    );
-
-    if (!didSet) {
-      return;
-    }
-
+    applySettingsControlValue(this.plugin.settings, key, value);
     await this.plugin.saveSettings();
     this.refreshNativeSettingsDomState();
-    await this.handleNativeControlSideEffects(key);
+    await publishSettingsControlChange(this.plugin, key);
   }
 
   refreshNativeSettingsDomState(): void {
@@ -275,100 +266,6 @@ export class JournalitSettingsTab extends PluginSettingTab {
     const update = Reflect.get(this, 'update');
     if (typeof update === 'function') {
       Reflect.apply(update, this, []);
-    }
-  }
-
-  private async handleNativeControlSideEffects(key: string): Promise<void> {
-    if (key === 'general.currency') {
-      window.dispatchEvent(
-        new CustomEvent('journalit-currency-changed', {
-          detail: { currency: this.plugin.settings.general?.currency },
-        })
-      );
-      eventBus.publish('settings:changed', {
-        section: 'general',
-        source: 'currency',
-      });
-      return;
-    }
-
-    if (key === 'general.accentColorSource') {
-      
-      eventBus.publish('appearance:accent-source-changed');
-      return;
-    }
-
-    if (key === 'home.filterRecentItemsToJournalit') {
-      const recentItems = this.plugin.uiStateManager.getState().recentItems;
-      eventBus.publish('recent-items:changed', {
-        recentItems: recentItems.map((item) => ({
-          path: item.path || item.viewType || '',
-          timestamp: new Date(item.openedAt).getTime(),
-          type: item.type,
-        })),
-      });
-      return;
-    }
-
-    if (key === 'home.showBackgroundInDashboard') {
-      eventBus.publish('settings:changed', {
-        section: 'home',
-        source: 'background-dashboard-visibility',
-      });
-      return;
-    }
-
-    if (key.startsWith('display.')) {
-      eventBus.publish('settings:changed', {
-        section: 'display',
-        source: key.slice('display.'.length),
-      });
-      return;
-    }
-
-    if (key.startsWith('trade.')) {
-      eventBus.publish('settings:changed', {
-        section: 'trade',
-        source: key.slice('trade.'.length),
-      });
-
-      if (
-        key.startsWith('trade.breakEven') ||
-        key === 'trade.defaultRiskAmount'
-      ) {
-        await this.plugin.tradeService?.clearCache();
-        await this.plugin.accountPageService?.refreshAllAccountData();
-      }
-      return;
-    }
-
-    if (key.startsWith('backendIntegration.')) {
-      if (
-        key === 'backendIntegration.showUpdateNotifications' ||
-        key === 'backendIntegration.showAvailableUpdateNotifications'
-      ) {
-        this.plugin.updateNotificationService?.handleNotificationSettingChanged();
-      }
-      eventBus.publish('settings:changed', {
-        section: 'backendIntegration',
-        source: key.slice('backendIntegration.'.length),
-      });
-      return;
-    }
-
-    if (
-      key.startsWith('reviews.') ||
-      key.startsWith('drc.') ||
-      key.startsWith('weekly.') ||
-      key.startsWith('monthly.') ||
-      key.startsWith('quarterly.') ||
-      key.startsWith('yearly.') ||
-      key.startsWith('reviewV2.')
-    ) {
-      eventBus.publish('settings:changed', {
-        section: 'reviews',
-        source: key,
-      });
     }
   }
 
@@ -553,7 +450,9 @@ const SettingsTabContent: React.FC<SettingsTabContentProps> = React.memo(
               initialSection={
                 requestedTab === SETTINGS_TAB_IDS.TRADE_IMPORT_SYNC
                   ? 'tradeImport'
-                  : 'brokerSync'
+                  : requestedTab === SETTINGS_TAB_IDS.MCP_ACCESS
+                    ? 'mcpAccess'
+                    : 'brokerSync'
               }
               isNativeSubPage={isNativeSubPage}
             />
@@ -590,7 +489,8 @@ function normalizeSettingsTabId(tabId: SettingsTabId): SettingsTabId {
   if (
     tabId === SETTINGS_TAB_IDS.TRADE_SYNC ||
     tabId === SETTINGS_TAB_IDS.TRADE_IMPORT_SYNC ||
-    tabId === SETTINGS_TAB_IDS.ACCOUNTS
+    tabId === SETTINGS_TAB_IDS.ACCOUNTS ||
+    tabId === SETTINGS_TAB_IDS.MCP_ACCESS
   ) {
     return SETTINGS_TAB_IDS.SYNC;
   }
@@ -627,7 +527,7 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
     {
       tabId: SETTINGS_TAB_IDS.GENERAL,
       label: t('settings.tab.general'),
-      desc: 'Currency, display name, home startup, recent items, and navigation preferences.',
+      desc: t('settings.page.general.desc'),
       createItems: createGeneralNativeSettingItems,
       aliases: [
         'currency',
@@ -641,7 +541,7 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
     {
       tabId: SETTINGS_TAB_IDS.SYNC,
       label: t('settings.tab.sync'),
-      desc: 'Journalit account, subscription, Trade Sync, Trade Import, and Economic Calendar.',
+      desc: t('settings.page.sync.desc'),
       createItems: createSyncNativeSettingItems,
       aliases: [
         'account',
@@ -666,7 +566,7 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
     {
       tabId: SETTINGS_TAB_IDS.TRADING,
       label: t('settings.tab.trading'),
-      desc: 'Defaults for new trades, date handling, risk, break-even logic, and analytics display preferences.',
+      desc: t('settings.page.trading.desc'),
       createItems: createTradingNativeSettingItems,
       aliases: [
         'trades',
@@ -686,7 +586,7 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
     {
       tabId: SETTINGS_TAB_IDS.JOURNAL,
       label: t('settings.tab.journal-setup'),
-      desc: 'Review templates, automation, custom fields, form layout, symbols, setups, mistakes, tags, and events.',
+      desc: t('settings.page.journal.desc'),
       createItems: createJournalNativeSettingItems,
       aliases: [
         'journal setup',
@@ -707,7 +607,7 @@ function getSettingsPageDefinitions(): SettingsPageDefinition[] {
     {
       tabId: SETTINGS_TAB_IDS.ADVANCED,
       label: t('form.tab.advanced'),
-      desc: 'Journal folder, image path maintenance, settings backup, import, export, and reset.',
+      desc: t('settings.page.advanced.desc'),
       createPage: (tab) =>
         createReactSettingsPage(
           tab,
@@ -1277,15 +1177,15 @@ function createJournalNativeSettingItems(
     createReactPageDefinition(
       tab,
       SETTINGS_TAB_IDS.REVIEWS,
-      'Review templates, goals, and checklists',
-      'Open the full Journalit review settings UI for templates, recurring goals, and checklist management.',
+      t('settings.page.reviews.title'),
+      t('settings.page.reviews.desc'),
       ['review templates', 'recurring goals', 'checklist', 'template builder']
     ),
     createReactPageDefinition(
       tab,
       SETTINGS_TAB_IDS.CUSTOMIZATION,
       t('settings.tab.customization'),
-      'Open custom fields, form layout, symbols, mappings, setups, mistakes, tags, and events.',
+      t('settings.page.customization.desc'),
       [
         'custom fields',
         'trade form layout',
@@ -1301,7 +1201,7 @@ function createJournalNativeSettingItems(
       tab,
       SETTINGS_TAB_IDS.SESSION_MODE,
       t('settings.session-mode.title'),
-      'Open Session Mode settings for trading windows, phase layout, Trade Gate workflows, and session log tags.',
+      t('settings.session-mode.description'),
       [
         'session mode',
         'trading sessions',
@@ -1351,7 +1251,7 @@ function createSyncNativeSettingItems(
       tab,
       SETTINGS_TAB_IDS.TRADE_SYNC,
       t('trade-sync.providers.title'),
-      'Open broker sync providers, FTP credentials, account management, diagnostics, and sync notification preferences.',
+      t('settings.page.trade-sync.desc'),
       [
         'MetaTrader',
         'Tradovate',
@@ -1369,7 +1269,7 @@ function createSyncNativeSettingItems(
       tab,
       SETTINGS_TAB_IDS.TRADE_IMPORT_SYNC,
       t('trade-sync.source.trade-import'),
-      'Open Trade Import sync inventory, account mapping, and restore tools.',
+      t('trade-sync.source.trade-import.description'),
       [
         'trade import',
         'import trades',
@@ -1384,6 +1284,27 @@ function createSyncNativeSettingItems(
       t('settings.economic-calendar.title'),
       t('settings.economic-calendar.description'),
       ['economic calendar', 'news events', 'key events', 'auto-import']
+    ),
+    createReactPageDefinition(
+      tab,
+      SETTINGS_TAB_IDS.MCP_ACCESS,
+      t('settings.mcp-access.title'),
+      t('settings.page.mcp-access.desc'),
+      [
+        'mcp',
+        'mcp access',
+        'ai',
+        'ai apps',
+        'ai access',
+        'ai assistant',
+        'ai agent activity',
+        'agent',
+        'claude',
+        'claude code',
+        'chatgpt',
+        'connector',
+        'ai connections',
+      ]
     ),
   ];
 }
@@ -1493,107 +1414,6 @@ function validateTime(value: string): string | void {
   }
 
   return 'Use 24-hour time in HH:MM format.';
-}
-
-function getSettingsPath(settings: JournalitSettings, path: string): unknown {
-  let cursor: unknown = settings;
-
-  for (const part of path.split('.')) {
-    if (!isRecord(cursor)) {
-      return getDefaultSettingsPath(path);
-    }
-
-    cursor = cursor[part];
-  }
-
-  return cursor ?? getDefaultSettingsPath(path);
-}
-
-function applyNativeSettingsControlValue(
-  settings: JournalitSettings,
-  path: string,
-  value: unknown
-): boolean {
-  if (path === 'trade.tradingDayCutoffTime') {
-    settings.trade.tradingDayCutoffEndOfDayMigrationVersion =
-      DEFAULT_SETTINGS.trade.tradingDayCutoffEndOfDayMigrationVersion;
-  }
-
-  setSettingsPath(settings, path, normalizeNativeControlValue(path, value));
-  return true;
-}
-
-function normalizeNativeControlValue(path: string, value: unknown): unknown {
-  
-  if (path === 'trade.breakEvenRangeMin' && isFiniteNumber(value)) {
-    return -Math.abs(value);
-  }
-
-  if (path === 'trade.breakEvenRangeMax' && isFiniteNumber(value)) {
-    return Math.abs(value);
-  }
-
-  if (path === 'trade.breakEvenThresholdPercent' && isFiniteNumber(value)) {
-    return Math.max(0, value);
-  }
-
-  return value;
-}
-
-function isFiniteNumber(value: unknown): value is number {
-  return typeof value === 'number' && Number.isFinite(value);
-}
-
-function setSettingsPath(
-  settings: JournalitSettings,
-  path: string,
-  value: unknown
-): void {
-  const parts = path.split('.');
-  const last = parts.pop();
-  if (!last) {
-    return;
-  }
-
-  let cursor: object = settings;
-  let currentPath = '';
-
-  for (const part of parts) {
-    currentPath = currentPath ? `${currentPath}.${part}` : part;
-    const next: unknown = Reflect.get(cursor, part);
-
-    if (isRecord(next)) {
-      cursor = next;
-      continue;
-    }
-
-    const defaultBranch = getDefaultSettingsPath(currentPath);
-    const replacement = isRecord(defaultBranch)
-      ? cloneRecord(defaultBranch)
-      : {};
-    Reflect.set(cursor, part, replacement);
-    cursor = replacement;
-  }
-
-  Reflect.set(cursor, last, value);
-}
-
-function getDefaultSettingsPath(path: string): unknown {
-  let cursor: unknown = DEFAULT_SETTINGS;
-
-  for (const part of path.split('.')) {
-    if (!isRecord(cursor)) {
-      return undefined;
-    }
-
-    cursor = cursor[part];
-  }
-
-  return cursor;
-}
-
-function cloneRecord(record: Record<string, unknown>): Record<string, unknown> {
-  return { ...record };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {

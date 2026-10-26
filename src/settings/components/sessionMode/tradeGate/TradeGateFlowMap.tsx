@@ -29,6 +29,8 @@ import type {
 } from '../../../../types/sessionMode';
 import {
   buildTradeGateFlowLayout,
+  getTradeGateFlowEdgePath,
+  TRADE_GATE_FLOW_EDGE_LABEL_MAX_CHARS,
   getTradeGateNodeById,
   getTradeGateQuestionById,
   truncateTradeGateFlowLabel,
@@ -337,9 +339,7 @@ export function TradeGateFlowMap({
             openNode={openNode}
           />
           <div className="journalit-session-mode-trade-gate-flow-canvas__hint">
-            {layout.truncated
-              ? t('settings.session-mode.trade-gate.flow-truncated')
-              : t('settings.session-mode.trade-gate.flow-click-hint')}
+            {t('settings.session-mode.trade-gate.flow-click-hint')}
           </div>
         </div>
       )}
@@ -411,9 +411,13 @@ function TradeGateFlowStage({
             style={cssVars({
               '--trade-gate-flow-edge-label-left': `${edge.labelX}px`,
               '--trade-gate-flow-edge-label-top': `${edge.labelY}px`,
+              '--trade-gate-flow-edge-label-max-width': `${edge.labelMaxWidth}px`,
             })}
           >
-            {truncateTradeGateFlowLabel(edge.label, 18)}
+            {truncateTradeGateFlowLabel(
+              edge.label,
+              TRADE_GATE_FLOW_EDGE_LABEL_MAX_CHARS
+            )}
           </button>
         ) : null
       )}
@@ -429,14 +433,11 @@ function TradeGateFlowStage({
 }
 
 function TradeGateFlowEdge({ edge }: { edge: TradeGateFlowLayoutEdge }) {
-  const midY = edge.sourceY + (edge.targetY - edge.sourceY) * 0.52;
-  const path = `M ${edge.sourceX} ${edge.sourceY} C ${edge.sourceX} ${midY}, ${edge.targetX} ${midY}, ${edge.targetX} ${edge.targetY}`;
-
   return (
     <g
       className={`journalit-session-mode-trade-gate-flow-edge${edge.wired ? '' : ' is-unwired'}`}
     >
-      <path d={path} />
+      <path d={getTradeGateFlowEdgePath(edge)} />
     </g>
   );
 }

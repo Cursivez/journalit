@@ -29,20 +29,24 @@ import type {
   RithmicConnections,
 } from '../../../services/tradeSync/types';
 import { logger } from '../../../utils/logger';
+import { useAuthRefreshRecovery } from './brokerSyncKit/useAuthRefreshRecovery';
+import { useBrokerRefreshSequence } from './brokerSyncKit/useBrokerRefreshSequence';
 import {
-  useAuthRefreshRecovery,
-  useBrokerRefreshSequence,
   useBrokerStatusFailureState,
   useBrokerStatusPolling,
+} from './brokerSyncKit/useBrokerStatusPolling';
+import {
   useBrokerSyncAll,
-  useConnectionBusyState,
-  useMappingUpdateQueue,
-  withRateLimitRetry,
-  type BrokerDataOwnership,
   type BrokerSyncAllEligibility,
   type BrokerSyncAllSummary,
+} from './brokerSyncKit/useBrokerSyncAll';
+import { useConnectionBusyState } from './brokerSyncKit/useConnectionBusyState';
+import { useMappingUpdateQueue } from './brokerSyncKit/useMappingUpdateQueue';
+import { withRateLimitRetry } from './brokerSyncKit/rateLimitRetry';
+import {
+  type BrokerDataOwnership,
   type LocalAccountOption,
-} from './brokerSyncKit';
+} from './brokerSyncKit/types';
 import {
   rithmicSyncErrorCode,
   rithmicSyncErrorDetail,
@@ -460,11 +464,13 @@ export function useRithmicSyncPanelModel(
     [plugin]
   );
   const completionNotice = useCallback(
-    ({ succeeded, total, hasIssues }: BrokerSyncAllSummary) =>
+    ({ succeeded, total, hasIssues, partlyFinished }: BrokerSyncAllSummary) =>
       t(
         hasIssues
           ? 'trade-sync.rithmic.sync-all-partial'
-          : 'trade-sync.rithmic.sync-all-complete',
+          : partlyFinished
+            ? 'trade-sync.rithmic.sync-all-provider-partial'
+            : 'trade-sync.rithmic.sync-all-complete',
         { succeeded: String(succeeded), total: String(total) }
       ),
     []

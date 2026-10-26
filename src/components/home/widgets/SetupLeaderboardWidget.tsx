@@ -541,7 +541,10 @@ const SetupLeaderboardWidgetComponent: React.FC<
   SetupLeaderboardWidgetProps
 > = ({ plugin, instanceId }) => {
   const { dashboardData, forceRefreshData } = useDashboardData();
-  const { currency } = useCurrency();
+  const { currency: liveCurrency } = useCurrency();
+  
+  
+  const currency = dashboardData?.currency ?? liveCurrency;
   const { formatValue, shouldMask } = useDisplayFormatter();
 
   useEffect(() => {}, []);

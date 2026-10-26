@@ -23,7 +23,8 @@ import {
 type RecoveryResponse = TradeImportAnalyseResponse | TradeImportPreviewResponse;
 
 export interface BrokerImportRecovery {
-  diagnosticCodesToSuppress: ReadonlySet<string>;
+  
+  suppressesDiagnostic: (diagnostic: TradeImportDiagnostic) => boolean;
   matches: (response: RecoveryResponse) => boolean;
   
   getNoticeProps: (
@@ -49,7 +50,7 @@ export interface BrokerImportAnalyseRecovery {
 }
 
 
-export interface BrokerImportSourceOption {
+interface BrokerImportSourceOption {
   id: string;
   label: string;
 }
@@ -63,7 +64,7 @@ function diagnosticCodeRecovery(
   getNoticeProps: BrokerImportRecovery['getNoticeProps']
 ): BrokerImportRecovery {
   return {
-    diagnosticCodesToSuppress: new Set([diagnosticCode]),
+    suppressesDiagnostic: (diagnostic) => diagnostic.code === diagnosticCode,
     matches: (preview) =>
       preview.diagnostics.some(
         (diagnostic) => diagnostic.code === diagnosticCode
@@ -73,6 +74,30 @@ function diagnosticCodeRecovery(
 }
 
 const BROKER_IMPORT_RECOVERIES: BrokerImportRecovery[] = [
+  {
+    
+    
+    
+    
+    suppressesDiagnostic: (diagnostic) => diagnostic.severity === 'error',
+    matches: (response) =>
+      response.schemaVersion === 'trade-import-analyse-v1' &&
+      response.sheets.length === 0 &&
+      response.diagnostics.some(
+        (diagnostic) => diagnostic.severity === 'error'
+      ),
+    getNoticeProps: (diagnostics) => ({
+      title: t('trade-import.recovery.no-trade-rows.title'),
+      message: [
+        ...diagnostics.flatMap((diagnostic) =>
+          diagnostic.severity === 'error' ? [diagnostic.message] : []
+        ),
+        t('trade-import.recovery.no-trade-rows.message'),
+      ].join(' '),
+    }),
+    supportsAnalyse: true,
+    anotherFileLabel: 'trade-import.action.choose-another-file',
+  },
   {
     ...diagnosticCodeRecovery(
       BYBIT_HEADER_MISMATCH_DIAGNOSTIC_CODE,
@@ -112,7 +137,7 @@ const BROKER_IMPORT_RECOVERIES: BrokerImportRecovery[] = [
     supportsAnalyse: true,
     canChangeSource: true,
     showQuickImportAnotherFileAction: true,
-    anotherFileLabel: 'trade-import.recovery.rithmic-order-history.choose-file',
+    anotherFileLabel: 'trade-import.action.choose-another-file',
   },
   diagnosticCodeRecovery(
     UNSUPPORTED_TRADOVATE_PERFORMANCE_REPORT_DIAGNOSTIC_CODE,
@@ -133,7 +158,7 @@ const BROKER_IMPORT_RECOVERIES: BrokerImportRecovery[] = [
     })
   ),
   {
-    diagnosticCodesToSuppress: new Set(),
+    suppressesDiagnostic: () => false,
     matches: (preview) =>
       preview.schemaVersion === 'trade-import-preview-v1' &&
       preview.broker === 'TRADINGVIEW' &&

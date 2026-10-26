@@ -555,7 +555,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
       );
     } catch (error) {
       console.error('Failed to save currency setting:', error);
-      new Notice('❌ ' + t('settings.general.currency-save-failed'), 5000);
+      new Notice(t('settings.general.currency-save-failed'), 5000);
 
       
       setSettingsVersion((prev) => prev + 1);
@@ -597,7 +597,7 @@ function useGeneralTabModel(props: GeneralTabProps) {
       );
     } catch (error) {
       console.error('Failed to save display name:', error);
-      new Notice('❌ ' + t('settings.general.display-name-save-failed'), 5000);
+      new Notice(t('settings.general.display-name-save-failed'), 5000);
     }
   };
 
@@ -770,7 +770,6 @@ function useGeneralTabModel(props: GeneralTabProps) {
       plugin.settings.home = {
         layouts: {},
         activeLayout: 'Default',
-        recentItems: [],
         filterRecentItemsToJournalit: newValue,
       };
     } else {
@@ -2021,6 +2020,23 @@ function GeneralDataManagementSection({
   includeSettingsActions?: boolean;
   flat?: boolean;
 }) {
+  const importInputRef = useRef<HTMLInputElement>(null);
+  const handleImportFileChange = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    setIsImporting(true);
+    try {
+      if (await settingsExporter.importSettings(file)) {
+        setSettingsVersion((prev) => prev + 1);
+      }
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
   return (
     <SettingsSectionOrAccordion
       title={
@@ -2099,24 +2115,7 @@ function GeneralDataManagementSection({
             <div className="setting-item-control">
               <Button
                 variant="primary"
-                onClick={() => {
-                  void (async () => {
-                    setIsImporting(true);
-                    try {
-                      const file =
-                        await settingsExporter.openImportFilePicker();
-                      if (file) {
-                        const success =
-                          await settingsExporter.importSettings(file);
-                        if (success) {
-                          setSettingsVersion((prev) => prev + 1);
-                        }
-                      }
-                    } finally {
-                      setIsImporting(false);
-                    }
-                  })();
-                }}
+                onClick={() => importInputRef.current?.click()}
                 disabled={isImporting}
                 className="journalit-settings-action-button"
               >
@@ -2124,6 +2123,16 @@ function GeneralDataManagementSection({
                   ? t('settings.general.import-settings-importing')
                   : t('settings.general.import-settings')}
               </Button>
+              
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".json"
+                onChange={(event) => void handleImportFileChange(event)}
+                className="journalit-settings-import-file-input"
+                aria-hidden="true"
+                tabIndex={-1}
+              />
             </div>
           </div>
 
@@ -2500,11 +2509,7 @@ export function CalendarSidebarOpenControl({
   );
 }
 
-export function HomeBackgroundSettings({
-  plugin,
-}: {
-  plugin: JournalitPlugin;
-}) {
+function HomeBackgroundSettings({ plugin }: { plugin: JournalitPlugin }) {
   const [hasBackground, setHasBackground] = useState(
     Boolean(plugin.settings.home?.backgroundImagePath)
   );
@@ -2584,7 +2589,7 @@ export function HomeBackgroundSettings({
 }
 
 
-export function AccentColorSetting({ plugin }: { plugin: JournalitPlugin }) {
+function AccentColorSetting({ plugin }: { plugin: JournalitPlugin }) {
   const [source, setSource] = useState<AccentColorSource>(
     plugin.settings.general?.accentColorSource ?? 'journalit'
   );

@@ -13,6 +13,7 @@ import type { JournalitSettings } from '../settings/types';
 import type { PropChallengeConfig } from '../services/propChallenge/types';
 import { CurrencyCode } from '../utils/currencyConfig';
 import type { DemoGenerationInputs } from './DemoManifest';
+import { resolvePropChallengePayoutPhaseAt } from '../services/propChallenge/PropChallengeConfig';
 
 export const DEMO_OPTIONS_NAMESPACE = 'sample';
 export const DEMO_CUSTOM_FIELDS_NAMESPACE = 'sample';
@@ -54,12 +55,7 @@ export interface DemoSupportNote {
   body: string;
 }
 
-export type DemoReviewType =
-  | 'drc'
-  | 'weekly'
-  | 'monthly'
-  | 'quarterly'
-  | 'yearly';
+type DemoReviewType = 'drc' | 'weekly' | 'monthly' | 'quarterly' | 'yearly';
 
 export interface DemoReviewRecipe {
   entityId: string;
@@ -174,12 +170,11 @@ function getZonedParts(date: Date, timezone: string): Record<string, number> {
     });
     zonedPartsFormatters.set(timezone, formatter);
   }
-  return Object.fromEntries(
-    formatter
-      .formatToParts(date)
-      .filter((part) => part.type !== 'literal')
-      .map((part) => [part.type, Number(part.value)])
-  );
+  const parts: Record<string, number> = {};
+  for (const part of formatter.formatToParts(date)) {
+    if (part.type !== 'literal') parts[part.type] = Number(part.value);
+  }
+  return parts;
 }
 
 function calendarDateInTimezone(date: Date, timezone: string): Date {
@@ -315,18 +310,35 @@ export function createSampleAccountMetadata(
   challengePayouts: readonly SampleChallengePayoutRecord[] = []
 ): SampleAccountMetadata {
   const payoutsFor = (account: DemoAccountName) =>
-    challengePayouts
-      .filter((payout) => payout.account === account)
-      .map((payout) => ({
-        id: payout.id,
-        date: payout.date,
-        type: TransactionType.WITHDRAWAL,
-        amount: -payout.amount,
-        description: payout.description,
-        
-        
-        balanceAfter: 0,
-      }));
+    challengePayouts.flatMap((payout) => {
+      if (payout.account !== account) return [];
+      const policy = resolvePropChallengePayoutPhaseAt(
+        challenges.funded,
+        payout.date
+      )?.payoutPolicy;
+      if (!policy || policy.profitSplit.kind !== 'fixed')
+        throw new Error(
+          'Synthetic sample payouts require their fixed phase split.'
+        );
+      return [
+        {
+          id: payout.id,
+          date: payout.date,
+          type: TransactionType.WITHDRAWAL,
+          amount: -payout.amount,
+          payoutReceipt: {
+            basis: 'policy_estimate' as const,
+            grossRequest: payout.amount,
+            traderNetAmount: (payout.amount * policy.profitSplit.percent) / 100,
+            source: policy.source,
+          },
+          description: payout.description,
+          
+          
+          balanceAfter: 0,
+        },
+      ];
+    });
   const transaction = (
     id: string,
     accountStart: Date,

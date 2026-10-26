@@ -29,11 +29,15 @@ import type {
   TradeProjectionResponse,
 } from './types';
 
+
+const PROJECTION_DESTINATIONS = 'live,backtest';
+
 function projectionQuery(request: TradeProjectionRequest): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(request)) {
     if (value !== undefined && value !== null) params.set(key, String(value));
   }
+  params.set('destinations', PROJECTION_DESTINATIONS);
   return params.toString();
 }
 
@@ -49,11 +53,6 @@ const mappingInFlight = new Map<
 const NONZERO_UUID_PATTERN =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const NIL_UUID = '00000000-0000-0000-0000-000000000000';
-
-export function resetTradeProjectionMutationInFlightForTests(): void {
-  restoreInFlight.clear();
-  mappingInFlight.clear();
-}
 
 function shareInFlight<T>(
   inFlight: Map<string, Promise<T>>,
@@ -322,7 +321,7 @@ export class TradeProjectionClient {
     const { response, requestAuthToken } = await requestTradeSyncWithAuthRetry(
       (authToken) => ({
         url: ApiClient.buildUrl(
-          `/api/v1/trade-projections/accounts?vaultId=${encodeURIComponent(vaultId)}`
+          `/api/v1/trade-projections/accounts?vaultId=${encodeURIComponent(vaultId)}&destinations=${PROJECTION_DESTINATIONS}`
         ),
         method: 'GET',
         headers: authHeaders(authToken),

@@ -39,7 +39,9 @@ export function usePopupDismiss({
     
     
     const scope = new Scope(
-      rootRef.current?.closest('.modal-container') ? undefined : app.scope
+      rootRef.current?.closest('.modal-container, .journalit-drawer-overlay')
+        ? undefined
+        : app.scope
     );
     scope.register(null, 'Escape', (event) => escape(event));
     app.keymap.pushScope(scope);

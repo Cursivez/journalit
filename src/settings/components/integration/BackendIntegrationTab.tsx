@@ -15,8 +15,8 @@ import {
 import { showConfirmationModal } from '../../../components/shared/ConfirmationModal';
 import { Notice, FileSystemAdapter, Platform } from 'obsidian';
 import JournalitPlugin from '../../../main';
-import { ToggleSwitch } from '../../../components/ui';
-import { Button } from '../../../components/ui';
+import ToggleSwitch from '../../../components/ui/ToggleSwitch';
+import { Button } from '../../../components/ui/Button';
 import { LoadingSpinner } from '../../../components/shared/LoadingSpinner';
 import { openExternalUrl } from '../../../utils/externalLinks';
 import { Accordion } from '../../../components/shared/Accordion';
@@ -1331,6 +1331,210 @@ function BackendIntegrationErrorPanel({
   );
 }
 
+function backendSyncSummary(
+  settings: BackendIntegrationTabModel['settings'],
+  connectionState: BackendIntegrationTabModel['connectionState']
+) {
+  return {
+    lastSyncTime:
+      settings.lastSyncTime || connectionState.syncStatus?.last_sync_time,
+    syncCount:
+      settings.syncCount || connectionState.syncStatus?.sync_count || 0,
+  };
+}
+
+function BackendSetupSection({
+  expandedSection,
+  setExpandedSection,
+  connectionState,
+  ftpState,
+  backendService,
+  handleRegisterVault,
+  handleCreateFTPCredentials,
+  ftpUserId,
+  setFtpErrorDetails,
+}: Pick<
+  BackendIntegrationTabModel,
+  | 'expandedSection'
+  | 'setExpandedSection'
+  | 'connectionState'
+  | 'ftpState'
+  | 'backendService'
+  | 'handleRegisterVault'
+  | 'handleCreateFTPCredentials'
+  | 'setFtpErrorDetails'
+> & { ftpUserId: string }) {
+  
+  return (
+    <Accordion
+      title={t('backend.section.setup.title')}
+      expanded={expandedSection === 'setup'}
+      onExpandedChange={(expanded) =>
+        setExpandedSection(expanded ? 'setup' : null)
+      }
+    >
+      
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">{t('backend.register.title')}</div>
+          <div className="setting-item-description">
+            {t('backend.register.description')}
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <Button
+            variant="primary"
+            onClick={() => void handleRegisterVault()}
+            disabled={
+              connectionState.isRegistering ||
+              connectionState.isSyncing ||
+              !backendService
+            }
+          >
+            <div className="backend-integration__button-content">
+              {connectionState.isRegistering && (
+                <LoadingSpinner size="small" message="" />
+              )}
+              {connectionState.isRegistering
+                ? t('backend.register.registering')
+                : t('backend.register.button')}
+            </div>
+          </Button>
+        </div>
+      </div>
+
+      
+      {connectionState.status === 'connected' && !ftpState.hasCredentials && (
+        <div className="setting-item">
+          <div className="setting-item-info">
+            <div className="setting-item-name">{t('backend.ftp.title')}</div>
+            <div className="setting-item-description">
+              {t('backend.ftp.description')}
+            </div>
+          </div>
+          <div className="setting-item-control">
+            <Button
+              variant="primary"
+              onClick={() => void handleCreateFTPCredentials()}
+              disabled={ftpState.isCreating || !backendService}
+            >
+              <div className="backend-integration__button-content">
+                {ftpState.isCreating && (
+                  <LoadingSpinner size="small" message="" />
+                )}
+                {ftpState.isCreating
+                  ? t('backend.ftp.creating')
+                  : t('backend.ftp.create-button')}
+              </div>
+            </Button>
+          </div>
+        </div>
+      )}
+
+      
+      {ftpState.hasCredentials && (
+        <div className="setting-item setting-item--full-width">
+          <FTPCredentialsSection
+            userId={ftpUserId}
+            onErrorChange={setFtpErrorDetails}
+          />
+        </div>
+      )}
+    </Accordion>
+  );
+}
+
+function BackendSyncSection({
+  expandedSection,
+  setExpandedSection,
+  connectionState,
+  settings,
+  handleSyncEnabledToggle,
+  formatLastSyncTime,
+}: Pick<
+  BackendIntegrationTabModel,
+  | 'expandedSection'
+  | 'setExpandedSection'
+  | 'connectionState'
+  | 'settings'
+  | 'handleSyncEnabledToggle'
+  | 'formatLastSyncTime'
+>) {
+  const { lastSyncTime, syncCount } = backendSyncSummary(
+    settings,
+    connectionState
+  );
+  
+  return (
+    <Accordion
+      title={t('backend.section.sync.title')}
+      expanded={expandedSection === 'sync'}
+      onExpandedChange={(expanded) =>
+        setExpandedSection(expanded ? 'sync' : null)
+      }
+    >
+      <div className="setting-item">
+        <div className="setting-item-info">
+          <div className="setting-item-name">{t('backend.sync.auto-sync')}</div>
+          <div className="setting-item-description">
+            {t('backend.sync.auto-sync-desc')}
+            <div className="backend-integration__sync-info">
+              <Info size={16} /> {t('backend.sync.auto-sync-info')}
+            </div>
+          </div>
+        </div>
+        <div className="setting-item-control">
+          <ToggleSwitch
+            checked={settings.syncEnabled || false}
+            onChange={handleSyncEnabledToggle}
+            id="sync-enabled-toggle"
+            ariaLabel={t('backend.sync.auto-sync-aria')}
+          />
+        </div>
+      </div>
+
+      {connectionState.lastSyncResult && (
+        <div className="setting-item">
+          <div className="setting-item-info">
+            <div className="setting-item-name">
+              {t('backend.sync.last-result')}
+            </div>
+            <div className="setting-item-description">
+              {connectionState.lastSyncResult.synced_trades > 0 ? (
+                <>
+                  <CheckCircle2 size={16} />{' '}
+                  {t('backend.sync.synced-trades', {
+                    trades: String(
+                      connectionState.lastSyncResult.synced_trades
+                    ),
+                    files: String(connectionState.lastSyncResult.new_files),
+                  })}
+                </>
+              ) : (
+                <>
+                  <CheckCircle2 size={16} /> {t('backend.sync.no-new-trades')}
+                </>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {(settings.lastSyncTime || connectionState.syncStatus) && (
+        <div className="setting-item">
+          <div className="setting-item-info">
+            <div className="setting-item-name">{t('backend.sync.status')}</div>
+            <div className="setting-item-description">
+              {t('backend.sync.last-sync')}: {formatLastSyncTime(lastSyncTime)}{' '}
+              | {t('backend.sync.total-syncs')}: {syncCount}
+            </div>
+          </div>
+        </div>
+      )}
+    </Accordion>
+  );
+}
+
 export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
   props
 ) => {
@@ -1388,12 +1592,7 @@ export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
         <StatusCards
           connectionStatus={connectionState.status}
           onRefreshConnection={checkConnectionStatus}
-          lastSyncTime={
-            settings.lastSyncTime || connectionState.syncStatus?.last_sync_time
-          }
-          syncCount={
-            settings.syncCount || connectionState.syncStatus?.sync_count || 0
-          }
+          {...backendSyncSummary(settings, connectionState)}
           isSyncing={connectionState.isSyncing}
           isRegistering={connectionState.isRegistering}
           onForceSync={handleForceSync}
@@ -1424,169 +1623,25 @@ export const BackendIntegrationTab: React.FC<BackendIntegrationTabProps> = (
 
       {contentMode !== 'accounts' && (
         <>
-          
-          <Accordion
-            title={t('backend.section.setup.title')}
-            expanded={expandedSection === 'setup'}
-            onExpandedChange={(expanded) =>
-              setExpandedSection(expanded ? 'setup' : null)
-            }
-          >
-            
-            <div className="setting-item">
-              <div className="setting-item-info">
-                <div className="setting-item-name">
-                  {t('backend.register.title')}
-                </div>
-                <div className="setting-item-description">
-                  {t('backend.register.description')}
-                </div>
-              </div>
-              <div className="setting-item-control">
-                <Button
-                  variant="primary"
-                  onClick={() => void handleRegisterVault()}
-                  disabled={
-                    connectionState.isRegistering ||
-                    connectionState.isSyncing ||
-                    !backendService
-                  }
-                >
-                  <div className="backend-integration__button-content">
-                    {connectionState.isRegistering && (
-                      <LoadingSpinner size="small" message="" />
-                    )}
-                    {connectionState.isRegistering
-                      ? t('backend.register.registering')
-                      : t('backend.register.button')}
-                  </div>
-                </Button>
-              </div>
-            </div>
-
-            
-            {connectionState.status === 'connected' &&
-              !ftpState.hasCredentials && (
-                <div className="setting-item">
-                  <div className="setting-item-info">
-                    <div className="setting-item-name">
-                      {t('backend.ftp.title')}
-                    </div>
-                    <div className="setting-item-description">
-                      {t('backend.ftp.description')}
-                    </div>
-                  </div>
-                  <div className="setting-item-control">
-                    <Button
-                      variant="primary"
-                      onClick={() => void handleCreateFTPCredentials()}
-                      disabled={ftpState.isCreating || !backendService}
-                    >
-                      <div className="backend-integration__button-content">
-                        {ftpState.isCreating && (
-                          <LoadingSpinner size="small" message="" />
-                        )}
-                        {ftpState.isCreating
-                          ? t('backend.ftp.creating')
-                          : t('backend.ftp.create-button')}
-                      </div>
-                    </Button>
-                  </div>
-                </div>
-              )}
-
-            
-            {ftpState.hasCredentials && (
-              <div className="setting-item setting-item--full-width">
-                <FTPCredentialsSection
-                  userId={settings.ftpUsername || autoDetectedUserId}
-                  onErrorChange={setFtpErrorDetails}
-                />
-              </div>
-            )}
-          </Accordion>
-
-          
-          <Accordion
-            title={t('backend.section.sync.title')}
-            expanded={expandedSection === 'sync'}
-            onExpandedChange={(expanded) =>
-              setExpandedSection(expanded ? 'sync' : null)
-            }
-          >
-            <div className="setting-item">
-              <div className="setting-item-info">
-                <div className="setting-item-name">
-                  {t('backend.sync.auto-sync')}
-                </div>
-                <div className="setting-item-description">
-                  {t('backend.sync.auto-sync-desc')}
-                  <div className="backend-integration__sync-info">
-                    <Info size={16} /> {t('backend.sync.auto-sync-info')}
-                  </div>
-                </div>
-              </div>
-              <div className="setting-item-control">
-                <ToggleSwitch
-                  checked={settings.syncEnabled || false}
-                  onChange={handleSyncEnabledToggle}
-                  id="sync-enabled-toggle"
-                  ariaLabel={t('backend.sync.auto-sync-aria')}
-                />
-              </div>
-            </div>
-
-            {connectionState.lastSyncResult && (
-              <div className="setting-item">
-                <div className="setting-item-info">
-                  <div className="setting-item-name">
-                    {t('backend.sync.last-result')}
-                  </div>
-                  <div className="setting-item-description">
-                    {connectionState.lastSyncResult.synced_trades > 0 ? (
-                      <>
-                        <CheckCircle2 size={16} />{' '}
-                        {t('backend.sync.synced-trades', {
-                          trades: String(
-                            connectionState.lastSyncResult.synced_trades
-                          ),
-                          files: String(
-                            connectionState.lastSyncResult.new_files
-                          ),
-                        })}
-                      </>
-                    ) : (
-                      <>
-                        <CheckCircle2 size={16} />{' '}
-                        {t('backend.sync.no-new-trades')}
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-            )}
-
-            {(settings.lastSyncTime || connectionState.syncStatus) && (
-              <div className="setting-item">
-                <div className="setting-item-info">
-                  <div className="setting-item-name">
-                    {t('backend.sync.status')}
-                  </div>
-                  <div className="setting-item-description">
-                    {t('backend.sync.last-sync')}:{' '}
-                    {formatLastSyncTime(
-                      settings.lastSyncTime ||
-                        connectionState.syncStatus?.last_sync_time
-                    )}{' '}
-                    | {t('backend.sync.total-syncs')}:{' '}
-                    {settings.syncCount ||
-                      connectionState.syncStatus?.sync_count ||
-                      0}
-                  </div>
-                </div>
-              </div>
-            )}
-          </Accordion>
+          <BackendSetupSection
+            expandedSection={expandedSection}
+            setExpandedSection={setExpandedSection}
+            connectionState={connectionState}
+            ftpState={ftpState}
+            backendService={backendService}
+            handleRegisterVault={handleRegisterVault}
+            handleCreateFTPCredentials={handleCreateFTPCredentials}
+            ftpUserId={settings.ftpUsername || autoDetectedUserId}
+            setFtpErrorDetails={setFtpErrorDetails}
+          />
+          <BackendSyncSection
+            expandedSection={expandedSection}
+            setExpandedSection={setExpandedSection}
+            connectionState={connectionState}
+            settings={settings}
+            handleSyncEnabledToggle={handleSyncEnabledToggle}
+            formatLastSyncTime={formatLastSyncTime}
+          />
         </>
       )}
 

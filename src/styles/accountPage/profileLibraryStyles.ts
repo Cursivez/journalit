@@ -138,17 +138,33 @@ export const PROFILE_LIBRARY_STYLES = `
   justify-content: space-between;
   gap: var(--size-4-2);
 }
+.journalit-profile-policy-change__heading strong {
+  font-size: var(--font-ui-small);
+  font-weight: var(--font-semibold);
+}
 .journalit-profile-policy-change__heading > span,
-.journalit-profile-policy-column-label {
+.journalit-profile-policy-column-label,
+.journalit-profile-policy-empty {
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
 }
+
 .journalit-profile-policy-change__columns {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--size-4-4);
+  grid-template-columns: max-content minmax(0, 1fr);
+  align-items: center;
+  gap: var(--size-4-2) var(--size-4-3);
 }
-.journalit-profile-policy-change__columns > div {
+.journalit-profile-policy-change__columns .journalit-profile-policy-column-label {
+  align-self: start;
+  display: flex;
+  align-items: center;
+  min-height: 36px;
+}
+.journalit-profile-policy-side__rules {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-1);
   min-width: 0;
 }
 .journalit-profile-policy-diff .journalit-prop-challenge-rule-remove {
@@ -160,9 +176,14 @@ export const PROFILE_LIBRARY_STYLES = `
   gap: var(--size-4-3);
 }
 @container (max-width: 540px) {
-  .journalit-profile-policy-change__columns,
   .journalit-profile-update-form .journalit-prop-profile-picker__controls {
     grid-template-columns: minmax(0, 1fr);
+  }
+}
+@container (max-width: 380px) {
+  .journalit-profile-policy-change__columns {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--size-2-2);
   }
 }
 .journalit-personal-profiles,
@@ -204,10 +225,16 @@ export const PROFILE_LIBRARY_STYLES = `
 }
 .journalit-profile-policy-diff .journalit-prop-challenge-rule-toggle {
   grid-template-columns: minmax(0, 1fr) auto;
-  padding: var(--size-4-2);
+  min-height: 36px;
+  padding: var(--size-2-2) var(--size-4-2) var(--size-2-2) var(--size-4-3);
 }
+
+.journalit-profile-policy-diff .journalit-prop-challenge-rule-toggle .journalit-prop-challenge-rule-help,
 .journalit-profile-policy-diff .journalit-prop-challenge-rule-toggle > strong {
   display: none;
+}
+.journalit-profile-policy-diff .journalit-prop-challenge-rule-summary-row {
+  min-height: 36px;
 }
 .journalit-profile-policy-diff .journalit-prop-challenge-rule-summary {
   grid-column: 1;
@@ -230,7 +257,6 @@ export const PROFILE_LIBRARY_STYLES = `
   padding-block: var(--size-4-4);
   border-top: 1px solid var(--background-modifier-border);
 }
-.journalit-profile-review__comparison,
 .journalit-profile-review__choices,
 .journalit-profile-review__transition,
 .journalit-profile-history__entries {
@@ -311,5 +337,66 @@ export const PROFILE_LIBRARY_STYLES = `
   .journalit-personal-profiles__selection > .journalit-button {
     justify-self: start;
   }
+}
+.journalit-profile-correction__period {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-4-2);
+  min-width: 0;
+}
+.journalit-profile-correction__period-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--size-4-3);
+  padding-bottom: var(--size-4-2);
+  border-bottom: 1px solid var(--background-modifier-border);
+  font-size: var(--font-ui-small);
+}
+.journalit-profile-correction__label {
+  color: var(--text-muted);
+}
+.journalit-profile-update-modal .journalit-profile-correction .journalit-profile-policy-change {
+  padding-block: 0;
+}
+.journalit-profile-correction .account-date-warning {
+  margin-top: 0;
+  padding: var(--size-4-2) var(--size-4-3);
+}
+.journalit-profile-correction .account-date-warning__title {
+  margin-bottom: var(--size-2-1);
+  font-size: var(--font-ui-small);
+}
+.journalit-profile-correction .account-date-warning__desc {
+  font-size: var(--font-ui-smaller);
+}
+
+.journalit-profile-correction .journalit-profile-correction-details > .journalit-collapsible-header {
+  padding-inline: 0;
+  color: var(--text-muted);
+}
+.journalit-profile-correction .journalit-profile-correction-details a {
+  align-self: flex-start;
+  font-size: var(--font-ui-small);
+}
+.journalit-profile-correction__consent {
+  display: flex;
+  flex-direction: column;
+  gap: var(--size-2-2);
+}
+.journalit-profile-correction__consent > p {
+  padding-inline-start: calc(16px + var(--size-4-2));
+}
+.journalit-profile-correction__error {
+  display: flex;
+  align-items: center;
+  gap: var(--size-4-2);
+  color: var(--text-error);
+  font-size: var(--font-ui-small);
+}
+.journalit-profile-correction .journalit-modal-actions {
+  margin-top: 0;
+  padding-top: var(--size-4-3);
+  border-top: 1px solid var(--background-modifier-border);
 }
 `;

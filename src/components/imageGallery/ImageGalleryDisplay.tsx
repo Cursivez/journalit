@@ -1,4 +1,10 @@
-import React, { useCallback, useMemo } from 'react';
+import React, {
+  useCallback,
+  useLayoutEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type { App } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import type { TradeLogFilters } from '../../services/tradelog/types';
@@ -28,11 +34,13 @@ import type {
   ImageGalleryViewMode,
 } from './types';
 import {
+  estimateImageGalleryGridMetrics,
   formatHoverTags,
   getImageGalleryCardDateLabel,
   getImageGalleryCardSourceLabel,
   getImageGalleryFullscreenTitle,
   getImageGalleryVirtualWindow,
+  type ImageGalleryGridMetrics,
 } from './ImageGalleryUtils';
 import { hasFilterExclusions } from '../shared/filters/filterExclusions';
 
@@ -219,9 +227,41 @@ export const ImageGalleryGrid: React.FC<{
   onOpenSource,
   registerGridTarget,
 }) => {
+  const gridRef = useRef<HTMLElement | null>(null);
+  const setGridElement = useCallback(
+    (element: HTMLElement | null) => {
+      gridRef.current = element;
+      registerGridTarget(element);
+    },
+    [registerGridTarget]
+  );
+  const [measuredMetrics, setMeasuredMetrics] =
+    useState<ImageGalleryGridMetrics | null>(null);
+  
+  
+  
+  
+  useLayoutEffect(() => {
+    const grid = gridRef.current!;
+    const measure = () => {
+      const nextMetrics = measureImageGalleryGrid(grid);
+      if (!nextMetrics) return;
+      setMeasuredMetrics((currentMetrics) =>
+        currentMetrics && isSameGridMetrics(currentMetrics, nextMetrics)
+          ? currentMetrics
+          : nextMetrics
+      );
+    };
+    measure();
+    const resizeObserver = new ResizeObserver(measure);
+    resizeObserver.observe(grid);
+    return () => resizeObserver.disconnect();
+  }, [size]);
+  const metrics =
+    measuredMetrics ?? estimateImageGalleryGridMetrics(size, viewport.width);
   const virtualWindow = useMemo(
-    () => getImageGalleryVirtualWindow(groups.length, size, viewport),
-    [groups.length, size, viewport]
+    () => getImageGalleryVirtualWindow(groups.length, metrics, viewport),
+    [groups.length, metrics, viewport]
   );
   const renderedGroups = useMemo(
     () => groups.slice(virtualWindow.startIndex, virtualWindow.endIndex),
@@ -231,7 +271,7 @@ export const ImageGalleryGrid: React.FC<{
   return (
     <section
       className={`journalit-image-gallery-grid journalit-image-gallery-grid--${size}`}
-      ref={registerGridTarget}
+      ref={setGridElement}
     >
       {virtualWindow.topSpacerHeight > 0 ? (
         <div
@@ -272,6 +312,36 @@ export const ImageGalleryGrid: React.FC<{
 };
 
 ImageGalleryGrid.displayName = 'ImageGalleryGrid';
+
+function measureImageGalleryGrid(
+  grid: HTMLElement
+): ImageGalleryGridMetrics | null {
+  const card = grid.querySelector('.journalit-image-gallery-card');
+  if (!card) return null;
+  const style = window.getComputedStyle(grid);
+  
+  const columnCount = style.gridTemplateColumns
+    .split(' ')
+    .filter(Boolean).length;
+  const gap = Number.parseFloat(style.rowGap);
+  if (columnCount === 0 || !Number.isFinite(gap)) return null;
+  return {
+    columnCount,
+    rowHeight: card.getBoundingClientRect().height + gap,
+    gap,
+  };
+}
+
+function isSameGridMetrics(
+  a: ImageGalleryGridMetrics,
+  b: ImageGalleryGridMetrics
+): boolean {
+  return (
+    a.columnCount === b.columnCount &&
+    a.gap === b.gap &&
+    Math.abs(a.rowHeight - b.rowHeight) < 0.01
+  );
+}
 
 export const ImageGalleryFullscreen: React.FC<{
   item: ImageGalleryItem | null;
@@ -435,7 +505,7 @@ function isFullscreenInteractiveTarget(target: EventTarget): boolean {
   );
 }
 
-export function getGroupedNavigationLabel(
+function getGroupedNavigationLabel(
   item: ImageGalleryItem,
   groups: ImageGalleryGroup[]
 ): string {
@@ -454,6 +524,85 @@ export function getGroupedNavigationLabel(
     groupTotal: String(groups.length),
   });
 }
+
+const ImageGalleryCardHoverPanel: React.FC<{
+  tags: string[];
+  notes: string | undefined;
+  reviewed: boolean | undefined;
+}> = ({ tags, notes, reviewed }) => (
+  <div className="journalit-image-gallery-card__hover-panel" aria-hidden="true">
+    {tags.length > 0 ? (
+      <div className="journalit-image-gallery-card__hover-tags">
+        <Tag
+          className="journalit-image-gallery-card__hover-tags-icon"
+          size={13}
+          aria-hidden="true"
+        />
+        <span className="journalit-image-gallery-card__hover-tag">
+          {formatHoverTags(tags)}
+        </span>
+      </div>
+    ) : null}
+    {notes ? (
+      <p className="journalit-image-gallery-card__hover-notes">{notes}</p>
+    ) : null}
+    {reviewed !== undefined ? (
+      <div className="journalit-image-gallery-card__hover-footer">
+        <span>
+          {reviewed ? (
+            <CheckCircle2
+              className="journalit-image-gallery-card__reviewed-icon"
+              size={15}
+              aria-hidden="true"
+            />
+          ) : (
+            <Circle size={15} aria-hidden="true" />
+          )}
+          {reviewed
+            ? t('imageGallery.annotation.reviewed')
+            : t('imageGallery.annotation.unreviewed')}
+        </span>
+      </div>
+    ) : null}
+  </div>
+);
+
+const performanceToneOf = (
+  value: number,
+  isMasked: boolean
+): 'masked' | 'negative' | 'positive' | 'neutral' => {
+  if (isMasked) return 'masked';
+  if (value < 0) return 'negative';
+  return value > 0 ? 'positive' : 'neutral';
+};
+
+
+const ImageGalleryCardValue: React.FC<{
+  item: ImageGalleryGroup['items'][number];
+  useRMultiples: boolean;
+  isPerformanceMasked: boolean;
+}> = ({ item, useRMultiples, isPerformanceMasked }) => {
+  const performanceValue = useRMultiples ? item.rMultiple : item.pnl;
+  if (item.sourceType !== 'trade' || performanceValue === undefined) {
+    return (
+      <span
+        className="journalit-image-gallery-card__meta-spacer"
+        aria-hidden="true"
+      />
+    );
+  }
+  return (
+    <span
+      className={`journalit-image-gallery-card__value journalit-image-gallery-card__value--${performanceToneOf(performanceValue, isPerformanceMasked)}`}
+    >
+      {useRMultiples ? (
+        <RMultipleValue value={performanceValue} />
+      ) : (
+        <PnLValue value={performanceValue} />
+      )}
+    </span>
+  );
+};
 
 const ImageGalleryCard = React.memo(function ImageGalleryCard({
   app,
@@ -488,23 +637,14 @@ const ImageGalleryCard = React.memo(function ImageGalleryCard({
     annotated: String(annotatedMediaCount),
     total: String(group.items.length),
   });
+  const hasAnnotations = annotatedMediaCount > 0;
+  
   const hoverNotes =
     group.items.length === 1
       ? item.notes
-      : annotatedMediaCount > 0
+      : hasAnnotations
         ? annotationSummary
         : undefined;
-  const performanceValue = useRMultiples ? item.rMultiple : item.pnl;
-  const showPerformanceValue =
-    item.sourceType === 'trade' && performanceValue !== undefined;
-  const valueTone = isPerformanceMasked
-    ? 'masked'
-    : (performanceValue ?? 0) < 0
-      ? 'negative'
-      : (performanceValue ?? 0) > 0
-        ? 'positive'
-        : 'neutral';
-  const hasAnnotations = annotatedMediaCount > 0;
   const cardDateLabel = getImageGalleryCardDateLabel(item, dateFormat);
   const hoverDetailsClass = getImageGalleryCardHoverDetailsClass({
     tags: groupTags,
@@ -564,46 +704,11 @@ const ImageGalleryCard = React.memo(function ImageGalleryCard({
               <Tag size={15} aria-hidden="true" />
             </span>
           ) : null}
-          <div
-            className="journalit-image-gallery-card__hover-panel"
-            aria-hidden="true"
-          >
-            {groupTags.length > 0 ? (
-              <div className="journalit-image-gallery-card__hover-tags">
-                <Tag
-                  className="journalit-image-gallery-card__hover-tags-icon"
-                  size={13}
-                  aria-hidden="true"
-                />
-                <span className="journalit-image-gallery-card__hover-tag">
-                  {formatHoverTags(groupTags)}
-                </span>
-              </div>
-            ) : null}
-            {hoverNotes ? (
-              <p className="journalit-image-gallery-card__hover-notes">
-                {hoverNotes}
-              </p>
-            ) : null}
-            {item.reviewed !== undefined ? (
-              <div className="journalit-image-gallery-card__hover-footer">
-                <span>
-                  {item.reviewed ? (
-                    <CheckCircle2
-                      className="journalit-image-gallery-card__reviewed-icon"
-                      size={15}
-                      aria-hidden="true"
-                    />
-                  ) : (
-                    <Circle size={15} aria-hidden="true" />
-                  )}
-                  {item.reviewed
-                    ? t('imageGallery.annotation.reviewed')
-                    : t('imageGallery.annotation.unreviewed')}
-                </span>
-              </div>
-            ) : null}
-          </div>
+          <ImageGalleryCardHoverPanel
+            tags={groupTags}
+            notes={hoverNotes}
+            reviewed={item.reviewed}
+          />
           {shouldBlurImage ? (
             <span className="journalit-image-gallery-card__privacy-overlay">
               {t('imageGallery.privacy-blurred')}
@@ -618,22 +723,11 @@ const ImageGalleryCard = React.memo(function ImageGalleryCard({
         <span className="journalit-image-gallery-card__date">
           {cardDateLabel}
         </span>
-        {showPerformanceValue ? (
-          <span
-            className={`journalit-image-gallery-card__value journalit-image-gallery-card__value--${valueTone}`}
-          >
-            {useRMultiples ? (
-              <RMultipleValue value={performanceValue} />
-            ) : (
-              <PnLValue value={performanceValue} />
-            )}
-          </span>
-        ) : (
-          <span
-            className="journalit-image-gallery-card__meta-spacer"
-            aria-hidden="true"
-          />
-        )}
+        <ImageGalleryCardValue
+          item={item}
+          useRMultiples={useRMultiples}
+          isPerformanceMasked={isPerformanceMasked}
+        />
       </div>
       <button
         className="journalit-image-gallery-card__source-link"

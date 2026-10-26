@@ -12,9 +12,13 @@ import { t } from '../lang/helpers';
 import { CANONICAL_EXECUTION_MIGRATION_VERSION } from '../services/trade/core/TradeFrontmatterCodec';
 import { TRADE_REVIEW_MARKDOWN_MIGRATION_VERSION } from '../services/trade/core/TradeReviewMarkdownCodec';
 import { GraphLinkService } from '../services/graph/GraphLinkService';
+import { DayTradeFieldsService } from '../services/drc/DayTradeFieldsService';
+import { ExternalTradeEditWatcher } from '../services/trade/ExternalTradeEditWatcher';
 import { TRADE_REVIEW_LAYOUT_MIGRATION_VERSION } from '../services/trade/LegacyTradeReviewMigration';
 
-const PERSISTENT_CACHE_VERSION = '2026-04-account-identity-v1';
+
+
+const PERSISTENT_CACHE_VERSION = '2026-10-memory-only-indexes-v1';
 const OLD_DERIVED_STORAGE_CLEANUP_VERSION = '2026-06-plugin-storage-v3';
 const LEGACY_DERIVED_STORAGE_FOLDERS = [
   '.journalit/cache',
@@ -40,6 +44,7 @@ import {
   RELEASE_NOTES_VIEW_TYPE,
 } from '../components/release-notes/ReleaseNotesView';
 import { ReviewDataCache } from '../services/reviewV2/ReviewDataCache';
+import { TradeDataChangeFeed } from '../services/trade/core/TradeDataChangeFeed';
 import { EventBus, eventBus } from '../services/events/EventBus';
 import { startDefaultAccentBodyClass } from '../services/appearance/defaultAccent';
 import { startSessionPhaseBodyAttribute } from '../services/sessionMode/sessionPhaseBodyAttribute';
@@ -85,6 +90,7 @@ import {
   getJournalitIndexesPath,
 } from '../services/base/pluginStoragePaths';
 import { DemoSessionService } from '../demo/DemoSessionService';
+import { DemoManifestStore } from '../demo/DemoManifest';
 
 
 interface JournalitPluginInternal extends JournalitPlugin {
@@ -100,6 +106,7 @@ export class PluginInitializer {
 
   
   private unloaded = false;
+  private loadedAfterAppStart = false;
 
   constructor(plugin: JournalitPlugin) {
     this.plugin = plugin;
@@ -127,11 +134,26 @@ export class PluginInitializer {
   async initialize(): Promise<void> {
     
     const startTime = Date.now();
+    
+    
+    
+    this.loadedAfterAppStart = this.plugin.app.workspace.layoutReady;
     window.__obsidianStartTime = startTime;
 
     this.plugin.register(() => {
       this.unloaded = true;
     });
+
+    
+    
+    
+    
+    
+    
+    
+    const startupDemoManifest = new DemoManifestStore(this.plugin).load();
+    
+    startupDemoManifest.catch(() => undefined);
 
     
     await this.initializeCriticalPath();
@@ -145,7 +167,7 @@ export class PluginInitializer {
 
     
     
-    await this.plugin.demoSessionService?.initialize();
+    await this.plugin.demoSessionService?.initialize(startupDemoManifest);
     
     await this.initializeCanonicalProjectionMigration();
 
@@ -161,7 +183,15 @@ export class PluginInitializer {
     this.plugin.onboardingManager = new OnboardingManager(this.plugin);
 
     this.plugin.app.workspace.onLayoutReady(() => {
+      void this.plugin.serviceManager
+        .getAgentAccessSessionService()
+        .then(() => this.plugin.serviceManager.getAgentRelaySessionService())
+        .then((relayService) => relayService.start())
+        .catch(() => undefined);
       void this.plugin.viewManager.migrateLegacyDashboardLeaves();
+      void this.plugin.viewManager.restorePlaceholderLeaves([
+        RELEASE_NOTES_VIEW_TYPE,
+      ]);
       void this.initializeNonCriticalComponents();
 
       if (this.plugin.demoSessionService?.isActive()) {
@@ -198,19 +228,6 @@ export class PluginInitializer {
 
     
     await this.plugin.uiStateManager.loadState();
-
-    
-    if (this.plugin.uiStateManager.hasLegacyUIData(this.plugin.settings)) {
-      const migrated = await this.plugin.uiStateManager.migrateFromSettings(
-        this.plugin.settings
-      );
-      if (migrated) {
-        this.plugin.settings = this.plugin.uiStateManager.cleanMigratedFields(
-          this.plugin.settings
-        );
-        await this.plugin.settingsManager.saveSettings(this.plugin.settings);
-      }
-    }
 
     
     const { initializeTokenManager } =
@@ -352,6 +369,13 @@ export class PluginInitializer {
     this.plugin.graphLinkService = new GraphLinkService(this.plugin);
     this.plugin.graphLinkService.initialize();
 
+    this.plugin.dayTradeFieldsService = new DayTradeFieldsService(this.plugin);
+    this.plugin.dayTradeFieldsService.initialize();
+    this.plugin.externalTradeEditWatcher = new ExternalTradeEditWatcher(
+      this.plugin
+    );
+    this.plugin.externalTradeEditWatcher.initialize();
+
     
     
     this.plugin.reviewDataCache = new ReviewDataCache(
@@ -365,9 +389,30 @@ export class PluginInitializer {
     
     
     
+    const tradeService = this.plugin.tradeService;
+    
+    const whenIndexesCurrent = () => tradeService.whenIndexesCurrent();
+    new TradeDataChangeFeed(
+      this.plugin.app,
+      'trades',
+      (path, frontmatter) => tradeService.feedsTradeData(path, frontmatter),
+      whenIndexesCurrent
+    ).startWhenReady(this.plugin, tradeService.waitForTradeDataReady());
+    new TradeDataChangeFeed(
+      this.plugin.app,
+      'missedTrades',
+      (path, frontmatter) =>
+        tradeService.feedsMissedTradeData(path, frontmatter),
+      whenIndexesCurrent
+    ).startWhenReady(this.plugin, tradeService.waitForTradeDataReady());
+
+    
+    
+    
     this.startupTradeMigrations = this.plugin.tradeService
       .waitForTradeDataReady()
       .then(async () => {
+        await this.runStopLossFrontmatterMigration();
         await this.plugin.tradeService.getTradeData({ fresh: true });
         await this.runCanonicalExecutionMigrationIfNeeded();
         await this.runTradeReviewMigrations();
@@ -444,6 +489,28 @@ export class PluginInitializer {
     if (result.migrated > 0) {
       logger.info(
         `[Journalit] Backfilled canonical execution data for ${result.migrated} trade notes`
+      );
+    }
+  }
+
+  private async runStopLossFrontmatterMigration(): Promise<void> {
+    let result: { migrated: number; failed: number };
+    try {
+      result =
+        await this.plugin.tradeService.migrateScalarStopLossFrontmatter();
+    } catch (error) {
+      
+      console.error('[Journalit] Stop loss migration failed:', error);
+      return;
+    }
+    if (result.failed > 0) {
+      console.warn(
+        `[Journalit] Stop loss migration completed with ${result.failed} failures`
+      );
+    }
+    if (result.migrated > 0) {
+      logger.info(
+        `[Journalit] Migrated stop loss to stop loss lists on ${result.migrated} trade notes`
       );
     }
   }
@@ -692,12 +759,12 @@ export class PluginInitializer {
       }
 
       
-      
 
       
       this.plugin.commandRegistry = new CommandRegistry(this.plugin);
       this.plugin.ribbonManager = new RibbonManager(this.plugin);
 
+      
       
       
       await scheduleSequence(
@@ -828,15 +895,31 @@ export class PluginInitializer {
           },
         ],
         30
-      ); 
+      );
     } catch (error) {
       console.error('Error during non-critical initialization:', error);
+    }
+  }
+
+  private async migrateLegacySetupOptions(): Promise<void> {
+    try {
+      const setupService = await this.plugin.serviceManager.getSetupService();
+      await setupService.migrateLegacySetupOptions();
+    } catch (error) {
+      console.error(
+        '[Journalit] Failed to migrate stored setup options into setup notes:',
+        error
+      );
     }
   }
 
   private async initializeRealContextBackgroundServicesInternal(
     resumeFromSample: boolean
   ): Promise<void> {
+    
+    
+    void this.migrateLegacySetupOptions();
+
     if (DemoSyncGate.isActive()) return;
 
     try {
@@ -948,7 +1031,9 @@ export class PluginInitializer {
     
     const onboardingLaunched =
       await this.plugin.onboardingManager.checkAndShowOnboarding();
-    if (!onboardingLaunched) {
+    
+    
+    if (!onboardingLaunched && !this.loadedAfterAppStart) {
       await this.openHomeOnStartup();
     }
   }
@@ -1081,12 +1166,15 @@ export class PluginInitializer {
       const cacheFilesRemoved = await this.clearDirectoryFiles(
         getJournalitCachePath(this.plugin.app)
       );
-      const indexFilesRemoved = await this.clearDirectoryFiles(
-        getJournalitIndexesPath(this.plugin.app)
-      );
+      
+      
+      const indexesPath = getJournalitIndexesPath(this.plugin.app);
+      if (await this.plugin.app.vault.adapter.exists(indexesPath)) {
+        await this.plugin.app.vault.adapter.rmdir(indexesPath, true);
+      }
 
       logger.info(
-        `[Journalit] Reset persisted caches for ${PERSISTENT_CACHE_VERSION} (cache files: ${cacheFilesRemoved}, index files: ${indexFilesRemoved})`
+        `[Journalit] Reset persisted caches for ${PERSISTENT_CACHE_VERSION} (cache files: ${cacheFilesRemoved})`
       );
 
       await this.plugin.uiStateManager.updateState({

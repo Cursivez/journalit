@@ -4,8 +4,15 @@ const TRADE_SCHEMA_VERSION = 1;
 
 export type TradeId = string;
 
-function createTradeId(): TradeId {
-  return `trade_${generateUUID()}`;
+const STRICT_TRADE_ID_PATTERN =
+  /^trade_[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
+
+export function isStrictTradeId(value: unknown): value is TradeId {
+  return typeof value === 'string' && STRICT_TRADE_ID_PATTERN.test(value);
+}
+
+export function generateTradeId(): TradeId {
+  return `trade_${generateUUID().toLowerCase()}`;
 }
 
 export function getTradeIdValue(value: unknown): TradeId | undefined {
@@ -123,7 +130,7 @@ export function buildTradeIdentityFields(
   const existingSchemaVersion = getSchemaVersionValue(source?.schemaVersion);
 
   return {
-    tradeId: existingTradeId ?? createTradeId(),
+    tradeId: existingTradeId ?? generateTradeId(),
     schemaVersion: Math.max(
       existingSchemaVersion ?? TRADE_SCHEMA_VERSION,
       TRADE_SCHEMA_VERSION
@@ -142,8 +149,8 @@ export function ensureTradeIdentityFrontmatter(
 } {
   const previousTradeId = getTradeIdValue(frontmatter.tradeId);
   const nextTradeId = options?.forceNewTradeId
-    ? createTradeId()
-    : (previousTradeId ?? createTradeId());
+    ? generateTradeId()
+    : (previousTradeId ?? generateTradeId());
   const nextSchemaVersion = Math.max(
     getSchemaVersionValue(frontmatter.schemaVersion) ?? TRADE_SCHEMA_VERSION,
     TRADE_SCHEMA_VERSION

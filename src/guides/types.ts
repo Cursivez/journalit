@@ -59,7 +59,7 @@ type GuideStepPlacement =
   | 'right-top';
 
 
-export interface GuideStepAction {
+interface GuideStepAction {
   label: string;
   run: () => void;
 }

@@ -157,6 +157,11 @@ export const REVIEW_SHARE_STYLES = `
     font-size: var(--font-ui-small);
   }
 
+  .journalit-review-share-item-row.is-disabled {
+    opacity: 0.5;
+    cursor: default;
+  }
+
   
   .journalit-review-share-section.is-flat .journalit-review-share-item-row {
     padding-left: 0;
@@ -268,5 +273,14 @@ export const REVIEW_SHARE_STYLES = `
   .journalit-share-card-url {
     font-size: 34px;
     font-weight: 600;
+  }
+
+  .journalit-trade-share-card {
+    min-height: 0;
+  }
+
+  .journalit-trade-share-card [data-journalit-share-exclude][data-journalit-share-exclude],
+  .journalit-share-card[data-journalit-share-hide-dollars] [data-journalit-share-dollar-amount][data-journalit-share-dollar-amount] {
+    display: none;
   }
 `;

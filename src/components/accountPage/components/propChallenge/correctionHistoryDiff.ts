@@ -1,11 +1,12 @@
 import type {
+  ExecutablePropChallengeRule,
   PropChallengePhase,
-  PropChallengeRule,
   PropChallengePayoutPolicy,
   PropChallengePayoutAvailability,
   PropChallengePayoutMaximum,
 } from '../../../../services/propChallenge/types';
 import { sameProfileContent } from '../../../../services/propChallenge/PropChallengePolicyHistory';
+import { isExecutableRule } from '../../../../services/propChallenge/PropChallengeRuleReview';
 import { t } from '../../../../lang/helpers';
 import type { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 
@@ -72,7 +73,7 @@ function fields(currencyCode: string, formatValue: Formatter) {
 }
 
 function ruleFields(
-  rule: PropChallengeRule,
+  rule: ExecutablePropChallengeRule,
   currencyCode: string,
   formatValue: Formatter
 ): Field[] {
@@ -90,6 +91,14 @@ function ruleFields(
           : rule.kind === 'daily_loss_limit'
             ? 'risk'
             : 'money'
+    );
+  }
+  if ('reviewRequired' in rule && typeof rule.reviewRequired === 'string') {
+    f.add(
+      'reviewRequired',
+      'account.prop-challenge.rule.manual_review',
+      rule.reviewRequired,
+      rule.reviewRequired
     );
   }
   switch (rule.kind) {
@@ -175,12 +184,12 @@ function ruleFields(
         );
       f.add(
         'profitBasis',
-        'account.prop-challenge.rule.position-profit-basis',
+        'account.prop-challenge.rule.profit-basis',
         rule.profitBasis ?? 'cumulative_trade_profit',
         t(
           rule.profitBasis === 'current_account_profit'
-            ? 'account.prop-challenge.rule.position-profit-basis.current-account'
-            : 'account.prop-challenge.rule.position-profit-basis.cumulative'
+            ? 'account.prop-challenge.rule.profit-basis.current-account'
+            : 'account.prop-challenge.rule.profit-basis.cumulative'
         )
       );
       break;
@@ -201,6 +210,12 @@ function ruleFields(
       );
       break;
     case 'consistency':
+      f.add(
+        'comparison',
+        'account.prop-challenge.rule.comparison',
+        rule.comparison ?? 'inclusive',
+        rule.comparison === 'strictly_below' ? '<' : '≤'
+      );
       f.numeric(
         'maxBestDayPercent',
         'account.prop-challenge.rule.best-day-percent',
@@ -214,65 +229,16 @@ function ruleFields(
         'percentage'
       );
       break;
-    case 'max_position_size':
-      f.boolean(
-        'microsPerContract',
-        'account.prop-challenge.rule.micros-per-contract',
-        rule.microsPerContract === 10
-      );
-      if ('maxContracts' in rule)
-        f.numeric(
-          'maxContracts',
-          'account.prop-challenge.rule.max-contracts',
-          rule.maxContracts,
-          'positionSize'
-        );
-      else {
-        f.numeric(
-          'initialContracts',
-          'account.prop-challenge.rule.initial-contracts',
-          rule.initialContracts,
-          'positionSize'
-        );
-        f.add(
-          'profitBasis',
-          'account.prop-challenge.rule.position-profit-basis',
-          rule.profitBasis ?? 'cumulative_trade_profit',
-          t(
-            rule.profitBasis === 'current_account_profit'
-              ? 'account.prop-challenge.rule.position-profit-basis.current-account'
-              : 'account.prop-challenge.rule.position-profit-basis.cumulative'
-          )
-        );
-        if ('profitTiers' in rule)
-          f.add(
-            'profitTiers',
-            'account.prop-challenge.rule.position-tiers',
-            rule.profitTiers,
-            rule.profitTiers
-              .map(
-                (tier) =>
-                  `${f.number(tier.profit, 'money')} → ${f.number(tier.maxContracts, 'positionSize')}`
-              )
-              .join(' · ')
-          );
-        else {
-          f.numeric(
-            'profitPerAdditionalContract',
-            'account.prop-challenge.rule.profit-per-contract',
-            rule.profitPerAdditionalContract
-          );
-          f.numeric(
-            'maximumContracts',
-            'account.prop-challenge.rule.maximum-contracts',
-            rule.maximumContracts,
-            'positionSize'
-          );
-        }
-      }
-      break;
     case 'daily_profit_cap':
     case 'live_review_daily_profit':
+      break;
+    case 'manual_review':
+      f.add(
+        'reason',
+        'account.prop-challenge.rule.manual_review',
+        rule.reason,
+        rule.reason
+      );
       break;
     default: {
       const exhaustive: never = rule;
@@ -288,6 +254,12 @@ function payoutFields(
   formatValue: Formatter
 ): Field[] {
   const f = fields(currencyCode, formatValue);
+  f.add(
+    'reviewRequired',
+    'account.prop-challenge.rule.manual_review',
+    policy.reviewRequired,
+    policy.reviewRequired ?? ''
+  );
   const cycle = policy.cycle;
   f.add(
     'cycle.kind',
@@ -441,6 +413,15 @@ function payoutFields(
   };
   const maximum = (value: PropChallengePayoutMaximum, lifetime: boolean) => {
     const key = lifetime ? 'lifetime.maximum' : 'maximum';
+    if (value.kind === 'unresolved') {
+      f.add(
+        `${key}.kind`,
+        'account.prop-challenge.payout.unresolved-cap',
+        value,
+        value.reason
+      );
+      return;
+    }
     f.add(
       `${key}.kind`,
       lifetime
@@ -520,7 +501,9 @@ function payoutFields(
         ? 'account.prop-challenge.payout-rules.profit-split.fixed'
         : split.kind === 'cumulative_payout_threshold'
           ? 'account.prop-challenge.payout-rules.profit-split.threshold'
-          : 'account.prop-challenge.payout-rules.profit-split.account-profit-threshold'
+          : split.kind === 'account_profit_marginal'
+            ? 'account.prop-challenge.payout.marginal-split'
+            : 'account.prop-challenge.payout-rules.profit-split.account-profit-threshold'
     )
   );
   if (split.kind === 'fixed')
@@ -565,6 +548,25 @@ function payoutFields(
       'split.atOrAbovePercent',
       'account.prop-challenge.payout-rules.profit-split.at-or-above',
       split.atOrAbovePercent,
+      'percentage'
+    );
+  }
+  if (split.kind === 'account_profit_marginal') {
+    f.numeric(
+      'split.belowPercent',
+      'account.prop-challenge.payout-rules.profit-split.below',
+      split.belowPercent,
+      'percentage'
+    );
+    f.numeric(
+      'split.thresholdProfit',
+      'account.prop-challenge.payout-rules.profit-split.threshold-profit',
+      split.thresholdProfit
+    );
+    f.numeric(
+      'split.abovePercent',
+      'account.prop-challenge.payout-rules.profit-split.above',
+      split.abovePercent,
       'percentage'
     );
   }
@@ -613,7 +615,9 @@ function payoutFields(
         ? 'account.prop-challenge.payout-rules.aftermath.unchanged'
         : aftermath.drawdownAction === 'lock_at_balance'
           ? 'account.prop-challenge.payout-rules.aftermath.lock'
-          : 'account.prop-challenge.payout-rules.aftermath.reset'
+          : aftermath.drawdownAction === 'raise_to_starting_balance'
+            ? 'account.prop-challenge.payout.raise-floor'
+            : 'account.prop-challenge.payout-rules.aftermath.reset'
     )
   );
   if (aftermath.drawdownAction === 'lock_at_balance')
@@ -681,11 +685,14 @@ export function correctionHistoryDiff(
       });
     }
   };
+  
+  const beforeRules = before.rules.filter(isExecutableRule),
+    afterRules = after.rules.filter(isExecutableRule);
   for (const kind of new Set(
-    [...before.rules, ...after.rules].map((rule) => rule.kind)
+    [...beforeRules, ...afterRules].map((rule) => rule.kind)
   )) {
-    const previous = before.rules.filter((rule) => rule.kind === kind),
-      next = after.rules.filter((rule) => rule.kind === kind);
+    const previous = beforeRules.filter((rule) => rule.kind === kind),
+      next = afterRules.filter((rule) => rule.kind === kind);
     for (
       let index = 0;
       index < Math.max(previous.length, next.length);

@@ -96,14 +96,19 @@ export function suggestPropChallengePayoutAmount(
     PropChallengePayoutEvaluation,
     'availableAmount' | 'maximumRequest'
   >
-): number {
+): number | undefined {
+  if (payout.availableAmount === null) return undefined;
   const available = Math.max(0, payout.availableAmount);
   let suggested = available;
   if (plan?.withdrawal?.kind === 'percent')
     suggested = (available * plan.withdrawal.value) / 100;
   else if (plan?.withdrawal?.kind === 'amount')
     suggested = Math.min(available, plan.withdrawal.value);
-  if (Number.isFinite(payout.maximumRequest) && payout.maximumRequest > 0)
+  if (
+    payout.maximumRequest !== null &&
+    Number.isFinite(payout.maximumRequest) &&
+    payout.maximumRequest > 0
+  )
     suggested = Math.min(suggested, payout.maximumRequest);
   return roundCents(Math.max(0, suggested));
 }
@@ -214,6 +219,7 @@ export function derivePropChallengeNotices(
   if (payoutEvaluation) {
     if (
       payoutEvaluation.status === 'eligible' &&
+      payoutEvaluation.availableAmount !== null &&
       payoutEvaluation.availableAmount > 0 &&
       payoutEvaluation.availableAmount >=
         (config.payoutPlan?.notifyMinimumAmount ?? 0)

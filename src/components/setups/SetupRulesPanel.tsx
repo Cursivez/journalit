@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useState } from 'react';
-import { Modal, Notice } from 'obsidian';
+import { Notice } from 'obsidian';
 import { createRoot, type Root } from 'react-dom/client';
 
 import type JournalitPlugin from '../../main';
@@ -37,6 +37,7 @@ import {
   getFallbackRuleGroupId,
   getFallbackSetupRuleGroup,
 } from './setupsViewModel';
+import { JournalitModal } from '../modals/JournalitModal';
 
 export const SetupRulesPanel: React.FC<{
   plugin: JournalitPlugin;
@@ -195,7 +196,7 @@ interface EditableSetupRule extends SetupRule {
   draftId: string;
 }
 
-export function moveSetupRuleWithinGroup<
+function moveSetupRuleWithinGroup<
   T extends {
     draftId: string;
     groupId?: string;
@@ -498,17 +499,15 @@ const SetupRulesEditor: React.FC<{
       })
     );
 
-    const normalizedRules = rules.map(
-      (rule, index): SetupRule => ({
-        id: rule.id,
-        label: rule.label.trim(),
-        description: rule.description?.trim() || undefined,
-        category: rule.category,
-        groupId: rule.groupId,
-        required: rule.required,
-        order: index,
-      })
-    );
+    const normalizedRules = rules.map((rule, index): SetupRule => ({
+      id: rule.id,
+      label: rule.label.trim(),
+      description: rule.description?.trim() || undefined,
+      category: rule.category,
+      groupId: rule.groupId,
+      required: rule.required,
+      order: index,
+    }));
 
     setSaving(true);
     try {
@@ -612,7 +611,7 @@ const SetupRulesEditor: React.FC<{
 
 SetupRulesEditor.displayName = 'SetupRulesEditor';
 
-class SetupRulesModal extends Modal {
+class SetupRulesModal extends JournalitModal {
   private root: Root | null = null;
 
   constructor(

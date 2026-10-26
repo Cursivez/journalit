@@ -11,11 +11,13 @@ import {
 } from '../../../../services/propChallenge/PropChallengeConfig';
 import { assignBrokerIdentityToPhase } from '../../../../services/propChallenge/PropChallengeIdentityLearning';
 import { savePropChallengeConfig } from '../../../../services/propChallenge/PropChallengePersistence';
-import { resolveStageAccountType } from '../../../../services/propChallenge/stageAccountTypes';
+import {
+  availableAccountTypes,
+  resolveStageAccountType,
+} from '../../../../services/propChallenge/stageAccountTypes';
 import type { PropChallengeConfig } from '../../../../services/propChallenge/types';
 import type { evaluatePropChallengePhase } from '../../../../services/propChallenge/PropChallengeRuleEngine';
 import type { AccountTradeData } from '../../../../services/accountPage/types';
-import { AccountType } from '../../../../services/account/types';
 import { OptionType } from '../../../../services/options/CustomOptionsService';
 import { AccountMetadataConflictError } from '../../../../services/accountPage/AccountPageService';
 import { showConfirmationModal } from '../../../shared/ConfirmationModal';
@@ -25,11 +27,24 @@ import { openPropChallengeTransitionModal } from './PropChallengeTransitionModal
 export function getAvailableAccountTypes(
   plugin: JournalitPlugin | null | undefined
 ): readonly string[] {
-  const customAccountTypes =
-    plugin?.optionsService?.getOptions(OptionType.ACCOUNT_TYPE) ?? [];
-  return customAccountTypes.length > 0
-    ? customAccountTypes
-    : Object.values(AccountType);
+  return availableAccountTypes(
+    plugin?.optionsService?.getOptions(OptionType.ACCOUNT_TYPE) ?? []
+  );
+}
+
+
+export function resolveAvailableAccountType<T extends string | undefined>(
+  accountType: T,
+  types: readonly string[]
+): T | string {
+  const current = String(accountType ?? '').toLowerCase();
+  if (
+    types.length === 0 ||
+    types.some((type) => type.toLowerCase() === current)
+  ) {
+    return accountType;
+  }
+  return types[0];
 }
 
 export interface LifecycleActionContext {

@@ -1,12 +1,9 @@
-import {
-  requestUrl,
-  type RequestUrlParam,
-  type RequestUrlResponse,
-} from 'obsidian';
+import { type RequestUrlParam, type RequestUrlResponse } from 'obsidian';
 import {
   ApiClient,
   AuthenticationRefreshUnavailableError,
 } from '../backend/ApiClient';
+import { BackendHttpClient } from '../backend/BackendHttpClient';
 import { clearPersistedBackendAuthSession } from '../backend/BackendAuthFailure';
 import { ApiError } from '../../types/errors';
 import { DemoSyncGate } from '../../demo/DemoSyncGate';
@@ -29,6 +26,10 @@ import type {
   TradeImportPreviewRequest,
   TradeImportPreviewResponse,
   TradeImportPreviewTrade,
+} from './types';
+import {
+  decodeTradeImportDestination,
+  isTradeImportDestination,
 } from './types';
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
@@ -331,6 +332,15 @@ const positiveInteger = (value: unknown): number | undefined =>
 const unknownArray = (value: unknown): unknown[] =>
   Array.isArray(value) ? value : [];
 
+
+const sheetRowList = (value: unknown): number[] | undefined => {
+  if (!Array.isArray(value) || value.length === 0) return undefined;
+  const rows = value.map(positiveInteger);
+  return rows.every((row): row is number => row !== undefined)
+    ? rows
+    : undefined;
+};
+
 const stringMatrix = (value: unknown): string[][] =>
   unknownArray(value).filter(
     (row): row is string[] =>
@@ -457,6 +467,7 @@ const previewTradesArray = (value: unknown): TradeImportPreviewTrade[] =>
         sourceRows: unknownArray(record.sourceRows).filter(
           (row): row is number => typeof row === 'number'
         ),
+        sourceSheetRows: sheetRowList(record.sourceSheetRows),
         symbol: record.symbol,
         direction: record.direction,
         entryTime: record.entryTime,
@@ -721,6 +732,10 @@ const previewItemsArray = (
         typeof record.matchedTradeId === 'string'
           ? record.matchedTradeId
           : null,
+      ...(typeof record.closeProfitLoss === 'number' &&
+        Number.isFinite(record.closeProfitLoss) && {
+          closeProfitLoss: record.closeProfitLoss,
+        }),
       otherAccount: otherAccountMatchValue(record.decisionReasons),
       decisionReasons: unknownArray(record.decisionReasons).flatMap(
         (reason) => {
@@ -887,9 +902,15 @@ const ensureTradeImportCapabilities = (
           supportsManualMapping: broker.supportsManualMapping === true,
           supportsAiMapping: broker.supportsAiMapping === true,
           supportsExportTimeZone: broker.supportsExportTimeZone === true,
+          ...(isTradeImportDestination(broker.defaultDestination) && {
+            defaultDestination: broker.defaultDestination,
+          }),
         },
       ];
     }),
+    destinations: unknownArray(record.destinations).filter(
+      isTradeImportDestination
+    ),
     manualMapping: {
       supported: manualMapping?.supported === true,
       mappingVersion: numberValue(manualMapping?.mappingVersion),
@@ -986,6 +1007,7 @@ export const parseTradeImportAnalyseResponse = (
         },
       ];
     }),
+    requiresSymbol: record.requiresSymbol === true,
     suggestedColumnAssignments: columnAssignments(
       record.suggestedColumnAssignments
     ),
@@ -1099,6 +1121,10 @@ const ensureCommitResponse = (value: unknown): TradeImportCommitResponse => {
               ? tradeRecord.accountId
               : null,
           accountIdentity: commitAccountIdentity(tradeRecord.accountIdentity),
+          destination: decodeTradeImportDestination(
+            tradeRecord.destination,
+            'Invalid Trade Import commit trade response'
+          ),
           importId:
             typeof tradeRecord.importId === 'string'
               ? tradeRecord.importId
@@ -1181,7 +1207,7 @@ async function requestWithAuthRetry(
   const { result, requestAuthToken } = await sendWithAuthRetry(
     (accessToken) => {
       DemoSyncGate.assertNetworkAllowed();
-      return requestUrl(buildRequest(accessToken));
+      return BackendHttpClient.request(buildRequest(accessToken));
     }
   );
   return { response: result, requestAuthToken };
@@ -1204,7 +1230,9 @@ function sendMultipart(
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest();
     xhr.open('POST', ApiClient.buildUrl(path));
-    for (const [key, value] of Object.entries(authHeaders(requestAuthToken)))
+    for (const [key, value] of Object.entries(
+      BackendHttpClient.headers(authHeaders(requestAuthToken))
+    ))
       xhr.setRequestHeader(key, value);
     xhr.onload = () => {
       let responseBody: unknown = null;

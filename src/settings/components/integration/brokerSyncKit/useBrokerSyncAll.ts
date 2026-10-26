@@ -6,7 +6,11 @@ import { t } from '../../../../lang/helpers';
 import type JournalitPlugin from '../../../../main';
 import { createTradeProjectionOwnershipGuard } from '../../../../services/tradeSync/TradeProjectionOwnership';
 import type { TradeSyncConnectionEligibility } from '../../../../services/tradeSync/TradeSyncEligibility';
-import type { BrokerSyncAllResult } from '../../../../services/tradeSync/types';
+import {
+  brokerConnectionSyncFailed,
+  partialIsProviderOnly,
+  type BrokerSyncAllResult,
+} from '../../../../services/tradeSync/types';
 import { recordBrokerPanelHandoff } from '../../../../services/tradeOperations/recordBrokerPanelHandoff';
 import { logger } from '../../../../utils/logger';
 import type { BrokerDataOwnership } from './types';
@@ -41,7 +45,10 @@ const BLOCKED_REASON_MESSAGE_KEYS = {
 export interface BrokerSyncAllSummary {
   succeeded: number;
   total: number;
+  
   hasIssues: boolean;
+  
+  partlyFinished: boolean;
 }
 
 interface UseBrokerSyncAllOptions<
@@ -130,24 +137,34 @@ export function useBrokerSyncAll<
         (outcome) =>
           outcome.status === 'succeeded' || outcome.status === 'partial'
       ).length;
-      const issueCount = result.outcomes.filter(
-        (outcome) => outcome.status !== 'succeeded'
-      ).length;
+      const connectionFailed = result.outcomes.some((outcome) =>
+        brokerConnectionSyncFailed(outcome.status)
+      );
+      const providerPartial =
+        !connectionFailed && partialIsProviderOnly(result.projection);
+      const partlyFinished =
+        result.projection.partial === true ||
+        result.outcomes.some((outcome) => outcome.status === 'partial');
       const hasIssues =
-        issueCount > 0 ||
+        (partlyFinished && !providerPartial) ||
+        connectionFailed ||
         result.projection.failedCount > 0 ||
         result.projection.pendingCount > 0 ||
         (result.projection.ackFailedCount ?? 0) > 0;
+      
+      
       const message = completionNotice({
         succeeded: synchronizedCount,
         total: result.outcomes.length,
         hasIssues,
+        partlyFinished: partlyFinished && !hasIssues,
       });
       recordBrokerPanelHandoff(
         plugin,
         {
           ...result.projection,
-          partial: result.projection.partial || hasIssues,
+          partial: partlyFinished || hasIssues,
+          providerPartial,
         },
         message
       );

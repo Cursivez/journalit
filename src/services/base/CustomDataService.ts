@@ -1,6 +1,13 @@
 
 
-import { App, TFile, TAbstractFile, TFolder } from 'obsidian';
+import {
+  App,
+  TFile,
+  TAbstractFile,
+  TFolder,
+  type CachedMetadata,
+  type FrontMatterCache,
+} from 'obsidian';
 import { IndexManager, IndexConfig, IndexEntry } from './IndexManager';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
 import type JournalitPlugin from '../../main';
@@ -18,16 +25,8 @@ function ensureRecord(value: unknown): Record<string, unknown> {
   return isRecord(value) ? value : {};
 }
 
-function materializeIndexEntryData(data: unknown, entry: IndexEntry): unknown {
-  if (!isRecord(data)) {
-    return data;
-  }
 
-  return {
-    ...data,
-    path: entry.file.path,
-  };
-}
+const frontmatterSnapshots = new WeakMap<object, Record<string, unknown>>();
 
 
 export interface CustomDataServiceConfig {
@@ -45,6 +44,11 @@ export interface CustomDataServiceConfig {
   enableIndexing?: boolean;
   
   indexes?: IndexConfig[];
+}
+
+export interface FrontmatterReadOptions {
+  diagnostics?: 'default' | 'silent';
+  errorMode?: 'fallback' | 'throw';
 }
 
 
@@ -70,8 +74,19 @@ interface QueryOptions {
   useCache?: boolean;
   cacheTTL?: number;
   offlineCapable?: boolean;
-  
-  useIndexes?: boolean;
+}
+
+
+export type CachedQueryDependency = 'all' | readonly string[] | null;
+
+function mergeDependencies(
+  a: CachedQueryDependency,
+  b: CachedQueryDependency
+): CachedQueryDependency {
+  if (a === 'all' || b === 'all') return 'all';
+  if (!a) return b;
+  if (!b) return a;
+  return [...new Set([...a, ...b])];
 }
 
 
@@ -98,10 +113,7 @@ export class CustomDataService {
   private pendingQueries: Map<string, Promise<unknown>> = new Map();
 
   
-  private boundHandleFileChange: (
-    file: TAbstractFile,
-    oldPath?: string
-  ) => Promise<void>;
+  private pendingNoteDependencies = new Map<string, CachedQueryDependency>();
 
   
   protected indexManager: IndexManager | null = null;
@@ -153,10 +165,6 @@ export class CustomDataService {
     });
 
     
-    this.boundHandleFileChange = (file: TAbstractFile, oldPath?: string) =>
-      this.handleFileChange(file, oldPath);
-
-    
     if (this.config.enableIndexing) {
       this.setupIndexing();
     }
@@ -170,17 +178,30 @@ export class CustomDataService {
     this.plugin = plugin;
 
     
-    this.plugin.registerEvent(
-      this.app.vault.on('create', this.boundHandleFileChange)
+    const { vault, metadataCache } = this.app;
+    plugin.registerEvent(
+      vault.on('create', (file) => this.handleFileCreated(file))
     );
-    this.plugin.registerEvent(
-      this.app.vault.on('modify', this.boundHandleFileChange)
+    plugin.registerEvent(
+      vault.on('modify', (file) => this.handleFileModified(file))
     );
-    this.plugin.registerEvent(
-      this.app.vault.on('delete', this.boundHandleFileChange)
+    plugin.registerEvent(
+      metadataCache.on('changed', (file, _data, cache) =>
+        this.handleNoteParsed(file, cache)
+      )
     );
-    this.plugin.registerEvent(
-      this.app.vault.on('rename', this.boundHandleFileChange)
+    plugin.registerEvent(
+      vault.on('delete', (file) => this.handleFileDeleted(file))
+    );
+    plugin.registerEvent(
+      metadataCache.on('deleted', (file, prevCache) =>
+        this.handleNoteDeleted(file, prevCache)
+      )
+    );
+    plugin.registerEvent(
+      vault.on('rename', (file, oldPath) =>
+        this.handleFileRenamed(file, oldPath)
+      )
     );
 
     
@@ -198,7 +219,7 @@ export class CustomDataService {
       
       this.indexManager = new IndexManager(this.app, async (file: TFile) => {
         try {
-          return await this.readFrontmatter(file);
+          return await this.readFrontmatterSnapshot(file);
         } catch (error) {
           console.error(`Error extracting data from ${file.path}:`, error);
           return null;
@@ -254,20 +275,12 @@ export class CustomDataService {
   protected async query<T>(
     queryFn: () => Promise<T>,
     cacheKey: string,
-    options: QueryOptions = {},
-    indexQueryOptions?: {
-      indexName: string;
-      filters?: Record<string, unknown>;
-      sort?: { field: string; direction: 'asc' | 'desc' };
-      limit?: number;
-      offset?: number;
-    }
+    options: QueryOptions = {}
   ): Promise<T> {
     const {
       useCache = true,
       cacheTTL = this.config.cacheTTL,
       offlineCapable = true,
-      useIndexes = true,
     } = options;
 
     
@@ -296,92 +309,6 @@ export class CustomDataService {
 
       
       const executeQuery = async (): Promise<T> => {
-        
-        if (useIndexes && this.indexManager && indexQueryOptions) {
-          try {
-            const indexedResults = this.indexManager.queryIndex(
-              indexQueryOptions.indexName,
-              indexQueryOptions.filters || {},
-              {
-                sort: indexQueryOptions.sort,
-                limit: indexQueryOptions.limit,
-                offset: indexQueryOptions.offset,
-              }
-            );
-
-            if (indexedResults.length > 0) {
-              
-              
-              const entriesWithData = indexedResults.filter(
-                (entry) => entry.data !== null && entry.data !== undefined
-              );
-
-              
-
-              let result: unknown;
-              if (entriesWithData.length === indexedResults.length) {
-                
-                result = indexedResults.flatMap((entry) =>
-                  entry.data
-                    ? [materializeIndexEntryData(entry.data, entry)]
-                    : []
-                );
-              } else {
-                
-                const loadedData = await Promise.all(
-                  indexedResults.map(async (entry) => {
-                    try {
-                      
-                      
-                      const fileExists = this.app.vault.getAbstractFileByPath(
-                        entry.file.path
-                      );
-                      if (!fileExists) {
-                        return null; 
-                      }
-                      const frontmatter = await this.readFrontmatter(
-                        entry.file
-                      );
-                      return materializeIndexEntryData(frontmatter, entry);
-                    } catch (error) {
-                      
-                      if (
-                        !(error instanceof Error) ||
-                        !error.message.includes('ENOENT')
-                      ) {
-                        console.error(
-                          `Error loading data from file ${entry.file.path}:`,
-                          error
-                        );
-                      }
-                      return null;
-                    }
-                  })
-                );
-                result = loadedData.filter(Boolean);
-              }
-
-              
-              if (useCache && queryGeneration === this.cacheGeneration) {
-                this.setCache(namespacedKey, result);
-                this.isCacheInvalidated = false;
-              }
-
-              
-              
-              
-              return result as T;
-            }
-          } catch (indexError) {
-            console.warn(
-              `Error using index for query ${cacheKey}:`,
-              indexError
-            );
-            
-          }
-        }
-
-        
         const result = await queryFn();
 
         
@@ -511,111 +438,133 @@ export class CustomDataService {
   }
 
   
-  private async handleFileChange(
-    file: TAbstractFile,
-    oldPath?: string
-  ): Promise<void> {
-    
-    if (!('path' in file)) return;
+  protected cachedQueriesDependingOn(
+    path: string,
+    _frontmatter: FrontMatterCache | undefined
+  ): CachedQueryDependency {
+    if (!this.isPathInMonitoredFolder(path)) return null;
+    if (this.config.extension && !path.endsWith(this.config.extension)) {
+      return null;
+    }
+    return 'all';
+  }
 
-    
-    const relevantPaths = [file.path, oldPath].filter((path): path is string =>
-      Boolean(path)
-    );
-    if (
-      relevantPaths.every((path) =>
-        isPathWithinDirectory(path, getJournalitCachePath(this.app))
+  private noteDependencies(
+    path: string,
+    frontmatter: FrontMatterCache | undefined
+  ): CachedQueryDependency {
+    if (isPathWithinDirectory(path, getJournalitCachePath(this.app))) {
+      return null;
+    }
+    return this.cachedQueriesDependingOn(path, frontmatter);
+  }
+
+  
+  private clearDependentQueries(dependency: CachedQueryDependency): void {
+    const prefixes = dependency === 'all' ? [''] : (dependency ?? []);
+    for (const prefix of prefixes) {
+      void this.clearCacheWithPrefix(prefix);
+    }
+  }
+
+  
+  private handleFileCreated(file: TAbstractFile): void {
+    if (!(file instanceof TFile)) return;
+    this.clearDependentQueries(
+      this.noteDependencies(
+        file.path,
+        this.app.metadataCache.getFileCache(file)?.frontmatter
       )
-    )
-      return;
+    );
+  }
 
+  
+  private handleFileModified(file: TAbstractFile): void {
+    if (!(file instanceof TFile)) return;
+    const before = this.noteDependencies(
+      file.path,
+      this.app.metadataCache.getFileCache(file)?.frontmatter
+    );
+    if (file.extension !== 'md') {
+      this.clearDependentQueries(before);
+      return;
+    }
     
-    const isFolder = file instanceof TFolder;
+    if (!before) return;
+    this.pendingNoteDependencies.set(
+      file.path,
+      mergeDependencies(
+        this.pendingNoteDependencies.get(file.path) ?? null,
+        before
+      )
+    );
+  }
+
+  private handleNoteParsed(file: TFile, cache: CachedMetadata): void {
+    const before = this.pendingNoteDependencies.get(file.path) ?? null;
+    this.pendingNoteDependencies.delete(file.path);
+    this.clearDependentQueries(
+      mergeDependencies(
+        before,
+        this.noteDependencies(file.path, cache.frontmatter)
+      )
+    );
+  }
+
+  
+  private handleFileDeleted(file: TAbstractFile): void {
+    if (file instanceof TFolder) {
+      this.handleFolderChanged([file.path]);
+      return;
+    }
+    if (file instanceof TFile && file.extension !== 'md') {
+      this.clearDependentQueries(this.noteDependencies(file.path, undefined));
+    }
+  }
+
+  private handleNoteDeleted(
+    file: TFile,
+    prevCache: CachedMetadata | null
+  ): void {
+    this.pendingNoteDependencies.delete(file.path);
+    this.clearDependentQueries(
+      this.noteDependencies(file.path, prevCache?.frontmatter)
+    );
+  }
+
+  
+  private handleFileRenamed(file: TAbstractFile, oldPath: string): void {
+    if (file instanceof TFolder) {
+      this.handleFolderChanged([file.path, oldPath]);
+      return;
+    }
+    if (!(file instanceof TFile)) return;
+    const pending = this.pendingNoteDependencies.get(oldPath);
+    if (pending !== undefined) {
+      this.pendingNoteDependencies.delete(oldPath);
+      this.pendingNoteDependencies.set(file.path, pending);
+    }
+    const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    this.clearDependentQueries(
+      mergeDependencies(
+        this.noteDependencies(oldPath, frontmatter),
+        this.noteDependencies(file.path, frontmatter)
+      )
+    );
+  }
+
+  
+  private handleFolderChanged(paths: string[]): void {
+    const folder = this.config.folder;
     if (
-      this.config.folder &&
-      !relevantPaths.some(
+      !folder ||
+      paths.some(
         (path) =>
-          isPathWithinDirectory(path, this.config.folder) ||
-          (isFolder && isPathWithinDirectory(this.config.folder, path))
+          isPathWithinDirectory(path, folder) ||
+          isPathWithinDirectory(folder, path)
       )
-    )
-      return;
-    if (
-      !isFolder &&
-      this.config.extension &&
-      !relevantPaths.some((path) => path.endsWith(this.config.extension))
-    )
-      return;
-
-    
-    if (isFolder && this.config.folder) {
-      await this.clearCache();
-      return;
-    }
-
-    const cachePrefixes = new Set<string>();
-    for (const path of relevantPaths) {
-      if (/(?:^|\/)trades(?:\/|$)/.test(path)) {
-        cachePrefixes.add('trade:');
-      }
-      if (/(?:^|\/)Accounts(?:\/|$)/.test(path)) {
-        cachePrefixes.add('account:');
-      }
-      if (/(?:^|\/)DRC(?:\/|$)/.test(path)) {
-        cachePrefixes.add('drc:');
-      }
-      if (/(?:^|\/)Weekly(?:\/|$)/.test(path)) {
-        cachePrefixes.add('weekly:');
-      }
-      if (/(?:^|\/)Setups(?:\/|$)/.test(path)) {
-        cachePrefixes.add('setup:');
-      }
-    }
-
-    const namespace = this.config.namespace;
-    await Promise.all(
-      Array.from(cachePrefixes, async (cachePrefix) => {
-        if (cachePrefix === 'setup:') {
-          if (namespace === 'setup') {
-            await this.clearCache();
-          }
-          return;
-        }
-
-        
-        const isAccountPageWatchingTrades =
-          namespace === 'accountPage' && cachePrefix === 'trade:';
-
-        
-        if (
-          namespace === 'default' ||
-          cachePrefix.startsWith(namespace) ||
-          namespace === cachePrefix.replace(':', '') ||
-          isAccountPageWatchingTrades
-        ) {
-          await this.clearCacheWithPrefix(cachePrefix);
-
-          
-          if (isAccountPageWatchingTrades) {
-            await Promise.all([
-              this.clearCacheByPattern('accountPage:', false),
-              this.clearCacheByPattern('accountTrades:', false),
-              this.clearCacheByPattern('allEnhancedAccounts', false),
-            ]);
-          }
-        }
-      })
-    );
-
-    if (cachePrefixes.size === 0) {
-      
-      
-      if (
-        namespace === 'default' ||
-        (oldPath !== undefined && Boolean(this.config.folder))
-      ) {
-        await this.clearCache();
-      }
+    ) {
+      void this.clearCache();
     }
   }
 
@@ -794,6 +743,11 @@ export class CustomDataService {
   }
 
   
+  
+  public whenIndexesCurrent(): Promise<void> | null {
+    return this.indexManager?.whenNotesApplied() ?? null;
+  }
+
   public isIndexingEnabled(): boolean {
     return this.config.enableIndexing && this.indexManager !== null;
   }
@@ -828,8 +782,25 @@ export class CustomDataService {
   }
 
   
-  protected async readFrontmatter(
+  protected async readFrontmatterSnapshot(
     file: TFile
+  ): Promise<Record<string, unknown>> {
+    const frontmatter = this.app.metadataCache.getFileCache(file)?.frontmatter;
+    if (!isRecord(frontmatter)) {
+      return this.readFrontmatter(file);
+    }
+    let snapshot = frontmatterSnapshots.get(frontmatter);
+    if (!snapshot) {
+      snapshot = await this.readFrontmatter(file);
+      frontmatterSnapshots.set(frontmatter, snapshot);
+    }
+    return snapshot;
+  }
+
+  
+  protected async readFrontmatter(
+    file: TFile,
+    options?: FrontmatterReadOptions
   ): Promise<Record<string, unknown>> {
     try {
       
@@ -852,14 +823,19 @@ export class CustomDataService {
         
         return this.parseYamlFrontmatter(frontmatterMatch[1]);
       } catch (parseError) {
-        console.warn(
-          `Failed to parse frontmatter with advanced parser for ${file.path}:`,
-          parseError
-        );
+        if (options?.diagnostics !== 'silent') {
+          console.warn(
+            `Failed to parse frontmatter with advanced parser for ${file.path}:`,
+            parseError
+          );
+        }
         
         return this.simpleYamlParse(frontmatterMatch[1]);
       }
     } catch (error) {
+      if (options?.errorMode === 'throw') {
+        throw error;
+      }
       const isMissingFileError =
         (error instanceof Error && error.message.includes('ENOENT')) ||
         getErrorCode(error) === 'ENOENT';

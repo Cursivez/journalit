@@ -11,7 +11,8 @@ import {
   Eye,
   EyeOff,
 } from '../../../components/shared/icons/ObsidianIcon';
-import { useService, usePlugin } from '../../../hooks';
+import { useService } from '../../../hooks/useService';
+import { usePlugin } from '../../../hooks/usePlugin';
 import type { FTPCredentials } from '../../types';
 import { ErrorHandler, ErrorContext } from '../../../utils/errorHandler';
 import { t } from '../../../lang/helpers';
@@ -236,6 +237,104 @@ function useFTPCredentialsSectionModel({
   };
 }
 
+type FTPCredentialsSectionModel = ReturnType<
+  typeof useFTPCredentialsSectionModel
+>;
+
+const PasswordCopyIcon: React.FC<{
+  isPasswordMasked: boolean;
+  copied: boolean;
+}> = ({ isPasswordMasked, copied }) => {
+  if (isPasswordMasked) return <Ban size={16} />;
+  return copied ? <Check size={16} /> : <Copy size={16} />;
+};
+
+const PasswordVisibilityIcon: React.FC<{
+  isPasswordMasked: boolean;
+  showPassword: boolean;
+}> = ({ isPasswordMasked, showPassword }) => {
+  if (isPasswordMasked) return <Lock size={16} />;
+  return showPassword ? <EyeOff size={16} /> : <Eye size={16} />;
+};
+
+const FTPPasswordField: React.FC<
+  Pick<
+    FTPCredentialsSectionModel,
+    | 'showPassword'
+    | 'setShowPassword'
+    | 'copySuccess'
+    | 'isPasswordMasked'
+    | 'copyToClipboard'
+  > & { credentials: FTPCredentials }
+> = ({
+  credentials,
+  showPassword,
+  setShowPassword,
+  copySuccess,
+  isPasswordMasked,
+  copyToClipboard,
+}) => {
+  if (!credentials.password && !isPasswordMasked) {
+    return null;
+  }
+
+  return (
+    <div className="ftp-credential-field">
+      <label>{t('settings.ftp.label.password')}</label>
+      <div className="input-with-action">
+        <input
+          type={showPassword ? 'text' : 'password'}
+          value={isPasswordMasked ? '*'.repeat(12) : credentials.password}
+          readOnly
+          className="ftp-readonly-input"
+        />
+        <button
+          className="clickable-icon"
+          onClick={() =>
+            void copyToClipboard(credentials.password!, 'password')
+          }
+          disabled={isPasswordMasked || !credentials.password}
+          aria-label={
+            isPasswordMasked
+              ? t('settings.ftp.aria.password-unavailable')
+              : t('settings.ftp.aria.copy-password')
+          }
+        >
+          <PasswordCopyIcon
+            isPasswordMasked={isPasswordMasked}
+            copied={copySuccess === 'password'}
+          />
+        </button>
+        <button
+          className="clickable-icon"
+          onClick={() => setShowPassword(!showPassword)}
+          disabled={isPasswordMasked}
+          aria-label={
+            isPasswordMasked
+              ? t('settings.ftp.aria.password-hidden')
+              : showPassword
+                ? t('settings.ftp.aria.hide-password')
+                : t('settings.ftp.aria.show-password')
+          }
+        >
+          <PasswordVisibilityIcon
+            isPasswordMasked={isPasswordMasked}
+            showPassword={showPassword}
+          />
+        </button>
+      </div>
+      <div className="ftp-password-notice">
+        <AlertTriangle size={14} />
+        <span>
+          {isPasswordMasked
+            ? t('settings.ftp.notice.password-masked')
+            : t('settings.ftp.notice.password-save')}
+        </span>
+      </div>
+    </div>
+  );
+};
+
 export const FTPCredentialsSection: React.FC<FTPCredentialsSectionProps> = (
   props
 ) => {
@@ -324,69 +423,14 @@ export const FTPCredentialsSection: React.FC<FTPCredentialsSectionProps> = (
               </div>
             </div>
 
-            {(credentials.password || isPasswordMasked) && (
-              <div className="ftp-credential-field">
-                <label>{t('settings.ftp.label.password')}</label>
-                <div className="input-with-action">
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    value={
-                      isPasswordMasked ? '*'.repeat(12) : credentials.password
-                    }
-                    readOnly
-                    className="ftp-readonly-input"
-                  />
-                  <button
-                    className="clickable-icon"
-                    onClick={() =>
-                      void copyToClipboard(credentials.password!, 'password')
-                    }
-                    disabled={isPasswordMasked || !credentials.password}
-                    aria-label={
-                      isPasswordMasked
-                        ? t('settings.ftp.aria.password-unavailable')
-                        : t('settings.ftp.aria.copy-password')
-                    }
-                  >
-                    {isPasswordMasked ? (
-                      <Ban size={16} />
-                    ) : copySuccess === 'password' ? (
-                      <Check size={16} />
-                    ) : (
-                      <Copy size={16} />
-                    )}
-                  </button>
-                  <button
-                    className="clickable-icon"
-                    onClick={() => setShowPassword(!showPassword)}
-                    disabled={isPasswordMasked}
-                    aria-label={
-                      isPasswordMasked
-                        ? t('settings.ftp.aria.password-hidden')
-                        : showPassword
-                          ? t('settings.ftp.aria.hide-password')
-                          : t('settings.ftp.aria.show-password')
-                    }
-                  >
-                    {isPasswordMasked ? (
-                      <Lock size={16} />
-                    ) : showPassword ? (
-                      <EyeOff size={16} />
-                    ) : (
-                      <Eye size={16} />
-                    )}
-                  </button>
-                </div>
-                <div className="ftp-password-notice">
-                  <AlertTriangle size={14} />
-                  <span>
-                    {isPasswordMasked
-                      ? t('settings.ftp.notice.password-masked')
-                      : t('settings.ftp.notice.password-save')}
-                  </span>
-                </div>
-              </div>
-            )}
+            <FTPPasswordField
+              credentials={credentials}
+              showPassword={showPassword}
+              setShowPassword={setShowPassword}
+              copySuccess={copySuccess}
+              isPasswordMasked={isPasswordMasked}
+              copyToClipboard={copyToClipboard}
+            />
           </div>
 
           <div className="ftp-reset-password">

@@ -1,9 +1,11 @@
+import { serializeStopLossTargets } from '../trade/core/StopLossTargets';
 import { logger } from '../../utils/logger';
 
 
 import {
   CustomDataService,
   CustomDataServiceConfig,
+  type CachedQueryDependency,
 } from '../base/CustomDataService';
 import {
   IdealExitTransaction,
@@ -11,7 +13,13 @@ import {
 } from '../../components/forms/trade/types';
 import { calculatePnL } from '../../utils/pnlCalculation';
 import { calculatePersistableRMultiple } from '../../components/forms/trade/validation';
-import { TFile, TAbstractFile, App, normalizePath } from 'obsidian';
+import {
+  TFile,
+  TAbstractFile,
+  App,
+  normalizePath,
+  type FrontMatterCache,
+} from 'obsidian';
 import JournalitPlugin from '../../main';
 import { FolderPathService } from '../core/FolderPathService';
 import { getQuarterForMonth, getWeekFolderName } from '../../utils/dateUtils';
@@ -22,11 +30,15 @@ import { mapCustomFieldsToFrontmatter } from '../../utils/customFieldPersistence
 import { buildTradeIdentityFields } from '../../utils/tradeIdentity';
 import { Mutex } from '../../utils/mutex';
 import { getDefaultTradeTemplateMetadata } from '../templates/defaultTradeTemplateMetadata';
+import { getDefaultTradeNoteSectionsMarkdown } from '../templates/tradeNoteSections';
 import { serializeIdealExitFrontmatter } from '../trade/core/TradeFrontmatterCodec';
+import { createUserOwnedTradeContent } from '../trade/core/TradeNoteDocumentCodec';
 import { normalizeStringArray } from '../../utils/dataUtils';
 import { readFrontmatterFromDisk } from '../../utils/dataRefresh';
+import { isBacktestTradeFilename } from '../../utils/tagOptionNoteEligibility';
 import type { PreviousTagAssignments } from '../options/CustomOptionsService';
 import { serializeImageAnnotationsForFrontmatter } from '../../utils/imageAnnotations';
+import { applySubmittedTradeRating } from '../../utils/tradeRating';
 import {
   getSampleEntityId,
   getSampleInstanceId,
@@ -212,7 +224,7 @@ export class BacktestTradeService extends CustomDataService {
   }
 
   private getAssignedTags(data: BacktestTradeFormData): string[] {
-    return [...(data.tags ?? []), ...(data.customTags ?? [])];
+    return data.tags ?? [];
   }
 
   private async getStoredAssignedTags(filePath: string): Promise<string[]> {
@@ -431,7 +443,8 @@ export class BacktestTradeService extends CustomDataService {
             fees: data.fees,
             swap: data.swap,
             rebate: data.rebate,
-            stopLoss: data.stopLoss,
+            stopLosses: serializeStopLossTargets(data.stopLosses),
+            stopLoss: undefined,
             riskAmount: data.riskAmount,
             currency: data.currency,
             fxRate: data.fxRate,
@@ -444,12 +457,9 @@ export class BacktestTradeService extends CustomDataService {
             rMultiple: calculatePersistableRMultiple(data),
             useDirectPnLInput: data.useDirectPnLInput,
             directPnL: data.directPnL,
-            
             tags:
-              data.customTags &&
-              Array.isArray(data.customTags) &&
-              data.customTags.length > 0
-                ? data.customTags.flatMap((tag) => {
+              data.tags && data.tags.length > 0
+                ? data.tags.flatMap((tag) => {
                     const normalizedTag = String(tag).trim();
                     return normalizedTag ? [normalizedTag] : [];
                   })
@@ -504,6 +514,8 @@ export class BacktestTradeService extends CustomDataService {
               frontmatter.leverageRatio = data.leverageRatio;
           }
 
+          applySubmittedTradeRating(frontmatter, data);
+
           
           const fileExists = await this.app.vault.adapter.exists(filePath);
           if (fileExists) {
@@ -515,7 +527,15 @@ export class BacktestTradeService extends CustomDataService {
           }
 
           
-          const file = await this.app.vault.create(filePath, '');
+          const sectionsMarkdown = getDefaultTradeNoteSectionsMarkdown(
+            this.getPlugin()
+          );
+          const file = await this.app.vault.create(
+            filePath,
+            sectionsMarkdown
+              ? `\n${createUserOwnedTradeContent(sectionsMarkdown)}\n`
+              : ''
+          );
           await this.updateFrontmatter(file, frontmatter);
 
           
@@ -669,7 +689,8 @@ export class BacktestTradeService extends CustomDataService {
         fees: data.fees,
         swap: data.swap,
         rebate: data.rebate,
-        stopLoss: data.stopLoss,
+        stopLosses: serializeStopLossTargets(data.stopLosses),
+        stopLoss: undefined,
         riskAmount: data.riskAmount,
         currency: data.currency,
         fxRate: data.fxRate,
@@ -683,12 +704,9 @@ export class BacktestTradeService extends CustomDataService {
         useDirectPnLInput: data.useDirectPnLInput,
         directPnL: data.directPnL,
         missedReason: undefined,
-        
         tags:
-          data.customTags &&
-          Array.isArray(data.customTags) &&
-          data.customTags.length > 0
-            ? data.customTags.flatMap((tag) => {
+          data.tags && data.tags.length > 0
+            ? data.tags.flatMap((tag) => {
                 const normalizedTag = String(tag).trim();
                 return normalizedTag ? [normalizedTag] : [];
               })
@@ -741,6 +759,7 @@ export class BacktestTradeService extends CustomDataService {
         { includeClearedFields: true }
       );
       Object.assign(frontmatter, mappedCustomFields);
+      applySubmittedTradeRating(frontmatter, data);
 
       await this.updateFrontmatter(file, frontmatter);
 
@@ -779,27 +798,41 @@ export class BacktestTradeService extends CustomDataService {
 
   
   private getAllBacktestTradeFiles(): TFile[] {
-    const allFiles = this.app.vault.getMarkdownFiles();
-    return allFiles.filter((file: TFile) => {
-      if (
-        !file.path.includes('/trades/') ||
-        !this.folderPathService.isJournalPath(file.path)
-      ) {
-        return false;
-      }
+    return this.app.vault
+      .getMarkdownFiles()
+      .filter((file) =>
+        this.isBacktestTradeNote(
+          file.path,
+          this.app.metadataCache.getFileCache(file)?.frontmatter
+        )
+      );
+  }
 
-      const frontmatter =
-        this.app.metadataCache.getFileCache(file)?.frontmatter;
-      if (
-        frontmatter?.type === 'backtest-trade' ||
-        frontmatter?.isBacktestTrade
-      ) {
-        return true;
-      }
+  private isBacktestTradeNote(
+    path: string,
+    frontmatter: FrontMatterCache | undefined
+  ): boolean {
+    if (
+      !path.includes('/trades/') ||
+      !this.folderPathService.isJournalPath(path)
+    ) {
+      return false;
+    }
+    if (
+      frontmatter?.type === 'backtest-trade' ||
+      frontmatter?.isBacktestTrade
+    ) {
+      return true;
+    }
+    return isBacktestTradeFilename(path);
+  }
 
-      const backtestPattern = /(-B\d+\.md$|TMB.*\.md$)/;
-      return backtestPattern.test(file.path);
-    });
+  
+  protected override cachedQueriesDependingOn(
+    path: string,
+    frontmatter: FrontMatterCache | undefined
+  ): CachedQueryDependency {
+    return this.isBacktestTradeNote(path, frontmatter) ? 'all' : null;
   }
 
   
@@ -1032,6 +1065,18 @@ export class BacktestTradeService extends CustomDataService {
       );
       return 1;
     }
+  }
+
+  
+  public reserveBacktestTradePath(
+    data: Pick<BacktestTradeFormData, 'instrument' | 'entryTime'>
+  ): Promise<string> {
+    return this.creationMutex.withLock(async () => {
+      const filePath = await this.generateBacktestTradePath(data);
+      this.recentlyCreatedFiles.add(filePath);
+      window.setTimeout(() => this.recentlyCreatedFiles.delete(filePath), 5000);
+      return filePath;
+    });
   }
 
   public async generateBacktestTradePath(

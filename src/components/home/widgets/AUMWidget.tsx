@@ -14,7 +14,7 @@ import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
 import { t } from '../../../lang/helpers';
-import { useHomeAccountsData } from '../context/HomeAccountsDataContext';
+import { useHomeAccountsState } from '../context/HomeAccountsDataContext';
 import { formatLocalDateString } from '../../../utils/dateUtils';
 import {
   createTradingDayFromString,
@@ -104,7 +104,7 @@ function AUMLoadingState() {
             fill="none"
             stroke="var(--background-modifier-border)"
             strokeWidth="2"
-            className="skeleton-shimmer journalit-home-aum__sparkline-skeleton"
+            className="journalit-skeleton-shimmer journalit-home-aum__sparkline-skeleton"
           />
         </svg>
       </div>
@@ -133,17 +133,38 @@ function AUMEmptyState({ message }: { message: string }) {
   );
 }
 
+const AUM_FLAT_TREND = {
+  Icon: Minus,
+  className: 'journalit-home-aum__trend--flat',
+};
+
+const aumTrend = ({
+  isTrendMasked,
+  isFlat,
+  isPositive,
+}: {
+  isTrendMasked: boolean;
+  isFlat: boolean;
+  isPositive: boolean;
+}) => {
+  if (isTrendMasked || isFlat) return AUM_FLAT_TREND;
+  return isPositive
+    ? { Icon: TrendingUp, className: 'journalit-home-aum__trend--positive' }
+    : { Icon: TrendingDown, className: 'journalit-home-aum__trend--negative' };
+};
+
+const accountCountLabel = (accountCount: number): string =>
+  accountCount === 1
+    ? t('home.widget.aum.account-count', { count: '1' })
+    : t('home.widget.aum.account-count-plural', {
+        count: String(accountCount),
+      });
+
 const AUMWidgetComponent: React.FC<AUMWidgetProps> = ({ plugin }) => {
   const { currency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
   const accountContext = useHomeAccount();
-  const homeAccountsData = useHomeAccountsData();
-  const accounts = useMemo(
-    () => homeAccountsData?.accounts || [],
-    [homeAccountsData?.accounts]
-  );
-  const isLoading = homeAccountsData?.isLoading ?? true;
-  const error = homeAccountsData?.error ?? null;
+  const { accounts, isLoading, error } = useHomeAccountsState();
 
   const [now, setNow] = useState(() => Date.now());
   const currentTradingDayKey = formatLocalDateString(
@@ -241,20 +262,11 @@ const AUMWidgetComponent: React.FC<AUMWidgetProps> = ({ plugin }) => {
   });
 
   
-  const TrendIcon = isTrendMasked
-    ? Minus
-    : isFlat
-      ? Minus
-      : isPositive
-        ? TrendingUp
-        : TrendingDown;
-  const trendClass = isTrendMasked
-    ? 'journalit-home-aum__trend--flat'
-    : isFlat
-      ? 'journalit-home-aum__trend--flat'
-      : isPositive
-        ? 'journalit-home-aum__trend--positive'
-        : 'journalit-home-aum__trend--negative';
+  const { Icon: TrendIcon, className: trendClass } = aumTrend({
+    isTrendMasked,
+    isFlat,
+    isPositive,
+  });
 
   return (
     <div
@@ -296,11 +308,7 @@ const AUMWidgetComponent: React.FC<AUMWidgetProps> = ({ plugin }) => {
         <div className="journalit-home-aum__left">
           <div className="journalit-home-aum__value">{formattedAUM}</div>
           <div className="journalit-home-aum__account-count">
-            {accountCount === 1
-              ? t('home.widget.aum.account-count', { count: '1' })
-              : t('home.widget.aum.account-count-plural', {
-                  count: String(accountCount),
-                })}
+            {accountCountLabel(accountCount)}
           </div>
         </div>
 

@@ -27,7 +27,7 @@
   <a href="README.ar.md">العربية</a>
 </p>
 
-[التثبيت](#installation) · [الوسطاء المدعومون](#supported-brokers) · [الخصوصية](PRIVACY.md)
+[التثبيت](#installation) · [تطبيقات الذكاء الاصطناعي (MCP)](#ai-apps-mcp) · [الوسطاء المدعومون](#supported-brokers) · [الخصوصية](PRIVACY.md)
 
 </div>
 
@@ -54,16 +54,7 @@
 - **نظام المراجعة (V2):** قوالب مراجعة من اليومية إلى السنوية مع أداة لتصميم التخطيط.
 - **[استيراد الصفقات](https://journalit.co/csv-import):** استورد ملفات CSV وجداول البيانات وHTML وكشوف الوسطاء عبر الخدمة الخلفية.
 - **[مزامنة الصفقات](https://journalit.co/docs/trade-sync):** مزامنة تلقائية للصفقات من الوسطاء المدعومين.
-
-## معلومات مهمة
-
-- **الوظائف الأساسية تعمل دون اتصال:** تحفظ سجلاتك وصفقاتك الأساسية في مخزنك المحلي على Obsidian.
-- **الحساب مطلوب لبعض الميزات:** يلزم حساب Journalit للميزات التي تتطلب تسجيل الدخول أو اشتراكًا.
-- **ميزات مدفوعة:** يلزم اشتراك Pro مدفوع للاستفادة الكاملة من مزامنة الصفقات واستيرادها والتقويم الاقتصادي وملفات شركات التداول المموّل المعبأة مسبقًا.
-- **استخدام الشبكة:** يتحقق Journalit افتراضيًا من بيانات إصدارات GitHub العامة دون إرسال بيانات المخزن أو الحساب. قد تستخدم الميزات المرتبطة بتسجيل الدخول خدمات Journalit؛ وتستخدم مزامنة MT4 خدمة FTP مُدارة، وقد يستخدم تحويل العملات خدمة خارجية لأسعار الصرف. راجع [سياسة الخصوصية](PRIVACY.md).
-- **لا يوجد تتبع للاستخدام داخل الإضافة:** لا تجمع الإضافة بيانات استخدام من داخل Obsidian. تفتح أزرار الترقية موقع journalit.co عند الضغط عليها وترسل معاملات حملات ثابتة دون معرّفات لإسناد الترقيات على الخادم؛ راجع [سياسة الخصوصية](PRIVACY.md).
-- **الشيفرة متاحة للاطلاع بترخيص مملوك:** الإضافة برنامج مملوك، وشيفرتها منشورة للمراجعة وليست مفتوحة المصدر.
-- **تفاصيل الخصوصية:** راجع [PRIVACY.md](PRIVACY.md) لمعرفة كيفية التعامل مع البيانات والاحتفاظ بها والبنية التحتية.
+- **[تطبيقات الذكاء الاصطناعي (MCP)](https://journalit.co/docs/ai-apps)**: اربط تطبيق الذكاء الاصطناعي لتحليل الصفقات وصياغة المراجعات وتحديث يومياتك.
 
 ## لقطات الشاشة
 
@@ -101,17 +92,44 @@
 
 ![استيراد الصفقات](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
+<a id="ai-apps-mcp"></a>
+
+## تطبيقات الذكاء الاصطناعي (MCP)
+
+اربط Claude أو Claude Code أو ChatGPT أو Codex أو Hermes أو Grok Bot أو أي تطبيق متوافق آخر بيومياتك عبر MCP (Model Context Protocol). اطلب منه تحليل صفقاتك أو إعداد مراجعة أسبوعية أو تحديث حقول اليوميات دون نسخ الملاحظات إلى المحادثة.
+
+1. سجّل الدخول إلى Journalit في Obsidian. افتح **الإعدادات → Journalit → تطبيقات الذكاء الاصطناعي (MCP)** وفعّل **تفعيل وصول MCP**.
+2. أضف `https://api.journalit.co/mcp` بوصفه خادم MCP بعيدًا في تطبيق الذكاء الاصطناعي.
+3. سجّل الدخول إلى Journalit عند الطلب، واختر خزنتك، وراجع الأذونات المطلوبة، ثم وافق على الاتصال.
+
+أبقِ Obsidian مفتوحًا وJournalit قيد التشغيل. تتطلب عمليات الحذف والدمج والتغييرات الكبيرة موافقتك افتراضيًا.
+
+راجع **[دليل إعداد تطبيقات الذكاء الاصطناعي](https://journalit.co/docs/ai-apps)** لمعرفة خطوات كل تطبيق والأذونات والتراجع عن التغييرات وحدود الاستخدام الشهرية.
+
 <a id="supported-brokers"></a>
 
 ## الوسطاء والمنصات المدعومة
 
-صيغ استيراد الصفقات المدعومة:
+تنشئ Trade Sync اتصالًا مستمرًا، بينما تقرأ Trade Import الملفات المصدّرة. دعم إحداهما لا يعني دعم الأخرى.
+
+### المزامنة التلقائية عبر Trade Sync
+
+- [MetaTrader 4](https://journalit.co/docs/trade-sync-metatrader)
+- [Tradovate](https://journalit.co/docs/trade-sync-tradovate)
+- [cTrader](https://journalit.co/docs/trade-sync-ctrader)
+- [Hyperliquid](https://journalit.co/docs/trade-sync-hyperliquid): عقود دائمة تُسوّى بعملة USDC، بوصول للقراءة فقط
+
+[Rithmic Trade Sync](https://journalit.co/docs/trade-sync-rithmic) متاحة كنسخة معاينة للمختبرين المعتمدين فقط. تُستورد كشوف MetaTrader 5 عبر Trade Import، وليس عبر Trade Sync المستندة إلى FTP.
+
+### الاستيراد من الملفات عبر Trade Import
+
+مصادر التصدير وصيغه المدعومة:
 
 - [IBKR](https://journalit.co/docs/broker-guides-ibkr)
 - [Tradovate](https://journalit.co/docs/broker-guides-tradovate)
 - [TopStepX](https://journalit.co/docs/broker-guides-topstepx)
 - [TradeZero](https://journalit.co/docs/broker-guides-tradezero)
-- [TradingView](https://journalit.co/docs/broker-guides-tradingview)
+- TradingView: [سجل أوامر Paper Trading](https://journalit.co/docs/broker-guides-tradingview) وList of Trades من Strategy Tester للاختبارات التاريخية
 - [Bybit](https://journalit.co/docs/broker-guides-bybit)
 - [BloFin](https://journalit.co/docs/broker-guides-blofin)
 - [Hyperliquid](https://journalit.co/docs/broker-guides-hyperliquid)
@@ -122,13 +140,23 @@
 - [Trading Technologies (TT)](https://journalit.co/docs/broker-guides-tradingtechnologies)
 - [Rithmic](https://journalit.co/docs/broker-guides-rithmic)
 - [MetaTrader 4/5](https://journalit.co/docs/broker-guides-jdr)
+- [DeepCharts](https://journalit.co/docs/broker-guides-deepcharts): Trade List من Strategy Report
+- [Breakout Terminal](https://journalit.co/docs/broker-guides-breakout-terminal): `trades.csv`
+- Merrill Edge: نشاط الحساب بصيغة CSV
+- PropReports: تقرير Executions للأسهم
+
+استخدم Manual Mapping للملفات المتوافقة الأخرى. راجع [نظرة عامة على Trade Import](https://journalit.co/csv-import) ودليل كل مصدر لمعرفة التصدير المطلوب.
 
 هل وسيطك غير مدعوم؟ انضم إلى [Discord](https://discord.gg/AkSw3D9h8b) وأخبرنا بما تحتاجه.
 
 <details>
 <summary>كلمات البحث</summary>
 
-Journalit، Obsidian، دفتر التداول، سجل الصفقات، تحليل التداول، مزامنة MetaTrader، MT4، MT5، استيراد الصفقات، شركات التداول المموّل، حساب مموّل، حد التراجع، تقييم المتداول، هدف الربح.
+الكلمات المفتاحية: obsidian trading journal, trading plugin, trade tracker, obsidian trading template, trading analytics, Trade Import, Trade Sync, prop firm, prop firms, funded account, profit target, trailing drawdown, max drawdown, prop challenge, evaluation, funded phase, payout rules, daily loss limit
+
+الذكاء الاصطناعي: MCP, Model Context Protocol, Obsidian MCP, AI trading journal, AI-assisted journaling, Claude, Claude Code, ChatGPT, Codex, Hermes, Grok Bot
+
+الوسطاء والمنصات: MetaTrader, MetaTrader 4, MT4 sync, MetaTrader 5 imports, IBKR, Interactive Brokers, Tradovate, cTrader, Hyperliquid, Rithmic, TopStepX, TradeZero, TradingView, TradingView Strategy Tester, Bybit, BloFin, Sierra Chart, MotiveWave, FX Replay, ATAS, Trading Technologies, DeepCharts, Breakout Terminal, Merrill Edge, PropReports
 
 </details>
 
@@ -142,6 +170,18 @@ Journalit، Obsidian، دفتر التداول، سجل الصفقات، تحل�
 - [دليل تحديات التداول المموّل](https://journalit.co/docs/prop-challenges)
 
 </details>
+
+## معلومات مهمة
+
+- **الوظائف الأساسية تعمل دون اتصال:** تحفظ سجلاتك وصفقاتك الأساسية في مخزنك المحلي على Obsidian.
+- **الحساب مطلوب لبعض الميزات:** يلزم حساب Journalit للميزات التي تتطلب تسجيل الدخول أو اشتراكًا.
+- **ميزات مدفوعة:** يلزم اشتراك Pro مدفوع لاستخدام Trade Sync وتأكيد عمليات Trade Import والتقويم الاقتصادي وملفات شركات التداول المموّل المعبأة مسبقًا. يمكن لمستخدمي الحسابات المجانية الذين سجّلوا الدخول تحليل ملفات Trade Import ومعاينتها.
+- **استخدام الشبكة:** يتحقق Journalit افتراضيًا من بيانات إصدارات GitHub العامة دون إرسال بيانات المخزن أو الحساب. قد تستخدم الميزات المرتبطة بتسجيل الدخول خدمات Journalit؛ وتستخدم مزامنة MT4 خدمة FTP مُدارة، وقد يستخدم تحويل العملات خدمة خارجية لأسعار الصرف. راجع [سياسة الخصوصية](PRIVACY.md).
+- **وصول اختياري للذكاء الاصطناعي:** عند تفعيل MCP وتفويض تطبيق ذكاء اصطناعي، تُشارَك بيانات اليوميات المطلوبة مع التطبيق عبر خدمات Journalit. تخضع البيانات التي يقرأها لشروط خصوصية مزوّد الذكاء الاصطناعي. يمكنك فصل التطبيق أو إيقاف وصول MCP في أي وقت.
+- **معالجة Trade Import:** يرسل التحليل والمعاينة الملف المحدد وخيارات الاستيراد إلى Journalit. تنتهي صلاحية لقطات التشخيص المشفّرة على الخادم بعد يوم واحد للحسابات المجانية أو 14 يومًا لحسابات Pro، وتنتهي صلاحية المعاينات المحفوظة بعد 7 أيام. تُعاد إرشادات التوافق ضمن هذه الاستجابات وتُعرض محليًا دون رفع تقرير منفصل عن إخفاقات التطبيق. راجع [PRIVACY.md](PRIVACY.md).
+- **تشخيصات الشبكة الأخرى:** ترسل الشيفرة الحالية لـ Tradovate Sync أحداث تشخيص لمزامنة التطبيق وفقًا لما ورد في [PRIVACY.md](PRIVACY.md)، بصورة منفصلة عن Trade Import. تفتح أزرار الترقية journalit.co عند النقر عليها فقط، مع معلمات حملة ثابتة دون معرّفات، لإسناد الزيارات على الخادم.
+- **الشيفرة متاحة للاطلاع بترخيص مملوك:** الإضافة برنامج مملوك، وشيفرتها منشورة للمراجعة وليست مفتوحة المصدر.
+- **تفاصيل الخصوصية:** راجع [PRIVACY.md](PRIVACY.md) لمعرفة كيفية التعامل مع البيانات والاحتفاظ بها والبنية التحتية.
 
 ## الترخيص
 

@@ -4,7 +4,8 @@ import type JournalitPlugin from '../../main';
 import { generateUUID } from '../../utils/uuid';
 import { getTradeProjectionOwnerId } from './TradeProjectionOwnership';
 import type {
-  BrokerClientOperationContext,
+  BrokerConnectionOperationContext,
+  BrokerProjectionOperationContext,
   BrokerSyncProviderId,
 } from './types';
 
@@ -29,7 +30,7 @@ export function createBrokerConnectionOperation(
   vaultId: string,
   connectionId: string,
   provider: BrokerSyncProviderId
-): BrokerClientOperationContext {
+): BrokerConnectionOperationContext {
   return {
     clientOperationId: generateUUID(),
     ownerUserId: getTradeProjectionOwnerId(plugin),
@@ -47,7 +48,7 @@ export function createBrokerProjectionOperation(
   vaultId: string,
   provider: BrokerSyncProviderId,
   syncRunId = generateUUID()
-): BrokerClientOperationContext {
+): BrokerProjectionOperationContext {
   return {
     clientOperationId: generateUUID(),
     ownerUserId: getTradeProjectionOwnerId(plugin),

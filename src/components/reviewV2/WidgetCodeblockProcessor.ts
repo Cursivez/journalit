@@ -9,7 +9,8 @@ import {
   MarkdownSectionInformation,
   TFile,
 } from 'obsidian';
-import { createRoot, Root } from 'react-dom/client';
+import { Root } from 'react-dom/client';
+import { createWorkspaceRoot } from '../../core/libraryGlobals';
 import { createElement, type ReactElement } from 'react';
 import { replaceFileContent } from '../../utils/fileMutation';
 import type {
@@ -33,8 +34,10 @@ import {
 import { TradeTableWidget } from './widgets/TradeTableWidget';
 import { TradeReviewWidget } from './widgets/TradeReviewWidget';
 import {
+  isTradeReviewCustomFieldRef,
+  parseTradeReviewFieldList,
+  parseTradeReviewNotesSections,
   parseTradeReviewQuestions,
-  type TradeReviewCardField,
   type TradeReviewWidgetConfig,
 } from './widgets/tradeReviewConfig';
 import { BreakdownTableWidget } from './widgets/BreakdownTableWidget';
@@ -72,6 +75,7 @@ import { MentalGameWidget } from './widgets/MentalGameWidget';
 import { DemonTrackerWidget } from './widgets/DemonTrackerWidget';
 import { parseDemonTrackerWidgetConfig } from './widgets/shared/demonTrackerConfigParser';
 import { SessionMistakesWidget } from './widgets/SessionMistakesWidget';
+import { DayTradeFieldsWidget } from './widgets/DayTradeFieldsWidget';
 import { KeyLevelsWidget } from './widgets/KeyLevelsWidget';
 import { KeyEventsWidget } from './widgets/KeyEventsWidget';
 import { MissedTradesWidget } from './widgets/MissedTradesWidget';
@@ -130,6 +134,10 @@ import { getEmbeddedReviewAncestorSources } from '../../utils/reviewEmbed';
 import { t } from '../../lang/helpers';
 import { NoteGuideRuntimeLayer } from '../../guides/NoteGuideRuntimeLayer';
 
+
+
+const PDF_EXPORT_WIDGET_LOAD_TIMEOUT_MS = 10_000;
+
 const globallyRegisteredCodeblockProcessors = new Map<
   string,
   MarkdownPostProcessor
@@ -143,27 +151,75 @@ import {
 import {
   isInShareHideDollarAmountsArea,
   markShareLoadingUntil,
+  whenShareLoadingSettles,
 } from '../../services/share/brandedCapture';
+import { ChartAnimationContext } from '../charts/chartAnimation';
+import { isInPdfExportRender } from '../../utils/pdfExportRender';
 
 
 class ReactRenderChild extends MarkdownRenderChild {
   private root: Root | null = null;
   private onUnloadCallback: (() => void) | null = null;
+  private stopWaitingForDisplay: (() => void) | null = null;
+  
+  private unloaded = false;
 
   constructor(containerEl: HTMLElement, onUnload?: () => void) {
     super(containerEl);
     this.onUnloadCallback = onUnload || null;
   }
 
-  setRoot(root: Root): void {
-    this.root = root;
+  
+  whenDisplayed(onHidden: () => void): Promise<boolean> {
+    const el = this.containerEl;
+    const ownerWindow = el.ownerDocument.defaultView;
+    
+    if (!ownerWindow) {
+      onHidden();
+      return Promise.resolve(false);
+    }
+    return new Promise((resolve) => {
+      const stop = () => {
+        observer.disconnect();
+        ownerWindow.cancelAnimationFrame(firstFrame);
+        this.stopWaitingForDisplay = null;
+      };
+      const observer = new ownerWindow.ResizeObserver((entries) => {
+        const { width, height } = entries[entries.length - 1].contentRect;
+        if (width === 0 && height === 0) return;
+        stop();
+        resolve(true);
+      });
+      
+      const firstFrame = ownerWindow.requestAnimationFrame(() => {
+        if (el.getClientRects().length === 0) onHidden();
+      });
+      this.stopWaitingForDisplay = () => {
+        stop();
+        resolve(false);
+      };
+      observer.observe(el);
+    });
   }
 
-  onunload(): void {
+  
+  mount(createMountedRoot: () => Root): void {
+    if (this.unloaded) return;
+    this.root = createMountedRoot();
+  }
+
+  
+  dispose(): void {
+    this.unloaded = true;
+    this.stopWaitingForDisplay?.();
     if (this.root) {
       this.root.unmount();
       this.root = null;
     }
+  }
+
+  onunload(): void {
+    this.dispose();
     if (this.onUnloadCallback) {
       this.onUnloadCallback();
     }
@@ -213,43 +269,10 @@ function parseImageLayout(value: string): 'carousel' | 'stacked' | undefined {
   }
 }
 
-function parseTradeReviewFields(value: string): TradeReviewCardField[] {
-  return value.split(',').flatMap((field): TradeReviewCardField[] => {
-    const normalizedField = field
-      .trim()
-      .replaceAll('[', '')
-      .replaceAll(']', '')
-      .replaceAll('"', '')
-      .replaceAll("'", '');
-    switch (normalizedField) {
-      case 'entry':
-      case 'exit':
-      case 'duration':
-      case 'risk':
-      case 'positionSize':
-      case 'stopLoss':
-      case 'takeProfit':
-      case 'fees':
-      case 'commission':
-      case 'mae':
-      case 'mfe':
-      case 'account':
-      case 'setup':
-      case 'mistakes':
-      case 'tags':
-      case 'thesis':
-      case 'notes':
-      case 'customFields':
-        return [normalizedField];
-      default:
-        return [];
-    }
-  });
-}
-
 export class WidgetCodeblockProcessor {
   private plugin: JournalitPlugin;
-  private roots: Map<HTMLElement, Root> = new Map();
+  
+  private readonly renderChildren = new Set<ReactRenderChild>();
   private registeredTypes: Set<string> = new Set();
   private registeredPostProcessors: Map<string, MarkdownPostProcessor> =
     new Map();
@@ -277,6 +300,7 @@ export class WidgetCodeblockProcessor {
       'goals',
       'checklist',
       'session-mistakes',
+      'day-trade-fields',
       'session-log',
       'key-levels',
       'trades',
@@ -361,11 +385,59 @@ export class WidgetCodeblockProcessor {
   }
 
   
-  private async processCodeblock(
+  private processCodeblock(
     widgetType: ReviewWidgetType,
     source: string,
     el: HTMLElement,
     ctx: MarkdownPostProcessorContext
+  ): Promise<void> {
+    
+    
+    const renderChild = new ReactRenderChild(el, () => {
+      this.renderChildren.delete(renderChild);
+    });
+    this.renderChildren.add(renderChild);
+    ctx.addChild(renderChild);
+
+    
+    
+    if (isInPdfExportRender(el)) {
+      return this.mountWidget(widgetType, source, el, ctx, renderChild);
+    }
+
+    let settledHidden = false;
+    let settleHidden = () => {};
+    const hidden = new Promise<void>((resolve) => {
+      settleHidden = resolve;
+    });
+    const mounted = renderChild
+      .whenDisplayed(() => {
+        settledHidden = true;
+        settleHidden();
+      })
+      .then((displayed) =>
+        displayed
+          ? this.mountWidget(widgetType, source, el, ctx, renderChild)
+          : undefined
+      )
+      .catch((error: unknown) => {
+        
+        
+        if (!settledHidden) throw error;
+        console.error(
+          `[Journalit] Failed to render the ${widgetType} widget:`,
+          error
+        );
+      });
+    return Promise.race([mounted, hidden]);
+  }
+
+  private async mountWidget(
+    widgetType: ReviewWidgetType,
+    source: string,
+    el: HTMLElement,
+    ctx: MarkdownPostProcessorContext,
+    renderChild: ReactRenderChild
   ): Promise<void> {
     const ancestorSourcePaths = getEmbeddedReviewAncestorSources(el);
     const readOnly = ancestorSourcePaths.length > 0;
@@ -383,12 +455,6 @@ export class WidgetCodeblockProcessor {
             ctx.getSectionInfo(el)
           )
         : undefined;
-
-    
-    el.empty();
-
-    
-    el.addClass('journalit-widget', `journalit-${widgetType}`);
 
     
     let widget = this.createWidget(
@@ -411,36 +477,47 @@ export class WidgetCodeblockProcessor {
       );
     }
 
+    const isPdfExport = isInPdfExportRender(el);
+
     
-    const renderChild = new ReactRenderChild(el, () => {
-      this.roots.delete(el);
+    renderChild.mount(() => {
+      
+      el.empty();
+
+      
+      el.addClass('journalit-widget', `journalit-${widgetType}`);
+
+      
+      const root = createWorkspaceRoot(el);
+      root.render(
+        createElement(
+          CurrencyProvider,
+          null,
+          createElement(
+            DisplayPolicyProvider,
+            
+            { hideDollarAmounts: isInShareHideDollarAmountsArea(el) },
+            createElement(
+              ReviewReadOnlyContext.Provider,
+              { value: readOnly },
+              createElement(
+                ChartAnimationContext.Provider,
+                { value: !isPdfExport },
+                widget
+              )
+            )
+          )
+        )
+      );
+      return root;
     });
 
     
-    const root = createRoot(el);
-    root.render(
-      createElement(
-        CurrencyProvider,
-        null,
-        createElement(
-          DisplayPolicyProvider,
-          
-          { hideDollarAmounts: isInShareHideDollarAmountsArea(el) },
-          createElement(
-            ReviewReadOnlyContext.Provider,
-            { value: readOnly },
-            widget
-          )
-        )
-      )
-    );
-
     
-    renderChild.setRoot(root);
-    this.roots.set(el, root);
-
     
-    ctx.addChild(renderChild);
+    if (isPdfExport) {
+      await whenShareLoadingSettles(el, PDF_EXPORT_WIDGET_LOAD_TIMEOUT_MS);
+    }
   }
 
   
@@ -534,13 +611,21 @@ export class WidgetCodeblockProcessor {
           if (key === 'showOpenTrades')
             config.showOpenTrades = value === 'true';
           if (key === 'showImages') config.showImages = value === 'true';
-          if (key === 'fields') config.fields = parseTradeReviewFields(value);
+          if (key === 'notesSections') {
+            config.notesSections = parseTradeReviewNotesSections(value);
+          }
+          if (key === 'fields')
+            config.fields = parseTradeReviewFieldList(value);
           if (key === 'primaryMetrics')
-            config.primaryMetrics = parseTradeReviewFields(value);
+            config.primaryMetrics = parseTradeReviewFieldList(value);
           if (key === 'classificationFields')
-            config.classificationFields = parseTradeReviewFields(value);
+            config.classificationFields = parseTradeReviewFieldList(value);
           if (key === 'moreContextFields')
-            config.moreContextFields = parseTradeReviewFields(value);
+            config.moreContextFields = parseTradeReviewFieldList(value);
+          if (key === 'hiddenFields')
+            config.hiddenFields = parseTradeReviewFieldList(value).filter(
+              isTradeReviewCustomFieldRef
+            );
           if (key === 'winQuestions') {
             config.winQuestions = parseTradeReviewQuestions(value);
           }
@@ -1055,6 +1140,13 @@ export class WidgetCodeblockProcessor {
     
     if (widgetType === 'session-mistakes') {
       return createElement(SessionMistakesWidget, {
+        filePath,
+        plugin: this.plugin,
+      });
+    }
+
+    if (widgetType === 'day-trade-fields') {
+      return createElement(DayTradeFieldsWidget, {
         filePath,
         plugin: this.plugin,
       });
@@ -1644,9 +1736,9 @@ export class WidgetCodeblockProcessor {
   
   unregisterAll(): void {
     
-    for (const [, root] of this.roots.entries()) {
+    for (const renderChild of this.renderChildren) {
       try {
-        root.unmount();
+        renderChild.dispose();
       } catch {
         // intentional
       }
@@ -1668,7 +1760,7 @@ export class WidgetCodeblockProcessor {
       }
     }
 
-    this.roots.clear();
+    this.renderChildren.clear();
     this.registeredTypes.clear();
     this.registeredPostProcessors.clear();
     this.fileLineCache.clear();

@@ -2,6 +2,11 @@
 
 import {
   calculateWeightedAveragePrice,
+  getFirstEntryTimeOf,
+  getLastExitTimeOf,
+  getResolvedExitPriceOf,
+  getTotalEntrySizeOf,
+  getWeightedEntryPriceOf,
   normalizeTradeExecution,
 } from '../services/trade/core/TradeExecutionNormalization';
 import { hasUnknownCanonicalPnL } from '../services/trade/core/CanonicalProjectionFields';
@@ -27,37 +32,18 @@ export function getEffectivePnL(trade: {
 }): number {
   const hasStoredPnL =
     trade.pnl !== undefined && trade.pnl !== null && Number.isFinite(trade.pnl);
-  const hasDividendEvents = Boolean(
-    trade.dividends?.some(
-      (dividend) =>
-        dividend.amount !== undefined &&
-        dividend.amount !== null &&
-        Number.isFinite(dividend.amount) &&
-        dividend.amount !== 0
-    )
-  );
-  const hasPnLAdjustments = [
-    trade.commission,
-    trade.swap,
-    trade.fees,
-    trade.rebate,
-  ].some(
-    (value) =>
-      value !== undefined &&
-      value !== null &&
-      Number.isFinite(value) &&
-      value !== 0
-  );
 
   if (hasStoredPnL) {
+    
+    
     const shouldFallbackToDirectPnLForLegacyTrade =
       trade.useDirectPnLInput === true &&
       trade.directPnL !== undefined &&
       trade.directPnL !== null &&
       trade.pnl === 0 &&
       trade.directPnL !== 0 &&
-      !hasDividendEvents &&
-      !hasPnLAdjustments;
+      !hasDividendEvents(trade.dividends) &&
+      !hasPnLAdjustments(trade);
 
     if (!shouldFallbackToDirectPnLForLegacyTrade) {
       return typeof trade.pnl === 'number' && Number.isFinite(trade.pnl)
@@ -79,6 +65,37 @@ export function getEffectivePnL(trade: {
   return typeof trade.pnl === 'number' && Number.isFinite(trade.pnl)
     ? trade.pnl
     : 0;
+}
+
+function isNonZeroFinite(value: number | null | undefined): boolean {
+  return (
+    value !== undefined &&
+    value !== null &&
+    Number.isFinite(value) &&
+    value !== 0
+  );
+}
+
+function hasDividendEvents(
+  dividends: Array<{ amount?: number | null }> | undefined
+): boolean {
+  return Boolean(
+    dividends?.some((dividend) => isNonZeroFinite(dividend.amount))
+  );
+}
+
+function hasPnLAdjustments(trade: {
+  commission?: number | null;
+  swap?: number | null;
+  fees?: number | null;
+  rebate?: number | null;
+}): boolean {
+  return (
+    isNonZeroFinite(trade.commission) ||
+    isNonZeroFinite(trade.swap) ||
+    isNonZeroFinite(trade.fees) ||
+    isNonZeroFinite(trade.rebate)
+  );
 }
 
 interface TradePnLContributionContext {
@@ -182,32 +199,10 @@ export function hasRealizedPnLComponents(
         exit.price !== undefined && exit.price !== null && (exit.size ?? 0) > 0
     )
   );
-  const hasDividendEvents = Boolean(
-    trade.dividends?.some(
-      (dividend) =>
-        dividend.amount !== undefined &&
-        dividend.amount !== null &&
-        Number.isFinite(dividend.amount) &&
-        dividend.amount !== 0
-    )
-  );
-  const hasAdjustments = [
-    trade.commission,
-    trade.swap,
-    trade.fees,
-    trade.rebate,
-  ].some(
-    (value) =>
-      value !== undefined &&
-      value !== null &&
-      Number.isFinite(value) &&
-      value !== 0
-  );
-
   return (
     hasRealizedExits ||
-    hasDividendEvents ||
-    hasAdjustments ||
+    hasDividendEvents(trade.dividends) ||
+    hasPnLAdjustments(trade) ||
     (trade.tradeStatus === 'CLOSED' &&
       trade.useDirectPnLInput === true &&
       trade.directPnL !== undefined &&
@@ -282,6 +277,16 @@ export function isPnlContributingTrade(
       entries: trade.entries,
     }) || hasRealizedStoredPnL(trade)
   );
+}
+
+
+export function hasMissedTradeOutcome(
+  trade: TradePnLContributionContext
+): boolean {
+  if (trade.useDirectPnLInput === true && typeof trade.directPnL !== 'number') {
+    return false;
+  }
+  return isPnlContributingTrade(trade);
 }
 
 
@@ -754,29 +759,32 @@ function normalizeTradeExecutionForCompatibility(
 }
 
 
+export function getExecutionFillPrices(
+  trade: Pick<TradeExecutionCompatibilityInput, 'entries' | 'exits'>
+): { entry: number[]; exit: number[] } {
+  const normalized = normalizeTradeExecutionForCompatibility({
+    entries: trade.entries,
+    exits: trade.exits,
+  });
+  const pricesOf = (legs: Array<{ price: number | null }>) =>
+    legs.flatMap((leg) => (leg.price === null ? [] : [leg.price]));
+  return {
+    entry: pricesOf(normalized.entries),
+    exit: pricesOf(normalized.exits),
+  };
+}
+
+
 export function getWeightedAverageEntryPrice(
   trade: Pick<TradeExecutionCompatibilityInput, 'entries' | 'entryPrice'>
 ): number | null {
-  return normalizeTradeExecutionForCompatibility({
-    entries: trade.entries,
-    entryPrice: trade.entryPrice,
-  }).weightedEntryPrice;
+  return getWeightedEntryPriceOf(trade.entries, trade.entryPrice);
 }
 
 export function getTotalEntrySize(
   trade: Pick<TradeExecutionCompatibilityInput, 'entries' | 'positionSize'>
 ): number | null {
-  const normalized = normalizeTradeExecutionForCompatibility({
-    entries: trade.entries,
-    positionSize: trade.positionSize,
-  });
-  const entriesSize = normalized.entries.reduce(
-    (sum, entry) =>
-      entry.size !== null && entry.size > 0 ? sum + entry.size : sum,
-    0
-  );
-
-  return entriesSize > 0 ? entriesSize : normalized.positionSize;
+  return getTotalEntrySizeOf(trade.entries, trade.positionSize);
 }
 
 export function getResolvedWeightedAverageExitPrice(
@@ -785,12 +793,7 @@ export function getResolvedWeightedAverageExitPrice(
     'exits' | 'exitPrice' | 'hasExplicitExitPrice' | 'useDirectPnLInput'
   >
 ): number | null {
-  return normalizeTradeExecutionForCompatibility({
-    exits: trade.exits,
-    exitPrice: trade.exitPrice,
-    hasExplicitExitPrice: trade.hasExplicitExitPrice,
-    useDirectPnLInput: trade.useDirectPnLInput,
-  }).resolvedExitPrice;
+  return getResolvedExitPriceOf(trade, COMPATIBILITY_NORMALIZATION_OPTIONS);
 }
 
 export function calculateTradePriceMove(
@@ -824,10 +827,7 @@ export function calculateTradePriceMove(
 export function getFirstEntryTime(
   trade: Pick<TradeExecutionCompatibilityInput, 'entries' | 'entryTime'>
 ): Date | null {
-  return normalizeTradeExecutionForCompatibility({
-    entries: trade.entries,
-    entryTime: trade.entryTime,
-  }).firstEntryTime;
+  return getFirstEntryTimeOf(trade.entries, trade.entryTime);
 }
 
 
@@ -859,9 +859,5 @@ export function getLastExitTime(
     }
   }
 
-  return normalizeTradeExecutionForCompatibility({
-    exits: trade.exits,
-    exitTime: trade.exitTime,
-    useDirectPnLInput: trade.useDirectPnLInput,
-  }).lastExitTime;
+  return getLastExitTimeOf(trade.exits, trade.exitTime);
 }

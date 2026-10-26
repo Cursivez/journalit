@@ -49,8 +49,6 @@ export const BacktestTradesWidget: React.FC<BacktestTradesWidgetProps> =
         },
         customFieldDefinitions,
         {
-          resolveAccountIdDisplayName: (accountId) =>
-            plugin.settings.backendIntegration?.accountMapping?.[accountId],
           accountPhaseWindows: resolveAccountPhaseWindowsFromPlugin(
             data.filters.accountPhases,
             plugin

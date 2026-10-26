@@ -16,7 +16,6 @@ export const ACCOUNT_STYLES = `
   border-radius: 8px;
   padding: 12px 16px;
   
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .journalit-account-chart-empty {
@@ -32,7 +31,7 @@ export const ACCOUNT_STYLES = `
   padding: 12px 16px;
   min-width: 180px;
   border: 1px solid var(--background-modifier-border);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-s);
   transform: translateY(-4px);
   position: relative;
 }
@@ -167,7 +166,6 @@ export const ACCOUNT_STYLES = `
   background-color: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .journalit-account .metric-label {
@@ -195,14 +193,6 @@ export const ACCOUNT_STYLES = `
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
-.journalit-account .details-grid,
-.journalit-account .metrics-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-  gap: 15px;
-}
-
-.journalit-account .detail-item,
 .journalit-account .metric-item {
   padding: 10px;
   background-color: var(--background-secondary);
@@ -218,7 +208,6 @@ export const ACCOUNT_STYLES = `
   margin-bottom: 5px;
 }
 
-.journalit-account .detail-value,
 .journalit-account .metric-value {
   font-size: 1.1rem;
   font-weight: 500;
@@ -226,44 +215,12 @@ export const ACCOUNT_STYLES = `
 }
 
 
-.journalit-account .cost-details {
-  margin-top: 5px;
-  font-size: 0.85rem;
-  color: var(--text-muted);
-}
-
-.journalit-account .cost-total {
-  font-weight: 500;
-}
-
-.journalit-account .cost-months {
-  font-style: italic;
-  font-size: 0.8rem;
-}
-
-
-.journalit-account .profit-target-item {
-  grid-column: 1 / -1; 
-  width: 100%;
-  box-sizing: border-box;
-  margin: 0;
-}
 
 .journalit-account .target-date {
   font-size: 0.9rem;
   color: var(--text-muted);
   font-style: italic;
   margin-left: 5px;
-}
-
-.journalit-account .target-progress {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-  margin-left: 5px;
-}
-
-.journalit-account .profit-target-progress {
-  margin-top: 10px;
 }
 
 .journalit-account .progress-container {
@@ -373,32 +330,6 @@ export const ACCOUNT_STYLES = `
   padding: 0 12px;
 }
 
-.folder-migration-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  z-index: 9999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-}
-
-.folder-migration-modal {
-  background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  padding: 0;
-  max-width: 600px;
-  width: 100%;
-  max-height: 90vh;
-  overflow-y: auto;
-  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
-}
-
 .migration-warning-header {
   display: flex;
   align-items: center;
@@ -423,10 +354,6 @@ export const ACCOUNT_STYLES = `
   padding: 0;
 }
 
-.migration-content {
-  padding: 24px;
-}
-
 .migration-warning {
   margin-bottom: 24px;
   padding: 16px;
@@ -445,10 +372,6 @@ export const ACCOUNT_STYLES = `
   margin-bottom: 0;
 }
 
-.migration-details {
-  margin-bottom: 24px;
-}
-
 .migration-path-container {
   display: flex;
   flex-direction: column;
@@ -457,35 +380,6 @@ export const ACCOUNT_STYLES = `
   background: var(--background-secondary);
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
-}
-
-.migration-path {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 0;
-}
-
-.migration-path .path-label {
-  font-weight: 500;
-  color: var(--text-muted);
-  min-width: 50px;
-}
-
-.migration-path .path-text {
-  background: var(--background-modifier-form-field);
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-family: var(--font-monospace);
-  font-size: 0.9rem;
-  color: var(--text-normal);
-  flex: 1;
-}
-
-.migration-arrow {
-  color: var(--text-muted);
-  align-self: center;
-  margin: 4px 0;
 }
 
 .impact-analysis {
@@ -497,12 +391,6 @@ export const ACCOUNT_STYLES = `
   font-size: 1rem;
   font-weight: 600;
   color: var(--text-normal);
-}
-
-.impact-details {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
 }
 
 .impact-item {
@@ -525,139 +413,7 @@ export const ACCOUNT_STYLES = `
   line-height: 1.4;
 }
 
-.backup-notice {
-  margin-bottom: 24px;
-  padding: 16px;
-  background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  border-left: 4px solid var(--interactive-accent);
-}
 
-.backup-notice-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 8px;
-}
-
-.backup-notice-header svg {
-  color: var(--text-accent);
-}
-
-.backup-notice-header h5 {
-  margin: 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-normal);
-}
-
-.backup-notice p {
-  margin: 0 0 8px 0;
-  color: var(--text-normal);
-  line-height: 1.5;
-}
-
-.backup-details {
-  margin-top: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--background-modifier-border);
-}
-
-.backup-details span {
-  font-size: 0.9rem;
-  color: var(--text-muted);
-}
-
-.backup-details code {
-  background: var(--background-modifier-form-field);
-  padding: 2px 4px;
-  border-radius: 3px;
-  font-family: var(--font-monospace);
-  font-size: 0.85rem;
-}
-
-.safety-information {
-  margin-bottom: 24px;
-}
-
-.safety-information h5 {
-  margin: 0 0 8px 0;
-  font-size: 0.95rem;
-  font-weight: 600;
-  color: var(--text-normal);
-}
-
-.safety-information ul {
-  margin: 0;
-  padding-left: 20px;
-  list-style: none;
-}
-
-.safety-information li {
-  margin-bottom: 4px;
-  color: var(--text-normal);
-  line-height: 1.4;
-  position: relative;
-  padding-left: 4px;
-}
-
-.safety-information li::before {
-  content: '✓';
-  color: var(--text-success);
-  font-weight: 600;
-  position: absolute;
-  left: -16px;
-}
-
-.final-warning {
-  padding: 16px;
-  background: rgba(var(--color-red-rgb), 0.1);
-  border: 1px solid rgba(var(--color-red-rgb), 0.2);
-  border-radius: 6px;
-  margin-bottom: 0;
-}
-
-.final-warning p {
-  margin: 0;
-  color: var(--text-normal);
-  line-height: 1.5;
-}
-
-
-.migration-progress-bar {
-  width: 100%;
-  height: 8px;
-  background: var(--background-modifier-border, #e0e0e0);
-  border-radius: 4px;
-  overflow: hidden;
-  margin-bottom: 12px;
-}
-
-.migration-progress-fill {
-  height: 100%;
-  background: var(--interactive-accent, #007acc);
-  color: var(--text-on-accent);
-  transition: width 0.3s ease;
-  border-radius: 4px;
-  
-}
-
-
-.migration-progress-section {
-  background: var(--background-primary);
-  padding: 20px;
-  border-radius: 6px;
-  margin-bottom: 16px;
-  border: 1px solid var(--background-modifier-border);
-}
-
-.migration-progress-section h4 {
-  margin: 0 0 16px 0;
-  color: var(--text-normal);
-  font-weight: 600;
-  font-size: 14px;
-}
 
 .progress-container {
   margin-bottom: 16px;
@@ -672,70 +428,7 @@ export const ACCOUNT_STYLES = `
   margin-bottom: 12px;
 }
 
-.progress-fill {
-  height: 100%;
-  background: var(--interactive-accent, #007acc);
-  color: var(--text-on-accent);
-  transition: width 0.3s ease;
-  border-radius: 4px;
-  
-}
 
-.progress-info {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-}
-
-.progress-phase {
-  font-weight: 600;
-  color: var(--text-normal);
-  font-size: 13px;
-  text-transform: capitalize;
-}
-
-.progress-message {
-  color: var(--text-muted);
-  font-size: 12px;
-  flex: 1;
-  text-align: center;
-  margin: 0 16px;
-}
-
-.progress-percentage {
-  font-weight: 600;
-  color: var(--text-normal);
-  font-size: 13px;
-}
-
-.detailed-progress {
-  background: var(--background-secondary);
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 11px;
-  color: var(--text-muted);
-  margin-top: 8px;
-}
-
-
-.migration-result-section {
-  background: var(--background-primary);
-  padding: 20px;
-  border-radius: 6px;
-  margin-bottom: 16px;
-  border: 1px solid var(--background-modifier-border);
-}
-
-.migration-result-section.success {
-  border-color: var(--text-success);
-  background: var(--background-primary);
-}
-
-.migration-result-section.error {
-  border-color: var(--text-error);
-  background: var(--background-primary);
-}
 
 .result-header {
   display: flex;
@@ -744,66 +437,6 @@ export const ACCOUNT_STYLES = `
   margin-bottom: 16px;
   font-weight: 600;
   font-size: 14px;
-}
-
-.migration-result-section.success .result-header {
-  color: var(--text-success);
-}
-
-.migration-result-section.error .result-header {
-  color: var(--text-error);
-}
-
-.result-details {
-  color: var(--text-normal);
-}
-
-.result-details p {
-  margin: 0 0 12px 0;
-  line-height: 1.5;
-}
-
-.migration-stats {
-  display: flex;
-  gap: 24px;
-  margin: 12px 0;
-  padding: 12px;
-  background: var(--background-secondary);
-  border-radius: 4px;
-  font-size: 13px;
-}
-
-.migration-stats span {
-  color: var(--text-muted);
-}
-
-.backup-info {
-  margin-top: 16px;
-  padding: 12px;
-  background: var(--background-secondary);
-  border-radius: 4px;
-  border-left: 3px solid var(--interactive-accent);
-}
-
-.backup-info p {
-  margin: 0 0 8px 0;
-  color: var(--text-normal);
-  font-size: 13px;
-}
-
-.backup-info code {
-  background: var(--background-primary);
-  padding: 2px 6px;
-  border-radius: 3px;
-  font-family: var(--font-monospace);
-  color: var(--text-accent);
-  font-size: 12px;
-}
-
-.backup-cleanup-note {
-  color: var(--text-muted) !important;
-  font-size: 12px !important;
-  margin-top: 8px !important;
 }
 
 .error-message {
@@ -816,61 +449,8 @@ export const ACCOUNT_STYLES = `
   margin: 8px 0;
 }
 
-.rollback-info {
-  color: var(--text-accent) !important;
-  background: var(--background-secondary);
-  padding: 8px 12px;
-  border-radius: 4px;
-  font-size: 12px;
-  margin: 8px 0;
-}
-
-.close-migration-button {
-  min-width: 80px;
-  padding: 8px 16px;
-}
-
-.migration-modal-actions {
-  display: flex;
-  gap: 12px;
-  justify-content: flex-end;
-  padding: 20px 24px;
-  background: var(--background-secondary);
-  border-top: 1px solid var(--background-modifier-border);
-  border-radius: 0 0 8px 8px;
-}
-
-.cancel-migration-button {
-  min-width: 100px;
-  padding: 8px 16px;
-}
-
-.confirm-migration-button {
-  min-width: 120px;
-  padding: 8px 16px;
-}
-
-.migration-danger-button {
-  background-color: var(--text-error) !important;
-  border-color: var(--text-error) !important;
-  color: white !important;
-}
-
-.migration-danger-button:hover {
-  background-color: var(--background-modifier-error-hover) !important;
-  border-color: var(--background-modifier-error-hover) !important;
-}
-
 
 @media (max-width: 600px) {
-  .folder-migration-modal {
-    margin: 10px;
-    max-width: calc(100vw - 20px);
-  }
-
-  .migration-content {
-    padding: 16px;
-  }
 
   .migration-warning-header {
     padding: 16px;
@@ -878,22 +458,6 @@ export const ACCOUNT_STYLES = `
 
   .migration-path-container {
     padding: 12px;
-  }
-
-  .migration-path .path-text {
-    font-size: 0.8rem;
-    word-break: break-all;
-  }
-
-  .migration-modal-actions {
-    flex-direction: column;
-    gap: 8px;
-    padding: 16px;
-  }
-
-  .cancel-migration-button,
-  .confirm-migration-button {
-    width: 100%;
   }
 }
 
@@ -1098,40 +662,10 @@ export const ACCOUNT_STYLES = `
   margin: 0;
 }
 
-.account-type-order-list {
-  background-color: transparent;
-  border: 0;
-  border-radius: 0;
-  padding: 0;
-}
-
 .order-list {
   display: flex;
   flex-direction: column;
   gap: 4px;
-}
-
-.order-list-item {
-  display: flex;
-  align-items: center;
-  padding: 8px 10px;
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 3px;
-  transition: background-color 0.15s ease;
-}
-
-.order-list-item:hover {
-  background-color: var(--background-modifier-hover);
-}
-
-.order-list-item .type-name {
-  font-weight: 500;
-  color: var(--text-normal);
-  flex: 1;
-  font-size: 13px;
-  text-align: left;
-  margin-right: 12px;
 }
 
 .order-controls {
@@ -1418,7 +952,6 @@ export const ACCOUNT_STYLES = `
   justify-content: center;
   gap: 2px;
 }
-
 
 .journalit-account-dashboard {
   --account-dashboard-content-gutter: 16px;
@@ -1871,7 +1404,6 @@ export const ACCOUNT_STYLES = `
   background: var(--journalit-detail-card-surface);
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
@@ -1957,7 +1489,7 @@ export const ACCOUNT_STYLES = `
   .metric-value.weight-percent {
   font-size: 1rem;
   font-weight: 700;
-  color: var(--color-info);
+  color: var(--color-blue);
 }
 
 
@@ -2535,7 +2067,6 @@ export const ACCOUNT_STYLES = `
   padding-top: 16px;
 }
 
-
 .journalit-account-dashboard .account-section-content {
   padding: 0;
 }
@@ -2991,12 +2522,6 @@ export const ACCOUNT_STYLES = `
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-
-
-
-
-
-
 
 .journalit-account-dashboard .journalit-account-phase-ribbon-segment.is-passed {
   --journalit-phase-ribbon-background: var(--background-secondary-alt);

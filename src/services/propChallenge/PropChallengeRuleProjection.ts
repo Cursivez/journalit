@@ -5,11 +5,15 @@ import {
   ProfitTargetType,
   type AccountData,
 } from '../account/types';
-import { getCurrentPropChallengePhase } from './PropChallengeConfig';
+import {
+  getCurrentPropChallengePhase,
+  resolvePhaseProfitTarget,
+} from './PropChallengeConfig';
 import { policyAt } from './PropChallengePolicyHistory';
+import { isAuthoritativeDrawdown } from './PropChallengeRuleReview';
 import type { PropChallengeConfig } from './types';
 
-export type PropChallengeDrawdownMode =
+type PropChallengeDrawdownMode =
   | 'static'
   | 'eod_trailing'
   | 'intraday_trailing';
@@ -29,6 +33,8 @@ export interface ProjectedPropChallengeRules {
   };
   
   profitTargetValue?: number;
+  
+  profitTargetNeedsBalance?: { percent: number };
 }
 
 
@@ -47,7 +53,7 @@ export function projectCurrentPropChallengeRules(
 
   const policy = policyAt(phase, now);
   const drawdownRule = policy.rules.find(
-    (rule) => rule.enabled && rule.kind === 'drawdown'
+    (rule) => rule.enabled && isAuthoritativeDrawdown(rule)
   );
   const drawdown =
     drawdownRule?.kind === 'drawdown' && drawdownRule.amount > 0
@@ -66,6 +72,10 @@ export function projectCurrentPropChallengeRules(
       ? profitTargetRule
       : undefined;
 
+  const profitTargetAmount = profitTarget
+    ? resolvePhaseProfitTarget(profitTarget, phase.startingBalance)
+    : undefined;
+
   const startMs = parseTimestamp(phase.startedAt);
   const endMs = parseTimestamp(phase.completedAt) ?? now.getTime();
 
@@ -75,12 +85,13 @@ export function projectCurrentPropChallengeRules(
     startMs,
     endMs,
     drawdown,
-    profitTargetValue: profitTarget
-      ? profitTarget.targetType === 'percentage'
-        ? phase.startingBalance +
-          (phase.startingBalance * profitTarget.amount) / 100
-        : phase.startingBalance + profitTarget.amount
-      : undefined,
+    profitTargetValue:
+      profitTargetAmount === undefined
+        ? undefined
+        : phase.startingBalance + profitTargetAmount,
+    ...(profitTarget && profitTargetAmount === undefined
+      ? { profitTargetNeedsBalance: { percent: profitTarget.amount } }
+      : {}),
   };
 }
 
@@ -100,27 +111,47 @@ export function applyPropChallengeRuleProjection(
     return account;
   }
 
+  
+  
+  
+  const needsBalance = projection.profitTargetNeedsBalance;
+  if (needsBalance) {
+    return {
+      ...projectedDrawdown(account, projection.drawdown),
+      hasProfitTarget: true,
+      profitTarget: needsBalance.percent,
+      profitTargetType: ProfitTargetType.PERCENTAGE,
+    };
+  }
+
   const profitTarget =
     projection.profitTargetValue === undefined
       ? undefined
       : projection.profitTargetValue - projection.startingBalance;
 
   return {
-    ...account,
-    drawdownType: projection.drawdown
-      ? projection.drawdown.mode === 'static'
-        ? DrawdownType.FIXED
-        : DrawdownType.EOD_TRAILING
-      : account.drawdownType,
-    drawdownAmount: projection.drawdown
-      ? projection.drawdown.amount
-      : account.drawdownAmount,
+    ...projectedDrawdown(account, projection.drawdown),
     hasProfitTarget: profitTarget !== undefined || account.hasProfitTarget,
     profitTarget: profitTarget ?? account.profitTarget,
     profitTargetType:
       profitTarget === undefined
         ? account.profitTargetType
         : ProfitTargetType.ABSOLUTE,
+  };
+}
+
+function projectedDrawdown(
+  account: AccountData,
+  drawdown: ProjectedPropChallengeRules['drawdown']
+): AccountData {
+  if (!drawdown) return account;
+  return {
+    ...account,
+    drawdownType:
+      drawdown.mode === 'static'
+        ? DrawdownType.FIXED
+        : DrawdownType.EOD_TRAILING,
+    drawdownAmount: drawdown.amount,
   };
 }
 

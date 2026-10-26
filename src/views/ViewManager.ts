@@ -27,6 +27,7 @@ import {
   TEMPLATE_BUILDER_VIEW_TYPE,
   TemplateBuilderView,
 } from './TemplateBuilderView';
+import type { TemplateBuilderSelectionRequest } from './TemplateBuilderView';
 import { NAVIGATION_VIEW_TYPE, NavigationView } from './NavigationView';
 import { SETUPS_VIEW_TYPE, SetupsView } from './SetupsView';
 import {
@@ -38,7 +39,7 @@ import {
   EconomicCalendarView,
 } from './EconomicCalendarView';
 import { SESSION_MODE_VIEW_TYPE, SessionModeView } from './SessionModeView';
-import { TradeFormModal } from '../components/forms/trade/TradeFormModal';
+import { TradeFormDrawer } from '../components/forms/trade/TradeFormDrawer';
 import {
   TradeFormData,
   TradeFormOpenOptions,
@@ -78,7 +79,7 @@ const getHomeLeafMode = (leaf: WorkspaceLeaf): HomeViewMode | null => {
   return mode === 'overview' || mode === 'dashboard' ? mode : null;
 };
 
-export const selectHomeLeafForNavigation = (
+const selectHomeLeafForNavigation = (
   existingLeaves: readonly WorkspaceLeaf[],
   recentLeaf: WorkspaceLeaf | null,
   mode?: HomeViewMode
@@ -147,7 +148,7 @@ function isKeyboardScopeAwareView(
   );
 }
 
-export function setupViewStateMatchesFile(
+function setupViewStateMatchesFile(
   state: SetupsViewState,
   filePath: string
 ): boolean {
@@ -298,15 +299,16 @@ export class ViewManager {
       sourcePath: string,
       newLeaf?: PaneType | boolean,
       openViewState?: OpenViewState
-    ): Promise<void> =>
+    ): Promise<void> => {
       // eslint-disable-next-line @typescript-eslint/no-unsafe-return -- Delegates to the typed setup-link wrapper with the workspace instance receiver.
-      openSetupLinkText.call(
+      return openSetupLinkText.call(
         workspace,
         linktext,
         sourcePath,
         newLeaf,
         openViewState
       );
+    };
 
     this.plugin.register(() => {
       WorkspaceLeaf.prototype.setViewState = originalSetViewState;
@@ -665,7 +667,7 @@ export class ViewManager {
     viewType: string,
     recentView?: { label: string; icon: string },
     focusLeaf: boolean = true
-  ): Promise<boolean> {
+  ): Promise<WorkspaceLeaf | null> {
     const existingLeaves = this.plugin.app.workspace.getLeavesOfType(viewType);
     let functionalLeaf: (typeof existingLeaves)[number] | undefined;
 
@@ -694,10 +696,10 @@ export class ViewManager {
       if (recentView) {
         this.trackRecentView(viewType, recentView.label, recentView.icon);
       }
-      return true;
+      return functionalLeaf;
     }
 
-    return false;
+    return null;
   }
 
   
@@ -720,6 +722,30 @@ export class ViewManager {
         error
       );
     }
+  }
+
+  
+  public async restorePlaceholderLeaves(
+    extraViewTypes: readonly string[] = []
+  ): Promise<void> {
+    const viewTypes = new Set([...this.registeredViews, ...extraViewTypes]);
+    const placeholders: WorkspaceLeaf[] = [];
+    this.plugin.app.workspace.iterateAllLeaves((leaf) => {
+      const viewType = leaf.view.getViewType();
+      if (
+        leaf.isDeferred &&
+        viewTypes.has(viewType) &&
+        leaf.view.getDisplayText() === viewType
+      ) {
+        placeholders.push(leaf);
+      }
+    });
+
+    await Promise.all(
+      placeholders.map((leaf) =>
+        leaf.setViewState({ ...leaf.getViewState(), active: false })
+      )
+    );
   }
 
   public async migrateLegacyDashboardLeaves(): Promise<void> {
@@ -1378,14 +1404,14 @@ export class ViewManager {
     initialData?: Partial<TradeFormData>
   ): Promise<void> {
     
-    const modal = new TradeFormModal({
+    const drawer = new TradeFormDrawer({
       app: this.plugin.app,
       plugin: this.plugin,
       isEditMode: false,
       initialData: initialData || {},
       filePath: '',
     });
-    modal.open();
+    drawer.open();
   }
 
   
@@ -1394,7 +1420,7 @@ export class ViewManager {
     filePath: string,
     openOptions?: TradeFormOpenOptions
   ): Promise<void> {
-    const modal = new TradeFormModal({
+    const drawer = new TradeFormDrawer({
       app: this.plugin.app,
       plugin: this.plugin,
       isEditMode: true,
@@ -1402,7 +1428,7 @@ export class ViewManager {
       filePath: filePath || '',
       openOptions,
     });
-    modal.open();
+    drawer.open();
   }
 
   
@@ -1438,16 +1464,24 @@ export class ViewManager {
   }
 
   
-  public async openTemplateBuilderView(): Promise<void> {
+  public async openTemplateBuilderView(
+    selection?: TemplateBuilderSelectionRequest
+  ): Promise<void> {
     
     await this.registerTemplateBuilderView();
 
-    if (
-      await this.revealExistingFunctionalLeaf(TEMPLATE_BUILDER_VIEW_TYPE, {
+    const existingLeaf = await this.revealExistingFunctionalLeaf(
+      TEMPLATE_BUILDER_VIEW_TYPE,
+      {
         label: t('view.layout-builder'),
         icon: 'lucide-blocks',
-      })
-    ) {
+      }
+    );
+
+    if (existingLeaf) {
+      if (selection) {
+        this.requestTemplateBuilderSelection(existingLeaf, selection);
+      }
       return;
     }
 
@@ -1461,6 +1495,10 @@ export class ViewManager {
         active: true,
       });
 
+      if (selection) {
+        this.requestTemplateBuilderSelection(leaf, selection);
+      }
+
       this.syncGuideContextForLeaf(leaf);
 
       
@@ -1473,6 +1511,18 @@ export class ViewManager {
         'lucide-blocks'
       );
     }
+  }
+
+  
+  private requestTemplateBuilderSelection(
+    leaf: WorkspaceLeaf,
+    selection: TemplateBuilderSelectionRequest
+  ): void {
+    const view = leaf.view;
+    if (!(view instanceof TemplateBuilderView)) {
+      throw new Error('Layout builder selection request could not be applied.');
+    }
+    view.requestSelection(selection);
   }
 
   

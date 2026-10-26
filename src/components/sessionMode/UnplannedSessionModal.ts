@@ -1,9 +1,10 @@
-import { Modal, Notice } from 'obsidian';
+import { Notice } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import { t } from '../../lang/helpers';
+import { JournalitModal } from '../modals/JournalitModal';
 
 
-export class UnplannedSessionModal extends Modal {
+export class UnplannedSessionModal extends JournalitModal {
   private readonly onSubmit: (reason: string) => void;
 
   constructor(plugin: JournalitPlugin, onSubmit: (reason: string) => void) {

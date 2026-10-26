@@ -8,6 +8,7 @@ import { AuthTab } from '../accounts/AuthTab';
 import { TradeSyncTab } from '../integration/TradeSyncTab';
 import { SyncNotificationSettingsSection } from '../general/GeneralTab';
 import { EconomicCalendarSettingsSection } from '../economicCalendar/EconomicCalendarSettingsSection';
+import { AgentAccessSettingsSection } from './AgentAccessSettingsSection';
 
 interface SyncSettingsTabProps {
   plugin: JournalitPlugin;
@@ -16,7 +17,7 @@ interface SyncSettingsTabProps {
   isNativeSubPage?: boolean;
 }
 
-type SyncSettingsSection = 'brokerSync' | 'tradeImport';
+type SyncSettingsSection = 'brokerSync' | 'tradeImport' | 'mcpAccess';
 
 const METATRADER_SOURCE = 'metatrader';
 const TRADE_IMPORT_SOURCE = 'tradeImport';
@@ -98,6 +99,13 @@ export const SyncSettingsTab: React.FC<SyncSettingsTabProps> = ({
               >
                 {t('trade-sync.source.trade-import')}
               </button>
+              <button
+                type="button"
+                className={`journalit-button journalit-settings-tab-button settings-tab-button ${activeSection === 'mcpAccess' ? 'settings-tab-button--active' : ''}`}
+                onClick={() => selectSection('mcpAccess')}
+              >
+                {t('settings.mcp-access.title')}
+              </button>
             </nav>
           )}
 
@@ -114,6 +122,9 @@ export const SyncSettingsTab: React.FC<SyncSettingsTabProps> = ({
           )}
           {activeSection === 'tradeImport' && (
             <TradeSyncTab plugin={plugin} source={TRADE_IMPORT_SOURCE} />
+          )}
+          {activeSection === 'mcpAccess' && (
+            <AgentAccessSettingsSection plugin={plugin} />
           )}
         </>
       )}

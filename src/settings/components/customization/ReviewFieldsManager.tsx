@@ -13,6 +13,7 @@ import { moveItemByDirection } from '../../../utils/reorderUtils';
 import { Edit } from '../../../components/shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
 import { Button } from '../../../components/ui/Button';
+import { FieldsListHeader } from './FieldsListHeader';
 import { Input } from '../../../components/core/Input';
 import { useService } from '../../../hooks/useService';
 import {
@@ -763,29 +764,17 @@ export const ReviewFieldsManager: React.FC<ReviewFieldsManagerProps> = ({
 
       {(fields.length > 0 || groups.length > 0) && (
         <div className="custom-fields-list-panel">
-          <div className="custom-fields-list-header">
-            <div>
-              <div className="custom-fields-list-title">
-                {t('settings.customization.review-fields.title', {
-                  count: String(fields.length),
-                })}
-              </div>
-              <div className="custom-fields-list-description">
-                {t('settings.customization.review-fields.manage-desc')}
-              </div>
-            </div>
-            <div className="custom-fields-list-header-actions">
-              {!editingField && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => void handleAddGroup()}
-                >
-                  {t('settings.customization.review-fields.groups.add-button')}
-                </Button>
-              )}
-            </div>
-          </div>
+          <FieldsListHeader
+            title={t('settings.customization.review-fields.title', {
+              count: String(fields.length),
+            })}
+            description={t('settings.customization.review-fields.manage-desc')}
+            addLabel={t(
+              'settings.customization.review-fields.groups.add-button'
+            )}
+            showAdd={!editingField}
+            onAdd={() => void handleAddGroup()}
+          />
 
           <div className="custom-review-field-groups-list">
             {groupedFieldSections.map(

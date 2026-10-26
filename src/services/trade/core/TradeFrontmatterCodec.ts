@@ -1,10 +1,14 @@
+import { serializeStopLossTargets } from './StopLossTargets';
 import { safeString } from '../../../utils/safeString';
 import { mapCustomFieldsToFrontmatter } from '../../../utils/customFieldPersistence';
-import { deduplicateOptions } from '../../../utils/stringNormalization';
+import {
+  normalizeTradeSelectionForWrite,
+  normalizeTradeTagList,
+} from '../../../utils/tradeTagNormalization';
 import { CustomFieldDefinition } from '../../../types/customFields';
 import { shouldShowTradeDividends } from '../../../components/forms/trade/types';
 import { areSnapshotKeysClaimedByCustomFields } from '../../../utils/unrealizedPnl';
-import { TradeMutationInput } from './types';
+import { TradeMutationInput, TradeNoteKind } from './types';
 import { serializeImageAnnotationsForFrontmatter } from '../../../utils/imageAnnotations';
 import {
   SAMPLE_ENTITY_ID_FRONTMATTER_KEY,
@@ -37,6 +41,8 @@ interface BuildTradeFrontmatterOptions {
   customFieldDefinitions?: CustomFieldDefinition[];
   includeClearedCustomFields?: boolean;
   invalidDateFallback?: 'preserve' | 'now';
+  
+  noteKind?: TradeNoteKind;
 }
 
 export function formatTradeFrontmatterDate(
@@ -125,9 +131,12 @@ export function buildTradeFrontmatter(
   options: BuildTradeFrontmatterOptions
 ): Record<string, unknown> {
   const frontmatterData: Record<string, unknown> = {
-    type: 'trade',
+    type: options.noteKind ?? 'trade',
     tradeStatus: options.tradeStatus,
   };
+  if (options.noteKind === 'backtest-trade') {
+    frontmatterData.isBacktestTrade = true;
+  }
 
   if (data.tradeId) frontmatterData.tradeId = data.tradeId;
   if (data.schemaVersion !== undefined) {
@@ -321,7 +330,12 @@ export function buildTradeFrontmatter(
   if (data.rebate !== undefined) frontmatterData.rebate = data.rebate;
   if (data.riskAmount !== undefined)
     frontmatterData.riskAmount = data.riskAmount;
-  if (data.stopLoss !== undefined) frontmatterData.stopLoss = data.stopLoss;
+  if (data.stopLosses !== undefined) {
+    frontmatterData.stopLosses = serializeStopLossTargets(data.stopLosses);
+    
+    
+    frontmatterData.stopLoss = undefined;
+  }
   if (data.takeProfits !== undefined) {
     const takeProfits = data.takeProfits.filter(
       (target) => target.price !== undefined
@@ -407,15 +421,28 @@ export function buildTradeFrontmatter(
   if (data.accountId) frontmatterData.accountId = data.accountId;
 
   if (data.setup !== undefined) {
-    frontmatterData.setup = data.setup;
+    
+    frontmatterData.setup = normalizeTradeSelectionForWrite(
+      data.setup,
+      'setup'
+    );
   }
-  const normalizedMistakes = normalizeStringList(data.mistake || []);
-  if (normalizedMistakes.length) frontmatterData.mistake = normalizedMistakes;
+  if (data.mistake !== undefined) {
+    const normalizedMistakes = normalizeTradeSelectionForWrite(
+      data.mistake,
+      'mistake'
+    );
+    frontmatterData.mistake = normalizedMistakes.length
+      ? normalizedMistakes
+      : undefined;
+  }
   if (data.account?.length) frontmatterData.account = data.account;
   if (data.lossReview !== undefined)
     frontmatterData.lossReview = data.lossReview;
   if (data.reviewed !== undefined) frontmatterData.reviewed = data.reviewed;
   if (data.reviewedAt) frontmatterData.reviewedAt = data.reviewedAt;
+  if (data.tradeRating !== undefined)
+    frontmatterData.tradeRating = data.tradeRating;
 
   if (data.images !== undefined) {
     frontmatterData.images = data.images.length
@@ -428,7 +455,7 @@ export function buildTradeFrontmatter(
     );
   }
 
-  frontmatterData.tags = normalizeTagList(data.tags || []);
+  frontmatterData.tags = normalizeTradeTagList(data.tags || []);
   frontmatterData.thesis = data.thesis ?? '';
   if (data.mtComment !== undefined) {
     frontmatterData.mtComment = data.mtComment;
@@ -874,33 +901,6 @@ function mergeNonConflictingCustomFields(
     }
     target[key] = value;
   }
-}
-
-function normalizeStringList(values: string[]): string[] {
-  return deduplicateOptions(
-    values.flatMap((value) => {
-      const trimmed = value.trim();
-      return trimmed ? [trimmed] : [];
-    })
-  );
-}
-
-function normalizeTagList(values: string[]): string[] {
-  const normalized: string[] = [];
-  const seen = new Set<string>();
-
-  for (const rawValue of values) {
-    const cleaned = rawValue.trim().replace(/^['"`]+|['"`]+$/g, '');
-    if (!cleaned) continue;
-
-    const dedupeKey = cleaned.toLowerCase();
-    if (seen.has(dedupeKey)) continue;
-
-    seen.add(dedupeKey);
-    normalized.push(cleaned);
-  }
-
-  return normalized;
 }
 
 function normalizeImageList(values: string[]): string[] {

@@ -7,6 +7,8 @@ interface IconButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> 
   className?: string;
   children: React.ReactNode;
   variant?: 'default' | 'toolbar';
+  
+  tooltip?: boolean;
 }
 
 export const IconButton: React.FC<IconButtonProps> = ({
@@ -14,6 +16,7 @@ export const IconButton: React.FC<IconButtonProps> = ({
   className = '',
   children,
   variant = 'default',
+  tooltip = true,
   ...props
 }) => {
   
@@ -31,12 +34,14 @@ export const IconButton: React.FC<IconButtonProps> = ({
   return (
     <button
       className={buttonClasses}
-      aria-label={ariaLabel}
+      
+      aria-label={tooltip ? ariaLabel : undefined}
       type="button"
-      data-tooltip={ariaLabel} 
+      data-tooltip={tooltip ? ariaLabel : undefined} 
       {...props}
     >
       {children}
+      {!tooltip && <span className="journalit-sr-only">{ariaLabel}</span>}
     </button>
   );
 };

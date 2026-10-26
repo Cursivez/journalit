@@ -85,6 +85,15 @@ export class TradeReadModel {
     }
   }
 
+  
+  public resolveCurrentPath(path: string): string {
+    if (this.tradeIdByPath.has(path)) return path;
+    for (const entry of this.entries.values()) {
+      if (entry.aliases.includes(path)) return entry.path;
+    }
+    return path;
+  }
+
   public getTradeIdForPath(path: string): TradeId | null {
     return this.tradeIdByPath.get(path) ?? null;
   }

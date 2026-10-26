@@ -6,7 +6,7 @@ export { DEFAULT_HOME_WIDGETS } from './defaultHomeLayout';
 
 export type HomeWidgetCategory = 'performance' | 'accounts' | 'workflow';
 
-interface HomeWidgetDefinition {
+export interface HomeWidgetDefinition {
   id: string;
   name: string;
   description: string;
@@ -170,6 +170,11 @@ export const AVAILABLE_HOME_WIDGETS: HomeWidgetDefinition[] = [
     defaultSize: { w: 4, h: 3 }, 
   },
 ];
+
+
+export const DIRECT_CONFIGURABLE_HOME_WIDGET_IDS = [
+  'setupLeaderboard',
+] as const;
 
 
 export const getHomeWidgetById = (

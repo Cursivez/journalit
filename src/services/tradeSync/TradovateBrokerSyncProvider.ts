@@ -47,7 +47,11 @@ export class TradovateBrokerSyncProvider implements BrokerSyncProvider {
     } catch (error) {
       
       
-      if (brokerProviderUnavailableReason(error) !== null) {
+      if (
+        brokerProviderUnavailableReason(error, {
+          allowTradovateDisabled: true,
+        }) !== null
+      ) {
         return [];
       }
       throw error;

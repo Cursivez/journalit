@@ -1,12 +1,6 @@
 
 
-import React, {
-  ReactNode,
-  useEffect,
-  useLayoutEffect,
-  useState,
-  useRef,
-} from 'react';
+import React, { ReactNode, useEffect, useState, useRef } from 'react';
 import ReactDOM from 'react-dom';
 import { t } from '../../lang/helpers';
 
@@ -44,36 +38,31 @@ export const FullscreenPortal: React.FC<FullscreenPortalProps> = ({
   const [portalContainer, setPortalContainer] = useState<HTMLElement | null>(
     null
   );
-  const portalElementRef = useRef<HTMLElement | null>(null);
-
-  
-  const isOpenRef = useRef(isOpen);
   const onCloseRef = useRef(onClose);
-
-  useLayoutEffect(() => {
-    isOpenRef.current = isOpen;
-  }, [isOpen]);
+  const anchorRef = useRef<HTMLSpanElement>(null);
 
   useEffect(() => {
     onCloseRef.current = onClose;
   }, [onClose]);
 
   
+  
+  
+  
   useEffect(() => {
-    if (!isOpen) return;
+    
+    const anchor = anchorRef.current;
+    if (!isOpen || !anchor) return;
 
     
-
-    let portalEl = window.activeDocument.getElementById(portalId);
-
-    if (!portalEl) {
-      portalEl = window.activeDocument.body.createDiv();
-      portalEl.id = portalId;
-      portalEl.className = 'journalit-fullscreen-portal-container';
-    }
-
+    
+    
+    const portalDocument = anchor.ownerDocument;
+    const portalEl = portalDocument.body.createDiv({
+      cls: 'journalit-fullscreen-portal-container',
+      attr: { id: portalId },
+    });
     setPortalContainer(portalEl);
-    portalElementRef.current = portalEl;
 
     
     
@@ -89,41 +78,29 @@ export const FullscreenPortal: React.FC<FullscreenPortalProps> = ({
 
     
     
-    const activeWindow = window.activeDocument.defaultView ?? window;
+    const activeWindow = portalDocument.defaultView ?? window;
     activeWindow.addEventListener('keydown', handleKeyDown, true);
 
-    
     return () => {
       activeWindow.removeEventListener('keydown', handleKeyDown, true);
-
       
-      
-      if (!isOpenRef.current && portalEl && portalEl.parentNode) {
-        window.setTimeout(() => {
-          
-          const currentPortal = window.activeDocument.getElementById(portalId);
-          if (
-            currentPortal &&
-            currentPortal.parentNode &&
-            currentPortal.childNodes.length === 0
-          ) {
-            try {
-              currentPortal.parentNode.removeChild(currentPortal);
-            } catch (error) {
-              console.error(
-                `[FullscreenPortal] Error removing portal element ${portalId}:`,
-                error
-              );
-            }
-          }
-        }, 0); 
-      }
+      portalEl.remove();
+      setPortalContainer(null);
     };
   }, [isOpen, portalId]);
 
   
+  const anchor = (
+    <span
+      ref={anchorRef}
+      className="journalit-fullscreen-portal-anchor"
+      hidden
+      aria-hidden="true"
+    />
+  );
+
   if (!isOpen || !portalContainer) {
-    return null;
+    return anchor;
   }
 
   
@@ -132,7 +109,7 @@ export const FullscreenPortal: React.FC<FullscreenPortalProps> = ({
     .join(' ');
 
   
-  return ReactDOM.createPortal(
+  const portal = ReactDOM.createPortal(
     <div
       className={overlayClassName}
       onClick={onClose}
@@ -174,5 +151,12 @@ export const FullscreenPortal: React.FC<FullscreenPortalProps> = ({
       </div>
     </div>,
     portalContainer
+  );
+
+  return (
+    <>
+      {anchor}
+      {portal}
+    </>
   );
 };

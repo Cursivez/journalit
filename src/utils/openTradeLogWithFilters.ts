@@ -32,7 +32,7 @@ export async function openTradeLogWithFilters(
     },
   });
 
-  void plugin.viewManager.openTradeLogView();
+  await plugin.viewManager.openTradeLogView();
   window.setTimeout(() => {
     (window as TradeLogFilterSyncWindow).journalitSyncTradeLogFilters?.();
     eventBus.publish('tradelog:filters-updated');

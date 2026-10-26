@@ -10,12 +10,12 @@ import {
   createBrokerConnectionOperation,
   createBrokerProjectionOperation,
 } from '../../../services/tradeSync/BrokerClientOperations';
-import { useOAuthBrokerSyncPanelModel } from './oauthBrokerSyncPanel';
+import { useOAuthBrokerSyncPanelModel } from './oauthBrokerSyncPanel/useOAuthBrokerSyncPanelModel';
 import type {
   OAuthBrokerSyncCopy,
   OAuthBrokerSyncPanelAdapter,
   OAuthBrokerSyncPanelModel,
-} from './oauthBrokerSyncPanel';
+} from './oauthBrokerSyncPanel/types';
 
 const CTRADER_SYNC_PANEL_COPY: OAuthBrokerSyncCopy = {
   sourceTitle: 'trade-sync.source.ctrader',
@@ -64,6 +64,7 @@ const CTRADER_SYNC_PANEL_COPY: OAuthBrokerSyncCopy = {
   syncPartialConnection: 'trade-sync.ctrader.sync-partial-connection',
   syncCompleteConnection: 'trade-sync.ctrader.sync-complete-connection',
   syncAllPartial: 'trade-sync.ctrader.sync-all-partial',
+  syncAllProviderPartial: 'trade-sync.ctrader.sync-all-provider-partial',
   syncAllComplete: 'trade-sync.ctrader.sync-all-complete',
   docsUrl: 'https://journalit.co/docs/trade-sync-ctrader',
   integrationsUrl:

@@ -8,7 +8,7 @@ import React, {
   useMemo,
   useRef,
 } from 'react';
-import { Notice, type WorkspaceLeaf } from 'obsidian';
+import { Notice, type TFile, type WorkspaceLeaf } from 'obsidian';
 import {
   Check,
   Plus,
@@ -87,7 +87,7 @@ import {
 import { areAccountSelectionsEqual } from '../shared/filters/remapSelectedAccounts';
 import { createFilterExclusions } from '../shared/filters/filterExclusions';
 import { createFilterMatchModes } from '../shared/filters/filterMatchModes';
-import type { TradeChangedPayload } from '../../services/events/types';
+import type { TradeType } from '../../services/tradelog/types';
 import { t, hasTranslation } from '../../lang/helpers';
 import { HomeBackgroundSurface } from './HomeBackgroundSurface';
 import { useLeafActive } from '../../hooks/useLeafActive';
@@ -107,6 +107,30 @@ import {
   markHomeVisited,
   resolveIsFirstHomeVisit,
 } from '../../utils/homeVisitState';
+
+const toSnapshotAccount = (
+  value: unknown
+): HomeAccountTradeSnapshot['account'] => {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is string => typeof entry === 'string');
+  }
+  return undefined;
+};
+
+
+const getMissedTradeAccountSnapshots = (
+  app: JournalitPlugin['app'],
+  missedTradeFiles: TFile[]
+): HomeAccountTradeSnapshot[] =>
+  missedTradeFiles.map((file) => ({
+    path: file.path,
+    type: 'missed-trade',
+    isMissedTrade: true,
+    account: toSnapshotAccount(
+      app.metadataCache.getFileCache(file)?.frontmatter?.account
+    ),
+  }));
 
 const asHomeAccountTradeSnapshots = (
   value: unknown
@@ -618,7 +642,6 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
           },
         },
         activeLayout: 'Default',
-        recentItems: [],
         quickLinksPosition: 'belowWidgets',
       };
       
@@ -776,7 +799,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
   );
 
   const handleTradeTypeFilterChange = useCallback(
-    async (tradeTypes: ('regular' | 'backtest')[]) => {
+    async (tradeTypes: TradeType[]) => {
       const normalizedTradeTypes = normalizeHomeTradeTypes(tradeTypes);
       setSelectedTradeTypes(normalizedTradeTypes);
 
@@ -826,28 +849,33 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     }
   }, [plugin]);
 
-  const resolveMappedAccountName = useCallback(
-    (accountId: string) =>
-      plugin.settings.backendIntegration?.accountMapping?.[accountId],
-    [plugin]
-  );
-
   const getHomeAccountCatalogNames = useCallback(
     async (tradeTypes: string[]): Promise<string[]> => {
-      if (!tradeTypes.includes('regular')) {
+      
+      if (!tradeTypes.includes('regular') && !tradeTypes.includes('missed')) {
         return [];
       }
 
       const accountPageService =
         await plugin.serviceManager.getAccountPageService();
-      const accounts = await accountPageService.getAllEnhancedAccounts([
-        'regular',
-      ]);
+      return accountPageService.getAccountNames(['regular']);
+    },
+    [plugin]
+  );
 
-      return accounts.flatMap((account) => {
-        const accountName = account.name || account.accountName;
-        return accountName ? [accountName] : [];
-      });
+  const loadMissedTradeAccountSnapshots = useCallback(
+    async (tradeTypes: TradeType[]): Promise<HomeAccountTradeSnapshot[]> => {
+      if (!tradeTypes.includes('missed')) {
+        return [];
+      }
+
+      const missedTradeService =
+        await plugin.serviceManager.getMissedTradeService();
+      const missedTradeFiles = await missedTradeService.getMissedTrades(
+        new Date('2000-01-01T00:00:00.000Z'),
+        new Date('2099-12-31T23:59:59.999Z')
+      );
+      return getMissedTradeAccountSnapshots(plugin.app, missedTradeFiles);
     },
     [plugin]
   );
@@ -899,14 +927,16 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
             getHomeAccountCatalogNames(selectedTradeTypes),
           ]);
 
-        const allTrades = asHomeAccountTradeSnapshots(rawAllTrades);
+        const allTrades = [
+          ...asHomeAccountTradeSnapshots(rawAllTrades),
+          ...(selectedTradeTypes.includes('missed')
+            ? getMissedTradeAccountSnapshots(plugin.app, missedTradeFiles)
+            : []),
+        ];
         const nextAccounts = collectAvailableHomeAccounts(
           allTrades,
           selectedTradeTypes,
-          catalogAccountNames,
-          {
-            resolveAccountIdDisplayName: resolveMappedAccountName,
-          }
+          catalogAccountNames
         );
 
         const remappedSelectedAccounts = explicitAllAccountsSelected
@@ -915,10 +945,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
               allTrades,
               selectedAccountsRef.current,
               selectedTradeTypes,
-              nextAccounts,
-              {
-                resolveAccountIdDisplayName: resolveMappedAccountName,
-              }
+              nextAccounts
             );
 
         setAvailableAccounts(nextAccounts);
@@ -948,7 +975,6 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     persistRemappedHomeAccounts,
     plugin,
     selectedTradeTypes,
-    resolveMappedAccountName,
   ]);
 
   const refreshAvailableAccounts = useCallback(async () => {
@@ -959,18 +985,20 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
 
       await ensureHomeTradeDataReady();
 
-      const [rawAllTrades, catalogAccountNames] = await Promise.all([
-        plugin.tradeService.getTradeData({ fresh: false }),
-        getHomeAccountCatalogNames(selectedTradeTypes),
-      ]);
-      const allTrades = asHomeAccountTradeSnapshots(rawAllTrades);
+      const [rawAllTrades, missedTradeSnapshots, catalogAccountNames] =
+        await Promise.all([
+          plugin.tradeService.getTradeData({ fresh: false }),
+          loadMissedTradeAccountSnapshots(selectedTradeTypes),
+          getHomeAccountCatalogNames(selectedTradeTypes),
+        ]);
+      const allTrades = [
+        ...asHomeAccountTradeSnapshots(rawAllTrades),
+        ...missedTradeSnapshots,
+      ];
       const nextAccounts = collectAvailableHomeAccounts(
         allTrades,
         selectedTradeTypes,
-        catalogAccountNames,
-        {
-          resolveAccountIdDisplayName: resolveMappedAccountName,
-        }
+        catalogAccountNames
       );
       const remappedSelectedAccounts = explicitAllAccountsSelected
         ? nextAccounts
@@ -978,10 +1006,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
             allTrades,
             selectedAccountsRef.current,
             selectedTradeTypes,
-            nextAccounts,
-            {
-              resolveAccountIdDisplayName: resolveMappedAccountName,
-            }
+            nextAccounts
           );
 
       setAvailableAccounts(nextAccounts);
@@ -999,25 +1024,11 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     ensureHomeTradeDataReady,
     explicitAllAccountsSelected,
     getHomeAccountCatalogNames,
+    loadMissedTradeAccountSnapshots,
     persistRemappedHomeAccounts,
     plugin,
     selectedTradeTypes,
-    resolveMappedAccountName,
   ]);
-
-  const applyTradeCountDelta = useCallback((delta: number) => {
-    if (!Number.isFinite(delta) || delta === 0) {
-      return;
-    }
-
-    setTradeCount((current) => {
-      if (current === null) {
-        return current;
-      }
-
-      return Math.max(0, current + delta);
-    });
-  }, []);
 
   const refreshTradeCount = useCallback(async () => {
     await runQueuedTradeCountRefresh(
@@ -1050,42 +1061,19 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     );
   }, [bootstrapHomeAuthoritativeData, ensureHomeTradeDataReady, plugin]);
 
-  const handleTradeChanged = useCallback(
-    (payload: TradeChangedPayload) => {
-      if (!payload || tradeCount === null) {
-        void refreshTradeCount();
-        return;
-      }
-
-      if (payload.action === 'created') {
-        applyTradeCountDelta(payload.filePaths?.length ?? 1);
-        return;
-      }
-
-      if (payload.action === 'deleted') {
-        const removedCount = payload.filePaths?.length ?? 1;
-        applyTradeCountDelta(-removedCount);
-        return;
-      }
-
-      if (payload.action === 'batch') {
-        const batchCount = payload.importedCount ?? payload.filePaths?.length;
-        if (batchCount !== undefined) {
-          applyTradeCountDelta(batchCount);
-          return;
-        }
-      }
-
-      void refreshTradeCount();
-    },
-    [applyTradeCountDelta, refreshTradeCount, tradeCount]
-  );
-
-  useEventBus('trade:changed', handleTradeChanged);
-  useEventBus('trade:changed', () => {
+  
+  
+  
+  useEventBus('trade-data:changed', () => {
+    void refreshTradeCount();
     void refreshAvailableAccounts();
   });
-  useEventBus('missed-trade:changed', refreshTradeCount);
+  useEventBus('missed-trade-data:changed', refreshTradeCount);
+  useEventBus('missed-trade-data:changed', () => {
+    if (selectedTradeTypes.includes('missed')) {
+      void refreshAvailableAccounts();
+    }
+  });
   useEventBus('backtest-trade:changed', refreshTradeCount);
   useEventBus('backtest-trade:changed', () => {
     void refreshAvailableAccounts();
@@ -1115,18 +1103,20 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
 
         await ensureHomeTradeDataReady();
 
-        const [rawAllTrades, catalogAccountNames] = await Promise.all([
-          plugin.tradeService.getTradeData({ fresh: false }),
-          getHomeAccountCatalogNames(selectedTradeTypes),
-        ]);
-        const allTrades = asHomeAccountTradeSnapshots(rawAllTrades);
+        const [rawAllTrades, missedTradeSnapshots, catalogAccountNames] =
+          await Promise.all([
+            plugin.tradeService.getTradeData({ fresh: false }),
+            loadMissedTradeAccountSnapshots(selectedTradeTypes),
+            getHomeAccountCatalogNames(selectedTradeTypes),
+          ]);
+        const allTrades = [
+          ...asHomeAccountTradeSnapshots(rawAllTrades),
+          ...missedTradeSnapshots,
+        ];
         const nextAccounts = collectAvailableHomeAccounts(
           allTrades,
           selectedTradeTypes,
-          catalogAccountNames,
-          {
-            resolveAccountIdDisplayName: resolveMappedAccountName,
-          }
+          catalogAccountNames
         );
         const remappedSelectedAccounts = explicitAllAccountsSelected
           ? nextAccounts
@@ -1134,10 +1124,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
               allTrades,
               selectedAccountsRef.current,
               selectedTradeTypes,
-              nextAccounts,
-              {
-                resolveAccountIdDisplayName: resolveMappedAccountName,
-              }
+              nextAccounts
             );
 
         if (!isCancelled) {
@@ -1170,10 +1157,10 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
     ensureHomeTradeDataReady,
     explicitAllAccountsSelected,
     getHomeAccountCatalogNames,
+    loadMissedTradeAccountSnapshots,
     persistRemappedHomeAccounts,
     plugin,
     selectedTradeTypes,
-    resolveMappedAccountName,
   ]);
 
   useEffect(() => {
@@ -1493,6 +1480,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
       tradeTypes: [...selectedTradeTypes],
       statuses: [],
       reviewStatus: [],
+      ratings: [],
       directions: [],
       tags: [],
       mistakes: [],

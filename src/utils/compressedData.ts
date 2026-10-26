@@ -9,12 +9,14 @@ import { inflateSync, strFromU8 } from 'fflate';
 
 const Z85_ALPHABET =
   '0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ.-:+=^!/*?&;>()[]{}@%$#';
-const Z85_VALUES = new Map(
-  Array.from(Z85_ALPHABET, (char, index) => [char, index])
-);
+
+const Z85_VALUES = new Int8Array(128).fill(-1);
+for (let index = 0; index < Z85_ALPHABET.length; index += 1) {
+  Z85_VALUES[Z85_ALPHABET.charCodeAt(index)] = index;
+}
 
 
-export function z85ToBytes(packed: string): Uint8Array {
+function z85ToBytes(packed: string): Uint8Array {
   const separatorIndex = packed.indexOf(':');
   if (separatorIndex <= 0) {
     throw new Error('Invalid Z85 payload length prefix');
@@ -48,8 +50,9 @@ export function z85ToBytes(packed: string): Uint8Array {
   ) {
     let value = 0;
     for (let index = 0; index < 5; index += 1) {
-      const digit = Z85_VALUES.get(encoded[encodedOffset + index]);
-      if (digit === undefined) {
+      const code = encoded.charCodeAt(encodedOffset + index);
+      const digit = code < 128 ? Z85_VALUES[code] : -1;
+      if (digit < 0) {
         throw new Error('Invalid Z85 payload character');
       }
       value = value * 85 + digit;

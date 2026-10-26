@@ -10,21 +10,18 @@ import {
   saveModalGuideState,
   shouldAutoShowModalGuide,
 } from '../../../guides/modalGuide/modalGuidePersistence';
-import {
-  getModalGuideTargetElement,
-  type ModalGuidePlacement,
-} from '../../../guides/modalGuide/modalGuidePopover';
+import { type ModalGuidePlacement } from '../../../guides/modalGuide/modalGuidePopover';
 import { ModalGuideOverlay } from '../../../guides/modalGuide/ModalGuideOverlay';
 import { findNavigableModalGuideStep } from '../../../guides/modalGuide/modalGuideSteps';
 import { useModalGuideTarget } from '../../../guides/modalGuide/useModalGuideTarget';
 
 const TRADE_FORM_GUIDE_IDENTITY: ModalGuideIdentity = {
   guideId: 'trade-form.main',
-  version: 1,
+  version: 2,
   dataKey: 'tradeFormGuide',
 };
 
-type TradeFormGuideStepId = 'customize-orb' | 'customization-modal' | 'finish';
+type TradeFormGuideStepId = 'customize-orb' | 'customization-page' | 'finish';
 
 interface TradeFormGuideStepDefinition {
   id: TradeFormGuideStepId;
@@ -37,23 +34,27 @@ interface TradeFormGuideStepDefinition {
 }
 
 
-const getGuidePortalTarget = (): Element => {
-  const doc = window.activeDocument;
-  const tradeFormModal = doc.querySelector('.modal.journalit-trade-form-modal');
+const getGuidePortalTarget = (doc: Document): Element => {
+  const tradeFormDrawer = doc.querySelector('.journalit-trade-form-drawer');
 
   
   
   
   
   
-  return tradeFormModal?.closest('.modal-container') ?? doc.body;
+  return tradeFormDrawer ?? doc.body;
 };
 
-interface TradeFormGuideProps {
+interface TradeFormGuideModelOptions {
   plugin: JournalitPlugin;
+  ownerDocument: Document;
+  enabled: boolean;
+  isCustomizing: boolean;
+  onLeaveCustomization: () => Promise<boolean>;
 }
 
-const LAYOUT_MODAL_SELECTOR = '.journalit-trade-form-layout-modal';
+const CUSTOMIZATION_PAGE_SELECTOR =
+  '[data-journalit-guide-target="trade-form.customization-page"]';
 
 const TRADE_FORM_GUIDE_STEPS: TradeFormGuideStepDefinition[] = [
   {
@@ -63,10 +64,10 @@ const TRADE_FORM_GUIDE_STEPS: TradeFormGuideStepDefinition[] = [
     orbOnly: true,
   },
   {
-    id: 'customization-modal',
-    titleKey: 'trade-form.guide.customization-modal.title',
-    descriptionKey: 'trade-form.guide.customization-modal.description',
-    targetSelector: LAYOUT_MODAL_SELECTOR,
+    id: 'customization-page',
+    titleKey: 'trade-form.guide.customization-page.title',
+    descriptionKey: 'trade-form.guide.customization-page.description',
+    targetSelector: CUSTOMIZATION_PAGE_SELECTOR,
     placement: 'right',
     skipIfMissing: true,
   },
@@ -78,26 +79,27 @@ const TRADE_FORM_GUIDE_STEPS: TradeFormGuideStepDefinition[] = [
   },
 ];
 
-const isTargetPresent = (selector: string): boolean =>
-  getModalGuideTargetElement(selector) !== null;
-
-
-
-
-const closeLayoutModal = (): void => {
-  getModalGuideTargetElement(
-    '[data-journalit-guide-target="trade-form.layout-cancel"]'
-  )?.click();
-};
-
-function useTradeFormGuideModel({ plugin }: TradeFormGuideProps) {
+export function useTradeFormGuide({
+  plugin,
+  ownerDocument,
+  enabled,
+  isCustomizing,
+  onLeaveCustomization,
+}: TradeFormGuideModelOptions) {
+  
+  
+  const isTargetPresent = useCallback(
+    (selector: string) =>
+      selector === CUSTOMIZATION_PAGE_SELECTOR ? isCustomizing : true,
+    [isCustomizing]
+  );
   const [isVisible, setIsVisible] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
-  const canAdvanceFromInitiallyOpenLayoutRef = useRef(true);
   const shouldSkipOrbOnUnmountRef = useRef(false);
   const terminalStatePersistedRef = useRef(false);
 
   useEffect(() => {
+    if (!enabled) return;
     let cancelled = false;
     const initialize = async () => {
       const shouldShow = await shouldAutoShowModalGuide(
@@ -113,7 +115,7 @@ function useTradeFormGuideModel({ plugin }: TradeFormGuideProps) {
     return () => {
       cancelled = true;
     };
-  }, [plugin]);
+  }, [plugin, enabled]);
 
   const currentStep = TRADE_FORM_GUIDE_STEPS[stepIndex];
   const isFirstStep =
@@ -149,15 +151,14 @@ function useTradeFormGuideModel({ plugin }: TradeFormGuideProps) {
 
   const overlayState = useModalGuideTarget(
     currentStep.targetSelector,
-    isVisible
+    isVisible,
+    ownerDocument
   );
 
   
   
-  
-  
   const moveToStep = useCallback(
-    (direction: 1 | -1) => {
+    async (direction: 1 | -1) => {
       const next = findNavigableModalGuideStep(
         TRADE_FORM_GUIDE_STEPS,
         stepIndex + direction,
@@ -166,71 +167,17 @@ function useTradeFormGuideModel({ plugin }: TradeFormGuideProps) {
       );
       if (next < 0) return;
       if (TRADE_FORM_GUIDE_STEPS[next].id === 'customize-orb') {
-        closeLayoutModal();
+        if (!(await onLeaveCustomization())) return;
       }
       setStepIndex(next);
     },
-    [stepIndex]
+    [stepIndex, isTargetPresent, onLeaveCustomization]
   );
 
-  useEffect(() => {
-    if (!isVisible || currentStep.id !== 'customize-orb') {
-      return;
-    }
-
-    
-    
-    
-    
-    let wasOpen = isTargetPresent(LAYOUT_MODAL_SELECTOR);
-    if (wasOpen && canAdvanceFromInitiallyOpenLayoutRef.current) {
-      canAdvanceFromInitiallyOpenLayoutRef.current = false;
-      setStepIndex(
-        TRADE_FORM_GUIDE_STEPS.findIndex(
-          (step) => step.id === 'customization-modal'
-        )
-      );
-      return;
-    }
-    canAdvanceFromInitiallyOpenLayoutRef.current = false;
-    const interval = window.setInterval(() => {
-      const isOpen = isTargetPresent(LAYOUT_MODAL_SELECTOR);
-      if (isOpen && !wasOpen) {
-        setStepIndex(
-          TRADE_FORM_GUIDE_STEPS.findIndex(
-            (step) => step.id === 'customization-modal'
-          )
-        );
-      }
-      wasOpen = isOpen;
-    }, 150);
-
-    return () => {
-      window.clearInterval(interval);
-    };
-  }, [currentStep.id, isVisible]);
-
-  useEffect(() => {
-    if (
-      !isVisible ||
-      !currentStep.skipIfMissing ||
-      !overlayState.isWaitingForTarget
-    ) {
-      return;
-    }
-
-    
-    const timeout = window.setTimeout(() => moveToStep(1), 800);
-
-    return () => {
-      window.clearTimeout(timeout);
-    };
-  }, [
-    currentStep.skipIfMissing,
-    isVisible,
-    moveToStep,
-    overlayState.isWaitingForTarget,
-  ]);
+  
+  
+  const customizationOpened = () => setStepIndex(1);
+  const customizationClosed = () => setStepIndex(2);
 
   const finish = useCallback(
     (status: ModalGuideStatus) => {
@@ -247,13 +194,15 @@ function useTradeFormGuideModel({ plugin }: TradeFormGuideProps) {
       finish('completed');
       return;
     }
-    moveToStep(1);
+    void moveToStep(1);
   }, [finish, isLastStep, moveToStep, overlayState.isWaitingForTarget]);
 
-  const handleBack = useCallback(() => moveToStep(-1), [moveToStep]);
+  const handleBack = useCallback(() => {
+    void moveToStep(-1);
+  }, [moveToStep]);
 
   const handleSkip = useCallback(() => {
-    closeLayoutModal();
+    
     finish('skipped');
   }, [finish]);
 
@@ -268,6 +217,8 @@ function useTradeFormGuideModel({ plugin }: TradeFormGuideProps) {
     handlePrimaryClick,
     handleBack,
     handleSkip,
+    customizationOpened,
+    customizationClosed,
   };
 }
 
@@ -280,6 +231,11 @@ const getVisibleGuideStepIndex = (stepIndex: number): number => {
     (step) => !step.orbOnly
   ).length;
 };
+
+interface TradeFormGuideProps {
+  ownerDocument: Document;
+  model: ReturnType<typeof useTradeFormGuide>;
+}
 
 export const TradeFormGuide: React.FC<TradeFormGuideProps> = (props) => {
   const titleId = useId();
@@ -294,7 +250,7 @@ export const TradeFormGuide: React.FC<TradeFormGuideProps> = (props) => {
     handlePrimaryClick,
     handleBack,
     handleSkip,
-  } = useTradeFormGuideModel(props);
+  } = props.model;
 
   if (!isVisible) return null;
 
@@ -316,7 +272,7 @@ export const TradeFormGuide: React.FC<TradeFormGuideProps> = (props) => {
           />
         )}
       </div>,
-      getGuidePortalTarget()
+      getGuidePortalTarget(props.ownerDocument)
     );
   }
 
@@ -337,7 +293,7 @@ export const TradeFormGuide: React.FC<TradeFormGuideProps> = (props) => {
       onPrimary={handlePrimaryClick}
       onBack={handleBack}
       onSkip={handleSkip}
-      portalTarget={getGuidePortalTarget()}
+      portalTarget={getGuidePortalTarget(props.ownerDocument)}
     />
   );
 };

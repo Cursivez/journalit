@@ -13,12 +13,12 @@ import {
   AccountTransaction,
   ManualDrawdownSnapshot,
   TransactionType,
-  ProfitTargetType,
   DrawdownType,
 } from '../../../services/account/types';
 import { hasLiveBalanceAdjustment } from '../../../services/account/liveBalanceAdjustment';
 import type { AccountTradeData } from '../../../services/accountPage/types';
 import { propChallengePhaseBalanceTimeline } from '../../../services/propChallenge/PropChallengeRuleEngine';
+import { resolveProfitTargetAmount } from '../../../services/account/accountDefinitionRules';
 
 function buildPhaseBalanceChartData(
   account: AccountData,
@@ -561,16 +561,21 @@ export const calculateBalanceChartParams = (
 
   
   
+  
+  
   const overlayProfitTargetValue = propChallengeOverlay?.profitTargetValue;
-  const hasAccountProfitTarget =
-    account.hasProfitTarget && account.profitTarget > 0;
+  const accountProfitTargetAmount =
+    propChallengeOverlay?.profitTargetNeedsBalance
+      ? undefined
+      : resolveProfitTargetAmount(account);
 
   if (isBalanceMasked) {
     return {
       domain: [0, 2] as [number, number],
       ticks: [1],
       profitTargetValue:
-        overlayProfitTargetValue !== undefined || hasAccountProfitTarget
+        overlayProfitTargetValue !== undefined ||
+        accountProfitTargetAmount !== undefined
           ? 1
           : undefined,
       showZeroLine: false,
@@ -587,12 +592,9 @@ export const calculateBalanceChartParams = (
   
   const profitTargetValue =
     overlayProfitTargetValue ??
-    (hasAccountProfitTarget
-      ? account.profitTargetType === ProfitTargetType.PERCENTAGE
-        ? account.initialBalance +
-          (account.initialBalance * account.profitTarget) / 100
-        : account.initialBalance + account.profitTarget
-      : undefined);
+    (accountProfitTargetAmount === undefined
+      ? undefined
+      : account.initialBalance + accountProfitTargetAmount);
 
   
   if (profitTargetValue !== undefined) {

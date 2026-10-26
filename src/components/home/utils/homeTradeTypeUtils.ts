@@ -10,8 +10,6 @@ import {
   normalizeTradeAccountIdentity,
 } from '../../../services/trade/core/TradeAccountIdentity';
 
-type HomeTradeType = Extract<TradeType, 'regular' | 'backtest'>;
-
 interface HomeFilterDefaults {
   period: Exclude<HomePeriod, 'custom'>;
   tradeTypes: readonly TradeType[];
@@ -36,11 +34,6 @@ export interface HomeAccountTradeSnapshot {
   isMissedTrade?: unknown;
   isBacktestTrade?: unknown;
 }
-
-const isHomeSupportedTradeType = (
-  tradeType: string
-): tradeType is HomeTradeType =>
-  tradeType === 'regular' || tradeType === 'backtest';
 
 export const normalizeHomeTradeTypes = (
   tradeTypes?: TradeType[]
@@ -97,10 +90,7 @@ export const normalizeHomeAccountSelection = (
 export const collectAvailableHomeAccounts = (
   trades: HomeAccountTradeSnapshot[],
   selectedTradeTypes: TradeType[],
-  retainedAccounts: string[] = [],
-  options?: {
-    resolveAccountIdDisplayName?: (accountId: string) => string | undefined;
-  }
+  retainedAccounts: string[] = []
 ): string[] => {
   const normalizedTradeTypeSet = new Set(
     normalizeHomeTradeTypes(selectedTradeTypes)
@@ -128,20 +118,11 @@ export const collectAvailableHomeAccounts = (
       isBacktestTrade: trade.isBacktestTrade,
     });
 
-    if (!isHomeSupportedTradeType(tradeType)) {
-      continue;
-    }
-
     if (!normalizedTradeTypeSet.has(tradeType)) {
       continue;
     }
 
-    const identity = normalizeTradeAccountIdentity(
-      { account: trade.account },
-      {
-        resolveAccountIdDisplayName: options?.resolveAccountIdDisplayName,
-      }
-    );
+    const identity = normalizeTradeAccountIdentity({ account: trade.account });
 
     for (const accountName of identity.accountNames) {
       const lookupKey = normalizeAccountLookupKey(accountName);
@@ -159,10 +140,7 @@ export const remapHomeSelectedAccounts = (
   trades: HomeAccountTradeSnapshot[],
   selectedAccounts: string[],
   selectedTradeTypes: TradeType[],
-  availableAccounts: string[],
-  options?: {
-    resolveAccountIdDisplayName?: (accountId: string) => string | undefined;
-  }
+  availableAccounts: string[]
 ): string[] => {
   const normalizedTradeTypeSet = new Set(
     normalizeHomeTradeTypes(selectedTradeTypes)
@@ -186,20 +164,11 @@ export const remapHomeSelectedAccounts = (
       isBacktestTrade: trade.isBacktestTrade,
     });
 
-    if (!isHomeSupportedTradeType(tradeType)) {
-      continue;
-    }
-
     if (!normalizedTradeTypeSet.has(tradeType)) {
       continue;
     }
 
-    const identity = normalizeTradeAccountIdentity(
-      { account: trade.account },
-      {
-        resolveAccountIdDisplayName: options?.resolveAccountIdDisplayName,
-      }
-    );
+    const identity = normalizeTradeAccountIdentity({ account: trade.account });
 
     if (identity.accountNames.length === 0) {
       continue;

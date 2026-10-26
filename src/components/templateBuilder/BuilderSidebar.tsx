@@ -12,6 +12,7 @@ import type { ReviewTemplateService } from '../../services/templates/ReviewTempl
 import { TradeTemplateService } from '../../services/templates/TradeTemplateService';
 import { eventBus } from '../../services/events/EventBus';
 import { DefaultTemplateChangedPayload } from '../../services/events/types';
+import { createReloadReviewTemplatesHandler } from './reviewTemplateEventUtils';
 import { t } from '../../lang/helpers';
 import type { TemplatesSettings } from '../../settings/types';
 import { showDeleteTemplateModal } from './UnsavedChangesModal';
@@ -363,10 +364,14 @@ function useBuilderSidebarModel({
     const loadCurrentTemplates = () => {
       loadAllTemplatesRef.current();
     };
+    const reloadReviewTemplates = createReloadReviewTemplatesHandler({
+      service: templateService,
+      loadTemplates: loadCurrentTemplates,
+    });
 
     const unsubReview = eventBus.subscribe(
       'review-template:changed',
-      loadCurrentTemplates
+      reloadReviewTemplates
     );
     const unsubTrade = eventBus.subscribe(
       'trade-template:changed',
@@ -377,7 +382,7 @@ function useBuilderSidebarModel({
       unsubReview();
       unsubTrade();
     };
-  }, []);
+  }, [templateService]);
 
   
   const toggleSection = (section: string) => {

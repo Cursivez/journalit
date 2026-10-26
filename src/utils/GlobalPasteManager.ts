@@ -361,7 +361,7 @@ export class GlobalPasteManager {
     );
     if (container) {
       const uploadArea = container.querySelector(
-        '.journalit-image-upload, .shared-forecast-image, .trade-form-metadata'
+        '.journalit-image-upload-wrapper, .journalit-image-upload, .shared-forecast-image, .trade-form-metadata'
       );
       return uploadArea?.instanceOf(HTMLElement) ? uploadArea : null;
     }

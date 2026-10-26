@@ -217,7 +217,7 @@ function MultiselectTooltipContent({
   const valueEntries = getTooltipValueEntries(values);
 
   return (
-    <div className="custom-tags-tooltip">
+    <div className="journalit-trade-tags-tooltip">
       <div className="tooltip-title">{label}</div>
       {valueEntries.map((entry) => (
         <div key={entry.key} className="tooltip-item">

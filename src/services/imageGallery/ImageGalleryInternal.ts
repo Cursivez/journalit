@@ -4,10 +4,7 @@ import type {
 } from '../../components/imageGallery/types';
 import type { TradeStatus } from '../tradelog/types';
 
-export const REVIEW_TYPE_TO_SOURCE: Record<
-  ReviewNoteType,
-  ImageGallerySourceType
-> = {
+export const REVIEW_TYPE_TO_SOURCE: Record<ReviewNoteType, ReviewSourceType> = {
   drc: 'drc',
   'weekly-review': 'weekly',
   'monthly-review': 'monthly',
@@ -29,6 +26,10 @@ export type ImageGallerySourceType =
   | 'monthly'
   | 'quarterly'
   | 'yearly';
+export type ReviewSourceType = Exclude<
+  ImageGallerySourceType,
+  'trade' | 'folder'
+>;
 
 export const IMAGE_GALLERY_INDEX_VERSION = 12;
 export const IMAGE_GALLERY_INDEX_TTL_MS = 60 * 60 * 1000;
@@ -191,7 +192,7 @@ export function normalizeImagePath(path: string): string {
   return trimmed;
 }
 
-function normalizeAnnotation(value: unknown): ImageGalleryAnnotation {
+export function normalizeAnnotation(value: unknown): ImageGalleryAnnotation {
   const record = isRecord(value) ? value : {};
 
   return {
