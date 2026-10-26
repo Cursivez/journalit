@@ -12,7 +12,7 @@ export const UPDATE_TOAST_STYLES = `
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-l);
   padding: 16px 52px 16px 18px;
   font-family: var(--font-interface);
   position: relative;

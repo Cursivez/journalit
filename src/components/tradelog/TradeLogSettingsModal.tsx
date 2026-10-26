@@ -1,6 +1,6 @@
 
 
-import { App, Modal, Notice } from 'obsidian';
+import { App, Notice } from 'obsidian';
 import { createRoot, Root } from 'react-dom/client';
 import React, {
   useState,
@@ -36,6 +36,7 @@ import {
 import { eventBus } from '../../services/events/EventBus';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { showConfirmationModal } from '../shared/ConfirmationModal';
+import { JournalitModal } from '../modals/JournalitModal';
 
 interface TradeLogSettingsModalProps {
   app: App;
@@ -45,7 +46,7 @@ interface TradeLogSettingsModalProps {
 }
 
 
-export class TradeLogSettingsModal extends Modal {
+export class TradeLogSettingsModal extends JournalitModal {
   private props: TradeLogSettingsModalProps;
   private container!: HTMLDivElement;
   private root: Root | null = null;
@@ -176,7 +177,7 @@ interface InitialState {
   expandedMode: boolean;
 }
 
-export function parseTradeLogColumnId(value: string): TradeLogColumnId | null {
+function parseTradeLogColumnId(value: string): TradeLogColumnId | null {
   if (value.startsWith('cf:')) {
     const customId: CustomTradeLogColumnId = `cf:${value.slice(3)}`;
     return customId;
@@ -222,6 +223,7 @@ export function parseTradeLogColumnId(value: string): TradeLogColumnId | null {
     case 'mistakes':
     case 'tags':
     case 'reviewed':
+    case 'tradeRating':
     case 'thesis':
     case 'mtComment':
       return value;
@@ -559,10 +561,7 @@ function useTradeLogSettingsModalModel({
         });
 
       
-      eventBus.publish('settings:changed', {
-        component: 'tradeLog',
-        settings: plugin.settings.tradeLog,
-      });
+      eventBus.publish('settings:changed', { component: 'tradeLog' });
 
       new Notice(t('notice.tradelog-saved'));
 

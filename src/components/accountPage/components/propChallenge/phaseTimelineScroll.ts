@@ -1,7 +1,7 @@
 const SELECTED_PHASE_SELECTOR =
   '.journalit-prop-challenge-phase-step.is-selected';
 
-export function revealSelectedPhaseStep(timeline: HTMLElement): void {
+function revealSelectedPhaseStep(timeline: HTMLElement): void {
   const selectedStep = timeline.querySelector<HTMLElement>(
     SELECTED_PHASE_SELECTOR
   );

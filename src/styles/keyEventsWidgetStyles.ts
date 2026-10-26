@@ -68,7 +68,7 @@ export const KEY_EVENTS_WIDGET_STYLES = `
   gap: 4px;
 }
 
-.journalit-key-events .key-events-header--skeleton .skeleton-shimmer {
+.journalit-key-events .key-events-header--skeleton .journalit-skeleton-shimmer {
   grid-column: 2;
 }
 
@@ -178,7 +178,7 @@ export const KEY_EVENTS_WIDGET_STYLES = `
   font-size: 13px;
 }
 
-.journalit-key-events .key-events-header-add-button {
+.journalit-key-events .journalit-key-events-header-add-button {
   display: flex;
   align-items: center;
   gap: 2px;
@@ -191,7 +191,7 @@ export const KEY_EVENTS_WIDGET_STYLES = `
   cursor: pointer;
 }
 
-.journalit-key-events .key-events-header-add-button:hover {
+.journalit-key-events .journalit-key-events-header-add-button:hover {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
@@ -373,7 +373,7 @@ export const KEY_EVENTS_WIDGET_STYLES = `
   gap: 8px;
 }
 
-.journalit-key-events .key-events-form-actions .key-events-add-button {
+.journalit-key-events .key-events-form-actions .journalit-key-events-add-button {
   margin-left: auto;
 }
 
@@ -474,7 +474,7 @@ export const KEY_EVENTS_WIDGET_STYLES = `
   resize: vertical;
 }
 
-.journalit-key-events .key-events-add-button {
+.journalit-key-events .journalit-key-events-add-button {
   align-self: flex-start;
   padding: 8px 16px;
   border-radius: 4px;
@@ -485,12 +485,12 @@ export const KEY_EVENTS_WIDGET_STYLES = `
   cursor: pointer;
 }
 
-.journalit-key-events .key-events-add-button:hover:not(:disabled) {
+.journalit-key-events .journalit-key-events-add-button:hover:not(:disabled) {
   background: var(--interactive-accent-hover);
   color: var(--text-on-accent);
 }
 
-.journalit-key-events .key-events-add-button:disabled {
+.journalit-key-events .journalit-key-events-add-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -654,7 +654,7 @@ export const KEY_EVENTS_WIDGET_STYLES = `
 
 .journalit-key-events .key-events-action-button,
 .journalit-key-events .key-events-remove-button,
-.journalit-key-events .key-events-secondary-button,
+.journalit-key-events .journalit-key-events-secondary-button,
 .journalit-key-events .key-events-save-button {
   display: inline-flex;
   align-items: center;
@@ -677,7 +677,7 @@ export const KEY_EVENTS_WIDGET_STYLES = `
 }
 
 .journalit-key-events .key-events-action-button:hover,
-.journalit-key-events .key-events-secondary-button:hover {
+.journalit-key-events .journalit-key-events-secondary-button:hover {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
@@ -720,5 +720,109 @@ export const KEY_EVENTS_WIDGET_STYLES = `
   color: var(--text-muted);
   line-height: 1.2;
   font-style: italic;
+}
+.journalit-key-events .key-events-day-picker {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 6px;
+}
+
+.journalit-key-events .journalit-key-events-day-picker__tile {
+  display: flex;
+  flex: 1 1 0;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 0;
+  height: auto;
+  padding: 6px 4px 7px;
+  border: 1px solid var(--background-modifier-border);
+  border-radius: 6px;
+  background: transparent;
+  box-shadow: none;
+  font-style: normal;
+  cursor: pointer;
+}
+
+.journalit-key-events .journalit-key-events-day-picker__tile:hover:not(:disabled) {
+  background: var(--background-modifier-hover);
+}
+
+.journalit-key-events .journalit-key-events-day-picker__tile.is-selected {
+  border-color: var(--interactive-accent);
+  background: color-mix(in srgb, var(--interactive-accent) 10%, transparent);
+}
+
+.journalit-key-events .journalit-key-events-day-picker__tile:disabled {
+  cursor: default;
+  opacity: 0.5;
+}
+
+.journalit-key-events .key-events-day-picker__weekday {
+  color: var(--text-muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+
+.journalit-key-events .journalit-key-events-day-picker__tile.is-past .key-events-day-picker__weekday {
+  color: var(--text-faint);
+}
+
+.journalit-key-events .journalit-key-events-day-picker__tile.is-today .key-events-day-picker__weekday {
+  color: var(--text-accent);
+}
+
+.journalit-key-events .key-events-day-picker__date {
+  color: var(--text-faint);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+
+.journalit-key-events .key-events-day-picker__dots {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 3px;
+  min-height: 6px;
+  margin-top: 3px;
+}
+
+.journalit-key-events .key-events-day-picker__dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+}
+
+.journalit-key-events .journalit-key-events-day-picker__tile.is-past .key-events-day-picker__dot {
+  opacity: 0.6;
+}
+
+.journalit-key-events .key-events-day-picker__more {
+  color: var(--text-faint);
+  font-size: 11px;
+  line-height: 6px;
+}
+
+.journalit-key-events .journalit-key-events-show-all-toggle {
+  align-self: flex-end;
+  height: auto;
+  margin-top: 6px;
+  padding: 2px 6px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-faint);
+  font-size: 11px;
+  font-style: normal;
+  cursor: pointer;
+}
+
+.journalit-key-events .journalit-key-events-show-all-toggle:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-muted);
 }
 `;

@@ -1,7 +1,7 @@
 
 
 import React, { useState, useCallback, memo, useLayoutEffect } from 'react';
-import { Notice, Modal, App } from 'obsidian';
+import { Notice, App } from 'obsidian';
 import {
   CheckCircle2,
   Tag,
@@ -15,17 +15,19 @@ import {
 import { ComboBox } from '../core/ComboBox';
 import { createRoot, Root } from 'react-dom/client';
 import JournalitPlugin from '../../main';
-import { OptionType } from '../../services/options';
+import { OptionType, type StoredOptionType } from '../../services/options';
 import { useEventBus } from '../../hooks/useEventBus';
+import { useSetupPicker } from '../../hooks/useSetupNotes';
 import { t, tPlural } from '../../lang/helpers';
 import { showConfirmationModal } from '../shared/ConfirmationModal';
+import { JournalitModal } from '../modals/JournalitModal';
 
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
 
 const readOptions = (
   plugin: JournalitPlugin,
-  optionType: OptionType,
+  optionType: StoredOptionType,
   fallback: string[]
 ): string[] => plugin.optionsService?.getOptions(optionType) ?? fallback;
 
@@ -39,7 +41,6 @@ interface BatchActionToolbarProps {
   onDelete: () => Promise<void>;
   onSelectAll: () => void;
   onClearSelection: () => void;
-  setupOptions: string[];
   tagOptions: string[];
   mistakeOptions: string[];
   app: App;
@@ -48,32 +49,19 @@ interface BatchActionToolbarProps {
 
 
 interface SetupsModalContentProps {
-  setupOptions: string[];
   onConfirm: (selected: string[]) => Promise<void>;
   onClose: () => void;
-  onSaveOption: (option: string) => Promise<void>;
   plugin: JournalitPlugin;
 }
 
 const SetupsModalContent: React.FC<SetupsModalContentProps> = ({
-  setupOptions: initialSetupOptions,
   onConfirm,
   onClose,
-  onSaveOption,
   plugin,
 }) => {
   const [selectedSetups, setSelectedSetups] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [setupOptions, setSetupOptions] = useState(() =>
-    readOptions(plugin, OptionType.SETUP, initialSetupOptions)
-  );
-
-  const loadSetupOptions = useCallback(() => {
-    setSetupOptions(readOptions(plugin, OptionType.SETUP, initialSetupOptions));
-  }, [initialSetupOptions, plugin]);
-
-  
-  useEventBus('options:changed', loadSetupOptions);
+  const setupPicker = useSetupPicker(plugin);
 
   const handleConfirm = async () => {
     if (selectedSetups.length === 0) return;
@@ -92,13 +80,17 @@ const SetupsModalContent: React.FC<SetupsModalContentProps> = ({
       <div className="batch-action-modal-body">
         <ComboBox
           label={t('form.field.setup')}
-          options={setupOptions}
+          options={setupPicker.options}
           value={selectedSetups}
-          onChange={setSelectedSetups}
-          allowCreate={true}
+          onChange={(value) =>
+            setSelectedSetups(
+              setupPicker.filterSelection(selectedSetups, value)
+            )
+          }
+          allowCreate={setupPicker.loaded}
           isMulti={true}
           placeholder={t('tradelog.batch.setups.placeholder')}
-          onSaveOption={onSaveOption}
+          onSaveOption={setupPicker.saveSetup}
         />
       </div>
       <div className="batch-action-modal-buttons">
@@ -122,29 +114,23 @@ const SetupsModalContent: React.FC<SetupsModalContentProps> = ({
 };
 
 
-class AddSetupsModal extends Modal {
-  private setupOptions: string[];
+class AddSetupsModal extends JournalitModal {
   private onConfirm: (setups: string[]) => Promise<void>;
   private onModalClose: () => void;
-  private onSaveOption: (option: string) => Promise<void>;
   private plugin: JournalitPlugin;
   private container: HTMLDivElement;
   private root: Root | null = null;
 
   constructor(
     app: App,
-    setupOptions: string[],
     onConfirm: (setups: string[]) => Promise<void>,
     onCancel: () => void,
-    onSaveOption: (option: string) => Promise<void>,
     plugin: JournalitPlugin
   ) {
     super(app);
     this.titleEl.setText(t('tradelog.batch.setups.title'));
-    this.setupOptions = setupOptions;
     this.onConfirm = onConfirm;
     this.onModalClose = onCancel;
-    this.onSaveOption = onSaveOption;
     this.plugin = plugin;
   }
 
@@ -165,10 +151,8 @@ class AddSetupsModal extends Modal {
     this.root = createRoot(this.container);
     this.root.render(
       <SetupsModalContent
-        setupOptions={this.setupOptions}
         onConfirm={this.onConfirm}
         onClose={() => this.close()}
-        onSaveOption={this.onSaveOption}
         plugin={this.plugin}
       />
     );
@@ -183,41 +167,51 @@ class AddSetupsModal extends Modal {
   }
 }
 
-interface TagsModalContentProps {
-  tagOptions: string[];
+interface OptionsBatchModalContentProps {
+  optionType: typeof OptionType.TAG | typeof OptionType.MISTAKE;
+  initialOptions: string[];
+  label: string;
+  placeholder: string;
+  
+  errorLabel: string;
   onConfirm: (selected: string[]) => Promise<void>;
   onClose: () => void;
   onSaveOption: (option: string) => Promise<void>;
   plugin: JournalitPlugin;
 }
 
-const TagsModalContent: React.FC<TagsModalContentProps> = ({
-  tagOptions: initialTagOptions,
+
+const OptionsBatchModalContent: React.FC<OptionsBatchModalContentProps> = ({
+  optionType,
+  initialOptions,
+  label,
+  placeholder,
+  errorLabel,
   onConfirm,
   onClose,
   onSaveOption,
   plugin,
 }) => {
-  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selected, setSelected] = useState<string[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [tagOptions, setTagOptions] = useState(() =>
-    readOptions(plugin, OptionType.TAG, initialTagOptions)
+  const [options, setOptions] = useState(() =>
+    readOptions(plugin, optionType, initialOptions)
   );
 
-  const loadTagOptions = useCallback(() => {
-    setTagOptions(readOptions(plugin, OptionType.TAG, initialTagOptions));
-  }, [initialTagOptions, plugin]);
+  const loadOptions = useCallback(() => {
+    setOptions(readOptions(plugin, optionType, initialOptions));
+  }, [initialOptions, optionType, plugin]);
 
-  useEventBus('options:changed', loadTagOptions);
+  useEventBus('options:changed', loadOptions);
 
   const handleConfirm = async () => {
-    if (selectedTags.length === 0) return;
+    if (selected.length === 0) return;
     setIsSubmitting(true);
     try {
-      await onConfirm(selectedTags);
+      await onConfirm(selected);
       onClose();
     } catch (error) {
-      console.error('Error adding tags:', error);
+      console.error(errorLabel, error);
       setIsSubmitting(false);
     }
   };
@@ -226,13 +220,13 @@ const TagsModalContent: React.FC<TagsModalContentProps> = ({
     <div className="batch-action-modal-content">
       <div className="batch-action-modal-body">
         <ComboBox
-          label={t('form.field.custom-tags')}
-          options={tagOptions}
-          value={selectedTags}
-          onChange={setSelectedTags}
+          label={label}
+          options={options}
+          value={selected}
+          onChange={setSelected}
           allowCreate={true}
           isMulti={true}
-          placeholder={t('tradelog.batch.tags.placeholder')}
+          placeholder={placeholder}
           onSaveOption={onSaveOption}
         />
       </div>
@@ -242,13 +236,13 @@ const TagsModalContent: React.FC<TagsModalContentProps> = ({
         </button>
         <button
           onClick={() => void handleConfirm()}
-          disabled={isSubmitting || selectedTags.length === 0}
+          disabled={isSubmitting || selected.length === 0}
           className="primary"
         >
           {isSubmitting
             ? t('tradelog.batch.adding')
             : t('tradelog.batch.add-count', {
-                count: selectedTags.length.toString(),
+                count: selected.length.toString(),
               })}
         </button>
       </div>
@@ -256,7 +250,7 @@ const TagsModalContent: React.FC<TagsModalContentProps> = ({
   );
 };
 
-class AddTagsModal extends Modal {
+class AddTagsModal extends JournalitModal {
   private tagOptions: string[];
   private onConfirm: (tags: string[]) => Promise<void>;
   private onModalClose: () => void;
@@ -292,8 +286,12 @@ class AddTagsModal extends Modal {
     });
     this.root = createRoot(this.container);
     this.root.render(
-      <TagsModalContent
-        tagOptions={this.tagOptions}
+      <OptionsBatchModalContent
+        optionType={OptionType.TAG}
+        initialOptions={this.tagOptions}
+        label={t('form.field.tags')}
+        placeholder={t('tradelog.batch.tags.placeholder')}
+        errorLabel="Error adding tags:"
         onConfirm={this.onConfirm}
         onClose={() => this.close()}
         onSaveOption={this.onSaveOption}
@@ -312,84 +310,7 @@ class AddTagsModal extends Modal {
 }
 
 
-interface MistakesModalContentProps {
-  mistakeOptions: string[];
-  onConfirm: (selected: string[]) => Promise<void>;
-  onClose: () => void;
-  onSaveOption: (option: string) => Promise<void>;
-  plugin: JournalitPlugin;
-}
-
-const MistakesModalContent: React.FC<MistakesModalContentProps> = ({
-  mistakeOptions: initialMistakeOptions,
-  onConfirm,
-  onClose,
-  onSaveOption,
-  plugin,
-}) => {
-  const [selectedMistakes, setSelectedMistakes] = useState<string[]>([]);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [mistakeOptions, setMistakeOptions] = useState(() =>
-    readOptions(plugin, OptionType.MISTAKE, initialMistakeOptions)
-  );
-
-  const loadMistakeOptions = useCallback(() => {
-    setMistakeOptions(
-      readOptions(plugin, OptionType.MISTAKE, initialMistakeOptions)
-    );
-  }, [initialMistakeOptions, plugin]);
-
-  
-  useEventBus('options:changed', loadMistakeOptions);
-
-  const handleConfirm = async () => {
-    if (selectedMistakes.length === 0) return;
-    setIsSubmitting(true);
-    try {
-      await onConfirm(selectedMistakes);
-      onClose();
-    } catch (error) {
-      console.error('Error adding mistakes:', error);
-      setIsSubmitting(false);
-    }
-  };
-
-  return (
-    <div className="batch-action-modal-content">
-      <div className="batch-action-modal-body">
-        <ComboBox
-          label={t('form.field.mistake')}
-          options={mistakeOptions}
-          value={selectedMistakes}
-          onChange={setSelectedMistakes}
-          allowCreate={true}
-          isMulti={true}
-          placeholder={t('tradelog.batch.mistakes.placeholder')}
-          onSaveOption={onSaveOption}
-        />
-      </div>
-      <div className="batch-action-modal-buttons">
-        <button onClick={onClose} disabled={isSubmitting}>
-          {t('button.cancel')}
-        </button>
-        <button
-          onClick={() => void handleConfirm()}
-          disabled={isSubmitting || selectedMistakes.length === 0}
-          className="primary"
-        >
-          {isSubmitting
-            ? t('tradelog.batch.adding')
-            : t('tradelog.batch.add-count', {
-                count: selectedMistakes.length.toString(),
-              })}
-        </button>
-      </div>
-    </div>
-  );
-};
-
-
-class AddMistakesModal extends Modal {
+class AddMistakesModal extends JournalitModal {
   private mistakeOptions: string[];
   private onConfirm: (mistakes: string[]) => Promise<void>;
   private onModalClose: () => void;
@@ -431,8 +352,12 @@ class AddMistakesModal extends Modal {
     
     this.root = createRoot(this.container);
     this.root.render(
-      <MistakesModalContent
-        mistakeOptions={this.mistakeOptions}
+      <OptionsBatchModalContent
+        optionType={OptionType.MISTAKE}
+        initialOptions={this.mistakeOptions}
+        label={t('form.field.mistake')}
+        placeholder={t('tradelog.batch.mistakes.placeholder')}
+        errorLabel="Error adding mistakes:"
         onConfirm={this.onConfirm}
         onClose={() => this.close()}
         onSaveOption={this.onSaveOption}
@@ -462,7 +387,6 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
     onDelete,
     onSelectAll,
     onClearSelection,
-    setupOptions,
     tagOptions,
     mistakeOptions,
     app,
@@ -474,27 +398,6 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
 
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [loadingAction, setLoadingAction] = useState<string | null>(null);
-
-    
-    const handleSaveSetup = useCallback(
-      async (option: string) => {
-        try {
-          const optionsService = plugin?.optionsService;
-          if (optionsService) {
-            const added = await optionsService.addOption(
-              OptionType.SETUP,
-              option
-            );
-            if (added) {
-              optionsService.notifyOptionsChanged();
-            }
-          }
-        } catch (error) {
-          console.error('Failed to save setup option:', error);
-        }
-      },
-      [plugin]
-    );
 
     
     const handleSaveMistake = useCallback(
@@ -558,7 +461,6 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
     const handleAddSetups = useCallback(() => {
       const modal = new AddSetupsModal(
         app,
-        setupOptions,
         async (setups: string[]) => {
           try {
             setIsSubmitting(true);
@@ -577,11 +479,10 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
         () => {
           // intentional
         },
-        handleSaveSetup,
         plugin
       );
       modal.open();
-    }, [app, setupOptions, onAddSetups, handleSaveSetup, plugin]);
+    }, [app, onAddSetups, plugin]);
 
     
     const handleAddMistakes = useCallback(() => {

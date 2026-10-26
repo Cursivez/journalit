@@ -8,6 +8,7 @@ import {
   changePersonalProfiles,
   createPersonalProfile,
   personalProfileSelection,
+  type PersonalPropFirmProfile,
 } from '../../../../services/propChallenge/PersonalPropFirmProfiles';
 import { Button } from '../../../ui/Button';
 import { DropdownSelect } from '../../../shared/DropdownSelect';
@@ -21,6 +22,122 @@ interface Props {
   
   showPicker?: boolean;
   onChange: (config: PropChallengeConfig) => void;
+}
+
+
+const isSavedProfileMissing = (
+  existingAccount: boolean,
+  value: PropChallengeConfig,
+  selectedId: string,
+  selected: PersonalPropFirmProfile | undefined
+): boolean =>
+  existingAccount &&
+  value.profileRef?.source === 'personal' &&
+  selectedId !== '' &&
+  !selected;
+
+const appliedPersonalProfileId = (value: PropChallengeConfig): string =>
+  value.profileRef?.source === 'personal' ? value.profileRef.challengeId : '';
+
+function ProfilePickerRow({
+  titleId,
+  profiles,
+  selectedId,
+  onPick,
+  unavailable,
+  applyDisabled,
+  canApply,
+  onApply,
+}: {
+  titleId: string;
+  profiles: readonly PersonalPropFirmProfile[];
+  selectedId: string;
+  onPick: (id: string) => void;
+  unavailable: boolean;
+  applyDisabled: boolean;
+  canApply: boolean;
+  onApply: () => void;
+}) {
+  return (
+    <>
+      <strong className="journalit-prop-profile-picker__title" id={titleId}>
+        {t('account.profiles.library')}
+      </strong>
+      <div className="journalit-personal-profiles__selection">
+        <DropdownSelect
+          value={selectedId}
+          onChange={onPick}
+          ariaLabel={t('account.profiles.library')}
+          ariaLabelledBy={titleId}
+          disabled={unavailable}
+          options={[
+            { value: '', label: t('account.profiles.choose') },
+            ...profiles.map((profile) => ({
+              value: profile.id,
+              label: `${profile.firmName} / ${profile.challenge.name} · v${profile.revision}`,
+            })),
+          ]}
+        />
+        {canApply && (
+          <Button size="small" disabled={applyDisabled} onClick={onApply}>
+            {t('account.prop-challenge.profile.apply')}
+          </Button>
+        )}
+      </div>
+    </>
+  );
+}
+
+function SelectedProfileActions({
+  showPicker,
+  unavailable,
+  onSaveRevision,
+  onDelete,
+}: {
+  showPicker: boolean;
+  unavailable: boolean;
+  onSaveRevision: () => void;
+  onDelete: () => void;
+}) {
+  return (
+    <>
+      <Button size="small" disabled={unavailable} onClick={onSaveRevision}>
+        {t(
+          showPicker
+            ? 'account.profiles.save-revision'
+            : 'account.profiles.update-saved'
+        )}
+      </Button>
+      <Button
+        size="small"
+        className="journalit-personal-profiles__delete"
+        disabled={unavailable}
+        onClick={onDelete}
+      >
+        {showPicker ? t('button.delete') : t('account.profiles.delete-saved')}
+      </Button>
+    </>
+  );
+}
+
+function ProfileLibraryStatus({
+  currencyMismatch,
+  savedNotice,
+  error,
+}: {
+  currencyMismatch: boolean;
+  savedNotice: boolean;
+  error: string;
+}) {
+  return (
+    <>
+      {currencyMismatch && (
+        <p role="status">{t('account.profiles.currency')}</p>
+      )}
+      {savedNotice && <p role="status">{t('account.profiles.saved')}</p>}
+      {error && <p role="alert">{error}</p>}
+    </>
+  );
 }
 
 export function PersonalProfileLibrary({
@@ -37,8 +154,7 @@ export function PersonalProfileLibrary({
   useEventBus('settings:changed', (event) => {
     if (event.section === 'personalPropFirmProfiles') refresh();
   });
-  const appliedId =
-    value.profileRef?.source === 'personal' ? value.profileRef.challengeId : '';
+  const appliedId = appliedPersonalProfileId(value);
   const [pickedId, setPickedId] = useState(appliedId);
   const selectedId = showPicker ? pickedId : appliedId;
   const [busy, setBusy] = useState(false);
@@ -48,6 +164,8 @@ export function PersonalProfileLibrary({
   const profiles = plugin?.settings.personalPropFirmProfiles ?? [];
   const selected = profiles.find((profile) => profile.id === selectedId);
   const unavailable = disabled || busy || !plugin;
+  const currencyMismatch =
+    selected !== undefined && selected.challenge.currency !== currencyCode;
   const execute = async <T,>(
     action: () => Promise<T>
   ): Promise<T | undefined> => {
@@ -102,118 +220,72 @@ export function PersonalProfileLibrary({
       className="journalit-personal-profiles"
       aria-labelledby={showPicker ? titleId : undefined}
     >
-      {existingAccount &&
-        value.profileRef?.source === 'personal' &&
-        selectedId &&
-        !selected && <p role="status">{t('account.profiles.missing')}</p>}
+      {isSavedProfileMissing(existingAccount, value, selectedId, selected) && (
+        <p role="status">{t('account.profiles.missing')}</p>
+      )}
       {showPicker && (
-        <>
-          <strong className="journalit-prop-profile-picker__title" id={titleId}>
-            {t('account.profiles.library')}
-          </strong>
-          <div className="journalit-personal-profiles__selection">
-            <DropdownSelect
-              value={selectedId}
-              onChange={setPickedId}
-              ariaLabel={t('account.profiles.library')}
-              ariaLabelledBy={titleId}
-              disabled={unavailable}
-              options={[
-                { value: '', label: t('account.profiles.choose') },
-                ...profiles.map((profile) => ({
-                  value: profile.id,
-                  label: `${profile.firmName} / ${profile.challenge.name} · v${profile.revision}`,
-                })),
-              ]}
-            />
-            {selected && !existingAccount && (
-              <Button
-                size="small"
-                disabled={
-                  unavailable || selected.challenge.currency !== currencyCode
-                }
-                onClick={() => {
-                  
-                  
-                  
-                  
-                  onChange(
-                    replacePropChallengeWithProfile(
-                      value,
-                      personalProfileSelection(selected)
-                    )
-                  );
-                }}
-              >
-                {t('account.prop-challenge.profile.apply')}
-              </Button>
-            )}
-          </div>
-        </>
+        <ProfilePickerRow
+          titleId={titleId}
+          profiles={profiles}
+          selectedId={selectedId}
+          onPick={setPickedId}
+          unavailable={unavailable}
+          applyDisabled={unavailable || currencyMismatch}
+          canApply={selected !== undefined && !existingAccount}
+          onApply={() =>
+            void execute(async () => {
+              if (!plugin || !selected) return;
+              
+              
+              
+              
+              onChange(
+                replacePropChallengeWithProfile(
+                  value,
+                  personalProfileSelection(selected)
+                )
+              );
+            })
+          }
+        />
       )}
       <div className="journalit-personal-profiles__actions">
-        <Button
-          variant="plain"
-          size="small"
-          disabled={unavailable}
-          onClick={() => save(false)}
-        >
+        <Button size="small" disabled={unavailable} onClick={() => save(false)}>
           {t('account.profiles.save-new')}
         </Button>
         {selected && (
-          <>
-            <Button
-              variant="plain"
-              size="small"
-              disabled={unavailable}
-              onClick={() => save(true)}
-            >
-              {t(
-                showPicker
-                  ? 'account.profiles.save-revision'
-                  : 'account.profiles.update-saved'
-              )}
-            </Button>
-            <Button
-              variant="plain"
-              size="small"
-              className="journalit-personal-profiles__delete"
-              disabled={unavailable}
-              onClick={() =>
-                void execute(async () => {
-                  if (
-                    !plugin ||
-                    !(await showConfirmationModal(plugin.app, {
-                      title: t('button.delete'),
-                      message: t('account.profiles.delete-help'),
-                      confirmLabel: t('button.delete'),
-                      cancelLabel: t('button.cancel'),
-                    }))
-                  )
-                    return false;
-                  await changePersonalProfiles(plugin, (current) =>
-                    current.filter((profile) => profile.id !== selectedId)
-                  );
-                  return true;
-                }).then((done) => {
-                  if (done) setPickedId('');
-                })
-              }
-            >
-              {showPicker
-                ? t('button.delete')
-                : t('account.profiles.delete-saved')}
-            </Button>
-          </>
+          <SelectedProfileActions
+            showPicker={showPicker}
+            unavailable={unavailable}
+            onSaveRevision={() => save(true)}
+            onDelete={() =>
+              void execute(async () => {
+                if (
+                  !plugin ||
+                  !(await showConfirmationModal(plugin.app, {
+                    title: t('button.delete'),
+                    message: t('account.profiles.delete-help'),
+                    confirmLabel: t('button.delete'),
+                    cancelLabel: t('button.cancel'),
+                  }))
+                )
+                  return false;
+                await changePersonalProfiles(plugin, (current) =>
+                  current.filter((profile) => profile.id !== selectedId)
+                );
+                return true;
+              }).then((done) => {
+                if (done) setPickedId('');
+              })
+            }
+          />
         )}
       </div>
-      {selected && selected.challenge.currency !== currencyCode && (
-        <p role="status">{t('account.profiles.currency')}</p>
-      )}
-      {saved && !showPicker && (
-        <p role="status">{t('account.profiles.saved')}</p>
-      )}
-      {error && <p role="alert">{error}</p>}
+      <ProfileLibraryStatus
+        currencyMismatch={currencyMismatch}
+        savedNotice={saved && !showPicker}
+        error={error}
+      />
     </section>
   );
 }

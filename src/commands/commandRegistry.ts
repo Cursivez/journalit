@@ -1,14 +1,15 @@
 
 
-import { Notice } from 'obsidian';
+import { ItemView, Notice } from 'obsidian';
 import type JournalitPlugin from '../main';
-import { TradeFormModal } from '../components/forms/trade/TradeFormModal';
+import { TradeFormDrawer } from '../components/forms/trade/TradeFormDrawer';
 import { PositionSizeCalculatorModal } from '../components/modals/PositionSizeCalculatorModal';
 import { openQuickTradeImportModal } from '../components/csv/QuickTradeImportModal';
 import { t } from '../lang/helpers';
 import { guidesRequireResolution } from '../guides/GuideRegistry';
 import type { GuideDefinition } from '../guides/types';
 import { openLegacyChallengeOnboardingModal } from '../components/onboarding/legacyChallenge/LegacyChallengeOnboardingModal';
+import { runTradeLogExport } from '../components/tradelog/tradeLogExportAction';
 
 
 export class CommandRegistry {
@@ -52,11 +53,11 @@ export class CommandRegistry {
       name: t('command.add-trade'),
       callback: async () => {
         
-        const modal = new TradeFormModal({
+        const drawer = new TradeFormDrawer({
           app: this.plugin.app,
           plugin: this.plugin,
         });
-        modal.open();
+        drawer.open();
       },
     });
 
@@ -267,6 +268,17 @@ export class CommandRegistry {
       },
     });
 
+    
+    this.plugin.addCommand({
+      id: 'export-trades',
+      name: t('tradelog.export.title'),
+      checkCallback: (checking) =>
+        runTradeLogExport(
+          this.plugin.app.workspace.getActiveViewOfType(ItemView),
+          checking
+        ),
+    });
+
     this.plugin.addCommand({
       id: 'open-setups',
       name: t('command.open-setups'),
@@ -281,6 +293,14 @@ export class CommandRegistry {
       name: t('command.open-home'),
       callback: async () => {
         await this.plugin.viewManager.openHomeView('overview');
+      },
+    });
+
+    this.plugin.addCommand({
+      id: 'open-agent-activity',
+      name: t('command.open-agent-activity'),
+      callback: () => {
+        this.plugin.serviceManager.openAgentActivity();
       },
     });
 

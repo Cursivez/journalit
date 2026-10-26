@@ -136,9 +136,7 @@ function parseHeaderDateValue(value: unknown): Date | null {
   return parseLocalDateSafe(toDateInput(value));
 }
 
-export const getHeaderDateValue = (
-  frontmatter: Record<string, unknown>
-): unknown => {
+const getHeaderDateValue = (frontmatter: Record<string, unknown>): unknown => {
   if (frontmatter.type !== 'trade') {
     return frontmatter.date;
   }
@@ -212,6 +210,106 @@ const getFrontmatterNumber = (
 
   return null;
 };
+
+const HeaderSkeleton: React.FC = () => (
+  <div className="journalit-header-content layout-e">
+    <div className="journalit-header-main">
+      
+      <div className="journalit-header-skeleton-title">
+        <SkeletonBox width={200} height={24} borderRadius="4px" />
+        <SkeletonCircle size={20} />
+      </div>
+      
+      <div className="journalit-header-skeleton-links">
+        <SkeletonBox width={50} height={14} borderRadius="4px" />
+        <SkeletonBox width={80} height={14} borderRadius="4px" />
+      </div>
+    </div>
+    <div className="journalit-header-subtle-controls">
+      <SkeletonBox width={28} height={28} borderRadius="4px" />
+      <SkeletonBox width={45} height={14} borderRadius="4px" />
+      <SkeletonBox width={45} height={14} borderRadius="4px" />
+    </div>
+  </div>
+);
+
+const activateOnKey = (e: React.KeyboardEvent<HTMLButtonElement>) => {
+  if (e.key !== 'Enter' && e.key !== ' ') return;
+  e.preventDefault();
+  e.currentTarget.click();
+};
+
+const HeaderTitle: React.FC<{
+  headerData: HeaderData;
+  reviewed: boolean;
+  readOnly: boolean;
+  reviewedRef: ReturnType<typeof useGuideTarget>;
+  onToggleReviewed: () => void;
+}> = ({ headerData, reviewed, readOnly, reviewedRef, onToggleReviewed }) => (
+  <div className="journalit-header-title">
+    {headerData.type === 'drc' ? (
+      <span className="journalit-header-title-text journalit-header-title-text--responsive-date">
+        <span className="journalit-header-date-full">{headerData.title}</span>
+        <span className="journalit-header-date-medium">
+          {formatLocalizedReviewDate(headerData.date, 'medium')}
+        </span>
+        <span className="journalit-header-date-short">
+          {formatLocalizedReviewDate(headerData.date, 'short')}
+        </span>
+      </span>
+    ) : (
+      <span className="journalit-header-title-text">{headerData.title}</span>
+    )}
+    
+    {headerData.type !== 'trade' && (
+      <button
+        ref={reviewedRef}
+        type="button"
+        {...shareCaptureExcludeProps}
+        className={mergeClassNames(
+          'journalit-native-button journalit-native-button--unstyled',
+          `reviewed-indicator ${readOnly ? 'reviewed-indicator--disabled' : ''}`
+        )}
+        disabled={readOnly}
+        aria-disabled={readOnly || undefined}
+        onKeyDown={activateOnKey}
+        aria-label={
+          reviewed
+            ? t('widget.header.aria.mark-not-reviewed')
+            : t('widget.header.aria.mark-reviewed')
+        }
+        onClick={onToggleReviewed}
+      >
+        {reviewed ? (
+          <CheckCircle2 size={20} className="journalit-header-reviewed-icon" />
+        ) : (
+          <Circle size={20} className="journalit-header-unreviewed-icon" />
+        )}
+      </button>
+    )}
+  </div>
+);
+
+const HeaderNavLink: React.FC<{
+  disabled: boolean;
+  label: string;
+  onNavigate: () => void;
+}> = ({ disabled, label, onNavigate }) => (
+  <button
+    type="button"
+    className={mergeClassNames(
+      'journalit-native-button journalit-native-button--unstyled',
+      `nav-link ${disabled ? 'disabled' : ''}`
+    )}
+    aria-disabled={disabled || undefined}
+    onKeyDown={activateOnKey}
+    onClick={() => {
+      if (!disabled) onNavigate();
+    }}
+  >
+    {label}
+  </button>
+);
 
 export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
   ({ filePath, plugin, preview, previewData }) => {
@@ -1050,28 +1148,7 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
     }, [filePath, plugin, readOnly]);
 
     if (loading) {
-      
-      return (
-        <div className="journalit-header-content layout-e">
-          <div className="journalit-header-main">
-            
-            <div className="journalit-header-skeleton-title">
-              <SkeletonBox width={200} height={24} borderRadius="4px" />
-              <SkeletonCircle size={20} />
-            </div>
-            
-            <div className="journalit-header-skeleton-links">
-              <SkeletonBox width={50} height={14} borderRadius="4px" />
-              <SkeletonBox width={80} height={14} borderRadius="4px" />
-            </div>
-          </div>
-          <div className="journalit-header-subtle-controls">
-            <SkeletonBox width={28} height={28} borderRadius="4px" />
-            <SkeletonBox width={45} height={14} borderRadius="4px" />
-            <SkeletonBox width={45} height={14} borderRadius="4px" />
-          </div>
-        </div>
-      );
+      return <HeaderSkeleton />;
     }
 
     if (!headerData) {
@@ -1444,64 +1521,13 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
             <ReviewHeaderGuideResolution />
           )}
         <div className="journalit-header-main">
-          <div className="journalit-header-title">
-            {headerData.type === 'drc' ? (
-              <span className="journalit-header-title-text journalit-header-title-text--responsive-date">
-                <span className="journalit-header-date-full">
-                  {headerData.title}
-                </span>
-                <span className="journalit-header-date-medium">
-                  {formatLocalizedReviewDate(headerData.date, 'medium')}
-                </span>
-                <span className="journalit-header-date-short">
-                  {formatLocalizedReviewDate(headerData.date, 'short')}
-                </span>
-              </span>
-            ) : (
-              <span className="journalit-header-title-text">
-                {headerData.title}
-              </span>
-            )}
-            
-            {headerData.type !== 'trade' && (
-              <button
-                ref={reviewedGuideTarget}
-                type="button"
-                {...shareCaptureExcludeProps}
-                className={mergeClassNames(
-                  'journalit-native-button journalit-native-button--unstyled',
-                  `reviewed-indicator ${
-                    readOnly ? 'reviewed-indicator--disabled' : ''
-                  }`
-                )}
-                disabled={readOnly}
-                aria-disabled={readOnly || undefined}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Enter' && e.key !== ' ') return;
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }}
-                aria-label={
-                  reviewed
-                    ? t('widget.header.aria.mark-not-reviewed')
-                    : t('widget.header.aria.mark-reviewed')
-                }
-                onClick={() => void toggleReviewedStatus()}
-              >
-                {reviewed ? (
-                  <CheckCircle2
-                    size={20}
-                    className="journalit-header-reviewed-icon"
-                  />
-                ) : (
-                  <Circle
-                    size={20}
-                    className="journalit-header-unreviewed-icon"
-                  />
-                )}
-              </button>
-            )}
-          </div>
+          <HeaderTitle
+            headerData={headerData}
+            reviewed={reviewed}
+            readOnly={readOnly}
+            reviewedRef={reviewedGuideTarget}
+            onToggleReviewed={() => void toggleReviewedStatus()}
+          />
           {headerData.subtitle && (
             <div className="journalit-header-subtitle">
               {headerData.subtitle}
@@ -1563,42 +1589,16 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                   <Repeat2 size={16} aria-hidden="true" />
                 </button>
               )}
-              <button
-                type="button"
-                className={mergeClassNames(
-                  'journalit-native-button journalit-native-button--unstyled',
-                  `nav-link ${preview ? 'disabled' : ''}`
-                )}
-                aria-disabled={preview || undefined}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Enter' && e.key !== ' ') return;
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }}
-                onClick={() => {
-                  if (!preview) void handleNavigate(-1);
-                }}
-              >
-                {t('widget.header.nav.prev')}
-              </button>
-              <button
-                type="button"
-                className={mergeClassNames(
-                  'journalit-native-button journalit-native-button--unstyled',
-                  `nav-link ${preview ? 'disabled' : ''}`
-                )}
-                aria-disabled={preview || undefined}
-                onKeyDown={(e) => {
-                  if (e.key !== 'Enter' && e.key !== ' ') return;
-                  e.preventDefault();
-                  e.currentTarget.click();
-                }}
-                onClick={() => {
-                  if (!preview) void handleNavigate(1);
-                }}
-              >
-                {t('widget.header.nav.next')}
-              </button>
+              <HeaderNavLink
+                disabled={Boolean(preview)}
+                label={t('widget.header.nav.prev')}
+                onNavigate={() => void handleNavigate(-1)}
+              />
+              <HeaderNavLink
+                disabled={Boolean(preview)}
+                label={t('widget.header.nav.next')}
+                onNavigate={() => void handleNavigate(1)}
+              />
             </div>
           </div>
         </div>

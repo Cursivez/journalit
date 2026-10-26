@@ -153,9 +153,15 @@ const DashboardGuideCoordinator: React.FC<DashboardGuideCoordinatorProps> = ({
   }, [isActive, refreshTradeCount]);
 
   const refreshEvents = useMemo<
-    Array<'trade:changed' | 'backtest-trade:changed' | 'folder-path:changed'>
+    Array<
+      'trade-data:changed' | 'backtest-trade:changed' | 'folder-path:changed'
+    >
   >(
-    () => ['trade:changed', 'backtest-trade:changed', 'folder-path:changed'],
+    () => [
+      'trade-data:changed',
+      'backtest-trade:changed',
+      'folder-path:changed',
+    ],
     []
   );
 

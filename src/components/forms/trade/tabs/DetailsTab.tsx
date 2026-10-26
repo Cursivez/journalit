@@ -19,6 +19,7 @@ interface DetailsTabProps {
   onDeleteImage: (imagePath: string) => Promise<void>;
   layout: TradeFormLayoutSettings;
   isEditMode: boolean;
+  active: boolean;
 }
 
 export const DetailsTab: React.FC<DetailsTabProps> = ({
@@ -33,16 +34,17 @@ export const DetailsTab: React.FC<DetailsTabProps> = ({
   onDeleteImage,
   layout,
   isEditMode,
+  active,
 }) => {
   const commonFieldOrder = getEditAwareVisibleOrderedTradeFormLayoutItems(
     layout,
-    ['setup', 'mistake', 'customTags', 'thesis'],
+    ['setup', 'mistake', 'tags', 'thesis', 'rating'],
     data,
     isEditMode
   );
   const detailFieldOrder = getEditAwareVisibleOrderedTradeFormLayoutItems(
     layout,
-    ['setup', 'mistake', 'customTags', 'thesis', 'attachments'],
+    ['setup', 'mistake', 'tags', 'thesis', 'rating', 'attachments'],
     data,
     isEditMode
   );
@@ -61,6 +63,7 @@ export const DetailsTab: React.FC<DetailsTabProps> = ({
             onAddImage={onAddImage}
             onDeleteImage={onDeleteImage}
             sourcePath={data.filePath || ''}
+            active={active}
           />
         </div>
       ) : null;

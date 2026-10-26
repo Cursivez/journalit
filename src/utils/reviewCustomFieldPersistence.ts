@@ -9,7 +9,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 type ReviewCustomFieldsFrontmatter = Record<string, unknown>;
 
-export function mapReviewCustomFieldsToFrontmatter(
+function mapReviewCustomFieldsToFrontmatter(
   values: Record<string, unknown> | undefined,
   fieldDefinitions: CustomReviewFieldDefinition[] = [],
   options?: { includeClearedFields?: boolean }
@@ -42,7 +42,7 @@ export function mapReviewCustomFieldsToFrontmatter(
   return mapped;
 }
 
-export function readReviewCustomFieldValuesById(
+function readReviewCustomFieldValuesById(
   reviewCustomFields: unknown,
   fieldDefinitions: CustomReviewFieldDefinition[] = []
 ): Record<string, unknown> {

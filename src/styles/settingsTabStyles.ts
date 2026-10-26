@@ -153,16 +153,8 @@ export const SETTINGS_TAB_STYLES = `
     background: transparent !important;
   }
 
-  .journalit-settings .journalit-session-mode-linked-resources-accordion {
-    margin-top: var(--size-4-4);
-  }
-
   .journalit-settings .journalit-session-mode-linked-resources-settings {
     margin-top: var(--size-4-3);
-  }
-
-  .journalit-settings .journalit-session-mode-linked-resources-accordion .journalit-settings-accordion__content {
-    padding-top: var(--size-2-2);
   }
 
   .journalit-settings .journalit-session-mode-resource-picker {
@@ -266,7 +258,7 @@ export const SETTINGS_TAB_STYLES = `
     margin-top: 0;
     overflow-x: hidden;
     overflow-y: auto;
-    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.32);
+    box-shadow: var(--shadow-s);
   }
 
   .journalit-settings .journalit-session-mode-resource-list {
@@ -464,11 +456,6 @@ export const SETTINGS_TAB_STYLES = `
     white-space: nowrap;
   }
 
-  .journalit-settings .journalit-session-mode-trade-gate-expand__icon {
-    display: inline-flex;
-    color: var(--text-muted);
-  }
-
   .journalit-settings .journalit-session-mode-trade-gate-editor {
     display: flex;
     flex-direction: column;
@@ -510,21 +497,11 @@ export const SETTINGS_TAB_STYLES = `
     gap: var(--size-2-3);
   }
 
-  .journalit-settings .journalit-session-mode-trade-gate-field,
-  .journalit-settings .journalit-session-mode-trade-gate-field--wide {
+  .journalit-settings .journalit-session-mode-trade-gate-field {
     display: flex;
     min-width: 0;
     flex-direction: column;
     gap: var(--size-2-1);
-  }
-
-  .journalit-settings .journalit-session-mode-trade-gate-field--wide {
-    grid-column: 1 / -1;
-  }
-
-  .journalit-settings .journalit-session-mode-trade-gate-textarea {
-    min-height: 64px;
-    resize: vertical;
   }
 
   .journalit-settings .journalit-session-mode-trade-gate-editor select {
@@ -556,7 +533,6 @@ export const SETTINGS_TAB_STYLES = `
     justify-content: flex-start;
     gap: var(--size-2-3);
   }
-
 
   .journalit-settings .journalit-session-mode-trade-gate-flow-canvas {
     position: relative;
@@ -640,7 +616,7 @@ export const SETTINGS_TAB_STYLES = `
     top: var(--trade-gate-flow-edge-label-top);
     display: block;
     width: max-content;
-    max-width: 112px;
+    max-width: var(--trade-gate-flow-edge-label-max-width, 112px);
     height: 22px;
     min-height: 22px;
     padding: 0 var(--size-2-2);
@@ -678,9 +654,7 @@ export const SETTINGS_TAB_STYLES = `
     border-radius: var(--radius-m);
     background: var(--background-secondary);
     filter: none;
-    box-shadow:
-      0 10px 28px rgba(0, 0, 0, 0.22),
-      inset 0 1px 0 rgba(255, 255, 255, 0.03);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.03);
     line-height: 1.2;
     text-align: center;
   }
@@ -797,8 +771,8 @@ export const SETTINGS_TAB_STYLES = `
   .journalit-settings .sync-settings .journalit-settings-subnav {
     display: grid;
     width: 100%;
-    max-width: 420px;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    max-width: 560px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
     margin-right: auto;
     margin-left: auto;
     border-bottom: none;
@@ -809,21 +783,14 @@ export const SETTINGS_TAB_STYLES = `
     margin-right: 0;
   }
 
-  .journalit-settings .journalit-sync-free-account {
-    display: grid;
-    gap: 16px;
-  }
-
-  .journalit-settings .journalit-sync-free-account .journalit-trade-sync-trial {
-    margin-top: 0;
+  @media (max-width: 520px) {
+    .journalit-settings .sync-settings .journalit-settings-subnav {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
   }
 
   .journalit-settings .journal-settings .journalit-settings-subnav {
     border-bottom: none;
-  }
-
-  .journalit-settings .journal-settings .templates-defaults-section {
-    margin-top: 12px;
   }
 
   .journalit-settings .journalit-settings-section h4 {
@@ -1161,7 +1128,6 @@ export const SETTINGS_TAB_STYLES = `
 
   
   .journalit-settings-tab .drc-settings .custom-item-add,
-  .journalit-settings-tab .weekly-review-settings .custom-item-add,
   .journalit-settings-tab .custom-options-settings .custom-item-add {
     display: flex !important;
     flex-direction: row !important;
@@ -1180,8 +1146,6 @@ export const SETTINGS_TAB_STYLES = `
   
   .journalit-settings-tab .drc-settings input[type="text"],
   .journalit-settings-tab .drc-settings .custom-item-add input,
-  .journalit-settings-tab .weekly-review-settings input[type="text"],
-  .journalit-settings-tab .weekly-review-settings .custom-item-add input,
   .journalit-settings-tab .custom-options-settings input[type="text"],
   .journalit-settings-tab .custom-options-settings .custom-item-add input {
     height: 34px !important;
@@ -1202,8 +1166,6 @@ export const SETTINGS_TAB_STYLES = `
 
   .journalit-settings-tab .drc-settings .custom-item-add .input,
   .journalit-settings-tab .drc-settings .custom-item-add input,
-  .journalit-settings-tab .weekly-review-settings .custom-item-add .input,
-  .journalit-settings-tab .weekly-review-settings .custom-item-add input,
   .journalit-settings-tab .custom-options-settings .custom-item-add .input,
   .journalit-settings-tab .custom-options-settings .custom-item-add input {
     width: 100% !important;
@@ -1226,8 +1188,6 @@ export const SETTINGS_TAB_STYLES = `
 
   .journalit-settings-tab .drc-settings .custom-item-add .input:focus,
   .journalit-settings-tab .drc-settings .custom-item-add input:focus,
-  .journalit-settings-tab .weekly-review-settings .custom-item-add .input:focus,
-  .journalit-settings-tab .weekly-review-settings .custom-item-add input:focus,
   .journalit-settings-tab .custom-options-settings .custom-item-add .input:focus,
   .journalit-settings-tab .custom-options-settings .custom-item-add input:focus {
     border-color: var(--interactive-accent) !important;
@@ -1237,9 +1197,7 @@ export const SETTINGS_TAB_STYLES = `
 
   
   body .vertical-tab-header .vertical-tab-content-container .vertical-tab-content .journalit-settings-tab .drc-settings .custom-item-add .inputContainer,
-  body .vertical-tab-header .vertical-tab-content-container .vertical-tab-content .journalit-settings-tab .drc-settings .custom-item-add .inputWrapper,
-  body .vertical-tab-header .vertical-tab-content-container .vertical-tab-content .journalit-settings-tab .weekly-review-settings .custom-item-add .inputContainer,
-  body .vertical-tab-header .vertical-tab-content-container .vertical-tab-content .journalit-settings-tab .weekly-review-settings .custom-item-add .inputWrapper {
+  body .vertical-tab-header .vertical-tab-content-container .vertical-tab-content .journalit-settings-tab .drc-settings .custom-item-add .inputWrapper {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
@@ -1250,17 +1208,14 @@ export const SETTINGS_TAB_STYLES = `
 
   
   body .vertical-tab-header .vertical-tab-content-container .vertical-tab-content .journalit-settings-tab .drc-settings .custom-item-add div,
-  body .vertical-tab-header .vertical-tab-content-container .vertical-tab-content .journalit-settings-tab .drc-settings .custom-item-add .setting-item-info div,
-  body .vertical-tab-header .vertical-tab-content-container .vertical-tab-content .journalit-settings-tab .weekly-review-settings .custom-item-add div,
-  body .vertical-tab-header .vertical-tab-content-container .vertical-tab-content .journalit-settings-tab .weekly-review-settings .custom-item-add .setting-item-info div {
+  body .vertical-tab-header .vertical-tab-content-container .vertical-tab-content .journalit-settings-tab .drc-settings .custom-item-add .setting-item-info div {
     height: auto !important;
     min-height: 34px !important;
     width: 100% !important;
     position: relative !important;
   }
 
-  .journalit-settings-tab .drc-settings .custom-item-add .inputContainer,
-  .journalit-settings-tab .weekly-review-settings .custom-item-add .inputContainer {
+  .journalit-settings-tab .drc-settings .custom-item-add .inputContainer {
     margin: 0 !important;
     padding: 0 !important;
     width: 100% !important;
@@ -1268,8 +1223,7 @@ export const SETTINGS_TAB_STYLES = `
     display: block !important;
   }
 
-  .journalit-settings-tab .drc-settings .custom-item-add .setting-item-info,
-  .journalit-settings-tab .weekly-review-settings .custom-item-add .setting-item-info {
+  .journalit-settings-tab .drc-settings .custom-item-add .setting-item-info {
     margin-right: 10px !important;
     flex: 1 !important;
     display: flex !important;
@@ -1278,8 +1232,7 @@ export const SETTINGS_TAB_STYLES = `
   }
 
   
-  .journalit-settings-tab .drc-settings .custom-item-add .setting-item-control,
-  .journalit-settings-tab .weekly-review-settings .custom-item-add .setting-item-control {
+  .journalit-settings-tab .drc-settings .custom-item-add .setting-item-control {
     display: flex !important;
     align-items: center !important;
     justify-content: flex-end !important;
@@ -1288,8 +1241,7 @@ export const SETTINGS_TAB_STYLES = `
   }
 
   
-  .journalit-settings-tab .drc-settings .custom-item-add button,
-  .journalit-settings-tab .weekly-review-settings .custom-item-add button {
+  .journalit-settings-tab .drc-settings .custom-item-add button {
     min-width: 60px !important;
     height: 34px !important;
     max-height: 34px !important;
@@ -1307,8 +1259,7 @@ export const SETTINGS_TAB_STYLES = `
     transition: background-color 0.15s ease !important;
   }
 
-  .journalit-settings-tab .drc-settings button:hover,
-  .journalit-settings-tab .weekly-review-settings button:hover {
+  .journalit-settings-tab .drc-settings button:hover {
     background-color: var(--interactive-accent-hover) !important;
     color: var(--text-on-accent) !important;
     border-color: var(--interactive-accent-hover) !important;
@@ -1317,9 +1268,7 @@ export const SETTINGS_TAB_STYLES = `
   
   
   .journalit-settings .drc-settings .custom-item-add input,
-  .journalit-settings .weekly-review-settings .custom-item-add input,
   .journalit-settings .custom-options-settings .custom-item-add input,
-  
   .journalit-settings input[placeholder="New checklist item"],
   .journalit-settings input[placeholder="New review question"],
   .journalit-settings input[placeholder="New timeframe (e.g., 15M, 5M)"],
@@ -1345,7 +1294,6 @@ export const SETTINGS_TAB_STYLES = `
 
   
   .journalit-settings .drc-settings .custom-item-add input:focus,
-  .journalit-settings .weekly-review-settings .custom-item-add input:focus,
   .journalit-settings .custom-options-settings .custom-item-add input:focus,
   .journalit-settings input[placeholder="New checklist item"]:focus,
   .journalit-settings input[placeholder="New review question"]:focus,
@@ -1364,11 +1312,6 @@ export const SETTINGS_TAB_STYLES = `
     border: 1px solid var(--background-modifier-border);
     border-radius: 6px;
     overflow: visible; 
-    transition: box-shadow 0.2s ease;
-  }
-
-  .journalit-settings .cmdr-accordion:hover {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 
   .journalit-settings .cmdr-accordion .cmdr-accordion-header {
@@ -1399,28 +1342,10 @@ export const SETTINGS_TAB_STYLES = `
   }
 
   
-  .journalit-settings .cmdr-accordion .cmdr-accordion-content .timeframe-manager > .setting-item:first-child,
   .journalit-settings .cmdr-accordion .cmdr-accordion-content .item-manager > .setting-item:first-child,
   .journalit-settings .cmdr-accordion .cmdr-accordion-content > div > .setting-item:first-child,
   .journalit-settings .cmdr-accordion .cmdr-accordion-content > .setting-item:first-child {
     border-top: none !important;
-  }
-
-  
-  .journalit-settings .cmdr-accordion .cmdr-accordion-content .weekly-review-section {
-    border: none !important;
-    border-radius: 0 !important;
-    padding: 0 !important;
-    background-color: transparent !important;
-  }
-
-  
-  .journalit-settings .timeframe-manager .custom-item-add .inputContainer,
-  .journalit-settings .timeframe-manager .custom-item-add input {
-    height: 34px !important;
-    min-height: 34px !important;
-    margin: 0 !important;
-    width: 100% !important;
   }
 
   
@@ -1463,33 +1388,6 @@ export const SETTINGS_TAB_STYLES = `
     margin-top: 0;
     margin-bottom: 0;
     overflow: hidden; 
-  }
-  
-  
-  .journalit-settings .edit-account-form.setting-item-container,
-  .journalit-settings-tab .edit-account-form.setting-item-container {
-    display: flex !important;
-    flex-direction: column !important;
-    width: 100% !important;
-    align-items: stretch !important;
-  }
-
-  
-  .journalit-settings .edit-account-form.setting-item-container .edit-account-buttons,
-  .journalit-settings-tab .edit-account-form.setting-item-container .edit-account-buttons {
-    display: flex !important;
-    justify-content: space-between !important;
-    align-items: center !important;
-    width: 100% !important;
-    margin-top: 16px !important;
-    position: relative !important;
-  }
-  
-  .journalit-settings .edit-account-form.setting-item-container .edit-account-buttons .button-group-right,
-  .journalit-settings-tab .edit-account-form.setting-item-container .edit-account-buttons .button-group-right {
-    display: flex !important;
-    gap: 8px !important;
-    align-items: center !important;
   }
   
   
@@ -1609,24 +1507,6 @@ export const SETTINGS_TAB_STYLES = `
   .backend-integration__ignored-accounts .mt-accounts-list .setting-item {
     border: none;
     padding: 12px 14px;
-  }
-
-  .mt-account-edit {
-    display: flex;
-    align-items: center;
-  }
-
-  .mt-account-edit input {
-    background-color: var(--background-primary-alt);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    padding: 4px 6px;
-    color: var(--text-normal);
-  }
-
-  .mt-account-edit input:focus {
-    border-color: var(--interactive-accent);
-    outline: none;
   }
 
   
@@ -1810,8 +1690,7 @@ export const SETTINGS_TAB_STYLES = `
   }
 
   
-  .journalit-settings .tier-badge.tier-pro,
-  .journalit-settings .tier-badge.tier-premium {
+  .journalit-settings .tier-badge.tier-pro {
     background: color-mix(in srgb, var(--interactive-accent) 15%, transparent);
     color: var(--text-accent);
     border-color: var(--interactive-accent);
@@ -2080,7 +1959,6 @@ export const SETTINGS_TAB_STYLES = `
     color: var(--text-muted);
   }
 
-
   .ftp-reset-password {
     margin-top: 24px;
     margin-bottom: 16px;
@@ -2138,17 +2016,6 @@ export const SETTINGS_TAB_STYLES = `
 
   .backend-integration-settings .trade-sync-header h3 {
     margin-bottom: 8px;
-  }
-
-  .backend-integration-settings .journalit-trade-sync-source-switcher {
-    display: flex;
-    width: fit-content;
-    gap: 4px;
-    margin: 0 auto 8px;
-    padding: 3px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 8px;
-    background: var(--background-secondary);
   }
 
   .backend-integration-settings .journalit-trade-sync-source {
@@ -2231,7 +2098,6 @@ export const SETTINGS_TAB_STYLES = `
     border: 1px solid var(--background-modifier-border);
     border-radius: 10px;
     background: var(--background-secondary);
-    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12), 0 8px 24px rgba(0, 0, 0, 0.08);
   }
 
   .journalit-settings .backend-integration-settings .journalit-trade-sync-trial-copy h3 {
@@ -2323,33 +2189,6 @@ export const SETTINGS_TAB_STYLES = `
     }
   }
 
-  .backend-integration-settings .journalit-trade-import-sync-toolbar {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-    margin: 16px 0;
-  }
-
-  .backend-integration-settings .journalit-trade-import-sync-toolbar label {
-    display: inline-flex;
-    align-items: center;
-    gap: 8px;
-    color: var(--text-muted);
-    font-size: 12px;
-  }
-
-  .backend-integration-settings .journalit-trade-import-sync-toolbar select {
-    min-width: 180px;
-  }
-
-  .backend-integration-settings .journalit-trade-import-sync-card-subtext {
-    margin-top: 6px;
-    color: var(--text-muted);
-    font-size: 12px;
-    text-align: center;
-  }
-
   .backend-integration-settings .journalit-trade-import-sync-pending {
     margin: 14px 0;
     color: var(--text-accent);
@@ -2373,16 +2212,6 @@ export const SETTINGS_TAB_STYLES = `
     grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
     gap: 12px;
     margin-top: 16px;
-  }
-
-  .backend-integration-settings .journalit-trade-import-account-card {
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-    padding: 14px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 10px;
-    background: var(--background-primary);
   }
 
   .backend-integration-settings .journalit-metatrader-sync-panel > .status-cards {
@@ -2409,55 +2238,6 @@ export const SETTINGS_TAB_STYLES = `
   .backend-integration-settings .journalit-trade-import-account-card__header span {
     color: var(--text-muted);
     font-size: 12px;
-  }
-
-  .backend-integration-settings .journalit-trade-import-account-card__count {
-    padding: 3px 7px;
-    border-radius: 999px;
-    background: var(--background-modifier-hover);
-    color: var(--text-accent) !important;
-    font-size: 11px !important;
-    font-weight: 700;
-    white-space: nowrap;
-  }
-
-  .backend-integration-settings .journalit-trade-import-account-card__metrics {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 6px;
-  }
-
-  .backend-integration-settings .journalit-trade-import-account-card__metrics span {
-    padding: 3px 7px;
-    border-radius: 6px;
-    background: var(--background-secondary);
-    color: var(--text-muted);
-    font-size: 11px;
-  }
-
-  .backend-integration-settings .journalit-trade-import-account-card__mapping label {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    color: var(--text-muted);
-    font-size: 12px;
-  }
-
-  .backend-integration-settings .journalit-trade-import-account-card__mapping select {
-    width: 100%;
-  }
-
-  .backend-integration-settings .journalit-trade-import-account-card__mapping {
-    display: grid;
-    gap: 10px;
-  }
-
-  .backend-integration-settings .journalit-trade-import-account-card__mapping input[type='date'] {
-    min-height: 32px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 6px;
-    background: var(--background-secondary);
-    color: var(--text-normal);
   }
 
   .backend-integration-settings .journalit-tradovate-account-toggle {
@@ -2571,7 +2351,7 @@ export const SETTINGS_TAB_STYLES = `
     margin-top: 10px;
     padding: 8px 10px;
     border-radius: 6px;
-    background: var(--background-modifier-error);
+    background: rgba(var(--color-red-rgb), 0.12);
     color: var(--text-error);
     font-size: 11px;
     line-height: 1.4;
@@ -2603,7 +2383,6 @@ export const SETTINGS_TAB_STYLES = `
     font-size: var(--font-ui-smaller);
     line-height: 1.3;
   }
-
 
   .backend-integration-settings button.journalit-broker-manage-link {
     width: auto;
@@ -2654,10 +2433,6 @@ export const SETTINGS_TAB_STYLES = `
     width: auto;
   }
 
-  .backend-integration-settings .journalit-tradovate-connection-help {
-    margin-top: 8px;
-  }
-
   .backend-integration-settings .journalit-tradovate-sync-panel > .journalit-trade-import-account-grid {
     grid-template-columns: 1fr;
     margin-top: 0;
@@ -2702,6 +2477,11 @@ export const SETTINGS_TAB_STYLES = `
     align-items: start;
     gap: 10px 12px;
     margin-top: 12px;
+  }
+
+  
+  .backend-integration-settings .journalit-tradovate-account-mapping--website {
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .backend-integration-settings .journalit-tradovate-account-field {
@@ -2913,7 +2693,6 @@ export const SETTINGS_TAB_STYLES = `
     width: 100%;
   }
 
-
   @media (max-width: 620px) {
     .backend-integration-settings .journalit-tradovate-status-cards {
       grid-template-columns: 1fr;
@@ -2949,24 +2728,6 @@ export const SETTINGS_TAB_STYLES = `
       width: 100%;
     }
 
-  }
-
-  .backend-integration-settings .journalit-trade-import-account-card__mapping small {
-    display: block;
-    margin-top: 6px;
-    color: var(--text-faint);
-    font-size: 11px;
-    line-height: 1.35;
-  }
-
-  .backend-integration-settings .journalit-trade-import-account-card__actions {
-    display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 8px;
-  }
-
-  .backend-integration-settings .journalit-trade-import-account-card__actions button {
-    justify-content: center;
   }
 
   .backend-integration-settings .journalit-trade-import-sync-header {
@@ -3146,56 +2907,6 @@ export const SETTINGS_TAB_STYLES = `
     }
   }
 
-  .backend-integration-settings .journalit-trade-import-account-card__actions button:disabled {
-    border-color: var(--background-modifier-border);
-    background: var(--background-secondary);
-    color: var(--text-faint);
-    opacity: 0.75;
-    cursor: not-allowed;
-  }
-
-  .backend-integration-settings .journalit-trade-import-sync-recovery {
-    padding: 12px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 8px;
-    background: var(--background-primary);
-  }
-
-  .backend-integration-settings .journalit-trade-import-sync-recovery-header {
-    display: flex;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .backend-integration-settings .journalit-trade-import-sync-recovery-header strong {
-    margin-right: auto;
-  }
-
-  .backend-integration-settings .journalit-trade-import-sync-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 6px;
-    max-height: 260px;
-    overflow: auto;
-  }
-
-  .backend-integration-settings .journalit-trade-import-sync-list label {
-    display: grid;
-    grid-template-columns: auto 1fr auto;
-    align-items: center;
-    gap: 8px;
-    padding: 6px 8px;
-    border-radius: 6px;
-    background: var(--background-secondary);
-    font-size: 12px;
-  }
-
-  .backend-integration-settings .journalit-trade-import-sync-list small {
-    color: var(--text-muted);
-  }
-
   .backend-integration-settings .backend-integration__button-content {
     display: flex;
     align-items: center;
@@ -3320,13 +3031,6 @@ export const SETTINGS_TAB_STYLES = `
     margin-bottom: 12px;
   }
 
-  .setup-progress-steps {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-    gap: 10px;
-  }
-
   .setup-step {
     display: flex;
     align-items: center;
@@ -3346,62 +3050,10 @@ export const SETTINGS_TAB_STYLES = `
   .setup-step:hover:not(:disabled) {
     border-color: var(--interactive-accent);
     transform: translateY(-1px);
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
   }
 
   .setup-step:disabled {
     cursor: default;
-  }
-
-  .setup-step--completed {
-    border-color: var(--background-modifier-border);
-    background: var(--background-primary);
-    opacity: 0.85;
-  }
-
-  .setup-step--current {
-    border-color: var(--interactive-accent);
-    background: color-mix(in srgb, var(--interactive-accent) 8%, transparent);
-    box-shadow: 0 0 0 1px var(--interactive-accent);
-  }
-
-  .setup-step--current .setup-step-indicator {
-    background: var(--interactive-accent);
-    color: var(--text-on-accent, white);
-  }
-
-  .setup-step--completed .setup-step-indicator {
-    background: transparent;
-    color: var(--color-green);
-    border: 1px solid var(--color-green);
-  }
-
-  .setup-step--pending {
-    opacity: 0.7;
-  }
-
-  .setup-step--pending .setup-step-indicator {
-    background: var(--background-primary);
-    color: var(--text-muted);
-    border: 2px solid var(--background-modifier-border);
-  }
-
-  .setup-step-indicator {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 22px;
-    height: 22px;
-    border-radius: 50%;
-    flex-shrink: 0;
-    font-size: 11px;
-    transition: all 0.2s ease;
-  }
-
-  .setup-step-content {
-    display: flex;
-    flex-direction: column;
-    gap: 1px;
   }
 
   .setup-step-label {
@@ -3415,11 +3067,6 @@ export const SETTINGS_TAB_STYLES = `
     color: var(--text-muted);
     line-height: 1.4;
     margin-top: 2px;
-  }
-
-  
-  .setup-step-connector {
-    display: none;
   }
 
   
@@ -3442,7 +3089,6 @@ export const SETTINGS_TAB_STYLES = `
 
   .status-card:hover {
     border-color: var(--background-modifier-border-hover);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   }
 
   .status-card--connected {
@@ -3577,8 +3223,11 @@ export const SETTINGS_TAB_STYLES = `
   }
 
   
-  .custom-options-asset-select {
+  .journalit-settings-tab .custom-options-asset-select {
     width: 120px;
+    height: auto;
+    align-self: stretch;
+    padding-top: var(--size-2-2);
   }
 
   .custom-options-spec-grid {
@@ -3779,7 +3428,7 @@ export const SETTINGS_TAB_STYLES = `
     border: 1px solid var(--background-modifier-border);
     border-radius: 4px;
     background-color: var(--background-primary);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-s);
   }
 
   .journalit-settings-tab .custom-options-commission-account-dropdown__option {
@@ -4065,11 +3714,11 @@ export const SETTINGS_TAB_STYLES = `
   }
 
   .custom-options-color-swatch--orange {
-    background-color: var(--color-warning, orange);
+    background-color: var(--color-orange);
   }
 
   .custom-options-color-swatch--yellow {
-    background-color: var(--color-warning-light, #ffb74d);
+    background-color: var(--color-yellow);
   }
 
   .custom-options-name-row {
@@ -4120,11 +3769,11 @@ export const SETTINGS_TAB_STYLES = `
   }
 
   .custom-options-event-color-dot--orange {
-    background-color: var(--color-warning, orange);
+    background-color: var(--color-orange);
   }
 
   .custom-options-event-color-dot--yellow {
-    background-color: var(--color-warning-light, #ffb74d);
+    background-color: var(--color-yellow);
   }
 
   .journalit-settings-tab .custom-options-label-color-dot {
@@ -4142,13 +3791,6 @@ export const SETTINGS_TAB_STYLES = `
 
   
   @media (max-width: 768px) {
-    .setup-progress-steps {
-      flex-direction: column;
-    }
-
-    .setup-step-connector {
-      display: none;
-    }
 
     .setup-step {
       width: 100%;
@@ -4163,8 +3805,7 @@ export const SETTINGS_TAB_STYLES = `
   @media (max-width: 600px) {
     .journalit-settings-tab input[type="text"],
     .journalit-settings-tab .custom-item-add input,
-    .journalit-settings input,
-    .mt-account-edit input {
+    .journalit-settings input {
       font-size: 18px !important;
     }
   }
@@ -4277,7 +3918,8 @@ export const SETTINGS_TAB_STYLES = `
     justify-content: flex-end;
   }
 
-  .journalit-home-background-file-input {
+  .journalit-home-background-file-input,
+  .journalit-settings-import-file-input {
     display: none;
   }
 
@@ -4321,7 +3963,6 @@ export const SETTINGS_TAB_STYLES = `
 
   .journalit-settings-tab .custom-fields-manager .custom-fields-list-panel,
   .journalit-settings-tab .custom-fields-manager .custom-fields-editor-panel,
-  .journalit-settings-tab .custom-fields-manager .custom-fields-empty-state,
   .journalit-settings-tab .custom-fields-manager .custom-fields-danger-zone {
     border: 1px solid var(--background-modifier-border);
     border-radius: 12px;
@@ -4373,12 +4014,6 @@ export const SETTINGS_TAB_STYLES = `
     align-items: center;
     gap: 10px;
     flex-shrink: 0;
-  }
-
-  .journalit-settings-tab .custom-fields-manager .custom-fields-list-meta {
-    color: var(--text-muted);
-    font-size: 12px;
-    white-space: nowrap;
   }
 
   .journalit-settings-tab .custom-fields-manager .custom-fields-field-list {
@@ -4534,11 +4169,6 @@ export const SETTINGS_TAB_STYLES = `
     color: var(--text-muted);
     font-size: 12px;
     margin-top: 2px;
-  }
-
-  .journalit-settings-tab .custom-fields-manager .custom-fields-empty-state {
-    padding: 22px 18px;
-    text-align: center;
   }
 
   .journalit-settings-tab .custom-fields-manager .custom-fields-danger-zone {
@@ -4863,16 +4493,6 @@ export const SETTINGS_TAB_STYLES = `
     border-color: var(--text-error) !important;
   }
 
-  .journalit-settings-tab .custom-fields-manager .custom-fields-editor-divider {
-    border-top: 2px solid var(--background-modifier-border);
-    margin-top: 16px;
-    padding-top: 16px;
-  }
-
-  .journalit-settings-tab .custom-fields-manager .custom-fields-actions {
-    justify-content: space-between;
-  }
-
   .journalit-settings-tab .custom-fields-manager .custom-fields-actions-buttons {
     display: flex;
     gap: 8px;
@@ -4882,5 +4502,185 @@ export const SETTINGS_TAB_STYLES = `
     margin-top: 24px;
     padding-top: 24px;
     border-top: 1px solid var(--background-modifier-border);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__intro {
+    margin: 0 0 12px;
+    color: var(--text-muted);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__status {
+    padding: 2px 8px;
+    border-radius: var(--radius-s);
+    background: var(--background-modifier-hover);
+    color: var(--text-muted);
+    font-size: var(--font-ui-smaller);
+    white-space: nowrap;
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__status.is-ready {
+    background: rgba(var(--color-green-rgb), 0.15);
+    color: var(--text-success);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__status.is-failed {
+    background: rgba(var(--color-red-rgb), 0.15);
+    color: var(--text-error);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__warning {
+    display: block;
+    margin-top: 6px;
+    color: var(--text-warning);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__warning.is-active {
+    color: var(--text-error);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__usage {
+    display: block;
+    font-variant-numeric: tabular-nums;
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__usage.is-reached {
+    color: var(--text-error);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__meter {
+    display: block;
+    width: min(240px, 100%);
+    height: 4px;
+    margin-top: 8px;
+    overflow: hidden;
+    border-radius: 2px;
+    background: var(--background-modifier-border);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__meter-fill {
+    display: block;
+    width: var(--journalit-mcp-usage, 0%);
+    height: 100%;
+    border-radius: inherit;
+    background: var(--interactive-accent);
+    color: var(--text-on-accent);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__meter.is-reached .journalit-mcp-access__meter-fill {
+    background: var(--color-red);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__allowance {
+    display: block;
+    margin-top: 8px;
+    color: var(--text-faint);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__link {
+    display: inline;
+    height: auto;
+    padding: 0;
+    border: none;
+    background: none;
+    box-shadow: none;
+    color: var(--text-accent);
+    font: inherit;
+    text-align: start;
+    cursor: pointer;
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__link:hover {
+    color: var(--text-accent-hover);
+    text-decoration: underline;
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__link:focus-visible {
+    outline: 2px solid var(--interactive-accent);
+    outline-offset: 2px;
+    border-radius: var(--journalit-radius-sm);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__pro-offer {
+    display: block;
+    margin-top: 4px;
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__connect {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 4px 0 12px;
+    padding: var(--size-4-4);
+    border-radius: var(--setting-items-radius);
+    background-color: var(--setting-items-background);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__connect-title {
+    color: var(--text-normal);
+    font-size: var(--font-ui-small);
+    font-weight: 600;
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__connect-label {
+    margin-top: 2px;
+    color: var(--text-muted);
+    font-size: var(--font-ui-smaller);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__copy-field {
+    display: flex;
+    align-items: stretch;
+    gap: 8px;
+    min-width: 0;
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__copy-value {
+    flex: 1 1 auto;
+    min-width: 0;
+    padding: 6px 8px;
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--radius-s);
+    background: var(--background-primary);
+    color: var(--text-normal);
+    font-family: var(--font-monospace);
+    font-size: var(--font-ui-smaller);
+    overflow-wrap: anywhere;
+    user-select: all;
+    box-sizing: border-box;
+    min-height: var(--input-height);
+    display: flex;
+    align-items: center;
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__copy-field > button {
+    flex: 0 0 auto;
+    height: auto;
+    min-height: 0;
+    padding-block: 0;
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__apps {
+    align-self: flex-start;
+    margin-top: 4px;
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__steps {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin: 0;
+    padding-inline-start: 20px;
+    color: var(--text-normal);
+    font-size: var(--font-ui-small);
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__steps .journalit-mcp-access__copy-field {
+    margin-top: 6px;
+  }
+
+  .journalit-settings-tab .journalit-mcp-access .journalit-mcp-access__connect-note {
+    margin: 0;
+    color: var(--text-muted);
+    font-size: var(--font-ui-smaller);
   }
 `;

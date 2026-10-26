@@ -1,6 +1,6 @@
 import React from 'react';
 import type JournalitPlugin from '../../../main';
-import { OAuthBrokerSyncPanelContent } from './oauthBrokerSyncPanel';
+import { OAuthBrokerSyncPanelContent } from './oauthBrokerSyncPanel/OAuthBrokerSyncPanelContent';
 import { useCTraderSyncPanelModel } from './useCTraderSyncPanelModel';
 
 export const CTraderSyncPanel: React.FC<{

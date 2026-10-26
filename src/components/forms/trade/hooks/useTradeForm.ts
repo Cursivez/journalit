@@ -39,6 +39,12 @@ import { deriveRawDirectPnLFromStoredCombinedPnL } from '../../../../utils/pnlCa
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { getTradingDay } from '../../../../utils/tradingDayUtils';
 import { isTradeOpenWithContext } from '../../../../utils/tradeStatusUtils';
+import { applyAutoCommission } from '../../../../services/trade/autoCommission';
+import { moveExecutionsOnDay } from '../executionDates';
+import {
+  getBacktestSessionDay,
+  rememberBacktestSessionDay,
+} from '../../../../services/backtestTrade/backtestSessionDay';
 import {
   hasUnrealizedPriceSnapshot,
   isUnrealizedSnapshotExecutionValid,
@@ -134,7 +140,9 @@ const completeTradeFormData = (
 const withCurrentTimeForBlankTradeTimes = (
   data: Partial<TradeFormData>,
   preserveScalarTradeTimes = false,
-  referenceDate = new Date()
+  referenceDate = new Date(),
+  
+  blankDefaultDay?: Date
 ): Partial<TradeFormData> => {
   const snapshotTime = data.unrealizedPriceSnapshotTime;
   const entryTimeReference =
@@ -174,12 +182,20 @@ const withCurrentTimeForBlankTradeTimes = (
   const normalized: Partial<TradeFormData> = { ...data };
 
   if (Array.isArray(data.entries)) {
+    
+    
+    const hasDatedEntry = data.entries.some(
+      (entry) => entry.time instanceof Date || hasTradeLegValues(entry)
+    );
     normalized.entries = data.entries.map((entry) => ({
       ...entry,
       time:
         entry.time ??
-        (entry.blankTimeDate || hasTradeLegValues(entry)
-          ? applyReferenceTime(entry.blankTimeDate, entryTimeReference)
+        ((entry.blankTimeDate && !hasDatedEntry) || hasTradeLegValues(entry)
+          ? applyReferenceTime(
+              entry.blankTimeDate ?? blankDefaultDay,
+              entryTimeReference
+            )
           : undefined),
       blankTimeDate: undefined,
     }));
@@ -190,16 +206,26 @@ const withCurrentTimeForBlankTradeTimes = (
       ...exit,
       time:
         exit.time ??
-        (exit.blankTimeDate || hasTradeLegValues(exit)
-          ? applyReferenceTime(exit.blankTimeDate, referenceDate)
+        
+        
+        ((exit.blankTimeDate && data.useDirectPnLInput === true) ||
+        hasTradeLegValues(exit)
+          ? applyReferenceTime(
+              exit.blankTimeDate ?? blankDefaultDay,
+              referenceDate
+            )
           : undefined),
       blankTimeDate: undefined,
     }));
   }
 
-  const entryTime = earliestTime(
-    normalized.entries?.map((entry) => entry.time) ?? []
-  );
+  
+  
+  const entryTime =
+    earliestTime(normalized.entries?.map((entry) => entry.time) ?? []) ??
+    (blankDefaultDay
+      ? applyReferenceTime(blankDefaultDay, entryTimeReference)
+      : undefined);
   if (
     entryTime &&
     (!preserveScalarTradeTimes || !data.useDirectPnLInput || !data.entryTime)
@@ -301,172 +327,6 @@ const shouldRefreshAutoCommission = (field: keyof TradeFormData): boolean =>
   field === 'commissionType' ||
   field === 'useDirectPnLInput';
 
-const hasExitData = (data: Partial<TradeFormData>): boolean => {
-  const meaningfulExits = (data.exits ?? []).filter(hasTradeLegValues);
-  const hasScalarExitPrice =
-    data.exitPrice !== undefined &&
-    data.exitPrice !== null &&
-    (data.exitPrice > 0 ||
-      (data.hasExplicitExitPrice === true && meaningfulExits.length === 0));
-  const hasClosedDirectPnL =
-    data.useDirectPnLInput === true &&
-    data.tradeStatus !== 'OPEN' &&
-    data.tradeStatus !== 'PARTIALLY_CLOSED' &&
-    data.tradeStatus !== 'CANCELLED';
-
-  return (
-    hasClosedDirectPnL ||
-    (data.tradeStatus === 'CLOSED' && hasScalarExitPrice) ||
-    meaningfulExits.length > 0
-  );
-};
-
-const getExitedPositionSize = (
-  data: Partial<TradeFormData>
-): number | undefined => {
-  const exitedSize = (data.exits ?? []).reduce(
-    (total, exit) =>
-      exit.size !== undefined && exit.size !== null && exit.size > 0
-        ? total + exit.size
-        : total,
-    0
-  );
-  return exitedSize > 0 ? exitedSize : undefined;
-};
-
-const applyAutoCommission = (
-  data: Partial<TradeFormData>,
-  optionsService?: CustomOptionsService,
-  previousData?: Partial<TradeFormData>
-): Partial<TradeFormData> => {
-  if (data.hasExplicitCommission === true) {
-    return data;
-  }
-
-  const instrument = typeof data.instrument === 'string' ? data.instrument : '';
-  const positionSize =
-    typeof data.positionSize === 'number' ? data.positionSize : 0;
-  if (
-    data.commissionType === 'percentage' &&
-    (typeof data.commission !== 'number' || data.commission === 0)
-  ) {
-    return data;
-  }
-
-  if (
-    (data.isMissedTrade === true || data.isBacktestTrade === true) &&
-    data.hasExplicitCommission !== false &&
-    typeof data.commission === 'number' &&
-    data.commission !== 0
-  ) {
-    return data;
-  }
-
-  const canInferPreviousAutoCommission = Boolean(
-    previousData &&
-    (previousData.isMissedTrade !== true ||
-      previousData.hasExplicitCommission === false) &&
-    (previousData.isBacktestTrade !== true ||
-      previousData.hasExplicitCommission === false)
-  );
-  const previousAutoCommission =
-    previousData && canInferPreviousAutoCommission
-      ? optionsService?.calculateInstrumentCommission({
-          instrument:
-            typeof previousData.instrument === 'string'
-              ? previousData.instrument
-              : '',
-          assetType: previousData.assetType,
-          account: previousData.account,
-          positionSize:
-            typeof previousData.positionSize === 'number'
-              ? previousData.positionSize
-              : 0,
-          exitedPositionSize: getExitedPositionSize(previousData),
-          hasExit: hasExitData(previousData),
-        })
-      : undefined;
-  const hadAutoCommission =
-    previousAutoCommission !== undefined &&
-    typeof data.commission === 'number' &&
-    Math.abs(data.commission - previousAutoCommission) < 0.000001;
-
-  if (data.commissionType === 'percentage') {
-    const changedFromFixedAutoCommission =
-      previousData?.commissionType !== 'percentage' && hadAutoCommission;
-    return changedFromFixedAutoCommission
-      ? { ...data, commission: undefined, hasExplicitCommission: false }
-      : data;
-  }
-
-  if (!instrument || positionSize <= 0) {
-    return hadAutoCommission
-      ? { ...data, commission: undefined, hasExplicitCommission: false }
-      : data;
-  }
-
-  const hasExit = hasExitData(data);
-  const commission = optionsService?.calculateInstrumentCommission({
-    instrument,
-    assetType: data.assetType,
-    account: data.account,
-    positionSize,
-    exitedPositionSize: getExitedPositionSize(data),
-    hasExit,
-  });
-
-  if (hadAutoCommission) {
-    return commission === undefined
-      ? { ...data, commission: undefined, hasExplicitCommission: false }
-      : {
-          ...data,
-          commission,
-          commissionType: 'fixed',
-          hasExplicitCommission: false,
-        };
-  }
-
-  if (data.commission && data.commission !== 0) {
-    if (commission === undefined) {
-      return data;
-    }
-
-    if (hasExit === false) {
-      return data;
-    }
-
-    const entryOnlyCommission = optionsService?.calculateInstrumentCommission({
-      instrument,
-      assetType: data.assetType,
-      account: data.account,
-      positionSize,
-      exitedPositionSize: getExitedPositionSize(data),
-      hasExit: false,
-    });
-
-    if (entryOnlyCommission === undefined) {
-      return data;
-    }
-
-    const isStoredEntryOnlyCommission =
-      Math.abs(data.commission - entryOnlyCommission) < 0.000001;
-    if (!isStoredEntryOnlyCommission) {
-      return data;
-    }
-  }
-
-  if (commission === undefined) {
-    return data;
-  }
-
-  return {
-    ...data,
-    commission,
-    commissionType: 'fixed',
-    hasExplicitCommission: false,
-  };
-};
-
 async function resolveSetupSelections(
   plugin: JournalitPlugin,
   data: Partial<TradeFormData>
@@ -504,6 +364,34 @@ export const useTradeForm = ({
     throw new Error('Journalit plugin context is required for trade form');
   }
   
+  
+  const [backtestSessionDay] = useState(() =>
+    isEditMode ? undefined : getBacktestSessionDay()
+  );
+  
+  
+  const layoutInputMode = (layout ?? plugin.settings?.trade?.tradeFormLayout)
+    ?.inputMode;
+  const resolveBlankDefaultDay = useCallback(
+    (data: Partial<TradeFormData>): Date | undefined =>
+      data.isBacktestTrade === true &&
+      (layoutInputMode !== 'pnl-risk' || data.useDirectPnLInput === false)
+        ? backtestSessionDay
+        : undefined,
+    [backtestSessionDay, layoutInputMode]
+  );
+  const materializeBlankTradeTimes = useCallback(
+    (data: Partial<TradeFormData>, referenceDate = new Date()) =>
+      withCurrentTimeForBlankTradeTimes(
+        data,
+        isEditMode,
+        referenceDate,
+        resolveBlankDefaultDay(data)
+      ),
+    [isEditMode, resolveBlankDefaultDay]
+  );
+
+  
   const [formData, setFormData] = useState<Partial<TradeFormData>>(() => {
     
     if (isEditMode && initialData) {
@@ -538,11 +426,6 @@ export const useTradeForm = ({
       }
       if (!editData.images) editData.images = [];
       if (!editData.tags) editData.tags = [];
-      if (!editData.customTags || editData.customTags.length === 0) {
-        editData.customTags = Array.isArray(editData.tags)
-          ? [...editData.tags]
-          : [];
-      }
       if (!editData.setup) editData.setup = [];
       if (!editData.mistake) editData.mistake = [];
       if (!editData.account) editData.account = [];
@@ -802,8 +685,14 @@ export const useTradeForm = ({
 
   useEffect(() => {
     if (!formSubmitted && !hasDisplayedErrors) return;
-    runValidation(withCurrentTimeForBlankTradeTimes(formData, isEditMode));
-  }, [formData, formSubmitted, hasDisplayedErrors, isEditMode, runValidation]);
+    runValidation(materializeBlankTradeTimes(formData));
+  }, [
+    formData,
+    formSubmitted,
+    hasDisplayedErrors,
+    materializeBlankTradeTimes,
+    runValidation,
+  ]);
 
   
   const cleanupPendingImages = useCallback(async () => {
@@ -907,6 +796,27 @@ export const useTradeForm = ({
             : plugin.settings?.general?.currency || 'USD';
       }
 
+      
+      
+      if (field !== 'entries' && field !== 'exits') {
+        const today = new Date();
+        const previousDefaultDay =
+          resolveBlankDefaultDay(currentFormData) ?? today;
+        const nextDefaultDay = resolveBlankDefaultDay(newData) ?? today;
+        const rows = {
+          entries: newData.entries ?? [],
+          exits: newData.exits ?? [],
+        };
+        const moved = moveExecutionsOnDay(
+          rows,
+          previousDefaultDay,
+          nextDefaultDay,
+          nextDefaultDay
+        );
+        if (moved.entries !== rows.entries) newData.entries = moved.entries;
+        if (moved.exits !== rows.exits) newData.exits = moved.exits;
+      }
+
       let executionsChanged = false;
       if (
         (field === 'entries' || field === 'exits') &&
@@ -915,14 +825,12 @@ export const useTradeForm = ({
       ) {
         const referenceDate = new Date();
         executionsChanged = shouldInvalidateUnrealizedSnapshot(
-          withCurrentTimeForBlankTradeTimes(
+          materializeBlankTradeTimes(
             withResolvedSnapshotExitExplicitness(currentFormData),
-            isEditMode,
             referenceDate
           ),
-          withCurrentTimeForBlankTradeTimes(
+          materializeBlankTradeTimes(
             withResolvedSnapshotExitExplicitness(newData),
-            isEditMode,
             referenceDate
           )
         );
@@ -944,19 +852,27 @@ export const useTradeForm = ({
       }
 
       const nextData = shouldRefreshAutoCommission(field)
-        ? applyAutoCommission(newData, plugin.optionsService, currentFormData)
+        ? applyAutoCommission(
+            newData,
+            plugin.optionsService
+              ? (input) =>
+                  plugin.optionsService.calculateInstrumentCommission(input)
+              : undefined,
+            currentFormData
+          )
         : newData;
 
       commitFormData(nextData);
 
       if (formSubmitted) {
-        runValidation(withCurrentTimeForBlankTradeTimes(nextData, isEditMode));
+        runValidation(materializeBlankTradeTimes(nextData));
       }
     },
     [
       commitFormData,
       formSubmitted,
-      isEditMode,
+      materializeBlankTradeTimes,
+      resolveBlankDefaultDay,
       plugin.optionsService,
       plugin.settings?.general?.currency,
       runValidation,
@@ -1236,9 +1152,8 @@ export const useTradeForm = ({
     
     const submitReadyData = clearInvalidUnrealizedSnapshot(
       syncHiddenDirectPnLExitTime(
-        withCurrentTimeForBlankTradeTimes(
-          withResolvedSnapshotExitExplicitness(formData),
-          isEditMode
+        materializeBlankTradeTimes(
+          withResolvedSnapshotExitExplicitness(formData)
         ),
         layout ?? plugin?.settings.trade.tradeFormLayout,
         isEditMode
@@ -1527,6 +1442,14 @@ export const useTradeForm = ({
         return;
       }
 
+      if (
+        !isEditMode &&
+        dataToSubmit.isBacktestTrade === true &&
+        dataToSubmit.entryTime instanceof Date
+      ) {
+        rememberBacktestSessionDay(dataToSubmit.entryTime);
+      }
+
       
       setTempImages([]);
       setImagesToDelete([]);
@@ -1629,8 +1552,8 @@ export const useTradeForm = ({
       }
 
       
-      if (data.customTags && data.customTags.length > 0) {
-        await optionsService.addOptions(OptionType.TAG, data.customTags);
+      if (data.tags && data.tags.length > 0) {
+        await optionsService.addOptions(OptionType.TAG, data.tags);
       }
     } catch (error) {
       console.error('Failed to save custom options:', error);
@@ -1699,9 +1622,6 @@ export const useTradeForm = ({
     const riskAmountChanged =
       normalizeOptionalNumber(formData.riskAmount) !==
       normalizeOptionalNumber(initial.riskAmount);
-    const stopLossChanged =
-      normalizeOptionalNumber(formData.stopLoss) !==
-      normalizeOptionalNumber(initial.stopLoss);
     const unrealizedPriceSnapshotChanged =
       normalizeOptionalNumber(formData.unrealizedPriceSnapshot) !==
       normalizeOptionalNumber(initial.unrealizedPriceSnapshot);
@@ -1804,7 +1724,7 @@ export const useTradeForm = ({
     const idealExitsChanged =
       normalizeIdealExitSnapshot(formData.idealExits) !==
       normalizeIdealExitSnapshot(initial.idealExits);
-    const normalizeTakeProfitSnapshot = (
+    const normalizePlannedTargetSnapshot = (
       takeProfits: Partial<TradeFormData>['takeProfits']
     ) =>
       JSON.stringify(
@@ -1814,9 +1734,24 @@ export const useTradeForm = ({
           size: target?.size ?? null,
         }))
       );
+    
+    
+    const isTouchedStopLoss = (
+      target: NonNullable<TradeFormData['stopLosses']>[number]
+    ) =>
+      target.price !== undefined ||
+      target.closePercent !== undefined ||
+      target.size !== undefined;
+    const stopLossesChanged =
+      normalizePlannedTargetSnapshot(
+        (formData.stopLosses || []).filter(isTouchedStopLoss)
+      ) !==
+      normalizePlannedTargetSnapshot(
+        (initial.stopLosses || []).filter(isTouchedStopLoss)
+      );
     const takeProfitsChanged =
-      normalizeTakeProfitSnapshot(formData.takeProfits) !==
-      normalizeTakeProfitSnapshot(initial.takeProfits);
+      normalizePlannedTargetSnapshot(formData.takeProfits) !==
+      normalizePlannedTargetSnapshot(initial.takeProfits);
 
     const imagesChanged =
       JSON.stringify(formData.images ?? []) !==
@@ -1839,7 +1774,7 @@ export const useTradeForm = ({
       forexPnlConversionContextChanged ||
       directPnLChanged ||
       riskAmountChanged ||
-      stopLossChanged ||
+      stopLossesChanged ||
       unrealizedPriceSnapshotChanged ||
       unrealizedPriceSnapshotTimeChanged ||
       useDirectPnLInputChanged ||
@@ -1868,7 +1803,7 @@ export const useTradeForm = ({
     formData.forexPnlConversionRateSource,
     formData.directPnL,
     formData.riskAmount,
-    formData.stopLoss,
+    formData.stopLosses,
     formData.unrealizedPriceSnapshot,
     formData.unrealizedPriceSnapshotTime,
     formData.useDirectPnLInput,
@@ -1896,6 +1831,7 @@ export const useTradeForm = ({
 
   return {
     formData,
+    backtestSessionDay: resolveBlankDefaultDay(formData),
     errors: displayedErrors,
     dateDraftGate,
     submissionState,

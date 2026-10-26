@@ -33,7 +33,7 @@ interface AccountSetupState {
 }
 
 
-export function resolveAccountSetupState(
+function resolveAccountSetupState(
   catalogAccountNames: readonly string[],
   accountMetadataKeys: readonly string[]
 ): AccountSetupState {
@@ -96,8 +96,9 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
     const refreshAccountSetup =
       useCallback(async (): Promise<AccountSetupState | null> => {
         try {
-          const catalog =
-            (await plugin.accountPageService?.getAccountCatalog()) ?? [];
+          const accountPageService =
+            await plugin.serviceManager.getAccountPageService();
+          const catalog = await accountPageService.getAccountCatalog();
           const metadata = plugin.settings.account?.accountMetadata ?? {};
 
           const setup = resolveAccountSetupState(
@@ -119,7 +120,7 @@ export const GettingStartedWidget = memo<GettingStartedWidgetProps>(
     useEventBus('account:changed', () => {
       void refreshAccountSetup();
     });
-    useEventBus('trade:changed', () => {
+    useEventBus('trade-data:changed', () => {
       void refreshAccountSetup();
     });
 

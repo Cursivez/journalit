@@ -15,6 +15,7 @@ import type {
   PropChallengeWeekday,
 } from './types';
 import { doesPhaseOwnTradeAt } from './PropChallengeConfig';
+import { isAuthoritativeDrawdown } from './PropChallengeRuleReview';
 
 function countQualifyingDays(
   dailyProfit: ReadonlyMap<string, number>,
@@ -60,6 +61,7 @@ export type PropChallengePayoutRequirement =
     }
   | {
       kind: 'consistency';
+      basis?: 'lifetime_gross_profit';
       
       current: number;
       target: number;
@@ -98,15 +100,16 @@ export type PropChallengePayoutRequirement =
     };
 
 export interface PropChallengePayoutEvaluation {
-  status: 'eligible' | 'not_eligible';
+  status: 'eligible' | 'not_eligible' | 'needs_review';
+  reviewReason?: string;
   requirements: PropChallengePayoutRequirement[];
   payoutCount: number;
   cycleProfit: number;
   currentBalance: number;
-  availableAmount: number;
+  availableAmount: number | null;
   minimumRequest: number;
-  maximumRequest: number;
-  traderSharePercent: number;
+  maximumRequest: number | null;
+  traderSharePercent: number | null;
   cumulativeRequestedAmount: number;
   lifetimeQualifyingDays?: {
     current: number;
@@ -119,7 +122,8 @@ export interface PropChallengePayoutEvaluation {
 interface PropChallengePayoutImpact {
   requestedAmount: number;
   requestAllowed: boolean;
-  traderReceives: number;
+  traderReceives: number | null;
+  reviewReason?: string;
   postPayoutBalance: number;
   drawdownFloor?: number;
   remainingDrawdownBuffer?: number;
@@ -225,8 +229,10 @@ function maximumForPayout(
   maximumRequest: PropChallengePayoutMaximum,
   payoutCount: number,
   cycleProfit: number
-): number {
+): number | null {
   switch (maximumRequest.kind) {
+    case 'unresolved':
+      return null;
     case 'none':
       return Number.POSITIVE_INFINITY;
     case 'fixed':
@@ -262,8 +268,11 @@ function currentProfitSharePercent(
   split: PropChallengeProfitSplit,
   cumulativeRequestedAmount: number,
   accountProfit: number
-): number {
+): number | null {
   switch (split.kind) {
+    case 'account_profit_marginal':
+      
+      return null;
     case 'fixed':
       return split.percent;
     case 'cumulative_payout_threshold':
@@ -282,7 +291,29 @@ function traderProceeds(
   cumulativeRequestedAmount: number,
   requestedAmount: number,
   accountProfit: number
-): number {
+): number | null {
+  if (split.kind === 'account_profit_marginal') {
+    
+    
+    const profitCents = Math.round(accountProfit * 100);
+    const requestCents = Math.round(requestedAmount * 100);
+    const thresholdCents = Math.round(split.thresholdProfit * 100);
+    if (
+      profitCents === thresholdCents ||
+      profitCents - requestCents === thresholdCents
+    )
+      return null;
+    const above = Math.min(
+      requestCents,
+      Math.max(0, profitCents - thresholdCents)
+    );
+    const below = requestCents - above;
+    return (
+      Math.round(
+        (above * split.abovePercent + below * split.belowPercent) / 100
+      ) / 100
+    );
+  }
   if (split.kind === 'fixed') {
     return requestedAmount * (split.percent / 100);
   }
@@ -612,15 +643,36 @@ export function evaluatePropChallengePayout(
         )
       : undefined);
   if (maxBestDayPercent !== undefined) {
-    const bestDay = Math.max(0, ...dailyProfit.values());
-    const current = cycleProfit > 0 ? (bestDay / cycleProfit) * 100 : 100;
+    const consistencyDailyProfit = new Map(dailyProfit);
+    const lifetime = input.policy.consistencyBasis === 'lifetime_gross_profit';
+    if (lifetime) {
+      consistencyDailyProfit.clear();
+      for (const item of phaseRealizedEvents) {
+        const day = getTradingDayString(item.date, {
+          settings: {
+            trade: { tradingDayCutoffTime: input.tradingDayCutoffTime },
+          },
+        });
+        consistencyDailyProfit.set(
+          day,
+          (consistencyDailyProfit.get(day) ?? 0) + item.amount
+        );
+      }
+    }
+    const consistencyProfit = lifetime
+      ? phaseRealizedEvents.reduce((total, event) => total + event.amount, 0)
+      : cycleProfit;
+    const bestDay = Math.max(0, ...consistencyDailyProfit.values());
+    const current =
+      consistencyProfit > 0 ? (bestDay / consistencyProfit) * 100 : 100;
     requirements.push({
       kind: 'consistency',
+      ...(lifetime ? { basis: 'lifetime_gross_profit' as const } : {}),
       current,
       target: maxBestDayPercent,
-      satisfied: cycleProfit > 0 && current <= maxBestDayPercent,
+      satisfied: consistencyProfit > 0 && current <= maxBestDayPercent,
       bestDayProfit: bestDay,
-      cycleProfit,
+      cycleProfit: consistencyProfit,
       requiredCycleProfit:
         bestDay > 0 && maxBestDayPercent > 0
           ? bestDay / (maxBestDayPercent / 100)
@@ -652,17 +704,17 @@ export function evaluatePropChallengePayout(
       ? Number.POSITIVE_INFINITY
       : Math.max(0, cycleProfit) /
         (input.policy.newProfitPercentOfRequest / 100);
-  const availableAmount = Math.min(
-    percentageAvailable,
-    maximumRequest,
-    newProfitMaximum
-  );
-  requirements.push({
-    kind: 'minimum_request',
-    current: availableAmount,
-    target: input.policy.minimumRequest,
-    satisfied: availableAmount >= input.policy.minimumRequest,
-  });
+  const availableAmount =
+    maximumRequest === null
+      ? null
+      : Math.min(percentageAvailable, maximumRequest, newProfitMaximum);
+  if (availableAmount !== null)
+    requirements.push({
+      kind: 'minimum_request',
+      current: availableAmount,
+      target: input.policy.minimumRequest,
+      satisfied: availableAmount >= input.policy.minimumRequest,
+    });
   if (input.policy.maximumPayouts !== undefined) {
     requirements.push({
       kind: 'payout_count',
@@ -672,31 +724,48 @@ export function evaluatePropChallengePayout(
     });
   }
 
+  const manualReview = input.evaluation.rules.find(
+    (rule) => rule.kind === 'manual_review' && rule.reviewRequired
+  );
+  const reviewReason =
+    input.policy.reviewRequired ??
+    (manualReview?.kind === 'manual_review'
+      ? manualReview.reason
+      : undefined) ??
+    (effectiveMaximumRequest.kind === 'unresolved'
+      ? effectiveMaximumRequest.reason
+      : undefined);
   return {
     
     
-    status:
-      input.evaluation.status !== 'failed' &&
-      requirements.every((requirement) => requirement.satisfied)
+    status: reviewReason
+      ? 'needs_review'
+      : input.evaluation.status !== 'failed' &&
+          requirements.every((requirement) => requirement.satisfied)
         ? 'eligible'
         : 'not_eligible',
-    requirements,
+    ...(reviewReason ? { reviewReason } : {}),
+    requirements: reviewReason ? [] : requirements,
     payoutCount,
     cycleProfit,
     currentBalance: input.evaluation.currentBalance,
-    availableAmount,
+    availableAmount: reviewReason ? null : availableAmount,
     minimumRequest: input.policy.minimumRequest,
-    maximumRequest,
-    traderSharePercent: currentProfitSharePercent(
-      input.policy.profitSplit,
-      cumulativeRequestedAmount,
-      input.evaluation.currentBalance -
-        input.phase.startingBalance +
-        cumulativeRequestedAmount
-    ),
+    maximumRequest: reviewReason ? null : maximumRequest,
+    traderSharePercent: reviewReason
+      ? null
+      : currentProfitSharePercent(
+          input.policy.profitSplit,
+          cumulativeRequestedAmount,
+          input.evaluation.currentBalance -
+            input.phase.startingBalance +
+            cumulativeRequestedAmount
+        ),
     cumulativeRequestedAmount,
-    ...(lifetimeQualifyingDays ? { lifetimeQualifyingDays } : {}),
-    ...(nextEligibleAt ? { nextEligibleAt } : {}),
+    ...(!reviewReason && lifetimeQualifyingDays
+      ? { lifetimeQualifyingDays }
+      : {}),
+    ...(!reviewReason && nextEligibleAt ? { nextEligibleAt } : {}),
   };
 }
 
@@ -707,9 +776,28 @@ export function previewPropChallengePayout(
   }
 ): PropChallengePayoutImpact {
   const { afterPayout } = input.policy;
+  const proceeds =
+    input.payout.status === 'needs_review'
+      ? null
+      : traderProceeds(
+          input.policy.profitSplit,
+          input.payout.cumulativeRequestedAmount,
+          input.requestedAmount,
+          input.evaluation.currentBalance -
+            input.phase.startingBalance +
+            (input.policy.profitSplit.kind === 'account_profit_marginal'
+              ? 0
+              : input.payout.cumulativeRequestedAmount)
+        );
+  const reviewReason =
+    input.payout.reviewReason ??
+    (proceeds === null
+      ? 'The source conflicts at the exact profit threshold. Trader net is not calculated; confirm with the firm.'
+      : undefined);
   const requestAllowed =
     input.payout.status === 'eligible' &&
     input.requestedAmount >= input.payout.minimumRequest &&
+    input.payout.availableAmount !== null &&
     input.requestedAmount <= input.payout.availableAmount;
   const postPayoutBalance =
     afterPayout.balanceAction === 'reset_to_starting_balance'
@@ -729,6 +817,12 @@ export function previewPropChallengePayout(
   }
   let drawdownFloor: number | undefined;
   switch (afterPayout.drawdownAction) {
+    case 'raise_to_starting_balance':
+      drawdownFloor = Math.max(
+        strictestFloor ?? input.phase.startingBalance,
+        input.phase.startingBalance
+      );
+      break;
     case 'unchanged':
       drawdownFloor = strictestFloor;
       break;
@@ -742,7 +836,7 @@ export function previewPropChallengePayout(
       
       let resetFloor: number | undefined;
       for (const rule of input.phase.rules) {
-        if (rule.kind !== 'drawdown' || !rule.enabled) continue;
+        if (!rule.enabled || !isAuthoritativeDrawdown(rule)) continue;
         const floor = input.phase.startingBalance - rule.amount;
         resetFloor =
           resetFloor === undefined ? floor : Math.max(resetFloor, floor);
@@ -754,24 +848,21 @@ export function previewPropChallengePayout(
   const remainingDrawdownBuffer =
     drawdownFloor === undefined ? undefined : postPayoutBalance - drawdownFloor;
   const immediateBreach =
-    remainingDrawdownBuffer !== undefined && remainingDrawdownBuffer <= 0;
+    input.payout.status !== 'needs_review' &&
+    remainingDrawdownBuffer !== undefined &&
+    remainingDrawdownBuffer <= 0;
   const reachesMaximumPayouts =
     input.policy.maximumPayouts !== undefined &&
     input.payout.payoutCount + 1 >= input.policy.maximumPayouts;
-  const maximumPayoutOutcome = reachesMaximumPayouts
-    ? afterPayout.maximumPayoutOutcome
-    : undefined;
+  const maximumPayoutOutcome =
+    input.payout.status !== 'needs_review' && reachesMaximumPayouts
+      ? afterPayout.maximumPayoutOutcome
+      : undefined;
   return {
     requestedAmount: input.requestedAmount,
     requestAllowed,
-    traderReceives: traderProceeds(
-      input.policy.profitSplit,
-      input.payout.cumulativeRequestedAmount,
-      input.requestedAmount,
-      input.evaluation.currentBalance -
-        input.phase.startingBalance +
-        input.payout.cumulativeRequestedAmount
-    ),
+    traderReceives: proceeds,
+    ...(reviewReason ? { reviewReason } : {}),
     postPayoutBalance,
     ...(drawdownFloor === undefined ? {} : { drawdownFloor }),
     ...(remainingDrawdownBuffer === undefined

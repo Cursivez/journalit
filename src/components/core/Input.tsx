@@ -3,69 +3,159 @@
 import React, { useId, ChangeEvent } from 'react';
 import { InputProps } from './types';
 
+type InputVariant = NonNullable<InputProps['variant']>;
+
+
+const isDefaultValue = (value: InputProps['value']): boolean =>
+  typeof value === 'string' && /^0(\.0+)?$/.test(value);
+
+type InputControlProps = Omit<
+  InputProps,
+  'id' | 'label' | 'error' | 'helperText' | 'disabled' | 'loading' | 'onChange'
+> & {
+  inputId: string;
+  variant: InputVariant;
+  hasError: boolean;
+  disabled: boolean;
+  describedBy: string | undefined;
+  onChange: (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => void;
+};
+
+
+function InputControl({
+  inputId,
+  className,
+  size = 'md',
+  variant,
+  hasError,
+  disabled,
+  describedBy,
+  type,
+  onChange,
+  multiline,
+  rows,
+  ref,
+  ...rest
+}: InputControlProps) {
+  const isModal = variant === 'modal';
+  const inputClasses = [
+    'input',
+    size,
+    isModal ? 'journalit-modal-input' : variant,
+    isModal && multiline ? 'journalit-modal-input--multiline' : '',
+    hasError ? 'error' : '',
+    isDefaultValue(rest.value) ? 'default-value' : '',
+    className,
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+  if (multiline) {
+    return (
+      <textarea
+        id={inputId}
+        className={inputClasses}
+        disabled={disabled}
+        aria-invalid={hasError}
+        aria-describedby={describedBy}
+        rows={rows}
+        onChange={onChange}
+        value={rest.value}
+        placeholder={rest.placeholder}
+      />
+    );
+  }
+  return (
+    <input
+      ref={ref}
+      type={type}
+      id={inputId}
+      className={inputClasses}
+      disabled={disabled}
+      aria-invalid={hasError}
+      aria-describedby={describedBy}
+      onFocus={rest.onFocus}
+      onBlur={rest.onBlur}
+      onChange={onChange}
+      {...rest}
+    />
+  );
+}
+
+const inputContainerClassName = (variant: InputVariant, loading: boolean) =>
+  [
+    'inputContainer',
+    variant === 'modal' ? 'journalit-modal-field' : '',
+    loading ? 'loading' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+
+function InputMessage({
+  inputId,
+  error,
+  helperText,
+}: {
+  inputId: string;
+  error: string | undefined;
+  helperText: string | undefined;
+}) {
+  if (error)
+    return (
+      <div id={`error-${inputId}`} className="errorMessage" role="alert">
+        {error}
+      </div>
+    );
+  if (!helperText) return null;
+  return (
+    <div id={`helper-${inputId}`} className="helperText">
+      {helperText}
+    </div>
+  );
+}
+
+const describedById = (
+  inputId: string,
+  error: string | undefined,
+  helperText: string | undefined
+): string | undefined => {
+  if (error) return `error-${inputId}`;
+  return helperText ? `helper-${inputId}` : undefined;
+};
+
 
 export const Input: React.FC<InputProps> = ({
-  className = '',
+  className,
   id,
   label,
   error,
   helperText,
-  disabled = false,
-  size = 'md',
+  disabled,
+  size,
   variant = 'default',
+  type = variant === 'modal' ? 'text' : undefined,
   loading = false,
   onChange,
   multiline = false,
   rows = 3,
-  required = false,
+  required,
   ref,
   ...rest
 }) => {
   
   const uniqueId = useId();
   const inputId = id || `input-${uniqueId}`;
-
-  
-  const helperId = `helper-${inputId}`;
-  const errorId = `error-${inputId}`;
-
-  
-  const isDefaultValue =
-    typeof rest.value === 'string' &&
-    (rest.value === '0' || rest.value === '0.00' || /^0\.0+$/.test(rest.value));
-
-  
-  const inputClasses = [
-    'input',
-    size,
-    variant,
-    error ? 'error' : '',
-    isDefaultValue ? 'default-value' : '',
-    className,
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  const containerClasses = ['inputContainer', loading ? 'loading' : '']
-    .filter(Boolean)
-    .join(' ');
-
-  
-  const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
-    if (onChange) {
-      void onChange(e.target.value);
-    }
-  };
-
-  
-  const handleTextareaChange = (e: ChangeEvent<HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     if (onChange) {
       void onChange(e.target.value);
     }
   };
 
   return (
-    <div className={containerClasses}>
+    <div className={inputContainerClassName(variant, loading)}>
       {label && (
         <label htmlFor={inputId} className="label">
           {label}
@@ -74,49 +164,24 @@ export const Input: React.FC<InputProps> = ({
       )}
 
       <div className="inputWrapper">
-        {multiline ? (
-          <textarea
-            id={inputId}
-            className={inputClasses}
-            disabled={disabled || loading}
-            aria-invalid={!!error}
-            aria-describedby={
-              error ? errorId : helperText ? helperId : undefined
-            }
-            rows={rows}
-            onChange={handleTextareaChange}
-            value={rest.value}
-            placeholder={rest.placeholder}
-          />
-        ) : (
-          <input
-            ref={ref}
-            id={inputId}
-            className={inputClasses}
-            disabled={disabled || loading}
-            aria-invalid={!!error}
-            aria-describedby={
-              error ? errorId : helperText ? helperId : undefined
-            }
-            onFocus={rest.onFocus}
-            onBlur={rest.onBlur}
-            onChange={handleInputChange}
-            {...rest}
-          />
-        )}
+        <InputControl
+          {...rest}
+          inputId={inputId}
+          className={className}
+          size={size}
+          variant={variant}
+          hasError={Boolean(error)}
+          disabled={disabled || loading}
+          describedBy={describedById(inputId, error, helperText)}
+          type={type}
+          onChange={handleChange}
+          multiline={multiline}
+          rows={rows}
+          ref={ref}
+        />
       </div>
 
-      {error && (
-        <div id={errorId} className="errorMessage" role="alert">
-          {error}
-        </div>
-      )}
-
-      {!error && helperText && (
-        <div id={helperId} className="helperText">
-          {helperText}
-        </div>
-      )}
+      <InputMessage inputId={inputId} error={error} helperText={helperText} />
     </div>
   );
 };

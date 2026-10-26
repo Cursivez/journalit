@@ -1,6 +1,6 @@
 
 
-import { App, Modal } from 'obsidian';
+import { App } from 'obsidian';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import JournalitPlugin from '../../../main';
@@ -8,6 +8,7 @@ import { t } from '../../../lang/helpers';
 import { showConfirmationModal } from '../../shared/ConfirmationModal';
 import { TradeFormLayoutSettings } from '../../../settings/types';
 import { TradeFormLayoutEditor } from './TradeFormLayoutEditor';
+import { JournalitModal } from '../../modals/JournalitModal';
 
 interface TradeFormLayoutSettingsModalProps {
   app: App;
@@ -15,7 +16,7 @@ interface TradeFormLayoutSettingsModalProps {
   onSave?: (layout: TradeFormLayoutSettings) => void;
 }
 
-class TradeFormLayoutSettingsModal extends Modal {
+class TradeFormLayoutSettingsModal extends JournalitModal {
   private root: Root | null = null;
   private container!: HTMLDivElement;
   private props: TradeFormLayoutSettingsModalProps;

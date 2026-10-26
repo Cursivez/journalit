@@ -90,7 +90,7 @@ const isAllowedRiskPercentInput = (value: string): boolean => {
   return /^(?:\d+(?:[.,]\d*)?|[.,]\d*)?$/.test(value);
 };
 
-export const parseRiskPercentInput = (value: string): number | null => {
+const parseRiskPercentInput = (value: string): number | null => {
   const normalized = value.trim().replace(',', '.');
 
   if (normalized === '' || normalized === '.') {
@@ -689,150 +689,208 @@ interface ResultsProps {
   shouldMask: (kind: string) => boolean;
 }
 
-const PositionSizeResults: React.FC<ResultsProps> = ({
+const riskRewardClassOf = (
+  ratio: number | null | undefined,
+  isMasked: boolean
+): string => {
+  if (ratio == null || isMasked) return '';
+  if (ratio >= 2) return 'journalit-home-position__rr--strong';
+  if (ratio >= 1) return 'journalit-home-position__rr--medium';
+  return 'journalit-home-position__rr--weak';
+};
+
+const positionUnitLabel = (unit: string | undefined): string => {
+  if (!unit) return t('widget.position-size.enter-values');
+  const key = `form.field.position-size.${unit}`;
+  return hasTranslation(key) ? t(key) : key;
+};
+
+
+const positionDirectionOf = ({
   assetType,
-  result,
-  riskAmount,
-  currency,
   useDollarValue,
   stockCalculation,
   futuresCalculation,
-  forexCalculation,
-  entryPrice,
-  shouldMask,
-}) => {
-  const { formatValue } = useDisplayFormatter();
+}: Pick<
+  ResultsProps,
+  'assetType' | 'useDollarValue' | 'stockCalculation' | 'futuresCalculation'
+>): boolean | undefined => {
+  if (assetType === 'stock' && !useDollarValue) {
+    return stockCalculation?.isLong ?? undefined;
+  }
+  if (assetType === 'futures') return futuresCalculation?.isLong;
+  return undefined;
+};
 
-  const isRiskRewardMasked = shouldMask('metric');
-  const riskRewardClass =
-    result?.riskRewardRatio == null || isRiskRewardMasked
-      ? ''
-      : result.riskRewardRatio >= 2
-        ? 'journalit-home-position__rr--strong'
-        : result.riskRewardRatio >= 1
-          ? 'journalit-home-position__rr--medium'
-          : 'journalit-home-position__rr--weak';
+const PositionDirectionBadge: React.FC<{ isLong: boolean }> = ({ isLong }) => (
+  <span
+    className={`journalit-home-position__direction ${isLong ? 'journalit-home-position__direction--long' : 'journalit-home-position__direction--short'}`}
+  >
+    {isLong ? t('form.field.direction.long') : t('form.field.direction.short')}
+  </span>
+);
+
+
+const positionExtraInfo = ({
+  assetType,
+  useDollarValue,
+  entryPrice,
+  stockCalculation,
+  futuresCalculation,
+  forexCalculation,
+}: Pick<
+  ResultsProps,
+  | 'assetType'
+  | 'useDollarValue'
+  | 'entryPrice'
+  | 'stockCalculation'
+  | 'futuresCalculation'
+  | 'forexCalculation'
+>): string | null => {
+  if (assetType === 'stock') {
+    if (useDollarValue) {
+      return entryPrice ? `@ $${parseFloat(entryPrice).toFixed(2)}` : null;
+    }
+    return stockCalculation?.priceDiff
+      ? `$${stockCalculation.priceDiff.toFixed(2)} ${t('widget.position-size.stop')}`
+      : null;
+  }
+  if (assetType === 'futures' && futuresCalculation) {
+    return `${futuresCalculation.pointsDiff.toFixed(2)} ${t('widget.position-size.pts')}`;
+  }
+  if (assetType === 'forex' && forexCalculation) {
+    return `${forexCalculation.miniLots.toFixed(1)} ${t('widget.position-size.mini')}`;
+  }
+  return null;
+};
+
+const PositionAmountStat: React.FC<
+  Pick<
+    ResultsProps,
+    | 'assetType'
+    | 'useDollarValue'
+    | 'stockCalculation'
+    | 'riskAmount'
+    | 'currency'
+  >
+> = ({ assetType, useDollarValue, stockCalculation, riskAmount, currency }) => {
+  const { formatValue } = useDisplayFormatter();
+  if (useDollarValue && assetType === 'stock') {
+    return (
+      <>
+        <span className="journalit-home-position__stat-label">
+          {t('widget.position-size.investment')}{' '}
+        </span>
+        <span className="journalit-home-position__stat-value">
+          {stockCalculation?.dollarAmount
+            ? formatValue({
+                kind: 'notional',
+                value: stockCalculation.dollarAmount,
+                currencyCode: currency,
+              })
+            : '—'}
+        </span>
+      </>
+    );
+  }
+  return (
+    <>
+      <span className="journalit-home-position__stat-label">
+        {t('widget.position-size.risk')}{' '}
+      </span>
+      <span className="journalit-home-position__stat-value">
+        {formatValue({
+          kind: 'risk',
+          value: riskAmount,
+          currencyCode: currency,
+        })}
+      </span>
+    </>
+  );
+};
+
+const PositionRewardStats: React.FC<{
+  potentialProfit: number;
+  riskRewardRatio: number;
+  currency: string;
+  isRiskRewardMasked: boolean;
+}> = ({ potentialProfit, riskRewardRatio, currency, isRiskRewardMasked }) => {
+  const { formatValue } = useDisplayFormatter();
+  return (
+    <div className="journalit-home-position__stats-right">
+      <div>
+        <span className="journalit-home-position__stat-label">
+          {t('widget.position-size.reward')}{' '}
+        </span>
+        <span className="journalit-home-position__reward-value">
+          {formatValue({
+            kind: 'pnl',
+            value: potentialProfit,
+            currencyCode: currency,
+          })}
+        </span>
+      </div>
+      <span
+        className={`journalit-home-position__rr ${riskRewardClassOf(riskRewardRatio, isRiskRewardMasked)}`}
+      >
+        {`1:${formatValue({
+          kind: 'metric',
+          value: riskRewardRatio,
+          precision: 1,
+        })}`}
+      </span>
+    </div>
+  );
+};
+
+const PositionSizeResults: React.FC<ResultsProps> = (props) => {
+  const { assetType, result, currency, useDollarValue, shouldMask } = props;
+  const positionSize = result?.positionSize;
+  const isLong = positionDirectionOf(props);
+  
+  const reward =
+    !useDollarValue &&
+    result?.riskRewardRatio != null &&
+    result.potentialProfit != null
+      ? {
+          riskRewardRatio: result.riskRewardRatio,
+          potentialProfit: result.potentialProfit,
+        }
+      : null;
 
   return (
     <div className="journalit-home-position__results">
       
       <div className="journalit-home-position__results-primary">
         <span
-          className={`journalit-home-position__results-value ${result?.positionSize ? 'journalit-home-position__results-value--active' : ''}`}
+          className={`journalit-home-position__results-value ${positionSize ? 'journalit-home-position__results-value--active' : ''}`}
         >
-          {result?.positionSize
-            ? result.positionSize.toFixed(getSizePrecision(assetType))
+          {positionSize
+            ? positionSize.toFixed(getSizePrecision(assetType))
             : '—'}
         </span>
         <span className="journalit-home-position__results-unit">
-          {result?.unit
-            ? (() => {
-                const key = `form.field.position-size.${result.unit}`;
-                return hasTranslation(key) ? t(key) : key;
-              })()
-            : t('widget.position-size.enter-values')}
+          {positionUnitLabel(result?.unit)}
         </span>
-        
-        {assetType === 'stock' &&
-          !useDollarValue &&
-          stockCalculation?.isLong !== null &&
-          stockCalculation?.isLong !== undefined && (
-            <span
-              className={`journalit-home-position__direction ${stockCalculation.isLong ? 'journalit-home-position__direction--long' : 'journalit-home-position__direction--short'}`}
-            >
-              {stockCalculation.isLong
-                ? t('form.field.direction.long')
-                : t('form.field.direction.short')}
-            </span>
-          )}
-        {assetType === 'futures' &&
-          futuresCalculation?.isLong !== undefined && (
-            <span
-              className={`journalit-home-position__direction ${futuresCalculation.isLong ? 'journalit-home-position__direction--long' : 'journalit-home-position__direction--short'}`}
-            >
-              {futuresCalculation.isLong
-                ? t('form.field.direction.long')
-                : t('form.field.direction.short')}
-            </span>
-          )}
+        {isLong !== undefined && <PositionDirectionBadge isLong={isLong} />}
       </div>
 
       
       <div className="journalit-home-position__stats">
         
         <div className="journalit-home-position__stats-left">
-          {useDollarValue && assetType === 'stock' ? (
-            <>
-              <span className="journalit-home-position__stat-label">
-                {t('widget.position-size.investment')}{' '}
-              </span>
-              <span className="journalit-home-position__stat-value">
-                {stockCalculation?.dollarAmount
-                  ? formatValue({
-                      kind: 'notional',
-                      value: stockCalculation.dollarAmount,
-                      currencyCode: currency,
-                    })
-                  : '—'}
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="journalit-home-position__stat-label">
-                {t('widget.position-size.risk')}{' '}
-              </span>
-              <span className="journalit-home-position__stat-value">
-                {formatValue({
-                  kind: 'risk',
-                  value: riskAmount,
-                  currencyCode: currency,
-                })}
-              </span>
-            </>
-          )}
+          <PositionAmountStat {...props} />
         </div>
-        
-        {!useDollarValue &&
-        result?.riskRewardRatio != null &&
-        result.potentialProfit != null ? (
-          <div className="journalit-home-position__stats-right">
-            <div>
-              <span className="journalit-home-position__stat-label">
-                {t('widget.position-size.reward')}{' '}
-              </span>
-              <span className="journalit-home-position__reward-value">
-                {formatValue({
-                  kind: 'pnl',
-                  value: result.potentialProfit,
-                  currencyCode: currency,
-                })}
-              </span>
-            </div>
-            <span className={`journalit-home-position__rr ${riskRewardClass}`}>
-              {`1:${formatValue({
-                kind: 'metric',
-                value: result.riskRewardRatio,
-                precision: 1,
-              })}`}
-            </span>
-          </div>
+        {reward ? (
+          <PositionRewardStats
+            {...reward}
+            currency={currency}
+            isRiskRewardMasked={shouldMask('metric')}
+          />
         ) : (
           
           <span className="journalit-home-position__extra">
-            {assetType === 'stock' &&
-              useDollarValue &&
-              entryPrice &&
-              `@ $${parseFloat(entryPrice).toFixed(2)}`}
-            {assetType === 'stock' &&
-              !useDollarValue &&
-              stockCalculation?.priceDiff &&
-              `$${stockCalculation.priceDiff.toFixed(2)} ${t('widget.position-size.stop')}`}
-            {assetType === 'futures' &&
-              futuresCalculation &&
-              `${futuresCalculation.pointsDiff.toFixed(2)} ${t('widget.position-size.pts')}`}
-            {assetType === 'forex' &&
-              forexCalculation &&
-              `${forexCalculation.miniLots.toFixed(1)} ${t('widget.position-size.mini')}`}
+            {positionExtraInfo(props)}
           </span>
         )}
       </div>

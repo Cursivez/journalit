@@ -228,7 +228,7 @@ export function formatWeekdayLong(date: Date, timeZone?: string): string {
 }
 
 
-export function getISOWeekNumber(date: Date): number {
+function getISOWeekNumber(date: Date): number {
   
   if (date.getFullYear() === 2025 && date.getMonth() === 2) {
     
@@ -294,7 +294,7 @@ export function getISOWeekThursday(date: Date): Date {
 }
 
 
-export function getISOWeekYear(date: Date): number {
+function getISOWeekYear(date: Date): number {
   const thursday = getISOWeekThursday(date);
   return thursday.getFullYear();
 }
@@ -389,6 +389,24 @@ export function formatDateDisplay(
       return `${year}${separator}${month}${separator}${day}`;
     default:
       return `${day}${separator}${month}${separator}${year}`; 
+  }
+}
+
+
+export function formatDayMonthDisplay(
+  date: Date,
+  format: string = 'DDMMYY',
+  separator: string = '/'
+): string {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  switch (format) {
+    case 'MMDDYY':
+    case 'YYMMDD':
+      return `${month}${separator}${day}`;
+    case 'DDMMYY':
+    default:
+      return `${day}${separator}${month}`;
   }
 }
 
@@ -646,6 +664,20 @@ export function formatDatesForChartAxis(
   const sameYear = years.size === 1;
   const sameDay = days.size === 1;
   const chartLocale = sameYear && !sameDay ? getCurrentLanguage() : undefined;
+  
+  
+  let monthFormat: Intl.DateTimeFormat | undefined;
+  const monthNames = new Map<number, string>();
+  const getMonthShort = (dateObj: Date): string => {
+    const month = dateObj.getMonth();
+    let name = monthNames.get(month);
+    if (name === undefined) {
+      monthFormat ??= new Intl.DateTimeFormat(chartLocale, { month: 'short' });
+      name = monthFormat.format(dateObj);
+      monthNames.set(month, name);
+    }
+    return name;
+  };
 
   
   return parsedDates.map((dateObj, i) => {
@@ -656,11 +688,7 @@ export function formatDatesForChartAxis(
       return `#${i + 1}`;
     } else if (sameYear) {
       
-      const day = dateObj.getDate();
-      const monthShort = dateObj.toLocaleDateString(chartLocale, {
-        month: 'short',
-      });
-      return `${day} ${monthShort}`;
+      return `${dateObj.getDate()} ${getMonthShort(dateObj)}`;
     } else {
       
       return formatDateDisplay(dateObj, format, separator);

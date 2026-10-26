@@ -3,6 +3,7 @@
 import type { Layout } from '../../shared/gridLayout/reactGridLayoutCompat';
 import {
   LAYOUT_BOTTOM_POSITION,
+  fitLayoutItemToBreakpoint,
   normalizeLayoutItem,
 } from '../../shared/gridLayout/gridLayoutUtils';
 import JournalitPlugin from '../../../main';
@@ -13,6 +14,7 @@ import {
 } from '../../../settings/types';
 import { AVAILABLE_METRICS } from '../components/TopSection/types';
 import { eventBus } from '../../../services/events/EventBus';
+import { defineOwnEntry } from '../../../utils/defineOwnEntry';
 
 
 let saveLayoutTimer: number | null = null;
@@ -97,7 +99,11 @@ const getLayoutSettings = (
     Object.entries(layouts).forEach(([name, layout]) => {
       
       if (!layout?.bottomSection) {
-        migratedLayouts[name] = cloneDashboardLayout(DEFAULT_LAYOUT);
+        defineOwnEntry(
+          migratedLayouts,
+          name,
+          cloneDashboardLayout(DEFAULT_LAYOUT)
+        );
         return;
       }
 
@@ -106,19 +112,13 @@ const getLayoutSettings = (
       
       const xs =
         layout.bottomSection.xs ??
-        sm.map((item) => ({
-          ...item,
-          w: Math.min(item.w, 2), 
-        }));
+        sm.map((item) => fitLayoutItemToBreakpoint(item, 'xs'));
 
       const xxs =
         layout.bottomSection.xxs ??
-        sm.map((item) => ({
-          ...item,
-          w: 1, 
-        }));
+        sm.map((item) => fitLayoutItemToBreakpoint(item, 'xxs'));
 
-      migratedLayouts[name] = {
+      defineOwnEntry(migratedLayouts, name, {
         topSection: layout.topSection || [],
         bottomSection: {
           lg: layout.bottomSection.lg ?? [],
@@ -127,7 +127,7 @@ const getLayoutSettings = (
           xs,
           xxs,
         },
-      };
+      });
     });
 
     return migratedLayouts;
@@ -149,7 +149,7 @@ function safeLayoutSettingsCopy(
 
   
   Object.entries(layoutSettings.layouts).forEach(([layoutName, layout]) => {
-    layoutsCopy[layoutName] = {
+    defineOwnEntry(layoutsCopy, layoutName, {
       topSection: [...layout.topSection],
       bottomSection: {
         lg: normalizeBreakpointLayout(layout.bottomSection.lg),
@@ -158,7 +158,7 @@ function safeLayoutSettingsCopy(
         xs: normalizeBreakpointLayout(layout.bottomSection.xs || []),
         xxs: normalizeBreakpointLayout(layout.bottomSection.xxs || []),
       },
-    };
+    });
   });
 
   return {
@@ -173,7 +173,7 @@ const applyLayoutSettings = (
   layoutSettings: DashboardLayoutSettings
 ): void => {
   if (!plugin.settings.dashboard) {
-    plugin.settings.dashboard = DEFAULT_SETTINGS.dashboard!;
+    plugin.settings.dashboard = structuredClone(DEFAULT_SETTINGS.dashboard!);
   }
 
   
@@ -238,7 +238,12 @@ export const getActiveLayout = (plugin: JournalitPlugin): DashboardLayout => {
   try {
     const settings = getLayoutSettings(plugin);
     const activeLayoutName = settings.activeLayout;
-    const activeLayout = settings.layouts[activeLayoutName];
+    const activeLayout = Object.prototype.hasOwnProperty.call(
+      settings.layouts,
+      activeLayoutName
+    )
+      ? settings.layouts[activeLayoutName]
+      : undefined;
 
     if (!activeLayout) {
       console.warn(
@@ -339,6 +344,7 @@ export const saveLayout = (
           await plugin.saveSettings();
           eventBus.publish('layout:changed', {
             view: 'dashboard',
+            source: 'ui',
             layoutName: getLayoutSettings(plugin).activeLayout,
           });
           waiters.forEach((waiter) => waiter.resolve());
@@ -422,7 +428,7 @@ const applyLayout = (
   });
 
   
-  settings.layouts[settings.activeLayout] = layoutCopy;
+  defineOwnEntry(settings.layouts, settings.activeLayout, layoutCopy);
 
   applyLayoutSettings(plugin, settings);
 };

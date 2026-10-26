@@ -191,19 +191,15 @@ export function buildCurrencyConversionMetadata(
   };
 }
 
-export const CurrencyConversionInfo: React.FC<CurrencyConversionInfoProps> = ({
-  metadata,
-  trades,
-}) => {
-  if (!metadata?.isMultiCurrency || !metadata.conversionBaseCurrency) {
-    return null;
-  }
 
-  const conversionBaseCurrency = metadata.conversionBaseCurrency;
-  const scopedOriginalByCurrency: Record<string, number> = {};
-  const scopedConvertedByCurrency: Record<string, number> = {};
+function scopedPnlByCurrency(trades: CurrencyConversionTrade[]): {
+  original: Record<string, number>;
+  converted: Record<string, number>;
+} {
+  const original: Record<string, number> = {};
+  const converted: Record<string, number> = {};
 
-  for (const trade of trades || []) {
+  for (const trade of trades) {
     const originalCurrency = trade.originalCurrency || trade.currency;
     if (!originalCurrency) continue;
 
@@ -213,106 +209,132 @@ export const CurrencyConversionInfo: React.FC<CurrencyConversionInfoProps> = ({
         ? trade.originalPnlBeforeConversion
         : getEffectivePnL(trade);
 
-    scopedOriginalByCurrency[originalCurrency] =
-      (scopedOriginalByCurrency[originalCurrency] || 0) +
-      originalPnlBeforeConversion;
+    original[originalCurrency] =
+      (original[originalCurrency] || 0) + originalPnlBeforeConversion;
     if (!trade.isUnconvertedCurrency) {
-      scopedConvertedByCurrency[originalCurrency] =
-        (scopedConvertedByCurrency[originalCurrency] || 0) +
-        getEffectivePnL(trade);
+      converted[originalCurrency] =
+        (converted[originalCurrency] || 0) + getEffectivePnL(trade);
     }
   }
 
-  const hasScopedTrades = trades !== undefined;
-  const hasScopedConversionEntries =
-    Object.keys(scopedOriginalByCurrency).length > 0 ||
-    Object.keys(scopedConvertedByCurrency).length > 0;
+  return { original, converted };
+}
 
-  if (hasScopedTrades && !hasScopedConversionEntries) {
-    return null;
-  }
 
-  const originalByCurrency = hasScopedTrades
-    ? scopedOriginalByCurrency
-    : metadata.originalByCurrency || {};
-  const convertedByCurrency = hasScopedTrades
-    ? scopedConvertedByCurrency
-    : metadata.convertedByCurrency || {};
-
-  const originalEntries = Object.entries(originalByCurrency).sort(([a], [b]) =>
-    a.localeCompare(b)
-  );
-  const convertedEntries = Object.entries(convertedByCurrency).sort(
-    ([a], [b]) => a.localeCompare(b)
-  );
-  const unconverted = hasScopedTrades
-    ? (metadata.unconvertedCurrencies || []).filter((currency) =>
-        Object.prototype.hasOwnProperty.call(originalByCurrency, currency)
-      )
-    : metadata.unconvertedCurrencies || [];
-  
-  
-  const partiallyConverted = hasScopedTrades
-    ? Array.from(
-        new Set(
-          (trades ?? []).flatMap(
-            (trade) => trade.conversionPartialCurrencies ?? []
-          )
-        )
-      )
-    : metadata.partiallyConvertedCurrencies || [];
-  const hasActualConversion =
-    originalEntries.some(
-      ([currency]) => currency !== metadata.conversionBaseCurrency
-    ) ||
-    unconverted.length > 0 ||
-    partiallyConverted.length > 0;
-
-  if (!hasActualConversion) {
-    return null;
-  }
-
-  const countScopedSourceTrades = (
-    predicate: (trade: CurrencyConversionTrade) => boolean
-  ): number => {
-    const identities = new Set<string>();
-    let anonymousCount = 0;
-    for (const trade of trades ?? []) {
-      if (!predicate(trade)) continue;
-      const identity =
-        trade.tradeId ?? trade._dashboardExcursionSourceKey ?? trade.path;
-      if (identity) {
-        identities.add(identity);
-      } else {
-        anonymousCount += 1;
-      }
+function countSourceTrades(
+  trades: CurrencyConversionTrade[],
+  predicate: (trade: CurrencyConversionTrade) => boolean
+): number {
+  const identities = new Set<string>();
+  let anonymousCount = 0;
+  for (const trade of trades) {
+    if (!predicate(trade)) continue;
+    const identity =
+      trade.tradeId ?? trade._dashboardExcursionSourceKey ?? trade.path;
+    if (identity) {
+      identities.add(identity);
+    } else {
+      anonymousCount += 1;
     }
-    return identities.size + anonymousCount;
+  }
+  return identities.size + anonymousCount;
+}
+
+const sortedCurrencyEntries = (
+  byCurrency: Record<string, number>
+): Array<[string, number]> =>
+  Object.entries(byCurrency).sort(([a], [b]) => a.localeCompare(b));
+
+
+function conversionCurrencyScope(
+  metadata: ReviewCurrencyConversionMetadata,
+  trades: CurrencyConversionTrade[] | undefined
+): {
+  originalByCurrency: Record<string, number>;
+  convertedByCurrency: Record<string, number>;
+  unconverted: string[];
+  partiallyConverted: string[];
+} | null {
+  if (trades === undefined) {
+    return {
+      originalByCurrency: metadata.originalByCurrency || {},
+      convertedByCurrency: metadata.convertedByCurrency || {},
+      unconverted: metadata.unconvertedCurrencies || [],
+      partiallyConverted: metadata.partiallyConvertedCurrencies || [],
+    };
+  }
+
+  const { original, converted } = scopedPnlByCurrency(trades);
+  if (
+    Object.keys(original).length === 0 &&
+    Object.keys(converted).length === 0
+  ) {
+    return null;
+  }
+  return {
+    originalByCurrency: original,
+    convertedByCurrency: converted,
+    unconverted: (metadata.unconvertedCurrencies || []).filter((currency) =>
+      Object.prototype.hasOwnProperty.call(original, currency)
+    ),
+    
+    
+    partiallyConverted: Array.from(
+      new Set(
+        trades.flatMap((trade) => trade.conversionPartialCurrencies ?? [])
+      )
+    ),
   };
+}
 
-  return (
-    <CurrencyConversionInfoContent
-      metadata={{
-        ...metadata,
-        conversionBaseCurrency,
-        brokerBaseCurrencyTradeCount: hasScopedTrades
-          ? countScopedSourceTrades((trade) =>
-              usedBrokerBasePnl(trade, conversionBaseCurrency)
-            )
-          : metadata.brokerBaseCurrencyTradeCount,
-        manualFxRateTradeCount: hasScopedTrades
-          ? countScopedSourceTrades(usedManualFxRate)
-          : metadata.manualFxRateTradeCount,
-      }}
-      ecbTradeCount={
-        hasScopedTrades ? countScopedSourceTrades(usedFetchedRates) : undefined
-      }
-      originalEntries={originalEntries}
-      convertedEntries={convertedEntries}
-      unconverted={unconverted}
-      partiallyConverted={partiallyConverted}
-    />
-  );
+
+function resolveCurrencyConversionContent(
+  metadata: ReviewCurrencyConversionMetadata | null | undefined,
+  trades: CurrencyConversionTrade[] | undefined
+): CurrencyConversionInfoContentProps | null {
+  if (!metadata?.isMultiCurrency || !metadata.conversionBaseCurrency) {
+    return null;
+  }
+  const conversionBaseCurrency = metadata.conversionBaseCurrency;
+  const scope = conversionCurrencyScope(metadata, trades);
+  if (!scope) return null;
+
+  const originalEntries = sortedCurrencyEntries(scope.originalByCurrency);
+  const hasActualConversion =
+    originalEntries.some(([currency]) => currency !== conversionBaseCurrency) ||
+    scope.unconverted.length > 0 ||
+    scope.partiallyConverted.length > 0;
+  if (!hasActualConversion) return null;
+
+  return {
+    metadata: {
+      ...metadata,
+      conversionBaseCurrency,
+      brokerBaseCurrencyTradeCount: trades
+        ? countSourceTrades(trades, (trade) =>
+            usedBrokerBasePnl(trade, conversionBaseCurrency)
+          )
+        : metadata.brokerBaseCurrencyTradeCount,
+      manualFxRateTradeCount: trades
+        ? countSourceTrades(trades, usedManualFxRate)
+        : metadata.manualFxRateTradeCount,
+    },
+    ecbTradeCount: trades
+      ? countSourceTrades(trades, usedFetchedRates)
+      : undefined,
+    originalEntries,
+    convertedEntries: sortedCurrencyEntries(scope.convertedByCurrency),
+    unconverted: scope.unconverted,
+    partiallyConverted: scope.partiallyConverted,
+  };
+}
+
+export const CurrencyConversionInfo: React.FC<CurrencyConversionInfoProps> = ({
+  metadata,
+  trades,
+}) => {
+  const content = resolveCurrencyConversionContent(metadata, trades);
+  return content ? <CurrencyConversionInfoContent {...content} /> : null;
 };
 
 function usedBrokerBasePnl(

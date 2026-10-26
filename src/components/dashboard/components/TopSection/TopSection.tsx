@@ -1,6 +1,6 @@
 
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import { FilterState } from '../../DashboardView';
 import { formatDuration } from '../../../../utils/formatting';
 import { parseCuratedCurrencyCode } from '../../../../utils/currencyConfig';
@@ -12,8 +12,13 @@ import {
 import { formatHoldTime } from '../../utils/analyticsUtils';
 import { getActiveLayout, saveLayout } from '../../utils/layoutUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
-import { useDashboardData } from '../../context/DashboardDataContext';
+import {
+  haveDashboardFiltersChanged,
+  isDashboardSettingsChange,
+  useDashboardData,
+} from '../../context/DashboardDataContext';
 import { MetricCard } from './MetricCard';
+import { ExpectancyGapMetric } from './ExpectancyGapMetric';
 import {
   DndContext,
   DragEndEvent,
@@ -168,7 +173,7 @@ const RATIO_DELTA_METRICS = new Set([
   'avgRRRiskBased',
 ]);
 
-export function formatTopSectionCalmarRatio({
+function formatTopSectionCalmarRatio({
   value,
   masked,
   formatValue,
@@ -181,7 +186,7 @@ export function formatTopSectionCalmarRatio({
   return formatValue({ kind: 'metric', value, precision: 2 });
 }
 
-export function formatTopSectionProfitFactor({
+function formatTopSectionProfitFactor({
   value,
   masked,
   formatValue,
@@ -195,7 +200,7 @@ export function formatTopSectionProfitFactor({
     : formatValue({ kind: 'metric', value, precision: 2 });
 }
 
-export function formatTopSectionRatioOrExcursionDelta({
+function formatTopSectionRatioOrExcursionDelta({
   metric,
   deltaValue,
   displayMaeMfeTicks,
@@ -233,7 +238,7 @@ export function formatTopSectionRatioOrExcursionDelta({
       });
 }
 
-export function shouldSplitTopSectionMetricValue({
+function shouldSplitTopSectionMetricValue({
   metric,
   formattedValue,
   displayMaeMfeTicks,
@@ -252,7 +257,7 @@ export function shouldSplitTopSectionMetricValue({
   return !(displayMaeMfeTicks && MAE_MFE_METRICS.has(metric));
 }
 
-export function shouldShowExcursionCoverageWarning({
+function shouldShowExcursionCoverageWarning({
   displayMaeMfeTicks,
   masked,
   coverage,
@@ -269,7 +274,7 @@ export function shouldShowExcursionCoverageWarning({
   );
 }
 
-export const resolveTopSectionRHeadline = ({
+const resolveTopSectionRHeadline = ({
   metricValue,
   displayRMultiples,
   netPnLR,
@@ -481,40 +486,11 @@ interface TopSectionProps {
 
 
 const SortableMetricCard: React.FC<{
+  children: React.ReactNode;
   id: string;
-  name: string;
-  value: string;
-  valueSuffix?: string;
-  isPositive?: boolean;
   isEditing: boolean;
   onRemove: (id: string) => void;
-  mainPart?: string;
-  decimalPart?: string;
-  tooltip?: React.ReactNode;
-  tooltipDisclosureLabel?: string;
-  valueSuffixIsPositive?: boolean;
-  hasWarning?: boolean;
-  previousDelta?: StatDelta;
-  subline?: string;
-  sublineIsPositive?: boolean;
-}> = ({
-  id,
-  name,
-  value,
-  valueSuffix,
-  valueSuffixIsPositive,
-  isPositive,
-  isEditing,
-  onRemove,
-  mainPart,
-  decimalPart,
-  tooltip,
-  tooltipDisclosureLabel,
-  hasWarning,
-  previousDelta,
-  subline,
-  sublineIsPositive,
-}) => {
+}> = ({ id, isEditing, onRemove, children }) => {
   const {
     attributes,
     listeners,
@@ -535,6 +511,7 @@ const SortableMetricCard: React.FC<{
     <div
       ref={setNodeRef}
       className="journalit-dashboard-metric-wrapper journalit-dashboard-metric-wrapper--sortable"
+      data-metric-id={id}
       style={dndKitStyle(transformString, transition)}
       data-editing={isEditing ? 'true' : 'false'}
       data-dragging={isDragging ? 'true' : 'false'}
@@ -550,21 +527,7 @@ const SortableMetricCard: React.FC<{
           {...(isEditing ? listeners : {})}
           className="journalit-dashboard-metric-handle-inner"
         >
-          <MetricCard
-            name={name}
-            value={value}
-            valueSuffix={valueSuffix}
-            valueSuffixIsPositive={valueSuffixIsPositive}
-            isPositive={isPositive}
-            mainPart={mainPart}
-            decimalPart={decimalPart}
-            tooltip={tooltip}
-            tooltipDisclosureLabel={tooltipDisclosureLabel}
-            hasWarning={hasWarning}
-            previousDelta={previousDelta}
-            subline={subline}
-            sublineIsPositive={sublineIsPositive}
-          />
+          {children}
           {isEditing && (
             <div
               className="journalit-dashboard-metric-drag-indicator"
@@ -746,7 +709,7 @@ const isPositiveMetric = (
 
 function useTopSectionModel() {
   const plugin = usePlugin();
-  const { currency } = useCurrency();
+  const { currency: liveCurrency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
   const {
     dashboardData: liveData,
@@ -764,19 +727,59 @@ function useTopSectionModel() {
   
   
   
+  
+  
+  
+  
+  
   const [committed, commitPair] = useState<{
     data: DashboardData;
+    filters: FilterState;
     comparison: DashboardData | null;
     mode: 'previous' | 'past30d';
+    
+    reusable: boolean;
   } | null>(null);
-  const data = committed?.data ?? liveData;
+  const data =
+    committed &&
+    dataFilters &&
+    (!committed.reusable ||
+      haveDashboardFiltersChanged(committed.filters, dataFilters))
+      ? committed.data
+      : liveData;
+  
+  
+  const currency = data?.currency ?? liveCurrency;
+  
+  
+  const retirementsRef = useRef(0);
+  
+  
+  const retireComparison = () => {
+    retirementsRef.current += 1;
+    commitPair((current) =>
+      current?.reusable
+        ? { ...current, data: data ?? current.data, reusable: false }
+        : current
+    );
+  };
+  useEventBus('settings:changed', (payload) => {
+    if (isDashboardSettingsChange(payload)) retireComparison();
+  });
+  useEventBus('account:changed', retireComparison);
+  useEventBus('folder-path:changed', retireComparison);
   
   const maxDrawdownPercentBasis =
     data?.metrics.maxDrawdownAmountPercent != null &&
     Number.isFinite(data.metrics.maxDrawdownAmountPercent)
       ? data.metrics.maxDrawdownAmountPercent
       : undefined;
-  const comparisonData = committed?.comparison ?? null;
+  
+  
+  const comparisonData =
+    committed?.comparison && committed.comparison.currency === data?.currency
+      ? committed.comparison
+      : null;
   const comparisonMode = committed?.mode ?? 'previous';
   const isUnconvertedGroupedDisplay =
     Boolean(data?.metrics.isMultiCurrency) &&
@@ -792,6 +795,7 @@ function useTopSectionModel() {
     );
 
     let isMounted = true;
+    const retirements = retirementsRef.current;
     fetchDashboardData(
       plugin.app,
       plugin.tradeService,
@@ -804,8 +808,10 @@ function useTopSectionModel() {
         if (isMounted) {
           commitPair({
             data: liveData,
+            filters: dataFilters,
             comparison: nextComparisonData,
             mode: comparisonRange.mode,
+            reusable: retirements === retirementsRef.current,
           });
         }
       })
@@ -817,8 +823,10 @@ function useTopSectionModel() {
         if (isMounted) {
           commitPair({
             data: liveData,
+            filters: dataFilters,
             comparison: null,
             mode: comparisonRange.mode,
+            reusable: retirements === retirementsRef.current,
           });
         }
       });
@@ -2187,6 +2195,21 @@ export const TopSection: React.FC<TopSectionProps> = ({ isEditing }) => {
                 id="topsection-metrics-container"
               >
                 {activeMetrics.map((metric) => {
+                  if (metric === 'expectancyGap') {
+                    return (
+                      <SortableMetricCard
+                        key={metric}
+                        id={metric}
+                        isEditing={isEditing}
+                        onRemove={(id) => void handleRemoveMetric(id)}
+                      >
+                        <ExpectancyGapMetric
+                          sample={data.expectancySample}
+                          isEditingLayout={isEditing}
+                        />
+                      </SortableMetricCard>
+                    );
+                  }
                   const rawMetricValue = getDashboardMetricValue(
                     data.metrics,
                     metric
@@ -2216,38 +2239,41 @@ export const TopSection: React.FC<TopSectionProps> = ({ isEditing }) => {
                     <SortableMetricCard
                       key={metric}
                       id={metric}
-                      name={getMetricName(metric)}
-                      value={formattedValue}
-                      valueSuffix={percentSuffix?.value}
-                      valueSuffixIsPositive={percentSuffix?.isPositive}
-                      isPositive={
-                        shouldMask(getMetricDisplayKind(metric))
-                          ? undefined
-                          : isPositiveMetric(metric, metricValue)
-                      }
                       isEditing={isEditing}
-                      onRemove={(metric) => void handleRemoveMetric(metric)}
-                      
-                      mainPart={getMainPart(
-                        metric,
-                        metricValue,
-                        formattedValue
-                      )}
-                      decimalPart={getDecimalPart(
-                        metric,
-                        metricValue,
-                        formattedValue
-                      )}
-                      tooltip={getMetricTooltip(metric, previousDelta)}
-                      tooltipDisclosureLabel={getMetricTooltipDisclosureLabel(
-                        metric,
-                        previousDelta
-                      )}
-                      hasWarning={hasMetricWarning(metric)}
-                      previousDelta={previousDelta}
-                      subline={netPnLUnrealized?.subline}
-                      sublineIsPositive={netPnLUnrealized?.sublineIsPositive}
-                    />
+                      onRemove={(id) => void handleRemoveMetric(id)}
+                    >
+                      <MetricCard
+                        name={getMetricName(metric)}
+                        value={formattedValue}
+                        valueSuffix={percentSuffix?.value}
+                        valueSuffixIsPositive={percentSuffix?.isPositive}
+                        isPositive={
+                          shouldMask(getMetricDisplayKind(metric))
+                            ? undefined
+                            : isPositiveMetric(metric, metricValue)
+                        }
+                        
+                        mainPart={getMainPart(
+                          metric,
+                          metricValue,
+                          formattedValue
+                        )}
+                        decimalPart={getDecimalPart(
+                          metric,
+                          metricValue,
+                          formattedValue
+                        )}
+                        tooltip={getMetricTooltip(metric, previousDelta)}
+                        tooltipDisclosureLabel={getMetricTooltipDisclosureLabel(
+                          metric,
+                          previousDelta
+                        )}
+                        hasWarning={hasMetricWarning(metric)}
+                        previousDelta={previousDelta}
+                        subline={netPnLUnrealized?.subline}
+                        sublineIsPositive={netPnLUnrealized?.sublineIsPositive}
+                      />
+                    </SortableMetricCard>
                   );
                 })}
               </div>

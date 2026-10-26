@@ -5,14 +5,13 @@ import { BaseWidget, BaseWidgetProps } from './BaseWidget';
 import type { Trade } from '../../utils/dataUtils';
 import { calculateEffectiveRMultiple } from '../../../../utils/formatting';
 import { usePlugin } from '../../../../hooks/usePlugin';
-import { TradeFormModal } from '../../../forms/trade/TradeFormModal';
+import { TradeFormDrawer } from '../../../forms/trade/TradeFormDrawer';
 import { EmptyState } from '../../../shared/EmptyState';
 import {
   getEffectivePnL,
   hasRealizedStoredPnL,
   isTradeOpenPreservingNullPnl,
 } from '../../../../utils/tradeStatusUtils';
-import { useCurrency } from '../../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import { safeDateSort } from '../../../../utils/dateUtils';
 import {
@@ -61,9 +60,8 @@ const formatDate = (date: Date, plugin: JournalitPlugin | null): string => {
 };
 
 
-export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
+const RecentTradesWidgetComponent: React.FC<BaseWidgetProps> = () => {
   const plugin = usePlugin();
-  const { currency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
   const isPnlMasked = shouldMask('pnl');
   const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
@@ -79,7 +77,7 @@ export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
   };
 
   return (
-    <BaseWidget filters={filters} skeletonType="table">
+    <BaseWidget skeletonType="table">
       {(data) => {
         
         
@@ -154,11 +152,11 @@ export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
                             if (!plugin || !plugin.app) return;
 
                             
-                            const modal = new TradeFormModal({
+                            const drawer = new TradeFormDrawer({
                               app: plugin.app,
                               plugin,
                             });
-                            modal.open();
+                            drawer.open();
                           }}
                         />
                       </div>
@@ -259,7 +257,7 @@ export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
                                   data.metrics.isMultiCurrency &&
                                   data.metrics.conversionBaseCurrency
                                     ? data.metrics.conversionBaseCurrency
-                                    : trade.currency || currency;
+                                    : trade.currency || data.currency;
                                 return formatValue({
                                   kind: 'pnl',
                                   value: displayPnL,
@@ -280,3 +278,6 @@ export const RecentTradesWidget: React.FC<BaseWidgetProps> = ({ filters }) => {
     </BaseWidget>
   );
 };
+
+
+export const RecentTradesWidget = React.memo(RecentTradesWidgetComponent);

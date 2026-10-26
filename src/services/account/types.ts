@@ -3,6 +3,7 @@
 import { CurrencyCode } from '../../utils/currencyConfig';
 import type { CopyTradingPeriod } from '../../settings/types';
 import type { PropChallengeConfig } from '../propChallenge/types';
+import type { PayoutReceipt } from '../propChallenge/PayoutReceipt';
 
 
 export enum AccountType {
@@ -43,6 +44,7 @@ export enum ProfitTargetType {
 
 
 export interface AccountTransaction {
+  payoutReceipt?: PayoutReceipt;
   id: string; 
   date: Date; 
   

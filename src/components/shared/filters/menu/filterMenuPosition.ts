@@ -12,7 +12,7 @@ export interface PanelPosition {
   bridgesGap: boolean;
 }
 
-export interface RectLike {
+interface RectLike {
   top: number;
   bottom: number;
   left: number;

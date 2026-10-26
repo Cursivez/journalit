@@ -66,6 +66,7 @@ export interface RealizedPnlEvent {
 interface AllocatedRealizedPnlEvent {
   event: RealizedPnlEvent;
   originalIndex: number;
+  isFinalEvent: boolean;
   brokerBaseCurrencyPnl?: number;
 }
 
@@ -87,6 +88,7 @@ interface ProjectedRealizedEventTrade<T extends ProjectableRealizedTrade> {
   trade: T;
   event: RealizedPnlEvent;
   originalIndex: number;
+  isFinalEvent: boolean;
 }
 
 export function getAnalyticsDateBasis(settings?: {
@@ -193,6 +195,39 @@ const isMeaningfulExitTimeCandidate = (exit: {
   return exit.size === undefined || exit.size === null || exit.size > 0;
 };
 
+
+const TRADING_DAY_SPAN_MARGIN_MS = 3 * 24 * 60 * 60 * 1000;
+
+
+export function mayTradeFallInWindow(
+  trade: AnalyticsDateTradeLike,
+  windowStart: number,
+  windowEnd: number
+): boolean {
+  let earliest = Infinity;
+  let latest = -Infinity;
+  let unparseable = false;
+  const include = (value: Date | string | null | undefined): void => {
+    if (value === undefined || value === null || value === '') return;
+    const timestamp = parseTradeTimestampValue(value)?.getTime();
+    if (timestamp === undefined) {
+      unparseable = true;
+      return;
+    }
+    if (timestamp < earliest) earliest = timestamp;
+    if (timestamp > latest) latest = timestamp;
+  };
+  include(trade.entryTime);
+  include(trade.exitTime);
+  if (trade.entries) for (const entry of trade.entries) include(entry.time);
+  if (trade.exits) for (const exit of trade.exits) include(exit.time);
+  if (unparseable || earliest === Infinity) return true;
+  return (
+    latest >= windowStart - TRADING_DAY_SPAN_MARGIN_MS &&
+    earliest <= windowEnd + TRADING_DAY_SPAN_MARGIN_MS
+  );
+}
+
 export function getTradeAnalyticsTradingDay(
   trade: AnalyticsDateTradeLike,
   basis: AnalyticsDateBasis,
@@ -207,11 +242,44 @@ export function getTradeAnalyticsTradingDay(
   }
 
   if (isDateOnlyTimestampValue(getAnalyticsDateRawValue(trade, basis))) {
-    analyticsDate.setHours(0, 0, 0, 0);
-    return analyticsDate;
+    
+    const tradingDay = new Date(analyticsDate);
+    tradingDay.setHours(0, 0, 0, 0);
+    return tradingDay;
   }
 
   return getTradingDay(analyticsDate, plugin);
+}
+
+
+export function getMissedTradeTradingDay(
+  trade: AnalyticsDateTradeLike,
+  basis: AnalyticsDateBasis,
+  plugin: Parameters<typeof getTradeAnalyticsTradingDay>[2]
+): Date | null {
+  return (
+    getTradeAnalyticsTradingDay(trade, basis, plugin) ??
+    (basis === 'exit'
+      ? getTradeAnalyticsTradingDay(trade, 'entry', plugin)
+      : null)
+  );
+}
+
+
+export function getMissedTradeFrontmatterTradingDay(
+  frontmatter: Omit<AnalyticsDateTradeLike, '_originalPnlWasNull'>,
+  basis: AnalyticsDateBasis,
+  plugin: Parameters<typeof getTradeAnalyticsTradingDay>[2]
+): Date | null {
+  return getMissedTradeTradingDay(
+    {
+      ...frontmatter,
+      _originalPnlWasNull:
+        frontmatter.pnl === undefined || frontmatter.pnl === null,
+    },
+    basis,
+    plugin
+  );
 }
 
 const toValidDate = (value: Date | string | null | undefined): Date | null => {
@@ -450,6 +518,7 @@ export function getAllocatedRealizedPnlEvents(
   return events.map((event, originalIndex) => ({
     event,
     originalIndex,
+    isFinalEvent: originalIndex === finalEventIndex,
     brokerBaseCurrencyPnl:
       brokerPnl === null
         ? undefined
@@ -469,7 +538,7 @@ export function getProjectedRealizedEventTrades<
   plugin: Parameters<typeof getTradeRealizedPnlEvents>[2]
 ): ProjectedRealizedEventTrade<T>[] {
   return getAllocatedRealizedPnlEvents(trade, 'exit', plugin).map(
-    ({ event, originalIndex, brokerBaseCurrencyPnl }) => ({
+    ({ event, originalIndex, isFinalEvent, brokerBaseCurrencyPnl }) => ({
       trade: {
         ...trade,
         tradeStatus: 'CLOSED',
@@ -502,6 +571,7 @@ export function getProjectedRealizedEventTrades<
       },
       event,
       originalIndex,
+      isFinalEvent,
     })
   );
 }

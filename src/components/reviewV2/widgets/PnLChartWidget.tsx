@@ -116,7 +116,7 @@ export const PnLChartWidget: React.FC<PnLChartWidgetProps> = React.memo(
                   <path
                     d="M0,180 Q50,160 100,140 T200,100 T300,80 T400,60 L400,200 L0,200 Z"
                     fill="var(--background-modifier-border)"
-                    className="skeleton-shimmer journalit-reviewv2-chart-skeleton-wave-fill"
+                    className="journalit-skeleton-shimmer journalit-reviewv2-chart-skeleton-wave-fill"
                   />
                   
                   <path
@@ -124,7 +124,7 @@ export const PnLChartWidget: React.FC<PnLChartWidgetProps> = React.memo(
                     fill="none"
                     stroke="var(--background-modifier-border)"
                     strokeWidth="2"
-                    className="skeleton-shimmer journalit-reviewv2-chart-skeleton-wave-line"
+                    className="journalit-skeleton-shimmer journalit-reviewv2-chart-skeleton-wave-line"
                   />
                 </svg>
               </div>

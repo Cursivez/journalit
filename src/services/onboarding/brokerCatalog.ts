@@ -7,7 +7,7 @@ import type { OnboardingAssetFocus } from './types';
 import { t } from '../../lang/helpers';
 
 
-export type OnboardingSyncProviderId = 'metatrader' | BrokerSyncProviderId;
+type OnboardingSyncProviderId = 'metatrader' | BrokerSyncProviderId;
 
 
 export const MANUAL_IMPORT_BROKER_ID = 'MANUAL';
@@ -38,6 +38,8 @@ interface SyncProviderDefinition {
   
   partialImportBrokerIds?: string[];
   inferredAssetFocus: OnboardingAssetFocus;
+  
+  scopeDescription?: () => string;
 }
 
 
@@ -59,6 +61,108 @@ const IMPORT_USAGE_ORDER: readonly string[] = [
   'RITHMIC',
   'TRADINGVIEW',
 ];
+
+
+interface ImportFormatGroup {
+  label: () => string;
+  formats: readonly {
+    brokerId: string;
+    label: () => string;
+    hint: () => string;
+  }[];
+}
+
+const IMPORT_FORMAT_GROUPS: readonly ImportFormatGroup[] = [
+  {
+    label: () => 'TradingView',
+    formats: [
+      {
+        brokerId: 'TRADINGVIEW',
+        label: () => t('trade-import.format.tradingview.paper'),
+        hint: () => t('trade-import.format.tradingview.paper-hint'),
+      },
+      {
+        brokerId: 'TRADINGVIEW_STRATEGY',
+        label: () => t('trade-import.format.tradingview.strategy'),
+        hint: () => t('trade-import.format.tradingview.strategy-hint'),
+      },
+    ],
+  },
+];
+
+const importFormatGroup = (brokerId: string): ImportFormatGroup | undefined => {
+  const normalized = brokerId.toUpperCase();
+  return IMPORT_FORMAT_GROUPS.find((group) =>
+    group.formats.some((format) => format.brokerId === normalized)
+  );
+};
+
+type ImportBrokerCapabilities = Pick<TradeImportCapabilities, 'brokers'>;
+
+
+const availableGroupFormats = (
+  group: ImportFormatGroup,
+  capabilities: ImportBrokerCapabilities | null
+): ImportFormatGroup['formats'] => {
+  const available = new Set(
+    capabilities?.brokers.map((broker) => broker.id.toUpperCase()) ?? []
+  );
+  return group.formats.filter((format) => available.has(format.brokerId));
+};
+
+
+export const importSourceTileId = (
+  brokerId: string,
+  capabilities: ImportBrokerCapabilities | null
+): string => {
+  const group = importFormatGroup(brokerId);
+  if (!group) return brokerId;
+  return availableGroupFormats(group, capabilities)[0]?.brokerId ?? brokerId;
+};
+
+interface TradeImportFormatOption {
+  brokerId: string;
+  label: string;
+  hint: string;
+}
+
+
+export function getImportFormatOptions(
+  brokerId: string,
+  capabilities: ImportBrokerCapabilities | null
+): TradeImportFormatOption[] {
+  const group = importFormatGroup(brokerId);
+  if (!group) return [];
+  const formats = availableGroupFormats(group, capabilities);
+  return formats.length > 1
+    ? formats.map((format) => ({
+        brokerId: format.brokerId,
+        label: format.label(),
+        hint: format.hint(),
+      }))
+    : [];
+}
+
+
+export const importPlatformLabel = (
+  brokerId: string,
+  capabilities: ImportBrokerCapabilities | null
+): string | undefined =>
+  getImportFormatOptions(brokerId, capabilities).length > 0
+    ? importFormatGroup(brokerId)?.label()
+    : undefined;
+
+
+export const importFormatForTile = (
+  tileId: string,
+  favoriteBrokerId: string | undefined,
+  capabilities: ImportBrokerCapabilities | null
+): string =>
+  favoriteBrokerId &&
+  capabilities?.brokers.some((broker) => broker.id === favoriteBrokerId) &&
+  importSourceTileId(favoriteBrokerId, capabilities) === tileId
+    ? favoriteBrokerId
+    : tileId;
 
 const importRank = (id: string | undefined): number => {
   const index = IMPORT_USAGE_ORDER.indexOf((id ?? '').toUpperCase());
@@ -87,7 +191,31 @@ const SYNC_PROVIDERS: readonly SyncProviderDefinition[] = [
     partialImportBrokerIds: ['METATRADER'],
     inferredAssetFocus: 'forex',
   },
+  {
+    
+    
+    id: 'hyperliquid',
+    label: () => t('onboarding.broker.option.hyperliquid-sync.label'),
+    importBrokerIds: [],
+    partialImportBrokerIds: ['HYPERLIQUID'],
+    inferredAssetFocus: 'crypto',
+    scopeDescription: () => t('trade-sync.hyperliquid.scope-description'),
+  },
 ];
+
+function toTradeSyncSuggestion(
+  provider: SyncProviderDefinition,
+  coverage: TradeSyncSuggestion['coverage']
+): TradeSyncSuggestion {
+  return {
+    providerId: provider.id,
+    providerLabel: provider.label(),
+    coverage,
+    ...(provider.scopeDescription
+      ? { scopeDescription: provider.scopeDescription() }
+      : {}),
+  };
+}
 
 export function getSyncProviderOptions(
   capabilities: TradeImportCapabilities | null = null
@@ -112,6 +240,8 @@ export interface TradeSyncSuggestion {
   providerLabel: string;
   
   coverage: 'full' | 'partial';
+  
+  scopeDescription?: string;
 }
 
 export function getTradeSyncSuggestion(
@@ -124,13 +254,7 @@ export function getTradeSyncSuggestion(
       : provider.partialImportBrokerIds?.includes(normalized)
         ? 'partial'
         : undefined;
-    if (coverage) {
-      return {
-        providerId: provider.id,
-        providerLabel: provider.label(),
-        coverage,
-      };
-    }
+    if (coverage) return toTradeSyncSuggestion(provider, coverage);
   }
   return undefined;
 }
@@ -146,11 +270,7 @@ export function getSyncOnlyProviders(
       ...(provider.partialImportBrokerIds ?? []),
     ].some((id) => importBrokerIds.has(id));
     if (importable) continue;
-    providers.push({
-      providerId: provider.id,
-      providerLabel: provider.label(),
-      coverage: 'full',
-    });
+    providers.push(toTradeSyncSuggestion(provider, 'full'));
   }
   return providers;
 }
@@ -177,14 +297,18 @@ export function buildOnboardingBrokerOptions(
   for (const broker of capabilities?.brokers ?? []) {
     if (
       broker.id === MANUAL_IMPORT_BROKER_ID ||
-      coveredImportIds.has(broker.id.toUpperCase())
+      coveredImportIds.has(broker.id.toUpperCase()) ||
+      
+      importSourceTileId(broker.id, capabilities) !== broker.id
     ) {
       continue;
     }
     importOptions.push({
       id: `import:${broker.id}`,
       label:
-        IMPORT_LABEL_OVERRIDES[broker.id.toUpperCase()]?.() ?? broker.label,
+        importPlatformLabel(broker.id, capabilities) ??
+        IMPORT_LABEL_OVERRIDES[broker.id.toUpperCase()]?.() ??
+        broker.label,
       method: 'import',
       importBrokerId: broker.id,
       ...(getBrokerLogo(broker.id) ? { logo: getBrokerLogo(broker.id) } : {}),

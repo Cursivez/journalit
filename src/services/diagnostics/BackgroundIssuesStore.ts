@@ -40,7 +40,7 @@ function extractErrorDetail(error: unknown): string | undefined {
   }
 }
 
-export class BackgroundIssuesStore {
+class BackgroundIssuesStore {
   private issues = new Map<string, BackgroundIssueRecord>();
   private listeners = new Set<Listener>();
 

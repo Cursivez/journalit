@@ -300,6 +300,19 @@ export const DASHBOARD_WIDGET_PREVIEWS: Record<string, () => React.ReactNode> =
         xLabels={['-$2,000', '$0', '$2,000', '$4,000']}
       />
     ),
+    ratingPerformance: () => (
+      <HBarChart
+        title={widgetName('ratingPerformance')}
+        rows={[
+          { category: '★★★★★', value: 4.1 },
+          { category: '★★★★', value: 2.2 },
+          { category: '★★★', value: 0.6 },
+          { category: '★★', value: -1.1 },
+          { category: '★', value: -2.4 },
+        ]}
+        xLabels={['-$2,000', '$0', '$2,000', '$4,000']}
+      />
+    ),
     drawdownChart: () =>
       lineChart(
         'drawdownChart',
@@ -331,6 +344,45 @@ export const DASHBOARD_WIDGET_PREVIEWS: Record<string, () => React.ReactNode> =
         { baselineAt: 0 }
       ),
     recentTrades: () => <RecentTradesPreview />,
+    
+    maeScatter: () => (
+      <ChartFrame
+        title={widgetName('maeScatter')}
+        legend={[
+          { label: t('tradelog.filter.losers'), tone: 'neg' },
+          { label: t('tradelog.filter.winners'), tone: 'pos' },
+        ]}
+        yLabels={['$1,000', '$500', '$0', '-$500', '-$1,000']}
+        xLabels={['$0', '$200', '$400', '$600', '$800']}
+      >
+        <PlotScatter
+          zeroY={30}
+          points={[
+            [2, 22, 'pos'],
+            [4, 18, 'pos'],
+            [5, 25, 'pos'],
+            [7, 20, 'pos'],
+            [9, 16, 'pos'],
+            [11, 24, 'pos'],
+            [13, 27, 'pos'],
+            [16, 21, 'pos'],
+            [19, 26, 'pos'],
+            [24, 23, 'pos'],
+            [31, 27.5, 'pos'],
+            [44, 22, 'pos'],
+            [6, 31.5, 'neg'],
+            [12, 33, 'neg'],
+            [20, 36, 'neg'],
+            [27, 38.5, 'neg'],
+            [34, 40, 'neg'],
+            [42, 43, 'neg'],
+            [55, 47, 'neg'],
+            [68, 51, 'neg'],
+            [86, 55, 'neg'],
+          ]}
+        />
+      </ChartFrame>
+    ),
     mfeScatter: () => (
       <ChartFrame
         title={widgetName('mfeScatter')}
@@ -456,13 +508,14 @@ const money = (
 });
 
 
-export const DASHBOARD_METRIC_PREVIEWS: Record<string, MetricSample> = {
+const DASHBOARD_METRIC_PREVIEWS: Record<string, MetricSample> = {
   netPnL: money('$11,731', '.28', true, up('$1,240.60')),
   winRate: { value: '62.5%', delta: up('4.2%') },
   profitFactor: { value: '1.84', isPositive: true, delta: up('0.21') },
   sharpeRatio: { value: '1.12', isPositive: true, delta: up('0.08') },
   calmarRatio: { value: '1.54', isPositive: true },
   expectancy: money('$57', '.20', true, up('$6.40')),
+  expectancyGap: { value: '-0.15R', isPositive: false },
   maxDrawdown: {
     value: '-8.4%',
     isPositive: false,

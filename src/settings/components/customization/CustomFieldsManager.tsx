@@ -25,9 +25,12 @@ import {
   generateUniqueFieldKey,
 } from '../../../types/customFields';
 import { Button } from '../../../components/ui/Button';
+import { FieldsListHeader } from './FieldsListHeader';
 import { useService } from '../../../hooks/useService';
 import { useOptimizedAccordion } from '../../../hooks/useOptimizedAccordion';
 import { FieldEditor } from './FieldEditor';
+import { openConvertFieldToRatingModal } from './ConvertFieldToRatingModal';
+import { canConvertFieldToRating } from '../../../services/customFieldConversion/ratingConversion';
 import { t, tPlural } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
 
@@ -587,6 +590,11 @@ export const CustomFieldsManager: React.FC<CustomFieldsManagerProps> = (
     validateLabelForField,
     customFieldsService,
   } = useCustomFieldsManagerModel(props);
+  
+  const savedEditingField =
+    editingField && !isAddingNew
+      ? fields.find((field) => field.id === editingField.id)
+      : undefined;
 
   return (
     <div className="custom-fields-manager">
@@ -597,29 +605,15 @@ export const CustomFieldsManager: React.FC<CustomFieldsManagerProps> = (
       
       {fields.length > 0 && (
         <div className="custom-fields-list-panel">
-          <div className="custom-fields-list-header">
-            <div>
-              <div className="custom-fields-list-title">
-                {t('settings.customization.custom-fields.title', {
-                  count: String(fields.length),
-                })}
-              </div>
-              <div className="custom-fields-list-description">
-                {t('settings.customization.custom-fields.manage-desc')}
-              </div>
-            </div>
-            <div className="custom-fields-list-header-actions">
-              {!editingField && (
-                <Button
-                  variant="primary"
-                  size="sm"
-                  onClick={() => void handleAddField()}
-                >
-                  {t('settings.customization.custom-fields.add-button')}
-                </Button>
-              )}
-            </div>
-          </div>
+          <FieldsListHeader
+            title={t('settings.customization.custom-fields.title', {
+              count: String(fields.length),
+            })}
+            description={t('settings.customization.custom-fields.manage-desc')}
+            addLabel={t('settings.customization.custom-fields.add-button')}
+            showAdd={!editingField}
+            onAdd={() => void handleAddField()}
+          />
 
           <div className="custom-fields-field-list">
             {fields.map((field, index) => (
@@ -692,6 +686,16 @@ export const CustomFieldsManager: React.FC<CustomFieldsManagerProps> = (
             onDelete={handleDeleteField}
             generateUniqueKey={generateUniqueKeyForField}
             validateLabel={validateLabelForField}
+            onConvertToRating={
+              savedEditingField && canConvertFieldToRating(savedEditingField)
+                ? () =>
+                    openConvertFieldToRatingModal(
+                      plugin,
+                      savedEditingField,
+                      handleCancelEdit
+                    )
+                : undefined
+            }
           />
         </div>
       )}

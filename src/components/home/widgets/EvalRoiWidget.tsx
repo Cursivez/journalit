@@ -5,7 +5,7 @@ import JournalitPlugin from '../../../main';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { useHomePeriod } from '../context/HomePeriodContext';
 import { useHomeAccount } from '../context/HomeAccountContext';
-import { useHomeAccountsData } from '../context/HomeAccountsDataContext';
+import { useHomeAccountsState } from '../context/HomeAccountsDataContext';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { HomePeriod } from '../../../settings/types';
 import { aggregatePropChallengeEconomics } from '../../../services/propChallenge/PropChallengeAggregation';
@@ -177,19 +177,36 @@ function EvalRoiGauge({
   );
 }
 
+const singleCurrencyTotals = <T,>(
+  totalsByCurrency: readonly T[]
+): T | undefined =>
+  totalsByCurrency.length === 1 ? totalsByCurrency[0] : undefined;
+
+
+const toneClassSuffix = (
+  isMasked: boolean,
+  value: number | null | undefined
+): string => {
+  if (isMasked || value === undefined || value === null) return '';
+  return value >= 0
+    ? ' journalit-home-eval-roi__tone--positive'
+    : ' journalit-home-eval-roi__tone--negative';
+};
+
+const challengeCountLabel = (challengeCount: number): string =>
+  challengeCount === 1
+    ? t('home.widget.eval-roi.challenge-count', { count: '1' })
+    : t('home.widget.eval-roi.challenge-count-plural', {
+        count: String(challengeCount),
+      });
+
 const EvalRoiWidgetComponent: React.FC<EvalRoiWidgetProps> = ({ plugin }) => {
   const { currency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
   const periodContext = useHomePeriod();
   const accountContext = useHomeAccount();
-  const homeAccountsData = useHomeAccountsData();
-  const accounts = useMemo(
-    () => homeAccountsData?.accounts || [],
-    [homeAccountsData?.accounts]
-  );
-  const isLoading = homeAccountsData?.isLoading ?? true;
-  const error = homeAccountsData?.error ?? null;
-  const period = periodContext?.period || 'month';
+  const { accounts, isLoading, error } = useHomeAccountsState();
+  const period = periodContext?.period ?? 'month';
 
   const openAccountDashboard = useCallback(() => {
     void plugin.viewManager.openAccountDashboardView();
@@ -232,8 +249,7 @@ const EvalRoiWidgetComponent: React.FC<EvalRoiWidgetProps> = ({ plugin }) => {
 
   const { challengeCount, totalsByCurrency } = economics;
   
-  const singleCurrency =
-    totalsByCurrency.length === 1 ? totalsByCurrency[0] : undefined;
+  const singleCurrency = singleCurrencyTotals(totalsByCurrency);
   const roi = singleCurrency?.roi;
   const isReturnMasked = shouldMask('returnPercent');
   const isMoneyMasked = shouldMask('money') || shouldMask('pnl');
@@ -260,27 +276,12 @@ const EvalRoiWidgetComponent: React.FC<EvalRoiWidgetProps> = ({ plugin }) => {
     precision: 1,
     fallback: EM_DASH,
   });
-  const roiToneClass =
-    isReturnMasked || roi === undefined
-      ? ''
-      : roi >= 0
-        ? ' journalit-home-eval-roi__tone--positive'
-        : ' journalit-home-eval-roi__tone--negative';
-
-  const netValue = singleCurrency?.netPayouts;
-  const netToneClass =
-    isMoneyMasked || netValue === undefined
-      ? ''
-      : netValue >= 0
-        ? ' journalit-home-eval-roi__tone--positive'
-        : ' journalit-home-eval-roi__tone--negative';
-
-  const countLabel =
-    challengeCount === 1
-      ? t('home.widget.eval-roi.challenge-count', { count: '1' })
-      : t('home.widget.eval-roi.challenge-count-plural', {
-          count: String(challengeCount),
-        });
+  const roiToneClass = toneClassSuffix(isReturnMasked, roi);
+  const netToneClass = toneClassSuffix(
+    isMoneyMasked,
+    singleCurrency?.netPayouts
+  );
+  const countLabel = challengeCountLabel(challengeCount);
 
   return (
     <div
@@ -332,7 +333,7 @@ const EvalRoiWidgetComponent: React.FC<EvalRoiWidgetProps> = ({ plugin }) => {
           </div>
           <div className="journalit-home-eval-roi__ledger-row">
             <dt className="journalit-home-eval-roi__ledger-label">
-              {t('home.widget.eval-roi.payouts')}
+              {t('account.prop-challenge.payout.estimated-net')}
             </dt>
             <dd className="journalit-home-eval-roi__ledger-value">
               {formatTotals('totalPayouts', 'money')}

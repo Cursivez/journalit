@@ -2,12 +2,13 @@
 
 import React from 'react';
 import { createRoot, type Root } from 'react-dom/client';
-import { Modal, type App } from 'obsidian';
+import { type App } from 'obsidian';
 import { t } from '../../lang/helpers';
 import {
   CreateCustomFieldFromColumn,
   type NewColumnCustomField,
 } from './CreateCustomFieldFromColumn';
+import { JournalitModal } from '../modals/JournalitModal';
 
 interface CustomFieldFromColumnModalOptions {
   header: string;
@@ -17,7 +18,7 @@ interface CustomFieldFromColumnModalOptions {
   onCreate: (field: NewColumnCustomField) => Promise<boolean>;
 }
 
-class CustomFieldFromColumnModal extends Modal {
+class CustomFieldFromColumnModal extends JournalitModal {
   private root: Root | null = null;
 
   constructor(

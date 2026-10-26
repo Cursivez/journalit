@@ -2,7 +2,7 @@
 
 import JournalitPlugin from '../main';
 import type { EntityShortcutTarget, QuickLinkAction } from '../settings/types';
-import { TradeFormModal } from '../components/forms/trade/TradeFormModal';
+import { TradeFormDrawer } from '../components/forms/trade/TradeFormDrawer';
 import { PositionSizeCalculatorModal } from '../components/modals/PositionSizeCalculatorModal';
 import { openQuickTradeImportModal } from '../components/csv/QuickTradeImportModal';
 import type { NavigationSource } from '../navigation/types';
@@ -63,11 +63,11 @@ export class QuickLinkActionResolver {
     const source = options.source ?? 'standard';
     switch (action) {
       case 'addTrade': {
-        const modal = new TradeFormModal({
+        const drawer = new TradeFormDrawer({
           app: this.plugin.app,
           plugin: this.plugin,
         });
-        modal.open();
+        drawer.open();
         break;
       }
 

@@ -1,6 +1,7 @@
 import React, { useId, useRef, useState } from 'react';
 import { DraftInput } from '../../../ui/DraftInput';
 import { t } from '../../../../lang/helpers';
+import { isEditableRule } from '../../../../services/propChallenge/PropChallengeRuleReview';
 import {
   addPropChallengeRule,
   createDefaultPropChallengePayoutPolicy,
@@ -227,9 +228,10 @@ export function PhaseEditor({
     !phase.rules.some((rule) => rule.enabled && rule.kind === 'profit_target')
       ? phase.payoutPolicy
       : undefined;
+  const editableRules = phase.rules.filter(isEditableRule);
   const [expandedRuleId, setExpandedRuleId] = useState(
     () =>
-      phase.rules[0]?.id ?? (phase.payoutPolicy ? PAYOUT_POLICY_RULE_ID : '')
+      editableRules[0]?.id ?? (phase.payoutPolicy ? PAYOUT_POLICY_RULE_ID : '')
   );
   const ruleToggleRefs = useRef(new Map<string, HTMLButtonElement>());
   const addRuleLabelId = useId();
@@ -271,9 +273,9 @@ export function PhaseEditor({
   };
 
   const removeRule = (ruleId: string) => {
-    const index = phase.rules.findIndex((rule) => rule.id === ruleId);
+    const index = editableRules.findIndex((rule) => rule.id === ruleId);
     const adjacentRuleId =
-      phase.rules[index + 1]?.id ?? phase.rules[index - 1]?.id ?? '';
+      editableRules[index + 1]?.id ?? editableRules[index - 1]?.id ?? '';
     if (expandedRuleId === ruleId) {
       setExpandedRuleId(adjacentRuleId);
     }
@@ -371,6 +373,9 @@ export function PhaseEditor({
         />
       </div>
       <div className="journalit-prop-challenge-rules">
+        <p className="setting-item-description">
+          {t('account.prop-challenge.position-limits-not-monitored')}
+        </p>
         <div className="journalit-prop-challenge-rules-heading">
           <strong>{t('account.prop-challenge.rules')}</strong>
           <span id={addRuleLabelId} className="journalit-sr-only">
@@ -415,12 +420,12 @@ export function PhaseEditor({
             triggerRef={addRuleTriggerRef}
           />
         </div>
-        {phase.rules.length === 0 && !phase.payoutPolicy && (
+        {editableRules.length === 0 && !phase.payoutPolicy && (
           <div className="journalit-prop-challenge-rules-empty">
             {t('account.prop-challenge.rules.empty')}
           </div>
         )}
-        {phase.rules.map((rule, index) => (
+        {editableRules.map((rule, index) => (
           <RuleEditor
             key={rule.id}
             rule={rule}

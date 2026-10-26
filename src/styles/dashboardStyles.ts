@@ -50,6 +50,8 @@ export const DASHBOARD_STYLES = `
     overflow-x: hidden !important;
     overflow-y: var(--journalit-dashboard-overflow-y, auto) !important;
     scrollbar-gutter: var(--journalit-dashboard-scrollbar-gutter, stable) !important;
+    
+    contain: paint;
     margin-top: 0 !important; 
   }
   
@@ -58,6 +60,8 @@ export const DASHBOARD_STYLES = `
     
     overflow: var(--journalit-dashboard-content-overflow, visible);
     scrollbar-gutter: var(--journalit-dashboard-content-scrollbar-gutter, auto);
+    
+    contain: var(--journalit-dashboard-content-contain, none);
     display: flex !important;
     flex-direction: column !important;
     gap: 2.5px !important; 
@@ -235,7 +239,8 @@ export const DASHBOARD_STYLES = `
     min-width: 0 !important;
   }
 
-  .journalit-dashboard-metric-card-frame .tooltip-trigger {
+
+  .journalit-dashboard-metric-card-frame > .tooltip-trigger {
     display: flex !important;
     flex: 1 1 auto !important;
     width: 100% !important;
@@ -251,7 +256,6 @@ export const DASHBOARD_STYLES = `
     background-color: var(--journalit-dashboard-widget-background, var(--background-primary)) !important;
     border-radius: 8px !important;
     border: 1px solid color-mix(in srgb, var(--text-normal) 8%, transparent) !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04), 0 0 1px rgba(0, 0, 0, 0.08) !important;
     display: flex !important;
     flex-direction: column !important;
     align-items: flex-start !important;
@@ -573,10 +577,6 @@ export const DASHBOARD_STYLES = `
     min-height: 0;
   }
 
-  .journalit-dashboard-trades-chart__chart {
-    box-shadow: var(--shadow-s);
-  }
-
   
   .journalit-dashboard-daily-performance-chart {
     width: 100%;
@@ -681,35 +681,6 @@ export const DASHBOARD_STYLES = `
   }
   
   
-  .journalit-dashboard-filters-section {
-    display: flex !important;
-    flex-direction: row !important;
-    gap: 20px !important;
-    align-items: center !important;
-    min-width: 0 !important; 
-    flex: 1 !important;
-  }
-  
-  .journalit-dashboard-date-range-section {
-    display: flex !important;
-    flex-direction: row !important;
-    position: relative !important; 
-    
-    flex: 1 !important;
-    
-    margin-right: 10px !important;
-    margin-top: 0 !important; 
-  }
-  
-  .journalit-dashboard-tickers-section,
-  .journalit-dashboard-accounts-section {
-    display: flex !important;
-    flex-direction: row !important;
-    
-    flex: 0 0 auto !important; 
-    margin-right: 10px !important;
-    margin-top: 0 !important; 
-  }
   
   .journalit-dashboard-filter-label {
     font-size: 13px !important;
@@ -814,18 +785,13 @@ export const DASHBOARD_STYLES = `
     min-width: 0 !important;
   }
   
+  
   .journalit-dashboard-date-range-presets {
     display: flex !important;
-    flex-wrap: nowrap !important;
+    flex-wrap: wrap !important;
     gap: 6px !important;
     align-items: center !important;
     min-width: 0 !important;
-    overflow-x: auto !important;
-    scrollbar-width: none !important;
-  }
-
-  .journalit-dashboard-date-range-presets::-webkit-scrollbar {
-    display: none !important;
   }
   
   .journalit-dashboard-date-range-presets button.journalit-native-button {
@@ -840,8 +806,10 @@ export const DASHBOARD_STYLES = `
     transition: all 0.2s ease !important;
     height: 28px !important;
     line-height: 1 !important;
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
   }
-  
+
   .journalit-dashboard-date-range-presets button.journalit-native-button:hover {
     background-color: var(--background-modifier-hover) !important;
     border-color: var(--interactive-accent) !important;
@@ -855,6 +823,7 @@ export const DASHBOARD_STYLES = `
 
   .journalit-dashboard-custom-date-anchor {
     display: inline-flex !important;
+    flex: 0 0 auto !important;
   }
 
   .journalit-dashboard-custom-date-dropdown {
@@ -873,7 +842,7 @@ export const DASHBOARD_STYLES = `
     z-index: 1000;
     width: max-content;
     max-width: calc(100vw - 32px);
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15), 0 2px 8px rgba(0, 0, 0, 0.1);
+    box-shadow: var(--shadow-s);
   }
 
   
@@ -946,19 +915,9 @@ export const DASHBOARD_STYLES = `
   }
 
   
-
   
   
-  .journalit-dashboard-filters-section .journalit-dashboard-tickers-section {
-    flex: 1 !important;
-    min-width: 0 !important;
-  }
-  
-  
-  .journalit-responsive-account-filter,
-  .journalit-responsive-ticker-filter,
-  .journalit-responsive-tag-filter,
-  .journalit-responsive-mistake-filter {
+  .journalit-responsive-tag-filter {
     width: auto !important;
     flex-shrink: 0 !important;
     
@@ -1048,7 +1007,6 @@ export const DASHBOARD_STYLES = `
     height: 100% !important;
     background-color: var(--journalit-dashboard-widget-background, transparent) !important;
     border-radius: 6px !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
     display: flex !important;
     flex-direction: column !important;
     overflow: hidden !important;
@@ -1126,7 +1084,6 @@ export const DASHBOARD_STYLES = `
   .journalit-home-grid-layout .react-grid-item {
     background-color: transparent !important;
     border-radius: 6px !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1) !important;
     transition: none !important;
     
   }
@@ -1188,30 +1145,6 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-static-grid-item > .journalit-dashboard-widget {
     width: 100%;
     height: 100%;
-  }
-
-  .journalit-dashboard-grid-layout > .journalit-grid-edit-measuring,
-  .journalit-home-grid-layout > .journalit-grid-edit-measuring {
-    position: absolute !important;
-    inset: 0 auto auto 0 !important;
-    width: 100% !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-  }
-
-  .journalit-grid-static-hidden {
-    position: absolute !important;
-    inset: 0 auto auto 0 !important;
-    width: 100% !important;
-    visibility: hidden !important;
-    pointer-events: none !important;
-  }
-
-  .journalit-grid-edit-placeholder {
-    width: 100% !important;
-    height: 100% !important;
-    min-height: 0 !important;
-    background: transparent !important;
   }
   
   .journalit-dashboard-grid-layout .react-grid-item.react-grid-placeholder,
@@ -1298,47 +1231,12 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-view .recharts-tooltip-wrapper {
     pointer-events: none !important;
     z-index: 1000 !important;
-    filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25)) !important;
     background-color: transparent !important;
     border: none !important;
   }
   
   .journalit-dashboard-view .recharts-tooltip-wrapper * {
     outline: none !important;
-  }
-  
-  .journalit-dashboard-custom-tooltip {
-    background-color: var(--background-primary, #ffffff) !important;
-    border-radius: 8px !important;
-    padding: 12px 16px !important;
-    min-width: 120px !important;
-    border: 1px solid var(--background-modifier-border, rgba(0, 0, 0, 0.05)) !important;
-    transform: translateY(-4px) !important;
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15) !important;
-    position: relative !important;
-  }
-  
-  
-  .journalit-dashboard-tooltip-date {
-    font-size: 14px !important;
-    font-weight: 500 !important;
-    color: var(--text-normal, #333333) !important;
-    margin-bottom: 6px !important;
-    text-align: center !important;
-  }
-  
-  .journalit-dashboard-tooltip-value {
-    font-size: 18px !important;
-    font-weight: 600 !important;
-    text-align: center !important;
-  }
-  
-  .journalit-dashboard-tooltip-value.positive {
-    color: var(--text-success, #43a047) !important;
-  }
-  
-  .journalit-dashboard-tooltip-value.negative {
-    color: var(--text-error, #e53935) !important;
   }
   
   
@@ -1372,7 +1270,6 @@ export const DASHBOARD_STYLES = `
     padding: 6px 0 !important;
     width: 100% !important;
     justify-content: stretch !important;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
     border-bottom: 1px solid var(--background-modifier-border) !important;
     border-radius: 6px !important;
   }
@@ -1469,7 +1366,7 @@ export const DASHBOARD_STYLES = `
     border-left: 1px solid rgba(0, 0, 0, 0.08) !important;
     cursor: pointer !important;
     transition: transform 0.2s ease-out, box-shadow 0.2s ease-out !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05), 0 0 0 1px var(--background-modifier-border) !important;
+    box-shadow: 0 0 0 1px var(--background-modifier-border) !important;
     color: var(--text-normal) !important;
   }
   
@@ -1539,12 +1436,10 @@ export const DASHBOARD_STYLES = `
     transition: all 0.2s !important;
     background-color: var(--background-secondary) !important;
     border: 1px solid var(--background-modifier-border) !important;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05) !important;
   }
   
   .journalit-dashboard-calendar-day:hover {
     transform: scale(1.05) !important;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
   }
   
   .journalit-dashboard-calendar-day.positive {
@@ -1552,7 +1447,6 @@ export const DASHBOARD_STYLES = `
     background-image: linear-gradient(to bottom, rgba(var(--color-green-rgb), 0.05), rgba(var(--color-green-rgb), 0.2)) !important;
     color: var(--color-green) !important;
     border-color: rgba(var(--color-green-rgb), 0.3) !important;
-    box-shadow: 0 2px 8px rgba(var(--color-green-rgb), 0.1) !important;
   }
   
   .journalit-dashboard-calendar-day.negative {
@@ -1560,15 +1454,14 @@ export const DASHBOARD_STYLES = `
     background-image: linear-gradient(to bottom, rgba(var(--color-red-rgb), 0.05), rgba(var(--color-red-rgb), 0.2)) !important;
     color: var(--color-red) !important;
     border-color: rgba(var(--color-red-rgb), 0.3) !important;
-    box-shadow: 0 2px 8px rgba(var(--color-red-rgb), 0.1) !important;
   }
   
   .journalit-dashboard-calendar-day.positive:hover {
-    box-shadow: 0 4px 12px rgba(var(--color-green-rgb), 0.2), 0 0 0 1px rgba(var(--color-green-rgb), 0.5) !important;
+    box-shadow: 0 0 0 1px rgba(var(--color-green-rgb), 0.5) !important;
   }
   
   .journalit-dashboard-calendar-day.negative:hover {
-    box-shadow: 0 4px 12px rgba(var(--color-red-rgb), 0.2), 0 0 0 1px rgba(var(--color-red-rgb), 0.5) !important;
+    box-shadow: 0 0 0 1px rgba(var(--color-red-rgb), 0.5) !important;
   }
   
   .journalit-dashboard-calendar-day.other-month {
@@ -1643,21 +1536,6 @@ export const DASHBOARD_STYLES = `
     transform: translate(-50%, -50%) !important;
     font-weight: 600 !important;
     text-align: center !important;
-  }
-  
-  
-  .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-weekly-trades,
-  .journalit-dashboard-calendar .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-weekly-trades,
-  .journalit-dashboard-calendar-grid .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-weekly-trades {
-    font-size: 10px !important;
-    width: 100% !important;
-    position: absolute !important;
-    top: 70% !important; 
-    left: 50% !important;
-    transform: translate(-50%, -50%) !important;
-    font-weight: 400 !important;
-    text-align: center !important;
-    color: var(--text-muted) !important;
   }
   
   
@@ -1762,13 +1640,6 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-recent-trades-table .pnl-cell.negative {
     color: var(--text-error) !important;
   }
-  
-  .journalit-dashboard-recent-trades-table .empty-message {
-    text-align: center !important;
-    padding: 16px !important;
-    color: var(--text-muted) !important;
-    font-style: italic !important;
-  }
 
   .journalit-dashboard-recent-trades-empty-cell {
     grid-column: 1 / -1;
@@ -1791,10 +1662,8 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-calendar .journalit-dashboard-calendar-day.today,
   .journalit-dashboard-calendar-grid .journalit-dashboard-calendar-day.today {
     border: 2px solid var(--interactive-accent) !important;
-    box-shadow: 0 0 6px color-mix(in srgb, var(--interactive-accent) 40%, transparent) !important;
     position: relative !important;
     z-index: 2 !important; 
-    animation: journalit-dashboard-pulse-border 2s infinite ease-in-out !important;
   }
   
   .journalit-dashboard-calendar-day.neutral,
@@ -1807,13 +1676,11 @@ export const DASHBOARD_STYLES = `
     ) !important;
     color: var(--text-normal) !important;
     border-color: var(--background-modifier-border, rgba(128, 128, 128, 0.36)) !important;
-    box-shadow: 0 2px 8px color-mix(in srgb, var(--text-normal) 18%, transparent) !important;
   }
 
   .journalit-dashboard-calendar-day.neutral:hover,
   .journalit-dashboard-calendar-weekly-pnl.neutral:hover {
-    box-shadow: 0 4px 12px color-mix(in srgb, var(--text-normal) 24%, transparent),
-      0 0 0 1px color-mix(in srgb, var(--text-normal) 50%, transparent) !important;
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--text-normal) 50%, transparent) !important;
   }
 
   
@@ -1898,15 +1765,6 @@ export const DASHBOARD_STYLES = `
   .journalit-calendar-sidebar .journalit-dashboard-calendar {
     height: clamp(260px, 115cqw, 360px) !important;
     max-height: 360px !important;
-  }
-
-  .journalit-calendar-sidebar-loading {
-    height: 100% !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    color: var(--text-muted) !important;
-    font-size: var(--font-ui-small) !important;
   }
 
   .journalit-dashboard-calendar .journalit-dashboard-calendar-nav-button {
@@ -2190,11 +2048,6 @@ export const DASHBOARD_STYLES = `
     display: none !important;
   }
 
-  .journalit-dashboard-calendar-day.today {
-    animation: none !important;
-    border: 1px solid var(--interactive-accent) !important;
-  }
-
   
   .journalit-dashboard-calendar-day .journalit-dashboard-calendar-reviewed-badge,
   .journalit-dashboard-calendar-weekly-pnl .journalit-dashboard-calendar-reviewed-badge {
@@ -2234,39 +2087,62 @@ export const DASHBOARD_STYLES = `
     background-color: var(--color-green) !important;
     pointer-events: none !important;
   }
+
   
-  
-  .journalit-dashboard-trades-table {
-    width: 100% !important;
-    border-collapse: collapse !important;
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-missed-count {
+    color: var(--color-orange);
   }
+
   
-  .journalit-dashboard-trades-table th,
-  .journalit-dashboard-trades-table td {
-    padding: 8px 12px !important;
-    text-align: left !important;
-    border-bottom: 1px solid var(--background-modifier-border) !important;
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-missed-marker {
+    display: none;
   }
-  
-  .journalit-dashboard-trades-table th {
-    font-weight: 600 !important;
-    color: var(--text-normal) !important;
-    background-color: var(--background-secondary) !important;
-    position: sticky !important;
-    top: 0 !important;
-    z-index: 1 !important;
+
+  .journalit-dashboard-calendar.is-compact .journalit-dashboard-calendar-missed-marker {
+    display: block;
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 0;
+    height: 0;
+    border-top: 11px solid var(--color-orange);
+    border-left: 11px solid transparent;
+    border-top-right-radius: 6px;
+    pointer-events: none;
   }
+
   
-  .journalit-dashboard-trades-table tr:hover {
-    background-color: var(--background-modifier-hover) !important;
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-day.missed-only {
+    background-color: rgba(var(--color-orange-rgb), 0.15) !important;
+    background-image: linear-gradient(to bottom, rgba(var(--color-orange-rgb), 0.05), rgba(var(--color-orange-rgb), 0.2)) !important;
+    color: var(--color-orange) !important;
   }
+
   
-  
-  .journalit-dashboard-layout-controls {
-    display: flex !important;
-    justify-content: flex-end !important;
-    gap: 8px !important;
-    margin-bottom: 16px !important;
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-day.missed-only:not(.today) {
+    border-color: rgba(var(--color-orange-rgb), 0.3) !important;
+  }
+
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-day.missed-only:hover {
+    box-shadow: inset 0 0 0 1px var(--text-muted) !important;
+  }
+
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-weekly-pnl.missed-only {
+    background: rgba(var(--color-orange-rgb), 0.2) !important;
+    color: var(--color-orange) !important;
+    box-shadow: inset 3px 0 0 rgba(var(--color-orange-rgb), 0.85),
+      inset 0 0 0 1px rgba(var(--color-orange-rgb), 0.28) !important;
+  }
+
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-weekly-pnl.missed-only:hover {
+    box-shadow: inset 3px 0 0 currentColor,
+      inset 0 0 0 1px var(--text-muted) !important;
+  }
+
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-day.missed-only .journalit-dashboard-calendar-day-number,
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-day.missed-only .journalit-dashboard-calendar-day-pnl,
+  .journalit-dashboard-calendar .journalit-dashboard-calendar-weekly-pnl.missed-only .journalit-dashboard-calendar-week-total-value {
+    color: var(--color-orange) !important;
   }
   
   
@@ -2365,36 +2241,6 @@ export const DASHBOARD_STYLES = `
   
   
   
-  @media (max-width: 1560px) {
-    
-    .journalit-dashboard-filter-row.standard-responsive {
-      grid-template-columns: minmax(300px, auto) auto 1fr auto !important;
-      gap: 10px !important;
-    }
-    
-    
-    .journalit-dashboard-filters-section {
-      flex-wrap: nowrap !important;
-      max-width: fit-content !important;
-      justify-content: flex-start !important;
-    }
-    
-    
-
-    
-    
-    .journalit-dashboard-accounts-section {
-      margin-left: 0 !important;
-      padding-left: 0 !important;
-    }
-    
-    
-    .journalit-dashboard-filter-section {
-      width: 100% !important;
-    }
-    
-  }
-  
   
   @media (max-width: 1200px) {
     
@@ -2439,18 +2285,6 @@ export const DASHBOARD_STYLES = `
     }
     
     
-    .journalit-dashboard-filter-row.standard-responsive {
-      
-      grid-template-columns: 1fr auto auto !important;
-      gap: 8px !important;
-    }
-    
-    
-    .journalit-dashboard-date-range-section {
-      margin-right: 5px !important;
-    }
-    
-    
     
     .journalit-dashboard-filter-actions.button-container {
       gap: 8px !important; 
@@ -2492,24 +2326,18 @@ export const DASHBOARD_STYLES = `
     }
     
     
-    .journalit-dashboard-filter-row.standard-responsive,
-    .journalit-dashboard-filter-row.medium-responsive,
     .journalit-dashboard-filter-row {
       grid-template-columns: 1fr !important;
       gap: 16px !important;
     }
     
-    .journalit-dashboard-filter-row.compact,
-    .journalit-dashboard-filter-row.medium-responsive {
+    .journalit-dashboard-filter-row.compact {
       display: flex !important;
       flex-direction: column !important;
       width: 100% !important;
     }
     
-    .journalit-dashboard-date-range-section,
-    .journalit-dashboard-accounts-section,
-    .journalit-dashboard-filter-actions,
-    .journalit-dashboard-filter-section {
+    .journalit-dashboard-filter-actions {
       width: 100% !important;
       margin: 8px 0 !important;
     }
@@ -2524,14 +2352,6 @@ export const DASHBOARD_STYLES = `
     }
     
     
-
-    
-    
-    .journalit-dashboard-date-range-section {
-      margin-right: 0 !important;
-      width: 100% !important;
-      min-width: auto !important;
-    }
     
     
     .journalit-dashboard-filter-actions {
@@ -2569,14 +2389,12 @@ export const DASHBOARD_STYLES = `
       min-height: 40px !important;
     }
     
-    
     .journalit-dashboard-date-range-presets {
-      flex-wrap: nowrap !important;
       justify-content: flex-start !important;
     }
     
     .journalit-dashboard-date-range-presets button.journalit-native-button {
-      flex: 0 1 auto !important;
+      flex: 0 0 auto !important;
       margin: 2px !important;
       font-size: 11px !important;
       padding: 4px 8px !important;
@@ -2624,19 +2442,6 @@ export const DASHBOARD_STYLES = `
     }
   }
 
-  
-  
-  @keyframes journalit-dashboard-pulse-border {
-    0% {
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent), 0 4px 12px color-mix(in srgb, var(--interactive-accent) 25%, transparent);
-    }
-    50% {
-      box-shadow: 0 0 0 4px color-mix(in srgb, var(--interactive-accent) 15%, transparent), 0 4px 16px color-mix(in srgb, var(--interactive-accent) 30%, transparent);
-    }
-    100% {
-      box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent), 0 4px 12px color-mix(in srgb, var(--interactive-accent) 25%, transparent);
-    }
-  }
   
   
   .journalit-dashboard-widget-container {

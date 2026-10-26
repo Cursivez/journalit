@@ -628,6 +628,172 @@ const getProgressClass = (percentage: number, isComplete: boolean): string => {
   return 'journalit-home-goals--critical';
 };
 
+const goalTargetSuffix = (goalType: GoalType, currency: string): string => {
+  if (goalType === 'pnl') return currency;
+  if (goalType === 'winRate') return '%';
+  return t('common.trades').toLowerCase();
+};
+
+const goalTargetPlaceholder = (
+  goalType: GoalType,
+  usesRMultiplesForPnl: boolean
+): string => {
+  if (goalType === 'pnl') return usesRMultiplesForPnl ? '10' : '500';
+  return goalType === 'winRate' ? '60' : '100';
+};
+
+const GoalTargetInput: React.FC<{
+  target: string;
+  setTarget: (target: string) => void;
+  placeholder: string;
+  suffix: string;
+}> = ({ target, setTarget, placeholder, suffix }) => (
+  <div className="journalit-home-goals__target-row">
+    <label
+      htmlFor="journalit-goalsprogresswidget-769"
+      className="journalit-home-goals__target-label"
+    >
+      {t('home.widget.goals-progress.target')}
+    </label>
+    <input
+      id="journalit-goalsprogresswidget-769"
+      type="number"
+      value={target}
+      onChange={(e) => setTarget(e.target.value)}
+      placeholder={placeholder}
+      className="journalit-home-goals__target-input"
+    />
+    <span className="journalit-home-goals__target-suffix">{suffix}</span>
+  </div>
+);
+
+const GoalAccountScopeEditor: React.FC<{
+  accountNames: string[];
+  accountTargets: Record<string, string>;
+  setAccountTargets: React.Dispatch<
+    React.SetStateAction<Record<string, string>>
+  >;
+  accountTargetAccounts: string[];
+  setAccountTargetAccounts: React.Dispatch<React.SetStateAction<string[]>>;
+  targetSuffix: string;
+}> = ({
+  accountNames,
+  accountTargets,
+  setAccountTargets,
+  accountTargetAccounts,
+  setAccountTargetAccounts,
+  targetSuffix,
+}) => {
+  const accountTargetAccountsSet = new Set(accountTargetAccounts);
+  const availableAccounts = accountNames.filter(
+    (account) => !accountTargetAccountsSet.has(account)
+  );
+  return (
+    <div className="journalit-home-goals__account-scope">
+      <div className="journalit-home-goals__account-scope-header">
+        <span className="journalit-home-goals__target-label">
+          {t('home.widget.goals-progress.account-scope')}
+        </span>
+        <select
+          aria-label={t('home.widget.goals-progress.account-scope')}
+          value=""
+          onChange={(e) => {
+            const nextAccount = e.target.value;
+            if (!nextAccount) return;
+            setAccountTargetAccounts((prev) => [...prev, nextAccount]);
+          }}
+          className="journalit-home-goals__account-select"
+        >
+          <option value="">
+            {t('home.widget.goals-progress.add-account')}
+          </option>
+          {availableAccounts.map((account) => (
+            <option key={account} value={account}>
+              {account}
+            </option>
+          ))}
+        </select>
+      </div>
+
+      <div className="journalit-home-goals__account-chips">
+        {accountTargetAccounts.map((account) => (
+          <button
+            key={account}
+            type="button"
+            className="journalit-home-goals__account-chip"
+            onClick={() =>
+              setAccountTargetAccounts((prev) =>
+                prev.filter((selected) => selected !== account)
+              )
+            }
+          >
+            {account}
+            <X size={12} />
+          </button>
+        ))}
+      </div>
+
+      <div className="journalit-home-goals__account-targets">
+        {accountTargetAccounts.map((account) => (
+          <label
+            key={account}
+            className="journalit-home-goals__account-target-row"
+          >
+            <span className="journalit-home-goals__account-target-name">
+              {account}
+            </span>
+            <input
+              type="number"
+              value={accountTargets[account] ?? ''}
+              onChange={(e) =>
+                setAccountTargets((prev) => ({
+                  ...prev,
+                  [account]: e.target.value,
+                }))
+              }
+              placeholder="0"
+              className="journalit-home-goals__target-input"
+            />
+            <span className="journalit-home-goals__target-suffix">
+              {targetSuffix}
+            </span>
+          </label>
+        ))}
+      </div>
+    </div>
+  );
+};
+
+const GoalPeriodControls: React.FC<{
+  goalType: GoalType;
+  period: GoalPeriod;
+  setPeriod: (period: GoalPeriod) => void;
+}> = ({ goalType, period, setPeriod }) => (
+  <>
+    
+    {goalType !== 'tradesJournaled' && (
+      <div className="journalit-home-goals__period-row">
+        {getPeriodOptions().map((option) => (
+          <button
+            key={option.value}
+            onClick={() => setPeriod(option.value)}
+            className={`journalit-home-goals__period-button ${period === option.value ? 'journalit-home-goals__period-button--active' : ''}`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    )}
+
+    
+    {goalType === 'tradesJournaled' && (
+      <div className="journalit-home-goals__lifetime">
+        {t('home.widget.goals-progress.tracks-lifetime')}
+      </div>
+    )}
+  </>
+);
+
 
 const GoalSettingModal: React.FC<{
   goalType: GoalType;
@@ -676,16 +842,7 @@ const GoalSettingModal: React.FC<{
   existingConfig,
   currency,
 }) => {
-  const accountTargetAccountsSet = new Set(accountTargetAccounts);
-  const availableAccounts = accountNames.filter(
-    (account) => !accountTargetAccountsSet.has(account)
-  );
-  const targetSuffix =
-    goalType === 'pnl'
-      ? currency
-      : goalType === 'winRate'
-        ? '%'
-        : t('common.trades').toLowerCase();
+  const targetSuffix = goalTargetSuffix(goalType, currency);
   const usesRMultiplesForPnl = goalType === 'pnl' && useRMultiples;
 
   return (
@@ -750,129 +907,28 @@ const GoalSettingModal: React.FC<{
       )}
 
       {!accountAware || usesRMultiplesForPnl ? (
-        <div className="journalit-home-goals__target-row">
-          <label
-            htmlFor="journalit-goalsprogresswidget-769"
-            className="journalit-home-goals__target-label"
-          >
-            {t('home.widget.goals-progress.target')}
-          </label>
-          <input
-            id="journalit-goalsprogresswidget-769"
-            type="number"
-            value={target}
-            onChange={(e) => setTarget(e.target.value)}
-            placeholder={
-              goalType === 'pnl'
-                ? usesRMultiplesForPnl
-                  ? '10'
-                  : '500'
-                : goalType === 'winRate'
-                  ? '60'
-                  : '100'
-            }
-            className="journalit-home-goals__target-input"
-          />
-          <span className="journalit-home-goals__target-suffix">
-            {usesRMultiplesForPnl ? 'R' : targetSuffix}
-          </span>
-        </div>
+        <GoalTargetInput
+          target={target}
+          setTarget={setTarget}
+          placeholder={goalTargetPlaceholder(goalType, usesRMultiplesForPnl)}
+          suffix={usesRMultiplesForPnl ? 'R' : targetSuffix}
+        />
       ) : (
-        <div className="journalit-home-goals__account-scope">
-          <div className="journalit-home-goals__account-scope-header">
-            <span className="journalit-home-goals__target-label">
-              {t('home.widget.goals-progress.account-scope')}
-            </span>
-            <select
-              aria-label={t('home.widget.goals-progress.account-scope')}
-              value=""
-              onChange={(e) => {
-                const nextAccount = e.target.value;
-                if (!nextAccount) return;
-                setAccountTargetAccounts((prev) => [...prev, nextAccount]);
-              }}
-              className="journalit-home-goals__account-select"
-            >
-              <option value="">
-                {t('home.widget.goals-progress.add-account')}
-              </option>
-              {availableAccounts.map((account) => (
-                <option key={account} value={account}>
-                  {account}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="journalit-home-goals__account-chips">
-            {accountTargetAccounts.map((account) => (
-              <button
-                key={account}
-                type="button"
-                className="journalit-home-goals__account-chip"
-                onClick={() =>
-                  setAccountTargetAccounts((prev) =>
-                    prev.filter((selected) => selected !== account)
-                  )
-                }
-              >
-                {account}
-                <X size={12} />
-              </button>
-            ))}
-          </div>
-
-          <div className="journalit-home-goals__account-targets">
-            {accountTargetAccounts.map((account) => (
-              <label
-                key={account}
-                className="journalit-home-goals__account-target-row"
-              >
-                <span className="journalit-home-goals__account-target-name">
-                  {account}
-                </span>
-                <input
-                  type="number"
-                  value={accountTargets[account] ?? ''}
-                  onChange={(e) =>
-                    setAccountTargets((prev) => ({
-                      ...prev,
-                      [account]: e.target.value,
-                    }))
-                  }
-                  placeholder="0"
-                  className="journalit-home-goals__target-input"
-                />
-                <span className="journalit-home-goals__target-suffix">
-                  {targetSuffix}
-                </span>
-              </label>
-            ))}
-          </div>
-        </div>
+        <GoalAccountScopeEditor
+          accountNames={accountNames}
+          accountTargets={accountTargets}
+          setAccountTargets={setAccountTargets}
+          accountTargetAccounts={accountTargetAccounts}
+          setAccountTargetAccounts={setAccountTargetAccounts}
+          targetSuffix={targetSuffix}
+        />
       )}
 
-      
-      {goalType !== 'tradesJournaled' && (
-        <div className="journalit-home-goals__period-row">
-          {getPeriodOptions().map((option) => (
-            <button
-              key={option.value}
-              onClick={() => setPeriod(option.value)}
-              className={`journalit-home-goals__period-button ${period === option.value ? 'journalit-home-goals__period-button--active' : ''}`}
-            >
-              {option.label}
-            </button>
-          ))}
-        </div>
-      )}
-
-      
-      {goalType === 'tradesJournaled' && (
-        <div className="journalit-home-goals__lifetime">
-          {t('home.widget.goals-progress.tracks-lifetime')}
-        </div>
-      )}
+      <GoalPeriodControls
+        goalType={goalType}
+        period={period}
+        setPeriod={setPeriod}
+      />
 
       
       {goalType === 'pnl' && rMultiplesEnabled && (
@@ -952,6 +1008,31 @@ const GoalScopeMismatchState: React.FC<{
   </button>
 );
 
+const GOAL_HEADER_KEYS = {
+  pnl: 'home.widget.goals-progress.header.pnl',
+  tradesJournaled: 'home.widget.goals-progress.header.trades',
+  winRate: 'home.widget.goals-progress.header.win-rate',
+} as const satisfies Record<GoalType, string>;
+
+
+const isGoalMasked = (
+  config: GoalConfig,
+  shouldMask: (kind: string) => boolean
+): boolean => {
+  if (config.type === 'pnl') {
+    return shouldMask(config.useRMultiples ? 'rMultiple' : 'pnl');
+  }
+  return config.type === 'winRate' && shouldMask('returnPercent');
+};
+
+
+const goalCompletionLabel = (progress: GoalProgress): string =>
+  progress.isComplete
+    ? t('home.widget.goals-progress.complete-100')
+    : t('home.widget.goals-progress.complete-percent', {
+        percent: String(Math.floor(progress.percentage)),
+      });
+
 
 const GoalProgressDisplay: React.FC<{
   progress: GoalProgress;
@@ -979,22 +1060,15 @@ const GoalProgressDisplay: React.FC<{
     );
   }
 
-  const isSensitiveGoalMasked =
-    existingConfig?.type === 'pnl'
-      ? shouldMask(existingConfig.useRMultiples ? 'rMultiple' : 'pnl')
-      : existingConfig?.type === 'winRate'
-        ? shouldMask('returnPercent')
-        : false;
+  const isSensitiveGoalMasked = isGoalMasked(existingConfig, shouldMask);
   const progressClass = isSensitiveGoalMasked
     ? ''
     : getProgressClass(progress.percentage, progress.isComplete);
   const progressPercentLabel = isSensitiveGoalMasked
     ? formatValue({ kind: 'metric', value: progress.percentage })
-    : progress.isComplete
-      ? t('home.widget.goals-progress.complete-100')
-      : t('home.widget.goals-progress.complete-percent', {
-          percent: String(Math.floor(progress.percentage)),
-        });
+    : goalCompletionLabel(progress);
+  const showsConversionInfo =
+    existingConfig.type === 'pnl' && !existingConfig.useRMultiples;
 
   return (
     <div
@@ -1010,12 +1084,8 @@ const GoalProgressDisplay: React.FC<{
       
       <div className="journalit-home-goals__display-header">
         <div className="journalit-home-widget__eyebrow">
-          {existingConfig?.type === 'pnl'
-            ? t('home.widget.goals-progress.header.pnl')
-            : existingConfig?.type === 'tradesJournaled'
-              ? t('home.widget.goals-progress.header.trades')
-              : t('home.widget.goals-progress.header.win-rate')}
-          {existingConfig?.type === 'pnl' && !existingConfig.useRMultiples && (
+          {t(GOAL_HEADER_KEYS[existingConfig.type])}
+          {showsConversionInfo && (
             <CurrencyConversionInfo
               metadata={buildCurrencyConversionMetadata(
                 dashboardData.dashboardData?.metrics
@@ -1078,7 +1148,7 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
   instanceId,
 }) => {
   const dashboardData = useDashboardData();
-  const { currency } = useCurrency();
+  const { currency: liveCurrency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
   const accountContext = useHomeAccount();
   const [accountScopedDashboardState, dispatchAccountScopedDashboardData] =
@@ -1175,6 +1245,9 @@ const GoalsProgressWidgetComponent: React.FC<GoalsProgressWidgetProps> = ({
   const dashboardDataForGoal = accountScopedDashboardState.data
     ? { ...dashboardData, dashboardData: accountScopedDashboardState.data }
     : dashboardData;
+  
+  
+  const currency = dashboardDataForGoal.dashboardData?.currency ?? liveCurrency;
 
   const model = useGoalModel(
     plugin,

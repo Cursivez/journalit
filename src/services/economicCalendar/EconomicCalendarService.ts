@@ -202,7 +202,7 @@ function keyEventWeekday(
   );
 }
 
-export function utcCalendarDate(iso: string | undefined): string | undefined {
+function utcCalendarDate(iso: string | undefined): string | undefined {
   if (typeof iso !== 'string' || iso.length === 0) return undefined;
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return undefined;
@@ -657,6 +657,37 @@ export class EconomicCalendarService {
   }
 
   
+  public async importConfiguredEventsForWeek(weekDate: Date): Promise<
+    | Exclude<EconomicCalendarFetchResult, { status: 'ok' }>
+    | (EconomicCalendarImportResult & {
+        status: 'ok';
+        
+        weekStart: string;
+        skippedCount: number;
+      })
+  > {
+    const fetched = await this.fetchWeek({ weekDate });
+    if (fetched.status !== 'ok') return fetched;
+
+    const imported = await this.importEvents(fetched.events, {
+      weekDate,
+      respectDeletions: true,
+      insertScope: resolveEconomicCalendarSyncScope(
+        this.plugin.settings.economicCalendar
+      ),
+    });
+    return {
+      status: 'ok',
+      ...imported,
+      weekStart: this.currentWeekKey(weekDate),
+      skippedCount: Math.max(
+        0,
+        fetched.events.length - imported.importedCount - imported.updatedCount
+      ),
+    };
+  }
+
+  
   public async checkConfiguredEventsForWeek(
     weekDate: Date
   ): Promise<EconomicCalendarRestoreCheckResult> {
@@ -756,32 +787,27 @@ export class EconomicCalendarService {
       return this.autoImportInFlight;
     }
 
-    this.autoImportInFlight = this.executeAutoImport(options).finally(
-      async () => {
+    const run = async (): Promise<void> => {
+      try {
+        await this.executeAutoImport(options);
+      } finally {
         this.autoImportInFlight = null;
-        if (!this.forcedAutoImportQueued) return;
-        this.forcedAutoImportQueued = false;
-        await this.runAutoImport({ force: true });
+        if (this.forcedAutoImportQueued) {
+          this.forcedAutoImportQueued = false;
+          await this.runAutoImport({ force: true });
+        }
       }
-    );
+    };
+    this.autoImportInFlight = run();
     return this.autoImportInFlight;
   }
 
   private async executeAutoImport(options: { force: boolean }): Promise<void> {
     try {
       const weekDate = new Date();
-      
-      
-      const result = await this.fetchWeek({ weekDate });
+      const result = await this.importConfiguredEventsForWeek(weekDate);
 
       if (result.status === 'ok') {
-        await this.importEvents(result.events, {
-          weekDate,
-          respectDeletions: true,
-          insertScope: resolveEconomicCalendarSyncScope(
-            this.plugin.settings.economicCalendar
-          ),
-        });
         await this.persistLastAutoImport(weekDate);
         return;
       }

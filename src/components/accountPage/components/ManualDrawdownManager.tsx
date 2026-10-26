@@ -19,31 +19,26 @@ import { t } from '../../../lang/helpers';
 import { showActionConfirmationModal } from '../../shared/ConfirmationModal';
 
 export const MANUAL_DRAWDOWN_MANAGER_STYLES = `
-        .edit-account-form .manual-drawdown-manager .save-accent {
-          background-color: var(--interactive-accent) !important;
-          color: var(--text-on-accent) !important;
-          border-color: var(--interactive-accent) !important;
-        }
-
-        .edit-account-form .manual-drawdown-manager {
+        .journalit-account-form .manual-drawdown-manager {
+          align-self: stretch;
           padding: 1rem 0;
           display: flex;
           flex-direction: column;
           gap: 2rem;
         }
 
-        .edit-account-form .manual-drawdown-manager .section-header {
+        .journalit-account-form .manual-drawdown-manager .section-header {
           margin: 0 0 1rem 0;
           font-size: 1.1em;
           font-weight: 600;
           color: var(--text-normal);
         }
 
-        .edit-account-form .manual-drawdown-manager .snapshots-list-section {
+        .journalit-account-form .manual-drawdown-manager .snapshots-list-section {
           margin-bottom: 1rem;
         }
 
-        .edit-account-form .manual-drawdown-manager .empty-state {
+        .journalit-account-form .manual-drawdown-manager .empty-state {
           padding: 2rem;
           text-align: center;
           background: var(--background-secondary);
@@ -51,28 +46,28 @@ export const MANUAL_DRAWDOWN_MANAGER_STYLES = `
           border: 1px dashed var(--background-modifier-border);
         }
 
-        .edit-account-form .manual-drawdown-manager .empty-state p {
+        .journalit-account-form .manual-drawdown-manager .empty-state p {
           margin: 0.5rem 0;
           color: var(--text-muted);
         }
 
-        .edit-account-form .manual-drawdown-manager .empty-state p:first-child {
+        .journalit-account-form .manual-drawdown-manager .empty-state p:first-child {
           font-weight: 500;
           color: var(--text-normal);
         }
 
-        .edit-account-form .manual-drawdown-manager .snapshots-table {
+        .journalit-account-form .manual-drawdown-manager .snapshots-table {
           overflow-x: auto;
           border: 1px solid var(--background-modifier-border);
           border-radius: 8px;
         }
 
-        .edit-account-form .manual-drawdown-manager .snapshots-table table {
+        .journalit-account-form .manual-drawdown-manager .snapshots-table table {
           width: 100%;
           border-collapse: collapse;
         }
 
-        .edit-account-form .manual-drawdown-manager .snapshots-table th {
+        .journalit-account-form .manual-drawdown-manager .snapshots-table th {
           background: var(--background-secondary);
           padding: 0.75rem;
           text-align: left;
@@ -81,27 +76,27 @@ export const MANUAL_DRAWDOWN_MANAGER_STYLES = `
           border-bottom: 2px solid var(--background-modifier-border);
         }
 
-        .edit-account-form .manual-drawdown-manager .snapshots-table td {
+        .journalit-account-form .manual-drawdown-manager .snapshots-table td {
           padding: 0.75rem;
           border-bottom: 1px solid var(--background-modifier-border);
           color: var(--text-normal);
         }
 
-        .edit-account-form .manual-drawdown-manager .snapshots-table tbody tr:last-child td {
+        .journalit-account-form .manual-drawdown-manager .snapshots-table tbody tr:last-child td {
           border-bottom: none;
         }
 
-        .edit-account-form .manual-drawdown-manager .snapshots-table tbody tr:hover {
+        .journalit-account-form .manual-drawdown-manager .snapshots-table tbody tr:hover {
           background: var(--background-secondary-alt);
         }
 
-        .edit-account-form .manual-drawdown-manager .snapshots-table tbody tr.editing {
+        .journalit-account-form .manual-drawdown-manager .snapshots-table tbody tr.editing {
           background: var(--background-modifier-hover);
           outline: 2px solid var(--interactive-accent);
           outline-offset: -2px;
         }
 
-        .edit-account-form .manual-drawdown-manager .note-cell {
+        .journalit-account-form .manual-drawdown-manager .note-cell {
           color: var(--text-muted);
           font-style: italic;
           max-width: 200px;
@@ -110,18 +105,18 @@ export const MANUAL_DRAWDOWN_MANAGER_STYLES = `
           white-space: nowrap;
         }
 
-        .edit-account-form .manual-drawdown-manager .actions-cell {
+        .journalit-account-form .manual-drawdown-manager .actions-cell {
           display: flex;
           gap: 0.5rem;
         }
 
-        .edit-account-form .manual-drawdown-manager .snapshot-form-section {
+        .journalit-account-form .manual-drawdown-manager .snapshot-form-section {
           background: var(--background-secondary);
           padding: 1.5rem;
           border-radius: 8px;
         }
 
-        .edit-account-form .manual-drawdown-manager .validation-error {
+        .journalit-account-form .manual-drawdown-manager .validation-error {
           padding: 0.75rem;
           margin-bottom: 1rem;
           background: var(--background-modifier-error);
@@ -131,75 +126,36 @@ export const MANUAL_DRAWDOWN_MANAGER_STYLES = `
           font-weight: 500;
         }
 
-        .edit-account-form .manual-drawdown-manager .setting-item {
-          margin-bottom: 1.5rem;
+        
+        .journalit-account-form .manual-drawdown-manager .setting-item {
           display: flex;
-          align-items: center;
-          gap: 1rem;
+          flex-direction: column;
+          align-items: stretch;
+          gap: 4px;
+          margin-bottom: var(--size-4-4);
           white-space: normal;
-          word-wrap: break-word;
         }
 
-        .edit-account-form .manual-drawdown-manager .setting-item.two-column {
+        .journalit-account-form .manual-drawdown-manager .setting-item.two-column {
           display: grid;
           grid-template-columns: 1fr 1fr;
-          gap: 1rem;
+          gap: 16px;
+          align-items: start;
         }
 
-        .edit-account-form .manual-drawdown-manager .setting-item.two-column .column {
+        .journalit-account-form .manual-drawdown-manager .setting-item.two-column .column {
           display: flex;
           flex-direction: column;
+          gap: 4px;
         }
 
-        .edit-account-form .manual-drawdown-manager .setting-item.two-column .setting-item-info {
-          margin-bottom: 0.5rem;
-        }
-
-        .edit-account-form .manual-drawdown-manager .setting-item .setting-item-info {
-          flex-shrink: 0;
-          width: 180px;
-          margin-bottom: 0;
+        .journalit-account-form .manual-drawdown-manager .setting-item-info {
           display: flex;
           flex-direction: column;
-          gap: 0.25rem;
+          gap: 2px;
         }
 
-        .edit-account-form .manual-drawdown-manager .setting-item .setting-item-control {
-          flex: 1;
-        }
-
-        
-        .edit-account-form .manual-drawdown-manager .setting-item {
-          display: flex !important;
-          flex-direction: row !important;
-          gap: 1rem !important;
-        }
-
-        .edit-account-form .manual-drawdown-manager .setting-item-control {
-          flex: 1;
-          min-width: 100px;
-        }
-
-        .edit-account-form .manual-drawdown-manager .setting-item-info {
-          max-width: 180px;
-          flex-shrink: 1;
-          min-width: 120px;
-        }
-
-        .edit-account-form .manual-drawdown-manager .setting-item-name {
-          font-weight: 600;
-          color: var(--text-normal);
-          margin-bottom: 0;
-          white-space: nowrap;
-        }
-
-        .edit-account-form .manual-drawdown-manager .setting-item-description {
-          font-size: 0.9em;
-          color: var(--text-muted);
-          display: inline;
-        }
-
-        .edit-account-form .manual-drawdown-manager .setting-item-control input {
+        .journalit-account-form .manual-drawdown-manager .setting-item-control input {
           width: 100%;
           padding: 0.5rem;
           border: 1px solid var(--background-modifier-border);
@@ -208,12 +164,12 @@ export const MANUAL_DRAWDOWN_MANAGER_STYLES = `
           color: var(--text-normal);
         }
 
-        .edit-account-form .manual-drawdown-manager .setting-item-control input:focus {
+        .journalit-account-form .manual-drawdown-manager .setting-item-control input:focus {
           outline: 2px solid var(--interactive-accent);
           outline-offset: -1px;
         }
 
-        .edit-account-form .manual-drawdown-manager .form-buttons {
+        .journalit-account-form .manual-drawdown-manager .form-buttons {
           display: flex;
           gap: 0.5rem;
           margin-top: 1rem;
@@ -429,6 +385,7 @@ const DrawdownSnapshotForm: React.FC<DrawdownSnapshotFormProps> = ({
         <div className="setting-item-control">
           <div className="journalit-manual-drawdown-date-input-wrapper">
             <FastDateTimeInput
+              className="journalit-account-date-input"
               label=""
               value={formDate ? new Date(formDate) : undefined}
               onChange={(value) => {
@@ -482,7 +439,10 @@ const DrawdownSnapshotForm: React.FC<DrawdownSnapshotFormProps> = ({
     <div className="setting-item">
       <div className="setting-item-info">
         <div className="setting-item-name">
-          {t('manual-drawdown.field.note')}
+          {t('manual-drawdown.field.note')}{' '}
+          <span className="setting-item-name-optional">
+            {t('form.field.optional')}
+          </span>
         </div>
         <div className="setting-item-description">
           {t('manual-drawdown.field.note-desc')}
@@ -501,7 +461,7 @@ const DrawdownSnapshotForm: React.FC<DrawdownSnapshotFormProps> = ({
     </div>
 
     <div className="form-buttons">
-      <Button variant="primary" onClick={onSubmit}>
+      <Button onClick={onSubmit}>
         {editingIndex !== null
           ? t('manual-drawdown.button.update')
           : t('manual-drawdown.button.add')}

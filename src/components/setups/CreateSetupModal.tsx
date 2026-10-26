@@ -1,5 +1,5 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { App, Modal, Notice, TFile } from 'obsidian';
+import { App, Notice, TFile } from 'obsidian';
 import { createRoot, Root } from 'react-dom/client';
 
 import type JournalitPlugin from '../../main';
@@ -31,6 +31,7 @@ import {
   normalizedEquals,
   normalizeOptionKey,
 } from '../../utils/stringNormalization';
+import { JournalitModal } from '../modals/JournalitModal';
 
 interface CreateSetupModalProps {
   app: App;
@@ -89,18 +90,15 @@ function mergeSetupProfileOptions(
   return [...new Set([...availableOptions, ...selectedOptions])];
 }
 
-export function removeFailedSetupTag(
-  tags: string[],
-  failedTag: string
-): string[] {
+function removeFailedSetupTag(tags: string[], failedTag: string): string[] {
   return tags.filter((tag) => !normalizedEquals(tag, failedTag));
 }
 
-export function normalizeSetupTagSelection(value: string | string[]): string[] {
+function normalizeSetupTagSelection(value: string | string[]): string[] {
   return Array.isArray(value) ? deduplicateOptions(value) : [];
 }
 
-export async function waitForSetupTagPersistence(
+async function waitForSetupTagPersistence(
   tags: string[],
   pendingSaves: Set<Promise<void>>,
   failedTagKeys: Set<string>
@@ -168,7 +166,7 @@ const DEFAULT_SETUP_TIMEFRAME_OPTIONS = [
   '1D',
 ];
 
-class CreateSetupModal extends Modal {
+class CreateSetupModal extends JournalitModal {
   private root: Root | null = null;
   private container: HTMLDivElement;
 
@@ -711,7 +709,6 @@ const CreateSetupFields: React.FC<{
         isMulti
         onSaveOption={onSaveTag}
         portalDropdown
-        selectedItemsPlacement="inside-input"
         disabled={isSaving}
       />
     </div>
@@ -838,7 +835,6 @@ const CreateSetupProfileFields: React.FC<{
         placeholder={t('setups.create.placeholder.preferred-sessions')}
         isMulti
         portalDropdown
-        selectedItemsPlacement="inside-input"
         disabled={isSaving}
       />
       <ComboBox
@@ -850,7 +846,6 @@ const CreateSetupProfileFields: React.FC<{
         allowCreate
         isMulti
         portalDropdown
-        selectedItemsPlacement="inside-input"
         disabled={isSaving}
       />
       <ComboBox
@@ -861,7 +856,6 @@ const CreateSetupProfileFields: React.FC<{
         placeholder={t('setups.create.placeholder.preferred-tickers')}
         isMulti
         portalDropdown
-        selectedItemsPlacement="inside-input"
         disabled={isSaving}
       />
     </div>

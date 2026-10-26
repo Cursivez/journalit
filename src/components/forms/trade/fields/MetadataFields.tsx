@@ -26,6 +26,8 @@ interface MetadataFieldsProps {
   onDeleteImage?: (imagePath: string) => Promise<void>;
   
   sourcePath?: string;
+  
+  active?: boolean;
 }
 
 
@@ -36,6 +38,7 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
   onAddImage,
   onDeleteImage,
   sourcePath = '',
+  active = true,
 }) => {
   const plugin = usePlugin();
   const imagesRef = useRef<string[]>(
@@ -177,9 +180,9 @@ const MetadataFieldsComponent: React.FC<MetadataFieldsProps> = ({
             onImageUploaded={handleImageUploaded}
             onMultipleImagesUploaded={handleMultipleImagesUploaded}
             label={t('button.upload-image')}
-            enableDragDrop={true}
+            enableDragDrop={active}
             saveImageFunction={saveImage}
-            enablePaste={true}
+            enablePaste={active}
             pasteContext={tradeContext}
           />
 

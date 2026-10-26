@@ -1,7 +1,11 @@
 import { ApiError } from '../../types/errors';
 import { validateFieldKey } from '../../types/customFields';
 import { isTradeProjectionGeneration } from './TradeProjectionGeneration';
-import type { TradeImportPreviewTrade } from '../tradeImport/types';
+import {
+  decodeTradeImportDestination,
+  type TradeImportDestination,
+  type TradeImportPreviewTrade,
+} from '../tradeImport/types';
 import type {
   TradeProjection,
   TradeProjectionAccountInventoryItem,
@@ -113,6 +117,12 @@ const nullableProjectionString = (
   }
   return value;
 };
+
+const projectionDestination = (value: unknown): TradeImportDestination =>
+  decodeTradeImportDestination(
+    value,
+    'Invalid Trade Projection destination response'
+  );
 
 const projectionAccountIdentity = (value: unknown): 'broker' | 'name' => {
   if (value === undefined || value === null) return 'name';
@@ -514,6 +524,9 @@ function normalizeMissingProjection(
           ? 'needs_rewrite'
           : syncStatus,
     projectionGeneration: projectionGeneration(state?.localRevision),
+    destination: projectionDestination(
+      projectionTrade?.destination ?? record.destination
+    ),
     previewTrade,
   };
 }
@@ -585,6 +598,7 @@ function normalizeProjectionResponse(value: unknown): TradeProjectionResponse {
         projectionGeneration: projectionGeneration(
           projection.projectionGeneration
         ),
+        destination: projectionDestination(projection.destination),
         previewTrade,
       } satisfies TradeProjection;
     }),
@@ -680,6 +694,7 @@ function normalizeInventoryItem(
       'inventory lastImportedAt'
     ),
     mapping: normalizeMapping(record.mapping),
+    destination: projectionDestination(record.destination),
   };
 }
 

@@ -24,6 +24,8 @@ import type {
 } from './BrokerSyncProvider';
 import type {
   BrokerClientOperationContext,
+  BrokerProjectionOperationContext,
+  BrokerSyncProviderId,
   TradeProjection,
   TradeProjectionAccountInventoryItem,
   TradeProjectionSyncResult,
@@ -59,7 +61,7 @@ export class TradeProjectionRestoreRunner {
   }
 
   async run(
-    operation?: BrokerClientOperationContext
+    operation?: BrokerProjectionOperationContext
   ): Promise<TradeProjectionSyncResult> {
     return this.restoreAccounts(operation);
   }
@@ -67,13 +69,13 @@ export class TradeProjectionRestoreRunner {
   
   async runForRemappedAccounts(
     accountBindings: BrokerSyncAccountBinding[],
-    operation?: BrokerClientOperationContext
+    operation?: BrokerProjectionOperationContext
   ): Promise<TradeProjectionSyncResult> {
     return this.restoreAccounts(operation, accountBindings);
   }
 
   private async restoreAccounts(
-    operation?: BrokerClientOperationContext,
+    operation?: BrokerProjectionOperationContext,
     accountBindings?: BrokerSyncAccountBinding[]
   ): Promise<TradeProjectionSyncResult> {
     await this.plugin.canonicalProjectionMigrationService?.run();
@@ -93,6 +95,9 @@ export class TradeProjectionRestoreRunner {
       initiatingUserId
     );
     const shouldStop = () => this.isStopped() || ownershipChanged();
+    if (operation && operation.ownerUserId !== initiatingUserId) {
+      return emptyTradeProjectionSyncResult();
+    }
     async function completeWhileOwned<T>(
       work: () => Promise<T>
     ): Promise<{ value: T } | null> {
@@ -179,19 +184,46 @@ export class TradeProjectionRestoreRunner {
     >();
     
     
+    const projectionOperations = new Map<
+      BrokerSyncProviderId,
+      BrokerProjectionOperationContext
+    >();
+    if (operation) projectionOperations.set(operation.provider, operation);
+    const projectionOperationFor = async (provider: BrokerSyncProviderId) => {
+      if (!operation) return undefined;
+      const existing = projectionOperations.get(provider);
+      if (existing) return existing;
+      const created = await completeWhileOwned(() =>
+        this.diagnostics.createProjectionOperation(
+          vaultId,
+          provider,
+          operation.syncRunId
+        )
+      );
+      if (!created) return undefined;
+      projectionOperations.set(provider, created.value);
+      return created.value;
+    };
+    
+    
     const recordMappingMissing = async (canonicalAccountId: string) => {
       if (!operation) return;
       const binding = connectionIdByCanonicalAccountId.get(canonicalAccountId);
       if (!binding) return;
       const { connectionId, provider } = binding;
-      let diagnosticOperation = mappingDiagnosticOperations.get(connectionId);
+      const bindingKey = `${provider}:${connectionId}`;
+      let diagnosticOperation = mappingDiagnosticOperations.get(bindingKey);
       if (!diagnosticOperation) {
-        diagnosticOperation = await this.diagnostics.createConnectionOperation(
-          vaultId,
-          connectionId,
-          provider
+        const created = await completeWhileOwned(() =>
+          this.diagnostics.createConnectionOperation(
+            vaultId,
+            connectionId,
+            provider
+          )
         );
-        mappingDiagnosticOperations.set(connectionId, diagnosticOperation);
+        if (!created) return;
+        diagnosticOperation = created.value;
+        mappingDiagnosticOperations.set(bindingKey, diagnosticOperation);
       }
       await this.diagnostics.record(diagnosticOperation, {
         eventType: 'account_mapping_missing',
@@ -251,6 +283,10 @@ export class TradeProjectionRestoreRunner {
         await recordMappingMissing(account.accountId);
         continue;
       }
+      const clientOperation = binding
+        ? await projectionOperationFor(binding.provider)
+        : undefined;
+      if (shouldStop()) return emptyTradeProjectionSyncResult();
       const result = await this.restoreService.restoreProjections({
         accountName: mappedCatalogAccount?.name ?? localAccountName,
         brokerLabel: account.broker,
@@ -258,10 +294,7 @@ export class TradeProjectionRestoreRunner {
         ownerUserId: initiatingUserId,
         requestOptions: { interactiveEntitlement: false },
         shouldStop,
-        clientOperation:
-          operation && binding
-            ? { ...operation, provider: binding.provider }
-            : undefined,
+        clientOperation,
       });
       writtenCount += result.writtenCount + result.duplicateCount;
       failedCount += result.failedCount;

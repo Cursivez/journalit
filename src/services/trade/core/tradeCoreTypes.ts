@@ -37,11 +37,15 @@ export interface TradeChange {
 export interface TradeCommittedPayload {
   change: TradeChange;
   receipt: TradeCommitReceipt;
-  legacyTradeChangedExpected?: boolean;
 }
 
 export interface TradeIdentitySnapshot {
   tradeId?: string;
   schemaVersion?: number;
   tradeRevision?: number;
+}
+
+export interface TradeMutationRevisionSnapshot {
+  identity: TradeIdentitySnapshot;
+  contentRevision: string;
 }

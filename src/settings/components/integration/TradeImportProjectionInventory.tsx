@@ -5,7 +5,7 @@ import { IconButton } from '../../../components/ui/IconButton';
 import { t } from '../../../lang/helpers';
 import type { TradeProjectionAccountInventoryItem } from '../../../services/tradeSync/types';
 import { formatLocalizedDateTime } from '../../../utils/localizedDateTime';
-import { rateLimitUiState } from './brokerSyncKit';
+import { rateLimitUiState } from './brokerSyncKit/rateLimitCooldowns';
 
 export interface ImportAccountOption {
   name: string;
@@ -129,7 +129,11 @@ const TradeImportAccountRow: React.FC<{
     <li className="journalit-trade-import-account-row">
       <div className="journalit-trade-import-account-row__identity">
         <strong>{account.displayName}</strong>
-        <span>{account.broker}</span>
+        <span>
+          {account.destination === 'backtest'
+            ? `${account.broker} · ${t('trade-import.destination.backtest')}`
+            : account.broker}
+        </span>
       </div>
       <div className="journalit-trade-import-account-row__status">
         <span>

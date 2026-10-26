@@ -5,7 +5,10 @@ export function scheduleIdle(
   fn: () => unknown,
   fallbackTimeoutMs: number = 200
 ): void {
-  if (typeof window !== 'undefined' && 'requestIdleCallback' in window) {
+  if (
+    typeof window !== 'undefined' &&
+    typeof window.requestIdleCallback === 'function'
+  ) {
     window.requestIdleCallback(() => {
       try {
         fn();

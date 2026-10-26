@@ -3,6 +3,29 @@
 import type { Lang } from './en';
 
 const ru: Lang = {
+  'tradelog.export.button': 'Экспорт',
+  'tradelog.export.title': 'Экспорт сделок',
+  'tradelog.export.format': 'Формат',
+  'tradelog.export.scope':
+    '{count} подходящих сделок · {columns} видимых столбцов',
+  'tradelog.export.raw':
+    'Значения не скрыты, даже в режиме конфиденциальности. P&L — сумма, не R; изображения — только пути.',
+  'tradelog.export.mobile':
+    'На мобильных устройствах файл сохраняется в корне хранилища.',
+  'tradelog.export.saved': 'Экспорт сохранён в хранилище: {filename}',
+  'tradelog.export.failed':
+    'Не удалось экспортировать сделки. Попробуйте ещё раз.',
+  'tradelog.export.empty':
+    'Нет подходящих сделок или видимых столбцов данных для экспорта.',
+  'tradelog.export.guide':
+    'Используйте экспорт, чтобы сохранить все подходящие сделки в CSV, JSON или Markdown с видимыми столбцами в заданном порядке. Файлы содержат нескрытые данные, даже в режиме конфиденциальности.',
+  'expectancy-gap.benchmark-help':
+    'Среднее модели/теста. Общее для фильтров; пустое поле удаляет значение.',
+  'expectancy-gap.formula': 'Разрыв = фактическое − ожидаемое',
+  'expectancy-gap.realized-help':
+    'Фактическое = средний чистый R закрытых сделок с пригодными данными риска.',
+  'expectancy-gap.interpretation':
+    'Отрицательное = ниже модели, положительное = выше. Причина не объясняется.',
   'trade-import.recovery.bybit-header.columns':
     'Отсутствуют обязательные столбцы: {columns}.',
   'trade-import.recovery.bybit-header.title':
@@ -22,6 +45,32 @@ const ru: Lang = {
     'Данные счёта изменились во время редактирования. Перед сохранением откройте редактор счёта заново.',
   'account.profiles.profitable-days-conflict':
     'Сохраните текущую политику выплат или измените требование к прибыльным дням перед применением этих условий.',
+  'account.prop-challenge.position-limits-not-monitored':
+    'Journalit не отслеживает лимиты позиций и правила увеличения числа контрактов. Проверяйте правила вашей фирмы и торговой платформы.',
+  'account.prop-challenge.rule.profit-basis.cumulative':
+    'Накопленная торговая прибыль (выплаты не уменьшают)',
+  'account.prop-challenge.rule.profit-basis':
+    'База прибыли для изменения лимита',
+  'account.prop-challenge.rule.manual_review':
+    'Проверка фирмой / неподдерживаемые условия',
+  'account.prop-challenge.summary.rule.manual_review': 'Проверка фирмой',
+  'account.prop-challenge.ledger.state.needs-review':
+    'Требуется проверка фирмой',
+  'account.prop-challenge.payout.estimated-net':
+    'Оценка чистой выплаты трейдеру',
+  'account.prop-challenge.payout.gross-withdrawals': 'Валовые снятия со счёта',
+  'account.prop-challenge.payout.lifetime-gross':
+    'Текущая прибыль этапа + все предыдущие валовые снятия на этапе (не только за платёжный цикл)',
+  'account.prop-challenge.payout.unresolved-cap': 'Уточнить лимит у фирмы',
+  'account.prop-challenge.payout.marginal-split': 'Разделение по части прибыли',
+  'account.prop-challenge.payout-rules.profit-split.above':
+    'Доля трейдера выше порога (%)',
+  'account.prop-challenge.payout.not-calculated': 'Не рассчитано',
+  'account.prop-challenge.payout.manual-only':
+    'Расчёт выплат для этих условий недоступен. Вы по-прежнему можете записывать фактические выплаты.',
+  'account.prop-challenge.payout.raise-floor':
+    'Поднять нижнюю границу до начального баланса',
+  'account.prop-challenge.rule.comparison': 'Сравнение',
   'templateEditor.widget.session-log.hide-empty-outside':
     'Скрывать журнал вне сессии, если он пуст',
   'account.profiles.correction-title': 'Исправление каталога',
@@ -32,9 +81,12 @@ const ru: Lang = {
   'account.profiles.correction-after': 'После',
   'account.profiles.correction-stale':
     'История счёта изменилась. Откройте проверку заново.',
-  'account.profiles.correction-result': 'Проверка строгих правил',
-  'account.profiles.no-hard-breach': 'Строгих нарушений не обнаружено',
+  'account.profiles.correction-effect': 'Влияние на этот счёт',
+  'account.profiles.not-failed': 'Без нарушений',
   'account.profiles.correction-consent': 'Пересчитать историю',
+  'account.profiles.correction-consent-help':
+    'Заменяет правила этой фазы для затронутой истории и заново проверяет её результат. Сделки и платежи не изменяются.',
+  'account.profiles.correction-period-open': 'С {date}',
   'account.profiles.correction-details': 'Подробности',
   'account.profiles.correction-apply': 'Применить исправление',
   'account.profiles.purchase-date': 'Дата первоначальной покупки',
@@ -64,13 +116,6 @@ const ru: Lang = {
   'account.profiles.source-changed':
     'Правила фирмы изменились, пока этот обзор был открыт. Откройте обзор заново перед применением.',
   'account.profiles.retain': 'Сохранить текущие правила',
-  'account.profiles.retain-help':
-    'Сохраните правила счёта и скройте эти изменения источника. Последующие изменения правил могут вызвать новое уведомление.',
-  'account.profiles.comparison-help':
-    'Показаны только различия. Разверните правило для просмотра полей. Различия могут быть вызваны локальными настройками.',
-  'account.profiles.added': 'Добавлено',
-  'account.profiles.removed': 'Удалено',
-  'account.profiles.changed': 'Изменено',
   'account.profiles.not-configured': 'Не настроено',
   'account.profiles.no-rule-changes':
     'Для этого этапа нет различий в правилах или условиях выплат.',
@@ -98,8 +143,6 @@ const ru: Lang = {
   'account.profiles.incoming': 'Новые правила фирмы',
   'account.profiles.independent':
     'Сохранённые правила хранятся локально в этом хранилище. Применение создаёт независимую копию на счёте; сохранение новой редакции никогда не меняет существующие счета.',
-  'account.profiles.keep-help':
-    'Отмеченные правила сохраняют ваши локальные значения вместо нового правила этого типа. Снимите отметку, чтобы принять значение фирмы. Новые типы правил добавляются.',
   'account.profiles.keep-local': 'Оставить моё правило:',
   'account.profiles.keep-payout': 'Сохранить текущую политику выплат',
   'account.profiles.library': 'Мои сохранённые правила',
@@ -121,19 +164,20 @@ const ru: Lang = {
     'Свяжите челлендж с правилами фирмы, и Journalit сообщит, когда фирма их изменит. Сначала вы проверите, чем они отличаются от правил этого счёта; ничего не изменится, пока вы не примените.',
   'account.profiles.link-title': 'Связать с правилами фирмы',
   'account.profiles.choose-source': 'Выберите правила фирмы',
-  'account.profiles.update-available':
-    'Правила фирмы изменились и требуют проверки. Ваш счёт по-прежнему использует сохранённые правила.',
-  'account.profiles.up-to-date':
-    'Эта фаза использует последние проверенные правила фирмы; локальные изменения остаются независимыми.',
   'widget.mfeScatter.name': 'MFE и реализованный PnL',
   'widget.mfeScatter.description':
     'Макс. нереализованная прибыль и итоговый P&L',
-  'widget.mfeScatter.y': 'Реализованный PnL ({unit})',
-  'widget.mfeScatter.winners': 'Прибыльные',
-  'widget.mfeScatter.losers': 'Убыточные',
-  'widget.mfeScatter.breakeven': 'Безубыточные',
+  'widget.excursionScatter.y': 'Реализованный PnL ({unit})',
+  'widget.excursionScatter.winners': 'Прибыльные',
+  'widget.excursionScatter.losers': 'Убыточные',
+  'widget.excursionScatter.breakeven': 'Безубыточные',
   'widget.mfeScatter.empty':
     'Нет закрытых сделок с доступным MFE в этой единице.',
+  'widget.maeScatter.name': 'MAE и реализованный PnL',
+  'widget.maeScatter.description':
+    'Макс. нереализованный убыток и итоговый P&L',
+  'widget.maeScatter.empty':
+    'Нет закрытых сделок с доступным MAE в этой единице.',
 
   'trade-sync.tradovate.status.connecting': 'Подключение',
   'trade-sync.tradovate.status.setup-required': 'Требуется настройка счёта',
@@ -152,6 +196,8 @@ const ru: Lang = {
     'Синхронизировано подключений Tradovate: {succeeded} из {total}.',
   'trade-sync.tradovate.sync-all-partial':
     'Синхронизировано подключений Tradovate: {succeeded} из {total}. Проверьте подключения с проблемами.',
+  'trade-sync.tradovate.sync-all-provider-partial':
+    'Синхронизировано подключений Tradovate: {succeeded} из {total} · синхронизация завершена частично',
   'trade-sync.tradovate.connect-another':
     'Подключить ещё одну учётную запись Tradovate',
   'trade-sync.tradovate.no-connections':
@@ -216,6 +262,8 @@ const ru: Lang = {
     'Синхронизировано подключений cTrader: {succeeded} из {total}.',
   'trade-sync.ctrader.sync-all-partial':
     'Синхронизировано подключений cTrader: {succeeded} из {total}. Проверьте подключения с проблемами.',
+  'trade-sync.ctrader.sync-all-provider-partial':
+    'Синхронизировано подключений cTrader: {succeeded} из {total} · синхронизация завершена частично',
   'trade-sync.ctrader.connect-another':
     'Подключить ещё одну учётную запись cTrader',
   'trade-sync.ctrader.no-connections':
@@ -259,32 +307,93 @@ const ru: Lang = {
     'Перед восстановлением заметок о сделках выберите локальный счёт.',
   'trade-sync.ctrader.recovery-confirm':
     'Восстановить заметки о сделках ({count}) в {account}?',
-  'trade-sync.oauth.remap.title': 'Change account',
+  'trade-sync.oauth.remap.title': 'Сменить счёт',
   'trade-sync.oauth.remap.message':
-    'Use {newAccount} for existing notes too? Otherwise, only future broker updates will use it.',
-  'trade-sync.oauth.remap.update-notes': 'Update notes',
-  'trade-sync.oauth.remap.future-only': 'Future updates only',
+    'Использовать {newAccount} и для существующих заметок? Иначе его будут использовать только будущие обновления от брокера.',
+  'trade-sync.oauth.remap.update-notes': 'Обновить заметки',
+  'trade-sync.oauth.remap.future-only': 'Только будущие обновления',
   'trade-sync.oauth.remap.unavailable':
-    'Account remapping is unavailable. Update the Journalit server and try again.',
+    'Переназначение счёта недоступно. Обновите сервер Journalit и попробуйте снова.',
   'trade-sync.oauth.remap.restore-in-progress':
-    'Wait for Restore to finish, then try again.',
+    'Дождитесь завершения восстановления и попробуйте снова.',
   'trade-sync.oauth.remap.operation-conflict':
-    'That remap request conflicted with an earlier attempt. Try again.',
+    'Этот запрос на переназначение конфликтует с более ранней попыткой. Попробуйте снова.',
   'trade-sync.oauth.remap.account-busy':
-    'This account is busy synchronizing. Retry shortly.',
+    'Этот счёт сейчас синхронизируется. Повторите попытку чуть позже.',
   'trade-sync.oauth.remap.account-unavailable':
-    'This account is no longer available. Refresh and try again.',
+    'Этот счёт больше недоступен. Обновите страницу и попробуйте снова.',
   'trade-sync.oauth.remap.preserved-conflicts':
-    '{count} existing conflict(s) were left unchanged.',
+    'Существующих конфликтов оставлено без изменений: {count}.',
   'trade-sync.oauth.remap.notes-pending':
-    '{count} existing note update(s) are still pending. Synchronize again to retry.',
+    'Обновлений существующих заметок в ожидании: {count}. Синхронизируйте снова, чтобы повторить попытку.',
   'trade-sync.source.ctrader': 'cTrader',
+  'trade-sync.source.hyperliquid': 'Hyperliquid',
+  'trade-sync.source.hyperliquid.description':
+    'Синхронизация только для просмотра бессрочных фьючерсов Hyperliquid в USDC, настраивается на Journalit.co и записывается в это хранилище.',
+  'onboarding.broker.option.hyperliquid-sync.label':
+    'Hyperliquid (бессрочные фьючерсы USDC)',
+  'trade-sync.hyperliquid.recovery-title':
+    'Восстановить отсутствующие заметки о сделках',
+  'trade-sync.hyperliquid.recovery-count':
+    'Заметок о сделках для восстановления: {count}',
+  'trade-sync.hyperliquid.recovery-select-account':
+    'Перед восстановлением заметок о сделках выберите локальный счёт.',
+  'trade-sync.hyperliquid.recovery-confirm':
+    'Восстановить заметки о сделках ({count}) в {account}?',
+  'trade-sync.hyperliquid.scope-description':
+    'Синхронизация охватывает только бессрочные фьючерсы с расчётами в USDC, а история, которую Hyperliquid отдаёт через API, может быть неполной. Импорт CSV остаётся доступным, но пересекающиеся сделки из CSV и синхронизации не дедуплицируются автоматически.',
+  'trade-sync.hyperliquid.description':
+    'Только просмотр: подключите адрес кошелька и выберите счета и историю на Journalit.co. Здесь вы сопоставляете каждый счёт со счётом Journalit и синхронизируете сделки в это хранилище.',
+  'trade-sync.hyperliquid.manage-on-website': 'Управлять на Journalit.co',
+  'trade-sync.hyperliquid.connect-on-website': 'Подключить на Journalit.co',
+  'trade-sync.hyperliquid.manage-connection': 'Управлять на сайте',
+  'trade-sync.hyperliquid.pending-acks':
+    'Обновлений хранилища, ожидающих подтверждения: {count}.',
+  'trade-sync.hyperliquid.disabled':
+    'Синхронизация Hyperliquid пока недоступна.',
+  'trade-sync.hyperliquid.status-failed':
+    'Не удалось загрузить статус Hyperliquid.',
+  'trade-sync.hyperliquid.no-connections':
+    'Подключений Hyperliquid пока нет. Подключите адрес кошелька на Journalit.co и вернитесь сюда.',
+  'trade-sync.hyperliquid.never': 'Никогда',
+  'trade-sync.hyperliquid.last-sync': 'Последняя синхронизация',
+  'trade-sync.hyperliquid.reconciliation-issues': 'Проблем сверки: {count}',
+  'trade-sync.hyperliquid.status.pending': 'Поиск счетов',
+  'trade-sync.hyperliquid.status.setup-required': 'Требуется настройка',
+  'trade-sync.hyperliquid.status.paused': 'Приостановлено',
+  'trade-sync.hyperliquid.status.attention': 'Требует внимания',
+  'trade-sync.hyperliquid.status.error': 'Ошибка подключения',
+  'trade-sync.hyperliquid.status.deleting': 'Удаление облачных данных',
+  'trade-sync.hyperliquid.notice.setup-required':
+    'Выберите на Journalit.co, какие счета и какую историю синхронизировать.',
+  'trade-sync.hyperliquid.notice.paused':
+    'Синхронизация приостановлена. Существующие заметки сохранены. Возобновите её на Journalit.co.',
+  'trade-sync.hyperliquid.notice.attention':
+    'Это подключение требует внимания. Проверьте его на Journalit.co или свяжитесь с поддержкой.',
+  'trade-sync.hyperliquid.account.selected': 'Выбран для синхронизации',
+  'trade-sync.hyperliquid.account.not-selected': 'Не выбран',
+  'trade-sync.hyperliquid.claimed-by-connection':
+    'Синхронизируется через {connection}.',
+  'trade-sync.hyperliquid.mapping-required':
+    'Сначала выберите счёт Journalit для каждого выбранного счёта.',
+  'trade-sync.hyperliquid.sync-to-vault': 'Синхронизировать',
+  'trade-sync.hyperliquid.sync-all': 'Синхронизировать все',
+  'trade-sync.hyperliquid.sync-complete':
+    'Синхронизация {connection} завершена.',
+  'trade-sync.hyperliquid.sync-partial':
+    'Синхронизация {connection} завершена с проблемами.',
+  'trade-sync.hyperliquid.sync-all-complete':
+    'Синхронизировано подключений Hyperliquid: {succeeded} из {total}.',
+  'trade-sync.hyperliquid.sync-all-partial':
+    'Синхронизировано подключений Hyperliquid: {succeeded} из {total}. Проверьте подключения с проблемами.',
+  'trade-sync.hyperliquid.sync-all-provider-partial':
+    'Синхронизировано подключений Hyperliquid: {succeeded} из {total} · синхронизация завершена частично',
   'trade-sync.source.ctrader.description':
-    'Synchronize cTrader trades in the cloud and project them into this vault.',
-  'trade-sync.ctrader.status-failed': 'Unable to load cTrader status.',
-  'trade-sync.ctrader.last-sync': 'Last sync',
+    'Синхронизирует сделки cTrader в облаке и переносит их в это хранилище.',
+  'trade-sync.ctrader.status-failed': 'Не удалось загрузить статус cTrader.',
+  'trade-sync.ctrader.last-sync': 'Последняя синхронизация',
   'trade-sync.ctrader.pending-acks': '{count} ожидающих локальных ACK',
-  'trade-sync.ctrader.never': 'Never',
+  'trade-sync.ctrader.never': 'Никогда',
 
   
   
@@ -292,7 +401,7 @@ const ru: Lang = {
 
   
   'command.add-trade': 'Добавить новую сделку',
-  'command.quick-import-trades': 'Quick import trades',
+  'command.quick-import-trades': 'Быстрый импорт сделок',
   'command.import-trades-csv': 'Открыть Trade Import',
 
   
@@ -328,7 +437,7 @@ const ru: Lang = {
   'form.section.trade-details': 'Детали сделки',
   'form.section.trading-costs': 'Торговые издержки',
   'form.section.risk-management': 'Управление рисками',
-  'form.section.take-profits': 'Take Profits',
+  'form.section.take-profits': 'Тейк-профиты',
   'form.section.analysis-thesis': 'Анализ и тезис',
 
   
@@ -356,6 +465,10 @@ const ru: Lang = {
   'form.manual-import-nudge.dismiss': 'Не сейчас',
   'form.layout.customize': 'Настроить форму',
   'form.layout.modal-title': 'Настроить форму сделки',
+  'form.layout.back-to-trade': 'Вернуться к сделке',
+  'form.layout.save-layout': 'Сохранить макет',
+  'form.layout.discard-changes.body':
+    'Отменить несохранённые настройки? Черновик сделки будет сохранён.',
   'form.layout.settings-title': 'Макет формы сделки',
 
   'form.layout.input-mode': 'Режим ввода',
@@ -417,14 +530,14 @@ const ru: Lang = {
   'form.field.swap': 'Своп',
   'form.field.other-fees': 'Прочие сборы',
   'form.field.stop-loss': 'Стоп-лосс',
-  'form.field.take-profit': 'Take Profit',
+  'form.field.take-profit': 'Тейк-профит',
   'form.field.take-profit-short': 'TP',
-  'form.field.target-price': 'Target Price',
-  'form.field.close-percent': 'Close %',
+  'form.field.target-price': 'Целевая цена',
+  'form.field.close-percent': 'Закрытие %',
   'form.field.close-size': 'Размер закрытия',
   'form.placeholder.close-size': '0.5',
   'form.layout.take-profit-unit': 'Объём закрытия Take Profit как',
-  'form.layout.take-profit-unit-percent': 'Close %',
+  'form.layout.take-profit-unit-percent': 'Закрытие %',
   'form.layout.take-profit-unit-size': 'Размер',
   'trade.validation.take-profit-size-number':
     'Размер тейк-профита должен быть корректным числом.',
@@ -434,13 +547,13 @@ const ru: Lang = {
     'Суммарный размер тейк-профитов не может превышать размер позиции.',
   'form.field.risk-amount': 'Сумма риска',
   'form.field.profit-loss': 'Прибыль/Убыток',
-  'form.field.total-pnl': 'Общий P&L',
+  'form.field.total-pnl': 'P&L сделки',
   'form.field.realized-pnl': 'Реализованный P&L',
   'form.field.floating-pnl': 'Плавающий P&L',
   'form.field.total-costs': 'Общие издержки:',
   'form.field.setup': 'Сетап',
   'form.field.mistake': 'Ошибка',
-  'form.field.custom-tags': 'Пользовательские теги',
+  'form.field.tags': 'Теги',
   'form.field.trade-thesis': 'Тезис сделки',
   'form.field.time': 'Время',
   'form.field.price': 'Цена',
@@ -502,8 +615,37 @@ const ru: Lang = {
   'form.placeholder.other-fees': 'Биржевые/регуляторные сборы',
   'form.placeholder.dividend-amount':
     'Денежная сумма, положительная или отрицательная',
-  'form.placeholder.stop-loss': 'Цена стоп-лосса (необязательно)',
-  'form.placeholder.target-price': 'Target price',
+  'form.placeholder.stop-loss': 'Цена стопа',
+  'form.layout.stop-loss-unit': 'Объём стоп-лосса как',
+  'form.layout.stop-loss-unit-percent': '% позиции',
+  'form.layout.stop-loss-unit-size': 'Размер',
+  'form.field.stop-loss-short': 'SL',
+  'form.field.stop-price': 'Цена стопа',
+  'form.field.stop-loss-percent': '% позиции',
+  'form.field.stop-loss-size': 'Размер',
+  'form.action.remove-stop-loss': 'Удалить стоп-лосс',
+  'form.stop-loss.coverage': 'Стопы покрывают {percent} позиции.',
+  'form.stop-loss.coverage-partial':
+    'Пока у каждой единицы нет стопа, риск берётся из суммы риска.',
+  'form.placeholder.stop-loss-rest': 'Остаток',
+  'form.empty.stop-losses': 'Стоп-лоссов пока нет',
+  'tradelog.tooltip.stop-losses': 'Стоп-лоссы',
+  'form.placeholder.stop-loss-size-amount': '{size} ед.',
+  'trade.validation.stop-loss-price-required': 'Цена стоп-лосса обязательна.',
+  'trade.validation.stop-loss-close-percent-number':
+    'Процент стоп-лосса должен быть корректным числом.',
+  'trade.validation.stop-loss-close-percent-range':
+    'Процент стоп-лосса должен быть от 1 до 100.',
+  'trade.validation.stop-loss-size-number':
+    'Размер стоп-лосса должен быть корректным числом.',
+  'trade.validation.stop-loss-size-positive':
+    'Размер стоп-лосса должен быть больше 0.',
+  'trade.validation.stop-loss-single-blank-amount':
+    'Только у одного стоп-лосса объём может быть пустым.',
+  'trade.validation.stop-loss-total-over-position':
+    'Стоп-лоссы покрывают больше, чем позиция.',
+  'trade.details.stop-loss-count': 'Стопов: {count}',
+  'form.placeholder.target-price': 'Целевая цена',
   'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': 'Планируемый риск в валюте',
   'form.placeholder.fx-rate': '1 {currency} = ? {base} (пусто: дневной курс)',
@@ -519,6 +661,9 @@ const ru: Lang = {
   
   
   'form.entry-exit.add-entry': '+ Добавить вход',
+  'form.entry-exit.backtest-day':
+    'Дата: {date}, день вашей последней бэктест-сделки.',
+  'form.entry-exit.use-today': 'Использовать сегодня',
   'form.entry-exit.add-exit': '+ Добавить выход',
   'form.entry-exit.remove-entry': 'Удалить вход',
   'form.entry-exit.remove-exit': 'Удалить выход',
@@ -529,9 +674,9 @@ const ru: Lang = {
   'form.entry-exit.remaining-position': 'Остаток позиции:',
   'form.entry-exit.open': '(Открыта)',
   'form.entry-exit.closed': '(Закрыта)',
-  'form.entry-exit.direct-pnl': 'Ввести P&L напрямую вместо цен',
+  'form.entry-exit.direct-pnl': 'Ввести базовый P&L сделки напрямую вместо цен',
   'form.entry-exit.direct-pnl-desc':
-    'Введите общую прибыль/убыток напрямую. Комиссия и сборы будут вычтены.',
+    'Введите прибыль/убыток сделки до дивидендов. Комиссии и сборы по-прежнему учитываются отдельно.',
   'form.entry-exit.calc-pnl':
     'Рассчитать P&L из цен входа/выхода и размеров позиции.',
   'form.ideal-exit.title': 'Идеальные выходы',
@@ -581,9 +726,8 @@ const ru: Lang = {
   'form.account-empty-state.create-account': 'Создать счёт',
   'form.account-empty-state.submit-disabled':
     'Сначала создайте счёт, чтобы сохранить эту сделку.',
-  'form.empty.take-profits': 'No take profit targets yet',
-  'form.action.add-take-profit': 'Add Take Profit',
-  'form.action.remove-take-profit': 'Remove take profit',
+  'form.empty.take-profits': 'Целей тейк-профита пока нет',
+  'form.action.remove-take-profit': 'Удалить тейк-профит',
 
   
   
@@ -603,7 +747,6 @@ const ru: Lang = {
   'button.add-trade': 'Добавить сделку',
   'button.update-trade': 'Обновить сделку',
   'button.save-changes': 'Сохранить изменения',
-  'button.create-trade': 'Создать сделку',
   'button.delete-all': 'Удалить все',
   'button.clear-all': 'Очистить все',
 
@@ -692,19 +835,19 @@ const ru: Lang = {
   'trade.validation.stop-loss-valid-number':
     'Стоп-лосс должен быть корректным числом.',
   'trade.validation.take-profit-price-required':
-    'Take profit price is required.',
+    'Цена тейк-профита обязательна.',
   'trade.validation.take-profit-price-number':
-    'Take profit price must be a number.',
+    'Цена тейк-профита должна быть числом.',
   'trade.validation.take-profit-price-valid-number':
-    'Take profit price must be a valid number.',
+    'Цена тейк-профита должна быть корректным числом.',
   'trade.validation.take-profit-close-percent-number':
-    'Take profit close percent must be a number.',
+    'Процент закрытия по тейк-профиту должен быть числом.',
   'trade.validation.take-profit-close-percent-valid-number':
-    'Take profit close percent must be a valid number.',
+    'Процент закрытия по тейк-профиту должен быть корректным числом.',
   'trade.validation.take-profit-close-percent-range':
-    'Take profit close percent must be between 1 and 100.',
+    'Процент закрытия по тейк-профиту должен быть от 1 до 100.',
   'trade.validation.take-profit-total-close-percent-range':
-    'Take profit close percentages cannot exceed 100.',
+    'Сумма процентов закрытия по тейк-профитам не может превышать 100.',
   'validation.custom-field.key-empty': 'Ключ поля не может быть пустым',
   'validation.custom-field.key-conflict':
     'Это имя поля конфликтует со встроенными полями сделки',
@@ -743,7 +886,6 @@ const ru: Lang = {
   'notice.pro-access-ready': 'Доступ PRO готов.',
 
   'notice.logout-success': 'Выход выполнен успешно',
-  'notice.hotkey-set': 'Сочетание клавиш настроено: {hotkey}',
   'notice.ftp-created': 'FTP-учётные данные созданы успешно',
   'notice.ftp-password-rotated':
     'Для этого устройства созданы новые FTP-учётные данные. FTP-синхронизацию на других устройствах (например, в вашем MetaTrader EA) необходимо обновить с новым паролем.',
@@ -770,7 +912,7 @@ const ru: Lang = {
     'Успешно импортировано {count} пользовательских полей',
 
   'notice.setups-added': 'Сетапы добавлены к {count} сделкам',
-  'notice.tags-added': 'Added tags to {count} trades',
+  'notice.tags-added': 'Теги добавлены к сделкам: {count}',
   'notice.mistakes-added': 'Ошибки добавлены к {count} сделкам',
 
   
@@ -779,8 +921,8 @@ const ru: Lang = {
   'notice.error.open-journalit':
     'Не удалось открыть Journalit. Попробуйте перезагрузить Obsidian.',
   'notice.error.open-drc': 'Не удалось открыть дневной анализ: {error}',
-  'notice.error.open-trade-log': 'Failed to open Trade Log: {error}',
-  'notice.error.open-csv-import': 'Failed to open Trade Import: {error}',
+  'notice.error.open-trade-log': 'Не удалось открыть журнал сделок: {error}',
+  'notice.error.open-csv-import': 'Не удалось открыть Trade Import: {error}',
   'notice.error.open-weekly-review':
     'Не удалось открыть недельный обзор: {error}',
   'notice.error.open-monthly-review':
@@ -805,10 +947,8 @@ const ru: Lang = {
   'notice.error.open-layout-builder':
     'Не удалось открыть конструктор макетов: {error}',
   'notice.error.switch-template': 'Не удалось сменить layout: {error}',
-  'notice.error.no-active-file':
-    'Нет активного файла. Сначала откройте заметку.',
   'notice.error.no-template-support':
-    'Этот тип заметки не поддерживает шаблоны.',
+    'Этот тип заметки не поддерживает макеты.',
   'notice.error.no-templates': 'Нет доступных layoutов для этого типа заметки.',
   'notice.error.asset-type-required':
     'Тип актива обязателен при добавлении инструмента',
@@ -829,15 +969,10 @@ const ru: Lang = {
   'notice.error.mark-reviewed':
     'Ошибка при отметке сделок как проверенных: {error}',
   'notice.error.add-setups': 'Ошибка добавления сетапов: {error}',
-  'notice.error.add-tags': 'Error adding tags: {error}',
+  'notice.error.add-tags': 'Ошибка при добавлении тегов: {error}',
   'notice.error.add-mistakes': 'Ошибка добавления ошибок: {error}',
   'notice.error.duplicate-trades': 'Ошибка дублирования сделок: {error}',
   'notice.error.delete-trades': 'Ошибка удаления сделок: {error}',
-  'notice.error.csv-validation': 'Ошибка валидации CSV/XLSX/XLS: {errors}',
-  'notice.error.import-failed': 'Импорт не удался: {error}',
-  'notice.error.file-too-large':
-    'Файл слишком большой. Максимальный размер 10 МБ',
-  'notice.error.select-csv': 'Выберите файл CSV/XLSX/XLS/HTML',
   'notice.error.cannot-delete-builtin': 'Нельзя удалить встроенные layouts',
   'notice.error.duplicate-to-customize': 'Дублируйте этот layout для настройки',
   'notice.error.sign-out': 'Не удалось выйти из аккаунта. Попробуйте снова.',
@@ -855,11 +990,6 @@ const ru: Lang = {
   
   
   
-  
-  'notice.error.missed-trade-service-init':
-    'Сервис пропущенных сделок не инициализирован. Подождите немного и попробуйте снова.',
-  'notice.error.backtest-trade-service-init':
-    'Сервис бэктест-сделок не инициализирован. Подождите немного и попробуйте снова.',
 
   
   'notice.trade-updated': '{type} обновлён: {path}',
@@ -874,8 +1004,7 @@ const ru: Lang = {
   'notice.error.switch-template-generic': 'Не удалось сменить layout',
 
   'notice.error.template-save-failed': 'Не удалось сохранить layout',
-  'notice.default-trade-template-updated':
-    'Шаблон сделки по умолчанию обновлён',
+  'notice.default-trade-template-updated': 'Макет сделки по умолчанию обновлён',
   'notice.trade-template-duplicated': 'Layout сделки дублирован',
   'notice.trade-template-deleted': 'Layout сделки удалён',
   'notice.error.create-template': 'Не удалось создать layout',
@@ -887,9 +1016,8 @@ const ru: Lang = {
   'notice.csv-template-deleted': 'Шаблон "{name}" удалён',
   'notice.csv-template-delete-failed': 'Не удалось удалить шаблон: {error}',
   'notice.csv-template-imported': 'Шаблон "{name}" успешно импортирован',
-  'notice.csv-symbol-mapping-skipped': 'Сопоставление символа пропущено',
   'notice.csv-missing-fields':
-    'Сопоставьте все обязательные поля перед импортом',
+    'Сопоставьте все обязательные поля перед созданием предпросмотра.',
 
   
   'notice.error.open-account-dashboard': 'Не удалось открыть счета: {error}',
@@ -921,7 +1049,7 @@ const ru: Lang = {
   
   
   'tradelog.title': 'Журнал сделок',
-  'dashboard.guide.empty.intro.title': 'Welcome to your Dashboard',
+  'dashboard.guide.empty.intro.title': 'Добро пожаловать на панель',
   'dashboard.guide.empty.intro.description':
     'Панель становится полезной, как только в Journalit появляется история торговли для анализа.',
   'dashboard.guide.empty.state.title': 'Возьмите историю торговли с собой',
@@ -929,89 +1057,83 @@ const ru: Lang = {
     'Импортируйте прошлые сделки, чтобы начать с содержательных данных о результатах, или добавьте сделку вручную, если только начинаете вести журнал.',
   'dashboard.guide.main.intro.title': 'Это ваша панель',
   'dashboard.guide.main.intro.description':
-    'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
-  'dashboard.guide.main.filters.title': 'Filters change the whole Dashboard',
+    'На этой странице отслеживайте результаты, изучайте статистику и держите самые полезные графики в одном месте.',
+  'dashboard.guide.main.filters.title': 'Фильтры меняют всю панель',
   'dashboard.guide.main.filters.description':
     'Используйте фильтры, чтобы вся статистика и все графики на этой странице обновились для другого диапазона дат, счёта, сетапа, тега или типа сделки. Можно также исключить любое значение, чтобы убрать эти сделки.',
   'dashboard.guide.main.edit-layout.title':
-    'Turn on edit mode to customise this page',
+    'Включите режим редактирования, чтобы настроить эту страницу',
   'dashboard.guide.main.edit-layout.description':
-    'Click Edit Layout to unlock moving, resizing, removing, and adding Dashboard widgets.',
-  'dashboard.guide.main.open-widget-selector.title': 'Open Add Widget',
+    'Нажмите «Редактировать макет», чтобы перемещать, изменять размер, удалять и добавлять виджеты панели.',
+  'dashboard.guide.main.open-widget-selector.title':
+    'Откройте «Добавить виджет»',
   'dashboard.guide.main.open-widget-selector.description':
-    'Click Add Widget to add more charts and bring back widgets you removed earlier.',
-  'dashboard.guide.main.widget-picker.title': 'Pick what you want to show',
+    'Нажмите «Добавить виджет», чтобы добавить графики и вернуть ранее удалённые виджеты.',
+  'dashboard.guide.main.widget-picker.title': 'Выберите, что показывать',
   'dashboard.guide.main.widget-picker.description':
     'Эта панель показывает превью каждого графика и метрики. Нажмите на элемент, чтобы добавить его; то, что уже есть на панели, отображается в разделе Используются.',
   'dashboard.guide.main.metrics.title':
-    'These top cards are your quick summary',
+    'Эти карточки сверху — ваша быстрая сводка',
   'dashboard.guide.main.metrics.description':
-    'The top row gives you fast answers like profit, win rate, and total trades. In edit mode, you can change which cards appear and reorder them.',
+    'Верхний ряд даёт быстрые ответы: прибыль, винрейт и общее число сделок. В режиме редактирования можно выбрать, какие карточки показывать, и изменить их порядок.',
   'dashboard.guide.main.bottom.title':
-    'This is where moving and resizing happens',
+    'Здесь виджеты перемещаются и меняют размер',
   'dashboard.guide.main.bottom.description':
-    'While Edit Layout is on, drag a widget to move it. To resize a widget, drag its bottom-right corner. This is the step many users miss.',
-  'dashboard.guide.main.save-layout.title':
-    'Save your layout when you are done',
+    'Когда включено «Редактировать макет», перетащите виджет, чтобы переместить его. Чтобы изменить размер, потяните за правый нижний угол. Этот шаг многие пропускают.',
+  'dashboard.guide.main.save-layout.title': 'Сохраните макет, когда закончите',
   'dashboard.guide.main.save-layout.description':
-    'When you finish customising, click Save Layout to keep your changes. You can come back and edit this page again anytime.',
+    'Закончив настройку, нажмите «Сохранить макет», чтобы сохранить изменения. Вернуться и отредактировать страницу можно в любой момент.',
   'home.guide.intro.title': 'Добро пожаловать домой',
   'home.guide.intro.description':
-    'This is your main page. It shows your trading stats, quick actions, and shortcuts to the rest of Journalit.',
-  'home.guide.filters.title': 'These buttons change what your widgets show',
+    'Это ваша главная страница. Здесь торговая статистика, быстрые действия и переходы в остальные разделы Journalit.',
+  'home.guide.filters.title': 'Эти кнопки меняют то, что показывают виджеты',
   'home.guide.filters.description':
-    'Use these to switch the time period, trade type, or account so your Home widgets show the data you want to look at.',
-  'home.guide.settings.title': 'Настройки Journalit всегда под рукой',
-  'home.guide.settings.description':
-    'Используйте эту кнопку, чтобы открыть настройки Journalit напрямую.',
-  'home.guide.customize.title': 'Turn on edit mode to customise Home',
+    'Фильтруйте по периоду, типу сделок или счёту. Выберите «Неделя» или задайте даты «С/По» включительно в «Произвольном диапазоне». Виджеты, зависящие от периода, следуют выбору; живые виджеты остаются живыми.',
+  'home.guide.customize.title':
+    'Включите режим редактирования, чтобы настроить главную',
   'home.guide.customize.description':
-    'Click this button to start customising. Edit mode unlocks moving, resizing, removing, and adding widgets.',
+    'Нажмите эту кнопку, чтобы начать настройку. В режиме редактирования можно перемещать, изменять размер, удалять и добавлять виджеты.',
   'home.guide.quick-links-position.title':
-    'Move Quick Links above or below the widgets',
+    'Переместите быстрые ссылки над виджетами или под них',
   'home.guide.quick-links-position.description':
-    'Use this button to choose whether the Quick Links row sits above the main widget area or below it.',
-  'home.guide.quick-links.title': 'These Quick Links are your fast shortcuts',
+    'С помощью этой кнопки выберите, где будет ряд быстрых ссылок: над основной областью виджетов или под ней.',
+  'home.guide.quick-links.title': 'Быстрые ссылки — ваши ярлыки',
   'home.guide.quick-links.description':
-    'Quick Links give you one-click shortcuts to common actions and pages. In edit mode, you can also hide links you do not want showing here.',
-  'home.guide.move-and-resize.title': 'Move and resize your widgets',
-  'home.guide.widget-picker.title': 'Add widgets here',
+    'Быстрые ссылки открывают частые действия и страницы в один клик. В режиме редактирования можно скрыть ненужные ссылки.',
+  'home.guide.move-and-resize.title': 'Перемещайте виджеты и меняйте их размер',
+  'home.guide.widget-picker.title': 'Добавляйте виджеты здесь',
   'home.guide.widget-picker.description':
     'Просматривайте и добавляйте виджеты, восстанавливайте быстрые ссылки или добавляйте ярлыки счетов и сетапов. Всё, что уже есть на Главной, отображается в разделе «Используются», где это можно убрать.',
   'home.guide.move-and-resize.description':
-    'This is the main area you can rearrange in edit mode. Drag widgets to move them, or drag a widget from its bottom-right corner to resize it.',
+    'Это основная область, которую можно перестраивать в режиме редактирования. Перетаскивайте виджеты, чтобы переместить их, или тяните за правый нижний угол, чтобы изменить размер.',
   'home.guide.add-widget.title': 'Добавьте элементы на главную',
   'home.guide.add-widget.description':
     'Откройте Добавить виджет, чтобы добавить виджеты, быстрые ссылки или ярлыки счетов и сетапов.',
-  'home.guide.save-layout.title': 'Save your layout when you are done',
+  'home.guide.save-layout.title': 'Сохраните макет, когда закончите',
   'home.guide.save-layout.description':
-    'When you are happy with the layout, click this button to save your changes and leave edit mode.',
-  'home.guide.widget-interactions.title': 'That is the main idea of Home',
-  'home.guide.widget-interactions.description':
-    'Home is your customisable dashboard. Use edit mode to change the layout, and click widgets to open tools, settings, or deeper pages.',
-  'layoutBuilder.guide.intro.title': 'This is your Layout Builder',
+    'Когда макет вас устроит, нажмите эту кнопку, чтобы сохранить изменения и выйти из режима редактирования.',
+  'layoutBuilder.guide.intro.title': 'Это ваш конструктор макетов',
   'layoutBuilder.guide.intro.description':
-    'This page controls how your review templates are structured. The easiest way to start is to duplicate a built-in template, then customise your copy.',
+    'Эта страница определяет структуру макетов обзоров. Проще всего начать с копии встроенного макета и затем настроить её.',
   'layoutBuilder.guide.create-own-layout.title': 'Создайте свой макет',
   'layoutBuilder.guide.create-own-layout.description':
     'Встроенные макеты доступны только для чтения. Нажмите значок копирования у встроенного макета DRC, чтобы продублировать его, или нажмите +, чтобы начать новый. Нажмите «Далее», чтобы продублировать стандартный DRC.',
-  'layoutBuilder.guide.editor-overview.title':
-    'This is where you edit the template',
+  'layoutBuilder.guide.editor-overview.title': 'Здесь редактируется макет',
   'layoutBuilder.guide.editor-overview.description':
-    'Rename the template here, review the widget list, drag the left handle to rearrange widgets, click a widget to change it, and remove anything you do not need.',
+    'Здесь можно переименовать макет, просмотреть список виджетов, перетащить левый маркер, чтобы изменить их порядок, нажать на виджет, чтобы изменить его, и удалить всё ненужное.',
   'layoutBuilder.guide.add-widget.title': 'Добавьте виджет',
   'layoutBuilder.guide.add-widget.description':
     'Нажмите «Добавить виджет», чтобы добавить блок в конец макета, или наведите курсор между двумя виджетами и нажмите +, чтобы вставить его точно в нужное место.',
-  'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
+  'layoutBuilder.guide.choose-widget.title': 'Выберите виджет',
   'layoutBuilder.guide.choose-widget.description':
     'Введите в строке поиска название, описание или категорию, затем выберите виджет. Можно также нажать «Далее», и Journalit выберет первый результат.',
-  'layoutBuilder.guide.save-template.title': 'Save your layout',
+  'layoutBuilder.guide.save-template.title': 'Сохраните макет',
   'layoutBuilder.guide.save-template.description':
-    'Once your copy looks right, save it. You can keep refining it later as your review process improves.',
+    'Когда копия будет готова, сохраните её. Позже её можно дорабатывать по мере улучшения процесса анализа.',
   'layoutBuilder.guide.set-default-template.title':
     'Сделайте его макетом по умолчанию',
   'layoutBuilder.guide.set-default-template.description':
-    'Click the star on your new template if you want new review notes to use this layout automatically.',
+    'Нажмите на звёздочку у нового макета, если хотите, чтобы новые заметки обзора автоматически использовали его.',
   'layoutBuilder.guide.whats-new.insert-slot.title':
     'Добавляйте виджет куда угодно',
   'layoutBuilder.guide.whats-new.insert-slot.description':
@@ -1021,7 +1143,6 @@ const ru: Lang = {
   'layoutBuilder.guide.whats-new.add-widget-button.description':
     '«Добавить виджет» по-прежнему добавляет в конец макета, а теперь ещё прокручивает к новому виджету и открывает его поиск.',
   'tradelog.empty': 'Сделки не найдены',
-  'tradelog.filter.all': 'Все',
   'tradelog.filter.winners': 'Прибыльные',
   'tradelog.filter.losers': 'Убыточные',
   'tradelog.filter.breakeven': 'Безубыточные',
@@ -1040,58 +1161,39 @@ const ru: Lang = {
   'tradelog.root.all-trades': 'Все сделки',
   'tradelog.view.selector.label': 'Вид',
 
-  'trade-form.guide.customization-modal.title':
+  'trade-form.guide.customization-page.title':
     'Настройте форму под свой процесс',
-  'trade-form.guide.customization-modal.description':
+  'trade-form.guide.customization-page.description':
     'Здесь можно показывать, скрывать и менять порядок дополнительных блоков. Оставьте в форме только поля, которыми вы действительно пользуетесь.',
   'trade-form.guide.finish.title': 'Это функция настройки',
   'trade-form.guide.finish.description':
     'Вы можете вернуться к этой кнопке в любой момент, когда форме сделки нужно соответствовать другому процессу ведения журнала.',
-  'tradelog.guide.empty.intro.title': 'Welcome to Trade Log',
+  'tradelog.guide.empty.intro.title': 'Добро пожаловать в журнал сделок',
   'tradelog.guide.empty.intro.description':
-    'This page becomes your main place for browsing, sorting, and reviewing trades. Once you add trades, you will also get the full Trade Log tour.',
+    'Эта страница станет главным местом для просмотра, сортировки и анализа сделок. Когда вы добавите сделки, откроется полный обзор журнала сделок.',
   'tradelog.guide.empty.state.title': 'Нет данных торговли',
   'tradelog.guide.empty.state.description':
     'Импортируйте прошлые сделки, чтобы сразу изучить результаты, или добавьте новую сделку вручную.',
-  'tradelog.guide.intro.title': 'This is your Trade Log',
+  'tradelog.guide.intro.title': 'Это ваш журнал сделок',
   'tradelog.guide.intro.description':
-    'Use this page to review trades one by one, sort them, filter them, and make changes to many trades at once.',
-  'tradelog.guide.view-selector.title':
-    'Choose how you want to review your history',
+    'На этой странице можно анализировать сделки по одной, сортировать и фильтровать их, а также изменять сразу много сделок.',
+  'tradelog.guide.view-selector.title': 'Выберите, как анализировать историю',
   'tradelog.guide.view-selector.description':
-    'Use this menu to switch between the full trade table and grouped time views like months, weeks, or days. Trades is the default, but grouped views are useful when you want to review by period.',
-  'tradelog.guide.filters.title': 'Use filters to narrow the Trade Log',
+    'Это меню переключает полную таблицу сделок и сгруппированные представления по месяцам, неделям или дням. По умолчанию открыты «Сделки», но группировка удобна для анализа по периодам.',
+  'tradelog.guide.filters.title': 'Сужайте журнал сделок с помощью фильтров',
   'tradelog.guide.filters.description':
     'Откройте фильтры, если хотите просмотреть только определённые счета, сетапы, теги, типы сделок, статусы или даты. Можно также исключить любое значение, чтобы убрать эти сделки.',
-  'tradelog.guide.sorting.title': 'Click column headers to sort the table',
+  'tradelog.guide.sorting.title':
+    'Нажимайте на заголовки столбцов для сортировки',
   'tradelog.guide.sorting.description':
-    'In Trades view, click a sortable column header to reorder the table. For example, click Net P&L to sort by your biggest win and biggest loss.',
+    'В представлении «Сделки» нажмите на заголовок сортируемого столбца, чтобы упорядочить таблицу. Например, нажмите «Чистый P&L», чтобы отсортировать по самой крупной прибыли и самому крупному убытку.',
   'tradelog.guide.gallery-mode.title': 'Есть и галерея изображений',
   'tradelog.guide.gallery-mode.description':
     'Переключите режим здесь, чтобы просматривать скриншоты сделок как галерею. При первом открытии короткий гид всё покажет.',
-  'tradelog.guide.multi-select.title': 'Turn on multi-select',
-  'tradelog.guide.multi-select.description':
-    'Click this button to select several trades at once. When multi-select is on, row clicks select trades instead of opening them.',
-  'tradelog.guide.batch-actions.title': 'These are your batch actions',
-  'tradelog.guide.batch-actions.description':
-    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, duplicate trades, or delete several trades at once. You can also shift-click to select a range of trades.',
-  'tradelog.guide.column-settings.title': 'Open column settings',
-  'tradelog.guide.column-settings.description':
-    'Click this button to choose which columns are shown and how dense or detailed the table should feel.',
-  'tradelog.guide.active-columns.title':
-    'Reorder or remove the columns you already use',
-  'tradelog.guide.active-columns.description':
-    'In Active Columns, drag a column to move it, or remove one you do not need. This changes the order of the table from left to right.',
-  'tradelog.guide.available-columns.title':
-    'Add hidden columns back when you need more detail',
-  'tradelog.guide.available-columns.description':
-    'Open Available Columns to add fields back into the table. That is where you bring back anything you removed earlier.',
   'tradelog.guide.open-trades.title':
-    'Click a trade when you want to open its note',
+    'Нажмите на сделку, чтобы открыть её заметку',
   'tradelog.guide.open-trades.description':
-    'In normal mode, clicking a trade opens it. In multi-select mode, clicking selects it instead. Switch between those two behaviours depending on what you are trying to do.',
-  'tradelog.empty.submessage':
-    'Начните создавать заметки о сделках, чтобы увидеть их в журнале торговли.',
+    'В обычном режиме нажатие на сделку открывает её. В режиме множественного выбора нажатие выделяет её. Переключайтесь между ними в зависимости от задачи.',
   'tradelog.processing': 'Обработка данных о сделках...',
 
   
@@ -1111,16 +1213,12 @@ const ru: Lang = {
   'tradelog.node.performance.period': '{indicator} результативный период',
 
   
-  'tradelog.filter.breakeven.desc': 'Сделки в безубыток',
-  'tradelog.filter.open.desc': 'Открытые позиции',
   'tradelog.filter.closed': 'Закрытые',
-  'tradelog.type.regular.desc': 'Стандартные сделки',
 
   
   'tradelog.status.win': 'ПРИБЫЛЬ',
   'tradelog.status.loss': 'УБЫТОК',
   'tradelog.status.open': 'ОТКРЫТА',
-  'tradelog.status.partially-closed': 'ЧАСТИЧНО ЗАКРЫТА',
   'tradelog.status.cancelled': 'ОТМЕНЕНА',
   'tradelog.status.breakeven': 'БЕЗУБЫТОК',
   'tradelog.status.missed': 'УПУЩЕНА',
@@ -1138,19 +1236,22 @@ const ru: Lang = {
   'tradelog.tooltip.thesis': 'Тезис:',
   'tradelog.tooltip.mtComment': 'Комментарий MT:',
   'tradelog.tooltip.accounts': 'Счета:',
-  'tradelog.copy-trade.tooltip': 'Copied from {account} at {multiplier}x',
+  'tradelog.copy-trade.tooltip':
+    'Скопировано из {account} с множителем {multiplier}x',
   'tradelog.tooltip.partial-exits': 'Частичные закрытия:',
-  'tradelog.copy-trade.base-tooltip-title': 'Copied account results',
-  'tradelog.copy-trade.adjustment-action': 'Adjust copied PnL',
-  'tradelog.copy-trade.adjustment-title': 'Adjust copied PnL',
+  'tradelog.copy-trade.base-tooltip-title': 'Результаты копирующего счёта',
+  'tradelog.copy-trade.adjustment-action': 'Скорректировать скопированный P&L',
+  'tradelog.copy-trade.adjustment-title': 'Корректировка скопированного P&L',
   'tradelog.copy-trade.adjustment-description-primary':
-    'Enter the manual PnL adjustment for this copied trade.',
+    'Введите ручную корректировку P&L для этой скопированной сделки.',
   'tradelog.copy-trade.adjustment-description-secondary':
-    'Use a negative number for worse fills/costs.',
-  'tradelog.copy-trade.adjustment-preview': 'Preview net P&L:',
+    'Используйте отрицательное число для худшего исполнения или затрат.',
+  'tradelog.copy-trade.adjustment-preview': 'Предпросмотр чистого P&L:',
 
-  'tradelog.copy-trade.adjustment-invalid': 'Enter a valid PnL adjustment.',
-  'tradelog.copy-trade.adjustment-saved': 'Copied trade PnL adjustment saved.',
+  'tradelog.copy-trade.adjustment-invalid':
+    'Введите корректную корректировку P&L.',
+  'tradelog.copy-trade.adjustment-saved':
+    'Корректировка P&L скопированной сделки сохранена.',
   'tradelog.tooltip.still-open': 'ещё открыта',
 
   
@@ -1162,8 +1263,8 @@ const ru: Lang = {
   'tradelog.batch.delete-confirm.warning': 'Это действие нельзя отменить.',
   'tradelog.batch.setups.title': 'Добавить сетапы к сделкам',
   'tradelog.batch.setups.placeholder': 'Выберите или создайте сетапы...',
-  'tradelog.batch.tags.title': 'Add Tags to Trades',
-  'tradelog.batch.tags.placeholder': 'Select or create tags...',
+  'tradelog.batch.tags.title': 'Добавить теги к сделкам',
+  'tradelog.batch.tags.placeholder': 'Выберите или создайте теги...',
   'tradelog.batch.mistakes.title': 'Добавить ошибки к сделкам',
   'tradelog.batch.mistakes.placeholder': 'Выберите или создайте ошибки...',
   'tradelog.batch.none-selected': 'НИЧЕГО НЕ ВЫБРАНО',
@@ -1185,9 +1286,9 @@ const ru: Lang = {
   'tradelog.batch.add-setups.aria': 'Добавить сетапы',
 
   'tradelog.batch.add-setups.label': 'Добавить сетапы',
-  'tradelog.batch.add-tags.aria': 'Add tags',
+  'tradelog.batch.add-tags.aria': 'Добавить теги',
 
-  'tradelog.batch.add-tags.label': 'Add Tags',
+  'tradelog.batch.add-tags.label': 'Добавить теги',
   'tradelog.batch.add-mistakes.aria': 'Добавить ошибки',
 
   'tradelog.batch.add-mistakes.label': 'Добавить ошибки',
@@ -1234,7 +1335,7 @@ const ru: Lang = {
   'tradelog.category.prices': 'Цены',
   'tradelog.category.risk': 'Риск-менеджмент',
   'tradelog.category.position': 'Позиция и P/L',
-  'tradelog.category.review': 'Анализ',
+  'tradelog.category.review': 'Разбор',
 
   
   'tradelog.column.image': 'Изображение',
@@ -1258,7 +1359,7 @@ const ru: Lang = {
   'tradelog.column.slDistancePercent': 'Расст. до SL %',
   'tradelog.column.riskAmount': 'Риск $',
   'tradelog.column.rMultiple': 'R:R',
-  'tradelog.column.maxR': 'Max R',
+  'tradelog.column.maxR': 'Макс. R',
   'tradelog.column.maePrice': 'Цена MAE',
   'tradelog.column.mfePrice': 'Цена MFE',
   'tradelog.column.mae': 'MAE',
@@ -1272,11 +1373,12 @@ const ru: Lang = {
   'tradelog.column.fees': 'Комиссии',
   'tradelog.column.dividends': 'Дивиденды',
   'tradelog.column.pnl': 'Чистый P&L',
-  'tradelog.column.returnPercent': 'Return %',
+  'tradelog.column.returnPercent': 'Доходность %',
   'tradelog.column.setups': 'Сетапы',
   'tradelog.column.mistakes': 'Ошибки',
   'tradelog.column.tags': 'Теги',
   'tradelog.column.reviewed': 'Проверено',
+  'tradelog.column.tradeRating': 'Оценка',
   'tradelog.column.thesis': 'Тезис',
   'tradelog.column.mtComment': 'Комментарий MT',
 
@@ -1309,7 +1411,7 @@ const ru: Lang = {
   'dashboard.metrics.avgLoss': 'Средний убыток',
   'dashboard.metrics.totalCommission': 'Общая комиссия',
   'dashboard.metrics.totalFees': 'Общие сборы',
-  'dashboard.metrics.maxDrawdown': 'Max Drawdown',
+  'dashboard.metrics.maxDrawdown': 'Максимальная просадка',
   'dashboard.metrics.bestDay': 'Лучший день',
   'dashboard.metrics.largestWin': 'Наибольшая прибыль',
   'dashboard.metrics.largestLoss': 'Наибольший убыток',
@@ -1360,13 +1462,13 @@ const ru: Lang = {
 
   'dashboard.conversion.using-ecb': 'Используются курсы ECB ({date})',
   'dashboard.conversion.using-broker-pnl':
-    'Using broker-provided base-currency P&L for {count} {tradeLabel}',
+    'Используется P&L в базовой валюте от брокера для {count} {tradeLabel}',
   'dashboard.conversion.using-manual-rate':
     'Используется ручной курс обмена для {count} {tradeLabel}',
   'dashboard.conversion.partial-warning':
     '⚠ Издержки/риск в {currencies} не удалось конвертировать, они исключены',
-  'dashboard.conversion.trade-singular': 'trade',
-  'dashboard.conversion.trade-plural': 'trades',
+  'dashboard.conversion.trade-singular': 'сделки',
+  'dashboard.conversion.trade-plural': 'сделок',
   'dashboard.conversion.excluded-warning':
     '⚠ {converted} из {total} сделок ({excluded} исключено: {currencies})',
   'dashboard.top-section.remove-metric': 'Удалить метрику',
@@ -1381,9 +1483,6 @@ const ru: Lang = {
   'dashboard.filter.date.custom': 'Произвольный',
   'dashboard.filter.date.from': 'От',
   'dashboard.filter.date.to': 'До',
-  'dashboard.filter.accounts.all': 'Все счета',
-  'dashboard.filter.accounts.n-selected': '{count} счетов',
-  'dashboard.filter.accounts.select-all': 'Выбрать все',
 
   'dashboard.filter.accounts.none-found': 'Счета не найдены',
   'dashboard.filter.accounts.phase-now': 'сейчас',
@@ -1434,6 +1533,12 @@ const ru: Lang = {
   'dashboard.widgets.tag-performance.empty':
     'Нет данных по результативности тегов',
   'dashboard.widgets.tag-performance.masked-label': 'Тег',
+  'dashboard.widgets.rating-performance.title': 'Результаты по оценке',
+  'dashboard.widgets.rating-performance.description':
+    'Чистый P&L или доля прибыльных сделок для каждой оценки в звёздах',
+  'dashboard.widgets.rating-performance.empty':
+    'Пока нет оценённых сделок. Оценивайте сделки в заметке сделки, чтобы сравнить их здесь.',
+  'dashboard.widgets.rating-performance.masked-label': 'Оценка',
   'dashboard.widgets.ticker-performance.title': 'Производительность по тикерам',
   'dashboard.widgets.ticker-performance.metric-aria': 'Метрика',
   'dashboard.widgets.ticker-performance.view-aria': 'Режим просмотра',
@@ -1443,17 +1548,14 @@ const ru: Lang = {
   'dashboard.widgets.ticker-performance.metric.total-pnl': 'Общий P&L',
   'dashboard.widgets.ticker-performance.metric.total-r': 'Общий R',
   'dashboard.widgets.ticker-performance.metric.win-rate': 'Винрейт',
-  'dashboard.widgets.ticker-performance.tooltip.ticker': 'Тикер: {ticker}',
   'dashboard.widgets.ticker-performance.tooltip.trades': 'Сделки: {count}',
   'dashboard.widgets.ticker-performance.tooltip.win-rate':
     'Винрейт: {rate} ({wins}П / {losses}У)',
 
   'dashboard.widgets.ticker-performance.empty':
     'Нет данных о производительности тикеров',
-  'dashboard.widgets.ticker-performance.empty-submessage':
-    'Нет закрытых сделок с тикером, соответствующих текущим фильтрам.',
   'dashboard.widgets.ticker-performance.masked-ticker': 'Тикер',
-  'dashboard.widgets.ticker-performance.omitted-count': 'Пропущено: {count}',
+  'dashboard.widgets.ticker-performance.omitted-count': 'Скрыто: {count}',
 
   'dashboard.widgets.rollingStats.title': 'Скользящее среднее прибыль/убыток',
   'dashboard.widgets.rollingStats.period': 'Период',
@@ -1488,7 +1590,6 @@ const ru: Lang = {
   'widget-drawer.add-aria': 'Добавить {name}',
   'widget-drawer.remove': 'Удалить',
   'widget-drawer.remove-aria': 'Удалить {name}',
-  'widget-drawer.close': 'Закрыть',
   'dashboard.selector.metrics': 'Метрики',
 
   
@@ -1555,7 +1656,7 @@ const ru: Lang = {
   'economicCalendar.guide.main.restore.title':
     'Восстановите недостающие настроенные события',
   'economicCalendar.guide.main.restore.description':
-    'Эта кнопка становится доступной, если отсутствуют события из сохранённой области автоимпорта. Когда неделя снова будет полной, кнопка останется видимой, но будет отключена.',
+    'Эта кнопка становится доступной, когда отсутствуют события из сохранённой области автоимпорта. Когда неделя снова заполнена, она остаётся видимой, но неактивной.',
   'economicCalendar.guide.main.summary.title':
     'Настройте один раз и проверяйте',
   'economicCalendar.guide.main.summary.description':
@@ -1578,7 +1679,7 @@ const ru: Lang = {
   'settings.economic-calendar.impacts-desc':
     'Импортировать события с этими уровнями значимости.',
   'settings.economic-calendar.impacts-empty':
-    'Экономические публикации не выбраны. Праздники по-прежнему будут импортироваться, если они включены.',
+    'Публикации не выбраны. Праздники по-прежнему можно импортировать, если они включены.',
   'settings.economic-calendar.include-holidays': 'Включать праздники',
   'settings.economic-calendar.include-holidays-desc':
     'Импортировать банковские праздники и протоколы центробанков как события на весь день.',
@@ -1609,24 +1710,20 @@ const ru: Lang = {
   
   'common.loading': 'Загрузка...',
   'common.error': 'Ошибка',
+  'common.section-error': 'В этом разделе произошла ошибка.',
+  'common.retry': 'Повторить',
 
   'common.warning': 'Предупреждение',
   'common.info': 'Информация',
   'common.yes': 'Да',
   'common.no': 'Нет',
-  'common.ok': 'ОК',
 
   'common.none': 'Нет',
   'common.all': 'Все',
-  'common.date': 'Дата',
 
   'common.week': 'Неделя',
   'common.month': 'Месяц',
   'common.year': 'Год',
-
-  'common.min': 'Мин',
-  'common.max': 'Макс',
-  'common.profit': 'Прибыль',
 
   'common.trade': 'Сделка',
   'common.trades': 'Сделки',
@@ -1637,14 +1734,31 @@ const ru: Lang = {
 
   
   'settings.tab.general': 'Общие',
-  'settings.tab.reviews': 'Обзор',
+  'settings.tab.reviews': 'Обзоры',
 
   'settings.tab.customization': 'Настройка',
   'settings.tab.journal-setup': 'Журнал',
-  'settings.tab.backend': 'Синхронизация сделок',
   'settings.tab.trading': 'Параметры сделок по умолчанию',
   'settings.tab.sync': 'Аккаунт и синхронизация',
-  'settings.tab.accounts': 'Аккаунт',
+  'settings.page.reviews.title': 'Макеты обзоров, цели и чек-листы',
+  'settings.page.reviews.desc':
+    'Открывает все настройки обзоров: макеты, повторяющиеся цели и чек-листы.',
+  'settings.page.customization.desc':
+    'Открывает пользовательские поля, макет формы, символы, сопоставления, сетапы, ошибки, теги и события.',
+  'settings.page.trade-sync.desc':
+    'Открывает провайдеров синхронизации брокеров, учётные данные FTP, управление счетами, диагностику и настройки уведомлений о синхронизации.',
+  'settings.page.general.desc':
+    'Валюта, отображаемое имя, стартовый экран, недавние элементы и настройки навигации.',
+  'settings.page.sync.desc':
+    'Аккаунт Journalit, подписка, синхронизация сделок, Trade Import и экономический календарь.',
+  'settings.page.trading.desc':
+    'Значения по умолчанию для новых сделок, обработка дат, риск, логика безубыточности и настройки отображения аналитики.',
+  'settings.page.journal.desc':
+    'Шаблоны обзоров, автоматизация, пользовательские поля, макет формы, символы, сетапы, ошибки, теги и события.',
+  'settings.page.advanced.desc':
+    'Папка журнала, обслуживание путей к изображениям, резервная копия настроек, импорт, экспорт и сброс.',
+  'settings.page.mcp-access.desc':
+    'Разрешите ИИ-приложениям, подключённым через MCP, работать с этим хранилищем, выберите, что требует вашего одобрения, и просматривайте действия агентов.',
 
   
   'settings.ftp.title': 'Учётные данные FTP',
@@ -1688,13 +1802,8 @@ const ru: Lang = {
   'settings.auth.status-offline': 'Офлайн',
   'settings.auth.status-online': 'Онлайн',
 
-  'settings.auth.signed-in': 'Авторизован',
   'settings.auth.sign-in-up': 'Вход / Регистрация',
   'settings.auth.sign-out': 'Выйти',
-
-  'settings.auth.subscription-features': 'Возможности подписки',
-
-  'settings.auth.offline-mode': 'Офлайн-режим',
 
   
   'settings.auth.guest': 'Гость',
@@ -1709,21 +1818,7 @@ const ru: Lang = {
   'settings.reviews.monthly': 'Месячный обзор',
   'settings.reviews.quarterly': 'Квартальный обзор',
   'settings.reviews.yearly': 'Годовой обзор',
-  'settings.reviews.default-templates': 'Layouts по умолчанию',
 
-  'settings.reviews.trade-template': 'Layout сделки',
-  'settings.reviews.trade-template-desc': 'Layout для новых заметок о сделках',
-  'settings.reviews.drc-template': 'Layout дневного анализа',
-  'settings.reviews.drc-template-desc': 'Layout для новых дневных анализов',
-  'settings.reviews.weekly-template': 'Недельный layout',
-  'settings.reviews.weekly-template-desc': 'Layout для новых недельных обзоров',
-  'settings.reviews.monthly-template': 'Месячный layout',
-  'settings.reviews.monthly-template-desc': 'Layout для новых месячных обзоров',
-  'settings.reviews.quarterly-template': 'Квартальный layout',
-  'settings.reviews.quarterly-template-desc':
-    'Шаблон для новых квартальных обзоров',
-  'settings.reviews.yearly-template': 'Годовой layout',
-  'settings.reviews.yearly-template-desc': 'Layout для новых годовых обзоров',
   'settings.reviews.template-builder': 'Конструктор макетов',
   'settings.reviews.template-builder-desc':
     'Создавайте, редактируйте и управляйте макетами визуально. Конструктор позволяет перетаскивать секции, настраивать параметры и просматривать макеты в реальном времени.',
@@ -1742,11 +1837,11 @@ const ru: Lang = {
   'settings.reviews.daily-goal-placeholder': 'Добавить ежедневную цель...',
   'settings.reviews.weekly-goals': 'Недельные цели',
   'settings.reviews.weekly-goal-placeholder': 'Добавить недельную цель...',
-  'settings.reviews.pre-trade-checklist': 'Чек-лист DRC перед торговлей',
-  'settings.reviews.pre-trade-checklist-desc':
+  'settings.reviews.checklist': 'Чек-лист DRC',
+  'settings.reviews.checklist-desc':
     'Определите пункты чек-листа, которые автоматически появляются в каждом новом DRC. Они копируются при создании и могут редактироваться для каждого дня.',
   'settings.reviews.checklist-placeholder': 'Добавить пункт чек-листа...',
-  'settings.reviews.weekly-checklist': 'Недельный чек-лист подготовки',
+  'settings.reviews.weekly-checklist': 'Недельный чек-лист',
   'settings.reviews.weekly-checklist-desc':
     'Определите пункты чек-листа, которые автоматически появляются в каждом новом недельном обзоре. Они копируются при создании недельного обзора и могут редактироваться для каждой недели.',
   'settings.reviews.weekly-checklist-placeholder':
@@ -1793,24 +1888,6 @@ const ru: Lang = {
     'Автосоздание для всех обзоров {status}',
   'settings.reviews.notice.auto-create-nav':
     'Автосоздание {type} при навигации {status}',
-  'settings.reviews.daily.checklist-title': 'Пункты чек-листа перед сделкой',
-
-  'settings.reviews.daily.questions-title': 'Вопросы для обзора',
-
-  'settings.reviews.daily.timeframes-title': 'Таймфреймы прогноза',
-
-  'settings.reviews.daily.timeframes-placeholder':
-    'Новый таймфрейм (напр., 15M, 5M)',
-
-  
-  'settings.weekly.review-questions': 'Вопросы для обзора',
-
-  'settings.weekly.forecast-timeframes': 'Таймфреймы прогноза',
-
-  
-  'settings.shared.timeframes.title': 'Таймфреймы прогноза',
-
-  'settings.shared.timeframes.placeholder': 'Новый таймфрейм (напр., 15M, 5M)',
 
   
 
@@ -2049,18 +2126,18 @@ const ru: Lang = {
   'settings.general.cutoff-time-aria': 'Время окончания торгового дня',
   'settings.general.cutoff-time-changed':
     'Время окончания торгового дня изменено на {time}',
-  'settings.general.break-even-threshold-mode': 'Break-even Threshold Type',
+  'settings.general.break-even-threshold-mode': 'Тип порога безубытка',
   'settings.general.break-even-threshold-mode-desc':
-    "Choose whether break-even is determined by a fixed P&L range or by a percentage of each trade account's current balance.",
-  'settings.general.break-even-mode-fixed': 'Fixed amount range',
+    'Выберите, определяется ли безубыток фиксированным диапазоном P&L или процентом от текущего баланса счёта каждой сделки.',
+  'settings.general.break-even-mode-fixed': 'Диапазон фиксированной суммы',
   'settings.general.break-even-mode-percent':
-    'Percentage of current account balance',
-  'settings.general.break-even-percent': 'Break-even Percentage',
+    'Процент от текущего баланса счёта',
+  'settings.general.break-even-percent': 'Процент безубытка',
   'settings.general.break-even-percent-desc':
-    'Symmetric threshold around zero (±X% of current account balance). Trades without a resolvable account balance are excluded from win/loss stats.',
+    'Симметричный порог вокруг нуля (±X% от текущего баланса счёта). Сделки без известного баланса счёта исключаются из статистики прибыльных и убыточных сделок.',
   'settings.general.break-even-percent-placeholder': '0.05',
   'settings.general.break-even-percent-aria':
-    'Break-even percentage of current account balance',
+    'Процент безубытка от текущего баланса счёта',
   'settings.general.break-even-range': 'Диапазон безубыточности',
   'settings.general.break-even-range-desc':
     'Определите диапазон P&L для признания сделок безубыточными. Например, Min: -20 и Max: 20 будут считать сделки между -$20 и +$20 безубыточными. Установите оба значения на 0, чтобы считать безубыточными только сделки с точным $0.00.',
@@ -2123,13 +2200,13 @@ const ru: Lang = {
   'settings.general.disabled': 'отключено',
 
   'settings.general.include-copy-accounts-analytics':
-    'Include copy accounts in all-account analytics',
+    'Включать копирующие счета в аналитику по всем счетам',
   'settings.general.include-copy-accounts-analytics-desc':
-    'When enabled, all-account trading analytics include derived copy-account results and count them as account-level trades.',
+    'Если включено, аналитика по всем счетам учитывает производные результаты копирующих счетов и считает их сделками на уровне счёта.',
   'settings.general.include-copy-accounts-analytics-aria':
-    'Include copy accounts in all-account analytics',
+    'Включать копирующие счета в аналитику по всем счетам',
   'settings.general.include-copy-accounts-toggled':
-    'Copy accounts in all-account analytics {status}',
+    'Копирующие счета в аналитике по всем счетам: {status}',
   'settings.general.include-unrealized-pnl':
     'Включать нереализованный P&L в аналитику',
   'settings.general.include-unrealized-pnl-desc':
@@ -2160,7 +2237,6 @@ const ru: Lang = {
   'settings.customization.options.type.tickers': 'Тикеры',
   'settings.customization.options.type.accounts': 'Счета',
   'settings.customization.options.type.account-types': 'Типы счетов',
-  'settings.customization.options.type.setups': 'Сетапы',
   'settings.customization.options.type.mistakes': 'Ошибки',
   'settings.customization.options.type.tags': 'Теги',
   'settings.customization.options.type.events': 'События',
@@ -2211,8 +2287,6 @@ const ru: Lang = {
     'Отменить редактирование',
   'settings.customization.options.label.edit-option': 'Редактировать {option}',
   'settings.customization.options.label.remove-option': 'Удалить {option}',
-  'settings.customization.options.placeholder.select-asset':
-    'Выберите тип актива...',
   'settings.customization.options.field.pip-size': 'Размер пипса',
   'settings.customization.options.field.priority': 'Приоритет:',
   'settings.customization.options.field.default-event-notes':
@@ -2222,8 +2296,6 @@ const ru: Lang = {
   'settings.customization.options.aria.confirm-add':
     'Подтвердить добавление {type}',
   'settings.customization.options.label.locked': 'Заблокировано',
-  'settings.customization.options.label.archived-reserved':
-    'Архивный (зарезервировано)',
   'settings.customization.options.aria.reset-all':
     'Удалить все пользовательские {type}',
   'settings.customization.options.button.reset-all': 'Сбросить все {type}',
@@ -2347,50 +2419,51 @@ const ru: Lang = {
   'settings.customization.custom-fields.editor.save': 'Сохранить поле',
   'settings.customization.custom-fields.editor.delete': 'Удалить поле',
 
-  'settings.customization.options.commission.costs': 'Costs',
-  'settings.customization.options.commission.add-rule': '+ Add cost rule',
-  'settings.customization.options.commission.applies-to': 'Applies to',
-  'settings.customization.options.commission.method': 'Method',
-  'settings.customization.options.commission.entry': 'Entry',
-  'settings.customization.options.commission.exit': 'Exit',
-  'settings.customization.options.commission.round-trip': 'Round trip',
-  'settings.customization.options.commission.actions': 'Actions',
-  'settings.customization.options.commission.all-accounts': 'All accounts',
-  'settings.customization.options.commission.per-side': 'Per side',
-  'settings.customization.options.commission.remove-rule': 'Remove cost rule',
-  'settings.customization.custom-fields.editor.trade-log': 'Trade Log',
+  'settings.customization.options.commission.costs': 'Затраты',
+  'settings.customization.options.commission.add-rule':
+    '+ Добавить правило затрат',
+  'settings.customization.options.commission.applies-to': 'Применяется к',
+  'settings.customization.options.commission.method': 'Метод',
+  'settings.customization.options.commission.entry': 'Вход',
+  'settings.customization.options.commission.exit': 'Выход',
+  'settings.customization.options.commission.round-trip': 'Полный круг',
+  'settings.customization.options.commission.all-accounts': 'Все счета',
+  'settings.customization.options.commission.per-side': 'За сторону',
+  'settings.customization.options.commission.remove-rule':
+    'Удалить правило затрат',
+  'settings.customization.custom-fields.editor.trade-log': 'Журнал сделок',
   'settings.customization.custom-fields.editor.trade-log-desc':
-    'Control how this field appears when added as a Trade Log column',
+    'Определяет, как отображается это поле, если оно добавлено столбцом в журнал сделок',
   'settings.customization.custom-fields.editor.column-label':
-    'Trade Log Column Label',
+    'Подпись столбца в журнале сделок',
   'settings.customization.custom-fields.editor.column-label-desc':
-    'Optional shorter label used only in the Trade Log header',
+    'Необязательная короткая подпись, используемая только в заголовке журнала сделок',
   'settings.customization.custom-fields.editor.column-label-placeholder':
-    'Use field label by default',
+    'По умолчанию используется название поля',
   'settings.customization.custom-fields.editor.display-as-currency':
     'Отображать как валюту',
   'settings.customization.custom-fields.editor.display-as-currency-desc':
     'Форматирует это числовое поле как денежное значение только в журнале сделок',
   'settings.customization.custom-fields.editor.dropdown-sort':
-    'Dropdown Sort Mode',
+    'Сортировка списка',
   'settings.customization.custom-fields.editor.dropdown-sort-desc':
-    'Disabled by default. Enable sorting only when this dropdown has a meaningful order.',
+    'По умолчанию отключено. Включайте сортировку, только если у списка есть осмысленный порядок.',
   'settings.customization.custom-fields.editor.dropdown-sort.disabled':
-    'Disabled',
+    'Отключено',
   'settings.customization.custom-fields.editor.dropdown-sort.alphabetical':
-    'Alphabetical',
+    'По алфавиту',
   'settings.customization.custom-fields.editor.dropdown-sort.numeric':
-    'Numeric',
+    'По числу',
   'settings.customization.custom-fields.editor.dropdown-sort.option-order':
-    'Configured option order',
+    'Заданный порядок вариантов',
   'settings.customization.custom-fields.editor.multiselect-collapsed-display':
-    'Collapsed Display',
+    'Свёрнутое отображение',
   'settings.customization.custom-fields.editor.multiselect-collapsed-display-desc':
-    'Choose how multiselect values render when Trade Log expanded mode is off',
+    'Выберите, как отображать значения множественного выбора, когда развёрнутый режим журнала сделок выключен',
   'settings.customization.custom-fields.editor.multiselect-collapsed-display.count':
-    'Count badge',
+    'Счётчик',
   'settings.customization.custom-fields.editor.multiselect-collapsed-display.values':
-    'Value list',
+    'Список значений',
 
   'settings.customization.custom-fields.type.text': 'Текст',
   'settings.customization.custom-fields.type.number': 'Число',
@@ -2409,6 +2482,100 @@ const ru: Lang = {
     'Вы уверены, что хотите удалить пользовательское поле "{fieldLabel}"?',
   'settings.customization.custom-fields.delete.cannot-undo':
     'Это действие нельзя отменить.',
+  'settings.customization.custom-fields.convert.action':
+    'Преобразовать {fieldLabel} в оценку',
+  'settings.customization.custom-fields.convert.title':
+    'Преобразовать {fieldLabel} в оценку',
+  'settings.customization.custom-fields.convert.editor-name':
+    'Встроенная оценка',
+  'settings.customization.custom-fields.convert.editor-desc':
+    'В Journalit у каждой сделки есть оценка звёздами. Перенесите в неё значение {fieldLabel} каждой сделки.',
+  'settings.customization.custom-fields.convert.intro':
+    'Значение {fieldLabel} каждой сделки станет её оценкой в звёздах. Значения {fieldLabel} сохранятся, пока вы не удалите поле.',
+  'settings.customization.custom-fields.convert.empty':
+    'Ни у одной сделки нет значения {fieldLabel}.',
+  'settings.customization.custom-fields.convert.scale-label':
+    'Шкала {fieldLabel}',
+  'settings.customization.custom-fields.convert.scale-out-of': 'Из {max}',
+  'settings.customization.custom-fields.convert.scale-custom': 'Своя',
+  'settings.customization.custom-fields.convert.scale-custom-max':
+    'Максимальное значение',
+  'settings.customization.custom-fields.convert.table':
+    'Значения {fieldLabel} и их оценки',
+  'settings.customization.custom-fields.convert.col-trades': 'Сделки',
+  'settings.customization.custom-fields.convert.value-rating':
+    'Оценка для {value}',
+  'settings.customization.custom-fields.convert.skip': 'Не преобразуется',
+  'settings.customization.custom-fields.convert.unreadable.one':
+    'У {count} сделки значение нельзя прочитать как оценку, она не будет преобразована.',
+  'settings.customization.custom-fields.convert.unreadable.other':
+    'У {count} сделок значение нельзя прочитать как оценку, они не будут преобразованы.',
+  'settings.customization.custom-fields.convert.conflict.one':
+    'У {count} сделки уже есть другая оценка',
+  'settings.customization.custom-fields.convert.conflict.other':
+    'У {count} сделок уже есть другая оценка',
+  'settings.customization.custom-fields.convert.conflict-keep':
+    'Оставить их оценку',
+  'settings.customization.custom-fields.convert.conflict-overwrite':
+    'Использовать {fieldLabel}',
+  'settings.customization.custom-fields.convert.summary-rate.one':
+    'Оценит {count} сделку',
+  'settings.customization.custom-fields.convert.summary-rate.other':
+    'Оценит сделок: {count}',
+  'settings.customization.custom-fields.convert.summary-done.one':
+    'Уже преобразовано: {count}',
+  'settings.customization.custom-fields.convert.summary-done.other':
+    'Уже преобразовано: {count}',
+  'settings.customization.custom-fields.convert.summary-skip.one':
+    'Не преобразуется: {count}',
+  'settings.customization.custom-fields.convert.summary-skip.other':
+    'Не преобразуется: {count}',
+  'settings.customization.custom-fields.convert.submit.one':
+    'Оценить {count} сделку',
+  'settings.customization.custom-fields.convert.submit.other':
+    'Оценить сделки ({count})',
+  'settings.customization.custom-fields.convert.continue': 'Продолжить',
+  'settings.customization.custom-fields.convert.progress':
+    'Оценка сделок: {done} из {total}',
+  'settings.customization.custom-fields.convert.done.one':
+    'Оценена {count} сделка.',
+  'settings.customization.custom-fields.convert.done.other':
+    'Оценено сделок: {count}.',
+  'settings.customization.custom-fields.convert.changed.one':
+    '{count} сделка изменилась после открытия этого окна и не была затронута. Откройте его снова, чтобы включить её.',
+  'settings.customization.custom-fields.convert.changed.other':
+    'Сделок изменилось после открытия этого окна и не было затронуто: {count}. Откройте его снова, чтобы включить их.',
+  'settings.customization.custom-fields.convert.failed.one':
+    'Не удалось обновить {count} сделку:',
+  'settings.customization.custom-fields.convert.failed.other':
+    'Не удалось обновить сделки ({count}):',
+  'settings.customization.custom-fields.convert.remove-title':
+    'Удалить {fieldLabel}?',
+  'settings.customization.custom-fields.convert.remove-desc.one':
+    'Удаляет {fieldLabel} из {count} сделки, оценка которой теперь содержит это значение, а затем удаляет поле.',
+  'settings.customization.custom-fields.convert.remove-desc.other':
+    'Удаляет {fieldLabel} из сделок ({count}), оценка которых теперь содержит это значение, а затем удаляет поле.',
+  'settings.customization.custom-fields.convert.remove-keeps.one':
+    '{count} сделка сохранит значение {fieldLabel}, так как оно не было преобразовано.',
+  'settings.customization.custom-fields.convert.remove-keeps.other':
+    'Сделки ({count}) сохранят значение {fieldLabel}, так как оно не было преобразовано.',
+  'settings.customization.custom-fields.convert.remove-confirm.one':
+    'Удалить {fieldLabel} из {count} сделки и удалить поле?',
+  'settings.customization.custom-fields.convert.remove-confirm.other':
+    'Удалить {fieldLabel} из сделок ({count}) и удалить поле?',
+  'settings.customization.custom-fields.convert.remove-views':
+    'Столбцы журнала сделок, фильтры и блоки макета, использующие {fieldLabel}, перестанут его показывать.',
+  'settings.customization.custom-fields.convert.remove': 'Удалить {fieldLabel}',
+  'settings.customization.custom-fields.convert.remove-progress':
+    'Удаление {fieldLabel}: {done} из {total}',
+  'settings.customization.custom-fields.convert.removed':
+    '{fieldLabel} удалено. Ваши оценки сохранены.',
+  'settings.customization.custom-fields.convert.remove-incomplete':
+    'Некоторые сделки не были обновлены, поэтому {fieldLabel} сохранено. Откройте это окно снова, чтобы завершить удаление.',
+  'settings.customization.custom-fields.convert.remove-field-failed':
+    '{fieldLabel} удалено из всех сделок, но само поле удалить не удалось. Удалите его в разделе пользовательских полей сделок.',
+  'settings.customization.custom-fields.convert.field-changed':
+    'Поле {fieldLabel} было изменено или удалено в другом месте, поэтому остальные сделки не обновлены. Откройте это окно снова, чтобы продолжить.',
   'settings.customization.custom-fields.reset.confirm-message':
     'Вы уверены, что хотите удалить ВСЕ пользовательские поля?',
   'settings.customization.custom-fields.saved-options.title':
@@ -2482,14 +2649,6 @@ const ru: Lang = {
     'Вкладка "Дополнительно" содержит {count} ошибок',
 
   
-  'notice.csv-symbol-mappings-created.one':
-    'Создано {count} сопоставление символа',
-  'notice.csv-symbol-mappings-created.few':
-    'Создано {count} сопоставления символов',
-  'notice.csv-symbol-mappings-created.many':
-    'Создано {count} сопоставлений символов',
-  'notice.csv-symbol-mappings-created.other':
-    'Создано {count} сопоставлений символов',
 
   'notice.trades-duplicated.one': 'Дублирована {count} сделка',
   'notice.trades-duplicated.few': 'Дублировано {count} сделки',
@@ -2537,20 +2696,11 @@ const ru: Lang = {
     'Успешно импортировано {count} сделок в {account}',
   'csv.results.success.other':
     'Успешно импортировано {count} сделок в {account}',
-  'csv.results.updated.one': 'Обновлена {count} существующая сделка',
-  'csv.results.updated.few': 'Обновлены {count} существующие сделки',
-  'csv.results.updated.many': 'Обновлено {count} существующих сделок',
-  'csv.results.updated.other': 'Обновлено {count} существующих сделок',
 
   'csv.results.skipped.one': '{count} дубликат сделки пропущен',
   'csv.results.skipped.few': '{count} дубликата сделок пропущено',
   'csv.results.skipped.many': '{count} дубликатов сделок пропущено',
   'csv.results.skipped.other': '{count} дубликатов сделок пропущено',
-
-  'csv.results.more-trades.one': 'и ещё {count} сделка...',
-  'csv.results.more-trades.few': 'и ещё {count} сделки...',
-  'csv.results.more-trades.many': 'и ещё {count} сделок...',
-  'csv.results.more-trades.other': 'и ещё {count} сделок...',
 
   
   'settings.customization.custom-fields.option-count.one': '{count} опция',
@@ -2652,13 +2802,6 @@ const ru: Lang = {
   'widget.header.drc': 'Дневной анализ',
   'widget.header.nav.prev': '← Назад',
   'widget.header.nav.next': 'Далее →',
-  'widget.header.day.0': 'Воскресенье',
-  'widget.header.day.1': 'Понедельник',
-  'widget.header.day.2': 'Вторник',
-  'widget.header.day.3': 'Среда',
-  'widget.header.day.4': 'Четверг',
-  'widget.header.day.5': 'Пятница',
-  'widget.header.day.6': 'Суббота',
   'widget.header.month.0': 'Январь',
   'widget.header.month.1': 'Февраль',
   'widget.header.month.2': 'Март',
@@ -2698,43 +2841,43 @@ const ru: Lang = {
   'widget.category.layout': 'Макет',
 
   
-  'widget.review.name': 'Анализ',
+  'widget.review.name': 'Обзор',
   'widget.review.description':
     'Оценки психологического и технического мастерства',
-  'widget.review-context-fields.name': 'Review Context Fields',
+  'widget.review-context-fields.name': 'Поля контекста обзора',
   'widget.review-context-fields.description':
-    'Editable custom context fields for review notes',
-  'widget.review-context-fields.group.default': 'Review Context',
+    'Редактируемые пользовательские поля контекста для заметок обзора',
+  'widget.review-context-fields.group.default': 'Контекст обзора',
 
   'widget.review-context-fields.empty-title':
-    'No review context fields configured for this review type.',
+    'Для этого типа анализа не настроены поля контекста.',
   'widget.review-context-fields.empty-desc':
-    'Create review custom fields in settings to capture bias, focus, intent, and other planning context.',
-  'widget.review-context-fields.configure': 'Configure Review Fields',
+    'Создайте в настройках пользовательские поля обзора, чтобы фиксировать уклон, фокус, намерения и другой контекст планирования.',
+  'widget.review-context-fields.configure': 'Настроить поля обзора',
   'widget.review-context-fields.service-unavailable':
-    'Review custom fields are not available yet.',
+    'Пользовательские поля обзора пока недоступны.',
   'widget.review-context-fields.unsupported-type':
-    'Unsupported review field type.',
+    'Неподдерживаемый тип поля обзора.',
   'widget.review-context-fields.source-missing':
-    'This parent review does not exist yet.',
+    'Эта родительская запись анализа ещё не существует.',
   'widget.review-context-fields.source-invalid':
-    'This parent review exists but is not a valid review note.',
+    'Эта родительская запись анализа существует, но не является корректной заметкой анализа.',
   'widget.review-context-fields.source-empty':
     'В этом родительском обзоре еще не заполнены наследуемые значения.',
 
-  'widget.review.title': 'Анализ техничности',
+  'widget.review.title': 'Обзор результатов',
   'widget.review.mental-game': 'Психология',
   'widget.review.technical-game': 'Техника',
   'widget.review.star-hint':
-    'Нажмите для полной звезды, правый клик для половины звезды',
+    'Нажмите для полной звезды, нажмите ещё раз для половины звезды',
   'widget.review.invalid-context':
-    'Виджет анализа требует примечания DRC или еженедельного анализа (тип frontmatter: drc или weekly-review)',
+    'Виджету обзора нужна заметка DRC или недельного обзора (тип frontmatter: drc или weekly-review)',
 
   
   'widget.checklist.name': 'Чек-лист',
   'widget.checklist.description': 'Чек-лист подготовки перед сессией',
-  'widget.checklist.title': 'Чек-лист перед торговлей',
-  'widget.checklist.weekly-title': 'Недельный предварительный чек-лист',
+  'widget.checklist.title': 'Чек-лист DRC',
+  'widget.checklist.weekly-title': 'Недельный чек-лист',
   'widget.checklist.tooltip.weekly':
     'Элементы, добавленные здесь, применяются только к этой неделе.',
   'widget.checklist.tooltip.weekly-settings-link':
@@ -2742,7 +2885,7 @@ const ru: Lang = {
   'widget.checklist.tooltip.day-only':
     'Элементы применяются только к этому дню.',
   'widget.checklist.tooltip.settings-link':
-    'Для повторяющихся элементов перейдите в Параметры > Обзоры.',
+    'Для повторяющихся элементов перейдите в Настройки > Обзоры.',
   'widget.checklist.completed': 'завершено',
   'widget.checklist.edit-item': 'Редактировать',
   'widget.checklist.delete-item': 'Удалить',
@@ -2763,6 +2906,37 @@ const ru: Lang = {
   'widget.session-mistakes.placeholder': 'Выберите или создайте ошибки',
   'widget.session-mistakes.empty': 'Ошибки сессии не добавлены',
 
+  'widget.day-trade-fields.name': 'Поля сделок дня',
+  'widget.day-trade-fields.description': 'Поля для всех сделок дня',
+  'widget.day-trade-fields.title': 'Поля сделок дня',
+  'widget.day-trade-fields.mistakes': 'Ошибки',
+  'widget.day-trade-fields.tags': 'Теги',
+  'widget.day-trade-fields.not-set': 'Не задано',
+  'widget.day-trade-fields.apply.one': 'Применить к {count} сделке',
+  'widget.day-trade-fields.apply.few': 'Применить к {count} сделкам',
+  'widget.day-trade-fields.apply.many': 'Применить к {count} сделкам',
+  'widget.day-trade-fields.apply.other': 'Применить к {count} сделкам',
+  'widget.day-trade-fields.add-field': 'Добавить поле',
+  'widget.day-trade-fields.empty':
+    'Задайте поле один раз, и оно применится ко всем сделкам этого дня, включая последующие.',
+  'widget.day-trade-fields.invalid-context':
+    "Виджет «Поля сделок дня» требует заметку DRC (frontmatter type: 'drc')",
+  'widget.day-trade-fields.notice-updated.one': 'Обновлено сделок: {count}',
+  'widget.day-trade-fields.notice-updated.few': 'Обновлено сделок: {count}',
+  'widget.day-trade-fields.notice-updated.many': 'Обновлено сделок: {count}',
+  'widget.day-trade-fields.notice-updated.other': 'Обновлено сделок: {count}',
+  'widget.day-trade-fields.notice-failed.one':
+    'Не удалось обновить сделок: {count}',
+  'widget.day-trade-fields.notice-failed.few':
+    'Не удалось обновить сделок: {count}',
+  'widget.day-trade-fields.notice-failed.many':
+    'Не удалось обновить сделок: {count}',
+  'widget.day-trade-fields.notice-failed.other':
+    'Не удалось обновить сделок: {count}',
+  'widget.day-trade-fields.notice-save-failed': 'Не удалось сохранить поле дня',
+  'widget.day-trade-fields.notice-conflict':
+    'Поля сделок дня изменены в другом окне. Проверьте их и примените снова.',
+  'widget.day-trade-fields.retry': 'Повторить',
   'widget.session-mistakes.invalid-context':
     'Виджет Ошибки сессии требует заметку DRC (тип: drc)',
 
@@ -2805,8 +2979,16 @@ const ru: Lang = {
   'widget.key-events.default-notes-tooltip':
     'Заметки по умолчанию настраиваются в Настройки → Настройка → События. При выборе события здесь сохраненные заметки по умолчанию будут подставлены автоматически.',
   'widget.key-events.add-button': 'Добавить событие',
+  'widget.key-events.today': 'Сегодня',
+  'widget.key-events.day-picker-label': 'День',
+  'widget.key-events.show-all-days': 'Показать всю неделю',
+  'widget.key-events.show-one-day': 'Показать один день',
+  'widget.key-events.event-count.one': '{count} событие',
+  'widget.key-events.event-count.few': '{count} события',
+  'widget.key-events.event-count.many': '{count} событий',
+  'widget.key-events.event-count.other': '{count} событий',
   'widget.key-events.empty-state': 'Нет ключевых событий на сегодня',
-  'widget.key-events.empty-state-sub': 'Добавьте события в еженедельный анализ',
+  'widget.key-events.empty-state-sub': 'Добавьте события в недельный обзор',
   'widget.key-events.open-calendar-aria': 'Открыть экономический календарь',
   'widget.key-events.restore-auto-import':
     'Восстановить автоимпортированные события',
@@ -2835,12 +3017,11 @@ const ru: Lang = {
   'widget.images.description': 'Карусель медиа с поддержкой загрузки',
   'widget.images.invalid-context':
     'Виджет изображений требует примечания анализа (тип: drc, weekly-review, monthly-review, quarterly-review или yearly-review)',
-  'widget.images.alt-prefix': 'Медиа анализа',
-  'widget.images.stacked-alt': 'Медиа анализа {index}',
+  'widget.images.alt-prefix': 'Медиа обзора',
   'widget.images.open-fullscreen': 'Открыть медиа {index} во весь экран',
   'widget.images.delete': 'Удалить медиа',
   'widget.images.empty': 'Нет медиа',
-  'widget.images.placeholder': 'Вставьте URL изображения или путь к файлу...',
+  'widget.images.placeholder': 'Вставьте URL или путь к медиафайлу...',
   'widget.images.placeholder-add-more': 'Добавьте больше медиа...',
 
   
@@ -2855,13 +3036,13 @@ const ru: Lang = {
   
   'widget.pnl-chart.name': 'Кривая капитала',
   'widget.pnl-chart.description': 'Совокупная прибыль/убыток во времени',
-  'widget.drawdown-chart.name': 'Drawdown',
+  'widget.drawdown-chart.name': 'Просадка',
   'widget.drawdown-chart.description':
-    'Closed-trade drawdown amount from the prior realized P&L high',
-  'widget.directional-pnl.name': 'Directional P&L',
-  'widget.directional-pnl.description': 'Long vs short performance comparison',
-  'widget.directional-pnl.title.long': 'П&У длинных позиций',
-  'widget.directional-pnl.title.short': 'П&У коротких позиций',
+    'Сумма просадки по закрытым сделкам от предыдущего максимума реализованного P&L',
+  'widget.directional-pnl.name': 'P&L по направлениям',
+  'widget.directional-pnl.description': 'Сравнение результатов лонг и шорт',
+  'widget.directional-pnl.title.long': 'P&L лонг-сделок',
+  'widget.directional-pnl.title.short': 'P&L шорт-сделок',
   'widget.directional-pnl.empty.not-enough': 'Недостаточно сделок для анализа',
   'widget.directional-pnl.empty.no-closed': 'Нет закрытых сделок за период',
   'widget.directional-pnl.empty.no-long': 'Нет длинных позиций за период',
@@ -2890,17 +3071,17 @@ const ru: Lang = {
   'widget.stats.avg-win': 'Средняя прибыль',
   'widget.stats.avg-loss': 'Средний убыток',
   'widget.stats.pl-ratio': 'Соотношение прибыли/убытка',
-  'widget.account-breakdown.name': 'Account Breakdown',
+  'widget.account-breakdown.name': 'Разбивка по счетам',
   'widget.account-breakdown.description':
-    'Compare performance across accounts in this review period',
+    'Сравните результаты счетов за этот период анализа',
 
   
-  'widget.account-breakdown.empty': 'No closed trades for this period',
-  'widget.account-breakdown.column.account': 'Account',
-  'widget.account-breakdown.column.trades': 'Trades',
-  'widget.account-breakdown.column.pnl': 'Net P&L',
-  'widget.account-breakdown.column.win-rate': 'Win Rate',
-  'widget.account-breakdown.column.profit-factor': 'Profit Factor',
+  'widget.account-breakdown.empty': 'Нет закрытых сделок за этот период',
+  'widget.account-breakdown.column.account': 'Счёт',
+  'widget.account-breakdown.column.trades': 'Сделки',
+  'widget.account-breakdown.column.pnl': 'Чистый P&L',
+  'widget.account-breakdown.column.win-rate': 'Винрейт',
+  'widget.account-breakdown.column.profit-factor': 'Профит-фактор',
   'widget.tag-performance.name': 'Результативность тегов',
   'widget.tag-performance.description': 'Разбивка результатов по тегам сделок',
   'widget.setup-performance.name': 'Результативность сетапа',
@@ -2993,7 +3174,6 @@ const ru: Lang = {
   'widget.position-size.futures-info': '${dollar}/пт | Тик: {size} = ${value}',
   'widget.position-size.investment-dollar': 'Инвестиция ($)',
   'widget.position-size.investment': 'Инвестиция',
-  'widget.position-size.at-price': 'по цене ${price}',
 
   
   'widget.technical-game.name': 'Техническая игра',
@@ -3075,7 +3255,7 @@ const ru: Lang = {
   'widget.trade-review.fallback-title': 'Сделка {index}',
   'widget.trade-review.question.win-what-worked': 'Что сработало?',
   'widget.trade-review.placeholder.win-what-worked':
-    'Что ты хорошо выполнил в этой сделке?',
+    'Что вы хорошо сделали в этой сделке?',
   'widget.trade-review.question.win-repeatable': 'Это можно повторить?',
   'widget.trade-review.placeholder.win-repeatable':
     'Что сделало эту сделку повторяемой?',
@@ -3147,7 +3327,7 @@ const ru: Lang = {
 
   'widget.table.header.trades': 'Сделки',
   'widget.table.header.pnl': 'P&L',
-  'widget.table.header.win-rate': 'Win%',
+  'widget.table.header.win-rate': 'Винрейт',
   'widget.table.header.profit-factor': 'PF',
   'widget.table.header.tag': 'Тег',
   'widget.table.header.setup': 'Сетап',
@@ -3170,8 +3350,8 @@ const ru: Lang = {
   'widget.trade-table.column.date': 'Дата',
   'widget.trade-table.column.entry': 'Вход',
   'widget.trade-table.column.ticker': 'Тикер',
-  'widget.trade-table.column.account': 'Account',
-  'widget.trade-table.column.pnl': 'П&У',
+  'widget.trade-table.column.account': 'Счёт',
+  'widget.trade-table.column.pnl': 'P&L',
   'widget.trade-table.column.direction': 'Направление',
   'widget.trade-table.column.setups': 'Сетапы',
   'widget.trade-table.column.mistakes': 'Ошибки',
@@ -3215,23 +3395,36 @@ const ru: Lang = {
   
   'widget.invalid-context.title': 'Неверный контекст',
   'widget.invalid-context.default':
-    'Этот виджет {widgetType} требует ревью или заметку о сделке',
+    'Этот виджет {widgetType} требует заметку обзора или сделки',
   'widget.invalid-context.monthly-quarterly-yearly':
-    'Этот виджет доступен только в ежемесячных, квартальных и годовых ревью',
+    'Этот виджет доступен только в ежемесячных, квартальных и годовых обзорах',
   'widget.invalid-context.weekly-monthly-quarterly-yearly':
-    'Этот виджет доступен только в еженедельных, ежемесячных, квартальных и годовых ревью',
+    'Этот виджет доступен только в еженедельных, ежемесячных, квартальных и годовых обзорах',
   'widget.invalid-context.quarterly-yearly':
-    'Этот виджет доступен только в квартальных и годовых ревью',
+    'Этот виджет доступен только в квартальных и годовых обзорах',
   'widget.invalid-context.yearly-only':
-    'Этот виджет доступен только в годовых ревью',
+    'Этот виджет доступен только в годовых обзорах',
   'widget.invalid-context.monthly-only':
-    'Этот виджет доступен только в ежемесячных ревью',
+    'Этот виджет доступен только в ежемесячных обзорах',
   'widget.invalid-context.weekly-monthly':
-    'Этот виджет доступен только в недельных и ежемесячных ревью',
+    'Этот виджет доступен только в недельных и ежемесячных обзорах',
   'widget.invalid-context.review-note':
     'Этот виджет требует заметку DRC, Weekly Review, Monthly Review, Quarterly Review или Yearly Review',
 
   
+  'metric.expectancyGap.name': 'Разрыв матожидания',
+  'metric.expectancyGap.description': 'Фактический и ожидаемый R на сделку.',
+  'expectancy-gap.expected': 'Ожидаемое (R/сделку)',
+  'expectancy-gap.realized': 'Фактическое (R/сделку)',
+  'expectancy-gap.sample':
+    'У {included} из {total} закрытых сделок есть пригодный чистый R.',
+  'expectancy-gap.method-title': 'Как это рассчитывается',
+  'expectancy-gap.method':
+    'Разрыв = фактическое − ожидаемое. Фактическое — средний чистый R полностью закрытых реальных сделок, включая безубыточные. Открытые, пропущенные и тестовые сделки исключены. Отсутствующие данные прибыли или риска исключаются, а не считаются нулём. Используется записанный R или риск сделки, но не текущий риск по умолчанию. Фильтры даты выхода учитывают сделку один раз при окончательном закрытии. Используйте независимую модель или исторический ориентир с сопоставимыми затратами. Отрицательный разрыв означает отставание, но не доказывает плохое исполнение. Очистите поле для удаления ориентира.',
+  'expectancy-gap.invalid':
+    'Введите конечное число или оставьте поле пустым для очистки.',
+  'expectancy-gap.save-failed':
+    'Не удалось сохранить ориентир. Повторите попытку.',
   'widget.pnlChart.name': 'Совокупный P&L',
   'widget.pnlChart.description': 'Накопленный P&L во времени',
 
@@ -3257,7 +3450,7 @@ const ru: Lang = {
   'widget.tickerPerformance.name': 'Производительность по тикерам',
   'widget.tickerPerformance.description': 'Рейтинг эффективности по тикерам',
   'widget.tradesChart.limit': '{count} сделок',
-  'widget.drawdownChart.name': 'Drawdown Chart',
+  'widget.drawdownChart.name': 'График просадки',
   'widget.drawdownChart.description': 'Падение от прошлого максимума P&L',
 
   'widget.recentTrades.name': 'Недавние сделки',
@@ -3281,14 +3474,12 @@ const ru: Lang = {
   
   
   
-  'account.header.title': 'Счёт: {name}',
   'account.header.back-to-dashboard': 'Назад к панели',
   'account.header.add-event.aria': 'Добавить депозит/вывод средств',
   'account.header.edit-account.aria': 'Редактировать счёт',
-  'account.header.view-trades.aria': 'View trades in Trade Log',
+  'account.header.view-trades.aria': 'Посмотреть сделки в журнале сделок',
   'account.header.type': 'Тип:',
   'account.header.initial-balance': 'Начальный баланс:',
-  'account.header.current-balance': 'Текущий баланс:',
   'account.header.account-id': 'ID счёта:',
   'account.header.warning.trades-before-phase.one':
     '{count} сделка датирована раньше начала Фазы 1',
@@ -3414,15 +3605,13 @@ const ru: Lang = {
     'Тип счёта, применяемый когда челлендж достигает этого этапа.',
   'account.settings.section.challenge-stages.no-change': 'Без изменений',
   'account.settings.section.challenge-stages.aria': 'Тип счёта для {stage}',
-  'account.settings.section.inclusion.title':
-    'Параметры включения в панель управления',
+  'account.settings.section.inclusion.title': 'Типы счетов на панели',
   'account.settings.section.inclusion.desc':
-    'Выберите, какие типы счётов включить в расчёты панели управления. Также настройте, включаются ли выводы средств из каждого типа счёта в общие метрики выводов.',
+    'Выберите, какие типы счетов отображаются в статистике панели, учитываются ли выводы и в каком порядке они показываются.',
   'account.settings.section.inclusion.include-dashboard': 'В статистике панели',
   'account.settings.section.inclusion.include-withdrawals': 'Выводы средств',
   'account.settings.section.inclusion.empty':
     'Нет доступных типов счётов для настройки.',
-  'account.settings.section.order.title': 'Порядок отображения',
 
   'account.settings.section.order.move-up': 'Переместить вверх',
   'account.settings.section.order.move-down': 'Переместить вниз',
@@ -3446,42 +3635,60 @@ const ru: Lang = {
   'account-page.error.not-found-sub':
     'Пожалуйста, проверьте, существует ли счёт, или попробуйте обновить страницу.',
 
-  'account-page.guide.empty.intro.title': 'This page is one account in detail',
+  'account-page.guide.empty.intro.title':
+    'На этой странице — один счёт во всех подробностях',
   'account-page.guide.empty.intro.description':
-    'Use the Account Page to manage one account, record account events, and review the trades linked to it.',
+    'Страница счёта позволяет управлять одним счётом, записывать его события и открывать отфильтрованный журнал сделок, когда нужно разобрать сделки.',
   'account-page.guide.empty.edit-account.title':
-    'Edit Account opens the full account settings',
+    '«Изменить счёт» открывает все настройки счёта',
   'account-page.guide.empty.edit-account.description':
-    'Use this button to change the account name, type, currency, drawdown rules, profit target, monthly cost, and more.',
+    'Используйте эту кнопку, чтобы изменить название счёта, тип, валюту, правила просадки, цель по прибыли, ежемесячную стоимость и многое другое.',
   'account-page.guide.empty.add-event.title':
-    'Add Event records deposits and withdrawals',
+    '«Добавить событие» записывает пополнения и выводы',
   'account-page.guide.empty.add-event.description':
-    'Use this button whenever money moves in or out of the account outside of normal trades.',
+    'Используйте эту кнопку каждый раз, когда деньги поступают на счёт или списываются с него вне обычных сделок.',
   'account-page.guide.empty.transactions.title':
-    'Cash movements are tracked here',
+    'Здесь отслеживается движение средств',
   'account-page.guide.empty.transactions.description':
-    'This section keeps a row-by-row record of manual deposits and withdrawals, shown as Payouts on a prop-challenge account. When it is empty, use Add Event to create the first one.',
-  'account-page.guide.empty.trade-log.title': 'Linked trades will appear here',
+    'В этом разделе построчно хранятся ручные пополнения и выводы; на счёте проп-челленджа они отображаются как выплаты. Если раздел пуст, создайте первую запись кнопкой «Добавить событие».',
+  'account-page.guide.empty.trade-log.title':
+    'Откройте этот счёт в журнале сделок',
   'account-page.guide.empty.trade-log.description':
-    'Trades show up here when they are assigned to this account. Once you have linked trades, this page becomes your full account breakdown.',
-  'account-page.guide.main.intro.title': 'This page is your account breakdown',
+    'Эта кнопка в заголовке открывает журнал сделок с уже выбранным счётом, чтобы разбор сделок оставался в отдельном представлении журнала.',
+  'account-page.guide.main.intro.title':
+    'Эта страница — подробная сводка по счёту',
   'account-page.guide.main.intro.description':
-    'Use the Account Page to understand one account clearly: balance history, performance, risk limits, cash movements, and linked trades.',
+    'Страница счёта помогает чётко понять один счёт: историю баланса, результаты, лимиты риска и движение средств.',
   'account-page.guide.main.balance-chart.title':
-    'The balance chart shows the account over time',
+    'График баланса показывает больше, чем баланс',
   'account-page.guide.main.balance-chart.description':
-    'Use this chart to see how the account changed over time, not just where it stands today.',
+    'График показывает счёт во времени, включая пополнения и выводы, а также заданные для счёта уровни просадки и цели по прибыли.',
   'account-page.guide.main.metrics.title': 'Результаты только этого счёта',
   'account-page.guide.main.metrics.description':
     'Баланс, P&L, винрейт и все расходы только по этому счёту. Для проп-счетов вместо чистого денежного потока показаны выплаты.',
   'account-page.guide.main.risk.title':
-    'Risk progress is tracked separately here',
+    'Прогресс по риску отслеживается здесь отдельно',
   'account-page.guide.main.risk.description':
     'Сколько лимита просадки уже использовано и насколько вы близки к цели по прибыли.',
   'account-page.guide.main.transactions.title':
-    'Cash movements stay in their own section',
+    'Движение средств вынесено в отдельный раздел',
   'account-page.guide.main.transactions.description':
     'Пополнения и выводы с балансом после каждой операции — отдельно от торговых результатов. У проп-счетов здесь перечислены выплаты.',
+  'account.monthly-returns.title': 'Месячная доходность',
+  'account.monthly-returns.total': 'Итого',
+  'account.monthly-returns.view-trades': 'Сделки за {period}',
+  'account.monthly-returns.unconverted':
+    'Не учтены: счета в {currencies} (нет обменного курса).',
+  'account.monthly-returns.empty': 'Месячной доходности пока нет.',
+  'account.monthly-returns.empty-sub':
+    'Она появится, когда на счёте будут средства и закроется сделка.',
+  'account.monthly-returns.error': 'Не удалось загрузить месячную доходность.',
+  'account-page.guide.main.monthly-returns.title': 'Месячная доходность',
+  'account-page.guide.main.monthly-returns.description':
+    'Доходность каждого месяца на капитал этого счёта. Пополнения и выводы исключены и никогда не считаются прибылью, а столбец «Итого» сцепляет месяцы. Выберите месяц или год, чтобы открыть его сделки.',
+  'account-dashboard.guide.main.monthly-returns.title': 'Месячная доходность',
+  'account-dashboard.guide.main.monthly-returns.description':
+    'Совокупная месячная доходность учтённых выше счетов, взвешенная по капиталу каждого счёта. Счета в других валютах пересчитываются по сегодняшнему курсу. Выберите месяц или год, чтобы открыть его сделки.',
   'account-page.guide.main.actions.title': 'Сделки, деньги и настройки',
   'account-page.guide.main.actions.description':
     'Откройте сделки этого счёта в Trade Log, запишите пополнение или вывод кнопкой + или измените счёт и его правила.',
@@ -3513,59 +3720,59 @@ const ru: Lang = {
   'account-dashboard.weight-bar.segment-aria':
     '{name}: {percent}% от общего AUM',
   'account-dashboard.guide.empty.intro.title':
-    'This page keeps all of your accounts in one place',
+    'На этой странице собраны все ваши счета',
   'account-dashboard.guide.empty.intro.description':
     'В разделе «Счета» можно увидеть все счета вместе. Когда счета добавлены, здесь их удобнее всего сравнивать.',
   'account-dashboard.guide.empty.state.title':
-    'There is nothing here yet because no accounts exist',
+    'Здесь пока пусто, потому что счетов ещё нет',
   'account-dashboard.guide.empty.state.description':
-    'The dashboard stays empty until you create your first account. After that, it will show account totals, sections, and shortcuts into each account page.',
+    'Панель остаётся пустой, пока вы не создадите первый счёт. После этого на ней появятся итоги по счетам, разделы и ссылки на страницу каждого счёта.',
   'account-dashboard.guide.empty.create.title':
-    'Create your first account here',
+    'Создайте здесь свой первый счёт',
   'account-dashboard.guide.empty.create.description':
-    'Click this button to create the first account you want Journalit to track.',
+    'Нажмите эту кнопку, чтобы создать первый счёт, который будет отслеживать Journalit.',
   'account-dashboard.guide.empty.after-create.title':
-    'After you save, Journalit opens the account page',
+    'После сохранения Journalit откроет страницу счёта',
   'account-dashboard.guide.empty.after-create.description':
-    'Fill in the basic account details and save. The next guide will pick up on the Account Page for that specific account.',
+    'Заполните основные данные счёта и сохраните. Следующее руководство продолжится на странице этого счёта.',
   'account-dashboard.guide.main.intro.title': 'Это ваши счета',
   'account-dashboard.guide.main.intro.description':
-    'Use this page to compare accounts, watch totals across all accounts, and jump into a single account when you need more detail.',
+    'На этой странице можно сравнить все счета в одном месте. Проп-челленджи остаются в тех же группах счетов, а их этап и прогресс по правилам показаны прямо на карточке.',
   'account-dashboard.guide.main.aum-chart.title':
-    'AUM means assets under management',
+    'AUM — это активы под управлением',
   'account-dashboard.guide.main.aum-chart.description':
-    'This chart tracks your combined account value over time, including deposits, withdrawals, and when accounts were added.',
+    'Этот график показывает совокупную стоимость ваших счетов во времени. Если есть проп-счета, рядом появляется журнал челленджей с долей прохождения, расходами, выплатами и итоговым результатом.',
   'account-dashboard.guide.main.metrics.title':
-    'These metrics summarise all visible accounts',
+    'Эти показатели суммируют все видимые счета',
   'account-dashboard.guide.main.metrics.description':
-    'Use these stats for a quick account-level snapshot before drilling into specific account types or specific accounts.',
+    'Используйте эти показатели для быстрого обзора на уровне счетов, прежде чем переходить к отдельным типам счетов или конкретным счетам.',
   'account-dashboard.guide.main.mode-switch.title':
     'Обзор и Челленджи — два представления одних и тех же счетов',
   'account-dashboard.guide.main.mode-switch.description':
     'В обзоре остаются график AUM и итоги портфеля. Переключитесь на Челленджи, чтобы увидеть экономику проп-челленджей: процент прохождения, расходы, выплаты и узкие места по фазам на всех счетах челленджей.',
   'account-dashboard.guide.main.create-account.title':
-    'You can create another account from here at any time',
+    'Отсюда в любой момент можно создать ещё один счёт',
   'account-dashboard.guide.main.create-account.description':
-    'Use this button whenever you want to add a new account to the dashboard.',
+    'Используйте эту кнопку, когда захотите добавить на панель новый счёт.',
   'account-dashboard.guide.main.settings-types.title':
-    'Settings can manage available account types',
+    'В настройках можно управлять доступными типами счетов',
   'account-dashboard.guide.main.settings-types.description':
-    'Inside settings, you can add custom account types and remove old ones if your workflow changes.',
+    'В настройках можно добавлять собственные типы счетов и удалять старые, если ваш процесс работы меняется.',
   'account-dashboard.guide.main.settings-stages.title':
     'Этапы челленджа могут задавать тип счёта',
   'account-dashboard.guide.main.settings-stages.description':
     'Выберите тип счёта, который применяется, когда челлендж достигает оценки, симулированного или реального финансирования. Оставьте этап на «Без изменений», чтобы сохранить текущий тип счёта.',
   'account-dashboard.guide.main.settings-inclusion.title':
-    'Settings can change what counts in totals',
+    'В настройках можно изменить, что учитывается в итогах',
   'account-dashboard.guide.main.settings-inclusion.description':
-    'You can hide account types from dashboard totals without deleting them, and you can separately decide whether their withdrawals still count.',
+    'Вы можете скрыть типы счетов из итогов панели, не удаляя их, и отдельно решить, учитываются ли их выводы средств.',
   'account-dashboard.guide.main.settings-order.title':
-    'This section controls the order of account groups',
+    'Этот раздел задаёт порядок групп счетов',
   'account-dashboard.guide.main.settings-order.description':
-    'Use these controls to decide which account types appear first on the dashboard.',
+    'С помощью этих элементов выберите, какие типы счетов показывать на панели первыми.',
 
   'account-dashboard.guide.main.open-account.title':
-    'Open any account card to go deeper',
+    'Откройте любую карточку счёта, чтобы узнать больше',
   'account-dashboard.guide.main.open-account.description':
     'Счета сгруппированы по типу, чтобы сравнивать похожие. Откройте любую карточку для полной сводки; там продолжит гид по странице счёта.',
   'account-dashboard.guide.whats-new.prop-challenges.intro.title':
@@ -3600,8 +3807,6 @@ const ru: Lang = {
   'account-card.metric.trades': 'Сделки',
   'account-card.metric.withdrawals': 'Выводы',
   'account-card.metric.age': 'Возраст',
-  'account-card.progress.profit-target': 'Цель по прибыли',
-  'account-card.progress.drawdown-used': 'Drawdown Limit Used',
   'account-card.progress.not-set': 'Не установлено',
   'account-card.footer.monthly': 'Ежемесячно:',
   'account-card.footer.total-costs': 'Общие затраты:',
@@ -3653,47 +3858,43 @@ const ru: Lang = {
   
   
 
-  'account.linked-trades.setups': 'Установки',
-
   
   
   
   'account.create.title': 'Создать счёт',
-  'account.create.field.name': 'Имя счёта',
-  'account.create.field.name-desc': 'Уникальное имя для вашего торгового счёта',
-  'account.create.placeholder.name': 'Мой торговый счёт',
-  'account.create.field.type': 'Тип счёта',
-  'account.create.field.type-desc': 'Тип торгового счёта',
-  'account.create.field.initial-balance': 'Начальный баланс',
-  'account.create.field.initial-balance-desc':
-    'Начальный баланс счёта (опционально, по умолчанию 0)',
-  'account.create.field.live-balance': 'Текущий баланс',
-  'account.create.field.live-balance-desc':
+  'account.form.field.name': 'Имя счёта',
+  'account.form.placeholder.name': 'Мой торговый счёт',
+  'account.form.field.type': 'Тип счёта',
+  'account.form.type.demo': 'Демо',
+  'account.form.type.evaluation': 'Оценка',
+  'account.form.type.funded': 'Финансируемый',
+  'account.form.field.initial-balance': 'Начальный баланс',
+  'account.form.field.initial-balance-desc':
+    'Начальный баланс счёта (по умолчанию 0)',
+  'account.form.field.live-balance': 'Текущий баланс',
+  'account.form.field.live-balance-desc':
     'Текущий баланс у брокера без создания денежного движения',
-  'account.create.field.creation-date': 'Дата создания',
-  'account.create.field.creation-date-desc': 'Когда был создан счёт',
-  'account.create.field.currency': 'Валюта',
-  'account.create.field.currency-desc': 'Базовая валюта счёта для отображения',
-  'account.create.field.drawdown-type': 'Тип просадки',
-
-  'account.create.field.drawdown-amount': 'Размер просадки',
-  'account.create.field.drawdown-amount-desc': 'Максимальный лимит просадки',
-  'account.create.field.profit-target-desc':
-    'Установите цель по прибыли для счёта',
-  'account.create.field.monthly-cost': 'Ежемесячные расходы',
-  'account.create.field.monthly-cost-desc':
+  'account.form.field.creation-date': 'Дата создания',
+  'account.form.field.creation-date-desc': 'Когда был создан счёт',
+  'account.form.field.currency': 'Валюта',
+  'account.form.field.currency-desc': 'Базовая валюта счёта для отображения',
+  'account.form.field.drawdown-type': 'Тип просадки',
+  'account.form.field.drawdown-amount': 'Размер просадки',
+  'account.form.field.drawdown-amount-desc': 'Максимальный лимит просадки',
+  'account.form.field.monthly-cost': 'Ежемесячные расходы',
+  'account.form.field.monthly-cost-desc':
     'Комиссия подписки, стоимость платформы',
-  'account.create.field.target-type': 'Тип цели',
-  'account.create.field.target-type-desc': 'Абсолютное или процентное значение',
-  'account.create.field.target-percent': 'Цель (%)',
-  'account.create.field.target-dollar': 'Цель ($)',
-  'account.create.field.target-percent-desc': 'Целевой прирост в процентах',
-  'account.create.field.target-dollar-desc': 'Целевая сумма в долларах',
-  'account.create.field.target-date': 'Дата цели (опционально)',
-  'account.create.field.target-date-desc': 'Дата достижения цели по прибыли',
-  'account.create.type.demo': 'Демо',
-  'account.create.type.evaluation': 'Оценка',
-  'account.create.type.funded': 'Финансируемый',
+  'account.form.field.target-type': 'Тип цели',
+  'account.form.field.target-type-desc': 'Абсолютное или процентное значение',
+  'account.form.field.target-percent': 'Цель (%)',
+  'account.form.field.target-dollar': 'Цель ($)',
+  'account.form.field.target-percent-desc': 'Целевой прирост в процентах',
+  'account.form.field.target-dollar-desc': 'Целевая сумма в долларах',
+  'account.form.field.target-date': 'Дата цели',
+  'account.form.field.target-date-desc': 'Дата достижения цели по прибыли',
+  'account.form.unsaved-changes.body':
+    'У вас есть несохранённые изменения в этом счёте.',
+
   'account.create.success': 'Счёт "{name}" успешно создан',
   'account.create.error.name-required': 'Требуется имя счёта',
   'account.create.error.name-exists': 'Счёт с именем "{name}" уже существует',
@@ -3706,6 +3907,10 @@ const ru: Lang = {
     'Размер просадки требуется, когда тип просадки включён',
   'account.create.error.profit-target-required':
     'Сумма цели по прибыли требуется, когда цель по прибыли включена',
+  'account.create.error.profit-target-needs-balance':
+    'Для цели по прибыли в процентах нужен начальный баланс. Укажите его или задайте цель в сумме.',
+  'account.create.error.phase-profit-target-needs-balance':
+    'Для цели по прибыли в процентах нужен начальный баланс этапа. Укажите его или задайте цель в сумме.',
   'account.create.error.invalid-date': 'Неверная дата создания',
   'account.create.error.future-date': 'Дата создания не может быть в будущем',
   'account.create.error.cost-negative':
@@ -3752,17 +3957,14 @@ const ru: Lang = {
   
   
   
-  'account.risk-metrics.loading': 'Загрузка показателей риска...',
   'account.risk-metrics.title': 'Управление рисками',
-  'account.risk-metrics.drawdown-used': 'Drawdown Limit Used',
+  'account.risk-metrics.drawdown-used': 'Использовано от лимита просадки',
   'account.risk-metrics.profit-target': 'Цель по прибыли',
+  'account.risk-metrics.profit-target-needs-balance':
+    'Цели в процентах нужен начальный баланс, от которого она считается. Укажите его в разделе «Изменить счёт» или задайте цель в сумме.',
   'account.risk-metrics.status.breached': 'НАРУШЕНА',
   'account.risk-metrics.status.achieved': 'ДОСТИГНУТА',
   'account.risk-metrics.status.in-progress': 'В ПРОЦЕССЕ',
-  'account.risk-metrics.not-set': 'Не установлено',
-  'account.risk-metrics.no-drawdown': 'Лимит просадки не установлен',
-  'account.risk-metrics.no-profit-target':
-    'Целевой уровень прибыли не установлен',
   'account.risk-metrics.label.used': 'Использовано:',
   'account.risk-metrics.label.limit': 'Лимит:',
   'account.risk-metrics.label.remaining': 'Осталось:',
@@ -3806,63 +4008,37 @@ const ru: Lang = {
   'account.edit.convert.discard-message':
     'Настройка челленджа открывается в отдельном окне и закрывает эту форму. Изменения, сделанные здесь, не сохранятся.',
   'account.edit.convert.discard-confirm': 'Отменить и продолжить',
-  'account.edit.field.name': 'Имя счёта',
-  'account.edit.field.name-desc': 'Уникальное имя для этого счёта',
-  'account.edit.placeholder.name': 'например, Мой торговый счёт',
-  'account.edit.field.type': 'Тип счёта',
-  'account.edit.field.type-desc': 'Тип торгового счёта',
-  'account.edit.type.demo': 'Демо',
-  'account.edit.type.evaluation': 'Оценка',
-  'account.edit.type.funded': 'Финансируемый',
-  'account.edit.field.initial-balance': 'Начальный баланс',
-  'account.edit.field.initial-balance-desc': 'Начальный баланс счёта',
-  'account.edit.field.live-balance': 'Текущий баланс',
-  'account.edit.field.live-balance-desc':
-    'Текущий баланс у брокера без создания денежного движения',
-  'account.edit.field.creation-date': 'Дата создания',
-  'account.edit.field.creation-date-desc': 'Когда был создан счёт',
-  'account.edit.field.currency': 'Валюта',
-  'account.edit.field.currency-desc': 'Базовая валюта счёта для отображения',
-  'account.edit.field.drawdown-type': 'Тип просадки',
 
-  'account.edit.field.drawdown-amount': 'Размер просадки',
-  'account.edit.field.drawdown-amount-desc':
-    'Максимально допустимая потеря от начального баланса',
   'account.edit.field.manual-snapshots': 'Снимки просадки вручную',
   'account.edit.field.manual-snapshots-desc':
-    'Управление ежедневными снимками баланса для расчёта EOD trailing просадки',
-  'account.edit.field.profit-target-desc':
-    'Установить целевую прибыль для счёта',
-  'account.copy-trading.title': 'Copy Trading',
+    'Записывайте лимиты просадки, которые брокер устанавливает со временем',
+  'account.copy-trading.title': 'Копи-трейдинг',
   'account.copy-trading.description':
-    'Derive this account’s performance from another account using historical copy periods.',
-  'account.copy-trading.enable': 'This account copies another account',
+    'Рассчитывать результаты этого счёта на основе другого счёта по историческим периодам копирования.',
+  'account.copy-trading.enable': 'Этот счёт копирует другой счёт',
   'account.copy-trading.existing-trades-warning':
-    'This account already has direct trades. They will remain, and copied trades will be added from the selected start date.',
-  'account.copy-trading.base-account': 'Base Account',
-  'account.copy-trading.base-account-desc':
-    'Only same-currency non-copy accounts can be selected.',
-  'account.copy-trading.base-account-placeholder': 'Select base account',
-  'account.copy-trading.multiplier': 'Multiplier',
-  'account.copy-trading.multiplier-desc': 'Allowed range: 0.1x to 100x',
-  'account.copy-trading.all-history': 'Copy all historical trades',
-  'account.copy-trading.start-date': 'Copy From Date',
-  'account.copy-trading.history': 'Copy history',
+    'На этом счёте уже есть собственные сделки. Они сохранятся, а скопированные сделки будут добавлены с выбранной даты начала.',
+  'account.copy-trading.base-account': 'Базовый счёт',
+  'account.copy-trading.base-account-desc': 'Та же валюта, не копирующий счёт',
+  'account.copy-trading.base-account-placeholder': 'Выберите базовый счёт',
+  'account.copy-trading.multiplier': 'Множитель',
+  'account.copy-trading.multiplier-desc':
+    'Допустимый диапазон: от 0.1x до 100x',
+  'account.copy-trading.all-history': 'Копировать все исторические сделки',
+  'account.copy-trading.start-date': 'Копировать с даты',
+  'account.copy-trading.history': 'История копирования',
   'account.copy-trading.error.base-required':
-    'Select a base account for copy trading.',
+    'Выберите базовый счёт для копи-трейдинга.',
   'account.copy-trading.error.multiplier-range':
-    'Copy trading multiplier must be between 0.1x and 100x.',
+    'Множитель копи-трейдинга должен быть от 0.1x до 100x.',
   'account.copy-trading.error.start-date-required':
-    'Select a copy trading start date.',
-  'account.edit.field.monthly-cost': 'Ежемесячная стоимость',
-  'account.edit.field.monthly-cost-desc':
-    'Комиссии подписки, стоимость платформы',
+    'Выберите дату начала копи-трейдинга.',
   'account.copy-trading.error.base-account-is-copied':
-    'This account is already used as a base account and cannot copy another account.',
+    'Этот счёт уже используется как базовый и не может копировать другой счёт.',
   'account.copy-trading.base-account-is-copied-desc-primary':
-    'This account is currently the base for another copy account.',
+    'Этот счёт сейчас служит базовым для другого копирующего счёта.',
   'account.copy-trading.base-account-is-copied-desc-secondary':
-    'Base accounts cannot also be copy accounts.',
+    'Базовые счета не могут одновременно быть копирующими.',
   'account.prop-challenge.summary.status.archived': 'В архиве',
   'account.prop-challenge.summary.status.hidden': 'Скрыто',
   'account.prop-challenge.actions.progress-to': 'Перейти к этапу «{phase}»',
@@ -3929,7 +4105,7 @@ const ru: Lang = {
   'account.prop-challenge.confirm.advance':
     'Подтвердить результат этапа и продолжить челлендж?',
   'account.prop-challenge.confirm.advance-with-promotion':
-    'This will advance the challenge and change the account type to {accountType}.',
+    'Челлендж перейдёт на следующий этап, а тип счёта изменится на {accountType}.',
   'account.prop-challenge.confirm.fail':
     'Отметить {account} как проваленный? Челлендж «{challenge}» завершится на этапе {phase}.',
   'account.prop-challenge.confirm.archive-failed':
@@ -3947,6 +4123,7 @@ const ru: Lang = {
     'Когда цель была достигнута',
   'account.prop-challenge.transition.too-early':
     'Время перехода не может быть раньше начала этой фазы.',
+  'account.prop-challenge.costs.section-title': 'Расходы',
   'account.prop-challenge.costs.title': 'Разовые расходы',
   'account.prop-challenge.costs.description':
     'Отдельно учитывайте покупку, сброс и активацию.',
@@ -3964,7 +4141,6 @@ const ru: Lang = {
   'account.header.created': 'Создан:',
   'account.summary.current-balance': 'Текущий баланс',
   'account.summary.net-cash-flow': 'Чистый денежный поток',
-  'account.summary.payouts': 'Выплаты',
   'account.performance.title': 'Результативность',
   'account-page.guide.whats-new.cockpit.intro.title':
     'Правила вашего челленджа',
@@ -3977,14 +4153,6 @@ const ru: Lang = {
   'account-page.guide.main.challenge.title': 'Ваш челлендж с первого взгляда',
   'account-page.guide.main.challenge.description':
     'Выберите фазу, чтобы увидеть каждое правило и прогресс по нему. Для funded-фаз с подтверждёнными правилами выплат здесь же отслеживается право на выплату.',
-  'account.edit.field.target-type': 'Тип целевого уровня',
-  'account.edit.field.target-type-desc': 'Абсолютный или процент',
-  'account.edit.field.target-percent': 'Целевой уровень (%)',
-  'account.edit.field.target-dollar': 'Целевой уровень ($)',
-  'account.edit.field.target-percent-desc': 'Целевая прибыль в процентах',
-  'account.edit.field.target-dollar-desc': 'Целевая сумма прибыли в долларах',
-  'account.edit.field.target-date': 'Целевая дата (опционально)',
-  'account.edit.field.target-date-desc': 'Дата для достижения целевой прибыли',
   'account.edit.button.show-snapshots':
     'Показать менеджер снимков ({count} записано)',
   'account.edit.button.hide-snapshots':
@@ -4033,15 +4201,15 @@ const ru: Lang = {
   'account.edit.success.deleted': 'Счёт "{name}" успешно удалён',
 
   'account.edit.modal.delete.delete-associated-trades':
-    'Also delete all trades linked to this account from my vault',
+    'Также удалить из моего хранилища все сделки, связанные с этим счётом',
   
   
   
   'account.drawdown.none': 'Нет',
-  'account.drawdown.fixed': 'Фиксированная',
-  'account.drawdown.eod-trailing': 'Скользящая просадка EOD',
+  'account.drawdown.fixed': 'Статический',
+  'account.drawdown.eod-trailing': 'Скользящая на конец дня',
   'account.drawdown.manual': 'Ручная',
-  'account.profit-target.enable': 'Включить целевую прибыль',
+  'account.profit-target.title': 'Целевая прибыль',
   'account.profit-target.type.absolute': 'Абсолютная сумма',
   'account.profit-target.type.percentage': 'Процент',
 
@@ -4056,8 +4224,6 @@ const ru: Lang = {
   
   'account.transaction.deposit': 'Депозит',
   'account.transaction.withdrawal': 'Вывод средств',
-  'account.transaction.click-to-edit':
-    'Нажмите, чтобы отредактировать или удалить эту транзакцию',
   'account.transaction.edit-row-label':
     'Изменить или удалить эту транзакцию: {date}, {amount}',
 
@@ -4102,12 +4268,9 @@ const ru: Lang = {
   'csv.mapper.mode.help':
     'В таблицах-журналах обычно одна закрытая сделка на строку и столбец P/L. В истории ордеров брокера каждая покупка и продажа идёт отдельной строкой.',
 
-  'csv.mapper.asset-type.help':
-    'Выберите тип инструмента в файле. Это определяет обязательные поля и логику парсинга.',
-
   'csv.mapper.tip.title': 'Совет: сопоставьте дополнительные поля',
   'csv.mapper.tip.desc':
-    'Сопоставление дополнительных полей, таких как комиссия и прибыль_убыток, обеспечивает более полные данные сделок и повышает точность определения дубликатов.',
+    'Сопоставление необязательных полей, таких как комиссия и P&L, повышает качество импорта. Можно также сопоставить несколько столбцов со списочными полями: тегами, изображениями, сетапами и ошибками.',
   'csv.mapper.missing-fields': 'Отсутствуют обязательные поля для {assetType}:',
   'csv.mapper.summary.title': 'Сводка:',
   'csv.mapper.summary.of': 'из',
@@ -4134,7 +4297,7 @@ const ru: Lang = {
   'csv.mapper.help.option-type-required':
     'Обязательно для опционов (колл или пут)',
   'csv.mapper.help.contract-size':
-    'Мультипликатор для опционов (обычно 100) или фьючерсов',
+    'Мультипликатор для опционов (обычно 100), фьючерсов или форекса (единиц на лот, обычно 100 000)',
   'csv.mapper.help.order-id':
     'Используется для объединения частичных исполнений',
   'csv.mapper.help.asset-types': 'акции, опционы, фьючерсы, форекс, крипто',
@@ -4172,25 +4335,8 @@ const ru: Lang = {
   
   
 
-  'csv.broker.label': 'Брокер / Формат импорта',
-
   'csv.broker.remove-favorite-aria': 'Удалить из избранного',
   'csv.broker.set-favorite-aria': 'Установить как избранное',
-
-  
-  'csv.broker.ibkr': 'Interactive Brokers (IBKR)',
-  'csv.broker.tradovate': 'Tradovate',
-  'csv.broker.tradezero': 'TradeZero',
-  'csv.broker.tradingview': 'TradingView Paper Trading',
-  'csv.broker.bybit': 'Bybit (Бессрочные контракты USDT)',
-  'csv.broker.blofin': 'Blofin',
-  'csv.broker.hyperliquid': 'Hyperliquid (Бессрочные контракты)',
-  'csv.broker.sierrachart': 'SierraChart (Фьючерсы)',
-  'csv.broker.motivewave': 'MotiveWave',
-  'csv.broker.fxreplay': 'FX Replay (Analytics)',
-  'csv.broker.atas': 'ATAS (Статистика в реальном времени)',
-  'csv.broker.rithmic': 'Rithmic',
-  'csv.broker.jdr': 'MetaTrader 4 / 5',
 
   
   
@@ -4205,8 +4351,6 @@ const ru: Lang = {
   
   
 
-  'csv.results.successfully-imported-suffix': ' сделок',
-
   'csv.results.failed-to-import-prefix': 'Не удалось импортировать ',
   'csv.results.failed-to-import-suffix': ' строк (см. детали ниже)',
 
@@ -4214,15 +4358,14 @@ const ru: Lang = {
     'Ожидается запись заметок по сделкам: {count}. Journalit согласует завершённые записи, а незавершённые проекции оставит доступными для восстановления.',
   'csv.results.pending-title': 'Импорт ещё синхронизируется',
 
-  'csv.results.complete': 'Импорт завершён',
   'csv.results.history-ready': 'История торговли готова',
   'csv.results.completed-with-issues': 'Импорт завершён с проблемами',
   'csv.results.failed': 'Импорт не выполнен',
   'csv.results.broker': 'Брокер: {broker}',
 
-  'csv.results.errors-header': 'CLICK TO SEE ERRORS ({count})',
+  'csv.results.errors-header': 'НАЖМИТЕ, ЧТОБЫ УВИДЕТЬ ОШИБКИ ({count})',
   'csv.results.discord-note':
-    'Optional: If you need help, click Copy report and paste it in Discord.',
+    'Необязательно: если нужна помощь, нажмите «Копировать отчёт» и вставьте его в Discord.',
 
   
 
@@ -4230,15 +4373,10 @@ const ru: Lang = {
 
   'csv.errors.copied': 'Скопировано',
   'csv.errors.rows': 'Строки: {rows}',
-  'csv.errors.suggestion': 'Рекомендация: ',
 
   'csv.errors.raw-errors-limit': 'Показаны первые {shown} из {total} ошибок',
 
   
-
-  'csv.report.plugin-version': 'Версия плагина: {version}',
-
-  'csv.report.broker': 'Брокер: {broker}',
 
   'csv.report.top-issues': 'Основные проблемы:',
 
@@ -4250,8 +4388,6 @@ const ru: Lang = {
   
   
 
-  'csv.image-review.count': '{count} изображений',
-
   
   
   
@@ -4259,8 +4395,6 @@ const ru: Lang = {
   
   
   
-
-  'csv.format': 'Формат импорта: ',
 
   
   'csv.button.export-template': 'Экспортировать шаблон',
@@ -4271,28 +4405,6 @@ const ru: Lang = {
   
   
   
-  
-
-  'csv.broker-guide.tradovate.step-2':
-    'Нажмите на вкладку "Orders" (НЕ вкладка Performance)',
-
-  'csv.broker-guide.tradovate.warning.emphasis': 'Важно:',
-  'csv.broker-guide.tradovate.warning.message':
-    'Используйте только вкладку Orders. Вкладка Performance не совместима.',
-
-  
-
-  'csv.broker-guide.ibkr.warning.emphasis': 'Используйте Orders',
-
-  
-
-  
-
-  'csv.broker-guide.tradingview.step-3':
-    'Выберите "Order History" из выпадающего меню',
-
-  'csv.broker-guide.tradingview.warning.message':
-    'Другие типы экспорта (например, Positions или Orders) не подходят для импорта.',
 
   
 
@@ -4300,47 +4412,30 @@ const ru: Lang = {
 
   
 
-  'csv.broker-guide.hyperliquid.warning.emphasis': 'Лимит 10 000 записей.',
-
-  
-
-  'csv.broker-guide.sierrachart.step-1':
-    'Откройте Trade Activity Log (Trade → Trade Activity Log или Ctrl+Shift+A)',
-
   
 
   
-
-  
-
-  'csv.broker-guide.atas.warning.emphasis': 'Важно:',
-  'csv.broker-guide.atas.warning.message':
-    'Не редактируйте экспортированный файл. Journalit сохраняет границы сделок из листа “Journal” и, при наличии данных, дополняет комиссию по совпадающим исполнениям из листа “Executions”.',
-
-  
-
-  'csv.broker-guide.rithmic.warning.emphasis': 'Важно:',
-
-  
-
-  'csv.broker-guide.jdr.warning.emphasis': 'Важно:',
 
   
   
   
   'csv.date-format.auto-detect':
     'Автоопределение (рекомендуется для ISO/стандартных форматов)',
-  'csv.date-format.us-date': 'US Date: 12/25/2024 (Schwab, Fidelity, E*TRADE)',
-  'csv.date-format.us-datetime': 'US DateTime: 12/25/2024 14:30:00 (Webull)',
-  'csv.date-format.us-short': 'US Short: 1/5/2024 (TradeZero)',
-  'csv.date-format.us-short-datetime': 'US Short DateTime: 1/5/2024 14:30:00',
+  'csv.date-format.us-date':
+    'Дата (США): 12/25/2024 (Schwab, Fidelity, E*TRADE)',
+  'csv.date-format.us-datetime':
+    'Дата и время (США): 12/25/2024 14:30:00 (Webull)',
+  'csv.date-format.us-short': 'Краткая дата (США): 1/5/2024 (TradeZero)',
+  'csv.date-format.us-short-datetime':
+    'Краткие дата и время (США): 1/5/2024 14:30:00',
   'csv.date-format.iso-datetime':
-    'ISO DateTime: 2024-12-25 14:30:00 (Bybit, Tradovate)',
-  'csv.date-format.iso-date': 'ISO Date: 2024-12-25 (Interactive Brokers)',
+    'ISO дата и время: 2024-12-25 14:30:00 (Tradovate)',
+  'csv.date-format.iso-date': 'Дата ISO: 2024-12-25 (Interactive Brokers)',
   'csv.date-format.eu-date': 'EU Date: 25/12/2024 (день/месяц/год)',
-  'csv.date-format.eu-datetime': 'EU DateTime: 25/12/2024 14:30:00',
-  'csv.date-format.eu-dash': 'EU Dash: 25-12-2024',
-  'csv.date-format.eu-dash-datetime': 'EU Dash DateTime: 25-12-2024 14:30:00',
+  'csv.date-format.eu-datetime': 'Дата и время (ЕС): 25/12/2024 14:30:00',
+  'csv.date-format.eu-dash': 'Дата с дефисами (ЕС): 25-12-2024',
+  'csv.date-format.eu-dash-datetime':
+    'Дата с дефисами и время (ЕС): 25-12-2024 14:30:00',
 
   
   
@@ -4350,14 +4445,14 @@ const ru: Lang = {
     'Недавно открытые файлы и представления',
   'home.widget.year-heatmap.name': 'Тепловая карта торговли',
   'home.widget.year-heatmap.description': 'Ваша торговая активность за год',
-  'home.widget.getting-started.name': 'Getting Started',
+  'home.widget.getting-started.name': 'Первые шаги',
   'home.widget.getting-started.description':
     'Чек-лист для настройки Journalit и сделок',
-  'home.widget.getting-started.progress': '{completed}/{total} completed',
-  'home.widget.getting-started.progress.loading': 'Checking progress...',
+  'home.widget.getting-started.progress': 'Выполнено {completed}/{total}',
+  'home.widget.getting-started.progress.loading': 'Проверка прогресса...',
   'home.widget.getting-started.item.account.title': 'Настройте торговый счёт',
   'home.widget.getting-started.item.account.description':
-    'Сделки записываются на счёт, который отслеживает баланс. Без него доходность и просадку рассчитать нельзя.',
+    'Сделки записываются на счёт, который отслеживает ваш баланс. Без счёта невозможно рассчитать доходность и просадку.',
   'home.widget.getting-started.item.account.time': '15s',
   'home.widget.getting-started.item.account.cta': 'Настроить счёт',
   'home.widget.getting-started.item.create.title': 'Добавьте историю торговли',
@@ -4365,27 +4460,28 @@ const ru: Lang = {
     'Импортируйте существующие сделки, подключите Trade Sync или добавьте первую сделку вручную.',
   'home.widget.getting-started.item.create.time': '30s',
   'home.widget.getting-started.item.create.cta': 'Открыть Trade Import',
-  'home.widget.getting-started.item.tradelog.title': 'Open Trade Log',
+  'home.widget.getting-started.item.tradelog.title': 'Откройте журнал сделок',
   'home.widget.getting-started.item.tradelog.description':
-    'Your trade database for analysing all your trades in one place.',
+    'Ваша база сделок, чтобы анализировать их все в одном месте.',
   'home.widget.getting-started.item.tradelog.time': '10s',
-  'home.widget.getting-started.item.tradelog.cta': 'Open Trade Log',
-  'home.widget.getting-started.item.layouts.title': 'Open Layout Builder',
+  'home.widget.getting-started.item.tradelog.cta': 'Открыть журнал сделок',
+  'home.widget.getting-started.item.layouts.title':
+    'Откройте конструктор макетов',
   'home.widget.getting-started.item.layouts.description':
-    'Design your review templates your way.',
-  'home.widget.getting-started.item.layouts.time': '1 min',
-  'home.widget.getting-started.item.layouts.cta': 'Open Layout Builder',
+    'Настройте макеты обзоров под себя.',
+  'home.widget.getting-started.item.layouts.time': '1 мин',
+  'home.widget.getting-started.item.layouts.cta': 'Открыть конструктор макетов',
   'home.widget.getting-started.item.sidebar.title':
     'Открыть боковую панель навигации',
   'home.widget.getting-started.item.sidebar.description':
     'Быстрый доступ к страницам, обзорам, инструментам и поиску Journalit.',
   'home.widget.getting-started.item.sidebar.time': '10 с',
   'home.widget.getting-started.item.sidebar.cta': 'Открыть панель',
-  'home.widget.getting-started.item.pro.title': 'Activate PRO',
+  'home.widget.getting-started.item.pro.title': 'Активируйте PRO',
   'home.widget.getting-started.item.pro.description':
-    'Включите Trade Import, Trade Sync и экономический календарь.',
-  'home.widget.getting-started.item.pro.time': '1 min',
-  'home.widget.getting-started.item.pro.cta': 'Activate',
+    'Включите Trade Import, Trade Sync и экономический календарь, а также получите больше вызовов ИИ-инструментов в месяц.',
+  'home.widget.getting-started.item.pro.time': '1 мин',
+  'home.widget.getting-started.item.pro.cta': 'Активировать',
   'home.widget.weekly-summary.name': 'Еженедельная сводка',
   'home.widget.weekly-summary.description':
     'Метрики текущей недели с графиком дневного P&L',
@@ -4441,11 +4537,11 @@ const ru: Lang = {
   'home.quick-links.trading-dashboard': 'Панель',
   'home.quick-links.account-dashboard': 'Счета',
   'home.quick-links.todays-drc': 'Дневной анализ',
-  'home.quick-links.weekly-review': 'Недельный анализ',
-  'home.quick-links.monthly-review': 'Месячный анализ',
+  'home.quick-links.weekly-review': 'Обзор за неделю',
+  'home.quick-links.monthly-review': 'Обзор за месяц',
   'home.quick-links.quarterly-review': 'Обзор за квартал',
   'home.quick-links.yearly-review': 'Обзор за год',
-  'home.quick-links.quick-import': 'Quick Import',
+  'home.quick-links.quick-import': 'Быстрый импорт',
   'home.quick-links.csv-import': 'Trade Import',
   'home.quick-links.layout-builder': 'Построитель макета',
   'home.quick-links.navigation-sidebar': 'Боковая панель навигации',
@@ -4463,7 +4559,7 @@ const ru: Lang = {
   'home.widget-selector.sample-note.title': 'Торговый план',
   'home.widget-selector.sample-note.intro':
     'Только сетапы A+ на ключевых уровнях. Не более 3 сделок в день.',
-  'home.widget-selector.sample-note.checklist': 'Чек-лист перед открытием',
+  'home.widget-selector.sample-note.checklist': 'Чек-лист',
   'home.widget-selector.sample-note.task.calendar':
     'Проверить экономический календарь',
   'home.widget-selector.sample-note.task.levels':
@@ -4529,7 +4625,7 @@ const ru: Lang = {
   'home.greeting.name-placeholder': 'Ваше имя',
   'home.greeting.edit-name-aria': '{name}. Изменить отображаемое имя',
   'home.greeting.hey-there': 'Привет',
-  'home.greeting.good-to-see-you': 'Рады тебя видеть',
+  'home.greeting.good-to-see-you': 'Рады вас видеть',
 
   
   
@@ -4603,8 +4699,8 @@ const ru: Lang = {
   'home.widget.goals-progress.no-target-selected':
     'Нет цели для выбранного счета',
   'home.widget.goals-progress.configured-for': 'Настроено для {accounts}',
-  'home.widget.goals-progress.account-scope': 'Account scope',
-  'home.widget.goals-progress.add-account': 'Add account',
+  'home.widget.goals-progress.account-scope': 'Охват счетов',
+  'home.widget.goals-progress.add-account': 'Добавить счёт',
   'home.widget.goals-progress.click-to-set': 'Нажмите, чтобы установить цель',
   'home.widget.goals-progress.header.pnl': 'Цель по P&L',
   'home.widget.goals-progress.header.trades': 'Цель по сделкам',
@@ -4622,8 +4718,6 @@ const ru: Lang = {
   
   'home.widget.best-hours.title': 'Лучшие часы',
   'home.widget.best-hours.no-data': 'Нет данных по сделкам',
-  'home.widget.best-hours.period-aria':
-    '{label}: средний P&L на сделку {pnl}, {count} сделок',
   'home.widget.best-hours.trades-count': '{count} сделок',
   'home.widget.best-hours.win-rate': '{rate}% побед',
   'home.widget.best-hours.win-rate-na': 'Процент побед недоступен',
@@ -4678,7 +4772,7 @@ const ru: Lang = {
   
   
   
-  'home.widget.drawdown.title': 'Drawdown Limit',
+  'home.widget.drawdown.title': 'Лимит просадки',
   'home.widget.drawdown.breached': 'Превышен',
   'home.widget.drawdown.remaining': 'осталось',
   'home.widget.drawdown.unable-to-load': 'Не удалось загрузить',
@@ -4720,7 +4814,6 @@ const ru: Lang = {
   'home.widget.eval-roi.challenge-count-plural': '{count} оценок',
   'home.widget.eval-roi.net': 'Чистыми',
   'home.widget.eval-roi.spent': 'Потрачено',
-  'home.widget.eval-roi.payouts': 'Выплаты',
   'home.widget.eval-roi.break-even': 'Безубыточность',
   'home.widget.challenge-alerts.title': 'Оповещения челленджей',
   'home.widget.challenge-alerts.unable-to-load':
@@ -4756,7 +4849,6 @@ const ru: Lang = {
   'home.widget.top-breakdown.configure-title': 'Настроить топ {dimension}',
   'home.widget.top-breakdown.aria.customize':
     'Нажмите, чтобы настроить топ {dimension}',
-  'home.widget.setups.title': 'Топ сетапы',
 
   'home.widget.setups.trades-count': '{count} сделок',
   'home.widget.setups.win-rate': '{rate}% побед',
@@ -4797,64 +4889,7 @@ const ru: Lang = {
 
   
 
-  'weekly.tab.review': 'Отчёт',
-
   
-  'weekly.review.drcs.title': 'Ежедневные отчёты за эту неделю',
-
-  
-  'weekly.review.performance.title': 'Самооценка результатов',
-  'weekly.review.performance.mental': 'Психологическое состояние',
-
-  'weekly.review.performance.technical': 'Техническое исполнение',
-
-  
-  'weekly.review.questions.title': 'Вопросы еженедельного обзора',
-
-  
-  'weekly.review.goals.title': 'Цели на следующую неделю',
-
-  
-  'weekly.preparation.goals.title': 'Цели недели',
-
-  
-  'weekly.preparation.events.title': 'Ключевые события',
-
-  'weekly.preparation.events.add-button': 'Добавить событие',
-
-  
-  'weekly.preparation.forecast.title': 'Прогноз на неделю',
-
-  
-  'weekly.overview.pnl-chart.title': 'Накопительный P&L за неделю',
-
-  
-  'weekly.overview.drawdown-chart.title': 'Просадка за неделю',
-
-  
-  'weekly.overview.performance.title': 'Результаты недели',
-
-  
-
-  
-  'weekly.overview.setup-performance.title': 'Результаты по сетапам',
-
-  
-  'weekly.overview.trades-chart.title': 'Сделки недели',
-
-  
-  'weekly.overview.best-trade.title': 'Лучшая сделка недели',
-
-  'weekly.overview.worst-trade.title': 'Худшая сделка недели',
-
-  
-  'weekly.overview.daily-performance.title': 'Ежедневные результаты',
-
-  
-
-  
-  'weekly.overview.button.create-trade': 'Создать сделку',
-  'weekly.overview.button.view-trade-details': 'Просмотр деталей сделки',
 
   
   
@@ -4862,15 +4897,7 @@ const ru: Lang = {
 
   
 
-  'monthly.tab.review': 'Анализ',
-
   
-
-  
-
-  
-  'monthly.overview.drawdown': 'Просадка за месяц',
-  'monthly.overview.no-drawdown-data': 'Нет данных о просадке',
 
   
 
@@ -4891,10 +4918,6 @@ const ru: Lang = {
   
 
   
-
-  
-
-  'drc.tab.review': 'Обзор',
 
   
 
@@ -4935,10 +4958,13 @@ const ru: Lang = {
   'calendar.weekday.fri': 'Пт',
   'calendar.weekday.sat': 'Сб',
   'calendar.weekday.sun': 'Вс',
-  'calendar.pnl': 'П/У',
+  'calendar.pnl': 'P&L',
   'calendar.week': 'НЕДЕЛЯ',
   'calendar.trade': '{count} сделка',
   'calendar.trades': '{count} сделки',
+  'calendar.missed': '{count} упущено',
+  'calendar.trades-short': '{count}С',
+  'calendar.missed-short': '{count}У',
   'calendar.reviewed': 'Проанализировано',
   'calendar.month.january': 'Январь',
   'calendar.month.february': 'Февраль',
@@ -4990,7 +5016,7 @@ const ru: Lang = {
   'metric.sharpeRatio.description': 'Средний P&L сделки к её волатильности',
   'metric.expectancy.name': 'Математическое ожидание',
   'metric.expectancy.description': 'Средняя сумма прибыли или убытка на сделку',
-  'metric.maxDrawdown.name': 'Max Drawdown',
+  'metric.maxDrawdown.name': 'Максимальная просадка',
   'metric.maxDrawdown.description':
     'Наибольшее падение от прошлого максимума P&L',
   'metric.bestDay.name': 'Лучший день',
@@ -5043,17 +5069,15 @@ const ru: Lang = {
   'metric.winnerMfeP90.description': '90-й перцентиль MFE прибыльных сделок',
   'metric.loserMfeP90.name': 'MFE P90 убыточных',
   'metric.loserMfeP90.description': '90-й перцентиль MFE убыточных сделок',
-  'metric.timeInDrawdown.name': 'Time in Drawdown',
+  'metric.timeInDrawdown.name': 'Время в просадке',
   'metric.timeInDrawdown.description': 'Доля времени ниже максимума P&L',
-  'metric.avgRecoveryTime.name': 'Avg Recovery Time',
+  'metric.avgRecoveryTime.name': 'Среднее время восстановления',
   'metric.avgRecoveryTime.description': 'Среднее время выхода из просадки',
-  'metric.longestDrawdown.name': 'Longest Drawdown',
+  'metric.longestDrawdown.name': 'Самая длинная просадка',
   'metric.longestDrawdown.description': 'Самое долгое время в одной просадке',
-  'metric.drawdownEpisodes.name': 'Drawdown Episodes',
+  'metric.drawdownEpisodes.name': 'Эпизоды просадки',
   'metric.drawdownEpisodes.description':
     'Количество отдельных периодов просадки',
-  'metric.category.performance': 'Производительность',
-  'metric.category.volume': 'Объём',
 
   
   
@@ -5175,8 +5199,8 @@ const ru: Lang = {
     'Или создайте новый шаблон в боковой панели',
   'template.builder.snippet-coming-soon': 'Редактор фрагментов появится скоро',
 
-  'template.preview.empty': 'В этом шаблоне нет виджетов',
-  'template.preview.summary': 'Шаблон {type} — {count} виджетов',
+  'template.preview.empty': 'В этом макете нет виджетов',
+  'template.preview.summary': 'Макет {type} — виджетов: {count}',
   'template.preview.mode': 'Режим предпросмотра',
   'template.preview.markdown-zone-placeholder': 'Зона Markdown — пишите здесь',
   'template.preview.markdown-zone-placeholder-with-id':
@@ -5211,7 +5235,7 @@ const ru: Lang = {
   'template-picker.badge.default': 'По умолчанию',
   'template-picker.badge.current': 'Текущий',
   'template-picker.cancel': 'Отмена',
-  'template.editor.loading': 'Загрузка шаблона...',
+  'template.editor.loading': 'Загрузка макета...',
   'template.editor.built-in': 'Встроенный',
   'template.editor.unsaved-changes': 'Несохранённые изменения',
 
@@ -5234,6 +5258,11 @@ const ru: Lang = {
   'template.editor.missed-reason-desc':
     'Показывать, почему пропущенная сделка не была открыта',
   'template.editor.metadata-rows': 'Строки метаданных',
+  'template.editor.note-sections': 'Разделы заметки',
+  'template.editor.note-sections-desc':
+    'Заголовки и текст, которые добавляются под сделкой в новых заметках сделок, для всех типов активов. Потом их можно править в заметке.',
+  'template.editor.note-sections-zone-placeholder':
+    'Текст для новых заметок о сделках...',
   'template.editor.accounts': 'Счета',
   'template.editor.setups': 'Сетапы',
   'template.editor.mistakes': 'Ошибки',
@@ -5252,12 +5281,19 @@ const ru: Lang = {
     'Показывать временную шкалу сделок и ссылки на анализы',
   'template.editor.images': 'Изображения',
   'template.editor.images-desc': 'Показывать графики сделок',
+  'template.editor.image-layout': 'Макет изображений',
+  'template.editor.image-layout-desc':
+    'Показывать изображения по одному или все сразу',
+  'template.editor.image-layout-carousel': 'Карусель',
+  'template.editor.image-layout-stacked': 'Стопкой',
   'template.editor.metadata': 'Метаданные',
   'template.editor.metadata-desc': 'Показывать счета, сетапы и ошибки',
 
   'template.editor.review-button': 'Кнопка отметить проверенным',
   'template.editor.review-button-desc':
     'Показывать кнопку отметить сделку как проверённую',
+  'template.editor.rating': 'Оценка',
+  'template.editor.rating-desc': 'Показывать оценку сделки в звёздах',
 
   
   
@@ -5283,7 +5319,6 @@ const ru: Lang = {
   'common.best': 'Лучший',
   'common.worst': 'Худший',
 
-  'common.statuses': 'Статусы',
   'common.enabled': 'включено',
   'common.disabled': 'отключено',
   'common.color.gray': 'Серый',
@@ -5319,8 +5354,6 @@ const ru: Lang = {
   'common.score.excellent': 'Отлично',
   'common.note-label': 'Примечание:',
 
-  'common.backups-label': 'Резервные копии:',
-
   
   
   
@@ -5350,18 +5383,17 @@ const ru: Lang = {
   'form.field.incl-costs': '(включая затраты)',
   'form.calculated': 'Рассчитано',
   'form.field.option-type': 'Тип опциона',
-  'form.field.option-type.call': 'Call',
-  'form.field.option-type.put': 'Put',
-  'form.field.image-url-placeholder':
-    'Вставьте URL изображения или путь к файлу...',
+  'form.field.option-type.call': 'Колл',
+  'form.field.option-type.put': 'Пут',
+  'form.field.image-url-placeholder': 'Вставьте URL или путь к медиафайлу...',
   'form.field.image-duplicate-error': 'Это изображение уже добавлено.',
   'form.field.trade-image-alt': 'Изображение сделки',
   'form.field.value-dollar': 'Стоимость ($)',
   'form.field.dollar-amount-placeholder': 'Сумма в долларах',
   'form.field.direct-pnl-placeholder': 'Введите общую прибыль или убыток',
 
-  'form.field.mae-placeholder-currency': 'Max drawdown in {currency}',
-  'form.field.mfe-placeholder-currency': 'Max profit in {currency}',
+  'form.field.mae-placeholder-currency': 'Макс. просадка в {currency}',
+  'form.field.mfe-placeholder-currency': 'Макс. прибыль в {currency}',
   'form.error.image-upload-unavailable': 'Загрузка изображений недоступна',
 
   
@@ -5386,7 +5418,7 @@ const ru: Lang = {
   'library.error.copy-failed': 'Не удалось скопировать в буфер обмена',
   'library.title.import': 'Импорт layoutа',
   'library.desc.import':
-    'Импортируйте шаблон, которым поделился другой пользователь, используя его код доступа.',
+    'Вставьте код JRT, чтобы импортировать макет другого пользователя.',
   'library.label.share-code': 'Код доступа',
   'library.placeholder.import-code': 'Вставьте код JRT-... сюда',
   'library.button.validating': 'Проверка...',
@@ -5399,7 +5431,7 @@ const ru: Lang = {
     'Поделитесь своим пользовательским шаблоном с другими, сгенерировав код доступа.',
   'library.empty.title': 'Нет пользовательских layoutов для экспорта.',
   'library.empty.hint':
-    'Сначала создайте пользовательский шаблон, чтобы поделиться им с другими.',
+    'Сначала создайте свой макет на вкладках макетов обзоров или сделок, затем вернитесь сюда, чтобы поделиться им.',
   'library.label.select-template': 'Выберите layout',
   'library.option.select-template': '-- Выберите layout --',
   'library.button.generate-code': 'Сгенерировать код доступа',
@@ -5415,7 +5447,7 @@ const ru: Lang = {
   
 
   'trade-sync.gate.pro.description':
-    'Trade Sync is a Pro feature. Upgrade to continue.',
+    'Синхронизация сделок — функция Pro. Обновите тариф, чтобы продолжить.',
 
   'trade-sync.gate.feature-unavailable.title': 'Функция недоступна',
   'trade-sync.gate.feature-unavailable.description':
@@ -5434,12 +5466,11 @@ const ru: Lang = {
 
   'premium.gate.cta.continue-pro': 'Перейти к PRO',
 
-  'premium.gate.cta.refresh': 'Refresh status',
+  'premium.gate.cta.refresh': 'Обновить статус',
 
-  'premium.gate.offline':
-    'You appear to be offline. Activation requires internet.',
+  'premium.gate.offline': 'Похоже, вы не в сети. Для активации нужен интернет.',
   'premium.gate.not-pro-yet':
-    'You are signed in, but your account is not PRO yet. Upgrade and then refresh.',
+    'Вы вошли, но ваш аккаунт ещё не PRO. Оформите подписку и обновите статус.',
 
   'backend.status.connected': 'Подключено',
   'backend.status.disconnected': 'Отключено',
@@ -5487,7 +5518,7 @@ const ru: Lang = {
   'backend.notice.batch-complete':
     '⏳ Пакет завершён: {processed}/{total} сделок ({progress}%). Продолжаем...',
   'backend.notice.sync-complete':
-    '✅ Синхронизация завершена: обработано {total} сделок ({newFiles} новых, {updated} обновлено) в {accounts} счётах',
+    'Синхронизация завершена: обработано {total} сделок ({newFiles} новых, {updated} обновлено) в {accounts} счётах',
   'backend.notice.sync-complete-no-trades':
     'Синхронизация завершена: нет новых сделок',
   'backend.notice.sync-failed': 'Ошибка синхронизации: {error}',
@@ -5548,6 +5579,9 @@ const ru: Lang = {
 
   'settings.auth.feature.manual-entry': 'Ручной ввод сделок',
   'settings.auth.feature.analytics-reviews': 'Аналитика и обзоры',
+  'settings.auth.feature.ai-tool-calls-free':
+    '100 вызовов ИИ-инструментов в месяц',
+  'settings.auth.feature.ai-tool-calls-pro': 'Больше вызовов ИИ-инструментов',
   'settings.auth.feature.priority-support': 'Приоритетная Поддержка',
 
   
@@ -5580,11 +5614,11 @@ const ru: Lang = {
   'manual-drawdown.button.delete': 'Удалить',
   'manual-drawdown.header.edit': 'Редактировать снимок',
   'manual-drawdown.header.add': 'Добавить новый снимок',
-  'manual-drawdown.field.date': 'Дата просадки *',
+  'manual-drawdown.field.date': 'Дата просадки',
   'manual-drawdown.field.date-desc': 'Когда брокер установил этот лимит',
-  'manual-drawdown.field.limit': 'Минимальный баланс ($) *',
+  'manual-drawdown.field.limit': 'Минимальный баланс ($)',
   'manual-drawdown.field.limit-desc': 'Минимально допустимый баланс',
-  'manual-drawdown.field.note': 'Заметка (необязательно)',
+  'manual-drawdown.field.note': 'Заметка',
   'manual-drawdown.field.note-desc': 'Дополнительный контекст для этого снимка',
   'manual-drawdown.placeholder.note': 'напр., Отчёт на конец месяца',
   'manual-drawdown.button.update': 'Обновить снимок',
@@ -5599,7 +5633,6 @@ const ru: Lang = {
   
   
   
-  'trade.review.title': 'Обзор сделки',
 
   'trade.details.entry': 'Вход',
   'trade.details.exit': 'Выход',
@@ -5608,24 +5641,28 @@ const ru: Lang = {
 
   'trade.details.thesis': 'Торговая идея',
 
-  'trade.details.entries-summary': '{count} entries',
-  'trade.details.exits-summary': '{count} exits',
-  'trade.details.take-profit-count': '{count} targets',
+  'trade.details.entries-summary': 'Входов: {count}',
+  'trade.details.exits-summary': 'Выходов: {count}',
+  'trade.details.take-profit-count': 'Целей: {count}',
 
   'trade.metadata.account': 'Счёт:',
 
   'trade.metadata.setups': 'Сетапы',
   'trade.metadata.mistakes': 'Ошибки',
   'trade.image.no-images': 'Изображений для этой сделки нет',
-  'trade.image.click-edit': 'Нажмите редактировать для добавления изображений',
+  'trade.image.click-edit': 'Добавить изображение',
   'trade.image.alt-prefix': 'Изображение сделки',
   'command.share-note-as-image': 'Поделиться текущей заметкой как изображением',
-  'trade.share.copy-screenshot': 'Скопировать скриншот сделки',
   'trade.share.copied': 'Скриншот сделки скопирован в буфер обмена',
   'trade.share.failed': 'Не удалось скопировать скриншот сделки',
   'trade.share.not-ready':
     'Заметка сделки ещё загружается. Повторите попытку через мгновение.',
   'share.review.action': 'Поделиться карточкой обзора',
+  'share.trade.modal-title': 'Поделиться сделкой',
+  'share.trade.position-return': 'Доходность позиции % (до расходов)',
+  'share.trade.account-return': 'Доходность счёта % (текущий баланс)',
+  'share.trade.hide-dollar-hint':
+    'Выберите R или %, чтобы скрыть денежные суммы. Недоступные значения отображаются прочерком.',
   'share.review.modal-title': 'Поделиться обзором',
   'share.review.section.top': 'Начало заметки',
   'share.review.select-all': 'Выбрать всё',
@@ -5650,6 +5687,9 @@ const ru: Lang = {
 
   'trade.review.reviewed': 'Проверено',
   'trade.review.reviewed-on': 'Проверено {date}',
+  'trade.rating.label': 'Оценка',
+  'trade.rating.hint':
+    'Нажмите на звезду, чтобы оценить, ещё раз — для половины звезды, и ещё раз, чтобы сбросить оценку',
 
   
   
@@ -5663,18 +5703,24 @@ const ru: Lang = {
   'image.uploader.file-upload-aria': 'Загрузить файл',
   'image.uploader.paste-clipboard-aria': 'Вставить из буфера обмена',
   'image.uploader.error-invalid-url':
-    'Недопустимый URL изображения или путь к файлу. Введите поддерживаемый URL изображения, путь к изображению в vault или ссылку Excalidraw.',
+    'Недопустимый URL или путь к медиафайлу. Укажите поддерживаемый URL изображения/видео, путь к медиа в хранилище или ссылку Excalidraw.',
   'image.viewer.alt-default': 'Изображение',
   'image.viewer.description-default': 'Предпросмотр медиа',
 
   'image.viewer.title-fullscreen': 'Нажмите для просмотра на весь экран',
 
-  'image.viewer.delete-button': 'Удалить изображение',
+  'image.viewer.delete-button': 'Удалить медиафайл',
   'image.viewer.nav-prev': 'Предыдущее изображение',
   'image.viewer.nav-next': 'Следующее изображение',
   'image.viewer.zoom-in-hint': 'Сведите пальцы или нажмите для увеличения',
   'image.viewer.zoom-out-hint':
     '{scale}x (сведите пальцы или нажмите для уменьшения)',
+
+  'image.youtube.unavailable-title': 'Видео YouTube',
+
+  'image.youtube.unavailable-description': 'Закрытое или недоступное',
+
+  'image.youtube.open': 'Открыть на YouTube',
 
   'image.viewer.close-aria': 'Закрыть полноэкранный режим',
   'image.viewer.copy-image': 'Копировать изображение',
@@ -5709,14 +5755,13 @@ const ru: Lang = {
   'filter.modal.type.regular': 'Обычная',
   'filter.summary.regular-trades': 'Обычные сделки',
   'filter.modal.type.backtest': 'Бэктест',
-  'filter.modal.status.breakeven': 'Безубыток',
 
-  'filter.modal.review-status.reviewed': 'Reviewed',
-  'filter.modal.review-status.unreviewed': 'Unreviewed',
-  'filter.modal.direction.long-call': 'Long/Call',
-  'filter.modal.direction.short-put': 'Short/Put',
-  'filter.modal.section.custom-fields': 'Custom Fields',
-  'filter.modal.custom-field.none-available': 'No values available',
+  'filter.modal.review-status.reviewed': 'Проанализированные',
+  'filter.modal.review-status.unreviewed': 'Непроанализированные',
+  'filter.modal.direction.long-call': 'Лонг/колл',
+  'filter.modal.direction.short-put': 'Шорт/пут',
+  'filter.modal.section.custom-fields': 'Пользовательские поля',
+  'filter.modal.custom-field.none-available': 'Нет доступных значений',
 
   
   
@@ -5744,23 +5789,6 @@ const ru: Lang = {
   
   
   
-  'auth.title.already-logged-in': 'Вы уже авторизованы',
-  'auth.desc.already-logged-in': 'Вы уже авторизованы{email}.',
-  'auth.title.sign-in': 'Войдите в Journalit',
-
-  'auth.label.email': 'Адрес электронной почты',
-
-  'auth.button.send-code': 'Отправить код подтверждения',
-
-  'auth.label.code': 'Код подтверждения',
-
-  'auth.button.verify': 'Проверить и войти',
-
-  'auth.button.resend': 'Отправить код повторно',
-
-  'auth.error.needs-premium': 'Функция Pro',
-
-  'auth.error.network-error': 'Ошибка подключения',
 
   
   
@@ -5775,7 +5803,6 @@ const ru: Lang = {
   'button.back': 'Назад',
   'button.maybe-later': 'Может быть позже',
   'button.upgrade-now': 'Обновить сейчас',
-  'button.apply': 'Применить',
   'button.remove': 'Удалить',
 
   'button.move-up': 'Переместить вверх',
@@ -5800,13 +5827,14 @@ const ru: Lang = {
   'templateEditor.mode.editor': 'Редактор',
   'templateEditor.built-in-badge': '(Встроенный)',
   'templateEditor.built-in-notice':
-    'Встроенные шаблоны не могут быть отредактированы. Продублируйте этот шаблон или создайте новый для настройки.',
+    'Встроенные макеты нельзя редактировать. Создайте копию этого макета или новый макет, чтобы настроить его.',
   'templateEditor.unsaved-changes': 'Несохраненные изменения',
   'templateEditor.field.template-name': 'Имя layoutа',
   'templateEditor.field.widgets': 'Виджеты ({count})',
   'templateEditor.button.add-widget': '+ Добавить виджет',
   'templateEditor.button.insert-widget-here': 'Добавить виджет сюда',
-  'templateEditor.button.widget-library-docs': 'Widget library docs',
+  'templateEditor.button.widget-library-docs':
+    'Документация библиотеки виджетов',
   'templateEditor.widget.locked': 'Заблокировано',
   'templateEditor.widget.select-placeholder': 'Выберите виджет...',
   'templateEditor.widget.header-text-placeholder': 'Текст заголовка...',
@@ -5842,20 +5870,19 @@ const ru: Lang = {
   
   
 
-  'timeline.status.loss': 'Убыток',
-
-  'timeline.aria.session-navigation': 'Same-day trade navigation',
-  'timeline.aria.previous-trade': 'Previous trade: {trade}',
-  'timeline.aria.next-trade': 'Next trade: {trade}',
-  'timeline.aria.no-previous-trade': 'No previous trade in this trading day',
-  'timeline.aria.no-next-trade': 'No next trade in this trading day',
+  'timeline.aria.session-navigation': 'Навигация по сделкам за день',
+  'timeline.aria.previous-trade': 'Предыдущая сделка: {trade}',
+  'timeline.aria.next-trade': 'Следующая сделка: {trade}',
+  'timeline.aria.no-previous-trade':
+    'В этот торговый день предыдущей сделки нет',
+  'timeline.aria.no-next-trade': 'В этот торговый день следующей сделки нет',
 
   
   
   
   'template-builder.modal.unsaved-changes.title': 'Несохранённые изменения',
   'template-builder.modal.unsaved-changes.body1':
-    'У вас есть несохранённые изменения в этом шаблоне.',
+    'В этом макете есть несохранённые изменения.',
   'template-builder.modal.unsaved-changes.body2':
     'Вы уверены, что хотите переключиться без сохранения?',
   'template-builder.modal.unsaved-changes.continue':
@@ -5881,6 +5908,8 @@ const ru: Lang = {
     'Экономический календарь с автоматическим еженедельным импортом событий',
   'upgrade.benefit.trade-sync': 'Trade Sync для поддерживаемых брокеров',
   'upgrade.benefit.multi-account': 'Поддержка нескольких аккаунтов',
+  'upgrade.benefit.ai-tool-calls':
+    'Больше вызовов ИИ-инструментов в месяц для подключённых ИИ-приложений',
   'upgrade.prop-profiles.message-firms':
     'Journalit держит наготове правила {count} проп-фирм, чтобы заполнить ваш челлендж.',
   'upgrade.prop-profiles.message-firm':
@@ -5907,6 +5936,11 @@ const ru: Lang = {
   'datepicker.button.clear': 'Очистить',
   'datepicker.button.today': 'Сегодня',
   'datepicker.button.now': 'Сейчас',
+  'datepicker.aria.hour': 'Час',
+  'datepicker.aria.minute': 'Минута',
+  'datepicker.aria.second': 'Секунда',
+  'datepicker.aria.previous-month': 'Предыдущий месяц',
+  'datepicker.aria.next-month': 'Следующий месяц',
   'datepicker.placeholder.day': 'ДД',
   'datepicker.placeholder.month': 'ММ',
   'datepicker.placeholder.year': 'YY',
@@ -5941,18 +5975,18 @@ const ru: Lang = {
   
   
   'chart.tooltip.pnl': 'P&L',
-  'chart.tooltip.peak-equity': 'Peak realized P&L',
-  'chart.tooltip.episode-start': 'Episode Start',
-  'chart.tooltip.underwater-days': 'Time Underwater',
-  'chart.tooltip.underwater-trades': 'Trades Underwater',
+  'chart.tooltip.peak-equity': 'Пик реализованного P&L',
+  'chart.tooltip.episode-start': 'Начало эпизода',
+  'chart.tooltip.underwater-days': 'Время в просадке',
+  'chart.tooltip.underwater-trades': 'Сделок в просадке',
 
-  'chart.tooltip.drawdown-amount': 'Amount',
-  'chart.tooltip.drawdown-percent': 'Drawdown % of {basis}',
-  'chart.tooltip.percent-basis': 'Percent Basis',
+  'chart.tooltip.drawdown-amount': 'Сумма',
+  'chart.tooltip.drawdown-percent': 'Просадка в % от {basis}',
+  'chart.tooltip.percent-basis': 'База для процента',
   'chart.tooltip.trade-pnl': 'P&L сделки',
 
   'chart.tooltip.accounts-list': '{accounts}',
-  'chart.tooltip.more-accounts': '+{count} more',
+  'chart.tooltip.more-accounts': 'ещё {count}',
   'chart.loading': 'Загрузка графика...',
   'chart.label.pnl': 'P&L',
   'chart.legend.entry': 'Вход',
@@ -5977,21 +6011,19 @@ const ru: Lang = {
   
   
   'template.transformation.orphaned-content.header':
-    'Содержимое из предыдущего шаблона',
+    'Содержимое предыдущего макета',
   'template.transformation.orphaned-content.desc1':
-    'Следующее содержимое не соответствует новому макету шаблона.',
+    'Следующее содержимое не поместилось в новый макет.',
   'template.transformation.orphaned-content.desc2':
     'Проверьте и интегрируйте его выше или удалите, если оно больше не требуется.',
   'template.editor.built-in-notice':
     'Встроенные шаблоны нельзя редактировать. Дублируйте этот шаблон или создайте новый для настройки.',
-  'template.editor.show-review-desc':
-    'Когда отображать раздел обзора в примечаниях к сделкам',
 
   
   
   
-  'paste.notice.image-pasted': '📋 Изображение успешно вставлено',
-  'paste.notice.images-pasted': '📋 {count} изображений успешно вставлены',
+  'paste.notice.image-pasted': 'Изображение успешно вставлено',
+  'paste.notice.images-pasted': '{count} изображений успешно вставлены',
   'paste.error.clipboard-not-supported': 'API буфера обмена не поддерживается',
   'paste.error.clipboard-empty':
     'Ничего не найдено в буфере обмена для вставки',
@@ -6003,7 +6035,7 @@ const ru: Lang = {
   
   
   
-  'modal.template-switch.title': 'Переключить шаблон?',
+  'modal.template-switch.title': 'Сменить макет?',
   'modal.template-switch.switching-from': 'Вы переключаетесь с',
   'modal.template-switch.switching-to': 'на',
   'modal.template-switch.has-content-title': 'Эта заметка содержит текст',
@@ -6029,8 +6061,6 @@ const ru: Lang = {
   'ui.folder-browser.root': 'Корневая папка',
   'ui.folder-browser.clear-aria':
     'Очистить для использования расположения по умолчанию',
-  'ui.folder-browser.expand-folder': 'Развернуть папку',
-  'ui.folder-browser.collapse-folder': 'Свернуть папку',
 
   
   
@@ -6162,10 +6192,10 @@ const ru: Lang = {
     'Этого достаточно, чтобы пользоваться Journalit.',
   'onboarding.orientation.inside.title': 'Journalit работает внутри Obsidian',
   'onboarding.orientation.inside.body':
-    'Не нужно сначала изучать Obsidian. Этот экран — представление Journalit.',
+    'Сначала изучать Obsidian не нужно. Этот экран — представление Journalit.',
   'onboarding.orientation.sidebar.title': 'Боковая панель — это навигация',
   'onboarding.orientation.sidebar.body':
-    'Главная, Дашборд, Журнал сделок и ваши обзоры находятся там.',
+    'Главная, Панель, Журнал сделок и ваши обзоры находятся там.',
   'onboarding.orientation.sidebar.action': 'Показать боковую панель',
   'onboarding.orientation.sidebar.action-mobile': 'Открыть боковую панель',
   'onboarding.orientation.sidebar.hint':
@@ -6174,16 +6204,16 @@ const ru: Lang = {
     'Она открывается поверх этого экрана. Смахните или коснитесь снаружи, чтобы вернуться.',
   'onboarding.orientation.tabs.title': 'Представления открываются как вкладки',
   'onboarding.orientation.tabs.body':
-    'Как эта. Переключайтесь между ними сверху.',
+    'Как эта. Переключайтесь между ними вверху.',
   'onboarding.orientation.privacy.title':
     'Ваш журнал остаётся на вашем устройстве',
   'onboarding.orientation.privacy.body':
-    'Заметки, скриншоты и обзоры — ваши собственные файлы. Через серверы Journalit проходят только импортированные или синхронизированные сделки.',
+    'Заметки, скриншоты и обзоры — это ваши собственные файлы. Через серверы Journalit проходят только сделки, которые вы импортируете или синхронизируете.',
   'onboarding.orientation.continue': 'Понятно',
   'onboarding.data-source.kicker': 'Ваши сделки',
   'onboarding.data-source.title': 'Где сейчас ваши сделки?',
   'onboarding.data-source.subtitle':
-    'Ваша история — часть вашего преимущества. Возьмите её с собой, и статистика будет значимой с первого дня, вместо месяцев ожидания новых сделок.',
+    'Ваша история — часть вашего преимущества. Перенесите её, и статистика будет осмысленной с первого дня, а не через месяцы накопления новых сделок.',
   'onboarding.data-source.option.broker.label':
     'У моего брокера или на платформе',
   'onboarding.data-source.option.broker.description':
@@ -6220,7 +6250,7 @@ const ru: Lang = {
   'onboarding.personalise.kicker': 'Настройте журнал',
   'onboarding.personalise.title': 'Несколько быстрых выборов',
   'onboarding.personalise.subtitle':
-    'Мы настраиваем Journalit на основе ваших ответов.',
+    'Мы настроим Journalit на основе ваших ответов.',
   'onboarding.personalise.style.question': 'Как вы торгуете?',
   'onboarding.personalise.style.scalping': 'Много сделок в день',
   'onboarding.personalise.style.intraday':
@@ -6286,13 +6316,6 @@ const ru: Lang = {
     'Не удалось сохранить пропуск онбординга. Пожалуйста, попробуйте позже.',
 
   
-  'csv.broker.tradingtechnologies': 'Trading Technologies (TT)',
-  'csv.broker-guide.tradingtechnologies.description':
-    'Экспорт CSV из виджета Fills',
-  'csv.broker-guide.tradingtechnologies.step-1':
-    'Откройте виджет Fills в TT и переключитесь в режим Detail, Continuous или Price with Detail',
-
-  'csv.broker-guide.tradingtechnologies.warning.emphasis': 'Важно:',
 
   'trade.metadata.broker-comment': 'Комментарий брокера',
 
@@ -6361,36 +6384,37 @@ const ru: Lang = {
   'command.open-calendar-sidebar': 'Открыть боковую панель календаря',
   'command.open-economic-calendar': 'Открыть экономический календарь',
 
-  'widget.directional-drawdown.name': 'Directional Realized Drawdown',
+  'widget.directional-drawdown.name': 'Реализованная просадка по направлениям',
   'widget.directional-drawdown.description':
-    'Separate long and short closed-trade drawdown amount curves',
+    'Отдельные кривые суммы просадки по закрытым сделкам в лонг и шорт',
 
-  'widget.long-drawdown.name': 'Long Drawdown',
+  'widget.long-drawdown.name': 'Просадка лонгов',
   'widget.long-drawdown.description':
-    'Closed-trade drawdown amount curve for long trades only',
-  'widget.short-drawdown.name': 'Short Drawdown',
+    'Кривая суммы просадки по закрытым сделкам, только лонг',
+  'widget.short-drawdown.name': 'Просадка шортов',
   'widget.short-drawdown.description':
-    'Closed-trade drawdown amount curve for short trades only',
-  'widget.directional-drawdown.title.long': 'Long Drawdown',
-  'widget.directional-drawdown.title.short': 'Short Drawdown',
+    'Кривая суммы просадки по закрытым сделкам, только шорт',
+  'widget.directional-drawdown.title.long': 'Просадка лонгов',
+  'widget.directional-drawdown.title.short': 'Просадка шортов',
   'widget.directional-drawdown.empty.not-enough':
-    'Not enough closed trades for directional analysis',
+    'Недостаточно закрытых сделок для анализа по направлениям',
   'widget.directional-drawdown.empty.no-closed':
-    'No closed directional trades for this period',
+    'Нет закрытых направленных сделок за этот период',
   'widget.directional-drawdown.empty.no-long':
-    'No long closed trades for this period',
+    'Нет закрытых сделок в лонг за этот период',
   'widget.directional-drawdown.empty.no-short':
-    'No short closed trades for this period',
-  'widget.directionalDrawdownChart.name': 'Directional Realized Drawdown',
+    'Нет закрытых сделок в шорт за этот период',
+  'widget.directionalDrawdownChart.name':
+    'Реализованная просадка по направлениям',
 
-  'widget.longDrawdownChart.name': 'Long Drawdown',
+  'widget.longDrawdownChart.name': 'Просадка лонгов',
   'widget.longDrawdownChart.description': 'Просадка только по лонгам',
 
-  'widget.shortDrawdownChart.name': 'Short Drawdown',
+  'widget.shortDrawdownChart.name': 'Просадка шортов',
   'widget.shortDrawdownChart.description': 'Просадка только по шортам',
 
   'widget.drawdownStats.no-conversion':
-    'Drawdown stats are unavailable for mixed currencies without FX conversion.',
+    'Статистика просадки недоступна для разных валют без конвертации.',
 
   'guide.skip-guide': 'Пропустить руководство',
   'guide.step-count': 'Шагов: {count}',
@@ -6399,78 +6423,84 @@ const ru: Lang = {
 
   'onboarding.activation.button.copy-link': 'Скопировать ссылку',
 
-  'widget.previous-trading-day-context.name': 'Previous Trading Day Context',
+  'widget.previous-trading-day-context.name':
+    'Контекст предыдущего торгового дня',
   'widget.previous-trading-day-context.description':
-    'Read-only context pulled from headings in the previous DRC',
-  'widget.previous-trading-day-context.reference-label': 'Previous DRC',
-  'widget.previous-trading-day-context.open-source': 'Open',
-  'widget.previous-trading-day-context.image-alt-prefix': 'Previous DRC image',
+    'Контекст только для чтения из заголовков предыдущего DRC',
+  'widget.previous-trading-day-context.reference-label': 'Предыдущий DRC',
+  'widget.previous-trading-day-context.open-source': 'Открыть',
+  'widget.previous-trading-day-context.image-alt-prefix':
+    'Изображение из предыдущего DRC',
   'widget.previous-trading-day-context.no-sections-configured':
-    'Choose at least one section in the template settings.',
+    'Выберите хотя бы один раздел в настройках макета.',
   'widget.previous-trading-day-context.preview-note':
-    'Yesterday price swept liquidity, rejected from the weekly level, and closed back inside the planned range.',
+    'Вчера цена сняла ликвидность, отбилась от недельного уровня и закрылась обратно внутри запланированного диапазона.',
   'widget.previous-trading-day-context.preview-bullet-two':
-    'Main deviation: entered before confirmation on the first pullback.',
+    'Главное отклонение: вход до подтверждения на первом откате.',
   'widget.previous-trading-day-context.preview-source':
-    'Preview: previous DRC from the prior trading day',
+    'Предпросмотр: DRC предыдущего торгового дня',
   'widget.previous-trading-day-context.preview-bullet-one':
-    'Daily bias matched the plan after the opening drive.',
-  'widget.weekly-drc-context.name': 'Daily Reviews by Weekday',
+    'Дневной уклон совпал с планом после импульса на открытии.',
+  'widget.weekly-drc-context.name': 'Дневные обзоры по дням недели',
   'widget.weekly-drc-context.description':
-    'Show selected DRC sections for each day in the weekly review',
+    'Показывает выбранные разделы DRC за каждый день в недельном анализе',
 
-  'widget.weekly-drc-context.no-activity': 'No activity for this day.',
+  'widget.weekly-drc-context.no-activity': 'В этот день активности не было.',
   'widget.weekly-drc-context.no-sections-configured':
-    'Choose at least one DRC section in the template settings.',
+    'Выберите хотя бы один раздел DRC в настройках макета.',
   'widget.weekly-drc-context.current-week-not-found':
-    'Current weekly review not found.',
+    'Текущий недельный анализ не найден.',
   'widget.weekly-drc-context.current-week-date-not-found':
-    'Current weekly review date not found.',
-  'widget.weekly-drc-context.load-error': 'Failed to load weekly DRC review.',
+    'Дата текущего недельного анализа не найдена.',
+  'widget.weekly-drc-context.load-error':
+    'Не удалось загрузить недельный анализ DRC.',
   'widget.weekly-drc-context.invalid-context':
     'Этот виджет доступен только в еженедельных обзорах',
   'templateEditor.widget.weekly-drc-day-label': 'День',
 
   'templateEditor.widget.weekly-drc-start-collapsed': 'Начинать свернутым',
-  'templateEditor.widget.weekly-drc-day-all': 'All days',
+  'templateEditor.widget.weekly-drc-day-all': 'Все дни',
 
-  'templateEditor.widget.previous-context-sections-label':
-    'Sections to include',
+  'templateEditor.widget.previous-context-sections-label': 'Включаемые разделы',
   'templateEditor.widget.previous-context-heading-label':
-    'Previous DRC section heading',
+    'Заголовок раздела предыдущего DRC',
   'templateEditor.widget.previous-context-heading-placeholder':
-    'Choose a heading',
-  'templateEditor.widget.review-context-fields.selection': 'Fields to display',
-  'templateEditor.widget.review-context-fields.selection.all': 'All fields',
-  'templateEditor.widget.review-context-fields.selection.group': 'Field group',
+    'Выберите заголовок',
+  'templateEditor.widget.review-context-fields.selection': 'Отображаемые поля',
+  'templateEditor.widget.review-context-fields.selection.all': 'Все поля',
+  'templateEditor.widget.review-context-fields.selection.group': 'Группа полей',
   'templateEditor.widget.review-context-fields.selection.fields':
-    'Specific fields',
-  'templateEditor.widget.review-context-fields.group': 'Group',
+    'Отдельные поля',
+  'templateEditor.widget.review-context-fields.group': 'Группа',
   'templateEditor.widget.review-context-fields.group-placeholder':
-    'Select group',
-  'templateEditor.widget.review-context-fields.fields': 'Fields',
+    'Выберите группу',
+  'templateEditor.widget.review-context-fields.fields': 'Поля',
   'templateEditor.widget.review-context-fields.fields-placeholder':
-    'Select fields',
+    'Выберите поля',
   'templateEditor.widget.review-context-fields.fields-selected':
-    '{count} fields selected',
+    'Выбрано полей: {count}',
   'templateEditor.widget.review-context-fields.no-fields':
-    'Create review fields in Settings first.',
+    'Сначала создайте поля обзора в настройках.',
 
-  'templateEditor.widget.review-context-fields.context': 'Context',
-  'templateEditor.widget.review-context-fields.context.both': 'Both',
-  'templateEditor.widget.review-context-fields.inherited': 'Inherited',
-  'templateEditor.widget.review-context-fields.current': 'Current',
-  'templateEditor.widget.review-context-fields.empty-values': 'Empty values',
-  'templateEditor.widget.review-context-fields.hide-empty': 'Hide empty values',
-  'templateEditor.widget.trade-review.primary-metrics': 'Основные метрики',
-  'templateEditor.widget.trade-review.classification': 'Классификация',
+  'templateEditor.widget.review-context-fields.context': 'Контекст',
+  'templateEditor.widget.review-context-fields.context.both': 'Оба',
+  'templateEditor.widget.review-context-fields.inherited': 'Унаследованный',
+  'templateEditor.widget.review-context-fields.current': 'Текущий',
+  'templateEditor.widget.review-context-fields.empty-values': 'Пустые значения',
+  'templateEditor.widget.review-context-fields.hide-empty':
+    'Скрыть пустые значения',
   'templateEditor.widget.trade-review.more-context': 'Больше контекста',
+  'templateEditor.widget.trade-review.notes-sections': 'Разделы заметок',
+  'templateEditor.widget.trade-review.notes-all': 'Все заметки',
+  'templateEditor.widget.trade-review.notes-sections-empty':
+    'Добавьте заголовки в «Разделы заметки» в макете сделки',
+  'templateEditor.widget.trade-review.placement.cards': 'Карточки показателей',
+  'templateEditor.widget.trade-review.placement.visible': 'Всегда видно',
+  'templateEditor.widget.trade-review.future-custom-fields':
+    'Пользовательские поля, добавленные позже',
   'templateEditor.widget.trade-review.display': 'Отображение',
   'templateEditor.widget.trade-review.show-images': 'Показывать изображения',
   'templateEditor.widget.trade-review.fields-none': 'Нет полей',
-  'templateEditor.widget.trade-review.fields-all': 'Все поля',
-  'templateEditor.widget.trade-review.fields-count': '{count} полей',
-  'templateEditor.widget.trade-review.no-fields': 'Нет доступных полей',
   'templateEditor.widget.trade-review.questions': 'Вопросы для разбора',
   'templateEditor.widget.trade-review.questions-help':
     'Выберите вопросы, которые будут показываться для каждого исхода сделки. Идентификаторы вопросов остаются неизменными, поэтому сохраненные ответы не теряются при редактировании или изменении порядка вопросов.',
@@ -6497,15 +6527,15 @@ const ru: Lang = {
   'templateEditor.widget.trade-review.condition-always': 'Всегда показывать',
   'templateEditor.widget.trade-review.condition-option-label':
     'Когда В{questionNumber} = {option}',
-  'templateEditor.widget.previous-context-add-section': '+ Add section',
+  'templateEditor.widget.previous-context-add-section': '+ Добавить раздел',
 
   'templateEditor.widget.previous-context-fallback-label':
-    'Previous DRC fallback',
+    'Замена предыдущего DRC',
   'templateEditor.widget.previous-context-fallback-nearest':
-    'Nearest earlier DRC',
+    'Ближайший более ранний DRC',
   'templateEditor.widget.previous-context-fallback-expected':
-    'Expected previous trading day only',
-  'widget.stats.vs-prev': 'vs prev',
+    'Только ожидаемый предыдущий торговый день',
+  'widget.stats.vs-prev': 'к пред.',
   'common.r-missing.title': 'Нет R для этой сделки',
   'common.r-missing.trade':
     'У этой сделки нет суммы риска, поэтому её результат нельзя показать в R.',
@@ -6517,115 +6547,118 @@ const ru: Lang = {
     'Ни у одной сделки здесь нет суммы риска, поэтому показать R нельзя.',
   'dashboard.r-coverage.no-comparison':
     'Изменение не показано: в периоде сравнения нет значения R для этого показателя.',
-  'dashboard.metrics.past-30d': 'past 30d',
+  'dashboard.metrics.past-30d': 'за 30 дн.',
 
-  'settings.customization.trade-fields': 'Custom Trade Fields',
-  'settings.customization.review-fields': 'Custom Review Fields',
+  'settings.customization.trade-fields': 'Пользовательские поля сделки',
+  'settings.customization.review-fields': 'Пользовательские поля обзора',
   'settings.customization.review-fields.description':
-    'Create custom fields for review notes. These fields are stored under reviewCustomFields and can later be inherited across monthly, weekly, and daily reviews.',
-  'settings.customization.review-fields.title': 'Review Fields ({count})',
+    'Создавайте пользовательские поля для заметок обзора. Они хранятся в reviewCustomFields и могут наследоваться между месячными, недельными и дневными анализами.',
+  'settings.customization.review-fields.title': 'Поля обзора ({count})',
   'settings.customization.review-fields.manage-desc':
-    'Manage custom fields for review notes',
+    'Управление пользовательскими полями заметок обзора',
   'settings.customization.review-fields.no-fields':
-    'No custom review fields defined yet',
+    'Пользовательских полей анализа пока нет',
   'settings.customization.review-fields.no-fields-desc':
-    'Review fields will be used by review-note widgets and will not appear in the trade form or Trade Log.',
-  'settings.customization.review-fields.add-button': 'Add Review Field',
+    'Поля обзора используются виджетами заметок обзора и не отображаются в форме сделки и журнале сделок.',
+  'settings.customization.review-fields.add-button': 'Добавить поле обзора',
   'settings.customization.review-fields.delete-all-button':
-    'Delete All Review Fields',
-  'settings.customization.review-fields.add-new': 'Add New Review Field',
+    'Удалить все поля обзора',
+  'settings.customization.review-fields.add-new': 'Добавить новое поле обзора',
   'settings.customization.review-fields.edit-field-with-name':
-    'Edit “{fieldLabel}”',
+    'Изменить «{fieldLabel}»',
   'settings.customization.review-fields.configure-desc':
-    'Configure your review field settings below',
+    'Настройте параметры поля обзора ниже',
   'settings.customization.review-fields.actions-desc':
-    'Manage your custom review fields',
-  'settings.customization.review-fields.default-label': 'New Review Field',
-  'settings.customization.review-fields.unknown-field': 'Unknown Review Field',
+    'Управление пользовательскими полями анализа',
+  'settings.customization.review-fields.default-label': 'Новое поле обзора',
+  'settings.customization.review-fields.unknown-field':
+    'Неизвестное поле обзора',
   'settings.customization.review-fields.field-summary':
-    'Type: {type} • Reviews: {reviews}',
+    'Тип: {type} • Обзоры: {reviews}',
   'settings.customization.review-fields.error.save-failed':
-    'Failed to save review field. Please try again.',
+    'Не удалось сохранить поле обзора. Попробуйте ещё раз.',
   'settings.customization.review-fields.delete.confirm-message':
-    'Are you sure you want to delete the custom review field "{fieldLabel}"?',
+    'Удалить пользовательское поле обзора «{fieldLabel}»?',
   'settings.customization.review-fields.reset.confirm-message':
-    'Are you sure you want to delete ALL custom review fields?',
-  'settings.customization.review-fields.editor.title':
-    'Review Field Configuration',
+    'Удалить ВСЕ пользовательские поля обзора?',
+  'settings.customization.review-fields.editor.title': 'Настройка поля обзора',
   'settings.customization.review-fields.editor.label-desc':
-    'Display name for this review field',
+    'Отображаемое название этого поля обзора',
   'settings.customization.review-fields.editor.label-placeholder':
-    'Enter review field label',
-  'settings.customization.review-fields.editor.key': 'Review Field Key',
+    'Введите название поля обзора',
+  'settings.customization.review-fields.editor.key': 'Ключ поля обзора',
   'settings.customization.review-fields.editor.key-desc':
-    'This key will be stored inside review note frontmatter at',
+    'Этот ключ будет сохранён во frontmatter заметки анализа по пути',
   'settings.customization.review-fields.editor.type-desc':
-    'Type of review field input',
-  'settings.customization.review-fields.editor.description': 'Description',
+    'Тип ввода поля обзора',
+  'settings.customization.review-fields.editor.description': 'Описание',
   'settings.customization.review-fields.editor.description-desc':
-    'Optional help text for this review field',
+    'Необязательный текст подсказки для этого поля обзора',
   'settings.customization.review-fields.editor.description-placeholder':
-    'Explain how this field should be used',
+    'Объясните, как использовать это поле',
   'settings.customization.review-fields.editor.placeholder-desc':
-    'Optional placeholder text shown when entering a local review value',
+    'Необязательный текст-подсказка при вводе локального значения',
   'settings.customization.review-fields.editor.placeholder-input':
-    'Enter review field placeholder',
+    'Введите текст-подсказку поля обзора',
 
-  'settings.customization.review-fields.editor.group': 'Field Group',
+  'settings.customization.review-fields.editor.group': 'Группа полей',
   'settings.customization.review-fields.editor.group-desc':
-    'Choose the review field group this field belongs to.',
-  'settings.customization.review-fields.groups.add-button': 'Add Group',
-  'settings.customization.review-fields.groups.default-name': 'New Group',
-  'settings.customization.review-fields.groups.untitled': 'Untitled Group',
-  'settings.customization.review-fields.groups.ungrouped': 'Ungrouped',
-  'settings.customization.review-fields.groups.field-count': '{count} fields',
+    'Выберите группу, к которой относится это поле обзора.',
+  'settings.customization.review-fields.groups.add-button': 'Добавить группу',
+  'settings.customization.review-fields.groups.default-name': 'Новая группа',
+  'settings.customization.review-fields.groups.untitled': 'Группа без названия',
+  'settings.customization.review-fields.groups.ungrouped': 'Без группы',
+  'settings.customization.review-fields.groups.field-count': 'Полей: {count}',
   'settings.customization.review-fields.groups.empty':
-    'No fields in this group yet.',
-  'settings.customization.review-fields.groups.rename-prompt': 'Group name',
+    'В этой группе пока нет полей.',
+  'settings.customization.review-fields.groups.rename-prompt':
+    'Название группы',
   'settings.customization.review-fields.groups.delete-message':
-    'Delete the review field group "{groupName}"?',
+    'Удалить группу полей анализа «{groupName}»?',
   'settings.customization.review-fields.groups.delete-note':
-    'Fields in this group will become ungrouped. Their saved review values are not deleted.',
+    'Поля этой группы останутся без группы. Их сохранённые значения не удаляются.',
   'settings.customization.review-fields.groups.error.duplicate':
-    'A review field group with this name already exists.',
+    'Группа полей анализа с таким названием уже существует.',
   'settings.customization.review-fields.groups.error.save-failed':
-    'Failed to save review field group.',
-  'settings.customization.review-fields.editor.compact': 'Compact Display',
+    'Не удалось сохранить группу полей анализа.',
+  'settings.customization.review-fields.editor.compact':
+    'Компактное отображение',
   'settings.customization.review-fields.editor.compact-desc':
-    'Prefer compact rendering when this field appears in review widgets',
-  'settings.customization.review-fields.editor.appears-on': 'Appears On',
+    'Предпочитать компактный вид, когда поле показывается в виджетах анализа',
+  'settings.customization.review-fields.editor.appears-on': 'Отображается в',
   'settings.customization.review-fields.editor.appears-on-desc':
-    'Review note types that can show this field',
-  'settings.customization.review-fields.editor.editable-on': 'Editable On',
+    'Типы заметок обзора, где может отображаться это поле',
+  'settings.customization.review-fields.editor.editable-on': 'Редактируется в',
   'settings.customization.review-fields.editor.editable-on-desc':
-    'Review note types where users can enter a local value',
-  'settings.customization.review-fields.editor.inherit-to': 'Inherited Into',
+    'Типы заметок обзора, где можно ввести локальное значение',
+  'settings.customization.review-fields.editor.inherit-to': 'Наследуется в',
   'settings.customization.review-fields.editor.inherit-to-desc':
-    'Lower review note types that can display inherited values from this field',
+    'Нижестоящие типы заметок обзора, которые могут показывать унаследованные значения этого поля',
   'settings.customization.review-fields.editor.inheritance':
-    'Enable Inheritance',
+    'Включить наследование',
   'settings.customization.review-fields.editor.inheritance-desc':
-    'Allow this field to be read from higher-timeframe review notes',
+    'Разрешить чтение этого поля из заметок обзора более крупного периода',
   'settings.customization.review-fields.editor.inheritance-mode':
-    'Inheritance Mode',
+    'Режим наследования',
   'settings.customization.review-fields.editor.inheritance-mode-desc':
-    'Controls whether child reviews show inherited values, local values, or both',
-  'settings.customization.review-fields.editor.sources': 'Inheritance Sources',
+    'Определяет, показывают ли дочерние анализы унаследованные значения, локальные или оба',
+  'settings.customization.review-fields.editor.sources':
+    'Источники наследования',
   'settings.customization.review-fields.editor.sources-desc':
-    'Higher-timeframe review types this field can inherit from',
+    'Типы анализа более крупного периода, от которых может наследовать это поле',
 
   'settings.customization.review-fields.editor.options-desc':
-    'Available choices for this review field',
+    'Доступные варианты для этого поля обзора',
   'settings.customization.review-fields.editor.allow-create-desc':
-    'Users can create new options when using this field in review notes',
-  'settings.customization.review-fields.editor.save': 'Save Review Field',
-  'settings.customization.review-fields.editor.delete': 'Delete Review Field',
+    'Пользователи могут создавать новые варианты при заполнении этого поля в заметках анализа',
+  'settings.customization.review-fields.editor.save': 'Сохранить поле обзора',
+  'settings.customization.review-fields.editor.delete': 'Удалить поле обзора',
   'settings.customization.review-fields.inheritance-mode.inherit-only':
-    'Inherited only',
+    'Только унаследованные',
   'settings.customization.review-fields.inheritance-mode.local-only':
-    'Local only',
+    'Только локальные',
   'settings.customization.review-fields.inheritance-mode.inherit-and-local':
-    'Inherited and local',
+    'Унаследованные и локальные',
 
   'calendar.aria.open-daily-review': 'Открыть дневной обзор за {date}',
   'calendar.aria.open-weekly-review': 'Открыть недельный обзор за {date}',
@@ -6636,43 +6669,43 @@ const ru: Lang = {
   'trade-import.error.file-empty':
     'Этот файл пуст. Экспортируйте его заново и повторите попытку.',
   'trade-import.error.file-too-large':
-    'Selected file exceeds the Trade Import size limit',
+    'Выбранный файл превышает ограничение размера Trade Import',
   'trade-import.error.file-type-unsupported':
-    'Selected file type is not supported by Trade Import',
+    'Trade Import не поддерживает выбранный тип файла',
   'trade-import.error.broker-file-type-unsupported':
-    'Selected broker does not support this file type',
+    'Выбранный брокер не поддерживает этот тип файла',
   
-  'quick-import.title': 'Quick Import',
+  'quick-import.title': 'Быстрый импорт',
   'quick-import.subtitle':
-    'Use your favorite Trade Import setup to preview and import a file faster.',
+    'Используйте избранную настройку Trade Import, чтобы быстрее просмотреть и импортировать файл.',
   'quick-import.gate.sign-in':
     'Войдите или создайте бесплатную учётную запись Journalit, чтобы просматривать файлы в Trade Import. Pro требуется только при импорте сделок.',
   'quick-import.gate.sign-in-cta': 'Войти и просмотреть бесплатно',
-  'quick-import.gate.pro': 'Quick Import is included with Trade Import Pro.',
+  'quick-import.gate.pro': 'Быстрый импорт входит в Trade Import Pro.',
   'quick-import.gate.preview-free': 'Бесплатно просмотреть файл',
   'quick-import.message.needs-setup':
-    'Choose a favorite broker or template in Trade Import before using Quick Import.',
+    'Перед использованием быстрого импорта выберите избранного брокера или шаблон в Trade Import.',
   'quick-import.message.capabilities-failed':
-    'Quick Import setup could not be loaded.',
+    'Не удалось загрузить настройки быстрого импорта.',
   'quick-import.message.mapping-required':
-    'This file needs column mapping. Open the full Trade Import flow to review mappings.',
+    'Для этого файла нужно сопоставление столбцов. Откройте полный процесс Trade Import, чтобы проверить сопоставления.',
   'quick-import.message.preview-failed':
-    'This file needs review in the full Trade Import flow.',
+    'Этот файл нужно проверить в полном процессе Trade Import.',
   'quick-import.message.no-importable':
     'Сделок для импорта не найдено. Проверьте файл в Trade Import, чтобы узнать подробности.',
 
   'quick-import.privacy-note':
     'Выбранный файл и параметры импорта отправляются в Journalit. Зашифрованные диагностические данные хранятся 1 день (бесплатно) или 14 дней (Pro), предпросмотры — 7 дней. Необязательное сопоставление с ИИ отправляет заголовки и примеры строк модели ИИ. Trade Import не отправляет отдельную клиентскую телеметрию или фоновые отчёты об ошибках.',
-  'quick-import.dropzone.title': 'Drop a broker export here',
-  'quick-import.dropzone.subtitle': 'Or click to choose a file',
+  'quick-import.dropzone.title': 'Перетащите сюда выгрузку от брокера',
+  'quick-import.dropzone.subtitle': 'Или нажмите, чтобы выбрать файл',
 
   'quick-import.status.checking-subscription': 'Проверка статуса подписки...',
-  'quick-import.status.analysing': 'Analysing and preparing preview...',
-  'quick-import.status.importing': 'Importing...',
+  'quick-import.status.analysing': 'Анализ и подготовка предпросмотра...',
+  'quick-import.status.importing': 'Импорт...',
   'quick-import.processing.sent-to-server':
-    'Uploaded to Journalit for private processing',
-  'quick-import.file.selected': 'Selected file',
-  'quick-import.file.processed': 'Processed and ready to write to your vault',
+    'Загружено в Journalit для закрытой обработки',
+  'quick-import.file.selected': 'Выбранный файл',
+  'quick-import.file.processed': 'Обработано и готово к записи в хранилище',
   'quick-import.summary.title': 'Готово к импорту',
 
   'quick-import.summary.to-import': 'К импорту',
@@ -6680,28 +6713,29 @@ const ru: Lang = {
   'quick-import.summary.failed': 'Требуют проверки',
   'quick-import.summary.failed-rows': 'Не импортировано строк',
   'quick-import.summary.incomplete-rows': 'Пропущено неполных строк',
-  'quick-import.complete.title': 'Import complete',
+  'quick-import.complete.title': 'Импорт завершён',
   'quick-import.complete.message':
-    '{written} written, {duplicates} duplicates, {failed} need review.',
-  'quick-import.action.open-full': 'Open full Trade Import',
+    'Записано: {written}, дубликатов: {duplicates}, требуют проверки: {failed}.',
+  'quick-import.action.open-full': 'Открыть полный Trade Import',
   'quick-import.action.review-in-trade-import': 'Проверить в Trade Import',
-  'quick-import.action.setup-in-trade-import': 'Set up in Trade Import',
-  'quick-import.action.replace-file': 'Replace file',
-  'quick-import.action.import': 'Import trades',
+  'quick-import.action.setup-in-trade-import': 'Настроить в Trade Import',
+  'quick-import.action.replace-file': 'Заменить файл',
   'quick-import.action.import-count.one': 'Импортировать {count} сделку',
   'quick-import.action.import-count.few': 'Импортировать {count} сделки',
   'quick-import.action.import-count.many': 'Импортировать {count} сделок',
   'quick-import.action.import-count.other': 'Импортировать {count} сделок',
-  'quick-import.preview.more': '+ {count} more processed trades',
+  'quick-import.preview.more': '+ ещё {count} обработанных сделок',
 
   'trade-import.notice.capabilities-failed':
-    'Unable to load Trade Import capabilities',
+    'Не удалось загрузить возможности Trade Import',
   'trade-import.notice.open-failed': 'Не удалось открыть Trade Import',
   'trade-import.notice.template-exists':
-    'A Trade Import template with this name already exists',
-  'trade-import.notice.template-saved': 'Trade Import template saved',
-  'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
-  'trade-import.notice.preview-failed': 'Trade Import preview failed',
+    'Шаблон Trade Import с таким названием уже существует',
+  'trade-import.notice.template-saved': 'Шаблон Trade Import сохранён',
+  'trade-import.notice.analyse-failed':
+    'Не удалось выполнить анализ в Trade Import',
+  'trade-import.notice.preview-failed':
+    'Не удалось создать предпросмотр Trade Import',
   'trade-import.notice.free-preview-rate-limited':
     'Достигнут лимит бесплатных предпросмотров. Подключите PRO или повторите попытку примерно через {minutes} мин.',
   'trade-import.notice.free-preview-storage-limit-reached':
@@ -6709,45 +6743,54 @@ const ru: Lang = {
   'trade-import.preview-error.guidance':
     'Проверьте, что все обязательные поля сопоставлены, выбранный формат даты соответствует файлу, а числовые столбцы содержат корректные значения сделки.',
   'trade-import.notice.complete':
-    'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
+    'Trade Import завершён: записано или обновлено {written}, дубликатов {duplicateCount}, ошибок {failedCount}',
   'trade-import.gate.brand-left': 'Сделки',
   'trade-import.gate.brand-right': 'Импорт',
   'trade-import.gate.sign-in.title': 'Бесплатно просмотрите историю торговли',
   'trade-import.gate.sign-in':
     'Войдите или создайте бесплатный аккаунт Journalit, чтобы проанализировать файл. Pro требуется только при импорте сделок.',
-  'trade-import.gate.sign-in.reassurance':
-    'Выбранный файл и параметры импорта отправляются в Journalit. Зашифрованные диагностические данные хранятся 1 день (бесплатно) или 14 дней (Pro), предпросмотры — 7 дней. Необязательное сопоставление с ИИ отправляет заголовки и примеры строк модели ИИ. Trade Import не отправляет отдельную клиентскую телеметрию или фоновые отчёты об ошибках.',
-  'trade-import.gate.sign-in.no-trial':
-    'Для анализа и предварительного просмотра пробный период Pro не требуется.',
   'trade-import.gate.sign-in.cta': 'Войти и просмотреть бесплатно',
 
-  'trade-import.step.select': '1. Select import settings',
+  'trade-import.step.select': 'Загрузка',
   'trade-import.step.privacy': '2. Privacy acknowledgement',
-  'trade-import.step.analyse': '3. Analyse and map',
+  'trade-import.step.analyse': 'Проверка',
   'trade-import.step.preview': '4. Preview',
-  'trade-import.label.template': 'Local mapping template',
-  'trade-import.label.template-actions': 'Template actions',
-  'trade-import.template.none': 'No template',
-  'trade-import.label.account': 'Account',
+  'trade-import.label.template': 'Локальный шаблон сопоставления',
+  'trade-import.label.template-actions': 'Действия с шаблоном',
+  'trade-import.template.none': 'Без шаблона',
+  'trade-import.label.account': 'Счёт',
   'trade-import.label.broker': 'Источник экспорта / платформа',
-  'trade-import.label.asset-type': 'Asset type',
-  'trade-import.asset.stock': 'Stock',
-  'trade-import.asset.options': 'Options',
-  'trade-import.asset.futures': 'Futures',
-  'trade-import.asset.forex': 'Forex',
-  'trade-import.asset.crypto': 'Crypto',
+  'trade-import.label.asset-type': 'Тип актива',
+  'trade-import.label.destination': 'Импортировать как',
+  'trade-import.destination.live': 'Реальные сделки',
+  'trade-import.destination.backtest': 'Сделки бэктеста',
+  'trade-import.destination.backtest-hint':
+    'Сохраняются как сделки бэктеста, отдельно от реальных сделок.',
+  'trade-import.label.export-format': 'Тип экспорта',
+  'trade-import.format.tradingview.paper': 'Бумажная торговля',
+  'trade-import.format.tradingview.strategy': 'Тестер стратегий',
+  'trade-import.format.tradingview.paper-hint':
+    'Экспорт Order History из панели Paper Trading.',
+  'trade-import.format.tradingview.strategy-hint':
+    'Экспорт List of Trades из тестера стратегий.',
+  'trade-import.label.symbol': 'Тикер',
+  'trade-import.symbol.hint':
+    'В этом экспорте не указан протестированный тикер. Введите его так, как он показан в TradingView, например CME_MINI:ES1!.',
+  'trade-import.asset.stock': 'Акции',
+  'trade-import.asset.options': 'Опционы',
+  'trade-import.asset.futures': 'Фьючерсы',
+  'trade-import.asset.forex': 'Форекс',
+  'trade-import.asset.crypto': 'Криптовалюта',
   'trade-import.manual-mode.price-based':
     'Ордера или исполнения (объединяются в сделки)',
   'trade-import.manual-mode.direct-pnl':
     'Одна сделка на строку (использует P/L)',
-  'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
+  'trade-import.label.ai-mapping': 'Запросить подсказки сопоставления от ИИ',
   'trade-import.privacy.copy':
     'Выбранный файл и параметры импорта отправляются в Journalit. Зашифрованные диагностические данные хранятся 1 день (бесплатно) или 14 дней (Pro), предпросмотры — 7 дней. Необязательное сопоставление с ИИ отправляет заголовки и примеры строк модели ИИ. Trade Import не отправляет отдельную клиентскую телеметрию или фоновые отчёты об ошибках. Экспорты могут содержать идентификаторы счетов, историю сделок, заметки, цены, объёмы, комиссии, балансы и прибыль/убыток. Запросы также отправляют определения пользовательских полей и сохранённые параметры; предпросмотр включает имя целевого счёта. Отключите сопоставление с ИИ, чтобы избежать обработки ИИ.',
 
-  'trade-import.action.analyse': 'Analyse file',
+  'trade-import.action.analyse': 'Проанализировать файл',
   'trade-import.action.choose-file': 'Choose file',
-  'trade-import.guide.prompt': 'Не уверены, что экспортировать?',
-  'trade-import.guide.link': 'Открыть руководство брокера',
   'trade-import.hyperliquid.export-guidance':
     'В Hyperliquid выберите Trade History → Export as CSV, а не Export More (отдельный отчёт стороннего сервиса). Не используйте Funding History или Order History.',
   'trade-import.hyperliquid.date-us': 'США: месяц/день/год — 24-часовой формат',
@@ -6759,9 +6802,11 @@ const ru: Lang = {
     'Не удалось определить часовой пояс устройства. Проверьте системные настройки.',
   'trade-import.hyperliquid.backend-update-required':
     'Для предпросмотра Hyperliquid требуется обновление сервера. Попробуйте позже.',
-  'trade-import.action.drop-file': 'Drop file to upload',
+  'trade-import.action.drop-file': 'Перетащите файл для загрузки',
   'trade-import.analyse.detected':
     'Файл {fileType} прочитан. Проверьте строки ниже, затем сопоставьте каждый столбец с полем сделки.',
+  'trade-import.analyse.detected-native':
+    'Файл {fileType} прочитан. Проверьте строки ниже, затем нажмите «Создать предпросмотр».',
   'trade-import.table.screenshots': 'Скриншоты',
   'trade-import.preview.screenshot-alt':
     'Скриншот {symbol} из строки {row} таблицы',
@@ -6793,6 +6838,8 @@ const ru: Lang = {
     'Строки в другом порядке будут перечислены, чтобы вы исправили их в файле.',
   'quick-import.message.date-order':
     'Даты можно прочитать двумя способами. Откройте полный импорт, чтобы выбрать.',
+  'quick-import.message.symbol-required':
+    'В этом экспорте не указан тикер. Откройте полный импорт, чтобы ввести его.',
   'csv.date-format.eu-dot': 'ЕС с точками: 25.12.2024 (день.месяц.год)',
   'csv.date-format.ymd-dot': 'Сначала год, с точками: 2024.12.25',
   'trade-import.unmapped.title': 'Не импортируются ({count})',
@@ -6821,16 +6868,15 @@ const ru: Lang = {
   'trade-import.diagnostic.column': 'Столбец: {columns}',
   'trade-import.diagnostic.unmap-column': 'Не импортировать этот столбец',
   'trade-import.diagnostic.edit-mapping': 'Изменить сопоставление',
-  'trade-import.diagnostic.info': 'info',
-  'trade-import.label.sheet': 'Sheet',
-  'trade-import.label.header-row': 'Header row',
-  'trade-import.placeholder.auto': 'Auto',
-  'trade-import.label.date-format': 'Date format',
+  'trade-import.label.sheet': 'Лист',
+  'trade-import.label.header-row': 'Строка заголовков',
+  'trade-import.placeholder.auto': 'Авто',
+  'trade-import.label.date-format': 'Формат даты',
 
-  'trade-import.label.save-template': 'Save mapping template',
-  'trade-import.placeholder.template-name': 'Template name',
-  'trade-import.action.save-template': 'Save template',
-  'trade-import.action.preview': 'Generate preview',
+  'trade-import.label.save-template': 'Сохранить шаблон сопоставления',
+  'trade-import.placeholder.template-name': 'Название шаблона',
+  'trade-import.action.save-template': 'Сохранить шаблон',
+  'trade-import.action.preview': 'Создать предпросмотр',
 
   'trade-import.preview.found.one': 'Найдена {count} сделка',
   'trade-import.preview.found.few': 'Найдено {count} сделки',
@@ -6841,8 +6887,6 @@ const ru: Lang = {
   'trade-import.preview.metric.ready': 'Готовы к импорту',
   'trade-import.preview.metric.duplicates': 'Возможные дубликаты',
   'trade-import.preview.metric.attention': 'Требуют внимания',
-  'trade-import.preview.completed.message':
-    'Сделки, готовые к импорту: {count}.',
   'trade-import.preview.partial.message':
     'Сделки, готовые к импорту: {count}. Строки, которые не удалось импортировать: {failed}. Пропущенные неполные строки: {incomplete}.',
   'trade-import.preview.partial.guidance':
@@ -6900,19 +6944,20 @@ const ru: Lang = {
   'trade-import.pro-gate.cta': 'Активировать PRO',
   'trade-import.preview.diagnostics': 'Сведения для проверки ({count})',
   'trade-import.preview.affected-rows': 'Затронуто строк: {count}',
-  'trade-import.table.status': 'Status',
-  'trade-import.table.symbol': 'Symbol',
-  'trade-import.table.direction': 'Direction',
-  'trade-import.table.entry-time': 'Entry time',
-  'trade-import.table.date': 'Date',
-  'trade-import.table.position': 'Position',
-  'trade-import.table.result': 'Result',
-  'trade-import.table.quantity': 'Quantity',
-  'trade-import.table.message': 'Message',
+  'trade-import.table.status': 'Статус',
+  'trade-import.table.symbol': 'Символ',
+  'trade-import.table.direction': 'Направление',
+  'trade-import.table.entry-time': 'Время входа',
+  'trade-import.table.date': 'Дата',
+  'trade-import.table.result': 'Результат',
+  'trade-import.table.quantity': 'Количество',
+  'trade-import.table.message': 'Сообщение',
   'trade-import.status.new': 'Новая',
   'trade-import.status.already-imported': 'Уже импортирована',
   'trade-import.status.other-account': 'В другом счёте',
   'trade-import.status.other-account.detail': 'Уже импортирована в {account}',
+  'trade-import.status.split-across-trades.detail':
+    'Её исполнения уже есть в журнале, но в разных сделках. Чтобы добавить недостающие, импортируйте те же периоды, что и раньше.',
   'trade-import.status.updates-existing': 'Обновляет существующую сделку',
   'trade-import.status.possible-duplicate': 'Возможный дубликат',
   'trade-import.status.needs-review': 'Требует проверки',
@@ -6922,6 +6967,10 @@ const ru: Lang = {
   'trade-import.status.multiple-open-trades':
     'Подходят несколько открытых сделок',
   'trade-import.status.quantity-mismatch': 'Несовпадение объёма',
+  'trade-import.commit-failure.update-target-changed':
+    'Сделка, которую обновляет эта строка, была изменена или удалена после предпросмотра. Импортируйте файл снова.',
+  'trade-import.commit-failure.tradovate-overlap':
+    'Пересекается со сделкой, уже синхронизированной из Tradovate, и не может быть с ней сопоставлена.',
   'trade-import.server-deletion.deleted':
     'Сделок удалено с сервера Journalit: {count}',
   'trade-import.server-deletion.kept':
@@ -6936,7 +6985,7 @@ const ru: Lang = {
     'Заметок о сделках перемещено в корзину после удаления на сервере: {count}',
   'trade-import.server-deletion.account.title': 'Удалить счёт на сервере?',
   'trade-import.server-deletion.account.message':
-    'Это навсегда удалит «{account}» и его импортированные сделки ({count} на сервере) с сервера Journalit и переместит их заметки в корзину во всех синхронизированных хранилищах. После этого файлы можно импортировать снова.',
+    '«{account}» и его импортированные сделки ({count} на сервере) будут безвозвратно удалены с сервера Journalit, а их заметки перемещены в корзину во всех синхронизированных хранилищах. Позже файлы можно импортировать снова.',
   'trade-import.server-deletion.account.confirm': 'Удалить с сервера',
   'trade-import.server-deletion.account.button': 'Удалить с сервера',
   'trade-import.history.title': 'История импорта',
@@ -6950,18 +6999,24 @@ const ru: Lang = {
   'trade-import.history.trades-on-server': '{count} на сервере',
   'trade-import.history.delete.title': 'Удалить этот импорт?',
   'trade-import.history.delete.message':
-    'Это навсегда удалит с сервера Journalit сделки, которые этот импорт добавил в «{account}» ({count} на сервере), и переместит их заметки в корзину во всех синхронизированных хранилищах. Сделки, которые есть и в другом импорте, сохранятся. После этого файл можно импортировать снова.',
+    'Сделки, добавленные этим импортом в «{account}» ({count} на сервере), будут безвозвратно удалены с сервера Journalit, а их заметки перемещены в корзину во всех синхронизированных хранилищах. Сделки, которые есть и в другом импорте, сохранятся. Позже файл можно импортировать снова.',
+  'trade-import.history.delete.updates-kept':
+    'Изменения ранее импортированных сделок, например их закрытие, сохранятся.',
+  'trade-import.history.delete.message-updates-only':
+    'Этот импорт только изменил ранее импортированные сделки, например закрыл их. Удаление уберёт его из истории импорта; эти изменения сохранятся.',
+  'trade-import.history.delete.message-none-deleted':
+    'Сделки не удаляются: каждая сделка этого импорта есть и в другом импорте. Удаление только убирает его из истории импортов.',
   'trade-import.history.delete.confirm': 'Удалить импорт',
   'trade-import.history.load-more': 'Загрузить ещё',
   'account.edit.modal.delete.delete-server-trades':
-    'Также удалить его импортированные сделки с сервера Journalit ({count} на сервере). Их заметки будут перемещены в корзину во всех синхронизированных хранилищах, даже если вы оставите их здесь.',
+    'Также удалить импортированные сделки с сервера Journalit ({count} на сервере). Их заметки будут перемещены в корзину во всех синхронизированных хранилищах, даже если вы оставите их здесь.',
   'trade-import.preview.other-account.message':
     'Уже есть в {account} ({count}), поэтому будут пропущены.',
   'trade-import.preview.other-account.import-instead':
     'Импортировать в {account}',
   'trade-import.preview.other-account.undo-earlier':
     'Отменить предыдущий импорт',
-  'trade-import.action.confirm': 'Confirm import',
+  'trade-import.action.confirm': 'Подтвердить импорт',
   'trade-import.action.activate-pro.one':
     'Активировать PRO и импортировать {count} сделку',
   'trade-import.action.activate-pro.few':
@@ -6970,8 +7025,8 @@ const ru: Lang = {
     'Активировать PRO и импортировать {count} сделок',
   'trade-import.action.activate-pro.other':
     'Активировать PRO и импортировать {count} сделок',
-  'trade-import.action.cancel-preview': 'Cancel preview',
-  'trade-import.broker.manual': 'Manual Mapping',
+  'trade-import.action.cancel-preview': 'Отменить предпросмотр',
+  'trade-import.broker.manual': 'Ручное сопоставление',
   'trade-import.source.title': 'Откуда эти сделки?',
   'trade-import.source.subtitle':
     'Выберите платформу, из которой вы экспортировали. Journalit читает её формат файла напрямую, без сопоставления столбцов.',
@@ -6990,8 +7045,11 @@ const ru: Lang = {
     'Неподдерживаемый формат Rithmic',
   'trade-import.recovery.rithmic-order-history.message':
     'Загрузите экспорт истории ордеров Rithmic или выберите платформу, создавшую этот файл.',
-  'trade-import.recovery.rithmic-order-history.choose-file':
-    'Выбрать другой файл',
+  'trade-import.recovery.no-trade-rows.title':
+    'В этом файле нет сделок для импорта',
+  'trade-import.recovery.no-trade-rows.message':
+    'Исправьте это в новом экспорте и выберите новый файл.',
+  'trade-import.action.choose-another-file': 'Выбрать другой файл',
   'trade-import.source.change-action': 'Изменить источник',
   'trade-import.sync-suggestion.full.title':
     '{broker} может синхронизироваться автоматически',
@@ -7023,7 +7081,7 @@ const ru: Lang = {
   'setups.create.field.sessions': 'Торговые сессии',
   'setups.create.field.preferred-sessions-tooltip':
     'Управляйте этими сессиями в разделе Настройки → Журнал → Режим сессии.',
-  'setups.create.placeholder.preferred-sessions': 'London, New York',
+  'setups.create.placeholder.preferred-sessions': 'Лондон, Нью-Йорк',
   'setups.create.field.timeframes': 'Таймфреймы',
   'setups.create.placeholder.preferred-timeframes': '5m, 15m, 1h',
   'setups.create.field.tickers': 'Тикеры',
@@ -7049,10 +7107,10 @@ const ru: Lang = {
   'setups.edit.title': 'Редактировать сетап',
   'setups.edit.button.saving': 'Сохранение...',
   'setups.edit.button.save': 'Сохранить сетап',
-  'setups.edit.button.rename-and-update': 'Rename and update trades',
-  'setups.edit.rename-warning.title': 'Rename setup and update trades',
+  'setups.edit.button.rename-and-update': 'Переименовать и обновить сделки',
+  'setups.edit.rename-warning.title': 'Переименовать сетап и обновить сделки',
   'setups.edit.rename-warning.message':
-    'Renaming {oldName} to {newName} will update trade notes that use the old setup name.',
+    'Переименование {oldName} в {newName} обновит заметки о сделках, где используется старое название сетапа.',
   'setups.edit.delete.button': 'Удалить сетап',
   'setups.edit.delete.title': 'Удалить сетап',
   'setups.edit.delete.confirm': 'Подтвердить удаление',
@@ -7063,7 +7121,7 @@ const ru: Lang = {
   'setups.edit.success': 'Сетап "{name}" успешно обновлен',
   'setups.edit.error.failed': 'Не удалось обновить сетап',
   'setups.view.compare.empty-submessage':
-    'Choose two setup cards from the overview to build a side-by-side report.',
+    'Выберите две карточки сетапов в обзоре, чтобы построить сравнительный отчёт.',
   'setups.view.compare.reason.higher.total-r': 'Более высокий общий R',
   'setups.view.compare.reason.lower.total-r': 'Более низкий общий R',
   'setups.view.compare.reason.similar.total-r': 'Сопоставимый общий R',
@@ -7087,12 +7145,6 @@ const ru: Lang = {
   'setups.guide.view-tabs.title': 'Переключение видов сетапов',
   'setups.guide.view-tabs.description':
     'Используйте вкладки для перехода между обзором, парами и сравнением, когда сетапов достаточно.',
-  'setups.guide.overview-chart.title': 'Рейтинг результатов',
-  'setups.guide.overview-chart.description':
-    'График обзора ранжирует сетапы по выбранной метрике. Используйте элементы справа вверху, чтобы сменить метрику или сфокусироваться на отдельных сетапах.',
-  'setups.guide.tag-filter.title': 'Фильтр сетапов по тегу',
-  'setups.guide.tag-filter.description':
-    'Фильтруйте карточки, график, пары и варианты сравнения по тегам или направлению. Внутри группы действует ИЛИ, а теги и направление объединяются по И.',
   'setups.guide.setup-cards.title': 'Карточки сетапов',
   'setups.guide.setup-cards.description':
     'Карточки показывают ключевые метрики, статус, дату последней сделки и небольшой тренд результата.',
@@ -7111,23 +7163,8 @@ const ru: Lang = {
   'setups.guide.detail-rules.title': 'Правила исполнения',
   'setups.guide.detail-rules.description':
     'Правила — структурированный чеклист условий, входов, риска и ошибок, которых нужно избегать.',
-  'setups.guide.finish.title': 'Руководство Setups завершено',
-  'setups.guide.finish.description':
-    'Вы увидели основные разделы: Обзор, Пары, Сравнение и страницу отдельного сетапа.',
 
-  'setups.guide.pairs-mode.title': 'Открыть пары сетапов',
-  'setups.guide.pairs-mode.description':
-    'Откройте Пары, чтобы увидеть комбинации с достаточным числом общих сделок для сравнения.',
-  'setups.guide.pairs-chart.title': 'Рейтинг пар',
-  'setups.guide.pairs-chart.description':
-    'Режим пар выделяет комбинации, которые могут работать вместе лучше или хуже. Нажмите на столбец, чтобы открыть более глубокие выводы по паре.',
-
-  'setups.guide.compare-mode.title': 'Начать сравнение',
-  'setups.guide.compare-mode.description':
-    'Режим сравнения позволяет выбрать две карточки сетапов для просмотра рядом.',
   'setups.guide.compare-select.title': 'Выберите два сетапа',
-  'setups.guide.compare-select.description':
-    'Выберите две карточки, чтобы открыть страницу сравнения.',
   'setups.guide.compare-summary.title': 'Это страница сравнения',
   'setups.guide.compare-summary.description':
     'Эта страница сравнивает два сетапа рядом. Верхняя строка показывает победителя, преимущество ожидания, уверенность и причины преимущества.',
@@ -7140,90 +7177,87 @@ const ru: Lang = {
   'setups.guide.detail-execution-gap.title': 'Анализ разрыва исполнения',
   'setups.guide.detail-execution-gap.description':
     'Если есть пропущенные сделки или бэктесты, эта вкладка сравнивает исполнение с упущенной или эталонной возможностью.',
-  'setups.guide.back-to-overview.title': 'Назад к карточкам',
-  'setups.guide.back-to-overview.description':
-    'Вернитесь к карточкам после завершения сравнения.',
 
-  'setups.view.open-as-markdown': 'Open as Markdown',
-  'setups.view.open-as-setup': 'Open as Journalit Setup',
+  'setups.view.open-as-markdown': 'Открыть как Markdown',
+  'setups.view.open-as-setup': 'Открыть как сетап Journalit',
 
-  'setups.view.overview.mode.pairs': 'Pairs',
-  'setups.view.pairs.summary-aria': 'Setup pairs summary',
-  'setups.view.pairs.best': 'Best pair',
-  'setups.view.pairs.worst': 'Worst pair',
-  'setups.view.pairs.worst-short': 'Worst',
-  'setups.view.pairs.empty': 'No setup pairs with 5+ trades yet.',
+  'setups.view.overview.mode.pairs': 'Пары',
+  'setups.view.pairs.summary-aria': 'Сводка по парам сетапов',
+  'setups.view.pairs.best': 'Лучшая пара',
+  'setups.view.pairs.worst': 'Худшая пара',
+  'setups.view.pairs.worst-short': 'Худшая',
+  'setups.view.pairs.empty': 'Пар сетапов с 5+ сделками пока нет.',
   'setups.view.pairs.empty-submessage':
-    'Pairs appear after two setups share enough linked trades.',
+    'Пары появятся, когда у двух сетапов будет достаточно общих связанных сделок.',
   'setups.view.pairs.privacy':
-    'Pair performance is hidden while Privacy Mode is on.',
+    'Результаты пар скрыты, пока включён режим конфиденциальности.',
 
-  'setups.view.pairs.metric-aria': 'Pair metric',
-  'setups.view.pairs.metric.edge': 'Pair edge',
-  'setups.view.pairs.metric.edge-short': 'edge',
-  'setups.view.pairs.metric.expectancy': 'Pair expectancy',
+  'setups.view.pairs.metric-aria': 'Метрика пары',
+  'setups.view.pairs.metric.edge': 'Преимущество пары',
+  'setups.view.pairs.metric.edge-short': 'преимущество',
+  'setups.view.pairs.metric.expectancy': 'Матожидание пары',
 
-  'setups.view.pairs.together': 'Together',
-  'setups.view.pairs.table.setup-pair': 'Setup pair',
+  'setups.view.pairs.together': 'Вместе',
+  'setups.view.pairs.table.setup-pair': 'Пара сетапов',
 
-  'setups.view.pairs.evidence': 'Evidence',
-  'setups.view.pairs.edge-comparison': 'Edge comparison',
-  'setups.view.pairs.edge-caption': 'Combined edge: {edge}',
-  'setups.view.overview.setup-filter.all': 'Setups: All',
-  'setups.view.overview.setup-filter.selected': 'Setups: {count} selected',
-  'setups.view.overview.setup-filter.aria': 'Choose setups to show',
-  'setups.view.overview.setup-filter.select-all': 'Select all',
-  'setups.view.overview.setup-filter.clear': 'Clear',
+  'setups.view.pairs.evidence': 'Данные',
+  'setups.view.pairs.edge-comparison': 'Сравнение преимущества',
+  'setups.view.pairs.edge-caption': 'Совместное преимущество: {edge}',
+  'setups.view.overview.setup-filter.all': 'Сетапы: все',
+  'setups.view.overview.setup-filter.selected': 'Сетапы: выбрано {count}',
+  'setups.view.overview.setup-filter.aria': 'Выберите сетапы для отображения',
+  'setups.view.overview.setup-filter.select-all': 'Выбрать все',
+  'setups.view.overview.setup-filter.clear': 'Очистить',
 
   'setups.view.overview.pnl-chart.dropdown-label': 'Cumulative P&L',
 
-  'setups.view.overview.pnl-chart.combined': 'All setups',
-  'setups.view.overview.pnl-chart.selected-combined': 'Selected setups',
+  'setups.view.overview.pnl-chart.combined': 'Все сетапы',
+  'setups.view.overview.pnl-chart.selected-combined': 'Выбранные сетапы',
 
   'setups.view.overview.pnl-chart.hidden':
-    'Setup P&L over time is hidden while privacy mode is enabled.',
-  'setups.view.overview.pnl-chart.trade': 'Trade',
-  'setups.view.overview.pnl-chart.start': 'Start',
+    'P&L сетапов во времени скрыт, пока включён режим конфиденциальности.',
+  'setups.view.overview.pnl-chart.trade': 'Сделка',
+  'setups.view.overview.pnl-chart.start': 'Начало',
   'setups.view.ranking.empty-submessage':
-    'Log trades with setups to start ranking performance.',
+    'Записывайте сделки с сетапами, чтобы начать ранжирование результатов.',
   'setups.view.empty.no-setups-submessage':
-    'Setups collect your playbook notes, rules, trades, and performance in one place.',
+    'Сетапы собирают заметки плейбука, правила, сделки и результаты в одном месте.',
   'setups.view.detail.no-playbook-note':
-    'Link a playbook note to preview it here.',
-  'setups.view.detail.link-playbook-note': 'Link note',
-  'setups.view.detail.change-playbook-note': 'Change note',
+    'Свяжите заметку плейбука, чтобы просмотреть её здесь.',
+  'setups.view.detail.link-playbook-note': 'Связать заметку',
+  'setups.view.detail.change-playbook-note': 'Сменить заметку',
 
-  'setups.view.detail.playbook-note-modal.empty': 'No matching notes found.',
-  'setups.view.detail.empty-playbook-note':
-    'The linked playbook note is empty.',
+  'setups.view.detail.playbook-note-modal.empty':
+    'Подходящих заметок не найдено.',
+  'setups.view.detail.empty-playbook-note': 'Связанная заметка плейбука пуста.',
   'setups.view.detail.rules.edit': 'Редактировать правила',
 
   'setups.view.detail.rules.add': 'Добавить правило',
 
-  'setups.view.detail.rules.empty-title': 'Build the setup playbook',
-  'setups.view.detail.rules.use-template': 'Use template',
-  'setups.view.detail.rules.applying-template': 'Applying template...',
-  'setups.view.detail.rules.add-custom': 'Custom rule',
+  'setups.view.detail.rules.empty-title': 'Составьте плейбук сетапа',
+  'setups.view.detail.rules.use-template': 'Использовать шаблон',
+  'setups.view.detail.rules.applying-template': 'Применение шаблона...',
+  'setups.view.detail.rules.add-custom': 'Своё правило',
   'setups.view.detail.rules.template-error':
-    'Failed to apply playbook template.',
-  'setups.view.detail.rules.template.best-conditions': 'Best Conditions',
-  'setups.view.detail.rules.template.entry-criteria': 'Entry Criteria',
-  'setups.view.detail.rules.template.invalidation': 'Invalidation',
-  'setups.view.detail.rules.template.risk-management': 'Risk / Management',
-  'setups.view.detail.rules.template.avoid-when': 'Avoid When',
-  'setups.view.detail.rules.template.common-mistakes': 'Common Mistakes',
+    'Не удалось применить шаблон плейбука.',
+  'setups.view.detail.rules.template.best-conditions': 'Лучшие условия',
+  'setups.view.detail.rules.template.entry-criteria': 'Критерии входа',
+  'setups.view.detail.rules.template.invalidation': 'Инвалидация',
+  'setups.view.detail.rules.template.risk-management': 'Риск / сопровождение',
+  'setups.view.detail.rules.template.avoid-when': 'Избегать, когда',
+  'setups.view.detail.rules.template.common-mistakes': 'Частые ошибки',
   'setups.view.detail.rules.template.rule.best-conditions':
-    'Market context supports this setup',
+    'Рыночный контекст поддерживает этот сетап',
   'setups.view.detail.rules.template.rule.entry-criteria':
-    'Entry trigger is clearly defined',
+    'Триггер входа чётко определён',
   'setups.view.detail.rules.template.rule.invalidation':
-    'Invalidation is clear before entry',
+    'Инвалидация ясна до входа',
   'setups.view.detail.rules.template.rule.risk-management':
-    'Risk is acceptable and target is defined',
+    'Риск приемлем, цель определена',
   'setups.view.detail.rules.template.rule.avoid-when':
-    'Avoid conditions are not present',
+    'Нет условий, при которых сетап следует избегать',
   'setups.view.detail.rules.template.rule.common-mistakes':
-    'Known execution mistakes are avoided',
+    'Известные ошибки исполнения исключены',
   'setups.view.detail.rules.field.label': 'Правило',
   'setups.view.detail.rules.field.description': 'Детали',
   'setups.view.detail.rules.field.group': 'Группа',
@@ -7233,11 +7267,11 @@ const ru: Lang = {
   'setups.view.detail.rules.save-error': 'Не удалось сохранить правила сетапа.',
   'setups.view.detail.rules.validation-label':
     'Добавьте название правила или удалите пустое правило перед сохранением.',
-  'setups.view.detail.rules.groups': 'Groups',
-  'setups.view.detail.rules.add-group': 'Add group',
-  'setups.view.detail.rules.new-group': 'New group',
+  'setups.view.detail.rules.groups': 'Группы',
+  'setups.view.detail.rules.add-group': 'Добавить группу',
+  'setups.view.detail.rules.new-group': 'Новая группа',
   'setups.view.detail.rules.validation-group':
-    'Add a group name or remove the blank group before saving.',
+    'Укажите название группы или удалите пустую группу перед сохранением.',
   'setups.view.detail.rules.summary': '{count} правил · {groups} групп',
 
   'setups.view.detail.rule.category.context': 'Контекст',
@@ -7249,28 +7283,28 @@ const ru: Lang = {
   'setups.view.detail.rule.category.psychology': 'Психология',
   'setups.view.detail.performance.drawdown': 'Просадка',
   'setups.view.detail.performance.empty-submessage':
-    'Trades using this setup will appear here once you start logging them.',
-  'setups.view.detail.analysis.performance': 'Performance',
-  'setups.view.detail.analysis.execution-gap': 'Execution Gap',
-  'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
-  'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
+    'Сделки с этим сетапом появятся здесь, когда вы начнёте их записывать.',
+  'setups.view.detail.analysis.performance': 'Результаты',
+  'setups.view.detail.analysis.execution-gap': 'Разрыв исполнения',
+  'setups.view.detail.analysis.tabs-aria': 'Вкладки результатов сетапа',
+  'setups.view.detail.brief.linked-notes-add': 'Изменить связанные заметки',
 
-  'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
+  'setups.view.detail.execution-gap.live-pnl': 'Реальный P&L',
   'setups.view.detail.execution-gap.live-r': 'R в реальной торговле',
-  'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
-  'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
-  'setups.view.detail.execution-gap.backtest': 'Backtest',
+  'setups.view.detail.execution-gap.missed-edge': 'Упущенное преимущество',
+  'setups.view.detail.execution-gap.live-plus-missed': 'Реальные + пропущенные',
+  'setups.view.detail.execution-gap.backtest': 'Бэктест',
 
-  'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
+  'setups.view.detail.execution-gap.capture-rate': 'Доля реализации',
   'setups.view.detail.execution-gap.capture-rate-tooltip':
-    'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
-  'setups.view.detail.execution-gap.average-r-delta': 'Avg R Delta',
-  'setups.view.detail.execution-gap.live-execution': 'Live Execution',
-  'setups.view.detail.execution-gap.backtest-benchmark': 'Backtest Benchmark',
+    'Реальный P&L ÷ (реальный P&L + P&L пропущенных сделок). Показывает, какую часть доступного преимущества вы реализовали.',
+  'setups.view.detail.execution-gap.average-r-delta': 'Средняя разница R',
+  'setups.view.detail.execution-gap.live-execution': 'Реальное исполнение',
+  'setups.view.detail.execution-gap.backtest-benchmark': 'Ориентир бэктеста',
   'setups.view.detail.execution-gap.hidden':
-    'Execution gap is hidden in privacy mode.',
+    'Разрыв исполнения скрыт в режиме конфиденциальности.',
   'setups.view.detail.execution-gap.empty':
-    'Log missed trades or backtest trades for this setup to analyze execution gaps.',
+    'Добавьте пропущенные сделки или сделки бэктеста для этого сетапа, чтобы проанализировать разрывы исполнения.',
   'setups.view.detail.brief.linked-notes': '{count}',
   'setups.view.detail.brief.linked-notes-modal.subtitle': '{name}',
   'setups.view.detail.brief.screenshots': '{count}',
@@ -7282,44 +7316,43 @@ const ru: Lang = {
   'setups.view.detail.brief.count.images': '{count}',
   'setups.view.detail.brief.count.trades': '{count}',
   'setups.view.detail.brief.more': '{count}',
-  'setups.view.detail.attention.title': 'Needs attention',
-  'setups.view.detail.attention.count': '{count} items',
-  'setups.view.detail.attention.empty': 'No setup issues found.',
-  'setups.view.detail.attention.show-more': '+{count} more',
-  'setups.view.detail.attention.show-less': 'Show less',
-  'setups.view.detail.attention.no-playbook-title': 'Link a playbook note',
+  'setups.view.detail.attention.title': 'Требует внимания',
+  'setups.view.detail.attention.count': 'Пунктов: {count}',
+  'setups.view.detail.attention.empty': 'Проблем с сетапом не найдено.',
+  'setups.view.detail.attention.show-more': 'ещё {count}',
+  'setups.view.detail.attention.show-less': 'Свернуть',
+  'setups.view.detail.attention.no-playbook-title': 'Свяжите заметку плейбука',
   'setups.view.detail.attention.no-playbook-detail':
-    'Link one source note for context and examples.',
-  'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
+    'Свяжите одну исходную заметку для контекста и примеров.',
+  'setups.view.detail.attention.no-rules-title': 'Составьте плейбук исполнения',
   'setups.view.detail.attention.no-rules-detail':
-    'Add criteria for entries, invalidation, risk, and mistakes.',
+    'Добавьте критерии входа, инвалидации, риска и ошибок.',
 
-  'setups.view.detail.attention.no-trades-title': 'No live trades yet',
+  'setups.view.detail.attention.no-trades-title': 'Реальных сделок пока нет',
   'setups.view.detail.attention.no-trades-detail':
-    'No linked live trade history yet.',
+    'Связанной истории реальных сделок пока нет.',
   'setups.view.detail.attention.no-screenshots-title':
-    'Save example screenshots',
+    'Сохраните примеры скриншотов',
   'setups.view.detail.attention.no-screenshots-detail':
-    'Attach screenshots to trades for review examples.',
-  'setups.view.detail.attention.stale-title': 'Review recent relevance',
+    'Прикрепляйте скриншоты к сделкам, чтобы иметь примеры для анализа.',
+  'setups.view.detail.attention.stale-title': 'Проверьте актуальность',
   'setups.view.detail.attention.stale-detail':
-    'This setup has not been traded in {count} days.',
+    'По этому сетапу не было сделок {count} дн.',
   'setups.view.detail.attention.profit-factor-title':
-    'Performance needs review',
+    'Результаты требуют проверки',
   'setups.view.detail.attention.profit-factor-detail':
-    'Profit factor is below 1.0 across linked trades.',
-  'setups.view.detail.attention.expectancy-title': 'Expectancy is negative',
+    'Профит-фактор по связанным сделкам ниже 1,0.',
+  'setups.view.detail.attention.expectancy-title': 'Отрицательное матожидание',
   'setups.view.detail.attention.expectancy-detail':
-    'Average linked-trade outcome is below breakeven.',
+    'Средний результат связанных сделок ниже безубытка.',
   'setups.view.card.open-named': '{name}',
-  'setups.view.card.status.active': 'Stable',
-  'setups.view.card.status.monitor': 'Monitor',
-  'setups.view.card.status.review': 'Review',
+  'setups.view.card.status.active': 'Стабильный',
+  'setups.view.card.status.monitor': 'Наблюдать',
+  'setups.view.card.status.review': 'Проверить',
   'setups.view.date.days-ago': '{count}',
 
   'home.quick-links.setups': 'Сетапы',
   'validation.setup-resolution-failed': 'Не удалось определить сетап.',
-  'setups.view.action.compare-selected': 'Сравнить выбранные сетапы',
   'setups.view.action.create': 'Создать сетап',
   'setups.view.action.new': 'Новый сетап',
 
@@ -7446,23 +7479,24 @@ const ru: Lang = {
   'setups.view.detail.brief.direction.both': 'Оба',
 
   'trade-import.restore.complete':
-    'Restored {written} imported trades; {failed} failed.',
-  'trade-import.restore.broker-label': 'Backend restore',
+    'Восстановлено импортированных сделок: {written}; с ошибкой: {failed}.',
+  'trade-import.restore.broker-label': 'Восстановление с сервера',
   'trade-sync.source.metatrader': 'MetaTrader',
   'trade-sync.providers.title': 'Синхронизация сделок',
 
   'trade-sync.source.trade-import': 'Trade Import',
   'trade-sync.source.tradovate': 'Tradovate',
   'trade-sync.source.metatrader.description':
-    'Sync trades from MetaTrader reports uploaded through your FTP connection.',
+    'Синхронизация сделок из отчётов MetaTrader, загружаемых через ваше FTP-подключение.',
   'trade-sync.source.trade-import.description':
-    'Restore broker-file imports across vaults and recover missing local trade notes.',
+    'Восстанавливайте импорт файлов брокера между хранилищами и возвращайте отсутствующие локальные заметки о сделках.',
   'trade-sync.source.tradovate.description':
-    'Synchronize Tradovate trades in the cloud and project them into this vault.',
-  'trade-sync.tradovate.status-failed': 'Unable to load Tradovate status.',
-  'trade-sync.tradovate.last-sync': 'Last sync',
-  'trade-sync.tradovate.last-projection': 'Last projection',
-  'trade-sync.tradovate.pending-projections': '{count} pending projection(s)',
+    'Синхронизирует сделки Tradovate в облаке и переносит их в это хранилище.',
+  'trade-sync.tradovate.status-failed':
+    'Не удалось загрузить статус Tradovate.',
+  'trade-sync.tradovate.last-sync': 'Последняя синхронизация',
+  'trade-sync.tradovate.last-projection': 'Последняя запись в хранилище',
+  'trade-sync.tradovate.pending-projections': 'Ожидает записи: {count}',
   'trade-sync.tradovate.pending-acks': '{count} ожидающих локальных ACK',
   'trade-sync.source.rithmic': 'Rithmic',
   'trade-sync.source.rithmic.description':
@@ -7506,6 +7540,8 @@ const ru: Lang = {
     'Синхронизировано подключений Rithmic: {succeeded} из {total}.',
   'trade-sync.rithmic.sync-all-partial':
     'Синхронизировано подключений Rithmic: {succeeded} из {total}. Проверьте подключения с проблемами.',
+  'trade-sync.rithmic.sync-all-provider-partial':
+    'Синхронизировано подключений Rithmic: {succeeded} из {total} · синхронизация завершена частично',
   'trade-sync.rithmic.error.session-conflict':
     'Rithmic допускает только одну активную сессию. Закройте R|Trader, NinjaTrader или другую платформу с этим логином Rithmic.',
   'trade-sync.rithmic.error.auto-retry':
@@ -7531,52 +7567,52 @@ const ru: Lang = {
   'trade-sync.rithmic.connect-another': 'Подключить ещё один аккаунт Rithmic',
   'trade-sync.rithmic.error.sync-failed-detail':
     'Синхронизация Rithmic не удалась: {message}',
-  'trade-sync.tradovate.never': 'Never',
+  'trade-sync.tradovate.never': 'Никогда',
 
   'trade-sync.import.card.inventory-summary':
-    '{accounts} account(s) · {trades} trade(s)',
-  'trade-sync.import.action.check': 'Check',
+    'Счетов: {accounts} · сделок: {trades}',
+  'trade-sync.import.action.check': 'Проверить',
 
-  'trade-sync.import.action.open-import': 'Open Trade Import',
+  'trade-sync.import.action.open-import': 'Открыть Trade Import',
 
   'trade-sync.import.action.create-local-account': 'Создать счёт',
 
-  'trade-sync.import.action.restore-account': 'Restore',
-  'trade-sync.import.action.restoring': 'Restoring…',
+  'trade-sync.import.action.restore-account': 'Восстановить',
+  'trade-sync.import.action.restoring': 'Восстановление…',
 
-  'trade-sync.import.pending-acks': '{count} pending ACK(s)',
+  'trade-sync.import.pending-acks': 'Ожидает подтверждения: {count}',
 
   'trade-sync.import.empty-accounts':
-    'No backed-up Trade Import accounts found yet.',
-  'trade-sync.import.account.restorable-count': '{count} restorable',
-  'trade-sync.import.account.synced-count': '{count} synced',
-  'trade-sync.import.account.missing-count': '{count} missing',
-  'trade-sync.import.account.issue-count': '{count} issue(s)',
+    'Резервных копий счетов Trade Import пока не найдено.',
+  'trade-sync.import.account.restorable-count': 'Можно восстановить: {count}',
+  'trade-sync.import.account.synced-count': 'Синхронизировано: {count}',
+  'trade-sync.import.account.missing-count': 'Отсутствует: {count}',
+  'trade-sync.import.account.issue-count': 'Проблем: {count}',
   'trade-sync.import.account.local-account': 'Счёт Journalit',
-  'trade-sync.import.notice.restored': 'Restored {count} imported trade(s).',
+  'trade-sync.import.notice.restored':
+    'Восстановлено импортированных сделок: {count}.',
 
   'trade-sync.import.notice.sync-cloud-failed':
-    'Unable to start cloud synchronization.',
+    'Не удалось запустить облачную синхронизацию.',
   'trade-sync.import.notice.load-failed':
-    'Could not load Trade Import sync status.',
+    'Не удалось загрузить статус синхронизации Trade Import.',
   'trade-sync.import.notice.mapping-failed':
-    'Could not save Trade Import account mapping.',
+    'Не удалось сохранить сопоставление счетов Trade Import.',
   'trade-sync.import.notice.create-account-failed':
-    'Could not create local account.',
+    'Не удалось создать локальный счёт.',
   'trade-sync.import.notice.restore-failed':
-    'Could not restore Trade Import account.',
+    'Не удалось восстановить счёт Trade Import.',
   'trade-sync.rate-limit.action.mapping': 'Сопоставление счёта',
   'trade-sync.import.notice.rate-limited':
-    '{action}: Слишком много запросов. Повторите попытку через {seconds} с.',
-  'setups.view.loading': 'Loading setups…',
-  'settings.general.copy-trading-pnl-toggled': 'Copy trading PnL is {status}',
-  'setups.view.trade.unknown-instrument': 'Unknown instrument',
+    '{action}: слишком много запросов. Повторите через {seconds} с.',
+  'setups.view.loading': 'Загрузка сетапов…',
+  'setups.view.trade.unknown-instrument': 'Неизвестный инструмент',
   'command.open-session-mode': 'Открыть живую сессию',
-  'view.session-mode': 'Живая сессия',
+  'view.session-mode': 'Режим сессии',
   'widget.session-log.name': 'Журнал сессии',
   'widget.session-log.description':
     'Записывайте заметки исполнения с отметками времени и события сделок.',
-  'session-log.title': 'Журнал живой сессии',
+  'session-log.title': 'Журнал режима сессии',
   'session-log.description':
     'Фиксируйте, что происходит во время текущей торговой сессии.',
   'session-log.notice.invalid-timestamp':
@@ -7597,7 +7633,7 @@ const ru: Lang = {
   'session-log.empty': 'В журнале сессии пока нет записей.',
   'session-log.empty-filtered': 'Нет записей, соответствующих этому фильтру.',
   'session-log.loading': 'Загрузка журнала сессии…',
-  'session-log.lessons.title': 'Lessons learned',
+  'session-log.lessons.title': 'Извлечённые уроки',
 
   'session-log.lessons.badge': 'LSN',
   'session-log.session-group.outside': 'Вне сессий',
@@ -7606,11 +7642,11 @@ const ru: Lang = {
   'session-log.trade.exited': 'Выход',
   'session-log.trade.size': 'размер',
 
-  'session-log.status.unclassified': 'unclassified',
+  'session-log.status.unclassified': 'без категории',
   'session-log.action.save': 'Сохранить',
   'session-log.action.cancel': 'Отмена',
 
-  'session-log.action.classify': 'Classify',
+  'session-log.action.classify': 'Классифицировать',
   'session-log.action.edit': 'Изменить',
   'session-log.action.delete': 'Удалить',
   'session-log.action.open-trade': 'Открыть сделку',
@@ -7703,17 +7739,15 @@ const ru: Lang = {
   'session-mode.status.unconfigured':
     'Настройте окна сессий, чтобы включить фазы подготовки, live, перерыва и завершения. Хронология остается доступной для сегодняшнего DRC.',
 
-  'session-mode.unconfigured.title': 'Задайте торговые часы',
+  'session-mode.unconfigured.title': 'Настройка режима сессии',
   'session-mode.unconfigured.description':
-    'Добавьте время, когда вы фактически торгуете, чтобы Режим сессии автоматически переключался между подготовкой, живой сессией, перерывом и завершением.',
-  'session-mode.unconfigured.step.window.title': 'Add a session window',
-
-  'session-mode.unconfigured.step.prep.title': 'Review preparation timing',
-
-  'session-mode.unconfigured.step.gate.title': 'Use the Starter Trade Gate',
-
-  'session-mode.unconfigured.step.log.title': 'Log notes during live sessions',
-
+    'Добавьте время сессий, чтобы начать.',
+  'session-mode.unconfigured.step.window.title': 'Добавьте окно сессии',
+  'session-mode.unconfigured.step.prep.title': 'Проверьте время подготовки',
+  'session-mode.unconfigured.step.gate.title':
+    'Используйте стартовый Trade Gate',
+  'session-mode.unconfigured.step.log.title':
+    'Записывайте заметки во время активных сессий',
   'session-mode.unconfigured.action': 'Настроить Режим сессии',
   'session-mode.guide.why.title': 'Торгуйте по плану, а не по настроению',
   'session-mode.guide.why.description':
@@ -7745,9 +7779,6 @@ const ru: Lang = {
   'session-mode.guide.live.settings.title': 'Настраивайте в любой момент',
   'session-mode.guide.live.settings.description':
     '«Изменить» открывает настройки режима сессии: время сессий, макет фаз, сценарии Trade Gate и теги журнала.',
-  'session-mode.guide.ended.review.title': 'Теперь разберите сессию',
-  'session-mode.guide.ended.review.description':
-    'Откройте сегодняшний DRC для обзора. Добавьте виджет журнала сессии в макет DRC — и каждая запись с отметкой времени появится там.',
   'settings.session-mode.guide.setting-name': 'Обзор',
   'settings.session-mode.guide.setting-desc':
     'Короткий тур по этим настройкам — от времени сессий до первого Trade Gate.',
@@ -7778,13 +7809,13 @@ const ru: Lang = {
   'settings.session-mode.guide.finish.description':
     'Открывайте режим сессии с панели или с главной. Добавьте виджет журнала сессии в макет DRC, чтобы видеть записи в каждом обзоре.',
 
-  'session-mode.layout.empty.title': 'Nothing enabled for this phase',
+  'session-mode.layout.empty.title': 'Для этой фазы ничего не включено',
   'session-mode.layout.empty.description':
-    'Turn modules back on to build this Session Mode phase.',
+    'Снова включите модули, чтобы собрать эту фазу режима сессии.',
   'session-mode.duration.minutes': '{minutes}м',
   'session-mode.duration.hours': '{hours}ч',
   'session-mode.duration.hours-minutes': '{hours}ч {minutes}м',
-  'settings.session-mode.title': 'Живая сессия',
+  'settings.session-mode.title': 'Режим сессии',
   'settings.session-mode.description':
     'Настройте окна сессий, подготовку, макет фаз, рабочие процессы Trade Gate и теги журнала сессии.',
   'settings.session-mode.preparation-lead-time': 'Время подготовки (минуты)',
@@ -7795,44 +7826,44 @@ const ru: Lang = {
   'settings.session-mode.add-window-short': 'Добавить',
   'settings.session-mode.no-windows':
     'Окна сессий пока не настроены. Живая хронология всё еще работает, но фазовая подготовка начнется после добавления окна.',
-  'settings.session-mode.layout.title': 'Phase layout',
+  'settings.session-mode.layout.title': 'Макет фаз',
 
   'settings.session-mode.layout.phase-desc.preparation':
-    'Choose what appears during pre-session preparation before trading starts.',
+    'Выберите, что показывать во время подготовки до начала торговли.',
   'settings.session-mode.layout.phase-desc.live':
-    'Choose what appears while a configured trading session is live.',
+    'Выберите, что показывать во время настроенной торговой сессии.',
 
   'settings.session-mode.layout.phase-desc.ended':
-    'Choose what appears after all configured trading sessions have ended.',
-  'settings.session-mode.layout.reset-phase': 'Reset',
+    'Выберите, что показывать после завершения всех настроенных торговых сессий.',
+  'settings.session-mode.layout.reset-phase': 'Сбросить',
 
-  'settings.session-mode.layout.module.preparation-resources': 'Resources',
+  'settings.session-mode.layout.module.preparation-resources': 'Ресурсы',
   'settings.session-mode.layout.module.preparation-resources-desc':
-    'Shows linked preparation notes and playbooks.',
-  'settings.session-mode.layout.module.preparation-goals': 'Goals',
+    'Показывает связанные заметки для подготовки и плейбуки.',
+  'settings.session-mode.layout.module.preparation-goals': 'Цели',
   'settings.session-mode.layout.module.preparation-goals-desc':
-    'Shows the DRC goals widget for pre-session focus.',
-  'settings.session-mode.layout.module.preparation-checklist': 'Checklist',
+    'Показывает виджет целей DRC, чтобы сфокусироваться перед сессией.',
+  'settings.session-mode.layout.module.preparation-checklist': 'Чек-лист',
   'settings.session-mode.layout.module.preparation-checklist-desc':
-    'Shows the DRC checklist widget for pre-session preparation.',
+    'Показывает виджет чек-листа DRC для подготовки к сессии.',
   'settings.session-mode.layout.module.trade-gate': 'Trade Gate',
   'settings.session-mode.layout.module.trade-gate-desc':
-    'Runs your configured IF/THEN gate during the live session.',
-  'settings.session-mode.layout.module.timeline': 'Session timeline',
+    'Запускает настроенный gate ЕСЛИ/ТО во время активной сессии.',
+  'settings.session-mode.layout.module.timeline': 'Хронология сессии',
   'settings.session-mode.layout.module.timeline-desc':
-    'Shows current-session notes and trade timeline entries.',
+    'Показывает заметки и сделки текущей сессии на временной шкале.',
 
-  'settings.session-mode.layout.module.ended-actions': 'End-of-session actions',
+  'settings.session-mode.layout.module.ended-actions': 'Действия после сессии',
   'settings.session-mode.layout.module.ended-actions-desc':
-    'Shows import, manual trade, and DRC actions after sessions end.',
-  'settings.session-mode.layout.module.ended-stats': 'Session stats',
+    'Показывает действия импорта, ручной сделки и DRC после окончания сессий.',
+  'settings.session-mode.layout.module.ended-stats': 'Статистика сессии',
   'settings.session-mode.layout.module.ended-stats-desc':
-    'Shows trade, note, and gate-check totals for the day.',
+    'Показывает итоги за день: сделки, заметки и проверки gate.',
   'settings.session-mode.linked-resources': 'Связанные ресурсы',
   'settings.session-mode.linked-resources-desc':
     'Показывает быстрые ссылки на заметки во время подготовки.',
-  'settings.session-mode.linked-resources-count': '{count} linked',
-  'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.linked-resources-count': 'Связано: {count}',
+  'settings.session-mode.linked-resources-hide': 'Скрыть связанные',
   'settings.session-mode.session-log': 'Журнал сессии',
   'settings.session-mode.session-log-desc':
     'Выберите, какие автоматические события будут отображаться рядом с заметками сессии.',
@@ -7843,19 +7874,18 @@ const ru: Lang = {
   'settings.session-mode.session-log-tags-desc':
     'Настройте теги, доступные в компоновщике режима сессии и журнале сессии DRC.',
   'settings.session-mode.tag-label-placeholder': 'Название тега',
-  'settings.session-mode.tag-short-label-placeholder': 'Короткая метка',
-  'settings.session-mode.tag-label-example': 'Trade',
+  'settings.session-mode.tag-short-label-placeholder': 'Метка',
+  'settings.session-mode.tag-label-example': 'Сделка',
   'settings.session-mode.tag-short-label-example': 'TR',
   'settings.session-mode.tag-color': 'Цвет тега',
-  'settings.session-mode.tag-requires-resolution': 'Требует решения',
+  'settings.session-mode.tag-requires-resolution': 'Требует классификации',
   'settings.session-mode.tag-lesson': 'Тег урока',
   'settings.session-mode.tag-requires-resolution-tooltip':
-    'Записи с этим тегом помечаются как требующие последующих действий, пока вы не решите их в журнале сессии. Используйте его для заметок, которые нужно разобрать или обработать после сессии.',
+    'Записи с этим тегом считаются некатегоризированными. Используйте его, когда во время сессии неясно, какой тег подходит, и классифицируйте запись позже.',
   'settings.session-mode.tag-lesson-tooltip':
-    'Помечает этот тег как обучающую запись. Заметки с тегом урока могут отображаться как уроки и выделяться как моменты обучения в рабочих процессах журнала сессии.',
+    'Отмечает тег как учебную запись. Заметки с тегом урока остаются в журнале сессии и могут выводиться фильтрами уроков и сводками обзоров.',
   'settings.session-mode.add-session-log-tag': 'Добавить тег журнала сессии',
-  'settings.session-mode.reset-session-log-tags':
-    'Сбросить теги журнала сессии',
+  'settings.session-mode.reset-session-log-tags': 'Сбросить',
   'settings.session-mode.tag-color.blue': 'Синий',
   'settings.session-mode.tag-color.indigo': 'Индиго',
   'settings.session-mode.tag-color.purple': 'Фиолетовый',
@@ -7876,7 +7906,7 @@ const ru: Lang = {
 
   'trade-gate.workflow': 'Сценарий',
 
-  'trade-gate.action.start-short': 'Start',
+  'trade-gate.action.start-short': 'Начать',
   'trade-gate.action.start-another': 'Начать другую',
   'trade-gate.outcome.green-light': 'Зелёный свет',
   'trade-gate.outcome.green-light-description': 'Условия выполнены.',
@@ -7944,9 +7974,7 @@ const ru: Lang = {
   'settings.session-mode.trade-gate.flow-map': 'Карта потока',
   'settings.session-mode.trade-gate.flow-fit': 'Вписать',
   'settings.session-mode.trade-gate.flow-click-hint':
-    'Нажмите узел или метку пути, чтобы изменить его.',
-  'settings.session-mode.trade-gate.flow-truncated':
-    'Эта схема слишком велика для полного отображения. Некоторые повторяющиеся ветви скрыты.',
+    'Нажмите на карточку, подпись пути или результат, чтобы изменить их.',
   'settings.session-mode.trade-gate.no-questions':
     'Добавьте первый вопрос, чтобы начать этот сценарий.',
   'filter.modal.image.annotation-status': 'Статус аннотаций',
@@ -7974,7 +8002,7 @@ const ru: Lang = {
   'imageGallery.empty.action.show-all': 'Показать все медиа',
   'imageGallery.error.load-failed': 'Не удалось загрузить галерею.',
 
-  'imageGallery.open-source': 'Открыть заметку',
+  'imageGallery.open-source': 'Открыть источник',
   'imageGallery.image-alt': 'Медиа {source} от {date}',
   'imageGallery.privacy-blurred': 'Размыто для конфиденциальности',
 
@@ -8055,31 +8083,17 @@ const ru: Lang = {
   'tradelog.guide.gallery-grouping.title':
     'Группировать медиа по записи журнала',
   'tradelog.guide.gallery-grouping.description':
-    'Сгруппированные объединяют каждую сделку или обзор в одну карточку. Отдельные показывают каждый прикреплённый медиафайл в отдельной карточке.',
+    '«Сгруппировано» держит вместе каждую сделку, обзор или настроенную папку. «По отдельности» показывает каждый медиафайл на отдельной карточке.',
   'tradelog.guide.gallery-source-sort.title':
     'Выберите источник и порядок медиа',
   'tradelog.guide.gallery-source-sort.description':
-    'Используйте Источник, чтобы показать все медиа, вложения сделок или медиа из заметок обзоров. Используйте Сортировку, чтобы сначала смотреть новые, старые, лучшие или худшие сделки.',
-  'tradelog.guide.gallery-size.title': 'Настройте размер превью галереи',
-  'tradelog.guide.gallery-size.description':
-    'Используйте эти кнопки размера, чтобы переключаться между компактным просмотром и более крупными превью графиков без обрезки важных деталей.',
+    'Используйте «Источник», чтобы показать все медиа, вложения сделок, медиа из заметок обзоров или настроенные папки хранилища. Используйте «Сортировку», чтобы просматривать элементы от новых к старым или по результату сделки.',
   'tradelog.guide.gallery-filters.title': 'Фильтруйте галерею из того же места',
   'tradelog.guide.gallery-filters.description':
     'Меню фильтров работает здесь так же. В режиме галереи в нём также есть раздел «Галерея» с фильтрами медиа, например по статусу аннотаций и тегам медиа.',
   'tradelog.guide.gallery-grid.title': 'Откройте медиа для подробного разбора',
   'tradelog.guide.gallery-grid.description':
     'Каждая карточка не перекрывает график и одновременно показывает краткий контекст сделки или обзора. Нажмите любую карточку или Далее, чтобы открыть первый видимый элемент на весь экран.',
-  'tradelog.guide.gallery-fullscreen-actions.title':
-    'Аннотируйте медиа в полноэкранном режиме',
-  'tradelog.guide.gallery-fullscreen-actions.description':
-    'Используйте Тег, чтобы добавить теги и заметки уровня медиа, пока элемент достаточно крупный для изучения. Открыть заметку возвращает к исходной сделке или заметке обзора.',
-  'tradelog.guide.gallery-open-annotation.title': 'Откройте панель аннотации',
-  'tradelog.guide.gallery-open-annotation.description':
-    'Нажмите Тег, чтобы аннотировать именно это медиа. Теги и заметки медиа описывают вложение, а не всю сделку.',
-  'tradelog.guide.gallery-annotation-panel.title':
-    'Добавьте теги и заметки медиа',
-  'tradelog.guide.gallery-annotation-panel.description':
-    'Используйте теги медиа для идей по конкретному графику, например снятие ликвидности или ложный пробой, а заметки — для контекста структуры рынка, который нужно запомнить.',
   'tradelog.guide.gallery-finish.title':
     'Теперь вы знаете оба режима журнала сделок',
   'tradelog.guide.gallery-finish.description':
@@ -8106,12 +8120,9 @@ const ru: Lang = {
     'Правила ещё не добавлены. Используйте «Добавить правило», чтобы настроить этот этап.',
   'account.prop-challenge.rules': 'Правила',
   'account.prop-challenge.costs.empty': 'Расходы пока не добавлены.',
-  'account.prop-challenge.description':
-    'Отслеживайте прохождение многоэтапного челленджа.',
-  'account.prop-challenge.enable': 'Включить отслеживание челленджа',
   'account.prop-challenge.challenge-name': 'Название челленджа',
   'account.prop-challenge.challenge-name-placeholder': 'напр., Испытание 25K',
-  'account.prop-challenge.firm-name': 'Название фирмы (необязательно)',
+  'account.prop-challenge.firm-name': 'Название фирмы',
   'account.prop-challenge.firm-name-placeholder': 'напр., Apex Trader Funding',
   'account.prop-challenge.profile.title': 'Применить правила фирмы',
   'account.prop-challenge.profile.firm': 'Фирма',
@@ -8132,18 +8143,11 @@ const ru: Lang = {
     'Заменить настройки испытания?',
   'account.prop-challenge.profile.confirm-message':
     'Применение этих правил фирмы заменит текущие фазы и правила.',
-  'account.prop-challenge.current-phase': 'Текущая фаза',
   'account.prop-challenge.phase-rules': 'Правила этапа «{phase}»',
   'account.prop-challenge.next-phase': 'Далее: {phase}',
   'account.prop-challenge.view-phase': 'Просмотреть этап',
   'account.prop-challenge.unnamed-phase': 'Фаза без названия',
   'account.prop-challenge.phase-name': 'Название фазы',
-  'account.prop-challenge.phase-type': 'Тип фазы',
-  'account.prop-challenge.phase-type.evaluation': 'Оценка',
-  'account.prop-challenge.phase-type.verification': 'Проверка',
-  'account.prop-challenge.phase-type.sim_funded': 'Симуляционный финансируемый',
-  'account.prop-challenge.phase-type.live_funded': 'Реальный финансируемый',
-  'account.prop-challenge.phase-type.custom': 'Пользовательский',
   'account.prop-challenge.starting-balance': 'Начальный баланс',
   'account.prop-challenge.broker-account-id': 'Брокерские счета',
   'account.prop-challenge.broker-accounts.assigned': 'Назначено на {phase}',
@@ -8168,10 +8172,10 @@ const ru: Lang = {
     'Учитывать выплаты в достижении цели',
   'account.prop-challenge.rule.drawdown-mode': 'Режим просадки',
   'account.prop-challenge.rule.lock-at-balance': 'Баланс фиксации',
-  'account.prop-challenge.rule.daily-loss-model': 'Daily loss amount',
-  'account.prop-challenge.rule.daily-loss-model.fixed': 'Fixed amount',
+  'account.prop-challenge.rule.daily-loss-model': 'Сумма дневного убытка',
+  'account.prop-challenge.rule.daily-loss-model.fixed': 'Фиксированная сумма',
   'account.prop-challenge.rule.daily-loss-model.threshold':
-    'Increases at account profit threshold',
+    'Увеличивается при достижении порога прибыли счёта',
   'account.prop-challenge.rule.daily-loss-model.peak-eod-profit':
     'Масштабируется по пиковый прибыли EOD',
   'account.prop-challenge.rule.daily-loss-peak-eod-help':
@@ -8191,9 +8195,9 @@ const ru: Lang = {
   'account.prop-challenge.rule.daily-loss-threshold-help':
     'Изменённый денежный лимит активируется навсегда, когда накопленная реализованная прибыль сделок фазы впервые достигает заданного процента её начального баланса.',
   'account.prop-challenge.rule.profit-threshold-percent':
-    'Account profit threshold (%)',
+    'Порог прибыли счёта (%)',
   'account.prop-challenge.rule.amount-after-threshold':
-    'Daily loss amount after threshold',
+    'Дневной убыток после порога',
   'account.prop-challenge.rule.breach-action': 'Действие при достижении лимита',
   'account.prop-challenge.rule.breach-action.hard':
     'Закрыть счет как нарушивший',
@@ -8206,33 +8210,10 @@ const ru: Lang = {
     '{value}+ за день',
   'account.prop-challenge.rule.best-day-percent':
     'Максимальный лучший день (%)',
-  'account.prop-challenge.rule.position-limit-model': 'Position limit model',
-  'account.prop-challenge.rule.position-limit-model.fixed': 'Fixed limit',
-  'account.prop-challenge.rule.position-limit-model.eod-profit-tiers':
-    'EOD profit tiers',
-  'account.prop-challenge.rule.position-profit-basis':
-    'База прибыли для масштабирования позиции',
-  'account.prop-challenge.rule.position-profit-basis.cumulative':
-    'Накопленная торговая прибыль (выплаты не уменьшают)',
-  'account.prop-challenge.rule.position-profit-basis.current-account':
+  'account.prop-challenge.rule.strict-help':
+    'Чистая прибыль лучшего дня должна быть строго ниже лимита. Равенство не подходит.',
+  'account.prop-challenge.rule.profit-basis.current-account':
     'Текущая прибыль счета (выплаты уменьшают)',
-  'account.prop-challenge.rule.position-limit-model.eod-profit':
-    'Scales with EOD profit',
-  'account.prop-challenge.rule.position-tiers': 'Profit tiers',
-  'account.prop-challenge.rule.position-tiers-help':
-    'Enter each completed EOD profit threshold and its new contract limit as profit:contracts, separated by commas. A tier applies from the next trading day.',
-  'account.prop-challenge.rule.position-scaling-help':
-    'Each completed profit step adds one contract starting on the next trading day, up to the maximum.',
-  'account.prop-challenge.rule.initial-contracts': 'Initial contracts',
-  'account.prop-challenge.rule.profit-per-contract':
-    'EOD profit per additional contract',
-  'account.prop-challenge.rule.maximum-contracts':
-    'Maximum contracts after scaling',
-  'account.prop-challenge.rule.micros-per-contract':
-    'Считать 10 микро за 1 контракт',
-  'account.prop-challenge.rule.micros-per-contract-help':
-    'Включите, если ваша фирма учитывает микрофьючерсы (MES, MNQ, MGC, ...) в этом лимите как одну десятую стандартного контракта. Оставьте выключенным, если каждый микро считается полным контрактом.',
-  'account.prop-challenge.rule.max-contracts': 'Максимум контрактов',
   'account.prop-challenge.rule.profit_target': 'Цель прибыли',
   'account.prop-challenge.rule.drawdown': 'Просадка',
   'account.prop-challenge.rule.daily_loss_limit': 'Дневной лимит убытка',
@@ -8253,6 +8234,8 @@ const ru: Lang = {
     'Максимальный размер позиции',
   'account.prop-challenge.rule.help.target-amount':
     'Абсолютная цель задана в валюте счёта, процентная — от начального баланса фазы. Прогресс учитывает рост баланса после дневного лимита зачтённой прибыли, без нереализованного P&L.',
+  'account.prop-challenge.rule.target-needs-balance':
+    'Для цели в процентах нужен начальный баланс больше 0.',
   'account.prop-challenge.rule.help.credit-withdrawals':
     'Добавляет записанные валовые суммы вывода обратно к прогрессу абсолютной цели. Не меняет баланс или право на вывод.',
   'account.prop-challenge.rule.help.drawdown-amount':
@@ -8401,10 +8384,6 @@ const ru: Lang = {
     'Лучший день {bestDay} — это {share} общей прибыли, в пределах лимита {maximum}.',
   'account.prop-challenge.ledger.help.consistency.example-none':
     'Прибыли пока нет, поэтому сравнивать лучший день не с чем.',
-  'account.prop-challenge.ledger.help.max_position_size':
-    'Максимальное число контрактов в позиции. Journalit проверяет размер каждой сделки. Некоторые фирмы повышают лимит по мере роста прибыли.',
-  'account.prop-challenge.ledger.help.max_position_size.example':
-    'Сейчас до {maximum} контрактов на сделку; самая крупная сделка пока {current}.',
   'account.prop-challenge.ledger.help.payout.cycle_days':
     'Торговые дни текущего цикла выплат. Счётчик сбрасывается после одобренной выплаты.',
   'account.prop-challenge.ledger.help.payout.cycle_days.example':
@@ -8475,12 +8454,9 @@ const ru: Lang = {
   'account.prop-challenge.ledger.state.cap-applied': 'Лимит применен',
   'account.prop-challenge.ledger.state.within-cap': 'В пределах лимита',
   'account.prop-challenge.ledger.state.breached': 'Нарушено',
-  'account-dashboard.prop.metrics.total': 'Челленджи',
   'account-dashboard.prop.metrics.pass-rate': 'Процент прохождения',
   'account-dashboard.prop.metrics.costs': 'Расходы на челленджи',
-  'account-dashboard.prop.metrics.payouts': 'Выплаты',
   'account-dashboard.prop.metrics.net': 'Итого',
-  'account-dashboard.prop.tabs.overview': 'Обзор',
   'account-dashboard.mode.selector': 'Режим панели счетов',
   'account-dashboard.mode.account-overview': 'Обзор',
   'account-dashboard.mode.challenges': 'Челленджи',
@@ -8575,6 +8551,8 @@ const ru: Lang = {
   'filter.menu.status': 'Статус',
   'filter.menu.direction': 'Направление',
   'filter.menu.review-status': 'Статус обзора',
+  'filter.menu.rating': 'Оценка',
+  'filter.menu.rating.unrated': 'Без оценки',
   'filter.menu.status.cancelled': 'Отменена',
   'filter.menu.included-count': 'Включено: {count}',
   'filter.menu.excluded-count': 'Исключено: {count}',
@@ -8612,7 +8590,7 @@ const ru: Lang = {
   'home.guide.whats-new.done.title': 'Рабочий контекст сохраняется',
   'home.guide.whats-new.done.description':
     'Используйте Обзор для личных виджетов, а Панель — для углублённого анализа. У каждого режима свои фильтры и макет.',
-  'account.prop-challenge.summary.status.payout_ready': 'Payout ready',
+  'account.prop-challenge.summary.status.payout_ready': 'Готов к выплате',
   'account.prop-challenge.ribbon.passed': '{phase} пройден',
   'account.prop-challenge.ribbon.failed': '{phase} провален',
   'account.prop-challenge.ribbon.action.advance': 'Перейти к этапу «{phase}»',
@@ -8623,122 +8601,106 @@ const ru: Lang = {
     'Этот челлендж был обновлён в другом месте. Проверьте его и попробуйте снова.',
   'account.prop-challenge.ribbon.action.record-payout': 'Записать выплату',
   'account.prop-challenge.ribbon.action.record-payout-short': 'Выплата',
-  'account.prop-challenge.payout.title': 'Payout readiness',
-  'account.prop-challenge.payout.eligible': 'Payout ready',
-  'account.prop-challenge.payout.available': 'Available now',
-  'account.prop-challenge.payout.cycle-profit': 'Cycle profit',
-  'account.prop-challenge.payout.history': 'Payouts',
+  'account.prop-challenge.payout.title': 'Готовность к выплате',
+  'account.prop-challenge.payout.available': 'Доступно сейчас',
   'account.prop-challenge.payout.lifetime-qualifying-days':
     'Накопленные квалификационные дни',
-  'account.prop-challenge.payout.requirement.days': 'Trading days',
-  'account.prop-challenge.payout.requirement.qualifying-days':
-    'Qualifying days',
+  'account.prop-challenge.payout.requirement.days': 'Торговые дни',
+  'account.prop-challenge.payout.requirement.qualifying-days': 'Зачётные дни',
   'account.prop-challenge.payout.requirement.minimum-balance':
-    'Minimum account balance',
+    'Минимальный баланс счёта',
   'account.prop-challenge.payout.requirement.positive-cycle-profit':
-    'Positive cycle profit',
-  'account.prop-challenge.payout.requirement.cycle-profit': 'Cycle profit',
-  'account.prop-challenge.payout.requirement.consistency': 'Consistency',
-  'account.prop-challenge.payout.requirement.minimum': 'Minimum available',
-  'account.prop-challenge.payout.requirement.payouts': 'Payout allowance',
-  'account.prop-challenge.payout.requirement.request-window': 'Request window',
+    'Положительная прибыль цикла',
+  'account.prop-challenge.payout.requirement.cycle-profit': 'Прибыль цикла',
+  'account.prop-challenge.payout.requirement.consistency': 'Консистентность',
+  'account.prop-challenge.payout.requirement.minimum': 'Минимум доступно',
+  'account.prop-challenge.payout.requirement.payouts': 'Лимит выплат',
+  'account.prop-challenge.payout.requirement.request-window': 'Окно запроса',
   'account.prop-challenge.payout.timezone-invalid': 'Неизвестная часовая зона.',
   'account.prop-challenge.payout.preview-amount': 'Предпросмотр выплаты',
   'account.prop-challenge.payout.you-receive': 'Доля трейдера',
   'account.prop-challenge.payout.balance-after': 'Баланс после',
   'account.prop-challenge.payout.drawdown-floor': 'Порог просадки',
-  'account.prop-challenge.payout.buffer-after': 'Room before breach',
+  'account.prop-challenge.payout.buffer-after': 'Запас до нарушения',
   'account.prop-challenge.payout.request-not-allowed':
     'Сумма не соответствует условиям',
   'account.prop-challenge.payout.immediate-breach':
-    'This payout would leave the account at or below its drawdown floor.',
+    'Эта выплата опустит счёт до нижней границы просадки или ниже.',
   'account.prop-challenge.payout.account-concludes':
-    'This payout completes the configured simulated-funded payout cycle.',
+    'Эта выплата завершает настроенный цикл выплат для симулированного финансируемого счёта.',
   'account.prop-challenge.payout.next-stage-after-payout':
-    'This payout advances the account to its next configured stage.',
+    'Эта выплата переводит счёт на следующий настроенный этап.',
   'account.prop-challenge.payout.live-review-after-payout':
-    'This payout makes the account eligible for live-account review.',
-  'account.prop-challenge.payout.cycle-resets':
-    'Payout progress resets after an approved payout.',
-  'account.prop-challenge.payout.cycle-continues':
-    'Payout progress continues after an approved payout.',
-  'account.prop-challenge.payout.drawdown.unchanged':
-    'The current drawdown floor remains in place.',
-  'account.prop-challenge.payout.drawdown.lock_at_balance':
-    'The drawdown floor locks after payout.',
-  'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
-    'The account and drawdown limits reset after payout.',
-  'account.prop-challenge.stage': 'Stage type',
-  'account.prop-challenge.stage.evaluation': 'Evaluation',
-  'account.prop-challenge.stage.sim-funded': 'Sim funded',
-  'account.prop-challenge.stage.live-funded': 'Live funded',
-  'account.prop-challenge.payout-rules.title': 'Payout rules',
-  'account.prop-challenge.payout-rules.add': 'Add payout rules',
-  'account.prop-challenge.payout-rules.remove': 'Remove payout rules',
-  'account.prop-challenge.payout-rules.cycle': 'Eligibility cycle',
-  'account.prop-challenge.payout-rules.request-window': 'Request timing',
-  'account.prop-challenge.payout-rules.request-window.anytime': 'Any day',
+    'После этой выплаты счёт получает допуск к проверке для реального счёта.',
+  'account.prop-challenge.stage': 'Тип этапа',
+  'account.prop-challenge.stage.evaluation': 'Оценка',
+  'account.prop-challenge.stage.sim-funded': 'Симулированное финансирование',
+  'account.prop-challenge.stage.live-funded': 'Реальное финансирование',
+  'account.prop-challenge.payout-rules.title': 'Правила выплат',
+  'account.prop-challenge.payout-rules.cycle': 'Цикл допуска',
+  'account.prop-challenge.payout-rules.request-window': 'Время запроса',
+  'account.prop-challenge.payout-rules.request-window.anytime': 'Любой день',
   'account.prop-challenge.payout-rules.request-window.weekdays':
-    'Specific weekdays',
-  'account.prop-challenge.payout-rules.request-window.time-zone': 'Time zone',
+    'Определённые дни недели',
+  'account.prop-challenge.payout-rules.request-window.time-zone':
+    'Часовой пояс',
   'account.prop-challenge.payout-rules.request-window.allowed-days':
-    'Allowed request days',
-  'account.prop-challenge.payout-rules.cycle.none': 'No waiting cycle',
-  'account.prop-challenge.payout-rules.cycle.trading-days': 'Trading days',
-  'account.prop-challenge.payout-rules.cycle.qualifying-days':
-    'Qualifying days',
-  'account.prop-challenge.payout-rules.cycle.calendar-days': 'Calendar days',
-  'account.prop-challenge.payout-rules.days': 'Required days',
+    'Дни, когда разрешён запрос',
+  'account.prop-challenge.payout-rules.cycle.none': 'Без цикла ожидания',
+  'account.prop-challenge.payout-rules.cycle.trading-days': 'Торговые дни',
+  'account.prop-challenge.payout-rules.cycle.qualifying-days': 'Зачётные дни',
+  'account.prop-challenge.payout-rules.cycle.calendar-days': 'Календарные дни',
+  'account.prop-challenge.payout-rules.days': 'Требуемые дни',
   'account.prop-challenge.payout-rules.minimum-daily-profit':
-    'Minimum daily profit',
-  'account.prop-challenge.payout-rules.anchor': 'Cycle starts from',
-  'account.prop-challenge.payout-rules.anchor.phase-start': 'Stage start',
-  'account.prop-challenge.payout-rules.anchor.first-trade': 'First trade',
+    'Минимальная дневная прибыль',
+  'account.prop-challenge.payout-rules.anchor': 'Цикл начинается с',
+  'account.prop-challenge.payout-rules.anchor.phase-start': 'Начала этапа',
+  'account.prop-challenge.payout-rules.anchor.first-trade': 'Первой сделки',
   'account.prop-challenge.payout-rules.minimum-balance':
-    'Minimum account balance',
+    'Минимальный баланс счёта',
   'account.prop-challenge.payout-rules.minimum-cycle-profit':
-    'Minimum cycle profit',
+    'Минимальная прибыль за цикл',
   'account.prop-challenge.payout-rules.minimum-cycle-profit-schedule':
     'Минимальная прибыль цикла по номеру выплаты',
   'account.prop-challenge.payout-rules.positive-cycle-after-first':
-    'Require positive cycle profit after first payout',
+    'Требовать положительную прибыль цикла после первой выплаты',
   'account.prop-challenge.payout-rules.consistency-percent':
-    'Maximum best-day share (%)',
+    'Максимальная доля лучшего дня (%)',
   'account.prop-challenge.payout-rules.consistency-percent-schedule':
     'Максимальная доля лучшего дня по номеру выплаты (%)',
-  'account.prop-challenge.payout-rules.availability': 'Available profit',
+  'account.prop-challenge.payout-rules.availability': 'Доступная прибыль',
   'account.prop-challenge.payout-rules.availability.starting-balance':
-    'Above starting balance',
+    'Выше начального баланса',
   'account.prop-challenge.payout-rules.availability.balance-floor':
-    'Above balance floor',
-  'account.prop-challenge.payout-rules.balance-floor': 'Balance floor',
-  'account.prop-challenge.payout-rules.request-percent':
-    'Withdrawable share (%)',
+    'Выше нижней границы баланса',
+  'account.prop-challenge.payout-rules.balance-floor': 'Нижняя граница баланса',
+  'account.prop-challenge.payout-rules.request-percent': 'Доля к выводу (%)',
   'account.prop-challenge.payout-rules.new-profit-percent':
-    'New profit required from each request (%)',
+    'Новая прибыль, требуемая для каждого запроса (%)',
   'account.prop-challenge.payout-rules.new-profit-percent-help':
-    'Caps the request so the configured percentage is backed by profit earned during the current payout cycle. For example, 50% allows a request up to twice current-cycle profit.',
-  'account.prop-challenge.payout-rules.minimum-request': 'Minimum request',
-  'account.prop-challenge.payout-rules.maximum': 'Maximum request',
-  'account.prop-challenge.payout-rules.maximum.none': 'No maximum',
-  'account.prop-challenge.payout-rules.maximum.fixed': 'Fixed maximum',
+    'Ограничивает запрос так, чтобы заданный процент покрывался прибылью текущего цикла выплат. Например, 50% позволяет запросить до двукратной прибыли текущего цикла.',
+  'account.prop-challenge.payout-rules.minimum-request': 'Минимальный запрос',
+  'account.prop-challenge.payout-rules.maximum': 'Максимальный запрос',
+  'account.prop-challenge.payout-rules.maximum.none': 'Без максимума',
+  'account.prop-challenge.payout-rules.maximum.fixed': 'Фиксированный максимум',
   'account.prop-challenge.payout-rules.maximum.first-fixed-then-none':
     'Лимит только для первой выплаты',
   'account.prop-challenge.payout-rules.maximum.schedule':
-    'Maximum by payout number',
+    'Максимум по номеру выплаты',
   'account.prop-challenge.payout-rules.maximum.cycle-profit-percent':
     'Процент прибыли цикла',
-  'account.prop-challenge.payout-rules.maximum-amount': 'Maximum amount',
+  'account.prop-challenge.payout-rules.maximum-amount': 'Максимальная сумма',
   'account.prop-challenge.payout-rules.maximum-first-amount':
     'Лимит первой выплаты',
   'account.prop-challenge.payout-rules.maximum-cycle-profit-percent':
     'Максимум прибыли цикла (%)',
   'account.prop-challenge.payout-rules.schedule-repeat-last':
-    'Keep using the final amount for later payouts',
+    'Использовать последнюю сумму для следующих выплат',
   'account.prop-challenge.payout-rules.schedule-repeat-value':
     'Использовать последнее значение для последующих выплат',
-  'account.prop-challenge.payout-rules.schedule': 'Amounts by payout number',
-  'account.prop-challenge.payout-rules.profit-split': 'Trader profit share (%)',
+  'account.prop-challenge.payout-rules.schedule': 'Суммы по номеру выплаты',
+  'account.prop-challenge.payout-rules.profit-split':
+    'Доля трейдера в прибыли (%)',
   'account.prop-challenge.payout-rules.lifetime-unlock':
     'Изменить лимиты после накопленных квалификационных дней',
   'account.prop-challenge.payout-rules.lifetime-unlock-help':
@@ -8771,47 +8733,49 @@ const ru: Lang = {
     'Порог накопленных выплат',
   'account.prop-challenge.payout-rules.profit-split.thereafter':
     'Доля трейдера после порога (%)',
-  'account.prop-challenge.payout-rules.maximum-payouts': 'Maximum payouts',
+  'account.prop-challenge.payout-rules.maximum-payouts': 'Максимум выплат',
   'account.prop-challenge.payout-rules.maximum-payout-outcome':
-    'After final payout',
+    'После последней выплаты',
   'account.prop-challenge.payout-rules.maximum-payout-outcome.continue':
-    'Continue account',
+    'Продолжить счёт',
   'account.prop-challenge.payout-rules.maximum-payout-outcome.conclude':
-    'Conclude account',
+    'Завершить счёт',
   'account.prop-challenge.payout-rules.maximum-payout-outcome.promote':
-    'Advance to next stage',
+    'Перейти к следующему этапу',
   'account.prop-challenge.payout-rules.maximum-payout-outcome.live-review':
-    'Eligible for live review',
-  'account.prop-challenge.payout-rules.aftermath': 'After an approved payout',
+    'Допуск к проверке для реального счёта',
+  'account.prop-challenge.payout-rules.aftermath': 'После одобренной выплаты',
   'account.prop-challenge.payout-rules.aftermath.unchanged':
-    'Deduct payout; keep drawdown floor',
+    'Вычесть выплату; сохранить нижнюю границу просадки',
   'account.prop-challenge.payout-rules.aftermath.lock':
-    'Deduct payout; lock drawdown floor',
+    'Вычесть выплату; зафиксировать нижнюю границу просадки',
   'account.prop-challenge.payout-rules.aftermath.reset':
-    'Reset account and drawdown',
+    'Сбросить счёт и просадку',
   'account.prop-challenge.payout-rules.drawdown-floor':
-    'Drawdown floor after payout',
+    'Нижняя граница просадки после выплаты',
   'account.prop-challenge.payout-rules.first-payout-exempt':
-    'First payout ignores minimum cycle profit',
+    'Первая выплата не учитывает минимальную прибыль цикла',
   'account.prop-challenge.payout-rules.reset-cycle':
-    'Reset eligibility cycle after payout',
-  'account.prop-challenge.payout-rules.group.eligibility': 'Eligibility',
-  'account.prop-challenge.payout-rules.group.availability': 'Available payout',
-  'account.prop-challenge.payout-rules.group.terms': 'Payout terms',
-  'account.prop-challenge.payout-rules.group.aftermath': 'After payout',
-  'account.prop-challenge.payout.requirement.elapsed-hours': 'Elapsed time',
+    'Сбрасывать цикл допуска после выплаты',
+  'account.prop-challenge.payout-rules.group.eligibility': 'Допуск к выплате',
+  'account.prop-challenge.payout-rules.group.availability': 'Доступная выплата',
+  'account.prop-challenge.payout-rules.group.terms': 'Условия выплаты',
+  'account.prop-challenge.payout-rules.group.aftermath': 'После выплаты',
+  'account.prop-challenge.payout.requirement.elapsed-hours': 'Прошедшее время',
   'account.prop-challenge.payout-rules.profit-split.account-profit-threshold':
-    'Changes by account profit',
+    'Зависит от прибыли счёта',
   'account.prop-challenge.payout-rules.profit-split.account-profit-help':
-    'Lifetime account profit equals current balance minus starting balance plus prior withdrawals. The below or at/above percentage applies to the entire request.',
+    'Прибыль счёта за всё время = текущий баланс − начальный баланс + прежние выводы. Процент «ниже» или «на пороге и выше» применяется ко всему запросу.',
+  'account.prop-challenge.payout-rules.profit-split.marginal-help':
+    'К части запроса ниже этого порога прибыли счёта применяется нижняя доля, а к части выше порога — верхняя.',
   'account.prop-challenge.payout-rules.profit-split.below':
-    'Trader share below threshold (%)',
+    'Доля трейдера ниже порога (%)',
   'account.prop-challenge.payout-rules.profit-split.threshold-profit':
-    'Account profit threshold',
+    'Порог прибыли счёта',
   'account.prop-challenge.payout-rules.profit-split.at-or-above':
-    'Trader share at or above threshold (%)',
+    'Доля трейдера на пороге и выше (%)',
   'account.prop-challenge.payout-rules.minimum-elapsed-hours':
-    'Minimum elapsed hours',
+    'Минимум прошедших часов',
 
   
   'account.merge.challenge.move-earlier': '{account} раньше',
@@ -8842,6 +8806,8 @@ const ru: Lang = {
   'account.merge.warning.copy-trading-dropped':
     'Периоды копи-трейдинга отброшены',
   'account.merge.error.too-few-sources': 'Выберите не менее двух счетов.',
+  'account.merge.error.target-needs-balance':
+    'Начальный баланс этого счёта равен 0, поэтому цель в процентах нельзя измерить. Задайте цель в сумме или отмените и сначала укажите начальный баланс счёта.',
   'account.merge.error.duplicate-source': 'Счёт указан дважды.',
   'account.merge.error.target-exists': 'Это имя принадлежит другому счёту.',
   'account.merge.error.currency-mismatch': 'У счетов разные валюты.',
@@ -8976,48 +8942,8 @@ const ru: Lang = {
     'Объедините или преобразуйте существующие счета в челленджи.',
   'onboarding.legacy-challenge.entry.action': 'Настроить',
 
-  'view.home': 'Главная',
-  'common.lose': 'Проигрыш',
-
   'dashboard.conversion.requires-conversion':
     'Для графиков P&L с несколькими валютами требуется конвертация по обменному курсу.',
-
-  'form.layout.guide-trigger-label': 'Настроить форму',
-  'dashboard.filter.setup.none-found': 'Сетапы не найдены',
-  'account.create.field.drawdown-type-desc':
-    'Нет | Фиксированная | EOD Trailing | Ручная',
-  'account.edit.field.drawdown-type-desc':
-    'Нет | Фиксированная | EOD Trailing | Ручная',
-  'csv.errors.group.close-only': 'Пропущены исполнения только для закрытия',
-  'csv.report.file': 'Файл: {file}',
-  'csv.broker-guide.sierrachart.warning.message':
-    'Опция Export сохраняет нескорректированные цены. Save Log As сохраняет цены, как они отображаются.',
-  'csv.broker-guide.rithmic.step-1':
-    'Откройте Order History в R | Trader Pro и отфильтруйте Completed/Filled по счёту и дате',
-  'csv.broker-guide.rithmic.step-2':
-    'В Add/Remove Columns включите Side, Symbol, Qty Filled, Avg Fill Price и Fill/Update Time',
-  'weekly.overview.drawdown-chart.empty':
-    'Нет данных о просадке для отображения',
-  'monthly.game.header.a-games': 'Игры A',
-  'drc.preparation.checklist.title': 'Предторговый чек-лист',
-  'trade-sync.gate.signin.cta': 'Войти',
-  'backend.progress.ftp.desc': 'Создать учётные данные',
-  'trade.details.execution': 'Execution',
-  'auth.error.invalid-email':
-    'Пожалуйста, введите действительный адрес электронной почты',
-  'auth.error.invalid-code': 'Недействительный код подтверждения',
-  'nav.weekly': 'Еженедельный обзор',
-  'onboarding.welcome.insight.timing.title': 'Паттерны тайминга',
-  'onboarding.wizard.error.account-service': 'AccountPageService недоступен',
-  'trade-import.preview.message.no-open-match':
-    'No matching open trade found for close-only preview',
-  'setups.view.detail.execution-gap.title': 'Execution Gap',
-  'setups.view.action.refresh': 'Обновить',
-  'setups.view.detail.no-playbook': 'Плейбук пока не написан.',
-  'trade-sync.import.action.sync-cloud': 'Sync cloud trades',
-  'session-log.placeholder.entry': 'Что вы видите, думаете или чувствуете?',
-  'session-mode.unconfigured.step.gate.description':
-    'Starter IF/THEN checklist is ready.',
 
   'home.widget.streak.kind.trade-outcome': 'Результаты сделок',
   'home.widget.streak.kind.trade-review': 'Разборы сделок',
@@ -9126,6 +9052,12 @@ const ru: Lang = {
   'trade-handoff.summary.mixed-partial':
     '{imported} импортировано · {updated} обновлено, с проблемами',
   'trade-handoff.summary.import-partial': '{trades} импортировано с проблемами',
+  'trade-handoff.summary.import-provider-partial':
+    '{trades} импортировано · синхронизация завершена частично',
+  'trade-handoff.summary.update-provider-partial':
+    '{trades} обновлено · синхронизация завершена частично',
+  'trade-handoff.summary.mixed-provider-partial':
+    '{imported} импортировано · {updated} обновлено · синхронизация завершена частично',
   'trade-handoff.periods.choose': 'Выбрать другой период обзора',
   'trade-handoff.periods.recommended': 'Рекомендуется',
   'trade-handoff.action.dismiss': 'Скрыть результат последней операции',
@@ -9248,6 +9180,481 @@ const ru: Lang = {
     'Для первой выплаты фазы минимальная прибыль цикла считается нулевой: реализованная чистая прибыль цикла не должна быть отрицательной. Остальные требования сохраняются.',
   'account.prop-challenge.payout-rules.help.reset-cycle':
     'Сбрасывает дни, дневную прибыль, прибыль цикла и стабильность после зарегистрированной выплаты. Сохраняет подходящие дни всей фазы; предварительные расчёты ничего не сбрасывают.',
+  
+  
+  
+  'actions.value.cleared': 'очищено',
+  'actions.trade.set.account_id': 'Счёт: {value}',
+  'actions.trade.set.setup_id': 'Сетап: {value}',
+  'actions.trade.set.stop_loss': 'Стоп-лосс: {value}',
+  'actions.trade.thesis.set': 'Обновить тезис',
+  'actions.trade.thesis.clear': 'Удалить тезис',
+  'actions.trade.reviewed.mark': 'Отметить как проверенную',
+  'actions.trade.reviewed.unmark': 'Отметить как непроверенную',
+  'actions.trade.notes.set': 'Заменить заметки',
+  'actions.trade.stop-losses': 'Стоп-лоссы: {value}',
+  'actions.trade.stop-losses.clear': 'Удалить стоп-лоссы',
+  'actions.trade.take-profits': 'Тейк-профиты: {value}',
+  'actions.trade.take-profits.clear': 'Удалить тейк-профиты',
+  'actions.trade.set.take_profit': 'Тейк-профит: {value}',
+  'actions.trade.set.risk_amount': 'Сумма риска: {value}',
+  'actions.trade.add-tags': 'Добавить теги: {labels}',
+  'actions.trade.remove-tags': 'Удалить теги: {labels}',
+  'actions.trade.add-mistakes': 'Добавить ошибки: {labels}',
+  'actions.trade.remove-mistakes': 'Удалить ошибки: {labels}',
+  'actions.review.summary': 'Заменить сводку',
+  'actions.review.target.day': 'Дневной обзор {date}',
+  'actions.review.target.week': 'Недельный обзор {date}',
+  'actions.review.target.month': 'Месячный обзор {date}',
+  'actions.review.target.quarter': 'Квартальный обзор {date}',
+  'actions.review.target.year': 'Годовой обзор {date}',
+  'agent-requests.deny': 'Отклонить',
+  'agent-requests.approve': 'Одобрить',
+  'actions.options.catalog.tags': 'Теги',
+  'actions.options.catalog.mistakes': 'Ошибки',
+  'actions.options.catalog.account_types': 'Типы счетов',
+  'actions.options.catalog.events': 'События',
+  'actions.options.create': 'Создать: {labels}',
+  'actions.options.set-color': 'Задать цвет: {value}',
+  'actions.options.clear-color': 'Убрать цвет: {value}',
+  'actions.options.update-style': 'Обновить стиль: {value}',
+  'actions.options.rename.one':
+    'Переименовать {source} в {target} в заметках: {count}',
+  'actions.options.rename.other':
+    'Переименовать {source} в {target} в заметках: {count}',
+  'actions.options.rename-account-type.one':
+    'Переименовать {source} в {target} для счетов: {count}',
+  'actions.options.rename-account-type.other':
+    'Переименовать {source} в {target} для счетов: {count}',
+  'actions.options.merge.one':
+    'Объединить {source} с {target} в заметках: {count}',
+  'actions.options.merge.other':
+    'Объединить {source} с {target} в заметках: {count}',
+  'actions.options.delete.one': 'Удалить {value} из заметок: {count}',
+  'actions.options.delete.other': 'Удалить {value} из заметок: {count}',
+  'actions.options.delete-entry': 'Удалить {value}',
+  'actions.options.move': 'Переместить {value} перед {before}',
+  'actions.options.move-last': 'Переместить {value} в конец',
+  'actions.configuration.target.settings': 'Настройки',
+  'actions.configuration.target.dashboard_layouts': 'Макеты панели',
+  'actions.configuration.target.home_layouts': 'Макеты главной',
+  'actions.configuration.target.review_templates': 'Шаблоны обзоров',
+  'actions.configuration.target.session_workflows': 'Сценарии сессии',
+  'actions.configuration.settings': 'Изменить настройки: {count}',
+  'actions.configuration.create': 'Создать {name}',
+  'actions.configuration.duplicate': 'Создать копию {name}',
+  'actions.configuration.replace': 'Заменить {name}',
+  'actions.configuration.rename': 'Переименовать в {name}',
+  'actions.configuration.delete': 'Удалить {name}',
+  'actions.configuration.delete-question.one':
+    'Удалить «{name}» и его размещения ({count}) {workflows}',
+  'actions.configuration.delete-question.other':
+    'Удалить «{name}» и его размещения ({count}) {workflows}',
+  'actions.configuration.delete-question-workflows.one':
+    'в сценариях ({count})',
+  'actions.configuration.delete-question-workflows.other':
+    'в сценариях ({count})',
+  'actions.configuration.delete-question-unused':
+    'Удалить «{name}» (не используется ни в одном сценарии)',
+  'actions.configuration.set-active': 'Сделать {name} активным макетом',
+  'actions.configuration.set-default': 'Изменить шаблон {type} по умолчанию',
+  'actions.configuration.reset-default':
+    'По умолчанию использовать встроенный шаблон {type}',
+  'actions.setup.target': 'Сетап {name}',
+  'actions.setup.update': 'Обновить: {fields}',
+  'actions.setup.field.status': 'статус',
+  'actions.setup.field.direction': 'направление',
+  'actions.setup.field.color': 'цвет',
+  'actions.setup.field.tags': 'теги',
+  'actions.setup.field.preferred_sessions': 'предпочтительные сессии',
+  'actions.setup.field.preferred_timeframes': 'предпочтительные таймфреймы',
+  'actions.setup.field.preferred_tickers': 'предпочтительные тикеры',
+  'actions.setup.field.playbook': 'плейбук',
+  'actions.setup.field.rules': 'правила',
+  'actions.setup.field.linked_notes': 'связанные заметки',
+  'actions.trade.set.direction': 'Направление: {value}',
+  'actions.trade.set.direct_pnl': 'Прямой P&L: {value}',
+  'actions.trade.set.commission': 'Комиссия: {value}',
+  'actions.trade.set.fees': 'Сборы: {value}',
+  'actions.trade.set.swap': 'Своп: {value}',
+  'actions.trade.executions': 'Заменить исполнения: {entries}, {exits}',
+  'actions.trade.set.missed_reason': 'Причина пропуска: {value}',
+  'actions.trade.create':
+    'Создать {type}: {direction} {instrument}, {entries}, {exits}',
+  'actions.trade.create.new-instrument': 'Добавить {instrument} в инструменты',
+  'actions.trade.set-type': 'Изменить тип: {source} на {target}',
+  'actions.trade.delete': 'Переместить заметку о сделке в корзину',
+  'actions.trade.custom-fields': 'Пользовательские поля: {labels}',
+  'actions.custom-field.create': 'Создать поле {label} ({type})',
+  'actions.custom-field.field.label': 'название',
+  'actions.custom-field.field.options': 'варианты',
+  'actions.custom-field.field.validation': 'проверка',
+  'actions.custom-field.field.placeholder': 'подсказка в поле',
+  'actions.custom-field.field.helper_text': 'пояснение',
+  'actions.custom-field.field.allow_create_options': 'новые варианты из сделок',
+  'actions.custom-field.order-target': 'Пользовательские поля',
+  'actions.custom-field.reorder': 'Новый порядок: {labels}',
+  'actions.session-log-tag.create': 'Создать тег {short} {label}',
+  'actions.session-log-tag.field.label': 'название',
+  'actions.session-log-tag.field.short_label': 'короткая метка',
+  'actions.session-log-tag.field.color': 'цвет',
+  'actions.session-log-tag.field.requires_resolution': 'требует классификации',
+  'actions.session-log-tag.field.lesson': 'тег урока',
+  'actions.session-log-tag.delete-alert-rule':
+    'Правило оповещений журнала сессии учитывает этот тег',
+  'actions.custom-field.delete.one':
+    'Удалить поле; сделок, сохраняющих значение: {count}',
+  'actions.custom-field.delete.other':
+    'Удалить поле; сделок, сохраняющих значение: {count}',
+  'actions.session-log-tag.delete.one':
+    'Убрать тег из редактора; дней в журналах сессий, где он останется: {count}',
+  'actions.session-log-tag.delete.other':
+    'Убрать тег из редактора; дней в журналах сессий, где он останется: {count}',
+  'actions.review.answers.one': 'Ответить на вопросы: {count}',
+  'actions.review.answers.other': 'Ответить на вопросы: {count}',
+  'actions.review.goals.one': 'Задать цели: {count}',
+  'actions.review.goals.other': 'Задать цели: {count}',
+  'actions.review.checklist.one': 'Задать пункты чек-листа: {count}',
+  'actions.review.checklist.other': 'Задать пункты чек-листа: {count}',
+  'actions.review.key-levels':
+    'Задать ключевые уровни: поддержка {support}, сопротивление {resistance}',
+  'actions.review.grade.mental': 'Оценка психологии: {value}',
+  'actions.review.grade.technical': 'Техническая оценка: {value}',
+  'actions.review.reviewed': 'Отметить как проверенный',
+  'actions.review.not-reviewed': 'Отметить как непроверенный',
+  'actions.review.session-log.add.one':
+    'Добавить записи в журнал сессии: {count}',
+  'actions.review.session-log.add.other':
+    'Добавить записи в журнал сессии: {count}',
+  'actions.review.session-log.update':
+    'Изменить запись журнала сессии: {fields}',
+  'actions.review.session-log.field.time': 'время',
+  'actions.review.session-log.field.tag_id': 'тег',
+  'actions.review.session-log.field.text': 'текст',
+  'actions.review.session-log.field.resolved': 'классификация',
+  'actions.review.session-log.delete': 'Удалить запись журнала сессии',
+  'actions.review.images.add.one': 'Добавить изображения: {count}',
+  'actions.review.images.add.other': 'Добавить изображения: {count}',
+  'actions.review.images.remove.one': 'Убрать изображения: {count}',
+  'actions.review.images.remove.other': 'Убрать изображения: {count}',
+  'actions.images.annotate.one':
+    'Изменить теги или заметки изображений: {count}',
+  'actions.images.annotate.other':
+    'Изменить теги или заметки изображений: {count}',
+  'actions.review.key-events.add.one': 'Добавить ключевые события: {count}',
+  'actions.review.key-events.add.other': 'Добавить ключевые события: {count}',
+  'actions.review.key-events.update': 'Обновить ключевое событие {name}',
+  'actions.review.key-events.delete': 'Удалить ключевое событие {name}',
+  'actions.review.day-trade-fields.set.one':
+    'Задать поля дня и обновить сделки: {count}',
+  'actions.review.day-trade-fields.set.other':
+    'Задать поля дня и обновить сделки: {count}',
+  'actions.session.unplanned.start':
+    'Начать незапланированную сессию: {reason}',
+  'actions.session.unplanned.stop': 'Остановить незапланированную сессию',
+  'actions.account.create':
+    'Создать счёт типа {type} в {currency} с начальным балансом {balance}',
+  'actions.account.field.account_type': 'тип',
+  'actions.account.field.currency': 'валюта',
+  'actions.account.field.created_date': 'дата начала',
+  'actions.account.field.initial_balance': 'начальный баланс',
+  'actions.account.field.live_balance': 'фактический баланс',
+  'actions.account.field.drawdown': 'просадка',
+  'actions.account.field.profit_target': 'цель по прибыли',
+  'actions.account.field.monthly_cost': 'ежемесячная плата',
+  'actions.account.field.copy_trading': 'копирование сделок',
+  'actions.account.rename': 'Переименовать в {name}',
+  'actions.account.rename-trades.one':
+    'Обновить сделки, которые на него ссылаются: {count}',
+  'actions.account.rename-trades.other':
+    'Обновить сделки, которые на него ссылаются: {count}',
+  'actions.account.delete': 'Удалить счёт',
+  'actions.account.transaction.deposit':
+    'Записать пополнение {amount} за {date}',
+  'actions.account.transaction.withdrawal': 'Записать вывод {amount} за {date}',
+  'actions.account.transaction.delete-deposit':
+    'Удалить пополнение {amount} за {date}',
+  'actions.account.transaction.delete-withdrawal':
+    'Удалить вывод {amount} за {date}',
+  'actions.prop-challenge.advance': 'Засчитать {from} и начать {to}',
+  'actions.prop-challenge.conclude':
+    'Засчитать {phase} и завершить челлендж как пройденный',
+  'actions.prop-challenge.account-type': 'Перевести счёт в тип {type}',
+  'actions.prop-challenge.fail': 'Отметить {phase} и челлендж как проваленные',
+  'actions.prop-challenge.reopen': 'Снова открыть {phase}',
+  'actions.prop-challenge.cost.purchase':
+    'Записать покупку на {amount} за {date}',
+  'actions.prop-challenge.cost.reset':
+    'Записать плату за сброс {amount} за {date}',
+  'actions.prop-challenge.cost.activation':
+    'Записать плату за активацию {amount} за {date}',
+  'actions.prop-challenge.cost.other': 'Записать расход {amount} за {date}',
+  'actions.prop-challenge.cost.delete': 'Удалить расход {amount} за {date}',
+  'actions.prop-challenge.configure.create.one':
+    'Настроить {name}, этапов: {count}',
+  'actions.prop-challenge.configure.create.other':
+    'Настроить {name}, этапов: {count}',
+  'actions.prop-challenge.configure.update.one':
+    'Обновить {name}: этапы ({count}) и их правила',
+  'actions.prop-challenge.configure.update.other':
+    'Обновить {name}: этапы ({count}) и их правила',
+  'actions.prop-challenge.configure.remove-phase':
+    'Удалить ожидающий этап {phase}',
+  'agent-history.title': 'Недавние изменения агентов',
+  'agent-history.empty':
+    'Здесь появляются изменения, которые ИИ-агенты вносят на этом устройстве.',
+  'agent-history.undo': 'Отменить',
+  'agent-history.undone': 'Отменено',
+  'agent-history.undone-notice': 'Изменение агента отменено.',
+  'agent-history.undo-failed':
+    'Часть изменения не удалось отменить: его с тех пор редактировали.',
+  'agent-history.undo-in-use':
+    'Часть изменения не удалось отменить: этот элемент теперь используется в вашем журнале.',
+  'agent-history.partly-applied': 'Изменение применено лишь частично.',
+  'agent-history.not-applied': 'Это изменение не было применено.',
+  'agent-action.title.trade.create': 'Создать сделку',
+  'agent-action.title.trade.update': 'Обновить сделку',
+  'agent-action.title.trade.set_type': 'Изменить тип сделки',
+  'agent-action.title.trade.delete': 'Удалить сделку',
+  'agent-action.title.review.create': 'Создать обзор',
+  'agent-action.title.review.update': 'Обновить обзор',
+  'agent-action.title.review.add_session_log_entries':
+    'Добавить записи в журнал сессии',
+  'agent-action.title.review.update_session_log_entry':
+    'Обновить запись журнала сессии',
+  'agent-action.title.review.delete_session_log_entry':
+    'Удалить запись журнала сессии',
+  'agent-action.title.review.add_images': 'Добавить изображения в обзор',
+  'agent-action.title.review.set_image_annotations':
+    'Задать теги и заметки изображений обзора',
+  'agent-action.title.trade.set_image_annotations':
+    'Задать теги и заметки изображений сделки',
+  'agent-action.title.review.add_key_events': 'Добавить ключевые события',
+  'agent-action.title.review.update_key_event': 'Обновить ключевое событие',
+  'agent-action.title.review.delete_key_event': 'Удалить ключевое событие',
+  'agent-action.title.review.set_day_trade_fields': 'Задать поля сделок дня',
+  'agent-action.title.session.start_unplanned':
+    'Начать незапланированную сессию',
+  'agent-action.title.session.stop_unplanned':
+    'Остановить незапланированную сессию',
+  'agent-action.title.review.remove_images': 'Удалить изображения из обзора',
+  'agent-action.title.tag.create': 'Создать теги',
+  'agent-action.title.tag.set_color': 'Задать цвет тега',
+  'agent-action.title.tag.clear_color': 'Убрать цвет тега',
+  'agent-action.title.tag.rename': 'Переименовать тег',
+  'agent-action.title.tag.merge': 'Объединить теги',
+  'agent-action.title.tag.delete': 'Удалить тег',
+  'agent-action.title.mistake.create': 'Создать ошибки',
+  'agent-action.title.mistake.rename': 'Переименовать ошибку',
+  'agent-action.title.mistake.merge': 'Объединить ошибки',
+  'agent-action.title.mistake.delete': 'Удалить ошибку',
+  'agent-action.title.account_type.create': 'Создать типы счетов',
+  'agent-action.title.account_type.rename': 'Переименовать тип счёта',
+  'agent-action.title.account_type.move': 'Переместить тип счёта',
+  'agent-action.title.account_type.delete': 'Удалить тип счёта',
+  'agent-action.title.event.create': 'Создать события',
+  'agent-action.title.event.update_style': 'Обновить стиль события',
+  'agent-action.title.event.rename': 'Переименовать событие',
+  'agent-action.title.event.merge': 'Объединить события',
+  'agent-action.title.event.delete': 'Удалить событие',
+  'agent-action.title.settings.set_analytics_calculation':
+    'Задать расчёт аналитики',
+  'agent-action.title.settings.set_date_time_display':
+    'Задать отображение даты и времени',
+  'agent-action.title.settings.set_display_preferences':
+    'Задать настройки отображения',
+  'agent-action.title.settings.set_trading_day': 'Задать торговый день',
+  'agent-action.title.settings.set_risk_display': 'Задать риск и отображение',
+  'agent-action.title.settings.set_break_even': 'Задать порог безубыточности',
+  'agent-action.title.settings.set_trade_entry':
+    'Задать настройки ввода сделок',
+  'agent-action.title.settings.set_review_automation':
+    'Задать автоматизацию обзоров',
+  'agent-action.title.settings.set_economic_calendar':
+    'Задать импорт экономического календаря',
+  'agent-action.title.settings.set_session_schedule':
+    'Задать расписание сессий',
+  'agent-action.title.dashboard_layout.create': 'Создать макет панели',
+  'agent-action.title.dashboard_layout.duplicate': 'Дублировать макет панели',
+  'agent-action.title.dashboard_layout.update': 'Заменить макет панели',
+  'agent-action.title.dashboard_layout.rename': 'Переименовать макет панели',
+  'agent-action.title.dashboard_layout.delete': 'Удалить макет панели',
+  'agent-action.title.dashboard_layout.set_active':
+    'Сделать макет панели активным',
+  'agent-action.title.home_layout.create': 'Создать макет главной',
+  'agent-action.title.home_layout.duplicate': 'Дублировать макет главной',
+  'agent-action.title.home_layout.update': 'Заменить макет главной',
+  'agent-action.title.home_layout.rename': 'Переименовать макет главной',
+  'agent-action.title.home_layout.delete': 'Удалить макет главной',
+  'agent-action.title.home_layout.set_active': 'Сделать макет главной активным',
+  'agent-action.title.review_template.create': 'Создать шаблон обзора',
+  'agent-action.title.review_template.duplicate': 'Дублировать шаблон обзора',
+  'agent-action.title.review_template.update': 'Заменить шаблон обзора',
+  'agent-action.title.review_template.delete': 'Удалить шаблон обзора',
+  'agent-action.title.review_template.set_default':
+    'Задать шаблон обзора по умолчанию',
+  'agent-action.title.session_workflow.create': 'Создать сценарий сессии',
+  'agent-action.title.session_workflow.update': 'Заменить сценарий сессии',
+  'agent-action.title.session_workflow.delete': 'Удалить сценарий сессии',
+  'agent-action.title.session_workflow.delete_question':
+    'Удалить вопрос сессии из библиотеки',
+  'agent-action.title.setup.create': 'Создать сетап',
+  'agent-action.title.setup.update': 'Обновить сетап',
+  'agent-action.title.setup.rename': 'Переименовать сетап',
+  'agent-action.title.setup.delete': 'Удалить сетап',
+  'agent-action.title.custom_field.create': 'Создать пользовательское поле',
+  'agent-action.title.custom_field.update': 'Обновить пользовательское поле',
+  'agent-action.title.custom_field.delete': 'Удалить пользовательское поле',
+  'agent-action.title.custom_field.reorder':
+    'Изменить порядок пользовательских полей',
+  'agent-action.title.session_log_tag.create': 'Создать тег журнала сессии',
+  'agent-action.title.session_log_tag.update': 'Обновить тег журнала сессии',
+  'agent-action.title.session_log_tag.delete': 'Удалить тег журнала сессии',
+  'agent-action.title.account.create': 'Создать счёт',
+  'agent-action.title.account.update': 'Обновить счёт',
+  'agent-action.title.account.rename': 'Переименовать счёт',
+  'agent-action.title.account.delete': 'Удалить счёт',
+  'agent-action.title.account.add_transaction': 'Записать пополнение или вывод',
+  'agent-action.title.account.delete_transaction':
+    'Удалить пополнение или вывод',
+  'agent-action.title.prop_challenge.advance':
+    'Перевести челлендж на следующую фазу',
+  'agent-action.title.prop_challenge.fail': 'Отметить челлендж как проваленный',
+  'agent-action.title.prop_challenge.reopen': 'Возобновить челлендж',
+  'agent-action.title.prop_challenge.add_cost': 'Записать расход на челлендж',
+  'agent-action.title.prop_challenge.delete_cost': 'Удалить расход на челлендж',
+  'agent-action.title.prop_challenge.configure': 'Настроить челлендж',
+  'agent-history.undo-confirm.title': 'Отменить изменение агента?',
+  'agent-history.undo-confirm.message':
+    'Journalit отменит это изменение. То, что редактировали после, останется как есть.',
+  'agent-approval.eyebrow': 'Запрос ИИ-агента',
+  'agent-approval.position': '{index} из {total}',
+  'agent-approval.previous': 'Предыдущий запрос',
+  'agent-approval.next': 'Следующий запрос',
+  'agent-approval.hide': 'Пока скрыть',
+  'agent-approval.details': 'Подробнее',
+  'agent-approval.hide-details': 'Скрыть подробности',
+  'agent-approval.approved': 'Одобрено. Попросите агента продолжить.',
+  'agent-approval.denied': 'Отклонено. Агент не внесёт эти изменения.',
+  'agent-approval.expired': 'Срок запроса истёк. Попросите агента повторить.',
+  'agent-activity.title': 'Действия ИИ-агентов',
+  'agent-activity.waiting': 'Ждут вашего решения',
+  'command.open-agent-activity': 'Открыть действия ИИ-агентов',
+  'settings.mcp-access.title': 'ИИ-приложения (MCP)',
+  'settings.mcp-access.description':
+    'Разрешите ИИ-приложениям, подключённым к вашему аккаунту Journalit, например Claude или ChatGPT, читать и обновлять это хранилище через MCP.',
+  'settings.mcp-access.loading': 'Загрузка доступа MCP…',
+  'settings.mcp-access.unavailable':
+    'Доступ MCP сейчас недоступен. Откройте настройки снова, чтобы повторить попытку.',
+  'settings.mcp-access.toggle.label': 'Включить доступ MCP',
+  'settings.mcp-access.toggle.description':
+    'Сделать хранилище доступным для ИИ-приложений, которые вы одобрите на journalit.co.',
+  'settings.mcp-access.status.label': 'Статус',
+  'settings.mcp-access.status.off': 'Выключено',
+  'settings.mcp-access.status.off-detail':
+    'Ни одно ИИ-приложение не может использовать это хранилище. Включите доступ, чтобы приложения вроде Claude и ChatGPT могли читать и обновлять его; здесь появится инструкция по подключению.',
+  'settings.mcp-access.status.connecting': 'Подключение',
+  'settings.mcp-access.status.connecting-detail':
+    'Регистрация хранилища в вашем аккаунте Journalit.',
+  'settings.mcp-access.status.connected': 'Подключено',
+  'settings.mcp-access.status.connected-detail':
+    'Одобренные вами ИИ-приложения могут использовать это хранилище.',
+  'settings.mcp-access.status.failed': 'Не подключено',
+  'settings.mcp-access.status.lost-detail':
+    'Journalit больше не распознаёт подключение этого хранилища, поэтому ваши ИИ-приложения не могут его использовать. Подключите его снова, чтобы вернуть доступ.',
+  'settings.mcp-access.failed.account-unavailable':
+    'Ваш аккаунт Journalit сейчас не может использовать доступ MCP.',
+  'settings.mcp-access.failed.vault-limit-reached':
+    'В вашем тарифе не осталось доступа MCP для ещё одного хранилища.',
+  'settings.mcp-access.failed.vault-limit-move':
+    'ИИ-приложения подключены к другому хранилищу, «{vault}» (последнее использование: {lastUsed}), а лимит хранилищ вашего тарифа исчерпан.',
+  'settings.mcp-access.failed.vault-limit-move-never-used':
+    'ИИ-приложения подключены к другому хранилищу, «{vault}» (ни разу не использовалось), а лимит хранилищ вашего тарифа исчерпан.',
+  'settings.mcp-access.action.move-here': 'Перенести доступ ИИ в это хранилище',
+  'settings.mcp-access.move.confirm-title':
+    'Перенести доступ ИИ в это хранилище?',
+  'settings.mcp-access.move.confirm-message':
+    'ИИ-приложения, подключённые к «{vault}», перестанут там работать. Их нужно будет заново подключить к этому хранилищу.',
+  'settings.mcp-access.move.confirm': 'Перенести доступ ИИ',
+  'settings.mcp-access.failed.temporarily-unavailable':
+    'Доступ MCP временно недоступен. Повторите попытку чуть позже.',
+  'settings.mcp-access.failed.settings-unavailable':
+    'Не удалось сохранить настройку доступа MCP в этом хранилище. Попробуйте снова.',
+  'settings.mcp-access.activity.description':
+    'Одобряйте ожидающие запросы и просматривайте или отменяйте недавние изменения агентов.',
+  'settings.mcp-access.activity.open': 'Открыть',
+  'settings.mcp-access.action.retry': 'Повторить',
+  'settings.mcp-access.action.reconnect': 'Подключить снова',
+  'settings.mcp-access.failed.sign-in-required':
+    'Войдите в учётную запись Journalit и повторите попытку.',
+  'settings.mcp-access.failed.vault-identity':
+    'Не удалось определить это хранилище. Перезапустите Obsidian и повторите попытку.',
+  'settings.mcp-access.failed.request-rejected':
+    'Не удалось зарегистрировать хранилище. Проверьте учётную запись и повторите попытку.',
+  'settings.mcp-access.failed.unexpected-response':
+    'Journalit вернул неожиданный ответ. Повторите попытку чуть позже.',
+  'settings.mcp-access.failed.rate-limited':
+    'Слишком много попыток. Подождите немного и повторите.',
+  'settings.mcp-access.failed.connection':
+    'Не удалось связаться с Journalit. Проверьте подключение и повторите попытку.',
+  'settings.mcp-access.full-access.label': 'Полный доступ',
+  'settings.mcp-access.full-access.description':
+    'ИИ-агенты вносят любые изменения без запроса. Если выключено, удаление, слияние и крупные изменения ждут вашего одобрения.',
+  'settings.mcp-access.full-access.warning':
+    'С полным доступом агент может удалять и изменять сделки, счета, обзоры и настройки и переписывать много заметок без вашего одобрения. Включайте только для доверенных агентов.',
+  'settings.mcp-access.usage.label': 'Использование за месяц',
+  'settings.mcp-access.usage.loading': 'Загрузка данных об использовании…',
+  'settings.mcp-access.usage.unavailable':
+    'Данные об использовании сейчас недоступны.',
+  'settings.mcp-access.usage.limited':
+    'В этом месяце использовано {consumed} из {limit} вызовов ИИ-инструментов. Сброс {date}.',
+  'settings.mcp-access.usage.unlimited':
+    'Вызовов ИИ-инструментов в этом месяце: {consumed}. Сброс {date}.',
+  'settings.mcp-access.usage.reached':
+    'Все {limit} вызовов ИИ-инструментов в этом месяце израсходованы. Сброс {date}.',
+  'settings.mcp-access.usage.upgrade': 'Улучшить план',
+  'settings.mcp-access.usage.not-counted':
+    'Проверки, предпросмотры, навигация, просмотр изображений и обращения к документации не учитываются.',
+  'settings.mcp-access.usage.pro-offer':
+    'Перейдите на Pro, чтобы получить больше вызовов ИИ-инструментов',
+  'settings.mcp-access.connect.title': 'Подключить ИИ-приложение',
+  'settings.mcp-access.connect.url-label': 'URL сервера MCP',
+  'settings.mcp-access.connect.copy': 'Копировать',
+  'settings.mcp-access.connect.copied': 'Скопировано',
+  'settings.mcp-access.connect.copy-failed': 'Не удалось скопировать',
+  'settings.mcp-access.connect.copy-url': 'Скопировать URL сервера MCP',
+  'settings.mcp-access.connect.copy-command': 'Скопировать команду',
+  'settings.mcp-access.connect.app-label': 'ИИ-приложение',
+  'settings.mcp-access.connect.claude.open':
+    'В Claude (веб или десктоп) откройте Customize → Connectors.',
+  'settings.mcp-access.connect.claude.add':
+    'Выберите + Add → Add custom connector и вставьте URL сервера MCP.',
+  'settings.mcp-access.connect.chatgpt.open':
+    'В веб-версии ChatGPT откройте Plugins (chatgpt.com/plugins).',
+  'settings.mcp-access.connect.chatgpt.add':
+    'Выберите + → Add custom MCP server, вставьте URL сервера MCP и выберите OAuth.',
+  'settings.mcp-access.connect.step.approve':
+    'Войдите в Journalit и подтвердите доступ.',
+  'settings.mcp-access.connect.claude-code.run':
+    'Выполните эту команду в терминале:',
+  'settings.mcp-access.connect.claude-code.sign-in':
+    'В Claude Code выполните /mcp и войдите в Journalit.',
+  'settings.mcp-access.connect.sign-in-note':
+    'ИИ-приложение откроет journalit.co, чтобы вы вошли и выбрали это хранилище.',
+  'settings.mcp-access.connect.manage': 'Управлять подключёнными приложениями',
+  'actions.options.rename-none': 'Переименовать {source} в {target}',
+  'actions.options.merge-none': 'Объединить {source} с {target}',
+  'actions.custom-field.delete-unused':
+    'Удалить поле; ни в одной сделке нет его значения',
+  'actions.session-log-tag.delete-unused':
+    'Убрать тег из редактора; ни один журнал сессии его не использует',
+  'actions.trade.entries.one': 'входов: {count}',
+  'actions.trade.entries.other': 'входов: {count}',
+  'actions.trade.exits.one': 'выходов: {count}',
+  'actions.trade.exits.other': 'выходов: {count}',
+  'agent-requests.changes.one': 'Изменений: {count}',
+  'agent-requests.changes.other': 'Изменений: {count}',
+  'agent-requests.kind-count': '{title} ×{count}',
 };
 
 export default ru;

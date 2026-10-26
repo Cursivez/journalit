@@ -490,7 +490,8 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
     const ownerDocument = getOwnerDocument(customDateAnchorRef.current);
     const handleClickOutside = (event: MouseEvent) => {
       const target = event.target;
-      if (!(target instanceof Node)) {
+      
+      if (!(target instanceof (ownerDocument.defaultView?.Node ?? Node))) {
         return;
       }
 
@@ -504,7 +505,10 @@ export const DateRangeFilter: React.FC<DateRangeFilterProps> = ({
 
       
       
-      if (target.instanceOf(Element) && target.closest('.flatpickr-calendar')) {
+      if (
+        target.instanceOf(Element) &&
+        target.closest('.journalit-date-picker-host')
+      ) {
         return;
       }
 

@@ -3,11 +3,15 @@ import { createContext, useMemo, useRef } from 'react';
 export interface DateDraftCheck {
   check: () => 'valid' | 'invalid' | 'committed';
   focus: () => void;
+  
+  pending: () => boolean;
 }
 
 interface DateDraftGate {
   register: (id: string, field: DateDraftCheck) => () => void;
   confirm: () => boolean;
+  
+  hasPendingDrafts: () => boolean;
 }
 
 export const DateDraftGateContext = createContext<DateDraftGate | null>(null);
@@ -36,6 +40,8 @@ export function useDateDraftGate(): DateDraftGate {
         
         return !firstInvalid && !committed;
       },
+      hasPendingDrafts: () =>
+        [...fields.current.values()].some((field) => field.pending()),
     }),
     []
   );

@@ -30,7 +30,6 @@ interface ComboBoxBaseProps {
   onSaveOption?: (option: string) => void | Promise<void>;
   required?: boolean;
   disabled?: boolean;
-  selectedItemsPlacement?: 'before-input' | 'after-input' | 'inside-input';
   portalDropdown?: boolean;
 }
 
@@ -41,6 +40,35 @@ export type ComboBoxProps = ComboBoxBaseProps &
   );
 
 const identityLabel = (value: string) => value;
+
+const selectedValues = (props: ComboBoxProps): string[] => {
+  if (props.isMulti) return props.value;
+  return props.value ? [props.value] : [];
+};
+
+type ActiveItem = { item: ComboBoxItem; keyboard: boolean };
+
+const activeItemIndex = (
+  items: readonly ComboBoxItem[],
+  isOpen: boolean,
+  active: ActiveItem | null
+): number => {
+  if (!isOpen || !active) return -1;
+  return items.findIndex(
+    (item) => item.kind === active.item.kind && item.value === active.item.value
+  );
+};
+
+
+const comboBoxInputValue = (
+  props: ComboBoxProps,
+  editingQuery: string | null,
+  getOptionLabel: (option: string) => string
+): string => {
+  if (editingQuery !== null) return editingQuery;
+  if (props.isMulti || !props.value) return '';
+  return getOptionLabel(props.value);
+};
 
 
 export function useComboBox(props: ComboBoxProps) {
@@ -60,14 +88,9 @@ export function useComboBox(props: ComboBoxProps) {
   const popupRef = useRef<HTMLUListElement>(null);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState<string | null>(null);
-  const [active, setActive] = useState<{
-    item: ComboBoxItem;
-    keyboard: boolean;
-  } | null>(null);
+  const [active, setActive] = useState<ActiveItem | null>(null);
   const isOpen = open && !disabled;
-  const selected = new Set(
-    props.isMulti ? props.value : props.value ? [props.value] : []
-  );
+  const selected = new Set(selectedValues(props));
   const normalizedOptions = useMemo(
     () => normalizeComboBoxOptions(options),
     [options]
@@ -80,22 +103,13 @@ export function useComboBox(props: ComboBoxProps) {
     allowCreate,
     getOptionLabel,
   });
-  const activeIndex =
-    isOpen && active
-      ? items.findIndex(
-          (item) =>
-            item.kind === active.item.kind && item.value === active.item.value
-        )
-      : -1;
+  const activeIndex = activeItemIndex(items, isOpen, active);
   const activeId = activeIndex < 0 ? undefined : `${listId}-${activeIndex}`;
-  const inputValue =
-    isOpen && query !== null
-      ? query
-      : props.isMulti
-        ? ''
-        : props.value
-          ? getOptionLabel(props.value)
-          : '';
+  const inputValue = comboBoxInputValue(
+    props,
+    isOpen ? query : null,
+    getOptionLabel
+  );
 
   const close = () => {
     setOpen(false);

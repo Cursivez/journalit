@@ -16,6 +16,15 @@ function stripMarkdownFrontmatter(content: string): string {
   return content.replace(FRONTMATTER_PATTERN, '');
 }
 
+function toWantedHeadings(headings: string[]): Set<string> {
+  return new Set(
+    headings.flatMap((heading) => {
+      const normalized = normalizeHeadingText(heading);
+      return normalized ? [normalized] : [];
+    })
+  );
+}
+
 function trimBlankBoundaryLines(content: string): string {
   return content
     .replace(/^(?:[\t ]*\r?\n)+/, '')
@@ -26,12 +35,7 @@ export function extractMarkdownSectionsByHeading(
   content: string,
   headings: string[]
 ): ExtractedMarkdownSection[] {
-  const wantedHeadings = new Set(
-    headings.flatMap((heading) => {
-      const normalized = normalizeHeadingText(heading);
-      return normalized ? [normalized] : [];
-    })
-  );
+  const wantedHeadings = toWantedHeadings(headings);
 
   if (wantedHeadings.size === 0) {
     return [];
@@ -82,4 +86,51 @@ export function extractMarkdownSectionsByHeading(
   }
 
   return sections;
+}
+
+
+export function partitionMarkdownSectionsByHeading(
+  content: string,
+  headings: string[]
+): ExtractedMarkdownSection[] {
+  const wantedHeadings = toWantedHeadings(headings);
+  if (wantedHeadings.size === 0) return [];
+
+  const sections: Array<ExtractedMarkdownSection & { lines: string[] }> = [];
+  
+  const open: Array<{ level: number; section: number | null }> = [];
+  const ownerOf = (): number | null => {
+    for (let i = open.length - 1; i >= 0; i--) {
+      const { section } = open[i];
+      if (section !== null) return section;
+    }
+    return null;
+  };
+
+  let inFence = false;
+  for (const line of stripMarkdownFrontmatter(content).split('\n')) {
+    if (FENCE_PATTERN.test(line)) inFence = !inFence;
+    const match = inFence ? null : line.match(HEADING_PATTERN);
+    if (match) {
+      const level = match[1].length;
+      while (open.length > 0 && open[open.length - 1].level >= level) {
+        open.pop();
+      }
+      const heading = match[2].trim();
+      if (wantedHeadings.has(normalizeHeadingText(heading))) {
+        sections.push({ heading, level, content: '', lines: [] });
+        open.push({ level, section: sections.length - 1 });
+        continue;
+      }
+      open.push({ level, section: null });
+    }
+    const owner = ownerOf();
+    if (owner !== null) sections[owner].lines.push(line);
+  }
+
+  return sections.map(({ heading, level, lines }) => ({
+    heading,
+    level,
+    content: trimBlankBoundaryLines(lines.join('\n')),
+  }));
 }

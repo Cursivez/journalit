@@ -387,48 +387,6 @@ export const TRADE_LOG_STYLES = `
   color: var(--text-muted);
 }
 
-.date-range-selector {
-  flex: 1;
-  display: flex;
-  justify-content: flex-end;
-}
-
-
-.trade-log-advanced-filters {
-  display: flex;
-  align-items: center;
-  gap: 24px;
-  flex-wrap: wrap;
-  padding: 12px;
-  background: var(--background-primary-alt);
-  border-radius: 4px;
-  border: 1px solid var(--background-modifier-border);
-}
-
-.trade-type-filter-section {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.trade-type-filter-section label {
-  font-weight: 500;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
-.status-filter-section {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.status-filter-section label {
-  font-weight: 500;
-  color: var(--text-muted);
-  white-space: nowrap;
-}
-
 
 
 
@@ -535,22 +493,6 @@ export const TRADE_LOG_STYLES = `
   justify-content: center;
   padding: 40px;
   color: var(--text-muted);
-}
-
-.journalit-trade-log-view-container .spinner {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.journalit-trade-log-view-container .spinner::before {
-  content: '';
-  width: 16px;
-  height: 16px;
-  border: 2px solid var(--text-muted);
-  border-top-color: transparent;
-  border-radius: 50%;
-  animation: journalit-spin 0.8s linear infinite;
 }
 
 
@@ -706,16 +648,6 @@ export const TRADE_LOG_STYLES = `
 
 .trade-log-node--trade .journalit-trade-log-view-container .node-wrapper {
   padding-left: 0;
-}
-
-
-.tree-node-indicator {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 20px;
-  position: relative;
-  margin-right: 8px;
 }
 
 
@@ -1044,11 +976,6 @@ button.journalit-native-button--unstyled.node-label {
 }
 
 
-.trade-log-content-wrapper {
-  max-width: 1600px;
-  margin: 0 auto;
-  width: 100%;
-}
 
 .trade-log-header-row {
 
@@ -1455,8 +1382,8 @@ button.journalit-native-button--unstyled.node-label {
 }
 
 .status-missed {
-  background: rgba(255, 149, 0, 0.15);
-  color: var(--color-warning);
+  background: rgba(var(--color-orange-rgb), 0.15);
+  color: var(--color-orange);
 }
 
 .status-open {
@@ -1652,7 +1579,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   text-align: center;
 }
 
-.custom-tags-tooltip .tooltip-title {
+.journalit-trade-tags-tooltip .tooltip-title {
   color: var(--text-accent);
 }
 
@@ -1673,6 +1600,14 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
 .trade-reviewed-icon--no {
   color: var(--text-muted);
+}
+
+
+.journalit-trade-rating-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
 }
 
 
@@ -1975,13 +1910,13 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 }
 
 .journalit-count-badge--setups {
-  background: rgba(33, 150, 243, 0.15);
-  color: var(--color-info);
-  border: 1px solid rgba(33, 150, 243, 0.3);
+  background: rgba(var(--color-blue-rgb), 0.15);
+  color: var(--color-blue);
+  border: 1px solid rgba(var(--color-blue-rgb), 0.3);
 }
 
 .journalit-count-badge--setups:hover {
-  background: rgba(33, 150, 243, 0.25);
+  background: rgba(var(--color-blue-rgb), 0.25);
   
   
 }
@@ -2044,9 +1979,9 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 }
 
 .journalit-trade-log-view-container .pill--setup {
-  background: rgba(33, 150, 243, 0.15);
-  color: var(--color-info);
-  border: 1px solid rgba(33, 150, 243, 0.3);
+  background: rgba(var(--color-blue-rgb), 0.15);
+  color: var(--color-blue);
+  border: 1px solid rgba(var(--color-blue-rgb), 0.3);
 }
 
 .journalit-trade-log-view-container .pill--mistake {
@@ -2074,21 +2009,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   justify-content: center;
   position: relative;
   width: 100%;
-}
-
-.journalit-tooltip {
-  background: var(--background-secondary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  padding: 8px 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  max-width: 250px;
-  min-width: 120px;
-  font-size: 13px;
-  color: var(--text-normal);
-  z-index: 9999;
-  pointer-events: none;
-  position: fixed !important;
 }
 
 .journalit-tooltip.trade-log-inline-value-tooltip {
@@ -2139,11 +2059,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
 @media (max-width: 1200px) {
   
-
-  .journalit-trade-log-view-container .metric--best,
-  .journalit-trade-log-view-container .metric--worst {
-    display: none;
-  }
 
   .trade-pnl {
     font-size: 14px;

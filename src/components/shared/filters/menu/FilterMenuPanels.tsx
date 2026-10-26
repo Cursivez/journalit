@@ -92,6 +92,38 @@ interface PanelChromeProps extends PanelFrameProps {
   children: React.ReactNode;
 }
 
+const panelClassName = ({
+  depth,
+  isForm,
+  layout,
+  position,
+}: {
+  depth: number;
+  isForm: boolean;
+  layout: FilterMenuLayout;
+  position: PanelPosition | null;
+}): string =>
+  [
+    'journalit-filter-menu__panel',
+    depth === 0 ? 'journalit-filter-menu__panel--root' : '',
+    isForm ? 'journalit-filter-menu__panel--date-range' : '',
+    layout === 'drilldown' ? 'journalit-filter-menu__panel--drilldown' : '',
+    position ? '' : 'journalit-filter-menu__panel--measuring',
+    
+    layout === 'cascade' && position?.bridgesGap
+      ? `journalit-filter-menu__panel--from-${position.side === 'right' ? 'left' : 'right'}`
+      : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+
+const panelBox = (position: PanelPosition | null) => ({
+  top: position?.top ?? 0,
+  left: position?.left ?? 0,
+  maxHeight: position?.maxHeight ?? 320,
+});
+
 const PanelChrome: React.FC<PanelChromeProps> = ({
   depth,
   layout,
@@ -109,22 +141,11 @@ const PanelChrome: React.FC<PanelChromeProps> = ({
   children,
 }) => {
   const titleId = useId();
+  const box = panelBox(position);
   return (
     <div
       ref={panelRef}
-      className={[
-        'journalit-filter-menu__panel',
-        depth === 0 ? 'journalit-filter-menu__panel--root' : '',
-        isForm ? 'journalit-filter-menu__panel--date-range' : '',
-        layout === 'drilldown' ? 'journalit-filter-menu__panel--drilldown' : '',
-        position ? '' : 'journalit-filter-menu__panel--measuring',
-        
-        layout === 'cascade' && position?.bridgesGap
-          ? `journalit-filter-menu__panel--from-${position.side === 'right' ? 'left' : 'right'}`
-          : '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      className={panelClassName({ depth, isForm, layout, position })}
       data-depth={depth}
       role={isForm ? 'dialog' : undefined}
       aria-labelledby={isForm ? titleId : undefined}
@@ -132,9 +153,9 @@ const PanelChrome: React.FC<PanelChromeProps> = ({
       onPointerEnter={onPointerEnter}
       onFocusCapture={onFocusCapture}
       style={cssVars({
-        '--journalit-filter-menu-top': `${position?.top ?? 0}px`,
-        '--journalit-filter-menu-left': `${position?.left ?? 0}px`,
-        '--journalit-filter-menu-max-height': `${position?.maxHeight ?? 320}px`,
+        '--journalit-filter-menu-top': `${box.top}px`,
+        '--journalit-filter-menu-left': `${box.left}px`,
+        '--journalit-filter-menu-max-height': `${box.maxHeight}px`,
         '--journalit-filter-menu-gap': `${SUBMENU_GAP}px`,
       })}
     >
@@ -294,34 +315,52 @@ export const DateRangePanel: React.FC<
   </PanelChrome>
 );
 
-export const ValuesPanel: React.FC<
-  PanelFrameProps &
-    NavigationProps & {
-      node: FilterMenuValuesNode;
-      onClear: () => void;
-    }
-> = ({ node, onClear, ...props }) => {
-  const [query, setQuery] = useState('');
-  const normalizedQuery = query.trim().toLowerCase();
-  const visibleOptions = normalizedQuery
-    ? node.options.filter((option) =>
-        option.label.toLowerCase().includes(normalizedQuery)
-      )
-    : node.options;
-  const excluded = node.excluded;
-  
-  
-  const counts = countNode(node);
-  const hasSelection = counts.included > 0 || counts.excluded > 0;
-  const { openChildId, onOpenChild, onHoverRow, registerAnchor } = props;
-  const matchChildId = node.matchChild?.id ?? '';
-  
-  const guideOptionValue = (
-    visibleOptions.find((option) => option.value !== node.noValueOption) ??
-    visibleOptions[0]
-  )?.value;
+const guideOptionValueOf = (
+  options: FilterMenuValuesNode['options'],
+  noValueOption: FilterMenuValuesNode['noValueOption']
+) =>
+  (options.find((option) => option.value !== noValueOption) ?? options[0])
+    ?.value;
 
-  const toolbar = (
+
+const showsValuesClearAction = (
+  node: FilterMenuValuesNode,
+  hasSelection: boolean
+): boolean =>
+  !node.singleChoice &&
+  (hasSelection || (node.matchMode !== null && node.matchMode !== 'any'));
+
+const ValuesPanelEmptyNotice: React.FC<{
+  isSearching: boolean;
+  emptyLabel: FilterMenuValuesNode['emptyLabel'];
+}> = ({ isSearching, emptyLabel }) => (
+  <div className="journalit-filter-menu__empty">
+    {isSearching
+      ? t('filter.menu.no-matches')
+      : (emptyLabel ?? t('filter.menu.no-options'))}
+  </div>
+);
+
+const ValuesPanelToolbar: React.FC<
+  Pick<
+    NavigationProps,
+    'openChildId' | 'onOpenChild' | 'onHoverRow' | 'registerAnchor'
+  > & {
+    node: FilterMenuValuesNode;
+    query: string;
+    onQueryChange: (query: string) => void;
+  }
+> = ({
+  node,
+  query,
+  onQueryChange,
+  openChildId,
+  onOpenChild,
+  onHoverRow,
+  registerAnchor,
+}) => {
+  const matchChildId = node.matchChild?.id ?? '';
+  return (
     <>
       {node.matchChild && node.matchMode !== null && (
         <div className="journalit-filter-menu__match">
@@ -354,12 +393,39 @@ export const ValuesPanel: React.FC<
             type="text"
             value={query}
             placeholder={t('filter.menu.search')}
-            onChange={(event) => setQuery(event.target.value)}
+            onChange={(event) => onQueryChange(event.target.value)}
             data-filter-menu-item
           />
         </label>
       )}
     </>
+  );
+};
+
+export const ValuesPanel: React.FC<
+  PanelFrameProps &
+    NavigationProps & {
+      node: FilterMenuValuesNode;
+      onClear: () => void;
+    }
+> = ({ node, onClear, ...props }) => {
+  const [query, setQuery] = useState('');
+  const normalizedQuery = query.trim().toLowerCase();
+  const visibleOptions = normalizedQuery
+    ? node.options.filter((option) =>
+        option.label.toLowerCase().includes(normalizedQuery)
+      )
+    : node.options;
+  const excluded = node.excluded;
+  
+  
+  const counts = countNode(node);
+  const hasSelection = counts.included > 0 || counts.excluded > 0;
+  const { openChildId, onOpenChild, onHoverRow, registerAnchor } = props;
+  
+  const guideOptionValue = guideOptionValueOf(
+    visibleOptions,
+    node.noValueOption
   );
 
   return (
@@ -367,9 +433,7 @@ export const ValuesPanel: React.FC<
       {...props}
       title={node.label}
       headerAction={
-        !node.singleChoice &&
-        (hasSelection ||
-          (node.matchMode !== null && node.matchMode !== 'any')) ? (
+        showsValuesClearAction(node, hasSelection) ? (
           <button
             type="button"
             className="journalit-filter-menu__clear"
@@ -380,14 +444,23 @@ export const ValuesPanel: React.FC<
           </button>
         ) : null
       }
-      toolbar={toolbar}
+      toolbar={
+        <ValuesPanelToolbar
+          node={node}
+          query={query}
+          onQueryChange={setQuery}
+          openChildId={openChildId}
+          onOpenChild={onOpenChild}
+          onHoverRow={onHoverRow}
+          registerAnchor={registerAnchor}
+        />
+      }
       notice={
         visibleOptions.length === 0 ? (
-          <div className="journalit-filter-menu__empty">
-            {normalizedQuery
-              ? t('filter.menu.no-matches')
-              : (node.emptyLabel ?? t('filter.menu.no-options'))}
-          </div>
+          <ValuesPanelEmptyNotice
+            isSearching={Boolean(normalizedQuery)}
+            emptyLabel={node.emptyLabel}
+          />
         ) : null
       }
     >

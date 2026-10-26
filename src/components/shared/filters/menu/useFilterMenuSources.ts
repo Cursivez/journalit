@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type JournalitPlugin from '../../../../main';
 import { useEventBus } from '../../../../hooks/useEventBus';
+import { useSetupNotes } from '../../../../hooks/useSetupNotes';
 import { OptionType } from '../../../../services/options/CustomOptionsService';
 import type { TradeType } from '../../../../services/tradelog/types';
 import { getSessionLogTags } from '../../../sessionLog/sessionLogUtils';
@@ -44,12 +45,12 @@ function tradeTypeRules(
 
 const TRADE_TYPE_RULES: Record<FilterMenuContext, TradeTypeRules> = {
   dashboard: tradeTypeRules(
-    ['regular', 'backtest'],
+    ['regular', 'missed', 'backtest'],
     () => createDashboardFilters().tradeTypes,
     normalizeDashboardTradeTypes
   ),
   review: tradeTypeRules(
-    ['regular', 'backtest'],
+    ['regular', 'missed', 'backtest'],
     () => createReviewFilters().tradeTypes,
     (tradeTypes) => normalizeReviewFilters({ tradeTypes }).tradeTypes
   ),
@@ -75,6 +76,7 @@ export function resetMenuFilters(
     tradeTypes: TRADE_TYPE_RULES[context].normalize([]),
     statuses: [],
     reviewStatus: [],
+    ratings: [],
     directions: [],
     sessionLogTags: [],
     customFieldFilters: {},
@@ -125,6 +127,12 @@ export function useFilterMenuSources({
   const bumpRevision = () => setOptionsRevision((rev) => rev + 1);
   useEventBus('options:changed', bumpRevision);
   useEventBus('account:changed', bumpRevision);
+  
+  const setups = useSetupNotes(plugin);
+  const setupNames = useMemo(
+    () => (setups ?? []).map((setup) => setup.name),
+    [setups]
+  );
   useEffect(() => {
     const workspace = plugin.app.workspace;
     const onCustomFieldsChanged = () => setOptionsRevision((rev) => rev + 1);
@@ -145,7 +153,7 @@ export function useFilterMenuSources({
         plugin.settings.account?.accountMetadata
       ),
       tickers: optionsService?.getOptions(OptionType.INSTRUMENT) ?? [],
-      setups: optionsService?.getOptions(OptionType.SETUP) ?? [],
+      setups: setupNames,
       tags: optionsService?.getOptions(OptionType.TAG) ?? [],
       mistakes: optionsService?.getOptions(OptionType.MISTAKE) ?? [],
       sessionLogTags: showSessionLogFilters
@@ -178,6 +186,7 @@ export function useFilterMenuSources({
     context,
     optionsRevision,
     plugin,
+    setupNames,
     showImageFilters,
     showSessionLogFilters,
   ]);

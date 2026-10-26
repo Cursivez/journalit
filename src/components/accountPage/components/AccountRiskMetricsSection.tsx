@@ -7,15 +7,16 @@ import {
   calculateDrawdownUsed,
   calculateProfitTargetProgress,
 } from '../../account/dashboard/utils';
-import {
-  AccountData,
-  DrawdownType,
-  ProfitTargetType,
-} from '../../../services/account/types';
+import { AccountData, DrawdownType } from '../../../services/account/types';
+import { resolveProfitTargetAmount } from '../../../services/account/accountDefinitionRules';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { formatDateDisplay } from '../../../utils/dateUtils';
 import { useCurrency } from '../../../contexts/CurrencyContext';
-import { parseCuratedCurrencyCode } from '../../../utils/currencyConfig';
+import {
+  type CurrencyCode,
+  parseCuratedCurrencyCode,
+} from '../../../utils/currencyConfig';
+import type { AccountPageData } from '../../../services/accountPage/types';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
@@ -312,6 +313,64 @@ function ProfitTargetMetricBox({
 }
 
 
+function ProfitTargetNeedsBalanceBox() {
+  return (
+    <div className="journalit-account-risk-metric">
+      <div className="journalit-account-risk-metric-header">
+        <div className="journalit-account-risk-metric-title-row">
+          <h4 className="journalit-account-risk-metric-title">
+            {t('account.risk-metrics.profit-target')}
+          </h4>
+        </div>
+      </div>
+      <p className="journalit-account-risk-metric-note">
+        {t('account.risk-metrics.profit-target-needs-balance')}
+      </p>
+    </div>
+  );
+}
+
+type ProfitTargetCard = 'none' | 'needs-balance' | 'metric';
+
+
+function profitTargetCard(
+  hasProfitTargetSet: boolean,
+  profitTargetAmount: number | undefined,
+  isBalanceMasked: boolean
+): ProfitTargetCard {
+  if (profitTargetAmount !== undefined) return 'metric';
+  if (!hasProfitTargetSet) return 'none';
+  return isBalanceMasked ? 'metric' : 'needs-balance';
+}
+
+const hasDrawdownRule = (account: AccountData): boolean =>
+  account.drawdownType !== DrawdownType.NONE &&
+  Boolean(
+    account.drawdownAmount > 0 ||
+    (account.drawdownType === DrawdownType.MANUAL &&
+      account.currentDrawdownSnapshot)
+  );
+
+
+const riskSectionCurrency = (
+  accountPageData: AccountPageData,
+  globalCurrency: CurrencyCode
+): CurrencyCode =>
+  accountPageData.metrics.isMultiCurrency &&
+  accountPageData.metrics.conversionBaseCurrency
+    ? parseCuratedCurrencyCode(accountPageData.metrics.conversionBaseCurrency)
+    : accountPageData.account.currency || globalCurrency;
+
+function ruleProgressStatus<Done extends string>(
+  visible: boolean,
+  progress: number,
+  doneLabel: Done
+): Done | 'IN PROGRESS' | null {
+  if (!visible) return null;
+  return progress >= 100 ? doneLabel : 'IN PROGRESS';
+}
+
+
 export const AccountRiskMetricsSection: React.FC = () => {
   const { accountPageData } = useAccountPageData();
   const registerRiskSectionTarget = useGuideTarget(
@@ -328,13 +387,7 @@ export const AccountRiskMetricsSection: React.FC = () => {
 
   const { account } = accountPageData;
 
-  const hasDrawdownSet =
-    account.drawdownType !== DrawdownType.NONE &&
-    Boolean(
-      account.drawdownAmount > 0 ||
-      (account.drawdownType === DrawdownType.MANUAL &&
-        account.currentDrawdownSnapshot)
-    );
+  const hasDrawdownSet = hasDrawdownRule(account);
   const hasProfitTargetSet =
     account.hasProfitTarget && account.profitTarget > 0;
 
@@ -344,34 +397,30 @@ export const AccountRiskMetricsSection: React.FC = () => {
 
   
   
-  const currency =
-    accountPageData.metrics.isMultiCurrency &&
-    accountPageData.metrics.conversionBaseCurrency
-      ? parseCuratedCurrencyCode(accountPageData.metrics.conversionBaseCurrency)
-      : account.currency || globalCurrency;
+  const currency = riskSectionCurrency(accountPageData, globalCurrency);
 
   const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount ?? 0;
 
   const drawdownUsed = calculateDrawdownUsed(account);
   const profitTargetProgress = calculateProfitTargetProgress(account);
   const progressAmount = calculateAccountGrowthAmount(account);
-  const profitTargetAmount =
-    account.profitTargetType === ProfitTargetType.PERCENTAGE
-      ? (account.initialBalance * account.profitTarget) / 100
-      : account.profitTarget;
+  const profitTargetAmount = resolveProfitTargetAmount(account);
 
-  const drawdownStatus =
-    !isRiskProgressMasked && hasDrawdownSet
-      ? drawdownUsed >= 100
-        ? 'BREACHED'
-        : 'IN PROGRESS'
-      : null;
-  const profitTargetStatus =
-    !isRiskProgressMasked && hasProfitTargetSet
-      ? profitTargetProgress >= 100
-        ? 'ACHIEVED'
-        : 'IN PROGRESS'
-      : null;
+  const drawdownStatus = ruleProgressStatus(
+    !isRiskProgressMasked && hasDrawdownSet,
+    drawdownUsed,
+    'BREACHED'
+  );
+  const profitTargetCardKind = profitTargetCard(
+    hasProfitTargetSet,
+    profitTargetAmount,
+    shouldMask('balance')
+  );
+  const profitTargetStatus = ruleProgressStatus(
+    !isRiskProgressMasked && profitTargetAmount !== undefined,
+    profitTargetProgress,
+    'ACHIEVED'
+  );
 
   return (
     <section className="journalit-account-risk" ref={registerRiskSectionTarget}>
@@ -402,14 +451,18 @@ export const AccountRiskMetricsSection: React.FC = () => {
           />
         )}
 
-        {hasProfitTargetSet && (
+        {profitTargetCardKind === 'needs-balance' && (
+          <ProfitTargetNeedsBalanceBox />
+        )}
+
+        {profitTargetCardKind === 'metric' && (
           <ProfitTargetMetricBox
             account={account}
             currency={currency}
             defaultRiskAmount={defaultRiskAmount}
             profitTargetProgress={profitTargetProgress}
             progressAmount={progressAmount}
-            profitTargetAmount={profitTargetAmount}
+            profitTargetAmount={profitTargetAmount ?? 0}
             status={profitTargetStatus}
             isRiskProgressMasked={isRiskProgressMasked}
             formatValue={formatValue}

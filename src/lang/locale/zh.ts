@@ -3,6 +3,25 @@
 import type { Lang } from './en';
 
 const zh: Lang = {
+  'tradelog.export.button': '导出',
+  'tradelog.export.title': '导出交易',
+  'tradelog.export.format': '格式',
+  'tradelog.export.scope': '{count} 笔匹配交易 · {columns} 个可见列',
+  'tradelog.export.raw':
+    '即使开启隐私模式，数值也不会隐藏。盈亏为金额而非 R 值；图片仅包含路径。',
+  'tradelog.export.mobile': '在移动设备上，文件保存在仓库根目录。',
+  'tradelog.export.saved': '已将导出文件保存到仓库：{filename}',
+  'tradelog.export.failed': '无法导出交易，请重试。',
+  'tradelog.export.empty': '没有可导出的匹配交易或可见数据列。',
+  'tradelog.export.guide':
+    '使用“导出”可按可见列及其顺序，将全部匹配交易保存为 CSV、JSON 或 Markdown。即使开启隐私模式，文件也包含未隐藏的数据。',
+  'expectancy-gap.benchmark-help':
+    '模型或回测的平均值。筛选条件间共享，留空清除。',
+  'expectancy-gap.formula': '差距 = 实际 − 预期',
+  'expectancy-gap.realized-help':
+    '实际 = 具有可用风险数据的已平仓交易的平均净 R。',
+  'expectancy-gap.interpretation':
+    '负值 = 低于模型；正值 = 高于模型。这不解释原因。',
   'trade-import.recovery.bybit-header.columns': '缺少必需列：{columns}。',
   'trade-import.recovery.bybit-header.title': '检查 Bybit 表头或导出格式',
   'trade-import.recovery.bybit-header.message':
@@ -18,6 +37,27 @@ const zh: Lang = {
     '编辑期间账户信息已更改。请重新打开账户编辑器后再保存。',
   'account.profiles.profitable-days-conflict':
     '应用这些条款前，请保留当前出金政策，或修改盈利天数要求。',
+  'account.prop-challenge.position-limits-not-monitored':
+    'Journalit 不监控持仓限额或合约数量调整规则。请查看交易公司的规则及交易平台。',
+  'account.prop-challenge.rule.profit-basis.cumulative':
+    '累计交易利润（出金不会降低）',
+  'account.prop-challenge.rule.profit-basis': '调整限额的利润基准',
+  'account.prop-challenge.rule.manual_review': '公司审核 / 不支持的条款',
+  'account.prop-challenge.summary.rule.manual_review': '公司审核',
+  'account.prop-challenge.ledger.state.needs-review': '需要公司审核',
+  'account.prop-challenge.payout.estimated-net': '预计交易者净额',
+  'account.prop-challenge.payout.gross-withdrawals': '账户提款总额',
+  'account.prop-challenge.payout.lifetime-gross':
+    '当前阶段利润 + 本阶段此前所有提款总额（并非仅本次付款周期）',
+  'account.prop-challenge.payout.unresolved-cap': '向公司确认上限',
+  'account.prop-challenge.payout.marginal-split': '按利润区间分配',
+  'account.prop-challenge.payout-rules.profit-split.above':
+    '高于门槛的交易者分成 (%)',
+  'account.prop-challenge.payout.not-calculated': '未计算',
+  'account.prop-challenge.payout.manual-only':
+    '无法根据这些条款计算提款。你仍可记录实际提款。',
+  'account.prop-challenge.payout.raise-floor': '将未达到的下限提高至初始余额',
+  'account.prop-challenge.rule.comparison': '比较',
   'templateEditor.widget.session-log.hide-empty-outside':
     '会话之外的日志为空时隐藏',
   'account.profiles.correction-title': '目录勘误',
@@ -27,9 +67,12 @@ const zh: Lang = {
   'account.profiles.correction-before': '纠正前',
   'account.profiles.correction-after': '纠正后',
   'account.profiles.correction-stale': '账户历史已更改。请重新打开审核。',
-  'account.profiles.correction-result': '硬性规则评估',
-  'account.profiles.no-hard-breach': '未发现硬性违规',
+  'account.profiles.correction-effect': '对此账户的影响',
+  'account.profiles.not-failed': '未违规',
   'account.profiles.correction-consent': '重新计算历史',
+  'account.profiles.correction-consent-help':
+    '为受影响的历史替换此阶段的规则并重新检查其结果。交易和付款不会更改。',
+  'account.profiles.correction-period-open': '自 {date} 起',
   'account.profiles.correction-details': '详情',
   'account.profiles.correction-apply': '应用修正',
   'account.profiles.purchase-date': '最初购买日期',
@@ -54,13 +97,6 @@ const zh: Lang = {
   'account.profiles.source-changed':
     '此审核打开期间机构规则已更改。请重新打开审核后再应用。',
   'account.profiles.retain': '保留当前规则',
-  'account.profiles.retain-help':
-    '保留账户规则并忽略此次来源更改。后续规则更改仍可再次提醒。',
-  'account.profiles.comparison-help':
-    '仅显示差异。展开规则可查看字段。本地自定义也可能造成差异。',
-  'account.profiles.added': '新增',
-  'account.profiles.removed': '移除',
-  'account.profiles.changed': '已更改',
   'account.profiles.not-configured': '未配置',
   'account.profiles.no-rule-changes': '此阶段的规则和提款政策没有差异。',
   'account.profiles.accept': '应用更新',
@@ -84,8 +120,6 @@ const zh: Lang = {
   'account.profiles.incoming': '机构的新规则',
   'account.profiles.independent':
     '已保存的规则仅存在于此仓库。应用时会在账户上创建独立副本；保存新修订版绝不会更改现有账户。',
-  'account.profiles.keep-help':
-    '勾选的规则保留你的本地值，而不采用同类型的新规则。取消勾选即可接受机构的值。新的规则类型会被添加。',
   'account.profiles.keep-local': '保留我的规则：',
   'account.profiles.keep-payout': '保留当前出金政策',
   'account.profiles.library': '我保存的规则',
@@ -106,17 +140,16 @@ const zh: Lang = {
     '将此挑战关联到其机构的规则，机构更改规则时 Journalit 会提醒你。你会先查看它们与此账户规则的差异；在你应用之前不会有任何更改。',
   'account.profiles.link-title': '关联机构规则',
   'account.profiles.choose-source': '选择机构规则',
-  'account.profiles.update-available':
-    '机构规则已更改，需要审核。你的账户仍在使用已保存的规则。',
-  'account.profiles.up-to-date':
-    '此阶段使用最新审核过的机构规则；本地调整保持独立。',
   'widget.mfeScatter.name': 'MFE 与已实现盈亏',
   'widget.mfeScatter.description': '每笔交易最大浮盈与最终 P&L 对比',
-  'widget.mfeScatter.y': '已实现盈亏（{unit}）',
-  'widget.mfeScatter.winners': '盈利',
-  'widget.mfeScatter.losers': '亏损',
-  'widget.mfeScatter.breakeven': '保本',
+  'widget.excursionScatter.y': '已实现盈亏（{unit}）',
+  'widget.excursionScatter.winners': '盈利',
+  'widget.excursionScatter.losers': '亏损',
+  'widget.excursionScatter.breakeven': '保本',
   'widget.mfeScatter.empty': '没有具备此单位有效 MFE 的已平仓交易。',
+  'widget.maeScatter.name': 'MAE 与已实现盈亏',
+  'widget.maeScatter.description': '每笔交易最大浮亏与最终 P&L 对比',
+  'widget.maeScatter.empty': '没有具备此单位有效 MAE 的已平仓交易。',
 
   'trade-sync.tradovate.status.connecting': '正在连接',
   'trade-sync.tradovate.status.setup-required': '需要设置账户',
@@ -133,6 +166,8 @@ const zh: Lang = {
     '已同步 {succeeded}/{total} 个 Tradovate 连接。',
   'trade-sync.tradovate.sync-all-partial':
     '已同步 {succeeded}/{total} 个 Tradovate 连接。请检查存在问题的连接。',
+  'trade-sync.tradovate.sync-all-provider-partial':
+    '已同步 {succeeded}/{total} 个 Tradovate 连接 · 同步部分完成',
   'trade-sync.tradovate.connect-another': '连接另一个 Tradovate 账户',
   'trade-sync.tradovate.no-connections':
     '请先在 Journalit.co 连接 Tradovate 账户，然后在此处配置并同步。',
@@ -191,6 +226,8 @@ const zh: Lang = {
     '已同步 {succeeded}/{total} 个 cTrader 连接。',
   'trade-sync.ctrader.sync-all-partial':
     '已同步 {succeeded}/{total} 个 cTrader 连接。请检查存在问题的连接。',
+  'trade-sync.ctrader.sync-all-provider-partial':
+    '已同步 {succeeded}/{total} 个 cTrader 连接 · 同步部分完成',
   'trade-sync.ctrader.connect-another': '连接另一个 cTrader 账户',
   'trade-sync.ctrader.no-connections':
     '请先在 Journalit.co 连接 cTrader 账户，然后在此处配置并同步。',
@@ -231,32 +268,83 @@ const zh: Lang = {
     '请先选择本地账户再恢复交易笔记。',
   'trade-sync.ctrader.recovery-confirm':
     '将 {count} 条交易笔记恢复到 {account}？',
-  'trade-sync.oauth.remap.title': 'Change account',
+  'trade-sync.oauth.remap.title': '更换账户',
   'trade-sync.oauth.remap.message':
-    'Use {newAccount} for existing notes too? Otherwise, only future broker updates will use it.',
-  'trade-sync.oauth.remap.update-notes': 'Update notes',
-  'trade-sync.oauth.remap.future-only': 'Future updates only',
+    '现有笔记也使用 {newAccount} 吗？否则只有今后的经纪商更新会使用它。',
+  'trade-sync.oauth.remap.update-notes': '更新笔记',
+  'trade-sync.oauth.remap.future-only': '仅今后的更新',
   'trade-sync.oauth.remap.unavailable':
-    'Account remapping is unavailable. Update the Journalit server and try again.',
-  'trade-sync.oauth.remap.restore-in-progress':
-    'Wait for Restore to finish, then try again.',
+    '账户重新映射不可用。请更新 Journalit 服务器后重试。',
+  'trade-sync.oauth.remap.restore-in-progress': '请等待恢复完成后重试。',
   'trade-sync.oauth.remap.operation-conflict':
-    'That remap request conflicted with an earlier attempt. Try again.',
-  'trade-sync.oauth.remap.account-busy':
-    'This account is busy synchronizing. Retry shortly.',
+    '该重新映射请求与之前的尝试冲突。请重试。',
+  'trade-sync.oauth.remap.account-busy': '此账户正在同步。请稍后重试。',
   'trade-sync.oauth.remap.account-unavailable':
-    'This account is no longer available. Refresh and try again.',
-  'trade-sync.oauth.remap.preserved-conflicts':
-    '{count} existing conflict(s) were left unchanged.',
+    '此账户已不可用。请刷新后重试。',
+  'trade-sync.oauth.remap.preserved-conflicts': '{count} 个现有冲突保持不变。',
   'trade-sync.oauth.remap.notes-pending':
-    '{count} existing note update(s) are still pending. Synchronize again to retry.',
+    '{count} 个现有笔记更新仍在等待。请再次同步以重试。',
   'trade-sync.source.ctrader': 'cTrader',
+  'trade-sync.source.hyperliquid': 'Hyperliquid',
+  'trade-sync.source.hyperliquid.description':
+    'Hyperliquid USDC 永续合约的只读同步，在 Journalit.co 上设置并写入此仓库。',
+  'onboarding.broker.option.hyperliquid-sync.label':
+    'Hyperliquid（USDC 永续合约）',
+  'trade-sync.hyperliquid.recovery-title': '恢复缺失的交易笔记',
+  'trade-sync.hyperliquid.recovery-count': '{count} 条交易笔记可恢复',
+  'trade-sync.hyperliquid.recovery-select-account':
+    '请先选择本地账户再恢复交易笔记。',
+  'trade-sync.hyperliquid.recovery-confirm':
+    '将 {count} 条交易笔记恢复到 {account}？',
+  'trade-sync.hyperliquid.scope-description':
+    '同步仅涵盖以 USDC 结算的永续合约，且 Hyperliquid 通过其 API 提供的历史记录可能不完整。CSV 导入仍可使用，但 CSV 与同步中重叠的交易不会自动去重。',
+  'trade-sync.hyperliquid.description':
+    '只读：在 Journalit.co 上连接钱包地址并选择账户和历史记录。在这里你将每个账户映射到一个 Journalit 账户，并将交易同步到此仓库。',
+  'trade-sync.hyperliquid.manage-on-website': '在 Journalit.co 上管理',
+  'trade-sync.hyperliquid.connect-on-website': '在 Journalit.co 上连接',
+  'trade-sync.hyperliquid.manage-connection': '在网站上管理',
+  'trade-sync.hyperliquid.pending-acks': '{count} 个仓库更新等待确认。',
+  'trade-sync.hyperliquid.disabled': 'Hyperliquid 同步尚不可用。',
+  'trade-sync.hyperliquid.status-failed': '无法加载 Hyperliquid 状态。',
+  'trade-sync.hyperliquid.no-connections':
+    '还没有 Hyperliquid 连接。请在 Journalit.co 上连接钱包地址，然后返回这里。',
+  'trade-sync.hyperliquid.never': '从未',
+  'trade-sync.hyperliquid.last-sync': '上次同步',
+  'trade-sync.hyperliquid.reconciliation-issues': '{count} 个对账问题',
+  'trade-sync.hyperliquid.status.pending': '正在发现账户',
+  'trade-sync.hyperliquid.status.setup-required': '需要设置',
+  'trade-sync.hyperliquid.status.paused': '已暂停',
+  'trade-sync.hyperliquid.status.attention': '需要处理',
+  'trade-sync.hyperliquid.status.error': '连接错误',
+  'trade-sync.hyperliquid.status.deleting': '正在删除云端数据',
+  'trade-sync.hyperliquid.notice.setup-required':
+    '在 Journalit.co 上选择要同步的账户和历史记录。',
+  'trade-sync.hyperliquid.notice.paused':
+    '同步已暂停。现有笔记会保留。请在 Journalit.co 上恢复同步。',
+  'trade-sync.hyperliquid.notice.attention':
+    '此连接需要处理。请在 Journalit.co 上查看，或联系支持。',
+  'trade-sync.hyperliquid.account.selected': '已选择同步',
+  'trade-sync.hyperliquid.account.not-selected': '未选择',
+  'trade-sync.hyperliquid.claimed-by-connection': '通过 {connection} 同步。',
+  'trade-sync.hyperliquid.mapping-required':
+    '请先为每个已选择的账户选择一个 Journalit 账户。',
+  'trade-sync.hyperliquid.sync-to-vault': '同步',
+  'trade-sync.hyperliquid.sync-all': '全部同步',
+  'trade-sync.hyperliquid.sync-complete': '{connection} 同步已完成。',
+  'trade-sync.hyperliquid.sync-partial':
+    '{connection} 同步已完成，但存在问题。',
+  'trade-sync.hyperliquid.sync-all-complete':
+    '已同步 {succeeded}/{total} 个 Hyperliquid 连接。',
+  'trade-sync.hyperliquid.sync-all-partial':
+    '已同步 {succeeded}/{total} 个 Hyperliquid 连接。请检查存在问题的连接。',
+  'trade-sync.hyperliquid.sync-all-provider-partial':
+    '已同步 {succeeded}/{total} 个 Hyperliquid 连接 · 同步部分完成',
   'trade-sync.source.ctrader.description':
-    'Synchronize cTrader trades in the cloud and project them into this vault.',
-  'trade-sync.ctrader.status-failed': 'Unable to load cTrader status.',
-  'trade-sync.ctrader.last-sync': 'Last sync',
+    '在云端同步 cTrader 交易，并写入此仓库。',
+  'trade-sync.ctrader.status-failed': '无法加载 cTrader 状态。',
+  'trade-sync.ctrader.last-sync': '上次同步',
   'trade-sync.ctrader.pending-acks': '{count} 个本地 ACK 待处理',
-  'trade-sync.ctrader.never': 'Never',
+  'trade-sync.ctrader.never': '从未',
 
   
   
@@ -264,7 +352,7 @@ const zh: Lang = {
 
   
   'command.add-trade': '添加新交易',
-  'command.quick-import-trades': 'Quick import trades',
+  'command.quick-import-trades': '快速导入交易',
   'command.import-trades-csv': '打开 Trade Import',
 
   
@@ -298,7 +386,7 @@ const zh: Lang = {
   'template.switch-title': '切换布局',
   'template.switch-review-title': '切换{type}布局',
 
-  'template.review-type.drc': '每日报告卡',
+  'template.review-type.drc': '每日复盘',
   'template.review-type.weekly': '周度复盘',
   'template.review-type.monthly': '月度复盘',
   'template.review-type.quarterly': '季度复盘',
@@ -311,8 +399,8 @@ const zh: Lang = {
   'template.builder.create-from-sidebar': '或从侧边栏创建一个新布局',
   'template.builder.snippet-coming-soon': '片段编辑器即将推出',
 
-  'template.preview.empty': '此模板没有任何组件',
-  'template.preview.summary': '{type} 模板 - {count} 个组件',
+  'template.preview.empty': '此布局中没有组件',
+  'template.preview.summary': '{type}布局 - {count} 个组件',
   'template.preview.mode': '预览模式',
   'template.preview.markdown-zone-placeholder': 'Markdown 区域 - 在此书写',
   'template.preview.markdown-zone-placeholder-with-id':
@@ -348,25 +436,6 @@ const zh: Lang = {
   
   
   
-  'auth.title.already-logged-in': '已登录',
-  'auth.desc.already-logged-in': '您已登录{email}。',
-  'auth.title.sign-in': '登录 Journalit',
-
-  'auth.label.email': '邮箱地址',
-
-  'auth.button.send-code': '发送验证码',
-
-  'auth.label.code': '验证码',
-
-  'auth.button.verify': '验证并登录',
-
-  'auth.button.resend': '重新发送验证码',
-
-  
-
-  'auth.error.needs-premium': '专业版功能',
-
-  'auth.error.network-error': '连接错误',
 
   
   
@@ -389,7 +458,7 @@ const zh: Lang = {
   'form.section.trade-details': '交易详情',
   'form.section.trading-costs': '交易成本',
   'form.section.risk-management': '风险管理',
-  'form.section.take-profits': 'Take Profits',
+  'form.section.take-profits': '止盈目标',
   'form.section.analysis-thesis': '分析与论点',
 
   
@@ -413,6 +482,10 @@ const zh: Lang = {
   'form.manual-import-nudge.dismiss': '暂不',
   'form.layout.customize': '自定义表单',
   'form.layout.modal-title': '自定义交易表单',
+  'form.layout.back-to-trade': '返回交易',
+  'form.layout.save-layout': '保存布局',
+  'form.layout.discard-changes.body':
+    '放弃未保存的自定义设置？你的交易草稿将会保留。',
   'form.layout.settings-title': '交易表单布局',
 
   'form.layout.input-mode': '输入模式',
@@ -470,14 +543,14 @@ const zh: Lang = {
   'form.field.swap': '隔夜利息',
   'form.field.other-fees': '其他费用',
   'form.field.stop-loss': '止损',
-  'form.field.take-profit': 'Take Profit',
+  'form.field.take-profit': '止盈',
   'form.field.take-profit-short': 'TP',
-  'form.field.target-price': 'Target Price',
-  'form.field.close-percent': 'Close %',
+  'form.field.target-price': '目标价格',
+  'form.field.close-percent': '平仓 %',
   'form.field.close-size': '平仓数量',
   'form.placeholder.close-size': '0.5',
   'form.layout.take-profit-unit': '止盈平仓数量单位',
-  'form.layout.take-profit-unit-percent': 'Close %',
+  'form.layout.take-profit-unit-percent': '平仓 %',
   'form.layout.take-profit-unit-size': '数量',
   'trade.validation.take-profit-size-number': '止盈数量必须是有效数字。',
   'trade.validation.take-profit-size-positive': '止盈数量必须大于 0。',
@@ -485,13 +558,13 @@ const zh: Lang = {
     '止盈数量总和不能超过仓位大小。',
   'form.field.risk-amount': '风险金额',
   'form.field.profit-loss': '盈亏',
-  'form.field.total-pnl': '总盈亏',
+  'form.field.total-pnl': '交易盈亏',
   'form.field.realized-pnl': '已实现盈亏',
   'form.field.floating-pnl': '浮动盈亏',
   'form.field.total-costs': '总成本:',
   'form.field.setup': '策略',
   'form.field.mistake': '失误',
-  'form.field.custom-tags': '自定义标签',
+  'form.field.tags': '标签',
   'form.field.trade-thesis': '交易论点',
   'form.field.time': '时间',
   'form.field.price': '价格',
@@ -552,8 +625,35 @@ const zh: Lang = {
   'form.placeholder.swap': '隔夜融资费用',
   'form.placeholder.other-fees': '平台/监管费用',
   'form.placeholder.dividend-amount': '现金金额，可正可负',
-  'form.placeholder.stop-loss': '可选的止损价格',
-  'form.placeholder.target-price': 'Target price',
+  'form.placeholder.stop-loss': '止损价',
+  'form.layout.stop-loss-unit': '止损数量单位',
+  'form.layout.stop-loss-unit-percent': '仓位百分比',
+  'form.layout.stop-loss-unit-size': '数量',
+  'form.field.stop-loss-short': 'SL',
+  'form.field.stop-price': '止损价',
+  'form.field.stop-loss-percent': '仓位 %',
+  'form.field.stop-loss-size': '数量',
+  'form.action.remove-stop-loss': '移除止损',
+  'form.stop-loss.coverage': '止损覆盖了 {percent} 的仓位。',
+  'form.stop-loss.coverage-partial':
+    '在每个单位都设有止损之前，风险使用风险金额。',
+  'form.placeholder.stop-loss-rest': '剩余',
+  'form.empty.stop-losses': '暂无止损',
+  'tradelog.tooltip.stop-losses': '止损',
+  'form.placeholder.stop-loss-size-amount': '{size} 单位',
+  'trade.validation.stop-loss-price-required': '止损价格为必填项。',
+  'trade.validation.stop-loss-close-percent-number':
+    '止损百分比必须是有效数字。',
+  'trade.validation.stop-loss-close-percent-range':
+    '止损百分比必须在 1 到 100 之间。',
+  'trade.validation.stop-loss-size-number': '止损数量必须是有效数字。',
+  'trade.validation.stop-loss-size-positive': '止损数量必须大于 0。',
+  'trade.validation.stop-loss-single-blank-amount':
+    '只有一个止损可以不填数量。',
+  'trade.validation.stop-loss-total-over-position':
+    '止损覆盖的数量超过了仓位。',
+  'trade.details.stop-loss-count': '{count} 个止损',
+  'form.placeholder.target-price': '目标价格',
   'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': '计划风险金额',
   'form.placeholder.fx-rate': '1 {currency} = ? {base}（留空：使用每日汇率）',
@@ -569,6 +669,8 @@ const zh: Lang = {
   
   
   'form.entry-exit.add-entry': '+ 添加入场',
+  'form.entry-exit.backtest-day': '日期为 {date}，即你上一笔回测交易的日期。',
+  'form.entry-exit.use-today': '使用今天',
   'form.entry-exit.add-exit': '+ 添加出场',
   'form.entry-exit.remove-entry': '删除入场',
   'form.entry-exit.remove-exit': '删除出场',
@@ -579,9 +681,9 @@ const zh: Lang = {
   'form.entry-exit.remaining-position': '剩余仓位:',
   'form.entry-exit.open': '(持仓中)',
   'form.entry-exit.closed': '(已平仓)',
-  'form.entry-exit.direct-pnl': '直接输入盈亏而非价格',
+  'form.entry-exit.direct-pnl': '直接输入交易基础盈亏，而不是价格',
   'form.entry-exit.direct-pnl-desc':
-    '直接输入您的总盈亏。佣金和费用仍会被扣除。',
+    '输入分红前的交易盈亏。佣金和费用仍会单独计算。',
   'form.entry-exit.calc-pnl': '根据入场/出场价格和仓位计算盈亏。',
   'form.ideal-exit.title': '理想出场',
 
@@ -610,7 +712,7 @@ const zh: Lang = {
   
   
   'form.trade-type.title': '交易类型',
-  'form.trade-type.subtitle': '选择您要创建的交易类型',
+  'form.trade-type.subtitle': '选择你要创建的交易类型',
   'form.trade-type.regular': '常规交易',
   'form.trade-type.regular-desc': '包含完整入场和出场数据的普通交易',
   'form.trade-type.missed': '错过的交易',
@@ -619,7 +721,7 @@ const zh: Lang = {
   'form.trade-type.backtest-desc': '用于分析目的的回测场景',
   'form.trade-type.missed-reason': '为什么错过了这笔交易?',
   'form.trade-type.missed-reason-placeholder':
-    '描述您错过这个交易机会的原因...',
+    '描述你错过这个交易机会的原因...',
 
   
   
@@ -639,7 +741,6 @@ const zh: Lang = {
   'button.add-trade': '添加交易',
   'button.update-trade': '更新交易',
   'button.save-changes': '保存更改',
-  'button.create-trade': '创建交易',
   'button.delete-all': '全部删除',
   'button.clear-all': '全部清除',
 
@@ -714,20 +815,17 @@ const zh: Lang = {
   'trade.validation.stop-loss-number': '止损必须为数字。',
   'trade.validation.stop-loss-valid-number': '止损必须为有效数字。',
 
-  'trade.validation.take-profit-price-required':
-    'Take profit price is required.',
-  'trade.validation.take-profit-price-number':
-    'Take profit price must be a number.',
-  'trade.validation.take-profit-price-valid-number':
-    'Take profit price must be a valid number.',
+  'trade.validation.take-profit-price-required': '止盈价格为必填项。',
+  'trade.validation.take-profit-price-number': '止盈价格必须是数字。',
+  'trade.validation.take-profit-price-valid-number': '止盈价格必须是有效数字。',
   'trade.validation.take-profit-close-percent-number':
-    'Take profit close percent must be a number.',
+    '止盈平仓百分比必须是数字。',
   'trade.validation.take-profit-close-percent-valid-number':
-    'Take profit close percent must be a valid number.',
+    '止盈平仓百分比必须是有效数字。',
   'trade.validation.take-profit-close-percent-range':
-    'Take profit close percent must be between 1 and 100.',
+    '止盈平仓百分比必须在 1 到 100 之间。',
   'trade.validation.take-profit-total-close-percent-range':
-    'Take profit close percentages cannot exceed 100.',
+    '止盈平仓百分比之和不能超过 100。',
   
   
   
@@ -762,10 +860,9 @@ const zh: Lang = {
   'notice.pro-access-ready': 'PRO 权限已就绪。',
 
   'notice.logout-success': '已成功退出登录',
-  'notice.hotkey-set': '快捷键已设置：{hotkey}',
   'notice.ftp-created': 'FTP凭据创建成功',
   'notice.ftp-password-rotated':
-    '已为此设备生成新的FTP凭据。在其他设备上配置的FTP同步（例如您的MetaTrader EA）必须更新为新密码。',
+    '已为此设备生成新的FTP凭据。在其他设备上配置的FTP同步（例如你的MetaTrader EA）必须更新为新密码。',
   'notice.ftp-reused':
     '已加载此设备上现有的FTP凭据。如果它们不再有效，请使用重置密码。',
   'notice.ftp-reset': 'FTP密码重置成功!请保存新密码。',
@@ -788,7 +885,7 @@ const zh: Lang = {
   'notice.custom-fields-imported': '已成功导入 {count} 个自定义字段',
 
   'notice.setups-added': '已为 {count} 笔交易添加策略',
-  'notice.tags-added': 'Added tags to {count} trades',
+  'notice.tags-added': '已为 {count} 笔交易添加标签',
   'notice.mistakes-added': '已为 {count} 笔交易添加失误',
 
   
@@ -796,8 +893,8 @@ const zh: Lang = {
   
   'notice.error.open-journalit': '无法打开Journalit。请尝试重新加载Obsidian。',
   'notice.error.open-drc': '无法打开DRC:{error}',
-  'notice.error.open-trade-log': 'Failed to open Trade Log: {error}',
-  'notice.error.open-csv-import': 'Failed to open Trade Import: {error}',
+  'notice.error.open-trade-log': '无法打开交易日志：{error}',
+  'notice.error.open-csv-import': '无法打开 Trade Import：{error}',
   'notice.error.open-weekly-review': '无法打开周度回顾:{error}',
   'notice.error.open-monthly-review': '无法打开月度回顾:{error}',
   'notice.error.open-quarterly-review': '无法打开季度回顾:{error}',
@@ -814,13 +911,12 @@ const zh: Lang = {
   'notice.guide.replay-started': '已为当前视图重新启动指南。',
   'notice.error.open-layout-builder': '无法打开布局编辑器：{error}',
   'notice.error.switch-template': '切换布局失败：{error}',
-  'notice.error.no-active-file': '没有活动文件。请先打开一个笔记。',
   'notice.error.no-template-support': '此笔记类型不支持布局。',
   'notice.error.no-templates': '此笔记类型没有可用布局。',
   'notice.error.asset-type-required': '添加交易品种时需要选择资产类型',
   'notice.error.column-required': '至少需要保留一个可见列',
   'notice.error.save-settings': '保存设置时出错:{error}',
-  'notice.error.sign-in-vault': '请登录以注册您的保管库。',
+  'notice.error.sign-in-vault': '请登录以注册你的保管库。',
   'notice.error.sign-in-sync': '请登录以使用自动同步功能。',
   'notice.error.restore-auth': '无法恢复认证。请在 设置 → 认证 重新登录。',
   'notice.error.export-settings': '导出设置失败。请查看控制台了解详情。',
@@ -829,14 +925,10 @@ const zh: Lang = {
 
   'notice.error.mark-reviewed': '标记交易为已审阅时出错:{error}',
   'notice.error.add-setups': '添加策略时出错:{error}',
-  'notice.error.add-tags': 'Error adding tags: {error}',
+  'notice.error.add-tags': '添加标签出错：{error}',
   'notice.error.add-mistakes': '添加失误时出错:{error}',
   'notice.error.duplicate-trades': '复制交易时出错:{error}',
   'notice.error.delete-trades': '删除交易时出错:{error}',
-  'notice.error.csv-validation': 'CSV/XLSX/XLS验证失败:{errors}',
-  'notice.error.import-failed': '导入失败:{error}',
-  'notice.error.file-too-large': '文件过大。最大允许10MB',
-  'notice.error.select-csv': '请选择一个 CSV/XLSX/XLS/HTML 文件',
   'notice.error.cannot-delete-builtin': '无法删除内置布局',
   'notice.error.duplicate-to-customize': '请复制此布局以进行自定义',
   'notice.error.sign-out': '无法退出登录。请再试一次。',
@@ -856,144 +948,114 @@ const zh: Lang = {
   'tradelog.root.all-trades': '所有交易',
   'tradelog.view.selector.label': '视图',
 
-  'trade-form.guide.customization-modal.title': '让表单匹配你的工作流程',
-  'trade-form.guide.customization-modal.description':
+  'trade-form.guide.customization-page.title': '让表单匹配你的工作流程',
+  'trade-form.guide.customization-page.description':
     '你可以在这里显示、隐藏和重新排序可选模块。让表单专注于你真正使用的字段。',
   'trade-form.guide.finish.title': '这就是自定义功能',
   'trade-form.guide.finish.description':
     '当交易表单需要匹配不同的日志流程时，你可以随时回到这个按钮进行调整。',
-  'tradelog.guide.empty.intro.title': 'Welcome to Trade Log',
+  'tradelog.guide.empty.intro.title': '欢迎使用交易日志',
   'tradelog.guide.empty.intro.description':
-    'This page becomes your main place for browsing, sorting, and reviewing trades. Once you add trades, you will also get the full Trade Log tour.',
+    '此页面将成为你浏览、排序和复盘交易的主要位置。添加交易后，你还会看到完整的交易日志导览。',
   'tradelog.guide.empty.state.title': '没有可用的交易数据',
   'tradelog.guide.empty.state.description':
     '导入以往交易即可查看表现，或者手动记录一笔新交易。',
-  'tradelog.guide.intro.title': 'This is your Trade Log',
+  'tradelog.guide.intro.title': '这是你的交易日志',
   'tradelog.guide.intro.description':
-    'Use this page to review trades one by one, sort them, filter them, and make changes to many trades at once.',
-  'tradelog.guide.view-selector.title':
-    'Choose how you want to review your history',
+    '使用此页面逐笔复盘交易、排序、筛选，并一次修改多笔交易。',
+  'tradelog.guide.view-selector.title': '选择你想如何复盘历史',
   'tradelog.guide.view-selector.description':
-    'Use this menu to switch between the full trade table and grouped time views like months, weeks, or days. Trades is the default, but grouped views are useful when you want to review by period.',
-  'tradelog.guide.filters.title': 'Use filters to narrow the Trade Log',
+    '使用此菜单在完整交易表与按月、周或日分组的时间视图之间切换。默认是“交易”视图，但想按时间段复盘时，分组视图很有用。',
+  'tradelog.guide.filters.title': '使用筛选缩小交易日志范围',
   'tradelog.guide.filters.description':
-    '想只查看某些账户、交易设置、标签、交易类型、状态或日期时，打开筛选。也可以排除任意值，把这些交易去掉。',
-  'tradelog.guide.sorting.title': 'Click column headers to sort the table',
+    '想只查看某些账户、策略、标签、交易类型、状态或日期时，打开筛选。也可以排除任意值，把这些交易去掉。',
+  'tradelog.guide.sorting.title': '点击列标题对表格排序',
   'tradelog.guide.sorting.description':
-    'In Trades view, click a sortable column header to reorder the table. For example, click Net P&L to sort by your biggest win and biggest loss.',
+    '在“交易”视图中，点击可排序的列标题即可重新排列表格。例如，点击“净盈亏”可按最大盈利和最大亏损排序。',
   'tradelog.guide.gallery-mode.title': '还有图片画廊',
   'tradelog.guide.gallery-mode.description':
     '在此切换模式，以画廊方式浏览交易截图。首次打开时会有简短指南。',
-  'tradelog.guide.multi-select.title': 'Turn on multi-select',
-  'tradelog.guide.multi-select.description':
-    'Click this button to select several trades at once. When multi-select is on, row clicks select trades instead of opening them.',
-  'tradelog.guide.batch-actions.title': 'These are your batch actions',
-  'tradelog.guide.batch-actions.description':
-    'Use this bar to select all visible trades, clear your selection, mark trades as reviewed, add setups, add mistakes, duplicate trades, or delete several trades at once. You can also shift-click to select a range of trades.',
-  'tradelog.guide.column-settings.title': 'Open column settings',
-  'tradelog.guide.column-settings.description':
-    'Click this button to choose which columns are shown and how dense or detailed the table should feel.',
-  'tradelog.guide.active-columns.title':
-    'Reorder or remove the columns you already use',
-  'tradelog.guide.active-columns.description':
-    'In Active Columns, drag a column to move it, or remove one you do not need. This changes the order of the table from left to right.',
-  'tradelog.guide.available-columns.title':
-    'Add hidden columns back when you need more detail',
-  'tradelog.guide.available-columns.description':
-    'Open Available Columns to add fields back into the table. That is where you bring back anything you removed earlier.',
-  'tradelog.guide.open-trades.title':
-    'Click a trade when you want to open its note',
+  'tradelog.guide.open-trades.title': '点击交易即可打开其笔记',
   'tradelog.guide.open-trades.description':
-    'In normal mode, clicking a trade opens it. In multi-select mode, clicking selects it instead. Switch between those two behaviours depending on what you are trying to do.',
-  'dashboard.guide.empty.intro.title': 'Welcome to your Dashboard',
+    '在普通模式下，点击交易会打开它；在多选模式下，点击则会选中它。可根据需要在两种行为之间切换。',
+  'dashboard.guide.empty.intro.title': '欢迎来到你的仪表盘',
   'dashboard.guide.empty.intro.description':
     'Journalit 获得可分析的交易历史后，仪表盘即可发挥作用。',
   'dashboard.guide.empty.state.title': '带上你的交易历史',
   'dashboard.guide.empty.state.description':
     '导入以往交易，从有意义的表现数据开始；如果你刚开始记录交易，也可以手动添加。',
-  'dashboard.guide.main.intro.title': '这是您的仪表盘',
+  'dashboard.guide.main.intro.title': '这是你的仪表盘',
   'dashboard.guide.main.intro.description':
-    'Use this page to track your performance, review your stats, and keep your most useful charts in one place.',
-  'dashboard.guide.main.filters.title': 'Filters change the whole Dashboard',
+    '使用此页面跟踪你的表现、查看统计数据，并把最有用的图表放在一起。',
+  'dashboard.guide.main.filters.title': '筛选会影响整个仪表盘',
   'dashboard.guide.main.filters.description':
-    '想让本页的所有统计和图表按其他日期范围、账户、交易设置、标签或交易类型更新时，使用筛选。也可以排除任意值，把这些交易去掉。',
-  'dashboard.guide.main.edit-layout.title':
-    'Turn on edit mode to customise this page',
+    '想让本页的所有统计和图表按其他日期范围、账户、策略、标签或交易类型更新时，使用筛选。也可以排除任意值，把这些交易去掉。',
+  'dashboard.guide.main.edit-layout.title': '开启编辑模式来自定义此页面',
   'dashboard.guide.main.edit-layout.description':
-    'Click Edit Layout to unlock moving, resizing, removing, and adding Dashboard widgets.',
-  'dashboard.guide.main.open-widget-selector.title': 'Open Add Widget',
+    '点击“编辑布局”，即可移动、调整大小、移除和添加仪表盘组件。',
+  'dashboard.guide.main.open-widget-selector.title': '打开“添加组件”',
   'dashboard.guide.main.open-widget-selector.description':
-    'Click Add Widget to add more charts and bring back widgets you removed earlier.',
-  'dashboard.guide.main.widget-picker.title': 'Pick what you want to show',
+    '点击“添加组件”可添加更多图表，并找回之前移除的组件。',
+  'dashboard.guide.main.widget-picker.title': '选择要显示的内容',
   'dashboard.guide.main.widget-picker.description':
     '此面板预览所有图表和指标。点击即可添加；已在仪表盘上的内容会列在“使用中”下。',
-  'dashboard.guide.main.metrics.title':
-    'These top cards are your quick summary',
+  'dashboard.guide.main.metrics.title': '顶部这些卡片是你的快速概览',
   'dashboard.guide.main.metrics.description':
-    'The top row gives you fast answers like profit, win rate, and total trades. In edit mode, you can change which cards appear and reorder them.',
-  'dashboard.guide.main.bottom.title':
-    'This is where moving and resizing happens',
+    '顶部一行快速显示利润、胜率和总交易数等信息。在编辑模式下，可以更改显示哪些卡片并调整顺序。',
+  'dashboard.guide.main.bottom.title': '在这里移动和调整大小',
   'dashboard.guide.main.bottom.description':
-    'While Edit Layout is on, drag a widget to move it. To resize a widget, drag its bottom-right corner. This is the step many users miss.',
-  'dashboard.guide.main.save-layout.title':
-    'Save your layout when you are done',
+    '开启“编辑布局”后，拖动组件即可移动它。要调整组件大小，请拖动其右下角。这是很多用户容易忽略的一步。',
+  'dashboard.guide.main.save-layout.title': '完成后保存布局',
   'dashboard.guide.main.save-layout.description':
-    'When you finish customising, click Save Layout to keep your changes. You can come back and edit this page again anytime.',
+    '完成自定义后，点击“保存布局”保存更改。你可以随时回来再次编辑此页面。',
   'home.guide.intro.title': '欢迎回家',
   'home.guide.intro.description':
-    'This is your main page. It shows your trading stats, quick actions, and shortcuts to the rest of Journalit.',
-  'home.guide.filters.title': 'These buttons change what your widgets show',
+    '这是你的主页面，显示交易统计、快捷操作以及通往 Journalit 其他部分的入口。',
+  'home.guide.filters.title': '这些按钮会改变组件显示的内容',
   'home.guide.filters.description':
-    'Use these to switch the time period, trade type, or account so your Home widgets show the data you want to look at.',
-  'home.guide.settings.title': 'Journalit 设置始终触手可及',
-  'home.guide.settings.description': '使用此按钮可直接打开 Journalit 设置。',
-  'home.guide.customize.title': 'Turn on edit mode to customise Home',
+    '按时段、交易类型或账户筛选。选择“周”，或用“自定义范围”设置包含起止日期。与时段相关的组件会跟随你的选择；实时组件保持实时。',
+  'home.guide.customize.title': '开启编辑模式来自定义首页',
   'home.guide.customize.description':
-    'Click this button to start customising. Edit mode unlocks moving, resizing, removing, and adding widgets.',
-  'home.guide.quick-links-position.title':
-    'Move Quick Links above or below the widgets',
+    '点击此按钮开始自定义。编辑模式下可以移动、调整大小、移除和添加组件。',
+  'home.guide.quick-links-position.title': '将快捷链接移到组件上方或下方',
   'home.guide.quick-links-position.description':
-    'Use this button to choose whether the Quick Links row sits above the main widget area or below it.',
-  'home.guide.quick-links.title': 'These Quick Links are your fast shortcuts',
+    '使用此按钮选择快捷链接行显示在主组件区域的上方还是下方。',
+  'home.guide.quick-links.title': '这些快捷链接是你的快速入口',
   'home.guide.quick-links.description':
-    'Quick Links give you one-click shortcuts to common actions and pages. In edit mode, you can also hide links you do not want showing here.',
-  'home.guide.move-and-resize.title': 'Move and resize your widgets',
-  'home.guide.widget-picker.title': 'Add widgets here',
+    '快捷链接可一键访问常用操作和页面。在编辑模式下，还可以隐藏不想在这里显示的链接。',
+  'home.guide.move-and-resize.title': '移动和调整组件大小',
+  'home.guide.widget-picker.title': '在这里添加组件',
   'home.guide.widget-picker.description':
-    '预览并添加组件、恢复快捷链接，或添加账户和交易设置快捷方式。首页上已有的内容会列在“使用中”下，可在那里移除。',
+    '预览并添加组件、恢复快捷链接，或添加账户和策略快捷方式。首页上已有的内容会列在“使用中”下，可在那里移除。',
   'home.guide.move-and-resize.description':
-    'This is the main area you can rearrange in edit mode. Drag widgets to move them, or drag a widget from its bottom-right corner to resize it.',
+    '这是在编辑模式下可以重新排列的主区域。拖动组件即可移动，拖动组件右下角即可调整大小。',
   'home.guide.add-widget.title': '向首页添加项目',
   'home.guide.add-widget.description':
-    '打开“添加小组件”以添加组件、快捷链接或账户和交易设置快捷方式。',
-  'home.guide.save-layout.title': 'Save your layout when you are done',
+    '打开“添加小组件”以添加组件、快捷链接或账户和策略快捷方式。',
+  'home.guide.save-layout.title': '完成后保存布局',
   'home.guide.save-layout.description':
-    'When you are happy with the layout, click this button to save your changes and leave edit mode.',
-  'home.guide.widget-interactions.title': 'That is the main idea of Home',
-  'home.guide.widget-interactions.description':
-    'Home is your customisable dashboard. Use edit mode to change the layout, and click widgets to open tools, settings, or deeper pages.',
-  'layoutBuilder.guide.intro.title': 'This is your Layout Builder',
+    '对布局满意后，点击此按钮保存更改并退出编辑模式。',
+  'layoutBuilder.guide.intro.title': '这是你的布局构建器',
   'layoutBuilder.guide.intro.description':
-    'This page controls how your review templates are structured. The easiest way to start is to duplicate a built-in template, then customise your copy.',
+    '此页面控制复盘布局的结构。最简单的开始方式是复制一个内置布局，然后自定义你的副本。',
   'layoutBuilder.guide.create-own-layout.title': '创建你自己的布局',
   'layoutBuilder.guide.create-own-layout.description':
     '内置布局是只读的。点击内置 DRC 布局上的复制图标来复制它，或按 + 新建一个布局。点击“下一步”可复制标准 DRC。',
-  'layoutBuilder.guide.editor-overview.title':
-    'This is where you edit the template',
+  'layoutBuilder.guide.editor-overview.title': '这里是编辑布局的地方',
   'layoutBuilder.guide.editor-overview.description':
-    'Rename the template here, review the widget list, drag the left handle to rearrange widgets, click a widget to change it, and remove anything you do not need.',
+    '在这里重命名布局、查看组件列表、拖动左侧手柄重新排列组件、点击组件进行修改，并移除不需要的内容。',
   'layoutBuilder.guide.add-widget.title': '添加组件',
   'layoutBuilder.guide.add-widget.description':
     '使用“添加组件”将模块添加到布局末尾，或将鼠标悬停在两个组件之间并点击 +，将其插入到你想要的位置。',
-  'layoutBuilder.guide.choose-widget.title': 'Choose a widget',
+  'layoutBuilder.guide.choose-widget.title': '选择组件',
   'layoutBuilder.guide.choose-widget.description':
     '在搜索框中输入组件名称、描述或类别，然后选择所需组件。也可以按“下一步”，让 Journalit 选择第一个搜索结果。',
-  'layoutBuilder.guide.save-template.title': 'Save your layout',
+  'layoutBuilder.guide.save-template.title': '保存布局',
   'layoutBuilder.guide.save-template.description':
-    'Once your copy looks right, save it. You can keep refining it later as your review process improves.',
+    '副本调整满意后保存即可。随着复盘流程改进，你可以继续完善它。',
   'layoutBuilder.guide.set-default-template.title': '设为默认布局',
   'layoutBuilder.guide.set-default-template.description':
-    'Click the star on your new template if you want new review notes to use this layout automatically.',
+    '如果希望新的复盘笔记自动使用此布局，请点击新布局上的星标。',
   'layoutBuilder.guide.whats-new.insert-slot.title': '在任意位置添加小组件',
   'layoutBuilder.guide.whats-new.insert-slot.description':
     '将鼠标悬停在两个小组件之间并按 +，即可在该位置添加小组件，而不是添加到底部。',
@@ -1001,7 +1063,6 @@ const zh: Lang = {
   'layoutBuilder.guide.whats-new.add-widget-button.description':
     '添加小组件仍会添加到布局底部，现在还会滚动到新小组件并打开其搜索。',
   'tradelog.empty': '未找到交易记录',
-  'tradelog.empty.submessage': '开始创建交易笔记,它们将显示在您的交易日志中。',
   'tradelog.processing': '正在处理交易数据...',
   'tradelog.node.file-not-found': '未找到交易文件:{path}',
   'tradelog.node.expand': '展开',
@@ -1013,16 +1074,12 @@ const zh: Lang = {
   'tradelog.node.performance.week': '{year}年{month}表现{indicator}的周',
   'tradelog.node.performance.day': '{year}年{week}表现{indicator}的日',
   'tradelog.node.performance.period': '表现{indicator}的时段',
-  'tradelog.filter.all': '全部',
   'tradelog.filter.winners': '盈利',
   'tradelog.filter.losers': '亏损',
   'tradelog.filter.breakeven': '保本',
-  'tradelog.filter.breakeven.desc': '保本交易',
   'tradelog.filter.open': '持仓中',
-  'tradelog.filter.open.desc': '当前持仓中的交易',
   'tradelog.filter.closed': '已平仓',
   'tradelog.type.regular': '常规',
-  'tradelog.type.regular.desc': '标准交易',
   'tradelog.type.missed': '错过',
   'tradelog.type.backtest': '回测',
 
@@ -1030,7 +1087,6 @@ const zh: Lang = {
   'tradelog.status.win': '盈利',
   'tradelog.status.loss': '亏损',
   'tradelog.status.open': '持仓',
-  'tradelog.status.partially-closed': '部分平仓',
   'tradelog.status.cancelled': '已取消',
   'tradelog.status.breakeven': '保本',
   'tradelog.status.missed': '错过',
@@ -1046,19 +1102,19 @@ const zh: Lang = {
   'tradelog.tooltip.thesis': '交易论点：',
   'tradelog.tooltip.mtComment': 'MT备注：',
   'tradelog.tooltip.accounts': '账户：',
-  'tradelog.copy-trade.tooltip': 'Copied from {account} at {multiplier}x',
+  'tradelog.copy-trade.tooltip': '以 {multiplier}x 复制自 {account}',
   'tradelog.tooltip.partial-exits': '部分平仓：',
-  'tradelog.copy-trade.base-tooltip-title': 'Copied account results',
-  'tradelog.copy-trade.adjustment-action': 'Adjust copied PnL',
-  'tradelog.copy-trade.adjustment-title': 'Adjust copied PnL',
+  'tradelog.copy-trade.base-tooltip-title': '复制账户结果',
+  'tradelog.copy-trade.adjustment-action': '调整复制的盈亏',
+  'tradelog.copy-trade.adjustment-title': '调整复制的盈亏',
   'tradelog.copy-trade.adjustment-description-primary':
-    'Enter the manual PnL adjustment for this copied trade.',
+    '输入此复制交易的手动盈亏调整。',
   'tradelog.copy-trade.adjustment-description-secondary':
-    'Use a negative number for worse fills/costs.',
-  'tradelog.copy-trade.adjustment-preview': 'Preview net P&L:',
+    '成交更差或成本更高时使用负数。',
+  'tradelog.copy-trade.adjustment-preview': '净盈亏预览：',
 
-  'tradelog.copy-trade.adjustment-invalid': 'Enter a valid PnL adjustment.',
-  'tradelog.copy-trade.adjustment-saved': 'Copied trade PnL adjustment saved.',
+  'tradelog.copy-trade.adjustment-invalid': '请输入有效的盈亏调整。',
+  'tradelog.copy-trade.adjustment-saved': '复制交易的盈亏调整已保存。',
   'tradelog.tooltip.still-open': '仍持仓中',
 
   'tradelog.alt.trade-image': '{instrument}图片',
@@ -1077,8 +1133,8 @@ const zh: Lang = {
   'tradelog.batch.delete-confirm.warning': '此操作无法撤销。',
   'tradelog.batch.setups.title': '为交易添加策略',
   'tradelog.batch.setups.placeholder': '选择或创建策略...',
-  'tradelog.batch.tags.title': 'Add Tags to Trades',
-  'tradelog.batch.tags.placeholder': 'Select or create tags...',
+  'tradelog.batch.tags.title': '为交易添加标签',
+  'tradelog.batch.tags.placeholder': '选择或创建标签...',
   'tradelog.batch.mistakes.title': '为交易添加失误',
   'tradelog.batch.mistakes.placeholder': '选择或创建失误...',
   'tradelog.batch.none-selected': '未选中',
@@ -1103,9 +1159,9 @@ const zh: Lang = {
   'tradelog.batch.add-setups.aria': '添加策略',
 
   'tradelog.batch.add-setups.label': '添加策略',
-  'tradelog.batch.add-tags.aria': 'Add tags',
+  'tradelog.batch.add-tags.aria': '添加标签',
 
-  'tradelog.batch.add-tags.label': 'Add Tags',
+  'tradelog.batch.add-tags.label': '添加标签',
   'tradelog.batch.add-mistakes.aria': '添加失误',
 
   'tradelog.batch.add-mistakes.label': '添加失误',
@@ -1129,7 +1185,7 @@ const zh: Lang = {
   
   
   'tradelog.settings.modal.unsaved-changes.body1':
-    '您在列设置中有未保存的更改。',
+    '你在列设置中有未保存的更改。',
   'tradelog.settings.modal.unsaved-changes.body2': '确定要关闭而不保存吗?',
   'tradelog.settings.active-columns': '已激活列',
   'tradelog.settings.available-columns': '可用列',
@@ -1171,7 +1227,7 @@ const zh: Lang = {
   'tradelog.column.slDistancePercent': '止损距离 %',
   'tradelog.column.riskAmount': '风险金额',
   'tradelog.column.rMultiple': '盈亏比',
-  'tradelog.column.maxR': 'Max R',
+  'tradelog.column.maxR': '最大 R',
   'tradelog.column.maePrice': 'MAE价格',
   'tradelog.column.mfePrice': 'MFE价格',
   'tradelog.column.mae': 'MAE',
@@ -1185,11 +1241,12 @@ const zh: Lang = {
   'tradelog.column.fees': '费用',
   'tradelog.column.dividends': '分红',
   'tradelog.column.pnl': '净盈亏',
-  'tradelog.column.returnPercent': 'Return %',
+  'tradelog.column.returnPercent': '收益率 %',
   'tradelog.column.setups': '策略',
   'tradelog.column.mistakes': '失误',
   'tradelog.column.tags': '标签',
   'tradelog.column.reviewed': '已复盘',
+  'tradelog.column.tradeRating': '评分',
   'tradelog.column.thesis': '交易论点',
   'tradelog.column.mtComment': 'MT备注',
 
@@ -1213,7 +1270,7 @@ const zh: Lang = {
   'dashboard.metrics.netPnL': '净盈亏',
   'dashboard.metrics.incl-unrealized': '含 {value} 未实现',
   'dashboard.metrics.winRate': '胜率',
-  'dashboard.metrics.profitFactor': '盈亏比',
+  'dashboard.metrics.profitFactor': '盈利因子',
   'dashboard.metrics.sharpeRatio': '夏普比率',
   'dashboard.metrics.expectancy': '期望值',
   'dashboard.metrics.numTrades': '总交易数',
@@ -1224,7 +1281,7 @@ const zh: Lang = {
   'dashboard.metrics.avgLoss': '平均亏损',
   'dashboard.metrics.totalCommission': '总佣金',
   'dashboard.metrics.totalFees': '总费用',
-  'dashboard.metrics.maxDrawdown': 'Max Drawdown',
+  'dashboard.metrics.maxDrawdown': '最大回撤',
   'dashboard.metrics.bestDay': '最佳交易日',
   'dashboard.metrics.largestWin': '最大单笔盈利',
   'dashboard.metrics.largestLoss': '最大单笔亏损',
@@ -1275,13 +1332,13 @@ const zh: Lang = {
 
   'dashboard.conversion.using-ecb': '使用ECB汇率({date})',
   'dashboard.conversion.using-broker-pnl':
-    'Using broker-provided base-currency P&L for {count} {tradeLabel}',
+    '{count} {tradeLabel}使用经纪商提供的基础货币盈亏',
   'dashboard.conversion.using-manual-rate':
     '对 {count} 笔{tradeLabel}使用手动汇率',
   'dashboard.conversion.partial-warning':
     '⚠ {currencies}的成本/风险无法换算，已被排除',
-  'dashboard.conversion.trade-singular': 'trade',
-  'dashboard.conversion.trade-plural': 'trades',
+  'dashboard.conversion.trade-singular': '笔交易',
+  'dashboard.conversion.trade-plural': '笔交易',
   'dashboard.conversion.excluded-warning':
     '⚠ {total} 笔交易中有 {converted} 笔已转换({excluded} 笔已排除:{currencies})',
   'dashboard.conversion.original-pnl': '原始盈亏',
@@ -1304,9 +1361,6 @@ const zh: Lang = {
   'dashboard.filter.date.to': '至',
 
   
-  'dashboard.filter.accounts.all': '所有账户',
-  'dashboard.filter.accounts.n-selected': '{count} 个账户',
-  'dashboard.filter.accounts.select-all': '全选',
 
   'dashboard.filter.accounts.none-found': '未找到账户',
   'dashboard.filter.accounts.phase-now': '至今',
@@ -1354,6 +1408,12 @@ const zh: Lang = {
   'dashboard.widgets.tag-performance.description': '按标签排名的表现柱状图',
   'dashboard.widgets.tag-performance.empty': '没有标签表现数据',
   'dashboard.widgets.tag-performance.masked-label': '标签',
+  'dashboard.widgets.rating-performance.title': '按评分的表现',
+  'dashboard.widgets.rating-performance.description':
+    '按你给交易的每个星级显示净盈亏或胜率',
+  'dashboard.widgets.rating-performance.empty':
+    '还没有已评分的交易。在交易笔记中为交易评分后即可在此比较。',
+  'dashboard.widgets.rating-performance.masked-label': '评分',
   'dashboard.widgets.ticker-performance.title': '标的绩效',
   'dashboard.widgets.ticker-performance.metric-aria': '指标',
   'dashboard.widgets.ticker-performance.view-aria': '视图',
@@ -1363,16 +1423,13 @@ const zh: Lang = {
   'dashboard.widgets.ticker-performance.metric.total-pnl': '总盈亏',
   'dashboard.widgets.ticker-performance.metric.total-r': '总R',
   'dashboard.widgets.ticker-performance.metric.win-rate': '胜率',
-  'dashboard.widgets.ticker-performance.tooltip.ticker': '标的：{ticker}',
   'dashboard.widgets.ticker-performance.tooltip.trades': '交易数：{count}',
   'dashboard.widgets.ticker-performance.tooltip.win-rate':
     '胜率：{rate}（{wins}胜 / {losses}负）',
 
   'dashboard.widgets.ticker-performance.empty': '无标的绩效数据',
-  'dashboard.widgets.ticker-performance.empty-submessage':
-    '没有与当前筛选条件匹配的带标的已平仓交易。',
   'dashboard.widgets.ticker-performance.masked-ticker': '标的',
-  'dashboard.widgets.ticker-performance.omitted-count': '已省略：{count}',
+  'dashboard.widgets.ticker-performance.omitted-count': '已省略 {count} 个',
 
   'dashboard.widgets.rollingStats.title': '滚动平均盈亏',
   'dashboard.widgets.rollingStats.period': '周期',
@@ -1410,7 +1467,6 @@ const zh: Lang = {
   'widget-drawer.add-aria': '添加 {name}',
   'widget-drawer.remove': '移除',
   'widget-drawer.remove-aria': '移除 {name}',
-  'widget-drawer.close': '关闭',
   'dashboard.selector.metrics': '指标',
 
   
@@ -1422,14 +1478,13 @@ const zh: Lang = {
   'filter.modal.type.regular': '常规',
   'filter.summary.regular-trades': '常规交易',
   'filter.modal.type.backtest': '回测',
-  'filter.modal.status.breakeven': '保本',
 
-  'filter.modal.review-status.reviewed': 'Reviewed',
-  'filter.modal.review-status.unreviewed': 'Unreviewed',
+  'filter.modal.review-status.reviewed': '已复盘',
+  'filter.modal.review-status.unreviewed': '未复盘',
   'filter.modal.direction.long-call': '做多/Call',
   'filter.modal.direction.short-put': '做空/Put',
-  'filter.modal.section.custom-fields': 'Custom Fields',
-  'filter.modal.custom-field.none-available': 'No values available',
+  'filter.modal.section.custom-fields': '自定义字段',
+  'filter.modal.custom-field.none-available': '没有可用的值',
 
   
   
@@ -1494,7 +1549,7 @@ const zh: Lang = {
     '选择当前显示的行并使用“导入事件”进行一次性导入。启用自动导入后，无需每周手动操作。',
   'economicCalendar.guide.main.restore.title': '恢复缺失的已配置事件',
   'economicCalendar.guide.main.restore.description':
-    '如果已保存的自动导入范围中有事件缺失，此按钮将变为可用。当本周事件重新完整后，该按钮仍会显示，但会被禁用。',
+    '当已保存的自动导入范围中缺少事件时，此按钮可用。本周再次完整后，它仍会显示但处于禁用状态。',
   'economicCalendar.guide.main.summary.title': '设置一次，之后只需复盘',
   'economicCalendar.guide.main.summary.description':
     '配置自动导入后，每周复盘会保持完整。你可以回到这里浏览、执行一次性导入或恢复缺失事件。',
@@ -1513,7 +1568,7 @@ const zh: Lang = {
   'settings.economic-calendar.impacts': '影响级别',
   'settings.economic-calendar.impacts-desc': '导入具有这些影响级别的事件。',
   'settings.economic-calendar.impacts-empty':
-    '未选择经济数据发布。如果已启用，仍可导入节假日。',
+    '未选择任何数据发布。启用后仍可导入节假日。',
   'settings.economic-calendar.include-holidays': '包含假期',
   'settings.economic-calendar.include-holidays-desc':
     '将银行假期和央行会议纪要作为全天条目导入。',
@@ -1526,24 +1581,20 @@ const zh: Lang = {
   
   'common.loading': '加载中...',
   'common.error': '错误',
+  'common.section-error': '此部分出现错误。',
+  'common.retry': '重试',
 
   'common.warning': '警告',
   'common.info': '信息',
   'common.yes': '是',
   'common.no': '否',
-  'common.ok': '确定',
 
   'common.none': '无',
   'common.all': '全部',
-  'common.date': '日期',
 
   'common.week': '周',
   'common.month': '月',
   'common.year': '年',
-
-  'common.min': '最小',
-  'common.max': '最大',
-  'common.profit': '盈利',
 
   'common.trade': '交易',
   'common.trades': '交易',
@@ -1564,7 +1615,7 @@ const zh: Lang = {
 
   'account.edit.modal.change-date.title': '更改创建日期',
   'account.edit.modal.change-date.message':
-    '您即将将账户"{account}"的创建日期从 {oldDate} 更改为 {newDate}。',
+    '你即将将账户"{account}"的创建日期从 {oldDate} 更改为 {newDate}。',
   'account.edit.modal.change-date.warning':
     '这将更新初始入金交易日期,并可能影响账户存续时间计算、月度账单周期以及其他基于日期的指标。',
 
@@ -1572,7 +1623,7 @@ const zh: Lang = {
 
   'account.edit.modal.change-balance.title': '更改初始余额',
   'account.edit.modal.change-balance.message':
-    '您即将将初始余额从 {oldBalance} 更改为 {newBalance}。',
+    '你即将将初始余额从 {oldBalance} 更改为 {newBalance}。',
 
   'account.edit.modal.change-balance.info':
     '这将影响所有的余额计算、盈亏百分比、回撤计算以及完整的交易历史。',
@@ -1583,14 +1634,14 @@ const zh: Lang = {
   'account.edit.modal.change-balance.confirm': '更新初始余额',
 
   'account.edit.modal.delete.title': '删除账户',
-  'account.edit.modal.delete.question': '您确定要永久删除账户"{name}"吗?',
+  'account.edit.modal.delete.question': '你确定要永久删除账户"{name}"吗?',
 
   'account.edit.modal.delete.will': '此操作将:',
   'account.edit.modal.delete.item1': '删除所有账户元数据和设置',
   'account.edit.modal.delete.item2': '从所有关联交易中移除账户引用',
   'account.edit.modal.delete.item3': '从笔记中移除自动生成的账户标签',
   'account.edit.modal.delete.delete-associated-trades':
-    'Also delete all trades linked to this account from my vault',
+    '同时从我的仓库中删除与此账户关联的所有交易',
 
   
   
@@ -1618,7 +1669,6 @@ const zh: Lang = {
   'common.best': '最佳',
   'common.worst': '最差',
 
-  'common.statuses': '状态',
   'common.enabled': '已启用',
   'common.disabled': '已禁用',
   'common.color.gray': '灰色',
@@ -1654,8 +1704,6 @@ const zh: Lang = {
   'common.score.excellent': '优秀',
   'common.note-label': '备注:',
 
-  'common.backups-label': '备份:',
-
   
   'button.done': '完成',
   'button.edit': '编辑',
@@ -1663,7 +1711,6 @@ const zh: Lang = {
   'button.back': '返回',
   'button.maybe-later': '稍后再说',
   'button.upgrade-now': '立即升级',
-  'button.apply': '应用',
   'button.remove': '移除',
 
   'button.move-up': '向上移动',
@@ -1686,13 +1733,13 @@ const zh: Lang = {
   'templateEditor.mode.editor': '编辑',
   'templateEditor.built-in-badge': '(内置)',
   'templateEditor.built-in-notice':
-    '内置模板无法编辑。请复制此模板或创建新模板进行自定义。',
+    '内置布局无法编辑。请复制此布局或新建一个布局进行自定义。',
   'templateEditor.unsaved-changes': '未保存的更改',
   'templateEditor.field.template-name': '布局名称',
   'templateEditor.field.widgets': '组件({count})',
   'templateEditor.button.add-widget': '+ 添加组件',
   'templateEditor.button.insert-widget-here': '在此添加组件',
-  'templateEditor.button.widget-library-docs': 'Widget library docs',
+  'templateEditor.button.widget-library-docs': '组件库文档',
   'templateEditor.widget.locked': '已锁定',
   'templateEditor.widget.select-placeholder': '选择组件...',
   'templateEditor.widget.header-text-placeholder': '标题文本...',
@@ -1718,7 +1765,7 @@ const zh: Lang = {
   
   'builder.sidebar.title': '布局编辑器',
   'builder.sidebar.section.trade': '交易',
-  'builder.sidebar.section.drc': '每日报告卡',
+  'builder.sidebar.section.drc': '每日复盘',
   'builder.sidebar.section.weekly': '周度复盘',
   'builder.sidebar.section.monthly': '月度复盘',
   'builder.sidebar.section.quarterly': '季度复盘',
@@ -1755,8 +1802,6 @@ const zh: Lang = {
   'ui.folder-browser.placeholder': '选择文件夹...',
   'ui.folder-browser.root': '根目录',
   'ui.folder-browser.clear-aria': '清空以使用默认位置',
-  'ui.folder-browser.expand-folder': '展开文件夹',
-  'ui.folder-browser.collapse-folder': '折叠文件夹',
 
   
   'view.account-page.title': '账户:{name}',
@@ -1769,7 +1814,7 @@ const zh: Lang = {
 
   
   'form.modal.unsaved-changes.title': '未保存的更改',
-  'form.modal.unsaved-changes.body1': '您在交易表单中有未保存的更改。',
+  'form.modal.unsaved-changes.body1': '你在交易表单中有未保存的更改。',
   'form.modal.unsaved-changes.body2': '确定要关闭而不保存吗?',
   'form.modal.unsaved-changes.continue': '继续编辑',
   'form.modal.unsaved-changes.discard': '放弃更改',
@@ -1797,12 +1842,11 @@ const zh: Lang = {
   'form.account-empty-state.create-account': '创建账户',
   'form.account-empty-state.submit-disabled': '请先创建账户,再保存这笔交易。',
   'form.field.option-type': '期权类型',
-  'form.empty.take-profits': 'No take profit targets yet',
-  'form.action.add-take-profit': 'Add Take Profit',
-  'form.action.remove-take-profit': 'Remove take profit',
+  'form.empty.take-profits': '还没有止盈目标',
+  'form.action.remove-take-profit': '移除止盈',
   'form.field.option-type.call': '看涨期权',
   'form.field.option-type.put': '看跌期权',
-  'form.field.image-url-placeholder': '粘贴图片 URL 或文件路径...',
+  'form.field.image-url-placeholder': '粘贴媒体 URL 或文件路径...',
   'form.field.image-duplicate-error': '此图片已添加。',
   'form.field.trade-image-alt': '交易图片',
 
@@ -1810,21 +1854,21 @@ const zh: Lang = {
   'form.field.dollar-amount-placeholder': '美元金额',
   'form.field.direct-pnl-placeholder': '输入总盈利或亏损',
 
-  'form.field.mae-placeholder-currency': 'Max drawdown in {currency}',
-  'form.field.mfe-placeholder-currency': 'Max profit in {currency}',
+  'form.field.mae-placeholder-currency': '以 {currency} 计的最大浮亏',
+  'form.field.mfe-placeholder-currency': '以 {currency} 计的最大浮盈',
   'form.error.image-upload-unavailable': '图片上传不可用',
   'trade.header.unknown-instrument': '未知品种',
 
   
 
   
-  'modal.template-switch.title': '切换模板?',
+  'modal.template-switch.title': '切换布局？',
   'modal.template-switch.switching-from': '从',
   'modal.template-switch.switching-to': '切换到',
   'modal.template-switch.has-content-title': '此笔记有内容',
   'modal.template-switch.has-content-desc': '切换模板将替换当前内容。',
-  'modal.template-switch.cannot-undo': '此操作无法撤销(但您可以切换回来)。',
-  'modal.template-switch.button.switch': '切换模板',
+  'modal.template-switch.cannot-undo': '此操作无法撤销(但你可以切换回来)。',
+  'modal.template-switch.button.switch': '切换布局',
 
   
   'status-bar.update-available-branded': '更新 Journalit',
@@ -1832,21 +1876,18 @@ const zh: Lang = {
   'update.available.ready': '已有新版本',
 
   
-  'template.transformation.orphaned-content.header': '来自旧模板的内容',
-  'template.transformation.orphaned-content.desc1':
-    '以下内容未能适配新的模板布局。',
+  'template.transformation.orphaned-content.header': '来自之前布局的内容',
+  'template.transformation.orphaned-content.desc1': '以下内容无法放入新布局。',
   'template.transformation.orphaned-content.desc2':
     '请在上方检查并整合,或在不需要时删除。',
 
   
-  'template.editor.loading': '正在加载模板...',
+  'template.editor.loading': '正在加载布局...',
   'template.editor.built-in': '内置',
   'template.editor.unsaved-changes': '未保存的更改',
 
   'template.editor.built-in-notice':
     '内置模板无法编辑。请复制此模板或创建新模板进行自定义。',
-
-  'template.editor.show-review-desc': '设置何时在交易笔记中显示复盘区块',
 
   'template.editor.section-visibility': '区块可见性',
   'template.editor.trade-note-layout': '交易笔记布局',
@@ -1865,8 +1906,12 @@ const zh: Lang = {
   'template.editor.missed-reason': '错过交易原因',
   'template.editor.missed-reason-desc': '显示为什么没有执行这笔错过的交易',
   'template.editor.metadata-rows': '元数据行',
+  'template.editor.note-sections': '笔记分区',
+  'template.editor.note-sections-desc':
+    '新交易笔记中写在交易下方的标题和文本，适用于所有资产类型。之后可在笔记中编辑。',
+  'template.editor.note-sections-zone-placeholder': '写入新交易笔记的文本...',
   'template.editor.accounts': '账户',
-  'template.editor.setups': '设置',
+  'template.editor.setups': '策略',
   'template.editor.mistakes': '错误',
   'template.editor.tags': '标签',
   'template.editor.custom-fields': '自定义字段',
@@ -1881,23 +1926,25 @@ const zh: Lang = {
   'template.editor.nav-bar-desc': '显示交易时间线与复盘链接',
   'template.editor.images': '图片',
   'template.editor.images-desc': '显示交易图表图片',
+  'template.editor.image-layout': '图片布局',
+  'template.editor.image-layout-desc': '逐张显示图片或一次显示全部',
+  'template.editor.image-layout-carousel': '轮播',
+  'template.editor.image-layout-stacked': '堆叠',
   'template.editor.metadata': '元数据',
-  'template.editor.metadata-desc': '显示账户、交易设置和失误',
+  'template.editor.metadata-desc': '显示账户、策略和失误',
 
   'template.editor.review-button': '标记已复盘按钮',
   'template.editor.review-button-desc': '显示用于标记交易已复盘的按钮',
+  'template.editor.rating': '评分',
+  'template.editor.rating-desc': '显示你给这笔交易的星级评分',
 
   
   'ribbon.open-journalit': '打开 Journalit',
 
   
-  'notice.error.missed-trade-service-init':
-    '错失交易服务未初始化。请稍候片刻后重试。',
-  'notice.error.backtest-trade-service-init':
-    '回测交易服务未初始化。请稍候片刻后重试。',
   'notice.trade-updated': '{type}已更新:{path}',
   'notice.trade-created': '{type}已创建:{path}',
-  'notice.new-trade-created': '📈 新交易已创建:{instrument} {direction}',
+  'notice.new-trade-created': '新交易已创建:{instrument} {direction}',
   'notice.error.trade-update-failed': '更新{type}失败:{error}',
   'notice.error.trade-create-failed': '创建{type}失败:{error}',
   'notice.template-applied': '已应用布局:{name}',
@@ -1905,12 +1952,7 @@ const zh: Lang = {
   'notice.csv-template-deleted': '模板"{name}"已删除',
   'notice.csv-template-delete-failed': '删除模板失败:{error}',
   'notice.csv-template-imported': '模板"{name}"导入成功',
-  'notice.csv-symbol-mappings-created.one': '已创建{count}个代码映射',
-  'notice.csv-symbol-mappings-created.few': '已创建{count}个代码映射',
-  'notice.csv-symbol-mappings-created.many': '已创建{count}个代码映射',
-  'notice.csv-symbol-mappings-created.other': '已创建{count}个代码映射',
-  'notice.csv-symbol-mapping-skipped': '跳过代码映射',
-  'notice.csv-missing-fields': '请在导入前映射所有必填字段',
+  'notice.csv-missing-fields': '生成预览前，请映射所有必填字段。',
   'notice.trades-duplicated.one': '已复制{count}笔交易',
   'notice.trades-duplicated.few': '已复制{count}笔交易',
   'notice.trades-duplicated.many': '已复制{count}笔交易',
@@ -1938,7 +1980,7 @@ const zh: Lang = {
   'notice.error.sync-mapping-update-failed':
     '更新交易同步映射失败。请重启插件。',
   'notice.error.template-save-failed': '保存布局失败',
-  'notice.default-trade-template-updated': '默认交易模板已更新',
+  'notice.default-trade-template-updated': '默认交易布局已更新',
   'notice.trade-template-duplicated': '交易布局已复制',
   'notice.trade-template-deleted': '交易布局已删除',
   'notice.error.create-template': '创建布局失败',
@@ -1951,35 +1993,35 @@ const zh: Lang = {
 
   
   'error.render-component': '渲染 {component} 时出错:{error}',
-  'error.session-expired': '您的会话已过期。请在插件设置中重新登录。',
-  'error.ftp-not-found': '未找到FTP账户。系统将自动为您创建一个。',
+  'error.session-expired': '你的会话已过期。请在插件设置中重新登录。',
+  'error.ftp-not-found': '未找到FTP账户。系统将自动为你创建一个。',
   'error.no-trading-data':
-    '未找到交易数据。请确保您的MetaTrader账户已正确连接且有交易历史。',
+    '未找到交易数据。请确保你的MetaTrader账户已正确连接且有交易历史。',
   'error.unable-connect-service':
-    '无法连接到交易数据服务。请检查您的网络连接。',
+    '无法连接到交易数据服务。请检查你的网络连接。',
   'error.invalid-verification-code': '验证码无效。请检查验证码后重试。',
-  'error.invalid-registration-data': '注册数据无效。请检查您的设置后重试。',
-  'error.invalid-request': '请求无效。请检查您的输入后重试。',
-  'error.access-denied': '访问被拒绝。请检查您的账户权限或联系支持。',
+  'error.invalid-registration-data': '注册数据无效。请检查你的设置后重试。',
+  'error.invalid-request': '请求无效。请检查你的输入后重试。',
+  'error.access-denied': '访问被拒绝。请检查你的账户权限或联系支持。',
   'error.too-many-requests': '请求过于频繁。请稍候片刻后重试。',
   'error.service-unavailable': '交易数据服务暂时不可用。请稍后重试。',
   'error.server-error': '服务器错误。请稍后重试或如问题持续请联系支持。',
-  'error.network-error': '无法连接到交易数据服务。请检查您的网络连接后重试。',
+  'error.network-error': '无法连接到交易数据服务。请检查你的网络连接后重试。',
   'error.unknown': '发生未知错误',
   'error.unexpected': '发生意外错误。请重试或如问题持续请联系支持。',
   'error.settings.invalid-pattern':
-    '验证模式无效。请检查您的正则表达式后重试。',
+    '验证模式无效。请检查你的正则表达式后重试。',
   'error.settings.field-name-conflict':
     '此字段名与现有字段冲突。请选择其他名称。',
   'error.settings.invalid-field-name':
     '字段名无效。字段名只能包含字母、数字和下划线。',
-  'error.settings.save-failed': '无法保存您的更改。请检查您的设置后重试。',
+  'error.settings.save-failed': '无法保存你的更改。请检查你的设置后重试。',
   'error.settings.load-failed':
-    '无法加载自定义字段设置。您的自定义字段可能无法正确显示。',
+    '无法加载自定义字段设置。你的自定义字段可能无法正确显示。',
   'error.settings.import-failed': '无法导入字段设置。请检查文件格式后重试。',
-  'error.settings.create-failed': '无法创建自定义字段。请检查您的输入后重试。',
+  'error.settings.create-failed': '无法创建自定义字段。请检查你的输入后重试。',
   'error.settings.remove-failed': '无法移除自定义字段。请重试。',
-  'error.settings.generic': '管理自定义字段时出错。请检查您的设置后重试。',
+  'error.settings.generic': '管理自定义字段时出错。请检查你的设置后重试。',
   'error.options.duplicate': '此选项已存在。请选择其他名称。',
   'error.options.invalid-ticker':
     '股票代码无效。只能使用字母、数字和句号(例如:AAPL、SPX)。',
@@ -1989,21 +2031,21 @@ const zh: Lang = {
   'error.options.remove-failed': '无法移除选项。请重试。',
   'error.options.no-options-reset': '无选项可重置。该类别已为空。',
   'error.options.reset-failed': '无法重置选项。请重试。',
-  'error.options.save-failed': '无法保存选项更改。请检查您的设置后重试。',
+  'error.options.save-failed': '无法保存选项更改。请检查你的设置后重试。',
   'error.options.generic': '管理选项时出错。请重试。',
   'error.clipboard.permission-denied':
     '剪贴板访问被拒绝。请在浏览器中允许剪贴板权限以使用粘贴功能。',
   'error.clipboard.not-supported':
-    '您的浏览器不支持剪贴板粘贴。请尝试使用 Ctrl+V 或 Cmd+V。',
+    '你的浏览器不支持剪贴板粘贴。请尝试使用 Ctrl+V 或 Cmd+V。',
   'error.clipboard.image-too-large': '图像过大无法粘贴。请使用小于10MB的图像。',
   'error.clipboard.no-content': '剪贴板中没有内容可粘贴。请先复制一张图像。',
   'error.clipboard.no-images':
-    '剪贴板中未找到图像。请确保您复制的是图像而非文本或其他内容。',
+    '剪贴板中未找到图像。请确保你复制的是图像而非文本或其他内容。',
   'error.clipboard.network-error':
-    '处理粘贴时发生网络错误。请检查您的连接后重试。',
+    '处理粘贴时发生网络错误。请检查你的连接后重试。',
   'error.clipboard.paste-failed':
     '无法完成粘贴操作。请重新复制图像并尝试粘贴。',
-  'error.clipboard.generic': '剪贴板操作失败。请重新复制您的内容并尝试粘贴。',
+  'error.clipboard.generic': '剪贴板操作失败。请重新复制你的内容并尝试粘贴。',
 
   
   
@@ -2018,6 +2060,11 @@ const zh: Lang = {
   'datepicker.button.clear': '清除',
   'datepicker.button.today': '今天',
   'datepicker.button.now': '现在',
+  'datepicker.aria.hour': '小时',
+  'datepicker.aria.minute': '分钟',
+  'datepicker.aria.second': '秒',
+  'datepicker.aria.previous-month': '上个月',
+  'datepicker.aria.next-month': '下个月',
   'datepicker.placeholder.day': 'DD',
   'datepicker.placeholder.month': 'MM',
   'datepicker.placeholder.year': 'YY',
@@ -2080,6 +2127,9 @@ const zh: Lang = {
   'calendar.week': '周',
   'calendar.trade': '{count} 笔交易',
   'calendar.trades': '{count} 笔交易',
+  'calendar.missed': '{count} 笔错过',
+  'calendar.trades-short': '{count}笔',
+  'calendar.missed-short': '{count}错过',
   'calendar.reviewed': '已复盘',
 
   
@@ -2119,7 +2169,7 @@ const zh: Lang = {
   'account.settings.unnamed-account': '未命名账户',
   'account.settings.migration.title': '删除前迁移账户',
   'account.settings.migration.warning':
-    '您即将删除"{name}",该类型有{count}个关联账户。',
+    '你即将删除"{name}",该类型有{count}个关联账户。',
   'account.settings.migration.instruction': '删除账户类型前必须处理这些账户:',
   'account.settings.migration.more-accounts': '... 以及{count}个更多账户',
   'account.settings.migration.choose-option': '选择如何处理这些账户:',
@@ -2138,7 +2188,7 @@ const zh: Lang = {
   'account.settings.migration.action.archived': '已移至归档状态',
   'account.settings.migration.action.deleted': '已标记为删除',
   'account.settings.delete.title': '删除账户类型',
-  'account.settings.delete.confirm-question': '您确定要删除账户类型"{name}"吗?',
+  'account.settings.delete.confirm-question': '你确定要删除账户类型"{name}"吗?',
   'account.settings.delete.impact-analysis': '影响分析:',
   'account.settings.delete.affected-accounts': '⚠️ {count}个账户受影响:',
   'account.settings.delete.migration-notice':
@@ -2163,13 +2213,12 @@ const zh: Lang = {
     '挑战达到该阶段时应用的账户类型。',
   'account.settings.section.challenge-stages.no-change': '不更改',
   'account.settings.section.challenge-stages.aria': '{stage} 的账户类型',
-  'account.settings.section.inclusion.title': '仪表盘包含设置',
+  'account.settings.section.inclusion.title': '仪表板账户类型',
   'account.settings.section.inclusion.desc':
-    '选择要包含在仪表盘计算中的账户类型。同时配置每种账户类型的出金是否计入总出金指标。',
+    '选择哪些账户类型显示在仪表板统计中、是否计入出金，以及它们的显示顺序。',
   'account.settings.section.inclusion.include-dashboard': '仪表盘统计',
   'account.settings.section.inclusion.include-withdrawals': '出金',
   'account.settings.section.inclusion.empty': '没有可配置的账户类型。',
-  'account.settings.section.order.title': '显示顺序',
 
   'account.settings.section.order.move-up': '上移',
   'account.settings.section.order.move-down': '下移',
@@ -2178,38 +2227,35 @@ const zh: Lang = {
 
   
   'account.create.title': '创建账户',
-  'account.create.field.name': '账户名称',
-  'account.create.field.name-desc': '您的交易账户的唯一名称',
-  'account.create.placeholder.name': '我的交易账户',
-  'account.create.field.type': '账户类型',
-  'account.create.field.type-desc': '交易账户的类型',
-  'account.create.field.initial-balance': '初始余额',
-  'account.create.field.initial-balance-desc': '账户起始余额（可选，默认为0）',
-  'account.create.field.live-balance': '实时余额',
-  'account.create.field.live-balance-desc':
-    '当前经纪商余额，不会创建现金流记录',
-  'account.create.field.creation-date': '创建日期',
-  'account.create.field.creation-date-desc': '账户创建时间',
-  'account.create.field.currency': '币种',
-  'account.create.field.currency-desc': '账户用于显示的本位币',
-  'account.create.field.drawdown-type': '回撤类型',
+  'account.form.field.name': '账户名称',
+  'account.form.placeholder.name': '我的交易账户',
+  'account.form.field.type': '账户类型',
+  'account.form.type.demo': '模拟',
+  'account.form.type.evaluation': '评估',
+  'account.form.type.funded': '实盘',
+  'account.form.field.initial-balance': '初始余额',
+  'account.form.field.initial-balance-desc': '账户起始余额（默认为0）',
+  'account.form.field.live-balance': '实时余额',
+  'account.form.field.live-balance-desc': '当前经纪商余额，不会创建现金流记录',
+  'account.form.field.creation-date': '创建日期',
+  'account.form.field.creation-date-desc': '账户创建时间',
+  'account.form.field.currency': '币种',
+  'account.form.field.currency-desc': '账户用于显示的本位币',
+  'account.form.field.drawdown-type': '回撤类型',
+  'account.form.field.drawdown-amount': '回撤金额',
+  'account.form.field.drawdown-amount-desc': '最大回撤限额',
+  'account.form.field.monthly-cost': '月度费用',
+  'account.form.field.monthly-cost-desc': '订阅费、平台费用',
+  'account.form.field.target-type': '目标类型',
+  'account.form.field.target-type-desc': '绝对值或百分比',
+  'account.form.field.target-percent': '目标 (%)',
+  'account.form.field.target-dollar': '目标 ($)',
+  'account.form.field.target-percent-desc': '百分比收益目标',
+  'account.form.field.target-dollar-desc': '金额目标',
+  'account.form.field.target-date': '目标日期',
+  'account.form.field.target-date-desc': '达成盈利目标的日期',
+  'account.form.unsaved-changes.body': '你对此账户有未保存的更改。',
 
-  'account.create.field.drawdown-amount': '回撤金额',
-  'account.create.field.drawdown-amount-desc': '最大回撤限额',
-  'account.create.field.profit-target-desc': '为账户设置盈利目标',
-  'account.create.field.monthly-cost': '月度费用',
-  'account.create.field.monthly-cost-desc': '订阅费、平台费用',
-  'account.create.field.target-type': '目标类型',
-  'account.create.field.target-type-desc': '绝对值或百分比',
-  'account.create.field.target-percent': '目标 (%)',
-  'account.create.field.target-dollar': '目标 ($)',
-  'account.create.field.target-percent-desc': '百分比收益目标',
-  'account.create.field.target-dollar-desc': '金额目标',
-  'account.create.field.target-date': '目标日期(可选)',
-  'account.create.field.target-date-desc': '达成盈利目标的日期',
-  'account.create.type.demo': '模拟',
-  'account.create.type.evaluation': '评估',
-  'account.create.type.funded': '实盘',
   'account.create.success': '账户"{name}"创建成功',
   'account.create.error.name-required': '账户名称为必填项',
   'account.create.error.name-exists': '名为"{name}"的账户已存在',
@@ -2219,6 +2265,10 @@ const zh: Lang = {
   'account.create.error.drawdown-required': '启用回撤类型时必须填写回撤金额',
   'account.create.error.profit-target-required':
     '启用盈利目标时必须填写目标金额',
+  'account.create.error.profit-target-needs-balance':
+    '百分比盈利目标需要初始余额。请设置初始余额，或改用金额目标。',
+  'account.create.error.phase-profit-target-needs-balance':
+    '百分比盈利目标需要阶段起始余额。请设置起始余额，或改用金额目标。',
   'account.create.error.invalid-date': '创建日期无效',
   'account.create.error.future-date': '创建日期不能是未来日期',
   'account.create.error.cost-negative': '月度费用不能为负数',
@@ -2235,59 +2285,34 @@ const zh: Lang = {
   'account.edit.convert.discard-message':
     '挑战设置会在单独的窗口中打开并关闭此表单。此处的更改不会被保存。',
   'account.edit.convert.discard-confirm': '放弃并继续',
-  'account.edit.field.name': '账户名称',
-  'account.edit.field.name-desc': '此账户的唯一名称',
-  'account.edit.placeholder.name': '例如:我的交易账户',
-  'account.edit.field.type': '账户类型',
-  'account.edit.field.type-desc': '交易账户类型',
-  'account.edit.type.demo': '模拟',
-  'account.edit.type.evaluation': '评估',
-  'account.edit.type.funded': '实盘',
-  'account.edit.field.initial-balance': '初始余额',
-  'account.edit.field.initial-balance-desc': '账户起始余额',
-  'account.edit.field.live-balance': '实时余额',
-  'account.edit.field.live-balance-desc': '当前经纪商余额，不会创建现金流记录',
-  'account.edit.field.creation-date': '创建日期',
-  'account.edit.field.creation-date-desc': '账户创建时间',
-  'account.edit.field.currency': '币种',
-  'account.edit.field.currency-desc': '账户用于显示的本位币',
-  'account.edit.field.drawdown-type': '回撤类型',
 
-  'account.edit.field.drawdown-amount': '回撤金额',
-  'account.edit.field.drawdown-amount-desc': '从初始余额计算的最大允许亏损',
   'account.edit.field.manual-snapshots': '手动回撤快照',
-  'account.edit.field.manual-snapshots-desc':
-    '管理每日余额快照用于每日收盘追踪回撤计算',
-  'account.edit.field.profit-target-desc': '为账户设置盈利目标',
-  'account.copy-trading.title': 'Copy Trading',
+  'account.edit.field.manual-snapshots-desc': '记录经纪商随时间设定的回撤限额',
+  'account.copy-trading.title': '跟单交易',
   'account.copy-trading.description':
-    'Derive this account’s performance from another account using historical copy periods.',
-  'account.copy-trading.enable': 'This account copies another account',
+    '根据历史复制周期，从另一个账户推导此账户的表现。',
+  'account.copy-trading.enable': '此账户复制另一个账户',
   'account.copy-trading.existing-trades-warning':
-    'This account already has direct trades. They will remain, and copied trades will be added from the selected start date.',
-  'account.copy-trading.base-account': 'Base Account',
-  'account.copy-trading.base-account-desc':
-    'Only same-currency non-copy accounts can be selected.',
-  'account.copy-trading.base-account-placeholder': 'Select base account',
-  'account.copy-trading.multiplier': 'Multiplier',
-  'account.copy-trading.multiplier-desc': 'Allowed range: 0.1x to 100x',
-  'account.copy-trading.all-history': 'Copy all historical trades',
-  'account.copy-trading.start-date': 'Copy From Date',
-  'account.copy-trading.history': 'Copy history',
-  'account.copy-trading.error.base-required':
-    'Select a base account for copy trading.',
+    '此账户已有直接交易。这些交易会保留，复制的交易将从所选开始日期起添加。',
+  'account.copy-trading.base-account': '基础账户',
+  'account.copy-trading.base-account-desc': '相同货币，且不是复制账户',
+  'account.copy-trading.base-account-placeholder': '选择基础账户',
+  'account.copy-trading.multiplier': '倍数',
+  'account.copy-trading.multiplier-desc': '允许范围：0.1x 至 100x',
+  'account.copy-trading.all-history': '复制全部历史交易',
+  'account.copy-trading.start-date': '复制起始日期',
+  'account.copy-trading.history': '复制历史',
+  'account.copy-trading.error.base-required': '请为跟单交易选择基础账户。',
   'account.copy-trading.error.multiplier-range':
-    'Copy trading multiplier must be between 0.1x and 100x.',
+    'Copy Trading 倍数必须在 0.1x 到 100x 之间。',
   'account.copy-trading.error.start-date-required':
-    'Select a copy trading start date.',
-  'account.edit.field.monthly-cost': '月度费用',
-  'account.edit.field.monthly-cost-desc': '订阅费、平台费用',
+    '请选择 Copy Trading 开始日期。',
   'account.copy-trading.error.base-account-is-copied':
-    'This account is already used as a base account and cannot copy another account.',
+    '此账户已被用作基础账户，不能复制其他账户。',
   'account.copy-trading.base-account-is-copied-desc-primary':
-    'This account is currently the base for another copy account.',
+    '此账户目前是另一个复制账户的基础账户。',
   'account.copy-trading.base-account-is-copied-desc-secondary':
-    'Base accounts cannot also be copy accounts.',
+    '基础账户不能同时作为复制账户。',
   'account.prop-challenge.summary.status.archived': '已归档',
   'account.prop-challenge.summary.status.hidden': '已隐藏',
   'account.prop-challenge.actions.progress-to': '进入{phase}',
@@ -2350,7 +2375,7 @@ const zh: Lang = {
   'account.prop-challenge.actions.error': '无法更新道具公司挑战。',
   'account.prop-challenge.confirm.advance': '确认此阶段结果并继续挑战？',
   'account.prop-challenge.confirm.advance-with-promotion':
-    'This will advance the challenge and change the account type to {accountType}.',
+    '这将推进考核并把账户类型更改为 {accountType}。',
   'account.prop-challenge.confirm.fail':
     '将 {account} 标记为失败？挑战“{challenge}”将在{phase}结束。',
   'account.prop-challenge.confirm.archive-failed':
@@ -2367,6 +2392,7 @@ const zh: Lang = {
   'account.prop-challenge.transition.when-target-reached': '达到目标时',
   'account.prop-challenge.transition.too-early':
     '过渡时间不能早于该阶段的开始时间。',
+  'account.prop-challenge.costs.section-title': '费用',
   'account.prop-challenge.costs.title': '一次性费用',
   'account.prop-challenge.costs.description': '单独记录购买、重置和激活费用。',
   'account.prop-challenge.costs.kind': '类型',
@@ -2383,7 +2409,6 @@ const zh: Lang = {
   'account.header.created': '创建于：',
   'account.summary.current-balance': '当前余额',
   'account.summary.net-cash-flow': '净现金流',
-  'account.summary.payouts': '出金',
   'account.performance.title': '绩效表现',
   'account-page.guide.whats-new.cockpit.intro.title': '你的挑战规则',
   'account-page.guide.whats-new.cockpit.intro.description':
@@ -2394,14 +2419,6 @@ const zh: Lang = {
   'account-page.guide.main.challenge.title': '一眼掌握挑战进度',
   'account-page.guide.main.challenge.description':
     '选择一个阶段，查看每条规则及其进度。带有已验证分润出金规则的资金阶段也会在这里跟踪出金资格。',
-  'account.edit.field.target-type': '目标类型',
-  'account.edit.field.target-type-desc': '绝对值或百分比',
-  'account.edit.field.target-percent': '目标 (%)',
-  'account.edit.field.target-dollar': '目标 ($)',
-  'account.edit.field.target-percent-desc': '百分比收益目标',
-  'account.edit.field.target-dollar-desc': '金额目标',
-  'account.edit.field.target-date': '目标日期(可选)',
-  'account.edit.field.target-date-desc': '达成盈利目标的日期',
   'account.edit.button.show-snapshots': '显示快照管理器(已记录 {count} 条)',
   'account.edit.button.hide-snapshots': '隐藏快照管理器(已记录 {count} 条)',
   'account.edit.delete-warning': '此操作不可撤销!',
@@ -2475,14 +2492,12 @@ const zh: Lang = {
   'account.edit-event.delete-confirm.warning': '此操作无法撤销。',
 
   
-  'account.header.title': '账户:{name}',
   'account.header.back-to-dashboard': '返回仪表板',
   'account.header.add-event.aria': '添加入金/出金',
   'account.header.edit-account.aria': '编辑账户',
-  'account.header.view-trades.aria': 'View trades in Trade Log',
+  'account.header.view-trades.aria': '在交易日志中查看交易',
   'account.header.type': '类型:',
   'account.header.initial-balance': '初始余额:',
-  'account.header.current-balance': '当前余额:',
   'account.header.account-id': '账户ID:',
   'account.header.warning.trades-before-creation.one':
     '发现{count}笔交易在账户创建日期之前',
@@ -2518,7 +2533,7 @@ const zh: Lang = {
   'account.link-modal.account-id': '账户ID:',
   'account.link-modal.broker': '券商:',
   'account.link-modal.first-seen': '首次发现:',
-  'account.link-modal.question': '您希望如何处理此账户?',
+  'account.link-modal.question': '你希望如何处理此账户?',
   'account.link-modal.option.new': '使用自定义名称创建新账户',
   'account.link-modal.placeholder.custom-name': '例如:FTMO挑战赛',
   'account.link-modal.account-type': '账户类型:',
@@ -2527,22 +2542,20 @@ const zh: Lang = {
   'account.link-modal.select-account': '选择账户...',
 
   'account.link-modal.option.default': '使用默认名称:Account-{id}',
-  'account.link-modal.default-name': 'Account-{id}',
+  'account.link-modal.default-name': '账户-{id}',
   'account.link-modal.button.linking': '关联中...',
   'account.link-modal.notice.select-existing': '请选择一个现有账户',
   'account.link-modal.notice.failed': '关联账户失败:{error}',
 
   
-  'account.risk-metrics.loading': '正在加载风险指标...',
   'account.risk-metrics.title': '风险管理',
-  'account.risk-metrics.drawdown-used': 'Drawdown Limit Used',
+  'account.risk-metrics.drawdown-used': '已用回撤额度',
   'account.risk-metrics.profit-target': '盈利目标',
+  'account.risk-metrics.profit-target-needs-balance':
+    '百分比目标需要以初始余额为基准。请在编辑账户中设置初始余额，或改用金额目标。',
   'account.risk-metrics.status.breached': '已突破',
   'account.risk-metrics.status.achieved': '已达成',
   'account.risk-metrics.status.in-progress': '进行中',
-  'account.risk-metrics.not-set': '未设置',
-  'account.risk-metrics.no-drawdown': '未设置回撤限制',
-  'account.risk-metrics.no-profit-target': '未设置盈利目标',
   'account.risk-metrics.label.used': '已用:',
   'account.risk-metrics.label.limit': '限制:',
   'account.risk-metrics.label.remaining': '剩余:',
@@ -2558,18 +2571,14 @@ const zh: Lang = {
 
   
   'account.drawdown.none': '无',
-  'account.drawdown.fixed': '固定',
-  'account.drawdown.eod-trailing': '日终追踪',
+  'account.drawdown.fixed': '静态',
+  'account.drawdown.eod-trailing': '日终跟踪',
   'account.drawdown.manual': '手动',
 
   
-  'account.profit-target.enable': '启用盈利目标',
+  'account.profit-target.title': '盈利目标',
   'account.profit-target.type.absolute': '绝对金额',
   'account.profit-target.type.percentage': '百分比',
-
-  
-
-  'account.linked-trades.setups': '策略',
 
   
   'account.weight-legend.aria-label': '账户类型分布图例',
@@ -2578,14 +2587,13 @@ const zh: Lang = {
   
   'account.transaction.deposit': '入金',
   'account.transaction.withdrawal': '出金',
-  'account.transaction.click-to-edit': '点击编辑或删除此交易',
   'account.transaction.edit-row-label': '编辑或删除此交易：{date}，{amount}',
 
   
   'account.deposits-withdrawals.title': '入金与出金',
   'account.deposits-withdrawals.empty': '暂无手动入金或出金记录。',
   'account.deposits-withdrawals.empty-sub':
-    '点击标题栏的 + 按钮添加您的第一笔交易。',
+    '点击标题栏的 + 按钮添加你的第一笔交易。',
   'account.deposits-withdrawals.summary':
     '入金 {deposits} · 出金 {withdrawn} · 最近 {date}',
   'account.payouts.title': '分润出金',
@@ -2621,42 +2629,51 @@ const zh: Lang = {
   'account-page.error.title': '加载账户出错',
   'account-page.error.not-found': '无法找到账户"{accountName}"的数据',
   'account-page.error.not-found-sub': '请检查账户是否存在，或尝试刷新页面。',
-  'account-page.guide.empty.intro.title': 'This page is one account in detail',
+  'account-page.guide.empty.intro.title': '此页面详细展示单个账户',
   'account-page.guide.empty.intro.description':
-    'Use the Account Page to manage one account, record account events, and review the trades linked to it.',
+    '使用账户页面管理单个账户、记录账户事件，并在需要复盘交易时打开已筛选的交易日志。',
   'account-page.guide.empty.edit-account.title':
-    'Edit Account opens the full account settings',
+    '“编辑账户”会打开完整的账户设置',
   'account-page.guide.empty.edit-account.description':
-    'Use this button to change the account name, type, currency, drawdown rules, profit target, monthly cost, and more.',
-  'account-page.guide.empty.add-event.title':
-    'Add Event records deposits and withdrawals',
+    '使用此按钮更改账户名称、类型、货币、回撤规则、盈利目标、月度费用等。',
+  'account-page.guide.empty.add-event.title': '“添加事件”用于记录入金和出金',
   'account-page.guide.empty.add-event.description':
-    'Use this button whenever money moves in or out of the account outside of normal trades.',
-  'account-page.guide.empty.transactions.title':
-    'Cash movements are tracked here',
+    '每当资金在正常交易之外转入或转出账户时，使用此按钮。',
+  'account-page.guide.empty.transactions.title': '资金变动记录在这里',
   'account-page.guide.empty.transactions.description':
-    'This section keeps a row-by-row record of manual deposits and withdrawals, shown as Payouts on a prop-challenge account. When it is empty, use Add Event to create the first one.',
-  'account-page.guide.empty.trade-log.title': 'Linked trades will appear here',
+    '此部分逐行记录手动入金和出金；在交易考核账户中显示为出金。为空时，使用“添加事件”创建第一条记录。',
+  'account-page.guide.empty.trade-log.title': '在交易日志中打开此账户',
   'account-page.guide.empty.trade-log.description':
-    'Trades show up here when they are assigned to this account. Once you have linked trades, this page becomes your full account breakdown.',
-  'account-page.guide.main.intro.title': 'This page is your account breakdown',
+    '此标题按钮会打开已选中此账户的交易日志，让交易复盘留在专门的交易日志视图中。',
+  'account-page.guide.main.intro.title': '此页面是你的账户明细',
   'account-page.guide.main.intro.description':
-    'Use the Account Page to understand one account clearly: balance history, performance, risk limits, cash movements, and linked trades.',
-  'account-page.guide.main.balance-chart.title':
-    'The balance chart shows the account over time',
+    '使用账户页面全面了解单个账户：余额历史、表现、风险限额和资金变动。',
+  'account-page.guide.main.balance-chart.title': '余额图表不只显示余额',
   'account-page.guide.main.balance-chart.description':
-    'Use this chart to see how the account changed over time, not just where it stands today.',
+    '此图表显示账户随时间的变化，包括入金和出金，以及你为该账户设置的回撤和盈利目标水平。',
   'account-page.guide.main.metrics.title': '仅此账户的表现',
   'account-page.guide.main.metrics.description':
     '仅限此账户的余额、盈亏、胜率和各项成本。Prop 账户会显示分润出金，而不是净现金流。',
-  'account-page.guide.main.risk.title':
-    'Risk progress is tracked separately here',
+  'account-page.guide.main.risk.title': '风险进度在这里单独跟踪',
   'account-page.guide.main.risk.description':
     '已使用多少回撤额度，以及距离盈利目标还有多远。',
-  'account-page.guide.main.transactions.title':
-    'Cash movements stay in their own section',
+  'account-page.guide.main.transactions.title': '资金变动有单独的板块',
   'account-page.guide.main.transactions.description':
     '每笔入金和出金及其后的余额，与交易结果分开记录。Prop 账户会在这里列出分润出金记录。',
+  'account.monthly-returns.title': '月度收益',
+  'account.monthly-returns.total': '合计',
+  'account.monthly-returns.view-trades': '查看 {period} 的交易',
+  'account.monthly-returns.unconverted':
+    '未计入：{currencies} 账户（无可用汇率）。',
+  'account.monthly-returns.empty': '暂无月度收益。',
+  'account.monthly-returns.empty-sub': '账户入金且有交易平仓后即会显示。',
+  'account.monthly-returns.error': '无法加载月度收益。',
+  'account-page.guide.main.monthly-returns.title': '月度收益',
+  'account-page.guide.main.monthly-returns.description':
+    '该账户资金每月的收益率。入金和出金已剔除，不会计为盈利；合计列按月复利汇总。选择月份或年份可打开对应交易。',
+  'account-dashboard.guide.main.monthly-returns.title': '月度收益',
+  'account-dashboard.guide.main.monthly-returns.description':
+    '上方所计账户的合并月度收益，按各账户资金加权。其他币种的账户按今日汇率换算。选择月份或年份可打开对应交易。',
   'account-page.guide.main.actions.title': '交易、资金与设置',
   'account-page.guide.main.actions.description':
     '在 Trade Log 中打开此账户的交易，用 + 记录一笔入金或出金，或编辑账户及其规则。',
@@ -2674,69 +2691,65 @@ const zh: Lang = {
   'account-dashboard.error.retry':
     '账户页面服务未就绪,将在 {delay}ms 后重试(第 {attempt}/{max} 次尝试)',
   'account-dashboard.empty.title': '未找到账户',
-  'account-dashboard.empty.message': '创建账户以开始跟踪您的交易表现',
+  'account-dashboard.empty.message': '创建账户以开始跟踪你的交易表现',
   'account-dashboard.section.empty': '暂无{type}账户',
   'account-dashboard.section.empty-sub': '创建账户后将在此处显示',
-  'account-dashboard.button.create-first': '创建您的第一个账户',
+  'account-dashboard.button.create-first': '创建你的第一个账户',
   'account-dashboard.action.create': '创建新账户',
   'account-dashboard.action.settings': '账户设置',
   'account-dashboard.weight-bar.aria': '账户类型资产管理规模分布',
   'account-dashboard.weight-bar.segment-aria':
     '{name}：占总资产管理规模的 {percent}%',
-  'account-dashboard.guide.empty.intro.title':
-    'This page keeps all of your accounts in one place',
+  'account-dashboard.guide.empty.intro.title': '此页面集中显示你的所有账户',
   'account-dashboard.guide.empty.intro.description':
     '使用“账户”集中查看所有账户。添加账户后，可在此快速比较。',
   'account-dashboard.guide.empty.state.title':
-    'There is nothing here yet because no accounts exist',
+    '这里还没有内容，因为还没有任何账户',
   'account-dashboard.guide.empty.state.description':
-    'The dashboard stays empty until you create your first account. After that, it will show account totals, sections, and shortcuts into each account page.',
-  'account-dashboard.guide.empty.create.title':
-    'Create your first account here',
+    '在你创建第一个账户之前，仪表盘会保持为空。之后它会显示账户汇总、分组以及进入各账户页面的快捷方式。',
+  'account-dashboard.guide.empty.create.title': '在这里创建你的第一个账户',
   'account-dashboard.guide.empty.create.description':
-    'Click this button to create the first account you want Journalit to track.',
+    '点击此按钮，创建你希望 Journalit 跟踪的第一个账户。',
   'account-dashboard.guide.empty.after-create.title':
-    'After you save, Journalit opens the account page',
+    '保存后，Journalit 会打开账户页面',
   'account-dashboard.guide.empty.after-create.description':
-    'Fill in the basic account details and save. The next guide will pick up on the Account Page for that specific account.',
-  'account-dashboard.guide.main.intro.title': '这些是您的账户',
+    '填写账户基本信息并保存。下一个引导会在该账户的账户页面继续。',
+  'account-dashboard.guide.main.intro.title': '这些是你的账户',
   'account-dashboard.guide.main.intro.description':
-    'Use this page to compare accounts, watch totals across all accounts, and jump into a single account when you need more detail.',
-  'account-dashboard.guide.main.aum-chart.title':
-    'AUM means assets under management',
+    '在这里集中比较所有账户。自营挑战仍在同一账户分组中，每张卡片上直接显示其阶段和规则进度。',
+  'account-dashboard.guide.main.aum-chart.title': 'AUM 指管理资产规模',
   'account-dashboard.guide.main.aum-chart.description':
-    'This chart tracks your combined account value over time, including deposits, withdrawals, and when accounts were added.',
-  'account-dashboard.guide.main.metrics.title':
-    'These metrics summarise all visible accounts',
+    '此图表显示你所有账户的合计价值随时间的变化。有自营账户时，旁边的挑战台账会显示通过率、成本、出金和净结果。',
+  'account-dashboard.guide.main.metrics.title': '这些指标汇总了所有可见账户',
   'account-dashboard.guide.main.metrics.description':
-    'Use these stats for a quick account-level snapshot before drilling into specific account types or specific accounts.',
+    '先用这些统计快速了解账户整体情况，再深入查看特定账户类型或具体账户。',
   'account-dashboard.guide.main.mode-switch.title':
     '概览和挑战是同一批账户的两种视图',
   'account-dashboard.guide.main.mode-switch.description':
     '概览保留 AUM 图表和投资组合总计。切换到挑战可查看自营挑战的经济数据：通过率、成本、出金以及所有挑战账户的阶段瓶颈。',
   'account-dashboard.guide.main.create-account.title':
-    'You can create another account from here at any time',
+    '你可以随时在这里创建另一个账户',
   'account-dashboard.guide.main.create-account.description':
-    'Use this button whenever you want to add a new account to the dashboard.',
+    '需要向仪表盘添加新账户时，使用此按钮。',
   'account-dashboard.guide.main.settings-types.title':
-    'Settings can manage available account types',
+    '设置可以管理可用的账户类型',
   'account-dashboard.guide.main.settings-types.description':
-    'Inside settings, you can add custom account types and remove old ones if your workflow changes.',
+    '在设置中，你可以添加自定义账户类型，并在工作流程变化时删除旧类型。',
   'account-dashboard.guide.main.settings-stages.title':
     '挑战阶段可设置账户类型',
   'account-dashboard.guide.main.settings-stages.description':
     '选择挑战达到评估、模拟 funded 或真实 funded 时应用的账户类型。将某个阶段设为“不更改”即可保持当前账户类型。',
   'account-dashboard.guide.main.settings-inclusion.title':
-    'Settings can change what counts in totals',
+    '设置可以改变汇总中计入的内容',
   'account-dashboard.guide.main.settings-inclusion.description':
-    'You can hide account types from dashboard totals without deleting them, and you can separately decide whether their withdrawals still count.',
+    '你可以在不删除账户类型的情况下将其从仪表盘汇总中隐藏，并单独决定其出金是否仍计入。',
   'account-dashboard.guide.main.settings-order.title':
-    'This section controls the order of account groups',
+    '此部分控制账户分组的顺序',
   'account-dashboard.guide.main.settings-order.description':
-    'Use these controls to decide which account types appear first on the dashboard.',
+    '使用这些控件决定哪些账户类型在仪表盘上优先显示。',
 
   'account-dashboard.guide.main.open-account.title':
-    'Open any account card to go deeper',
+    '打开任意账户卡片以查看更多详情',
   'account-dashboard.guide.main.open-account.description':
     '账户按类型分组，便于比较同类账户。打开任意卡片查看完整明细，账户页指南会在那里继续。',
   'account-dashboard.guide.whats-new.prop-challenges.intro.title':
@@ -2771,8 +2784,6 @@ const zh: Lang = {
   'account-card.metric.trades': '交易',
   'account-card.metric.withdrawals': '出金',
   'account-card.metric.age': '账龄',
-  'account-card.progress.profit-target': '盈利目标',
-  'account-card.progress.drawdown-used': 'Drawdown Limit Used',
   'account-card.progress.not-set': '未设置',
   'account-card.footer.monthly': '月度:',
   'account-card.footer.total-costs': '总成本:',
@@ -2791,18 +2802,15 @@ const zh: Lang = {
   
   
 
-  'timeline.status.loss': '亏损',
-
-  'timeline.aria.session-navigation': 'Same-day trade navigation',
-  'timeline.aria.previous-trade': 'Previous trade: {trade}',
-  'timeline.aria.next-trade': 'Next trade: {trade}',
-  'timeline.aria.no-previous-trade': 'No previous trade in this trading day',
-  'timeline.aria.no-next-trade': 'No next trade in this trading day',
+  'timeline.aria.session-navigation': '同日交易导航',
+  'timeline.aria.previous-trade': '上一笔交易：{trade}',
+  'timeline.aria.next-trade': '下一笔交易：{trade}',
+  'timeline.aria.no-previous-trade': '本交易日没有上一笔交易',
+  'timeline.aria.no-next-trade': '本交易日没有下一笔交易',
 
   
   
   
-  'trade.review.title': '交易复盘',
 
   
 
@@ -2813,9 +2821,9 @@ const zh: Lang = {
 
   'trade.details.thesis': '交易论点',
 
-  'trade.details.entries-summary': '{count} entries',
-  'trade.details.exits-summary': '{count} exits',
-  'trade.details.take-profit-count': '{count} targets',
+  'trade.details.entries-summary': '{count} 次入场',
+  'trade.details.exits-summary': '{count} 次出场',
+  'trade.details.take-profit-count': '{count} 个目标',
 
   
   'trade.metadata.account': '账户:',
@@ -2825,14 +2833,18 @@ const zh: Lang = {
 
   
   'trade.image.no-images': '此交易暂无图片',
-  'trade.image.click-edit': '点击编辑添加图片',
+  'trade.image.click-edit': '添加图片',
   'trade.image.alt-prefix': '交易图片',
   'command.share-note-as-image': '将当前笔记分享为图片',
-  'trade.share.copy-screenshot': '复制交易截图',
   'trade.share.copied': '交易截图已复制到剪贴板',
   'trade.share.failed': '无法复制交易截图',
   'trade.share.not-ready': '交易笔记仍在加载，请稍后再试。',
   'share.review.action': '分享复盘卡片',
+  'share.trade.modal-title': '分享交易',
+  'share.trade.position-return': '仓位回报率 %（费用前）',
+  'share.trade.account-return': '账户回报率 %（当前余额）',
+  'share.trade.hide-dollar-hint':
+    '选择 R 或 % 隐藏金额。不可用的值显示为横线。',
   'share.review.modal-title': '分享复盘',
   'share.review.section.top': '笔记开头',
   'share.review.select-all': '全选',
@@ -2856,31 +2868,33 @@ const zh: Lang = {
 
   'trade.review.reviewed': '已复盘',
   'trade.review.reviewed-on': '复盘于 {date}',
+  'trade.rating.label': '评分',
+  'trade.rating.hint': '点击星星评分，再次点击评半星，再点击一次可清除',
 
   
 
   
   
   
-  'chart.label.pnl': 'P&L',
+  'chart.label.pnl': '盈亏',
   'chart.legend.entry': '入场',
   'chart.legend.exit': '出场',
   'chart.legend.trade': '交易',
   'chart.shared.empty': '暂无交易数据',
   'chart.shared.empty-sub': '请尝试选择其他时间段',
-  'chart.tooltip.peak-equity': 'Peak realized P&L',
+  'chart.tooltip.peak-equity': '已实现盈亏峰值',
   'chart.tooltip.pnl': '盈亏',
-  'chart.tooltip.episode-start': 'Episode Start',
-  'chart.tooltip.underwater-days': 'Time Underwater',
-  'chart.tooltip.underwater-trades': 'Trades Underwater',
+  'chart.tooltip.episode-start': '回撤开始',
+  'chart.tooltip.underwater-days': '回撤持续时间',
+  'chart.tooltip.underwater-trades': '回撤期间交易数',
 
-  'chart.tooltip.drawdown-amount': 'Amount',
-  'chart.tooltip.drawdown-percent': 'Drawdown % of {basis}',
-  'chart.tooltip.percent-basis': 'Percent Basis',
+  'chart.tooltip.drawdown-amount': '金额',
+  'chart.tooltip.drawdown-percent': '回撤占 {basis} 的百分比',
+  'chart.tooltip.percent-basis': '百分比基准',
   'chart.tooltip.trade-pnl': '交易盈亏',
 
   'chart.tooltip.accounts-list': '{accounts}',
-  'chart.tooltip.more-accounts': '+{count} more',
+  'chart.tooltip.more-accounts': '另外 {count} 个',
   'chart.loading': '图表加载中...',
 
   
@@ -2919,16 +2933,14 @@ const zh: Lang = {
   'metric.winnerMfeP90.description': '盈利交易 MFE 的第 90 百分位',
   'metric.loserMfeP90.name': '亏损 MFE P90',
   'metric.loserMfeP90.description': '亏损交易 MFE 的第 90 百分位',
-  'metric.timeInDrawdown.name': 'Time in Drawdown',
+  'metric.timeInDrawdown.name': '回撤时长',
   'metric.timeInDrawdown.description': '低于 P&L 高点的时间占比',
-  'metric.avgRecoveryTime.name': 'Avg Recovery Time',
+  'metric.avgRecoveryTime.name': '平均恢复时间',
   'metric.avgRecoveryTime.description': '从回撤中恢复的平均时间',
-  'metric.longestDrawdown.name': 'Longest Drawdown',
+  'metric.longestDrawdown.name': '最长回撤',
   'metric.longestDrawdown.description': '单次回撤持续的最长时间',
-  'metric.drawdownEpisodes.name': 'Drawdown Episodes',
+  'metric.drawdownEpisodes.name': '回撤次数',
   'metric.drawdownEpisodes.description': '独立回撤期的次数',
-  'metric.category.performance': '绩效',
-  'metric.category.volume': '交易量',
   'metric.expectancy.description': '每笔交易的预期盈亏',
   'metric.calmarRatio.name': '卡玛比率',
   'metric.calmarRatio.description': '年化已实现收益相对于最大百分比回撤',
@@ -2957,13 +2969,13 @@ const zh: Lang = {
   'metric.largestWin.description': '最大盈利交易',
   'metric.largestWin.name': '最大盈利',
   'metric.maxDrawdown.description': '距前期 P&L 高点的最大跌幅',
-  'metric.maxDrawdown.name': 'Max Drawdown',
+  'metric.maxDrawdown.name': '最大回撤',
   'metric.netPnL.description': '所有交易的总盈亏',
   'metric.netPnL.name': '净盈亏',
   'metric.numLossTrades.description': '亏损交易笔数',
   'metric.numLossTrades.name': '亏损交易',
   'metric.numTrades.description': '已平仓交易总笔数',
-  'metric.numTrades.name': '已平仓交易',
+  'metric.numTrades.name': '总交易数',
   'metric.numWinTrades.description': '盈利交易笔数',
   'metric.numWinTrades.name': '盈利交易',
   'metric.profitFactor.description': '毛利润与毛亏损的比率',
@@ -3039,7 +3051,7 @@ const zh: Lang = {
   
   'home.quick-links.account-dashboard': '账户',
   'home.quick-links.add-trade': '添加交易',
-  'home.quick-links.quick-import': 'Quick Import',
+  'home.quick-links.quick-import': '快速导入',
   'home.quick-links.csv-import': 'Trade Import',
   'home.quick-links.hide': '隐藏快捷链接',
   'home.quick-links.layout-builder': '布局构建器',
@@ -3057,7 +3069,7 @@ const zh: Lang = {
   'home.quick-links.move-below': '将快捷链接移到组件下方',
 
   
-  'home.widget-selector.add-shortcut': '添加账户/交易设置快捷方式',
+  'home.widget-selector.add-shortcut': '添加账户/策略快捷方式',
   'home.widget-selector.restore': '恢复',
   'home.widget-selector.section.quick-links': '快捷链接',
   'home.widget-selector.title': '添加到首页',
@@ -3065,7 +3077,7 @@ const zh: Lang = {
   'home.widget-selector.sample-note.title': '交易计划',
   'home.widget-selector.sample-note.intro':
     '只在关键价位交易 A+ 形态。每天最多 3 笔交易。',
-  'home.widget-selector.sample-note.checklist': '盘前检查清单',
+  'home.widget-selector.sample-note.checklist': '检查清单',
   'home.widget-selector.sample-note.task.calendar': '查看经济日历',
   'home.widget-selector.sample-note.task.levels': '在图表上标出关键价位',
   'home.widget-selector.sample-note.task.max-loss': '设置每日最大亏损',
@@ -3078,7 +3090,7 @@ const zh: Lang = {
   'home.widget.aum.name': '资产管理规模',
   'home.widget.aum.description': '当前账户余额及30天趋势',
   'home.widget.best-hours.name': '最佳交易时段',
-  'home.widget.best-hours.description': '您盈利最多的交易时段',
+  'home.widget.best-hours.description': '你盈利最多的交易时段',
   'home.widget.current-streak.name': '当前连胜/连败',
   'home.widget.current-streak.description': '追踪交易和复盘连胜',
   'home.widget.drawdown-monitor.name': '回撤监控',
@@ -3105,7 +3117,7 @@ const zh: Lang = {
   'home.widget.key-events.empty-title': '暂无关键事件',
   'home.widget.key-events.open-aria': '打开本周周度复盘',
   'home.widget.year-heatmap.name': '交易热力图',
-  'home.widget.year-heatmap.description': '可视化展示您的交易活动',
+  'home.widget.year-heatmap.description': '可视化展示你的交易活动',
   'home.widget.profit-target-widget.name': '盈利目标',
   'home.widget.profit-target-widget.description': '跟踪各账户的盈利目标进度',
   'home.widget.eval-roi.name': '考核 ROI',
@@ -3115,13 +3127,13 @@ const zh: Lang = {
   'home.widget.eval-roi.description': '自营挑战费用与已获出金对比',
 
   
-  'home.widget.getting-started.name': 'Getting Started',
+  'home.widget.getting-started.name': '入门指南',
   'home.widget.getting-started.description': '帮你设置 Journalit 和交易的清单',
-  'home.widget.getting-started.progress': '{completed}/{total} completed',
-  'home.widget.getting-started.progress.loading': 'Checking progress...',
+  'home.widget.getting-started.progress': '已完成 {completed}/{total}',
+  'home.widget.getting-started.progress.loading': '正在检查进度...',
   'home.widget.getting-started.item.account.title': '设置你的交易账户',
   'home.widget.getting-started.item.account.description':
-    '交易会记录到用于跟踪余额的账户中。没有账户就无法计算收益和回撤。',
+    '交易会记录到一个跟踪你余额的账户中。没有账户，就无法计算收益和回撤。',
   'home.widget.getting-started.item.account.time': '15s',
   'home.widget.getting-started.item.account.cta': '设置账户',
   'home.widget.getting-started.item.create.title': '导入你的交易历史',
@@ -3129,26 +3141,26 @@ const zh: Lang = {
     '导入现有交易、连接 Trade Sync，或手动添加第一笔交易。',
   'home.widget.getting-started.item.create.time': '30s',
   'home.widget.getting-started.item.create.cta': '打开 Trade Import',
-  'home.widget.getting-started.item.tradelog.title': 'Open Trade Log',
+  'home.widget.getting-started.item.tradelog.title': '打开交易日志',
   'home.widget.getting-started.item.tradelog.description':
-    'Your trade database for analysing all your trades in one place.',
+    '你的交易数据库，可在一处分析所有交易。',
   'home.widget.getting-started.item.tradelog.time': '10s',
-  'home.widget.getting-started.item.tradelog.cta': 'Open Trade Log',
-  'home.widget.getting-started.item.layouts.title': 'Open Layout Builder',
+  'home.widget.getting-started.item.tradelog.cta': '打开交易日志',
+  'home.widget.getting-started.item.layouts.title': '打开布局构建器',
   'home.widget.getting-started.item.layouts.description':
-    'Design your review templates your way.',
-  'home.widget.getting-started.item.layouts.time': '1 min',
-  'home.widget.getting-started.item.layouts.cta': 'Open Layout Builder',
+    '按你的方式设计复盘布局。',
+  'home.widget.getting-started.item.layouts.time': '1 分钟',
+  'home.widget.getting-started.item.layouts.cta': '打开布局构建器',
   'home.widget.getting-started.item.sidebar.title': '打开导航侧栏',
   'home.widget.getting-started.item.sidebar.description':
     '快速访问 Journalit 页面、复盘、工具和搜索。',
   'home.widget.getting-started.item.sidebar.time': '10 秒',
   'home.widget.getting-started.item.sidebar.cta': '打开侧栏',
-  'home.widget.getting-started.item.pro.title': 'Activate PRO',
+  'home.widget.getting-started.item.pro.title': '激活 PRO',
   'home.widget.getting-started.item.pro.description':
-    '启用 Trade Import、Trade Sync 和经济日历。',
-  'home.widget.getting-started.item.pro.time': '1 min',
-  'home.widget.getting-started.item.pro.cta': 'Activate',
+    '启用 Trade Import、Trade Sync 和经济日历，并获得更多每月 AI 工具调用次数。',
+  'home.widget.getting-started.item.pro.time': '1 分钟',
+  'home.widget.getting-started.item.pro.cta': '激活',
 
   
   'home.widget.embedded-note.change-note': '更换笔记',
@@ -3195,13 +3207,11 @@ const zh: Lang = {
   'home.widget.goals-progress.account-aware': '按账户设置目标',
   'home.widget.goals-progress.no-target-selected': '所选账户没有目标',
   'home.widget.goals-progress.configured-for': '已为 {accounts} 配置',
-  'home.widget.goals-progress.account-scope': 'Account scope',
-  'home.widget.goals-progress.add-account': 'Add account',
+  'home.widget.goals-progress.account-scope': '账户范围',
+  'home.widget.goals-progress.add-account': '添加账户',
 
   
   'home.widget.best-hours.no-data': '暂无交易数据',
-  'home.widget.best-hours.period-aria':
-    '{label}: 每笔平均盈亏 {pnl}, {count} 笔交易',
   'home.widget.best-hours.title': '最佳交易时段',
   'home.widget.best-hours.trades-count': '{count} 笔交易',
   'home.widget.best-hours.win-rate': '{rate}% 胜率',
@@ -3263,7 +3273,6 @@ const zh: Lang = {
   'home.widget.eval-roi.challenge-count-plural': '{count} 个考核',
   'home.widget.eval-roi.net': '净额',
   'home.widget.eval-roi.spent': '已花费',
-  'home.widget.eval-roi.payouts': '出金',
   'home.widget.eval-roi.break-even': '盈亏平衡',
   'home.widget.challenge-alerts.title': '挑战提醒',
   'home.widget.challenge-alerts.unable-to-load': '无法检查挑战提醒',
@@ -3279,7 +3288,7 @@ const zh: Lang = {
   'home.widget.challenge-alerts.kind.unknown-account': '新账户 {label}',
   'home.widget.eval-roi.roi-aria': '考核费用回报率',
   'home.widget.drawdown.remaining': '剩余',
-  'home.widget.drawdown.title': 'Drawdown Limit',
+  'home.widget.drawdown.title': '回撤限额',
   'home.widget.drawdown.unable-to-load': '无法加载',
 
   
@@ -3325,7 +3334,6 @@ const zh: Lang = {
   'home.widget.top-breakdown.configure-title': '自定义热门{dimension}',
   'home.widget.top-breakdown.aria.customize': '点击自定义热门{dimension}',
 
-  'home.widget.setups.title': '热门交易设置',
   'home.widget.setups.trades-count': '{count}笔交易',
   'home.widget.setups.win-rate': '{rate}%胜率',
 
@@ -3415,13 +3423,6 @@ const zh: Lang = {
   'widget.header.drc': '每日复盘',
   'widget.header.nav.prev': '← 上一个',
   'widget.header.nav.next': '下一个 →',
-  'widget.header.day.0': '周日',
-  'widget.header.day.1': '周一',
-  'widget.header.day.2': '周二',
-  'widget.header.day.3': '周三',
-  'widget.header.day.4': '周四',
-  'widget.header.day.5': '周五',
-  'widget.header.day.6': '周六',
   'widget.header.month.0': '一月',
   'widget.header.month.1': '二月',
   'widget.header.month.2': '三月',
@@ -3465,30 +3466,27 @@ const zh: Lang = {
   
   'widget.review.name': '复盘',
   'widget.review.description': '心态与技术表现评分',
-  'widget.review-context-fields.name': 'Review Context Fields',
+  'widget.review-context-fields.name': '复盘背景字段',
   'widget.review-context-fields.description':
-    'Editable custom context fields for review notes',
-  'widget.review-context-fields.group.default': 'Review Context',
+    '复盘笔记中可编辑的自定义背景字段',
+  'widget.review-context-fields.group.default': '复盘背景',
 
-  'widget.review-context-fields.empty-title':
-    'No review context fields configured for this review type.',
+  'widget.review-context-fields.empty-title': '此复盘类型未配置背景字段。',
   'widget.review-context-fields.empty-desc':
-    'Create review custom fields in settings to capture bias, focus, intent, and other planning context.',
-  'widget.review-context-fields.configure': 'Configure Review Fields',
+    '在设置中创建复盘自定义字段，用于记录偏向、关注点、意图和其他计划背景。',
+  'widget.review-context-fields.configure': '配置复盘字段',
   'widget.review-context-fields.service-unavailable':
-    'Review custom fields are not available yet.',
-  'widget.review-context-fields.unsupported-type':
-    'Unsupported review field type.',
-  'widget.review-context-fields.source-missing':
-    'This parent review does not exist yet.',
+    '复盘自定义字段暂不可用。',
+  'widget.review-context-fields.unsupported-type': '不支持的复盘字段类型。',
+  'widget.review-context-fields.source-missing': '此上级复盘尚不存在。',
   'widget.review-context-fields.source-invalid':
-    'This parent review exists but is not a valid review note.',
+    '此上级复盘存在，但不是有效的复盘笔记。',
   'widget.review-context-fields.source-empty': '此上级复盘尚未填写可继承的值。',
 
   'widget.review.title': '表现复盘',
   'widget.review.mental-game': '心态',
   'widget.review.technical-game': '技术',
-  'widget.review.star-hint': '单击评整星,右键评半星',
+  'widget.review.star-hint': '单击评整星，再次单击评半星',
   'widget.review.invalid-context':
     "复盘组件需要在 DRC 或周复盘笔记中使用(frontmatter type: 'drc' 或 'weekly-review')",
 
@@ -3522,6 +3520,14 @@ const zh: Lang = {
   'widget.key-events.default-notes-tooltip':
     '默认备注可在设置 → 自定义 → 事件中管理。在此处选择事件时，会自动填充其保存的默认备注。',
   'widget.key-events.add-button': '添加事件',
+  'widget.key-events.today': '今天',
+  'widget.key-events.day-picker-label': '日期',
+  'widget.key-events.show-all-days': '显示整周',
+  'widget.key-events.show-one-day': '显示单日',
+  'widget.key-events.event-count.one': '{count} 个事件',
+  'widget.key-events.event-count.few': '{count} 个事件',
+  'widget.key-events.event-count.many': '{count} 个事件',
+  'widget.key-events.event-count.other': '{count} 个事件',
   'widget.key-events.empty-state': '今日无重要事件',
   'widget.key-events.empty-state-sub': '在周复盘中添加事件',
   'widget.key-events.open-calendar-aria': '打开财经日历',
@@ -3538,11 +3544,10 @@ const zh: Lang = {
   'widget.images.invalid-context':
     "图片组件需要在复盘笔记中使用(type: 'drc'、'weekly-review'、'monthly-review'、'quarterly-review' 或 'yearly-review')",
   'widget.images.alt-prefix': '复盘媒体',
-  'widget.images.stacked-alt': '复盘媒体 {index}',
   'widget.images.open-fullscreen': '全屏查看媒体 {index}',
   'widget.images.delete': '删除媒体',
   'widget.images.empty': '暂无媒体',
-  'widget.images.placeholder': '粘贴图片 URL 或文件路径...',
+  'widget.images.placeholder': '粘贴媒体 URL 或文件路径...',
   'widget.images.placeholder-add-more': '添加更多媒体...',
 
   
@@ -3556,11 +3561,11 @@ const zh: Lang = {
   
   'widget.pnl-chart.name': '净值曲线',
   'widget.pnl-chart.description': '累计盈亏随时间变化',
-  'widget.drawdown-chart.name': 'Drawdown',
+  'widget.drawdown-chart.name': '回撤',
   'widget.drawdown-chart.description':
-    'Closed-trade drawdown amount from the prior realized P&L high',
-  'widget.directional-pnl.name': 'Directional P&L',
-  'widget.directional-pnl.description': 'Long vs short performance comparison',
+    '已平仓交易相对于此前已实现盈亏高点的回撤金额',
+  'widget.directional-pnl.name': '多空盈亏',
+  'widget.directional-pnl.description': '多头与空头表现对比',
   'widget.trades-chart.name': '交易盈亏',
   'widget.trades-chart.description': '每笔交易的盈亏柱状图',
   'widget.trades-chart-daily.name': '日盈亏',
@@ -3584,17 +3589,16 @@ const zh: Lang = {
   'widget.stats.avg-win': '平均盈利',
   'widget.stats.avg-loss': '平均亏损',
   'widget.stats.pl-ratio': '盈亏比',
-  'widget.account-breakdown.name': 'Account Breakdown',
-  'widget.account-breakdown.description':
-    'Compare performance across accounts in this review period',
+  'widget.account-breakdown.name': '账户明细',
+  'widget.account-breakdown.description': '比较本复盘周期内各账户的表现',
 
   
-  'widget.account-breakdown.empty': 'No closed trades for this period',
-  'widget.account-breakdown.column.account': 'Account',
-  'widget.account-breakdown.column.trades': 'Trades',
-  'widget.account-breakdown.column.pnl': 'Net P&L',
-  'widget.account-breakdown.column.win-rate': 'Win Rate',
-  'widget.account-breakdown.column.profit-factor': 'Profit Factor',
+  'widget.account-breakdown.empty': '此期间没有已平仓交易',
+  'widget.account-breakdown.column.account': '账户',
+  'widget.account-breakdown.column.trades': '交易数',
+  'widget.account-breakdown.column.pnl': '净盈亏',
+  'widget.account-breakdown.column.win-rate': '胜率',
+  'widget.account-breakdown.column.profit-factor': '盈利因子',
   'widget.tag-performance.name': '标签表现',
   'widget.tag-performance.description': '按交易标签细分表现',
   'widget.setup-performance.name': '策略绩效',
@@ -3654,7 +3658,6 @@ const zh: Lang = {
     '${dollar}/点 | 最小变动:{size} = ${value}',
   'widget.position-size.investment-dollar': '投资金额($)',
   'widget.position-size.investment': '投资金额',
-  'widget.position-size.at-price': '@ ${price}',
 
   
   'widget.best-worst-weeks.name': '最佳/最差周',
@@ -3701,7 +3704,7 @@ const zh: Lang = {
   'widget.trading-score.breakdown-title': '评分明细',
   'widget.trading-score.close-breakdown': '收起明细',
   'widget.trading-score.of-weeks': '共 {count} 周',
-  'widget.trading-score.start-trading': '开始交易以解锁您的评分',
+  'widget.trading-score.start-trading': '开始交易以解锁你的评分',
   'widget.trading-score.one-week-down': '已完成1周,继续加油!',
   'widget.trading-score.weeks-to-unlock.one': '还需 {count} 周解锁',
   'widget.trading-score.weeks-to-unlock.few': '还需 {count} 周解锁',
@@ -3786,7 +3789,7 @@ const zh: Lang = {
   'widget.trade-review.field.duration': '持续时间',
   'widget.trade-review.field.risk': '风险',
   'widget.trade-review.field.account': '账户',
-  'widget.trade-review.field.setup': '设置',
+  'widget.trade-review.field.setup': '策略',
   'widget.trade-review.field.mistakes': '错误',
   'widget.trade-review.field.tags': '标签',
   'widget.trade-review.more-context': '更多上下文',
@@ -3824,9 +3827,9 @@ const zh: Lang = {
   'widget.table.header.trades': '交易数',
   'widget.table.header.pnl': '盈亏',
   'widget.table.header.win-rate': '胜率',
-  'widget.table.header.profit-factor': '盈亏比',
+  'widget.table.header.profit-factor': '盈利因子',
   'widget.table.header.tag': '标签',
-  'widget.table.header.setup': '交易设置',
+  'widget.table.header.setup': '策略',
   'widget.table.header.a-games': 'A级交易',
   'widget.table.header.b-games': 'B级交易',
   'widget.table.header.c-games': 'C级交易',
@@ -3855,8 +3858,8 @@ const zh: Lang = {
   'widget.markdown-header.description': '自定义文本的 Markdown 标题(H1-H6)',
 
   
-  'widget.checklist.title': '交易前检查清单',
-  'widget.checklist.weekly-title': '每周预检查清单',
+  'widget.checklist.title': 'DRC 检查清单',
+  'widget.checklist.weekly-title': '每周检查清单',
   'widget.checklist.tooltip.weekly': '此处添加的项目仅适用于本周。',
   'widget.checklist.tooltip.weekly-settings-link':
     '如需在所有新建周复盘中添加固定项目，请前往 设置 > 复盘。',
@@ -3880,6 +3883,33 @@ const zh: Lang = {
   'widget.session-mistakes.placeholder': '选择或创建错误',
   'widget.session-mistakes.empty': '尚未记录会话错误',
 
+  'widget.day-trade-fields.name': '当日交易字段',
+  'widget.day-trade-fields.description': '应用到当天所有交易的字段',
+  'widget.day-trade-fields.title': '当日交易字段',
+  'widget.day-trade-fields.mistakes': '错误',
+  'widget.day-trade-fields.tags': '标签',
+  'widget.day-trade-fields.not-set': '未设置',
+  'widget.day-trade-fields.apply.one': '应用到 {count} 笔交易',
+  'widget.day-trade-fields.apply.few': '应用到 {count} 笔交易',
+  'widget.day-trade-fields.apply.many': '应用到 {count} 笔交易',
+  'widget.day-trade-fields.apply.other': '应用到 {count} 笔交易',
+  'widget.day-trade-fields.add-field': '添加字段',
+  'widget.day-trade-fields.empty':
+    '设置一次字段，即可应用到当天的每笔交易，包括之后的交易。',
+  'widget.day-trade-fields.invalid-context':
+    "当日交易字段小组件需要 DRC 笔记（frontmatter type: 'drc'）",
+  'widget.day-trade-fields.notice-updated.one': '已更新 {count} 笔交易',
+  'widget.day-trade-fields.notice-updated.few': '已更新 {count} 笔交易',
+  'widget.day-trade-fields.notice-updated.many': '已更新 {count} 笔交易',
+  'widget.day-trade-fields.notice-updated.other': '已更新 {count} 笔交易',
+  'widget.day-trade-fields.notice-failed.one': '无法更新 {count} 笔交易',
+  'widget.day-trade-fields.notice-failed.few': '无法更新 {count} 笔交易',
+  'widget.day-trade-fields.notice-failed.many': '无法更新 {count} 笔交易',
+  'widget.day-trade-fields.notice-failed.other': '无法更新 {count} 笔交易',
+  'widget.day-trade-fields.notice-save-failed': '无法保存当日字段',
+  'widget.day-trade-fields.notice-conflict':
+    '当日交易字段已在其他视图中更改。请检查后重新应用。',
+  'widget.day-trade-fields.retry': '重试',
   'widget.session-mistakes.invalid-context':
     '会话错误组件仅支持 DRC 笔记(frontmatter type: drc)',
 
@@ -3909,7 +3939,7 @@ const zh: Lang = {
   'widget.trade-table.column.date': '日期',
   'widget.trade-table.column.entry': '入场',
   'widget.trade-table.column.ticker': '标的',
-  'widget.trade-table.column.account': 'Account',
+  'widget.trade-table.column.account': '账户',
   'widget.trade-table.column.pnl': '盈亏',
   'widget.trade-table.column.direction': '方向',
   'widget.trade-table.column.setups': '策略',
@@ -3981,6 +4011,16 @@ const zh: Lang = {
   'widget.key-levels.importance.low': '低',
 
   
+  'metric.expectancyGap.name': '期望值差距',
+  'metric.expectancyGap.description': '每笔交易的实际与预期 R。',
+  'expectancy-gap.expected': '预期（R/笔）',
+  'expectancy-gap.realized': '实际（R/笔）',
+  'expectancy-gap.sample': '{total} 笔已平仓交易中，{included} 笔有可用净 R。',
+  'expectancy-gap.method-title': '计算方法',
+  'expectancy-gap.method':
+    '差距 = 实际 − 预期。实际值是完全平仓的实际交易的平均净 R，包括保本交易。未平仓、错过和回测交易不计入。缺失盈亏或风险数据的交易被排除，不视为零。使用已记录的 R 或交易自身的风险，不使用当前默认风险。按离场日期筛选时，每笔交易在最终平仓时只计一次。请使用独立模型或费用口径一致的历史基准。负差距表示表现低于预期，不能证明执行不佳。清空基准即可取消设置。',
+  'expectancy-gap.invalid': '请输入有限数值，或留空以清除。',
+  'expectancy-gap.save-failed': '无法保存基准，请重试。',
   'widget.pnlChart.name': '累计盈亏',
   'widget.pnlChart.description': '随时间累计的 P&L',
 
@@ -4006,7 +4046,7 @@ const zh: Lang = {
   'widget.tickerPerformance.name': '标的绩效',
   'widget.tickerPerformance.description': '按品种排名的表现柱状图',
   'widget.tradesChart.limit': '{count} 笔交易',
-  'widget.drawdownChart.name': 'Drawdown Chart',
+  'widget.drawdownChart.name': '回撤图表',
   'widget.drawdownChart.description': '距前期已实现 P&L 高点的回落',
 
   'widget.recentTrades.name': '近期交易',
@@ -4029,7 +4069,7 @@ const zh: Lang = {
   
 
   'csv.mapper.title': '将列映射到交易字段',
-  'csv.mapper.subtitle': '将您的列与相应的交易字段进行匹配。',
+  'csv.mapper.subtitle': '将你的列与相应的交易字段进行匹配。',
   'csv.mapper.do-not-import': '不导入',
   'csv.mapper.required-badge': '必填',
   'csv.mapper.required-label': '必填项',
@@ -4037,9 +4077,6 @@ const zh: Lang = {
   'csv.mapper.mode.title': '每一行代表什么？',
   'csv.mapper.mode.help':
     '交易日志表格通常每行是一笔已平仓交易，并带有盈亏列。券商的订单历史会把每次买入和卖出分别列为一行。',
-
-  'csv.mapper.asset-type.help':
-    '选择此文件中的资产类型。这决定了必填字段和解析逻辑。',
 
   'csv.mapper.tip.title': '提示:映射更多字段',
   'csv.mapper.tip.desc':
@@ -4063,7 +4100,8 @@ const zh: Lang = {
   'csv.mapper.field.account-id': '账户ID',
   'csv.mapper.help.options-required': '期权交易必填',
   'csv.mapper.help.option-type-required': '期权必填(看涨或看跌)',
-  'csv.mapper.help.contract-size': '期权(通常为100)或期货的乘数',
+  'csv.mapper.help.contract-size':
+    '期权(通常为100)、期货或外汇(每手单位数,通常为100,000)的乘数',
   'csv.mapper.help.order-id': '用于汇总部分成交',
   'csv.mapper.help.asset-types': '股票、期权、期货、外汇、加密货币',
   'csv.mapper.help.status': '交易状态:持仓中或已平仓',
@@ -4092,23 +4130,8 @@ const zh: Lang = {
 
   
 
-  'csv.broker.label': '券商 / 导入格式',
-
   'csv.broker.remove-favorite-aria': '取消收藏',
   'csv.broker.set-favorite-aria': '设为收藏',
-  'csv.broker.ibkr': '盈透证券 (IBKR)',
-  'csv.broker.tradovate': 'Tradovate',
-  'csv.broker.tradezero': 'TradeZero',
-  'csv.broker.tradingview': 'TradingView 模拟交易',
-  'csv.broker.bybit': 'Bybit (USDT 永续合约)',
-  'csv.broker.blofin': 'Blofin',
-  'csv.broker.hyperliquid': 'Hyperliquid (永续合约)',
-  'csv.broker.sierrachart': 'SierraChart (期货)',
-  'csv.broker.motivewave': 'MotiveWave',
-  'csv.broker.fxreplay': 'FX Replay (Analytics)',
-  'csv.broker.atas': 'ATAS(实时统计)',
-  'csv.broker.rithmic': 'Rithmic',
-  'csv.broker.jdr': 'MetaTrader 4 / 5',
 
   
 
@@ -4119,8 +4142,6 @@ const zh: Lang = {
 
   
 
-  'csv.results.successfully-imported-suffix': ' 笔交易',
-
   'csv.results.failed-to-import-prefix': '导入失败 ',
   'csv.results.failed-to-import-suffix': ' 行(详见下方)',
 
@@ -4128,7 +4149,6 @@ const zh: Lang = {
     '仍有 {count} 条交易笔记等待写入。Journalit 会核对已完成的写入，并保留未完成的投影以供恢复。',
   'csv.results.pending-title': '导入仍在同步中',
 
-  'csv.results.complete': '导入完成',
   'csv.results.history-ready': '你的交易历史已准备就绪',
   'csv.results.completed-with-issues': '导入完成，但存在问题',
   'csv.results.failed': '导入失败',
@@ -4136,10 +4156,6 @@ const zh: Lang = {
   'csv.results.success.few': '成功导入 {count} 笔交易到账户:{account}',
   'csv.results.success.many': '成功导入 {count} 笔交易到账户:{account}',
   'csv.results.success.other': '成功导入 {count} 笔交易到账户:{account}',
-  'csv.results.updated.one': '已更新 {count} 笔已有交易',
-  'csv.results.updated.few': '已更新 {count} 笔已有交易',
-  'csv.results.updated.many': '已更新 {count} 笔已有交易',
-  'csv.results.updated.other': '已更新 {count} 笔已有交易',
   'csv.results.skipped.one': '跳过 {count} 笔重复交易(已存在于库中)',
   'csv.results.skipped.few': '跳过 {count} 笔重复交易(已存在于库中)',
   'csv.results.skipped.many': '跳过 {count} 笔重复交易(已存在于库中)',
@@ -4147,13 +4163,9 @@ const zh: Lang = {
 
   'csv.results.broker': '券商:{broker}',
 
-  'csv.results.more-trades.one': '还有 {count} 笔交易...',
-  'csv.results.more-trades.few': '还有 {count} 笔交易...',
-  'csv.results.more-trades.many': '还有 {count} 笔交易...',
-  'csv.results.more-trades.other': '还有 {count} 笔交易...',
-  'csv.results.errors-header': 'CLICK TO SEE ERRORS ({count})',
+  'csv.results.errors-header': '点击查看错误 ({count})',
   'csv.results.discord-note':
-    'Optional: If you need help, click Copy report and paste it in Discord.',
+    '可选：如需帮助，点击“复制报告”并粘贴到 Discord。',
 
   
 
@@ -4161,23 +4173,14 @@ const zh: Lang = {
 
   'csv.errors.copied': '已复制',
   'csv.errors.rows': '行:{rows}',
-  'csv.errors.suggestion': '建议:',
 
   'csv.errors.raw-errors-limit': '显示前 {shown} 条,共 {total} 条错误',
 
   
 
-  'csv.report.plugin-version': '插件版本:{version}',
-
-  'csv.report.broker': '券商:{broker}',
-
   'csv.report.top-issues': '主要问题:',
 
   
-
-  
-
-  'csv.image-review.count': '{count} 张图片',
 
   
   
@@ -4187,13 +4190,12 @@ const zh: Lang = {
 
   
 
-  'trade-sync.gate.pro.description':
-    'Trade Sync is a Pro feature. Upgrade to continue.',
+  'trade-sync.gate.pro.description': '交易同步是 Pro 功能。升级后即可继续。',
 
   'trade-sync.gate.feature-unavailable.title': '功能不可用',
   'trade-sync.gate.feature-unavailable.description':
-    '此同步功能未为您的 Pro 账户启用。如果问题仍然存在，请刷新状态或联系支持团队。',
-  'trade-sync.trial.title': '自动管理您的交易日志',
+    '此同步功能未为你的 Pro 账户启用。如果问题仍然存在，请刷新状态或联系支持团队。',
+  'trade-sync.trial.title': '自动管理你的交易日志',
   'trade-sync.trial.description': '使用 Journalit Pro，每周最多节省 7 小时。',
   'trade-sync.trial.benefit.sync': '自动同步交易',
   'trade-sync.trial.benefit.import': '随时随地导入交易',
@@ -4205,12 +4207,10 @@ const zh: Lang = {
 
   'premium.gate.cta.continue-pro': '继续开通 PRO',
 
-  'premium.gate.cta.refresh': 'Refresh status',
+  'premium.gate.cta.refresh': '刷新状态',
 
-  'premium.gate.offline':
-    'You appear to be offline. Activation requires internet.',
-  'premium.gate.not-pro-yet':
-    'You are signed in, but your account is not PRO yet. Upgrade and then refresh.',
+  'premium.gate.offline': '你似乎处于离线状态。激活需要联网。',
+  'premium.gate.not-pro-yet': '你已登录，但账户还不是 PRO。请升级后刷新。',
 
   
 
@@ -4250,20 +4250,20 @@ const zh: Lang = {
   'backend.sync.invalid-date': '无效日期',
 
   
-  'backend.notice.vault-registered': '✅ 保管库已注册到交易服务器',
+  'backend.notice.vault-registered': '保管库已注册到交易服务器',
   'backend.notice.sync-cancelled': '⏹️ 同步已取消',
-  'backend.notice.sync-in-progress': '⚠️ 同步已在进行中',
-  'backend.notice.account-info-failed': '❌ 获取账户信息失败',
+  'backend.notice.sync-in-progress': '同步已在进行中',
+  'backend.notice.account-info-failed': '获取账户信息失败',
   'backend.notice.sync-batch-progress':
     '⏳ 正在同步批次:{count} 笔交易(完成 {progress}%,剩余 {remaining})',
-  'backend.notice.all-trades-synced': '✅ 所有 {count} 笔交易已同步',
-  'backend.notice.account-created': '📊 已创建账户:{name}',
+  'backend.notice.all-trades-synced': '所有 {count} 笔交易已同步',
+  'backend.notice.account-created': '已创建账户:{name}',
   'backend.notice.batch-complete':
     '⏳ 批次完成:{processed}/{total} 笔交易({progress}%)。继续中...',
   'backend.notice.sync-complete':
-    '✅ 同步完成:处理 {total} 笔交易(新增 {newFiles},更新 {updated}),共 {accounts} 个账户',
-  'backend.notice.sync-complete-no-trades': '✅ 同步完成 - 未发现新交易',
-  'backend.notice.sync-failed': '❌ 同步失败:{error}',
+    '同步完成:处理 {total} 笔交易(新增 {newFiles},更新 {updated}),共 {accounts} 个账户',
+  'backend.notice.sync-complete-no-trades': '同步完成 - 未发现新交易',
+  'backend.notice.sync-failed': '同步失败:{error}',
 
   
 
@@ -4319,6 +4319,8 @@ const zh: Lang = {
 
   'settings.auth.feature.manual-entry': '手动录入交易',
   'settings.auth.feature.analytics-reviews': '分析与复盘',
+  'settings.auth.feature.ai-tool-calls-free': '每月 100 次 AI 工具调用',
+  'settings.auth.feature.ai-tool-calls-pro': '更多 AI 工具调用',
   'settings.auth.feature.priority-support': '优先支持',
 
   
@@ -4329,8 +4331,6 @@ const zh: Lang = {
 
   
 
-  'csv.format': '导入格式:',
-
   'csv.button.export-template': '导出模板',
   'csv.button.delete-template': '删除模板',
 
@@ -4340,56 +4340,13 @@ const zh: Lang = {
 
   
 
-  'csv.broker-guide.tradovate.step-2':
-    '点击"Orders"选项卡(不是 Performance 选项卡)',
-
-  'csv.broker-guide.tradovate.warning.emphasis': '重要提示:',
-  'csv.broker-guide.tradovate.warning.message':
-    '仅使用 Orders 选项卡。Performance 选项卡不兼容。',
-
-  
-
-  'csv.broker-guide.ibkr.warning.emphasis': '必须使用 Orders',
-
-  
-
-  
-
-  'csv.broker-guide.tradingview.step-3': '从下拉菜单中选择"Order History"',
-
-  'csv.broker-guide.tradingview.warning.message':
-    '其他导出类型(如 Positions 或 Orders)无法用于导入。',
-
   
 
   
 
   
 
-  'csv.broker-guide.hyperliquid.warning.emphasis': '10,000 条记录限制。',
-
   
-
-  'csv.broker-guide.sierrachart.step-1':
-    '打开交易活动日志(Trade → Trade Activity Log,或 Ctrl+Shift+A)',
-
-  
-
-  
-
-  
-
-  'csv.broker-guide.atas.warning.emphasis': '重要:',
-  'csv.broker-guide.atas.warning.message':
-    '请勿编辑导出的文件。Journalit 会保留 "Journal" 工作表中的交易边界,并在可用时使用 "Executions" 工作表中的匹配成交来补全手续费。',
-
-  
-
-  'csv.broker-guide.rithmic.warning.emphasis': '重要:',
-
-  
-
-  'csv.broker-guide.jdr.warning.emphasis': '重要:',
 
   
   'csv.date-format.auto-detect': '自动检测(推荐用于ISO/标准格式)',
@@ -4397,8 +4354,7 @@ const zh: Lang = {
   'csv.date-format.us-datetime': '美国日期时间:12/25/2024 14:30:00(Webull)',
   'csv.date-format.us-short': '美国短日期:1/5/2024(TradeZero)',
   'csv.date-format.us-short-datetime': '美国短日期时间:1/5/2024 14:30:00',
-  'csv.date-format.iso-datetime':
-    'ISO日期时间:2024-12-25 14:30:00(Bybit、Tradovate)',
+  'csv.date-format.iso-datetime': 'ISO日期时间:2024-12-25 14:30:00(Tradovate)',
   'csv.date-format.iso-date': 'ISO日期:2024-12-25(Interactive Brokers)',
   'csv.date-format.eu-date': '欧洲日期:25/12/2024(日/月/年)',
   'csv.date-format.eu-datetime': '欧洲日期时间:25/12/2024 14:30:00',
@@ -4413,10 +4369,27 @@ const zh: Lang = {
 
   'settings.tab.customization': '自定义',
   'settings.tab.journal-setup': '日志',
-  'settings.tab.backend': '交易同步',
   'settings.tab.trading': '交易默认设置',
   'settings.tab.sync': '账户与同步',
-  'settings.tab.accounts': '账户',
+  'settings.page.reviews.title': '复盘布局、目标和检查清单',
+  'settings.page.reviews.desc':
+    '打开完整的复盘设置：布局、周期目标和检查清单。',
+  'settings.page.customization.desc':
+    '打开自定义字段、表单布局、代码、映射、策略、错误、标签和事件。',
+  'settings.page.trade-sync.desc':
+    '打开经纪商同步来源、FTP 凭据、账户管理、诊断和同步通知偏好。',
+  'settings.page.general.desc':
+    '货币、显示名称、启动主页、最近项目和导航偏好。',
+  'settings.page.sync.desc':
+    'Journalit 账户、订阅、交易同步、Trade Import 和财经日历。',
+  'settings.page.trading.desc':
+    '新交易默认值、日期处理、风险、盈亏平衡逻辑和分析显示偏好。',
+  'settings.page.journal.desc':
+    '复盘模板、自动化、自定义字段、表单布局、代码、策略、错误、标签和事件。',
+  'settings.page.advanced.desc':
+    '日志文件夹、图片路径维护、设置备份、导入、导出和重置。',
+  'settings.page.mcp-access.desc':
+    '允许你通过 MCP 连接的 AI 应用使用此仓库，选择哪些操作需要你批准，并查看智能体活动。',
 
   
   
@@ -4443,11 +4416,13 @@ const zh: Lang = {
   'settings.ftp.reset-hint': '如果丢失了当前密码,可生成新的FTP密码',
   'settings.ftp.instructions.title': 'MetaTrader 4设置说明:',
   'settings.ftp.instructions.step1': '打开MetaTrader 4 (MT4)',
-  'settings.ftp.instructions.step2': '进入工具菜单',
-  'settings.ftp.instructions.step3': '选择"选项"',
-  'settings.ftp.instructions.step4': '点击"发布"选项卡',
-  'settings.ftp.instructions.step5': '启用"被动模式"',
-  'settings.ftp.instructions.step6': '输入上述凭证',
+  'settings.ftp.instructions.step2': '点击顶部的“Tools”菜单',
+  'settings.ftp.instructions.step3': '选择“Options”',
+  'settings.ftp.instructions.step4':
+    '切换到“FTP”标签页，输入上方显示的 FTP 服务器、登录名和密码',
+  'settings.ftp.instructions.step5': '启用“Passive mode”',
+  'settings.ftp.instructions.step6':
+    '启用通过 FTP 自动发布报告，并将刷新间隔设为 60 分钟',
   'settings.ftp.no-credentials': '未找到FTP凭证。请登录以生成凭证。',
   'settings.ftp.error.reset-failed': '重置密码失败',
 
@@ -4458,18 +4433,13 @@ const zh: Lang = {
   'settings.auth.status-offline': '离线',
   'settings.auth.status-online': '在线',
 
-  'settings.auth.signed-in': '已登录',
   'settings.auth.sign-in-up': '登录/注册',
   'settings.auth.sign-out': '登出',
-
-  'settings.auth.subscription-features': '订阅功能',
-
-  'settings.auth.offline-mode': '离线模式',
 
   
   'settings.auth.guest': '访客',
 
-  'settings.auth.your-plan': '您的方案',
+  'settings.auth.your-plan': '你的方案',
 
   'settings.auth.manage-subscription': '管理订阅',
 
@@ -4517,16 +4487,16 @@ const zh: Lang = {
   'settings.general.path-change.new-trades-desc': '所有未来的交易日志将使用:',
   'settings.general.path-change.manual-title': '需要手动操作:',
   'settings.general.path-change.manual-desc':
-    '您当前文件夹中已有交易。要移动它们:',
-  'settings.general.path-change.step.open-explorer': '打开您的库文件资源管理器',
+    '你当前文件夹中已有交易。要移动它们:',
+  'settings.general.path-change.step.open-explorer': '打开你的库文件资源管理器',
   'settings.general.path-change.step.find-folder-prefix': '找到你的',
   'settings.general.path-change.step.find-folder-suffix': '文件夹',
   'settings.general.path-change.step.drag-drop': '方便时将其拖放到新的位置',
   'settings.general.path-change.manual-note':
-    '这样您可以完全控制文件移动的时间和方式。',
+    '这样你可以完全控制文件移动的时间和方式。',
   'settings.general.path-change.sync-title': '同步映射更新:',
   'settings.general.path-change.sync-desc':
-    '插件会自动更新您的交易同步映射以反映新的文件夹路径,确保同步交易与后端记录保持连接。',
+    '插件会自动更新你的交易同步映射以反映新的文件夹路径,确保同步交易与后端记录保持连接。',
   'settings.general.path-change.button.cancel': '取消',
   'settings.general.path-change.button.confirm': '我已了解',
   'settings.general.display-name': '显示名称',
@@ -4601,7 +4571,8 @@ const zh: Lang = {
   'settings.general.update-image-paths-no-update': '无需更新图片路径',
   'settings.general.update-image-paths-errors':
     '已更新 {updated} 个路径,{failed} 个错误',
-  'settings.general.update-image-paths-failed': '更新图片路径失败:{error}',
+  'settings.general.update-image-paths-failed':
+    '更新图片路径失败。详情请查看控制台。',
   'settings.general.trade-settings': '交易设置',
   'settings.general.auto-open-trades': '自动打开新建交易',
   'settings.general.auto-open-trades-desc': '自动打开新创建的交易笔记',
@@ -4667,18 +4638,17 @@ const zh: Lang = {
   'settings.general.cutoff-time-desc': '新交易日开始的时间(用于隔夜交易时段)',
   'settings.general.cutoff-time-aria': '交易日截止时间',
   'settings.general.cutoff-time-changed': '交易日截止时间已更改为{time}',
-  'settings.general.break-even-threshold-mode': 'Break-even Threshold Type',
+  'settings.general.break-even-threshold-mode': '保本阈值类型',
   'settings.general.break-even-threshold-mode-desc':
-    "Choose whether break-even is determined by a fixed P&L range or by a percentage of each trade account's current balance.",
-  'settings.general.break-even-mode-fixed': 'Fixed amount range',
-  'settings.general.break-even-mode-percent':
-    'Percentage of current account balance',
-  'settings.general.break-even-percent': 'Break-even Percentage',
+    '选择保本是由固定盈亏区间决定，还是由每笔交易所属账户当前余额的百分比决定。',
+  'settings.general.break-even-mode-fixed': '固定金额区间',
+  'settings.general.break-even-mode-percent': '当前账户余额的百分比',
+  'settings.general.break-even-percent': '保本百分比',
   'settings.general.break-even-percent-desc':
-    'Symmetric threshold around zero (±X% of current account balance). Trades without a resolvable account balance are excluded from win/loss stats.',
+    '以零为中心的对称阈值（当前账户余额的 ±X%）。无法确定账户余额的交易不计入盈亏统计。',
   'settings.general.break-even-percent-placeholder': '0.05',
   'settings.general.break-even-percent-aria':
-    'Break-even percentage of current account balance',
+    '以当前账户余额百分比表示的保本区间',
   'settings.general.break-even-range': '盈亏平衡范围',
   'settings.general.break-even-range-desc': '视为盈亏平衡交易的盈亏范围',
   'settings.general.break-even-min-placeholder': '最小值',
@@ -4719,19 +4689,19 @@ const zh: Lang = {
   'settings.general.reset-to-defaults': '恢复默认设置',
   'settings.general.reset-to-defaults-desc': '将所有设置重置为默认值',
   'settings.general.reset-to-defaults-warning':
-    '这将重置所有自定义设置。您的交易笔记不会受到影响。',
+    '这将重置所有自定义设置。你的交易笔记不会受到影响。',
   'settings.general.reset-to-defaults-resetting': '正在重置...',
   'settings.general.enabled': '启用',
   'settings.general.disabled': '禁用',
 
   'settings.general.include-copy-accounts-analytics':
-    'Include copy accounts in all-account analytics',
+    '在全部账户分析中包含复制账户',
   'settings.general.include-copy-accounts-analytics-desc':
-    'When enabled, all-account trading analytics include derived copy-account results and count them as account-level trades.',
+    '启用后，全部账户的交易分析会包含复制账户的推导结果，并将其计为账户级交易。',
   'settings.general.include-copy-accounts-analytics-aria':
-    'Include copy accounts in all-account analytics',
+    '在全部账户分析中包含复制账户',
   'settings.general.include-copy-accounts-toggled':
-    'Copy accounts in all-account analytics {status}',
+    '全部账户分析中的复制账户：{status}',
   'settings.general.include-unrealized-pnl': '在分析中包含未实现盈亏',
   'settings.general.include-unrealized-pnl-desc':
     '启用后，净盈亏总额将包含带价格快照的持仓的未实现盈亏，并与已实现结果分开显示。胜率、连胜等交易结果统计仍仅基于已实现盈亏。',
@@ -4741,25 +4711,12 @@ const zh: Lang = {
   
   
   
-  'settings.reviews.drc': '每日报告卡',
+  'settings.reviews.drc': '每日复盘',
   'settings.reviews.weekly': '周度复盘',
   'settings.reviews.monthly': '月度复盘',
   'settings.reviews.quarterly': '季度复盘',
   'settings.reviews.yearly': '年度复盘',
-  'settings.reviews.default-templates': '默认布局',
 
-  'settings.reviews.trade-template': '交易布局',
-  'settings.reviews.trade-template-desc': '用于新建交易笔记的布局',
-  'settings.reviews.drc-template': '每日报告卡布局',
-  'settings.reviews.drc-template-desc': '用于新建每日报告卡的布局',
-  'settings.reviews.weekly-template': '周度布局',
-  'settings.reviews.weekly-template-desc': '用于新建周度复盘的布局',
-  'settings.reviews.monthly-template': '月度布局',
-  'settings.reviews.monthly-template-desc': '用于新建月度复盘的布局',
-  'settings.reviews.quarterly-template': '季度布局',
-  'settings.reviews.quarterly-template-desc': '用于新建季度复盘的布局',
-  'settings.reviews.yearly-template': '年度布局',
-  'settings.reviews.yearly-template-desc': '用于新建年度复盘的布局',
   'settings.reviews.template-builder': '布局构建器',
   'settings.reviews.template-builder-desc': '创建和自定义笔记布局',
   'settings.reviews.open-builder': '打开布局构建器',
@@ -4775,10 +4732,10 @@ const zh: Lang = {
   'settings.reviews.daily-goal-placeholder': '添加周期性每日目标...',
   'settings.reviews.weekly-goals': '每周目标',
   'settings.reviews.weekly-goal-placeholder': '添加周期性每周目标...',
-  'settings.reviews.pre-trade-checklist': 'DRC 交易前检查清单',
-  'settings.reviews.pre-trade-checklist-desc': '入场前需要检查的事项',
+  'settings.reviews.checklist': 'DRC 检查清单',
+  'settings.reviews.checklist-desc': '每日准备检查事项',
   'settings.reviews.checklist-placeholder': '添加检查项...',
-  'settings.reviews.weekly-checklist': '每周准备检查清单',
+  'settings.reviews.weekly-checklist': '每周检查清单',
   'settings.reviews.weekly-checklist-desc':
     '定义会自动出现在每个新建周复盘中的检查清单项目。这些项目会在创建周复盘时复制，并可按周编辑。',
   'settings.reviews.weekly-checklist-placeholder': '添加每周检查清单项目...',
@@ -4787,10 +4744,10 @@ const zh: Lang = {
   'settings.reviews.global-auto-create-desc':
     '导航到没有复盘的日期时自动创建复盘笔记',
   'settings.reviews.global-auto-create-aria': '全局自动创建复盘',
-  'settings.reviews.auto-create-drc-nav': '导航时自动创建每日报告卡',
+  'settings.reviews.auto-create-drc-nav': '导航时自动创建每日复盘',
   'settings.reviews.auto-create-drc-nav-desc':
-    '导航到没有每日报告卡的日期时自动创建',
-  'settings.reviews.auto-create-drc-nav-aria': '导航时自动创建每日报告卡',
+    '导航到没有每日复盘的日期时自动创建',
+  'settings.reviews.auto-create-drc-nav-aria': '导航时自动创建每日复盘',
   'settings.reviews.auto-create-weekly-nav': '导航时自动创建周度复盘',
   'settings.reviews.auto-create-weekly-nav-desc':
     '导航到没有周度复盘的周时自动创建',
@@ -4811,21 +4768,10 @@ const zh: Lang = {
   'settings.reviews.notice.builder-not-found': '未找到布局构建器',
   'settings.reviews.notice.global-auto-create': '全局自动创建已{status}',
   'settings.reviews.notice.auto-create-nav': '导航时自动创建{type}已{status}',
-  'settings.reviews.daily.checklist-title': '交易前检查项',
-
-  'settings.reviews.daily.questions-title': '复盘问题',
-
-  'settings.reviews.daily.timeframes-title': '预测时间周期',
-
-  'settings.reviews.daily.timeframes-placeholder':
-    '新时间周期(如:15分钟、1小时)',
 
   
   
   
-  'settings.weekly.review-questions': '复盘问题',
-
-  'settings.weekly.forecast-timeframes': '预测时间周期',
 
   
   
@@ -4842,8 +4788,8 @@ const zh: Lang = {
   'settings.reset.modal.item-symbol-mappings': '代码映射',
   'settings.reset.modal.item-csv-templates': 'Trade Import 模板',
   'settings.reset.modal.item-other': '所有其他自定义设置',
-  'settings.reset.modal.backup-note': '重置前将创建备份。',
-  'settings.reset.modal.warning': '您的交易笔记不会受到影响。',
+  'settings.reset.modal.backup-note': '重置前会创建备份。',
+  'settings.reset.modal.warning': '你的交易笔记不会受到影响。',
   'settings.reset.backup-failed.title': '备份失败',
   'settings.reset.backup-failed.message': '重置前创建备份失败。',
   'settings.reset.backup-failed.warning': '是否要在没有备份的情况下继续?',
@@ -4851,9 +4797,6 @@ const zh: Lang = {
   
   
   
-  'settings.shared.timeframes.title': '预测时间周期',
-
-  'settings.shared.timeframes.placeholder': '新时间周期(例如:15M、5M)',
 
   
   
@@ -4876,7 +4819,7 @@ const zh: Lang = {
   'settings.customization.tickers-symbols': '代码/品种',
   'settings.customization.symbol-mappings': '代码映射',
 
-  'settings.customization.setups': '交易设置',
+  'settings.customization.setups': '策略',
   'settings.customization.mistakes': '失误',
   'settings.customization.tags': '标签',
   'settings.customization.events': '事件',
@@ -4887,7 +4830,6 @@ const zh: Lang = {
   'settings.customization.options.type.tickers': '代码',
   'settings.customization.options.type.accounts': '账户',
   'settings.customization.options.type.account-types': '账户类型',
-  'settings.customization.options.type.setups': '交易设置',
   'settings.customization.options.type.mistakes': '失误',
   'settings.customization.options.type.tags': '标签',
   'settings.customization.options.type.events': '事件',
@@ -4908,7 +4850,7 @@ const zh: Lang = {
   'settings.customization.options.confirm.remove-message':
     '确定要删除"{option}"吗?',
   'settings.customization.options.notice.removed': '已删除选项"{option}"',
-  'settings.customization.options.notice.remove-failed': '删除选项失败:{error}',
+  'settings.customization.options.notice.remove-failed': '删除选项失败',
   'settings.customization.options.confirm.reset-message':
     '确定要将所有{type}重置为默认选项吗?此操作无法撤销。',
   'settings.customization.options.notice.reset-success':
@@ -4919,18 +4861,15 @@ const zh: Lang = {
     '映射需要填写两个代码',
   'settings.customization.options.notice.mapping-added':
     '已添加映射:{imported} → {base}',
-  'settings.customization.options.notice.mapping-add-failed':
-    '添加映射失败:{error}',
+  'settings.customization.options.notice.mapping-add-failed': '添加映射失败',
   'settings.customization.options.notice.mapping-deleted':
     '已删除映射:{symbol}',
-  'settings.customization.options.notice.mapping-delete-failed':
-    '删除映射失败:{error}',
+  'settings.customization.options.notice.mapping-delete-failed': '删除映射失败',
   'settings.customization.options.empty-state': '尚未添加任何{type}。',
   'settings.customization.options.label.save-changes': '保存更改',
   'settings.customization.options.label.cancel-editing': '取消编辑',
   'settings.customization.options.label.edit-option': '编辑{option}',
   'settings.customization.options.label.remove-option': '删除{option}',
-  'settings.customization.options.placeholder.select-asset': '选择资产类型',
   'settings.customization.options.field.pip-size': '点值大小',
   'settings.customization.options.field.priority': '优先级:',
   'settings.customization.options.field.default-event-notes': '默认事件备注：',
@@ -4938,7 +4877,6 @@ const zh: Lang = {
     '选择此事件时自动填充的备注',
   'settings.customization.options.aria.confirm-add': '确认添加{type}',
   'settings.customization.options.label.locked': '已锁定',
-  'settings.customization.options.label.archived-reserved': '已归档(保留)',
   'settings.customization.options.aria.reset-all': '删除所有自定义{type}',
   'settings.customization.options.button.reset-all': '重置所有{type}',
   'settings.customization.options.placeholder.new-name': '新{type}名称',
@@ -4950,7 +4888,7 @@ const zh: Lang = {
   'settings.customization.options.placeholder.pip-size': '点值大小',
   'settings.customization.options.field.optional': '(可选)',
   'settings.customization.options.mapping.description':
-    '将经纪商代码映射到您偏好的显示名称',
+    '将经纪商代码映射到你偏好的显示名称',
   'settings.customization.options.mapping.auto-detected': '自动检测',
   'settings.customization.options.mapping.manual': '手动',
   'settings.customization.options.mapping.created-at': '创建于 {date}',
@@ -5046,50 +4984,46 @@ const zh: Lang = {
   'settings.customization.custom-fields.editor.save': '保存字段',
   'settings.customization.custom-fields.editor.delete': '删除字段',
 
-  'settings.customization.options.commission.costs': 'Costs',
-  'settings.customization.options.commission.add-rule': '+ Add cost rule',
-  'settings.customization.options.commission.applies-to': 'Applies to',
-  'settings.customization.options.commission.method': 'Method',
-  'settings.customization.options.commission.entry': 'Entry',
-  'settings.customization.options.commission.exit': 'Exit',
-  'settings.customization.options.commission.round-trip': 'Round trip',
-  'settings.customization.options.commission.actions': 'Actions',
-  'settings.customization.options.commission.all-accounts': 'All accounts',
-  'settings.customization.options.commission.per-side': 'Per side',
-  'settings.customization.options.commission.remove-rule': 'Remove cost rule',
-  'settings.customization.custom-fields.editor.trade-log': 'Trade Log',
+  'settings.customization.options.commission.costs': '费用',
+  'settings.customization.options.commission.add-rule': '+ 添加费用规则',
+  'settings.customization.options.commission.applies-to': '适用于',
+  'settings.customization.options.commission.method': '方式',
+  'settings.customization.options.commission.entry': '入场',
+  'settings.customization.options.commission.exit': '出场',
+  'settings.customization.options.commission.round-trip': '双边',
+  'settings.customization.options.commission.all-accounts': '所有账户',
+  'settings.customization.options.commission.per-side': '单边',
+  'settings.customization.options.commission.remove-rule': '移除费用规则',
+  'settings.customization.custom-fields.editor.trade-log': '交易日志',
   'settings.customization.custom-fields.editor.trade-log-desc':
-    'Control how this field appears when added as a Trade Log column',
-  'settings.customization.custom-fields.editor.column-label':
-    'Trade Log Column Label',
+    '控制此字段作为交易日志列添加时的显示方式',
+  'settings.customization.custom-fields.editor.column-label': '交易日志列标签',
   'settings.customization.custom-fields.editor.column-label-desc':
-    'Optional shorter label used only in the Trade Log header',
+    '可选的较短标签，仅用于交易日志表头',
   'settings.customization.custom-fields.editor.column-label-placeholder':
-    'Use field label by default',
+    '默认使用字段标签',
   'settings.customization.custom-fields.editor.display-as-currency':
     '显示为货币',
   'settings.customization.custom-fields.editor.display-as-currency-desc':
     '仅在交易日志中将此数字字段格式化为货币值',
-  'settings.customization.custom-fields.editor.dropdown-sort':
-    'Dropdown Sort Mode',
+  'settings.customization.custom-fields.editor.dropdown-sort': '下拉排序方式',
   'settings.customization.custom-fields.editor.dropdown-sort-desc':
-    'Disabled by default. Enable sorting only when this dropdown has a meaningful order.',
+    '默认关闭。仅当此下拉列表的顺序有意义时才启用排序。',
   'settings.customization.custom-fields.editor.dropdown-sort.disabled':
-    'Disabled',
+    '已关闭',
   'settings.customization.custom-fields.editor.dropdown-sort.alphabetical':
-    'Alphabetical',
-  'settings.customization.custom-fields.editor.dropdown-sort.numeric':
-    'Numeric',
+    '按字母',
+  'settings.customization.custom-fields.editor.dropdown-sort.numeric': '按数字',
   'settings.customization.custom-fields.editor.dropdown-sort.option-order':
-    'Configured option order',
+    '按已配置的选项顺序',
   'settings.customization.custom-fields.editor.multiselect-collapsed-display':
-    'Collapsed Display',
+    '折叠显示',
   'settings.customization.custom-fields.editor.multiselect-collapsed-display-desc':
-    'Choose how multiselect values render when Trade Log expanded mode is off',
+    '选择交易日志未展开时多选值的显示方式',
   'settings.customization.custom-fields.editor.multiselect-collapsed-display.count':
-    'Count badge',
+    '数量徽标',
   'settings.customization.custom-fields.editor.multiselect-collapsed-display.values':
-    'Value list',
+    '值列表',
 
   'settings.customization.custom-fields.type.text': '文本',
   'settings.customization.custom-fields.type.number': '数字',
@@ -5101,12 +5035,102 @@ const zh: Lang = {
   'settings.customization.custom-fields.error.duplicate-key':
     '已存在使用此前置元数据键的字段',
   'settings.customization.custom-fields.error.save-failed':
-    '保存字段失败:{error}',
+    '保存字段失败，请重试。',
   'settings.customization.custom-fields.notice.import-summary':
     '已导入{totalCount}个字段,其中{validCount}个有效',
   'settings.customization.custom-fields.delete.confirm-message':
     '确定要删除自定义字段"{fieldLabel}"吗?',
   'settings.customization.custom-fields.delete.cannot-undo': '此操作无法撤销。',
+  'settings.customization.custom-fields.convert.action':
+    '将{fieldLabel}转换为评分',
+  'settings.customization.custom-fields.convert.title':
+    '将{fieldLabel}转换为评分',
+  'settings.customization.custom-fields.convert.editor-name': '内置评分',
+  'settings.customization.custom-fields.convert.editor-desc':
+    'Journalit 为每笔交易提供星级评分。将每笔交易的{fieldLabel}值移入其中。',
+  'settings.customization.custom-fields.convert.intro':
+    '每笔交易的{fieldLabel}值将成为其星级评分。在你移除该字段之前，{fieldLabel}的值会保留。',
+  'settings.customization.custom-fields.convert.empty':
+    '没有交易包含{fieldLabel}值。',
+  'settings.customization.custom-fields.convert.scale-label':
+    '{fieldLabel}的刻度',
+  'settings.customization.custom-fields.convert.scale-out-of': '满分 {max}',
+  'settings.customization.custom-fields.convert.scale-custom': '自定义',
+  'settings.customization.custom-fields.convert.scale-custom-max': '最高值',
+  'settings.customization.custom-fields.convert.table':
+    '{fieldLabel}的值及其评分',
+  'settings.customization.custom-fields.convert.col-trades': '交易数',
+  'settings.customization.custom-fields.convert.value-rating': '{value}的评分',
+  'settings.customization.custom-fields.convert.skip': '不转换',
+  'settings.customization.custom-fields.convert.unreadable.one':
+    '{count} 笔交易的值无法识别为评分，将不会转换。',
+  'settings.customization.custom-fields.convert.unreadable.other':
+    '{count} 笔交易的值无法识别为评分，将不会转换。',
+  'settings.customization.custom-fields.convert.conflict.one':
+    '{count} 笔交易已有不同的评分',
+  'settings.customization.custom-fields.convert.conflict.other':
+    '{count} 笔交易已有不同的评分',
+  'settings.customization.custom-fields.convert.conflict-keep': '保留原评分',
+  'settings.customization.custom-fields.convert.conflict-overwrite':
+    '使用{fieldLabel}',
+  'settings.customization.custom-fields.convert.summary-rate.one':
+    '将为 {count} 笔交易评分',
+  'settings.customization.custom-fields.convert.summary-rate.other':
+    '将为 {count} 笔交易评分',
+  'settings.customization.custom-fields.convert.summary-done.one':
+    '{count} 笔已转换',
+  'settings.customization.custom-fields.convert.summary-done.other':
+    '{count} 笔已转换',
+  'settings.customization.custom-fields.convert.summary-skip.one':
+    '{count} 笔不转换',
+  'settings.customization.custom-fields.convert.summary-skip.other':
+    '{count} 笔不转换',
+  'settings.customization.custom-fields.convert.submit.one':
+    '为 {count} 笔交易评分',
+  'settings.customization.custom-fields.convert.submit.other':
+    '为 {count} 笔交易评分',
+  'settings.customization.custom-fields.convert.continue': '继续',
+  'settings.customization.custom-fields.convert.progress':
+    '正在评分：{done} / {total}',
+  'settings.customization.custom-fields.convert.done.one':
+    '已为 {count} 笔交易评分。',
+  'settings.customization.custom-fields.convert.done.other':
+    '已为 {count} 笔交易评分。',
+  'settings.customization.custom-fields.convert.changed.one':
+    '{count} 笔交易在打开此对话框后发生了变化，未被修改。请重新打开以包含它。',
+  'settings.customization.custom-fields.convert.changed.other':
+    '{count} 笔交易在打开此对话框后发生了变化，未被修改。请重新打开以包含它们。',
+  'settings.customization.custom-fields.convert.failed.one':
+    '{count} 笔交易无法更新：',
+  'settings.customization.custom-fields.convert.failed.other':
+    '{count} 笔交易无法更新：',
+  'settings.customization.custom-fields.convert.remove-title':
+    '移除{fieldLabel}？',
+  'settings.customization.custom-fields.convert.remove-desc.one':
+    '从评分已包含该值的 {count} 笔交易中删除{fieldLabel}，然后删除该字段。',
+  'settings.customization.custom-fields.convert.remove-desc.other':
+    '从评分已包含该值的 {count} 笔交易中删除{fieldLabel}，然后删除该字段。',
+  'settings.customization.custom-fields.convert.remove-keeps.one':
+    '{count} 笔交易未转换，将保留其{fieldLabel}值。',
+  'settings.customization.custom-fields.convert.remove-keeps.other':
+    '{count} 笔交易未转换，将保留其{fieldLabel}值。',
+  'settings.customization.custom-fields.convert.remove-confirm.one':
+    '从 {count} 笔交易中删除{fieldLabel}并删除该字段？',
+  'settings.customization.custom-fields.convert.remove-confirm.other':
+    '从 {count} 笔交易中删除{fieldLabel}并删除该字段？',
+  'settings.customization.custom-fields.convert.remove-views':
+    '使用{fieldLabel}的交易日志列、筛选器和布局块将不再显示它。',
+  'settings.customization.custom-fields.convert.remove': '移除{fieldLabel}',
+  'settings.customization.custom-fields.convert.remove-progress':
+    '正在移除{fieldLabel}：{done} / {total}',
+  'settings.customization.custom-fields.convert.removed':
+    '已移除{fieldLabel}。你的评分已保留。',
+  'settings.customization.custom-fields.convert.remove-incomplete':
+    '部分交易未更新，因此保留了{fieldLabel}。请重新打开以完成移除。',
+  'settings.customization.custom-fields.convert.remove-field-failed':
+    '已从所有交易中移除{fieldLabel}，但无法删除该字段。请在自定义交易字段中删除它。',
+  'settings.customization.custom-fields.convert.field-changed':
+    '{fieldLabel} 已在其他地方被更改或删除，因此其余交易未更新。请重新打开以继续。',
   'settings.customization.custom-fields.reset.confirm-message':
     '确定要删除所有自定义字段吗?',
   'settings.customization.custom-fields.saved-options.title': '已保存的选项',
@@ -5127,10 +5151,6 @@ const zh: Lang = {
 
   
 
-  'drc.tab.review': '交易复盘',
-
-  
-
   
 
   'drc.missed-trades.label.reason': '原因:',
@@ -5140,49 +5160,6 @@ const zh: Lang = {
   
   
   
-
-  'weekly.tab.review': '回顾',
-
-  
-  'weekly.review.drcs.title': '本周每日复盘',
-
-  'weekly.review.performance.title': '表现自评',
-  'weekly.review.performance.mental': '心态表现',
-
-  'weekly.review.performance.technical': '技术执行',
-
-  'weekly.review.questions.title': '周度回顾问题',
-
-  'weekly.review.goals.title': '下周目标',
-
-  
-  'weekly.preparation.goals.title': '本周目标',
-
-  'weekly.preparation.events.title': '重要事件',
-
-  'weekly.preparation.events.add-button': '添加事件',
-
-  'weekly.preparation.forecast.title': '周度预测',
-
-  
-  'weekly.overview.pnl-chart.title': '周度累计盈亏',
-
-  'weekly.overview.drawdown-chart.title': '周度回撤',
-
-  'weekly.overview.performance.title': '周度表现',
-
-  'weekly.overview.setup-performance.title': '策略表现',
-
-  'weekly.overview.trades-chart.title': '周度交易',
-
-  'weekly.overview.best-trade.title': '本周最佳交易',
-
-  'weekly.overview.worst-trade.title': '本周最差交易',
-
-  'weekly.overview.daily-performance.title': '每日表现',
-
-  'weekly.overview.button.create-trade': '创建交易',
-  'weekly.overview.button.view-trade-details': '查看交易详情',
 
   
   
@@ -5195,6 +5172,7 @@ const zh: Lang = {
   'upgrade.benefit.economic-calendar': '自动导入每周事件的经济日历',
   'upgrade.benefit.trade-sync': '受支持经纪商的 Trade Sync',
   'upgrade.benefit.multi-account': '多账户支持',
+  'upgrade.benefit.ai-tool-calls': '已连接的 AI 应用每月可进行更多 AI 工具调用',
   'upgrade.prop-profiles.message-firms':
     'Journalit 已备好 {count} 家自营交易公司的规则，可直接预填到你的挑战中。',
   'upgrade.prop-profiles.message-firm':
@@ -5217,14 +5195,7 @@ const zh: Lang = {
   
   
 
-  'monthly.tab.review': '回顾',
-
   
-
-  
-
-  'monthly.overview.drawdown': '月度回撤',
-  'monthly.overview.no-drawdown-data': '暂无回撤数据',
 
   
 
@@ -5260,7 +5231,7 @@ const zh: Lang = {
   'library.desc.export': '选择布局生成分享码供他人导入。',
   'library.empty.title': '没有可导出的自定义布局。',
   'library.empty.hint':
-    '请先在复盘或交易模板标签页创建自定义模板,然后返回此处分享。',
+    '请先在复盘布局或交易布局标签页中创建自定义布局，然后回到这里分享。',
   'library.label.select-template': '选择布局',
   'library.option.select-template': '-- 选择布局 --',
   'library.button.generate-code': '生成分享码',
@@ -5277,7 +5248,7 @@ const zh: Lang = {
   'image.uploader.file-upload-aria': '从文件上传',
   'image.uploader.paste-clipboard-aria': '从剪贴板粘贴',
   'image.uploader.error-invalid-url':
-    '图片 URL 或文件路径无效。请输入支持的图片 URL、仓库图片路径或 Excalidraw 链接。',
+    '无效的媒体 URL 或文件路径。请输入受支持的图片/视频 URL、仓库媒体路径或 Excalidraw 链接。',
 
   
   
@@ -5287,11 +5258,17 @@ const zh: Lang = {
 
   'image.viewer.title-fullscreen': '点击查看全屏',
 
-  'image.viewer.delete-button': '删除图片',
+  'image.viewer.delete-button': '删除媒体',
   'image.viewer.nav-prev': '上一张图片',
   'image.viewer.nav-next': '下一张图片',
   'image.viewer.zoom-in-hint': '捏合或点击以放大',
   'image.viewer.zoom-out-hint': '{scale}x(捏合或点击以缩小)',
+
+  'image.youtube.unavailable-title': 'YouTube 视频',
+
+  'image.youtube.unavailable-description': '私密或不可用',
+
+  'image.youtube.open': '在 YouTube 上打开',
 
   'image.viewer.close-aria': '关闭全屏',
   'image.viewer.copy-image': '复制图片',
@@ -5322,8 +5299,8 @@ const zh: Lang = {
   
   
   
-  'paste.notice.image-pasted': '📋 图片粘贴成功',
-  'paste.notice.images-pasted': '📋 已成功粘贴 {count} 张图片',
+  'paste.notice.image-pasted': '图片粘贴成功',
+  'paste.notice.images-pasted': '已成功粘贴 {count} 张图片',
   'paste.error.clipboard-not-supported': '不支持剪贴板 API',
   'paste.error.clipboard-empty': '剪贴板中没有可粘贴的内容',
   'paste.error.file-size-exceeds': '文件大小 {size}MB 超出限制',
@@ -5353,11 +5330,11 @@ const zh: Lang = {
   'manual-drawdown.button.delete': '删除',
   'manual-drawdown.header.edit': '编辑快照',
   'manual-drawdown.header.add': '添加新快照',
-  'manual-drawdown.field.date': '回撤日期 *',
+  'manual-drawdown.field.date': '回撤日期',
   'manual-drawdown.field.date-desc': '券商设置该限额的日期',
-  'manual-drawdown.field.limit': '最低余额($)*',
+  'manual-drawdown.field.limit': '最低余额($)',
   'manual-drawdown.field.limit-desc': '允许的最低余额',
-  'manual-drawdown.field.note': '备注(可选)',
+  'manual-drawdown.field.note': '备注',
   'manual-drawdown.field.note-desc': '关于该快照的补充说明',
   'manual-drawdown.placeholder.note': '例如:月末对账单',
   'manual-drawdown.button.update': '更新快照',
@@ -5417,7 +5394,7 @@ const zh: Lang = {
   
   
   'onboarding.welcome.title': '欢迎使用 Journalit',
-  'onboarding.welcome.subtitle': '一个存放在您设备上的交易日志。',
+  'onboarding.welcome.subtitle': '一个存放在你设备上的交易日志。',
   'onboarding.welcome.cta': '设置我的日志',
   'onboarding.welcome.chart.week': '第 {count} 周',
   'onboarding.view.title': 'Journalit 引导',
@@ -5473,11 +5450,11 @@ const zh: Lang = {
   'onboarding.activation.success.title': '登录完成!',
 
   'onboarding.notice.complete-failed': '无法保存新手引导完成状态。请稍后再试。',
-  'onboarding.notice.completed': '您的日志已设置完成。新手引导已完成。',
+  'onboarding.notice.completed': '你的日志已设置完成。新手引导已完成。',
   'onboarding.familiarity.kicker': '快速提问',
-  'onboarding.familiarity.title': '您以前用过 Obsidian 吗？',
+  'onboarding.familiarity.title': '你以前用过 Obsidian 吗？',
   'onboarding.familiarity.subtitle':
-    'Journalit 运行在 Obsidian 内。如果您是新手，我们只展示必要的内容。',
+    'Journalit 运行在 Obsidian 内。如果你是新手，我们只展示必要的内容。',
   'onboarding.familiarity.option.yes.label': '用过，我很熟悉',
   'onboarding.familiarity.option.yes.description': '跳过入门介绍。',
   'onboarding.familiarity.option.no.label': '没有，我是 Obsidian 新手',
@@ -5488,10 +5465,10 @@ const zh: Lang = {
   'onboarding.orientation.subtitle': '了解这些就足以使用 Journalit。',
   'onboarding.orientation.inside.title': 'Journalit 运行在 Obsidian 内',
   'onboarding.orientation.inside.body':
-    '无需先学习 Obsidian。当前页面就是一个 Journalit 视图。',
+    '无需先学习 Obsidian。这个界面就是一个 Journalit 视图。',
   'onboarding.orientation.sidebar.title': '侧边栏用于导航',
   'onboarding.orientation.sidebar.body':
-    '首页、仪表板、交易日志和复盘都在那里。',
+    '首页、仪表板、交易日志和你的复盘都在那里。',
   'onboarding.orientation.sidebar.action': '显示侧边栏',
   'onboarding.orientation.sidebar.action-mobile': '打开侧边栏',
   'onboarding.orientation.sidebar.hint': '就在左侧。此页面保持打开。',
@@ -5499,14 +5476,14 @@ const zh: Lang = {
     '它会覆盖在此页面上。滑动或点击外部即可返回。',
   'onboarding.orientation.tabs.title': '视图以标签页打开',
   'onboarding.orientation.tabs.body': '就像这个一样。在顶部切换。',
-  'onboarding.orientation.privacy.title': '您的日志保存在您的设备上',
+  'onboarding.orientation.privacy.title': '你的日志保存在你的设备上',
   'onboarding.orientation.privacy.body':
-    '笔记、截图和复盘都是您自己的文件。只有导入或同步的交易会经过 Journalit 服务器。',
+    '笔记、截图和复盘都是你自己的文件。只有你导入或同步的交易会经过 Journalit 的服务器。',
   'onboarding.orientation.continue': '明白了',
-  'onboarding.data-source.kicker': '您的交易',
-  'onboarding.data-source.title': '您的交易现在在哪里？',
+  'onboarding.data-source.kicker': '你的交易',
+  'onboarding.data-source.title': '你的交易现在在哪里？',
   'onboarding.data-source.subtitle':
-    '您的历史记录是您优势的一部分。带上它，统计数据从第一天起就有意义，而不必等待数月积累新交易。',
+    '你的历史记录是你优势的一部分。带上它，统计数据从第一天起就有意义，而不必等待数月积累新交易。',
   'onboarding.data-source.option.broker.label': '在我的券商或平台上',
   'onboarding.data-source.option.broker.description':
     '连接它，或导入其导出文件。',
@@ -5518,14 +5495,14 @@ const zh: Lang = {
   'onboarding.data-source.option.sample.label': '还没有，先看看示例',
   'onboarding.data-source.option.sample.description':
     '在添加自己的交易之前，先浏览一个现成的日志。',
-  'onboarding.broker.kicker': '您的券商',
+  'onboarding.broker.kicker': '你的券商',
   'onboarding.broker.title': '哪家券商或平台？',
   'onboarding.awaiting.sign-in.action': '登录以继续',
   'onboarding.awaiting.sign-in.body':
-    '请先登录或创建免费的 Journalit 账户。之后您的交易就会进入日志。',
+    '请先登录或创建免费的 Journalit 账户。之后你的交易就会进入日志。',
   'onboarding.broker.badge.sync': '自动同步',
   'onboarding.broker.search': '搜索券商和平台',
-  'onboarding.broker.subtitle': '我们会选择最佳方式导入您的交易。',
+  'onboarding.broker.subtitle': '我们会选择最佳方式导入你的交易。',
   'onboarding.broker.option.unlisted.label': '不在列表中',
   'onboarding.broker.option.metatrader4.label': 'MetaTrader 4',
   'onboarding.broker.option.metatrader5.label': 'MetaTrader 5',
@@ -5536,11 +5513,11 @@ const zh: Lang = {
   'onboarding.broker.request.continue': '继续手动导入',
   'onboarding.broker.loading': '正在检查支持的券商...',
   'onboarding.broker.offline':
-    '无法加载完整列表。您仍可连接受支持的券商或导入文件。',
-  'onboarding.personalise.kicker': '设置您的日志',
+    '无法加载完整列表。你仍可连接受支持的券商或导入文件。',
+  'onboarding.personalise.kicker': '设置你的日志',
   'onboarding.personalise.title': '几个快速选择',
-  'onboarding.personalise.subtitle': '我们会根据您的回答个性化 Journalit。',
-  'onboarding.personalise.style.question': '您如何交易？',
+  'onboarding.personalise.subtitle': '我们会根据你的回答个性化 Journalit。',
+  'onboarding.personalise.style.question': '你如何交易？',
   'onboarding.personalise.style.scalping': '每天很多笔交易',
   'onboarding.personalise.style.intraday': '每天几笔，不隔夜',
   'onboarding.personalise.style.swing': '持仓数天或数周',
@@ -5549,7 +5526,7 @@ const zh: Lang = {
   'onboarding.personalise.account.personal': '个人',
   'onboarding.personalise.account.practice': '模拟或练习',
   'onboarding.personalise.account.prop': '自营公司挑战或已获资金',
-  'onboarding.personalise.asset.question': '您主要交易什么？',
+  'onboarding.personalise.asset.question': '你主要交易什么？',
   'onboarding.personalise.asset.stock': '股票',
   'onboarding.personalise.asset.futures': '期货',
   'onboarding.personalise.asset.forex': '外汇',
@@ -5557,9 +5534,9 @@ const zh: Lang = {
   'onboarding.personalise.asset.options': '期权',
   'onboarding.personalise.asset.mixed': '混合',
   'onboarding.first-trade.kicker': '即将完成',
-  'onboarding.first-trade.title': '添加您的第一笔交易',
+  'onboarding.first-trade.title': '添加你的第一笔交易',
   'onboarding.first-trade.subtitle':
-    '您的日志已就绪。记录一笔交易，Journalit 就会开始工作。',
+    '你的日志已就绪。记录一笔交易，Journalit 就会开始工作。',
   'onboarding.first-trade.cta': '添加我的第一笔交易',
   'onboarding.first-trade.sample': '用示例数据探索',
   'onboarding.preparing-sample.title': '正在准备示例日志',
@@ -5578,32 +5555,26 @@ const zh: Lang = {
   'onboarding.sample-exploring.failed.title': '无法恢复示例日志',
   'onboarding.sample-exploring.failed.body':
     '退出示例以清除残留内容，然后继续设置你自己的日志。',
-  'onboarding.awaiting.kicker': '等待您的第一批交易',
+  'onboarding.awaiting.kicker': '等待你的第一批交易',
   'onboarding.awaiting.first-sync.title': '完成券商连接',
   'onboarding.awaiting.first-sync.body':
     '请在设置 > Trade Sync 中完成连接。第一批交易同步后，此设置页面会自动关闭。',
   'onboarding.awaiting.first-sync.action': '打开 Trade Sync',
-  'onboarding.awaiting.first-import.title': '导入您的文件',
+  'onboarding.awaiting.first-import.title': '导入你的文件',
   'onboarding.awaiting.first-import.body':
     '请在 Trade Import 标签页中完成导入。第一批交易导入后，此设置页面会自动关闭。',
   'onboarding.awaiting.first-import.action': '打开 Trade Import',
-  'onboarding.awaiting.first-trade.title': '保存您的第一笔交易',
+  'onboarding.awaiting.first-trade.title': '保存你的第一笔交易',
   'onboarding.awaiting.first-trade.body':
     '第一笔交易保存后，此设置页面会自动关闭。',
   'onboarding.awaiting.first-trade.action': '添加交易',
   'onboarding.awaiting.change-route': '选择其他方式',
   'onboarding.notice.personalise-failed':
-    '无法应用您的设置选择。您可以稍后在设置中调整。',
+    '无法应用你的设置选择。你可以稍后在设置中调整。',
   'onboarding.notice.trade-sync-open-failed': '无法打开 Trade Sync。请重试。',
   'onboarding.notice.skip-failed': '无法保存跳过新手引导。请稍后再试。',
 
   
-  'csv.broker.tradingtechnologies': 'Trading Technologies (TT)',
-  'csv.broker-guide.tradingtechnologies.description': 'Fills 小组件 CSV 导出',
-  'csv.broker-guide.tradingtechnologies.step-1':
-    '在 TT 中打开 Fills 小组件,并切换到 Detail、Continuous 或 Price with Detail 视图',
-
-  'csv.broker-guide.tradingtechnologies.warning.emphasis': '重要:',
 
   'trade.metadata.broker-comment': '经纪商备注',
 
@@ -5640,7 +5611,7 @@ const zh: Lang = {
   'navigation.items.nav-yearly': '本年度回顾',
   'navigation.items.nav-add-trade': '添加交易',
   'navigation.items.nav-layout-builder': '布局构建器',
-  'navigation.items.nav-quick-import': 'Quick Import',
+  'navigation.items.nav-quick-import': '快速导入',
   'navigation.items.nav-csv-import': 'Trade Import',
   'navigation.items.nav-session-mode': '会话模式',
   'navigation.items.nav-economic-calendar': '财经日历',
@@ -5670,36 +5641,31 @@ const zh: Lang = {
   'command.open-calendar-sidebar': '打开日历侧栏',
   'command.open-economic-calendar': '打开财经日历',
 
-  'widget.directional-drawdown.name': 'Directional Realized Drawdown',
+  'widget.directional-drawdown.name': '多空已实现回撤',
   'widget.directional-drawdown.description':
-    'Separate long and short closed-trade drawdown amount curves',
+    '分别显示多头和空头已平仓交易的回撤金额曲线',
 
-  'widget.long-drawdown.name': 'Long Drawdown',
-  'widget.long-drawdown.description':
-    'Closed-trade drawdown amount curve for long trades only',
-  'widget.short-drawdown.name': 'Short Drawdown',
-  'widget.short-drawdown.description':
-    'Closed-trade drawdown amount curve for short trades only',
-  'widget.directional-drawdown.title.long': 'Long Drawdown',
-  'widget.directional-drawdown.title.short': 'Short Drawdown',
+  'widget.long-drawdown.name': '多头回撤',
+  'widget.long-drawdown.description': '仅多头已平仓交易的回撤金额曲线',
+  'widget.short-drawdown.name': '空头回撤',
+  'widget.short-drawdown.description': '仅空头已平仓交易的回撤金额曲线',
+  'widget.directional-drawdown.title.long': '多头回撤',
+  'widget.directional-drawdown.title.short': '空头回撤',
   'widget.directional-drawdown.empty.not-enough':
-    'Not enough closed trades for directional analysis',
-  'widget.directional-drawdown.empty.no-closed':
-    'No closed directional trades for this period',
-  'widget.directional-drawdown.empty.no-long':
-    'No long closed trades for this period',
-  'widget.directional-drawdown.empty.no-short':
-    'No short closed trades for this period',
-  'widget.directionalDrawdownChart.name': 'Directional Realized Drawdown',
+    '已平仓交易不足，无法进行多空分析',
+  'widget.directional-drawdown.empty.no-closed': '此期间没有已平仓的多空交易',
+  'widget.directional-drawdown.empty.no-long': '此期间没有已平仓多头交易',
+  'widget.directional-drawdown.empty.no-short': '此期间没有已平仓空头交易',
+  'widget.directionalDrawdownChart.name': '多空已实现回撤',
 
-  'widget.longDrawdownChart.name': 'Long Drawdown',
+  'widget.longDrawdownChart.name': '多头回撤',
   'widget.longDrawdownChart.description': '仅做多交易的回撤',
 
-  'widget.shortDrawdownChart.name': 'Short Drawdown',
+  'widget.shortDrawdownChart.name': '空头回撤',
   'widget.shortDrawdownChart.description': '仅做空交易的回撤',
 
   'widget.drawdownStats.no-conversion':
-    'Drawdown stats are unavailable for mixed currencies without FX conversion.',
+    '未进行汇率换算时，无法计算混合币种的回撤统计。',
 
   'guide.skip-guide': '跳过引导',
   'guide.step-count': '{count} 个步骤',
@@ -5708,77 +5674,73 @@ const zh: Lang = {
 
   'onboarding.activation.button.copy-link': '复制链接',
 
-  'widget.previous-trading-day-context.name': 'Previous Trading Day Context',
+  'widget.previous-trading-day-context.name': '上一交易日背景',
   'widget.previous-trading-day-context.description':
-    'Read-only context pulled from headings in the previous DRC',
-  'widget.previous-trading-day-context.reference-label': 'Previous DRC',
-  'widget.previous-trading-day-context.open-source': 'Open',
-  'widget.previous-trading-day-context.image-alt-prefix': 'Previous DRC image',
+    '从上一份 DRC 标题中提取的只读背景信息',
+  'widget.previous-trading-day-context.reference-label': '上一份 DRC',
+  'widget.previous-trading-day-context.open-source': '打开',
+  'widget.previous-trading-day-context.image-alt-prefix': '上一份 DRC 图片',
   'widget.previous-trading-day-context.no-sections-configured':
-    'Choose at least one section in the template settings.',
+    '请在布局设置中至少选择一个部分。',
   'widget.previous-trading-day-context.preview-note':
-    'Yesterday price swept liquidity, rejected from the weekly level, and closed back inside the planned range.',
+    '昨天价格扫过流动性，在周线位置受阻回落，并收回到计划区间内。',
   'widget.previous-trading-day-context.preview-bullet-two':
-    'Main deviation: entered before confirmation on the first pullback.',
+    '主要偏差：在第一次回调时于确认前入场。',
   'widget.previous-trading-day-context.preview-source':
-    'Preview: previous DRC from the prior trading day',
+    '预览：上一交易日的 DRC',
   'widget.previous-trading-day-context.preview-bullet-one':
-    'Daily bias matched the plan after the opening drive.',
-  'widget.weekly-drc-context.name': 'Daily Reviews by Weekday',
-  'widget.weekly-drc-context.description':
-    'Show selected DRC sections for each day in the weekly review',
+    '开盘冲刺后，日内偏向与计划一致。',
+  'widget.weekly-drc-context.name': '按星期查看每日复盘',
+  'widget.weekly-drc-context.description': '在周复盘中显示每天所选的 DRC 部分',
 
-  'widget.weekly-drc-context.no-activity': 'No activity for this day.',
+  'widget.weekly-drc-context.no-activity': '这一天没有活动。',
   'widget.weekly-drc-context.no-sections-configured':
-    'Choose at least one DRC section in the template settings.',
-  'widget.weekly-drc-context.current-week-not-found':
-    'Current weekly review not found.',
+    '请在布局设置中至少选择一个 DRC 部分。',
+  'widget.weekly-drc-context.current-week-not-found': '未找到本周复盘。',
   'widget.weekly-drc-context.current-week-date-not-found':
-    'Current weekly review date not found.',
-  'widget.weekly-drc-context.load-error': 'Failed to load weekly DRC review.',
+    '未找到本周复盘日期。',
+  'widget.weekly-drc-context.load-error': '无法加载每周 DRC 复盘。',
   'widget.weekly-drc-context.invalid-context': '此组件仅在周度复盘笔记中可用',
   'templateEditor.widget.weekly-drc-day-label': '日期',
 
   'templateEditor.widget.weekly-drc-start-collapsed': '默认折叠',
-  'templateEditor.widget.weekly-drc-day-all': 'All days',
+  'templateEditor.widget.weekly-drc-day-all': '所有日期',
 
-  'templateEditor.widget.previous-context-sections-label':
-    'Sections to include',
+  'templateEditor.widget.previous-context-sections-label': '要包含的部分',
   'templateEditor.widget.previous-context-heading-label':
-    'Previous DRC section heading',
-  'templateEditor.widget.previous-context-heading-placeholder':
-    'Choose a heading',
-  'templateEditor.widget.review-context-fields.selection': 'Fields to display',
-  'templateEditor.widget.review-context-fields.selection.all': 'All fields',
-  'templateEditor.widget.review-context-fields.selection.group': 'Field group',
-  'templateEditor.widget.review-context-fields.selection.fields':
-    'Specific fields',
-  'templateEditor.widget.review-context-fields.group': 'Group',
-  'templateEditor.widget.review-context-fields.group-placeholder':
-    'Select group',
-  'templateEditor.widget.review-context-fields.fields': 'Fields',
-  'templateEditor.widget.review-context-fields.fields-placeholder':
-    'Select fields',
+    '上一份 DRC 的章节标题',
+  'templateEditor.widget.previous-context-heading-placeholder': '选择一个标题',
+  'templateEditor.widget.review-context-fields.selection': '要显示的字段',
+  'templateEditor.widget.review-context-fields.selection.all': '所有字段',
+  'templateEditor.widget.review-context-fields.selection.group': '字段分组',
+  'templateEditor.widget.review-context-fields.selection.fields': '指定字段',
+  'templateEditor.widget.review-context-fields.group': '分组',
+  'templateEditor.widget.review-context-fields.group-placeholder': '选择分组',
+  'templateEditor.widget.review-context-fields.fields': '字段',
+  'templateEditor.widget.review-context-fields.fields-placeholder': '选择字段',
   'templateEditor.widget.review-context-fields.fields-selected':
-    '{count} fields selected',
+    '已选 {count} 个字段',
   'templateEditor.widget.review-context-fields.no-fields':
-    'Create review fields in Settings first.',
+    '请先在设置中创建复盘字段。',
 
-  'templateEditor.widget.review-context-fields.context': 'Context',
-  'templateEditor.widget.review-context-fields.context.both': 'Both',
-  'templateEditor.widget.review-context-fields.inherited': 'Inherited',
-  'templateEditor.widget.review-context-fields.current': 'Current',
-  'templateEditor.widget.review-context-fields.empty-values': 'Empty values',
-  'templateEditor.widget.review-context-fields.hide-empty': 'Hide empty values',
-  'templateEditor.widget.trade-review.primary-metrics': '主要指标',
-  'templateEditor.widget.trade-review.classification': '分类',
+  'templateEditor.widget.review-context-fields.context': '背景',
+  'templateEditor.widget.review-context-fields.context.both': '两者',
+  'templateEditor.widget.review-context-fields.inherited': '继承',
+  'templateEditor.widget.review-context-fields.current': '当前',
+  'templateEditor.widget.review-context-fields.empty-values': '空值',
+  'templateEditor.widget.review-context-fields.hide-empty': '隐藏空值',
   'templateEditor.widget.trade-review.more-context': '更多上下文',
+  'templateEditor.widget.trade-review.notes-sections': '笔记分区',
+  'templateEditor.widget.trade-review.notes-all': '全部笔记',
+  'templateEditor.widget.trade-review.notes-sections-empty':
+    '在交易布局的笔记分区中添加分区标题',
+  'templateEditor.widget.trade-review.placement.cards': '统计卡片',
+  'templateEditor.widget.trade-review.placement.visible': '始终显示',
+  'templateEditor.widget.trade-review.future-custom-fields':
+    '之后添加的自定义字段',
   'templateEditor.widget.trade-review.display': '显示',
   'templateEditor.widget.trade-review.show-images': '显示图片',
   'templateEditor.widget.trade-review.fields-none': '无字段',
-  'templateEditor.widget.trade-review.fields-all': '所有字段',
-  'templateEditor.widget.trade-review.fields-count': '{count} 个字段',
-  'templateEditor.widget.trade-review.no-fields': '没有可用字段',
   'templateEditor.widget.trade-review.questions': '复盘问题',
   'templateEditor.widget.trade-review.questions-help':
     '选择每种交易结果要显示的问题。问题 ID 保持不变，因此编辑或重新排序问题后，已保存的答案仍会保持关联。',
@@ -5802,15 +5764,14 @@ const zh: Lang = {
   'templateEditor.widget.trade-review.condition-always': '始终显示',
   'templateEditor.widget.trade-review.condition-option-label':
     '当问题 {questionNumber} = {option}',
-  'templateEditor.widget.previous-context-add-section': '+ Add section',
+  'templateEditor.widget.previous-context-add-section': '+ 添加部分',
 
   'templateEditor.widget.previous-context-fallback-label':
-    'Previous DRC fallback',
-  'templateEditor.widget.previous-context-fallback-nearest':
-    'Nearest earlier DRC',
+    '上一份 DRC 的回退方式',
+  'templateEditor.widget.previous-context-fallback-nearest': '最近的较早 DRC',
   'templateEditor.widget.previous-context-fallback-expected':
-    'Expected previous trading day only',
-  'widget.stats.vs-prev': 'vs prev',
+    '仅限预期的上一交易日',
+  'widget.stats.vs-prev': '较上期',
   'common.r-missing.title': '此交易没有 R',
   'common.r-missing.trade': '此交易没有风险金额，因此无法以 R 显示其结果。',
   'common.r-missing.fix': '请添加风险金额，或在设置中设定默认风险金额。',
@@ -5819,115 +5780,107 @@ const zh: Lang = {
   'common.r-coverage.none':
     '这里没有任何交易设有风险金额，因此没有可显示的 R。',
   'dashboard.r-coverage.no-comparison': '未显示变化：对比期间此指标没有 R 值。',
-  'dashboard.metrics.past-30d': 'past 30d',
+  'dashboard.metrics.past-30d': '近 30 天',
 
-  'settings.customization.trade-fields': 'Custom Trade Fields',
-  'settings.customization.review-fields': 'Custom Review Fields',
+  'settings.customization.trade-fields': '自定义交易字段',
+  'settings.customization.review-fields': '自定义复盘字段',
   'settings.customization.review-fields.description':
-    'Create custom fields for review notes. These fields are stored under reviewCustomFields and can later be inherited across monthly, weekly, and daily reviews.',
-  'settings.customization.review-fields.title': 'Review Fields ({count})',
+    '为复盘笔记创建自定义字段。这些字段保存在 reviewCustomFields 下，之后可在月度、周度和每日复盘之间继承。',
+  'settings.customization.review-fields.title': '复盘字段 ({count})',
   'settings.customization.review-fields.manage-desc':
-    'Manage custom fields for review notes',
-  'settings.customization.review-fields.no-fields':
-    'No custom review fields defined yet',
+    '管理复盘笔记的自定义字段',
+  'settings.customization.review-fields.no-fields': '尚未定义自定义复盘字段',
   'settings.customization.review-fields.no-fields-desc':
-    'Review fields will be used by review-note widgets and will not appear in the trade form or Trade Log.',
-  'settings.customization.review-fields.add-button': 'Add Review Field',
-  'settings.customization.review-fields.delete-all-button':
-    'Delete All Review Fields',
-  'settings.customization.review-fields.add-new': 'Add New Review Field',
+    '复盘字段由复盘笔记组件使用，不会出现在交易表单或交易日志中。',
+  'settings.customization.review-fields.add-button': '添加复盘字段',
+  'settings.customization.review-fields.delete-all-button': '删除所有复盘字段',
+  'settings.customization.review-fields.add-new': '新增复盘字段',
   'settings.customization.review-fields.edit-field-with-name':
-    'Edit “{fieldLabel}”',
+    '编辑“{fieldLabel}”',
   'settings.customization.review-fields.configure-desc':
-    'Configure your review field settings below',
-  'settings.customization.review-fields.actions-desc':
-    'Manage your custom review fields',
-  'settings.customization.review-fields.default-label': 'New Review Field',
-  'settings.customization.review-fields.unknown-field': 'Unknown Review Field',
+    '在下方配置复盘字段设置',
+  'settings.customization.review-fields.actions-desc': '管理你的自定义复盘字段',
+  'settings.customization.review-fields.default-label': '新复盘字段',
+  'settings.customization.review-fields.unknown-field': '未知复盘字段',
   'settings.customization.review-fields.field-summary':
-    'Type: {type} • Reviews: {reviews}',
+    '类型：{type} • 复盘：{reviews}',
   'settings.customization.review-fields.error.save-failed':
-    'Failed to save review field. Please try again.',
+    '无法保存复盘字段。请重试。',
   'settings.customization.review-fields.delete.confirm-message':
-    'Are you sure you want to delete the custom review field "{fieldLabel}"?',
+    '确定要删除自定义复盘字段“{fieldLabel}”吗？',
   'settings.customization.review-fields.reset.confirm-message':
-    'Are you sure you want to delete ALL custom review fields?',
-  'settings.customization.review-fields.editor.title':
-    'Review Field Configuration',
+    '确定要删除所有自定义复盘字段吗？',
+  'settings.customization.review-fields.editor.title': '复盘字段配置',
   'settings.customization.review-fields.editor.label-desc':
-    'Display name for this review field',
+    '此复盘字段的显示名称',
   'settings.customization.review-fields.editor.label-placeholder':
-    'Enter review field label',
-  'settings.customization.review-fields.editor.key': 'Review Field Key',
+    '输入复盘字段标签',
+  'settings.customization.review-fields.editor.key': '复盘字段键名',
   'settings.customization.review-fields.editor.key-desc':
-    'This key will be stored inside review note frontmatter at',
-  'settings.customization.review-fields.editor.type-desc':
-    'Type of review field input',
-  'settings.customization.review-fields.editor.description': 'Description',
+    '此键名将保存在复盘笔记 frontmatter 的以下位置',
+  'settings.customization.review-fields.editor.type-desc': '复盘字段的输入类型',
+  'settings.customization.review-fields.editor.description': '描述',
   'settings.customization.review-fields.editor.description-desc':
-    'Optional help text for this review field',
+    '此复盘字段的可选帮助文字',
   'settings.customization.review-fields.editor.description-placeholder':
-    'Explain how this field should be used',
+    '说明此字段的用法',
   'settings.customization.review-fields.editor.placeholder-desc':
-    'Optional placeholder text shown when entering a local review value',
+    '输入本地值时显示的可选占位文字',
   'settings.customization.review-fields.editor.placeholder-input':
-    'Enter review field placeholder',
+    '输入复盘字段占位文字',
 
-  'settings.customization.review-fields.editor.group': 'Field Group',
+  'settings.customization.review-fields.editor.group': '字段分组',
   'settings.customization.review-fields.editor.group-desc':
-    'Choose the review field group this field belongs to.',
-  'settings.customization.review-fields.groups.add-button': 'Add Group',
-  'settings.customization.review-fields.groups.default-name': 'New Group',
-  'settings.customization.review-fields.groups.untitled': 'Untitled Group',
-  'settings.customization.review-fields.groups.ungrouped': 'Ungrouped',
-  'settings.customization.review-fields.groups.field-count': '{count} fields',
-  'settings.customization.review-fields.groups.empty':
-    'No fields in this group yet.',
-  'settings.customization.review-fields.groups.rename-prompt': 'Group name',
+    '选择此复盘字段所属的分组。',
+  'settings.customization.review-fields.groups.add-button': '添加分组',
+  'settings.customization.review-fields.groups.default-name': '新分组',
+  'settings.customization.review-fields.groups.untitled': '未命名分组',
+  'settings.customization.review-fields.groups.ungrouped': '未分组',
+  'settings.customization.review-fields.groups.field-count': '{count} 个字段',
+  'settings.customization.review-fields.groups.empty': '此分组中还没有字段。',
+  'settings.customization.review-fields.groups.rename-prompt': '分组名称',
   'settings.customization.review-fields.groups.delete-message':
-    'Delete the review field group "{groupName}"?',
+    '删除复盘字段分组“{groupName}”？',
   'settings.customization.review-fields.groups.delete-note':
-    'Fields in this group will become ungrouped. Their saved review values are not deleted.',
+    '此分组中的字段将变为未分组。已保存的复盘值不会被删除。',
   'settings.customization.review-fields.groups.error.duplicate':
-    'A review field group with this name already exists.',
+    '已存在同名的复盘字段分组。',
   'settings.customization.review-fields.groups.error.save-failed':
-    'Failed to save review field group.',
-  'settings.customization.review-fields.editor.compact': 'Compact Display',
+    '无法保存复盘字段分组。',
+  'settings.customization.review-fields.editor.compact': '紧凑显示',
   'settings.customization.review-fields.editor.compact-desc':
-    'Prefer compact rendering when this field appears in review widgets',
-  'settings.customization.review-fields.editor.appears-on': 'Appears On',
+    '此字段出现在复盘组件中时优先使用紧凑样式',
+  'settings.customization.review-fields.editor.appears-on': '显示于',
   'settings.customization.review-fields.editor.appears-on-desc':
-    'Review note types that can show this field',
-  'settings.customization.review-fields.editor.editable-on': 'Editable On',
+    '可显示此字段的复盘笔记类型',
+  'settings.customization.review-fields.editor.editable-on': '可编辑于',
   'settings.customization.review-fields.editor.editable-on-desc':
-    'Review note types where users can enter a local value',
-  'settings.customization.review-fields.editor.inherit-to': 'Inherited Into',
+    '可以输入本地值的复盘笔记类型',
+  'settings.customization.review-fields.editor.inherit-to': '继承到',
   'settings.customization.review-fields.editor.inherit-to-desc':
-    'Lower review note types that can display inherited values from this field',
-  'settings.customization.review-fields.editor.inheritance':
-    'Enable Inheritance',
+    '可显示此字段继承值的下级复盘笔记类型',
+  'settings.customization.review-fields.editor.inheritance': '启用继承',
   'settings.customization.review-fields.editor.inheritance-desc':
-    'Allow this field to be read from higher-timeframe review notes',
-  'settings.customization.review-fields.editor.inheritance-mode':
-    'Inheritance Mode',
+    '允许从更高周期的复盘笔记读取此字段',
+  'settings.customization.review-fields.editor.inheritance-mode': '继承模式',
   'settings.customization.review-fields.editor.inheritance-mode-desc':
-    'Controls whether child reviews show inherited values, local values, or both',
-  'settings.customization.review-fields.editor.sources': 'Inheritance Sources',
+    '控制下级复盘显示继承值、本地值还是两者',
+  'settings.customization.review-fields.editor.sources': '继承来源',
   'settings.customization.review-fields.editor.sources-desc':
-    'Higher-timeframe review types this field can inherit from',
+    '此字段可以继承的更高周期复盘类型',
 
   'settings.customization.review-fields.editor.options-desc':
-    'Available choices for this review field',
+    '此复盘字段的可选项',
   'settings.customization.review-fields.editor.allow-create-desc':
-    'Users can create new options when using this field in review notes',
-  'settings.customization.review-fields.editor.save': 'Save Review Field',
-  'settings.customization.review-fields.editor.delete': 'Delete Review Field',
+    '用户在复盘笔记中使用此字段时可以创建新选项',
+  'settings.customization.review-fields.editor.save': '保存复盘字段',
+  'settings.customization.review-fields.editor.delete': '删除复盘字段',
   'settings.customization.review-fields.inheritance-mode.inherit-only':
-    'Inherited only',
+    '仅继承值',
   'settings.customization.review-fields.inheritance-mode.local-only':
-    'Local only',
+    '仅本地值',
   'settings.customization.review-fields.inheritance-mode.inherit-and-local':
-    'Inherited and local',
+    '继承值和本地值',
 
   'calendar.aria.open-daily-review': '打开 {date} 的每日复盘',
   'calendar.aria.open-weekly-review': '打开 {date} 的每周复盘',
@@ -5936,44 +5889,40 @@ const zh: Lang = {
 
   'csv.mapper.aria.map-column': '映射列 {header}',
   'trade-import.error.file-empty': '此文件为空。请重新导出文件后再试。',
-  'trade-import.error.file-too-large':
-    'Selected file exceeds the Trade Import size limit',
-  'trade-import.error.file-type-unsupported':
-    'Selected file type is not supported by Trade Import',
+  'trade-import.error.file-too-large': '所选文件超过了 Trade Import 的大小限制',
+  'trade-import.error.file-type-unsupported': 'Trade Import 不支持所选文件类型',
   'trade-import.error.broker-file-type-unsupported':
-    'Selected broker does not support this file type',
+    '所选经纪商不支持此文件类型',
   
-  'quick-import.title': 'Quick Import',
+  'quick-import.title': '快速导入',
   'quick-import.subtitle':
-    'Use your favorite Trade Import setup to preview and import a file faster.',
+    '使用你常用的 Trade Import 设置，更快地预览并导入文件。',
   'quick-import.gate.sign-in':
     '登录或创建免费的 Journalit 账户，即可在 Trade Import 中预览文件。只有导入交易时才需要 Pro。',
   'quick-import.gate.sign-in-cta': '登录并免费预览',
-  'quick-import.gate.pro': 'Quick Import is included with Trade Import Pro.',
+  'quick-import.gate.pro': '快速导入包含在 Trade Import Pro 中。',
   'quick-import.gate.preview-free': '免费预览文件',
   'quick-import.message.needs-setup':
-    'Choose a favorite broker or template in Trade Import before using Quick Import.',
-  'quick-import.message.capabilities-failed':
-    'Quick Import setup could not be loaded.',
+    '使用快速导入前，请先在 Trade Import 中选择常用的经纪商或模板。',
+  'quick-import.message.capabilities-failed': '无法加载快速导入设置。',
   'quick-import.message.mapping-required':
-    'This file needs column mapping. Open the full Trade Import flow to review mappings.',
+    '此文件需要列映射。请打开完整的 Trade Import 流程检查映射。',
   'quick-import.message.preview-failed':
-    'This file needs review in the full Trade Import flow.',
+    '此文件需要在完整的 Trade Import 流程中检查。',
   'quick-import.message.no-importable':
     '未找到可导入的交易。请在 Trade Import 中查看此文件的详细信息。',
 
   'quick-import.privacy-note':
     '所选文件和导入选项将上传至 Journalit。加密诊断记录在 1 天（免费）或 14 天（Pro）后过期，预览在 7 天后过期。可选的 AI 映射会将表头和示例行发送给 AI 模型。Trade Import 不发送单独的客户端遥测或后台错误报告。',
-  'quick-import.dropzone.title': 'Drop a broker export here',
-  'quick-import.dropzone.subtitle': 'Or click to choose a file',
+  'quick-import.dropzone.title': '将经纪商导出文件拖放到这里',
+  'quick-import.dropzone.subtitle': '或点击选择文件',
 
   'quick-import.status.checking-subscription': '正在检查订阅状态...',
-  'quick-import.status.analysing': 'Analysing and preparing preview...',
-  'quick-import.status.importing': 'Importing...',
-  'quick-import.processing.sent-to-server':
-    'Uploaded to Journalit for private processing',
-  'quick-import.file.selected': 'Selected file',
-  'quick-import.file.processed': 'Processed and ready to write to your vault',
+  'quick-import.status.analysing': '正在分析并准备预览...',
+  'quick-import.status.importing': '正在导入...',
+  'quick-import.processing.sent-to-server': '已上传到 Journalit 进行私密处理',
+  'quick-import.file.selected': '已选文件',
+  'quick-import.file.processed': '已处理，可写入你的仓库',
   'quick-import.summary.title': '准备导入',
 
   'quick-import.summary.to-import': '待导入',
@@ -5981,28 +5930,25 @@ const zh: Lang = {
   'quick-import.summary.failed': '需要检查',
   'quick-import.summary.failed-rows': '未导入的行',
   'quick-import.summary.incomplete-rows': '已跳过的不完整行',
-  'quick-import.complete.title': 'Import complete',
+  'quick-import.complete.title': '导入完成',
   'quick-import.complete.message':
-    '{written} written, {duplicates} duplicates, {failed} need review.',
-  'quick-import.action.open-full': 'Open full Trade Import',
+    '已写入 {written} 笔，重复 {duplicates} 笔，{failed} 笔需要检查。',
+  'quick-import.action.open-full': '打开完整的 Trade Import',
   'quick-import.action.review-in-trade-import': '在 Trade Import 中检查',
-  'quick-import.action.setup-in-trade-import': 'Set up in Trade Import',
-  'quick-import.action.replace-file': 'Replace file',
-  'quick-import.action.import': 'Import trades',
+  'quick-import.action.setup-in-trade-import': '在 Trade Import 中设置',
+  'quick-import.action.replace-file': '替换文件',
   'quick-import.action.import-count.one': '导入 {count} 笔交易',
   'quick-import.action.import-count.few': '导入 {count} 笔交易',
   'quick-import.action.import-count.many': '导入 {count} 笔交易',
   'quick-import.action.import-count.other': '导入 {count} 笔交易',
-  'quick-import.preview.more': '+ {count} more processed trades',
+  'quick-import.preview.more': '+ 另外 {count} 笔已处理交易',
 
-  'trade-import.notice.capabilities-failed':
-    'Unable to load Trade Import capabilities',
+  'trade-import.notice.capabilities-failed': '无法加载 Trade Import 功能',
   'trade-import.notice.open-failed': '无法打开 Trade Import',
-  'trade-import.notice.template-exists':
-    'A Trade Import template with this name already exists',
-  'trade-import.notice.template-saved': 'Trade Import template saved',
-  'trade-import.notice.analyse-failed': 'Trade Import analyse failed',
-  'trade-import.notice.preview-failed': 'Trade Import preview failed',
+  'trade-import.notice.template-exists': '已存在同名的 Trade Import 模板',
+  'trade-import.notice.template-saved': 'Trade Import 模板已保存',
+  'trade-import.notice.analyse-failed': 'Trade Import 分析失败',
+  'trade-import.notice.preview-failed': 'Trade Import 预览失败',
   'trade-import.notice.free-preview-rate-limited':
     '已达到免费预览限制。请开通 PRO，或约 {minutes} 分钟后重试。',
   'trade-import.notice.free-preview-storage-limit-reached':
@@ -6010,42 +5956,51 @@ const zh: Lang = {
   'trade-import.preview-error.guidance':
     '请检查所有必填字段是否已映射，所选日期格式是否与文件匹配，并且数字列是否包含有效的交易数值。',
   'trade-import.notice.complete':
-    'Trade Import complete: {written} written or updated, {duplicateCount} duplicates, {failedCount} failed',
+    'Trade Import 完成：已写入或更新 {written} 笔，重复 {duplicateCount} 笔，失败 {failedCount} 笔',
   'trade-import.gate.brand-left': '交易',
   'trade-import.gate.brand-right': '导入',
   'trade-import.gate.sign-in.title': '免费预览你的交易历史',
   'trade-import.gate.sign-in':
     '登录或创建免费的 Journalit 账户即可分析文件。只有导入交易时才需要 Pro。',
-  'trade-import.gate.sign-in.reassurance':
-    '所选文件和导入选项将上传至 Journalit。加密诊断记录在 1 天（免费）或 14 天（Pro）后过期，预览在 7 天后过期。可选的 AI 映射会将表头和示例行发送给 AI 模型。Trade Import 不发送单独的客户端遥测或后台错误报告。',
-  'trade-import.gate.sign-in.no-trial': '分析和预览无需开启 Pro 试用。',
   'trade-import.gate.sign-in.cta': '登录并免费预览',
 
-  'trade-import.step.select': '1. Select import settings',
+  'trade-import.step.select': '上传',
   'trade-import.step.privacy': '2. Privacy acknowledgement',
-  'trade-import.step.analyse': '3. Analyse and map',
+  'trade-import.step.analyse': '检查',
   'trade-import.step.preview': '4. Preview',
-  'trade-import.label.template': 'Local mapping template',
-  'trade-import.label.template-actions': 'Template actions',
-  'trade-import.template.none': 'No template',
-  'trade-import.label.account': 'Account',
+  'trade-import.label.template': '本地映射模板',
+  'trade-import.label.template-actions': '模板操作',
+  'trade-import.template.none': '无模板',
+  'trade-import.label.account': '账户',
   'trade-import.label.broker': '导出来源 / 平台',
-  'trade-import.label.asset-type': 'Asset type',
-  'trade-import.asset.stock': 'Stock',
-  'trade-import.asset.options': 'Options',
-  'trade-import.asset.futures': 'Futures',
-  'trade-import.asset.forex': 'Forex',
-  'trade-import.asset.crypto': 'Crypto',
+  'trade-import.label.asset-type': '资产类型',
+  'trade-import.label.destination': '导入为',
+  'trade-import.destination.live': '实盘交易',
+  'trade-import.destination.backtest': '回测交易',
+  'trade-import.destination.backtest-hint': '保存为回测交易，与实盘交易分开。',
+  'trade-import.label.export-format': '导出类型',
+  'trade-import.format.tradingview.paper': '模拟交易',
+  'trade-import.format.tradingview.strategy': '策略测试器',
+  'trade-import.format.tradingview.paper-hint':
+    '模拟交易面板中的 Order History 导出。',
+  'trade-import.format.tradingview.strategy-hint':
+    '策略测试器中的 List of Trades 导出。',
+  'trade-import.label.symbol': '代码',
+  'trade-import.symbol.hint':
+    '此导出未注明测试所用的代码。请按 TradingView 显示的方式输入，例如 CME_MINI:ES1!。',
+  'trade-import.asset.stock': '股票',
+  'trade-import.asset.options': '期权',
+  'trade-import.asset.futures': '期货',
+  'trade-import.asset.forex': '外汇',
+  'trade-import.asset.crypto': '加密货币',
   'trade-import.manual-mode.price-based': '订单或成交（合并为交易）',
   'trade-import.manual-mode.direct-pnl': '每行一笔交易（使用盈亏）',
-  'trade-import.label.ai-mapping': 'Request AI mapping suggestions',
+  'trade-import.label.ai-mapping': '请求 AI 映射建议',
   'trade-import.privacy.copy':
     '所选文件和导入选项将上传至 Journalit。加密诊断记录在 1 天（免费）或 14 天（Pro）后过期，预览在 7 天后过期。可选的 AI 映射会将表头和示例行发送给 AI 模型。Trade Import 不发送单独的客户端遥测或后台错误报告。导出文件可能包含账户标识、交易历史、笔记、价格、数量、费用、余额和盈亏。请求还会发送自定义字段定义和已保存选项；预览包含目标账户名称。关闭 AI 映射即可避免 AI 处理。',
 
-  'trade-import.action.analyse': 'Analyse file',
+  'trade-import.action.analyse': '分析文件',
   'trade-import.action.choose-file': 'Choose file',
-  'trade-import.guide.prompt': '不确定要导出什么？',
-  'trade-import.guide.link': '查看券商指南',
   'trade-import.hyperliquid.export-guidance':
     '在 Hyperliquid 中选择 Trade History → Export as CSV，不要选择 Export More（独立的第三方报表）。不要使用 Funding History 或 Order History。',
   'trade-import.hyperliquid.date-us': '美式：月/日/年 - 24 小时制',
@@ -6056,9 +6011,11 @@ const zh: Lang = {
     '无法检测此设备的时区。请检查系统设置。',
   'trade-import.hyperliquid.backend-update-required':
     '预览 Hyperliquid 文件需要更新服务器。请稍后重试。',
-  'trade-import.action.drop-file': 'Drop file to upload',
+  'trade-import.action.drop-file': '拖放文件以上传',
   'trade-import.analyse.detected':
     '已读取你的 {fileType} 文件。请检查下方各行，然后将每一列对应到交易字段。',
+  'trade-import.analyse.detected-native':
+    '已读取你的 {fileType} 文件。请检查下方各行，然后选择“生成预览”。',
   'trade-import.table.screenshots': '截图',
   'trade-import.preview.screenshot-alt': '表格第 {row} 行 {symbol} 的截图',
   'trade-import.preview.screenshots-more': '还有 {count} 张',
@@ -6086,6 +6043,8 @@ const zh: Lang = {
     '采用另一种顺序的行会被列出，方便你在文件中修正。',
   'quick-import.message.date-order':
     '你的日期有两种读法。请打开完整导入进行选择。',
+  'quick-import.message.symbol-required':
+    '此导出未注明代码。请打开完整导入进行输入。',
   'csv.date-format.eu-dot': '欧式点分：25.12.2024（日.月.年）',
   'csv.date-format.ymd-dot': '年份在前（点分）：2024.12.25',
   'trade-import.unmapped.title': '不会导入 ({count})',
@@ -6112,16 +6071,15 @@ const zh: Lang = {
   'trade-import.diagnostic.column': '列：{columns}',
   'trade-import.diagnostic.unmap-column': '不导入此列',
   'trade-import.diagnostic.edit-mapping': '更改映射',
-  'trade-import.diagnostic.info': 'info',
-  'trade-import.label.sheet': 'Sheet',
-  'trade-import.label.header-row': 'Header row',
-  'trade-import.placeholder.auto': 'Auto',
-  'trade-import.label.date-format': 'Date format',
+  'trade-import.label.sheet': '工作表',
+  'trade-import.label.header-row': '表头行',
+  'trade-import.placeholder.auto': '自动',
+  'trade-import.label.date-format': '日期格式',
 
-  'trade-import.label.save-template': 'Save mapping template',
-  'trade-import.placeholder.template-name': 'Template name',
-  'trade-import.action.save-template': 'Save template',
-  'trade-import.action.preview': 'Generate preview',
+  'trade-import.label.save-template': '保存映射模板',
+  'trade-import.placeholder.template-name': '模板名称',
+  'trade-import.action.save-template': '保存模板',
+  'trade-import.action.preview': '生成预览',
 
   'trade-import.preview.found.one': '找到 {count} 笔交易',
   'trade-import.preview.found.few': '找到 {count} 笔交易',
@@ -6132,7 +6090,6 @@ const zh: Lang = {
   'trade-import.preview.metric.ready': '可导入',
   'trade-import.preview.metric.duplicates': '可能重复',
   'trade-import.preview.metric.attention': '需要处理',
-  'trade-import.preview.completed.message': '{count} 笔交易已准备好导入。',
   'trade-import.preview.partial.message':
     '{count} 笔交易已准备就绪。{failed} 行无法导入，另有 {incomplete} 行因数据不完整而被跳过。',
   'trade-import.preview.partial.guidance': '仅会导入下方显示的有效交易。',
@@ -6142,7 +6099,7 @@ const zh: Lang = {
     '请检查列映射、日期格式、所选工作表和标题行，以及下方的无效值。',
   'trade-import.preview.tradovate-performance.title': 'Tradovate 报告不正确',
   'trade-import.preview.tradovate-performance.message':
-    '这似乎是 Tradovate 的 Performance 导出。Journalit 需要导入 Orders 报告，才能准确重建您的成交记录。请在 Tradovate 中前往 Reports > Orders 并下载 CSV。',
+    '这似乎是 Tradovate 的 Performance 导出。Journalit 需要导入 Orders 报告，才能准确重建你的成交记录。请在 Tradovate 中前往 Reports > Orders 并下载 CSV。',
   'trade-import.preview.tradovate-performance.guide': '查看 Tradovate 导出指南',
   'trade-import.preview.metatrader-statement.title':
     '不支持的 MetaTrader 对账单',
@@ -6182,19 +6139,20 @@ const zh: Lang = {
   'trade-import.pro-gate.cta': '激活 PRO',
   'trade-import.preview.diagnostics': '查看详情（{count}）',
   'trade-import.preview.affected-rows': '受影响的行：{count}',
-  'trade-import.table.status': 'Status',
-  'trade-import.table.symbol': 'Symbol',
-  'trade-import.table.direction': 'Direction',
-  'trade-import.table.entry-time': 'Entry time',
-  'trade-import.table.date': 'Date',
-  'trade-import.table.position': 'Position',
-  'trade-import.table.result': 'Result',
-  'trade-import.table.quantity': 'Quantity',
-  'trade-import.table.message': 'Message',
+  'trade-import.table.status': '状态',
+  'trade-import.table.symbol': '代码',
+  'trade-import.table.direction': '方向',
+  'trade-import.table.entry-time': '入场时间',
+  'trade-import.table.date': '日期',
+  'trade-import.table.result': '结果',
+  'trade-import.table.quantity': '数量',
+  'trade-import.table.message': '消息',
   'trade-import.status.new': '新交易',
   'trade-import.status.already-imported': '已导入',
   'trade-import.status.other-account': '在其他账户中',
   'trade-import.status.other-account.detail': '已导入到 {account}',
+  'trade-import.status.split-across-trades.detail':
+    '其成交已在日志中，分布于多笔交易。要添加缺少的成交，请按之前相同的日期范围导入。',
   'trade-import.status.updates-existing': '更新现有交易',
   'trade-import.status.possible-duplicate': '可能重复',
   'trade-import.status.needs-review': '需要检查',
@@ -6203,6 +6161,10 @@ const zh: Lang = {
   'trade-import.status.no-open-trade': '没有可平仓的持仓交易',
   'trade-import.status.multiple-open-trades': '多笔持仓交易匹配',
   'trade-import.status.quantity-mismatch': '数量不匹配',
+  'trade-import.commit-failure.update-target-changed':
+    '此行要更新的交易在预览后已被更改或删除。请重新导入该文件。',
+  'trade-import.commit-failure.tradovate-overlap':
+    '与一笔已从 Tradovate 同步的交易重叠，且无法与其匹配。',
   'trade-import.server-deletion.deleted':
     '已从 Journalit 服务器删除的交易：{count}',
   'trade-import.server-deletion.kept': '因其他导入也包含而保留的交易：{count}',
@@ -6216,7 +6178,7 @@ const zh: Lang = {
     '服务器删除后移至回收站的交易笔记：{count}',
   'trade-import.server-deletion.account.title': '删除服务器账户？',
   'trade-import.server-deletion.account.message':
-    '这将从 Journalit 服务器永久删除“{account}”及其导入的交易（服务器上 {count} 笔），并在每个已同步的库中将其笔记移至回收站。之后可以重新导入文件。',
+    '这会从 Journalit 服务器永久删除“{account}”及其导入的交易（服务器上 {count} 笔），并将其笔记在每个已同步仓库中移入回收站。之后你可以重新导入这些文件。',
   'trade-import.server-deletion.account.confirm': '从服务器删除',
   'trade-import.server-deletion.account.button': '从服务器删除',
   'trade-import.history.title': '导入历史',
@@ -6230,22 +6192,28 @@ const zh: Lang = {
   'trade-import.history.trades-on-server': '服务器上 {count} 笔',
   'trade-import.history.delete.title': '删除此导入？',
   'trade-import.history.delete.message':
-    '这将从 Journalit 服务器永久删除此导入添加到“{account}”的交易（服务器上 {count} 笔），并在每个已同步的库中将其笔记移至回收站。其他导入也包含的交易会被保留。之后可以重新导入该文件。',
+    '这会从 Journalit 服务器永久删除此次导入添加到“{account}”的交易（服务器上 {count} 笔），并将其笔记在每个已同步仓库中移入回收站。其他导入中也包含的交易会被保留。之后你可以重新导入该文件。',
+  'trade-import.history.delete.updates-kept':
+    '它对之前导入的交易所做的更改（例如平仓）会保留。',
+  'trade-import.history.delete.message-updates-only':
+    '此次导入只更改了之前导入的交易，例如将其平仓。删除它会将其从导入历史中移除；这些更改会保留。',
+  'trade-import.history.delete.message-none-deleted':
+    '不会删除任何交易：此导入中的每笔交易也存在于其他导入中。删除只会将其从导入历史中移除。',
   'trade-import.history.delete.confirm': '删除导入',
   'trade-import.history.load-more': '加载更多',
   'account.edit.modal.delete.delete-server-trades':
-    '同时从 Journalit 服务器删除其导入的交易（服务器上 {count} 笔）。即使你在此保留笔记，它们也会在每个已同步的库中移至回收站。',
+    '同时从 Journalit 服务器删除其导入的交易（服务器上 {count} 笔）。即使你在这里保留它们，其笔记也会在每个已同步的仓库中移入回收站。',
   'trade-import.preview.other-account.message':
     '已在 {account} 中（{count}），将被跳过。',
   'trade-import.preview.other-account.import-instead': '改为导入到 {account}',
   'trade-import.preview.other-account.undo-earlier': '撤销之前的导入',
-  'trade-import.action.confirm': 'Confirm import',
+  'trade-import.action.confirm': '确认导入',
   'trade-import.action.activate-pro.one': '激活 PRO 以导入 {count} 笔交易',
   'trade-import.action.activate-pro.few': '激活 PRO 以导入 {count} 笔交易',
   'trade-import.action.activate-pro.many': '激活 PRO 以导入 {count} 笔交易',
   'trade-import.action.activate-pro.other': '激活 PRO 以导入 {count} 笔交易',
-  'trade-import.action.cancel-preview': 'Cancel preview',
-  'trade-import.broker.manual': 'Manual Mapping',
+  'trade-import.action.cancel-preview': '取消预览',
+  'trade-import.broker.manual': '手动映射',
   'trade-import.source.title': '这些交易来自哪里？',
   'trade-import.source.subtitle':
     '选择你导出数据的平台。Journalit 会直接读取其文件格式，无需列映射。',
@@ -6260,7 +6228,10 @@ const zh: Lang = {
   'trade-import.recovery.rithmic-order-history.title': '不支持的 Rithmic 格式',
   'trade-import.recovery.rithmic-order-history.message':
     '上传 Rithmic 订单历史导出文件，或选择生成此文件的平台。',
-  'trade-import.recovery.rithmic-order-history.choose-file': '选择其他文件',
+  'trade-import.recovery.no-trade-rows.title': '此文件中没有可导入的交易',
+  'trade-import.recovery.no-trade-rows.message':
+    '请在重新导出的文件中修正此问题，然后选择新文件。',
+  'trade-import.action.choose-another-file': '选择其他文件',
   'trade-import.source.change-action': '更改来源',
   'trade-import.sync-suggestion.full.title': '{broker} 可以自动同步',
   'trade-import.sync-suggestion.full.body':
@@ -6275,20 +6246,20 @@ const zh: Lang = {
     '无需导出：Trade Sync 会自动导入你的 {broker} 交易。仍有 {broker} 文件？请选择“未列出 / 自定义文件”。',
   'trade-import.sync-suggestion.action.open': '打开 Trade Sync',
 
-  'command.open-setups': '打开设置形态',
-  'setups.create.title': '创建设置',
-  'setups.create.field.name': '设置名称',
+  'command.open-setups': '打开策略',
+  'setups.create.title': '创建策略',
+  'setups.create.field.name': '策略名称',
   'setups.create.placeholder.name': '开盘推动',
   'setups.create.field.status': '状态',
   'setups.create.field.direction': '方向',
   'setups.create.field.color': '色彩',
-  'setups.create.field.color-description': '选择颜色以识别此设置。',
+  'setups.create.field.color-description': '选择颜色以识别此策略。',
   'setups.create.profile.heading': '首选字段',
   'setups.create.profile.optional-label': '（可选）',
   'setups.create.field.sessions': '交易时段',
   'setups.create.field.preferred-sessions-tooltip':
     '在 设置 → 日志 → 会话模式 中管理这些交易时段。',
-  'setups.create.placeholder.preferred-sessions': 'London, New York',
+  'setups.create.placeholder.preferred-sessions': '伦敦, 纽约',
   'setups.create.field.timeframes': '时间周期',
   'setups.create.placeholder.preferred-timeframes': '5m, 15m, 1h',
   'setups.create.field.tickers': '交易品种',
@@ -6299,7 +6270,7 @@ const zh: Lang = {
   'setups.create.direction.both': '两者',
   'setups.create.field.linked-notes': '关联笔记',
   'setups.create.field.linked-notes-desc':
-    '关联记录此设置 playbook 的现有笔记。',
+    '关联记录此策略 playbook 的现有笔记。',
   'setups.create.linked-notes.empty': '尚未关联笔记。',
   'setups.create.linked-notes.add': '+ 关联笔记',
   'setups.create.linked-notes.remove': '移除关联笔记',
@@ -6307,117 +6278,95 @@ const zh: Lang = {
   'setups.create.linked-notes.search': '搜索笔记...',
   'setups.create.linked-notes.no-notes': '未找到 Markdown 笔记。',
   'setups.create.button.creating': '正在创建...',
-  'setups.create.button.create': '创建设置',
-  'setups.create.success': '设置 "{name}" 已成功创建',
-  'setups.create.error.name-required': '设置名称为必填项',
-  'setups.create.error.failed': '创建设置失败',
-  'setups.edit.title': '编辑设置',
+  'setups.create.button.create': '创建策略',
+  'setups.create.success': '策略“{name}”已成功创建',
+  'setups.create.error.name-required': '策略名称为必填项',
+  'setups.create.error.failed': '创建策略失败',
+  'setups.edit.title': '编辑策略',
   'setups.edit.button.saving': '正在保存...',
-  'setups.edit.button.save': '保存设置',
+  'setups.edit.button.save': '保存策略',
   'setups.edit.button.rename-and-update': '重命名并更新交易',
-  'setups.edit.rename-warning.title': '重命名设置并更新交易',
+  'setups.edit.rename-warning.title': '重命名策略并更新交易',
   'setups.edit.rename-warning.message':
-    '将 {oldName} 重命名为 {newName} 后，将更新使用旧设置名称的交易笔记。',
-  'setups.edit.delete.button': '删除设置',
-  'setups.edit.delete.title': '删除设置',
+    '将 {oldName} 重命名为 {newName} 后，将更新使用旧策略名称的交易笔记。',
+  'setups.edit.delete.button': '删除策略',
+  'setups.edit.delete.title': '删除策略',
   'setups.edit.delete.confirm': '确认删除',
   'setups.edit.delete.warning':
-    '删除“{name}”将永久移除该设置，并将其从关联交易中清除。此操作无法撤销。',
-  'setups.edit.delete.success': '已删除设置“{name}”',
-  'setups.edit.delete.error': '删除设置失败',
-  'setups.edit.success': '设置 "{name}" 已成功更新',
-  'setups.edit.error.failed': '更新设置失败',
+    '删除“{name}”将永久移除该策略，并将其从关联交易中清除。此操作无法撤销。',
+  'setups.edit.delete.success': '已删除策略“{name}”',
+  'setups.edit.delete.error': '删除策略失败',
+  'setups.edit.success': '策略“{name}”已成功更新',
+  'setups.edit.error.failed': '更新策略失败',
   'setups.view.compare.empty-submessage':
-    '从概览中选择两张设置卡片，以生成并排报告。',
+    '从概览中选择两张策略卡片，以生成并排报告。',
   'setups.view.compare.reason.higher.total-r': '更高的总 R',
   'setups.view.compare.reason.lower.total-r': '更低的总 R',
   'setups.view.compare.reason.similar.total-r': '相近的总 R',
 
-  'setups.guide.create-new-setup.title': '创建新设置',
+  'setups.guide.create-new-setup.title': '创建新策略',
   'setups.guide.create-new-setup.description':
-    '想添加另一个剧本时使用“新建设置”。弹窗会引导你填写详情、关联笔记和规则。',
-  'setups.guide.detail-intro.title': '这是设置页面',
+    '想添加另一个剧本时使用“新建策略”。弹窗会引导你填写详情、关联笔记和规则。',
+  'setups.guide.detail-intro.title': '这是策略页面',
   'setups.guide.detail-intro.description':
-    '设置页面聚焦一个剧本，集中展示表现图、上下文、参考资料、操作和执行规则。',
-  'setups.guide.detail-actions.title': '设置操作',
+    '策略页面聚焦一个剧本，集中展示表现图、上下文、参考资料、操作和执行规则。',
+  'setups.guide.detail-actions.title': '策略操作',
   'setups.guide.detail-actions.description':
-    '使用这些按钮打开相关交易，或编辑设置详情、关联笔记、截图和剧本规则。',
-  'setups.guide.empty.create-setup.title': '从“新建设置”开始',
+    '使用这些按钮打开相关交易，或编辑策略详情、关联笔记、截图和剧本规则。',
+  'setups.guide.empty.create-setup.title': '从“新建策略”开始',
   'setups.guide.empty.create-setup.description':
-    '先创建一个设置。创建后，本指南会继续正常的设置流程。',
+    '先创建一个策略。创建后，本指南会继续正常的策略流程。',
 
   'setups.guide.intro.title': '欢迎使用 Setups',
   'setups.guide.intro.description':
-    '此视图把设置剧本、关联交易、笔记、截图和规则集中在一个地方。',
-  'setups.guide.view-tabs.title': '切换设置视图',
+    '此视图把策略剧本、关联交易、笔记、截图和规则集中在一个地方。',
+  'setups.guide.view-tabs.title': '切换策略视图',
   'setups.guide.view-tabs.description':
-    '当有足够设置时，用这些标签在概览、设置组合和比较流程之间切换。',
-  'setups.guide.overview-chart.title': '表现排名',
-  'setups.guide.overview-chart.description':
-    '概览图按所选指标排列设置。使用右上角控件可切换指标，或让图表聚焦到特定设置。',
-  'setups.guide.tag-filter.title': '筛选策略',
-  'setups.guide.tag-filter.description':
-    '按策略标签或方向筛选卡片、图表、配对和比较选项。同一组内使用“或”逻辑，标签与方向之间使用“且”逻辑。',
-  'setups.guide.setup-cards.title': '设置卡片',
+    '当有足够策略时，用这些标签在概览、策略组合和比较流程之间切换。',
+  'setups.guide.setup-cards.title': '策略卡片',
   'setups.guide.setup-cards.description':
-    '卡片用关键指标、状态、最近交易日期和小型表现趋势总结每个设置。',
-  'setups.guide.open-detail.title': '打开设置页面',
+    '卡片用关键指标、状态、最近交易日期和小型表现趋势总结每个策略。',
+  'setups.guide.open-detail.title': '打开策略页面',
   'setups.guide.open-detail.description':
     '准备好后，打开一个策略卡片查看其页面，那里会有一段简短的指南。',
   'setups.guide.detail-performance.title': '详情表现',
   'setups.guide.detail-performance.description':
-    'Performance 标签显示该设置随时间的图表和关键指标，包括 P&L、胜率、期望值和回撤。',
-  'setups.guide.detail-context.title': '设置上下文',
+    'Performance 标签显示该策略随时间的图表和关键指标，包括 P&L、胜率、期望值和回撤。',
+  'setups.guide.detail-context.title': '策略上下文',
   'setups.guide.detail-context.description':
-    '此面板集中显示设置健康度、需关注项、关联笔记和截图。',
+    '此面板集中显示策略健康度、需关注项、关联笔记和截图。',
   'setups.guide.detail-playbook.title': '剧本笔记',
   'setups.guide.detail-playbook.description':
-    '剧本区域预览此设置的关联笔记。它可以是 Markdown、图片、Excalidraw 或任何参考资料。',
+    '剧本区域预览此策略的关联笔记。它可以是 Markdown、图片、Excalidraw 或任何参考资料。',
   'setups.guide.detail-rules.title': '执行规则',
   'setups.guide.detail-rules.description':
     '规则保存最佳条件、入场、风险和需避免错误的结构化清单。',
-  'setups.guide.finish.title': 'Setups 指南已完成',
-  'setups.guide.finish.description':
-    '你已查看主要页面：概览、组合、比较和单个设置详情页。',
 
-  'setups.guide.pairs-mode.title': '打开设置组合',
-  'setups.guide.pairs-mode.description':
-    '打开组合，查看哪些设置组合有足够的共同交易可供比较。',
-  'setups.guide.pairs-chart.title': '组合排名',
-  'setups.guide.pairs-chart.description':
-    '组合模式会突出可能一起表现更好或更差的设置组合。点击柱条可打开该组合的更深入洞察。',
-
-  'setups.guide.compare-mode.title': '开始比较模式',
-  'setups.guide.compare-mode.description':
-    '比较模式可选择两张设置卡片进行并排复盘。',
-  'setups.guide.compare-select.title': '选择两个设置',
-  'setups.guide.compare-select.description': '选择两张设置卡片以打开比较页面。',
+  'setups.guide.compare-select.title': '选择两个策略',
   'setups.guide.compare-summary.title': '这是比较页面',
   'setups.guide.compare-summary.description':
-    '此页面并排比较两个设置。顶部摘要行显示胜出者、期望值优势、置信度，以及某个设置可能更有优势的原因。',
+    '此页面并排比较两个策略。顶部摘要行显示胜出者、期望值优势、置信度，以及某个策略可能更有优势的原因。',
   'setups.guide.compare-body.title': '比较摘要行',
   'setups.guide.compare-body.description':
     '顶部行总结比较结果：胜出者、期望值优势、置信度，以及优势背后的原因。',
   'setups.guide.compare-details.title': '比较详情',
   'setups.guide.compare-details.description':
-    '使用指标表和累计图了解两个设置的差异。',
+    '使用指标表和累计图了解两个策略的差异。',
   'setups.guide.detail-execution-gap.title': '执行差距分析',
   'setups.guide.detail-execution-gap.description':
     '当有错过交易或回测数据时，此标签会将已捕捉的执行与错过或基准机会进行比较。',
-  'setups.guide.back-to-overview.title': '返回设置卡片',
-  'setups.guide.back-to-overview.description': '比较完成后返回设置卡片。',
 
   'setups.view.open-as-markdown': '以 Markdown 打开',
-  'setups.view.open-as-setup': '以 Journalit 设置打开',
+  'setups.view.open-as-setup': '以 Journalit 策略打开',
 
   'setups.view.overview.mode.pairs': '组合',
-  'setups.view.pairs.summary-aria': '设置组合摘要',
+  'setups.view.pairs.summary-aria': '策略组合摘要',
   'setups.view.pairs.best': '最佳组合',
   'setups.view.pairs.worst': '最差组合',
   'setups.view.pairs.worst-short': '最差',
-  'setups.view.pairs.empty': '尚无交易数达到 5 笔以上的设置组合。',
+  'setups.view.pairs.empty': '尚无交易数达到 5 笔以上的策略组合。',
   'setups.view.pairs.empty-submessage':
-    '两个设置共享足够多的关联交易后，才会显示组合。',
+    '两个策略共享足够多的关联交易后，才会显示组合。',
   'setups.view.pairs.privacy': '隐私模式开启时将隐藏组合绩效。',
 
   'setups.view.pairs.metric-aria': '组合指标',
@@ -6426,30 +6375,30 @@ const zh: Lang = {
   'setups.view.pairs.metric.expectancy': '组合期望值',
 
   'setups.view.pairs.together': '共同',
-  'setups.view.pairs.table.setup-pair': '设置组合',
+  'setups.view.pairs.table.setup-pair': '策略组合',
 
   'setups.view.pairs.evidence': '证据',
   'setups.view.pairs.edge-comparison': '优势比较',
   'setups.view.pairs.edge-caption': '综合优势：{edge}',
-  'setups.view.overview.setup-filter.all': '设置：全部',
-  'setups.view.overview.setup-filter.selected': '设置：已选择 {count} 个',
-  'setups.view.overview.setup-filter.aria': '选择要显示的设置',
+  'setups.view.overview.setup-filter.all': '策略：全部',
+  'setups.view.overview.setup-filter.selected': '策略：已选择 {count} 个',
+  'setups.view.overview.setup-filter.aria': '选择要显示的策略',
   'setups.view.overview.setup-filter.select-all': '全选',
   'setups.view.overview.setup-filter.clear': '清除',
 
   'setups.view.overview.pnl-chart.dropdown-label': 'Cumulative P&L',
 
-  'setups.view.overview.pnl-chart.combined': '全部设置',
-  'setups.view.overview.pnl-chart.selected-combined': '已选设置',
+  'setups.view.overview.pnl-chart.combined': '全部策略',
+  'setups.view.overview.pnl-chart.selected-combined': '已选策略',
 
   'setups.view.overview.pnl-chart.hidden':
-    '启用隐私模式时将隐藏设置的盈亏曲线。',
+    '启用隐私模式时将隐藏策略的盈亏曲线。',
   'setups.view.overview.pnl-chart.trade': '交易',
   'setups.view.overview.pnl-chart.start': '开始',
   'setups.view.ranking.empty-submessage':
-    '记录带有设置的交易，即可开始绩效排名。',
+    '记录带有策略的交易，即可开始绩效排名。',
   'setups.view.empty.no-setups-submessage':
-    '设置会将剧本笔记、规则、交易和绩效集中在一处。',
+    '策略会将剧本笔记、规则、交易和绩效集中在一处。',
   'setups.view.detail.no-playbook-note': '关联剧本笔记以在此处预览。',
   'setups.view.detail.link-playbook-note': '关联笔记',
   'setups.view.detail.change-playbook-note': '更改笔记',
@@ -6460,7 +6409,7 @@ const zh: Lang = {
 
   'setups.view.detail.rules.add': '添加规则',
 
-  'setups.view.detail.rules.empty-title': '构建设置交易计划',
+  'setups.view.detail.rules.empty-title': '构建策略交易计划',
   'setups.view.detail.rules.use-template': '使用模板',
   'setups.view.detail.rules.applying-template': '正在应用模板...',
   'setups.view.detail.rules.add-custom': '自定义规则',
@@ -6472,7 +6421,7 @@ const zh: Lang = {
   'setups.view.detail.rules.template.avoid-when': '避免情形',
   'setups.view.detail.rules.template.common-mistakes': '常见错误',
   'setups.view.detail.rules.template.rule.best-conditions':
-    '市场背景支持此设置',
+    '市场背景支持此策略',
   'setups.view.detail.rules.template.rule.entry-criteria':
     '入场触发条件已明确定义',
   'setups.view.detail.rules.template.rule.invalidation': '入场前已明确失效条件',
@@ -6487,7 +6436,7 @@ const zh: Lang = {
   'setups.view.detail.rules.move-up': '上移规则',
   'setups.view.detail.rules.move-down': '下移规则',
   'setups.view.detail.rules.delete': '删除规则',
-  'setups.view.detail.rules.save-error': '保存设置规则失败。',
+  'setups.view.detail.rules.save-error': '保存策略规则失败。',
   'setups.view.detail.rules.validation-label':
     '请添加规则名称，或在保存前删除空白规则。',
   'setups.view.detail.rules.groups': '分组',
@@ -6506,10 +6455,10 @@ const zh: Lang = {
   'setups.view.detail.rule.category.psychology': '心理',
   'setups.view.detail.performance.drawdown': '回撤',
   'setups.view.detail.performance.empty-submessage':
-    '使用此设置的交易将在你开始记录后显示在这里。',
+    '使用此策略的交易将在你开始记录后显示在这里。',
   'setups.view.detail.analysis.performance': '绩效',
   'setups.view.detail.analysis.execution-gap': '执行差距',
-  'setups.view.detail.analysis.tabs-aria': '设置绩效标签页',
+  'setups.view.detail.analysis.tabs-aria': '策略绩效标签页',
   'setups.view.detail.brief.linked-notes-add': '编辑关联笔记',
 
   'setups.view.detail.execution-gap.live-pnl': '实盘盈亏',
@@ -6526,7 +6475,7 @@ const zh: Lang = {
   'setups.view.detail.execution-gap.backtest-benchmark': '回测基准',
   'setups.view.detail.execution-gap.hidden': '隐私模式下将隐藏执行差距。',
   'setups.view.detail.execution-gap.empty':
-    '记录此设置的错过交易或回测交易，以分析执行差距。',
+    '记录此策略的错过交易或回测交易，以分析执行差距。',
   'setups.view.detail.brief.linked-notes': '{count}',
   'setups.view.detail.brief.linked-notes-modal.subtitle': '{name}',
   'setups.view.detail.brief.screenshots': '{count}',
@@ -6540,7 +6489,7 @@ const zh: Lang = {
   'setups.view.detail.brief.more': '{count}',
   'setups.view.detail.attention.title': '需要关注',
   'setups.view.detail.attention.count': '{count} 项',
-  'setups.view.detail.attention.empty': '未发现设置问题。',
+  'setups.view.detail.attention.empty': '未发现策略问题。',
   'setups.view.detail.attention.show-more': '+{count} 项',
   'setups.view.detail.attention.show-less': '收起',
   'setups.view.detail.attention.no-playbook-title': '关联剧本笔记',
@@ -6556,7 +6505,7 @@ const zh: Lang = {
   'setups.view.detail.attention.no-screenshots-detail':
     '将截图附加到交易中，作为复盘示例。',
   'setups.view.detail.attention.stale-title': '复盘近期适用性',
-  'setups.view.detail.attention.stale-detail': '此设置已有 {count} 天未交易。',
+  'setups.view.detail.attention.stale-detail': '此策略已有 {count} 天未交易。',
   'setups.view.detail.attention.profit-factor-title': '绩效需要复盘',
   'setups.view.detail.attention.profit-factor-detail':
     '关联交易的利润因子低于 1.0。',
@@ -6570,23 +6519,23 @@ const zh: Lang = {
   'setups.view.date.days-ago': '{count}',
 
   'trade-import.restore.complete':
-    'Restored {written} imported trades; {failed} failed.',
-  'trade-import.restore.broker-label': 'Backend restore',
+    '已恢复 {written} 笔导入的交易；{failed} 笔失败。',
+  'trade-import.restore.broker-label': '从服务器恢复',
   'trade-sync.source.metatrader': 'MetaTrader',
   'trade-sync.providers.title': '交易同步',
 
   'trade-sync.source.trade-import': 'Trade Import',
   'trade-sync.source.tradovate': 'Tradovate',
   'trade-sync.source.metatrader.description':
-    'Sync trades from MetaTrader reports uploaded through your FTP connection.',
+    '通过 FTP 连接上传的 MetaTrader 报告同步交易。',
   'trade-sync.source.trade-import.description':
-    'Restore broker-file imports across vaults and recover missing local trade notes.',
+    '在多个仓库之间恢复经纪商文件导入，并找回缺失的本地交易笔记。',
   'trade-sync.source.tradovate.description':
-    'Synchronize Tradovate trades in the cloud and project them into this vault.',
-  'trade-sync.tradovate.status-failed': 'Unable to load Tradovate status.',
-  'trade-sync.tradovate.last-sync': 'Last sync',
-  'trade-sync.tradovate.last-projection': 'Last projection',
-  'trade-sync.tradovate.pending-projections': '{count} pending projection(s)',
+    '在云端同步 Tradovate 交易，并写入此仓库。',
+  'trade-sync.tradovate.status-failed': '无法加载 Tradovate 状态。',
+  'trade-sync.tradovate.last-sync': '上次同步',
+  'trade-sync.tradovate.last-projection': '上次写入',
+  'trade-sync.tradovate.pending-projections': '{count} 个待写入',
   'trade-sync.tradovate.pending-acks': '{count} 个本地 ACK 待处理',
   'trade-sync.source.rithmic': 'Rithmic',
   'trade-sync.source.rithmic.description':
@@ -6629,6 +6578,8 @@ const zh: Lang = {
     '已同步 {succeeded}/{total} 个 Rithmic 连接。',
   'trade-sync.rithmic.sync-all-partial':
     '已同步 {succeeded}/{total} 个 Rithmic 连接。请检查存在问题的连接。',
+  'trade-sync.rithmic.sync-all-provider-partial':
+    '已同步 {succeeded}/{total} 个 Rithmic 连接 · 同步部分完成',
   'trade-sync.rithmic.error.session-conflict':
     'Rithmic 只允许一个活动会话。请关闭使用该 Rithmic 登录的 R|Trader、NinjaTrader 或其他平台。',
   'trade-sync.rithmic.error.auto-retry': 'Journalit 会自动重试。',
@@ -6649,51 +6600,44 @@ const zh: Lang = {
   'trade-sync.broker.sync-all-blocked.not-ready': '没有连接可以同步。',
   'trade-sync.rithmic.connect-another': '连接另一个 Rithmic 账户',
   'trade-sync.rithmic.error.sync-failed-detail': 'Rithmic 同步失败：{message}',
-  'trade-sync.tradovate.never': 'Never',
+  'trade-sync.tradovate.never': '从未',
 
   'trade-sync.import.card.inventory-summary':
-    '{accounts} account(s) · {trades} trade(s)',
-  'trade-sync.import.action.check': 'Check',
+    '{accounts} 个账户 · {trades} 笔交易',
+  'trade-sync.import.action.check': '检查',
 
-  'trade-sync.import.action.open-import': 'Open Trade Import',
+  'trade-sync.import.action.open-import': '打开 Trade Import',
 
   'trade-sync.import.action.create-local-account': '创建账户',
 
-  'trade-sync.import.action.restore-account': 'Restore',
-  'trade-sync.import.action.restoring': 'Restoring…',
+  'trade-sync.import.action.restore-account': '恢复',
+  'trade-sync.import.action.restoring': '正在恢复…',
 
-  'trade-sync.import.pending-acks': '{count} pending ACK(s)',
+  'trade-sync.import.pending-acks': '{count} 个待确认',
 
-  'trade-sync.import.empty-accounts':
-    'No backed-up Trade Import accounts found yet.',
-  'trade-sync.import.account.restorable-count': '{count} restorable',
-  'trade-sync.import.account.synced-count': '{count} synced',
-  'trade-sync.import.account.missing-count': '{count} missing',
-  'trade-sync.import.account.issue-count': '{count} issue(s)',
+  'trade-sync.import.empty-accounts': '尚未找到已备份的 Trade Import 账户。',
+  'trade-sync.import.account.restorable-count': '可恢复 {count} 笔',
+  'trade-sync.import.account.synced-count': '已同步 {count} 笔',
+  'trade-sync.import.account.missing-count': '缺失 {count} 笔',
+  'trade-sync.import.account.issue-count': '{count} 个问题',
   'trade-sync.import.account.local-account': 'Journalit 账户',
-  'trade-sync.import.notice.restored': 'Restored {count} imported trade(s).',
+  'trade-sync.import.notice.restored': '已恢复 {count} 笔导入的交易。',
 
-  'trade-sync.import.notice.sync-cloud-failed':
-    'Unable to start cloud synchronization.',
-  'trade-sync.import.notice.load-failed':
-    'Could not load Trade Import sync status.',
-  'trade-sync.import.notice.mapping-failed':
-    'Could not save Trade Import account mapping.',
-  'trade-sync.import.notice.create-account-failed':
-    'Could not create local account.',
-  'trade-sync.import.notice.restore-failed':
-    'Could not restore Trade Import account.',
+  'trade-sync.import.notice.sync-cloud-failed': '无法启动云同步。',
+  'trade-sync.import.notice.load-failed': '无法加载 Trade Import 同步状态。',
+  'trade-sync.import.notice.mapping-failed': '无法保存 Trade Import 账户映射。',
+  'trade-sync.import.notice.create-account-failed': '无法创建本地账户。',
+  'trade-sync.import.notice.restore-failed': '无法恢复 Trade Import 账户。',
   'trade-sync.rate-limit.action.mapping': '账户映射',
   'trade-sync.import.notice.rate-limited':
-    '{action}：请求过于频繁。请在 {seconds} 秒后重试。',
-  'setups.view.loading': '正在加载设置…',
-  'settings.general.copy-trading-pnl-toggled': 'Copy trading PnL is {status}',
+    '{action}：请求过多。请在 {seconds} 秒后重试。',
+  'setups.view.loading': '正在加载策略…',
   'setups.view.trade.unknown-instrument': '未知品种',
   'command.open-session-mode': '打开实时会话',
-  'view.session-mode': '实时会话',
+  'view.session-mode': '会话模式',
   'widget.session-log.name': '会话日志',
   'widget.session-log.description': '记录带时间戳的执行笔记和交易事件。',
-  'session-log.title': '实时会话日志',
+  'session-log.title': '会话模式日志',
   'session-log.description': '记录当前交易会话中发生的事情。',
   'session-log.notice.invalid-timestamp': '请输入有效的会话日志时间戳。',
   'session-log.action.auto-time': '自动时间',
@@ -6712,7 +6656,7 @@ const zh: Lang = {
   'session-log.empty': '还没有会话日志条目。',
   'session-log.empty-filtered': '没有符合此筛选条件的条目。',
   'session-log.loading': '正在加载会话日志…',
-  'session-log.lessons.title': 'Lessons learned',
+  'session-log.lessons.title': '经验教训',
 
   'session-log.lessons.badge': 'LSN',
   'session-log.session-group.outside': '会话之外',
@@ -6721,11 +6665,11 @@ const zh: Lang = {
   'session-log.trade.exited': '出场',
   'session-log.trade.size': '仓位',
 
-  'session-log.status.unclassified': 'unclassified',
+  'session-log.status.unclassified': '未分类',
   'session-log.action.save': '保存',
   'session-log.action.cancel': '取消',
 
-  'session-log.action.classify': 'Classify',
+  'session-log.action.classify': '分类',
   'session-log.action.edit': '编辑',
   'session-log.action.delete': '删除',
   'session-log.action.open-trade': '打开交易',
@@ -6815,17 +6759,12 @@ const zh: Lang = {
   'session-mode.status.unconfigured':
     '配置会话窗口后即可启用准备、进行中、休息和结束阶段。今天 DRC 的时间线仍可使用。',
 
-  'session-mode.unconfigured.title': '设置你的交易时间',
-  'session-mode.unconfigured.description':
-    '添加你实际交易的时间，这样会话模式就能在准备、实时、休息和结束阶段之间自动切换。',
-  'session-mode.unconfigured.step.window.title': 'Add a session window',
-
-  'session-mode.unconfigured.step.prep.title': 'Review preparation timing',
-
-  'session-mode.unconfigured.step.gate.title': 'Use the Starter Trade Gate',
-
-  'session-mode.unconfigured.step.log.title': 'Log notes during live sessions',
-
+  'session-mode.unconfigured.title': '设置会话模式',
+  'session-mode.unconfigured.description': '添加你的会话时间即可开始。',
+  'session-mode.unconfigured.step.window.title': '添加会话窗口',
+  'session-mode.unconfigured.step.prep.title': '检查准备时间',
+  'session-mode.unconfigured.step.gate.title': '使用入门 Trade Gate',
+  'session-mode.unconfigured.step.log.title': '在实时会话中记录笔记',
   'session-mode.unconfigured.action': '配置会话模式',
   'session-mode.guide.why.title': '按计划交易，而不是凭心情',
   'session-mode.guide.why.description':
@@ -6854,9 +6793,6 @@ const zh: Lang = {
   'session-mode.guide.live.settings.title': '随时调整',
   'session-mode.guide.live.settings.description':
     '“编辑”会打开时段模式设置：时段时间、阶段布局、Trade Gate 流程和日志标签。',
-  'session-mode.guide.ended.review.title': '现在复盘这个时段',
-  'session-mode.guide.ended.review.description':
-    '打开今天的 DRC 进行复盘。把时段日志小组件加入 DRC 布局，每条带时间戳的记录都会显示在那里。',
   'settings.session-mode.guide.setting-name': '引导',
   'settings.session-mode.guide.setting-desc':
     '这些设置的简短导览，从时段时间到你的第一个 Trade Gate。',
@@ -6886,13 +6822,13 @@ const zh: Lang = {
   'settings.session-mode.guide.finish.description':
     '从侧栏或首页打开时段模式。把时段日志小组件加入 DRC 布局，即可在每次复盘中查看记录。',
 
-  'session-mode.layout.empty.title': 'Nothing enabled for this phase',
+  'session-mode.layout.empty.title': '此阶段未启用任何内容',
   'session-mode.layout.empty.description':
-    'Turn modules back on to build this Session Mode phase.',
+    '重新开启模块，以构建会话模式的此阶段。',
   'session-mode.duration.minutes': '{minutes}分钟',
   'session-mode.duration.hours': '{hours}小时',
   'session-mode.duration.hours-minutes': '{hours}小时 {minutes}分钟',
-  'settings.session-mode.title': '实时会话',
+  'settings.session-mode.title': '会话模式',
   'settings.session-mode.description':
     '配置交易时段、准备、阶段布局、Trade Gate 工作流和会话日志标签。',
   'settings.session-mode.preparation-lead-time': '准备提前时间（分钟）',
@@ -6903,43 +6839,43 @@ const zh: Lang = {
   'settings.session-mode.add-window-short': '添加',
   'settings.session-mode.no-windows':
     '尚未配置会话窗口。实时时间线仍可使用，但添加窗口后才会启用阶段化准备。',
-  'settings.session-mode.layout.title': 'Phase layout',
+  'settings.session-mode.layout.title': '阶段布局',
 
   'settings.session-mode.layout.phase-desc.preparation':
-    'Choose what appears during pre-session preparation before trading starts.',
+    '选择开盘前准备阶段显示的内容。',
   'settings.session-mode.layout.phase-desc.live':
-    'Choose what appears while a configured trading session is live.',
+    '选择已配置的交易会话进行中时显示的内容。',
 
   'settings.session-mode.layout.phase-desc.ended':
-    'Choose what appears after all configured trading sessions have ended.',
-  'settings.session-mode.layout.reset-phase': 'Reset',
+    '选择所有已配置交易会话结束后显示的内容。',
+  'settings.session-mode.layout.reset-phase': '重置',
 
-  'settings.session-mode.layout.module.preparation-resources': 'Resources',
+  'settings.session-mode.layout.module.preparation-resources': '资源',
   'settings.session-mode.layout.module.preparation-resources-desc':
-    'Shows linked preparation notes and playbooks.',
-  'settings.session-mode.layout.module.preparation-goals': 'Goals',
+    '显示已关联的准备笔记和交易计划。',
+  'settings.session-mode.layout.module.preparation-goals': '目标',
   'settings.session-mode.layout.module.preparation-goals-desc':
-    'Shows the DRC goals widget for pre-session focus.',
-  'settings.session-mode.layout.module.preparation-checklist': 'Checklist',
+    '显示 DRC 目标组件，帮助会话前集中注意力。',
+  'settings.session-mode.layout.module.preparation-checklist': '检查清单',
   'settings.session-mode.layout.module.preparation-checklist-desc':
-    'Shows the DRC checklist widget for pre-session preparation.',
+    '显示 DRC 检查清单组件，用于会话前准备。',
   'settings.session-mode.layout.module.trade-gate': 'Trade Gate',
   'settings.session-mode.layout.module.trade-gate-desc':
-    'Runs your configured IF/THEN gate during the live session.',
-  'settings.session-mode.layout.module.timeline': 'Session timeline',
+    '在实时会话中运行你配置的“如果/那么”关卡。',
+  'settings.session-mode.layout.module.timeline': '会话时间线',
   'settings.session-mode.layout.module.timeline-desc':
-    'Shows current-session notes and trade timeline entries.',
+    '显示当前会话的笔记和交易时间线条目。',
 
-  'settings.session-mode.layout.module.ended-actions': 'End-of-session actions',
+  'settings.session-mode.layout.module.ended-actions': '会话结束操作',
   'settings.session-mode.layout.module.ended-actions-desc':
-    'Shows import, manual trade, and DRC actions after sessions end.',
-  'settings.session-mode.layout.module.ended-stats': 'Session stats',
+    '会话结束后显示导入、手动交易和 DRC 操作。',
+  'settings.session-mode.layout.module.ended-stats': '会话统计',
   'settings.session-mode.layout.module.ended-stats-desc':
-    'Shows trade, note, and gate-check totals for the day.',
+    '显示当天的交易、笔记和关卡检查总数。',
   'settings.session-mode.linked-resources': '链接资源',
   'settings.session-mode.linked-resources-desc': '在准备阶段显示快速笔记链接。',
-  'settings.session-mode.linked-resources-count': '{count} linked',
-  'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.linked-resources-count': '已关联 {count} 个',
+  'settings.session-mode.linked-resources-hide': '隐藏已关联',
   'settings.session-mode.session-log': '会话日志',
   'settings.session-mode.session-log-desc':
     '选择要显示在会话笔记旁边的自动事件。',
@@ -6950,18 +6886,18 @@ const zh: Lang = {
   'settings.session-mode.session-log-tags-desc':
     '自定义会话模式输入栏和 DRC 会话日志中可用的标签。',
   'settings.session-mode.tag-label-placeholder': '标签名称',
-  'settings.session-mode.tag-short-label-placeholder': '短标签',
-  'settings.session-mode.tag-label-example': 'Trade',
+  'settings.session-mode.tag-short-label-placeholder': '标签',
+  'settings.session-mode.tag-label-example': '交易',
   'settings.session-mode.tag-short-label-example': 'TR',
   'settings.session-mode.tag-color': '标签颜色',
-  'settings.session-mode.tag-requires-resolution': '需要处理',
+  'settings.session-mode.tag-requires-resolution': '待分类',
   'settings.session-mode.tag-lesson': '课程标签',
   'settings.session-mode.tag-requires-resolution-tooltip':
-    '带有此标签的条目会被标记为待跟进，直到你在会话日志中将其处理完成。适用于会话后需要复盘或采取行动的备注。',
+    '带此标签的条目会被视为未分类笔记。在会话中不确定该用哪个标签时使用它，稍后再分类。',
   'settings.session-mode.tag-lesson-tooltip':
-    '将此标签标记为学习条目。带有课程标签的备注可作为课程显示，并在会话日志流程中突出为学习时刻。',
+    '将此标签标记为学习条目。带课程标签的笔记会保留在会话日志中，并可通过课程筛选和复盘摘要展示。',
   'settings.session-mode.add-session-log-tag': '添加会话日志标签',
-  'settings.session-mode.reset-session-log-tags': '重置会话日志标签',
+  'settings.session-mode.reset-session-log-tags': '重置',
   'settings.session-mode.tag-color.blue': '蓝色',
   'settings.session-mode.tag-color.indigo': '靛蓝',
   'settings.session-mode.tag-color.purple': '紫色',
@@ -6981,7 +6917,7 @@ const zh: Lang = {
 
   'trade-gate.workflow': '工作流',
 
-  'trade-gate.action.start-short': 'Start',
+  'trade-gate.action.start-short': '开始',
   'trade-gate.action.start-another': '再开始一次',
   'trade-gate.outcome.green-light': '绿灯',
   'trade-gate.outcome.green-light-description': '条件已满足。',
@@ -7041,26 +6977,23 @@ const zh: Lang = {
   'settings.session-mode.trade-gate.flow-map': '流程图',
   'settings.session-mode.trade-gate.flow-fit': '适合',
   'settings.session-mode.trade-gate.flow-click-hint':
-    '点击节点或路径标签进行编辑。',
-  'settings.session-mode.trade-gate.flow-truncated':
-    '此流程过大，无法完整显示。部分重复分支已隐藏。',
+    '点击卡片、路径标签或结果即可编辑。',
   'settings.session-mode.trade-gate.no-questions':
     '添加第一个问题以开始此流程。',
-  'home.quick-links.setups': '交易设置',
-  'setups.view.action.compare-selected': '比较已选设置',
-  'setups.view.action.create': '创建设置',
-  'setups.view.action.new': '新建设置',
+  'home.quick-links.setups': '策略',
+  'setups.view.action.create': '创建策略',
+  'setups.view.action.new': '新建策略',
 
   'setups.view.action.retry': '重试',
 
-  'setups.view.card.select-for-compare': '选择设置进行比较',
-  'setups.view.card.sparkline-aria': '设置迷你趋势图',
+  'setups.view.card.select-for-compare': '选择策略进行比较',
+  'setups.view.card.sparkline-aria': '策略迷你趋势图',
 
   'setups.view.compare.confidence': '置信度',
   'setups.view.compare.confidence.high': '高',
   'setups.view.compare.confidence.low': '低',
   'setups.view.compare.confidence.moderate': '中等',
-  'setups.view.compare.cumulative-empty': '所选设置没有累计交易数据。',
+  'setups.view.compare.cumulative-empty': '所选策略没有累计交易数据。',
   'setups.view.compare.cumulative-privacy': '隐私模式开启时将隐藏累计绩效。',
   'setups.view.compare.cumulative-title': '累计绩效',
   'setups.view.compare.edge-column': '优势',
@@ -7070,7 +7003,7 @@ const zh: Lang = {
   'setups.view.compare.edge-strength.clear': '明显优势',
   'setups.view.compare.edge-strength.slight': '轻微优势',
   'setups.view.compare.edge-strength.strong': '强劲优势',
-  'setups.view.compare.empty': '请选择两个设置进行比较。',
+  'setups.view.compare.empty': '请选择两个策略进行比较。',
   'setups.view.compare.expectancy-edge': '期望值优势',
   'setups.view.compare.metric': '指标',
   'setups.view.compare.metrics-title': '比较指标',
@@ -7090,7 +7023,7 @@ const zh: Lang = {
   'setups.view.compare.reason.similar.win-rate': '胜率相近',
   'setups.view.compare.sample': '样本',
 
-  'setups.view.compare.title': '比较设置',
+  'setups.view.compare.title': '比较策略',
   'setups.view.completeness.incomplete-playbook': '交易计划不完整',
   'setups.view.completeness.no-linked-notes': '没有关联笔记',
   'setups.view.completeness.no-rules': '没有规则',
@@ -7099,13 +7032,13 @@ const zh: Lang = {
   'setups.view.date.today': '今天',
   'setups.view.date.yesterday': '昨天',
 
-  'setups.view.detail.action.edit': '编辑设置',
+  'setups.view.detail.action.edit': '编辑策略',
   'setups.view.detail.action.view-trades': '在交易日志中查看',
   'setups.view.detail.back': '返回',
   'setups.view.detail.brief.direction.both': '双向',
   'setups.view.detail.brief.direction.long': '做多',
   'setups.view.detail.brief.direction.short': '做空',
-  'setups.view.detail.brief.health': '设置健康度',
+  'setups.view.detail.brief.health': '策略健康度',
   'setups.view.detail.brief.health.notes': '笔记',
   'setups.view.detail.brief.health.playbook': '交易计划',
   'setups.view.detail.brief.health.rules': '规则',
@@ -7133,9 +7066,9 @@ const zh: Lang = {
   'setups.view.detail.rule.required': '必需',
   'setups.view.detail.rules': '规则',
 
-  'setups.view.empty.no-setups': '尚无设置。创建第一个设置以开始跟踪交易计划。',
-  'setups.view.error.load-failed': '无法加载设置数据。',
-  'setups.view.error.title': '无法加载设置',
+  'setups.view.empty.no-setups': '尚无策略。创建第一个策略以开始跟踪交易计划。',
+  'setups.view.error.load-failed': '无法加载策略数据。',
+  'setups.view.error.title': '无法加载策略',
 
   'setups.view.metric.expectancy-r': '期望值 (R)',
   'setups.view.metric.expected-value': '期望值',
@@ -7147,7 +7080,7 @@ const zh: Lang = {
   'setups.view.metric.trade-count': '交易次数',
   'setups.view.metric.trades': '笔交易',
   'setups.view.metric.win-rate': '胜率',
-  'setups.view.ranking.empty': '尚无设置绩效数据。',
+  'setups.view.ranking.empty': '尚无策略绩效数据。',
   'setups.view.ranking.metric-aria': '绩效指标',
   'setups.view.ranking.privacy': '隐私模式开启时将隐藏绩效数值。',
 
@@ -7157,7 +7090,7 @@ const zh: Lang = {
 
   'setups.view.status.testing': '测试中',
 
-  'setups.view.summary.aria': '设置概览摘要',
+  'setups.view.summary.aria': '策略概览摘要',
 
   'setups.view.summary.best-performer': '最佳表现',
 
@@ -7165,9 +7098,9 @@ const zh: Lang = {
 
   'setups.view.tab.compare': '比较',
   'setups.view.tab.overview': '概览',
-  'setups.view.tabs.aria': '设置视图标签页',
-  'setups.view.title': '设置',
-  'validation.setup-resolution-failed': '无法解析设置。',
+  'setups.view.tabs.aria': '策略视图标签页',
+  'setups.view.title': '策略',
+  'validation.setup-resolution-failed': '无法准备所选策略。请检查后重试。',
   'filter.modal.image.annotation-status': '注释状态',
   'filter.modal.image.status.tagged': '有标签',
   'filter.modal.image.status.untagged': '无标签',
@@ -7193,7 +7126,7 @@ const zh: Lang = {
   'imageGallery.empty.action.show-all': '显示所有媒体',
   'imageGallery.error.load-failed': '无法加载图库。',
 
-  'imageGallery.open-source': '打开笔记',
+  'imageGallery.open-source': '打开来源',
   'imageGallery.image-alt': '{date} 的 {source} 媒体',
   'imageGallery.privacy-blurred': '为保护隐私已模糊',
 
@@ -7233,7 +7166,7 @@ const zh: Lang = {
   'imageGallery.annotation.editor-title': '标注媒体',
   'imageGallery.annotation.editor-title-with-file': '标注 {fileName}',
   'imageGallery.annotation.tags': '标签',
-  'imageGallery.annotation.tags-placeholder': '突破、A+ 设置、错误',
+  'imageGallery.annotation.tags-placeholder': '突破、A+ 策略、错误',
   'imageGallery.annotation.notes': '备注',
   'imageGallery.annotation.notes-placeholder': '未来的你应该从这张图学到什么？',
   'imageGallery.annotation.error.save-failed': '无法保存媒体标注。',
@@ -7249,28 +7182,16 @@ const zh: Lang = {
   'settings.gallery-folders.save-failed': '无法保存图库文件夹。请重试。',
   'tradelog.guide.gallery-grouping.title': '按日志条目分组媒体',
   'tradelog.guide.gallery-grouping.description':
-    '分组模式会将每笔交易或每篇复盘保留在一张卡片中。单独模式会将每个附加媒体项目显示为一张独立卡片。',
+    '分组会将每笔交易、每篇复盘或每个已配置文件夹放在一起。单独会将每个媒体项显示为独立卡片。',
   'tradelog.guide.gallery-source-sort.title': '选择媒体来源和顺序',
   'tradelog.guide.gallery-source-sort.description':
-    '使用来源聚焦所有媒体、交易附件或复盘笔记媒体。使用排序优先查看最新、最旧、最佳或最差的交易。',
-  'tradelog.guide.gallery-size.title': '调整图库预览大小',
-  'tradelog.guide.gallery-size.description':
-    '使用这些尺寸按钮在紧凑浏览和更大的图表预览之间切换，同时不裁剪重要图表细节。',
+    '使用“来源”查看全部媒体、交易附件、复盘笔记媒体或已配置的仓库文件夹。使用“排序”按从新到旧或按交易表现查看。',
   'tradelog.guide.gallery-filters.title': '用同一个入口筛选图库',
   'tradelog.guide.gallery-filters.description':
     '筛选菜单在这里的用法相同。在图库模式下，它还包含一个“图库”分区，提供注释状态和媒体标签等媒体筛选。',
   'tradelog.guide.gallery-grid.title': '打开媒体进行细看',
   'tradelog.guide.gallery-grid.description':
     '每张卡片都会保持内容无遮挡，同时显示简洁的交易和复盘上下文。点击任意卡片，或按下一步以全屏打开第一个可见项目。',
-  'tradelog.guide.gallery-fullscreen-actions.title': '在全屏中标注媒体',
-  'tradelog.guide.gallery-fullscreen-actions.description':
-    '内容足够大时，使用标签添加媒体级标签和备注。打开笔记会带你回到来源交易或复盘笔记。',
-  'tradelog.guide.gallery-open-annotation.title': '打开注释面板',
-  'tradelog.guide.gallery-open-annotation.description':
-    '点击标签来标注这个特定媒体。媒体标签和备注描述的是附件，而不是整笔交易。',
-  'tradelog.guide.gallery-annotation-panel.title': '添加媒体标签和笔记',
-  'tradelog.guide.gallery-annotation-panel.description':
-    '使用媒体标签记录图表特定想法，例如流动性扫荡或假突破；使用备注记录你想记住的市场结构背景。',
   'tradelog.guide.gallery-finish.title': '你已经了解交易日志的两种模式',
   'tradelog.guide.gallery-finish.description':
     '需要表格和批量工具时使用交易。想在整个日志中复盘图片、GIF、视频、YouTube 链接和图表标注时使用图库。',
@@ -7282,13 +7203,13 @@ const zh: Lang = {
     '每个值都有一个 ⊘ 按钮。排除某个值后，所有带有该值的交易都会被去掉，无论它还匹配什么。',
   'filter.menu.whats-new.match.title': '选择多个值如何匹配',
   'filter.menu.whats-new.match.description':
-    '选中多个值时，决定交易需要满足“任意一项”、“全部”、“仅这些”还是“完全一致”。标签、交易设置、错误和自定义字段都有这个匹配选项。',
+    '选中多个值时，决定交易需要满足“任意一项”、“全部”、“仅这些”还是“完全一致”。标签、策略、错误和自定义字段都有这个匹配选项。',
   'filter.menu.whats-new.phases.title': '按挑战阶段筛选',
   'filter.menu.whats-new.phases.description':
     '拥有多个阶段的自营账户会打开其阶段列表。可以只选某些阶段，而不是整个账户。',
   'filter.menu.whats-new.done.title': '这就是筛选的新功能',
   'filter.menu.whats-new.done.description':
-    '同一个菜单也用于交易日志、仪表板、首页、交易设置和复盘中。点击后立即生效。',
+    '同一个菜单也用于交易日志、仪表板、首页、策略和复盘中。点击后立即生效。',
   'tradelog.guide.image-gallery-empty.intro.title': '还没有媒体',
   'tradelog.guide.image-gallery-empty.intro.description':
     '把图片、GIF、视频或 YouTube 链接添加到交易或复盘笔记后，它们会自动出现在这里。有媒体后，Journalit 会显示完整图库导览，包括全屏复盘、标签和备注。',
@@ -7314,12 +7235,9 @@ const zh: Lang = {
     '尚未添加规则。使用“添加规则”来定义此阶段。',
   'account.prop-challenge.rules': '规则',
   'account.prop-challenge.costs.empty': '尚未添加费用。',
-  'account.prop-challenge.description':
-    '跟踪此账户完成多阶段交易公司考核挑战。',
-  'account.prop-challenge.enable': '启用挑战跟踪',
   'account.prop-challenge.challenge-name': '挑战名称',
   'account.prop-challenge.challenge-name-placeholder': '例如：25K 评估',
-  'account.prop-challenge.firm-name': '公司名称（可选）',
+  'account.prop-challenge.firm-name': '公司名称',
   'account.prop-challenge.firm-name-placeholder': '例如：Apex Trader Funding',
   'account.prop-challenge.profile.title': '应用机构规则',
   'account.prop-challenge.profile.firm': '公司',
@@ -7338,18 +7256,11 @@ const zh: Lang = {
   'account.prop-challenge.profile.confirm-title': '替换挑战设置？',
   'account.prop-challenge.profile.confirm-message':
     '应用这些机构规则将替换当前设置的阶段和规则。',
-  'account.prop-challenge.current-phase': '当前阶段',
   'account.prop-challenge.phase-rules': '{phase}规则',
   'account.prop-challenge.next-phase': '下一阶段：{phase}',
   'account.prop-challenge.view-phase': '查看阶段',
   'account.prop-challenge.unnamed-phase': '未命名阶段',
   'account.prop-challenge.phase-name': '阶段名称',
-  'account.prop-challenge.phase-type': '阶段类型',
-  'account.prop-challenge.phase-type.evaluation': '考核',
-  'account.prop-challenge.phase-type.verification': '验证',
-  'account.prop-challenge.phase-type.sim_funded': '模拟资助',
-  'account.prop-challenge.phase-type.live_funded': '实盘资助',
-  'account.prop-challenge.phase-type.custom': '自定义',
   'account.prop-challenge.starting-balance': '起始余额',
   'account.prop-challenge.broker-account-id': '经纪账户',
   'account.prop-challenge.broker-accounts.assigned': '已分配给 {phase}',
@@ -7373,10 +7284,10 @@ const zh: Lang = {
   'account.prop-challenge.rule.credit-withdrawals': '将提款计入目标',
   'account.prop-challenge.rule.drawdown-mode': '回撤模式',
   'account.prop-challenge.rule.lock-at-balance': '锁定余额',
-  'account.prop-challenge.rule.daily-loss-model': 'Daily loss amount',
-  'account.prop-challenge.rule.daily-loss-model.fixed': 'Fixed amount',
+  'account.prop-challenge.rule.daily-loss-model': '每日亏损额',
+  'account.prop-challenge.rule.daily-loss-model.fixed': '固定金额',
   'account.prop-challenge.rule.daily-loss-model.threshold':
-    'Increases at account profit threshold',
+    '达到账户利润阈值后提高',
   'account.prop-challenge.rule.daily-loss-model.peak-eod-profit':
     '按最高日终利润调整',
   'account.prop-challenge.rule.daily-loss-peak-eod-help':
@@ -7395,10 +7306,9 @@ const zh: Lang = {
   'account.prop-challenge.rule.loss-tiers': '利润层级与亏损限额',
   'account.prop-challenge.rule.daily-loss-threshold-help':
     '本阶段累计已实现交易利润首次达到阶段初始余额的设定百分比时，调整后的货币限额永久生效。',
-  'account.prop-challenge.rule.profit-threshold-percent':
-    'Account profit threshold (%)',
+  'account.prop-challenge.rule.profit-threshold-percent': '账户利润阈值 (%)',
   'account.prop-challenge.rule.amount-after-threshold':
-    'Daily loss amount after threshold',
+    '达到阈值后的每日亏损额',
   'account.prop-challenge.rule.breach-action': '触及限额时的处理',
   'account.prop-challenge.rule.breach-action.hard': '判定账户失败',
   'account.prop-challenge.rule.breach-action.soft': '暂停至下一交易时段',
@@ -7406,31 +7316,10 @@ const zh: Lang = {
   'account.prop-challenge.rule.minimum-daily-profit': '每日最低利润',
   'account.prop-challenge.rule.minimum-daily-profit-summary': '每日 {value}+',
   'account.prop-challenge.rule.best-day-percent': '最佳日最高占比（%）',
-  'account.prop-challenge.rule.position-limit-model': 'Position limit model',
-  'account.prop-challenge.rule.position-limit-model.fixed': 'Fixed limit',
-  'account.prop-challenge.rule.position-limit-model.eod-profit-tiers':
-    'EOD profit tiers',
-  'account.prop-challenge.rule.position-profit-basis': '仓位扩展利润基准',
-  'account.prop-challenge.rule.position-profit-basis.cumulative':
-    '累计交易利润（出金不会降低）',
-  'account.prop-challenge.rule.position-profit-basis.current-account':
+  'account.prop-challenge.rule.strict-help':
+    '最佳交易日的净利润必须严格低于上限。恰好等于上限不算达标。',
+  'account.prop-challenge.rule.profit-basis.current-account':
     '当前账户利润（出金会降低）',
-  'account.prop-challenge.rule.position-limit-model.eod-profit':
-    'Scales with EOD profit',
-  'account.prop-challenge.rule.position-tiers': 'Profit tiers',
-  'account.prop-challenge.rule.position-tiers-help':
-    'Enter each completed EOD profit threshold and its new contract limit as profit:contracts, separated by commas. A tier applies from the next trading day.',
-  'account.prop-challenge.rule.position-scaling-help':
-    'Each completed profit step adds one contract starting on the next trading day, up to the maximum.',
-  'account.prop-challenge.rule.initial-contracts': 'Initial contracts',
-  'account.prop-challenge.rule.profit-per-contract':
-    'EOD profit per additional contract',
-  'account.prop-challenge.rule.maximum-contracts':
-    'Maximum contracts after scaling',
-  'account.prop-challenge.rule.micros-per-contract': '10 手微型合约计为 1 手',
-  'account.prop-challenge.rule.micros-per-contract-help':
-    '如果你的公司在此限额中将微型期货（MES、MNQ、MGC 等）计为标准合约的十分之一，请开启。如果每手微型合约都按完整合约计算，请保持关闭。',
-  'account.prop-challenge.rule.max-contracts': '最大合约数',
   'account.prop-challenge.rule.profit_target': '盈利目标',
   'account.prop-challenge.rule.drawdown': '回撤',
   'account.prop-challenge.rule.daily_loss_limit': '每日亏损限额',
@@ -7510,6 +7399,8 @@ const zh: Lang = {
   'account.prop-challenge.ledger.help.open': '关于{rule}',
   'account.prop-challenge.rule.help.target-amount':
     '固定目标使用账户货币；百分比目标以本阶段初始余额为基数。进度按每日利润计入上限调整后的阶段余额增幅计算，不含未实现盈亏。',
+  'account.prop-challenge.rule.target-needs-balance':
+    '百分比目标需要大于 0 的起始余额。',
   'account.prop-challenge.rule.help.credit-withdrawals':
     '将已记录的提款总额加回固定目标进度，不改变余额或提款资格。',
   'account.prop-challenge.rule.help.drawdown-amount':
@@ -7588,10 +7479,6 @@ const zh: Lang = {
     '最佳日 {bestDay} 占总利润的 {share}，在 {maximum} 限额内。',
   'account.prop-challenge.ledger.help.consistency.example-none':
     '尚无利润，因此没有可比较的最佳日。',
-  'account.prop-challenge.ledger.help.max_position_size':
-    '单个持仓允许的最大合约数。Journalit 会检查每笔交易的规模。部分机构会随着盈利增加而提高上限。',
-  'account.prop-challenge.ledger.help.max_position_size.example':
-    '当前每笔交易最多 {maximum} 张合约；目前最大一笔为 {current}。',
   'account.prop-challenge.ledger.help.payout.cycle_days':
     '当前出金周期内的交易日。批准出金后重新计数。',
   'account.prop-challenge.ledger.help.payout.cycle_days.example':
@@ -7662,12 +7549,9 @@ const zh: Lang = {
   'account.prop-challenge.ledger.state.cap-applied': '已应用上限',
   'account.prop-challenge.ledger.state.within-cap': '未超过上限',
   'account.prop-challenge.ledger.state.breached': '已违规',
-  'account-dashboard.prop.metrics.total': '挑战',
   'account-dashboard.prop.metrics.pass-rate': '通过率',
   'account-dashboard.prop.metrics.costs': '挑战成本',
-  'account-dashboard.prop.metrics.payouts': '出金',
   'account-dashboard.prop.metrics.net': '净额',
-  'account-dashboard.prop.tabs.overview': '概览',
   'account-dashboard.mode.selector': '账户仪表盘模式',
   'account-dashboard.mode.account-overview': '概览',
   'account-dashboard.mode.challenges': '挑战',
@@ -7757,6 +7641,8 @@ const zh: Lang = {
   'filter.menu.status': '状态',
   'filter.menu.direction': '方向',
   'filter.menu.review-status': '复盘状态',
+  'filter.menu.rating': '评分',
+  'filter.menu.rating.unrated': '未评分',
   'filter.menu.status.cancelled': '已取消',
   'filter.menu.included-count': '已包含 {count} 项',
   'filter.menu.excluded-count': '已排除 {count} 项',
@@ -7790,7 +7676,7 @@ const zh: Lang = {
   'home.guide.whats-new.done.title': '保持工作区上下文',
   'home.guide.whats-new.done.description':
     '使用概览查看个人组件，使用仪表盘进行深入分析。每种模式都会保留自己的筛选和布局。',
-  'account.prop-challenge.summary.status.payout_ready': 'Payout ready',
+  'account.prop-challenge.summary.status.payout_ready': '可出金',
   'account.prop-challenge.ribbon.passed': '{phase}已通过',
   'account.prop-challenge.ribbon.failed': '{phase}未通过',
   'account.prop-challenge.ribbon.action.advance': '进入{phase}',
@@ -7801,119 +7687,95 @@ const zh: Lang = {
     '此挑战已在其他位置更新。请检查后重试。',
   'account.prop-challenge.ribbon.action.record-payout': '记录出金',
   'account.prop-challenge.ribbon.action.record-payout-short': '出金',
-  'account.prop-challenge.payout.title': 'Payout readiness',
-  'account.prop-challenge.payout.eligible': 'Payout ready',
-  'account.prop-challenge.payout.available': 'Available now',
-  'account.prop-challenge.payout.cycle-profit': 'Cycle profit',
-  'account.prop-challenge.payout.history': 'Payouts',
+  'account.prop-challenge.payout.title': '出金准备情况',
+  'account.prop-challenge.payout.available': '当前可用',
   'account.prop-challenge.payout.lifetime-qualifying-days': '累计合格交易日',
-  'account.prop-challenge.payout.requirement.days': 'Trading days',
-  'account.prop-challenge.payout.requirement.qualifying-days':
-    'Qualifying days',
-  'account.prop-challenge.payout.requirement.minimum-balance':
-    'Minimum account balance',
+  'account.prop-challenge.payout.requirement.days': '交易日',
+  'account.prop-challenge.payout.requirement.qualifying-days': '合格交易日',
+  'account.prop-challenge.payout.requirement.minimum-balance': '最低账户余额',
   'account.prop-challenge.payout.requirement.positive-cycle-profit':
-    'Positive cycle profit',
-  'account.prop-challenge.payout.requirement.cycle-profit': 'Cycle profit',
-  'account.prop-challenge.payout.requirement.consistency': 'Consistency',
-  'account.prop-challenge.payout.requirement.minimum': 'Minimum available',
-  'account.prop-challenge.payout.requirement.payouts': 'Payout allowance',
-  'account.prop-challenge.payout.requirement.request-window': 'Request window',
+    '周期利润为正',
+  'account.prop-challenge.payout.requirement.cycle-profit': '周期利润',
+  'account.prop-challenge.payout.requirement.consistency': '一致性',
+  'account.prop-challenge.payout.requirement.minimum': '最低可用额',
+  'account.prop-challenge.payout.requirement.payouts': '出金次数额度',
+  'account.prop-challenge.payout.requirement.request-window': '申请时间窗口',
   'account.prop-challenge.payout.timezone-invalid': '不是已知时区。',
   'account.prop-challenge.payout.preview-amount': '预览出金',
   'account.prop-challenge.payout.you-receive': '交易者份额',
   'account.prop-challenge.payout.balance-after': '出金后余额',
   'account.prop-challenge.payout.drawdown-floor': '回撤下限',
-  'account.prop-challenge.payout.buffer-after': 'Room before breach',
+  'account.prop-challenge.payout.buffer-after': '距离违规的余量',
   'account.prop-challenge.payout.request-not-allowed': '此金额不符合条件',
   'account.prop-challenge.payout.immediate-breach':
-    'This payout would leave the account at or below its drawdown floor.',
+    '此次出金会使账户处于或低于回撤底线。',
   'account.prop-challenge.payout.account-concludes':
-    'This payout completes the configured simulated-funded payout cycle.',
+    '此次出金完成已配置的模拟资金账户出金周期。',
   'account.prop-challenge.payout.next-stage-after-payout':
-    'This payout advances the account to its next configured stage.',
+    '此次出金会使账户进入下一个已配置的阶段。',
   'account.prop-challenge.payout.live-review-after-payout':
-    'This payout makes the account eligible for live-account review.',
-  'account.prop-challenge.payout.cycle-resets':
-    'Payout progress resets after an approved payout.',
-  'account.prop-challenge.payout.cycle-continues':
-    'Payout progress continues after an approved payout.',
-  'account.prop-challenge.payout.drawdown.unchanged':
-    'The current drawdown floor remains in place.',
-  'account.prop-challenge.payout.drawdown.lock_at_balance':
-    'The drawdown floor locks after payout.',
-  'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
-    'The account and drawdown limits reset after payout.',
-  'account.prop-challenge.stage': 'Stage type',
-  'account.prop-challenge.stage.evaluation': 'Evaluation',
-  'account.prop-challenge.stage.sim-funded': 'Sim funded',
-  'account.prop-challenge.stage.live-funded': 'Live funded',
-  'account.prop-challenge.payout-rules.title': 'Payout rules',
-  'account.prop-challenge.payout-rules.add': 'Add payout rules',
-  'account.prop-challenge.payout-rules.remove': 'Remove payout rules',
-  'account.prop-challenge.payout-rules.cycle': 'Eligibility cycle',
-  'account.prop-challenge.payout-rules.request-window': 'Request timing',
-  'account.prop-challenge.payout-rules.request-window.anytime': 'Any day',
-  'account.prop-challenge.payout-rules.request-window.weekdays':
-    'Specific weekdays',
-  'account.prop-challenge.payout-rules.request-window.time-zone': 'Time zone',
+    '此次出金使账户符合实盘账户审核资格。',
+  'account.prop-challenge.stage': '阶段类型',
+  'account.prop-challenge.stage.evaluation': '考核',
+  'account.prop-challenge.stage.sim-funded': '模拟资金',
+  'account.prop-challenge.stage.live-funded': '实盘资金',
+  'account.prop-challenge.payout-rules.title': '出金规则',
+  'account.prop-challenge.payout-rules.cycle': '资格周期',
+  'account.prop-challenge.payout-rules.request-window': '申请时间',
+  'account.prop-challenge.payout-rules.request-window.anytime': '任意一天',
+  'account.prop-challenge.payout-rules.request-window.weekdays': '指定工作日',
+  'account.prop-challenge.payout-rules.request-window.time-zone': '时区',
   'account.prop-challenge.payout-rules.request-window.allowed-days':
-    'Allowed request days',
-  'account.prop-challenge.payout-rules.cycle.none': 'No waiting cycle',
-  'account.prop-challenge.payout-rules.cycle.trading-days': 'Trading days',
-  'account.prop-challenge.payout-rules.cycle.qualifying-days':
-    'Qualifying days',
-  'account.prop-challenge.payout-rules.cycle.calendar-days': 'Calendar days',
-  'account.prop-challenge.payout-rules.days': 'Required days',
-  'account.prop-challenge.payout-rules.minimum-daily-profit':
-    'Minimum daily profit',
-  'account.prop-challenge.payout-rules.anchor': 'Cycle starts from',
-  'account.prop-challenge.payout-rules.anchor.phase-start': 'Stage start',
-  'account.prop-challenge.payout-rules.anchor.first-trade': 'First trade',
-  'account.prop-challenge.payout-rules.minimum-balance':
-    'Minimum account balance',
-  'account.prop-challenge.payout-rules.minimum-cycle-profit':
-    'Minimum cycle profit',
+    '允许申请的日期',
+  'account.prop-challenge.payout-rules.cycle.none': '无等待周期',
+  'account.prop-challenge.payout-rules.cycle.trading-days': '交易日',
+  'account.prop-challenge.payout-rules.cycle.qualifying-days': '合格交易日',
+  'account.prop-challenge.payout-rules.cycle.calendar-days': '自然日',
+  'account.prop-challenge.payout-rules.days': '所需天数',
+  'account.prop-challenge.payout-rules.minimum-daily-profit': '最低每日利润',
+  'account.prop-challenge.payout-rules.anchor': '周期起点',
+  'account.prop-challenge.payout-rules.anchor.phase-start': '阶段开始',
+  'account.prop-challenge.payout-rules.anchor.first-trade': '第一笔交易',
+  'account.prop-challenge.payout-rules.minimum-balance': '最低账户余额',
+  'account.prop-challenge.payout-rules.minimum-cycle-profit': '最低周期利润',
   'account.prop-challenge.payout-rules.minimum-cycle-profit-schedule':
     '按出金次数的最低周期利润',
   'account.prop-challenge.payout-rules.positive-cycle-after-first':
-    'Require positive cycle profit after first payout',
+    '首次出金后要求周期利润为正',
   'account.prop-challenge.payout-rules.consistency-percent':
-    'Maximum best-day share (%)',
+    '最佳单日最大占比 (%)',
   'account.prop-challenge.payout-rules.consistency-percent-schedule':
     '按出金次数的最佳单日最高占比 (%)',
-  'account.prop-challenge.payout-rules.availability': 'Available profit',
+  'account.prop-challenge.payout-rules.availability': '可用利润',
   'account.prop-challenge.payout-rules.availability.starting-balance':
-    'Above starting balance',
+    '高于初始余额',
   'account.prop-challenge.payout-rules.availability.balance-floor':
-    'Above balance floor',
-  'account.prop-challenge.payout-rules.balance-floor': 'Balance floor',
-  'account.prop-challenge.payout-rules.request-percent':
-    'Withdrawable share (%)',
+    '高于余额底线',
+  'account.prop-challenge.payout-rules.balance-floor': '余额底线',
+  'account.prop-challenge.payout-rules.request-percent': '可提取比例 (%)',
   'account.prop-challenge.payout-rules.new-profit-percent':
-    'New profit required from each request (%)',
+    '每次申请所需的新增利润 (%)',
   'account.prop-challenge.payout-rules.new-profit-percent-help':
-    'Caps the request so the configured percentage is backed by profit earned during the current payout cycle. For example, 50% allows a request up to twice current-cycle profit.',
-  'account.prop-challenge.payout-rules.minimum-request': 'Minimum request',
-  'account.prop-challenge.payout-rules.maximum': 'Maximum request',
-  'account.prop-challenge.payout-rules.maximum.none': 'No maximum',
-  'account.prop-challenge.payout-rules.maximum.fixed': 'Fixed maximum',
+    '限制申请金额，使所设百分比由当前出金周期内赚取的利润覆盖。例如，50% 允许申请最高为当前周期利润的两倍。',
+  'account.prop-challenge.payout-rules.minimum-request': '最低申请额',
+  'account.prop-challenge.payout-rules.maximum': '最高申请额',
+  'account.prop-challenge.payout-rules.maximum.none': '无上限',
+  'account.prop-challenge.payout-rules.maximum.fixed': '固定上限',
   'account.prop-challenge.payout-rules.maximum.first-fixed-then-none':
     '仅首次提现上限',
-  'account.prop-challenge.payout-rules.maximum.schedule':
-    'Maximum by payout number',
+  'account.prop-challenge.payout-rules.maximum.schedule': '按出金次数设定上限',
   'account.prop-challenge.payout-rules.maximum.cycle-profit-percent':
     '周期利润百分比',
-  'account.prop-challenge.payout-rules.maximum-amount': 'Maximum amount',
+  'account.prop-challenge.payout-rules.maximum-amount': '最高金额',
   'account.prop-challenge.payout-rules.maximum-first-amount': '首次提现上限',
   'account.prop-challenge.payout-rules.maximum-cycle-profit-percent':
     '最大周期利润 (%)',
   'account.prop-challenge.payout-rules.schedule-repeat-last':
-    'Keep using the final amount for later payouts',
+    '之后的出金继续使用最后一个金额',
   'account.prop-challenge.payout-rules.schedule-repeat-value':
     '后续出金继续使用最终值',
-  'account.prop-challenge.payout-rules.schedule': 'Amounts by payout number',
-  'account.prop-challenge.payout-rules.profit-split': 'Trader profit share (%)',
+  'account.prop-challenge.payout-rules.schedule': '按出金次数设定金额',
+  'account.prop-challenge.payout-rules.profit-split': '交易者分润比例 (%)',
   'account.prop-challenge.payout-rules.lifetime-unlock':
     '累计合格交易日达标后更改限制',
   'account.prop-challenge.payout-rules.lifetime-unlock-help':
@@ -7944,47 +7806,45 @@ const zh: Lang = {
     '累计出金阈值',
   'account.prop-challenge.payout-rules.profit-split.thereafter':
     '超过阈值后的分成 (%)',
-  'account.prop-challenge.payout-rules.maximum-payouts': 'Maximum payouts',
+  'account.prop-challenge.payout-rules.maximum-payouts': '最多出金次数',
   'account.prop-challenge.payout-rules.maximum-payout-outcome':
-    'After final payout',
+    '最后一次出金后',
   'account.prop-challenge.payout-rules.maximum-payout-outcome.continue':
-    'Continue account',
+    '继续使用账户',
   'account.prop-challenge.payout-rules.maximum-payout-outcome.conclude':
-    'Conclude account',
+    '结束账户',
   'account.prop-challenge.payout-rules.maximum-payout-outcome.promote':
-    'Advance to next stage',
+    '进入下一阶段',
   'account.prop-challenge.payout-rules.maximum-payout-outcome.live-review':
-    'Eligible for live review',
-  'account.prop-challenge.payout-rules.aftermath': 'After an approved payout',
+    '符合实盘审核资格',
+  'account.prop-challenge.payout-rules.aftermath': '出金获批后',
   'account.prop-challenge.payout-rules.aftermath.unchanged':
-    'Deduct payout; keep drawdown floor',
+    '扣除出金；保持回撤底线',
   'account.prop-challenge.payout-rules.aftermath.lock':
-    'Deduct payout; lock drawdown floor',
-  'account.prop-challenge.payout-rules.aftermath.reset':
-    'Reset account and drawdown',
-  'account.prop-challenge.payout-rules.drawdown-floor':
-    'Drawdown floor after payout',
+    '扣除出金；锁定回撤底线',
+  'account.prop-challenge.payout-rules.aftermath.reset': '重置账户和回撤',
+  'account.prop-challenge.payout-rules.drawdown-floor': '出金后的回撤底线',
   'account.prop-challenge.payout-rules.first-payout-exempt':
-    'First payout ignores minimum cycle profit',
-  'account.prop-challenge.payout-rules.reset-cycle':
-    'Reset eligibility cycle after payout',
-  'account.prop-challenge.payout-rules.group.eligibility': 'Eligibility',
-  'account.prop-challenge.payout-rules.group.availability': 'Available payout',
-  'account.prop-challenge.payout-rules.group.terms': 'Payout terms',
-  'account.prop-challenge.payout-rules.group.aftermath': 'After payout',
-  'account.prop-challenge.payout.requirement.elapsed-hours': 'Elapsed time',
+    '首次出金不受最低周期利润限制',
+  'account.prop-challenge.payout-rules.reset-cycle': '出金后重置资格周期',
+  'account.prop-challenge.payout-rules.group.eligibility': '出金资格',
+  'account.prop-challenge.payout-rules.group.availability': '可出金金额',
+  'account.prop-challenge.payout-rules.group.terms': '出金条款',
+  'account.prop-challenge.payout-rules.group.aftermath': '出金后',
+  'account.prop-challenge.payout.requirement.elapsed-hours': '已过时间',
   'account.prop-challenge.payout-rules.profit-split.account-profit-threshold':
-    'Changes by account profit',
+    '随账户利润变化',
   'account.prop-challenge.payout-rules.profit-split.account-profit-help':
-    'Lifetime account profit equals current balance minus starting balance plus prior withdrawals. The below or at/above percentage applies to the entire request.',
+    '账户累计利润 = 当前余额 − 初始余额 + 此前出金。低于或达到/高于阈值时的比例适用于整笔申请。',
+  'account.prop-challenge.payout-rules.profit-split.marginal-help':
+    '请求中低于此账户利润阈值的部分使用较低分成，高于阈值的部分使用较高分成。',
   'account.prop-challenge.payout-rules.profit-split.below':
-    'Trader share below threshold (%)',
+    '低于阈值时的交易者分成 (%)',
   'account.prop-challenge.payout-rules.profit-split.threshold-profit':
-    'Account profit threshold',
+    '账户利润阈值',
   'account.prop-challenge.payout-rules.profit-split.at-or-above':
-    'Trader share at or above threshold (%)',
-  'account.prop-challenge.payout-rules.minimum-elapsed-hours':
-    'Minimum elapsed hours',
+    '达到或高于阈值时的交易者分成 (%)',
+  'account.prop-challenge.payout-rules.minimum-elapsed-hours': '最短间隔小时数',
 
   
   'account.merge.challenge.move-earlier': '将 {account} 前移',
@@ -8013,6 +7873,8 @@ const zh: Lang = {
   'account.merge.warning.identity-shared': '标识被多个账户占用',
   'account.merge.warning.copy-trading-dropped': '已丢弃跟单周期',
   'account.merge.error.too-few-sources': '请至少选择两个账户。',
+  'account.merge.error.target-needs-balance':
+    '此账户的起始余额为 0，无法衡量百分比目标。请改用金额目标，或取消并先设置账户的初始余额。',
   'account.merge.error.duplicate-source': '某个账户重复出现。',
   'account.merge.error.target-exists': '该名称属于另一个账户。',
   'account.merge.error.currency-mismatch': '账户使用了不同的货币。',
@@ -8135,43 +7997,7 @@ const zh: Lang = {
   'onboarding.legacy-challenge.entry.desc': '将现有账户合并或转换为挑战。',
   'onboarding.legacy-challenge.entry.action': '设置',
 
-  'view.home': '主页',
-  'common.lose': '亏',
-
   'dashboard.conversion.requires-conversion': '多货币盈亏图表需要汇率转换。',
-
-  'auth.error.invalid-email': '请输入有效的邮箱地址',
-  'auth.error.invalid-code': '验证码无效',
-  'form.layout.guide-trigger-label': '自定义表单',
-  'dashboard.filter.setup.none-found': '未找到策略',
-  'nav.weekly': '周度复盘',
-  'account.create.field.drawdown-type-desc': '无 | 固定 | 每日收盘追踪 | 手动',
-  'account.edit.field.drawdown-type-desc': '无 | 固定 | 每日收盘追踪 | 手动',
-  'trade.details.execution': 'Execution',
-  'csv.errors.group.close-only': '已跳过仅平仓的执行',
-  'csv.report.file': '文件:{file}',
-  'trade-sync.gate.signin.cta': '登录',
-  'backend.progress.ftp.desc': '创建凭证',
-  'csv.broker-guide.sierrachart.warning.message':
-    'Export 选项会保存未调整的价格。Save Log As 会保留显示的价格。',
-  'csv.broker-guide.rithmic.step-1':
-    '在 R | Trader Pro 打开 Order History,并按账户与日期筛选 Completed/Filled',
-  'csv.broker-guide.rithmic.step-2':
-    '在 Add/Remove Columns 中确保显示 Side、Symbol、Qty Filled、Avg Fill Price、Fill/Update Time',
-  'drc.preparation.checklist.title': '交易前检查清单',
-  'weekly.overview.drawdown-chart.empty': '无回撤数据可显示',
-  'monthly.game.header.a-games': 'A级表现',
-  'onboarding.welcome.insight.timing.title': '时机模式',
-  'onboarding.wizard.error.account-service': 'AccountPageService 不可用',
-  'trade-import.preview.message.no-open-match':
-    'No matching open trade found for close-only preview',
-  'setups.view.detail.execution-gap.title': '执行差距',
-  'trade-sync.import.action.sync-cloud': 'Sync cloud trades',
-  'session-log.placeholder.entry': '你正在观察、思考或感受到什么？',
-  'session-mode.unconfigured.step.gate.description':
-    'Starter IF/THEN checklist is ready.',
-  'setups.view.action.refresh': '刷新',
-  'setups.view.detail.no-playbook': '尚未编写交易计划。',
 
   'home.widget.streak.kind.trade-outcome': '交易结果',
   'home.widget.streak.kind.trade-review': '交易复盘',
@@ -8257,6 +8083,12 @@ const zh: Lang = {
   'trade-handoff.summary.mixed-partial':
     '已导入{imported} · 已更新{updated}，但存在问题',
   'trade-handoff.summary.import-partial': '已导入{trades}，但存在问题',
+  'trade-handoff.summary.import-provider-partial':
+    '已导入{trades} · 同步部分完成',
+  'trade-handoff.summary.update-provider-partial':
+    '已更新{trades} · 同步部分完成',
+  'trade-handoff.summary.mixed-provider-partial':
+    '已导入{imported} · 已更新{updated} · 同步部分完成',
   'trade-handoff.periods.choose': '选择其他复盘周期',
   'trade-handoff.periods.recommended': '推荐',
   'trade-handoff.action.dismiss': '关闭最近的交易结果',
@@ -8371,6 +8203,429 @@ const zh: Lang = {
     '本阶段首次出金时，将周期最低利润视为零：当前周期已实现净利润不能为负。其他要求仍然适用。',
   'account.prop-challenge.payout-rules.help.reset-cycle':
     '已记录出金后重置天数、每日利润、周期利润及一致性。保留整个阶段累计达标天数；预览不重置进度。',
+  
+  
+  
+  'actions.value.cleared': '已清除',
+  'actions.trade.set.account_id': '账户：{value}',
+  'actions.trade.set.setup_id': '交易设置：{value}',
+  'actions.trade.set.stop_loss': '止损：{value}',
+  'actions.trade.thesis.set': '更新交易论点',
+  'actions.trade.thesis.clear': '移除交易论点',
+  'actions.trade.reviewed.mark': '标记为已复盘',
+  'actions.trade.reviewed.unmark': '标记为未复盘',
+  'actions.trade.notes.set': '替换笔记',
+  'actions.trade.stop-losses': '止损：{value}',
+  'actions.trade.stop-losses.clear': '移除止损',
+  'actions.trade.take-profits': '止盈：{value}',
+  'actions.trade.take-profits.clear': '移除止盈',
+  'actions.trade.set.take_profit': '止盈：{value}',
+  'actions.trade.set.risk_amount': '风险金额：{value}',
+  'actions.trade.add-tags': '添加标签：{labels}',
+  'actions.trade.remove-tags': '移除标签：{labels}',
+  'actions.trade.add-mistakes': '添加错误：{labels}',
+  'actions.trade.remove-mistakes': '移除错误：{labels}',
+  'actions.review.summary': '替换摘要',
+  'actions.review.target.day': '每日复盘 {date}',
+  'actions.review.target.week': '每周复盘 {date}',
+  'actions.review.target.month': '每月复盘 {date}',
+  'actions.review.target.quarter': '季度复盘 {date}',
+  'actions.review.target.year': '年度复盘 {date}',
+  'agent-requests.deny': '拒绝',
+  'agent-requests.approve': '批准',
+  'actions.options.catalog.tags': '标签',
+  'actions.options.catalog.mistakes': '错误',
+  'actions.options.catalog.account_types': '账户类型',
+  'actions.options.catalog.events': '事件',
+  'actions.options.create': '创建：{labels}',
+  'actions.options.set-color': '设置 {value} 的颜色',
+  'actions.options.clear-color': '清除 {value} 的颜色',
+  'actions.options.update-style': '更新 {value} 的样式',
+  'actions.options.rename.one':
+    '在 {count} 篇笔记中将 {source} 重命名为 {target}',
+  'actions.options.rename.other':
+    '在 {count} 篇笔记中将 {source} 重命名为 {target}',
+  'actions.options.rename-account-type.one':
+    '为 {count} 个账户将 {source} 重命名为 {target}',
+  'actions.options.rename-account-type.other':
+    '为 {count} 个账户将 {source} 重命名为 {target}',
+  'actions.options.merge.one': '在 {count} 篇笔记中将 {source} 合并到 {target}',
+  'actions.options.merge.other':
+    '在 {count} 篇笔记中将 {source} 合并到 {target}',
+  'actions.options.delete.one': '从 {count} 篇笔记中删除 {value}',
+  'actions.options.delete.other': '从 {count} 篇笔记中删除 {value}',
+  'actions.options.delete-entry': '删除 {value}',
+  'actions.options.move': '将 {value} 移到 {before} 之前',
+  'actions.options.move-last': '将 {value} 移到末尾',
+  'actions.configuration.target.settings': '设置',
+  'actions.configuration.target.dashboard_layouts': '仪表板布局',
+  'actions.configuration.target.home_layouts': '主页布局',
+  'actions.configuration.target.review_templates': '复盘模板',
+  'actions.configuration.target.session_workflows': '交易时段流程',
+  'actions.configuration.settings': '更改 {count} 项设置',
+  'actions.configuration.create': '创建 {name}',
+  'actions.configuration.duplicate': '以副本创建 {name}',
+  'actions.configuration.replace': '替换 {name}',
+  'actions.configuration.rename': '重命名为 {name}',
+  'actions.configuration.delete': '删除 {name}',
+  'actions.configuration.delete-question.one':
+    '删除“{name}”及其在{workflows}中的 {count} 处使用',
+  'actions.configuration.delete-question.other':
+    '删除“{name}”及其在{workflows}中的 {count} 处使用',
+  'actions.configuration.delete-question-workflows.one': '{count} 个流程',
+  'actions.configuration.delete-question-workflows.other': '{count} 个流程',
+  'actions.configuration.delete-question-unused':
+    '删除“{name}”（未在任何流程中使用）',
+  'actions.configuration.set-active': '将 {name} 设为当前布局',
+  'actions.configuration.set-default': '更改默认的 {type} 模板',
+  'actions.configuration.reset-default': '默认使用内置的 {type} 模板',
+  'actions.setup.target': '策略 {name}',
+  'actions.setup.update': '更新：{fields}',
+  'actions.setup.field.status': '状态',
+  'actions.setup.field.direction': '方向',
+  'actions.setup.field.color': '颜色',
+  'actions.setup.field.tags': '标签',
+  'actions.setup.field.preferred_sessions': '偏好时段',
+  'actions.setup.field.preferred_timeframes': '偏好周期',
+  'actions.setup.field.preferred_tickers': '偏好代码',
+  'actions.setup.field.playbook': '交易手册',
+  'actions.setup.field.rules': '规则',
+  'actions.setup.field.linked_notes': '链接笔记',
+  'actions.trade.set.direction': '方向：{value}',
+  'actions.trade.set.direct_pnl': '直接盈亏：{value}',
+  'actions.trade.set.commission': '佣金：{value}',
+  'actions.trade.set.fees': '费用：{value}',
+  'actions.trade.set.swap': '隔夜利息：{value}',
+  'actions.trade.executions': '替换成交：{entries}，{exits}',
+  'actions.trade.set.missed_reason': '错过原因：{value}',
+  'actions.trade.create':
+    '创建{type}：{direction} {instrument}，{entries}，{exits}',
+  'actions.trade.create.new-instrument': '将 {instrument} 添加到品种',
+  'actions.trade.set-type': '更改类型：{source} 改为 {target}',
+  'actions.trade.delete': '将交易笔记移到回收站',
+  'actions.trade.custom-fields': '自定义字段：{labels}',
+  'actions.custom-field.create': '创建字段 {label}（{type}）',
+  'actions.custom-field.field.label': '名称',
+  'actions.custom-field.field.options': '选项',
+  'actions.custom-field.field.validation': '验证规则',
+  'actions.custom-field.field.placeholder': '占位文本',
+  'actions.custom-field.field.helper_text': '帮助文本',
+  'actions.custom-field.field.allow_create_options': '从交易添加新选项',
+  'actions.custom-field.order-target': '自定义字段',
+  'actions.custom-field.reorder': '新顺序：{labels}',
+  'actions.session-log-tag.create': '创建标签 {short} {label}',
+  'actions.session-log-tag.field.label': '名称',
+  'actions.session-log-tag.field.short_label': '简称',
+  'actions.session-log-tag.field.color': '颜色',
+  'actions.session-log-tag.field.requires_resolution': '需要分类',
+  'actions.session-log-tag.field.lesson': '经验标签',
+  'actions.session-log-tag.delete-alert-rule': '会话日志提醒规则统计此标签',
+  'actions.custom-field.delete.one': '删除字段；{count} 笔交易保留其值',
+  'actions.custom-field.delete.other': '删除字段；{count} 笔交易保留其值',
+  'actions.session-log-tag.delete.one':
+    '从输入框移除标签；{count} 天的会话日志仍保留它',
+  'actions.session-log-tag.delete.other':
+    '从输入框移除标签；{count} 天的会话日志仍保留它',
+  'actions.review.answers.one': '回答 {count} 个问题',
+  'actions.review.answers.other': '回答 {count} 个问题',
+  'actions.review.goals.one': '设置 {count} 个目标',
+  'actions.review.goals.other': '设置 {count} 个目标',
+  'actions.review.checklist.one': '设置 {count} 个清单项',
+  'actions.review.checklist.other': '设置 {count} 个清单项',
+  'actions.review.key-levels':
+    '设置关键价位：{support} 个支撑，{resistance} 个阻力',
+  'actions.review.grade.mental': '心理评分：{value}',
+  'actions.review.grade.technical': '技术评分：{value}',
+  'actions.review.reviewed': '标记为已复盘',
+  'actions.review.not-reviewed': '标记为未复盘',
+  'actions.review.session-log.add.one': '添加 {count} 条会话日志',
+  'actions.review.session-log.add.other': '添加 {count} 条会话日志',
+  'actions.review.session-log.update': '更新一条会话日志：{fields}',
+  'actions.review.session-log.field.time': '时间',
+  'actions.review.session-log.field.tag_id': '标签',
+  'actions.review.session-log.field.text': '内容',
+  'actions.review.session-log.field.resolved': '分类',
+  'actions.review.session-log.delete': '删除一条会话日志',
+  'actions.review.images.add.one': '添加 {count} 张图片',
+  'actions.review.images.add.other': '添加 {count} 张图片',
+  'actions.review.images.remove.one': '移除 {count} 张图片',
+  'actions.review.images.remove.other': '移除 {count} 张图片',
+  'actions.images.annotate.one': '更改 {count} 张图片的标签或备注',
+  'actions.images.annotate.other': '更改 {count} 张图片的标签或备注',
+  'actions.review.key-events.add.one': '添加 {count} 个关键事件',
+  'actions.review.key-events.add.other': '添加 {count} 个关键事件',
+  'actions.review.key-events.update': '更新关键事件 {name}',
+  'actions.review.key-events.delete': '删除关键事件 {name}',
+  'actions.review.day-trade-fields.set.one':
+    '设置当日字段并更新 {count} 笔交易',
+  'actions.review.day-trade-fields.set.other':
+    '设置当日字段并更新 {count} 笔交易',
+  'actions.session.unplanned.start': '开始计划外交易时段：{reason}',
+  'actions.session.unplanned.stop': '停止计划外交易时段',
+  'actions.account.create':
+    '创建 {type} 账户（{currency}），初始余额 {balance}',
+  'actions.account.field.account_type': '类型',
+  'actions.account.field.currency': '币种',
+  'actions.account.field.created_date': '开始日期',
+  'actions.account.field.initial_balance': '初始余额',
+  'actions.account.field.live_balance': '实时余额',
+  'actions.account.field.drawdown': '回撤',
+  'actions.account.field.profit_target': '盈利目标',
+  'actions.account.field.monthly_cost': '月费',
+  'actions.account.field.copy_trading': '跟单',
+  'actions.account.rename': '重命名为 {name}',
+  'actions.account.rename-trades.one': '更新引用该账户的 {count} 笔交易',
+  'actions.account.rename-trades.other': '更新引用该账户的 {count} 笔交易',
+  'actions.account.delete': '删除账户',
+  'actions.account.transaction.deposit': '记录 {date} 入金 {amount}',
+  'actions.account.transaction.withdrawal': '记录 {date} 出金 {amount}',
+  'actions.account.transaction.delete-deposit': '删除 {date} 的入金 {amount}',
+  'actions.account.transaction.delete-withdrawal':
+    '删除 {date} 的出金 {amount}',
+  'actions.prop-challenge.advance': '通过 {from} 并开始 {to}',
+  'actions.prop-challenge.conclude': '通过 {phase} 并将挑战标记为已通过',
+  'actions.prop-challenge.account-type': '将账户改为 {type}',
+  'actions.prop-challenge.fail': '将 {phase} 和挑战标记为失败',
+  'actions.prop-challenge.reopen': '重新开启 {phase}',
+  'actions.prop-challenge.cost.purchase': '记录 {date} 的购买费用 {amount}',
+  'actions.prop-challenge.cost.reset': '记录 {date} 的重置费用 {amount}',
+  'actions.prop-challenge.cost.activation': '记录 {date} 的激活费用 {amount}',
+  'actions.prop-challenge.cost.other': '记录 {date} 的费用 {amount}',
+  'actions.prop-challenge.cost.delete': '删除 {date} 的费用 {amount}',
+  'actions.prop-challenge.configure.create.one':
+    '设置 {name}，共 {count} 个阶段',
+  'actions.prop-challenge.configure.create.other':
+    '设置 {name}，共 {count} 个阶段',
+  'actions.prop-challenge.configure.update.one':
+    '更新 {name}：{count} 个阶段及其规则',
+  'actions.prop-challenge.configure.update.other':
+    '更新 {name}：{count} 个阶段及其规则',
+  'actions.prop-challenge.configure.remove-phase': '移除待开始阶段 {phase}',
+  'agent-history.title': '智能体最近的更改',
+  'agent-history.empty': 'AI 智能体在此设备上所做的更改会显示在这里。',
+  'agent-history.undo': '撤销',
+  'agent-history.undone': '已撤销',
+  'agent-history.undone-notice': '已撤销智能体的更改。',
+  'agent-history.undo-failed': '部分更改在之后已被编辑，无法撤销。',
+  'agent-history.undo-in-use': '该项目现已在你的日志中使用，部分更改无法撤销。',
+  'agent-history.partly-applied': '此更改仅部分生效。',
+  'agent-history.not-applied': '此更改未生效。',
+  'agent-action.title.trade.create': '创建交易',
+  'agent-action.title.trade.update': '更新交易',
+  'agent-action.title.trade.set_type': '更改交易类型',
+  'agent-action.title.trade.delete': '删除交易',
+  'agent-action.title.review.create': '创建复盘',
+  'agent-action.title.review.update': '更新复盘',
+  'agent-action.title.review.add_session_log_entries': '添加交易时段日志条目',
+  'agent-action.title.review.update_session_log_entry': '更新交易时段日志条目',
+  'agent-action.title.review.delete_session_log_entry': '删除交易时段日志条目',
+  'agent-action.title.review.add_images': '添加复盘图片',
+  'agent-action.title.review.set_image_annotations': '设置复盘图片的标签和备注',
+  'agent-action.title.trade.set_image_annotations': '设置交易图片的标签和备注',
+  'agent-action.title.review.add_key_events': '添加关键事件',
+  'agent-action.title.review.update_key_event': '更新关键事件',
+  'agent-action.title.review.delete_key_event': '删除关键事件',
+  'agent-action.title.review.set_day_trade_fields': '设置当日交易字段',
+  'agent-action.title.session.start_unplanned': '开始计划外交易时段',
+  'agent-action.title.session.stop_unplanned': '停止计划外交易时段',
+  'agent-action.title.review.remove_images': '移除复盘图片',
+  'agent-action.title.tag.create': '创建标签',
+  'agent-action.title.tag.set_color': '设置标签颜色',
+  'agent-action.title.tag.clear_color': '清除标签颜色',
+  'agent-action.title.tag.rename': '重命名标签',
+  'agent-action.title.tag.merge': '合并标签',
+  'agent-action.title.tag.delete': '删除标签',
+  'agent-action.title.mistake.create': '创建错误',
+  'agent-action.title.mistake.rename': '重命名错误',
+  'agent-action.title.mistake.merge': '合并错误',
+  'agent-action.title.mistake.delete': '删除错误',
+  'agent-action.title.account_type.create': '创建账户类型',
+  'agent-action.title.account_type.rename': '重命名账户类型',
+  'agent-action.title.account_type.move': '移动账户类型',
+  'agent-action.title.account_type.delete': '删除账户类型',
+  'agent-action.title.event.create': '创建事件',
+  'agent-action.title.event.update_style': '更新事件样式',
+  'agent-action.title.event.rename': '重命名事件',
+  'agent-action.title.event.merge': '合并事件',
+  'agent-action.title.event.delete': '删除事件',
+  'agent-action.title.settings.set_analytics_calculation': '设置分析计算方式',
+  'agent-action.title.settings.set_date_time_display': '设置日期和时间显示',
+  'agent-action.title.settings.set_display_preferences': '设置显示偏好',
+  'agent-action.title.settings.set_trading_day': '设置交易日',
+  'agent-action.title.settings.set_risk_display': '设置风险与显示',
+  'agent-action.title.settings.set_break_even': '设置盈亏平衡阈值',
+  'agent-action.title.settings.set_trade_entry': '设置交易录入偏好',
+  'agent-action.title.settings.set_review_automation': '设置复盘自动化',
+  'agent-action.title.settings.set_economic_calendar': '设置经济日历导入',
+  'agent-action.title.settings.set_session_schedule': '设置交易时段安排',
+  'agent-action.title.dashboard_layout.create': '创建仪表板布局',
+  'agent-action.title.dashboard_layout.duplicate': '复制仪表板布局',
+  'agent-action.title.dashboard_layout.update': '替换仪表板布局',
+  'agent-action.title.dashboard_layout.rename': '重命名仪表板布局',
+  'agent-action.title.dashboard_layout.delete': '删除仪表板布局',
+  'agent-action.title.dashboard_layout.set_active': '设置当前仪表板布局',
+  'agent-action.title.home_layout.create': '创建主页布局',
+  'agent-action.title.home_layout.duplicate': '复制主页布局',
+  'agent-action.title.home_layout.update': '替换主页布局',
+  'agent-action.title.home_layout.rename': '重命名主页布局',
+  'agent-action.title.home_layout.delete': '删除主页布局',
+  'agent-action.title.home_layout.set_active': '设置当前主页布局',
+  'agent-action.title.review_template.create': '创建复盘模板',
+  'agent-action.title.review_template.duplicate': '复制复盘模板',
+  'agent-action.title.review_template.update': '替换复盘模板',
+  'agent-action.title.review_template.delete': '删除复盘模板',
+  'agent-action.title.review_template.set_default': '设置默认复盘模板',
+  'agent-action.title.session_workflow.create': '创建交易时段流程',
+  'agent-action.title.session_workflow.update': '替换交易时段流程',
+  'agent-action.title.session_workflow.delete': '删除交易时段流程',
+  'agent-action.title.session_workflow.delete_question':
+    '从库中删除交易时段问题',
+  'agent-action.title.setup.create': '创建交易策略',
+  'agent-action.title.setup.update': '更新交易策略',
+  'agent-action.title.setup.rename': '重命名交易策略',
+  'agent-action.title.setup.delete': '删除交易策略',
+  'agent-action.title.custom_field.create': '创建自定义字段',
+  'agent-action.title.custom_field.update': '更新自定义字段',
+  'agent-action.title.custom_field.delete': '删除自定义字段',
+  'agent-action.title.custom_field.reorder': '调整自定义字段顺序',
+  'agent-action.title.session_log_tag.create': '创建交易时段日志标签',
+  'agent-action.title.session_log_tag.update': '更新交易时段日志标签',
+  'agent-action.title.session_log_tag.delete': '删除交易时段日志标签',
+  'agent-action.title.account.create': '创建账户',
+  'agent-action.title.account.update': '更新账户',
+  'agent-action.title.account.rename': '重命名账户',
+  'agent-action.title.account.delete': '删除账户',
+  'agent-action.title.account.add_transaction': '记录入金或出金',
+  'agent-action.title.account.delete_transaction': '删除入金或出金',
+  'agent-action.title.prop_challenge.advance': '推进挑战阶段',
+  'agent-action.title.prop_challenge.fail': '将挑战标记为失败',
+  'agent-action.title.prop_challenge.reopen': '重新开启挑战',
+  'agent-action.title.prop_challenge.add_cost': '记录挑战费用',
+  'agent-action.title.prop_challenge.delete_cost': '删除挑战费用',
+  'agent-action.title.prop_challenge.configure': '设置挑战',
+  'agent-history.undo-confirm.title': '撤销智能体的更改？',
+  'agent-history.undo-confirm.message':
+    'Journalit 会撤销此更改。之后编辑过的内容保持不变。',
+  'agent-approval.eyebrow': 'AI 智能体请求',
+  'agent-approval.position': '{index}/{total}',
+  'agent-approval.previous': '上一个请求',
+  'agent-approval.next': '下一个请求',
+  'agent-approval.hide': '暂时隐藏',
+  'agent-approval.details': '详情',
+  'agent-approval.hide-details': '隐藏详情',
+  'agent-approval.approved': '已批准。请让智能体继续。',
+  'agent-approval.denied': '已拒绝。智能体不会进行这些更改。',
+  'agent-approval.expired': '该请求已过期。请让智能体重试。',
+  'agent-activity.title': 'AI 智能体活动',
+  'agent-activity.waiting': '等待你处理',
+  'command.open-agent-activity': '打开 AI 智能体活动',
+  'settings.mcp-access.title': 'AI 应用 (MCP)',
+  'settings.mcp-access.description':
+    '允许你连接到 Journalit 账户的 AI 应用（如 Claude 或 ChatGPT）通过 MCP 读取和更新此仓库。',
+  'settings.mcp-access.loading': '正在加载 MCP 访问…',
+  'settings.mcp-access.unavailable': 'MCP 访问暂时不可用。请重新打开设置再试。',
+  'settings.mcp-access.toggle.label': '启用 MCP 访问',
+  'settings.mcp-access.toggle.description':
+    '让你在 journalit.co 上批准的 AI 应用可以使用此仓库。',
+  'settings.mcp-access.status.label': '状态',
+  'settings.mcp-access.status.off': '已关闭',
+  'settings.mcp-access.status.off-detail':
+    '任何 AI 应用都无法使用此仓库。开启后，Claude 和 ChatGPT 等应用即可读取和更新它，这里也会显示如何连接应用。',
+  'settings.mcp-access.status.connecting': '正在连接',
+  'settings.mcp-access.status.connecting-detail':
+    '正在向你的 Journalit 账户注册此仓库。',
+  'settings.mcp-access.status.connected': '已连接',
+  'settings.mcp-access.status.connected-detail':
+    '你批准的 AI 应用可以使用此仓库。',
+  'settings.mcp-access.status.failed': '未连接',
+  'settings.mcp-access.status.lost-detail':
+    'Journalit 已无法识别此仓库的连接，你的 AI 应用无法使用它。重新连接即可再次允许访问。',
+  'settings.mcp-access.failed.account-unavailable':
+    '你的 Journalit 账户目前无法使用 MCP 访问。',
+  'settings.mcp-access.failed.vault-limit-reached':
+    '你的方案已无法为其他仓库提供 MCP 访问。',
+  'settings.mcp-access.failed.vault-limit-move':
+    'AI 应用已连接到另一个仓库“{vault}”（上次使用：{lastUsed}），且已达到你方案的仓库上限。',
+  'settings.mcp-access.failed.vault-limit-move-never-used':
+    'AI 应用已连接到另一个仓库“{vault}”（从未使用），且已达到你方案的仓库上限。',
+  'settings.mcp-access.action.move-here': '将 AI 访问移到此仓库',
+  'settings.mcp-access.move.confirm-title': '将 AI 访问移到此仓库？',
+  'settings.mcp-access.move.confirm-message':
+    '连接到“{vault}”的 AI 应用将无法在那里继续使用。你需要将它们重新连接到此仓库。',
+  'settings.mcp-access.move.confirm': '移动 AI 访问',
+  'settings.mcp-access.failed.temporarily-unavailable':
+    'MCP 访问暂时不可用。请稍后再试。',
+  'settings.mcp-access.failed.settings-unavailable':
+    '无法将你的 MCP 访问设置保存到此仓库。请重试。',
+  'settings.mcp-access.activity.description':
+    '批准等待中的请求，并查看或撤销智能体最近的更改。',
+  'settings.mcp-access.activity.open': '打开',
+  'settings.mcp-access.action.retry': '重试',
+  'settings.mcp-access.action.reconnect': '重新连接',
+  'settings.mcp-access.failed.sign-in-required':
+    '请登录你的 Journalit 账户后重试。',
+  'settings.mcp-access.failed.vault-identity':
+    '无法识别此仓库。请重启 Obsidian 后重试。',
+  'settings.mcp-access.failed.request-rejected':
+    '无法注册此仓库，请检查您的账户后重试。',
+  'settings.mcp-access.failed.unexpected-response':
+    'Journalit 返回了意外响应，请稍后重试。',
+  'settings.mcp-access.failed.rate-limited': '尝试次数过多，请稍候再试。',
+  'settings.mcp-access.failed.connection':
+    '无法连接 Journalit。请检查网络后重试。',
+  'settings.mcp-access.full-access.label': '完全访问',
+  'settings.mcp-access.full-access.description':
+    '允许 AI 智能体无需询问即可进行任何更改。关闭时，删除、合并和大量更改需要你的批准。',
+  'settings.mcp-access.full-access.warning':
+    '开启完全访问后，智能体无需你的批准即可删除和修改交易、账户、复盘和设置，并重写大量笔记。仅对你信任的智能体开启。',
+  'settings.mcp-access.usage.label': '本月用量',
+  'settings.mcp-access.usage.loading': '正在加载用量…',
+  'settings.mcp-access.usage.unavailable': '暂时无法获取用量。',
+  'settings.mcp-access.usage.limited':
+    '本月已使用 {consumed}/{limit} 次 AI 工具调用。{date} 重置。',
+  'settings.mcp-access.usage.unlimited':
+    '本月 {consumed} 次 AI 工具调用。{date} 重置。',
+  'settings.mcp-access.usage.reached':
+    '本月的 {limit} 次 AI 工具调用已用完。{date} 重置。',
+  'settings.mcp-access.usage.upgrade': '升级',
+  'settings.mcp-access.usage.not-counted':
+    '检查、预览、导航、查看图片和查阅文档不计入。',
+  'settings.mcp-access.usage.pro-offer': '升级到 Pro，获得更多 AI 工具调用',
+  'settings.mcp-access.connect.title': '连接 AI 应用',
+  'settings.mcp-access.connect.url-label': 'MCP 服务器 URL',
+  'settings.mcp-access.connect.copy': '复制',
+  'settings.mcp-access.connect.copied': '已复制',
+  'settings.mcp-access.connect.copy-failed': '无法复制',
+  'settings.mcp-access.connect.copy-url': '复制 MCP 服务器 URL',
+  'settings.mcp-access.connect.copy-command': '复制命令',
+  'settings.mcp-access.connect.app-label': 'AI 应用',
+  'settings.mcp-access.connect.claude.open':
+    '在 Claude（网页版或桌面版）中打开 Customize → Connectors。',
+  'settings.mcp-access.connect.claude.add':
+    '选择 + Add → Add custom connector，然后粘贴 MCP 服务器 URL。',
+  'settings.mcp-access.connect.chatgpt.open':
+    '在网页版 ChatGPT 中打开 Plugins（chatgpt.com/plugins）。',
+  'settings.mcp-access.connect.chatgpt.add':
+    '选择 + → Add custom MCP server，粘贴 MCP 服务器 URL，然后选择 OAuth。',
+  'settings.mcp-access.connect.step.approve': '登录 Journalit 并批准访问。',
+  'settings.mcp-access.connect.claude-code.run': '在终端中运行此命令：',
+  'settings.mcp-access.connect.claude-code.sign-in':
+    '在 Claude Code 中运行 /mcp 并登录 Journalit。',
+  'settings.mcp-access.connect.sign-in-note':
+    '你的 AI 应用会打开 journalit.co，让你登录并选择此仓库。',
+  'settings.mcp-access.connect.manage': '管理已连接的应用',
+  'actions.options.rename-none': '将 {source} 重命名为 {target}',
+  'actions.options.merge-none': '将 {source} 合并到 {target}',
+  'actions.custom-field.delete-unused': '删除字段；没有交易使用此字段的值',
+  'actions.session-log-tag.delete-unused':
+    '从输入框中移除标签；没有会话日志使用它',
+  'actions.trade.entries.one': '{count} 笔入场',
+  'actions.trade.entries.other': '{count} 笔入场',
+  'actions.trade.exits.one': '{count} 笔出场',
+  'actions.trade.exits.other': '{count} 笔出场',
+  'agent-requests.changes.one': '{count} 项更改',
+  'agent-requests.changes.other': '{count} 项更改',
+  'agent-requests.kind-count': '{title} ×{count}',
 };
 
 export default zh;

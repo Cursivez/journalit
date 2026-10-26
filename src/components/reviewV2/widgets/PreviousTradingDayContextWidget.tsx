@@ -14,7 +14,7 @@ import { ImageCarousel } from '../../image/ImageCarousel';
 import { createSvgPlaceholderDataUri } from '../../../utils/placeholderImage';
 import type { PreviousTradingDayContextResult } from '../../../services/drc/DRCService';
 import { t } from '../../../lang/helpers';
-import { forceMetadataCacheRefresh } from '../../../utils/dataRefresh';
+import { waitForFileIndexed } from '../../../utils/dataRefresh';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 import { EmbeddedReviewMarkdown } from '../EmbeddedReviewMarkdown';
 import {
@@ -123,7 +123,7 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
               return;
             }
 
-            await forceMetadataCacheRefresh(plugin.app, file);
+            await waitForFileIndexed(plugin.app, file);
             const frontmatter =
               plugin.app.metadataCache.getFileCache(file)?.frontmatter;
             const currentDate =

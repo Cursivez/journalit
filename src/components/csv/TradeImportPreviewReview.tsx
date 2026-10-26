@@ -127,22 +127,38 @@ function diagnosticSeverityLabel(
   }
 }
 
+
+const MAP_FIELD_DIAGNOSTIC_CODES: ReadonlySet<string> = new Set([
+  'missing_required_mapping',
+  'pnl_requires_mapping',
+]);
+
+
+const NO_COLUMN_FIX_DIAGNOSTIC_CODES: ReadonlySet<string> = new Set([
+  'pnl_computed_currency_unverified',
+]);
+
 const DiagnosticColumnFix: React.FC<{
   code: string;
   field: string;
   mappingActions: TradeImportDiagnosticMappingActions;
 }> = ({ code, field, mappingActions }) => {
+  if (NO_COLUMN_FIX_DIAGNOSTIC_CODES.has(code)) return null;
   const columns = mappingActions.columnsForField(field);
-  if (columns.length === 0) return null;
+  const mapFieldFix = MAP_FIELD_DIAGNOSTIC_CODES.has(code);
+  if (columns.length === 0 && !mapFieldFix) return null;
   
   
   const dateFormatFix = DATE_FORMAT_DIAGNOSTIC_CODES.has(code);
-  const required = dateFormatFix || mappingActions.isRequiredField(field);
+  const required =
+    dateFormatFix || mapFieldFix || mappingActions.isRequiredField(field);
   return (
     <span className="journalit-trade-import-diagnostic-column">
-      <span>
-        {t('trade-import.diagnostic.column', { columns: columns.join(', ') })}
-      </span>
+      {columns.length > 0 && (
+        <span>
+          {t('trade-import.diagnostic.column', { columns: columns.join(', ') })}
+        </span>
+      )}
       <button
         type="button"
         className="journalit-trade-import-inline-link"
@@ -631,7 +647,10 @@ const TradeImportPreviewOutcome: React.FC<{
       {preview.outcome === 'failed' && (
         <>
           <p>{t('trade-import.preview.failed.message')}</p>
-          <p>{t('trade-import.preview.failed.guidance')}</p>
+          
+          {preview.broker === 'MANUAL' && (
+            <p>{t('trade-import.preview.failed.guidance')}</p>
+          )}
         </>
       )}
       {preview.outcome === 'completed' && overview.importableCount === 0 && (
@@ -747,8 +766,7 @@ export function TradeImportRecoveryReview({
       />
       <TradeImportDiagnostics
         diagnostics={diagnostics.filter(
-          (diagnostic) =>
-            !recovery.diagnosticCodesToSuppress.has(diagnostic.code)
+          (diagnostic) => !recovery.suppressesDiagnostic(diagnostic)
         )}
         defaultOpen
         className="journalit-trade-import-preview-diagnostics"
@@ -772,6 +790,133 @@ export function TradeImportRecoveryReview({
         </button>
       </div>
     </>
+  );
+}
+
+type EntitlementStatus = TradeImportPreviewReviewProps['entitlementStatus'];
+
+const isEntitlementUnverified = (
+  isCheckingEntitlement: boolean,
+  entitlementStatus: EntitlementStatus
+): boolean =>
+  isCheckingEntitlement ||
+  entitlementStatus === null ||
+  entitlementStatus === 'unverified';
+
+
+const showsFreeTierPreview = ({
+  canCommit,
+  isCheckingEntitlement,
+  entitlementStatus,
+  preview,
+  overview,
+}: {
+  canCommit: boolean;
+  isCheckingEntitlement: boolean;
+  entitlementStatus: EntitlementStatus;
+  preview: TradeImportPreviewResponse;
+  overview: TradeImportPreviewOverview;
+}): boolean =>
+  !canCommit &&
+  !isCheckingEntitlement &&
+  entitlementStatus === 'free' &&
+  preview.outcome !== 'failed' &&
+  overview.importableCount > 0;
+
+function isConfirmDisabled({
+  busy,
+  isCheckingEntitlement,
+  isRefreshingStatus,
+  importCompleted,
+  preview,
+  overview,
+  canCommit,
+  importAnywayCandidateCount,
+}: {
+  busy: boolean;
+  isCheckingEntitlement: boolean;
+  isRefreshingStatus: boolean;
+  importCompleted: boolean;
+  preview: TradeImportPreviewResponse;
+  overview: TradeImportPreviewOverview;
+  canCommit: boolean;
+  importAnywayCandidateCount: number;
+}): boolean {
+  if (busy || isCheckingEntitlement || isRefreshingStatus || importCompleted)
+    return true;
+  if (preview.outcome === 'failed') return true;
+  
+  
+  return (
+    overview.importableCount < 1 &&
+    (canCommit || importAnywayCandidateCount === 0)
+  );
+}
+
+function PartialPreviewNotice({
+  preview,
+  overview,
+}: {
+  preview: TradeImportPreviewResponse;
+  overview: TradeImportPreviewOverview;
+}) {
+  if (preview.outcome !== 'partially_completed') return null;
+  return (
+    <p className="journalit-trade-import-preview-partial">
+      <AlertTriangle size={15} />
+      <span>
+        {t('trade-import.preview.partial.message', {
+          count: String(overview.importableCount),
+          failed: String(preview.summary.failedRowCount),
+          incomplete: String(preview.summary.skippedIncompleteCount),
+        })}
+      </span>
+    </p>
+  );
+}
+
+
+function previewConfirmAction({
+  canCommit,
+  entitlementIsUnverified,
+  importableCount,
+  onConfirm,
+  onRefreshStatus,
+  onUpgrade,
+}: {
+  canCommit: boolean;
+  entitlementIsUnverified: boolean;
+  importableCount: number;
+  onConfirm: () => void;
+  onRefreshStatus: () => void;
+  onUpgrade: () => void;
+}): { onClick: () => void; label: string } {
+  if (canCommit)
+    return { onClick: onConfirm, label: t('trade-import.action.confirm') };
+  if (entitlementIsUnverified)
+    return { onClick: onRefreshStatus, label: t('premium.gate.cta.refresh') };
+  return {
+    onClick: onUpgrade,
+    label:
+      importableCount > 0
+        ? tPlural('trade-import.action.activate-pro', importableCount)
+        : t('premium.gate.cta.continue-pro'),
+  };
+}
+
+function PreviewConfirmButton({
+  disabled,
+  ...actionInput
+}: Parameters<typeof previewConfirmAction>[0] & { disabled: boolean }) {
+  const action = previewConfirmAction(actionInput);
+  return (
+    <button
+      className="journalit-trade-import-confirm-button"
+      disabled={disabled}
+      onClick={action.onClick}
+    >
+      {action.label}
+    </button>
   );
 }
 
@@ -835,30 +980,14 @@ const TradeImportStandardPreviewReview: React.FC<
       (diagnostic.candidateFormats?.length ?? 0) > 0
   );
 
-  const confirmDisabled =
-    busy ||
-    isCheckingEntitlement ||
-    isRefreshingStatus ||
-    importCompleted ||
-    preview.outcome === 'failed' ||
-    
-    
-    (overview.importableCount < 1 &&
-      (canCommit || importAnywayCandidateIds.length === 0));
-
-  const entitlementIsUnverified =
-    isCheckingEntitlement ||
-    entitlementStatus === null ||
-    entitlementStatus === 'unverified';
-
-  
-  
   if (
-    !canCommit &&
-    !isCheckingEntitlement &&
-    entitlementStatus === 'free' &&
-    preview.outcome !== 'failed' &&
-    overview.importableCount > 0
+    showsFreeTierPreview({
+      canCommit,
+      isCheckingEntitlement,
+      entitlementStatus,
+      preview,
+      overview,
+    })
   ) {
     return (
       <>
@@ -886,18 +1015,7 @@ const TradeImportStandardPreviewReview: React.FC<
           </span>
         </div>
 
-        {preview.outcome === 'partially_completed' && (
-          <p className="journalit-trade-import-preview-partial">
-            <AlertTriangle size={15} />
-            <span>
-              {t('trade-import.preview.partial.message', {
-                count: String(overview.importableCount),
-                failed: String(preview.summary.failedRowCount),
-                incomplete: String(preview.summary.skippedIncompleteCount),
-              })}
-            </span>
-          </p>
-        )}
+        <PartialPreviewNotice preview={preview} overview={overview} />
 
         <TradeImportDiagnostics
           diagnostics={preview.diagnostics}
@@ -935,6 +1053,7 @@ const TradeImportStandardPreviewReview: React.FC<
     );
   }
 
+  const locked = busy || importCompleted;
   return (
     <>
       <TradeImportPreviewOutcome
@@ -977,7 +1096,7 @@ const TradeImportStandardPreviewReview: React.FC<
         <ImportAllAnywayToggle
           itemIds={importAnywayCandidateIds}
           selected={importAnywayItemIds}
-          disabled={busy || importCompleted}
+          disabled={locked}
           onToggle={onToggleImportAnyway}
         />
       )}
@@ -985,7 +1104,7 @@ const TradeImportStandardPreviewReview: React.FC<
         <WorkbookImagesToggle
           count={workbookImageCount}
           included={workbookImagesIncluded}
-          disabled={busy || importCompleted}
+          disabled={locked}
           onToggle={onToggleWorkbookImages}
         />
       )}
@@ -997,41 +1116,40 @@ const TradeImportStandardPreviewReview: React.FC<
         use24HourTime={use24HourTime}
         importAnywayItemIds={importAnywayItemIds}
         onToggleImportAnyway={canCommit ? onToggleImportAnyway : undefined}
-        locked={busy || importCompleted}
+        locked={locked}
         workbookImageUrls={workbookImageUrls}
       />
 
       <div className="journalit-trade-import-actions">
         <button
           className="journalit-trade-import-cancel-preview-button"
-          disabled={busy || importCompleted}
+          disabled={locked}
           onClick={onCancel}
         >
           {t('trade-import.action.cancel-preview')}
         </button>
         {(canCommit || preview.outcome !== 'failed') && (
-          <button
-            className="journalit-trade-import-confirm-button"
-            disabled={confirmDisabled}
-            onClick={
-              canCommit
-                ? onConfirm
-                : entitlementIsUnverified
-                  ? onRefreshStatus
-                  : onUpgrade
-            }
-          >
-            {canCommit
-              ? t('trade-import.action.confirm')
-              : entitlementIsUnverified
-                ? t('premium.gate.cta.refresh')
-                : overview.importableCount > 0
-                  ? tPlural(
-                      'trade-import.action.activate-pro',
-                      overview.importableCount
-                    )
-                  : t('premium.gate.cta.continue-pro')}
-          </button>
+          <PreviewConfirmButton
+            canCommit={canCommit}
+            entitlementIsUnverified={isEntitlementUnverified(
+              isCheckingEntitlement,
+              entitlementStatus
+            )}
+            importableCount={overview.importableCount}
+            disabled={isConfirmDisabled({
+              busy,
+              isCheckingEntitlement,
+              isRefreshingStatus,
+              importCompleted,
+              preview,
+              overview,
+              canCommit,
+              importAnywayCandidateCount: importAnywayCandidateIds.length,
+            })}
+            onConfirm={onConfirm}
+            onRefreshStatus={onRefreshStatus}
+            onUpgrade={onUpgrade}
+          />
         )}
       </div>
     </>

@@ -7,17 +7,29 @@ const TRADE_REVIEW_MARKER_PATTERN = /<!--\s*journalit-trade-review:/;
 const TRADE_REVIEW_END_PATTERN =
   /<!--\s*journalit-trade-review:end\s*-->(?:\s*\n---\s*\n_End Trade Review_\s*)?/;
 
+
+export function createUserOwnedTradeContent(
+  sectionsMarkdown?: string,
+  notes?: string
+): string {
+  return [
+    USER_OWNED_TRADE_CONTENT_MARKER,
+    ...(sectionsMarkdown ? ['', sectionsMarkdown] : []),
+    ...(notes ? ['', notes] : []),
+  ].join('\n');
+}
+
 export function createTradeNotesDocument(
   frontmatterYaml: string,
-  notes?: string
+  notes?: string,
+  sectionsMarkdown?: string
 ): string {
   return [
     frontmatterYaml,
     '',
     '# Trade Notes',
     '',
-    USER_OWNED_TRADE_CONTENT_MARKER,
-    ...(notes ? ['', notes] : []),
+    createUserOwnedTradeContent(sectionsMarkdown, notes),
   ].join('\n');
 }
 
@@ -86,6 +98,42 @@ export function extractUserOwnedTradeNotes(
   const legacyContent = extractLegacyUserOwnedTradeContent(bodySection);
   const notes = trimDocumentBlankLines(extractPreservedUserText(legacyContent));
   return notes.length > 0 ? notes : undefined;
+}
+
+
+export function replaceUserOwnedTradeNotes(
+  content: string,
+  notes: string
+): string | null {
+  const frontmatterEnd = findFrontmatterEndIndex(content);
+  const bodyStart = frontmatterEnd === -1 ? 0 : frontmatterEnd;
+  const markerIndex = content
+    .substring(bodyStart)
+    .indexOf(USER_OWNED_TRADE_CONTENT_MARKER);
+  if (markerIndex === -1) return null;
+  const regionStart =
+    bodyStart + markerIndex + USER_OWNED_TRADE_CONTENT_MARKER.length;
+  const region = content.substring(regionStart);
+  if (removeGeneratedTradeReviewBlock(region) !== region) return null;
+  const text = trimDocumentBlankLines(notes);
+  const hasNotes = trimDocumentBlankLines(region).length > 0;
+  let nextRegion: string;
+  if (text.length === 0) {
+    nextRegion = hasNotes ? '\n' : region;
+  } else if (hasNotes) {
+    const leading = /^(?:[ \t]*\r?\n)*/.exec(region)?.[0] ?? '';
+    const trailing = /(?:\r?\n[ \t]*)*$/.exec(region)?.[0] ?? '';
+    nextRegion = `${leading}${text}${trailing}`;
+  } else {
+    nextRegion = `\n\n${text}\n`;
+  }
+  const next = content.substring(0, regionStart) + nextRegion;
+  return (extractUserOwnedTradeNotes(next) ?? '') === text ? next : null;
+}
+
+
+export function normalizeUserOwnedTradeNotes(notes: string): string {
+  return trimDocumentBlankLines(notes);
 }
 
 function trimDocumentBlankLines(content: string): string {

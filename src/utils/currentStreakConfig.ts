@@ -6,7 +6,7 @@ import type {
   HomeSettings,
 } from '../settings/types';
 
-export const DEFAULT_CURRENT_STREAK_KIND: CurrentStreakKind = 'trade-outcome';
+const DEFAULT_CURRENT_STREAK_KIND: CurrentStreakKind = 'trade-outcome';
 
 const CURRENT_REVIEW_STREAK_KINDS = [
   'trade-review',

@@ -12,6 +12,7 @@ import { SubscriptionTierService } from '../backend/SubscriptionTierService';
 import type { SubscriptionTierRefreshResult } from '../backend/SubscriptionTierService';
 import { logger } from '../../utils/logger';
 import { CTraderBrokerSyncClient } from './CTraderBrokerSyncClient';
+import { HyperliquidBrokerSyncClient } from './HyperliquidBrokerSyncClient';
 import { TradovateBrokerSyncClient } from './TradovateBrokerSyncClient';
 import { RithmicBrokerSyncClient } from './RithmicBrokerSyncClient';
 import {
@@ -37,11 +38,14 @@ import type {
   BrokerSyncProviderId,
   CTraderConnection,
   CTraderConnections,
+  HyperliquidConnection,
+  HyperliquidConnections,
   RithmicConnections,
   TradeProjectionSyncResult,
   TradovateConnection,
   TradovateConnections,
 } from './types';
+import { brokerConnectionSyncFailed, partialIsProviderOnly } from './types';
 import type { TradeOperationResult } from '../tradeOperations/types';
 import {
   buildProjectionSyncOperationResult,
@@ -63,11 +67,19 @@ type TradeSyncSourceOutcome =
       source: TradeSyncSourceId;
       status: 'partial';
       importedCount: number;
+      
+      providerOnly: boolean;
     }
   | {
       source: TradeSyncSourceId;
       status: 'skipped';
-      reason: 'busy' | 'mapping-required' | 'not-ready' | 'tier' | 'unverified';
+      reason:
+        | 'busy'
+        | 'cancelled'
+        | 'mapping-required'
+        | 'not-ready'
+        | 'tier'
+        | 'unverified';
     }
   | {
       source: TradeSyncSourceId;
@@ -97,14 +109,16 @@ interface BrokerProjectionSyncService {
   syncAll(connectionIds: string[]): Promise<BrokerSyncAllResult>;
   syncRithmicAll(connectionIds: string[]): Promise<BrokerSyncAllResult>;
   syncCTraderAll(connectionIds: string[]): Promise<BrokerSyncAllResult>;
+  syncHyperliquidAll(connectionIds: string[]): Promise<BrokerSyncAllResult>;
 }
 
-export interface TradeSyncCoordinatorDependencies {
+interface TradeSyncCoordinatorDependencies {
   getBackendService(): Promise<MetaTraderSyncService>;
   getProjectionService(): BrokerProjectionSyncService;
   getTradovateConnections(): Promise<TradovateConnections>;
   getRithmicConnections(): Promise<RithmicConnections>;
   getCTraderConnections(): Promise<CTraderConnections>;
+  getHyperliquidConnections(): Promise<HyperliquidConnections>;
   getMappedCanonicalAccountIds(): Promise<ReadonlySet<string>>;
   refreshEntitlements(): Promise<SubscriptionTierRefreshResult>;
   hasAuthToken(): boolean;
@@ -167,6 +181,7 @@ function createDefaultDependencies(
   const tradovateClient = new TradovateBrokerSyncClient();
   const rithmicClient = new RithmicBrokerSyncClient();
   const cTraderClient = new CTraderBrokerSyncClient();
+  const hyperliquidClient = new HyperliquidBrokerSyncClient();
   const projectionClient = new TradeProjectionClient();
   return {
     getBackendService: () =>
@@ -180,6 +195,10 @@ function createDefaultDependencies(
       rithmicClient.getRithmicConnections({ interactiveEntitlement: false }),
     getCTraderConnections: () =>
       cTraderClient.getCTraderConnections({ interactiveEntitlement: false }),
+    getHyperliquidConnections: () =>
+      hyperliquidClient.getHyperliquidConnections({
+        interactiveEntitlement: false,
+      }),
     refreshEntitlements: () =>
       new SubscriptionTierService(plugin).refreshTier('quick trade sync'),
     getMappedCanonicalAccountIds: async () => {
@@ -232,19 +251,29 @@ function classifyBrokerResult(
   const synchronizedCount = result.outcomes.filter(
     (outcome) => outcome.status === 'succeeded' || outcome.status === 'partial'
   ).length;
-  const hasIssues =
-    result.outcomes.some((outcome) => outcome.status !== 'succeeded') ||
+  const deliveryIssues =
+    result.outcomes.some((outcome) =>
+      brokerConnectionSyncFailed(outcome.status)
+    ) ||
     result.projection.failedCount > 0 ||
     result.projection.pendingCount > 0 ||
     (result.projection.ackFailedCount ?? 0) > 0;
+  const hasIssues =
+    deliveryIssues ||
+    result.outcomes.some((outcome) => outcome.status === 'partial');
 
   if (synchronizedCount === 0) {
     return importedCount > 0
-      ? { source, status: 'partial', importedCount }
+      ? { source, status: 'partial', importedCount, providerOnly: false }
       : { source, status: 'failed' };
   }
   if (hasIssues) {
-    return { source, status: 'partial', importedCount };
+    return {
+      source,
+      status: 'partial',
+      importedCount,
+      providerOnly: !deliveryIssues,
+    };
   }
   return { source, status: 'succeeded', importedCount };
 }
@@ -262,6 +291,7 @@ function completedMetaTraderBatchOutcome(
         source: 'metatrader',
         status: 'partial',
         importedCount: response.new_files + response.updated_files,
+        providerOnly: false,
       }
     : null;
 }
@@ -330,13 +360,19 @@ export class TradeSyncCoordinator {
       return result;
     }
 
-    const [entitlementRefresh, tradovateStatus, rithmicStatus, cTraderStatus] =
-      await Promise.all([
-        settle(this.dependencies.refreshEntitlements()),
-        settle(this.dependencies.getTradovateConnections()),
-        settle(this.dependencies.getRithmicConnections()),
-        settle(this.dependencies.getCTraderConnections()),
-      ]);
+    const [
+      entitlementRefresh,
+      tradovateStatus,
+      rithmicStatus,
+      cTraderStatus,
+      hyperliquidStatus,
+    ] = await Promise.all([
+      settle(this.dependencies.refreshEntitlements()),
+      settle(this.dependencies.getTradovateConnections()),
+      settle(this.dependencies.getRithmicConnections()),
+      settle(this.dependencies.getCTraderConnections()),
+      settle(this.dependencies.getHyperliquidConnections()),
+    ]);
     if (this.destroyed) return this.abortedResult();
     if (entitlementRefresh.status === 'rejected') {
       logger.error(
@@ -375,6 +411,7 @@ export class TradeSyncCoordinator {
       tradovateStatus,
       rithmicStatus,
       cTraderStatus,
+      hyperliquidStatus,
     ].some(
       (result) =>
         result.status === 'fulfilled' && result.value.connections.length > 0
@@ -401,6 +438,15 @@ export class TradeSyncCoordinator {
     const tradovate = this.discoverTradovate(tradovateStatus, mappedAccountIds);
     const rithmic = this.discoverRithmic(rithmicStatus, mappedAccountIds);
     const cTrader = this.discoverCTrader(cTraderStatus, mappedAccountIds);
+    const hyperliquid = this.discoverBroker<HyperliquidConnection>(
+      hyperliquidStatus,
+      mappedAccountIds,
+      {
+        logLabel: 'Hyperliquid',
+        unavailableOptions: { allowHyperliquidDisabled: true },
+        eligibility: oauthBrokerConnectionSyncEligibility,
+      }
+    );
     const brokers = [
       {
         id: 'tradovate',
@@ -416,6 +462,11 @@ export class TradeSyncCoordinator {
         id: 'ctrader',
         label: 'trade-sync.source.ctrader',
         discovery: cTrader,
+      },
+      {
+        id: 'hyperliquid',
+        label: 'trade-sync.source.hyperliquid',
+        discovery: hyperliquid,
       },
     ] as const;
     const metaTraderConfigured = Boolean(
@@ -510,6 +561,9 @@ export class TradeSyncCoordinator {
         this.dependencies.requestUpgrade(t('trade-sync.providers.title'));
       } else if (skipReasons.includes('unverified')) {
         this.notify(t('premium.gate.offline'));
+      } else if (skipReasons.includes('cancelled')) {
+        // intentional
+        
       } else {
         this.notify(t('trade-sync.quick.not-ready'));
       }
@@ -538,6 +592,14 @@ export class TradeSyncCoordinator {
             result: {
               ...combinedProjectionResult,
               partial: status === 'partial' || combinedProjectionResult.partial,
+              
+              
+              providerPartial:
+                resultOutcomes.every(
+                  (outcome) =>
+                    outcome.status === 'succeeded' ||
+                    (outcome.status === 'partial' && outcome.providerOnly)
+                ) && partialIsProviderOnly(combinedProjectionResult),
             },
           })
         )
@@ -600,44 +662,70 @@ export class TradeSyncCoordinator {
         
         recordOperationResult: false,
       });
-      const response = syncResult?.response;
-      if (syncResult && syncResult.ownerUserId !== initiatingOwnerUserId) {
+      if (!syncResult || syncResult.ownerUserId !== initiatingOwnerUserId) {
         return { source: 'metatrader', status: 'failed' };
       }
-      if (syncResult?.importedTrades.length) {
+      const { response, importedTrades, failedTradeWriteCount } = syncResult;
+      if (importedTrades.length) {
         operationProjectionResults.push({
           accountCount: new Set(
-            syncResult.importedTrades.map((trade) => trade.accountName)
+            importedTrades.map((trade) => trade.accountName)
           ).size,
-          writtenCount: syncResult.importedTrades.length,
-          failedCount: syncResult.failedTradeWriteCount,
+          writtenCount: importedTrades.length,
+          failedCount: failedTradeWriteCount,
           pendingCount: 0,
-          partial: syncResult.response.errors.length > 0,
-          importedTrades: syncResult.importedTrades,
+          partial: response.status !== 'success' || response.errors.length > 0,
+          importedTrades,
         });
       }
-      if (response?.status === METATRADER_SYNC_NOT_ENTITLED_STATUS) {
-        const completedBatch = completedMetaTraderBatchOutcome(response);
-        if (completedBatch) return completedBatch;
-        return { source: 'metatrader', status: 'skipped', reason: 'tier' };
+      switch (response.status) {
+        case METATRADER_SYNC_NOT_ENTITLED_STATUS:
+          return (
+            completedMetaTraderBatchOutcome(response) ?? {
+              source: 'metatrader',
+              status: 'skipped',
+              reason: 'tier',
+            }
+          );
+        case METATRADER_SYNC_ENTITLEMENT_UNVERIFIED_STATUS:
+          return (
+            completedMetaTraderBatchOutcome(response) ?? {
+              source: 'metatrader',
+              status: 'skipped',
+              reason: 'unverified',
+            }
+          );
+        case 'cancelled':
+          
+          
+          
+          return importedTrades.length > 0 || failedTradeWriteCount > 0
+            ? {
+                source: 'metatrader',
+                status: 'partial',
+                importedCount: importedTrades.length,
+                providerOnly: false,
+              }
+            : { source: 'metatrader', status: 'skipped', reason: 'cancelled' };
+        case 'partial':
+        case 'success': {
+          const importedCount = response.new_files + response.updated_files;
+          return response.status === 'partial' || response.errors.length > 0
+            ? {
+                source: 'metatrader',
+                status: 'partial',
+                importedCount,
+                providerOnly: false,
+              }
+            : { source: 'metatrader', status: 'succeeded', importedCount };
+        }
+        default: {
+          const unhandled: never = response.status;
+          throw new Error(
+            `Unhandled MetaTrader sync status: ${String(unhandled)}`
+          );
+        }
       }
-      if (response?.status === METATRADER_SYNC_ENTITLEMENT_UNVERIFIED_STATUS) {
-        const completedBatch = completedMetaTraderBatchOutcome(response);
-        if (completedBatch) return completedBatch;
-        return {
-          source: 'metatrader',
-          status: 'skipped',
-          reason: 'unverified',
-        };
-      }
-      if (!response || response.status === 'cancelled') {
-        return { source: 'metatrader', status: 'failed' };
-      }
-      return {
-        source: 'metatrader',
-        status: response.errors.length > 0 ? 'partial' : 'succeeded',
-        importedCount: response.new_files + response.updated_files,
-      };
     } catch (error) {
       logger.error('Quick MetaTrader sync failed', error);
       return { source: 'metatrader', status: 'failed' };
@@ -672,7 +760,7 @@ export class TradeSyncCoordinator {
     );
     return [
       task
-        .then((result) => {
+        .then((result): TradeSyncSourceOutcome => {
           const projectionAlreadyCounted = countedProjections.has(
             result.projection
           );
@@ -685,8 +773,16 @@ export class TradeSyncCoordinator {
             result,
             projectionAlreadyCounted ? 0 : result.projection.writtenCount
           );
-          return discovery.partial && outcome.status === 'succeeded'
-            ? ({ ...outcome, status: 'partial' } as const)
+          
+          
+          return discovery.partial &&
+            (outcome.status === 'succeeded' || outcome.status === 'partial')
+            ? {
+                source,
+                status: 'partial',
+                importedCount: outcome.importedCount,
+                providerOnly: false,
+              }
             : outcome;
         })
         .catch((error: unknown) => {
@@ -708,6 +804,8 @@ export class TradeSyncCoordinator {
         return projectionService.syncRithmicAll(connectionIds);
       case 'ctrader':
         return projectionService.syncCTraderAll(connectionIds);
+      case 'hyperliquid':
+        return projectionService.syncHyperliquidAll(connectionIds);
       default: {
         const _exhaustive: never = source;
         return _exhaustive;

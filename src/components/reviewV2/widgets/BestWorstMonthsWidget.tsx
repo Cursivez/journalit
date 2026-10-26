@@ -4,8 +4,6 @@ import React, { useState, useMemo, useCallback } from 'react';
 import JournalitPlugin from '../../../main';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
-import { CurrencyCode } from '../../../utils/currencyConfig';
-import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import {
   getEffectivePnL,
   isPnlContributingTrade,
@@ -15,12 +13,18 @@ import {
   getReviewTradeTradingDay,
   splitReviewTradeByRealizedPnlEvent,
 } from '../utils/reviewTradeDates';
-import { BestWorstCard } from './shared/BestWorstCard';
+import {
+  BestWorstPeriodGrid,
+  BestWorstSkeletonGrid,
+} from './shared/BestWorstPeriodGrid';
+import {
+  readReviewTradeSettings,
+  resolveReviewCurrency,
+} from './shared/reviewWidgetSettings';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { TradesPreviewData } from '../../../types/reviewV2';
 import { useReviewTrades } from '../hooks/useReviewData';
 import { useEventBus } from '../../../hooks/useEventBus';
-import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t, type TranslationKey } from '../../../lang/helpers';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import { getBreakEvenBalanceForDisplayTrade } from './shared/breakEvenDisplayUtils';
@@ -129,34 +133,6 @@ const formatMonthName = (monthData: MonthStats): string => {
   return `${t(MONTH_KEYS[monthData.month])} ${monthData.year}`;
 };
 
-const renderSkeletonCard = (isPositive: boolean, titleKey: TranslationKey) => (
-  <div>
-    <div className="journalit-reviewv2-bestworst-label">{t(titleKey)}</div>
-    <div
-      className={[
-        'journalit-reviewv2-bestworst-card',
-        isPositive
-          ? 'journalit-reviewv2-bestworst-card--positive'
-          : 'journalit-reviewv2-bestworst-card--negative',
-        'journalit-reviewv2-bestworst-card--preview',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
-      <div className="journalit-reviewv2-bestworst-pnl-col">
-        <SkeletonBox width={70} height={20} borderRadius="4px" />
-      </div>
-      <div className="journalit-reviewv2-bestworst-details">
-        <SkeletonBox width={120} height={16} borderRadius="4px" />
-        <div className="journalit-u-flex journalit-u-gap-8 journalit-u-mt-4">
-          <SkeletonBox width={50} height={12} borderRadius="4px" />
-          <SkeletonBox width={70} height={12} borderRadius="4px" />
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
   React.memo(
     ({ filePath, plugin, config = {}, preview = false, previewData }) => {
@@ -188,21 +164,18 @@ export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
       );
 
       
-      const currency =
-        getSingleExplicitCurrency(trades) ||
-        plugin?.settings?.general?.currency ||
-        CurrencyCode.USD;
+      const currency = resolveReviewCurrency(trades, plugin);
       const { formatValue, shouldMask } = useDisplayFormatter();
       const isPnlMasked = shouldMask('pnl');
       const isReturnPercentMasked = shouldMask('returnPercent');
       const applyAccountCountMultiplier = false;
-      const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
-      const breakEvenThresholdMode =
-        plugin?.settings?.trade?.breakEvenThresholdMode;
-      const breakEvenThresholdPercent =
-        plugin?.settings?.trade?.breakEvenThresholdPercent;
-      const breakEvenRangeMin = plugin?.settings?.trade?.breakEvenRangeMin;
-      const breakEvenRangeMax = plugin?.settings?.trade?.breakEvenRangeMax;
+      const {
+        defaultRiskAmount,
+        breakEvenThresholdMode,
+        breakEvenThresholdPercent,
+        breakEvenRangeMin,
+        breakEvenRangeMax,
+      } = readReviewTradeSettings(plugin);
       
       const { bestMonth, worstMonth } = useMemo(() => {
         const closedTrades = asReviewBestWorstTrades(
@@ -386,26 +359,13 @@ export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
       
 
       if (loading) {
-        const showBoth = Boolean(
-          mergedConfig.showBest && mergedConfig.showWorst
-        );
-
         return (
-          <div
-            className={[
-              'journalit-reviewv2-bestworst-grid',
-              showBoth
-                ? 'journalit-reviewv2-bestworst-grid--both'
-                : 'journalit-reviewv2-bestworst-grid--single',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            {mergedConfig.showBest &&
-              renderSkeletonCard(true, 'widget.best-worst.best-month')}
-            {mergedConfig.showWorst &&
-              renderSkeletonCard(false, 'widget.best-worst.worst-month')}
-          </div>
+          <BestWorstSkeletonGrid
+            config={mergedConfig}
+            bestTitle={t('widget.best-worst.best-month')}
+            worstTitle={t('widget.best-worst.worst-month')}
+            primaryWidth={120}
+          />
         );
       }
 
@@ -482,72 +442,34 @@ export const BestWorstMonthsWidget: React.FC<BestWorstMonthsWidgetProps> =
         );
       }
 
+      const formatPeriodPnl = (period: MonthStats): string =>
+        formatValue({
+          kind: 'pnl',
+          value: period.pnl,
+          currencyCode: currency,
+          rMultiple: period.pnlR,
+        });
+
       return (
-        <div
-          className={[
-            'journalit-reviewv2-bestworst-grid',
-            mergedConfig.showBest && mergedConfig.showWorst
-              ? 'journalit-reviewv2-bestworst-grid--both'
-              : 'journalit-reviewv2-bestworst-grid--single',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-        >
-          {mergedConfig.showBest && (
-            <BestWorstCard
-              title={t('widget.best-worst.best-month')}
-              isPositive={true}
-              isMasked={isPnlMasked}
-              isEmpty={!bestMonth}
-              emptyMessage={t('widget.best-worst.no-profitable-months')}
-              pnl={
-                bestMonth
-                  ? formatValue({
-                      kind: 'pnl',
-                      value: bestMonth.pnl,
-                      currencyCode: currency,
-                      rMultiple: bestMonth.pnlR,
-                    })
-                  : ''
-              }
-              primaryText={bestMonth ? formatMonthName(bestMonth) : ''}
-              metaItems={bestMonth ? buildMetaItems(bestMonth) : []}
-              onClick={
-                bestMonth ? () => void openMonthlyReview(bestMonth) : undefined
-              }
-              currencyConversion={currencyConversion}
-              conversionTrades={bestMonth?.trades}
-            />
-          )}
-          {mergedConfig.showWorst && (
-            <BestWorstCard
-              title={t('widget.best-worst.worst-month')}
-              isPositive={false}
-              isMasked={isPnlMasked}
-              isEmpty={!worstMonth}
-              emptyMessage={t('widget.best-worst.no-losing-months')}
-              pnl={
-                worstMonth
-                  ? formatValue({
-                      kind: 'pnl',
-                      value: worstMonth.pnl,
-                      currencyCode: currency,
-                      rMultiple: worstMonth.pnlR,
-                    })
-                  : ''
-              }
-              primaryText={worstMonth ? formatMonthName(worstMonth) : ''}
-              metaItems={worstMonth ? buildMetaItems(worstMonth) : []}
-              onClick={
-                worstMonth
-                  ? () => void openMonthlyReview(worstMonth)
-                  : undefined
-              }
-              currencyConversion={currencyConversion}
-              conversionTrades={worstMonth?.trades}
-            />
-          )}
-        </div>
+        <BestWorstPeriodGrid
+          config={mergedConfig}
+          best={{
+            title: t('widget.best-worst.best-month'),
+            emptyMessage: t('widget.best-worst.no-profitable-months'),
+            period: bestMonth,
+          }}
+          worst={{
+            title: t('widget.best-worst.worst-month'),
+            emptyMessage: t('widget.best-worst.no-losing-months'),
+            period: worstMonth,
+          }}
+          isPnlMasked={isPnlMasked}
+          currencyConversion={currencyConversion}
+          formatPnl={formatPeriodPnl}
+          formatName={formatMonthName}
+          buildMetaItems={buildMetaItems}
+          onOpen={(monthData) => void openMonthlyReview(monthData)}
+        />
       );
     }
   );

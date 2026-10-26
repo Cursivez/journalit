@@ -77,9 +77,3 @@ export function refreshTradeProjectionCatalog(
   inFlight.set(key, tracked);
   return tracked;
 }
-
-export function resetTradeProjectionCatalogRefreshForTests(): void {
-  inFlight.clear();
-  backendIds = new WeakMap<object, number>();
-  nextBackendId = 1;
-}

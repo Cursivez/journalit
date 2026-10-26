@@ -48,6 +48,7 @@ import { SampleJournalEntryButton } from '../../shared/SampleJournalControls';
 import { ChallengeOverview } from './ChallengeOverview';
 import { ChallengeEmptyState } from './ChallengeEmptyState';
 import { openLegacyChallengeOnboardingModal } from '../../onboarding/legacyChallenge/LegacyChallengeOnboardingModal';
+import { MonthlyReturnsSection } from '../monthlyReturns/MonthlyReturnsSection';
 import { useGuideContextValue } from '../../../guides/GuideRuntimeLayer';
 import { LEGACY_CHALLENGE_ONBOARDING_GUIDE_CONTEXT_KEY } from '../../../services/accountMerge/LegacyChallengeOnboarding';
 import {
@@ -66,6 +67,7 @@ import {
   ACCOUNT_DASHBOARD_MAIN_GUIDE_ID,
   ACCOUNT_DASHBOARD_WHATS_NEW_PROP_CHALLENGES_GUIDE_ID,
   ACCOUNT_DASHBOARD_METRICS_TARGET_ID,
+  ACCOUNT_DASHBOARD_MONTHLY_RETURNS_TARGET_ID,
   ACCOUNT_DASHBOARD_SECTIONS_TARGET_ID,
   ACCOUNT_DASHBOARD_SETTINGS_BUTTON_TARGET_ID,
   ACCOUNT_DASHBOARD_SETTINGS_INCLUSION_TARGET_ID,
@@ -91,7 +93,7 @@ import { resolveAccountDashboardBaseGuideId } from '../../../guides/accountDashb
 const DASHBOARD_EVENTS: (keyof EventMap)[] = [
   'account:changed',
   'options:changed',
-  'trade:changed',
+  'trade-data:changed',
   'backtest-trade:changed',
 ];
 
@@ -329,7 +331,11 @@ interface AccountDashboardMainContentProps {
   registerAumChartTarget: React.Ref<HTMLDivElement>;
   registerChallengeOverviewTarget: React.Ref<HTMLDivElement>;
   registerMetricsTarget: React.Ref<HTMLDivElement>;
+  registerMonthlyReturnsTarget: React.Ref<HTMLElement>;
   registerSectionsTarget: React.Ref<HTMLDivElement>;
+  
+  returnsAccountNames: readonly string[];
+  selectedTradeTypes: readonly TradeType[];
 }
 
 const AccountDashboardMainContent: React.FC<
@@ -356,7 +362,10 @@ const AccountDashboardMainContent: React.FC<
   registerAumChartTarget,
   registerChallengeOverviewTarget,
   registerMetricsTarget,
+  registerMonthlyReturnsTarget,
   registerSectionsTarget,
+  returnsAccountNames,
+  selectedTradeTypes,
   onCreateChallenge,
   onSetUpExisting,
   hasLegacyAccounts,
@@ -386,6 +395,12 @@ const AccountDashboardMainContent: React.FC<
           totalAUM={totalAUM}
           excludedTypes={excludedTypes}
           showLegend={true}
+        />
+        <MonthlyReturnsSection
+          accountNames={returnsAccountNames}
+          tradeTypes={selectedTradeTypes}
+          placement="account-dashboard"
+          sectionRef={registerMonthlyReturnsTarget}
         />
       </>
     ) : propChallengeAccounts.length === 0 ? (
@@ -628,6 +643,9 @@ const useAccountDashboardGuideTargets = () => ({
   ),
   registerAumChartTarget: useGuideTarget(ACCOUNT_DASHBOARD_AUM_CHART_TARGET_ID),
   registerMetricsTarget: useGuideTarget(ACCOUNT_DASHBOARD_METRICS_TARGET_ID),
+  registerMonthlyReturnsTarget: useGuideTarget(
+    ACCOUNT_DASHBOARD_MONTHLY_RETURNS_TARGET_ID
+  ),
   registerSectionsTarget: useGuideTarget(ACCOUNT_DASHBOARD_SECTIONS_TARGET_ID),
   registerSettingsTypesTarget: useGuideTarget(
     ACCOUNT_DASHBOARD_SETTINGS_TYPES_TARGET_ID
@@ -683,16 +701,23 @@ const useAccountDashboardDerivedData = (
     () => plugin.settings?.account?.excludedAccountTypes || ['archived'],
     [plugin.settings]
   );
-  const totalAUM = useMemo(() => {
+  
+  const aumAccounts = useMemo(() => {
     const excludedTypesSet = new Set(excludedTypes);
-    return displayableAccounts
-      .filter(
-        (account) =>
-          account.accountType &&
-          !excludedTypesSet.has(account.accountType.toLowerCase())
-      )
-      .reduce((sum, account) => sum + account.currentBalance, 0);
+    return displayableAccounts.filter(
+      (account) =>
+        account.accountType &&
+        !excludedTypesSet.has(account.accountType.toLowerCase())
+    );
   }, [displayableAccounts, excludedTypes]);
+  const totalAUM = useMemo(
+    () => aumAccounts.reduce((sum, account) => sum + account.currentBalance, 0),
+    [aumAccounts]
+  );
+  const returnsAccountNames = useMemo(
+    () => aumAccounts.map((account) => account.name),
+    [aumAccounts]
+  );
   const aumChartData = useMemo(
     () => generateAUMChartData(displayableAccounts, plugin.settings),
     [displayableAccounts, plugin.settings]
@@ -725,6 +750,7 @@ const useAccountDashboardDerivedData = (
     withdrawalAccounts,
     excludedTypes,
     totalAUM,
+    returnsAccountNames,
     aumChartData,
     accountsByType,
     accountTypesToDisplay,
@@ -767,6 +793,7 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
     registerEmptyStateTarget,
     registerAumChartTarget,
     registerMetricsTarget,
+    registerMonthlyReturnsTarget,
     registerSectionsTarget,
     registerSettingsTypesTarget,
     registerSettingsStagesTarget,
@@ -883,6 +910,7 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
     withdrawalAccounts,
     excludedTypes,
     totalAUM,
+    returnsAccountNames,
     aumChartData,
     accountsByType,
     accountTypesToDisplay,
@@ -1088,6 +1116,9 @@ const AccountDashboardComponent: React.FC<AccountDashboardProps> = ({
       registerAumChartTarget={registerAumChartTarget}
       registerChallengeOverviewTarget={registerChallengeOverviewTarget}
       registerMetricsTarget={registerMetricsTarget}
+      registerMonthlyReturnsTarget={registerMonthlyReturnsTarget}
+      returnsAccountNames={returnsAccountNames}
+      selectedTradeTypes={selectedTradeTypes}
       registerSectionsTarget={registerSectionsTarget}
       leaf={leaf}
     />

@@ -1,20 +1,12 @@
 
 
-import React, { useEffect, useMemo, useState } from 'react';
-import { App, MarkdownView, Modal, Notice, TFile } from 'obsidian';
+import React, { useMemo, useState } from 'react';
+import { App, MarkdownView, TFile } from 'obsidian';
 import type { Root } from 'react-dom/client';
 import JournalitPlugin from '../../../main';
 import { t } from '../../../lang/helpers';
-import {
-  captureElementPng,
-  hasShareLoadingContent,
-  observeShareLoadingContent,
-} from '../../../services/share/brandedCapture';
-import { writeClipboardPendingPng } from '../../../utils/clipboard';
-import { cssVars } from '../../../styles/inlineStylePolicy';
 import { Button } from '../../ui/Button';
-import { DEFAULT_SETTINGS } from '../../../settings/types';
-import { eventBus } from '../../../services/events/EventBus';
+import { ShareComposer } from '../ShareComposer';
 import { ReviewShareCard } from './ReviewShareCard';
 import {
   AlignLeft,
@@ -32,46 +24,7 @@ import {
   type ReviewNoteBlock,
   type ReviewNoteSection,
 } from './reviewNoteBlocks';
-
-
-
-const CARD_WIDTH = 720;
-const CARD_PIXEL_RATIO = 1.5;
-
-const MAX_PREVIEW_SCALE = 1;
-const FALLBACK_PREVIEW_SCALE = 0.6;
-
-
-function useLayoutSize(
-  element: HTMLElement | null
-): { width: number; height: number } | null {
-  const [size, setSize] = useState<{ width: number; height: number } | null>(
-    null
-  );
-
-  useEffect(() => {
-    if (!element) return;
-    const observer = new ResizeObserver(() => {
-      setSize({ width: element.clientWidth, height: element.offsetHeight });
-    });
-    observer.observe(element);
-    return () => observer.disconnect();
-  }, [element]);
-
-  return size;
-}
-
-
-function useShareCardLoading(card: HTMLElement | null): boolean {
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    if (!card) return;
-    return observeShareLoadingContent(card, setLoading);
-  }, [card]);
-
-  return loading;
-}
+import { JournalitModal } from '../../modals/JournalitModal';
 
 const BLOCK_ICONS = {
   widget: LayoutDashboard,
@@ -129,43 +82,6 @@ const ReviewSharePanel: React.FC<{
     }
     return initial;
   });
-  const [copying, setCopying] = useState(false);
-  
-  const rMultiplesOn = Boolean(plugin.settings.trade.displayRMultiples);
-  const [hideDollarAmounts, setHideDollarAmounts] = useState(
-    () =>
-      rMultiplesOn &&
-      (plugin.settings.display?.hideDollarAmountsInShares ?? false)
-  );
-  const changeHideDollarAmounts = (hide: boolean) => {
-    setHideDollarAmounts(hide);
-    
-    plugin.settings.display = {
-      ...(plugin.settings.display ?? DEFAULT_SETTINGS.display!),
-      hideDollarAmountsInShares: hide,
-    };
-    void plugin.saveSettings().then(() => {
-      eventBus.publish('settings:changed', {
-        section: 'display',
-        source: 'share-hide-dollar-amounts',
-      });
-    });
-  };
-  
-  const [frame, setFrame] = useState<HTMLDivElement | null>(null);
-  const [card, setCard] = useState<HTMLDivElement | null>(null);
-  const [preview, setPreview] = useState<HTMLDivElement | null>(null);
-  const cardHeight = useLayoutSize(card)?.height ?? 0;
-  
-  
-  const cardLoading = useShareCardLoading(card);
-  
-  const previewWidth = useLayoutSize(preview)?.width ?? 0;
-  const previewScale =
-    previewWidth > 0
-      ? Math.min(MAX_PREVIEW_SCALE, previewWidth / CARD_WIDTH)
-      : FALLBACK_PREVIEW_SCALE;
-
   const sharedBlocks = useMemo(
     () => selectedReviewNoteBlocks(sections, selected),
     [sections, selected]
@@ -189,169 +105,101 @@ const ReviewSharePanel: React.FC<{
     sections.flatMap((section) => section.items.map((item) => item.kind))
   );
 
-  const copyCard = () => {
-    
-    
-    if (
-      !frame ||
-      !card ||
-      copying ||
-      cardLoading ||
-      hasShareLoadingContent(card)
-    ) {
-      return;
-    }
-
-    setCopying(true);
-    
-    const png = captureElementPng(card, frame, CARD_PIXEL_RATIO);
-    png.catch((error: unknown) => {
-      console.error('[Journalit] Failed to render review share card:', error);
-    });
-    writeClipboardPendingPng(png)
-      .then(() => {
-        new Notice(t('share.review.copied'));
-      })
-      .catch((error: unknown) => {
-        console.error('[Journalit] Failed to copy review share card:', error);
-        new Notice(t('share.review.failed'));
-      })
-      .finally(() => {
-        setCopying(false);
-      });
-  };
-
   return (
-    <div className="journalit-review-share-layout">
-      
-      <div ref={setPreview} className="journalit-review-share-preview">
-        <div
-          className="journalit-review-share-preview-box"
-          inert
-          style={cssVars({
-            '--journalit-share-preview-scale': previewScale,
-            '--journalit-share-preview-height': `${cardHeight * previewScale}px`,
-          })}
-        >
-          <div ref={setFrame} className="journalit-share-card-frame">
-            <ReviewShareCard
-              ref={setCard}
-              filePath={file.path}
-              plugin={plugin}
-              blocks={sharedBlocks}
-              hideDollarAmounts={hideDollarAmounts}
-            />
-          </div>
-        </div>
-      </div>
-      <div className="journalit-review-share-controls">
-        <div className="journalit-review-share-picker-actions">
-          <Button
-            variant="text"
-            size="small"
-            onClick={() => setIncluded(allIds, true)}
-          >
-            {t('share.review.select-all')}
-          </Button>
-          <Button
-            variant="text"
-            size="small"
-            onClick={() => setIncluded(allIds, false)}
-          >
-            {t('share.review.clear')}
-          </Button>
-        </div>
-        <div className="journalit-review-share-legend">
-          {BLOCK_KINDS.filter((kind) => presentKinds.has(kind)).map((kind) => {
-            const Icon = BLOCK_ICONS[kind];
-            return (
-              <span key={kind} className="journalit-review-share-legend-item">
-                <Icon
-                  size={12}
-                  className="journalit-review-share-item-icon"
-                  aria-hidden="true"
-                />
-                <span className="journalit-review-share-legend-label">
-                  {t(LEGEND_LABEL_KEYS[kind])}
-                </span>
-              </span>
-            );
-          })}
-        </div>
-        <div className="journalit-review-share-sections">
-          {sections.map((section) => (
-            <div
-              key={section.id}
-              className={`journalit-review-share-section${hasSections ? '' : ' is-flat'}`}
-            >
-              {hasSections && (
-                <SectionToggle
-                  section={section}
-                  selected={selected}
-                  onChange={setIncluded}
-                />
-              )}
-              {section.items.map((item) => {
-                const Icon = BLOCK_ICONS[item.kind];
-                return (
-                  <label
-                    key={item.id}
-                    className="journalit-review-share-item-row"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={selected.has(item.id)}
-                      onChange={() =>
-                        setIncluded([item.id], !selected.has(item.id))
-                      }
-                    />
-                    <Icon
-                      size={14}
-                      className="journalit-review-share-item-icon"
-                      aria-hidden="true"
-                    />
-                    <span className="journalit-review-share-row-label">
-                      {reviewNoteBlockLabel(item)}
-                    </span>
-                  </label>
-                );
-              })}
-            </div>
-          ))}
-        </div>
-        <label
-          className={`journalit-review-share-option${rMultiplesOn ? '' : ' is-disabled'}`}
-        >
-          <input
-            type="checkbox"
-            checked={hideDollarAmounts}
-            disabled={!rMultiplesOn}
-            onChange={() => changeHideDollarAmounts(!hideDollarAmounts)}
-          />
-          <span className="journalit-review-share-option-text">
-            <span>{t('share.review.hide-dollar-amounts')}</span>
-            <span className="journalit-review-share-option-hint">
-              {rMultiplesOn
-                ? t('share.review.hide-dollar-amounts-hint')
-                : t('share.review.hide-dollar-amounts-needs-r')}
-            </span>
-          </span>
-        </label>
+    <ShareComposer
+      plugin={plugin}
+      hasContent={sharedBlocks.length > 0}
+      copiedMessage={t('share.review.copied')}
+      failedMessage={t('share.review.failed')}
+      renderCard={(ref, hideDollarAmounts) => (
+        <ReviewShareCard
+          ref={ref}
+          filePath={file.path}
+          plugin={plugin}
+          blocks={sharedBlocks}
+          hideDollarAmounts={hideDollarAmounts}
+        />
+      )}
+    >
+      <div className="journalit-review-share-picker-actions">
         <Button
-          variant="primary"
-          fullWidth
-          onClick={copyCard}
-          loading={copying || (cardLoading && sharedBlocks.length > 0)}
-          disabled={copying || cardLoading || sharedBlocks.length === 0}
+          variant="text"
+          size="small"
+          onClick={() => setIncluded(allIds, true)}
         >
-          {t('share.review.copy')}
+          {t('share.review.select-all')}
+        </Button>
+        <Button
+          variant="text"
+          size="small"
+          onClick={() => setIncluded(allIds, false)}
+        >
+          {t('share.review.clear')}
         </Button>
       </div>
-    </div>
+      <div className="journalit-review-share-legend">
+        {BLOCK_KINDS.filter((kind) => presentKinds.has(kind)).map((kind) => {
+          const Icon = BLOCK_ICONS[kind];
+          return (
+            <span key={kind} className="journalit-review-share-legend-item">
+              <Icon
+                size={12}
+                className="journalit-review-share-item-icon"
+                aria-hidden="true"
+              />
+              <span className="journalit-review-share-legend-label">
+                {t(LEGEND_LABEL_KEYS[kind])}
+              </span>
+            </span>
+          );
+        })}
+      </div>
+      <div className="journalit-review-share-sections">
+        {sections.map((section) => (
+          <div
+            key={section.id}
+            className={`journalit-review-share-section${hasSections ? '' : ' is-flat'}`}
+          >
+            {hasSections && (
+              <SectionToggle
+                section={section}
+                selected={selected}
+                onChange={setIncluded}
+              />
+            )}
+            {section.items.map((item) => {
+              const Icon = BLOCK_ICONS[item.kind];
+              return (
+                <label
+                  key={item.id}
+                  className="journalit-review-share-item-row"
+                >
+                  <input
+                    type="checkbox"
+                    checked={selected.has(item.id)}
+                    onChange={() =>
+                      setIncluded([item.id], !selected.has(item.id))
+                    }
+                  />
+                  <Icon
+                    size={14}
+                    className="journalit-review-share-item-icon"
+                    aria-hidden="true"
+                  />
+                  <span className="journalit-review-share-row-label">
+                    {reviewNoteBlockLabel(item)}
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        ))}
+      </div>
+    </ShareComposer>
   );
 };
 
-export class ReviewShareModal extends Modal {
+export class ReviewShareModal extends JournalitModal {
   private root: Root | null = null;
 
   constructor(
@@ -371,7 +219,7 @@ export class ReviewShareModal extends Modal {
       .getWidgetCodeblockProcessor()
       .ensureImageWidgetIds(this.file.path);
     return this.sourceView.file === this.file
-      ? this.sourceView.editor.getValue()
+      ? this.sourceView.getViewData()
       : this.app.vault.cachedRead(this.file);
   }
 

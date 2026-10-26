@@ -9,7 +9,6 @@ export const RULE_KINDS: PropChallengeRuleKind[] = [
   'minimum_trading_days',
   'minimum_profitable_days',
   'consistency',
-  'max_position_size',
 ];
 
 export const numberValue = (value: string): number =>

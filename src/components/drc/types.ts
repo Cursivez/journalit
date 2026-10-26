@@ -1,5 +1,6 @@
 
 
+import type { StopLossTarget } from '../../services/trade/core/StopLossTargets';
 
 interface ForecastTimeframeSection {
   notes: string;
@@ -52,9 +53,6 @@ export interface DRCFrontmatter {
   dailyGoalStatus?: Record<string, boolean>; 
 
   
-  previousDayGoals?: string[];
-
-  
   mentalGrade: string; 
   technicalGrade: string; 
 
@@ -97,7 +95,6 @@ export interface Trade {
   side?: string; 
   setup?: string[] | string; 
   tags?: string[]; 
-  customTags?: string[]; 
   images?: string[]; 
   assetType?: string; 
   optionType?: string; 
@@ -138,7 +135,7 @@ export interface Trade {
   fees?: number;
 
   
-  stopLoss?: number;
+  stopLosses?: StopLossTarget[];
 
   
   riskAmount?: number;

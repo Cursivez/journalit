@@ -1,5 +1,6 @@
 import {
   CURRENT_SETTINGS_SCHEMA_VERSION,
+  resolveTradeFormLayoutSettings,
   type JournalitSettings,
 } from './types';
 import { migratePropChallengeLiveBalances } from '../services/propChallenge/PropChallengeBalance';
@@ -120,6 +121,20 @@ function deleteKey(record: Record<string, unknown>, key: string): boolean {
 
 function removeRetiredSettings(settings: Partial<JournalitSettings>): boolean {
   let changed = deleteKey(settings, 'uiCustomization');
+  
+  changed = deleteKey(settings, 'tradeLog') || changed;
+  changed = deleteKey(settings, 'viewFilters') || changed;
+  for (const [sectionName, key] of [
+    ['home', 'recentItems'],
+    ['home', 'selectedPeriod'],
+    ['dashboard', 'lastUsedFilters'],
+    ['trade', 'lastAssetType'],
+  ]) {
+    const section = settings[sectionName];
+    if (isRecord(section)) {
+      changed = deleteKey(section, key) || changed;
+    }
+  }
 
   for (const sectionName of [
     'drc',
@@ -136,6 +151,12 @@ function removeRetiredSettings(settings: Partial<JournalitSettings>): boolean {
 
   if (isRecord(settings.reviewV2)) {
     changed = deleteKey(settings.reviewV2, 'scalperDefaults') || changed;
+  }
+
+  
+  if (isRecord(settings.trade)) {
+    changed =
+      deleteKey(settings.trade, 'includeMissedTradesInCalculations') || changed;
   }
 
   return changed;
@@ -159,6 +180,50 @@ export function migrateRetiredSettings(
   }
 
   return removeRetiredSettings(settings) || changed;
+}
+
+
+
+const RENAMED_TRADE_FORM_TAGS_ITEM_ID = 'customTags';
+
+function renameTradeFormTagsItem(value: readonly unknown[]): unknown[] {
+  const renamed = new Set<unknown>();
+  for (const item of value) {
+    renamed.add(item === RENAMED_TRADE_FORM_TAGS_ITEM_ID ? 'tags' : item);
+  }
+  return [...renamed];
+}
+
+
+function migrateTradeFormTagsItemId(
+  settings: JournalitSettings,
+  source: unknown
+): boolean {
+  if (!isRecord(source) || !isRecord(source.trade)) return false;
+  const stored: unknown = source.trade.tradeFormLayout;
+  if (!isRecord(stored)) return false;
+  const itemOrder: unknown = stored.itemOrder;
+  const visibleItems: unknown = stored.visibleItems;
+  if (
+    ![itemOrder, visibleItems].some(
+      (list) =>
+        Array.isArray(list) && list.includes(RENAMED_TRADE_FORM_TAGS_ITEM_ID)
+    )
+  )
+    return false;
+  settings.trade.tradeFormLayout = resolveTradeFormLayoutSettings(
+    {
+      ...settings.trade.tradeFormLayout,
+      ...(Array.isArray(itemOrder)
+        ? { itemOrder: renameTradeFormTagsItem(itemOrder) }
+        : {}),
+      ...(Array.isArray(visibleItems)
+        ? { visibleItems: renameTradeFormTagsItem(visibleItems) }
+        : {}),
+    },
+    { existingInstall: true }
+  );
+  return true;
 }
 
 
@@ -278,6 +343,10 @@ export function migrateSettingsSchema(
         changed = true;
       }
     }
+  }
+
+  if (storedVersion < 3) {
+    changed = migrateTradeFormTagsItemId(settings, source) || changed;
   }
 
   

@@ -1,5 +1,6 @@
 
 
+import { parseStopLossTargets } from '../trade/core/StopLossTargets';
 import { TradeService } from '../trade/TradeService';
 import {
   formatDateDisplay,
@@ -22,6 +23,7 @@ import {
   TimeNode,
   ViewLevel,
   TradeLogMetrics,
+  type TradeLogTrade,
   TradeType,
   TradeStatus,
   ReviewStatusFilter,
@@ -32,6 +34,7 @@ import {
   getCurrentRealizedPnL,
   getTradeDisplayStatusWithContext,
   hasDerivableCurrentRealizedPnL,
+  hasMissedTradeOutcome,
   isPnlContributingTrade,
 } from '../../utils/tradeStatusUtils';
 import {
@@ -46,11 +49,7 @@ import {
 } from '../../utils/unrealizedPnl';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
 import { eventBus } from '../events/EventBus';
-import type {
-  TradeChangedPayload,
-  TradeCommittedPayload,
-  Unsubscribe,
-} from '../events/types';
+import type { TradeCommittedPayload, Unsubscribe } from '../events/types';
 import { aggregatePnLByCurrency } from '../../utils/currencyAggregation';
 import {
   calculateWinRateExcludingBreakeven,
@@ -59,6 +58,7 @@ import {
 import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 import type JournalitPlugin from '../../main';
 import { normalizePath } from 'obsidian';
+import { parseTradeRating, type RatingFilter } from '../../utils/tradeRating';
 import { t } from '../../lang/helpers';
 import {
   type CustomFieldDefinition,
@@ -166,10 +166,13 @@ function createMissedTradeLogData(
     instrument: getStringValue(frontmatter, 'instrument'),
     direction: getStringValue(frontmatter, 'direction'),
     thesis: getStringValue(frontmatter, 'thesis'),
+    stopLosses: parseStopLossTargets(frontmatter.stopLosses),
+    tradeRating: parseTradeRating(frontmatter.tradeRating),
   };
 }
 
 type TradeLogData = PartialTradeFrontmatter &
+  Pick<TradeLogTrade, '_analyticsEventContext'> &
   Record<string, unknown> & {
     breakEvenAccountCurrentBalance?: number;
     breakEvenAccountCurrentBalanceCurrency?: string;
@@ -215,6 +218,7 @@ type EnrichedTradeData = TradeLogData & {
 };
 
 interface HierarchicalQueryParams {
+  resultMode: 'view' | 'trades';
   viewLevel: ViewLevel;
   startDate?: Date;
   endDate?: Date;
@@ -234,6 +238,7 @@ interface HierarchicalQueryParams {
   accountPhases?: AccountPhaseScope[];
   exclusions: FilterExclusions;
   matchModes: FilterMatchModes;
+  ratings?: RatingFilter[];
 }
 
 function normalizeCustomFieldFilterValue(value: unknown): string | null {
@@ -290,8 +295,6 @@ export class TradeLogService {
   
   private readonly latestTradeRevisionById = new Map<string, number>();
   
-  private readonly pendingLegacyMirrors = new Map<string, number>();
-  
   private tradeCommitRevisionToken: number = 0;
   private missedTradeAccountOptionsCache: string[] | null = null;
   private resolvedTradePnLCache = new WeakMap<
@@ -302,72 +305,6 @@ export class TradeLogService {
   
   private cachedTradingDayCutoffTime: string | null = null;
   private cachedWeekStartDay: WeekStartDaySetting = 'monday';
-
-  private registerPendingLegacyMirror(
-    change: TradeCommittedPayload['change']
-  ): void {
-    const now = Date.now();
-    for (const [key, expiresAt] of this.pendingLegacyMirrors.entries()) {
-      if (expiresAt < now) {
-        this.pendingLegacyMirrors.delete(key);
-      }
-    }
-
-    const primaryPath =
-      typeof change.path === 'string' && change.path.length > 0
-        ? change.path
-        : null;
-    if (!primaryPath) {
-      return;
-    }
-
-    this.pendingLegacyMirrors.set(
-      `${change.action}:${primaryPath}`,
-      now + 1200
-    );
-  }
-
-  private shouldIgnoreMirroredLegacyTradeChanged(
-    payload?: TradeChangedPayload
-  ): boolean {
-    if (!payload) {
-      return false;
-    }
-
-    const action = payload.action;
-    if (
-      action !== 'created' &&
-      action !== 'updated' &&
-      action !== 'deleted' &&
-      action !== 'relocated'
-    ) {
-      return false;
-    }
-
-    const pathCandidates = Array.isArray(payload.filePaths)
-      ? payload.filePaths
-      : payload.filePath
-        ? [payload.filePath]
-        : [];
-
-    if (pathCandidates.length !== 1) {
-      return false;
-    }
-
-    const key = `${action}:${pathCandidates[0]}`;
-    const expiresAt = this.pendingLegacyMirrors.get(key);
-    if (!expiresAt) {
-      return false;
-    }
-
-    if (expiresAt < Date.now()) {
-      this.pendingLegacyMirrors.delete(key);
-      return false;
-    }
-
-    this.pendingLegacyMirrors.delete(key);
-    return true;
-  }
 
   constructor(plugin: JournalitPlugin) {
     this.plugin = plugin;
@@ -404,26 +341,21 @@ export class TradeLogService {
       }
 
       this.latestTradeRevisionById.set(tradeId, revision);
-      if (payload.legacyTradeChangedExpected === true) {
-        this.registerPendingLegacyMirror(payload.change);
-      }
       bumpTradeRevisionAndClearCache();
     };
 
-    const handleTradeChanged = (payload: TradeChangedPayload) => {
-      if (this.shouldIgnoreMirroredLegacyTradeChanged(payload)) {
-        return;
-      }
-      bumpTradeRevisionAndClearCache();
-    };
-
+    
     
     
     this.unsubscribeFns.push(
       eventBus.subscribe('trade:committed', handleTradeCommitted),
-      eventBus.subscribe('trade:changed', handleTradeChanged),
+      eventBus.subscribe('trade-data:changed', bumpTradeRevisionAndClearCache),
       eventBus.subscribe(
         'missed-trade:changed',
+        bumpTradeRevisionAndClearCache
+      ),
+      eventBus.subscribe(
+        'missed-trade-data:changed',
         bumpTradeRevisionAndClearCache
       ),
       eventBus.subscribe(
@@ -530,6 +462,8 @@ export class TradeLogService {
     const tradesWithPaths = relevantTrades.flatMap((trade) => {
       const normalizedTrade: TradeLogData = {
         ...trade,
+        
+        _analyticsEventContext: undefined,
         entryTime:
           trade.entryTime instanceof Date
             ? trade.entryTime
@@ -551,13 +485,7 @@ export class TradeLogService {
           getBreakEvenAccountBalanceFields(
             resolveBreakEvenAccountBalances(
               normalizedTrade,
-              accountBalanceLookup,
-              {
-                resolveAccountIdDisplayName: (accountId) =>
-                  this.plugin.settings.backendIntegration?.accountMapping?.[
-                    accountId
-                  ],
-              }
+              accountBalanceLookup
             )
           )
         );
@@ -871,6 +799,8 @@ export class TradeLogService {
         query.accountPhases,
         query.exclusions,
         query.matchModes,
+        query.resultMode,
+        query.ratings,
         retryCount + 1
       );
     }
@@ -901,6 +831,8 @@ export class TradeLogService {
     accountPhases?: AccountPhaseScope[],
     exclusions: FilterExclusions = createFilterExclusions(),
     matchModes: FilterMatchModes = createFilterMatchModes(),
+    resultMode: 'view' | 'trades' = 'view',
+    ratings?: RatingFilter[],
     retryCount: number = 0
   ): Promise<TimeNode[]> {
     
@@ -920,6 +852,7 @@ export class TradeLogService {
       return entries.length === 0 ? 'ALL' : JSON.stringify(entries);
     };
     const query: HierarchicalQueryParams = {
+      resultMode,
       viewLevel,
       startDate,
       endDate,
@@ -939,6 +872,7 @@ export class TradeLogService {
       accountPhases,
       exclusions,
       matchModes,
+      ratings,
     };
 
     const requestRevisionToken = this.tradeCommitRevisionToken;
@@ -952,7 +886,7 @@ export class TradeLogService {
             .map((scope) => `${scope.account}\0${scope.phaseId}`)
             .sort()
             .join(',');
-    const cacheKey = `v${this.CACHE_VERSION}-r${requestRevisionToken}-copy${includeCopyAccountsInAllAccounts}-${viewLevel}-${startDate?.toISOString()}-${endDate?.toISOString()}-${analyticsDateBasis ?? 'calendar-entry'}-${normalizeFilterArray(tradeTypes)}-${normalizeFilterArray(statuses)}-${normalizeFilterArray(reviewStatus)}-${normalizeFilterArray(directions)}-${normalizeFilterArray(sessionLogTags)}-${normalizeFilterArray(accounts)}-${normalizeFilterArray(tickers)}-${normalizeFilterArray(setups)}-${normalizeFilterArray(tags)}-${normalizeFilterArray(mistakes)}-${normalizeCustomFieldFilters(customFieldFilters)}-${normalizeFilterArray(operationFilePaths)}-${accountPhaseCacheKey}-${getFilterExclusionsCacheKey(exclusions)}-${getFilterMatchModesCacheKey(matchModes)}`;
+    const cacheKey = `v${this.CACHE_VERSION}-${resultMode}-r${requestRevisionToken}-copy${includeCopyAccountsInAllAccounts}-${viewLevel}-${startDate?.toISOString()}-${endDate?.toISOString()}-${analyticsDateBasis ?? 'calendar-entry'}-${normalizeFilterArray(tradeTypes)}-${normalizeFilterArray(statuses)}-${normalizeFilterArray(reviewStatus)}-${normalizeFilterArray(ratings)}-${normalizeFilterArray(directions)}-${normalizeFilterArray(sessionLogTags)}-${normalizeFilterArray(accounts)}-${normalizeFilterArray(tickers)}-${normalizeFilterArray(setups)}-${normalizeFilterArray(tags)}-${normalizeFilterArray(mistakes)}-${normalizeCustomFieldFilters(customFieldFilters)}-${normalizeFilterArray(operationFilePaths)}-${accountPhaseCacheKey}-${getFilterExclusionsCacheKey(exclusions)}-${getFilterMatchModesCacheKey(matchModes)}`;
     const now = Date.now();
 
     
@@ -970,7 +904,7 @@ export class TradeLogService {
     
     
     const isNewDataRequest = !this.cache.has(cacheKey.split('-')[0]); 
-    if (isNewDataRequest) {
+    if (isNewDataRequest && resultMode === 'view') {
       this.cachedEnrichedTrades = null;
       this.cachedEnrichedTradesCacheKey = null;
       this.cachedEnrichedTradesOperationScopeKey = null;
@@ -996,6 +930,7 @@ export class TradeLogService {
       tradeTypes: tradeTypes || [],
       statuses: statuses || [],
       reviewStatus: reviewStatus || [],
+      ratings: ratings || [],
       directions: directions || [],
       customFieldFilters: customFieldFilters || {},
       exclusions,
@@ -1051,7 +986,9 @@ export class TradeLogService {
 
     
     let result: TimeNode[];
-    switch (viewLevel) {
+    
+    
+    switch (resultMode === 'trades' ? 'trades' : viewLevel) {
       case 'years':
         result = await this.buildYearNodesOptimized(enrichedTrades);
         break;
@@ -1082,7 +1019,7 @@ export class TradeLogService {
       this.markBestWorstPerformers(result);
     }
 
-    if (matchingDays) {
+    if (matchingDays && resultMode === 'view') {
       const existingDayIds = new Set(result.map((node) => node.id));
       for (const dayId of matchingDays) {
         if (existingDayIds.has(dayId)) continue;
@@ -1110,12 +1047,6 @@ export class TradeLogService {
       result.sort((a, b) => b.id.localeCompare(a.id));
     }
 
-    
-    const rootMetrics =
-      enrichedTrades.length > 500
-        ? this.calculateMetricsLightweight(enrichedTrades)
-        : this.calculateMetrics(enrichedTrades);
-
     const retryAfterBuild = await this.retryHierarchicalDataIfRevisionChanged(
       requestRevisionToken,
       query,
@@ -1124,6 +1055,16 @@ export class TradeLogService {
     if (retryAfterBuild !== undefined) {
       return retryAfterBuild;
     }
+
+    
+    
+    if (resultMode === 'trades') return result;
+
+    
+    const rootMetrics =
+      enrichedTrades.length > 500
+        ? this.calculateMetricsLightweight(enrichedTrades)
+        : this.calculateMetrics(enrichedTrades);
 
     
     
@@ -1715,7 +1656,7 @@ export class TradeLogService {
     if (analyticsDateBasis === 'exit') {
       return trades.flatMap((trade) =>
         getProjectedRealizedEventTrades(trade, this.plugin).flatMap(
-          ({ trade: projectedTrade, event, originalIndex }) => {
+          ({ trade: projectedTrade, event, originalIndex, isFinalEvent }) => {
             if (startDate && event.tradingDay < startDate) return [];
             if (endDate && event.tradingDay > endDate) return [];
 
@@ -1729,6 +1670,13 @@ export class TradeLogService {
                 ...projectedTrade,
                 _analyticsEventDate: event.tradingDay,
                 _analyticsEventRowId: `${rowIdentity}#realized-${originalIndex}`,
+                _analyticsEventContext: {
+                  ownsSourceCashflows: isFinalEvent,
+                  pnl:
+                    trade.isMissedTrade && !hasMissedTradeOutcome(trade)
+                      ? null
+                      : event.pnl,
+                },
               },
             ];
           }
@@ -1771,8 +1719,6 @@ export class TradeLogService {
       filters,
       this.plugin.customFieldsService?.getFields() || [],
       {
-        resolveAccountIdDisplayName: (accountId) =>
-          this.plugin.settings.backendIntegration?.accountMapping?.[accountId],
         breakEvenSettings: this.plugin.settings.trade,
         getBreakEvenBalance: (trade) =>
           trade.breakEvenAccountCurrentBalanceTotal ??
@@ -2031,162 +1977,6 @@ export class TradeLogService {
         this.markBestWorstPerformersRecursive(node.children);
       }
     });
-  }
-
-  
-  private markBestWorstTrades(trades: TimeNode[]): void {
-    if (trades.length === 0) return;
-
-    
-    let best: TimeNode | null = null;
-    let worst: TimeNode | null = null;
-    let bestPnL = -Infinity;
-    let worstPnL = Infinity;
-
-    trades.forEach((node: TimeNode) => {
-      const tradeRecord = node.trade;
-      const pnl = tradeRecord ? this.getResolvedTradePnL(tradeRecord) : 0;
-
-      
-      if (pnl > 0 && pnl > bestPnL) {
-        bestPnL = pnl;
-        best = node;
-      }
-
-      
-      if (pnl < 0 && pnl < worstPnL) {
-        worstPnL = pnl;
-        worst = node;
-      }
-    });
-
-    
-    if (trades.length === 1) {
-      const trade = trades[0];
-      const tradeRecord = trade.trade;
-      const pnl = tradeRecord ? this.getResolvedTradePnL(tradeRecord) : 0;
-      if (pnl > 0) {
-        if (tradeRecord) tradeRecord.performanceIndicator = 'best';
-      } else if (pnl < 0) {
-        if (tradeRecord) tradeRecord.performanceIndicator = 'worst';
-      }
-    } else {
-      
-      
-      const bestTrade = best
-        ? asTradeLogRecord((best as TimeNode).trade)
-        : undefined;
-      if (bestTrade && bestPnL > 0) {
-        bestTrade.performanceIndicator = 'best';
-      }
-      
-      if (
-        worst !== null &&
-        worstPnL < 0 &&
-        worst !== best &&
-        asTradeLogRecord((worst as TimeNode).trade)
-      ) {
-        const worstTrade = asTradeLogRecord((worst as TimeNode).trade);
-        if (worstTrade) {
-          worstTrade.performanceIndicator = 'worst';
-        }
-      }
-    }
-  }
-
-  
-  private async buildTradeNodes(trades: TradeLogData[]): Promise<TimeNode[]> {
-    
-    const sortedTrades = [...trades].sort((a, b) => {
-      const dateA = new Date(a._analyticsEventDate ?? a.entryTime);
-      const dateB = new Date(b._analyticsEventDate ?? b.entryTime);
-      return dateB.getTime() - dateA.getTime();
-    });
-
-    
-    if (sortedTrades.length < 100) {
-      const tradeNodes: TimeNode[] = sortedTrades.map((trade) => {
-        const date = new Date(trade._analyticsEventDate ?? trade.entryTime);
-        const formattedDate = formatDateDisplay(date);
-        const tradeStatus = this.getTradeStatus(trade);
-        const isOpenTrade =
-          tradeStatus === 'open' || tradeStatus === 'partially_closed';
-        const pnl = this.getResolvedTradePnL(trade);
-        const instrument = trade.instrument || 'Unknown';
-
-        const label = `${instrument} - ${formattedDate}${isOpenTrade ? ' (OPEN)' : ''}`;
-
-        return {
-          type: 'trade' as const,
-          id:
-            trade.copiedTradeRowId ||
-            trade.filePath ||
-            `trade-${instrument}-${date.getTime()}`,
-          label,
-          metrics: {
-            totalPnL: pnl,
-            winRate:
-              isOpenTrade || this.getOutcomeFromPnL(trade) !== 'win' ? 0 : 100,
-            tradeCount: 1,
-            status: tradeStatus,
-          },
-          trade: trade,
-          expanded: false,
-          dataLoaded: true,
-        };
-      });
-
-      
-      return tradeNodes;
-    }
-
-    
-    const tradeNodes: TimeNode[] = [];
-    const batchSize = 50;
-
-    for (let i = 0; i < sortedTrades.length; i += batchSize) {
-      const batch = sortedTrades.slice(i, i + batchSize);
-
-      const batchNodes = batch.map((trade) => {
-        const date = new Date(trade.entryTime);
-        const formattedDate = formatDateDisplay(date);
-        const tradeStatus = this.getTradeStatus(trade);
-        const isOpenTrade =
-          tradeStatus === 'open' || tradeStatus === 'partially_closed';
-        const pnl = this.getResolvedTradePnL(trade);
-        const instrument = trade.instrument || 'Unknown';
-
-        const label = `${instrument} - ${formattedDate}${isOpenTrade ? ' (OPEN)' : ''}`;
-
-        return {
-          type: 'trade' as const,
-          id:
-            trade.copiedTradeRowId ||
-            trade.filePath ||
-            `trade-${instrument}-${date.getTime()}`,
-          label,
-          metrics: {
-            totalPnL: pnl,
-            winRate:
-              isOpenTrade || this.getOutcomeFromPnL(trade) !== 'win' ? 0 : 100,
-            tradeCount: 1,
-            status: tradeStatus,
-          },
-          trade: trade,
-          expanded: false,
-          dataLoaded: true,
-        };
-      });
-
-      tradeNodes.push(...batchNodes);
-
-      
-      if ((i / batchSize) % 3 === 0 && i + batchSize < sortedTrades.length) {
-        await new Promise((resolve) => window.setTimeout(resolve, 0));
-      }
-    }
-
-    return tradeNodes;
   }
 
   
@@ -2714,7 +2504,6 @@ export class TradeLogService {
       RealizedOrTerminalPnLResolution
     >();
     this.latestTradeRevisionById.clear();
-    this.pendingLegacyMirrors.clear();
     this.missedTradeAccountOptionsCache = null;
   }
 }

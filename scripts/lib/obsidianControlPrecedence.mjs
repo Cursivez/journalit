@@ -1,7 +1,9 @@
 
 
 export const CONTROL_BOOST = {
-  button: ':is(button)',
+  
+  
+  button: ':is(button):defined',
   select: ':is(select):not(:disabled):not(.mod-disabled)',
   
   
@@ -271,6 +273,13 @@ function interpolationCode(expression) {
 function classTokens(source, expression, depth = 3) {
   const tokens = new Set();
   for (const literal of expression.matchAll(STRING_LITERAL)) {
+    
+    
+    const before = expression.slice(0, literal.index).trimEnd();
+    const after = expression
+      .slice(literal.index + literal[0].length)
+      .trimStart();
+    if (/(?:===?|!==?)$/.test(before) || /^(?:===?|!==?)/.test(after)) continue;
     const text = literal[2]
       .replace(/\$\{\s*([A-Za-z_$][\w$]*)\s*\}/g, (match, identifier) => {
         const value = declarationValue(source, identifier).trim();

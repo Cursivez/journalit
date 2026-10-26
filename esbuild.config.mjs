@@ -143,9 +143,19 @@ async function main() {
   
   if (prod || preview) {
     
-    await context.rebuild();
-    if (prod) applyObsidianReviewBundleNormalizations();
-    process.exit(0);
+    
+    try {
+      await context.rebuild();
+      if (prod) applyObsidianReviewBundleNormalizations();
+    } catch (error) {
+      
+      
+      console.error(error);
+      process.exitCode = 1;
+    } finally {
+      await context.dispose();
+    }
+    return;
   }
 
   

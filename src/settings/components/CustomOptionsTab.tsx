@@ -27,6 +27,7 @@ import JournalitPlugin from '../../main';
 import {
   CustomOptionsService,
   OptionType,
+  type StoredOptionType,
   FuturesInstrumentData,
   ForexInstrumentData,
   CfdInstrumentData,
@@ -51,10 +52,13 @@ import {
 } from '../../types/labelColor';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { mergeClassNames } from '../../utils/classNames';
+import type { AccountCatalogEntry } from '../../services/accountPage/types';
+import { normalizeAccountLookupKey } from '../../services/trade/core/TradeAccountIdentity';
+import { useEventBus } from '../../hooks/useEventBus';
 
 interface CustomOptionsTabProps {
   plugin: JournalitPlugin;
-  filterType?: OptionType; 
+  filterType?: StoredOptionType; 
   showSymbolMappings?: boolean; 
 }
 
@@ -89,18 +93,16 @@ const CUSTOM_OPTION_TYPES = [
   OptionType.INSTRUMENT,
   OptionType.ACCOUNT,
   OptionType.ACCOUNT_TYPE,
-  OptionType.SETUP,
   OptionType.MISTAKE,
   OptionType.TAG,
   OptionType.EVENT,
 ] as const;
 
-const isOptionType = (type: string): type is OptionType => {
+const isOptionType = (type: string): type is StoredOptionType => {
   switch (type) {
     case 'instrument':
     case 'account':
     case 'account_type':
-    case 'setup':
     case 'mistake':
     case 'tag':
     case 'event':
@@ -114,7 +116,6 @@ type OptionsState = {
   ['instrument']: InstrumentData[];
   ['account']: string[];
   ['account_type']: string[];
-  ['setup']: string[];
   ['mistake']: string[];
   ['tag']: string[];
   ['event']: EventOptionData[];
@@ -126,7 +127,6 @@ const EMPTY_OPTIONS_STATE: OptionsState = {
   [OptionType.INSTRUMENT]: [],
   [OptionType.ACCOUNT]: [],
   [OptionType.ACCOUNT_TYPE]: [],
-  [OptionType.SETUP]: [],
   [OptionType.MISTAKE]: [],
   [OptionType.TAG]: [],
   [OptionType.EVENT]: [],
@@ -170,12 +170,10 @@ const CommissionAccountDropdown: React.FC<CommissionAccountDropdownProps> = ({
       }
     };
 
-    window.activeDocument.addEventListener('mousedown', handleClickOutside);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('mousedown', handleClickOutside);
     return () =>
-      window.activeDocument.removeEventListener(
-        'mousedown',
-        handleClickOutside
-      );
+      listenerDocument.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
   const handleSelect = (account: string) => {
@@ -369,32 +367,31 @@ const createInstrumentEditState = (instrument: InstrumentData): OptionInfo => {
 };
 
 function allOptionsForType(
-  options: OptionsState[OptionType],
+  options: OptionsState[StoredOptionType],
   type: OptionType.INSTRUMENT
 ): InstrumentData[];
 function allOptionsForType(
-  options: OptionsState[OptionType],
+  options: OptionsState[StoredOptionType],
   type: OptionType.EVENT
 ): EventOptionData[];
 function allOptionsForType(
-  options: OptionsState[OptionType],
+  options: OptionsState[StoredOptionType],
   type:
     | OptionType.ACCOUNT
     | OptionType.ACCOUNT_TYPE
-    | OptionType.SETUP
     | OptionType.MISTAKE
     | OptionType.TAG
 ): string[];
 function allOptionsForType(
-  options: OptionsState[OptionType],
+  options: OptionsState[StoredOptionType],
   _type: OptionType
-): OptionsState[OptionType] {
+): OptionsState[StoredOptionType] {
   return options;
 }
 
 const buildEditStatesForType = (
-  type: OptionType,
-  typeOptions: OptionsState[OptionType],
+  type: StoredOptionType,
+  typeOptions: OptionsState[StoredOptionType],
   tagColors: Record<string, LabelColor>
 ): Record<string, OptionInfo> => {
   const typeEditStates: Record<string, OptionInfo> = {};
@@ -412,7 +409,6 @@ const buildEditStatesForType = (
       break;
     case OptionType.ACCOUNT:
     case OptionType.ACCOUNT_TYPE:
-    case OptionType.SETUP:
     case OptionType.MISTAKE:
       allOptionsForType(typeOptions, type).forEach((option) => {
         typeEditStates[option] = createStringEditState(option);
@@ -585,7 +581,6 @@ const customOptionsTabReducer = (
         [OptionType.INSTRUMENT]: action.allOptions[OptionType.INSTRUMENT],
         [OptionType.ACCOUNT]: action.allOptions[OptionType.ACCOUNT],
         [OptionType.ACCOUNT_TYPE]: action.allOptions[OptionType.ACCOUNT_TYPE],
-        [OptionType.SETUP]: action.allOptions[OptionType.SETUP],
         [OptionType.MISTAKE]: action.allOptions[OptionType.MISTAKE],
         [OptionType.TAG]: action.allOptions[OptionType.TAG],
         [OptionType.EVENT]: action.allOptions[OptionType.EVENT],
@@ -743,8 +738,6 @@ const getDisplayName = (type: string): string => {
       return t('settings.customization.options.type.accounts');
     case 'account_type':
       return t('settings.customization.options.type.account-types');
-    case 'setup':
-      return t('settings.customization.options.type.setups');
     case 'mistake':
       return t('settings.customization.options.type.mistakes');
     case 'tag':
@@ -836,6 +829,69 @@ const useCustomOptionsTabController = ({
     reloadOptionsState,
     reloadSymbolMappings,
   } = useCustomOptionsTabViewModel(optionsService, plugin);
+
+  const [accountCatalog, setAccountCatalog] = useState<AccountCatalogEntry[]>(
+    []
+  );
+  const accountRequestRef = useRef(0);
+  const needsCommissionAccounts =
+    !showSymbolMappings &&
+    (!filterType || filterType === OptionType.INSTRUMENT);
+  const loadCommissionAccounts = useCallback(async () => {
+    if (!needsCommissionAccounts) return;
+    const request = ++accountRequestRef.current;
+    try {
+      const service = await plugin.serviceManager.getAccountPageService();
+      const catalog = await service.getAccountCatalogOrThrow([
+        'regular',
+        'backtest',
+      ]);
+      if (request === accountRequestRef.current) setAccountCatalog(catalog);
+    } catch (error) {
+      if (request === accountRequestRef.current) {
+        ErrorHandler.handleError(
+          error,
+          ErrorHandler.createContext('load commission accounts')
+        );
+      }
+    }
+  }, [needsCommissionAccounts, plugin]);
+
+  useEffect(() => {
+    void loadCommissionAccounts();
+    return () => {
+      accountRequestRef.current += 1;
+    };
+  }, [loadCommissionAccounts]);
+  useEventBus(
+    'account:changed',
+    loadCommissionAccounts,
+    needsCommissionAccounts
+  );
+  useEventBus(
+    'trade-data:changed',
+    loadCommissionAccounts,
+    needsCommissionAccounts
+  );
+  useEventBus(
+    'backtest-trade:changed',
+    loadCommissionAccounts,
+    needsCommissionAccounts
+  );
+
+  
+  
+  const commissionAccountsByKey = new Map(
+    options.account.map((name) => [normalizeAccountLookupKey(name), name])
+  );
+  for (const account of accountCatalog) {
+    const key = normalizeAccountLookupKey(account.name);
+    if (account.archived) commissionAccountsByKey.delete(key);
+    else commissionAccountsByKey.set(key, account.name);
+  }
+  const commissionAccounts = [...commissionAccountsByKey.values()].sort(
+    (a, b) => a.localeCompare(b)
+  );
 
   
   useEffect(() => {
@@ -994,7 +1050,7 @@ const useCustomOptionsTabController = ({
     if (!isOptionType(type)) {
       return;
     }
-    const optionType: OptionType = type;
+    const optionType: StoredOptionType = type;
 
     
     resetFocusState();
@@ -1365,6 +1421,39 @@ const useCustomOptionsTabController = ({
 
   
   const saveOption = async (type: string, oldValueKey: string) => {
+    const restoreSubmittedEdit = () => {
+      const submitted = editStates[type]?.[oldValueKey];
+      if (!submitted) return;
+      setEditStates((prev) => {
+        const original = prev[type]?.[oldValueKey];
+        const restored = { ...(prev[type] || {}) };
+        delete restored[submitted.editValue];
+        restored[oldValueKey] = original?.isEditing
+          ? original
+          : { ...submitted, isEditing: true };
+        return { ...prev, [type]: restored };
+      });
+    };
+    
+    
+    
+    let committed = false;
+    const recoverFailedSave = async () => {
+      if (!committed) {
+        restoreSubmittedEdit();
+        return;
+      }
+      try {
+        await reloadOptionsState();
+      } catch (reloadError) {
+        ErrorHandler.handleError(
+          reloadError,
+          ErrorHandler.createContext(
+            `reload ${getDisplayName(type).toLowerCase()} options`
+          )
+        );
+      }
+    };
     try {
       
       if (!editStates[type] || !editStates[type][oldValueKey]) {
@@ -1592,6 +1681,7 @@ const useCustomOptionsTabController = ({
           if (oldValueKey !== newValue) {
             
             await optionsService.removeOption(OptionType.EVENT, oldValueKey);
+            committed = true;
           }
           
           const success = await optionsService.addOrUpdateEventOption(
@@ -1610,6 +1700,8 @@ const useCustomOptionsTabController = ({
                   newValue,
                   shouldUpdateNotes
                 );
+          if (updateResult.success && oldValueKey !== newValue)
+            committed = true;
           const colorSaved = updateResult.success
             ? await optionsService.setTagColor(
                 newValue,
@@ -1622,7 +1714,7 @@ const useCustomOptionsTabController = ({
           if (!isOptionType(type)) {
             return;
           }
-          const optionType: OptionType = type;
+          const optionType: StoredOptionType = type;
 
           result = await optionsService.updateOption(
             optionType,
@@ -1633,6 +1725,7 @@ const useCustomOptionsTabController = ({
         }
 
         if (result.success) {
+          committed = true;
           await reloadOptionsState({
             closeEditingFor: { type, optionKey: newValue },
           });
@@ -1663,34 +1756,7 @@ const useCustomOptionsTabController = ({
               `update ${getDisplayName(type).toLowerCase()} option`
             )
           );
-          
-          setEditStates((prev) => {
-            const revertedTypeState = { ...(prev[type] || {}) };
-            const optionState = revertedTypeState[newValue]; 
-
-            if (optionState) {
-              delete revertedTypeState[newValue]; 
-              
-              revertedTypeState[oldValueKey] = {
-                ...(editStates[type]?.[oldValueKey] || {
-                  text: oldValueKey,
-                  editValue: oldValueKey,
-                }), 
-                isEditing: true,
-                editValue: newValue, 
-              };
-            } else {
-              
-              if (prev[type]?.[oldValueKey]) {
-                revertedTypeState[oldValueKey] = {
-                  ...prev[type][oldValueKey],
-                  isEditing: true,
-                  editValue: newValue, 
-                };
-              }
-            }
-            return { ...prev, [type]: revertedTypeState };
-          });
+          await recoverFailedSave();
         }
       };
 
@@ -1729,9 +1795,9 @@ const useCustomOptionsTabController = ({
         });
 
         if (action === 'update-notes') {
-          void performUpdate(true);
+          await performUpdate(true);
         } else if (action === 'save-name') {
-          void performUpdate(false);
+          await performUpdate(false);
         }
       } else if (type === 'instrument') {
         
@@ -1751,7 +1817,7 @@ const useCustomOptionsTabController = ({
           commissionRulesChanged
         ) {
           
-          void performUpdate(false);
+          await performUpdate(false);
         } else {
           
           setEditStates((prev) => ({
@@ -1770,7 +1836,7 @@ const useCustomOptionsTabController = ({
         }
       } else if (type === 'event') {
         if (eventColorChanged || eventNotesChanged) {
-          void performUpdate(false);
+          await performUpdate(false);
         } else {
           setEditStates((prev) => ({
             ...prev,
@@ -1787,7 +1853,7 @@ const useCustomOptionsTabController = ({
           }));
         }
       } else if (type === 'tag' && tagColorChanged) {
-        void performUpdate(false);
+        await performUpdate(false);
       } else {
         
         setEditStates((prev) => ({
@@ -1811,20 +1877,7 @@ const useCustomOptionsTabController = ({
           `update ${getDisplayName(type).toLowerCase()} option`
         )
       );
-      
-      setEditStates((prev) => ({
-        ...prev,
-        [type]: {
-          ...(prev[type] || {}),
-          [oldValueKey]: {
-            ...(prev[type]?.[oldValueKey] || {
-              text: oldValueKey,
-              editValue: oldValueKey,
-            }),
-            isEditing: true, 
-          },
-        },
-      }));
+      await recoverFailedSave();
     }
   };
 
@@ -1859,7 +1912,7 @@ const useCustomOptionsTabController = ({
       if (!isOptionType(type)) {
         return;
       }
-      const optionType: OptionType = type;
+      const optionType: StoredOptionType = type;
 
       const removed = await optionsService.removeOption(optionType, optionKey);
 
@@ -1911,7 +1964,7 @@ const useCustomOptionsTabController = ({
       if (!isOptionType(type)) {
         return;
       }
-      const optionType: OptionType = type;
+      const optionType: StoredOptionType = type;
 
       const didChange = await optionsService.resetOptionsToDefaults(optionType);
 
@@ -2020,6 +2073,7 @@ const useCustomOptionsTabController = ({
   return {
     plugin,
     options,
+    commissionAccounts,
     tagColors,
     editStates,
     newOptionValues,
@@ -2071,6 +2125,7 @@ const renderCustomOptionsTab = (
   const {
     plugin,
     options,
+    commissionAccounts,
     tagColors,
     editStates,
     newOptionValues,
@@ -2575,7 +2630,7 @@ const renderCustomOptionsTab = (
                                               )}
                                             </span>
                                             <CommissionAccountDropdown
-                                              accounts={options['account']}
+                                              accounts={commissionAccounts}
                                               value={rule.account}
                                               onChange={(account) =>
                                                 updateCommissionRule(

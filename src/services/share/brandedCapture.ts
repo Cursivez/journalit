@@ -1,7 +1,8 @@
 
 
 import { toCanvas } from 'html-to-image';
-import { LOGO_DATA_URI } from '../../assets/logoData';
+import type { App } from 'obsidian';
+import { withVaultCaptureMedia } from './vaultCaptureMedia';
 import { inlineCloneMedia } from './inlineCloneMedia';
 import { inlineSvgPresentation } from './inlineSvgPresentation';
 
@@ -91,17 +92,36 @@ export function observeShareLoadingContent(
   return () => observer.disconnect();
 }
 
+
+export function whenShareLoadingSettles(
+  root: Element,
+  timeoutMs: number
+): Promise<void> {
+  return new Promise((resolve) => {
+    const isSettled = () =>
+      root.childElementCount > 0 && !hasShareLoadingContent(root);
+    let finished = false;
+    const finish = () => {
+      if (finished) return;
+      finished = true;
+      observer.disconnect();
+      window.clearTimeout(timeout);
+      resolve();
+    };
+    const observer = new MutationObserver(() => {
+      if (isSettled()) finish();
+    });
+    observer.observe(root, {
+      subtree: true,
+      childList: true,
+      attributeFilter: [SHARE_LOADING_ATTRIBUTE],
+    });
+    const timeout = window.setTimeout(finish, timeoutMs);
+    if (isSettled()) finish();
+  });
+}
+
 const SHARE_CAPTURE_STAGE_CLASS = 'journalit-share-capture-stage';
-const BRAND_URL_LABEL = 'journalit.co';
-
-
-const FRAME_PADDING = 32;
-const FOOTER_GAP = 12;
-const FOOTER_BOTTOM_PADDING = 20;
-const BRAND_MARK_SIZE = 32;
-const BRAND_MARK_GAP = 12;
-const BRAND_URL_FONT_SIZE = 26;
-const MIN_PIXEL_RATIO = 2;
 
 
 
@@ -124,82 +144,32 @@ function boundedPixelRatio(
   );
 }
 
-
-
-const LOGO_MARK_SOURCE = { x: 34, y: 17, size: 138 } as const;
-
 interface ShareTheme {
   background: string;
-  text: string;
-  fontFamily: string;
 }
 
 function readShareTheme(source: HTMLElement): ShareTheme {
   const style = source.win.getComputedStyle(source);
   return {
     background: style.getPropertyValue('--background-primary').trim(),
-    text: style.getPropertyValue('--text-normal').trim(),
-    fontFamily: style.fontFamily,
   };
 }
 
-function loadImage(src: string): Promise<HTMLImageElement> {
-  const image = new Image();
-  return new Promise((resolve, reject) => {
-    image.onload = () => resolve(image);
-    image.onerror = () => reject(new Error('Unable to load Journalit logo'));
-    image.src = src;
-  });
-}
-
-function get2dContext(canvas: HTMLCanvasElement): CanvasRenderingContext2D {
-  const context = canvas.getContext('2d');
-  if (!context) {
-    throw new Error('Unable to prepare share image canvas');
-  }
-  return context;
-}
-
-
-async function renderTintedMark(
-  color: string,
-  size: number
-): Promise<HTMLCanvasElement> {
-  const logo = await loadImage(LOGO_DATA_URI);
-  const canvas = createEl('canvas');
-  canvas.width = size;
-  canvas.height = size;
-
-  const context = get2dContext(canvas);
-  context.drawImage(
-    logo,
-    LOGO_MARK_SOURCE.x,
-    LOGO_MARK_SOURCE.y,
-    LOGO_MARK_SOURCE.size,
-    LOGO_MARK_SOURCE.size,
-    0,
-    0,
-    size,
-    size
-  );
-  context.globalCompositeOperation = 'source-in';
-  context.fillStyle = color;
-  context.fillRect(0, 0, canvas.width, canvas.height);
-  return canvas;
-}
-
 async function rasterizeWithoutExcludedParts(
+  app: App,
   source: HTMLElement,
   stageHost: HTMLElement,
   pixelRatio: number,
   backgroundColor: string,
-  hideDollarAmounts = false
+  hideDollarAmounts = isInShareHideDollarAmountsArea(source)
 ): Promise<HTMLCanvasElement> {
   const clone = source.cloneNode(true);
   if (!clone.instanceOf(HTMLElement)) {
     throw new Error('Unable to clone the element for capture');
   }
-  await inlineCloneMedia(source, clone, pixelRatio);
+  await withVaultCaptureMedia(app, source, clone, () =>
+    inlineCloneMedia(source, clone, pixelRatio)
+  );
   clone
     .querySelectorAll(
       hideDollarAmounts
@@ -240,6 +210,7 @@ function canvasToPng(canvas: HTMLCanvasElement): Promise<Blob> {
 
 
 export async function captureElementPng(
+  app: App,
   source: HTMLElement,
   stageHost: HTMLElement,
   pixelRatio: number
@@ -247,69 +218,11 @@ export async function captureElementPng(
   const theme = readShareTheme(source);
   return canvasToPng(
     await rasterizeWithoutExcludedParts(
+      app,
       source,
       stageHost,
       boundedPixelRatio(source.offsetWidth, source.offsetHeight, pixelRatio),
       theme.background
     )
   );
-}
-
-export async function captureBrandedPng(
-  source: HTMLElement,
-  stageHost: HTMLElement,
-  options: { hideDollarAmounts: boolean }
-): Promise<Blob> {
-  const theme = readShareTheme(source);
-  
-  const pixelRatio = boundedPixelRatio(
-    source.offsetWidth + FRAME_PADDING * 2,
-    source.offsetHeight +
-      FRAME_PADDING +
-      FOOTER_GAP +
-      BRAND_MARK_SIZE +
-      FOOTER_BOTTOM_PADDING,
-    Math.max(MIN_PIXEL_RATIO, source.win.devicePixelRatio)
-  );
-  const px = (cssPixels: number) => Math.round(cssPixels * pixelRatio);
-
-  const [content, mark] = await Promise.all([
-    rasterizeWithoutExcludedParts(
-      source,
-      stageHost,
-      pixelRatio,
-      theme.background,
-      options.hideDollarAmounts
-    ),
-    renderTintedMark(theme.text, px(BRAND_MARK_SIZE)),
-  ]);
-
-  const padding = px(FRAME_PADDING);
-  const footerTop = padding + content.height + px(FOOTER_GAP);
-  const output = createEl('canvas');
-  output.width = content.width + padding * 2;
-  output.height = footerTop + mark.height + px(FOOTER_BOTTOM_PADDING);
-
-  const context = get2dContext(output);
-  context.fillStyle = theme.background;
-  context.fillRect(0, 0, output.width, output.height);
-  context.drawImage(content, padding, padding);
-
-  
-  context.font = `600 ${px(BRAND_URL_FONT_SIZE)}px ${theme.fontFamily}`;
-  const urlWidth = context.measureText(BRAND_URL_LABEL).width;
-  const markGap = px(BRAND_MARK_GAP);
-  const footerLeft = (output.width - (mark.width + markGap + urlWidth)) / 2;
-  context.drawImage(mark, footerLeft, footerTop);
-
-  context.fillStyle = theme.text;
-  context.textAlign = 'left';
-  context.textBaseline = 'middle';
-  context.fillText(
-    BRAND_URL_LABEL,
-    footerLeft + mark.width + markGap,
-    footerTop + mark.height / 2
-  );
-
-  return canvasToPng(output);
 }

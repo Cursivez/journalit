@@ -40,6 +40,41 @@ interface ChallengeScorecards {
   hideFailureSignal: boolean;
 }
 
+const signClass = (value: number): string =>
+  value >= 0 ? ' is-positive' : ' is-negative';
+
+
+function deriveReturnSignals(
+  stats: ChallengeStats,
+  monetaryOutcomesMasked: boolean,
+  returnMetricsMasked: boolean
+) {
+  const singleCurrencyTotals =
+    stats.monetaryTotals.length === 1 ? stats.monetaryTotals[0] : undefined;
+  const netPayouts = singleCurrencyTotals?.netPayouts ?? null;
+  const netClass =
+    monetaryOutcomesMasked || netPayouts === null ? '' : signClass(netPayouts);
+  const roi =
+    singleCurrencyTotals &&
+    netPayouts !== null &&
+    singleCurrencyTotals.totalCosts > 0
+      ? (netPayouts / singleCurrencyTotals.totalCosts) * 100
+      : undefined;
+  
+  
+  
+  
+  const roiHasNoCostBasis = Boolean(
+    singleCurrencyTotals &&
+    singleCurrencyTotals.totalCosts === 0 &&
+    singleCurrencyTotals.totalPayouts !== null &&
+    singleCurrencyTotals.totalPayouts > 0
+  );
+  const roiClass =
+    returnMetricsMasked || roi === undefined ? '' : signClass(roi);
+  return { singleCurrencyTotals, netClass, roi, roiHasNoCostBasis, roiClass };
+}
+
 export function useChallengeScorecards(
   stats: ChallengeStats,
   firmStats: FirmStats
@@ -51,34 +86,8 @@ export function useChallengeScorecards(
   const returnMetricsMasked = shouldMask('returnPercent');
   
   const outcomeCountsMasked = shouldMask('metric');
-  const singleCurrencyTotals =
-    stats.monetaryTotals.length === 1 ? stats.monetaryTotals[0] : undefined;
-  const netClass =
-    monetaryOutcomesMasked || !singleCurrencyTotals
-      ? ''
-      : singleCurrencyTotals.netPayouts >= 0
-        ? ' is-positive'
-        : ' is-negative';
-  const roi =
-    singleCurrencyTotals && singleCurrencyTotals.totalCosts > 0
-      ? (singleCurrencyTotals.netPayouts / singleCurrencyTotals.totalCosts) *
-        100
-      : undefined;
-  
-  
-  
-  
-  const roiHasNoCostBasis = Boolean(
-    singleCurrencyTotals &&
-    singleCurrencyTotals.totalCosts === 0 &&
-    singleCurrencyTotals.totalPayouts > 0
-  );
-  const roiClass =
-    returnMetricsMasked || roi === undefined
-      ? ''
-      : roi >= 0
-        ? ' is-positive'
-        : ' is-negative';
+  const { singleCurrencyTotals, netClass, roi, roiHasNoCostBasis, roiClass } =
+    deriveReturnSignals(stats, monetaryOutcomesMasked, returnMetricsMasked);
 
   const formatMonetaryTotals = (
     field: MonetaryField,
@@ -126,7 +135,7 @@ export function useChallengeScorecards(
     formatValue({ kind: 'count', value });
 
   const formatMoney = (
-    value: number,
+    value: number | null,
     currencyCode: string | undefined,
     kind: 'money' | 'pnl' = 'money'
   ): string =>
@@ -194,7 +203,7 @@ export function useChallengeScorecards(
     },
     {
       key: 'payouts',
-      label: t('account-dashboard.prop.metrics.payouts'),
+      label: t('account.prop-challenge.payout.estimated-net'),
       value: formatMonetaryTotals('totalPayouts', 'money'),
     },
     {

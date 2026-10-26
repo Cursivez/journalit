@@ -8,6 +8,8 @@ import {
   getBrokerLogo,
   getSyncOnlyProviders,
   getTradeSyncSuggestion,
+  importPlatformLabel,
+  importSourceTileId,
   type TradeSyncSuggestion,
 } from '../onboarding/brokerCatalog';
 import type { LocalCSVTemplate } from '../csv/types';
@@ -86,13 +88,16 @@ export function buildTradeImportSourceOptions(
     const tradeSync = getTradeSyncSuggestion(broker.id);
     options.push({
       id: broker.id,
-      label: broker.label,
+      label: importPlatformLabel(broker.id, capabilities) ?? broker.label,
       ...(logo ? { logo } : {}),
       ...(tradeSync ? { tradeSync } : {}),
     });
   }
 
-  const favorite = options.find((option) => option.id === favoriteBrokerId);
+  const favoriteTileId = favoriteBrokerId
+    ? importSourceTileId(favoriteBrokerId, capabilities)
+    : undefined;
+  const favorite = options.find((option) => option.id === favoriteTileId);
   return favorite
     ? [favorite, ...options.filter((option) => option !== favorite)]
     : options;

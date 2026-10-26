@@ -51,6 +51,8 @@ interface FieldEditorProps {
   onDelete: (fieldId: string) => void | Promise<void>;
   generateUniqueKey: (label: string, excludeFieldId?: string) => string;
   validateLabel?: (label: string, excludeFieldId?: string) => string | null;
+  
+  onConvertToRating?: () => void;
 }
 
 const fieldTypeOptions = [
@@ -904,6 +906,7 @@ const FieldEditorComponent: React.FC<FieldEditorProps> = ({
   onDelete,
   generateUniqueKey,
   validateLabel,
+  onConvertToRating,
 }) => {
   const {
     editingField,
@@ -1097,6 +1100,28 @@ const FieldEditorComponent: React.FC<FieldEditorProps> = ({
           handleMoveOption={handleMoveOption}
           handleFieldChange={handleFieldChange}
         />
+      )}
+
+      {onConvertToRating && (
+        <div className="setting-item">
+          <div className="setting-item-info">
+            <div className="setting-item-name">
+              {t('settings.customization.custom-fields.convert.editor-name')}
+            </div>
+            <div className="setting-item-description">
+              {t('settings.customization.custom-fields.convert.editor-desc', {
+                fieldLabel: field.label,
+              })}
+            </div>
+          </div>
+          <div className="setting-item-control">
+            <Button variant="outline" onClick={onConvertToRating}>
+              {t('settings.customization.custom-fields.convert.action', {
+                fieldLabel: field.label,
+              })}
+            </Button>
+          </div>
+        </div>
       )}
 
       

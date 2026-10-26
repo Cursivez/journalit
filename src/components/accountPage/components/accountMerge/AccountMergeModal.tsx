@@ -1,6 +1,7 @@
 
 
-import { App, Modal } from 'obsidian';
+import { App } from 'obsidian';
+import { isExecutableRule } from '../../../../services/propChallenge/PropChallengeRuleReview';
 import React, { useEffect, useId, useMemo, useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import type JournalitPlugin from '../../../../main';
@@ -57,6 +58,7 @@ import {
 } from '../../../shared/icons/ObsidianIcon';
 import {
   accountMergeErrorLocaleKey,
+  accountMergeRulesIssue,
   findInvalidOverrideRow,
   hasEditedAccountMergeRules,
   hasIncompleteAccountMergeRules,
@@ -65,6 +67,7 @@ import {
   type AccountMergeCandidate,
 } from './accountMergeWizardHelpers';
 import { suspendViewGuidesWhileOpen } from '../../../../guides/suspendViewGuides';
+import { JournalitModal } from '../../../modals/JournalitModal';
 
 type AccountMergeOutcome = 'merged' | 'cancelled';
 
@@ -202,7 +205,7 @@ function formatShortDate(iso: string | undefined): string {
 
 
 const StepperHeader: React.FC<{
-  steps: WizardStep[];
+  steps: readonly WizardStep[];
   step: WizardStep;
   sequence?: AccountMergeModalOptions['sequence'];
 }> = ({ steps, step, sequence }) => {
@@ -571,7 +574,12 @@ const PhasesStep: React.FC<PhasesStepProps> = ({
         const ruleKinds: PropChallengeRule['kind'][] = [];
         const seenRuleKinds = new Set<PropChallengeRule['kind']>();
         for (const rule of phase?.rules ?? []) {
-          if (!rule.enabled || seenRuleKinds.has(rule.kind)) continue;
+          if (
+            !isExecutableRule(rule) ||
+            !rule.enabled ||
+            seenRuleKinds.has(rule.kind)
+          )
+            continue;
           seenRuleKinds.add(rule.kind);
           ruleKinds.push(rule.kind);
         }
@@ -722,6 +730,7 @@ const PhasesStep: React.FC<PhasesStepProps> = ({
       
       {trailing.map((phase, offset) => {
         const previous = phases[selected.length + offset - 1];
+        const visibleRules = phase.rules.filter(isExecutableRule);
         return (
           <section
             className="journalit-account-merge-modal__phase is-pending"
@@ -744,10 +753,10 @@ const PhasesStep: React.FC<PhasesStepProps> = ({
                   phase: previous?.name ?? '',
                 })}
               </span>
-              {phase.rules.length > 0 && (
+              {visibleRules.length > 0 && (
                 <span>
                   {t('account.merge.phase.pending-rules', {
-                    rules: phase.rules
+                    rules: visibleRules
                       .map((rule) =>
                         t(`account.prop-challenge.summary.rule.${rule.kind}`)
                       )
@@ -960,6 +969,168 @@ const ReviewStep: React.FC<{
 
 
 
+const ALL_STEPS: readonly WizardStep[] = [
+  'accounts',
+  'challenge',
+  'phases',
+  'review',
+];
+
+const LOCKED_ACCOUNT_STEPS: readonly WizardStep[] = [
+  'challenge',
+  'phases',
+  'review',
+];
+
+function resolveTargetAccountName(
+  selected: readonly string[],
+  targetMode: 'keep' | 'new',
+  targetName: string,
+  effectiveKeep: string
+): string {
+  if (selected.length === 1) return selected[0];
+  return targetMode === 'new' ? targetName.trim() : effectiveKeep;
+}
+
+function canAdvanceStep({
+  step,
+  selectedCount,
+  targetAccountName,
+  planState,
+  hasIncompleteRules,
+}: {
+  step: WizardStep;
+  selectedCount: number;
+  targetAccountName: string;
+  planState: PlanState;
+  hasIncompleteRules: boolean;
+}): boolean {
+  if (step === 'accounts') return selectedCount >= 1;
+  if (step === 'challenge') {
+    return targetAccountName !== '' && planState.status !== 'error';
+  }
+  return planState.status === 'ready' && !hasIncompleteRules;
+}
+
+
+function readyPlanPhases(planState: PlanState): readonly PropChallengePhase[] {
+  return planState.status === 'ready' ? planState.plan.phases : [];
+}
+
+const MergeStepGuide: React.FC<{
+  plugin: JournalitPlugin;
+  step: WizardStep;
+  isPro: boolean;
+}> = ({ plugin, step, isPro }) => {
+  if (step === 'challenge') {
+    return (
+      <ModalGuide
+        plugin={plugin}
+        identity={ACCOUNT_MERGE_CHALLENGE_PAGE_GUIDE.identity}
+        steps={
+          isPro
+            ? ACCOUNT_MERGE_CHALLENGE_PAGE_GUIDE.steps
+            : ACCOUNT_MERGE_CHALLENGE_PAGE_GUIDE.freeSteps
+        }
+      />
+    );
+  }
+  if (step === 'phases') {
+    return (
+      <ModalGuide
+        plugin={plugin}
+        identity={ACCOUNT_MERGE_PHASES_PAGE_GUIDE.identity}
+        steps={ACCOUNT_MERGE_PHASES_PAGE_GUIDE.steps}
+      />
+    );
+  }
+  if (step === 'review') {
+    return (
+      <ModalGuide
+        plugin={plugin}
+        identity={ACCOUNT_MERGE_REVIEW_PAGE_GUIDE.identity}
+        steps={ACCOUNT_MERGE_REVIEW_PAGE_GUIDE.steps}
+      />
+    );
+  }
+  return null;
+};
+
+interface PrimaryMergeAction {
+  label: string;
+  
+  isMerge: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}
+
+function primaryMergeAction({
+  step,
+  isSingleAccount,
+  running,
+  canAdvance,
+  canMerge,
+  onNext,
+  onMerge,
+}: {
+  step: WizardStep;
+  isSingleAccount: boolean;
+  running: boolean;
+  canAdvance: boolean;
+  canMerge: boolean;
+  onNext: () => void;
+  onMerge: () => void;
+}): PrimaryMergeAction {
+  if (step !== 'review') {
+    return {
+      label: t('button.next'),
+      isMerge: false,
+      disabled: !canAdvance,
+      onClick: onNext,
+    };
+  }
+  return {
+    label: isSingleAccount
+      ? t('account.merge.action.convert')
+      : t('account.merge.action.merge'),
+    isMerge: true,
+    disabled: running || !canMerge,
+    onClick: onMerge,
+  };
+}
+
+const MergeModalActions: React.FC<{
+  running: boolean;
+  
+  canGoBack: boolean;
+  onBack: () => void;
+  onCancel: () => void;
+  primary: PrimaryMergeAction;
+}> = ({ running, canGoBack, onBack, onCancel, primary }) => (
+  <div className="journalit-account-merge-modal__actions">
+    {canGoBack && (
+      <Button variant="plain" disabled={running} onClick={onBack}>
+        {t('button.back')}
+      </Button>
+    )}
+    <span
+      aria-hidden="true"
+      className="journalit-account-merge-modal__actions-spacer"
+    />
+    <Button variant="plain" disabled={running} onClick={onCancel}>
+      {t('button.cancel')}
+    </Button>
+    <Button
+      variant="primary"
+      disabled={primary.disabled}
+      onClick={primary.onClick}
+    >
+      {primary.isMerge && <GitMerge size={14} />}
+      {primary.label}
+    </Button>
+  </div>
+);
+
 
 
 
@@ -971,9 +1142,7 @@ const AccountMergeModalContent: React.FC<{
 }> = ({ plugin, options, onDone, onStepChange }) => {
   const dateDraftGate = useDateDraftGate();
   const lockedAccounts = !!options.accounts?.length;
-  const steps: WizardStep[] = lockedAccounts
-    ? ['challenge', 'phases', 'review']
-    : ['accounts', 'challenge', 'phases', 'review'];
+  const steps = lockedAccounts ? LOCKED_ACCOUNT_STEPS : ALL_STEPS;
   const [step, setStepState] = useState<WizardStep>(steps[0]);
   
   const setStep = (next: WizardStep) => {
@@ -1084,11 +1253,12 @@ const AccountMergeModalContent: React.FC<{
   const effectiveKeep = selected.includes(targetKeep)
     ? targetKeep
     : (selected[selected.length - 1] ?? '');
-  const targetAccountName = single
-    ? selected[0]
-    : targetMode === 'new'
-      ? targetName.trim()
-      : effectiveKeep;
+  const targetAccountName = resolveTargetAccountName(
+    selected,
+    targetMode,
+    targetName,
+    effectiveKeep
+  );
   const currency = candidates?.find(
     (candidate) => candidate.name === selected[0]
   )?.currency;
@@ -1217,24 +1387,28 @@ const AccountMergeModalContent: React.FC<{
   };
 
   const stepIndex = steps.indexOf(step);
+  const planPhases = readyPlanPhases(planState);
   const hasIncompleteRules = hasIncompleteAccountMergeRules(
     selected.map((name) => overrides[name]?.rules),
     Boolean(profile),
-    planState.status === 'ready'
-      ? planState.plan.phases.map((phase) => phase.payoutPolicy)
-      : []
+    planPhases.map((phase) => phase.payoutPolicy)
   );
-  const canAdvance =
-    step === 'accounts'
-      ? selected.length >= 1
-      : step === 'challenge'
-        ? targetAccountName !== '' && planState.status !== 'error'
-        : planState.status === 'ready' && !hasIncompleteRules;
+  const rulesIssue = accountMergeRulesIssue(hasIncompleteRules, planPhases);
+  
+  
+  const rulesBlocked = rulesIssue !== undefined;
+  const canAdvance = canAdvanceStep({
+    step,
+    selectedCount: selected.length,
+    targetAccountName,
+    planState,
+    hasIncompleteRules: rulesBlocked,
+  });
 
   const runMerge = async () => {
     if (!dateDraftGate.confirm()) return;
     const plan = planState.status === 'ready' ? planState.plan : undefined;
-    if (!plan || !mergeService || hasIncompleteRules) return;
+    if (!plan || !mergeService || rulesBlocked) return;
     setRunning(true);
     setExecuteError(null);
     try {
@@ -1252,41 +1426,10 @@ const AccountMergeModalContent: React.FC<{
     onDone('merged');
   };
 
-  const primaryLabel =
-    step === 'review'
-      ? single
-        ? t('account.merge.action.convert')
-        : t('account.merge.action.merge')
-      : t('button.next');
-
   return (
     <DateDraftGateContext.Provider value={dateDraftGate}>
       <StepperHeader steps={steps} step={step} sequence={options.sequence} />
-      {step === 'challenge' && (
-        <ModalGuide
-          plugin={plugin}
-          identity={ACCOUNT_MERGE_CHALLENGE_PAGE_GUIDE.identity}
-          steps={
-            isPro
-              ? ACCOUNT_MERGE_CHALLENGE_PAGE_GUIDE.steps
-              : ACCOUNT_MERGE_CHALLENGE_PAGE_GUIDE.freeSteps
-          }
-        />
-      )}
-      {step === 'phases' && (
-        <ModalGuide
-          plugin={plugin}
-          identity={ACCOUNT_MERGE_PHASES_PAGE_GUIDE.identity}
-          steps={ACCOUNT_MERGE_PHASES_PAGE_GUIDE.steps}
-        />
-      )}
-      {step === 'review' && (
-        <ModalGuide
-          plugin={plugin}
-          identity={ACCOUNT_MERGE_REVIEW_PAGE_GUIDE.identity}
-          steps={ACCOUNT_MERGE_REVIEW_PAGE_GUIDE.steps}
-        />
-      )}
+      <MergeStepGuide key={step} plugin={plugin} step={step} isPro={isPro} />
       <div className="journalit-account-merge-modal__content">
         {step === 'accounts' && (
           <AccountsStep
@@ -1330,13 +1473,13 @@ const AccountMergeModalContent: React.FC<{
               typedFirmName={identity.firmName}
               onApplyProfile={applyProfile}
             />
-            {hasIncompleteRules && (
+            {rulesIssue && (
               <div
                 className="journalit-account-merge-modal__alert is-error"
                 role="alert"
               >
                 <AlertTriangle size={16} />
-                <span>{t('account.create.error.rule-incomplete')}</span>
+                <span>{t(rulesIssue)}</span>
               </div>
             )}
           </div>
@@ -1363,53 +1506,26 @@ const AccountMergeModalContent: React.FC<{
         </div>
       )}
 
-      <div className="journalit-account-merge-modal__actions">
-        {stepIndex > 0 && (
-          <Button
-            variant="plain"
-            disabled={running}
-            onClick={() => setStep(steps[stepIndex - 1])}
-          >
-            {t('button.back')}
-          </Button>
-        )}
-        <span
-          aria-hidden="true"
-          className="journalit-account-merge-modal__actions-spacer"
-        />
-        <Button
-          variant="plain"
-          disabled={running}
-          onClick={() => onDone('cancelled')}
-        >
-          {t('button.cancel')}
-        </Button>
-        {step === 'review' ? (
-          <Button
-            variant="primary"
-            disabled={
-              running || planState.status !== 'ready' || hasIncompleteRules
-            }
-            onClick={() => void runMerge()}
-          >
-            <GitMerge size={14} />
-            {primaryLabel}
-          </Button>
-        ) : (
-          <Button
-            variant="primary"
-            disabled={!canAdvance}
-            onClick={() => setStep(steps[stepIndex + 1])}
-          >
-            {primaryLabel}
-          </Button>
-        )}
-      </div>
+      <MergeModalActions
+        running={running}
+        canGoBack={stepIndex > 0}
+        onBack={() => setStep(steps[stepIndex - 1])}
+        onCancel={() => onDone('cancelled')}
+        primary={primaryMergeAction({
+          step,
+          isSingleAccount: single,
+          running,
+          canAdvance,
+          canMerge: planState.status === 'ready' && !rulesBlocked,
+          onNext: () => setStep(steps[stepIndex + 1]),
+          onMerge: () => void runMerge(),
+        })}
+      />
     </DateDraftGateContext.Provider>
   );
 };
 
-class AccountMergeModal extends Modal {
+class AccountMergeModal extends JournalitModal {
   private root: Root | null = null;
   private settled = false;
 

@@ -5,19 +5,21 @@ import {
   FTPProvisionedCredentials,
 } from '../../settings/types';
 import type { TradeProjectionPersistedTradeSummary } from '../tradeSync/types';
-import type { SyncResponse } from './ApiClient';
+import type { SyncResponse, SyncResponseStatus } from './ApiClient';
 
 export type {
   SyncResponse,
+  SyncResponseStatus,
   SyncStatus,
   VaultRegistrationData,
   Trade,
   TradesResponse,
 } from './ApiClient';
 
-export const METATRADER_SYNC_NOT_ENTITLED_STATUS = 'not-entitled';
+export const METATRADER_SYNC_NOT_ENTITLED_STATUS =
+  'not-entitled' satisfies SyncResponseStatus;
 export const METATRADER_SYNC_ENTITLEMENT_UNVERIFIED_STATUS =
-  'entitlement-unverified';
+  'entitlement-unverified' satisfies SyncResponseStatus;
 
 export interface MetaTraderSyncResult {
   ownerUserId: string;
@@ -72,6 +74,8 @@ export interface TradeMetadata {
   dividends?: Array<{ time: string; amount: number }>;
   commission?: number;
   commissionType?: 'fixed' | 'percentage';
+  
+  riskAmount?: number;
   fees?: number;
   mtComment?: string;
   useDirectPnLInput?: boolean | string;

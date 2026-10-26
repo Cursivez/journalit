@@ -1,7 +1,7 @@
 
 
 import React from 'react';
-import { Button } from '../../../components/ui';
+import { Button } from '../../../components/ui/Button';
 import {
   AlertCircle,
   Download,
@@ -21,19 +21,27 @@ import { openExternalUrl } from '../../../utils/externalLinks';
 import { formatLocalizedDateTime } from '../../../utils/localizedDateTime';
 import {
   BrokerAccountCard,
+  BrokerLocalAccountSelect,
+} from './brokerSyncKit/BrokerAccountCard';
+import {
   BrokerActionsRow,
   BrokerConnectionList,
-  BrokerConnectionStatus,
-  BrokerLocalAccountSelect,
-  BrokerOverviewCard,
   BrokerStatusPlaceholder,
-  BrokerUnsavedMappingHint,
+} from './brokerSyncKit/BrokerLayout';
+import {
+  BrokerConnectionStatus,
+  type BrokerConnectionTone,
+} from './brokerSyncKit/BrokerConnectionStatus';
+import { BrokerOverviewCard } from './brokerSyncKit/BrokerOverviewCard';
+import { BrokerUnsavedMappingHint } from './brokerSyncKit/BrokerMappingHint';
+import {
   rateLimitUiState,
   useRateLimitCountdown,
-  type BrokerConnectionTone,
+} from './brokerSyncKit/rateLimitCooldowns';
+import {
   type BrokerStatusState,
   type LocalAccountOption,
-} from './brokerSyncKit';
+} from './brokerSyncKit/types';
 import { RithmicAttribution } from './RithmicAttribution';
 import {
   isRithmicRetryingErrorCode,
@@ -326,6 +334,92 @@ const RithmicConnectionCard: React.FC<RithmicConnectionCardProps> = ({
 
 RithmicConnectionCard.displayName = 'RithmicConnectionCard';
 
+const openRithmicIntegrations = () => openExternalUrl(RITHMIC_INTEGRATIONS_URL);
+
+const RithmicOverviewActions: React.FC<
+  Pick<
+    RithmicSyncPanelContentProps,
+    | 'refreshing'
+    | 'syncAllBusy'
+    | 'syncAllAvailable'
+    | 'syncAllBlockedMessage'
+    | 'busyConnections'
+    | 'refresh'
+    | 'syncAll'
+  > & { statusLoaded: boolean; hasConnections: boolean }
+> = ({
+  statusLoaded,
+  hasConnections,
+  refreshing,
+  syncAllBusy,
+  syncAllAvailable,
+  syncAllBlockedMessage,
+  busyConnections,
+  refresh,
+  syncAll,
+}) => (
+  <>
+    {statusLoaded && !hasConnections ? (
+      <Button variant="primary" size="small" onClick={openRithmicIntegrations}>
+        {t('trade-sync.rithmic.connect')}
+      </Button>
+    ) : statusLoaded ? (
+      <Button
+        variant="primary"
+        size="small"
+        disabled={
+          refreshing ||
+          syncAllBusy ||
+          !syncAllAvailable ||
+          Object.keys(busyConnections).length > 0
+        }
+        title={syncAllAvailable ? undefined : syncAllBlockedMessage}
+        onClick={() => void syncAll()}
+      >
+        <Download size={14} />
+        {t('trade-sync.rithmic.sync-all')}
+      </Button>
+    ) : null}
+    <Button
+      variant="secondary"
+      size="small"
+      disabled={refreshing || syncAllBusy}
+      onClick={() => void refresh()}
+    >
+      <RefreshCw size={14} />
+      {t('backend.cards.connection.refresh')}
+    </Button>
+  </>
+);
+
+const RithmicStatusNotice: React.FC<{
+  statusState: RithmicStatusState;
+  hasConnections: boolean;
+}> = ({ statusState, hasConnections }) => {
+  const statusLoaded = statusState.kind === 'loaded';
+  const statusUnavailable = statusState.kind === 'failed';
+  return (
+    <>
+      {!statusLoaded && (
+        <BrokerStatusPlaceholder
+          role={statusUnavailable ? 'alert' : 'status'}
+          message={t(
+            statusUnavailable
+              ? 'trade-sync.rithmic.status-failed'
+              : 'common.loading'
+          )}
+        />
+      )}
+
+      {statusLoaded && !hasConnections && (
+        <BrokerStatusPlaceholder
+          message={t('trade-sync.rithmic.no-connections')}
+        />
+      )}
+    </>
+  );
+};
+
 export const RithmicSyncPanelContent: React.FC<
   RithmicSyncPanelContentProps
 > = ({
@@ -348,9 +442,7 @@ export const RithmicSyncPanelContent: React.FC<
   const connections =
     statusState.kind === 'loaded' ? statusState.data.connections : [];
   const statusLoaded = statusState.kind === 'loaded';
-  const statusUnavailable = statusState.kind === 'failed';
   const now = useRateLimitCountdown(mappingRetryAtByAccountId);
-  const openIntegrations = () => openExternalUrl(RITHMIC_INTEGRATIONS_URL);
 
   return (
     <section>
@@ -359,69 +451,36 @@ export const RithmicSyncPanelContent: React.FC<
         description={t('trade-sync.rithmic.plugin-sync-description')}
         manageLink={{
           label: t('trade-sync.rithmic.manage'),
-          onClick: openIntegrations,
+          onClick: openRithmicIntegrations,
         }}
         actionsHint={syncAllAvailable ? undefined : syncAllBlockedMessage}
         actions={
-          <>
-            {statusLoaded && connections.length === 0 ? (
-              <Button variant="primary" size="small" onClick={openIntegrations}>
-                {t('trade-sync.rithmic.connect')}
-              </Button>
-            ) : statusLoaded ? (
-              <Button
-                variant="primary"
-                size="small"
-                disabled={
-                  refreshing ||
-                  syncAllBusy ||
-                  !syncAllAvailable ||
-                  Object.keys(busyConnections).length > 0
-                }
-                title={syncAllAvailable ? undefined : syncAllBlockedMessage}
-                onClick={() => void syncAll()}
-              >
-                <Download size={14} />
-                {t('trade-sync.rithmic.sync-all')}
-              </Button>
-            ) : null}
-            <Button
-              variant="secondary"
-              size="small"
-              disabled={refreshing || syncAllBusy}
-              onClick={() => void refresh()}
-            >
-              <RefreshCw size={14} />
-              {t('backend.cards.connection.refresh')}
-            </Button>
-          </>
+          <RithmicOverviewActions
+            statusLoaded={statusLoaded}
+            hasConnections={connections.length > 0}
+            refreshing={refreshing}
+            syncAllBusy={syncAllBusy}
+            syncAllAvailable={syncAllAvailable}
+            syncAllBlockedMessage={syncAllBlockedMessage}
+            busyConnections={busyConnections}
+            refresh={refresh}
+            syncAll={syncAll}
+          />
         }
         footerLink={
           statusLoaded && connections.length > 0
             ? {
                 label: t('trade-sync.rithmic.connect-another'),
-                onClick: openIntegrations,
+                onClick: openRithmicIntegrations,
               }
             : undefined
         }
       />
 
-      {!statusLoaded && (
-        <BrokerStatusPlaceholder
-          role={statusUnavailable ? 'alert' : 'status'}
-          message={t(
-            statusUnavailable
-              ? 'trade-sync.rithmic.status-failed'
-              : 'common.loading'
-          )}
-        />
-      )}
-
-      {statusLoaded && connections.length === 0 && (
-        <BrokerStatusPlaceholder
-          message={t('trade-sync.rithmic.no-connections')}
-        />
-      )}
+      <RithmicStatusNotice
+        statusState={statusState}
+        hasConnections={connections.length > 0}
+      />
 
       <BrokerConnectionList>
         {connections.map((connection) => (

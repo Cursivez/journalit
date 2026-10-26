@@ -18,11 +18,18 @@ import {
 import { normalizeGalleryFolders } from './settingsNormalization';
 import { normalizeHomeBackgroundImagePath } from '../components/home/homeBackgroundUtils';
 import { normalizeHomeWidgetOpacity } from './homeWidgetOpacity';
+import { normalizeExpectancyBenchmark } from './expectancyBenchmark';
 import { migrateSettingsSchema } from './settingsSchema';
 
-export function redactSettingsSecretsForExport(value: unknown): unknown {
+type KeyOmissionPredicate = (key: string, isRoot: boolean) => boolean;
+
+function copyOmittingKeys(
+  value: unknown,
+  shouldOmit: KeyOmissionPredicate,
+  isRoot = true
+): unknown {
   if (Array.isArray(value)) {
-    return value.map((item) => redactSettingsSecretsForExport(item));
+    return value.map((item) => copyOmittingKeys(item, shouldOmit, false));
   }
 
   if (typeof value !== 'object' || value === null) {
@@ -31,17 +38,25 @@ export function redactSettingsSecretsForExport(value: unknown): unknown {
 
   const redacted: Record<string, unknown> = {};
   for (const [key, nestedValue] of Object.entries(value)) {
-    if (
-      key === 'authToken' ||
-      key === 'ftpPassword' ||
-      key === 'secretStorageNamespace'
-    ) {
+    if (shouldOmit(key, isRoot)) {
       continue;
     }
-    redacted[key] = redactSettingsSecretsForExport(nestedValue);
+    redacted[key] = copyOmittingKeys(nestedValue, shouldOmit, false);
   }
 
   return redacted;
+}
+
+export function redactSettingsSecretsForExport(value: unknown): unknown {
+  return copyOmittingKeys(
+    value,
+    (key, isRoot) =>
+      (isRoot && key === 'agentAccess') ||
+      key === 'authToken' ||
+      key === 'refreshToken' ||
+      key === 'ftpPassword' ||
+      key === 'secretStorageNamespace'
+  );
 }
 
 interface SettingsImportFile {
@@ -66,24 +81,12 @@ function cloneDefaultSettings(): JournalitSettings {
   return structuredClone(DEFAULT_SETTINGS);
 }
 
-function removeLocalSecretNamespaceFromImport(value: unknown): unknown {
-  if (Array.isArray(value)) {
-    return value.map((item) => removeLocalSecretNamespaceFromImport(item));
-  }
-
-  if (typeof value !== 'object' || value === null) {
-    return value;
-  }
-
-  const sanitized: Record<string, unknown> = {};
-  for (const [key, nestedValue] of Object.entries(value)) {
-    if (key === 'secretStorageNamespace') {
-      continue;
-    }
-    sanitized[key] = removeLocalSecretNamespaceFromImport(nestedValue);
-  }
-
-  return sanitized;
+function sanitizeSettingsImport(value: unknown): unknown {
+  return copyOmittingKeys(
+    value,
+    (key, isRoot) =>
+      key === 'secretStorageNamespace' || (isRoot && key === 'agentAccess')
+  );
 }
 
 
@@ -149,8 +152,14 @@ export class SettingsExporter {
       
       const mergedSettings = this.deepMergeSettings(
         this.plugin.settings,
-        removeLocalSecretNamespaceFromImport(importData.settings)
+        sanitizeSettingsImport(importData.settings)
       );
+      if (this.isPlainObject(mergedSettings.dashboard)) {
+        mergedSettings.dashboard.expectancyBenchmarkR =
+          normalizeExpectancyBenchmark(
+            mergedSettings.dashboard.expectancyBenchmarkR
+          );
+      }
       if (this.isPlainObject(mergedSettings.trade)) {
         mergedSettings.trade.galleryFolders = normalizeGalleryFolders(
           mergedSettings.trade.galleryFolders
@@ -186,7 +195,8 @@ export class SettingsExporter {
       const mergedSessionMode = mergedSettings.sessionMode;
       if (!this.isPlainObject(mergedSessionMode)) {
         mergedSettings.sessionMode =
-          this.plugin.settings.sessionMode ?? DEFAULT_SETTINGS.sessionMode;
+          this.plugin.settings.sessionMode ??
+          structuredClone(DEFAULT_SETTINGS.sessionMode);
       } else if (
         typeof mergedSessionMode.showTradeExecutionsInSessionLog !== 'boolean'
       ) {
@@ -444,24 +454,5 @@ export class SettingsExporter {
 
   private isPlainObject(value: unknown): value is Record<string, unknown> {
     return typeof value === 'object' && value !== null && !Array.isArray(value);
-  }
-
-  
-  openImportFilePicker(): Promise<File | null> {
-    return new Promise((resolve) => {
-      const input = createEl('input', {
-        attr: { type: 'file', accept: '.json' },
-      });
-
-      input.onchange = () => {
-        resolve(input.files?.[0] ?? null);
-      };
-
-      input.oncancel = () => {
-        resolve(null);
-      };
-
-      input.click();
-    });
   }
 }

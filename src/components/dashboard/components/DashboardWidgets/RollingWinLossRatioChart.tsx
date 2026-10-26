@@ -19,7 +19,6 @@ import { Trade } from '../../utils/dataUtils';
 import { calculateEffectiveRMultiple } from '../../../../utils/formatting';
 import { generateNiceAxis } from '../../../../utils/chartUtils';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
-import { useCurrency } from '../../../../contexts/CurrencyContext';
 import { CurrencyCode } from '../../../../utils/currencyConfig';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import {
@@ -31,6 +30,7 @@ import {
   getAnalyticsDateBasis,
   getTradeAnalyticsDate,
 } from '../../../../utils/tradeAnalyticsDate';
+import { skipVerticalGridCoordinates } from '../../../charts/chartGrid';
 
 
 const ROLLING_PERIODS = [10, 20, 30, 50] as const;
@@ -50,7 +50,7 @@ const MASKED_RATIO_AXIS: RatioYAxisConfig = {
 };
 
 
-export const buildRatioYAxis = (
+const buildRatioYAxis = (
   ratios: readonly (number | null)[],
   isMetricMasked: boolean
 ): RatioYAxisConfig => {
@@ -122,7 +122,7 @@ type UndefinedRatioBand =
   | { scope: 'categories'; x1: string; x2: string; y1: number; y2: number }
   | { scope: 'plot' };
 
-export const getUndefinedRatioBands = (
+const getUndefinedRatioBands = (
   points: readonly RollingWinLossRatioDataPoint[]
 ): UndefinedRatioBand[] => {
   const bands: UndefinedRatioBand[] = [];
@@ -173,7 +173,7 @@ const ZIGZAG_RAMP_PX = 18;
 
 const ZIGZAG_MAX_RAMP = 0.35;
 
-export const getZigzagRamp = (width: number): number =>
+const getZigzagRamp = (width: number): number =>
   Math.min(ZIGZAG_RAMP_PX / Math.max(width, 1), ZIGZAG_MAX_RAMP);
 
 
@@ -222,7 +222,7 @@ const zigzagCenterline = (
 };
 
 
-export const buildSquigglePath = (
+const buildSquigglePath = (
   x: number,
   width: number,
   yStart: number,
@@ -258,7 +258,7 @@ export const buildSquigglePath = (
 };
 
 
-export const getIsolatedPointLabels = (
+const getIsolatedPointLabels = (
   points: readonly { ratio: number | null; label: string }[]
 ): Set<string> => {
   const labels = new Set<string>();
@@ -336,7 +336,7 @@ const getRollingTooltipDataPoint = (
 };
 
 
-export const calculateRollingWinLossRatio = (
+const calculateRollingWinLossRatio = (
   trades: Trade[],
   period: number,
   defaultRiskAmount?: number,
@@ -528,11 +528,10 @@ let gradientIdCounter = 0;
 
 
 export const RollingWinLossRatioChart = React.memo<BaseWidgetProps>(
-  ({ filters, dateFormat }) => {
+  ({ dateFormat }) => {
     const chartRef = React.useRef<HTMLDivElement>(null);
     const [selectedPeriod, setSelectedPeriod] = useState<RollingPeriod>(20);
     const plugin = usePlugin();
-    const { currency } = useCurrency();
     const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
     const { formatValue, shouldMask } = useDisplayFormatter();
     const isMetricMasked = shouldMask('metric');
@@ -549,11 +548,7 @@ export const RollingWinLossRatioChart = React.memo<BaseWidgetProps>(
     const LINE_COLOR = 'var(--text-muted)';
 
     return (
-      <BaseWidget
-        filters={filters}
-        dateFormat={dateFormat}
-        skeletonType="line-chart"
-      >
+      <BaseWidget dateFormat={dateFormat} skeletonType="line-chart">
         {(data) => {
           
           
@@ -665,6 +660,9 @@ export const RollingWinLossRatioChart = React.memo<BaseWidgetProps>(
                       <CartesianGrid
                         strokeDasharray="3 3"
                         vertical={false}
+                        verticalCoordinatesGenerator={
+                          skipVerticalGridCoordinates
+                        }
                         stroke="var(--background-modifier-border)"
                         strokeOpacity={0.5}
                       />
@@ -832,7 +830,7 @@ export const RollingWinLossRatioChart = React.memo<BaseWidgetProps>(
                             payload={props.payload}
                             label={props.label}
                             chartData={chartData}
-                            currency={currency}
+                            currency={data.currency}
                             formatValue={formatValue}
                             shouldMask={shouldMask}
                           />

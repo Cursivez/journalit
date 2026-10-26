@@ -11,7 +11,9 @@ import type {
   TradeChange,
   TradeCommitReceipt,
   TradeCommittedPayload,
+  TradeIdentitySnapshot,
 } from './tradeCoreTypes';
+import type { TradeNoteKind } from './types';
 
 export class TradeCommitEventBatch {
   private readonly payloads: TradeCommittedPayload[] = [];
@@ -45,11 +47,15 @@ export class TradeCommitEventBatch {
 }
 
 export interface TradeCreateOptions {
+  
+  noteKind?: TradeNoteKind;
   suppressAutoOpen?: boolean;
   deferPostCreateTasks?: boolean;
   suppressPostCreateTasks?: boolean;
   commitEventBatch?: TradeCommitEventBatch;
   creationBatch?: TradeCreationBatch;
+  
+  applyLayoutNoteSections?: boolean;
 }
 
 export class TradeCreationBatchFinalizationError extends Error {
@@ -78,14 +84,13 @@ export interface TradeCreationBatch {
 interface TradeServiceMutator {
   legacyCreateTrade(
     data: TradeData,
-    options?: TradeCreateOptions,
-    suppressTradeChangedEvent?: boolean
+    options?: TradeCreateOptions
   ): Promise<string>;
   legacyUpdateTrade(
     data: TradeData,
     filePath: string,
     source?: string,
-    suppressTradeChangedEvent?: boolean
+    noteKind?: TradeNoteKind
   ): Promise<string>;
   getTradeSchemaVersion(): number;
 }
@@ -97,9 +102,30 @@ type TagAssignmentRunner = <T>(
 ) => Promise<T>;
 
 export interface TradeUpdateOptions {
+  
+  noteKind?: TradeNoteKind;
   suppressLegacyTradeChanged?: boolean;
   expectedTradeRevision?: number;
+  expectedTradeContentRevision?: string;
   commitEventBatch?: TradeCommitEventBatch;
+  
+  beforeWrite?: () => Promise<TradeUpdateGuard | undefined>;
+}
+
+
+export type TradeUpdateGuard = Pick<
+  TradeUpdateOptions,
+  'expectedTradeRevision' | 'expectedTradeContentRevision'
+>;
+
+export class TradeRevisionConflictError extends Error {
+  constructor(
+    public readonly currentRevision: number,
+    public readonly expectedRevision: number
+  ) {
+    super('Trade revision conflict');
+    this.name = 'TradeRevisionConflictError';
+  }
 }
 
 export class TradeCommandService {
@@ -117,13 +143,42 @@ export class TradeCommandService {
     this.tagAssignmentRunner = runner;
   }
 
+  public async getCurrentTradeRevision(filePath: string): Promise<number> {
+    const identity = await this.noteStore.readIdentity(filePath);
+    return this.getCurrentTradeRevisionFromIdentity(filePath, identity);
+  }
+
+  public async getCurrentTradeMutationRevision(filePath: string): Promise<{
+    tradeRevision: number;
+    contentRevision: string;
+  }> {
+    const snapshot = await this.noteStore.readMutationRevision(filePath);
+    if (snapshot === null) throw new Error('Trade note is unavailable.');
+    return {
+      tradeRevision: this.getCurrentTradeRevisionFromIdentity(
+        filePath,
+        snapshot.identity
+      ),
+      contentRevision: snapshot.contentRevision,
+    };
+  }
+
+  
+  public async getTradeEditRevision(
+    filePath: string
+  ): Promise<{ contentRevision: string; editRevision: string }> {
+    const snapshot = await this.noteStore.readEditRevision(filePath);
+    if (snapshot === null) throw new Error('Trade note is unavailable.');
+    return snapshot;
+  }
+
   private runWithTagAssignments<T>(
     data: TradeData,
     operation: () => Promise<T>,
     previousTags: PreviousTagAssignments = []
   ): Promise<T> {
     if (!this.tagAssignmentRunner) return operation();
-    const tags = [...(data.tags ?? []), ...(data.customTags ?? [])];
+    const tags = data.tags ?? [];
     return this.tagAssignmentRunner(tags, operation, previousTags);
   }
 
@@ -142,7 +197,7 @@ export class TradeCommandService {
     };
 
     const path = await this.runWithTagAssignments(committedData, () =>
-      this.tradeService.legacyCreateTrade(committedData, options, true)
+      this.tradeService.legacyCreateTrade(committedData, options)
     );
 
     const change: TradeChange = {
@@ -169,11 +224,41 @@ export class TradeCommandService {
     source?: string,
     options?: TradeUpdateOptions
   ): Promise<string> {
+    const receipt = await this.updateTradeWithReceipt(
+      data,
+      filePath,
+      source,
+      options
+    );
+    return receipt.path;
+  }
+
+  public async updateTradeWithReceipt(
+    data: TradeData,
+    filePath: string,
+    source?: string,
+    options?: TradeUpdateOptions
+  ): Promise<Readonly<TradeCommitReceipt>> {
+    const receipt = await this.runSerializedUpdate(filePath, async () => {
+      const guard = await options?.beforeWrite?.();
+      return this.updateTradeUnlocked(
+        data,
+        filePath,
+        source,
+        guard ? { ...options, ...guard } : options
+      );
+    });
+    return { ...receipt };
+  }
+
+  
+  public async runSerializedUpdate<T>(
+    filePath: string,
+    write: () => Promise<T>
+  ): Promise<T> {
     const previousWork =
       this.updateWorkByPath.get(filePath) ?? Promise.resolve();
-    const execution = previousWork
-      .catch(() => undefined)
-      .then(() => this.updateTradeUnlocked(data, filePath, source, options));
+    const execution = previousWork.catch(() => undefined).then(write);
     const settlement = execution.then(
       () => undefined,
       () => undefined
@@ -192,22 +277,40 @@ export class TradeCommandService {
     filePath: string,
     source?: string,
     options?: TradeUpdateOptions
-  ): Promise<string> {
-    const identitySnapshot = await this.noteStore.readIdentity(filePath);
+  ): Promise<TradeCommitReceipt> {
+    const mutationSnapshot =
+      options?.expectedTradeContentRevision === undefined
+        ? null
+        : await this.noteStore.readMutationRevision(filePath);
+    const identitySnapshot = mutationSnapshot
+      ? mutationSnapshot.identity
+      : await this.noteStore.readIdentity(filePath);
     const identity = identitySnapshot ?? undefined;
     const tradeId =
       identity?.tradeId ??
       this.readModel.getTradeIdForPath(filePath) ??
       buildTradeIdentityFields(data).tradeId;
-    const currentRevision = Math.max(
-      identity?.tradeRevision ?? 0,
-      this.readModel.getEntryForPath(filePath)?.revision ?? 0
+    const currentRevision = this.getCurrentTradeRevisionFromIdentity(
+      filePath,
+      identitySnapshot
     );
     if (
       options?.expectedTradeRevision !== undefined &&
       currentRevision !== options.expectedTradeRevision
     ) {
-      throw new Error('Trade changed before projection update');
+      throw new TradeRevisionConflictError(
+        currentRevision,
+        options.expectedTradeRevision
+      );
+    }
+    if (
+      options?.expectedTradeContentRevision !== undefined &&
+      mutationSnapshot?.contentRevision !== options.expectedTradeContentRevision
+    ) {
+      throw new TradeRevisionConflictError(
+        currentRevision,
+        options.expectedTradeRevision ?? currentRevision
+      );
     }
     const revision = this.readModel.getNextRevision(
       tradeId,
@@ -231,7 +334,7 @@ export class TradeCommandService {
           committedData,
           filePath,
           source,
-          true
+          options?.noteKind
         ),
       () => this.noteStore.readAssignedTags(filePath)
     );
@@ -257,7 +360,17 @@ export class TradeCommandService {
         options?.suppressLegacyTradeChanged ?? source === 'user-input',
     });
 
-    return path;
+    return receipt;
+  }
+
+  private getCurrentTradeRevisionFromIdentity(
+    filePath: string,
+    identity: TradeIdentitySnapshot | null
+  ): number {
+    return Math.max(
+      identity?.tradeRevision ?? 0,
+      this.readModel.getEntryForPath(filePath)?.revision ?? 0
+    );
   }
 
   private recordCommit(

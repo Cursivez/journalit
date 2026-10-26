@@ -38,98 +38,143 @@ export function getTradeImportCompletionTitle(
     : resolveCompletionTitle(result);
 }
 
-export const TradeImportCompletionSummary: React.FC<
-  TradeImportCompletionSummaryProps
-> = ({ plugin, result, operationResult, headingId }) => {
-  const fallbackTitle = headingId ? '' : resolveCompletionTitle(result);
-
+function ResultItem({
+  tone,
+  children,
+}: {
+  tone: 'success' | 'warning';
+  children: React.ReactNode;
+}) {
+  const Icon = tone === 'success' ? BadgeCheck : AlertTriangle;
   return (
-    <div
-      className="journalit-trade-import-completion"
-      role={headingId && !operationResult ? 'status' : undefined}
-      aria-labelledby={headingId && !operationResult ? headingId : undefined}
-      aria-live={headingId && !operationResult ? 'polite' : undefined}
-      aria-atomic={headingId && !operationResult ? 'true' : undefined}
-    >
-      {operationResult ? (
-        <TradeOperationResultCard
-          plugin={plugin}
-          result={operationResult}
-          presentation="inline"
-          externalHeadingId={headingId}
-        />
-      ) : (
-        <>
-          {!headingId && (
-            <div role="status" aria-live="polite" aria-atomic="true">
-              <h3>{fallbackTitle}</h3>
-            </div>
-          )}
-          {result.writtenCount > 0 && (
-            <div className="result-item result-success">
-              <BadgeCheck className="result-icon" size={20} />
-              <span className="result-text">
-                {tPlural('csv.results.success', result.writtenCount, {
-                  account: result.accountName,
-                })}
-              </span>
-            </div>
-          )}
-          <div className="result-item result-info">
-            <span className="result-text result-text--muted">
-              {t('csv.results.broker', { broker: result.brokerLabel })}
-            </span>
-          </div>
-        </>
-      )}
-      {result.attachedImageCount > 0 && (
-        <div className="result-item result-success">
-          <BadgeCheck className="result-icon" size={20} />
-          <span className="result-text">
-            {t('trade-import.completion.screenshots-added', {
-              count: String(result.attachedImageCount),
-            })}
-          </span>
-        </div>
-      )}
-      {result.failedImageCount > 0 && (
-        <div className="result-item result-warning">
-          <AlertTriangle className="result-icon" size={20} />
-          <span className="result-text">
-            {t('trade-import.completion.screenshots-failed', {
-              count: String(result.failedImageCount),
-            })}
-          </span>
-        </div>
-      )}
-      {result.duplicateCount > 0 && (
-        <div className="result-item result-warning">
-          <AlertTriangle className="result-icon" size={20} />
-          <span className="result-text">
-            {tPlural('csv.results.skipped', result.duplicateCount)}
-          </span>
-        </div>
-      )}
-      {result.failedCount > 0 && (
-        <div className="result-item result-warning">
-          <AlertTriangle className="result-icon" size={20} />
-          <span className="result-text">
-            {t('csv.results.failed-to-import-prefix')}
-            {result.failedCount}
-            {t('csv.results.failed-to-import-suffix')}
-          </span>
-        </div>
-      )}
-      {result.pendingCount > 0 && (
-        <div className="result-item result-warning">
-          <AlertTriangle className="result-icon" size={20} />
-          <span className="result-text">
-            {t('csv.results.pending-local-writes', {
-              count: String(result.pendingCount),
-            })}
-          </span>
-        </div>
-      )}
+    <div className={`result-item result-${tone}`}>
+      <Icon className="result-icon" size={20} />
+      <span className="result-text">{children}</span>
     </div>
   );
-};
+}
+
+interface CompletionFollowUp {
+  key: string;
+  tone: 'success' | 'warning';
+  text: React.ReactNode;
+}
+
+
+function completionFollowUps(
+  result: TradeImportCompletionResult
+): CompletionFollowUp[] {
+  const rows: CompletionFollowUp[] = [];
+  if (result.attachedImageCount > 0)
+    rows.push({
+      key: 'screenshots-added',
+      tone: 'success',
+      text: t('trade-import.completion.screenshots-added', {
+        count: String(result.attachedImageCount),
+      }),
+    });
+  if (result.failedImageCount > 0)
+    rows.push({
+      key: 'screenshots-failed',
+      tone: 'warning',
+      text: t('trade-import.completion.screenshots-failed', {
+        count: String(result.failedImageCount),
+      }),
+    });
+  if (result.duplicateCount > 0)
+    rows.push({
+      key: 'skipped',
+      tone: 'warning',
+      text: tPlural('csv.results.skipped', result.duplicateCount),
+    });
+  if (result.failedCount > 0)
+    rows.push({
+      key: 'failed',
+      tone: 'warning',
+      text: (
+        <>
+          {t('csv.results.failed-to-import-prefix')}
+          {result.failedCount}
+          {t('csv.results.failed-to-import-suffix')}
+        </>
+      ),
+    });
+  if (result.pendingCount > 0)
+    rows.push({
+      key: 'pending',
+      tone: 'warning',
+      text: t('csv.results.pending-local-writes', {
+        count: String(result.pendingCount),
+      }),
+    });
+  return rows;
+}
+
+
+const completionLiveRegion = (
+  headingId: string | undefined,
+  operationResult: TradeOperationResult | null
+) =>
+  headingId && !operationResult
+    ? {
+        role: 'status',
+        'aria-labelledby': headingId,
+        'aria-live': 'polite' as const,
+        'aria-atomic': 'true' as const,
+      }
+    : {};
+
+function ImportCompletionBody({
+  result,
+  headingId,
+}: {
+  result: TradeImportCompletionResult;
+  headingId: string | undefined;
+}) {
+  return (
+    <>
+      {!headingId && (
+        <div role="status" aria-live="polite" aria-atomic="true">
+          <h3>{resolveCompletionTitle(result)}</h3>
+        </div>
+      )}
+      {result.writtenCount > 0 && (
+        <ResultItem tone="success">
+          {tPlural('csv.results.success', result.writtenCount, {
+            account: result.accountName,
+          })}
+        </ResultItem>
+      )}
+      <div className="result-item result-info">
+        <span className="result-text result-text--muted">
+          {t('csv.results.broker', { broker: result.brokerLabel })}
+        </span>
+      </div>
+    </>
+  );
+}
+
+export const TradeImportCompletionSummary: React.FC<
+  TradeImportCompletionSummaryProps
+> = ({ plugin, result, operationResult, headingId }) => (
+  <div
+    className="journalit-trade-import-completion"
+    {...completionLiveRegion(headingId, operationResult)}
+  >
+    {operationResult ? (
+      <TradeOperationResultCard
+        plugin={plugin}
+        result={operationResult}
+        presentation="inline"
+        externalHeadingId={headingId}
+      />
+    ) : (
+      <ImportCompletionBody result={result} headingId={headingId} />
+    )}
+    {completionFollowUps(result).map((row) => (
+      <ResultItem key={row.key} tone={row.tone}>
+        {row.text}
+      </ResultItem>
+    ))}
+  </div>
+);

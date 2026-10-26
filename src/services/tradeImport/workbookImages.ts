@@ -48,7 +48,7 @@ function imageExtension(path: string): string {
 }
 
 
-export function isImportableWorkbookImage(path: string): boolean {
+function isImportableWorkbookImage(path: string): boolean {
   return /^xl\/media\/[^/]+$/.test(path) && imageExtension(path) in IMAGE_TYPES;
 }
 

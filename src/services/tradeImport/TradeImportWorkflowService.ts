@@ -20,9 +20,11 @@ import type {
   ClassifiedPreviewTrade,
   TradeImportAnalyseResponse,
   TradeImportCapabilities,
+  TradeImportDestination,
   TradeImportCustomFieldDefinition,
   TradeImportFileType,
   TradeImportManualMode,
+  TradeImportPreviewItem,
   TradeImportPreviewResponse,
 } from './types';
 import { TradeProjectionClient } from '../tradeSync/TradeProjectionClient';
@@ -36,7 +38,14 @@ import type {
 } from '../tradeSync/types';
 import { getTradeProjectionVaultId } from '../tradeSync/TradeProjectionAckQueue';
 import { TradeProjectionRestoreService } from '../tradeSync/TradeProjectionRestoreService';
-import { TradeProjectionWriter } from '../tradeSync/TradeProjectionWriter';
+import {
+  TradeProjectionWriter,
+  projectedTradesByBackendId,
+} from '../tradeSync/TradeProjectionWriter';
+import {
+  closeHasCostRule,
+  createCloseOnlyCostRuleAdjuster,
+} from './closeOnlyCostRules';
 import {
   createTradeProjectionOwnershipGuard,
   getTradeProjectionOwnerId,
@@ -94,6 +103,16 @@ interface TradeImportPreviewInput {
   timeZone?: string;
   columnMappings: Record<string, string[]>;
   manualMappingRequired: boolean;
+  
+  destination?: TradeImportDestination;
+  
+  symbol?: string;
+}
+
+interface TradeImportFailedItem {
+  itemId: string;
+  
+  errorCode?: string;
 }
 
 export interface TradeImportCompletionResult {
@@ -106,11 +125,13 @@ export interface TradeImportCompletionResult {
   brokerLabel: string;
   importedTrades: TradeProjectionPersistedTradeSummary[];
   
-  failedItemIds: string[];
+  failedItems: TradeImportFailedItem[];
   
   attachedImageCount: number;
   
   failedImageCount: number;
+  
+  createdOnServer: boolean;
 }
 
 interface TradeImportWriteInput {
@@ -408,6 +429,8 @@ export class TradeImportWorkflowService {
     timeZone,
     columnMappings,
     manualMappingRequired,
+    destination,
+    symbol,
   }: TradeImportPreviewInput): Promise<{
     response: TradeImportPreviewResponse;
     classifiedTrades: ClassifiedPreviewTrade[];
@@ -457,22 +480,64 @@ export class TradeImportWorkflowService {
       mappingVersion: capabilities.manualMapping.mappingVersion,
       columnMappings: normalizedColumnMappings,
       customFields: customFieldDefinitions(this.plugin),
+      ...(destination && { destination }),
+      ...(analyse.requiresSymbol && { symbol: symbol?.trim() ?? '' }),
     });
     if (shouldStop()) throw new Error('Trade Import ownership changed');
-    const classifiedTrades = response.items.map((item) => ({
+    const mappedTrades = response.items.map((item) =>
+      mapProjectionTradeToTradeData(item.previewTrade, accountName)
+    );
+    const adjustCloseProfitLoss = await this.closeOnlyCostRuleAdjuster(
+      response.items,
+      mappedTrades
+    );
+    if (shouldStop()) throw new Error('Trade Import ownership changed');
+    const classifiedTrades = response.items.map((item, index) => ({
       itemId: item.itemId,
       preview: item.previewTrade,
       tradeData: applyInstrumentCostRulesToProjection(
-        mapProjectionTradeToTradeData(item.previewTrade, accountName),
+        mappedTrades[index],
         this.plugin.optionsService
       ),
       classification: item.classification,
       defaultAction: item.defaultAction,
       matchedTradeId: item.matchedTradeId,
+      closeProfitLoss:
+        item.closeProfitLoss !== undefined && item.matchedTradeId
+          ? adjustCloseProfitLoss(
+              item.matchedTradeId,
+              mappedTrades[index],
+              item.closeProfitLoss
+            )
+          : item.closeProfitLoss,
       otherAccount: item.otherAccount,
       message: tradeImportClassificationDetail(item),
     }));
     return { response, classifiedTrades, ownerUserId };
+  }
+
+  
+  private async closeOnlyCostRuleAdjuster(
+    items: TradeImportPreviewItem[],
+    mappedTrades: TradeData[]
+  ): Promise<
+    (targetTradeId: string, close: TradeData, closeProfitLoss: number) => number
+  > {
+    const needsNotes = items.some(
+      (item, index) =>
+        item.closeProfitLoss !== undefined &&
+        item.matchedTradeId &&
+        closeHasCostRule(mappedTrades[index], this.plugin.optionsService)
+    );
+    if (!needsNotes)
+      return (_target, _close, closeProfitLoss) => closeProfitLoss;
+    const notes = new Map<string, TradeData>();
+    for (const [tradeId, trades] of await projectedTradesByBackendId(
+      this.plugin
+    )) {
+      if (trades.length === 1) notes.set(tradeId, trades[0]);
+    }
+    return createCloseOnlyCostRuleAdjuster(notes, this.plugin.optionsService);
   }
 
   async getRestorableProjections(
@@ -513,10 +578,11 @@ export class TradeImportWorkflowService {
       brokerLabel: result.brokerLabel,
       importedTrades: result.importedTrades,
       
-      failedItemIds: [],
+      failedItems: [],
       
       attachedImageCount: 0,
       failedImageCount: 0,
+      createdOnServer: false,
     };
     onComplete?.(completionResult);
     return completionResult;
@@ -612,9 +678,10 @@ export class TradeImportWorkflowService {
     let written = 0;
     let failed = 0;
     const importedTrades: TradeProjectionPersistedTradeSummary[] = [];
-    const failedItemIds: string[] = [];
+    const failedItems: TradeImportFailedItem[] = [];
     let attachedImageCount = 0;
     let failedImageCount = 0;
+    let createdOnServer = false;
 
     const buildResult = (
       writtenCount: number,
@@ -630,9 +697,10 @@ export class TradeImportWorkflowService {
       accountName,
       brokerLabel,
       importedTrades,
-      failedItemIds,
+      failedItems,
       attachedImageCount,
       failedImageCount,
+      createdOnServer,
     });
 
     const finalizeImport = (
@@ -700,7 +768,9 @@ export class TradeImportWorkflowService {
         clientCommitId
       );
     } catch {
-      failedItemIds.push(...submittedWrites(commitItems));
+      failedItems.push(
+        ...submittedWrites(commitItems).map((itemId) => ({ itemId }))
+      );
       const duplicateCount = classified.filter((item) =>
         isLeftAsDuplicate(item)
       ).length;
@@ -710,6 +780,9 @@ export class TradeImportWorkflowService {
       );
     }
     if (shouldStop()) return abortImport();
+    createdOnServer = commit.itemResults.some(
+      (result) => result.result === 'created'
+    );
 
     const previewByItemId = new Map(
       classified.map((item) => [item.itemId, item])
@@ -723,7 +796,9 @@ export class TradeImportWorkflowService {
       commitItems.some((item) => !returnedItemIds.has(item.itemId)) ||
       commit.itemResults.some((result) => !submittedItemIds.has(result.itemId))
     ) {
-      failedItemIds.push(...submittedWrites(commitItems));
+      failedItems.push(
+        ...submittedWrites(commitItems).map((itemId) => ({ itemId }))
+      );
       const duplicateCount = classified.filter((item) =>
         isLeftAsDuplicate(item)
       ).length;
@@ -811,13 +886,16 @@ export class TradeImportWorkflowService {
         (result.result === 'created' || result.result === 'updated') &&
         result.tradeId !== undefined &&
         ackedTradeIds.has(result.tradeId);
-      if (
-        result.result === 'blocked' ||
-        result.result === 'conflict' ||
-        ((result.result === 'created' || result.result === 'updated') &&
-          !written)
+      if (result.result === 'blocked' || result.result === 'conflict') {
+        failedItems.push({
+          itemId: result.itemId,
+          errorCode: result.errorCode,
+        });
+      } else if (
+        (result.result === 'created' || result.result === 'updated') &&
+        !written
       ) {
-        failedItemIds.push(result.itemId);
+        failedItems.push({ itemId: result.itemId });
       }
     }
     const totalFailed =

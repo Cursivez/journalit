@@ -44,28 +44,19 @@ import { ReviewChangedPayload } from '../events/types';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
 import { extractCanonicalProjectionPnlFields } from '../trade/core/CanonicalProjectionFields';
 import type { ReviewStreakItem } from '../../utils/reviewStreaks';
-
-interface MonthlyDataOptimizedResult {
-  trades: Trade[];
-  weeklyPerformance: WeeklyPerformanceData[];
-  weeklyGamePerformance: WeeklyGamePerformance[];
-  demonTrackerData: DemonTrackerEntry[];
-  bestWeek: WeeklyPerformanceData | null;
-  worstWeek: WeeklyPerformanceData | null;
-}
-
-interface MonthlyDataCacheEntry {
-  data: MonthlyDataOptimizedResult;
-  timestamp: number;
-}
+import {
+  applyReviewFrontmatterUpdates,
+  applyReviewInitialContent,
+  type ReviewCreationReceipt,
+  type ReviewFrontmatterGuard,
+  type ReviewInitialContent,
+} from '../reviews';
 
 const getPnlContributingTrades = (trades: Trade[]): Trade[] =>
   trades.filter((trade) => isPnlContributingTrade(trade));
 
 const sumEffectivePnL = (trades: Trade[]): number =>
   trades.reduce((sum, trade) => sum + getEffectivePnL(trade), 0);
-
-const VALID_REVIEW_GRADES = new Set<keyof GradeDistribution>(['A', 'B', 'C']);
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -151,7 +142,6 @@ export class MonthlyReviewService extends CustomDataService {
   private folderPathService: FolderPathService | null = null;
 
   private lastCacheClear: number = 0;
-  private monthlyDataCache: Map<string, MonthlyDataCacheEntry> = new Map();
 
   private templateService: ReviewTemplateService | null = null;
   private transformService: TemplateTransformationService | null = null;
@@ -186,7 +176,6 @@ export class MonthlyReviewService extends CustomDataService {
           const now = Date.now();
           if (!this.lastCacheClear || now - this.lastCacheClear > 5000) {
             await this.clearCache();
-            this.monthlyDataCache.clear(); 
             this.lastCacheClear = now;
           }
         }
@@ -198,7 +187,6 @@ export class MonthlyReviewService extends CustomDataService {
       (payload?: { section?: string; source?: string }) => {
         if (payload?.section === 'trade' || payload?.source === 'week-start') {
           void this.clearCache();
-          this.monthlyDataCache.clear();
         }
       }
     );
@@ -271,12 +259,6 @@ export class MonthlyReviewService extends CustomDataService {
 
   protected isValidType(frontmatter: Record<string, unknown>): boolean {
     return frontmatter?.type === 'monthly-review';
-  }
-
-  
-  async clearCache(): Promise<void> {
-    await super.clearCache();
-    this.monthlyDataCache.clear();
   }
 
   
@@ -392,6 +374,7 @@ export class MonthlyReviewService extends CustomDataService {
     
     const generatedContent = this.generateInitialContent(
       frontmatter,
+      undefined,
       options.sampleMaterialization
     );
     const claimedOwnership = options.sampleMaterialization
@@ -425,6 +408,45 @@ export class MonthlyReviewService extends CustomDataService {
       console.error('Error creating monthly review:', error);
       return null;
     }
+  }
+
+  async createMonthlyReviewWithReceipt(
+    date: Date,
+    initialContent?: ReviewInitialContent,
+    source?: string
+  ): Promise<ReviewCreationReceipt> {
+    const filePath = this.getMonthlyReviewPath(date);
+    const existingFile = this.app.vault.getAbstractFileByPath(filePath);
+    if (existingFile instanceof TFile)
+      return { file: existingFile, created: false };
+    await this.ensureDirectoryExists(filePath);
+    const frontmatter: MonthlyReviewFrontmatter = {
+      ...this.defaultFrontmatter(),
+      date: this.formatDateForDisplay(date),
+      month: date.getMonth() + 1,
+      year: date.getFullYear(),
+    };
+    const content = this.generateInitialContent(frontmatter, initialContent);
+    let file: TFile;
+    try {
+      file = await this.app.vault.create(filePath, content);
+    } catch (error) {
+      const racedFile = this.app.vault.getAbstractFileByPath(filePath);
+      if (racedFile instanceof TFile)
+        return { file: racedFile, created: false };
+      throw error;
+    }
+    await Promise.all([
+      forceMetadataCacheRefresh(this.app, file),
+      this.clearCache(),
+    ]);
+    eventBus.publish('review:changed', {
+      type: 'monthly',
+      action: 'created',
+      filePath,
+      ...(source === undefined ? {} : { source }),
+    });
+    return { file, created: true };
   }
 
   
@@ -517,6 +539,7 @@ export class MonthlyReviewService extends CustomDataService {
   
   private generateInitialContent(
     frontmatter: MonthlyReviewFrontmatter,
+    initialContent?: ReviewInitialContent,
     sampleMaterialization?: SampleReviewMaterialization
   ): string {
     
@@ -535,6 +558,13 @@ export class MonthlyReviewService extends CustomDataService {
     
     monthlyData.templateId = template.id;
     monthlyData.templateVersion = template.version;
+
+    applyReviewInitialContent(
+      monthlyData,
+      initialContent,
+      'monthlyGoals',
+      'monthlyGoalStatus'
+    );
 
     
     const authoredData = sampleMaterialization
@@ -984,432 +1014,17 @@ export class MonthlyReviewService extends CustomDataService {
   }
 
   
-  async getMonthlyDataOptimized(
-    year: number,
-    month: number
-  ): Promise<MonthlyDataOptimizedResult> {
-    
-    const cacheKey = `${year}-${month}`;
-    const cached = this.monthlyDataCache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < 5 * 60 * 1000) {
-      
-      return cached.data;
-    }
-
-    try {
-      
-      const trades = await this.getMonthlyTradesOptimized(year, month);
-
-      
-      const weeklyPerformance = await this.calculateWeeklyPerformance(
-        trades,
-        year,
-        month
-      );
-
-      
-      const demonTrackerData = this.getDemonTrackerDataFromTrades(trades);
-      const weeklyGamePerformance =
-        await this.getWeeklyGamePerformanceOptimized(
-          weeklyPerformance,
-          year,
-          month
-        );
-
-      
-      const bestWeek =
-        weeklyPerformance.length > 0
-          ? weeklyPerformance.reduce((best, current) =>
-              current.pnl > best.pnl ? current : best
-            )
-          : null;
-
-      const worstWeek =
-        weeklyPerformance.length > 0
-          ? weeklyPerformance.reduce((worst, current) =>
-              current.pnl < worst.pnl ? current : worst
-            )
-          : null;
-
-      const result = {
-        trades,
-        weeklyPerformance,
-        weeklyGamePerformance,
-        demonTrackerData,
-        bestWeek,
-        worstWeek,
-      };
-
-      
-      this.monthlyDataCache.set(cacheKey, {
-        data: result,
-        timestamp: Date.now(),
-      });
-
-      return result;
-    } catch (error) {
-      console.error('Error getting optimized monthly data:', error);
-      return {
-        trades: [],
-        weeklyPerformance: [],
-        weeklyGamePerformance: [],
-        demonTrackerData: [],
-        bestWeek: null,
-        worstWeek: null,
-      };
-    }
-  }
-
-  
-  private async getMonthlyTradesOptimized(
-    year: number,
-    month: number
-  ): Promise<Trade[]> {
-    try {
-      const trades: Trade[] = [];
-
-      
-      const monthPath = `${this.getJournalFolderPath()}/${year}/${String(month).padStart(2, '0')}`;
-      const files = this.app.vault
-        .getMarkdownFiles()
-        .filter(
-          (file) =>
-            file.path.startsWith(monthPath) && file.path.includes('/trades/')
-        );
-
-      
-      const batchSize = 20;
-      for (let i = 0; i < files.length; i += batchSize) {
-        const batch = files.slice(i, i + batchSize);
-        const batchPromises = batch.map(async (file) => {
-          try {
-            const cache = this.app.metadataCache.getFileCache(file);
-            const frontmatter = asRecord(cache?.frontmatter);
-
-            if (
-              frontmatter?.type === 'trade' ||
-              frontmatter?.type === 'backtest-trade'
-            ) {
-              const normalizedExecution =
-                normalizeTradeExecutionForPeriodAnalytics(frontmatter);
-              if (!normalizedExecution) return null;
-              const entryTime = normalizedExecution.entryTime;
-
-              const tradingDay = getTradingDay(entryTime, this.plugin);
-
-              if (
-                tradingDay.getFullYear() === year &&
-                tradingDay.getMonth() + 1 === month
-              ) {
-                return createTradeFromFrontmatter(
-                  frontmatter,
-                  normalizedExecution,
-                  file.path
-                );
-              }
-            }
-            return null;
-          } catch (error) {
-            console.warn(`Error processing trade file ${file.path}:`, error);
-            return null;
-          }
-        });
-
-        const batchResults = await Promise.all(batchPromises);
-        trades.push(...batchResults.filter((trade) => trade !== null));
-      }
-
-      return trades;
-    } catch (error) {
-      console.error('Error getting optimized monthly trades:', error);
-      return [];
-    }
-  }
-
-  
-  private async calculateWeeklyPerformance(
-    trades: Trade[],
-    _year: number,
-    month: number
-  ): Promise<WeeklyPerformanceData[]> {
-    try {
-      if (trades.length === 0) {
-        return [];
-      }
-
-      const weeklyData = new Map<number, WeeklyPerformanceData>();
-
-      
-      const weeklyService = this.getPlugin()?.serviceManager
-        ? await this.getPlugin().serviceManager.getWeeklyReviewService()
-        : this.getPlugin()?.weeklyReviewService;
-
-      const weekStartDay = getWeekStartDaySetting(this.getPlugin());
-      const pnlContributingTrades = getPnlContributingTrades(trades);
-
-      
-      pnlContributingTrades.forEach((trade: Trade) => {
-        const tradeDate = new Date(trade.entryTime);
-        const weekStart = getWeekStartDate(tradeDate, weekStartDay);
-        const weekNumber = getWeekNumberForDate(tradeDate, weekStartDay);
-
-        
-        if (tradeDate.getMonth() + 1 !== month) return;
-
-        if (!weeklyData.has(weekNumber)) {
-          const weekEnd = new Date(weekStart);
-          weekEnd.setDate(weekEnd.getDate() + 6);
-
-          let weeklyReviewPath: string | undefined;
-          if (weeklyService) {
-            weeklyReviewPath = weeklyService.getWeeklyReviewPath(weekStart);
-          }
-
-          weeklyData.set(weekNumber, {
-            weekNumber,
-            weekStartDate: weekStart,
-            weekEndDate: weekEnd,
-            trades: 0,
-            winRate: 0,
-            profitFactor: 0,
-            pnl: 0,
-            weeklyReviewPath,
-          });
-        }
-
-        const weekStats = weeklyData.get(weekNumber)!;
-        weekStats.trades++;
-        weekStats.pnl += getEffectivePnL(trade);
-      });
-
-      
-      weeklyData.forEach((weekStats, weekNumber) => {
-        const weekTrades = pnlContributingTrades.filter((trade) => {
-          const tradeDate = new Date(trade.entryTime);
-          return (
-            this.getWeekNumber(tradeDate) === weekNumber &&
-            tradeDate.getMonth() + 1 === month
-          );
-        });
-
-        const pnlContributingWeekTrades = getPnlContributingTrades(weekTrades);
-        const winningTrades = pnlContributingWeekTrades.filter(
-          (t) => getEffectivePnL(t) > 0
-        );
-        const losingTrades = pnlContributingWeekTrades.filter(
-          (t) => getEffectivePnL(t) < 0
-        );
-
-        weekStats.winRate = calculateWinRateExcludingBreakeven(
-          winningTrades.length,
-          losingTrades.length
-        );
-
-        const totalWins = sumEffectivePnL(winningTrades);
-        const totalLosses = Math.abs(sumEffectivePnL(losingTrades));
-
-        weekStats.profitFactor =
-          totalLosses > 0
-            ? totalWins / totalLosses
-            : totalWins > 0
-              ? Infinity
-              : 0;
-      });
-
-      return Array.from(weeklyData.values()).sort(
-        (a, b) => a.weekNumber - b.weekNumber
-      );
-    } catch (error) {
-      console.error('Error calculating weekly performance:', error);
-      return [];
-    }
-  }
-
-  
-  private async getWeeklyGamePerformanceOptimized(
-    weeklyPerformance: WeeklyPerformanceData[],
-    year: number,
-    month: number
-  ): Promise<WeeklyGamePerformance[]> {
-    try {
-      
-      const weeklyService = this.getPlugin()?.serviceManager
-        ? await this.getPlugin().serviceManager.getWeeklyReviewService()
-        : this.getPlugin()?.weeklyReviewService;
-
-      const drcService = this.getPlugin()?.serviceManager
-        ? await this.getPlugin().serviceManager.getDRCService()
-        : this.getPlugin()?.drcService;
-
-      if (!weeklyService || !drcService) {
-        return [];
-      }
-
-      
-      const gamePerformancePromises = weeklyPerformance.map(async (week) => {
-        
-        const mentalGradeDistribution: GradeDistribution = { A: 0, B: 0, C: 0 };
-        const technicalGradeDistribution: GradeDistribution = {
-          A: 0,
-          B: 0,
-          C: 0,
-        };
-
-        
-        const drcs = await weeklyService.getDRCsForWeek(week.weekStartDate);
-
-        
-        for (const { data: drcData } of drcs) {
-          const drcDate = parseLocalDateSafe(drcData.date);
-          if (!drcDate) continue; 
-
-          
-          if (
-            drcDate.getMonth() + 1 === month &&
-            drcDate.getFullYear() === year
-          ) {
-            
-            if (
-              drcData.mentalGrade &&
-              VALID_REVIEW_GRADES.has(drcData.mentalGrade)
-            ) {
-              mentalGradeDistribution[drcData.mentalGrade]++;
-            }
-
-            
-            if (
-              drcData.technicalGrade &&
-              VALID_REVIEW_GRADES.has(drcData.technicalGrade)
-            ) {
-              technicalGradeDistribution[drcData.technicalGrade]++;
-            }
-          }
-        }
-
-        
-        let mentalRating: number | undefined;
-        let technicalRating: number | undefined;
-        let mentalNotes: string | undefined;
-        let technicalNotes: string | undefined;
-
-        if (week.weeklyReviewPath) {
-          const weeklyFile = this.app.vault.getAbstractFileByPath(
-            week.weeklyReviewPath
-          );
-          if (weeklyFile instanceof TFile) {
-            const weeklyData =
-              await weeklyService.extractWeeklyReviewData(weeklyFile);
-            if (weeklyData) {
-              mentalRating = weeklyData.mentalGrade;
-              technicalRating = weeklyData.technicalGrade;
-              mentalNotes = weeklyData.mentalNotes;
-              technicalNotes = weeklyData.technicalNotes;
-            }
-          }
-        }
-
-        return {
-          weekNumber: week.weekNumber,
-          weekStartDate: week.weekStartDate,
-          weekEndDate: week.weekEndDate,
-          weeklyReviewPath: week.weeklyReviewPath,
-          mentalGradeDistribution,
-          technicalGradeDistribution,
-          mentalRating,
-          technicalRating,
-          mentalNotes,
-          technicalNotes,
-        };
-      });
-
-      return await Promise.all(gamePerformancePromises);
-    } catch (error) {
-      console.error('Error getting optimized weekly game performance:', error);
-      return [];
-    }
-  }
-
-  
-  private getDemonTrackerDataFromTrades(trades: Trade[]): DemonTrackerEntry[] {
-    try {
-      const mistakeMap = new Map<string, DemonTrackerEntry>();
-
-      
-      trades.forEach((trade: Trade) => {
-        if (trade.mistake && Array.isArray(trade.mistake)) {
-          trade.mistake.forEach((mistake: string) => {
-            if (!mistakeMap.has(mistake)) {
-              mistakeMap.set(mistake, {
-                mistake,
-                occurrences: 0,
-                dates: [],
-              });
-            }
-
-            const entry = mistakeMap.get(mistake)!;
-            entry.occurrences++;
-            
-            entry.dates.push(trade.entryTime.toISOString());
-          });
-        }
-      });
-
-      
-      return Array.from(mistakeMap.values()).sort(
-        (a, b) => b.occurrences - a.occurrences
-      );
-    } catch (error) {
-      console.error('Error processing demon tracker data from trades:', error);
-      return [];
-    }
-  }
-
-  
   public async updateMonthlyReviewFrontmatter(
     filePath: string,
     updates: Partial<Record<string, unknown>>
   ): Promise<void> {
     try {
-      
-      const file = this.app.vault.getAbstractFileByPath(filePath);
-
-      if (!file || !(file instanceof TFile)) {
-        throw new Error(`Monthly Review file not found: ${filePath}`);
-      }
-
-      
-      await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-        const { imagesByWidget, ...rest } = updates;
-        const frontmatterRecord = asRecord(frontmatter) ?? {};
-        Object.assign(frontmatterRecord, rest);
-
-        if (
-          imagesByWidget &&
-          typeof imagesByWidget === 'object' &&
-          !Array.isArray(imagesByWidget)
-        ) {
-          const existingByWidget =
-            frontmatterRecord.imagesByWidget &&
-            typeof frontmatterRecord.imagesByWidget === 'object' &&
-            !Array.isArray(frontmatterRecord.imagesByWidget)
-              ? frontmatterRecord.imagesByWidget
-              : {};
-          frontmatterRecord.imagesByWidget = {
-            ...existingByWidget,
-            ...Object.fromEntries(Object.entries(imagesByWidget)),
-          };
-        } else if (imagesByWidget !== undefined) {
-          frontmatterRecord.imagesByWidget = imagesByWidget;
-        }
-      });
-
-      await Promise.all([
-        forceMetadataCacheRefresh(this.app, file),
-        this.clearCache(),
-      ]);
-      this.monthlyDataCache.clear();
-
-      return;
+      await this.updateMonthlyReviewFrontmatterCore(
+        filePath,
+        updates,
+        () => undefined,
+        undefined
+      );
     } catch (error) {
       console.error(
         `Error updating Monthly Review frontmatter in ${filePath}:`,
@@ -1417,5 +1032,47 @@ export class MonthlyReviewService extends CustomDataService {
       );
       throw error;
     }
+  }
+
+  public async updateMonthlyReviewFrontmatterGuarded(
+    filePath: string,
+    updates: Partial<Record<string, unknown>>,
+    guard: ReviewFrontmatterGuard,
+    source?: string
+  ): Promise<void> {
+    await this.updateMonthlyReviewFrontmatterCore(
+      filePath,
+      updates,
+      guard,
+      source
+    );
+  }
+
+  private async updateMonthlyReviewFrontmatterCore(
+    filePath: string,
+    updates: Partial<Record<string, unknown>>,
+    guard: ReviewFrontmatterGuard,
+    source: string | undefined
+  ): Promise<void> {
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile))
+      throw new Error(`Monthly Review file not found: ${filePath}`);
+    await this.app.fileManager.processFrontMatter(
+      file,
+      (frontmatter: Record<string, unknown>) => {
+        guard(frontmatter);
+        applyReviewFrontmatterUpdates(frontmatter, updates);
+      }
+    );
+    await Promise.all([
+      forceMetadataCacheRefresh(this.app, file),
+      this.clearCache(),
+    ]);
+    eventBus.publish('review:changed', {
+      type: 'monthly',
+      action: 'updated',
+      filePath,
+      ...(source === undefined ? {} : { source }),
+    });
   }
 }

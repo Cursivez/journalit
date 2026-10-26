@@ -3,6 +3,8 @@
 import type {
   BrokerClientDiagnosticEventInput,
   BrokerClientOperationContext,
+  BrokerConnectionOperationContext,
+  BrokerProjectionOperationContext,
   BrokerSyncJob,
   BrokerSyncProviderId,
 } from './types';
@@ -37,12 +39,12 @@ export interface BrokerSyncDiagnostics {
     vaultId: string,
     connectionId: string,
     provider: BrokerSyncProviderId
-  ): Promise<BrokerClientOperationContext>;
+  ): Promise<BrokerConnectionOperationContext>;
   createProjectionOperation(
     vaultId: string,
     provider: BrokerSyncProviderId,
     syncRunId?: string
-  ): Promise<BrokerClientOperationContext>;
+  ): Promise<BrokerProjectionOperationContext>;
   record(
     operation: BrokerClientOperationContext,
     event: BrokerClientDiagnosticEventInput

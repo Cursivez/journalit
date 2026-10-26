@@ -1,7 +1,7 @@
 
 
 
-export function balancedColumns(count: number, maxColumns: number): number {
+function balancedColumns(count: number, maxColumns: number): number {
   if (count <= 0) return 1;
   const rows = Math.ceil(count / maxColumns);
   return Math.ceil(count / rows);

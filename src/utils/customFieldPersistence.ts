@@ -17,7 +17,7 @@ function formatLocalDate(date: Date): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
 }
 
-function formatLocalDateTime(date: Date): string {
+export function formatLocalDateTime(date: Date): string {
   return `${formatLocalDate(date)}T${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
 }
 
@@ -201,4 +201,19 @@ export function mapCustomFieldsToFrontmatter(
   }
 
   return mapped;
+}
+
+
+export function hasStoredCustomFieldValue(
+  frontmatter: Record<string, unknown> | undefined,
+  field: Pick<CustomFieldDefinition, 'id' | 'fieldKey' | 'type'>
+): boolean {
+  if (!frontmatter) return false;
+  const nested: unknown = frontmatter.customFields;
+  const nestedValue: unknown =
+    typeof nested === 'object' && nested !== null
+      ? Object.getOwnPropertyDescriptor(nested, field.id)?.value
+      : undefined;
+  const value = frontmatter[field.fieldKey] ?? nestedValue;
+  return serializeCustomFieldValue(value, field.type) !== undefined;
 }

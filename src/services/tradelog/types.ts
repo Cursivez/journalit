@@ -6,6 +6,7 @@ import type { FilterExclusions } from '../../components/shared/filters/filterExc
 import type { FilterMatchModes } from '../../components/shared/filters/filterMatchModes';
 import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 import type { AnalyticsDateBasis } from '../../settings/types';
+import type { RatingFilter } from '../../utils/tradeRating';
 
 export type ViewLevel =
   | 'years'
@@ -63,6 +64,11 @@ export type TradeLogTrade = PartialTradeFrontmatter &
     filePath?: string;
     path?: string;
     file?: { path?: string };
+    
+    _analyticsEventContext?: {
+      ownsSourceCashflows: boolean;
+      pnl: number | null;
+    };
   };
 
 export interface TimeNode {
@@ -87,6 +93,7 @@ export type TradeType = 'all' | 'regular' | 'missed' | 'backtest';
 export type TradeStatus =
   | 'all'
   | 'open'
+  | 'partially_closed'
   | 'closed'
   | 'win'
   | 'loss'
@@ -123,6 +130,7 @@ export interface TradeLogFilters {
   tags: string[];
   mistakes: string[];
   reviewStatus: ReviewStatusFilter[];
+  ratings: RatingFilter[];
   customFieldFilters: CustomFieldFilterSelections;
   exclusions: FilterExclusions;
   matchModes: FilterMatchModes;

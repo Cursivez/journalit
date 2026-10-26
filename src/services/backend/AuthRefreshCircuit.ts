@@ -1,5 +1,5 @@
 
-export const AUTH_REFRESH_UNAVAILABLE_COOLDOWN_MS = 2 * 60 * 1000;
+const AUTH_REFRESH_UNAVAILABLE_COOLDOWN_MS = 2 * 60 * 1000;
 
 export type AuthRefreshResumeReason =
   | 'manual'

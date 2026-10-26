@@ -61,9 +61,10 @@ export const EntityShortcutPicker: React.FC<EntityShortcutPickerProps> = ({
       event.stopImmediatePropagation();
       onCloseEvent();
     };
-    window.activeDocument.addEventListener('keydown', handleEscape, true);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('keydown', handleEscape, true);
     return () =>
-      window.activeDocument.removeEventListener('keydown', handleEscape, true);
+      listenerDocument.removeEventListener('keydown', handleEscape, true);
   }, []);
   const existingKeys = useMemo(
     () =>
@@ -97,12 +98,10 @@ export const EntityShortcutPicker: React.FC<EntityShortcutPickerProps> = ({
         spaced: false,
       });
       pickerRows.push(
-        ...accountItems.map(
-          (item): ShortcutPickerRow => ({
-            type: 'item',
-            item,
-          })
-        )
+        ...accountItems.map((item): ShortcutPickerRow => ({
+          type: 'item',
+          item,
+        }))
       );
     }
     if (setupItems.length > 0) {
@@ -114,12 +113,10 @@ export const EntityShortcutPicker: React.FC<EntityShortcutPickerProps> = ({
         spaced: accountItems.length > 0,
       });
       pickerRows.push(
-        ...setupItems.map(
-          (item): ShortcutPickerRow => ({
-            type: 'item',
-            item,
-          })
-        )
+        ...setupItems.map((item): ShortcutPickerRow => ({
+          type: 'item',
+          item,
+        }))
       );
     }
     return pickerRows;

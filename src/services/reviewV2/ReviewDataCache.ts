@@ -1,7 +1,7 @@
 import { logger } from '../../utils/logger';
 
 
-import { App, TFile } from 'obsidian';
+import { App, TFile, type FrontMatterCache } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import type { UnifiedFilters } from '../../components/shared/filters/types';
 import { applyTradeFilters } from '../../components/shared/filters/filterUtils';
@@ -37,17 +37,23 @@ import type {
   ReviewChangedPayload,
   ReviewFilterSyncPayload,
   SettingsChangedPayload,
+  TradeApplyingInPlacePayload,
+  TradeDataChangedPayload,
 } from '../events/types';
+import { TRADE_DATA_MAX_WAIT_MS } from '../trade/core/TradeDataChangeFeed';
 import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 import type { CustomFieldDefinition } from '../../types/customFields';
 import type { TradeReviewData } from '../backend/types';
 import {
   getAllocatedRealizedPnlEvents,
   getAnalyticsDateBasis,
+  getMissedTradeTradingDay,
   getTradeAnalyticsTradingDay,
   getTradeRealizedPnlEvents,
+  mayTradeFallInWindow,
 } from '../../utils/tradeAnalyticsDate';
 import { parseTradeReviewMarkdown } from '../trade/core/TradeReviewMarkdownCodec';
+import type { TradeJournalCommit } from '../trade/core/TradeJournalFields';
 import { extractUserOwnedTradeNotes } from '../trade/core/TradeNoteDocumentCodec';
 import {
   getEffectivePnL,
@@ -366,10 +372,9 @@ const REVIEW_TRADE_PROPERTY_KEYS = new Set<string>([
   'swap',
   'fees',
   'tags',
-  'customTags',
   'assetType',
   'optionType',
-  'stopLoss',
+  'stopLosses',
   'riskAmount',
   'rMultiple',
   'currency',
@@ -385,6 +390,7 @@ const REVIEW_TRADE_PROPERTY_KEYS = new Set<string>([
   'isMissedTrade',
   'isBacktestTrade',
   'reviewed',
+  'tradeRating',
   'customFields',
   'breakEvenAccountCurrentBalance',
   'breakEvenAccountCurrentBalanceTotal',
@@ -519,6 +525,18 @@ export class ReviewDataCache {
     new Map();
 
   
+  private readonly appliedTradeChanges = new Map<
+    string,
+    {
+      until: number;
+      
+      before: FrontMatterCache | undefined;
+      
+      keys: ReadonlySet<string>;
+    }
+  >();
+
+  
   private eventCleanup: Unsubscribe[] = [];
 
   
@@ -600,8 +618,6 @@ export class ReviewDataCache {
     }
 
     return applyTradeFilters(scopedTrades, filters, customFieldDefinitions, {
-      resolveAccountIdDisplayName: (accountId) =>
-        this.plugin.settings.backendIntegration?.accountMapping?.[accountId],
       accountPhaseWindows: resolveAccountPhaseWindowsFromPlugin(
         filters.accountPhases,
         this.plugin
@@ -785,10 +801,7 @@ export class ReviewDataCache {
     }
 
     return trades.map((trade) =>
-      attachBreakEvenAccountBalancesToTrade(trade, accountBalanceLookup, {
-        resolveAccountIdDisplayName: (accountId) =>
-          this.plugin.settings.backendIntegration?.accountMapping?.[accountId],
-      })
+      attachBreakEvenAccountBalancesToTrade(trade, accountBalanceLookup)
     );
   }
 
@@ -802,7 +815,16 @@ export class ReviewDataCache {
   
   private setupEventListeners(): void {
     
-    const handleTradeDataChanged = (payload: TradeChangedPayload) => {
+    
+    
+    const handleTradeChanged = (payload: TradeChangedPayload) => {
+      if (payload.journalFields) {
+        this.refreshJournalFieldsInPlace(
+          new Set(getPayloadTradeFilePaths(payload)),
+          payload.journalFields
+        );
+        return;
+      }
       if (payload.action === 'review-status-updated') {
         this.updateTradeReviewStatusInCache(payload);
         return;
@@ -815,36 +837,36 @@ export class ReviewDataCache {
         return;
       }
 
-      if (
-        payload.action === 'updated' ||
-        payload.action === 'created' ||
-        payload.action === 'deleted'
-      ) {
-        
-        if (payload.filePath) {
-          this.invalidateByTradeChange(payload.filePath);
-        } else if (payload.filePaths && payload.filePaths.length > 0) {
-          
-          for (const filePath of payload.filePaths) {
-            this.invalidateByTradeChange(filePath);
-          }
-        } else {
-          
-          this.invalidateAll();
-        }
-      } else if (payload.action === 'batch') {
-        
-        this.invalidateAll();
-      } else if (payload.action === 'relocated') {
+      if (payload.action === 'relocated') {
         
         
         this.invalidateAll();
       }
+    };
+
+    
+    
+    const handleTradeDataChanged = ({ filePaths }: TradeDataChangedPayload) => {
+      if (filePaths === 'all') {
+        this.appliedTradeChanges.clear();
+        this.invalidateAll();
+        return;
+      }
+      const now = Date.now();
+      let unapplied = false;
+      for (const filePath of filePaths) {
+        if (!this.takeAppliedTradeChange(filePath, now)) unapplied = true;
+      }
+      if (unapplied) this.invalidateAll();
     };
 
     const handleBacktestTradeDataChanged = (
       payload: BacktestTradeChangedPayload
     ) => {
+      if (payload.journalFieldsOnly) {
+        
+        return;
+      }
       if (payload.filePath) {
         this.invalidateByTradeChange(payload.filePath);
       } else {
@@ -852,24 +874,18 @@ export class ReviewDataCache {
       }
     };
 
-    const handleMissedTradeDataChanged = (
+    
+    
+    const handleMissedTradeReviewStatus = (
       payload: MissedTradeChangedPayload
     ) => {
-      if (payload.reviewed !== undefined) {
-        this.updateTradeReviewStatusInCache({
-          action: 'review-status-updated',
-          filePath: payload.filePath,
-          reviewed: payload.reviewed,
-          reviewedAt: payload.reviewedAt,
-        });
-        return;
-      }
-
-      if (payload.filePath) {
-        this.invalidateByTradeChange(payload.filePath);
-      } else {
-        this.invalidateAll();
-      }
+      if (payload.reviewed === undefined) return;
+      this.updateTradeReviewStatusInCache({
+        action: 'review-status-updated',
+        filePath: payload.filePath,
+        reviewed: payload.reviewed,
+        reviewedAt: payload.reviewedAt,
+      });
     };
 
     
@@ -1028,12 +1044,19 @@ export class ReviewDataCache {
 
     
     this.eventCleanup.push(
-      eventBus.subscribe('trade:changed', handleTradeDataChanged),
+      eventBus.subscribe('trade:changed', handleTradeChanged),
+      eventBus.subscribe('trade-data:changed', handleTradeDataChanged),
+      eventBus.subscribe(
+        'trade:applying-in-place',
+        (payload: TradeApplyingInPlacePayload) =>
+          this.markTradeChangesApplied(payload)
+      ),
       eventBus.subscribe(
         'backtest-trade:changed',
         handleBacktestTradeDataChanged
       ),
-      eventBus.subscribe('missed-trade:changed', handleMissedTradeDataChanged),
+      eventBus.subscribe('missed-trade:changed', handleMissedTradeReviewStatus),
+      eventBus.subscribe('missed-trade-data:changed', handleTradeDataChanged),
       eventBus.subscribe('account:changed', () => {
         this.invalidateAll();
       }),
@@ -1375,6 +1398,42 @@ export class ReviewDataCache {
     }
   }
 
+  private markTradeChangesApplied({
+    filePaths,
+    keys,
+  }: TradeApplyingInPlacePayload): void {
+    const until = Date.now() + TRADE_DATA_MAX_WAIT_MS;
+    const keySet = new Set(keys);
+    for (const filePath of filePaths) {
+      this.appliedTradeChanges.set(filePath, {
+        until,
+        before: this.app.metadataCache.getCache(filePath)?.frontmatter,
+        keys: keySet,
+      });
+    }
+  }
+
+  
+  private takeAppliedTradeChange(filePath: string, now: number): boolean {
+    const applied = this.appliedTradeChanges.get(filePath);
+    this.appliedTradeChanges.delete(filePath);
+    if (!applied || applied.until < now) return false;
+    const after = this.app.metadataCache.getCache(filePath)?.frontmatter;
+    const keys = new Set([
+      ...Object.keys(applied.before ?? {}),
+      ...Object.keys(after ?? {}),
+    ]);
+    for (const key of keys) {
+      if (applied.keys.has(key)) continue;
+      if (
+        JSON.stringify(applied.before?.[key]) !== JSON.stringify(after?.[key])
+      ) {
+        return false;
+      }
+    }
+    return true;
+  }
+
   private queueMarkdownTradeReviewRefresh(tradeFilePath: string): void {
     const previous =
       this.markdownTradeReviewRefreshByPath.get(tradeFilePath) ??
@@ -1418,9 +1477,12 @@ export class ReviewDataCache {
       return [];
     }
 
+    
+    
     const missedTradeFiles = await missedTradeService.getMissedTrades(
       start,
-      end
+      end,
+      { dateBasis: getAnalyticsDateBasis(this.plugin.settings) }
     );
     const extractedTrades = await Promise.all(
       missedTradeFiles.map((file) =>
@@ -1650,11 +1712,12 @@ export class ReviewDataCache {
             }
           }
 
-          const analyticsTradingDay = getTradeAnalyticsTradingDay(
-            analyticsTrade,
-            basis,
-            this.plugin
-          );
+          
+          
+          const analyticsTradingDay =
+            trade.isMissedTrade === true
+              ? getMissedTradeTradingDay(analyticsTrade, basis, this.plugin)
+              : getTradeAnalyticsTradingDay(analyticsTrade, basis, this.plugin);
           return tradingDayStr
             ? analyticsTradingDay !== null &&
                 formatLocalDateString(analyticsTradingDay) === tradingDayStr
@@ -1728,17 +1791,30 @@ export class ReviewDataCache {
 
         
         
-        trades = allTrades.filter((trade: PartialTradeFrontmatter) =>
+        
+        let windowStart = Math.min(start.getTime(), date.getTime());
+        let windowEnd = Math.max(end.getTime(), date.getTime());
+        for (const session of drcSessionWindows) {
+          windowStart = Math.min(windowStart, session.start.getTime());
+          windowEnd = Math.max(windowEnd, session.end.getTime());
+        }
+        const candidateTrades = allTrades.filter((trade) =>
+          mayTradeFallInWindow(trade, windowStart, windowEnd)
+        );
+
+        
+        
+        trades = candidateTrades.filter((trade: PartialTradeFrontmatter) =>
           isTradeInReviewRange(trade, 'entry')
         );
 
         const analyticsBasisRawTrades =
           analyticsDateBasis === 'entry'
             ? trades
-            : allTrades.filter((trade: PartialTradeFrontmatter) =>
+            : candidateTrades.filter((trade: PartialTradeFrontmatter) =>
                 isTradeInReviewRange(trade, analyticsDateBasis)
               );
-        const executionBasisRawTrades = allTrades.filter(
+        const executionBasisRawTrades = candidateTrades.filter(
           (trade: PartialTradeFrontmatter) =>
             hasEntryExecutionInReviewRange(trade) ||
             isTradeInReviewRange(trade, 'exit') ||
@@ -1954,10 +2030,6 @@ export class ReviewDataCache {
 
         
         const reviewTradeFilterOptions = {
-          resolveAccountIdDisplayName: (accountId: string) =>
-            this.plugin.settings.backendIntegration?.accountMapping?.[
-              accountId
-            ],
           accountPhaseWindows: resolveAccountPhaseWindowsFromPlugin(
             filters.accountPhases,
             this.plugin
@@ -2539,6 +2611,85 @@ export class ReviewDataCache {
     
     for (const filePath of filePaths) {
       this.populateDebounced(filePath);
+    }
+  }
+
+  private refreshJournalFieldsInPlace(
+    tradePaths: Set<string>,
+    commit: TradeJournalCommit
+  ): void {
+    let changed = false;
+    const updateTrades = (trades: unknown[]): unknown[] =>
+      trades.map((trade) => {
+        if (!isRecord(trade) || typeof trade.path !== 'string') return trade;
+        if (!tradePaths.has(trade.path)) return trade;
+        changed = true;
+        const updated: Record<string, unknown> = {
+          ...trade,
+          ...(commit.thesis !== undefined ? { thesis: commit.thesis } : {}),
+          ...(commit.setup ? { setup: commit.setup } : {}),
+          ...(commit.mistake ? { mistake: commit.mistake } : {}),
+          ...(commit.tags ? { tags: commit.tags } : {}),
+          ...(commit.images ? { images: commit.images } : {}),
+          ...(commit.tradeRating !== undefined
+            ? { tradeRating: commit.tradeRating ?? undefined }
+            : {}),
+        };
+        if (commit.customFields.length) {
+          const customFields: Record<string, unknown> = {
+            ...(isRecord(trade.customFields) ? trade.customFields : {}),
+          };
+          for (const { id, key, value } of commit.customFields) {
+            if (value === undefined) delete customFields[id];
+            else customFields[id] = value;
+            
+            
+            if (!REVIEW_TRADE_PROPERTY_KEYS.has(key)) {
+              if (value === undefined) delete updated[key];
+              else updated[key] = value;
+            }
+          }
+          updated.customFields = customFields;
+        }
+        return updated;
+      });
+
+    
+    
+    for (const path of new Set([
+      ...this.cache.keys(),
+      ...this.subscribers.keys(),
+    ])) {
+      this.supersedePopulation(path);
+      const cached = this.cache.get(path);
+      if (cached) {
+        changed = false;
+        
+        
+        const nextCached: CachedReviewData = {
+          ...cached,
+          trades: updateTrades(cached.trades),
+          ...(cached.allTrades
+            ? { allTrades: updateTrades(cached.allTrades) }
+            : {}),
+          ...(cached.executionBasisTrades
+            ? {
+                executionBasisTrades: updateTrades(cached.executionBasisTrades),
+              }
+            : {}),
+          ...(cached.analyticsBasisTrades
+            ? {
+                analyticsBasisTrades: updateTrades(cached.analyticsBasisTrades),
+              }
+            : {}),
+          version: cached.version + 1,
+        };
+        if (changed) {
+          this.cache.set(path, nextCached);
+          this.notifySubscribers(path, nextCached);
+        }
+      }
+      this.populateDebounced(path);
     }
   }
 

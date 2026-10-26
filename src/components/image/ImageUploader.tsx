@@ -1,7 +1,8 @@
 
 
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { ClipboardPaste } from '../shared/icons/ObsidianIcon';
+import { Menu } from 'obsidian';
+import { ClipboardPaste, Plus } from '../shared/icons/ObsidianIcon';
 import { t } from '../../lang/helpers';
 import { ImageUploadProps } from '../../types/image';
 import { imageService } from '../../services/image/ImageService';
@@ -12,6 +13,7 @@ import { GlobalPasteManager } from '../../utils/GlobalPasteManager';
 
 
 function useImageUploaderModel({
+  onUploadStart,
   onImageUploaded,
   onMultipleImagesUploaded,
   onError,
@@ -23,6 +25,7 @@ function useImageUploaderModel({
   pasteContext,
 }: Pick<
   ImageUploadProps,
+  | 'onUploadStart'
   | 'onImageUploaded'
   | 'onMultipleImagesUploaded'
   | 'onError'
@@ -56,6 +59,7 @@ function useImageUploaderModel({
   const onImageUploadedRef = useRef(onImageUploaded);
   const onMultipleImagesUploadedRef = useRef(onMultipleImagesUploaded);
   const onErrorRef = useRef(onError);
+  const onUploadStartRef = useRef(onUploadStart);
   const handleClipboardPasteRef = useRef<(() => Promise<void>) | undefined>(
     undefined
   );
@@ -66,7 +70,14 @@ function useImageUploaderModel({
     onImageUploadedRef.current = onImageUploaded;
     onMultipleImagesUploadedRef.current = onMultipleImagesUploaded;
     onErrorRef.current = onError;
-  }, [saveImageFunction, onImageUploaded, onMultipleImagesUploaded, onError]);
+    onUploadStartRef.current = onUploadStart;
+  }, [
+    saveImageFunction,
+    onImageUploaded,
+    onMultipleImagesUploaded,
+    onError,
+    onUploadStart,
+  ]);
 
   
 
@@ -83,6 +94,7 @@ function useImageUploaderModel({
   }, []);
 
   const processImageFiles = useCallback(async (filesToProcess: File[]) => {
+    onUploadStartRef.current?.();
     
     
     const imagePaths = await filesToProcess.reduce<Promise<(string | null)[]>>(
@@ -369,6 +381,80 @@ function useImageUploaderModel({
 
 type ImageUploaderModel = ReturnType<typeof useImageUploaderModel>;
 
+function ImageUploadAddTile({
+  model,
+  label,
+  enablePaste,
+  draggingOverClass,
+}: {
+  model: ImageUploaderModel;
+  label: string;
+  enablePaste: boolean;
+  draggingOverClass: string;
+}) {
+  const menuRef = useRef<Menu | null>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
+  useEffect(() => {
+    const activeMenu = menuRef;
+    return () => {
+      activeMenu.current?.hide();
+    };
+  }, []);
+
+  return (
+    <button
+      type="button"
+      className={`journalit-carousel-thumbnail journalit-image-upload-add-tile ${model.isDraggingOver ? draggingOverClass : ''}`}
+      aria-label={label}
+      aria-haspopup="menu"
+      aria-expanded={menuOpen}
+      disabled={model.isPasting}
+      onDragEnter={model.handleDragEnter}
+      onDragLeave={model.handleDragLeave}
+      onDragOver={model.handleDragOver}
+      onDrop={(event) => void model.handleDrop(event)}
+      onClick={(event) => {
+        event.stopPropagation();
+        menuRef.current?.hide();
+        const trigger = event.currentTarget;
+        const menu = new Menu();
+        menu.setUseNativeMenu(false);
+        menu.addItem((item) =>
+          item
+            .setTitle(label)
+            .setIcon('upload')
+            .onClick(model.handleUploadAreaClick)
+        );
+        if (enablePaste && model.pasteSupported) {
+          menu.addItem((item) =>
+            item
+              .setTitle(t('image.uploader.paste'))
+              .setIcon('clipboard-paste')
+              .onClick(() => void model.handleClipboardPaste())
+          );
+        }
+        menu.onHide(() => {
+          menuRef.current = null;
+          setMenuOpen(false);
+        });
+        menuRef.current = menu;
+        setMenuOpen(true);
+        const bounds = trigger.getBoundingClientRect();
+        menu.showAtPosition(
+          { x: bounds.left, y: bounds.bottom },
+          trigger.ownerDocument
+        );
+      }}
+    >
+      {model.isPasting ? (
+        <span className="journalit-spinner" aria-hidden="true" />
+      ) : (
+        <Plus size={20} aria-hidden="true" />
+      )}
+    </button>
+  );
+}
+
 function ImageUploadControls({
   model,
   label,
@@ -448,6 +534,8 @@ function ImageUploadControls({
 }
 
 export const ImageUploader: React.FC<ImageUploadProps> = ({
+  variant = 'dropzone',
+  onUploadStart,
   onImageUploaded,
   onMultipleImagesUploaded,
   onError,
@@ -462,6 +550,7 @@ export const ImageUploader: React.FC<ImageUploadProps> = ({
   className = '',
 }) => {
   const model = useImageUploaderModel({
+    onUploadStart,
     onImageUploaded,
     onMultipleImagesUploaded,
     onError,
@@ -478,14 +567,23 @@ export const ImageUploader: React.FC<ImageUploadProps> = ({
     <div
       ref={container}
       className={`journalit-image-upload-wrapper ${className}`}
-      tabIndex={enablePaste ? 0 : -1} 
+      tabIndex={enablePaste && variant === 'dropzone' ? 0 : -1}
     >
-      <ImageUploadControls
-        model={model}
-        label={label}
-        enablePaste={enablePaste}
-        draggingOverClass={draggingOverClass}
-      />
+      {variant === 'thumbnail' ? (
+        <ImageUploadAddTile
+          model={model}
+          label={label}
+          enablePaste={enablePaste}
+          draggingOverClass={draggingOverClass}
+        />
+      ) : (
+        <ImageUploadControls
+          model={model}
+          label={label}
+          enablePaste={enablePaste}
+          draggingOverClass={draggingOverClass}
+        />
+      )}
 
       <input
         aria-label={label}

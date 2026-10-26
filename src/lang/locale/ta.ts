@@ -3,6 +3,28 @@
 import type { Lang } from './en';
 
 const ta: Lang = {
+  'tradelog.export.button': 'ஏற்றுமதி செய்',
+  'tradelog.export.title': 'வர்த்தகங்களை ஏற்றுமதி செய்',
+  'tradelog.export.format': 'வடிவம்',
+  'tradelog.export.scope':
+    'பொருந்தும் {count} வர்த்தகங்கள் · தெரியும் {columns} நெடுவரிசைகள்',
+  'tradelog.export.raw':
+    'தனியுரிமை முறையிலும் மதிப்புகள் மறைக்கப்படாது. லாப/நட்டம் பணத் தொகை, R அல்ல; படங்களின் பாதைகள் மட்டுமே சேர்க்கப்படும்.',
+  'tradelog.export.mobile':
+    'கைபேசியில் கோப்பு பெட்டகத்தின் மூலக் கோப்புறையில் சேமிக்கப்படும்.',
+  'tradelog.export.saved': 'ஏற்றுமதி பெட்டகத்தில் சேமிக்கப்பட்டது: {filename}',
+  'tradelog.export.failed': 'வர்த்தகங்களை ஏற்றுமதி செய்ய முடியவில்லை. மீண்டும் முயலவும்.',
+  'tradelog.export.empty':
+    'ஏற்றுமதி செய்ய பொருந்தும் வர்த்தகங்களோ தெரியும் தரவு நெடுவரிசைகளோ இல்லை.',
+  'tradelog.export.guide':
+    'தெரியும் நெடுவரிசைகளையும் அவற்றின் வரிசையையும் பயன்படுத்தி பொருந்தும் அனைத்து வர்த்தகங்களையும் CSV, JSON அல்லது Markdown ஆகச் சேமிக்க ஏற்றுமதியைப் பயன்படுத்தவும். தனியுரிமை முறையிலும் கோப்புகளில் மறைக்கப்படாத தரவு இருக்கும்.',
+  'expectancy-gap.benchmark-help':
+    'மாதிரி/பின்சோதனை சராசரி. வடிகட்டிகளில் பகிரப்படும்; நீக்கக் காலியாக விடவும்.',
+  'expectancy-gap.formula': 'இடைவெளி = உண்மை − எதிர்பார்ப்பு',
+  'expectancy-gap.realized-help':
+    'உண்மை = பயன்படும் இடர் தரவுள்ள மூடிய வர்த்தகங்களின் சராசரி நிகர R.',
+  'expectancy-gap.interpretation':
+    'எதிர்மறை = மாதிரிக்குக் கீழ்; நேர்மறை = மேலே. இது காரணத்தைக் கூறாது.',
   'trade-import.recovery.bybit-header.columns':
     'விடுபட்ட தேவையான நெடுவரிசைகள்: {columns}.',
   'trade-import.recovery.bybit-header.title':
@@ -22,16 +44,42 @@ const ta: Lang = {
     'திருத்தும்போது கணக்கு விவரங்கள் மாறிவிட்டன. சேமிப்பதற்கு முன் கணக்குத் திருத்தியை மீண்டும் திறக்கவும்.',
   'account.profiles.profitable-days-conflict':
     'இந்த விதிமுறைகளைப் பயன்படுத்தும் முன், தற்போதைய பேஅவுட் கொள்கையை வைத்திருக்கவும் அல்லது லாபகரமான நாட்களின் தேவையை மாற்றவும்.',
+  'account.prop-challenge.rule.manual_review':
+    'நிறுவன ஆய்வு / ஆதரிக்கப்படாத விதிமுறைகள்',
+  'account.prop-challenge.summary.rule.manual_review': 'நிறுவன ஆய்வு',
+  'account.prop-challenge.ledger.state.needs-review': 'நிறுவன ஆய்வு தேவை',
+  'account.prop-challenge.payout.estimated-net':
+    'வர்த்தகரின் மதிப்பிடப்பட்ட நிகரத் தொகை',
+  'account.prop-challenge.payout.gross-withdrawals':
+    'கணக்கிலிருந்து மொத்தப் பணமெடுப்பு',
+  'account.prop-challenge.payout.lifetime-gross':
+    'கட்டத்தின் தற்போதைய இலாபம் + கட்டத்தின் முந்தைய மொத்தப் பணமெடுப்புகள் (பணமளிப்பு சுழற்சி மட்டும் அல்ல)',
+  'account.prop-challenge.payout.unresolved-cap':
+    'நிறுவனத்துடன் உச்சவரம்பை உறுதிப்படுத்தவும்',
+  'account.prop-challenge.payout.marginal-split':
+    'இலாபப் பகுதி அடிப்படையில் பிரித்தல்',
+  'account.prop-challenge.payout-rules.profit-split.above':
+    'வரம்புக்கு மேலான வர்த்தகரின் பங்கு (%)',
+  'account.prop-challenge.payout.not-calculated': 'கணக்கிடப்படவில்லை',
+  'account.prop-challenge.payout.manual-only':
+    'இந்த நிபந்தனைகளுக்கான பணப்பெறுதல் கணக்கீடுகள் கிடைக்கவில்லை. உண்மையான பணப்பெறுதல்களை நீங்கள் பதிவு செய்யலாம்.',
+  'account.prop-challenge.payout.raise-floor':
+    'கீழுள்ள வரம்பை ஆரம்ப இருப்புக்கு உயர்த்தவும்',
+  'account.prop-challenge.rule.comparison': 'ஒப்பீடு',
   'templateEditor.widget.session-log.hide-empty-outside':
     'அமர்வுக்கு வெளியேயான பதிவு காலியாக இருந்தால் மறை',
   'widget.mfeScatter.name': 'MFE மற்றும் ஈட்டிய லாபம்/நஷ்டம்',
   'widget.mfeScatter.description': 'அதிகபட்ச திறந்த லாபம் vs இறுதி P&L',
-  'widget.mfeScatter.y': 'ஈட்டிய லாபம்/நஷ்டம் ({unit})',
-  'widget.mfeScatter.winners': 'லாபமானவை',
-  'widget.mfeScatter.losers': 'நஷ்டமானவை',
-  'widget.mfeScatter.breakeven': 'சமநிலை',
+  'widget.excursionScatter.y': 'ஈட்டிய லாபம்/நஷ்டம் ({unit})',
+  'widget.excursionScatter.winners': 'லாபமானவை',
+  'widget.excursionScatter.losers': 'நஷ்டமானவை',
+  'widget.excursionScatter.breakeven': 'சமநிலை',
   'widget.mfeScatter.empty':
     'இந்த அலகில் பயன்படுத்தக்கூடிய MFE கொண்ட மூடப்பட்ட வர்த்தகங்கள் இல்லை.',
+  'widget.maeScatter.name': 'MAE மற்றும் ஈட்டிய லாபம்/நஷ்டம்',
+  'widget.maeScatter.description': 'அதிகபட்ச திறந்த நஷ்டம் vs இறுதி P&L',
+  'widget.maeScatter.empty':
+    'இந்த அலகில் பயன்படுத்தக்கூடிய MAE கொண்ட மூடப்பட்ட வர்த்தகங்கள் இல்லை.',
 
   'trade-sync.tradovate.status.setup-required': 'கணக்கை அமைக்க வேண்டும்',
   'trade-sync.tradovate.status.connecting': 'இணைக்கிறது',
@@ -49,6 +97,8 @@ const ta: Lang = {
     '{total} Tradovate இணைப்புகளின் {succeeded} ஒத்திசைக்கப்பட்டது.',
   'trade-sync.tradovate.sync-all-partial':
     '{total} Tradovate இணைப்புகளின் {succeeded} ஒத்திசைக்கப்பட்டது. சிக்கல்களுடன் தொடர்புகளை மதிப்பாய்வு செய்யவும்.',
+  'trade-sync.tradovate.sync-all-provider-partial':
+    '{total} Tradovate இணைப்புகளின் {succeeded} ஒத்திசைக்கப்பட்டது · ஒத்திசைவு பகுதியளவு முடிந்தது',
   'trade-sync.tradovate.connect-another': 'மற்றொரு Tradovate கணக்கை இணைக்கவும்',
   'trade-sync.tradovate.no-connections':
     'Journalit.co இல் உள்ள Tradovate கணக்கை இங்கே உள்ளமைக்கவும் ஒத்திசைக்கவும் இணைக்கவும்.',
@@ -89,8 +139,7 @@ const ta: Lang = {
     'ஒவ்வொரு தனிப்பயன் வரலாறு தேர்வுக்கும் ஒரு தொடக்கத் தேதியைத் தேர்வு செய்யவும்.',
   'trade-sync.tradovate.recovery-title':
     'காணாமல் போன டிரேட் குறிப்புகளை மீட்டெடுக்கவும்',
-  'trade-sync.tradovate.recovery-count':
-    '{count} டிரேட் குறிப்பு(களை) மீட்டமைக்க',
+  'trade-sync.tradovate.recovery-count': '{count} டிரேட் குறிப்பு(களை) மீட்டமைக்க',
   'trade-sync.tradovate.recovery-select-account':
     'டிரேட் குறிப்புகளை மீட்டமைக்கும் முன் உள்ளூர் கணக்கைத் தேர்ந்தெடுக்கவும்.',
   'trade-sync.tradovate.recovery-confirm':
@@ -111,6 +160,8 @@ const ta: Lang = {
     '{total} cTrader இணைப்புகளின் {succeeded} ஒத்திசைக்கப்பட்டது.',
   'trade-sync.ctrader.sync-all-partial':
     '{total} cTrader இணைப்புகளின் {succeeded} ஒத்திசைக்கப்பட்டது. சிக்கல்களுடன் தொடர்புகளை மதிப்பாய்வு செய்யவும்.',
+  'trade-sync.ctrader.sync-all-provider-partial':
+    '{total} cTrader இணைப்புகளின் {succeeded} ஒத்திசைக்கப்பட்டது · ஒத்திசைவு பகுதியளவு முடிந்தது',
   'trade-sync.ctrader.connect-another': 'மற்றொரு cTrader கணக்கை இணைக்கவும்',
   'trade-sync.ctrader.no-connections':
     'Journalit.co இல் உள்ள cTrader கணக்கை இங்கே உள்ளமைக்கவும் ஒத்திசைக்கவும் இணைக்கவும்.',
@@ -146,40 +197,94 @@ const ta: Lang = {
     'இயக்கப்பட்ட ஒவ்வொரு cTrader கணக்கிற்கும் உள்ளூர் vault கணக்கைத் தேர்வு செய்யவும்.',
   'trade-sync.ctrader.custom-date-required':
     'ஒவ்வொரு தனிப்பயன் வரலாறு தேர்வுக்கும் ஒரு தொடக்கத் தேதியைத் தேர்வு செய்யவும்.',
-  'trade-sync.ctrader.recovery-title':
-    'காணாமல் போன டிரேட் குறிப்புகளை மீட்டெடுக்கவும்',
-  'trade-sync.ctrader.recovery-count':
-    '{count} டிரேட் குறிப்பு(களை) மீட்டமைக்க',
+  'trade-sync.ctrader.recovery-title': 'காணாமல் போன டிரேட் குறிப்புகளை மீட்டெடுக்கவும்',
+  'trade-sync.ctrader.recovery-count': '{count} டிரேட் குறிப்பு(களை) மீட்டமைக்க',
   'trade-sync.ctrader.recovery-select-account':
     'டிரேட் குறிப்புகளை மீட்டமைக்கும் முன் உள்ளூர் கணக்கைத் தேர்ந்தெடுக்கவும்.',
   'trade-sync.ctrader.recovery-confirm':
     '{count} டிரேட் குறிப்பை(களை) {account}க்கு மீட்டமைக்கவா?',
-  'trade-sync.oauth.remap.title': 'Change account',
+  'trade-sync.oauth.remap.title': 'கணக்கை மாற்றவும்',
   'trade-sync.oauth.remap.message':
-    'Use {newAccount} for existing notes too? Otherwise, only future broker updates will use it.',
-  'trade-sync.oauth.remap.update-notes': 'Update notes',
-  'trade-sync.oauth.remap.future-only': 'Future updates only',
+    'ஏற்கனவே உள்ள குறிப்புகளுக்கும் {newAccount} ஐப் பயன்படுத்தவா? இல்லையெனில், இனி வரும் ப்ரோக்கர் புதுப்பிப்புகள் மட்டுமே இதைப் பயன்படுத்தும்.',
+  'trade-sync.oauth.remap.update-notes': 'குறிப்புகளைப் புதுப்பிக்கவும்',
+  'trade-sync.oauth.remap.future-only': 'இனி வரும் புதுப்பிப்புகள் மட்டும்',
   'trade-sync.oauth.remap.unavailable':
-    'Account remapping is unavailable. Update the Journalit server and try again.',
+    'கணக்கு மறு இணைப்பு கிடைக்கவில்லை. Journalit சர்வரைப் புதுப்பித்து மீண்டும் முயலவும்.',
   'trade-sync.oauth.remap.restore-in-progress':
-    'Wait for Restore to finish, then try again.',
+    'மீட்டெடுப்பு முடியும் வரை காத்திருந்து, பின்னர் மீண்டும் முயலவும்.',
   'trade-sync.oauth.remap.operation-conflict':
-    'That remap request conflicted with an earlier attempt. Try again.',
+    'இந்த மறு இணைப்புக் கோரிக்கை முந்தைய முயற்சியுடன் முரண்பட்டது. மீண்டும் முயலவும்.',
   'trade-sync.oauth.remap.account-busy':
-    'This account is busy synchronizing. Retry shortly.',
+    'இந்தக் கணக்கு ஒத்திசைவில் உள்ளது. சிறிது நேரத்தில் மீண்டும் முயலவும்.',
   'trade-sync.oauth.remap.account-unavailable':
-    'This account is no longer available. Refresh and try again.',
+    'இந்தக் கணக்கு இனி கிடைக்காது. புதுப்பித்து மீண்டும் முயலவும்.',
   'trade-sync.oauth.remap.preserved-conflicts':
-    '{count} existing conflict(s) were left unchanged.',
+    'ஏற்கனவே உள்ள {count} முரண்பாடுகள் மாற்றப்படாமல் விடப்பட்டன.',
   'trade-sync.oauth.remap.notes-pending':
-    '{count} existing note update(s) are still pending. Synchronize again to retry.',
+    'ஏற்கனவே உள்ள {count} குறிப்புப் புதுப்பிப்புகள் இன்னும் நிலுவையில் உள்ளன. மீண்டும் முயல மீண்டும் ஒத்திசைக்கவும்.',
   'trade-sync.source.ctrader': 'cTrader',
+  'trade-sync.source.hyperliquid': 'Hyperliquid',
+  'trade-sync.source.hyperliquid.description':
+    'Hyperliquid USDC நிரந்தர ஒப்பந்தங்களுக்கான பார்வை-மட்டும் ஒத்திசைவு; Journalit.co இல் அமைக்கப்பட்டு இந்தப் பெட்டகத்தில் எழுதப்படும்.',
+  'onboarding.broker.option.hyperliquid-sync.label':
+    'Hyperliquid (USDC நிரந்தர ஒப்பந்தங்கள்)',
+  'trade-sync.hyperliquid.recovery-title':
+    'காணாமல் போன டிரேட் குறிப்புகளை மீட்டெடுக்கவும்',
+  'trade-sync.hyperliquid.recovery-count': '{count} டிரேட் குறிப்பு(களை) மீட்டமைக்க',
+  'trade-sync.hyperliquid.recovery-select-account':
+    'டிரேட் குறிப்புகளை மீட்டமைக்கும் முன் உள்ளூர் கணக்கைத் தேர்ந்தெடுக்கவும்.',
+  'trade-sync.hyperliquid.recovery-confirm':
+    '{count} டிரேட் குறிப்பை(களை) {account}க்கு மீட்டமைக்கவா?',
+  'trade-sync.hyperliquid.scope-description':
+    'ஒத்திசைவு USDC இல் தீர்வு செய்யப்படும் நிரந்தர ஒப்பந்தங்களை மட்டுமே உள்ளடக்கும்; Hyperliquid தனது API மூலம் வழங்கும் வரலாறு முழுமையற்றதாக இருக்கலாம். CSV இறக்குமதி கிடைக்கும், ஆனால் CSV மற்றும் ஒத்திசைவில் ஒன்றிணையும் டிரேடுகள் தானாக நகல் நீக்கப்படாது.',
+  'trade-sync.hyperliquid.description':
+    'பார்வை மட்டும்: Journalit.co இல் வாலட் முகவரியை இணைத்து கணக்குகளையும் வரலாற்றையும் தேர்வு செய்யவும். இங்கே ஒவ்வொரு கணக்கையும் ஒரு Journalit கணக்குடன் இணைத்து, டிரேடுகளை இந்தப் பெட்டகத்தில் ஒத்திசைக்கலாம்.',
+  'trade-sync.hyperliquid.manage-on-website': 'Journalit.co இல் நிர்வகிக்கவும்',
+  'trade-sync.hyperliquid.connect-on-website': 'Journalit.co இல் இணைக்கவும்',
+  'trade-sync.hyperliquid.manage-connection': 'இணையதளத்தில் நிர்வகிக்கவும்',
+  'trade-sync.hyperliquid.pending-acks':
+    '{count} பெட்டக புதுப்பிப்புகள் உறுதிப்படுத்தலுக்குக் காத்திருக்கின்றன.',
+  'trade-sync.hyperliquid.disabled': 'Hyperliquid ஒத்திசைவு இன்னும் கிடைக்கவில்லை.',
+  'trade-sync.hyperliquid.status-failed': 'Hyperliquid நிலையை ஏற்ற முடியவில்லை.',
+  'trade-sync.hyperliquid.no-connections':
+    'இன்னும் Hyperliquid இணைப்புகள் இல்லை. Journalit.co இல் வாலட் முகவரியை இணைத்து, பின்னர் இங்கே திரும்பவும்.',
+  'trade-sync.hyperliquid.never': 'ஒருபோதும் இல்லை',
+  'trade-sync.hyperliquid.last-sync': 'கடைசி ஒத்திசைவு',
+  'trade-sync.hyperliquid.reconciliation-issues': '{count} சரிபார்ப்புச் சிக்கல்கள்',
+  'trade-sync.hyperliquid.status.pending': 'கணக்குகள் கண்டறியப்படுகின்றன',
+  'trade-sync.hyperliquid.status.setup-required': 'அமைப்பு தேவை',
+  'trade-sync.hyperliquid.status.paused': 'இடைநிறுத்தப்பட்டது',
+  'trade-sync.hyperliquid.status.attention': 'கவனம் தேவை',
+  'trade-sync.hyperliquid.status.error': 'இணைப்புப் பிழை',
+  'trade-sync.hyperliquid.status.deleting': 'கிளவுட் தரவு நீக்கப்படுகிறது',
+  'trade-sync.hyperliquid.notice.setup-required':
+    'எந்தக் கணக்குகளையும் வரலாற்றையும் ஒத்திசைக்க வேண்டும் என்பதை Journalit.co இல் தேர்வு செய்யவும்.',
+  'trade-sync.hyperliquid.notice.paused':
+    'ஒத்திசைவு இடைநிறுத்தப்பட்டுள்ளது. ஏற்கனவே உள்ள குறிப்புகள் வைக்கப்படும். Journalit.co இல் மீண்டும் தொடங்கவும்.',
+  'trade-sync.hyperliquid.notice.attention':
+    'இந்த இணைப்புக்குக் கவனம் தேவை. Journalit.co இல் சரிபார்க்கவும் அல்லது ஆதரவைத் தொடர்பு கொள்ளவும்.',
+  'trade-sync.hyperliquid.account.selected': 'ஒத்திசைவுக்குத் தேர்ந்தெடுக்கப்பட்டது',
+  'trade-sync.hyperliquid.account.not-selected': 'தேர்ந்தெடுக்கப்படவில்லை',
+  'trade-sync.hyperliquid.claimed-by-connection':
+    '{connection} மூலம் ஒத்திசைக்கப்பட்டது.',
+  'trade-sync.hyperliquid.mapping-required':
+    'முதலில் தேர்ந்தெடுத்த ஒவ்வொரு கணக்குக்கும் ஒரு Journalit கணக்கைத் தேர்வு செய்யவும்.',
+  'trade-sync.hyperliquid.sync-to-vault': 'ஒத்திசை',
+  'trade-sync.hyperliquid.sync-all': 'அனைத்தையும் ஒத்திசைக்கவும்',
+  'trade-sync.hyperliquid.sync-complete': '{connection} ஒத்திசைவு முடிந்தது.',
+  'trade-sync.hyperliquid.sync-partial':
+    '{connection} ஒத்திசைவு சிக்கல்களுடன் முடிந்தது.',
+  'trade-sync.hyperliquid.sync-all-complete':
+    '{total} இல் {succeeded} Hyperliquid இணைப்புகள் ஒத்திசைக்கப்பட்டன.',
+  'trade-sync.hyperliquid.sync-all-partial':
+    '{total} இல் {succeeded} Hyperliquid இணைப்புகள் ஒத்திசைக்கப்பட்டன. சிக்கல் உள்ள இணைப்புகளைச் சரிபார்க்கவும்.',
+  'trade-sync.hyperliquid.sync-all-provider-partial':
+    '{total} இல் {succeeded} Hyperliquid இணைப்புகள் ஒத்திசைக்கப்பட்டன · ஒத்திசைவு பகுதியளவு முடிந்தது',
   'trade-sync.source.ctrader.description':
     'மேகக்கணியில் cTrader டிரேட்களை ஒத்திசைத்து, இந்த vault இல் அவற்றைத் திட்டமிடுங்கள்.',
   'trade-sync.ctrader.status-failed': 'cTrader நிலையை ஏற்ற முடியவில்லை.',
   'trade-sync.ctrader.last-sync': 'கடைசி ஒத்திசைவு',
-  'trade-sync.ctrader.pending-acks':
-    '{count} உள்ளூர் ACK(கள்) நிலுவையில் உள்ளது',
+  'trade-sync.ctrader.pending-acks': '{count} உள்ளூர் ACK(கள்) நிலுவையில் உள்ளது',
   'trade-sync.ctrader.never': 'ஒருபோதும் இல்லை',
 
   'command.add-trade': 'புதிய டிரேடைச் சேர்',
@@ -196,8 +301,7 @@ const ta: Lang = {
   'command.open-settings': 'அமைப்புகளைத் திற',
   'command.open-position-size-calculator': 'போசிஷன் சைஸ் கால்குலேட்டரைத் திற',
   'command.replay-onboarding': 'ஆன்போர்டிங்கை மீண்டும் இயக்கு',
-  'command.replay-current-view-guide':
-    'தற்போதைய பார்வைக்கு வழிகாட்டியை மீண்டும் இயக்கு',
+  'command.replay-current-view-guide': 'தற்போதைய பார்வைக்கு வழிகாட்டியை மீண்டும் இயக்கு',
   'command.open-release-notes': 'வெளியீட்டு குறிப்புகளைப் பார்',
   'command.open-layout-builder': 'தளவமைப்பு உருவாக்கியைத் திற',
   'notice.guide.replay-unavailable':
@@ -210,8 +314,7 @@ const ta: Lang = {
     'இந்தக் காட்சியின் வழிகாட்டி அதன் தற்போதைய நிலையில் கிடைக்கவில்லை.',
   'notice.guide.replay-failed':
     'வழிகாட்டியைத் தொடங்குவதில் தோல்வி. மீண்டும் முயற்சிக்கவும்.',
-  'notice.guide.replay-started':
-    'இந்தக் காட்சிக்கு வழிகாட்டி மீண்டும் தொடங்கப்பட்டது.',
+  'notice.guide.replay-started': 'இந்தக் காட்சிக்கு வழிகாட்டி மீண்டும் தொடங்கப்பட்டது.',
   'template.switch-title': 'தளவமைப்பை மாற்றவும்',
   'template.switch-review-title': '{type} தளவமைப்பை மாற்றவும்',
 
@@ -221,8 +324,7 @@ const ta: Lang = {
   'template.review-type.quarterly': 'காலாண்டு',
   'template.review-type.yearly': 'வருடாந்திர',
   'template.review-type.review': 'மதிப்பாய்வு',
-  'template.builder.select-template':
-    'திருத்துவதற்கு தளவமைப்பைத் தேர்ந்தெடுக்கவும்',
+  'template.builder.select-template': 'திருத்துவதற்கு தளவமைப்பைத் தேர்ந்தெடுக்கவும்',
   'template.builder.loading': 'தளவமைப்பு உருவாக்கியை ஏற்றுகிறது...',
   'template.builder.create-from-sidebar':
     'அல்லது பக்கப்பட்டியில் இருந்து புதிய ஒன்றை உருவாக்கவும்',
@@ -234,8 +336,7 @@ const ta: Lang = {
     'Markdown மண்டலம் - பயனர்கள் இங்கே எழுதுகிறார்கள்',
   'template.preview.markdown-zone-placeholder-with-id':
     'Markdown மண்டலம் ({id}) - பயனர்கள் இங்கே எழுதுகிறார்கள்',
-  'template.preview.widget.game-performance-desc':
-    'மன/தொழில்நுட்ப தர விநியோகங்கள்',
+  'template.preview.widget.game-performance-desc': 'மன/தொழில்நுட்ப தர விநியோகங்கள்',
   'template.preview.widget.unknown-desc': 'அறியப்படாத விட்ஜெட் வகை',
   'template.section.forecast': 'முன்னறிவிப்பு',
   'template.section.performance': 'செயல்திறன்',
@@ -250,34 +351,15 @@ const ta: Lang = {
   'template.question.weekly.q5': 'அடுத்த வாரம் நான் என்ன மேம்படுத்த முடியும்?',
   'template.question.monthly.q1': 'இந்த மாதத்தின் முக்கிய பாடங்கள் என்ன?',
   'template.question.monthly.q2': 'எந்த உத்திகள் சிறப்பாக செயல்பட்டன?',
-  'template.question.monthly.q3':
-    'எனது டிரேட்டில் நான் என்ன மாதிரிகளை கவனிக்கிறேன்?',
+  'template.question.monthly.q3': 'எனது டிரேட்டில் நான் என்ன மாதிரிகளை கவனிக்கிறேன்?',
   'template.question.monthly.q4': 'அடுத்த மாதத்திற்கான எனது இலக்குகள் என்ன?',
-  'template.question.monthly.q5':
-    'எனது இடர் மேலாண்மையை எவ்வாறு மேம்படுத்துவது?',
+  'template.question.monthly.q5': 'எனது இடர் மேலாண்மையை எவ்வாறு மேம்படுத்துவது?',
   'template-picker.empty': 'தளவமைப்புகள் எதுவும் இல்லை.',
   'template-picker.close': 'மூடு',
   'template-picker.built-in': '(உள்ளமைக்கப்பட்ட)',
   'template-picker.badge.default': 'இயல்பு',
   'template-picker.badge.current': 'தற்போதைய',
   'template-picker.cancel': 'ரத்து',
-  'auth.title.already-logged-in': 'ஏற்கனவே உள்நுழைந்துள்ளீர்கள்',
-  'auth.desc.already-logged-in': 'நீங்கள் ஏற்கனவே உள்நுழைந்துள்ளீர்கள்{email}.',
-  'auth.title.sign-in': 'Journalit இல் உள்நுழையவும்',
-
-  'auth.label.email': 'மின்னஞ்சல் முகவரி',
-
-  'auth.button.send-code': 'சரிபார்ப்புக் குறியீட்டை அனுப்பவும்',
-
-  'auth.label.code': 'சரிபார்ப்பு குறியீடு',
-
-  'auth.button.verify': 'சரிபார்த்து உள்நுழையவும்',
-
-  'auth.button.resend': 'குறியீட்டை மீண்டும் அனுப்பு',
-
-  'auth.error.needs-premium': 'ப்ரோ அம்சம்',
-
-  'auth.error.network-error': 'இணைப்பு பிழை',
 
   'form.modal.unsaved-changes.title': 'சேமிக்கப்படாத மாற்றங்கள்',
   'form.modal.unsaved-changes.body1':
@@ -293,26 +375,19 @@ const ta: Lang = {
   'template-builder.modal.unsaved-changes.continue': 'எடிட்டிங் தொடரவும்',
   'template-builder.modal.unsaved-changes.discard': 'மாற்றங்களை நிராகரிக்கவும்',
   'template-builder.modal.delete.title': 'தளவமைப்பை நீக்கு',
-  'template-builder.modal.delete.body':
-    '"{name}" ஐ நிச்சயமாக நீக்க விரும்புகிறீர்களா?',
-  'template-builder.modal.delete.warning':
-    'இந்தச் செயலைச் செயல்தவிர்க்க முடியாது.',
+  'template-builder.modal.delete.body': '"{name}" ஐ நிச்சயமாக நீக்க விரும்புகிறீர்களா?',
+  'template-builder.modal.delete.warning': 'இந்தச் செயலைச் செயல்தவிர்க்க முடியாது.',
   'template-builder.modal.delete.cancel': 'ரத்து',
   'template-builder.modal.delete.confirm': 'நீக்கு',
   'tradelog.settings.modal.unsaved-changes.body1':
     'நெடுவரிசை அமைப்புகளில் நீங்கள் சேமிக்கப்படாத மாற்றங்கள் உள்ளன.',
   'tradelog.settings.modal.unsaved-changes.body2':
     'சேமிக்காமல் மூட விரும்புகிறீர்களா?',
-  'notice.error.missed-trade-service-init':
-    'தவறவிட்ட டிரேட் சேவை தொடங்கப்படவில்லை. சிறிது நேரம் காத்திருந்து மீண்டும் முயற்சிக்கவும்.',
-  'notice.error.backtest-trade-service-init':
-    'Backtest டிரேட் சேவை தொடங்கப்படவில்லை. சிறிது நேரம் காத்திருந்து மீண்டும் முயற்சிக்கவும்.',
   'notice.trade-updated': '{type} புதுப்பிக்கப்பட்டது: {path}',
   'notice.trade-created': '{type} உருவாக்கப்பட்டது: {path}',
   'notice.new-trade-created':
-    '📈 புதிய டிரேட் உருவாக்கப்பட்டது: {instrument} {direction}',
-  'notice.error.trade-update-failed':
-    '{type}: {error}ஐப் புதுப்பிக்க முடியவில்லை',
+    'புதிய டிரேட் உருவாக்கப்பட்டது: {instrument} {direction}',
+  'notice.error.trade-update-failed': '{type}: {error}ஐப் புதுப்பிக்க முடியவில்லை',
   'notice.error.trade-create-failed': '{type}: {error} ஐ உருவாக்க முடியவில்லை',
   'form.section.trade-details': 'டிரேட் விவரங்கள்',
   'form.section.trading-costs': 'டிரேடிங் செலவுகள்',
@@ -343,6 +418,10 @@ const ta: Lang = {
   'form.manual-import-nudge.dismiss': 'இப்போது வேண்டாம்',
   'form.layout.customize': 'படிவத்தைத் தனிப்பயனாக்கு',
   'form.layout.modal-title': 'டிரேட் படிவத்தை தனிப்பயனாக்குங்கள்',
+  'form.layout.back-to-trade': 'வர்த்தகத்திற்குத் திரும்பு',
+  'form.layout.save-layout': 'தளவமைப்பைச் சேமி',
+  'form.layout.discard-changes.body':
+    'சேமிக்காத தனிப்பயனாக்கத்தை நிராகரிக்கவா? உங்கள் வர்த்தக வரைவு பாதுகாக்கப்படும்.',
   'form.layout.settings-title': 'டிரேட் படிவ தளவமைப்பு',
 
   'form.layout.input-mode': 'உள்ளீட்டு முறை',
@@ -354,13 +433,12 @@ const ta: Lang = {
     'நேரடி P&L + ஆபத்து. Journalit R ஐக் காட்டுகிறது.',
   'form.layout.asset-type-mode': 'சொத்து வகை',
   'form.layout.asset-type-mode-show': 'கேள்',
-  'form.layout.asset-type-mode-fixed': 'Fixed',
+  'form.layout.asset-type-mode-fixed': 'நிலையானது',
   'form.layout.default-asset-type': 'இயல்புநிலை சொத்து வகை',
   'form.layout.active-fields': 'காணக்கூடிய தொகுதிகள்',
   'form.layout.available-fields': 'மறைக்கப்பட்ட தொகுதிகள்',
   'form.layout.active-fields-desc': 'மறுவரிசைப்படுத்த இழுக்கவும்.',
-  'form.layout.available-fields-desc':
-    'மறைக்கப்பட்ட தொகுதிகளை மீண்டும் சேர்க்கவும்.',
+  'form.layout.available-fields-desc': 'மறைக்கப்பட்ட தொகுதிகளை மீண்டும் சேர்க்கவும்.',
   'form.layout.empty-active': 'விருப்பத் தொகுதிகள் எதுவும் தெரியவில்லை.',
   'form.layout.all-active': 'அனைத்து விருப்பத் தொகுதிகளும் தெரியும்.',
   'form.layout.add-field-aria': 'டிரேட் படிவத்தில் {field} ஐ சேர்க்கவும்',
@@ -427,7 +505,7 @@ const ta: Lang = {
   'form.field.total-costs': 'மொத்த செலவுகள்:',
   'form.field.setup': 'Setup',
   'form.field.mistake': 'தவறு',
-  'form.field.custom-tags': 'தனிப்பயன் குறிச்சொற்கள்',
+  'form.field.tags': 'குறிச்சொற்கள்',
   'form.field.trade-thesis': 'டிரேட் தீசிஸ்',
   'form.field.time': 'நேரம்',
   'form.field.price': 'விலை',
@@ -439,7 +517,7 @@ const ta: Lang = {
   'form.field.optional': '(விருப்பம்)',
   'form.field.closed': 'மூடப்பட்டது',
   'form.field.incl-costs': '(செலவுகள் உட்பட)',
-  'form.field.commission-type.fixed': 'Fixed',
+  'form.field.commission-type.fixed': 'நிலையானது',
   'form.field.commission-type.percentage': 'சதவீதம் (%)',
   'form.calculated': 'கணக்கிடப்பட்டது',
   'form.account-empty-state.title': 'உங்கள் முதல் கணக்கை அமைக்கவும்',
@@ -449,11 +527,10 @@ const ta: Lang = {
   'form.account-empty-state.submit-disabled':
     'இந்த டிரேடை சேமிக்க முதலில் ஒரு கணக்கை உருவாக்கவும்.',
   'form.empty.take-profits': 'இன்னும் Take Profit இலக்குகள் இல்லை',
-  'form.action.add-take-profit': 'Take Profit-ஐச் சேர்',
   'form.action.remove-take-profit': 'Take Profit-ஐ அகற்று',
   'form.field.position-size': 'போசிஷன் அளவு',
   'form.field.position-size.shares': 'பங்குகள்',
-  'form.field.position-size.contracts': 'Contracts',
+  'form.field.position-size.contracts': 'ஒப்பந்தங்கள்',
   'form.field.position-size.lots': 'Lots',
   'form.field.position-size.amount': 'தொகை',
   'form.field.position-size.cfd-units': 'CFD அலகுகள்',
@@ -464,7 +541,7 @@ const ta: Lang = {
   'form.field.instrument.forex-pair': 'Forex ஜோடி',
   'form.field.instrument.crypto-symbol': 'Crypto சின்னம்',
   'form.field.instrument.cfd-symbol': 'CFD சின்னம்',
-  'form.field.exchange': 'Exchange',
+  'form.field.exchange': 'பரிமாற்றகம்',
   'form.field.expiration-date': 'காலாவதி தேதி',
   'form.field.strike-price': 'Strike Price',
   'form.field.contract-size': 'Contract அளவு',
@@ -486,10 +563,8 @@ const ta: Lang = {
   'form.field.lot-size.mini': 'மினி (10,000)',
   'form.field.lot-size.micro': 'மைக்ரோ (1,000)',
   'form.field.lot-size.custom': 'தனிப்பயன்',
-  'form.field.image-url-placeholder':
-    'மீடியா URL அல்லது கோப்பு பாதையை ஒட்டு...',
-  'form.field.image-duplicate-error':
-    'இந்தப் படம் ஏற்கனவே சேர்க்கப்பட்டுள்ளது.',
+  'form.field.image-url-placeholder': 'மீடியா URL அல்லது கோப்பு பாதையை ஒட்டு...',
+  'form.field.image-duplicate-error': 'இந்தப் படம் ஏற்கனவே சேர்க்கப்பட்டுள்ளது.',
   'form.field.trade-image-alt': 'டிரேட் படம்',
 
   'form.field.value-dollar': 'மதிப்பு ($)',
@@ -501,11 +576,40 @@ const ta: Lang = {
   'form.placeholder.select-accounts': 'கணக்குகளைத் தேர்ந்தெடுக்கவும்',
   'form.placeholder.commission': '0.15',
   'form.placeholder.commission-alt': '5.50',
-  'form.placeholder.rebate': 'Commission Rebate/credit',
+  'form.placeholder.rebate': 'கமிஷன் தள்ளுபடி/வரவு',
   'form.placeholder.swap': 'ஒரே இரவில் நிதி',
   'form.placeholder.other-fees': 'தளம்/ஒழுங்குமுறை கட்டணம்',
   'form.placeholder.dividend-amount': 'பணத் தொகை, நேர்மறை அல்லது எதிர்மறை',
-  'form.placeholder.stop-loss': 'விருப்ப Stop Loss விலை',
+  'form.placeholder.stop-loss': 'ஸ்டாப் விலை',
+  'form.layout.stop-loss-unit': 'ஸ்டாப் லாஸ் அளவு வடிவம்',
+  'form.layout.stop-loss-unit-percent': 'நிலையின் %',
+  'form.layout.stop-loss-unit-size': 'அளவு',
+  'form.field.stop-loss-short': 'SL',
+  'form.field.stop-price': 'ஸ்டாப் விலை',
+  'form.field.stop-loss-percent': 'நிலையின் %',
+  'form.field.stop-loss-size': 'அளவு',
+  'form.action.remove-stop-loss': 'ஸ்டாப் லாஸை அகற்று',
+  'form.stop-loss.coverage': 'ஸ்டாப்கள் நிலையின் {percent} பகுதியை உள்ளடக்குகின்றன.',
+  'form.stop-loss.coverage-partial':
+    'ஒவ்வொரு அலகுக்கும் ஸ்டாப் அமையும் வரை, ரிஸ்க் தொகை பயன்படுத்தப்படும்.',
+  'form.placeholder.stop-loss-rest': 'மீதி',
+  'form.empty.stop-losses': 'இன்னும் ஸ்டாப் லாஸ் இல்லை',
+  'tradelog.tooltip.stop-losses': 'ஸ்டாப் லாஸ்கள்',
+  'form.placeholder.stop-loss-size-amount': '{size} அலகுகள்',
+  'trade.validation.stop-loss-price-required': 'ஸ்டாப் லாஸ் விலை தேவை.',
+  'trade.validation.stop-loss-close-percent-number':
+    'ஸ்டாப் லாஸ் சதவீதம் சரியான எண்ணாக இருக்க வேண்டும்.',
+  'trade.validation.stop-loss-close-percent-range':
+    'ஸ்டாப் லாஸ் சதவீதம் 1 முதல் 100 வரை இருக்க வேண்டும்.',
+  'trade.validation.stop-loss-size-number':
+    'ஸ்டாப் லாஸ் அளவு சரியான எண்ணாக இருக்க வேண்டும்.',
+  'trade.validation.stop-loss-size-positive':
+    'ஸ்டாப் லாஸ் அளவு 0-ஐ விட அதிகமாக இருக்க வேண்டும்.',
+  'trade.validation.stop-loss-single-blank-amount':
+    'ஒரு ஸ்டாப் லாஸ் மட்டுமே அளவை காலியாக விடலாம்.',
+  'trade.validation.stop-loss-total-over-position':
+    'ஸ்டாப் லாஸ்கள் நிலையை விட அதிகமாக உள்ளடக்குகின்றன.',
+  'trade.details.stop-loss-count': '{count} ஸ்டாப்கள்',
   'form.placeholder.target-price': 'இலக்கு விலை',
   'form.placeholder.close-percent': '50%',
   'form.placeholder.risk-amount': 'நாணயத்தில் திட்டமிடப்பட்ட ஆபத்து',
@@ -519,6 +623,9 @@ const ta: Lang = {
   'form.placeholder.futures-point-value': 'எ.கா: ES1க்கு 50',
   'form.placeholder.leverage': 'எ.கா., 1:100க்கு 100',
   'form.entry-exit.add-entry': '+ நுழைவைச் சேர்',
+  'form.entry-exit.backtest-day':
+    'தேதி {date}, உங்கள் கடைசி பேக்டெஸ்ட் வர்த்தகத்தின் நாள்.',
+  'form.entry-exit.use-today': 'இன்றைப் பயன்படுத்து',
   'form.entry-exit.add-exit': '+ வெளியேற்றத்தைச் சேர்',
   'form.entry-exit.remove-entry': 'நுழைவை அகற்று',
   'form.entry-exit.remove-exit': 'வெளியேற்றத்தை அகற்று',
@@ -561,8 +668,7 @@ const ta: Lang = {
   'form.trade-type.title': 'டிரேட் வகை',
   'form.trade-type.subtitle': 'உருவாக்கும் டிரேட் வகையைத் தேர்வு செய்',
   'form.trade-type.regular': 'வழக்கமான டிரேட்',
-  'form.trade-type.regular-desc':
-    'முழு என்ட்ரி மற்றும் எக்சிட் தரவுடன் சாதாரண டிரேட்',
+  'form.trade-type.regular-desc': 'முழு என்ட்ரி மற்றும் எக்சிட் தரவுடன் சாதாரண டிரேட்',
   'form.trade-type.missed': 'தவறவிட்ட டிரேட்',
   'form.trade-type.missed-desc':
     'நீங்கள் தவறவிட்ட டிரேட் வாய்ப்பு - PnL மற்றும் கணக்கு புலங்கள் விருப்பமானது',
@@ -590,7 +696,6 @@ const ta: Lang = {
   'button.add-trade': 'டிரேடைச் சேர்',
   'button.update-trade': 'டிரேடைப் புதுப்பி',
   'button.save-changes': 'மாற்றங்களைச் சேமி',
-  'button.create-trade': 'டிரேடை உருவாக்கு',
   'button.delete-all': 'அனைத்தையும் நீக்கு',
   'button.clear-all': 'அனைத்தையும் அழி',
 
@@ -600,14 +705,12 @@ const ta: Lang = {
   'button.maybe-later': 'பிறகு பார்க்கலாம்',
   'button.upgrade-now': 'இப்போது மேம்படுத்து',
 
-  'button.apply': 'பயன்படுத்து',
-
   'button.learn-more': 'மேலும் அறிக',
   'button.upload-image': 'ஊடகத்தைப் பதிவேற்று',
   'button.discord': 'Discord',
   'form.error.image-upload-unavailable': 'படப் பதிவேற்றம் கிடைக்கவில்லை',
   'trade.header.unknown-instrument': 'தெரியாத இன்ஸ்ட்ருமென்ட்',
-  'validation.edit': 'EDIT',
+  'validation.edit': 'திருத்து',
   'validation.fix-errors': 'பின்வரும் பிழைகளை சரிசெய்யவும்:',
   'validation.setup-resolution-failed':
     'தேர்ந்தெடுக்கப்பட்ட Setups-ஐ தயாரிக்க முடியவில்லை. அவற்றைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.',
@@ -616,21 +719,14 @@ const ta: Lang = {
   'validation.basic-tab-errors.many': 'அடிப்படை தாவலில் {count} பிழைகள் உள்ளன',
   'validation.basic-tab-errors.other': 'அடிப்படை தாவலில் {count} பிழைகள் உள்ளன',
   'validation.details-tab-errors.one': 'விவரங்கள் தாவலில் {count} பிழை உள்ளது',
-  'validation.details-tab-errors.few':
-    'விவரங்கள் தாவலில் {count} பிழைகள் உள்ளன',
-  'validation.details-tab-errors.many':
-    'விவரங்கள் தாவலில் {count} பிழைகள் உள்ளன',
-  'validation.details-tab-errors.other':
-    'விவரங்கள் தாவலில் {count} பிழைகள் உள்ளன',
+  'validation.details-tab-errors.few': 'விவரங்கள் தாவலில் {count} பிழைகள் உள்ளன',
+  'validation.details-tab-errors.many': 'விவரங்கள் தாவலில் {count} பிழைகள் உள்ளன',
+  'validation.details-tab-errors.other': 'விவரங்கள் தாவலில் {count} பிழைகள் உள்ளன',
   'validation.advanced-tab-errors.one': 'மேம்பட்ட தாவலில் {count} பிழை உள்ளது',
-  'validation.advanced-tab-errors.few':
-    'மேம்பட்ட தாவலில் {count} பிழைகள் உள்ளன',
-  'validation.advanced-tab-errors.many':
-    'மேம்பட்ட தாவலில் {count} பிழைகள் உள்ளன',
-  'validation.advanced-tab-errors.other':
-    'மேம்பட்ட தாவலில் {count} பிழைகள் உள்ளன',
-  'validation.complete-required':
-    'தேவையான அனைத்து புலங்களையும் பூர்த்தி செய்யவும்',
+  'validation.advanced-tab-errors.few': 'மேம்பட்ட தாவலில் {count} பிழைகள் உள்ளன',
+  'validation.advanced-tab-errors.many': 'மேம்பட்ட தாவலில் {count} பிழைகள் உள்ளன',
+  'validation.advanced-tab-errors.other': 'மேம்பட்ட தாவலில் {count} பிழைகள் உள்ளன',
+  'validation.complete-required': 'தேவையான அனைத்து புலங்களையும் பூர்த்தி செய்யவும்',
 
   'validation.missed-trade-requires-exit':
     'தவறவிட்ட டிரேட்களில் பூஜ்ஜியம் அல்லாத விலைகளுடன் வெளியேறும் தரவு இருக்க வேண்டும். அவை ஏற்கனவே கடந்துவிட்ட வாய்ப்புகளைக் குறிக்கின்றன, எனவே வெளியேறும் விலை என்னவாக இருக்கும் என்பதை நீங்கள் குறிப்பிட வேண்டும்.',
@@ -647,30 +743,25 @@ const ta: Lang = {
     'வெளியேறும் அளவு பூஜ்ஜியத்தை விட அதிகமாக இருக்க வேண்டும்.',
   'trade.validation.exit-size-exceeds-entry':
     'மொத்த வெளியேறும் அளவு மொத்த நுழைவு அளவை விட அதிகமாக இருக்கக்கூடாது.',
-  'trade.validation.exit-before-entry':
-    'முதல் நுழைவுக்கு முன் வெளியேற முடியாது.',
+  'trade.validation.exit-before-entry': 'முதல் நுழைவுக்கு முன் வெளியேற முடியாது.',
   'trade.validation.dividend-time-required': 'ஈவுத்தொகை நேரம் தேவை.',
   'trade.validation.dividend-amount-nonzero':
     'ஈவுத்தொகை பூஜ்ஜியமற்ற எண்ணாக இருக்க வேண்டும்.',
   'trade.validation.direct-pnl-required': 'லாபம்/இழப்பு மதிப்பை உள்ளிடவும்.',
   'trade.validation.entry-time-select': 'நுழைவு நேரத்தைத் தேர்ந்தெடுக்கவும்.',
   'trade.validation.direction-required': 'ஒரு திசையைத் தேர்ந்தெடுக்கவும்.',
-  'trade.validation.asset-type-required':
-    'ஒரு சொத்து வகையைத் தேர்ந்தெடுக்கவும்.',
+  'trade.validation.asset-type-required': 'ஒரு சொத்து வகையைத் தேர்ந்தெடுக்கவும்.',
   'trade.validation.ticker-required': 'டிக்கரைத் தேர்ந்தெடுக்கவும்.',
   'trade.validation.ticker-invalid':
     'சரியான டிக்கர் சின்னத்தை உள்ளிடவும் (எழுத்துகள், எண்கள் & காலங்கள் மட்டும்).',
-  'trade.validation.account-required':
-    'குறைந்தது ஒரு கணக்கையாவது தேர்ந்தெடுக்கவும்.',
-  'trade.validation.exit-time-select':
-    'வெளியேறும் நேரத்தைத் தேர்ந்தெடுக்கவும்.',
+  'trade.validation.account-required': 'குறைந்தது ஒரு கணக்கையாவது தேர்ந்தெடுக்கவும்.',
+  'trade.validation.exit-time-select': 'வெளியேறும் நேரத்தைத் தேர்ந்தெடுக்கவும்.',
   'trade.validation.entry-price-invalid': 'சரியான நுழைவு விலையை உள்ளிடவும்.',
   'trade.validation.exit-price-invalid': 'சரியான வெளியேறும் விலையை உள்ளிடவும்.',
   'trade.validation.position-size-invalid': 'சரியான Position அளவை உள்ளிடவும்.',
   'trade.validation.exit-time-after-entry':
     'வெளியேறும் நேரம் நுழைவு நேரத்திற்குப் பிறகு இருக்க வேண்டும்.',
-  'trade.validation.expiration-date-required':
-    'காலாவதி தேதியைத் தேர்ந்தெடுக்கவும்.',
+  'trade.validation.expiration-date-required': 'காலாவதி தேதியைத் தேர்ந்தெடுக்கவும்.',
   'trade.validation.strike-price-required': 'Strike Price-ஐ உள்ளிடவும்.',
   'trade.validation.option-type-required':
     'தயவுசெய்து விருப்ப வகையைத் தேர்ந்தெடுக்கவும் (Call அல்லது Put).',
@@ -690,17 +781,14 @@ const ta: Lang = {
   'trade.validation.rebate-options-only':
     'Rebate options டிரேட்களுக்கு மட்டுமே அனுமதிக்கப்படுகிறது.',
   'trade.validation.rebate-number': 'Rebate ஒரு எண்ணாக இருக்க வேண்டும்.',
-  'trade.validation.rebate-positive':
-    'Rebate நேர்மறை மதிப்பாக இருக்க வேண்டும்.',
+  'trade.validation.rebate-positive': 'Rebate நேர்மறை மதிப்பாக இருக்க வேண்டும்.',
   'trade.validation.swap-invalid': 'தவறான பரிமாற்றத் தொகை.',
   'trade.validation.fees-number': 'கட்டணம் ஒரு எண்ணாக இருக்க வேண்டும்.',
   'trade.validation.risk-number': 'இடர் தொகை ஒரு எண்ணாக இருக்க வேண்டும்.',
-  'trade.validation.risk-valid-number':
-    'அபாயத் தொகை சரியான எண்ணாக இருக்க வேண்டும்.',
+  'trade.validation.risk-valid-number': 'அபாயத் தொகை சரியான எண்ணாக இருக்க வேண்டும்.',
   'trade.validation.risk-positive':
     'அபாயத் தொகை பூஜ்ஜியத்தை விட அதிகமாக இருக்க வேண்டும்.',
-  'trade.validation.fx-rate-number':
-    'FX விகிதம் சரியான எண்ணாக இருக்க வேண்டும்.',
+  'trade.validation.fx-rate-number': 'FX விகிதம் சரியான எண்ணாக இருக்க வேண்டும்.',
   'trade.validation.fx-rate-positive':
     'FX விகிதம் பூஜ்ஜியத்தை விட அதிகமாக இருக்க வேண்டும்.',
   'trade.validation.stop-loss-number': 'Stop Loss ஒரு எண்ணாக இருக்க வேண்டும்.',
@@ -734,8 +822,7 @@ const ta: Lang = {
   'validation.custom-field.pattern-invalid-pattern':
     '{label} தவறான சரிபார்ப்பு வடிவத்தைக் கொண்டுள்ளது',
   'validation.custom-field.number': '{label} ஒரு எண்ணாக இருக்க வேண்டும்',
-  'validation.custom-field.min':
-    '{label} குறைந்தபட்சம் {min} ஆக இருக்க வேண்டும்',
+  'validation.custom-field.min': '{label} குறைந்தபட்சம் {min} ஆக இருக்க வேண்டும்',
   'validation.custom-field.max': '{label} {max} ஐ விட அதிகமாக இருக்கக்கூடாது',
   'validation.custom-field.selection': '{label} சரியான தேர்வாக இருக்க வேண்டும்',
   'validation.custom-field.option': '{label} சரியான விருப்பமாக இருக்க வேண்டும்',
@@ -755,8 +842,7 @@ const ta: Lang = {
 
   'notice.logout-success': 'வெற்றிகரமாக வெளியேறியது',
   'notice.ftp-created': 'FTP Credentials வெற்றிகரமாக உருவாக்கப்பட்டன',
-  'notice.ftp-reset':
-    'FTP கடவுச்சொல் மீட்டமைக்கப்பட்டது! புதிய கடவுச்சொல்லை சேமிக்கவும்.',
+  'notice.ftp-reset': 'FTP கடவுச்சொல் மீட்டமைக்கப்பட்டது! புதிய கடவுச்சொல்லை சேமிக்கவும்.',
   'notice.ftp-password-rotated':
     'இந்தச் சாதனத்திற்காக புதிய FTP Credentials உருவாக்கப்பட்டன. பிற சாதனங்களில் உள்ளமைக்கப்பட்ட FTP ஒத்திசைவு (எ.கா. உங்கள் MetaTrader EA) புதிய கடவுச்சொல்லுடன் புதுப்பிக்கப்பட வேண்டும்.',
   'notice.ftp-reused':
@@ -768,12 +854,10 @@ const ta: Lang = {
   'notice.template-deleted': 'தளவமைப்பு நீக்கப்பட்டது',
   'notice.default-template-updated': 'இயல்பு தளவமைப்பு புதுப்பிக்கப்பட்டது',
   'notice.tradelog-saved': 'TradeLog அமைப்புகள் வெற்றிகரமாக சேமிக்கப்பட்டன',
-  'notice.settings-exported':
-    'அமைப்புகள் {filename} க்கு ஏற்றுமதி செய்யப்பட்டன',
+  'notice.settings-exported': 'அமைப்புகள் {filename} க்கு ஏற்றுமதி செய்யப்பட்டன',
   'notice.settings-imported':
     'v{version} இலிருந்து அமைப்புகள் வெற்றிகரமாக இறக்குமதி செய்யப்பட்டன. எல்லா மாற்றங்களையும் செயல்படுத்த Obsidian ஐ மீண்டும் தொடங்கவும்.',
   'notice.template-switched': 'இதற்கு மாறியது: {name}',
-  'notice.hotkey-set': 'ஹாட்கீ தொகுப்பு: {hotkey}',
   'notice.auto-sync-toggled': 'தானாக ஒத்திசைவு {status}',
   'notice.auto-sync-enabled': 'செயல்படுத்தப்பட்டது',
   'notice.auto-sync-disabled': 'முடக்கப்பட்டது',
@@ -783,21 +867,11 @@ const ta: Lang = {
     '{count} தனிப்பயன் புலங்கள் வெற்றிகரமாக இறக்குமதி செய்யப்பட்டன',
 
   'notice.csv-template-deleted': 'வார்ப்புரு "{name}" நீக்கப்பட்டது',
-  'notice.csv-template-delete-failed':
-    'வார்ப்புருவை நீக்க முடியவில்லை: {error}',
+  'notice.csv-template-delete-failed': 'வார்ப்புருவை நீக்க முடியவில்லை: {error}',
   'notice.csv-template-imported':
     'வார்ப்புரு "{name}" வெற்றிகரமாக இறக்குமதி செய்யப்பட்டது',
-  'notice.csv-symbol-mappings-created.one':
-    '{count} சின்ன மேப்பிங் உருவாக்கப்பட்டது',
-  'notice.csv-symbol-mappings-created.few':
-    '{count} சின்ன மேப்பிங்ஸ் உருவாக்கப்பட்டது',
-  'notice.csv-symbol-mappings-created.many':
-    '{count} சின்ன மேப்பிங்ஸ் உருவாக்கப்பட்டது',
-  'notice.csv-symbol-mappings-created.other':
-    '{count} சின்ன மேப்பிங்ஸ் உருவாக்கப்பட்டது',
-  'notice.csv-symbol-mapping-skipped': 'சின்ன மேப்பிங் தவிர்க்கப்பட்டது',
   'notice.csv-missing-fields':
-    'இறக்குவதற்கு முன் தேவையான அனைத்து புலங்களையும் மேப் செய்யவும்',
+    'முன்னோட்டத்தை உருவாக்கும் முன் தேவையான அனைத்து புலங்களையும் பொருத்தவும்.',
   'notice.setups-added': '{count} டிரேட்களுக்கு Setups சேர்க்கப்பட்டன',
   'notice.tags-added': '{count} டிரேட்டில் குறிச்சொற்கள் சேர்க்கப்பட்டன',
   'notice.mistakes-added': '{count} டிரேட்டில் தவறுகள் சேர்க்கப்பட்டன',
@@ -809,12 +883,9 @@ const ta: Lang = {
   'notice.trades-deleted.few': '{count} டிரேட்கள் நீக்கப்பட்டன',
   'notice.trades-deleted.many': '{count} டிரேட்கள் நீக்கப்பட்டன',
   'notice.trades-deleted.other': '{count} டிரேட்கள் நீக்கப்பட்டன',
-  'notice.mark-reviewed.one':
-    'மதிப்பாய்வு செய்யப்பட்டதாக {count} டிரேட் குறிக்கப்பட்டது',
-  'notice.mark-reviewed.few':
-    'மதிப்பாய்வு செய்யப்பட்டதாக {count} டிரேட் குறிக்கப்பட்டது',
-  'notice.mark-reviewed.many':
-    'மதிப்பாய்வு செய்யப்பட்டதாக {count} டிரேட் குறிக்கப்பட்டது',
+  'notice.mark-reviewed.one': 'மதிப்பாய்வு செய்யப்பட்டதாக {count} டிரேட் குறிக்கப்பட்டது',
+  'notice.mark-reviewed.few': 'மதிப்பாய்வு செய்யப்பட்டதாக {count} டிரேட் குறிக்கப்பட்டது',
+  'notice.mark-reviewed.many': 'மதிப்பாய்வு செய்யப்பட்டதாக {count} டிரேட் குறிக்கப்பட்டது',
   'notice.mark-reviewed.other':
     'மதிப்பாய்வு செய்யப்பட்டதாக {count} டிரேட் குறிக்கப்பட்டது',
 
@@ -823,8 +894,7 @@ const ta: Lang = {
   'notice.error.open-drc': 'DRC: {error}ஐ திறக்க முடியவில்லை',
   'notice.error.open-trade-log': 'டிரேட் பதிவைத் திறக்க முடியவில்லை: {error}',
   'notice.error.open-csv-import': 'Trade Import: {error}ஐ திறக்க முடியவில்லை',
-  'notice.error.open-account-dashboard':
-    'கணக்குகளைத் திறக்க முடியவில்லை: {error}',
+  'notice.error.open-account-dashboard': 'கணக்குகளைத் திறக்க முடியவில்லை: {error}',
   'notice.error.open-trade-form-edit':
     'திருத்த பயன்முறையில் டிரேட் படிவத்தைத் திறக்க முடியவில்லை: {error}',
   'notice.error.open-weekly-review':
@@ -845,12 +915,8 @@ const ta: Lang = {
   'notice.error.switch-template': 'தளவமைப்பை மாற்ற முடியவில்லை: {error}',
   'notice.error.switch-template-generic': 'தளவமைப்பை மாற்ற முடியவில்லை',
 
-  'notice.error.no-active-file':
-    'செயலில் கோப்பு இல்லை. முதலில் ஒரு குறிப்பைத் திறக்கவும்.',
-  'notice.error.no-template-support':
-    'இந்த குறிப்பு வகை தளவமைப்புகளை ஆதரிக்காது.',
-  'notice.error.no-templates':
-    'இந்தக் குறிப்பு வகைக்கான தளவமைப்புகள் எதுவும் இல்லை.',
+  'notice.error.no-template-support': 'இந்த குறிப்பு வகை தளவமைப்புகளை ஆதரிக்காது.',
+  'notice.error.no-templates': 'இந்தக் குறிப்பு வகைக்கான தளவமைப்புகள் எதுவும் இல்லை.',
   'notice.error.asset-type-required':
     'இன்ஸ்ட்ருமென்ட்டைச் சேர்க்கும்போது சொத்து வகை தேவை',
   'notice.error.column-required':
@@ -862,8 +928,7 @@ const ta: Lang = {
     'அங்கீகாரத்தை மீட்டெடுக்க முடியவில்லை. அமைப்புகள் → அங்கீகாரத்திலிருந்து மீண்டும் உள்நுழையவும்.',
   'notice.error.export-settings':
     'அமைப்புகளை ஏற்றுமதி செய்ய முடியவில்லை. விவரங்களுக்கு கன்சோலைச் சரிபார்க்கவும்.',
-  'notice.error.import-settings':
-    'அமைப்புகளை இறக்குமதி செய்ய முடியவில்லை: {error}',
+  'notice.error.import-settings': 'அமைப்புகளை இறக்குமதி செய்ய முடியவில்லை: {error}',
   'notice.error.reset-settings':
     'அமைப்புகளை மீட்டமைக்க முடியவில்லை. விவரங்களுக்கு கன்சோலைச் சரிபார்க்கவும்.',
 
@@ -878,16 +943,8 @@ const ta: Lang = {
   'notice.error.add-mistakes': 'தவறுகளைச் சேர்ப்பதில் பிழை: {error}',
   'notice.error.delete-trades': 'டிரேடை நீக்குவதில் பிழை: {error}',
   'notice.error.duplicate-trades': 'டிரேடை நகலெடுப்பதில் பிழை: {error}',
-  'notice.error.csv-validation':
-    'CSV/XLSX/XLS சரிபார்ப்பு தோல்வியடைந்தது: {errors}',
-  'notice.error.import-failed': 'இறக்குமதி தோல்வி: {error}',
-  'notice.error.file-too-large': 'கோப்பு மிகவும் பெரியது. அதிகபட்ச அளவு 10MB',
-  'notice.error.select-csv':
-    'தயவுசெய்து CSV/XLSX/XLS/HTML கோப்பைத் தேர்ந்தெடுக்கவும்',
-  'notice.error.cannot-delete-builtin':
-    'உள்ளமைக்கப்பட்ட தளவமைப்புகளை நீக்க முடியாது',
-  'notice.error.duplicate-to-customize':
-    'தனிப்பயனாக்க இந்த தளவமைப்பை நகலெடுக்கவும்',
+  'notice.error.cannot-delete-builtin': 'உள்ளமைக்கப்பட்ட தளவமைப்புகளை நீக்க முடியாது',
+  'notice.error.duplicate-to-customize': 'தனிப்பயனாக்க இந்த தளவமைப்பை நகலெடுக்கவும்',
   'notice.error.sign-out': 'வெளியேற முடியவில்லை. மீண்டும் முயற்சிக்கவும்.',
   'notice.error.open-upgrade-modal':
     'பிரீமியம் அம்சம் கோரப்பட்டது, ஆனால் மேம்படுத்தல் உரையாடல் ஏற்றப்படவில்லை.',
@@ -906,9 +963,9 @@ const ta: Lang = {
   'tradelog.root.all-trades': 'அனைத்து டிரேட்',
   'tradelog.view.selector.label': 'காண்க',
 
-  'trade-form.guide.customization-modal.title':
+  'trade-form.guide.customization-page.title':
     'உங்கள் பணிப்பாய்வுக்கு படிவத்தை மாற்றவும்',
-  'trade-form.guide.customization-modal.description':
+  'trade-form.guide.customization-page.description':
     'இங்கே நீங்கள் விருப்பத் தொகுதிகளைக் காட்டலாம், மறைக்கலாம் மற்றும் மறுவரிசைப்படுத்தலாம். நீங்கள் உண்மையில் பயன்படுத்தும் புலங்களில் படிவத்தை கவனம் செலுத்துங்கள்.',
   'trade-form.guide.finish.title': 'இது தனிப்பயனாக்குதல் அம்சமாகும்',
   'trade-form.guide.finish.description':
@@ -926,8 +983,7 @@ const ta: Lang = {
     'உங்கள் வரலாற்றை எவ்வாறு மதிப்பாய்வு செய்ய விரும்புகிறீர்கள் என்பதைத் தேர்வுசெய்யவும்',
   'tradelog.guide.view-selector.description':
     'முழு டிரேட் அட்டவணை மற்றும் மாதங்கள், வாரங்கள் அல்லது நாட்கள் போன்ற குழுவான நேரக் காட்சிகளுக்கு இடையில் மாற இந்த மெனுவைப் பயன்படுத்தவும். டிரேட்கள் இயல்புநிலையாகும், ஆனால் நீங்கள் காலத்தின் அடிப்படையில் மதிப்பாய்வு செய்ய விரும்பும் போது குழுவான பார்வைகள் பயனுள்ளதாக இருக்கும்.',
-  'tradelog.guide.filters.title':
-    'டிரேட் பதிவைக் குறைக்க வடிப்பான்களைப் பயன்படுத்தவும்',
+  'tradelog.guide.filters.title': 'டிரேட் பதிவைக் குறைக்க வடிப்பான்களைப் பயன்படுத்தவும்',
   'tradelog.guide.filters.description':
     'குறிப்பிட்ட கணக்குகள், Setups, குறிச்சொற்கள், டிரேட் வகைகள், நிலைகள் அல்லது தேதிகளை மட்டும் நீங்கள் மதிப்பாய்வு செய்ய விரும்பினால் வடிப்பான்களைத் திறக்கவும். எந்த மதிப்பையும் விலக்கி அந்த டிரேட்களை நீக்கவும் முடியும்.',
   'tradelog.guide.sorting.title':
@@ -937,23 +993,6 @@ const ta: Lang = {
   'tradelog.guide.gallery-mode.title': 'படக் காட்சியகமும் உள்ளது',
   'tradelog.guide.gallery-mode.description':
     'உங்கள் வர்த்தக ஸ்கிரீன்ஷாட்களை காட்சியகமாகப் பார்க்க இங்கே முறையை மாற்றுங்கள். முதல் முறை திறக்கும்போது ஒரு சிறிய வழிகாட்டி காட்டும்.',
-  'tradelog.guide.multi-select.title': 'பல தேர்வை இயக்கவும்',
-  'tradelog.guide.multi-select.description':
-    'ஒரே நேரத்தில் பல டிரேட்களைத் தேர்ந்தெடுக்க இந்த பொத்தானைக் கிளிக் செய்யவும். பல-தேர்வு இயக்கத்தில் இருக்கும்போது, ​​வரிசை கிளிக்குகள் டிரேடைத் திறப்பதற்குப் பதிலாக அவற்றைத் தேர்ந்தெடுக்கும்.',
-  'tradelog.guide.batch-actions.title': 'இவை உங்கள் தொகுதி நடவடிக்கைகள்',
-  'tradelog.guide.batch-actions.description':
-    'காணக்கூடிய அனைத்து டிரேட்களையும் தேர்ந்தெடுக்க, உங்கள் தேர்வை அழிக்க, டிரேட்களை மதிப்பாய்வு செய்ததாகக் குறிக்க, Setups-ஐ சேர்க்கவும், தவறுகளைச் சேர்க்கவும், டிரேட்களை நகல் செய்யவும் அல்லது ஒரே நேரத்தில் பல டிரேட்களை நீக்கவும் இந்தப் பட்டியைப் பயன்படுத்தவும். டிரேட்களின் வரம்பைத் தேர்ந்தெடுக்க நீங்கள் ஷிப்ட்-கிளிக் செய்யலாம்.',
-  'tradelog.guide.column-settings.title': 'நெடுவரிசை அமைப்புகளைத் திறக்கவும்',
-  'tradelog.guide.column-settings.description':
-    'எந்த நெடுவரிசைகள் காட்டப்பட வேண்டும் மற்றும் அட்டவணை எவ்வளவு அடர்த்தியாக அல்லது விரிவாக இருக்க வேண்டும் என்பதைத் தேர்வுசெய்ய இந்தப் பொத்தானைக் கிளிக் செய்யவும்.',
-  'tradelog.guide.active-columns.title':
-    'நீங்கள் ஏற்கனவே பயன்படுத்தும் நெடுவரிசைகளை மறுவரிசைப்படுத்தவும் அல்லது அகற்றவும்',
-  'tradelog.guide.active-columns.description':
-    'செயலில் உள்ள நெடுவரிசைகளில், அதை நகர்த்த ஒரு நெடுவரிசையை இழுக்கவும் அல்லது உங்களுக்குத் தேவையில்லாத ஒன்றை அகற்றவும். இது அட்டவணையின் வரிசையை இடமிருந்து வலமாக மாற்றுகிறது.',
-  'tradelog.guide.available-columns.title':
-    'உங்களுக்கு கூடுதல் விவரங்கள் தேவைப்படும்போது மறைக்கப்பட்ட நெடுவரிசைகளைச் சேர்க்கவும்',
-  'tradelog.guide.available-columns.description':
-    'புலங்களை மீண்டும் அட்டவணையில் சேர்க்க, கிடைக்கும் நெடுவரிசைகளைத் திறக்கவும். அங்குதான் நீங்கள் முன்பு நீக்கியதை மீண்டும் கொண்டு வருகிறீர்கள்.',
   'tradelog.guide.open-trades.title':
     'நீங்கள் அதன் குறிப்பைத் திறக்க விரும்பும் போது டிரேடைக் கிளிக் செய்யவும்',
   'tradelog.guide.open-trades.description':
@@ -961,23 +1000,20 @@ const ta: Lang = {
   'dashboard.guide.empty.intro.title': 'உங்கள் டாஷ்போர்டுக்கு வரவேற்கிறோம்',
   'dashboard.guide.empty.intro.description':
     'Journalit டிரேட் வரலாற்றை பகுப்பாய்வு செய்ய உங்கள் டாஷ்போர்டு பயனுள்ளதாக இருக்கும்.',
-  'dashboard.guide.empty.state.title':
-    'உங்கள் டிரேட் வரலாற்றை உங்களுடன் கொண்டு வாருங்கள்',
+  'dashboard.guide.empty.state.title': 'உங்கள் டிரேட் வரலாற்றை உங்களுடன் கொண்டு வாருங்கள்',
   'dashboard.guide.empty.state.description':
     'அர்த்தமுள்ள செயல்திறன் தரவுடன் தொடங்குவதற்கு முந்தைய டிரேட்களை இறக்குமதி செய்யவும் அல்லது உங்கள் முதல் டிரேடை நீங்கள் பதிவு செய்தால் கைமுறையாக டிரேடைச் சேர்க்கவும்.',
   'dashboard.guide.main.intro.title': 'இது உங்கள் டாஷ்போர்டு',
   'dashboard.guide.main.intro.description':
     'உங்கள் செயல்திறனைக் கண்காணிக்கவும், புள்ளிவிவரங்களை மதிப்பாய்வு செய்யவும், உங்களின் மிகவும் பயனுள்ள விளக்கப்படங்களை ஒரே இடத்தில் வைத்திருக்கவும் இந்தப் பக்கத்தைப் பயன்படுத்தவும்.',
-  'dashboard.guide.main.filters.title':
-    'வடிப்பான்கள் முழு டாஷ்போர்டையும் மாற்றும்',
+  'dashboard.guide.main.filters.title': 'வடிப்பான்கள் முழு டாஷ்போர்டையும் மாற்றும்',
   'dashboard.guide.main.filters.description':
     'இந்தப் பக்கத்தில் உள்ள ஒவ்வொரு புள்ளிவிவரமும் விளக்கப்படமும் வெவ்வேறு தேதி வரம்பு, கணக்கு, Setup, குறிச்சொல் அல்லது டிரேட் வகையைப் புதுப்பிக்க வேண்டுமெனில் வடிப்பான்களைப் பயன்படுத்தவும். எந்த மதிப்பையும் விலக்கி அந்த டிரேட்களை நீக்கவும் முடியும்.',
   'dashboard.guide.main.edit-layout.title':
     'இந்தப் பக்கத்தைத் தனிப்பயனாக்க, திருத்தப் பயன்முறையை இயக்கவும்',
   'dashboard.guide.main.edit-layout.description':
     'டேஷ்போர்டு விட்ஜெட்களை நகர்த்துவதற்கும், அளவை மாற்றுவதற்கும், அகற்றுவதற்கும், சேர்ப்பதற்கும், தளவமைப்பைத் திருத்து என்பதைக் கிளிக் செய்யவும்.',
-  'dashboard.guide.main.open-widget-selector.title':
-    'சேர் விட்ஜெட்டைத் திறக்கவும்',
+  'dashboard.guide.main.open-widget-selector.title': 'சேர் விட்ஜெட்டைத் திறக்கவும்',
   'dashboard.guide.main.open-widget-selector.description':
     'கூடுதல் விளக்கப்படங்களைச் சேர்க்க விட்ஜெட்டைச் சேர் என்பதைக் கிளிக் செய்யவும் மற்றும் நீங்கள் முன்பு நீக்கிய விட்ஜெட்களை மீண்டும் கொண்டு வரவும்.',
   'dashboard.guide.main.widget-picker.title':
@@ -988,8 +1024,7 @@ const ta: Lang = {
     'இந்த சிறந்த அட்டைகள் உங்களின் விரைவான சுருக்கம்',
   'dashboard.guide.main.metrics.description':
     'மேல் வரிசையில் லாபம், Win Rate மற்றும் மொத்த டிரேட் போன்ற விரைவான பதில்களை உங்களுக்கு வழங்குகிறது. திருத்தும் பயன்முறையில், எந்த அட்டைகள் தோன்றும் என்பதை மாற்றலாம் மற்றும் அவற்றை மறுவரிசைப்படுத்தலாம்.',
-  'dashboard.guide.main.bottom.title':
-    'இங்குதான் நகரும் மற்றும் மறுஅளவாக்கம் நிகழ்கிறது',
+  'dashboard.guide.main.bottom.title': 'இங்குதான் நகரும் மற்றும் மறுஅளவாக்கம் நிகழ்கிறது',
   'dashboard.guide.main.bottom.description':
     'திருத்து தளவமைப்பு இயக்கத்தில் இருக்கும்போது, ​​அதை நகர்த்த ஒரு விட்ஜெட்டை இழுக்கவும். விட்ஜெட்டின் அளவை மாற்ற, அதன் கீழ் வலது மூலையை இழுக்கவும். பல பயனர்கள் தவறவிட்ட படி இது.',
   'dashboard.guide.main.save-layout.title':
@@ -999,27 +1034,20 @@ const ta: Lang = {
   'home.guide.intro.title': 'முகப்புக்கு வரவேற்கிறோம்',
   'home.guide.intro.description':
     'இது உங்கள் முக்கிய பக்கம். இது உங்கள் டிரேட் புள்ளிவிவரங்கள், விரைவான செயல்கள் மற்றும் மீதமுள்ள Journalitக்கான குறுக்குவழிகளைக் காட்டுகிறது.',
-  'home.guide.filters.title':
-    'இந்த பொத்தான்கள் உங்கள் விட்ஜெட்டுகள் காட்டுவதை மாற்றும்',
+  'home.guide.filters.title': 'இந்த பொத்தான்கள் உங்கள் விட்ஜெட்டுகள் காட்டுவதை மாற்றும்',
   'home.guide.filters.description':
-    'நேரம், டிரேட் வகை அல்லது கணக்கை மாற்ற இவற்றைப் பயன்படுத்தவும், இதன் மூலம் நீங்கள் பார்க்க விரும்பும் தரவை உங்கள் முகப்பு விட்ஜெட்டுகள் காண்பிக்கும்.',
-  'home.guide.settings.title': 'Journalit அமைப்புகள் எப்போதும் அருகிலேயே உள்ளன',
-  'home.guide.settings.description':
-    'Journalit அமைப்புகளை நேரடியாகத் திறக்க இந்தப் பொத்தானைப் பயன்படுத்தவும்.',
-  'home.guide.customize.title':
-    'முகப்பைத் தனிப்பயனாக்க எடிட் பயன்முறையை இயக்கவும்',
+    'காலம், டிரேட் வகை அல்லது கணக்கின்படி வடிகட்டவும். வாரம் என்பதைத் தேர்ந்தெடுக்கவும் அல்லது தனிப்பயன் வரம்பில் உள்ளடக்கிய இருந்து/வரை தேதிகளை அமைக்கவும். காலம் சார்ந்த விட்ஜெட்கள் உங்கள் தேர்வைப் பின்பற்றும்; நேரலை விட்ஜெட்கள் நேரலையாகவே இருக்கும்.',
+  'home.guide.customize.title': 'முகப்பைத் தனிப்பயனாக்க எடிட் பயன்முறையை இயக்கவும்',
   'home.guide.customize.description':
     'தனிப்பயனாக்கத் தொடங்க, இந்த பொத்தானைக் கிளிக் செய்யவும். விட்ஜெட்களை நகர்த்துதல், மறுஅளவாக்கம் செய்தல், நீக்குதல் மற்றும் சேர்த்தல் ஆகியவற்றைத் திருத்தும் பயன்முறை திறக்கிறது.',
   'home.guide.quick-links-position.title':
     'விட்ஜெட்டுகளுக்கு மேலே அல்லது கீழே விரைவு இணைப்புகளை நகர்த்தவும்',
   'home.guide.quick-links-position.description':
     'விரைவு இணைப்புகள் வரிசை பிரதான விட்ஜெட் பகுதிக்கு மேலே உள்ளதா அல்லது அதற்குக் கீழே உள்ளதா என்பதைத் தேர்வுசெய்ய இந்தப் பொத்தானைப் பயன்படுத்தவும்.',
-  'home.guide.quick-links.title':
-    'இந்த விரைவு இணைப்புகள் உங்கள் வேகமான குறுக்குவழிகள்',
+  'home.guide.quick-links.title': 'இந்த விரைவு இணைப்புகள் உங்கள் வேகமான குறுக்குவழிகள்',
   'home.guide.quick-links.description':
     'விரைவு இணைப்புகள் பொதுவான செயல்கள் மற்றும் பக்கங்களுக்கு ஒரே கிளிக்கில் குறுக்குவழிகளை வழங்குகின்றன. திருத்த பயன்முறையில், நீங்கள் இங்கே காட்ட விரும்பாத இணைப்புகளையும் மறைக்கலாம்.',
-  'home.guide.move-and-resize.title':
-    'உங்கள் விட்ஜெட்களை நகர்த்தி அளவை மாற்றவும்',
+  'home.guide.move-and-resize.title': 'உங்கள் விட்ஜெட்களை நகர்த்தி அளவை மாற்றவும்',
   'home.guide.widget-picker.title': 'இங்கே விட்ஜெட்களைச் சேர்க்கவும்',
   'home.guide.widget-picker.description':
     'விட்ஜெட்களை முன்னோட்டமிட்டுச் சேர்க்கவும், விரைவு இணைப்புகளை மீட்டெடுக்கவும் அல்லது கணக்கு மற்றும் அமைப்பு குறுக்குவழிகளைச் சேர்க்கவும். முகப்பில் ஏற்கனவே உள்ளவை "பயன்பாட்டில்" என்பதன் கீழ் காட்டப்படும், அங்கிருந்து அவற்றை நீக்கலாம்.',
@@ -1028,18 +1056,13 @@ const ta: Lang = {
   'home.guide.add-widget.title': 'முகப்பில் உருப்படிகளைச் சேர்க்கவும்',
   'home.guide.add-widget.description':
     'விட்ஜெட்கள், விரைவு இணைப்புகள் அல்லது கணக்கு மற்றும் அமைப்பு குறுக்குவழிகளைச் சேர்க்க விட்ஜெட்டைச் சேர் என்பதைத் திறக்கவும்.',
-  'home.guide.save-layout.title':
-    'நீங்கள் முடித்ததும் உங்கள் தளவமைப்பைச் சேமிக்கவும்',
+  'home.guide.save-layout.title': 'நீங்கள் முடித்ததும் உங்கள் தளவமைப்பைச் சேமிக்கவும்',
   'home.guide.save-layout.description':
     'தளவமைப்பில் நீங்கள் மகிழ்ச்சியாக இருக்கும்போது, ​​உங்கள் மாற்றங்களைச் சேமித்து, திருத்த பயன்முறையிலிருந்து வெளியேற, இந்தப் பொத்தானைக் கிளிக் செய்யவும்.',
-  'home.guide.widget-interactions.title': 'அதுதான் முகப்பின் முக்கிய யோசனை',
-  'home.guide.widget-interactions.description':
-    'முகப்பு உங்கள் தனிப்பயனாக்கக்கூடிய டாஷ்போர்டு. தளவமைப்பை மாற்ற எடிட் பயன்முறையைப் பயன்படுத்தவும், மேலும் கருவிகள், அமைப்புகள் அல்லது ஆழமான பக்கங்களைத் திறக்க விட்ஜெட்களைக் கிளிக் செய்யவும்.',
   'layoutBuilder.guide.intro.title': 'இது உங்கள் தளவமைப்பு உருவாக்கி',
   'layoutBuilder.guide.intro.description':
     'உங்கள் மதிப்பாய்வு தளவமைப்புகள் எவ்வாறு கட்டமைக்கப்பட்டுள்ளன என்பதை இந்தப் பக்கம் கட்டுப்படுத்துகிறது. தொடங்குவதற்கான எளிதான வழி, உள்ளமைக்கப்பட்ட தளவமைப்பை நகலெடுத்து, பின்னர் உங்கள் நகலைத் தனிப்பயனாக்குவது.',
-  'layoutBuilder.guide.create-own-layout.title':
-    'உங்கள் சொந்த தளவமைப்பை உருவாக்கவும்',
+  'layoutBuilder.guide.create-own-layout.title': 'உங்கள் சொந்த தளவமைப்பை உருவாக்கவும்',
   'layoutBuilder.guide.create-own-layout.description':
     'உள்ளமைந்த தளவமைப்புகள் படிக்க மட்டுமே. ஒரு உள்ளமைந்த DRC தளவமைப்பை நகலெடுக்க நகல் ஐகானைக் கிளிக் செய்யவும், அல்லது புதியதைத் தொடங்க + ஐ அழுத்தவும். நிலையான DRC ஐ நகலெடுக்க அடுத்து என்பதை அழுத்தவும்.',
   'layoutBuilder.guide.editor-overview.title':
@@ -1068,38 +1091,30 @@ const ta: Lang = {
   'layoutBuilder.guide.whats-new.add-widget-button.description':
     'விட்ஜெட்டைச் சேர் இன்னும் தளவமைப்பின் கீழே சேர்க்கிறது, இப்போது புதிய விட்ஜெட்டுக்கு உருட்டி அதன் தேடலைத் திறக்கிறது.',
   'tradelog.empty': 'டிரேட் இல்லை',
-  'tradelog.empty.submessage':
-    'டிரேட் குறிப்புகள் உங்கள் டிரேட் பதிவில் தோன்றுவதைக் காண அவற்றை உருவாக்கத் தொடங்குங்கள்.',
   'tradelog.processing': 'டிரேட் தரவைச் செயலாக்குகிறது...',
   'tradelog.node.file-not-found': 'டிரேட் கோப்பு கிடைக்கவில்லை: {path}',
   'tradelog.node.expand': 'விரிவாக்கு',
   'tradelog.node.collapse': 'சுருக்கு',
   'tradelog.node.navigate-to-review': '{type} மதிப்பாய்விற்கு செல்லவும்',
   'tradelog.node.performance.year': '{indicator} செயல்படும் ஆண்டு',
-  'tradelog.node.performance.quarter':
-    '{indicator} {year} இன் காலாண்டு செயல்திறன்',
+  'tradelog.node.performance.quarter': '{indicator} {year} இன் காலாண்டு செயல்திறன்',
   'tradelog.node.performance.month':
     '{indicator} செயல்படும் மாதம் {quarter} {year}',
   'tradelog.node.performance.week':
     '{month} {year} இன் {indicator} செயல்திறன் வாரம்',
   'tradelog.node.performance.day': '{indicator} செயல்படும் நாள் {week} {year}',
   'tradelog.node.performance.period': '{indicator} செயல்படும் காலம்',
-  'tradelog.filter.all': 'அனைத்து நிலைகளும்',
   'tradelog.filter.winners': 'வெற்றி டிரேட்கள்',
   'tradelog.filter.losers': 'தோல்வி டிரேட்கள்',
   'tradelog.filter.breakeven': 'Breakeven',
-  'tradelog.filter.breakeven.desc': 'Breakeven டிரேட்கள்',
   'tradelog.filter.open': 'திறந்தவை',
-  'tradelog.filter.open.desc': 'தற்போது திறந்த டிரேட்கள்',
   'tradelog.filter.closed': 'மூடப்பட்டது',
   'tradelog.type.regular': 'வழக்கமான',
-  'tradelog.type.regular.desc': 'நிலையான டிரேட்',
   'tradelog.type.missed': 'தவறவிட்டது',
   'tradelog.type.backtest': 'Backtest',
   'tradelog.status.win': 'WIN',
   'tradelog.status.loss': 'LOSS',
   'tradelog.status.open': 'OPEN',
-  'tradelog.status.partially-closed': 'PARTIALLY CLOSED',
   'tradelog.status.cancelled': 'CANCELLED',
   'tradelog.status.breakeven': 'BREAKEVEN',
   'tradelog.status.missed': 'MISSED',
@@ -1141,8 +1156,7 @@ const ta: Lang = {
     '{count} தேர்ந்தெடுக்கப்பட்ட டிரேட்களை நிச்சயமாக நீக்க விரும்புகிறீர்களா?',
   'tradelog.batch.delete-confirm.message.other':
     '{count} தேர்ந்தெடுக்கப்பட்ட டிரேட்களை நிச்சயமாக நீக்க விரும்புகிறீர்களா?',
-  'tradelog.batch.delete-confirm.warning':
-    'இந்தச் செயலைச் செயல்தவிர்க்க முடியாது.',
+  'tradelog.batch.delete-confirm.warning': 'இந்தச் செயலைச் செயல்தவிர்க்க முடியாது.',
   'tradelog.batch.setups.title': 'டிரேட்டில் Setups ஐச் சேர்க்கவும்',
   'tradelog.batch.setups.placeholder':
     'Setups-ஐ தேர்ந்தெடுக்கவும் அல்லது உருவாக்கவும்...',
@@ -1200,7 +1214,7 @@ const ta: Lang = {
   'tradelog.batch.delete.aria': 'டிரேட்களை நீக்கு',
 
   'tradelog.batch.deleting': 'நீக்குகிறது...',
-  'tradelog.batch.clear.aria': 'தெளிவான தேர்வு',
+  'tradelog.batch.clear.aria': 'தேர்வை அழி',
 
   'tradelog.batch.clear.label': 'அழி',
   'tradelog.settings.active-columns': 'செயலில் உள்ள நெடுவரிசைகள்',
@@ -1215,8 +1229,7 @@ const ta: Lang = {
   'tradelog.settings.expanded-view': 'விரிவாக்கப்பட்ட பார்வை',
   'tradelog.settings.expanded-view-desc':
     'குறிச்சொற்கள், Setups மற்றும் தவறுகளை பிள் பேட்ஜ்களாகக் காட்டு',
-  'tradelog.settings.expanded-view-aria':
-    'விரிவாக்கப்பட்ட பார்வை பயன்முறையை நிலைமாற்று',
+  'tradelog.settings.expanded-view-aria': 'விரிவாக்கப்பட்ட பார்வை பயன்முறையை நிலைமாற்று',
   'tradelog.settings.saving': 'சேமிக்கிறது...',
   'tradelog.settings.reset': 'இயல்புநிலைக்கு மீட்டமைக்கவும்',
   'tradelog.category.basic': 'அடிப்படை தகவல்',
@@ -1265,6 +1278,7 @@ const ta: Lang = {
   'tradelog.column.mistakes': 'தவறுகள்',
   'tradelog.column.tags': 'குறிச்சொற்கள்',
   'tradelog.column.reviewed': 'மதிப்பாய்வு செய்யப்பட்டது',
+  'tradelog.column.tradeRating': 'மதிப்பீடு',
   'tradelog.column.thesis': 'தீசிஸ்',
   'tradelog.column.mtComment': 'MT கருத்து',
   'dashboard.title': 'டாஷ்போர்டு',
@@ -1273,8 +1287,7 @@ const ta: Lang = {
     'உங்கள் செயல்திறனை இப்போது ஆராய முந்தைய டிரேட்களை இறக்குமதி செய்யவும் அல்லது புதிய டிரேடை கைமுறையாக பதிவு செய்யவும்.',
   'dashboard.empty.import-action': 'ஏற்கனவே உள்ள டிரேட்களை இறக்குமதி செய்யவும்',
   'dashboard.empty.manual-action': 'கைமுறையாக டிரேடைச் சேர்க்கவும்',
-  'dashboard.empty.filter-hint':
-    'உங்கள் வடிகட்டி அமைப்புகளைச் சரிசெய்ய முயற்சிக்கவும்',
+  'dashboard.empty.filter-hint': 'உங்கள் வடிகட்டி அமைப்புகளைச் சரிசெய்ய முயற்சிக்கவும்',
   'dashboard.error.load-failed': 'தரவை ஏற்ற முடியவில்லை',
   'dashboard.no-data': 'டிரேட் தரவு எதுவும் கிடைக்கவில்லை',
   'dashboard.button.add-widget': 'விட்ஜெட்டைச் சேர்',
@@ -1369,9 +1382,6 @@ const ta: Lang = {
   'dashboard.filter.date.custom': 'தனிப்பயன்',
   'dashboard.filter.date.from': 'இருந்து',
   'dashboard.filter.date.to': 'செய்ய',
-  'dashboard.filter.accounts.all': 'அனைத்து கணக்குகளும்',
-  'dashboard.filter.accounts.n-selected': '{count} கணக்குகள்',
-  'dashboard.filter.accounts.select-all': 'அனைத்தையும் தேர்ந்தெடு',
 
   'dashboard.filter.accounts.none-found': 'கணக்குகள் எதுவும் இல்லை',
   'dashboard.filter.tickers.none-found': 'டிக்கர் எதுவும் இல்லை',
@@ -1407,10 +1417,15 @@ const ta: Lang = {
   'dashboard.widgets.setup-performance.empty': 'Setup செயல்திறன் தரவு இல்லை',
   'dashboard.widgets.setup-performance.masked-label': 'Setup',
   'dashboard.widgets.tag-performance.title': 'டேக் செயல்திறன்',
-  'dashboard.widgets.tag-performance.description':
-    'டேக் வாரியான செயல்திறன் தரவரிசை',
+  'dashboard.widgets.tag-performance.description': 'டேக் வாரியான செயல்திறன் தரவரிசை',
   'dashboard.widgets.tag-performance.empty': 'டேக் செயல்திறன் தரவு இல்லை',
   'dashboard.widgets.tag-performance.masked-label': 'குறிச்சொல்',
+  'dashboard.widgets.rating-performance.title': 'மதிப்பீட்டின்படி செயல்திறன்',
+  'dashboard.widgets.rating-performance.description':
+    'உங்கள் வர்த்தகங்களுக்கு வழங்கிய ஒவ்வொரு நட்சத்திர மதிப்பீட்டிற்குமான நிகர P&L அல்லது வெற்றி விகிதம்',
+  'dashboard.widgets.rating-performance.empty':
+    'இன்னும் மதிப்பிடப்பட்ட வர்த்தகங்கள் இல்லை. இங்கே ஒப்பிட வர்த்தகக் குறிப்பில் வர்த்தகங்களை மதிப்பிடுங்கள்.',
+  'dashboard.widgets.rating-performance.masked-label': 'மதிப்பீடு',
   'dashboard.widgets.ticker-performance.title': 'டிக்கர் செயல்திறன்',
   'dashboard.widgets.ticker-performance.metric-aria': 'மெட்ரிக்',
   'dashboard.widgets.ticker-performance.view-aria': 'காண்க',
@@ -1420,16 +1435,12 @@ const ta: Lang = {
   'dashboard.widgets.ticker-performance.metric.total-pnl': 'மொத்தம் P&L',
   'dashboard.widgets.ticker-performance.metric.total-r': 'மொத்த ஆர்',
   'dashboard.widgets.ticker-performance.metric.win-rate': 'Win Rate',
-  'dashboard.widgets.ticker-performance.tooltip.ticker': 'டிக்கர்: {ticker}',
   'dashboard.widgets.ticker-performance.tooltip.trades': 'டிரேட்: {count}',
   'dashboard.widgets.ticker-performance.tooltip.win-rate':
     'Win Rate: {rate} ({wins}W / {losses}L)',
   'dashboard.widgets.ticker-performance.empty': 'டிக்கர் செயல்திறன் தரவு இல்லை',
-  'dashboard.widgets.ticker-performance.empty-submessage':
-    'தற்போதைய வடிப்பான்களுடன் டிக்கர் பொருத்தப்பட்ட எந்த மூடிய டிரேடும் இல்லை.',
   'dashboard.widgets.ticker-performance.masked-ticker': 'டிக்கர்',
-  'dashboard.widgets.ticker-performance.omitted-count':
-    '{count} தவிர்க்கப்பட்டது',
+  'dashboard.widgets.ticker-performance.omitted-count': '{count} தவிர்க்கப்பட்டது',
   'dashboard.widgets.rollingStats.title': 'ரோலிங் சராசரி வெற்றி/தோல்வி',
   'dashboard.widgets.rollingStats.period': 'காலம்',
   'dashboard.widgets.rollingStats.trades': '{count} டிரேட்',
@@ -1441,29 +1452,25 @@ const ta: Lang = {
   'dashboard.rolling_win_loss.trades_count': '{count} டிரேட்',
   'dashboard.rolling_win_loss.trade_label': 'டிரேட் {label}',
   'dashboard.rolling_win_loss.ratio_label': 'விகிதம்: {ratio}',
-  'dashboard.rolling_win_loss.ratio_undefined':
-    'விகிதம்: சாளரத்தில் இழப்புகள் இல்லை',
+  'dashboard.rolling_win_loss.ratio_undefined': 'விகிதம்: சாளரத்தில் இழப்புகள் இல்லை',
   'dashboard.rolling_win_loss.avg_win_label': 'சராசரி வெற்றி: {value}',
   'dashboard.rolling_win_loss.no_losses_band': 'இழப்புகள் இல்லை',
   'dashboard.rolling_win_loss.window_not_filled':
     'குறைந்தபட்சம் {count} மூடப்பட்ட டிரேட்கள் தேவை',
   'dashboard.rolling_win_loss.avg_loss_label': 'சராசரி இழப்பு: {value}',
   'home.widget.recent-items.name': 'சமீபத்தியவை',
-  'home.widget.recent-items.description':
-    'சமீபத்தில் திறந்த கோப்புகள் மற்றும் பார்வைகள்',
+  'home.widget.recent-items.description': 'சமீபத்தில் திறந்த கோப்புகள் மற்றும் பார்வைகள்',
   'home.widget.year-heatmap.name': 'டிரேடிங் ஹீட்மேப்',
-  'home.widget.year-heatmap.description':
-    'இந்த ஆண்டின் டிரேடிங் செயல்பாட்டு நாட்காட்டி',
+  'home.widget.year-heatmap.description': 'இந்த ஆண்டின் டிரேடிங் செயல்பாட்டு நாட்காட்டி',
   'home.widget.getting-started.name': 'தொடங்குவோம்',
   'home.widget.getting-started.description':
     'Journalit அமைப்பதற்கான சரிபார்ப்பு பட்டியல்',
   'home.widget.getting-started.progress': '{completed}/{total} முடிந்தது',
-  'home.widget.getting-started.progress.loading':
-    'முன்னேற்றத்தை சரிபார்க்கிறது...',
+  'home.widget.getting-started.progress.loading': 'முன்னேற்றத்தை சரிபார்க்கிறது...',
   'home.widget.getting-started.item.account.title':
-    'உங்கள் வர்த்தகக் கணக்கை அமைக்கவும்',
+    'உங்கள் டிரேடிங் கணக்கை அமைக்கவும்',
   'home.widget.getting-started.item.account.description':
-    'வர்த்தகங்கள் உங்கள் இருப்பைக் கண்காணிக்கும் கணக்கில் பதிவாகின்றன. அது இல்லாமல் வருவாயையும் டிராடௌனையும் கணக்கிட முடியாது.',
+    'டிரேட்கள் உங்கள் இருப்பைக் கண்காணிக்கும் ஒரு கணக்கில் பதிவுசெய்யப்படுகின்றன. கணக்கு இல்லாமல் வருமானத்தையும் Drawdown-ஐயும் கணக்கிட முடியாது.',
   'home.widget.getting-started.item.account.time': '15s',
   'home.widget.getting-started.item.account.cta': 'கணக்கை அமைக்கவும்',
   'home.widget.getting-started.item.create.title': 'டிரேட் வரலாற்றைச் சேர்',
@@ -1476,8 +1483,7 @@ const ta: Lang = {
     'எல்லா டிரேட்களையும் ஒரே இடத்தில் பகுப்பாய்வு செய்யும் டிரேட் தரவுத்தளம்.',
   'home.widget.getting-started.item.tradelog.time': '10வி',
   'home.widget.getting-started.item.tradelog.cta': 'டிரேட் பதிவைத் திறக்கவும்',
-  'home.widget.getting-started.item.layouts.title':
-    'தளவமைப்பு உருவாக்கியைத் திற',
+  'home.widget.getting-started.item.layouts.title': 'தளவமைப்பு உருவாக்கியைத் திற',
   'home.widget.getting-started.item.layouts.description':
     'மதிப்பாய்வு தளவமைப்புகளை உங்கள் பாணிக்கு ஏற்ப வடிவமை.',
   'home.widget.getting-started.item.layouts.time': '1 நிமிடம்',
@@ -1491,7 +1497,7 @@ const ta: Lang = {
   'home.widget.getting-started.item.sidebar.cta': 'பக்கப்பட்டியைத் திறக்கவும்',
   'home.widget.getting-started.item.pro.title': 'PRO-ஐ இயக்கு',
   'home.widget.getting-started.item.pro.description':
-    'Trade Import, Trade Sync மற்றும் பொருளாதார நாட்காட்டியை இயக்கவும்.',
+    'Trade Import, Trade Sync மற்றும் பொருளாதார நாட்காட்டியை இயக்கவும், மேலும் மாதத்திற்கு கூடுதல் AI கருவி அழைப்புகளைப் பெறவும்.',
   'home.widget.getting-started.item.pro.time': '1 நிமிடம்',
   'home.widget.getting-started.item.pro.cta': 'செயல்படுத்து',
   'home.widget.weekly-summary.name': 'வாராந்திர சுருக்கம்',
@@ -1501,20 +1507,17 @@ const ta: Lang = {
   'home.widget.key-events.description':
     'இந்த வார மதிப்பாய்விலிருந்து செய்திகள், நிகழ்வுகள்',
   'home.widget.key-events.empty-title': 'முக்கிய நிகழ்வுகள் எதுவும் இல்லை',
-  'home.widget.key-events.open-aria':
-    'இந்த வார வாராந்திர மதிப்பாய்வைத் திறக்கவும்',
+  'home.widget.key-events.open-aria': 'இந்த வார வாராந்திர மதிப்பாய்வைத் திறக்கவும்',
   'home.widget.position-size.name': 'போசிஷன் சைஸ் கால்குலேட்டர்',
-  'home.widget.position-size.description':
-    'கணக்கு ஆபத்து % அடிப்படையில் நிலை அளவு',
+  'home.widget.position-size.description': 'கணக்கு ஆபத்து % அடிப்படையில் நிலை அளவு',
   'home.widget.embedded-note.name': 'உட்பொதிக்கப்பட்ட குறிப்பு',
   'home.widget.embedded-note.description':
     'உங்கள் vault-இலிருந்து எந்த Markdown குறிப்பையும் காட்டு',
   'home.widget.current-streak.name': 'தற்போதைய ஸ்ட்ரீக்',
   'home.widget.current-streak.description':
-    'வெற்றி மற்றும் தோல்வி ஸ்ட்ரீக்கைக் கண்காணி',
+    'டிரேட் மற்றும் மதிப்பாய்வு தொடர்களைக் கண்காணிக்கவும்',
   'home.widget.best-hours.name': 'சிறந்த மணிநேரம்',
-  'home.widget.best-hours.description':
-    'நீங்கள் சிறப்பாக டிரேட் செய்யும் நேரம்',
+  'home.widget.best-hours.description': 'நீங்கள் சிறப்பாக டிரேட் செய்யும் நேரம்',
   'home.widget.setup-leaderboard.name': 'டாப் பிரிவு',
   'home.widget.setup-leaderboard.description':
     'சிறந்த Setups, குறிச்சொற்கள், டிக்கர்கள்',
@@ -1535,13 +1538,11 @@ const ta: Lang = {
   'home.widget.profit-target-widget.name': 'Profit Target',
   'home.widget.profit-target-widget.description':
     'கணக்குகளின் Profit Target முன்னேற்றம்',
-  'account.header.title': 'கணக்கு: {name}',
   'account.header.add-event.aria': 'வைப்பு / திரும்பப் பெறுதல் சேர்க்கவும்',
   'account.header.edit-account.aria': 'கணக்கைத் திருத்தவும்',
   'account.header.view-trades.aria': 'டிரேட் பதிவில் டிரேட்களைக் காண்க',
   'account.header.type': 'வகை:',
   'account.header.initial-balance': 'ஆரம்ப இருப்பு:',
-  'account.header.current-balance': 'தற்போதைய இருப்பு:',
   'account.header.account-id': 'கணக்கு ஐடி:',
   'account.header.warning.trades-before-creation.one':
     'கணக்கு உருவாக்கும் தேதிக்கு முன் {count} டிரேட் கண்டறியப்பட்டது',
@@ -1553,8 +1554,7 @@ const ta: Lang = {
     'கணக்கு உருவாக்கும் தேதிக்கு முன் {count} டிரேட் கண்டறியப்பட்டது',
   'account.header.warning.earliest-trade':
     'ஆரம்ப டிரேட்: {date}. இது தவறான இருப்பு கணக்கீடுகளை ஏற்படுத்தலாம்.',
-  'account.header.warning.fix-date.aria':
-    'கணக்கு உருவாக்கப்பட்ட தேதியை சரிசெய்யவும்',
+  'account.header.warning.fix-date.aria': 'கணக்கு உருவாக்கப்பட்ட தேதியை சரிசெய்யவும்',
   'account.header.warning.fixing': 'சரிசெய்கிறது...',
   'account.header.warning.fix-date': 'தேதியை சரிசெய்யவும்',
   'account.header.notice.date-updated':
@@ -1570,25 +1570,20 @@ const ta: Lang = {
   'view.account-dashboard': 'கணக்குகள்',
   'view.account-page.title': 'கணக்கு: {name}',
   'view.account-page.title-default': 'கணக்கு பக்கம்',
-  'view.account-page.no-account-selected':
-    'கணக்கு எதுவும் தேர்ந்தெடுக்கப்படவில்லை',
+  'view.account-page.no-account-selected': 'கணக்கு எதுவும் தேர்ந்தெடுக்கப்படவில்லை',
   'view.account-page.no-account-instructions':
     'கணக்குகளிலிருந்து இந்தப் பக்கத்திற்குச் செல்.',
   'view.account-page.service-loading': 'கணக்கு பக்க சேவையை ஏற்றுகிறது...',
   'view.account-page.balance-chart-title': 'கணக்கு இருப்பு விளக்கப்படம்',
-  'view.account-page.balance-chart-loading':
-    'இருப்பு விளக்கப்படத்தை ஏற்றுகிறது...',
+  'view.account-page.balance-chart-loading': 'இருப்பு விளக்கப்படத்தை ஏற்றுகிறது...',
   'view.layout-builder': 'தளவமைப்பு உருவாக்கி',
   'view.csv-import': 'Trade Import',
   'view.economic-calendar.title': 'பொருளாதார நாட்காட்டி',
   'view.economic-calendar.this-week': 'இந்த வாரம்',
   'view.economic-calendar.import-count.one': '{count} நிகழ்வை இறக்குமதி செய்',
-  'view.economic-calendar.import-count.few':
-    '{count} நிகழ்வுகளை இறக்குமதி செய்',
-  'view.economic-calendar.import-count.many':
-    '{count} நிகழ்வுகளை இறக்குமதி செய்',
-  'view.economic-calendar.import-count.other':
-    '{count} நிகழ்வுகளை இறக்குமதி செய்',
+  'view.economic-calendar.import-count.few': '{count} நிகழ்வுகளை இறக்குமதி செய்',
+  'view.economic-calendar.import-count.many': '{count} நிகழ்வுகளை இறக்குமதி செய்',
+  'view.economic-calendar.import-count.other': '{count} நிகழ்வுகளை இறக்குமதி செய்',
   'view.economic-calendar.imported': 'இறக்குமதி செய்யப்பட்டது',
   'view.economic-calendar.update-available': 'புதுப்பிப்பு கிடைக்கிறது',
   'view.economic-calendar.filter.currency': 'நாணயம்',
@@ -1597,14 +1592,11 @@ const ta: Lang = {
   'view.economic-calendar.impact.medium': 'நடுத்தரம்',
   'view.economic-calendar.impact.low': 'குறைவு',
   'view.economic-calendar.impact.none': 'எதுவுமில்லை',
-  'view.economic-calendar.pro-required':
-    'பொருளாதார நாட்காட்டிக்கு Journalit Pro தேவை',
+  'view.economic-calendar.pro-required': 'பொருளாதார நாட்காட்டிக்கு Journalit Pro தேவை',
   'view.economic-calendar.error.offline':
     'ஆஃப்லைனில் இருக்கும்போது பொருளாதார நாட்காட்டியை ஏற்ற முடியாது.',
-  'view.economic-calendar.error.generic':
-    'பொருளாதார நாட்காட்டியை ஏற்ற முடியவில்லை.',
-  'view.economic-calendar.empty':
-    'இந்த வாரத்திற்கான பொருளாதார நிகழ்வுகள் எதுவும் இல்லை.',
+  'view.economic-calendar.error.generic': 'பொருளாதார நாட்காட்டியை ஏற்ற முடியவில்லை.',
+  'view.economic-calendar.empty': 'இந்த வாரத்திற்கான பொருளாதார நிகழ்வுகள் எதுவும் இல்லை.',
   'view.economic-calendar.sync.aria': 'பொருளாதார நாட்காட்டி அமைப்புகளைத் திற',
   'view.economic-calendar.all-day': 'நாள் முழுவதும்',
   'view.economic-calendar.holiday-aria': 'விடுமுறை',
@@ -1618,8 +1610,7 @@ const ta: Lang = {
   'view.economic-calendar.actual': 'உண்மையானது',
   'view.economic-calendar.import-success':
     '{imported} இறக்குமதி செய்யப்பட்டது, {updated} புதுப்பிக்கப்பட்டது',
-  'view.economic-calendar.import-failed':
-    'நிகழ்வுகளை இறக்குமதி செய்ய முடியவில்லை.',
+  'view.economic-calendar.import-failed': 'நிகழ்வுகளை இறக்குமதி செய்ய முடியவில்லை.',
   'view.economic-calendar.restore-missing-events':
     'விடுபட்ட நிகழ்வுகளை மீட்டமை ({count})',
   'economicCalendar.guide.main.intro.description':
@@ -1646,8 +1637,7 @@ const ta: Lang = {
     'தானியங்கி இறக்குமதி உள்ளமைக்கப்பட்டதும் உங்கள் வாராந்திர மதிப்பாய்வு நிரம்பியிருக்கும். உலாவ, ஒருமுறை இறக்குமதி செய்ய அல்லது விடுபட்ட நிகழ்வுகளை மீட்டமைக்க இங்கே திரும்புங்கள்.',
   'view.economic-calendar.pro-benefit':
     'உங்கள் வாராந்திர குறிப்பில் அதிக தாக்கமுள்ள நிகழ்வுகள்.',
-  'view.economic-calendar.pro-benefit-trial':
-    '14 நாள் இலவச சோதனையுடன் தொடங்குங்கள்.',
+  'view.economic-calendar.pro-benefit-trial': '14 நாள் இலவச சோதனையுடன் தொடங்குங்கள்.',
   'view.economic-calendar.sign-in': 'ஏற்கனவே Pro உள்ளதா? உள்நுழையவும்',
   'settings.economic-calendar.title': 'பொருளாதார நாட்காட்டி',
   'settings.economic-calendar.description':
@@ -1663,7 +1653,7 @@ const ta: Lang = {
   'settings.economic-calendar.impacts-desc':
     'இறக்குமதி செய்ய வேண்டிய தாக்க நிலைகளைத் தேர்ந்தெடுக்கவும்.',
   'settings.economic-calendar.impacts-empty':
-    'பொருளாதார வெளியீடுகள் எதுவும் தேர்ந்தெடுக்கப்படவில்லை. இயக்கப்பட்டிருந்தால் விடுமுறைகள் இன்னும் இறக்குமதி செய்யப்படும்.',
+    'வெளியீடுகள் எதுவும் தேர்ந்தெடுக்கப்படவில்லை. இயக்கப்பட்டிருந்தால் விடுமுறை நாட்களை இன்னும் இறக்குமதி செய்யலாம்.',
   'settings.economic-calendar.include-holidays': 'விடுமுறைகளைச் சேர்',
   'settings.economic-calendar.include-holidays-desc':
     'தேர்ந்தெடுத்த நாணயங்களுக்கான பொது மற்றும் வங்கி விடுமுறைகளை இறக்குமதி செய்.',
@@ -1685,8 +1675,7 @@ const ta: Lang = {
   'command.open-economic-calendar': 'பொருளாதார நாட்காட்டியைத் திற',
 
   'status-bar.update-available-branded': 'Journalit-ஐ புதுப்பிக்கவும்',
-  'status-bar.update-aria-label':
-    'Journalit {version} - பார்க்க கிளிக் செய்யவும்',
+  'status-bar.update-aria-label': 'Journalit {version} - பார்க்க கிளிக் செய்யவும்',
   'update.available.ready': 'புதிய பதிப்பு தயாராக உள்ளது',
   'template.transformation.orphaned-content.header':
     'முந்தைய தளவமைப்பிலிருந்து உள்ளடக்கம்',
@@ -1700,9 +1689,6 @@ const ta: Lang = {
 
   'template.editor.built-in-notice':
     'உள்ளமைக்கப்பட்ட தளவமைப்புகளைத் திருத்த முடியாது. இந்த தளவமைப்பை நகலெடுக்கவும் அல்லது தனிப்பயனாக்க புதிய ஒன்றை உருவாக்கவும்.',
-
-  'template.editor.show-review-desc':
-    'டிரேட் குறிப்புகளில் மதிப்பாய்வு பகுதியை எப்போது காண்பிக்க வேண்டும்',
 
   'template.editor.section-visibility': 'பிரிவு தெரிவுநிலை',
   'template.editor.trade-note-layout': 'டிரேட் குறிப்பு தளவமைப்பு',
@@ -1718,6 +1704,11 @@ const ta: Lang = {
     'டிரேட் காலவரிசை மற்றும் மதிப்பாய்வு இணைப்புகளைக் காட்டு',
   'template.editor.images': 'படங்கள்',
   'template.editor.images-desc': 'டிரேட் விளக்கப்படப் படங்களைக் காட்டு',
+  'template.editor.image-layout': 'பட அமைப்பு',
+  'template.editor.image-layout-desc':
+    'படங்களை ஒவ்வொன்றாக அல்லது அனைத்தையும் ஒரே நேரத்தில் காட்டு',
+  'template.editor.image-layout-carousel': 'சுழல் காட்சி',
+  'template.editor.image-layout-stacked': 'அடுக்கியது',
   'template.editor.metrics': 'அளவீடுகள்',
   'template.editor.metrics-desc':
     'நுழைவு, வெளியேறு, கால அளவு மற்றும் திட்ட மெட்ரிக் கார்டுகளைக் காட்டு',
@@ -1730,38 +1721,41 @@ const ta: Lang = {
   'template.editor.metadata-desc': 'கணக்குகள், Setups மற்றும் தவறுகளைக் காட்டு',
   'template.editor.metric-cards': 'மெட்ரிக் கார்டுகள்',
   'template.editor.metadata-rows': 'மெட்டாடேட்டா வரிசைகள்',
+  'template.editor.note-sections': 'குறிப்புப் பிரிவுகள்',
+  'template.editor.note-sections-desc':
+    'புதிய டிரேட் குறிப்புகளில் டிரேடுக்குக் கீழே எழுதப்படும் தலைப்புகளும் உரையும், எல்லா சொத்து வகைகளுக்கும். பின்னர் குறிப்பில் திருத்தலாம்.',
+  'template.editor.note-sections-zone-placeholder':
+    'புதிய வர்த்தகக் குறிப்புகளில் எழுதப்படும் உரை...',
   'template.editor.accounts': 'கணக்குகள்',
   'template.editor.setups': 'Setups',
   'template.editor.mistakes': 'தவறுகள்',
   'template.editor.tags': 'குறிச்சொற்கள்',
   'template.editor.custom-fields': 'தனிப்பயன் புலங்கள்',
-  'template.editor.custom-fields-desc':
-    '{count} தனிப்பயன் புலங்கள் உள்ளமைக்கப்பட்டன',
+  'template.editor.custom-fields-desc': '{count} தனிப்பயன் புலங்கள் உள்ளமைக்கப்பட்டன',
 
-  'template.editor.metric.position-size': 'Position Size',
+  'template.editor.metric.position-size': 'போசிஷன் அளவு',
   'template.editor.metric.execution-breakdown': 'செயல்படுத்தல் பிரிவு',
   'template.editor.metric.pnl': 'P&L',
   'template.editor.metric.r-multiple': 'R-multiple',
   'template.editor.metric.costs': 'செலவுகள்',
 
-  'template.editor.review-button':
-    'மதிப்பாய்வு செய்யப்பட்ட பொத்தானைக் குறிக்கவும்',
+  'template.editor.review-button': 'மதிப்பாய்வு செய்யப்பட்ட பொத்தானைக் குறிக்கவும்',
   'template.editor.review-button-desc':
     'டிரேடை மதிப்பாய்வு செய்ததாகக் குறிக்க பொத்தானைக் காட்டு',
+  'template.editor.rating': 'மதிப்பீடு',
+  'template.editor.rating-desc':
+    'வர்த்தகத்திற்கு நீங்கள் வழங்கும் நட்சத்திர மதிப்பீட்டைக் காட்டு',
 
   'csv.mapper.title': 'நெடுவரிசைகளை டிரேட் புலங்களுக்கு மேப் செய்',
   'csv.mapper.subtitle':
     'உங்கள் நெடுவரிசைகளை அவை பிரதிநிதித்துவப்படுத்தும் டிரேட் புலங்களுடன் பொருத்தவும்.',
   'csv.mapper.do-not-import': 'இறக்குமதி செய்ய வேண்டாம்',
   'csv.mapper.required-badge': 'தேவை',
-  'csv.mapper.required-label': 'REQUIRED',
+  'csv.mapper.required-label': 'தேவை',
   'csv.mapper.example': 'எடுத்துக்காட்டு:',
   'csv.mapper.mode.title': 'ஒவ்வொரு வரிசையும் என்ன?',
   'csv.mapper.mode.help':
     'ஜர்னல் விரிதாள்களில் பொதுவாக ஒரு வரிசைக்கு ஒரு மூடப்பட்ட டிரேட் மற்றும் P/L நெடுவரிசை இருக்கும். புரோக்கர் ஆர்டர் வரலாறுகள் ஒவ்வொரு வாங்குதலையும் விற்பனையையும் தனி வரிசையாகக் காட்டும்.',
-
-  'csv.mapper.asset-type.help':
-    'இந்தக் கோப்பில் உள்ள இன்ஸ்ட்ருமென்ட்டின் வகையைத் தேர்ந்தெடுக்கவும். இது தேவையான புலங்கள் மற்றும் பாகுபடுத்தும் தர்க்கத்தை தீர்மானிக்கிறது.',
 
   'csv.mapper.tip.title': 'உதவிக்குறிப்பு: கூடுதல் புலங்களை மேப் செய்',
   'csv.mapper.tip.desc':
@@ -1770,8 +1764,7 @@ const ta: Lang = {
   'csv.mapper.summary.title': 'சுருக்கம்:',
   'csv.mapper.summary.of': 'இன்',
   'csv.mapper.summary.columns-mapped': 'நெடுவரிசைகள் மேப் செய்யப்பட்டன',
-  'csv.mapper.summary.all-mapped':
-    'தேவையான அனைத்து புலங்களும் மேப் செய்யப்பட்டுள்ளன',
+  'csv.mapper.summary.all-mapped': 'தேவையான அனைத்து புலங்களும் மேப் செய்யப்பட்டுள்ளன',
   'csv.mapper.available-fields.title': 'கிடைக்கும் டிரேட் புலங்கள்',
   'csv.mapper.available-fields.desc':
     'சொத்து-குறிப்பிட்ட புலங்களுக்கான விளக்கங்களுடன் வகையின்படி ஒழுங்கமைக்கப்பட்டது',
@@ -1799,10 +1792,9 @@ const ta: Lang = {
   'csv.mapper.field.order-id': 'ஆர்டர் ஐடி',
   'csv.mapper.field.account-id': 'கணக்கு ஐடி',
   'csv.mapper.help.options-required': 'விருப்ப டிரேட்களுக்குத் தேவை',
-  'csv.mapper.help.option-type-required':
-    'Options-க்குத் தேவை (Call அல்லது Put)',
+  'csv.mapper.help.option-type-required': 'Options-க்குத் தேவை (Call அல்லது Put)',
   'csv.mapper.help.contract-size':
-    'விருப்பங்களுக்கான பெருக்கி (பொதுவாக 100) அல்லது எதிர்காலங்கள்',
+    'விருப்பங்கள் (பொதுவாக 100), எதிர்காலங்கள் அல்லது ஃபாரெக்ஸ் (ஒரு லாட்டுக்கான அலகுகள், பொதுவாக 100,000) ஆகியவற்றுக்கான பெருக்கி',
   'csv.mapper.help.order-id': 'பகுதி நிரப்புகளை ஒருங்கிணைக்கப் பயன்படுகிறது',
   'csv.mapper.help.asset-types': 'stock, options, futures, forex, crypto',
   'csv.mapper.help.status': 'டிரேட் நிலை: திறந்த அல்லது மூடப்பட்டது',
@@ -1813,44 +1805,22 @@ const ta: Lang = {
   'csv.mapper.category.options': 'விருப்பங்கள் புலங்கள்',
   'csv.mapper.category.futures': 'எதிர்கால புலங்கள்',
 
-  'csv.broker.label': 'தரகர் / இறக்குமதி வடிவம்',
-
   'csv.broker.remove-favorite-aria': 'பிடித்தவற்றிலிருந்து அகற்று',
   'csv.broker.set-favorite-aria': 'பிடித்ததாக அமைக்கவும்',
-  'csv.broker.ibkr': 'ஊடாடும் தரகர்கள் (IBKR)',
-  'csv.broker.tradovate': 'Tradovate',
-  'csv.broker.tradezero': 'TradeZero',
-  'csv.broker.tradingview': 'TradingView காகித டிரேட்',
-  'csv.broker.bybit': 'Bybit (USDT பெர்பெச்சுவல்ஸ்)',
-  'csv.broker.blofin': 'ப்ளோஃபின்',
-  'csv.broker.hyperliquid': 'Hyperliquid (பெர்பெச்சுவல்ஸ்)',
-  'csv.broker.sierrachart': 'Sierra Chart (Futures)',
-  'csv.broker.motivewave': 'MotiveWave',
-  'csv.broker.fxreplay': 'FX Replay (பகுப்பாய்வு)',
-  'csv.broker.atas': 'ATAS (புள்ளிவிவரங்கள் நிகழ்நேரம்)',
-  'csv.broker.rithmic': 'Rithmic',
-  'csv.broker.jdr': 'MetaTrader 4/5',
 
   'csv.account-selector.favorite.remove': 'பிடித்தவற்றிலிருந்து அகற்று',
   'csv.account-selector.favorite.set': 'பிடித்ததாக அமைக்கவும்',
 
-  'csv.results.successfully-imported-suffix': 'டிரேட் செய்கிறது',
-
   'csv.results.failed-to-import-prefix': 'இறக்குமதி செய்ய முடியவில்லை',
-  'csv.results.failed-to-import-suffix':
-    'வரிசைகள் (கீழே உள்ள விவரங்களைக் காண்க)',
+  'csv.results.failed-to-import-suffix': 'வரிசைகள் (கீழே உள்ள விவரங்களைக் காண்க)',
   'csv.results.pending-local-writes':
     '{count} டிரேட் குறிப்பு எழுதுதல்(கள்) இன்னும் நிலுவையில் உள்ளன. Journalit முடிக்கப்பட்ட எழுத்துகளை சீர்செய்து, முடிக்கப்படாத கணிப்புகளை மீட்டெடுப்பதற்குக் கிடைக்கும்.',
   'csv.results.pending-title': 'இறக்குமதி இன்னும் ஒத்திசைக்கிறது',
 
-  'csv.image-review.count': '{count} படம்(கள்)',
-
-  'image.uploader.paste-title':
-    'கிளிப்போர்டிலிருந்து மீடியாவை ஒட்டவும் (Ctrl+V)',
+  'image.uploader.paste-title': 'கிளிப்போர்டிலிருந்து மீடியாவை ஒட்டவும் (Ctrl+V)',
   'image.uploader.pasting': 'ஒட்டுகிறது...',
   'image.uploader.paste': 'ஒட்டு',
-  'image.uploader.url-placeholder':
-    'மீடியா URL அல்லது கோப்பு பாதையை ஒட்டவும்...',
+  'image.uploader.url-placeholder': 'மீடியா URL அல்லது கோப்பு பாதையை ஒட்டவும்...',
   'image.uploader.url-input-aria': 'மீடியா URL உள்ளீடு',
   'image.uploader.file-upload-aria': 'கோப்பிலிருந்து பதிவேற்றவும்',
   'image.uploader.paste-clipboard-aria': 'கிளிப்போர்டில் இருந்து ஒட்டவும்',
@@ -1865,8 +1835,13 @@ const ta: Lang = {
   'image.viewer.nav-prev': 'முந்தைய படம்',
   'image.viewer.nav-next': 'அடுத்த படம்',
   'image.viewer.zoom-in-hint': 'பெரிதாக்க பிஞ்ச் அல்லது கிளிக் செய்யவும்',
-  'image.viewer.zoom-out-hint':
-    '{scale}x (சிறிதாக்க பிஞ்ச் அல்லது கிளிக் செய்யவும்)',
+  'image.viewer.zoom-out-hint': '{scale}x (சிறிதாக்க பிஞ்ச் அல்லது கிளிக் செய்யவும்)',
+
+  'image.youtube.unavailable-title': 'YouTube வீடியோ',
+
+  'image.youtube.unavailable-description': 'தனிப்பட்டது அல்லது கிடைக்கவில்லை',
+
+  'image.youtube.open': 'YouTube இல் திற',
 
   'image.viewer.close-aria': 'முழுத்திரையை மூடு',
   'image.viewer.copy-image': 'படத்தை நகலெடுக்கவும்',
@@ -1890,8 +1865,8 @@ const ta: Lang = {
   'image.carousel.next': 'அடுத்த படம்',
   'image.carousel.image-alt': '{prefix} {index}',
   'image.carousel.thumbnail-alt': 'சிறுபடம் {index}',
-  'paste.notice.image-pasted': '📋 படம் வெற்றிகரமாக ஒட்டப்பட்டது',
-  'paste.notice.images-pasted': '📋 {count} படங்கள் வெற்றிகரமாக ஒட்டப்பட்டன',
+  'paste.notice.image-pasted': 'படம் வெற்றிகரமாக ஒட்டப்பட்டது',
+  'paste.notice.images-pasted': '{count} படங்கள் வெற்றிகரமாக ஒட்டப்பட்டன',
   'paste.error.clipboard-not-supported': 'கிளிப்போர்டு API ஆதரிக்கப்படவில்லை',
   'paste.error.clipboard-empty': 'ஒட்டுவதற்கு கிளிப்போர்டில் எதுவும் இல்லை',
   'paste.error.file-size-exceeds': 'கோப்பின் அளவு {size}MB வரம்பை மீறுகிறது',
@@ -1902,6 +1877,11 @@ const ta: Lang = {
   'datepicker.button.clear': 'அழி',
   'datepicker.button.today': 'இன்று',
   'datepicker.button.now': 'இப்போது',
+  'datepicker.aria.hour': 'மணி',
+  'datepicker.aria.minute': 'நிமிடம்',
+  'datepicker.aria.second': 'வினாடி',
+  'datepicker.aria.previous-month': 'முந்தைய மாதம்',
+  'datepicker.aria.next-month': 'அடுத்த மாதம்',
   'datepicker.placeholder.day': 'DD',
   'datepicker.placeholder.month': 'MM',
   'datepicker.placeholder.year': 'YY',
@@ -1910,12 +1890,13 @@ const ta: Lang = {
   'datepicker.placeholder.second': 'SS',
   'common.loading': 'ஏற்றுகிறது...',
   'common.error': 'பிழை',
+  'common.section-error': 'இந்தப் பகுதியில் பிழை ஏற்பட்டது.',
+  'common.retry': 'மீண்டும் முயற்சி',
 
   'common.warning': 'எச்சரிக்கை',
   'common.info': 'தகவல்',
   'common.yes': 'ஆம்',
   'common.no': 'இல்லை',
-  'common.ok': 'சரி',
 
   'common.select-option': 'ஒரு விருப்பத்தைத் தேர்ந்தெடு',
 
@@ -1931,8 +1912,6 @@ const ta: Lang = {
   'common.select-item': '{item}-ஐத் தேர்ந்தெடு',
   'common.header': 'தலைப்பு',
 
-  'common.date': 'தேதி',
-
   'common.days': 'நாட்கள்',
   'common.week': 'வாரம்',
   'common.weeks': 'வாரங்கள்',
@@ -1943,16 +1922,12 @@ const ta: Lang = {
   'common.quarter': 'காலாண்டு',
   'common.quarters': 'காலாண்டுகள்',
 
-  'common.min': 'குறைந்தபட்சம்',
-  'common.max': 'அதிகபட்சம்',
   'common.best': 'சிறந்தது',
   'common.worst': 'மோசமானது',
-  'common.profit': 'லாபம்',
 
   'common.trade': 'டிரேட்',
   'common.trades': 'டிரேட்கள்',
 
-  'common.statuses': 'நிலைகள்',
   'common.enabled': 'இயக்கத்தில்',
   'common.disabled': 'முடக்கத்தில்',
   'common.color.gray': 'சாம்பல்',
@@ -2050,11 +2025,9 @@ const ta: Lang = {
   'settings.ftp.reset-hint':
     'புதிய FTP கடவுச்சொல்லை உருவாக்க, இந்தப் பொத்தானைக் கிளிக் செய்யவும்.',
   'settings.ftp.instructions.title': 'MetaTrader 4 Setup வழிமுறைகள்:',
-  'settings.ftp.instructions.step1': 'திற MetaTrader 4 (MT4)',
-  'settings.ftp.instructions.step2':
-    'மேலே உள்ள "Tools" மெனுவைக் கிளிக் செய்யவும்',
-  'settings.ftp.instructions.step3':
-    '"விருப்பங்கள்" என்பதைத் தேர்ந்தெடுக்கவும்',
+  'settings.ftp.instructions.step1': 'MetaTrader 4 (MT4)-ஐத் திறக்கவும்',
+  'settings.ftp.instructions.step2': 'மேலே உள்ள "Tools" மெனுவைக் கிளிக் செய்யவும்',
+  'settings.ftp.instructions.step3': '"விருப்பங்கள்" என்பதைத் தேர்ந்தெடுக்கவும்',
   'settings.ftp.instructions.step4':
     '"FTP" தாவலுக்குச் சென்று மேலே காட்டப்பட்டுள்ள FTP சேவையகம், உள்நுழைவு மற்றும் கடவுச்சொல்லை உள்ளிடவும்',
   'settings.ftp.instructions.step5': '"செயலற்ற பயன்முறையை" இயக்கு',
@@ -2067,13 +2040,8 @@ const ta: Lang = {
   'settings.auth.status-offline': 'ஆஃப்லைன்',
   'settings.auth.status-online': 'ஆன்லைன்',
 
-  'settings.auth.signed-in': 'உள்நுழைந்துள்ளீர்கள்',
   'settings.auth.sign-in-up': 'உள்நுழையவும் / பதிவு செய்யவும்',
   'settings.auth.sign-out': 'வெளியேறு',
-
-  'settings.auth.subscription-features': 'சந்தா அம்சங்கள்',
-
-  'settings.auth.offline-mode': 'ஆஃப்லைன் பயன்முறை',
 
   'settings.auth.guest': 'விருந்தினர்',
 
@@ -2084,36 +2052,35 @@ const ta: Lang = {
   'settings.tab.reviews': 'மதிப்பாய்வு',
 
   'settings.tab.customization': 'தனிப்பயனாக்கம்',
-  'settings.tab.journal-setup': 'ஜர்னல் Setup',
-  'settings.tab.backend': 'டிரேட் ஒத்திசைவு',
-  'settings.tab.trading': 'டிரேட்கள்',
-  'settings.tab.sync': 'ஒத்திசை',
-  'settings.tab.accounts': 'கணக்கு',
+  'settings.tab.journal-setup': 'ஜர்னல்',
+  'settings.tab.trading': 'டிரேட் இயல்புநிலைகள்',
+  'settings.tab.sync': 'கணக்கு & ஒத்திசைவு',
+  'settings.page.reviews.title':
+    'மதிப்பாய்வு தளவமைப்புகள், இலக்குகள் மற்றும் சரிபார்ப்புப் பட்டியல்கள்',
+  'settings.page.reviews.desc':
+    'தளவமைப்புகள், தொடர் இலக்குகள் மற்றும் சரிபார்ப்புப் பட்டியல்களுக்கான முழு மதிப்பாய்வு அமைப்புகளைத் திறக்கவும்.',
+  'settings.page.customization.desc':
+    'தனிப்பயன் புலங்கள், படிவத் தளவமைப்பு, சின்னங்கள், பொருத்தங்கள், Setup-கள், தவறுகள், குறிச்சொற்கள் மற்றும் நிகழ்வுகளைத் திறக்கவும்.',
+  'settings.page.trade-sync.desc':
+    'Broker ஒத்திசைவு வழங்குநர்கள், FTP Credentials, கணக்கு மேலாண்மை, கண்டறிதல் மற்றும் ஒத்திசைவு அறிவிப்பு விருப்பங்களைத் திறக்கவும்.',
+  'settings.page.general.desc':
+    'நாணயம், காட்சிப் பெயர், முகப்புத் தொடக்கம், சமீபத்திய உருப்படிகள் மற்றும் வழிசெலுத்தல் விருப்பங்கள்.',
+  'settings.page.sync.desc':
+    'Journalit கணக்கு, சந்தா, டிரேட் ஒத்திசைவு, Trade Import மற்றும் பொருளாதார நாட்காட்டி.',
+  'settings.page.trading.desc':
+    'புதிய டிரேடுகளுக்கான இயல்புநிலைகள், தேதி கையாளுதல், அபாயம், சமநிலை தர்க்கம் மற்றும் பகுப்பாய்வுக் காட்சி விருப்பங்கள்.',
+  'settings.page.journal.desc':
+    'மதிப்பாய்வு வார்ப்புருக்கள், தானியக்கம், தனிப்பயன் புலங்கள், படிவத் தளவமைப்பு, சின்னங்கள், Setup-கள், தவறுகள், குறிச்சொற்கள் மற்றும் நிகழ்வுகள்.',
+  'settings.page.advanced.desc':
+    'ஜர்னல் கோப்புறை, படப் பாதை பராமரிப்பு, அமைப்புகள் காப்புப்பிரதி, இறக்குமதி, ஏற்றுமதி மற்றும் மீட்டமைப்பு.',
+  'settings.page.mcp-access.desc':
+    'MCP மூலம் இணைக்கும் AI பயன்பாடுகள் இந்த வால்ட்டைப் பயன்படுத்த அனுமதிக்கவும், எதற்கு உங்கள் ஒப்புதல் தேவை என்பதைத் தேர்வுசெய்யவும், முகவர் செயல்பாட்டைப் பார்க்கவும்.',
   'settings.reviews.drc': 'DRC',
   'settings.reviews.weekly': 'வாராந்திர மதிப்பாய்வு',
   'settings.reviews.monthly': 'மாதாந்திர மதிப்பாய்வு',
   'settings.reviews.quarterly': 'காலாண்டு மதிப்பாய்வு',
   'settings.reviews.yearly': 'ஆண்டு மதிப்பாய்வு',
-  'settings.reviews.default-templates': 'இயல்புநிலை தளவமைப்புகள்',
 
-  'settings.reviews.trade-template': 'டிரேட் தளவமைப்பு',
-  'settings.reviews.trade-template-desc':
-    'புதிய டிரேட் குறிப்புகளுக்கு பயன்படுத்தப்படும் தளவமைப்பு',
-  'settings.reviews.drc-template': 'DRC தளவமைப்பு',
-  'settings.reviews.drc-template-desc':
-    'புதிய தினசரி அறிக்கை அட்டைகளுக்குப் பயன்படுத்தப்படும் தளவமைப்பு',
-  'settings.reviews.weekly-template': 'வாராந்திர தளவமைப்பு',
-  'settings.reviews.weekly-template-desc':
-    'புதிய வாராந்திர மதிப்பாய்வுகளுக்குப் பயன்படுத்தப்படும் தளவமைப்பு',
-  'settings.reviews.monthly-template': 'மாதாந்திர தளவமைப்பு',
-  'settings.reviews.monthly-template-desc':
-    'புதிய மாதாந்திர மதிப்பாய்வுகளுக்குப் பயன்படுத்தப்படும் தளவமைப்பு',
-  'settings.reviews.quarterly-template': 'காலாண்டு தளவமைப்பு',
-  'settings.reviews.quarterly-template-desc':
-    'புதிய காலாண்டு மதிப்பாய்வுகளுக்குப் பயன்படுத்தப்படும் தளவமைப்பு',
-  'settings.reviews.yearly-template': 'ஆண்டு தளவமைப்பு',
-  'settings.reviews.yearly-template-desc':
-    'புதிய ஆண்டு மதிப்பாய்வுகளுக்குப் பயன்படுத்தப்படும் தளவமைப்பு',
   'settings.reviews.template-builder': 'தளவமைப்பு கட்டுபவர்',
   'settings.reviews.template-builder-desc':
     'பார்வைக்கு உங்கள் தளவமைப்புகளை உருவாக்கவும், திருத்தவும் மற்றும் நிர்வகிக்கவும். பில்டர் வியூ பிரிவுகளை இழுத்து விடவும், விருப்பங்களை உள்ளமைக்கவும் மற்றும் நிகழ்நேரத்தில் உங்கள் தளவமைப்புகளை முன்னோட்டமிடவும் அனுமதிக்கிறது.',
@@ -2134,31 +2101,26 @@ const ta: Lang = {
   'settings.reviews.weekly-goals': 'வாராந்திர இலக்குகள்',
   'settings.reviews.weekly-goal-placeholder':
     'தொடர்ச்சியான வாராந்திர இலக்கைச் சேர்க்கவும்...',
-  'settings.reviews.pre-trade-checklist':
-    'DRC டிரேட்டுக்கு முந்தைய சரிபார்ப்பு பட்டியல்',
-  'settings.reviews.pre-trade-checklist-desc':
+  'settings.reviews.checklist': 'DRC சரிபார்ப்பு பட்டியல்',
+  'settings.reviews.checklist-desc':
     'ஒவ்வொரு புதிய தினசரி அறிக்கை அட்டையிலும் தானாகவே தோன்றும் சரிபார்ப்புப் பட்டியல் உருப்படிகளை வரையறுக்கவும். இவை உருவாக்கப்படும் போது ஒவ்வொரு DRC க்கும் நகலெடுக்கப்படும், மேலும் ஒரு நாளைக்கு திருத்தலாம்.',
   'settings.reviews.checklist-placeholder':
     'சரிபார்ப்புப் பட்டியல் உருப்படியைச் சேர்க்கவும்...',
-  'settings.reviews.weekly-checklist':
-    'வாராந்திர தயாரிப்பு சரிபார்ப்பு பட்டியல்',
+  'settings.reviews.weekly-checklist': 'வாராந்திர சரிபார்ப்பு பட்டியல்',
   'settings.reviews.weekly-checklist-desc':
     'ஒவ்வொரு புதிய வாராந்திர மதிப்பாய்விலும் தானாகவே தோன்றும் சரிபார்ப்புப் பட்டியல் உருப்படிகளை வரையறுக்கவும். இவை உருவாக்கப்படும் போது ஒவ்வொரு வாராந்திர மதிப்பாய்விற்கும் நகலெடுக்கப்படும், மேலும் வாரத்திற்கு ஒருமுறை திருத்தலாம்.',
   'settings.reviews.weekly-checklist-placeholder':
     'வாராந்திர சரிபார்ப்புப் பட்டியல் உருப்படியைச் சேர்க்கவும்...',
   'settings.reviews.auto-create': 'மதிப்பாய்வுகளை தானாக உருவாக்கு',
-  'settings.reviews.global-auto-create':
-    'அனைத்து மதிப்பாய்வுகளையும் தானாக உருவாக்கு',
+  'settings.reviews.global-auto-create': 'அனைத்து மதிப்பாய்வுகளையும் தானாக உருவாக்கு',
   'settings.reviews.global-auto-create-desc':
     'தொடர்புடைய காலகட்டத்தின் முதல் டிரேட் பதிவுசெய்யப்படும்போது தானாகவே மதிப்பாய்வுகளை உருவாக்கவும். தினசரி, வாராந்திர, மாதாந்திர, காலாண்டு மற்றும் வருடாந்திர மதிப்பாய்வுகளுக்கு இந்த அமைப்பு பொருந்தும்.',
   'settings.reviews.global-auto-create-aria':
     'அனைத்து மதிப்பாய்வுகளையும் தானாக உருவாக்கு',
-  'settings.reviews.auto-create-drc-nav':
-    'வழிசெலுத்தலில் DRC தானாக உருவாக்கவும்',
+  'settings.reviews.auto-create-drc-nav': 'வழிசெலுத்தலில் DRC தானாக உருவாக்கவும்',
   'settings.reviews.auto-create-drc-nav-desc':
     'தினசரி அறிக்கை அட்டை இல்லாத நாளுக்குச் செல்லும்போது தானாகவே புதிய தினசரி அறிக்கை அட்டையை உருவாக்கவும்',
-  'settings.reviews.auto-create-drc-nav-aria':
-    'வழிசெலுத்தலில் DRC தானாக உருவாக்கவும்',
+  'settings.reviews.auto-create-drc-nav-aria': 'வழிசெலுத்தலில் DRC தானாக உருவாக்கவும்',
   'settings.reviews.auto-create-weekly-nav':
     'வழிசெலுத்தலில் வாராந்திர மதிப்பாய்வை தானாக உருவாக்கவும்',
   'settings.reviews.auto-create-weekly-nav-desc':
@@ -2190,10 +2152,6 @@ const ta: Lang = {
     'அனைத்து மதிப்பாய்வுகளுக்கும் தானாக உருவாக்கு {status}',
   'settings.reviews.notice.auto-create-nav':
     'வழிசெலுத்தலில் தானாக உருவாக்கு {type} {status}',
-  'settings.reviews.daily.checklist-title':
-    'முன் டிரேட் சரிபார்ப்பு பட்டியல் உருப்படிகள்',
-
-  'settings.reviews.daily.questions-title': 'மதிப்பாய்வுக் கேள்விகள்',
 
   'library.type.drc': 'DRC',
   'library.type.weekly': 'வாராந்திர',
@@ -2205,8 +2163,7 @@ const ta: Lang = {
   'library.notice.import-success':
     '"{name}" தளவமைப்பு வெற்றிகரமாக இறக்குமதி செய்யப்பட்டது!',
   'library.error.import-failed': 'தளவமைப்பை இறக்குமதி செய்ய முடியவில்லை',
-  'library.notice.select-template':
-    'ஏற்றுமதி செய்ய தளவமைப்பைத் தேர்ந்தெடுக்கவும்',
+  'library.notice.select-template': 'ஏற்றுமதி செய்ய தளவமைப்பைத் தேர்ந்தெடுக்கவும்',
   'library.notice.template-not-found': 'தளவமைப்பு கிடைக்கவில்லை',
   'library.notice.code-generated': 'பகிர்வு குறியீடு உருவாக்கப்பட்டது!',
   'library.error.export-failed': 'தளவமைப்பை ஏற்றுமதி செய்ய முடியவில்லை',
@@ -2218,8 +2175,7 @@ const ta: Lang = {
   'library.desc.import':
     'மற்றொரு பயனரிடமிருந்து தளவமைப்பை இறக்குமதி செய்ய JRT பகிர்வுக் குறியீட்டை ஒட்டவும்.',
   'library.label.share-code': 'பகிர் குறியீடு',
-  'library.placeholder.import-code':
-    'JRT-... பகிர்வுக் குறியீட்டை இங்கே ஒட்டவும்',
+  'library.placeholder.import-code': 'JRT-... பகிர்வுக் குறியீட்டை இங்கே ஒட்டவும்',
   'library.button.validating': 'சரிபார்க்கிறது...',
   'library.button.validate': 'சரிபார்க்கவும்',
   'library.button.import': 'இறக்குமதி தளவமைப்பு',
@@ -2236,33 +2192,16 @@ const ta: Lang = {
   'library.button.generate-code': 'பகிர்வுக் குறியீட்டை உருவாக்கவும்',
   'library.button.copy-code': 'கிளிப்போர்டுக்கு நகலெடுக்கவும்',
 
-  'settings.reviews.daily.timeframes-title': 'முன்னறிவிப்பு காலக்கெடு',
-
-  'settings.reviews.daily.timeframes-placeholder':
-    'புதிய காலக்கெடு (எ.கா., 15M, 5M)',
-  'settings.weekly.review-questions': 'கேள்விகளை மதிப்பாய்வு செய்யவும்',
-
-  'settings.weekly.forecast-timeframes': 'முன்னறிவிப்பு காலக்கெடு',
-
-  'settings.shared.timeframes.title': 'முன்னறிவிப்பு காலக்கெடு',
-
-  'settings.shared.timeframes.placeholder': 'புதிய காலக்கெடு (எ.கா., 15M, 5M)',
-
   'shared.empty-state.message': 'தரவு எதுவும் கிடைக்கவில்லை',
 
-  'weekly.tab.review': 'மதிப்பாய்வு',
-  'weekly.review.drcs.title': 'இந்த வாரத்திற்கான தினசரி மதிப்பாய்வுகள்',
-
   'account.settings.modal.title': 'கணக்கு டாஷ்போர்டு அமைப்புகள்',
-  'account.settings.notice.name-empty':
-    'கணக்கு வகையின் பெயர் காலியாக இருக்கக்கூடாது',
+  'account.settings.notice.name-empty': 'கணக்கு வகையின் பெயர் காலியாக இருக்கக்கூடாது',
   'account.settings.notice.type-exists': 'கணக்கு வகை "{name}" ஏற்கனவே உள்ளது',
   'account.settings.notice.reserved-name':
     '"{name}" என்பது முன்பதிவு செய்யப்பட்ட கணக்கு வகைப் பெயர்',
   'account.settings.notice.type-added':
     'கணக்கு வகை "{name}" வெற்றிகரமாக சேர்க்கப்பட்டது',
-  'account.settings.notice.add-error':
-    'கணக்கு வகையைச் சேர்ப்பதில் பிழை: {error}',
+  'account.settings.notice.add-error': 'கணக்கு வகையைச் சேர்ப்பதில் பிழை: {error}',
   'account.settings.notice.cannot-delete-archived':
     '"காப்பகப்படுத்தப்பட்ட" கணக்கு வகையை நீக்க முடியாது - இது கணக்குகளை காப்பகப்படுத்துவதற்கு ஒதுக்கப்பட்டுள்ளது',
   'account.settings.notice.analyze-error':
@@ -2271,8 +2210,7 @@ const ta: Lang = {
     '"{name}" ஐ நீக்க முடியாது - அதில் {count} தொடர்புடைய கணக்குகள் உள்ளன. இடம்பெயர்தல் அம்சம் விரைவில்.',
   'account.settings.notice.saved':
     'கணக்கு டாஷ்போர்டு அமைப்புகள் வெற்றிகரமாக சேமிக்கப்பட்டன',
-  'account.settings.notice.save-error':
-    'அமைப்புகளைச் சேமிப்பதில் பிழை: {error}',
+  'account.settings.notice.save-error': 'அமைப்புகளைச் சேமிப்பதில் பிழை: {error}',
   'account.settings.notice.migration-target-required':
     'மறுஒதுக்கீட்டிற்கான இலக்கு கணக்கு வகையைத் தேர்ந்தெடுக்கவும்',
   'account.settings.notice.migration-failed': 'இடம்பெயர்வு தோல்வி: {error}',
@@ -2281,8 +2219,7 @@ const ta: Lang = {
   'account.settings.notice.type-deleted-with-cleanup':
     'கணக்கு வகை "{name}" வெற்றிகரமாக நீக்கப்பட்டது (சுத்தம் செய்யப்பட்டது: {actions})',
   'account.settings.notice.migration-error': 'இடம்பெயர்வின் போது பிழை: {error}',
-  'account.settings.notice.delete-error':
-    'கணக்கு வகையை நீக்குவதில் பிழை: {error}',
+  'account.settings.notice.delete-error': 'கணக்கு வகையை நீக்குவதில் பிழை: {error}',
   'account.settings.notice.operation-failed': '{operation} தோல்வி: {error}',
   'account.settings.notice.migration-no-targets':
     'கணக்குகளை மாற்ற முடியாது - வேறு கணக்கு வகைகள் இல்லை. முதலில் புதிய கணக்கு வகையை உருவாக்கவும்.',
@@ -2291,8 +2228,7 @@ const ta: Lang = {
   'account.settings.operation.type-deletion': 'கணக்கு வகை நீக்கம்',
   'account.settings.migration.error.target-required':
     'மறுஒதுக்கீட்டிற்கு இலக்கு வகை தேவை',
-  'account.settings.migration.error.invalid-option':
-    'தவறான இடம்பெயர்வு விருப்பம்',
+  'account.settings.migration.error.invalid-option': 'தவறான இடம்பெயர்வு விருப்பம்',
   'account.settings.unnamed-account': 'பெயரிடப்படாத கணக்கு',
   'account.settings.migration.title': 'நீக்குவதற்கு முன் கணக்குகளை நகர்த்தவும்',
   'account.settings.migration.warning':
@@ -2307,8 +2243,7 @@ const ta: Lang = {
   'account.settings.migration.option.reassign.desc':
     'அனைத்து கணக்குகளையும் மற்றொரு கணக்கு வகைக்கு நகர்த்தவும்',
   'account.settings.migration.target-type.label': 'இலக்கு கணக்கு வகை:',
-  'account.settings.migration.option.archive.title':
-    'கணக்குகளை காப்பகப்படுத்தவும்',
+  'account.settings.migration.option.archive.title': 'கணக்குகளை காப்பகப்படுத்தவும்',
   'account.settings.migration.option.archive.desc':
     'அனைத்து கணக்குகளையும் "காப்பகப்படுத்தப்பட்ட" நிலைக்கு நகர்த்தவும்',
   'account.settings.migration.option.delete.title': 'நீக்குவதற்கான குறி',
@@ -2318,8 +2253,7 @@ const ta: Lang = {
   'account.settings.migration.button.migrating': 'இடம்பெயர்கிறது...',
   'account.settings.migration.action.reassigned':
     '"{target}"க்கு மீண்டும் ஒதுக்கப்பட்டது',
-  'account.settings.migration.action.archived':
-    'காப்பக நிலைக்கு நகர்த்தப்பட்டது',
+  'account.settings.migration.action.archived': 'காப்பக நிலைக்கு நகர்த்தப்பட்டது',
   'account.settings.migration.action.deleted': 'நீக்குவதற்கு குறிக்கப்பட்டது',
   'account.settings.delete.title': 'கணக்கு வகையை நீக்கு',
   'account.settings.delete.confirm-question':
@@ -2334,8 +2268,7 @@ const ta: Lang = {
   'account.settings.delete.cleanup-title': 'சுத்தம் செய்யப்படும் அமைப்புகள்:',
   'account.settings.delete.cleanup.excluded':
     '✓ விலக்கப்பட்ட கணக்கு வகைகளிலிருந்து அகற்றப்பட்டது',
-  'account.settings.delete.cleanup.order':
-    '✓ காட்சி வரிசையில் இருந்து அகற்றப்பட்டது',
+  'account.settings.delete.cleanup.order': '✓ காட்சி வரிசையில் இருந்து அகற்றப்பட்டது',
   'account.settings.delete.cleanup.withdrawals':
     '✓ திரும்பப் பெறும் அமைப்புகளிலிருந்து அகற்றப்பட்டது',
   'account.settings.delete.cleanup.none': 'அமைப்புகளை சுத்தம் செய்ய தேவையில்லை',
@@ -2360,49 +2293,11 @@ const ta: Lang = {
   'account.settings.section.inclusion.include-withdrawals': 'வித்ட்ராக்கள்',
   'account.settings.section.inclusion.empty':
     'உள்ளமைக்க கணக்கு வகைகள் எதுவும் இல்லை.',
-  'account.settings.section.order.title': 'காட்சி வரிசை',
 
   'account.settings.section.order.move-up': 'மேலே செல்லவும்',
   'account.settings.section.order.move-down': 'கீழே நகர்த்தவும்',
   'account.settings.button.save': 'அமைப்புகளைச் சேமிக்கவும்',
   'account.settings.button.saving': 'சேமிக்கிறது...',
-
-  'weekly.review.performance.title': 'செயல்திறன் சுய மதிப்பீடு',
-  'weekly.review.performance.mental': 'மன செயல்திறன்',
-
-  'weekly.review.performance.technical': 'தொழில்நுட்ப செயல்படுத்தல்',
-
-  'weekly.review.questions.title': 'வாராந்திர மதிப்பாய்வுக் கேள்விகள்',
-
-  'weekly.review.goals.title': 'அடுத்த வாரத்திற்கான இலக்குகள்',
-
-  'weekly.preparation.goals.title': 'வாராந்திர இலக்குகள்',
-
-  'weekly.preparation.events.title': 'முக்கிய நிகழ்வுகள்',
-
-  'weekly.preparation.events.add-button': 'நிகழ்வைச் சேர்க்கவும்',
-
-  'weekly.preparation.forecast.title': 'வாராந்திர முன்னறிவிப்பு',
-  'weekly.overview.pnl-chart.title': 'வாராந்திர ஒட்டுமொத்த P&L',
-
-  'weekly.overview.drawdown-chart.title': 'வாராந்திர Drawdown',
-
-  'weekly.overview.performance.title': 'வாராந்திர செயல்திறன்',
-
-  'weekly.overview.setup-performance.title': 'Setup செயல்திறன்',
-
-  'weekly.overview.trades-chart.title': 'வாராந்திர டிரேட்',
-
-  'weekly.overview.best-trade.title': 'வாரத்தின் சிறந்த டிரேட்',
-
-  'weekly.overview.worst-trade.title': 'வாரத்தின் மோசமான டிரேட்',
-
-  'weekly.overview.daily-performance.title': 'தினசரி செயல்திறன்',
-
-  'weekly.overview.button.create-trade': 'டிரேடை உருவாக்குங்கள்',
-  'weekly.overview.button.view-trade-details': 'டிரேட் விவரங்களைக் காண்க',
-
-  'monthly.tab.review': 'மதிப்பாய்வு',
 
   'backend.title': 'Trade Sync',
   'backend.description':
@@ -2441,7 +2336,7 @@ const ta: Lang = {
     'இந்த vaultஐ ஒத்திசைக்க பின்தள சேவையகத்துடன் பதிவு செய்யவும்',
   'backend.register.button': 'பதிவு வால்ட்',
   'backend.register.registering': 'பதிவு செய்கிறது...',
-  'backend.ftp.title': 'FTP Credentials',
+  'backend.ftp.title': 'FTP சான்றுகள்',
   'backend.ftp.description':
     'MetaTrader அறிக்கைகளைப் பதிவேற்ற FTP Credentials-ஐ உருவாக்கவும். தனிப்பட்ட பயனர்பெயர் தானாகவே உருவாக்கப்படும்.',
   'backend.ftp.create-button': 'FTP Credentials-ஐ உருவாக்கவும்',
@@ -2465,23 +2360,22 @@ const ta: Lang = {
   'backend.sync.total-syncs': 'மொத்த ஒத்திசைவுகள்',
   'backend.sync.never': 'ஒருபோதும் இல்லை',
   'backend.sync.invalid-date': 'தவறான தேதி',
-  'backend.notice.vault-registered':
-    '✅ வால்ட் டிரேட் சேவையகத்தில் பதிவு செய்யப்பட்டுள்ளது',
+  'backend.notice.vault-registered': 'வால்ட் டிரேட் சேவையகத்தில் பதிவு செய்யப்பட்டுள்ளது',
   'backend.notice.sync-cancelled': '⏹️ ஒத்திசைவு ரத்துசெய்யப்பட்டது',
-  'backend.notice.sync-in-progress': '⚠️ ஒத்திசைவு ஏற்கனவே செயலில் உள்ளது',
-  'backend.notice.account-info-failed': '❌ கணக்குத் தகவலைப் பெறுவதில் தோல்வி',
+  'backend.notice.sync-in-progress': 'ஒத்திசைவு ஏற்கனவே செயலில் உள்ளது',
+  'backend.notice.account-info-failed': 'கணக்குத் தகவலைப் பெறுவதில் தோல்வி',
   'backend.notice.sync-batch-progress':
     '⏳ ஒத்திசைவு தொகுதி: {count} டிரேட் ({progress}% முடிந்தது, {remaining} மீதமுள்ளது)',
   'backend.notice.all-trades-synced':
-    '✅ அனைத்து {count} டிரேட்களும் ஏற்கனவே ஒத்திசைக்கப்பட்டுள்ளன',
-  'backend.notice.account-created': '📊 உருவாக்கப்பட்ட கணக்கு: {name}',
+    'அனைத்து {count} டிரேட்களும் ஏற்கனவே ஒத்திசைக்கப்பட்டுள்ளன',
+  'backend.notice.account-created': 'உருவாக்கப்பட்ட கணக்கு: {name}',
   'backend.notice.batch-complete':
     '⏳ தொகுதி முடிந்தது: {processed}/{total} டிரேட் ({progress}%). தொடர்கிறது...',
   'backend.notice.sync-complete':
-    '✅ ஒத்திசைவு முடிந்தது: {total} டிரேட் செயலாக்கப்பட்டது ({newFiles} புதியது, {updated} புதுப்பிக்கப்பட்டது) {accounts} கணக்கு(கள்) முழுவதும்',
+    'ஒத்திசைவு முடிந்தது: {total} டிரேட் செயலாக்கப்பட்டது ({newFiles} புதியது, {updated} புதுப்பிக்கப்பட்டது) {accounts} கணக்கு(கள்) முழுவதும்',
   'backend.notice.sync-complete-no-trades':
-    '✅ ஒத்திசைவு முடிந்தது - புதிய டிரேட்கள் எதுவும் இல்லை',
-  'backend.notice.sync-failed': '❌ ஒத்திசைவு தோல்வி: {error}',
+    'ஒத்திசைவு முடிந்தது - புதிய டிரேட்கள் எதுவும் இல்லை',
+  'backend.notice.sync-failed': 'ஒத்திசைவு தோல்வி: {error}',
 
   'backend.accounts.linked': 'இணைக்கப்பட்ட MT கணக்குகள்',
   'backend.accounts.linked-desc':
@@ -2505,8 +2399,7 @@ const ta: Lang = {
     'MetaTrader கணக்கை {accountId} இணைப்பை நீக்கவா? இது Trade Sync இலிருந்து மறைக்கப்படும் மற்றும் நீங்கள் அதை மீண்டும் இணைக்கும் வரை எதிர்கால இறக்குமதிகள் தவிர்க்கப்படும்.',
   'backend.accounts.unlink-success': 'MetaTrader கணக்கு துண்டிக்கப்பட்டது',
   'backend.accounts.relink': 'மீண்டும் இணைக்கவும்',
-  'backend.accounts.relink-success':
-    'MetaTrader கணக்கு மீண்டும் இணைக்கப்பட்டது',
+  'backend.accounts.relink-success': 'MetaTrader கணக்கு மீண்டும் இணைக்கப்பட்டது',
   'backend.accounts.ignored.title': 'இணைக்கப்படாத கணக்குகள்',
   'backend.accounts.ignored.count': '{count} மறைக்கப்பட்டுள்ளது',
   'backend.accounts.ignored.empty': 'இணைக்கப்படாத கணக்குகள் இல்லை.',
@@ -2532,21 +2425,19 @@ const ta: Lang = {
   'settings.auth.feature.basic-tracking': 'அடிப்படை டிரேட் கண்காணிப்பு',
 
   'settings.auth.feature.manual-entry': 'கைமுறை டிரேட் நுழைவு',
-  'settings.auth.feature.analytics-reviews':
-    'பகுப்பாய்வு மற்றும் மதிப்பாய்வுகள்',
+  'settings.auth.feature.analytics-reviews': 'பகுப்பாய்வு மற்றும் மதிப்பாய்வுகள்',
+  'settings.auth.feature.ai-tool-calls-free': 'மாதத்திற்கு 100 AI கருவி அழைப்புகள்',
+  'settings.auth.feature.ai-tool-calls-pro': 'கூடுதல் AI கருவி அழைப்புகள்',
   'settings.auth.feature.priority-support': 'முன்னுரிமை ஆதரவு',
   'backend.sync.just-now': 'இப்போதுதான்',
   'backend.sync.minutes-ago': '{count} நிமிடத்திற்கு முன்பு',
   'backend.sync.hours-ago': '{count} மணிநேரத்திற்கு முன்பு',
   'backend.sync.days-ago': '{count} நாட்களுக்கு முன்பு',
 
-  'csv.format': 'இறக்குமதி வடிவம்:',
-
   'csv.button.export-template': 'ஏற்றுமதி வார்ப்புரு',
   'csv.button.delete-template': 'வார்ப்புருவை நீக்கு',
 
   'csv.button.import-another': 'மற்றொரு கோப்பை இறக்குமதி செய்யவும்',
-  'csv.results.complete': 'இறக்குமதி முடிந்தது',
   'csv.results.history-ready': 'உங்கள் டிரேட் வரலாறு தயாராக உள்ளது',
   'csv.results.completed-with-issues': 'இறக்குமதி சிக்கல்களுடன் முடிந்தது',
   'csv.results.failed': 'இறக்குமதி தோல்வி',
@@ -2558,15 +2449,8 @@ const ta: Lang = {
     'கணக்கிற்கு {count} டிரேட் வெற்றிகரமாக இறக்குமதி செய்யப்பட்டது: {account}',
   'csv.results.success.other':
     'கணக்கிற்கு {count} டிரேட் வெற்றிகரமாக இறக்குமதி செய்யப்பட்டது: {account}',
-  'csv.results.updated.one': 'தற்போதுள்ள டிரேட் {count} புதுப்பிக்கப்பட்டது',
-  'csv.results.updated.few': '{count} ஏற்கனவே உள்ள டிரேட் புதுப்பிக்கப்பட்டது',
-  'csv.results.updated.many': '{count} ஏற்கனவே உள்ள டிரேட் புதுப்பிக்கப்பட்டது',
-  'csv.results.updated.other':
-    '{count} ஏற்கனவே உள்ள டிரேட் புதுப்பிக்கப்பட்டது',
-  'csv.results.skipped.one':
-    'தவிர்க்கப்பட்டது {count} நகல் டிரேட் (ஏற்கனவே vault இல்)',
-  'csv.results.skipped.few':
-    'தவிர்க்கப்பட்டது {count} நகல் டிரேட் (ஏற்கனவே vault இல்)',
+  'csv.results.skipped.one': 'தவிர்க்கப்பட்டது {count} நகல் டிரேட் (ஏற்கனவே vault இல்)',
+  'csv.results.skipped.few': 'தவிர்க்கப்பட்டது {count} நகல் டிரேட் (ஏற்கனவே vault இல்)',
   'csv.results.skipped.many':
     'தவிர்க்கப்பட்டது {count} நகல் டிரேட் (ஏற்கனவே vault இல்)',
   'csv.results.skipped.other':
@@ -2574,10 +2458,6 @@ const ta: Lang = {
 
   'csv.results.broker': 'தரகர்: {broker}',
 
-  'csv.results.more-trades.one': 'மேலும் {count} டிரேட்...',
-  'csv.results.more-trades.few': 'மேலும் {count} டிரேட்கள்...',
-  'csv.results.more-trades.many': 'மேலும் {count} டிரேட்கள்...',
-  'csv.results.more-trades.other': 'மேலும் {count} டிரேட்கள்...',
   'csv.results.errors-header': 'பிழைகளைக் காண கிளிக் செய்யவும் ({count})',
   'csv.results.discord-note':
     'விருப்பத்தேர்வு: உங்களுக்கு உதவி தேவைப்பட்டால், அறிக்கையை நகலெடு என்பதைக் கிளிக் செய்து Discord இல் ஒட்டவும்.',
@@ -2586,44 +2466,10 @@ const ta: Lang = {
 
   'csv.errors.copied': 'நகலெடுக்கப்பட்டது',
   'csv.errors.rows': 'வரிசைகள்: {rows}',
-  'csv.errors.suggestion': 'பரிந்துரை:',
 
-  'csv.errors.raw-errors-limit':
-    '{total} பிழைகளில் முதல் {shown}ஐக் காட்டுகிறது',
-
-  'csv.report.plugin-version': 'செருகுநிரல் பதிப்பு: {version}',
-
-  'csv.report.broker': 'தரகர்: {broker}',
+  'csv.errors.raw-errors-limit': '{total} பிழைகளில் முதல் {shown}ஐக் காட்டுகிறது',
 
   'csv.report.top-issues': 'முக்கிய சிக்கல்கள்:',
-
-  'csv.broker-guide.tradovate.step-2':
-    '"ஆர்டர்கள்" தாவலைக் கிளிக் செய்யவும் (செயல்திறன் தாவல் அல்ல)',
-
-  'csv.broker-guide.tradovate.warning.emphasis': 'முக்கியமானது:',
-  'csv.broker-guide.tradovate.warning.message':
-    'ஆர்டர்கள் தாவலை மட்டும் பயன்படுத்தவும். செயல்திறன் தாவல் இணக்கமாக இல்லை.',
-
-  'csv.broker-guide.ibkr.warning.emphasis': 'ஆர்டர்களைப் பயன்படுத்த வேண்டும்',
-
-  'csv.broker-guide.tradingview.step-3':
-    'கீழ்தோன்றலில் இருந்து "ஆர்டர் வரலாறு" என்பதைத் தேர்ந்தெடுக்கவும்',
-
-  'csv.broker-guide.tradingview.warning.message':
-    'பிற ஏற்றுமதி வகைகள் (நிலைகள் அல்லது ஆர்டர்கள் போன்றவை) இறக்குமதிக்கு வேலை செய்யாது.',
-
-  'csv.broker-guide.hyperliquid.warning.emphasis': '10,000 நுழைவு வரம்பு.',
-
-  'csv.broker-guide.sierrachart.step-1':
-    'டிரேட் நடவடிக்கைப் பதிவைத் திற (டிரேட் → டிரேட் நடவடிக்கைப் பதிவு, அல்லது Ctrl+Shift+A)',
-
-  'csv.broker-guide.atas.warning.emphasis': 'முக்கியமானது:',
-  'csv.broker-guide.atas.warning.message':
-    'ஏற்றுமதி செய்யப்பட்ட கோப்பைத் திருத்த வேண்டாம். Journalit "Journal" தாளில் இருந்து டிரேட்களைப் பாதுகாக்கிறது மற்றும் கிடைக்கும்போது, "Executions" தாளில் பொருந்தும் fills மூலம் commission-ஐ நிரப்புகிறது.',
-
-  'csv.broker-guide.rithmic.warning.emphasis': 'முக்கியமானது:',
-
-  'csv.broker-guide.jdr.warning.emphasis': 'முக்கியமானது:',
 
   'csv.date-format.auto-detect':
     'தானாகக் கண்டறிதல் (ஐஎஸ்ஓ/தரநிலை வடிவங்களுக்குப் பரிந்துரைக்கப்படுகிறது)',
@@ -2631,15 +2477,15 @@ const ta: Lang = {
     'அமெரிக்க தேதி: 12/25/2024 (ஸ்க்வாப், ஃபிடிலிட்டி, இ*டிரேட்)',
   'csv.date-format.us-datetime':
     'அமெரிக்க தேதிநேரம்: 12/25/2024 14:30:00 (Webull)',
-  'csv.date-format.us-short': 'US Short: 1/5/2024 (TradeZero)',
-  'csv.date-format.us-short-datetime': 'US Short தேதிநேரம்: 1/5/2024 14:30:00',
+  'csv.date-format.us-short': 'US சுருக்கம்: 1/5/2024 (TradeZero)',
+  'csv.date-format.us-short-datetime': 'US சுருக்கம் தேதிநேரம்: 1/5/2024 14:30:00',
   'csv.date-format.iso-datetime':
-    'ISO தேதிநேரம்: 2024-12-25 14:30:00 (Bybit, Tradovate)',
-  'csv.date-format.iso-date': 'ISO தேதி: 2024-12-25 (ஊடாடும் தரகர்கள்)',
+    'ISO தேதிநேரம்: 2024-12-25 14:30:00 (Tradovate)',
+  'csv.date-format.iso-date': 'ISO தேதி: 2024-12-25 (Interactive Brokers)',
   'csv.date-format.eu-date': 'EU தேதி: 25/12/2024 (நாள்/மாதம்/ஆண்டு)',
   'csv.date-format.eu-datetime': 'EU தேதிநேரம்: 25/12/2024 14:30:00',
-  'csv.date-format.eu-dash': 'EU டாஷ்: 25-12-2024',
-  'csv.date-format.eu-dash-datetime': 'EU டேஷ் தேதிநேரம்: 25-12-2024 14:30:00',
+  'csv.date-format.eu-dash': 'EU கோடு: 25-12-2024',
+  'csv.date-format.eu-dash-datetime': 'EU கோடு தேதிநேரம்: 25-12-2024 14:30:00',
   'upgrade.title': 'Pro ஆக மேம்படுத்தவும்',
   'upgrade.feature-message':
     '{featureName} என்பது ஒரு ப்ரோ அம்சமாகும். மேம்பட்ட ஆட்டோமேஷன் மற்றும் அம்சங்களைத் திறக்க மேம்படுத்தவும்.',
@@ -2649,6 +2495,8 @@ const ta: Lang = {
     'தானியங்கி வாராந்திர நிகழ்வு இறக்குமதிகளுடன் பொருளாதார நாட்காட்டி',
   'upgrade.benefit.trade-sync': 'ஆதரிக்கப்படும் தரகர்களுக்கான Trade Sync',
   'upgrade.benefit.multi-account': 'பல கணக்கு ஆதரவு',
+  'upgrade.benefit.ai-tool-calls':
+    'இணைக்கப்பட்ட AI ஆப்களுக்கு மாதத்திற்கு கூடுதல் AI கருவி அழைப்புகள்',
   'upgrade.prop-profiles.message-firms':
     'உங்கள் சேலஞ்சை முன்கூட்டியே நிரப்ப {count} ப்ராப் நிறுவனங்களின் விதிகளை Journalit தயாராக வைத்திருக்கிறது.',
   'upgrade.prop-profiles.message-firm':
@@ -2665,13 +2513,9 @@ const ta: Lang = {
   'upgrade.benefit.prop.payout': 'பேஅவுட் வரம்புகளும் தகுதி நிபந்தனைகளும்',
   'upgrade.benefit.prop.phases':
     'நீங்கள் தேர்ந்தெடுத்த சேலஞ்சின் கட்ட இலக்குகளும் முன்னேற்றமும்',
-  'upgrade.benefit.prop.updates':
-    'நிறுவனம் விதிகளை மாற்றும்போது புதுப்பிப்புகள்',
+  'upgrade.benefit.prop.updates': 'நிறுவனம் விதிகளை மாற்றும்போது புதுப்பிப்புகள்',
   'upgrade.trial-notice':
     'உங்களின் அனைத்து வரலாற்று டிரேட்களையும் இறக்குமதி செய்ய 2 வார இலவச சோதனையைப் பெறுங்கள் மற்றும் அனைத்து ப்ரோ அம்சங்களையும் ஆபத்து இல்லாமல் முயற்சிக்கவும்.',
-
-  'monthly.overview.drawdown': 'மாதாந்திர Drawdown',
-  'monthly.overview.no-drawdown-data': 'காட்டுவதற்கு Drawdown தரவு இல்லை',
 
   'settings.account-linking.title': 'கணக்கு இணைப்பை மாற்றவும்',
   'settings.account-linking.description':
@@ -2679,8 +2523,7 @@ const ta: Lang = {
   'settings.account-linking.source.title': 'மூல MT கணக்கு',
   'settings.account-linking.source.description':
     'MT கணக்கை நீங்கள் நகர்த்த விரும்பும் டிரேடைத் தேர்ந்தெடுக்கவும்',
-  'settings.account-linking.source.placeholder':
-    'மூலக் கணக்கைத் தேர்ந்தெடுக்கவும்...',
+  'settings.account-linking.source.placeholder': 'மூலக் கணக்கைத் தேர்ந்தெடுக்கவும்...',
   'settings.account-linking.target.title': 'இலக்கு Obsidian கணக்கு',
   'settings.account-linking.target.description':
     'டிரேட்களை இணைக்க Obsidian கணக்கைத் தேர்ந்தெடுக்கவும்',
@@ -2694,14 +2537,11 @@ const ta: Lang = {
     '{count} டிரேட் {source} இலிருந்து {target} வரை வெற்றிகரமாக மீண்டும் இணைக்கப்பட்டது',
   'settings.account-linking.error.select-both':
     'மூல மற்றும் இலக்கு கணக்குகள் இரண்டையும் தேர்ந்தெடுக்கவும்',
-  'settings.account-linking.error.source-not-found':
-    'ஆதார கணக்கு கிடைக்கவில்லை',
-  'settings.account-linking.error.target-not-found':
-    'இலக்கு கணக்கு கிடைக்கவில்லை',
+  'settings.account-linking.error.source-not-found': 'ஆதார கணக்கு கிடைக்கவில்லை',
+  'settings.account-linking.error.target-not-found': 'இலக்கு கணக்கு கிடைக்கவில்லை',
   'settings.account-linking.error.already-linked':
     'இந்த MT கணக்கு ஏற்கனவே தேர்ந்தெடுக்கப்பட்ட Obsidian கணக்குடன் இணைக்கப்பட்டுள்ளது',
-  'settings.account-linking.error.service-manager':
-    'சேவை மேலாளர் கிடைக்கவில்லை',
+  'settings.account-linking.error.service-manager': 'சேவை மேலாளர் கிடைக்கவில்லை',
   'settings.account-linking.error.backend-service': 'பின்தள சேவை கிடைக்கவில்லை',
   'settings.account-linking.error.relink-failed':
     'கணக்கை மீண்டும் இணைப்பதில் தோல்வி: {error}',
@@ -2726,9 +2566,9 @@ const ta: Lang = {
   'account-page.guide.empty.add-event.description':
     'சாதாரண டிரேட்டுக்கு வெளியே பணம் உள்ளே அல்லது வெளியே செல்லும் போதெல்லாம் இந்த பொத்தானைப் பயன்படுத்தவும்.',
   'account-page.guide.empty.transactions.title':
-    'டெபாசிட்கள் மற்றும் திரும்பப் பெறுதல்கள் இங்கே கண்காணிக்கப்படும்',
+    'பண இயக்கங்கள் இங்கே கண்காணிக்கப்படுகின்றன',
   'account-page.guide.empty.transactions.description':
-    'இந்த பிரிவு கைமுறையாக வைப்பு மற்றும் திரும்பப் பெறுதல் பற்றிய வரலாற்றை வைத்திருக்கிறது. அது காலியாக இருக்கும்போது, ​​முதல் நிகழ்வை உருவாக்க, நிகழ்வைச் சேர் என்பதைப் பயன்படுத்தவும்.',
+    'இந்தப் பகுதி கைமுறை வைப்புகள் மற்றும் திரும்பப் பெறுதல்களை வரிசை வாரியாகப் பதிவுசெய்கிறது; Prop சவால் கணக்கில் இவை Payout-களாகக் காட்டப்படும். காலியாக இருந்தால், முதல் பதிவை உருவாக்க நிகழ்வைச் சேர் என்பதைப் பயன்படுத்தவும்.',
   'account-page.guide.empty.trade-log.title':
     'டிரேட் பதிவில் இந்தக் கணக்கைத் திறக்கவும்',
   'account-page.guide.empty.trade-log.description':
@@ -2748,9 +2588,24 @@ const ta: Lang = {
   'account-page.guide.main.risk.description':
     'உங்கள் டிராடவுன் வரம்பில் எவ்வளவு பயன்படுத்தப்பட்டுள்ளது, உங்கள் லாப இலக்கை எவ்வளவு நெருங்கியுள்ளீர்கள் என்பதைக் காட்டுகிறது.',
   'account-page.guide.main.transactions.title':
-    'வைப்பு மற்றும் திரும்பப் பெறுதல்கள் அவற்றின் சொந்த பிரிவில் இருக்கும்',
+    'பண இயக்கங்கள் தனிப் பகுதியில் இருக்கும்',
   'account-page.guide.main.transactions.description':
     'ஒவ்வொரு டெபாசிட் மற்றும் திரும்பப்பெறுதலுக்குப் பிறகான இருப்புடன், டிரேடிங் முடிவுகளிலிருந்து தனியாக. ப்ராப் கணக்குகள் இங்கே பேஅவுட்களைப் பட்டியலிடும்.',
+  'account.monthly-returns.title': 'மாதாந்திர வருமானம்',
+  'account.monthly-returns.total': 'மொத்தம்',
+  'account.monthly-returns.view-trades': '{period} டிரேடுகளைப் பார்',
+  'account.monthly-returns.unconverted':
+    'சேர்க்கப்படவில்லை: {currencies} கணக்குகள் (மாற்று விகிதம் கிடைக்கவில்லை).',
+  'account.monthly-returns.empty': 'இன்னும் மாதாந்திர வருமானம் இல்லை.',
+  'account.monthly-returns.empty-sub':
+    'கணக்கில் மூலதனம் இருந்து ஒரு டிரேட் மூடப்பட்டதும் இவை தோன்றும்.',
+  'account.monthly-returns.error': 'மாதாந்திர வருமானத்தை ஏற்ற முடியவில்லை.',
+  'account-page.guide.main.monthly-returns.title': 'மாதாந்திர வருமானம்',
+  'account-page.guide.main.monthly-returns.description':
+    'இந்தக் கணக்கின் மூலதனத்தின் மீதான ஒவ்வொரு மாத வருமானம். டெபாசிட் மற்றும் திரும்பப்பெறுதல் நீக்கப்படுவதால் அவை லாபமாகக் கணக்கிடப்படாது; மொத்தம் நெடுவரிசை மாதங்களைக் கூட்டுகிறது. ஒரு மாதம் அல்லது ஆண்டைத் தேர்ந்தெடுத்து அதன் டிரேடுகளைத் திறக்கவும்.',
+  'account-dashboard.guide.main.monthly-returns.title': 'மாதாந்திர வருமானம்',
+  'account-dashboard.guide.main.monthly-returns.description':
+    'மேலே கணக்கிடப்பட்ட கணக்குகளின் ஒருங்கிணைந்த மாதாந்திர வருமானம், ஒவ்வொரு கணக்கின் மூலதனத்தின்படி எடையிடப்பட்டது. பிற நாணயக் கணக்குகள் இன்றைய விகிதத்தில் மாற்றப்படும். ஒரு மாதம் அல்லது ஆண்டைத் தேர்ந்தெடுத்து அதன் டிரேடுகளைத் திறக்கவும்.',
   'account-page.guide.main.actions.title': 'டிரேடுகள், பணம் மற்றும் அமைப்புகள்',
   'account-page.guide.main.actions.description':
     'இந்தக் கணக்கின் டிரேடுகளை Trade Log-இல் திறக்கவும், + மூலம் டெபாசிட் அல்லது திரும்பப்பெறுதலைப் பதிவு செய்யவும், அல்லது கணக்கையும் அதன் விதிகளையும் திருத்தவும்.',
@@ -2771,14 +2626,12 @@ const ta: Lang = {
   'account-dashboard.empty.message':
     'உங்கள் டிரேட் செயல்திறனைக் கண்காணிக்க ஒரு கணக்கை உருவாக்கவும்',
   'account-dashboard.section.empty': '{type} கணக்குகள் இல்லை',
-  'account-dashboard.section.empty-sub':
-    'அதை இங்கே பார்க்க ஒரு கணக்கை உருவாக்கவும்',
+  'account-dashboard.section.empty-sub': 'அதை இங்கே பார்க்க ஒரு கணக்கை உருவாக்கவும்',
   'account-dashboard.button.create-first': 'உங்கள் முதல் கணக்கை உருவாக்கவும்',
   'account-dashboard.action.create': 'புதிய கணக்கை உருவாக்கவும்',
   'account-dashboard.action.settings': 'கணக்கு அமைப்புகள்',
   'account-dashboard.weight-bar.aria': 'கணக்கு வகை AUM விநியோகம்',
-  'account-dashboard.weight-bar.segment-aria':
-    '{name}: மொத்த AUM இல் {percent}%',
+  'account-dashboard.weight-bar.segment-aria': '{name}: மொத்த AUM இல் {percent}%',
   'account-dashboard.guide.empty.intro.title':
     'இந்தப் பக்கம் உங்கள் கணக்குகள் அனைத்தையும் ஒரே இடத்தில் வைத்திருக்கும்',
   'account-dashboard.guide.empty.intro.description':
@@ -2797,11 +2650,11 @@ const ta: Lang = {
     'அடிப்படை கணக்கு விவரங்களை பூர்த்தி செய்து சேமிக்கவும். குறிப்பிட்ட கணக்கிற்கான கணக்குப் பக்கத்தில் அடுத்த வழிகாட்டி எடுக்கப்படும்.',
   'account-dashboard.guide.main.intro.title': 'இவை உங்கள் கணக்குகள்',
   'account-dashboard.guide.main.intro.description':
-    'கணக்குகளை ஒப்பிட்டுப் பார்க்கவும், எல்லா கணக்குகளிலும் மொத்தத்தைப் பார்க்கவும், மேலும் விவரங்கள் தேவைப்படும்போது ஒரே கணக்கில் குதிக்கவும் இந்தப் பக்கத்தைப் பயன்படுத்தவும்.',
+    'எல்லா கணக்குகளையும் ஒரே இடத்தில் ஒப்பிட இந்தப் பக்கத்தைப் பயன்படுத்தவும். Prop சவால்கள் அதே கணக்குக் குழுக்களில் இருக்கும்; அவற்றின் கட்டமும் விதி முன்னேற்றமும் ஒவ்வொரு அட்டையிலும் நேரடியாகக் காட்டப்படும்.',
   'account-dashboard.guide.main.aum-chart.title':
     'AUM என்பது நிர்வாகத்தின் கீழ் உள்ள சொத்துகள்',
   'account-dashboard.guide.main.aum-chart.description':
-    'இந்த விளக்கப்படம் உங்கள் கணக்குகள் முழுவதும் வைப்புத்தொகை, திரும்பப் பெறுதல், Profit Target-கள் மற்றும் Drawdown அளவுகள் உட்பட, காலப்போக்கில் உங்கள் ஒருங்கிணைந்த கணக்கு மதிப்பைக் கண்காணிக்கும்.',
+    'இந்த விளக்கப்படம் உங்கள் கணக்குகளின் மொத்த மதிப்பை காலப்போக்கில் காட்டுகிறது. Prop கணக்குகள் இருந்தால், அருகிலுள்ள சவால் பேரேடு தேர்ச்சி விகிதம், செலவுகள், Payout-கள் மற்றும் நிகர முடிவுகளைச் சேர்க்கிறது.',
   'account-dashboard.guide.main.metrics.title':
     'இந்த அளவீடுகள் அனைத்து புலப்படும் கணக்குகளையும் சுருக்கமாகக் கூறுகின்றன',
   'account-dashboard.guide.main.metrics.description':
@@ -2851,8 +2704,6 @@ const ta: Lang = {
   'account-card.metric.trades': 'டிரேட்கள்',
   'account-card.metric.withdrawals': 'வித்ட்ராக்கள்',
   'account-card.metric.age': 'வயது',
-  'account-card.progress.profit-target': 'Profit Target',
-  'account-card.progress.drawdown-used': 'Drawdown வரம்பு பயன்படுத்தப்பட்டது',
   'account-card.progress.not-set': 'அமைக்கப்படவில்லை',
   'account-card.footer.monthly': 'மாதாந்திர:',
   'account-card.footer.total-costs': 'மொத்த செலவுகள்:',
@@ -2863,35 +2714,29 @@ const ta: Lang = {
   'account.balance-chart.profit-target-off-scale':
     'லாப இலக்கு {value} ({distance} மேலே)',
   'account.balance-chart.empty': 'டிரேட் இல்லை',
-  'account.balance-chart.empty-sub':
-    'இந்தக் கணக்கிற்கு டிரேட் நடவடிக்கை எதுவும் இல்லை',
+  'account.balance-chart.empty-sub': 'இந்தக் கணக்கிற்கு டிரேட் நடவடிக்கை எதுவும் இல்லை',
   'account.aum-chart.empty': 'கணக்கு தரவு இல்லை',
-  'account.aum-chart.empty-sub':
-    'AUM வரலாற்றைப் பார்க்க கணக்குகளைச் சேர்க்கவும்',
+  'account.aum-chart.empty-sub': 'AUM வரலாற்றைப் பார்க்க கணக்குகளைச் சேர்க்கவும்',
   'chart.shared.empty': 'டிரேட் இல்லை',
   'chart.shared.empty-sub': 'வேறு நேரத்தைத் தேர்ந்தெடுக்க முயற்சிக்கவும்',
   'account.link-modal.title': 'புதிய டிரேட் கணக்கு கண்டறியப்பட்டது',
   'account.link-modal.account-id': 'கணக்கு ஐடி:',
   'account.link-modal.broker': 'தரகர்:',
   'account.link-modal.first-seen': 'முதலில் பார்த்தது:',
-  'account.link-modal.question':
-    'இந்தக் கணக்கை எப்படிக் கையாள விரும்புகிறீர்கள்?',
-  'account.link-modal.option.new':
-    'தனிப்பயன் பெயரில் புதிய கணக்கை உருவாக்கவும்',
+  'account.link-modal.question': 'இந்தக் கணக்கை எப்படிக் கையாள விரும்புகிறீர்கள்?',
+  'account.link-modal.option.new': 'தனிப்பயன் பெயரில் புதிய கணக்கை உருவாக்கவும்',
   'account.link-modal.placeholder.custom-name': 'எ.கா., FTMO சவால்',
   'account.link-modal.account-type': 'கணக்கு வகை:',
   'account.link-modal.option.existing': 'ஏற்கனவே உள்ள கணக்கிற்கான இணைப்பு',
   'account.link-modal.no-accounts-available': '(கணக்குகள் இல்லை)',
   'account.link-modal.select-account': 'கணக்கைத் தேர்ந்தெடுக்கவும்...',
 
-  'account.link-modal.option.default':
-    'இயல்புப் பெயரைப் பயன்படுத்தவும்: கணக்கு-{id}',
+  'account.link-modal.option.default': 'இயல்புப் பெயரைப் பயன்படுத்தவும்: கணக்கு-{id}',
   'account.link-modal.default-name': 'கணக்கு-{id}',
   'account.link-modal.button.linking': 'இணைக்கிறது...',
   'account.link-modal.notice.select-existing':
     'ஏற்கனவே உள்ள கணக்கைத் தேர்ந்தெடுக்கவும்',
   'account.link-modal.notice.failed': 'கணக்கை இணைப்பதில் தோல்வி: {error}',
-  'trade.review.title': 'டிரேட் மதிப்பாய்வு',
 
   'trade.details.entry': 'நுழைவு',
   'trade.details.exit': 'வெளியேற்றம்',
@@ -2912,13 +2757,16 @@ const ta: Lang = {
   'trade.image.click-edit': 'படத்தைச் சேர்க்கவும்',
   'trade.image.alt-prefix': 'டிரேட் படம்',
   'command.share-note-as-image': 'தற்போதைய குறிப்பை படமாகப் பகிர்',
-  'trade.share.copy-screenshot': 'டிரேட் ஸ்கிரீன்ஷாட்டை நகலெடு',
-  'trade.share.copied':
-    'டிரேட் ஸ்கிரீன்ஷாட் கிளிப்போர்டுக்கு நகலெடுக்கப்பட்டது',
+  'trade.share.copied': 'டிரேட் ஸ்கிரீன்ஷாட் கிளிப்போர்டுக்கு நகலெடுக்கப்பட்டது',
   'trade.share.failed': 'டிரேட் ஸ்கிரீன்ஷாட்டை நகலெடுக்க முடியவில்லை',
   'trade.share.not-ready':
     'டிரேட் குறிப்பு இன்னும் ஏற்றப்படுகிறது. சிறிது நேரத்தில் மீண்டும் முயற்சிக்கவும்.',
   'share.review.action': 'மதிப்பாய்வு அட்டையைப் பகிர்',
+  'share.trade.modal-title': 'வர்த்தகத்தைப் பகிர்',
+  'share.trade.position-return': 'நிலை வருமானம் % (செலவுகளுக்கு முன்)',
+  'share.trade.account-return': 'கணக்கு வருமானம் % (தற்போதைய இருப்பு)',
+  'share.trade.hide-dollar-hint':
+    'பணத் தொகைகளை மறைக்க R அல்லது % ஐத் தேர்ந்தெடுக்கவும். கிடைக்காத மதிப்புகள் கோடாகக் காட்டப்படும்.',
   'share.review.modal-title': 'மதிப்பாய்வைப் பகிர்',
   'share.review.section.top': 'குறிப்பின் தொடக்கம்',
   'share.review.select-all': 'அனைத்தையும் தேர்ந்தெடு',
@@ -2942,16 +2790,15 @@ const ta: Lang = {
 
   'trade.review.reviewed': 'மதிப்பாய்வு செய்யப்பட்டது',
   'trade.review.reviewed-on': '{date} இல் மதிப்பாய்வு செய்யப்பட்டது',
-
-  'timeline.status.loss': 'நட்டம்',
+  'trade.rating.label': 'மதிப்பீடு',
+  'trade.rating.hint':
+    'மதிப்பிட நட்சத்திரத்தைக் கிளிக் செய்யவும், அரை நட்சத்திரத்திற்கு மீண்டும் கிளிக் செய்யவும், நீக்க இன்னொரு முறை கிளிக் செய்யவும்',
 
   'timeline.aria.session-navigation': 'ஒரே நாள் டிரேட் வழிசெலுத்தல்',
   'timeline.aria.previous-trade': 'முந்தைய டிரேட்: {trade}',
   'timeline.aria.next-trade': 'அடுத்த டிரேட்: {trade}',
   'timeline.aria.no-previous-trade': 'இந்த டிரேட் நாளில் முந்தைய டிரேட் இல்லை',
   'timeline.aria.no-next-trade': 'இந்த டிரேட் நாளில் அடுத்த டிரேட் இல்லை',
-
-  'drc.tab.review': 'மதிப்பாய்வு',
 
   'drc.missed-trades.label.reason': 'காரணம்:',
 
@@ -2970,8 +2817,7 @@ const ta: Lang = {
     'நாணயம் {currency}க்கு மாற்றப்பட்டது. அனைத்து கூறுகளும் உடனடியாக புதுப்பிக்கப்படும்!',
   'settings.general.currency-save-failed':
     'நாணய அமைப்பைச் சேமிப்பதில் தோல்வி. மீண்டும் முயற்சிக்கவும்.',
-  'settings.general.path-change.title':
-    'ஜர்னல் கோப்புறையின் இடம் மாற்றப்பட்டது',
+  'settings.general.path-change.title': 'ஜர்னல் கோப்புறையின் இடம் மாற்றப்பட்டது',
   'settings.general.path-change.new-trades-title':
     'உங்கள் புதிய கோப்புறை இருப்பிடத்தில் புதிய டிரேட்கள் உருவாக்கப்படும்',
   'settings.general.path-change.new-trades-desc':
@@ -2999,10 +2845,8 @@ const ta: Lang = {
   'settings.general.display-name-aria': 'வரவேற்பு செய்திக்கான காட்சி பெயர்',
   'settings.general.display-name-confirm-aria':
     'காட்சி பெயர் மாற்றத்தை உறுதிப்படுத்தவும்',
-  'settings.general.display-name-cancel-aria':
-    'காட்சி பெயர் மாற்றத்தை ரத்துசெய்',
-  'settings.general.display-name-saved':
-    'காட்சி பெயர் "{name}" ஆக சேமிக்கப்பட்டது',
+  'settings.general.display-name-cancel-aria': 'காட்சி பெயர் மாற்றத்தை ரத்துசெய்',
+  'settings.general.display-name-saved': 'காட்சி பெயர் "{name}" ஆக சேமிக்கப்பட்டது',
   'settings.general.display-name-cleared': 'காட்சி பெயர் அழிக்கப்பட்டது',
   'settings.general.display-name-save-failed':
     'காட்சிப் பெயரைச் சேமிப்பதில் தோல்வி. மீண்டும் முயற்சிக்கவும்.',
@@ -3016,20 +2860,15 @@ const ta: Lang = {
     'Journalit பொத்தான்கள், நிலைமாற்றிகள் மற்றும் சிறப்பம்சங்களுக்கான நிறம். Obsidian அதன் இயல்புநிலை உச்சரிப்பு நிறத்தில் இருக்கும்போது மட்டுமே Journalit உச்சரிப்பு நிறம் பயன்படுத்தப்படும்; Obsidian தோற்ற அமைப்புகளில் நீங்கள் தேர்ந்தெடுக்கும் நிறம் அல்லது தீம் எப்போதும் முன்னுரிமை பெறும்.',
   'settings.general.accent-color-journalit':
     'Journalit உச்சரிப்பு நிறம் (இயல்புநிலை)',
-  'settings.general.accent-color-obsidian':
-    'Obsidian உச்சரிப்பு நிறத்தைப் பின்பற்று',
+  'settings.general.accent-color-obsidian': 'Obsidian உச்சரிப்பு நிறத்தைப் பின்பற்று',
   'settings.general.home-view-settings': 'முகப்புக் காட்சி அமைப்புகள்',
   'settings.general.home-auto-open': 'முகப்புக் காட்சி தானாகத் திற',
   'settings.general.home-auto-open-desc':
     'முகப்புக் காட்சியைத் தானாக எப்போது திறக்க வேண்டும் என்பதைத் தேர்வுசெய்யவும்',
-  'settings.general.home-auto-open-always':
-    'எப்போதும் திற + கவனம் (இயல்புநிலை)',
-  'settings.general.home-auto-open-ifnone':
-    'செயலில் கோப்பு இல்லை என்றால் மட்டுமே',
-  'settings.general.home-auto-open-never':
-    'ஒருபோதும் வேண்டாம் (கைமுறை மட்டும்)',
-  'settings.general.home-auto-open-aria':
-    'முகப்பு தொடக்க நடத்தையைத் தேர்ந்தெடுக்கவும்',
+  'settings.general.home-auto-open-always': 'எப்போதும் திற + கவனம் (இயல்புநிலை)',
+  'settings.general.home-auto-open-ifnone': 'செயலில் கோப்பு இல்லை என்றால் மட்டுமே',
+  'settings.general.home-auto-open-never': 'ஒருபோதும் வேண்டாம் (கைமுறை மட்டும்)',
+  'settings.general.home-auto-open-aria': 'முகப்பு தொடக்க நடத்தையைத் தேர்ந்தெடுக்கவும்',
   'settings.general.home-startup-changed':
     'Journalit தொடக்க நடத்தை இதற்கு மாற்றப்பட்டது: {behavior}',
   'settings.general.filter-recent':
@@ -3048,8 +2887,7 @@ const ta: Lang = {
   'settings.general.home-background': 'முகப்பு பின்னணி படம்',
   'settings.general.home-background-desc':
     'உங்கள் முகப்பு விட்ஜெட்டுகளுக்குப் பின்னால் காட்டப்பட்டுள்ளது.',
-  'settings.general.home-background-dashboard':
-    'டாஷ்போர்டில் பின்னணியைக் காட்டு',
+  'settings.general.home-background-dashboard': 'டாஷ்போர்டில் பின்னணியைக் காட்டு',
   'settings.general.home-background-dashboard-desc':
     'டாஷ்போர்டு பயன்முறையில் அதே பின்னணி படத்தைப் பயன்படுத்தவும்.',
   'settings.general.home-background-dashboard-aria':
@@ -3060,10 +2898,8 @@ const ta: Lang = {
 
   'settings.general.home-background-invalid-file':
     'ஆதரிக்கப்படும் படக் கோப்பைத் தேர்ந்தெடுக்கவும்.',
-  'settings.general.home-background-saved':
-    'முகப்பு பின்னணி படம் சேமிக்கப்பட்டது.',
-  'settings.general.home-background-cleared':
-    'முகப்பு பின்னணி படம் அழிக்கப்பட்டது.',
+  'settings.general.home-background-saved': 'முகப்பு பின்னணி படம் சேமிக்கப்பட்டது.',
+  'settings.general.home-background-cleared': 'முகப்பு பின்னணி படம் அழிக்கப்பட்டது.',
   'settings.general.home-background-save-failed':
     'முகப்புப் பின்புலப் படத்தைச் சேமிப்பதில் தோல்வி.',
   'settings.general.folder-section': 'கோப்புறை இருப்பிடம் & பட பாதைகள்',
@@ -3098,8 +2934,7 @@ const ta: Lang = {
   'settings.general.auto-open-trades': 'உருவாக்கப்பட்ட டிரேட்களைத் தானாகத் திற',
   'settings.general.auto-open-trades-desc':
     'டிரேட் குறிப்புகள் உருவாக்கப்பட்ட பிறகு, புதிய தாவலில் தானாகத் திறக்கவும்',
-  'settings.general.auto-open-trades-aria':
-    'தானாகத் திற உருவாக்கப்பட்ட டிரேட்கள்',
+  'settings.general.auto-open-trades-aria': 'தானாகத் திற உருவாக்கப்பட்ட டிரேட்கள்',
   'settings.general.auto-open-toggled':
     'உருவாக்கப்பட்ட டிரேட்களைத் தானாகத் திற {status}',
   'settings.general.date-format': 'தேதி வடிவம்',
@@ -3112,8 +2947,7 @@ const ta: Lang = {
   'settings.general.date-format-yymmdd': 'YY/MM/DD (23/12/31)',
   'settings.general.date-format-changed':
     'டிரேட் குறிப்பு தேதி வடிவம் {format} க்கு மாற்றப்பட்டது',
-  'settings.general.use-24-hour-time':
-    '24 மணிநேர நேர வடிவமைப்பைப் பயன்படுத்தவும்',
+  'settings.general.use-24-hour-time': '24 மணிநேர நேர வடிவமைப்பைப் பயன்படுத்தவும்',
   'settings.general.use-24-hour-time-desc':
     'காட்சி நேரங்கள் 12-மணிநேரம்/பிஎம் வடிவமைப்பிற்குப் பதிலாக (14:30) 24-மணிநேர வடிவமைப்பில் (பிற்பகல் 2:30)',
   'settings.general.use-24-hour-time-aria':
@@ -3132,8 +2966,7 @@ const ta: Lang = {
   'settings.general.week-start-desc':
     'உங்கள் டிரேட் வாரம் எந்த நாளில் தொடங்குகிறது என்பதைத் தேர்வுசெய்யவும். வாராந்திர மதிப்பாய்வுகள் மற்றும் அறிக்கைகளை பாதிக்கிறது.',
   'settings.general.week-start-aria': 'வார தொடக்க நாளைத் தேர்ந்தெடுக்கவும்',
-  'settings.general.week-start-changed':
-    'வார தொடக்க நாள் {day} ஆக மாற்றப்பட்டது',
+  'settings.general.week-start-changed': 'வார தொடக்க நாள் {day} ஆக மாற்றப்பட்டது',
   'settings.general.analytics-date-basis': 'பகுப்பாய்வு தேதி அடிப்படை',
   'settings.general.analytics-date-basis-desc':
     'ஊஞ்சல் வியாபாரிகளுக்கு சிறந்தது. பகுப்பாய்வுக்கான நுழைவு தேதி அல்லது இறுதி வெளியேறும் தேதியைப் பயன்படுத்துகிறது. வெளியேறும் தேதி பயன்முறையானது மூடப்பட்ட டிரேட்களை மட்டுமே கணக்கிடுகிறது மற்றும் நேரடி PnL டிரேட்களுக்கு வெளியேறும் தேதி தேவைப்படுகிறது.',
@@ -3143,14 +2976,11 @@ const ta: Lang = {
   'settings.general.analytics-date-basis-exit': 'வெளியேறும் தேதி',
   'settings.general.analytics-date-basis-changed':
     'பகுப்பாய்வு தேதி அடிப்படையில் {basis} க்கு மாற்றப்பட்டது',
-  'settings.general.dollar-value-input':
-    'Position அளவை டாலர் மதிப்பாக உள்ளிடவும்',
+  'settings.general.dollar-value-input': 'Position அளவை டாலர் மதிப்பாக உள்ளிடவும்',
   'settings.general.dollar-value-input-desc':
     'இயக்கப்பட்டால், அளவு (shares/Lots/contracts) என்பதற்குப் பதிலாக, ஒரு டாலர் தொகையாக (எ.கா., $10,000) position அளவை உள்ளிடவும். விலையில் இருந்து அளவு தானாகவே கணக்கிடப்படும். பங்குகளுக்கு சிறப்பாகச் செயல்படும்; Futures/Forex கணக்கில் இல்லாத contract பெருக்கிகளைக் கொண்டுள்ளன.',
-  'settings.general.dollar-value-input-aria':
-    'நிலை அளவை டாலர் மதிப்பாக உள்ளிடவும்',
-  'settings.general.dollar-value-input-toggled':
-    'Position அளவு உள்ளீடு: {mode}',
+  'settings.general.dollar-value-input-aria': 'நிலை அளவை டாலர் மதிப்பாக உள்ளிடவும்',
+  'settings.general.dollar-value-input-toggled': 'Position அளவு உள்ளீடு: {mode}',
   'settings.general.dollar-value': 'டாலர் மதிப்பு',
   'settings.general.quantity': 'அளவு',
   'settings.general.mae-mfe-input-mode': 'MAE/MFE உள்ளீட்டு முறை',
@@ -3184,8 +3014,7 @@ const ta: Lang = {
   'settings.general.break-even-threshold-mode-desc':
     'நிலையான P&L வரம்பினால் Breakeven தீர்மானிக்கப்படுகிறதா அல்லது ஒவ்வொரு டிரேட் கணக்கின் தற்போதைய இருப்பின் சதவீதத்தால் தீர்மானிக்கப்படுகிறதா என்பதைத் தேர்வுசெய்யவும்.',
   'settings.general.break-even-mode-fixed': 'நிலையான தொகை வரம்பு',
-  'settings.general.break-even-mode-percent':
-    'நடப்புக் கணக்கு இருப்பின் சதவீதம்',
+  'settings.general.break-even-mode-percent': 'நடப்புக் கணக்கு இருப்பின் சதவீதம்',
   'settings.general.break-even-percent': 'Breakeven சதவீதம்',
   'settings.general.break-even-percent-desc':
     'பூஜ்ஜியத்தைச் சுற்றி சமச்சீர் வரம்பு (நடப்புக் கணக்கு இருப்பில் ±X%). தீர்க்கக்கூடிய கணக்கு இருப்பு இல்லாத டிரேட்கள் வெற்றி/தோல்வி புள்ளிவிவரங்களில் இருந்து விலக்கப்படும்.',
@@ -3211,8 +3040,7 @@ const ta: Lang = {
     'செருகுநிரல் முழுவதும் நாணயத் தொகைகளுக்குப் பதிலாக R-multiple மதிப்புகளைக் (ரிஸ்க்-டு-ரிவார்ட் விகிதங்கள்) காட்டு',
   'settings.general.display-r-multiples-aria':
     'டிரேட் காட்சிகளில் R-பன்மைகளைக் காட்டவும்',
-  'settings.general.display-r-multiples-toggled':
-    'R-மல்டிபிள்ஸ் காட்சி {status}',
+  'settings.general.display-r-multiples-toggled': 'R-மல்டிபிள்ஸ் காட்சி {status}',
   'settings.general.include-copy-accounts-analytics':
     'அனைத்து கணக்கு பகுப்பாய்வுகளிலும் நகல் கணக்குகளைச் சேர்க்கவும்',
   'settings.general.include-copy-accounts-analytics-desc':
@@ -3234,8 +3062,7 @@ const ta: Lang = {
   'settings.general.sync-notifications-desc':
     'ஒத்திசைவு செயல்பாடுகள் முடிந்ததும் அறிவிப்புகளைக் காட்டு',
   'settings.general.sync-notifications-aria': 'ஒத்திசைவு அறிவிப்புகளை இயக்கு',
-  'settings.general.sync-notifications-toggled':
-    'ஒத்திசைவு அறிவிப்புகள் {status}',
+  'settings.general.sync-notifications-toggled': 'ஒத்திசைவு அறிவிப்புகள் {status}',
   'settings.general.new-trade-notifications': 'புதிய டிரேட் அறிவிப்புகள்',
   'settings.general.new-trade-notifications-desc':
     'புதிய டிரேட் கோப்புகள் கண்டறியப்படும்போது அறிவிப்புகளைக் காட்டு',
@@ -3246,11 +3073,9 @@ const ta: Lang = {
   'settings.general.update-notifications': 'புதுப்பிப்பு அறிவிப்புகளைக் காட்டு',
   'settings.general.update-notifications-desc':
     'புதுப்பிப்பு நினைவூட்டல்களையும் புதுப்பித்த பிறகு புதிய அம்சங்களையும் காட்டு.',
-  'settings.general.update-notifications-aria':
-    'புதுப்பிப்பு அறிவிப்புகளைக் காட்டு',
+  'settings.general.update-notifications-aria': 'புதுப்பிப்பு அறிவிப்புகளைக் காட்டு',
   'settings.general.data-management': 'தரவு மேலாண்மை & தனியுரிமை',
-  'settings.general.backup-restore-section':
-    'காப்புப்பிரதி, மீட்டெடு & மீட்டமை',
+  'settings.general.backup-restore-section': 'காப்புப்பிரதி, மீட்டெடு & மீட்டமை',
   'settings.general.export-settings': 'ஏற்றுமதி அமைப்புகள்',
   'settings.general.export-settings-desc':
     'காப்புப்பிரதிக்கான அனைத்து செருகுநிரல் அமைப்புகளையும் JSON கோப்பாகப் பதிவிறக்கவும் அல்லது மற்றொரு vault க்கு மாற்றவும்',
@@ -3272,8 +3097,7 @@ const ta: Lang = {
     'Journalit செருகுநிரலின் விருப்பங்கள், தோற்றம் மற்றும் நடத்தை ஆகியவற்றைத் தனிப்பயனாக்குங்கள்.',
   'settings.customization.trade-form-layout.description':
     'டிரேட் படிவத்தில் எந்த புலங்கள் மற்றும் பிரிவுகள் தோன்றும் என்பதைத் தேர்ந்தெடுக்கவும்.',
-  'settings.customization.trade-form-layout.button':
-    'தளவமைப்பைத் தனிப்பயனாக்கு',
+  'settings.customization.trade-form-layout.button': 'தளவமைப்பைத் தனிப்பயனாக்கு',
   'settings.customization.tickers-symbols': 'டிக்கர்கள்/சின்னங்கள்',
   'settings.customization.symbol-mappings': 'சின்ன மேப்பிங்ஸ்',
 
@@ -3284,13 +3108,11 @@ const ta: Lang = {
 
   'settings.customization.options.confirm.update-notes':
     'சரி (புதுப்பிப்பு குறிப்புகள்)',
-  'settings.customization.options.confirm.save-name':
-    'பெயரை மட்டும் சேமிக்கவும்',
+  'settings.customization.options.confirm.save-name': 'பெயரை மட்டும் சேமிக்கவும்',
   'settings.customization.options.confirm.cancel': 'செயலை ரத்துசெய்',
   'settings.customization.options.type.tickers': 'டிக்கர்ஸ்',
   'settings.customization.options.type.accounts': 'கணக்குகள்',
   'settings.customization.options.type.account-types': 'கணக்கு வகைகள்',
-  'settings.customization.options.type.setups': 'Setups',
   'settings.customization.options.type.mistakes': 'தவறுகள்',
   'settings.customization.options.type.tags': 'குறிச்சொற்கள்',
   'settings.customization.options.type.events': 'நிகழ்வுகள்',
@@ -3341,14 +3163,10 @@ const ta: Lang = {
     'மேப்பிங்கை நீக்க முடியவில்லை',
   'settings.customization.options.empty-state':
     'தனிப்பயன் {type} எதுவும் இதுவரை சேர்க்கப்படவில்லை.',
-  'settings.customization.options.label.save-changes':
-    'மாற்றங்களைச் சேமிக்கவும்',
-  'settings.customization.options.label.cancel-editing':
-    'திருத்துவதை ரத்துசெய்',
+  'settings.customization.options.label.save-changes': 'மாற்றங்களைச் சேமிக்கவும்',
+  'settings.customization.options.label.cancel-editing': 'திருத்துவதை ரத்துசெய்',
   'settings.customization.options.label.edit-option': 'திருத்து {option}',
   'settings.customization.options.label.remove-option': 'அகற்று {option}',
-  'settings.customization.options.placeholder.select-asset':
-    'சொத்து வகையைத் தேர்ந்தெடுக்கவும்...',
   'settings.customization.options.field.pip-size': 'பிப் அளவு',
   'settings.customization.options.field.priority': 'முன்னுரிமை:',
   'settings.customization.options.field.default-event-notes':
@@ -3358,12 +3176,9 @@ const ta: Lang = {
   'settings.customization.options.aria.confirm-add':
     'சேர்ப்பதை உறுதிப்படுத்தவும் {type}',
   'settings.customization.options.label.locked': 'பூட்டப்பட்டது',
-  'settings.customization.options.label.archived-reserved':
-    'காப்பகப்படுத்தப்பட்டது (ஒதுக்கப்பட்டது)',
   'settings.customization.options.aria.reset-all':
     'தனிப்பயன் {type} அனைத்தையும் அகற்று',
-  'settings.customization.options.button.reset-all':
-    'அனைத்தையும் மீட்டமை {type}',
+  'settings.customization.options.button.reset-all': 'அனைத்தையும் மீட்டமை {type}',
   'settings.customization.options.placeholder.new-name': 'புதிய {type} பெயர்',
   'settings.customization.options.placeholder.dollar-per-point': '$/புள்ளி',
   'settings.customization.options.placeholder.tick-size': 'டிக் அளவு',
@@ -3374,19 +3189,16 @@ const ta: Lang = {
   'settings.customization.options.field.optional': '(விரும்பினால்)',
   'settings.customization.options.mapping.description':
     'தானியங்கு spec தேடலுக்கு contract-specific சின்னங்களை (எ.கா., NQZ5) அடிப்படை சின்னங்களுக்கு (எ.கா., NQ) மேப் செய்யும்',
-  'settings.customization.options.mapping.auto-detected':
-    'தானாக கண்டறியப்பட்டது',
-  'settings.customization.options.mapping.manual': 'Manual',
-  'settings.customization.options.mapping.created-at':
-    'உருவாக்கப்பட்டது {date}',
+  'settings.customization.options.mapping.auto-detected': 'தானாக கண்டறியப்பட்டது',
+  'settings.customization.options.mapping.manual': 'கைமுறை',
+  'settings.customization.options.mapping.created-at': 'உருவாக்கப்பட்டது {date}',
   'settings.customization.options.mapping.no-mappings':
     'இதுவரை குறியீடு மேப்பிங் இல்லை. ஒப்பந்த சின்னங்கள் கண்டறியப்படும்போது CSV இறக்குமதியின் போது மேப்பிங் தானாகவே உருவாக்கப்படும்.',
   'settings.customization.options.mapping.placeholder-imported':
     'இறக்குமதி செய்யப்பட்ட சின்னம் (எ.கா., NQZ5)',
   'settings.customization.options.mapping.placeholder-base':
     'அடிப்படை சின்னம் (எ.கா., NQ)',
-  'settings.customization.options.mapping.button-add':
-    'மேப்பிங்கைச் சேர்க்கவும்',
+  'settings.customization.options.mapping.button-add': 'மேப்பிங்கைச் சேர்க்கவும்',
   'settings.customization.options.placeholder.add-new': 'புதிய {type} சேர்',
   'settings.customization.options.aria.delete-mapping': 'மேப்பிங்கை நீக்கு',
   'settings.customization.options.instrument.specs-futures':
@@ -3406,12 +3218,9 @@ const ta: Lang = {
   'settings.customization.options.commission.entry': 'நுழைவு',
   'settings.customization.options.commission.exit': 'வெளியேற்றம்',
   'settings.customization.options.commission.round-trip': 'சுற்று பயணம்',
-  'settings.customization.options.commission.actions': 'செயல்கள்',
-  'settings.customization.options.commission.all-accounts':
-    'அனைத்து கணக்குகளும்',
+  'settings.customization.options.commission.all-accounts': 'அனைத்து கணக்குகளும்',
   'settings.customization.options.commission.per-side': 'ஒவ்வொரு பக்கமும்',
-  'settings.customization.options.commission.remove-rule':
-    'செலவு விதியை அகற்று',
+  'settings.customization.options.commission.remove-rule': 'செலவு விதியை அகற்று',
 
   'button.remove': 'அகற்று',
 
@@ -3428,10 +3237,8 @@ const ta: Lang = {
   'settings.customization.custom-fields.type-multiselect': 'பல தேர்வு',
   'settings.customization.custom-fields.type-suffix': 'புலம்',
   'settings.customization.custom-fields.option-count.one': '{count} விருப்பம்',
-  'settings.customization.custom-fields.option-count.few':
-    '{count} விருப்பங்கள்',
-  'settings.customization.custom-fields.option-count.many':
-    '{count} விருப்பங்கள்',
+  'settings.customization.custom-fields.option-count.few': '{count} விருப்பங்கள்',
+  'settings.customization.custom-fields.option-count.many': '{count} விருப்பங்கள்',
   'settings.customization.custom-fields.option-count.other':
     '{count} விருப்பங்கள்',
   'settings.customization.custom-fields.no-fields':
@@ -3447,8 +3254,7 @@ const ta: Lang = {
   'settings.customization.custom-fields.actions': 'செயல்கள்',
   'settings.customization.custom-fields.actions-desc':
     'உங்கள் தனிப்பயன் புலங்களை நிர்வகிக்கவும்',
-  'settings.customization.custom-fields.add-button':
-    'தனிப்பயன் புலத்தைச் சேர்க்கவும்',
+  'settings.customization.custom-fields.add-button': 'தனிப்பயன் புலத்தைச் சேர்க்கவும்',
   'settings.customization.custom-fields.delete-all-button':
     'அனைத்து புலங்களையும் நீக்கு',
   'settings.customization.custom-fields.editor.title': 'புல கட்டமைப்பு',
@@ -3464,8 +3270,7 @@ const ta: Lang = {
   'settings.customization.custom-fields.editor.key-reserved':
     '⚠️ ஒதுக்கப்பட்ட புலத்தின் பெயர்',
   'settings.customization.custom-fields.editor.type': 'புல வகை',
-  'settings.customization.custom-fields.editor.type-desc':
-    'உள்ளீட்டு புலத்தின் வகை',
+  'settings.customization.custom-fields.editor.type-desc': 'உள்ளீட்டு புலத்தின் வகை',
   'settings.customization.custom-fields.editor.placeholder': 'ஒதுக்கிட உரை',
   'settings.customization.custom-fields.editor.placeholder-desc':
     'காலியான புலத்தில் காட்டப்படும் விருப்ப ஒதுக்கிட உரை',
@@ -3492,8 +3297,7 @@ const ta: Lang = {
     'முடக்கப்பட்டது',
   'settings.customization.custom-fields.editor.dropdown-sort.alphabetical':
     'அகரவரிசைப்படி',
-  'settings.customization.custom-fields.editor.dropdown-sort.numeric':
-    'எண்ணியல்',
+  'settings.customization.custom-fields.editor.dropdown-sort.numeric': 'எண்ணியல்',
   'settings.customization.custom-fields.editor.dropdown-sort.option-order':
     'கட்டமைக்கப்பட்ட விருப்ப வரிசை',
   'settings.customization.custom-fields.editor.multiselect-collapsed-display':
@@ -3563,6 +3367,99 @@ const ta: Lang = {
     '"{fieldLabel}" என்ற தனிப்பயன் புலத்தை நிச்சயமாக நீக்க விரும்புகிறீர்களா?',
   'settings.customization.custom-fields.delete.cannot-undo':
     'இந்தச் செயலைச் செயல்தவிர்க்க முடியாது.',
+  'settings.customization.custom-fields.convert.action':
+    '{fieldLabel} ஐ மதிப்பீடாக மாற்று',
+  'settings.customization.custom-fields.convert.title':
+    '{fieldLabel} ஐ மதிப்பீடாக மாற்று',
+  'settings.customization.custom-fields.convert.editor-name': 'உள்ளமைந்த மதிப்பீடு',
+  'settings.customization.custom-fields.convert.editor-desc':
+    'Journalit-இல் ஒவ்வொரு வர்த்தகத்துக்கும் நட்சத்திர மதிப்பீடு உள்ளது. ஒவ்வொரு வர்த்தகத்தின் {fieldLabel} மதிப்பையும் அதற்கு மாற்றவும்.',
+  'settings.customization.custom-fields.convert.intro':
+    'ஒவ்வொரு வர்த்தகத்தின் {fieldLabel} மதிப்பும் அதன் நட்சத்திர மதிப்பீடாக மாறும். புலத்தை நீக்கும் வரை உங்கள் {fieldLabel} மதிப்புகள் இருக்கும்.',
+  'settings.customization.custom-fields.convert.empty':
+    'எந்த வர்த்தகத்திலும் {fieldLabel} மதிப்பு இல்லை.',
+  'settings.customization.custom-fields.convert.scale-label':
+    '{fieldLabel} அளவுகோல்',
+  'settings.customization.custom-fields.convert.scale-out-of': '{max} இல்',
+  'settings.customization.custom-fields.convert.scale-custom': 'தனிப்பயன்',
+  'settings.customization.custom-fields.convert.scale-custom-max':
+    'அதிகபட்ச மதிப்பு',
+  'settings.customization.custom-fields.convert.table':
+    '{fieldLabel} மதிப்புகளும் அவற்றின் மதிப்பீடுகளும்',
+  'settings.customization.custom-fields.convert.col-trades': 'வர்த்தகங்கள்',
+  'settings.customization.custom-fields.convert.value-rating':
+    '{value} க்கான மதிப்பீடு',
+  'settings.customization.custom-fields.convert.skip': 'மாற்றப்படாது',
+  'settings.customization.custom-fields.convert.unreadable.one':
+    '{count} வர்த்தகத்தின் மதிப்பை மதிப்பீடாகப் படிக்க முடியாது, அது மாற்றப்படாது.',
+  'settings.customization.custom-fields.convert.unreadable.other':
+    '{count} வர்த்தகங்களின் மதிப்பை மதிப்பீடாகப் படிக்க முடியாது, அவை மாற்றப்படாது.',
+  'settings.customization.custom-fields.convert.conflict.one':
+    '{count} வர்த்தகத்துக்கு ஏற்கனவே வேறு மதிப்பீடு உள்ளது',
+  'settings.customization.custom-fields.convert.conflict.other':
+    '{count} வர்த்தகங்களுக்கு ஏற்கனவே வேறு மதிப்பீடு உள்ளது',
+  'settings.customization.custom-fields.convert.conflict-keep':
+    'அவற்றின் மதிப்பீட்டை வைத்திரு',
+  'settings.customization.custom-fields.convert.conflict-overwrite':
+    '{fieldLabel} ஐப் பயன்படுத்து',
+  'settings.customization.custom-fields.convert.summary-rate.one':
+    '{count} வர்த்தகத்தை மதிப்பிடும்',
+  'settings.customization.custom-fields.convert.summary-rate.other':
+    '{count} வர்த்தகங்களை மதிப்பிடும்',
+  'settings.customization.custom-fields.convert.summary-done.one':
+    '{count} ஏற்கனவே மாற்றப்பட்டது',
+  'settings.customization.custom-fields.convert.summary-done.other':
+    '{count} ஏற்கனவே மாற்றப்பட்டன',
+  'settings.customization.custom-fields.convert.summary-skip.one':
+    '{count} மாற்றப்படாது',
+  'settings.customization.custom-fields.convert.summary-skip.other':
+    '{count} மாற்றப்படாது',
+  'settings.customization.custom-fields.convert.submit.one':
+    '{count} வர்த்தகத்தை மதிப்பிடு',
+  'settings.customization.custom-fields.convert.submit.other':
+    '{count} வர்த்தகங்களை மதிப்பிடு',
+  'settings.customization.custom-fields.convert.continue': 'தொடர்',
+  'settings.customization.custom-fields.convert.progress':
+    'வர்த்தகங்கள் மதிப்பிடப்படுகின்றன: {total} இல் {done}',
+  'settings.customization.custom-fields.convert.done.one':
+    '{count} வர்த்தகம் மதிப்பிடப்பட்டது.',
+  'settings.customization.custom-fields.convert.done.other':
+    '{count} வர்த்தகங்கள் மதிப்பிடப்பட்டன.',
+  'settings.customization.custom-fields.convert.changed.one':
+    'இந்த உரையாடலைத் திறந்த பின் {count} வர்த்தகம் மாறியதால் அது தொடப்படவில்லை. அதைச் சேர்க்க மீண்டும் திறக்கவும்.',
+  'settings.customization.custom-fields.convert.changed.other':
+    'இந்த உரையாடலைத் திறந்த பின் {count} வர்த்தகங்கள் மாறியதால் அவை தொடப்படவில்லை. அவற்றைச் சேர்க்க மீண்டும் திறக்கவும்.',
+  'settings.customization.custom-fields.convert.failed.one':
+    '{count} வர்த்தகத்தைப் புதுப்பிக்க முடியவில்லை:',
+  'settings.customization.custom-fields.convert.failed.other':
+    '{count} வர்த்தகங்களைப் புதுப்பிக்க முடியவில்லை:',
+  'settings.customization.custom-fields.convert.remove-title':
+    '{fieldLabel} ஐ நீக்கவா?',
+  'settings.customization.custom-fields.convert.remove-desc.one':
+    'மதிப்பீட்டில் இப்போது அந்த மதிப்பு உள்ள {count} வர்த்தகத்திலிருந்து {fieldLabel} ஐ அழித்து, பின் புலத்தை நீக்கும்.',
+  'settings.customization.custom-fields.convert.remove-desc.other':
+    'மதிப்பீட்டில் இப்போது அந்த மதிப்பு உள்ள {count} வர்த்தகங்களிலிருந்து {fieldLabel} ஐ அழித்து, பின் புலத்தை நீக்கும்.',
+  'settings.customization.custom-fields.convert.remove-keeps.one':
+    '{count} வர்த்தகம் மாற்றப்படாததால் அதன் {fieldLabel} மதிப்பை வைத்திருக்கும்.',
+  'settings.customization.custom-fields.convert.remove-keeps.other':
+    '{count} வர்த்தகங்கள் மாற்றப்படாததால் அவற்றின் {fieldLabel} மதிப்பை வைத்திருக்கும்.',
+  'settings.customization.custom-fields.convert.remove-confirm.one':
+    '{count} வர்த்தகத்திலிருந்து {fieldLabel} ஐ அழித்து புலத்தை நீக்கவா?',
+  'settings.customization.custom-fields.convert.remove-confirm.other':
+    '{count} வர்த்தகங்களிலிருந்து {fieldLabel} ஐ அழித்து புலத்தை நீக்கவா?',
+  'settings.customization.custom-fields.convert.remove-views':
+    '{fieldLabel} ஐப் பயன்படுத்தும் வர்த்தகப் பதிவு நெடுவரிசைகள், வடிகட்டிகள் மற்றும் தளவமைப்புத் தொகுதிகள் அதைக் காட்டாது.',
+  'settings.customization.custom-fields.convert.remove': '{fieldLabel} ஐ நீக்கு',
+  'settings.customization.custom-fields.convert.remove-progress':
+    '{fieldLabel} நீக்கப்படுகிறது: {total} இல் {done}',
+  'settings.customization.custom-fields.convert.removed':
+    '{fieldLabel} நீக்கப்பட்டது. உங்கள் மதிப்பீடுகள் வைக்கப்பட்டுள்ளன.',
+  'settings.customization.custom-fields.convert.remove-incomplete':
+    'சில வர்த்தகங்கள் புதுப்பிக்கப்படாததால் {fieldLabel} வைக்கப்பட்டது. நீக்குவதை முடிக்க மீண்டும் திறக்கவும்.',
+  'settings.customization.custom-fields.convert.remove-field-failed':
+    '{fieldLabel} ஒவ்வொரு வர்த்தகத்திலிருந்தும் நீக்கப்பட்டது, ஆனால் புலத்தை நீக்க முடியவில்லை. தனிப்பயன் வர்த்தகப் புலங்களில் அதை நீக்கவும்.',
+  'settings.customization.custom-fields.convert.field-changed':
+    '{fieldLabel} வேறு இடத்தில் மாற்றப்பட்டது அல்லது நீக்கப்பட்டது, எனவே மீதமுள்ள டிரேடுகள் புதுப்பிக்கப்படவில்லை. தொடர இதை மீண்டும் திறக்கவும்.',
   'settings.customization.custom-fields.reset.confirm-message':
     'அனைத்து தனிப்பயன் புலங்களையும் நிச்சயமாக நீக்க விரும்புகிறீர்களா?',
   'settings.customization.custom-fields.saved-options.title':
@@ -3580,8 +3477,7 @@ const ta: Lang = {
   'settings.customization.review-fields': 'தனிப்பயன் மதிப்பாய்வு புலங்கள்',
   'settings.customization.review-fields.description':
     'மதிப்பாய்வு குறிப்புகளுக்கு தனிப்பயன் புலங்களை உருவாக்கவும். இந்த புலங்கள் மதிப்பாய்வு கஸ்டம்ஃபீல்டுகளின் கீழ் சேமிக்கப்பட்டு, பின்னர் மாதாந்திர, வாராந்திர மற்றும் தினசரி மதிப்பாய்வுகள் முழுவதும் பெறப்படும்.',
-  'settings.customization.review-fields.title':
-    'மதிப்பாய்வு புலங்கள் ({count})',
+  'settings.customization.review-fields.title': 'மதிப்பாய்வு புலங்கள் ({count})',
   'settings.customization.review-fields.manage-desc':
     'மதிப்பாய்வு குறிப்புகளுக்கு தனிப்பயன் புலங்களை நிர்வகிக்கவும்',
   'settings.customization.review-fields.no-fields':
@@ -3600,8 +3496,7 @@ const ta: Lang = {
     'உங்கள் மதிப்பாய்வு புல அமைப்புகளை கீழே உள்ளமைக்கவும்',
   'settings.customization.review-fields.actions-desc':
     'உங்கள் தனிப்பயன் மதிப்பாய்வு புலங்களை நிர்வகிக்கவும்',
-  'settings.customization.review-fields.default-label':
-    'புதிய மதிப்பாய்வுப் புலம்',
+  'settings.customization.review-fields.default-label': 'புதிய மதிப்பாய்வுப் புலம்',
   'settings.customization.review-fields.unknown-field':
     'அறியப்படாத மதிப்பாய்வு புலம்',
   'settings.customization.review-fields.field-summary':
@@ -3618,8 +3513,7 @@ const ta: Lang = {
     'இந்த மதிப்பாய்வு புலத்திற்கான காட்சி பெயர்',
   'settings.customization.review-fields.editor.label-placeholder':
     'மதிப்பாய்வு புல லேபிளை உள்ளிடவும்',
-  'settings.customization.review-fields.editor.key':
-    'மதிப்பாய்வு புலத் திறவுகோல்',
+  'settings.customization.review-fields.editor.key': 'மதிப்பாய்வு புலத் திறவுகோல்',
   'settings.customization.review-fields.editor.key-desc':
     'இந்த விசை மதிப்பாய்வு குறிப்பில் frontmatter இல் சேமிக்கப்படும்',
   'settings.customization.review-fields.editor.type-desc':
@@ -3637,8 +3531,7 @@ const ta: Lang = {
   'settings.customization.review-fields.editor.group': 'களக் குழு',
   'settings.customization.review-fields.editor.group-desc':
     'இந்த புலம் சார்ந்த மதிப்பாய்வு புலக் குழுவைத் தேர்ந்தெடுக்கவும்.',
-  'settings.customization.review-fields.groups.add-button':
-    'குழுவைச் சேர்க்கவும்',
+  'settings.customization.review-fields.groups.add-button': 'குழுவைச் சேர்க்கவும்',
   'settings.customization.review-fields.groups.default-name': 'புதிய குழு',
   'settings.customization.review-fields.groups.untitled': 'பெயரிடப்படாத குழு',
   'settings.customization.review-fields.groups.ungrouped': 'குழுவாக்கப்படாதது',
@@ -3670,8 +3563,7 @@ const ta: Lang = {
   'settings.customization.review-fields.editor.inheritance': 'பரம்பரையை இயக்கு',
   'settings.customization.review-fields.editor.inheritance-desc':
     'இந்த புலத்தை அதிக நேர மதிப்பாய்வு குறிப்புகளில் இருந்து படிக்க அனுமதிக்கவும்',
-  'settings.customization.review-fields.editor.inheritance-mode':
-    'பரம்பரை முறை',
+  'settings.customization.review-fields.editor.inheritance-mode': 'பரம்பரை முறை',
   'settings.customization.review-fields.editor.inheritance-mode-desc':
     'child மதிப்பாய்வுகள் inherited மதிப்புகள், உள்ளூர் மதிப்புகள் அல்லது இரண்டையும் காட்டுகின்றனவா என்பதைக் கட்டுப்படுத்துகிறது',
   'settings.customization.review-fields.editor.sources': 'பரம்பரை ஆதாரங்கள்',
@@ -3684,8 +3576,7 @@ const ta: Lang = {
     'மதிப்பாய்வுக் குறிப்புகளில் இந்தப் புலத்தைப் பயன்படுத்தும் போது பயனர்கள் புதிய விருப்பங்களை உருவாக்கலாம்',
   'settings.customization.review-fields.editor.save':
     'மதிப்பாய்வு புலத்தை சேமிக்கவும்',
-  'settings.customization.review-fields.editor.delete':
-    'மதிப்பாய்வு புலத்தை நீக்கு',
+  'settings.customization.review-fields.editor.delete': 'மதிப்பாய்வு புலத்தை நீக்கு',
   'settings.customization.review-fields.inheritance-mode.inherit-only':
     'பரம்பரை மட்டுமே',
   'settings.customization.review-fields.inheritance-mode.local-only':
@@ -3693,8 +3584,7 @@ const ta: Lang = {
   'settings.customization.review-fields.inheritance-mode.inherit-and-local':
     'பரம்பரை மற்றும் உள்ளூர்',
   'onboarding.welcome.title': 'Journalitக்கு வரவேற்கிறோம்',
-  'onboarding.welcome.subtitle':
-    'உங்கள் சாதனத்திலேயே இருக்கும் வர்த்தக ஜர்னல்.',
+  'onboarding.welcome.subtitle': 'உங்கள் சாதனத்திலேயே இருக்கும் வர்த்தக ஜர்னல்.',
   'onboarding.welcome.cta': 'என் ஜர்னலை அமைக்கவும்',
   'onboarding.welcome.chart.week': 'வாரம் {count}',
   'onboarding.view.title': 'Journalit ஆன்போர்டிங்',
@@ -3708,8 +3598,8 @@ const ta: Lang = {
   'onboarding.features.graphic.complete': 'ஒத்திசைவு முடிந்தது',
   'onboarding.features.graphic.direction.long': 'LONG',
   'onboarding.features.graphic.direction.short': 'SHORT',
-  'onboarding.features.graphic.status.win': 'WIN',
-  'onboarding.features.graphic.status.loss': 'LOSS',
+  'onboarding.features.graphic.status.win': 'வெற்றி',
+  'onboarding.features.graphic.status.loss': 'இழப்பு',
   'onboarding.activation.title': 'Journalit இல் உள்நுழைக',
 
   'onboarding.activation.status.initializing':
@@ -3722,8 +3612,7 @@ const ta: Lang = {
     'உள்நுழைவு மறுக்கப்பட்டது. அமைப்புகளில் நீங்கள் பின்னர் உள்நுழையலாம்.',
   'onboarding.activation.error.expired':
     'அங்கீகாரக் குறியீடு காலாவதியானது. உள்நுழைவு செயல்முறையை மீண்டும் தொடங்கவும்.',
-  'onboarding.activation.error.generic':
-    'ஏதோ தவறாகிவிட்டது. மீண்டும் முயற்சிக்கவும்.',
+  'onboarding.activation.error.generic': 'ஏதோ தவறாகிவிட்டது. மீண்டும் முயற்சிக்கவும்.',
   'onboarding.activation.error.save':
     'உள்நுழைவு வெற்றியடைந்தது ஆனால் சேமிக்க முடியவில்லை. செருகுநிரலை மறுதொடக்கம் செய்து மீண்டும் முயற்சிக்கவும்.',
   'onboarding.activation.error.connection':
@@ -3741,8 +3630,7 @@ const ta: Lang = {
   'onboarding.activation.button.copied': 'நகலெடுக்கப்பட்டது!',
   'onboarding.activation.step.open-browser':
     'உங்கள் உலாவியைத் திறக்க கீழே கிளிக் செய்யவும்',
-  'onboarding.activation.step.enter-code':
-    'உங்கள் அங்கீகாரக் குறியீட்டை உள்ளிடவும்',
+  'onboarding.activation.step.enter-code': 'உங்கள் அங்கீகாரக் குறியீட்டை உள்ளிடவும்',
   'onboarding.activation.step.complete-signin': 'உள்நுழைவை முடிக்கவும்',
   'onboarding.activation.step.return-here': 'தானாக முடிக்க இங்கு திரும்பவும்',
   'onboarding.activation.button.open-browser': 'உள்நுழைய உலாவியைத் திறக்கவும்',
@@ -3753,11 +3641,9 @@ const ta: Lang = {
 
   'onboarding.notice.complete-failed':
     'ஆன்போர்டிங் நிறைவைச் சேமிக்க முடியவில்லை. பிறகு முயற்சிக்கவும்.',
-  'onboarding.notice.completed':
-    'உங்கள் ஜர்னல் தயாராக உள்ளது. ஆன்போர்டிங் நிறைவடைந்தது.',
+  'onboarding.notice.completed': 'உங்கள் ஜர்னல் தயாராக உள்ளது. ஆன்போர்டிங் நிறைவடைந்தது.',
   'onboarding.familiarity.kicker': 'ஒரு சிறிய கேள்வி',
-  'onboarding.familiarity.title':
-    'இதற்கு முன் Obsidian பயன்படுத்தியிருக்கிறீர்களா?',
+  'onboarding.familiarity.title': 'இதற்கு முன் Obsidian பயன்படுத்தியிருக்கிறீர்களா?',
   'onboarding.familiarity.subtitle':
     'Journalit Obsidian-க்குள் இயங்குகிறது. இது உங்களுக்குப் புதிதென்றால், தேவையானதை மட்டும் காட்டுவோம்.',
   'onboarding.familiarity.option.yes.label': 'ஆம், எனக்குத் தெரியும்',
@@ -3768,14 +3654,12 @@ const ta: Lang = {
   'onboarding.orientation.kicker': 'Obsidian-க்குப் புதியவர்',
   'onboarding.orientation.title': 'தெரிந்துகொள்ள வேண்டிய நான்கு விஷயங்கள்',
   'onboarding.orientation.subtitle': 'Journalit பயன்படுத்த இது மட்டுமே போதும்.',
-  'onboarding.orientation.inside.title':
-    'Journalit Obsidian-க்குள் இயங்குகிறது',
+  'onboarding.orientation.inside.title': 'Journalit Obsidian-க்குள் இயங்குகிறது',
   'onboarding.orientation.inside.body':
     'முதலில் Obsidian கற்க வேண்டியதில்லை. இந்தத் திரை ஒரு Journalit காட்சி.',
-  'onboarding.orientation.sidebar.title':
-    'பக்கப்பட்டி தான் உங்கள் வழிசெலுத்தல்',
+  'onboarding.orientation.sidebar.title': 'பக்கப்பட்டி தான் உங்கள் வழிசெலுத்தல்',
   'onboarding.orientation.sidebar.body':
-    'முகப்பு, டாஷ்போர்டு, வர்த்தகப் பதிவு, மதிப்பாய்வுகள் அனைத்தும் அங்கே உள்ளன.',
+    'முகப்பு, டாஷ்போர்டு, டிரேட் பதிவு மற்றும் உங்கள் மதிப்பாய்வுகள் அனைத்தும் அங்கே உள்ளன.',
   'onboarding.orientation.sidebar.action': 'பக்கப்பட்டியைக் காட்டு',
   'onboarding.orientation.sidebar.action-mobile': 'பக்கப்பட்டியைத் திற',
   'onboarding.orientation.sidebar.hint':
@@ -3783,17 +3667,15 @@ const ta: Lang = {
   'onboarding.orientation.sidebar.hint-mobile':
     'இது இந்தத் திரையின் மேல் திறக்கும். திரும்ப, ஸ்வைப் செய்யவும் அல்லது வெளியே தட்டவும்.',
   'onboarding.orientation.tabs.title': 'காட்சிகள் தாவல்களாகத் திறக்கும்',
-  'onboarding.orientation.tabs.body':
-    'இதைப் போலவே. மேலே அவற்றுக்கிடையே மாறவும்.',
-  'onboarding.orientation.privacy.title':
-    'உங்கள் ஜர்னல் உங்கள் சாதனத்திலேயே இருக்கும்',
+  'onboarding.orientation.tabs.body': 'இதைப் போலவே. மேலே அவற்றுக்கிடையே மாறவும்.',
+  'onboarding.orientation.privacy.title': 'உங்கள் ஜர்னல் உங்கள் சாதனத்திலேயே இருக்கும்',
   'onboarding.orientation.privacy.body':
-    'குறிப்புகள், ஸ்கிரீன்ஷாட்கள், மதிப்பாய்வுகள் உங்கள் சொந்தக் கோப்புகள். இறக்குமதி அல்லது ஒத்திசைக்கும் வர்த்தகங்கள் மட்டுமே Journalit சேவையகங்கள் வழியாகச் செல்லும்.',
+    'குறிப்புகள், ஸ்கிரீன்ஷாட்கள் மற்றும் மதிப்பாய்வுகள் உங்கள் சொந்தக் கோப்புகள். நீங்கள் இறக்குமதி அல்லது ஒத்திசைக்கும் டிரேட்கள் மட்டுமே Journalit சேவையகங்கள் வழியாகச் செல்லும்.',
   'onboarding.orientation.continue': 'புரிந்தது',
   'onboarding.data-source.kicker': 'உங்கள் வர்த்தகங்கள்',
   'onboarding.data-source.title': 'உங்கள் வர்த்தகங்கள் இப்போது எங்கே உள்ளன?',
   'onboarding.data-source.subtitle':
-    'உங்கள் வரலாறு உங்கள் அனுகூலத்தின் ஒரு பகுதி. அதைக் கொண்டு வாருங்கள்; புதிய வர்த்தகங்கள் சேர மாதங்கள் காத்திருக்காமல் முதல் நாளிலிருந்தே புள்ளிவிவரங்கள் அர்த்தமுள்ளதாக இருக்கும்.',
+    'உங்கள் வரலாறு உங்கள் Edge-இன் ஒரு பகுதி. அதைக் கொண்டு வாருங்கள்; புதிய டிரேட்கள் சேர மாதக்கணக்கில் காத்திருக்காமல், முதல் நாளிலிருந்தே உங்கள் புள்ளிவிவரங்கள் அர்த்தமுள்ளதாக இருக்கும்.',
   'onboarding.data-source.option.broker.label': 'என் புரோக்கர் அல்லது தளத்தில்',
   'onboarding.data-source.option.broker.description':
     'அதை இணைக்கவும், அல்லது அதன் ஏற்றுமதியை இறக்குமதி செய்யவும்.',
@@ -3826,22 +3708,19 @@ const ta: Lang = {
     'புதிய ப்ரோக்கர்கள் கோரிக்கையின் பேரில் சேர்க்கப்படுகின்றன. எது என்று சொல்லுங்கள் (ஏற்றுமதி மாதிரி உதவும்); அதுவரை கோப்பு ஏற்றுமதியை கையால் வரைபடமாக்கலாம்.',
   'onboarding.broker.request.discord': 'Discord இல் கோருங்கள்',
   'onboarding.broker.request.continue': 'கைமுறை இறக்குமதியுடன் தொடரவும்',
-  'onboarding.broker.loading':
-    'ஆதரிக்கப்படும் புரோக்கர்கள் சரிபார்க்கப்படுகின்றன...',
+  'onboarding.broker.loading': 'ஆதரிக்கப்படும் புரோக்கர்கள் சரிபார்க்கப்படுகின்றன...',
   'onboarding.broker.offline':
     'முழுப் பட்டியலை ஏற்ற முடியவில்லை. ஆதரிக்கப்படும் புரோக்கரை இணைக்கலாம் அல்லது கோப்பை இறக்குமதி செய்யலாம்.',
   'onboarding.personalise.kicker': 'உங்கள் ஜர்னலை அமைக்கவும்',
   'onboarding.personalise.title': 'சில விரைவான தேர்வுகள்',
   'onboarding.personalise.subtitle':
-    'உங்கள் பதில்களின் அடிப்படையில் Journalit ஐ தனிப்பயனாக்குகிறோம்.',
-  'onboarding.personalise.style.question':
-    'நீங்கள் எப்படி வர்த்தகம் செய்கிறீர்கள்?',
+    'உங்கள் பதில்களின் அடிப்படையில் Journalit-ஐத் தனிப்பயனாக்குகிறோம்.',
+  'onboarding.personalise.style.question': 'நீங்கள் எப்படி வர்த்தகம் செய்கிறீர்கள்?',
   'onboarding.personalise.style.scalping': 'ஒரு நாளில் பல வர்த்தகங்கள்',
   'onboarding.personalise.style.intraday':
     'ஒரு நாளில் சில வர்த்தகங்கள், இரவு வைத்திருப்பதில்லை',
   'onboarding.personalise.style.swing': 'நாட்கள் அல்லது வாரங்கள் வைத்திருப்பது',
-  'onboarding.personalise.style.position':
-    'வாரங்கள் அல்லது மாதங்கள் வைத்திருப்பது',
+  'onboarding.personalise.style.position': 'வாரங்கள் அல்லது மாதங்கள் வைத்திருப்பது',
   'onboarding.personalise.account.question': 'எந்த வகைக் கணக்கு?',
   'onboarding.personalise.account.personal': 'தனிப்பட்டது',
   'onboarding.personalise.account.practice': 'டெமோ அல்லது பயிற்சி',
@@ -3873,8 +3752,7 @@ const ta: Lang = {
     'மீண்டும் முயற்சிக்கலாம் அல்லது வேறு வழியில் தொடங்கலாம்.',
   'onboarding.preparing-sample.retry': 'மீண்டும் முயற்சி',
   'onboarding.sample-exploring.kicker': 'மாதிரி பதிவேடு',
-  'onboarding.sample-exploring.title':
-    'நீங்கள் மாதிரி பதிவேட்டை ஆராய்கிறீர்கள்',
+  'onboarding.sample-exploring.title': 'நீங்கள் மாதிரி பதிவேட்டை ஆராய்கிறீர்கள்',
   'onboarding.sample-exploring.body':
     'நிதானமாகப் பாருங்கள். மாதிரியிலிருந்து வெளியேறியதும் இங்கிருந்து தொடர்வோம்: உங்கள் பதிவேட்டைத் தனிப்பயனாக்கி முதல் வர்த்தகத்தைச் சேர்ப்போம்.',
   'onboarding.sample-exploring.exit': 'மாதிரியிலிருந்து வெளியேறி தொடரவும்',
@@ -3882,8 +3760,7 @@ const ta: Lang = {
     'மாதிரி பதிவேட்டை மீட்டெடுக்க முடியவில்லை',
   'onboarding.sample-exploring.failed.body':
     'மீதமுள்ளதை நீக்க மாதிரியிலிருந்து வெளியேறி, பின்னர் உங்கள் பதிவேட்டை அமைப்பதைத் தொடருங்கள்.',
-  'onboarding.awaiting.kicker':
-    'உங்கள் முதல் வர்த்தகங்களுக்காகக் காத்திருக்கிறோம்',
+  'onboarding.awaiting.kicker': 'உங்கள் முதல் வர்த்தகங்களுக்காகக் காத்திருக்கிறோம்',
   'onboarding.awaiting.first-sync.title': 'புரோக்கர் இணைப்பை முடிக்கவும்',
   'onboarding.awaiting.first-sync.body':
     'அமைப்புகள் > Trade Sync இல் இணைப்பை முடிக்கவும். உங்கள் முதல் வர்த்தகங்கள் ஒத்திசைந்ததும், இந்த அமைவு தானாக மூடப்படும்.',
@@ -3892,8 +3769,7 @@ const ta: Lang = {
   'onboarding.awaiting.first-import.body':
     'Trade Import தாவலில் இறக்குமதியை முடிக்கவும். உங்கள் முதல் வர்த்தகங்கள் வந்ததும், இந்த அமைவு தானாக மூடப்படும்.',
   'onboarding.awaiting.first-import.action': 'Trade Import ஐத் திற',
-  'onboarding.awaiting.first-trade.title':
-    'உங்கள் முதல் வர்த்தகத்தைச் சேமிக்கவும்',
+  'onboarding.awaiting.first-trade.title': 'உங்கள் முதல் வர்த்தகத்தைச் சேமிக்கவும்',
   'onboarding.awaiting.first-trade.body':
     'உங்கள் முதல் வர்த்தகம் சேமிக்கப்பட்டதும், இந்த அமைவு தானாக மூடப்படும்.',
   'onboarding.awaiting.first-trade.action': 'வர்த்தகம் சேர்',
@@ -3939,8 +3815,7 @@ const ta: Lang = {
   'review.header.guide.dates.title': 'மதிப்பாய்வுகளுக்கு இடையே செல்லவும்',
   'review.header.guide.dates.description':
     'ஜூன் அல்லது 2026 போன்ற தேதி லேபிளைக் கிளிக் செய்து அதன் மதிப்பாய்வுக் குறிப்பைத் திறக்கவும்.',
-  'review.header.guide.controls.title':
-    'வடிகட்டி, தளவமைப்பு மற்றும் வழிசெலுத்தல்',
+  'review.header.guide.controls.title': 'வடிகட்டி, தளவமைப்பு மற்றும் வழிசெலுத்தல்',
   'review.header.guide.controls.description':
     'வர்த்தகங்களை வடிகட்ட புனல் ஐகானையும், குறிப்பின் தளவமைப்பை மாற்ற «தளவமைப்பை மாற்றவும்» என்பதையும், மதிப்பாய்வுக் காலங்களுக்கு இடையே செல்ல «முந்தைய» / «அடுத்து» என்பதையும் பயன்படுத்தவும்.',
   'widget.header.name': 'தலைப்பு',
@@ -3957,13 +3832,6 @@ const ta: Lang = {
   'widget.header.drc': 'DRC',
   'widget.header.nav.prev': '← முந்தைய',
   'widget.header.nav.next': 'அடுத்து →',
-  'widget.header.day.0': 'ஞாயிறு',
-  'widget.header.day.1': 'திங்கட்கிழமை',
-  'widget.header.day.2': 'செவ்வாய்',
-  'widget.header.day.3': 'புதன்',
-  'widget.header.day.4': 'வியாழன்',
-  'widget.header.day.5': 'வெள்ளிக்கிழமை',
-  'widget.header.day.6': 'சனிக்கிழமை',
   'widget.header.month.0': 'ஜனவரி',
   'widget.header.month.1': 'பிப்ரவரி',
   'widget.header.month.2': 'மார்ச்',
@@ -3993,8 +3861,7 @@ const ta: Lang = {
   'widget.picker.search-label': 'தேடல் விட்ஜெட்கள்',
   'widget.picker.clear-search': 'விட்ஜெட் தேடலை அழிக்கவும்',
   'widget.picker.results-label': 'கிடைக்கும் விட்ஜெட்டுகள்',
-  'widget.picker.no-results':
-    'உங்கள் தேடலுக்கு எந்த விட்ஜெட்களும் பொருந்தவில்லை',
+  'widget.picker.no-results': 'உங்கள் தேடலுக்கு எந்த விட்ஜெட்களும் பொருந்தவில்லை',
   'widget.category.charts': 'விளக்கப்படங்கள்',
   'widget.category.statistics': 'புள்ளிவிவரங்கள்',
   'widget.category.content': 'உள்ளடக்கம்',
@@ -4013,8 +3880,7 @@ const ta: Lang = {
     'இந்த மதிப்பாய்வு வகைக்கு மதிப்பாய்வு சூழல் புலங்கள் எதுவும் உள்ளமைக்கப்படவில்லை.',
   'widget.review-context-fields.empty-desc':
     'சார்பு, கவனம், நோக்கம் மற்றும் பிற திட்டமிடல் சூழலைப் பிடிக்க அமைப்புகளில் தனிப்பயன் புலங்களை மதிப்பாய்வு செய்யவும்.',
-  'widget.review-context-fields.configure':
-    'மதிப்பாய்வு புலங்களை உள்ளமைக்கவும்',
+  'widget.review-context-fields.configure': 'மதிப்பாய்வு புலங்களை உள்ளமைக்கவும்',
   'widget.review-context-fields.service-unavailable':
     'மதிப்பாய்வு தனிப்பயன் புலங்கள் இன்னும் கிடைக்கவில்லை.',
   'widget.review-context-fields.unsupported-type':
@@ -4030,12 +3896,11 @@ const ta: Lang = {
   'widget.review.mental-game': 'Mental Game',
   'widget.review.technical-game': 'Technical Game',
   'widget.review.star-hint':
-    'முழு நட்சத்திரத்திற்கு கிளிக் செய்யவும், அரை நட்சத்திரத்திற்கு வலது கிளிக் செய்யவும்',
+    'முழு நட்சத்திரத்திற்கு கிளிக் செய்யவும், அரை நட்சத்திரத்திற்கு மீண்டும் கிளிக் செய்யவும்',
   'widget.review.invalid-context':
     "மதிப்பாய்வு விட்ஜெட்டுக்கு DRC அல்லது வாராந்திர மதிப்பாய்வு குறிப்பு தேவை (frontmatter type: 'drc' அல்லது 'weekly-review')",
   'widget.checklist.name': 'சரிபார்ப்பு பட்டியல்',
-  'widget.checklist.description':
-    'அமர்வுக்கு முந்தைய தயாரிப்பு சரிபார்ப்பு பட்டியல்',
+  'widget.checklist.description': 'அமர்வுக்கு முந்தைய தயாரிப்பு சரிபார்ப்பு பட்டியல்',
   'widget.session-mistakes.name': 'அமர்வு தவறுகள்',
   'widget.session-mistakes.description':
     'அன்றைய அமர்வின் இறுதியில் நடத்தை தவறுகளைக் கண்காணிக்கவும்',
@@ -4046,8 +3911,7 @@ const ta: Lang = {
   'widget.key-events.title': 'முக்கிய நிகழ்வுகள்',
   'widget.key-events.tooltip':
     'முக்கிய நிகழ்வுகள் உங்கள் வாராந்திர மதிப்பாய்வில் சேமிக்கப்பட்டு DRC இல் சேர்க்கலாம் அல்லது திருத்தலாம்.',
-  'widget.key-events.placeholder':
-    'நிகழ்வைத் தேர்ந்தெடுக்கவும் அல்லது உருவாக்கவும்',
+  'widget.key-events.placeholder': 'நிகழ்வைத் தேர்ந்தெடுக்கவும் அல்லது உருவாக்கவும்',
   'widget.key-events.color-label': 'நிறம்:',
   'widget.key-events.color-aria': '{color} நிறத்தைத் தேர்ந்தெடுக்கவும்',
   'widget.key-events.day-label': 'நாள்:',
@@ -4057,18 +3921,24 @@ const ta: Lang = {
   'widget.key-events.default-notes-tooltip':
     'இயல்புநிலை குறிப்புகள் அமைப்புகள் → தனிப்பயனாக்கம் → நிகழ்வுகளில் நிர்வகிக்கப்படும். இங்கே ஒரு நிகழ்வைத் தேர்ந்தெடுப்பது அதன் சேமித்த இயல்புநிலை குறிப்புகளைத் தானாக நிரப்பும்.',
   'widget.key-events.add-button': 'நிகழ்வைச் சேர்க்கவும்',
+  'widget.key-events.today': 'இன்று',
+  'widget.key-events.day-picker-label': 'நாள்',
+  'widget.key-events.show-all-days': 'முழு வாரத்தையும் காட்டு',
+  'widget.key-events.show-one-day': 'ஒரு நாளைக் காட்டு',
+  'widget.key-events.event-count.one': '{count} நிகழ்வு',
+  'widget.key-events.event-count.few': '{count} நிகழ்வுகள்',
+  'widget.key-events.event-count.many': '{count} நிகழ்வுகள்',
+  'widget.key-events.event-count.other': '{count} நிகழ்வுகள்',
   'widget.key-events.empty-state': 'இன்று முக்கிய நிகழ்வுகள் இல்லை',
   'widget.key-events.empty-state-sub':
     'உங்கள் வாராந்திர மதிப்பாய்வில் நிகழ்வுகளைச் சேர்க்கவும்',
   'widget.missed-trades.name': 'தவறவிட்ட டிரேட்கள்',
-  'widget.missed-trades.description':
-    'நீங்கள் அடையாளம் கண்டுள்ள ஆனால் எடுக்காத டிரேட்கள்',
+  'widget.missed-trades.description': 'நீங்கள் அடையாளம் கண்டுள்ள ஆனால் எடுக்காத டிரேட்கள்',
   'widget.images.name': 'விளக்கப்படங்கள் & மீடியா',
   'widget.images.description': 'பதிவேற்ற ஆதரவுடன் மீடியா கொணர்வி',
   'widget.images.invalid-context':
     "மீடியா விட்ஜெட்டுக்கு மதிப்பாய்வுக் குறிப்பு தேவை (type: 'drc', 'weekly-review', 'monthly-review', 'quarterly-review', அல்லது 'yearly-review')",
   'widget.images.alt-prefix': 'மீடியாவை மதிப்பாய்வு செய்யவும்',
-  'widget.images.stacked-alt': 'மீடியாவை மதிப்பாய்வு செய்யவும் {index}',
   'widget.images.open-fullscreen': 'மீடியா {index} முழுத்திரையில் திறக்கவும்',
   'widget.images.delete': 'மீடியாவை நீக்கு',
   'widget.images.empty': 'ஊடகம் இல்லை',
@@ -4080,8 +3950,7 @@ const ta: Lang = {
   'widget.mark-reviewed.status.reviewed': 'REVIEWED',
   'widget.mark-reviewed.status.pending': 'மதிப்பாய்வு நிலுவையில் உள்ளது',
   'widget.mark-reviewed.button.undo': 'செயல்தவிர்',
-  'widget.mark-reviewed.button.mark':
-    'மதிப்பாய்வு செய்யப்பட்டதாகக் குறிக்கவும்',
+  'widget.mark-reviewed.button.mark': 'மதிப்பாய்வு செய்யப்பட்டதாகக் குறிக்கவும்',
   'widget.pnl-chart.name': 'Equity Curve',
   'widget.pnl-chart.description': 'காலப்போக்கில் ஒட்டுமொத்த லாபம்/நஷ்டம்',
   'widget.drawdown-chart.name': 'Drawdown',
@@ -4099,16 +3968,13 @@ const ta: Lang = {
   'widget.short-drawdown.description':
     'Short டிரேட்களுக்கு மட்டுமே மூடிய-டிரேட் Drawdown தொகை வளைவு',
   'widget.trades-chart.name': 'டிரேட் P&L',
-  'widget.trades-chart.description':
-    'ஒவ்வொரு தனிப்பட்ட டிரேட்டுக்கும் P&L பட்டி',
+  'widget.trades-chart.description': 'ஒவ்வொரு தனிப்பட்ட டிரேட்டுக்கும் P&L பட்டி',
   'widget.trades-chart-daily.name': 'தினசரி P&L',
   'widget.trades-chart-daily.description': 'P&L நாளின்படி திரட்டப்பட்டது',
   'widget.trades-chart-weekly.name': 'வாராந்திர P&L',
-  'widget.trades-chart-weekly.description':
-    'P&L வாரத்தின்படி ஒருங்கிணைக்கப்பட்டது',
+  'widget.trades-chart-weekly.description': 'P&L வாரத்தின்படி ஒருங்கிணைக்கப்பட்டது',
   'widget.trades-chart-monthly.name': 'மாதாந்திர P&L',
-  'widget.trades-chart-monthly.description':
-    'P&L மாத அடிப்படையில் திரட்டப்பட்டது',
+  'widget.trades-chart-monthly.description': 'P&L மாத அடிப்படையில் திரட்டப்பட்டது',
   'widget.trades-chart-quarterly.name': 'காலாண்டு P&L',
   'widget.trades-chart-quarterly.description': 'P&L காலாண்டால் திரட்டப்பட்டது',
   'widget.stats.name': 'ஸ்டாட்ஸ் கட்டம்',
@@ -4146,8 +4012,7 @@ const ta: Lang = {
   'widget.account-breakdown.column.win-rate': 'Win Rate',
   'widget.account-breakdown.column.profit-factor': 'Profit Factor',
   'widget.tag-performance.name': 'டேக் செயல்திறன்',
-  'widget.tag-performance.description':
-    'டிரேட் குறிச்சொல் மூலம் செயல்திறன் பிரிவு',
+  'widget.tag-performance.description': 'டிரேட் குறிச்சொல் மூலம் செயல்திறன் பிரிவு',
   'widget.setup-performance.name': 'Setup செயல்திறன்',
   'widget.setup-performance.description': 'Setup மூலம் செயல்திறன் பிரிவு',
   'widget.best-worst-trades.name': 'சிறந்த/மோசமான டிரேட்கள்',
@@ -4175,7 +4040,7 @@ const ta: Lang = {
   'widget.best-worst-days.win-rate': '{rate}% Win Rate',
   'widget.best-worst-days.invalid-context':
     'இந்த விட்ஜெட் வாராந்திர மற்றும் மாதாந்திர மதிப்பாய்வுகளில் மட்டுமே கிடைக்கும்',
-  'widget.position-size.title': 'Position Size',
+  'widget.position-size.title': 'போசிஷன் அளவு',
   'widget.position-size.save-defaults': 'இயல்புநிலையாக சேமிக்கவும்',
   'widget.position-size.reset-defaults': 'இயல்புநிலைக்கு மீட்டமைக்கவும்',
   'widget.position-size.stock-crypto': 'பங்கு/கிரிப்டோ',
@@ -4187,8 +4052,7 @@ const ta: Lang = {
   'widget.position-size.profit-target-optional': 'Profit Target (optional)',
   'widget.position-size.currency-pair': 'நாணய ஜோடி',
   'widget.position-size.stop-loss-pips': 'Stop Loss (pips)',
-  'widget.position-size.target-pips-optional':
-    'இலக்கு (பிப்ஸ், விருப்பத்தேர்வு)',
+  'widget.position-size.target-pips-optional': 'இலக்கு (பிப்ஸ், விருப்பத்தேர்வு)',
   'widget.position-size.placeholder.example': 'எ.கா., {value}',
   'widget.position-size.enter-values': 'மதிப்புகளை உள்ளிடவும்',
   'widget.position-size.risk': 'ஆபத்து',
@@ -4201,10 +4065,8 @@ const ta: Lang = {
   'widget.position-size.futures-info': '${dollar}/pt | டிக்: {size} = ${value}',
   'widget.position-size.investment-dollar': 'முதலீடு ($)',
   'widget.position-size.investment': 'முதலீடு',
-  'widget.position-size.at-price': '@ ${price}',
   'widget.best-worst-weeks.name': 'சிறந்த/மோசமான வாரங்கள்',
-  'widget.best-worst-weeks.description':
-    'அதிகபட்சம் மற்றும் குறைந்த P&L வாரங்கள்',
+  'widget.best-worst-weeks.description': 'அதிகபட்சம் மற்றும் குறைந்த P&L வாரங்கள்',
   'widget.best-worst-weeks.best-week': 'சிறந்த வாரம்',
   'widget.best-worst-weeks.worst-week': 'மோசமான வாரம்',
   'widget.best-worst-weeks.no-profitable': 'லாபகரமான வாரங்கள் இல்லை',
@@ -4219,8 +4081,7 @@ const ta: Lang = {
   'widget.best-worst-months.invalid-context':
     'இந்த விட்ஜெட் காலாண்டு மற்றும் வருடாந்திர மதிப்பாய்வுகளில் மட்டுமே கிடைக்கும்',
   'widget.best-worst-quarters.name': 'சிறந்த/மோசமான காலாண்டுகள்',
-  'widget.best-worst-quarters.description':
-    'அதிக மற்றும் குறைந்த P&L காலாண்டுகள்',
+  'widget.best-worst-quarters.description': 'அதிக மற்றும் குறைந்த P&L காலாண்டுகள்',
   'widget.best-worst-quarters.best-quarter': 'சிறந்த காலாண்டு',
   'widget.best-worst-quarters.worst-quarter': 'மோசமான காலாண்டு',
   'widget.best-worst-quarters.no-profitable': 'லாபகரமான காலாண்டுகள் இல்லை',
@@ -4235,29 +4096,22 @@ const ta: Lang = {
   'widget.mental-game.name': 'Mental Game',
   'widget.mental-game.description': 'DRCs இலிருந்து வாராந்திர மன தர விநியோகம்',
   'widget.demon-tracker.name': 'Demon Tracker',
-  'widget.demon-tracker.description':
-    'தொடர்ச்சியான டிரேட் தவறுகளைக் கண்காணிக்கவும்',
+  'widget.demon-tracker.description': 'தொடர்ச்சியான டிரேட் தவறுகளைக் கண்காணிக்கவும்',
   'widget.trading-score.title': 'டிரேட் மதிப்பெண்',
   'widget.trading-score.no-data': 'டிரேட் தரவு இல்லை',
   'widget.trading-score.breakdown-title': 'மதிப்பெண் பிரிவு',
   'widget.trading-score.close-breakdown': 'மூடு பிரிவு',
   'widget.trading-score.of-weeks': 'இன் {count}',
-  'widget.trading-score.start-trading':
-    'உங்கள் ஸ்கோரைத் திறக்க டிரேடைத் தொடங்கவும்',
+  'widget.trading-score.start-trading': 'உங்கள் ஸ்கோரைத் திறக்க டிரேடைத் தொடங்கவும்',
   'widget.trading-score.one-week-down': '1 வாரம் கீழே, தொடரவும்!',
   'widget.trading-score.weeks-to-unlock.one': 'திறக்க இன்னும் வாரம் {count}',
   'widget.trading-score.weeks-to-unlock.few': 'திறக்க இன்னும் {count} வாரங்கள்',
-  'widget.trading-score.weeks-to-unlock.many':
-    'திறக்க இன்னும் {count} வாரங்கள்',
-  'widget.trading-score.weeks-to-unlock.other':
-    'திறக்க இன்னும் {count} வாரங்கள்',
+  'widget.trading-score.weeks-to-unlock.many': 'திறக்க இன்னும் {count} வாரங்கள்',
+  'widget.trading-score.weeks-to-unlock.other': 'திறக்க இன்னும் {count} வாரங்கள்',
   'widget.trading-score.trades-to-unlock.one': 'திறக்க {count} மேலும் டிரேட்',
-  'widget.trading-score.trades-to-unlock.few':
-    'திறக்க {count} மேலும் டிரேட்கள்',
-  'widget.trading-score.trades-to-unlock.many':
-    'திறக்க {count} மேலும் டிரேட்கள்',
-  'widget.trading-score.trades-to-unlock.other':
-    'திறக்க {count} மேலும் டிரேட்கள்',
+  'widget.trading-score.trades-to-unlock.few': 'திறக்க {count} மேலும் டிரேட்கள்',
+  'widget.trading-score.trades-to-unlock.many': 'திறக்க {count} மேலும் டிரேட்கள்',
+  'widget.trading-score.trades-to-unlock.other': 'திறக்க {count} மேலும் டிரேட்கள்',
   'widget.trading-score.collect-more-data':
     'உங்கள் ஸ்கோரைத் திறக்க இன்னும் கொஞ்சம் தரவைச் சேகரிக்கவும்',
   'widget.trading-score.trades-logged.one': '{count} டிரேட் பதிவுசெய்யப்பட்டது',
@@ -4300,8 +4154,7 @@ const ta: Lang = {
   'widget.trade-review.question.win-what-worked': 'என்ன வேலை செய்தது?',
   'widget.trade-review.placeholder.win-what-worked':
     'இந்த டிரேட்டில் நீங்கள் எதைச் சிறப்பாகச் செய்தீர்கள்?',
-  'widget.trade-review.question.win-repeatable':
-    'இது மீண்டும் மீண்டும் செய்யக்கூடியதா?',
+  'widget.trade-review.question.win-repeatable': 'இது மீண்டும் மீண்டும் செய்யக்கூடியதா?',
   'widget.trade-review.placeholder.win-repeatable':
     'இந்த டிரேடை மீண்டும் மீண்டும் செய்யக் காரணம் என்ன?',
   'widget.trade-review.question.key-lesson': 'முக்கிய பாடம்',
@@ -4370,8 +4223,7 @@ const ta: Lang = {
     'செயல்திறன் அட்டவணை காலாண்டால் தொகுக்கப்பட்டுள்ளது',
   'widget.breakdown.empty.days-week': 'இந்த வாரம் டிரேட் நாட்கள் இல்லை',
   'widget.breakdown.empty.weeks-month': 'இந்த மாதம் டிரேட் வாரங்கள் இல்லை',
-  'widget.breakdown.empty.months-quarter':
-    'இந்த காலாண்டில் டிரேட் மாதங்கள் இல்லை',
+  'widget.breakdown.empty.months-quarter': 'இந்த காலாண்டில் டிரேட் மாதங்கள் இல்லை',
   'widget.breakdown.empty.quarters-year': 'இந்த ஆண்டு டிரேட் காலாண்டுகள் இல்லை',
   'widget.table.header.date': 'தேதி',
   'widget.table.header.week': 'வாரம்',
@@ -4396,8 +4248,7 @@ const ta: Lang = {
   'widget.demon-tracker.period.this-month': 'இந்த மாதம்',
   'widget.demon-tracker.period.this-quarter': 'இந்த காலாண்டில்',
   'widget.demon-tracker.period.this-year': 'இந்த ஆண்டு',
-  'widget.demon-tracker.empty.title':
-    'எந்த தவறும் கண்காணிக்கப்படவில்லை {period}',
+  'widget.demon-tracker.empty.title': 'எந்த தவறும் கண்காணிக்கப்படவில்லை {period}',
   'widget.demon-tracker.empty.description':
     'பேட்டர்ன்களை அடையாளம் காண உதவும் வகையில் உங்கள் டிரேட்டில் உள்நுழைந்துள்ள தவறுகள் இங்கே தோன்றும்',
   'widget.demon-tracker.summary.unique': 'தனித்துவமான தவறுகள்:',
@@ -4409,8 +4260,7 @@ const ta: Lang = {
   'widget.markdown-header.description':
     'தனிப்பயன் உரையுடன் Markdown தலைப்பு (H1-H6).',
   'metric.netPnL.name': 'Net P&L',
-  'metric.netPnL.description':
-    'அனைத்து டிரேட்களிலும் மொத்த லாபம் மற்றும் இழப்பு',
+  'metric.netPnL.description': 'அனைத்து டிரேட்களிலும் மொத்த லாபம் மற்றும் இழப்பு',
   'metric.winRate.name': 'Win Rate',
   'metric.winRate.description': 'வென்ற டிரேட்டின் சதவீதம்',
   'metric.profitFactor.name': 'Profit Factor',
@@ -4426,8 +4276,7 @@ const ta: Lang = {
     'காட்சி நாணயத்தில் தொடக்க மூலதனம் கிடைக்கவில்லை.',
   'dashboard.calmarRatio.unavailable.incomplete-history':
     'சில ஈட்டிய லாபம்/நஷ்டம் விடுபட்டுள்ளது.',
-  'dashboard.calmarRatio.unavailable.dates':
-    'சில வர்த்தகத் தேதிகள் விடுபட்டுள்ளன.',
+  'dashboard.calmarRatio.unavailable.dates': 'சில வர்த்தகத் தேதிகள் விடுபட்டுள்ளன.',
   'dashboard.calmarRatio.unavailable.short-history':
     'குறைந்தது ஒரு நாள் வரலாறு தேவை.',
   'dashboard.calmarRatio.unavailable.no-drawdown': 'இதுவரை சரிவு பதிவாகவில்லை.',
@@ -4437,16 +4286,13 @@ const ta: Lang = {
     'முடிவு கணக்கிட முடியாத அளவு பெரியது.',
   'dashboard.calmarRatio.unavailable.scope':
     'முழுக் காலத்தையும் முழுக் கணக்குகளையும் மட்டும் தேர்ந்தெடுக்கவும்.',
-  'dashboard.calmarRatio.unavailable.conversion':
-    'சில நாணய மாற்றங்கள் கிடைக்கவில்லை.',
+  'dashboard.calmarRatio.unavailable.conversion': 'சில நாணய மாற்றங்கள் கிடைக்கவில்லை.',
   'metric.sharpeRatio.name': 'Sharpe Ratio',
   'metric.sharpeRatio.description': 'ஏற்ற இறக்கத்துடன் ஒப்பிட்ட சராசரி P&L',
   'metric.expectancy.name': 'Expectancy',
-  'metric.expectancy.description':
-    'ஒரு டிரேட்டுக்கு வென்ற அல்லது இழந்த சராசரி தொகை',
+  'metric.expectancy.description': 'ஒரு டிரேட்டுக்கு வென்ற அல்லது இழந்த சராசரி தொகை',
   'metric.maxDrawdown.name': 'அதிகபட்ச Drawdown',
-  'metric.maxDrawdown.description':
-    'முந்தைய P&L உச்சத்திலிருந்து பெரிய வீழ்ச்சி',
+  'metric.maxDrawdown.description': 'முந்தைய P&L உச்சத்திலிருந்து பெரிய வீழ்ச்சி',
   'metric.bestDay.name': 'சிறந்த நாள்',
   'metric.bestDay.description': 'அதிகபட்ச ஒற்றை நாள் P&L',
   'metric.largestWin.name': 'மிகப்பெரிய வெற்றி',
@@ -4472,19 +4318,15 @@ const ta: Lang = {
   'metric.avgRR.name': 'சராசரி RR (Payoff)',
   'metric.avgRR.description': 'சராசரி லாபம் ÷ சராசரி நஷ்டம்',
   'metric.avgRRRiskBased.name': 'சராசரி RR (R-அடிப்படையில்)',
-  'metric.avgRRRiskBased.description':
-    'சராசரி வெற்றி R vs தோல்வி R (ஸ்டாப் தேவை)',
+  'metric.avgRRRiskBased.description': 'சராசரி வெற்றி R vs தோல்வி R (ஸ்டாப் தேவை)',
   'metric.avgHoldTime.name': 'சராசரி வைத்திருக்கும் நேரம்',
-  'metric.avgHoldTime.description':
-    'அனைத்து மூடப்பட்ட டிரேட்களிலும் சராசரி நேரம்',
+  'metric.avgHoldTime.description': 'அனைத்து மூடப்பட்ட டிரேட்களிலும் சராசரி நேரம்',
   'metric.avgWinHoldTime.name': 'சராசரி வெற்றி ஹோல்ட் டைம்',
-  'metric.avgWinHoldTime.description':
-    'வெற்றி பெற்ற மூடிய டிரேட்களில் சராசரி நேரம்',
+  'metric.avgWinHoldTime.description': 'வெற்றி பெற்ற மூடிய டிரேட்களில் சராசரி நேரம்',
   'metric.avgLossHoldTime.name': 'சராசரி இழப்பு ஹோல்ட் நேரம்',
   'metric.avgLossHoldTime.description': 'இழந்த மூடிய டிரேட்களில் சராசரி நேரம்',
   'metric.avgWinnerHeat.name': 'சராசரி Winner Heat',
-  'metric.avgWinnerHeat.description':
-    'வெற்றி பெற்ற மூடிய டிரேட்களின் சராசரி MAE',
+  'metric.avgWinnerHeat.description': 'வெற்றி பெற்ற மூடிய டிரேட்களின் சராசரி MAE',
   'metric.winnerMaeP90.name': 'வெற்றியாளர் MAE P90',
   'metric.winnerMaeP90.description': 'வெற்றி பெற்ற டிரேட்களின் 90வது சதமான MAE',
   'metric.winnerMaeMedian.name': 'வெற்றியாளர் MAE Median',
@@ -4506,10 +4348,7 @@ const ta: Lang = {
   'metric.longestDrawdown.name': 'Longest Drawdown',
   'metric.longestDrawdown.description': 'ஒரே டிராடவுனில் இருந்த நீண்ட நேரம்',
   'metric.drawdownEpisodes.name': 'Drawdown எபிசோடுகள்',
-  'metric.drawdownEpisodes.description':
-    'தனித்தனி டிராடவுன் காலங்களின் எண்ணிக்கை',
-  'metric.category.performance': 'செயல்திறன்',
-  'metric.category.volume': 'தொகுதி',
+  'metric.drawdownEpisodes.description': 'தனித்தனி டிராடவுன் காலங்களின் எண்ணிக்கை',
 
   'onboarding.wizard.skip-aria': 'இந்த படிநிலையைத் தவிர்க்கவும்',
   'onboarding.wizard.skip-onboarding': 'ஆன்போர்டிங்கைத் தவிர்க்கவும்',
@@ -4518,43 +4357,37 @@ const ta: Lang = {
   'guide.step-count': '{count} படிகள்',
   'guide.step-position': 'படி {current} / {total}',
 
-  'account.linked-trades.setups': 'Setups',
-
   'account.create.title': 'கணக்கை உருவாக்கவும்',
-  'account.create.field.name': 'கணக்கு பெயர்',
-  'account.create.field.name-desc':
-    'உங்கள் டிரேட் கணக்கிற்கான தனித்துவமான பெயர்',
-  'account.create.placeholder.name': 'எனது டிரேட் கணக்கு',
-  'account.create.field.type': 'கணக்கு வகை',
-  'account.create.field.type-desc': 'டிரேட் கணக்கு வகை',
-  'account.create.field.initial-balance': 'ஆரம்ப இருப்பு',
-  'account.create.field.initial-balance-desc':
-    'கணக்கு இருப்பைத் தொடங்குதல் (விரும்பினால், இயல்புநிலை 0 க்கு)',
-  'account.create.field.live-balance': 'நேரடி இருப்பு',
-  'account.create.field.live-balance-desc': 'தற்போதைய தரகர் கணக்கு இருப்பு',
-  'account.create.field.creation-date': 'உருவாக்கிய தேதி',
-  'account.create.field.creation-date-desc': 'கணக்கு உருவாக்கப்பட்ட போது',
-  'account.create.field.currency': 'நாணயம்',
-  'account.create.field.currency-desc': 'காட்சிக்கான கணக்கின் சொந்த நாணயம்',
-  'account.create.field.drawdown-type': 'Drawdown வகை',
+  'account.form.field.name': 'கணக்கு பெயர்',
+  'account.form.placeholder.name': 'எனது டிரேட் கணக்கு',
+  'account.form.field.type': 'கணக்கு வகை',
+  'account.form.type.demo': 'டெமோ',
+  'account.form.type.evaluation': 'மதிப்பீடு',
+  'account.form.type.funded': 'Funded',
+  'account.form.field.initial-balance': 'ஆரம்ப இருப்பு',
+  'account.form.field.initial-balance-desc': 'தொடக்க கணக்கு இருப்பு (இயல்புநிலை 0)',
+  'account.form.field.live-balance': 'நேரடி இருப்பு',
+  'account.form.field.live-balance-desc': 'தற்போதைய தரகர் கணக்கு இருப்பு',
+  'account.form.field.creation-date': 'உருவாக்கிய தேதி',
+  'account.form.field.creation-date-desc': 'கணக்கு உருவாக்கப்பட்ட போது',
+  'account.form.field.currency': 'நாணயம்',
+  'account.form.field.currency-desc': 'காட்சிக்கான கணக்கின் சொந்த நாணயம்',
+  'account.form.field.drawdown-type': 'Drawdown வகை',
+  'account.form.field.drawdown-amount': 'Drawdown தொகை',
+  'account.form.field.drawdown-amount-desc': 'அதிகபட்ச Drawdown வரம்பு',
+  'account.form.field.monthly-cost': 'மாதாந்திர செலவு',
+  'account.form.field.monthly-cost-desc': 'சந்தா கட்டணம், இயங்குதள செலவுகள்',
+  'account.form.field.target-type': 'இலக்கு வகை',
+  'account.form.field.target-type-desc': 'முழுமையான அல்லது சதவீதம்',
+  'account.form.field.target-percent': 'இலக்கு (%)',
+  'account.form.field.target-dollar': 'இலக்கு ($)',
+  'account.form.field.target-percent-desc': 'சதவீத Profit Target',
+  'account.form.field.target-dollar-desc': 'டாலர் தொகை இலக்கு',
+  'account.form.field.target-date': 'இலக்கு தேதி',
+  'account.form.field.target-date-desc': 'Profit Target-ஐ அடைய தேதி',
+  'account.form.unsaved-changes.body':
+    'இந்தக் கணக்கில் நீங்கள் சேமிக்கப்படாத மாற்றங்கள் உள்ளன.',
 
-  'account.create.field.drawdown-amount': 'Drawdown தொகை',
-  'account.create.field.drawdown-amount-desc': 'அதிகபட்ச Drawdown வரம்பு',
-  'account.create.field.profit-target-desc':
-    'கணக்கிற்கான Profit Target-ஐ அமைக்கவும்',
-  'account.create.field.monthly-cost': 'மாதாந்திர செலவு',
-  'account.create.field.monthly-cost-desc': 'சந்தா கட்டணம், இயங்குதள செலவுகள்',
-  'account.create.field.target-type': 'இலக்கு வகை',
-  'account.create.field.target-type-desc': 'முழுமையான அல்லது சதவீதம்',
-  'account.create.field.target-percent': 'இலக்கு (%)',
-  'account.create.field.target-dollar': 'இலக்கு ($)',
-  'account.create.field.target-percent-desc': 'சதவீத Profit Target',
-  'account.create.field.target-dollar-desc': 'டாலர் தொகை இலக்கு',
-  'account.create.field.target-date': 'இலக்கு தேதி (விரும்பினால்)',
-  'account.create.field.target-date-desc': 'Profit Target-ஐ அடைய தேதி',
-  'account.create.type.demo': 'டெமோ',
-  'account.create.type.evaluation': 'மதிப்பீடு',
-  'account.create.type.funded': 'Funded',
   'account.create.success': '"{name}" கணக்கு வெற்றிகரமாக உருவாக்கப்பட்டது',
   'account.create.error.name-required': 'கணக்கின் பெயர் தேவை',
   'account.create.error.name-exists':
@@ -4568,11 +4401,13 @@ const ta: Lang = {
     'Drawdown வகை இயக்கப்பட்டிருக்கும் போது Drawdown தொகை தேவைப்படுகிறது',
   'account.create.error.profit-target-required':
     'Profit Target இயக்கப்படும் போது Profit Target தொகை தேவை',
+  'account.create.error.profit-target-needs-balance':
+    'சதவீத லாப இலக்குக்கு ஆரம்ப இருப்பு தேவை. ஒன்றை அமைக்கவும் அல்லது தொகை இலக்கைப் பயன்படுத்தவும்.',
+  'account.create.error.phase-profit-target-needs-balance':
+    'சதவீத லாப இலக்குக்கு கட்டத்தின் தொடக்க இருப்பு தேவை. ஒன்றை அமைக்கவும் அல்லது தொகை இலக்கைப் பயன்படுத்தவும்.',
   'account.create.error.invalid-date': 'தவறான உருவாக்கத் தேதி',
-  'account.create.error.future-date':
-    'உருவாக்கும் தேதி எதிர்காலத்தில் இருக்க முடியாது',
-  'account.create.error.cost-negative':
-    'மாதாந்திர செலவு எதிர்மறையாக இருக்க முடியாது',
+  'account.create.error.future-date': 'உருவாக்கும் தேதி எதிர்காலத்தில் இருக்க முடியாது',
+  'account.create.error.cost-negative': 'மாதாந்திர செலவு எதிர்மறையாக இருக்க முடியாது',
   'account.create.error.service-unavailable':
     'கணக்கு சேவை கிடைக்கவில்லை. மீண்டும் முயற்சிக்கவும்.',
   'account.create.error.fix-target-date':
@@ -4594,10 +4429,8 @@ const ta: Lang = {
   'account.add-event.placeholder.withdrawal': 'கைமுறையாக திரும்பப் பெறுதல்',
   'account.add-event.button.add': 'பரிவர்த்தனையைச் சேர்க்கவும்',
   'account.add-event.button.adding': 'சேர்க்கிறது...',
-  'account.add-event.success':
-    '{amount} இன் {type} வெற்றிகரமாக சேர்க்கப்பட்டது',
-  'account.add-event.error.amount-required':
-    'தொகை 0 ஐ விட அதிகமாக இருக்க வேண்டும்',
+  'account.add-event.success': '{amount} இன் {type} வெற்றிகரமாக சேர்க்கப்பட்டது',
+  'account.add-event.error.amount-required': 'தொகை 0 ஐ விட அதிகமாக இருக்க வேண்டும்',
   'account.add-event.error.date-required': 'தேதி தேவை',
   'account.add-event.error.invalid-date': 'தவறான தேதி வடிவம்',
   'account.add-event.error.future-date':
@@ -4607,16 +4440,14 @@ const ta: Lang = {
   'account.add-event.confirm.message':
     '{date} இல் "{account}" கணக்கில் {amount} இன் {type} ஐச் சேர்க்கவா?',
   'account.add-event.confirm.description': 'விளக்கம்: {description}',
-  'account.risk-metrics.loading': 'அபாய அளவீடுகளை ஏற்றுகிறது...',
   'account.risk-metrics.title': 'இடர் மேலாண்மை',
   'account.risk-metrics.drawdown-used': 'Drawdown வரம்பு பயன்படுத்தப்பட்டது',
   'account.risk-metrics.profit-target': 'Profit Target',
+  'account.risk-metrics.profit-target-needs-balance':
+    'சதவீத இலக்கை அளவிட ஆரம்ப இருப்பு தேவை. கணக்கைத் திருத்து பகுதியில் அதை அமைக்கவும் அல்லது தொகை இலக்கைப் பயன்படுத்தவும்.',
   'account.risk-metrics.status.breached': 'BREACHED',
   'account.risk-metrics.status.achieved': 'ACHIEVED',
   'account.risk-metrics.status.in-progress': 'செயல்பாட்டில் உள்ளது',
-  'account.risk-metrics.not-set': 'அமைக்கப்படவில்லை',
-  'account.risk-metrics.no-drawdown': 'Drawdown வரம்பு அமைக்கப்படவில்லை',
-  'account.risk-metrics.no-profit-target': 'Profit Target அமைக்கப்படவில்லை',
   'account.risk-metrics.label.used': 'பயன்படுத்தப்பட்டது:',
   'account.risk-metrics.label.limit': 'வரம்பு:',
   'account.risk-metrics.label.remaining': 'மீதமுள்ளவை:',
@@ -4638,8 +4469,7 @@ const ta: Lang = {
   'account.edit-event.button.deleting': 'நீக்குகிறது...',
   'account.edit-event.success.update': '{type} வெற்றிகரமாக புதுப்பிக்கப்பட்டது',
   'account.edit-event.success.delete': '{type} வெற்றிகரமாக நீக்கப்பட்டது',
-  'account.edit-event.error.update':
-    'பரிவர்த்தனையைப் புதுப்பிப்பதில் பிழை: {error}',
+  'account.edit-event.error.update': 'பரிவர்த்தனையைப் புதுப்பிப்பதில் பிழை: {error}',
   'account.edit-event.error.delete': 'பரிவர்த்தனையை நீக்குவதில் பிழை: {error}',
   'account.edit-event.delete-confirm.title': '{type} ஐ நீக்கு',
   'account.edit-event.delete-confirm.message':
@@ -4651,34 +4481,10 @@ const ta: Lang = {
   'account.edit.convert.discard-message':
     'சவால் அமைப்பு தனி சாளரத்தில் திறந்து இந்தப் படிவத்தை மூடும். இங்கு செய்த மாற்றங்கள் சேமிக்கப்படாது.',
   'account.edit.convert.discard-confirm': 'நிராகரித்துத் தொடரவும்',
-  'account.edit.field.name': 'கணக்கு பெயர்',
-  'account.edit.field.name-desc': 'இந்தக் கணக்கிற்கான தனித்துவமான பெயர்',
-  'account.edit.placeholder.name': 'எ.கா., எனது டிரேட் கணக்கு',
-  'account.edit.field.type': 'கணக்கு வகை',
-  'account.edit.field.type-desc': 'டிரேட் கணக்கு வகை',
-  'account.edit.type.demo': 'டெமோ',
-  'account.edit.type.evaluation': 'மதிப்பீடு',
-  'account.edit.type.funded': 'Funded',
-  'account.edit.field.initial-balance': 'ஆரம்ப இருப்பு',
-  'account.edit.field.initial-balance-desc': 'கணக்கு இருப்பைத் தொடங்குதல்',
-  'account.edit.field.live-balance': 'நேரடி இருப்பு',
-  'account.edit.field.live-balance-desc': 'தற்போதைய தரகர் கணக்கு இருப்பு',
-  'account.edit.field.creation-date': 'உருவாக்கிய தேதி',
-  'account.edit.field.creation-date-desc': 'கணக்கு உருவாக்கப்பட்ட போது',
-  'account.edit.field.currency': 'நாணயம்',
-  'account.edit.field.currency-desc': 'காட்சிக்கான கணக்கின் சொந்த நாணயம்',
-  'account.edit.field.drawdown-type': 'Drawdown வகை',
 
-  'account.edit.field.drawdown-amount': 'Drawdown தொகை',
-  'account.edit.field.drawdown-amount-desc':
-    'தொடக்க இருப்பிலிருந்து அதிகபட்ச இழப்பு அனுமதிக்கப்படுகிறது',
   'account.edit.field.manual-snapshots': 'கைமுறை Drawdown ஸ்னாப்ஷாட்கள்',
   'account.edit.field.manual-snapshots-desc':
-    'EOD டிரெய்லிங் Drawdown கணக்கீட்டிற்கான தினசரி இருப்பு ஸ்னாப்ஷாட்களை நிர்வகிக்கவும்',
-  'account.edit.field.profit-target-desc':
-    'கணக்கிற்கான Profit Target-ஐ அமைக்கவும்',
-  'account.edit.field.monthly-cost': 'மாதாந்திர செலவு',
-  'account.edit.field.monthly-cost-desc': 'சந்தா கட்டணம், இயங்குதள செலவுகள்',
+    'உங்கள் புரோக்கர் காலப்போக்கில் வழங்கும் Drawdown வரம்புகளைப் பதிவுசெய்யவும்',
   'account.copy-trading.title': 'Copy Trading',
   'account.copy-trading.description':
     'வரலாற்று நகல் காலங்களைப் பயன்படுத்தி மற்றொரு கணக்கிலிருந்து இந்தக் கணக்கின் செயல்திறனைப் பெறவும்.',
@@ -4686,15 +4492,13 @@ const ta: Lang = {
   'account.copy-trading.existing-trades-warning':
     'இந்தக் கணக்கில் ஏற்கனவே நேரடி டிரேட் உள்ளது. அவை அப்படியே இருக்கும், மேலும் நகலெடுக்கப்பட்ட டிரேட்கள் தேர்ந்தெடுக்கப்பட்ட தொடக்கத் தேதியிலிருந்து சேர்க்கப்படும்.',
   'account.copy-trading.base-account': 'அடிப்படை கணக்கு',
-  'account.copy-trading.base-account-desc':
-    'ஒரே நாணயம் அல்லாத நகல் கணக்குகளை மட்டுமே தேர்ந்தெடுக்க முடியும்.',
+  'account.copy-trading.base-account-desc': 'அதே நாணயம், நகல் கணக்கு அல்ல',
   'account.copy-trading.base-account-placeholder':
     'அடிப்படை கணக்கைத் தேர்ந்தெடுக்கவும்',
   'account.copy-trading.multiplier': 'பெருக்கி',
   'account.copy-trading.multiplier-desc':
     'அனுமதிக்கப்பட்ட வரம்பு: 0.1x முதல் 100x வரை',
-  'account.copy-trading.all-history':
-    'அனைத்து வரலாற்று டிரேட்களையும் நகலெடுக்கவும்',
+  'account.copy-trading.all-history': 'அனைத்து வரலாற்று டிரேட்களையும் நகலெடுக்கவும்',
   'account.copy-trading.start-date': 'தேதியிலிருந்து நகல்',
   'account.copy-trading.history': 'வரலாற்றை நகலெடுக்கவும்',
   'account.copy-trading.error.base-required':
@@ -4709,24 +4513,16 @@ const ta: Lang = {
     'இந்தக் கணக்கு தற்போது மற்றொரு நகல் கணக்கிற்கான அடிப்படையாகும்.',
   'account.copy-trading.base-account-is-copied-desc-secondary':
     'அடிப்படை கணக்குகள் நகல் கணக்குகளாகவும் இருக்க முடியாது.',
-  'account.edit.field.target-type': 'இலக்கு வகை',
-  'account.edit.field.target-type-desc': 'முழுமையான அல்லது சதவீதம்',
-  'account.edit.field.target-percent': 'இலக்கு (%)',
-  'account.edit.field.target-dollar': 'இலக்கு ($)',
-  'account.edit.field.target-percent-desc': 'சதவீத Profit Target',
-  'account.edit.field.target-dollar-desc': 'டாலர் தொகை இலக்கு',
-  'account.edit.field.target-date': 'இலக்கு தேதி (விரும்பினால்)',
-  'account.edit.field.target-date-desc': 'Profit Target-ஐ அடைய தேதி',
   'account.edit.button.show-snapshots':
     'ஸ்னாப்ஷாட் மேலாளரைக் காட்டு ({count} பதிவுசெய்யப்பட்டது)',
   'account.edit.button.hide-snapshots':
     'ஸ்னாப்ஷாட் மேலாளரை மறை ({count} பதிவு செய்யப்பட்டது)',
   'account.edit.delete-warning': 'இது செயல்தவிர்க்க முடியாத நிரந்தர செயல்!',
   'account.drawdown.none': 'இல்லை',
-  'account.drawdown.fixed': 'Fixed',
+  'account.drawdown.fixed': 'Static',
   'account.drawdown.eod-trailing': 'EOD டிரெயிலிங்',
   'account.drawdown.manual': 'Manual',
-  'account.profit-target.enable': 'Profit Target-ஐ இயக்கு',
+  'account.profit-target.title': 'Profit Target',
   'account.profit-target.type.absolute': 'முழுமையான தொகை',
   'account.profit-target.type.percentage': 'சதவீதம்',
   'account.create.button.creating': 'உருவாக்குகிறது...',
@@ -4735,8 +4531,7 @@ const ta: Lang = {
   'account.edit.button.save': 'மாற்றங்களைச் சேமிக்கவும்',
   'account.edit.button.delete': 'கணக்கை நீக்கு',
   'account.edit.button.delete-name': '"{name}" ஐ நீக்கு',
-  'account.edit.modal.update-notes.title':
-    'இணைக்கப்பட்ட குறிப்புகளைப் புதுப்பிக்கவா?',
+  'account.edit.modal.update-notes.title': 'இணைக்கப்பட்ட குறிப்புகளைப் புதுப்பிக்கவா?',
   'account.edit.modal.update-notes.message':
     'மறுபெயரிடுவது "{oldName}" ஐ "{newName}" என்று குறிப்பிடும் அனைத்து குறிப்புகளையும் புதுப்பிக்கும். தரவை சீராக வைத்திருக்க இது அவசியம்.',
   'account.edit.modal.update-notes.yes': 'சரி (புதுப்பிப்பு குறிப்புகள்)',
@@ -4748,8 +4543,7 @@ const ta: Lang = {
   'account.edit.modal.change-date.warning':
     'இது ஆரம்ப டெபாசிட் பரிவர்த்தனை தேதியைப் புதுப்பிக்கும் மற்றும் கணக்கு வயது கணக்கீடுகள், மாதாந்திர பில்லிங் சுழற்சிகள் மற்றும் பிற தேதி அடிப்படையிலான அளவீடுகளை பாதிக்கலாம்.',
 
-  'account.edit.modal.change-date.confirm':
-    'உருவாக்கும் தேதியைப் புதுப்பிக்கவும்',
+  'account.edit.modal.change-date.confirm': 'உருவாக்கும் தேதியைப் புதுப்பிக்கவும்',
   'account.edit.modal.change-balance.title': 'ஆரம்ப இருப்பை மாற்றவும்',
   'account.edit.modal.change-balance.message':
     'ஆரம்ப இருப்பை {oldBalance} இலிருந்து {newBalance}க்கு மாற்ற உள்ளீர்கள்.',
@@ -4776,22 +4570,18 @@ const ta: Lang = {
     'எனது vault இலிருந்து இந்தக் கணக்குடன் இணைக்கப்பட்ட அனைத்து டிரேட்களையும் நீக்கவும்',
   'common.note-label': 'குறிப்பு:',
 
-  'common.backups-label': 'காப்புப்பிரதிகள்:',
   'account.edit.error.name-required': 'கணக்கின் பெயர் தேவை',
   'account.edit.error.name-exists': '"{name}" கணக்கு ஏற்கனவே உள்ளது',
   'account.edit.error.creation-date-required': 'உருவாக்கிய தேதி தேவை',
-  'account.edit.error.balance-required':
-    'ஆரம்ப இருப்பு எதிர்மறையாக இருக்க முடியாது',
+  'account.edit.error.balance-required': 'ஆரம்ப இருப்பு எதிர்மறையாக இருக்க முடியாது',
   'account.edit.error.invalid-live-balance': 'லைவ் பேலன்ஸ் தவறானது',
   'account.edit.error.drawdown-required':
     'Drawdown தொகை 0 ஐ விட அதிகமாக இருக்க வேண்டும்',
-  'account.edit.error.future-date':
-    'உருவாக்கும் தேதி எதிர்காலத்தில் இருக்க முடியாது',
+  'account.edit.error.future-date': 'உருவாக்கும் தேதி எதிர்காலத்தில் இருக்க முடியாது',
   'account.edit.error.update-failed': 'கணக்கைப் புதுப்பிப்பதில் பிழை: {error}',
   'account.edit.error.service-unavailable': 'கணக்கு சேவை கிடைக்கவில்லை',
   'account.edit.error.delete-failed': 'கணக்கை நீக்குவதில் பிழை: {error}',
-  'account.edit.success.updated':
-    '"{name}" கணக்கு வெற்றிகரமாக புதுப்பிக்கப்பட்டது',
+  'account.edit.success.updated': '"{name}" கணக்கு வெற்றிகரமாக புதுப்பிக்கப்பட்டது',
   'account.edit.success.updated-with-references':
     'கணக்கு "{oldName}" இலிருந்து "{newName}" க்கு புதுப்பிக்கப்பட்டது மற்றும் அனைத்து குறிப்பு குறிப்புகளும் புதுப்பிக்கப்பட்டன',
   'account.edit.success.deleted': '"{name}" கணக்கு வெற்றிகரமாக நீக்கப்பட்டது',
@@ -4818,15 +4608,13 @@ const ta: Lang = {
   'templateEditor.button.insert-widget-here': 'இங்கே விட்ஜெட்டைச் சேர்க்கவும்',
   'templateEditor.button.widget-library-docs': 'விட்ஜெட் லைப்ரரி டாக்ஸ்',
   'templateEditor.widget.locked': 'பூட்டப்பட்டது',
-  'templateEditor.widget.select-placeholder':
-    'விட்ஜெட்டைத் தேர்ந்தெடுக்கவும்...',
+  'templateEditor.widget.select-placeholder': 'விட்ஜெட்டைத் தேர்ந்தெடுக்கவும்...',
   'templateEditor.widget.header-text-placeholder': 'தலைப்பு உரை...',
   'templateEditor.widget.markdown-zone-text-label': 'முன்னமைக்கப்பட்ட உரை',
   'templateEditor.widget.markdown-zone-text-placeholder':
     'புதிய மதிப்பாய்வுக் குறிப்புகளில் செருகுவதற்கான உரை...',
   'templateEditor.widget.page-size': 'பக்க அளவு:',
-  'templateEditor.widget.show-rating-column':
-    'மதிப்பீட்டு நெடுவரிசையைக் காட்டு',
+  'templateEditor.widget.show-rating-column': 'மதிப்பீட்டு நெடுவரிசையைக் காட்டு',
   'templateEditor.widget.demon-tracker.tracking-method':
     'இதன் மூலம் தவறுகளைக் கண்காணிக்கவும்:',
   'templateEditor.widget.demon-tracker.tracking-method.trade-occurrences':
@@ -4841,8 +4629,7 @@ const ta: Lang = {
     'தினசரி மதிப்பாய்வு உள்ளீடுகள்',
   'templateEditor.widget.demon-tracker.tracking-method.daily-review-entries-desc':
     'தினசரி மதிப்பாய்வுகளில் பதிவுசெய்யப்பட்ட தவறுகள் மட்டுமே கணக்கிடப்படுகின்றன.',
-  'templateEditor.widget.demon-tracker.stop-after':
-    'பிறகு டிரேடை நிறுத்துங்கள்:',
+  'templateEditor.widget.demon-tracker.stop-after': 'பிறகு டிரேடை நிறுத்துங்கள்:',
   'notice.error.template-save-failed': 'தளவமைப்பைச் சேமிக்க முடியவில்லை',
   'builder.sidebar.title': 'தளவமைப்பு உருவாக்கி',
   'builder.sidebar.section.trade': 'டிரேட்',
@@ -4874,10 +4661,7 @@ const ta: Lang = {
   'account.weight-legend.item-aria-label': '{name}: {percent}',
   'account.transaction.deposit': 'டெபாசிட்',
   'account.transaction.withdrawal': 'வித்ட்ரா',
-  'account.transaction.click-to-edit':
-    'இந்தப் பரிவர்த்தனையைத் திருத்த அல்லது நீக்க கிளிக் செய்யவும்',
-  'account.deposits-withdrawals.title':
-    'வைப்பு மற்றும் திரும்பப் பெறுதல் ({count})',
+  'account.deposits-withdrawals.title': 'வைப்பு மற்றும் திரும்பப் பெறுதல்',
   'account.deposits-withdrawals.empty':
     'கைமுறையாக வைப்பு அல்லது திரும்பப் பெறுதல் எதுவும் பதிவு செய்யப்படவில்லை.',
   'account.deposits-withdrawals.empty-sub':
@@ -4887,14 +4671,12 @@ const ta: Lang = {
     'இது அனைத்து செருகுநிரல் அமைப்புகளையும் அவற்றின் இயல்புநிலை மதிப்புகளுக்கு மீட்டமைக்கும். இதில் அடங்கும்:',
   'settings.reset.modal.item-custom-options':
     'அனைத்து தனிப்பயன் விருப்பங்களும் (டிக்கர்கள், Setups, தவறுகள்)',
-  'settings.reset.modal.item-account-settings':
-    'கணக்கு அமைப்புகள் மற்றும் மெட்டாடேட்டா',
+  'settings.reset.modal.item-account-settings': 'கணக்கு அமைப்புகள் மற்றும் மெட்டாடேட்டா',
   'settings.reset.modal.item-dashboard-layouts': 'டாஷ்போர்டு தளவமைப்புகள்',
   'settings.reset.modal.item-symbol-mappings': 'சின்ன மேப்பிங்',
   'settings.reset.modal.item-csv-templates': 'CSV வார்ப்புருக்கள்',
   'settings.reset.modal.item-other': 'மற்ற அனைத்து தனிப்பயனாக்கங்கள்',
-  'settings.reset.modal.backup-note':
-    'மீட்டமைப்பதற்கு முன் காப்புப்பிரதி உருவாக்கப்படும்.',
+  'settings.reset.modal.backup-note': 'மீட்டமைப்பதற்கு முன் காப்புப்பிரதி உருவாக்கப்படும்.',
   'settings.reset.modal.warning':
     'இந்தச் செயலைச் செயல்தவிர்க்க முடியாது (காப்புப் பிரதியிலிருந்து மீட்டெடுப்பதைத் தவிர).',
   'settings.reset.backup-failed.title': 'காப்புப்பிரதி தோல்வியடைந்தது',
@@ -4930,16 +4712,13 @@ const ta: Lang = {
   'home.widget-selector.sample-note.title': 'டிரேடிங் திட்டம்',
   'home.widget-selector.sample-note.intro':
     'முக்கிய நிலைகளில் A+ செட்அப்களை மட்டும் டிரேட் செய்யவும். நாளொன்றுக்கு அதிகபட்சம் 3 டிரேட்கள்.',
-  'home.widget-selector.sample-note.checklist':
-    'சந்தை திறப்புக்கு முந்தைய சரிபார்ப்புப் பட்டியல்',
-  'home.widget-selector.sample-note.task.calendar':
-    'பொருளாதார நாட்காட்டியைப் பார்க்கவும்',
+  'home.widget-selector.sample-note.checklist': 'சரிபார்ப்பு பட்டியல்',
+  'home.widget-selector.sample-note.task.calendar': 'பொருளாதார நாட்காட்டியைப் பார்க்கவும்',
   'home.widget-selector.sample-note.task.levels':
     'சார்ட்டில் முக்கிய நிலைகளைக் குறிக்கவும்',
   'home.widget-selector.sample-note.task.max-loss':
     'அதிகபட்ச தினசரி இழப்பை அமைக்கவும்',
-  'home.widget-selector.sample-note.task.journal':
-    'முதல் டிரேடைப் பதிவு செய்யவும்',
+  'home.widget-selector.sample-note.task.journal': 'முதல் டிரேடைப் பதிவு செய்யவும்',
   'home.widget-selector.tab.performance': 'செயல்திறன்',
   'home.widget-selector.tab.accounts': 'கணக்குகள்',
   'home.widget-selector.tab.workflow': 'பணிப்பாய்வு',
@@ -4954,8 +4733,7 @@ const ta: Lang = {
   'date-input.error.day': 'நாள் 1 முதல் {max} வரை இருக்க வேண்டும்.',
   'date-input.error.invalid': 'சரியான தேதியை உள்ளிடவும்',
   'date-input.error.month': 'மாதம் 1 முதல் 12 வரை இருக்க வேண்டும்.',
-  'date-input.error.year':
-    'YY (2000–2099) அல்லது YYYY (1000–9999) பயன்படுத்தவும்.',
+  'date-input.error.year': 'YY (2000–2099) அல்லது YYYY (1000–9999) பயன்படுத்தவும்.',
   'home.period.quarter': 'காலாண்டு',
   'home.period.year': 'ஆண்டு',
   'home.period.lifetime': 'எல்லா நேரமும்',
@@ -4978,8 +4756,7 @@ const ta: Lang = {
   'home.greeting.ready-conquer': 'நாளை வெல்ல தயாரா?',
   'home.greeting.fresh-start': 'புதிய தொடக்கம்',
   'home.greeting.good-afternoon': 'நல்ல மதியம்',
-  'home.greeting.day-going-well':
-    'உங்கள் நாள் நன்றாக இருக்கும் என்று நம்புகிறேன்',
+  'home.greeting.day-going-well': 'உங்கள் நாள் நன்றாக இருக்கும் என்று நம்புகிறேன்',
   'home.greeting.afternoon-checkin': 'மதியம் செக்-இன்',
   'home.greeting.midday-momentum': 'மதிய வேகம்',
   'home.greeting.hows-it-going': 'எப்படி போகிறது?',
@@ -4994,8 +4771,7 @@ const ta: Lang = {
   'home.greeting.hey-there': 'வணக்கம்',
   'home.greeting.good-to-see-you': 'உங்களைப் பார்த்ததில் மகிழ்ச்சி',
   'home.subtitle.first-time': 'உங்கள் டிரேட் பயணத்தைத் தொடங்குவோம்',
-  'home.subtitle.see-how-doing':
-    'நீங்கள் எப்படி இருக்கிறீர்கள் என்று பார்ப்போம்',
+  'home.subtitle.see-how-doing': 'நீங்கள் எப்படி இருக்கிறீர்கள் என்று பார்ப்போம்',
   'home.subtitle.elevate-trading': 'உங்கள் டிரேடை உயர்த்துவதற்கான நேரம்',
   'home.subtitle.journey-continues': 'உங்கள் டிரேட் பயணம் தொடர்கிறது',
   'home.subtitle.check-progress': 'உங்கள் முன்னேற்றத்தைச் சரிபார்ப்போம்',
@@ -5007,14 +4783,10 @@ const ta: Lang = {
   'home.grid.error.retry': 'மீண்டும் முயல்க',
   'home.grid.widget.remove-aria': 'விட்ஜெட்டை அகற்று',
   'home.grid.widget.unknown-type': 'அறியப்படாத விட்ஜெட் வகை: {widgetId}',
-  'home.widget.unreviewed.all-reviewed':
-    'அனைத்து டிரேட்களும் மதிப்பாய்வு செய்யப்பட்டன',
-  'home.widget.unreviewed.title-review':
-    'மதிப்பாய்வு செய்ய டிரேட் பதிவைத் திறக்கவும்',
-  'home.widget.unreviewed.need-review.one':
-    '{count} டிரேட்டுக்கு மதிப்பாய்வு தேவை',
-  'home.widget.unreviewed.need-review.few':
-    '{count} டிரேட்களுக்கு மதிப்பாய்வு தேவை',
+  'home.widget.unreviewed.all-reviewed': 'அனைத்து டிரேட்களும் மதிப்பாய்வு செய்யப்பட்டன',
+  'home.widget.unreviewed.title-review': 'மதிப்பாய்வு செய்ய டிரேட் பதிவைத் திறக்கவும்',
+  'home.widget.unreviewed.need-review.one': '{count} டிரேட்டுக்கு மதிப்பாய்வு தேவை',
+  'home.widget.unreviewed.need-review.few': '{count} டிரேட்களுக்கு மதிப்பாய்வு தேவை',
   'home.widget.unreviewed.need-review.many':
     '{count} டிரேட்களுக்கு மதிப்பாய்வு தேவை',
   'home.widget.unreviewed.need-review.other':
@@ -5033,11 +4805,9 @@ const ta: Lang = {
     'குறிப்பு உள்ளடக்கத்தை ஏற்றுவதில் தோல்வி',
   'home.widget.embedded-note.error.deleted': 'மூலக் கோப்பு நீக்கப்பட்டது',
   'home.widget.goals-progress.type.pnl': 'P&L இலக்கு',
-  'home.widget.goals-progress.type.pnl-desc':
-    'ஒரு காலத்திற்கு லாபம்/இழப்பு இலக்கு',
+  'home.widget.goals-progress.type.pnl-desc': 'ஒரு காலத்திற்கு லாபம்/இழப்பு இலக்கு',
   'home.widget.goals-progress.type.trades-logged': 'டிரேட் எண்ணிக்கை',
-  'home.widget.goals-progress.type.trades-logged-desc':
-    'வாழ்நாள் டிரேட் எண்ணிக்கை',
+  'home.widget.goals-progress.type.trades-logged-desc': 'வாழ்நாள் டிரேட் எண்ணிக்கை',
   'home.widget.goals-progress.type.win-rate': 'Win Rate',
   'home.widget.goals-progress.type.win-rate-desc': 'வெற்றி சதவீதம் இலக்கு',
   'home.widget.goals-progress.period.daily': 'தினசரி',
@@ -5050,15 +4820,12 @@ const ta: Lang = {
   'home.widget.goals-progress.trades-count': '{count} டிரேட்கள்',
   'home.widget.goals-progress.set-goal': 'இலக்கை அமைக்கவும்',
   'home.widget.goals-progress.target': 'இலக்கு',
-  'home.widget.goals-progress.tracks-lifetime':
-    'மொத்த வாழ்நாளைக் கண்காணிக்கிறது',
-  'home.widget.goals-progress.use-r-multiples':
-    'R-பன்மடங்குகளைப் பயன்படுத்தவும்',
+  'home.widget.goals-progress.tracks-lifetime': 'மொத்த வாழ்நாளைக் கண்காணிக்கிறது',
+  'home.widget.goals-progress.use-r-multiples': 'R-பன்மடங்குகளைப் பயன்படுத்தவும்',
   'home.widget.goals-progress.account-aware': 'கணக்கு விழிப்புணர்வு இலக்குகள்',
   'home.widget.goals-progress.no-target-selected':
     'தேர்ந்தெடுக்கப்பட்ட கணக்கிற்கு இலக்கு இல்லை',
-  'home.widget.goals-progress.configured-for':
-    '{accounts} க்காக கட்டமைக்கப்பட்டது',
+  'home.widget.goals-progress.configured-for': '{accounts} க்காக கட்டமைக்கப்பட்டது',
   'home.widget.goals-progress.account-scope': 'கணக்கு நோக்கம்',
   'home.widget.goals-progress.add-account': 'கணக்கைச் சேர்க்கவும்',
   'home.widget.goals-progress.click-to-set': 'இலக்கை அமைக்க கிளிக் செய்யவும்',
@@ -5071,12 +4838,9 @@ const ta: Lang = {
   'home.widget.goals-progress.goal-reached': 'இலக்கை எட்டியது',
   'home.widget.goals-progress.aria.save-goal': 'இலக்கைச் சேமிக்கவும்',
   'home.widget.goals-progress.aria.set-goal': 'ஒரு இலக்கை அமைக்கவும்',
-  'home.widget.goals-progress.aria.change-goal':
-    'இலக்கை மாற்ற கிளிக் செய்யவும்',
+  'home.widget.goals-progress.aria.change-goal': 'இலக்கை மாற்ற கிளிக் செய்யவும்',
   'home.widget.best-hours.title': 'சிறந்த மணிநேரம்',
   'home.widget.best-hours.no-data': 'டிரேட் தரவு இல்லை',
-  'home.widget.best-hours.period-aria':
-    '{label}: {pnl} சராசரி P&L ஒரு டிரேட், {count} டிரேட்',
   'home.widget.best-hours.trades-count': '{count} டிரேட்கள்',
   'home.widget.best-hours.win-rate': '{rate}% வெற்றி',
   'home.widget.best-hours.win-rate-na': 'Win Rate கிடைக்கவில்லை',
@@ -5109,8 +4873,7 @@ const ta: Lang = {
   'home.widget.streak.losses': 'இழப்புகள்',
   'home.widget.streak.in-a-row': 'ஒரு வரிசையில்',
   'home.widget.streak.no-active': 'செயலில் ஸ்ட்ரீக் இல்லை',
-  'home.widget.streak.start-trading':
-    'ஒரு ஸ்ட்ரீக்கை உருவாக்க டிரேடைத் தொடங்குங்கள்',
+  'home.widget.streak.start-trading': 'ஒரு ஸ்ட்ரீக்கை உருவாக்க டிரேடைத் தொடங்குங்கள்',
   'home.widget.streak.best-streak': 'உங்கள் சிறந்த தொடர் {period}',
   'home.widget.streak.above-average': 'உங்கள் சராசரிக்கு மேல் {period}',
   'home.widget.streak.stay-focused': 'கவனத்துடன் இருங்கள், தொடருங்கள்',
@@ -5118,8 +4881,7 @@ const ta: Lang = {
   'home.widget.streak.good-start': 'நல்ல தொடக்கம்',
   'home.widget.streak.pause': 'உங்கள் அடுத்த டிரேட்டுக்கு முன் இடைநிறுத்தவும்',
   'home.widget.streak.review': 'அடுத்த டிரேட்டுக்கு முன் மதிப்பாய்வு செய்யவும்',
-  'home.widget.streak.losses-process':
-    'இழப்புகள் செயல்முறையின் ஒரு பகுதியாகும்',
+  'home.widget.streak.losses-process': 'இழப்புகள் செயல்முறையின் ஒரு பகுதியாகும்',
   'home.widget.streak.best': 'சிறந்த',
   'home.widget.streak.avg': 'சராசரி',
   'home.widget.drawdown.title': 'Drawdown வரம்பு',
@@ -5142,10 +4904,8 @@ const ta: Lang = {
     'இலக்குக்கு அருகில் உள்ளவை முதலில்.',
   'home.widget.account-progress.max-label': 'அதிகபட்சம் காட்டு',
   'home.widget.account-progress.max-all': 'அனைத்தும்',
-  'home.widget.account-progress.select-hint':
-    'விரும்பிய அளவு தேர்ந்தெடுக்கவும்.',
-  'home.widget.account-progress.no-eligible':
-    'தேர்ந்தெடுக்க இன்னும் கணக்குகள் இல்லை.',
+  'home.widget.account-progress.select-hint': 'விரும்பிய அளவு தேர்ந்தெடுக்கவும்.',
+  'home.widget.account-progress.no-eligible': 'தேர்ந்தெடுக்க இன்னும் கணக்குகள் இல்லை.',
   'home.widget.account-progress.none-selected':
     'கணக்குகள் தேர்ந்தெடுக்கப்படவில்லை. தேர்ந்தெடுக்க கிளிக் செய்யவும்.',
   'home.widget.account-progress.search': 'கணக்குகளைத் தேடு',
@@ -5153,8 +4913,7 @@ const ta: Lang = {
   'home.widget.account-progress.select-none': 'எதுவும் இல்லை',
   'home.widget.account-progress.select-all-aria':
     'காட்டப்படும் அனைத்து கணக்குகளையும் தேர்ந்தெடுக்கவும்',
-  'home.widget.account-progress.select-none-aria':
-    'காட்டப்படும் கணக்குகளை நீக்கவும்',
+  'home.widget.account-progress.select-none-aria': 'காட்டப்படும் கணக்குகளை நீக்கவும்',
   'home.widget.account-progress.no-match': 'பொருந்தும் கணக்குகள் இல்லை.',
   'home.widget.account-progress.none-available':
     'தேர்ந்தெடுத்த கணக்குகள் எதையும் காட்ட முடியாது. மற்றவற்றைத் தேர்ந்தெடுக்க கிளிக் செய்யவும்.',
@@ -5165,13 +4924,11 @@ const ta: Lang = {
   'home.widget.recent.hours-ago': '{hours}h முன்பு',
   'home.widget.recent.days-ago': '{days}d முன்பு',
   'home.widget.recent.no-items': 'இதுவரை சமீபத்திய உருப்படிகள் எதுவும் இல்லை',
-  'home.widget.recent.hint':
-    'கோப்புகள் அல்லது காட்சிகளை இங்கே பார்க்க அவற்றைத் திறக்கவும்',
+  'home.widget.recent.hint': 'கோப்புகள் அல்லது காட்சிகளை இங்கே பார்க்க அவற்றைத் திறக்கவும்',
   'home.widget.top-breakdown.title': 'டாப் {dimension}',
   'home.widget.top-breakdown.configure-title': 'மேல் {dimension} தனிப்பயனாக்கு',
   'home.widget.top-breakdown.aria.customize':
     'Top {dimension} ஐ தனிப்பயனாக்க கிளிக் செய்யவும்',
-  'home.widget.setups.title': 'டாப் Setups',
 
   'home.widget.setups.trades-count': '{count} டிரேட்கள்',
   'home.widget.setups.win-rate': '{rate}% Win Rate',
@@ -5203,11 +4960,14 @@ const ta: Lang = {
   'calendar.weekday.thu': 'வியாழன்',
   'calendar.weekday.fri': 'வெள்ளி',
   'calendar.weekday.sat': 'சனி',
-  'calendar.weekday.sun': 'சூரியன்',
+  'calendar.weekday.sun': 'ஞாயிறு',
   'calendar.pnl': 'P&L',
-  'calendar.week': 'WEEK',
+  'calendar.week': 'வாரம்',
   'calendar.trade': '{count} டிரேட்',
   'calendar.trades': '{count} டிரேட்கள்',
+  'calendar.missed': '{count} தவறியவை',
+  'calendar.trades-short': '{count} டி',
+  'calendar.missed-short': '{count} த',
   'calendar.reviewed': 'மதிப்பாய்வு செய்யப்பட்டது',
   'calendar.month.january': 'ஜனவரி',
   'calendar.month.february': 'பிப்ரவரி',
@@ -5228,7 +4988,6 @@ const ta: Lang = {
   'filter.modal.type.regular': 'வழக்கமான',
   'filter.modal.type.backtest': 'Backtest',
   'filter.summary.regular-trades': 'வழக்கமான டிரேட்',
-  'filter.modal.status.breakeven': 'Breakeven',
 
   'filter.modal.review-status.reviewed': 'மதிப்பாய்வு செய்யப்பட்டது',
   'filter.modal.review-status.unreviewed': 'மதிப்பாய்வு செய்யப்படவில்லை',
@@ -5236,8 +4995,8 @@ const ta: Lang = {
   'filter.modal.direction.short-put': 'Short/Put',
   'filter.modal.section.custom-fields': 'தனிப்பயன் புலங்கள்',
   'filter.modal.custom-field.none-available': 'மதிப்புகள் இல்லை',
-  'widget.checklist.title': 'டிரேட்டுக்கு முந்தைய சரிபார்ப்பு பட்டியல்',
-  'widget.checklist.weekly-title': 'வாராந்திர முன் சரிபார்ப்பு பட்டியல்',
+  'widget.checklist.title': 'DRC சரிபார்ப்பு பட்டியல்',
+  'widget.checklist.weekly-title': 'வாராந்திர சரிபார்ப்பு பட்டியல்',
   'widget.checklist.tooltip.day-only':
     'இங்கு சேர்க்கப்படும் பொருட்கள் இன்று வரை மட்டுமே பொருந்தும்.',
   'widget.checklist.tooltip.weekly':
@@ -5265,18 +5024,51 @@ const ta: Lang = {
     'தவறுகளைத் தேர்ந்தெடுக்கவும் அல்லது உருவாக்கவும்',
   'widget.session-mistakes.empty': 'அமர்வு தவறுகள் பதிவு செய்யப்படவில்லை',
 
+  'widget.day-trade-fields.name': 'நாள் வர்த்தக புலங்கள்',
+  'widget.day-trade-fields.description':
+    'அன்றைய அனைத்து வர்த்தகங்களுக்கும் பொருந்தும் புலங்கள்',
+  'widget.day-trade-fields.title': 'நாள் வர்த்தக புலங்கள்',
+  'widget.day-trade-fields.mistakes': 'தவறுகள்',
+  'widget.day-trade-fields.tags': 'குறிச்சொற்கள்',
+  'widget.day-trade-fields.not-set': 'அமைக்கப்படவில்லை',
+  'widget.day-trade-fields.apply.one': '{count} வர்த்தகத்திற்கு பயன்படுத்து',
+  'widget.day-trade-fields.apply.few': '{count} வர்த்தகங்களுக்கு பயன்படுத்து',
+  'widget.day-trade-fields.apply.many': '{count} வர்த்தகங்களுக்கு பயன்படுத்து',
+  'widget.day-trade-fields.apply.other': '{count} வர்த்தகங்களுக்கு பயன்படுத்து',
+  'widget.day-trade-fields.add-field': 'புலம் சேர்',
+  'widget.day-trade-fields.empty':
+    'ஒரு புலத்தை ஒருமுறை அமைத்தால், பின்னர் எடுக்கும் வர்த்தகங்கள் உட்பட இந்த நாளின் ஒவ்வொரு வர்த்தகத்துக்கும் பொருந்தும்.',
+  'widget.day-trade-fields.invalid-context':
+    "நாள் வர்த்தக புலங்கள் விட்ஜெட்டுக்கு DRC குறிப்பு தேவை (frontmatter type: 'drc')",
+  'widget.day-trade-fields.notice-updated.one':
+    '{count} வர்த்தகம் புதுப்பிக்கப்பட்டது',
+  'widget.day-trade-fields.notice-updated.few':
+    '{count} வர்த்தகங்கள் புதுப்பிக்கப்பட்டன',
+  'widget.day-trade-fields.notice-updated.many':
+    '{count} வர்த்தகங்கள் புதுப்பிக்கப்பட்டன',
+  'widget.day-trade-fields.notice-updated.other':
+    '{count} வர்த்தகங்கள் புதுப்பிக்கப்பட்டன',
+  'widget.day-trade-fields.notice-failed.one':
+    '{count} வர்த்தகத்தைப் புதுப்பிக்க முடியவில்லை',
+  'widget.day-trade-fields.notice-failed.few':
+    '{count} வர்த்தகங்களைப் புதுப்பிக்க முடியவில்லை',
+  'widget.day-trade-fields.notice-failed.many':
+    '{count} வர்த்தகங்களைப் புதுப்பிக்க முடியவில்லை',
+  'widget.day-trade-fields.notice-failed.other':
+    '{count} வர்த்தகங்களைப் புதுப்பிக்க முடியவில்லை',
+  'widget.day-trade-fields.notice-save-failed': 'நாள் புலத்தைச் சேமிக்க முடியவில்லை',
+  'widget.day-trade-fields.notice-conflict':
+    'நாள் வர்த்தகப் புலங்கள் வேறொரு காட்சியில் மாற்றப்பட்டன. அவற்றைச் சரிபார்த்து மீண்டும் பயன்படுத்தவும்.',
+  'widget.day-trade-fields.retry': 'மீண்டும் முயற்சி',
   'widget.session-mistakes.invalid-context':
     "அமர்வு தவறுகள் விட்ஜெட்டுக்கு DRC குறிப்பு தேவை (frontmatter type: 'drc')",
   'widget.directional-pnl.title.long': 'Long டிரேட்கள் P&L',
   'widget.directional-pnl.title.short': 'Short டிரேட்கள் P&L',
   'widget.directional-pnl.empty.not-enough':
     'திசை பகுப்பாய்விற்கு போதுமான டிரேட் இல்லை',
-  'widget.directional-pnl.empty.no-closed':
-    'இந்தக் காலத்திற்கு மூடப்பட்ட டிரேட் இல்லை',
-  'widget.directional-pnl.empty.no-long':
-    'இந்த காலகட்டத்தில் Long டிரேட் இல்லை',
-  'widget.directional-pnl.empty.no-short':
-    'இந்த காலகட்டத்தில் Short டிரேட் இல்லை',
+  'widget.directional-pnl.empty.no-closed': 'இந்தக் காலத்திற்கு மூடப்பட்ட டிரேட் இல்லை',
+  'widget.directional-pnl.empty.no-long': 'இந்த காலகட்டத்தில் Long டிரேட் இல்லை',
+  'widget.directional-pnl.empty.no-short': 'இந்த காலகட்டத்தில் Short டிரேட் இல்லை',
   'widget.directional-drawdown.title.long': 'Long Drawdown',
   'widget.directional-drawdown.title.short': 'Short Drawdown',
   'widget.directional-drawdown.empty.not-enough':
@@ -5326,8 +5118,7 @@ const ta: Lang = {
   'widget.trade-table.pagination.prev': '← முந்தைய',
   'widget.trade-table.pagination.next': 'அடுத்து →',
   'widget.trade-table.pagination.page': 'பக்கம் {current} of {total}',
-  'widget.pagination.showing':
-    '{total} {items} இன் {start}-{end} ஐக் காட்டுகிறது',
+  'widget.pagination.showing': '{total} {items} இன் {start}-{end} ஐக் காட்டுகிறது',
   'widget.pagination.prev': 'முந்தைய',
   'widget.pagination.next': 'அடுத்து',
   'widget.pagination.page': 'பக்கம் {current} of {total}',
@@ -5343,8 +5134,7 @@ const ta: Lang = {
   'widget.empty.no-setup-data': 'இந்தக் காலகட்டத்திற்கான Setupத் தரவு இல்லை',
   'widget.empty.no-mental-game-data':
     '{period}க்கு மனநல விளையாட்டு தரவு எதுவும் இல்லை',
-  'widget.empty.no-technical-game-data':
-    '{period}க்கான தொழில்நுட்ப கேம் தரவு இல்லை',
+  'widget.empty.no-technical-game-data': '{period}க்கான தொழில்நுட்ப கேம் தரவு இல்லை',
   'widget.invalid-context.title': 'தவறான சூழல்',
   'widget.invalid-context.default':
     'இந்த {widgetType} விட்ஜெட்டுக்கு மதிப்பாய்வு அல்லது டிரேட் குறிப்பு தேவை',
@@ -5383,8 +5173,7 @@ const ta: Lang = {
   'manual-drawdown.notice.added': 'ஸ்னாப்ஷாட் சேர்க்கப்பட்டது',
   'manual-drawdown.validation.date-required': 'தேதி தேவை',
   'manual-drawdown.validation.invalid-date': 'சரியான தேதியை உள்ளிடவும்',
-  'manual-drawdown.validation.future-date':
-    'தேதி எதிர்காலத்தில் இருக்க முடியாது',
+  'manual-drawdown.validation.future-date': 'தேதி எதிர்காலத்தில் இருக்க முடியாது',
   'manual-drawdown.validation.limit-required': 'Drawdown வரம்பு தேவை',
   'manual-drawdown.validation.limit-positive':
     'Drawdown வரம்பு நேர்மறை எண்ணாக இருக்க வேண்டும்',
@@ -5400,11 +5189,11 @@ const ta: Lang = {
   'manual-drawdown.button.delete': 'நீக்கு',
   'manual-drawdown.header.edit': 'ஸ்னாப்ஷாட்டைத் திருத்து',
   'manual-drawdown.header.add': 'புதிய ஸ்னாப்ஷாட்டைச் சேர்க்கவும்',
-  'manual-drawdown.field.date': 'Drawdown தேதி *',
+  'manual-drawdown.field.date': 'Drawdown தேதி',
   'manual-drawdown.field.date-desc': 'தரகர் இந்த வரம்பை வழங்கியபோது',
-  'manual-drawdown.field.limit': 'குறைந்தபட்ச இருப்பு ($) *',
+  'manual-drawdown.field.limit': 'குறைந்தபட்ச இருப்பு ($)',
   'manual-drawdown.field.limit-desc': 'குறைந்தபட்ச இருப்பு அனுமதிக்கப்படுகிறது',
-  'manual-drawdown.field.note': 'குறிப்பு (விரும்பினால்)',
+  'manual-drawdown.field.note': 'குறிப்பு',
   'manual-drawdown.field.note-desc': 'இந்த ஸ்னாப்ஷாட்டுக்கான கூடுதல் சூழல்',
   'manual-drawdown.placeholder.note': 'எ.கா., மாத இறுதி அறிக்கை',
   'manual-drawdown.button.update': 'ஸ்னாப்ஷாட்டைப் புதுப்பிக்கவும்',
@@ -5414,8 +5203,7 @@ const ta: Lang = {
   'manual-drawdown.modal.delete-confirm':
     '{date} இலிருந்து Drawdown ஸ்னாப்ஷாட்டை நீக்கவா?',
   'manual-drawdown.modal.delete-limit': 'Drawdown வரம்பு: {limit}',
-  'manual-drawdown.modal.delete-warning':
-    'இந்தச் செயலைச் செயல்தவிர்க்க முடியாது.',
+  'manual-drawdown.modal.delete-warning': 'இந்தச் செயலைச் செயல்தவிர்க்க முடியாது.',
   'dashboard.selector.title': 'டாஷ்போர்டில் சேர்க்கவும்',
   'dashboard.selector.subtitle':
     'முன்னோட்டத்தைப் பார்த்து விளக்கப்படங்களையும் அளவீடுகளையும் தேர்ந்தெடுத்து, டாஷ்போர்டில் சேர்க்க கிளிக் செய்யவும்.',
@@ -5431,9 +5219,19 @@ const ta: Lang = {
   'widget-drawer.add-aria': '{name} சேர்',
   'widget-drawer.remove': 'அகற்று',
   'widget-drawer.remove-aria': '{name} அகற்று',
-  'widget-drawer.close': 'மூடு',
   'dashboard.selector.metrics': 'அளவீடுகள்',
 
+  'metric.expectancyGap.name': 'எதிர்பார்ப்பு இடைவெளி',
+  'metric.expectancyGap.description': 'வர்த்தகத்தின் உண்மையான மற்றும் எதிர்பார்த்த R.',
+  'expectancy-gap.expected': 'எதிர்பார்ப்பு (R/வர்த்தகம்)',
+  'expectancy-gap.realized': 'உண்மை (R/வர்த்தகம்)',
+  'expectancy-gap.sample':
+    'மூடிய {total} வர்த்தகங்களில் {included} வர்த்தகங்களுக்கு பயன்படுத்தக்கூடிய நிகர R உள்ளது.',
+  'expectancy-gap.method-title': 'கணக்கிடும் முறை',
+  'expectancy-gap.method':
+    'இடைவெளி = உண்மை − எதிர்பார்ப்பு. உண்மை என்பது முழுவதும் மூடிய உண்மையான வர்த்தகங்களின் சராசரி நிகர R; சமநிலை வர்த்தகங்களும் அடங்கும். திறந்த, தவறவிட்ட மற்றும் பின்சோதனை வர்த்தகங்கள் விலக்கப்படும். விடுபட்ட லாபநட்டம் அல்லது இடர் தரவு பூஜ்ஜியமாகக் கணக்கிடப்படாது. பதிவுசெய்த R அல்லது வர்த்தகத்தின் இடர் பயன்படுத்தப்படும்; தற்போதைய இயல்புநிலை இடர் அல்ல. வெளியேறும் தேதி வடிகட்டிகள் இறுதி மூடலில் ஒவ்வொரு வர்த்தகத்தையும் ஒருமுறை எண்ணும். சமமான செலவுகளுடன் தனி மாதிரி அல்லது வரலாற்று அளவுகோலைப் பயன்படுத்தவும். எதிர்மறை இடைவெளி குறைந்த செயல்திறனைக் குறிக்கும்; மோசமான செயலாக்கத்திற்கான ஆதாரம் அல்ல. அளவுகோலை நீக்கக் காலியாக்கவும்.',
+  'expectancy-gap.invalid': 'முடிவுள்ள எண்ணை உள்ளிடவும் அல்லது நீக்கக் காலியாக விடவும்.',
+  'expectancy-gap.save-failed': 'அளவுகோலைச் சேமிக்க முடியவில்லை. மீண்டும் முயலவும்.',
   'widget.pnlChart.name': 'ஒட்டுமொத்த P&L',
   'widget.pnlChart.description': 'காலப்போக்கில் மொத்த P&L',
 
@@ -5468,8 +5266,7 @@ const ta: Lang = {
   'widget.longDrawdownChart.description': 'லாங் டிரேட்களின் டிராடவுன் மட்டும்',
 
   'widget.shortDrawdownChart.name': 'Short Drawdown',
-  'widget.shortDrawdownChart.description':
-    'ஷார்ட் டிரேட்களின் டிராடவுன் மட்டும்',
+  'widget.shortDrawdownChart.description': 'ஷார்ட் டிரேட்களின் டிராடவுன் மட்டும்',
 
   'widget.drawdownStats.no-conversion':
     'FX மாற்றம் இல்லாமல் கலப்பு நாணயங்களுக்கு Drawdown புள்ளிவிவரங்கள் கிடைக்காது.',
@@ -5488,22 +5285,17 @@ const ta: Lang = {
   'widget.rollingWinRate.description': 'சமீபத்திய டிரேட்களின் லாப/நஷ்ட விகிதம்',
 
   'widget.rollingStats.name': 'ரோலிங் சராசரி வெற்றி/தோல்வி',
-  'widget.rollingStats.description':
-    'சமீபத்திய டிரேட்களின் சராசரி லாபம், நஷ்டம்',
+  'widget.rollingStats.description': 'சமீபத்திய டிரேட்களின் சராசரி லாபம், நஷ்டம்',
 
-  'shared.filter.disabled-preview':
-    'முன்னோட்டத்தில் வடிப்பான்கள் முடக்கப்பட்டுள்ளன',
+  'shared.filter.disabled-preview': 'முன்னோட்டத்தில் வடிப்பான்கள் முடக்கப்பட்டுள்ளன',
   'shared.filter.open': 'வடிப்பான்களைத் திறக்கவும்',
   'shared.filter.active-count': '{count} செயலில் உள்ள வடிப்பான்கள்',
   'ui.toggle-switch.aria-label': 'மாற்று சுவிட்ச்',
   'ui.folder-browser.placeholder': 'ஒரு கோப்புறையைத் தேர்ந்தெடுக்கவும்...',
   'ui.folder-browser.root': 'வேர்',
   'ui.folder-browser.clear-aria': 'இயல்புநிலை இருப்பிடத்தைப் பயன்படுத்த அழி',
-  'ui.folder-browser.expand-folder': 'கோப்புறையை விரிவாக்கு',
-  'ui.folder-browser.collapse-folder': 'கோப்புறையைச் சுருக்கு',
 
-  'combobox.placeholder.default':
-    'தேர்ந்தெடுக்கவும் அல்லது தட்டச்சு செய்யவும்...',
+  'combobox.placeholder.default': 'தேர்ந்தெடுக்கவும் அல்லது தட்டச்சு செய்யவும்...',
   'combobox.aria.remove-item': 'அகற்று {item}',
   'combobox.add-option': '"{value}" சேர்',
   'error.render-component': 'வழங்குவதில் பிழை {component}: {error}',
@@ -5594,8 +5386,7 @@ const ta: Lang = {
   'modal.template-switch.title': 'தளவமைப்பை மாற்றவா?',
   'modal.template-switch.switching-from': 'நீங்கள் மாறுகிறீர்கள்',
   'modal.template-switch.switching-to': 'செய்ய',
-  'modal.template-switch.has-content-title':
-    'இந்தக் குறிப்பில் உள்ளடக்கம் உள்ளது',
+  'modal.template-switch.has-content-title': 'இந்தக் குறிப்பில் உள்ளடக்கம் உள்ளது',
   'modal.template-switch.has-content-desc':
     'புதிய தளவமைப்பிற்கு ஏற்றவாறு உள்ளடக்கம் மறுசீரமைக்கப்படும். பொருந்தாத எந்த உள்ளடக்கமும் நீங்கள் மதிப்பாய்வு செய்வதற்காக குறிப்பின் கீழே பாதுகாக்கப்படும்.',
   'modal.template-switch.cannot-undo':
@@ -5616,13 +5407,6 @@ const ta: Lang = {
   'skeleton.account-page.loading': 'கணக்குப் பக்கத்தை ஏற்றுகிறது',
 
   'grid.aria.remove-widget': 'விட்ஜெட்டை அகற்று',
-  'csv.broker.tradingtechnologies': 'டிரேட் தொழில்நுட்பங்கள் (TT)',
-  'csv.broker-guide.tradingtechnologies.description':
-    'விட்ஜெட்டை நிரப்புகிறது CSV ஏற்றுமதி',
-  'csv.broker-guide.tradingtechnologies.step-1':
-    'TT இல் நிரப்புதல் விட்ஜெட்டைத் திறந்து, விவரம், தொடர்ச்சியான அல்லது விலைக்கு மாறவும்.',
-
-  'csv.broker-guide.tradingtechnologies.warning.emphasis': 'முக்கியமானது:',
 
   'trade.metadata.broker-comment': 'தரகர் கருத்து',
 
@@ -5707,16 +5491,14 @@ const ta: Lang = {
   'widget.weekly-drc-context.description':
     'வாராந்திர மதிப்பாய்வில் ஒவ்வொரு நாளுக்கும் தேர்ந்தெடுக்கப்பட்ட DRC பிரிவுகளைக் காட்டு',
 
-  'widget.weekly-drc-context.no-activity':
-    'இந்த நாளுக்கு எந்த நடவடிக்கையும் இல்லை.',
+  'widget.weekly-drc-context.no-activity': 'இந்த நாளுக்கு எந்த நடவடிக்கையும் இல்லை.',
   'widget.weekly-drc-context.no-sections-configured':
     'தளவமைப்பு அமைப்புகளில் குறைந்தது ஒரு DRC பிரிவையாவது தேர்வு செய்யவும்.',
   'widget.weekly-drc-context.current-week-not-found':
     'தற்போதைய வாராந்திர மதிப்பாய்வு கிடைக்கவில்லை.',
   'widget.weekly-drc-context.current-week-date-not-found':
     'தற்போதைய வாராந்திர மதிப்பாய்வு தேதி கிடைக்கவில்லை.',
-  'widget.weekly-drc-context.load-error':
-    'வாராந்திர DRC மதிப்பாய்வை ஏற்றுவதில் தோல்வி.',
+  'widget.weekly-drc-context.load-error': 'வாராந்திர DRC மதிப்பாய்வை ஏற்றுவதில் தோல்வி.',
   'widget.weekly-drc-context.invalid-context':
     'இந்த விட்ஜெட் வாராந்திர மதிப்பாய்வு குறிப்புகளில் மட்டுமே கிடைக்கும்',
   'templateEditor.widget.weekly-drc-day-label': 'நாள்',
@@ -5730,10 +5512,8 @@ const ta: Lang = {
     'முந்தைய DRC பிரிவு தலைப்பு',
   'templateEditor.widget.previous-context-heading-placeholder':
     'ஒரு தலைப்பைத் தேர்ந்தெடுக்கவும்',
-  'templateEditor.widget.review-context-fields.selection':
-    'காட்ட வேண்டிய புலங்கள்',
-  'templateEditor.widget.review-context-fields.selection.all':
-    'அனைத்து புலங்கள்',
+  'templateEditor.widget.review-context-fields.selection': 'காட்ட வேண்டிய புலங்கள்',
+  'templateEditor.widget.review-context-fields.selection.all': 'அனைத்து புலங்கள்',
   'templateEditor.widget.review-context-fields.selection.group': 'களக் குழு',
   'templateEditor.widget.review-context-fields.selection.fields':
     'குறிப்பிட்ட புலங்கள்',
@@ -5752,34 +5532,34 @@ const ta: Lang = {
   'templateEditor.widget.review-context-fields.context.both': 'இரண்டும்',
   'templateEditor.widget.review-context-fields.inherited': 'பரம்பரை',
   'templateEditor.widget.review-context-fields.current': 'தற்போதைய',
-  'templateEditor.widget.review-context-fields.empty-values':
-    'வெற்று மதிப்புகள்',
+  'templateEditor.widget.review-context-fields.empty-values': 'வெற்று மதிப்புகள்',
   'templateEditor.widget.review-context-fields.hide-empty':
     'வெற்று மதிப்புகளை மறை',
-  'templateEditor.widget.trade-review.primary-metrics': 'முதன்மை அளவீடுகள்',
-  'templateEditor.widget.trade-review.classification': 'வகைப்பாடு',
   'templateEditor.widget.trade-review.more-context': 'மேலும் சூழல்',
+  'templateEditor.widget.trade-review.notes-sections': 'குறிப்புப் பிரிவுகள்',
+  'templateEditor.widget.trade-review.notes-all': 'அனைத்து குறிப்புகளும்',
+  'templateEditor.widget.trade-review.notes-sections-empty':
+    'உங்கள் வர்த்தக அமைப்பில் குறிப்புப் பிரிவுகளின் கீழ் தலைப்புகளைச் சேர்க்கவும்',
+  'templateEditor.widget.trade-review.placement.cards': 'புள்ளிவிவர அட்டைகள்',
+  'templateEditor.widget.trade-review.placement.visible': 'எப்போதும் தெரியும்',
+  'templateEditor.widget.trade-review.future-custom-fields':
+    'பின்னர் சேர்க்கப்படும் தனிப்பயன் புலங்கள்',
   'templateEditor.widget.trade-review.display': 'காட்சி',
   'templateEditor.widget.trade-review.show-images': 'படங்களைக் காட்டு',
   'templateEditor.widget.trade-review.fields-none': 'புலங்கள் இல்லை',
-  'templateEditor.widget.trade-review.fields-all': 'அனைத்து புலங்கள்',
-  'templateEditor.widget.trade-review.fields-count': '{count} புலங்கள்',
-  'templateEditor.widget.trade-review.no-fields': 'புலங்கள் இல்லை',
-  'templateEditor.widget.trade-review.questions':
-    'கேள்விகளை மதிப்பாய்வு செய்யவும்',
+  'templateEditor.widget.trade-review.questions': 'கேள்விகளை மதிப்பாய்வு செய்யவும்',
   'templateEditor.widget.trade-review.questions-help':
     'ஒவ்வொரு டிரேட் விளைவுக்கும் காட்டப்படும் அறிவுறுத்தல்களைத் தேர்வு செய்யவும். கேள்வி ஐடிகள் நிலையானதாக இருக்கும், எனவே நீங்கள் திருத்தும் போது அல்லது மறுவரிசைப்படுத்தும் போது சேமிக்கப்பட்ட பதில்கள் இணைக்கப்பட்டிருக்கும்.',
   'templateEditor.widget.trade-review.outcome.win': 'வெற்றி பெறுகிறது',
   'templateEditor.widget.trade-review.outcome.loss': 'இழப்புகள்',
-  'templateEditor.widget.trade-review.outcome.breakeven': 'Breakeven',
+  'templateEditor.widget.trade-review.outcome.breakeven': 'சமநிலை',
   'templateEditor.widget.trade-review.outcome.open': 'திறந்தவை',
   'templateEditor.widget.trade-review.questions-empty':
     'இந்த முடிவுக்கு கேள்விகள் இல்லை.',
   'templateEditor.widget.trade-review.question-label': 'கேள்வி',
   'templateEditor.widget.trade-review.question-placeholder':
     'மதிப்பாய்வு கேள்வியை உள்ளிடவும்',
-  'templateEditor.widget.trade-review.answer-placeholder-label':
-    'பதில் ஒதுக்கிட',
+  'templateEditor.widget.trade-review.answer-placeholder-label': 'பதில் ஒதுக்கிட',
   'templateEditor.widget.trade-review.answer-placeholder':
     'பதில் புலத்தில் விருப்பத் தூண்டல் காட்டப்பட்டுள்ளது',
   'templateEditor.widget.trade-review.add-question': '+ கேள்வியைச் சேர்க்கவும்',
@@ -5789,27 +5569,20 @@ const ta: Lang = {
   'templateEditor.widget.trade-review.option-placeholder': 'விருப்பம் லேபிள்',
   'templateEditor.widget.trade-review.add-option': '+ விருப்பத்தைச் சேர்',
   'templateEditor.widget.trade-review.condition-label': 'எப்போது காட்டு',
-  'templateEditor.widget.trade-review.condition-always':
-    'எப்போதும் காட்டப்படும்',
+  'templateEditor.widget.trade-review.condition-always': 'எப்போதும் காட்டப்படும்',
   'templateEditor.widget.trade-review.condition-option-label':
     'எப்போது Q{questionNumber} = {option}',
-  'templateEditor.widget.previous-context-add-section':
-    '+ பகுதியைச் சேர்க்கவும்',
+  'templateEditor.widget.previous-context-add-section': '+ பகுதியைச் சேர்க்கவும்',
 
-  'templateEditor.widget.previous-context-fallback-label':
-    'முந்தைய DRC ஃபால்பேக்',
+  'templateEditor.widget.previous-context-fallback-label': 'முந்தைய DRC ஃபால்பேக்',
   'templateEditor.widget.previous-context-fallback-nearest':
     'அருகிலுள்ள முந்தைய DRC',
   'templateEditor.widget.previous-context-fallback-expected':
     'எதிர்பார்க்கப்படும் முந்தைய டிரேட் நாள் மட்டுமே',
-  'calendar.aria.open-daily-review':
-    '{date}க்கான தினசரி மதிப்பாய்வைத் திறக்கவும்',
-  'calendar.aria.open-weekly-review':
-    '{date}க்கான வாராந்திர மதிப்பாய்வைத் திறக்கவும்',
-  'calendar.aria.open-monthly-review':
-    '{date}க்கான மாதாந்திர மதிப்பாய்வைத் திறக்கவும்',
-  'calendar.aria.open-quarterly-review':
-    '{date}க்கான காலாண்டு மதிப்பாய்வைத் திறக்கவும்',
+  'calendar.aria.open-daily-review': '{date}க்கான தினசரி மதிப்பாய்வைத் திறக்கவும்',
+  'calendar.aria.open-weekly-review': '{date}க்கான வாராந்திர மதிப்பாய்வைத் திறக்கவும்',
+  'calendar.aria.open-monthly-review': '{date}க்கான மாதாந்திர மதிப்பாய்வைத் திறக்கவும்',
+  'calendar.aria.open-quarterly-review': '{date}க்கான காலாண்டு மதிப்பாய்வைத் திறக்கவும்',
 
   'csv.mapper.aria.map-column': 'நெடுவரிசை {header}-ஐ மேப் செய்',
   'command.quick-import-trades': 'டிரேட்களை விரைவாக இறக்குமதி செய்',
@@ -5844,13 +5617,10 @@ const ta: Lang = {
   'quick-import.privacy-note':
     'தேர்ந்தெடுத்த கோப்பும் இறக்குமதி விருப்பங்களும் Journalit-க்கு பதிவேற்றப்படும். மறையாக்கப்பட்ட கண்டறிதல் பதிவுகள் 1 நாள் (இலவசம்) அல்லது 14 நாட்களில் (Pro), முன்னோட்டங்கள் 7 நாட்களில் காலாவதியாகும். விருப்ப AI பொருத்தம் தலைப்புகளையும் மாதிரி வரிசைகளையும் AI மாதிரிக்கு அனுப்பும். Trade Import தனியான கிளையன்ட் டெலிமெட்ரியையோ பின்னணி பிழை அறிக்கைகளையோ அனுப்பாது.',
   'quick-import.dropzone.title': 'ஒரு தரகர் ஏற்றுமதியை இங்கே விடுங்கள்',
-  'quick-import.dropzone.subtitle':
-    'அல்லது கோப்பைத் தேர்ந்தெடுக்க கிளிக் செய்யவும்',
+  'quick-import.dropzone.subtitle': 'அல்லது கோப்பைத் தேர்ந்தெடுக்க கிளிக் செய்யவும்',
 
-  'quick-import.status.checking-subscription':
-    'சந்தா நிலையைச் சரிபார்க்கிறது...',
-  'quick-import.status.analysing':
-    'பகுப்பாய்வு செய்து முன்னோட்டம் தயார் செய்கிறது...',
+  'quick-import.status.checking-subscription': 'சந்தா நிலையைச் சரிபார்க்கிறது...',
+  'quick-import.status.analysing': 'பகுப்பாய்வு செய்து முன்னோட்டம் தயார் செய்கிறது...',
   'quick-import.status.importing': 'இறக்குமதி செய்கிறது...',
   'quick-import.processing.sent-to-server':
     'தனிப்பட்ட செயலாக்கத்திற்காக Journalit க்கு பதிவேற்றப்பட்டது',
@@ -5863,8 +5633,7 @@ const ta: Lang = {
   'quick-import.summary.duplicates': 'பிரதிகள்',
   'quick-import.summary.failed': 'மதிப்பாய்வு தேவை',
   'quick-import.summary.failed-rows': 'வரிசைகள் இறக்குமதி செய்யப்படவில்லை',
-  'quick-import.summary.incomplete-rows':
-    'முழுமையடையாத வரிசைகள் தவிர்க்கப்பட்டன',
+  'quick-import.summary.incomplete-rows': 'முழுமையடையாத வரிசைகள் தவிர்க்கப்பட்டன',
   'quick-import.complete.title': 'இறக்குமதி முடிந்தது',
   'quick-import.complete.message':
     '{written} எழுதப்பட்டது, {duplicates} பிரதிகள், {failed} மதிப்பாய்வு தேவை.',
@@ -5873,26 +5642,19 @@ const ta: Lang = {
     'Trade Import இல் மதிப்பாய்வு செய்யவும்',
   'quick-import.action.setup-in-trade-import': 'Trade Import இல் அமைக்கவும்',
   'quick-import.action.replace-file': 'கோப்பை மாற்றவும்',
-  'quick-import.action.import': 'இறக்குமதி டிரேட்',
   'quick-import.action.import-count.one': '{count} டிரேடை இறக்குமதி செய்யவும்',
-  'quick-import.action.import-count.few':
-    '{count} டிரேட்களை இறக்குமதி செய்யவும்',
-  'quick-import.action.import-count.many':
-    '{count} டிரேட்களை இறக்குமதி செய்யவும்',
-  'quick-import.action.import-count.other':
-    '{count} டிரேட்களை இறக்குமதி செய்யவும்',
+  'quick-import.action.import-count.few': '{count} டிரேட்களை இறக்குமதி செய்யவும்',
+  'quick-import.action.import-count.many': '{count} டிரேட்களை இறக்குமதி செய்யவும்',
+  'quick-import.action.import-count.other': '{count} டிரேட்களை இறக்குமதி செய்யவும்',
   'quick-import.preview.more': '+ {count} மேலும் செயலாக்கப்பட்ட டிரேட்கள்',
   'trade-import.notice.capabilities-failed':
     'Trade Import திறன்களை ஏற்ற முடியவில்லை',
   'trade-import.notice.open-failed': 'Trade Import-ஐத் திறக்க முடியவில்லை',
   'trade-import.notice.template-exists':
     'இந்தப் பெயருடன் Trade Import வார்ப்புரு ஏற்கனவே உள்ளது',
-  'trade-import.notice.template-saved':
-    'Trade Import வார்ப்புரு சேமிக்கப்பட்டது',
-  'trade-import.notice.analyse-failed':
-    'Trade Import பகுப்பாய்வு தோல்வியடைந்தது',
-  'trade-import.notice.preview-failed':
-    'Trade Import முன்னோட்டம் தோல்வியடைந்தது',
+  'trade-import.notice.template-saved': 'Trade Import வார்ப்புரு சேமிக்கப்பட்டது',
+  'trade-import.notice.analyse-failed': 'Trade Import பகுப்பாய்வு தோல்வியடைந்தது',
+  'trade-import.notice.preview-failed': 'Trade Import முன்னோட்டம் தோல்வியடைந்தது',
   'trade-import.notice.free-preview-rate-limited':
     'இலவச முன்னோட்ட வரம்பை அடைந்துவிட்டது. PRO ஐத் தொடங்கவும் அல்லது சுமார் {minutes} நிமிடங்களில் மீண்டும் முயற்சிக்கவும்.',
   'trade-import.notice.free-preview-storage-limit-reached':
@@ -5903,14 +5665,9 @@ const ta: Lang = {
     'Trade Import முடிந்தது: {written} எழுதப்பட்டது அல்லது புதுப்பிக்கப்பட்டது, {duplicateCount} நகல், {failedCount} தோல்வி',
   'trade-import.gate.brand-left': 'டிரேட்',
   'trade-import.gate.brand-right': 'இறக்கு',
-  'trade-import.gate.sign-in.title':
-    'உங்கள் டிரேட் வரலாற்றை இலவசமாக முன்னோட்டமிடவும்',
+  'trade-import.gate.sign-in.title': 'உங்கள் டிரேட் வரலாற்றை இலவசமாக முன்னோட்டமிடவும்',
   'trade-import.gate.sign-in':
     'உங்கள் கோப்பை பகுப்பாய்வு செய்ய உள்நுழையவும் அல்லது இலவச Journalit கணக்கை உருவாக்கவும். நீங்கள் டிரேட்களை இறக்குமதி செய்யும் போது மட்டுமே புரோ தேவைப்படுகிறது.',
-  'trade-import.gate.sign-in.reassurance':
-    'தேர்ந்தெடுத்த கோப்பும் இறக்குமதி விருப்பங்களும் Journalit-க்கு பதிவேற்றப்படும். மறையாக்கப்பட்ட கண்டறிதல் பதிவுகள் 1 நாள் (இலவசம்) அல்லது 14 நாட்களில் (Pro), முன்னோட்டங்கள் 7 நாட்களில் காலாவதியாகும். விருப்ப AI பொருத்தம் தலைப்புகளையும் மாதிரி வரிசைகளையும் AI மாதிரிக்கு அனுப்பும். Trade Import தனியான கிளையன்ட் டெலிமெட்ரியையோ பின்னணி பிழை அறிக்கைகளையோ அனுப்பாது.',
-  'trade-import.gate.sign-in.no-trial':
-    'பகுப்பாய்வு செய்வதற்கும் முன்னோட்டமிடுவதற்கும் எந்த ப்ரோ சோதனையும் தேவையில்லை.',
   'trade-import.gate.sign-in.cta': 'இலவச மாதிரிக்காட்சிக்கு உள்நுழையவும்',
 
   'trade-import.step.select': 'பதிவேற்று',
@@ -5923,6 +5680,21 @@ const ta: Lang = {
   'trade-import.label.account': 'கணக்கு',
   'trade-import.label.broker': 'ஏற்றுமதி மூலம் / தளம்',
   'trade-import.label.asset-type': 'சொத்து வகை',
+  'trade-import.label.destination': 'இவ்வாறு இறக்குமதி செய்',
+  'trade-import.destination.live': 'நேரடி வர்த்தகங்கள்',
+  'trade-import.destination.backtest': 'பேக்டெஸ்ட் வர்த்தகங்கள்',
+  'trade-import.destination.backtest-hint':
+    'பேக்டெஸ்ட் வர்த்தகங்களாகச் சேமிக்கப்படும், உங்கள் நேரடி வர்த்தகங்களிலிருந்து தனியாக.',
+  'trade-import.label.export-format': 'ஏற்றுமதி வகை',
+  'trade-import.format.tradingview.paper': 'காகித டிரேட்',
+  'trade-import.format.tradingview.strategy': 'ஸ்ட்ராடஜி டெஸ்டர்',
+  'trade-import.format.tradingview.paper-hint':
+    'காகித டிரேட் பேனலின் Order History ஏற்றுமதி.',
+  'trade-import.format.tradingview.strategy-hint':
+    'ஸ்ட்ராடஜி டெஸ்டரின் List of Trades ஏற்றுமதி.',
+  'trade-import.label.symbol': 'சின்னம்',
+  'trade-import.symbol.hint':
+    'இந்த ஏற்றுமதியில் சோதிக்கப்பட்ட சின்னம் குறிப்பிடப்படவில்லை. TradingView காட்டுவது போலவே உள்ளிடவும், எ.கா. CME_MINI:ES1!.',
   'trade-import.asset.stock': 'பங்கு',
   'trade-import.asset.options': 'விருப்பங்கள்',
   'trade-import.asset.futures': 'Futures',
@@ -5937,14 +5709,10 @@ const ta: Lang = {
     'தேர்ந்தெடுத்த கோப்பும் இறக்குமதி விருப்பங்களும் Journalit-க்கு பதிவேற்றப்படும். மறையாக்கப்பட்ட கண்டறிதல் பதிவுகள் 1 நாள் (இலவசம்) அல்லது 14 நாட்களில் (Pro), முன்னோட்டங்கள் 7 நாட்களில் காலாவதியாகும். விருப்ப AI பொருத்தம் தலைப்புகளையும் மாதிரி வரிசைகளையும் AI மாதிரிக்கு அனுப்பும். Trade Import தனியான கிளையன்ட் டெலிமெட்ரியையோ பின்னணி பிழை அறிக்கைகளையோ அனுப்பாது. ஏற்றுமதிகளில் கணக்கு அடையாளங்கள், வர்த்தக வரலாறு, குறிப்புகள், விலைகள், அளவுகள், கட்டணங்கள், இருப்புகள் மற்றும் லாபம்/நஷ்டம் இருக்கலாம். கோரிக்கைகள் தனிப்பயன் புல வரையறைகளையும் சேமித்த விருப்பங்களையும் அனுப்பும்; முன்னோட்டத்தில் இலக்குக் கணக்கின் பெயர் இருக்கும். AI செயலாக்கத்தைத் தவிர்க்க AI பொருத்தத்தை முடக்கவும்.',
 
   'trade-import.action.analyse': 'கோப்பை பகுப்பாய்வு செய்யுங்கள்',
-  'trade-import.action.choose-file':
-    'பதிவேற்ற அல்லது இழுத்து விட கிளிக் செய்யவும்',
-  'trade-import.guide.prompt': 'எதை ஏற்றுமதி செய்வது என்று தெரியவில்லையா?',
-  'trade-import.guide.link': 'தரகர் வழிகாட்டியைப் பார்க்கவும்',
+  'trade-import.action.choose-file': 'பதிவேற்ற அல்லது இழுத்து விட கிளிக் செய்யவும்',
   'trade-import.hyperliquid.export-guidance':
     'Hyperliquid-இல் Trade History → Export as CSV-ஐத் தேர்ந்தெடுக்கவும்; Export More-ஐ அல்ல (அது தனியான மூன்றாம் தரப்பு அறிக்கை). Funding History அல்லது Order History-ஐப் பயன்படுத்த வேண்டாம்.',
-  'trade-import.hyperliquid.date-us':
-    'அமெரிக்க: மாதம்/நாள்/ஆண்டு - 24 மணி நேர முறை',
+  'trade-import.hyperliquid.date-us': 'அமெரிக்க: மாதம்/நாள்/ஆண்டு - 24 மணி நேர முறை',
   'trade-import.hyperliquid.date-day-first':
     'நாள் முதலில்: நாள்/மாதம்/ஆண்டு, நேரத்திற்கு முன் “ - ” இருந்தாலும் இல்லாவிட்டாலும்',
   'trade-import.hyperliquid.date-german':
@@ -5956,6 +5724,8 @@ const ta: Lang = {
   'trade-import.action.drop-file': 'பதிவேற்ற கோப்பை கைவிடவும்',
   'trade-import.analyse.detected':
     'உங்கள் {fileType} கோப்பு படிக்கப்பட்டது. கீழே உள்ள வரிசைகளைச் சரிபார்த்து, ஒவ்வொரு நெடுவரிசையையும் ஒரு டிரேட் புலத்துடன் பொருத்துங்கள்.',
+  'trade-import.analyse.detected-native':
+    'உங்கள் {fileType} கோப்பு படிக்கப்பட்டது. கீழே உள்ள வரிசைகளைச் சரிபார்த்து, "முன்னோட்டத்தை உருவாக்கவும்" என்பதைத் தேர்ந்தெடுக்கவும்.',
   'trade-import.table.screenshots': 'திரைப்பிடிப்புகள்',
   'trade-import.preview.screenshot-alt':
     'விரிதாள் வரிசை {row} இலிருந்து {symbol} க்கான திரைப்பிடிப்பு',
@@ -5973,8 +5743,7 @@ const ta: Lang = {
     'சாத்தியமான {count} நகல்களையும் இருந்தாலும் இறக்குமதி செய்',
   'csv.mapper.missing-fields.pnl-or-prices':
     'அல்லது விலைகளிலிருந்து P/L கணக்கிட நுழைவு விலை, வெளியேறும் விலை, அளவு ஆகியவற்றைப் பொருத்துங்கள்.',
-  'trade-import.pnl-from-prices.title':
-    'P/L உங்கள் விலைகளிலிருந்து கணக்கிடப்படும்',
+  'trade-import.pnl-from-prices.title': 'P/L உங்கள் விலைகளிலிருந்து கணக்கிடப்படும்',
   'trade-import.pnl-from-prices.body':
     'P/L நெடுவரிசை இல்லை, எனவே நுழைவு விலை, வெளியேறும் விலை, அளவிலிருந்து P/L கணக்கிடப்படுகிறது. சரியான சொத்து வகையுடன் மட்டுமே இது சரியாக இருக்கும், எனவே இந்த டிரேட்கள் என்ன என்று தேர்ந்தெடுக்கவும்.',
   'trade-import.pnl-from-prices.contract-size':
@@ -5988,6 +5757,8 @@ const ta: Lang = {
     'மற்ற வரிசையில் எழுதப்பட்ட வரிசைகள் பட்டியலிடப்படும், அவற்றை உங்கள் கோப்பில் சரிசெய்யலாம்.',
   'quick-import.message.date-order':
     'உங்கள் தேதிகளை இரண்டு விதமாகப் படிக்கலாம். தேர்ந்தெடுக்க முழு இறக்குமதியைத் திறக்கவும்.',
+  'quick-import.message.symbol-required':
+    'இந்த ஏற்றுமதியில் அதன் சின்னம் குறிப்பிடப்படவில்லை. அதை உள்ளிட முழு இறக்குமதியைத் திறக்கவும்.',
   'csv.date-format.eu-dot': 'EU புள்ளி: 25.12.2024 (நாள்.மாதம்.ஆண்டு)',
   'csv.date-format.ymd-dot': 'முதலில் ஆண்டு, புள்ளிகளுடன்: 2024.12.25',
   'trade-import.unmapped.title': 'இறக்குமதி செய்யப்படாதவை ({count})',
@@ -6012,10 +5783,8 @@ const ta: Lang = {
   'trade-import.status.closed': 'மூடப்பட்டது',
   'trade-import.status.cancelled': 'ரத்துசெய்யப்பட்டது',
   'trade-import.diagnostic.column': 'நெடுவரிசை: {columns}',
-  'trade-import.diagnostic.unmap-column':
-    'இந்த நெடுவரிசையை இறக்குமதி செய்ய வேண்டாம்',
+  'trade-import.diagnostic.unmap-column': 'இந்த நெடுவரிசையை இறக்குமதி செய்ய வேண்டாம்',
   'trade-import.diagnostic.edit-mapping': 'மேப்பிங்கை மாற்று',
-  'trade-import.diagnostic.info': 'தகவல்',
   'trade-import.label.sheet': 'தாள்',
   'trade-import.label.header-row': 'தலைப்பு வரிசை',
   'trade-import.placeholder.auto': 'ஆட்டோ',
@@ -6035,8 +5804,6 @@ const ta: Lang = {
   'trade-import.preview.metric.ready': 'இறக்குமதி செய்ய தயார்',
   'trade-import.preview.metric.duplicates': 'சாத்தியமான பிரதிகள்',
   'trade-import.preview.metric.attention': 'கவனம் தேவை',
-  'trade-import.preview.completed.message':
-    'டிரேட் இறக்குமதி செய்யத் தயாராக உள்ளது: {count}.',
   'trade-import.preview.partial.message':
     'டிரேட் தயாராக உள்ளது: {count}. வரிசைகள் இறக்குமதி செய்யப்படவில்லை: {failed}. முழுமையற்ற வரிசைகள் தவிர்க்கப்பட்டன: {incomplete}.',
   'trade-import.preview.partial.guidance':
@@ -6061,8 +5828,7 @@ const ta: Lang = {
     'Journalit-க்கு TradingView Paper Trading-இன் Order History / History CSV தேவை. Account History, விளக்கப்படத் தரவு, உத்தி ஏற்றுமதிகள் அல்லது பிற TradingView CSV கோப்புகளைப் பயன்படுத்த வேண்டாம்.',
   'trade-import.preview.tradingview-export.guide':
     'TradingView ஏற்றுமதி வழிகாட்டியைப் பார்க்கவும்',
-  'trade-import.source-recovery.title':
-    'இந்தக் கோப்பு {source} ஏற்றுமதி போல உள்ளது',
+  'trade-import.source-recovery.title': 'இந்தக் கோப்பு {source} ஏற்றுமதி போல உள்ளது',
   'trade-import.source-recovery.message':
     'Journalit இந்தக் கோப்பை {selected} க்கு பதிலாக நேரடியாக {source} மூலம் இறக்குமதி செய்ய முடியும்.',
   'trade-import.source-recovery.continue': '{selected} உடன் தொடர்',
@@ -6083,12 +5849,9 @@ const ta: Lang = {
   'trade-import.preview.no-eligible':
     'கோப்பு வெற்றிகரமாக பாகுபடுத்தப்பட்டது, ஆனால் புதிய அல்லது புதுப்பிக்கப்பட்ட டிரேட்கள் எதுவும் இறக்குமதி செய்ய தகுதியற்றவை. கீழே உள்ள நகல் மற்றும் வகைப்பாடு விவரங்களை மதிப்பாய்வு செய்யவும்.',
   'trade-import.pro-gate.title.one': '{count} வர்த்தகம் இறக்குமதிக்குத் தயார்',
-  'trade-import.pro-gate.title.few':
-    '{count} வர்த்தகங்கள் இறக்குமதிக்குத் தயார்',
-  'trade-import.pro-gate.title.many':
-    '{count} வர்த்தகங்கள் இறக்குமதிக்குத் தயார்',
-  'trade-import.pro-gate.title.other':
-    '{count} வர்த்தகங்கள் இறக்குமதிக்குத் தயார்',
+  'trade-import.pro-gate.title.few': '{count} வர்த்தகங்கள் இறக்குமதிக்குத் தயார்',
+  'trade-import.pro-gate.title.many': '{count} வர்த்தகங்கள் இறக்குமதிக்குத் தயார்',
+  'trade-import.pro-gate.title.other': '{count} வர்த்தகங்கள் இறக்குமதிக்குத் தயார்',
   'trade-import.pro-gate.subtitle':
     'அவற்றை வர்த்தகக் குறிப்புகளாக உங்கள் வால்ட்டில் எழுத PRO-ஐ செயல்படுத்துங்கள்.',
   'trade-import.pro-gate.cta': 'PRO-ஐ செயல்படுத்து',
@@ -6100,7 +5863,6 @@ const ta: Lang = {
   'trade-import.table.entry-time': 'நுழைவு நேரம்',
   'trade-import.table.date': 'தேதி',
   'trade-import.table.quantity': 'அளவு',
-  'trade-import.table.position': 'Position',
   'trade-import.table.result': 'முடிவு',
   'trade-import.table.message': 'செய்தி',
   'trade-import.status.new': 'புதியது',
@@ -6108,15 +5870,20 @@ const ta: Lang = {
   'trade-import.status.other-account': 'வேறு கணக்கில் உள்ளது',
   'trade-import.status.other-account.detail':
     'ஏற்கனவே {account} இல் இறக்குமதி செய்யப்பட்டது',
+  'trade-import.status.split-across-trades.detail':
+    'இதன் நிறைவேற்றங்கள் ஏற்கனவே உங்கள் ஜர்னலில் பல டிரேடுகளில் பிரிந்து உள்ளன. விடுபட்டவற்றைச் சேர்க்க, முன்பு போலவே அதே தேதி வரம்புகளை இறக்குமதி செய்யவும்.',
   'trade-import.status.updates-existing': 'உள்ள டிரேடைப் புதுப்பிக்கிறது',
   'trade-import.status.possible-duplicate': 'சாத்தியமான பிரதி',
   'trade-import.status.needs-review': 'சரிபார்க்க வேண்டும்',
   'trade-import.status.duplicate-in-file': 'கோப்பில் பிரதி',
   'trade-import.status.invalid': 'தவறான டிரேட்',
   'trade-import.status.no-open-trade': 'மூட திறந்த டிரேட் இல்லை',
-  'trade-import.status.multiple-open-trades':
-    'பல திறந்த டிரேட்கள் பொருந்துகின்றன',
+  'trade-import.status.multiple-open-trades': 'பல திறந்த டிரேட்கள் பொருந்துகின்றன',
   'trade-import.status.quantity-mismatch': 'அளவு பொருந்தவில்லை',
+  'trade-import.commit-failure.update-target-changed':
+    'இந்த வரிசை புதுப்பிக்கும் வர்த்தகம் முன்னோட்டத்திற்குப் பிறகு மாற்றப்பட்டது அல்லது நீக்கப்பட்டது. கோப்பை மீண்டும் இறக்குமதி செய்யவும்.',
+  'trade-import.commit-failure.tradovate-overlap':
+    'Tradovate இலிருந்து ஏற்கனவே ஒத்திசைக்கப்பட்ட ஒரு வர்த்தகத்துடன் மேலெழுகிறது, அதனுடன் பொருத்த முடியவில்லை.',
   'trade-import.server-deletion.deleted':
     'Journalit சர்வரிலிருந்து நீக்கப்பட்ட டிரேட்கள்: {count}',
   'trade-import.server-deletion.kept':
@@ -6131,12 +5898,11 @@ const ta: Lang = {
     'சர்வரில் நீக்கப்பட்ட பிறகு குப்பைக்கு நகர்த்தப்பட்ட டிரேட் குறிப்புகள்: {count}',
   'trade-import.server-deletion.account.title': 'சர்வர் கணக்கை நீக்கவா?',
   'trade-import.server-deletion.account.message':
-    'இது "{account}" மற்றும் அதன் இறக்குமதி செய்த டிரேட்களை ({count} சர்வரில்) Journalit சர்வரிலிருந்து நிரந்தரமாக நீக்கி, ஒத்திசைக்கப்பட்ட ஒவ்வொரு வால்ட்டிலும் அவற்றின் குறிப்புகளை குப்பைக்கு நகர்த்தும். பிறகு கோப்புகளை மீண்டும் இறக்குமதி செய்யலாம்.',
+    'இது "{account}" மற்றும் அதன் இறக்குமதி செய்யப்பட்ட டிரேட்களை (சேவையகத்தில் {count}) Journalit சேவையகத்திலிருந்து நிரந்தரமாக நீக்கி, ஒத்திசைக்கப்பட்ட ஒவ்வொரு பெட்டகத்திலும் அவற்றின் குறிப்புகளைக் குப்பைக்கு நகர்த்தும். பின்னர் கோப்புகளை மீண்டும் இறக்குமதி செய்யலாம்.',
   'trade-import.server-deletion.account.confirm': 'சர்வரிலிருந்து நீக்கு',
   'trade-import.server-deletion.account.button': 'சர்வரிலிருந்து நீக்கு',
   'trade-import.history.title': 'இறக்குமதி வரலாறு',
-  'trade-import.completion.wrong-account':
-    'தவறான கணக்கில் இறக்குமதி செய்துவிட்டீர்களா?',
+  'trade-import.completion.wrong-account': 'தவறான கணக்கில் இறக்குமதி செய்துவிட்டீர்களா?',
   'trade-import.completion.undo-import': 'இந்த இறக்குமதியைத் திரும்பப்பெறு',
   'trade-import.action.manage-imports': 'முந்தைய இறக்குமதிகளை நிர்வகி',
   'trade-sync.import.more-actions': 'மேலும் செயல்கள்',
@@ -6146,11 +5912,17 @@ const ta: Lang = {
   'trade-import.history.trades-on-server': '{count} சர்வரில்',
   'trade-import.history.delete.title': 'இந்த இறக்குமதியை நீக்கவா?',
   'trade-import.history.delete.message':
-    'இந்த இறக்குமதி "{account}" இல் சேர்த்த டிரேட்களை ({count} சர்வரில்) Journalit சர்வரிலிருந்து நிரந்தரமாக நீக்கி, ஒத்திசைக்கப்பட்ட ஒவ்வொரு வால்ட்டிலும் அவற்றின் குறிப்புகளை குப்பைக்கு நகர்த்தும். வேறு இறக்குமதியிலும் உள்ள டிரேட்கள் வைக்கப்படும். பிறகு கோப்பை மீண்டும் இறக்குமதி செய்யலாம்.',
+    'இந்த இறக்குமதி "{account}"-இல் சேர்த்த டிரேட்களை (சேவையகத்தில் {count}) Journalit சேவையகத்திலிருந்து நிரந்தரமாக நீக்கி, ஒத்திசைக்கப்பட்ட ஒவ்வொரு பெட்டகத்திலும் அவற்றின் குறிப்புகளைக் குப்பைக்கு நகர்த்தும். வேறொரு இறக்குமதியிலும் உள்ள டிரேட்கள் வைக்கப்படும். பின்னர் கோப்பை மீண்டும் இறக்குமதி செய்யலாம்.',
+  'trade-import.history.delete.updates-kept':
+    'முன்பு இறக்குமதி செய்த டிரேட்களில் இது செய்த மாற்றங்கள், உதாரணமாக மூடியது, அப்படியே இருக்கும்.',
+  'trade-import.history.delete.message-updates-only':
+    'இந்த இறக்குமதி முன்பு இறக்குமதி செய்த டிரேட்களை மட்டுமே மாற்றியது, உதாரணமாக அவற்றை மூடியது. இதை நீக்கினால் இறக்குமதி வரலாற்றிலிருந்து அகற்றப்படும்; அந்த மாற்றங்கள் அப்படியே இருக்கும்.',
+  'trade-import.history.delete.message-none-deleted':
+    'எந்த டிரேடும் நீக்கப்படாது: இந்த இறக்குமதியின் ஒவ்வொரு டிரேடும் வேறொரு இறக்குமதியிலும் உள்ளது. இதை நீக்குவது இறக்குமதி வரலாற்றிலிருந்து மட்டும் அகற்றும்.',
   'trade-import.history.delete.confirm': 'இறக்குமதியை நீக்கு',
   'trade-import.history.load-more': 'மேலும் ஏற்று',
   'account.edit.modal.delete.delete-server-trades':
-    'அதன் இறக்குமதி செய்த டிரேட்களையும் Journalit சர்வரிலிருந்து நீக்கு ({count} சர்வரில்). நீங்கள் இங்கே வைத்திருந்தாலும், ஒத்திசைக்கப்பட்ட ஒவ்வொரு வால்ட்டிலும் அவற்றின் குறிப்புகள் குப்பைக்கு நகர்த்தப்படும்.',
+    'இதன் இறக்குமதி செய்யப்பட்ட டிரேட்களையும் Journalit சேவையகத்திலிருந்து நீக்கவும் (சேவையகத்தில் {count}). இங்கே வைத்திருந்தாலும், ஒத்திசைக்கப்பட்ட ஒவ்வொரு பெட்டகத்திலும் அவற்றின் குறிப்புகள் குப்பைக்கு நகரும்.',
   'trade-import.preview.other-account.message':
     'ஏற்கனவே {account} இல் உள்ளன ({count}), எனவே தவிர்க்கப்படும்.',
   'trade-import.preview.other-account.import-instead':
@@ -6172,8 +5944,7 @@ const ta: Lang = {
   'trade-import.source.subtitle':
     'நீங்கள் ஏற்றுமதி செய்த தளத்தைத் தேர்ந்தெடுக்கவும். Journalit அதன் கோப்பு வடிவத்தை நேரடியாகப் படிக்கிறது, நெடுவரிசை மேப்பிங் தேவையில்லை.',
   'trade-import.source.search': 'புரோக்கர்கள் மற்றும் தளங்களைத் தேடுங்கள்',
-  'trade-import.source.sync-available':
-    'தானியங்கி Trade Sync-ஐயும் ஆதரிக்கிறது',
+  'trade-import.source.sync-available': 'தானியங்கி Trade Sync-ஐயும் ஆதரிக்கிறது',
   'trade-import.source.manual.tile': 'சொந்த விரிதாள் / பிற கோப்பு',
   'trade-import.source.manual.title': 'சொந்த விரிதாள் அல்லது பிற கோப்பு',
   'trade-import.source.manual.hint':
@@ -6186,11 +5957,13 @@ const ta: Lang = {
     'ஆதரிக்கப்படாத Rithmic வடிவம்',
   'trade-import.recovery.rithmic-order-history.message':
     'Rithmic ஆர்டர் வரலாற்றுக் கோப்பைப் பதிவேற்றவும் அல்லது இந்தக் கோப்பை உருவாக்கிய தளத்தைத் தேர்ந்தெடுக்கவும்.',
-  'trade-import.recovery.rithmic-order-history.choose-file':
-    'வேறு கோப்பைத் தேர்ந்தெடு',
+  'trade-import.recovery.no-trade-rows.title':
+    'இந்தக் கோப்பில் இறக்குமதி செய்ய வர்த்தகங்கள் இல்லை',
+  'trade-import.recovery.no-trade-rows.message':
+    'புதிய ஏற்றுமதியில் இதைச் சரிசெய்து, புதிய கோப்பைத் தேர்ந்தெடுக்கவும்.',
+  'trade-import.action.choose-another-file': 'வேறு கோப்பைத் தேர்ந்தெடு',
   'trade-import.source.change-action': 'மூலத்தை மாற்று',
-  'trade-import.sync-suggestion.full.title':
-    '{broker} தானாக ஒத்திசைக்க முடியும்',
+  'trade-import.sync-suggestion.full.title': '{broker} தானாக ஒத்திசைக்க முடியும்',
   'trade-import.sync-suggestion.full.body':
     'Trade Sync புதிய டிரேடுகளைத் தானாகக் கொண்டுவருகிறது, ஏற்றுமதி தேவையில்லை. கீழே கோப்பையும் இறக்குமதி செய்யலாம்.',
   'trade-import.sync-suggestion.partial.title':
@@ -6223,7 +5996,7 @@ const ta: Lang = {
   'setups.create.field.color-description':
     'இந்த Setup-ஐ அடையாளம் காண வண்ணத்தைத் தேர்ந்தெடுக்கவும்.',
   'setups.create.field.tags': 'குறிச்சொற்கள்',
-  'setups.create.placeholder.tags': 'Momentum, Breakout, Morning',
+  'setups.create.placeholder.tags': 'Momentum, Breakout, காலை',
   'setups.create.profile.heading': 'விருப்பமான புலங்கள்',
   'setups.create.profile.optional-label': '(விரும்பினால்)',
   'setups.create.field.sessions': 'அமர்வுகள்',
@@ -6244,11 +6017,9 @@ const ta: Lang = {
   'setups.create.linked-notes.empty': 'இன்னும் குறிப்புகள் இணைக்கப்படவில்லை.',
   'setups.create.linked-notes.add': '+ இணைப்பு குறிப்பு',
   'setups.create.linked-notes.remove': 'இணைக்கப்பட்ட குறிப்பை அகற்று',
-  'setups.create.linked-notes.picker-title':
-    'பிளேபுக் குறிப்பைத் தேர்ந்தெடுக்கவும்',
+  'setups.create.linked-notes.picker-title': 'பிளேபுக் குறிப்பைத் தேர்ந்தெடுக்கவும்',
   'setups.create.linked-notes.search': 'குறிப்புகளைத் தேடு...',
-  'setups.create.linked-notes.no-notes':
-    'மார்க் டவுன் குறிப்புகள் எதுவும் இல்லை.',
+  'setups.create.linked-notes.no-notes': 'மார்க் டவுன் குறிப்புகள் எதுவும் இல்லை.',
   'setups.create.button.creating': 'உருவாக்குகிறது...',
   'setups.create.button.create': 'உருவாக்கு Setup',
   'setups.create.success': 'Setup "{name}" வெற்றிகரமாக உருவாக்கப்பட்டது',
@@ -6259,8 +6030,7 @@ const ta: Lang = {
   'setups.edit.title': 'திருத்து Setup',
   'setups.edit.button.saving': 'சேமிக்கிறது...',
   'setups.edit.button.save': 'சேமி Setup',
-  'setups.edit.button.rename-and-update':
-    'டிரேட்களை மறுபெயரிட்டு புதுப்பிக்கவும்',
+  'setups.edit.button.rename-and-update': 'டிரேட்களை மறுபெயரிட்டு புதுப்பிக்கவும்',
   'setups.edit.rename-warning.title':
     'Setup-ஐ மறுபெயரிடவும் மற்றும் டிரேட்களைப் புதுப்பிக்கவும்',
   'setups.edit.rename-warning.message':
@@ -6274,18 +6044,14 @@ const ta: Lang = {
   'setups.edit.delete.error': 'Setup-ஐ நீக்க முடியவில்லை',
   'setups.edit.success': 'Setup "{name}" வெற்றிகரமாக புதுப்பிக்கப்பட்டது',
   'setups.edit.error.failed': 'Setup-ஐப் புதுப்பிக்க முடியவில்லை',
-  'setups.view.action.compare-selected':
-    'தேர்ந்தெடுக்கப்பட்ட Setups-ஐ ஒப்பிடுக',
   'setups.view.tabs.aria': 'Setup தாவல்களைப் பார்க்கவும்',
   'setups.view.tab.overview': 'மேலோட்டம்',
   'setups.view.tab.compare': 'ஒப்பிடு',
-  'setups.view.card.select-for-compare':
-    'ஒப்பிடுவதற்கு Setup-ஐத் தேர்ந்தெடுக்கவும்',
+  'setups.view.card.select-for-compare': 'ஒப்பிடுவதற்கு Setup-ஐத் தேர்ந்தெடுக்கவும்',
 
   'setups.view.compare.title': 'Setups-ஐ ஒப்பிடுக',
 
-  'setups.view.compare.empty':
-    'ஒப்பிடுவதற்கு இரண்டு Setups-ஐ தேர்ந்தெடுக்கவும்.',
+  'setups.view.compare.empty': 'ஒப்பிடுவதற்கு இரண்டு Setups-ஐ தேர்ந்தெடுக்கவும்.',
   'setups.view.compare.empty-submessage':
     'அருகருகே அறிக்கையை உருவாக்க மேலோட்டத்தில் இருந்து இரண்டு Setup அட்டைகளைத் தேர்வு செய்யவும்.',
   'setups.view.compare.metrics-title': 'ஒப்பீட்டு அளவீடுகள்',
@@ -6295,7 +6061,7 @@ const ta: Lang = {
 
   'setups.view.compare.no-clear-edge': 'தெளிவான Edge இல்லை',
   'setups.view.compare.expectancy-edge': 'Expectancy Edge',
-  'setups.view.compare.confidence': 'Confidence',
+  'setups.view.compare.confidence': 'நம்பகத்தன்மை',
   'setups.view.compare.sample': 'மாதிரி',
   'setups.view.compare.confidence.high': 'உயர்',
   'setups.view.compare.confidence.moderate': 'மிதமான',
@@ -6348,12 +6114,6 @@ const ta: Lang = {
   'setups.guide.view-tabs.title': 'Setup காட்சிகளை மாற்றவும்',
   'setups.guide.view-tabs.description':
     'போதுமான Setups கிடைக்கும்போது மேலோட்டம், Setup ஜோடிகள் மற்றும் ஒப்பீட்டு ஓட்டம் ஆகியவற்றுக்கு இடையே நகர்த்துவதற்கு இந்தத் தாவல்களைப் பயன்படுத்தவும்.',
-  'setups.guide.overview-chart.title': 'செயல்திறன் தரவரிசை',
-  'setups.guide.overview-chart.description':
-    'தேர்ந்தெடுக்கப்பட்ட அளவீட்டின்படி மேலோட்ட விளக்கப்படம் Setups-ஐ வரிசைப்படுத்துகிறது. மெட்ரிக்கை மாற்றுவதற்கு மேல் வலதுபுறத்தில் உள்ள கட்டுப்பாடுகளைப் பயன்படுத்தவும் அல்லது குறிப்பிட்ட Setups-இல் விளக்கப்படத்தை மையப்படுத்தவும்.',
-  'setups.guide.tag-filter.title': 'Setups-ஐ வடிகட்டு',
-  'setups.guide.tag-filter.description':
-    'Setup குறிச்சொற்கள் அல்லது திசையின் மூலம் அட்டைகள், விளக்கப்படம், ஜோடிகள் மற்றும் ஒப்பீட்டுத் தேர்வுகளை வடிகட்டவும். ஒவ்வொரு குழுவிற்கும் உள்ள தேர்வுகள் அல்லது தர்க்கத்தைப் பயன்படுத்துகின்றன, அதே சமயம் குறிச்சொற்களும் திசையும் ஒன்றாக இணைகின்றன.',
   'setups.guide.setup-cards.title': 'Setup கார்டுகள்',
   'setups.guide.setup-cards.description':
     'கார்டுகள் ஒவ்வொரு Setup-ஐயும் முக்கிய அளவீடுகள், நிலை, குறிச்சொற்கள், கடைசியாக டிரேட் செய்த தேதி மற்றும் சிறிய செயல்திறன் போக்கு ஆகியவற்றுடன் சுருக்கமாகக் கூறுகின்றன.',
@@ -6372,23 +6132,8 @@ const ta: Lang = {
   'setups.guide.detail-rules.title': 'செயல்படுத்தும் விதிகள்',
   'setups.guide.detail-rules.description':
     'சிறந்த நிபந்தனைகள், நுழைவுகள், ஆபத்து மற்றும் தவிர்க்க வேண்டிய தவறுகளுக்கான கட்டமைக்கப்பட்ட சரிபார்ப்புப் பட்டியலை விதிகள் பதிவு செய்கின்றன.',
-  'setups.guide.finish.title': 'Setups வழிகாட்டி முடிந்தது',
-  'setups.guide.finish.description':
-    'முக்கிய Setups பரப்புகளை நீங்கள் பார்த்திருக்கிறீர்கள்: மேலோட்டம், இணைகள், ஒப்பிடுதல் மற்றும் தனிப்பட்ட Setupப் பக்கம்.',
 
-  'setups.guide.pairs-mode.title': 'Setup ஜோடிகளைத் திறக்கவும்',
-  'setups.guide.pairs-mode.description':
-    'எந்த Setup சேர்க்கைகள் ஒப்பிடுவதற்குப் போதுமான பகிரப்பட்ட டிரேட்களைக் கொண்டுள்ளன என்பதைப் பார்க்க Pairs-ஐத் திறக்கவும்.',
-  'setups.guide.pairs-chart.title': 'ஜோடி தரவரிசை',
-  'setups.guide.pairs-chart.description':
-    'ஜோடிகளின் பயன்முறை சிறந்த அல்லது மோசமாகச் செயல்படக்கூடிய சேர்க்கைகளை எடுத்துக்காட்டுகிறது. அந்த கலவைக்கான ஆழமான ஜோடி நுண்ணறிவுகளைத் திறக்க ஒரு பட்டியைக் கிளிக் செய்யவும்.',
-
-  'setups.guide.compare-mode.title': 'ஒப்பீட்டு பயன்முறையைத் தொடங்கவும்',
-  'setups.guide.compare-mode.description':
-    'ஒப்பீட்டு பயன்முறையானது, அருகருகே மதிப்பாய்வுக்காக இரண்டு Setup அட்டைகளைத் தேர்ந்தெடுக்க உங்களை அனுமதிக்கிறது.',
   'setups.guide.compare-select.title': 'இரண்டு Setups-ஐ தேர்ந்தெடுக்கவும்',
-  'setups.guide.compare-select.description':
-    'ஒப்பீட்டுப் பக்கத்தைத் திறக்க இரண்டு Setup அட்டைகளைத் தேர்ந்தெடுக்கவும்.',
   'setups.guide.compare-summary.title': 'இது ஒப்பீட்டுப் பக்கம்',
   'setups.guide.compare-summary.description':
     'இந்தப் பக்கம் இரண்டு Setups-ஐ அருகருகே ஒப்பிடுகிறது. மேல் சுருக்க வரிசையில் வெற்றியாளர், Expectancy Edge, Confidence மற்றும் ஒரு Setup-இல் ஏன் Edge இருக்கலாம்.',
@@ -6401,9 +6146,6 @@ const ta: Lang = {
   'setups.guide.detail-execution-gap.title': 'Execution Gap பகுப்பாய்வு',
   'setups.guide.detail-execution-gap.description':
     'தவறவிட்ட டிரேட் அல்லது Backtest தரவு இருக்கும் போது, இந்தத் தாவல் பதிவு செய்யப்பட்ட செயல்பாட்டைத் தவறவிட்ட அல்லது benchmark வாய்ப்புடன் ஒப்பிடுகிறது.',
-  'setups.guide.back-to-overview.title': 'Setup அட்டைகளுக்குத் திரும்பு',
-  'setups.guide.back-to-overview.description':
-    'ஒப்பிட்டு முடித்ததும் Setup அட்டைகளுக்குத் திரும்பவும்.',
 
   'setups.view.title': 'Setups',
   'setups.view.open-as-markdown': 'Markdown ஆக திற',
@@ -6441,10 +6183,8 @@ const ta: Lang = {
   'setups.view.overview.setup-filter.all': 'Setups: அனைத்தும்',
   'setups.view.overview.setup-filter.selected':
     'Setups: {count} தேர்ந்தெடுக்கப்பட்டது',
-  'setups.view.overview.setup-filter.aria':
-    'காண்பிக்க Setups-ஐ தேர்ந்தெடுக்கவும்',
-  'setups.view.overview.setup-filter.select-all':
-    'அனைத்தையும் தேர்ந்தெடுக்கவும்',
+  'setups.view.overview.setup-filter.aria': 'காண்பிக்க Setups-ஐ தேர்ந்தெடுக்கவும்',
+  'setups.view.overview.setup-filter.select-all': 'அனைத்தையும் தேர்ந்தெடுக்கவும்',
   'setups.view.overview.setup-filter.clear': 'அழி',
   'setups.view.overview.tag-filter.aria': 'Setups-ஐ வடிகட்டு',
   'setups.view.overview.tag-filter.reset': 'மீட்டமை',
@@ -6457,8 +6197,7 @@ const ta: Lang = {
   'setups.view.overview.pnl-chart.dropdown-label': 'P&L வளைவு',
 
   'setups.view.overview.pnl-chart.combined': 'அனைத்து Setups-உம்',
-  'setups.view.overview.pnl-chart.selected-combined':
-    'தேர்ந்தெடுக்கப்பட்ட Setups',
+  'setups.view.overview.pnl-chart.selected-combined': 'தேர்ந்தெடுக்கப்பட்ட Setups',
 
   'setups.view.overview.pnl-chart.hidden':
     'தனியுரிமை பயன்முறை இயக்கப்பட்டிருக்கும் போது Setup P&L காலப்போக்கில் மறைக்கப்படும்.',
@@ -6512,8 +6251,7 @@ const ta: Lang = {
 
   'setups.view.detail.rules.empty-title': 'Setup பிளேபுக்கை உருவாக்கவும்',
   'setups.view.detail.rules.use-template': 'வார்ப்புருவைப் பயன்படுத்தவும்',
-  'setups.view.detail.rules.applying-template':
-    'வார்ப்புருவைப் பயன்படுத்துகிறது...',
+  'setups.view.detail.rules.applying-template': 'வார்ப்புருவைப் பயன்படுத்துகிறது...',
   'setups.view.detail.rules.add-custom': 'விருப்ப விதி',
   'setups.view.detail.rules.template-error':
     'பிளேபுக் வார்ப்புருவைப் பயன்படுத்துவதில் தோல்வி.',
@@ -6560,19 +6298,17 @@ const ta: Lang = {
   'setups.view.detail.rule.category.psychology': 'உளவியல்',
   'setups.view.detail.rule.required': 'தேவை',
 
-  'setups.view.detail.no-linked-notes':
-    'இணைக்கப்பட்ட குறிப்புகள் எதுவும் இல்லை.',
+  'setups.view.detail.no-linked-notes': 'இணைக்கப்பட்ட குறிப்புகள் எதுவும் இல்லை.',
 
   'setups.view.detail.performance.cumulative-pnl': 'ஒட்டுமொத்த PnL',
   'setups.view.detail.performance.cumulative-r': 'ஒட்டுமொத்த ஆர்',
   'setups.view.detail.performance.drawdown': 'Drawdown',
-  'setups.view.detail.performance.empty':
-    'இதுவரை இணைக்கப்பட்ட டிரேட்கள் இல்லை.',
+  'setups.view.detail.performance.empty': 'இதுவரை இணைக்கப்பட்ட டிரேட்கள் இல்லை.',
   'setups.view.detail.performance.empty-submessage':
     'இந்த Setup-ஐப் பயன்படுத்தும் டிரேட்கள் நீங்கள் பதிவு செய்யத் தொடங்கியவுடன் இங்கே தோன்றும்.',
 
   'setups.view.detail.analysis.performance': 'செயல்திறன்',
-  'setups.view.detail.analysis.execution-gap': 'Execution Gap',
+  'setups.view.detail.analysis.execution-gap': 'செயல்படுத்தல் இடைவெளி',
   'setups.view.detail.analysis.tabs-aria': 'Setup செயல்திறன் தாவல்கள்',
   'setups.view.detail.brief.linked-notes-add':
     'இணைக்கப்பட்ட குறிப்புகளைத் திருத்தவும்',
@@ -6587,9 +6323,8 @@ const ta: Lang = {
   'setups.view.detail.execution-gap.capture-rate-tooltip':
     'Live P&L ÷ (Live P&L + missed-trade P&L). கிடைக்கக்கூடிய Edge-இல் எவ்வளவு பதிவு செய்தீர்கள் என்பதைக் காட்டுகிறது.',
   'setups.view.detail.execution-gap.average-r-delta': 'சராசரி R டெல்டா',
-  'setups.view.detail.execution-gap.live-execution': 'Live Execution',
-  'setups.view.detail.execution-gap.backtest-benchmark':
-    'Backtest பெஞ்ச்மார்க்',
+  'setups.view.detail.execution-gap.live-execution': 'நேரடி செயல்படுத்தல்',
+  'setups.view.detail.execution-gap.backtest-benchmark': 'Backtest பெஞ்ச்மார்க்',
   'setups.view.detail.execution-gap.hidden':
     'Execution Gap தனியுரிமை பயன்முறையில் மறைக்கப்பட்டுள்ளது.',
   'setups.view.detail.execution-gap.empty':
@@ -6598,14 +6333,12 @@ const ta: Lang = {
   'setups.view.detail.brief.health': 'Setup ஆரோக்கியம்',
   'setups.view.detail.brief.profile': 'சுயவிவரம்',
   'setups.view.detail.brief.linked-notes': 'இணைக்கப்பட்ட குறிப்புகள் ({count})',
-  'setups.view.detail.brief.linked-notes-modal.title':
-    'இணைக்கப்பட்ட குறிப்புகள்',
+  'setups.view.detail.brief.linked-notes-modal.title': 'இணைக்கப்பட்ட குறிப்புகள்',
   'setups.view.detail.brief.linked-notes-modal.subtitle':
     'குறிப்புகள் {name} உடன் இணைக்கப்பட்டுள்ளன.',
   'setups.view.detail.brief.screenshots': 'ஸ்கிரீன்ஷாட்கள் ({count})',
   'setups.view.detail.brief.view-all': 'அனைத்தையும் பார்க்கவும்',
-  'setups.view.detail.brief.no-screenshots':
-    'இன்னும் ஸ்கிரீன்ஷாட்கள் இணைக்கப்படவில்லை.',
+  'setups.view.detail.brief.no-screenshots': 'இன்னும் ஸ்கிரீன்ஷாட்கள் இணைக்கப்படவில்லை.',
   'setups.view.detail.brief.screenshot-alt': 'Setup ஸ்கிரீன்ஷாட் {index}',
   'setups.view.detail.brief.screenshot-open': 'ஸ்கிரீன்ஷாட்டைத் திற {index}',
   'setups.view.detail.brief.status.complete': 'நிறைவு',
@@ -6633,8 +6366,7 @@ const ta: Lang = {
   'setups.view.detail.attention.empty': 'Setup-இல் சிக்கல்கள் எதுவும் இல்லை.',
   'setups.view.detail.attention.show-more': '+{count} மேலும்',
   'setups.view.detail.attention.show-less': 'குறைவாகக் காட்டு',
-  'setups.view.detail.attention.no-playbook-title':
-    'பிளேபுக் குறிப்பை இணைக்கவும்',
+  'setups.view.detail.attention.no-playbook-title': 'பிளேபுக் குறிப்பை இணைக்கவும்',
   'setups.view.detail.attention.no-playbook-detail':
     'சூழல் மற்றும் எடுத்துக்காட்டுகளுக்கு ஒரு மூலக் குறிப்பை இணைக்கவும்.',
   'setups.view.detail.attention.no-rules-title':
@@ -6653,8 +6385,7 @@ const ta: Lang = {
     'சமீபத்திய பொருத்தத்தை மதிப்பாய்வு செய்யவும்',
   'setups.view.detail.attention.stale-detail':
     'இந்த Setup {count} நாட்களில் டிரேட் செய்யப்படவில்லை.',
-  'setups.view.detail.attention.profit-factor-title':
-    'செயல்திறன் மதிப்பாய்வு தேவை',
+  'setups.view.detail.attention.profit-factor-title': 'செயல்திறன் மதிப்பாய்வு தேவை',
   'setups.view.detail.attention.profit-factor-detail':
     'இணைக்கப்பட்ட டிரேட்களில் Profit Factor 1.0க்குக் கீழே உள்ளது.',
   'setups.view.detail.attention.expectancy-title': 'Expectancy எதிர்மறை',
@@ -6675,8 +6406,6 @@ const ta: Lang = {
   'setups.view.date.today': 'இன்று',
   'setups.view.date.yesterday': 'நேற்று',
   'setups.view.date.days-ago': '{count} நாட்களுக்கு முன்பு',
-  'settings.general.copy-trading-pnl-toggled':
-    'நகல் டிரேட் PnL என்பது {status}',
 
   'trade-import.restore.complete':
     '{written} இறக்குமதி செய்யப்பட்ட டிரேட்கள் மீட்டெடுக்கப்பட்டன; {failed} தோல்வியடைந்தது.',
@@ -6695,10 +6424,8 @@ const ta: Lang = {
   'trade-sync.tradovate.status-failed': 'Tradovate நிலையை ஏற்ற முடியவில்லை.',
   'trade-sync.tradovate.last-sync': 'கடைசி ஒத்திசைவு',
   'trade-sync.tradovate.last-projection': 'கடைசித் திட்டம்',
-  'trade-sync.tradovate.pending-projections':
-    '{count} நிலுவையிலுள்ள கணிப்பு(கள்)',
-  'trade-sync.tradovate.pending-acks':
-    '{count} உள்ளூர் ACK(கள்) நிலுவையில் உள்ளது',
+  'trade-sync.tradovate.pending-projections': '{count} நிலுவையிலுள்ள கணிப்பு(கள்)',
+  'trade-sync.tradovate.pending-acks': '{count} உள்ளூர் ACK(கள்) நிலுவையில் உள்ளது',
   'trade-sync.tradovate.never': 'ஒருபோதும் இல்லை',
 
   'trade-sync.source.rithmic': 'Rithmic',
@@ -6709,8 +6436,7 @@ const ta: Lang = {
   'trade-sync.rithmic.status-failed': 'Rithmic நிலையை ஏற்ற முடியவில்லை.',
   'trade-sync.rithmic.status.connecting': 'இணைக்கிறது',
   'trade-sync.rithmic.status.paused': 'இடைநிறுத்தப்பட்டது',
-  'trade-sync.rithmic.status.waiting-for-accounts':
-    'கணக்குகளுக்காக காத்திருக்கிறது',
+  'trade-sync.rithmic.status.waiting-for-accounts': 'கணக்குகளுக்காக காத்திருக்கிறது',
   'trade-sync.rithmic.status.reauthorization-required':
     'Journalit.co இல் மீண்டும் அங்கீகாரம் தேவை',
   'trade-sync.rithmic.status.error': 'இணைப்பு பிழை',
@@ -6744,10 +6470,11 @@ const ta: Lang = {
     '{total} Rithmic இணைப்புகளின் {succeeded} ஒத்திசைக்கப்பட்டது.',
   'trade-sync.rithmic.sync-all-partial':
     '{total} Rithmic இணைப்புகளின் {succeeded} ஒத்திசைக்கப்பட்டது. சிக்கல்களுடன் தொடர்புகளை மதிப்பாய்வு செய்யவும்.',
+  'trade-sync.rithmic.sync-all-provider-partial':
+    '{total} Rithmic இணைப்புகளின் {succeeded} ஒத்திசைக்கப்பட்டது · ஒத்திசைவு பகுதியளவு முடிந்தது',
   'trade-sync.rithmic.error.session-conflict':
     'Rithmic ஒரே ஒரு செயலில் உள்ள அமர்வை மட்டுமே அனுமதிக்கிறது. இந்த Rithmic உள்நுழைவைப் பயன்படுத்தும் R|Trader, NinjaTrader அல்லது பிற தளங்களை மூடவும்.',
-  'trade-sync.rithmic.error.auto-retry':
-    'Journalit தானாக மீண்டும் முயற்சிக்கும்.',
+  'trade-sync.rithmic.error.auto-retry': 'Journalit தானாக மீண்டும் முயற்சிக்கும்.',
   'trade-sync.rithmic.error.invalid-credentials':
     'Rithmic சேமிக்கப்பட்ட சான்றுகளை நிராகரித்தது. அவற்றை Journalit.co இல் புதுப்பித்து மீண்டும் முயற்சிக்கவும்.',
   'trade-sync.rithmic.error.agreements-required':
@@ -6809,7 +6536,7 @@ const ta: Lang = {
     'Trade Import கணக்கை மீட்டெடுக்க முடியவில்லை.',
   'trade-sync.rate-limit.action.mapping': 'கணக்கு இணைப்பு',
   'trade-sync.import.notice.rate-limited':
-    '{action}: பல கோரிக்கைகள். {seconds} வினாடியில் மீண்டும் முயலவும்.',
+    '{action}: அதிகமான கோரிக்கைகள். {seconds} வினாடிகளில் மீண்டும் முயலவும்.',
   'command.open-session-mode': 'அமர்வு பயன்முறையைத் திறக்கவும்',
   'view.session-mode': 'அமர்வு முறை',
 
@@ -6827,8 +6554,7 @@ const ta: Lang = {
   'session-mode.ended.helper':
     'உங்கள் டிரேடை பதிவு செய்யவும் அல்லது நாளை மதிப்பாய்வு செய்யவும்.',
   'session-mode.ended.action.import-trades': 'இறக்குமதி டிரேட்',
-  'session-mode.ended.action.add-trade-manually':
-    'கைமுறையாக டிரேடைச் சேர்க்கவும்',
+  'session-mode.ended.action.add-trade-manually': 'கைமுறையாக டிரேடைச் சேர்க்கவும்',
   'session-mode.ended.action.open-drc': 'திற DRC',
   'session-log.session-group.unplanned': 'திட்டமிடப்படாதது @ {time}',
   'session-mode.unplanned.name': 'திட்டமிடப்படாத அமர்வு',
@@ -6848,8 +6574,7 @@ const ta: Lang = {
   'session-mode.unplanned.modal.reason-required':
     'தொடங்குவதற்கு முன் ஒரு காரணத்தை உள்ளிடவும்.',
   'session-mode.unplanned.notice.started': 'திட்டமிடப்படாத அமர்வு தொடங்கியது.',
-  'session-mode.unplanned.notice.stopped':
-    'திட்டமிடப்படாத அமர்வு நிறுத்தப்பட்டது.',
+  'session-mode.unplanned.notice.stopped': 'திட்டமிடப்படாத அமர்வு நிறுத்தப்பட்டது.',
   'session-mode.unplanned.notice.blocked-live':
     'ஏற்கனவே ஒரு அமர்வு நடந்து கொண்டிருக்கிறது.',
   'session-mode.unplanned.notice.none-running':
@@ -6905,28 +6630,20 @@ const ta: Lang = {
   'session-mode.unconfigured.title': 'அமர்வு பயன்முறையை அமைக்கவும்',
   'session-mode.unconfigured.description':
     'தொடங்குவதற்கு உங்கள் அமர்வு நேரங்களைச் சேர்க்கவும்.',
-  'session-mode.unconfigured.step.window.title':
-    'அமர்வு சாளரத்தைச் சேர்க்கவும்',
-
+  'session-mode.unconfigured.step.window.title': 'அமர்வு சாளரத்தைச் சேர்க்கவும்',
   'session-mode.unconfigured.step.prep.title':
     'தயாரிப்பு நேரத்தை மதிப்பாய்வு செய்யவும்',
-
-  'session-mode.unconfigured.step.gate.title':
-    'ஸ்டார்டர் டிரேட் கேட் பயன்படுத்தவும்',
-
+  'session-mode.unconfigured.step.gate.title': 'ஸ்டார்டர் டிரேட் கேட் பயன்படுத்தவும்',
   'session-mode.unconfigured.step.log.title':
     'நேரலை அமர்வுகளின் போது குறிப்புகளை பதிவு செய்யவும்',
-
   'session-mode.unconfigured.action': 'அமர்வு பயன்முறையை உள்ளமைக்கவும்',
-  'session-mode.guide.why.title':
-    'மனநிலையால் அல்ல, திட்டப்படி வர்த்தகம் செய்யுங்கள்',
+  'session-mode.guide.why.title': 'மனநிலையால் அல்ல, திட்டப்படி வர்த்தகம் செய்யுங்கள்',
   'session-mode.guide.why.description':
     'அமர்வு முறை ஒவ்வொரு அமர்வுக்கு முன்பும் உங்களைத் தயார்படுத்துகிறது, நேரடியில் Trade Gate மூலம் விதிகளில் நிலைநிறுத்துகிறது, நாளை மீண்டும் பார்க்க நேர முத்திரையுள்ள பதிவை வைத்திருக்கிறது. அமைக்க இரண்டு நிமிடங்களே.',
   'session-mode.guide.configure.title': 'இப்போதே அமைக்கவும்',
   'session-mode.guide.configure.description':
     'உங்கள் அமர்வு நேரங்களைச் சேர்த்து முதல் Trade Gate ஐ உருவாக்குங்கள். அமைப்புகளில் ஒரு சிறிய வழிகாட்டி உதவும்.',
-  'session-mode.guide.preparation.countdown.title':
-    'உங்கள் அமர்வு நெருங்குகிறது',
+  'session-mode.guide.preparation.countdown.title': 'உங்கள் அமர்வு நெருங்குகிறது',
   'session-mode.guide.preparation.countdown.description':
     'இது தயாரிப்புக் கட்டம். கவுண்ட்டவுன் எப்போது நேரடிக்குச் செல்வீர்கள் என்பதைக் காட்டுகிறது; இந்தப் பக்கம் தானாக நேரடி முறைக்கு மாறும்.',
   'session-mode.guide.preparation.goals.title': 'இன்றைய இலக்குகளை அமைக்கவும்',
@@ -6947,14 +6664,9 @@ const ta: Lang = {
     'பார்ப்பதையும் உணர்வதையும் பதிவு செய்யுங்கள்',
   'session-mode.guide.live.session-log.description':
     'செட்அப்கள், உணர்வுகள், முடிவுகளை நடக்கும்போதே குறியுங்கள். ஒவ்வொரு குறிப்புக்கும் நேர முத்திரை உண்டு; பின்னர் என்ன நடந்தது என்பதைத் துல்லியமாக மீண்டும் பார்க்கலாம்.',
-  'session-mode.guide.live.settings.title':
-    'எப்போது வேண்டுமானாலும் சரிசெய்யலாம்',
+  'session-mode.guide.live.settings.title': 'எப்போது வேண்டுமானாலும் சரிசெய்யலாம்',
   'session-mode.guide.live.settings.description':
     'திருத்து அமர்வு முறை அமைப்புகளைத் திறக்கிறது: அமர்வு நேரங்கள், கட்ட தளவமைப்பு, Trade Gate பணிப்பாய்வுகள், பதிவு குறிச்சொற்கள்.',
-  'session-mode.guide.ended.review.title':
-    'இப்போது அமர்வை மதிப்பாய்வு செய்யுங்கள்',
-  'session-mode.guide.ended.review.description':
-    'மதிப்பாய்வுக்கு இன்றைய DRC ஐத் திறங்கள். உங்கள் DRC தளவமைப்பில் அமர்வு பதிவு விட்ஜெட்டைச் சேர்த்தால், நேர முத்திரையுள்ள ஒவ்வொரு குறிப்பும் அங்கே தோன்றும்.',
   'settings.session-mode.guide.setting-name': 'வழிகாட்டி',
   'settings.session-mode.guide.setting-desc':
     'அமர்வு நேரங்களிலிருந்து உங்கள் முதல் Trade Gate வரை, இந்த அமைப்புகளின் சிறிய சுற்றுப்பயணம்.',
@@ -6965,8 +6677,7 @@ const ta: Lang = {
   'settings.session-mode.guide.lead-time.title': 'தயாரிப்பு முன்னோடி நேரம்',
   'settings.session-mode.guide.lead-time.description':
     'அமர்வுக்கு எத்தனை நிமிடங்களுக்கு முன் தயாரிப்புக் கட்டம் திறக்கும்.',
-  'settings.session-mode.guide.windows.title':
-    'உங்கள் அமர்வு சாளரங்களைச் சேர்க்கவும்',
+  'settings.session-mode.guide.windows.title': 'உங்கள் அமர்வு சாளரங்களைச் சேர்க்கவும்',
   'settings.session-mode.guide.windows.description':
     'நீங்கள் வர்த்தகம் செய்யும் ஒவ்வொரு அமர்வுக்கும் ஒரு சாளரம்: பெயர், தொடக்கம், முடிவு. எப்போது தயாராக வேண்டும், எப்போது நேரடி என்பதை இவற்றிலிருந்து அமர்வு முறை அறிகிறது.',
   'settings.session-mode.guide.layout.title':
@@ -6987,8 +6698,7 @@ const ta: Lang = {
   'settings.session-mode.guide.finish.description':
     'ரிப்பனிலிருந்தோ முகப்பிலிருந்தோ அமர்வு முறையைத் திறங்கள். ஒவ்வொரு மதிப்பாய்விலும் குறிப்புகளைக் காண DRC தளவமைப்பில் அமர்வு பதிவு விட்ஜெட்டைச் சேர்க்கவும்.',
 
-  'session-mode.layout.empty.title':
-    'இந்த கட்டத்திற்கு எதுவும் இயக்கப்படவில்லை',
+  'session-mode.layout.empty.title': 'இந்த கட்டத்திற்கு எதுவும் இயக்கப்படவில்லை',
   'session-mode.layout.empty.description':
     'இந்த அமர்வு பயன்முறை கட்டத்தை உருவாக்க தொகுதிகளை மீண்டும் இயக்கவும்.',
   'session-mode.duration.minutes': '{minutes}m',
@@ -7098,8 +6808,7 @@ const ta: Lang = {
 
   'session-log.composer.tag-label': 'அமர்வு பதிவு குறிச்சொல்',
   'session-log.placeholder.entry-short': 'அமர்வு குறிப்பைச் சேர்...',
-  'session-log.action.add-entry':
-    'நேரமுத்திரையிடப்பட்ட உள்ளீட்டைச் சேர்க்கவும்',
+  'session-log.action.add-entry': 'நேரமுத்திரையிடப்பட்ட உள்ளீட்டைச் சேர்க்கவும்',
   'session-log.action.add-note': 'சேர்',
   'session-log.action.hide-composer': 'எழுத்துப் பகுதியை மறை',
   'session-log.filter.all': 'அனைத்தும்',
@@ -7108,8 +6817,7 @@ const ta: Lang = {
   'session-log.timeline.most-recent': 'மிக சமீபத்தியது',
   'session-log.timeline.start': 'அமர்வு ஆரம்பம்',
   'session-log.empty': 'அமர்வு பதிவு உள்ளீடுகள் எதுவும் இதுவரை இல்லை.',
-  'session-log.empty-filtered':
-    'இந்த வடிப்பானுடன் எந்த உள்ளீடுகளும் பொருந்தவில்லை.',
+  'session-log.empty-filtered': 'இந்த வடிப்பானுடன் எந்த உள்ளீடுகளும் பொருந்தவில்லை.',
   'session-log.loading': 'அமர்வு பதிவை ஏற்றுகிறது…',
   'session-log.session-group.outside': 'வெளிப்புற அமர்வுகள்',
   'session-log.lessons.title': 'கற்றுக்கொண்ட பாடங்கள்',
@@ -7138,11 +6846,9 @@ const ta: Lang = {
   'trade-gate.action.start-short': 'தொடங்கு',
   'trade-gate.action.start-another': 'இன்னொன்றைத் தொடங்கவும்',
   'trade-gate.outcome.green-light': 'பச்சை விளக்கு',
-  'trade-gate.outcome.green-light-description':
-    'நிபந்தனைகள் பூர்த்தி செய்யப்பட்டன.',
+  'trade-gate.outcome.green-light-description': 'நிபந்தனைகள் பூர்த்தி செய்யப்பட்டன.',
   'trade-gate.outcome.no-trade': 'டிரேட் இல்லை',
-  'trade-gate.outcome.no-trade-description':
-    'நிபந்தனைகள் பூர்த்தி செய்யப்படவில்லை.',
+  'trade-gate.outcome.no-trade-description': 'நிபந்தனைகள் பூர்த்தி செய்யப்படவில்லை.',
   'trade-gate.outcome.wait': 'காத்திருங்கள்',
   'trade-gate.outcome.wait-description':
     'Setup தயாராக இல்லை. அடுத்த வாய்ப்புக்காக காத்திருங்கள்.',
@@ -7203,8 +6909,6 @@ const ta: Lang = {
   'settings.session-mode.trade-gate.flow-fit': 'பொருத்தம்',
   'settings.session-mode.trade-gate.flow-click-hint':
     'அதைத் திருத்த, கார்டு, பாதை லேபிள் அல்லது முடிவைக் கிளிக் செய்யவும்.',
-  'settings.session-mode.trade-gate.flow-truncated':
-    'இந்த ஓட்டம் முழுமையாகக் காட்ட முடியாத அளவுக்கு அதிகமாக உள்ளது. சில மீண்டும் மீண்டும் கிளைகள் மறைக்கப்பட்டுள்ளன.',
   'settings.session-mode.trade-gate.no-start':
     'ஓட்டத்தைப் பார்க்க, தொடக்கக் கேள்வியைத் தேர்ந்தெடுக்கவும்.',
   'settings.session-mode.trade-gate.no-questions':
@@ -7235,7 +6939,7 @@ const ta: Lang = {
   'imageGallery.empty.action.show-all': 'எல்லா மீடியாவையும் காட்டு',
   'imageGallery.error.load-failed': 'கேலரியை ஏற்ற முடியவில்லை.',
 
-  'imageGallery.open-source': 'குறிப்பைத் திற',
+  'imageGallery.open-source': 'மூலத்தைத் திற',
   'imageGallery.image-alt': '{source} ஊடகம் {date} இலிருந்து',
   'imageGallery.privacy-blurred': 'தனியுரிமைக்காக மங்கலாக்கப்பட்டது',
 
@@ -7282,8 +6986,7 @@ const ta: Lang = {
     'இந்த விளக்கப்படத்திலிருந்து எதிர்காலத்தில் நீங்கள் என்ன கற்றுக்கொள்ள வேண்டும்?',
   'imageGallery.annotation.error.save-failed':
     'மீடியா குறிப்பைச் சேமிக்க முடியவில்லை.',
-  'imageGallery.annotation.error.load-failed':
-    'மீடியா குறிப்பை ஏற்ற முடியவில்லை.',
+  'imageGallery.annotation.error.load-failed': 'மீடியா குறிப்பை ஏற்ற முடியவில்லை.',
   'imageGallery.annotation.saving': 'சேமிக்கிறது...',
   'settings.gallery-folders.section': 'மீடியா கேலரி',
   'settings.gallery-folders.description':
@@ -7295,37 +6998,20 @@ const ta: Lang = {
     'மீடியா கோப்பைக் காட்டிலும் கோப்புறையைத் தேர்ந்தெடுக்கவும்.',
   'settings.gallery-folders.save-failed':
     'கேலரி கோப்புறைகளைச் சேமிப்பதில் தோல்வி. மீண்டும் முயற்சிக்கவும்.',
-  'tradelog.guide.gallery-grouping.title':
-    'ஜர்னல் நுழைவு மூலம் ஊடகத்தைக் குழுவாக்கு',
+  'tradelog.guide.gallery-grouping.title': 'ஜர்னல் நுழைவு மூலம் ஊடகத்தைக் குழுவாக்கு',
   'tradelog.guide.gallery-grouping.description':
     'குழுவானது ஒவ்வொரு டிரேட், மதிப்பாய்வு அல்லது உள்ளமைக்கப்பட்ட கோப்புறையை ஒன்றாக வைத்திருக்கிறது. தனித்தனி பயன்முறை ஒவ்வொரு ஊடகத்தையும் அதன் சொந்த அட்டையாகக் காட்டுகிறது.',
   'tradelog.guide.gallery-source-sort.title':
     'ஊடக ஆதாரத்தைத் தேர்ந்தெடுத்து ஆர்டர் செய்யவும்',
   'tradelog.guide.gallery-source-sort.description':
     'அனைத்து மீடியா, டிரேட் இணைப்புகள், மதிப்பாய்வு-குறிப்பு மீடியா அல்லது உள்ளமைக்கப்பட்ட vault கோப்புறைகளில் கவனம் செலுத்த மூலத்தைப் பயன்படுத்தவும். புதியது முதல் பழையது வரை அல்லது டிரேட் செயல்திறன் மூலம் பொருட்களை மதிப்பாய்வு செய்ய வரிசைப்படுத்தலைப் பயன்படுத்தவும்.',
-  'tradelog.guide.gallery-size.title': 'கேலரி மாதிரிக்காட்சி அளவை சரிசெய்யவும்',
-  'tradelog.guide.gallery-size.description':
-    'சிறிய ஸ்கேனிங் மற்றும் பெரிய மீடியா முன்னோட்டங்களுக்கு இடையே மாற, இந்த அளவு பொத்தான்களைப் பயன்படுத்தவும்.',
   'tradelog.guide.gallery-filters.title':
     'அதே நுழைவுப் புள்ளியுடன் கேலரியை வடிகட்டவும்',
   'tradelog.guide.gallery-filters.description':
     'வடிப்பான் மெனு இங்கேயும் அதே போல் செயல்படும். கேலரி பயன்முறையில், குறிப்பு நிலை மற்றும் மீடியா குறிச்சொற்கள் போன்ற மீடியா வடிப்பான்களுடன் ஒரு கேலரி பிரிவும் இருக்கும்.',
-  'tradelog.guide.gallery-grid.title':
-    'ஆழமான மதிப்பாய்வுக்கு மீடியாவைத் திறக்கவும்',
+  'tradelog.guide.gallery-grid.title': 'ஆழமான மதிப்பாய்வுக்கு மீடியாவைத் திறக்கவும்',
   'tradelog.guide.gallery-grid.description':
     'கச்சிதமான டிரேட் மற்றும் மதிப்பாய்வு சூழலைக் காண்பிக்கும் போது ஒவ்வொரு அட்டையும் மீடியாவைத் தடையின்றி வைத்திருக்கும். முதலில் தெரியும் உருப்படியை முழுத்திரையில் திறக்க ஏதேனும் கார்டைக் கிளிக் செய்யவும் அல்லது அடுத்து என்பதை அழுத்தவும்.',
-  'tradelog.guide.gallery-fullscreen-actions.title':
-    'முழுத்திரையிலிருந்து மீடியாவை சிறுகுறிப்பு',
-  'tradelog.guide.gallery-fullscreen-actions.description':
-    'உருப்படி ஆய்வு செய்ய போதுமான அளவில் இருக்கும்போது, மீடியா-நிலை குறிச்சொற்கள் மற்றும் குறிப்புகளைச் சேர்க்க Tag-ஐப் பயன்படுத்தவும். மூலத்தைத் திற என்பது டிரேட், மதிப்பாய்வு அல்லது கோப்புறை மீடியா கோப்பைத் திறக்கும்.',
-  'tradelog.guide.gallery-open-annotation.title':
-    'சிறுகுறிப்பு பேனலைத் திறக்கவும்',
-  'tradelog.guide.gallery-open-annotation.description':
-    'இந்தக் குறிப்பிட்ட மீடியா உருப்படியைக் குறிக்க குறியைக் கிளிக் செய்யவும். மீடியா குறிச்சொற்கள் மற்றும் குறிப்புகள் இணைப்பை விவரிக்கின்றன, முழு டிரேடையும் அல்ல.',
-  'tradelog.guide.gallery-annotation-panel.title':
-    'மீடியா குறிச்சொற்கள் மற்றும் குறிப்புகளைச் சேர்க்கவும்',
-  'tradelog.guide.gallery-annotation-panel.description':
-    'liquidity sweep அல்லது failed breakout போன்ற விளக்கப்படம் சார்ந்த யோசனைகளுக்கு மீடியா குறிச்சொற்களைப் பயன்படுத்தவும், மேலும் நீங்கள் நினைவில் கொள்ள விரும்பும் சந்தை-கட்டமைப்பு சூழலுக்கான குறிப்புகளையும் பயன்படுத்தவும்.',
   'tradelog.guide.gallery-finish.title':
     'இரண்டு டிரேட் பதிவு முறைகளையும் நீங்கள் இப்போது அறிவீர்கள்',
   'tradelog.guide.gallery-finish.description':
@@ -7372,6 +7058,8 @@ const ta: Lang = {
   'filter.menu.status': 'நிலை',
   'filter.menu.direction': 'திசை',
   'filter.menu.review-status': 'மதிப்பாய்வு நிலை',
+  'filter.menu.rating': 'மதிப்பீடு',
+  'filter.menu.rating.unrated': 'மதிப்பிடப்படாதவை',
   'filter.menu.status.cancelled': 'ரத்துசெய்யப்பட்டது',
   'filter.menu.included-count': '{count} சேர்க்கப்பட்டன',
   'filter.menu.excluded-count': '{count} விலக்கப்பட்டன',
@@ -7403,56 +7091,15 @@ const ta: Lang = {
   'home.guide.whats-new.mode.title': 'ஒரு முகப்பு, இரண்டு பயன்முறைகள்',
   'home.guide.whats-new.mode.description':
     'மேலோட்டமும் டாஷ்போர்டும் இப்போது ஒரு பக்கத்தைப் பகிரும். தளவமைப்பு அல்லது ஸ்க்ரோல் நிலையை இழக்காமல் இங்கே முறைகளை மாற்றவும்.',
-  'home.guide.whats-new.filters.title':
-    'முகப்பு வடிகட்டிகள் ஒரே இடத்தில் உள்ளன',
+  'home.guide.whats-new.filters.title': 'முகப்பு வடிகட்டிகள் ஒரே இடத்தில் உள்ளன',
   'home.guide.whats-new.filters.description':
     'ஒரு சிறிய அடுக்கு மெனுவிலிருந்து காலம், டிரேட் வகை அல்லது கணக்குகளைத் தேர்வுசெய்ய வடிகட்டி பொத்தானைத் திறக்கவும்.',
   'home.guide.whats-new.done.title': 'உங்கள் பணியிடம் சூழலில் இருக்கும்',
   'home.guide.whats-new.done.description':
     'ஆழ்ந்த பகுப்பாய்விற்கு உங்கள் தனிப்பட்ட விட்ஜெட்டுகள் மற்றும் டாஷ்போர்டிற்கான மேலோட்டத்தைப் பயன்படுத்தவும். ஒவ்வொரு பயன்முறையும் அதன் சொந்த வடிப்பான்கள் மற்றும் தளவமைப்பை வைத்திருக்கிறது.',
 
-  'view.home': 'முகப்பு',
-  'common.lose': 'தோல்வி',
-
   'dashboard.conversion.requires-conversion':
     'பல நாணய P&L விளக்கப்படங்களுக்கு மாற்று-விகித மாற்றம் தேவை.',
-
-  'auth.error.invalid-email': 'சரியான மின்னஞ்சல் முகவரியை உள்ளிடவும்',
-  'auth.error.invalid-code': 'தவறான சரிபார்ப்புக் குறியீடு',
-  'form.layout.guide-trigger-label': 'படிவத்தைத் தனிப்பயனாக்கு',
-  'dashboard.filter.setup.none-found': 'Setups எதுவும் இல்லை',
-  'nav.weekly': 'வாராந்திர மதிப்பாய்வு',
-  'weekly.overview.drawdown-chart.empty': 'காட்டுவதற்கு Drawdown தரவு இல்லை',
-  'trade-sync.gate.signin.cta': 'உள்நுழைக',
-  'backend.progress.ftp.desc': 'Credentials-ஐ உருவாக்கவும்',
-  'csv.errors.group.close-only': 'Close-only executions தவிர்க்கப்பட்டன',
-  'csv.report.file': 'கோப்பு: {file}',
-  'csv.broker-guide.sierrachart.warning.message':
-    'Export விருப்பம் சரிசெய்யப்படாத விலைகளைச் சேமிக்கிறது. "Save Log As" காட்டப்படும் விலைகளை அப்படியே வைத்திருக்கும்.',
-  'csv.broker-guide.rithmic.step-1':
-    'R | Trader Pro-இல் Order History-ஐத் திறந்து, உங்கள் கணக்கு/தேதிக்கான Completed/Filled ஆர்டர்களுக்கு வடிகட்டவும்',
-  'csv.broker-guide.rithmic.step-2':
-    'Add/Remove Columns-ஐப் பயன்படுத்தி Side, Symbol, Qty Filled, Avg Fill Price மற்றும் Fill/Update Time தெரியும் என்பதை உறுதிப்படுத்தவும்',
-  'trade.details.execution': 'Execution',
-  'drc.preparation.checklist.title':
-    'டிரேட்டுக்கு முந்தைய சரிபார்ப்பு பட்டியல்',
-  'onboarding.welcome.insight.timing.title': 'நேர வடிவங்கள்',
-  'onboarding.wizard.error.account-service': 'AccountPageService கிடைக்கவில்லை',
-  'account.create.field.drawdown-type-desc':
-    'None | Fixed | EOD Trailing | Manual',
-  'account.edit.field.drawdown-type-desc':
-    'None | Fixed | EOD Trailing | Manual',
-  'monthly.game.header.a-games': 'ஒரு விளையாட்டு',
-  'trade-import.preview.message.no-open-match':
-    'close-only மாதிரிக்காட்சிக்கு பொருந்தக்கூடிய திறந்த டிரேட் எதுவும் இல்லை',
-  'setups.view.action.refresh': 'புதுப்பி',
-  'setups.view.detail.no-playbook': 'இன்னும் பிளேபுக் எதுவும் எழுதப்படவில்லை.',
-  'setups.view.detail.execution-gap.title': 'Execution Gap',
-  'trade-sync.import.action.sync-cloud': 'கிளவுட் டிரேட்களை ஒத்திசைக்கவும்',
-  'session-mode.unconfigured.step.gate.description':
-    'ஸ்டார்டர் IF/THEN சரிபார்ப்பு பட்டியல் தயாராக உள்ளது.',
-  'session-log.placeholder.entry':
-    'நீங்கள் என்ன பார்க்கிறீர்கள், நினைக்கிறீர்கள் அல்லது உணர்கிறீர்கள்?',
 
   'home.widget.streak.kind.trade-outcome': 'டிரேட் முடிவுகள்',
   'home.widget.streak.kind.trade-review': 'டிரேட் மதிப்பாய்வுகள்',
@@ -7462,10 +7109,8 @@ const ta: Lang = {
   'home.widget.streak.configure': 'ஸ்ட்ரீக் வகையைத் தேர்ந்தெடுக்கவும்',
   'home.widget.streak.configure-aria': '{kind} ஸ்ட்ரீக்கை உள்ளமைக்கவும்',
   'home.widget.streak.no-review-streak': 'செயலில் மதிப்பாய்வு ஸ்ட்ரீக் இல்லை',
-  'home.widget.streak.start-reviewing':
-    'ஒரு ஸ்ட்ரீக்கை உருவாக்க மதிப்பாய்வைத் தொடங்குங்கள்',
-  'home.widget.streak.keep-reviewing':
-    'தொடர மதிப்பாய்வு செய்து கொண்டே இருங்கள்',
+  'home.widget.streak.start-reviewing': 'ஒரு ஸ்ட்ரீக்கை உருவாக்க மதிப்பாய்வைத் தொடங்குங்கள்',
+  'home.widget.streak.keep-reviewing': 'தொடர மதிப்பாய்வு செய்து கொண்டே இருங்கள்',
   'home.widget.streak.reviewed-trades-in-a-row.one':
     'ஒரு வரிசையில் மதிப்பாய்வு செய்த டிரேட்',
   'home.widget.streak.reviewed-trades-in-a-row.few':
@@ -7530,8 +7175,7 @@ const ta: Lang = {
     'உங்கள் கடைசி மதிப்பாய்வுக்குப் பிறகு {count} மாதங்கள் தவறவிடப்பட்டன',
   'home.widget.streak.missed-months.other':
     'உங்கள் கடைசி மதிப்பாய்வுக்குப் பிறகு {count} மாதங்கள் தவறவிடப்பட்டன',
-  'trade-sync.quick.started':
-    'இயக்கப்பட்ட வர்த்தக மூலங்கள் ஒத்திசைக்கப்படுகின்றன…',
+  'trade-sync.quick.started': 'இயக்கப்பட்ட வர்த்தக மூலங்கள் ஒத்திசைக்கப்படுகின்றன…',
   'trade-sync.quick.running': 'ஒத்திசைக்கப்படுகிறது…',
   'trade-sync.quick.offline':
     'வர்த்தக ஒத்திசைவுக்கு இணைய இணைப்பு தேவை. ஆன்லைனில் வந்ததும் மீண்டும் முயற்சிக்கவும்.',
@@ -7553,8 +7197,7 @@ const ta: Lang = {
   'trade-handoff.action.view-trades-count.one': '{count} வர்த்தகத்தைக் காண்க',
   'trade-handoff.action.view-trades-count.few': '{count} வர்த்தகங்களைக் காண்க',
   'trade-handoff.action.view-trades-count.many': '{count} வர்த்தகங்களைக் காண்க',
-  'trade-handoff.action.view-trades-count.other':
-    '{count} வர்த்தகங்களைக் காண்க',
+  'trade-handoff.action.view-trades-count.other': '{count} வர்த்தகங்களைக் காண்க',
   'trade-handoff.action.review-now': 'இப்போது மதிப்பாய்வு செய்',
   'trade-handoff.action.open-period': '{period} மதிப்பாய்வைத் திற',
   'trade-handoff.review.creation-disabled':
@@ -7571,16 +7214,20 @@ const ta: Lang = {
   'trade-handoff.title.sync': 'ஒத்திசைவு முடிந்தது',
   'trade-handoff.summary.import-complete': '{trades} இறக்குமதி செய்யப்பட்டன',
   'trade-handoff.summary.update-complete': '{trades} புதுப்பிக்கப்பட்டன',
-  'trade-handoff.summary.update-partial':
-    '{trades} சிக்கல்களுடன் புதுப்பிக்கப்பட்டன',
+  'trade-handoff.summary.update-partial': '{trades} சிக்கல்களுடன் புதுப்பிக்கப்பட்டன',
   'trade-handoff.summary.mixed-complete':
     '{imported} இறக்குமதி செய்யப்பட்டன · {updated} புதுப்பிக்கப்பட்டன',
   'trade-handoff.summary.mixed-partial':
     '{imported} இறக்குமதி செய்யப்பட்டன · {updated} புதுப்பிக்கப்பட்டன, சிக்கல்களுடன்',
   'trade-handoff.summary.import-partial':
     '{trades} சிக்கல்களுடன் இறக்குமதி செய்யப்பட்டன',
-  'trade-handoff.periods.choose':
-    'வேறு மதிப்பாய்வுக் காலத்தைத் தேர்ந்தெடுக்கவும்',
+  'trade-handoff.summary.import-provider-partial':
+    '{trades} இறக்குமதி செய்யப்பட்டன · ஒத்திசைவு பகுதியளவு முடிந்தது',
+  'trade-handoff.summary.update-provider-partial':
+    '{trades} புதுப்பிக்கப்பட்டன · ஒத்திசைவு பகுதியளவு முடிந்தது',
+  'trade-handoff.summary.mixed-provider-partial':
+    '{imported} இறக்குமதி செய்யப்பட்டன · {updated} புதுப்பிக்கப்பட்டன · ஒத்திசைவு பகுதியளவு முடிந்தது',
+  'trade-handoff.periods.choose': 'வேறு மதிப்பாய்வுக் காலத்தைத் தேர்ந்தெடுக்கவும்',
   'trade-handoff.periods.recommended': 'பரிந்துரை',
   'trade-handoff.action.dismiss': 'சமீபத்திய வர்த்தக முடிவை மூடு',
   'sample.action.try': 'மாதிரி பதிவேட்டை முயற்சிக்கவும்',
@@ -7609,8 +7256,7 @@ const ta: Lang = {
   'sample.reset.title': 'மாதிரி பதிவேட்டை மீட்டமைக்கவா?',
   'sample.reset.message':
     'இது அனைத்து மாதிரி கோப்புகளையும் மாதிரிக்கான அமைப்புகளையும் அசல் கற்பனைத் தொகுப்பிற்கு மீட்டமைக்கும்.',
-  'sample.reset.warning':
-    'மாதிரி பதிவேட்டில் நீங்கள் செய்த திருத்தங்கள் நீக்கப்படும்.',
+  'sample.reset.warning': 'மாதிரி பதிவேட்டில் நீங்கள் செய்த திருத்தங்கள் நீக்கப்படும்.',
   'sample.collision.title': 'மாதிரி கோப்புறை ஏற்கனவே உள்ளது',
   'sample.collision.message':
     'Journalit ஏற்கனவே உள்ள கோப்புறையை மேலெழுதாது. அதற்கு பதிலாக “{path}” இல் மாதிரி பதிவேட்டை உருவாக்கவா?',
@@ -7626,8 +7272,7 @@ const ta: Lang = {
   'command.open-sample-journal': 'மாதிரி பதிவேட்டைத் திறக்கவும்',
   'command.exit-sample-journal': 'மாதிரி பதிவேட்டிலிருந்து வெளியேறவும்',
   'command.reset-sample-journal': 'மாதிரி பதிவேட்டை மீட்டமைக்கவும்',
-  'sample.notice.busy':
-    'மாதிரி பதிவேட்டின் மற்றொரு செயல் ஏற்கனவே நடைபெறுகிறது.',
+  'sample.notice.busy': 'மாதிரி பதிவேட்டின் மற்றொரு செயல் ஏற்கனவே நடைபெறுகிறது.',
   'account.profiles.no-matching-phase':
     'இந்த நிறுவன விதிகளில் பொருந்தும் கட்டம் இல்லை.',
   'account.profiles.history-unchanged': 'முந்தைய வரலாறு மாறாமல் இருக்கும்.',
@@ -7635,19 +7280,11 @@ const ta: Lang = {
   'account.profiles.notice-description':
     'நிறுவனம் வெளியிட்ட விதிகள் இந்தக் கணக்கில் சேமித்த விதிகளிலிருந்து வேறுபடுகின்றன. உங்கள் கணக்கின் விதிகள் மாறவில்லை.',
   'account.profiles.review-changes': 'மாற்றங்களை மதிப்பாய்வு செய்',
-  'account.profiles.check-failed':
-    'விதிப் புதுப்பிப்புகளைச் சரிபார்க்க முடியவில்லை.',
+  'account.profiles.check-failed': 'விதிப் புதுப்பிப்புகளைச் சரிபார்க்க முடியவில்லை.',
   'account.profiles.retry': 'மீண்டும் முயல்க',
   'account.profiles.source-changed':
     'இந்த மதிப்பாய்வு திறந்திருந்தபோது நிறுவன விதிகள் மாறின. பயன்படுத்தும் முன் மதிப்பாய்வை மீண்டும் திறக்கவும்.',
   'account.profiles.retain': 'தற்போதைய விதிகளை வைத்திரு',
-  'account.profiles.retain-help':
-    'இந்தக் கணக்கின் விதிகளை வைத்திருந்து இந்த மூல மாற்றங்களை நிராகரிக்கவும். பின்னர் கொள்கை மாற்றங்கள் மீண்டும் அறிவிக்கலாம்.',
-  'account.profiles.comparison-help':
-    'வேறுபாடுகள் மட்டுமே காட்டப்படும். புலங்களைப் பார்க்க ஒரு விதியை விரிவாக்கவும். உள்ளூர் மேலெழுதல்கள் வேறுபாடுகளை விளக்கலாம்.',
-  'account.profiles.added': 'சேர்க்கப்பட்டது',
-  'account.profiles.removed': 'அகற்றப்பட்டது',
-  'account.profiles.changed': 'மாற்றப்பட்டது',
   'account.profiles.not-configured': 'கட்டமைக்கப்படவில்லை',
   'account.profiles.no-rule-changes':
     'இந்தக் கட்டத்திற்கு விதி அல்லது பேஅவுட் கொள்கை வேறுபாடுகள் இல்லை.',
@@ -7656,8 +7293,7 @@ const ta: Lang = {
     'தற்காலிகமாகச் சேமித்த நிறுவன விதிகள் பயன்படுத்தப்படுகின்றன; சமீபத்திய விதிகளைச் சரிபார்க்க முடியவில்லை.',
   'account.profiles.account-phase': 'கணக்குக் கட்டம்',
   'account.profiles.choose': 'சேமித்த விதிகளைத் தேர்ந்தெடுக்கவும்',
-  'account.profiles.completed':
-    'முடிந்த கட்டங்கள் தங்கள் அசல் விதிகளை வைத்திருக்கும்.',
+  'account.profiles.completed': 'முடிந்த கட்டங்கள் தங்கள் அசல் விதிகளை வைத்திருக்கும்.',
   'account.profiles.confirm': 'இந்த விதிகள் என் கணக்கிற்குப் பொருந்தும்.',
   'account.profiles.currency':
     'பயன்படுத்தும் முன் இந்த விதிகளுக்குப் பொருந்தும் கணக்கு நாணயத்தைத் தேர்ந்தெடுக்கவும்.',
@@ -7675,9 +7311,12 @@ const ta: Lang = {
   'account.profiles.correction-after': 'பின்பு',
   'account.profiles.correction-stale':
     'கணக்கு வரலாறு மாறியது. திருத்தத்தைப் பயன்படுத்துவதற்கு முன் இந்த மதிப்பாய்வை மீண்டும் திறக்கவும்.',
-  'account.profiles.correction-result': 'கடுமையான விதி மதிப்பீடு',
-  'account.profiles.no-hard-breach': 'கண்டறியப்பட்ட கடுமையான மீறல் இல்லை',
+  'account.profiles.correction-effect': 'இந்தக் கணக்கில் விளைவு',
+  'account.profiles.not-failed': 'தோல்வி இல்லை',
   'account.profiles.correction-consent': 'வரலாற்றை மறுகணக்கிடு',
+  'account.profiles.correction-consent-help':
+    'பாதிக்கப்பட்ட வரலாற்றுக்கு இந்த கட்டத்தின் விதிகளை மாற்றி அதன் முடிவை மீண்டும் சரிபார்க்கிறது. வர்த்தகங்களும் கட்டணங்களும் மாறாது.',
+  'account.profiles.correction-period-open': '{date} முதல்',
   'account.profiles.correction-details': 'விவரங்கள்',
   'account.profiles.correction-apply': 'திருத்தத்தைப் பயன்படுத்து',
   'account.profiles.purchase-date': 'அசல் வாங்கிய தேதி',
@@ -7693,8 +7332,7 @@ const ta: Lang = {
   'account.profiles.announcement': 'நிறுவன அறிவிப்பு',
   'account.profiles.firm-effective': 'நிறுவனம் உறுதிப்படுத்திய அமல் தேதி',
   'account.profiles.published-date': 'வெளியிடப்பட்ட அமல் தேதி',
-  'account.profiles.applicability-checking':
-    'பொருந்தும் தன்மையைச் சரிபார்க்கிறது…',
+  'account.profiles.applicability-checking': 'பொருந்தும் தன்மையைச் சரிபார்க்கிறது…',
   'account.profiles.error':
     'விதிகளைச் சேமிக்க முடியவில்லை. மதிப்புகளைச் சரிபார்த்து மீண்டும் முயலவும்.',
   'account.profiles.floor': 'மாற்றத்தின் போது ட்ராடவுன் தளம்',
@@ -7704,8 +7342,6 @@ const ta: Lang = {
   'account.profiles.incoming': 'நிறுவனத்தின் புதிய விதிகள்',
   'account.profiles.independent':
     'சேமித்த விதிகள் இந்த வால்ட்டில் மட்டுமே உள்ளன. அவற்றைப் பயன்படுத்தினால் கணக்கில் ஒரு சுயாதீன நகல் உருவாகும்; புதிய திருத்தத்தைச் சேமிப்பது இருக்கும் கணக்குகளை ஒருபோதும் மாற்றாது.',
-  'account.profiles.keep-help':
-    'தேர்வுசெய்த விதிகள் அதே வகையின் புதிய விதிக்குப் பதிலாக உங்கள் உள்ளூர் மதிப்புகளை வைத்திருக்கும். நிறுவனத்தின் மதிப்பை ஏற்க தேர்வை நீக்கவும். புதிய விதி வகைகள் சேர்க்கப்படும்.',
   'account.profiles.keep-local': 'என்னுடையதை வைத்திரு:',
   'account.profiles.keep-payout': 'தற்போதைய பேஅவுட் கொள்கையை வைத்திரு',
   'account.profiles.library': 'எனது சேமித்த விதிகள்',
@@ -7722,16 +7358,11 @@ const ta: Lang = {
   'account.profiles.source-phase': 'நிறுவன விதிகளில் உள்ள கட்டம்',
   'account.profiles.transition-help':
     'சரிபார்க்கப்பட்ட மாற்ற இயல்புநிலைகள் வழங்கப்படவில்லை. நிறுவனம் உறுதிப்படுத்திய நிபந்தனைகளை உள்ளிடவும்: தளம், உச்சம் மற்றும் பேஅவுட் சுழற்சி தொடக்கம். இவை தனிப்பயன் எனக் குறிக்கப்படும். கட்ட லாபமும் வாழ்நாள் பேஅவுட் எண்ணிக்கையும் வைக்கப்படும்; பழைய டிரேட்கள் தங்கள் அசல் விதிகளை வைத்திருக்கும்.',
-  'account.profiles.transition-source':
-    'நிறுவன உறுதிப்படுத்தல் அல்லது குறிப்பு',
+  'account.profiles.transition-source': 'நிறுவன உறுதிப்படுத்தல் அல்லது குறிப்பு',
   'account.profiles.link-intro':
     'இந்தச் சவாலை அதன் நிறுவன விதிகளுடன் இணைத்தால், நிறுவனம் அவற்றை மாற்றும்போது Journalit தெரிவிக்கும். முதலில் இவை இந்தக் கணக்கின் விதிகளிலிருந்து எப்படி வேறுபடுகின்றன எனப் பார்ப்பீர்கள்; நீங்கள் பயன்படுத்தும் வரை எதுவும் மாறாது.',
   'account.profiles.link-title': 'நிறுவன விதிகளுடன் இணைக்கவும்',
   'account.profiles.choose-source': 'நிறுவன விதிகளைத் தேர்ந்தெடுக்கவும்',
-  'account.profiles.update-available':
-    'நிறுவன விதிகள் மாறியுள்ளன, மதிப்பாய்வு தேவை. உங்கள் கணக்கு இன்னும் சேமித்த விதிகளையே பயன்படுத்துகிறது.',
-  'account.profiles.up-to-date':
-    'இந்தக் கட்டம் சமீபத்தில் மதிப்பாய்வு செய்த நிறுவன விதிகளைப் பயன்படுத்துகிறது; உள்ளூர் மாற்றங்கள் சுயாதீனமாக இருக்கும்.',
   'form.field.prop-challenge-phase': 'கட்டம்: {name}',
   'form.field.prop-challenge-phase.none': 'இப்போது கட்டம் இல்லை',
   'dashboard.filter.accounts.phase-now': 'இப்போது',
@@ -7753,8 +7384,7 @@ const ta: Lang = {
     'முந்தைய டிரேட்: {date}. கட்டம் தொடங்குவதற்கு முன் உள்ள டிரேட்கள் சவாலில் கணக்கிடப்படாது.',
   'account.header.notice.phase-start-updated':
     'கட்டம் 1 தொடக்கம் {date}க்கு நகர்த்தப்பட்டது',
-  'account.header.warning.fix-phase-start.aria':
-    'கட்டம் 1 தொடக்கத்தைச் சரிசெய்',
+  'account.header.warning.fix-phase-start.aria': 'கட்டம் 1 தொடக்கத்தைச் சரிசெய்',
   'account.settings.section.challenge-stages.title': 'சவால் நிலைகள்',
   'account.settings.section.challenge-stages.desc':
     'சவால் இந்த நிலையை அடையும்போது பயன்படுத்தப்படும் கணக்கு வகை.',
@@ -7781,12 +7411,9 @@ const ta: Lang = {
     'உங்கள் எல்லாச் சவால்களையும் பார்க்கவும்',
   'account-dashboard.guide.whats-new.prop-challenges.mode.description':
     'எல்லாச் சவால்களின் முன்னேற்றம், தேர்ச்சி விகிதம், செலவுகள் மற்றும் பேஅவுட்களைப் பார்க்க சவால்கள் என்பதற்கு மாறவும்.',
-  'account-dashboard.prop.metrics.total': 'சவால்கள்',
   'account-dashboard.prop.metrics.pass-rate': 'தேர்ச்சி விகிதம்',
   'account-dashboard.prop.metrics.costs': 'சவால் செலவுகள்',
-  'account-dashboard.prop.metrics.payouts': 'பேஅவுட்கள்',
   'account-dashboard.prop.metrics.net': 'நிகர',
-  'account-dashboard.prop.tabs.overview': 'கண்ணோட்டம்',
   'account-dashboard.mode.selector': 'கணக்கு டாஷ்போர்டு முறை',
   'account-dashboard.mode.account-overview': 'கண்ணோட்டம்',
   'account-dashboard.mode.challenges': 'சவால்கள்',
@@ -7866,20 +7493,15 @@ const ta: Lang = {
     'இன்னும் விதிகள் சேர்க்கப்படவில்லை. இந்தக் கட்டத்தை வரையறுக்க விதியைச் சேர் என்பதைப் பயன்படுத்தவும்.',
   'account.prop-challenge.rules': 'விதிகள்',
   'account.prop-challenge.costs.empty': 'இன்னும் செலவுகள் சேர்க்கப்படவில்லை.',
-  'account.prop-challenge.description':
-    'பல-கட்ட ப்ராப் நிறுவனச் சவால் வழியாக இந்தக் கணக்கைக் கண்காணிக்கவும்.',
-  'account.prop-challenge.enable': 'ப்ராப் சவால் கண்காணிப்பை இயக்கு',
   'account.prop-challenge.challenge-name': 'சவால் பெயர்',
   'account.prop-challenge.challenge-name-placeholder': 'எ.கா. 25K மதிப்பீடு',
-  'account.prop-challenge.firm-name': 'நிறுவனப் பெயர் (விரும்பினால்)',
+  'account.prop-challenge.firm-name': 'நிறுவனப் பெயர்',
   'account.prop-challenge.firm-name-placeholder': 'எ.கா. Apex Trader Funding',
   'account.prop-challenge.profile.title': 'நிறுவன விதிகளைப் பயன்படுத்தவும்',
   'account.prop-challenge.profile.firm': 'நிறுவனம்',
   'account.prop-challenge.profile.challenge': 'சவால்',
-  'account.prop-challenge.profile.choose-firm':
-    'நிறுவனத்தைத் தேர்ந்தெடுக்கவும்',
-  'account.prop-challenge.profile.choose-challenge':
-    'சேலஞ்சைத் தேர்ந்தெடுக்கவும்',
+  'account.prop-challenge.profile.choose-firm': 'நிறுவனத்தைத் தேர்ந்தெடுக்கவும்',
+  'account.prop-challenge.profile.choose-challenge': 'சேலஞ்சைத் தேர்ந்தெடுக்கவும்',
   'account.prop-challenge.profile.custom-firm': 'மற்றவை / தனிப்பயன் நிறுவனம்',
   'account.prop-challenge.profile.help':
     'விதிகளை நிரப்ப உங்கள் நிறுவனத்தையும் திட்டத்தையும் தேர்ந்தெடுக்கவும்: டிராடவுன், இலக்குகள், பேஅவுட்கள். பின்னர் திருத்தலாம்.',
@@ -7893,22 +7515,14 @@ const ta: Lang = {
   'account.prop-challenge.profile.confirm-title': 'சவால் அமைப்பை மாற்றவா?',
   'account.prop-challenge.profile.confirm-message':
     'இந்த நிறுவன விதிகளைப் பயன்படுத்தினால் தற்போது அமைத்துள்ள கட்டங்களும் விதிகளும் மாற்றப்படும்.',
-  'account.prop-challenge.current-phase': 'தற்போதைய கட்டம்',
   'account.prop-challenge.phase-rules': '{phase}க்கான விதிகள்',
   'account.prop-challenge.next-phase': 'அடுத்து: {phase}',
   'account.prop-challenge.view-phase': 'கட்டத்தைக் காண்',
   'account.prop-challenge.unnamed-phase': 'பெயரிடப்படாத கட்டம்',
   'account.prop-challenge.phase-name': 'கட்டப் பெயர்',
-  'account.prop-challenge.phase-type': 'கட்ட வகை',
-  'account.prop-challenge.phase-type.evaluation': 'மதிப்பீடு',
-  'account.prop-challenge.phase-type.verification': 'சரிபார்ப்பு',
-  'account.prop-challenge.phase-type.sim_funded': 'சிம் ஃபண்டட்',
-  'account.prop-challenge.phase-type.live_funded': 'நேரடி ஃபண்டட்',
-  'account.prop-challenge.phase-type.custom': 'தனிப்பயன்',
   'account.prop-challenge.starting-balance': 'தொடக்க இருப்பு',
   'account.prop-challenge.broker-account-id': 'தரகர் கணக்குகள்',
-  'account.prop-challenge.broker-accounts.assigned':
-    '{phase}க்கு ஒதுக்கப்பட்டது',
+  'account.prop-challenge.broker-accounts.assigned': '{phase}க்கு ஒதுக்கப்பட்டது',
   'account.prop-challenge.broker-accounts.trades': '{count} டிரேட்கள்',
   'account.prop-challenge.broker-accounts.trade-one': '1 டிரேட்',
   'account.prop-challenge.phase-started': 'தொடங்கியது',
@@ -7933,6 +7547,8 @@ const ta: Lang = {
   'account.prop-challenge.rule.daily-loss-model': 'தினசரி நஷ்டத் தொகை',
   'account.prop-challenge.rule.help.target-amount':
     'நிலையான இலக்குகள் கணக்கு நாணயத்தில்; சதவீத இலக்குகள் இக்கட்டத்தின் தொடக்க இருப்பை அடிப்படையாகக் கொண்டவை. தினசரி கணக்கிடும் லாப வரம்புக்குப் பின் இருப்பு உயர்வே முன்னேற்றம்; Unrealized P&L சேராது.',
+  'account.prop-challenge.rule.target-needs-balance':
+    'சதவீத இலக்குக்கு 0-க்கு மேல் தொடக்க இருப்பு தேவை.',
   'account.prop-challenge.rule.help.credit-withdrawals':
     'பதிவான மொத்தப் பணமெடுப்புகளை நிலையான இலக்கு முன்னேற்றத்தில் மீண்டும் சேர்க்கிறது. இருப்பையோ பணமெடுப்பு தகுதியையோ மாற்றாது.',
   'account.prop-challenge.rule.help.drawdown-amount':
@@ -7983,12 +7599,10 @@ const ta: Lang = {
     'முந்தைய-EOD லாப நிலைகள்',
   'account.prop-challenge.rule.daily-loss-tiers-help':
     'காற்புள்ளியால் பிரித்த லாபம்:இழப்பு-வரம்பு இணைகளை உள்ளிடவும். முந்தைய வர்த்தக நாள் முடிவில் தேர்ந்த லாப அடிப்படை அடுத்த நாளின் வரம்பைத் தீர்மானிக்கும்; அது உயரலாம் அல்லது குறையலாம்.',
-  'account.prop-challenge.rule.loss-tiers':
-    'லாப நிலைகள் மற்றும் நஷ்ட வரம்புகள்',
+  'account.prop-challenge.rule.loss-tiers': 'லாப நிலைகள் மற்றும் நஷ்ட வரம்புகள்',
   'account.prop-challenge.rule.daily-loss-threshold-help':
     'இக்கட்டத்தின் திரண்ட Realized வர்த்தக லாபம் கட்டத் தொடக்க இருப்பின் அமைத்த சதவீதத்தை முதலில் எட்டும்போது, மாற்றிய நாணய வரம்பு நிரந்தரமாகச் செயல்படும்.',
-  'account.prop-challenge.rule.profit-threshold-percent':
-    'கணக்கு லாப வாசல் (%)',
+  'account.prop-challenge.rule.profit-threshold-percent': 'கணக்கு லாப வாசல் (%)',
   'account.prop-challenge.rule.amount-after-threshold':
     'வாசலுக்குப் பிறகு தினசரி நஷ்டத் தொகை',
   'account.prop-challenge.rule.breach-action': 'மீறல் நடத்தை',
@@ -7996,38 +7610,19 @@ const ta: Lang = {
   'account.prop-challenge.rule.breach-action.soft':
     'அடுத்த அமர்வு வரை இடைநிறுத்து',
   'account.prop-challenge.rule.days': 'டிரேடிங் நாட்கள்',
-  'account.prop-challenge.rule.minimum-daily-profit':
-    'நாளொன்றுக்கு குறைந்தபட்ச லாபம்',
+  'account.prop-challenge.rule.minimum-daily-profit': 'நாளொன்றுக்கு குறைந்தபட்ச லாபம்',
   'account.prop-challenge.rule.minimum-daily-profit-summary':
     'நாளொன்றுக்கு {value}+',
   'account.prop-challenge.rule.best-day-percent': 'அதிகபட்ச சிறந்த நாள் (%)',
-  'account.prop-challenge.rule.position-limit-model': 'போசிஷன் வரம்பு மாதிரி',
-  'account.prop-challenge.rule.position-limit-model.fixed': 'நிலையான வரம்பு',
-  'account.prop-challenge.rule.position-limit-model.eod-profit-tiers':
-    'EOD லாப நிலைகள்',
-  'account.prop-challenge.rule.position-profit-basis':
-    'போசிஷன் அளவீட்டு லாப அடிப்படை',
-  'account.prop-challenge.rule.position-profit-basis.cumulative':
+  'account.prop-challenge.rule.strict-help':
+    'சிறந்த நாளின் நிகர இலாபம் வரம்பைவிடக் கண்டிப்பாகக் குறைவாக இருக்க வேண்டும். சமமாக இருப்பது தகுதி பெறாது.',
+  'account.prop-challenge.position-limits-not-monitored':
+    'Journalit பொசிஷன் வரம்புகள் அல்லது காண்ட்ராக்ட் அளவு மாற்ற விதிகளைக் கண்காணிப்பதில்லை. உங்கள் நிறுவனத்தின் விதிகளையும் வர்த்தகத் தளத்தையும் சரிபார்க்கவும்.',
+  'account.prop-challenge.rule.profit-basis': 'அளவு மாற்றத்திற்கான லாப அடிப்படை',
+  'account.prop-challenge.rule.profit-basis.cumulative':
     'ஒட்டுமொத்த டிரேட் லாபம் (பேஅவுட்கள் குறைக்காது)',
-  'account.prop-challenge.rule.position-profit-basis.current-account':
+  'account.prop-challenge.rule.profit-basis.current-account':
     'தற்போதைய கணக்கு லாபம் (பேஅவுட்கள் குறைக்கும்)',
-  'account.prop-challenge.rule.position-limit-model.eod-profit':
-    'EOD லாபத்துடன் அளவிடும்',
-  'account.prop-challenge.rule.position-tiers': 'லாப நிலைகள்',
-  'account.prop-challenge.rule.position-tiers-help':
-    'ஒவ்வொரு முடிந்த EOD லாப வாசலையும் அதன் புதிய காண்ட்ராக்ட் வரம்பையும் லாபம்:காண்ட்ராக்ட்கள் என, காற்புள்ளிகளால் பிரித்து உள்ளிடவும். ஒரு நிலை அடுத்த டிரேடிங் நாளிலிருந்து பொருந்தும்.',
-  'account.prop-challenge.rule.position-scaling-help':
-    'ஒவ்வொரு முடிந்த லாபப் படியும் அடுத்த டிரேடிங் நாள் முதல் ஒரு காண்ட்ராக்டைச் சேர்க்கும், அதிகபட்சம் வரை.',
-  'account.prop-challenge.rule.initial-contracts': 'தொடக்க காண்ட்ராக்ட்கள்',
-  'account.prop-challenge.rule.profit-per-contract':
-    'கூடுதல் காண்ட்ராக்ட்டிற்கான EOD லாபம்',
-  'account.prop-challenge.rule.maximum-contracts':
-    'அளவீட்டுக்குப் பிறகு அதிகபட்ச காண்ட்ராக்ட்கள்',
-  'account.prop-challenge.rule.micros-per-contract':
-    '10 மைக்ரோக்களை 1 காண்ட்ராக்ட்டாக எண்ணு',
-  'account.prop-challenge.rule.micros-per-contract-help':
-    'இந்த வரம்புக்கு உங்கள் நிறுவனம் மைக்ரோ ஃப்யூச்சர்களை (MES, MNQ, MGC, ...) ஒரு நிலையான காண்ட்ராக்ட்டின் பத்தில் ஒரு பங்காக எண்ணினால் இதை இயக்கவும். ஒவ்வொரு மைக்ரோவும் முழு காண்ட்ராக்ட்டாக எண்ணப்பட்டால் அணைத்தே வைக்கவும்.',
-  'account.prop-challenge.rule.max-contracts': 'அதிகபட்ச காண்ட்ராக்ட்கள்',
   'account.prop-challenge.rule.profit_target': 'லாப இலக்கு',
   'account.prop-challenge.rule.drawdown': 'ட்ராடவுன்',
   'account.prop-challenge.rule.daily_loss_limit': 'தினசரி நஷ்ட வரம்பு',
@@ -8036,16 +7631,14 @@ const ta: Lang = {
   'account.prop-challenge.rule.best-profitable-day': 'லாப நாள் தூண்டுதல்',
   'account.prop-challenge.rule.daily_profit_cap': 'தினசரி லாப கிரெடிட் வரம்பு',
   'account.prop-challenge.rule.per-trading-day': 'டிரேடிங் நாளொன்றுக்கு',
-  'account.prop-challenge.rule.minimum_trading_days':
-    'குறைந்தபட்ச டிரேடிங் நாட்கள்',
-  'account.prop-challenge.rule.minimum_profitable_days':
-    'குறைந்தபட்ச லாப நாட்கள்',
+  'account.prop-challenge.rule.minimum_trading_days': 'குறைந்தபட்ச டிரேடிங் நாட்கள்',
+  'account.prop-challenge.rule.minimum_profitable_days': 'குறைந்தபட்ச லாப நாட்கள்',
   'account.prop-challenge.rule.consistency-cushion-percent':
     'நிலைத்தன்மை இடைவெளி (சதவீதப் புள்ளிகள்)',
   'account.prop-challenge.rule.consistency-cushion-short': 'இடைவெளி',
   'account.prop-challenge.rule.consistency': 'நிலைத்தன்மை',
   'account.prop-challenge.rule.max_position_size': 'அதிகபட்ச போசிஷன் அளவு',
-  'account.prop-challenge.drawdown.static': 'நிலையான',
+  'account.prop-challenge.drawdown.static': 'Static',
   'account.prop-challenge.drawdown.eod-trailing': 'EOD டிரெயிலிங்',
   'account.prop-challenge.drawdown.intraday-trailing': 'இன்ட்ராடே டிரெயிலிங்',
   'account.prop-challenge.summary.status.active': 'செயலில்',
@@ -8076,20 +7669,15 @@ const ta: Lang = {
   'account.prop-challenge.summary.rule.live_review_daily_profit':
     'நேரடி மதிப்பாய்வு',
   'account.prop-challenge.summary.rule.daily_profit_cap': 'தினசரி லாப கிரெடிட்',
-  'account.prop-challenge.summary.rule.minimum_trading_days':
-    'டிரேடிங் நாட்கள்',
+  'account.prop-challenge.summary.rule.minimum_trading_days': 'டிரேடிங் நாட்கள்',
   'account.prop-challenge.summary.rule.minimum_profitable_days': 'லாப நாட்கள்',
   'account.prop-challenge.summary.rule.consistency': 'சிறந்த நாள் நிலைத்தன்மை',
   'account.prop-challenge.summary.rule.max_position_size': 'போசிஷன் அளவு',
   'account.prop-challenge.summary.status.archived': 'காப்பகப்படுத்தப்பட்டது',
   'account.prop-challenge.summary.status.hidden': 'மறைக்கப்பட்டது',
   'account.prop-challenge.payout.title': 'பேஅவுட் தயார்நிலை',
-  'account.prop-challenge.payout.eligible': 'பேஅவுட் தயார்',
   'account.prop-challenge.payout.available': 'இப்போது கிடைக்கிறது',
-  'account.prop-challenge.payout.cycle-profit': 'சுழற்சி லாபம்',
-  'account.prop-challenge.payout.history': 'பேஅவுட்கள்',
-  'account.prop-challenge.payout.lifetime-qualifying-days':
-    'வாழ்நாள் தகுதி நாட்கள்',
+  'account.prop-challenge.payout.lifetime-qualifying-days': 'வாழ்நாள் தகுதி நாட்கள்',
   'account.prop-challenge.payout.requirement.days': 'டிரேடிங் நாட்கள்',
   'account.prop-challenge.payout.requirement.qualifying-days': 'தகுதி நாட்கள்',
   'account.prop-challenge.payout.requirement.minimum-balance':
@@ -8101,8 +7689,7 @@ const ta: Lang = {
   'account.prop-challenge.payout.requirement.minimum': 'குறைந்தபட்ச கிடைப்பது',
   'account.prop-challenge.payout.requirement.payouts': 'பேஅவுட் அனுமதி',
   'account.prop-challenge.payout.requirement.request-window': 'கோரிக்கை சாளரம்',
-  'account.prop-challenge.payout.timezone-invalid':
-    'அறியப்பட்ட நேர மண்டலம் அல்ல.',
+  'account.prop-challenge.payout.timezone-invalid': 'அறியப்பட்ட நேர மண்டலம் அல்ல.',
   'account.prop-challenge.payout.preview-amount': 'பேஅவுட் முன்னோட்டம்',
   'account.prop-challenge.payout.you-receive': 'டிரேடர் பங்கு',
   'account.prop-challenge.payout.balance-after': 'பிந்தைய இருப்பு',
@@ -8118,24 +7705,13 @@ const ta: Lang = {
     'இந்தப் பேஅவுட் கணக்கை அடுத்த கட்டமைக்கப்பட்ட நிலைக்கு முன்னேற்றும்.',
   'account.prop-challenge.payout.live-review-after-payout':
     'இந்தப் பேஅவுட் கணக்கை நேரடிக் கணக்கு மதிப்பாய்வுக்குத் தகுதியாக்கும்.',
-  'account.prop-challenge.payout.cycle-resets':
-    'அங்கீகரிக்கப்பட்ட பேஅவுட்டுக்குப் பிறகு பேஅவுட் முன்னேற்றம் மீட்டமைக்கப்படும்.',
-  'account.prop-challenge.payout.cycle-continues':
-    'அங்கீகரிக்கப்பட்ட பேஅவுட்டுக்குப் பிறகு பேஅவுட் முன்னேற்றம் தொடரும்.',
-  'account.prop-challenge.payout.drawdown.unchanged':
-    'தற்போதைய ட்ராடவுன் தளம் அப்படியே இருக்கும்.',
-  'account.prop-challenge.payout.drawdown.lock_at_balance':
-    'பேஅவுட்டுக்குப் பிறகு ட்ராடவுன் தளம் பூட்டப்படும்.',
-  'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
-    'பேஅவுட்டுக்குப் பிறகு கணக்கும் ட்ராடவுன் வரம்புகளும் மீட்டமைக்கப்படும்.',
   'account.prop-challenge.ledger.value.of': '{target}-இல் {current}',
   'account.prop-challenge.ledger.section.payout': 'பேஅவுட் தேவைகள்',
   'account.prop-challenge.ledger.requirement.minimum': 'குறைந்தபட்சம் {value}',
   'account.prop-challenge.ledger.requirement.maximum': 'அதிகபட்சம் {value}',
   'account.prop-challenge.ledger.value.ratio': '{target}-இல் {current}',
   'account.prop-challenge.payout.met-of-total': '{total}-இல் {met} தேவைகள்',
-  'account.prop-challenge.ledger.value.of-today':
-    'இன்று {target}-இல் {current}',
+  'account.prop-challenge.ledger.value.of-today': 'இன்று {target}-இல் {current}',
   'account.prop-challenge.ledger.value.credited-profit':
     '{actual} உண்மையான லாபத்தில் {credited} கிரெடிட்',
   'account.prop-challenge.ledger.value.used': '{used} பயன்படுத்தப்பட்டது',
@@ -8215,10 +7791,6 @@ const ta: Lang = {
     'சிறந்த நாள் {bestDay} மொத்த லாபத்தில் {share}, {maximum} வரம்புக்குள்.',
   'account.prop-challenge.ledger.help.consistency.example-none':
     'இன்னும் லாபம் இல்லை, எனவே ஒப்பிட சிறந்த நாள் இல்லை.',
-  'account.prop-challenge.ledger.help.max_position_size':
-    'ஒரு நிலையில் அனுமதிக்கப்படும் அதிகபட்ச ஒப்பந்தங்கள். Journalit ஒவ்வொரு டிரேடின் அளவையும் சரிபார்க்கிறது. சில நிறுவனங்கள் லாபம் அதிகரிக்கும்போது வரம்பை உயர்த்துகின்றன.',
-  'account.prop-challenge.ledger.help.max_position_size.example':
-    'இப்போது ஒரு டிரேடுக்கு அதிகபட்சம் {maximum} ஒப்பந்தங்கள்; இதுவரை பெரிய டிரேடு {current}.',
   'account.prop-challenge.ledger.help.payout.cycle_days':
     'தற்போதைய பேஅவுட் சுழற்சியில் டிரேடிங் நாட்கள். அங்கீகரிக்கப்பட்ட பேஅவுட்டுக்குப் பிறகு எண்ணிக்கை மீண்டும் தொடங்கும்.',
   'account.prop-challenge.ledger.help.payout.cycle_days.example':
@@ -8286,8 +7858,7 @@ const ta: Lang = {
   'account.prop-challenge.ledger.state.within-rule': 'விதிக்குள்',
   'account.prop-challenge.ledger.state.near-limit': 'வரம்புக்கு அருகில்',
   'account.prop-challenge.ledger.state.limit-reached': 'வரம்பு அடைந்தது',
-  'account.prop-challenge.ledger.state.cap-applied':
-    'வரம்பு பயன்படுத்தப்பட்டது',
+  'account.prop-challenge.ledger.state.cap-applied': 'வரம்பு பயன்படுத்தப்பட்டது',
   'account.prop-challenge.ledger.state.within-cap': 'வரம்புக்குள்',
   'account.prop-challenge.ledger.state.breached': 'மீறப்பட்டது',
   'account.prop-challenge.actions.progress-to': '{phase}க்கு முன்னேறு',
@@ -8350,14 +7921,12 @@ const ta: Lang = {
   'account.prop-challenge.payout.plan.percent-value': 'சதவீதம்',
   'account.prop-challenge.payout.plan.amount-value': 'தொகை ({currency})',
   'account.prop-challenge.payout.plan.save': 'திட்டத்தைச் சேமி',
-  'account.prop-challenge.payout.plan.saved':
-    'பேஅவுட் திட்டம் சேமிக்கப்பட்டது.',
+  'account.prop-challenge.payout.plan.saved': 'பேஅவுட் திட்டம் சேமிக்கப்பட்டது.',
   'account.prop-challenge.payout.plan.summary-notify': 'அறிவிப்பு ≥ {amount}',
   'account.prop-challenge.payout.plan.summary-percent': '{percent}% பரிந்துரை',
   'account.prop-challenge.payout.plan.summary-amount': '{amount} பரிந்துரை',
   'account.prop-challenge.payout.plan.summary-full': 'முழுத் தொகை',
-  'account.prop-challenge.actions.error':
-    'ப்ராப் சவாலைப் புதுப்பிக்க முடியவில்லை.',
+  'account.prop-challenge.actions.error': 'ப்ராப் சவாலைப் புதுப்பிக்க முடியவில்லை.',
   'account.prop-challenge.confirm.advance':
     'இந்தக் கட்ட முடிவை உறுதிப்படுத்தி சவாலைத் தொடரவா?',
   'account.prop-challenge.confirm.advance-with-promotion':
@@ -8368,8 +7937,7 @@ const ta: Lang = {
     '{account}ஐக் காப்பகப்படுத்தவா? “{challenge}” சவால் தோல்வியடைந்தது. கணக்கு காப்பகத்திற்கு நகரும்.',
   'account.prop-challenge.confirm.archive-passed':
     '{account}ஐக் காப்பகப்படுத்தவா? “{challenge}” சவால் தேர்ச்சியடைந்தது. கணக்கு காப்பகத்திற்கு நகரும்.',
-  'account.prop-challenge.transition.route':
-    '{account} · {from} இருந்து → {to}',
+  'account.prop-challenge.transition.route': '{account} · {from} இருந்து → {to}',
   'account.prop-challenge.transition.route-passed':
     '{account} · {from} → சவால் தேர்ச்சி',
   'account.prop-challenge.confirm.reopen':
@@ -8379,6 +7947,7 @@ const ta: Lang = {
   'account.prop-challenge.transition.when-target-reached': 'இலக்கு அடைந்தபோது',
   'account.prop-challenge.transition.too-early':
     'மாற்ற நேரம் இந்தக் கட்டம் தொடங்குவதற்கு முன் இருக்க முடியாது.',
+  'account.prop-challenge.costs.section-title': 'செலவுகள்',
   'account.prop-challenge.costs.title': 'ஒருமுறை செலவுகள்',
   'account.prop-challenge.costs.description':
     'வாங்கல், மீட்டமைப்பு மற்றும் செயல்படுத்தல் கட்டணங்களைத் தனித்தனியாகக் கண்காணிக்கவும்.',
@@ -8396,7 +7965,6 @@ const ta: Lang = {
   'account.header.created': 'உருவாக்கப்பட்டது:',
   'account.summary.current-balance': 'தற்போதைய இருப்பு',
   'account.summary.net-cash-flow': 'நிகர பண ஓட்டம்',
-  'account.summary.payouts': 'பேஅவுட்கள்',
   'account.performance.title': 'செயல்திறன்',
   'account-page.guide.whats-new.cockpit.intro.title': 'உங்கள் சவாலின் விதிகள்',
   'account-page.guide.whats-new.cockpit.intro.description':
@@ -8418,8 +7986,7 @@ const ta: Lang = {
     'மதிப்புகள் மறைக்கப்பட்டுள்ளவரை பணப்பட்டுவாடா வரலாறு மறைக்கப்படும்',
   'account.payouts.summary-one': '1 பேஅவுட் · {total} · கடைசி {date}',
   'account.payouts.empty': 'இன்னும் பேஅவுட்கள் இல்லை',
-  'account.payouts.empty-sub':
-    'தலைப்பில் உள்ள + பொத்தானால் பேஅவுட்டைப் பதிவுசெய்யவும்.',
+  'account.payouts.empty-sub': 'தலைப்பில் உள்ள + பொத்தானால் பேஅவுட்டைப் பதிவுசெய்யவும்.',
   'account.ledger.column.date': 'தேதி',
   'account.ledger.column.type': 'வகை',
   'account.ledger.column.payout': 'பேஅவுட்',
@@ -8433,7 +8000,6 @@ const ta: Lang = {
   'home.widget.eval-roi.challenge-count-plural': '{count} மதிப்பீடுகள்',
   'home.widget.eval-roi.net': 'நிகர',
   'home.widget.eval-roi.spent': 'செலவழித்தது',
-  'home.widget.eval-roi.payouts': 'பேஅவுட்கள்',
   'home.widget.eval-roi.break-even': 'சமநிலை',
   'home.widget.challenge-alerts.title': 'சவால் எச்சரிக்கைகள்',
   'home.widget.challenge-alerts.unable-to-load':
@@ -8454,8 +8020,6 @@ const ta: Lang = {
   'account.prop-challenge.stage.sim-funded': 'சிம் ஃபண்டட்',
   'account.prop-challenge.stage.live-funded': 'நேரடி ஃபண்டட்',
   'account.prop-challenge.payout-rules.title': 'பேஅவுட் விதிகள்',
-  'account.prop-challenge.payout-rules.add': 'பேஅவுட் விதிகளைச் சேர்',
-  'account.prop-challenge.payout-rules.remove': 'பேஅவுட் விதிகளை அகற்று',
   'account.prop-challenge.payout-rules.cycle': 'தகுதி சுழற்சி',
   'account.prop-challenge.payout-rules.request-window': 'கோரிக்கை நேரம்',
   'account.prop-challenge.payout-rules.request-window.anytime': 'எந்த நாளிலும்',
@@ -8464,12 +8028,10 @@ const ta: Lang = {
   'account.prop-challenge.payout-rules.request-window.time-zone': 'நேர மண்டலம்',
   'account.prop-challenge.payout-rules.request-window.allowed-days':
     'அனுமதிக்கப்பட்ட கோரிக்கை நாட்கள்',
-  'account.prop-challenge.payout-rules.cycle.none':
-    'காத்திருப்பு சுழற்சி இல்லை',
+  'account.prop-challenge.payout-rules.cycle.none': 'காத்திருப்பு சுழற்சி இல்லை',
   'account.prop-challenge.payout-rules.cycle.trading-days': 'டிரேடிங் நாட்கள்',
   'account.prop-challenge.payout-rules.cycle.qualifying-days': 'தகுதி நாட்கள்',
-  'account.prop-challenge.payout-rules.cycle.calendar-days':
-    'நாட்காட்டி நாட்கள்',
+  'account.prop-challenge.payout-rules.cycle.calendar-days': 'நாட்காட்டி நாட்கள்',
   'account.prop-challenge.payout-rules.days': 'தேவையான நாட்கள்',
   'account.prop-challenge.payout-rules.minimum-daily-profit':
     'குறைந்தபட்ச தினசரி லாபம்',
@@ -8541,8 +8103,7 @@ const ta: Lang = {
     'திறந்த பிறகு அதிகபட்ச அட்டவணை',
   'account.prop-challenge.payout-rules.lifetime-unlock-maximum-cycle-profit-percent':
     'திறந்த பிறகு அதிகபட்ச சுழற்சி-லாப சதவீதம்',
-  'account.prop-challenge.payout-rules.profit-split-model':
-    'லாபப் பகிர்வு மாதிரி',
+  'account.prop-challenge.payout-rules.profit-split-model': 'லாபப் பகிர்வு மாதிரி',
   'account.prop-challenge.payout-rules.profit-split.fixed': 'நிலையான சதவீதம்',
   'account.prop-challenge.payout-rules.profit-split.threshold':
     'ஒட்டுமொத்த பேஅவுட்களுக்குப் பிறகு மாறும்',
@@ -8556,6 +8117,8 @@ const ta: Lang = {
     'வாசலுக்குப் பிறகு டிரேடர் பங்கு (%)',
   'account.prop-challenge.payout-rules.profit-split.account-profit-help':
     'வாழ்நாள் கணக்கு லாபம் என்பது தற்போதைய இருப்பு கழித்தல் தொடக்க இருப்பு கூட்டல் முந்தைய திரும்பப் பெறுதல்கள். கீழ் அல்லது சமம்/மேல் சதவீதம் முழுக் கோரிக்கைக்கும் பொருந்தும்.',
+  'account.prop-challenge.payout-rules.profit-split.marginal-help':
+    'இந்தக் கணக்கு இலாப வரம்புக்குக் கீழுள்ள கோரிக்கைப் பகுதிக்கு கீழ் பங்கு பயன்படுத்தப்படும்; அதற்கு மேலுள்ள பகுதிக்கு மேல் பங்கு பயன்படுத்தப்படும்.',
   'account.prop-challenge.payout-rules.profit-split.below':
     'வாசலுக்குக் கீழ் டிரேடர் பங்கு (%)',
   'account.prop-challenge.payout-rules.profit-split.threshold-profit':
@@ -8588,18 +8151,15 @@ const ta: Lang = {
   'account.prop-challenge.payout-rules.reset-cycle':
     'பேஅவுட்டுக்குப் பிறகு தகுதி சுழற்சியை மீட்டமை',
   'account.prop-challenge.payout-rules.group.eligibility': 'தகுதி',
-  'account.prop-challenge.payout-rules.group.availability':
-    'கிடைக்கும் பேஅவுட்',
+  'account.prop-challenge.payout-rules.group.availability': 'கிடைக்கும் பேஅவுட்',
   'account.prop-challenge.payout-rules.group.terms': 'பேஅவுட் நிபந்தனைகள்',
-  'account.prop-challenge.payout-rules.group.aftermath':
-    'பேஅவுட்டுக்குப் பிறகு',
+  'account.prop-challenge.payout-rules.group.aftermath': 'பேஅவுட்டுக்குப் பிறகு',
   'account.prop-challenge.payout.requirement.elapsed-hours': 'கடந்த நேரம்',
   'account.prop-challenge.payout-rules.minimum-elapsed-hours':
     'குறைந்தபட்ச கடந்த மணிநேரம்',
   'account.merge.challenge.move-earlier': '{account}ஐ முன்னதாக நகர்த்து',
   'account.merge.challenge.move-later': '{account}ஐ பின்னதாக நகர்த்து',
-  'account.merge.warning.use-profile-balance':
-    'நிறுவனத்தின் இருப்பைப் பயன்படுத்தவும்',
+  'account.merge.warning.use-profile-balance': 'நிறுவனத்தின் இருப்பைப் பயன்படுத்தவும்',
   'account.merge.warning.edit-phases': 'கட்டங்களைத் திருத்து',
   'account.merge.title': 'சவால் அமைப்பு',
   'account.merge.loading': 'ஏற்றுகிறது...',
@@ -8622,10 +8182,11 @@ const ta: Lang = {
   'account.merge.warning.trade-outside-window':
     'கட்ட சாளரத்திற்கு வெளியே உள்ள டிரேட்கள்',
   'account.merge.warning.identity-shared': 'பல கணக்குகள் உரிமை கோரும் அடையாளம்',
-  'account.merge.warning.copy-trading-dropped':
-    'நகல் டிரேடிங் காலங்கள் விடப்பட்டன',
+  'account.merge.warning.copy-trading-dropped': 'நகல் டிரேடிங் காலங்கள் விடப்பட்டன',
   'account.merge.error.too-few-sources':
     'குறைந்தது இரண்டு கணக்குகளைத் தேர்ந்தெடுக்கவும்.',
+  'account.merge.error.target-needs-balance':
+    'இந்தக் கணக்கின் தொடக்க இருப்பு 0, எனவே சதவீத இலக்கை அளவிட முடியாது. தொகை இலக்கைப் பயன்படுத்தவும், அல்லது ரத்துசெய்து முதலில் கணக்கின் ஆரம்ப இருப்பை அமைக்கவும்.',
   'account.merge.error.duplicate-source':
     'ஒரு கணக்கு இருமுறை பட்டியலிடப்பட்டுள்ளது.',
   'account.merge.error.target-exists': 'அந்தப் பெயர் வேறு கணக்கிற்கு உரியது.',
@@ -8633,18 +8194,15 @@ const ta: Lang = {
     'கணக்குகள் வெவ்வேறு நாணயங்களைப் பயன்படுத்துகின்றன.',
   'account.merge.error.timeline-not-monotonic':
     'கட்டத் தொடக்க நேரங்கள் அதிகரிக்க வேண்டும்.',
-  'account.merge.error.invalid-override':
-    'இந்தக் கட்டத்தின் தேதிகளைச் சரிபார்க்கவும்.',
-  'account.merge.error.source-missing':
-    'ஒரு கணக்கிற்குச் சேமித்த அமைப்புகள் இல்லை.',
+  'account.merge.error.invalid-override': 'இந்தக் கட்டத்தின் தேதிகளைச் சரிபார்க்கவும்.',
+  'account.merge.error.source-missing': 'ஒரு கணக்கிற்குச் சேமித்த அமைப்புகள் இல்லை.',
   'account.merge.error.unknown': 'இணைப்பு தோல்வி.',
   'account.merge.action.merge': 'இணை',
   'account.merge.action.undo': 'செயல்தவிர்',
   'account.merge.action.looks-right': 'சரியாக உள்ளது',
   'account.merge.action.delete': 'பழைய கணக்குகளை நீக்கு',
   'account.merge.notice.converted': 'சவாலாக மாற்றப்பட்டது',
-  'account.merge.summary.intro':
-    'இது உங்கள் சவாலுடன் பொருந்துகிறதா எனச் சரிபார்க்கவும்:',
+  'account.merge.summary.intro': 'இது உங்கள் சவாலுடன் பொருந்துகிறதா எனச் சரிபார்க்கவும்:',
   'account.merge.summary.phases': 'கட்டங்கள்: {phases}',
   'account.merge.summary.current':
     'இப்போது {phase} ({stage}), {date} அன்று தொடங்கியது',
@@ -8671,8 +8229,7 @@ const ta: Lang = {
   'account.merge.profile.applied': 'பயன்படுத்தப்பட்டது: {firm} · {challenge}',
   'account.merge.profile.remove': 'நீக்கு',
   'account.merge.phase.apply-profile': 'நிறுவன விதிகளைப் பயன்படுத்தவும்',
-  'account.merge.profile.replace-rules.title':
-    'கையால் உள்ளிட்ட விதிகளை மாற்றவா?',
+  'account.merge.profile.replace-rules.title': 'கையால் உள்ளிட்ட விதிகளை மாற்றவா?',
   'account.merge.profile.replace-rules.body':
     '{firm} சுயவிவரம் ஒவ்வொரு கட்டத்தின் விதிகளையும் வரையறுக்கிறது. இந்தப் பக்கத்தில் நீங்கள் உள்ளிட்ட விதிகள் மாற்றப்படும்.',
   'account.merge.profile.replace-rules.confirm': 'விதிகளை மாற்று',
@@ -8680,8 +8237,7 @@ const ta: Lang = {
     'சவால் இல்லாத ஒவ்வொரு கணக்கும் இங்கே பட்டியலிடப்பட்டுள்ளது',
   'guide.legacy-setup.list.description':
     'ஒவ்வொரு கணக்கிற்கும் முடிவு செய்யுங்கள். “அப்படியே விடு” அதை அப்படியே வைத்திருக்கும்; பின்னர் எப்போதும் டாஷ்போர்டு அமைப்புகளில் இருந்து அமைக்கலாம்.',
-  'guide.legacy-setup.assign.title':
-    'ஒரே சவாலின் கட்டங்களை ஒன்றாகக் குழுவாக்குங்கள்',
+  'guide.legacy-setup.assign.title': 'ஒரே சவாலின் கட்டங்களை ஒன்றாகக் குழுவாக்குங்கள்',
   'guide.legacy-setup.assign.description':
     'ஒரே சவாலின் கட்டங்களாக இருந்த கணக்குகள் ஒரே குழுவில் செல்லும் (பொருந்தும் பெயர்களிலிருந்து குழுக்களைப் பரிந்துரைக்கிறோம்). தனியாக உள்ள கணக்கு ஒரு-கட்ட சவாலாகிறது.',
   'guide.legacy-setup.continue.title': 'ஒவ்வொரு சவாலுக்கும் ஒரு குறுகிய அமைவு',
@@ -8690,8 +8246,7 @@ const ta: Lang = {
   'guide.merge-wizard.target.title': 'ஒரு கணக்கு வரலாற்றை வைத்திருக்கும்',
   'guide.merge-wizard.target.description':
     'இலக்குக் கணக்கு எல்லா கட்டங்களுடனும் நீடிக்கும். மற்றவை காப்பகப்படுத்தப்படும், நீக்கப்படாது; அவற்றின் வர்த்தகங்கள் இலக்குக் கணக்கிற்கு நகரும்.',
-  'guide.merge-wizard.identity.title':
-    'உங்கள் நிறுவன விதிகளைத் தேர்ந்தெடுக்கவும்',
+  'guide.merge-wizard.identity.title': 'உங்கள் நிறுவன விதிகளைத் தேர்ந்தெடுக்கவும்',
   'guide.merge-wizard.identity.description':
     'கட்டங்களையும் விதிகளையும் நிரப்ப உங்கள் நிறுவனத்தையும் திட்டத்தையும் தேர்ந்தெடுக்கவும். உங்கள் நிறுவனம் பட்டியலில் இல்லையா? பிற / தனிப்பயன் நிறுவனம் என்பதைத் தேர்ந்தெடுத்து அடுத்த பக்கத்தில் விதிகளை அமைக்கவும்.',
   'guide.merge-wizard.identity.free-title': 'உங்கள் சவாலுக்குப் பெயரிடவும்',
@@ -8700,8 +8255,7 @@ const ta: Lang = {
   'guide.merge-wizard.phases.title': 'ஒவ்வொரு கட்டத்தையும் சரிபாருங்கள்',
   'guide.merge-wizard.phases.description':
     'நிலை வகையை அமைத்து, முடித்த கட்டங்களை தேர்ச்சி என்றும் தற்போதையதை செயலில் என்றும் குறித்து, தேதிகளை உறுதிப்படுத்துங்கள்.',
-  'guide.merge-wizard.review.title':
-    'நீங்கள் உறுதிப்படுத்தும் வரை எதுவும் நடக்காது',
+  'guide.merge-wizard.review.title': 'நீங்கள் உறுதிப்படுத்தும் வரை எதுவும் நடக்காது',
   'guide.merge-wizard.review.description':
     'மாற்றிய பிறகு, அமைக்கப்பட்டதை கணக்குப் பக்கம் பட்டியலிடும், நீங்கள் சரிபார்க்கலாம், அங்கேயே செயல்தவிர்க்கலாம்.',
   'account.merge.challenge.accounts': 'கணக்குகள்',
@@ -8745,8 +8299,7 @@ const ta: Lang = {
   'onboarding.legacy-challenge.action.continue': 'தொடர்',
   'onboarding.legacy-challenge.action.continue-count': '{count}ஐ அமை',
   'guide.action-step.dismiss': 'இப்போது இல்லை',
-  'guide.legacy-challenge.title':
-    'இந்தப் புதுப்பிப்புக்கு முந்தைய கணக்குகளை அமைக்கவும்',
+  'guide.legacy-challenge.title': 'இந்தப் புதுப்பிப்புக்கு முந்தைய கணக்குகளை அமைக்கவும்',
   'guide.legacy-challenge.description':
     'பழைய மதிப்பீடு அல்லது நிதியளிக்கப்பட்ட கணக்குகளைச் சவால்களாக மாற்றவும். அமைப்பு கட்டங்களையும் தேதிகளையும் வழிநடத்தி, இறுதியில் அமைக்கப்பட்டதைக் காட்டும், நீங்கள் சரிபார்க்கலாம்.',
   'guide.legacy-challenge.action': 'என் கணக்குகளை அமை',
@@ -8837,6 +8390,474 @@ const ta: Lang = {
     'இக்கட்டத்தின் முதல் பணம்பெறுதலில் குறைந்தபட்ச சுழற்சி லாபம் பூஜ்ஜியமாகக் கருதப்படும்: நடப்புச் சுழற்சியின் ஈட்டிய நிகர லாபம் எதிர்மறையாக இருக்கக் கூடாது. மற்ற நிபந்தனைகள் தொடரும்.',
   'account.prop-challenge.payout-rules.help.reset-cycle':
     'பதிவுசெய்த பணம்பெறுதலுக்குப் பின் நாட்கள், தினசரி லாபம், சுழற்சி லாபம், நிலைத்தன்மையை மீட்டமைக்கும். கட்டத்தின் முழுத் தகுதி நாட்கள் தொடரும்; முன்னோட்டம் மீட்டமைக்காது.',
+
+  
+  'actions.value.cleared': 'அழிக்கப்பட்டது',
+  'actions.trade.set.account_id': 'கணக்கு: {value}',
+  'actions.trade.set.setup_id': 'செட்டப்: {value}',
+  'actions.trade.set.stop_loss': 'ஸ்டாப் லாஸ்: {value}',
+  'actions.trade.thesis.set': 'கருதுகோளைப் புதுப்பி',
+  'actions.trade.thesis.clear': 'கருதுகோளை அகற்று',
+  'actions.trade.reviewed.mark': 'மதிப்பாய்வு செய்ததாகக் குறி',
+  'actions.trade.reviewed.unmark': 'மதிப்பாய்வு செய்யாததாகக் குறி',
+  'actions.trade.notes.set': 'குறிப்புகளை மாற்று',
+  'actions.trade.stop-losses': 'ஸ்டாப் லாஸ்கள்: {value}',
+  'actions.trade.stop-losses.clear': 'ஸ்டாப் லாஸ்களை அகற்று',
+  'actions.trade.take-profits': 'டேக் ப்ராஃபிட்கள்: {value}',
+  'actions.trade.take-profits.clear': 'டேக் ப்ராஃபிட்களை அகற்று',
+  'actions.trade.set.take_profit': 'டேக் ப்ராஃபிட்: {value}',
+  'actions.trade.set.risk_amount': 'இடர் தொகை: {value}',
+  'actions.trade.add-tags': 'குறிச்சொற்களைச் சேர்: {labels}',
+  'actions.trade.remove-tags': 'குறிச்சொற்களை நீக்கு: {labels}',
+  'actions.trade.add-mistakes': 'தவறுகளைச் சேர்: {labels}',
+  'actions.trade.remove-mistakes': 'தவறுகளை நீக்கு: {labels}',
+  'actions.review.summary': 'சுருக்கத்தை மாற்று',
+  'actions.review.target.day': 'தினசரி மதிப்பாய்வு {date}',
+  'actions.review.target.week': 'வாராந்திர மதிப்பாய்வு {date}',
+  'actions.review.target.month': 'மாதாந்திர மதிப்பாய்வு {date}',
+  'actions.review.target.quarter': 'காலாண்டு மதிப்பாய்வு {date}',
+  'actions.review.target.year': 'ஆண்டு மதிப்பாய்வு {date}',
+  'agent-requests.deny': 'மறு',
+  'agent-requests.approve': 'ஒப்புதல் அளி',
+  'actions.options.catalog.tags': 'குறிச்சொற்கள்',
+  'actions.options.catalog.mistakes': 'தவறுகள்',
+  'actions.options.catalog.account_types': 'கணக்கு வகைகள்',
+  'actions.options.catalog.events': 'நிகழ்வுகள்',
+  'actions.options.create': 'உருவாக்கு: {labels}',
+  'actions.options.set-color': '{value} இன் நிறத்தை அமை',
+  'actions.options.clear-color': '{value} இன் நிறத்தை அழி',
+  'actions.options.update-style': '{value} இன் பாணியைப் புதுப்பி',
+  'actions.options.rename.one':
+    '{count} குறிப்பில் {source} ஐ {target} என மறுபெயரிடு',
+  'actions.options.rename.other':
+    '{count} குறிப்புகளில் {source} ஐ {target} என மறுபெயரிடு',
+  'actions.options.rename-account-type.one':
+    '{count} கணக்கிற்கு {source} ஐ {target} என மறுபெயரிடு',
+  'actions.options.rename-account-type.other':
+    '{count} கணக்குகளுக்கு {source} ஐ {target} என மறுபெயரிடு',
+  'actions.options.merge.one': '{count} குறிப்பில் {source} ஐ {target} உடன் இணை',
+  'actions.options.merge.other':
+    '{count} குறிப்புகளில் {source} ஐ {target} உடன் இணை',
+  'actions.options.delete.one': '{count} குறிப்பிலிருந்து {value} ஐ நீக்கு',
+  'actions.options.delete.other': '{count} குறிப்புகளிலிருந்து {value} ஐ நீக்கு',
+  'actions.options.delete-entry': '{value} ஐ நீக்கு',
+  'actions.options.move': '{value} ஐ {before} க்கு முன் நகர்த்து',
+  'actions.options.move-last': '{value} ஐ இறுதிக்கு நகர்த்து',
+  'actions.configuration.target.settings': 'அமைப்புகள்',
+  'actions.configuration.target.dashboard_layouts': 'டாஷ்போர்டு தளவமைப்புகள்',
+  'actions.configuration.target.home_layouts': 'முகப்பு தளவமைப்புகள்',
+  'actions.configuration.target.review_templates': 'மதிப்பாய்வு வார்ப்புருக்கள்',
+  'actions.configuration.target.session_workflows': 'அமர்வு பணிப்பாய்வுகள்',
+  'actions.configuration.settings': '{count} அமைப்புகளை மாற்று',
+  'actions.configuration.create': '{name} ஐ உருவாக்கு',
+  'actions.configuration.duplicate': '{name} ஐ நகலாக உருவாக்கு',
+  'actions.configuration.replace': '{name} ஐ மாற்றியமை',
+  'actions.configuration.rename': '{name} என மறுபெயரிடு',
+  'actions.configuration.delete': '{name} ஐ நீக்கு',
+  'actions.configuration.delete-question.one':
+    '“{name}” மற்றும் {workflows} உள்ள அதன் {count} இடத்தை நீக்கு',
+  'actions.configuration.delete-question.other':
+    '“{name}” மற்றும் {workflows} உள்ள அதன் {count} இடங்களை நீக்கு',
+  'actions.configuration.delete-question-workflows.one': '{count} பணிப்பாய்வில்',
+  'actions.configuration.delete-question-workflows.other':
+    '{count} பணிப்பாய்வுகளில்',
+  'actions.configuration.delete-question-unused':
+    '“{name}” ஐ நீக்கு (எந்தப் பணிப்பாய்விலும் பயன்படுத்தப்படவில்லை)',
+  'actions.configuration.set-active': '{name} ஐ செயலில் உள்ள தளவமைப்பாக்கு',
+  'actions.configuration.set-default': 'இயல்புநிலை {type} வார்ப்புருவை மாற்று',
+  'actions.configuration.reset-default':
+    'இயல்பாக உள்ளமைந்த {type} வார்ப்புருவைப் பயன்படுத்து',
+  'actions.setup.target': 'செட்அப் {name}',
+  'actions.setup.update': 'புதுப்பி: {fields}',
+  'actions.setup.field.status': 'நிலை',
+  'actions.setup.field.direction': 'திசை',
+  'actions.setup.field.color': 'நிறம்',
+  'actions.setup.field.tags': 'குறிச்சொற்கள்',
+  'actions.setup.field.preferred_sessions': 'விருப்பமான அமர்வுகள்',
+  'actions.setup.field.preferred_timeframes': 'விருப்பமான கால அளவுகள்',
+  'actions.setup.field.preferred_tickers': 'விருப்பமான டிக்கர்கள்',
+  'actions.setup.field.playbook': 'பிளேபுக்',
+  'actions.setup.field.rules': 'விதிகள்',
+  'actions.setup.field.linked_notes': 'இணைக்கப்பட்ட குறிப்புகள்',
+  'actions.trade.set.direction': 'திசை: {value}',
+  'actions.trade.set.direct_pnl': 'நேரடி P&L: {value}',
+  'actions.trade.set.commission': 'கமிஷன்: {value}',
+  'actions.trade.set.fees': 'கட்டணங்கள்: {value}',
+  'actions.trade.set.swap': 'ஸ்வாப்: {value}',
+  'actions.trade.executions': 'செயலாக்கங்களை மாற்று: {entries}, {exits}',
+  'actions.trade.set.missed_reason': 'தவறவிட்டதற்கான காரணம்: {value}',
+  'actions.trade.create':
+    '{type} உருவாக்கு: {direction} {instrument}, {entries}, {exits}',
+  'actions.trade.create.new-instrument': '{instrument} ஐக் கருவிகளில் சேர்',
+  'actions.trade.set-type': 'வகையை மாற்று: {source} இலிருந்து {target}',
+  'actions.trade.delete': 'வர்த்தகக் குறிப்பைக் குப்பைக்கு நகர்த்து',
+  'actions.trade.custom-fields': 'தனிப்பயன் புலங்கள்: {labels}',
+  'actions.custom-field.create': 'புலம் {label} உருவாக்கு ({type})',
+  'actions.custom-field.field.label': 'லேபிள்',
+  'actions.custom-field.field.options': 'விருப்பங்கள்',
+  'actions.custom-field.field.validation': 'சரிபார்ப்பு',
+  'actions.custom-field.field.placeholder': 'இடம்பிடி உரை',
+  'actions.custom-field.field.helper_text': 'உதவி உரை',
+  'actions.custom-field.field.allow_create_options':
+    'வர்த்தகங்களிலிருந்து புதிய விருப்பங்கள்',
+  'actions.custom-field.order-target': 'தனிப்பயன் புலங்கள்',
+  'actions.custom-field.reorder': 'புதிய வரிசை: {labels}',
+  'actions.session-log-tag.create': 'குறிச்சொல் {short} {label} உருவாக்கு',
+  'actions.session-log-tag.field.label': 'பெயர்',
+  'actions.session-log-tag.field.short_label': 'குறுகிய லேபிள்',
+  'actions.session-log-tag.field.color': 'நிறம்',
+  'actions.session-log-tag.field.requires_resolution': 'வகைப்படுத்தல் தேவை',
+  'actions.session-log-tag.field.lesson': 'பாடக் குறிச்சொல்',
+  'actions.session-log-tag.delete-alert-rule':
+    'அமர்வுப் பதிவு எச்சரிக்கை விதி இந்தக் குறிச்சொல்லை எண்ணுகிறது',
+  'actions.custom-field.delete.one':
+    'புலத்தை நீக்கு; {count} வர்த்தகம் அதன் மதிப்பை வைத்திருக்கும்',
+  'actions.custom-field.delete.other':
+    'புலத்தை நீக்கு; {count} வர்த்தகங்கள் அவற்றின் மதிப்புகளை வைத்திருக்கும்',
+  'actions.session-log-tag.delete.one':
+    'எழுதியிலிருந்து குறிச்சொல்லை நீக்கு; {count} நாள் அமர்வுப் பதிவு அதை வைத்திருக்கும்',
+  'actions.session-log-tag.delete.other':
+    'எழுதியிலிருந்து குறிச்சொல்லை நீக்கு; {count} நாள் அமர்வுப் பதிவுகள் அதை வைத்திருக்கும்',
+  'actions.review.answers.one': '{count} கேள்விக்குப் பதிலளி',
+  'actions.review.answers.other': '{count} கேள்விகளுக்குப் பதிலளி',
+  'actions.review.goals.one': '{count} இலக்கை அமை',
+  'actions.review.goals.other': '{count} இலக்குகளை அமை',
+  'actions.review.checklist.one': '{count} சரிபார்ப்புப் பட்டியல் உருப்படியை அமை',
+  'actions.review.checklist.other': '{count} சரிபார்ப்புப் பட்டியல் உருப்படிகளை அமை',
+  'actions.review.key-levels':
+    'முக்கிய நிலைகளை அமை: {support} ஆதரவு, {resistance} எதிர்ப்பு',
+  'actions.review.grade.mental': 'மனநிலை மதிப்பீடு: {value}',
+  'actions.review.grade.technical': 'தொழில்நுட்ப மதிப்பீடு: {value}',
+  'actions.review.reviewed': 'மதிப்பாய்வு செய்ததாகக் குறி',
+  'actions.review.not-reviewed': 'மதிப்பாய்வு செய்யாததாகக் குறி',
+  'actions.review.session-log.add.one': 'அமர்வுப் பதிவில் {count} உள்ளீட்டைச் சேர்',
+  'actions.review.session-log.add.other': 'அமர்வுப் பதிவில் {count} உள்ளீடுகளைச் சேர்',
+  'actions.review.session-log.update': 'அமர்வுப் பதிவு உள்ளீட்டைப் புதுப்பி: {fields}',
+  'actions.review.session-log.field.time': 'நேரம்',
+  'actions.review.session-log.field.tag_id': 'குறிச்சொல்',
+  'actions.review.session-log.field.text': 'உரை',
+  'actions.review.session-log.field.resolved': 'வகைப்படுத்தல்',
+  'actions.review.session-log.delete': 'அமர்வுப் பதிவு உள்ளீட்டை நீக்கு',
+  'actions.review.images.add.one': '{count} படத்தைச் சேர்',
+  'actions.review.images.add.other': '{count} படங்களைச் சேர்',
+  'actions.review.images.remove.one': '{count} படத்தை அகற்று',
+  'actions.review.images.remove.other': '{count} படங்களை அகற்று',
+  'actions.images.annotate.one':
+    '{count} படத்தின் குறிச்சொற்கள் அல்லது குறிப்புகளை மாற்று',
+  'actions.images.annotate.other':
+    '{count} படங்களின் குறிச்சொற்கள் அல்லது குறிப்புகளை மாற்று',
+  'actions.review.key-events.add.one': '{count} முக்கிய நிகழ்வைச் சேர்',
+  'actions.review.key-events.add.other': '{count} முக்கிய நிகழ்வுகளைச் சேர்',
+  'actions.review.key-events.update': 'முக்கிய நிகழ்வு {name} ஐப் புதுப்பி',
+  'actions.review.key-events.delete': 'முக்கிய நிகழ்வு {name} ஐ நீக்கு',
+  'actions.review.day-trade-fields.set.one':
+    'நாள் புலங்களை அமைத்து {count} வர்த்தகத்தைப் புதுப்பி',
+  'actions.review.day-trade-fields.set.other':
+    'நாள் புலங்களை அமைத்து {count} வர்த்தகங்களைப் புதுப்பி',
+  'actions.session.unplanned.start': 'திட்டமிடாத அமர்வைத் தொடங்கு: {reason}',
+  'actions.session.unplanned.stop': 'திட்டமிடாத அமர்வை நிறுத்து',
+  'actions.account.create':
+    '{currency} இல் {type} கணக்கை உருவாக்கு, தொடக்க இருப்பு {balance}',
+  'actions.account.field.account_type': 'வகை',
+  'actions.account.field.currency': 'நாணயம்',
+  'actions.account.field.created_date': 'தொடக்க தேதி',
+  'actions.account.field.initial_balance': 'தொடக்க இருப்பு',
+  'actions.account.field.live_balance': 'நேரடி இருப்பு',
+  'actions.account.field.drawdown': 'டிராடவுன்',
+  'actions.account.field.profit_target': 'லாப இலக்கு',
+  'actions.account.field.monthly_cost': 'மாதாந்திர செலவு',
+  'actions.account.field.copy_trading': 'நகல் வர்த்தகம்',
+  'actions.account.rename': '{name} என மறுபெயரிடு',
+  'actions.account.rename-trades.one':
+    'இதைப் பயன்படுத்தும் {count} வர்த்தகத்தைப் புதுப்பி',
+  'actions.account.rename-trades.other':
+    'இதைப் பயன்படுத்தும் {count} வர்த்தகங்களைப் புதுப்பி',
+  'actions.account.delete': 'கணக்கை நீக்கு',
+  'actions.account.transaction.deposit':
+    '{date} அன்று {amount} வைப்பைப் பதிவு செய்',
+  'actions.account.transaction.withdrawal':
+    '{date} அன்று {amount} திரும்பப்பெறுதலைப் பதிவு செய்',
+  'actions.account.transaction.delete-deposit': '{date} இன் {amount} வைப்பை நீக்கு',
+  'actions.account.transaction.delete-withdrawal':
+    '{date} இன் {amount} திரும்பப்பெறுதலை நீக்கு',
+  'actions.prop-challenge.advance': '{from} ஐத் தேர்ச்சி செய்து {to} ஐத் தொடங்கு',
+  'actions.prop-challenge.conclude':
+    '{phase} ஐத் தேர்ச்சி செய்து சவாலைத் தேர்ச்சியாக முடி',
+  'actions.prop-challenge.account-type': 'கணக்கை {type} ஆக மாற்று',
+  'actions.prop-challenge.fail': '{phase} மற்றும் சவாலைத் தோல்வி எனக் குறி',
+  'actions.prop-challenge.reopen': '{phase} ஐ மீண்டும் திற',
+  'actions.prop-challenge.cost.purchase':
+    '{date} அன்று {amount} கொள்முதலைப் பதிவு செய்',
+  'actions.prop-challenge.cost.reset':
+    '{date} அன்று {amount} மீட்டமைப்புக் கட்டணத்தைப் பதிவு செய்',
+  'actions.prop-challenge.cost.activation':
+    '{date} அன்று {amount} செயல்படுத்தல் கட்டணத்தைப் பதிவு செய்',
+  'actions.prop-challenge.cost.other': '{date} அன்று {amount} செலவைப் பதிவு செய்',
+  'actions.prop-challenge.cost.delete': '{date} இன் {amount} செலவை நீக்கு',
+  'actions.prop-challenge.configure.create.one':
+    '{name} ஐ {count} கட்டத்துடன் அமை',
+  'actions.prop-challenge.configure.create.other':
+    '{name} ஐ {count} கட்டங்களுடன் அமை',
+  'actions.prop-challenge.configure.update.one':
+    '{name} ஐப் புதுப்பி: {count} கட்டம் மற்றும் அதன் விதிகள்',
+  'actions.prop-challenge.configure.update.other':
+    '{name} ஐப் புதுப்பி: {count} கட்டங்கள் மற்றும் அவற்றின் விதிகள்',
+  'actions.prop-challenge.configure.remove-phase':
+    'நிலுவையில் உள்ள கட்டம் {phase} ஐ நீக்கு',
+  'agent-history.title': 'முகவர்களின் சமீபத்திய மாற்றங்கள்',
+  'agent-history.empty': 'இந்தச் சாதனத்தில் AI முகவர்கள் செய்யும் மாற்றங்கள் இங்கே தோன்றும்.',
+  'agent-history.undo': 'செயல்தவிர்',
+  'agent-history.undone': 'செயல்தவிர்க்கப்பட்டது',
+  'agent-history.undone-notice': 'முகவரின் மாற்றம் செயல்தவிர்க்கப்பட்டது.',
+  'agent-history.undo-failed':
+    'இது பின்னர் திருத்தப்பட்டதால் இந்த மாற்றத்தின் ஒரு பகுதியைச் செயல்தவிர்க்க முடியவில்லை.',
+  'agent-history.undo-in-use':
+    'இந்த உருப்படி இப்போது உங்கள் ஜர்னலில் பயன்படுத்தப்படுவதால் இந்த மாற்றத்தின் ஒரு பகுதியைச் செயல்தவிர்க்க முடியவில்லை.',
+  'agent-history.partly-applied':
+    'இந்த மாற்றத்தின் ஒரு பகுதி மட்டுமே பயன்படுத்தப்பட்டது.',
+  'agent-history.not-applied': 'இந்த மாற்றம் பயன்படுத்தப்படவில்லை.',
+  'agent-action.title.trade.create': 'வர்த்தகத்தை உருவாக்கு',
+  'agent-action.title.trade.update': 'வர்த்தகத்தைப் புதுப்பி',
+  'agent-action.title.trade.set_type': 'வர்த்தக வகையை மாற்று',
+  'agent-action.title.trade.delete': 'வர்த்தகத்தை நீக்கு',
+  'agent-action.title.review.create': 'மதிப்பாய்வை உருவாக்கு',
+  'agent-action.title.review.update': 'மதிப்பாய்வைப் புதுப்பி',
+  'agent-action.title.review.add_session_log_entries':
+    'அமர்வுப் பதிவில் உள்ளீடுகளைச் சேர்',
+  'agent-action.title.review.update_session_log_entry':
+    'அமர்வுப் பதிவு உள்ளீட்டைப் புதுப்பி',
+  'agent-action.title.review.delete_session_log_entry':
+    'அமர்வுப் பதிவு உள்ளீட்டை நீக்கு',
+  'agent-action.title.review.add_images': 'மதிப்பாய்வில் படங்களைச் சேர்',
+  'agent-action.title.review.set_image_annotations':
+    'மதிப்பாய்வுப் படங்களின் குறிச்சொற்கள் மற்றும் குறிப்புகளை அமை',
+  'agent-action.title.trade.set_image_annotations':
+    'வர்த்தகப் படங்களின் குறிச்சொற்கள் மற்றும் குறிப்புகளை அமை',
+  'agent-action.title.review.add_key_events': 'முக்கிய நிகழ்வுகளைச் சேர்',
+  'agent-action.title.review.update_key_event': 'முக்கிய நிகழ்வைப் புதுப்பி',
+  'agent-action.title.review.delete_key_event': 'முக்கிய நிகழ்வை நீக்கு',
+  'agent-action.title.review.set_day_trade_fields': 'நாள் வர்த்தகப் புலங்களை அமை',
+  'agent-action.title.session.start_unplanned': 'திட்டமிடாத அமர்வைத் தொடங்கு',
+  'agent-action.title.session.stop_unplanned': 'திட்டமிடாத அமர்வை நிறுத்து',
+  'agent-action.title.review.remove_images': 'மதிப்பாய்விலிருந்து படங்களை அகற்று',
+  'agent-action.title.tag.create': 'குறிச்சொற்களை உருவாக்கு',
+  'agent-action.title.tag.set_color': 'குறிச்சொல் நிறத்தை அமை',
+  'agent-action.title.tag.clear_color': 'குறிச்சொல் நிறத்தை அழி',
+  'agent-action.title.tag.rename': 'குறிச்சொல்லை மறுபெயரிடு',
+  'agent-action.title.tag.merge': 'குறிச்சொற்களை இணை',
+  'agent-action.title.tag.delete': 'குறிச்சொல்லை நீக்கு',
+  'agent-action.title.mistake.create': 'தவறுகளை உருவாக்கு',
+  'agent-action.title.mistake.rename': 'தவறை மறுபெயரிடு',
+  'agent-action.title.mistake.merge': 'தவறுகளை இணை',
+  'agent-action.title.mistake.delete': 'தவறை நீக்கு',
+  'agent-action.title.account_type.create': 'கணக்கு வகைகளை உருவாக்கு',
+  'agent-action.title.account_type.rename': 'கணக்கு வகையை மறுபெயரிடு',
+  'agent-action.title.account_type.move': 'கணக்கு வகையை நகர்த்து',
+  'agent-action.title.account_type.delete': 'கணக்கு வகையை நீக்கு',
+  'agent-action.title.event.create': 'நிகழ்வுகளை உருவாக்கு',
+  'agent-action.title.event.update_style': 'நிகழ்வின் பாணியைப் புதுப்பி',
+  'agent-action.title.event.rename': 'நிகழ்வை மறுபெயரிடு',
+  'agent-action.title.event.merge': 'நிகழ்வுகளை இணை',
+  'agent-action.title.event.delete': 'நிகழ்வை நீக்கு',
+  'agent-action.title.settings.set_analytics_calculation':
+    'பகுப்பாய்வுக் கணக்கீட்டை அமை',
+  'agent-action.title.settings.set_date_time_display':
+    'தேதி மற்றும் நேரக் காட்சியை அமை',
+  'agent-action.title.settings.set_display_preferences':
+    'காட்சி விருப்பங்களை அமைக்கவும்',
+  'agent-action.title.settings.set_trading_day': 'வர்த்தக நாளை அமைக்கவும்',
+  'agent-action.title.settings.set_risk_display': 'இடர் மற்றும் காட்சியை அமைக்கவும்',
+  'agent-action.title.settings.set_break_even': 'சமநிலை வரம்பை அமைக்கவும்',
+  'agent-action.title.settings.set_trade_entry':
+    'வர்த்தக உள்ளீட்டு விருப்பங்களை அமைக்கவும்',
+  'agent-action.title.settings.set_review_automation':
+    'மதிப்பாய்வு தானியக்கத்தை அமைக்கவும்',
+  'agent-action.title.settings.set_economic_calendar':
+    'பொருளாதார நாட்காட்டி இறக்குமதியை அமைக்கவும்',
+  'agent-action.title.settings.set_session_schedule': 'அமர்வு அட்டவணையை அமைக்கவும்',
+  'agent-action.title.dashboard_layout.create': 'டாஷ்போர்டு தளவமைப்பை உருவாக்கு',
+  'agent-action.title.dashboard_layout.duplicate':
+    'டாஷ்போர்டு தளவமைப்பின் நகலை உருவாக்கு',
+  'agent-action.title.dashboard_layout.update': 'டாஷ்போர்டு தளவமைப்பை மாற்றியமை',
+  'agent-action.title.dashboard_layout.rename': 'டாஷ்போர்டு தளவமைப்பை மறுபெயரிடு',
+  'agent-action.title.dashboard_layout.delete': 'டாஷ்போர்டு தளவமைப்பை நீக்கு',
+  'agent-action.title.dashboard_layout.set_active':
+    'செயலில் உள்ள டாஷ்போர்டு தளவமைப்பை அமை',
+  'agent-action.title.home_layout.create': 'முகப்பு தளவமைப்பை உருவாக்கு',
+  'agent-action.title.home_layout.duplicate': 'முகப்பு தளவமைப்பின் நகலை உருவாக்கு',
+  'agent-action.title.home_layout.update': 'முகப்பு தளவமைப்பை மாற்றியமை',
+  'agent-action.title.home_layout.rename': 'முகப்பு தளவமைப்பை மறுபெயரிடு',
+  'agent-action.title.home_layout.delete': 'முகப்பு தளவமைப்பை நீக்கு',
+  'agent-action.title.home_layout.set_active': 'செயலில் உள்ள முகப்பு தளவமைப்பை அமை',
+  'agent-action.title.review_template.create': 'மதிப்பாய்வு வார்ப்புருவை உருவாக்கு',
+  'agent-action.title.review_template.duplicate':
+    'மதிப்பாய்வு வார்ப்புருவின் நகலை உருவாக்கு',
+  'agent-action.title.review_template.update': 'மதிப்பாய்வு வார்ப்புருவை மாற்றியமை',
+  'agent-action.title.review_template.delete': 'மதிப்பாய்வு வார்ப்புருவை நீக்கு',
+  'agent-action.title.review_template.set_default':
+    'இயல்புநிலை மதிப்பாய்வு வார்ப்புருவை அமை',
+  'agent-action.title.session_workflow.create': 'அமர்வு பணிப்பாய்வை உருவாக்கு',
+  'agent-action.title.session_workflow.update': 'அமர்வு பணிப்பாய்வை மாற்றியமை',
+  'agent-action.title.session_workflow.delete': 'அமர்வு பணிப்பாய்வை நீக்கு',
+  'agent-action.title.session_workflow.delete_question':
+    'நூலகத்திலிருந்து அமர்வு கேள்வியை நீக்கு',
+  'agent-action.title.setup.create': 'அமைப்பை உருவாக்கு',
+  'agent-action.title.setup.update': 'அமைப்பைப் புதுப்பி',
+  'agent-action.title.setup.rename': 'அமைப்பை மறுபெயரிடு',
+  'agent-action.title.setup.delete': 'அமைப்பை நீக்கு',
+  'agent-action.title.custom_field.create': 'தனிப்பயன் புலத்தை உருவாக்கு',
+  'agent-action.title.custom_field.update': 'தனிப்பயன் புலத்தைப் புதுப்பி',
+  'agent-action.title.custom_field.delete': 'தனிப்பயன் புலத்தை நீக்கு',
+  'agent-action.title.custom_field.reorder': 'தனிப்பயன் புலங்களை மறுவரிசைப்படுத்து',
+  'agent-action.title.session_log_tag.create':
+    'அமர்வுப் பதிவுக் குறிச்சொல்லை உருவாக்கு',
+  'agent-action.title.session_log_tag.update':
+    'அமர்வுப் பதிவுக் குறிச்சொல்லைப் புதுப்பி',
+  'agent-action.title.session_log_tag.delete': 'அமர்வுப் பதிவுக் குறிச்சொல்லை நீக்கு',
+  'agent-action.title.account.create': 'கணக்கை உருவாக்கு',
+  'agent-action.title.account.update': 'கணக்கைப் புதுப்பி',
+  'agent-action.title.account.rename': 'கணக்கை மறுபெயரிடு',
+  'agent-action.title.account.delete': 'கணக்கை நீக்கு',
+  'agent-action.title.account.add_transaction':
+    'வைப்பு அல்லது திரும்பப்பெறுதலைப் பதிவுசெய்',
+  'agent-action.title.account.delete_transaction':
+    'வைப்பு அல்லது திரும்பப்பெறுதலை நீக்கு',
+  'agent-action.title.prop_challenge.advance': 'சவாலின் அடுத்த கட்டத்திற்குச் செல்',
+  'agent-action.title.prop_challenge.fail': 'சவாலைத் தோல்வியடைந்ததாகக் குறி',
+  'agent-action.title.prop_challenge.reopen': 'சவாலை மீண்டும் திற',
+  'agent-action.title.prop_challenge.add_cost': 'சவால் செலவைப் பதிவுசெய்',
+  'agent-action.title.prop_challenge.delete_cost': 'சவால் செலவை நீக்கு',
+  'agent-action.title.prop_challenge.configure': 'சவாலை அமை',
+  'agent-history.undo-confirm.title': 'முகவரின் மாற்றத்தைச் செயல்தவிர்க்கவா?',
+  'agent-history.undo-confirm.message':
+    'Journalit இந்த மாற்றத்தைத் திரும்பப் பெறும். பின்னர் திருத்தப்பட்டவை அப்படியே இருக்கும்.',
+  'agent-approval.eyebrow': 'AI முகவர் கோரிக்கை',
+  'agent-approval.position': '{total} இல் {index}',
+  'agent-approval.previous': 'முந்தைய கோரிக்கை',
+  'agent-approval.next': 'அடுத்த கோரிக்கை',
+  'agent-approval.hide': 'இப்போதைக்கு மறை',
+  'agent-approval.details': 'விவரங்கள்',
+  'agent-approval.hide-details': 'விவரங்களை மறை',
+  'agent-approval.approved': 'அங்கீகரிக்கப்பட்டது. தொடருமாறு முகவரிடம் கேளுங்கள்.',
+  'agent-approval.denied': 'மறுக்கப்பட்டது. முகவர் இந்த மாற்றங்களைச் செய்யாது.',
+  'agent-approval.expired':
+    'அந்தக் கோரிக்கை காலாவதியானது. மீண்டும் முயலுமாறு முகவரிடம் கேளுங்கள்.',
+  'agent-activity.title': 'AI முகவர் செயல்பாடு',
+  'agent-activity.waiting': 'உங்களுக்காகக் காத்திருக்கிறது',
+  'command.open-agent-activity': 'AI முகவர் செயல்பாட்டைத் திற',
+  'settings.mcp-access.title': 'AI பயன்பாடுகள் (MCP)',
+  'settings.mcp-access.description':
+    'உங்கள் Journalit கணக்குடன் இணைக்கும் Claude அல்லது ChatGPT போன்ற AI பயன்பாடுகள் MCP மூலம் இந்த வால்ட்டைப் படிக்கவும் புதுப்பிக்கவும் அனுமதிக்கவும்.',
+  'settings.mcp-access.loading': 'MCP அணுகல் ஏற்றப்படுகிறது…',
+  'settings.mcp-access.unavailable':
+    'MCP அணுகல் இப்போது கிடைக்கவில்லை. மீண்டும் முயல அமைப்புகளை மீண்டும் திறக்கவும்.',
+  'settings.mcp-access.toggle.label': 'MCP அணுகலை இயக்கு',
+  'settings.mcp-access.toggle.description':
+    'journalit.co இல் நீங்கள் அனுமதிக்கும் AI பயன்பாடுகளுக்கு இந்த வால்ட்டைக் கிடைக்கச் செய்யவும்.',
+  'settings.mcp-access.status.label': 'நிலை',
+  'settings.mcp-access.status.off': 'முடக்கப்பட்டது',
+  'settings.mcp-access.status.off-detail':
+    'எந்த AI பயன்பாடும் இந்த வால்ட்டைப் பயன்படுத்த முடியாது. இதை இயக்கினால் Claude, ChatGPT போன்ற பயன்பாடுகள் இதைப் படித்துப் புதுப்பிக்கலாம்; ஒன்றை இணைக்கும் வழி இங்கே தோன்றும்.',
+  'settings.mcp-access.status.connecting': 'இணைக்கிறது',
+  'settings.mcp-access.status.connecting-detail':
+    'இந்த வால்ட் உங்கள் Journalit கணக்கில் பதிவுசெய்யப்படுகிறது.',
+  'settings.mcp-access.status.connected': 'இணைக்கப்பட்டது',
+  'settings.mcp-access.status.connected-detail':
+    'நீங்கள் அனுமதித்த AI பயன்பாடுகள் இந்த வால்ட்டைப் பயன்படுத்தலாம்.',
+  'settings.mcp-access.status.failed': 'இணைக்கப்படவில்லை',
+  'settings.mcp-access.status.lost-detail':
+    'Journalit இந்த வால்ட்டின் இணைப்பை இனி அடையாளம் காணவில்லை, எனவே உங்கள் AI செயலிகள் இதைப் பயன்படுத்த முடியாது. மீண்டும் அனுமதிக்க மீண்டும் இணைக்கவும்.',
+  'settings.mcp-access.failed.account-unavailable':
+    'உங்கள் Journalit கணக்கு இப்போது MCP அணுகலைப் பயன்படுத்த முடியாது.',
+  'settings.mcp-access.failed.vault-limit-reached':
+    'உங்கள் திட்டத்தில் மற்றொரு வால்ட்டுக்கு MCP அணுகல் இல்லை.',
+  'settings.mcp-access.failed.vault-limit-move':
+    'AI செயலிகள் மற்றொரு வால்ட் "{vault}" உடன் இணைக்கப்பட்டுள்ளன (கடைசியாகப் பயன்படுத்தியது: {lastUsed}), உங்கள் திட்டத்தின் வால்ட் வரம்பு எட்டப்பட்டுவிட்டது.',
+  'settings.mcp-access.failed.vault-limit-move-never-used':
+    'AI செயலிகள் மற்றொரு வால்ட் "{vault}" உடன் இணைக்கப்பட்டுள்ளன (ஒருபோதும் பயன்படுத்தப்படவில்லை), உங்கள் திட்டத்தின் வால்ட் வரம்பு எட்டப்பட்டுவிட்டது.',
+  'settings.mcp-access.action.move-here': 'AI அணுகலை இந்த வால்ட்டுக்கு நகர்த்து',
+  'settings.mcp-access.move.confirm-title': 'AI அணுகலை இந்த வால்ட்டுக்கு நகர்த்தவா?',
+  'settings.mcp-access.move.confirm-message':
+    '"{vault}" உடன் இணைக்கப்பட்ட AI செயலிகள் அங்கு வேலை செய்வதை நிறுத்திவிடும். அவற்றை இந்த வால்ட்டுடன் மீண்டும் இணைக்க வேண்டும்.',
+  'settings.mcp-access.move.confirm': 'AI அணுகலை நகர்த்து',
+  'settings.mcp-access.failed.temporarily-unavailable':
+    'MCP அணுகல் தற்காலிகமாகக் கிடைக்கவில்லை. சிறிது நேரத்தில் மீண்டும் முயலவும்.',
+  'settings.mcp-access.failed.settings-unavailable':
+    'உங்கள் MCP அணுகல் அமைப்பை இந்த வால்ட்டில் சேமிக்க முடியவில்லை. மீண்டும் முயலவும்.',
+  'settings.mcp-access.activity.description':
+    'காத்திருக்கும் கோரிக்கைகளை அனுமதித்து, முகவர்களின் சமீபத்திய மாற்றங்களைப் பார்க்கவும் அல்லது செயல்தவிர்க்கவும்.',
+  'settings.mcp-access.activity.open': 'திற',
+  'settings.mcp-access.action.retry': 'மீண்டும் முயல்க',
+  'settings.mcp-access.action.reconnect': 'மீண்டும் இணை',
+  'settings.mcp-access.failed.sign-in-required':
+    'உங்கள் Journalit கணக்கில் உள்நுழைந்து, மீண்டும் முயலவும்.',
+  'settings.mcp-access.failed.vault-identity':
+    'இந்த வால்ட்டை அடையாளம் காண முடியவில்லை. Obsidian ஐ மறுதொடக்கம் செய்து, மீண்டும் முயலவும்.',
+  'settings.mcp-access.failed.request-rejected':
+    'இந்த வால்ட்டைப் பதிவு செய்ய முடியவில்லை. உங்கள் கணக்கைச் சரிபார்த்து மீண்டும் முயலவும்.',
+  'settings.mcp-access.failed.unexpected-response':
+    'Journalit எதிர்பாராத பதிலை அனுப்பியது. சிறிது நேரத்தில் மீண்டும் முயலவும்.',
+  'settings.mcp-access.failed.rate-limited':
+    'அதிகமான முயற்சிகள். மீண்டும் முயலும் முன் சிறிது காத்திருக்கவும்.',
+  'settings.mcp-access.failed.connection':
+    'Journalit ஐ அடைய முடியவில்லை. உங்கள் இணைப்பைச் சரிபார்த்து, மீண்டும் முயலவும்.',
+  'settings.mcp-access.full-access.label': 'முழு அணுகல்',
+  'settings.mcp-access.full-access.description':
+    'AI முகவர்கள் கேட்காமலேயே எந்த மாற்றத்தையும் செய்ய அனுமதி. அணைத்திருந்தால், நீக்கல், இணைத்தல், பெரிய மாற்றங்கள் உங்கள் ஒப்புதலுக்காகக் காத்திருக்கும்.',
+  'settings.mcp-access.full-access.warning':
+    'முழு அணுகலுடன், உங்கள் ஒப்புதல் இல்லாமல் முகவர் வர்த்தகங்கள், கணக்குகள், மதிப்பாய்வுகள், அமைப்புகளை நீக்கவும் மாற்றவும், பல குறிப்புகளை மீண்டும் எழுதவும் முடியும். நம்பகமான முகவர்களுக்கு மட்டும் இயக்கவும்.',
+  'settings.mcp-access.usage.label': 'மாதாந்திர பயன்பாடு',
+  'settings.mcp-access.usage.loading': 'பயன்பாடு ஏற்றப்படுகிறது…',
+  'settings.mcp-access.usage.unavailable': 'பயன்பாடு இப்போது கிடைக்கவில்லை.',
+  'settings.mcp-access.usage.limited':
+    'இந்த மாதம் {limit} AI கருவி அழைப்புகளில் {consumed} பயன்படுத்தப்பட்டது. {date} மீட்டமைக்கப்படும்.',
+  'settings.mcp-access.usage.unlimited':
+    'இந்த மாதம் {consumed} AI கருவி அழைப்புகள். {date} மீட்டமைக்கப்படும்.',
+  'settings.mcp-access.usage.reached':
+    'இந்த மாதத்தின் {limit} AI கருவி அழைப்புகளும் பயன்படுத்தப்பட்டன. {date} மீட்டமைக்கப்படும்.',
+  'settings.mcp-access.usage.upgrade': 'மேம்படுத்து',
+  'settings.mcp-access.usage.not-counted':
+    'ஆய்வு, முன்னோட்டம், வழிசெலுத்தல், படம் பார்த்தல், ஆவணத் தேடல் ஆகியவை கணக்கில் வராது.',
+  'settings.mcp-access.usage.pro-offer':
+    'கூடுதல் AI கருவி அழைப்புகளுக்கு Pro-க்கு மேம்படுத்தவும்',
+  'settings.mcp-access.connect.title': 'AI பயன்பாட்டை இணை',
+  'settings.mcp-access.connect.url-label': 'MCP சேவையக URL',
+  'settings.mcp-access.connect.copy': 'நகலெடு',
+  'settings.mcp-access.connect.copied': 'நகலெடுக்கப்பட்டது',
+  'settings.mcp-access.connect.copy-failed': 'நகலெடுக்க முடியவில்லை',
+  'settings.mcp-access.connect.copy-url': 'MCP சேவையக URL-ஐ நகலெடு',
+  'settings.mcp-access.connect.copy-command': 'கட்டளையை நகலெடு',
+  'settings.mcp-access.connect.app-label': 'AI பயன்பாடு',
+  'settings.mcp-access.connect.claude.open':
+    'Claude-இல் (இணையம் அல்லது டெஸ்க்டாப்) Customize → Connectors-ஐத் திறக்கவும்.',
+  'settings.mcp-access.connect.claude.add':
+    '+ Add → Add custom connector-ஐத் தேர்ந்தெடுத்து MCP சேவையக URL-ஐ ஒட்டவும்.',
+  'settings.mcp-access.connect.chatgpt.open':
+    'இணையத்தில் ChatGPT-இல் Plugins (chatgpt.com/plugins)-ஐத் திறக்கவும்.',
+  'settings.mcp-access.connect.chatgpt.add':
+    '+ → Add custom MCP server-ஐத் தேர்ந்தெடுத்து, MCP சேவையக URL-ஐ ஒட்டி, OAuth-ஐத் தேர்ந்தெடுக்கவும்.',
+  'settings.mcp-access.connect.step.approve':
+    'Journalit-இல் உள்நுழைந்து அணுகலை அங்கீகரிக்கவும்.',
+  'settings.mcp-access.connect.claude-code.run':
+    'உங்கள் டெர்மினலில் இந்தக் கட்டளையை இயக்கவும்:',
+  'settings.mcp-access.connect.claude-code.sign-in':
+    'Claude Code-இல் /mcp-ஐ இயக்கி Journalit-இல் உள்நுழையவும்.',
+  'settings.mcp-access.connect.sign-in-note':
+    'நீங்கள் உள்நுழைந்து இந்த வால்ட்டைத் தேர்ந்தெடுக்க உங்கள் AI பயன்பாடு journalit.co-ஐத் திறக்கும்.',
+  'settings.mcp-access.connect.manage': 'இணைக்கப்பட்ட பயன்பாடுகளை நிர்வகி',
+  'actions.options.rename-none': '{source} ஐ {target} என மறுபெயரிடு',
+  'actions.options.merge-none': '{source} ஐ {target} உடன் இணை',
+  'actions.custom-field.delete-unused':
+    'புலத்தை நீக்கு; எந்த வர்த்தகத்திலும் இதற்கு மதிப்பு இல்லை',
+  'actions.session-log-tag.delete-unused':
+    'கம்போசரிலிருந்து குறிச்சொல்லை அகற்று; எந்த அமர்வு பதிவும் இதைப் பயன்படுத்தவில்லை',
+  'actions.trade.entries.one': '{count} நுழைவு',
+  'actions.trade.entries.other': '{count} நுழைவுகள்',
+  'actions.trade.exits.one': '{count} வெளியேற்றம்',
+  'actions.trade.exits.other': '{count} வெளியேற்றங்கள்',
+  'agent-requests.changes.one': '{count} மாற்றம்',
+  'agent-requests.changes.other': '{count} மாற்றங்கள்',
+  'agent-requests.kind-count': '{title} ×{count}',
 };
 
 export default ta;

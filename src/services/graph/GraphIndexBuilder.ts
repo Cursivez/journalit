@@ -17,6 +17,7 @@ import {
   errorMessage,
   getReviewType,
   hasManagedProperties,
+  isInsideNestedVault,
   periodKey,
   type GraphIndex,
 } from './graphTypes';
@@ -35,9 +36,31 @@ export class GraphIndexBuilder {
     this.app = plugin.app;
   }
 
+  
+  private async findNestedVaultRoots(journalPath: string): Promise<string[]> {
+    const journalParts = journalPath.split('/').filter(Boolean);
+    const candidates = new Set(
+      journalParts.map((_, index) => journalParts.slice(0, index + 1).join('/'))
+    );
+    for (const folder of this.app.vault.getAllFolders()) {
+      if (folder.path.startsWith(`${journalPath}/`))
+        candidates.add(folder.path);
+    }
+    const { adapter, configDir } = this.app.vault;
+    const roots = await Promise.all(
+      Array.from(candidates, async (folder) =>
+        (await adapter.exists(`${folder}/${configDir}`)) ? folder : null
+      )
+    );
+    return roots.filter((root): root is string => root !== null);
+  }
+
   public async build(): Promise<GraphIndex> {
     const folderPathService = this.plugin.serviceManager.getFolderPathService();
     const index: GraphIndex = {
+      nestedVaultRoots: await this.findNestedVaultRoots(
+        folderPathService.journalFolderPath
+      ),
       frontmatterByPath: new Map(),
       readErrors: [],
       reviewTargetSignaturesByPath: new Map(),
@@ -55,7 +78,11 @@ export class GraphIndexBuilder {
     index.readErrors.push(...setupDiscovery.errors);
     const files = this.app.vault
       .getMarkdownFiles()
-      .filter((file) => folderPathService.isJournalPath(file.path));
+      .filter(
+        (file) =>
+          folderPathService.isJournalPath(file.path) &&
+          !isInsideNestedVault(file.path, index.nestedVaultRoots)
+      );
 
     const frontmatterEntries = await Promise.all(
       files.map(async (file) => {

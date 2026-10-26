@@ -3,7 +3,7 @@
 import { Notice, Platform } from 'obsidian';
 import { t } from '../lang/helpers';
 
-export const DEFAULT_ALLOWED_HOSTNAMES = [
+const DEFAULT_ALLOWED_HOSTNAMES = [
   'journalit.co',
   'api.journalit.co',
   'discord.gg',
@@ -80,7 +80,7 @@ export function openObsidianPluginPage(pluginId: string): void {
 
 export function openExternalUrl(
   url: string,
-  allowedHostnames: string[] = DEFAULT_ALLOWED_HOSTNAMES,
+  allowedHostnames: readonly string[] = DEFAULT_ALLOWED_HOSTNAMES,
   options: OpenExternalUrlOptions = {}
 ): void {
   let parsedUrl: URL;
@@ -92,8 +92,7 @@ export function openExternalUrl(
     return;
   }
 
-  const validProtocol = parsedUrl.protocol === 'https:';
-  if (!validProtocol) {
+  if (parsedUrl.protocol !== 'https:') {
     new Notice(t('onboarding.activation.notice.invalid-url'), 5000);
     return;
   }

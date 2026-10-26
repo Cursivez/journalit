@@ -8,7 +8,10 @@ import {
   normalizeDashboardWidgetIds,
   type DashboardWidgetCategory,
 } from './BottomSection/types';
-import { findBestWidgetPosition } from '../../shared/gridLayout/gridLayoutUtils';
+import {
+  findBestWidgetPosition,
+  fitLayoutItemToBreakpoint,
+} from '../../shared/gridLayout/gridLayoutUtils';
 import type { Layout } from '../../shared/gridLayout/reactGridLayoutCompat';
 import { usePlugin } from '../../../hooks/usePlugin';
 import {
@@ -145,22 +148,25 @@ const UnifiedComponentSelectorBase: React.FC<UnifiedComponentSelectorProps> = ({
         const newLayout: DashboardLayout = {
           ...currentLayout,
           bottomSection: {
-            lg: [...currentLayout.bottomSection.lg, newLayoutItem],
-            md: [...currentLayout.bottomSection.md, newLayoutItem],
-            sm: [...currentLayout.bottomSection.sm, newLayoutItem],
+            lg: [
+              ...currentLayout.bottomSection.lg,
+              fitLayoutItemToBreakpoint(newLayoutItem, 'lg'),
+            ],
+            md: [
+              ...currentLayout.bottomSection.md,
+              fitLayoutItemToBreakpoint(newLayoutItem, 'md'),
+            ],
+            sm: [
+              ...currentLayout.bottomSection.sm,
+              fitLayoutItemToBreakpoint(newLayoutItem, 'sm'),
+            ],
             xs: [
               ...(currentLayout.bottomSection.xs || []),
-              {
-                ...newLayoutItem,
-                w: Math.min(newLayoutItem.w, 2),
-              },
+              fitLayoutItemToBreakpoint(newLayoutItem, 'xs'),
             ],
             xxs: [
               ...(currentLayout.bottomSection.xxs || []),
-              {
-                ...newLayoutItem,
-                w: 1,
-              },
+              fitLayoutItemToBreakpoint(newLayoutItem, 'xxs'),
             ],
           },
         };

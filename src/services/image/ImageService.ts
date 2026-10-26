@@ -36,7 +36,7 @@ export function getGeneratedMediaFileId(fileName: string): string {
   );
 }
 
-export class ImageService {
+class ImageService {
   private _app: App | null = null;
   private sampleMediaOwnershipHandler: SampleMediaOwnershipHandler | null =
     null;

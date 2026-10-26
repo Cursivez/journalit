@@ -326,6 +326,9 @@ export function buildPersonalisationPlan(
             if (targetLayout.takeProfitUnit === defaultLayout.takeProfitUnit) {
               targetLayout.takeProfitUnit = 'size';
             }
+            if (targetLayout.stopLossUnit === defaultLayout.stopLossUnit) {
+              targetLayout.stopLossUnit = 'size';
+            }
             if (
               target.trade.maeMfeDisplayUnit ===
               defaults.trade.maeMfeDisplayUnit

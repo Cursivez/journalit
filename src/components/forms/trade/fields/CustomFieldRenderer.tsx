@@ -1,9 +1,9 @@
 
 
-import React, { useMemo } from 'react';
+import React, { useId, useMemo } from 'react';
 import { Input } from '../../../core/Input';
 import { NumberInput } from '../../../core/NumberInput';
-import { Select } from '../../../core/Select';
+import { DropdownSelect } from '../../../shared/DropdownSelect';
 import { FastDateTimeInput } from '../../../core/FastDateTimeInput';
 import { ComboBox } from '../../../core/ComboBox';
 import { Button } from '../../../ui/Button';
@@ -21,27 +21,17 @@ interface CustomFieldRendererProps {
   value: CustomFieldValue;
   onChange: (value: CustomFieldValue) => void;
   error?: string;
+  
+  multilineText?: boolean;
 }
 
-const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
-  field,
-  value,
-  onChange,
-  error,
-}) => {
-  const plugin = usePlugin();
-  const {
-    id,
-    label,
-    type,
-    validation,
-    options,
-    placeholder,
-    allowCreateOptions,
-  } = field;
 
-  
-  const allOptions = useMemo(() => {
+function useCustomFieldOptions(
+  field: CustomFieldDefinition
+): Array<{ value: string; label: string }> {
+  const plugin = usePlugin();
+  const { id, type, options } = field;
+  return useMemo(() => {
     if (
       type !== CustomFieldType.DROPDOWN &&
       type !== CustomFieldType.MULTISELECT
@@ -74,6 +64,85 @@ const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
 
     return combined;
   }, [id, type, options, plugin?.customFieldsService]);
+}
+
+
+const CustomDropdownField: React.FC<{
+  label: string;
+  placeholder?: string;
+  error?: string;
+  required: boolean;
+  value: string;
+  options: Array<{ value: string; label: string }>;
+  onChange: (value: string) => void;
+}> = ({ label, placeholder, error, required, value, options, onChange }) => {
+  const id = useId();
+  const triggerId = `${id}-trigger`;
+  const labelId = `${id}-label`;
+  const errorId = `${id}-error`;
+  return (
+    <div
+      className="selectContainer journalit-custom-field-dropdown"
+      data-empty={value ? undefined : 'true'}
+    >
+      <label id={labelId} htmlFor={triggerId} className="label">
+        {label}
+        
+        {required && <span className="required-indicator">*</span>}
+      </label>
+      <DropdownSelect
+        id={triggerId}
+        value={value}
+        options={options}
+        ariaLabel={label}
+        
+        ariaLabelledBy={labelId}
+        ariaDescribedBy={error ? errorId : undefined}
+        invalid={Boolean(error)}
+        
+        disabled={options.length === 0}
+        placeholder={placeholder || t('common.select-option')}
+        menuWidth="content"
+        showOptionTooltips={false}
+        onChange={onChange}
+      />
+      {error && (
+        <div id={errorId} className="errorMessage" role="alert">
+          {error}
+        </div>
+      )}
+    </div>
+  );
+};
+
+
+const customFieldInputValues = (value: CustomFieldRendererProps['value']) => ({
+  stringValue: typeof value === 'string' ? value : '',
+  numberValue: typeof value === 'number' ? value : 0,
+  stringListValue: Array.isArray(value)
+    ? value.filter((item): item is string => typeof item === 'string')
+    : [],
+  dateValue:
+    typeof value === 'string' || value instanceof Date ? value : undefined,
+});
+
+const numberBounds = (validation: CustomFieldDefinition['validation']) => ({
+  min: validation?.min,
+  max: validation?.max,
+});
+
+export const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
+  field,
+  value,
+  onChange,
+  error,
+  multilineText = false,
+}) => {
+  const plugin = usePlugin();
+  const { id, label, type, validation, placeholder, allowCreateOptions } =
+    field;
+
+  const allOptions = useCustomFieldOptions(field);
 
   
   const handleSaveOption = async (option: string) => {
@@ -90,23 +159,15 @@ const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
   };
 
   
+  const required = validation?.required === true;
   const commonProps = useMemo(
-    () => ({
-      label,
-      placeholder,
-      error,
-      required: validation?.required || false,
-    }),
-    [label, placeholder, error, validation?.required]
+    () => ({ label, placeholder, error, required }),
+    [label, placeholder, error, required]
   );
 
-  const stringValue = typeof value === 'string' ? value : '';
-  const numberValue = typeof value === 'number' ? value : 0;
-  const stringListValue = Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === 'string')
-    : [];
-  const dateValue =
-    typeof value === 'string' || value instanceof Date ? value : undefined;
+  const { stringValue, numberValue, stringListValue, dateValue } =
+    customFieldInputValues(value);
+  const canCreateOptions = allowCreateOptions === true;
 
   switch (type) {
     case CustomFieldType.TEXT:
@@ -115,7 +176,7 @@ const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
           {...commonProps}
           value={stringValue}
           onChange={onChange}
-          multiline={false}
+          multiline={multilineText}
           type="text"
         />
       );
@@ -128,35 +189,30 @@ const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
           onChange={onChange}
           allowDecimal={true}
           precision={2}
-          min={validation?.min}
-          max={validation?.max}
+          {...numberBounds(validation)}
         />
       );
 
     case CustomFieldType.DROPDOWN:
       
-      if (allowCreateOptions) {
-        return (
-          <ComboBox
-            {...commonProps}
-            value={stringValue}
-            onChange={onChange}
-            options={allOptions.map((opt) => opt.value)}
-            isMulti={false}
-            allowCreate={true}
-            onSaveOption={handleSaveOption}
-          />
-        );
-      } else {
-        return (
-          <Select
-            {...commonProps}
-            value={stringValue}
-            onChange={onChange}
-            options={allOptions}
-          />
-        );
-      }
+      return canCreateOptions ? (
+        <ComboBox
+          {...commonProps}
+          value={stringValue}
+          onChange={onChange}
+          options={allOptions.map((opt) => opt.value)}
+          isMulti={false}
+          allowCreate={true}
+          onSaveOption={handleSaveOption}
+        />
+      ) : (
+        <CustomDropdownField
+          {...commonProps}
+          value={stringValue}
+          options={allOptions}
+          onChange={onChange}
+        />
+      );
 
     case CustomFieldType.MULTISELECT:
       return (
@@ -166,8 +222,8 @@ const CustomFieldRenderer: React.FC<CustomFieldRendererProps> = ({
           onChange={onChange}
           options={allOptions.map((opt) => opt.value)}
           isMulti={true}
-          allowCreate={allowCreateOptions || false}
-          onSaveOption={allowCreateOptions ? handleSaveOption : undefined}
+          allowCreate={canCreateOptions}
+          onSaveOption={canCreateOptions ? handleSaveOption : undefined}
         />
       );
 

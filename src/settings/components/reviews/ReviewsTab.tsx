@@ -253,11 +253,11 @@ function ReviewListsSection({
       </Accordion>
 
       <Accordion
-        title={t('settings.reviews.pre-trade-checklist')}
+        title={t('settings.reviews.checklist')}
         defaultExpanded={false}
       >
         <p className="setting-item-description journalit-u-mb-12">
-          {t('settings.reviews.pre-trade-checklist-desc')}
+          {t('settings.reviews.checklist-desc')}
         </p>
         <ItemManager
           plugin={plugin}

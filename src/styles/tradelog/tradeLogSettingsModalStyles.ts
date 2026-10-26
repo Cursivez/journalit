@@ -137,17 +137,6 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
   }
 
   
-  .tradelog-settings-modal-content {
-    flex: 1;
-    overflow-y: auto;
-    padding: 0 4px;
-  }
-
-  .tradelog-settings-panel {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
 
   .panel-description {
     font-size: 12px;
@@ -156,88 +145,7 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
     text-align: center;
   }
 
-  .empty-panel-message {
-    text-align: center;
-    color: var(--text-muted);
-    padding: 32px 16px;
-    font-size: 13px;
-  }
-
   
-  .active-column-item {
-    display: grid;
-    grid-template-columns: 32px 1fr 32px;
-    gap: 8px;
-    align-items: center;
-    padding: 10px 12px;
-    background: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 6px;
-    transition: background-color 0.2s ease, border-color 0.2s ease;
-  }
-
-  .active-column-item:hover {
-    background: var(--background-modifier-hover);
-    border-color: var(--interactive-accent);
-  }
-
-  .active-column-item.dragging {
-    opacity: 0.5;
-  }
-
-  .column-drag-handle {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    color: var(--text-muted);
-    cursor: grab;
-  }
-
-  .column-drag-handle:hover {
-    color: var(--text-normal);
-  }
-
-  .column-drag-handle:active {
-    cursor: grabbing;
-  }
-
-  .active-column-item .column-label {
-    color: var(--text-normal);
-    font-size: 14px;
-  }
-
-  .column-remove-btn {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 24px;
-    height: 24px;
-    border: none;
-    background: transparent;
-    color: var(--text-muted);
-    cursor: pointer;
-    border-radius: 4px;
-    font-size: 16px;
-    font-weight: 400;
-    line-height: 1;
-    padding: 0;
-    transition: all 0.15s ease;
-  }
-
-  .column-remove-btn:hover:not(:disabled) {
-    background: var(--background-modifier-error);
-    color: var(--text-on-accent);
-  }
-
-  .column-remove-btn:disabled {
-    opacity: 0.3;
-    cursor: not-allowed;
-  }
-
-  
-  .column-category {
-    margin-bottom: 8px;
-  }
 
   .category-header {
     display: flex;
@@ -267,73 +175,6 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
   .category-label {
     flex: 1;
     text-align: left;
-  }
-
-  .category-count {
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--text-muted);
-    background: var(--background-primary);
-    padding: 2px 6px;
-    border-radius: 8px;
-  }
-
-  .category-columns {
-    display: flex;
-    flex-direction: column;
-    gap: 4px;
-    padding: 8px 0 0 0;
-  }
-
-  
-  .available-column-item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 12px;
-    background: var(--background-primary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    transition: background-color 0.15s ease;
-  }
-
-  .available-column-item:hover {
-    background: var(--background-secondary);
-  }
-
-  .available-column-item .column-label {
-    color: var(--text-normal);
-    font-size: 13px;
-  }
-
-  .column-add-btn {
-    display: grid;
-    place-items: center;
-    box-sizing: border-box;
-    width: 24px;
-    height: 24px;
-    min-width: 24px;
-    padding: 0;
-    border: none;
-    appearance: none;
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
-    cursor: pointer;
-    border-radius: 4px;
-    line-height: 0;
-    transition: background-color 0.15s ease;
-  }
-
-  .column-add-btn-icon {
-    width: 14px;
-    height: 14px;
-    flex: 0 0 14px;
-    transform: translateX(0.5px);
-  }
-
-  .column-add-btn:hover {
-    background: var(--interactive-accent-hover);
-    color: var(--text-on-accent);
   }
 
   

@@ -1,6 +1,6 @@
 
 
-import React, { memo, useLayoutEffect, useMemo } from 'react';
+import React, { memo, useMemo } from 'react';
 import { SkeletonBox } from '../shared/SkeletonBox';
 import { SkeletonText } from '../shared/SkeletonText';
 import { SkeletonCircle } from '../shared/SkeletonCircle';
@@ -19,48 +19,40 @@ const SKELETON_ROW_KEYS = Array.from(
   (_, index) => `trade-log-skeleton-row-${index}`
 );
 
+const circleCell = () => <SkeletonCircle size={16} />;
+const textCell = (width: string) => () => <SkeletonText width={width} />;
+
+
+const SKELETON_CELL_BY_COLUMN = new Map<string, () => React.ReactElement>(
+  Object.entries({
+    select: circleCell,
+    image: () => <SkeletonBox width={40} height={40} />,
+    ticker: textCell('80px'),
+    direction: textCell('60px'),
+    status: textCell('60px'),
+    pnl: textCell('70px'),
+    duration: textCell('50px'),
+    date: textCell('70px'),
+    account: textCell('60px'),
+    reviewed: circleCell,
+    tradeRating: textCell('64px'),
+    positionSize: textCell('60px'),
+    mistakes: textCell('40px'),
+    setups: textCell('40px'),
+    thesis: textCell('80%'),
+    mtComment: textCell('80%'),
+  })
+);
+const defaultSkeletonCell = textCell('50px');
+
 function TradeLogSkeletonCell({ columnId }: { columnId: string }) {
-  switch (columnId) {
-    case 'select':
-      return <SkeletonCircle size={16} />;
-    case 'image':
-      return <SkeletonBox width={40} height={40} />;
-    case 'ticker':
-      return <SkeletonText width="80px" />;
-    case 'direction':
-      return <SkeletonText width="60px" />;
-    case 'status':
-      return <SkeletonText width="60px" />;
-    case 'pnl':
-      return <SkeletonText width="70px" />;
-    case 'duration':
-      return <SkeletonText width="50px" />;
-    case 'date':
-      return <SkeletonText width="70px" />;
-    case 'account':
-      return <SkeletonText width="60px" />;
-    case 'reviewed':
-      return <SkeletonCircle size={16} />;
-    case 'positionSize':
-      return <SkeletonText width="60px" />;
-    case 'mistakes':
-      return <SkeletonText width="40px" />;
-    case 'setups':
-      return <SkeletonText width="40px" />;
-    case 'thesis':
-    case 'mtComment':
-      return <SkeletonText width="80%" />;
-    default:
-      return <SkeletonText width="50px" />;
-  }
+  const renderCell =
+    SKELETON_CELL_BY_COLUMN.get(columnId) ?? defaultSkeletonCell;
+  return renderCell();
 }
 
 export const TradeLogSkeleton = memo<TradeLogSkeletonProps>(
   ({ visibleColumns, gridTemplate, containerHeight = 600 }) => {
-    useLayoutEffect(() => {
-      return () => {};
-    }, []);
-
     const rowCount = useMemo(() => {
       return Math.min(Math.ceil(containerHeight / 48), 20);
     }, [containerHeight]);

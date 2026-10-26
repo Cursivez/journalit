@@ -44,71 +44,6 @@ export const ACCOUNT_WEIGHT_BAR_STYLES = `
   opacity: 0.8;
   transform: scaleY(1.1);
   z-index: 2;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-
-.account-weight-tooltip {
-  background-color: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
-  padding: 0;
-  max-width: 280px;
-  min-width: 220px;
-  font-size: 14px;
-  line-height: 1.4;
-  z-index: 1000;
-  backdrop-filter: blur(8px);
-}
-
-.account-weight-tooltip .weight-tooltip-content {
-  padding: 12px 16px;
-}
-
-.account-weight-tooltip .tooltip-header {
-  margin-bottom: 8px;
-  padding-bottom: 8px;
-  border-bottom: 1px solid var(--background-modifier-border);
-  font-size: 15px;
-  font-weight: 600;
-  color: var(--text-normal);
-}
-
-.account-weight-tooltip .tooltip-metrics {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.account-weight-tooltip .tooltip-metric {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 13px;
-  line-height: 1.3;
-}
-
-.account-weight-tooltip .tooltip-metric .metric-label {
-  color: var(--text-muted);
-  font-weight: 500;
-  flex-shrink: 0;
-  margin-right: 12px;
-}
-
-.account-weight-tooltip .tooltip-metric .metric-value {
-  color: var(--text-normal);
-  font-weight: 600;
-  text-align: right;
-  flex: 1;
-}
-
-.account-weight-tooltip .tooltip-metric .metric-value.positive {
-  color: var(--text-success);
-}
-
-.account-weight-tooltip .tooltip-metric .metric-value.negative {
-  color: var(--text-error);
 }
 
 
@@ -161,7 +96,6 @@ export const ACCOUNT_WEIGHT_BAR_STYLES = `
   border-radius: 50%;
   flex-shrink: 0;
   border: 1px solid rgba(0, 0, 0, 0.1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
   transition: transform 0.2s ease;
 }
 
@@ -233,27 +167,15 @@ export const ACCOUNT_WEIGHT_BAR_STYLES = `
 }
 
 
-.theme-dark .account-weight-tooltip {
-  background-color: var(--background-primary);
-  border-color: var(--background-modifier-border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
-}
 
 .theme-dark .account-weight-legend .legend-dot {
   border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
 }
 
 
-.theme-light .account-weight-tooltip {
-  background-color: rgba(255, 255, 255, 0.95);
-  border-color: var(--background-modifier-border);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-}
 
 .theme-light .account-weight-legend .legend-dot {
   border-color: rgba(0, 0, 0, 0.15);
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
 }
 
 

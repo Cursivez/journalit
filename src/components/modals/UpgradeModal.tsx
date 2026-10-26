@@ -1,4 +1,4 @@
-import { App, Modal } from 'obsidian';
+import { App } from 'obsidian';
 import React from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { Zap, Lightbulb } from '../shared/icons/ObsidianIcon';
@@ -8,6 +8,7 @@ import { resolveUpgradeUrl } from '../../services/upgrade/upgradeOrigin';
 import type { UpgradeFeature } from '../../constants';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { Button } from '../ui/Button';
+import { JournalitModal } from './JournalitModal';
 
 export interface UpgradeModalProps {
   app: App;
@@ -25,7 +26,7 @@ export interface UpgradeModalProps {
   onModalClose?: () => void;
 }
 
-class UpgradeModal extends Modal {
+class UpgradeModal extends JournalitModal {
   private props: UpgradeModalProps;
   private container: HTMLDivElement;
   private root: Root | null = null;
@@ -66,6 +67,7 @@ const DEFAULT_BENEFIT_KEYS = [
   'upgrade.benefit.trade-sync',
   'upgrade.benefit.multi-account',
   'upgrade.benefit.economic-calendar',
+  'upgrade.benefit.ai-tool-calls',
 ] as const;
 
 const UpgradeComponent: React.FC<

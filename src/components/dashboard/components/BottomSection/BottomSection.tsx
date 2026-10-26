@@ -1,7 +1,6 @@
 
 
 import React, { useEffect, useState, useCallback } from 'react';
-import { FilterState } from '../../DashboardView';
 import {
   getActiveLayout,
   saveLayout,
@@ -14,15 +13,11 @@ import { useEventBus } from '../../../../hooks/useEventBus';
 import { normalizeDashboardWidgetIds } from './types';
 
 interface BottomSectionProps {
-  filters: FilterState;
   isEditing: boolean;
 }
 
 
-export const BottomSection: React.FC<BottomSectionProps> = ({
-  filters,
-  isEditing,
-}) => {
+export const BottomSection: React.FC<BottomSectionProps> = ({ isEditing }) => {
   const plugin = usePlugin();
   const [activeWidgets, setActiveWidgets] = useState<string[]>([]);
 
@@ -128,7 +123,6 @@ export const BottomSection: React.FC<BottomSectionProps> = ({
     <div className="journalit-dashboard-bottom-section">
       <div className="journalit-dashboard-bottom-section-body">
         <GridLayout
-          filters={filters}
           isEditing={isEditing}
           widgets={activeWidgets}
           onRemoveWidget={handleRemoveWidget}

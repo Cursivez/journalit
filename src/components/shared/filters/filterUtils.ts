@@ -31,6 +31,10 @@ import { getTradeBrokerIdentity } from '../../../services/propChallenge/tradeIde
 import { hasUnknownCanonicalPnL } from '../../../services/trade/core/CanonicalProjectionFields';
 import { type FilterExclusions, hasFilterExclusions } from './filterExclusions';
 import {
+  getRatingFilterValue,
+  parseTradeRating,
+} from '../../../utils/tradeRating';
+import {
   getCustomFieldMatchMode,
   matchesSelectedValues,
 } from './filterMatchModes';
@@ -114,7 +118,6 @@ export function applyTradeFilters<T extends object>(
   filters: UnifiedFilters | null,
   customFieldDefinitions: CustomFieldDefinition[] = [],
   options: {
-    resolveAccountIdDisplayName?: (accountId: string) => string | undefined;
     isTradeOpen?: (trade: T) => boolean;
     breakEvenSettings?: BreakEvenRangeSettings;
     getBreakEvenBalance?: (trade: T) => number | undefined;
@@ -139,12 +142,7 @@ export function applyTradeFilters<T extends object>(
       : [];
 
     filtered = filtered.filter((trade) => {
-      const identity = normalizeTradeAccountIdentity(
-        Object.fromEntries(Object.entries(trade)),
-        {
-          resolveAccountIdDisplayName: options.resolveAccountIdDisplayName,
-        }
-      );
+      const identity = normalizeTradeAccountIdentity(trade);
 
       if (
         selectedLookupKeys &&
@@ -316,6 +314,17 @@ export function applyTradeFilters<T extends object>(
         return includeReviewed ? isReviewed : !isReviewed;
       });
     }
+  }
+
+  
+  
+  if (filters.ratings.length > 0) {
+    const selectedRatings = new Set(filters.ratings);
+    filtered = filtered.filter((t) =>
+      selectedRatings.has(
+        getRatingFilterValue(parseTradeRating(Reflect.get(t, 'tradeRating')))
+      )
+    );
   }
 
   

@@ -6,7 +6,7 @@ import type { DisplayValueOptions } from '../../../../services/display/DisplayPo
 import type { PropChallengePayoutRequirement } from '../../../../services/propChallenge/PropChallengePayoutEngine';
 import type { PropChallengeRuleEvaluation } from '../../../../services/propChallenge/PropChallengeRuleEngine';
 import type {
-  PropChallengeRule,
+  ExecutablePropChallengeRule,
   PropChallengeWeekday,
 } from '../../../../services/propChallenge/types';
 
@@ -19,8 +19,9 @@ export interface PropChallengeLedgerHelp {
 
 
 export function propChallengeRuleDescription(
-  rule: PropChallengeRule | PropChallengeRuleEvaluation
+  rule: ExecutablePropChallengeRule | PropChallengeRuleEvaluation
 ): string {
+  if (rule.kind === 'manual_review') return rule.reason;
   return rule.kind === 'drawdown'
     ? t(`account.prop-challenge.ledger.help.drawdown.${rule.mode}`)
     : t(`account.prop-challenge.ledger.help.${rule.kind}`);
@@ -109,7 +110,18 @@ export function propChallengeRuleHelp(
   currency: string
 ): PropChallengeLedgerHelp {
   switch (rule.kind) {
+    case 'manual_review':
+      return {
+        description: rule.reason,
+        example: t('account.profiles.purchase-uncertain'),
+      };
     case 'profit_target':
+      if (rule.targetNeedsBalance) {
+        return ruleHelp(
+          rule,
+          'account.prop-challenge.rule.target-needs-balance'
+        );
+      }
       return ruleHelp(
         rule,
         rule.satisfied
@@ -177,6 +189,18 @@ export function propChallengeRuleHelp(
         }
       );
     case 'consistency':
+      if (rule.comparison === 'strictly_below')
+        return {
+          description: t('account.prop-challenge.rule.strict-help'),
+          example:
+            rule.totalProfit > 0
+              ? t('account.prop-challenge.ledger.tooltip.consistency.share', {
+                  best: money(formatValue, rule.bestDayProfit, currency),
+                  total: money(formatValue, rule.totalProfit, currency),
+                  share: share(formatValue, rule.bestDayPercent),
+                })
+              : t('account.prop-challenge.ledger.tooltip.consistency.pending'),
+        };
       if (rule.totalProfit <= 0) {
         return ruleHelp(
           rule,
@@ -203,15 +227,6 @@ export function propChallengeRuleHelp(
           total: money(formatValue, rule.totalProfit, currency),
           goal: money(formatValue, rule.requiredTotalProfit, currency),
           maximum: share(formatValue, rule.target),
-        }
-      );
-    case 'max_position_size':
-      return ruleHelp(
-        rule,
-        'account.prop-challenge.ledger.help.max_position_size.example',
-        {
-          maximum: count(formatValue, rule.target),
-          current: count(formatValue, rule.current),
         }
       );
     default: {
@@ -289,6 +304,18 @@ export function propChallengePayoutRequirementHelp(
         }
       );
     case 'consistency':
+      if (requirement.basis === 'lifetime_gross_profit')
+        return {
+          description: t('account.prop-challenge.payout.lifetime-gross'),
+          example: t(
+            'account.prop-challenge.ledger.tooltip.consistency.share',
+            {
+              best: money(formatValue, requirement.bestDayProfit, currency),
+              total: money(formatValue, requirement.cycleProfit, currency),
+              share: share(formatValue, requirement.current),
+            }
+          ),
+        };
       if (requirement.cycleProfit <= 0) {
         return help(
           'account.prop-challenge.ledger.help.payout.consistency',

@@ -1,4 +1,5 @@
 import type { PropChallengeStage } from './types';
+import { AccountType } from '../account/types';
 
 const PROP_CHALLENGE_STAGES: readonly PropChallengeStage[] = [
   'evaluation',
@@ -31,6 +32,15 @@ export function normalizeChallengeStageAccountTypes(
     result[stage] = trimmed;
   }
   return result;
+}
+
+
+export function availableAccountTypes(
+  configuredTypes: readonly string[]
+): readonly string[] {
+  return configuredTypes.length > 0
+    ? configuredTypes
+    : Object.values(AccountType);
 }
 
 export function resolveStageAccountType(

@@ -1,7 +1,8 @@
 
 
 import { ItemView, Scope, WorkspaceLeaf } from 'obsidian';
-import { createRoot, Root } from 'react-dom/client';
+import { Root } from 'react-dom/client';
+import { createWorkspaceRoot } from '../core/libraryGlobals';
 import React, { StrictMode } from 'react';
 import { ReactViewConfig, RenderFunction } from './types';
 import { CurrencyProvider } from '../contexts/CurrencyContext';
@@ -37,6 +38,8 @@ export abstract class ReactView extends ItemView {
   private _themeChangeHandler: () => void;
   private _currencyChangeHandler: () => void;
   private _escapeKeyHandler: (event: KeyboardEvent) => void;
+  
+  private _domListeners: AbortController | null = null;
   private _keyboardScope: Scope | null = null;
   private _scopePushed = false;
   private _pendingAnimationFrame: number | null = null;
@@ -157,22 +160,30 @@ export abstract class ReactView extends ItemView {
       }
 
       
-      this.root = createRoot(this.rootEl);
+      this.root = createWorkspaceRoot(this.rootEl);
       this.renderComponent();
 
       
+      
+      
+      
+      this._domListeners?.abort();
+      this._domListeners = new AbortController();
+      const { signal } = this._domListeners;
       window.activeDocument.addEventListener(
         'theme-change',
-        this._themeChangeHandler
+        this._themeChangeHandler,
+        { signal }
       );
       window.addEventListener(
         'journalit-currency-changed',
-        this._currencyChangeHandler
+        this._currencyChangeHandler,
+        { signal }
       );
       this.containerEl.ownerDocument.defaultView?.addEventListener(
         'keydown',
         this._escapeKeyHandler,
-        true
+        { capture: true, signal }
       );
       this.registerEvent(
         this.app.workspace.on('active-leaf-change', () =>
@@ -285,20 +296,8 @@ export abstract class ReactView extends ItemView {
     this.rootEl?.remove();
     this.rootEl = null;
 
-    
-    window.activeDocument.removeEventListener(
-      'theme-change',
-      this._themeChangeHandler
-    );
-    window.removeEventListener(
-      'journalit-currency-changed',
-      this._currencyChangeHandler
-    );
-    this.containerEl.ownerDocument.defaultView?.removeEventListener(
-      'keydown',
-      this._escapeKeyHandler,
-      true
-    );
+    this._domListeners?.abort();
+    this._domListeners = null;
 
     return Promise.resolve();
   }

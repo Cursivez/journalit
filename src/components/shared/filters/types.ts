@@ -13,6 +13,7 @@ import {
 } from '../../../types/customFields';
 import type { FilterExclusions } from './filterExclusions';
 import type { FilterMatchModes } from './filterMatchModes';
+import type { RatingFilter } from '../../../utils/tradeRating';
 
 
 export interface UnifiedFilters {
@@ -42,6 +43,9 @@ export interface UnifiedFilters {
 
   
   reviewStatus: ReviewStatusFilter[];
+
+  
+  ratings: RatingFilter[];
 
   
   directions: DirectionFilter[];

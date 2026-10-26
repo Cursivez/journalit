@@ -1,12 +1,6 @@
 
 
-import React, {
-  useEffect,
-  useCallback,
-  useMemo,
-  useRef,
-  useState,
-} from 'react';
+import React, { useCallback, useContext, useRef, useState } from 'react';
 import { NumberInput } from '../../../core/NumberInput';
 import { FastDateTimeInput } from '../../../core/FastDateTimeInput';
 import { Button } from '../../../ui/Button';
@@ -35,6 +29,7 @@ import {
   roundToPrecision,
 } from '../utils';
 import { usePlugin } from '../../../../hooks/usePlugin';
+import { useCalendarToday } from '../../../../hooks/useCalendarToday';
 import { t } from '../../../../lang/helpers';
 import { normalizeTradeExecution } from '../../../../services/trade/core/TradeExecutionNormalization';
 import { TradeFormInputMode } from '../../../../settings/types';
@@ -42,6 +37,16 @@ import { calculateUnrealizedPnL } from '../../../../utils/unrealizedPnl';
 import { formatDateDisplay } from '../../../../utils/dateUtils';
 import { isTradeOpenWithContext } from '../../../../utils/tradeStatusUtils';
 import { resolveEffectiveRiskAmount } from '../validation';
+import {
+  applyExecutionDayEdit,
+  BacktestSessionDayContext,
+  blankTimeDateFor,
+  blankTimeDateForNewRow,
+  isSameCalendarDay,
+  moveExecutionsOnDay,
+  resolveExecutionDay,
+  type ExecutionRows,
+} from '../executionDates';
 import { PnLValue } from '../../../shared/display/DisplayValue';
 
 type TransactionFieldValue = number | Date | string | undefined | boolean;
@@ -219,6 +224,9 @@ interface EntriesSectionProps {
   totalEntrySize: number;
   entryRowKeys: string[];
   blankTimeDefaultDate: Date;
+  
+  backtestDayLabel?: string;
+  onUseToday: () => void;
   getPositionSizeLabel: () => string;
   onAddEntry: () => void;
   onRemoveEntry: (index: number) => void;
@@ -244,6 +252,8 @@ function EntriesSection({
   totalEntrySize,
   entryRowKeys,
   blankTimeDefaultDate,
+  backtestDayLabel,
+  onUseToday,
   getPositionSizeLabel,
   onAddEntry,
   onRemoveEntry,
@@ -258,6 +268,17 @@ function EntriesSection({
         {data.useDirectPnLInput ? t('form.field.optional') : ''}{' '}
         <span className="badge">{data.entries?.length || 0}</span>
       </h4>
+
+      {backtestDayLabel && (
+        <div className="journalit-backtest-day-hint">
+          <span>
+            {t('form.entry-exit.backtest-day', { date: backtestDayLabel })}
+          </span>
+          <Button variant="text" size="small" onClick={onUseToday}>
+            {t('form.entry-exit.use-today')}
+          </Button>
+        </div>
+      )}
 
       {(data.entries || []).map((entry, index) => (
         <div key={entryRowKeys[index]} className="entry-row">
@@ -380,21 +401,128 @@ function EntriesSection({
 }
 
 
+type TradeSettings = NonNullable<
+  ReturnType<typeof usePlugin>
+>['settings']['trade'];
+
+const entryExitSettings = (trade: TradeSettings | undefined) => ({
+  useDollarValue: trade?.useDollarValueInput ?? false,
+  showSeconds: trade?.showSeconds ?? false,
+  dateFormat: trade?.dateFormat ?? 'DDMMYY',
+});
+
+
+const backtestDayLabelFor = ({
+  backtestSessionDay,
+  today,
+  data,
+  blankTimeDefaultDate,
+  dateFormat,
+}: {
+  backtestSessionDay: Date | undefined;
+  today: Date;
+  data: Partial<TradeFormData>;
+  blankTimeDefaultDate: Date;
+  dateFormat: string;
+}): string | undefined => {
+  if (!backtestSessionDay || isSameCalendarDay(backtestSessionDay, today)) {
+    return undefined;
+  }
+  const rows = [...(data.entries ?? []), ...(data.exits ?? [])];
+  const hasRowOnBacktestDay = rows.some((row) =>
+    isSameCalendarDay(
+      resolveExecutionDay(row, blankTimeDefaultDate),
+      backtestSessionDay
+    )
+  );
+  return hasRowOnBacktestDay
+    ? formatDateDisplay(backtestSessionDay, dateFormat)
+    : undefined;
+};
+
+const positionTotals = (
+  data: Partial<TradeFormData>,
+  sizePrecision: number
+) => {
+  const totalEntrySize = (data.entries || []).reduce(
+    (sum, entry) => sum + (entry.size || 0),
+    0
+  );
+  const resolvedExits = (data.exits || []).map((exit) => ({
+    ...exit,
+    hasExplicitPrice: resolveFormExitExplicitness(exit, data.useDirectPnLInput),
+  }));
+  const normalizedExecution = normalizeTradeExecution(
+    {
+      ...data,
+      exits: resolvedExits,
+      hasExplicitExitPrice: resolveFormHasExplicitExitPrice(
+        resolvedExits,
+        data.hasExplicitExitPrice
+      ),
+    },
+    { deriveMissingExplicitness: true }
+  );
+  const totalExitSize = normalizedExecution.exits.reduce(
+    (sum, exit) =>
+      exit.hasExplicitPrice === true && exit.size !== null && exit.size > 0
+        ? sum + exit.size
+        : sum,
+    0
+  );
+  const totalIdealExitSize = (data.idealExits || []).reduce(
+    (sum, exit) =>
+      hasPersistableIdealExitPrice(exit) &&
+      exit.size !== undefined &&
+      exit.size > 0
+        ? sum + exit.size
+        : sum,
+    0
+  );
+  return {
+    totalEntrySize,
+    remainingSize: roundToPrecision(
+      totalEntrySize - totalExitSize,
+      sizePrecision
+    ),
+    totalIdealExitSize,
+    totalDividends: (data.dividends || []).reduce(
+      (sum, dividend) => sum + (dividend.amount || 0),
+      0
+    ),
+  };
+};
+
+const transactionRowCounts = (data: Partial<TradeFormData>) => ({
+  entries: data.entries?.length ?? 0,
+  exits: data.exits?.length ?? 0,
+  idealExits: data.idealExits?.length ?? 0,
+  dividends: data.dividends?.length ?? 0,
+});
+
 function useEntryExitFieldsModel({
   data,
   onChange,
-}: Pick<EntryExitFieldsProps, 'data' | 'onChange'>) {
+  backtestSessionDay,
+}: Pick<EntryExitFieldsProps, 'data' | 'onChange'> & {
+  backtestSessionDay: Date | undefined;
+}) {
   const plugin = usePlugin();
 
   
-  const useDollarValue = plugin?.settings?.trade?.useDollarValueInput ?? false;
-  const showSeconds = plugin?.settings?.trade?.showSeconds ?? false;
+  const { useDollarValue, showSeconds, dateFormat } = entryExitSettings(
+    plugin?.settings?.trade
+  );
 
   
   const pricePrecision = getPricePrecision(data.assetType);
   const sizePrecision = getSizePrecision(data.assetType);
   const supportsDividends = shouldShowTradeDividends(data);
-  const blankTimeDefaultDate = useMemo(() => new Date(), []);
+  
+  
+  const today = useCalendarToday();
+  
+  const blankTimeDefaultDate = backtestSessionDay ?? today;
   const entryRowKeysRef = useRef<string[]>([]);
   const exitRowKeysRef = useRef<string[]>([]);
   const idealExitRowKeysRef = useRef<string[]>([]);
@@ -406,6 +534,10 @@ function useEntryExitFieldsModel({
       ...(data.entries || []),
       {
         time: undefined,
+        blankTimeDate: blankTimeDateForNewRow(
+          data.entries?.[data.entries.length - 1],
+          blankTimeDefaultDate
+        ),
         price: 0,
         size: 0,
       },
@@ -431,6 +563,11 @@ function useEntryExitFieldsModel({
       ...(data.exits || []),
       {
         time: undefined,
+        blankTimeDate: blankTimeDateForNewRow(
+          data.exits?.[data.exits.length - 1] ??
+            data.entries?.[data.entries.length - 1],
+          blankTimeDefaultDate
+        ),
         price: 0,
         size: 0,
       },
@@ -583,6 +720,74 @@ function useEntryExitFieldsModel({
     [data.useDirectPnLInput, onChange]
   );
 
+  const commitRows = useCallback(
+    (rows: ExecutionRows, changed: Record<keyof ExecutionRows, boolean>) => {
+      if (changed.entries) onChange('entries', rows.entries);
+      if (changed.exits) onChange('exits', rows.exits);
+      updateAggregateFields(rows.entries, rows.exits);
+    },
+    [onChange, updateAggregateFields]
+  );
+
+  
+  const commitExecutionRows = useCallback(
+    (
+      edited: ExecutionRows,
+      list: keyof ExecutionRows,
+      index: number,
+      field: keyof EntryTransaction | keyof ExitTransaction,
+      value: unknown
+    ) => {
+      const rows =
+        (field === 'time' || field === 'blankTimeDate') && value instanceof Date
+          ? applyExecutionDayEdit(
+              edited,
+              list,
+              index,
+              resolveExecutionDay(data[list]?.[index], blankTimeDefaultDate),
+              value,
+              blankTimeDefaultDate
+            )
+          : edited;
+      commitRows(rows, {
+        entries: list === 'entries' || rows.entries !== edited.entries,
+        exits: list === 'exits' || rows.exits !== edited.exits,
+      });
+    },
+    [blankTimeDefaultDate, commitRows, data]
+  );
+
+  
+  const backtestDayLabel = backtestDayLabelFor({
+    backtestSessionDay,
+    today,
+    data,
+    blankTimeDefaultDate,
+    dateFormat,
+  });
+
+  const handleUseToday = useCallback(() => {
+    if (!backtestSessionDay) return;
+    const rows = { entries: data.entries ?? [], exits: data.exits ?? [] };
+    const moved = moveExecutionsOnDay(
+      rows,
+      backtestSessionDay,
+      today,
+      blankTimeDefaultDate
+    );
+    commitRows(moved, {
+      entries: moved.entries !== rows.entries,
+      exits: moved.exits !== rows.exits,
+    });
+  }, [
+    backtestSessionDay,
+    blankTimeDefaultDate,
+    commitRows,
+    data.entries,
+    data.exits,
+    today,
+  ]);
+
   
   const handleEntryChange = useCallback(
     (
@@ -610,7 +815,10 @@ function useEntryExitFieldsModel({
         entries[index] = {
           ...entries[index],
           time: undefined,
-          blankTimeDate: value instanceof Date ? value : undefined,
+          blankTimeDate:
+            value instanceof Date
+              ? blankTimeDateFor(value, blankTimeDefaultDate)
+              : undefined,
         };
       } else {
         entries[index] = {
@@ -618,12 +826,15 @@ function useEntryExitFieldsModel({
           [field]: toOptionalTransactionNumber(value),
         };
       }
-      onChange('entries', entries);
-
-      
-      updateAggregateFields(entries, data.exits || []);
+      commitExecutionRows(
+        { entries, exits: data.exits || [] },
+        'entries',
+        index,
+        field,
+        value
+      );
     },
-    [data.entries, data.exits, onChange, updateAggregateFields]
+    [blankTimeDefaultDate, commitExecutionRows, data.entries, data.exits]
   );
 
   
@@ -653,7 +864,10 @@ function useEntryExitFieldsModel({
         exits[index] = {
           ...exits[index],
           time: undefined,
-          blankTimeDate: value instanceof Date ? value : undefined,
+          blankTimeDate:
+            value instanceof Date
+              ? blankTimeDateFor(value, blankTimeDefaultDate)
+              : undefined,
         };
       } else if (field === 'hasExplicitPrice') {
         exits[index] = { ...exits[index], hasExplicitPrice: Boolean(value) };
@@ -673,17 +887,20 @@ function useEntryExitFieldsModel({
           [field]: toOptionalTransactionNumber(value),
         };
       }
-      onChange('exits', exits);
-
-      
-      updateAggregateFields(data.entries || [], exits);
+      commitExecutionRows(
+        { entries: data.entries || [], exits },
+        'exits',
+        index,
+        field,
+        value
+      );
     },
     [
+      blankTimeDefaultDate,
+      commitExecutionRows,
       data.entries,
       data.exits,
       data.useDirectPnLInput,
-      onChange,
-      updateAggregateFields,
     ]
   );
 
@@ -894,75 +1111,29 @@ function useEntryExitFieldsModel({
   };
 
   
-  const totalEntrySize = (data.entries || []).reduce(
-    (sum, entry) => sum + (entry.size || 0),
-    0
-  );
-  const resolvedExits = (data.exits || []).map((exit) => ({
-    ...exit,
-    hasExplicitPrice: resolveFormExitExplicitness(exit, data.useDirectPnLInput),
-  }));
-  const normalizedExecution = normalizeTradeExecution(
-    {
-      ...data,
-      exits: resolvedExits,
-      hasExplicitExitPrice: resolveFormHasExplicitExitPrice(
-        resolvedExits,
-        data.hasExplicitExitPrice
-      ),
-    },
-    { deriveMissingExplicitness: true }
-  );
-  const totalExitSize = normalizedExecution.exits.reduce(
-    (sum, exit) =>
-      exit.hasExplicitPrice === true && exit.size !== null && exit.size > 0
-        ? sum + exit.size
-        : sum,
-    0
-  );
-  const totalIdealExitSize = (data.idealExits || []).reduce(
-    (sum, exit) =>
-      hasPersistableIdealExitPrice(exit) &&
-      exit.size !== undefined &&
-      exit.size > 0
-        ? sum + exit.size
-        : sum,
-    0
-  );
-  const remainingSize = roundToPrecision(
-    totalEntrySize - totalExitSize,
-    sizePrecision
-  );
-  const totalDividends = (data.dividends || []).reduce(
-    (sum, dividend) => sum + (dividend.amount || 0),
-    0
-  );
+  const { totalEntrySize, remainingSize, totalIdealExitSize, totalDividends } =
+    positionTotals(data, sizePrecision);
+  const rowCounts = transactionRowCounts(data);
   const entryRowKeys = getTransactionRowKeys(
     entryRowKeysRef.current,
     'entry',
-    data.entries?.length || 0
+    rowCounts.entries
   );
   const exitRowKeys = getTransactionRowKeys(
     exitRowKeysRef.current,
     'exit',
-    data.exits?.length || 0
+    rowCounts.exits
   );
   const idealExitRowKeys = getTransactionRowKeys(
     idealExitRowKeysRef.current,
     'ideal-exit',
-    data.idealExits?.length || 0
+    rowCounts.idealExits
   );
   const dividendRowKeys = getTransactionRowKeys(
     dividendRowKeysRef.current,
     'dividend',
-    data.dividends?.length || 0
+    rowCounts.dividends
   );
-
-  
-  useEffect(() => {
-    
-    return () => {};
-  }, []);
 
   return {
     useDollarValue,
@@ -990,6 +1161,8 @@ function useEntryExitFieldsModel({
     handleExitPriceChangeWithDollar,
     getPositionSizeLabel,
     blankTimeDefaultDate,
+    backtestDayLabel,
+    handleUseToday,
     entryRowKeys,
     exitRowKeys,
     idealExitRowKeys,
@@ -1358,6 +1531,46 @@ interface ExitsSectionProps {
   ) => void;
 }
 
+
+function RemainingPositionSummary({
+  totalEntrySize,
+  remainingSize,
+  sizePrecision,
+}: {
+  totalEntrySize: number;
+  remainingSize: number;
+  sizePrecision: number;
+}) {
+  if (totalEntrySize <= 0) return null;
+  const isOpen = remainingSize > 0;
+  return (
+    <div className={`remaining-size ${isOpen ? 'positive' : 'neutral'}`}>
+      {t('form.entry-exit.remaining-position')}{' '}
+      {remainingSize.toFixed(sizePrecision)}{' '}
+      {isOpen ? t('form.entry-exit.open') : t('form.entry-exit.closed')}
+    </div>
+  );
+}
+
+
+const showsUnrealizedSnapshotEditor = (
+  data: Partial<TradeFormData>,
+  remainingSize: number
+): boolean =>
+  !data.isMissedTrade &&
+  !data.isBacktestTrade &&
+  !data.useDirectPnLInput &&
+  remainingSize > 0 &&
+  isTradeOpenWithContext({
+    tradeStatus: data.tradeStatus,
+    exitTime: data.exitTime,
+    exitPrice: data.exitPrice,
+    pnl: data._originalPnlWasNull ? null : data.pnl,
+    useDirectPnLInput: data.useDirectPnLInput,
+    exits: data.exits,
+    entries: data.entries,
+  });
+
 function ExitsSection({
   data,
   errors,
@@ -1386,15 +1599,7 @@ function ExitsSection({
   onRemoveIdealExit,
   onIdealExitChange,
 }: ExitsSectionProps) {
-  const isOperationallyOpen = isTradeOpenWithContext({
-    tradeStatus: data.tradeStatus,
-    exitTime: data.exitTime,
-    exitPrice: data.exitPrice,
-    pnl: data._originalPnlWasNull ? null : data.pnl,
-    useDirectPnLInput: data.useDirectPnLInput,
-    exits: data.exits,
-    entries: data.entries,
-  });
+  const exits = data.exits ?? [];
   const isFormExecutionOpen = isTradeOpenWithContext({
     tradeStatus: data.tradeStatus,
     exitTime: data.exitTime,
@@ -1413,11 +1618,11 @@ function ExitsSection({
       <h4 className="section-title">
         {t('form.field.exits')}{' '}
         {data.useDirectPnLInput ? t('form.field.optional') : ''}{' '}
-        <span className="badge">{data.exits?.length || 0}</span>
+        <span className="badge">{exits.length}</span>
       </h4>
 
       
-      {(data.exits || []).map((exit, index) => (
+      {exits.map((exit, index) => (
         <div key={exitRowKeys[index]} className="exit-row">
           <div className="exit-index">{index + 1}</div>
 
@@ -1434,7 +1639,7 @@ function ExitsSection({
                     <span className="required-star">*</span>
                   )}
                 </label>
-                {(data.exits?.length || 0) > 1 && (
+                {exits.length > 1 && (
                   <button
                     type="button"
                     className="remove-button-inline"
@@ -1531,26 +1736,15 @@ function ExitsSection({
           {t('form.entry-exit.add-exit')}
         </Button>
 
-        
-        {totalEntrySize > 0 && (
-          <div
-            className={`remaining-size ${remainingSize > 0 ? 'positive' : 'neutral'}`}
-          >
-            {t('form.entry-exit.remaining-position')}{' '}
-            {remainingSize.toFixed(sizePrecision)}{' '}
-            {remainingSize > 0
-              ? t('form.entry-exit.open')
-              : t('form.entry-exit.closed')}
-          </div>
-        )}
+        <RemainingPositionSummary
+          totalEntrySize={totalEntrySize}
+          remainingSize={remainingSize}
+          sizePrecision={sizePrecision}
+        />
       </div>
 
       {showUnrealizedSnapshot &&
-        isOperationallyOpen &&
-        !data.isMissedTrade &&
-        !data.isBacktestTrade &&
-        !data.useDirectPnLInput &&
-        remainingSize > 0 && (
+        showsUnrealizedSnapshotEditor(data, remainingSize) && (
           <UnrealizedSnapshotSection
             data={data}
             errors={errors}
@@ -1586,6 +1780,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
   visibility,
   pnlCurrency = 'USD',
 }) => {
+  const backtestSessionDay = useContext(BacktestSessionDayContext);
   const {
     useDollarValue,
     showSeconds,
@@ -1612,6 +1807,8 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
     handleExitPriceChangeWithDollar,
     getPositionSizeLabel,
     blankTimeDefaultDate,
+    backtestDayLabel,
+    handleUseToday,
     entryRowKeys,
     exitRowKeys,
     idealExitRowKeys,
@@ -1620,7 +1817,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
     remainingSize,
     totalIdealExitSize,
     totalDividends,
-  } = useEntryExitFieldsModel({ data, onChange });
+  } = useEntryExitFieldsModel({ data, onChange, backtestSessionDay });
 
   const showPriceExecutionFields = inputMode !== 'pnl-risk';
   const hasDividendRows = (data.dividends?.length ?? 0) > 0;
@@ -1663,6 +1860,8 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
           totalEntrySize={totalEntrySize}
           entryRowKeys={entryRowKeys}
           blankTimeDefaultDate={blankTimeDefaultDate}
+          backtestDayLabel={backtestDayLabel}
+          onUseToday={handleUseToday}
           getPositionSizeLabel={getPositionSizeLabel}
           onAddEntry={handleAddEntry}
           onRemoveEntry={handleRemoveEntry}

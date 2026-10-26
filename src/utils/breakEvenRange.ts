@@ -34,6 +34,11 @@ export const normalizeBreakEvenRange = (
   return { min, max };
 };
 
+export const normalizeBreakEvenThresholdPercent = (
+  configuredPercent: number | undefined
+): number =>
+  Number.isFinite(configuredPercent) ? Math.max(0, configuredPercent ?? 0) : 0;
+
 const getBreakEvenRangeForClassification = (
   settings: BreakEvenRangeSettings | undefined,
   accountCurrentBalance?: number
@@ -52,10 +57,9 @@ const getBreakEvenRangeForClassification = (
     return null;
   }
 
-  const configuredPercent = settings?.breakEvenThresholdPercent ?? 0;
-  const safePercent = Number.isFinite(configuredPercent)
-    ? Math.max(0, configuredPercent)
-    : 0;
+  const safePercent = normalizeBreakEvenThresholdPercent(
+    settings?.breakEvenThresholdPercent
+  );
 
   const threshold = (Math.abs(accountCurrentBalance) * safePercent) / 100;
   return {

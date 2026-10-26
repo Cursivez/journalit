@@ -14,11 +14,7 @@ const localeCodes = [
   'fr',
   'vi',
   'hi',
-  'pt-BR',
   'zh',
-  'zh-TW',
-  'ja',
-  'ko',
   'ru',
   'it',
   'ta',
@@ -75,23 +71,25 @@ if (process.argv.includes('--check')) {
   const englishLocale = locales.en;
   const englishKeys = Object.keys(englishLocale);
   const keyHash = hashKeys(englishKeys);
-  const localePacks = {};
-  for (const localeCode of localeCodes) {
-    if (localeCode === 'en') {
-      continue;
-    }
+  const translatedLocaleCodes = localeCodes.filter(
+    (localeCode) => localeCode !== 'en'
+  );
+  const localePacks = Object.fromEntries(
+    await Promise.all(
+      translatedLocaleCodes.map(async (localeCode) => {
+        const locale = locales[localeCode];
+        const values = englishKeys.map((key) => {
+          
+          if (!Object.prototype.hasOwnProperty.call(locale, key)) {
+            throw new Error(`Locale ${localeCode} is missing key ${key}`);
+          }
 
-    const locale = locales[localeCode];
-    const values = englishKeys.map((key) => {
-      const hasTranslation = Object.prototype.hasOwnProperty.call(locale, key);
-      if (!hasTranslation) {
-        return null;
-      }
-
-      return locale[key] === englishLocale[key] ? 0 : locale[key];
-    });
-    localePacks[localeCode] = await compressJson(values);
-  }
+          return locale[key] === englishLocale[key] ? 0 : locale[key];
+        });
+        return [localeCode, await compressJson(values)];
+      })
+    )
+  );
 
   const localeEntries = Object.entries(localePacks)
     .map(

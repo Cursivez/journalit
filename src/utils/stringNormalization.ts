@@ -1,7 +1,7 @@
 
 
 
-function normalizeOptionString(value: string): string {
+export function normalizeOptionString(value: string): string {
   if (!value) return '';
 
   let normalized = value.trim();

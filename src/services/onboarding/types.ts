@@ -21,9 +21,9 @@ export type OnboardingStepId =
   | 'sample-exploring'
   | 'awaiting-completion';
 
-export type OnboardingObsidianFamiliarity = 'new' | 'experienced';
+type OnboardingObsidianFamiliarity = 'new' | 'experienced';
 
-export type OnboardingDataSource = 'broker' | 'file' | 'fresh' | 'sample';
+type OnboardingDataSource = 'broker' | 'file' | 'fresh' | 'sample';
 
 export type OnboardingTradingStyle =
   | 'scalping'

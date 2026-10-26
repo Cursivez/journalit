@@ -35,7 +35,12 @@ import {
 import { SetupOverviewPage } from './SetupOverviewPage';
 import { SetupViewSkeleton } from './SetupViewSkeleton';
 import { buildSetupTradeIndex, getCompletenessBadges } from './setupsViewModel';
-import type { SetupsDataState, SetupsViewState } from './setupsViewTypes';
+import type {
+  SetupTradeIndex,
+  SetupViewModel,
+  SetupsDataState,
+  SetupsViewState,
+} from './setupsViewTypes';
 
 export type { SetupsViewState } from './setupsViewTypes';
 
@@ -48,9 +53,8 @@ interface SetupsViewContentProps {
 
 const SETUPS_VIEW_REFRESH_EVENTS: EventName[] = [
   'setup:changed',
-  'trade:committed',
-  'trade:changed',
-  'missed-trade:changed',
+  'trade-data:changed',
+  'missed-trade-data:changed',
   'backtest-trade:changed',
   'options:changed',
   'settings:changed',
@@ -87,7 +91,7 @@ const INITIAL_SETUPS_DATA_STATE: SetupsDataState = {
   hasLoadedData: false,
 };
 
-export function buildSetupsViewOpportunityStats(
+function buildSetupsViewOpportunityStats(
   setups: Setup[],
   liveTrades: unknown[],
   missedTrades: unknown[],
@@ -180,6 +184,48 @@ function useSetupsGuideNavigation(
   useGuideBackHandler(guideBackHandler);
 }
 
+const guideSetupCount = (
+  hasLoadedData: boolean,
+  viewModels: SetupViewModel[]
+): number => (hasLoadedData ? viewModels.length : -1);
+
+const setupsLoadErrorOf = (
+  loadError: string | null,
+  serviceError: Error | null | undefined
+): string | null => loadError ?? serviceError?.message ?? null;
+
+const linkedTradesOf = (tradeIndex: SetupTradeIndex, setupId: string) =>
+  tradeIndex.any.get(setupId) ?? [];
+
+const selectedSetupIdsOf = (state: SetupsViewState): string[] =>
+  state.selectedSetupIds ?? [];
+
+const SetupsCompareRoute: React.FC<{
+  plugin: JournalitPlugin;
+  viewModels: SetupViewModel[];
+  tradeIndex: SetupTradeIndex;
+  selectedSetupIds: string[];
+  onBack: () => void;
+}> = ({ plugin, viewModels, tradeIndex, selectedSetupIds, onBack }) => {
+  const hasValidComparison =
+    selectedSetupIds.length >= 2 &&
+    selectedSetupIds.every((setupId) =>
+      viewModels.some(({ setup }) => setup.id === setupId)
+    );
+  return (
+    <>
+      {hasValidComparison && <SetupsGuideResolution page="compare" />}
+      <SetupComparePage
+        displayRMultiples={plugin.settings.trade?.displayRMultiples ?? false}
+        viewModels={viewModels}
+        tradeIndex={tradeIndex}
+        selectedSetupIds={selectedSetupIds}
+        onBack={onBack}
+      />
+    </>
+  );
+};
+
 const SetupsViewBody: React.FC<SetupsViewContentProps> = ({
   hoverParent,
   plugin,
@@ -268,10 +314,10 @@ const SetupsViewBody: React.FC<SetupsViewContentProps> = ({
 
   useGuideContextValue(
     SETUPS_COUNT_CONTEXT_KEY,
-    hasLoadedData ? viewModels.length : -1
+    guideSetupCount(hasLoadedData, viewModels)
   );
 
-  const currentError = loadError ?? error?.message ?? null;
+  const currentError = setupsLoadErrorOf(loadError, error);
   useSetupsGuideNavigation(state, viewModels, onStateChange);
   if (currentError) {
     return (
@@ -301,8 +347,10 @@ const SetupsViewBody: React.FC<SetupsViewContentProps> = ({
   );
 
   if (state.page === 'detail' && selectedSetup) {
-    const selectedLinkedTrades =
-      tradeIndex.any.get(selectedSetup.setup.id) ?? [];
+    const selectedLinkedTrades = linkedTradesOf(
+      tradeIndex,
+      selectedSetup.setup.id
+    );
 
     return (
       <>
@@ -347,36 +395,26 @@ const SetupsViewBody: React.FC<SetupsViewContentProps> = ({
     );
   }
 
-  if (state.page === 'detail' && !selectedSetup) {
-    return hasLoadedData ? (
+  if (state.page === 'detail') {
+    
+    return (
       <div className="journalit-setups-view">
         <div className="journalit-setups-error">
           {t('setups.view.error.load-failed')}
         </div>
       </div>
-    ) : (
-      <SetupViewSkeleton page="detail" />
     );
   }
 
   if (state.page === 'compare') {
-    const selectedSetupIds = state.selectedSetupIds ?? [];
-    const hasValidComparison =
-      selectedSetupIds.length >= 2 &&
-      selectedSetupIds.every((setupId) =>
-        viewModels.some(({ setup }) => setup.id === setupId)
-      );
     return (
-      <>
-        {hasValidComparison && <SetupsGuideResolution page="compare" />}
-        <SetupComparePage
-          displayRMultiples={plugin.settings.trade?.displayRMultiples ?? false}
-          viewModels={viewModels}
-          tradeIndex={tradeIndex}
-          selectedSetupIds={selectedSetupIds}
-          onBack={() => onStateChange({ page: 'overview' })}
-        />
-      </>
+      <SetupsCompareRoute
+        plugin={plugin}
+        viewModels={viewModels}
+        tradeIndex={tradeIndex}
+        selectedSetupIds={selectedSetupIdsOf(state)}
+        onBack={() => onStateChange({ page: 'overview' })}
+      />
     );
   }
 
@@ -418,7 +456,7 @@ const SetupsViewBody: React.FC<SetupsViewContentProps> = ({
             setupName,
           });
         }}
-        selectedSetupIds={state.selectedSetupIds ?? []}
+        selectedSetupIds={selectedSetupIdsOf(state)}
         onSelectedSetupIdsChange={(selectedSetupIds) =>
           onStateChange({
             page: 'overview',

@@ -50,7 +50,8 @@ export class ReviewTemplateService {
       }
 
       
-      const builtInTemplates = this.getBuiltInTemplates();
+      const builtInTemplates =
+        ReviewTemplateService.getBuiltInTemplateSnapshot();
 
       
       const savedTemplates = this.plugin.settings.reviewV2.templates || [];
@@ -62,7 +63,7 @@ export class ReviewTemplateService {
       this.templates = [...builtInTemplates, ...userTemplates];
     } catch (error) {
       console.error('Error loading review templates:', error);
-      this.templates = this.getBuiltInTemplates();
+      this.templates = ReviewTemplateService.getBuiltInTemplateSnapshot();
     }
   }
 
@@ -94,7 +95,7 @@ export class ReviewTemplateService {
   }
 
   
-  private getBuiltInTemplates(): ReviewTemplate[] {
+  public static getBuiltInTemplateSnapshot(): ReviewTemplate[] {
     const now = new Date().toISOString();
 
     return [

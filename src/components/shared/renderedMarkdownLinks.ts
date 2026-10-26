@@ -20,11 +20,14 @@ export function registerRenderedMarkdownLinks({
   component,
   container,
   sourcePath,
+  openPlainClickInNewTab = () => true,
 }: {
   app: App;
   component: Component;
   container: HTMLElement;
   sourcePath: string;
+  
+  openPlainClickInNewTab?: () => boolean;
 }): void {
   const hoverParent: HoverParent = { hoverPopover: null };
 
@@ -45,7 +48,10 @@ export function registerRenderedMarkdownLinks({
 
   component.registerDomEvent(container, 'click', (event) => {
     if (event.button !== 0) return;
-    openLink(event, Keymap.isModEvent(event) || 'tab');
+    openLink(
+      event,
+      Keymap.isModEvent(event) || (openPlainClickInNewTab() ? 'tab' : false)
+    );
   });
   component.registerDomEvent(container, 'auxclick', (event) => {
     if (event.button !== 1) return;

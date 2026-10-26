@@ -9,9 +9,11 @@ import {
 import JournalitPlugin from '../../main';
 import {
   normalizeLayoutForSave,
+  fitLayoutItemToBreakpoint,
   LAYOUT_BOTTOM_POSITION,
 } from '../shared/gridLayout/gridLayoutUtils';
 import { eventBus } from '../../services/events/EventBus';
+import { defineOwnEntry } from '../../utils/defineOwnEntry';
 
 
 let saveLayoutTimer: number | null = null;
@@ -61,13 +63,13 @@ function safeLayoutSettingsCopy(
   const layoutsCopy: Record<string, HomeLayout> = {};
 
   Object.entries(layoutSettings.layouts).forEach(([layoutName, layout]) => {
-    layoutsCopy[layoutName] = {
+    defineOwnEntry(layoutsCopy, layoutName, {
       lg: normalizeLayoutForSave(layout.lg || []),
       md: normalizeLayoutForSave(layout.md || []),
       sm: normalizeLayoutForSave(layout.sm || []),
       xs: normalizeLayoutForSave(layout.xs || []),
       xxs: normalizeLayoutForSave(layout.xxs || []),
-    };
+    });
   });
 
   return {
@@ -88,33 +90,27 @@ const getLayoutSettings = (plugin: JournalitPlugin): HomeLayoutSettings => {
 
   Object.entries(layouts).forEach(([name, layout]) => {
     if (!layout) {
-      migratedLayouts[name] = cloneHomeLayout(DEFAULT_LAYOUT);
+      defineOwnEntry(migratedLayouts, name, cloneHomeLayout(DEFAULT_LAYOUT));
       return;
     }
 
     const xs =
       layout.xs ||
-      layout.sm?.map((item: Layout) => ({
-        ...item,
-        w: Math.min(item.w, 2),
-      })) ||
+      layout.sm?.map((item) => fitLayoutItemToBreakpoint(item, 'xs')) ||
       [];
 
     const xxs =
       layout.xxs ||
-      layout.sm?.map((item: Layout) => ({
-        ...item,
-        w: 1,
-      })) ||
+      layout.sm?.map((item) => fitLayoutItemToBreakpoint(item, 'xxs')) ||
       [];
 
-    migratedLayouts[name] = {
+    defineOwnEntry(migratedLayouts, name, {
       lg: layout.lg || [],
       md: layout.md || [],
       sm: layout.sm || [],
       xs,
       xxs,
-    };
+    });
   });
 
   return {
@@ -133,7 +129,6 @@ const applyLayoutSettings = (
     plugin.settings.home = {
       layouts: {},
       activeLayout: 'Default',
-      recentItems: [],
     };
   }
 
@@ -157,6 +152,7 @@ const persistLayoutSettings = async (
 
   eventBus.publish('layout:changed', {
     view: 'home',
+    source: 'ui',
     layoutName: getLayoutSettings(plugin).activeLayout,
   });
 };
@@ -166,7 +162,12 @@ export const getActiveLayout = (plugin: JournalitPlugin): HomeLayout => {
   try {
     const settings = getLayoutSettings(plugin);
     const activeLayoutName = settings.activeLayout;
-    const activeLayout = settings.layouts[activeLayoutName];
+    const activeLayout = Object.prototype.hasOwnProperty.call(
+      settings.layouts,
+      activeLayoutName
+    )
+      ? settings.layouts[activeLayoutName]
+      : undefined;
 
     if (!activeLayout) {
       console.warn(
@@ -315,7 +316,7 @@ const applyLayout = (plugin: JournalitPlugin, layout: HomeLayout): void => {
   });
 
   const settings = getLayoutSettings(plugin);
-  settings.layouts[settings.activeLayout] = layoutCopy;
+  defineOwnEntry(settings.layouts, settings.activeLayout, layoutCopy);
   applyLayoutSettings(plugin, settings);
 };
 

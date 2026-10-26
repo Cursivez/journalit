@@ -249,12 +249,14 @@ function netPnlForDates(
   }, 0);
 }
 
+const signedCurrencyFormatter = new Intl.NumberFormat('en-US', {
+  style: 'currency',
+  currency: 'USD',
+  signDisplay: 'always',
+});
+
 function formatSignedCurrency(value: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-    signDisplay: 'always',
-  }).format(value);
+  return signedCurrencyFormatter.format(value);
 }
 
 export function createReviews(options: {

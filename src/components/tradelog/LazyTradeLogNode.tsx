@@ -90,10 +90,8 @@ export const LazyTradeLogNode = memo<LazyTradeLogNodeProps>(
       observer.observe(element);
 
       return () => {
-        if (element) {
-          observer.unobserve(element);
-          observerCallbacks.delete(element);
-        }
+        observer.unobserve(element);
+        observerCallbacks.delete(element);
       };
     }, [shouldRenderImmediately]);
 

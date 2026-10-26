@@ -104,20 +104,11 @@ export const HomeAccountsDataProvider: React.FC<
       });
       setError(null);
 
-      let retries = 0;
-      while (!plugin.accountPageService && retries < 5) {
-        if (!isCurrent()) return;
-        await new Promise((resolve) => window.setTimeout(resolve, 300));
-        retries++;
-      }
-
+      
+      
+      const accountPageService =
+        await plugin.serviceManager.getAccountPageService();
       if (!isCurrent()) return;
-
-      if (!plugin.accountPageService) {
-        throw new Error('Account service not available');
-      }
-
-      const accountPageService = plugin.accountPageService;
       const allAccounts = await accountPageService.getAllEnhancedAccounts();
       
       
@@ -176,7 +167,7 @@ export const HomeAccountsDataProvider: React.FC<
   }, [refresh]);
 
   useEventBus('account:changed', refresh, enabled);
-  useEventBus('trade:changed', refresh, enabled);
+  useEventBus('trade-data:changed', refresh, enabled);
   
   
   
@@ -219,5 +210,18 @@ export const HomeAccountsDataProvider: React.FC<
   );
 };
 
-export const useHomeAccountsData = (): HomeAccountsDataContextValue | null =>
+const useHomeAccountsData = (): HomeAccountsDataContextValue | null =>
   use(HomeAccountsDataContext);
+
+const EMPTY_HOME_ACCOUNTS: HomeAccountsDataContextValue['accounts'] = [];
+
+
+export const useHomeAccountsState = () => {
+  const data = useHomeAccountsData();
+  return {
+    accounts: data?.accounts ?? EMPTY_HOME_ACCOUNTS,
+    challengeProgress: data?.challengeProgress,
+    isLoading: data?.isLoading ?? true,
+    error: data?.error ?? null,
+  };
+};

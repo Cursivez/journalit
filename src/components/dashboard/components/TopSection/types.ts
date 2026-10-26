@@ -48,6 +48,12 @@ export const AVAILABLE_METRICS: MetricDefinition[] = [
     category: 'performance',
   },
   {
+    id: 'expectancyGap',
+    name: t('metric.expectancyGap.name'),
+    description: t('metric.expectancyGap.description'),
+    category: 'performance',
+  },
+  {
     id: 'maxDrawdown',
     name: t('metric.maxDrawdown.name'),
     description: t('metric.maxDrawdown.description'),

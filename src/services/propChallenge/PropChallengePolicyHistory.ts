@@ -3,6 +3,7 @@ import type {
   PropChallengePolicyRevision,
   PropChallengeRule,
 } from './types';
+import { isAuthoritativeDrawdown } from './PropChallengeRuleReview';
 
 export function ruleDefinition({ id: _id, ...rule }: PropChallengeRule) {
   return rule;
@@ -13,10 +14,13 @@ export function canPreserveProfileState(
   after: Pick<PropChallengePolicyRevision, 'rules' | 'payoutPolicy'>
 ): boolean {
   return (
-    sameProfileContent(
-      before.rules.filter((r) => r.kind === 'drawdown'),
-      after.rules.filter((r) => r.kind === 'drawdown')
-    ) && sameProfileContent(before.payoutPolicy, after.payoutPolicy)
+    
+    
+    after.rules
+      .filter(isAuthoritativeDrawdown)
+      .every((rule) =>
+        before.rules.some((previous) => sameProfileContent(previous, rule))
+      ) && sameProfileContent(before.payoutPolicy, after.payoutPolicy)
   );
 }
 

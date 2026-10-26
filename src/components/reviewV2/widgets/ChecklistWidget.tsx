@@ -7,6 +7,7 @@ import { InvalidContextMessage } from './InvalidContextMessage';
 import { ChecklistPreviewData } from '../../../types/reviewV2';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonCircle } from '../../shared/SkeletonCircle';
+import { LinkedItemText } from './shared/LinkedItemText';
 import { Tooltip } from '../../shared/Tooltip';
 import { Edit, Trash2 } from '../../shared/icons/ObsidianIcon';
 import { NoTooltipButton } from '../../ui/NoTooltipButton';
@@ -492,28 +493,24 @@ export const ChecklistWidget: React.FC<ChecklistWidgetProps> = React.memo(
                     </button>
                   </>
                 ) : readOnly ? (
-                  <span
+                  <LinkedItemText
+                    plugin={plugin}
+                    text={item.text}
+                    sourcePath={filePath}
                     className={`journalit-reviewv2-item-text journalit-reviewv2-item-text--read-only${item.checked ? ' journalit-reviewv2-item-text--completed' : ''}`}
-                  >
-                    {item.text}
-                  </span>
+                  />
                 ) : (
-                  <button
-                    type="button"
-                    onClick={() => void handleToggleItem(index)}
-                    onKeyDown={(e) => {
-                      if (e.key !== 'Enter' && e.key !== ' ') return;
-                      e.preventDefault();
-                      void handleToggleItem(index);
-                    }}
-                    className={`journalit-native-button journalit-native-button--unstyled journalit-reviewv2-item-text ${
+                  <LinkedItemText
+                    plugin={plugin}
+                    text={item.text}
+                    sourcePath={filePath}
+                    onToggle={() => void handleToggleItem(index)}
+                    className={`journalit-reviewv2-item-text ${
                       item.checked
                         ? 'journalit-reviewv2-item-text--completed'
                         : ''
                     }`}
-                  >
-                    {item.text}
-                  </button>
+                  />
                 )}
 
                 

@@ -1,7 +1,7 @@
 
 
 
-export const MANUAL_TRADE_NUDGE_THRESHOLDS = {
+const MANUAL_TRADE_NUDGE_THRESHOLDS = {
   minManualTrades: 20,
   minSpanDays: 14,
   minDistinctEntryDays: 3,

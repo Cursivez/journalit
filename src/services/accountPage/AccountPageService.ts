@@ -1,5 +1,12 @@
+import { defineOwnEntry } from '../../utils/defineOwnEntry';
+import { parseStopLossTargets } from '../trade/core/StopLossTargets';
+import { hasStopLossRiskBasis } from '../../utils/riskCalculation';
 import { logger } from '../../utils/logger';
 import { sameProfileContent } from '../propChallenge/PropChallengePolicyHistory';
+import {
+  buildPayoutReceipt,
+  normalizePayoutReceipt,
+} from '../propChallenge/PayoutReceipt';
 import type { PropChallengeConfig } from '../propChallenge/types';
 import { getAccountBalanceAdjustment } from '../propChallenge/PropChallengeBalance';
 import { getCurrentPropChallengePhase } from '../propChallenge/PropChallengeConfig';
@@ -87,13 +94,19 @@ import {
 } from '../account/types';
 import { AccountMetadata } from '../../settings/types';
 import {
+  commitAccountMetadata,
+  AccountMetadataSavedError,
+} from './accountMetadataStore';
+import {
   hasLiveBalanceAdjustment,
   normalizeLiveBalanceAdjustment,
 } from '../account/liveBalanceAdjustment';
+import { withPropChallengePhaseResets } from '../account/monthlyReturns';
 import { formatLocalDateString } from '../../utils/dateUtils';
 import {
   getEffectivePnL,
   getLastExitTime,
+  hasMissedTradeOutcome,
   isPnlContributingTrade,
 } from '../../utils/tradeStatusUtils';
 import { getTradeRealizedPnlEvents } from '../../utils/tradeAnalyticsDate';
@@ -134,6 +147,7 @@ import {
   restoreEntityShortcuts,
 } from '../../utils/entityShortcutTargets';
 import type { TradeData } from '../trade/TradeService';
+import { applyAccountIdentityRename } from '../agent/identity/accountIdentityStore';
 import { OptionType } from '../options/CustomOptionsService';
 import { isPathWithinDirectory } from '../base/pluginStoragePaths';
 import {
@@ -143,6 +157,36 @@ import {
 
 const ACCOUNT_DELETION_REQUIRED_ACCOUNT_ERROR =
   /At least one account is required/;
+
+function assertManualTransactionDate(
+  date: Date,
+  precision: AccountTransaction['datePrecision']
+): void {
+  if (!Number.isFinite(date.getTime())) {
+    throw new Error('Transaction date must be valid and not in the future');
+  }
+
+  const now = new Date();
+  const isFuture =
+    precision === 'instant'
+      ? date.getTime() > now.getTime()
+      : Date.UTC(date.getUTCFullYear(), date.getUTCMonth(), date.getUTCDate()) >
+        Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
+  if (isFuture) {
+    throw new Error('Transaction date must be valid and not in the future');
+  }
+}
+
+interface AccountMetadataUpdateGuard {
+  expectedPropChallenge: PropChallengeConfig;
+  expectedCurrency?: CurrencyCode;
+  reconciledUnscopedBalance?: boolean;
+}
+
+
+export type AccountMetadataExpectation = (
+  current: Readonly<AccountMetadata> | undefined
+) => void;
 
 
 
@@ -155,11 +199,25 @@ export class AccountMetadataConflictError extends Error {
   }
 }
 
+
+const reportedAccountWarnings = new Set<string>();
+const warnOncePerAccount = (
+  accountName: string,
+  issue: string,
+  message: string
+): void => {
+  const key = JSON.stringify([accountName, issue]);
+  if (reportedAccountWarnings.has(key)) return;
+  reportedAccountWarnings.add(key);
+  console.warn(message);
+};
+
 export class AccountPageService extends CustomDataService {
   private folderPathService: FolderPathService | null = null;
   private unsubscribeTradeChanged: Unsubscribe;
   private unsubscribeTradeCommitted: Unsubscribe;
   private unsubscribeMissedTradeChanged: Unsubscribe;
+  private unsubscribeMissedTradeDataChanged: Unsubscribe;
   private unsubscribeBacktestTradeChanged: Unsubscribe;
   private unsubscribeFolderPathChanged: Unsubscribe;
   private unsubscribeSettingsChanged: Unsubscribe;
@@ -183,6 +241,39 @@ export class AccountPageService extends CustomDataService {
   private exchangeRateService: ExchangeRateService | null = null;
   private accountSnapshotGeneration = 0;
   private folderRenameListenerRegistered = false;
+  private mutationQueue: Promise<void> = Promise.resolve();
+  private mutationsClosed = false;
+
+  private runMutationExclusive<T>(operation: () => Promise<T>): Promise<T> {
+    const plugin = this.requirePlugin();
+    const settings = plugin.settings;
+    const folderService = this.folderPathService;
+    if (!folderService)
+      throw new Error(
+        'The account context is not ready. Wait for Journalit to finish loading.'
+      );
+    const folder = folderService.getPath();
+    const run = () => {
+      if (
+        this.mutationsClosed ||
+        this.plugin !== plugin ||
+        plugin.settings !== settings ||
+        this.folderPathService !== folderService ||
+        folderService.getPath() !== folder
+      ) {
+        throw new Error(
+          'The account context changed. Reopen the account before saving.'
+        );
+      }
+      return operation();
+    };
+    const result = this.mutationQueue.then(run, run);
+    this.mutationQueue = result.then(
+      () => undefined,
+      () => undefined
+    );
+    return result;
+  }
 
   private requirePlugin(): JournalitPlugin {
     if (!this.plugin) {
@@ -208,7 +299,7 @@ export class AccountPageService extends CustomDataService {
 
     
     this.unsubscribeTradeChanged = eventBus.subscribe(
-      'trade:changed',
+      'trade-data:changed',
       handleTradeDataChange
     );
     this.unsubscribeTradeCommitted = eventBus.subscribe(
@@ -217,6 +308,10 @@ export class AccountPageService extends CustomDataService {
     );
     this.unsubscribeMissedTradeChanged = eventBus.subscribe(
       'missed-trade:changed',
+      handleTradeDataChange
+    );
+    this.unsubscribeMissedTradeDataChanged = eventBus.subscribe(
+      'missed-trade-data:changed',
       handleTradeDataChange
     );
     this.unsubscribeBacktestTradeChanged = eventBus.subscribe(
@@ -298,9 +393,12 @@ export class AccountPageService extends CustomDataService {
 
   private getAccountAggregateSnapshotKey(
     accountName: string,
-    tradeTypes?: TradeType[]
+    tradeTypes: TradeType[] | undefined,
+    exitEventLedger: boolean
   ): string {
-    return `${accountName}::${this.getTradeTypeSelectionKey(tradeTypes)}`;
+    return `${accountName}::${this.getTradeTypeSelectionKey(tradeTypes)}${
+      exitEventLedger ? '::exit-events' : ''
+    }`;
   }
 
   private clearAccountSnapshots(accountName?: string): void {
@@ -401,10 +499,7 @@ export class AccountPageService extends CustomDataService {
   }
 
   private getTradeAccountIdentity(trade: Record<string, unknown>) {
-    return normalizeTradeAccountIdentity(trade, {
-      resolveAccountIdDisplayName: (accountId) =>
-        this.resolveMappedAccountName(accountId),
-    });
+    return normalizeTradeAccountIdentity(trade);
   }
 
   private getLookupMatchedAccountNames(
@@ -693,7 +788,7 @@ export class AccountPageService extends CustomDataService {
     }
 
     return (
-      tradeData.riskAmount === undefined && tradeData.stopLoss === undefined
+      tradeData.riskAmount === undefined && !hasStopLossRiskBasis(tradeData)
     );
   }
 
@@ -922,12 +1017,7 @@ export class AccountPageService extends CustomDataService {
           : trade.riskAmount === undefined
             ? undefined
             : Number(trade.riskAmount),
-      stopLoss:
-        typeof trade.stopLoss === 'number'
-          ? trade.stopLoss
-          : trade.stopLoss === undefined
-            ? undefined
-            : Number(trade.stopLoss),
+      stopLosses: parseStopLossTargets(trade.stopLosses),
       currency: typeof trade.currency === 'string' ? trade.currency : undefined,
       fxRate:
         typeof trade.fxRate === 'number' && Number.isFinite(trade.fxRate)
@@ -1090,6 +1180,9 @@ export class AccountPageService extends CustomDataService {
       metrics: { ...account.metrics },
       transactions: account.transactions.map((transaction) => ({
         ...transaction,
+        ...(transaction.payoutReceipt
+          ? { payoutReceipt: { ...transaction.payoutReceipt } }
+          : {}),
         date: new Date(transaction.date),
       })),
       dailyBalances: account.dailyBalances.map((balance) => ({
@@ -1302,9 +1395,42 @@ export class AccountPageService extends CustomDataService {
     }
   }
 
+  
+  private resolveAccountMetadata(
+    groupingSnapshot: AccountTradeGroupingSnapshot,
+    canonicalAccountName: string
+  ): { metadata?: AccountMetadata; displayAccountName: string } {
+    const metadataEntries =
+      this.plugin?.settings.account?.accountMetadata || {};
+    const canonicalLookupKey = normalizeAccountLookupKey(canonicalAccountName);
+    const metadataRecords = Object.entries(metadataEntries).map(
+      ([key, metadata]) => ({ key, metadata })
+    );
+    const metadataEntry =
+      metadataRecords.find(
+        ({ key }) => normalizeAccountLookupKey(key) === canonicalLookupKey
+      ) ||
+      metadataRecords.find(
+        ({ key }) =>
+          normalizeAccountLookupKey(
+            this.resolveCanonicalAccountName(groupingSnapshot, key)
+          ) === canonicalLookupKey
+      );
+    const metadataKeyMatchesCanonical =
+      metadataEntry !== undefined &&
+      normalizeAccountLookupKey(metadataEntry.key) === canonicalLookupKey;
+    return {
+      metadata: metadataEntry?.metadata,
+      displayAccountName: metadataKeyMatchesCanonical
+        ? metadataEntry.key
+        : canonicalAccountName,
+    };
+  }
+
   private async getAccountAggregateSnapshot(
     accountName: string,
-    tradeTypes?: TradeType[]
+    tradeTypes?: TradeType[],
+    exitEventLedger = false
   ): Promise<AccountAggregateSnapshot | null> {
     const normalizedTradeTypes = this.normalizeSupportedTradeTypes(tradeTypes);
     const groupingSnapshot =
@@ -1315,7 +1441,8 @@ export class AccountPageService extends CustomDataService {
     );
     const snapshotKey = this.getAccountAggregateSnapshotKey(
       canonicalAccountName,
-      normalizedTradeTypes
+      normalizedTradeTypes,
+      exitEventLedger
     );
 
     const cachedSnapshot = this.accountAggregateSnapshots.get(snapshotKey);
@@ -1337,31 +1464,10 @@ export class AccountPageService extends CustomDataService {
         accountName
       );
       const accountTrades = this.cloneAccountTrades(rawTrades);
-      const metadataEntries =
-        this.plugin?.settings.account?.accountMetadata || {};
-      const canonicalLookupKey =
-        normalizeAccountLookupKey(canonicalAccountName);
-      const metadataRecords = Object.entries(metadataEntries).map(
-        ([key, metadata]) => ({ key, metadata })
+      const { metadata, displayAccountName } = this.resolveAccountMetadata(
+        groupingSnapshot,
+        canonicalAccountName
       );
-      const metadataEntry =
-        metadataRecords.find(
-          ({ key }) => normalizeAccountLookupKey(key) === canonicalLookupKey
-        ) ||
-        metadataRecords.find(
-          ({ key }) =>
-            normalizeAccountLookupKey(
-              this.resolveCanonicalAccountName(groupingSnapshot, key)
-            ) === canonicalLookupKey
-        );
-      const metadata = metadataEntry?.metadata;
-      const metadataKeyMatchesCanonical =
-        metadataEntry !== undefined &&
-        normalizeAccountLookupKey(metadataEntry.key) ===
-          normalizeAccountLookupKey(canonicalAccountName);
-      const displayAccountName = metadataKeyMatchesCanonical
-        ? metadataEntry.key
-        : canonicalAccountName;
 
       if (accountTrades.length === 0 && !metadata) {
         this.accountAggregateSnapshotPromises.delete(snapshotKey);
@@ -1475,7 +1581,8 @@ export class AccountPageService extends CustomDataService {
       const enhancedAccount = await this.enhanceAccountWithTransactions(
         account,
         convertedTrades,
-        metrics
+        metrics,
+        exitEventLedger
       );
       if (enhancedAccount.propChallenge) {
         const phase = getCurrentPropChallengePhase(
@@ -1509,7 +1616,8 @@ export class AccountPageService extends CustomDataService {
         this.accountAggregateSnapshotPromises.delete(snapshotKey);
         return this.getAccountAggregateSnapshot(
           accountName,
-          normalizedTradeTypes
+          normalizedTradeTypes,
+          exitEventLedger
         );
       }
 
@@ -1563,7 +1671,12 @@ export class AccountPageService extends CustomDataService {
       return undefined;
     }
 
-    const exactMatch = accountMetadata[accountName];
+    const exactMatch = Object.prototype.hasOwnProperty.call(
+      accountMetadata,
+      accountName
+    )
+      ? accountMetadata[accountName]
+      : undefined;
     if (exactMatch) {
       return { key: accountName, metadata: exactMatch };
     }
@@ -1624,6 +1737,12 @@ export class AccountPageService extends CustomDataService {
       manualTransactions: rawMetadata.manualTransactions
         ? rawMetadata.manualTransactions.flatMap((t) => {
             if (t === null || t === undefined) return [];
+            if (
+              t.datePrecision !== undefined &&
+              t.datePrecision !== 'day' &&
+              t.datePrecision !== 'instant'
+            )
+              return [];
             const parsedDate =
               t.date instanceof Date ? t.date : this.safeParseDate(t.date);
 
@@ -1635,7 +1754,11 @@ export class AccountPageService extends CustomDataService {
               return [];
             }
 
-            const transaction = { ...t, date: parsedDate };
+            const transaction = {
+              ...t,
+              date: parsedDate,
+              payoutReceipt: normalizePayoutReceipt(t.payoutReceipt, t),
+            };
             
             if (typeof transaction.id !== 'string' || !transaction.id)
               return [];
@@ -1722,47 +1845,37 @@ export class AccountPageService extends CustomDataService {
   
   private async saveAccountMetadata(
     accountName: string,
-    metadata: AccountMetadata
+    updates: Partial<AccountMetadata>,
+    reconciledUnscopedBalance = false
   ): Promise<void> {
-    if (!this.plugin?.settings.account) {
-      
-      if (!this.plugin?.settings) {
-        throw new Error(
-          'Plugin settings not initialized - cannot save account metadata'
+    try {
+      await commitAccountMetadata(
+        this.requirePlugin(),
+        accountName,
+        (current) =>
+          this.buildAccountMetadata(
+            accountName,
+            current,
+            updates,
+            reconciledUnscopedBalance
+          )
+      );
+    } catch (error) {
+      try {
+        await this.refreshAccountData();
+      } catch (refreshError) {
+        throw new AggregateError(
+          [error, refreshError],
+          'Account metadata persistence failed and its view could not be refreshed.'
         );
       }
-      this.plugin.settings.account = {
-        defaultAccountType: AccountType.DEMO,
-        defaultDrawdownType: DrawdownType.NONE,
-        defaultDrawdownAmount: 0,
-        showBalanceInDashboard: true,
-        excludedAccountTypes: ['archived'],
-        includeWithdrawalsFromExcluded: { archived: true, demo: false },
-        accountTypeOrder: ['funded', 'evaluation', 'demo', 'archived'],
-        accountMetadata: {},
-      };
-    }
-
-    if (!this.plugin.settings.account.accountMetadata) {
-      this.plugin.settings.account.accountMetadata = {};
-    }
-
-    const existingMetadataEntry = this.findAccountMetadataEntry(accountName);
-    const metadataKey = existingMetadataEntry?.key ?? accountName;
-    const previousMetadata =
-      this.plugin.settings.account.accountMetadata[metadataKey];
-    this.plugin.settings.account.accountMetadata[metadataKey] = metadata;
-
-    try {
-      await this.plugin.saveSettings();
-    } catch (error) {
-      if (previousMetadata) {
-        this.plugin.settings.account.accountMetadata[metadataKey] =
-          previousMetadata;
-      } else {
-        delete this.plugin.settings.account.accountMetadata[metadataKey];
-      }
+      eventBus.publish('account:changed', { action: 'updated', accountName });
       throw error;
+    }
+    try {
+      await this.refreshAccountData();
+    } catch (error) {
+      throw new AccountMetadataSavedError(error);
     }
   }
 
@@ -1779,25 +1892,17 @@ export class AccountPageService extends CustomDataService {
       ? updates.propChallenge
       : existingMetadata?.propChallenge;
     return {
-      accountType: existingMetadata?.accountType || AccountType.DEMO,
-      createdDate: existingMetadata?.createdDate || new Date(),
-      initialBalance: existingMetadata?.initialBalance ?? 0,
-      drawdownType: existingMetadata?.drawdownType || DrawdownType.NONE,
-      drawdownAmount: existingMetadata?.drawdownAmount || 0,
-      hasProfitTarget: existingMetadata?.hasProfitTarget || false,
-      profitTarget: existingMetadata?.profitTarget || 0,
-      profitTargetType:
-        existingMetadata?.profitTargetType || ProfitTargetType.ABSOLUTE,
-      profitTargetDate: existingMetadata?.profitTargetDate,
-      monthlyCost: existingMetadata?.monthlyCost || 0,
-      manualTransactions: existingMetadata?.manualTransactions,
-      manualDrawdownSnapshots: existingMetadata?.manualDrawdownSnapshots,
-      copyTradingPeriods: existingMetadata?.copyTradingPeriods,
-      propChallenge: existingMetadata?.propChallenge,
-      propChallengeQuarantine: existingMetadata?.propChallengeQuarantine,
-      currency: existingMetadata?.currency,
+      accountType: AccountType.DEMO,
+      createdDate: new Date(),
+      initialBalance: 0,
+      drawdownType: DrawdownType.NONE,
+      drawdownAmount: 0,
+      hasProfitTarget: false,
+      profitTarget: 0,
+      profitTargetType: ProfitTargetType.ABSOLUTE,
+      monthlyCost: 0,
+      ...existingMetadata,
       ...updates,
-      
       
       
       ...(updates.propChallenge !== undefined
@@ -1857,13 +1962,25 @@ export class AccountPageService extends CustomDataService {
   public async updateAccountMetadata(
     accountName: string,
     updates: Partial<AccountMetadata>,
-    options?: {
-      expectedPropChallenge: PropChallengeConfig;
-      expectedCurrency?: CurrencyCode;
-      reconciledUnscopedBalance?: boolean;
-    }
+    options?: AccountMetadataUpdateGuard,
+    expect?: AccountMetadataExpectation
   ): Promise<void> {
-    const existingMetadata = this.getAccountMetadata(accountName);
+    const snapshot = structuredClone(updates);
+    const guard = structuredClone(options);
+    return this.runMutationExclusive(() =>
+      this.updateAccountMetadataNow(accountName, snapshot, guard, expect)
+    );
+  }
+
+  private async updateAccountMetadataNow(
+    accountName: string,
+    updates: Partial<AccountMetadata>,
+    options?: AccountMetadataUpdateGuard,
+    expect?: AccountMetadataExpectation
+  ): Promise<void> {
+    const existingMetadata =
+      this.findAccountMetadataEntry(accountName)?.metadata;
+    expect?.(existingMetadata);
     if (
       options &&
       !sameProfileContent(
@@ -1883,15 +2000,11 @@ export class AccountPageService extends CustomDataService {
         'Account currency changed while the review was open. Reopen the review before saving.'
       );
     }
-    const metadata = this.buildAccountMetadata(
+    await this.saveAccountMetadata(
       accountName,
-      existingMetadata,
       updates,
       options?.reconciledUnscopedBalance
     );
-
-    await this.saveAccountMetadata(accountName, metadata);
-    await this.refreshAccountData();
   }
 
   public async renameAccountMetadata(
@@ -1901,9 +2014,34 @@ export class AccountPageService extends CustomDataService {
     options?: {
       expectedPropChallenge: PropChallengeConfig;
       reconciledUnscopedBalance?: boolean;
-    }
+    },
+    expect?: AccountMetadataExpectation
+  ): Promise<void> {
+    const snapshot = structuredClone(updates);
+    const guard = structuredClone(options);
+    return this.runMutationExclusive(() =>
+      this.renameAccountMetadataNow(
+        oldAccountName,
+        newAccountName,
+        snapshot,
+        guard,
+        expect
+      )
+    );
+  }
+
+  private async renameAccountMetadataNow(
+    oldAccountName: string,
+    newAccountName: string,
+    updates: Partial<AccountMetadata>,
+    options?: Pick<
+      AccountMetadataUpdateGuard,
+      'expectedPropChallenge' | 'reconciledUnscopedBalance'
+    >,
+    expect?: AccountMetadataExpectation
   ): Promise<void> {
     const oldMetadataEntry = this.findAccountMetadataEntry(oldAccountName);
+    expect?.(oldMetadataEntry?.metadata);
     const existingMetadata = oldMetadataEntry?.metadata;
     if (
       options &&
@@ -1926,28 +2064,7 @@ export class AccountPageService extends CustomDataService {
       );
     }
 
-    const accountMetadata = this.plugin.settings.account?.accountMetadata;
-    if (!accountMetadata) {
-      const shortcutRemap = remapAccountEntityShortcuts(
-        this.plugin.settings,
-        oldAccountName,
-        newAccountName
-      );
-      try {
-        await this.saveAccountMetadata(newAccountName, metadata);
-      } catch (error) {
-        restoreEntityShortcuts(this.plugin.settings, shortcutRemap);
-        throw error;
-      }
-      if (shortcutRemap.changedSurfaces.length > 0) {
-        eventBus.publish('entity-shortcuts:changed', { surface: 'all' });
-      }
-      await this.refreshAllAccountData();
-      return;
-    }
-
     const oldMetadataKey = oldMetadataEntry?.key ?? oldAccountName;
-    const previousOldMetadata = accountMetadata[oldMetadataKey];
     const existingNewEntry = this.findAccountMetadataEntry(newAccountName);
     if (existingNewEntry && existingNewEntry.key !== oldMetadataKey) {
       throw new Error(`Account "${newAccountName}" already exists`);
@@ -1958,15 +2075,44 @@ export class AccountPageService extends CustomDataService {
       oldAccountName,
       newAccountName
     );
+    const previousAccountSettings = this.plugin.settings.account;
+    if (!this.plugin.settings.account) {
+      this.plugin.settings.account = {
+        defaultAccountType: AccountType.DEMO,
+        defaultDrawdownType: DrawdownType.NONE,
+        defaultDrawdownAmount: 0,
+        showBalanceInDashboard: true,
+        excludedAccountTypes: ['archived'],
+        includeWithdrawalsFromExcluded: { archived: true, demo: false },
+        accountTypeOrder: ['funded', 'evaluation', 'demo', 'archived'],
+      };
+    }
+    const accountSettings = this.plugin.settings.account;
+    const accountMetadataPreviouslyAbsent = !accountSettings.accountMetadata;
+    const accountMetadata =
+      accountSettings.accountMetadata ?? (accountSettings.accountMetadata = {});
+    const accountIdsPreviouslyAbsent = !accountSettings.agentAccountIds;
+    const accountIds =
+      accountSettings.agentAccountIds ?? (accountSettings.agentAccountIds = {});
+    const identityRename = applyAccountIdentityRename(
+      accountIds,
+      oldAccountName,
+      newAccountName
+    );
+    
+    
+    const ownRow = (key: string): AccountMetadata | undefined =>
+      Object.prototype.hasOwnProperty.call(accountMetadata, key)
+        ? accountMetadata[key]
+        : undefined;
+    const previousOldMetadata = ownRow(oldMetadataKey);
 
     const newMetadataKey = newAccountName;
     const previousNewMetadata =
-      newMetadataKey === oldMetadataKey
-        ? undefined
-        : accountMetadata[newMetadataKey];
+      newMetadataKey === oldMetadataKey ? undefined : ownRow(newMetadataKey);
 
     delete accountMetadata[oldMetadataKey];
-    accountMetadata[newMetadataKey] = metadata;
+    defineOwnEntry(accountMetadata, newMetadataKey, metadata);
 
     const referenceChanges = repointAccountReferences(
       this.plugin.settings,
@@ -1978,19 +2124,31 @@ export class AccountPageService extends CustomDataService {
       await this.plugin.saveSettings();
     } catch (error) {
       restoreEntityShortcuts(this.plugin.settings, shortcutRemap);
+      identityRename.rollback();
+      if (accountIdsPreviouslyAbsent) {
+        delete accountSettings.agentAccountIds;
+      }
+
       if (previousOldMetadata) {
-        accountMetadata[oldMetadataKey] = previousOldMetadata;
+        defineOwnEntry(accountMetadata, oldMetadataKey, previousOldMetadata);
       }
 
       if (newMetadataKey !== oldMetadataKey) {
         if (previousNewMetadata) {
-          accountMetadata[newMetadataKey] = previousNewMetadata;
+          defineOwnEntry(accountMetadata, newMetadataKey, previousNewMetadata);
         } else {
           delete accountMetadata[newMetadataKey];
         }
       }
 
       revertAccountReferences(this.plugin.settings, referenceChanges);
+      if (accountMetadataPreviouslyAbsent) {
+        delete accountSettings.accountMetadata;
+      }
+      if (!previousAccountSettings) {
+        delete this.plugin.settings.account;
+      }
+
       throw error;
     }
 
@@ -2221,20 +2379,7 @@ export class AccountPageService extends CustomDataService {
     tradeTypes?: TradeType[]
   ): Promise<AccountPageData | null> {
     try {
-      const snapshot = await this.getAccountAggregateSnapshot(
-        accountName,
-        tradeTypes
-      );
-      if (!snapshot) {
-        return null;
-      }
-
-      return {
-        account: this.cloneAccountData(snapshot.account),
-        trades: this.cloneAccountTrades(snapshot.trades),
-        excludedTrades: this.cloneAccountTrades(snapshot.excludedTrades),
-        metrics: { ...snapshot.metrics },
-      };
+      return await this.getAccountPageDataOrThrow(accountName, tradeTypes);
     } catch (error) {
       console.error(
         `Error getting account page data for ${accountName}:`,
@@ -2242,6 +2387,27 @@ export class AccountPageService extends CustomDataService {
       );
       return null;
     }
+  }
+
+  
+  public async getAccountPageDataOrThrow(
+    accountName: string,
+    tradeTypes?: TradeType[]
+  ): Promise<AccountPageData | null> {
+    const snapshot = await this.getAccountAggregateSnapshot(
+      accountName,
+      tradeTypes
+    );
+    if (!snapshot) {
+      return null;
+    }
+
+    return {
+      account: this.cloneAccountData(snapshot.account),
+      trades: this.cloneAccountTrades(snapshot.trades),
+      excludedTrades: this.cloneAccountTrades(snapshot.excludedTrades),
+      metrics: { ...snapshot.metrics },
+    };
   }
 
   
@@ -2456,10 +2622,11 @@ export class AccountPageService extends CustomDataService {
     date: Date,
     description?: string,
     datePrecision: AccountTransaction['datePrecision'] = 'instant'
-  ): Promise<void> {
-    if (amount <= 0) {
+  ): Promise<string> {
+    if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error('Deposit amount must be positive');
     }
+    assertManualTransactionDate(date, datePrecision);
 
     const transactionId = this.generateTransactionId();
     const transaction: AccountTransaction = {
@@ -2473,6 +2640,7 @@ export class AccountPageService extends CustomDataService {
     };
 
     await this.addManualTransaction(accountName, transaction);
+    return transactionId;
   }
 
   
@@ -2482,9 +2650,25 @@ export class AccountPageService extends CustomDataService {
     date: Date,
     description?: string,
     datePrecision: AccountTransaction['datePrecision'] = 'instant'
-  ): Promise<void> {
-    if (amount <= 0) {
+  ): Promise<string> {
+    if (!Number.isFinite(amount) || amount <= 0) {
       throw new Error('Withdrawal amount must be positive');
+    }
+    assertManualTransactionDate(date, datePrecision);
+
+    let payoutReceipt: AccountTransaction['payoutReceipt'];
+    if (this.getAccountMetadataEntry(accountName)?.metadata.propChallenge) {
+      const data = await this.getAccountPageData(accountName);
+      if (!data)
+        throw new Error(
+          'Account data is unavailable; retry before recording a payout.'
+        );
+      payoutReceipt = buildPayoutReceipt(
+        data,
+        amount,
+        date,
+        this.plugin?.settings.trade.tradingDayCutoffTime
+      );
     }
 
     const transactionId = this.generateTransactionId();
@@ -2493,12 +2677,14 @@ export class AccountPageService extends CustomDataService {
       date: new Date(date),
       type: TransactionType.WITHDRAWAL,
       datePrecision,
+      ...(payoutReceipt ? { payoutReceipt } : {}),
       amount: -amount, 
       description: description || 'Manual withdrawal',
       balanceAfter: 0, 
     };
 
     await this.addManualTransaction(accountName, transaction);
+    return transactionId;
   }
 
   private async tryConvertTrades(
@@ -2561,10 +2747,12 @@ export class AccountPageService extends CustomDataService {
   }
 
   
+  
   private async enhanceAccountWithTransactions(
     account: AccountData,
     trades: AccountTradeData[],
-    pageMetrics: AccountMetrics
+    pageMetrics: AccountMetrics,
+    exitEventLedger = false
   ): Promise<AccountData> {
     
     const enhancedAccount: AccountData = {
@@ -2944,8 +3132,9 @@ export class AccountPageService extends CustomDataService {
       );
       const residualTradePnL = getEffectivePnL(trade) - emittedDividendTotal;
       const settlementDate = trade.settlementTime ?? trade.entryTime;
-      const analyticsDateBasis =
-        this.plugin?.settings?.trade?.analyticsDateBasis ?? 'entry';
+      const analyticsDateBasis = exitEventLedger
+        ? 'exit'
+        : (this.plugin?.settings?.trade?.analyticsDateBasis ?? 'entry');
       const realizedPnlEvents =
         analyticsDateBasis === 'exit'
           ? getTradeRealizedPnlEvents(trade, analyticsDateBasis, this.plugin)
@@ -2962,7 +3151,11 @@ export class AccountPageService extends CustomDataService {
             index === realizedPnlAdjustmentIndex
               ? event.pnl - realizedPnlDividendAdjustment
               : event.pnl;
-          if (amount === 0) {
+          
+          if (
+            amount === 0 &&
+            !(exitEventLedger && hasMissedTradeOutcome(trade))
+          ) {
             continue;
           }
 
@@ -2978,6 +3171,11 @@ export class AccountPageService extends CustomDataService {
         }
       } else if (
         (dividendTransactions.length === 0 || residualTradePnL !== 0) &&
+        !(
+          exitEventLedger &&
+          residualTradePnL === 0 &&
+          !hasMissedTradeOutcome(trade)
+        ) &&
         settlementDate instanceof Date &&
         !isNaN(settlementDate.getTime())
       ) {
@@ -3025,10 +3223,11 @@ export class AccountPageService extends CustomDataService {
         } else if (i < initialDepositIndex) {
           
           
-          
-          if (i <= 2) {
-            console.warn(
-              `AccountPageService: ${sortedTransactions.length - initialDepositIndex} transactions before initial deposit (showing first few)`
+          if (i === 0) {
+            warnOncePerAccount(
+              account.name,
+              'before-initial-deposit',
+              `AccountPageService: ${initialDepositIndex} transactions before the initial deposit of account "${account.name}"`
             );
           }
           runningBalance += transaction.amount;
@@ -3041,8 +3240,10 @@ export class AccountPageService extends CustomDataService {
       }
     } else {
       
-      console.warn(
-        `AccountPageService: No initial deposit found, using zero-based balance calculation`
+      warnOncePerAccount(
+        account.name,
+        'no-initial-deposit',
+        `AccountPageService: No initial deposit found for account "${account.name}", using zero-based balance calculation`
       );
       for (const transaction of sortedTransactions) {
         runningBalance += transaction.amount;
@@ -3262,24 +3463,66 @@ export class AccountPageService extends CustomDataService {
   }
 
   
+  public async getReturnLedgers(
+    tradeTypes?: TradeType[],
+    accountNames?: readonly string[]
+  ): Promise<AccountData[]> {
+    const normalizedTradeTypes = this.normalizeSupportedTradeTypes(tradeTypes);
+    const names =
+      accountNames ??
+      (await this.getAccountCatalogOrThrow(normalizedTradeTypes)).map(
+        (account) => account.name
+      );
+    const snapshots = await Promise.all(
+      names.map((accountName) =>
+        this.getAccountAggregateSnapshot(
+          accountName,
+          normalizedTradeTypes,
+          true
+        )
+      )
+    );
+    
+    
+    const resetPhases = normalizedTradeTypes.includes('regular');
+    return snapshots.flatMap((snapshot) => {
+      if (snapshot === null) return [];
+      const account = this.cloneAccountData(snapshot.account);
+      return [resetPhases ? withPropChallengePhaseResets(account) : account];
+    });
+  }
+
+  
+  public async getAccountNames(tradeTypes?: TradeType[]): Promise<string[]> {
+    try {
+      const normalizedTradeTypes =
+        this.normalizeSupportedTradeTypes(tradeTypes);
+      const groupingSnapshot =
+        await this.getTradeGroupingSnapshot(normalizedTradeTypes);
+      const catalog = await this.getAccountCatalogOrThrow(normalizedTradeTypes);
+
+      return catalog.flatMap(({ name }) => {
+        const { metadata, displayAccountName } = this.resolveAccountMetadata(
+          groupingSnapshot,
+          this.resolveCanonicalAccountName(groupingSnapshot, name)
+        );
+        return metadata ||
+          this.getTradesForAccountLookup(groupingSnapshot, name).length > 0
+          ? [displayAccountName]
+          : [];
+      });
+    } catch (error) {
+      console.error('Error getting account names:', error);
+      return [];
+    }
+  }
+
+  
   public async getAllEnhancedAccounts(
     tradeTypes?: TradeType[]
   ): Promise<AccountData[]> {
     try {
-      const normalizedTradeTypes =
-        this.normalizeSupportedTradeTypes(tradeTypes);
-      const catalog = await this.getAccountCatalog(normalizedTradeTypes);
-      const allAccountNames = catalog.map((account) => account.name);
-
-      const enhancedAccounts = await Promise.all(
-        allAccountNames.map((accountName) =>
-          this.getAccountAggregateSnapshot(accountName, normalizedTradeTypes)
-        )
-      );
-
-      return enhancedAccounts.flatMap((account) =>
-        account === null ? [] : [this.cloneAccountData(account.account)]
-      );
+      return await this.getAllEnhancedAccountsOrThrow(tradeTypes);
     } catch (error) {
       console.error('Error getting all enhanced accounts:', error);
       return [];
@@ -3287,13 +3530,43 @@ export class AccountPageService extends CustomDataService {
   }
 
   
+  public async getAllEnhancedAccountsOrThrow(
+    tradeTypes?: TradeType[]
+  ): Promise<AccountData[]> {
+    const normalizedTradeTypes = this.normalizeSupportedTradeTypes(tradeTypes);
+    const catalog = await this.getAccountCatalogOrThrow(normalizedTradeTypes);
+    const enhancedAccounts = await Promise.all(
+      catalog.map(({ name }) =>
+        this.getAccountAggregateSnapshot(name, normalizedTradeTypes)
+      )
+    );
+
+    return enhancedAccounts.flatMap((account) =>
+      account === null ? [] : [this.cloneAccountData(account.account)]
+    );
+  }
+
+  
   public async deleteAccount(
     accountName: string,
-    options: { deleteAssociatedTrades?: boolean } = {}
+    options: { deleteAssociatedTrades?: boolean } = {},
+    expect?: AccountMetadataExpectation
+  ): Promise<void> {
+    const snapshot = structuredClone(options);
+    return this.runMutationExclusive(() =>
+      this.deleteAccountNow(accountName, snapshot, expect)
+    );
+  }
+
+  private async deleteAccountNow(
+    accountName: string,
+    options: { deleteAssociatedTrades?: boolean },
+    expect?: AccountMetadataExpectation
   ): Promise<void> {
     if (!this.plugin) {
       throw new Error('Plugin not initialized');
     }
+    expect?.(this.findAccountMetadataEntry(accountName)?.metadata);
 
     const accountLookupKey = normalizeAccountLookupKey(accountName);
     const snapshotLookupKeysToRemove = new Set<string>();
@@ -4282,7 +4555,23 @@ export class AccountPageService extends CustomDataService {
       >
     >
   ): Promise<void> {
-    const metadata = this.getAccountMetadata(accountName);
+    const snapshot = structuredClone(updates);
+    return this.runMutationExclusive(() =>
+      this.updateManualTransactionNow(accountName, transactionId, snapshot)
+    );
+  }
+
+  private async updateManualTransactionNow(
+    accountName: string,
+    transactionId: string,
+    updates: Partial<
+      Pick<
+        AccountTransaction,
+        'amount' | 'date' | 'datePrecision' | 'description'
+      >
+    >
+  ): Promise<void> {
+    const metadata = this.getTransactionMutationMetadata(accountName);
     if (!metadata?.manualTransactions) {
       throw new Error('No manual transactions found for this account');
     }
@@ -4295,15 +4584,40 @@ export class AccountPageService extends CustomDataService {
     }
 
     const existingTransaction = metadata.manualTransactions[transactionIndex];
+    if (updates.date) {
+      assertManualTransactionDate(
+        updates.date,
+        updates.datePrecision ?? existingTransaction.datePrecision
+      );
+    }
     const updatedTransaction: AccountTransaction = {
       ...existingTransaction,
       ...updates,
       date: updates.date ? new Date(updates.date) : existingTransaction.date,
       balanceAfter: 0, 
     };
+    if (
+      existingTransaction.payoutReceipt &&
+      ((updates.amount !== undefined &&
+        Math.abs(updates.amount) !== Math.abs(existingTransaction.amount)) ||
+        (updates.date !== undefined &&
+          new Date(updates.date).getTime() !==
+            existingTransaction.date.getTime()))
+    ) {
+      updatedTransaction.payoutReceipt = {
+        basis: 'policy_estimate',
+        grossRequest: Math.abs(updates.amount ?? existingTransaction.amount),
+        traderNetAmount: null,
+        source: existingTransaction.payoutReceipt.source,
+        reviewReason:
+          'Amount or timestamp was edited. The earlier payout estimate is no longer applicable.',
+      };
+    }
 
     
     if (updates.amount !== undefined) {
+      if (!Number.isFinite(updates.amount))
+        throw new Error('Transaction amount must be finite');
       if (
         existingTransaction.type === TransactionType.DEPOSIT &&
         updates.amount <= 0
@@ -4323,12 +4637,12 @@ export class AccountPageService extends CustomDataService {
       }
     }
 
+    if (!Number.isFinite(updatedTransaction.date.getTime()))
+      throw new Error('Transaction date is invalid');
     metadata.manualTransactions[transactionIndex] = updatedTransaction;
     await this.saveAccountMetadata(accountName, {
-      ...metadata,
-      lastUpdated: new Date(),
+      manualTransactions: metadata.manualTransactions,
     });
-    await this.refreshAccountData();
 
     eventBus.publish('account:changed', {
       action: 'updated',
@@ -4341,7 +4655,16 @@ export class AccountPageService extends CustomDataService {
     accountName: string,
     transactionId: string
   ): Promise<void> {
-    const metadata = this.getAccountMetadata(accountName);
+    return this.runMutationExclusive(() =>
+      this.deleteManualTransactionNow(accountName, transactionId)
+    );
+  }
+
+  private async deleteManualTransactionNow(
+    accountName: string,
+    transactionId: string
+  ): Promise<void> {
+    const metadata = this.getTransactionMutationMetadata(accountName);
     if (!metadata?.manualTransactions) {
       throw new Error('No manual transactions found for this account');
     }
@@ -4355,10 +4678,8 @@ export class AccountPageService extends CustomDataService {
 
     metadata.manualTransactions.splice(transactionIndex, 1);
     await this.saveAccountMetadata(accountName, {
-      ...metadata,
-      lastUpdated: new Date(),
+      manualTransactions: metadata.manualTransactions,
     });
-    await this.refreshAccountData();
 
     eventBus.publish('account:changed', {
       action: 'transaction-deleted',
@@ -4377,29 +4698,64 @@ export class AccountPageService extends CustomDataService {
     accountName: string,
     transaction: AccountTransaction
   ): Promise<void> {
-    const metadata = this.getAccountMetadata(accountName) || {
-      name: accountName,
-      accountType: AccountType.DEMO,
-      createdDate: new Date(),
-      initialBalance: 10000,
-      drawdownType: DrawdownType.NONE,
-      drawdownAmount: 0,
-      hasProfitTarget: false,
-      profitTarget: 0,
-      profitTargetType: ProfitTargetType.ABSOLUTE,
-      monthlyCost: 0,
-      lastUpdated: new Date(),
-    };
+    const snapshot = structuredClone(transaction);
+    return this.runMutationExclusive(() =>
+      this.addManualTransactionNow(accountName, snapshot)
+    );
+  }
+
+  private getTransactionMutationMetadata(
+    accountName: string
+  ): AccountMetadata | undefined {
+    const raw = this.findAccountMetadataEntry(accountName)?.metadata;
+    if (!raw) return undefined;
+    const transactions = raw.manualTransactions;
+    if (transactions === undefined) return { ...raw };
+    const invalid = () =>
+      new Error(
+        'Account transactions require repair before they can be changed. No transactions were discarded.'
+      );
+    if (!Array.isArray(transactions)) throw invalid();
+    const parsed: AccountTransaction[] = [];
+    for (const transaction of transactions) {
+      if (
+        !transaction ||
+        typeof transaction.id !== 'string' ||
+        !transaction.id ||
+        typeof transaction.type !== 'string' ||
+        !transaction.type ||
+        !Number.isFinite(transaction.amount) ||
+        !Number.isFinite(transaction.balanceAfter)
+      )
+        throw invalid();
+      const date = this.safeParseDate(transaction.date);
+      if (!date) throw invalid();
+      parsed.push({ ...transaction, date: new Date(date) });
+    }
+    return { ...raw, manualTransactions: parsed };
+  }
+
+  private async addManualTransactionNow(
+    accountName: string,
+    transaction: AccountTransaction
+  ): Promise<void> {
+    const existing = this.getTransactionMutationMetadata(accountName);
+    const metadata =
+      existing ??
+      this.buildAccountMetadata(accountName, undefined, {
+        initialBalance: 10000,
+      });
 
     if (!metadata.manualTransactions) {
       metadata.manualTransactions = [];
     }
 
     metadata.manualTransactions.push(transaction);
-    metadata.lastUpdated = new Date();
 
-    await this.saveAccountMetadata(accountName, metadata);
-    await this.refreshAccountData();
+    await this.saveAccountMetadata(
+      accountName,
+      existing ? { manualTransactions: metadata.manualTransactions } : metadata
+    );
 
     eventBus.publish('account:changed', {
       action: 'transaction-added',
@@ -4414,6 +4770,7 @@ export class AccountPageService extends CustomDataService {
 
   
   public destroy(): void {
+    this.mutationsClosed = true;
     
     if (this.unsubscribeTradeChanged) {
       this.unsubscribeTradeChanged();
@@ -4423,6 +4780,9 @@ export class AccountPageService extends CustomDataService {
     }
     if (this.unsubscribeMissedTradeChanged) {
       this.unsubscribeMissedTradeChanged();
+    }
+    if (this.unsubscribeMissedTradeDataChanged) {
+      this.unsubscribeMissedTradeDataChanged();
     }
     if (this.unsubscribeBacktestTradeChanged) {
       this.unsubscribeBacktestTradeChanged();

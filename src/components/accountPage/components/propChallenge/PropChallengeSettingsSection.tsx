@@ -18,6 +18,7 @@ import type {
 } from '../../../../services/propChallenge/types';
 import { getAvailableAccountTypes } from './propChallengeLifecycleActions';
 import { Button } from '../../../ui/Button';
+import { Plus } from '../../../shared/icons/ObsidianIcon';
 import { PhaseEditor } from './PhaseEditor';
 import { PropChallengeCostsEditor } from './PropChallengeCostsEditor';
 import { PropFirmProfilePicker } from './PropFirmProfilePicker';
@@ -38,7 +39,186 @@ interface Props {
   accountType: string;
   onChange: (value: PropChallengeConfig) => void;
   onAccountTypeChange: (accountType: string) => void;
+  
+  monthlyCostField: React.ReactNode;
 }
+
+type ChallengePhase = PropChallengeConfig['phases'][number];
+
+
+function resolveSelectedPhase(
+  value: PropChallengeConfig | undefined,
+  selectedPhaseId: string
+): ChallengePhase | undefined {
+  if (!value) return undefined;
+  return (
+    value.phases.find((phase) => phase.id === selectedPhaseId) ??
+    value.phases.find((phase) => phase.id === value.currentPhaseId) ??
+    value.phases[0]
+  );
+}
+
+
+const hasLinkedIdentity = (
+  value: PropChallengeConfig,
+  existingAccount: boolean
+): boolean =>
+  existingAccount &&
+  value.profileRef !== undefined &&
+  Boolean(value.firmName?.trim() && value.challengeName.trim());
+
+
+const isPhaseRemovable = (
+  value: PropChallengeConfig,
+  selectedPhase: ChallengePhase | undefined
+): boolean =>
+  value.phases.length > 1 &&
+  !selectedPhase?.policyHistory?.length &&
+  !(value.status !== 'active' && selectedPhase?.id === value.currentPhaseId);
+
+
+const canPickCatalogProfile = (plugin: ReturnType<typeof usePlugin>) =>
+  Boolean(
+    plugin?.settings.backendIntegration?.subscriptionTier === 'premium' &&
+    BackendSecretStorage.hasAuthToken(plugin)
+  );
+
+
+const isReopenablePhase = (
+  value: PropChallengeConfig,
+  selectedPhase: ChallengePhase | undefined
+): boolean =>
+  value.status === 'failed' && selectedPhase?.id === value.currentPhaseId;
+
+interface NameFieldProps {
+  value: PropChallengeConfig;
+  disabled: boolean;
+  onChange: (value: PropChallengeConfig) => void;
+}
+
+const FirmNameField: React.FC<NameFieldProps> = ({
+  value,
+  disabled,
+  onChange,
+}) => (
+  <label className="journalit-prop-challenge-field">
+    <span>
+      {t('account.prop-challenge.firm-name')}{' '}
+      <span className="setting-item-name-optional">
+        {t('form.field.optional')}
+      </span>
+    </span>
+    <input
+      value={value.firmName ?? ''}
+      placeholder={t('account.prop-challenge.firm-name-placeholder')}
+      onChange={(event) =>
+        onChange({
+          ...value,
+          firmName: event.target.value || undefined,
+        })
+      }
+      disabled={disabled}
+    />
+  </label>
+);
+
+const ChallengeNameField: React.FC<NameFieldProps> = ({
+  value,
+  disabled,
+  onChange,
+}) => (
+  <label className="journalit-prop-challenge-field">
+    <span>{t('account.prop-challenge.challenge-name')}</span>
+    <input
+      value={value.challengeName}
+      placeholder={t('account.prop-challenge.challenge-name-placeholder')}
+      onChange={(event) =>
+        onChange({ ...value, challengeName: event.target.value })
+      }
+      disabled={disabled}
+    />
+  </label>
+);
+
+
+const PhaseWorkspace: React.FC<{
+  value: PropChallengeConfig;
+  selectedPhase: ChallengePhase | undefined;
+  currencyCode: string;
+  disabled: boolean;
+  onSelectPhase: (id: string) => void;
+  onAddPhase: () => void;
+  onRemovePhase: () => void;
+  
+  onReopenPhase: (() => void) | undefined;
+  onChange: (value: PropChallengeConfig) => void;
+  
+  onCurrentStageChange: (stage: PropChallengeStage) => void;
+}> = ({
+  value,
+  selectedPhase,
+  currencyCode,
+  disabled,
+  onSelectPhase,
+  onAddPhase,
+  onRemovePhase,
+  onReopenPhase,
+  onChange,
+  onCurrentStageChange,
+}) => {
+  const timelineError = validatePhaseTimeline(value);
+  return (
+    <div className="journalit-prop-challenge-phase-workspace">
+      <PhaseTimeline
+        phases={value.phases}
+        selectedPhaseId={selectedPhase?.id}
+        currentPhaseId={value.currentPhaseId}
+        disabled={disabled}
+        onSelect={onSelectPhase}
+      />
+      <div className="journalit-prop-challenge-phase-actions">
+        <Button size="small" onClick={onAddPhase} disabled={disabled}>
+          <Plus size={15} aria-hidden="true" />
+          {t('account.prop-challenge.add-phase')}
+        </Button>
+        {onReopenPhase && (
+          <Button size="small" onClick={onReopenPhase} disabled={disabled}>
+            {t('account.prop-challenge.actions.reopen')}
+          </Button>
+        )}
+        <Button
+          size="small"
+          onClick={onRemovePhase}
+          disabled={disabled || !isPhaseRemovable(value, selectedPhase)}
+        >
+          {t('account.prop-challenge.remove-phase')}
+        </Button>
+      </div>
+      {selectedPhase && (
+        <PhaseEditor
+          key={selectedPhase.id}
+          phase={selectedPhase}
+          profileRef={value.profileRef}
+          phases={value.phases}
+          currencyCode={currencyCode}
+          disabled={disabled || Boolean(selectedPhase.policyHistory?.length)}
+          datesDisabled={disabled}
+          onChange={(nextPhase) =>
+            onChange(updatePropChallengePhase(value, nextPhase))
+          }
+          onStageChange={(stage) => {
+            if (selectedPhase.id === value.currentPhaseId) {
+              onCurrentStageChange(stage);
+            }
+          }}
+        />
+      )}
+      {timelineError && (
+        <div className="error-message-inline">{timelineError}</div>
+      )}
+    </div>
+  );
+};
 
 export function PropChallengeSettingsSection({
   value,
@@ -48,6 +228,7 @@ export function PropChallengeSettingsSection({
   accountType,
   onChange,
   onAccountTypeChange,
+  monthlyCostField,
 }: Props) {
   const plugin = usePlugin();
   const dateDraftGate = useContext(DateDraftGateContext);
@@ -56,22 +237,14 @@ export function PropChallengeSettingsSection({
   
   
   const firmIndex = usePropFirmIndex();
-  const showProfilePicker = Boolean(
-    plugin?.settings.backendIntegration?.subscriptionTier === 'premium' &&
-    BackendSecretStorage.hasAuthToken(plugin)
-  );
+  const showProfilePicker = canPickCatalogProfile(plugin);
   
   
   
   const showPrefillTeaser = !showProfilePicker && !existingAccount;
-  const selectedPhase =
-    value?.phases.find((phase) => phase.id === selectedPhaseId) ??
-    value?.phases.find((phase) => phase.id === value.currentPhaseId) ??
-    value?.phases[0];
+  const selectedPhase = resolveSelectedPhase(value, selectedPhaseId);
 
   if (!value) return null;
-
-  const timelineError = validatePhaseTimeline(value);
 
   const alignAccountType = (stage: PropChallengeStage) => {
     const resolved = resolveStageAccountType(
@@ -114,10 +287,7 @@ export function PropChallengeSettingsSection({
     onChange(next);
   };
 
-  
-  
-  const canReopenSelectedPhase =
-    value.status === 'failed' && selectedPhase?.id === value.currentPhaseId;
+  const canReopenSelectedPhase = isReopenablePhase(value, selectedPhase);
 
   const reopenSelectedPhase = () => {
     if (!canReopenSelectedPhase || !selectedPhase) return;
@@ -125,43 +295,17 @@ export function PropChallengeSettingsSection({
     onChange(reopenChallenge(value));
   };
 
+  const showsLinkedIdentity = hasLinkedIdentity(value, existingAccount);
   
-  
-  const showsLinkedIdentity =
-    existingAccount &&
-    value.profileRef !== undefined &&
-    Boolean(value.firmName?.trim() && value.challengeName.trim());
-
-  const firmNameField = value ? (
-    <label className="journalit-prop-challenge-field">
-      <span>{t('account.prop-challenge.firm-name')}</span>
-      <input
-        value={value.firmName ?? ''}
-        placeholder={t('account.prop-challenge.firm-name-placeholder')}
-        onChange={(event) =>
-          onChange({
-            ...value,
-            firmName: event.target.value || undefined,
-          })
-        }
-        disabled={disabled}
-      />
-    </label>
-  ) : null;
-
-  const challengeNameField = value ? (
-    <label className="journalit-prop-challenge-field">
-      <span>{t('account.prop-challenge.challenge-name')}</span>
-      <input
-        value={value.challengeName}
-        placeholder={t('account.prop-challenge.challenge-name-placeholder')}
-        onChange={(event) =>
-          onChange({ ...value, challengeName: event.target.value })
-        }
-        disabled={disabled}
-      />
-    </label>
-  ) : null;
+  const showsIdentityFields = existingAccount
+    ? !showsLinkedIdentity
+    : !showProfilePicker;
+  const firmNameField = (
+    <FirmNameField value={value} disabled={disabled} onChange={onChange} />
+  );
+  const challengeNameField = (
+    <ChallengeNameField value={value} disabled={disabled} onChange={onChange} />
+  );
 
   return (
     <div className="setting-item journalit-setting-item--full-width journalit-prop-challenge-section">
@@ -201,7 +345,7 @@ export function PropChallengeSettingsSection({
               {value.firmName} · {value.challengeName}
             </p>
           )}
-          {(existingAccount ? !showsLinkedIdentity : !showProfilePicker) && (
+          {showsIdentityFields && (
             <>
               
               <div className="journalit-prop-challenge-identity-block">
@@ -212,7 +356,7 @@ export function PropChallengeSettingsSection({
                 {showPrefillTeaser && (
                   <PropFirmPrefillMatch
                     firms={firmIndex}
-                    typedFirmName={value?.firmName ?? ''}
+                    typedFirmName={value.firmName ?? ''}
                   />
                 )}
               </div>
@@ -237,76 +381,23 @@ export function PropChallengeSettingsSection({
             }}
           />
         </div>
-        <div className="journalit-prop-challenge-phase-workspace">
-          <PhaseTimeline
-            phases={value.phases}
-            selectedPhaseId={selectedPhase?.id}
-            currentPhaseId={value.currentPhaseId}
-            disabled={disabled}
-            onSelect={(id) => {
-              if (dateDraftGate && !dateDraftGate.confirm()) return;
-              setSelectedPhaseId(id);
-            }}
-          />
-          <div className="journalit-prop-challenge-phase-actions">
-            <Button
-              variant="plain"
-              size="small"
-              onClick={addPhase}
-              disabled={disabled}
-            >
-              {t('account.prop-challenge.add-phase')}
-            </Button>
-            {canReopenSelectedPhase && (
-              <Button
-                variant="plain"
-                size="small"
-                onClick={reopenSelectedPhase}
-                disabled={disabled}
-              >
-                {t('account.prop-challenge.actions.reopen')}
-              </Button>
-            )}
-            <Button
-              variant="plain"
-              size="small"
-              onClick={removeSelectedPhase}
-              disabled={
-                disabled ||
-                value.phases.length <= 1 ||
-                Boolean(selectedPhase?.policyHistory?.length) ||
-                (value.status !== 'active' &&
-                  selectedPhase?.id === value.currentPhaseId)
-              }
-            >
-              {t('account.prop-challenge.remove-phase')}
-            </Button>
-          </div>
-          {selectedPhase && (
-            <PhaseEditor
-              key={selectedPhase.id}
-              phase={selectedPhase}
-              profileRef={value.profileRef}
-              phases={value.phases}
-              currencyCode={currencyCode}
-              disabled={
-                disabled || Boolean(selectedPhase.policyHistory?.length)
-              }
-              datesDisabled={disabled}
-              onChange={(nextPhase) =>
-                onChange(updatePropChallengePhase(value, nextPhase))
-              }
-              onStageChange={(stage) => {
-                if (selectedPhase.id === value.currentPhaseId) {
-                  alignAccountType(stage);
-                }
-              }}
-            />
-          )}
-          {timelineError && (
-            <div className="error-message-inline">{timelineError}</div>
-          )}
-        </div>
+        <PhaseWorkspace
+          value={value}
+          selectedPhase={selectedPhase}
+          currencyCode={currencyCode}
+          disabled={disabled}
+          onSelectPhase={(id) => {
+            if (dateDraftGate && !dateDraftGate.confirm()) return;
+            setSelectedPhaseId(id);
+          }}
+          onAddPhase={addPhase}
+          onRemovePhase={removeSelectedPhase}
+          onReopenPhase={
+            canReopenSelectedPhase ? reopenSelectedPhase : undefined
+          }
+          onChange={onChange}
+          onCurrentStageChange={alignAccountType}
+        />
         {selectedPhase && (
           <PhasePolicyHistory
             phase={selectedPhase}
@@ -315,6 +406,7 @@ export function PropChallengeSettingsSection({
           />
         )}
         <PropChallengeCostsEditor
+          monthlyCostField={monthlyCostField}
           value={value}
           disabled={disabled}
           onChange={onChange}

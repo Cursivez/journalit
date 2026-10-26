@@ -5,7 +5,7 @@ interface DisplayNameSettingsOwner {
   saveSettings: () => Promise<void>;
 }
 
-export const DISPLAY_NAME_CHANGED_EVENT = 'journalit:display-name-changed';
+const DISPLAY_NAME_CHANGED_EVENT = 'journalit:display-name-changed';
 
 interface DisplayNameChangedEventDetail {
   displayName: string;

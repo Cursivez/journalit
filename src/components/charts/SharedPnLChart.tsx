@@ -4,14 +4,7 @@ import { logger } from '../../utils/logger';
 import React, { useEffect, useMemo, useCallback } from 'react';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { t } from '../../lang/helpers';
-import {
-  AreaChart,
-  Area,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  ReferenceLine,
-} from 'recharts';
+import { AreaChart, Area, YAxis, CartesianGrid, ReferenceLine } from 'recharts';
 import type { TooltipProps } from 'recharts';
 import {
   generateNiceAxis,
@@ -19,11 +12,19 @@ import {
   PnLChartDataPoint,
 } from '../../utils/chartUtils';
 import { ChartBase } from './ChartBase';
+import { DateXAxis } from './DateXAxis';
 import { ChartTooltip } from './ChartTooltip';
 import { RechartsPortalTooltip } from './RechartsPortalTooltip';
 import { PnLChartProps } from './types';
 import { useCurrency } from '../../contexts/CurrencyContext';
 import type JournalitPlugin from '../../main';
+import { shouldAnimateSeries, useChartAnimationActive } from './chartAnimation';
+import { skipVerticalGridCoordinates } from './chartGrid';
+import {
+  SeriesGlowFilter,
+  SeriesShadowFilter,
+  SignedStrokeGradientStops,
+} from './SignedSeriesDefs';
 
 const EPSILON = 1e-6; 
 
@@ -60,7 +61,6 @@ type PnLChartDataPointChartClickEvent = {
 interface SharedPnLChartProps extends PnLChartProps {
   plugin?: JournalitPlugin | null; 
   currencyOverride?: string; 
-  isAnimationActive?: boolean;
 }
 
 const DEFAULT_PNL_CHART_MARGIN = {
@@ -142,8 +142,8 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
     plugin,
     currencyOverride,
     showAccountTooltip = false,
-    isAnimationActive = true,
   }) => {
+    const isAnimationActive = useChartAnimationActive();
     const chartRef = React.useRef<HTMLDivElement>(null);
     const { currency: globalCurrency } = useCurrency();
     
@@ -172,6 +172,8 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
         })),
       [data, isPnlMasked]
     );
+    const animateSeries =
+      isAnimationActive && shouldAnimateSeries(displayData.length);
 
     
     const dataRange = useMemo(() => {
@@ -461,57 +463,21 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
               x2="0"
               y2="1"
             >
-              {actualTransitionOffset <= 0.1 ? (
-                
-                <>
-                  <stop offset="0%" stopColor={negativeColor} />
-                  <stop offset="100%" stopColor={negativeColor} />
-                </>
-              ) : actualTransitionOffset >= 99.9 ? (
-                
-                <>
-                  <stop offset="0%" stopColor={positiveColor} />
-                  <stop offset="100%" stopColor={positiveColor} />
-                </>
-              ) : (
-                
-                <>
-                  <stop offset="0%" stopColor={positiveColor} />
-                  <stop
-                    offset={`${Math.max(0.1, actualTransitionOffset - 0.1)}%`}
-                    stopColor={positiveColor}
-                  />
-                  <stop
-                    offset={`${Math.min(99.9, actualTransitionOffset + 0.1)}%`}
-                    stopColor={negativeColor}
-                  />
-                  <stop offset="100%" stopColor={negativeColor} />
-                </>
-              )}
+              <SignedStrokeGradientStops
+                transitionOffset={actualTransitionOffset}
+                positiveColor={positiveColor}
+                negativeColor={negativeColor}
+              />
             </linearGradient>
             
-            <filter id={`${chartId}-shadow`} height="120%">
-              <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
-            </filter>
+            <SeriesShadowFilter id={`${chartId}-shadow`} />
             
-            <filter id={`${chartId}-glow`} height="130%">
-              <feGaussianBlur
-                in="SourceGraphic"
-                stdDeviation="2"
-                result="blur"
-              />
-              <feColorMatrix
-                in="blur"
-                mode="matrix"
-                values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
-                result="glow"
-              />
-              <feComposite in="SourceGraphic" in2="glow" operator="over" />
-            </filter>
+            <SeriesGlowFilter id={`${chartId}-glow`} />
           </defs>
           <CartesianGrid
             strokeDasharray="3 3"
             vertical={false}
+            verticalCoordinatesGenerator={skipVerticalGridCoordinates}
             stroke="var(--background-modifier-border)"
             strokeOpacity={0.5}
           />
@@ -523,8 +489,8 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
             strokeWidth={1.5}
             ifOverflow="hidden"
           />
-          <XAxis
-            dataKey="dateKey"
+          <DateXAxis
+            chartData={displayData}
             height={16}
             tickMargin={4}
             tickLine={false}
@@ -596,8 +562,8 @@ export const SharedPnLChart = React.memo<SharedPnLChartProps>(
               fill: 'var(--interactive-accent, #4299e1)',
               filter: `url(#${chartId}-glow)`,
             }}
-            isAnimationActive={isAnimationActive}
-            animationDuration={isAnimationActive ? 500 : 0}
+            isAnimationActive={animateSeries}
+            animationDuration={animateSeries ? 500 : 0}
             animationEasing="ease-out"
             filter={`url(#${chartId}-shadow)`}
           />{' '}

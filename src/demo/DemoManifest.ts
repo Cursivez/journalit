@@ -2,7 +2,7 @@ import type { Plugin } from 'obsidian';
 import { isSupportedTimeZone } from '../services/propChallenge/normalization';
 
 export const DEMO_PACK_VERSION = 4;
-export const DEMO_MANIFEST_SCHEMA_VERSION = 1;
+const DEMO_MANIFEST_SCHEMA_VERSION = 1;
 export const DEMO_DEFAULT_ROOT = 'Journalit Sample';
 const DEMO_STATE_PARENT_DIRECTORY = 'journalit';
 const DEMO_STATE_DIRECTORY = 'sample-journal';
@@ -136,7 +136,7 @@ function parseOwnedEntity(value: unknown): DemoOwnedEntity | null {
   };
 }
 
-export function parseDemoManifest(value: unknown): DemoManifest | null {
+function parseDemoManifest(value: unknown): DemoManifest | null {
   if (!isRecord(value)) return null;
   if (
     value.schemaVersion !== DEMO_MANIFEST_SCHEMA_VERSION ||
@@ -320,14 +320,13 @@ export class DemoManifestStore {
   }
 
   async remove(): Promise<void> {
-    for (const path of [
-      this.getPath(),
-      this.getTemporaryPath(),
-      this.getBackupPath(),
-    ]) {
-      if (await this.plugin.app.vault.adapter.exists(path)) {
-        await this.plugin.app.vault.adapter.remove(path);
-      }
-    }
+    const adapter = this.plugin.app.vault.adapter;
+    await Promise.all(
+      [this.getPath(), this.getTemporaryPath(), this.getBackupPath()].map(
+        async (path) => {
+          if (await adapter.exists(path)) await adapter.remove(path);
+        }
+      )
+    );
   }
 }

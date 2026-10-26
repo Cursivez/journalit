@@ -84,6 +84,13 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     availableIn: ['drc'],
   },
   {
+    type: 'day-trade-fields',
+    name: t('widget.day-trade-fields.name'),
+    description: t('widget.day-trade-fields.description'),
+    category: 'content',
+    availableIn: ['drc'],
+  },
+  {
     type: 'session-log',
     name: t('widget.session-log.name'),
     description: t('widget.session-log.description'),

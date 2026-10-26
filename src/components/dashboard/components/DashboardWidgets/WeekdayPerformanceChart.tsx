@@ -13,7 +13,6 @@ import {
 } from 'recharts';
 import { t } from '../../../../lang/helpers';
 import { usePlugin } from '../../../../hooks/usePlugin';
-import { useCurrency } from '../../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import { calculateEffectiveRMultiple } from '../../../../utils/formatting';
 import {
@@ -40,6 +39,7 @@ import {
   buildCurrencyConversionMetadata,
   CurrencyConversionInfo,
 } from '../../../shared/display/CurrencyConversionInfo';
+import { skipVerticalGridCoordinates } from '../../../charts/chartGrid';
 
 type WeekdayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
@@ -309,10 +309,9 @@ const getWeekdayLabelMap = (): Record<WeekdayKey, string> => ({
 });
 
 export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
-  ({ filters, dateFormat }) => {
+  ({ dateFormat }) => {
     const chartRef = React.useRef<HTMLDivElement>(null);
     const plugin = usePlugin();
-    const { currency } = useCurrency();
     const { formatValue, shouldMask } = useDisplayFormatter();
     const weekdayLabelMap = getWeekdayLabelMap();
 
@@ -360,16 +359,12 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
     };
 
     return (
-      <BaseWidget
-        filters={filters}
-        dateFormat={dateFormat}
-        skeletonType="bar-chart"
-      >
+      <BaseWidget dateFormat={dateFormat} skeletonType="bar-chart">
         {(data) => {
           const activeCurrency =
             (data.metrics.isMultiCurrency
               ? data.metrics.conversionBaseCurrency
-              : currency) || currency;
+              : data.currency) || data.currency;
           const currencyCode = parseCuratedCurrencyCode(activeCurrency);
 
           const visibleDays = skipWeekends
@@ -616,6 +611,7 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
                     <CartesianGrid
                       strokeDasharray="3 3"
                       vertical={false}
+                      verticalCoordinatesGenerator={skipVerticalGridCoordinates}
                       stroke="var(--background-modifier-border)"
                       strokeOpacity={0.5}
                     />

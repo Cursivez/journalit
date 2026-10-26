@@ -6,14 +6,8 @@ export class TradeEventBridge {
     payload: TradeCommittedPayload,
     options?: { suppressLegacyTradeChanged?: boolean }
   ): void {
-    const shouldEmitLegacyTradeChanged = !options?.suppressLegacyTradeChanged;
-    const committedPayload: TradeCommittedPayload = {
-      ...payload,
-      legacyTradeChangedExpected: shouldEmitLegacyTradeChanged,
-    };
-
-    eventBus.publish('trade:committed', committedPayload);
-    if (shouldEmitLegacyTradeChanged) {
+    eventBus.publish('trade:committed', payload);
+    if (!options?.suppressLegacyTradeChanged) {
       const delay = this.getLegacyDelay(payload.change.action);
       window.setTimeout(() => {
         eventBus.publish('trade:changed', this.toLegacyPayload(payload.change));

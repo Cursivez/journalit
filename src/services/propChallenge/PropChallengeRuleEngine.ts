@@ -7,10 +7,15 @@ import type {
   PropChallengePhase,
   PropChallengePolicyRevision,
   PropChallengeRule,
+  ExecutablePropChallengeRule,
 } from './types';
 import { policyAt, latestCustomTransition } from './PropChallengePolicyHistory';
-import { doesPhaseOwnTradeAt } from './PropChallengeConfig';
+import {
+  doesPhaseOwnTradeAt,
+  resolvePhaseProfitTarget,
+} from './PropChallengeConfig';
 import { normalizeLiveBalanceAdjustment } from '../account/liveBalanceAdjustment';
+import { isDisputedRule, isExecutableRule } from './PropChallengeRuleReview';
 
 
 const PROP_CHALLENGE_WARNING_THRESHOLD = 0.8;
@@ -38,6 +43,8 @@ interface ProfitTargetRuleEvaluation extends RuleEvaluationBase {
   kind: 'profit_target';
   targetBalance: number;
   targetReached: boolean;
+  
+  targetNeedsBalance: boolean;
 }
 
 interface DrawdownRuleEvaluation extends RuleEvaluationBase {
@@ -103,6 +110,7 @@ interface MinimumProfitableDaysRuleEvaluation extends RuleEvaluationBase {
 
 interface ConsistencyRuleEvaluation extends RuleEvaluationBase {
   kind: 'consistency';
+  comparison?: 'strictly_below';
   bestDayProfit: number;
   bestDayPercent: number;
   totalProfit: number;
@@ -110,13 +118,12 @@ interface ConsistencyRuleEvaluation extends RuleEvaluationBase {
   requiredTotalProfit: number;
 }
 
-interface MaxPositionSizeRuleEvaluation extends RuleEvaluationBase {
-  kind: 'max_position_size';
-  violatingTradePaths: string[];
-  violatingTradingDays: string[];
-}
-
 export type PropChallengeRuleEvaluation =
+  | (RuleEvaluationBase & {
+      kind: 'manual_review';
+      reason: string;
+      reviewRequired: boolean;
+    })
   | ProfitTargetRuleEvaluation
   | DrawdownRuleEvaluation
   | DailyLossLimitRuleEvaluation
@@ -124,18 +131,46 @@ export type PropChallengeRuleEvaluation =
   | LiveReviewDailyProfitRuleEvaluation
   | MinimumTradingDaysRuleEvaluation
   | MinimumProfitableDaysRuleEvaluation
-  | ConsistencyRuleEvaluation
-  | MaxPositionSizeRuleEvaluation;
+  | ConsistencyRuleEvaluation;
 
 export function hasFundedLimitWarning(
   rules: readonly PropChallengeRuleEvaluation[]
 ): boolean {
   return rules.some((rule) =>
-    rule.kind === 'drawdown'
-      ? rule.currentBufferWarning
-      : rule.kind === 'daily_loss_limit'
-        ? rule.currentTradingDayWarning
-        : false
+    rule.kind === 'manual_review' ? rule.warning : isFundedRiskWarning(rule)
+  );
+}
+
+
+export function isUnconfirmedTerm(rule: PropChallengeRuleEvaluation): boolean {
+  return rule.kind === 'manual_review' && rule.target === 0;
+}
+
+function isFundedRiskWarning(rule: PropChallengeRuleEvaluation): boolean {
+  return rule.kind === 'drawdown'
+    ? rule.currentBufferWarning
+    : rule.kind === 'daily_loss_limit'
+      ? rule.currentTradingDayWarning
+      : false;
+}
+
+
+export function isReviewOnlyWarning(
+  rules: readonly PropChallengeRuleEvaluation[],
+  funded = false
+): boolean {
+  return (
+    rules.some((rule) => rule.kind === 'manual_review' && rule.warning) &&
+    !rules.some(
+      (rule) =>
+        rule.kind !== 'manual_review' &&
+        (funded
+          ? isFundedRiskWarning(rule)
+          : rule.warning ||
+            (rule.kind === 'daily_loss_limit' &&
+              rule.breachAction === 'suspend_until_next_session' &&
+              rule.currentTradingDayBreached))
+    )
   );
 }
 
@@ -162,6 +197,7 @@ export function isPropChallengeAchievementRule(
     case 'daily_profit_cap':
     case 'live_review_daily_profit':
     case 'max_position_size':
+    case 'manual_review':
       return false;
     default: {
       const exhaustive: never = kind;
@@ -173,7 +209,7 @@ export function isPropChallengeAchievementRule(
 interface PropChallengeFailure {
   date: Date;
   ruleId: string;
-  ruleKind: 'drawdown' | 'daily_loss_limit' | 'max_position_size';
+  ruleKind: 'drawdown' | 'daily_loss_limit';
 }
 
 export interface PropChallengePhaseEvaluation {
@@ -418,17 +454,6 @@ function waivedThrough(phase: PropChallengePhase, ruleId: string): number {
   return through;
 }
 
-
-function positionContracts(
-  trade: AccountTradeData,
-  microsPerContract: number | undefined
-): number {
-  const size = Math.abs(trade.positionSize);
-  return microsPerContract !== undefined && trade.isMicroFutures
-    ? size / microsPerContract
-    : size;
-}
-
 function applyTrailingFloorLock(
   candidate: number,
   lockAtBalance?: number
@@ -501,7 +526,13 @@ function evaluateDrawdown(
       payoutAftermath?.balanceAction === 'reset_to_starting_balance'
         ? phase.startingBalance
         : balance + event.amount;
-    if (payoutAftermath?.drawdownAction === 'lock_at_balance') {
+    if (payoutAftermath?.drawdownAction === 'raise_to_starting_balance') {
+      
+      if (floor < phase.startingBalance) {
+        floor = phase.startingBalance;
+        trailingFloorLocked = true;
+      }
+    } else if (payoutAftermath?.drawdownAction === 'lock_at_balance') {
       floor = payoutAftermath.drawdownFloor ?? phase.startingBalance;
       trailingFloorLocked = true;
     } else if (
@@ -861,7 +892,7 @@ function evaluateDailyLoss(
 
 function evaluateRule(
   rule: Exclude<
-    PropChallengeRule,
+    ExecutablePropChallengeRule,
     { kind: 'drawdown' | 'daily_loss_limit' | 'daily_profit_cap' }
   >,
   phase: PropChallengePhase,
@@ -877,10 +908,14 @@ function evaluateRule(
 ): PropChallengeRuleEvaluation {
   switch (rule.kind) {
     case 'profit_target': {
-      const profitTarget =
-        rule.targetType === 'percentage'
-          ? (phase.startingBalance * rule.amount) / 100
-          : rule.amount;
+      
+      
+      
+      const resolvedTarget = resolvePhaseProfitTarget(
+        rule,
+        phase.startingBalance
+      );
+      const profitTarget = resolvedTarget ?? 0;
       const withdrawalCredit = rule.creditWithdrawals
         ? events.reduce(
             (total, event) =>
@@ -889,19 +924,26 @@ function evaluateRule(
           )
         : 0;
       const currentProfit = objectiveProfit + withdrawalCredit;
-      const targetReached = currentProfit >= profitTarget;
+      const targetReached =
+        resolvedTarget !== undefined && currentProfit >= resolvedTarget;
       return {
         ruleId: rule.id,
         kind: rule.kind,
         current: currentProfit,
         target: profitTarget,
-        progress: profitTarget > 0 ? currentProfit / profitTarget : 1,
+        progress:
+          resolvedTarget === undefined
+            ? 0
+            : profitTarget > 0
+              ? currentProfit / profitTarget
+              : 1,
         remaining: Math.max(0, profitTarget - currentProfit),
         satisfied: targetReached,
         breached: false,
         warning: false,
         targetBalance: phase.startingBalance + profitTarget,
         targetReached,
+        targetNeedsBalance: resolvedTarget === undefined,
       };
     }
     case 'minimum_trading_days': {
@@ -952,6 +994,35 @@ function evaluateRule(
         minimumDailyProfit: rule.minimumDailyProfit,
       };
     }
+    case 'manual_review': {
+      let current = 0;
+      let peakProfit = 0;
+      for (const event of events) {
+        if (!event.isTrade) continue;
+        current += event.amount;
+        peakProfit = Math.max(peakProfit, current);
+      }
+      
+      const reviewRequired =
+        rule.amount === undefined || peakProfit >= rule.amount;
+      return {
+        ruleId: rule.id,
+        kind: rule.kind,
+        reason: rule.reason,
+        reviewRequired,
+        current,
+        target: rule.amount ?? 0,
+        progress: 0,
+        remaining: reviewRequired
+          ? 0
+          : Math.max(0, (rule.amount ?? 0) - current),
+        satisfied: false,
+        breached: false,
+        
+        
+        warning: rule.amount !== undefined && reviewRequired,
+      };
+    }
     case 'live_review_daily_profit': {
       const bestDayProfit = Math.max(
         0,
@@ -980,16 +1051,32 @@ function evaluateRule(
       const dailyProfits = Array.from(groupedTradePnl.values()).map((events) =>
         events.reduce((sum, event) => sum + event.amount, 0)
       );
-      const totalProfit = dailyProfits.reduce((sum, profit) => sum + profit, 0);
-      const bestDayProfit = Math.max(0, ...dailyProfits);
+      
+      
+      const strict = rule.comparison === 'strictly_below';
+      const profits = strict
+        ? dailyProfits.map((profit) => Math.round(profit * 100))
+        : dailyProfits;
+      const totalUnits = profits.reduce((sum, profit) => sum + profit, 0);
+      const bestUnits = Math.max(0, ...profits);
+      const totalProfit = totalUnits / (strict ? 100 : 1);
+      const bestDayProfit = bestUnits / (strict ? 100 : 1);
       const bestDayPercent =
         totalProfit > 0 ? (bestDayProfit / totalProfit) * 100 : 0;
       const satisfied =
-        totalProfit > 0 && bestDayPercent <= effectiveMaxBestDayPercent;
+        totalProfit > 0 &&
+        (strict
+          ? bestUnits * 100 < totalUnits * effectiveMaxBestDayPercent
+          : bestDayPercent <= effectiveMaxBestDayPercent);
       const maximumShare = effectiveMaxBestDayPercent / 100;
       const additionalProfitNeeded =
         totalProfit > 0 && maximumShare > 0
-          ? Math.max(0, bestDayProfit / maximumShare - totalProfit)
+          ? Math.max(
+              0,
+              (strict
+                ? (Math.floor(bestUnits / maximumShare) + 1) / 100
+                : bestDayProfit / maximumShare) - totalProfit
+            )
           : 0;
       return {
         ruleId: rule.id,
@@ -1008,88 +1095,11 @@ function evaluateRule(
         bestDayProfit,
         bestDayPercent,
         totalProfit,
+        ...(rule.comparison ? { comparison: rule.comparison } : {}),
         requiredTotalProfit:
           totalProfit > 0 && maximumShare > 0
             ? totalProfit + additionalProfitNeeded
             : 0,
-      };
-    }
-    case 'max_position_size': {
-      const positionScalingEvents =
-        'maxContracts' in rule || rule.profitBasis !== 'current_account_profit'
-          ? groupedTradePnl
-          : groupEventsByDay(events, cutoffTime);
-      const positionLimitForDay = (tradingDay: string): number => {
-        if ('maxContracts' in rule) return rule.maxContracts;
-        const priorEodProfit = Array.from(
-          positionScalingEvents.entries()
-        ).reduce(
-          (profit, [day, dayEvents]) =>
-            day < tradingDay
-              ? profit + dayEvents.reduce((sum, event) => sum + event.amount, 0)
-              : profit,
-          0
-        );
-        if ('profitTiers' in rule) {
-          return rule.profitTiers.reduce(
-            (limit, tier) =>
-              priorEodProfit >= tier.profit ? tier.maxContracts : limit,
-            rule.initialContracts
-          );
-        }
-        const earnedContracts = Math.floor(
-          Math.max(0, priorEodProfit) / rule.profitPerAdditionalContract
-        );
-        return Math.min(
-          rule.maximumContracts ?? Number.POSITIVE_INFINITY,
-          rule.initialContracts + earnedContracts
-        );
-      };
-      const breachesAfter = waivedThrough(phase, rule.id);
-      const exceedsLimit = ({ trade, closedAt }: ScopedTrade): boolean =>
-        positionContracts(trade, rule.microsPerContract) >
-        positionLimitForDay(tradingDayKey(closedAt, cutoffTime));
-      const isWaived = (item: ScopedTrade): boolean =>
-        item.closedAt.getTime() <= breachesAfter && exceedsLimit(item);
-      const violatingTrades = positionTrades.filter(
-        (item) => item.closedAt.getTime() > breachesAfter && exceedsLimit(item)
-      );
-      const currentTradingDay = tradingDayKey(evaluatedAt, cutoffTime);
-      
-      
-      const measuredTrades = positionTrades.filter(
-        (item) =>
-          ('maxContracts' in rule ||
-            tradingDayKey(item.closedAt, cutoffTime) === currentTradingDay) &&
-          !isWaived(item)
-      );
-      const maximumPositionSize = measuredTrades.reduce(
-        (maximum, { trade }) =>
-          Math.max(maximum, positionContracts(trade, rule.microsPerContract)),
-        0
-      );
-      const currentLimit = positionLimitForDay(currentTradingDay);
-      const violatingTradingDays = Array.from(
-        new Set(
-          violatingTrades.map(({ closedAt }) =>
-            tradingDayKey(closedAt, cutoffTime)
-          )
-        )
-      );
-      const breachDate = violatingTrades[0]?.closedAt;
-      return {
-        ruleId: rule.id,
-        kind: rule.kind,
-        current: maximumPositionSize,
-        target: currentLimit,
-        progress: currentLimit > 0 ? maximumPositionSize / currentLimit : 0,
-        remaining: currentLimit - maximumPositionSize,
-        satisfied: !breachDate,
-        breached: Boolean(breachDate),
-        warning: false,
-        breachDate,
-        violatingTradePaths: violatingTrades.map(({ trade }) => trade.path),
-        violatingTradingDays,
       };
     }
     default: {
@@ -1097,15 +1107,6 @@ function evaluateRule(
       return exhaustive;
     }
   }
-}
-
-function profitTargetAmount(
-  rule: Extract<PropChallengeRule, { kind: 'profit_target' }>,
-  startingBalance: number
-): number {
-  return rule.targetType === 'percentage'
-    ? (startingBalance * rule.amount) / 100
-    : rule.amount;
 }
 
 function eventsThrough(
@@ -1197,7 +1198,8 @@ function findTargetReachedAt(
     const credit = withdrawalCreditThrough(eventsToDate);
     const reached = profitTargets.every((rule) => {
       const current = profit + (rule.creditWithdrawals ? credit : 0);
-      return current >= profitTargetAmount(rule, startingBalance);
+      const target = resolvePhaseProfitTarget(rule, startingBalance);
+      return target !== undefined && current >= target;
     });
     if (reached) return date;
   }
@@ -1240,7 +1242,22 @@ function evaluateSinglePolicy(
     events.reduce((sum, event) => sum + event.amount, 0);
   
   
-  const phaseRules = input.phase.rules.filter((rule) => rule.enabled);
+  
+  
+  const phaseRules: ExecutablePropChallengeRule[] = [];
+  for (const rule of input.phase.rules) {
+    if (!rule.enabled || !isExecutableRule(rule)) continue;
+    phaseRules.push(
+      isDisputedRule(rule)
+        ? {
+            id: rule.id,
+            enabled: rule.enabled,
+            kind: 'manual_review',
+            reason: rule.reviewRequired,
+          }
+        : rule
+    );
+  }
   const drawdowns = new Map<string, DrawdownRuleEvaluation>();
   for (const rule of phaseRules) {
     if (rule.kind !== 'drawdown') continue;
@@ -1324,21 +1341,14 @@ function evaluateSinglePolicy(
   });
 
   const hardFailures = rules.filter(
-    (
-      rule
-    ): rule is
-      | DrawdownRuleEvaluation
-      | DailyLossLimitRuleEvaluation
-      | MaxPositionSizeRuleEvaluation =>
+    (rule): rule is DrawdownRuleEvaluation | DailyLossLimitRuleEvaluation =>
       (rule.kind === 'drawdown' ||
-        (rule.kind === 'daily_loss_limit' && rule.breachAction === 'fail') ||
-        rule.kind === 'max_position_size') &&
+        (rule.kind === 'daily_loss_limit' && rule.breachAction === 'fail')) &&
       rule.breached
   );
   let firstFailure:
     | DrawdownRuleEvaluation
     | DailyLossLimitRuleEvaluation
-    | MaxPositionSizeRuleEvaluation
     | undefined;
   for (const failure of hardFailures) {
     if (
@@ -1388,7 +1398,7 @@ function evaluateSinglePolicy(
                 rule.currentTradingDayBreached)
           )
         ? 'warning'
-        : requirementsOutstanding.length === 0
+        : requirementsOutstanding.length === 0 && !rules.some(isUnconfirmedTerm)
           ? 'passed'
           : 'active';
 
@@ -1396,8 +1406,7 @@ function evaluateSinglePolicy(
     firstFailure?.breachDate &&
     (firstFailure.kind === 'drawdown' ||
       (firstFailure.kind === 'daily_loss_limit' &&
-        firstFailure.breachAction === 'fail') ||
-      firstFailure.kind === 'max_position_size')
+        firstFailure.breachAction === 'fail'))
       ? {
           date: firstFailure.breachDate,
           ruleId: firstFailure.ruleId,
@@ -1497,6 +1506,17 @@ export function calibratePropChallengeBalance(
 }
 
 export function evaluatePropChallengePhase(
+  input: PropChallengeRuleEngineInput
+): PropChallengePhaseEvaluation {
+  const result = evaluatePhasePolicies(input);
+  
+  
+  return input.phase.status === 'failed'
+    ? { ...result, status: 'failed' }
+    : result;
+}
+
+function evaluatePhasePolicies(
   input: PropChallengeRuleEngineInput
 ): PropChallengePhaseEvaluation {
   const history = input.phase.policyHistory;

@@ -156,14 +156,6 @@ export const comboboxCSS = `
   list-style: none;
 }
 
-.journalit-combobox .journalit-combobox-selected-items {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  margin: 4px 0;
-}
-
 .journalit-combobox .selected-item {
   display: inline-flex;
   align-items: center;

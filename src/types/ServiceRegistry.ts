@@ -20,6 +20,20 @@ import type { FolderPathService } from '../services/core/FolderPathService';
 import type { PropFirmProfileCatalogService } from '../services/propChallenge';
 import type { ReviewStreakService } from '../services/reviewStreak/ReviewStreakService';
 import type { EconomicCalendarService } from '../services/economicCalendar/EconomicCalendarService';
+import type {
+  AgentEntityIdentityService,
+  AgentTradeIdentityService,
+} from '../services/agent/identity';
+import type { AgentToolRegistry } from '../services/agent/AgentToolRegistry';
+import type { AgentResultCache } from '../services/agent/AgentResultCache';
+import type { ActionBatchService } from '../services/actions/ActionBatchService';
+import type { AgentTradeReadService } from '../services/agent/trades';
+import type { AgentAnalyticsReadService } from '../services/agent/analytics';
+import type { AgentReviewReadService } from '../services/agent/reviews';
+import type { AgentNavigationService } from '../services/agent/navigation';
+import type { AgentIntegrationService } from '../services/agent/integrations';
+import type { AgentAccessSessionService } from '../services/agent/registration';
+import type { AgentRelaySessionService } from '../services/agent/relay';
 
 
 export interface ServiceRegistry {
@@ -43,6 +57,18 @@ export interface ServiceRegistry {
   propFirmProfileCatalogService: PropFirmProfileCatalogService;
   reviewStreakService: ReviewStreakService;
   economicCalendarService: EconomicCalendarService;
+  agentEntityIdentityService: AgentEntityIdentityService;
+  agentTradeIdentityService: AgentTradeIdentityService;
+  agentTradeReadService: AgentTradeReadService;
+  agentAnalyticsReadService: AgentAnalyticsReadService;
+  agentReviewReadService: AgentReviewReadService;
+  actionBatchService: ActionBatchService;
+  agentNavigationService: AgentNavigationService;
+  agentIntegrationService: AgentIntegrationService;
+  agentToolRegistry: AgentToolRegistry;
+  agentResultCache: AgentResultCache;
+  agentAccessSessionService: AgentAccessSessionService;
+  agentRelaySessionService: AgentRelaySessionService;
 }
 
 

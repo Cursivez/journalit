@@ -455,25 +455,20 @@ export class AccountManagementService {
       
       const accounts = response.accounts || [];
 
-      const transformedAccounts = accounts.map(
-        (account): AccountInfo => ({
-          accountId: String(
-            account.accountId ||
-              account.account_id ||
-              account.mt_account_id ||
-              ''
-          ),
-          displayName:
-            account.displayName ||
-            account.display_name ||
-            `Account-${account.account_id || account.mt_account_id || 'Unknown'}`,
-          brokerName: account.brokerName || account.broker_name,
-          firstSeen: account.firstSeen || account.first_seen,
-          lastSeen: account.lastSeen || account.last_seen,
-          status: account.status,
-          ignoredAt: account.ignoredAt || account.ignored_at,
-        })
-      );
+      const transformedAccounts = accounts.map((account): AccountInfo => ({
+        accountId: String(
+          account.accountId || account.account_id || account.mt_account_id || ''
+        ),
+        displayName:
+          account.displayName ||
+          account.display_name ||
+          `Account-${account.account_id || account.mt_account_id || 'Unknown'}`,
+        brokerName: account.brokerName || account.broker_name,
+        firstSeen: account.firstSeen || account.first_seen,
+        lastSeen: account.lastSeen || account.last_seen,
+        status: account.status,
+        ignoredAt: account.ignoredAt || account.ignored_at,
+      }));
 
       return transformedAccounts;
     } catch (error) {

@@ -227,7 +227,7 @@ interface ActiveVisibilityItemsProps {
   getRemoveAriaLabel: (itemLabel: string) => string;
 }
 
-export const resolveVisibilityEditorReorderTarget = (
+const resolveVisibilityEditorReorderTarget = (
   items: VisibilityEditorItem[],
   activeId: string,
   overId: string
@@ -374,6 +374,8 @@ const SortableVisibilityItem: React.FC<SortableVisibilityItemProps> =
     });
     const canReorder = item.reorderable !== false;
 
+    
+    
     return (
       <div
         ref={setNodeRef}
@@ -382,6 +384,7 @@ const SortableVisibilityItem: React.FC<SortableVisibilityItemProps> =
           isDragging ? transition : undefined
         )}
         className={`journalit-visibility-editor__active-item ${item.description ? 'has-description' : ''} ${isDragging ? 'is-dragging' : ''}`}
+        data-journalit-escape-delegate={isDragging ? 'true' : undefined}
       >
         <div
           className={`journalit-visibility-editor__drag-handle ${canReorder ? '' : 'is-disabled'}`}

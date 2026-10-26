@@ -69,7 +69,6 @@ export function DateRangeEditor(props: EditorProps) {
           label={t('dashboard.filter.date.from')}
           initialValue={initialRange[0]}
           onDraftChange={(result) => change('start', result)}
-          required={props.policy === 'bounded'}
           onPickerOpen={props.onPickerOpen}
           onPickerClose={props.onPickerClose}
         />
@@ -79,7 +78,6 @@ export function DateRangeEditor(props: EditorProps) {
           label={t('dashboard.filter.date.to')}
           initialValue={initialRange[1]}
           onDraftChange={(result) => change('end', result)}
-          required={props.policy === 'bounded'}
           minDate={
             drafts.start.kind === 'valid' ? drafts.start.date : undefined
           }

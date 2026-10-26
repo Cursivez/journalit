@@ -1,4 +1,5 @@
 import type JournalitPlugin from '../../main';
+import type { TradeTemplate } from '../../types/reviewV2';
 import { TradeTemplateService } from './TradeTemplateService';
 
 interface DefaultTradeTemplateMetadata {
@@ -6,17 +7,22 @@ interface DefaultTradeTemplateMetadata {
   templateVersion: number;
 }
 
-export function getDefaultTradeTemplateMetadata(
+
+export function resolveDefaultTradeTemplate(
   plugin: JournalitPlugin
-): DefaultTradeTemplateMetadata {
+): TradeTemplate {
   const tradeTemplateService = new TradeTemplateService(plugin);
   const configuredDefaultId = plugin.settings.templates?.defaultTrade;
   const configuredTemplate = configuredDefaultId
     ? tradeTemplateService.getTemplate(configuredDefaultId)
     : undefined;
-  const template =
-    configuredTemplate ?? tradeTemplateService.getDefaultTemplate();
+  return configuredTemplate ?? tradeTemplateService.getDefaultTemplate();
+}
 
+export function getDefaultTradeTemplateMetadata(
+  plugin: JournalitPlugin
+): DefaultTradeTemplateMetadata {
+  const template = resolveDefaultTradeTemplate(plugin);
   return {
     templateId: template.id,
     templateVersion: template.version,

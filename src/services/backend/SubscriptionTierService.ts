@@ -15,7 +15,7 @@ export type SubscriptionTierRefreshStatus =
   | 'signed_out'
   | 'unverified';
 
-export type BackendFeatureKey =
+type BackendFeatureKey =
   | 'tradeImport'
   | 'quickTradeImport'
   | 'metatraderSync'
@@ -23,7 +23,7 @@ export type BackendFeatureKey =
   | 'aiMapping';
 
 
-export type OptionalBackendFeatureKey = 'ctraderSync';
+type OptionalBackendFeatureKey = 'ctraderSync';
 
 export type AnyBackendFeatureKey =
   | BackendFeatureKey

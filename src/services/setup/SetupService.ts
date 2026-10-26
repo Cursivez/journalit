@@ -1,6 +1,13 @@
 
 
-import { App, TFile, TFolder, normalizePath, parseYaml } from 'obsidian';
+import {
+  App,
+  TFile,
+  TFolder,
+  normalizePath,
+  parseYaml,
+  type FrontMatterCache,
+} from 'obsidian';
 import type JournalitPlugin from '../../main';
 import type {
   DemoJournalMutationContext,
@@ -9,6 +16,7 @@ import type {
 import {
   CustomDataService,
   CustomDataServiceConfig,
+  type CachedQueryDependency,
 } from '../base/CustomDataService';
 import {
   ConvertUnmanagedSetupLabelData,
@@ -22,14 +30,17 @@ import {
   SetupRuleGroup,
 } from './types';
 import { validateSetupData, validateSetupId } from './validation';
+import {
+  assertCompleteSetupDiscovery,
+  normalizeSetupReadError,
+  SETUP_IDENTITY_UNAVAILABLE_ERROR,
+  SetupNoteFormatError,
+} from './setupReadErrors';
 import { SetupMetricsCalculator } from './metrics';
 import { TradeService } from '../trade/TradeService';
 import { eventBus } from '../events/EventBus';
-import type { Unsubscribe } from '../events/types';
-import {
-  OptionType,
-  type PreviousTagAssignments,
-} from '../options/CustomOptionsService';
+import { type PreviousTagAssignments } from '../options/CustomOptionsService';
+import type { SetupOptionWriter } from '../options/setupOptionWriter';
 import {
   forceMetadataCacheRefresh,
   readFrontmatterFromDisk,
@@ -37,6 +48,7 @@ import {
 import {
   readFileContentForMutation,
   replaceFileContent,
+  replaceFileContentIfUnchanged,
 } from '../../utils/fileMutation';
 import { getSetupHistoryDateRange } from './setupHistoryRange';
 import { normalizeLabelColor, type LabelColor } from '../../types/labelColor';
@@ -49,10 +61,20 @@ import {
   SAMPLE_INSTANCE_FRONTMATTER_KEY,
 } from '../../demo/DemoOwnership';
 import { deduplicateOptions } from '../../utils/stringNormalization';
+import { commitSetupShortcutRename } from './setupShortcutRename';
 import {
-  remapSetupEntityShortcuts,
-  restoreEntityShortcuts,
-} from '../../utils/entityShortcutTargets';
+  SetupChangedError,
+  SetupDeletionOutcomeError,
+} from './setupDeletionErrors';
+import { resolveJournalFolderPath } from '../../utils/tagOptionNoteEligibility';
+import {
+  compareSetupIdentityOrder,
+  generateSetupAgentId,
+  isSetupAgentId,
+  separateSetupAgentIdFrontmatter,
+  SETUP_AGENT_ID_FRONTMATTER_KEY,
+  upsertSetupAgentId,
+} from '../agent/identity/setupIdentityStore';
 
 const SETUPS_FOLDER_NAME = 'Setups';
 const FRONTMATTER_BLOCK_PATTERN = /^---\r?\n([\s\S]*?)\r?\n---/;
@@ -64,7 +86,6 @@ const SETUP_MARKER_KEY_PATTERN = new RegExp(`^${SETUP_FRONTMATTER_KEY}\\s*:`);
 const FRONTMATTER_TAGS_KEY_PATTERN = /^(?:tags|'tags'|"tags")\s*:/;
 const SETUP_WARNING =
   '==⚠ This is a Journalit Setup file. Journalit opens it in the Setup view by default. If you are reading this as markdown, use the note menu / pane details menu and choose “Open as Journalit Setup” to return to the setup editor. This markdown exists for portability, search, and manual reference; create and edit setups through Journalit’s Setups view. ⚠==';
-
 interface SetupFileRecord {
   file: TFile;
   setup: Setup;
@@ -73,6 +94,11 @@ interface SetupFileRecord {
 interface ExistingSetupDiscoveryResult {
   setups: Setup[];
   errors: Array<{ filePath: string; message: string }>;
+}
+
+interface SetupDiscoveryOptions {
+  suppressPathWarnings?: boolean;
+  readFromDisk?: boolean;
 }
 
 interface MarkdownSection {
@@ -170,8 +196,8 @@ function scanFlowCollection(
 export class SetupService extends CustomDataService {
   private metricsCalculator: SetupMetricsCalculator;
   private materializePromise: Promise<void> | null = null;
+  private legacyMigrationPromise: Promise<void> | null = null;
   private mutationQueue: Promise<void> = Promise.resolve();
-  private tradeCacheUnsubscribers: Unsubscribe[] = [];
   private setupRecordsGeneration = 0;
 
   constructor(
@@ -186,15 +212,7 @@ export class SetupService extends CustomDataService {
       persistCache: false,
       namespace: config.namespace || 'setup',
     });
-    this.metricsCalculator = new SetupMetricsCalculator(tradeService);
-    const invalidateMetricsCache = () => {
-      void this.clearCacheWithPrefix('metrics:');
-    };
-    this.tradeCacheUnsubscribers = [
-      eventBus.subscribe('trade:changed', invalidateMetricsCache),
-      eventBus.subscribe('missed-trade:changed', invalidateMetricsCache),
-      eventBus.subscribe('backtest-trade:changed', invalidateMetricsCache),
-    ];
+    this.metricsCalculator = new SetupMetricsCalculator();
   }
 
   public override setPlugin(plugin: JournalitPlugin): void {
@@ -215,74 +233,21 @@ export class SetupService extends CustomDataService {
     );
   }
 
-  public override async cleanup(): Promise<void> {
-    this.tradeCacheUnsubscribers.forEach((unsubscribe) => unsubscribe());
-    this.tradeCacheUnsubscribers = [];
-    await super.cleanup();
-  }
-
-  public async getSetupMetrics(id: string): Promise<SetupMetrics> {
-    validateSetupId(id);
-
-    return this.query(
-      async () => {
-        const setup = await this.getSetupById(id);
-        if (!setup) return this.metricsCalculator.calculateMetrics(id);
-        return this.metricsCalculator.calculateMetricsForSetup(setup);
-      },
-      `metrics:${id}`,
-      { offlineCapable: true }
-    );
-  }
-
-  public async getAllSetupMetrics(
-    filter?: SetupFilter
-  ): Promise<Map<string, SetupMetrics>> {
-    const cacheKey = `metrics:all${filter ? `:${JSON.stringify(filter)}` : ''}`;
-
-    return this.query(
-      async () => {
-        const setups = await this.listSetups(filter);
-        const metrics = new Map<string, SetupMetrics>();
-
-        const results = await Promise.all(
-          setups.map(async (setup) => {
-            try {
-              const setupMetrics =
-                await this.metricsCalculator.calculateMetricsForSetup(setup);
-              return { setupId: setup.id, setupMetrics };
-            } catch {
-              console.warn(
-                `Failed to calculate metrics for setup: ${setup.name}`
-              );
-              return null;
-            }
-          })
-        );
-
-        for (const result of results) {
-          if (result) metrics.set(result.setupId, result.setupMetrics);
-        }
-
-        return metrics;
-      },
-      cacheKey,
-      { offlineCapable: true }
-    );
+  
+  protected override cachedQueriesDependingOn(
+    path: string,
+    _frontmatter: FrontMatterCache | undefined
+  ): CachedQueryDependency {
+    return this.isPathInSetupsFolder(path) ? 'all' : null;
   }
 
   public getAllSetupMetricsFromTradeData(
     setups: Setup[],
     tradeData: Array<Record<string, unknown>>
   ): Map<string, SetupMetrics> {
-    return new Map(
-      setups.map((setup) => [
-        setup.id,
-        this.metricsCalculator.calculateMetricsForSetupFromTradeData(
-          setup,
-          tradeData
-        ),
-      ])
+    return this.metricsCalculator.calculateMetricsForSetupsFromTradeData(
+      setups,
+      tradeData
     );
   }
 
@@ -323,6 +288,52 @@ export class SetupService extends CustomDataService {
       ),
       errors,
     };
+  }
+
+  public async listSetupsForAgentIdentityStrict(): Promise<Setup[]> {
+    try {
+      await this.materializeTradeSetups({ suppressPathWarnings: true });
+      const discovery = await this.discoverSetupFileRecords({
+        suppressPathWarnings: true,
+      });
+      assertCompleteSetupDiscovery(discovery);
+      return discovery.records.map((record) => record.setup);
+    } catch (error) {
+      throw normalizeSetupReadError(error);
+    }
+  }
+
+  
+  public async readExistingSetupDefinitionsStrict(): Promise<Setup[]> {
+    try {
+      const discovery = await this.discoverSetupFileRecords({
+        suppressPathWarnings: true,
+        readFromDisk: true,
+      });
+      assertCompleteSetupDiscovery(discovery);
+      return discovery.records.map((record) => record.setup);
+    } catch (error) {
+      throw normalizeSetupReadError(error);
+    }
+  }
+
+  public async ensureAgentEntityId(currentSetupId: string): Promise<string> {
+    const identities = await this.ensureAgentEntityIds([currentSetupId]);
+    const identity = identities.get(currentSetupId);
+    if (!identity) throw new Error('Setup identity is unavailable');
+    return identity;
+  }
+
+  public async ensureAgentEntityIds(
+    setupNames: readonly string[]
+  ): Promise<ReadonlyMap<string, string | null>> {
+    return this.runMutationExclusive(async () => {
+      try {
+        return await this.ensureAgentEntityIdsNow(setupNames);
+      } catch (error) {
+        throw normalizeSetupReadError(error);
+      }
+    });
   }
 
   
@@ -386,6 +397,11 @@ export class SetupService extends CustomDataService {
   }
 
   public async createSetup(inputData: SetupData): Promise<Setup> {
+    const snapshot = structuredClone(inputData);
+    return this.runMutationExclusive(() => this.createSetupNow(snapshot));
+  }
+
+  private async createSetupNow(inputData: SetupData): Promise<Setup> {
     const { data, ownership } = this.prepareSetupOwnership(inputData);
     const errors = validateSetupData(data);
     if (errors.length) {
@@ -409,23 +425,43 @@ export class SetupService extends CustomDataService {
     const filePath = this.getUniqueSetupFilePath(folder.path, name);
     return this.runWithTagAssignments(data.tags ?? [], async () => {
       await this.app.vault.create(filePath, this.serializeNewSetup(data));
-      const file = this.app.vault.getAbstractFileByPath(filePath);
-      if (!(file instanceof TFile)) {
-        throw new Error(`Failed to create setup file: ${filePath}`);
+      try {
+        const file = this.app.vault.getAbstractFileByPath(filePath);
+        if (!(file instanceof TFile)) {
+          throw new Error(`Failed to create setup file: ${filePath}`);
+        }
+        await forceMetadataCacheRefresh(this.app, file);
+        await this.clearCache();
+        await this.recordSetupOwnership(filePath, ownership);
+        const setup = await this.parseSetupFile(file);
+        this.publishChanged('created', setup);
+        return setup;
+      } catch (error) {
+        
+        
+        const failures = [error];
+        try {
+          await this.clearCache();
+        } catch (refreshError) {
+          failures.push(refreshError);
+        }
+        throw new AggregateError(
+          failures,
+          'A setup note was created, but creation could not finish. Review it in Journalit before retrying.'
+        );
       }
-      await Promise.all([
-        forceMetadataCacheRefresh(this.app, file),
-        this.clearCache(),
-        this.plugin?.optionsService?.addOption?.(OptionType.SETUP, name),
-      ]);
-      await this.recordSetupOwnership(filePath, ownership);
-      const setup = await this.parseSetupFile(file);
-      this.publishChanged('created', setup);
-      return setup;
     });
   }
 
   public async updateSetup(
+    id: string,
+    data: Partial<SetupData>
+  ): Promise<Setup> {
+    const snapshot = structuredClone(data);
+    return this.runMutationExclusive(() => this.updateSetupNow(id, snapshot));
+  }
+
+  private async updateSetupNow(
     id: string,
     data: Partial<SetupData>
   ): Promise<Setup> {
@@ -434,8 +470,20 @@ export class SetupService extends CustomDataService {
     if (!plugin) {
       throw new Error('Plugin not initialized - cannot update setup');
     }
+    const assertContext = this.captureMutationContext(plugin);
     const record = await this.requireSetupFileRecord(id);
-    const existing = record.setup;
+    const originalPath = record.file.path;
+    assertContext();
+    const currentContent = await readFileContentForMutation(
+      this.app,
+      record.file
+    );
+    const existing = this.parseSetupMutationTarget(record.file, currentContent);
+    if (normalizeSetupKey(existing.id) !== normalizeSetupKey(record.setup.id)) {
+      throw new Error(
+        'Setup changed before the update. Refresh it before retrying.'
+      );
+    }
 
     if (Object.keys(data).length > 0) {
       const validationTarget: SetupData = {
@@ -465,35 +513,39 @@ export class SetupService extends CustomDataService {
     }
     return this.runWithTagAssignments(
       data.tags ?? existing.tags,
-      async () => {
-        const currentContent = await readFileContentForMutation(
-          this.app,
-          record.file
-        );
+      async (writer) => {
+        assertContext();
+        if (record.file.path !== originalPath)
+          throw new Error(
+            'Setup moved during the update. Refresh it before retrying.'
+          );
         const nextContent = this.updateSetupMarkdown(currentContent, existing, {
           ...data,
           name: nextName,
         });
         const shortcutRemap =
           nextName !== existing.name
-            ? remapSetupEntityShortcuts(plugin.settings, existing.id, nextName)
+            ? await commitSetupShortcutRename(plugin, existing.id, nextName)
             : null;
-        if (shortcutRemap?.changedSurfaces.length) {
-          try {
-            await plugin.saveSettings();
-          } catch (error) {
-            restoreEntityShortcuts(plugin.settings, shortcutRemap);
-            throw error;
-          }
-        }
-
-        const originalPath = record.file.path;
+        let installedPath = originalPath;
         let targetFile = record.file;
         let setupWriteStarted = false;
-        let tradeRenameCompleted = false;
+        let referenceRollback: (() => Promise<void>) | undefined;
         try {
+          assertContext();
           setupWriteStarted = true;
-          await replaceFileContent(this.app, record.file, nextContent);
+          const replaced = await replaceFileContentIfUnchanged(
+            this.app,
+            record.file,
+            currentContent,
+            nextContent
+          );
+          if (replaced === 'stale') {
+            setupWriteStarted = false;
+            throw new Error(
+              'Setup changed during the update. Refresh it before retrying.'
+            );
+          }
 
           if (nextName !== existing.name) {
             const newPath = this.getRenamedSetupPath(
@@ -502,63 +554,117 @@ export class SetupService extends CustomDataService {
             );
             if (newPath !== record.file.path) {
               await this.app.fileManager.renameFile(record.file, newPath);
+              installedPath = newPath;
               const renamed = this.app.vault.getAbstractFileByPath(newPath);
-              if (renamed instanceof TFile) targetFile = renamed;
+              if (!(renamed instanceof TFile))
+                throw new Error('Setup was removed during the update.');
+              targetFile = renamed;
             }
-            await this.updateTradeSetupName(existing.name, nextName);
-            tradeRenameCompleted = true;
+            if (writer) {
+              assertContext();
+              if (
+                (await readFileContentForMutation(this.app, targetFile)) !==
+                nextContent
+              )
+                throw new Error(
+                  'Setup changed during the update. Refresh it before retrying.'
+                );
+              const renamed = await writer.rename(
+                existing.name,
+                nextName,
+                true
+              );
+              if (!renamed.success)
+                throw new Error(`Setup name is already in use: ${nextName}`);
+              referenceRollback = () => renamed.rollback();
+            }
           }
 
           await Promise.all([
             forceMetadataCacheRefresh(this.app, targetFile),
             this.clearCache(),
           ]);
-          const updated = await this.parseSetupFile(targetFile);
-          if (shortcutRemap?.changedSurfaces.length) {
-            eventBus.publish('entity-shortcuts:changed', { surface: 'all' });
-          }
-          this.publishChanged('updated', updated);
+          const writtenContent = await readFileContentForMutation(
+            this.app,
+            targetFile
+          );
+          if (writtenContent !== nextContent)
+            throw new Error(
+              'Setup changed during the update. Refresh it before retrying.'
+            );
+          const updated = this.parseSetupContent(targetFile, writtenContent);
+          assertContext();
+          shortcutRemap?.assertCurrent();
           if (targetFile.path !== originalPath) {
             await plugin.demoSessionService?.recordMovedEntity(
               originalPath,
               targetFile.path
             );
           }
+          if (shortcutRemap?.changed) {
+            eventBus.publish('entity-shortcuts:changed', { surface: 'all' });
+          }
+          this.publishChanged('updated', updated);
           return updated;
         } catch (error) {
           const rollbackErrors: unknown[] = [];
-          if (tradeRenameCompleted) {
+          if (referenceRollback) {
             try {
-              await this.updateTradeSetupName(nextName, existing.name);
+              await referenceRollback();
             } catch (rollbackError) {
               rollbackErrors.push(rollbackError);
             }
           }
           if (setupWriteStarted) {
             try {
-              if (targetFile.path !== originalPath) {
-                await this.app.fileManager.renameFile(targetFile, originalPath);
-              }
               const restoredFile =
-                this.app.vault.getAbstractFileByPath(originalPath);
-              if (!(restoredFile instanceof TFile)) {
+                this.app.vault.getAbstractFileByPath(installedPath);
+              if (
+                !(restoredFile instanceof TFile) ||
+                targetFile.path !== installedPath
+              ) {
                 throw new Error(
-                  `Failed to restore setup file after update error: ${originalPath}`
+                  'Cannot restore a setup that has been moved or removed during the update.'
                 );
               }
-              await replaceFileContent(this.app, restoredFile, currentContent);
+              const current = await readFileContentForMutation(
+                this.app,
+                restoredFile
+              );
+              if (
+                current !== currentContent &&
+                (await replaceFileContentIfUnchanged(
+                  this.app,
+                  restoredFile,
+                  nextContent,
+                  currentContent
+                )) === 'stale'
+              ) {
+                throw new Error('Cannot restore a setup with newer edits.');
+              }
+              if (installedPath !== originalPath) {
+                if (this.app.vault.getAbstractFileByPath(originalPath)) {
+                  throw new Error(
+                    'Cannot restore a setup because its original path is occupied.'
+                  );
+                }
+                await this.app.fileManager.renameFile(
+                  restoredFile,
+                  originalPath
+                );
+              }
               await forceMetadataCacheRefresh(this.app, restoredFile);
             } catch (rollbackError) {
               rollbackErrors.push(rollbackError);
             }
           }
-          if (shortcutRemap?.changedSurfaces.length) {
-            restoreEntityShortcuts(plugin.settings, shortcutRemap);
+          if (shortcutRemap?.changed) {
             try {
-              await plugin.saveSettings();
+              await shortcutRemap.rollback();
             } catch (rollbackError) {
               rollbackErrors.push(rollbackError);
             }
+            eventBus.publish('entity-shortcuts:changed', { surface: 'all' });
           }
           try {
             await this.clearCache();
@@ -591,32 +697,161 @@ export class SetupService extends CustomDataService {
     return setup;
   }
 
-  public async deleteSetup(id: string): Promise<void> {
-    return this.runMutationExclusive(() => this.deleteSetupNow(id));
+  
+  public async getSetupNoteRevision(
+    id: string
+  ): Promise<{ path: string; revision: string }> {
+    const record = await this.requireSetupFileRecord(id);
+    const content = await readFileContentForMutation(this.app, record.file);
+    return { path: record.file.path, revision: await contentRevision(content) };
   }
 
-  private async deleteSetupNow(id: string): Promise<void> {
+  
+  public async deleteSetup(
+    id: string,
+    guard?: { revision: string; unreferenced: boolean }
+  ): Promise<void> {
+    return this.runMutationExclusive(() => this.deleteSetupNow(id, guard));
+  }
+
+  private async deleteSetupNow(
+    id: string,
+    guard: { revision: string; unreferenced: boolean } | undefined
+  ): Promise<void> {
     validateSetupId(id);
+    const plugin = this.plugin;
+    if (!plugin)
+      throw new Error('Plugin not initialized - cannot delete setup');
+    const assertContext = this.captureMutationContext(plugin);
     const record = await this.requireSetupFileRecord(id);
-    const optionsService = this.plugin?.optionsService;
-
-    if (optionsService) {
-      await optionsService.removeOptionValueFromNotes(
-        OptionType.SETUP,
-        record.setup.name
+    const path = record.file.path;
+    const content = await readFileContentForMutation(this.app, record.file);
+    
+    if (guard && (await contentRevision(content)) !== guard.revision)
+      throw new SetupChangedError();
+    const setup = this.parseSetupMutationTarget(record.file, content);
+    if (normalizeSetupKey(setup.id) !== normalizeSetupKey(record.setup.id))
+      throw new Error(
+        'Setup changed before deletion. Refresh it before retrying.'
       );
-      const removedOption = await optionsService.removeOption(
-        OptionType.SETUP,
-        record.setup.name
-      );
-      if (!removedOption) {
-        optionsService.notifyOptionsChanged();
+    const requireCurrentTarget = async (): Promise<TFile> => {
+      assertContext();
+      const current = this.app.vault.getAbstractFileByPath(path);
+      if (
+        !(current instanceof TFile) ||
+        record.file.path !== path ||
+        (await readFileContentForMutation(this.app, current)) !== content ||
+        current.path !== path
+      ) {
+        throw new Error(
+          'Setup changed before deletion. Refresh it before retrying.'
+        );
       }
-    }
+      assertContext();
+      return current;
+    };
+    assertContext();
+    await this.runWithTagAssignments([], async (writer) => {
+      if (!writer)
+        throw new Error(
+          'Setup reference persistence is unavailable. Wait for Journalit to finish loading.'
+        );
+      await requireCurrentTarget();
+      const references = await writer.remove(setup.name, {
+        expectNone: guard?.unreferenced ?? false,
+      });
+      if (!references.success)
+        throw new Error('Setup reference removal was refused.');
+      let trashAttempted = false;
+      try {
+        const current = await requireCurrentTarget();
+        
+        
+        trashAttempted = true;
+        await this.app.fileManager.trashFile(current);
+      } catch (error) {
+        const failures: unknown[] = [error];
+        let canRestore = false;
+        try {
+          const current = this.app.vault.getAbstractFileByPath(path);
+          if (current instanceof TFile) {
+            const currentContent = await readFileContentForMutation(
+              this.app,
+              current
+            );
+            if (trashAttempted) {
+              
+              
+              
+              
+              canRestore = currentContent === content;
+            } else {
+              
+              
+              const remaining = this.parseSetupMutationTarget(
+                current,
+                currentContent
+              );
+              canRestore =
+                normalizeSetupKey(remaining.id) ===
+                  normalizeSetupKey(setup.id) &&
+                remaining.agentEntityId === setup.agentEntityId;
+            }
+          }
+        } catch (inspectionError) {
+          failures.push(inspectionError);
+        }
+        if (!canRestore) {
+          try {
+            await this.clearCache();
+          } catch (refreshError) {
+            failures.push(refreshError);
+          }
+          throw new SetupDeletionOutcomeError('unknown', failures);
+        }
+        try {
+          await references.rollback();
+        } catch (rollbackError) {
+          failures.push(rollbackError);
+        }
+        try {
+          await this.clearCache();
+        } catch (refreshError) {
+          failures.push(refreshError);
+        }
+        if (failures.length > 1)
+          throw new AggregateError(
+            failures,
+            'Failed to delete setup and fully restore its references. Review the affected trades before retrying.'
+          );
+        throw error;
+      }
+      try {
+        await this.clearCache();
+      } catch (error) {
+        this.publishChanged('deleted', setup);
+        throw new SetupDeletionOutcomeError('deleted', [error]);
+      }
+      this.publishChanged('deleted', setup);
+    });
+  }
 
-    await this.app.fileManager.trashFile(record.file);
-    await this.clearCache();
-    this.publishChanged('deleted', record.setup);
+  private captureMutationContext(plugin: JournalitPlugin): () => void {
+    const settingsRoot = plugin.settings;
+    const journalFolder = resolveJournalFolderPath(settingsRoot);
+    const activeFolder = this.getJournalFolderPath();
+    return () => {
+      if (
+        this.plugin !== plugin ||
+        plugin.settings !== settingsRoot ||
+        resolveJournalFolderPath(settingsRoot) !== journalFolder ||
+        this.getJournalFolderPath() !== activeFolder
+      ) {
+        throw new Error(
+          'Journal settings changed during the setup operation. Review them before retrying.'
+        );
+      }
+    };
   }
 
   
@@ -646,10 +881,12 @@ export class SetupService extends CustomDataService {
     return this.getJournalFolderPath(SETUPS_FOLDER_NAME);
   }
 
-  private async materializeTradeSetups(): Promise<void> {
+  private async materializeTradeSetups(
+    discoveryOptions: SetupDiscoveryOptions = {}
+  ): Promise<void> {
     if (this.materializePromise) return this.materializePromise;
     this.materializePromise = this.runMutationExclusive(() =>
-      this.materializeTradeSetupsNow()
+      this.materializeTradeSetupsNow(discoveryOptions)
     ).finally(() => {
       this.materializePromise = null;
     });
@@ -667,16 +904,16 @@ export class SetupService extends CustomDataService {
 
   private runWithTagAssignments<T>(
     tags: readonly string[],
-    operation: () => Promise<T>,
+    operation: (writer: SetupOptionWriter | undefined) => Promise<T>,
     previousTags: PreviousTagAssignments = []
   ): Promise<T> {
     return this.plugin?.optionsService
-      ? this.plugin.optionsService.runWithTagAssignments(
+      ? this.plugin.optionsService.runWithSetupTagAssignments(
           tags,
           operation,
           previousTags
         )
-      : operation();
+      : operation(undefined);
   }
 
   private getJournalMutationContext(): DemoJournalMutationContext {
@@ -716,18 +953,75 @@ export class SetupService extends CustomDataService {
     );
   }
 
-  private async materializeTradeSetupsNow(): Promise<void> {
+  private async materializeTradeSetupsNow(
+    discoveryOptions: SetupDiscoveryOptions = {}
+  ): Promise<void> {
     const mutationContext = this.getJournalMutationContext();
     if (mutationContext === 'deferred') return;
 
-    const [labels, discovery] = await Promise.all([
-      this.collectSetupLabels(),
-      this.discoverSetupFileRecords(),
-    ]);
-    const existing = discovery.records;
+    await this.createMissingSetupNotes(
+      await this.collectSetupLabels(),
+      mutationContext,
+      discoveryOptions
+    );
+  }
+
+  
+  public migrateLegacySetupOptions(): Promise<void> {
+    this.legacyMigrationPromise ??=
+      this.runLegacySetupOptionsMigration().finally(() => {
+        this.legacyMigrationPromise = null;
+      });
+    return this.legacyMigrationPromise;
+  }
+
+  private async runLegacySetupOptionsMigration(): Promise<void> {
+    const optionsService = this.plugin?.optionsService;
+    if (!optionsService) return;
+
+    await optionsService.migrateLegacySetupOptions((names) =>
+      this.runMutationExclusive(async () => {
+        if (this.getJournalMutationContext() !== 'real') return false;
+        return this.createMissingSetupNotes(
+          [...names, ...(await this.collectSetupLabels())],
+          'real'
+        );
+      })
+    );
+  }
+
+  
+  public async ensureSetup(label: string): Promise<Setup> {
+    const name = label.trim();
+    if (!name) throw new Error('Setup label is required');
+
+    return this.runMutationExclusive(async () => {
+      const resolution = this.resolveSetupRefFromSetups(
+        name,
+        (await this.listSetupFileRecordsWithoutMaterialization()).map(
+          (record) => record.setup
+        )
+      );
+      if (resolution.kind === 'resolved' && resolution.setup) {
+        return resolution.setup;
+      }
+      if (resolution.kind === 'ambiguous') {
+        throw new Error(`Setup label is ambiguous: ${name}`);
+      }
+      return this.createSetupNow({ name });
+    });
+  }
+
+  
+  private async createMissingSetupNotes(
+    labels: readonly string[],
+    mutationContext: Exclude<DemoJournalMutationContext, 'deferred'>,
+    discoveryOptions: SetupDiscoveryOptions = {}
+  ): Promise<boolean> {
+    const discovery = await this.discoverSetupFileRecords(discoveryOptions);
     const existingNames = new Set(
       [
-        ...existing.map((record) => record.setup.name),
+        ...discovery.records.map((record) => record.setup.name),
         ...discovery.rejectedNames,
       ].map(normalizeSetupKey)
     );
@@ -740,56 +1034,45 @@ export class SetupService extends CustomDataService {
       existingNames.add(normalizedName);
       namesToCreate.push(name);
     }
+    if (namesToCreate.length === 0) return true;
 
-    if (namesToCreate.length > 0) {
-      const folder = await this.ensureSetupFolder();
-      
-      
-      const createdFilePaths = await namesToCreate.reduce<Promise<string[]>>(
-        async (previousPaths, name) => {
-          const paths = await previousPaths;
-          if (this.getJournalMutationContext() !== mutationContext) {
-            return paths;
-          }
-          const { data, ownership } = this.prepareSetupOwnership({
-            name,
-            playbookMarkdown: '',
-          });
-          const filePath = this.getUniqueSetupFilePath(folder.path, name);
-          await this.app.vault.create(filePath, this.serializeNewSetup(data));
-          await this.recordSetupOwnership(filePath, ownership);
-          return [...paths, filePath];
-        },
-        Promise.resolve([])
-      );
+    const folder = await this.ensureSetupFolder();
+    
+    
+    const createdFilePaths = await namesToCreate.reduce<Promise<string[]>>(
+      async (previousPaths, name) => {
+        const paths = await previousPaths;
+        if (this.getJournalMutationContext() !== mutationContext) {
+          return paths;
+        }
+        const { data, ownership } = this.prepareSetupOwnership({
+          name,
+          playbookMarkdown: '',
+        });
+        const filePath = this.getUniqueSetupFilePath(folder.path, name);
+        await this.app.vault.create(filePath, this.serializeNewSetup(data));
+        await this.recordSetupOwnership(filePath, ownership);
+        return [...paths, filePath];
+      },
+      Promise.resolve([])
+    );
 
-      if (this.getJournalMutationContext() !== mutationContext) return;
-
-      await Promise.all(
-        createdFilePaths.map(async (filePath) => {
-          const file = this.app.vault.getAbstractFileByPath(filePath);
-          if (file instanceof TFile)
-            await forceMetadataCacheRefresh(this.app, file);
-        })
-      );
-      await this.clearCache();
+    await Promise.all(
+      createdFilePaths.map(async (filePath) => {
+        const file = this.app.vault.getAbstractFileByPath(filePath);
+        if (file instanceof TFile)
+          await forceMetadataCacheRefresh(this.app, file);
+      })
+    );
+    await this.clearCache();
+    if (createdFilePaths.length > 0) {
+      eventBus.publish('setup:changed', {
+        action: 'created',
+        filePaths: createdFilePaths,
+        timestamp: Date.now(),
+      });
     }
-
-    if (this.getJournalMutationContext() !== mutationContext) return;
-
-    const optionsService = this.plugin?.optionsService;
-    if (optionsService) {
-      
-      const setupNames = [
-        ...existing.map((record) => record.setup.name),
-        ...namesToCreate,
-      ];
-      const addedCount = await optionsService.addOptions(
-        OptionType.SETUP,
-        setupNames
-      );
-      if (addedCount > 0) optionsService.notifyOptionsChanged();
-    }
+    return createdFilePaths.length === namesToCreate.length;
   }
 
   private pathsIntersect(path: string, folderPath: string): boolean {
@@ -816,10 +1099,13 @@ export class SetupService extends CustomDataService {
     return (await this.discoverSetupFileRecords()).records;
   }
 
-  private async discoverSetupFileRecords(): Promise<{
+  private async discoverSetupFileRecords(
+    options: SetupDiscoveryOptions = {}
+  ): Promise<{
     records: SetupFileRecord[];
     errors: Array<{ filePath: string; message: string }>;
     rejectedNames: string[];
+    hasInvalidNotes: boolean;
   }> {
     const setupFolderPath = this.getSetupsFolderPath();
     const files = this.app.vault
@@ -829,15 +1115,30 @@ export class SetupService extends CustomDataService {
     const results = await Promise.all(
       files.map(async (file) => {
         try {
-          if (!(await this.isSetupFile(file))) {
+          const content = options.readFromDisk
+            ? await this.app.vault.read(file)
+            : undefined;
+          const isSetup =
+            content === undefined
+              ? await this.isSetupFile(file)
+              : this.hasSetupFrontmatterMarker(content);
+          if (!isSetup) {
             return { record: null, error: undefined };
           }
           return {
-            record: { file, setup: await this.parseSetupFile(file) },
+            record: {
+              file,
+              setup:
+                content === undefined
+                  ? await this.parseSetupFile(file)
+                  : this.parseSetupContent(file, content),
+            },
             error: undefined,
           };
         } catch (error) {
-          console.warn(`Failed to parse setup file ${file.path}:`, error);
+          if (!options.suppressPathWarnings) {
+            console.warn(`Failed to parse setup file ${file.path}:`, error);
+          }
           let rejectedName = file.basename;
           try {
             const content = await this.app.vault.cachedRead(file);
@@ -854,6 +1155,7 @@ export class SetupService extends CustomDataService {
               message: error instanceof Error ? error.message : String(error),
             },
             rejectedName,
+            invalidNote: error instanceof SetupNoteFormatError,
           };
         }
       })
@@ -870,7 +1172,12 @@ export class SetupService extends CustomDataService {
     const rejectedNames = results.flatMap(({ rejectedName }) =>
       rejectedName ? [rejectedName] : []
     );
-    return { records, errors, rejectedNames };
+    return {
+      records,
+      errors,
+      rejectedNames,
+      hasInvalidNotes: results.some((result) => result.invalidNote === true),
+    };
   }
 
   private async requireSetupFileRecord(id: string): Promise<SetupFileRecord> {
@@ -884,10 +1191,188 @@ export class SetupService extends CustomDataService {
     return record;
   }
 
+  private async ensureAgentEntityIdsNow(
+    setupNames: readonly string[]
+  ): Promise<ReadonlyMap<string, string | null>> {
+    const discovery = await this.discoverSetupFileRecords({
+      suppressPathWarnings: true,
+    });
+    assertCompleteSetupDiscovery(discovery);
+
+    const setups = discovery.records.map((record) => record.setup);
+    const recordsByPath = new Map(
+      discovery.records.map((record) => [record.setup.filePath, record])
+    );
+    const requestedRecords = new Map<string, SetupFileRecord>();
+    const resolvedPaths = new Map<string, string | null>();
+    for (const setupName of setupNames) {
+      const resolution = this.resolveSetupRefFromSetups(setupName, setups);
+      const filePath =
+        resolution.kind === 'resolved' ? resolution.setup?.filePath : undefined;
+      const record = filePath ? recordsByPath.get(filePath) : undefined;
+      const recordFilePath = record?.setup.filePath;
+      resolvedPaths.set(setupName, recordFilePath ?? null);
+      if (recordFilePath) {
+        requestedRecords.set(recordFilePath, record);
+      }
+    }
+
+    const currentContents = new Map(
+      await Promise.all(
+        Array.from(
+          requestedRecords,
+          async ([filePath, record]) =>
+            [
+              filePath,
+              await readFileContentForMutation(this.app, record.file),
+            ] as const
+        )
+      )
+    );
+    const usedIds = new Set(
+      discovery.records.flatMap(({ setup }) =>
+        setup.agentEntityId ? [setup.agentEntityId] : []
+      )
+    );
+    const identitiesByPath = new Map<string, string>();
+    const writes: Array<{
+      record: SetupFileRecord;
+      currentContent: string;
+      nextContent: string;
+    }> = [];
+    for (const [filePath, record] of requestedRecords) {
+      const currentContent = currentContents.get(filePath);
+      if (currentContent === undefined) {
+        throw new Error(SETUP_IDENTITY_UNAVAILABLE_ERROR);
+      }
+      const currentFrontmatter = this.parseSetupFrontmatter(currentContent);
+      const parsedId = currentFrontmatter[SETUP_AGENT_ID_FRONTMATTER_KEY];
+      const currentId = isSetupAgentId(parsedId) ? parsedId : undefined;
+      let identity =
+        currentId &&
+        this.isSetupAgentIdWinner(record.setup, discovery.records, currentId)
+          ? currentId
+          : undefined;
+      if (!identity) {
+        do {
+          identity = generateSetupAgentId();
+        } while (usedIds.has(identity));
+      }
+      usedIds.add(identity);
+      identitiesByPath.set(filePath, identity);
+      const nextContent = upsertSetupAgentId(currentContent, identity);
+      if (nextContent !== currentContent) {
+        writes.push({ record, currentContent, nextContent });
+      }
+    }
+
+    const completedWrites: typeof writes = [];
+    try {
+      
+      for (const write of writes) {
+        const latestContent = await readFileContentForMutation(
+          this.app,
+          write.record.file
+        );
+        if (latestContent !== write.currentContent) {
+          throw new Error(SETUP_IDENTITY_UNAVAILABLE_ERROR);
+        }
+        await replaceFileContent(
+          this.app,
+          write.record.file,
+          write.nextContent
+        );
+        completedWrites.push(write);
+      }
+      if (writes.length > 0) {
+        await Promise.all(
+          writes.map(({ record }) =>
+            forceMetadataCacheRefresh(this.app, record.file)
+          )
+        );
+        await this.clearCache();
+      }
+    } catch {
+      let rollbackIncomplete = false;
+      
+      for (const write of completedWrites.reverse()) {
+        try {
+          const latestContent = await readFileContentForMutation(
+            this.app,
+            write.record.file
+          );
+          if (latestContent !== write.nextContent) {
+            rollbackIncomplete = true;
+            continue;
+          }
+          await replaceFileContent(
+            this.app,
+            write.record.file,
+            write.currentContent
+          );
+        } catch {
+          rollbackIncomplete = true;
+        }
+      }
+      if (completedWrites.length > 0) {
+        await Promise.allSettled(
+          completedWrites.map(({ record }) =>
+            forceMetadataCacheRefresh(this.app, record.file)
+          )
+        );
+        await this.clearCache();
+      }
+      if (rollbackIncomplete) {
+        console.error('Setup identity batch rollback was incomplete.');
+      }
+      throw new Error(SETUP_IDENTITY_UNAVAILABLE_ERROR);
+    }
+
+    return new Map(
+      Array.from(resolvedPaths, ([requestedName, filePath]) => [
+        requestedName,
+        filePath ? (identitiesByPath.get(filePath) ?? null) : null,
+      ])
+    );
+  }
+
+  private isSetupAgentIdWinner(
+    setup: Setup,
+    records: SetupFileRecord[],
+    agentEntityId: string
+  ): boolean {
+    const matching = records
+      .map((record) => record.setup)
+      .filter((candidate) =>
+        candidate.filePath === setup.filePath
+          ? true
+          : candidate.agentEntityId === agentEntityId
+      )
+      .sort(compareSetupIdentityOrder);
+    return matching[0]?.filePath === setup.filePath;
+  }
+
   private async parseSetupFile(file: TFile): Promise<Setup> {
     const content = await this.app.vault.cachedRead(file);
-    const body = this.stripFrontmatter(content);
+    return this.parseSetupContent(file, content);
+  }
+
+  private parseSetupMutationTarget(file: TFile, content: string): Setup {
     const frontmatter = this.parseSetupFrontmatter(content);
+    if (frontmatter[SETUP_FRONTMATTER_KEY] !== true) {
+      throw new SetupNoteFormatError(
+        'The note is no longer a setup definition'
+      );
+    }
+    return this.parseSetupContent(file, content, frontmatter);
+  }
+
+  private parseSetupContent(
+    file: TFile,
+    content: string,
+    frontmatter: Record<string, unknown> = this.parseSetupFrontmatter(content)
+  ): Setup {
+    const body = this.stripFrontmatter(content);
     const title = this.extractTitle(body) || file.basename;
     const details = this.parseDetailsSection(body);
     const linkedNotes = this.parseLinkedNotesSection(body);
@@ -896,6 +1381,9 @@ export class SetupService extends CustomDataService {
 
     return {
       id: title,
+      agentEntityId: isSetupAgentId(frontmatter[SETUP_AGENT_ID_FRONTMATTER_KEY])
+        ? frontmatter[SETUP_AGENT_ID_FRONTMATTER_KEY]
+        : undefined,
       name: title,
       filePath: file.path,
       aliases: [],
@@ -955,6 +1443,7 @@ export class SetupService extends CustomDataService {
             `${SAMPLE_ENTITY_ID_FRONTMATTER_KEY}: ${JSON.stringify(data.journalitSampleEntityId)}`,
           ]
         : []),
+      `${SETUP_AGENT_ID_FRONTMATTER_KEY}: ${generateSetupAgentId()}`,
       `tags: ${JSON.stringify(tags)}`,
       '---',
       '',
@@ -1282,9 +1771,23 @@ export class SetupService extends CustomDataService {
     const match = matchFrontmatterBlock(content);
     if (!match) return {};
 
-    const parsed: unknown = parseYaml(match[1]);
+    const { yamlWithoutAgentId, agentEntityId } =
+      separateSetupAgentIdFrontmatter(match[1]);
+    let parsed: unknown;
+    try {
+      parsed = parseYaml(yamlWithoutAgentId);
+    } catch (error) {
+      throw new SetupNoteFormatError(
+        error instanceof Error ? error.message : 'Invalid setup YAML'
+      );
+    }
     if (!this.isRecord(parsed)) {
-      throw new Error('Invalid setup frontmatter: expected a YAML mapping');
+      throw new SetupNoteFormatError(
+        'Invalid setup frontmatter: expected a YAML mapping'
+      );
+    }
+    if (agentEntityId) {
+      parsed[SETUP_AGENT_ID_FRONTMATTER_KEY] = agentEntityId;
     }
     return parsed;
   }
@@ -1292,13 +1795,17 @@ export class SetupService extends CustomDataService {
   private normalizeSetupTags(value: unknown): string[] {
     if (value === undefined) return [];
     if (!Array.isArray(value)) {
-      throw new Error('Invalid setup tags: expected an array of strings');
+      throw new SetupNoteFormatError(
+        'Invalid setup tags: expected an array of strings'
+      );
     }
 
     const values: string[] = [];
     for (const item of value) {
       if (typeof item !== 'string') {
-        throw new Error('Invalid setup tags: expected an array of strings');
+        throw new SetupNoteFormatError(
+          'Invalid setup tags: expected an array of strings'
+        );
       }
       values.push(item);
     }
@@ -1547,9 +2054,6 @@ export class SetupService extends CustomDataService {
     backtestTradeData.forEach((trade) =>
       this.collectLabelsFromTrade(trade, labels)
     );
-    this.plugin?.optionsService
-      ?.getUserDefinedSetupOptions()
-      .forEach((label) => this.addStringOrArrayLabels(label, labels));
     return Array.from(labels).sort((a, b) => a.localeCompare(b));
   }
 
@@ -1661,67 +2165,6 @@ export class SetupService extends CustomDataService {
       ...setup.tags,
       ...setup.rules.map((rule) => rule.label),
     ].some((value) => value.toLowerCase().includes(searchLower));
-  }
-
-  private async updateTradeSetupName(
-    oldName: string,
-    newName: string
-  ): Promise<void> {
-    if (oldName === newName) return;
-    const optionsService = this.plugin?.optionsService;
-    if (!optionsService) return;
-
-    const normalizedOldName = normalizeSetupKey(oldName);
-    const [tradeData, missedTradeData, backtestTradeData] = await Promise.all([
-      this.tradeService.getTradeData({ fresh: false }),
-      this.getMissedTradeSetupData(),
-      this.getBacktestTradeSetupData(),
-    ]);
-    const hasLinkedTrades = [
-      ...tradeData,
-      ...missedTradeData,
-      ...backtestTradeData,
-    ].some((trade) => {
-      if (!this.isRecord(trade)) return false;
-      const value = trade.setup;
-      const labels = Array.isArray(value)
-        ? value
-        : typeof value === 'string'
-          ? [value]
-          : [];
-      return labels.some(
-        (label) =>
-          typeof label === 'string' &&
-          normalizeSetupKey(label) === normalizedOldName
-      );
-    });
-
-    const hasOption = optionsService
-      .getOptions(OptionType.SETUP)
-      .some((option) => option.toLowerCase() === oldName.toLowerCase());
-
-    if (hasOption) {
-      const result = await optionsService.updateOption(
-        OptionType.SETUP,
-        oldName,
-        newName,
-        hasLinkedTrades
-      );
-      if (result.success) return;
-    }
-
-    await Promise.all([
-      ...(hasLinkedTrades
-        ? [
-            optionsService.updateNotesForOptionValue(
-              OptionType.SETUP,
-              oldName,
-              newName
-            ),
-          ]
-        : []),
-      optionsService.addOption(OptionType.SETUP, newName),
-    ]);
   }
 
   private getSetupTimestamps(file: TFile): {
@@ -1839,4 +2282,15 @@ export class SetupService extends CustomDataService {
   private isRecord(value: unknown): value is Record<string, unknown> {
     return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
   }
+}
+
+
+async function contentRevision(content: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(content)
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, '0')
+  ).join('');
 }

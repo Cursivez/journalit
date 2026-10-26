@@ -169,7 +169,9 @@ async function resolveImageDataUrl(
 }
 
 function imageSource(image: HTMLImageElement): string | null {
-  const url = image.currentSrc || image.src;
+  
+  
+  const url = image.src;
   return url && !url.startsWith('data:') ? url : null;
 }
 
@@ -244,26 +246,27 @@ async function encodeDetachedVideoFrame(
 }
 
 async function captureVideoFrame(
-  live: HTMLVideoElement,
+  video: HTMLVideoElement,
   bound: PixelSize | null
 ): Promise<string> {
   
   
   
   
-  return withCanvasReadableUrl(live.currentSrc || live.src, 'video', (url) =>
-    encodeDetachedVideoFrame(url, bound)
+  return withCanvasReadableUrl(
+    video.src || video.querySelector('source')?.src || '',
+    'video',
+    (url) => encodeDetachedVideoFrame(url, bound)
   );
 }
 
 async function replaceVideoWithFrame(
-  live: HTMLVideoElement,
   cloned: HTMLVideoElement,
   bound: PixelSize | null
 ): Promise<void> {
   let dataUrl = TRANSPARENT_PIXEL;
   try {
-    dataUrl = await captureVideoFrame(live, bound);
+    dataUrl = await captureVideoFrame(cloned, bound);
   } catch (error) {
     logger.debug('[Journalit] Share capture could not read video frame', error);
   }
@@ -283,7 +286,6 @@ export async function inlineCloneMedia(
   await Promise.all([
     ...clonedVideos.map((cloned, index) =>
       replaceVideoWithFrame(
-        liveVideos[index],
         cloned,
         renderedBound(liveVideos[index], pixelRatio)
       )

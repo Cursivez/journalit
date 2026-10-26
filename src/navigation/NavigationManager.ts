@@ -30,62 +30,9 @@ export class NavigationManager {
     source: NavigationSource = 'standard'
   ): Promise<void> {
     try {
-      
       const file = this.app.vault.getAbstractFileByPath(filePath);
-
       if (file instanceof TFile) {
-        
-        
-        
-        let existingLeaf: WorkspaceLeaf | null = null;
-        this.app.workspace.iterateRootLeaves((leaf) => {
-          if (existingLeaf) return; 
-
-          if (file.extension === 'md') {
-            
-            
-            if (
-              leaf.view.getViewType() === 'markdown' &&
-              isViewWithTFile(leaf.view) &&
-              leaf.view.file.path === filePath
-            ) {
-              existingLeaf = leaf;
-            }
-            return;
-          }
-
-          if (
-            leaf.view instanceof FileView &&
-            leaf.view.file?.path === filePath
-          ) {
-            existingLeaf = leaf;
-          }
-        });
-
-        if (existingLeaf) {
-          
-          void this.app.workspace.revealLeaf(existingLeaf);
-          this.app.workspace.setActiveLeaf(existingLeaf, {
-            focus: focusLeaf,
-          });
-          return;
-        }
-
-        
-        let leaf: WorkspaceLeaf;
-        if (source === 'sidebar') {
-          
-          
-          leaf = resolveNavigationTargetLeaf(this.app.workspace, createNewLeaf);
-        } else {
-          leaf = createNewLeaf
-            ? this.app.workspace.getLeaf('tab')
-            : this.app.workspace.getLeaf();
-        }
-
-        await leaf.openFile(file);
-        void this.app.workspace.revealLeaf(leaf);
-        this.app.workspace.setActiveLeaf(leaf, { focus: focusLeaf });
+        await this.openResolvedFile(file, createNewLeaf, focusLeaf, source);
       } else {
         console.error(
           `Could not open file: ${filePath} - File not found or not a valid file`
@@ -94,6 +41,51 @@ export class NavigationManager {
     } catch (error) {
       console.error(`Error opening file: ${filePath}`, error);
     }
+  }
+
+  
+  async openResolvedFile(
+    file: TFile,
+    createNewLeaf: boolean = true,
+    focusLeaf: boolean = true,
+    source: NavigationSource = 'standard'
+  ): Promise<void> {
+    let existingLeaf: WorkspaceLeaf | null = null;
+    this.app.workspace.iterateRootLeaves((leaf) => {
+      if (existingLeaf) return;
+      if (file.extension === 'md') {
+        if (
+          leaf.view.getViewType() === 'markdown' &&
+          isViewWithTFile(leaf.view) &&
+          leaf.view.file.path === file.path
+        ) {
+          existingLeaf = leaf;
+        }
+        return;
+      }
+      if (leaf.view instanceof FileView && leaf.view.file?.path === file.path) {
+        existingLeaf = leaf;
+      }
+    });
+
+    if (existingLeaf) {
+      await Promise.resolve(this.app.workspace.revealLeaf(existingLeaf));
+      this.app.workspace.setActiveLeaf(existingLeaf, { focus: focusLeaf });
+      return;
+    }
+
+    let leaf: WorkspaceLeaf;
+    if (source === 'sidebar') {
+      leaf = resolveNavigationTargetLeaf(this.app.workspace, createNewLeaf);
+    } else {
+      leaf = createNewLeaf
+        ? this.app.workspace.getLeaf('tab')
+        : this.app.workspace.getLeaf();
+    }
+
+    await leaf.openFile(file);
+    await Promise.resolve(this.app.workspace.revealLeaf(leaf));
+    this.app.workspace.setActiveLeaf(leaf, { focus: focusLeaf });
   }
 
   
@@ -173,8 +165,9 @@ export class NavigationManager {
         );
         if (homeStartupBehavior === 'always') {
           
+          
           logger.debug('[Journalit] Revealing existing home view');
-          void this.app.workspace.revealLeaf(existingHome[0]);
+          await this.viewManager.openHomeView();
         }
         return;
       }

@@ -13,6 +13,9 @@ import {
 import {
   dateKey,
   formatGraphWikilink,
+  JOURNALIT_DRC_PROPERTY,
+  JOURNALIT_PARENT_REVIEW_PROPERTY,
+  JOURNALIT_SETUPS_PROPERTY,
   normalizeStringList,
   periodKey,
   type GraphIndex,
@@ -49,6 +52,7 @@ export class GraphProjectionService {
         journalitDrc = this.formatTargetLink(
           resolved.target,
           sourcePath,
+          frontmatter[JOURNALIT_DRC_PROPERTY],
           warnings,
           'DRC'
         );
@@ -64,6 +68,7 @@ export class GraphProjectionService {
           journalitParentReview = this.formatTargetLink(
             parentReview,
             sourcePath,
+            frontmatter[JOURNALIT_PARENT_REVIEW_PROPERTY],
             warnings,
             'parent review'
           );
@@ -90,6 +95,7 @@ export class GraphProjectionService {
       const setupLink = this.formatTargetLink(
         resolved.target,
         sourcePath,
+        frontmatter[JOURNALIT_SETUPS_PROPERTY],
         warnings,
         'setup'
       );
@@ -175,6 +181,7 @@ export class GraphProjectionService {
         ? this.formatTargetLink(
             resolved.target,
             filePath,
+            frontmatter[JOURNALIT_PARENT_REVIEW_PROPERTY],
             warnings,
             'parent review'
           )
@@ -273,10 +280,15 @@ export class GraphProjectionService {
   private formatTargetLink(
     target: GraphTarget,
     sourcePath: string,
+    currentValue: unknown,
     warnings: string[],
     relationship: string
   ): string | undefined {
-    const linkPath = this.resolveSafeLinkPath(target, sourcePath);
+    const linkPath = this.resolveSafeLinkPath(
+      target,
+      sourcePath,
+      this.currentLinkPaths(currentValue)
+    );
     if (!linkPath) {
       warnings.push(
         `Unlinkable ${relationship} target path: ${target.file.path}`
@@ -286,9 +298,22 @@ export class GraphProjectionService {
     return formatGraphWikilink(target, linkPath);
   }
 
+  
+  private currentLinkPaths(currentValue: unknown): string[] {
+    const currentValues = Array.isArray(currentValue)
+      ? currentValue
+      : [currentValue];
+    return currentValues.flatMap((value) => {
+      if (typeof value !== 'string') return [];
+      const linkPath = /^\[\[([^|\]]+)(?:\|[^\]]*)?\]\]$/.exec(value)?.[1];
+      return linkPath ? [linkPath] : [];
+    });
+  }
+
   private resolveSafeLinkPath(
     target: GraphTarget,
-    sourcePath: string
+    sourcePath: string,
+    currentLinkPaths: readonly string[]
   ): string | undefined {
     const fullPath = target.file.path.replace(/\.md$/i, '');
     const relativePath = this.relativeLinkPath(sourcePath, target.file.path);
@@ -298,6 +323,7 @@ export class GraphProjectionService {
       true
     );
     const candidates = [
+      ...currentLinkPaths,
       fullPath,
       relativePath,
       target.file.basename,

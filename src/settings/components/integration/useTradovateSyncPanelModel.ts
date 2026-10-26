@@ -7,12 +7,12 @@ import {
   TradovateSyncClaimConflictError,
 } from '../../../services/tradeSync/TradovateBrokerSyncClient';
 import { TradovateClientDiagnosticsService } from '../../../services/tradeSync/TradovateClientDiagnosticsService';
-import { useOAuthBrokerSyncPanelModel } from './oauthBrokerSyncPanel';
+import { useOAuthBrokerSyncPanelModel } from './oauthBrokerSyncPanel/useOAuthBrokerSyncPanelModel';
 import type {
   OAuthBrokerSyncCopy,
   OAuthBrokerSyncPanelAdapter,
   OAuthBrokerSyncPanelModel,
-} from './oauthBrokerSyncPanel';
+} from './oauthBrokerSyncPanel/types';
 
 const TRADOVATE_SYNC_PANEL_COPY: OAuthBrokerSyncCopy = {
   sourceTitle: 'trade-sync.source.tradovate',
@@ -62,6 +62,7 @@ const TRADOVATE_SYNC_PANEL_COPY: OAuthBrokerSyncCopy = {
   syncPartialConnection: 'trade-sync.tradovate.sync-partial-connection',
   syncCompleteConnection: 'trade-sync.tradovate.sync-complete-connection',
   syncAllPartial: 'trade-sync.tradovate.sync-all-partial',
+  syncAllProviderPartial: 'trade-sync.tradovate.sync-all-provider-partial',
   syncAllComplete: 'trade-sync.tradovate.sync-all-complete',
   docsUrl: 'https://journalit.co/docs/trade-sync-tradovate',
   integrationsUrl:

@@ -6,11 +6,6 @@ export const ACCORDION_STYLES = `
     border: 1px solid var(--background-modifier-border);
     border-radius: 6px;
     overflow: hidden;
-    transition: box-shadow 150ms ease-out;
-  }
-
-  .journalit-settings-accordion:hover {
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   }
 
   .journalit-settings-accordion__header {

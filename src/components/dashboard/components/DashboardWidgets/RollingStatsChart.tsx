@@ -21,7 +21,6 @@ import {
 } from '../../../../utils/tradeStatusUtils';
 import { calculateEffectiveRMultiple } from '../../../../utils/formatting';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
-import { useCurrency } from '../../../../contexts/CurrencyContext';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
 import { cssVars } from '../../../../styles/inlineStylePolicy';
@@ -38,6 +37,7 @@ import {
   calculateYAxisWidth,
   generateNiceAxis,
 } from '../../../../utils/chartUtils';
+import { skipVerticalGridCoordinates } from '../../../charts/chartGrid';
 
 
 interface RollingStatsDataPoint {
@@ -254,10 +254,9 @@ const calculateRollingWindowStats = (
 const periodOptions = [10, 20, 30, 50];
 
 export const RollingStatsChart = React.memo<BaseWidgetProps>(
-  ({ filters, dateFormat }) => {
+  ({ dateFormat }) => {
     const chartRef = React.useRef<HTMLDivElement>(null);
     const plugin = usePlugin();
-    const { currency } = useCurrency();
     const [period, setPeriod] = useState<number>(20);
     const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
     const displayRMultiples =
@@ -268,19 +267,14 @@ export const RollingStatsChart = React.memo<BaseWidgetProps>(
     
 
     return (
-      <BaseWidget
-        filters={filters}
-        dateFormat={dateFormat}
-        skeletonType="line-chart"
-      >
+      <BaseWidget dateFormat={dateFormat} skeletonType="line-chart">
         {(data, _userDateFormat) => {
           
           const currencyOverride = data.metrics.isMultiCurrency
             ? data.metrics.conversionBaseCurrency
             : undefined;
 
-          
-          const activeCurrency = currencyOverride || currency;
+          const activeCurrency = currencyOverride || data.currency;
 
           
           const allStats = calculateRollingWindowStats(
@@ -443,6 +437,7 @@ export const RollingStatsChart = React.memo<BaseWidgetProps>(
                     <CartesianGrid
                       strokeDasharray="3 3"
                       vertical={false}
+                      verticalCoordinatesGenerator={skipVerticalGridCoordinates}
                       stroke="var(--background-modifier-border)"
                       strokeOpacity={0.5}
                     />

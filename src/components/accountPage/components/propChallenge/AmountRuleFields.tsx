@@ -6,6 +6,7 @@ import Checkbox from '../../../ui/Checkbox';
 import { DraftInput } from '../../../ui/DraftInput';
 import { numberValue } from './editorOptions';
 import { PropChallengeField } from './PropChallengeField';
+import { resolvePhaseProfitTarget } from '../../../../services/propChallenge/PropChallengeConfig';
 
 export function RuleAmountField({
   amount,
@@ -38,10 +39,12 @@ export function RuleAmountField({
 
 export function ProfitTargetFields({
   rule,
+  startingBalance,
   disabled,
   onChange,
 }: {
   rule: Extract<PropChallengeRule, { kind: 'profit_target' }>;
+  startingBalance: number;
   disabled: boolean;
   onChange: (rule: PropChallengeRule) => void;
 }) {
@@ -84,9 +87,15 @@ export function ProfitTargetFields({
           ]}
         />
       </PropChallengeField>
+      {resolvePhaseProfitTarget(rule, startingBalance) === undefined && (
+        <div className="error-message-inline journalit-prop-challenge-rule-hint">
+          {t('account.prop-challenge.rule.target-needs-balance')}
+        </div>
+      )}
       {rule.targetType === 'absolute' && (
         <PropChallengeField
           kind="checkbox"
+          inline
           translationKey="account.prop-challenge.rule.credit-withdrawals"
           description={t('account.prop-challenge.rule.help.credit-withdrawals')}
         >

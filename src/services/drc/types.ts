@@ -73,9 +73,6 @@ export interface DRCData {
   dailyGoals?: string[];
 
   
-  previousDayGoals?: string[];
-
-  
   dailyGoalStatus?: Record<string, boolean>; 
 
   

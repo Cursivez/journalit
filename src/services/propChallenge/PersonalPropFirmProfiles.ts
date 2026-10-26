@@ -3,6 +3,7 @@ import { generateUUID } from '../../utils/uuid';
 import { Mutex } from '../../utils/mutex';
 import { eventBus } from '../events/EventBus';
 import { normalizePropFirmProfileCatalog } from './normalization';
+import { isExecutableRule } from './PropChallengeRuleReview';
 import type {
   PropChallengeConfig,
   PropFirmProfileChallenge,
@@ -126,16 +127,17 @@ export function createPersonalProfile(
     phases: config.phases.map((phase) => {
       if (!phase.stage)
         throw new Error('Choose an explicit stage for every phase.');
-      for (const rule of phase.rules) {
+      const rules = phase.rules.filter(isExecutableRule);
+      for (const rule of rules) {
         if (!rule.enabled)
           throw new Error(
             'Enable or remove disabled rules before saving a profile.'
           );
         if (
           ('amount' in rule &&
+            rule.amount !== undefined &&
             (!Number.isFinite(rule.amount) || rule.amount <= 0)) ||
           ('days' in rule && (!Number.isInteger(rule.days) || rule.days < 1)) ||
-          ('maxContracts' in rule && rule.maxContracts <= 0) ||
           ('maxBestDayPercent' in rule &&
             (rule.maxBestDayPercent <= 0 || rule.maxBestDayPercent > 100))
         ) {
@@ -148,9 +150,7 @@ export function createPersonalProfile(
         name: phase.name,
         stage: phase.stage,
         startingBalance: phase.startingBalance,
-        rules: phase.rules.map(
-          ({ id: _id, enabled: _enabled, ...rule }) => rule
-        ),
+        rules: rules.map(({ id: _id, enabled: _enabled, ...rule }) => rule),
         ...(phase.payoutPolicy ? { payoutPolicy: phase.payoutPolicy } : {}),
       };
     }),

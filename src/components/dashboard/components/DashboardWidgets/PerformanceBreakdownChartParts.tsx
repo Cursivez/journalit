@@ -166,15 +166,63 @@ export const PerformanceBreakdownTooltip: React.FC<
   );
 };
 
+const barFill = (
+  fillMode: 'masked' | 'net' | 'neutral',
+  value: number
+): string => {
+  if (fillMode !== 'net') return 'var(--text-muted)';
+  if (value > 0) return 'var(--chart-positive)';
+  if (value < 0) return 'var(--chart-negative)';
+  return 'var(--chart-neutral)';
+};
+
+
+const normalizedBarExtent = (
+  x: number | undefined,
+  width: number | undefined
+) => {
+  const safeX = x ?? 0;
+  const safeWidth = width ?? 0;
+  return {
+    x: safeWidth < 0 ? safeX + safeWidth : safeX,
+    width: Math.abs(safeWidth),
+  };
+};
+
+type PerformanceBreakdownBarPoint = Exclude<
+  NonNullable<PerformanceBreakdownBarShapeProps['payload']>,
+  { kind: 'divider' }
+>;
+
+const interactiveBarProps = (
+  payload: PerformanceBreakdownBarPoint,
+  onKeyboardActivate:
+    | ((
+        point: PerformanceBreakdownBarPoint,
+        event: React.KeyboardEvent<SVGRectElement>
+      ) => void)
+    | undefined
+): React.SVGProps<SVGRectElement> & {
+  'data-journalit-chart-mark': string;
+} => ({
+  cursor: 'pointer',
+  role: 'button',
+  'data-journalit-chart-mark': 'true',
+  'aria-label': t('setups.view.card.open-named', { name: payload.label }),
+  onKeyDown: onKeyboardActivate
+    ? (event) =>
+        handleRovingChartMarkKeyDown(event, () =>
+          onKeyboardActivate(payload, event)
+        )
+    : undefined,
+});
+
 export const PerformanceBreakdownBarShape: React.FC<
   PerformanceBreakdownBarShapeProps & {
     fillMode: 'masked' | 'net' | 'neutral';
     navigationTabIndex?: 0 | -1;
     onKeyboardActivate?: (
-      point: Exclude<
-        NonNullable<PerformanceBreakdownBarShapeProps['payload']>,
-        { kind: 'divider' }
-      >,
+      point: PerformanceBreakdownBarPoint,
       event: React.KeyboardEvent<SVGRectElement>
     ) => void;
   }
@@ -193,23 +241,15 @@ export const PerformanceBreakdownBarShape: React.FC<
 }) => {
   if (!payload || payload.kind === 'divider') return null;
 
-  const fill =
-    fillMode !== 'net'
-      ? 'var(--text-muted)'
-      : payload.displayValue > 0
-        ? 'var(--chart-positive)'
-        : payload.displayValue < 0
-          ? 'var(--chart-negative)'
-          : 'var(--chart-neutral)';
-  const safeWidth = width ?? 0;
-  const adjustedX = safeWidth < 0 ? (x ?? 0) + safeWidth : (x ?? 0);
+  const fill = barFill(fillMode, payload.displayValue);
+  const { x: rectX, width: rectWidth } = normalizedBarExtent(x, width);
   const isInteractive = navigationTabIndex !== undefined;
 
   return (
     <rect
-      x={adjustedX}
+      x={rectX}
       y={y ?? 0}
-      width={Math.abs(safeWidth)}
+      width={rectWidth}
       height={Math.max(height ?? 0, 0)}
       fill={fill}
       stroke={stroke}
@@ -217,23 +257,10 @@ export const PerformanceBreakdownBarShape: React.FC<
       strokeOpacity={strokeOpacity}
       rx={2}
       ry={2}
-      cursor={isInteractive ? 'pointer' : undefined}
-      role={isInteractive ? 'button' : undefined}
       tabIndex={navigationTabIndex}
-      data-journalit-chart-mark={isInteractive ? 'true' : undefined}
-      aria-label={
-        isInteractive
-          ? t('setups.view.card.open-named', { name: payload.label })
-          : undefined
-      }
-      onKeyDown={
-        isInteractive && onKeyboardActivate
-          ? (event) =>
-              handleRovingChartMarkKeyDown(event, () =>
-                onKeyboardActivate(payload, event)
-              )
-          : undefined
-      }
+      {...(isInteractive
+        ? interactiveBarProps(payload, onKeyboardActivate)
+        : undefined)}
     />
   );
 };

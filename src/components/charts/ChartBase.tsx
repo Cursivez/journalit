@@ -196,14 +196,15 @@ export const ChartBase = React.memo<ChartBaseProps>(
       });
 
       resizeObserver.observe(container);
-      window.activeDocument.addEventListener(
-        'journalit:chart-resize-resume',
-        measure
-      );
+      
+      
+      
+      const chartDocument = container.ownerDocument;
+      chartDocument.addEventListener('journalit:chart-resize-resume', measure);
 
       
       return () => {
-        window.activeDocument.removeEventListener(
+        chartDocument.removeEventListener(
           'journalit:chart-resize-resume',
           measure
         );

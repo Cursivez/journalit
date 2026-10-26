@@ -11,7 +11,7 @@ import {
   Import,
   RefreshCw,
 } from '../../../components/shared/icons/ObsidianIcon';
-import { Button } from '../../../components/ui';
+import { Button } from '../../../components/ui/Button';
 import { t } from '../../../lang/helpers';
 import { logger } from '../../../utils/logger';
 import type JournalitPlugin from '../../../main';
@@ -46,7 +46,7 @@ import {
   isTradeSyncRateLimitError,
   tradeSyncRateLimitMessage,
 } from '../../../services/tradeSync/TradeSyncRateLimit';
-import { useRateLimitCountdown } from './brokerSyncKit';
+import { useRateLimitCountdown } from './brokerSyncKit/rateLimitCooldowns';
 import {
   TradeProjectionInventory,
   selectDefaultLocalAccount,
@@ -107,7 +107,7 @@ async function loadAccountOptions(
     : fallbackAccountOptions(plugin);
 }
 
-export async function loadTradeProjectionInventoryForCurrentOwner(
+async function loadTradeProjectionInventoryForCurrentOwner(
   plugin: JournalitPlugin,
   projectionBackendService: TradeProjectionClient,
   vaultId: string
@@ -158,7 +158,7 @@ function connectionText(status: ConnectionStatus): string {
   return t('backend.status.checking');
 }
 
-export async function persistTradeProjectionMappingForInventoryOwner(
+async function persistTradeProjectionMappingForInventoryOwner(
   ownership: TradeProjectionInventoryOwnership,
   projectionBackendService: TradeProjectionClient,
   accountId: string,
@@ -183,7 +183,7 @@ function totalSynced(accounts: TradeProjectionAccountInventoryItem[]): number {
   return accounts.reduce((total, account) => total + account.syncedCount, 0);
 }
 
-export async function loadAllRestorableProjections(
+async function loadAllRestorableProjections(
   workflowService: TradeImportWorkflowService,
   accountId: string,
   shouldStop: () => boolean
@@ -267,12 +267,23 @@ const TradeImportSyncHeader: React.FC<{
   </div>
 );
 
-export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
+
+function filterToCanonicalAccounts(
+  accounts: TradeProjectionAccountInventoryItem[],
+  canonicalAccountIds: readonly string[] | undefined
+): TradeProjectionAccountInventoryItem[] {
+  if (!canonicalAccountIds) return accounts;
+  const allowed = new Set(canonicalAccountIds);
+  return accounts.filter((account) => allowed.has(account.accountId));
+}
+
+function useTradeImportSyncPanelModel({
   plugin,
-  projectionOnly = false,
+  projectionOnly,
   brokerFilter,
   canonicalAccountIds,
-}) => {
+}: Required<Pick<TradeImportSyncPanelProps, 'plugin' | 'projectionOnly'>> &
+  Pick<TradeImportSyncPanelProps, 'brokerFilter' | 'canonicalAccountIds'>) {
   const initialAccounts = fallbackAccountOptions(plugin);
   const [state, dispatchState] = useReducer(reducer, {
     connectionStatus: 'unknown',
@@ -376,11 +387,11 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
       }
       const { localAccounts, ownership, response } = loaded;
       const accounts = brokerFilter
-        ? response.accounts.filter(
-            (account) =>
-              account.broker === brokerFilter &&
-              (canonicalAccountIds === undefined ||
-                canonicalAccountIds.includes(account.accountId))
+        ? filterToCanonicalAccounts(
+            response.accounts.filter(
+              (account) => account.broker === brokerFilter
+            ),
+            canonicalAccountIds
           )
         : response.accounts;
       
@@ -779,11 +790,50 @@ export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
     [saveMapping, state.selectedLocalAccounts]
   );
 
-  const visibleAccounts = canonicalAccountIds
-    ? state.accounts.filter((account) =>
-        canonicalAccountIds.includes(account.accountId)
-      )
-    : state.accounts;
+  const visibleAccounts = filterToCanonicalAccounts(
+    state.accounts,
+    canonicalAccountIds
+  );
+
+  return {
+    state,
+    visibleAccounts,
+    pendingAckCount,
+    now,
+    focusHistory,
+    historyRevision,
+    loadInventory,
+    deleteAccountFromServer,
+    selectLocalAccount,
+    createLocalAccount,
+    restoreAccount,
+  };
+}
+
+export const TradeImportSyncPanel: React.FC<TradeImportSyncPanelProps> = ({
+  plugin,
+  projectionOnly = false,
+  brokerFilter,
+  canonicalAccountIds,
+}) => {
+  const {
+    state,
+    visibleAccounts,
+    pendingAckCount,
+    now,
+    focusHistory,
+    historyRevision,
+    loadInventory,
+    deleteAccountFromServer,
+    selectLocalAccount,
+    createLocalAccount,
+    restoreAccount,
+  } = useTradeImportSyncPanelModel({
+    plugin,
+    projectionOnly,
+    brokerFilter,
+    canonicalAccountIds,
+  });
 
   return (
     <div className="journalit-trade-import-sync-panel">

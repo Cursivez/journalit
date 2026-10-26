@@ -2,14 +2,17 @@ import React, { useId } from 'react';
 import { DraftInput } from '../../../ui/DraftInput';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import { t } from '../../../../lang/helpers';
-import type { PropChallengeRule } from '../../../../services/propChallenge/types';
+import type {
+  ExecutablePropChallengeRule,
+  PropChallengeRule,
+} from '../../../../services/propChallenge/types';
+import { isDisputedRule } from '../../../../services/propChallenge/PropChallengeRuleReview';
 import { DropdownSelect } from '../../../shared/DropdownSelect';
 import {
   ChevronDown,
   ChevronRight,
   Trash2,
 } from '../../../shared/icons/ObsidianIcon';
-import Checkbox from '../../../ui/Checkbox';
 import { NoTooltipButton } from '../../../ui/NoTooltipButton';
 import { numberValue } from './editorOptions';
 import { Tooltip } from '../../../shared/Tooltip';
@@ -21,27 +24,6 @@ import {
   ProfitTargetFields,
   RuleAmountField,
 } from './AmountRuleFields';
-
-const formatPositionTiers = (
-  tiers: Array<{ profit: number; maxContracts: number }>
-): string =>
-  tiers.map((tier) => `${tier.profit}:${tier.maxContracts}`).join(', ');
-
-const parsePositionTiers = (
-  value: string
-): Array<{ profit: number; maxContracts: number }> =>
-  value
-    .split(',')
-    .map((entry) => entry.trim())
-    .filter(Boolean)
-    .flatMap((entry) => {
-      const [profitValue, contractsValue] = entry.split(':');
-      const profit = Number.parseFloat(profitValue ?? '');
-      const maxContracts = Number.parseFloat(contractsValue ?? '');
-      return Number.isFinite(profit) && Number.isFinite(maxContracts)
-        ? [{ profit, maxContracts }]
-        : [];
-    });
 
 const formatLossTiers = (
   tiers: Array<{ profit: number; amount: number }>
@@ -77,10 +59,13 @@ function getDrawdownModeLabel(
 }
 
 function getRuleSummary(
-  rule: PropChallengeRule,
+  rule: ExecutablePropChallengeRule,
   currencyCode: string,
   formatValue: ReturnType<typeof useDisplayFormatter>['formatValue']
 ): string {
+  if (isDisputedRule(rule)) {
+    return `${t('account.prop-challenge.rule.manual_review')}: ${rule.reviewRequired}`;
+  }
   switch (rule.kind) {
     case 'profit_target': {
       const target = formatValue({
@@ -199,8 +184,10 @@ function getRuleSummary(
           }),
         }
       )}`;
+    case 'manual_review':
+      return rule.reason;
     case 'consistency':
-      return `${t('account.prop-challenge.rule.best-day-percent')}: ${formatValue(
+      return `${t('account.prop-challenge.rule.best-day-percent')}: ${rule.comparison === 'strictly_below' ? '< ' : '≤ '}${formatValue(
         {
           kind: 'percentage',
           value: rule.maxBestDayPercent,
@@ -215,42 +202,6 @@ function getRuleSummary(
               precision: 1,
             })} ${t('account.prop-challenge.rule.consistency-cushion-short')}`
       }`;
-    case 'max_position_size':
-      return 'maxContracts' in rule
-        ? `${t('account.prop-challenge.rule.max-contracts')}: ${formatValue({
-            kind: 'positionSize',
-            value: rule.maxContracts,
-            precision: 0,
-          })}`
-        : 'profitTiers' in rule
-          ? `${formatValue({
-              kind: 'positionSize',
-              value: rule.initialContracts,
-              precision: 0,
-            })} → ${formatValue({
-              kind: 'positionSize',
-              value:
-                rule.profitTiers[rule.profitTiers.length - 1]?.maxContracts ??
-                rule.initialContracts,
-              precision: 0,
-            })}`
-          : rule.maximumContracts === undefined
-            ? `${formatValue({
-                kind: 'positionSize',
-                value: rule.initialContracts,
-                precision: 0,
-              })} · ${t(
-                'account.prop-challenge.rule.position-limit-model.eod-profit'
-              )}`
-            : `${formatValue({
-                kind: 'positionSize',
-                value: rule.initialContracts,
-                precision: 0,
-              })} → ${formatValue({
-                kind: 'positionSize',
-                value: rule.maximumContracts,
-                precision: 0,
-              })}`;
   }
 }
 
@@ -510,12 +461,12 @@ function DailyLossLimitFields({
           </PropChallengeField>
           <PropChallengeField
             kind="dropdown"
-            translationKey="account.prop-challenge.rule.position-profit-basis"
+            translationKey="account.prop-challenge.rule.profit-basis"
             description={t('account.prop-challenge.rule.help.profit-basis')}
           >
             <DropdownSelect
               value={rule.profitBasis ?? 'cumulative_trade_profit'}
-              ariaLabel={t('account.prop-challenge.rule.position-profit-basis')}
+              ariaLabel={t('account.prop-challenge.rule.profit-basis')}
               onChange={(profitBasis) =>
                 onChange({
                   ...rule,
@@ -530,13 +481,13 @@ function DailyLossLimitFields({
                 {
                   value: 'current_account_profit',
                   label: t(
-                    'account.prop-challenge.rule.position-profit-basis.current-account'
+                    'account.prop-challenge.rule.profit-basis.current-account'
                   ),
                 },
                 {
                   value: 'cumulative_trade_profit',
                   label: t(
-                    'account.prop-challenge.rule.position-profit-basis.cumulative'
+                    'account.prop-challenge.rule.profit-basis.cumulative'
                   ),
                 },
               ]}
@@ -548,14 +499,93 @@ function DailyLossLimitFields({
   );
 }
 
-function MaxPositionSizeFields({
+function MinimumTradingDaysField({
   rule,
-  startingBalance,
   disabled,
   onChange,
 }: {
-  rule: Extract<PropChallengeRule, { kind: 'max_position_size' }>;
-  startingBalance: number;
+  rule: Extract<PropChallengeRule, { kind: 'minimum_trading_days' }>;
+  disabled: boolean;
+  onChange: (rule: PropChallengeRule) => void;
+}) {
+  return (
+    <PropChallengeField
+      kind="input"
+      translationKey="account.prop-challenge.rule.days"
+      description={t('account.prop-challenge.ledger.help.minimum_trading_days')}
+    >
+      <DraftInput
+        type="number"
+        min="0"
+        step="1"
+        value={rule.days === 0 ? '' : rule.days}
+        onChange={(event) =>
+          onChange({ ...rule, days: numberValue(event.target.value) })
+        }
+        disabled={disabled}
+      />
+    </PropChallengeField>
+  );
+}
+
+function MinimumProfitableDaysFields({
+  rule,
+  disabled,
+  onChange,
+}: {
+  rule: Extract<PropChallengeRule, { kind: 'minimum_profitable_days' }>;
+  disabled: boolean;
+  onChange: (rule: PropChallengeRule) => void;
+}) {
+  return (
+    <>
+      <PropChallengeField
+        kind="input"
+        translationKey="account.prop-challenge.rule.days"
+        description={t(
+          'account.prop-challenge.ledger.help.minimum_profitable_days'
+        )}
+      >
+        <DraftInput
+          type="number"
+          min="0"
+          step="1"
+          value={rule.days === 0 ? '' : rule.days}
+          onChange={(event) =>
+            onChange({ ...rule, days: numberValue(event.target.value) })
+          }
+          disabled={disabled}
+        />
+      </PropChallengeField>
+      <PropChallengeField
+        kind="input"
+        translationKey="account.prop-challenge.rule.minimum-daily-profit"
+        description={t('account.prop-challenge.rule.help.daily-profit')}
+      >
+        <DraftInput
+          type="number"
+          min="0"
+          step="50"
+          value={rule.minimumDailyProfit === 0 ? '' : rule.minimumDailyProfit}
+          onChange={(event) =>
+            onChange({
+              ...rule,
+              minimumDailyProfit: numberValue(event.target.value),
+            })
+          }
+          disabled={disabled}
+        />
+      </PropChallengeField>
+    </>
+  );
+}
+
+function ConsistencyFields({
+  rule,
+  disabled,
+  onChange,
+}: {
+  rule: Extract<PropChallengeRule, { kind: 'consistency' }>;
   disabled: boolean;
   onChange: (rule: PropChallengeRule) => void;
 }) {
@@ -563,247 +593,70 @@ function MaxPositionSizeFields({
     <>
       <PropChallengeField
         kind="dropdown"
-        translationKey="account.prop-challenge.rule.position-limit-model"
-        description={t('account.prop-challenge.rule.help.position-model')}
+        translationKey="account.prop-challenge.rule.comparison"
+        description={t(
+          rule.comparison === 'strictly_below'
+            ? 'account.prop-challenge.rule.strict-help'
+            : 'account.prop-challenge.ledger.help.consistency'
+        )}
       >
         <DropdownSelect
-          ariaLabel={t('account.prop-challenge.rule.position-limit-model')}
-          value={
-            'maxContracts' in rule
-              ? 'fixed'
-              : 'profitTiers' in rule
-                ? 'eod_profit_tiers'
-                : 'eod_profit_steps'
-          }
-          onChange={(kind) => {
-            const initialContracts =
-              'initialContracts' in rule ? rule.initialContracts : 1;
-            const profitBasis =
-              'maxContracts' in rule ? undefined : rule.profitBasis;
-            const base = {
-              id: rule.id,
-              enabled: rule.enabled,
-              kind: 'max_position_size' as const,
-              ...(rule.microsPerContract
-                ? { microsPerContract: rule.microsPerContract }
-                : {}),
-            };
-            if (kind === 'fixed') {
-              onChange({
-                ...base,
-                maxContracts: 'maxContracts' in rule ? rule.maxContracts : 1,
-              });
-              return;
-            }
-            if (kind === 'eod_profit_tiers') {
-              onChange({
-                ...base,
-                initialContracts,
-                profitTiers: [
-                  { profit: 1_500, maxContracts: initialContracts + 1 },
-                ],
-                ...(profitBasis ? { profitBasis } : {}),
-              });
-              return;
-            }
-            onChange({
-              ...base,
-              initialContracts,
-              profitPerAdditionalContract: 2_000,
-              ...(profitBasis ? { profitBasis } : {}),
-              ...('maxContracts' in rule && rule.maxContracts > 0
-                ? { maximumContracts: rule.maxContracts }
-                : {}),
-            });
-          }}
+          ariaLabel={t('account.prop-challenge.rule.comparison')}
           disabled={disabled}
+          value={rule.comparison ?? 'inclusive'}
+          onChange={(value) => {
+            const next = { ...rule };
+            if (value === 'strictly_below') next.comparison = value;
+            else delete next.comparison;
+            onChange(next);
+          }}
           options={[
-            {
-              value: 'fixed',
-              label: t(
-                'account.prop-challenge.rule.position-limit-model.fixed'
-              ),
-            },
-            {
-              value: 'eod_profit_steps',
-              label: t(
-                'account.prop-challenge.rule.position-limit-model.eod-profit'
-              ),
-            },
-            {
-              value: 'eod_profit_tiers',
-              label: t(
-                'account.prop-challenge.rule.position-limit-model.eod-profit-tiers'
-              ),
-            },
+            { value: 'inclusive', label: '≤' },
+            { value: 'strictly_below', label: '<' },
           ]}
         />
       </PropChallengeField>
-      {'maxContracts' in rule ? (
-        <PropChallengeField
-          kind="input"
-          translationKey="account.prop-challenge.rule.max-contracts"
-          description={t('account.prop-challenge.rule.help.max-contracts')}
-        >
-          <DraftInput
-            type="number"
-            min="0"
-            step="1"
-            value={rule.maxContracts === 0 ? '' : rule.maxContracts}
-            onChange={(event) =>
-              onChange({
-                ...rule,
-                maxContracts: numberValue(event.target.value),
-              })
-            }
-            disabled={disabled}
-          />
-        </PropChallengeField>
-      ) : (
-        <>
-          <PropChallengeField
-            kind="dropdown"
-            translationKey="account.prop-challenge.rule.position-profit-basis"
-            description={t('account.prop-challenge.rule.help.profit-basis')}
-          >
-            <DropdownSelect
-              value={rule.profitBasis ?? 'cumulative_trade_profit'}
-              ariaLabel={t('account.prop-challenge.rule.position-profit-basis')}
-              onChange={(profitBasis) => {
-                if (
-                  profitBasis === 'cumulative_trade_profit' ||
-                  profitBasis === 'current_account_profit'
-                ) {
-                  onChange({ ...rule, profitBasis });
-                }
-              }}
-              disabled={disabled}
-              options={[
-                {
-                  value: 'cumulative_trade_profit',
-                  label: t(
-                    'account.prop-challenge.rule.position-profit-basis.cumulative'
-                  ),
-                },
-                {
-                  value: 'current_account_profit',
-                  label: t(
-                    'account.prop-challenge.rule.position-profit-basis.current-account'
-                  ),
-                },
-              ]}
-            />
-          </PropChallengeField>
-          <PropChallengeField
-            kind="input"
-            translationKey="account.prop-challenge.rule.initial-contracts"
-            description={t(
-              'account.prop-challenge.rule.help.initial-contracts'
-            )}
-          >
-            <DraftInput
-              type="number"
-              min="1"
-              step="1"
-              value={rule.initialContracts}
-              onChange={(event) =>
-                onChange({
-                  ...rule,
-                  initialContracts: numberValue(event.target.value),
-                })
-              }
-              disabled={disabled}
-            />
-          </PropChallengeField>
-          {'profitTiers' in rule ? (
-            <>
-              <PropChallengeField
-                kind="input"
-                translationKey="account.prop-challenge.rule.position-tiers"
-                description={t(
-                  'account.prop-challenge.rule.position-tiers-help'
-                )}
-              >
-                <DraftInput
-                  value={formatPositionTiers(rule.profitTiers)}
-                  onChange={(event) =>
-                    onChange({
-                      ...rule,
-                      profitTiers: parsePositionTiers(event.target.value),
-                    })
-                  }
-                  disabled={disabled}
-                />
-              </PropChallengeField>
-            </>
-          ) : (
-            <>
-              <PropChallengeField
-                kind="input"
-                translationKey="account.prop-challenge.rule.profit-per-contract"
-                description={t(
-                  'account.prop-challenge.rule.position-scaling-help'
-                )}
-              >
-                <DraftInput
-                  type="number"
-                  min="1"
-                  step="500"
-                  value={rule.profitPerAdditionalContract}
-                  onChange={(event) =>
-                    onChange({
-                      ...rule,
-                      profitPerAdditionalContract: numberValue(
-                        event.target.value
-                      ),
-                    })
-                  }
-                  disabled={disabled}
-                />
-              </PropChallengeField>
-              <PropChallengeField
-                kind="input"
-                translationKey="account.prop-challenge.rule.maximum-contracts"
-                description={t(
-                  'account.prop-challenge.rule.help.maximum-contracts'
-                )}
-              >
-                <DraftInput
-                  type="number"
-                  min="1"
-                  step="1"
-                  value={rule.maximumContracts ?? ''}
-                  onChange={(event) => {
-                    if (event.target.value.trim() === '') {
-                      const withoutMaximum = { ...rule };
-                      delete withoutMaximum.maximumContracts;
-                      onChange(withoutMaximum);
-                      return;
-                    }
-                    onChange({
-                      ...rule,
-                      maximumContracts: numberValue(event.target.value),
-                    });
-                  }}
-                  disabled={disabled}
-                />
-              </PropChallengeField>
-            </>
-          )}
-        </>
-      )}
       <PropChallengeField
-        kind="checkbox"
-        translationKey="account.prop-challenge.rule.micros-per-contract"
-        description={t('account.prop-challenge.rule.micros-per-contract-help')}
+        kind="input"
+        translationKey="account.prop-challenge.rule.best-day-percent"
+        description={t('account.prop-challenge.ledger.help.consistency')}
       >
-        <Checkbox
-          checked={rule.microsPerContract === 10}
-          onChange={(checked) => {
-            const next = { ...rule };
-            if (checked) next.microsPerContract = 10;
-            else delete next.microsPerContract;
-            onChange(next);
+        <DraftInput
+          type="number"
+          min="0"
+          step="1"
+          value={rule.maxBestDayPercent === 0 ? '' : rule.maxBestDayPercent}
+          onChange={(event) =>
+            onChange({
+              ...rule,
+              maxBestDayPercent: numberValue(event.target.value),
+            })
+          }
+          disabled={disabled}
+        />
+      </PropChallengeField>
+      <PropChallengeField
+        kind="input"
+        translationKey="account.prop-challenge.rule.consistency-cushion-percent"
+        description={t('account.prop-challenge.rule.help.consistency-cushion')}
+      >
+        <DraftInput
+          type="number"
+          min="0"
+          max="100"
+          step="0.1"
+          value={rule.consistencyCushionPercent ?? ''}
+          onChange={(event) => {
+            if (event.target.value === '') {
+              const nextRule = { ...rule };
+              delete nextRule.consistencyCushionPercent;
+              onChange(nextRule);
+              return;
+            }
+            onChange({
+              ...rule,
+              consistencyCushionPercent: numberValue(event.target.value),
+            });
           }}
           disabled={disabled}
         />
@@ -818,10 +671,10 @@ function RuleEditorFields({
   disabled,
   onChange,
 }: {
-  rule: PropChallengeRule;
+  rule: ExecutablePropChallengeRule;
   startingBalance: number;
   disabled: boolean;
-  onChange: (rule: PropChallengeRule) => void;
+  onChange: (rule: ExecutablePropChallengeRule) => void;
 }) {
   let fields: React.ReactNode;
   switch (rule.kind) {
@@ -829,6 +682,7 @@ function RuleEditorFields({
       fields = (
         <ProfitTargetFields
           rule={rule}
+          startingBalance={startingBalance}
           disabled={disabled}
           onChange={onChange}
         />
@@ -871,129 +725,29 @@ function RuleEditorFields({
       break;
     case 'minimum_trading_days':
       fields = (
-        <PropChallengeField
-          kind="input"
-          translationKey="account.prop-challenge.rule.days"
-          description={t(
-            'account.prop-challenge.ledger.help.minimum_trading_days'
-          )}
-        >
-          <DraftInput
-            type="number"
-            min="0"
-            step="1"
-            value={rule.days === 0 ? '' : rule.days}
-            onChange={(event) =>
-              onChange({ ...rule, days: numberValue(event.target.value) })
-            }
-            disabled={disabled}
-          />
-        </PropChallengeField>
+        <MinimumTradingDaysField
+          rule={rule}
+          disabled={disabled}
+          onChange={onChange}
+        />
       );
       break;
     case 'minimum_profitable_days':
       fields = (
-        <>
-          <PropChallengeField
-            kind="input"
-            translationKey="account.prop-challenge.rule.days"
-            description={t(
-              'account.prop-challenge.ledger.help.minimum_profitable_days'
-            )}
-          >
-            <DraftInput
-              type="number"
-              min="0"
-              step="1"
-              value={rule.days === 0 ? '' : rule.days}
-              onChange={(event) =>
-                onChange({ ...rule, days: numberValue(event.target.value) })
-              }
-              disabled={disabled}
-            />
-          </PropChallengeField>
-          <PropChallengeField
-            kind="input"
-            translationKey="account.prop-challenge.rule.minimum-daily-profit"
-            description={t('account.prop-challenge.rule.help.daily-profit')}
-          >
-            <DraftInput
-              type="number"
-              min="0"
-              step="50"
-              value={
-                rule.minimumDailyProfit === 0 ? '' : rule.minimumDailyProfit
-              }
-              onChange={(event) =>
-                onChange({
-                  ...rule,
-                  minimumDailyProfit: numberValue(event.target.value),
-                })
-              }
-              disabled={disabled}
-            />
-          </PropChallengeField>
-        </>
+        <MinimumProfitableDaysFields
+          rule={rule}
+          disabled={disabled}
+          onChange={onChange}
+        />
       );
+      break;
+    case 'manual_review':
+      fields = <p>{rule.reason}</p>;
       break;
     case 'consistency':
       fields = (
-        <>
-          <PropChallengeField
-            kind="input"
-            translationKey="account.prop-challenge.rule.best-day-percent"
-            description={t('account.prop-challenge.ledger.help.consistency')}
-          >
-            <DraftInput
-              type="number"
-              min="0"
-              step="1"
-              value={rule.maxBestDayPercent === 0 ? '' : rule.maxBestDayPercent}
-              onChange={(event) =>
-                onChange({
-                  ...rule,
-                  maxBestDayPercent: numberValue(event.target.value),
-                })
-              }
-              disabled={disabled}
-            />
-          </PropChallengeField>
-          <PropChallengeField
-            kind="input"
-            translationKey="account.prop-challenge.rule.consistency-cushion-percent"
-            description={t(
-              'account.prop-challenge.rule.help.consistency-cushion'
-            )}
-          >
-            <DraftInput
-              type="number"
-              min="0"
-              max="100"
-              step="0.1"
-              value={rule.consistencyCushionPercent ?? ''}
-              onChange={(event) => {
-                if (event.target.value === '') {
-                  const nextRule = { ...rule };
-                  delete nextRule.consistencyCushionPercent;
-                  onChange(nextRule);
-                  return;
-                }
-                onChange({
-                  ...rule,
-                  consistencyCushionPercent: numberValue(event.target.value),
-                });
-              }}
-              disabled={disabled}
-            />
-          </PropChallengeField>
-        </>
-      );
-      break;
-    case 'max_position_size':
-      fields = (
-        <MaxPositionSizeFields
+        <ConsistencyFields
           rule={rule}
-          startingBalance={startingBalance}
           disabled={disabled}
           onChange={onChange}
         />
@@ -1016,7 +770,7 @@ export function RuleEditor({
   onChange,
   onRemove,
 }: {
-  rule: PropChallengeRule;
+  rule: ExecutablePropChallengeRule;
   ordinal: number;
   currencyCode: string;
   startingBalance: number;
@@ -1024,7 +778,7 @@ export function RuleEditor({
   disabled: boolean;
   toggleRef: (element: HTMLButtonElement | null) => void;
   onToggle: () => void;
-  onChange: (rule: PropChallengeRule) => void;
+  onChange: (rule: ExecutablePropChallengeRule) => void;
   onRemove: () => void;
 }) {
   const contentId = useId();

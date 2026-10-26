@@ -56,7 +56,7 @@ export function getRequestedTradeType(snapshot: {
   return 'regular';
 }
 
-export function normalizeTradeIdentityDate(
+function normalizeTradeIdentityDate(
   tradeType: StoredTradeType,
   entryTime: unknown,
   plugin?: unknown

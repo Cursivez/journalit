@@ -13,7 +13,6 @@ import {
 } from 'recharts';
 import { t } from '../../../../lang/helpers';
 import { usePlugin } from '../../../../hooks/usePlugin';
-import { useCurrency } from '../../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import { calculateEffectiveRMultiple } from '../../../../utils/formatting';
 import {
@@ -32,6 +31,7 @@ import {
   buildCurrencyConversionMetadata,
   CurrencyConversionInfo,
 } from '../../../shared/display/CurrencyConversionInfo';
+import { skipVerticalGridCoordinates } from '../../../charts/chartGrid';
 
 interface HourlyPerformanceDataPoint {
   bucketStart: number;
@@ -205,13 +205,12 @@ const HourlyPerformanceTooltip: React.FC<HourlyTooltipProps> = ({
 };
 
 export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
-  ({ filters, dateFormat }) => {
+  ({ dateFormat }) => {
     const chartRef = React.useRef<HTMLDivElement>(null);
     const [bucketMinutes, setBucketMinutes] =
       React.useState<TimeBucketMinutes>(60);
     const [metric, setMetric] = React.useState<TimeMetric>('total');
     const plugin = usePlugin();
-    const { currency } = useCurrency();
     const { formatValue, shouldMask } = useDisplayFormatter();
     const displayRMultiples =
       plugin?.settings?.trade?.displayRMultiples ?? false;
@@ -227,19 +226,15 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
       breakEvenThresholdPercent:
         plugin?.settings?.trade?.breakEvenThresholdPercent,
     };
-    const [filterStartDate, filterEndDate] = filters.dateRange;
 
     return (
-      <BaseWidget
-        filters={filters}
-        dateFormat={dateFormat}
-        skeletonType="bar-chart"
-      >
-        {(data) => {
+      <BaseWidget dateFormat={dateFormat} skeletonType="bar-chart">
+        {(data, _dateFormat, filters) => {
+          const [filterStartDate, filterEndDate] = filters.dateRange;
           const activeCurrency =
             (data.metrics.isMultiCurrency
               ? data.metrics.conversionBaseCurrency
-              : currency) || currency;
+              : data.currency) || data.currency;
           const currencyCode = activeCurrency;
 
           const bucketStarts = Array.from(
@@ -330,8 +325,8 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
             }
           });
 
-          const hourlyData = bucketStarts.map(
-            (bucketStart) => aggregates.get(bucketStart)!
+          const hourlyData = bucketStarts.map((bucketStart) =>
+            aggregates.get(bucketStart)!
           );
           const hasCompleteRCoverage = hourlyData.every(
             (item) => item.pnlEvents === 0 || item.pnlEvents === item.rTrades
@@ -439,6 +434,7 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
                     <CartesianGrid
                       strokeDasharray="3 3"
                       vertical={false}
+                      verticalCoordinatesGenerator={skipVerticalGridCoordinates}
                       stroke="var(--background-modifier-border)"
                       strokeOpacity={0.5}
                     />

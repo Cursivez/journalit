@@ -18,6 +18,7 @@ import {
   createFilterMatchModes,
   normalizeFilterMatchModes,
 } from '../components/shared/filters/filterMatchModes';
+import { isRatingFilter, type RatingFilter } from '../utils/tradeRating';
 
 const CONCRETE_TRADE_TYPES = ['regular', 'missed', 'backtest'] as const;
 const CONCRETE_TRADE_TYPE_SET = new Set<TradeType>(CONCRETE_TRADE_TYPES);
@@ -125,20 +126,13 @@ export const getTradeTypeFilterActiveCount = (
 export const normalizeDashboardTradeTypes = (
   tradeTypes?: TradeType[]
 ): TradeType[] => {
-  const sanitized = sanitizeTradeTypes(tradeTypes).filter(
-    (tradeType) => tradeType !== 'missed'
-  );
-  return sanitized.length > 0
-    ? sanitized
-    : [...DEFAULT_REGULAR_ONLY_TRADE_TYPES];
-};
-
-const normalizeReviewTradeTypes = (tradeTypes?: TradeType[]): TradeType[] => {
   const sanitized = sanitizeTradeTypes(tradeTypes);
   return sanitized.length > 0
     ? sanitized
     : [...DEFAULT_REGULAR_ONLY_TRADE_TYPES];
 };
+
+const normalizeReviewTradeTypes = normalizeDashboardTradeTypes;
 
 export const normalizeTradeLogTradeTypes = (
   tradeTypes?: TradeType[]
@@ -184,7 +178,11 @@ const normalizeAccountPhaseScopes = (
   return normalized;
 };
 
-export const DEFAULT_DASHBOARD_FILTERS: FilterState = {
+
+const normalizeRatingFilters = (value: unknown): RatingFilter[] =>
+  Array.isArray(value) ? [...new Set(value.filter(isRatingFilter))] : [];
+
+const DEFAULT_DASHBOARD_FILTERS: FilterState = {
   dateRange: [null, null],
   accounts: [],
   accountPhases: [],
@@ -195,6 +193,7 @@ export const DEFAULT_DASHBOARD_FILTERS: FilterState = {
   tradeTypes: [...DEFAULT_REGULAR_ONLY_TRADE_TYPES],
   statuses: [],
   reviewStatus: [],
+  ratings: [],
   directions: [],
   customFieldFilters: {},
   exclusions: createFilterExclusions(),
@@ -203,12 +202,13 @@ export const DEFAULT_DASHBOARD_FILTERS: FilterState = {
   imageTags: [],
 };
 
-export const DEFAULT_TRADELOG_FILTERS: TradeLogFilters = {
+const DEFAULT_TRADELOG_FILTERS: TradeLogFilters = {
   dateRange: [null, null],
   viewLevel: 'trades',
   tradeTypes: [...DEFAULT_ALL_TRADE_TYPES],
   statuses: [],
   reviewStatus: [],
+  ratings: [],
   accounts: [],
   accountPhases: [],
   directions: [],
@@ -224,7 +224,7 @@ export const DEFAULT_TRADELOG_FILTERS: TradeLogFilters = {
   imageTags: [],
 };
 
-export const DEFAULT_REVIEW_FILTERS: UnifiedFilters = {
+const DEFAULT_REVIEW_FILTERS: UnifiedFilters = {
   accounts: [],
   accountPhases: [],
   tickers: [],
@@ -234,6 +234,7 @@ export const DEFAULT_REVIEW_FILTERS: UnifiedFilters = {
   tradeTypes: [...DEFAULT_REGULAR_ONLY_TRADE_TYPES],
   statuses: [],
   reviewStatus: [],
+  ratings: [],
   directions: [],
   customFieldFilters: {},
   exclusions: createFilterExclusions(),
@@ -256,6 +257,7 @@ export const createDashboardFilters = (): FilterState => ({
   tradeTypes: [...DEFAULT_DASHBOARD_FILTERS.tradeTypes],
   statuses: [...DEFAULT_DASHBOARD_FILTERS.statuses],
   reviewStatus: [...DEFAULT_DASHBOARD_FILTERS.reviewStatus],
+  ratings: [...DEFAULT_DASHBOARD_FILTERS.ratings],
   directions: [...DEFAULT_DASHBOARD_FILTERS.directions],
   customFieldFilters: { ...DEFAULT_DASHBOARD_FILTERS.customFieldFilters },
   exclusions: cloneFilterExclusions(DEFAULT_DASHBOARD_FILTERS.exclusions),
@@ -272,6 +274,7 @@ export const createTradeLogFilters = (): TradeLogFilters => ({
   tradeTypes: [...DEFAULT_TRADELOG_FILTERS.tradeTypes],
   statuses: [...DEFAULT_TRADELOG_FILTERS.statuses],
   reviewStatus: [...DEFAULT_TRADELOG_FILTERS.reviewStatus],
+  ratings: [...DEFAULT_TRADELOG_FILTERS.ratings],
   accounts: [...DEFAULT_TRADELOG_FILTERS.accounts],
   accountPhases: DEFAULT_TRADELOG_FILTERS.accountPhases.map((scope) => ({
     ...scope,
@@ -302,6 +305,7 @@ export const createReviewFilters = (): UnifiedFilters => ({
   tradeTypes: [...DEFAULT_REVIEW_FILTERS.tradeTypes],
   statuses: [...DEFAULT_REVIEW_FILTERS.statuses],
   reviewStatus: [...DEFAULT_REVIEW_FILTERS.reviewStatus],
+  ratings: [...DEFAULT_REVIEW_FILTERS.ratings],
   directions: [...DEFAULT_REVIEW_FILTERS.directions],
   customFieldFilters: { ...DEFAULT_REVIEW_FILTERS.customFieldFilters },
   exclusions: cloneFilterExclusions(DEFAULT_REVIEW_FILTERS.exclusions),
@@ -332,6 +336,7 @@ export const normalizeDashboardFilters = (
     reviewStatus: filters?.reviewStatus
       ? [...filters.reviewStatus]
       : defaults.reviewStatus,
+    ratings: normalizeRatingFilters(filters?.ratings),
     directions: filters?.directions
       ? [...filters.directions]
       : defaults.directions,
@@ -367,6 +372,7 @@ export const normalizeTradeLogFilters = (
     reviewStatus: filters?.reviewStatus
       ? [...filters.reviewStatus]
       : defaults.reviewStatus,
+    ratings: normalizeRatingFilters(filters?.ratings),
     accounts: filters?.accounts ? [...filters.accounts] : defaults.accounts,
     accountPhases: normalizeAccountPhaseScopes(filters?.accountPhases),
     directions: filters?.directions
@@ -416,6 +422,7 @@ export const normalizeReviewFilters = (
     reviewStatus: filters?.reviewStatus
       ? [...filters.reviewStatus]
       : defaults.reviewStatus,
+    ratings: normalizeRatingFilters(filters?.ratings),
     directions: filters?.directions
       ? [...filters.directions]
       : defaults.directions,

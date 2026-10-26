@@ -1,3 +1,4 @@
+import { serializeStopLossTargets } from '../trade/core/StopLossTargets';
 import { logger } from '../../utils/logger';
 
 
@@ -9,6 +10,8 @@ import {
 import JournalitPlugin from '../../main';
 import { mapCustomFieldsToFrontmatter } from '../../utils/customFieldPersistence';
 import { getTradingDay } from '../../utils/tradingDayUtils';
+import { getMissedTradeFrontmatterTradingDay } from '../../utils/tradeAnalyticsDate';
+import type { AnalyticsDateBasis } from '../../settings/types';
 import {
   getQuarterForMonth,
   getQuarterString,
@@ -27,13 +30,20 @@ import {
 import { Mutex } from '../../utils/mutex';
 import { safeString } from '../../utils/safeString';
 import { getDefaultTradeTemplateMetadata } from '../templates/defaultTradeTemplateMetadata';
+import { getDefaultTradeNoteSectionsMarkdown } from '../templates/tradeNoteSections';
 import { serializeIdealExitFrontmatter } from '../trade/core/TradeFrontmatterCodec';
+import { createUserOwnedTradeContent } from '../trade/core/TradeNoteDocumentCodec';
 import type { PreviousTagAssignments } from '../options/CustomOptionsService';
 import { serializeImageAnnotationsForFrontmatter } from '../../utils/imageAnnotations';
+import { applySubmittedTradeRating } from '../../utils/tradeRating';
 import {
   SAMPLE_ENTITY_ID_FRONTMATTER_KEY,
   SAMPLE_INSTANCE_FRONTMATTER_KEY,
 } from '../../demo/DemoOwnership';
+import {
+  generateMissedTradeAgentId,
+  MISSED_TRADE_AGENT_ID_KEY,
+} from '../agent/identity/missedTradeIdentityStore';
 
 function isTradeFolderPath(path: string): boolean {
   return /\/trades\//.test(path);
@@ -112,7 +122,7 @@ export class MissedTradeService extends CustomDataService {
   }
 
   private getAssignedTags(data: MissedTradeFormData): string[] {
-    return [...(data.tags ?? []), ...(data.customTags ?? [])];
+    return data.tags ?? [];
   }
 
   private async getStoredAssignedTags(filePath: string): Promise<string[]> {
@@ -501,7 +511,8 @@ export class MissedTradeService extends CustomDataService {
       frontmatterData.swap = data.swap;
       frontmatterData.rebate = data.rebate;
       frontmatterData.riskAmount = data.riskAmount;
-      frontmatterData.stopLoss = data.stopLoss;
+      frontmatterData.stopLosses = serializeStopLossTargets(data.stopLosses);
+      frontmatterData.stopLoss = undefined;
       frontmatterData.currency = data.currency;
       frontmatterData.fxRate = data.fxRate;
       frontmatterData.fxRateBaseCurrency = data.fxRateBaseCurrency;
@@ -509,11 +520,20 @@ export class MissedTradeService extends CustomDataService {
       frontmatterData.mfe = data.mfe;
       frontmatterData.maePrice = data.maePrice;
       frontmatterData.mfePrice = data.mfePrice;
-      if (data.account?.length) frontmatterData.account = data.account;
+      
+      if (data.account !== undefined) {
+        frontmatterData.account = data.account.length
+          ? data.account
+          : undefined;
+      }
       if (data.setup !== undefined) {
         frontmatterData.setup = data.setup;
       }
-      if (data.mistake?.length) frontmatterData.mistake = data.mistake;
+      if (data.mistake !== undefined) {
+        frontmatterData.mistake = data.mistake.length
+          ? data.mistake
+          : undefined;
+      }
       if (data.images?.length) frontmatterData.images = data.images;
       if (data.imageAnnotations !== undefined) {
         frontmatterData.imageAnnotations =
@@ -560,20 +580,11 @@ export class MissedTradeService extends CustomDataService {
       
       if (data.reviewed !== undefined) frontmatterData.reviewed = data.reviewed;
       if (data.reviewedAt) frontmatterData.reviewedAt = data.reviewedAt;
+      applySubmittedTradeRating(frontmatterData, data);
 
-      
-      
-      if (
-        data.customTags &&
-        Array.isArray(data.customTags) &&
-        data.customTags.length > 0
-      ) {
-        frontmatterData.tags = data.customTags.filter((tag: string) =>
-          tag?.trim()
-        );
-      } else {
-        frontmatterData.tags = [];
-      }
+      frontmatterData.tags = (data.tags ?? []).filter((tag: string) =>
+        tag?.trim()
+      );
 
       if (Object.prototype.hasOwnProperty.call(data, 'customFields')) {
         try {
@@ -634,7 +645,32 @@ export class MissedTradeService extends CustomDataService {
         reviewedAt: effectiveReviewedAt,
       };
 
-      await this.updateFrontmatter(file, frontmatterData);
+      let committed = false;
+      try {
+        await this.updateFrontmatter(
+          file,
+          frontmatterData,
+          
+          
+          
+          () =>
+            eventBus.publish('trade:applying-in-place', {
+              filePaths: [filePath],
+              keys: Object.keys(frontmatterData),
+            }),
+          () => {
+            committed = true;
+          }
+        );
+      } catch (error) {
+        if (!committed) throw error;
+        
+        
+        console.error(
+          `[Journalit] Review status saved to ${filePath}, but refreshing its metadata failed`,
+          error
+        );
+      }
 
       
       eventBus.publish('missed-trade:changed', {
@@ -827,6 +863,13 @@ export class MissedTradeService extends CustomDataService {
   }
 
   
+  public async listManagedMissedTradeFilesForAgentIdentityStrict(): Promise<
+    readonly TFile[]
+  > {
+    return this.getAllMissedTradeFiles();
+  }
+
+  
   public async getMissedTradeCount(): Promise<number> {
     const allFiles = this.app.vault.getMarkdownFiles();
     let count = 0;
@@ -855,19 +898,15 @@ export class MissedTradeService extends CustomDataService {
   
   public async getMissedTrades(
     startDate: Date,
-    endDate: Date
+    endDate: Date,
+    options?: { dateBasis?: AnalyticsDateBasis }
   ): Promise<TFile[]> {
-    
-    await new Promise((resolve) => window.setTimeout(resolve, 50));
-
-    
-    this.invalidateCache();
-
     const rangeStartDay = new Date(startDate);
     rangeStartDay.setHours(0, 0, 0, 0);
     const rangeEndDay = new Date(endDate);
     rangeEndDay.setHours(23, 59, 59, 999);
 
+    
     
     const allFiles = this.getAllMissedTradeFiles();
 
@@ -891,19 +930,14 @@ export class MissedTradeService extends CustomDataService {
             return null;
           }
 
-          const entryTimeValue = frontmatter.entryTime;
-          const entryTime =
-            typeof entryTimeValue === 'string' ||
-            typeof entryTimeValue === 'number' ||
-            entryTimeValue instanceof Date
-              ? new Date(entryTimeValue)
-              : null;
-          if (!entryTime) {
+          const tradingDay = getMissedTradeFrontmatterTradingDay(
+            frontmatter,
+            options?.dateBasis ?? 'entry',
+            this.plugin
+          );
+          if (!tradingDay) {
             return null;
           }
-
-          
-          const tradingDay = getTradingDay(entryTime, this.plugin);
           const matches =
             tradingDay >= rangeStartDay && tradingDay <= rangeEndDay;
 
@@ -930,6 +964,7 @@ export class MissedTradeService extends CustomDataService {
       '---',
       'type: missed-trade',
       'isMissedTrade: true',
+      `${MISSED_TRADE_AGENT_ID_KEY}: ${generateMissedTradeAgentId()}`,
       `templateId: ${templateMetadata.templateId}`,
       `templateVersion: ${templateMetadata.templateVersion}`,
       data.journalitSampleInstance
@@ -966,6 +1001,9 @@ export class MissedTradeService extends CustomDataService {
         ? `hasExplicitCommission: ${data.hasExplicitCommission}`
         : null,
       data.fees !== undefined ? `fees: ${data.fees}` : null,
+      data.tradeRating !== undefined
+        ? `tradeRating: ${data.tradeRating}`
+        : null,
 
       
       data.currency ? `currency: ${data.currency}` : null,
@@ -1003,9 +1041,9 @@ export class MissedTradeService extends CustomDataService {
         ? `imageAnnotations: ${JSON.stringify(imageAnnotations)}`
         : null,
 
-      
-      
-      'tags: []',
+      `tags: [${(data.tags ?? [])
+        .flatMap((tag) => (tag.trim() ? [JSON.stringify(tag)] : []))
+        .join(', ')}]`,
     ];
 
     const validEntries = data.entries?.flatMap((entry) =>
@@ -1060,6 +1098,7 @@ export class MissedTradeService extends CustomDataService {
     const knownFields = new Set([
       'type',
       'isMissedTrade',
+      MISSED_TRADE_AGENT_ID_KEY,
       'entryTime',
       'exitTime',
       'entryPrice',
@@ -1080,6 +1119,8 @@ export class MissedTradeService extends CustomDataService {
       'assetType',
       'thesis',
       'missedReason',
+      'tradeRating',
+      'clearTradeRating',
 
       'setup',
       'mistake',
@@ -1154,12 +1195,18 @@ export class MissedTradeService extends CustomDataService {
     frontmatterLines.push('---');
 
     
+    const sectionsMarkdown = getDefaultTradeNoteSectionsMarkdown(
+      this.getPlugin()
+    );
     const markdownContent = [
       ...frontmatterLines,
       '',
       '# Missed Trade Notes',
       '',
-      data.notes || 'Add any additional notes about this missed trade here.',
+      sectionsMarkdown
+        ? createUserOwnedTradeContent(sectionsMarkdown, data.notes)
+        : data.notes ||
+          'Add any additional notes about this missed trade here.',
     ];
 
     

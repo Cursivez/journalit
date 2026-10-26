@@ -1,5 +1,12 @@
 
 
+import {
+  isReviewWidgetUpload,
+  normalizeReviewImages,
+  normalizeReviewImagesByWidget,
+  reviewImageFilename,
+  reviewMediaFolder,
+} from '../../../services/reviews/reviewImages';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 import { TFile, normalizePath } from 'obsidian';
@@ -7,10 +14,7 @@ import JournalitPlugin from '../../../main';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { ImageCarousel } from '../../image/ImageCarousel';
 import { CompactImageUploader } from '../../image/CompactImageUploader';
-import { FullscreenPortal } from '../../image/FullscreenPortal';
-import { FullscreenImageViewer } from '../../image/FullscreenImageViewer';
-import { ExcalidrawMediaEmbed } from '../../image/ExcalidrawMediaEmbed';
-import { MediaPreview } from '../../image/MediaPreview';
+import { StackedMediaList } from '../../image/StackedMediaList';
 import { eventBus } from '../../../services/events/EventBus';
 import { reviewChangeAffectsPath } from '../../../services/events/reviewChangedPaths';
 import { SkeletonBox } from '../../shared/SkeletonBox';
@@ -23,11 +27,7 @@ import {
   isMarkdownView,
   isViewWithTFile,
 } from '../../../types/obsidian-extensions';
-import {
-  isExcalidrawMediaPath,
-  resolveMediaDisplayPath,
-} from '../../../utils/imageMediaUtils';
-import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
+import { resolveMediaDisplayPath } from '../../../utils/imageMediaUtils';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -98,6 +98,135 @@ interface NoteContext {
   date: string;
 }
 
+function readImageWidgetOptions(
+  config: ImageWidgetProps['config'],
+  codeblockContext: ImageWidgetCodeblockContext | undefined,
+  embeddedReadOnly: boolean
+) {
+  return {
+    configId: config?.id?.trim() || null,
+    contextId: codeblockContext?.id?.trim() || null,
+    isLegacyOwner: codeblockContext?.isLegacyOwner ?? false,
+    showUploader: !embeddedReadOnly && config?.showUploader !== false,
+    maxImages: config?.maxImages, 
+    layout: config?.layout || 'carousel',
+  };
+}
+
+const ImageWidgetSkeleton: React.FC = () => (
+  <div className="journalit-images-widget journalit-media-carousel-surface">
+    
+    <div className="journalit-reviewv2-images-skeleton-main">
+      <SkeletonBox width="90%" height="180px" borderRadius="var(--radius-s)" />
+    </div>
+    
+    <div className="journalit-reviewv2-images-skeleton-thumbs">
+      {['first', 'second', 'third'].map((key) => (
+        <SkeletonBox key={key} width={50} height={40} borderRadius="4px" />
+      ))}
+    </div>
+  </div>
+);
+
+const ImageWidgetGallery: React.FC<{
+  images: string[];
+  layout: NonNullable<NonNullable<ImageWidgetProps['config']>['layout']>;
+  readOnly: boolean;
+  filePath: string;
+  app: JournalitPlugin['app'];
+  onDeleteImage: (index: number, imagePath: string) => Promise<void>;
+}> = ({ images, layout, readOnly, filePath, app, onDeleteImage }) => {
+  return (
+    <>
+      
+      {layout === 'carousel' && (
+        <ImageCarousel
+          images={images}
+          altPrefix={t('widget.images.alt-prefix')}
+          displayOptions={{
+            showThumbnails: images.length > 1,
+            showCounter: images.length > 1,
+            enableFullscreen: true,
+          }}
+          deleteOptions={{
+            enabled: !readOnly,
+            onDeleteImage: onDeleteImage,
+          }}
+          fullscreenAnnotationOptions={{ enabled: !readOnly }}
+          useResolveMediaPath={true}
+          sourcePath={filePath}
+          className={images.length === 1 ? 'single-image-carousel' : ''}
+        />
+      )}
+
+      
+      {layout === 'stacked' && (
+        <StackedMediaList
+          app={app}
+          images={images}
+          sourcePath={filePath}
+          altPrefix={t('widget.images.alt-prefix')}
+          annotationsEnabled={!readOnly}
+          onDelete={
+            readOnly
+              ? undefined
+              : (index, imagePath) => void onDeleteImage(index, imagePath)
+          }
+        />
+      )}
+    </>
+  );
+};
+
+
+const ImageWidgetUploader: React.FC<{
+  preview: boolean;
+  hasImages: boolean;
+  filePath: string;
+  onImageAdded: React.ComponentProps<
+    typeof CompactImageUploader
+  >['onImageAdded'];
+  onMultipleImagesAdded: React.ComponentProps<
+    typeof CompactImageUploader
+  >['onMultipleImagesAdded'];
+  onError: React.ComponentProps<typeof CompactImageUploader>['onError'];
+  saveImage: React.ComponentProps<
+    typeof CompactImageUploader
+  >['saveImageFunction'];
+}> = ({
+  preview,
+  hasImages,
+  filePath,
+  onImageAdded,
+  onMultipleImagesAdded,
+  onError,
+  saveImage,
+}) =>
+  preview ? (
+    <CompactImageUploader
+      onImageAdded={() => {}}
+      placeholder={t('widget.images.placeholder')}
+      disabled={true}
+      sourcePath={filePath}
+      className="journalit-images-uploader"
+    />
+  ) : (
+    <CompactImageUploader
+      onImageAdded={onImageAdded}
+      onMultipleImagesAdded={onMultipleImagesAdded}
+      onError={onError}
+      saveImageFunction={saveImage}
+      multiple={true}
+      sourcePath={filePath}
+      placeholder={
+        hasImages
+          ? t('widget.images.placeholder-add-more')
+          : t('widget.images.placeholder')
+      }
+      className="journalit-images-uploader"
+    />
+  );
+
 export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
   ({ filePath, plugin, config, preview, previewData, codeblockContext }) => {
     const embeddedReadOnly = useReviewReadOnly();
@@ -106,21 +235,21 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
     const [loading, setLoading] = useState(true);
     const [isValidContext, setIsValidContext] = useState(true);
     const [noteContext, setNoteContext] = useState<NoteContext | null>(null);
-    const [fullscreenIndex, setFullscreenIndex] = useState<number | null>(null);
-    const configId = config?.id?.trim() || null;
-    const contextId = codeblockContext?.id?.trim() || null;
+    const {
+      configId,
+      contextId,
+      isLegacyOwner,
+      showUploader,
+      maxImages,
+      layout,
+    } = readImageWidgetOptions(config, codeblockContext, embeddedReadOnly);
     const widgetIdRef = useRef<string | null>(configId || contextId);
     const retryCountRef = useRef(0);
     const retryTimeoutRef = useRef<number | null>(null);
     const isValidContextRef = useRef(isValidContext);
     const sessionUploadedImagesRef = useRef(new Set<string>());
-    const isLegacyOwner = codeblockContext?.isLegacyOwner ?? false;
-
-    const showUploader = !embeddedReadOnly && config?.showUploader !== false;
-    const maxImages = config?.maxImages; 
     const hasReachedMaxImages =
       maxImages !== undefined && images.length >= maxImages;
-    const layout = config?.layout || 'carousel'; 
 
     
     useEffect(() => {
@@ -175,29 +304,8 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
       // eslint-disable-next-line react-hooks/exhaustive-deps -- image refresh is driven by explicit widget identity changes
     }, [filePath, preview]);
 
-    const normalizeImagesArray = useCallback((value: unknown): string[] => {
-      if (!Array.isArray(value)) return [];
-      return value.filter((item): item is string => typeof item === 'string');
-    }, []);
-
-    const normalizeImagesByWidget = useCallback(
-      (value: unknown): Record<string, string[]> => {
-        if (!isRecord(value)) {
-          return {};
-        }
-
-        const result: Record<string, string[]> = {};
-        for (const [key, entryValue] of Object.entries(value)) {
-          if (Array.isArray(entryValue)) {
-            result[key] = entryValue.filter(
-              (item): item is string => typeof item === 'string'
-            );
-          }
-        }
-        return result;
-      },
-      []
-    );
+    const normalizeImagesArray = normalizeReviewImages;
+    const normalizeImagesByWidget = normalizeReviewImagesByWidget;
 
     const getCurrentImagesByWidget = useCallback((): Record<
       string,
@@ -315,79 +423,23 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
     };
 
     
-    const getMediaFolderPath = useCallback((): string => {
-      
-      const lastSlash = filePath.lastIndexOf('/');
-      const parentFolder =
-        lastSlash > 0 ? filePath.substring(0, lastSlash) : '';
-      return parentFolder ? `${parentFolder}/media` : 'media';
-    }, [filePath]);
+    const getMediaFolderPath = useCallback(
+      (): string => reviewMediaFolder(filePath),
+      [filePath]
+    );
 
     
     const generateImageFilename = useCallback(
       (file: File): string => {
-        if (!noteContext) return `img-${Date.now()}`;
-
-        const timestamp = Date.now();
         const ext = file.name.includes('.')
           ? file.name.substring(file.name.lastIndexOf('.'))
           : '.png';
-
-        const { type, date } = noteContext;
-
-        if (type === 'drc' && date) {
-          
-          const dateObj = new Date(date);
-          if (isNaN(dateObj.getTime())) {
-            return `drc-${timestamp}${ext}`;
-          }
-          const dd = String(dateObj.getDate()).padStart(2, '0');
-          const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-          const yyyy = dateObj.getFullYear();
-          return `drc-${dd}${mm}${yyyy}-${timestamp}${ext}`;
-        }
-
-        if (type === 'weekly-review' && date) {
-          
-          const weekMatch = date.match(/W(\d+)/i);
-          const weekNum = weekMatch ? weekMatch[1].padStart(2, '0') : '00';
-          return `weekly-W${weekNum}-${timestamp}${ext}`;
-        }
-
-        if (type === 'monthly-review' && date) {
-          
-          const dateObj = new Date(date);
-          if (isNaN(dateObj.getTime())) {
-            return `monthly-${timestamp}${ext}`;
-          }
-          const mm = String(dateObj.getMonth() + 1).padStart(2, '0');
-          const yyyy = dateObj.getFullYear();
-          return `monthly-${mm}${yyyy}-${timestamp}${ext}`;
-        }
-
-        if (type === 'quarterly-review' && date) {
-          
-          const dateObj = new Date(date);
-          if (isNaN(dateObj.getTime())) {
-            return `quarterly-${timestamp}${ext}`;
-          }
-          const q = Math.ceil((dateObj.getMonth() + 1) / 3);
-          const yyyy = dateObj.getFullYear();
-          return `quarterly-Q${q}${yyyy}-${timestamp}${ext}`;
-        }
-
-        if (type === 'yearly-review' && date) {
-          
-          const dateObj = new Date(date);
-          if (isNaN(dateObj.getTime())) {
-            return `yearly-${timestamp}${ext}`;
-          }
-          const yyyy = dateObj.getFullYear();
-          return `yearly-${yyyy}-${timestamp}${ext}`;
-        }
-
-        
-        return `img-${timestamp}${ext}`;
+        return reviewImageFilename(
+          noteContext?.type ?? null,
+          noteContext?.date,
+          ext,
+          Date.now()
+        );
       },
       [noteContext]
     );
@@ -427,25 +479,13 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
     );
 
     const isWidgetOwnedUpload = useCallback(
-      (imagePath: string): boolean => {
-        const resolvedPath = resolveMediaDisplayPath(
-          plugin.app,
-          imagePath,
-          filePath
-        );
-        const normalizedPath = normalizePath(resolvedPath);
-        const mediaFolder = normalizePath(getMediaFolderPath());
-        if (!normalizedPath.startsWith(`${mediaFolder}/`)) return false;
-        if (!SUPPORTED_UPLOAD_MEDIA_EXTENSION_PATTERN.test(normalizedPath)) {
-          return false;
-        }
-
-        const fileName = normalizedPath.split('/').pop() ?? '';
-        return /^(?:img|drc|weekly|monthly|quarterly|yearly)(?:-[A-Za-z0-9]+)*-\d{10,}\.[^.]+$/i.test(
-          fileName
-        );
-      },
-      [filePath, getMediaFolderPath, plugin.app]
+      (imagePath: string): boolean =>
+        isReviewWidgetUpload(
+          resolveMediaDisplayPath(plugin.app, imagePath, filePath),
+          filePath,
+          SUPPORTED_UPLOAD_MEDIA_EXTENSION_PATTERN
+        ),
+      [filePath, plugin.app]
     );
 
     const insertWidgetIdIntoCodeblock = useCallback(
@@ -804,30 +844,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
     }, []);
 
     if (loading) {
-      
-      return (
-        <div className="journalit-images-widget journalit-media-carousel-surface">
-          
-          <div className="journalit-reviewv2-images-skeleton-main">
-            <SkeletonBox
-              width="90%"
-              height="180px"
-              borderRadius="var(--radius-s)"
-            />
-          </div>
-          
-          <div className="journalit-reviewv2-images-skeleton-thumbs">
-            {['first', 'second', 'third'].map((key) => (
-              <SkeletonBox
-                key={key}
-                width={50}
-                height={40}
-                borderRadius="4px"
-              />
-            ))}
-          </div>
-        </div>
-      );
+      return <ImageWidgetSkeleton />;
     }
 
     if (!isValidContext) {
@@ -841,134 +858,16 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
 
     return (
       <div className="journalit-images-widget journalit-media-carousel-surface">
-        
-        {images.length > 0 && layout === 'carousel' && (
-          <ImageCarousel
+        {images.length > 0 && (
+          <ImageWidgetGallery
             images={images}
-            altPrefix={t('widget.images.alt-prefix')}
-            displayOptions={{
-              showThumbnails: images.length > 1,
-              showCounter: images.length > 1,
-              enableFullscreen: true,
-            }}
-            deleteOptions={{
-              enabled: !readOnly,
-              onDeleteImage: handleDeleteImage,
-            }}
-            fullscreenAnnotationOptions={{ enabled: !readOnly }}
-            useResolveMediaPath={true}
-            sourcePath={filePath}
-            className={images.length === 1 ? 'single-image-carousel' : ''}
+            layout={layout}
+            readOnly={readOnly}
+            filePath={filePath}
+            app={plugin.app}
+            onDeleteImage={handleDeleteImage}
           />
         )}
-
-        
-        {images.length > 0 && layout === 'stacked' && (
-          <div className="journalit-images-stacked journalit-reviewv2-images-stacked">
-            {images.map((imagePath, index) => {
-              const isExcalidraw = isExcalidrawMediaPath(
-                plugin.app,
-                imagePath,
-                filePath
-              );
-              const displayPath = resolveMediaDisplayPath(
-                plugin.app,
-                imagePath,
-                filePath
-              );
-              return (
-                <div
-                  key={imagePath}
-                  className="journalit-stacked-image-container journalit-reviewv2-images-stacked__item"
-                >
-                  {isExcalidraw ? (
-                    <button
-                      type="button"
-                      className="journalit-native-button journalit-native-button--unstyled journalit-reviewv2-images-stacked__excalidraw"
-                      onClick={() => setFullscreenIndex(index)}
-                      aria-label={t('widget.images.open-fullscreen', {
-                        index: String(index + 1),
-                      })}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setFullscreenIndex(index);
-                        }
-                      }}
-                    >
-                      <ExcalidrawMediaEmbed
-                        path={imagePath}
-                        sourcePath={filePath}
-                      />
-                    </button>
-                  ) : (
-                    <MediaPreview
-                      app={plugin.app}
-                      path={imagePath}
-                      sourcePath={filePath}
-                      displayPath={displayPath}
-                      alt={t('widget.images.stacked-alt', {
-                        index: String(index + 1),
-                      })}
-                      imageClassName="journalit-reviewv2-images-stacked__img"
-                      videoClassName="journalit-reviewv2-images-stacked__img"
-                      onClick={() => setFullscreenIndex(index)}
-                      tabIndex={0}
-                      role="button"
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          setFullscreenIndex(index);
-                        }
-                      }}
-                    />
-                  )}
-                  {!readOnly && (
-                    <button
-                      className="journalit-stacked-image-delete"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        void handleDeleteImage(index, imagePath);
-                      }}
-                      aria-label={t('widget.images.delete')}
-                      {...shareCaptureExcludeProps}
-                    >
-                      ×
-                    </button>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        )}
-
-        
-        <FullscreenPortal
-          isOpen={fullscreenIndex !== null && layout === 'stacked'}
-          onClose={() => setFullscreenIndex(null)}
-        >
-          {fullscreenIndex !== null && (
-            <FullscreenImageViewer
-              annotationOptions={{ enabled: !readOnly }}
-              imagePath={images[fullscreenIndex]}
-              onClose={() => setFullscreenIndex(null)}
-              useResolveMediaPath={true}
-              sourcePath={filePath}
-              navigationContext={
-                images.length > 1
-                  ? {
-                      images,
-                      currentIndex: fullscreenIndex,
-                      onNavigate: setFullscreenIndex,
-                      altPrefix: t('widget.images.alt-prefix'),
-                      useResolveMediaPath: true,
-                      sourcePath: filePath,
-                    }
-                  : undefined
-              }
-            />
-          )}
-        </FullscreenPortal>
 
         
         {images.length === 0 && !showUploader && (
@@ -977,32 +876,15 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
           </div>
         )}
 
-        
-        {showUploader && !preview && !hasReachedMaxImages && (
-          <CompactImageUploader
+        {showUploader && !hasReachedMaxImages && (
+          <ImageWidgetUploader
+            preview={Boolean(preview)}
+            hasImages={images.length > 0}
+            filePath={filePath}
             onImageAdded={handleImageUploaded}
             onMultipleImagesAdded={handleMultipleImagesUploaded}
             onError={handleUploadError}
-            saveImageFunction={saveImage}
-            multiple={true}
-            sourcePath={filePath}
-            placeholder={
-              images.length === 0
-                ? t('widget.images.placeholder')
-                : t('widget.images.placeholder-add-more')
-            }
-            className="journalit-images-uploader"
-          />
-        )}
-
-        
-        {showUploader && preview && !hasReachedMaxImages && (
-          <CompactImageUploader
-            onImageAdded={() => {}}
-            placeholder={t('widget.images.placeholder')}
-            disabled={true}
-            sourcePath={filePath}
-            className="journalit-images-uploader"
+            saveImage={saveImage}
           />
         )}
       </div>

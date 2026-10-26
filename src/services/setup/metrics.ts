@@ -1,6 +1,5 @@
 
 
-import { TradeService } from '../trade/TradeService';
 import { Setup, SetupMetrics } from './types';
 import { calculateWinRateExcludingBreakeven } from '../../utils/breakEvenRange';
 import { isPnlContributingTrade } from '../../utils/tradeStatusUtils';
@@ -26,7 +25,7 @@ function dateString(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
-export interface Trade extends Record<string, unknown> {
+interface Trade extends Record<string, unknown> {
   path?: string;
   type?: unknown;
   isMissedTrade?: unknown;
@@ -84,29 +83,54 @@ function normalizeSetupMetricTrade(value: unknown): Trade | null {
 
 
 export class SetupMetricsCalculator {
-  constructor(private tradeService: TradeService) {}
-
   
-  public async calculateMetrics(setupId: string): Promise<SetupMetrics> {
-    const trades = await this.getSetupTrades([setupId]);
-    return this.calculateMetricsForTrades(trades);
-  }
-
-  public async calculateMetricsForSetup(setup: Setup): Promise<SetupMetrics> {
-    const setupLabels = [setup.id, setup.name];
-    const trades = await this.getSetupTrades(setupLabels);
-    return this.calculateMetricsForTrades(trades);
-  }
-
-  public calculateMetricsForSetupFromTradeData(
-    setup: Setup,
+  public calculateMetricsForSetupsFromTradeData(
+    setups: readonly Setup[],
     tradeData: Array<Record<string, unknown>>
-  ): SetupMetrics {
-    const trades = this.filterSetupTrades(
-      tradeData,
-      this.buildSetupRefs([setup.id, setup.name])
-    );
-    return this.calculateMetricsForTrades(trades);
+  ): Map<string, SetupMetrics> {
+    const trades: Trade[] = [];
+    const tradeIndexesByToken = new Map<string, number[]>();
+    for (const value of tradeData) {
+      const trade = normalizeSetupMetricTrade(value);
+      if (
+        !trade ||
+        !this.isRegularTrade(trade) ||
+        !isPnlContributingTrade(trade)
+      ) {
+        continue;
+      }
+      const tradeIndex = trades.length;
+      trades.push(trade);
+      for (const label of trade.setup) {
+        const token = this.normalizeSetupToken(label);
+        if (!token) continue;
+        const indexes = tradeIndexesByToken.get(token);
+        if (!indexes) {
+          tradeIndexesByToken.set(token, [tradeIndex]);
+        } else if (indexes[indexes.length - 1] !== tradeIndex) {
+          indexes.push(tradeIndex);
+        }
+      }
+    }
+
+    const metricsBySetupId = new Map<string, SetupMetrics>();
+    for (const setup of setups) {
+      const matchingIndexes = new Set<number>();
+      for (const ref of this.buildSetupRefs([setup.id, setup.name])) {
+        for (const index of tradeIndexesByToken.get(ref) ?? []) {
+          matchingIndexes.add(index);
+        }
+      }
+      
+      const setupTrades = Array.from(matchingIndexes)
+        .sort((a, b) => a - b)
+        .map((index) => trades[index]);
+      metricsBySetupId.set(
+        setup.id,
+        this.calculateMetricsForTrades(setupTrades)
+      );
+    }
+    return metricsBySetupId;
   }
 
   private calculateMetricsForTrades(trades: Trade[]): SetupMetrics {
@@ -142,43 +166,12 @@ export class SetupMetricsCalculator {
     };
   }
 
-  
-  private async getSetupTrades(setupTokens: string[]): Promise<Trade[]> {
-    const tradeData = await this.tradeService.getTradeData();
-    return this.filterSetupTrades(tradeData, this.buildSetupRefs(setupTokens));
-  }
-
   private buildSetupRefs(setupTokens: string[]): Set<string> {
     return new Set(
       setupTokens.flatMap((ref) => {
         const normalizedRef = this.normalizeSetupToken(ref);
         return normalizedRef ? [normalizedRef] : [];
       })
-    );
-  }
-
-  private filterSetupTrades(
-    tradeData: Array<Record<string, unknown>>,
-    normalizedSetupRefs: Set<string>
-  ): Trade[] {
-    const trades = tradeData.flatMap((trade) => {
-      const normalizedTrade = normalizeSetupMetricTrade(trade);
-      return normalizedTrade ? [normalizedTrade] : [];
-    });
-    return trades.filter(
-      (trade) =>
-        this.isRegularTrade(trade) &&
-        this.tradeMatchesSetup(trade, normalizedSetupRefs) &&
-        isPnlContributingTrade(trade)
-    );
-  }
-
-  private tradeMatchesSetup(
-    trade: Trade,
-    normalizedSetupRefs: Set<string>
-  ): boolean {
-    return trade.setup.some((label) =>
-      normalizedSetupRefs.has(this.normalizeSetupToken(label))
     );
   }
 

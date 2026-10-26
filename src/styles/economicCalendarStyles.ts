@@ -239,7 +239,7 @@ export const ECONOMIC_CALENDAR_STYLES = `
 }
 
 
-.journalit-econ-columns .skeleton-shimmer {
+.journalit-econ-columns .journalit-skeleton-shimmer {
   justify-self: end;
 }
 

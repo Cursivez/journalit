@@ -7,10 +7,10 @@ import {
   getFirstEntryTime,
   getLastExitTime,
   getTotalEntrySize,
-  getWeightedAverageEntryPrice,
 } from '../../utils/tradeStatusUtils';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
 import {
+  getMaeMfePercent,
   calculateTradeMaxR,
   calculateTradeReturnPercent,
 } from './tradeMetricUtils';
@@ -31,10 +31,7 @@ import {
   type CustomFieldTradeLogDropdownSortMode,
 } from '../../types/customFields';
 import { parseStoredDateLikeValue } from '../../utils/customFieldPersistence';
-import {
-  calculateDirectionalPriceDiff,
-  calculateTotalDividends,
-} from '../../utils/pnlCalculation';
+import { calculateTotalDividends } from '../../utils/pnlCalculation';
 import { safeString } from '../../utils/safeString';
 import {
   getCustomFieldDisplayValues,
@@ -538,79 +535,6 @@ function sortByMfePrice(
   });
 }
 
-type MaeMfePercentTrade = {
-  entries?: Array<{
-    price?: number | string | null;
-    size?: number | string | null;
-  }>;
-  entryPrice?: number | string | null;
-  positionSize?: number | string | null;
-  direction?: string;
-  assetType?: string;
-  mae?: number | string | null;
-  mfe?: number | string | null;
-  maePrice?: number | string | null;
-  mfePrice?: number | string | null;
-};
-
-function parseFiniteSortNumber(value: unknown): number | null {
-  if (value === undefined || value === null || value === '') {
-    return null;
-  }
-
-  const parsed = typeof value === 'number' ? value : Number(safeString(value));
-  return Number.isFinite(parsed) ? parsed : null;
-}
-
-function getMaeMfePercent(
-  trade: Record<string, unknown> | undefined,
-  valueField: 'mae' | 'mfe',
-  priceField: 'maePrice' | 'mfePrice'
-): number | null {
-  const metricTrade = trade as MaeMfePercentTrade | undefined;
-  if (!metricTrade) {
-    return null;
-  }
-
-  const entryPrice = getWeightedAverageEntryPrice(metricTrade);
-  if (entryPrice === null || entryPrice === 0) {
-    return null;
-  }
-
-  const metricPrice = parseFiniteSortNumber(metricTrade[priceField]);
-  if (metricPrice !== null) {
-    const priceDiff = calculateDirectionalPriceDiff(
-      {
-        assetType: metricTrade.assetType,
-        direction: getMaeMfeSortDirection(metricTrade.direction),
-      },
-      entryPrice,
-      metricPrice
-    );
-
-    if (priceDiff !== null) {
-      const percent = (priceDiff / entryPrice) * 100;
-      return Number.isFinite(percent) ? percent : null;
-    }
-  }
-
-  const metricValue = parseFiniteSortNumber(metricTrade[valueField]);
-  const positionSize = getTotalEntrySize(metricTrade);
-  if (metricValue === null || positionSize === null || positionSize === 0) {
-    return null;
-  }
-
-  const percent = (metricValue / (entryPrice * positionSize)) * 100;
-  return Number.isFinite(percent) ? percent : null;
-}
-
-function getMaeMfeSortDirection(direction: unknown): string {
-  const normalizedDirection = safeString(direction).toLowerCase();
-  return normalizedDirection === 'short' || normalizedDirection === 'sell'
-    ? normalizedDirection
-    : 'long';
-}
-
 function sortByMaeMfePercent(
   nodes: TimeNode[],
   direction: SortDirection,
@@ -662,6 +586,24 @@ function sortByReviewed(
     const reviewedB = b.trade?.reviewed === true ? 1 : 0;
 
     return direction === 'asc' ? reviewedA - reviewedB : reviewedB - reviewedA;
+  });
+}
+
+
+function sortByTradeRating(
+  nodes: TimeNode[],
+  direction: SortDirection
+): TimeNode[] {
+  return [...nodes].sort((a, b) => {
+    if (a.type !== 'trade' || b.type !== 'trade') return 0;
+
+    const ratingA = a.trade?.tradeRating;
+    const ratingB = b.trade?.tradeRating;
+    if (ratingA === undefined && ratingB === undefined) return 0;
+    if (ratingA === undefined) return 1;
+    if (ratingB === undefined) return -1;
+
+    return direction === 'asc' ? ratingA - ratingB : ratingB - ratingA;
   });
 }
 
@@ -760,6 +702,8 @@ export function applySorting(
       return sortByReturnPercent(nodes, sortConfig.direction);
     case 'reviewed':
       return sortByReviewed(nodes, sortConfig.direction);
+    case 'tradeRating':
+      return sortByTradeRating(nodes, sortConfig.direction);
     case 'direction':
       return sortByDirection(nodes, sortConfig.direction);
     case 'priceMove':

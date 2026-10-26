@@ -101,6 +101,270 @@ const DEFAULT_CONFIG: StatsWidgetConfig = {
   columns: 4,
 };
 
+type StatKey = keyof NonNullable<StatsWidgetConfig['stats']>;
+
+const StatsGrid: React.FC<{
+  columns: StatsWidgetConfig['columns'];
+  children: React.ReactNode;
+}> = ({ columns, children }) => (
+  <div
+    className="journalit-reviewv2-stats-grid"
+    style={cssVars({ '--reviewv2-stats-columns': columns || 4 })}
+  >
+    {children}
+  </div>
+);
+
+interface StatCardsInput {
+  stats: NonNullable<StatsWidgetConfig['stats']>;
+  metrics: NonNullable<StatsMetrics>;
+  previousMetrics: StatsMetrics | null;
+  plRatio: number;
+  previousPLRatio: number;
+  currency: string;
+  previousCurrency: string;
+  displayRMultiples: boolean | undefined;
+  formatter: ReturnType<typeof useDisplayFormatter>;
+  currencyConversion: ReviewCurrencyConversionMetadata | null;
+  winningTrades: CurrencyConversionTrade[];
+  losingTrades: CurrencyConversionTrade[];
+}
+
+
+function buildStatCards({
+  stats,
+  metrics,
+  previousMetrics,
+  plRatio,
+  previousPLRatio,
+  currency,
+  previousCurrency,
+  displayRMultiples,
+  formatter: { formatValue, shouldMask },
+  currencyConversion,
+  winningTrades,
+  losingTrades,
+}: StatCardsInput): Array<StatCardProps & { key: StatKey }> {
+  const isPnlMasked = shouldMask('pnl');
+  const isReturnPercentMasked = shouldMask('returnPercent');
+  const isMetricMasked = shouldMask('metric');
+  const previousDataAvailable = previousMetrics !== null;
+  const comparablePnlCurrencies = currency === previousCurrency;
+  const pnlDeltaOptions = {
+    previousDataAvailable,
+    masked: isPnlMasked,
+    zeroThreshold: displayRMultiples ? 0.05 : 0.005,
+    formatter: (value: number) =>
+      displayRMultiples
+        ? formatValue({
+            kind: 'rMultiple' as const,
+            value,
+            signed: true,
+            precision: 1,
+          })
+        : formatValue({
+            kind: 'pnl' as const,
+            value,
+            currencyCode: currency,
+            signed: true,
+          }),
+  };
+  const percentDeltaOptions = {
+    previousDataAvailable,
+    masked: isReturnPercentMasked,
+    zeroThreshold: 0.05,
+    formatter: (value: number) =>
+      formatValue({
+        kind: 'returnPercent' as const,
+        value,
+        signed: true,
+        precision: 1,
+      }),
+  };
+  const metricDeltaOptions = {
+    previousDataAvailable,
+    masked: isMetricMasked,
+    zeroThreshold: 0.005,
+    formatter: (value: number) =>
+      formatValue({
+        kind: 'metric' as const,
+        value,
+        signed: true,
+        precision: 2,
+      }),
+  };
+
+  const createPnlDelta = (
+    currentValue: number,
+    previousValue: number | undefined,
+    currentR: number | undefined,
+    previousR: number | undefined,
+    lowerIsBetter = false
+  ): StatDelta | undefined => {
+    const useRDelta =
+      displayRMultiples && currentR !== undefined && previousR !== undefined;
+    if (
+      !useRDelta &&
+      previousDataAvailable &&
+      previousValue !== undefined &&
+      !comparablePnlCurrencies
+    ) {
+      return undefined;
+    }
+
+    return createStatDelta(
+      useRDelta ? currentR : currentValue,
+      useRDelta ? previousR : previousValue,
+      { ...pnlDeltaOptions, lowerIsBetter }
+    );
+  };
+
+  const cards: Array<StatCardProps & { key: StatKey }> = [
+    {
+      key: 'netPnL',
+      label: t('widget.stats.net-pnl'),
+      value: formatValue({
+        kind: 'pnl',
+        value: metrics.netPnL,
+        currencyCode: currency,
+        rMultiple: metrics.netPnLR,
+      }),
+      color: isPnlMasked ? undefined : metrics.netPnL >= 0 ? 'green' : 'red',
+      delta: createPnlDelta(
+        metrics.netPnL,
+        previousMetrics?.netPnL,
+        metrics.netPnLR,
+        previousMetrics?.netPnLR
+      ),
+      currencyConversion,
+    },
+    {
+      key: 'winRate',
+      label: t('widget.stats.win-rate'),
+      value: formatValue({
+        kind: 'returnPercent',
+        value: metrics.winRate * 100,
+        signed: false,
+        precision: 1,
+      }),
+      delta: createStatDelta(
+        metrics.winRate * 100,
+        previousMetrics ? previousMetrics.winRate * 100 : undefined,
+        percentDeltaOptions
+      ),
+    },
+    {
+      key: 'profitFactor',
+      label: t('widget.stats.profit-factor'),
+      value: isMetricMasked
+        ? formatValue({ kind: 'metric', value: metrics.profitFactor })
+        : metrics.profitFactor === Infinity
+          ? '∞'
+          : metrics.profitFactor.toFixed(2),
+      color: isMetricMasked
+        ? undefined
+        : metrics.profitFactor >= 1
+          ? 'green'
+          : 'red',
+      delta: createStatDelta(
+        metrics.profitFactor,
+        previousMetrics?.profitFactor,
+        metricDeltaOptions
+      ),
+    },
+    {
+      key: 'expectancy',
+      label: t('widget.stats.expectancy'),
+      value: formatValue({
+        kind: 'pnl',
+        value: metrics.expectancy,
+        currencyCode: currency,
+        rMultiple: metrics.expectancyR,
+      }),
+      color: isPnlMasked
+        ? undefined
+        : metrics.expectancy > 0
+          ? 'green'
+          : metrics.expectancy < 0
+            ? 'red'
+            : undefined,
+      delta: createPnlDelta(
+        metrics.expectancy,
+        previousMetrics?.expectancy,
+        metrics.expectancyR,
+        previousMetrics?.expectancyR
+      ),
+      currencyConversion,
+    },
+    {
+      key: 'totalTrades',
+      label: t('widget.stats.total-trades'),
+      value: metrics.numTrades.toString(),
+      delta: createStatDelta(metrics.numTrades, previousMetrics?.numTrades, {
+        previousDataAvailable,
+        masked: false,
+        formatter: (value) => signedNumber(value),
+        lowerIsBetter: false,
+        neutralTone: true,
+      }),
+    },
+    {
+      key: 'avgWin',
+      label: t('widget.stats.avg-win'),
+      value: formatValue({
+        kind: 'pnl',
+        value: metrics.avgWin,
+        currencyCode: currency,
+        rMultiple: metrics.avgWinR,
+      }),
+      delta: createPnlDelta(
+        metrics.avgWin,
+        previousMetrics?.avgWin,
+        metrics.avgWinR,
+        previousMetrics?.avgWinR
+      ),
+      currencyConversion,
+      conversionTrades: winningTrades,
+    },
+    {
+      key: 'avgLoss',
+      label: t('widget.stats.avg-loss'),
+      value: formatValue({
+        kind: 'pnl',
+        value: -Math.abs(metrics.avgLoss),
+        currencyCode: currency,
+        rMultiple: metrics.avgLossR ? -Math.abs(metrics.avgLossR) : undefined,
+      }),
+      delta: createPnlDelta(
+        -Math.abs(metrics.avgLoss),
+        previousMetrics ? -Math.abs(previousMetrics.avgLoss) : undefined,
+        metrics.avgLossR !== undefined
+          ? -Math.abs(metrics.avgLossR)
+          : undefined,
+        previousMetrics?.avgLossR !== undefined
+          ? -Math.abs(previousMetrics.avgLossR)
+          : undefined,
+        false
+      ),
+      currencyConversion,
+      conversionTrades: losingTrades,
+    },
+    {
+      key: 'plRatio',
+      label: t('widget.stats.pl-ratio'),
+      value: formatValue({ kind: 'metric', value: plRatio, precision: 2 }),
+      color:
+        isMetricMasked || isReturnPercentMasked
+          ? undefined
+          : plRatio >= 1
+            ? 'green'
+            : 'red',
+      delta: createStatDelta(plRatio, previousPLRatio, metricDeltaOptions),
+    },
+  ];
+  return cards.filter((card) => stats[card.key]);
+}
+
 export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
   ({ filePath, plugin, config = {}, preview, previewData }) => {
     const mergedConfig = {
@@ -322,18 +586,12 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
     );
 
     if (loading) {
-      const { stats } = mergedConfig;
-      const enabledStats = Object.entries(stats || {}).filter(
+      const enabledStats = Object.entries(mergedConfig.stats || {}).filter(
         ([, enabled]) => enabled
       );
 
       return (
-        <div
-          className="journalit-reviewv2-stats-grid"
-          style={cssVars({
-            '--reviewv2-stats-columns': mergedConfig.columns || 4,
-          })}
-        >
+        <StatsGrid columns={mergedConfig.columns}>
           {enabledStats.map(([key]) => (
             <div key={key} className="journalit-reviewv2-stats-card">
               <div className="journalit-u-mb-4">
@@ -342,7 +600,7 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
               <SkeletonBox width={50} height={18} borderRadius="4px" />
             </div>
           ))}
-        </div>
+        </StatsGrid>
       );
     }
 
@@ -354,271 +612,30 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
       );
     }
 
-    const currency =
-      getSingleExplicitCurrency(trades) ||
-      plugin?.settings?.general?.currency ||
-      CurrencyCode.USD;
-    const previousCurrency =
-      getSingleExplicitCurrency(previousTrades) ||
-      plugin?.settings?.general?.currency ||
-      CurrencyCode.USD;
-    const currencyConversion = cachedData?.currencyConversion ?? null;
-    const isPnlMasked = shouldMask('pnl');
-    const isReturnPercentMasked = shouldMask('returnPercent');
-    const isMetricMasked = shouldMask('metric');
-    const { stats } = mergedConfig;
-    const previousDataAvailable = previousMetrics !== null;
-    const displayRMultiples = plugin?.settings?.trade?.displayRMultiples;
-    const comparablePnlCurrencies = currency === previousCurrency;
-    const pnlDeltaOptions = {
-      previousDataAvailable,
-      masked: isPnlMasked,
-      zeroThreshold: displayRMultiples ? 0.05 : 0.005,
-      formatter: (value: number) =>
-        displayRMultiples
-          ? formatValue({
-              kind: 'rMultiple' as const,
-              value,
-              signed: true,
-              precision: 1,
-            })
-          : formatValue({
-              kind: 'pnl' as const,
-              value,
-              currencyCode: currency,
-              signed: true,
-            }),
-    };
-    const percentDeltaOptions = {
-      previousDataAvailable,
-      masked: isReturnPercentMasked,
-      zeroThreshold: 0.05,
-      formatter: (value: number) =>
-        formatValue({
-          kind: 'returnPercent' as const,
-          value,
-          signed: true,
-          precision: 1,
-        }),
-    };
-    const metricDeltaOptions = {
-      previousDataAvailable,
-      masked: isMetricMasked,
-      zeroThreshold: 0.005,
-      formatter: (value: number) =>
-        formatValue({
-          kind: 'metric' as const,
-          value,
-          signed: true,
-          precision: 2,
-        }),
-    };
-
-    const createPnlDelta = (
-      currentValue: number,
-      previousValue: number | undefined,
-      currentR: number | undefined,
-      previousR: number | undefined,
-      lowerIsBetter = false
-    ): StatDelta | undefined => {
-      const useRDelta =
-        displayRMultiples && currentR !== undefined && previousR !== undefined;
-      if (
-        !useRDelta &&
-        previousDataAvailable &&
-        previousValue !== undefined &&
-        !comparablePnlCurrencies
-      ) {
-        return undefined;
-      }
-
-      return createStatDelta(
-        useRDelta ? currentR : currentValue,
-        useRDelta ? previousR : previousValue,
-        { ...pnlDeltaOptions, lowerIsBetter }
-      );
-    };
+    const fallbackCurrency =
+      plugin?.settings?.general?.currency || CurrencyCode.USD;
+    const cards = buildStatCards({
+      stats: mergedConfig.stats || {},
+      metrics,
+      previousMetrics,
+      plRatio,
+      previousPLRatio,
+      currency: getSingleExplicitCurrency(trades) || fallbackCurrency,
+      previousCurrency:
+        getSingleExplicitCurrency(previousTrades) || fallbackCurrency,
+      displayRMultiples: plugin?.settings?.trade?.displayRMultiples,
+      formatter: { formatValue, shouldMask },
+      currencyConversion: cachedData?.currencyConversion ?? null,
+      winningTrades,
+      losingTrades,
+    });
 
     return (
-      <div
-        className="journalit-reviewv2-stats-grid"
-        style={cssVars({
-          '--reviewv2-stats-columns': mergedConfig.columns || 4,
-        })}
-      >
-        {stats?.netPnL && (
-          <StatCard
-            label={t('widget.stats.net-pnl')}
-            value={formatValue({
-              kind: 'pnl',
-              value: metrics.netPnL,
-              currencyCode: currency,
-              rMultiple: metrics.netPnLR,
-            })}
-            color={
-              isPnlMasked ? undefined : metrics.netPnL >= 0 ? 'green' : 'red'
-            }
-            delta={createPnlDelta(
-              metrics.netPnL,
-              previousMetrics?.netPnL,
-              metrics.netPnLR,
-              previousMetrics?.netPnLR
-            )}
-            currencyConversion={currencyConversion}
-          />
-        )}
-        {stats?.winRate && (
-          <StatCard
-            label={t('widget.stats.win-rate')}
-            value={formatValue({
-              kind: 'returnPercent',
-              value: metrics.winRate * 100,
-              signed: false,
-              precision: 1,
-            })}
-            delta={createStatDelta(
-              metrics.winRate * 100,
-              previousMetrics ? previousMetrics.winRate * 100 : undefined,
-              percentDeltaOptions
-            )}
-          />
-        )}
-        {stats?.profitFactor && (
-          <StatCard
-            label={t('widget.stats.profit-factor')}
-            value={
-              isMetricMasked
-                ? formatValue({ kind: 'metric', value: metrics.profitFactor })
-                : metrics.profitFactor === Infinity
-                  ? '∞'
-                  : metrics.profitFactor.toFixed(2)
-            }
-            color={
-              isMetricMasked
-                ? undefined
-                : metrics.profitFactor >= 1
-                  ? 'green'
-                  : 'red'
-            }
-            delta={createStatDelta(
-              metrics.profitFactor,
-              previousMetrics?.profitFactor,
-              metricDeltaOptions
-            )}
-          />
-        )}
-        {stats?.expectancy && (
-          <StatCard
-            label={t('widget.stats.expectancy')}
-            value={formatValue({
-              kind: 'pnl',
-              value: metrics.expectancy,
-              currencyCode: currency,
-              rMultiple: metrics.expectancyR,
-            })}
-            color={
-              isPnlMasked
-                ? undefined
-                : metrics.expectancy > 0
-                  ? 'green'
-                  : metrics.expectancy < 0
-                    ? 'red'
-                    : undefined
-            }
-            delta={createPnlDelta(
-              metrics.expectancy,
-              previousMetrics?.expectancy,
-              metrics.expectancyR,
-              previousMetrics?.expectancyR
-            )}
-            currencyConversion={currencyConversion}
-          />
-        )}
-        {stats?.totalTrades && (
-          <StatCard
-            label={t('widget.stats.total-trades')}
-            value={metrics.numTrades.toString()}
-            delta={createStatDelta(
-              metrics.numTrades,
-              previousMetrics?.numTrades,
-              {
-                previousDataAvailable,
-                masked: false,
-                formatter: (value) => signedNumber(value),
-                lowerIsBetter: false,
-                neutralTone: true,
-              }
-            )}
-          />
-        )}
-        {stats?.avgWin && (
-          <StatCard
-            label={t('widget.stats.avg-win')}
-            value={formatValue({
-              kind: 'pnl',
-              value: metrics.avgWin,
-              currencyCode: currency,
-              rMultiple: metrics.avgWinR,
-            })}
-            delta={createPnlDelta(
-              metrics.avgWin,
-              previousMetrics?.avgWin,
-              metrics.avgWinR,
-              previousMetrics?.avgWinR
-            )}
-            currencyConversion={currencyConversion}
-            conversionTrades={winningTrades}
-          />
-        )}
-        {stats?.avgLoss && (
-          <StatCard
-            label={t('widget.stats.avg-loss')}
-            value={formatValue({
-              kind: 'pnl',
-              value: -Math.abs(metrics.avgLoss),
-              currencyCode: currency,
-              rMultiple: metrics.avgLossR
-                ? -Math.abs(metrics.avgLossR)
-                : undefined,
-            })}
-            delta={createPnlDelta(
-              -Math.abs(metrics.avgLoss),
-              previousMetrics ? -Math.abs(previousMetrics.avgLoss) : undefined,
-              metrics.avgLossR !== undefined
-                ? -Math.abs(metrics.avgLossR)
-                : undefined,
-              previousMetrics?.avgLossR !== undefined
-                ? -Math.abs(previousMetrics.avgLossR)
-                : undefined,
-              false
-            )}
-            currencyConversion={currencyConversion}
-            conversionTrades={losingTrades}
-          />
-        )}
-        {stats?.plRatio && (
-          <StatCard
-            label={t('widget.stats.pl-ratio')}
-            value={formatValue({
-              kind: 'metric',
-              value: plRatio,
-              precision: 2,
-            })}
-            color={
-              isMetricMasked || isReturnPercentMasked
-                ? undefined
-                : plRatio >= 1
-                  ? 'green'
-                  : 'red'
-            }
-            delta={createStatDelta(
-              plRatio,
-              previousPLRatio,
-              metricDeltaOptions
-            )}
-          />
-        )}
-      </div>
+      <StatsGrid columns={mergedConfig.columns}>
+        {cards.map(({ key, ...card }) => (
+          <StatCard key={key} {...card} />
+        ))}
+      </StatsGrid>
     );
   }
 );

@@ -8,8 +8,7 @@ import {
 } from '../../../utils/tradeStatusUtils';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
-import { CurrencyCode } from '../../../utils/currencyConfig';
-import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
+import { resolveReviewCurrency } from './shared/reviewWidgetSettings';
 import { getDisplayPnL, getAccountCount } from '../../../utils/pnlUtils';
 import {
   formatDateDisplay,
@@ -82,6 +81,203 @@ const DEFAULT_CONFIG: BreakdownTableWidgetConfig = {
   },
 };
 
+type BreakdownColumns = BreakdownTableWidgetConfig['columns'];
+
+
+const BREAKDOWN_GROUP_SHAPES = {
+  day: {
+    headerKey: 'widget.table.header.date',
+    emptyKey: 'widget.breakdown.empty.days-week',
+    skeletonRows: 5,
+    skeletonDateWidth: 70,
+  },
+  week: {
+    headerKey: 'widget.table.header.week',
+    emptyKey: 'widget.breakdown.empty.weeks-month',
+    skeletonRows: 4,
+    skeletonDateWidth: 35,
+  },
+  month: {
+    headerKey: 'widget.table.header.month',
+    emptyKey: 'widget.breakdown.empty.months-quarter',
+    skeletonRows: 3,
+    skeletonDateWidth: 100,
+  },
+  quarter: {
+    headerKey: 'widget.table.header.quarter',
+    emptyKey: 'widget.breakdown.empty.quarters-year',
+    skeletonRows: 4,
+    skeletonDateWidth: 60,
+  },
+} as const;
+
+type BreakdownGroupBy = keyof typeof BREAKDOWN_GROUP_SHAPES;
+
+const BREAKDOWN_GROUP_BY_VALUES: ReadonlySet<string> = new Set(
+  Object.keys(BREAKDOWN_GROUP_SHAPES)
+);
+
+const isBreakdownGroupBy = (value: unknown): value is BreakdownGroupBy =>
+  typeof value === 'string' && BREAKDOWN_GROUP_BY_VALUES.has(value);
+
+interface BreakdownRow {
+  key: string;
+  label: string;
+  tradeCount: number;
+  pnl: number;
+  pnlR?: number;
+  winRate: number;
+  profitFactor: number;
+  onOpen: () => void;
+}
+
+interface BreakdownFormat {
+  pnl: (value: number, rMultiple?: number) => string;
+  winRate: (value: number) => string;
+  profitFactor: (value: number) => string;
+  pnlTone: (value: number) => string;
+  metricTone: (value: number) => string;
+}
+
+const HEADER_CELL = 'journalit-reviewv2-table-header-cell';
+const COMPACT_CELL =
+  'journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact';
+const EMPHASIS_CELL = `${COMPACT_CELL} journalit-reviewv2-table-cell--emphasis`;
+
+const BreakdownHeaderRow: React.FC<{
+  columns: BreakdownColumns;
+  dateHeader: string;
+}> = ({ columns, dateHeader }) => (
+  <thead>
+    <tr>
+      {columns?.date && (
+        <th className={`${HEADER_CELL} journalit-reviewv2-col-date`}>
+          {dateHeader}
+        </th>
+      )}
+      {columns?.trades && (
+        <th className={`${HEADER_CELL} journalit-reviewv2-col-trades`}>
+          {t('widget.table.header.trades')}
+        </th>
+      )}
+      {columns?.pnl && (
+        <th className={`${HEADER_CELL} journalit-reviewv2-col-pnl`}>
+          {t('widget.table.header.pnl')}
+        </th>
+      )}
+      {columns?.winRate && (
+        <th className={`${HEADER_CELL} journalit-reviewv2-col-winrate`}>
+          {t('widget.table.header.win-rate')}
+        </th>
+      )}
+      {columns?.profitFactor && (
+        <th className={`${HEADER_CELL} journalit-reviewv2-col-profit-factor`}>
+          {t('widget.table.header.profit-factor')}
+        </th>
+      )}
+    </tr>
+  </thead>
+);
+
+const BreakdownSkeleton: React.FC<{
+  columns: BreakdownColumns;
+  dateHeader: string;
+  rowCount: number;
+  dateSkeletonWidth: number;
+}> = ({ columns, dateHeader, rowCount, dateSkeletonWidth }) => (
+  <table className="weekly-review-trades-table journalit-reviewv2-table journalit-reviewv2-table--compact">
+    <BreakdownHeaderRow columns={columns} dateHeader={dateHeader} />
+    <tbody>
+      {Array.from({ length: rowCount }).map((_, i) => (
+        <tr
+          key={i}
+          className="journalit-reviewv2-table-row journalit-reviewv2-table-row--static"
+        >
+          {columns?.date && (
+            <td className={`${COMPACT_CELL} journalit-reviewv2-col-date`}>
+              <SkeletonBox
+                width={dateSkeletonWidth}
+                height={14}
+                borderRadius="4px"
+              />
+            </td>
+          )}
+          {columns?.trades && (
+            <td className={`${COMPACT_CELL} journalit-reviewv2-col-trades`}>
+              <SkeletonBox width={25} height={14} borderRadius="4px" />
+            </td>
+          )}
+          {columns?.pnl && (
+            <td className={`${COMPACT_CELL} journalit-reviewv2-col-pnl`}>
+              <SkeletonBox width={65} height={14} borderRadius="4px" />
+            </td>
+          )}
+          {columns?.winRate && (
+            <td className={`${COMPACT_CELL} journalit-reviewv2-col-winrate`}>
+              <SkeletonBox width={40} height={14} borderRadius="4px" />
+            </td>
+          )}
+          {columns?.profitFactor && (
+            <td
+              className={`${COMPACT_CELL} journalit-reviewv2-col-profit-factor`}
+            >
+              <SkeletonBox width={35} height={14} borderRadius="4px" />
+            </td>
+          )}
+        </tr>
+      ))}
+    </tbody>
+  </table>
+);
+
+const BreakdownTableRow: React.FC<{
+  row: BreakdownRow;
+  columns: BreakdownColumns;
+  format: BreakdownFormat;
+}> = ({ row, columns, format }) => (
+  <tr
+    tabIndex={0}
+    onKeyDown={(event) => {
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        event.currentTarget.click();
+      }
+    }}
+    className="weekly-review-trade-row journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive"
+    onClick={row.onOpen}
+  >
+    {columns?.date && (
+      <td className={`${COMPACT_CELL} journalit-reviewv2-col-date`}>
+        {row.label}
+      </td>
+    )}
+    {columns?.trades && (
+      <td className={`${COMPACT_CELL} journalit-reviewv2-col-trades`}>
+        {row.tradeCount}
+      </td>
+    )}
+    {columns?.pnl && (
+      <td
+        className={`${EMPHASIS_CELL} journalit-reviewv2-col-pnl ${format.pnlTone(row.pnl)}`}
+      >
+        {format.pnl(row.pnl, row.pnlR)}
+      </td>
+    )}
+    {columns?.winRate && (
+      <td className={`${COMPACT_CELL} journalit-reviewv2-col-winrate`}>
+        {format.winRate(row.winRate)}
+      </td>
+    )}
+    {columns?.profitFactor && (
+      <td
+        className={`${EMPHASIS_CELL} journalit-reviewv2-col-profit-factor ${format.metricTone(row.profitFactor)}`}
+      >
+        {format.profitFactor(row.profitFactor)}
+      </td>
+    )}
+  </tr>
+);
+
 export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
   React.memo(
     ({
@@ -132,7 +328,9 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
 
       
       const groupBy = useMemo(() => {
-        if (config.groupBy) return config.groupBy;
+        
+        
+        if (isBreakdownGroupBy(config.groupBy)) return config.groupBy;
         
         if (period === 'daily') return 'day';
         if (period === 'weekly') return 'week';
@@ -934,579 +1132,118 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
         }
       };
 
-      if (loading) {
-        const { columns } = mergedConfig;
-        
-        const rowCount =
-          groupBy === 'week'
-            ? 4
-            : groupBy === 'month'
-              ? 3
-              : groupBy === 'quarter'
-                ? 4
-                : 5;
-        
-        const dateHeader =
-          groupBy === 'week'
-            ? t('widget.table.header.week')
-            : groupBy === 'month'
-              ? t('widget.table.header.month')
-              : groupBy === 'quarter'
-                ? t('widget.table.header.quarter')
-                : t('widget.table.header.date');
-        
-        const dateSkeletonWidth =
-          groupBy === 'week'
-            ? 35
-            : groupBy === 'month'
-              ? 100
-              : groupBy === 'quarter'
-                ? 60
-                : 70;
-
-        return (
-          <table className="weekly-review-trades-table journalit-reviewv2-table journalit-reviewv2-table--compact">
-            <thead>
-              <tr>
-                {columns?.date && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-date">
-                    {dateHeader}
-                  </th>
-                )}
-                {columns?.trades && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-trades">
-                    {t('widget.table.header.trades')}
-                  </th>
-                )}
-                {columns?.pnl && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-pnl">
-                    {t('widget.table.header.pnl')}
-                  </th>
-                )}
-                {columns?.winRate && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-winrate">
-                    {t('widget.table.header.win-rate')}
-                  </th>
-                )}
-                {columns?.profitFactor && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-profit-factor">
-                    {t('widget.table.header.profit-factor')}
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {Array.from({ length: rowCount }).map((_, i) => (
-                <tr
-                  key={i}
-                  className="journalit-reviewv2-table-row journalit-reviewv2-table-row--static"
-                >
-                  {columns?.date && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-date">
-                      <SkeletonBox
-                        width={dateSkeletonWidth}
-                        height={14}
-                        borderRadius="4px"
-                      />
-                    </td>
-                  )}
-                  {columns?.trades && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-trades">
-                      <SkeletonBox width={25} height={14} borderRadius="4px" />
-                    </td>
-                  )}
-                  {columns?.pnl && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-pnl">
-                      <SkeletonBox width={65} height={14} borderRadius="4px" />
-                    </td>
-                  )}
-                  {columns?.winRate && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-winrate">
-                      <SkeletonBox width={40} height={14} borderRadius="4px" />
-                    </td>
-                  )}
-                  {columns?.profitFactor && (
-                    <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-profit-factor">
-                      <SkeletonBox width={35} height={14} borderRadius="4px" />
-                    </td>
-                  )}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        );
-      }
-
-      const currency =
-        getSingleExplicitCurrency(trades) ||
-        plugin?.settings?.general?.currency ||
-        CurrencyCode.USD;
       const { columns } = mergedConfig;
-      const formatBreakdownPnL = (value: number, rMultiple?: number) =>
-        formatValue({
-          kind: 'pnl',
-          value,
-          currencyCode: currency,
-          rMultiple,
-        });
-      const formatBreakdownWinRate = (value: number) =>
-        formatValue({
-          kind: 'returnPercent',
-          value: value * 100,
-          signed: false,
-          precision: 1,
-        });
-      const formatBreakdownProfitFactor = (value: number) =>
-        value === Infinity && !isMetricMasked
-          ? '∞'
-          : formatValue({ kind: 'metric', value, precision: 2 });
-      const getPnlToneClass = (value: number) =>
-        isPnlMasked
-          ? ''
-          : value >= 0
-            ? 'journalit-reviewv2-table-cell--positive'
-            : 'journalit-reviewv2-table-cell--negative';
-      const getMetricToneClass = (value: number) =>
-        isMetricMasked
-          ? ''
-          : value >= 1
-            ? 'journalit-reviewv2-table-cell--positive'
-            : 'journalit-reviewv2-table-cell--negative';
+      const shape = BREAKDOWN_GROUP_SHAPES[groupBy];
 
-      
-      if (groupBy === 'day') {
-        if (dailyBreakdown.length === 0) {
-          return (
-            <div className="journalit-reviewv2-empty journalit-reviewv2-empty--large">
-              {t('widget.breakdown.empty.days-week')}
-            </div>
-          );
-        }
-
+      if (loading) {
         return (
-          <table className="weekly-review-trades-table journalit-reviewv2-table journalit-reviewv2-table--compact">
-            <thead>
-              <tr>
-                {columns?.date && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-date">
-                    {t('widget.table.header.date')}
-                  </th>
-                )}
-                {columns?.trades && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-trades">
-                    {t('widget.table.header.trades')}
-                  </th>
-                )}
-                {columns?.pnl && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-pnl">
-                    {t('widget.table.header.pnl')}
-                  </th>
-                )}
-                {columns?.winRate && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-winrate">
-                    {t('widget.table.header.win-rate')}
-                  </th>
-                )}
-                {columns?.profitFactor && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-profit-factor">
-                    {t('widget.table.header.profit-factor')}
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {dailyBreakdown.map((day) => {
-                const pnlClassName = [
-                  'journalit-reviewv2-table-cell',
-                  'journalit-reviewv2-table-cell--compact',
-                  'journalit-reviewv2-table-cell--emphasis',
-                  'journalit-reviewv2-col-pnl',
-                  getPnlToneClass(day.pnl),
-                ].join(' ');
-                const profitFactorClassName = [
-                  'journalit-reviewv2-table-cell',
-                  'journalit-reviewv2-table-cell--compact',
-                  'journalit-reviewv2-table-cell--emphasis',
-                  'journalit-reviewv2-col-profit-factor',
-                  getMetricToneClass(day.profitFactor),
-                ].join(' ');
-
-                return (
-                  <tr
-                    tabIndex={0}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        event.currentTarget.click();
-                      }
-                    }}
-                    key={day.rawDate.toISOString()}
-                    className="weekly-review-trade-row journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive"
-                    onClick={() =>
-                      void handleDayRowClick(day.drcPath, day.rawDate)
-                    }
-                  >
-                    {columns?.date && (
-                      <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-date">
-                        {day.date}
-                      </td>
-                    )}
-                    {columns?.trades && (
-                      <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-trades">
-                        {day.tradeCount}
-                      </td>
-                    )}
-                    {columns?.pnl && (
-                      <td className={pnlClassName}>
-                        {formatBreakdownPnL(day.pnl, day.pnlR)}
-                      </td>
-                    )}
-                    {columns?.winRate && (
-                      <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-winrate">
-                        {formatBreakdownWinRate(day.winRate)}
-                      </td>
-                    )}
-                    {columns?.profitFactor && (
-                      <td className={profitFactorClassName}>
-                        {formatBreakdownProfitFactor(day.profitFactor)}
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <BreakdownSkeleton
+            columns={columns}
+            dateHeader={t(shape.headerKey)}
+            rowCount={shape.skeletonRows}
+            dateSkeletonWidth={shape.skeletonDateWidth}
+          />
         );
       }
 
-      
-      if (groupBy === 'week') {
-        if (weeklyBreakdown.length === 0) {
-          return (
-            <div className="journalit-reviewv2-empty journalit-reviewv2-empty--large">
-              {t('widget.breakdown.empty.weeks-month')}
-            </div>
-          );
-        }
+      const currency = resolveReviewCurrency(trades, plugin);
+      const format: BreakdownFormat = {
+        pnl: (value, rMultiple) =>
+          formatValue({
+            kind: 'pnl',
+            value,
+            currencyCode: currency,
+            rMultiple,
+          }),
+        winRate: (value) =>
+          formatValue({
+            kind: 'returnPercent',
+            value: value * 100,
+            signed: false,
+            precision: 1,
+          }),
+        profitFactor: (value) =>
+          value === Infinity && !isMetricMasked
+            ? '∞'
+            : formatValue({ kind: 'metric', value, precision: 2 }),
+        pnlTone: (value) =>
+          isPnlMasked
+            ? ''
+            : value >= 0
+              ? 'journalit-reviewv2-table-cell--positive'
+              : 'journalit-reviewv2-table-cell--negative',
+        metricTone: (value) =>
+          isMetricMasked
+            ? ''
+            : value >= 1
+              ? 'journalit-reviewv2-table-cell--positive'
+              : 'journalit-reviewv2-table-cell--negative',
+      };
 
+      const rowsByGroup: Record<typeof groupBy, () => BreakdownRow[]> = {
+        day: () =>
+          dailyBreakdown.map((day) => ({
+            ...day,
+            key: day.rawDate.toISOString(),
+            label: day.date,
+            onOpen: () => void handleDayRowClick(day.drcPath, day.rawDate),
+          })),
+        week: () =>
+          weeklyBreakdown.map((week) => ({
+            ...week,
+            key: week.weeklyPath ?? week.firstDate.toISOString(),
+            label: week.week,
+            onOpen: () =>
+              void handleWeekRowClick(week.weeklyPath, week.firstDate),
+          })),
+        month: () =>
+          monthlyBreakdown.map((month) => ({
+            ...month,
+            key: month.monthlyPath ?? month.monthStart.toISOString(),
+            label: month.month,
+            onOpen: () =>
+              void handleMonthRowClick(month.monthlyPath, month.monthStart),
+          })),
+        quarter: () =>
+          quarterlyBreakdown.map((quarter) => ({
+            ...quarter,
+            key: quarter.quarterlyPath ?? quarter.quarterStart.toISOString(),
+            label: quarter.quarter,
+            onOpen: () =>
+              void handleQuarterRowClick(
+                quarter.quarterlyPath,
+                quarter.quarterStart
+              ),
+          })),
+      };
+      const rows = rowsByGroup[groupBy]();
+
+      if (rows.length === 0) {
         return (
-          <table className="weekly-review-trades-table journalit-reviewv2-table journalit-reviewv2-table--compact">
-            <thead>
-              <tr>
-                {columns?.date && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-date">
-                    {t('widget.table.header.week')}
-                  </th>
-                )}
-                {columns?.trades && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-trades">
-                    {t('widget.table.header.trades')}
-                  </th>
-                )}
-                {columns?.pnl && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-pnl">
-                    {t('widget.table.header.pnl')}
-                  </th>
-                )}
-                {columns?.winRate && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-winrate">
-                    {t('widget.table.header.win-rate')}
-                  </th>
-                )}
-                {columns?.profitFactor && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-profit-factor">
-                    {t('widget.table.header.profit-factor')}
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {weeklyBreakdown.map((week) => {
-                const pnlClassName = [
-                  'journalit-reviewv2-table-cell',
-                  'journalit-reviewv2-table-cell--compact',
-                  'journalit-reviewv2-table-cell--emphasis',
-                  'journalit-reviewv2-col-pnl',
-                  getPnlToneClass(week.pnl),
-                ].join(' ');
-                const profitFactorClassName = [
-                  'journalit-reviewv2-table-cell',
-                  'journalit-reviewv2-table-cell--compact',
-                  'journalit-reviewv2-table-cell--emphasis',
-                  'journalit-reviewv2-col-profit-factor',
-                  getMetricToneClass(week.profitFactor),
-                ].join(' ');
-
-                return (
-                  <tr
-                    tabIndex={0}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        event.currentTarget.click();
-                      }
-                    }}
-                    key={week.weeklyPath ?? week.firstDate.toISOString()}
-                    className="weekly-review-trade-row journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive"
-                    onClick={() =>
-                      void handleWeekRowClick(week.weeklyPath, week.firstDate)
-                    }
-                  >
-                    {columns?.date && (
-                      <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-date">
-                        {week.week}
-                      </td>
-                    )}
-                    {columns?.trades && (
-                      <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-trades">
-                        {week.tradeCount}
-                      </td>
-                    )}
-                    {columns?.pnl && (
-                      <td className={pnlClassName}>
-                        {formatBreakdownPnL(week.pnl, week.pnlR)}
-                      </td>
-                    )}
-                    {columns?.winRate && (
-                      <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-winrate">
-                        {formatBreakdownWinRate(week.winRate)}
-                      </td>
-                    )}
-                    {columns?.profitFactor && (
-                      <td className={profitFactorClassName}>
-                        {formatBreakdownProfitFactor(week.profitFactor)}
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <div className="journalit-reviewv2-empty journalit-reviewv2-empty--large">
+            {t(shape.emptyKey)}
+          </div>
         );
       }
 
-      
-      if (groupBy === 'month') {
-        if (monthlyBreakdown.length === 0) {
-          return (
-            <div className="journalit-reviewv2-empty journalit-reviewv2-empty--large">
-              {t('widget.breakdown.empty.months-quarter')}
-            </div>
-          );
-        }
-
-        return (
-          <table className="weekly-review-trades-table journalit-reviewv2-table journalit-reviewv2-table--compact">
-            <thead>
-              <tr>
-                {columns?.date && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-date">
-                    {t('widget.table.header.month')}
-                  </th>
-                )}
-                {columns?.trades && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-trades">
-                    {t('widget.table.header.trades')}
-                  </th>
-                )}
-                {columns?.pnl && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-pnl">
-                    {t('widget.table.header.pnl')}
-                  </th>
-                )}
-                {columns?.winRate && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-winrate">
-                    {t('widget.table.header.win-rate')}
-                  </th>
-                )}
-                {columns?.profitFactor && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-profit-factor">
-                    {t('widget.table.header.profit-factor')}
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {monthlyBreakdown.map((month) => {
-                const pnlClassName = [
-                  'journalit-reviewv2-table-cell',
-                  'journalit-reviewv2-table-cell--compact',
-                  'journalit-reviewv2-table-cell--emphasis',
-                  'journalit-reviewv2-col-pnl',
-                  getPnlToneClass(month.pnl),
-                ].join(' ');
-                const profitFactorClassName = [
-                  'journalit-reviewv2-table-cell',
-                  'journalit-reviewv2-table-cell--compact',
-                  'journalit-reviewv2-table-cell--emphasis',
-                  'journalit-reviewv2-col-profit-factor',
-                  getMetricToneClass(month.profitFactor),
-                ].join(' ');
-
-                return (
-                  <tr
-                    tabIndex={0}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        event.currentTarget.click();
-                      }
-                    }}
-                    key={month.monthlyPath ?? month.monthStart.toISOString()}
-                    className="weekly-review-trade-row journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive"
-                    onClick={() =>
-                      void handleMonthRowClick(
-                        month.monthlyPath,
-                        month.monthStart
-                      )
-                    }
-                  >
-                    {columns?.date && (
-                      <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-date">
-                        {month.month}
-                      </td>
-                    )}
-                    {columns?.trades && (
-                      <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-trades">
-                        {month.tradeCount}
-                      </td>
-                    )}
-                    {columns?.pnl && (
-                      <td className={pnlClassName}>
-                        {formatBreakdownPnL(month.pnl, month.pnlR)}
-                      </td>
-                    )}
-                    {columns?.winRate && (
-                      <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-winrate">
-                        {formatBreakdownWinRate(month.winRate)}
-                      </td>
-                    )}
-                    {columns?.profitFactor && (
-                      <td className={profitFactorClassName}>
-                        {formatBreakdownProfitFactor(month.profitFactor)}
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        );
-      }
-
-      
-      if (groupBy === 'quarter') {
-        if (quarterlyBreakdown.length === 0) {
-          return (
-            <div className="journalit-reviewv2-empty journalit-reviewv2-empty--large">
-              {t('widget.breakdown.empty.quarters-year')}
-            </div>
-          );
-        }
-
-        return (
-          <table className="weekly-review-trades-table journalit-reviewv2-table journalit-reviewv2-table--compact">
-            <thead>
-              <tr>
-                {columns?.date && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-date">
-                    {t('widget.table.header.quarter')}
-                  </th>
-                )}
-                {columns?.trades && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-trades">
-                    {t('widget.table.header.trades')}
-                  </th>
-                )}
-                {columns?.pnl && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-pnl">
-                    {t('widget.table.header.pnl')}
-                  </th>
-                )}
-                {columns?.winRate && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-winrate">
-                    {t('widget.table.header.win-rate')}
-                  </th>
-                )}
-                {columns?.profitFactor && (
-                  <th className="journalit-reviewv2-table-header-cell journalit-reviewv2-col-profit-factor">
-                    {t('widget.table.header.profit-factor')}
-                  </th>
-                )}
-              </tr>
-            </thead>
-            <tbody>
-              {quarterlyBreakdown.map((quarter) => {
-                const pnlClassName = [
-                  'journalit-reviewv2-table-cell',
-                  'journalit-reviewv2-table-cell--compact',
-                  'journalit-reviewv2-table-cell--emphasis',
-                  'journalit-reviewv2-col-pnl',
-                  getPnlToneClass(quarter.pnl),
-                ].join(' ');
-                const profitFactorClassName = [
-                  'journalit-reviewv2-table-cell',
-                  'journalit-reviewv2-table-cell--compact',
-                  'journalit-reviewv2-table-cell--emphasis',
-                  'journalit-reviewv2-col-profit-factor',
-                  getMetricToneClass(quarter.profitFactor),
-                ].join(' ');
-
-                return (
-                  <tr
-                    tabIndex={0}
-                    onKeyDown={(event) => {
-                      if (event.key === 'Enter' || event.key === ' ') {
-                        event.preventDefault();
-                        event.currentTarget.click();
-                      }
-                    }}
-                    key={
-                      quarter.quarterlyPath ??
-                      quarter.quarterStart.toISOString()
-                    }
-                    className="weekly-review-trade-row journalit-reviewv2-table-row journalit-reviewv2-table-row--interactive"
-                    onClick={() =>
-                      void handleQuarterRowClick(
-                        quarter.quarterlyPath,
-                        quarter.quarterStart
-                      )
-                    }
-                  >
-                    {columns?.date && (
-                      <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-date">
-                        {quarter.quarter}
-                      </td>
-                    )}
-                    {columns?.trades && (
-                      <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-trades">
-                        {quarter.tradeCount}
-                      </td>
-                    )}
-                    {columns?.pnl && (
-                      <td className={pnlClassName}>
-                        {formatBreakdownPnL(quarter.pnl, quarter.pnlR)}
-                      </td>
-                    )}
-                    {columns?.winRate && (
-                      <td className="journalit-reviewv2-table-cell journalit-reviewv2-table-cell--compact journalit-reviewv2-col-winrate">
-                        {formatBreakdownWinRate(quarter.winRate)}
-                      </td>
-                    )}
-                    {columns?.profitFactor && (
-                      <td className={profitFactorClassName}>
-                        {formatBreakdownProfitFactor(quarter.profitFactor)}
-                      </td>
-                    )}
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        );
-      }
-
-      return null;
+      return (
+        <table className="weekly-review-trades-table journalit-reviewv2-table journalit-reviewv2-table--compact">
+          <BreakdownHeaderRow
+            columns={columns}
+            dateHeader={t(shape.headerKey)}
+          />
+          <tbody>
+            {rows.map((row) => (
+              <BreakdownTableRow
+                key={row.key}
+                row={row}
+                columns={columns}
+                format={format}
+              />
+            ))}
+          </tbody>
+        </table>
+      );
     }
   );
 

@@ -74,7 +74,7 @@ function accountNames(plugin: JournalitPlugin): string[] {
   return names.length ? names : ['Main Account'];
 }
 
-export async function loadTradeImportAccountNames(
+async function loadTradeImportAccountNames(
   plugin: JournalitPlugin
 ): Promise<string[]> {
   const catalog = await plugin.accountPageService?.getAccountCatalog();
@@ -166,7 +166,7 @@ function templateSetup(
   };
 }
 
-export async function resolveQuickTradeImportSetup(
+async function resolveQuickTradeImportSetup(
   plugin: JournalitPlugin,
   capabilities: TradeImportCapabilities
 ): Promise<TradeImportQuickSetup> {

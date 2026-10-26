@@ -1,6 +1,6 @@
 
 
-import { App, Modal } from 'obsidian';
+import { App } from 'obsidian';
 import React, { useState, useCallback, useEffect, useRef } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { Check, Lock, Star } from '../shared/icons/ObsidianIcon';
@@ -8,6 +8,7 @@ import type { ReviewTemplate, TradeTemplate } from '../../types/reviewV2';
 import { Button } from '../ui/Button';
 import { t } from '../../lang/helpers';
 import { mergeClassNames } from '../../utils/classNames';
+import { JournalitModal } from './JournalitModal';
 
 type TemplateType = ReviewTemplate | TradeTemplate;
 
@@ -177,7 +178,7 @@ const TemplatePickerContent: React.FC<
   );
 };
 
-class TemplatePickerModal extends Modal {
+class TemplatePickerModal extends JournalitModal {
   private props: TemplatePickerModalProps;
   private root: Root | null = null;
 

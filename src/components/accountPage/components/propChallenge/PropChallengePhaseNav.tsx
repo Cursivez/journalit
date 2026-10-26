@@ -101,6 +101,7 @@ export const PhaseSelector: React.FC<{
 export const PropChallengePhaseNav: React.FC<{
   challenge: PropChallengeConfig;
   selectedPhase: PropChallengePhase;
+  reviewRequired?: boolean;
   status?:
     | PropChallengeConfig['status']
     | PropChallengePhase['status']
@@ -109,7 +110,15 @@ export const PropChallengePhaseNav: React.FC<{
   onAction: (action: PropChallengeManualAction) => void;
   
   upsell?: React.ReactNode;
-}> = ({ challenge, selectedPhase, status, actions, onAction, upsell }) => {
+}> = ({
+  challenge,
+  selectedPhase,
+  status,
+  reviewRequired,
+  actions,
+  onAction,
+  upsell,
+}) => {
   const selectedIndex = challenge.phases.findIndex(
     (phase) => phase.id === selectedPhase.id
   );
@@ -124,7 +133,9 @@ export const PropChallengePhaseNav: React.FC<{
             className={`journalit-prop-phase-status is-${status}`}
             role="status"
           >
-            {t(`account.prop-challenge.summary.status.${status}`)}
+            {reviewRequired && status === 'warning'
+              ? t('account.prop-challenge.ledger.state.needs-review')
+              : t(`account.prop-challenge.summary.status.${status}`)}
           </span>
         ) : null}
       </div>

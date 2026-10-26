@@ -5,8 +5,19 @@ import {
   findServerImportAccountsForLocalAccount,
   type ServerImportAccount,
 } from '../../../services/tradeImport/tradeImportServerDeletion';
-import { App, Modal, Notice } from 'obsidian';
-import React, { useState, useEffect, useCallback, useId, useRef } from 'react';
+import { App, Notice } from 'obsidian';
+import {
+  AccountFormModal,
+  type AccountFormCloseProps,
+} from './AccountFormModal';
+import React, {
+  useState,
+  useEffect,
+  useCallback,
+  useId,
+  useImperativeHandle,
+  useRef,
+} from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import JournalitPlugin from '../../../main';
 import {
@@ -53,12 +64,20 @@ import {
 import type { CopyTradingPeriod } from '../../../settings/types';
 import type { PropChallengeConfig } from '../../../services/propChallenge/types';
 import { resolveStageAccountType } from '../../../services/propChallenge/stageAccountTypes';
-import { getAvailableAccountTypes } from './propChallenge/propChallengeLifecycleActions';
+import {
+  getAvailableAccountTypes,
+  resolveAvailableAccountType,
+} from './propChallenge/propChallengeLifecycleActions';
 import {
   getCurrentPropChallengePhase,
-  isPropChallengePhaseComplete,
   validatePhaseTimeline,
 } from '../../../services/propChallenge/PropChallengeConfig';
+import { rewriteAccountReferenceNotes } from '../../../services/account/accountRename';
+import {
+  accountDefinitionIssue,
+  type AccountDefinitionIssue,
+  profitTargetNeedsBalance,
+} from '../../../services/account/accountDefinitionRules';
 import { DisplayPolicyProvider } from '../../../contexts/DisplayPolicyContext';
 import { SegmentedControl } from '../../shared/SegmentedControl';
 import { ModalEscapeProvider } from '../../shared/disclosureEscape';
@@ -67,12 +86,15 @@ import { DropdownSelect } from '../../shared/DropdownSelect';
 import { Tooltip } from '../../shared/Tooltip';
 import { Info } from '../../shared/icons/ObsidianIcon';
 import { PropChallengeToggleField } from './PropChallengeToggleField';
+import { AccountFormField } from './AccountFormField';
+import { ProfitTargetTypeControl } from './ProfitTargetTypeControl';
 import { AccountPageDataProvider } from '../context/AccountPageDataContext';
 import { useAccountPageService } from '../../../hooks/useService';
 import {
   isValidCopyTradingMultiplier,
   hasActiveCopyTradingPeriod,
   isAccountUsedAsActiveCopyBase,
+  nextCopyTradingPeriods,
 } from '../../../utils/accountCopyTrading';
 import { formatAccountTypeLabel } from '../../../utils/accountTypeLabel';
 import { suspendViewGuidesWhileOpen } from '../../../guides/suspendViewGuides';
@@ -88,31 +110,8 @@ import {
 import { AccountMetadataConflictError } from '../../../services/accountPage/AccountPageService';
 
 export const EDIT_ACCOUNT_MODAL_STYLES = `
-        .edit-account-form .manage-snapshots-button {
-          padding: 8px 16px;
-          background-color: var(--interactive-accent);
-          color: var(--text-on-accent);
-          border: none;
-          border-radius: 4px;
-          cursor: pointer;
-          white-space: normal;
-          word-wrap: break-word;
-          width: auto;
-          max-width: 100%;
-          display: inline-block;
-          min-width: 250px !important;
-        }
-
-        .edit-account-form .modal-save-accent {
-          background-color: var(--interactive-accent) !important;
-          color: var(--text-on-accent) !important;
-          border-color: var(--interactive-accent) !important;
-        }
-
-        .edit-account-form .delete-account-danger {
-          background-color: #dc3545 !important;
-          color: white !important;
-          border-color: #dc3545 !important;
+        .journalit-account-form .journalit-manage-snapshots-button {
+          align-self: flex-start;
         }
       
 `;
@@ -134,6 +133,25 @@ const DRAWDOWN_TYPE_OPTIONS: Array<{
   { value: DrawdownType.MANUAL, labelKey: 'account.drawdown.manual' },
 ];
 
+
+const EDIT_DEFINITION_ISSUE_MESSAGES: Record<
+  AccountDefinitionIssue,
+  () => string
+> = {
+  'balance-negative': () => t('account.edit.error.balance-required'),
+  'rule-incomplete': () => t('account.create.error.rule-incomplete'),
+  'drawdown-required': () => t('account.edit.error.drawdown-required'),
+  'profit-target-required': () =>
+    t('account.create.error.profit-target-required'),
+  'profit-target-needs-balance': () =>
+    t('account.create.error.profit-target-needs-balance'),
+  'phase-profit-target-needs-balance': () =>
+    t('account.create.error.phase-profit-target-needs-balance'),
+  'invalid-date': () => t('account.edit.error.creation-date-required'),
+  'future-date': () => t('account.edit.error.future-date'),
+  'cost-negative': () => t('account.create.error.cost-negative'),
+};
+
 const getErrorMessage = (error: unknown): string =>
   error instanceof InactivePropChallengeBalanceError
     ? t('account.edit.error.inactive-phase')
@@ -142,11 +160,6 @@ const getErrorMessage = (error: unknown): string =>
       : error instanceof Error
         ? error.message
         : String(error);
-
-const profitTargetTypeFromSelect = (value: string): ProfitTargetType =>
-  value === 'percentage'
-    ? ProfitTargetType.PERCENTAGE
-    : ProfitTargetType.ABSOLUTE;
 
 interface EditAccountModalProps {
   app: App;
@@ -183,7 +196,7 @@ interface EditAccountFormState {
 }
 
 
-class EditAccountModal extends Modal {
+class EditAccountModal extends AccountFormModal {
   private props: EditAccountModalProps;
   private container: HTMLDivElement;
   private root: Root | null = null;
@@ -197,12 +210,12 @@ class EditAccountModal extends Modal {
   onOpen() {
     const { contentEl } = this;
     contentEl.empty();
-    this.modalEl.addClass('journalit-edit-account-modal');
+    this.modalEl.addClass('journalit-account-form-modal');
     suspendViewGuidesWhileOpen(this.modalEl);
 
     
     this.container = contentEl.createDiv({
-      cls: 'edit-account-modal-container',
+      cls: 'journalit-account-form-container',
     });
 
     
@@ -225,7 +238,9 @@ class EditAccountModal extends Modal {
         <CurrencyProvider>
           <EditAccountModalTree
             {...this.props}
-            onModalClose={() => this.close()}
+            onModalClose={this.closeWithoutConfirm}
+            onRequestClose={() => this.close()}
+            closeHandle={this.closeHandle}
           />
         </CurrencyProvider>
       </ModalEscapeProvider>
@@ -251,62 +266,55 @@ const AccountIdentityFields: React.FC<AccountIdentityFieldsProps> = ({
   isSaving,
 }) => (
   <div className="setting-item two-column">
-    <div className="column">
-      <div className="setting-item-info">
-        <div className="setting-item-name">{t('account.edit.field.name')}</div>
-      </div>
-      <div className="setting-item-control">
+    <AccountFormField label={t('account.form.field.name')} labelFor="input">
+      {(controlId) => (
         <input
+          id={controlId}
           type="text"
           value={editAccount.name}
           onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
             const name = e.target.value;
             setEditAccount((currentAccount) => ({ ...currentAccount, name }));
           }}
-          placeholder={t('account.edit.placeholder.name')}
+          placeholder={t('account.form.placeholder.name')}
           disabled={isSaving}
         />
-      </div>
-    </div>
-    <div className="column">
-      <div className="setting-item-info">
-        <div className="setting-item-name">{t('account.edit.field.type')}</div>
-      </div>
-      <div className="setting-item-control">
-        <DropdownSelect
-          value={editAccount.accountType}
-          onChange={(accountType) => {
-            setEditAccount((currentAccount) => ({
-              ...currentAccount,
-              accountType,
-            }));
-          }}
-          ariaLabel={t('account.edit.field.type')}
-          disabled={isSaving}
-          options={
-            customAccountTypes.length > 0
-              ? customAccountTypes.map((type) => ({
-                  value: type,
-                  label: formatAccountTypeLabel(type),
-                }))
-              : [
-                  {
-                    value: AccountType.DEMO,
-                    label: t('account.edit.type.demo'),
-                  },
-                  {
-                    value: AccountType.EVALUATION,
-                    label: t('account.edit.type.evaluation'),
-                  },
-                  {
-                    value: AccountType.FUNDED,
-                    label: t('account.edit.type.funded'),
-                  },
-                ]
-          }
-        />
-      </div>
-    </div>
+      )}
+    </AccountFormField>
+    <AccountFormField label={t('account.form.field.type')}>
+      <DropdownSelect
+        value={editAccount.accountType}
+        onChange={(accountType) => {
+          setEditAccount((currentAccount) => ({
+            ...currentAccount,
+            accountType,
+          }));
+        }}
+        ariaLabel={t('account.form.field.type')}
+        disabled={isSaving}
+        options={
+          customAccountTypes.length > 0
+            ? customAccountTypes.map((type) => ({
+                value: type,
+                label: formatAccountTypeLabel(type),
+              }))
+            : [
+                {
+                  value: AccountType.DEMO,
+                  label: t('account.form.type.demo'),
+                },
+                {
+                  value: AccountType.EVALUATION,
+                  label: t('account.form.type.evaluation'),
+                },
+                {
+                  value: AccountType.FUNDED,
+                  label: t('account.form.type.funded'),
+                },
+              ]
+        }
+      />
+    </AccountFormField>
   </div>
 );
 
@@ -330,134 +338,104 @@ const AccountBalanceFields: React.FC<AccountBalanceFieldsProps> = ({
       className={`setting-item two-column${isPropChallenge ? ' journalit-account-created-date-only' : ''}`}
     >
       {!isPropChallenge && (
-        <div className="column">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('account.edit.field.initial-balance')}
-            </div>
-            <div className="setting-item-description">
-              {t('account.edit.field.initial-balance-desc')}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <DraftInput
-              type="number"
-              value={
-                editAccount.initialBalance === 0
-                  ? ''
-                  : editAccount.initialBalance
-              }
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const initialBalance =
-                  e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
-                setEditAccount((currentAccount) => ({
-                  ...currentAccount,
-                  initialBalance,
-                }));
-              }}
-              min="0"
-              step="100"
-              placeholder="0"
-              aria-label={t('account.edit.field.initial-balance')}
-              disabled={isSaving}
-            />
-          </div>
-        </div>
-      )}
-      <div
-        className={`column${isPropChallenge ? ' journalit-account-created-date-column' : ''}`}
-      >
-        <div className="setting-item-info">
-          <div className="setting-item-name">
-            {t('account.edit.field.creation-date')}
-          </div>
-          <div className="setting-item-description">
-            {t('account.edit.field.creation-date-desc')}
-          </div>
-        </div>
-        <div className="setting-item-control">
-          <FastDateTimeInput
-            className="journalit-account-date-input"
-            value={editAccount.createdDate ?? undefined}
-            onChange={(value) => {
-              if (value instanceof Date) {
-                const date = new Date(value);
-                date.setHours(0, 0, 0, 0);
-                setEditAccount((currentAccount) => ({
-                  ...currentAccount,
-                  createdDate: date,
-                }));
-              } else {
-                setEditAccount((currentAccount) => ({
-                  ...currentAccount,
-                  createdDate: null,
-                }));
-              }
+        <AccountFormField
+          label={t('account.form.field.initial-balance')}
+          description={t('account.form.field.initial-balance-desc')}
+          optional
+        >
+          <DraftInput
+            type="number"
+            value={
+              editAccount.initialBalance === 0 ? '' : editAccount.initialBalance
+            }
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+              const initialBalance =
+                e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
+              setEditAccount((currentAccount) => ({
+                ...currentAccount,
+                initialBalance,
+              }));
             }}
+            min="0"
+            step="100"
+            placeholder="0"
+            aria-label={t('account.form.field.initial-balance')}
             disabled={isSaving}
           />
-        </div>
-      </div>
+        </AccountFormField>
+      )}
+      <AccountFormField
+        label={t('account.form.field.creation-date')}
+        description={t('account.form.field.creation-date-desc')}
+        className={
+          isPropChallenge ? 'journalit-account-created-date-column' : undefined
+        }
+      >
+        <FastDateTimeInput
+          className="journalit-account-date-input"
+          value={editAccount.createdDate ?? undefined}
+          onChange={(value) => {
+            if (value instanceof Date) {
+              const date = new Date(value);
+              date.setHours(0, 0, 0, 0);
+              setEditAccount((currentAccount) => ({
+                ...currentAccount,
+                createdDate: date,
+              }));
+            } else {
+              setEditAccount((currentAccount) => ({
+                ...currentAccount,
+                createdDate: null,
+              }));
+            }
+          }}
+          disabled={isSaving}
+        />
+      </AccountFormField>
     </div>
     <div className="setting-item two-column journalit-setting-item--balance-row">
-      <div className="column">
-        <div className="setting-item-info">
-          <div className="setting-item-name">
-            {t('account.edit.field.live-balance')}{' '}
-            <span className="setting-item-name-optional">
-              {t('form.field.optional')}
-            </span>
-          </div>
-          <div className="setting-item-description">
-            {t('account.edit.field.live-balance-desc')}
-          </div>
-        </div>
-        <div className="setting-item-control">
-          <input
-            aria-label={t('account.edit.field.live-balance')}
-            type="number"
-            value={editAccount.liveBalance}
-            onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const liveBalance = e.target.value;
-              setEditAccount((currentAccount) => ({
-                ...currentAccount,
-                liveBalance,
-              }));
-            }}
-            step="100"
-            placeholder={String(account.currentBalance || 0)}
-            disabled={isSaving}
-          />
-        </div>
-      </div>
-      <div className="column">
-        <div className="setting-item-info">
-          <div className="setting-item-name">
-            {t('account.edit.field.currency')}
-          </div>
-          <div className="setting-item-description">
-            {t('account.edit.field.currency-desc')}
-          </div>
-        </div>
-        <div className="setting-item-control">
-          <DropdownSelect
-            value={editAccount.currency}
-            onChange={(currencyValue) => {
-              const currency = parseCuratedCurrencyCode(currencyValue);
-              setEditAccount((currentAccount) => ({
-                ...currentAccount,
-                currency,
-              }));
-            }}
-            ariaLabel={t('account.edit.field.currency')}
-            disabled={isSaving}
-            options={Object.values(CURRENCY_CONFIGS).map((config) => ({
-              value: config.code,
-              label: `${config.symbol} ${config.code} - ${config.name}`,
-            }))}
-          />
-        </div>
-      </div>
+      <AccountFormField
+        label={t('account.form.field.live-balance')}
+        description={t('account.form.field.live-balance-desc')}
+        optional
+      >
+        <input
+          aria-label={t('account.form.field.live-balance')}
+          type="number"
+          value={editAccount.liveBalance}
+          onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+            const liveBalance = e.target.value;
+            setEditAccount((currentAccount) => ({
+              ...currentAccount,
+              liveBalance,
+            }));
+          }}
+          step="100"
+          placeholder={String(account.currentBalance || 0)}
+          disabled={isSaving}
+        />
+      </AccountFormField>
+      <AccountFormField
+        label={t('account.form.field.currency')}
+        description={t('account.form.field.currency-desc')}
+      >
+        <DropdownSelect
+          value={editAccount.currency}
+          onChange={(currencyValue) => {
+            const currency = parseCuratedCurrencyCode(currencyValue);
+            setEditAccount((currentAccount) => ({
+              ...currentAccount,
+              currency,
+            }));
+          }}
+          ariaLabel={t('account.form.field.currency')}
+          disabled={isSaving}
+          options={Object.values(CURRENCY_CONFIGS).map((config) => ({
+            value: config.code,
+            label: `${config.symbol} ${config.code} - ${config.name}`,
+          }))}
+        />
+      </AccountFormField>
     </div>
   </>
 );
@@ -466,122 +444,75 @@ const PropChallengeAccountBasics: React.FC<
   Omit<AccountBalanceFieldsProps, 'isPropChallenge'>
 > = ({ account, editAccount, setEditAccount, isSaving }) => (
   <div className="setting-item two-column journalit-prop-challenge-account-basics">
-    <div className="column">
-      <div className="setting-item-info">
-        <div className="setting-item-name">
-          {t('account.edit.field.creation-date')}
-        </div>
-        <div className="setting-item-description">
-          {t('account.edit.field.creation-date-desc')}
-        </div>
-      </div>
-      <div className="setting-item-control">
-        <FastDateTimeInput
-          className="journalit-account-date-input"
-          value={editAccount.createdDate ?? undefined}
-          onChange={(value) => {
-            if (value instanceof Date) {
-              const date = new Date(value);
-              date.setHours(0, 0, 0, 0);
-              setEditAccount((current) => ({ ...current, createdDate: date }));
-            }
-          }}
-          disabled={isSaving}
-        />
-      </div>
-    </div>
-    <div className="column">
-      <div className="setting-item-info">
-        <div className="setting-item-name">
-          {t('account.edit.field.live-balance')}{' '}
-          <span className="setting-item-name-optional">
-            {t('form.field.optional')}
-          </span>
-        </div>
-        <div className="setting-item-description">
-          {t('account.edit.field.live-balance-desc')}
+    <AccountFormField
+      label={t('account.form.field.live-balance')}
+      optional
+      description={
+        <>
+          {t('account.form.field.live-balance-desc')}
           {account.unscopedLiveBalanceAdjustment !== undefined && (
             <p>{t('account.edit.field.unscoped-live-balance-desc')}</p>
           )}
-        </div>
-      </div>
-      <div className="setting-item-control">
-        <input
-          type="number"
-          value={editAccount.liveBalance}
-          aria-label={t('account.edit.field.live-balance')}
-          onChange={(event) =>
-            setEditAccount((current) => ({
-              ...current,
-              liveBalance: event.target.value,
-            }))
+        </>
+      }
+    >
+      <input
+        type="number"
+        value={editAccount.liveBalance}
+        aria-label={t('account.form.field.live-balance')}
+        onChange={(event) =>
+          setEditAccount((current) => ({
+            ...current,
+            liveBalance: event.target.value,
+          }))
+        }
+        step="100"
+        placeholder={String(editAccount.initialBalance || 0)}
+        disabled={
+          isSaving ||
+          Boolean(
+            editAccount.propChallenge &&
+            getCurrentPropChallengePhase(editAccount.propChallenge)?.status !==
+              'active'
+          )
+        }
+      />
+    </AccountFormField>
+    <AccountFormField
+      label={t('account.form.field.creation-date')}
+      description={t('account.form.field.creation-date-desc')}
+    >
+      <FastDateTimeInput
+        className="journalit-account-date-input"
+        value={editAccount.createdDate ?? undefined}
+        onChange={(value) => {
+          if (value instanceof Date) {
+            const date = new Date(value);
+            date.setHours(0, 0, 0, 0);
+            setEditAccount((current) => ({ ...current, createdDate: date }));
           }
-          step="100"
-          placeholder={String(editAccount.initialBalance || 0)}
-          disabled={
-            isSaving ||
-            Boolean(
-              editAccount.propChallenge &&
-              getCurrentPropChallengePhase(editAccount.propChallenge)
-                ?.status !== 'active'
-            )
-          }
-        />
-      </div>
-    </div>
-    <div className="column">
-      <div className="setting-item-info">
-        <div className="setting-item-name">
-          {t('account.edit.field.currency')}
-        </div>
-        <div className="setting-item-description">
-          {t('account.edit.field.currency-desc')}
-        </div>
-      </div>
-      <div className="setting-item-control">
-        <DropdownSelect
-          value={editAccount.currency}
-          onChange={(currencyValue) => {
-            const currency = parseCuratedCurrencyCode(currencyValue);
-            setEditAccount((current) => ({ ...current, currency }));
-          }}
-          ariaLabel={t('account.edit.field.currency')}
-          disabled={isSaving}
-          options={Object.values(CURRENCY_CONFIGS).map((config) => ({
-            value: config.code,
-            label: `${config.symbol} ${config.code} - ${config.name}`,
-          }))}
-        />
-      </div>
-    </div>
-    <div className="column">
-      <div className="setting-item-info">
-        <div className="setting-item-name">
-          {t('account.edit.field.monthly-cost')}
-        </div>
-        <div className="setting-item-description">
-          {t('account.edit.field.monthly-cost-desc')}
-        </div>
-      </div>
-      <div className="setting-item-control">
-        <DraftInput
-          type="number"
-          value={editAccount.monthlyCost === 0 ? '' : editAccount.monthlyCost}
-          onChange={(event) => {
-            const monthlyCost =
-              event.target.value === ''
-                ? 0
-                : parseFloat(event.target.value) || 0;
-            setEditAccount((current) => ({ ...current, monthlyCost }));
-          }}
-          min="0"
-          step="1"
-          placeholder="0"
-          aria-label={t('account.edit.field.monthly-cost')}
-          disabled={isSaving}
-        />
-      </div>
-    </div>
+        }}
+        disabled={isSaving}
+      />
+    </AccountFormField>
+    <AccountFormField
+      label={t('account.form.field.currency')}
+      description={t('account.form.field.currency-desc')}
+    >
+      <DropdownSelect
+        value={editAccount.currency}
+        onChange={(currencyValue) => {
+          const currency = parseCuratedCurrencyCode(currencyValue);
+          setEditAccount((current) => ({ ...current, currency }));
+        }}
+        ariaLabel={t('account.form.field.currency')}
+        disabled={isSaving}
+        options={Object.values(CURRENCY_CONFIGS).map((config) => ({
+          value: config.code,
+          label: `${config.symbol} ${config.code} - ${config.name}`,
+        }))}
+      />
+    </AccountFormField>
   </div>
 );
 
@@ -616,7 +547,7 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
       <div className="setting-item journalit-setting-item--full-width">
         <div className="setting-item-info">
           <div className="setting-item-name" id={drawdownTypeLabelId}>
-            {t('account.edit.field.drawdown-type')}
+            {t('account.form.field.drawdown-type')}
           </div>
         </div>
         <SegmentedControl<DrawdownType>
@@ -649,18 +580,13 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
       </div>
 
       {editAccount.drawdownType !== DrawdownType.NONE && (
-        <div className="setting-item">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('account.edit.field.drawdown-amount')}
-            </div>
-            <div className="setting-item-description">
-              {t('account.edit.field.drawdown-amount-desc')}
-            </div>
-          </div>
-          <div className="setting-item-control">
+        <div className="setting-item two-column">
+          <AccountFormField
+            label={t('account.form.field.drawdown-amount')}
+            description={t('account.form.field.drawdown-amount-desc')}
+          >
             <DraftInput
-              aria-label={t('account.edit.field.drawdown-amount')}
+              aria-label={t('account.form.field.drawdown-amount')}
               type="number"
               value={
                 editAccount.drawdownAmount === 0
@@ -680,7 +606,7 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
               placeholder="0"
               disabled={isSaving}
             />
-          </div>
+          </AccountFormField>
         </div>
       )}
 
@@ -694,10 +620,9 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
               {t('account.edit.field.manual-snapshots-desc')}
             </div>
           </div>
-          <button
-            type="button"
+          <Button
             onClick={() => setShowSnapshotManager(!showSnapshotManager)}
-            className="manage-snapshots-button"
+            className="journalit-manage-snapshots-button"
           >
             {showSnapshotManager
               ? t('account.edit.button.hide-snapshots', {
@@ -706,7 +631,7 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
               : t('account.edit.button.show-snapshots', {
                   count: String(manualSnapshots.length),
                 })}
-          </button>
+          </Button>
           {showSnapshotManager && (
             <ManualDrawdownManager
               app={app}
@@ -722,235 +647,162 @@ const DrawdownSection: React.FC<DrawdownSectionProps> = ({
   );
 };
 
-interface ProfitTargetSectionProps {
+interface EditAccountFieldProps {
   editAccount: EditAccountFormState;
   setEditAccount: EditAccountSetter;
   isSaving: boolean;
-  isPropChallenge: boolean;
 }
 
-const ProfitTargetSection: React.FC<ProfitTargetSectionProps> = ({
+const MonthlyCostField: React.FC<EditAccountFieldProps> = ({
   editAccount,
   setEditAccount,
   isSaving,
-  isPropChallenge,
-}) => {
-  if (isPropChallenge) {
-    return (
-      <div className="setting-item">
-        <div className="setting-item-info">
-          <div className="setting-item-name">
-            {t('account.edit.field.monthly-cost')}
-          </div>
-          <div className="setting-item-description">
-            {t('account.edit.field.monthly-cost-desc')}
-          </div>
+}) => (
+  <div className="setting-item two-column">
+    <AccountFormField
+      label={t('account.form.field.monthly-cost')}
+      description={t('account.form.field.monthly-cost-desc')}
+    >
+      <DraftInput
+        aria-label={t('account.form.field.monthly-cost')}
+        type="number"
+        value={editAccount.monthlyCost === 0 ? '' : editAccount.monthlyCost}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          const monthlyCost =
+            e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
+          setEditAccount((currentAccount) => ({
+            ...currentAccount,
+            monthlyCost,
+          }));
+        }}
+        min="0"
+        step="1"
+        placeholder="0"
+        disabled={isSaving}
+      />
+    </AccountFormField>
+  </div>
+);
+
+const ProfitTargetSection: React.FC<EditAccountFieldProps> = ({
+  editAccount,
+  setEditAccount,
+  isSaving,
+}) => (
+  <div className="setting-item journalit-setting-item--full-width journalit-profit-target-section">
+    <div className="journalit-checkbox-setting-row journalit-feature-toggle-row">
+      <Checkbox
+        checked={editAccount.hasProfitTarget}
+        onChange={(checked) =>
+          setEditAccount((currentAccount) => ({
+            ...currentAccount,
+            hasProfitTarget: checked,
+          }))
+        }
+        ariaLabel={t('account.profit-target.title')}
+        disabled={isSaving}
+      />
+      <div className="setting-item-info">
+        <div className="setting-item-name">
+          {t('account.profit-target.title')}
         </div>
-        <div className="setting-item-control">
+      </div>
+    </div>
+
+    {editAccount.hasProfitTarget && (
+      <div className="journalit-profit-target-fields two-column">
+        <AccountFormField
+          label={t('account.form.field.target-type')}
+          description={t('account.form.field.target-type-desc')}
+          labelFor="group"
+        >
+          {(labelId) => (
+            <ProfitTargetTypeControl
+              labelId={labelId}
+              value={editAccount.profitTargetType}
+              disabled={isSaving}
+              onChange={(profitTargetType) =>
+                setEditAccount((currentAccount) => ({
+                  ...currentAccount,
+                  profitTargetType,
+                }))
+              }
+            />
+          )}
+        </AccountFormField>
+        <AccountFormField
+          label={
+            editAccount.profitTargetType === ProfitTargetType.PERCENTAGE
+              ? t('account.form.field.target-percent')
+              : t('account.form.field.target-dollar')
+          }
+          description={
+            editAccount.profitTargetType === ProfitTargetType.PERCENTAGE
+              ? t('account.form.field.target-percent-desc')
+              : t('account.form.field.target-dollar-desc')
+          }
+        >
           <DraftInput
-            aria-label={t('account.edit.field.monthly-cost')}
             type="number"
-            value={editAccount.monthlyCost === 0 ? '' : editAccount.monthlyCost}
+            value={
+              editAccount.profitTarget === 0 ? '' : editAccount.profitTarget
+            }
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              const monthlyCost =
-                e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
+              
+              
+              if (e.target.value === '') return;
+              const profitTarget = parseFloat(e.target.value) || 0;
               setEditAccount((currentAccount) => ({
                 ...currentAccount,
-                monthlyCost,
+                profitTarget,
               }));
             }}
             min="0"
-            step="1"
+            step={
+              editAccount.profitTargetType === ProfitTargetType.PERCENTAGE
+                ? '1'
+                : '100'
+            }
             placeholder="0"
+            aria-label={
+              editAccount.profitTargetType === ProfitTargetType.PERCENTAGE
+                ? t('account.form.field.target-percent')
+                : t('account.form.field.target-dollar')
+            }
             disabled={isSaving}
           />
-        </div>
+        </AccountFormField>
+        {profitTargetNeedsBalance(editAccount) && (
+          <div className="error-message-inline journalit-profit-target-hint">
+            {t('account.create.error.profit-target-needs-balance')}
+          </div>
+        )}
+        <AccountFormField
+          label={t('account.form.field.target-date')}
+          description={t('account.form.field.target-date-desc')}
+          optional
+        >
+          <FastDateTimeInput
+            className="journalit-account-date-input"
+            value={
+              editAccount.profitTargetDate
+                ? new Date(editAccount.profitTargetDate)
+                : undefined
+            }
+            onChange={(value) => {
+              const profitTargetDate = value instanceof Date ? value : null;
+              setEditAccount((currentAccount) => ({
+                ...currentAccount,
+                profitTargetDate,
+              }));
+            }}
+            disabled={isSaving}
+          />
+        </AccountFormField>
       </div>
-    );
-  }
-
-  return (
-    <>
-      <div className="setting-item two-column">
-        <div className="column">
-          <div className="journalit-checkbox-setting-row journalit-feature-toggle-row">
-            <Checkbox
-              checked={editAccount.hasProfitTarget}
-              onChange={(checked) =>
-                setEditAccount((currentAccount) => ({
-                  ...currentAccount,
-                  hasProfitTarget: checked,
-                }))
-              }
-              ariaLabel={t('account.profit-target.enable')}
-              disabled={isSaving}
-            />
-            <div className="setting-item-info">
-              <div className="setting-item-name">
-                {t('account.profit-target.enable')}
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="column">
-          <div className="setting-item-info">
-            <div className="setting-item-name">
-              {t('account.edit.field.monthly-cost')}
-            </div>
-            <div className="setting-item-description">
-              {t('account.edit.field.monthly-cost-desc')}
-            </div>
-          </div>
-          <div className="setting-item-control">
-            <DraftInput
-              type="number"
-              value={
-                editAccount.monthlyCost === 0 ? '' : editAccount.monthlyCost
-              }
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const monthlyCost =
-                  e.target.value === '' ? 0 : parseFloat(e.target.value) || 0;
-                setEditAccount((currentAccount) => ({
-                  ...currentAccount,
-                  monthlyCost,
-                }));
-              }}
-              min="0"
-              step="1"
-              placeholder="0"
-              aria-label={t('account.edit.field.monthly-cost')}
-              disabled={isSaving}
-            />
-          </div>
-        </div>
-      </div>
-
-      {editAccount.hasProfitTarget && (
-        <>
-          <div className="setting-item two-column">
-            <div className="column">
-              <div className="setting-item-info">
-                <div className="setting-item-name">
-                  {t('account.edit.field.target-type')}
-                </div>
-                <div className="setting-item-description">
-                  {t('account.edit.field.target-type-desc')}
-                </div>
-              </div>
-              <div className="setting-item-control">
-                <DropdownSelect
-                  value={editAccount.profitTargetType}
-                  onChange={(targetType) => {
-                    const profitTargetType =
-                      profitTargetTypeFromSelect(targetType);
-                    setEditAccount((currentAccount) => ({
-                      ...currentAccount,
-                      profitTargetType,
-                    }));
-                  }}
-                  ariaLabel={t('account.edit.field.target-type')}
-                  disabled={isSaving}
-                  options={[
-                    {
-                      value: ProfitTargetType.ABSOLUTE,
-                      label: t('account.profit-target.type.absolute'),
-                    },
-                    {
-                      value: ProfitTargetType.PERCENTAGE,
-                      label: t('account.profit-target.type.percentage'),
-                    },
-                  ]}
-                />
-              </div>
-            </div>
-            <div className="column">
-              <div className="setting-item-info">
-                <div className="setting-item-name">
-                  {editAccount.profitTargetType === ProfitTargetType.PERCENTAGE
-                    ? t('account.edit.field.target-percent')
-                    : t('account.edit.field.target-dollar')}
-                </div>
-                <div className="setting-item-description">
-                  {editAccount.profitTargetType === ProfitTargetType.PERCENTAGE
-                    ? t('account.edit.field.target-percent-desc')
-                    : t('account.edit.field.target-dollar-desc')}
-                </div>
-              </div>
-              <div className="setting-item-control">
-                <DraftInput
-                  type="number"
-                  value={
-                    editAccount.profitTarget === 0
-                      ? ''
-                      : editAccount.profitTarget
-                  }
-                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                    
-                    
-                    if (e.target.value === '') return;
-                    const profitTarget = parseFloat(e.target.value) || 0;
-                    setEditAccount((currentAccount) => ({
-                      ...currentAccount,
-                      profitTarget,
-                    }));
-                  }}
-                  min="0"
-                  step={
-                    editAccount.profitTargetType === ProfitTargetType.PERCENTAGE
-                      ? '1'
-                      : '100'
-                  }
-                  placeholder="0"
-                  aria-label={
-                    editAccount.profitTargetType === ProfitTargetType.PERCENTAGE
-                      ? t('account.edit.field.target-percent')
-                      : t('account.edit.field.target-dollar')
-                  }
-                  disabled={isSaving}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="setting-item">
-            <div className="setting-item-info">
-              <div className="setting-item-name">
-                {t('account.edit.field.target-date')}
-              </div>
-              <div className="setting-item-description">
-                {t('account.edit.field.target-date-desc')}
-              </div>
-            </div>
-            <div className="setting-item-control">
-              <FastDateTimeInput
-                className="journalit-account-date-input"
-                value={
-                  editAccount.profitTargetDate
-                    ? new Date(editAccount.profitTargetDate)
-                    : undefined
-                }
-                onChange={(value) => {
-                  if (value instanceof Date) {
-                    setEditAccount((currentAccount) => ({
-                      ...currentAccount,
-                      profitTargetDate: value,
-                    }));
-                  } else {
-                    setEditAccount((currentAccount) => ({
-                      ...currentAccount,
-                      profitTargetDate: null,
-                    }));
-                  }
-                }}
-                disabled={isSaving}
-              />
-            </div>
-          </div>
-        </>
-      )}
-    </>
-  );
-};
+    )}
+  </div>
+);
 
 interface CopyTradingSectionProps {
   account: AccountData;
@@ -959,21 +811,6 @@ interface CopyTradingSectionProps {
   setEditAccount: EditAccountSetter;
   isSaving: boolean;
 }
-
-const toDateInputValue = (date: Date | null): string => {
-  if (!date || Number.isNaN(date.getTime())) return '';
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${year}-${month}-${day}`;
-};
-
-const parseDateInputValue = (value: string): Date | null => {
-  if (!value) return null;
-  const [year, month, day] = value.split('-').map(Number);
-  if (!year || !month || !day) return null;
-  return new Date(year, month - 1, day);
-};
 
 const startOfDay = (date: Date): Date =>
   new Date(date.getFullYear(), date.getMonth(), date.getDate());
@@ -1009,9 +846,7 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
   );
 
   return (
-    <div
-      className={`setting-item journalit-setting-item--full-width journalit-copy-trading-section${!editAccount.propChallenge && !editAccount.copyTradingEnabled ? ' journalit-copy-trading-section--compact' : ''}`}
-    >
+    <div className="setting-item journalit-setting-item--full-width journalit-copy-trading-section">
       <div className="journalit-checkbox-setting-row journalit-feature-toggle-row">
         <Checkbox
           checked={editAccount.copyTradingEnabled && !isActiveCopyBase}
@@ -1067,69 +902,53 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
       {editAccount.copyTradingEnabled && !isActiveCopyBase && (
         <>
           <div className="journalit-copy-trading-fields two-column">
-            <div className="column">
-              <div className="setting-item-info">
-                <div className="setting-item-name">
-                  {t('account.copy-trading.base-account')}
-                </div>
-                <div className="setting-item-description">
-                  {t('account.copy-trading.base-account-desc')}
-                </div>
-              </div>
-              <div className="setting-item-control">
-                <DropdownSelect
-                  value={editAccount.copyTradingBaseAccount}
-                  onChange={(copyTradingBaseAccount) =>
-                    setEditAccount((currentAccount) => ({
-                      ...currentAccount,
-                      copyTradingBaseAccount,
-                    }))
+            <AccountFormField
+              label={t('account.copy-trading.base-account')}
+              description={t('account.copy-trading.base-account-desc')}
+            >
+              <DropdownSelect
+                value={editAccount.copyTradingBaseAccount}
+                onChange={(copyTradingBaseAccount) =>
+                  setEditAccount((currentAccount) => ({
+                    ...currentAccount,
+                    copyTradingBaseAccount,
+                  }))
+                }
+                ariaLabel={t('account.copy-trading.base-account')}
+                placeholder={t('account.copy-trading.base-account-placeholder')}
+                disabled={isSaving}
+                options={baseAccountOptions.map((accountName) => ({
+                  value: accountName,
+                  label: accountName,
+                }))}
+              />
+            </AccountFormField>
+            <AccountFormField
+              label={t('account.copy-trading.multiplier')}
+              description={t('account.copy-trading.multiplier-desc')}
+            >
+              <DraftInput
+                aria-label={t('account.copy-trading.multiplier')}
+                type="number"
+                min="0.1"
+                max="100"
+                step="0.1"
+                value={editAccount.copyTradingMultiplier}
+                onChange={(e) => {
+                  
+                  
+                  const multiplier = Number(e.target.value);
+                  if (e.target.value === '' || !Number.isFinite(multiplier)) {
+                    return;
                   }
-                  ariaLabel={t('account.copy-trading.base-account')}
-                  placeholder={t(
-                    'account.copy-trading.base-account-placeholder'
-                  )}
-                  disabled={isSaving}
-                  options={baseAccountOptions.map((accountName) => ({
-                    value: accountName,
-                    label: accountName,
-                  }))}
-                />
-              </div>
-            </div>
-            <div className="column">
-              <div className="setting-item-info">
-                <div className="setting-item-name">
-                  {t('account.copy-trading.multiplier')}
-                </div>
-                <div className="setting-item-description">
-                  {t('account.copy-trading.multiplier-desc')}
-                </div>
-              </div>
-              <div className="setting-item-control">
-                <DraftInput
-                  aria-label={t('account.copy-trading.multiplier')}
-                  type="number"
-                  min="0.1"
-                  max="100"
-                  step="0.1"
-                  value={editAccount.copyTradingMultiplier}
-                  onChange={(e) => {
-                    
-                    
-                    const multiplier = Number(e.target.value);
-                    if (e.target.value === '' || !Number.isFinite(multiplier)) {
-                      return;
-                    }
-                    setEditAccount((currentAccount) => ({
-                      ...currentAccount,
-                      copyTradingMultiplier: multiplier,
-                    }));
-                  }}
-                  disabled={isSaving}
-                />
-              </div>
-            </div>
+                  setEditAccount((currentAccount) => ({
+                    ...currentAccount,
+                    copyTradingMultiplier: multiplier,
+                  }));
+                }}
+                disabled={isSaving}
+              />
+            </AccountFormField>
           </div>
 
           {!activeCopyPeriod && (
@@ -1153,29 +972,22 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
                 </div>
               </div>
               {editAccount.copyTradingStartMode === 'date' && (
-                <div className="column">
-                  <div className="setting-item-info">
-                    <div className="setting-item-name">
-                      {t('account.copy-trading.start-date')}
-                    </div>
-                  </div>
-                  <div className="setting-item-control">
-                    <input
-                      aria-label={t('account.copy-trading.start-date')}
-                      type="date"
-                      value={toDateInputValue(editAccount.copyTradingStartDate)}
-                      onChange={(e) =>
-                        setEditAccount((currentAccount) => ({
-                          ...currentAccount,
-                          copyTradingStartDate: parseDateInputValue(
-                            e.target.value
-                          ),
-                        }))
-                      }
-                      disabled={isSaving}
-                    />
-                  </div>
-                </div>
+                <AccountFormField label={t('account.copy-trading.start-date')}>
+                  <FastDateTimeInput
+                    className="journalit-account-date-input"
+                    ariaLabel={t('account.copy-trading.start-date')}
+                    value={editAccount.copyTradingStartDate ?? undefined}
+                    onChange={(value) => {
+                      const copyTradingStartDate =
+                        value instanceof Date ? startOfDay(value) : null;
+                      setEditAccount((currentAccount) => ({
+                        ...currentAccount,
+                        copyTradingStartDate,
+                      }));
+                    }}
+                    disabled={isSaving}
+                  />
+                </AccountFormField>
               )}
             </div>
           )}
@@ -1203,21 +1015,6 @@ const CopyTradingSection: React.FC<CopyTradingSectionProps> = ({
 };
 
 
-
-
-function resolveAvailableAccountType(
-  accountType: EditAccountFormState['accountType'],
-  types: string[]
-): EditAccountFormState['accountType'] {
-  const current = String(accountType ?? '').toLowerCase();
-  if (
-    types.length === 0 ||
-    types.some((type) => type.toLowerCase() === current)
-  ) {
-    return accountType;
-  }
-  return types[0];
-}
 
 const useEditAccountModalController = ({
   app,
@@ -1434,88 +1231,21 @@ const useEditAccountModalController = ({
     };
   };
 
-  const buildCopyTradingPeriods = (): CopyTradingPeriod[] => {
-    const periods = editAccount.copyTradingPeriods.map((period) => ({
-      ...period,
-    }));
-    const activePeriodIndex = periods.findIndex((period) => !period.endDate);
-
-    if (!editAccount.copyTradingEnabled) {
-      if (activePeriodIndex >= 0) {
-        const disabledEndDate = new Date();
-        disabledEndDate.setDate(disabledEndDate.getDate() - 1);
-        const activeStartDate = new Date(periods[activePeriodIndex].startDate);
-
-        if (activeStartDate >= startOfDay(new Date())) {
-          periods.splice(activePeriodIndex, 1);
-          return periods;
-        }
-
-        periods[activePeriodIndex] = {
-          ...periods[activePeriodIndex],
-          endDate: disabledEndDate,
-        };
-      }
-      return periods;
-    }
-
-    let startDate =
-      editAccount.copyTradingStartMode === 'all'
-        ? new Date(1970, 0, 1)
-        : (editAccount.copyTradingStartDate ?? new Date());
-
-    const latestHistoricalEndTime = periods.reduce((latestEndTime, period) => {
-      if (!period.endDate) {
-        return latestEndTime;
-      }
-
-      const endTime = startOfDay(new Date(period.endDate)).getTime();
-      return Number.isNaN(endTime)
-        ? latestEndTime
-        : Math.max(latestEndTime, endTime);
-    }, Number.NEGATIVE_INFINITY);
-
-    if (latestHistoricalEndTime !== Number.NEGATIVE_INFINITY) {
-      const earliestNextStartDate = new Date(latestHistoricalEndTime);
-      earliestNextStartDate.setDate(earliestNextStartDate.getDate() + 1);
-      if (startOfDay(startDate) < earliestNextStartDate) {
-        startDate = earliestNextStartDate;
-      }
-    }
-
-    if (activePeriodIndex === -1) {
-      return [
-        ...periods,
-        {
-          baseAccount: editAccount.copyTradingBaseAccount,
-          multiplier: editAccount.copyTradingMultiplier,
-          startDate,
-        },
-      ];
-    }
-
-    const activePeriod = periods[activePeriodIndex];
-    if (
-      activePeriod.baseAccount === editAccount.copyTradingBaseAccount &&
-      activePeriod.multiplier === editAccount.copyTradingMultiplier
-    ) {
-      return periods;
-    }
-
-    const newStartDate = new Date();
-    const priorEndDate = new Date(newStartDate);
-    priorEndDate.setDate(priorEndDate.getDate() - 1);
-    periods[activePeriodIndex] = {
-      ...activePeriod,
-      endDate: priorEndDate,
-    };
-    periods.push({
-      baseAccount: editAccount.copyTradingBaseAccount,
-      multiplier: editAccount.copyTradingMultiplier,
-      startDate: newStartDate,
-    });
-    return periods;
-  };
+  const buildCopyTradingPeriods = (): CopyTradingPeriod[] =>
+    nextCopyTradingPeriods(
+      editAccount.copyTradingPeriods,
+      editAccount.copyTradingEnabled
+        ? {
+            enabled: true,
+            baseAccount: editAccount.copyTradingBaseAccount,
+            multiplier: editAccount.copyTradingMultiplier,
+            startDate:
+              editAccount.copyTradingStartMode === 'all'
+                ? null
+                : (editAccount.copyTradingStartDate ?? new Date()),
+          }
+        : { enabled: false }
+    );
 
   const handleSave = async () => {
     if (!dateDraftGate.confirm()) return;
@@ -1536,75 +1266,30 @@ const useEditAccountModalController = ({
           new Notice(timelineError);
           return;
         }
-        
-        
-        
-        const invalidPhase = editAccount.propChallenge.phases.find(
-          (phase) =>
-            !Number.isFinite(phase.startingBalance) || phase.startingBalance < 0
-        );
-        if (invalidPhase) {
-          new Notice(t('account.edit.error.balance-required'));
-          return;
-        }
-        
-        
-        if (
-          editAccount.propChallenge.phases.some(
-            (phase) => !isPropChallengePhaseComplete(phase)
-          )
-        ) {
-          new Notice(t('account.create.error.rule-incomplete'));
-          return;
-        }
       }
 
       if (trimmedName !== editAccount.name) {
         setEditAccount((prev) => ({ ...prev, name: trimmedName }));
       }
 
-      
-      if (editAccount.initialBalance < 0) {
-        new Notice(t('account.edit.error.balance-required'));
-        return;
-      }
-
-      
-      if (
-        editAccount.drawdownType !== DrawdownType.NONE &&
-        editAccount.drawdownAmount <= 0
-      ) {
-        new Notice(t('account.edit.error.drawdown-required'));
-        return;
-      }
-
-      
-      
-      if (
-        !editAccount.propChallenge &&
-        editAccount.hasProfitTarget &&
-        editAccount.profitTarget <= 0
-      ) {
-        new Notice(t('account.create.error.profit-target-required'));
-        return;
-      }
-
-      
-      if (
-        !editAccount.createdDate ||
-        isNaN(editAccount.createdDate.getTime())
-      ) {
-        new Notice(t('account.edit.error.creation-date-required'));
-        return;
-      }
-
-      
-      if (editAccount.createdDate.getTime() > Date.now()) {
-        new Notice(t('account.edit.error.future-date'));
-        return;
-      }
-
+      const definitionIssue = accountDefinitionIssue({
+        initialBalance: editAccount.initialBalance,
+        drawdownType: editAccount.drawdownType,
+        drawdownAmount: editAccount.drawdownAmount,
+        hasProfitTarget: editAccount.hasProfitTarget,
+        profitTarget: editAccount.profitTarget,
+        profitTargetType: editAccount.profitTargetType,
+        monthlyCost: editAccount.monthlyCost,
+        createdDate: editAccount.createdDate,
+        propChallenge: editAccount.propChallenge,
+      });
       const validatedCreatedDate = editAccount.createdDate;
+      if (definitionIssue || !validatedCreatedDate) {
+        new Notice(
+          EDIT_DEFINITION_ISSUE_MESSAGES[definitionIssue ?? 'invalid-date']()
+        );
+        return;
+      }
 
       if (editAccount.copyTradingEnabled) {
         if (
@@ -2018,20 +1703,11 @@ const useEditAccountModalController = ({
       
       if (shouldUpdateNotes && account.name !== accountName) {
         if (plugin.optionsService) {
-          const result = await plugin.optionsService.updateOption(
-            OptionType.ACCOUNT,
-            account.name, 
-            accountName, 
-            true 
+          await rewriteAccountReferenceNotes(
+            plugin.optionsService,
+            account.name,
+            accountName
           );
-
-          if (!result.success) {
-            await plugin.optionsService.updateNotesForOptionValue(
-              OptionType.ACCOUNT,
-              account.name,
-              accountName
-            );
-          }
         }
       }
 
@@ -2444,7 +2120,7 @@ const useEditAccountModalController = ({
 };
 
 const EditAccountModalTree: React.FC<
-  EditAccountModalProps & { onModalClose: () => void }
+  EditAccountModalProps & AccountFormCloseProps
 > = (props) => {
   const { service } = useAccountPageService();
   if (!service) {
@@ -2463,8 +2139,17 @@ const EditAccountModalTree: React.FC<
 };
 
 export const EditAccountModalContent: React.FC<
-  EditAccountModalProps & { onModalClose: () => void }
-> = ({ app, plugin, account, trades, onSave, onModalClose }) => {
+  EditAccountModalProps & AccountFormCloseProps
+> = ({
+  app,
+  plugin,
+  account,
+  trades,
+  onSave,
+  onModalClose,
+  onRequestClose,
+  closeHandle,
+}) => {
   const {
     isSaving,
     customAccountTypes,
@@ -2488,6 +2173,17 @@ export const EditAccountModalContent: React.FC<
   });
 
   
+  useImperativeHandle(closeHandle, () => ({
+    
+    closeState: () =>
+      isSaving
+        ? 'saving'
+        : hasUnsavedEdits() || dateDraftGate.hasPendingDrafts()
+          ? 'unsaved'
+          : 'clean',
+  }));
+
+  
   const discardedChallengeRef = useRef<PropChallengeConfig | undefined>(
     undefined
   );
@@ -2504,6 +2200,7 @@ export const EditAccountModalContent: React.FC<
         message: t('account.edit.convert.discard-message'),
         confirmLabel: t('account.edit.convert.discard-confirm'),
         cancelLabel: t('button.cancel'),
+        destructive: true,
       }))
     ) {
       return;
@@ -2564,118 +2261,125 @@ export const EditAccountModalContent: React.FC<
 
   return (
     <DateDraftGateContext.Provider value={dateDraftGate}>
-      <div className="edit-account-form">
-        <div className="edit-account-form-body">
-          <AccountIdentityFields
+      <div className="journalit-account-form">
+        <AccountIdentityFields
+          editAccount={editAccount}
+          setEditAccount={setEditAccount}
+          customAccountTypes={customAccountTypes}
+          isSaving={isSaving}
+        />
+
+        
+        <PropChallengeToggleField
+          checked={Boolean(editAccount.propChallenge)}
+          disabled={isSaving}
+          onChange={handlePropChallengeToggle}
+        />
+
+        {editAccount.propChallenge ? (
+          <PropChallengeAccountBasics
+            account={account}
             editAccount={editAccount}
             setEditAccount={setEditAccount}
-            customAccountTypes={customAccountTypes}
             isSaving={isSaving}
           />
-
-          
-          <PropChallengeToggleField
-            checked={Boolean(editAccount.propChallenge)}
-            disabled={isSaving}
-            onChange={handlePropChallengeToggle}
-          />
-
-          {editAccount.propChallenge ? (
-            <PropChallengeAccountBasics
+        ) : (
+          <>
+            <AccountBalanceFields
               account={account}
               editAccount={editAccount}
               setEditAccount={setEditAccount}
               isSaving={isSaving}
+              isPropChallenge={false}
             />
-          ) : (
-            <>
-              <AccountBalanceFields
-                account={account}
-                editAccount={editAccount}
-                setEditAccount={setEditAccount}
-                isSaving={isSaving}
-                isPropChallenge={false}
-              />
 
-              <DrawdownSection
-                app={app}
-                account={account}
-                editAccount={editAccount}
-                setEditAccount={setEditAccount}
-                manualSnapshots={manualSnapshots}
-                setManualSnapshots={setManualSnapshots}
-                showSnapshotManager={showSnapshotManager}
-                setShowSnapshotManager={setShowSnapshotManager}
-                isSaving={isSaving}
-              />
+            <MonthlyCostField
+              editAccount={editAccount}
+              setEditAccount={setEditAccount}
+              isSaving={isSaving}
+            />
 
-              <ProfitTargetSection
-                editAccount={editAccount}
-                setEditAccount={setEditAccount}
-                isSaving={isSaving}
-                isPropChallenge={false}
-              />
-            </>
-          )}
+            <DrawdownSection
+              app={app}
+              account={account}
+              editAccount={editAccount}
+              setEditAccount={setEditAccount}
+              manualSnapshots={manualSnapshots}
+              setManualSnapshots={setManualSnapshots}
+              showSnapshotManager={showSnapshotManager}
+              setShowSnapshotManager={setShowSnapshotManager}
+              isSaving={isSaving}
+            />
 
-          {editAccount.propChallenge && (
-            <DisplayPolicyProvider privacyModeOverride={false}>
-              <PropChallengeSettingsSection
-                existingAccount
-                value={editAccount.propChallenge}
-                currencyCode={editAccount.currency}
-                disabled={isSaving}
-                accountType={editAccount.accountType}
-                onChange={(propChallenge) =>
-                  setEditAccount((current) => ({ ...current, propChallenge }))
-                }
-                onAccountTypeChange={(accountType) =>
-                  setEditAccount((current) => ({ ...current, accountType }))
-                }
-              />
-            </DisplayPolicyProvider>
-          )}
+            <ProfitTargetSection
+              editAccount={editAccount}
+              setEditAccount={setEditAccount}
+              isSaving={isSaving}
+            />
+          </>
+        )}
 
-          
-          <CopyTradingSection
-            account={account}
-            plugin={plugin}
-            editAccount={editAccount}
-            setEditAccount={setEditAccount}
-            isSaving={isSaving}
-          />
-        </div>
+        {editAccount.propChallenge && (
+          <DisplayPolicyProvider privacyModeOverride={false}>
+            <PropChallengeSettingsSection
+              existingAccount
+              value={editAccount.propChallenge}
+              currencyCode={editAccount.currency}
+              disabled={isSaving}
+              accountType={editAccount.accountType}
+              onChange={(propChallenge) =>
+                setEditAccount((current) => ({ ...current, propChallenge }))
+              }
+              onAccountTypeChange={(accountType) =>
+                setEditAccount((current) => ({ ...current, accountType }))
+              }
+              monthlyCostField={
+                <MonthlyCostField
+                  editAccount={editAccount}
+                  setEditAccount={setEditAccount}
+                  isSaving={isSaving}
+                />
+              }
+            />
+          </DisplayPolicyProvider>
+        )}
 
         
-        <div className="edit-account-buttons">
+        <CopyTradingSection
+          account={account}
+          plugin={plugin}
+          editAccount={editAccount}
+          setEditAccount={setEditAccount}
+          isSaving={isSaving}
+        />
+
+        <div className="journalit-modal-actions journalit-account-form-actions">
           <Button
-            variant="secondary"
+            variant="danger"
             onClick={() => void handleDeleteAccount()}
             disabled={isSaving}
-            className="delete-account-button delete-account-danger"
+            className="journalit-account-form-actions__delete"
           >
             {t('account.edit.button.delete')}
           </Button>
-          <div className="button-group-right">
-            <Button
-              variant="plain"
-              onClick={onModalClose}
-              disabled={isSaving}
-              className="cancel-button"
-            >
-              {t('button.cancel')}
-            </Button>
-            <Button
-              variant="primary"
-              onClick={() => void handleSave()}
-              disabled={isSaving}
-              className="save-account-button accent-button modal-save-accent"
-            >
-              {isSaving
-                ? t('account.edit.button.saving')
-                : t('account.edit.button.save')}
-            </Button>
-          </div>
+          <Button
+            variant="plain"
+            onClick={onRequestClose}
+            disabled={isSaving}
+            className="journalit-modal-actions__cancel"
+          >
+            {t('button.cancel')}
+          </Button>
+          <Button
+            variant="primary"
+            onClick={() => void handleSave()}
+            disabled={isSaving}
+            className="journalit-modal-actions__primary"
+          >
+            {isSaving
+              ? t('account.edit.button.saving')
+              : t('account.edit.button.save')}
+          </Button>
         </div>
       </div>
     </DateDraftGateContext.Provider>

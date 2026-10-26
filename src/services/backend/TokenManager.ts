@@ -1,5 +1,3 @@
-import { requestUrl } from 'obsidian';
-
 import type JournalitPlugin from '../../main';
 import {
   ApiClient,
@@ -11,6 +9,7 @@ import {
   type AuthRefreshResumeReason,
 } from './AuthRefreshCircuit';
 import { BackendSecretStorage } from './BackendSecretStorage';
+import { BackendHttpClient } from './BackendHttpClient';
 import { DemoSyncGate } from '../../demo/DemoSyncGate';
 
 export const ACCESS_TOKEN_CLOCK_SKEW_MS = 60_000;
@@ -185,7 +184,7 @@ export class TokenManager implements AuthTokenRefresher {
       return;
     }
 
-    const response = await requestUrl({
+    const response = await BackendHttpClient.request({
       url: ApiClient.buildUrl('/auth/logout'),
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -221,7 +220,7 @@ export class TokenManager implements AuthTokenRefresher {
     let response;
     try {
       DemoSyncGate.assertNetworkAllowed();
-      response = await requestUrl({
+      response = await BackendHttpClient.request({
         url: ApiClient.buildUrl('/auth/refresh'),
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

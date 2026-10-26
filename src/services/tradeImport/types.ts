@@ -6,6 +6,23 @@ export type TradeImportManualMode =
   | 'direct_pnl'
   | 'trade_per_row';
 
+
+export type TradeImportDestination = 'live' | 'backtest';
+
+export const isTradeImportDestination = (
+  value: unknown
+): value is TradeImportDestination => value === 'live' || value === 'backtest';
+
+
+export const decodeTradeImportDestination = (
+  value: unknown,
+  errorMessage: string
+): TradeImportDestination => {
+  if (value === undefined || value === null) return 'live';
+  if (isTradeImportDestination(value)) return value;
+  throw new Error(errorMessage);
+};
+
 export interface TradeImportCapabilities {
   apiVersion: string;
   schemaVersion: 'trade-import-capabilities-v1';
@@ -30,7 +47,11 @@ export interface TradeImportCapabilities {
     supportsManualMapping: boolean;
     supportsAiMapping: boolean;
     supportsExportTimeZone: boolean;
+    
+    defaultDestination?: TradeImportDestination;
   }>;
+  
+  destinations: TradeImportDestination[];
   manualMapping: {
     supported: boolean;
     mappingVersion: number;
@@ -115,6 +136,8 @@ export interface TradeImportAnalyseResponse {
   >;
   suggestedColumnMappings?: Record<string, string[]>;
   diagnostics: TradeImportDiagnostic[];
+  
+  requiresSymbol: boolean;
 }
 
 interface TradeImportExecution {
@@ -130,7 +153,10 @@ export interface TradeImportEmbeddedImage {
 }
 
 export interface TradeImportPreviewTrade {
+  
   sourceRows: number[];
+  
+  sourceSheetRows?: number[];
   symbol: string;
   direction: 'long' | 'short';
   entryTime: string;
@@ -240,6 +266,8 @@ export interface TradeImportPreviewItem {
   classification: TradeImportPreviewClassification;
   defaultAction: TradeImportDefaultAction;
   matchedTradeId?: string | null;
+  
+  closeProfitLoss?: number;
   otherAccount?: TradeImportOtherAccountMatch;
   decisionReasons: Array<{ code: string; message?: string }>;
   identityCandidates: TradeImportIdentityCandidate[];
@@ -260,6 +288,10 @@ export interface TradeImportPreviewRequest {
   mappingVersion: number;
   columnMappings: Record<string, string[]>;
   customFields: TradeImportCustomFieldDefinition[];
+  
+  destination?: TradeImportDestination;
+  
+  symbol?: string;
 }
 
 export interface TradeImportCustomFieldDefinition {
@@ -300,6 +332,8 @@ export interface ClassifiedPreviewTrade {
   classification: TradeImportPreviewClassification;
   defaultAction: TradeImportDefaultAction;
   matchedTradeId?: string | null;
+  
+  closeProfitLoss?: number;
   otherAccount?: TradeImportOtherAccountMatch;
   existingPath?: string;
   message?: string;
@@ -334,6 +368,7 @@ interface TradeImportCommittedTrade {
   accountIdentity?: 'broker' | 'name';
   accountDisplayName?: string | null;
   broker?: string | null;
+  destination: TradeImportDestination;
   importId: string;
   previewTrade?: TradeImportPreviewTrade;
 }

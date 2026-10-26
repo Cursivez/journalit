@@ -28,6 +28,7 @@ import { FolderPathChangedPayload, Unsubscribe } from '../events/types';
 import { t } from '../../lang/helpers';
 import { getTradeIdentityNoteType } from '../../utils/tradeIdentity';
 import { normalizeTradeExecution } from '../trade/core/TradeExecutionNormalization';
+import { createTimeSlicer } from '../../utils/mainThreadYield';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -66,14 +67,23 @@ const MARKDOWN_OBJECT_ARRAY_FRONTMATTER_KEYS = new Set([
 const MARKDOWN_SCALAR_ARRAY_FRONTMATTER_KEYS = new Set([
   'account',
   'tags',
-  'customTags',
   'setup',
 
   'mistake',
-  'mistakeIds',
   'executionIds',
   'images',
 ]);
+
+function isSameSyncMapping(
+  left: Readonly<Record<number, string>>,
+  right: Readonly<Record<number, string>>
+): boolean {
+  const leftKeys = Object.keys(left);
+  if (leftKeys.length !== Object.keys(right).length) return false;
+  return leftKeys.every(
+    (key) => Reflect.get(right, key) === Reflect.get(left, key)
+  );
+}
 
 const MARKDOWN_NUMERIC_FRONTMATTER_KEYS = new Set([
   'backendTradeId',
@@ -97,7 +107,6 @@ const MARKDOWN_NUMERIC_FRONTMATTER_KEYS = new Set([
   'rebate',
   'riskAmount',
   'rMultiple',
-  'stopLoss',
   'contractSize',
   'dollarPerPoint',
   'tickSize',
@@ -371,19 +380,13 @@ export class TradeSyncService {
       });
 
     
-    if (tradeFiles.length === 0) {
-      this.tradeSyncMapping = {};
-      await this.saveSyncMapping();
-      return;
-    }
-
     
     const newMapping: { [key: number]: string } = {};
+    const slicer = createTimeSlicer();
 
     for (const file of tradeFiles) {
       try {
-        const content = await this.plugin.app.vault.read(file);
-        const tradeMeta = this.parseTradeFromMarkdown(content, file.path);
+        const tradeMeta = await this.readTradeMetadata(file);
 
         if (tradeMeta && tradeMeta.backendTradeId) {
           newMapping[tradeMeta.backendTradeId] = file.path;
@@ -391,9 +394,19 @@ export class TradeSyncService {
       } catch (error) {
         console.error('Error reading trade file for sync mapping:', error);
       }
+      await slicer.maybeYield();
     }
 
     
+    
+    
+    const persisted = this.settings.tradeSyncMapping;
+    if (persisted && isSameSyncMapping(persisted, newMapping)) {
+      
+      
+      this.tradeSyncMapping = persisted;
+      return;
+    }
     this.tradeSyncMapping = newMapping;
     await this.saveSyncMapping();
   }
@@ -786,12 +799,11 @@ export class TradeSyncService {
   private async readTradeMetadata(file: TFile): Promise<TradeMetadata | null> {
     const cachedFrontmatter =
       this.plugin.app.metadataCache.getFileCache(file)?.frontmatter;
-    const cachedMetadata = this.normalizeTradeMetadata(
-      cachedFrontmatter,
-      file.path
-    );
-    if (cachedMetadata) {
-      return cachedMetadata;
+    
+    
+    
+    if (cachedFrontmatter) {
+      return this.normalizeTradeMetadata(cachedFrontmatter, file.path);
     }
 
     const content = await this.plugin.app.vault.read(file);
@@ -821,6 +833,18 @@ export class TradeSyncService {
     if (trade.backendTradeId) {
       const backendTradeId = this.parseNumericValue(trade.backendTradeId);
       trade.backendTradeId = backendTradeId ?? undefined;
+    }
+    
+    
+    if (trade.riskAmount !== undefined) {
+      const riskAmount =
+        typeof trade.riskAmount === 'string' && trade.riskAmount.trim() !== ''
+          ? Number(trade.riskAmount)
+          : trade.riskAmount;
+      trade.riskAmount =
+        typeof riskAmount === 'number' && Number.isFinite(riskAmount)
+          ? riskAmount
+          : undefined;
     }
     if (typeof trade.mtComment === 'string') {
       const trimmedComment = trade.mtComment.trim();

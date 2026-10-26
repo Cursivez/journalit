@@ -1,5 +1,5 @@
 import type JournalitPlugin from '../../main';
-import { TradovateClientDiagnosticsService } from './TradovateClientDiagnosticsService';
+import { BrokerClientDiagnostics } from './BrokerClientDiagnostics';
 import type {
   TradeProjectionAckClient,
   TradeProjectionAckRequest,
@@ -35,7 +35,7 @@ export async function recordProjectionAckQueuedDiagnostic(
 ): Promise<void> {
   if (!request.clientOperationId || !request.pluginVersion || !ownerUserId)
     return;
-  await new TradovateClientDiagnosticsService(plugin).record(
+  await new BrokerClientDiagnostics(plugin).record(
     {
       clientOperationId: request.clientOperationId,
       ownerUserId,

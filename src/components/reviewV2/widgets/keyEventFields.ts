@@ -36,7 +36,9 @@ function parseKeyEventCurrency(value: string): string | undefined {
   return KEY_EVENT_CURRENCIES.find((currency) => currency === value);
 }
 
-function keyEventImpactForColor(color: string | undefined): NewsEventImpact {
+export function keyEventImpactForColor(
+  color: string | undefined
+): NewsEventImpact {
   return COLOR_IMPACTS[getKeyEventColor(color)];
 }
 
@@ -71,7 +73,8 @@ function utcDateKey(value: string | undefined): string | undefined {
   return date.toISOString().slice(0, 10);
 }
 
-function demoteChangedImportedIdentity(
+
+export function demoteChangedImportedIdentity(
   original: NewsEvent,
   updated: NewsEvent
 ): void {

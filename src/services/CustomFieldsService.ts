@@ -269,7 +269,7 @@ export class CustomFieldsService {
   }
 
   
-  private validateRegexPattern(pattern: string): boolean {
+  validateRegexPattern(pattern: string): boolean {
     if (!pattern) return true;
 
     try {

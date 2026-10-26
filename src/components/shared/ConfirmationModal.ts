@@ -1,5 +1,5 @@
-import { Modal } from 'obsidian';
 import type { App } from 'obsidian';
+import { JournalitModal } from '../modals/JournalitModal';
 
 interface ConfirmationModalMessage {
   text: string;
@@ -26,6 +26,7 @@ export interface ConfirmationAction<TResult> {
 }
 
 interface ActionConfirmationModalOptions<TResult> {
+  signal?: AbortSignal;
   title?: string;
   message?: string | readonly ConfirmationModalMessage[];
   renderContent?: (contentEl: HTMLElement) => void | (() => void);
@@ -35,6 +36,7 @@ interface ActionConfirmationModalOptions<TResult> {
 }
 
 interface ConfirmationModalOptions {
+  signal?: AbortSignal;
   title?: string;
   message: string | readonly ConfirmationModalMessage[];
   confirmLabel: string;
@@ -42,7 +44,7 @@ interface ConfirmationModalOptions {
   destructive?: boolean;
 }
 
-class ConfirmationModal<TResult> extends Modal {
+class ConfirmationModal<TResult> extends JournalitModal {
   private settled = false;
   private cleanupContent: (() => void) | null = null;
   private initialFocusButton: HTMLButtonElement | null = null;
@@ -132,7 +134,17 @@ export function showActionConfirmationModal<TResult>(
   options: ActionConfirmationModalOptions<TResult>
 ): Promise<TResult> {
   return new Promise((resolve) => {
-    new ConfirmationModal(app, options, resolve).open();
+    if (options.signal?.aborted) {
+      resolve(options.cancelValue);
+      return;
+    }
+    const modal = new ConfirmationModal(app, options, (value) => {
+      options.signal?.removeEventListener('abort', abort);
+      resolve(value);
+    });
+    const abort = () => modal.close();
+    options.signal?.addEventListener('abort', abort, { once: true });
+    modal.open();
   });
 }
 
@@ -142,6 +154,7 @@ export function showConfirmationModal(
 ): Promise<boolean> {
   return showActionConfirmationModal(app, {
     title: options.title,
+    signal: options.signal,
     message: options.message,
     destructive: options.destructive,
     cancelValue: false,

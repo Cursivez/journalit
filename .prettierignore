@@ -3,3 +3,8 @@ src/lang/compressedLocales.generated.ts
 src/services/csv/xlsxCompressed.generated.ts
 
 src/data/compressedData.generated.ts
+contracts/agent/v1/
+contracts/agent-registration/v1/
+src/services/agent/protocol/generated/
+# pnpm owns this file; lint-staged would otherwise reformat it on commit.
+pnpm-lock.yaml

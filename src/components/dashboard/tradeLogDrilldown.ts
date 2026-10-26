@@ -7,7 +7,12 @@ import { cloneFilterMatchModes } from '../shared/filters/filterMatchModes';
 type TradeLogDrilldownOverrides = Partial<
   Pick<
     TradeLogFilters,
-    'analyticsDateBasis' | 'dateRange' | 'tickers' | 'setups' | 'tags'
+    | 'analyticsDateBasis'
+    | 'dateRange'
+    | 'tickers'
+    | 'setups'
+    | 'tags'
+    | 'ratings'
   >
 >;
 
@@ -25,6 +30,7 @@ export function createDashboardTradeLogDrilldownFilters(
     tradeTypes: [...filters.tradeTypes],
     statuses: [...filters.statuses],
     reviewStatus: [...filters.reviewStatus],
+    ratings: overrides.ratings ? [...overrides.ratings] : [...filters.ratings],
     accounts: [...filters.accounts],
     directions: [...filters.directions],
     tickers: overrides.tickers ? [...overrides.tickers] : [...filters.tickers],

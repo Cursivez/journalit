@@ -32,6 +32,12 @@ import {
 } from '../filterMatchModes';
 import { formatDateDisplay } from '../../../../utils/dateUtils';
 import {
+  getRatingFilterValue,
+  getTradeRatingBucketLabel,
+  TRADE_RATING_BUCKETS,
+  type RatingFilter,
+} from '../../../../utils/tradeRating';
+import {
   type ExcludableFilterField,
   type MatchModeField,
   clearFieldValues,
@@ -385,6 +391,17 @@ const REVIEW_STATUS_OPTIONS: Array<{
   { value: 'unreviewed', labelKey: 'filter.modal.review-status.unreviewed' },
 ];
 
+
+function ratingFilterOptions(): Array<{ value: RatingFilter; label: string }> {
+  return [
+    ...TRADE_RATING_BUCKETS.map((bucket) => ({
+      value: getRatingFilterValue(bucket),
+      label: getTradeRatingBucketLabel(bucket),
+    })),
+    { value: 'unrated', label: t('filter.menu.rating.unrated') },
+  ];
+}
+
 const IMAGE_ANNOTATION_OPTIONS: Array<{
   value: ImageAnnotationStatusFilter;
   labelKey: TranslationKey;
@@ -567,6 +584,22 @@ function buildFilterMenuDrafts(
       (next) => ({ ...filters, directions: next })
     )
   );
+
+  if (sources.context === 'tradelog' || sources.context === 'dashboard') {
+    entries.push(
+      includeOnlyNode(
+        filters,
+        {
+          id: 'ratings',
+          label: t('filter.menu.rating'),
+          icon: FILTER_MENU_ICONS.rating,
+          options: ratingFilterOptions(),
+        },
+        filters.ratings,
+        (next) => ({ ...filters, ratings: next })
+      )
+    );
+  }
 
   if (sources.context === 'tradelog') {
     entries.push(

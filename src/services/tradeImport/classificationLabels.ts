@@ -37,9 +37,31 @@ export function tradeImportClassificationLabel(
 }
 
 
+export function tradeImportCommitFailureLabel(
+  errorCode: string | undefined
+): string | undefined {
+  switch (errorCode) {
+    case undefined:
+      return undefined;
+    case 'update_target_conflict':
+      return t('trade-import.commit-failure.update-target-changed');
+    case 'tradovate_overlap_conflict':
+      return t('trade-import.commit-failure.tradovate-overlap');
+    case 'failed_invalid_trade':
+    case 'failed_no_open_match':
+    case 'failed_multiple_open_matches':
+    case 'failed_quantity_mismatch':
+      return tradeImportClassificationLabel(errorCode);
+    default:
+      return undefined;
+  }
+}
+
+
 export function tradeImportClassificationDetail(item: {
   classification: TradeImportPreviewClassification;
   otherAccount?: TradeImportOtherAccountMatch;
+  decisionReasons: ReadonlyArray<{ code: string }>;
 }): string | undefined {
   if (item.classification === 'exists_in_other_account') {
     return item.otherAccount
@@ -47,6 +69,16 @@ export function tradeImportClassificationDetail(item: {
           account: item.otherAccount.accountDisplayName,
         })
       : undefined;
+  }
+  
+  
+  if (
+    item.classification === 'conflict' &&
+    item.decisionReasons.some(
+      (reason) => reason.code === 'execution_ids_split_across_trades'
+    )
+  ) {
+    return t('trade-import.status.split-across-trades.detail');
   }
   return undefined;
 }

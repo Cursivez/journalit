@@ -1,6 +1,5 @@
 
 
-import { Modal } from 'obsidian';
 import type { App } from 'obsidian';
 import React, { useEffect, useRef, useState } from 'react';
 import { Root, createRoot } from 'react-dom/client';
@@ -31,6 +30,7 @@ import {
   getTradeGateRouteTarget,
   type TradeGateQuestionEdit,
 } from './tradeGateEditorUtils';
+import { JournalitModal } from '../../../../components/modals/JournalitModal';
 
 const TRADE_GATE_OUTCOME_TYPES: TradeGateOutcomeType[] = [
   'green-light',
@@ -110,6 +110,36 @@ function resolveQuestionTargetSelection(params: {
     }
   }
   return { questionId: params.questionId, createdQuestion: null };
+}
+
+function resolveCurrentNodeTargets(
+  params: TradeGateQuestionModalParams
+): Map<string, { nodeId: string; title: string }> {
+  const currentNodeTargets = new Map<
+    string,
+    { nodeId: string; title: string }
+  >();
+  if (params.workflow && params.nodeId) {
+    for (const option of params.question?.options ?? []) {
+      const target = getTradeGateRouteTarget(
+        params.workflow,
+        params.nodeId,
+        option.id
+      );
+      if (target?.kind !== 'node') continue;
+      const targetNode = getTradeGateNodeById(params.workflow, target.nodeId);
+      const targetQuestion = targetNode
+        ? getTradeGateQuestionById(params.questions, targetNode.questionId)
+        : null;
+      currentNodeTargets.set(option.id, {
+        nodeId: target.nodeId,
+        title:
+          targetQuestion?.title ||
+          t('settings.session-mode.trade-gate.question'),
+      });
+    }
+  }
+  return currentNodeTargets;
 }
 
 const TradeGateQuestionModalContent: React.FC<{
@@ -279,30 +309,7 @@ const TradeGateQuestionModalContent: React.FC<{
 
   
   
-  const currentNodeTargets = new Map<
-    string,
-    { nodeId: string; title: string }
-  >();
-  if (params.workflow && params.nodeId) {
-    for (const option of params.question?.options ?? []) {
-      const target = getTradeGateRouteTarget(
-        params.workflow,
-        params.nodeId,
-        option.id
-      );
-      if (target?.kind !== 'node') continue;
-      const targetNode = getTradeGateNodeById(params.workflow, target.nodeId);
-      const targetQuestion = targetNode
-        ? getTradeGateQuestionById(params.questions, targetNode.questionId)
-        : null;
-      currentNodeTargets.set(option.id, {
-        nodeId: target.nodeId,
-        title:
-          targetQuestion?.title ||
-          t('settings.session-mode.trade-gate.question'),
-      });
-    }
-  }
+  const currentNodeTargets = resolveCurrentNodeTargets(params);
 
   return (
     <div className="journalit-trade-gate-question-modal">
@@ -521,7 +528,7 @@ function TradeGateOptionEditor({
   );
 }
 
-class TradeGateQuestionModal extends Modal {
+class TradeGateQuestionModal extends JournalitModal {
   private params: TradeGateQuestionModalParams;
   private root: Root | null = null;
 

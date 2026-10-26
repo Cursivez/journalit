@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { Modal } from 'obsidian';
 import { createRoot, type Root } from 'react-dom/client';
 import type JournalitPlugin from '../../../../main';
 import type { AccountData } from '../../../../services/account/types';
@@ -28,6 +27,7 @@ import {
   resolveProfileApplicability,
   profilePolicyHash,
 } from '../../../../services/propChallenge/ProfileApplicability';
+import { JournalitModal } from '../../../modals/JournalitModal';
 
 interface Options {
   plugin: JournalitPlugin;
@@ -46,7 +46,7 @@ type FlowOptions = Omit<Options, 'selection' | 'comparison'> & {
   initialReview?: ReviewSelection;
 };
 
-class ProfileUpdateModal extends Modal {
+class ProfileUpdateModal extends JournalitModal {
   private root?: Root;
   constructor(private options: FlowOptions) {
     super(options.plugin.app);
@@ -63,7 +63,7 @@ class ProfileUpdateModal extends Modal {
       )
     );
     const container = this.contentEl.createDiv({
-      cls: 'edit-account-form journalit-prop-challenge-section journalit-profile-update-form',
+      cls: 'journalit-account-form journalit-prop-challenge-section journalit-profile-update-form',
     });
     this.root = createRoot(container);
     this.root.render(

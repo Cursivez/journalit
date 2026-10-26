@@ -38,11 +38,14 @@ export const ExcalidrawMediaEmbed: React.FC<ExcalidrawMediaEmbedProps> = ({
     const component = new Component();
     component.load();
 
+    
+    
+    
     const rendering = MarkdownRenderer.render(
       getApp(),
       toObsidianEmbed(file.path, embedWidth),
       container,
-      sourcePath || file.path,
+      file.path,
       component
     );
     
@@ -52,7 +55,7 @@ export const ExcalidrawMediaEmbed: React.FC<ExcalidrawMediaEmbedProps> = ({
       component.unload();
       container.empty();
     };
-  }, [embedWidth, file, sourcePath]);
+  }, [embedWidth, file]);
 
   return (
     <div

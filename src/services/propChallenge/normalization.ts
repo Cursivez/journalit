@@ -3,6 +3,7 @@ import {
   sameProfileContent,
 } from './PropChallengePolicyHistory';
 import { parseApplicability, isPurchaseDate } from './ProfileApplicability';
+import { isAuthoritativeDrawdown } from './PropChallengeRuleReview';
 import type {
   PropChallengeConfig,
   PropFirmCatalogCorrection,
@@ -183,7 +184,34 @@ function normalizePositionProfitTiers(
 const isIsoDateString = (value: unknown): value is string =>
   typeof value === 'string' && !Number.isNaN(Date.parse(value));
 
+
+export function normalizePropChallengeRule(
+  value: unknown
+): PropChallengeRule | null {
+  return normalizeRule(value);
+}
+
 function normalizeRule(value: unknown): PropChallengeRule | null {
+  return normalizeRuleReview(value, normalizeRuleDefinition(value));
+}
+
+
+function normalizeRuleReview<T extends PropChallengeRule | PropFirmProfileRule>(
+  value: unknown,
+  rule: T | null
+): T | null {
+  if (!rule || !isRecord(value)) return null;
+  if (value.reviewRequired === undefined) return rule;
+  if (
+    (rule.kind !== 'drawdown' && rule.kind !== 'max_position_size') ||
+    typeof value.reviewRequired !== 'string' ||
+    !value.reviewRequired.trim()
+  )
+    return null;
+  return { ...rule, reviewRequired: value.reviewRequired };
+}
+
+function normalizeRuleDefinition(value: unknown): PropChallengeRule | null {
   if (
     !isRecord(value) ||
     typeof value.id !== 'string' ||
@@ -191,6 +219,12 @@ function normalizeRule(value: unknown): PropChallengeRule | null {
   )
     return null;
   switch (value.kind) {
+    case 'manual_review': {
+      const definition = normalizeProfileRule(value);
+      return definition?.kind === 'manual_review'
+        ? { ...definition, id: value.id, enabled: value.enabled }
+        : null;
+    }
     case 'profit_target':
       return isPositiveAmount(value.amount) &&
         (value.targetType === 'absolute' || value.targetType === 'percentage')
@@ -302,6 +336,8 @@ function normalizeRule(value: unknown): PropChallengeRule | null {
         : null;
     case 'consistency':
       return isFiniteNumber(value.maxBestDayPercent) &&
+        (value.comparison === undefined ||
+          value.comparison === 'strictly_below') &&
         (value.consistencyCushionPercent === undefined ||
           (isFiniteNumber(value.consistencyCushionPercent) &&
             value.consistencyCushionPercent > 0 &&
@@ -311,6 +347,9 @@ function normalizeRule(value: unknown): PropChallengeRule | null {
             enabled: value.enabled,
             kind: value.kind,
             maxBestDayPercent: value.maxBestDayPercent,
+            ...(value.comparison === 'strictly_below'
+              ? { comparison: value.comparison }
+              : {}),
             ...(value.consistencyCushionPercent === undefined
               ? {}
               : {
@@ -397,8 +436,24 @@ function isPositiveAmount(value: unknown): value is number {
 }
 
 function normalizeProfileRule(value: unknown): PropFirmProfileRule | null {
+  return normalizeRuleReview(value, normalizeProfileRuleDefinition(value));
+}
+
+function normalizeProfileRuleDefinition(
+  value: unknown
+): PropFirmProfileRule | null {
   if (!isRecord(value)) return null;
   switch (value.kind) {
+    case 'manual_review':
+      return typeof value.reason === 'string' &&
+        value.reason.trim() &&
+        (value.amount === undefined || isPositiveAmount(value.amount))
+        ? {
+            kind: value.kind,
+            reason: value.reason,
+            ...(isPositiveAmount(value.amount) ? { amount: value.amount } : {}),
+          }
+        : null;
     case 'profit_target':
       return isFiniteNumber(value.amount) &&
         (value.targetType === 'absolute' || value.targetType === 'percentage')
@@ -488,6 +543,8 @@ function normalizeProfileRule(value: unknown): PropFirmProfileRule | null {
         : null;
     case 'consistency':
       return isFiniteNumber(value.maxBestDayPercent) &&
+        (value.comparison === undefined ||
+          value.comparison === 'strictly_below') &&
         (value.consistencyCushionPercent === undefined ||
           (isFiniteNumber(value.consistencyCushionPercent) &&
             value.consistencyCushionPercent > 0 &&
@@ -495,6 +552,9 @@ function normalizeProfileRule(value: unknown): PropFirmProfileRule | null {
         ? {
             kind: value.kind,
             maxBestDayPercent: value.maxBestDayPercent,
+            ...(value.comparison === 'strictly_below'
+              ? { comparison: value.comparison }
+              : {}),
             ...(value.consistencyCushionPercent === undefined
               ? {}
               : {
@@ -629,6 +689,10 @@ function normalizePayoutMaximum(
 ): PropChallengePayoutMaximum | null {
   if (!isRecord(value)) return null;
   switch (value.kind) {
+    case 'unresolved':
+      return typeof value.reason === 'string' && value.reason.trim()
+        ? { kind: value.kind, reason: value.reason }
+        : null;
     case 'none':
       return { kind: value.kind };
     case 'fixed':
@@ -742,6 +806,22 @@ function isMaximumPayoutOutcome(
 function normalizeProfitSplit(value: unknown): PropChallengeProfitSplit | null {
   if (!isRecord(value)) return null;
   switch (value.kind) {
+    case 'account_profit_marginal':
+      return isFiniteNumber(value.belowPercent) &&
+        value.belowPercent > 0 &&
+        value.belowPercent <= 100 &&
+        isFiniteNumber(value.abovePercent) &&
+        value.abovePercent > 0 &&
+        value.abovePercent <= 100 &&
+        isFiniteNumber(value.thresholdProfit) &&
+        value.thresholdProfit > 0
+        ? {
+            kind: value.kind,
+            belowPercent: value.belowPercent,
+            abovePercent: value.abovePercent,
+            thresholdProfit: value.thresholdProfit,
+          }
+        : null;
     case 'fixed':
       return isFiniteNumber(value.percent) &&
         value.percent > 0 &&
@@ -849,7 +929,8 @@ function normalizePayoutAftermath(
     return null;
   if (
     value.balanceAction === 'deduct_request' &&
-    value.drawdownAction === 'unchanged'
+    (value.drawdownAction === 'unchanged' ||
+      value.drawdownAction === 'raise_to_starting_balance')
   ) {
     return {
       balanceAction: value.balanceAction,
@@ -898,6 +979,16 @@ export function normalizePropChallengePayoutPolicy(
     value.minimumRequest < 0
   )
     return null;
+  if (
+    value.reviewRequired !== undefined &&
+    (typeof value.reviewRequired !== 'string' || !value.reviewRequired.trim())
+  )
+    return null;
+  if (
+    value.consistencyBasis !== undefined &&
+    value.consistencyBasis !== 'lifetime_gross_profit'
+  )
+    return null;
   const cycle = normalizePayoutCycle(value.cycle);
   let qualifyingDays: PropChallengePayoutPolicy['qualifyingDays'];
   if (value.qualifyingDays !== undefined) {
@@ -924,15 +1015,16 @@ export function normalizePropChallengePayoutPolicy(
         );
   const afterPayout = normalizePayoutAftermath(value.afterPayout);
   const profitSplit =
-    normalizeProfitSplit(value.profitSplit) ??
-    (isFiniteNumber(value.profitSplitPercent) &&
-    value.profitSplitPercent > 0 &&
-    value.profitSplitPercent <= 100
-      ? ({
-          kind: 'fixed',
-          percent: value.profitSplitPercent,
-        } satisfies PropChallengeProfitSplit)
-      : null);
+    value.profitSplit !== undefined
+      ? normalizeProfitSplit(value.profitSplit)
+      : isFiniteNumber(value.profitSplitPercent) &&
+          value.profitSplitPercent > 0 &&
+          value.profitSplitPercent <= 100
+        ? ({
+            kind: 'fixed',
+            percent: value.profitSplitPercent,
+          } satisfies PropChallengeProfitSplit)
+        : null;
   const requestWindow =
     value.requestWindow === undefined
       ? undefined
@@ -1027,6 +1119,12 @@ export function normalizePropChallengePayoutPolicy(
   return {
     version: value.version,
     source: value.source,
+    ...(typeof value.reviewRequired === 'string'
+      ? { reviewRequired: value.reviewRequired }
+      : {}),
+    ...(value.consistencyBasis === 'lifetime_gross_profit'
+      ? { consistencyBasis: value.consistencyBasis }
+      : {}),
     cycle,
     ...(qualifyingDays ? { qualifyingDays } : {}),
     availability,
@@ -1318,10 +1416,18 @@ export function normalizePropFirmProfileCatalog(
 export function normalizePropFirmProfileCatalogCache(
   value: unknown
 ): PropFirmProfileCatalogCache | undefined {
-  if (!isRecord(value) || !isIsoDateString(value.fetchedAt)) return undefined;
+  
+  
+  if (
+    !isRecord(value) ||
+    value.contractVersion !== 4 ||
+    !isIsoDateString(value.fetchedAt)
+  )
+    return undefined;
   const catalog = normalizePropFirmProfileCatalog(value.catalog);
   if (!catalog) return undefined;
   return {
+    contractVersion: 4,
     catalog,
     etag: typeof value.etag === 'string' ? value.etag : undefined,
     fetchedAt: value.fetchedAt,
@@ -1428,7 +1534,7 @@ function normalizePolicyHistory(
           locked: state.locked,
         });
       }
-      const expected = rules.filter((rule) => rule.kind === 'drawdown');
+      const expected = rules.filter(isAuthoritativeDrawdown);
       const required = expected.filter(
         (rule) =>
           !result[result.length - 1].rules.some((previous) =>
@@ -1830,7 +1936,9 @@ function normalizeNoticeState(
     typeof observed.phaseId === 'string' &&
     phaseIds.has(observed.phaseId) &&
     isFiniteNumber(observed.payoutCount) &&
-    (observed.status === 'eligible' || observed.status === 'not_eligible') &&
+    (observed.status === 'eligible' ||
+      observed.status === 'not_eligible' ||
+      observed.status === 'needs_review') &&
     isIsoDateString(observed.at)
   )
     state.payoutObserved = {

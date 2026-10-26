@@ -7,6 +7,7 @@ import {
   ACCOUNT_DASHBOARD_CREATE_BUTTON_TARGET_ID,
   ACCOUNT_DASHBOARD_MAIN_GUIDE_ID,
   ACCOUNT_DASHBOARD_METRICS_TARGET_ID,
+  ACCOUNT_DASHBOARD_MONTHLY_RETURNS_TARGET_ID,
   ACCOUNT_DASHBOARD_SECTIONS_TARGET_ID,
   ACCOUNT_DASHBOARD_MODE_SWITCH_TARGET_ID,
 } from './accountDashboardGuideIds';
@@ -18,7 +19,7 @@ export function registerAccountDashboardMainGuide(
   guideRegistry.registerGuide({
     id: ACCOUNT_DASHBOARD_MAIN_GUIDE_ID,
     viewType: ACCOUNT_DASHBOARD_VIEW_TYPE,
-    version: 5,
+    version: 6,
     autoShow: true,
     priority: 110,
     initialStepId: 'intro',
@@ -43,6 +44,17 @@ export function registerAccountDashboardMainGuide(
         description: t('account-dashboard.guide.main.metrics.description'),
         progression: 'manual',
         targetId: ACCOUNT_DASHBOARD_METRICS_TARGET_ID,
+      },
+      {
+        
+        id: 'monthly-returns',
+        title: t('account-dashboard.guide.main.monthly-returns.title'),
+        description: t(
+          'account-dashboard.guide.main.monthly-returns.description'
+        ),
+        progression: 'manual',
+        targetId: ACCOUNT_DASHBOARD_MONTHLY_RETURNS_TARGET_ID,
+        skipIfTargetMissing: true,
       },
       {
         id: 'mode-switch',

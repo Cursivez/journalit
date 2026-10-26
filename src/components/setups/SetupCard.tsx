@@ -30,6 +30,79 @@ import { SetupTagIndicator } from './SetupTags';
 const MASKED_SPARKLINE_BASELINE_Y = '34';
 const MASKED_SPARKLINE_PATH = 'M 8.0 34.0 L 312.0 34.0';
 
+const setupCardClassName = (
+  status: SetupViewModel['setup']['status'],
+  {
+    compareMode,
+    compareSelected,
+    compareDisabled,
+  }: {
+    compareMode: boolean;
+    compareSelected: boolean;
+    compareDisabled: boolean;
+  }
+): string =>
+  [
+    'journalit-setup-card',
+    `journalit-setup-card--lifecycle-${status}`,
+    compareMode ? 'journalit-setup-card--compare-mode' : '',
+    compareSelected ? 'journalit-setup-card--compare-selected' : '',
+    compareDisabled ? 'journalit-setup-card--compare-disabled' : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+
+const lastTradedLabel = (metrics: SetupViewModel['metrics']): string =>
+  metrics.totalTrades > 0
+    ? formatRelativeDateLabel(metrics.lastTradeDate)
+    : t('setups.view.date.never');
+
+
+const SetupCardHeaderMeta: React.FC<{
+  tags: string[];
+  compareMode: boolean;
+  compareSelected: boolean;
+  health: SetupCardHealth | null;
+}> = ({ tags, compareMode, compareSelected, health }) => {
+  if (tags.length === 0 && !compareMode && !health) return null;
+  return (
+    <div className="journalit-setup-card__header-meta">
+      <SetupTagIndicator tags={tags} />
+      {compareMode ? (
+        <span
+          className="journalit-setup-card__compare-indicator"
+          aria-hidden="true"
+        >
+          {compareSelected ? <CheckCircle2 size={16} /> : <Circle size={16} />}
+        </span>
+      ) : health ? (
+        <SetupCardHealthBadge health={health} />
+      ) : null}
+    </div>
+  );
+};
+
+const SetupCardExpectancyValue: React.FC<{
+  displayRMultiples: boolean;
+  value: number | null;
+  tone: SetupCardTone;
+}> = ({ displayRMultiples, value, tone }) => {
+  const className = [
+    'journalit-setup-card__expectancy-value',
+    `journalit-setup-card__expectancy-value--${tone}`,
+  ].join(' ');
+  return displayRMultiples ? (
+    <RMultipleValue
+      className={className}
+      value={value}
+      precision={1}
+      tone="none"
+    />
+  ) : (
+    <PnLValue className={className} value={value} precision={0} tone="none" />
+  );
+};
+
 export const SetupCard: React.FC<{
   viewModel: SetupViewModel;
   linkedTrades: SetupLinkedTrade[];
@@ -84,15 +157,11 @@ export const SetupCard: React.FC<{
 
   return (
     <article
-      className={[
-        'journalit-setup-card',
-        `journalit-setup-card--lifecycle-${setup.status}`,
-        compareMode ? 'journalit-setup-card--compare-mode' : '',
-        compareSelected ? 'journalit-setup-card--compare-selected' : '',
-        compareDisabled ? 'journalit-setup-card--compare-disabled' : '',
-      ]
-        .filter(Boolean)
-        .join(' ')}
+      className={setupCardClassName(setup.status, {
+        compareMode,
+        compareSelected,
+        compareDisabled,
+      })}
     >
       <button
         type="button"
@@ -104,25 +173,12 @@ export const SetupCard: React.FC<{
       />
       <div className="journalit-setup-card__header">
         <h3 className="journalit-setup-card__title">{setup.name}</h3>
-        {setup.tags.length > 0 || compareMode || health ? (
-          <div className="journalit-setup-card__header-meta">
-            <SetupTagIndicator tags={setup.tags} />
-            {compareMode ? (
-              <span
-                className="journalit-setup-card__compare-indicator"
-                aria-hidden="true"
-              >
-                {compareSelected ? (
-                  <CheckCircle2 size={16} />
-                ) : (
-                  <Circle size={16} />
-                )}
-              </span>
-            ) : health ? (
-              <SetupCardHealthBadge health={health} />
-            ) : null}
-          </div>
-        ) : null}
+        <SetupCardHeaderMeta
+          tags={setup.tags}
+          compareMode={compareMode}
+          compareSelected={compareSelected}
+          health={health}
+        />
       </div>
 
       <div className="journalit-setup-card__metric-row">
@@ -130,27 +186,11 @@ export const SetupCard: React.FC<{
           <span className="journalit-setup-card__metric-label">
             {t('setups.view.metric.expected-value')}
           </span>
-          {displayRMultiples ? (
-            <RMultipleValue
-              className={[
-                'journalit-setup-card__expectancy-value',
-                `journalit-setup-card__expectancy-value--${expectancyTone}`,
-              ].join(' ')}
-              value={expectancyValue}
-              precision={1}
-              tone="none"
-            />
-          ) : (
-            <PnLValue
-              className={[
-                'journalit-setup-card__expectancy-value',
-                `journalit-setup-card__expectancy-value--${expectancyTone}`,
-              ].join(' ')}
-              value={expectancyValue}
-              precision={0}
-              tone="none"
-            />
-          )}
+          <SetupCardExpectancyValue
+            displayRMultiples={displayRMultiples}
+            value={expectancyValue}
+            tone={expectancyTone}
+          />
         </div>
         <div className="journalit-setup-card__metric-block journalit-setup-card__metric-block--win-rate">
           <span className="journalit-setup-card__metric-label">
@@ -177,10 +217,7 @@ export const SetupCard: React.FC<{
         <span className="journalit-setup-card__reviewed">
           <Calendar size={14} aria-hidden="true" />
           <span>
-            {t('setups.view.metric.last-traded')}:{' '}
-            {metrics.totalTrades > 0
-              ? formatRelativeDateLabel(metrics.lastTradeDate)
-              : t('setups.view.date.never')}
+            {t('setups.view.metric.last-traded')}: {lastTradedLabel(metrics)}
           </span>
         </span>
         <span className="journalit-setup-card__trades">

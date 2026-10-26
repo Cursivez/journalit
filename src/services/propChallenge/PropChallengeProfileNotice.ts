@@ -7,6 +7,8 @@ import type {
 } from './types';
 import type { PersonalPropFirmProfile } from './PersonalPropFirmProfiles';
 import { resolveProfileApplicability } from './ProfileApplicability';
+import { matchesSavedProfilePhase } from './profilePhaseIdentity';
+import { isExecutableRule } from './PropChallengeRuleReview';
 import {
   findCatalogCorrections,
   type CorrectionMatch,
@@ -48,6 +50,8 @@ export function findAccountSourceProfile(
 }
 
 export interface ProfileNoticeComparison {
+  
+  unmatchedPhaseIds?: string[];
   corrections?: CorrectionMatch[];
   changed: Record<string, string>;
   unreviewedPhaseIds: string[];
@@ -58,7 +62,7 @@ function policyDefinition(phase: PropFirmProfilePhase) {
   return {
     stage: phase.stage,
     startingBalance: phase.startingBalance,
-    rules: phase.rules,
+    rules: phase.rules.filter(isExecutableRule),
     payoutPolicy: phase.payoutPolicy,
   };
 }
@@ -109,12 +113,24 @@ export async function compareAccountSourceProfile(
     const incoming = selection.challenge.phases[profilePhaseIndex];
     if (
       !incoming ||
-      (!phaseCorrections.length &&
-        phase.profileSnapshot &&
-        sameProfileContent(
-          policyDefinition(phase.profileSnapshot),
-          policyDefinition(incoming)
-        ))
+      !matchesSavedProfilePhase(config, phase, selection, profilePhaseIndex)
+    ) {
+      (result.unmatchedPhaseIds ??= []).push(phase.id);
+      continue;
+    }
+    if (
+      !matchesSavedProfilePhase(config, phase, selection, profilePhaseIndex)
+    ) {
+      (result.unmatchedPhaseIds ??= []).push(phase.id);
+      continue;
+    }
+    if (
+      !phaseCorrections.length &&
+      phase.profileSnapshot &&
+      sameProfileContent(
+        policyDefinition(phase.profileSnapshot),
+        policyDefinition(incoming)
+      )
     )
       continue;
     pending.push({ phase, incoming, phaseCorrections, profilePhaseIndex });

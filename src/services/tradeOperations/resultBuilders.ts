@@ -1,8 +1,9 @@
 import { generateUUID } from '../../utils/uuid';
 import type { TradeImportCompletionResult } from '../tradeImport/TradeImportWorkflowService';
-import type {
-  TradeProjectionPersistedTradeSummary,
-  TradeProjectionSyncResult,
+import {
+  partialIsProviderOnly,
+  type TradeProjectionPersistedTradeSummary,
+  type TradeProjectionSyncResult,
 } from '../tradeSync/types';
 import type {
   TradeOperationCounts,
@@ -91,6 +92,10 @@ export function combineTradeProjectionSyncResults(
         result.pendingCount > 0 ||
         (result.ackFailedCount ?? 0) > 0
     ),
+    
+    providerPartial:
+      results.some((result) => result.providerPartial === true) &&
+      results.every(partialIsProviderOnly),
     importedTrades: mergeImportedTradesByPath(results),
   };
 }
@@ -136,6 +141,7 @@ export function buildImportOperationResult({
     brokerLabels: unique([result.brokerLabel]),
     partial:
       !result.success || result.failedCount > 0 || result.pendingCount > 0,
+    providerPartialOnly: false,
   };
 }
 
@@ -152,6 +158,10 @@ export function buildProjectionSyncOperationResult({
   ownerUserId: string;
 }): TradeOperationResult {
   const trades = operationTrades(result.importedTrades ?? []);
+  const deliveryIssues =
+    result.failedCount > 0 ||
+    result.pendingCount > 0 ||
+    (result.ackFailedCount ?? 0) > 0;
   return {
     id: generateUUID(),
     kind: 'sync',
@@ -168,10 +178,10 @@ export function buildProjectionSyncOperationResult({
     
     
     brokerLabels: [],
-    partial:
-      result.partial === true ||
-      result.failedCount > 0 ||
-      result.pendingCount > 0 ||
-      (result.ackFailedCount ?? 0) > 0,
+    partial: result.partial === true || deliveryIssues,
+    providerPartialOnly:
+      result.partial === true &&
+      result.providerPartial === true &&
+      !deliveryIssues,
   };
 }

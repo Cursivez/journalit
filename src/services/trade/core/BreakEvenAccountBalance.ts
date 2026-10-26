@@ -54,8 +54,6 @@ interface BreakEvenAccountPluginLike {
   } | null;
 }
 
-type ResolveAccountIdDisplayName = (accountId: string) => string | undefined;
-
 const toLookupString = (value: string | number | null | undefined): string =>
   value === null || value === undefined ? '' : String(value);
 
@@ -134,7 +132,8 @@ export const buildBreakEvenAccountBalanceLookup = (
 };
 
 export const fetchBreakEvenAccountBalanceLookup = async (
-  plugin?: BreakEvenAccountPluginLike | null
+  plugin?: BreakEvenAccountPluginLike | null,
+  options?: { errorMode?: 'fallback' | 'throw' }
 ): Promise<BreakEvenAccountBalanceLookup> => {
   if (!plugin) {
     return new Map();
@@ -155,6 +154,9 @@ export const fetchBreakEvenAccountBalanceLookup = async (
       await accountPageService.getAllEnhancedAccounts()
     );
   } catch (error) {
+    if (options?.errorMode === 'throw') {
+      throw error;
+    }
     console.error(
       '[BreakEvenAccountBalance] Failed to build account balance lookup for break-even percentage mode:',
       error
@@ -164,11 +166,10 @@ export const fetchBreakEvenAccountBalanceLookup = async (
 };
 
 export const resolveBreakEvenAccountBalances = (
-  trade: Record<string, unknown>,
-  accountBalanceLookup: BreakEvenAccountBalanceLookup,
-  options: { resolveAccountIdDisplayName?: ResolveAccountIdDisplayName } = {}
+  trade: object & { account?: unknown },
+  accountBalanceLookup: BreakEvenAccountBalanceLookup
 ): BreakEvenAccountBalanceResolution => {
-  const identity = normalizeTradeAccountIdentity(trade, options);
+  const identity = normalizeTradeAccountIdentity(trade);
   const requiredLookupKeys = Array.from(
     new Set([
       ...identity.accountNames.map(normalizeAccountLookupKey),
@@ -240,11 +241,10 @@ export const attachBreakEvenAccountBalancesToTrade = <
   T extends Record<string, unknown>,
 >(
   trade: T,
-  accountBalanceLookup: BreakEvenAccountBalanceLookup,
-  options: { resolveAccountIdDisplayName?: ResolveAccountIdDisplayName } = {}
+  accountBalanceLookup: BreakEvenAccountBalanceLookup
 ): T & BreakEvenAccountBalanceFields => ({
   ...trade,
   ...getBreakEvenAccountBalanceFields(
-    resolveBreakEvenAccountBalances(trade, accountBalanceLookup, options)
+    resolveBreakEvenAccountBalances(trade, accountBalanceLookup)
   ),
 });

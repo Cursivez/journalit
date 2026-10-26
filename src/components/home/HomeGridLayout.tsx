@@ -3,6 +3,7 @@
 import React, {
   useCallback,
   useEffect,
+  useEffectEvent,
   useMemo,
   useRef,
   useState,
@@ -198,7 +199,7 @@ const GridWidgetItem = memo<GridWidgetItemProps>(
           
           
           
-          window.activeDocument.dispatchEvent(
+          button.ownerDocument.dispatchEvent(
             new CustomEvent('journalit-home-grid-remove-widget', {
               detail: { widgetId },
             })
@@ -232,6 +233,101 @@ const GridWidgetItem = memo<GridWidgetItemProps>(
 );
 GridWidgetItem.displayName = 'GridWidgetItem';
 
+interface HomeWidgetRenderContext {
+  widgetId: string;
+  plugin: JournalitPlugin;
+  tradeCount: number | null;
+  isEditing: boolean;
+}
+
+type HomeWidgetRenderFn = (context: HomeWidgetRenderContext) => React.ReactNode;
+
+const renderCurrentStreak: HomeWidgetRenderFn = ({
+  plugin,
+  widgetId,
+  isEditing,
+}) => (
+  <CurrentStreakWidget
+    plugin={plugin}
+    instanceId={widgetId}
+    isEditing={isEditing}
+  />
+);
+
+const HOME_WIDGET_RENDERERS = new Map<string, HomeWidgetRenderFn>(
+  Object.entries({
+    recentItems: ({ plugin }) => <RecentItemsWidget plugin={plugin} />,
+    yearHeatmap: ({ plugin }) => <YearHeatmapWidget plugin={plugin} />,
+    weeklySummary: ({ plugin }) => <WeeklySummaryWidget plugin={plugin} />,
+    keyEvents: ({ plugin }) => <KeyEventsHomeWidget plugin={plugin} />,
+    positionSize: ({ plugin }) => (
+      <DisplayPolicyProvider privacyModeOverride={false}>
+        <PositionSizeWidget plugin={plugin} />
+      </DisplayPolicyProvider>
+    ),
+    currentStreak: renderCurrentStreak,
+    bestHours: () => <BestHoursWidget />,
+    setupLeaderboard: ({ plugin }) => (
+      <SetupLeaderboardWidget plugin={plugin} instanceId="setupLeaderboard" />
+    ),
+    unreviewedTrades: ({ plugin }) => (
+      <UnreviewedTradesWidget plugin={plugin} />
+    ),
+    tradingScore: () => <TradingScoreWidget />,
+    aum: ({ plugin }) => <AUMWidget plugin={plugin} />,
+    drawdownMonitor: ({ plugin, widgetId, isEditing }) => (
+      <DrawdownMonitorWidget
+        plugin={plugin}
+        instanceId={widgetId}
+        isEditing={isEditing}
+      />
+    ),
+    profitTarget: ({ plugin, widgetId, isEditing }) => (
+      <ProfitTargetWidget
+        plugin={plugin}
+        instanceId={widgetId}
+        isEditing={isEditing}
+      />
+    ),
+    evalRoi: ({ plugin }) => <EvalRoiWidget plugin={plugin} />,
+    challengeAlerts: ({ plugin }) => <ChallengeAlertsWidget plugin={plugin} />,
+    gettingStarted: ({ plugin, tradeCount }) => (
+      <GettingStartedWidget plugin={plugin} tradeCount={tradeCount} />
+    ),
+  } satisfies Record<string, HomeWidgetRenderFn>)
+);
+
+
+const HOME_INSTANCE_WIDGET_RENDERERS: ReadonlyArray<
+  readonly [prefix: string, render: HomeWidgetRenderFn]
+> = [
+  [
+    'embeddedNote-',
+    ({ plugin, widgetId }) => (
+      <EmbeddedNoteWidget plugin={plugin} instanceId={widgetId} />
+    ),
+  ],
+  ['currentStreak-', renderCurrentStreak],
+  [
+    'goalsProgress-',
+    ({ plugin, widgetId }) => (
+      <GoalsProgressWidget plugin={plugin} instanceId={widgetId} />
+    ),
+  ],
+  [
+    'setupLeaderboard-',
+    ({ plugin, widgetId }) => (
+      <SetupLeaderboardWidget plugin={plugin} instanceId={widgetId} />
+    ),
+  ],
+];
+
+const homeWidgetRenderer = (widgetId: string): HomeWidgetRenderFn | undefined =>
+  HOME_WIDGET_RENDERERS.get(widgetId) ??
+  HOME_INSTANCE_WIDGET_RENDERERS.find(([prefix]) =>
+    widgetId.startsWith(prefix)
+  )?.[1];
+
 const HomeWidgetContent: React.FC<{
   widgetId: string;
   plugin: JournalitPlugin | null;
@@ -239,89 +335,13 @@ const HomeWidgetContent: React.FC<{
   isEditing: boolean;
 }> = ({ widgetId, plugin, tradeCount, isEditing }) => {
   if (!plugin) return null;
-
-  switch (widgetId) {
-    case 'recentItems':
-      return <RecentItemsWidget plugin={plugin} />;
-    case 'yearHeatmap':
-      return <YearHeatmapWidget plugin={plugin} />;
-    case 'weeklySummary':
-      return <WeeklySummaryWidget plugin={plugin} />;
-    case 'keyEvents':
-      return <KeyEventsHomeWidget plugin={plugin} />;
-    case 'positionSize':
-      return (
-        <DisplayPolicyProvider privacyModeOverride={false}>
-          <PositionSizeWidget plugin={plugin} />
-        </DisplayPolicyProvider>
-      );
-    case 'currentStreak':
-      return (
-        <CurrentStreakWidget
-          plugin={plugin}
-          instanceId={widgetId}
-          isEditing={isEditing}
-        />
-      );
-    case 'bestHours':
-      return <BestHoursWidget />;
-    case 'setupLeaderboard':
-      return (
-        <SetupLeaderboardWidget plugin={plugin} instanceId="setupLeaderboard" />
-      );
-    case 'unreviewedTrades':
-      return <UnreviewedTradesWidget plugin={plugin} />;
-    case 'tradingScore':
-      return <TradingScoreWidget />;
-    case 'aum':
-      return <AUMWidget plugin={plugin} />;
-    case 'drawdownMonitor':
-      return (
-        <DrawdownMonitorWidget
-          plugin={plugin}
-          instanceId={widgetId}
-          isEditing={isEditing}
-        />
-      );
-    case 'profitTarget':
-      return (
-        <ProfitTargetWidget
-          plugin={plugin}
-          instanceId={widgetId}
-          isEditing={isEditing}
-        />
-      );
-    case 'evalRoi':
-      return <EvalRoiWidget plugin={plugin} />;
-    case 'challengeAlerts':
-      return <ChallengeAlertsWidget plugin={plugin} />;
-    case 'gettingStarted':
-      return <GettingStartedWidget plugin={plugin} tradeCount={tradeCount} />;
-    default:
-      if (widgetId.startsWith('embeddedNote-')) {
-        return <EmbeddedNoteWidget plugin={plugin} instanceId={widgetId} />;
-      }
-      if (widgetId.startsWith('currentStreak-')) {
-        return (
-          <CurrentStreakWidget
-            plugin={plugin}
-            instanceId={widgetId}
-            isEditing={isEditing}
-          />
-        );
-      }
-      if (widgetId.startsWith('goalsProgress-')) {
-        return <GoalsProgressWidget plugin={plugin} instanceId={widgetId} />;
-      }
-      if (widgetId.startsWith('setupLeaderboard-')) {
-        return <SetupLeaderboardWidget plugin={plugin} instanceId={widgetId} />;
-      }
-      return (
-        <div className="journalit-home-widget-error">
-          {t('home.grid.widget.unknown-type', { widgetId })}
-        </div>
-      );
-  }
+  const render = homeWidgetRenderer(widgetId);
+  if (render) return render({ widgetId, plugin, tradeCount, isEditing });
+  return (
+    <div className="journalit-home-widget-error">
+      {t('home.grid.widget.unknown-type', { widgetId })}
+    </div>
+  );
 };
 
 const HomeResponsiveGrid: React.FC<HomeResponsiveGridProps> = ({
@@ -739,36 +759,35 @@ const HomeGridLayoutBase: React.FC<HomeGridLayoutProps> = ({
     });
   }, [widgets]);
 
-  const handleRemoveWidget = useCallback(
-    (widgetId: string) => {
-      setLocallyRemovedWidgets((current) => {
-        if (current.has(widgetId)) return current;
-        return new Set([...current, widgetId]);
-      });
-      window.setTimeout(() => void onRemoveWidget(widgetId), 400);
-    },
-    [onRemoveWidget]
-  );
+  const handleGridRemoveWidget = useEffectEvent((event: Event) => {
+    if (!isWidgetRemoveEvent(event)) return;
+    const widgetId = event.detail?.widgetId;
+    if (!widgetId) return;
+    setLocallyRemovedWidgets((current) => {
+      if (current.has(widgetId)) return current;
+      return new Set([...current, widgetId]);
+    });
+    window.setTimeout(() => void onRemoveWidget(widgetId), 400);
+  });
 
   useEffect(() => {
-    const handleGridRemoveWidget = (event: Event) => {
-      if (!isWidgetRemoveEvent(event)) return;
-      const widgetId = event.detail?.widgetId;
-      if (!widgetId) return;
-      handleRemoveWidget(widgetId);
-    };
-
-    window.activeDocument.addEventListener(
+    
+    
+    
+    const gridDocument =
+      containerRef.current?.ownerDocument ?? window.activeDocument;
+    const listener = (event: Event) => handleGridRemoveWidget(event);
+    gridDocument.addEventListener(
       'journalit-home-grid-remove-widget',
-      handleGridRemoveWidget
+      listener
     );
     return () => {
-      window.activeDocument.removeEventListener(
+      gridDocument.removeEventListener(
         'journalit-home-grid-remove-widget',
-        handleGridRemoveWidget
+        listener
       );
     };
-  }, [handleRemoveWidget]);
+  }, [containerRef]);
 
   const validatedLayouts = validateLayoutsForGrid(layouts);
 

@@ -30,7 +30,6 @@ import {
   classifyPnLWithBreakEvenSettings,
   type BreakEvenRangeSettings,
 } from '../../../utils/breakEvenRange';
-import { TradeChangedPayload } from '../../../services/events/types';
 import { usePhaseScopedTrades } from './usePhaseScopedTrades';
 import { useAccountPageDataEvents } from './useAccountPageDataEvents';
 import { calculateCommissionCost } from '../../../utils/pnlUtils';
@@ -197,7 +196,7 @@ interface FilteredMetricsOptions extends BreakEvenRangeSettings {
 
 
 
-export const applyScopedConversionMetadata = (
+const applyScopedConversionMetadata = (
   filteredMetrics: AccountMetrics,
   parentMetrics: AccountMetrics,
   filteredTrades: AccountTradeData[],
@@ -486,7 +485,6 @@ export const AccountPageDataProvider: React.FC<
   const refreshQueuedRef = useRef(false);
   const activeRefreshPromiseRef = useRef<Promise<void> | null>(null);
   const accountNameRef = useRef(accountName);
-  const recentCommittedTradeChangesRef = useRef<Map<string, number>>(new Map());
 
   React.useEffect(() => {
     accountNameRef.current = accountName;
@@ -616,64 +614,7 @@ export const AccountPageDataProvider: React.FC<
     [filteredMetrics]
   );
 
-  const rememberCommittedTradeChange = useCallback((filePaths: string[]) => {
-    const expiresAt = Date.now() + 2000;
-    const recentChanges = recentCommittedTradeChangesRef.current;
-
-    for (const [filePath, expiry] of recentChanges.entries()) {
-      if (expiry <= Date.now()) {
-        recentChanges.delete(filePath);
-      }
-    }
-
-    for (const filePath of filePaths) {
-      recentChanges.set(filePath, expiresAt);
-    }
-  }, []);
-
-  const wasExpectedLegacyMirror = useCallback(
-    (payload: TradeChangedPayload) => {
-      const filePaths =
-        payload.filePaths ?? (payload.filePath ? [payload.filePath] : []);
-      if (filePaths.length === 0) {
-        return false;
-      }
-
-      const recentChanges = recentCommittedTradeChangesRef.current;
-      let hasTrackedPath = false;
-      const now = Date.now();
-
-      for (const filePath of filePaths) {
-        const expiry = recentChanges.get(filePath);
-        if (!expiry) {
-          return false;
-        }
-
-        if (expiry <= now) {
-          recentChanges.delete(filePath);
-          return false;
-        }
-
-        hasTrackedPath = true;
-      }
-
-      if (hasTrackedPath) {
-        for (const filePath of filePaths) {
-          recentChanges.delete(filePath);
-        }
-      }
-
-      return hasTrackedPath;
-    },
-    []
-  );
-
-  useAccountPageDataEvents({
-    accountName,
-    refreshData,
-    rememberCommittedTradeChange,
-    wasExpectedLegacyMirror,
-  });
+  useAccountPageDataEvents({ accountName, refreshData });
 
   
   React.useEffect(() => {

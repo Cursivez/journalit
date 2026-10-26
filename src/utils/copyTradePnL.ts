@@ -27,6 +27,8 @@ type CopyTradeInput = {
   dividends?: unknown;
   mae?: unknown;
   mfe?: unknown;
+  stopLosses?: unknown;
+  takeProfits?: unknown;
 };
 
 type ExecutionRow = {
@@ -173,6 +175,15 @@ export function calculateCopiedTradePnL(input: CopiedTradePnLInput): {
   };
 }
 
+function scalePlannedTargetSize(
+  target: ExecutionRow,
+  multiplier: number
+): ExecutionRow {
+  return typeof target.size === 'number'
+    ? { ...target, size: target.size * multiplier }
+    : target;
+}
+
 export function scaleCopiedTradeExecutionFields<T extends CopyTradeInput>(
   trade: T,
   multiplier: number
@@ -214,6 +225,21 @@ export function scaleCopiedTradeExecutionFields<T extends CopyTradeInput>(
           ? dividend.amount * multiplier
           : dividend.amount,
     }));
+  }
+
+  
+  
+  
+  if (Array.isArray(trade.stopLosses)) {
+    scaled.stopLosses = trade.stopLosses.map((target: ExecutionRow) =>
+      scalePlannedTargetSize(target, multiplier)
+    );
+  }
+
+  if (Array.isArray(trade.takeProfits)) {
+    scaled.takeProfits = trade.takeProfits.map((target: ExecutionRow) =>
+      scalePlannedTargetSize(target, multiplier)
+    );
   }
 
   if (typeof trade.mae === 'number') {

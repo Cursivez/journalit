@@ -1,6 +1,6 @@
 
 
-import { Modal, App, Notice } from 'obsidian';
+import { App, Notice } from 'obsidian';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { Button } from '../ui/Button';
@@ -21,6 +21,7 @@ import { openExternalUrl } from '../../utils/externalLinks';
 import { createDefaultBackendIntegrationSettings } from '../../settings/types';
 import { writeClipboardText } from '../../utils/clipboard';
 import { mergeClassNames } from '../../utils/classNames';
+import { JournalitModal } from '../modals/JournalitModal';
 
 interface DeviceFlowSignInModalProps {
   plugin: JournalitPlugin;
@@ -725,7 +726,7 @@ const DeviceFlowSignInContentBase: React.FC<DeviceFlowSignInModalProps> = ({
 const DeviceFlowSignInContent = React.memo(DeviceFlowSignInContentBase);
 
 
-export class DeviceFlowSignInModal extends Modal {
+export class DeviceFlowSignInModal extends JournalitModal {
   private plugin: JournalitPlugin;
   private onSuccess: () => void;
   private onCancel: () => void;

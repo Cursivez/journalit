@@ -27,6 +27,16 @@ export const ENTRY_EXIT_STYLES = `
       color: var(--text-normal);
     }
 
+    .trade-form-view-container .journalit-backtest-day-hint {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 4px 8px;
+      margin: -4px 0 12px;
+      color: var(--text-muted);
+      font-size: var(--font-ui-smaller);
+    }
+
     .trade-form-view-container .badge {
       display: inline-block;
       background: var(--interactive-accent);
@@ -608,7 +618,6 @@ export const ENTRY_EXIT_STYLES = `
       align-items: center;
     }
 
-    .trade-form-view-container .journalit-ideal-exit-row .form-group,
     .trade-form-view-container .journalit-ideal-exit-row .inputContainer {
       margin-bottom: 0;
     }
@@ -761,7 +770,7 @@ export const ENTRY_EXIT_STYLES = `
       background-color: var(--background-primary);
       transition: transform 0.3s ease;
       border-radius: 50%;
-      box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+      box-shadow: var(--toggle-thumb-shadow);
     }
 
     .trade-form-view-container .toggle-switch-input:checked + .toggle-switch-label {

@@ -4,7 +4,7 @@ import React, { memo, useCallback, useMemo } from 'react';
 import { DEFAULT_PRIVACY_MASK } from '../../../constants';
 import JournalitPlugin from '../../../main';
 import { useHomeAccount } from '../context/HomeAccountContext';
-import { useHomeAccountsData } from '../context/HomeAccountsDataContext';
+import { useHomeAccountsState } from '../context/HomeAccountsDataContext';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import type {
   PropChallengeActiveNotice,
@@ -70,15 +70,9 @@ const ChallengeAlertsWidgetComponent: React.FC<ChallengeAlertsWidgetProps> = ({
   
   const outcomeMasked = shouldMask('pnl');
   const accountContext = useHomeAccount();
-  const homeAccountsData = useHomeAccountsData();
-  const accounts = useMemo(
-    () => homeAccountsData?.accounts || [],
-    [homeAccountsData?.accounts]
-  );
-  const isLoading = homeAccountsData?.isLoading ?? true;
+  const { accounts, isLoading, error: loadError } = useHomeAccountsState();
   
   
-  const loadError = homeAccountsData?.error ?? null;
 
   const rows = useMemo((): AlertRow[] => {
     const result: AlertRow[] = [];

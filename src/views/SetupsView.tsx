@@ -112,9 +112,7 @@ export class SetupsView extends ReactView {
   }
 }
 
-export function getSetupMarkdownReference(
-  state: SetupsViewState
-): string | undefined {
+function getSetupMarkdownReference(state: SetupsViewState): string | undefined {
   return state.page === 'detail'
     ? (state.setupPath ?? state.setupId)
     : undefined;

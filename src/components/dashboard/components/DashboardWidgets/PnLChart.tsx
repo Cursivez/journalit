@@ -7,42 +7,40 @@ import { preparePnLChartData } from '../../../../utils/chartUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 
 
-export const PnLChart = React.memo<BaseWidgetProps>(
-  ({ filters, dateFormat }) => {
-    const plugin = usePlugin();
-    const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
+export const PnLChart = React.memo<BaseWidgetProps>(({ dateFormat }) => {
+  const plugin = usePlugin();
+  const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
 
-    return (
-      <BaseWidget filters={filters} dateFormat={dateFormat}>
-        {(data, userDateFormat) => {
-          
-          const chartData = preparePnLChartData(
-            data.trades,
-            userDateFormat,
-            defaultRiskAmount,
-            plugin
-          );
+  return (
+    <BaseWidget dateFormat={dateFormat}>
+      {(data, userDateFormat) => {
+        
+        const chartData = preparePnLChartData(
+          data.trades,
+          userDateFormat,
+          defaultRiskAmount,
+          plugin
+        );
 
-          
-          const currencyOverride = data.metrics.isMultiCurrency
-            ? data.metrics.conversionBaseCurrency
-            : undefined;
+        
+        const currencyOverride = data.metrics.isMultiCurrency
+          ? data.metrics.conversionBaseCurrency
+          : undefined;
 
-          
-          return (
-            <SharedPnLChart
-              data={chartData}
-              plugin={plugin}
-              currencyOverride={currencyOverride}
-              onPointClick={(_data, _index) => {
-                // intentional
-              }}
-            />
-          );
-        }}
-      </BaseWidget>
-    );
-  }
-);
+        
+        return (
+          <SharedPnLChart
+            data={chartData}
+            plugin={plugin}
+            currencyOverride={currencyOverride}
+            onPointClick={(_data, _index) => {
+              // intentional
+            }}
+          />
+        );
+      }}
+    </BaseWidget>
+  );
+});
 
 PnLChart.displayName = 'PnLChart';

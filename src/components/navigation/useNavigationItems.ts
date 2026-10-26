@@ -36,9 +36,7 @@ export function restrictNavigationDragTransform(
   };
 }
 
-export function mergeNavigationItemsWithDefaults(
-  currentItems: SidebarNavItem[]
-): {
+function mergeNavigationItemsWithDefaults(currentItems: SidebarNavItem[]): {
   items: SidebarNavItem[];
   changed: boolean;
 } {

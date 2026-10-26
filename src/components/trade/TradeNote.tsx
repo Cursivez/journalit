@@ -23,12 +23,13 @@ import {
   TradeCustomFieldsSection,
 } from './components';
 import { hasTradeCustomFieldDisplayEntries } from './components/TradeCustomFieldsSection';
+import { TradeRatingCard } from './components/TradeRatingCard';
 import {
   areSnapshotKeysClaimedByCustomFields,
   calculateUnrealizedPnL,
 } from '../../utils/unrealizedPnl';
 import { useTradeMetrics } from './hooks';
-import { TradeTemplateService } from '../../services/templates/TradeTemplateService';
+import { resolveDefaultTradeTemplate } from '../../services/templates/defaultTradeTemplateMetadata';
 import {
   TradeNoteSectionId,
   TradeTemplate,
@@ -51,6 +52,12 @@ import { CustomFieldDefinition } from '../../types/customFields';
 import { useTradeLabelColorData } from '../../hooks/useTradeLabelColorData';
 import { extractPriceMoveValueFields } from '../../utils/priceMoveValue';
 import { shareCaptureExcludeProps } from '../../services/share/brandedCapture';
+import {
+  resolveTradeShareImageLayout,
+  tradeShareSectionProps,
+  type TradeShareOptions,
+} from '../share/tradeShare/tradeShareModel';
+import { calculateTradeReturnPercent } from '../tradelog/tradeMetricUtils';
 
 const TRADE_NAV_CACHE_PREFIX = 'trade-nav-';
 
@@ -63,7 +70,7 @@ const DEFAULT_TRADE_NOTE_SECTION_ORDER: TradeNoteSectionId[] = [
   'reviewButton',
 ];
 
-export async function updateTradeNoteReviewStatus(
+async function updateTradeNoteReviewStatus(
   plugin: JournalitPlugin,
   data: Pick<PartialTradeFrontmatter, 'isMissedTrade' | 'isBacktestTrade'>,
   filePath: string,
@@ -129,7 +136,7 @@ function mergeSectionConfig<K extends keyof TradeTemplate['sections']>(
   };
 }
 
-export function getEffectiveTradeTemplate(
+function getEffectiveTradeTemplate(
   template: TradeTemplate | null,
   assetType: string | undefined
 ): TradeTemplate | null {
@@ -173,6 +180,11 @@ export function getEffectiveTradeTemplate(
         override.sections,
         'missedReason'
       ),
+      rating: mergeSectionConfig(
+        template.sections,
+        override.sections,
+        'rating'
+      ),
     },
   };
 }
@@ -181,7 +193,10 @@ const isMissedReasonVisible = (template: TradeTemplate | null): boolean =>
   template?.sections.missedReason?.show !== false;
 
 const MissedTradeReasonSection: React.FC<{ reason: string }> = ({ reason }) => (
-  <section className="missed-trade-reason-section">
+  <section
+    className="missed-trade-reason-section"
+    {...tradeShareSectionProps('missedReason')}
+  >
     <div className="missed-trade-reason-header">
       <div className="missed-trade-reason-title">
         <CircleHelp size={17} />
@@ -199,7 +214,7 @@ const MissedTradeReasonSection: React.FC<{ reason: string }> = ({ reason }) => (
   </section>
 );
 
-export function getTradeNoteSectionOrder(
+function getTradeNoteSectionOrder(
   template: TradeTemplate | null
 ): TradeNoteSectionId[] {
   const configured = template?.sectionOrder ?? [];
@@ -213,9 +228,7 @@ export function getTradeNoteSectionOrder(
   return [...valid, ...missing];
 }
 
-export function isTradeThesisSectionVisible(
-  template: TradeTemplate | null
-): boolean {
+function isTradeThesisSectionVisible(template: TradeTemplate | null): boolean {
   const detailsConfig = template?.sections.details;
   return detailsConfig?.show !== false && detailsConfig?.showThesis !== false;
 }
@@ -304,10 +317,142 @@ interface TradeNoteProps {
   data: PartialTradeFrontmatter;
   onEditClick?: (data: TradeNoteProps['data']) => void;
   onDataUpdate?: (updatedData: Partial<TradeFormData>) => void;
+  shareOptions?: TradeShareOptions;
 }
 
+type TradeNoteMetrics = ReturnType<typeof useTradeMetrics>['metrics'];
+
+const tradeOutcomeKind = (
+  metrics: TradeNoteMetrics
+): 'breakeven' | 'profit' | 'loss' => {
+  if (metrics.isBreakeven) return 'breakeven';
+  return metrics.isProfit ? 'profit' : 'loss';
+};
+
+const tradeNoteKind = (
+  data: PartialTradeFrontmatter
+): 'backtest-trade' | 'missed-trade' | 'trade' => {
+  if (data.isBacktestTrade) return 'backtest-trade';
+  return data.isMissedTrade ? 'missed-trade' : 'trade';
+};
+
+
+const showsSessionNavigation = (
+  data: PartialTradeFrontmatter,
+  shareOptions: TradeShareOptions | undefined,
+  showNavigationSection: boolean
+): boolean =>
+  !shareOptions &&
+  showNavigationSection &&
+  Boolean(data.entryTime || data.useDirectPnLInput);
+
+const displaysRMultiples = (plugin: ReturnType<typeof usePlugin>): boolean =>
+  plugin?.settings?.trade?.displayRMultiples ?? false;
+
+
+
+const snapshotUnrealizedPnL = (
+  plugin: ReturnType<typeof usePlugin>,
+  data: PartialTradeFrontmatter
+) =>
+  areSnapshotKeysClaimedByCustomFields(plugin?.customFieldsService?.getFields())
+    ? null
+    : calculateUnrealizedPnL(data);
+
+
+const TradeNoteHeader: React.FC<{
+  data: PartialTradeFrontmatter;
+  filePath: string;
+  plugin: ReturnType<typeof usePlugin>;
+  metrics: TradeNoteMetrics;
+  shareOptions: TradeShareOptions | undefined;
+  reviewed: boolean;
+  showNavigationSection: boolean;
+  onEditClick: () => void;
+  onToggleReviewed: (() => void) | undefined;
+}> = ({
+  data,
+  filePath,
+  plugin,
+  metrics,
+  shareOptions,
+  reviewed,
+  showNavigationSection,
+  onEditClick,
+  onToggleReviewed,
+}) => {
+  if (shareOptions && !shareOptions.sections.has('header')) return null;
+  const header = (
+    <TradeHeader
+      instrument={data.instrument}
+      direction={data.direction}
+      entryTime={data.entryTime}
+      sourcePath={filePath}
+      onEditClick={onEditClick}
+      sessionNavigation={
+        showsSessionNavigation(data, shareOptions, showNavigationSection) ? (
+          <TradeNavigationSection data={data} filePath={filePath} />
+        ) : null
+      }
+      showReviewNavigation={showNavigationSection}
+      reviewed={reviewed}
+      onToggleReviewed={onToggleReviewed}
+      outcome={{ kind: tradeOutcomeKind(metrics) }}
+      pnl={metrics.pnl}
+      percentChange={metrics.percentChange}
+      sharePnlDisplay={
+        shareOptions
+          ? {
+              mode: shareOptions.pnlMode,
+              accountBalance: shareOptions.accountBalance,
+              positionReturn: calculateTradeReturnPercent(data),
+            }
+          : undefined
+      }
+      pnlInput={{
+        useDirectPnLInput: data.useDirectPnLInput,
+        directPnL: data.directPnL,
+        originalPnlWasNull: data._originalPnlWasNull,
+      }}
+      noteKind={tradeNoteKind(data)}
+      exitTime={data.exitTime}
+      exitPrice={data.exitPrice}
+      tradeStatus={data.tradeStatus}
+      entries={data.entries}
+      exits={data.exits}
+      dividends={data.dividends}
+      commission={data.commission}
+      commissionType={data.commissionType}
+      swap={data.swap}
+      fees={data.fees}
+      rebate={data.rebate}
+      optionType={data.optionType}
+      {...extractPriceMoveValueFields(data)}
+      rMultiple={data.rMultiple}
+      rMultipleDisplay={{
+        enabled: displaysRMultiples(plugin),
+        riskAmount: data.riskAmount,
+      }}
+      currency={data.currency}
+      unrealizedPnL={
+        
+        
+        snapshotUnrealizedPnL(plugin, data)
+      }
+      unrealizedPriceSnapshotTime={data.unrealizedPriceSnapshotTime}
+    />
+  );
+  return data.isMissedTrade === true ? (
+    <DisplayPolicyProvider privacyModeOverride={false}>
+      {header}
+    </DisplayPolicyProvider>
+  ) : (
+    header
+  );
+};
+
 export const TradeNote: React.FC<TradeNoteProps> = React.memo(
-  function TradeNote({ data, onEditClick }) {
+  function TradeNote({ data, onEditClick, shareOptions }) {
     
     const [filePath, setFilePath] = useState<string>(
       data.filePath || 'unknown'
@@ -332,6 +477,9 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
     
     useEventBus('trade-template:changed', () => {
       setTemplateRefreshKey((k) => k + 1);
+    });
+    useEventBus('default-template:changed', ({ type }) => {
+      if (type === 'trade') setTemplateRefreshKey((k) => k + 1);
     });
 
     
@@ -359,7 +507,11 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
 
     
     const plugin = usePlugin();
-    const labelColors = useTradeLabelColorData(plugin);
+    const isShare = shareOptions !== undefined;
+    const liveLabelColors = useTradeLabelColorData(isShare ? null : plugin);
+    const labelColors = shareOptions
+      ? shareOptions.presentation.labelColors
+      : liveLabelColors;
     const { service: accountPageService } = useAccountPageService();
     const [customFieldDefinitions, setCustomFieldDefinitions] = useState<
       CustomFieldDefinition[]
@@ -395,11 +547,13 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
       [data, customFieldDefinitions, plugin?.settings.trade.dateFormat]
     );
 
-    const [breakEvenAccountCurrentBalance, dispatchBreakEvenAccountBalance] =
-      useReducer(
-        (_state: number | undefined, balance: number | undefined) => balance,
-        undefined
-      );
+    const [
+      liveBreakEvenAccountCurrentBalance,
+      dispatchBreakEvenAccountBalance,
+    ] = useReducer(
+      (_state: number | undefined, balance: number | undefined) => balance,
+      undefined
+    );
     const [accountBalanceRefreshKey, setAccountBalanceRefreshKey] = useState(0);
 
     useEventBus('account:changed', () => {
@@ -407,15 +561,12 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
     });
 
     const tradeAccountIdentityInput = React.useMemo(
-      () => ({
-        account: data.account,
-        accountId: data.accountId,
-        backendTradeId: data.backendTradeId,
-      }),
-      [data.account, data.accountId, data.backendTradeId]
+      () => ({ account: data.account }),
+      [data.account]
     );
 
     useEffect(() => {
+      if (isShare) return;
       let isMounted = true;
 
       const resolveBreakEvenBalance = async () => {
@@ -434,14 +585,8 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
           const balanceLookup =
             await fetchBreakEvenAccountBalanceLookup(plugin);
           const resolution = resolveBreakEvenAccountBalances(
-            Object.fromEntries(Object.entries(tradeAccountIdentityInput)),
-            balanceLookup,
-            {
-              resolveAccountIdDisplayName: (accountId) =>
-                plugin?.settings?.backendIntegration?.accountMapping?.[
-                  accountId
-                ],
-            }
+            tradeAccountIdentityInput,
+            balanceLookup
           );
 
           if (!isMounted) return;
@@ -468,40 +613,26 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
       plugin?.settings?.trade?.breakEvenThresholdMode,
       plugin?.settings?.backendIntegration?.accountMapping,
       accountBalanceRefreshKey,
+      isShare,
     ]);
 
     
     const { metrics, formatTime } = useTradeMetrics({
       data,
       breakEvenRange: plugin?.settings?.trade,
-      breakEvenAccountCurrentBalance,
+      breakEvenAccountCurrentBalance: shareOptions
+        ? shareOptions.presentation.breakEvenAccountCurrentBalance
+        : liveBreakEvenAccountCurrentBalance,
     });
 
     
     
+    
     const tradeTemplate = React.useMemo<TradeTemplate | null>(() => {
       if (!plugin) return null;
-      try {
-        const tradeTemplateService = new TradeTemplateService(plugin);
-        
-        if (data.templateId) {
-          const template = tradeTemplateService.getTemplate(data.templateId);
-          if (template) return template;
-        }
-        
-        const defaultTemplateId = plugin.settings.templates?.defaultTrade;
-        if (defaultTemplateId) {
-          const template = tradeTemplateService.getTemplate(defaultTemplateId);
-          if (template) return template;
-        }
-        
-        return tradeTemplateService.getDefaultTemplate();
-      } catch (error) {
-        console.error('[TradeNote] Error loading trade template:', error);
-        return null;
-      }
-      // eslint-disable-next-line react-hooks/exhaustive-deps -- initial data load is controlled by trade identity, not every derived dependency
-    }, [plugin, data.templateId, templateRefreshKey]);
+      return resolveDefaultTradeTemplate(plugin);
+      // eslint-disable-next-line react-hooks/exhaustive-deps -- templateRefreshKey is the change signal for settings-backed layouts
+    }, [plugin, templateRefreshKey]);
 
     const effectiveTradeTemplate = React.useMemo(
       () => getEffectiveTradeTemplate(tradeTemplate, data.assetType),
@@ -691,79 +822,12 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
       effectiveTradeTemplate?.sections?.navigation?.show !== false;
     const showReviewButtonSection =
       effectiveTradeTemplate?.sections?.reviewButton?.show !== false;
-
-    const tradeHeader = (
-      <TradeHeader
-        instrument={data.instrument}
-        direction={data.direction}
-        entryTime={data.entryTime}
-        sourcePath={filePath}
-        onEditClick={handleEditClick}
-        sessionNavigation={
-          showNavigationSection &&
-          (data.entryTime || data.useDirectPnLInput) ? (
-            <TradeNavigationSection data={data} filePath={filePath} />
-          ) : null
-        }
-        showReviewNavigation={showNavigationSection}
-        reviewed={reviewStatus.reviewed === true}
-        onToggleReviewed={
-          showReviewButtonSection
-            ? () => void handleToggleReviewed()
-            : undefined
-        }
-        outcome={{
-          kind: metrics.isBreakeven
-            ? 'breakeven'
-            : metrics.isProfit
-              ? 'profit'
-              : 'loss',
-        }}
-        pnl={metrics.pnl}
-        percentChange={metrics.percentChange}
-        pnlInput={{
-          useDirectPnLInput: data.useDirectPnLInput,
-          directPnL: data.directPnL,
-          originalPnlWasNull: data._originalPnlWasNull,
-        }}
-        noteKind={
-          data.isBacktestTrade
-            ? 'backtest-trade'
-            : data.isMissedTrade
-              ? 'missed-trade'
-              : 'trade'
-        }
-        exitTime={data.exitTime}
-        exitPrice={data.exitPrice}
-        tradeStatus={data.tradeStatus}
-        entries={data.entries}
-        exits={data.exits}
-        dividends={data.dividends}
-        commission={data.commission}
-        commissionType={data.commissionType}
-        swap={data.swap}
-        fees={data.fees}
-        rebate={data.rebate}
-        optionType={data.optionType}
-        {...extractPriceMoveValueFields(data)}
-        rMultiple={data.rMultiple}
-        rMultipleDisplay={{
-          enabled: plugin?.settings?.trade?.displayRMultiples ?? false,
-          riskAmount: data.riskAmount,
-        }}
-        currency={data.currency}
-        unrealizedPnL={
-          
-          
-          areSnapshotKeysClaimedByCustomFields(
-            plugin?.customFieldsService?.getFields()
-          )
-            ? null
-            : calculateUnrealizedPnL(data)
-        }
-        unrealizedPriceSnapshotTime={data.unrealizedPriceSnapshotTime}
-      />
-    );
+    
+    const showRating =
+      effectiveTradeTemplate?.sections?.rating?.show !== false &&
+      (!shareOptions ||
+        (shareOptions.sections.has('rating') &&
+          data.tradeRating !== undefined));
 
     return (
       <div
@@ -772,17 +836,32 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
         data-file-path={filePath}
       >
         
-        {data.isMissedTrade === true ? (
-          <DisplayPolicyProvider privacyModeOverride={false}>
-            {tradeHeader}
-          </DisplayPolicyProvider>
-        ) : (
-          tradeHeader
-        )}
+        <TradeNoteHeader
+          data={data}
+          filePath={filePath}
+          plugin={plugin}
+          metrics={metrics}
+          shareOptions={shareOptions}
+          reviewed={reviewStatus.reviewed === true}
+          showNavigationSection={showNavigationSection}
+          onEditClick={handleEditClick}
+          onToggleReviewed={
+            showReviewButtonSection
+              ? () => void handleToggleReviewed()
+              : undefined
+          }
+        />
 
         
         <div className="trade-note-content">
           {tradeNoteSectionOrder.map((sectionId) => {
+            if (
+              shareOptions &&
+              (sectionId === 'navigation' ||
+                sectionId === 'reviewButton' ||
+                !shareOptions.sections.has(sectionId))
+            )
+              return null;
             switch (sectionId) {
               case 'navigation':
                 return null;
@@ -794,6 +873,11 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
                     images={data.images}
                     onEditClick={handleEditClick}
                     sourcePath={filePath}
+                    layout={resolveTradeShareImageLayout(
+                      shareOptions?.imageLayout ?? 'current',
+                      effectiveTradeTemplate?.sections?.images?.layout ??
+                        'carousel'
+                    )}
                   />
                 ) : null;
               case 'metrics':
@@ -809,6 +893,16 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
                     formatTime={formatTime}
                     config={effectiveTradeTemplate?.sections?.details}
                     section="metrics"
+                    shareOptions={shareOptions}
+                    rating={
+                      showRating ? (
+                        <TradeRatingCard
+                          data={data}
+                          filePath={filePath}
+                          readOnly={Boolean(shareOptions)}
+                        />
+                      ) : null
+                    }
                   />
                 ) : null;
               case 'thesis':

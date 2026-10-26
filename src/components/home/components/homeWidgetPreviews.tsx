@@ -585,7 +585,7 @@ export const HOME_WIDGET_PREVIEWS: Record<
             <span className="journalit-wpd-muted">$1,480</span>
           </span>
           <span className="journalit-wpd-row-split">
-            <span>{t('home.widget.eval-roi.payouts')}</span>
+            <span>{t('account.prop-challenge.payout.estimated-net')}</span>
             <span>$3,580</span>
           </span>
           <span className="journalit-wpd-row-split journalit-wpd-ledger-net">

@@ -33,7 +33,108 @@ import {
   calculateStopLossRiskAmount,
   canCalculateStopLossRiskAmount,
   resolveEffectiveRiskAmount,
+  resolveTradeStopLossCoverage,
 } from '../../../utils/riskCalculation';
+import {
+  hasStopLossAmount,
+  isPricedStopLoss,
+} from '../../../services/trade/core/StopLossTargets';
+
+type StopLossRowErrors = NonNullable<TradeFormErrors['stopLosses']>[number];
+
+const isPresent = (value: unknown): boolean =>
+  value !== undefined && value !== null;
+
+
+function validateStopLosses(
+  data: Partial<TradeFormData>
+): StopLossRowErrors[] | undefined {
+  const stopLosses = data.stopLosses;
+  if (!stopLosses?.length) return undefined;
+
+  const rowErrors = stopLosses.map((target) => {
+    const targetErrors: StopLossRowErrors = {};
+    const hasPrice = isPresent(target.price);
+
+    if (hasPrice) {
+      if (typeof target.price !== 'number') {
+        targetErrors.price = t('trade.validation.stop-loss-number');
+      } else if (!Number.isFinite(target.price)) {
+        targetErrors.price = t('trade.validation.stop-loss-valid-number');
+      }
+    } else if (isPresent(target.closePercent) || isPresent(target.size)) {
+      targetErrors.price = t('trade.validation.stop-loss-price-required');
+    }
+
+    if (isPresent(target.closePercent)) {
+      if (
+        typeof target.closePercent !== 'number' ||
+        !Number.isFinite(target.closePercent)
+      ) {
+        targetErrors.closePercent = t(
+          'trade.validation.stop-loss-close-percent-number'
+        );
+      } else if (target.closePercent <= 0 || target.closePercent > 100) {
+        targetErrors.closePercent = t(
+          'trade.validation.stop-loss-close-percent-range'
+        );
+      }
+    }
+
+    if (isPresent(target.size)) {
+      if (typeof target.size !== 'number' || !Number.isFinite(target.size)) {
+        targetErrors.size = t('trade.validation.stop-loss-size-number');
+      } else if (target.size <= 0) {
+        targetErrors.size = t('trade.validation.stop-loss-size-positive');
+      }
+    }
+
+    return targetErrors;
+  });
+
+  
+  
+  const blankAmountIndexes = stopLosses.flatMap((target, index) =>
+    isPricedStopLoss(target) && !hasStopLossAmount(target) ? [index] : []
+  );
+  const singleBlankMessage = t(
+    'trade.validation.stop-loss-single-blank-amount'
+  );
+  for (const index of blankAmountIndexes.slice(1)) {
+    rowErrors[index].closePercent ??= singleBlankMessage;
+    rowErrors[index].size ??= singleBlankMessage;
+  }
+
+  return rowErrors.some(
+    (targetErrors) =>
+      targetErrors.price || targetErrors.closePercent || targetErrors.size
+  )
+    ? rowErrors
+    : undefined;
+}
+
+
+function validateStopLossTotal(
+  data: Partial<TradeFormData>
+): string | undefined {
+  const stopLosses = data.stopLosses;
+  if (!stopLosses?.length) return undefined;
+
+  const coverage = resolveTradeStopLossCoverage(data);
+  const percentTotal = stopLosses.reduce(
+    (total, target) =>
+      isPricedStopLoss(target) &&
+      typeof target.closePercent === 'number' &&
+      Number.isFinite(target.closePercent)
+        ? total + target.closePercent
+        : total,
+    0
+  );
+  return coverage.status === 'over' ||
+    (coverage.status === 'no-position-size' && percentTotal > 100)
+    ? t('trade.validation.stop-loss-total-over-position')
+    : undefined;
+}
 
 function addEntriesExitsError(errors: TradeFormErrors, message: string): void {
   errors.entriesExits = errors.entriesExits
@@ -661,13 +762,20 @@ export const validateTradeForm = (
     }
   }
 
+  const stopLossErrors = validateStopLosses(data);
+  if (stopLossErrors) {
+    errors.stopLosses = stopLossErrors;
+  }
   
-  if (data.stopLoss !== undefined && data.stopLoss !== null) {
-    if (typeof data.stopLoss !== 'number') {
-      errors.stopLoss = t('trade.validation.stop-loss-number');
-    } else if (!Number.isFinite(data.stopLoss)) {
-      errors.stopLoss = t('trade.validation.stop-loss-valid-number');
-    }
+  
+  const hasStopLossRowAmountError = stopLossErrors?.some(
+    (targetErrors) => targetErrors.closePercent || targetErrors.size
+  );
+  const stopLossTotalError = hasStopLossRowAmountError
+    ? undefined
+    : validateStopLossTotal(data);
+  if (stopLossTotalError) {
+    errors.stopLossesTotal = stopLossTotalError;
   }
 
   
@@ -740,47 +848,50 @@ export const validateTradeForm = (
 
       return targetErrors;
     });
-    const totalClosePercent = data.takeProfits.reduce(
-      (total, target) => total + (target.closePercent || 0),
-      0
+    
+    
+    const hasRowAmountError = takeProfitErrors.some(
+      (targetErrors) => targetErrors.closePercent || targetErrors.size
     );
-
-    if (totalClosePercent > 100) {
-      const firstTargetErrors = takeProfitErrors[0] || {};
-      firstTargetErrors.closePercent = t(
-        'trade.validation.take-profit-total-close-percent-range'
-      );
-      takeProfitErrors[0] = firstTargetErrors;
-    }
-
-    const totalPositionSize =
-      typeof data.positionSize === 'number' &&
-      Number.isFinite(data.positionSize) &&
-      data.positionSize > 0
-        ? data.positionSize
-        : undefined;
-    const hasSizeTarget = data.takeProfits.some(
-      (target) =>
-        typeof target.size === 'number' && Number.isFinite(target.size)
-    );
-
-    
-    
-    
-    
-    if (hasSizeTarget && totalPositionSize !== undefined) {
-      const totalCloseSize = data.takeProfits.reduce(
-        (total, target) =>
-          total + resolveTakeProfitCloseSize(target, totalPositionSize),
+    if (!hasRowAmountError) {
+      const totalClosePercent = data.takeProfits.reduce(
+        (total, target) => total + (target.closePercent || 0),
         0
       );
 
-      if (totalCloseSize - totalPositionSize > TAKE_PROFIT_SIZE_TOLERANCE) {
-        const firstTargetErrors = takeProfitErrors[0] || {};
-        firstTargetErrors.size = t(
-          'trade.validation.take-profit-total-size-range'
+      if (totalClosePercent > 100) {
+        errors.takeProfitsTotal = t(
+          'trade.validation.take-profit-total-close-percent-range'
         );
-        takeProfitErrors[0] = firstTargetErrors;
+      }
+
+      const totalPositionSize =
+        typeof data.positionSize === 'number' &&
+        Number.isFinite(data.positionSize) &&
+        data.positionSize > 0
+          ? data.positionSize
+          : undefined;
+      const hasSizeTarget = data.takeProfits.some(
+        (target) =>
+          typeof target.size === 'number' && Number.isFinite(target.size)
+      );
+
+      
+      
+      
+      
+      if (hasSizeTarget && totalPositionSize !== undefined) {
+        const totalCloseSize = data.takeProfits.reduce(
+          (total, target) =>
+            total + resolveTakeProfitCloseSize(target, totalPositionSize),
+          0
+        );
+
+        if (totalCloseSize - totalPositionSize > TAKE_PROFIT_SIZE_TOLERANCE) {
+          errors.takeProfitsTotal = t(
+            'trade.validation.take-profit-total-size-range'
+          );
+        }
       }
     }
 

@@ -7,12 +7,14 @@ import { showTemplateSwitchWarning } from '../../components/modals/TemplateSwitc
 import { ReviewTemplateService } from './ReviewTemplateService';
 import { generateUUID } from '../../utils/uuid';
 import { safeString } from '../../utils/safeString';
+import { parseFrontmatterFromContentOrThrow } from '../../utils/dataRefresh';
 import type { JournalitSettings } from '../../settings/types';
 import {
   readFileContentForMutation,
   replaceFileContent,
 } from '../../utils/fileMutation';
 import {
+  serializeTradeReviewNotesSections,
   serializeTradeReviewQuestions,
   TRADE_REVIEW_QUESTION_CONFIG_KEY_LIST,
 } from '../../components/reviewV2/widgets/tradeReviewConfig';
@@ -53,6 +55,9 @@ function formatWidgetConfigValue(
   if (value === undefined || value === null) return undefined;
   if (TRADE_REVIEW_QUESTION_CONFIG_KEYS.has(key)) {
     return serializeTradeReviewQuestions(value);
+  }
+  if (key === 'notesSections') {
+    return serializeTradeReviewNotesSections(value);
   }
   if (Array.isArray(value)) {
     return value
@@ -265,11 +270,9 @@ export class TemplateTransformationService {
   }
 
   private getSourceTemplate(content: string): ReviewTemplate | undefined {
-    const templateIdMatch = content.match(
-      /^---\n[\s\S]*?^templateId:\s*([^\n]+)$/m
-    );
-    const templateId = templateIdMatch?.[1]?.trim();
-    if (!templateId) {
+    if (!/^---\r?\n/.test(content)) return undefined;
+    const { templateId } = parseFrontmatterFromContentOrThrow(content);
+    if (typeof templateId !== 'string' || !templateId) {
       return undefined;
     }
 
@@ -713,11 +716,7 @@ export class TemplateTransformationService {
       return `${key}: `;
     }
     if (typeof value === 'string') {
-      
-      if (value.includes(':') || value.includes('#') || value.includes('\n')) {
-        return `${key}: "${value.replace(/"/g, '\\"')}"`;
-      }
-      return `${key}: ${safeString(value)}`;
+      return `${key}: ${JSON.stringify(value)}`;
     }
     if (typeof value === 'number' || typeof value === 'boolean') {
       return `${key}: ${safeString(value)}`;

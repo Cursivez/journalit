@@ -5,7 +5,6 @@ import {
   TradeLogColumnId,
   CustomTradeLogColumnId,
   TradeLogSettings,
-  DEFAULT_SETTINGS,
 } from '../../settings/types';
 import {
   CustomFieldDefinition,
@@ -13,6 +12,58 @@ import {
 } from '../../types/customFields';
 
 const CUSTOM_TRADE_LOG_COLUMN_PREFIX = 'cf:';
+
+
+const DEFAULT_TRADE_LOG_SETTINGS: TradeLogSettings = {
+  expandedMode: false,
+  columnVisibility: {
+    select: false,
+    image: true,
+    account: true,
+    ticker: true,
+    status: true,
+    pnl: true,
+    direction: true,
+    setups: true,
+    mistakes: true,
+    tags: true,
+    date: true,
+    reviewed: true,
+    duration: false,
+    positionSize: false,
+    priceMove: false,
+    expirationDate: false,
+    daysToExpiry: false,
+    thesis: false,
+    mtComment: false,
+  },
+  columnOrder: [
+    'select',
+    'image',
+    'account',
+    'ticker',
+    'status',
+    'pnl',
+    'direction',
+    'setups',
+    'mistakes',
+    'tags',
+    'date',
+    'reviewed',
+    'tradeRating',
+    'duration',
+    'positionSize',
+    'entryPrice',
+    'exitPrice',
+    'priceMove',
+    'stopLoss',
+    'expirationDate',
+    'daysToExpiry',
+    'thesis',
+    'mtComment',
+  ],
+  columnWidths: {},
+};
 
 export type ColumnType =
   | 'text'
@@ -379,6 +430,14 @@ const COLUMN_DEFINITIONS: ColumnDefinition[] = [
     category: 'review',
   },
   {
+    id: 'tradeRating',
+    width: 84,
+    sortable: true,
+    defaultVisible: false,
+    type: 'number',
+    category: 'review',
+  },
+  {
     id: 'thesis',
     width: 0,
     sortable: false,
@@ -466,12 +525,11 @@ export function buildTradeLogColumnDefinitions(
   ];
 }
 
-export function buildDefaultTradeLogSettings(
+function buildDefaultTradeLogSettings(
   customFields: CustomFieldDefinition[] = []
 ): TradeLogSettings {
   const allColumns = buildTradeLogColumnDefinitions(customFields);
-  const defaultTradeLogSettings = DEFAULT_SETTINGS.tradeLog!;
-  const defaultOrder = defaultTradeLogSettings.columnOrder;
+  const defaultOrder = DEFAULT_TRADE_LOG_SETTINGS.columnOrder;
   const allColumnIds: TradeLogColumnId[] = allColumns.map(
     (column) => column.id
   );
@@ -486,15 +544,15 @@ export function buildDefaultTradeLogSettings(
   const columnVisibility: Partial<Record<TradeLogColumnId, boolean>> = {};
   for (const column of allColumns) {
     columnVisibility[column.id] =
-      defaultTradeLogSettings.columnVisibility[column.id] ??
+      DEFAULT_TRADE_LOG_SETTINGS.columnVisibility[column.id] ??
       column.defaultVisible;
   }
 
   return {
     columnVisibility,
     columnOrder,
-    columnWidths: { ...defaultTradeLogSettings.columnWidths },
-    expandedMode: defaultTradeLogSettings.expandedMode ?? false,
+    columnWidths: { ...DEFAULT_TRADE_LOG_SETTINGS.columnWidths },
+    expandedMode: DEFAULT_TRADE_LOG_SETTINGS.expandedMode ?? false,
   };
 }
 

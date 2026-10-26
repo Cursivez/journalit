@@ -1,6 +1,6 @@
 
 
-import { App, Modal } from 'obsidian';
+import { App } from 'obsidian';
 import React, { useState } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { t } from '../../../../lang/helpers';
@@ -10,6 +10,7 @@ import {
   useDateDraftGate,
 } from '../../../core/DateDraftGate';
 import { Button } from '../../../ui/Button';
+import { JournalitModal } from '../../../modals/JournalitModal';
 
 interface TransitionModalOptions {
   title: string;
@@ -28,7 +29,7 @@ function parseInputDate(value: Date | string | undefined): Date | undefined {
 }
 
 
-export const PropChallengeTransitionModalContent: React.FC<{
+const PropChallengeTransitionModalContent: React.FC<{
   context?: string;
   targetReachedAt?: Date;
   startedAt?: Date;
@@ -110,7 +111,7 @@ export const PropChallengeTransitionModalContent: React.FC<{
   );
 };
 
-class PropChallengeTransitionModal extends Modal {
+class PropChallengeTransitionModal extends JournalitModal {
   private root: Root | null = null;
   private settled = false;
 

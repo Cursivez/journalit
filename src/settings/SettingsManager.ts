@@ -1,5 +1,13 @@
 import { logger } from '../utils/logger';
-import { normalizePersonalProfiles } from '../services/propChallenge/PersonalPropFirmProfiles';
+import { normalizeExpectancyBenchmark } from './expectancyBenchmark';
+import {
+  normalizeStoredPersonalProfiles,
+  normalizeStoredPropChallenge,
+  protectPersonalProfilesForStorage,
+  protectPropChallengeForStorage,
+  recoverProtectedPersonalProfiles,
+  recoverProtectedPropChallenge,
+} from '../services/propChallenge/PropChallengeStorageCompatibility';
 
 
 import { App, Notice, PluginManifest } from 'obsidian';
@@ -39,7 +47,6 @@ import type {
 import { getDefaultOutcomeDescription } from '../components/sessionMode/tradeGateUtils';
 import { normalizeSessionModePhaseLayouts } from '../utils/sessionModeLayout';
 import {
-  normalizePropChallengeConfig,
   normalizePropFirmIndexCache,
   normalizePropFirmProfileCatalogCache,
 } from '../services/propChallenge/normalization';
@@ -48,6 +55,10 @@ import { normalizeGalleryFolders } from './settingsNormalization';
 import { normalizeHomeBackgroundImagePath } from '../components/home/homeBackgroundUtils';
 import { normalizeHomeWidgetOpacity } from './homeWidgetOpacity';
 import { migrateLegacyMetaTraderBrokerSettings } from '../services/tradeImport/brokerIds';
+import {
+  isTradeImportDestination,
+  type TradeImportDestination,
+} from '../services/tradeImport/types';
 import { migrateSettingsSchema } from './settingsSchema';
 import type { LocalCSVTemplate } from '../services/csv/types';
 import type {
@@ -68,15 +79,69 @@ import {
   ensureDemoStateDirectory,
   getDemoStateDirectoryPath,
 } from '../demo/DemoManifest';
+import { sanitizeAccountAgentIds } from '../services/agent/identity/accountIdentityStore';
+import { isCanonicalNonNilUuid } from '../utils/uuid';
 
 
 const BACKUP_FILENAME = 'data.backup.json';
 const SAMPLE_SETTINGS_FILENAME = 'settings.json';
 
+function settingsForStorage(settings: JournalitSettings): unknown {
+  const account = settings.account;
+  const accountMetadata = account?.accountMetadata;
+  const protectedAccountMetadata = accountMetadata
+    ? Object.fromEntries(
+        Object.entries(accountMetadata).map(([accountName, metadata]) => [
+          accountName,
+          metadata.propChallenge
+            ? {
+                ...metadata,
+                propChallenge: protectPropChallengeForStorage(
+                  metadata.propChallenge
+                ),
+              }
+            : metadata,
+        ])
+      )
+    : accountMetadata;
+  const personalProfiles = settings.personalPropFirmProfiles;
+  return {
+    ...settings,
+    ...(account
+      ? {
+          account: {
+            ...account,
+            accountMetadata: protectedAccountMetadata,
+          },
+        }
+      : {}),
+    ...(personalProfiles
+      ? {
+          personalPropFirmProfiles:
+            protectPersonalProfilesForStorage(personalProfiles),
+        }
+      : {}),
+  };
+}
+
 
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
+}
+
+
+function withoutPlaintextCredentials(
+  data: Record<string, unknown>
+): Record<string, unknown> {
+  if (!isRecord(data.backendIntegration)) return data;
+  const {
+    authToken: _authToken,
+    refreshToken: _refreshToken,
+    ftpPassword: _ftpPassword,
+    ...backendIntegration
+  } = data.backendIntegration;
+  return { ...data, backendIntegration };
 }
 
 function normalizeEconomicCalendarSettings(
@@ -134,6 +199,71 @@ function normalizePerformanceBreakdownViewMode(
   return value === 'bestAndWorst' || value === 'best' || value === 'worst'
     ? value
     : fallback;
+}
+
+type AgentAccessSettings = JournalitSettings['agentAccess'];
+
+function hasExactKeys(
+  value: unknown,
+  expectedKeys: readonly string[]
+): value is Record<string, unknown> {
+  if (!isRecord(value)) return false;
+
+  const keys = Object.keys(value);
+  return (
+    keys.length === expectedKeys.length &&
+    keys.every((key) => expectedKeys.includes(key))
+  );
+}
+
+function normalizeAgentInstallation(
+  value: unknown
+): AgentAccessSettings['installation'] {
+  if (
+    !hasExactKeys(value, ['deviceId', 'vaultId', 'installationId']) ||
+    !isCanonicalNonNilUuid(value.deviceId) ||
+    !isCanonicalNonNilUuid(value.vaultId) ||
+    !isCanonicalNonNilUuid(value.installationId)
+  ) {
+    return undefined;
+  }
+
+  return {
+    deviceId: value.deviceId,
+    vaultId: value.vaultId,
+    installationId: value.installationId,
+  };
+}
+
+function normalizeAgentAccessSettings(value: unknown): {
+  settings: AgentAccessSettings;
+  isExact: boolean;
+} {
+  const enabled = isRecord(value) && value.enabled === true;
+  const fullAccess = isRecord(value) && value.fullAccess === true;
+  const rawInstallation = isRecord(value) ? value.installation : undefined;
+  const installation = normalizeAgentInstallation(rawInstallation);
+
+  const settings: AgentAccessSettings = installation
+    ? {
+        enabled,
+        fullAccess,
+        installation,
+      }
+    : { enabled, fullAccess };
+
+  const expectedKeys = installation
+    ? ['enabled', 'fullAccess', 'installation']
+    : ['enabled', 'fullAccess'];
+
+  return {
+    settings,
+    isExact:
+      hasExactKeys(value, expectedKeys) &&
+      value.enabled === enabled &&
+      value.fullAccess === fullAccess &&
+      (installation !== undefined || rawInstallation === undefined),
+  };
 }
 
 function isCSVTemplateAssetType(
@@ -258,6 +388,27 @@ function normalizeLoadedTradeImportSettings(
     }
     if (JSON.stringify(lastAssetType) !== JSON.stringify(rawLastAssetType)) {
       settings.csvLastAssetType = lastAssetType;
+      changed = true;
+    }
+  }
+
+  const rawImportDestinations = rawRecord.csvImportDestinations;
+  if (rawImportDestinations !== undefined) {
+    const importDestinations: Record<string, TradeImportDestination> = {};
+    if (isRecord(rawImportDestinations)) {
+      for (const [broker, destination] of Object.entries(
+        rawImportDestinations
+      )) {
+        if (isTradeImportDestination(destination)) {
+          importDestinations[broker] = destination;
+        }
+      }
+    }
+    if (
+      JSON.stringify(importDestinations) !==
+      JSON.stringify(rawImportDestinations)
+    ) {
+      settings.csvImportDestinations = importDestinations;
       changed = true;
     }
   }
@@ -915,18 +1066,6 @@ export class SettingsManager {
         logger.debug(
           'SettingsManager: Successfully recovered settings from backup'
         );
-
-        
-        
-        try {
-          await this.plugin.saveData(data);
-          logger.debug('SettingsManager: Restored backup as main settings');
-        } catch (error) {
-          console.error(
-            'SettingsManager: Failed to restore backup as main settings:',
-            error
-          );
-        }
       } else {
         console.warn('SettingsManager: No valid backup found, using defaults');
       }
@@ -939,12 +1078,17 @@ export class SettingsManager {
     );
     const migratedSettings = this.migrateLoadedSettings(settings, data ?? {});
 
-    if (migratedSettings) {
+    if (recoveredFromBackup || migratedSettings) {
       try {
-        await this.plugin.saveData(settings);
+        await this.plugin.saveData(settingsForStorage(settings));
+        if (recoveredFromBackup) {
+          logger.debug('SettingsManager: Restored backup as main settings');
+        }
       } catch (error) {
         console.error(
-          'SettingsManager: Failed to persist migrated settings:',
+          recoveredFromBackup
+            ? 'SettingsManager: Failed to restore backup as main settings:'
+            : 'SettingsManager: Failed to persist migrated settings:',
           error
         );
       }
@@ -1090,6 +1234,44 @@ export class SettingsManager {
       migrated = true;
     }
 
+    if (Object.prototype.hasOwnProperty.call(rawRecord, 'agentAccess')) {
+      const normalizedAgentAccess = normalizeAgentAccessSettings(
+        rawRecord.agentAccess
+      );
+      if (!normalizedAgentAccess.isExact) {
+        migrated = true;
+      }
+    }
+
+    const rawAccountSettings = isRecord(rawRecord.account)
+      ? rawRecord.account
+      : {};
+    if (
+      Object.prototype.hasOwnProperty.call(
+        rawAccountSettings,
+        'agentAccountIds'
+      )
+    ) {
+      const sanitizedAccountIds = sanitizeAccountAgentIds(
+        rawAccountSettings.agentAccountIds
+      );
+      if (settings.account) {
+        settings.account.agentAccountIds = sanitizedAccountIds;
+      }
+
+      const rawAccountIds = rawAccountSettings.agentAccountIds;
+      if (
+        !isRecord(rawAccountIds) ||
+        Object.keys(rawAccountIds).length !==
+          Object.keys(sanitizedAccountIds).length ||
+        Object.entries(sanitizedAccountIds).some(
+          ([key, id]) => rawAccountIds[key] !== id
+        )
+      ) {
+        migrated = true;
+      }
+    }
+
     return migrated;
   }
 
@@ -1155,12 +1337,12 @@ export class SettingsManager {
 
         
         if (!settings.weekly) {
-          settings.weekly = DEFAULT_SETTINGS.weekly;
+          settings.weekly = structuredClone(DEFAULT_SETTINGS.weekly);
         }
 
         
         if (!settings.dashboard) {
-          settings.dashboard = DEFAULT_SETTINGS.dashboard!;
+          settings.dashboard = structuredClone(DEFAULT_SETTINGS.dashboard!);
         }
 
         
@@ -1168,26 +1350,34 @@ export class SettingsManager {
           !settings.dashboard.layouts ||
           Object.keys(settings.dashboard.layouts).length === 0
         ) {
-          settings.dashboard.layouts = DEFAULT_SETTINGS.dashboard!.layouts;
+          settings.dashboard.layouts = structuredClone(
+            DEFAULT_SETTINGS.dashboard!.layouts
+          );
         }
 
         
         if (!settings.dashboard.layouts['Default']) {
-          settings.dashboard.layouts['Default'] =
-            DEFAULT_SETTINGS.dashboard!.layouts['Default'];
+          settings.dashboard.layouts['Default'] = structuredClone(
+            DEFAULT_SETTINGS.dashboard!.layouts['Default']
+          );
         }
 
         
         if (
           !settings.dashboard.activeLayout ||
-          !settings.dashboard.layouts[settings.dashboard.activeLayout]
+          !Object.prototype.hasOwnProperty.call(
+            settings.dashboard.layouts,
+            settings.dashboard.activeLayout
+          )
         ) {
           settings.dashboard.activeLayout = 'Default';
         }
 
         
         if (!settings.backendIntegration) {
-          settings.backendIntegration = DEFAULT_SETTINGS.backendIntegration!;
+          settings.backendIntegration = structuredClone(
+            DEFAULT_SETTINGS.backendIntegration!
+          );
         }
 
         
@@ -1195,7 +1385,7 @@ export class SettingsManager {
         await this.createBackup();
 
         
-        await this.plugin.saveData(settings);
+        await this.plugin.saveData(settingsForStorage(settings));
         this.realSettings = settings;
         this.lastPersistedRealSettingsJson = JSON.stringify(settings);
 
@@ -1427,6 +1617,13 @@ export class SettingsManager {
       }
     }
 
+    const normalizedAgentAccess = normalizeAgentAccessSettings(
+      settings.agentAccess
+    );
+    if (!normalizedAgentAccess.isExact) {
+      errors.push('Agent access settings are malformed');
+    }
+
     return {
       isValid: errors.length === 0,
       errors,
@@ -1498,7 +1695,7 @@ export class SettingsManager {
         );
       }
       await this.createBackup();
-      await this.plugin.saveData(nextRealSettings);
+      await this.plugin.saveData(settingsForStorage(nextRealSettings));
       this.lastPersistedRealSettingsJson = realSettingsJson;
     }
 
@@ -1523,7 +1720,7 @@ export class SettingsManager {
         const backupPath = this.getBackupPath();
         await this.plugin.app.vault.adapter.write(
           backupPath,
-          JSON.stringify(current, null, 2)
+          JSON.stringify(withoutPlaintextCredentials(current), null, 2)
         );
         logger.debug('SettingsManager: Backup created successfully');
       }
@@ -1556,10 +1753,18 @@ export class SettingsManager {
 
   
   private deepMergeSettings(
-    defaults: JournalitSettings,
+    sharedDefaults: JournalitSettings,
     saved: Partial<JournalitSettings> | null | undefined
   ): JournalitSettings {
-    const merged = { ...defaults };
+    
+    
+    
+    
+    const defaults = structuredClone(sharedDefaults);
+    const merged: JournalitSettings = {
+      ...defaults,
+      agentAccess: normalizeAgentAccessSettings(defaults.agentAccess).settings,
+    };
 
     
     if (!saved) return merged;
@@ -1569,11 +1774,26 @@ export class SettingsManager {
     
     const existingInstall = Object.keys(saved).length > 0;
 
-    if (saved.personalPropFirmProfiles !== undefined) {
+    let recoveredPersonalProfiles = false;
+    const quarantinedPersonalProfiles = recoverProtectedPersonalProfiles(
+      saved.personalPropFirmProfilesQuarantine
+    );
+    const protectedPersonalProfiles =
+      quarantinedPersonalProfiles !== undefined &&
+      (saved.personalPropFirmProfiles === undefined ||
+        (Array.isArray(saved.personalPropFirmProfiles) &&
+          saved.personalPropFirmProfiles.length === 0))
+        ? quarantinedPersonalProfiles
+        : undefined;
+    if (
+      saved.personalPropFirmProfiles !== undefined ||
+      protectedPersonalProfiles !== undefined
+    ) {
       try {
-        merged.personalPropFirmProfiles = normalizePersonalProfiles(
-          saved.personalPropFirmProfiles
-        );
+        merged.personalPropFirmProfiles =
+          protectedPersonalProfiles ??
+          normalizeStoredPersonalProfiles(saved.personalPropFirmProfiles);
+        recoveredPersonalProfiles = protectedPersonalProfiles !== undefined;
       } catch (error) {
         
         
@@ -1753,6 +1973,9 @@ export class SettingsManager {
           'Default',
 
         
+        expectancyBenchmarkR: normalizeExpectancyBenchmark(
+          saved.dashboard.expectancyBenchmarkR
+        ),
         weekdayPerformanceMetric:
           saved.dashboard.weekdayPerformanceMetric ||
           defaults.dashboard?.weekdayPerformanceMetric ||
@@ -1781,17 +2004,16 @@ export class SettingsManager {
           saved.dashboard.tagPerformanceViewMode,
           defaults.dashboard?.tagPerformanceViewMode || 'bestAndWorst'
         ),
+        ratingPerformanceMetric: normalizePerformanceBreakdownMetric(
+          saved.dashboard.ratingPerformanceMetric,
+          defaults.dashboard?.ratingPerformanceMetric || 'net'
+        ),
 
         
         defaultFilters: {
           ...(defaults.dashboard?.defaultFilters || {}),
           ...(saved.dashboard.defaultFilters || {}),
         },
-
-        
-        lastUsedFilters:
-          saved.dashboard.lastUsedFilters ||
-          defaults.dashboard?.lastUsedFilters,
       };
 
       
@@ -1808,7 +2030,10 @@ export class SettingsManager {
       if (
         merged.dashboard &&
         merged.dashboard.activeLayout &&
-        !merged.dashboard.layouts[merged.dashboard.activeLayout]
+        !Object.prototype.hasOwnProperty.call(
+          merged.dashboard.layouts,
+          merged.dashboard.activeLayout
+        )
       ) {
         console.warn(
           'Active layout not found in saved layouts, resetting to Default'
@@ -1828,11 +2053,20 @@ export class SettingsManager {
         )) {
           if (!isRecord(rawMetadata)) continue;
           const metadata = { ...rawMetadata };
-          const propChallenge = normalizePropChallengeConfig(
-            rawMetadata.propChallenge
-          );
+          const recoveredPropChallenge =
+            rawMetadata.propChallenge === undefined
+              ? recoverProtectedPropChallenge(
+                  rawMetadata.propChallengeQuarantine
+                )
+              : undefined;
+          const propChallenge =
+            recoveredPropChallenge ??
+            normalizeStoredPropChallenge(rawMetadata.propChallenge);
           if (propChallenge) {
             metadata.propChallenge = propChallenge;
+            if (recoveredPropChallenge) {
+              delete metadata.propChallengeQuarantine;
+            }
           } else {
             delete metadata.propChallenge;
             
@@ -1857,6 +2091,10 @@ export class SettingsManager {
           saved.account.includeWithdrawalsFromExcluded ||
           defaults.account?.includeWithdrawalsFromExcluded,
         accountMetadata,
+        agentAccountIds:
+          saved.account.agentAccountIds !== undefined
+            ? { ...saved.account.agentAccountIds }
+            : {},
         challengeStageAccountTypes: normalizeChallengeStageAccountTypes(
           saved.account.challengeStageAccountTypes ??
             defaults.account?.challengeStageAccountTypes
@@ -1886,6 +2124,12 @@ export class SettingsManager {
       } else {
         delete merged.backendIntegration.propFirmIndexCache;
       }
+    }
+
+    if (saved.agentAccess !== undefined) {
+      merged.agentAccess = normalizeAgentAccessSettings(
+        saved.agentAccess
+      ).settings;
     }
 
     
@@ -2005,7 +2249,6 @@ export class SettingsManager {
           ...(defaults.home?.layouts || {}),
           ...(saved.home.layouts || {}),
         },
-        recentItems: saved.home.recentItems || defaults.home?.recentItems || [],
         quickLinks: mergedQuickLinks,
         entityShortcuts: getEntityShortcutsSetting(saved.home.entityShortcuts),
       };
@@ -2062,24 +2305,10 @@ export class SettingsManager {
       ...(defaults.csvLastAssetType || {}),
       ...(saved.csvLastAssetType || {}),
     };
-
-    
-    if (saved.tradeLog) {
-      merged.tradeLog = {
-        ...defaults.tradeLog,
-        ...saved.tradeLog,
-      };
-    }
-
-    
-    if (saved.viewFilters) {
-      merged.viewFilters = {
-        dashboard:
-          saved.viewFilters.dashboard || defaults.viewFilters?.dashboard,
-        tradelog: saved.viewFilters.tradelog || defaults.viewFilters?.tradelog,
-        reviews: saved.viewFilters.reviews || defaults.viewFilters?.reviews,
-      };
-    }
+    merged.csvImportDestinations = {
+      ...(defaults.csvImportDestinations || {}),
+      ...(saved.csvImportDestinations || {}),
+    };
 
     
     if (saved.symbolMappings) {
@@ -2102,6 +2331,9 @@ export class SettingsManager {
       ) {
         merged[key] = saved[key];
       }
+    }
+    if (recoveredPersonalProfiles) {
+      delete merged.personalPropFirmProfilesQuarantine;
     }
 
     return merged;

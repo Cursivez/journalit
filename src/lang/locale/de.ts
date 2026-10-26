@@ -3,12 +3,35 @@
 import type { Lang } from './en';
 
 const de: Lang = {
+  'tradelog.export.button': 'Exportieren',
+  'tradelog.export.title': 'Trades exportieren',
+  'tradelog.export.format': 'Format',
+  'tradelog.export.scope':
+    '{count} passende Trades · {columns} sichtbare Spalten',
+  'tradelog.export.raw':
+    'Unmaskierte Werte, auch im Datenschutzmodus. Gewinn/Verlust als Geldbetrag, nicht R; Bilder nur als Pfade.',
+  'tradelog.export.mobile':
+    'Auf Mobilgeräten wird die Datei im Hauptverzeichnis des Vaults gespeichert.',
+  'tradelog.export.saved': 'Export im Vault gespeichert: {filename}',
+  'tradelog.export.failed':
+    'Trades konnten nicht exportiert werden. Bitte erneut versuchen.',
+  'tradelog.export.empty':
+    'Keine passenden Trades oder sichtbaren Datenspalten zum Exportieren.',
+  'tradelog.export.guide':
+    'Mit Exportieren speichern Sie alle passenden Trades als CSV, JSON oder Markdown mit Ihren sichtbaren Spalten und deren Reihenfolge. Dateien enthalten unmaskierte Daten, auch im Datenschutzmodus.',
+  'expectancy-gap.benchmark-help':
+    'Modell-/Backtest-Durchschnitt. Filterübergreifend; zum Löschen leer lassen.',
+  'expectancy-gap.formula': 'Lücke = realisiert − erwartet',
+  'expectancy-gap.realized-help':
+    'Realisiert = durchschnittliches Netto-R geschlossener Trades mit nutzbaren Risikodaten.',
+  'expectancy-gap.interpretation':
+    'Negativ = unter dem Modell; positiv = darüber. Der Grund bleibt offen.',
   'trade-import.recovery.bybit-header.columns':
     'Fehlende erforderliche Spalten: {columns}.',
   'trade-import.recovery.bybit-header.title':
     'Bybit-Kopfzeile oder Export prüfen',
   'trade-import.recovery.bybit-header.message':
-    'Die gewählte Kopfzeile passt nicht zum Bybit-Handelsverlauf. Prüfe die Kopfzeile oder exportiere Ausführungen mit Ausführungspreisen und Mengen, nicht nur Orderpreisen. Um ein anderes Format zuzuordnen, wähle ausdrücklich {manualSource}.',
+    'Die gewählte Kopfzeile passt nicht zum Bybit-Handelsverlauf. Prüfen Sie die Kopfzeile oder exportieren Sie Ausführungen mit Ausführungspreisen und Mengen, nicht nur Orderpreisen. Um ein anderes Format zuzuordnen, wählen Sie ausdrücklich {manualSource}.',
   'update.installed.title': 'Was ist neu?',
   'settings.general.available-update-notifications':
     'Update-Erinnerungen anzeigen',
@@ -19,9 +42,30 @@ const de: Lang = {
   'account.edit.error.inactive-phase':
     'Der Live-Kontostand kann nur in einer aktiven Phase geändert werden.',
   'account.edit.error.phase-changed':
-    'Die Kontodaten wurden während der Bearbeitung geändert. Öffne den Kontoeditor vor dem Speichern erneut.',
+    'Die Kontodaten wurden während der Bearbeitung geändert. Öffnen Sie den Kontoeditor vor dem Speichern erneut.',
   'account.profiles.profitable-days-conflict':
-    'Behalte deine aktuelle Auszahlungsrichtlinie bei oder ändere die Anforderung an profitable Tage, bevor du diese Bedingungen anwendest.',
+    'Behalten Sie Ihre aktuelle Auszahlungsrichtlinie bei oder ändern Sie die Anforderung an profitable Tage, bevor Sie diese Bedingungen anwenden.',
+  'account.prop-challenge.rule.manual_review':
+    'Firmenprüfung / nicht unterstützte Bedingungen',
+  'account.prop-challenge.summary.rule.manual_review': 'Firmenprüfung',
+  'account.prop-challenge.ledger.state.needs-review':
+    'Firmenprüfung erforderlich',
+  'account.prop-challenge.payout.estimated-net':
+    'Geschätzter Nettoauszahlungsbetrag',
+  'account.prop-challenge.payout.gross-withdrawals': 'Brutto-Kontoauszahlungen',
+  'account.prop-challenge.payout.lifetime-gross':
+    'Aktueller Phasengewinn + alle bisherigen Bruttoauszahlungen der Phase (nicht nur der Auszahlungszyklus).',
+  'account.prop-challenge.payout.unresolved-cap': 'Obergrenze mit Firma klären',
+  'account.prop-challenge.payout.marginal-split':
+    'Aufteilung nach Gewinnanteil',
+  'account.prop-challenge.payout-rules.profit-split.above':
+    'Trader-Anteil oberhalb der Schwelle (%)',
+  'account.prop-challenge.payout.not-calculated': 'Nicht berechnet',
+  'account.prop-challenge.payout.manual-only':
+    'Für diese Bedingungen sind keine Auszahlungsberechnungen verfügbar. Tatsächliche Auszahlungen können Sie weiterhin erfassen.',
+  'account.prop-challenge.payout.raise-floor':
+    'Verlustgrenze mindestens auf Startsaldo anheben',
+  'account.prop-challenge.rule.comparison': 'Vergleich',
   'templateEditor.widget.session-log.hide-empty-outside':
     'Protokoll außerhalb der Sitzung ausblenden, wenn es leer ist',
   'account.profiles.correction-title': 'Katalogkorrektur',
@@ -31,22 +75,25 @@ const de: Lang = {
   'account.profiles.correction-before': 'Vorher',
   'account.profiles.correction-after': 'Nachher',
   'account.profiles.correction-stale':
-    'Der Kontoverlauf hat sich geändert. Öffne die Prüfung erneut.',
-  'account.profiles.correction-result': 'Prüfung harter Regeln',
-  'account.profiles.no-hard-breach': 'Kein harter Regelverstoß erkannt',
+    'Der Kontoverlauf hat sich geändert. Öffnen Sie die Prüfung erneut.',
+  'account.profiles.correction-effect': 'Auswirkung auf dieses Konto',
+  'account.profiles.not-failed': 'Kein Regelverstoß',
   'account.profiles.correction-consent': 'Verlauf neu berechnen',
+  'account.profiles.correction-consent-help':
+    'Ersetzt die Regeln dieser Phase für den betroffenen Verlauf und prüft ihr Ergebnis erneut. Trades und Zahlungen bleiben unverändert.',
+  'account.profiles.correction-period-open': 'Ab {date}',
   'account.profiles.correction-details': 'Einzelheiten',
   'account.profiles.correction-apply': 'Korrektur anwenden',
   'account.profiles.purchase-date': 'Ursprüngliches Kaufdatum',
   'account.profiles.save-purchase': 'Kaufdatum speichern',
   'account.profiles.purchase-needed':
-    'Gib das ursprüngliche Kaufdatum ein, um diese Bedingungen zu prüfen.',
+    'Geben Sie das ursprüngliche Kaufdatum ein, um diese Bedingungen zu prüfen.',
   'account.profiles.purchase-excluded':
     'Für diesen Kauf bleiben die bisherigen Bedingungen bestehen.',
   'account.profiles.purchase-uncertain':
     'Die Firma muss die Anwendbarkeit bestätigen. Die Regeln bleiben unverändert.',
   'account.profiles.initial-terms':
-    'Diese Bedingungen gelten ab Kauf oder vor dieser Phase. Prüfe die Ersteinrichtung separat; der Verlauf bleibt unverändert.',
+    'Diese Bedingungen gelten ab Kauf oder vor dieser Phase. Prüfen Sie die Ersteinrichtung separat; der Verlauf bleibt unverändert.',
   'account.profiles.announcement': 'Mitteilung der Firma',
   'account.profiles.firm-effective':
     'Von der Firma bestätigtes Gültigkeitsdatum',
@@ -58,21 +105,14 @@ const de: Lang = {
     'Der bisherige Verlauf bleibt unverändert.',
   'account.profiles.notice-title': 'Aktualisierte Firmenregeln verfügbar',
   'account.profiles.notice-description':
-    'Die veröffentlichten Regeln der Firma weichen von den auf diesem Konto gespeicherten ab. Deine Kontoregeln wurden nicht geändert.',
+    'Die veröffentlichten Regeln der Firma weichen von den auf diesem Konto gespeicherten ab. Ihre Kontoregeln wurden nicht geändert.',
   'account.profiles.review-changes': 'Änderungen prüfen',
   'account.profiles.check-failed':
     'Regelaktualisierungen konnten nicht geprüft werden.',
   'account.profiles.retry': 'Erneut versuchen',
   'account.profiles.source-changed':
-    'Die Regeln der Firma haben sich geändert, während diese Prüfung offen war. Öffne die Prüfung erneut, bevor du sie anwendest.',
+    'Die Regeln der Firma haben sich geändert, während diese Prüfung offen war. Öffnen Sie die Prüfung erneut, bevor Sie sie anwenden.',
   'account.profiles.retain': 'Aktuelle Regeln behalten',
-  'account.profiles.retain-help':
-    'Behalte die Kontoregeln und blende diese Quelländerungen aus. Spätere Regeländerungen können erneut gemeldet werden.',
-  'account.profiles.comparison-help':
-    'Nur Unterschiede werden angezeigt. Klappe eine Regel auf, um ihre Felder zu prüfen. Lokale Anpassungen können Unterschiede erklären.',
-  'account.profiles.added': 'Hinzugefügt',
-  'account.profiles.removed': 'Entfernt',
-  'account.profiles.changed': 'Geändert',
   'account.profiles.not-configured': 'Nicht konfiguriert',
   'account.profiles.no-rule-changes':
     'Keine Unterschiede bei Regeln oder Auszahlungsbedingungen für diese Phase.',
@@ -85,7 +125,7 @@ const de: Lang = {
     'Abgeschlossene Phasen behalten ihre ursprünglichen Regeln.',
   'account.profiles.confirm': 'Diese Regeln gelten für mein Konto.',
   'account.profiles.currency':
-    'Wähle eine Kontowährung, die zu diesen Regeln passt, bevor du sie anwendest.',
+    'Wählen Sie eine Kontowährung, die zu diesen Regeln passt, bevor Sie sie anwenden.',
   'account.profiles.current': 'Aktuelle Kontoregeln',
   'account.profiles.custom-transition': 'Eigene Übergangsbedingungen',
   'account.profiles.cycle-start': 'Beginn des Auszahlungszyklus (Ortszeit)',
@@ -93,16 +133,14 @@ const de: Lang = {
     'Diese gespeicherten Regeln löschen? Konten, die sie bereits nutzen, ändern sich nicht.',
   'account.profiles.effective': 'Gültig ab (Ortszeit)',
   'account.profiles.error':
-    'Die Regeln konnten nicht gespeichert werden. Prüfe die Werte und versuche es erneut.',
+    'Die Regeln konnten nicht gespeichert werden. Prüfen Sie die Werte und versuchen Sie es erneut.',
   'account.profiles.floor': 'Drawdown-Untergrenze beim Übergang',
   'account.profiles.history': 'Regelverlauf',
   'account.profiles.history-help':
-    'Frühere Regeln bleiben erhalten. Nutze „Regelaktualisierung prüfen“, um eine versionierte Phase zu ändern; direktes Bearbeiten ist gesperrt, um den Verlauf zu schützen.',
+    'Frühere Regeln bleiben erhalten. Nutzen Sie „Regelaktualisierung prüfen“, um eine versionierte Phase zu ändern; direktes Bearbeiten ist gesperrt, um den Verlauf zu schützen.',
   'account.profiles.incoming': 'Eingehende Firmenregeln',
   'account.profiles.independent':
     'Gespeicherte Regeln sind lokal in diesem Vault. Beim Anwenden entsteht eine unabhängige Kopie auf dem Konto; eine neue Revision ändert nie bestehende Konten.',
-  'account.profiles.keep-help':
-    'Markierte Regeln behalten deine lokalen Werte statt der eingehenden Regel dieser Art. Entferne die Markierung, um den Wert der Firma zu übernehmen. Neue Regelarten werden hinzugefügt.',
   'account.profiles.keep-local': 'Meine Regel behalten:',
   'account.profiles.keep-payout': 'Aktuelle Auszahlungsrichtlinie behalten',
   'account.profiles.library': 'Meine gespeicherten Regeln',
@@ -119,25 +157,26 @@ const de: Lang = {
     'Als neue Revision der ausgewählten Regeln speichern',
   'account.profiles.source-phase': 'Phase der Firmenregeln',
   'account.profiles.transition-help':
-    'Keine verifizierten Übergangsvorgaben vorhanden. Trage bestätigte Untergrenze, Höchstsaldo und Zyklusbeginn ein. Diese gelten als benutzerdefiniert. Phasengewinn und gesamte Auszahlungsanzahl bleiben erhalten; ältere Trades behalten ihre Regeln.',
+    'Keine verifizierten Übergangsvorgaben vorhanden. Tragen Sie bestätigte Untergrenze, Höchstsaldo und Zyklusbeginn ein. Diese gelten als benutzerdefiniert. Phasengewinn und gesamte Auszahlungsanzahl bleiben erhalten; ältere Trades behalten ihre Regeln.',
   'account.profiles.transition-source': 'Bestätigung der Firma oder Referenz',
   'account.profiles.link-intro':
-    'Verknüpfe diese Prüfung mit den Regeln ihrer Firma, und Journalit sagt dir, wenn die Firma sie ändert. Zuerst prüfst du, wie sie sich von den Regeln dieses Kontos unterscheiden; nichts ändert sich, bis du übernimmst.',
+    'Verknüpfen Sie diese Prüfung mit den Regeln ihrer Firma, und Journalit informiert Sie, wenn die Firma sie ändert. Zuerst prüfen Sie, wie sie sich von den Regeln dieses Kontos unterscheiden; nichts ändert sich, bis Sie übernehmen.',
   'account.profiles.link-title': 'Mit Firmenregeln verknüpfen',
   'account.profiles.choose-source': 'Firmenregeln wählen',
-  'account.profiles.update-available':
-    'Die Regeln der Firma haben sich geändert und müssen geprüft werden. Dein Konto nutzt weiterhin seine gespeicherten Regeln.',
-  'account.profiles.up-to-date':
-    'Diese Phase nutzt die zuletzt geprüften Firmenregeln; lokale Anpassungen bleiben unabhängig.',
   'widget.mfeScatter.name': 'MFE vs. realisierter Gewinn/Verlust',
   'widget.mfeScatter.description':
     'Maximaler offener Gewinn vs. finales P&L je Trade',
-  'widget.mfeScatter.y': 'Realisierter G/V ({unit})',
-  'widget.mfeScatter.winners': 'Gewinner',
-  'widget.mfeScatter.losers': 'Verlierer',
-  'widget.mfeScatter.breakeven': 'Gewinnschwelle',
+  'widget.excursionScatter.y': 'Realisierter P&L ({unit})',
+  'widget.excursionScatter.winners': 'Gewinner',
+  'widget.excursionScatter.losers': 'Verlierer',
+  'widget.excursionScatter.breakeven': 'Gewinnschwelle',
   'widget.mfeScatter.empty':
     'Keine abgeschlossenen Trades mit nutzbarer MFE in dieser Einheit.',
+  'widget.maeScatter.name': 'MAE vs. realisierter Gewinn/Verlust',
+  'widget.maeScatter.description':
+    'Maximaler offener Verlust vs. finales P&L je Trade',
+  'widget.maeScatter.empty':
+    'Keine abgeschlossenen Trades mit nutzbarer MAE in dieser Einheit.',
 
   'trade-sync.tradovate.status.setup-required': 'Kontoeinrichtung erforderlich',
   'trade-sync.tradovate.status.connecting': 'Verbindung wird hergestellt',
@@ -155,21 +194,23 @@ const de: Lang = {
   'trade-sync.tradovate.sync-all-complete':
     '{succeeded} von {total} Tradovate-Verbindungen synchronisiert.',
   'trade-sync.tradovate.sync-all-partial':
-    '{succeeded} von {total} Tradovate-Verbindungen synchronisiert. Überprüfe die Verbindungen mit Problemen.',
+    '{succeeded} von {total} Tradovate-Verbindungen synchronisiert. Überprüfen Sie die Verbindungen mit Problemen.',
+  'trade-sync.tradovate.sync-all-provider-partial':
+    '{succeeded} von {total} Tradovate-Verbindungen synchronisiert · Synchronisierung teilweise abgeschlossen',
   'trade-sync.tradovate.connect-another': 'Weiteres Tradovate-Konto verbinden',
   'trade-sync.tradovate.no-connections':
-    'Verbinde ein Tradovate-Konto auf Journalit.co, um es hier zu konfigurieren und zu synchronisieren.',
+    'Verbinden Sie ein Tradovate-Konto auf Journalit.co, um es hier zu konfigurieren und zu synchronisieren.',
   'trade-sync.tradovate.claimed-by-connection':
-    'Die Synchronisierung ist über {connection} aktiviert. Deaktiviere sie dort, bevor du dieses Konto wechselst.',
+    'Die Synchronisierung ist über {connection} aktiviert. Deaktivieren Sie sie dort, bevor Sie dieses Konto wechseln.',
   'trade-sync.tradovate.claim-conflict':
-    'Eine andere Tradovate-Verbindung hat dieses Konto beansprucht. Prüfe die aktualisierten Verbindungskarten, bevor du es erneut versuchst.',
+    'Eine andere Tradovate-Verbindung hat dieses Konto beansprucht. Prüfen Sie die aktualisierten Verbindungskarten, bevor Sie es erneut versuchen.',
   'trade-sync.tradovate.reconciliation-issues': '{count} Abstimmungsproblem(e)',
   'trade-sync.tradovate.website-connection-description':
-    'Verbinde Tradovate sicher auf Journalit.co oder autorisiere es erneut. Kehre dann hierher zurück, um Konten auszuwählen und deinen Vault zu synchronisieren.',
+    'Verbinden Sie Tradovate sicher auf Journalit.co oder autorisieren Sie es erneut. Kehren Sie dann hierher zurück, um Konten auszuwählen und Ihren Vault zu synchronisieren.',
   'trade-sync.tradovate.paused-website-description':
-    'Diese Tradovate-Verbindung ist pausiert. Verwalte sie auf Journalit.co, um sie zu prüfen oder fortzusetzen.',
+    'Diese Tradovate-Verbindung ist pausiert. Verwalten Sie sie auf Journalit.co, um sie zu prüfen oder fortzusetzen.',
   'trade-sync.tradovate.plugin-sync-description':
-    'Eine Synchronisierung ruft deine neuesten Tradovate-Aktivitäten ab und schreibt die daraus entstehenden Trades in diesen Vault.',
+    'Eine Synchronisierung ruft Ihre neuesten Tradovate-Aktivitäten ab und schreibt die daraus entstehenden Trades in diesen Vault.',
   'trade-sync.tradovate.connect': 'Verbinden',
   'trade-sync.tradovate.manage-connection': 'Verbindung verwalten',
   'trade-sync.tradovate.setup-guide': 'Einrichtungsanleitung',
@@ -177,11 +218,11 @@ const de: Lang = {
     'Einrichtung abschließen und synchronisieren',
   'trade-sync.tradovate.sync-to-vault': 'Synchronisieren',
   'trade-sync.tradovate.discovery-description':
-    'Journalit muss die über deine Tradovate-Verbindung verfügbaren Demo- und Live-Konten ermitteln.',
+    'Journalit muss die über Ihre Tradovate-Verbindung verfügbaren Demo- und Live-Konten ermitteln.',
   'trade-sync.tradovate.discover-accounts': 'Tradovate-Konten ermitteln',
   'trade-sync.tradovate.discovering': 'Konten werden ermittelt…',
   'trade-sync.tradovate.discovery-failed':
-    'Die Ermittlung der Tradovate-Konten ist fehlgeschlagen. Versuche es erneut oder verwalte die Verbindung auf Journalit.co.',
+    'Die Ermittlung der Tradovate-Konten ist fehlgeschlagen. Versuchen Sie es erneut oder verwalten Sie die Verbindung auf Journalit.co.',
   'trade-sync.tradovate.sync-account': 'In Synchronisierung aufnehmen',
   'trade-sync.tradovate.history-label': 'Anfangsverlauf',
   'trade-sync.tradovate.history-all': 'Gesamter verfügbarer Verlauf',
@@ -191,15 +232,15 @@ const de: Lang = {
   'trade-sync.tradovate.start-date': 'Startdatum',
 
   'trade-sync.tradovate.mapping-required':
-    'Wähle für jedes aktivierte Tradovate-Konto ein lokales Vault-Konto.',
+    'Wählen Sie für jedes aktivierte Tradovate-Konto ein lokales Vault-Konto.',
   'trade-sync.tradovate.custom-date-required':
-    'Wähle für jede benutzerdefinierte Verlaufsauswahl ein Startdatum.',
+    'Wählen Sie für jede benutzerdefinierte Verlaufsauswahl ein Startdatum.',
   'trade-sync.tradovate.recovery-title':
     'Fehlende Trade-Notizen wiederherstellen',
   'trade-sync.tradovate.recovery-count':
     '{count} Trade-Notiz(en) wiederherzustellen',
   'trade-sync.tradovate.recovery-select-account':
-    'Wähle vor der Wiederherstellung von Trade-Notizen ein lokales Konto aus.',
+    'Wählen Sie vor der Wiederherstellung von Trade-Notizen ein lokales Konto aus.',
   'trade-sync.tradovate.recovery-confirm':
     '{count} Trade-Notiz(en) in {account} wiederherstellen?',
 
@@ -218,19 +259,21 @@ const de: Lang = {
   'trade-sync.ctrader.sync-all-complete':
     '{succeeded} von {total} cTrader-Verbindungen synchronisiert.',
   'trade-sync.ctrader.sync-all-partial':
-    '{succeeded} von {total} cTrader-Verbindungen synchronisiert. Überprüfe die Verbindungen mit Problemen.',
+    '{succeeded} von {total} cTrader-Verbindungen synchronisiert. Überprüfen Sie die Verbindungen mit Problemen.',
+  'trade-sync.ctrader.sync-all-provider-partial':
+    '{succeeded} von {total} cTrader-Verbindungen synchronisiert · Synchronisierung teilweise abgeschlossen',
   'trade-sync.ctrader.connect-another': 'Weiteres cTrader-Konto verbinden',
   'trade-sync.ctrader.no-connections':
-    'Verbinde ein cTrader-Konto auf Journalit.co, um es hier zu konfigurieren und zu synchronisieren.',
+    'Verbinden Sie ein cTrader-Konto auf Journalit.co, um es hier zu konfigurieren und zu synchronisieren.',
   'trade-sync.ctrader.claimed-by-connection':
-    'Die Synchronisierung ist über {connection} aktiviert. Deaktiviere sie dort, bevor du dieses Konto wechselst.',
+    'Die Synchronisierung ist über {connection} aktiviert. Deaktivieren Sie sie dort, bevor Sie dieses Konto wechseln.',
   'trade-sync.ctrader.claim-conflict':
-    'Eine andere cTrader-Verbindung hat dieses Konto beansprucht. Prüfe die aktualisierten Verbindungskarten, bevor du es erneut versuchst.',
+    'Eine andere cTrader-Verbindung hat dieses Konto beansprucht. Prüfen Sie die aktualisierten Verbindungskarten, bevor Sie es erneut versuchen.',
   'trade-sync.ctrader.reconciliation-issues': '{count} Abstimmungsproblem(e)',
   'trade-sync.ctrader.website-connection-description':
-    'Verbinde cTrader sicher auf Journalit.co oder autorisiere es erneut. Kehre dann hierher zurück, um Konten auszuwählen und deinen Vault zu synchronisieren.',
+    'Verbinden Sie cTrader sicher auf Journalit.co oder autorisieren Sie es erneut. Kehren Sie dann hierher zurück, um Konten auszuwählen und Ihren Vault zu synchronisieren.',
   'trade-sync.ctrader.plugin-sync-description':
-    'Eine Synchronisierung ruft deine neuesten cTrader-Aktivitäten ab und schreibt die daraus entstehenden Trades in diesen Vault.',
+    'Eine Synchronisierung ruft Ihre neuesten cTrader-Aktivitäten ab und schreibt die daraus entstehenden Trades in diesen Vault.',
   'trade-sync.ctrader.connect': 'Verbinden',
   'trade-sync.ctrader.manage-connection': 'Verbindung verwalten',
   'trade-sync.ctrader.setup-guide': 'Einrichtungsanleitung',
@@ -238,11 +281,11 @@ const de: Lang = {
     'Einrichtung abschließen und synchronisieren',
   'trade-sync.ctrader.sync-to-vault': 'Synchronisieren',
   'trade-sync.ctrader.discovery-description':
-    'Journalit muss die über deine cTrader-Verbindung verfügbaren Demo- und Live-Konten ermitteln.',
+    'Journalit muss die über Ihre cTrader-Verbindung verfügbaren Demo- und Live-Konten ermitteln.',
   'trade-sync.ctrader.discover-accounts': 'cTrader-Konten ermitteln',
   'trade-sync.ctrader.discovering': 'Konten werden ermittelt…',
   'trade-sync.ctrader.discovery-failed':
-    'Die Ermittlung der cTrader-Konten ist fehlgeschlagen. Versuche es erneut oder verwalte die Verbindung auf Journalit.co.',
+    'Die Ermittlung der cTrader-Konten ist fehlgeschlagen. Versuchen Sie es erneut oder verwalten Sie die Verbindung auf Journalit.co.',
   'trade-sync.ctrader.sync-account': 'In Synchronisierung aufnehmen',
   'trade-sync.ctrader.history-label': 'Anfangsverlauf',
   'trade-sync.ctrader.history-all': 'Gesamter verfügbarer Verlauf',
@@ -251,40 +294,102 @@ const de: Lang = {
   'trade-sync.ctrader.history-new': 'Nur neue Trades',
   'trade-sync.ctrader.start-date': 'Startdatum',
   'trade-sync.ctrader.mapping-required':
-    'Wähle für jedes aktivierte cTrader-Konto ein lokales Vault-Konto.',
+    'Wählen Sie für jedes aktivierte cTrader-Konto ein lokales Vault-Konto.',
   'trade-sync.ctrader.custom-date-required':
-    'Wähle für jede benutzerdefinierte Verlaufsauswahl ein Startdatum.',
+    'Wählen Sie für jede benutzerdefinierte Verlaufsauswahl ein Startdatum.',
   'trade-sync.ctrader.recovery-title':
     'Fehlende Trade-Notizen wiederherstellen',
   'trade-sync.ctrader.recovery-count':
     '{count} Trade-Notiz(en) wiederherzustellen',
   'trade-sync.ctrader.recovery-select-account':
-    'Wähle vor der Wiederherstellung von Trade-Notizen ein lokales Konto aus.',
+    'Wählen Sie vor der Wiederherstellung von Trade-Notizen ein lokales Konto aus.',
   'trade-sync.ctrader.recovery-confirm':
     '{count} Trade-Notiz(en) in {account} wiederherstellen?',
-  'trade-sync.oauth.remap.title': 'Change account',
+  'trade-sync.oauth.remap.title': 'Konto ändern',
   'trade-sync.oauth.remap.message':
-    'Use {newAccount} for existing notes too? Otherwise, only future broker updates will use it.',
-  'trade-sync.oauth.remap.update-notes': 'Update notes',
-  'trade-sync.oauth.remap.future-only': 'Future updates only',
+    '{newAccount} auch für vorhandene Notizen verwenden? Andernfalls verwenden es nur künftige Broker-Aktualisierungen.',
+  'trade-sync.oauth.remap.update-notes': 'Notizen aktualisieren',
+  'trade-sync.oauth.remap.future-only': 'Nur künftige Aktualisierungen',
   'trade-sync.oauth.remap.unavailable':
-    'Account remapping is unavailable. Update the Journalit server and try again.',
+    'Die Kontoneuzuordnung ist nicht verfügbar. Aktualisieren Sie den Journalit-Server und versuchen Sie es erneut.',
   'trade-sync.oauth.remap.restore-in-progress':
-    'Wait for Restore to finish, then try again.',
+    'Warten Sie, bis die Wiederherstellung abgeschlossen ist, und versuchen Sie es dann erneut.',
   'trade-sync.oauth.remap.operation-conflict':
-    'That remap request conflicted with an earlier attempt. Try again.',
+    'Diese Neuzuordnung kollidierte mit einem früheren Versuch. Versuchen Sie es erneut.',
   'trade-sync.oauth.remap.account-busy':
-    'This account is busy synchronizing. Retry shortly.',
+    'Dieses Konto wird gerade synchronisiert. Versuchen Sie es gleich noch einmal.',
   'trade-sync.oauth.remap.account-unavailable':
-    'This account is no longer available. Refresh and try again.',
+    'Dieses Konto ist nicht mehr verfügbar. Aktualisieren Sie und versuchen Sie es erneut.',
   'trade-sync.oauth.remap.preserved-conflicts':
-    '{count} existing conflict(s) were left unchanged.',
+    '{count} vorhandene(r) Konflikt(e) blieb(en) unverändert.',
   'trade-sync.oauth.remap.notes-pending':
-    '{count} existing note update(s) are still pending. Synchronize again to retry.',
+    '{count} Aktualisierung(en) vorhandener Notizen stehen noch aus. Synchronisieren Sie erneut, um es noch einmal zu versuchen.',
   'trade-sync.source.ctrader': 'cTrader',
+  'trade-sync.source.hyperliquid': 'Hyperliquid',
+  'trade-sync.source.hyperliquid.description':
+    'Nur-Lese-Synchronisierung für Hyperliquid-USDC-Perpetuals, eingerichtet auf Journalit.co und in diesen Vault geschrieben.',
+  'onboarding.broker.option.hyperliquid-sync.label':
+    'Hyperliquid (USDC-Perpetuals)',
+  'trade-sync.hyperliquid.recovery-title':
+    'Fehlende Trade-Notizen wiederherstellen',
+  'trade-sync.hyperliquid.recovery-count':
+    '{count} Trade-Notiz(en) wiederherzustellen',
+  'trade-sync.hyperliquid.recovery-select-account':
+    'Wählen Sie vor der Wiederherstellung von Trade-Notizen ein lokales Konto aus.',
+  'trade-sync.hyperliquid.recovery-confirm':
+    '{count} Trade-Notiz(en) in {account} wiederherstellen?',
+  'trade-sync.hyperliquid.scope-description':
+    'Die Synchronisierung umfasst nur in USDC abgerechnete Perpetuals, und die Historie, die Hyperliquid über seine API bereitstellt, kann unvollständig sein. Der CSV-Import bleibt verfügbar, aber überschneidende CSV- und synchronisierte Trades werden nicht automatisch dedupliziert.',
+  'trade-sync.hyperliquid.description':
+    'Nur Lesezugriff: Verbinden Sie auf Journalit.co eine Wallet-Adresse und wählen Sie Konten und Historie. Hier ordnen Sie jedes Konto einem Journalit-Konto zu und synchronisieren Trades in diesen Vault.',
+  'trade-sync.hyperliquid.manage-on-website': 'Auf Journalit.co verwalten',
+  'trade-sync.hyperliquid.connect-on-website': 'Auf Journalit.co verbinden',
+  'trade-sync.hyperliquid.manage-connection': 'Auf der Website verwalten',
+  'trade-sync.hyperliquid.pending-acks':
+    '{count} Vault-Aktualisierung(en) warten auf Bestätigung.',
+  'trade-sync.hyperliquid.disabled':
+    'Die Hyperliquid-Synchronisierung ist noch nicht verfügbar.',
+  'trade-sync.hyperliquid.status-failed':
+    'Hyperliquid-Status konnte nicht geladen werden.',
+  'trade-sync.hyperliquid.no-connections':
+    'Noch keine Hyperliquid-Verbindungen. Verbinden Sie eine Wallet-Adresse auf Journalit.co und kehren Sie dann hierher zurück.',
+  'trade-sync.hyperliquid.never': 'Nie',
+  'trade-sync.hyperliquid.last-sync': 'Letzte Synchronisierung',
+  'trade-sync.hyperliquid.reconciliation-issues': '{count} Abgleichsproblem(e)',
+  'trade-sync.hyperliquid.status.pending': 'Konten werden erkannt',
+  'trade-sync.hyperliquid.status.setup-required': 'Einrichtung erforderlich',
+  'trade-sync.hyperliquid.status.paused': 'Pausiert',
+  'trade-sync.hyperliquid.status.attention': 'Benötigt Aufmerksamkeit',
+  'trade-sync.hyperliquid.status.error': 'Verbindungsfehler',
+  'trade-sync.hyperliquid.status.deleting': 'Cloud-Daten werden gelöscht',
+  'trade-sync.hyperliquid.notice.setup-required':
+    'Wählen Sie auf Journalit.co, welche Konten und welche Historie synchronisiert werden.',
+  'trade-sync.hyperliquid.notice.paused':
+    'Die Synchronisierung ist pausiert. Vorhandene Notizen bleiben erhalten. Setzen Sie sie auf Journalit.co fort.',
+  'trade-sync.hyperliquid.notice.attention':
+    'Diese Verbindung benötigt Aufmerksamkeit. Prüfen Sie sie auf Journalit.co oder kontaktieren Sie den Support.',
+  'trade-sync.hyperliquid.account.selected': 'Zur Synchronisierung ausgewählt',
+  'trade-sync.hyperliquid.account.not-selected': 'Nicht ausgewählt',
+  'trade-sync.hyperliquid.claimed-by-connection':
+    'Synchronisiert über {connection}.',
+  'trade-sync.hyperliquid.mapping-required':
+    'Wählen Sie zuerst für jedes ausgewählte Konto ein Journalit-Konto.',
+  'trade-sync.hyperliquid.sync-to-vault': 'Synchronisieren',
+  'trade-sync.hyperliquid.sync-all': 'Alle synchronisieren',
+  'trade-sync.hyperliquid.sync-complete':
+    'Synchronisierung von {connection} abgeschlossen.',
+  'trade-sync.hyperliquid.sync-partial':
+    'Synchronisierung von {connection} mit Problemen abgeschlossen.',
+  'trade-sync.hyperliquid.sync-all-complete':
+    '{succeeded} von {total} Hyperliquid-Verbindungen synchronisiert.',
+  'trade-sync.hyperliquid.sync-all-partial':
+    '{succeeded} von {total} Hyperliquid-Verbindungen synchronisiert. Prüfen Sie die Verbindungen mit Problemen.',
+  'trade-sync.hyperliquid.sync-all-provider-partial':
+    '{succeeded} von {total} Hyperliquid-Verbindungen synchronisiert · Synchronisierung teilweise abgeschlossen',
   'trade-sync.source.ctrader.description':
-    'Synchronize cTrader trades in the cloud and project them into this vault.',
-  'trade-sync.ctrader.status-failed': 'Unable to load cTrader status.',
+    'cTrader-Trades in der Cloud synchronisieren und in diesen Vault übertragen.',
+  'trade-sync.ctrader.status-failed':
+    'cTrader-Status konnte nicht geladen werden.',
   'trade-sync.ctrader.last-sync': 'Letzte Synchronisierung',
   'trade-sync.ctrader.pending-acks': '{count} ausstehende lokale ACK(s)',
   'trade-sync.ctrader.never': 'Nie',
@@ -330,14 +435,13 @@ const de: Lang = {
   'template.review-type.quarterly': 'vierteljährlich',
   'template.review-type.yearly': 'jährlich',
   'template.review-type.review': 'Review',
-  'template.builder.select-template':
-    'Wählen Sie eine Vorlage zum Bearbeiten aus',
+  'template.builder.select-template': 'Wählen Sie ein Layout zum Bearbeiten',
   'template.builder.loading': 'Layout-Builder wird geladen...',
   'template.builder.create-from-sidebar':
     'Oder erstellen Sie in der Seitenleiste ein neues',
   'template.builder.snippet-coming-soon': 'Snippet-Editor kommt bald',
-  'template.preview.empty': 'In dieser Vorlage sind keine Widgets enthalten',
-  'template.preview.summary': '{type}-Vorlage – {count}-Widgets',
+  'template.preview.empty': 'Keine Widgets in diesem Layout',
+  'template.preview.summary': '{type}-Layout – {count} Widgets',
   'template.preview.mode': 'Vorschaumodus',
   'template.preview.markdown-zone-placeholder':
     'Markdown-Zone – Benutzer schreiben hier',
@@ -374,23 +478,6 @@ const de: Lang = {
   'template-picker.badge.default': 'Standard',
   'template-picker.badge.current': 'Aktuell',
   'template-picker.cancel': 'Abbrechen',
-  'auth.title.already-logged-in': 'Bereits eingeloggt',
-  'auth.desc.already-logged-in': 'Sie sind bereits angemeldet{email}.',
-  'auth.title.sign-in': 'Melden Sie sich bei Journalit an',
-
-  'auth.label.email': 'E-Mail-Adresse',
-
-  'auth.button.send-code': 'Bestätigungscode senden',
-
-  'auth.label.code': 'Bestätigungscode',
-
-  'auth.button.verify': 'Bestätigen und anmelden',
-
-  'auth.button.resend': 'Code erneut senden',
-
-  'auth.error.needs-premium': 'Pro-Funktion',
-
-  'auth.error.network-error': 'Verbindungsfehler',
 
   'form.modal.unsaved-changes.title': 'Nicht gespeicherte Änderungen',
   'form.modal.unsaved-changes.body1':
@@ -402,7 +489,7 @@ const de: Lang = {
   'template-builder.modal.unsaved-changes.title':
     'Nicht gespeicherte Änderungen',
   'template-builder.modal.unsaved-changes.body1':
-    'Sie haben nicht gespeicherte Änderungen in dieser Vorlage.',
+    'Dieses Layout enthält ungespeicherte Änderungen.',
   'template-builder.modal.unsaved-changes.body2':
     'Sind Sie sicher, dass Sie ohne Speichern wechseln möchten?',
   'template-builder.modal.unsaved-changes.continue': 'Bearbeiten Sie weiter',
@@ -418,14 +505,9 @@ const de: Lang = {
     'Sie haben nicht gespeicherte Änderungen in den Spalteneinstellungen.',
   'tradelog.settings.modal.unsaved-changes.body2':
     'Möchten Sie wirklich schließen, ohne zu speichern?',
-  'notice.error.missed-trade-service-init':
-    'Der verpasste Trade-Service wurde nicht initialisiert. Bitte warten Sie einen Moment und versuchen Sie es erneut.',
-  'notice.error.backtest-trade-service-init':
-    'Backtest-Trade-Service ist nicht initialisiert. Bitte warten Sie einen Moment und versuchen Sie es erneut.',
   'notice.trade-updated': '{type} aktualisiert: {path}',
   'notice.trade-created': '{type} erstellt: {path}',
-  'notice.new-trade-created':
-    '📈 Neuer Trade erstellt: {instrument} {direction}',
+  'notice.new-trade-created': 'Neuer Trade erstellt: {instrument} {direction}',
   'notice.error.trade-update-failed':
     'Fehler beim Aktualisieren von {type}: {error}',
   'notice.error.trade-create-failed':
@@ -433,36 +515,40 @@ const de: Lang = {
   'form.section.trade-details': 'Trade-Details',
   'form.section.trading-costs': 'Handelskosten',
   'form.section.risk-management': 'Risikomanagement',
-  'form.section.take-profits': 'Gewinnziele',
+  'form.section.take-profits': 'Take-Profits',
   'form.section.analysis-thesis': 'Analyse & These',
   'form.section.custom-fields': 'Benutzerdefinierte Felder',
 
   'form.section.custom-fields-empty-title': 'Noch keine erweiterten Felder.',
   'form.section.custom-fields-empty-desc':
-    'Erfassen Sie alles, was die integrierten Felder auslassen, etwa Session, Zeitrahmen oder Setup-Bewertung. Eigene Felder werden mit jedem Trade gespeichert und können zu sortierbaren Spalten im Trade-Log werden.',
+    'Erfassen Sie alles, was die integrierten Felder auslassen, etwa Sitzung, Zeitrahmen oder Setup-Bewertung. Eigene Felder werden mit jedem Trade gespeichert und können zu sortierbaren Spalten im Trade-Log werden.',
   'form.section.attachments': 'Anhänge',
   'form.tab.basic': 'Basis',
   'form.tab.details': 'Einzelheiten',
-  'form.tab.advanced': 'Fortschrittlich',
+  'form.tab.advanced': 'Erweitert',
 
   
   
   
   'form.import-shortcut.open': 'Trade-Import öffnen',
   'form.manual-import-nudge.title.one':
-    'Tipp: Du hast {count} Trade von Hand eingetragen',
+    'Tipp: Sie haben {count} Trade von Hand eingetragen',
   'form.manual-import-nudge.title.few':
-    'Tipp: Du hast {count} Trades von Hand eingetragen',
+    'Tipp: Sie haben {count} Trades von Hand eingetragen',
   'form.manual-import-nudge.title.many':
-    'Tipp: Du hast {count} Trades von Hand eingetragen',
+    'Tipp: Sie haben {count} Trades von Hand eingetragen',
   'form.manual-import-nudge.title.other':
-    'Tipp: Du hast {count} Trades von Hand eingetragen',
+    'Tipp: Sie haben {count} Trades von Hand eingetragen',
   'form.manual-import-nudge.body':
-    'Der Trade-Import kann deine Broker- oder Tabellenhistorie gesammelt übernehmen, statt jeden Trade einzeln einzutragen.',
+    'Der Trade-Import kann Ihre Broker- oder Tabellenhistorie gesammelt übernehmen, statt jeden Trade einzeln einzutragen.',
   'form.manual-import-nudge.cta': 'Meine Trades ansehen',
   'form.manual-import-nudge.dismiss': 'Nicht jetzt',
   'form.layout.customize': 'Formular anpassen',
   'form.layout.modal-title': 'Trade-Formular anpassen',
+  'form.layout.back-to-trade': 'Zurück zum Trade',
+  'form.layout.save-layout': 'Layout speichern',
+  'form.layout.discard-changes.body':
+    'Ungespeicherte Anpassungen verwerfen? Ihr Trade-Entwurf bleibt erhalten.',
   'form.layout.settings-title': 'Trade-Formularlayout',
 
   'form.layout.input-mode': 'Eingabemodus',
@@ -479,15 +565,15 @@ const de: Lang = {
   'form.layout.active-fields': 'Sichtbare Blöcke',
   'form.layout.available-fields': 'Ausgeblendete Blöcke',
   'form.layout.active-fields-desc':
-    'Ziehe Blöcke, um sie neu zu sortieren. Entferne alles, was du nicht nutzt.',
+    'Ziehen Sie Blöcke, um sie neu zu sortieren. Entfernen Sie alles, was Sie nicht nutzen.',
   'form.layout.available-fields-desc':
-    'Füge ausgeblendete Blöcke wieder zum Trade-Formular hinzu, wenn du sie brauchst.',
+    'Fügen Sie ausgeblendete Blöcke wieder zum Trade-Formular hinzu, wenn Sie sie brauchen.',
   'form.layout.empty-active': 'Keine optionalen Blöcke sind sichtbar.',
   'form.layout.all-active': 'Alle optionalen Blöcke sind sichtbar.',
   'form.layout.add-field-aria': '{field} zum Trade-Formular hinzufügen',
   'form.layout.remove-field-aria': '{field} im Trade-Formular ausblenden',
   'form.layout.saved': 'Trade-Formularlayout gespeichert',
-  'form.layout.item.trading-costs.commission': 'Kommission',
+  'form.layout.item.trading-costs.commission': 'Provision',
   'form.layout.item.import-shortcut': 'Import-Verknüpfung',
   'form.layout.item.import-shortcut-desc':
     'Zeigt eine Footer-Schaltfläche, die den Trade-Import öffnet.',
@@ -519,20 +605,20 @@ const de: Lang = {
   'form.field.direction': 'Richtung',
   'form.field.direction.long': 'Kaufen',
   'form.field.direction.short': 'Verkaufen',
-  'form.field.commission': 'Kommission',
+  'form.field.commission': 'Provision',
   'form.field.commission-type': 'Typ',
   'form.field.rebate': 'Rabatt',
   'form.field.swap': 'Swap',
 
   'form.field.other-fees': 'Sonstige Gebühren',
   'form.field.stop-loss': 'Stop-Loss',
-  'form.field.take-profit': 'Gewinnziel',
+  'form.field.take-profit': 'Take-Profit',
   'form.field.take-profit-short': 'Ziel',
   'form.field.target-price': 'Zielpreis',
   'form.field.close-percent': 'Schließen %',
   'form.field.close-size': 'Schließgröße',
   'form.placeholder.close-size': '0.5',
-  'form.layout.take-profit-unit': 'Gewinnziel-Schließmenge als',
+  'form.layout.take-profit-unit': 'Take-Profit-Schließmenge als',
   'form.layout.take-profit-unit-percent': 'Schließen %',
   'form.layout.take-profit-unit-size': 'Größe',
   'trade.validation.take-profit-size-number':
@@ -543,13 +629,13 @@ const de: Lang = {
     'Take-Profit-Größen dürfen die Positionsgröße nicht überschreiten.',
   'form.field.risk-amount': 'Risikobetrag',
   'form.field.profit-loss': 'Gewinn/Verlust',
-  'form.field.total-pnl': 'Trade-G/V',
+  'form.field.total-pnl': 'Trade-P&L',
   'form.field.realized-pnl': 'Realisiert P&L',
   'form.field.floating-pnl': 'Schwebender P&L',
   'form.field.total-costs': 'Gesamtkosten:',
   'form.field.setup': 'Setup',
   'form.field.mistake': 'Fehler',
-  'form.field.custom-tags': 'Benutzerdefinierte Tags',
+  'form.field.tags': 'Tags',
   'form.field.trade-thesis': 'Trade-These',
   'form.field.time': 'Zeit',
   'form.field.price': 'Preis',
@@ -570,8 +656,7 @@ const de: Lang = {
   'form.account-empty-state.create-account': 'Konto erstellen',
   'form.account-empty-state.submit-disabled':
     'Erstellen Sie zunächst ein Konto, um diesen Trade zu speichern.',
-  'form.empty.take-profits': 'Noch keine Gewinnziele',
-  'form.action.add-take-profit': 'Take-Profit hinzufügen',
+  'form.empty.take-profits': 'Noch keine Take-Profit-Ziele',
   'form.action.remove-take-profit': 'Take-Profit entfernen',
   'form.field.position-size': 'Positionsgröße',
   'form.field.position-size.shares': 'Aktien',
@@ -608,7 +693,7 @@ const de: Lang = {
   'form.field.lot-size.mini': 'Mini (10.000)',
   'form.field.lot-size.micro': 'Mikro (1.000)',
   'form.field.lot-size.custom': 'Benutzerdefiniert',
-  'form.field.image-url-placeholder': 'Bild-URL oder Dateipfad einfügen...',
+  'form.field.image-url-placeholder': 'Medien-URL oder Dateipfad einfügen...',
   'form.field.image-duplicate-error': 'Dieses Bild wurde bereits hinzugefügt.',
   'form.field.trade-image-alt': 'Trade-Bild',
 
@@ -625,7 +710,37 @@ const de: Lang = {
   'form.placeholder.swap': 'Finanzierung über Nacht',
   'form.placeholder.other-fees': 'Plattform-/Regulierungsgebühren',
   'form.placeholder.dividend-amount': 'Bargeldbetrag, positiv oder negativ',
-  'form.placeholder.stop-loss': 'Optionaler Stop-Loss-Preis',
+  'form.placeholder.stop-loss': 'Stoppkurs',
+  'form.layout.stop-loss-unit': 'Stop-Loss-Menge als',
+  'form.layout.stop-loss-unit-percent': '% der Position',
+  'form.layout.stop-loss-unit-size': 'Größe',
+  'form.field.stop-loss-short': 'SL',
+  'form.field.stop-price': 'Stoppkurs',
+  'form.field.stop-loss-percent': '% der Position',
+  'form.field.stop-loss-size': 'Größe',
+  'form.action.remove-stop-loss': 'Stop-Loss entfernen',
+  'form.stop-loss.coverage': 'Stopps decken {percent} der Position ab.',
+  'form.stop-loss.coverage-partial':
+    'Das Risiko nutzt den Risikobetrag, bis jede Einheit einen Stopp hat.',
+  'form.placeholder.stop-loss-rest': 'Rest',
+  'form.empty.stop-losses': 'Noch keine Stop-Losses',
+  'tradelog.tooltip.stop-losses': 'Stop-Loss-Orders',
+  'form.placeholder.stop-loss-size-amount': '{size} Einheiten',
+  'trade.validation.stop-loss-price-required':
+    'Stop-Loss-Preis ist erforderlich.',
+  'trade.validation.stop-loss-close-percent-number':
+    'Stop-Loss-Prozentsatz muss eine gültige Zahl sein.',
+  'trade.validation.stop-loss-close-percent-range':
+    'Stop-Loss-Prozentsatz muss zwischen 1 und 100 liegen.',
+  'trade.validation.stop-loss-size-number':
+    'Stop-Loss-Größe muss eine gültige Zahl sein.',
+  'trade.validation.stop-loss-size-positive':
+    'Stop-Loss-Größe muss größer als 0 sein.',
+  'trade.validation.stop-loss-single-blank-amount':
+    'Nur ein Stop-Loss darf seine Menge leer lassen.',
+  'trade.validation.stop-loss-total-over-position':
+    'Die Stop-Losses decken mehr als die Position ab.',
+  'trade.details.stop-loss-count': '{count} Stopps',
   'form.placeholder.target-price': 'Zielpreis',
   'form.placeholder.close-percent': '50 Prozent',
   'form.placeholder.risk-amount': 'Geplantes Risiko in Währung',
@@ -639,6 +754,9 @@ const de: Lang = {
   'form.placeholder.futures-point-value': 'Beispiel: 50 für ES1',
   'form.placeholder.leverage': 'z. B. 100 für 1:100',
   'form.entry-exit.add-entry': '+ Einstieg hinzufügen',
+  'form.entry-exit.backtest-day':
+    'Datiert auf {date}, den Tag Ihres letzten Backtest-Trades.',
+  'form.entry-exit.use-today': 'Heute verwenden',
   'form.entry-exit.add-exit': '+ Ausstieg hinzufügen',
   'form.entry-exit.remove-entry': 'Einstieg entfernen',
   'form.entry-exit.remove-exit': 'Ausstieg entfernen',
@@ -688,7 +806,6 @@ const de: Lang = {
   'button.add-trade': 'Trade hinzufügen',
   'button.update-trade': 'Trade aktualisieren',
   'button.save-changes': 'Änderungen speichern',
-  'button.create-trade': 'Trade erstellen',
   'button.delete-all': 'Alle löschen',
   'button.clear-all': 'Alles löschen',
 
@@ -697,8 +814,6 @@ const de: Lang = {
   'button.mark-reviewed': 'Als geprüft markieren',
   'button.maybe-later': 'Vielleicht später',
   'button.upgrade-now': 'Jetzt upgraden',
-
-  'button.apply': 'Anwenden',
 
   'button.learn-more': 'Erfahren Sie mehr',
   'button.upload-image': 'Medien hochladen',
@@ -815,19 +930,19 @@ const de: Lang = {
   'trade.validation.stop-loss-valid-number':
     'Stop-Loss muss eine gültige Zahl sein.',
   'trade.validation.take-profit-price-required':
-    'Gewinnzielpreis ist erforderlich.',
+    'Der Take-Profit-Preis ist erforderlich.',
   'trade.validation.take-profit-price-number':
-    'Take profit price must be a number.',
+    'Der Take-Profit-Preis muss eine Zahl sein.',
   'trade.validation.take-profit-price-valid-number':
-    'Take profit price must be a valid number.',
+    'Der Take-Profit-Preis muss eine gültige Zahl sein.',
   'trade.validation.take-profit-close-percent-number':
-    'Take profit close percent must be a number.',
+    'Der Take-Profit-Schließanteil muss eine Zahl sein.',
   'trade.validation.take-profit-close-percent-valid-number':
-    'Take profit close percent must be a valid number.',
+    'Der Take-Profit-Schließanteil muss eine gültige Zahl sein.',
   'trade.validation.take-profit-close-percent-range':
-    'Take profit close percent must be between 1 and 100.',
+    'Der Take-Profit-Schließanteil muss zwischen 1 und 100 liegen.',
   'trade.validation.take-profit-total-close-percent-range':
-    'Gewinnziel-Schließungsprozente dürfen 100 nicht überschreiten.',
+    'Die Take-Profit-Schließanteile dürfen zusammen 100 nicht überschreiten.',
   'validation.custom-field.key-empty': 'Der Feldschlüssel darf nicht leer sein',
   'validation.custom-field.key-conflict':
     'Dieser Feldname steht im Konflikt mit integrierten Trade-Feldern',
@@ -878,7 +993,6 @@ const de: Lang = {
   'notice.settings-imported':
     'Einstellungen erfolgreich aus v{version} importiert. Starten Sie Obsidian neu, um alle Änderungen zu übernehmen.',
   'notice.template-switched': 'Geändert zu: {name}',
-  'notice.hotkey-set': 'Hotkey festgelegt: {hotkey}',
   'notice.auto-sync-toggled': 'Automatische Synchronisierung {status}',
   'notice.auto-sync-enabled': 'ermöglicht',
   'notice.auto-sync-disabled': 'deaktiviert',
@@ -891,18 +1005,10 @@ const de: Lang = {
   'notice.csv-template-delete-failed':
     'Vorlage konnte nicht gelöscht werden: {error}',
   'notice.csv-template-imported': 'Vorlage „{name}“ erfolgreich importiert',
-  'notice.csv-symbol-mappings-created.one': '{count}-Symbolzuordnung erstellt',
-  'notice.csv-symbol-mappings-created.few':
-    'Erstellte {count}-Symbolzuordnungen',
-  'notice.csv-symbol-mappings-created.many':
-    'Erstellte {count}-Symbolzuordnungen',
-  'notice.csv-symbol-mappings-created.other':
-    'Erstellte {count}-Symbolzuordnungen',
-  'notice.csv-symbol-mapping-skipped': 'Symbolzuordnung übersprungen',
   'notice.csv-missing-fields':
-    'Bitte ordnen Sie vor dem Import alle erforderlichen Felder zu',
+    'Ordnen Sie alle Pflichtfelder zu, bevor Sie eine Vorschau erstellen.',
   'notice.setups-added': 'Setups zu {count} Trades hinzugefügt',
-  'notice.tags-added': 'Added tags to {count} trades',
+  'notice.tags-added': 'Tags zu {count} Trades hinzugefügt',
   'notice.mistakes-added': 'Fehler zu {count} Trades hinzugefügt',
   'notice.trades-duplicated.one': '{count} Trade dupliziert',
   'notice.trades-duplicated.few': '{count} Trades dupliziert',
@@ -945,12 +1051,10 @@ const de: Lang = {
   'notice.error.switch-template': 'Fehler beim Wechseln der Layout: {error}',
   'notice.error.switch-template-generic': 'Fehler beim Wechseln der Layout',
 
-  'notice.error.no-active-file':
-    'Keine aktive Datei. Öffnen Sie zunächst eine Notiz.',
   'notice.error.no-template-support':
-    'Dieser Notiztyp unterstützt keine Vorlagen.',
+    'Dieser Notiztyp unterstützt keine Layouts.',
   'notice.error.no-templates':
-    'Für diesen Notiztyp sind keine Vorlagen verfügbar.',
+    'Für diesen Notiztyp sind keine Layouts verfügbar.',
   'notice.error.asset-type-required':
     'Beim Hinzufügen eines Instruments ist der Asset-Typ erforderlich',
   'notice.error.column-required':
@@ -977,22 +1081,15 @@ const de: Lang = {
   'notice.error.mark-reviewed':
     'Fehler beim Markieren von Trades als geprüft: {error}',
   'notice.error.add-setups': 'Fehler beim Hinzufügen von Setups: {error}',
-  'notice.error.add-tags': 'Error adding tags: {error}',
+  'notice.error.add-tags': 'Fehler beim Hinzufügen der Tags: {error}',
   'notice.error.add-mistakes': 'Fehler beim Hinzufügen von Fehlern: {error}',
   'notice.error.duplicate-trades':
     'Fehler beim Duplizieren von Trades: {error}',
   'notice.error.delete-trades': 'Fehler beim Löschen von Trades: {error}',
-  'notice.error.csv-validation':
-    'CSV/XLSX/XLS-Validierung fehlgeschlagen: {errors}',
-  'notice.error.import-failed': 'Import fehlgeschlagen: {error}',
-  'notice.error.file-too-large':
-    'Die Datei ist zu groß. Die maximale Größe beträgt 10 MB',
-  'notice.error.select-csv':
-    'Bitte wählen Sie eine CSV-/XLSX-/XLS-/HTML-Datei aus',
   'notice.error.cannot-delete-builtin':
-    'Integrierte Vorlagen können nicht gelöscht werden',
+    'Integrierte Layouts können nicht gelöscht werden',
   'notice.error.duplicate-to-customize':
-    'Duplizieren Sie diese Vorlage, um sie anzupassen',
+    'Duplizieren Sie dieses Layout, um es anzupassen',
   'notice.error.sign-out':
     'Abmelden fehlgeschlagen. Bitte versuchen Sie es erneut.',
   'notice.error.open-upgrade-modal':
@@ -1013,19 +1110,19 @@ const de: Lang = {
   'tradelog.root.all-trades': 'Alle Trades',
   'tradelog.view.selector.label': 'Ansicht',
 
-  'trade-form.guide.customization-modal.title':
-    'Passe das Formular an deinen Workflow an',
-  'trade-form.guide.customization-modal.description':
-    'Hier kannst du optionale Blöcke anzeigen, ausblenden und neu anordnen. Halte das Formular auf die Felder fokussiert, die du wirklich nutzt.',
+  'trade-form.guide.customization-page.title':
+    'Passen Sie das Formular an Ihren Workflow an',
+  'trade-form.guide.customization-page.description':
+    'Hier können Sie optionale Blöcke anzeigen, ausblenden und neu anordnen. Halten Sie das Formular auf die Felder fokussiert, die Sie wirklich nutzen.',
   'trade-form.guide.finish.title': 'Das ist die Anpassungsfunktion',
   'trade-form.guide.finish.description':
-    'Du kannst diese Schaltfläche jederzeit wieder öffnen, wenn das Trade-Formular zu einem anderen Journaling-Workflow passen soll.',
+    'Sie können diese Schaltfläche jederzeit wieder öffnen, wenn das Trade-Formular zu einem anderen Journaling-Workflow passen soll.',
   'tradelog.guide.empty.intro.title': 'Willkommen beim Trade-Log',
   'tradelog.guide.empty.intro.description':
     'Diese Seite wird zu Ihrem Hauptort zum Durchsuchen, Sortieren und Überprüfen von Trades. Sobald Sie Trades hinzufügen, erhalten Sie auch die vollständige Trade-Log-Tour.',
   'tradelog.guide.empty.state.title': 'Keine Trading-Daten verfügbar',
   'tradelog.guide.empty.state.description':
-    'Importiere frühere Trades, um deine Leistung sofort auszuwerten, oder erfasse einen neuen Trade manuell.',
+    'Importieren Sie frühere Trades, um Ihre Leistung sofort auszuwerten, oder erfassen Sie einen neuen Trade manuell.',
   'tradelog.guide.intro.title': 'Dies ist Ihr Trade-Log',
   'tradelog.guide.intro.description':
     'Verwenden Sie diese Seite, um Trades einzeln zu überprüfen, zu sortieren, zu filtern und Änderungen an vielen Trades gleichzeitig vorzunehmen.',
@@ -1043,34 +1140,17 @@ const de: Lang = {
     'Klicken Sie in der Trades-Ansicht auf eine sortierbare Spaltenüberschrift, um die Tabelle neu anzuordnen. Klicken Sie beispielsweise auf Netto P&L, um nach Ihrem größten Gewinn und Ihrem größten Verlust zu sortieren.',
   'tradelog.guide.gallery-mode.title': 'Es gibt auch eine Bildergalerie',
   'tradelog.guide.gallery-mode.description':
-    'Wechsle hier den Modus, um deine Trade-Screenshots als Galerie zu durchstöbern. Beim ersten Öffnen zeigt dir ein kurzer Guide alles.',
-  'tradelog.guide.multi-select.title': 'Aktivieren Sie die Mehrfachauswahl',
-  'tradelog.guide.multi-select.description':
-    'Klicken Sie auf diese Schaltfläche, um mehrere Trades gleichzeitig auszuwählen. Wenn die Mehrfachauswahl aktiviert ist, wählen Zeilenklicks Trades aus, anstatt sie zu öffnen.',
-  'tradelog.guide.batch-actions.title': 'Dies sind Ihre Batch-Aktionen',
-  'tradelog.guide.batch-actions.description':
-    'Verwenden Sie diese Leiste, um alle sichtbaren Trades auszuwählen, Ihre Auswahl zu löschen, Trades als geprüft zu markieren, Setups hinzuzufügen, Fehler hinzuzufügen, Trades zu duplizieren oder mehrere Trades gleichzeitig zu löschen. Sie können auch bei gedrückter Umschalttaste klicken, um eine Reihe von Trades auszuwählen.',
-  'tradelog.guide.column-settings.title': 'Spalteneinstellungen öffnen',
-  'tradelog.guide.column-settings.description':
-    'Klicken Sie auf diese Schaltfläche, um auszuwählen, welche Spalten angezeigt werden und wie dicht oder detailliert die Tabelle wirken soll.',
-  'tradelog.guide.active-columns.title':
-    'Ordnen Sie die bereits verwendeten Spalten neu an oder entfernen Sie sie',
-  'tradelog.guide.active-columns.description':
-    'Ziehen Sie in „Aktive Spalten“ eine Spalte, um sie zu verschieben, oder entfernen Sie eine Spalte, die Sie nicht benötigen. Dadurch ändert sich die Reihenfolge der Tabelle von links nach rechts.',
-  'tradelog.guide.available-columns.title':
-    'Fügen Sie ausgeblendete Spalten wieder hinzu, wenn Sie weitere Details benötigen',
-  'tradelog.guide.available-columns.description':
-    'Öffnen Sie „Verfügbare Spalten“, um Felder wieder zur Tabelle hinzuzufügen. Dort bringen Sie alles zurück, was Sie zuvor entfernt haben.',
+    'Wechseln Sie hier den Modus, um Ihre Trade-Screenshots als Galerie zu durchstöbern. Beim ersten Öffnen zeigt Ihnen ein kurzer Guide alles.',
   'tradelog.guide.open-trades.title':
     'Klicken Sie auf einen Trade, wenn Sie dessen Notiz öffnen möchten',
   'tradelog.guide.open-trades.description':
     'Im normalen Modus wird durch Klicken auf einen Trade dieser geöffnet. Im Mehrfachauswahlmodus wird es stattdessen durch Klicken ausgewählt. Wechseln Sie zwischen diesen beiden Verhaltensweisen, je nachdem, was Sie tun möchten.',
   'dashboard.guide.empty.intro.title': 'Willkommen in Ihrem Dashboard',
   'dashboard.guide.empty.intro.description':
-    'Dein Dashboard wird nützlich, sobald Journalit einen Handelsverlauf analysieren kann.',
-  'dashboard.guide.empty.state.title': 'Nimm deinen Handelsverlauf mit',
+    'Ihr Dashboard wird nützlich, sobald Journalit einen Handelsverlauf analysieren kann.',
+  'dashboard.guide.empty.state.title': 'Bringen Sie Ihren Handelsverlauf mit',
   'dashboard.guide.empty.state.description':
-    'Importiere frühere Trades, um mit aussagekräftigen Leistungsdaten zu starten, oder füge einen Trade manuell hinzu, wenn du deine ersten Trades erfasst.',
+    'Importieren Sie frühere Trades, um mit aussagekräftigen Leistungsdaten zu starten, oder fügen Sie einen Trade manuell hinzu, wenn Sie Ihre ersten Trades erfassen.',
   'dashboard.guide.main.intro.title': 'Dies ist Ihr Dashboard',
   'dashboard.guide.main.intro.description':
     'Verwenden Sie diese Seite, um Ihre Leistung zu verfolgen, Ihre Statistiken zu überprüfen und Ihre nützlichsten Diagramme an einem Ort aufzubewahren.',
@@ -1102,17 +1182,13 @@ const de: Lang = {
     'Speichern Sie Ihr Layout, wenn Sie fertig sind',
   'dashboard.guide.main.save-layout.description':
     'Wenn Sie mit der Anpassung fertig sind, klicken Sie auf „Layout speichern“, um Ihre Änderungen beizubehalten. Sie können jederzeit zurückkommen und diese Seite erneut bearbeiten.',
-  'home.guide.intro.title': 'Willkommen zu Hause',
+  'home.guide.intro.title': 'Willkommen auf der Startseite',
   'home.guide.intro.description':
     'Dies ist Ihre Hauptseite. Es zeigt Ihre Trading-Statistiken, Schnellaktionen und Verknüpfungen zum Rest von Journalit an.',
   'home.guide.filters.title':
     'Diese Schaltflächen ändern, was Ihre Widgets anzeigen',
   'home.guide.filters.description':
-    'Verwenden Sie diese, um den Zeitraum, den Trade-Typ oder das Konto zu ändern, sodass Ihre Home-Widgets die Daten anzeigen, die Sie anzeigen möchten.',
-  'home.guide.settings.title':
-    'Deine Journalit-Einstellungen sind immer griffbereit',
-  'home.guide.settings.description':
-    'Mit dieser Schaltfläche öffnest du die Journalit-Einstellungen direkt.',
+    'Filtern Sie nach Zeitraum, Trade-Typ oder Konto. Wählen Sie Woche oder legen Sie mit Benutzerdefiniert ein Von/Bis-Datum (inklusive) fest. Zeitraumbezogene Widgets folgen Ihrer Auswahl; Live-Widgets bleiben live.',
   'home.guide.customize.title':
     'Aktivieren Sie den Bearbeitungsmodus, um die Startseite anzupassen',
   'home.guide.customize.description':
@@ -1139,9 +1215,6 @@ const de: Lang = {
     'Speichern Sie Ihr Layout, wenn Sie fertig sind',
   'home.guide.save-layout.description':
     'Wenn Sie mit dem Layout zufrieden sind, klicken Sie auf diese Schaltfläche, um Ihre Änderungen zu speichern und den Bearbeitungsmodus zu verlassen.',
-  'home.guide.widget-interactions.title': 'Das ist die Grundidee von Home',
-  'home.guide.widget-interactions.description':
-    'Home ist Ihr anpassbares Dashboard. Verwenden Sie den Bearbeitungsmodus, um das Layout zu ändern, und klicken Sie auf Widgets, um Tools, Einstellungen oder tiefer liegende Seiten zu öffnen.',
   'layoutBuilder.guide.intro.title': 'Dies ist Ihr Layout-Builder',
   'layoutBuilder.guide.intro.description':
     'Diese Seite steuert, wie Ihre Review-Vorlagen strukturiert sind. Der einfachste Einstieg besteht darin, eine integrierte Vorlage zu duplizieren und dann Ihre Kopie anzupassen.',
@@ -1149,8 +1222,7 @@ const de: Lang = {
     'Erstellen Sie Ihre eigene Vorlage',
   'layoutBuilder.guide.create-own-layout.description':
     'Integrierte Vorlagen sind schreibgeschützt. Klicken Sie bei einer integrierten DRC-Vorlage auf das Kopiersymbol, um sie zu duplizieren, oder auf +, um eine neue zu beginnen. Klicken Sie auf Weiter, um den Standard-DRC zu duplizieren.',
-  'layoutBuilder.guide.editor-overview.title':
-    'Hier bearbeiten Sie die Vorlage',
+  'layoutBuilder.guide.editor-overview.title': 'Hier bearbeiten Sie das Layout',
   'layoutBuilder.guide.editor-overview.description':
     'Benennen Sie die Vorlage hier um, überprüfen Sie die Widget-Liste, ziehen Sie den linken Ziehpunkt, um die Widgets neu anzuordnen, klicken Sie auf ein Widget, um es zu ändern, und entfernen Sie alles, was Sie nicht benötigen.',
   'layoutBuilder.guide.add-widget.title': 'Ein Widget hinzufügen',
@@ -1175,8 +1247,6 @@ const de: Lang = {
   'layoutBuilder.guide.whats-new.add-widget-button.description':
     'Widget hinzufügen fügt weiterhin am Ende des Layouts hinzu, scrollt jetzt aber zum neuen Widget und öffnet dessen Suche.',
   'tradelog.empty': 'Keine Trades gefunden',
-  'tradelog.empty.submessage':
-    'Beginnen Sie mit der Erstellung von Trade-Notizen, damit diese in Ihrem Trade-Log angezeigt werden.',
   'tradelog.processing': 'Trading-Daten werden verarbeitet...',
   'tradelog.node.file-not-found': 'Trade-Datei nicht gefunden: {path}',
   'tradelog.node.expand': 'Expandieren',
@@ -1192,22 +1262,17 @@ const de: Lang = {
   'tradelog.node.performance.day':
     '{indicator} performender Tag von {week} {year}',
   'tradelog.node.performance.period': '{indicator} performender Zeitraum',
-  'tradelog.filter.all': 'Alle Status',
   'tradelog.filter.winners': 'Gewinn-Trades',
   'tradelog.filter.losers': 'Verlust-Trades',
   'tradelog.filter.breakeven': 'Break-even',
-  'tradelog.filter.breakeven.desc': 'Breakeven-Trades',
   'tradelog.filter.open': 'Offen',
-  'tradelog.filter.open.desc': 'Derzeit offene Positionen',
   'tradelog.filter.closed': 'Geschlossen',
   'tradelog.type.regular': 'Regulär',
-  'tradelog.type.regular.desc': 'Standard-Trades',
   'tradelog.type.missed': 'Verpasst',
   'tradelog.type.backtest': 'Backtest',
   'tradelog.status.win': 'GEWINN',
   'tradelog.status.loss': 'VERLUST',
   'tradelog.status.open': 'OFFEN',
-  'tradelog.status.partially-closed': 'TEILGESCHLOSSEN',
   'tradelog.status.cancelled': 'STORNIERT',
   'tradelog.status.breakeven': 'DIE GEWINNZONE ERREICHEN',
   'tradelog.status.missed': 'VERPASST',
@@ -1224,18 +1289,18 @@ const de: Lang = {
   'tradelog.copy-trade.tooltip': 'Kopiert von {account} mit {multiplier}x',
   'tradelog.tooltip.partial-exits': 'Teilausstiege:',
   'tradelog.copy-trade.base-tooltip-title': 'Ergebnisse kopierter Konten',
-  'tradelog.copy-trade.adjustment-action': 'Kopiertes GuV anpassen',
-  'tradelog.copy-trade.adjustment-title': 'Kopiertes GuV anpassen',
+  'tradelog.copy-trade.adjustment-action': 'Kopierten P&L anpassen',
+  'tradelog.copy-trade.adjustment-title': 'Kopierten P&L anpassen',
   'tradelog.copy-trade.adjustment-description-primary':
-    'Gib die manuelle GuV-Anpassung für diesen kopierten Trade ein.',
+    'Geben Sie die manuelle P&L-Anpassung für diesen kopierten Trade ein.',
   'tradelog.copy-trade.adjustment-description-secondary':
-    'Verwende eine negative Zahl für schlechtere Ausführungen/Kosten.',
-  'tradelog.copy-trade.adjustment-preview': 'Vorschau Netto-GuV:',
+    'Verwenden Sie eine negative Zahl für schlechtere Ausführungen/Kosten.',
+  'tradelog.copy-trade.adjustment-preview': 'Vorschau Netto-P&L:',
 
   'tradelog.copy-trade.adjustment-invalid':
-    'Gib eine gültige GuV-Anpassung ein.',
+    'Geben Sie eine gültige P&L-Anpassung ein.',
   'tradelog.copy-trade.adjustment-saved':
-    'GuV-Anpassung für kopierten Trade gespeichert.',
+    'P&L-Anpassung für kopierten Trade gespeichert.',
   'tradelog.tooltip.still-open': 'noch offen',
 
   'tradelog.alt.trade-image': '{instrument}-Bild',
@@ -1303,9 +1368,9 @@ const de: Lang = {
   'tradelog.batch.delete.aria': 'Trades löschen',
 
   'tradelog.batch.deleting': 'Löschen...',
-  'tradelog.batch.clear.aria': 'Klare Auswahl',
+  'tradelog.batch.clear.aria': 'Auswahl aufheben',
 
-  'tradelog.batch.clear.label': 'Klar',
+  'tradelog.batch.clear.label': 'Leeren',
   'tradelog.settings.active-columns': 'Aktive Spalten',
   'tradelog.settings.available-columns': 'Verfügbare Spalten',
   'tradelog.settings.active-desc':
@@ -1368,12 +1433,13 @@ const de: Lang = {
   'tradelog.column.mistakes': 'Fehler',
   'tradelog.column.tags': 'Schlagworte',
   'tradelog.column.reviewed': 'Bewertet',
+  'tradelog.column.tradeRating': 'Bewertung',
   'tradelog.column.thesis': 'These',
   'tradelog.column.mtComment': 'MT-Kommentar',
   'dashboard.title': 'Auswertung',
   'dashboard.empty.message': 'Keine Trading-Daten verfügbar',
   'dashboard.empty.submessage':
-    'Importiere frühere Trades, um deine Leistung sofort auszuwerten, oder erfasse einen neuen Trade manuell.',
+    'Importieren Sie frühere Trades, um Ihre Leistung sofort auszuwerten, oder erfassen Sie einen neuen Trade manuell.',
   'dashboard.empty.import-action': 'Bestehende Trades importieren',
   'dashboard.empty.manual-action': 'Trade manuell hinzufügen',
   'dashboard.empty.filter-hint':
@@ -1397,7 +1463,7 @@ const de: Lang = {
   'dashboard.metrics.avgLoss': 'Durchschnittlicher Verlust',
   'dashboard.metrics.totalCommission': 'Gesamtprovision',
   'dashboard.metrics.totalFees': 'Gesamtgebühren',
-  'dashboard.metrics.maxDrawdown': 'Max. Rückgang',
+  'dashboard.metrics.maxDrawdown': 'Max. Drawdown',
   'dashboard.metrics.bestDay': 'Bester Tag',
   'dashboard.metrics.largestWin': 'Größter Gewinn',
   'dashboard.metrics.largestLoss': 'Größter Verlust',
@@ -1470,9 +1536,6 @@ const de: Lang = {
   'dashboard.filter.date.custom': 'Benutzerdefiniert',
   'dashboard.filter.date.from': 'Aus',
   'dashboard.filter.date.to': 'Zu',
-  'dashboard.filter.accounts.all': 'Alle Konten',
-  'dashboard.filter.accounts.n-selected': '{count}-Konten',
-  'dashboard.filter.accounts.select-all': 'Wählen Sie „Alle“ aus',
 
   'dashboard.filter.accounts.none-found': 'Keine Konten gefunden',
   'dashboard.filter.accounts.phase-now': 'jetzt',
@@ -1514,6 +1577,12 @@ const de: Lang = {
     'Rangliste der Performance nach Tag',
   'dashboard.widgets.tag-performance.empty': 'Keine Tag-Leistungsdaten',
   'dashboard.widgets.tag-performance.masked-label': 'Schlagworte',
+  'dashboard.widgets.rating-performance.title': 'Performance nach Bewertung',
+  'dashboard.widgets.rating-performance.description':
+    'Netto-P&L oder Trefferquote je Sternebewertung Ihrer Trades',
+  'dashboard.widgets.rating-performance.empty':
+    'Noch keine bewerteten Trades. Bewerte Trades in der Trade-Notiz, um sie hier zu vergleichen.',
+  'dashboard.widgets.rating-performance.masked-label': 'Bewertung',
   'dashboard.widgets.ticker-performance.title': 'Performance nach Ticker',
   'dashboard.widgets.ticker-performance.metric-aria': 'Metrik',
   'dashboard.widgets.ticker-performance.view-aria': 'Ansicht',
@@ -1524,7 +1593,6 @@ const de: Lang = {
   'dashboard.widgets.ticker-performance.metric.total-pnl': 'Gesamt-P&L',
   'dashboard.widgets.ticker-performance.metric.total-r': 'Gesamt-R',
   'dashboard.widgets.ticker-performance.metric.win-rate': 'Trefferquote',
-  'dashboard.widgets.ticker-performance.tooltip.ticker': 'Symbol: {ticker}',
   'dashboard.widgets.ticker-performance.tooltip.trades':
     'Transaktionen: {count}',
   'dashboard.widgets.ticker-performance.tooltip.win-rate':
@@ -1532,10 +1600,8 @@ const de: Lang = {
 
   'dashboard.widgets.ticker-performance.empty':
     'Keine Ticker-Performance-Daten',
-  'dashboard.widgets.ticker-performance.empty-submessage':
-    'Keine geschlossenen Trades mit einem Ticker entsprechen den aktuellen Filtern.',
   'dashboard.widgets.ticker-performance.masked-ticker': 'Symbol',
-  'dashboard.widgets.ticker-performance.omitted-count': 'Ausgelassen: {count}',
+  'dashboard.widgets.ticker-performance.omitted-count': '{count} ausgelassen',
 
   'dashboard.widgets.rollingStats.title':
     'Rollierender durchschnittlicher Gewinn/Verlust',
@@ -1569,16 +1635,15 @@ const de: Lang = {
     'Checkliste zur Einrichtung von Journalit',
   'home.widget.getting-started.progress': '{completed}/{total} abgeschlossen',
   'home.widget.getting-started.progress.loading': 'Fortschritt wird geprüft...',
-  'home.widget.getting-started.item.account.title':
-    'Richten Sie Ihr Handelskonto ein',
+  'home.widget.getting-started.item.account.title': 'Trading-Konto einrichten',
   'home.widget.getting-started.item.account.description':
-    'Trades werden einem Konto zugeordnet, das Ihren Kontostand verfolgt. Ohne Konto lassen sich Rendite und Drawdown nicht berechnen.',
+    'Trades werden einem Konto zugeordnet, das Ihren Saldo verfolgt. Ohne Konto lassen sich Renditen und Drawdown nicht berechnen.',
   'home.widget.getting-started.item.account.time': '15s',
   'home.widget.getting-started.item.account.cta': 'Konto einrichten',
   'home.widget.getting-started.item.create.title':
-    'Übernimm deinen Handelsverlauf',
+    'Übernehmen Sie Ihren Handelsverlauf',
   'home.widget.getting-started.item.create.description':
-    'Importiere bestehende Trades, verbinde Trade Sync oder füge deinen ersten Trade manuell hinzu.',
+    'Importieren Sie bestehende Trades, verbinden Sie Trade Sync oder fügen Sie Ihren ersten Trade manuell hinzu.',
   'home.widget.getting-started.item.create.time': '30er Jahre',
   'home.widget.getting-started.item.create.cta': 'Trade Import öffnen',
   'home.widget.getting-started.item.tradelog.title': 'Trade-Log öffnen',
@@ -1589,7 +1654,7 @@ const de: Lang = {
   'home.widget.getting-started.item.layouts.title':
     'Öffnen Sie den Layout-Builder',
   'home.widget.getting-started.item.layouts.description':
-    'Gestalten Sie Ihre Review-Vorlagen nach Ihren Wünschen.',
+    'Gestalten Sie Ihre Review-Layouts nach Ihren Wünschen.',
   'home.widget.getting-started.item.layouts.time': '1 Minute',
   'home.widget.getting-started.item.layouts.cta':
     'Öffnen Sie den Layout-Builder',
@@ -1601,7 +1666,7 @@ const de: Lang = {
   'home.widget.getting-started.item.sidebar.cta': 'Seitenleiste öffnen',
   'home.widget.getting-started.item.pro.title': 'Aktivieren Sie PRO',
   'home.widget.getting-started.item.pro.description':
-    'Aktivieren Sie Trade Import, Trade Sync und den Wirtschaftskalender.',
+    'Aktivieren Sie Trade Import, Trade Sync und den Wirtschaftskalender und erhalten Sie mehr KI-Tool-Aufrufe pro Monat.',
   'home.widget.getting-started.item.pro.time': '1 Minute',
   'home.widget.getting-started.item.pro.cta': 'Aktivieren',
   'home.widget.weekly-summary.name': 'Wöchentliche Zusammenfassung',
@@ -1623,7 +1688,7 @@ const de: Lang = {
     'Verfolgen Sie Trade- und Review-Serien',
   'home.widget.best-hours.name': 'Beste Stunden',
   'home.widget.best-hours.description':
-    'Zu welcher Tageszeit du am besten tradest',
+    'Zu welcher Tageszeit Sie am besten traden',
   'home.widget.setup-leaderboard.name': 'Top-Aufschlüsselung',
   'home.widget.setup-leaderboard.description':
     'Top-Setups, Tags, Asset-Typen oder Ticker',
@@ -1631,24 +1696,21 @@ const de: Lang = {
   'home.widget.unreviewed-trades.description':
     'Trades, die einen Review benötigen',
   'home.widget.goals-progress.name': 'Zielfortschritt',
-  'home.widget.goals-progress.description':
-    'Fortschritt zu deinem Trading-Ziel',
+  'home.widget.goals-progress.description': 'Fortschritt zu Ihrem Trading-Ziel',
   'home.widget.trading-score.name': 'Trading-Score',
   'home.widget.trading-score.description':
-    'Eine Kennzahl für deine gesamte Trading-Leistung',
+    'Eine Kennzahl für Ihre gesamte Trading-Leistung',
   'home.widget.aum.name': 'AUM',
   'home.widget.aum.description': 'Aktuelle Kontostände mit einem 30-Tage-Trend',
   'home.widget.drawdown-monitor.name': 'Drawdown-Monitor',
   'home.widget.drawdown-monitor.description':
     'Auslastung des Drawdown-Limits je Konto',
-  'account.header.title': 'Konto: {name}',
   'account.header.back-to-dashboard': 'Zurück zum Dashboard',
   'account.header.add-event.aria': 'Einzahlung/Auszahlung hinzufügen',
   'account.header.edit-account.aria': 'Konto bearbeiten',
   'account.header.view-trades.aria': 'Trades im Trade Log anzeigen',
   'account.header.type': 'Typ:',
   'account.header.initial-balance': 'Anfangssaldo:',
-  'account.header.current-balance': 'Aktueller Kontostand:',
   'account.header.account-id': 'Konto-ID:',
   'account.header.warning.trades-before-creation.one':
     '{count} Trade vor Kontoerstellungsdatum gefunden',
@@ -1740,35 +1802,35 @@ const de: Lang = {
   'view.economic-calendar.restore-missing-events':
     'Fehlende Ereignisse wiederherstellen ({count})',
   'economicCalendar.guide.main.intro.description':
-    'Hier siehst du die vollständige Woche. Journalit kann deinen Wochenrückblick automatisch aktuell halten, sodass der manuelle Import optional ist.',
+    'Hier sehen Sie die vollständige Woche. Journalit kann Ihren Wochenrückblick automatisch aktuell halten, sodass der manuelle Import optional ist.',
   'economicCalendar.guide.main.filters.title':
     'Diese Filter ändern nur diesen Kalender',
   'economicCalendar.guide.main.filters.description':
-    'Währungs- und Auswirkungsfilter begrenzen nur die hier angezeigten und auswählbaren Ereignisse. Sie ändern deine Regeln für den automatischen Import nicht.',
+    'Währungs- und Auswirkungsfilter begrenzen nur die hier angezeigten und auswählbaren Ereignisse. Sie ändern Ihre Regeln für den automatischen Import nicht.',
   'economicCalendar.guide.main.settings.title':
     'Automatischen Import in den Einstellungen konfigurieren',
   'economicCalendar.guide.main.settings.description':
-    'Wähle hier Währungen, Auswirkungsstufen und Feiertage aus und aktiviere den automatischen Import. Journalit synchronisiert die aktuelle Woche mit deinem Wochenrückblick und aktualisiert importierte Werte, ohne bewusst entfernte Ereignisse erneut hinzuzufügen.',
+    'Wählen Sie hier Währungen, Auswirkungsstufen und Feiertage aus und aktivieren Sie den automatischen Import. Journalit synchronisiert die aktuelle Woche mit Ihrem Wochenrückblick und aktualisiert importierte Werte, ohne bewusst entfernte Ereignisse erneut hinzuzufügen.',
   'economicCalendar.guide.main.manual-import.title':
     'Manuelle Importe sind optional',
   'economicCalendar.guide.main.manual-import.description':
-    'Wähle sichtbare Zeilen aus und nutze Ereignisse importieren für einen einmaligen Import. Bei aktiviertem automatischem Import ist das nicht jede Woche nötig.',
+    'Wählen Sie sichtbare Zeilen aus und nutzen Sie Ereignisse importieren für einen einmaligen Import. Bei aktiviertem automatischem Import ist das nicht jede Woche nötig.',
   'economicCalendar.guide.main.restore.title':
     'Fehlende konfigurierte Ereignisse wiederherstellen',
   'economicCalendar.guide.main.restore.description':
-    'Diese Schaltfläche wird verfügbar, wenn Ereignisse aus deinem gespeicherten automatischen Importbereich fehlen. Sobald die Woche wieder vollständig ist, bleibt sie sichtbar, ist aber deaktiviert.',
+    'Diese Schaltfläche wird verfügbar, wenn Ereignisse aus Ihrem gespeicherten automatischen Importbereich fehlen. Sobald die Woche wieder vollständig ist, bleibt sie sichtbar, ist aber deaktiviert.',
   'economicCalendar.guide.main.summary.title':
     'Einmal einrichten, dann überprüfen',
   'economicCalendar.guide.main.summary.description':
-    'Nach der Einrichtung des automatischen Imports bleibt dein Wochenrückblick gefüllt. Kehre hierher zurück, um zu stöbern, einmalig zu importieren oder fehlende Ereignisse wiederherzustellen.',
+    'Nach der Einrichtung des automatischen Imports bleibt Ihr Wochenrückblick gefüllt. Kehren Sie hierher zurück, um zu stöbern, einmalig zu importieren oder fehlende Ereignisse wiederherzustellen.',
   'view.economic-calendar.pro-benefit':
-    'Wichtige Ereignisse in deiner Wochennotiz.',
+    'Wichtige Ereignisse in Ihrer Wochennotiz.',
   'view.economic-calendar.pro-benefit-trial':
     'Starten Sie mit einer 14-tägigen kostenlosen Testphase.',
   'view.economic-calendar.sign-in': 'Bereits Pro? Anmelden',
   'settings.economic-calendar.title': 'Wirtschaftskalender',
   'settings.economic-calendar.description':
-    'Importiert die Wirtschaftstermine dieser Woche automatisch in die Kernereignisse deiner Wochennotiz.',
+    'Importiert die Wirtschaftstermine dieser Woche automatisch in die Kernereignisse Ihrer Wochennotiz.',
   'settings.economic-calendar.auto-import':
     'Wochentermine automatisch importieren',
   'settings.economic-calendar.auto-import-desc':
@@ -1780,7 +1842,7 @@ const de: Lang = {
   'settings.economic-calendar.impacts-desc':
     'Termine mit diesen Wirkungsstufen importieren.',
   'settings.economic-calendar.impacts-empty':
-    'Keine Veröffentlichungen ausgewählt. Feiertage können weiterhin importiert werden, wenn sie aktiviert sind.',
+    'Keine Veröffentlichungen ausgewählt. Feiertage können bei Aktivierung weiterhin importiert werden.',
   'settings.economic-calendar.include-holidays': 'Feiertage einbeziehen',
   'settings.economic-calendar.include-holidays-desc':
     'Bankfeiertage und Notenbankprotokolle als ganztägige Einträge importieren.',
@@ -1793,20 +1855,17 @@ const de: Lang = {
   'status-bar.update-aria-label': 'Journalit {version} – Zum Anzeigen klicken',
   'update.available.ready': 'Eine neue Version ist verfügbar',
   'template.transformation.orphaned-content.header':
-    'Inhalt aus vorheriger Vorlage',
+    'Inhalt aus dem vorherigen Layout',
   'template.transformation.orphaned-content.desc1':
-    'Der folgende Inhalt passte nicht zum neuen Vorlagenlayout.',
+    'Der folgende Inhalt passte nicht in das neue Layout.',
   'template.transformation.orphaned-content.desc2':
     'Überprüfen und integrieren Sie es oben oder löschen Sie es, wenn es nicht mehr benötigt wird.',
-  'template.editor.loading': 'Vorlage wird geladen...',
+  'template.editor.loading': 'Layout wird geladen...',
   'template.editor.built-in': 'Eingebaut',
   'template.editor.unsaved-changes': 'Nicht gespeicherte Änderungen',
 
   'template.editor.built-in-notice':
     'Integrierte Vorlagen können nicht bearbeitet werden. Duplizieren Sie diese Vorlage oder erstellen Sie eine neue, um sie anzupassen.',
-
-  'template.editor.show-review-desc':
-    'Wann der Review-Abschnitt auf Trade-Notizen angezeigt werden soll',
 
   'template.editor.section-visibility': 'Abschnittssichtbarkeit',
   'template.editor.trade-note-layout': 'Trade-Notiz-Layout',
@@ -1827,6 +1886,11 @@ const de: Lang = {
     'Anzeigen, warum der verpasste Trade nicht genommen wurde',
   'template.editor.metric-cards': 'Kennzahlenkarten',
   'template.editor.metadata-rows': 'Metadatenzeilen',
+  'template.editor.note-sections': 'Notizabschnitte',
+  'template.editor.note-sections-desc':
+    'Überschriften und Text, die in neuen Trade-Notizen unter den Trade geschrieben werden, für alle Asset-Typen. Danach in der Notiz bearbeitbar.',
+  'template.editor.note-sections-zone-placeholder':
+    'Text für neue Trade-Notizen...',
   'template.editor.accounts': 'Konten',
   'template.editor.setups': 'Setups',
   'template.editor.mistakes': 'Fehler',
@@ -1837,19 +1901,27 @@ const de: Lang = {
 
   'template.editor.metric.position-size': 'Positionsgröße',
   'template.editor.metric.execution-breakdown': 'Ausführungsübersicht',
-  'template.editor.metric.pnl': 'GuV',
+  'template.editor.metric.pnl': 'P&L',
   'template.editor.metric.r-multiple': 'R-Multiple',
   'template.editor.metric.costs': 'Kosten',
   'template.editor.nav-bar': 'Navigationsleiste',
   'template.editor.nav-bar-desc': 'Trade-Zeitleiste und Review-Links anzeigen',
   'template.editor.images': 'Bilder',
   'template.editor.images-desc': 'Bilder von Trade-Charts anzeigen',
+  'template.editor.image-layout': 'Bildlayout',
+  'template.editor.image-layout-desc':
+    'Bilder einzeln oder alle untereinander anzeigen',
+  'template.editor.image-layout-carousel': 'Karussell',
+  'template.editor.image-layout-stacked': 'Gestapelt',
   'template.editor.metadata': 'Metadaten',
   'template.editor.metadata-desc': 'Konten, Setups und Fehler anzeigen',
 
   'template.editor.review-button': 'Schaltfläche „Bewertet markieren“.',
   'template.editor.review-button-desc':
     'Schaltfläche anzeigen, um den Trade als geprüft zu markieren',
+  'template.editor.rating': 'Bewertung',
+  'template.editor.rating-desc':
+    'Zeigt die Sternebewertung, die Sie dem Trade geben',
 
   'csv.mapper.title': 'Ordnen Sie Spalten Trade-Feldern zu',
   'csv.mapper.subtitle':
@@ -1860,14 +1932,11 @@ const de: Lang = {
   'csv.mapper.example': 'Beispiel:',
   'csv.mapper.mode.title': 'Was ist eine Zeile?',
   'csv.mapper.mode.help':
-    'Journal-Tabellen haben meist einen abgeschlossenen Trade pro Zeile mit einer G/V-Spalte. Order-Historien von Brokern führen jeden Kauf und Verkauf als eigene Zeile.',
-
-  'csv.mapper.asset-type.help':
-    'Wählen Sie den Instrumententyp in dieser Datei aus. Dadurch werden die erforderlichen Felder und die Parsing-Logik bestimmt.',
+    'Journal-Tabellen haben meist einen abgeschlossenen Trade pro Zeile mit einer P&L-Spalte. Order-Historien von Brokern führen jeden Kauf und Verkauf als eigene Zeile.',
 
   'csv.mapper.tip.title': 'Tipp: Ordnen Sie zusätzliche Felder zu',
   'csv.mapper.tip.desc':
-    'Die Zuordnung optionaler Felder wie Provision und G/V verbessert die Importqualität. Sie können auch mehrere Spalten zuordnen, um Felder wie Tags, Bilder, Setups und Fehler aufzulisten.',
+    'Die Zuordnung optionaler Felder wie Provision und P&L verbessert die Importqualität. Sie können auch mehrere Spalten zuordnen, um Felder wie Tags, Bilder, Setups und Fehler aufzulisten.',
   'csv.mapper.missing-fields': 'Fehlende erforderliche Felder für {assetType}:',
   'csv.mapper.summary.title': 'Zusammenfassung:',
   'csv.mapper.summary.of': 'von',
@@ -1903,7 +1972,7 @@ const de: Lang = {
   'csv.mapper.help.option-type-required':
     'Erforderlich für Optionen (Call oder Put)',
   'csv.mapper.help.contract-size':
-    'Multiplikator für Optionen (normalerweise 100) oder Futures',
+    'Multiplikator für Optionen (normalerweise 100), Futures oder Forex (Einheiten pro Lot, normalerweise 100.000)',
   'csv.mapper.help.order-id': 'Wird zum Aggregieren von Teil-Fills verwendet',
   'csv.mapper.help.asset-types': 'Aktien, Optionen, Futures, Forex, Krypto',
   'csv.mapper.help.status': 'Trade-Status: OFFEN oder GESCHLOSSEN',
@@ -1914,28 +1983,11 @@ const de: Lang = {
   'csv.mapper.category.options': 'Optionsfelder',
   'csv.mapper.category.futures': 'Futures-Felder',
 
-  'csv.broker.label': 'Broker-/Importformat',
-
   'csv.broker.remove-favorite-aria': 'Aus Favoriten entfernen',
   'csv.broker.set-favorite-aria': 'Als Favorit festlegen',
-  'csv.broker.ibkr': 'Interaktive Broker (IBKR)',
-  'csv.broker.tradovate': 'Tradovate',
-  'csv.broker.tradezero': 'TradeZero',
-  'csv.broker.tradingview': 'TradingView Papierhandel',
-  'csv.broker.bybit': 'Bybit (USDT Perpetuals)',
-  'csv.broker.blofin': 'Blofin',
-  'csv.broker.hyperliquid': 'Hyperliquid (Perpetuals)',
-  'csv.broker.sierrachart': 'SierraChart (Futures)',
-  'csv.broker.motivewave': 'MotiveWave',
-  'csv.broker.fxreplay': 'FX-Wiedergabe (Analyse)',
-  'csv.broker.atas': 'ATAS (Statistics Realtime)',
-  'csv.broker.rithmic': 'Rithmisch',
-  'csv.broker.jdr': 'MetaTrader 4 / 5',
 
   'csv.account-selector.favorite.remove': 'Aus Favoriten entfernen',
   'csv.account-selector.favorite.set': 'Als Favorit festlegen',
-
-  'csv.results.successfully-imported-suffix': 'Trades',
 
   'csv.results.failed-to-import-prefix': 'Import fehlgeschlagen',
   'csv.results.failed-to-import-suffix': 'Zeilen (Details siehe unten)',
@@ -1943,8 +1995,6 @@ const de: Lang = {
   'csv.results.pending-local-writes':
     '{count} Schreibvorgang/-vorgänge für Handelsnotizen stehen noch aus. Journalit gleicht abgeschlossene Schreibvorgänge ab und hält nicht abgeschlossene Projektionen für die Wiederherstellung verfügbar.',
   'csv.results.pending-title': 'Import wird noch synchronisiert',
-
-  'csv.image-review.count': '{count} Bild(er)',
 
   'image.uploader.paste-title':
     'Medien aus der Zwischenablage einfügen (Strg+V)',
@@ -1955,19 +2005,25 @@ const de: Lang = {
   'image.uploader.file-upload-aria': 'Aus Datei hochladen',
   'image.uploader.paste-clipboard-aria': 'Aus der Zwischenablage einfügen',
   'image.uploader.error-invalid-url':
-    'Ungültige Bild-URL oder ungültiger Dateipfad. Gib eine unterstützte Bild-URL, einen Vault-Bildpfad oder einen Excalidraw-Link ein.',
+    'Ungültige Medien-URL oder ungültiger Dateipfad. Geben Sie eine unterstützte Bild-/Video-URL, einen Vault-Medienpfad oder einen Excalidraw-Link ein.',
   'image.viewer.alt-default': 'Bild',
   'image.viewer.description-default': 'Medienvorschau',
 
   'image.viewer.title-fullscreen':
     'Klicken Sie hier, um den Vollbildmodus anzuzeigen',
 
-  'image.viewer.delete-button': 'Bild löschen',
+  'image.viewer.delete-button': 'Medium löschen',
   'image.viewer.nav-prev': 'Vorheriges Bild',
   'image.viewer.nav-next': 'Nächstes Bild',
   'image.viewer.zoom-in-hint': 'Zum Vergrößern kneifen oder klicken',
   'image.viewer.zoom-out-hint':
     '{scale}x (Zum Verkleinern zusammenziehen oder anklicken)',
+
+  'image.youtube.unavailable-title': 'YouTube-Video',
+
+  'image.youtube.unavailable-description': 'Privat oder nicht verfügbar',
+
+  'image.youtube.open': 'Auf YouTube öffnen',
 
   'image.viewer.close-aria': 'Vollbild schließen',
   'image.viewer.copy-image': 'Bild kopieren',
@@ -1992,8 +2048,8 @@ const de: Lang = {
   'image.carousel.next': 'Nächstes Bild',
   'image.carousel.image-alt': '{prefix} {index}',
   'image.carousel.thumbnail-alt': 'Miniaturansicht {index}',
-  'paste.notice.image-pasted': '📋 Bild erfolgreich eingefügt',
-  'paste.notice.images-pasted': '📋 {count} Bilder erfolgreich eingefügt',
+  'paste.notice.image-pasted': 'Bild erfolgreich eingefügt',
+  'paste.notice.images-pasted': '{count} Bilder erfolgreich eingefügt',
   'paste.error.clipboard-not-supported':
     'Zwischenablage API wird nicht unterstützt',
   'paste.error.clipboard-empty':
@@ -2004,9 +2060,14 @@ const de: Lang = {
     'Keine Bilder in der Zwischenablage gefunden. Versuchen Sie zunächst, ein Bild zu kopieren.',
   'paste.error.permission-denied': 'Zugriff verweigert',
 
-  'datepicker.button.clear': 'Klar',
+  'datepicker.button.clear': 'Leeren',
   'datepicker.button.today': 'Heute',
   'datepicker.button.now': 'Jetzt',
+  'datepicker.aria.hour': 'Stunde',
+  'datepicker.aria.minute': 'Minute',
+  'datepicker.aria.second': 'Sekunde',
+  'datepicker.aria.previous-month': 'Vorheriger Monat',
+  'datepicker.aria.next-month': 'Nächster Monat',
   'datepicker.placeholder.day': 'DD',
   'datepicker.placeholder.month': 'MM',
   'datepicker.placeholder.year': 'YY',
@@ -2015,12 +2076,13 @@ const de: Lang = {
   'datepicker.placeholder.second': 'SS',
   'common.loading': 'Laden...',
   'common.error': 'Fehler',
+  'common.section-error': 'In diesem Bereich ist ein Fehler aufgetreten.',
+  'common.retry': 'Erneut versuchen',
 
   'common.warning': 'Warnung',
   'common.info': 'Info',
   'common.yes': 'Ja',
   'common.no': 'NEIN',
-  'common.ok': 'OK',
 
   'common.select-option': 'Wählen Sie eine Option',
 
@@ -2036,8 +2098,6 @@ const de: Lang = {
   'common.select-item': 'Wählen Sie {item}',
   'common.header': 'Kopfzeile',
 
-  'common.date': 'Datum',
-
   'common.days': 'Tage',
   'common.week': 'Woche',
   'common.weeks': 'Wochen',
@@ -2048,16 +2108,12 @@ const de: Lang = {
   'common.quarter': 'Quartal',
   'common.quarters': 'Viertel',
 
-  'common.min': 'Min',
-  'common.max': 'Max',
   'common.best': 'Am besten',
   'common.worst': 'Am schlimmsten',
-  'common.profit': 'Profitieren',
 
   'common.trade': 'Trade',
   'common.trades': 'Trades',
 
-  'common.statuses': 'Status',
   'common.enabled': 'aktiviert',
   'common.disabled': 'deaktiviert',
   'common.color.gray': 'Grau',
@@ -2092,18 +2148,18 @@ const de: Lang = {
   'common.score.strong': 'Stark',
   'common.score.excellent': 'Exzellent',
   'chart.tooltip.pnl': 'P&L',
-  'chart.tooltip.peak-equity': 'Höchststand realisierter GuV',
+  'chart.tooltip.peak-equity': 'Höchststand des realisierten P&L',
   'chart.tooltip.episode-start': 'Episodenstart',
   'chart.tooltip.underwater-days': 'Zeit im Drawdown',
   'chart.tooltip.underwater-trades': 'Trades im Drawdown',
-  'chart.tooltip.drawdown-amount': 'Amount',
+  'chart.tooltip.drawdown-amount': 'Betrag',
   'chart.tooltip.drawdown-percent': 'Drawdown % von {basis}',
   'chart.tooltip.percent-basis': 'Prozentbasis',
 
   'chart.tooltip.trade-pnl': 'Trade P&L',
 
   'chart.tooltip.accounts-list': '{accounts}',
-  'chart.tooltip.more-accounts': '+{count} more',
+  'chart.tooltip.more-accounts': '+{count} weitere',
   'chart.loading': 'Diagramm wird geladen...',
   'chart.label.pnl': 'P&L',
   'chart.legend.entry': 'Einstieg',
@@ -2172,17 +2228,12 @@ const de: Lang = {
   'settings.auth.status-offline': 'Offline',
   'settings.auth.status-online': 'Online',
 
-  'settings.auth.signed-in': 'Angemeldet',
   'settings.auth.sign-in-up': 'Anmelden / Registrieren',
   'settings.auth.sign-out': 'Abmelden',
 
-  'settings.auth.subscription-features': 'Abonnementfunktionen',
-
-  'settings.auth.offline-mode': 'Offline-Modus',
-
   'settings.auth.guest': 'Gast',
 
-  'settings.auth.your-plan': 'Dein Plan',
+  'settings.auth.your-plan': 'Ihr Plan',
 
   'settings.auth.manage-subscription': 'Abonnement verwalten',
   'settings.tab.general': 'Allgemein',
@@ -2190,32 +2241,33 @@ const de: Lang = {
 
   'settings.tab.customization': 'Anpassung',
   'settings.tab.journal-setup': 'Journal',
-  'settings.tab.backend': 'Trade-Synchronisierung',
   'settings.tab.trading': 'Trade-Standardwerte',
   'settings.tab.sync': 'Konto & Synchronisierung',
-  'settings.tab.accounts': 'Konto',
+  'settings.page.reviews.title': 'Review-Layouts, Ziele und Checklisten',
+  'settings.page.reviews.desc':
+    'Öffnet die vollständigen Review-Einstellungen für Layouts, wiederkehrende Ziele und Checklisten.',
+  'settings.page.customization.desc':
+    'Öffnet eigene Felder, Formularlayout, Symbole, Zuordnungen, Setups, Fehler, Tags und Ereignisse.',
+  'settings.page.trade-sync.desc':
+    'Öffnet Broker-Synchronisierungsanbieter, FTP-Zugangsdaten, Kontoverwaltung, Diagnose und Benachrichtigungseinstellungen für die Synchronisierung.',
+  'settings.page.general.desc':
+    'Währung, Anzeigename, Startansicht, zuletzt verwendete Elemente und Navigationseinstellungen.',
+  'settings.page.sync.desc':
+    'Journalit-Konto, Abonnement, Trade-Synchronisierung, Trade Import und Wirtschaftskalender.',
+  'settings.page.trading.desc':
+    'Standardwerte für neue Trades, Datumsverarbeitung, Risiko, Break-even-Logik und Anzeigeeinstellungen für Analysen.',
+  'settings.page.journal.desc':
+    'Review-Vorlagen, Automatisierung, benutzerdefinierte Felder, Formularlayout, Symbole, Setups, Fehler, Tags und Ereignisse.',
+  'settings.page.advanced.desc':
+    'Journal-Ordner, Pflege der Bildpfade, Sicherung der Einstellungen, Import, Export und Zurücksetzen.',
+  'settings.page.mcp-access.desc':
+    'Erlauben Sie KI-Apps, die Sie über MCP verbinden, diesen Vault zu nutzen, legen Sie fest, was Ihre Genehmigung braucht, und prüfen Sie die Aktivität der Agenten.',
   'settings.reviews.drc': 'DRC',
   'settings.reviews.weekly': 'Wöchentlicher Rückblick',
   'settings.reviews.monthly': 'Monatlicher Rückblick',
   'settings.reviews.quarterly': 'Quartalsreview',
   'settings.reviews.yearly': 'Jahresrückblick',
-  'settings.reviews.default-templates': 'Standardlayouts',
 
-  'settings.reviews.trade-template': 'Trade-Layout',
-  'settings.reviews.trade-template-desc': 'Layout für neue Trade-Notizen',
-  'settings.reviews.drc-template': 'DRC-Layout',
-  'settings.reviews.drc-template-desc': 'Layout für neue Tageszeugnisse',
-  'settings.reviews.weekly-template': 'Wöchentliche Layout',
-  'settings.reviews.weekly-template-desc':
-    'Vorlage für neue wöchentliche Reviews',
-  'settings.reviews.monthly-template': 'Monatliche Layout',
-  'settings.reviews.monthly-template-desc':
-    'Vorlage für neue monatliche Reviews',
-  'settings.reviews.quarterly-template': 'Vierteljährliche Layout',
-  'settings.reviews.quarterly-template-desc':
-    'Vorlage für neue Quartalsreviews',
-  'settings.reviews.yearly-template': 'Jährliche Layout',
-  'settings.reviews.yearly-template-desc': 'Layout für neue Jahresreviews',
   'settings.reviews.template-builder': 'Layout-Builder',
   'settings.reviews.template-builder-desc':
     'Erstellen, bearbeiten und verwalten Sie Ihre Layouts visuell. In der Builder-Ansicht können Sie Abschnitte per Drag-and-Drop verschieben, Optionen konfigurieren und eine Vorschau Ihrer Layouts in Echtzeit anzeigen.',
@@ -2236,8 +2288,8 @@ const de: Lang = {
   'settings.reviews.weekly-goals': 'Wöchentliche Ziele',
   'settings.reviews.weekly-goal-placeholder':
     'Fügen Sie ein wiederkehrendes wöchentliches Ziel hinzu...',
-  'settings.reviews.pre-trade-checklist': 'DRC-Checkliste vor dem Trade',
-  'settings.reviews.pre-trade-checklist-desc':
+  'settings.reviews.checklist': 'DRC-Checkliste',
+  'settings.reviews.checklist-desc':
     'Definieren Sie Checklistenelemente, die automatisch auf jeder neuen DRC erscheinen. Diese werden bei der Erstellung auf jedes DRC kopiert und können täglich bearbeitet werden.',
   'settings.reviews.checklist-placeholder':
     'Fügen Sie einen Checklistenpunkt hinzu...',
@@ -2285,9 +2337,6 @@ const de: Lang = {
     'Für alle Reviews automatisch erstellen {status}',
   'settings.reviews.notice.auto-create-nav':
     '{type} automatisch in der Navigation {status} erstellen',
-  'settings.reviews.daily.checklist-title': 'Punkte der Pre-Trade-Checkliste',
-
-  'settings.reviews.daily.questions-title': 'Überprüfen Sie Fragen',
 
   'library.type.drc': 'DRC',
   'library.type.weekly': 'Wöchentlich',
@@ -2299,7 +2348,7 @@ const de: Lang = {
   'library.notice.import-success': 'Layout „{name}“ erfolgreich importiert!',
   'library.error.import-failed': 'Layout konnte nicht importiert werden',
   'library.notice.select-template':
-    'Bitte wählen Sie eine Vorlage zum Exportieren aus',
+    'Bitte wählen Sie ein Layout zum Exportieren aus',
   'library.notice.template-not-found': 'Layout nicht gefunden',
   'library.notice.code-generated': 'Freigabecode generiert!',
   'library.error.export-failed': 'Layout konnte nicht exportiert werden',
@@ -2323,29 +2372,13 @@ const de: Lang = {
     'Wählen Sie eine Vorlage aus, um einen Freigabecode zu generieren, den andere importieren können.',
   'library.empty.title': 'Keine benutzerdefinierten Layouts zum Exportieren.',
   'library.empty.hint':
-    'Erstellen Sie zunächst eine benutzerdefinierte Vorlage auf den Registerkarten „Review-“ oder „Trade-Vorlagen“ und kehren Sie dann hierher zurück, um sie zu teilen.',
+    'Erstellen Sie zuerst ein eigenes Layout in den Tabs für Review- oder Trade-Layouts und kommen Sie dann hierher zurück, um es zu teilen.',
   'library.label.select-template': 'Layout auswählen',
   'library.option.select-template': '-- Wählen Sie eine Layout aus --',
   'library.button.generate-code': 'Freigabecode generieren',
   'library.button.copy-code': 'In die Zwischenablage kopieren',
 
-  'settings.reviews.daily.timeframes-title': 'Zeitrahmen prognostizieren',
-
-  'settings.reviews.daily.timeframes-placeholder':
-    'Neuer Zeitrahmen (z. B. 15 Min, 5 Min)',
-  'settings.weekly.review-questions': 'Überprüfen Sie Fragen',
-
-  'settings.weekly.forecast-timeframes': 'Zeitrahmen prognostizieren',
-
-  'settings.shared.timeframes.title': 'Zeitrahmen prognostizieren',
-
-  'settings.shared.timeframes.placeholder':
-    'Neuer Zeitrahmen (z. B. 15 Min, 5 Min)',
-
   'shared.empty-state.message': 'Keine Daten verfügbar',
-
-  'weekly.tab.review': 'Review',
-  'weekly.review.drcs.title': 'Tägliche Reviews für diese Woche',
 
   'account.settings.modal.title': 'Einstellungen des Konto-Dashboards',
   'account.settings.notice.name-empty':
@@ -2456,58 +2489,19 @@ const de: Lang = {
     'Kontotyp, der angewendet wird, wenn eine Challenge diese Phase erreicht.',
   'account.settings.section.challenge-stages.no-change': 'Keine Änderung',
   'account.settings.section.challenge-stages.aria': 'Kontotyp für {stage}',
-  'account.settings.section.inclusion.title':
-    'Einstellungen zur Dashboard-Einbindung',
+  'account.settings.section.inclusion.title': 'Kontotypen im Dashboard',
   'account.settings.section.inclusion.desc':
-    'Wählen Sie aus, welche Kontotypen in Dashboard-Berechnungen einbezogen werden sollen. Konfigurieren Sie außerdem, ob Abhebungen von jedem Kontotyp in die Gesamtabhebungsmetriken einbezogen werden.',
+    'Wählen Sie, welche Kontotypen in den Dashboard-Statistiken erscheinen, ob Auszahlungen zählen und in welcher Reihenfolge sie angezeigt werden.',
   'account.settings.section.inclusion.include-dashboard':
     'In Dashboard-Statistiken',
   'account.settings.section.inclusion.include-withdrawals': 'Abhebungen',
   'account.settings.section.inclusion.empty':
     'Es sind keine Kontotypen zum Konfigurieren verfügbar.',
-  'account.settings.section.order.title': 'Reihenfolge anzeigen',
 
   'account.settings.section.order.move-up': 'Bewegen Sie sich nach oben',
   'account.settings.section.order.move-down': 'Bewegen Sie sich nach unten',
   'account.settings.button.save': 'Einstellungen speichern',
   'account.settings.button.saving': 'Sparen...',
-
-  'weekly.review.performance.title': 'Selbsteinschätzung der Leistung',
-  'weekly.review.performance.mental': 'Mentale Performance',
-
-  'weekly.review.performance.technical': 'Technische Ausführung',
-
-  'weekly.review.questions.title': 'Wöchentliche Review-Fragen',
-
-  'weekly.review.goals.title': 'Ziele für nächste Woche',
-
-  'weekly.preparation.goals.title': 'Wöchentliche Ziele',
-
-  'weekly.preparation.events.title': 'Wichtige Ereignisse',
-
-  'weekly.preparation.events.add-button': 'Ereignis hinzufügen',
-
-  'weekly.preparation.forecast.title': 'Wöchentliche Prognose',
-  'weekly.overview.pnl-chart.title': 'Wöchentlich kumulativ P&L',
-
-  'weekly.overview.drawdown-chart.title': 'Wöchentlicher Drawdown',
-
-  'weekly.overview.performance.title': 'Wöchentliche Performance',
-
-  'weekly.overview.setup-performance.title': 'Setup-Performance',
-
-  'weekly.overview.trades-chart.title': 'Wöchentliche Trades',
-
-  'weekly.overview.best-trade.title': 'Bester Trade der Woche',
-
-  'weekly.overview.worst-trade.title': 'Schlechtester Trade der Woche',
-
-  'weekly.overview.daily-performance.title': 'Tägliche Performance',
-
-  'weekly.overview.button.create-trade': 'Trade erstellen',
-  'weekly.overview.button.view-trade-details': 'Trade-Details anzeigen',
-
-  'monthly.tab.review': 'Review',
 
   'backend.title': 'Trade Synchronisierung',
   'backend.description':
@@ -2572,23 +2566,23 @@ const de: Lang = {
   'backend.sync.total-syncs': 'Gesamtsynchronisierungen',
   'backend.sync.never': 'Niemals',
   'backend.sync.invalid-date': 'Ungültiges Datum',
-  'backend.notice.vault-registered': '✓ Vault beim Trading-Server registriert',
+  'backend.notice.vault-registered': 'Vault beim Trading-Server registriert',
   'backend.notice.sync-cancelled': '⏹️ Synchronisierung abgebrochen',
-  'backend.notice.sync-in-progress': '⚠️ Synchronisierung läuft bereits',
+  'backend.notice.sync-in-progress': 'Synchronisierung läuft bereits',
   'backend.notice.account-info-failed':
-    '✗ Kontoinformationen konnten nicht abgerufen werden',
+    'Kontoinformationen konnten nicht abgerufen werden',
   'backend.notice.sync-batch-progress':
     '⟳ Synchronisierungsstapel: {count} Trades ({progress} % abgeschlossen, {remaining} verbleibend)',
   'backend.notice.all-trades-synced':
-    '✓ Alle {count} Trades sind bereits synchronisiert',
-  'backend.notice.account-created': '✓ Erstelltes Konto: {name}',
+    'Alle {count} Trades sind bereits synchronisiert',
+  'backend.notice.account-created': 'Erstelltes Konto: {name}',
   'backend.notice.batch-complete':
     '⟳ Batch abgeschlossen: {processed}/{total}-Trades ({progress} %). Fortsetzung...',
   'backend.notice.sync-complete':
-    '✗ Synchronisierung abgeschlossen: {total}-Trades verarbeitet ({newFiles} neu, {updated} aktualisiert) über alle {accounts}-Konten hinweg',
+    'Synchronisierung abgeschlossen: {total}-Trades verarbeitet ({newFiles} neu, {updated} aktualisiert) über alle {accounts}-Konten hinweg',
   'backend.notice.sync-complete-no-trades':
-    '✗ Synchronisierung abgeschlossen – keine neuen Trades gefunden',
-  'backend.notice.sync-failed': '✗ Synchronisierung fehlgeschlagen: {error}',
+    'Synchronisierung abgeschlossen – keine neuen Trades gefunden',
+  'backend.notice.sync-failed': 'Synchronisierung fehlgeschlagen: {error}',
 
   'backend.accounts.linked': 'Verknüpfte MT-Konten',
   'backend.accounts.linked-desc':
@@ -2609,7 +2603,7 @@ const de: Lang = {
   'backend.accounts.unlink-title': 'MetaTrader-Konto trennen',
   'backend.accounts.unlink': 'Trennen',
   'backend.accounts.unlink-confirm':
-    'MetaTrader-Konto {accountId} trennen? Es wird in Trade Sync ausgeblendet und zukünftige Importe werden übersprungen, bis du es erneut verknüpfst.',
+    'MetaTrader-Konto {accountId} trennen? Es wird in Trade Sync ausgeblendet und zukünftige Importe werden übersprungen, bis Sie es erneut verknüpfen.',
   'backend.accounts.unlink-success': 'MetaTrader-Konto getrennt',
   'backend.accounts.relink': 'Erneut verknüpfen',
   'backend.accounts.relink-success': 'MetaTrader-Konto erneut verknüpft',
@@ -2632,27 +2626,26 @@ const de: Lang = {
   'backend.section.sync.title': 'Synchronisierungseinstellungen',
   'backend.section.accounts.title': 'Kontoverwaltung',
   'settings.auth.feature.csv-import': 'Trade Import',
-  'settings.auth.feature.ai-mapping': 'KI-Trade-Import-Zuordnung',
+  'settings.auth.feature.ai-mapping': 'KI-CSV-Zuordnung',
   'settings.auth.feature.trade-sync': 'Trade Synchronisierung',
   'settings.auth.feature.economic-calendar': 'Wirtschaftskalender',
   'settings.auth.feature.basic-tracking': 'Grundlegende Trade-Tracking',
 
   'settings.auth.feature.manual-entry': 'Manuelle Trade-Eingabe',
   'settings.auth.feature.analytics-reviews': 'Analysen und Reviews',
+  'settings.auth.feature.ai-tool-calls-free': '100 KI-Tool-Aufrufe/Monat',
+  'settings.auth.feature.ai-tool-calls-pro': 'Mehr KI-Tool-Aufrufe',
   'settings.auth.feature.priority-support': 'Vorrangiger Support',
   'backend.sync.just-now': 'Soeben',
   'backend.sync.minutes-ago': '{count} vor Minuten',
   'backend.sync.hours-ago': '{count} vor einer Stunde',
   'backend.sync.days-ago': '{count} vor Tagen',
 
-  'csv.format': 'Importformat:',
-
   'csv.button.export-template': 'Vorlage exportieren',
   'csv.button.delete-template': 'Vorlage löschen',
 
   'csv.button.import-another': 'Importieren Sie eine andere Datei',
-  'csv.results.complete': 'Import abgeschlossen',
-  'csv.results.history-ready': 'Dein Handelsverlauf ist bereit',
+  'csv.results.history-ready': 'Ihr Handelsverlauf ist bereit',
   'csv.results.completed-with-issues': 'Import mit Problemen abgeschlossen',
   'csv.results.failed': 'Import fehlgeschlagen',
   'csv.results.success.one':
@@ -2663,10 +2656,6 @@ const de: Lang = {
     '{count} Trades erfolgreich importiert in das Konto: {account}',
   'csv.results.success.other':
     '{count} Trades erfolgreich importiert in das Konto: {account}',
-  'csv.results.updated.one': 'Aktualisierter {count} bestehender Trade',
-  'csv.results.updated.few': 'Bestehende {count} Trades aktualisiert',
-  'csv.results.updated.many': 'Bestehende {count} Trades aktualisiert',
-  'csv.results.updated.other': 'Bestehende {count} Trades aktualisiert',
   'csv.results.skipped.one':
     '{count} doppelter Trade übersprungen (bereits im Vault)',
   'csv.results.skipped.few':
@@ -2678,10 +2667,6 @@ const de: Lang = {
 
   'csv.results.broker': 'Broker: {broker}',
 
-  'csv.results.more-trades.one': 'und {count} weiterer Trade...',
-  'csv.results.more-trades.few': 'und {count} weitere Trades...',
-  'csv.results.more-trades.many': 'und {count} weitere Trades...',
-  'csv.results.more-trades.other': 'und {count} weitere Trades...',
   'csv.results.errors-header': 'KLICKEN, UM FEHLER ANZUZEIGEN ({count})',
   'csv.results.discord-note':
     'Optional: Wenn Sie Hilfe benötigen, klicken Sie auf Bericht kopieren und fügen Sie ihn in Discord ein.',
@@ -2690,44 +2675,10 @@ const de: Lang = {
 
   'csv.errors.copied': 'Kopiert',
   'csv.errors.rows': 'Zeilen: {rows}',
-  'csv.errors.suggestion': 'Anregung:',
 
   'csv.errors.raw-errors-limit': 'Zeigt den ersten {shown} von {total}-Fehlern',
 
-  'csv.report.plugin-version': 'Plugin-Version: {version}',
-
-  'csv.report.broker': 'Broker: {broker}',
-
   'csv.report.top-issues': 'Top-Themen:',
-
-  'csv.broker-guide.tradovate.step-2':
-    'Klicken Sie auf die Registerkarte „Orders“ (NICHT auf die Registerkarte „Leistung“).',
-
-  'csv.broker-guide.tradovate.warning.emphasis': 'Wichtig:',
-  'csv.broker-guide.tradovate.warning.message':
-    'Verwenden Sie nur die Registerkarte „Orders“. Die Registerkarte „Leistung“ ist nicht kompatibel.',
-
-  'csv.broker-guide.ibkr.warning.emphasis': 'Muss Befehle verwenden',
-
-  'csv.broker-guide.tradingview.step-3':
-    'Wählen Sie im Dropdown-Menü „Bestellverlauf“ aus',
-
-  'csv.broker-guide.tradingview.warning.message':
-    'Andere Exporttypen (z. B. Positionen oder Orders) funktionieren nicht für den Import.',
-
-  'csv.broker-guide.hyperliquid.warning.emphasis':
-    'Limit von 10.000 Einträgen.',
-
-  'csv.broker-guide.sierrachart.step-1':
-    'Öffnen Sie das Trade-Aktivitätsprotokoll (Trade → Trade-Aktivitätsprotokoll oder Strg+Umschalt+A).',
-
-  'csv.broker-guide.atas.warning.emphasis': 'Wichtig:',
-  'csv.broker-guide.atas.warning.message':
-    'Bearbeiten Sie die exportierte Datei nicht. Journalit behält Trades aus dem Blatt „Journal“ bei und bereichert, sofern verfügbar, die Provision durch passende Fills aus dem Blatt „Ausführungen“.',
-
-  'csv.broker-guide.rithmic.warning.emphasis': 'Wichtig:',
-
-  'csv.broker-guide.jdr.warning.emphasis': 'Wichtig:',
 
   'csv.date-format.auto-detect':
     'Automatische Erkennung (empfohlen für ISO-/Standardformate)',
@@ -2738,7 +2689,7 @@ const de: Lang = {
   'csv.date-format.us-short-datetime':
     'US Short DatumUhrzeit: 05.01.2024 14:30:00',
   'csv.date-format.iso-datetime':
-    'ISO DateTime: 25.12.2024 14:30:00 (Bybit, Tradovate)',
+    'ISO-Datum/Uhrzeit: 2024-12-25 14:30:00 (Tradovate)',
   'csv.date-format.iso-date': 'ISO-Datum: 25.12.2024 (Interaktive Broker)',
   'csv.date-format.eu-date': 'EU-Datum: 25.12.2024 (Tag/Monat/Jahr)',
   'csv.date-format.eu-datetime': 'EU-Datum/Uhrzeit: 25.12.2024 14:30:00',
@@ -2748,36 +2699,34 @@ const de: Lang = {
   'upgrade.feature-message':
     '{featureName} ist eine Pro-Funktion. Führen Sie ein Upgrade durch, um erweiterte Automatisierung und Funktionen freizuschalten.',
   'upgrade.benefits-title': 'Zu den Pro-Funktionen gehören:',
-  'upgrade.benefit.csv': 'Trade Import mit KI-unterstützter Spaltenzuordnung',
+  'upgrade.benefit.csv': 'CSV-Import mit KI-gestützter Spaltenzuordnung',
   'upgrade.benefit.economic-calendar':
     'Wirtschaftskalender mit automatischen wöchentlichen Ereignisimporten',
   'upgrade.benefit.trade-sync': 'Trade Sync für unterstützte Broker',
   'upgrade.benefit.multi-account': 'Unterstützung mehrerer Konten',
+  'upgrade.benefit.ai-tool-calls':
+    'Mehr KI-Tool-Aufrufe pro Monat für verbundene KI-Apps',
   'upgrade.prop-profiles.message-firms':
-    'Journalit hält die Regeln von {count} Prop-Firmen bereit, um deine Challenge vorauszufüllen.',
+    'Journalit hält die Regeln von {count} Prop-Firmen bereit, um Ihre Challenge vorauszufüllen.',
   'upgrade.prop-profiles.message-firm':
     'Journalit hat die Regeln für jede {firm}-Challenge bereit zum Vorausfüllen.',
   'upgrade.prop-profiles.message':
-    'Journalit hält Prop-Firm-Regeln bereit, um sie in deine Challenge einzufügen.',
+    'Journalit hält Prop-Firm-Regeln bereit, um sie in Ihre Challenge einzufügen.',
   'upgrade.prop-profiles.message-updates':
-    'Verknüpfe deine Prüfung mit den veröffentlichten Regeln deiner Firma, und Journalit sagt dir, wenn die Firma sie ändert.',
+    'Verknüpfen Sie Ihre Prüfung mit den veröffentlichten Regeln Ihrer Firma, und Journalit informiert Sie, wenn die Firma sie ändert.',
   'upgrade.prop-profiles.message-updates-firm':
-    'Verknüpfe deine Prüfung mit den veröffentlichten Regeln von {firm}, und Journalit sagt dir, wenn {firm} sie ändert.',
-  'upgrade.prop-profiles.benefits-title': 'Was Pro für dich ausfüllt:',
+    'Verknüpfen Sie Ihre Prüfung mit den veröffentlichten Regeln von {firm}, und Journalit informiert Sie, wenn {firm} sie ändert.',
+  'upgrade.prop-profiles.benefits-title': 'Was Pro für Sie ausfüllt:',
   'upgrade.benefit.prop.rules':
-    'Drawdown- und Tagesverlustgrenzen direkt aus den Regeln deiner Firma',
+    'Drawdown- und Tagesverlustgrenzen direkt aus den Regeln Ihrer Firma',
   'upgrade.benefit.prop.payout':
     'Auszahlungsschwellen und Anspruchsbedingungen',
   'upgrade.benefit.prop.phases':
     'Phasenziele und Fortschritt für die gewählte Challenge',
   'upgrade.benefit.prop.updates':
-    'Regelaktualisierungen, wenn deine Firma sie ändert',
+    'Regelaktualisierungen, wenn Ihre Firma sie ändert',
   'upgrade.trial-notice':
     'Holen Sie sich eine zweiwöchige kostenlose Testversion, um alle Ihre historischen Trades zu importieren und alle Pro-Funktionen risikofrei auszuprobieren.',
-
-  'monthly.overview.drawdown': 'Monatlicher Drawdown',
-  'monthly.overview.no-drawdown-data':
-    'Es können keine Drawdown-Daten angezeigt werden',
 
   'settings.account-linking.title': 'Kontoverknüpfung ändern',
   'settings.account-linking.description':
@@ -2820,7 +2769,7 @@ const de: Lang = {
     'Bitte überprüfen Sie, ob das Konto vorhanden ist, oder versuchen Sie, die Seite zu aktualisieren.',
   'account-page.guide.empty.intro.title': 'Diese Seite ist ein Konto im Detail',
   'account-page.guide.empty.intro.description':
-    'Verwenden Sie die Kontoseite, um ein Konto zu verwalten, Kontoereignisse aufzuzeichnen und die damit verbundenen Trades zu überprüfen.',
+    'Auf der Kontoseite verwalten Sie ein einzelnes Konto, erfassen Kontoereignisse und öffnen das gefilterte Trade-Log, wenn Sie Trades prüfen möchten.',
   'account-page.guide.empty.edit-account.title':
     '„Konto bearbeiten“ öffnet die vollständigen Kontoeinstellungen',
   'account-page.guide.empty.edit-account.description':
@@ -2834,13 +2783,13 @@ const de: Lang = {
   'account-page.guide.empty.transactions.description':
     'In diesem Abschnitt wird jede manuelle Ein- und Auszahlung Zeile für Zeile festgehalten – bei einem Prop-Challenge-Konto als Auszahlungen. Wenn es leer ist, verwenden Sie „Ereignis hinzufügen“, um das erste zu erstellen.',
   'account-page.guide.empty.trade-log.title':
-    'Verknüpfte Trades werden hier angezeigt',
+    'Dieses Konto im Trade-Log öffnen',
   'account-page.guide.empty.trade-log.description':
-    'Trades werden hier angezeigt, wenn sie diesem Konto zugewiesen sind. Sobald Sie Trades verknüpft haben, wird diese Seite zu Ihrer vollständigen Kontoaufschlüsselung.',
+    'Diese Schaltfläche in der Kopfzeile öffnet das Trade-Log mit bereits ausgewähltem Konto, sodass die Trade-Prüfung in der eigenen Trade-Log-Ansicht bleibt.',
   'account-page.guide.main.intro.title':
     'Diese Seite ist die Aufschlüsselung Ihres Kontos',
   'account-page.guide.main.intro.description':
-    'Verwenden Sie die Kontoseite, um ein Konto klar zu verstehen: Kontostandverlauf, Leistung, Risikogrenzen, Cashflows und verknüpfte Trades.',
+    'Auf der Kontoseite verstehen Sie ein Konto genau: Saldoverlauf, Performance, Risikolimits und Geldbewegungen.',
   'account-page.guide.main.balance-chart.title':
     'Das Bilanzdiagramm zeigt mehr als nur das Gleichgewicht',
   'account-page.guide.main.balance-chart.description':
@@ -2856,6 +2805,22 @@ const de: Lang = {
     'Geldbewegungen bleiben in einem eigenen Bereich',
   'account-page.guide.main.transactions.description':
     'Ein- und Auszahlungen mit dem Saldo danach, getrennt von den Trading-Ergebnissen. Prop-Konten listen hier ihre Auszahlungen.',
+  'account.monthly-returns.title': 'Monatsrenditen',
+  'account.monthly-returns.total': 'Gesamt',
+  'account.monthly-returns.view-trades': 'Trades für {period} anzeigen',
+  'account.monthly-returns.unconverted':
+    'Nicht enthalten: {currencies}-Konten (kein Wechselkurs verfügbar).',
+  'account.monthly-returns.empty': 'Noch keine Monatsrenditen.',
+  'account.monthly-returns.empty-sub':
+    'Sie erscheinen, sobald ein Konto Kapital hat und ein Trade geschlossen ist.',
+  'account.monthly-returns.error':
+    'Monatsrenditen konnten nicht geladen werden.',
+  'account-page.guide.main.monthly-returns.title': 'Monatsrenditen',
+  'account-page.guide.main.monthly-returns.description':
+    'Die Rendite jedes Monats auf das Kapital dieses Kontos. Ein- und Auszahlungen sind herausgerechnet und zählen nie als Gewinn; die Spalte Gesamt verkettet die Monate. Ein Monat oder Jahr öffnet die zugehörigen Trades.',
+  'account-dashboard.guide.main.monthly-returns.title': 'Monatsrenditen',
+  'account-dashboard.guide.main.monthly-returns.description':
+    'Die kombinierte Monatsrendite der oben gezählten Konten, gewichtet nach dem Kapital jedes Kontos. Konten in anderen Währungen werden zum heutigen Kurs umgerechnet. Ein Monat oder Jahr öffnet die zugehörigen Trades.',
   'account-page.guide.main.actions.title':
     'Trades, Geldbewegungen und Einstellungen',
   'account-page.guide.main.actions.description':
@@ -2874,7 +2839,7 @@ const de: Lang = {
     'AccountPageService nicht bereit, erneuter Versuch in {delay}ms (Versuch {attempt}/{max})',
   'account-dashboard.challenges.empty.title': 'Noch keine Challenges',
   'account-dashboard.challenges.empty.message':
-    'Verfolge eine Prop-Firm-Challenge als ein Konto mit Phasen, Regeln und Auszahlungen.',
+    'Verfolgen Sie eine Prop-Firm-Challenge als ein Konto mit Phasen, Regeln und Auszahlungen.',
   'account-dashboard.challenges.empty.create': 'Neue Challenge',
   'account-dashboard.challenges.empty.setup': 'Bestehende Konten einrichten',
   'account-dashboard.empty.title': 'Keine Konten gefunden',
@@ -2907,11 +2872,11 @@ const de: Lang = {
     'Geben Sie die grundlegenden Kontodaten ein und speichern Sie. Die nächste Anleitung finden Sie auf der Kontoseite für das jeweilige Konto.',
   'account-dashboard.guide.main.intro.title': 'Dies sind Ihre Konten',
   'account-dashboard.guide.main.intro.description':
-    'Verwenden Sie diese Seite, um Konten zu vergleichen, die Gesamtsummen aller Konten anzuzeigen und zu einem einzelnen Konto zu springen, wenn Sie weitere Details benötigen.',
+    'Auf dieser Seite vergleichen Sie alle Konten an einem Ort. Prop-Challenges bleiben in denselben Kontogruppen; Phase und Regelfortschritt sehen Sie direkt auf jeder Karte.',
   'account-dashboard.guide.main.aum-chart.title':
     'AUM bedeutet verwaltetes Vermögen',
   'account-dashboard.guide.main.aum-chart.description':
-    'Dieses Diagramm verfolgt den Gesamtwert Ihres Kontos im Zeitverlauf, einschließlich Einzahlungen, Auszahlungen, Gewinnzielen und Drawdown-Limits auf Ihren Konten.',
+    'Dieses Diagramm zeigt den Gesamtwert Ihrer Konten im Zeitverlauf. Gibt es Prop-Konten, ergänzt ein Challenge-Ledger daneben Bestehensquote, Kosten, Auszahlungen und Nettoergebnisse.',
   'account-dashboard.guide.main.metrics.title':
     'Diese Metriken fassen alle sichtbaren Konten zusammen',
   'account-dashboard.guide.main.metrics.description':
@@ -2919,7 +2884,7 @@ const de: Lang = {
   'account-dashboard.guide.main.mode-switch.title':
     'Übersicht und Challenges sind zwei Ansichten derselben Konten',
   'account-dashboard.guide.main.mode-switch.description':
-    'Die Übersicht behält das AUM-Diagramm und die Portfolio-Summen. Wechsle zu Challenges für die Ökonomie deiner Prop-Challenges: Bestehensquote, Kosten, Auszahlungen und Phasen-Engpässe über alle Challenge-Konten.',
+    'Die Übersicht behält das AUM-Diagramm und die Portfolio-Summen. Wechseln Sie zu Challenges für die Ökonomie Ihrer Prop-Challenges: Bestehensquote, Kosten, Auszahlungen und Phasen-Engpässe über alle Challenge-Konten.',
   'account-dashboard.guide.main.create-account.title':
     'Sie können von hier aus jederzeit ein weiteres Konto erstellen',
   'account-dashboard.guide.main.create-account.description':
@@ -2931,7 +2896,7 @@ const de: Lang = {
   'account-dashboard.guide.main.settings-stages.title':
     'Challenge-Phasen können den Kontotyp festlegen',
   'account-dashboard.guide.main.settings-stages.description':
-    'Wähle den Kontotyp, der angewendet wird, wenn eine Challenge die Bewertung, Sim-Finanzierung oder Live-Finanzierung erreicht. Lass eine Phase auf „Keine Änderung“, um den Kontotyp beizubehalten.',
+    'Wählen Sie den Kontotyp, der angewendet wird, wenn eine Challenge die Bewertung, Sim-Finanzierung oder Live-Finanzierung erreicht. Lassen Sie eine Phase auf „Keine Änderung“, um den Kontotyp beizubehalten.',
   'account-dashboard.guide.main.settings-inclusion.title':
     'Durch Einstellungen kann geändert werden, was in den Gesamtsummen zählt',
   'account-dashboard.guide.main.settings-inclusion.description':
@@ -2944,19 +2909,19 @@ const de: Lang = {
   'account-dashboard.guide.main.open-account.title':
     'Öffnen Sie eine beliebige Kontokarte, um tiefer einzusteigen',
   'account-dashboard.guide.main.open-account.description':
-    'Konten sind nach Typ gruppiert, damit du ähnliche vergleichen kannst. Öffne eine Karte für die vollständige Aufschlüsselung; dort übernimmt der Kontoseiten-Guide.',
+    'Konten sind nach Typ gruppiert, damit Sie ähnliche vergleichen können. Öffnen Sie eine Karte für die vollständige Aufschlüsselung; dort übernimmt der Kontoseiten-Guide.',
   'account-dashboard.guide.whats-new.prop-challenges.intro.title':
     'Neu: Prop-Firmen-Prüfungen',
   'account-dashboard.guide.whats-new.prop-challenges.intro.description':
-    'Ein Konto kann jetzt eine Prop-Firmen-Prüfung verfolgen: ihre Phasen, die Regeln der Firma und deine Auszahlungen.',
+    'Ein Konto kann jetzt eine Prop-Firmen-Prüfung verfolgen: ihre Phasen, die Regeln der Firma und Ihre Auszahlungen.',
   'account-dashboard.guide.whats-new.prop-challenges.enable.title':
     'Neue Prüfung starten',
   'account-dashboard.guide.whats-new.prop-challenges.enable.description':
-    'Aktiviere beim Erstellen eines Kontos „Prop-Firmen-Prüfung“ und wähle deine Firma. Ihre Regeln werden für dich ausgefüllt.',
+    'Aktivieren Sie beim Erstellen eines Kontos „Prop-Firmen-Prüfung“ und wählen Sie Ihre Firma. Ihre Regeln werden für Sie ausgefüllt.',
   'account-dashboard.guide.whats-new.prop-challenges.mode.title':
-    'Alle deine Prüfungen sehen',
+    'Alle Ihre Prüfungen sehen',
   'account-dashboard.guide.whats-new.prop-challenges.mode.description':
-    'Wechsle zu „Prüfungen“, um Fortschritt, Erfolgsquote, Kosten und Auszahlungen über alle Prüfungen zu sehen.',
+    'Wechseln Sie zu „Prüfungen“, um Fortschritt, Erfolgsquote, Kosten und Auszahlungen über alle Prüfungen zu sehen.',
   'account-dashboard.metrics.total-accounts': 'Gesamtkonten',
   'account-dashboard.metrics.total-aum': 'Gesamt-AUM',
   'account-dashboard.metrics.total-growth': 'Gesamtwachstum',
@@ -2977,8 +2942,6 @@ const de: Lang = {
   'account-card.metric.trades': 'Trades',
   'account-card.metric.withdrawals': 'Auszahlungen',
   'account-card.metric.age': 'Alter',
-  'account-card.progress.profit-target': 'Gewinnziel',
-  'account-card.progress.drawdown-used': 'Genutztes Drawdown-Limit',
   'account-card.progress.not-set': 'Nicht festgelegt',
   'account-card.footer.monthly': 'Monatlich:',
   'account-card.footer.total-costs': 'Gesamtkosten:',
@@ -3022,7 +2985,6 @@ const de: Lang = {
     'Bitte wählen Sie ein bestehendes Konto aus',
   'account.link-modal.notice.failed':
     'Konto konnte nicht verknüpft werden: {error}',
-  'trade.review.title': 'Trade-Review',
 
   'trade.details.entry': 'Einstieg',
   'trade.details.exit': 'Ausstieg',
@@ -3031,25 +2993,28 @@ const de: Lang = {
 
   'trade.details.thesis': 'These',
 
-  'trade.details.entries-summary': '{count} entries',
-  'trade.details.exits-summary': '{count} exits',
-  'trade.details.take-profit-count': '{count} targets',
+  'trade.details.entries-summary': '{count} Einstiege',
+  'trade.details.exits-summary': '{count} Ausstiege',
+  'trade.details.take-profit-count': '{count} Ziele',
 
   'trade.metadata.account': 'Konto:',
 
   'trade.metadata.setups': 'Setups',
   'trade.metadata.mistakes': 'Fehler',
   'trade.image.no-images': 'Keine Bilder für diesen Trade',
-  'trade.image.click-edit':
-    'Klicken Sie auf Bearbeiten, um Bilder hinzuzufügen',
+  'trade.image.click-edit': 'Bild hinzufügen',
   'trade.image.alt-prefix': 'Trade-Bild',
   'command.share-note-as-image': 'Aktuelle Notiz als Bild teilen',
-  'trade.share.copy-screenshot': 'Trade-Screenshot kopieren',
   'trade.share.copied': 'Trade-Screenshot in die Zwischenablage kopiert',
   'trade.share.failed': 'Trade-Screenshot konnte nicht kopiert werden',
   'trade.share.not-ready':
-    'Die Trade-Notiz wird noch geladen. Versuche es gleich erneut.',
+    'Die Trade-Notiz wird noch geladen. Versuchen Sie es gleich erneut.',
   'share.review.action': 'Review-Karte teilen',
+  'share.trade.modal-title': 'Trade teilen',
+  'share.trade.position-return': 'Positionsrendite % (vor Kosten)',
+  'share.trade.account-return': 'Kontorendite % (aktueller Kontostand)',
+  'share.trade.hide-dollar-hint':
+    'Wählen Sie R oder %, um Geldbeträge auszublenden. Nicht verfügbare Werte erscheinen als Strich.',
   'share.review.modal-title': 'Review teilen',
   'share.review.section.top': 'Anfang der Notiz',
   'share.review.select-all': 'Alle auswählen',
@@ -3062,27 +3027,28 @@ const de: Lang = {
   'settings.general.hide-dollar-amounts-in-shares':
     'Dollarbeträge in geteilten Bildern ausblenden',
   'settings.general.hide-dollar-amounts-in-shares-desc':
-    'Bei aktivierten R-Multiples lassen Trade-Screenshots und Review-Karten Risiko, Gebühren, Kommissionen und MAE/MFE in Dollar weg.',
+    'Bei aktivierten R-Multiples lassen Trade-Screenshots und Review-Karten Risiko, Gebühren, Provisionen und MAE/MFE in Dollar weg.',
   'share.review.hide-dollar-amounts': 'Dollarbeträge ausblenden',
   'share.review.hide-dollar-amounts-hint':
     'Lässt Risiko, Gebühren und andere Dollarwerte weg.',
   'share.review.hide-dollar-amounts-needs-r':
-    'Aktiviere R-Multiples in den Einstellungen, um ohne Dollarbeträge zu teilen.',
+    'Aktivieren Sie R-Multiples in den Einstellungen, um ohne Dollarbeträge zu teilen.',
   'share.review.copied': 'Teilen-Karte in die Zwischenablage kopiert',
   'share.review.failed': 'Teilen-Karte konnte nicht kopiert werden',
 
   'trade.review.reviewed': 'Bewertet',
   'trade.review.reviewed-on': 'Bewertet am {date}',
+  'trade.rating.label': 'Bewertung',
+  'trade.rating.hint':
+    'Klicke auf einen Stern zum Bewerten, erneut für einen halben Stern und noch einmal zum Entfernen',
 
-  'timeline.status.loss': 'Verlust',
-
-  'timeline.aria.session-navigation': 'Same-day trade navigation',
-  'timeline.aria.previous-trade': 'Previous trade: {trade}',
-  'timeline.aria.next-trade': 'Next trade: {trade}',
-  'timeline.aria.no-previous-trade': 'No previous trade in this trading day',
-  'timeline.aria.no-next-trade': 'No next trade in this trading day',
-
-  'drc.tab.review': 'Review',
+  'timeline.aria.session-navigation':
+    'Navigation zwischen Trades desselben Tages',
+  'timeline.aria.previous-trade': 'Vorheriger Trade: {trade}',
+  'timeline.aria.next-trade': 'Nächster Trade: {trade}',
+  'timeline.aria.no-previous-trade':
+    'Kein vorheriger Trade an diesem Handelstag',
+  'timeline.aria.no-next-trade': 'Kein nächster Trade an diesem Handelstag',
 
   'drc.missed-trades.label.reason': 'Grund:',
 
@@ -3143,13 +3109,13 @@ const de: Lang = {
   'settings.general.privacy-mode-desc':
     'Maskiert sensible Trading-, Konto-, Preis- und Performance-Werte in der UI, ohne gespeicherte Daten zu ändern.',
   'settings.general.privacy-mode-aria': 'Datenschutzmodus umschalten',
-  'dashboard.conversion.original-pnl': 'Ursprünglicher G/V',
-  'dashboard.conversion.converted-pnl': 'Konvertierter G/V',
+  'dashboard.conversion.original-pnl': 'Ursprünglicher P&L',
+  'dashboard.conversion.converted-pnl': 'Konvertierter P&L',
   'dashboard.conversion.details-label': 'Details zur Währungsumrechnung',
 
   'home.widget.profit-target-widget.name': 'Gewinnziel',
   'home.widget.profit-target-widget.description':
-    'Verfolge Gewinnziel-Fortschritt über Konten',
+    'Gewinnziel-Fortschritt über alle Konten verfolgen',
   'home.widget.eval-roi.name': 'Eval-Rendite',
   'home.widget.challenge-alerts.name': 'Challenge-Hinweise',
   'home.widget.challenge-alerts.description':
@@ -3165,11 +3131,11 @@ const de: Lang = {
   'form.ideal-exit.copy-actual': 'Tatsächliche Exits kopieren',
 
   'form.ideal-exit.tooltip':
-    'Erfasse rückblickend den Exit-Plan, den du gern ausgeführt hättest. Unterstützt skalierte Exits für die Auswertung.',
+    'Erfassen Sie rückblickend den Exit-Plan, den Sie gern ausgeführt hätten. Unterstützt skalierte Exits für die Auswertung.',
   'form.ideal-exit.empty': 'Noch keine idealen Exits',
   'form.unrealized.title': 'Snapshot der offenen Position',
   'form.unrealized.tooltip':
-    'Erfasse den aktuellen Marktpreis deiner offenen Position, um den unrealisierten P&L zu verfolgen. Der Snapshot wird beim Schließen des Trades automatisch entfernt.',
+    'Erfassen Sie den aktuellen Marktpreis Ihrer offenen Position, um den unrealisierten P&L zu verfolgen. Der Snapshot wird beim Schließen des Trades automatisch entfernt.',
   'form.unrealized.price': 'Snapshot-Preis',
   'form.unrealized.time': 'Snapshot-Zeitpunkt',
   'form.unrealized.preview': 'Unrealisierter P&L',
@@ -3214,7 +3180,7 @@ const de: Lang = {
     'Die Widget-Deckkraft konnte nicht gespeichert werden. Bitte erneut versuchen.',
   'settings.general.home-background': 'Home-Hintergrundbild',
   'settings.general.home-background-desc':
-    'Verwende ein Bild aus deinem Vault oder wähle eines von deinem Computer aus, um es in den Vault zu kopieren.',
+    'Verwenden Sie ein Bild aus Ihrem Vault oder wählen Sie eines von Ihrem Computer aus, um es in den Vault zu kopieren.',
   'settings.general.home-background-dashboard':
     'Hintergrund auch im Dashboard anzeigen',
   'settings.general.home-background-dashboard-desc':
@@ -3226,7 +3192,7 @@ const de: Lang = {
   'settings.general.home-background-clear': 'Löschen',
 
   'settings.general.home-background-invalid-file':
-    'Wähle eine unterstützte Bilddatei aus.',
+    'Wählen Sie eine unterstützte Bilddatei aus.',
   'settings.general.home-background-saved': 'Home-Hintergrundbild gespeichert.',
   'settings.general.home-background-cleared': 'Home-Hintergrundbild entfernt.',
   'settings.general.home-background-save-failed':
@@ -3289,7 +3255,7 @@ const de: Lang = {
   'settings.general.show-seconds-aria': 'Sekunden in Trade-Zeiten anzeigen',
   'settings.general.skip-weekends': 'Wochenenden ausschließen',
   'settings.general.skip-weekends-desc':
-    'Wenn aktiviert, behandelt Journalit Wochenenden im gesamten Plugin als handelsfreie Tage. Deaktiviere dies, wenn du samstags und sonntags tradest oder Aktivitäten überprüfst.',
+    'Wenn aktiviert, behandelt Journalit Wochenenden im gesamten Plugin als handelsfreie Tage. Deaktivieren Sie dies, wenn Sie samstags und sonntags traden oder Aktivitäten überprüfen.',
   'settings.general.skip-weekends-aria':
     'Wochenenden in Journalit ausschließen',
   'settings.general.skip-weekends-toggled': 'Wochenend-Ausschluss {status}',
@@ -3423,7 +3389,7 @@ const de: Lang = {
   'settings.customization.description':
     'Passen Sie Optionen, Erscheinungsbild und Verhalten des Journalit-Plugins an.',
   'settings.customization.trade-form-layout.description':
-    'Wähle aus, welche Felder und Abschnitte im Trade-Formular angezeigt werden.',
+    'Wählen Sie aus, welche Felder und Abschnitte im Trade-Formular angezeigt werden.',
   'settings.customization.trade-form-layout.button': 'Layout anpassen',
   'settings.customization.tickers-symbols': 'Ticker/Symbole',
   'settings.customization.symbol-mappings': 'Symbolzuordnungen',
@@ -3440,7 +3406,6 @@ const de: Lang = {
   'settings.customization.options.type.tickers': 'Ticker',
   'settings.customization.options.type.accounts': 'Konten',
   'settings.customization.options.type.account-types': 'Kontotypen',
-  'settings.customization.options.type.setups': 'Setups',
   'settings.customization.options.type.mistakes': 'Fehler',
   'settings.customization.options.type.tags': 'Schlagworte',
   'settings.customization.options.type.events': 'Veranstaltungen',
@@ -3492,8 +3457,6 @@ const de: Lang = {
   'settings.customization.options.label.edit-option': 'Bearbeiten Sie {option}',
   'settings.customization.options.label.remove-option':
     'Entfernen Sie {option}',
-  'settings.customization.options.placeholder.select-asset':
-    'Wählen Sie den Asset-Typ aus...',
   'settings.customization.options.field.pip-size': 'Kerngröße',
   'settings.customization.options.field.priority': 'Priorität:',
   'settings.customization.options.field.default-event-notes':
@@ -3503,8 +3466,6 @@ const de: Lang = {
   'settings.customization.options.aria.confirm-add':
     'Bestätigen Sie das Hinzufügen von {type}',
   'settings.customization.options.label.locked': 'Gesperrt',
-  'settings.customization.options.label.archived-reserved':
-    'Archiviert (reserviert)',
   'settings.customization.options.aria.reset-all':
     'Entfernen Sie alle benutzerdefinierten {type}',
   'settings.customization.options.button.reset-all':
@@ -3520,7 +3481,7 @@ const de: Lang = {
   'settings.customization.options.mapping.description':
     'Ordnet vertragsspezifische Symbole (z. B. NQZ5) Basissymbolen (z. B. NQ) für die automatische Spezifikationssuche zu',
   'settings.customization.options.mapping.auto-detected': 'Automatisch erkannt',
-  'settings.customization.options.mapping.manual': 'Handbuch',
+  'settings.customization.options.mapping.manual': 'Manuell',
   'settings.customization.options.mapping.created-at': 'Erstellt {date}',
   'settings.customization.options.mapping.no-mappings':
     'Noch keine Symbolzuordnungen. Zuordnungen werden bei Trade Importen automatisch erstellt, wenn Vertragssymbole erkannt werden.',
@@ -3548,7 +3509,7 @@ const de: Lang = {
   'button.move-down': 'Bewegen Sie sich nach unten',
 
   'settings.customization.custom-fields.description':
-    'Ergänzen Sie jeden Trade um eigene Felder, etwa Session, Zeitrahmen oder Setup-Bewertung. Sie erscheinen im Tab „Erweitert“ des Trade-Formulars, werden im Frontmatter der Trade-Notiz gespeichert und können zu sortier- und filterbaren Spalten im Trade-Log werden.',
+    'Ergänzen Sie jeden Trade um eigene Felder, etwa Sitzung, Zeitrahmen oder Setup-Bewertung. Sie erscheinen im Tab „Erweitert“ des Trade-Formulars, werden im Frontmatter der Trade-Notiz gespeichert und können zu sortier- und filterbaren Spalten im Trade-Log werden.',
   'settings.customization.custom-fields.title':
     'Benutzerdefinierte Felder ({count})',
   'settings.customization.custom-fields.manage-desc':
@@ -3556,14 +3517,14 @@ const de: Lang = {
   'settings.customization.custom-fields.type-dropdown': 'Runterfallen',
   'settings.customization.custom-fields.type-multiselect': 'Mehrfachauswahl',
   'settings.customization.custom-fields.type-suffix': 'Feld',
-  'settings.customization.custom-fields.option-count.one': '{count}-Option',
+  'settings.customization.custom-fields.option-count.one': '{count} Option',
   'settings.customization.custom-fields.option-count.few': '{count}-Optionen',
   'settings.customization.custom-fields.option-count.many': '{count}-Optionen',
   'settings.customization.custom-fields.option-count.other': '{count}-Optionen',
   'settings.customization.custom-fields.no-fields':
     'Noch keine benutzerdefinierten Felder definiert',
   'settings.customization.custom-fields.no-fields-desc':
-    'Beginnen Sie mit einem Feld, das Sie später wirklich auswerten, etwa die gehandelte Session oder wie gut das Setup Ihrem Plan entsprach.',
+    'Beginnen Sie mit einem Feld, das Sie später wirklich auswerten, etwa die gehandelte Sitzung oder wie gut das Setup Ihrem Plan entsprach.',
   'settings.customization.custom-fields.add-new': 'Neues Feld hinzufügen',
 
   'settings.customization.custom-fields.edit-field-with-name':
@@ -3689,6 +3650,101 @@ const de: Lang = {
     'Sind Sie sicher, dass Sie das benutzerdefinierte Feld „{fieldLabel}“ löschen möchten?',
   'settings.customization.custom-fields.delete.cannot-undo':
     'Diese Aktion kann nicht rückgängig gemacht werden.',
+  'settings.customization.custom-fields.convert.action':
+    '{fieldLabel} in Bewertung umwandeln',
+  'settings.customization.custom-fields.convert.title':
+    '{fieldLabel} in Bewertung umwandeln',
+  'settings.customization.custom-fields.convert.editor-name':
+    'Integrierte Bewertung',
+  'settings.customization.custom-fields.convert.editor-desc':
+    'Journalit hat eine Sternebewertung für jeden Trade. Übertragen Sie den {fieldLabel}-Wert jedes Trades dorthin.',
+  'settings.customization.custom-fields.convert.intro':
+    'Der {fieldLabel}-Wert jedes Trades wird zu seiner Sternebewertung. Ihre {fieldLabel}-Werte bleiben erhalten, bis Sie das Feld entfernen.',
+  'settings.customization.custom-fields.convert.empty':
+    'Kein Trade hat einen {fieldLabel}-Wert.',
+  'settings.customization.custom-fields.convert.scale-label':
+    'Skala von {fieldLabel}',
+  'settings.customization.custom-fields.convert.scale-out-of': 'Von {max}',
+  'settings.customization.custom-fields.convert.scale-custom': 'Eigene',
+  'settings.customization.custom-fields.convert.scale-custom-max':
+    'Höchster Wert',
+  'settings.customization.custom-fields.convert.table':
+    '{fieldLabel}-Werte und ihre Bewertungen',
+  'settings.customization.custom-fields.convert.col-trades': 'Anzahl',
+  'settings.customization.custom-fields.convert.value-rating':
+    'Bewertung für {value}',
+  'settings.customization.custom-fields.convert.skip': 'Nicht umgewandelt',
+  'settings.customization.custom-fields.convert.unreadable.one':
+    '{count} Trade hat einen Wert, der nicht als Bewertung gelesen werden kann, und wird nicht umgewandelt.',
+  'settings.customization.custom-fields.convert.unreadable.other':
+    '{count} Trades haben einen Wert, der nicht als Bewertung gelesen werden kann, und werden nicht umgewandelt.',
+  'settings.customization.custom-fields.convert.conflict.one':
+    '{count} Trade hat bereits eine andere Bewertung',
+  'settings.customization.custom-fields.convert.conflict.other':
+    '{count} Trades haben bereits eine andere Bewertung',
+  'settings.customization.custom-fields.convert.conflict-keep':
+    'Bewertung behalten',
+  'settings.customization.custom-fields.convert.conflict-overwrite':
+    '{fieldLabel} verwenden',
+  'settings.customization.custom-fields.convert.summary-rate.one':
+    'Bewertet {count} Trade',
+  'settings.customization.custom-fields.convert.summary-rate.other':
+    'Bewertet {count} Trades',
+  'settings.customization.custom-fields.convert.summary-done.one':
+    '{count} bereits umgewandelt',
+  'settings.customization.custom-fields.convert.summary-done.other':
+    '{count} bereits umgewandelt',
+  'settings.customization.custom-fields.convert.summary-skip.one':
+    '{count} nicht umgewandelt',
+  'settings.customization.custom-fields.convert.summary-skip.other':
+    '{count} nicht umgewandelt',
+  'settings.customization.custom-fields.convert.submit.one':
+    '{count} Trade bewerten',
+  'settings.customization.custom-fields.convert.submit.other':
+    '{count} Trades bewerten',
+  'settings.customization.custom-fields.convert.continue': 'Weiter',
+  'settings.customization.custom-fields.convert.progress':
+    'Trades werden bewertet: {done} von {total}',
+  'settings.customization.custom-fields.convert.done.one':
+    '{count} Trade bewertet.',
+  'settings.customization.custom-fields.convert.done.other':
+    '{count} Trades bewertet.',
+  'settings.customization.custom-fields.convert.changed.one':
+    '{count} Trade wurde geändert, nachdem Sie diesen Dialog geöffnet haben, und blieb unverändert. Öffnen Sie ihn erneut, um ihn einzubeziehen.',
+  'settings.customization.custom-fields.convert.changed.other':
+    '{count} Trades wurden geändert, nachdem Sie diesen Dialog geöffnet haben, und blieben unverändert. Öffnen Sie ihn erneut, um sie einzubeziehen.',
+  'settings.customization.custom-fields.convert.failed.one':
+    '{count} Trade konnte nicht aktualisiert werden:',
+  'settings.customization.custom-fields.convert.failed.other':
+    '{count} Trades konnten nicht aktualisiert werden:',
+  'settings.customization.custom-fields.convert.remove-title':
+    '{fieldLabel} entfernen?',
+  'settings.customization.custom-fields.convert.remove-desc.one':
+    'Löscht {fieldLabel} aus dem {count} Trade, dessen Bewertung den Wert jetzt enthält, und löscht dann das Feld.',
+  'settings.customization.custom-fields.convert.remove-desc.other':
+    'Löscht {fieldLabel} aus den {count} Trades, deren Bewertung den Wert jetzt enthält, und löscht dann das Feld.',
+  'settings.customization.custom-fields.convert.remove-keeps.one':
+    '{count} Trade behält seinen {fieldLabel}-Wert, weil er nicht umgewandelt wurde.',
+  'settings.customization.custom-fields.convert.remove-keeps.other':
+    '{count} Trades behalten ihren {fieldLabel}-Wert, weil er nicht umgewandelt wurde.',
+  'settings.customization.custom-fields.convert.remove-confirm.one':
+    '{fieldLabel} aus {count} Trade löschen und das Feld löschen?',
+  'settings.customization.custom-fields.convert.remove-confirm.other':
+    '{fieldLabel} aus {count} Trades löschen und das Feld löschen?',
+  'settings.customization.custom-fields.convert.remove-views':
+    'Trade-Log-Spalten, Filter und Layout-Blöcke, die {fieldLabel} verwenden, zeigen es nicht mehr an.',
+  'settings.customization.custom-fields.convert.remove':
+    '{fieldLabel} entfernen',
+  'settings.customization.custom-fields.convert.remove-progress':
+    '{fieldLabel} wird entfernt: {done} von {total}',
+  'settings.customization.custom-fields.convert.removed':
+    '{fieldLabel} wurde entfernt. Ihre Bewertungen bleiben erhalten.',
+  'settings.customization.custom-fields.convert.remove-incomplete':
+    'Einige Trades wurden nicht aktualisiert, daher wurde {fieldLabel} behalten. Öffnen Sie dies erneut, um das Entfernen abzuschließen.',
+  'settings.customization.custom-fields.convert.remove-field-failed':
+    '{fieldLabel} wurde aus allen Trades entfernt, aber das Feld konnte nicht gelöscht werden. Löschen Sie es unter Benutzerdefinierte Trade-Felder.',
+  'settings.customization.custom-fields.convert.field-changed':
+    '{fieldLabel} wurde an anderer Stelle geändert oder gelöscht, daher wurden die übrigen Trades nicht aktualisiert. Öffnen Sie dies erneut, um fortzufahren.',
   'settings.customization.custom-fields.reset.confirm-message':
     'Sind Sie sicher, dass Sie ALLE benutzerdefinierten Felder löschen möchten?',
   'settings.customization.custom-fields.saved-options.title':
@@ -3783,11 +3839,11 @@ const de: Lang = {
     'Mehr brauchen Sie nicht, um Journalit zu nutzen.',
   'onboarding.orientation.inside.title': 'Journalit läuft in Obsidian',
   'onboarding.orientation.inside.body':
-    'Sie müssen Obsidian nicht zuerst lernen. Dieser Bildschirm ist eine Journalit-Ansicht.',
+    'Sie müssen Obsidian nicht erst lernen. Dieser Bildschirm ist eine Journalit-Ansicht.',
   'onboarding.orientation.sidebar.title':
     'Über die Seitenleiste bewegen Sie sich',
   'onboarding.orientation.sidebar.body':
-    'Home, Dashboard, Trade-Log und Ihre Reviews finden Sie dort.',
+    'Startseite, Dashboard, Trade-Log und Ihre Reviews finden Sie alle dort.',
   'onboarding.orientation.sidebar.action': 'Seitenleiste zeigen',
   'onboarding.orientation.sidebar.action-mobile': 'Seitenleiste öffnen',
   'onboarding.orientation.sidebar.hint':
@@ -3796,22 +3852,22 @@ const de: Lang = {
     'Sie öffnet sich über diesem Bildschirm. Wischen oder außerhalb tippen, um zurückzukehren.',
   'onboarding.orientation.tabs.title': 'Ansichten öffnen sich als Tabs',
   'onboarding.orientation.tabs.body':
-    'So wie dieser. Wechseln Sie oben zwischen ihnen.',
+    'Wie dieser hier. Wechseln Sie oben zwischen ihnen.',
   'onboarding.orientation.privacy.title': 'Ihr Journal bleibt auf Ihrem Gerät',
   'onboarding.orientation.privacy.body':
-    'Notizen, Screenshots und Reviews sind Ihre eigenen Dateien. Nur importierte oder synchronisierte Trades laufen über die Journalit-Server.',
+    'Notizen, Screenshots und Reviews sind Ihre eigenen Dateien. Nur Trades, die Sie importieren oder synchronisieren, laufen über die Server von Journalit.',
   'onboarding.orientation.continue': 'Verstanden',
   'onboarding.data-source.kicker': 'Ihre Trades',
   'onboarding.data-source.title': 'Wo sind Ihre Trades gerade?',
   'onboarding.data-source.subtitle':
-    'Ihre Historie ist Teil Ihres Vorteils. Nehmen Sie sie mit, und Ihre Statistiken sind ab dem ersten Tag aussagekräftig, statt monatelang auf neue Trades zu warten.',
+    'Ihr Verlauf ist Teil Ihres Vorteils. Bringen Sie ihn mit, dann sind Ihre Statistiken vom ersten Tag an aussagekräftig, statt monatelang auf neue Trades zu warten.',
   'onboarding.data-source.option.broker.label':
     'Bei meinem Broker oder meiner Plattform',
   'onboarding.data-source.option.broker.description':
     'Verbinden oder den Export importieren.',
   'onboarding.data-source.option.file.label': 'In meiner eigenen Tabelle',
   'onboarding.data-source.option.file.description':
-    'Ein Journal, das du in Excel, Google Sheets oder als CSV führst.',
+    'Ein Journal, das Sie in Excel, Google Sheets oder als CSV führen.',
   'onboarding.data-source.option.fresh.label':
     'Noch nirgends, ich fange neu an',
   'onboarding.data-source.option.fresh.description':
@@ -3819,7 +3875,7 @@ const de: Lang = {
   'onboarding.data-source.option.sample.label':
     'Noch nirgends, ich schaue mir ein Beispiel an',
   'onboarding.data-source.option.sample.description':
-    'Sieh dir ein fertiges Journal an, bevor du eigene Trades hinzufügst.',
+    'Sehen Sie sich ein fertiges Journal an, bevor Sie eigene Trades hinzufügen.',
   'onboarding.broker.kicker': 'Ihr Broker',
   'onboarding.broker.title': 'Welcher Broker oder welche Plattform?',
   'onboarding.awaiting.sign-in.action': 'Anmelden, um fortzufahren',
@@ -3834,7 +3890,7 @@ const de: Lang = {
   'onboarding.broker.option.metatrader5.label': 'MetaTrader 5',
   'onboarding.broker.request.title': 'Noch nicht dabei? Sag uns welchen Broker',
   'onboarding.broker.request.body':
-    'Neue Broker werden auf Anfrage ergänzt. Nenne uns deinen (ein Export-Beispiel hilft); bis dahin lässt sich ein Dateiexport manuell zuordnen.',
+    'Neue Broker werden auf Anfrage ergänzt. Nennen Sie uns Ihren (ein Export-Beispiel hilft); bis dahin lässt sich ein Dateiexport manuell zuordnen.',
   'onboarding.broker.request.discord': 'Auf Discord anfragen',
   'onboarding.broker.request.continue': 'Mit manuellem Import fortfahren',
   'onboarding.broker.loading': 'Unterstützte Broker werden geprüft...',
@@ -3843,7 +3899,7 @@ const de: Lang = {
   'onboarding.personalise.kicker': 'Journal einrichten',
   'onboarding.personalise.title': 'Ein paar schnelle Entscheidungen',
   'onboarding.personalise.subtitle':
-    'Wir passen Journalit anhand Ihrer Antworten an.',
+    'Wir personalisieren Journalit anhand Ihrer Antworten.',
   'onboarding.personalise.style.question': 'Wie traden Sie?',
   'onboarding.personalise.style.scalping': 'Viele Trades pro Tag',
   'onboarding.personalise.style.intraday':
@@ -3867,27 +3923,27 @@ const de: Lang = {
     'Ihr Journal ist bereit. Erfassen Sie einen Trade, und Journalit arbeitet damit.',
   'onboarding.first-trade.cta': 'Meinen ersten Trade hinzufügen',
   'onboarding.first-trade.sample': 'Mit Beispieldaten erkunden',
-  'onboarding.preparing-sample.title': 'Dein Beispiel-Journal wird vorbereitet',
+  'onboarding.preparing-sample.title': 'Ihr Beispiel-Journal wird vorbereitet',
   'onboarding.preparing-sample.body':
     'Das dauert nur ein paar Sekunden. Obsidian kann sich etwas langsam anfühlen, während die Notizen geschrieben werden.',
   'onboarding.preparing-sample.starting': 'Wird gestartet…',
   'onboarding.preparing-sample.hint':
-    'Du kannst das Beispiel-Journal jederzeit über sein Abzeichen in der Ecke entfernen.',
+    'Sie können das Beispiel-Journal jederzeit über sein Abzeichen in der Ecke entfernen.',
   'onboarding.preparing-sample.failed.title':
     'Das Beispiel-Journal konnte nicht erstellt werden',
   'onboarding.preparing-sample.failed.body':
-    'Du kannst es erneut versuchen oder einen anderen Start wählen.',
+    'Sie können es erneut versuchen oder einen anderen Start wählen.',
   'onboarding.preparing-sample.retry': 'Erneut versuchen',
   'onboarding.sample-exploring.kicker': 'Beispiel-Journal',
   'onboarding.sample-exploring.title':
-    'Du erkundest gerade das Beispiel-Journal',
+    'Sie erkunden gerade das Beispiel-Journal',
   'onboarding.sample-exploring.body':
-    'Lass dir Zeit. Wenn du das Beispiel verlässt, machen wir hier weiter: dein eigenes Journal personalisieren und deinen ersten Trade hinzufügen.',
+    'Lassen Sie sich Zeit. Wenn Sie das Beispiel verlassen, machen wir hier weiter: Ihr eigenes Journal personalisieren und Ihren ersten Trade hinzufügen.',
   'onboarding.sample-exploring.exit': 'Beispiel verlassen und weitermachen',
   'onboarding.sample-exploring.failed.title':
     'Das Beispiel-Journal konnte nicht wiederhergestellt werden',
   'onboarding.sample-exploring.failed.body':
-    'Verlasse das Beispiel, um die Reste zu entfernen, und richte dann dein eigenes Journal weiter ein.',
+    'Verlassen Sie das Beispiel, um die Reste zu entfernen, und richten Sie dann Ihr eigenes Journal weiter ein.',
   'onboarding.awaiting.kicker': 'Warten auf Ihre ersten Trades',
   'onboarding.awaiting.first-sync.title': 'Broker-Verbindung abschließen',
   'onboarding.awaiting.first-sync.body':
@@ -3905,7 +3961,7 @@ const de: Lang = {
   'onboarding.notice.personalise-failed':
     'Ihre Einrichtungsauswahl konnte nicht angewendet werden. Sie können sie später in den Einstellungen anpassen.',
   'onboarding.notice.trade-sync-open-failed':
-    'Trade Sync konnte nicht geöffnet werden. Bitte versuche es erneut.',
+    'Trade Sync konnte nicht geöffnet werden. Bitte versuchen Sie es erneut.',
   'onboarding.notice.skip-failed':
     'Der Onboarding-Übersprung konnte nicht gespeichert werden. Bitte versuchen Sie es später noch einmal.',
 
@@ -3934,18 +3990,18 @@ const de: Lang = {
     'Für das Ziel-Widget ist eine Review-Notiz erforderlich (DRC, wöchentlich, monatlich, vierteljährlich oder jährlich).',
   'widget.goals.aria.edit': 'Ziel bearbeiten',
   'widget.goals.aria.delete': 'Ziel löschen',
-  'review.header.guide.intro.title': 'Deine Review beginnt hier',
+  'review.header.guide.intro.title': 'Ihre Review beginnt hier',
   'review.header.guide.intro.description':
-    'In der Kopfzeile findest du alles, um durch diese Review zu navigieren und sie zu verwalten.',
+    'In der Kopfzeile finden Sie alles, um durch diese Review zu navigieren und sie zu verwalten.',
   'review.header.guide.reviewed.title': 'Als geprüft markieren',
   'review.header.guide.reviewed.description':
-    'Klicke auf den Kreis, um diese Notiz als geprüft zu markieren. Klicke erneut, um das rückgängig zu machen.',
+    'Klicken Sie auf den Kreis, um diese Notiz als geprüft zu markieren. Klicken Sie erneut, um das rückgängig zu machen.',
   'review.header.guide.dates.title': 'Zwischen Reviews wechseln',
   'review.header.guide.dates.description':
-    'Klicke auf eine Datumsangabe wie Juni oder 2026, um die zugehörige Review-Notiz zu öffnen.',
+    'Klicken Sie auf eine Datumsangabe wie Juni oder 2026, um die zugehörige Review-Notiz zu öffnen.',
   'review.header.guide.controls.title': 'Filter, Layout und Navigation',
   'review.header.guide.controls.description':
-    'Nutze den Trichter zum Filtern von Trades, „Layout wechseln“ für ein anderes Notizlayout und „Zurück“ / „Weiter“ zum Wechseln zwischen Review-Zeiträumen.',
+    'Nutzen Sie den Trichter zum Filtern von Trades, „Layout wechseln“ für ein anderes Notizlayout und „Zurück“ / „Weiter“ zum Wechseln zwischen Review-Zeiträumen.',
   'widget.header.name': 'Kopfzeile',
 
   'widget.header.invalid-context':
@@ -3960,13 +4016,6 @@ const de: Lang = {
   'widget.header.drc': 'DRC',
   'widget.header.nav.prev': '← Zurück',
   'widget.header.nav.next': 'Weiter →',
-  'widget.header.day.0': 'Sonntag',
-  'widget.header.day.1': 'Montag',
-  'widget.header.day.2': 'Dienstag',
-  'widget.header.day.3': 'Mittwoch',
-  'widget.header.day.4': 'Donnerstag',
-  'widget.header.day.5': 'Freitag',
-  'widget.header.day.6': 'Samstag',
   'widget.header.month.0': 'Januar',
   'widget.header.month.1': 'Februar',
   'widget.header.month.2': 'März',
@@ -4014,7 +4063,7 @@ const de: Lang = {
   'widget.review-context-fields.empty-title':
     'Für diesen Review-Typ sind keine Review-Kontextfelder konfiguriert.',
   'widget.review-context-fields.empty-desc':
-    'Erstelle benutzerdefinierte Review-Felder in den Einstellungen, um Bias, Fokus, Absicht und weiteren Planungskontext zu erfassen.',
+    'Erstellen Sie benutzerdefinierte Review-Felder in den Einstellungen, um Bias, Fokus, Absicht und weiteren Planungskontext zu erfassen.',
   'widget.review-context-fields.configure': 'Review-Felder konfigurieren',
   'widget.review-context-fields.service-unavailable':
     'Benutzerdefinierte Review-Felder sind noch nicht verfügbar.',
@@ -4031,7 +4080,7 @@ const de: Lang = {
   'widget.review.mental-game': 'Mentales Spiel',
   'widget.review.technical-game': 'Technisches Spiel',
   'widget.review.star-hint':
-    'Für einen Vollstern klicken Sie, für einen Halbstern klicken Sie mit der rechten Maustaste',
+    'Klicken Sie für einen ganzen Stern, erneut für einen halben Stern',
   'widget.review.invalid-context':
     'Das Review-Widget erfordert eine DRC- oder wöchentliche Review-Notiz (Frontmatter-Typ: „drc“ oder „weekly-review“).',
   'widget.checklist.name': 'Checkliste',
@@ -4045,7 +4094,7 @@ const de: Lang = {
   'widget.key-events.description': 'Wichtige Ereignisse während des Zeitraums',
   'widget.key-events.title': 'Wichtige Ereignisse',
   'widget.key-events.tooltip':
-    'Wichtige Ereignisse werden in deiner Wochenübersicht gespeichert und können hier im DRC hinzugefügt oder bearbeitet werden.',
+    'Wichtige Ereignisse werden in Ihrer Wochenübersicht gespeichert und können hier im DRC hinzugefügt oder bearbeitet werden.',
   'widget.key-events.placeholder': 'Ereignis auswählen oder erstellen',
   'widget.key-events.color-label': 'Farbe:',
   'widget.key-events.color-aria': 'Wählen Sie die Farbe {color}',
@@ -4059,12 +4108,20 @@ const de: Lang = {
   'widget.key-events.default-notes-tooltip':
     'Standardnotizen werden unter Einstellungen → Anpassung → Ereignisse verwaltet. Wenn Sie hier ein Ereignis auswählen, werden die gespeicherten Standardnotizen automatisch eingefügt.',
   'widget.key-events.add-button': 'Ereignis hinzufügen',
+  'widget.key-events.today': 'Heute',
+  'widget.key-events.day-picker-label': 'Tag',
+  'widget.key-events.show-all-days': 'Ganze Woche anzeigen',
+  'widget.key-events.show-one-day': 'Einen Tag anzeigen',
+  'widget.key-events.event-count.one': '{count} Ereignis',
+  'widget.key-events.event-count.few': '{count} Ereignisse',
+  'widget.key-events.event-count.many': '{count} Ereignisse',
+  'widget.key-events.event-count.other': '{count} Ereignisse',
   'widget.key-events.empty-state': 'Keine wichtigen Ereignisse für heute',
   'widget.key-events.empty-state-sub':
     'Fügen Sie Ereignisse zu Ihrem wöchentlichen Rückblick hinzu',
   'widget.key-events.open-calendar-aria': 'Wirtschaftskalender öffnen',
   'widget.key-events.restore-auto-import':
-    'Auto-importierte Ereignisse wiederherstellen',
+    'Automatisch importierte Ereignisse wiederherstellen',
   'widget.key-events.restore-missing-events':
     'Fehlende Ereignisse wiederherstellen ({count})',
   'widget.missed-trades.name': 'Trades verpasst',
@@ -4075,12 +4132,10 @@ const de: Lang = {
   'widget.images.invalid-context':
     'Für das Bilder-Widget ist eine Review-Notiz erforderlich (Typ: „drc“, „wöchentliche Reviews“, „monatlicher Review“, „Quartalsreview“ oder „jährlicher Review“).',
   'widget.images.alt-prefix': 'Review-Medium',
-  'widget.images.stacked-alt': 'Review-Medium {index}',
-  'widget.images.open-fullscreen':
-    'Öffnen Sie das Bild {index} im Vollbildmodus',
+  'widget.images.open-fullscreen': 'Medium {index} im Vollbild öffnen',
   'widget.images.delete': 'Medium löschen',
   'widget.images.empty': 'Keine Medien',
-  'widget.images.placeholder': 'Bild-URL oder Dateipfad einfügen...',
+  'widget.images.placeholder': 'Medien-URL oder Dateipfad einfügen...',
   'widget.images.placeholder-add-more': 'Weitere Medien hinzufügen...',
   'widget.mark-reviewed.name': 'Als geprüft markieren',
   'widget.mark-reviewed.description': 'Review mit Zeitstempel abschließen',
@@ -4090,20 +4145,20 @@ const de: Lang = {
   'widget.mark-reviewed.button.mark': 'Als geprüft markieren',
   'widget.pnl-chart.name': 'Equity-Kurve',
   'widget.pnl-chart.description': 'Kumulierter Gewinn/Verlust im Zeitverlauf',
-  'widget.drawdown-chart.name': 'Rückgang',
+  'widget.drawdown-chart.name': 'Drawdown',
   'widget.drawdown-chart.description':
-    'Drawdown-Betrag aus geschlossenen Trades seit dem vorherigen realisierten GuV-Hoch',
-  'widget.directional-pnl.name': 'Richtungsbezogener GuV',
+    'Drawdown-Betrag aus geschlossenen Trades seit dem vorherigen realisierten P&L-Hoch',
+  'widget.directional-pnl.name': 'Richtungsbezogener P&L',
   'widget.directional-pnl.description':
     'Performancevergleich von Long- und Short-Trades',
   'widget.directional-drawdown.name':
     'Richtungsbezogener realisierter Drawdown',
   'widget.directional-drawdown.description':
     'Separate Long- und Short-Drawdown-Betragskurven aus geschlossenen Trades',
-  'widget.long-drawdown.name': 'Realisierter Long-Drawdown',
+  'widget.long-drawdown.name': 'Long-Drawdown',
   'widget.long-drawdown.description':
     'Drawdown-Betragskurve aus geschlossenen Long-Trades',
-  'widget.short-drawdown.name': 'Realisierter Short-Drawdown',
+  'widget.short-drawdown.name': 'Short-Drawdown',
   'widget.short-drawdown.description':
     'Drawdown-Betragskurve aus geschlossenen Short-Trades',
   'widget.trades-chart.name': 'Trade P&L',
@@ -4125,7 +4180,7 @@ const de: Lang = {
   'common.r-missing.trade':
     'Dieser Trade hat keinen Risikobetrag, daher kann sein Ergebnis nicht in R angezeigt werden.',
   'common.r-missing.fix':
-    'Füge einen Risikobetrag hinzu oder lege in den Einstellungen einen Standard-Risikobetrag fest.',
+    'Fügen Sie einen Risikobetrag hinzu oder legen Sie in den Einstellungen einen Standard-Risikobetrag fest.',
   'common.r-coverage.partial':
     'Basiert auf {valid} von {total} Trades. Trades ohne Risikobetrag werden in R nicht berücksichtigt.',
   'common.r-coverage.none':
@@ -4144,7 +4199,7 @@ const de: Lang = {
   'widget.stats.pl-ratio': 'P/L-Verhältnis',
   'widget.account-breakdown.name': 'Kontenaufschlüsselung',
   'widget.account-breakdown.description':
-    'Vergleiche die Performance der Konten in diesem Review-Zeitraum',
+    'Vergleichen Sie die Performance der Konten in diesem Review-Zeitraum',
   'widget.account-breakdown.empty':
     'Keine geschlossenen Trades in diesem Zeitraum',
   'widget.account-breakdown.column.account': 'Konto',
@@ -4200,7 +4255,7 @@ const de: Lang = {
   'widget.position-size.placeholder.example': 'z. B. {value}',
   'widget.position-size.enter-values': 'Werte eingeben',
   'widget.position-size.risk': 'Risiko',
-  'widget.position-size.reward': 'Reward',
+  'widget.position-size.reward': 'Chance',
   'widget.position-size.stop': 'stoppen',
   'widget.position-size.pts': 'Punkte',
   'widget.position-size.mini': 'Mini',
@@ -4209,7 +4264,6 @@ const de: Lang = {
   'widget.position-size.futures-info': '${dollar}/pt | Tick: {size} = ${value}',
   'widget.position-size.investment-dollar': 'Investition ($)',
   'widget.position-size.investment': 'Investition',
-  'widget.position-size.at-price': '@ ${price}',
   'widget.best-worst-weeks.name': 'Beste/schlechteste Wochen',
   'widget.best-worst-weeks.description': 'Höchste und niedrigste P&L-Wochen',
   'widget.best-worst-weeks.best-week': 'Beste Woche',
@@ -4304,7 +4358,7 @@ const de: Lang = {
   'widget.trades.description': 'Liste der Gewerke mit den wichtigsten Details',
   'widget.trade-review.name': 'Trade-Prüfung',
   'widget.trade-review.description':
-    'Prüfe jeden Trade mit Bildern, Kennzahlen und konfigurierbaren Fragen',
+    'Prüfen Sie jeden Trade mit Bildern, Kennzahlen und konfigurierbaren Fragen',
   'widget.trade-review.status.reviewed': 'Geprüft',
   'widget.trade-review.status.pending': 'Ausstehend',
   'widget.trade-review.no-image': 'Kein Trade-Bild',
@@ -4316,20 +4370,20 @@ const de: Lang = {
   'widget.trade-review.fallback-title': 'Transaktion {index}',
   'widget.trade-review.question.win-what-worked': 'Was hat funktioniert?',
   'widget.trade-review.placeholder.win-what-worked':
-    'Was hast du in diesem Trade gut umgesetzt?',
+    'Was haben Sie in diesem Trade gut umgesetzt?',
   'widget.trade-review.question.win-repeatable': 'War das wiederholbar?',
   'widget.trade-review.placeholder.win-repeatable':
     'Was machte diesen Trade wiederholbar?',
   'widget.trade-review.question.key-lesson': 'Wichtigste Lektion',
   'widget.trade-review.placeholder.key-lesson':
-    'Was solltest du aus diesem Trade mitnehmen?',
+    'Was sollten Sie aus diesem Trade mitnehmen?',
   'widget.trade-review.question.loss-what-went-wrong': 'Was lief schief?',
   'widget.trade-review.placeholder.loss-what-went-wrong':
     'Was verursachte diesen Verlust?',
   'widget.trade-review.question.loss-valid-or-mistake':
     'War das ein gültiger Verlust oder ein Ausführungsfehler?',
   'widget.trade-review.placeholder.loss-valid-or-mistake':
-    'Beschreibe, ob der Prozess gültig oder vermeidbar war.',
+    'Beschreiben Sie, ob der Prozess gültig oder vermeidbar war.',
   'widget.trade-review.question.loss-avoid-next-time':
     'Was vermeide ich beim nächsten Mal?',
   'widget.trade-review.placeholder.loss-avoid-next-time':
@@ -4337,9 +4391,9 @@ const de: Lang = {
   'widget.trade-review.question.be-managed-correctly':
     'Wurde der Trade korrekt gemanagt?',
   'widget.trade-review.placeholder.be-managed-correctly':
-    'Entsprach das Management deinem Plan?',
+    'Entsprach das Management Ihrem Plan?',
   'widget.trade-review.image-alt-prefix': 'Bild zur Trade-Prüfung',
-  'widget.trade-review.placeholder.default': 'Schreibe deine Gedanken...',
+  'widget.trade-review.placeholder.default': 'Schreiben Sie Ihre Gedanken...',
 
   'widget.trade-review.field.entry': 'Einstieg',
   'widget.trade-review.field.exit': 'Ausstieg',
@@ -4352,7 +4406,7 @@ const de: Lang = {
   'widget.trade-review.more-context': 'Mehr Kontext',
   'widget.trade-review.field.position-size': 'Positionsgröße',
   'widget.trade-review.field.stop-loss': 'Stoppkurs',
-  'widget.trade-review.field.take-profit': 'Gewinnziel',
+  'widget.trade-review.field.take-profit': 'Take-Profit',
   'widget.trade-review.field.fees': 'Gebühren',
   'widget.trade-review.field.commission': 'Provision',
   'widget.trade-review.field.mae': 'MAE',
@@ -4450,9 +4504,9 @@ const de: Lang = {
     'Durchschnittliches Trade-P&L relativ zur Volatilität',
   'metric.expectancy.name': 'Erwartungswert',
   'metric.expectancy.description': 'Ø-Gewinn oder -Verlust pro Trade',
-  'metric.maxDrawdown.name': 'Max. Rückgang',
+  'metric.maxDrawdown.name': 'Max. Drawdown',
   'metric.maxDrawdown.description':
-    'Größter Rückgang von einem früheren P&L-Hoch',
+    'Größter Drawdown von einem früheren P&L-Hoch',
   'metric.bestDay.name': 'Bester Tag',
   'metric.bestDay.description': 'Höchster Einzeltag P&L',
   'metric.largestWin.name': 'Größter Gewinn',
@@ -4503,26 +4557,24 @@ const de: Lang = {
   'metric.loserMfeP90.name': 'Verlierer MFE P90',
   'metric.loserMfeP90.description': '90. Perzentil des MFE bei Verlusttrades',
   'metric.timeInDrawdown.name': 'Zeit im Drawdown',
-  'metric.timeInDrawdown.description': 'Anteil der Zeit unter deinem P&L-Hoch',
+  'metric.timeInDrawdown.description': 'Anteil der Zeit unter Ihrem P&L-Hoch',
   'metric.avgRecoveryTime.name': 'Durchschnittliche Wiederherstellungszeit',
   'metric.avgRecoveryTime.description': 'Ø-Erholungszeit nach einem Drawdown',
-  'metric.longestDrawdown.name': 'Längster realisierter Drawdown',
+  'metric.longestDrawdown.name': 'Längster Drawdown',
   'metric.longestDrawdown.description':
     'Längste Zeit in einem einzelnen Drawdown',
   'metric.drawdownEpisodes.name': 'Drawdown-Episoden',
   'metric.drawdownEpisodes.description': 'Anzahl getrennter Drawdown-Phasen',
-  'metric.category.performance': 'Leistung',
-  'metric.category.volume': 'Volumen',
 
   'onboarding.wizard.skip-aria': 'Überspringen Sie diesen Schritt',
   'onboarding.wizard.skip-onboarding': 'Onboarding überspringen',
 
-  'settings.reviews.weekly-checklist': 'Wöchentliche Vorbereitungs-Checkliste',
+  'settings.reviews.weekly-checklist': 'Wöchentliche Checkliste',
   'settings.reviews.weekly-checklist-desc':
-    'Lege Checklistenpunkte fest, die automatisch in jedem neuen Wochenrückblick erscheinen. Sie werden beim Erstellen kopiert und können pro Woche bearbeitet werden.',
+    'Legen Sie Checklistenpunkte fest, die automatisch in jedem neuen Wochenrückblick erscheinen. Sie werden beim Erstellen kopiert und können pro Woche bearbeitet werden.',
   'settings.reviews.weekly-checklist-placeholder':
     'Wöchentlichen Checklistenpunkt hinzufügen...',
-  'widget.checklist.weekly-title': 'Wöchentliche Vorab-Checkliste',
+  'widget.checklist.weekly-title': 'Wöchentliche Checkliste',
   'widget.checklist.tooltip.weekly':
     'Hier hinzugefügte Punkte gelten nur für diese Woche.',
   'widget.checklist.tooltip.weekly-settings-link':
@@ -4531,45 +4583,37 @@ const de: Lang = {
   'guide.step-count': '{count} Schritte',
   'guide.step-position': 'Schritt {current} von {total}',
 
-  'account.linked-trades.setups': 'Setups',
-
   'account.create.title': 'Konto erstellen',
-  'account.create.field.name': 'Kontoname',
-  'account.create.field.name-desc': 'Ein eindeutiger Name für Ihr Handelskonto',
-  'account.create.placeholder.name': 'Mein Handelskonto',
-  'account.create.field.type': 'Kontotyp',
-  'account.create.field.type-desc': 'Die Art des Trade-Kontos',
-  'account.create.field.initial-balance': 'Anfangssaldo',
-  'account.create.field.initial-balance-desc':
-    'Startkontostand (optional, Standardwert 0)',
-  'account.create.field.live-balance': 'Live-Balance',
-  'account.create.field.live-balance-desc': 'Aktueller Kontostand des Brokers',
-  'account.create.field.creation-date': 'Erstellungsdatum',
-  'account.create.field.creation-date-desc': 'Wann das Konto erstellt wurde',
-  'account.create.field.currency': 'Währung',
-  'account.create.field.currency-desc':
-    'Die angezeigte Landeswährung des Kontos',
-  'account.create.field.drawdown-type': 'Drawdown-Typ',
+  'account.form.field.name': 'Kontoname',
+  'account.form.placeholder.name': 'Mein Handelskonto',
+  'account.form.field.type': 'Kontotyp',
+  'account.form.type.demo': 'Demokonto',
+  'account.form.type.evaluation': 'Auswertung',
+  'account.form.type.funded': 'Gefördert',
+  'account.form.field.initial-balance': 'Anfangssaldo',
+  'account.form.field.initial-balance-desc': 'Startkontostand (Standardwert 0)',
+  'account.form.field.live-balance': 'Live-Balance',
+  'account.form.field.live-balance-desc': 'Aktueller Kontostand des Brokers',
+  'account.form.field.creation-date': 'Erstellungsdatum',
+  'account.form.field.creation-date-desc': 'Als das Konto erstellt wurde',
+  'account.form.field.currency': 'Währung',
+  'account.form.field.currency-desc': 'Die angezeigte Landeswährung des Kontos',
+  'account.form.field.drawdown-type': 'Drawdown-Typ',
+  'account.form.field.drawdown-amount': 'Drawdown-Betrag',
+  'account.form.field.drawdown-amount-desc': 'Maximales Drawdown-Limit',
+  'account.form.field.monthly-cost': 'Monatliche Kosten',
+  'account.form.field.monthly-cost-desc': 'Abonnementgebühren, Plattformkosten',
+  'account.form.field.target-type': 'Zieltyp',
+  'account.form.field.target-type-desc': 'Absolut oder prozentual',
+  'account.form.field.target-percent': 'Ziel (%)',
+  'account.form.field.target-dollar': 'Ziel ($)',
+  'account.form.field.target-percent-desc': 'Prozentuales Gewinnziel',
+  'account.form.field.target-dollar-desc': 'Dollar-Betragsziel',
+  'account.form.field.target-date': 'Zieldatum',
+  'account.form.field.target-date-desc': 'Datum zur Erreichung des Gewinnziels',
+  'account.form.unsaved-changes.body':
+    'Sie haben nicht gespeicherte Änderungen an diesem Konto.',
 
-  'account.create.field.drawdown-amount': 'Drawdown-Betrag',
-  'account.create.field.drawdown-amount-desc': 'Maximales Drawdown-Limit',
-  'account.create.field.profit-target-desc':
-    'Legen Sie ein Gewinnziel für das Konto fest',
-  'account.create.field.monthly-cost': 'Monatliche Kosten',
-  'account.create.field.monthly-cost-desc':
-    'Abonnementgebühren, Plattformkosten',
-  'account.create.field.target-type': 'Zieltyp',
-  'account.create.field.target-type-desc': 'Absolut oder prozentual',
-  'account.create.field.target-percent': 'Ziel (%)',
-  'account.create.field.target-dollar': 'Ziel ($)',
-  'account.create.field.target-percent-desc': 'Prozentuales Gewinnziel',
-  'account.create.field.target-dollar-desc': 'Dollar-Betragsziel',
-  'account.create.field.target-date': 'Zieldatum (optional)',
-  'account.create.field.target-date-desc':
-    'Datum zur Erreichung des Gewinnziels',
-  'account.create.type.demo': 'Demokonto',
-  'account.create.type.evaluation': 'Auswertung',
-  'account.create.type.funded': 'Gefördert',
   'account.create.success': 'Konto „{name}“ erfolgreich erstellt',
   'account.create.error.name-required': 'Kontoname ist erforderlich',
   'account.create.error.name-exists':
@@ -4583,6 +4627,10 @@ const de: Lang = {
     'Der Drawdown-Betrag ist erforderlich, wenn der Drawdown-Typ aktiviert ist',
   'account.create.error.profit-target-required':
     'Der Gewinnzielbetrag ist erforderlich, wenn das Gewinnziel aktiviert ist',
+  'account.create.error.profit-target-needs-balance':
+    'Ein prozentuales Gewinnziel benötigt einen Anfangssaldo. Legen Sie einen fest oder verwenden Sie ein Ziel in Währung.',
+  'account.create.error.phase-profit-target-needs-balance':
+    'Ein prozentuales Gewinnziel benötigt einen Startsaldo für die Phase. Legen Sie einen fest oder verwenden Sie ein Ziel in Währung.',
   'account.create.error.invalid-date': 'Ungültiges Erstellungsdatum',
   'account.create.error.future-date':
     'Das Erstellungsdatum darf nicht in der Zukunft liegen',
@@ -4622,16 +4670,14 @@ const de: Lang = {
   'account.add-event.confirm.message':
     '{type} von {amount} zum Konto „{account}“ auf {date} hinzufügen?',
   'account.add-event.confirm.description': 'Beschreibung: {description}',
-  'account.risk-metrics.loading': 'Risikometriken werden geladen...',
   'account.risk-metrics.title': 'Risikomanagement',
   'account.risk-metrics.drawdown-used': 'Genutztes Drawdown-Limit',
   'account.risk-metrics.profit-target': 'Gewinnziel',
+  'account.risk-metrics.profit-target-needs-balance':
+    'Ein prozentuales Ziel benötigt einen Anfangssaldo als Bezugsgröße. Legen Sie ihn unter Konto bearbeiten fest oder verwenden Sie ein Ziel in Währung.',
   'account.risk-metrics.status.breached': 'VERLETZT',
   'account.risk-metrics.status.achieved': 'ERREICHT',
   'account.risk-metrics.status.in-progress': 'IM GANGE',
-  'account.risk-metrics.not-set': 'Nicht festgelegt',
-  'account.risk-metrics.no-drawdown': 'Kein Drawdown-Limit festgelegt',
-  'account.risk-metrics.no-profit-target': 'Kein Gewinnziel festgelegt',
   'account.risk-metrics.label.used': 'Genutzt:',
   'account.risk-metrics.label.limit': 'Limit:',
   'account.risk-metrics.label.remaining': 'Übrig:',
@@ -4668,32 +4714,10 @@ const de: Lang = {
   'account.edit.convert.discard-message':
     'Die Einrichtung der Prüfung öffnet sich in einem eigenen Fenster und schließt dieses Formular. Hier vorgenommene Änderungen werden nicht gespeichert.',
   'account.edit.convert.discard-confirm': 'Verwerfen und fortfahren',
-  'account.edit.field.name': 'Kontoname',
-  'account.edit.field.name-desc': 'Der eindeutige Name für dieses Konto',
-  'account.edit.placeholder.name': 'z. B. Mein Handelskonto',
-  'account.edit.field.type': 'Kontotyp',
-  'account.edit.field.type-desc': 'Art des Trade-Kontos',
-  'account.edit.type.demo': 'Demokonto',
-  'account.edit.type.evaluation': 'Auswertung',
-  'account.edit.type.funded': 'Gefördert',
-  'account.edit.field.initial-balance': 'Anfangssaldo',
-  'account.edit.field.initial-balance-desc': 'Startkontostand',
-  'account.edit.field.live-balance': 'Live-Balance',
-  'account.edit.field.live-balance-desc': 'Aktueller Kontostand des Brokers',
-  'account.edit.field.creation-date': 'Erstellungsdatum',
-  'account.edit.field.creation-date-desc': 'Als das Konto erstellt wurde',
-  'account.edit.field.currency': 'Währung',
-  'account.edit.field.currency-desc': 'Die angezeigte Landeswährung des Kontos',
-  'account.edit.field.drawdown-type': 'Drawdown-Typ',
 
-  'account.edit.field.drawdown-amount': 'Drawdown-Betrag',
-  'account.edit.field.drawdown-amount-desc':
-    'Maximal zulässiger Verlust ab Startguthaben',
   'account.edit.field.manual-snapshots': 'Manuelle Drawdown-Snapshots',
   'account.edit.field.manual-snapshots-desc':
-    'Verwalten Sie tägliche Saldo-Snapshots für die EOD-Trailing-Drawdown-Berechnung',
-  'account.edit.field.profit-target-desc':
-    'Legen Sie ein Gewinnziel für das Konto fest',
+    'Erfassen Sie die Drawdown-Limits, die Ihr Broker im Laufe der Zeit festlegt',
   'account.copy-trading.title': 'Kopier-Trading',
   'account.copy-trading.description':
     'Leite die Performance dieses Kontos über historische Kopierzeiträume von einem anderen Konto ab.',
@@ -4701,8 +4725,7 @@ const de: Lang = {
   'account.copy-trading.existing-trades-warning':
     'Dieses Konto hat bereits direkte Trades. Sie bleiben erhalten, und kopierte Trades werden ab dem gewählten Startdatum ergänzt.',
   'account.copy-trading.base-account': 'Basiskonto',
-  'account.copy-trading.base-account-desc':
-    'Es können nur Nicht-Kopierkonten mit derselben Währung ausgewählt werden.',
+  'account.copy-trading.base-account-desc': 'Gleiche Währung, kein Kopierkonto',
   'account.copy-trading.base-account-placeholder': 'Basiskonto auswählen',
   'account.copy-trading.multiplier': 'Multiplikator',
   'account.copy-trading.multiplier-desc': 'Erlaubter Bereich: 0,1x bis 100x',
@@ -4710,13 +4733,11 @@ const de: Lang = {
   'account.copy-trading.start-date': 'Kopieren ab Datum',
   'account.copy-trading.history': 'Kopierverlauf',
   'account.copy-trading.error.base-required':
-    'Wähle ein Basiskonto für Kopier-Trading aus.',
+    'Wählen Sie ein Basiskonto für Copy-Trading aus.',
   'account.copy-trading.error.multiplier-range':
     'Der Kopier-Trading-Multiplikator muss zwischen 0,1x und 100x liegen.',
   'account.copy-trading.error.start-date-required':
-    'Wähle ein Startdatum für Kopier-Trading aus.',
-  'account.edit.field.monthly-cost': 'Monatliche Kosten',
-  'account.edit.field.monthly-cost-desc': 'Abonnementgebühren, Plattformkosten',
+    'Wählen Sie ein Startdatum für Copy-Trading aus.',
   'account.copy-trading.error.base-account-is-copied':
     'Dieses Konto wird bereits als Basiskonto verwendet und kann kein anderes Konto kopieren.',
   'account.copy-trading.base-account-is-copied-desc-primary':
@@ -4732,7 +4753,7 @@ const de: Lang = {
   'account.prop-challenge.actions.mark-failed': 'Als fehlgeschlagen markieren',
   'account.prop-challenge.actions.archive': 'Challenge archivieren',
   'account.prop-challenge.actions.stale':
-    'Diese Challenge wurde an anderer Stelle aktualisiert. Prüfe sie und versuche es erneut.',
+    'Diese Challenge wurde an anderer Stelle aktualisiert. Prüfen Sie sie und versuchen Sie es erneut.',
   'account.prop-challenge.actions.reopen': 'Wieder öffnen',
   'account.prop-challenge.actions.link-rules': 'Mit Firmenregeln verknüpfen…',
   'account.prop-challenge.view-trades': 'Trades für {phase} anzeigen',
@@ -4746,14 +4767,14 @@ const de: Lang = {
   'account.prop-challenge.notice.target-description':
     'Alle Bestehensanforderungen sind erfüllt. Weiter zu {next}?',
   'account.prop-challenge.notice.breach-after-reached':
-    'Regeln wurden nach Erreichen des Ziels um {time} verletzt. Setze die Übergangszeit, damit diese Trades nicht in dieser Phase bleiben.',
+    'Regeln wurden nach Erreichen des Ziels um {time} verletzt. Setzen Sie die Übergangszeit, damit diese Trades nicht in dieser Phase bleiben.',
   'account.prop-challenge.notice.not-yet': 'Noch nicht',
   'account.prop-challenge.notice.passed-title': 'Evaluierung bestanden',
   'account.prop-challenge.notice.passed-description':
     'Alle Anforderungen sind erfüllt. Challenge als bestanden markieren?',
   'account.prop-challenge.notice.payout-title':
     'Auszahlung verfügbar: {amount}',
-  'account.prop-challenge.notice.payout-plan': 'Dein Plan: {amount} auszahlen',
+  'account.prop-challenge.notice.payout-plan': 'Ihr Plan: {amount} auszahlen',
   'account.prop-challenge.notice.record-payout': 'Auszahlung erfassen',
   'account.prop-challenge.notice.skip-cycle': 'Diesen Zyklus überspringen',
   'account.prop-challenge.notice.payout-description': 'Auszahlung',
@@ -4780,9 +4801,9 @@ const de: Lang = {
   'account.prop-challenge.payout.plan.percent': 'Prozent des Verfügbaren',
   'account.prop-challenge.payout.plan.amount': 'Fester Betrag',
   'account.prop-challenge.payout.plan.percent-invalid':
-    'Gib einen Prozentsatz zwischen 1 und 100 ein.',
+    'Geben Sie einen Prozentsatz zwischen 1 und 100 ein.',
   'account.prop-challenge.payout.plan.amount-invalid':
-    'Gib einen Betrag über null ein.',
+    'Geben Sie einen Betrag über null ein.',
   'account.prop-challenge.payout.plan.percent-value': 'Prozent',
   'account.prop-challenge.payout.plan.amount-value': 'Betrag ({currency})',
   'account.prop-challenge.payout.plan.save': 'Plan speichern',
@@ -4815,6 +4836,7 @@ const de: Lang = {
     'Als das Ziel erreicht wurde',
   'account.prop-challenge.transition.too-early':
     'Die Übergangszeit darf nicht vor dem Phasenstart liegen.',
+  'account.prop-challenge.costs.section-title': 'Kosten',
   'account.prop-challenge.costs.title': 'Einmalige Kosten',
   'account.prop-challenge.costs.description':
     'Kauf-, Reset- und Aktivierungsgebühren separat erfassen.',
@@ -4832,26 +4854,17 @@ const de: Lang = {
   'account.header.created': 'Erstellt:',
   'account.summary.current-balance': 'Aktueller Kontostand',
   'account.summary.net-cash-flow': 'Netto-Kapitalfluss',
-  'account.summary.payouts': 'Auszahlungen',
   'account.performance.title': 'Wertentwicklung',
-  'account-page.guide.whats-new.cockpit.intro.title': 'Deine Prüfungsregeln',
+  'account-page.guide.whats-new.cockpit.intro.title': 'Ihre Prüfungsregeln',
   'account-page.guide.whats-new.cockpit.intro.description':
-    'Bei einem Prop-Konto steht jede Firmenregel und wie nah du ihr bist unter den Kennzahlen.',
+    'Bei einem Prop-Konto steht jede Firmenregel und wie nah Sie ihr sind unter den Kennzahlen.',
   'account-page.guide.whats-new.cockpit.cockpit.title':
     'Eine Phase prüfen und handeln',
   'account-page.guide.whats-new.cockpit.cockpit.description':
-    'Wähle im Regelkopf eine Phase, um ihre Regeln zu sehen. Markiere sie über das ⋮-Menü daneben als bestanden oder nicht bestanden oder öffne sie wieder.',
-  'account-page.guide.main.challenge.title': 'Deine Challenge auf einen Blick',
+    'Wählen Sie im Regelkopf eine Phase, um ihre Regeln zu sehen. Markieren Sie sie über das ⋮-Menü daneben als bestanden oder nicht bestanden oder öffnen Sie sie wieder.',
+  'account-page.guide.main.challenge.title': 'Ihre Challenge auf einen Blick',
   'account-page.guide.main.challenge.description':
     'Wählen Sie eine Phase, um jede Regel mit ihrem Fortschritt zu sehen. Funded-Phasen mit verifizierten Auszahlungsregeln verfolgen hier auch die Auszahlungsberechtigung.',
-  'account.edit.field.target-type': 'Zieltyp',
-  'account.edit.field.target-type-desc': 'Absolut oder prozentual',
-  'account.edit.field.target-percent': 'Ziel (%)',
-  'account.edit.field.target-dollar': 'Ziel ($)',
-  'account.edit.field.target-percent-desc': 'Prozentuales Gewinnziel',
-  'account.edit.field.target-dollar-desc': 'Dollar-Betragsziel',
-  'account.edit.field.target-date': 'Zieldatum (optional)',
-  'account.edit.field.target-date-desc': 'Datum zur Erreichung des Gewinnziels',
   'account.edit.button.show-snapshots':
     'Snapshot Manager anzeigen ({count} aufgezeichnet)',
   'account.edit.button.hide-snapshots':
@@ -4859,10 +4872,10 @@ const de: Lang = {
   'account.edit.delete-warning':
     'Dies ist eine dauerhafte Aktion, die nicht rückgängig gemacht werden kann!',
   'account.drawdown.none': 'Keiner',
-  'account.drawdown.fixed': 'Behoben',
-  'account.drawdown.eod-trailing': 'EOD-Trailing',
-  'account.drawdown.manual': 'Handbuch',
-  'account.profit-target.enable': 'Gewinnziel aktivieren',
+  'account.drawdown.fixed': 'Statisch',
+  'account.drawdown.eod-trailing': 'EOD nachlaufend',
+  'account.drawdown.manual': 'Manuell',
+  'account.profit-target.title': 'Gewinnziel',
   'account.profit-target.type.absolute': 'Absoluter Betrag',
   'account.profit-target.type.percentage': 'Prozentsatz',
   'account.create.button.creating': 'Erstellen...',
@@ -4908,7 +4921,6 @@ const de: Lang = {
     'Entfernen Sie automatisch generierte Konto-Tags aus Notizen',
   'common.note-label': 'Notiz:',
 
-  'common.backups-label': 'Backups:',
   'account.edit.error.name-required': 'Kontoname ist erforderlich',
   'account.edit.error.name-exists': 'Das Konto „{name}“ existiert bereits',
   'account.edit.error.creation-date-required':
@@ -4946,7 +4958,7 @@ const de: Lang = {
   'templateEditor.mode.editor': 'Editor',
   'templateEditor.built-in-badge': '(Eingebaut)',
   'templateEditor.built-in-notice':
-    'Integrierte Vorlagen können nicht bearbeitet werden. Duplizieren Sie diese Vorlage oder erstellen Sie eine neue, um sie anzupassen.',
+    'Integrierte Layouts können nicht bearbeitet werden. Duplizieren Sie dieses Layout oder erstellen Sie ein neues, um es anzupassen.',
   'templateEditor.unsaved-changes': 'Nicht gespeicherte Änderungen',
   'templateEditor.field.template-name': 'Layoutsname',
   'templateEditor.field.widgets': 'Widgets ({count})',
@@ -4977,8 +4989,7 @@ const de: Lang = {
   'templateEditor.widget.demon-tracker.tracking-method.daily-review-entries-desc':
     'Nur Fehler aus täglichen Reviews zählen.',
   'templateEditor.widget.demon-tracker.stop-after': 'Trading stoppen nach:',
-  'notice.error.template-save-failed':
-    'Vorlage konnte nicht gespeichert werden',
+  'notice.error.template-save-failed': 'Layout konnte nicht gespeichert werden',
   'builder.sidebar.title': 'Layout-Builder',
   'builder.sidebar.section.trade': 'Trade',
   'builder.sidebar.section.drc': 'DRC',
@@ -4998,20 +5009,16 @@ const de: Lang = {
   'builder.sidebar.share-template': 'Layout teilen',
   'builder.sidebar.new-template-name': 'Neue {type}-Layout',
   'builder.sidebar.copy-suffix': '(Kopie)',
-  'notice.default-trade-template-updated':
-    'Standard-Trade-Vorlage aktualisiert',
+  'notice.default-trade-template-updated': 'Standard-Trade-Layout aktualisiert',
   'notice.trade-template-duplicated': 'Trade-Layout dupliziert',
   'notice.trade-template-deleted': 'Trade-Layout gelöscht',
   'notice.error.create-template': 'Layout konnte nicht erstellt werden',
-  'notice.error.duplicate-template':
-    'Die Vorlage konnte nicht dupliziert werden',
+  'notice.error.duplicate-template': 'Layout konnte nicht dupliziert werden',
   'notice.error.delete-template': 'Layout konnte nicht gelöscht werden',
   'account.weight-legend.aria-label': 'Legende zur Kontotypverteilung',
   'account.weight-legend.item-aria-label': '{name}: {percent}',
   'account.transaction.deposit': 'Kaution',
   'account.transaction.withdrawal': 'Rückzug',
-  'account.transaction.click-to-edit':
-    'Klicken Sie hier, um diese Transaktion zu bearbeiten oder zu löschen',
   'account.transaction.edit-row-label':
     'Diese Transaktion bearbeiten oder löschen: {date}, {amount}',
   'account.deposits-withdrawals.title': 'Ein- und Auszahlungen',
@@ -5042,9 +5049,9 @@ const de: Lang = {
     'Alle benutzerdefinierten Optionen (Ticker, Setups, Fehler)',
   'settings.reset.modal.item-account-settings':
     'Kontoeinstellungen und Metadaten',
-  'settings.reset.modal.item-dashboard-layouts': 'Dashboard-Layouts',
+  'settings.reset.modal.item-dashboard-layouts': 'Auswertungs-Layouts',
   'settings.reset.modal.item-symbol-mappings': 'Symbolzuordnungen',
-  'settings.reset.modal.item-csv-templates': 'Trade-Import-Vorlagen',
+  'settings.reset.modal.item-csv-templates': 'CSV-Vorlagen',
   'settings.reset.modal.item-other': 'Alle anderen Anpassungen',
   'settings.reset.modal.backup-note':
     'Vor dem Zurücksetzen wird ein Backup erstellt.',
@@ -5083,7 +5090,7 @@ const de: Lang = {
   'home.widget-selector.sample-note.title': 'Handelsplan',
   'home.widget-selector.sample-note.intro':
     'Nur A+-Setups an Schlüsselmarken handeln. Max. 3 Trades pro Tag.',
-  'home.widget-selector.sample-note.checklist': 'Checkliste vor Marktöffnung',
+  'home.widget-selector.sample-note.checklist': 'Checkliste',
   'home.widget-selector.sample-note.task.calendar':
     'Wirtschaftskalender prüfen',
   'home.widget-selector.sample-note.task.levels':
@@ -5118,7 +5125,7 @@ const de: Lang = {
   'home.button.add-widget': 'Widget hinzufügen',
 
   'home.greeting.welcome': 'Willkommen bei Journalit!',
-  'home.greeting.hey': 'Hey',
+  'home.greeting.hey': 'Hallo',
   'home.greeting.nightowl': 'Hey Nachteule',
   'home.greeting.still-up': 'noch oben?',
   'home.greeting.late-night': 'Late-Night-Session?',
@@ -5139,12 +5146,12 @@ const de: Lang = {
   'home.greeting.how-did-today-go': 'Wie ist es heute gelaufen?',
   'home.greeting.time-to-reflect': 'Zeit zum Nachdenken',
   'home.greeting.welcome-back': 'Willkommen zurück',
-  'home.greeting.name-placeholder': 'Dein Name',
+  'home.greeting.name-placeholder': 'Ihr Name',
   'home.greeting.edit-name-aria': '{name}. Anzeigenamen bearbeiten',
   'home.greeting.hey-there': 'Hallo',
-  'home.greeting.good-to-see-you': 'Schön dich zu sehen',
+  'home.greeting.good-to-see-you': 'Schön, Sie zu sehen',
   'home.subtitle.first-time': 'Lassen Sie uns Ihre Trading-Reise beginnen',
-  'home.subtitle.see-how-doing': 'Mal sehen, wie es dir geht',
+  'home.subtitle.see-how-doing': 'Mal sehen, wie es bei Ihnen läuft',
   'home.subtitle.elevate-trading': 'Es ist Zeit, Ihr Trading zu verbessern',
   'home.subtitle.journey-continues': 'Ihre Trading-Reise geht weiter',
   'home.subtitle.check-progress': 'Lassen Sie uns Ihren Fortschritt überprüfen',
@@ -5215,13 +5222,11 @@ const de: Lang = {
   'home.widget.goals-progress.complete-percent': '{percent}% abgeschlossen',
   'home.widget.goals-progress.goal-reached': 'Ziel erreicht',
   'home.widget.goals-progress.aria.save-goal': 'Ziel speichern',
-  'home.widget.goals-progress.aria.set-goal': 'Setze dir ein Ziel',
+  'home.widget.goals-progress.aria.set-goal': 'Ziel festlegen',
   'home.widget.goals-progress.aria.change-goal':
     'Klicken Sie, um das Ziel zu ändern',
   'home.widget.best-hours.title': 'Beste Stunden',
   'home.widget.best-hours.no-data': 'Keine Trading-Daten',
-  'home.widget.best-hours.period-aria':
-    '{label}: {pnl} durchschnittlicher P&L pro Trade, {count} Trades',
   'home.widget.best-hours.trades-count': '{count} Trades',
   'home.widget.best-hours.win-rate': '{rate}% Gewinn',
   'home.widget.best-hours.win-rate-na': 'Gewinnrate nicht verfügbar',
@@ -5256,11 +5261,11 @@ const de: Lang = {
   'home.widget.streak.no-active': 'kein aktiver Streak',
   'home.widget.streak.start-trading':
     'Beginnen Sie mit dem Trading, um einen Streak aufzubauen',
-  'home.widget.streak.best-streak': 'Deine beste Serie {period}',
+  'home.widget.streak.best-streak': 'Ihre beste Serie {period}',
   'home.widget.streak.above-average': 'über Ihrem Durchschnitt {period}',
   'home.widget.streak.stay-focused':
     'Bleiben Sie konzentriert, machen Sie weiter so',
-  'home.widget.streak.keep-going': 'Mach weiter so',
+  'home.widget.streak.keep-going': 'Weiter so',
   'home.widget.streak.good-start': 'guter Anfang',
   'home.widget.streak.pause': 'Machen Sie vor Ihrem nächsten Trade eine Pause',
   'home.widget.streak.review': 'Review vor dem nächsten Trade',
@@ -5289,7 +5294,7 @@ const de: Lang = {
   'home.widget.account-progress.max-label': 'Bis zu',
   'home.widget.account-progress.max-all': 'Alle',
   'home.widget.account-progress.select-hint':
-    'Wähle so viele, wie du möchtest.',
+    'Wählen Sie so viele, wie Sie möchten.',
   'home.widget.account-progress.no-eligible': 'Noch keine Konten zur Auswahl.',
   'home.widget.account-progress.none-selected':
     'Keine Konten gewählt. Zum Auswählen klicken.',
@@ -5309,7 +5314,6 @@ const de: Lang = {
   'home.widget.eval-roi.challenge-count-plural': '{count} Bewertungen',
   'home.widget.eval-roi.net': 'Netto',
   'home.widget.eval-roi.spent': 'Ausgegeben',
-  'home.widget.eval-roi.payouts': 'Auszahlungen',
   'home.widget.eval-roi.break-even': 'Gewinnschwelle',
   'home.widget.challenge-alerts.title': 'Challenge-Hinweise',
   'home.widget.challenge-alerts.unable-to-load':
@@ -5338,7 +5342,6 @@ const de: Lang = {
   'home.widget.top-breakdown.configure-title': 'Top anpassen {dimension}',
   'home.widget.top-breakdown.aria.customize':
     'Klicken Sie hier, um Top {dimension} anzupassen',
-  'home.widget.setups.title': 'Top-Setups',
 
   'home.widget.setups.trades-count': '{count} Trades',
   'home.widget.setups.win-rate': '{rate}% Trefferquote',
@@ -5375,6 +5378,9 @@ const de: Lang = {
   'calendar.week': 'WOCHE',
   'calendar.trade': '{count} Trade',
   'calendar.trades': '{count} Trades',
+  'calendar.missed': '{count} verpasst',
+  'calendar.trades-short': '{count}T',
+  'calendar.missed-short': '{count}V',
   'calendar.reviewed': 'Überprüft',
   'calendar.month.january': 'Januar',
   'calendar.month.february': 'Februar',
@@ -5395,7 +5401,6 @@ const de: Lang = {
   'filter.modal.type.regular': 'Regulär',
   'filter.modal.type.backtest': 'Backtest',
   'filter.summary.regular-trades': 'Regulärer Trades',
-  'filter.modal.status.breakeven': 'Break-even',
 
   'filter.modal.review-status.reviewed': 'Überprüft',
   'filter.modal.review-status.unreviewed': 'Nicht überprüft',
@@ -5403,7 +5408,7 @@ const de: Lang = {
   'filter.modal.direction.short-put': 'Short/Verkaufsoption',
   'filter.modal.section.custom-fields': 'Benutzerdefinierte Felder',
   'filter.modal.custom-field.none-available': 'Keine Werte verfügbar',
-  'widget.checklist.title': 'Pre-Trade-Checkliste',
+  'widget.checklist.title': 'DRC-Checkliste',
   'widget.checklist.tooltip.day-only':
     'Die hier hinzugefügten Elemente gelten nur für diesen Tag.',
   'widget.checklist.tooltip.settings-link':
@@ -5416,7 +5421,7 @@ const de: Lang = {
     'Keine Checklistenpunkte. Fügen Sie unten eines hinzu.',
   'widget.checklist.placeholder': 'Einen neuen Checklistenpunkt hinzufügen...',
   'widget.checklist.invalid-context':
-    'Das Checklisten-Widget erfordert eine DRC-Notiz (Frontmatter-Typ: „drc“).',
+    "Das Checklisten-Widget benötigt eine DRC- oder Wochenrückblick-Notiz (Frontmatter-Typ: 'drc' oder 'weekly-review')",
   'widget.session-mistakes.title': 'Sitzungsfehler',
   'widget.session-mistakes.subtitle':
     'Protokollieren Sie Fehler einmal pro Sitzung, anstatt sie bei jedem Trade zu wiederholen.',
@@ -5425,10 +5430,42 @@ const de: Lang = {
   'widget.session-mistakes.empty':
     'Es wurden keine Sitzungsfehler protokolliert',
 
+  'widget.day-trade-fields.name': 'Tages-Trade-Felder',
+  'widget.day-trade-fields.description': 'Felder für alle Trades des Tages',
+  'widget.day-trade-fields.title': 'Tages-Trade-Felder',
+  'widget.day-trade-fields.mistakes': 'Fehler',
+  'widget.day-trade-fields.tags': 'Schlagwörter',
+  'widget.day-trade-fields.not-set': 'Nicht gesetzt',
+  'widget.day-trade-fields.apply.one': 'Auf {count} Trade anwenden',
+  'widget.day-trade-fields.apply.few': 'Auf {count} Trades anwenden',
+  'widget.day-trade-fields.apply.many': 'Auf {count} Trades anwenden',
+  'widget.day-trade-fields.apply.other': 'Auf {count} Trades anwenden',
+  'widget.day-trade-fields.add-field': 'Feld hinzufügen',
+  'widget.day-trade-fields.empty':
+    'Legen Sie ein Feld einmal fest, und es gilt für jeden Trade dieses Tages, auch für spätere Trades.',
+  'widget.day-trade-fields.invalid-context':
+    "Das Widget Tages-Trade-Felder benötigt eine DRC-Notiz (frontmatter type: 'drc')",
+  'widget.day-trade-fields.notice-updated.one': '{count} Trade aktualisiert',
+  'widget.day-trade-fields.notice-updated.few': '{count} Trades aktualisiert',
+  'widget.day-trade-fields.notice-updated.many': '{count} Trades aktualisiert',
+  'widget.day-trade-fields.notice-updated.other': '{count} Trades aktualisiert',
+  'widget.day-trade-fields.notice-failed.one':
+    '{count} Trade konnte nicht aktualisiert werden',
+  'widget.day-trade-fields.notice-failed.few':
+    '{count} Trades konnten nicht aktualisiert werden',
+  'widget.day-trade-fields.notice-failed.many':
+    '{count} Trades konnten nicht aktualisiert werden',
+  'widget.day-trade-fields.notice-failed.other':
+    '{count} Trades konnten nicht aktualisiert werden',
+  'widget.day-trade-fields.notice-save-failed':
+    'Tagesfeld konnte nicht gespeichert werden',
+  'widget.day-trade-fields.notice-conflict':
+    'Die Tages-Trade-Felder wurden in einer anderen Ansicht geändert. Prüfen Sie sie und wenden Sie sie erneut an.',
+  'widget.day-trade-fields.retry': 'Erneut versuchen',
   'widget.session-mistakes.invalid-context':
     'Das Widget „Sitzungsfehler“ erfordert eine DRC-Notiz (Frontmatter-Typ: „drc“).',
-  'widget.directional-pnl.title.long': 'Long Trades P&L',
-  'widget.directional-pnl.title.short': 'Short Trades P&L',
+  'widget.directional-pnl.title.long': 'P&L der Long-Trades',
+  'widget.directional-pnl.title.short': 'P&L der Short-Trades',
   'widget.directional-pnl.empty.not-enough':
     'Nicht genügend Trades für eine Richtungsanalyse',
   'widget.directional-pnl.empty.no-closed':
@@ -5437,8 +5474,8 @@ const de: Lang = {
     'In diesem Zeitraum gibt es keine langen Trades',
   'widget.directional-pnl.empty.no-short':
     'In diesem Zeitraum gibt es keine Short-Trades',
-  'widget.directional-drawdown.title.long': 'Realisierter Long-Drawdown',
-  'widget.directional-drawdown.title.short': 'Realisierter Short-Drawdown',
+  'widget.directional-drawdown.title.long': 'Long-Drawdown',
+  'widget.directional-drawdown.title.short': 'Short-Drawdown',
   'widget.directional-drawdown.empty.not-enough':
     'Nicht genügend geschlossene Trades für eine Richtungsanalyse',
   'widget.directional-drawdown.empty.no-closed':
@@ -5543,7 +5580,7 @@ const de: Lang = {
   'widget.key-levels.open-source-review': '{label}-Review öffnen',
   'widget.key-levels.importance.none': 'Keiner',
   'widget.key-levels.importance.high': 'Hoch',
-  'widget.key-levels.importance.medium': 'Medium',
+  'widget.key-levels.importance.medium': 'Mittel',
   'widget.key-levels.importance.low': 'Niedrig',
   'manual-drawdown.notice.deleted': 'Snapshot gelöscht',
   'manual-drawdown.notice.updated': 'Snapshot aktualisiert',
@@ -5569,11 +5606,11 @@ const de: Lang = {
   'manual-drawdown.button.delete': 'Löschen',
   'manual-drawdown.header.edit': 'Schnappschuss bearbeiten',
   'manual-drawdown.header.add': 'Neuen Snapshot hinzufügen',
-  'manual-drawdown.field.date': 'Auszahlungsdatum *',
+  'manual-drawdown.field.date': 'Drawdown-Datum',
   'manual-drawdown.field.date-desc': 'Als der Broker dieses Limit herausgab',
-  'manual-drawdown.field.limit': 'Drawdown-Limit ($) *',
+  'manual-drawdown.field.limit': 'Mindestsaldo ($)',
   'manual-drawdown.field.limit-desc': 'Niedrigster zulässiger Saldo',
-  'manual-drawdown.field.note': 'Hinweis (optional)',
+  'manual-drawdown.field.note': 'Hinweis',
   'manual-drawdown.field.note-desc':
     'Zusätzlicher Kontext für diesen Schnappschuss',
   'manual-drawdown.placeholder.note': 'z. B. Abrechnung zum Monatsende',
@@ -5601,20 +5638,33 @@ const de: Lang = {
   'widget-drawer.add-aria': '{name} hinzufügen',
   'widget-drawer.remove': 'Entfernen',
   'widget-drawer.remove-aria': '{name} entfernen',
-  'widget-drawer.close': 'Schließen',
   'dashboard.selector.metrics': 'Metriken',
 
-  'widget.pnlChart.name': 'Kumulativ P&L',
+  'metric.expectancyGap.name': 'Erwartungswertlücke',
+  'metric.expectancyGap.description':
+    'Tatsächliches vs. erwartetes R pro Trade.',
+  'expectancy-gap.expected': 'Erwartet (R/Trade)',
+  'expectancy-gap.realized': 'Realisiert (R/Trade)',
+  'expectancy-gap.sample':
+    '{included} von {total} geschlossenen Trades haben nutzbare Netto-R-Werte.',
+  'expectancy-gap.method-title': 'So wird gerechnet',
+  'expectancy-gap.method':
+    'Lücke = realisiert − erwartet. Realisiert ist der Mittelwert des Netto-R vollständig geschlossener tatsächlicher Trades, einschließlich Nullergebnissen. Offene, verpasste und Backtest-Trades sind ausgeschlossen. Fehlende Gewinn- oder Risikodaten werden ausgeschlossen, nicht als null gezählt. Verwendet werden gespeichertes R oder das Risiko des Trades, nie das aktuelle Standardrisiko. Ausstiegsfilter zählen jeden Trade einmal beim endgültigen Abschluss. Nutzen Sie ein unabhängiges Modell oder historische Vergleichswerte mit gleichen Kosten. Eine negative Lücke bedeutet Unterperformance, nicht zwangsläufig schlechte Ausführung. Leeren Sie den Vergleichswert zum Entfernen.',
+  'expectancy-gap.invalid':
+    'Geben Sie eine endliche Zahl ein oder lassen Sie das Feld zum Löschen leer.',
+  'expectancy-gap.save-failed':
+    'Vergleichswert konnte nicht gespeichert werden. Bitte erneut versuchen.',
+  'widget.pnlChart.name': 'Kumulativer P&L',
   'widget.pnlChart.description': 'Kumuliertes P&L im Zeitverlauf',
 
-  'widget.longPnLChart.name': 'Long-G/V',
+  'widget.longPnLChart.name': 'Long-P&L',
   'widget.longPnLChart.description':
     'Kumulierte P&L-Kurve geschlossener Long-Trades',
-  'widget.shortPnLChart.name': 'Short-G/V',
+  'widget.shortPnLChart.name': 'Short-P&L',
   'widget.shortPnLChart.description':
     'Kumulierte P&L-Kurve geschlossener Short-Trades',
   'widget.performanceCalendar.name': 'Leistungskalender',
-  'widget.performanceCalendar.description': 'Kalender deines täglichen P&L',
+  'widget.performanceCalendar.description': 'Kalender Ihres täglichen P&L',
 
   'widget.dailyPerformance.name': 'Tägliche Performance',
   'widget.dailyPerformance.description': 'P&L für jeden Handelstag',
@@ -5632,17 +5682,17 @@ const de: Lang = {
   'widget.tickerPerformance.description':
     'Rangliste der Performance nach Ticker',
   'widget.tradesChart.limit': '{count} Trades',
-  'widget.drawdownChart.name': 'Rückgang Chart',
+  'widget.drawdownChart.name': 'Drawdown-Diagramm',
   'widget.drawdownChart.description':
-    'Rückgang vom letzten realisierten P&L-Hoch',
+    'Drawdown vom letzten realisierten P&L-Hoch',
 
   'widget.directionalDrawdownChart.name':
     'Richtungsbezogener realisierter Drawdown',
 
-  'widget.longDrawdownChart.name': 'Realisierter Long-Drawdown',
+  'widget.longDrawdownChart.name': 'Long-Drawdown',
   'widget.longDrawdownChart.description': 'Drawdown nur für Long-Trades',
 
-  'widget.shortDrawdownChart.name': 'Realisierter Short-Drawdown',
+  'widget.shortDrawdownChart.name': 'Short-Drawdown',
   'widget.shortDrawdownChart.description': 'Drawdown nur für Short-Trades',
 
   'widget.drawdownStats.no-conversion':
@@ -5673,8 +5723,6 @@ const de: Lang = {
   'ui.folder-browser.root': 'Wurzel',
   'ui.folder-browser.clear-aria':
     'Deaktivieren Sie die Option, um den Standardspeicherort zu verwenden',
-  'ui.folder-browser.expand-folder': 'Ordner erweitern',
-  'ui.folder-browser.collapse-folder': 'Ordner einklappen',
 
   'combobox.placeholder.default': 'Auswählen oder eingeben...',
   'combobox.aria.remove-item': 'Entfernen Sie {item}',
@@ -5764,8 +5812,8 @@ const de: Lang = {
 
   'datetime.aria.open-picker': 'Datumsauswahl öffnen',
 
-  'modal.template-switch.title': 'Vorlage wechseln?',
-  'modal.template-switch.switching-from': 'Du wechselst von',
+  'modal.template-switch.title': 'Layout wechseln?',
+  'modal.template-switch.switching-from': 'Sie wechseln von',
   'modal.template-switch.switching-to': 'Zu',
   'modal.template-switch.has-content-title': 'Diese Notiz hat Inhalt',
   'modal.template-switch.has-content-desc':
@@ -5788,13 +5836,6 @@ const de: Lang = {
   'skeleton.account-page.loading': 'Kontoseite wird geladen',
 
   'grid.aria.remove-widget': 'Widget entfernen',
-  'csv.broker.tradingtechnologies': 'Trading Technologies (TT)',
-  'csv.broker-guide.tradingtechnologies.description':
-    'CSV-Export des Fills-Widgets',
-  'csv.broker-guide.tradingtechnologies.step-1':
-    'Öffnen Sie das Fills-Widget in TT und wechseln Sie zur Ansicht „Detail“, „Kontinuierlich“ oder „Preis mit Detail“.',
-
-  'csv.broker-guide.tradingtechnologies.warning.emphasis': 'Wichtig:',
 
   'trade.metadata.broker-comment': 'Broker-Kommentar',
 
@@ -5818,8 +5859,8 @@ const de: Lang = {
   'navigation.shortcuts.unavailable': 'Nicht verfügbar',
   'navigation.shortcuts.added': 'Hinzugefügt',
   'navigation.shortcuts.parent-required':
-    'Entferne zuerst die Verknüpfungen, bevor du diesen Navigationseintrag ausblendest.',
-  'navigation.items.nav-home': 'Heim',
+    'Entfernen Sie zuerst die Verknüpfungen, bevor Sie diesen Navigationseintrag ausblenden.',
+  'navigation.items.nav-home': 'Startseite',
   'navigation.items.nav-dashboard': 'Auswertung',
   'navigation.items.nav-trade-log': 'Trade-Log',
   'navigation.items.nav-account-dashboard': 'Konten',
@@ -5869,7 +5910,7 @@ const de: Lang = {
   'widget.previous-trading-day-context.open-source': 'Vorherigen DRC öffnen',
   'widget.previous-trading-day-context.image-alt-prefix': 'Vorheriges DRC-Bild',
   'widget.previous-trading-day-context.no-sections-configured':
-    'Wähle mindestens einen Abschnitt in den Template-Einstellungen aus.',
+    'Wählen Sie mindestens einen Abschnitt in den Layout-Einstellungen aus.',
   'widget.previous-trading-day-context.preview-note':
     'Gestern hat der Kurs Liquidität abgeholt, am Wochenlevel reagiert und wieder innerhalb der geplanten Range geschlossen.',
   'widget.previous-trading-day-context.preview-bullet-two':
@@ -5884,7 +5925,7 @@ const de: Lang = {
 
   'widget.weekly-drc-context.no-activity': 'Keine Aktivität für diesen Tag.',
   'widget.weekly-drc-context.no-sections-configured':
-    'Wähle mindestens einen DRC-Abschnitt in den Vorlageneinstellungen aus.',
+    'Wählen Sie mindestens einen DRC-Abschnitt in den Vorlageneinstellungen aus.',
   'widget.weekly-drc-context.current-week-not-found':
     'Aktuelle Wochenreview nicht gefunden.',
   'widget.weekly-drc-context.current-week-date-not-found':
@@ -5896,7 +5937,7 @@ const de: Lang = {
   'templateEditor.widget.weekly-drc-day-label': 'Tag',
 
   'templateEditor.widget.weekly-drc-start-collapsed': 'Eingeklappt starten',
-  'templateEditor.widget.weekly-drc-day-all': 'All days',
+  'templateEditor.widget.weekly-drc-day-all': 'Alle Tage',
 
   'templateEditor.widget.previous-context-sections-label':
     'Einzuschließende Abschnitte',
@@ -5904,37 +5945,42 @@ const de: Lang = {
     'Abschnittsüberschrift aus vorherigem DRC',
   'templateEditor.widget.previous-context-heading-placeholder':
     'Überschrift auswählen oder eingeben',
-  'templateEditor.widget.review-context-fields.selection': 'Fields to display',
-  'templateEditor.widget.review-context-fields.selection.all': 'All fields',
-  'templateEditor.widget.review-context-fields.selection.group': 'Field group',
+  'templateEditor.widget.review-context-fields.selection':
+    'Anzuzeigende Felder',
+  'templateEditor.widget.review-context-fields.selection.all': 'Alle Felder',
+  'templateEditor.widget.review-context-fields.selection.group': 'Feldgruppe',
   'templateEditor.widget.review-context-fields.selection.fields':
-    'Specific fields',
-  'templateEditor.widget.review-context-fields.group': 'Group',
+    'Bestimmte Felder',
+  'templateEditor.widget.review-context-fields.group': 'Gruppe',
   'templateEditor.widget.review-context-fields.group-placeholder':
-    'Select group',
-  'templateEditor.widget.review-context-fields.fields': 'Fields',
+    'Gruppe auswählen',
+  'templateEditor.widget.review-context-fields.fields': 'Felder',
   'templateEditor.widget.review-context-fields.fields-placeholder':
-    'Select fields',
+    'Felder auswählen',
   'templateEditor.widget.review-context-fields.fields-selected':
-    '{count} fields selected',
+    '{count} Felder ausgewählt',
   'templateEditor.widget.review-context-fields.no-fields':
-    'Create review fields in Settings first.',
+    'Erstellen Sie zuerst Review-Felder in den Einstellungen.',
 
-  'templateEditor.widget.review-context-fields.context': 'Context',
-  'templateEditor.widget.review-context-fields.context.both': 'Both',
-  'templateEditor.widget.review-context-fields.inherited': 'Inherited',
-  'templateEditor.widget.review-context-fields.current': 'Current',
-  'templateEditor.widget.review-context-fields.empty-values': 'Empty values',
-  'templateEditor.widget.review-context-fields.hide-empty': 'Hide empty values',
-  'templateEditor.widget.trade-review.primary-metrics': 'Primäre Kennzahlen',
-  'templateEditor.widget.trade-review.classification': 'Klassifizierung',
+  'templateEditor.widget.review-context-fields.context': 'Kontext',
+  'templateEditor.widget.review-context-fields.context.both': 'Beides',
+  'templateEditor.widget.review-context-fields.inherited': 'Vererbt',
+  'templateEditor.widget.review-context-fields.current': 'Aktuell',
+  'templateEditor.widget.review-context-fields.empty-values': 'Leere Werte',
+  'templateEditor.widget.review-context-fields.hide-empty':
+    'Leere Werte ausblenden',
   'templateEditor.widget.trade-review.more-context': 'Mehr Kontext',
+  'templateEditor.widget.trade-review.notes-sections': 'Notizabschnitte',
+  'templateEditor.widget.trade-review.notes-all': 'Alle Notizen',
+  'templateEditor.widget.trade-review.notes-sections-empty':
+    'Fügen Sie Abschnittsüberschriften unter Notizabschnitte in Ihrem Trade-Layout hinzu',
+  'templateEditor.widget.trade-review.placement.cards': 'Kennzahlkarten',
+  'templateEditor.widget.trade-review.placement.visible': 'Immer sichtbar',
+  'templateEditor.widget.trade-review.future-custom-fields':
+    'Später hinzugefügte benutzerdefinierte Felder',
   'templateEditor.widget.trade-review.display': 'Anzeige',
   'templateEditor.widget.trade-review.show-images': 'Bilder anzeigen',
   'templateEditor.widget.trade-review.fields-none': 'Keine Felder',
-  'templateEditor.widget.trade-review.fields-all': 'Alle Felder',
-  'templateEditor.widget.trade-review.fields-count': '{count} Felder',
-  'templateEditor.widget.trade-review.no-fields': 'Keine Felder verfügbar',
   'templateEditor.widget.trade-review.questions': 'Review-Fragen',
   'templateEditor.widget.trade-review.questions-help':
     'Wählen Sie die für jedes Handelsergebnis angezeigten Fragen aus. Die Fragen-IDs bleiben stabil, damit gespeicherte Antworten auch beim Bearbeiten oder Umsortieren der Fragen zugeordnet bleiben.',
@@ -5965,20 +6011,20 @@ const de: Lang = {
     '+ Abschnitt hinzufügen',
 
   'templateEditor.widget.previous-context-fallback-label':
-    'Previous DRC fallback',
+    'Ersatz für vorherigen DRC',
   'templateEditor.widget.previous-context-fallback-nearest':
-    'Nearest earlier DRC',
+    'Nächster früherer DRC',
   'templateEditor.widget.previous-context-fallback-expected':
-    'Expected previous trading day only',
+    'Nur erwarteter vorheriger Handelstag',
 
   'settings.general.include-copy-accounts-analytics':
-    'Include copy accounts in all-account analytics',
+    'Kopierkonten in kontoübergreifende Analysen einbeziehen',
   'settings.general.include-copy-accounts-analytics-desc':
-    'When enabled, all-account trading analytics include derived copy-account results and count them as account-level trades.',
+    'Wenn aktiviert, enthalten kontoübergreifende Trading-Analysen die abgeleiteten Ergebnisse der Kopierkonten und zählen sie als Trades auf Kontoebene.',
   'settings.general.include-copy-accounts-analytics-aria':
-    'Include copy accounts in all-account analytics',
+    'Kopierkonten in kontoübergreifende Analysen einbeziehen',
   'settings.general.include-copy-accounts-toggled':
-    'Copy accounts in all-account analytics {status}',
+    'Kopierkonten in kontoübergreifenden Analysen {status}',
   'settings.general.include-unrealized-pnl':
     'Unrealisierten P&L in Analysen einbeziehen',
   'settings.general.include-unrealized-pnl-desc':
@@ -5987,124 +6033,128 @@ const de: Lang = {
     'Unrealisierten P&L in Analysen einbeziehen',
   'settings.general.include-unrealized-pnl-toggled':
     'Unrealisierter P&L in Analysen {status}',
-  'settings.customization.options.commission.costs': 'Costs',
-  'settings.customization.options.commission.add-rule': '+ Add cost rule',
-  'settings.customization.options.commission.applies-to': 'Applies to',
-  'settings.customization.options.commission.method': 'Method',
-  'settings.customization.options.commission.entry': 'Entry',
-  'settings.customization.options.commission.exit': 'Exit',
-  'settings.customization.options.commission.round-trip': 'Round trip',
-  'settings.customization.options.commission.actions': 'Actions',
-  'settings.customization.options.commission.all-accounts': 'All accounts',
-  'settings.customization.options.commission.per-side': 'Per side',
-  'settings.customization.options.commission.remove-rule': 'Remove cost rule',
-  'settings.customization.trade-fields': 'Custom Trade Fields',
-  'settings.customization.review-fields': 'Custom Review Fields',
+  'settings.customization.options.commission.costs': 'Kosten',
+  'settings.customization.options.commission.add-rule':
+    '+ Kostenregel hinzufügen',
+  'settings.customization.options.commission.applies-to': 'Gilt für',
+  'settings.customization.options.commission.method': 'Methode',
+  'settings.customization.options.commission.entry': 'Einstieg',
+  'settings.customization.options.commission.exit': 'Ausstieg',
+  'settings.customization.options.commission.round-trip': 'Hin- und Rückweg',
+  'settings.customization.options.commission.all-accounts': 'Alle Konten',
+  'settings.customization.options.commission.per-side': 'Pro Seite',
+  'settings.customization.options.commission.remove-rule':
+    'Kostenregel entfernen',
+  'settings.customization.trade-fields': 'Benutzerdefinierte Trade-Felder',
+  'settings.customization.review-fields': 'Benutzerdefinierte Review-Felder',
   'settings.customization.review-fields.description':
-    'Create custom fields for review notes. These fields are stored under reviewCustomFields and can later be inherited across monthly, weekly, and daily reviews.',
-  'settings.customization.review-fields.title': 'Review Fields ({count})',
+    'Erstellen Sie benutzerdefinierte Felder für Review-Notizen. Diese Felder werden unter reviewCustomFields gespeichert und können über monatliche, wöchentliche und tägliche Reviews vererbt werden.',
+  'settings.customization.review-fields.title': 'Review-Felder ({count})',
   'settings.customization.review-fields.manage-desc':
-    'Manage custom fields for review notes',
+    'Benutzerdefinierte Felder für Review-Notizen verwalten',
   'settings.customization.review-fields.no-fields':
-    'No custom review fields defined yet',
+    'Noch keine benutzerdefinierten Review-Felder definiert',
   'settings.customization.review-fields.no-fields-desc':
-    'Review fields will be used by review-note widgets and will not appear in the trade form or Trade Log.',
-  'settings.customization.review-fields.add-button': 'Add Review Field',
+    'Review-Felder werden von Widgets in Review-Notizen verwendet und erscheinen weder im Trade-Formular noch im Trade Log.',
+  'settings.customization.review-fields.add-button': 'Review-Feld hinzufügen',
   'settings.customization.review-fields.delete-all-button':
-    'Delete All Review Fields',
-  'settings.customization.review-fields.add-new': 'Add New Review Field',
+    'Alle Review-Felder löschen',
+  'settings.customization.review-fields.add-new':
+    'Neues Review-Feld hinzufügen',
   'settings.customization.review-fields.edit-field-with-name':
-    'Edit “{fieldLabel}”',
+    '„{fieldLabel}“ bearbeiten',
   'settings.customization.review-fields.configure-desc':
-    'Configure your review field settings below',
+    'Konfigurieren Sie unten die Einstellungen des Review-Felds',
   'settings.customization.review-fields.actions-desc':
-    'Manage your custom review fields',
-  'settings.customization.review-fields.default-label': 'New Review Field',
-  'settings.customization.review-fields.unknown-field': 'Unknown Review Field',
+    'Ihre benutzerdefinierten Review-Felder verwalten',
+  'settings.customization.review-fields.default-label': 'Neues Review-Feld',
+  'settings.customization.review-fields.unknown-field':
+    'Unbekanntes Review-Feld',
   'settings.customization.review-fields.field-summary':
-    'Type: {type} • Reviews: {reviews}',
+    'Typ: {type} • Reviews: {reviews}',
   'settings.customization.review-fields.error.save-failed':
-    'Failed to save review field. Please try again.',
+    'Review-Feld konnte nicht gespeichert werden. Bitte versuchen Sie es erneut.',
   'settings.customization.review-fields.delete.confirm-message':
-    'Are you sure you want to delete the custom review field "{fieldLabel}"?',
+    'Möchten Sie das benutzerdefinierte Review-Feld „{fieldLabel}“ wirklich löschen?',
   'settings.customization.review-fields.reset.confirm-message':
-    'Are you sure you want to delete ALL custom review fields?',
+    'Möchten Sie wirklich ALLE benutzerdefinierten Review-Felder löschen?',
   'settings.customization.review-fields.editor.title':
-    'Review Field Configuration',
+    'Konfiguration des Review-Felds',
   'settings.customization.review-fields.editor.label-desc':
-    'Display name for this review field',
+    'Anzeigename dieses Review-Felds',
   'settings.customization.review-fields.editor.label-placeholder':
-    'Enter review field label',
-  'settings.customization.review-fields.editor.key': 'Review Field Key',
+    'Bezeichnung des Review-Felds eingeben',
+  'settings.customization.review-fields.editor.key':
+    'Schlüssel des Review-Felds',
   'settings.customization.review-fields.editor.key-desc':
-    'This key will be stored inside review note frontmatter at',
+    'Dieser Schlüssel wird im Frontmatter der Review-Notiz gespeichert unter',
   'settings.customization.review-fields.editor.type-desc':
-    'Type of review field input',
-  'settings.customization.review-fields.editor.description': 'Description',
+    'Eingabetyp des Review-Felds',
+  'settings.customization.review-fields.editor.description': 'Beschreibung',
   'settings.customization.review-fields.editor.description-desc':
-    'Optional help text for this review field',
+    'Optionaler Hilfetext für dieses Review-Feld',
   'settings.customization.review-fields.editor.description-placeholder':
-    'Explain how this field should be used',
+    'Erklären Sie, wie dieses Feld verwendet werden soll',
   'settings.customization.review-fields.editor.placeholder-desc':
-    'Optional placeholder text shown when entering a local review value',
+    'Optionaler Platzhaltertext bei der Eingabe eines lokalen Review-Werts',
   'settings.customization.review-fields.editor.placeholder-input':
-    'Enter review field placeholder',
+    'Platzhalter des Review-Felds eingeben',
 
-  'settings.customization.review-fields.editor.group': 'Field Group',
+  'settings.customization.review-fields.editor.group': 'Feldgruppe',
   'settings.customization.review-fields.editor.group-desc':
-    'Choose the review field group this field belongs to.',
-  'settings.customization.review-fields.groups.add-button': 'Add Group',
-  'settings.customization.review-fields.groups.default-name': 'New Group',
-  'settings.customization.review-fields.groups.untitled': 'Untitled Group',
-  'settings.customization.review-fields.groups.ungrouped': 'Ungrouped',
-  'settings.customization.review-fields.groups.field-count': '{count} fields',
+    'Wählen Sie die Gruppe, zu der dieses Review-Feld gehört.',
+  'settings.customization.review-fields.groups.add-button': 'Gruppe hinzufügen',
+  'settings.customization.review-fields.groups.default-name': 'Neue Gruppe',
+  'settings.customization.review-fields.groups.untitled': 'Unbenannte Gruppe',
+  'settings.customization.review-fields.groups.ungrouped': 'Ohne Gruppe',
+  'settings.customization.review-fields.groups.field-count': '{count} Felder',
   'settings.customization.review-fields.groups.empty':
-    'No fields in this group yet.',
-  'settings.customization.review-fields.groups.rename-prompt': 'Group name',
+    'Noch keine Felder in dieser Gruppe.',
+  'settings.customization.review-fields.groups.rename-prompt': 'Gruppenname',
   'settings.customization.review-fields.groups.delete-message':
-    'Delete the review field group "{groupName}"?',
+    'Die Review-Feldgruppe „{groupName}“ löschen?',
   'settings.customization.review-fields.groups.delete-note':
-    'Fields in this group will become ungrouped. Their saved review values are not deleted.',
+    'Felder dieser Gruppe werden keiner Gruppe mehr zugeordnet. Ihre gespeicherten Review-Werte werden nicht gelöscht.',
   'settings.customization.review-fields.groups.error.duplicate':
-    'A review field group with this name already exists.',
+    'Eine Review-Feldgruppe mit diesem Namen existiert bereits.',
   'settings.customization.review-fields.groups.error.save-failed':
-    'Failed to save review field group.',
-  'settings.customization.review-fields.editor.compact': 'Compact Display',
+    'Review-Feldgruppe konnte nicht gespeichert werden.',
+  'settings.customization.review-fields.editor.compact': 'Kompakte Anzeige',
   'settings.customization.review-fields.editor.compact-desc':
-    'Prefer compact rendering when this field appears in review widgets',
-  'settings.customization.review-fields.editor.appears-on': 'Appears On',
+    'Kompakte Darstellung bevorzugen, wenn dieses Feld in Review-Widgets erscheint',
+  'settings.customization.review-fields.editor.appears-on': 'Erscheint in',
   'settings.customization.review-fields.editor.appears-on-desc':
-    'Review note types that can show this field',
-  'settings.customization.review-fields.editor.editable-on': 'Editable On',
+    'Review-Notiztypen, die dieses Feld anzeigen können',
+  'settings.customization.review-fields.editor.editable-on': 'Bearbeitbar in',
   'settings.customization.review-fields.editor.editable-on-desc':
-    'Review note types where users can enter a local value',
-  'settings.customization.review-fields.editor.inherit-to': 'Inherited Into',
+    'Review-Notiztypen, in denen ein lokaler Wert eingegeben werden kann',
+  'settings.customization.review-fields.editor.inherit-to': 'Vererbt an',
   'settings.customization.review-fields.editor.inherit-to-desc':
-    'Lower review note types that can display inherited values from this field',
+    'Untergeordnete Review-Notiztypen, die vererbte Werte dieses Felds anzeigen können',
   'settings.customization.review-fields.editor.inheritance':
-    'Enable Inheritance',
+    'Vererbung aktivieren',
   'settings.customization.review-fields.editor.inheritance-desc':
-    'Allow this field to be read from higher-timeframe review notes',
+    'Dieses Feld aus Review-Notizen eines höheren Zeitraums lesen lassen',
   'settings.customization.review-fields.editor.inheritance-mode':
-    'Inheritance Mode',
+    'Vererbungsmodus',
   'settings.customization.review-fields.editor.inheritance-mode-desc':
-    'Controls whether child reviews show inherited values, local values, or both',
-  'settings.customization.review-fields.editor.sources': 'Inheritance Sources',
+    'Legt fest, ob untergeordnete Reviews vererbte Werte, lokale Werte oder beides anzeigen',
+  'settings.customization.review-fields.editor.sources': 'Vererbungsquellen',
   'settings.customization.review-fields.editor.sources-desc':
-    'Higher-timeframe review types this field can inherit from',
+    'Review-Typen eines höheren Zeitraums, von denen dieses Feld erben kann',
 
   'settings.customization.review-fields.editor.options-desc':
-    'Available choices for this review field',
+    'Verfügbare Auswahlmöglichkeiten für dieses Review-Feld',
   'settings.customization.review-fields.editor.allow-create-desc':
-    'Users can create new options when using this field in review notes',
-  'settings.customization.review-fields.editor.save': 'Save Review Field',
-  'settings.customization.review-fields.editor.delete': 'Delete Review Field',
+    'Nutzer können neue Optionen anlegen, wenn sie dieses Feld in Review-Notizen verwenden',
+  'settings.customization.review-fields.editor.save': 'Review-Feld speichern',
+  'settings.customization.review-fields.editor.delete': 'Review-Feld löschen',
   'settings.customization.review-fields.inheritance-mode.inherit-only':
-    'Inherited only',
+    'Nur vererbt',
   'settings.customization.review-fields.inheritance-mode.local-only':
-    'Local only',
+    'Nur lokal',
   'settings.customization.review-fields.inheritance-mode.inherit-and-local':
-    'Inherited and local',
+    'Vererbt und lokal',
 
   'account.edit.modal.delete.delete-associated-trades':
     'Auch alle mit diesem Konto verknüpften Trades aus meinem Vault löschen',
@@ -6115,7 +6165,7 @@ const de: Lang = {
 
   'csv.mapper.aria.map-column': 'Spalte {header} zuordnen',
   'trade-import.error.file-empty':
-    'Diese Datei ist leer. Exportiere sie erneut und versuche es noch einmal.',
+    'Diese Datei ist leer. Exportieren Sie sie erneut und versuchen Sie es noch einmal.',
   'trade-import.error.file-too-large':
     'Die ausgewählte Datei überschreitet die Größenbeschränkung für Trade Import',
   'trade-import.error.file-type-unsupported':
@@ -6125,22 +6175,22 @@ const de: Lang = {
   
   'quick-import.title': 'Schnellimport',
   'quick-import.subtitle':
-    'Nutze dein bevorzugtes Trade-Import-Setup, um eine Datei schneller zu prüfen und zu importieren.',
+    'Nutzen Sie Ihr bevorzugtes Trade-Import-Setup, um eine Datei schneller zu prüfen und zu importieren.',
   'quick-import.gate.sign-in':
-    'Melde dich an oder erstelle ein kostenloses Journalit-Konto, um Dateien im Trade Import anzusehen. Pro ist erst erforderlich, wenn du die Trades importierst.',
+    'Melden Sie sich an oder erstellen Sie ein kostenloses Journalit-Konto, um Dateien im Trade Import anzusehen. Pro ist erst erforderlich, wenn Sie die Trades importieren.',
   'quick-import.gate.sign-in-cta': 'Anmelden und kostenlos ansehen',
   'quick-import.gate.pro': 'Schnellimport ist in Trade Import Pro enthalten.',
   'quick-import.gate.preview-free': 'Datei kostenlos in Vorschau ansehen',
   'quick-import.message.needs-setup':
-    'Wähle in Trade Import einen bevorzugten Broker oder eine Vorlage aus, bevor du den Schnellimport nutzt.',
+    'Wählen Sie in Trade Import einen bevorzugten Broker oder eine Vorlage aus, bevor Sie den Schnellimport nutzen.',
   'quick-import.message.capabilities-failed':
     'Das Schnellimport-Setup konnte nicht geladen werden.',
   'quick-import.message.mapping-required':
-    'Diese Datei benötigt eine Spaltenzuordnung. Öffne den vollständigen Trade-Import-Ablauf, um die Zuordnung zu prüfen.',
+    'Diese Datei benötigt eine Spaltenzuordnung. Öffnen Sie den vollständigen Trade-Import-Ablauf, um die Zuordnung zu prüfen.',
   'quick-import.message.preview-failed':
     'Diese Datei muss im vollständigen Trade-Import-Ablauf geprüft werden.',
   'quick-import.message.no-importable':
-    'No importable trades were found. Review this file in Trade Import for details.',
+    'Es wurden keine importierbaren Trades gefunden. Prüfen Sie diese Datei im Trade Import, um Details zu sehen.',
 
   'quick-import.privacy-note':
     'Die ausgewählte Datei und Importoptionen werden an Journalit gesendet. Verschlüsselte Diagnoseaufzeichnungen verfallen nach 1 Tag (kostenlos) oder 14 Tagen (Pro), Vorschauen nach 7 Tagen. Die optionale KI-Zuordnung sendet Überschriften und Beispielzeilen an ein KI-Modell. Trade Import sendet keine separate Client-Telemetrie oder Fehlerberichte im Hintergrund.',
@@ -6153,9 +6203,10 @@ const de: Lang = {
     'Analyse läuft und Vorschau wird vorbereitet...',
   'quick-import.status.importing': 'Import läuft...',
   'quick-import.processing.sent-to-server':
-    'Uploaded to Journalit for private processing',
-  'quick-import.file.selected': 'Selected file',
-  'quick-import.file.processed': 'Processed and ready to write to your vault',
+    'Zur privaten Verarbeitung an Journalit hochgeladen',
+  'quick-import.file.selected': 'Ausgewählte Datei',
+  'quick-import.file.processed':
+    'Verarbeitet und bereit zum Schreiben in Ihren Vault',
   'quick-import.summary.title': 'Bereit zum Import',
 
   'quick-import.summary.to-import': 'Zu importieren',
@@ -6169,13 +6220,12 @@ const de: Lang = {
   'quick-import.action.open-full': 'Vollständigen Trade Import öffnen',
   'quick-import.action.review-in-trade-import': 'In Trade Import prüfen',
   'quick-import.action.setup-in-trade-import': 'In Trade Import einrichten',
-  'quick-import.action.import': 'Trades importieren',
-  'quick-import.action.replace-file': 'Replace file',
-  'quick-import.action.import-count.one': 'Importiere {count} Trade',
-  'quick-import.action.import-count.few': 'Importiere {count} Trades',
-  'quick-import.action.import-count.many': 'Importiere {count} Trades',
-  'quick-import.action.import-count.other': 'Importiere {count} Trades',
-  'quick-import.preview.more': '+ {count} more processed trades',
+  'quick-import.action.replace-file': 'Datei ersetzen',
+  'quick-import.action.import-count.one': '{count} Trade importieren',
+  'quick-import.action.import-count.few': '{count} Trades importieren',
+  'quick-import.action.import-count.many': '{count} Trades importieren',
+  'quick-import.action.import-count.other': '{count} Trades importieren',
+  'quick-import.preview.more': '+ {count} weitere verarbeitete Trades',
 
   'trade-import.notice.capabilities-failed':
     'Trade-Import-Funktionen konnten nicht geladen werden',
@@ -6187,35 +6237,46 @@ const de: Lang = {
   'trade-import.notice.analyse-failed': 'Trade-Import-Analyse fehlgeschlagen',
   'trade-import.notice.preview-failed': 'Trade-Import-Vorschau fehlgeschlagen',
   'trade-import.notice.free-preview-rate-limited':
-    'Kostenloses Vorschau-Limit erreicht. Aktiviere PRO oder versuche es in etwa {minutes} Minuten erneut.',
+    'Kostenloses Vorschau-Limit erreicht. Aktivieren Sie PRO oder versuchen Sie es in etwa {minutes} Minuten erneut.',
   'trade-import.notice.free-preview-storage-limit-reached':
-    'Der kostenlose Vorschau-Speicher fasst bis zu {limit} Trades. Du hast {storedItems} gespeichert, und diese Datei würde {requestedItems} hinzufügen. Warte, bis eine frühere Vorschau abläuft, oder aktiviere PRO.',
+    'Der kostenlose Vorschau-Speicher fasst bis zu {limit} Trades. Sie haben {storedItems} gespeichert, und diese Datei würde {requestedItems} hinzufügen. Warten Sie, bis eine frühere Vorschau abläuft, oder aktivieren Sie PRO.',
   'trade-import.preview-error.guidance':
-    'Prüfe, ob alle Pflichtfelder zugeordnet sind, das ausgewählte Datumsformat zur Datei passt und numerische Spalten gültige Trade-Werte enthalten.',
+    'Prüfen Sie, ob alle Pflichtfelder zugeordnet sind, das ausgewählte Datumsformat zur Datei passt und numerische Spalten gültige Trade-Werte enthalten.',
   'trade-import.notice.complete':
     'Trade Import abgeschlossen: {written} geschrieben oder aktualisiert, {duplicateCount} Duplikate, {failedCount} fehlgeschlagen',
   'trade-import.gate.brand-left': 'Trades',
   'trade-import.gate.brand-right': 'Importieren',
   'trade-import.gate.sign-in.title':
-    'Vorschau deiner Trading-Historie – kostenlos',
+    'Vorschau Ihrer Trading-Historie – kostenlos',
   'trade-import.gate.sign-in':
-    'Melde dich an oder erstelle ein kostenloses Journalit-Konto, um deine Datei zu analysieren. Pro ist erst erforderlich, wenn du die Trades importierst.',
-  'trade-import.gate.sign-in.reassurance':
-    'Die ausgewählte Datei und Importoptionen werden an Journalit gesendet. Verschlüsselte Diagnoseaufzeichnungen verfallen nach 1 Tag (kostenlos) oder 14 Tagen (Pro), Vorschauen nach 7 Tagen. Die optionale KI-Zuordnung sendet Überschriften und Beispielzeilen an ein KI-Modell. Trade Import sendet keine separate Client-Telemetrie oder Fehlerberichte im Hintergrund.',
-  'trade-import.gate.sign-in.no-trial':
-    'Für Analyse und Vorschau ist keine Pro-Testphase erforderlich.',
+    'Melden Sie sich an oder erstellen Sie ein kostenloses Journalit-Konto, um Ihre Datei zu analysieren. Pro ist erst erforderlich, wenn Sie die Trades importieren.',
   'trade-import.gate.sign-in.cta': 'Anmelden und kostenlos ansehen',
 
-  'trade-import.step.select': '1. Import-Einstellungen auswählen',
+  'trade-import.step.select': 'Hochladen',
   'trade-import.step.privacy': 'Datenschutzhinweis',
-  'trade-import.step.analyse': '3. Analysieren und zuordnen',
-  'trade-import.step.preview': '4. Vorschau',
+  'trade-import.step.analyse': 'Prüfen',
+  'trade-import.step.preview': 'Import',
   'trade-import.label.template': 'Lokale Zuordnungsvorlage',
   'trade-import.label.template-actions': 'Vorlagenaktionen',
   'trade-import.template.none': 'Keine Vorlage',
   'trade-import.label.account': 'Konto',
   'trade-import.label.broker': 'Exportquelle / Plattform',
   'trade-import.label.asset-type': 'Asset-Typ',
+  'trade-import.label.destination': 'Importieren als',
+  'trade-import.destination.live': 'Reale Trades',
+  'trade-import.destination.backtest': 'Trades aus Backtests',
+  'trade-import.destination.backtest-hint':
+    'Werden als Trades aus Backtests gespeichert, getrennt von Ihren realen Trades.',
+  'trade-import.label.export-format': 'Exporttyp',
+  'trade-import.format.tradingview.paper': 'Papierhandel',
+  'trade-import.format.tradingview.strategy': 'Strategietester',
+  'trade-import.format.tradingview.paper-hint':
+    'Der Export „Order History“ aus dem Papierhandel-Panel.',
+  'trade-import.format.tradingview.strategy-hint':
+    'Der Export „List of Trades“ aus dem Strategietester.',
+  'trade-import.label.symbol': 'Symbol',
+  'trade-import.symbol.hint':
+    'Dieser Export nennt das getestete Symbol nicht. Geben Sie es so ein, wie TradingView es anzeigt, zum Beispiel CME_MINI:ES1!.',
   'trade-import.asset.stock': 'Aktie',
   'trade-import.asset.options': 'Optionen',
   'trade-import.asset.futures': 'Futures',
@@ -6223,61 +6284,63 @@ const de: Lang = {
   'trade-import.asset.crypto': 'Krypto',
   'trade-import.manual-mode.price-based':
     'Orders oder Fills (zu Trades zusammengeführt)',
-  'trade-import.manual-mode.direct-pnl': 'Ein Trade pro Zeile (nutzt G/V)',
+  'trade-import.manual-mode.direct-pnl': 'Ein Trade pro Zeile (nutzt P&L)',
   'trade-import.label.ai-mapping': 'KI-Zuordnungsvorschläge anfordern',
   'trade-import.privacy.copy':
-    'Die ausgewählte Datei und Importoptionen werden an Journalit gesendet. Verschlüsselte Diagnoseaufzeichnungen verfallen nach 1 Tag (kostenlos) oder 14 Tagen (Pro), Vorschauen nach 7 Tagen. Die optionale KI-Zuordnung sendet Überschriften und Beispielzeilen an ein KI-Modell. Trade Import sendet keine separate Client-Telemetrie oder Fehlerberichte im Hintergrund. Exporte können Kontokennungen, Handelshistorie, Notizen, Preise, Mengen, Gebühren, Salden und Gewinn/Verlust enthalten. Anfragen senden auch benutzerdefinierte Felddefinitionen und gespeicherte Optionen; Vorschauen enthalten den Zielkontonamen. Deaktiviere die KI-Zuordnung, um die KI-Verarbeitung zu vermeiden.',
+    'Die ausgewählte Datei und Importoptionen werden an Journalit gesendet. Verschlüsselte Diagnoseaufzeichnungen verfallen nach 1 Tag (kostenlos) oder 14 Tagen (Pro), Vorschauen nach 7 Tagen. Die optionale KI-Zuordnung sendet Überschriften und Beispielzeilen an ein KI-Modell. Trade Import sendet keine separate Client-Telemetrie oder Fehlerberichte im Hintergrund. Exporte können Kontokennungen, Handelshistorie, Notizen, Preise, Mengen, Gebühren, Salden und Gewinn/Verlust enthalten. Anfragen senden auch benutzerdefinierte Felddefinitionen und gespeicherte Optionen; Vorschauen enthalten den Zielkontonamen. Deaktivieren Sie die KI-Zuordnung, um die KI-Verarbeitung zu vermeiden.',
 
   'trade-import.action.analyse': 'Datei analysieren',
   'trade-import.action.choose-file': 'Zum Hochladen klicken oder Datei ablegen',
-  'trade-import.guide.prompt': 'Nicht sicher, was du exportieren sollst?',
-  'trade-import.guide.link': 'Broker-Anleitung ansehen',
   'trade-import.hyperliquid.export-guidance':
-    'Wähle bei Hyperliquid Trade History → Export as CSV, nicht Export More (ein separater Bericht eines Drittanbieters). Verwende weder Funding History noch Order History.',
+    'Wählen Sie bei Hyperliquid Trade History → Export as CSV, nicht Export More (ein separater Bericht eines Drittanbieters). Verwenden Sie weder Funding History noch Order History.',
   'trade-import.hyperliquid.date-us': 'USA: Monat/Tag/Jahr – 24-Stunden-Zeit',
   'trade-import.hyperliquid.date-day-first':
     'Tag zuerst: Tag/Monat/Jahr, mit oder ohne „ - “ vor der Uhrzeit',
   'trade-import.hyperliquid.date-german':
     'Deutsch: Tag.Monat.Jahr – 24-Stunden-Zeit',
   'trade-import.hyperliquid.invalid-time-zone':
-    'Die Zeitzone dieses Geräts konnte nicht erkannt werden. Prüfe die Systemeinstellungen.',
+    'Die Zeitzone dieses Geräts konnte nicht erkannt werden. Prüfen Sie die Systemeinstellungen.',
   'trade-import.hyperliquid.backend-update-required':
-    'Für die Hyperliquid-Vorschau ist eine Serveraktualisierung erforderlich. Bitte versuche es später erneut.',
+    'Für die Hyperliquid-Vorschau ist eine Serveraktualisierung erforderlich. Bitte versuchen Sie es später erneut.',
   'trade-import.action.drop-file': 'Datei zum Hochladen ablegen',
   'trade-import.analyse.detected':
-    'Deine {fileType}-Datei wurde gelesen. Prüfe die Zeilen unten und ordne dann jede Spalte einem Trade-Feld zu.',
+    'Ihre {fileType}-Datei wurde gelesen. Prüfen Sie die Zeilen unten und ordnen Sie dann jede Spalte einem Trade-Feld zu.',
+  'trade-import.analyse.detected-native':
+    'Ihre {fileType}-Datei wurde gelesen. Prüfen Sie die Zeilen unten und wählen Sie dann „Vorschau erzeugen“.',
   'trade-import.table.screenshots': 'Bildschirmfotos',
   'trade-import.preview.screenshot-alt':
     'Screenshot für {symbol} aus Tabellenzeile {row}',
   'trade-import.preview.screenshots-more': '{count} weitere',
   'trade-import.preview.include-screenshots':
-    'Screenshots aus deiner Tabelle zu ihren Trades hinzufügen ({count})',
+    'Screenshots aus Ihrer Tabelle zu den zugehörigen Trades hinzufügen ({count})',
   'trade-import.completion.screenshots-added':
-    'Aus deiner Tabelle hinzugefügte Screenshots: {count}',
+    'Aus Ihrer Tabelle hinzugefügte Screenshots: {count}',
   'trade-import.completion.screenshots-failed':
-    'Screenshots aus deiner Tabelle, die nicht hinzugefügt werden konnten: {count}',
+    'Screenshots aus Ihrer Tabelle, die nicht hinzugefügt werden konnten: {count}',
   'trade-import.preview.import-anyway': 'Trotzdem importieren',
   'trade-import.preview.import-anyway-aria':
     '{symbol} vom {date} trotzdem importieren',
   'trade-import.preview.import-all-anyway':
     'Alle {count} möglichen Duplikate trotzdem importieren',
   'csv.mapper.missing-fields.pnl-or-prices':
-    'Oder ordne Einstiegspreis, Ausstiegspreis und Menge zu, um die G/V aus den Preisen zu berechnen.',
+    'Oder ordnen Sie Einstiegspreis, Ausstiegspreis und Menge zu, um den P&L aus den Preisen zu berechnen.',
   'trade-import.pnl-from-prices.title':
-    'Die G/V wird aus deinen Preisen berechnet',
+    'Der P&L wird aus Ihren Preisen berechnet',
   'trade-import.pnl-from-prices.body':
-    'Es gibt keine G/V-Spalte, daher wird die G/V aus Einstiegspreis, Ausstiegspreis und Menge berechnet. Das stimmt nur mit der richtigen Anlageklasse – wähle also, was diese Trades sind.',
+    'Es gibt keine P&L-Spalte, daher wird der P&L aus Einstiegspreis, Ausstiegspreis und Menge berechnet. Das stimmt nur mit der richtigen Anlageklasse – wählen Sie also, was diese Trades sind.',
   'trade-import.pnl-from-prices.contract-size':
-    'Forex und Futures brauchen zusätzlich eine Spalte für die Kontraktgröße, um die G/V zu berechnen. Ohne sie ordne stattdessen deine G/V-Spalte zu.',
+    'Forex und Futures brauchen zusätzlich eine Spalte für die Kontraktgröße, um den P&L zu berechnen. Ohne sie ordnen Sie stattdessen Ihre P&L-Spalte zu.',
   'trade-import.diagnostic.choose-date-format': 'Datumsformat wählen',
   'trade-import.date-question.ambiguous':
-    'Deine Daten sehen aus wie {example}. Welches Datum ist das?',
+    'Ihre Daten sehen aus wie {example}. Welches Datum ist das?',
   'trade-import.date-question.mixed':
-    'Einige Daten in dieser Spalte haben eine andere Reihenfolge, z. B. {example}. Welche Reihenfolge nutzen die meisten deiner Daten?',
+    'Einige Daten in dieser Spalte haben eine andere Reihenfolge, z. B. {example}. Welche Reihenfolge nutzen die meisten Ihrer Daten?',
   'trade-import.date-question.mixed-note':
-    'Zeilen in der anderen Reihenfolge werden aufgelistet, damit du sie in deiner Datei korrigieren kannst.',
+    'Zeilen in der anderen Reihenfolge werden aufgelistet, damit Sie sie in Ihrer Datei korrigieren können.',
   'quick-import.message.date-order':
-    'Deine Daten lassen sich auf zwei Arten lesen. Öffne den vollständigen Import, um das zu wählen.',
+    'Ihre Daten lassen sich auf zwei Arten lesen. Öffnen Sie den vollständigen Import, um das zu wählen.',
+  'quick-import.message.symbol-required':
+    'Dieser Export nennt sein Symbol nicht. Öffnen Sie den vollständigen Import, um es einzugeben.',
   'csv.date-format.eu-dot': 'EU-Punkt: 25.12.2024 (Tag.Monat.Jahr)',
   'csv.date-format.ymd-dot': 'Jahr zuerst mit Punkten: 2024.12.25',
   'trade-import.unmapped.title': 'Nicht importiert ({count})',
@@ -6289,7 +6352,7 @@ const de: Lang = {
   'trade-import.custom-field.title':
     '„{header}“ als benutzerdefiniertes Feld behalten',
   'trade-import.custom-field.hint':
-    'Fügt deinen Trades ein Feld hinzu und füllt es aus dieser Spalte. Wenn bereits ein Journalit-Feld passt, ordne die Spalte stattdessen diesem zu.',
+    'Fügt Ihren Trades ein Feld hinzu und füllt es aus dieser Spalte. Wenn bereits ein Journalit-Feld passt, ordnen Sie die Spalte stattdessen diesem zu.',
   'trade-import.custom-field.name': 'Feldname',
   'trade-import.custom-field.type': 'Feldtyp',
   'trade-import.custom-field.type.text': 'Freitext',
@@ -6297,7 +6360,7 @@ const de: Lang = {
   'trade-import.custom-field.type.dropdown': 'Auswahlliste',
   'trade-import.custom-field.create': 'Feld anlegen',
   'trade-import.custom-field.error.reserved':
-    'Dieser Name wird von einem eingebauten Trade-Feld verwendet. Wähle einen anderen Namen.',
+    'Dieser Name wird von einem eingebauten Trade-Feld verwendet. Wählen Sie einen anderen Namen.',
   'trade-import.table.open-closed': 'Offen/geschlossen',
   'trade-import.status.open': 'Offen',
   'trade-import.status.partially-closed': 'Teilweise geschlossen',
@@ -6306,7 +6369,6 @@ const de: Lang = {
   'trade-import.diagnostic.column': 'Spalte: {columns}',
   'trade-import.diagnostic.unmap-column': 'Diese Spalte nicht importieren',
   'trade-import.diagnostic.edit-mapping': 'Zuordnung ändern',
-  'trade-import.diagnostic.info': 'Info',
   'trade-import.label.sheet': 'Blatt',
   'trade-import.label.header-row': 'Header-Zeile',
   'trade-import.placeholder.auto': 'Automatisch',
@@ -6326,7 +6388,6 @@ const de: Lang = {
   'trade-import.preview.metric.ready': 'Bereit zum Import',
   'trade-import.preview.metric.duplicates': 'Mögliche Duplikate',
   'trade-import.preview.metric.attention': 'Zu prüfen',
-  'trade-import.preview.completed.message': 'Importbereite Trades: {count}.',
   'trade-import.preview.partial.message':
     'Importbereite Trades: {count}. Nicht importierbare Zeilen: {failed}. Übersprungene unvollständige Zeilen: {incomplete}.',
   'trade-import.preview.partial.guidance':
@@ -6335,23 +6396,23 @@ const de: Lang = {
   'trade-import.preview.failed.message':
     'Aus dieser Datei konnten keine Trades vorbereitet werden.',
   'trade-import.preview.failed.guidance':
-    'Prüfe die Spaltenzuordnungen, das Datumsformat, das ausgewählte Blatt und die ausgewählte Header-Zeile sowie die unten aufgeführten ungültigen Werte.',
+    'Prüfen Sie die Spaltenzuordnungen, das Datumsformat, das ausgewählte Blatt und die ausgewählte Header-Zeile sowie die unten aufgeführten ungültigen Werte.',
   'trade-import.preview.tradovate-performance.title':
     'Falscher Tradovate-Bericht',
   'trade-import.preview.tradovate-performance.message':
-    'Dies scheint ein Tradovate-Performance-Export zu sein. Journalit importiert den Orders-Bericht, damit deine Ausführungen genau rekonstruiert werden können. Gehe in Tradovate zu Reports > Orders und lade die CSV-Datei herunter.',
+    'Dies scheint ein Tradovate-Performance-Export zu sein. Journalit importiert den Orders-Bericht, damit Ihre Ausführungen genau rekonstruiert werden können. Gehen Sie in Tradovate zu Reports > Orders und laden Sie die CSV-Datei herunter.',
   'trade-import.preview.tradovate-performance.guide':
     'Tradovate-Exportanleitung anzeigen',
   'trade-import.preview.metatrader-statement.title':
     'Nicht unterstützter MetaTrader-Kontoauszug',
   'trade-import.preview.metatrader-statement.message':
-    'Journalit importiert den originalen MetaTrader-Kontoverlaufsbericht. Stelle MetaTrader auf Englisch, öffne Account History / History, wähle Save as Report und lade anschließend die unveränderte, nicht konvertierte Originaldatei im Format .html oder .htm hoch.',
+    'Journalit importiert den originalen MetaTrader-Kontoverlaufsbericht. Stellen Sie MetaTrader auf Englisch, öffnen Sie Account History / History, wählen Sie Save as Report und laden Sie anschließend die unveränderte, nicht konvertierte Originaldatei im Format .html oder .htm hoch.',
   'trade-import.preview.metatrader-statement.guide':
     'MetaTrader-Exportanleitung anzeigen',
   'trade-import.preview.tradingview-export.title':
     'Falscher TradingView-Export',
   'trade-import.preview.tradingview-export.message':
-    'Journalit erwartet die CSV Order History / History aus TradingView Paper Trading. Verwende nicht Account History, Chart-Daten, Strategie-Exporte oder andere TradingView-CSV-Dateien.',
+    'Journalit erwartet die CSV Order History / History aus TradingView Paper Trading. Verwenden Sie nicht Account History, Chart-Daten, Strategie-Exporte oder andere TradingView-CSV-Dateien.',
   'trade-import.preview.tradingview-export.guide':
     'TradingView-Exportanleitung anzeigen',
   'trade-import.source-recovery.title':
@@ -6364,23 +6425,23 @@ const de: Lang = {
   'trade-import.source-recovery.metatrader.message':
     'Journalit kann diesen MetaTrader-Kontoauszug direkt importieren, eine Spaltenzuordnung ist nicht nötig.',
   'trade-import.source-recovery.deepcharts.rithmic-message':
-    'Die Datei stammt aus DeepCharts, auch wenn das Konto über Rithmic ausgeführt wird. Verwende DeepCharts, damit Long- und Short-Trades korrekt aus der Trade List gelesen werden.',
+    'Die Datei stammt aus DeepCharts, auch wenn das Konto über Rithmic ausgeführt wird. Verwenden Sie DeepCharts, damit Long- und Short-Trades korrekt aus der Trade List gelesen werden.',
   'trade-import.source-recovery.deepcharts.manual-message':
-    'Verwende den DeepCharts-Importer. Er liest Long und Short aus der vorzeichenbehafteten Quantity oder der Direction-Spalte der Trade List, daher ist keine manuelle Zuordnung nötig.',
+    'Verwenden Sie den DeepCharts-Importer. Er liest Long und Short aus der vorzeichenbehafteten Quantity oder der Direction-Spalte der Trade List, daher ist keine manuelle Zuordnung nötig.',
   'trade-import.source-recovery.motivewave.title':
     'Diese Datei sieht wie ein MotiveWave-Ausführungsexport aus',
   'trade-import.source-recovery.motivewave.message':
-    'Verwende MotiveWave, damit Journalit die Ausführungszeilen korrekt zu abgeschlossenen Trades zusammenführen kann.',
+    'Verwenden Sie MotiveWave, damit Journalit die Ausführungszeilen korrekt zu abgeschlossenen Trades zusammenführen kann.',
   'quick-import.message.source-mismatch':
-    'Journalit hat eine andere Exportquelle erkannt. Prüfe die Datei in Trade Import, um die Quelle ohne erneutes Hochladen zu wechseln.',
+    'Journalit hat eine andere Exportquelle erkannt. Prüfen Sie die Datei in Trade Import, um die Quelle ohne erneutes Hochladen zu wechseln.',
   'trade-import.preview.no-eligible':
-    'Die Datei wurde erfolgreich eingelesen, aber es gibt keine neuen oder aktualisierten Trades, die importiert werden können. Prüfe unten die Details zu Duplikaten und zur Klassifizierung.',
+    'Die Datei wurde erfolgreich eingelesen, aber es gibt keine neuen oder aktualisierten Trades, die importiert werden können. Prüfen Sie unten die Details zu Duplikaten und zur Klassifizierung.',
   'trade-import.pro-gate.title.one': '{count} Trade ist bereit zum Import',
   'trade-import.pro-gate.title.few': '{count} Trades sind bereit zum Import',
   'trade-import.pro-gate.title.many': '{count} Trades sind bereit zum Import',
   'trade-import.pro-gate.title.other': '{count} Trades sind bereit zum Import',
   'trade-import.pro-gate.subtitle':
-    'Aktiviere PRO, um sie als Trade-Notizen in deinen Vault zu schreiben.',
+    'Aktivieren Sie PRO, um sie als Trade-Notizen in Ihren Vault zu schreiben.',
   'trade-import.pro-gate.cta': 'PRO aktivieren',
   'trade-import.preview.diagnostics': 'Prüfdetails ({count})',
   'trade-import.preview.affected-rows': 'Betroffene Zeilen: {count}',
@@ -6389,7 +6450,6 @@ const de: Lang = {
   'trade-import.table.direction': 'Richtung',
   'trade-import.table.entry-time': 'Einstiegszeit',
   'trade-import.table.date': 'Datum',
-  'trade-import.table.position': 'Positionsgröße',
   'trade-import.table.result': 'Ergebnis',
   'trade-import.table.quantity': 'Menge',
   'trade-import.table.message': 'Meldung',
@@ -6397,6 +6457,8 @@ const de: Lang = {
   'trade-import.status.already-imported': 'Bereits importiert',
   'trade-import.status.other-account': 'In anderem Konto',
   'trade-import.status.other-account.detail': 'Bereits in {account} importiert',
+  'trade-import.status.split-across-trades.detail':
+    'Ihre Ausführungen sind bereits im Journal, verteilt auf mehrere Trades. Um die fehlenden hinzuzufügen, importieren Sie dieselben Zeiträume wie zuvor.',
   'trade-import.status.updates-existing': 'Aktualisiert bestehenden Trade',
   'trade-import.status.possible-duplicate': 'Mögliches Duplikat',
   'trade-import.status.needs-review': 'Zu prüfen',
@@ -6405,21 +6467,25 @@ const de: Lang = {
   'trade-import.status.no-open-trade': 'Kein offener Trade zum Schließen',
   'trade-import.status.multiple-open-trades': 'Mehrere offene Trades passen',
   'trade-import.status.quantity-mismatch': 'Mengenabweichung',
+  'trade-import.commit-failure.update-target-changed':
+    'Der Trade, den diese Zeile aktualisiert, wurde nach der Vorschau geändert oder gelöscht. Importieren Sie die Datei erneut.',
+  'trade-import.commit-failure.tradovate-overlap':
+    'Überschneidet sich mit einem bereits von Tradovate synchronisierten Trade, dem sie nicht zugeordnet werden konnte.',
   'trade-import.server-deletion.deleted':
     'Vom Journalit-Server gelöschte Trades: {count}',
   'trade-import.server-deletion.kept':
     'Behaltene Trades, weil ein anderer Import sie ebenfalls enthält: {count}',
   'trade-import.server-deletion.blocked-broker-connected':
-    'Dieses Konto wird über eine Broker-Verbindung synchronisiert. Trenne den Broker, um seine Daten zu löschen.',
+    'Dieses Konto wird über eine Broker-Verbindung synchronisiert. Trennen Sie den Broker, um seine Daten zu löschen.',
   'trade-import.server-deletion.blocked-broker-history':
-    'Dieses Konto enthält Broker-Sync-Verlauf und kann hier nicht gelöscht werden. Lösche stattdessen einzelne Importe.',
+    'Dieses Konto enthält Broker-Sync-Verlauf und kann hier nicht gelöscht werden. Löschen Sie stattdessen einzelne Importe.',
   'trade-import.server-deletion.failed':
-    'Löschen auf dem Journalit-Server fehlgeschlagen. Bitte versuche es erneut.',
+    'Löschen auf dem Journalit-Server fehlgeschlagen. Bitte versuchen Sie es erneut.',
   'trade-import.server-deletion.notice':
     'Nach einer Server-Löschung in den Papierkorb verschobene Trade-Notizen: {count}',
   'trade-import.server-deletion.account.title': 'Serverkonto löschen?',
   'trade-import.server-deletion.account.message':
-    'Dadurch werden „{account}“ und seine importierten Trades ({count} auf dem Server) dauerhaft vom Journalit-Server gelöscht und ihre Notizen in jedem synchronisierten Vault in den Papierkorb verschoben. Du kannst die Dateien danach erneut importieren.',
+    'Dadurch werden „{account}“ und seine importierten Trades ({count} auf dem Server) dauerhaft vom Journalit-Server gelöscht und ihre Notizen in jedem synchronisierten Vault in den Papierkorb verschoben. Sie können die Dateien danach erneut importieren.',
   'trade-import.server-deletion.account.confirm': 'Vom Server löschen',
   'trade-import.server-deletion.account.button': 'Vom Server löschen',
   'trade-import.history.title': 'Importverlauf',
@@ -6433,11 +6499,17 @@ const de: Lang = {
   'trade-import.history.trades-on-server': '{count} auf dem Server',
   'trade-import.history.delete.title': 'Diesen Import löschen?',
   'trade-import.history.delete.message':
-    'Dadurch werden die Trades, die dieser Import zu „{account}“ hinzugefügt hat ({count} auf dem Server), dauerhaft vom Journalit-Server gelöscht und ihre Notizen in jedem synchronisierten Vault in den Papierkorb verschoben. Trades, die ein anderer Import ebenfalls enthält, bleiben erhalten. Du kannst die Datei danach erneut importieren.',
+    'Dadurch werden die Trades, die dieser Import zu „{account}“ hinzugefügt hat ({count} auf dem Server), dauerhaft vom Journalit-Server gelöscht und ihre Notizen in jedem synchronisierten Vault in den Papierkorb verschoben. Trades, die ein anderer Import ebenfalls enthält, bleiben erhalten. Sie können die Datei danach erneut importieren.',
+  'trade-import.history.delete.updates-kept':
+    'Änderungen an früher importierten Trades, etwa deren Schließung, bleiben bestehen.',
+  'trade-import.history.delete.message-updates-only':
+    'Dieser Import hat nur früher importierte Trades geändert, etwa sie geschlossen. Wenn Sie ihn löschen, verschwindet er aus dem Importverlauf; diese Änderungen bleiben bestehen.',
+  'trade-import.history.delete.message-none-deleted':
+    'Es werden keine Trades gelöscht: Jeder Trade dieses Imports ist auch in einem anderen Import enthalten. Das Löschen entfernt ihn nur aus dem Importverlauf.',
   'trade-import.history.delete.confirm': 'Import löschen',
   'trade-import.history.load-more': 'Mehr laden',
   'account.edit.modal.delete.delete-server-trades':
-    'Auch die importierten Trades vom Journalit-Server löschen ({count} auf dem Server). Ihre Notizen landen in jedem synchronisierten Vault im Papierkorb, auch wenn du sie hier behältst.',
+    'Auch die importierten Trades vom Journalit-Server löschen ({count} auf dem Server). Ihre Notizen landen in jedem synchronisierten Vault im Papierkorb, auch wenn Sie sie hier behalten.',
   'trade-import.preview.other-account.message':
     'Bereits in {account} ({count}), daher werden sie übersprungen.',
   'trade-import.preview.other-account.import-instead':
@@ -6457,38 +6529,41 @@ const de: Lang = {
   'trade-import.broker.manual': 'Manuelle Zuordnung',
   'trade-import.source.title': 'Woher stammen diese Trades?',
   'trade-import.source.subtitle':
-    'Wähle die Plattform, aus der du exportiert hast. Journalit liest ihr Dateiformat direkt, ohne Spaltenzuordnung.',
+    'Wählen Sie die Plattform, aus der Sie exportiert haben. Journalit liest ihr Dateiformat direkt, ohne Spaltenzuordnung.',
   'trade-import.source.search': 'Broker und Plattformen suchen',
   'trade-import.source.sync-available':
     'Unterstützt auch automatischen Trade Sync',
   'trade-import.source.manual.tile': 'Eigene Tabelle / andere Datei',
   'trade-import.source.manual.title': 'Eigene Tabelle oder andere Datei',
   'trade-import.source.manual.hint':
-    'Du ordnest die Spalten deiner Datei den Journalit-Feldern zu.',
+    'Sie ordnen die Spalten Ihrer Datei den Journalit-Feldern zu.',
   'trade-import.source.native.hint':
     'Das Dateiformat wird automatisch gelesen, keine Zuordnung nötig.',
-  'trade-import.source.guide': 'So exportierst du',
+  'trade-import.source.guide': 'So exportieren Sie',
   'trade-import.source.change': 'Ändern',
   'trade-import.recovery.rithmic-order-history.title':
     'Nicht unterstütztes Rithmic-Format',
   'trade-import.recovery.rithmic-order-history.message':
-    'Lade einen Rithmic-Orderhistorienexport hoch oder wähle die Plattform, die diese Datei erstellt hat.',
-  'trade-import.recovery.rithmic-order-history.choose-file':
-    'Andere Datei wählen',
+    'Laden Sie einen Rithmic-Orderhistorienexport hoch oder wählen Sie die Plattform, die diese Datei erstellt hat.',
+  'trade-import.recovery.no-trade-rows.title':
+    'Diese Datei enthält keine Trades zum Importieren',
+  'trade-import.recovery.no-trade-rows.message':
+    'Beheben Sie das in einem neuen Export und wählen Sie dann die neue Datei.',
+  'trade-import.action.choose-another-file': 'Andere Datei wählen',
   'trade-import.source.change-action': 'Quelle ändern',
   'trade-import.sync-suggestion.full.title':
     '{broker} kann automatisch synchronisieren',
   'trade-import.sync-suggestion.full.body':
-    'Trade Sync holt neue Trades selbstständig, ganz ohne Exporte. Du kannst unten trotzdem eine Datei importieren.',
+    'Trade Sync holt neue Trades selbstständig, ganz ohne Exporte. Sie können unten trotzdem eine Datei importieren.',
   'trade-import.sync-suggestion.partial.title':
-    'Nutzt du {provider}? Synchronisiere stattdessen',
+    'Nutzen Sie {provider}? Synchronisieren Sie stattdessen',
   'trade-import.sync-suggestion.partial.body':
-    'Trade Sync holt {provider}-Trades automatisch. Andere Kontoauszüge importierst du weiterhin unten.',
+    'Trade Sync holt {provider}-Trades automatisch. Andere Kontoauszüge importieren Sie weiterhin unten.',
   'trade-import.sync-suggestion.action': 'Trade Sync einrichten',
   'trade-import.sync-suggestion.sync-only.title':
     '{broker} wird über Trade Sync verbunden',
   'trade-import.sync-suggestion.sync-only.body':
-    'Kein Export nötig: Trade Sync holt deine {broker}-Trades automatisch. Hast du trotzdem eine {broker}-Datei? Wähle Nicht aufgeführt / eigene Datei.',
+    'Kein Export nötig: Trade Sync holt Ihre {broker}-Trades automatisch. Haben Sie trotzdem eine {broker}-Datei? Wählen Sie Nicht aufgeführt / eigene Datei.',
   'trade-import.sync-suggestion.action.open': 'Trade Sync öffnen',
 
   
@@ -6500,12 +6575,12 @@ const de: Lang = {
   'setups.create.field.direction': 'Richtung',
   'setups.create.field.color': 'Farbe',
   'setups.create.field.color-description':
-    'Wähle eine Farbe, um dieses Setup zu kennzeichnen.',
+    'Wählen Sie eine Farbe, um dieses Setup zu kennzeichnen.',
   'setups.create.profile.heading': 'Bevorzugte Felder',
   'setups.create.profile.optional-label': '(Optional)',
   'setups.create.field.sessions': 'Handelssitzungen',
   'setups.create.field.preferred-sessions-tooltip':
-    'Verwalte diese Sitzungen unter Einstellungen → Journal → Sitzungsmodus.',
+    'Verwalten Sie diese Sitzungen unter Einstellungen → Journal → Sitzungsmodus.',
   'setups.create.placeholder.preferred-sessions': 'London, New York',
   'setups.create.field.timeframes': 'Zeiteinheiten',
   'setups.create.placeholder.preferred-timeframes': '5m, 15m, 1h',
@@ -6517,7 +6592,7 @@ const de: Lang = {
   'setups.create.direction.both': 'Beide',
   'setups.create.field.linked-notes': 'Verknüpfte Notizen',
   'setups.create.field.linked-notes-desc':
-    'Verknüpfe vorhandene Notizen, die das Playbook für dieses Setup dokumentieren.',
+    'Verknüpfen Sie vorhandene Notizen, die das Playbook für dieses Setup dokumentieren.',
   'setups.create.linked-notes.empty': 'Noch keine Notizen verknüpft.',
   'setups.create.linked-notes.add': '+ Notiz verknüpfen',
   'setups.create.linked-notes.remove': 'Verknüpfte Notiz entfernen',
@@ -6547,43 +6622,37 @@ const de: Lang = {
   'setups.edit.success': 'Setup "{name}" erfolgreich aktualisiert',
   'setups.edit.error.failed': 'Setup konnte nicht aktualisiert werden',
   'setups.view.compare.empty-submessage':
-    'Wähle zwei Setup-Karten aus dem Überblick, um einen Bericht nebeneinander zu erstellen.',
+    'Wählen Sie zwei Setup-Karten aus dem Überblick, um einen Bericht nebeneinander zu erstellen.',
   'setups.view.compare.reason.higher.total-r': 'Höherer Gesamt-R',
   'setups.view.compare.reason.lower.total-r': 'Niedrigerer Gesamt-R',
   'setups.view.compare.reason.similar.total-r': 'Ähnlicher Gesamt-R',
 
   'setups.guide.create-new-setup.title': 'Neue Setups erstellen',
   'setups.guide.create-new-setup.description':
-    'Nutze Neues Setup, um ein weiteres Playbook hinzuzufügen. Das Modal führt durch Details, verknüpfte Notizen und Regeln.',
+    'Nutzen Sie Neues Setup, um ein weiteres Playbook hinzuzufügen. Das Modal führt durch Details, verknüpfte Notizen und Regeln.',
   'setups.guide.detail-intro.title': 'Das ist die Setup-Seite',
   'setups.guide.detail-intro.description':
     'Diese Setup-Seite fokussiert ein Playbook mit Performance-Chart, Kontext, Referenzmaterial, Aktionen und Ausführungsregeln.',
   'setups.guide.detail-actions.title': 'Setup-Aktionen',
   'setups.guide.detail-actions.description':
-    'Mit diesen Buttons öffnest du zugehörige Trades oder bearbeitest Details, verknüpfte Notizen, Screenshots und Playbook-Regeln.',
-  'setups.guide.empty.create-setup.title': 'Beginne mit Neues Setup',
+    'Mit diesen Buttons öffnen Sie zugehörige Trades oder bearbeiten Details, verknüpfte Notizen, Screenshots und Playbook-Regeln.',
+  'setups.guide.empty.create-setup.title': 'Beginnen Sie mit Neues Setup',
   'setups.guide.empty.create-setup.description':
-    'Erstelle zuerst ein Setup. Danach fährt diese Anleitung mit dem normalen Rundgang fort.',
+    'Erstellen Sie zuerst ein Setup. Danach fährt diese Anleitung mit dem normalen Rundgang fort.',
 
   'setups.guide.intro.title': 'Willkommen bei Setups',
   'setups.guide.intro.description':
     'Diese Ansicht bündelt Setup-Playbooks, verknüpfte Trades, Notizen, Screenshots und Regeln an einem Ort.',
   'setups.guide.view-tabs.title': 'Setup-Ansichten wechseln',
   'setups.guide.view-tabs.description':
-    'Nutze diese Tabs für Überblick, Setup-Paare und Vergleich, wenn genügend Setups vorhanden sind.',
-  'setups.guide.overview-chart.title': 'Performance-Rangliste',
-  'setups.guide.overview-chart.description':
-    'Das Überblicksdiagramm sortiert Setups nach der gewählten Metrik. Mit den Steuerelementen oben rechts wechselst du die Metrik oder fokussierst bestimmte Setups.',
-  'setups.guide.tag-filter.title': 'Setups filtern',
-  'setups.guide.tag-filter.description':
-    'Filtere Karten, Diagramm, Paare und Vergleich nach Setup-Tags oder Richtung. Auswahlen innerhalb einer Gruppe verwenden ODER; Tags und Richtung werden gemeinsam angewendet.',
+    'Nutzen Sie diese Tabs für Überblick, Setup-Paare und Vergleich, wenn genügend Setups vorhanden sind.',
   'setups.guide.setup-cards.title': 'Setup-Karten',
   'setups.guide.setup-cards.description':
     'Karten fassen jedes Setup mit Kennzahlen, Status, letztem Trade und kleinem Performance-Trend zusammen.',
   'setups.guide.open-detail.title': 'Setup-Seite öffnen',
   'setups.guide.open-detail.description':
-    'Wenn du bereit bist, öffne eine Setup-Karte, um ihre Seite zu sehen. Dort erwartet dich ein kurzer Guide.',
-  'setups.guide.detail-performance.title': 'Detail-Performance',
+    'Wenn Sie bereit sind, öffnen Sie eine Setup-Karte, um ihre Seite zu sehen. Dort erwartet Sie ein kurzer Guide.',
+  'setups.guide.detail-performance.title': 'Detaillierte Performance',
   'setups.guide.detail-performance.description':
     'Der Performance-Tab zeigt Chart und Kennzahlen im Zeitverlauf, darunter P&L, Trefferquote, Erwartung und Drawdown.',
   'setups.guide.detail-context.title': 'Setup-Kontext',
@@ -6595,23 +6664,8 @@ const de: Lang = {
   'setups.guide.detail-rules.title': 'Ausführungsregeln',
   'setups.guide.detail-rules.description':
     'Regeln bilden die strukturierte Checkliste für Bedingungen, Einstiege, Risiko und zu vermeidende Fehler.',
-  'setups.guide.finish.title': 'Setups-Anleitung abgeschlossen',
-  'setups.guide.finish.description':
-    'Du hast die wichtigsten Bereiche gesehen: Überblick, Paare, Vergleichen und die einzelne Setup-Seite.',
 
-  'setups.guide.pairs-mode.title': 'Setup-Paare öffnen',
-  'setups.guide.pairs-mode.description':
-    'Öffne Paare, um zu sehen, welche Kombinationen genügend gemeinsame Trades für einen Vergleich haben.',
-  'setups.guide.pairs-chart.title': 'Paar-Rangliste',
-  'setups.guide.pairs-chart.description':
-    'Der Paarmodus hebt Kombinationen hervor, die zusammen besser oder schlechter funktionieren können. Klicke auf einen Balken, um tiefere Paar-Einblicke zu öffnen.',
-
-  'setups.guide.compare-mode.title': 'Vergleich starten',
-  'setups.guide.compare-mode.description':
-    'Im Vergleichsmodus wählst du zwei Setup-Karten für eine Gegenüberstellung aus.',
   'setups.guide.compare-select.title': 'Zwei Setups auswählen',
-  'setups.guide.compare-select.description':
-    'Wähle zwei Setup-Karten aus, um die Vergleichsseite zu öffnen.',
   'setups.guide.compare-summary.title': 'Das ist die Vergleichsseite',
   'setups.guide.compare-summary.description':
     'Diese Seite vergleicht zwei Setups nebeneinander. Die obere Zusammenfassung zeigt Gewinner, Erwartungswert-Vorteil, Sicherheit und Gründe für den Vorteil.',
@@ -6620,13 +6674,10 @@ const de: Lang = {
     'Die obere Zeile fasst den Vergleich zusammen: Gewinner, Erwartungswert-Vorteil, Sicherheit und Gründe für den Vorteil.',
   'setups.guide.compare-details.title': 'Vergleichsdetails',
   'setups.guide.compare-details.description':
-    'Nutze Metriktabelle und kumulatives Diagramm, um die Unterschiede der beiden Setups zu verstehen.',
+    'Nutzen Sie Metriktabelle und kumulatives Diagramm, um die Unterschiede der beiden Setups zu verstehen.',
   'setups.guide.detail-execution-gap.title': 'Ausführungslücken-Analyse',
   'setups.guide.detail-execution-gap.description':
     'Bei Missed-Trades oder Backtests vergleicht dieser Tab ausgeführte Trades mit verpasster oder Benchmark-Chance.',
-  'setups.guide.back-to-overview.title': 'Zurück zu Setup-Karten',
-  'setups.guide.back-to-overview.description':
-    'Kehre zu den Karten zurück, wenn der Vergleich abgeschlossen ist.',
 
   'setups.view.open-as-markdown': 'Als Markdown öffnen',
   'setups.view.open-as-setup': 'Als Journalit-Setup öffnen',
@@ -6644,7 +6695,7 @@ const de: Lang = {
 
   'setups.view.pairs.metric-aria': 'Paar-Kennzahl',
   'setups.view.pairs.metric.edge': 'Paar-Vorteil',
-  'setups.view.pairs.metric.edge-short': 'edge',
+  'setups.view.pairs.metric.edge-short': 'Edge',
   'setups.view.pairs.metric.expectancy': 'Erwartungswert des Paars',
 
   'setups.view.pairs.together': 'Zusammen',
@@ -6669,11 +6720,11 @@ const de: Lang = {
   'setups.view.overview.pnl-chart.trade': 'Trade',
   'setups.view.overview.pnl-chart.start': 'Start',
   'setups.view.ranking.empty-submessage':
-    'Log trades with setups to start ranking performance.',
+    'Erfassen Sie Trades mit Setups, um mit dem Performance-Ranking zu beginnen.',
   'setups.view.empty.no-setups-submessage':
-    'Setups collect your playbook notes, rules, trades, and performance in one place.',
+    'Setups bündeln Ihre Playbook-Notizen, Regeln, Trades und Performance an einem Ort.',
   'setups.view.detail.no-playbook-note':
-    'Verknüpfe eine Playbook-Notiz, um sie hier in der Vorschau anzuzeigen.',
+    'Verknüpfen Sie eine Playbook-Notiz, um sie hier in der Vorschau anzuzeigen.',
   'setups.view.detail.link-playbook-note': 'Notiz verknüpfen',
   'setups.view.detail.change-playbook-note': 'Notiz ändern',
 
@@ -6710,7 +6761,7 @@ const de: Lang = {
   'setups.view.detail.rules.template.rule.common-mistakes':
     'Bekannte Ausführungsfehler werden vermieden',
   'setups.view.detail.rules.field.label': 'Regel',
-  'setups.view.detail.rules.field.description': 'Details',
+  'setups.view.detail.rules.field.description': 'Beschreibung',
   'setups.view.detail.rules.field.group': 'Gruppe',
   'setups.view.detail.rules.move-up': 'Regel nach oben verschieben',
   'setups.view.detail.rules.move-down': 'Regel nach unten verschieben',
@@ -6718,12 +6769,12 @@ const de: Lang = {
   'setups.view.detail.rules.save-error':
     'Setup-Regeln konnten nicht gespeichert werden.',
   'setups.view.detail.rules.validation-label':
-    'Füge einen Regelnamen hinzu oder lösche die leere Regel vor dem Speichern.',
+    'Fügen Sie einen Regelnamen hinzu oder löschen Sie die leere Regel vor dem Speichern.',
   'setups.view.detail.rules.groups': 'Gruppen',
   'setups.view.detail.rules.add-group': 'Gruppe hinzufügen',
   'setups.view.detail.rules.new-group': 'Neue Gruppe',
   'setups.view.detail.rules.validation-group':
-    'Füge einen Gruppennamen hinzu oder entferne die leere Gruppe vor dem Speichern.',
+    'Fügen Sie einen Gruppennamen hinzu oder entfernen Sie die leere Gruppe vor dem Speichern.',
   'setups.view.detail.rules.summary': '{count} Regeln · {groups} Gruppen',
 
   'setups.view.detail.rule.category.context': 'Kontext',
@@ -6735,28 +6786,28 @@ const de: Lang = {
   'setups.view.detail.rule.category.psychology': 'Psychologie',
   'setups.view.detail.performance.drawdown': 'Drawdown',
   'setups.view.detail.performance.empty-submessage':
-    'Trades using this setup will appear here once you start logging them.',
+    'Trades mit diesem Setup erscheinen hier, sobald Sie sie erfassen.',
   'setups.view.detail.analysis.performance': 'Performance',
-  'setups.view.detail.analysis.execution-gap': 'Execution Gap',
-  'setups.view.detail.analysis.tabs-aria': 'Setup performance tabs',
-  'setups.view.detail.brief.linked-notes-add': 'Edit linked notes',
+  'setups.view.detail.analysis.execution-gap': 'Ausführungslücke',
+  'setups.view.detail.analysis.tabs-aria': 'Tabs zur Setup-Performance',
+  'setups.view.detail.brief.linked-notes-add': 'Verknüpfte Notizen bearbeiten',
 
-  'setups.view.detail.execution-gap.live-pnl': 'Live PnL',
+  'setups.view.detail.execution-gap.live-pnl': 'Live-P&L',
   'setups.view.detail.execution-gap.live-r': 'Live-R',
-  'setups.view.detail.execution-gap.missed-edge': 'Missed Edge',
-  'setups.view.detail.execution-gap.live-plus-missed': 'Live + Missed',
+  'setups.view.detail.execution-gap.missed-edge': 'Verpasster Edge',
+  'setups.view.detail.execution-gap.live-plus-missed': 'Live + Verpasst',
   'setups.view.detail.execution-gap.backtest': 'Backtest',
 
-  'setups.view.detail.execution-gap.capture-rate': 'Capture Rate',
+  'setups.view.detail.execution-gap.capture-rate': 'Umsetzungsquote',
   'setups.view.detail.execution-gap.capture-rate-tooltip':
-    'Live P&L ÷ (Live P&L + missed-trade P&L). Shows how much available edge you captured.',
-  'setups.view.detail.execution-gap.average-r-delta': 'Avg R Delta',
-  'setups.view.detail.execution-gap.live-execution': 'Live Execution',
-  'setups.view.detail.execution-gap.backtest-benchmark': 'Backtest Benchmark',
+    'Live-P&L ÷ (Live-P&L + P&L verpasster Trades). Zeigt, wie viel des verfügbaren Edge Sie realisiert haben.',
+  'setups.view.detail.execution-gap.average-r-delta': 'Ø R-Differenz',
+  'setups.view.detail.execution-gap.live-execution': 'Live-Ausführung',
+  'setups.view.detail.execution-gap.backtest-benchmark': 'Backtest-Benchmark',
   'setups.view.detail.execution-gap.hidden':
-    'Execution gap is hidden in privacy mode.',
+    'Die Ausführungslücke ist im Privatsphäre-Modus ausgeblendet.',
   'setups.view.detail.execution-gap.empty':
-    'Log missed trades or backtest trades for this setup to analyze execution gaps.',
+    'Erfassen Sie verpasste Trades oder Backtest-Trades für dieses Setup, um Ausführungslücken zu analysieren.',
   'setups.view.detail.brief.linked-notes': '{count}',
   'setups.view.detail.brief.linked-notes-modal.subtitle': '{name}',
   'setups.view.detail.brief.screenshots': '{count}',
@@ -6769,39 +6820,39 @@ const de: Lang = {
   'setups.view.detail.brief.count.images': '{count}',
   'setups.view.detail.brief.count.trades': '{count}',
   'setups.view.detail.brief.more': '{count}',
-  'setups.view.detail.attention.title': 'Needs attention',
-  'setups.view.detail.attention.count': '{count} items',
-  'setups.view.detail.attention.empty': 'No setup issues found.',
-  'setups.view.detail.attention.show-more': '+{count} more',
-  'setups.view.detail.attention.show-less': 'Show less',
-  'setups.view.detail.attention.no-playbook-title': 'Link a playbook note',
+  'setups.view.detail.attention.title': 'Benötigt Aufmerksamkeit',
+  'setups.view.detail.attention.count': '{count} Punkte',
+  'setups.view.detail.attention.empty': 'Keine Setup-Probleme gefunden.',
+  'setups.view.detail.attention.show-more': '+{count} weitere',
+  'setups.view.detail.attention.show-less': 'Weniger anzeigen',
+  'setups.view.detail.attention.no-playbook-title': 'Playbook-Notiz verknüpfen',
   'setups.view.detail.attention.no-playbook-detail':
-    'Link one source note for context and examples.',
-  'setups.view.detail.attention.no-rules-title': 'Build the execution playbook',
+    'Verknüpfen Sie eine Quellnotiz für Kontext und Beispiele.',
+  'setups.view.detail.attention.no-rules-title':
+    'Ausführungs-Playbook erstellen',
   'setups.view.detail.attention.no-rules-detail':
-    'Add criteria for entries, invalidation, risk, and mistakes.',
+    'Fügen Sie Kriterien für Einstiege, Invalidierung, Risiko und Fehler hinzu.',
 
-  'setups.view.detail.attention.no-trades-title': 'No live trades yet',
+  'setups.view.detail.attention.no-trades-title': 'Noch keine Live-Trades',
   'setups.view.detail.attention.no-trades-detail':
-    'No linked live trade history yet.',
+    'Noch keine verknüpfte Live-Trade-Historie.',
   'setups.view.detail.attention.no-screenshots-title':
-    'Save example screenshots',
+    'Beispiel-Screenshots speichern',
   'setups.view.detail.attention.no-screenshots-detail':
-    'Attach screenshots to trades for review examples.',
-  'setups.view.detail.attention.stale-title': 'Review recent relevance',
+    'Hängen Sie Screenshots an Trades an, um Beispiele für Reviews zu haben.',
+  'setups.view.detail.attention.stale-title': 'Aktuelle Relevanz prüfen',
   'setups.view.detail.attention.stale-detail':
-    'This setup has not been traded in {count} days.',
-  'setups.view.detail.attention.profit-factor-title':
-    'Performance needs review',
+    'Dieses Setup wurde seit {count} Tagen nicht gehandelt.',
+  'setups.view.detail.attention.profit-factor-title': 'Performance prüfen',
   'setups.view.detail.attention.profit-factor-detail':
-    'Profit factor is below 1.0 across linked trades.',
-  'setups.view.detail.attention.expectancy-title': 'Expectancy is negative',
+    'Der Profitfaktor der verknüpften Trades liegt unter 1,0.',
+  'setups.view.detail.attention.expectancy-title': 'Erwartungswert ist negativ',
   'setups.view.detail.attention.expectancy-detail':
-    'Average linked-trade outcome is below breakeven.',
+    'Das durchschnittliche Ergebnis der verknüpften Trades liegt unter Break-even.',
   'setups.view.card.open-named': '{name}',
-  'setups.view.card.status.active': 'Stable',
-  'setups.view.card.status.monitor': 'Monitor',
-  'setups.view.card.status.review': 'Review',
+  'setups.view.card.status.active': 'Stabil',
+  'setups.view.card.status.monitor': 'Beobachten',
+  'setups.view.card.status.review': 'Prüfen',
   'setups.view.date.days-ago': '{count}',
 
   'home.quick-links.setups': 'Trading-Setups',
@@ -6810,7 +6861,6 @@ const de: Lang = {
   'setups.view.action.new': 'Neues Setup',
 
   'setups.view.action.retry': 'Erneut versuchen',
-  'setups.view.action.compare-selected': 'Ausgewählte vergleichen',
   'setups.view.tab.overview': 'Überblick',
   'setups.view.tab.compare': 'Vergleichen',
   'setups.view.tabs.aria': 'Setup-Ansichten',
@@ -6819,7 +6869,7 @@ const de: Lang = {
 
   'setups.view.error.title': 'Setups konnten nicht geladen werden',
   'setups.view.error.load-failed':
-    'Setups konnten nicht geladen werden. Versuche es erneut.',
+    'Setups konnten nicht geladen werden. Versuchen Sie es erneut.',
   'setups.view.summary.aria': 'Zusammenfassung der Setups im Überblick',
 
   'setups.view.summary.needs-review': 'Überprüfung erforderlich',
@@ -6835,7 +6885,7 @@ const de: Lang = {
   'setups.view.metric.net-pnl': 'Gesamt-P&L',
   'setups.view.metric.total-pnl': 'Gesamt-PnL',
   'setups.view.metric.win-rate': 'Trefferquote',
-  'setups.view.metric.profit-factor': 'Profit Factor',
+  'setups.view.metric.profit-factor': 'Profitfaktor',
   'setups.view.metric.last-traded': 'Zuletzt gehandelt',
   'setups.view.metric.expected-value': 'Erwartungswert',
   'setups.view.metric.expectancy-r': 'Erwartungswert (R)',
@@ -6847,14 +6897,14 @@ const de: Lang = {
   'setups.view.card.select-for-compare': 'Für Vergleich auswählen',
   'setups.view.card.sparkline-aria': 'Setup-Sparkline',
   'setups.view.empty.no-setups':
-    'Noch keine Setups. Erstelle dein erstes Setup, um Playbooks zu verfolgen.',
+    'Noch keine Setups. Erstellen Sie Ihr erstes Setup, um Playbooks zu verfolgen.',
 
   'setups.view.date.never': 'Nie',
   'setups.view.date.today': 'Heute',
   'setups.view.date.yesterday': 'Gestern',
   'setups.view.compare.title': 'Setups vergleichen',
 
-  'setups.view.compare.empty': 'Wähle zwei Setups zum Vergleichen aus.',
+  'setups.view.compare.empty': 'Wählen Sie zwei Setups zum Vergleichen aus.',
   'setups.view.compare.metrics-title': 'Vergleichskennzahlen',
   'setups.view.compare.metric': 'Kennzahl',
   'setups.view.compare.edge-column': 'Vorteil',
@@ -6940,12 +6990,13 @@ const de: Lang = {
   'trade-sync.source.trade-import': 'Trade Import',
   'trade-sync.source.tradovate': 'Tradovate',
   'trade-sync.source.metatrader.description':
-    'Synchronisiere Trades aus MetaTrader-Berichten, die über deine FTP-Verbindung hochgeladen wurden.',
+    'Synchronisieren Sie Trades aus MetaTrader-Berichten, die über Ihre FTP-Verbindung hochgeladen wurden.',
   'trade-sync.source.trade-import.description':
-    'Stelle Broker-Dateiimporte über mehrere Vaults hinweg wieder her und rekonstruiere fehlende lokale Trade-Notizen.',
+    'Stellen Sie Broker-Dateiimporte über mehrere Vaults hinweg wieder her und rekonstruieren Sie fehlende lokale Trade-Notizen.',
   'trade-sync.source.tradovate.description':
-    'Synchronize Tradovate trades in the cloud and project them into this vault.',
-  'trade-sync.tradovate.status-failed': 'Unable to load Tradovate status.',
+    'Tradovate-Trades in der Cloud synchronisieren und in diesen Vault übertragen.',
+  'trade-sync.tradovate.status-failed':
+    'Tradovate-Status konnte nicht geladen werden.',
   'trade-sync.tradovate.last-sync': 'Letzte Synchronisierung',
   'trade-sync.tradovate.last-projection': 'Letzte Projektion',
   'trade-sync.tradovate.pending-projections':
@@ -6994,6 +7045,8 @@ const de: Lang = {
     '{succeeded} von {total} Rithmic-Verbindungen synchronisiert.',
   'trade-sync.rithmic.sync-all-partial':
     '{succeeded} von {total} Rithmic-Verbindungen synchronisiert. Überprüfen Sie die Verbindungen mit Problemen.',
+  'trade-sync.rithmic.sync-all-provider-partial':
+    '{succeeded} von {total} Rithmic-Verbindungen synchronisiert · Synchronisierung teilweise abgeschlossen',
   'trade-sync.rithmic.error.session-conflict':
     'Rithmic erlaubt nur eine aktive Sitzung. Schließen Sie R|Trader, NinjaTrader oder jede andere Plattform mit diesem Rithmic-Login.',
   'trade-sync.rithmic.error.auto-retry':
@@ -7050,7 +7103,7 @@ const de: Lang = {
     '{count} importierte Trade(s) wiederhergestellt.',
 
   'trade-sync.import.notice.sync-cloud-failed':
-    'Unable to start cloud synchronization.',
+    'Cloud-Synchronisierung konnte nicht gestartet werden.',
   'trade-sync.import.notice.load-failed':
     'Trade-Import-Sync-Status konnte nicht geladen werden.',
   'trade-sync.import.notice.mapping-failed':
@@ -7061,20 +7114,19 @@ const de: Lang = {
     'Trade-Import-Konto konnte nicht wiederhergestellt werden.',
   'trade-sync.rate-limit.action.mapping': 'Kontozuordnung',
   'trade-sync.import.notice.rate-limited':
-    '{action}: Zu viele Anfragen. Bitte in {seconds} s erneut versuchen.',
-  'setups.view.loading': 'Loading setups…',
-  'settings.general.copy-trading-pnl-toggled': 'Copy-Trading-PnL ist {status}',
-  'setups.view.trade.unknown-instrument': 'Unknown instrument',
-  'command.open-session-mode': 'Live-Sitzung öffnen',
-  'view.session-mode': 'Live-Sitzung',
+    '{action}: Zu viele Anfragen. Versuchen Sie es in {seconds} s erneut.',
+  'setups.view.loading': 'Setups werden geladen…',
+  'setups.view.trade.unknown-instrument': 'Unbekanntes Instrument',
+  'command.open-session-mode': 'Sitzungsmodus öffnen',
+  'view.session-mode': 'Sitzungsmodus',
   'widget.session-log.name': 'Sitzungsprotokoll',
   'widget.session-log.description':
-    'Erfasse Ausführungsnotizen mit Zeitstempel und Trade-Ereignisse.',
-  'session-log.title': 'Live-Sitzungsprotokoll',
+    'Erfassen Sie Ausführungsnotizen mit Zeitstempel und Trade-Ereignisse.',
+  'session-log.title': 'Sitzungsmodus-Protokoll',
   'session-log.description':
-    'Erfasse, was während der aktuellen Trading-Sitzung passiert.',
+    'Erfassen Sie, was während der aktuellen Trading-Sitzung passiert.',
   'session-log.notice.invalid-timestamp':
-    'Gib einen gültigen Zeitstempel für das Sitzungsprotokoll ein.',
+    'Geben Sie einen gültigen Zeitstempel für das Sitzungsprotokoll ein.',
   'session-log.action.auto-time': 'Automatische Zeit',
   'session-log.action.set-time': 'Zeit festlegen',
 
@@ -7091,7 +7143,7 @@ const de: Lang = {
   'session-log.empty': 'Noch keine Einträge im Sitzungsprotokoll.',
   'session-log.empty-filtered': 'Keine Einträge entsprechen diesem Filter.',
   'session-log.loading': 'Sitzungsprotokoll wird geladen…',
-  'session-log.lessons.title': 'Lessons learned',
+  'session-log.lessons.title': 'Erkenntnisse',
 
   'session-log.lessons.badge': 'LSN',
   'session-log.session-group.outside': 'Außerhalb der Sitzungen',
@@ -7100,18 +7152,18 @@ const de: Lang = {
   'session-log.trade.exited': 'Ausstieg',
   'session-log.trade.size': 'Größe',
 
-  'session-log.status.unclassified': 'unclassified',
+  'session-log.status.unclassified': 'nicht zugeordnet',
   'session-log.action.save': 'Speichern',
   'session-log.action.cancel': 'Abbrechen',
 
-  'session-log.action.classify': 'Classify',
+  'session-log.action.classify': 'Zuordnen',
   'session-log.action.edit': 'Bearbeiten',
   'session-log.action.delete': 'Löschen',
   'session-log.action.open-trade': 'Trade öffnen',
   'session-log.preview':
     'Vorschau des Sitzungsprotokolls: Notizen mit Zeitstempel und Trade-Ereignisse erscheinen während der Live-Sitzung hier.',
   'session-log.alert.tag-concentration':
-    '{tag} macht {percentage}% der Sitzungsnotizen aus ({count}/{total}). Prüfe vor dem Fortfahren auf Drift.',
+    '{tag} macht {percentage}% der Sitzungsnotizen aus ({count}/{total}). Prüfen Sie vor dem Fortfahren auf Drift.',
 
   'session-mode.loading': 'Sitzungsmodus wird geladen',
 
@@ -7126,7 +7178,7 @@ const de: Lang = {
 
   'session-mode.action.open-drc-for-date': 'DRC für {date} öffnen',
   'session-mode.ended.helper':
-    'Protokolliere deine Trades oder überprüfe den Tag.',
+    'Protokollieren Sie Ihre Trades oder überprüfen Sie den Tag.',
   'session-mode.ended.action.import-trades': 'Trades importieren',
   'session-mode.ended.action.add-trade-manually': 'Trade manuell hinzufügen',
   'session-mode.ended.action.open-drc': 'DRC öffnen',
@@ -7141,12 +7193,12 @@ const de: Lang = {
     'Ungeplante Sitzung · {start}–{end} · {duration}',
   'session-mode.unplanned.modal.title': 'Ungeplante Sitzung starten',
   'session-mode.unplanned.modal.description':
-    'Du befindest dich außerhalb deiner geplanten Sitzungsfenster. Diese Sitzung wird in deiner Tagesauswertung als ungeplant markiert. Schreibe auf, warum du jetzt handelst.',
+    'Sie befinden sich außerhalb Ihrer geplanten Sitzungsfenster. Diese Sitzung wird in Ihrer Tagesauswertung als ungeplant markiert. Schreiben Sie auf, warum Sie jetzt handeln.',
   'session-mode.unplanned.modal.reason-label': 'Grund',
   'session-mode.unplanned.modal.reason-placeholder':
     'z. B. FOMC um 14:00, Vormittagssitzung verpasst',
   'session-mode.unplanned.modal.reason-required':
-    'Gib vor dem Start einen Grund ein.',
+    'Geben Sie vor dem Start einen Grund ein.',
   'session-mode.unplanned.notice.started': 'Ungeplante Sitzung gestartet.',
   'session-mode.unplanned.notice.stopped': 'Ungeplante Sitzung beendet.',
   'session-mode.unplanned.notice.blocked-live':
@@ -7157,7 +7209,7 @@ const de: Lang = {
     'Die ungeplante Sitzung konnte nicht aktualisiert werden. Details in der Konsole.',
   'session-mode.ended.stat.trades': 'Trades',
   'session-mode.ended.stat.notes': 'Notizen',
-  'session-mode.ended.stat.gate-checks': 'Gate-Checks',
+  'session-mode.ended.stat.gate-checks': 'Gate-Prüfungen',
   'session-mode.waiting.next-session': 'Nächste Sitzung',
   'session-mode.waiting.starts-at': '{session} beginnt um {time}',
   'session-mode.waiting.preparation-opens-in':
@@ -7169,7 +7221,7 @@ const de: Lang = {
   'session-mode.break.next-session-meta':
     'Nächste Sitzung beginnt um {time} · {remaining} verbleibend',
   'session-mode.break.description':
-    'Tritt kurz zurück, trink Wasser und kläre deinen Kopf vor der nächsten Sitzung.',
+    'Treten Sie kurz zurück, trinken Sie Wasser und machen Sie den Kopf frei vor der nächsten Sitzung.',
   'session-mode.break.open-drc': 'DRC öffnen',
   'session-mode.countdown.starts-in': 'Beginnt in',
   'session-mode.countdown.starts-at': '{session} beginnt um {time}',
@@ -7183,107 +7235,102 @@ const de: Lang = {
   'session-mode.phase.ended': 'Beendet',
   'session-mode.phase.unconfigured': 'Sitzungsplan nicht konfiguriert',
   'session-mode.status.preparation':
-    '{session} beginnt um {time}. Du hast {remaining} zur Vorbereitung.',
+    '{session} beginnt um {time}. Sie haben {remaining} zur Vorbereitung.',
   'session-mode.status.preparation-generic':
-    'Bereite dich auf die nächste Live-Trading-Sitzung vor.',
+    'Bereiten Sie sich auf die nächste Live-Trading-Sitzung vor.',
   'session-mode.status.waiting':
     '{session} beginnt um {time}. Die Vorbereitung beginnt in {remaining}.',
   'session-mode.status.waiting-generic':
-    'Deine nächste Sitzung ist geplant, aber die Vorbereitung hat noch nicht begonnen.',
+    'Ihre nächste Sitzung ist geplant, aber die Vorbereitung hat noch nicht begonnen.',
   'session-mode.status.live': 'Noch {remaining} in dieser Sitzung.',
-  'session-mode.status.live-generic': 'Deine Trading-Sitzung läuft.',
+  'session-mode.status.live-generic': 'Ihre Trading-Sitzung läuft.',
   'session-mode.status.break':
-    '{session} beginnt um {time}. Du hast {remaining} Pause.',
-  'session-mode.status.break-generic': 'Du bist zwischen Trading-Sitzungen.',
+    '{session} beginnt um {time}. Sie haben {remaining} Pause.',
+  'session-mode.status.break-generic': 'Sie sind zwischen Trading-Sitzungen.',
   'session-mode.status.ended':
-    'Deine konfigurierten Trading-Sitzungen sind vorerst beendet.',
+    'Ihre konfigurierten Trading-Sitzungen sind vorerst beendet.',
   'session-mode.status.unconfigured':
-    'Konfiguriere Sitzungsfenster, um Vorbereitung, Live, Pause und Beendet zu aktivieren. Die Zeitleiste bleibt für den heutigen DRC verfügbar.',
+    'Konfigurieren Sie Sitzungsfenster, um Vorbereitung, Live, Pause und Beendet zu aktivieren. Die Zeitleiste bleibt für den heutigen DRC verfügbar.',
 
-  'session-mode.unconfigured.title': 'Trading-Zeiten festlegen',
+  'session-mode.unconfigured.title': 'Sitzungsmodus einrichten',
   'session-mode.unconfigured.description':
-    'Füge die Zeiten hinzu, zu denen du tatsächlich tradest, damit der Sitzungsmodus automatisch zwischen Vorbereitung, live, Pause und beendet wechseln kann.',
-  'session-mode.unconfigured.step.window.title': 'Add a session window',
-
-  'session-mode.unconfigured.step.prep.title': 'Review preparation timing',
-
-  'session-mode.unconfigured.step.gate.title': 'Use the Starter Trade Gate',
-
-  'session-mode.unconfigured.step.log.title': 'Log notes during live sessions',
-
+    'Fügen Sie Ihre Sitzungszeiten hinzu, um zu beginnen.',
+  'session-mode.unconfigured.step.window.title': 'Sitzungsfenster hinzufügen',
+  'session-mode.unconfigured.step.prep.title': 'Vorbereitungszeit prüfen',
+  'session-mode.unconfigured.step.gate.title': 'Starter-Trade-Gate verwenden',
+  'session-mode.unconfigured.step.log.title':
+    'Notizen während Live-Sitzungen erfassen',
   'session-mode.unconfigured.action': 'Sitzungsmodus konfigurieren',
-  'session-mode.guide.why.title': 'Handle deinen Plan, nicht deine Stimmung',
+  'session-mode.guide.why.title': 'Handeln Sie Ihren Plan, nicht Ihre Stimmung',
   'session-mode.guide.why.description':
-    'Der Session-Modus bereitet dich vor jeder Session vor, hält dich mit einem Trade Gate an deine Regeln, während sie läuft, und führt ein Protokoll mit Zeitstempeln, damit du den Tag nachspielen kannst. Die Einrichtung dauert zwei Minuten.',
+    'Der Sitzungsmodus bereitet Sie vor jeder Sitzung vor, hält Sie mit einem Trade Gate an Ihre Regeln, während sie läuft, und führt ein Protokoll mit Zeitstempeln, damit Sie den Tag nachvollziehen können. Die Einrichtung dauert zwei Minuten.',
   'session-mode.guide.configure.title': 'Jetzt einrichten',
   'session-mode.guide.configure.description':
-    'Trage deine Session-Zeiten ein und baue dein erstes Trade Gate. Ein kurzer Rundgang begleitet dich in den Einstellungen.',
-  'session-mode.guide.preparation.countdown.title': 'Deine Session steht bevor',
+    'Tragen Sie Ihre Sitzungszeiten ein und bauen Sie Ihr erstes Trade Gate. Ein kurzer Rundgang begleitet Sie in den Einstellungen.',
+  'session-mode.guide.preparation.countdown.title': 'Ihre Sitzung steht bevor',
   'session-mode.guide.preparation.countdown.description':
-    'Das ist die Vorbereitungsphase. Der Countdown zeigt, wann du live gehst, und diese Seite wechselt von selbst in den Live-Modus.',
+    'Das ist die Vorbereitungsphase. Der Countdown zeigt, wann Sie live gehen, und diese Seite wechselt von selbst in den Live-Modus.',
   'session-mode.guide.preparation.goals.title': 'Ziele für heute setzen',
   'session-mode.guide.preparation.goals.description':
-    'Schreib vor der Eröffnung auf, wie eine gute Session aussieht, damit du dich an etwas messen kannst.',
+    'Schreiben Sie vor der Eröffnung auf, wie eine gute Sitzung aussieht, damit Sie sich an etwas messen können.',
   'session-mode.guide.preparation.checklist.title': 'Checkliste abarbeiten',
   'session-mode.guide.preparation.checklist.description':
-    'Hake hier deine Routine vor der Session ab. Alles, was du abhakst, wird in der heutigen Review-Notiz gespeichert.',
-  'session-mode.guide.preparation.next.title': 'Wenn du live gehst',
+    'Haken Sie hier Ihre Routine vor der Sitzung ab. Alles, was Sie abhaken, wird in der heutigen Review-Notiz gespeichert.',
+  'session-mode.guide.preparation.next.title': 'Wenn Sie live gehen',
   'session-mode.guide.preparation.next.description':
-    'Dein Trade Gate und das Session-Log erscheinen hier. Beim ersten Mal zeigen wir dir beides.',
+    'Ihr Trade Gate und das Sitzungsprotokoll erscheinen hier. Beim ersten Mal zeigen wir Ihnen beides.',
   'session-mode.guide.live.trade-gate.title':
     'Vor jedem Trade das Trade Gate durchlaufen',
   'session-mode.guide.live.trade-gate.description':
-    'Drücke Start und beantworte die Fragen aus deinen Kriterien. Das Gate endet mit grünem Licht, warten oder kein Trade, sodass du nur Trades nimmst, die dein System erlaubt.',
+    'Drücken Sie Start und beantworten Sie die Fragen aus Ihren Kriterien. Das Gate endet mit grünem Licht, Warten oder Kein Trade, sodass Sie nur Trades nehmen, die Ihr System erlaubt.',
   'session-mode.guide.live.session-log.title':
-    'Notiere, was du siehst und fühlst',
+    'Notieren Sie, was Sie sehen und fühlen',
   'session-mode.guide.live.session-log.description':
-    'Halte Setups, Emotionen und Entscheidungen fest, während sie passieren. Jede Notiz hat einen Zeitstempel, sodass du später genau nachvollziehen kannst, was los war.',
+    'Halten Sie Setups, Emotionen und Entscheidungen fest, während sie passieren. Jede Notiz hat einen Zeitstempel, sodass Sie später genau nachvollziehen können, was los war.',
   'session-mode.guide.live.settings.title': 'Jederzeit anpassen',
   'session-mode.guide.live.settings.description':
-    'Bearbeiten öffnet die Session-Modus-Einstellungen: Session-Zeiten, Phasen-Layout, Trade-Gate-Workflows und Log-Tags.',
-  'session-mode.guide.ended.review.title': 'Jetzt die Session reviewen',
-  'session-mode.guide.ended.review.description':
-    'Öffne das heutige DRC zum Review. Füge das Session-Log-Widget zu deinem DRC-Layout hinzu, und jede Notiz mit Zeitstempel erscheint dort.',
+    'Bearbeiten öffnet die Einstellungen des Sitzungsmodus: Sitzungszeiten, Phasen-Layout, Trade-Gate-Workflows und Protokoll-Tags.',
   'settings.session-mode.guide.setting-name': 'Rundgang',
   'settings.session-mode.guide.setting-desc':
-    'Eine kurze Tour durch diese Einstellungen, von den Session-Zeiten bis zu deinem ersten Trade Gate.',
+    'Eine kurze Tour durch diese Einstellungen, von den Sitzungszeiten bis zu Ihrem ersten Trade Gate.',
   'settings.session-mode.guide.replay': 'Guide anzeigen',
   'settings.session-mode.guide.intro.title':
-    'Richten wir den Session-Modus ein',
+    'Richten wir den Sitzungsmodus ein',
   'settings.session-mode.guide.intro.description':
-    'Vier Dinge: wann deine Sessions laufen, was jede Phase zeigt, dein Trade Gate und deine Session-Log-Tags.',
+    'Vier Dinge: wann Ihre Sitzungen laufen, was jede Phase zeigt, Ihr Trade Gate und Ihre Tags für das Sitzungsprotokoll.',
   'settings.session-mode.guide.lead-time.title': 'Vorlaufzeit der Vorbereitung',
   'settings.session-mode.guide.lead-time.description':
-    'Wie viele Minuten vor einer Session die Vorbereitungsphase öffnet.',
+    'Wie viele Minuten vor einer Sitzung die Vorbereitungsphase öffnet.',
   'settings.session-mode.guide.windows.title':
-    'Füge deine Session-Fenster hinzu',
+    'Fügen Sie Ihre Sitzungsfenster hinzu',
   'settings.session-mode.guide.windows.description':
-    'Ein Fenster pro Session, die du handelst, mit Name, Start und Ende. Daran erkennt der Session-Modus, wann vorbereitet wird und wann du live bist.',
-  'settings.session-mode.guide.layout.title': 'Wähle, was jede Phase zeigt',
+    'Ein Fenster pro Sitzung, die Sie handeln, mit Name, Start und Ende. Daran erkennt der Sitzungsmodus, wann vorbereitet wird und wann Sie live sind.',
+  'settings.session-mode.guide.layout.title':
+    'Wählen Sie, was jede Phase zeigt',
   'settings.session-mode.guide.layout.description':
-    'Schalte Module pro Phase ein oder aus: Ressourcen, Ziele und Checkliste für die Vorbereitung; Trade Gate und Session-Timeline im Live-Betrieb.',
-  'settings.session-mode.guide.trade-gate.title': 'Baue dein Trade Gate',
+    'Schalten Sie Module pro Phase ein oder aus: Ressourcen, Ziele und Checkliste für die Vorbereitung; Trade Gate und Sitzungs-Zeitleiste im Live-Betrieb.',
+  'settings.session-mode.guide.trade-gate.title': 'Bauen Sie Ihr Trade Gate',
   'settings.session-mode.guide.trade-gate.description':
     'Hinzufügen erstellt beim ersten Mal einen Starter-Workflow aus gängigen Fragen, danach einen leeren; die Bibliothek enthält fertige Fragen. Jede Frage führt zur nächsten oder zu einem Ergebnis: grünes Licht, warten oder kein Trade.',
   'settings.session-mode.guide.editor.title': 'Fragen und Ergebnisse',
   'settings.session-mode.guide.editor.description':
-    'Klappe einen Workflow auf, um Fragen hinzuzufügen und festzulegen, wohin jede Antwort führt. Die Abspielen-Schaltfläche führt ihn genau so aus wie in der Session.',
-  'settings.session-mode.guide.tags.title': 'Tags für dein Session-Log',
+    'Klappen Sie einen Workflow auf, um Fragen hinzuzufügen und festzulegen, wohin jede Antwort führt. Die Abspielen-Schaltfläche führt ihn genau so aus wie in der Sitzung.',
+  'settings.session-mode.guide.tags.title': 'Tags für Ihr Sitzungsprotokoll',
   'settings.session-mode.guide.tags.description':
-    'Tagge Notizen beim Protokollieren, etwa nach Emotion oder Setup, damit du sie im Review filtern kannst.',
+    'Taggen Sie Notizen beim Protokollieren, etwa nach Emotion oder Setup, damit Sie sie im Review filtern können.',
   'settings.session-mode.guide.finish.title': 'Fertig',
   'settings.session-mode.guide.finish.description':
-    'Öffne den Session-Modus über die Leiste oder Home. Füge das Session-Log-Widget zu deinem DRC-Layout hinzu, um deine Notizen in jedem Review zu sehen.',
+    'Öffnen Sie den Sitzungsmodus über die Leiste oder Home. Fügen Sie das Sitzungsprotokoll-Widget zu Ihrem DRC-Layout hinzu, um Ihre Notizen in jedem Review zu sehen.',
 
-  'session-mode.layout.empty.title': 'Nothing enabled for this phase',
+  'session-mode.layout.empty.title': 'Für diese Phase ist nichts aktiviert',
   'session-mode.layout.empty.description':
-    'Turn modules back on to build this Session Mode phase.',
-  'session-mode.duration.minutes': '{minutes}m',
-  'session-mode.duration.hours': '{hours}h',
-  'session-mode.duration.hours-minutes': '{hours}h {minutes}m',
-  'settings.session-mode.title': 'Live-Sitzung',
+    'Aktivieren Sie Module wieder, um diese Phase des Sitzungsmodus aufzubauen.',
+  'session-mode.duration.minutes': '{minutes} Min.',
+  'session-mode.duration.hours': '{hours} Std.',
+  'session-mode.duration.hours-minutes': '{hours} Std. {minutes} Min.',
+  'settings.session-mode.title': 'Sitzungsmodus',
   'settings.session-mode.description':
-    'Konfiguriere Sitzungsfenster, Vorbereitung, Phasenlayout, Trade-Gate-Workflows und Sitzungsprotokoll-Tags.',
+    'Konfigurieren Sie Sitzungsfenster, Vorbereitung, Phasenlayout, Trade-Gate-Workflows und Sitzungsprotokoll-Tags.',
   'settings.session-mode.preparation-lead-time': 'Vorbereitungszeit (Minuten)',
   'settings.session-mode.preparation-lead-time-desc':
     'Wie früh der Vorbereitungsmodus vor einer Sitzung startet.',
@@ -7292,74 +7339,74 @@ const de: Lang = {
   'settings.session-mode.add-window-short': 'Hinzufügen',
   'settings.session-mode.no-windows':
     'Noch keine Sitzungsfenster konfiguriert. Die Live-Zeitleiste funktioniert weiterhin, aber phasenbasierte Vorbereitung beginnt nach dem Hinzufügen eines Fensters.',
-  'settings.session-mode.layout.title': 'Phase layout',
+  'settings.session-mode.layout.title': 'Phasen-Layout',
 
   'settings.session-mode.layout.phase-desc.preparation':
-    'Choose what appears during pre-session preparation before trading starts.',
+    'Wählen Sie, was während der Vorbereitung vor Handelsbeginn angezeigt wird.',
   'settings.session-mode.layout.phase-desc.live':
-    'Choose what appears while a configured trading session is live.',
+    'Wählen Sie, was angezeigt wird, während eine konfigurierte Handelssitzung läuft.',
 
   'settings.session-mode.layout.phase-desc.ended':
-    'Choose what appears after all configured trading sessions have ended.',
-  'settings.session-mode.layout.reset-phase': 'Reset',
+    'Wählen Sie, was angezeigt wird, nachdem alle konfigurierten Handelssitzungen beendet sind.',
+  'settings.session-mode.layout.reset-phase': 'Zurücksetzen',
 
-  'settings.session-mode.layout.module.preparation-resources': 'Resources',
+  'settings.session-mode.layout.module.preparation-resources': 'Ressourcen',
   'settings.session-mode.layout.module.preparation-resources-desc':
-    'Shows linked preparation notes and playbooks.',
-  'settings.session-mode.layout.module.preparation-goals': 'Goals',
+    'Zeigt verknüpfte Vorbereitungsnotizen und Playbooks.',
+  'settings.session-mode.layout.module.preparation-goals': 'Ziele',
   'settings.session-mode.layout.module.preparation-goals-desc':
-    'Shows the DRC goals widget for pre-session focus.',
-  'settings.session-mode.layout.module.preparation-checklist': 'Checklist',
+    'Zeigt das DRC-Ziele-Widget für den Fokus vor der Sitzung.',
+  'settings.session-mode.layout.module.preparation-checklist': 'Checkliste',
   'settings.session-mode.layout.module.preparation-checklist-desc':
-    'Shows the DRC checklist widget for pre-session preparation.',
+    'Zeigt das DRC-Checklisten-Widget für die Vorbereitung vor der Sitzung.',
   'settings.session-mode.layout.module.trade-gate': 'Trade Gate',
   'settings.session-mode.layout.module.trade-gate-desc':
-    'Runs your configured IF/THEN gate during the live session.',
-  'settings.session-mode.layout.module.timeline': 'Session timeline',
+    'Führt Ihr konfiguriertes WENN/DANN-Gate während der Live-Sitzung aus.',
+  'settings.session-mode.layout.module.timeline': 'Sitzungs-Zeitleiste',
   'settings.session-mode.layout.module.timeline-desc':
-    'Shows current-session notes and trade timeline entries.',
+    'Zeigt Notizen und Trade-Einträge der aktuellen Sitzung in der Zeitleiste.',
 
-  'settings.session-mode.layout.module.ended-actions': 'End-of-session actions',
+  'settings.session-mode.layout.module.ended-actions':
+    'Aktionen zum Sitzungsende',
   'settings.session-mode.layout.module.ended-actions-desc':
-    'Shows import, manual trade, and DRC actions after sessions end.',
-  'settings.session-mode.layout.module.ended-stats': 'Session stats',
+    'Zeigt nach Sitzungsende Aktionen für Import, manuellen Trade und DRC.',
+  'settings.session-mode.layout.module.ended-stats': 'Sitzungsstatistik',
   'settings.session-mode.layout.module.ended-stats-desc':
-    'Shows trade, note, and gate-check totals for the day.',
+    'Zeigt die Tagessummen für Trades, Notizen und Gate-Prüfungen.',
   'settings.session-mode.linked-resources': 'Verknüpfte Ressourcen',
   'settings.session-mode.linked-resources-desc':
     'Zeigt schnelle Notizlinks während der Vorbereitung.',
-  'settings.session-mode.linked-resources-count': '{count} linked',
-  'settings.session-mode.linked-resources-hide': 'Hide linked',
+  'settings.session-mode.linked-resources-count': '{count} verknüpft',
+  'settings.session-mode.linked-resources-hide': 'Verknüpfte ausblenden',
   'settings.session-mode.session-log': 'Sitzungsprotokoll',
   'settings.session-mode.session-log-desc':
-    'Wähle aus, welche automatischen Ereignisse neben deinen Sitzungsnotizen angezeigt werden.',
+    'Wählen Sie aus, welche automatischen Ereignisse neben Ihren Sitzungsnotizen angezeigt werden.',
   'settings.session-mode.show-trade-executions':
     'Trade-Einstiege und -Ausstiege',
   'settings.session-mode.show-trade-executions-desc':
     'Trade-Einstiege und -Ausstiege in den Protokollen von Sitzungsmodus und Tagesreview anzeigen.',
   'settings.session-mode.session-log-tags': 'Sitzungsprotokoll-Tags',
   'settings.session-mode.session-log-tags-desc':
-    'Passe die Tags an, die im Session-Mode-Komponisten und im DRC-Sitzungsprotokoll verfügbar sind.',
+    'Passen Sie die Tags an, die im Eingabefeld des Sitzungsmodus und im DRC-Sitzungsprotokoll verfügbar sind.',
   'settings.session-mode.tag-label-placeholder': 'Tag-Name',
-  'settings.session-mode.tag-short-label-placeholder': 'Kurzlabel',
+  'settings.session-mode.tag-short-label-placeholder': 'Kürzel',
   'settings.session-mode.tag-label-example': 'Trade',
   'settings.session-mode.tag-short-label-example': 'TR',
   'settings.session-mode.tag-color': 'Tag-Farbe',
-  'settings.session-mode.tag-requires-resolution': 'Erfordert Auflösung',
+  'settings.session-mode.tag-requires-resolution': 'Braucht Einordnung',
   'settings.session-mode.tag-lesson': 'Lektions-Tag',
   'settings.session-mode.tag-requires-resolution-tooltip':
-    'Einträge mit diesem Tag werden als Folgepunkte markiert, bis du sie im Sitzungsprotokoll auflöst. Verwende ihn für Notizen, die nach der Sitzung Prüfung oder Aktion benötigen.',
+    'Einträge mit diesem Tag gelten als nicht kategorisierte Notizen. Verwenden Sie ihn, wenn der passende Tag während der Sitzung unklar ist, und ordnen Sie den Eintrag später ein.',
   'settings.session-mode.tag-lesson-tooltip':
-    'Markiert diesen Tag als Lerneintrag. Notizen mit Lektions-Tag können als Lektionen angezeigt und in Sitzungsprotokoll-Abläufen als Lernmomente hervorgehoben werden.',
+    'Markiert diesen Tag als Lerneintrag. Notizen mit Lektions-Tag bleiben im Sitzungsprotokoll und können über Lektionsfilter und Review-Zusammenfassungen hervorgehoben werden.',
   'settings.session-mode.add-session-log-tag':
     'Sitzungsprotokoll-Tag hinzufügen',
-  'settings.session-mode.reset-session-log-tags':
-    'Sitzungsprotokoll-Tags zurücksetzen',
+  'settings.session-mode.reset-session-log-tags': 'Zurücksetzen',
   'settings.session-mode.tag-color.blue': 'Blau',
   'settings.session-mode.tag-color.indigo': 'Indigo',
   'settings.session-mode.tag-color.purple': 'Lila',
   'settings.session-mode.tag-color.green': 'Grün',
-  'settings.session-mode.tag-color.pink': 'Pink',
+  'settings.session-mode.tag-color.pink': 'Rosa',
   'settings.session-mode.tag-color.amber': 'Bernstein',
   'settings.session-mode.tag-color.red': 'Rot',
   'settings.session-mode.tag-color.orange': 'Orange',
@@ -7384,10 +7431,10 @@ const de: Lang = {
     'Die Bedingungen sind nicht erfüllt.',
   'trade-gate.outcome.wait': 'Warten',
   'trade-gate.outcome.wait-description':
-    'Das Setup ist nicht bereit. Warte auf die nächste Gelegenheit.',
+    'Das Setup ist nicht bereit. Warten Sie auf die nächste Gelegenheit.',
   'settings.session-mode.trade-gate.title': 'Trade-Gate-Workflows',
   'settings.session-mode.trade-gate.desc':
-    'Erstelle IF/THEN-Entscheidungsflüsse für Live-Einstiegschecks.',
+    'Erstellen Sie WENN/DANN-Entscheidungsflüsse für Live-Einstiegschecks.',
   'settings.session-mode.trade-gate.delete-workflow.title':
     'Trade-Gate-Ablauf löschen?',
   'settings.session-mode.trade-gate.delete-workflow.message':
@@ -7396,7 +7443,7 @@ const de: Lang = {
   'settings.session-mode.trade-gate.name': 'Workflow-Name',
   'settings.session-mode.trade-gate.edit-question': 'Frage bearbeiten',
   'settings.session-mode.trade-gate.no-options':
-    'Füge Antwortoptionen für diese Frage hinzu.',
+    'Fügen Sie Antwortoptionen für diese Frage hinzu.',
   'settings.session-mode.trade-gate.not-wired': 'Noch nicht verbunden',
   'settings.session-mode.trade-gate.not-wired-hint': 'Zum Verbinden klicken',
   'settings.session-mode.trade-gate.target-group-questions': 'Fragen',
@@ -7414,7 +7461,7 @@ const de: Lang = {
   'settings.session-mode.trade-gate.library-title': 'Fragenbibliothek',
   'settings.session-mode.trade-gate.library-search': 'Fragen suchen…',
   'settings.session-mode.trade-gate.library-empty':
-    'Keine Fragen gefunden. Erstelle eine, um zu beginnen.',
+    'Keine Fragen gefunden. Erstellen Sie eine, um zu beginnen.',
   'settings.session-mode.trade-gate.delete-question.title': 'Frage löschen?',
   'settings.session-mode.trade-gate.delete-question.message':
     '„{name}“ aus der Fragenbibliothek löschen? Diese Aktion kann nicht rückgängig gemacht werden.',
@@ -7424,17 +7471,17 @@ const de: Lang = {
   'settings.session-mode.trade-gate.unplaced-title':
     'In diesem Ablauf noch nicht verbunden',
   'settings.session-mode.trade-gate.no-start':
-    'Wähle eine Startfrage, um den Ablauf zu sehen.',
+    'Wählen Sie eine Startfrage, um den Ablauf zu sehen.',
   'settings.session-mode.trade-gate.untitled': 'Unbenannter Ablauf',
   'settings.session-mode.trade-gate.start-node': 'Startfrage',
   'settings.session-mode.trade-gate.simulation.show': 'Simulieren',
   'settings.session-mode.trade-gate.simulation.unavailable':
-    'Verbinde die Startfrage mit mindestens einem vollständigen Ergebnis, bevor du die Simulation startest.',
+    'Verbinden Sie die Startfrage mit mindestens einem vollständigen Ergebnis, bevor Sie die Simulation starten.',
   'settings.session-mode.trade-gate.add-question': 'Frage hinzufügen',
   'settings.session-mode.trade-gate.question': 'Frage',
   'settings.session-mode.trade-gate.new-question-title': 'Neue Frage',
   'settings.session-mode.trade-gate.question-title': 'Fragentitel',
-  'settings.session-mode.trade-gate.prompt': 'Prompt',
+  'settings.session-mode.trade-gate.prompt': 'Frage',
   'settings.session-mode.trade-gate.options': 'Optionen',
   'settings.session-mode.trade-gate.option': 'Option',
   'settings.session-mode.trade-gate.option-label': 'Optionsbezeichnung',
@@ -7442,11 +7489,9 @@ const de: Lang = {
   'settings.session-mode.trade-gate.flow-map': 'Ablaufkarte',
   'settings.session-mode.trade-gate.flow-fit': 'Einpassen',
   'settings.session-mode.trade-gate.flow-click-hint':
-    'Klicke auf einen Knoten oder eine Pfadbeschriftung, um ihn zu bearbeiten.',
-  'settings.session-mode.trade-gate.flow-truncated':
-    'Dieser Ablauf ist zu groß für die vollständige Anzeige. Einige wiederholte Zweige sind ausgeblendet.',
+    'Klicken Sie auf eine Karte, eine Pfadbeschriftung oder ein Ergebnis, um es zu bearbeiten.',
   'settings.session-mode.trade-gate.no-questions':
-    'Füge die erste Frage hinzu, um diesen Ablauf zu beginnen.',
+    'Fügen Sie die erste Frage hinzu, um diesen Ablauf zu beginnen.',
   'filter.modal.image.annotation-status': 'Anmerkungsstatus',
   'filter.modal.image.status.tagged': 'Getaggt',
   'filter.modal.image.status.untagged': 'Ohne Tags',
@@ -7468,12 +7513,12 @@ const de: Lang = {
     'Leere die aktiven Filter oder erweitere den Datumsbereich, um mehr Galerieelemente anzuzeigen.',
   'imageGallery.empty.no-source.title': 'Keine Medien in dieser Quelle',
   'imageGallery.empty.no-source.description':
-    'Diese Quelle enthält noch keine Galerieelemente. Wechsle zurück zu allen Medien oder wähle eine andere Quelle.',
+    'Diese Quelle enthält noch keine Galerieelemente. Wechseln Sie zurück zu allen Medien oder wählen Sie eine andere Quelle.',
   'imageGallery.empty.action.clear-filters': 'Filter leeren',
   'imageGallery.empty.action.show-all': 'Alle Medien anzeigen',
   'imageGallery.error.load-failed': 'Galerie konnte nicht geladen werden.',
 
-  'imageGallery.open-source': 'Notiz öffnen',
+  'imageGallery.open-source': 'Quelle öffnen',
   'imageGallery.image-alt': '{source}-Medium vom {date}',
   'imageGallery.privacy-blurred': 'Aus Datenschutzgründen verwischt',
 
@@ -7516,7 +7561,7 @@ const de: Lang = {
   'imageGallery.annotation.tags-placeholder': 'Breakout, A+ Setup, Fehler',
   'imageGallery.annotation.notes': 'Notizen',
   'imageGallery.annotation.notes-placeholder':
-    'Was soll dein zukünftiges Ich aus diesem Chart lernen?',
+    'Was soll Ihr zukünftiges Ich aus diesem Chart lernen?',
   'imageGallery.annotation.error.save-failed':
     'Medienannotation konnte nicht gespeichert werden.',
   'imageGallery.annotation.error.load-failed':
@@ -7529,41 +7574,29 @@ const de: Lang = {
   'settings.gallery-folders.add': 'Hinzufügen',
   'settings.gallery-folders.remove-aria': 'Galerieordner {path} entfernen',
   'settings.gallery-folders.not-a-folder':
-    'Wähle einen Ordner statt einer Mediendatei aus.',
+    'Wählen Sie einen Ordner statt einer Mediendatei aus.',
   'settings.gallery-folders.save-failed':
-    'Galerieordner konnten nicht gespeichert werden. Bitte versuche es erneut.',
+    'Galerieordner konnten nicht gespeichert werden. Bitte versuchen Sie es erneut.',
   'tradelog.guide.gallery-grouping.title':
     'Medien nach Journaleintrag gruppieren',
   'tradelog.guide.gallery-grouping.description':
-    'Gruppiert zeigt jeden Trade oder jedes Review in einer Karte. Einzeln zeigt jedes angehängte Medienelement als eigene Karte.',
+    'Gruppiert hält jeden Trade, jede Review oder jeden konfigurierten Ordner zusammen. Einzeln zeigt jedes Medienelement als eigene Karte.',
   'tradelog.guide.gallery-source-sort.title':
     'Medienquelle und Reihenfolge wählen',
   'tradelog.guide.gallery-source-sort.description':
-    'Verwende Quelle, um alle Medien, Trade-Anhänge oder Medien aus Review-Notizen anzuzeigen. Verwende Sortieren, um die neuesten, ältesten, besten oder schlechtesten Trades zuerst zu prüfen.',
-  'tradelog.guide.gallery-size.title': 'Vorschaugröße der Galerie anpassen',
-  'tradelog.guide.gallery-size.description':
-    'Nutze diese Größenbuttons, um zwischen kompakter Durchsicht und größeren Chart-Vorschauen zu wechseln, ohne wichtige Chartdetails abzuschneiden.',
+    'Verwenden Sie Quelle, um alle Medien, Trade-Anhänge, Medien aus Review-Notizen oder konfigurierte Vault-Ordner anzuzeigen. Verwenden Sie Sortieren, um Elemente von neu nach alt oder nach Trade-Performance zu prüfen.',
   'tradelog.guide.gallery-filters.title':
-    'Filtere die Galerie über denselben Einstieg',
+    'Filtern Sie die Galerie über denselben Einstieg',
   'tradelog.guide.gallery-filters.description':
     'Das Filtermenü funktioniert hier genauso. Im Galeriemodus enthält es zusätzlich einen Galerie-Bereich mit Medienfiltern wie Anmerkungsstatus und Medien-Tags.',
-  'tradelog.guide.gallery-grid.title': 'Öffne Medien für eine genauere Prüfung',
+  'tradelog.guide.gallery-grid.title':
+    'Öffnen Sie Medien für eine genauere Prüfung',
   'tradelog.guide.gallery-grid.description':
-    'Jede Karte hält das Medium frei sichtbar und zeigt gleichzeitig kompakten Trade- und Review-Kontext. Klicke auf eine Karte oder auf Weiter, um das erste sichtbare Element im Vollbild zu öffnen.',
-  'tradelog.guide.gallery-fullscreen-actions.title':
-    'Medien im Vollbild annotieren',
-  'tradelog.guide.gallery-fullscreen-actions.description':
-    'Verwende Tag, um medienbezogene Tags und Notizen hinzuzufügen, während das Element groß genug zum Prüfen ist. Notiz öffnen bringt dich zurück zur Quell-Trade- oder Review-Notiz.',
-  'tradelog.guide.gallery-open-annotation.title': 'Annotationsbereich öffnen',
-  'tradelog.guide.gallery-open-annotation.description':
-    'Klicke auf Tag, um genau dieses Medium zu annotieren. Medien-Tags und Notizen beschreiben den Anhang, nicht den gesamten Trade.',
-  'tradelog.guide.gallery-annotation-panel.title':
-    'Medien-Tags und Notizen hinzufügen',
-  'tradelog.guide.gallery-annotation-panel.description':
-    'Nutze Medien-Tags für chartspezifische Ideen wie Liquidity Sweep oder fehlgeschlagener Breakout und Notizen für den Marktstruktur-Kontext, den du behalten möchtest.',
-  'tradelog.guide.gallery-finish.title': 'Du kennst jetzt beide Trade-Log-Modi',
+    'Jede Karte hält das Medium frei sichtbar und zeigt gleichzeitig kompakten Trade- und Review-Kontext. Klicken Sie auf eine Karte oder auf Weiter, um das erste sichtbare Element im Vollbild zu öffnen.',
+  'tradelog.guide.gallery-finish.title':
+    'Sie kennen jetzt beide Trade-Log-Modi',
   'tradelog.guide.gallery-finish.description':
-    'Nutze Trades, wenn du die Tabelle und Batch-Werkzeuge brauchst. Nutze die Galerie, wenn du Bilder, GIFs, Videos, YouTube-Links und Chart-Annotationen in deinem Journal prüfen möchtest.',
+    'Nutzen Sie Trades, wenn Sie die Tabelle und Batch-Werkzeuge brauchen. Nutzen Sie die Galerie, wenn Sie Bilder, GIFs, Videos, YouTube-Links und Chart-Annotationen in Ihrem Journal prüfen möchten.',
   'filter.menu.whats-new.open.title': 'Filter haben ein neues Menü',
   'filter.menu.whats-new.open.description':
     'Alle Filter liegen jetzt in einem mehrstufigen Menü, mit zwei neuen Möglichkeiten, Ihre Trades einzugrenzen. Öffnen Sie es, um sie zu sehen.',
@@ -7581,17 +7614,17 @@ const de: Lang = {
     'Dasselbe Menü gibt es im Trade-Log, im Dashboard, auf der Startseite, bei Setups und in Reviews. Änderungen gelten sofort beim Klicken.',
   'tradelog.guide.image-gallery-empty.intro.title': 'Noch keine Medien',
   'tradelog.guide.image-gallery-empty.intro.description':
-    'Füge Bilder, GIFs, Videos oder YouTube-Links zu Trades oder Review-Notizen hinzu, dann erscheinen sie hier automatisch. Sobald Medien vorhanden sind, zeigt Journalit die vollständige Galerie-Anleitung für Vollbildprüfung, Tags und Notizen.',
+    'Fügen Sie Bilder, GIFs, Videos oder YouTube-Links zu Trades oder Review-Notizen hinzu, dann erscheinen sie hier automatisch. Sobald Medien vorhanden sind, zeigt Journalit die vollständige Galerie-Anleitung für Vollbildprüfung, Tags und Notizen.',
 
   'filter.modal.section.image-gallery': 'Galerie',
   'filter.modal.session-tags.placeholder': 'Sitzungs-Tags',
   'filter.modal.session-tags.none-found': 'Keine Sitzungs-Tags gefunden',
   'account.challenge.toggle.label': 'Prop-Firmen-Prüfung',
   'account.challenge.toggle.help':
-    'Verfolge Prüfungsphasen, Firmenregeln und Auszahlungen für dieses Konto.',
+    'Prüfungsphasen, Firmenregeln und Auszahlungen für dieses Konto verfolgen.',
   'account.prop-challenge.title': 'Prop-Firmen-Prüfung',
   'account.prop-challenge.identity': 'Challenge-Details',
-  'account.prop-challenge.prefill.heading-link': 'Von deiner Firma vorbefüllen',
+  'account.prop-challenge.prefill.heading-link': 'Von Ihrer Firma vorbefüllen',
   'account.prop-challenge.prefill.updates-link': 'Firmenregeln aktuell halten',
   'account.prop-challenge.prefill.updates-link-firm':
     '{firm}-Regeln aktuell halten',
@@ -7605,15 +7638,12 @@ const de: Lang = {
   'account.prop-challenge.prefill.match':
     'Wir haben {firm}: {count} Challenges mit fertigen Regeln',
   'account.prop-challenge.rules.empty':
-    'Noch keine Regeln hinzugefügt. Verwende Regel hinzufügen, um diese Phase zu definieren.',
+    'Noch keine Regeln hinzugefügt. Verwenden Sie Regel hinzufügen, um diese Phase zu definieren.',
   'account.prop-challenge.rules': 'Regeln',
   'account.prop-challenge.costs.empty': 'Noch keine Kosten hinzugefügt.',
-  'account.prop-challenge.description':
-    'Mehrphasige Prop-Firm-Challenge für dieses Konto verfolgen.',
-  'account.prop-challenge.enable': 'Prop-Challenge-Tracking aktivieren',
   'account.prop-challenge.challenge-name': 'Prüfungsname',
   'account.prop-challenge.challenge-name-placeholder': 'z. B. 25K-Prüfung',
-  'account.prop-challenge.firm-name': 'Firmenname (optional)',
+  'account.prop-challenge.firm-name': 'Firmenname',
   'account.prop-challenge.firm-name-placeholder': 'z. B. Apex Trader Funding',
   'account.prop-challenge.profile.title': 'Firmenregeln anwenden',
   'account.prop-challenge.profile.firm': 'Firma',
@@ -7622,7 +7652,7 @@ const de: Lang = {
   'account.prop-challenge.profile.choose-challenge': 'Prüfung wählen',
   'account.prop-challenge.profile.custom-firm': 'Andere / eigene Firma',
   'account.prop-challenge.profile.help':
-    'Wähle deine Firma und deinen Plan, um ihre Regeln auszufüllen: Drawdown, Ziele, Auszahlungen. Du kannst sie danach bearbeiten.',
+    'Wählen Sie Ihre Firma und Ihren Plan, um deren Regeln auszufüllen: Drawdown, Ziele, Auszahlungen. Sie können sie danach bearbeiten.',
   'account.prop-challenge.profile.current': 'Aktuell: {identity}',
   'account.prop-challenge.profile.apply': 'Anwenden',
   'account.prop-challenge.profile.loading': 'Firmenregeln werden geladen…',
@@ -7635,18 +7665,11 @@ const de: Lang = {
     'Challenge-Einrichtung ersetzen?',
   'account.prop-challenge.profile.confirm-message':
     'Das Anwenden dieser Firmenregeln ersetzt die aktuell eingerichteten Phasen und Regeln.',
-  'account.prop-challenge.current-phase': 'Aktuelle Phase',
   'account.prop-challenge.phase-rules': 'Regeln für {phase}',
   'account.prop-challenge.next-phase': 'Als Nächstes: {phase}',
   'account.prop-challenge.view-phase': 'Phase anzeigen',
   'account.prop-challenge.unnamed-phase': 'Unbenannte Phase',
   'account.prop-challenge.phase-name': 'Phasenname',
-  'account.prop-challenge.phase-type': 'Phasentyp',
-  'account.prop-challenge.phase-type.evaluation': 'Bewertung',
-  'account.prop-challenge.phase-type.verification': 'Verifizierung',
-  'account.prop-challenge.phase-type.sim_funded': 'Simuliert finanziert',
-  'account.prop-challenge.phase-type.live_funded': 'Live finanziert',
-  'account.prop-challenge.phase-type.custom': 'Benutzerdefiniert',
   'account.prop-challenge.starting-balance': 'Startguthaben',
   'account.prop-challenge.broker-account-id': 'Brokerkonten',
   'account.prop-challenge.broker-accounts.assigned': 'Zugewiesen zu {phase}',
@@ -7695,6 +7718,8 @@ const de: Lang = {
     'Das angepasste Geldlimit wird dauerhaft aktiv, sobald der kumulierte realisierte Handelsgewinn dieser Phase den konfigurierten Prozentsatz ihres Startsaldos erreicht.',
   'account.prop-challenge.rule.help.target-amount':
     'Absolute Ziele verwenden die Kontowährung; Prozentziele den Startsaldo dieser Phase. Der Fortschritt verwendet den Saldozuwachs nach einem täglichen Gewinnanrechnungslimit, ohne unrealisierten P&L.',
+  'account.prop-challenge.rule.target-needs-balance':
+    'Ein prozentuales Ziel benötigt einen Startsaldo über 0.',
   'account.prop-challenge.rule.help.credit-withdrawals':
     'Addiert erfasste Bruttoauszahlungen zum Fortschritt absoluter Ziele. Ändert weder den Saldo noch die Auszahlungsberechtigung.',
   'account.prop-challenge.rule.help.drawdown-amount':
@@ -7708,11 +7733,11 @@ const de: Lang = {
   'account.prop-challenge.rule.help.breach-action':
     'Konto scheitern lassen hält einen früheren Verstoß aktiv. Pause bis zur nächsten Sitzung gilt nur für den aktuellen Handelstag; frühere Verstöße bleiben im Verlauf.',
   'account.prop-challenge.rule.help.daily-loss-model':
-    'Wähle ein festes Limit, eine dauerhafte Änderung ab Gewinnschwelle, Skalierung nach höchstem EOD-Gewinn oder vorherige EOD-Gewinnstufen. Die bedingten Felder konfigurieren das Modell.',
+    'Wählen Sie ein festes Limit, eine dauerhafte Änderung ab Gewinnschwelle, Skalierung nach höchstem EOD-Gewinn oder vorherige EOD-Gewinnstufen. Die bedingten Felder konfigurieren das Modell.',
   'account.prop-challenge.rule.help.profit-basis':
     'Kumulierter Handelsgewinn schließt Cashflows aus. Aktueller Kontogewinn enthält sie, sodass Auszahlungen ihn verringern. Beide verwenden frühere Handelstagesschlusswerte.',
   'account.prop-challenge.rule.help.position-model':
-    'Wähle ein festes Limit je Trade, einen zusätzlichen Kontrakt je Gewinnschritt oder ausdrückliche Gewinnstufen. Die Skalierung verwendet frühere Handelstagesschlusswerte.',
+    'Wählen Sie ein festes Limit je Trade, einen zusätzlichen Kontrakt je Gewinnschritt oder ausdrückliche Gewinnstufen. Die Skalierung verwendet frühere Handelstagesschlusswerte.',
   'account.prop-challenge.rule.help.max-contracts':
     'Maximale Größe je Trade nach optionaler Micro-Umrechnung, nicht die Gesamtexposition mehrerer Trades. Überschreiten verletzt die Regel.',
   'account.prop-challenge.rule.help.initial-contracts':
@@ -7740,36 +7765,17 @@ const de: Lang = {
   'account.prop-challenge.rule.minimum-daily-profit-summary':
     '{value}+ pro Tag',
   'account.prop-challenge.rule.best-day-percent': 'Maximaler bester Tag (%)',
-  'account.prop-challenge.rule.position-limit-model':
-    'Modell für Positionslimit',
-  'account.prop-challenge.rule.position-limit-model.fixed': 'Festes Limit',
-  'account.prop-challenge.rule.position-limit-model.eod-profit-tiers':
-    'EOD-Gewinnstufen',
-  'account.prop-challenge.rule.position-profit-basis':
-    'Gewinnbasis für Positionsskalierung',
-  'account.prop-challenge.rule.position-profit-basis.cumulative':
+  'account.prop-challenge.rule.strict-help':
+    'Der Nettogewinn des besten Tages muss strikt unter der Grenze liegen. Gleichheit reicht nicht aus.',
+  'account.prop-challenge.position-limits-not-monitored':
+    'Journalit überwacht keine Positionslimits oder Regeln zur Kontraktskalierung. Prüfen Sie die Regeln Ihrer Firma und Ihre Handelsplattform.',
+  'account.prop-challenge.rule.profit-basis': 'Gewinnbasis der Skalierung',
+  'account.prop-challenge.rule.profit-basis.cumulative':
     'Kumulierter Handelsgewinn (Auszahlungen reduzieren nicht)',
-  'account.prop-challenge.rule.position-profit-basis.current-account':
+  'account.prop-challenge.rule.profit-basis.current-account':
     'Aktueller Kontogewinn (Auszahlungen reduzieren)',
-  'account.prop-challenge.rule.position-limit-model.eod-profit':
-    'Skaliert mit EOD-Gewinn',
-  'account.prop-challenge.rule.position-tiers': 'Gewinnstufen',
-  'account.prop-challenge.rule.position-tiers-help':
-    'Gib jede erreichte EOD-Gewinnschwelle und das neue Kontraktlimit als Gewinn:Kontrakte ein, durch Kommas getrennt. Eine Stufe gilt ab dem nächsten Handelstag.',
-  'account.prop-challenge.rule.position-scaling-help':
-    'Jede erreichte Gewinnstufe erhöht die Anzahl der Kontrakte ab dem nächsten Handelstag um eins, bis zum Maximum.',
-  'account.prop-challenge.rule.initial-contracts': 'Anfängliche Kontrakte',
-  'account.prop-challenge.rule.profit-per-contract':
-    'EOD-Gewinn pro zusätzlichem Kontrakt',
-  'account.prop-challenge.rule.maximum-contracts':
-    'Maximale Kontrakte nach Skalierung',
-  'account.prop-challenge.rule.micros-per-contract':
-    '10 Micros als 1 Kontrakt zählen',
-  'account.prop-challenge.rule.micros-per-contract-help':
-    'Aktivieren, wenn deine Firma Micro-Futures (MES, MNQ, MGC, ...) für dieses Limit als ein Zehntel eines Standardkontrakts zählt. Deaktiviert lassen, wenn jeder Micro als voller Kontrakt zählt.',
-  'account.prop-challenge.rule.max-contracts': 'Maximale Kontrakte',
   'account.prop-challenge.rule.profit_target': 'Gewinnziel',
-  'account.prop-challenge.rule.drawdown': 'Verlustgrenze',
+  'account.prop-challenge.rule.drawdown': 'Drawdown',
   'account.prop-challenge.rule.daily_loss_limit': 'Tägliches Verlustlimit',
   'account.prop-challenge.rule.live_review_daily_profit':
     'Tagesgewinn für Live-Prüfung',
@@ -7798,7 +7804,7 @@ const de: Lang = {
   'account.prop-challenge.summary.phase-status.passed': 'Bestanden',
   'account.prop-challenge.summary.phase-status.failed': 'Nicht bestanden',
   'account.prop-challenge.summary.rule.profit_target': 'Gewinnziel',
-  'account.prop-challenge.summary.rule.drawdown': 'Verlustgrenze',
+  'account.prop-challenge.summary.rule.drawdown': 'Drawdown',
   'account.prop-challenge.summary.rule.drawdown-static': 'Statischer Drawdown',
   'account.prop-challenge.summary.rule.drawdown-eod_trailing': 'EOD-Drawdown',
   'account.prop-challenge.summary.rule.drawdown-intraday_trailing':
@@ -7870,7 +7876,7 @@ const de: Lang = {
   'account.prop-challenge.ledger.help.drawdown.eod_trailing.example':
     'Aktuell liegt die Untergrenze bei {floor} (höchster Schluss minus {limit}) und sie steigt mit jedem höheren Schluss. Noch {buffer} übrig.',
   'account.prop-challenge.ledger.help.drawdown.intraday_trailing':
-    'Die Untergrenze folgt jederzeit deinem höchsten Kontostand, inklusive offenem Gewinn. Journalit sieht nur geschlossene Trades: Diese Untergrenze folgt dem besten Stand nach jedem Schluss; ein Hoch innerhalb eines offenen Trades zählt nicht. Prüfe den Wert der Firma.',
+    'Die Untergrenze folgt jederzeit Ihrem höchsten Kontostand, inklusive offenem Gewinn. Journalit sieht nur geschlossene Trades: Diese Untergrenze folgt dem besten Stand nach jedem Schluss; ein Hoch innerhalb eines offenen Trades zählt nicht. Prüfen Sie den Wert der Firma.',
   'account.prop-challenge.ledger.help.drawdown.intraday_trailing.example':
     'Aktuell liegt die Untergrenze bei {floor} (bester Kontostand nach geschlossenen Trades minus {limit}). Noch {buffer} übrig; die Live-Zahl der Firma kann enger sein.',
   'account.prop-challenge.ledger.help.daily_loss_limit':
@@ -7901,10 +7907,6 @@ const de: Lang = {
     'Bester Tag {bestDay} macht {share} des Gesamtgewinns aus, innerhalb des Limits von {maximum}.',
   'account.prop-challenge.ledger.help.consistency.example-none':
     'Noch kein Gewinn, daher gibt es keinen besten Tag zum Vergleich.',
-  'account.prop-challenge.ledger.help.max_position_size':
-    'Die meisten erlaubten Kontrakte in einer Position. Journalit prüft die Größe jedes Trades. Manche Firmen erhöhen das Limit mit wachsendem Gewinn.',
-  'account.prop-challenge.ledger.help.max_position_size.example':
-    'Derzeit bis zu {maximum} Kontrakte pro Trade; größter Trade bisher {current}.',
   'account.prop-challenge.ledger.help.payout.cycle_days':
     'Handelstage im aktuellen Auszahlungszyklus. Der Zähler startet nach einer genehmigten Auszahlung neu.',
   'account.prop-challenge.ledger.help.payout.cycle_days.example':
@@ -7975,12 +7977,9 @@ const de: Lang = {
   'account.prop-challenge.ledger.state.cap-applied': 'Grenze angewendet',
   'account.prop-challenge.ledger.state.within-cap': 'Innerhalb der Grenze',
   'account.prop-challenge.ledger.state.breached': 'Verletzt',
-  'account-dashboard.prop.metrics.total': 'Prüfungen',
   'account-dashboard.prop.metrics.pass-rate': 'Bestehensquote',
   'account-dashboard.prop.metrics.costs': 'Challenge-Kosten',
-  'account-dashboard.prop.metrics.payouts': 'Auszahlungen',
   'account-dashboard.prop.metrics.net': 'Netto',
-  'account-dashboard.prop.tabs.overview': 'Übersicht',
   'account-dashboard.mode.selector': 'Kontodashboard-Modus',
   'account-dashboard.mode.account-overview': 'Übersicht',
   'account-dashboard.mode.challenges': 'Prop-Challenges',
@@ -8041,7 +8040,7 @@ const de: Lang = {
   'setups.view.overview.tag-filter.empty':
     'Keine Setups entsprechen diesen Filtern',
   'setups.view.overview.tag-filter.empty-submessage':
-    'Passe die Filter an oder lösche sie, um mehr Setups anzuzeigen.',
+    'Passen Sie die Filter an oder löschen Sie sie, um mehr Setups anzuzeigen.',
 
   'setups.view.tags': 'Tags',
   'setups.create.error.tag-save-failed':
@@ -8068,6 +8067,8 @@ const de: Lang = {
   'filter.menu.status': 'Status',
   'filter.menu.direction': 'Richtung',
   'filter.menu.review-status': 'Review-Status',
+  'filter.menu.rating': 'Bewertung',
+  'filter.menu.rating.unrated': 'Nicht bewertet',
   'filter.menu.status.cancelled': 'Storniert',
   'filter.menu.included-count': '{count} eingeschlossen',
   'filter.menu.excluded-count': '{count} ausgeschlossen',
@@ -8095,16 +8096,16 @@ const de: Lang = {
   'filter.menu.match.badge.exact': 'Genau',
   'home.guide.modes.title': 'Noch etwas: das Dashboard',
   'home.guide.modes.description':
-    'Übersicht und Dashboard teilen sich diese Seite. Wechsle jetzt zum Dashboard, um mit einer kurzen Tour durch deine Performance-Statistiken fortzufahren.',
+    'Übersicht und Dashboard teilen sich diese Seite. Wechseln Sie jetzt zum Dashboard, um mit einer kurzen Tour durch Ihre Performance-Statistiken fortzufahren.',
   'home.guide.whats-new.mode.title': 'Eine Startseite, zwei Modi',
   'home.guide.whats-new.mode.description':
-    'Übersicht und Dashboard teilen sich jetzt eine Seite. Wechsle hier den Modus, ohne Layout oder Scrollposition zu verlieren.',
+    'Übersicht und Dashboard teilen sich jetzt eine Seite. Wechseln Sie hier den Modus, ohne Layout oder Scrollposition zu verlieren.',
   'home.guide.whats-new.filters.title': 'Home-Filter an einem Ort',
   'home.guide.whats-new.filters.description':
-    'Öffne die Filter-Schaltfläche, um Zeitraum, Handelstyp oder Konten in einem kompakten Menü auszuwählen.',
-  'home.guide.whats-new.done.title': 'Dein Arbeitskontext bleibt erhalten',
+    'Öffnen Sie die Filter-Schaltfläche, um Zeitraum, Handelstyp oder Konten in einem kompakten Menü auszuwählen.',
+  'home.guide.whats-new.done.title': 'Ihr Arbeitskontext bleibt erhalten',
   'home.guide.whats-new.done.description':
-    'Nutze die Übersicht für persönliche Widgets und das Dashboard für tiefere Analysen. Jeder Modus behält eigene Filter und Layouts.',
+    'Nutzen Sie die Übersicht für persönliche Widgets und das Dashboard für tiefere Analysen. Jeder Modus behält eigene Filter und Layouts.',
   'account.prop-challenge.summary.status.payout_ready': 'Auszahlungsbereit',
   'account.prop-challenge.ribbon.passed': '{phase} bestanden',
   'account.prop-challenge.ribbon.failed': '{phase} nicht bestanden',
@@ -8115,10 +8116,7 @@ const de: Lang = {
   'account.prop-challenge.ribbon.action.record-payout': 'Auszahlung erfassen',
   'account.prop-challenge.ribbon.action.record-payout-short': 'Auszahlung',
   'account.prop-challenge.payout.title': 'Auszahlungsbereitschaft',
-  'account.prop-challenge.payout.eligible': 'Auszahlungsbereit',
   'account.prop-challenge.payout.available': 'Jetzt verfügbar',
-  'account.prop-challenge.payout.cycle-profit': 'Zyklusgewinn',
-  'account.prop-challenge.payout.history': 'Auszahlungen',
   'account.prop-challenge.payout.lifetime-qualifying-days':
     'Lebenslange qualifizierende Tage',
   'account.prop-challenge.payout.requirement.days': 'Handelstage',
@@ -8150,23 +8148,11 @@ const de: Lang = {
     'Diese Auszahlung versetzt das Konto in die nächste konfigurierte Phase.',
   'account.prop-challenge.payout.live-review-after-payout':
     'Diese Auszahlung macht das Konto für die Prüfung auf ein Live-Konto berechtigt.',
-  'account.prop-challenge.payout.cycle-resets':
-    'Der Auszahlungsfortschritt wird nach einer genehmigten Auszahlung zurückgesetzt.',
-  'account.prop-challenge.payout.cycle-continues':
-    'Der Auszahlungsfortschritt wird nach einer genehmigten Auszahlung fortgesetzt.',
-  'account.prop-challenge.payout.drawdown.unchanged':
-    'Die aktuelle Drawdown-Untergrenze bleibt bestehen.',
-  'account.prop-challenge.payout.drawdown.lock_at_balance':
-    'Die Drawdown-Untergrenze wird nach der Auszahlung fixiert.',
-  'account.prop-challenge.payout.drawdown.reset_from_starting_balance':
-    'Konto- und Drawdown-Limits werden nach der Auszahlung zurückgesetzt.',
   'account.prop-challenge.stage': 'Stufentyp',
   'account.prop-challenge.stage.evaluation': 'Evaluierung',
   'account.prop-challenge.stage.sim-funded': 'Simuliert finanziert',
   'account.prop-challenge.stage.live-funded': 'Live finanziert',
   'account.prop-challenge.payout-rules.title': 'Auszahlungsregeln',
-  'account.prop-challenge.payout-rules.add': 'Auszahlungsregeln hinzufügen',
-  'account.prop-challenge.payout-rules.remove': 'Auszahlungsregeln entfernen',
   'account.prop-challenge.payout-rules.cycle': 'Berechtigungszyklus',
   'account.prop-challenge.payout-rules.request-window':
     'Zeitpunkt des Auszahlungsantrags',
@@ -8302,6 +8288,8 @@ const de: Lang = {
     'Ändert sich nach Kontogewinn',
   'account.prop-challenge.payout-rules.profit-split.account-profit-help':
     'Der lebenslange Kontogewinn entspricht dem aktuellen Saldo minus Startguthaben plus früheren Auszahlungen. Der Prozentsatz unterhalb bzw. ab der Schwelle gilt für den gesamten Antrag.',
+  'account.prop-challenge.payout-rules.profit-split.marginal-help':
+    'Der Anteil der Anfrage unterhalb dieser Kontogewinnschwelle verwendet den unteren Satz; der Anteil darüber den oberen Satz.',
   'account.prop-challenge.payout-rules.profit-split.below':
     'Händleranteil unterhalb der Schwelle (%)',
   'account.prop-challenge.payout-rules.profit-split.threshold-profit':
@@ -8340,7 +8328,9 @@ const de: Lang = {
     'Kennung von mehreren Konten beansprucht',
   'account.merge.warning.copy-trading-dropped':
     'Copy-Trading-Zeiträume verworfen',
-  'account.merge.error.too-few-sources': 'Wähle mindestens zwei Konten.',
+  'account.merge.error.too-few-sources': 'Wählen Sie mindestens zwei Konten.',
+  'account.merge.error.target-needs-balance':
+    'Der Startsaldo dieses Kontos ist 0, daher lässt sich ein prozentuales Ziel nicht messen. Verwenden Sie ein Ziel in Währung oder brechen Sie ab und legen Sie zuerst den Anfangssaldo des Kontos fest.',
   'account.merge.error.duplicate-source': 'Ein Konto ist doppelt aufgeführt.',
   'account.merge.error.target-exists':
     'Dieser Name gehört zu einem anderen Konto.',
@@ -8348,7 +8338,7 @@ const de: Lang = {
     'Die Konten nutzen unterschiedliche Währungen.',
   'account.merge.error.timeline-not-monotonic':
     'Die Phasenstarts müssen aufsteigend sein.',
-  'account.merge.error.invalid-override': 'Prüfe die Daten dieser Phase.',
+  'account.merge.error.invalid-override': 'Prüfen Sie die Daten dieser Phase.',
   'account.merge.error.source-missing':
     'Für ein Konto sind keine Einstellungen gespeichert.',
   'account.merge.error.unknown': 'Zusammenführen fehlgeschlagen.',
@@ -8357,7 +8347,7 @@ const de: Lang = {
   'account.merge.action.looks-right': 'Sieht richtig aus',
   'account.merge.action.delete': 'Alte Konten löschen',
   'account.merge.notice.converted': 'In eine Challenge umgewandelt',
-  'account.merge.summary.intro': 'Prüfe, ob das zu deiner Prüfung passt:',
+  'account.merge.summary.intro': 'Prüfen Sie, ob das zu Ihrer Prüfung passt:',
   'account.merge.summary.phases': 'Phasen: {phases}',
   'account.merge.summary.current':
     'Aktuell in {phase} ({stage}), gestartet am {date}',
@@ -8369,7 +8359,7 @@ const de: Lang = {
     '{counted} von {total} Trades zählen für die Prüfung. Die übrigen liegen außerhalb der Daten aller Phasen.',
   'account.merge.summary.rules': 'Regeln für {phase}: {rules}',
   'account.merge.summary.no-rules':
-    'Noch keine Regeln für {phase}. Füge die Regeln deiner Firma in Konto bearbeiten hinzu.',
+    'Noch keine Regeln für {phase}. Fügen Sie die Regeln Ihrer Firma in Konto bearbeiten hinzu.',
   'account.merge.notice.title': 'Zusammengeführt aus {accounts}',
   'account.merge.notice.error': 'Aktion fehlgeschlagen.',
   'account.merge.undo.title': 'Zusammenführung rückgängig machen',
@@ -8391,28 +8381,28 @@ const de: Lang = {
   'account.merge.profile.replace-rules.confirm': 'Regeln ersetzen',
   'guide.legacy-setup.list.title': 'Hier steht jedes Konto ohne Challenge',
   'guide.legacy-setup.list.description':
-    'Entscheide pro Konto. „Unverändert lassen“ behält es genau so, wie es ist; du kannst es später jederzeit in den Dashboard-Einstellungen einrichten.',
+    'Entscheiden Sie pro Konto. „Unverändert lassen“ behält es genau so, wie es ist; Sie können es später jederzeit in den Dashboard-Einstellungen einrichten.',
   'guide.legacy-setup.assign.title': 'Phasen einer Challenge zusammenfassen',
   'guide.legacy-setup.assign.description':
     'Konten, die Phasen derselben Challenge waren, kommen in eine Gruppe (Vorschläge entstehen aus passenden Namen). Ein einzelnes Konto wird zu einer Challenge mit einer Phase.',
   'guide.legacy-setup.continue.title': 'Eine kurze Einrichtung pro Challenge',
   'guide.legacy-setup.continue.description':
-    '„Weiter“ öffnet die Challenge-Einrichtung nacheinander für jede Gruppe. Nichts ändert sich, bevor du jede bestätigst.',
+    '„Weiter“ öffnet die Challenge-Einrichtung nacheinander für jede Gruppe. Nichts ändert sich, bevor Sie jede bestätigen.',
   'guide.merge-wizard.target.title': 'Ein Konto behält den Verlauf',
   'guide.merge-wizard.target.description':
     'Das Zielkonto bleibt mit allen Phasen bestehen. Die anderen werden archiviert, nicht gelöscht, und ihre Trades wandern zum Zielkonto.',
-  'guide.merge-wizard.identity.title': 'Wähle die Regeln deiner Firma',
+  'guide.merge-wizard.identity.title': 'Wählen Sie die Regeln Ihrer Firma',
   'guide.merge-wizard.identity.description':
-    'Wähle deine Firma und deinen Plan, um Phasen und Regeln auszufüllen. Firma nicht dabei? Wähle „Andere / eigene Firma“ und lege die Regeln auf der nächsten Seite fest.',
-  'guide.merge-wizard.identity.free-title': 'Benenne deine Prüfung',
+    'Wählen Sie Ihre Firma und Ihren Plan, um Phasen und Regeln auszufüllen. Firma nicht dabei? Wählen Sie „Andere / eigene Firma“ und legen Sie die Regeln auf der nächsten Seite fest.',
+  'guide.merge-wizard.identity.free-title': 'Benennen Sie Ihre Prüfung',
   'guide.merge-wizard.identity.free-description':
-    'Gib ihr einen Namen und, wenn du willst, den deiner Firma. Gespeicherte Regeln einer früheren Prüfung füllen Phasen und Regeln aus; sonst legst du sie auf der nächsten Seite fest.',
+    'Geben Sie ihr einen Namen und, wenn Sie möchten, den Ihrer Firma. Gespeicherte Regeln einer früheren Prüfung füllen Phasen und Regeln aus; sonst legen Sie sie auf der nächsten Seite fest.',
   'guide.merge-wizard.phases.title': 'Jede Phase prüfen',
   'guide.merge-wizard.phases.description':
-    'Lege den Stufentyp fest, markiere abgeschlossene Phasen als „Bestanden“ und die aktuelle als „Aktiv“ und prüfe die Daten.',
-  'guide.merge-wizard.review.title': 'Nichts passiert, bevor du bestätigst',
+    'Legen Sie den Stufentyp fest, markieren Sie abgeschlossene Phasen als „Bestanden“ und die aktuelle als „Aktiv“ und prüfen Sie die Daten.',
+  'guide.merge-wizard.review.title': 'Nichts passiert, bevor Sie bestätigen',
   'guide.merge-wizard.review.description':
-    'Nach dem Umwandeln zeigt die Kontoseite, was eingerichtet wurde, damit du es prüfen kannst, und du kannst es dort rückgängig machen.',
+    'Nach dem Umwandeln zeigt die Kontoseite, was eingerichtet wurde, damit Sie es prüfen können, und Sie können es dort rückgängig machen.',
   'account.merge.challenge.accounts': 'Konten',
   'account.merge.challenge.order-hint': 'Älteste Phase zuerst',
   'account.merge.challenge.single-hint':
@@ -8439,15 +8429,15 @@ const de: Lang = {
   'account.merge.error.profile-currency-mismatch':
     'Die Regeln der Firma nutzen eine andere Währung als diese Konten.',
   'account.merge.error.source-changed':
-    'Ein Konto hat sich geändert. Prüfe die Zusammenführung erneut.',
+    'Ein Konto hat sich geändert. Prüfen Sie die Zusammenführung erneut.',
   'account.merge.error.multiple-active-phases':
     'Nur das letzte Konto darf noch aktiv sein.',
   'account.merge.error.phases-after-failed-source':
     'Ein gescheitertes Konto beendet die Challenge und muss daher zuletzt ausgewählt werden.',
   'account.merge.error.copy-trading-overlap':
-    'Copy-Trading-Zeiträume überschneiden sich. Schließe zuerst einen.',
+    'Copy-Trading-Zeiträume überschneiden sich. Schließen Sie zuerst einen.',
   'onboarding.legacy-challenge.legend':
-    'Wähle, was mit jedem älteren Konto passiert. Hattest du für jede Phase ein eigenes Konto, etwa Phase 1 und Funded? Lege sie in dieselbe Prüfung, damit sie ein Konto mit Phasen werden.',
+    'Wählen Sie, was mit jedem älteren Konto passiert. Hatten Sie für jede Phase ein eigenes Konto, etwa Phase 1 und Funded? Legen Sie sie in dieselbe Prüfung, damit sie ein Konto mit Phasen werden.',
   'onboarding.legacy-challenge.assign.leave': 'Als normales Konto behalten',
   'onboarding.legacy-challenge.assign.own': 'Zur Prüfung machen',
   'onboarding.legacy-challenge.assign.group': 'Zu Prüfung {letter} hinzufügen',
@@ -8458,7 +8448,7 @@ const de: Lang = {
   'guide.action-step.dismiss': 'Nicht jetzt',
   'guide.legacy-challenge.title': 'Konten von vor diesem Update einrichten',
   'guide.legacy-challenge.description':
-    'Mache ältere Evaluierungs- oder Funded-Konten zu Prüfungen. Die Einrichtung führt dich durch Phasen und Daten und zeigt am Ende, was eingerichtet wurde, damit du es prüfen kannst.',
+    'Machen Sie ältere Evaluierungs- oder Funded-Konten zu Prüfungen. Die Einrichtung führt Sie durch Phasen und Daten und zeigt am Ende, was eingerichtet wurde, damit Sie es prüfen können.',
   'guide.legacy-challenge.action': 'Konten einrichten',
   'onboarding.legacy-challenge.title': 'Prop-Challenges',
   'onboarding.legacy-challenge.action.skip': 'Überspringen',
@@ -8474,49 +8464,8 @@ const de: Lang = {
     'Bestehende Konten zu Challenges zusammenführen oder umwandeln.',
   'onboarding.legacy-challenge.entry.action': 'Einrichten',
 
-  'view.home': 'Heim',
-  'common.lose': 'Verlieren',
-
   'dashboard.conversion.requires-conversion':
     'P&L-Diagramme mit mehreren Währungen erfordern eine Wechselkursumrechnung.',
-
-  'auth.error.invalid-email': 'Bitte geben Sie eine gültige E-Mail-Adresse ein',
-  'auth.error.invalid-code': 'Ungültiger Bestätigungscode',
-  'form.layout.guide-trigger-label': 'Formular anpassen',
-  'dashboard.filter.setup.none-found': 'Keine Setups gefunden',
-  'nav.weekly': 'Wöchentlicher Rückblick',
-  'weekly.overview.drawdown-chart.empty':
-    'Es können keine Drawdown-Daten angezeigt werden',
-  'trade-sync.gate.signin.cta': 'anmelden',
-  'backend.progress.ftp.desc': 'Anmeldeinformationen erstellen',
-  'csv.errors.group.close-only':
-    'Nur Close-only-Ausführungen wurden übersprungen',
-  'csv.report.file': 'Datei: {file}',
-  'csv.broker-guide.sierrachart.warning.message':
-    'Die Export-Option speichert nicht angepasste Preise. Mit „Protokoll speichern unter“ bleiben die angezeigten Preise erhalten.',
-  'csv.broker-guide.rithmic.step-1':
-    'Order-Historie in R öffnen | Trader Pro und filtern Sie nach abgeschlossenen/erfüllten Aufträgen für Ihr Konto/Datum',
-  'csv.broker-guide.rithmic.step-2':
-    'Verwenden Sie „Spalten hinzufügen/entfernen“ und stellen Sie sicher, dass „Seite“, „Symbol“, „Fill-Menge“, „Durchschn. Fill-Preis“ und „Fill-/Aktualisierungszeit“ sichtbar sind',
-  'trade.details.execution': 'Execution',
-  'drc.preparation.checklist.title': 'Pre-Trade-Checkliste',
-  'onboarding.welcome.insight.timing.title': 'Timing-Muster',
-  'onboarding.wizard.error.account-service':
-    'AccountPageService nicht verfügbar',
-  'account.create.field.drawdown-type-desc':
-    'Keine | Behoben | EOD-Trailing | Handbuch',
-  'account.edit.field.drawdown-type-desc':
-    'Keine | Behoben | EOD-Trailing | Handbuch',
-  'monthly.game.header.a-games': 'Ein Spiel',
-  'trade-import.preview.message.no-open-match':
-    'Kein passender offener Trade für Close-only-Vorschau gefunden',
-  'setups.view.detail.execution-gap.title': 'Execution Gap',
-  'setups.view.action.refresh': 'Aktualisieren',
-  'setups.view.detail.no-playbook': 'Noch kein Playbook erstellt.',
-  'trade-sync.import.action.sync-cloud': 'Sync cloud trades',
-  'session-log.placeholder.entry': 'Was siehst, denkst oder fühlst du?',
-  'session-mode.unconfigured.step.gate.description':
-    'Starter IF/THEN checklist is ready.',
 
   'home.widget.streak.kind.trade-outcome': 'Trade-Ergebnisse',
   'home.widget.streak.kind.trade-review': 'Handelsauswertungen',
@@ -8552,56 +8501,56 @@ const de: Lang = {
   'home.widget.streak.reviewed-months-in-a-row.other':
     'Monate in Folge geprüft',
   'home.widget.streak.missed-trades.one':
-    'seit deinem letzten Review fehlt {count} Geschäft',
+    'seit Ihrem letzten Review fehlt {count} Trade',
   'home.widget.streak.missed-trades.few':
-    'seit deinem letzten Review fehlen {count} Geschäfte',
+    'seit Ihrem letzten Review fehlen {count} Trades',
   'home.widget.streak.missed-trades.many':
-    'seit deinem letzten Review fehlen {count} Geschäfte',
+    'seit Ihrem letzten Review fehlen {count} Trades',
   'home.widget.streak.missed-trades.other':
-    'seit deinem letzten Review fehlen {count} Geschäfte',
+    'seit Ihrem letzten Review fehlen {count} Trades',
   'home.widget.streak.missed-days.one':
-    'seit deinem letzten Review fehlt {count} Tag',
+    'seit Ihrem letzten Review fehlt {count} Tag',
   'home.widget.streak.missed-days.few':
-    'seit deinem letzten Review fehlen {count} Tage',
+    'seit Ihrem letzten Review fehlen {count} Tage',
   'home.widget.streak.missed-days.many':
-    'seit deinem letzten Review fehlen {count} Tage',
+    'seit Ihrem letzten Review fehlen {count} Tage',
   'home.widget.streak.missed-days.other':
-    'seit deinem letzten Review fehlen {count} Tage',
+    'seit Ihrem letzten Review fehlen {count} Tage',
   'home.widget.streak.missed-weeks.one':
-    'seit deinem letzten Review fehlt {count} Woche',
+    'seit Ihrem letzten Review fehlt {count} Woche',
   'home.widget.streak.missed-weeks.few':
-    'seit deinem letzten Review fehlen {count} Wochen',
+    'seit Ihrem letzten Review fehlen {count} Wochen',
   'home.widget.streak.missed-weeks.many':
-    'seit deinem letzten Review fehlen {count} Wochen',
+    'seit Ihrem letzten Review fehlen {count} Wochen',
   'home.widget.streak.missed-weeks.other':
-    'seit deinem letzten Review fehlen {count} Wochen',
+    'seit Ihrem letzten Review fehlen {count} Wochen',
   'home.widget.streak.missed-months.one':
-    'seit deinem letzten Review fehlt {count} Monat',
+    'seit Ihrem letzten Review fehlt {count} Monat',
   'home.widget.streak.missed-months.few':
-    'seit deinem letzten Review fehlen {count} Monate',
+    'seit Ihrem letzten Review fehlen {count} Monate',
   'home.widget.streak.missed-months.many':
-    'seit deinem letzten Review fehlen {count} Monate',
+    'seit Ihrem letzten Review fehlen {count} Monate',
   'home.widget.streak.missed-months.other':
-    'seit deinem letzten Review fehlen {count} Monate',
+    'seit Ihrem letzten Review fehlen {count} Monate',
   'trade-sync.quick.started': 'Aktivierte Trade-Quellen werden synchronisiert…',
   'trade-sync.quick.running': 'Wird synchronisiert…',
   'trade-sync.quick.offline':
-    'Die Trade-Synchronisierung benötigt eine Internetverbindung. Versuche es erneut, sobald du online bist.',
+    'Die Trade-Synchronisierung benötigt eine Internetverbindung. Versuchen Sie es erneut, sobald Sie online sind.',
   'trade-sync.quick.no-sources':
-    'Keine aktivierten Trade-Sync-Quellen gefunden. Richte Trade Sync in den Einstellungen ein.',
+    'Keine aktivierten Trade-Sync-Quellen gefunden. Richten Sie Trade Sync in den Einstellungen ein.',
   'trade-sync.quick.complete':
     'Trade-Synchronisierung abgeschlossen: {sources} Quellen synchronisiert und {imported} Trades importiert oder aktualisiert.',
   'trade-sync.quick.partial':
     'Trade-Synchronisierung mit Problemen beendet: {completed} von {total} Quellen abgeschlossen und {imported} Trades importiert oder aktualisiert.',
   'trade-sync.quick.failed':
-    'Die Trade-Synchronisierung konnte für {sources} Quellen nicht abgeschlossen werden. Prüfe deine Trade-Sync-Einstellungen und versuche es erneut.',
+    'Die Trade-Synchronisierung konnte für {sources} Quellen nicht abgeschlossen werden. Prüfen Sie Ihre Trade-Sync-Einstellungen und versuchen Sie es erneut.',
   'navigation.items.nav-sync-trades': 'Trades synchronisieren',
   'command.sync-trades-now': 'Trades synchronisieren',
   'home.quick-links.sync-trades': 'Trades synchronisieren',
   'trade-sync.quick.not-ready':
-    'Keine aktivierten Trade-Sync-Quellen sind derzeit bereit. Warte auf laufende Synchronisierungen oder prüfe die Trade-Sync-Einstellungen.',
+    'Keine aktivierten Trade-Sync-Quellen sind derzeit bereit. Warten Sie auf laufende Synchronisierungen oder prüfen Sie die Trade-Sync-Einstellungen.',
   'trade-sync.quick.mapping-required':
-    '{imported} Trades wurden importiert oder aktualisiert. Schließe die Kontozuordnung für {providers} unter Einstellungen → Trade Sync ab und versuche es erneut.',
+    '{imported} Trades wurden importiert oder aktualisiert. Schließen Sie die Kontozuordnung für {providers} unter Einstellungen → Trade Sync ab und versuchen Sie es erneut.',
   'trade-handoff.action.view-trades-count.one': '{count} Trade anzeigen',
   'trade-handoff.action.view-trades-count.few': '{count} Trades anzeigen',
   'trade-handoff.action.view-trades-count.many': '{count} Trades anzeigen',
@@ -8630,6 +8579,12 @@ const de: Lang = {
   'trade-handoff.summary.mixed-partial':
     '{imported} importiert · {updated} aktualisiert, mit Problemen',
   'trade-handoff.summary.import-partial': '{trades} mit Problemen importiert',
+  'trade-handoff.summary.import-provider-partial':
+    '{trades} importiert · Synchronisierung teilweise abgeschlossen',
+  'trade-handoff.summary.update-provider-partial':
+    '{trades} aktualisiert · Synchronisierung teilweise abgeschlossen',
+  'trade-handoff.summary.mixed-provider-partial':
+    '{imported} importiert · {updated} aktualisiert · Synchronisierung teilweise abgeschlossen',
   'trade-handoff.periods.choose': 'Anderen Überprüfungszeitraum auswählen',
   'trade-handoff.periods.recommended': 'Empfohlen',
   'trade-handoff.action.dismiss': 'Letztes Trade-Ergebnis schließen',
@@ -8641,11 +8596,11 @@ const de: Lang = {
   'sample.popout.closed': 'Übungsjournal gespeichert und geschlossen.',
   'sample.popout.recovery': 'Übungsjournal muss wiederhergestellt werden.',
   'sample.notice.sync-blocked':
-    'Du bearbeitest fiktive Beispieldaten. Die Backend-Synchronisierung ist pausiert.',
+    'Sie bearbeiten fiktive Beispieldaten. Die Backend-Synchronisierung ist pausiert.',
   'sample.notice.folder-locked':
     'Der Journal-Ordner kann nicht geändert werden, solange das Beispiel-Journal aktiv ist.',
   'sample.empty.description':
-    'Erkunde ein ausgefülltes fiktives Journal, ohne deine Journaldateien oder Einstellungen zu ändern.',
+    'Erkunden Sie ein ausgefülltes fiktives Journal, ohne Ihre Journaldateien oder Einstellungen zu ändern.',
   'sample.progress.creating':
     'Beispieljournal wird erstellt: {completed} von {total} Elementen',
   'sample.progress.removing':
@@ -8659,8 +8614,7 @@ const de: Lang = {
   'sample.reset.title': 'Beispieljournal zurücksetzen?',
   'sample.reset.message':
     'Dadurch werden alle Beispieldateien und beispielspezifischen Einstellungen auf das ursprüngliche fiktive Paket zurückgesetzt.',
-  'sample.reset.warning':
-    'Deine Änderungen im Beispieljournal werden gelöscht.',
+  'sample.reset.warning': 'Ihre Änderungen im Beispieljournal werden gelöscht.',
   'sample.collision.title': 'Beispielordner ist bereits vorhanden',
   'sample.collision.message':
     'Journalit überschreibt den vorhandenen Ordner nicht. Soll das Beispieljournal stattdessen unter „{path}“ erstellt werden?',
@@ -8685,7 +8639,7 @@ const de: Lang = {
   'account.prop-challenge.payout-rules.help.days':
     'Erforderliche Tage des gewählten Zyklus: Einstiegstage, Tage mit ausreichendem realisiertem Nettogewinn oder vollständige 24-Stunden-Zeiträume.',
   'account.prop-challenge.payout-rules.help.daily-profit':
-    'Realisierter Mindest-Nettogewinn pro Tag nach Kosten. Trades werden nach deinem Handelstagesende zusammengefasst. Der Schwellenwert muss größer als null sein.',
+    'Realisierter Mindest-Nettogewinn pro Tag nach Kosten. Trades werden nach Ihrem Handelstagesende zusammengefasst. Der Schwellenwert muss größer als null sein.',
   'account.prop-challenge.payout-rules.help.qualifying-days':
     'Zusätzliche Gewinntage neben dem Wartezyklus. Beide Anforderungen müssen im aktuellen Auszahlungszyklus erfüllt sein.',
   'account.prop-challenge.payout-rules.help.profitable-days':
@@ -8697,7 +8651,7 @@ const de: Lang = {
   'account.prop-challenge.payout-rules.help.request-window':
     'Anträge an jedem Tag oder nur an ausgewählten Wochentagen in der festgelegten Zeitzone. Andere Anforderungen gelten weiterhin.',
   'account.prop-challenge.payout-rules.help.time-zone':
-    'Zeitzone für erlaubte Antragstage, etwa America/New_York. Ändert nicht dein Handelstagesende.',
+    'Zeitzone für erlaubte Antragstage, etwa America/New_York. Ändert nicht Ihr Handelstagesende.',
   'account.prop-challenge.payout-rules.help.request-days':
     'Erlaubte Wochentage in der gewählten Zeitzone. Mindestens einen Tag auswählen.',
   'account.prop-challenge.payout-rules.help.minimum-balance':
@@ -8752,5 +8706,495 @@ const de: Lang = {
     'Für die erste Auszahlung dieser Phase gilt null als Mindest-Zyklusgewinn: Der realisierte Netto-Zyklusgewinn darf nicht negativ sein. Alle anderen Anforderungen gelten weiterhin.',
   'account.prop-challenge.payout-rules.help.reset-cycle':
     'Setzt Tage, Tagesgewinne, Zyklusgewinn und Konsistenz nach erfasster Auszahlung zurück. Phasenweite qualifizierende Tage bleiben erhalten; Vorschauen setzen nichts zurück.',
+  
+  
+  
+  'actions.value.cleared': 'geleert',
+  'actions.trade.set.account_id': 'Konto: {value}',
+  'actions.trade.set.setup_id': 'Setup: {value}',
+  'actions.trade.set.stop_loss': 'Stop-Loss: {value}',
+  'actions.trade.thesis.set': 'These aktualisieren',
+  'actions.trade.thesis.clear': 'These entfernen',
+  'actions.trade.reviewed.mark': 'Als überprüft markieren',
+  'actions.trade.reviewed.unmark': 'Als nicht überprüft markieren',
+  'actions.trade.notes.set': 'Notizen ersetzen',
+  'actions.trade.stop-losses': 'Stop-Losses: {value}',
+  'actions.trade.stop-losses.clear': 'Stop-Losses entfernen',
+  'actions.trade.take-profits': 'Take-Profits: {value}',
+  'actions.trade.take-profits.clear': 'Take-Profits entfernen',
+  'actions.trade.set.take_profit': 'Take-Profit: {value}',
+  'actions.trade.set.risk_amount': 'Risikobetrag: {value}',
+  'actions.trade.add-tags': 'Tags hinzufügen: {labels}',
+  'actions.trade.remove-tags': 'Tags entfernen: {labels}',
+  'actions.trade.add-mistakes': 'Fehler hinzufügen: {labels}',
+  'actions.trade.remove-mistakes': 'Fehler entfernen: {labels}',
+  'actions.review.summary': 'Zusammenfassung ersetzen',
+  'actions.review.target.day': 'Tagesreview {date}',
+  'actions.review.target.week': 'Wochenreview {date}',
+  'actions.review.target.month': 'Monatsreview {date}',
+  'actions.review.target.quarter': 'Quartalsreview {date}',
+  'actions.review.target.year': 'Jahresreview {date}',
+  'agent-requests.deny': 'Ablehnen',
+  'agent-requests.approve': 'Genehmigen',
+  'actions.options.catalog.tags': 'Tags',
+  'actions.options.catalog.mistakes': 'Fehler',
+  'actions.options.catalog.account_types': 'Kontotypen',
+  'actions.options.catalog.events': 'Ereignisse',
+  'actions.options.create': 'Erstellen: {labels}',
+  'actions.options.set-color': 'Farbe von {value} festlegen',
+  'actions.options.clear-color': 'Farbe von {value} entfernen',
+  'actions.options.update-style': 'Stil von {value} aktualisieren',
+  'actions.options.rename.one':
+    '{source} in {count} Notiz zu {target} umbenennen',
+  'actions.options.rename.other':
+    '{source} in {count} Notizen zu {target} umbenennen',
+  'actions.options.rename-account-type.one':
+    '{source} für {count} Konto zu {target} umbenennen',
+  'actions.options.rename-account-type.other':
+    '{source} für {count} Konten zu {target} umbenennen',
+  'actions.options.merge.one':
+    '{source} in {count} Notiz mit {target} zusammenführen',
+  'actions.options.merge.other':
+    '{source} in {count} Notizen mit {target} zusammenführen',
+  'actions.options.delete.one': '{value} aus {count} Notiz löschen',
+  'actions.options.delete.other': '{value} aus {count} Notizen löschen',
+  'actions.options.delete-entry': '{value} löschen',
+  'actions.options.move': '{value} vor {before} verschieben',
+  'actions.options.move-last': '{value} ans Ende verschieben',
+  'actions.configuration.target.settings': 'Einstellungen',
+  'actions.configuration.target.dashboard_layouts': 'Auswertungs-Layouts',
+  'actions.configuration.target.home_layouts': 'Startseiten-Layouts',
+  'actions.configuration.target.review_templates': 'Review-Vorlagen',
+  'actions.configuration.target.session_workflows': 'Sitzungs-Workflows',
+  'actions.configuration.settings': '{count} Einstellungen ändern',
+  'actions.configuration.create': '{name} erstellen',
+  'actions.configuration.duplicate': '{name} als Kopie erstellen',
+  'actions.configuration.replace': '{name} ersetzen',
+  'actions.configuration.rename': 'In {name} umbenennen',
+  'actions.configuration.delete': '{name} löschen',
+  'actions.configuration.delete-question.one':
+    '„{name}“ und seine {count} Platzierung {workflows} löschen',
+  'actions.configuration.delete-question.other':
+    '„{name}“ und seine {count} Platzierungen {workflows} löschen',
+  'actions.configuration.delete-question-workflows.one': 'in {count} Workflow',
+  'actions.configuration.delete-question-workflows.other':
+    'in {count} Workflows',
+  'actions.configuration.delete-question-unused':
+    '„{name}“ löschen (in keinem Workflow verwendet)',
+  'actions.configuration.set-active': '{name} als aktives Layout festlegen',
+  'actions.configuration.set-default': 'Standardvorlage für {type} ändern',
+  'actions.configuration.reset-default':
+    'Standardmäßig die integrierte Vorlage für {type} verwenden',
+  'actions.setup.target': 'Setup {name}',
+  'actions.setup.update': 'Aktualisieren: {fields}',
+  'actions.setup.field.status': 'Status',
+  'actions.setup.field.direction': 'Richtung',
+  'actions.setup.field.color': 'Farbe',
+  'actions.setup.field.tags': 'Tags',
+  'actions.setup.field.preferred_sessions': 'bevorzugte Sessions',
+  'actions.setup.field.preferred_timeframes': 'bevorzugte Zeiteinheiten',
+  'actions.setup.field.preferred_tickers': 'bevorzugte Ticker',
+  'actions.setup.field.playbook': 'Playbook',
+  'actions.setup.field.rules': 'Regeln',
+  'actions.setup.field.linked_notes': 'verknüpfte Notizen',
+  'actions.trade.set.direction': 'Richtung: {value}',
+  'actions.trade.set.direct_pnl': 'Direkter P&L: {value}',
+  'actions.trade.set.commission': 'Provision: {value}',
+  'actions.trade.set.fees': 'Gebühren: {value}',
+  'actions.trade.set.swap': 'Swap: {value}',
+  'actions.trade.executions': 'Ausführungen ersetzen: {entries}, {exits}',
+  'actions.trade.set.missed_reason': 'Grund für den verpassten Trade: {value}',
+  'actions.trade.create':
+    '{type} erstellen: {direction} {instrument}, {entries}, {exits}',
+  'actions.trade.create.new-instrument':
+    '{instrument} zu den Instrumenten hinzufügen',
+  'actions.trade.set-type': 'Typ ändern: {source} zu {target}',
+  'actions.trade.delete': 'Trade-Notiz in den Papierkorb verschieben',
+  'actions.trade.custom-fields': 'Benutzerdefinierte Felder: {labels}',
+  'actions.custom-field.create': 'Feld {label} erstellen ({type})',
+  'actions.custom-field.field.label': 'Bezeichnung',
+  'actions.custom-field.field.options': 'Optionen',
+  'actions.custom-field.field.validation': 'Validierung',
+  'actions.custom-field.field.placeholder': 'Platzhalter',
+  'actions.custom-field.field.helper_text': 'Hilfetext',
+  'actions.custom-field.field.allow_create_options': 'neue Optionen aus Trades',
+  'actions.custom-field.order-target': 'Benutzerdefinierte Felder',
+  'actions.custom-field.reorder': 'Neue Reihenfolge: {labels}',
+  'actions.session-log-tag.create': 'Tag {short} {label} erstellen',
+  'actions.session-log-tag.field.label': 'Name',
+  'actions.session-log-tag.field.short_label': 'Kurzbezeichnung',
+  'actions.session-log-tag.field.color': 'Farbe',
+  'actions.session-log-tag.field.requires_resolution': 'Einordnung nötig',
+  'actions.session-log-tag.field.lesson': 'Lektions-Tag',
+  'actions.session-log-tag.delete-alert-rule':
+    'Die Warnregel des Sitzungsprotokolls zählt diesen Tag',
+  'actions.custom-field.delete.one':
+    'Feld löschen; {count} Trade behält seinen Wert',
+  'actions.custom-field.delete.other':
+    'Feld löschen; {count} Trades behalten ihre Werte',
+  'actions.session-log-tag.delete.one':
+    'Tag aus dem Editor entfernen; {count} Tag im Sitzungsprotokoll behält ihn',
+  'actions.session-log-tag.delete.other':
+    'Tag aus dem Editor entfernen; {count} Tage im Sitzungsprotokoll behalten ihn',
+  'actions.review.answers.one': '{count} Frage beantworten',
+  'actions.review.answers.other': '{count} Fragen beantworten',
+  'actions.review.goals.one': '{count} Ziel festlegen',
+  'actions.review.goals.other': '{count} Ziele festlegen',
+  'actions.review.checklist.one': '{count} Checklistenpunkt festlegen',
+  'actions.review.checklist.other': '{count} Checklistenpunkte festlegen',
+  'actions.review.key-levels':
+    'Schlüsselniveaus festlegen: {support} Unterstützung, {resistance} Widerstand',
+  'actions.review.grade.mental': 'Mentale Note: {value}',
+  'actions.review.grade.technical': 'Technische Note: {value}',
+  'actions.review.reviewed': 'Als überprüft markieren',
+  'actions.review.not-reviewed': 'Als nicht überprüft markieren',
+  'actions.review.session-log.add.one':
+    '{count} Eintrag zum Sitzungsprotokoll hinzufügen',
+  'actions.review.session-log.add.other':
+    '{count} Einträge zum Sitzungsprotokoll hinzufügen',
+  'actions.review.session-log.update':
+    'Eintrag im Sitzungsprotokoll ändern: {fields}',
+  'actions.review.session-log.field.time': 'Zeit',
+  'actions.review.session-log.field.tag_id': 'Tag',
+  'actions.review.session-log.field.text': 'Text',
+  'actions.review.session-log.field.resolved': 'Einordnung',
+  'actions.review.session-log.delete':
+    'Eintrag aus dem Sitzungsprotokoll löschen',
+  'actions.review.images.add.one': '{count} Bild hinzufügen',
+  'actions.review.images.add.other': '{count} Bilder hinzufügen',
+  'actions.review.images.remove.one': '{count} Bild entfernen',
+  'actions.review.images.remove.other': '{count} Bilder entfernen',
+  'actions.images.annotate.one': 'Tags oder Notizen von {count} Bild ändern',
+  'actions.images.annotate.other':
+    'Tags oder Notizen von {count} Bildern ändern',
+  'actions.review.key-events.add.one': '{count} Schlüsselereignis hinzufügen',
+  'actions.review.key-events.add.other':
+    '{count} Schlüsselereignisse hinzufügen',
+  'actions.review.key-events.update': 'Schlüsselereignis {name} aktualisieren',
+  'actions.review.key-events.delete': 'Schlüsselereignis {name} löschen',
+  'actions.review.day-trade-fields.set.one':
+    'Tagesfelder setzen und {count} Trade aktualisieren',
+  'actions.review.day-trade-fields.set.other':
+    'Tagesfelder setzen und {count} Trades aktualisieren',
+  'actions.session.unplanned.start': 'Ungeplante Session starten: {reason}',
+  'actions.session.unplanned.stop': 'Ungeplante Session beenden',
+  'actions.account.create':
+    '{type}-Konto in {currency} mit Startguthaben {balance} anlegen',
+  'actions.account.field.account_type': 'Typ',
+  'actions.account.field.currency': 'Währung',
+  'actions.account.field.created_date': 'Startdatum',
+  'actions.account.field.initial_balance': 'Startguthaben',
+  'actions.account.field.live_balance': 'Live-Kontostand',
+  'actions.account.field.drawdown': 'Drawdown',
+  'actions.account.field.profit_target': 'Gewinnziel',
+  'actions.account.field.monthly_cost': 'monatliche Kosten',
+  'actions.account.field.copy_trading': 'Kopier-Trading',
+  'actions.account.rename': 'Umbenennen in {name}',
+  'actions.account.rename-trades.one':
+    '{count} Trade aktualisieren, der darauf verweist',
+  'actions.account.rename-trades.other':
+    '{count} Trades aktualisieren, die darauf verweisen',
+  'actions.account.delete': 'Konto löschen',
+  'actions.account.transaction.deposit':
+    'Einzahlung von {amount} am {date} erfassen',
+  'actions.account.transaction.withdrawal':
+    'Auszahlung von {amount} am {date} erfassen',
+  'actions.account.transaction.delete-deposit':
+    'Einzahlung von {amount} am {date} löschen',
+  'actions.account.transaction.delete-withdrawal':
+    'Auszahlung von {amount} am {date} löschen',
+  'actions.prop-challenge.advance': '{from} bestanden, {to} starten',
+  'actions.prop-challenge.conclude':
+    '{phase} bestanden und Challenge als bestanden abschließen',
+  'actions.prop-challenge.account-type': 'Konto auf {type} umstellen',
+  'actions.prop-challenge.fail':
+    '{phase} und Challenge als nicht bestanden markieren',
+  'actions.prop-challenge.reopen': '{phase} wieder öffnen',
+  'actions.prop-challenge.cost.purchase':
+    'Kauf über {amount} am {date} erfassen',
+  'actions.prop-challenge.cost.reset':
+    'Reset-Gebühr über {amount} am {date} erfassen',
+  'actions.prop-challenge.cost.activation':
+    'Aktivierungsgebühr über {amount} am {date} erfassen',
+  'actions.prop-challenge.cost.other':
+    'Kosten über {amount} am {date} erfassen',
+  'actions.prop-challenge.cost.delete':
+    'Kosten über {amount} vom {date} löschen',
+  'actions.prop-challenge.configure.create.one':
+    '{name} mit {count} Phase einrichten',
+  'actions.prop-challenge.configure.create.other':
+    '{name} mit {count} Phasen einrichten',
+  'actions.prop-challenge.configure.update.one':
+    '{name} aktualisieren: {count} Phase und ihre Regeln',
+  'actions.prop-challenge.configure.update.other':
+    '{name} aktualisieren: {count} Phasen und ihre Regeln',
+  'actions.prop-challenge.configure.remove-phase':
+    'Ausstehende Phase {phase} entfernen',
+  'agent-history.title': 'Letzte Änderungen durch Agenten',
+  'agent-history.empty':
+    'Hier erscheinen Änderungen, die KI-Agenten auf diesem Gerät vornehmen.',
+  'agent-history.undo': 'Rückgängig',
+  'agent-history.undone': 'Rückgängig gemacht',
+  'agent-history.undone-notice':
+    'Die Änderung des Agenten wurde rückgängig gemacht.',
+  'agent-history.undo-failed':
+    'Ein Teil dieser Änderung ließ sich nicht rückgängig machen, weil er seitdem bearbeitet wurde.',
+  'agent-history.undo-in-use':
+    'Ein Teil dieser Änderung ließ sich nicht rückgängig machen, weil das Element jetzt in Ihrem Journal verwendet wird.',
+  'agent-history.partly-applied':
+    'Nur ein Teil dieser Änderung wurde übernommen.',
+  'agent-history.not-applied': 'Diese Änderung wurde nicht übernommen.',
+  'agent-action.title.trade.create': 'Trade erstellen',
+  'agent-action.title.trade.update': 'Trade aktualisieren',
+  'agent-action.title.trade.set_type': 'Trade-Typ ändern',
+  'agent-action.title.trade.delete': 'Trade löschen',
+  'agent-action.title.review.create': 'Review erstellen',
+  'agent-action.title.review.update': 'Review aktualisieren',
+  'agent-action.title.review.add_session_log_entries':
+    'Session-Log-Einträge hinzufügen',
+  'agent-action.title.review.update_session_log_entry':
+    'Session-Log-Eintrag aktualisieren',
+  'agent-action.title.review.delete_session_log_entry':
+    'Session-Log-Eintrag löschen',
+  'agent-action.title.review.add_images': 'Review-Bilder hinzufügen',
+  'agent-action.title.review.set_image_annotations':
+    'Tags und Notizen von Review-Bildern festlegen',
+  'agent-action.title.trade.set_image_annotations':
+    'Tags und Notizen von Trade-Bildern festlegen',
+  'agent-action.title.review.add_key_events': 'Schlüsselereignisse hinzufügen',
+  'agent-action.title.review.update_key_event':
+    'Schlüsselereignis aktualisieren',
+  'agent-action.title.review.delete_key_event': 'Schlüsselereignis löschen',
+  'agent-action.title.review.set_day_trade_fields':
+    'Tagesfelder für Trades setzen',
+  'agent-action.title.session.start_unplanned': 'Ungeplante Session starten',
+  'agent-action.title.session.stop_unplanned': 'Ungeplante Session beenden',
+  'agent-action.title.review.remove_images': 'Review-Bilder entfernen',
+  'agent-action.title.tag.create': 'Tags erstellen',
+  'agent-action.title.tag.set_color': 'Tag-Farbe festlegen',
+  'agent-action.title.tag.clear_color': 'Tag-Farbe entfernen',
+  'agent-action.title.tag.rename': 'Tag umbenennen',
+  'agent-action.title.tag.merge': 'Tags zusammenführen',
+  'agent-action.title.tag.delete': 'Tag löschen',
+  'agent-action.title.mistake.create': 'Fehler erstellen',
+  'agent-action.title.mistake.rename': 'Fehler umbenennen',
+  'agent-action.title.mistake.merge': 'Fehler zusammenführen',
+  'agent-action.title.mistake.delete': 'Fehler löschen',
+  'agent-action.title.account_type.create': 'Kontotypen erstellen',
+  'agent-action.title.account_type.rename': 'Kontotyp umbenennen',
+  'agent-action.title.account_type.move': 'Kontotyp verschieben',
+  'agent-action.title.account_type.delete': 'Kontotyp löschen',
+  'agent-action.title.event.create': 'Ereignisse erstellen',
+  'agent-action.title.event.update_style': 'Ereignisstil aktualisieren',
+  'agent-action.title.event.rename': 'Ereignis umbenennen',
+  'agent-action.title.event.merge': 'Ereignisse zusammenführen',
+  'agent-action.title.event.delete': 'Ereignis löschen',
+  'agent-action.title.settings.set_analytics_calculation':
+    'Analyseberechnung festlegen',
+  'agent-action.title.settings.set_date_time_display':
+    'Datums- und Zeitanzeige festlegen',
+  'agent-action.title.settings.set_display_preferences':
+    'Anzeigeeinstellungen festlegen',
+  'agent-action.title.settings.set_trading_day': 'Handelstag festlegen',
+  'agent-action.title.settings.set_risk_display':
+    'Risiko und Anzeige festlegen',
+  'agent-action.title.settings.set_break_even': 'Break-even-Schwelle festlegen',
+  'agent-action.title.settings.set_trade_entry':
+    'Einstellungen für die Trade-Erfassung festlegen',
+  'agent-action.title.settings.set_review_automation':
+    'Review-Automatisierung festlegen',
+  'agent-action.title.settings.set_economic_calendar':
+    'Wirtschaftskalender-Import festlegen',
+  'agent-action.title.settings.set_session_schedule':
+    'Sitzungszeitplan festlegen',
+  'agent-action.title.dashboard_layout.create': 'Dashboard-Layout erstellen',
+  'agent-action.title.dashboard_layout.duplicate':
+    'Dashboard-Layout duplizieren',
+  'agent-action.title.dashboard_layout.update': 'Dashboard-Layout ersetzen',
+  'agent-action.title.dashboard_layout.rename': 'Dashboard-Layout umbenennen',
+  'agent-action.title.dashboard_layout.delete': 'Dashboard-Layout löschen',
+  'agent-action.title.dashboard_layout.set_active':
+    'Aktives Dashboard-Layout festlegen',
+  'agent-action.title.home_layout.create': 'Startseiten-Layout erstellen',
+  'agent-action.title.home_layout.duplicate': 'Startseiten-Layout duplizieren',
+  'agent-action.title.home_layout.update': 'Startseiten-Layout ersetzen',
+  'agent-action.title.home_layout.rename': 'Startseiten-Layout umbenennen',
+  'agent-action.title.home_layout.delete': 'Startseiten-Layout löschen',
+  'agent-action.title.home_layout.set_active':
+    'Aktives Startseiten-Layout festlegen',
+  'agent-action.title.review_template.create': 'Review-Vorlage erstellen',
+  'agent-action.title.review_template.duplicate': 'Review-Vorlage duplizieren',
+  'agent-action.title.review_template.update': 'Review-Vorlage ersetzen',
+  'agent-action.title.review_template.delete': 'Review-Vorlage löschen',
+  'agent-action.title.review_template.set_default':
+    'Standard-Review-Vorlage festlegen',
+  'agent-action.title.session_workflow.create': 'Session-Workflow erstellen',
+  'agent-action.title.session_workflow.update': 'Session-Workflow ersetzen',
+  'agent-action.title.session_workflow.delete': 'Session-Workflow löschen',
+  'agent-action.title.session_workflow.delete_question':
+    'Session-Frage aus der Bibliothek löschen',
+  'agent-action.title.setup.create': 'Setup erstellen',
+  'agent-action.title.setup.update': 'Setup aktualisieren',
+  'agent-action.title.setup.rename': 'Setup umbenennen',
+  'agent-action.title.setup.delete': 'Setup löschen',
+  'agent-action.title.custom_field.create':
+    'Benutzerdefiniertes Feld erstellen',
+  'agent-action.title.custom_field.update':
+    'Benutzerdefiniertes Feld aktualisieren',
+  'agent-action.title.custom_field.delete': 'Benutzerdefiniertes Feld löschen',
+  'agent-action.title.custom_field.reorder':
+    'Benutzerdefinierte Felder neu anordnen',
+  'agent-action.title.session_log_tag.create': 'Session-Log-Tag erstellen',
+  'agent-action.title.session_log_tag.update': 'Session-Log-Tag aktualisieren',
+  'agent-action.title.session_log_tag.delete': 'Session-Log-Tag löschen',
+  'agent-action.title.account.create': 'Konto erstellen',
+  'agent-action.title.account.update': 'Konto aktualisieren',
+  'agent-action.title.account.rename': 'Konto umbenennen',
+  'agent-action.title.account.delete': 'Konto löschen',
+  'agent-action.title.account.add_transaction':
+    'Einzahlung oder Auszahlung erfassen',
+  'agent-action.title.account.delete_transaction':
+    'Einzahlung oder Auszahlung löschen',
+  'agent-action.title.prop_challenge.advance': 'Challenge-Phase abschließen',
+  'agent-action.title.prop_challenge.fail':
+    'Challenge als nicht bestanden markieren',
+  'agent-action.title.prop_challenge.reopen': 'Challenge wieder öffnen',
+  'agent-action.title.prop_challenge.add_cost': 'Challenge-Kosten erfassen',
+  'agent-action.title.prop_challenge.delete_cost': 'Challenge-Kosten löschen',
+  'agent-action.title.prop_challenge.configure': 'Challenge einrichten',
+  'agent-history.undo-confirm.title': 'Änderung des Agenten rückgängig machen?',
+  'agent-history.undo-confirm.message':
+    'Journalit macht diese Änderung rückgängig. Seitdem Bearbeitetes bleibt unverändert.',
+  'agent-approval.eyebrow': 'Anfrage eines KI-Agenten',
+  'agent-approval.position': '{index} von {total}',
+  'agent-approval.previous': 'Vorherige Anfrage',
+  'agent-approval.next': 'Nächste Anfrage',
+  'agent-approval.hide': 'Vorerst ausblenden',
+  'agent-approval.details': 'Details',
+  'agent-approval.hide-details': 'Details ausblenden',
+  'agent-approval.approved': 'Genehmigt. Bitten Sie den Agenten, fortzufahren.',
+  'agent-approval.denied':
+    'Abgelehnt. Der Agent nimmt diese Änderungen nicht vor.',
+  'agent-approval.expired':
+    'Diese Anfrage ist abgelaufen. Bitten Sie den Agenten, es erneut zu versuchen.',
+  'agent-activity.title': 'Aktivität der KI-Agenten',
+  'agent-activity.waiting': 'Wartet auf Sie',
+  'command.open-agent-activity': 'Aktivität der KI-Agenten öffnen',
+  'settings.mcp-access.title': 'KI-Apps (MCP)',
+  'settings.mcp-access.description':
+    'Erlauben Sie KI-Apps, die Sie mit Ihrem Journalit-Konto verbinden, etwa Claude oder ChatGPT, diesen Vault über MCP zu lesen und zu aktualisieren.',
+  'settings.mcp-access.loading': 'MCP-Zugriff wird geladen…',
+  'settings.mcp-access.unavailable':
+    'MCP-Zugriff ist derzeit nicht verfügbar. Öffnen Sie die Einstellungen erneut, um es noch einmal zu versuchen.',
+  'settings.mcp-access.toggle.label': 'MCP-Zugriff aktivieren',
+  'settings.mcp-access.toggle.description':
+    'Machen Sie diesen Vault für KI-Apps verfügbar, die Sie auf journalit.co genehmigen.',
+  'settings.mcp-access.status.label': 'Status',
+  'settings.mcp-access.status.off': 'Aus',
+  'settings.mcp-access.status.off-detail':
+    'Keine KI-App kann diesen Vault nutzen. Schalten Sie den Zugriff ein, damit Apps wie Claude und ChatGPT ihn lesen und aktualisieren können; hier sehen Sie dann, wie Sie eine verbinden.',
+  'settings.mcp-access.status.connecting': 'Verbindet',
+  'settings.mcp-access.status.connecting-detail':
+    'Dieser Vault wird bei Ihrem Journalit-Konto registriert.',
+  'settings.mcp-access.status.connected': 'Verbunden',
+  'settings.mcp-access.status.connected-detail':
+    'Von Ihnen genehmigte KI-Apps können diesen Vault nutzen.',
+  'settings.mcp-access.status.failed': 'Nicht verbunden',
+  'settings.mcp-access.status.lost-detail':
+    'Journalit erkennt die Verbindung dieses Vaults nicht mehr, daher können Ihre KI-Apps ihn nicht nutzen. Verbinden Sie ihn erneut, um sie wieder zuzulassen.',
+  'settings.mcp-access.failed.account-unavailable':
+    'Ihr Journalit-Konto kann den MCP-Zugriff derzeit nicht nutzen.',
+  'settings.mcp-access.failed.vault-limit-reached':
+    'In Ihrem Tarif ist kein MCP-Zugriff für einen weiteren Vault mehr verfügbar.',
+  'settings.mcp-access.failed.vault-limit-move':
+    'KI-Apps sind mit einem anderen Vault verbunden, „{vault}“ (zuletzt genutzt {lastUsed}), und das Vault-Limit Ihres Tarifs ist erreicht.',
+  'settings.mcp-access.failed.vault-limit-move-never-used':
+    'KI-Apps sind mit einem anderen Vault verbunden, „{vault}“ (nie genutzt), und das Vault-Limit Ihres Tarifs ist erreicht.',
+  'settings.mcp-access.action.move-here':
+    'KI-Zugriff auf diesen Vault verschieben',
+  'settings.mcp-access.move.confirm-title':
+    'KI-Zugriff auf diesen Vault verschieben?',
+  'settings.mcp-access.move.confirm-message':
+    'Mit „{vault}“ verbundene KI-Apps funktionieren dort nicht mehr. Sie müssen sie erneut mit diesem Vault verbinden.',
+  'settings.mcp-access.move.confirm': 'KI-Zugriff verschieben',
+  'settings.mcp-access.failed.temporarily-unavailable':
+    'MCP-Zugriff ist vorübergehend nicht verfügbar. Versuchen Sie es gleich erneut.',
+  'settings.mcp-access.failed.settings-unavailable':
+    'Ihre MCP-Zugriffseinstellung konnte nicht in diesem Vault gespeichert werden. Versuchen Sie es erneut.',
+  'settings.mcp-access.activity.description':
+    'Genehmigen Sie wartende Anfragen und prüfen oder widerrufen Sie die letzten Änderungen der Agenten.',
+  'settings.mcp-access.activity.open': 'Öffnen',
+  'settings.mcp-access.action.retry': 'Erneut versuchen',
+  'settings.mcp-access.action.reconnect': 'Erneut verbinden',
+  'settings.mcp-access.failed.sign-in-required':
+    'Melden Sie sich bei Ihrem Journalit-Konto an und versuchen Sie es erneut.',
+  'settings.mcp-access.failed.vault-identity':
+    'Dieser Vault konnte nicht identifiziert werden. Starten Sie Obsidian neu und versuchen Sie es erneut.',
+  'settings.mcp-access.failed.request-rejected':
+    'Dieser Vault konnte nicht registriert werden. Prüfen Sie Ihr Konto und versuchen Sie es erneut.',
+  'settings.mcp-access.failed.unexpected-response':
+    'Journalit hat unerwartet geantwortet. Versuchen Sie es gleich noch einmal.',
+  'settings.mcp-access.failed.rate-limited':
+    'Zu viele Versuche. Warten Sie einen Moment, bevor Sie es erneut versuchen.',
+  'settings.mcp-access.failed.connection':
+    'Journalit konnte nicht erreicht werden. Prüfen Sie Ihre Verbindung und versuchen Sie es erneut.',
+  'settings.mcp-access.full-access.label': 'Vollzugriff',
+  'settings.mcp-access.full-access.description':
+    'KI-Agenten dürfen jede Änderung ohne Rückfrage vornehmen. Wenn aus, warten Löschungen, Zusammenführungen und große Änderungen auf Ihre Freigabe.',
+  'settings.mcp-access.full-access.warning':
+    'Mit Vollzugriff kann ein Agent Trades, Konten, Reviews und Einstellungen löschen und ändern und viele Notizen umschreiben, ohne Ihre Freigabe. Nur für vertrauenswürdige Agenten aktivieren.',
+  'settings.mcp-access.usage.label': 'Monatliche Nutzung',
+  'settings.mcp-access.usage.loading': 'Nutzung wird geladen…',
+  'settings.mcp-access.usage.unavailable':
+    'Die Nutzung ist gerade nicht verfügbar.',
+  'settings.mcp-access.usage.limited':
+    '{consumed} von {limit} KI-Tool-Aufrufen in diesem Monat genutzt. Wird am {date} zurückgesetzt.',
+  'settings.mcp-access.usage.unlimited':
+    '{consumed} KI-Tool-Aufrufe in diesem Monat. Wird am {date} zurückgesetzt.',
+  'settings.mcp-access.usage.reached':
+    'Alle {limit} KI-Tool-Aufrufe dieses Monats sind aufgebraucht. Wird am {date} zurückgesetzt.',
+  'settings.mcp-access.usage.upgrade': 'Upgrade',
+  'settings.mcp-access.usage.not-counted':
+    'Prüfungen, Vorschauen, Navigation, Bildansichten und Nachschlagen in der Dokumentation zählen nicht.',
+  'settings.mcp-access.usage.pro-offer':
+    'Mit Pro mehr KI-Tool-Aufrufe erhalten',
+  'settings.mcp-access.connect.title': 'KI-App verbinden',
+  'settings.mcp-access.connect.url-label': 'MCP-Server-URL',
+  'settings.mcp-access.connect.copy': 'Kopieren',
+  'settings.mcp-access.connect.copied': 'Kopiert',
+  'settings.mcp-access.connect.copy-failed': 'Kopieren fehlgeschlagen',
+  'settings.mcp-access.connect.copy-url': 'MCP-Server-URL kopieren',
+  'settings.mcp-access.connect.copy-command': 'Befehl kopieren',
+  'settings.mcp-access.connect.app-label': 'KI-App',
+  'settings.mcp-access.connect.claude.open':
+    'Öffnen Sie in Claude (Web oder Desktop) Customize → Connectors.',
+  'settings.mcp-access.connect.claude.add':
+    'Wählen Sie + Add → Add custom connector und fügen Sie die MCP-Server-URL ein.',
+  'settings.mcp-access.connect.chatgpt.open':
+    'Öffnen Sie in ChatGPT im Web Plugins (chatgpt.com/plugins).',
+  'settings.mcp-access.connect.chatgpt.add':
+    'Wählen Sie + → Add custom MCP server, fügen Sie die MCP-Server-URL ein und wählen Sie OAuth.',
+  'settings.mcp-access.connect.step.approve':
+    'Melden Sie sich bei Journalit an und genehmigen Sie den Zugriff.',
+  'settings.mcp-access.connect.claude-code.run':
+    'Führen Sie diesen Befehl in Ihrem Terminal aus:',
+  'settings.mcp-access.connect.claude-code.sign-in':
+    'Führen Sie in Claude Code /mcp aus und melden Sie sich bei Journalit an.',
+  'settings.mcp-access.connect.sign-in-note':
+    'Ihre KI-App öffnet journalit.co, damit Sie sich anmelden und diesen Vault auswählen können.',
+  'settings.mcp-access.connect.manage': 'Verbundene Apps verwalten',
+  'actions.options.rename-none': '{source} zu {target} umbenennen',
+  'actions.options.merge-none': '{source} mit {target} zusammenführen',
+  'actions.custom-field.delete-unused':
+    'Feld löschen; kein Trade hat einen Wert dafür',
+  'actions.session-log-tag.delete-unused':
+    'Tag aus dem Editor entfernen; kein Sitzungsprotokoll verwendet ihn',
+  'actions.trade.entries.one': '{count} Einstieg',
+  'actions.trade.entries.other': '{count} Einstiege',
+  'actions.trade.exits.one': '{count} Ausstieg',
+  'actions.trade.exits.other': '{count} Ausstiege',
+  'agent-requests.changes.one': '{count} Änderung',
+  'agent-requests.changes.other': '{count} Änderungen',
+  'agent-requests.kind-count': '{title} ×{count}',
 };
 export default de;

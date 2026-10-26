@@ -108,7 +108,7 @@ export function areAccountSelectionsEqual(
   );
 }
 
-export function remapSelectedAccountsFromAccountChange(
+function remapSelectedAccountsFromAccountChange(
   selectedAccounts: string[],
   payload: AccountChangedPayload
 ): string[] {

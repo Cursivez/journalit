@@ -112,7 +112,7 @@ export function useSummaryBandTiles(
     isProp ? (
       <AccountStatCell
         key="cash"
-        label={t('account.summary.payouts')}
+        label={t('account.prop-challenge.payout.gross-withdrawals')}
         value={formatValue({
           kind: 'money',
           value: phase

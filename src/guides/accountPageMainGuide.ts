@@ -7,6 +7,7 @@ import {
   ACCOUNT_PAGE_CHALLENGE_SECTION_TARGET_ID,
   ACCOUNT_PAGE_MAIN_GUIDE_ID,
   ACCOUNT_PAGE_METRICS_SECTION_TARGET_ID,
+  ACCOUNT_PAGE_MONTHLY_RETURNS_SECTION_TARGET_ID,
   ACCOUNT_PAGE_RISK_SECTION_TARGET_ID,
   ACCOUNT_PAGE_TRANSACTIONS_SECTION_TARGET_ID,
 } from './accountPageGuideIds';
@@ -18,7 +19,7 @@ export function registerAccountPageMainGuide(
   guideRegistry.registerGuide({
     id: ACCOUNT_PAGE_MAIN_GUIDE_ID,
     viewType: ACCOUNT_PAGE_VIEW_TYPE,
-    version: 12,
+    version: 13,
     autoShow: true,
     priority: 110,
     initialStepId: 'intro',
@@ -63,6 +64,13 @@ export function registerAccountPageMainGuide(
         progression: 'manual',
         targetId: ACCOUNT_PAGE_RISK_SECTION_TARGET_ID,
         skipIfTargetMissing: true,
+      },
+      {
+        id: 'monthly-returns',
+        title: t('account-page.guide.main.monthly-returns.title'),
+        description: t('account-page.guide.main.monthly-returns.description'),
+        progression: 'manual',
+        targetId: ACCOUNT_PAGE_MONTHLY_RETURNS_SECTION_TARGET_ID,
       },
       {
         id: 'transactions',

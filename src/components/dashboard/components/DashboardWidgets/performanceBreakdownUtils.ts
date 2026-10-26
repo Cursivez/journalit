@@ -18,7 +18,7 @@ import {
 
 export type PerformanceGroupExtractor = (trade: Trade) => readonly string[];
 
-export interface PerformanceBreakdownOptions {
+interface PerformanceBreakdownOptions {
   breakEvenSettings?: BreakEvenRangeSettings;
   defaultRiskAmount?: number;
   useStoredRMultiple: boolean;
@@ -27,6 +27,8 @@ export interface PerformanceBreakdownOptions {
   metric: PerformanceBreakdownMetric;
   viewMode: PerformanceBreakdownViewMode;
   getGroups: PerformanceGroupExtractor;
+  
+  fixedRowOrder?: readonly string[];
 }
 
 type PerformanceBreakdownROptions = Pick<
@@ -51,7 +53,7 @@ interface PerformanceBreakdownSelection {
   dividerIndex?: number;
 }
 
-export interface PerformanceBreakdownResult extends PerformanceBreakdownSelection {
+interface PerformanceBreakdownResult extends PerformanceBreakdownSelection {
   rankedRows: PerformanceBreakdownRow[];
   totalTradeCount: number;
   totalRTradeCount: number;
@@ -192,6 +194,21 @@ const rankRows = (
     return compareText(first.label, second.label);
   });
 
+const orderRowsByLabel = (
+  rows: readonly PerformanceBreakdownRow[],
+  labelOrder: readonly string[]
+): PerformanceBreakdownRow[] => {
+  const position = (label: string): number => {
+    const index = labelOrder.indexOf(label);
+    return index === -1 ? labelOrder.length : index;
+  };
+  return Array.from(rows).sort(
+    (first, second) =>
+      position(first.label) - position(second.label) ||
+      compareText(first.label, second.label)
+  );
+};
+
 const selectRows = (
   rankedRows: readonly PerformanceBreakdownRow[],
   viewMode: PerformanceBreakdownViewMode
@@ -289,7 +306,9 @@ export const buildPerformanceBreakdown = (
   );
   const hasCompleteRCoverage = totalTradeCount === totalRTradeCount;
   const usesRMultiples = options.displayRMultiples && hasCompleteRCoverage;
-  const rankedRows = rankRows(aggregatedRows, options.metric, usesRMultiples);
+  const rankedRows = options.fixedRowOrder
+    ? orderRowsByLabel(aggregatedRows, options.fixedRowOrder)
+    : rankRows(aggregatedRows, options.metric, usesRMultiples);
 
   return {
     rankedRows,

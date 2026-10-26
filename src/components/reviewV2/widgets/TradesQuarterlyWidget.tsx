@@ -2,7 +2,10 @@
 
 import React, { useMemo } from 'react';
 import JournalitPlugin from '../../../main';
-import { SharedDailyPerformanceChart } from '../../charts/SharedDailyPerformanceChart';
+import {
+  PeriodPerformanceChartCard,
+  type PeriodBarSkeletonShape,
+} from './shared/PeriodPerformanceChartCard';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import { getDisplayPnL, getAccountCount } from '../../../utils/pnlUtils';
@@ -16,18 +19,14 @@ import {
   getReviewTradeTradingDay,
 } from '../utils/reviewTradeDates';
 import { useReviewTrades } from '../hooks/useReviewData';
-import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
-import { cssVars } from '../../../styles/inlineStylePolicy';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
-import { CurrencyConversionInfo } from '../../shared/display/CurrencyConversionInfo';
 import { getTradeAccountNames } from './shared/accountDisplay';
 import { formatAccountTooltipSummary } from './shared/accountTooltipSummary';
 import {
   getReviewWidgetPeriodAriaLabel,
   openReviewWidgetPeriod,
 } from '../reviewWidgetNavigation';
-import { shareLoadingProps } from '../../../services/share/brandedCapture';
 
 type ReviewPeriodTrade = Record<string, unknown> & {
   tradeId?: string;
@@ -97,6 +96,13 @@ function getQuarterStartDate(quarterKey: string): Date | null {
   if (!match) return null;
   return new Date(Number(match[1]), (Number(match[2]) - 1) * 3, 1);
 }
+
+const CHART_SKELETON: PeriodBarSkeletonShape = {
+  barWidth: 24,
+  barHeights: ['45%', '60%', '35%', '50%'],
+  labelCount: 4,
+  labelWidth: 20,
+};
 
 export const TradesQuarterlyWidget: React.FC<TradesQuarterlyWidgetProps> = ({
   filePath,
@@ -234,103 +240,32 @@ export const TradesQuarterlyWidget: React.FC<TradesQuarterlyWidgetProps> = ({
     );
   }
 
-  if (loading) {
-    return (
-      <div className="journalit-reviewv2-chart-container">
-        <div className="journalit-reviewv2-chart-header">
-          <div className="journalit-reviewv2-chart-title">
-            {t('widget.trades-chart-quarterly.name')}
-          </div>
-        </div>
-        <div className="journalit-reviewv2-chart-body">
-          
-          <div
-            className="journalit-reviewv2-chart-skeleton"
-            {...shareLoadingProps}
-            style={cssVars({
-              '--reviewv2-chart-height': `${height}px`,
-              '--reviewv2-chart-bar-gap': '4px',
-            })}
-          >
-            
-            <div className="journalit-reviewv2-chart-skeleton-axis">
-              <SkeletonBox width={30} height={10} borderRadius="4px" />
-              <SkeletonBox width={25} height={10} borderRadius="4px" />
-              <SkeletonBox width={28} height={10} borderRadius="4px" />
-            </div>
-            
-            <div className="journalit-reviewv2-chart-skeleton-bars">
-              <SkeletonBox width={24} height="45%" borderRadius="2px" />
-              <SkeletonBox width={24} height="60%" borderRadius="2px" />
-              <SkeletonBox width={24} height="35%" borderRadius="2px" />
-              <SkeletonBox width={24} height="50%" borderRadius="2px" />
-            </div>
-            
-            <div className="journalit-reviewv2-chart-skeleton-xline" />
-            
-            <div className="journalit-reviewv2-chart-skeleton-xlabels">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <SkeletonBox
-                  key={i}
-                  width={20}
-                  height={10}
-                  borderRadius="4px"
-                />
-              ))}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  if (chartData.length === 0) {
-    return (
-      <div className="journalit-reviewv2-chart-container">
-        <div className="journalit-reviewv2-chart-header">
-          <div className="journalit-reviewv2-chart-title">
-            {t('widget.trades-chart-quarterly.name')}
-            <CurrencyConversionInfo metadata={currencyConversion} />
-          </div>
-        </div>
-        <div className="journalit-reviewv2-chart-empty">
-          {t('widget.empty.no-quarterly-data')}
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="journalit-reviewv2-chart-container">
-      <div className="journalit-reviewv2-chart-header">
-        <div className="journalit-reviewv2-chart-title">
-          {t('widget.trades-chart-quarterly.name')}
-          <CurrencyConversionInfo metadata={currencyConversion} />
-        </div>
-      </div>
-      <div className="journalit-reviewv2-chart-body">
-        <SharedDailyPerformanceChart
-          data={chartData}
-          height={height}
-          currencyOverride={getSingleExplicitCurrency(trades)}
-          navigation={
-            preview
-              ? undefined
-              : {
-                  getPointAriaLabel: (point) =>
-                    getReviewWidgetPeriodAriaLabel('quarterly', point.date),
-                  onPointClick: (point) => {
-                    if (!point.originalDate) return;
-                    const date = getQuarterStartDate(point.originalDate);
-                    if (date) {
-                      void openReviewWidgetPeriod(plugin, 'quarterly', date);
-                    }
-                  },
+    <PeriodPerformanceChartCard
+      title={t('widget.trades-chart-quarterly.name')}
+      emptyMessage={t('widget.empty.no-quarterly-data')}
+      loading={loading}
+      height={height}
+      skeleton={CHART_SKELETON}
+      currencyConversion={currencyConversion}
+      data={chartData}
+      currencyOverride={getSingleExplicitCurrency(trades)}
+      navigation={
+        preview
+          ? undefined
+          : {
+              getPointAriaLabel: (point) =>
+                getReviewWidgetPeriodAriaLabel('quarterly', point.date),
+              onPointClick: (point) => {
+                if (!point.originalDate) return;
+                const date = getQuarterStartDate(point.originalDate);
+                if (date) {
+                  void openReviewWidgetPeriod(plugin, 'quarterly', date);
                 }
-          }
-        />
-      </div>
-    </div>
+              },
+            }
+      }
+    />
   );
 };
 

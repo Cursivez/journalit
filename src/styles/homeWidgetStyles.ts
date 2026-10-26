@@ -398,7 +398,7 @@ export const HOME_WIDGET_STYLES = `
     border: 1px solid var(--background-modifier-border);
     border-radius: 6px;
     padding: 8px 10px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-s);
     z-index: 100;
     max-width: 200px;
     font-size: 11px;
@@ -441,7 +441,7 @@ export const HOME_WIDGET_STYLES = `
     border: 1px solid var(--background-modifier-border);
     border-radius: 6px;
     padding: 8px 12px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-s);
   }
 
   .journalit-home-score__tooltip-label {
@@ -579,6 +579,7 @@ export const HOME_WIDGET_STYLES = `
     border: none;
     border-bottom: 2px solid transparent;
     background-color: transparent;
+    box-shadow: none;
     color: var(--text-muted);
     cursor: pointer;
     transition: all 0.15s ease;
@@ -1681,7 +1682,7 @@ export const HOME_WIDGET_STYLES = `
     color: var(--text-normal);
     white-space: nowrap;
     z-index: 10;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-s);
     pointer-events: none;
   }
 
@@ -1818,10 +1819,6 @@ export const HOME_WIDGET_STYLES = `
     color: var(--color-green);
   }
 
-  .journalit-home-best-hours__hero-value--negative {
-    color: var(--color-red);
-  }
-
   .journalit-home-best-hours__timeline {
     display: flex;
     flex-direction: column;
@@ -1874,7 +1871,7 @@ export const HOME_WIDGET_STYLES = `
     border: 1px solid var(--background-modifier-border);
     border-radius: 6px;
     padding: 8px 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: var(--shadow-s);
     z-index: 100;
     white-space: nowrap;
     pointer-events: none;
@@ -2208,108 +2205,6 @@ export const HOME_WIDGET_STYLES = `
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .journalit-home-embedded-note__cancel-button {
-    padding: 4px 8px;
-    font-size: 12px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    background-color: var(--background-secondary);
-    color: var(--text-muted);
-    cursor: pointer;
-  }
-
-  .journalit-home-embedded-note__search {
-    padding: 8px 12px;
-    font-size: 13px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    background-color: var(--background-primary);
-    color: var(--text-normal);
-    outline: none;
-  }
-
-  .journalit-home-embedded-note__file-list {
-    flex: 1;
-    overflow: auto;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-  }
-
-  .journalit-home-embedded-note__file-empty {
-    padding: 16px;
-    text-align: center;
-    color: var(--text-muted);
-  }
-
-  .journalit-home-embedded-note__file-item {
-    padding: 8px 12px;
-    cursor: pointer;
-    border-bottom: 1px solid var(--background-modifier-border);
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-
-  .journalit-home-embedded-note__file-icon {
-    color: var(--text-muted);
-    flex-shrink: 0;
-  }
-
-  .journalit-home-embedded-note__file-text {
-    min-width: 0;
-  }
-
-  .journalit-home-embedded-note__file-name {
-    font-size: 13px;
-    color: var(--text-normal);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .journalit-home-embedded-note__file-path {
-    font-size: 11px;
-    color: var(--text-muted);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-
-  .journalit-home-embedded-note__loading-content {
-    flex: 1;
-    overflow: hidden;
-    padding: 0 8px 8px 8px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  .journalit-home-embedded-note__error-content {
-    flex: 1;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    color: var(--text-error);
-  }
-
-  .journalit-home-embedded-note__error-message {
-    font-size: 13px;
-    text-align: center;
-  }
-
-  .journalit-home-embedded-note__error-button {
-    margin-top: 8px;
-    padding: 6px 12px;
-    font-size: 12px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    background-color: var(--interactive-accent);
-    color: var(--text-on-accent);
-    cursor: pointer;
   }
 
   .journalit-home-embedded-note__content {

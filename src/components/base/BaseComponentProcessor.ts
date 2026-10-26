@@ -189,6 +189,9 @@ export abstract class BaseComponentProcessor {
   
   private handleLayoutChange(): void {
     
+    this.renderer.unmountDetachedRoots();
+
+    
     const currentLeafIds = new Set<string>();
     this.app.workspace.iterateAllLeaves((leaf) => {
       

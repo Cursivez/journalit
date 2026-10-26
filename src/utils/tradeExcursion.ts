@@ -127,16 +127,18 @@ export function getTradeMfeValue(
     return trade.mfe;
   }
 
-  const entryPrice = trade ? getWeightedAverageEntryPrice(trade) : null;
-  const positionSize = trade ? getTotalEntrySize(trade) : null;
-
   if (
-    trade &&
-    typeof trade.mfePrice === 'number' &&
-    Number.isFinite(trade.mfePrice) &&
-    entryPrice !== null &&
-    positionSize !== null
+    !trade ||
+    typeof trade.mfePrice !== 'number' ||
+    !Number.isFinite(trade.mfePrice)
   ) {
+    return undefined;
+  }
+
+  const entryPrice = getWeightedAverageEntryPrice(trade);
+  const positionSize = getTotalEntrySize(trade);
+
+  if (entryPrice !== null && positionSize !== null) {
     const priceDiff = calculateDirectionalPriceDiff(
       { assetType: trade.assetType, direction: trade.direction },
       entryPrice,
@@ -163,16 +165,18 @@ export function getTradeMaeValue(
     return trade.mae;
   }
 
-  const entryPrice = trade ? getWeightedAverageEntryPrice(trade) : null;
-  const positionSize = trade ? getTotalEntrySize(trade) : null;
-
   if (
-    trade &&
-    typeof trade.maePrice === 'number' &&
-    Number.isFinite(trade.maePrice) &&
-    entryPrice !== null &&
-    positionSize !== null
+    !trade ||
+    typeof trade.maePrice !== 'number' ||
+    !Number.isFinite(trade.maePrice)
   ) {
+    return undefined;
+  }
+
+  const entryPrice = getWeightedAverageEntryPrice(trade);
+  const positionSize = getTotalEntrySize(trade);
+
+  if (entryPrice !== null && positionSize !== null) {
     const priceDiff = calculateDirectionalPriceDiff(
       { assetType: trade.assetType, direction: trade.direction },
       entryPrice,

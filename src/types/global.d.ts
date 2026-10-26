@@ -67,6 +67,8 @@ declare module 'obsidian' {
 
     
     setting?: {
+      
+      containerEl: HTMLElement;
       open(): void;
       openTabById(id: string): void;
       close(): void;

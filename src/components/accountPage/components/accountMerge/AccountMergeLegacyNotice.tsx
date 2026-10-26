@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Notice } from 'obsidian';
+import { isExecutableRule } from '../../../../services/propChallenge/PropChallengeRuleReview';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import { useEventBus } from '../../../../hooks/useEventBus';
@@ -83,7 +84,9 @@ function buildSetupSummary(
     ),
   });
   if (current) {
-    const rules = current.rules.filter((rule) => rule.enabled);
+    const rules = current.rules.filter(
+      (rule) => isExecutableRule(rule) && rule.enabled
+    );
     lines.push(
       rules.length > 0
         ? {

@@ -1,21 +1,12 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type JournalitPlugin from '../main';
-import type { TradeLabelColors } from '../contexts/TradeLabelColorContext';
+import {
+  normalizeTradeTagColors,
+  type TradeLabelColors,
+} from '../contexts/TradeLabelColorContext';
 import { useEventBus } from './useEventBus';
 import { LabelColor } from '../types/labelColor';
 import { logger } from '../utils/logger';
-import { normalizeOptionKey } from '../utils/stringNormalization';
-
-function normalizeColorMap(
-  colors: Readonly<Record<string, LabelColor>>,
-  normalizeKey: (label: string) => string
-): Record<string, LabelColor> {
-  const normalized: Record<string, LabelColor> = {};
-  for (const [label, color] of Object.entries(colors)) {
-    normalized[normalizeKey(label)] = color;
-  }
-  return normalized;
-}
 
 export function useTradeLabelColorData(
   plugin: JournalitPlugin | null
@@ -72,10 +63,7 @@ export function useTradeLabelColorData(
   const tagColors = useMemo(() => {
     void optionsVersion;
     return plugin
-      ? normalizeColorMap(
-          plugin.optionsService.getTagColors(),
-          normalizeOptionKey
-        )
+      ? normalizeTradeTagColors(plugin.optionsService.getTagColors())
       : {};
   }, [optionsVersion, plugin]);
 

@@ -160,6 +160,7 @@ export const RESERVED_FRONTMATTER_KEYS = new Set([
   'tradeReview',
   'reviewed',
   'reviewedAt',
+  'tradeRating',
   'exchange',
   'optionType',
   'strikePrice',
@@ -204,11 +205,11 @@ export const RESERVED_FRONTMATTER_KEYS = new Set([
   'riskAmount',
   'rMultiple',
   'stopLoss',
+  'stopLosses',
   'takeProfits',
   'idealExits',
   'currency',
   'customFields',
-  'customTags',
   ...CUSTOM_FIELD_KEY_MIGRATION_KEYS,
 ]);
 

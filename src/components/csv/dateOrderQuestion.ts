@@ -22,7 +22,7 @@ function escapeRegExp(value: string): string {
 }
 
 
-export function readDateWithFormat(
+function readDateWithFormat(
   value: string,
   format: string
 ): { year: number; month: number; day: number } | null {

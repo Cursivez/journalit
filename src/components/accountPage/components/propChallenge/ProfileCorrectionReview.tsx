@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useId, useState } from 'react';
 import type JournalitPlugin from '../../../../main';
 import type { AccountData } from '../../../../services/account/types';
 import type { AccountTradeData } from '../../../../services/accountPage/types';
@@ -6,6 +6,7 @@ import type { AccountPageService } from '../../../../services/accountPage/Accoun
 import type { PropFirmProfileCatalogService } from '../../../../services/propChallenge/PropFirmProfileCatalogService';
 import type {
   PropChallengeConfig,
+  PropChallengePhase,
   PropFirmProfileSelection,
 } from '../../../../services/propChallenge/types';
 import {
@@ -30,12 +31,13 @@ import Checkbox from '../../../ui/Checkbox';
 import { DropdownSelect } from '../../../shared/DropdownSelect';
 import { CollapsibleSection } from '../../../shared/CollapsibleSection';
 import { ProfilePolicyComparison } from './ProfilePolicyComparison';
+import { AlertTriangle, CheckCircle } from '../../../shared/icons/ObsidianIcon';
 import { CorrectionAuditHistory } from './CorrectionAuditHistory';
 
 type Preview = Awaited<ReturnType<typeof previewCatalogCorrection>> & {
   at: Date;
 };
-export interface CorrectionReviewServices {
+interface CorrectionReviewServices {
   accountPageService: Pick<
     AccountPageService,
     'refreshAccountData' | 'updateAccountMetadata'
@@ -86,22 +88,165 @@ function CorrectionDetails({
   );
 }
 
+type Period = CorrectionMatch['periods'][number];
+
+function formatPeriod(period: Period) {
+  if (!period.from)
+    return t('account.prop-challenge.summary.phase-status.pending');
+  const from = new Date(period.from).toLocaleDateString();
+  return period.until
+    ? `${from} – ${new Date(period.until).toLocaleDateString()}`
+    : t('account.profiles.correction-period-open', { date: from });
+}
+
+function CorrectionPeriod({
+  period,
+  before,
+  after,
+  currencyCode,
+}: {
+  period: Period;
+  before: PropChallengePhase;
+  after: PropChallengePhase;
+  currencyCode: string;
+}) {
+  const at = period.from ? new Date(period.from) : undefined;
+  return (
+    <div className="journalit-profile-correction__period">
+      <div className="journalit-profile-correction__period-head">
+        <span className="journalit-profile-correction__label">
+          {t('account.profiles.correction-period')}
+        </span>
+        <span>{formatPeriod(period)}</span>
+      </div>
+      <ProfilePolicyComparison
+        current={{ ...before, ...(at ? policyAt(before, at) : {}) }}
+        incoming={{ ...after, ...(at ? policyAt(after, at) : {}) }}
+        currencyCode={currencyCode}
+        currentLabel={t('account.profiles.correction-before')}
+        incomingLabel={t('account.profiles.correction-after')}
+      />
+    </div>
+  );
+}
+
+function resultLabel(failed: boolean) {
+  return t(
+    failed
+      ? 'account.prop-challenge.summary.status.failed'
+      : 'account.profiles.not-failed'
+  );
+}
+
+
+function CorrectionOutcome({
+  preview,
+  before,
+  after,
+}: {
+  preview: Pick<Preview, 'beforeEvaluation' | 'evaluation'>;
+  before: PropChallengePhase;
+  after: PropChallengePhase;
+}) {
+  const wasFailed = Boolean(preview.beforeEvaluation.failure);
+  const isFailed = Boolean(preview.evaluation.failure);
+  const change =
+    before.status !== after.status
+      ? {
+          from: t(
+            `account.prop-challenge.summary.phase-status.${before.status}`
+          ),
+          to: t(`account.prop-challenge.summary.phase-status.${after.status}`),
+          failed: after.status === 'failed',
+        }
+      : wasFailed !== isFailed
+        ? {
+            from: resultLabel(wasFailed),
+            to: resultLabel(isFailed),
+            failed: isFailed,
+          }
+        : undefined;
+  if (!change) return null;
+  const Icon = change.failed ? AlertTriangle : CheckCircle;
+  return (
+    <div
+      className={`account-date-warning journalit-prop-transition-notice ${change.failed ? 'is-failed' : 'is-passed'}`}
+    >
+      <Icon size={20} className="account-date-warning__icon" />
+      <div className="account-date-warning__content">
+        <div className="account-date-warning__title">
+          {t('account.profiles.correction-effect')}
+        </div>
+        <div className="account-date-warning__desc">
+          {change.from} → {change.to}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function CorrectionConsent({
+  checked,
+  onChange,
+  disabled,
+}: {
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  disabled: boolean;
+}) {
+  const helpId = useId();
+  return (
+    <div className="journalit-profile-correction__consent">
+      <Checkbox
+        checked={checked}
+        onChange={onChange}
+        disabled={disabled}
+        ariaDescribedBy={helpId}
+        label={t('account.profiles.correction-consent')}
+      />
+      <p id={helpId}>{t('account.profiles.correction-consent-help')}</p>
+    </div>
+  );
+}
+
+const reviewCurrency = (props: Props): string =>
+  props.account.currency ??
+  props.plugin.settings.general?.currency ??
+  CurrencyCode.USD;
+
+
+const isPreviewCurrent = (
+  preview: Preview | undefined,
+  match: CorrectionMatch | undefined
+): boolean =>
+  preview !== undefined &&
+  match !== undefined &&
+  preview.match.phaseId === match.phaseId &&
+  preview.match.correction.id === match.correction.id;
+
+
+function correctionReviewOf(
+  preview: Preview | undefined,
+  match: CorrectionMatch | undefined
+):
+  | { preview: Preview; before: PropChallengePhase; after: PropChallengePhase }
+  | undefined {
+  if (!preview || !match) return undefined;
+  const history = preview.config.correctionHistory;
+  const before = history?.[history.length - 1]?.before;
+  const after = preview.config.phases.find((p) => p.id === match.phaseId);
+  return before && after ? { preview, before, after } : undefined;
+}
+
 export function ProfileCorrectionReview(props: Props) {
-  const currency =
-    props.account.currency ??
-    props.plugin.settings.general?.currency ??
-    CurrencyCode.USD;
+  const currency = reviewCurrency(props);
   const [choice, setChoice] = useState('0');
   const match = props.matches[Number(choice)];
   const [preview, setPreview] = useState<Preview>();
   const [confirmed, setConfirmed] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
-  const ready =
-    preview &&
-    match &&
-    preview.match.phaseId === match.phaseId &&
-    preview.match.correction.id === match.correction.id;
+  const ready = isPreviewCurrent(preview, match);
   useEffect(() => {
     let cancelled = false;
     setPreview(undefined);
@@ -233,16 +378,9 @@ export function ProfileCorrectionReview(props: Props) {
       setSaving(false);
     }
   };
-  const before =
-    preview?.config.correctionHistory?.[
-      preview.config.correctionHistory.length - 1
-    ]?.before;
-  const after = preview?.config.phases.find((p) => p.id === match?.phaseId);
+  const review = ready ? correctionReviewOf(preview, match) : undefined;
   return (
-    <section
-      className="journalit-profile-review"
-      aria-label={t('account.profiles.correction-title')}
-    >
+    <section className="journalit-profile-review journalit-profile-correction">
       <div className="journalit-profile-update-source">
         <strong>{props.account.name}</strong>
         <span>
@@ -264,72 +402,30 @@ export function ProfileCorrectionReview(props: Props) {
       {!preview && !error && (
         <p role="status">{t('account.profiles.applicability-checking')}</p>
       )}
-      {ready && preview && before && after && (
+      {review && (
         <>
-          {preview.match.periods.map((period) => (
-            <div key={period.from || `pending:${period.until ?? 'open'}`}>
-              <p>
-                {t('account.profiles.correction-period')}:{' '}
-                {period.from
-                  ? new Date(period.from).toLocaleDateString()
-                  : t('account.prop-challenge.summary.phase-status.pending')}
-                {period.until
-                  ? ` – ${new Date(period.until).toLocaleDateString()}`
-                  : ''}
-              </p>
-              <ProfilePolicyComparison
-                current={{
-                  ...before,
-                  ...(period.from
-                    ? policyAt(before, new Date(period.from))
-                    : {}),
-                }}
-                incoming={{
-                  ...after,
-                  ...(period.from
-                    ? policyAt(after, new Date(period.from))
-                    : {}),
-                }}
-                currencyCode={currency}
-              />
-            </div>
+          {review.preview.match.periods.map((period) => (
+            <CorrectionPeriod
+              key={period.from || `pending:${period.until ?? 'open'}`}
+              period={period}
+              before={review.before}
+              after={review.after}
+              currencyCode={currency}
+            />
           ))}
-          {before.status === after.status &&
-            Boolean(preview.beforeEvaluation.failure) !==
-              Boolean(preview.evaluation.failure) && (
-              <p>
-                {t('account.profiles.correction-result')}:{' '}
-                {t(
-                  preview.beforeEvaluation.failure
-                    ? 'account.prop-challenge.summary.status.failed'
-                    : 'account.profiles.no-hard-breach'
-                )}{' '}
-                →{' '}
-                {t(
-                  preview.evaluation.failure
-                    ? 'account.prop-challenge.summary.status.failed'
-                    : 'account.profiles.no-hard-breach'
-                )}
-              </p>
-            )}
-          {before.status !== after.status && (
-            <p>
-              {t(
-                `account.prop-challenge.summary.phase-status.${before.status}`
-              )}{' '}
-              →{' '}
-              {t(`account.prop-challenge.summary.phase-status.${after.status}`)}
-            </p>
-          )}
-          <Checkbox
-            checked={confirmed}
-            onChange={setConfirmed}
-            disabled={saving}
-            label={t('account.profiles.correction-consent')}
+          <CorrectionOutcome
+            preview={review.preview}
+            before={review.before}
+            after={review.after}
           />
         </>
       )}
-      {error && <p role="alert">{error}</p>}
+      {error && (
+        <div className="journalit-profile-correction__error" role="alert">
+          <AlertTriangle size={14} />
+          <span>{error}</span>
+        </div>
+      )}
       {match && (
         <CorrectionDetails sourceUrl={match.correction.sourceUrl}>
           {preview?.match.periods.map((period, index) => (
@@ -344,11 +440,18 @@ export function ProfileCorrectionReview(props: Props) {
           ))}
         </CorrectionDetails>
       )}
-      <div className="journalit-profile-review__actions">
+      {review && (
+        <CorrectionConsent
+          checked={confirmed}
+          onChange={setConfirmed}
+          disabled={saving}
+        />
+      )}
+      <div className="journalit-modal-actions">
         <Button
-          size="small"
           variant="plain"
           disabled={saving}
+          className="journalit-modal-actions__cancel"
           onClick={() => {
             void save(false);
           }}
@@ -356,8 +459,9 @@ export function ProfileCorrectionReview(props: Props) {
           {t('account.profiles.retain')}
         </Button>
         <Button
-          size="small"
+          variant="primary"
           disabled={!ready || !confirmed || saving || Boolean(error)}
+          className="journalit-modal-actions__primary"
           onClick={() => {
             void save(true);
           }}

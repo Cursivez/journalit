@@ -142,12 +142,6 @@ export function createReadyToAdvanceChallenge(
           kind: 'consistency',
           maxBestDayPercent: 50,
         },
-        {
-          id: 'sample-mffu-eval-size',
-          enabled: true,
-          kind: 'max_position_size',
-          maxContracts: 3,
-        },
       ],
     },
     {
@@ -163,12 +157,6 @@ export function createReadyToAdvanceChallenge(
           kind: 'drawdown',
           mode: 'eod_trailing',
           amount: 2000,
-        },
-        {
-          id: 'sample-mffu-funded-size',
-          enabled: true,
-          kind: 'max_position_size',
-          maxContracts: 5,
         },
       ],
       payoutPolicy: {
@@ -251,12 +239,6 @@ export function createPayoutReadyChallenge(
           },
           trailingDrawdown('sample-apex-eval-drawdown'),
           dailyLoss('sample-apex-eval-daily'),
-          {
-            id: 'sample-apex-eval-size',
-            enabled: true,
-            kind: 'max_position_size',
-            maxContracts: 6,
-          },
         ],
       },
       {
@@ -343,12 +325,6 @@ export function createFailedChallenge(
             enabled: true,
             kind: 'consistency',
             maxBestDayPercent: 55,
-          },
-          {
-            id: 'sample-topstep-size',
-            enabled: true,
-            kind: 'max_position_size',
-            maxContracts: 5,
           },
           {
             id: 'sample-topstep-daily',

@@ -17,7 +17,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.3,
       "riskAmount": 150,
-      "stopLoss": 378.75,
+      "stopLosses": [{ "price": 378.75 }],
       "images": []
     },
     {
@@ -37,7 +37,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -0.6,
       "riskAmount": 200,
-      "stopLoss": 153,
+      "stopLosses": [{ "price": 153 }],
       "images": []
     },
     {
@@ -57,7 +57,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 0.85,
       "riskAmount": 200,
-      "stopLoss": 471.5,
+      "stopLosses": [{ "price": 471.5 }],
       "images": []
     }
   ],
@@ -79,7 +79,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.9,
       "riskAmount": 200,
-      "stopLoss": 176.5,
+      "stopLosses": [{ "price": 176.5 }],
       "images": []
     },
     {
@@ -99,7 +99,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -0.7,
       "riskAmount": 250,
-      "stopLoss": 247.5,
+      "stopLosses": [{ "price": 247.5 }],
       "images": []
     },
     {
@@ -119,7 +119,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 2.4,
       "riskAmount": 300,
-      "stopLoss": 470.75,
+      "stopLosses": [{ "price": 470.75 }],
       "images": []
     },
     {
@@ -139,7 +139,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.5,
       "riskAmount": 150,
-      "stopLoss": 480,
+      "stopLosses": [{ "price": 480 }],
       "images": []
     },
     {
@@ -159,7 +159,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.3,
       "riskAmount": 150,
-      "stopLoss": 378.75,
+      "stopLosses": [{ "price": 378.75 }],
       "images": []
     },
     {
@@ -179,7 +179,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -0.6,
       "riskAmount": 200,
-      "stopLoss": 153,
+      "stopLosses": [{ "price": 153 }],
       "images": []
     },
     {
@@ -199,7 +199,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.75,
       "riskAmount": 200,
-      "stopLoss": 140,
+      "stopLosses": [{ "price": 140 }],
       "images": []
     },
     {
@@ -219,7 +219,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -0.5,
       "riskAmount": 150,
-      "stopLoss": 387,
+      "stopLosses": [{ "price": 387 }],
       "images": []
     }
   ],
@@ -241,7 +241,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.75,
       "riskAmount": 200,
-      "stopLoss": 180,
+      "stopLosses": [{ "price": 180 }],
       "images": []
     },
     {
@@ -261,7 +261,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.17,
       "riskAmount": 150,
-      "stopLoss": 255,
+      "stopLosses": [{ "price": 255 }],
       "images": []
     },
     {
@@ -281,7 +281,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -0.9,
       "riskAmount": 250,
-      "stopLoss": 468.5,
+      "stopLosses": [{ "price": 468.5 }],
       "images": []
     },
     {
@@ -301,7 +301,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.4,
       "riskAmount": 200,
-      "stopLoss": 473,
+      "stopLosses": [{ "price": 473 }],
       "images": []
     },
     {
@@ -321,7 +321,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.4,
       "riskAmount": 200,
-      "stopLoss": 136,
+      "stopLosses": [{ "price": 136 }],
       "images": []
     },
     {
@@ -341,7 +341,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.9,
       "riskAmount": 200,
-      "stopLoss": 176.5,
+      "stopLosses": [{ "price": 176.5 }],
       "images": []
     },
     {
@@ -361,7 +361,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -0.7,
       "riskAmount": 250,
-      "stopLoss": 247.5,
+      "stopLosses": [{ "price": 247.5 }],
       "images": []
     },
     {
@@ -381,7 +381,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 2.4,
       "riskAmount": 300,
-      "stopLoss": 470.75,
+      "stopLosses": [{ "price": 470.75 }],
       "images": []
     },
     {
@@ -401,7 +401,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.5,
       "riskAmount": 150,
-      "stopLoss": 480,
+      "stopLosses": [{ "price": 480 }],
       "images": []
     },
     {
@@ -421,7 +421,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.3,
       "riskAmount": 150,
-      "stopLoss": 378.75,
+      "stopLosses": [{ "price": 378.75 }],
       "images": []
     },
     {
@@ -441,7 +441,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.75,
       "riskAmount": 200,
-      "stopLoss": 140,
+      "stopLosses": [{ "price": 140 }],
       "images": []
     },
     {
@@ -461,7 +461,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -1,
       "riskAmount": 200,
-      "stopLoss": 183,
+      "stopLosses": [{ "price": 183 }],
       "images": []
     },
     {
@@ -481,7 +481,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -0.8,
       "riskAmount": 250,
-      "stopLoss": 243,
+      "stopLosses": [{ "price": 243 }],
       "images": []
     },
     {
@@ -501,7 +501,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.2,
       "riskAmount": 250,
-      "stopLoss": 472.5,
+      "stopLosses": [{ "price": 472.5 }],
       "images": []
     },
     {
@@ -521,7 +521,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -0.75,
       "riskAmount": 200,
-      "stopLoss": 365,
+      "stopLosses": [{ "price": 365 }],
       "images": []
     },
     {
@@ -541,7 +541,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -0.6,
       "riskAmount": 250,
-      "stopLoss": 525,
+      "stopLosses": [{ "price": 525 }],
       "images": []
     },
     {
@@ -561,7 +561,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -0.6,
       "riskAmount": 200,
-      "stopLoss": 138.5,
+      "stopLosses": [{ "price": 138.5 }],
       "images": []
     },
     {
@@ -581,7 +581,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 2,
       "riskAmount": 200,
-      "stopLoss": 486,
+      "stopLosses": [{ "price": 486 }],
       "images": []
     },
     {
@@ -601,7 +601,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -0.75,
       "riskAmount": 200,
-      "stopLoss": 392.5,
+      "stopLosses": [{ "price": 392.5 }],
       "images": []
     },
     {
@@ -621,7 +621,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.5,
       "riskAmount": 200,
-      "stopLoss": 146,
+      "stopLosses": [{ "price": 146 }],
       "images": []
     },
     {
@@ -641,7 +641,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": 1.2,
       "riskAmount": 200,
-      "stopLoss": 164,
+      "stopLosses": [{ "price": 164 }],
       "images": []
     },
     {
@@ -661,7 +661,7 @@
       "tradeStatus": "CLOSED",
       "rMultiple": -0.8,
       "riskAmount": 250,
-      "stopLoss": 477.5,
+      "stopLosses": [{ "price": 477.5 }],
       "images": []
     }
   ],
@@ -805,11 +805,6 @@
     "date": "2025-01-15",
     "mentalGrade": "B",
     "technicalGrade": "A",
-    "previousDayGoals": [
-      "Stick to stop losses",
-      "No revenge trading",
-      "Take breaks between trades"
-    ],
     "preTradeChecklist": {
       "Reviewed market conditions": true,
       "Checked economic calendar": true,
@@ -1568,7 +1563,8 @@
       "missedReason": "Was waiting for a deeper pullback that never came",
       "reviewed": true,
       "entryTime": "2024-01-15T10:30:00",
-      "path": "mock/missed-trade-1.md"
+      "path": "mock/missed-trade-1.md",
+      "outcome": { "pnl": 612.5, "rMultiple": 2.4 }
     },
     {
       "file": null,
@@ -1581,7 +1577,8 @@
       "missedReason": "Hesitated on entry, missed the move",
       "reviewed": false,
       "entryTime": "2024-01-15T14:15:00",
-      "path": "mock/missed-trade-2.md"
+      "path": "mock/missed-trade-2.md",
+      "outcome": { "pnl": -180, "rMultiple": -0.9 }
     }
   ],
   "missedTradesWeekly": [
@@ -1596,7 +1593,8 @@
       "missedReason": "Was waiting for a deeper pullback that never came",
       "reviewed": true,
       "entryTime": "2024-01-15T10:30:00",
-      "path": "mock/missed-trade-1.md"
+      "path": "mock/missed-trade-1.md",
+      "outcome": { "pnl": 612.5, "rMultiple": 2.4 }
     },
     {
       "file": null,
@@ -1609,7 +1607,8 @@
       "missedReason": "Hesitated on entry",
       "reviewed": false,
       "entryTime": "2024-01-16T14:15:00",
-      "path": "mock/missed-trade-2.md"
+      "path": "mock/missed-trade-2.md",
+      "outcome": { "pnl": -180, "rMultiple": -0.9 }
     },
     {
       "file": null,
@@ -1622,7 +1621,8 @@
       "missedReason": "Was in another trade when signal appeared",
       "reviewed": false,
       "entryTime": "2024-01-17T11:00:00",
-      "path": "mock/missed-trade-3.md"
+      "path": "mock/missed-trade-3.md",
+      "outcome": { "pnl": -95, "rMultiple": null }
     },
     {
       "file": null,
@@ -1635,7 +1635,8 @@
       "missedReason": "Didn't trust the setup near support",
       "reviewed": false,
       "entryTime": "2024-01-19T15:30:00",
-      "path": "mock/missed-trade-4.md"
+      "path": "mock/missed-trade-4.md",
+      "outcome": null
     }
   ]
 }

@@ -58,6 +58,33 @@ const LazySetupCompareEdgeBreakdownChart = React.lazy(async () => {
   return { default: module.SetupCompareEdgeBreakdownChart };
 });
 
+const isComparePerformanceMasked = (
+  shouldMask: ReturnType<typeof useDisplayFormatter>['shouldMask']
+): boolean =>
+  shouldMask('metric') || shouldMask('pnl') || shouldMask('rMultiple');
+
+const SetupCompareTitle: React.FC<{
+  compareModels: SetupCompareViewModel[];
+}> = ({ compareModels }) => {
+  if (compareModels.length !== 2) {
+    const compareTitle = compareModels
+      .map(({ setup }) => setup.name)
+      .join(' vs ');
+    return <>{compareTitle || t('setups.view.compare.empty')}</>;
+  }
+  return (
+    <>
+      <span className="journalit-setups-compare-header__setup-name journalit-setups-compare-header__setup-name--left">
+        {compareModels[0].setup.name}
+      </span>
+      <span className="journalit-setups-compare-header__vs">vs</span>
+      <span className="journalit-setups-compare-header__setup-name journalit-setups-compare-header__setup-name--right">
+        {compareModels[1].setup.name}
+      </span>
+    </>
+  );
+};
+
 export const SetupComparePage: React.FC<{
   displayRMultiples: boolean;
   viewModels: SetupViewModel[];
@@ -99,11 +126,7 @@ export const SetupComparePage: React.FC<{
     compareModels.length === 2
       ? buildCompareEdgeSummary(compareModels, displayRMultiples)
       : null;
-  const isPerformanceMasked =
-    shouldMask('metric') || shouldMask('pnl') || shouldMask('rMultiple');
-  const compareTitle = compareModels
-    .map(({ setup }) => setup.name)
-    .join(' vs ');
+  const isPerformanceMasked = isComparePerformanceMasked(shouldMask);
 
   return (
     <div className="journalit-setups-view journalit-setups-compare-page">
@@ -120,19 +143,7 @@ export const SetupComparePage: React.FC<{
           {t('setups.view.detail.back')}
         </button>
         <h1 className="journalit-setups-compare-header__title">
-          {compareModels.length === 2 ? (
-            <>
-              <span className="journalit-setups-compare-header__setup-name journalit-setups-compare-header__setup-name--left">
-                {compareModels[0].setup.name}
-              </span>
-              <span className="journalit-setups-compare-header__vs">vs</span>
-              <span className="journalit-setups-compare-header__setup-name journalit-setups-compare-header__setup-name--right">
-                {compareModels[1].setup.name}
-              </span>
-            </>
-          ) : (
-            compareTitle || t('setups.view.compare.empty')
-          )}
+          <SetupCompareTitle compareModels={compareModels} />
         </h1>
       </header>
 
@@ -284,12 +295,10 @@ const SetupCompareChartMetricControl: React.FC<{
       }
       setMenuOpen(false);
     };
-    window.activeDocument.addEventListener('pointerdown', handlePointerDown);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('pointerdown', handlePointerDown);
     return () =>
-      window.activeDocument.removeEventListener(
-        'pointerdown',
-        handlePointerDown
-      );
+      listenerDocument.removeEventListener('pointerdown', handlePointerDown);
   }, [menuOpen]);
 
   return (
@@ -328,7 +337,7 @@ const SetupCompareChartMetricControl: React.FC<{
 
 SetupCompareChartMetricControl.displayName = 'SetupCompareChartMetricControl';
 
-export const CompareEdgeSummaryCard: React.FC<{
+const CompareEdgeSummaryCard: React.FC<{
   summary: SetupCompareEdgeSummary;
   isPerformanceMasked: boolean;
 }> = ({ summary, isPerformanceMasked }) => {

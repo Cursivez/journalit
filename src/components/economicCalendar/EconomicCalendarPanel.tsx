@@ -229,7 +229,13 @@ export const EconomicCalendarPanel: React.FC<EconomicCalendarPanelProps> = ({
 
   const handleSettingsChanged = useCallback(
     (payload: SettingsChangedPayload): void => {
-      if (payload.section && payload.section !== 'economicCalendar') return;
+      if (
+        payload.section &&
+        payload.section !== 'economicCalendar' &&
+        payload.section !== 'trade' &&
+        payload.section !== 'all'
+      )
+        return;
       setConfiguredScope(
         resolveEconomicCalendarSyncScope(plugin.settings.economicCalendar)
       );

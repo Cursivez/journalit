@@ -16,7 +16,6 @@ import {
   useContainerWidth,
   verticalCompactor,
 } from '../../../shared/gridLayout/reactGridLayoutCompat';
-import { FilterState } from '../../DashboardView';
 import {
   getActiveLayout,
   getSavedDashboardLgLayouts,
@@ -48,6 +47,7 @@ import { isPnlContributingTrade } from '../../../../utils/tradeStatusUtils';
 import { StaticWidgetGrid } from '../../../shared/gridLayout/StaticWidgetGrid';
 import { cssVars } from '../../../../styles/inlineStylePolicy';
 import { shouldShowDashboardWidgetMinimalHeader } from './widgetHeaderVisibility';
+import { useDashboardLayoutReload } from '../../hooks/useDashboardLayoutReload';
 
 
 class GridLayoutErrorBoundary extends React.Component<
@@ -103,7 +103,7 @@ import { DirectionalPnLChart } from '../DashboardWidgets/DirectionalPnLChart';
 import { PerformanceCalendar } from '../DashboardWidgets/PerformanceCalendar';
 import { DailyPerformanceChart } from '../DashboardWidgets/DailyPerformanceChart';
 import { TradesChart } from '../DashboardWidgets/TradesChart';
-import { MfeScatter } from '../DashboardWidgets/MfeScatter';
+import { ExcursionScatter } from '../DashboardWidgets/ExcursionScatter';
 import { DrawdownChart } from '../DashboardWidgets/DrawdownChart';
 import { DirectionalDrawdownChart } from '../DashboardWidgets/DirectionalDrawdownChart';
 import { RecentTradesWidget } from '../DashboardWidgets/RecentTradesWidget';
@@ -114,6 +114,7 @@ import { HourlyPerformanceChart } from '../DashboardWidgets/HourlyPerformanceCha
 import { TickerPerformanceChart } from '../DashboardWidgets/TickerPerformanceChart';
 import { SetupPerformanceChart } from '../DashboardWidgets/SetupPerformanceChart';
 import { TagPerformanceChart } from '../DashboardWidgets/TagPerformanceChart';
+import { RatingPerformanceChart } from '../DashboardWidgets/RatingPerformanceChart';
 
 
 const GRID_MARGIN = 4;
@@ -181,7 +182,6 @@ const calculateGridPixelHeight = (layout: Layout[]): number => {
 };
 
 interface GridLayoutProps {
-  filters: FilterState;
   isEditing: boolean;
   widgets: string[];
   onRemoveWidget: (widgetId: string) => void;
@@ -189,7 +189,6 @@ interface GridLayoutProps {
 
 interface DashboardWidgetRendererProps {
   widgetId: string;
-  filters: FilterState;
   dateFormat: string;
 }
 
@@ -202,102 +201,92 @@ interface DashboardWidgetCardProps extends DashboardWidgetRendererProps {
   ) => CurrencyConversionTrade[] | undefined;
 }
 
+type DashboardWidgetRenderFn = (dateFormat: string) => React.ReactElement;
+
+const DASHBOARD_WIDGET_RENDERERS = new Map<string, DashboardWidgetRenderFn>(
+  Object.entries({
+    pnlChart: (dateFormat) => <PnLChart dateFormat={dateFormat} />,
+    longPnLChart: (dateFormat) => (
+      <DirectionalPnLChart dateFormat={dateFormat} direction="long" />
+    ),
+    shortPnLChart: (dateFormat) => (
+      <DirectionalPnLChart dateFormat={dateFormat} direction="short" />
+    ),
+    performanceCalendar: (dateFormat) => (
+      <PerformanceCalendar dateFormat={dateFormat} />
+    ),
+    dailyPerformance: (dateFormat) => (
+      <DailyPerformanceChart dateFormat={dateFormat} />
+    ),
+    tradesChart: (dateFormat) => <TradesChart dateFormat={dateFormat} />,
+    mfeScatter: (dateFormat) => (
+      <ExcursionScatter excursion="mfe" dateFormat={dateFormat} />
+    ),
+    maeScatter: (dateFormat) => (
+      <ExcursionScatter excursion="mae" dateFormat={dateFormat} />
+    ),
+    drawdownChart: (dateFormat) => <DrawdownChart dateFormat={dateFormat} />,
+    longDrawdownChart: (dateFormat) => (
+      <DirectionalDrawdownChart
+        dateFormat={dateFormat}
+        showLong={true}
+        showShort={false}
+        singleDirectionTitle={t('widget.longDrawdownChart.name')}
+        hideInternalTitle={true}
+      />
+    ),
+    shortDrawdownChart: (dateFormat) => (
+      <DirectionalDrawdownChart
+        dateFormat={dateFormat}
+        showLong={false}
+        showShort={true}
+        singleDirectionTitle={t('widget.shortDrawdownChart.name')}
+        hideInternalTitle={true}
+      />
+    ),
+    recentTrades: (dateFormat) => (
+      <RecentTradesWidget dateFormat={dateFormat} />
+    ),
+    rollingWinRate: (dateFormat) => (
+      <RollingWinLossRatioChart dateFormat={dateFormat} />
+    ),
+    rollingStats: (dateFormat) => <RollingStatsChart dateFormat={dateFormat} />,
+    weekdayPerformance: (dateFormat) => (
+      <WeekdayPerformanceChart dateFormat={dateFormat} />
+    ),
+    hourlyPerformance: (dateFormat) => (
+      <HourlyPerformanceChart dateFormat={dateFormat} />
+    ),
+    tickerPerformance: (dateFormat) => (
+      <TickerPerformanceChart dateFormat={dateFormat} />
+    ),
+    setupPerformance: (dateFormat) => (
+      <SetupPerformanceChart dateFormat={dateFormat} />
+    ),
+    tagPerformance: (dateFormat) => (
+      <TagPerformanceChart dateFormat={dateFormat} />
+    ),
+    ratingPerformance: (dateFormat) => (
+      <RatingPerformanceChart dateFormat={dateFormat} />
+    ),
+  } satisfies Record<string, DashboardWidgetRenderFn>)
+);
+
 const DashboardWidgetRenderer: React.FC<DashboardWidgetRendererProps> = ({
   widgetId,
-  filters,
   dateFormat,
 }) => {
-  switch (widgetId) {
-    case 'pnlChart':
-      return <PnLChart filters={filters} dateFormat={dateFormat} />;
-    case 'longPnLChart':
-      return (
-        <DirectionalPnLChart
-          filters={filters}
-          dateFormat={dateFormat}
-          direction="long"
-        />
-      );
-    case 'shortPnLChart':
-      return (
-        <DirectionalPnLChart
-          filters={filters}
-          dateFormat={dateFormat}
-          direction="short"
-        />
-      );
-    case 'performanceCalendar':
-      return <PerformanceCalendar filters={filters} dateFormat={dateFormat} />;
-    case 'dailyPerformance':
-      return (
-        <DailyPerformanceChart filters={filters} dateFormat={dateFormat} />
-      );
-    case 'tradesChart':
-      return <TradesChart filters={filters} dateFormat={dateFormat} />;
-    case 'mfeScatter':
-      return <MfeScatter filters={filters} dateFormat={dateFormat} />;
-    case 'drawdownChart':
-      return <DrawdownChart filters={filters} dateFormat={dateFormat} />;
-    case 'longDrawdownChart':
-      return (
-        <DirectionalDrawdownChart
-          filters={filters}
-          dateFormat={dateFormat}
-          showLong={true}
-          showShort={false}
-          singleDirectionTitle={t('widget.longDrawdownChart.name')}
-          hideInternalTitle={true}
-        />
-      );
-    case 'shortDrawdownChart':
-      return (
-        <DirectionalDrawdownChart
-          filters={filters}
-          dateFormat={dateFormat}
-          showLong={false}
-          showShort={true}
-          singleDirectionTitle={t('widget.shortDrawdownChart.name')}
-          hideInternalTitle={true}
-        />
-      );
-    case 'recentTrades':
-      return <RecentTradesWidget filters={filters} dateFormat={dateFormat} />;
-    case 'rollingWinRate':
-      return (
-        <RollingWinLossRatioChart filters={filters} dateFormat={dateFormat} />
-      );
-    case 'rollingStats':
-      return <RollingStatsChart filters={filters} dateFormat={dateFormat} />;
-    case 'weekdayPerformance':
-      return (
-        <WeekdayPerformanceChart filters={filters} dateFormat={dateFormat} />
-      );
-    case 'hourlyPerformance':
-      return (
-        <HourlyPerformanceChart filters={filters} dateFormat={dateFormat} />
-      );
-    case 'tickerPerformance':
-      return (
-        <TickerPerformanceChart filters={filters} dateFormat={dateFormat} />
-      );
-    case 'setupPerformance':
-      return (
-        <SetupPerformanceChart filters={filters} dateFormat={dateFormat} />
-      );
-    case 'tagPerformance':
-      return <TagPerformanceChart filters={filters} dateFormat={dateFormat} />;
-    default:
-      return (
-        <div className="journalit-dashboard-widget-error">
-          Widget not implemented: {widgetId}
-        </div>
-      );
-  }
+  const render = DASHBOARD_WIDGET_RENDERERS.get(widgetId);
+  if (render) return render(dateFormat);
+  return (
+    <div className="journalit-dashboard-widget-error">
+      Widget not implemented: {widgetId}
+    </div>
+  );
 };
 
-export const DashboardWidgetCard: React.FC<DashboardWidgetCardProps> = ({
+const DashboardWidgetCard: React.FC<DashboardWidgetCardProps> = ({
   widgetId,
-  filters,
   dateFormat,
   editing,
   onRemoveWidget,
@@ -349,11 +338,7 @@ export const DashboardWidgetCard: React.FC<DashboardWidgetCardProps> = ({
       )}
 
       <div className="journalit-dashboard-widget-content">
-        <DashboardWidgetRenderer
-          widgetId={widgetId}
-          filters={filters}
-          dateFormat={dateFormat}
-        />
+        <DashboardWidgetRenderer widgetId={widgetId} dateFormat={dateFormat} />
       </div>
     </div>
   );
@@ -434,110 +419,110 @@ const useDashboardGridLayoutState = ({
   }, []);
 
   
-  useEffect(() => {
-    const loadLayouts = () => {
-      try {
-        if (plugin) {
-          const activeLayout = getActiveLayout(plugin);
-
-          
-          
-          const widgetIdSet = new Set(widgets);
-
-          const filteredLg = sanitizeBreakpointLayout(
-            activeLayout.bottomSection.lg,
-            widgetIdSet
-          );
-
-          const filteredMd = sanitizeBreakpointLayout(
-            activeLayout.bottomSection.md,
-            widgetIdSet
-          );
-
-          const filteredSm = sanitizeBreakpointLayout(
-            activeLayout.bottomSection.sm,
-            widgetIdSet
-          );
-
-          const filteredXs = sanitizeBreakpointLayout(
-            activeLayout.bottomSection.xs || [],
-            widgetIdSet
-          );
-
-          const filteredXxs = sanitizeBreakpointLayout(
-            activeLayout.bottomSection.xxs || [],
-            widgetIdSet
-          );
-
-          setLayoutState({
-            layouts: fillMissingBreakpointItems({
-              layouts: {
-                lg: filteredLg,
-                md: filteredMd,
-                sm: filteredSm,
-                xs: filteredXs,
-                xxs: filteredXxs,
-              },
-              widgetIds: widgets,
-              getSizing: getDashboardWidgetById,
-              savedLgLayouts: getSavedDashboardLgLayouts(plugin),
-            }),
-            layoutsReady: true,
-          });
-        }
-      } catch (error) {
-        console.error('Error loading layouts:', error);
-        
+  const loadLayouts = useCallback(() => {
+    try {
+      if (plugin) {
+        const activeLayout = getActiveLayout(plugin);
 
         
-        const createDefaultLayoutItem = (
-          widgetId: string,
-          bp: string
-        ): Layout => {
-          const widgetDef = getDashboardWidgetById(widgetId);
-          const maxCols = isBreakpointKey(bp) ? GRID_COLS[bp] : GRID_COLS.lg;
-          const defaultWidth =
-            bp === 'xxs' ? 1 : Math.min(widgetDef?.defaultSize.w || 6, maxCols);
-          const defaultHeight =
-            widgetDef?.defaultSize.h || (bp === 'lg' ? 4 : 3);
-
-          const layoutItem: Layout = {
-            i: widgetId,
-            x: 0,
-            y: 0, 
-            w: defaultWidth,
-            h: defaultHeight,
-          };
-
-          
-          return validateLayoutItem(layoutItem);
-        };
-
         
-        const defaultLayouts = {
-          lg: widgets.map((widgetId) =>
-            createDefaultLayoutItem(widgetId, 'lg')
-          ),
-          md: widgets.map((widgetId) =>
-            createDefaultLayoutItem(widgetId, 'md')
-          ),
-          sm: widgets.map((widgetId) =>
-            createDefaultLayoutItem(widgetId, 'sm')
-          ),
-          xs: widgets.map((widgetId) =>
-            createDefaultLayoutItem(widgetId, 'xs')
-          ),
-          xxs: widgets.map((widgetId) =>
-            createDefaultLayoutItem(widgetId, 'xxs')
-          ),
-        };
+        const widgetIdSet = new Set(widgets);
 
-        setLayoutState({ layouts: defaultLayouts, layoutsReady: true });
+        const filteredLg = sanitizeBreakpointLayout(
+          activeLayout.bottomSection.lg,
+          widgetIdSet
+        );
+
+        const filteredMd = sanitizeBreakpointLayout(
+          activeLayout.bottomSection.md,
+          widgetIdSet
+        );
+
+        const filteredSm = sanitizeBreakpointLayout(
+          activeLayout.bottomSection.sm,
+          widgetIdSet
+        );
+
+        const filteredXs = sanitizeBreakpointLayout(
+          activeLayout.bottomSection.xs || [],
+          widgetIdSet
+        );
+
+        const filteredXxs = sanitizeBreakpointLayout(
+          activeLayout.bottomSection.xxs || [],
+          widgetIdSet
+        );
+
+        setLayoutState({
+          layouts: fillMissingBreakpointItems({
+            layouts: {
+              lg: filteredLg,
+              md: filteredMd,
+              sm: filteredSm,
+              xs: filteredXs,
+              xxs: filteredXxs,
+            },
+            widgetIds: widgets,
+            getSizing: getDashboardWidgetById,
+            savedLgLayouts: getSavedDashboardLgLayouts(plugin),
+          }),
+          layoutsReady: true,
+        });
       }
-    };
+    } catch (error) {
+      console.error('Error loading layouts:', error);
+      
 
-    loadLayouts();
+      
+      const createDefaultLayoutItem = (
+        widgetId: string,
+        bp: string
+      ): Layout => {
+        const widgetDef = getDashboardWidgetById(widgetId);
+        const maxCols = isBreakpointKey(bp) ? GRID_COLS[bp] : GRID_COLS.lg;
+        const defaultWidth =
+          bp === 'xxs' ? 1 : Math.min(widgetDef?.defaultSize.w || 6, maxCols);
+        const defaultHeight = widgetDef?.defaultSize.h || (bp === 'lg' ? 4 : 3);
+
+        const layoutItem: Layout = {
+          i: widgetId,
+          x: 0,
+          y: 0, 
+          w: defaultWidth,
+          h: defaultHeight,
+        };
+
+        
+        return validateLayoutItem(layoutItem);
+      };
+
+      
+      const defaultLayouts = {
+        lg: widgets.map((widgetId) => createDefaultLayoutItem(widgetId, 'lg')),
+        md: widgets.map((widgetId) => createDefaultLayoutItem(widgetId, 'md')),
+        sm: widgets.map((widgetId) => createDefaultLayoutItem(widgetId, 'sm')),
+        xs: widgets.map((widgetId) => createDefaultLayoutItem(widgetId, 'xs')),
+        xxs: widgets.map((widgetId) =>
+          createDefaultLayoutItem(widgetId, 'xxs')
+        ),
+      };
+
+      setLayoutState({ layouts: defaultLayouts, layoutsReady: true });
+    }
   }, [plugin, widgets]);
+
+  useEffect(() => {
+    loadLayouts();
+  }, [loadLayouts]);
+
+  const applyPendingExternalLayoutReload = useDashboardLayoutReload(
+    loadLayouts,
+    {
+      activeDragItemId: activeDragItemIdRef,
+      isResizeActive: isResizeActiveRef,
+      latestLayoutChange: latestLayoutChangeRef,
+    }
+  );
 
   const persistLayoutChange = useCallback(
     (currentLayout: Layout[], allLayouts: { [key: string]: Layout[] }) => {
@@ -724,11 +709,13 @@ const useDashboardGridLayoutState = ({
 
   const handleDragStop = useCallback(() => {
     window.setTimeout(() => {
-      finalizeLayoutChange({ applyDragSwap: true });
+      if (!applyPendingExternalLayoutReload()) {
+        finalizeLayoutChange({ applyDragSwap: true });
+      }
       activeDragItemIdRef.current = null;
       dragStartItemRef.current = null;
     }, 0);
-  }, [finalizeLayoutChange]);
+  }, [applyPendingExternalLayoutReload, finalizeLayoutChange]);
 
   const handleResizeStart = useCallback(() => {
     isResizeActiveRef.current = true;
@@ -742,7 +729,9 @@ const useDashboardGridLayoutState = ({
     setIsGridResizing(false);
     setResizeLockedHeight(null);
     window.setTimeout(() => {
-      finalizeLayoutChange({ applyDragSwap: false });
+      if (!applyPendingExternalLayoutReload()) {
+        finalizeLayoutChange({ applyDragSwap: false });
+      }
       isResizeActiveRef.current = false;
     }, 0);
     window.requestAnimationFrame(() => {
@@ -750,7 +739,7 @@ const useDashboardGridLayoutState = ({
         new CustomEvent('journalit:chart-resize-resume')
       );
     });
-  }, [finalizeLayoutChange]);
+  }, [applyPendingExternalLayoutReload, finalizeLayoutChange]);
 
   return {
     layoutsReady,
@@ -769,7 +758,6 @@ const useDashboardGridLayoutState = ({
 };
 
 export const GridLayout: React.FC<GridLayoutProps> = ({
-  filters,
   isEditing,
   widgets,
   onRemoveWidget,
@@ -840,7 +828,6 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
 
   const staticDashboardWidgetProps = useMemo(
     () => ({
-      filters,
       dateFormat,
       editing: false,
       onRemoveWidget,
@@ -850,7 +837,6 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
     [
       currencyConversion,
       dateFormat,
-      filters,
       getConversionTradesForWidget,
       onRemoveWidget,
     ]
@@ -897,7 +883,6 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
               <div key={widgetId}>
                 <DashboardGridWidgetCard
                   widgetId={widgetId}
-                  filters={filters}
                   dateFormat={dateFormat}
                   editing={true}
                   onRemoveWidget={onRemoveWidget}

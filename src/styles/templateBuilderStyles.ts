@@ -19,16 +19,6 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 
-.journalit-template-builder-container .template-builder-view {
-  display: flex;
-  flex-direction: column;
-  width: 100%;
-  height: 100%;
-  min-height: 0;
-  overflow: hidden;
-}
-
-
 .journalit-template-builder-container .journalit-react-view-root {
   height: 100%;
   overflow: visible;
@@ -38,14 +28,6 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 
-.journalit-template-builder-container .template-builder-tabs {
-  display: flex;
-  border-bottom: 2px solid var(--background-modifier-border);
-  background: var(--background-primary);
-  flex-shrink: 0;
-  padding: 0 16px;
-  gap: 4px;
-}
 
 .journalit-template-builder-container .template-builder-tab {
   padding: 12px 20px;
@@ -73,16 +55,6 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 
-.journalit-template-builder-container .template-builder-content {
-  flex: 1;
-  min-height: 0;
-  overflow-y: auto;
-  overflow-x: hidden;
-  padding: 24px;
-  background: var(--background-primary);
-}
-
-
 .journalit-template-builder-container .template-editor-canvas {
   background-color: var(--background-primary);
   background-size: 20px 20px;
@@ -105,83 +77,12 @@ export const TEMPLATE_BUILDER_STYLES = `
   margin-bottom: 24px;
 }
 
-.journalit-template-builder-container .template-list-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  background: var(--background-primary-alt);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.journalit-template-builder-container .template-list-item:hover {
-  background: var(--background-modifier-hover);
-  border-color: var(--background-modifier-border-hover);
-}
-
-.journalit-template-builder-container .template-list-item--selected {
-  border-color: var(--interactive-accent);
-  background: var(--background-secondary);
-}
-
-.journalit-template-builder-container .template-list-item-info {
-  flex: 1;
-  min-width: 0;
-}
-
-.journalit-template-builder-container .template-list-item-name {
-  font-weight: 600;
-  color: var(--text-normal);
-  margin-bottom: 4px;
-  font-size: 15px;
-}
-
 .journalit-template-builder-container .template-list-item-description {
   color: var(--text-muted);
   font-size: 13px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.journalit-template-builder-container .template-list-item-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
-  flex-shrink: 0;
-}
-
-
-.journalit-template-builder-container .template-editor {
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  padding: 24px;
-  background: var(--background-secondary);
-}
-
-.journalit-template-builder-container .template-editor-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 24px;
-  padding-bottom: 16px;
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.journalit-template-builder-container .template-editor-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-normal);
-  margin: 0;
-}
-
-.journalit-template-builder-container .template-editor-actions {
-  display: flex;
-  gap: 8px;
-  align-items: center;
 }
 
 
@@ -228,20 +129,7 @@ export const TEMPLATE_BUILDER_STYLES = `
   padding: 8px 12px;
 }
 
-.journalit-template-builder-container .template-form-textarea {
-  min-height: 100px;
-  resize: vertical;
-  font-family: inherit;
-  line-height: 1.5;
-}
 
-
-.journalit-template-builder-container .template-sections-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  margin-top: 12px;
-}
 
 .journalit-template-builder-container .template-section-item {
   display: flex;
@@ -260,11 +148,6 @@ export const TEMPLATE_BUILDER_STYLES = `
   background: var(--background-modifier-hover);
 }
 
-.journalit-template-builder-container .template-section-item--dragging {
-  opacity: 0.5;
-  cursor: grabbing;
-}
-
 .journalit-template-builder-container .template-section-item__summary {
   flex: 1 1 auto;
   min-width: 0;
@@ -278,63 +161,6 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 
-.journalit-template-builder-container .template-section-drag-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 24px;
-  height: 24px;
-  margin-right: 12px;
-  cursor: grab;
-  color: var(--text-muted);
-  transition: color 0.2s ease;
-}
-
-.journalit-template-builder-container .template-section-drag-handle:hover {
-  color: var(--text-normal);
-}
-
-.journalit-template-builder-container .template-section-drag-handle:active {
-  cursor: grabbing;
-}
-
-
-.journalit-template-builder-container .template-section-reorder-indicator {
-  position: absolute;
-  left: 0;
-  right: 0;
-  height: 2px;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-  border-radius: 1px;
-  pointer-events: none;
-  z-index: 100;
-}
-
-.journalit-template-builder-container .template-section-reorder-indicator--top {
-  top: -1px;
-}
-
-.journalit-template-builder-container .template-section-reorder-indicator--bottom {
-  bottom: -1px;
-}
-
-.journalit-template-builder-container .template-section-content {
-  flex: 1;
-  min-width: 0;
-}
-
-.journalit-template-builder-container .template-section-title {
-  font-weight: 500;
-  color: var(--text-normal);
-  margin-bottom: 4px;
-  font-size: 14px;
-}
-
-.journalit-template-builder-container .template-section-type {
-  color: var(--text-muted);
-  font-size: 12px;
-}
 
 .journalit-template-builder-container .template-section-actions {
   display: flex;
@@ -481,7 +307,7 @@ export const TEMPLATE_BUILDER_STYLES = `
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
   background: var(--background-primary);
-  box-shadow: var(--shadow-l);
+  box-shadow: var(--shadow-s);
 }
 
 .journalit-template-builder-container .template-layout-scope-menu-item {
@@ -583,21 +409,6 @@ export const TEMPLATE_BUILDER_STYLES = `
   border-color: var(--background-modifier-border-hover);
 }
 
-.journalit-template-builder-container .template-action-button--danger {
-  background: var(--background-modifier-error);
-  color: var(--text-on-accent, white);
-  border-color: var(--background-modifier-error);
-}
-
-.journalit-template-builder-container .template-action-button--danger:hover {
-  opacity: 0.9;
-}
-
-.journalit-template-builder-container .template-action-button--small {
-  padding: 6px 12px;
-  font-size: 13px;
-}
-
 .journalit-template-builder-container .template-action-button--compact {
   padding: 5px 12px;
   font-size: 12px;
@@ -614,124 +425,12 @@ export const TEMPLATE_BUILDER_STYLES = `
   border-color: var(--background-modifier-border-hover);
 }
 
-.journalit-template-builder-container .template-action-button--icon-only {
-  padding: 8px;
-  min-width: 36px;
-  min-height: 36px;
-}
-
 .journalit-template-builder-container .template-action-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-.journalit-template-builder-container .template-action-button-icon {
-  width: 16px;
-  height: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
 
-
-.journalit-template-builder-container .template-modal-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-  padding: 24px;
-}
-
-.journalit-template-builder-container .template-modal {
-  background: var(--background-primary);
-  border-radius: 12px;
-  max-width: 600px;
-  width: 100%;
-  max-height: 80vh;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-}
-
-.journalit-template-builder-container .template-modal-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px 24px;
-  border-bottom: 1px solid var(--background-modifier-border);
-}
-
-.journalit-template-builder-container .template-modal-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-normal);
-  margin: 0;
-}
-
-.journalit-template-builder-container .template-modal-close {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  background: transparent;
-  color: var(--text-muted);
-  cursor: pointer;
-  border-radius: 6px;
-  transition: all 0.2s ease;
-}
-
-.journalit-template-builder-container .template-modal-close:hover {
-  background: var(--background-modifier-hover);
-  color: var(--text-normal);
-}
-
-.journalit-template-builder-container .template-modal-content {
-  flex: 1;
-  overflow-y: auto;
-  padding: 24px;
-}
-
-.journalit-template-builder-container .template-modal-footer {
-  display: flex;
-  justify-content: flex-end;
-  gap: 12px;
-  padding: 16px 24px;
-  border-top: 1px solid var(--background-modifier-border);
-}
-
-
-.journalit-template-builder-container .template-empty-state {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 64px 24px;
-  text-align: center;
-}
-
-.journalit-template-builder-container .template-empty-state-icon {
-  width: 64px;
-  height: 64px;
-  margin-bottom: 16px;
-  color: var(--text-muted);
-  opacity: 0.5;
-}
-
-.journalit-template-builder-container .template-empty-state-title {
-  font-size: 18px;
-  font-weight: 600;
-  color: var(--text-normal);
-  margin-bottom: 8px;
-}
 
 .journalit-template-builder-container .template-empty-state-description {
   font-size: 14px;
@@ -742,168 +441,11 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 
-.journalit-template-builder-container .template-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 16px 24px;
-  background: var(--background-secondary);
-  border-bottom: 1px solid var(--background-modifier-border);
-  flex-shrink: 0;
-}
-
-.journalit-template-builder-container .template-toolbar-left {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.journalit-template-builder-container .template-toolbar-right {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-
-.journalit-template-builder-container .template-search-input {
-  padding: 8px 12px 8px 36px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  background: var(--background-primary);
-  color: var(--text-normal);
-  font-size: 14px;
-  width: 250px;
-  transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.journalit-template-builder-container .template-search-input:focus {
-  border-color: var(--interactive-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent);
-  outline: none;
-}
-
-.journalit-template-builder-container .template-search-wrapper {
-  position: relative;
-  display: flex;
-  align-items: center;
-}
-
-.journalit-template-builder-container .template-search-icon {
-  position: absolute;
-  left: 12px;
-  width: 16px;
-  height: 16px;
-  color: var(--text-muted);
-  pointer-events: none;
-}
-
-
-.journalit-template-builder-container .template-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 12px;
-  font-weight: 500;
-  background: var(--background-secondary);
-  color: var(--text-muted);
-}
-
-.journalit-template-builder-container .template-badge--active {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent, white);
-}
-
-
-.journalit-template-builder-container .template-dropdown {
-  position: relative;
-  display: inline-block;
-}
-
-.journalit-template-builder-container .template-dropdown-menu {
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
-  min-width: 160px;
-  background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
-  overflow: hidden;
-  z-index: 100;
-}
-
-.journalit-template-builder-container .template-dropdown-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 10px 14px;
-  color: var(--text-normal);
-  cursor: pointer;
-  font-size: 14px;
-  transition: background 0.15s ease;
-  border: none;
-  background: transparent;
-  width: 100%;
-  text-align: left;
-}
-
-.journalit-template-builder-container .template-dropdown-item:hover {
-  background: var(--background-modifier-hover);
-}
-
-.journalit-template-builder-container .template-dropdown-item--danger {
-  color: var(--text-error);
-}
-
-.journalit-template-builder-container .template-dropdown-divider {
-  height: 1px;
-  background: var(--background-modifier-border);
-  margin: 4px 0;
-}
-
-
 @media (max-width: 768px) {
-  .journalit-template-builder-container .template-builder-tabs {
-    padding: 0 8px;
-    gap: 0;
-  }
 
   .journalit-template-builder-container .template-builder-tab {
     padding: 12px 12px;
     font-size: 13px;
-  }
-
-  .journalit-template-builder-container .template-builder-content {
-    padding: 16px;
-  }
-
-  .journalit-template-builder-container .template-editor {
-    padding: 16px;
-  }
-
-  .journalit-template-builder-container .template-search-input {
-    width: 180px;
-  }
-
-  .journalit-template-builder-container .template-toolbar {
-    flex-direction: column;
-    gap: 12px;
-    align-items: stretch;
-  }
-
-  .journalit-template-builder-container .template-toolbar-left,
-  .journalit-template-builder-container .template-toolbar-right {
-    flex-direction: column;
-    width: 100%;
-  }
-
-  .journalit-template-builder-container .template-search-wrapper {
-    width: 100%;
-  }
-
-  .journalit-template-builder-container .template-search-input {
-    width: 100%;
   }
 }
 
@@ -911,12 +453,6 @@ export const TEMPLATE_BUILDER_STYLES = `
   .journalit-template-builder-container .template-builder-tab {
     padding: 10px 8px;
     font-size: 12px;
-  }
-
-  .journalit-template-builder-container .template-modal {
-    max-width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
   }
 
   .journalit-template-builder-container .template-list-item-description {
@@ -927,24 +463,6 @@ export const TEMPLATE_BUILDER_STYLES = `
     padding: 6px 12px;
     font-size: 13px;
   }
-}
-
-
-@keyframes journalit-template-builder-fade-in {
-  from {
-    opacity: 0;
-    transform: translateY(-8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.journalit-template-builder-container .template-editor,
-.journalit-template-builder-container .template-list-item,
-.journalit-template-builder-container .template-modal {
-  animation: journalit-template-builder-fade-in 0.2s ease-out;
 }
 
 
@@ -997,7 +515,7 @@ export const TEMPLATE_BUILDER_STYLES = `
   background: var(--background-primary);
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-s);
   z-index: 1000;
 }
 
@@ -1244,7 +762,7 @@ export const TEMPLATE_BUILDER_STYLES = `
   top: 2px;
   left: 2px;
   transition: left 0.2s;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--toggle-thumb-shadow);
 }
 
 .journalit-template-builder-container .template-toggle.is-checked .template-toggle__thumb {
@@ -1320,10 +838,6 @@ export const TEMPLATE_BUILDER_STYLES = `
   padding: 6px 10px;
 }
 
-.journalit-template-builder-container .template-input--textarea {
-  resize: vertical;
-}
-
 .journalit-template-builder-container .template-input.is-disabled {
   opacity: 0.5;
 }
@@ -1357,13 +871,6 @@ export const TEMPLATE_BUILDER_STYLES = `
   z-index: 1000;
 }
 
-.journalit-template-builder-container .template-section-row-main {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-}
-
 .journalit-template-builder-container .template-section-handle {
   color: var(--text-faint);
   cursor: default;
@@ -1379,32 +886,10 @@ export const TEMPLATE_BUILDER_STYLES = `
   opacity: 1;
 }
 
-.journalit-template-builder-container .template-section-info {
-  flex: 1;
-  cursor: default;
-}
-
-.journalit-template-builder-container .template-section-info.is-editing {
-  cursor: pointer;
-}
-
 .journalit-template-builder-container .template-section-info-row {
   display: flex;
   align-items: center;
   gap: 8px;
-}
-
-.journalit-template-builder-container .template-section-title {
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.journalit-template-builder-container .template-section-type {
-  font-size: 10px;
-  padding: 2px 6px;
-  background: var(--background-modifier-border);
-  border-radius: 4px;
-  color: var(--text-muted);
 }
 
 .journalit-template-builder-container .template-section-actions {
@@ -1447,14 +932,6 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .template-section-remove:disabled {
   opacity: 0.3;
   cursor: not-allowed;
-}
-
-.journalit-template-builder-container .template-section-expanded {
-  padding: 12px;
-  border-top: 1px solid var(--background-modifier-border);
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
 }
 
 .journalit-template-builder-container .template-section-label {
@@ -1594,7 +1071,7 @@ export const TEMPLATE_BUILDER_STYLES = `
   z-index: 20;
   max-width: 600px;
   margin: 0 auto;
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.18), 0 2px 8px rgba(0, 0, 0, 0.12);
+  box-shadow: var(--shadow-s);
   backdrop-filter: blur(8px);
 }
 
@@ -1647,10 +1124,6 @@ export const TEMPLATE_BUILDER_STYLES = `
   border-top: 0;
 }
 
-.journalit-template-builder-container .template-editor-panel--spaced {
-  margin-bottom: 20px;
-}
-
 .journalit-template-builder-container .template-editor-section-title {
   margin: 0 0 16px 0;
   font-size: 14px;
@@ -1691,68 +1164,16 @@ export const TEMPLATE_BUILDER_STYLES = `
   color: var(--color-yellow, #e0af48);
 }
 
-.journalit-template-builder-container .template-editor-review-sections {
-  margin-top: 16px;
-}
-
-.journalit-template-builder-container .template-editor-section-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 12px;
-}
-
 .journalit-template-builder-container .template-editor-section-label {
   font-size: 13px;
   font-weight: 500;
   color: var(--text-normal);
 }
 
-.journalit-template-builder-container .template-editor-section-label--muted {
-  font-size: 12px;
-  font-weight: 400;
-  color: var(--text-muted);
-}
-
-.journalit-template-builder-container .template-editor-empty-state {
-  padding: 20px;
-  text-align: center;
-  color: var(--text-muted);
-  font-size: 13px;
-  background: var(--background-primary);
-  border-radius: var(--radius-s);
-  border: 1px dashed var(--background-modifier-border);
-}
-
 .journalit-template-builder-container .template-editor-section-list {
   display: flex;
   flex-direction: column;
   gap: 6px;
-}
-
-.journalit-template-builder-container .template-editor-tab-list {
-  display: flex;
-  gap: 4px;
-  margin-bottom: 12px;
-  border-bottom: 1px solid var(--background-modifier-border);
-  padding-bottom: 8px;
-}
-
-.journalit-template-builder-container .template-editor-tab-button {
-  padding: 6px 12px;
-  font-size: 12px;
-  font-weight: 500;
-  background: transparent;
-  color: var(--text-muted);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s);
-  cursor: pointer;
-}
-
-.journalit-template-builder-container .template-editor-tab-button.is-active {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-  border-color: var(--interactive-accent);
 }
 
 .journalit-template-builder-container .template-editor-widget-header {
@@ -2012,25 +1433,6 @@ export const TEMPLATE_BUILDER_STYLES = `
   gap: 8px;
 }
 
-.journalit-template-builder-container .template-review-context-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  min-height: 28px;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 13px;
-  cursor: pointer;
-}
-
-.journalit-template-builder-container .template-review-context-pill:has(input:checked) {
-  color: var(--text-normal);
-}
-
-.journalit-template-builder-container .template-review-context-pill input,
 .journalit-template-builder-container .template-review-context-toggle-row input {
   margin: 0;
 }
@@ -2106,7 +1508,7 @@ export const TEMPLATE_BUILDER_STYLES = `
   border: 1px solid var(--background-modifier-border);
   border-radius: 4px;
   background-color: var(--background-primary);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-s);
 }
 
 .journalit-template-builder-container .template-review-context-field-filter__option {
@@ -2141,6 +1543,14 @@ export const TEMPLATE_BUILDER_STYLES = `
   background: transparent !important;
   background-color: transparent !important;
   color: var(--text-normal) !important;
+}
+
+.journalit-template-builder-container .template-review-context-field-filter__option-detail {
+  margin-left: auto;
+  padding-left: 12px;
+  color: var(--text-faint);
+  font-size: var(--font-ui-smaller);
+  white-space: nowrap;
 }
 
 .journalit-template-builder-container .template-review-context-field-filter__checkbox {
@@ -2296,7 +1706,6 @@ export const TEMPLATE_BUILDER_STYLES = `
   text-transform: uppercase;
 }
 
-
 .journalit-template-builder-container .template-trade-review-question-row {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 96px;
@@ -2321,7 +1730,6 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .template-trade-review-question-row + .template-trade-review-question-row {
   margin-top: 2px;
 }
-
 
 .journalit-template-builder-container .template-trade-review-question-fields {
   display: grid;
@@ -2575,7 +1983,6 @@ export const TEMPLATE_BUILDER_STYLES = `
     display: none;
   }
 
-
   .journalit-template-builder-container .template-trade-review-question-row {
     align-items: start;
   }
@@ -2584,7 +1991,6 @@ export const TEMPLATE_BUILDER_STYLES = `
     flex-direction: column;
   }
 }
-
 
 .journalit-template-builder-container .template-widget-config-input {
   flex: 1;
@@ -2650,7 +2056,6 @@ export const TEMPLATE_BUILDER_STYLES = `
   gap: 20px;
   width: 100%;
 }
-
 
 .journalit-template-builder-container .template-previous-context-sections {
   display: flex;
@@ -3242,6 +2647,49 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container .template-preview-widget {
   position: relative;
+}
+
+
+.journalit-template-builder-container .template-trade-note-sections__description {
+  margin: -8px 0 12px;
+}
+
+.journalit-template-builder-container .template-trade-note-sections {
+  display: flex;
+  flex-direction: column;
+}
+
+.journalit-template-builder-container .template-trade-note-section {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--background-modifier-border);
+}
+
+.journalit-template-builder-container .template-trade-note-section__fields {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  gap: 8px;
+}
+
+.journalit-template-builder-container .template-trade-note-section__input {
+  flex: 1;
+  min-width: 0;
+}
+
+.journalit-template-builder-container .template-trade-note-section__actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 30px;
+}
+
+.journalit-template-builder-container .template-trade-note-sections__add {
+  display: flex;
+  gap: 8px;
+  padding-top: 12px;
 }
 `;
 

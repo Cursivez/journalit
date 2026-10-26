@@ -16,6 +16,7 @@ import {
   getReviewType,
   hasManagedProperties,
   isBlockingProjectionWarning,
+  isInsideNestedVault,
   isRecord,
   JOURNALIT_DRC_PROPERTY,
   JOURNALIT_PARENT_REVIEW_PROPERTY,
@@ -383,7 +384,11 @@ export class GraphLinkService {
     const result = createEmptyResult();
     const index = await this.getOrBuildIndex();
     for (const path of paths) {
-      if (this.destroyed || !this.isJournalPath(path)) {
+      if (
+        this.destroyed ||
+        !this.isJournalPath(path) ||
+        isInsideNestedVault(path, index.nestedVaultRoots)
+      ) {
         result.skipped += 1;
         continue;
       }

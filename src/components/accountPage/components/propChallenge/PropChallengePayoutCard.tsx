@@ -41,7 +41,74 @@ const Line: React.FC<{ label: string; value: string }> = ({ label, value }) => (
   </div>
 );
 
-export const PropChallengePayoutCard: React.FC<Props> = ({
+export const PropChallengePayoutCard: React.FC<Props> = (props) =>
+  props.payout.status === 'needs_review' ? (
+    <UnavailablePayout />
+  ) : (
+    <CalculatedPayoutCard {...props} />
+  );
+
+function UnavailablePayout() {
+  const titleId = useId();
+  return (
+    <section
+      aria-labelledby={titleId}
+      className="journalit-prop-payout-unavailable"
+    >
+      <span id={titleId} className="journalit-prop-payout-head__label">
+        {t('account.prop-challenge.payout.title')}
+      </span>
+      <strong>{t('account.prop-challenge.payout.not-calculated')}</strong>
+      <p className="journalit-prop-payout-head__caption">
+        {t('account.prop-challenge.payout.manual-only')}
+      </p>
+    </section>
+  );
+}
+
+
+function PayoutImpactNotices({
+  impact,
+}: {
+  impact: ReturnType<typeof previewPropChallengePayout>;
+}) {
+  return (
+    <>
+      {impact.reviewReason && (
+        <Notice tone="warning">{impact.reviewReason}</Notice>
+      )}
+      {!impact.requestAllowed && (
+        <Notice tone="warning">
+          {t('account.prop-challenge.payout.request-not-allowed')}
+        </Notice>
+      )}
+      {impact.immediateBreach && (
+        <Notice tone="danger">
+          {t('account.prop-challenge.payout.immediate-breach')}
+        </Notice>
+      )}
+      {!impact.immediateBreach && impact.accountConcludes && (
+        <Notice tone="warning">
+          {t('account.prop-challenge.payout.account-concludes')}
+        </Notice>
+      )}
+      {!impact.immediateBreach &&
+        impact.maximumPayoutOutcome === 'promote_to_next_phase' && (
+          <Notice tone="info">
+            {t('account.prop-challenge.payout.next-stage-after-payout')}
+          </Notice>
+        )}
+      {!impact.immediateBreach &&
+        impact.maximumPayoutOutcome === 'eligible_for_live_review' && (
+          <Notice tone="info">
+            {t('account.prop-challenge.payout.live-review-after-payout')}
+          </Notice>
+        )}
+    </>
+  );
+}
+
+const CalculatedPayoutCard: React.FC<Props> = ({
   currency,
   evaluation,
   payout,
@@ -53,7 +120,7 @@ export const PropChallengePayoutCard: React.FC<Props> = ({
   
   
   const [draft, setDraft] = useState<string | null>(null);
-  const requestInput = draft ?? payout.availableAmount.toFixed(2);
+  const requestInput = draft ?? payout.availableAmount?.toFixed(2) ?? '';
   const requestedAmount = Number.parseFloat(requestInput);
   const normalizedRequest = Number.isFinite(requestedAmount)
     ? Math.max(0, requestedAmount)
@@ -69,8 +136,10 @@ export const PropChallengePayoutCard: React.FC<Props> = ({
       }),
     [evaluation, normalizedRequest, payout, phase, policy]
   );
-  const money = (value: number) =>
-    formatValue({ kind: 'pnl', value, currencyCode: currency });
+  const money = (value: number | null) =>
+    value === null
+      ? t('common.unknown')
+      : formatValue({ kind: 'pnl', value, currencyCode: currency });
 
   
   
@@ -120,9 +189,12 @@ export const PropChallengePayoutCard: React.FC<Props> = ({
 
       <div className="journalit-prop-payout-detail">
         <label className="journalit-prop-payout-detail__preview">
-          <span>{t('account.prop-challenge.payout.preview-amount')}</span>
+          <span>
+            {t('account.prop-challenge.payout.preview-amount')}:{' '}
+            {t('account.prop-challenge.payout.gross-withdrawals')}
+          </span>
           <input
-            max={payout.availableAmount}
+            max={payout.availableAmount ?? undefined}
             min={payout.minimumRequest}
             onChange={(event) => setDraft(event.target.value)}
             step="0.01"
@@ -131,33 +203,7 @@ export const PropChallengePayoutCard: React.FC<Props> = ({
           />
         </label>
 
-        {!impact.requestAllowed && (
-          <Notice tone="warning">
-            {t('account.prop-challenge.payout.request-not-allowed')}
-          </Notice>
-        )}
-        {impact.immediateBreach && (
-          <Notice tone="danger">
-            {t('account.prop-challenge.payout.immediate-breach')}
-          </Notice>
-        )}
-        {!impact.immediateBreach && impact.accountConcludes && (
-          <Notice tone="warning">
-            {t('account.prop-challenge.payout.account-concludes')}
-          </Notice>
-        )}
-        {!impact.immediateBreach &&
-          impact.maximumPayoutOutcome === 'promote_to_next_phase' && (
-            <Notice tone="info">
-              {t('account.prop-challenge.payout.next-stage-after-payout')}
-            </Notice>
-          )}
-        {!impact.immediateBreach &&
-          impact.maximumPayoutOutcome === 'eligible_for_live_review' && (
-            <Notice tone="info">
-              {t('account.prop-challenge.payout.live-review-after-payout')}
-            </Notice>
-          )}
+        <PayoutImpactNotices impact={impact} />
 
         <div className="journalit-prop-payout-detail__lines">
           <Line

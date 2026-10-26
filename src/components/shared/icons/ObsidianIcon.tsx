@@ -129,6 +129,7 @@ export const XCircle: ObsidianIconComponent = createIcon('x-circle');
 export const CheckCircle2: ObsidianIconComponent = createIcon('check-circle-2');
 export const CheckSquare: ObsidianIconComponent = createIcon('check-square');
 export const ChevronDown: ObsidianIconComponent = createIcon('chevron-down');
+export const ChevronUp: ObsidianIconComponent = createIcon('chevron-up');
 export const CornerDownRight: ObsidianIconComponent =
   createIcon('corner-down-right');
 export const ChevronLeft: ObsidianIconComponent = createIcon('chevron-left');
@@ -149,7 +150,9 @@ export const ClockAlert: ObsidianIconComponent =
 export const ClockIcon: ObsidianIconComponent = createIcon('clock');
 export const Copy: ObsidianIconComponent = createIcon('copy');
 export const Edit: ObsidianIconComponent = createIcon('edit');
+export const Pencil: ObsidianIconComponent = createIcon('pencil');
 export const ExternalLink: ObsidianIconComponent = createIcon('external-link');
+export const VideoOff: ObsidianIconComponent = createIcon('video-off');
 export const Eye: ObsidianIconComponent = createIcon('eye');
 export const LinkIcon: ObsidianIconComponent = createIcon('link');
 export const EyeOff: ObsidianIconComponent = createIcon('eye-off');

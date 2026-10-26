@@ -10,6 +10,7 @@ export function getJournalitCachePath(app: App): string {
   return `${getJournalitPluginStoragePath(app)}/cache`;
 }
 
+
 export function getJournalitIndexesPath(app: App): string {
   return `${getJournalitPluginStoragePath(app)}/indexes`;
 }

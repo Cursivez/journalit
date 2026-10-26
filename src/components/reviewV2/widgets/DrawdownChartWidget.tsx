@@ -154,7 +154,7 @@ export const DrawdownChartWidget: React.FC<DrawdownChartWidgetProps> =
                   <path
                     d="M0,10 L50,10 Q80,40 120,80 T180,60 T240,100 T320,40 T400,70 L400,0 L0,0 Z"
                     fill="var(--background-modifier-border)"
-                    className="skeleton-shimmer journalit-reviewv2-chart-skeleton-wave-fill"
+                    className="journalit-skeleton-shimmer journalit-reviewv2-chart-skeleton-wave-fill"
                   />
                   
                   <path
@@ -162,7 +162,7 @@ export const DrawdownChartWidget: React.FC<DrawdownChartWidgetProps> =
                     fill="none"
                     stroke="var(--background-modifier-border)"
                     strokeWidth="2"
-                    className="skeleton-shimmer journalit-reviewv2-chart-skeleton-wave-line"
+                    className="journalit-skeleton-shimmer journalit-reviewv2-chart-skeleton-wave-line"
                   />
                 </svg>
               </div>

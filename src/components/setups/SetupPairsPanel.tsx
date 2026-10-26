@@ -295,7 +295,7 @@ export const SetupPairsSplitInsight: React.FC<{
 
 SetupPairsSplitInsight.displayName = 'SetupPairsSplitInsight';
 
-export function getSetupPairBarTone(
+function getSetupPairBarTone(
   metricKey: SetupPairMetricKey,
   barValue: number,
   hasMetricData: boolean,
@@ -310,6 +310,26 @@ export function getSetupPairBarTone(
     return 'neutral';
   }
   return barValue < 0 ? 'negative' : 'positive';
+}
+
+
+function getSetupPairBarWidth({
+  barValue,
+  hasMetricData,
+  isMasked,
+  maxMagnitude,
+}: {
+  barValue: number;
+  hasMetricData: boolean;
+  isMasked: boolean;
+  maxMagnitude: number;
+}): string {
+  if (isMasked) return '38%';
+  if (!hasMetricData || barValue === 0) return '0%';
+  const barMagnitude = Number.isFinite(barValue)
+    ? Math.min(1, Math.abs(barValue) / maxMagnitude)
+    : 1;
+  return `${Math.max(0.04, barMagnitude) * 100}%`;
 }
 
 const SetupPairRankingRow: React.FC<{
@@ -337,22 +357,18 @@ const SetupPairRankingRow: React.FC<{
   const barValue = getSetupPairBarValue(pair, metric.key);
   const hasMetricData =
     metric.key !== 'profitFactor' || pair.metrics.totalTrades > 0;
-  const barMagnitude = !hasMetricData
-    ? 0
-    : isMasked
-      ? 0.38
-      : Number.isFinite(barValue)
-        ? Math.min(1, Math.abs(barValue) / maxMagnitude)
-        : 1;
   const barTone = getSetupPairBarTone(
     metric.key,
     barValue,
     hasMetricData,
     isMasked
   );
-  const barWidth = isMasked
-    ? '38%'
-    : `${(hasMetricData && barValue !== 0 ? Math.max(0.04, barMagnitude) : 0) * 100}%`;
+  const barWidth = getSetupPairBarWidth({
+    barValue,
+    hasMetricData,
+    isMasked,
+    maxMagnitude,
+  });
 
   return (
     <button

@@ -40,8 +40,15 @@ import { normalizeTradeExecutionForPeriodAnalytics } from '../trade/core/TradeEx
 import { eventBus } from '../events/EventBus';
 import { Unsubscribe } from '../events/types';
 import { registerPathIndexInvalidator } from '../indexing/pathIndexInvalidator';
-import { safeString } from '../../utils/safeString';
+
 import type { ReviewStreakItem } from '../../utils/reviewStreaks';
+import {
+  applyReviewFrontmatterUpdates,
+  applyReviewInitialContent,
+  type ReviewCreationReceipt,
+  type ReviewFrontmatterGuard,
+  type ReviewInitialContent,
+} from '../reviews';
 
 
 
@@ -133,9 +140,6 @@ function createDRCData(frontmatter: Record<string, unknown>): DRCData | null {
 }
 
 export class WeeklyReviewService {
-  
-  private readonly WEEKLY_PREFIX = 'Weekly';
-
   
   private app: App;
 
@@ -522,6 +526,7 @@ export class WeeklyReviewService {
       
       const generatedContent = await this.generateInitialWeeklyReviewContent(
         date,
+        undefined,
         options.sampleMaterialization
       );
       const content = claimedOwnership
@@ -555,6 +560,41 @@ export class WeeklyReviewService {
     }
   }
 
+  public async createWeeklyReviewWithReceipt(
+    date: Date,
+    initialContent?: ReviewInitialContent,
+    source?: string
+  ): Promise<ReviewCreationReceipt> {
+    const path = this.getWeeklyReviewPath(date);
+    const existingFile = this.app.vault.getAbstractFileByPath(path);
+    if (existingFile instanceof TFile)
+      return { file: existingFile, created: false };
+
+    await this.ensureDirectoryExists(path);
+    const content = await this.generateInitialWeeklyReviewContent(
+      date,
+      initialContent
+    );
+    let newFile: TFile;
+    try {
+      newFile = await this.app.vault.create(path, content);
+    } catch (error) {
+      const racedFile = this.app.vault.getAbstractFileByPath(path);
+      if (racedFile instanceof TFile)
+        return { file: racedFile, created: false };
+      throw error;
+    }
+
+    await forceMetadataCacheRefresh(this.app, newFile);
+    eventBus.publish('review:changed', {
+      type: 'weekly',
+      action: 'created',
+      filePath: path,
+      ...(source === undefined ? {} : { source }),
+    });
+    return { file: newFile, created: true };
+  }
+
   
   
   private formatDateForDisplay(date: Date): string {
@@ -567,6 +607,7 @@ export class WeeklyReviewService {
   
   private async generateInitialWeeklyReviewContent(
     date: Date,
+    initialContent?: ReviewInitialContent,
     sampleMaterialization?: SampleReviewMaterialization
   ): Promise<string> {
     const weekStartDay = getWeekStartDaySetting(this.plugin);
@@ -581,7 +622,7 @@ export class WeeklyReviewService {
     const isoMonth = thursday.getMonth() + 1;
 
     
-    const weeklyReviewData: Partial<WeeklyReviewData> = {
+    const weeklyReviewData: Record<string, unknown> = {
       type: 'weekly-review',
       date: this.formatDateForDisplay(weekStart),
       tags: [],
@@ -594,20 +635,22 @@ export class WeeklyReviewService {
     const recurringGoals = this.plugin.settings.weekly?.recurringGoals || [];
     if (recurringGoals.length > 0) {
       weeklyReviewData.weeklyGoals = [...recurringGoals];
-      weeklyReviewData.weeklyGoalStatus = {};
+      const weeklyGoalStatus: Record<string, boolean> = {};
       recurringGoals.forEach((_, index) => {
-        weeklyReviewData.weeklyGoalStatus![`goal_${index}`] = false;
+        weeklyGoalStatus[`goal_${index}`] = false;
       });
+      weeklyReviewData.weeklyGoalStatus = weeklyGoalStatus;
     }
 
     
     const checklistItems = this.plugin.settings.weekly?.checklistItems || [];
     if (checklistItems.length > 0) {
       weeklyReviewData.checklistItems = [...checklistItems];
-      weeklyReviewData.checklistStatus = {};
+      const checklistStatus: Record<string, boolean> = {};
       checklistItems.forEach((_, index) => {
-        weeklyReviewData.checklistStatus![`item_${index}`] = false;
+        checklistStatus[`item_${index}`] = false;
       });
+      weeklyReviewData.checklistStatus = checklistStatus;
     }
 
     
@@ -617,6 +660,13 @@ export class WeeklyReviewService {
     
     weeklyReviewData.templateId = template.id;
     weeklyReviewData.templateVersion = template.version;
+
+    applyReviewInitialContent(
+      weeklyReviewData,
+      initialContent,
+      'weeklyGoals',
+      'weeklyGoalStatus'
+    );
 
     
     const authoredData = sampleMaterialization
@@ -632,57 +682,6 @@ export class WeeklyReviewService {
     return sampleMaterialization
       ? appendSampleReviewBody(content, sampleMaterialization.appendBody)
       : content;
-  }
-
-  
-  private convertToYamlFrontmatter(data: Partial<WeeklyReviewData>): string[] {
-    const result: string[] = [];
-
-    
-    const stringifyValue = (value: unknown): string => {
-      if (value === null || value === undefined) {
-        return 'null';
-      }
-
-      if (typeof value === 'string') {
-        
-        if (
-          value.includes(':') ||
-          value.includes('#') ||
-          value.includes('\n') ||
-          value.includes('"') ||
-          value.trim() === ''
-        ) {
-          return `"${value.replace(/"/g, '\\"')}"`;
-        }
-        return value;
-      }
-
-      if (typeof value === 'number' || typeof value === 'boolean') {
-        return safeString(value);
-      }
-
-      if (Array.isArray(value)) {
-        return JSON.stringify(value);
-      }
-
-      if (typeof value === 'object') {
-        return JSON.stringify(value);
-      }
-
-      return safeString(value);
-    };
-
-    
-    for (const [key, value] of Object.entries(data)) {
-      if (key === 'type') continue; 
-
-      if (value !== undefined) {
-        result.push(`${key}: ${stringifyValue(value)}`);
-      }
-    }
-
-    return result;
   }
 
   
@@ -735,60 +734,69 @@ export class WeeklyReviewService {
     updates: Partial<Record<string, unknown>>
   ): Promise<void> {
     try {
-      
-      const file = this.app.vault.getAbstractFileByPath(filePath);
-
-      if (!file || !(file instanceof TFile)) {
-        throw new Error(`Weekly Review file not found: ${filePath}`);
-      }
-
-      
-      await this.app.fileManager.processFrontMatter(file, (frontmatter) => {
-        const frontmatterRecord = asRecord(frontmatter) ?? {};
-        const { imagesByWidget, ...rest } = updates;
-        Object.assign(frontmatterRecord, rest);
-
-        if (
-          imagesByWidget &&
-          typeof imagesByWidget === 'object' &&
-          !Array.isArray(imagesByWidget)
-        ) {
-          const existingByWidget =
-            asRecord(frontmatterRecord.imagesByWidget) ?? {};
-          frontmatterRecord.imagesByWidget = {
-            ...existingByWidget,
-            ...imagesByWidget,
-          };
-        } else if (imagesByWidget !== undefined) {
-          frontmatterRecord.imagesByWidget = imagesByWidget;
-        }
-      });
-
-      
-      await forceMetadataCacheRefresh(this.app, file);
-
-      
-      eventBus.publish('review:changed', {
-        type: 'weekly',
-        action: 'updated',
+      await this.updateWeeklyReviewFrontmatterCore(
         filePath,
-      });
-
-      
-      if (updates.nextWeekGoals !== undefined) {
-        await this.syncGoalsToNextWeek(
-          filePath,
-          asStringArray(updates.nextWeekGoals)
-        );
-      }
-
-      return;
+        updates,
+        () => undefined,
+        undefined,
+        true
+      );
     } catch (error) {
       console.error(
         `Error updating Weekly Review frontmatter in ${filePath}:`,
         error
       );
       throw error;
+    }
+  }
+
+  public async updateWeeklyReviewFrontmatterGuarded(
+    filePath: string,
+    updates: Partial<Record<string, unknown>>,
+    guard: ReviewFrontmatterGuard,
+    source?: string
+  ): Promise<void> {
+    await this.updateWeeklyReviewFrontmatterCore(
+      filePath,
+      updates,
+      guard,
+      source,
+      false
+    );
+  }
+
+  private async updateWeeklyReviewFrontmatterCore(
+    filePath: string,
+    updates: Partial<Record<string, unknown>>,
+    guard: ReviewFrontmatterGuard,
+    source: string | undefined,
+    logCarryoverErrors: boolean
+  ): Promise<void> {
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile))
+      throw new Error(`Weekly Review file not found: ${filePath}`);
+
+    await this.app.fileManager.processFrontMatter(
+      file,
+      (frontmatter: Record<string, unknown>) => {
+        guard(frontmatter);
+        applyReviewFrontmatterUpdates(frontmatter, updates);
+      }
+    );
+
+    await forceMetadataCacheRefresh(this.app, file);
+    eventBus.publish('review:changed', {
+      type: 'weekly',
+      action: 'updated',
+      filePath,
+      ...(source === undefined ? {} : { source }),
+    });
+    if (updates.nextWeekGoals !== undefined) {
+      await this.syncGoalsToNextWeek(
+        filePath,
+        asStringArray(updates.nextWeekGoals),
+        logCarryoverErrors
+      );
     }
   }
 
@@ -950,7 +958,8 @@ export class WeeklyReviewService {
   
   private async syncGoalsToNextWeek(
     currentFilePath: string,
-    nextWeekGoals: string[] | undefined
+    nextWeekGoals: string[] | undefined,
+    logErrors: boolean = true
   ): Promise<void> {
     try {
       
@@ -1005,7 +1014,9 @@ export class WeeklyReviewService {
       }
     } catch (error) {
       
-      console.warn(`Warning: Failed to sync goals to next week:`, error);
+      if (logErrors) {
+        console.warn(`Warning: Failed to sync goals to next week:`, error);
+      }
     }
   }
 

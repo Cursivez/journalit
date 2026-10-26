@@ -1,6 +1,12 @@
 
 
-import React, { useState, useMemo, useCallback, useRef } from 'react';
+import React, {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  useRef,
+} from 'react';
 import {
   useContextualGuideResolution,
   useGuideBackHandler,
@@ -22,15 +28,18 @@ import { ReviewTemplateService } from '../../services/templates/ReviewTemplateSe
 import { TradeTemplateService } from '../../services/templates/TradeTemplateService';
 import { t } from '../../lang/helpers';
 import { showUnsavedChangesModal } from './UnsavedChangesModal';
+import type { TemplateBuilderExternalSelection } from '../../views/TemplateBuilderView';
 
 interface TemplateBuilderProps {
   leaf: WorkspaceLeaf;
   view: ItemView;
+  
+  externalSelection?: TemplateBuilderExternalSelection | null;
 }
 
-const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
-  _props: TemplateBuilderProps
-) => {
+const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = ({
+  externalSelection = null,
+}: TemplateBuilderProps) => {
   
   const plugin = usePlugin();
   const [selection, setSelection] = useState<Selection | null>(null);
@@ -81,9 +90,6 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
   }, []);
 
   
-  const pendingSelectionRef = useRef<Selection | null>(null);
-
-  
   const isSameSelection = useCallback(
     (a: Selection | null, b: Selection | null): boolean => {
       if (a === null && b === null) return true;
@@ -106,14 +112,14 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
       }
 
       
+      
+      
       if (selection && isDirtyRef.current && plugin) {
-        pendingSelectionRef.current = newSelection;
         const shouldDiscard = await showUnsavedChangesModal(plugin.app);
         if (shouldDiscard) {
           isDirtyRef.current = false;
-          setSelection(pendingSelectionRef.current);
+          setSelection(newSelection);
         }
-        pendingSelectionRef.current = null;
         return shouldDiscard;
       }
 
@@ -122,6 +128,19 @@ const TemplateBuilderRenderer: React.FC<TemplateBuilderProps> = (
     },
     [selection, plugin, isSameSelection]
   );
+
+  
+  
+  
+  const appliedExternalRequestRef = useRef<number | null>(null);
+  useEffect(() => {
+    if (externalSelection === null) return;
+    if (appliedExternalRequestRef.current === externalSelection.requestId) {
+      return;
+    }
+    appliedExternalRequestRef.current = externalSelection.requestId;
+    void handleSelectionChange(externalSelection.selection);
+  }, [externalSelection, handleSelectionChange]);
 
   
   const handleTemplatesChange = useCallback(() => {

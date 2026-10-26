@@ -5,10 +5,10 @@ import { BaseWidget, BaseWidgetProps } from './BaseWidget';
 import { PerformanceCalendar as SharedPerformanceCalendar } from '../../../charts/PerformanceCalendar';
 
 
-export const PerformanceCalendar: React.FC<BaseWidgetProps> = ({ filters }) => {
+const PerformanceCalendarComponent: React.FC<BaseWidgetProps> = () => {
   return (
-    <BaseWidget filters={filters} skeletonType="calendar">
-      {(data) => {
+    <BaseWidget skeletonType="calendar">
+      {(data, _dateFormat, filters) => {
         return (
           <SharedPerformanceCalendar trades={data.trades} filters={filters} />
         );
@@ -16,3 +16,6 @@ export const PerformanceCalendar: React.FC<BaseWidgetProps> = ({ filters }) => {
     </BaseWidget>
   );
 };
+
+
+export const PerformanceCalendar = React.memo(PerformanceCalendarComponent);

@@ -135,14 +135,12 @@ function useFullscreenImageViewerModel({
 
       setContextMenu(null);
     };
-    window.activeDocument.addEventListener('click', closeContextMenu);
-    window.activeDocument.addEventListener('contextmenu', closeContextMenu);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('click', closeContextMenu);
+    listenerDocument.addEventListener('contextmenu', closeContextMenu);
     return () => {
-      window.activeDocument.removeEventListener('click', closeContextMenu);
-      window.activeDocument.removeEventListener(
-        'contextmenu',
-        closeContextMenu
-      );
+      listenerDocument.removeEventListener('click', closeContextMenu);
+      listenerDocument.removeEventListener('contextmenu', closeContextMenu);
     };
   }, [contextMenu]);
 
@@ -313,9 +311,9 @@ function useFullscreenImageViewerModel({
       }
     };
 
-    window.activeDocument.addEventListener('keydown', handleKeyDown);
-    return () =>
-      window.activeDocument.removeEventListener('keydown', handleKeyDown);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('keydown', handleKeyDown);
+    return () => listenerDocument.removeEventListener('keydown', handleKeyDown);
   }, [handleNavigate, mediaKind]);
 
   
@@ -380,21 +378,19 @@ function useFullscreenImageViewerModel({
         handleGlobalMouseUpRef.current();
       };
 
-      window.activeDocument.addEventListener(
+      const listenerDocument = window.activeDocument;
+      listenerDocument.addEventListener(
         'mousemove',
         handleCurrentGlobalMouseMove
       );
-      window.activeDocument.addEventListener(
-        'mouseup',
-        handleCurrentGlobalMouseUp
-      );
+      listenerDocument.addEventListener('mouseup', handleCurrentGlobalMouseUp);
 
       return () => {
-        window.activeDocument.removeEventListener(
+        listenerDocument.removeEventListener(
           'mousemove',
           handleCurrentGlobalMouseMove
         );
-        window.activeDocument.removeEventListener(
+        listenerDocument.removeEventListener(
           'mouseup',
           handleCurrentGlobalMouseUp
         );

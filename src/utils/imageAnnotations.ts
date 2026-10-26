@@ -2,6 +2,10 @@ import type {
   ImageAnnotation,
   ImageAnnotations,
 } from '../types/imageAnnotations';
+import {
+  storedTagDedupeKey,
+  storedTagValuesMatch,
+} from './tradeTagNormalization';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -108,4 +112,66 @@ export function rekeyImageAnnotations(
     rekeyed[pathMap.get(imagePath) ?? imagePath] = annotation;
   }
   return rekeyed;
+}
+
+
+export type EmptiedImageAnnotation = 'tombstone' | 'remove';
+
+
+export function rewriteImageAnnotationTags(
+  annotations: unknown,
+  change: {
+    source: string;
+    target: string | undefined;
+    emptied: EmptiedImageAnnotation;
+  }
+):
+  | { changed: false }
+  | { changed: true; value: Record<string, unknown> | undefined } {
+  if (!isRecord(annotations)) return { changed: false };
+  let changed = false;
+  const rewritten: Record<string, unknown> = {};
+  for (const [imagePath, entry] of Object.entries(annotations)) {
+    const tags = isRecord(entry) ? entry.tags : undefined;
+    if (
+      !isRecord(entry) ||
+      !Array.isArray(tags) ||
+      !tags.some(
+        (tag) =>
+          typeof tag === 'string' && storedTagValuesMatch(tag, change.source)
+      )
+    ) {
+      rewritten[imagePath] = entry;
+      continue;
+    }
+    changed = true;
+    const seen = new Set<string>();
+    const nextTags: string[] = [];
+    for (const tag of tags) {
+      if (typeof tag !== 'string') continue;
+      const next = storedTagValuesMatch(tag, change.source)
+        ? change.target
+        : tag;
+      if (next === undefined) continue;
+      const key = storedTagDedupeKey(next);
+      if (seen.has(key)) continue;
+      seen.add(key);
+      nextTags.push(next);
+    }
+    const next: Record<string, unknown> = { ...entry };
+    if (nextTags.length > 0) next.tags = nextTags;
+    else delete next.tags;
+    const emptied =
+      Object.keys(next).length === 0 ||
+      (Object.keys(next).length === 1 &&
+        typeof next.notes === 'string' &&
+        next.notes.trim() === '');
+    if (emptied && change.emptied === 'remove') continue;
+    rewritten[imagePath] = emptied ? {} : next;
+  }
+  if (!changed) return { changed: false };
+  return {
+    changed: true,
+    value: Object.keys(rewritten).length > 0 ? rewritten : undefined,
+  };
 }

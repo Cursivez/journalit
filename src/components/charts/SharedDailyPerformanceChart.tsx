@@ -18,11 +18,13 @@ import { RechartsPortalTooltip } from './RechartsPortalTooltip';
 import { generateNiceAxis, calculateYAxisWidth } from '../../utils/chartUtils';
 import { handleRovingChartMarkKeyDown } from './chartKeyboardNavigation';
 import { useTwoStageTouchNavigation } from './useTwoStageTouchNavigation';
+import { shouldAnimateSeries, useChartAnimationActive } from './chartAnimation';
+import { skipVerticalGridCoordinates } from './chartGrid';
 
 const EPSILON = 1e-6; 
 
 
-export interface DailyPerformanceDataPoint {
+interface DailyPerformanceDataPoint {
   date: string;
   originalDate?: string; 
   pnl: number;
@@ -210,6 +212,7 @@ export const SharedDailyPerformanceChart =
       currencyOverride,
       navigation,
     }) => {
+      const isAnimationActive = useChartAnimationActive();
       const chartRef = React.useRef<HTMLDivElement>(null);
       const touchResetKey = React.useMemo(
         () =>
@@ -346,6 +349,7 @@ export const SharedDailyPerformanceChart =
             <CartesianGrid
               strokeDasharray="3 3"
               vertical={false}
+              verticalCoordinatesGenerator={skipVerticalGridCoordinates}
               stroke="var(--background-modifier-border)"
               strokeOpacity={0.5}
             />
@@ -411,7 +415,9 @@ export const SharedDailyPerformanceChart =
               fill="var(--interactive-accent)" 
               minPointSize={5}
               
-              isAnimationActive={true}
+              isAnimationActive={
+                isAnimationActive && shouldAnimateSeries(displayData.length)
+              }
               animationDuration={800}
               
               

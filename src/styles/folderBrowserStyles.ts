@@ -78,7 +78,7 @@ export const folderBrowserCSS = `
   margin: 0;
   padding: 0;
   list-style: none;
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  box-shadow: var(--shadow-s);
   transition: opacity 0.15s ease;
   animation: journalit-folder-browser-dropdown-open 0.15s ease forwards;
 }
@@ -185,18 +185,6 @@ export const folderBrowserCSS = `
   color: var(--text-normal, #333);
   background: var(--background-modifier-hover);
   box-shadow: none;
-}
-
-.journalit-folder-browser-sr-only {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0, 0, 0, 0);
-  white-space: nowrap;
-  border: 0;
 }
 
 .journalit-folder-browser-toggle-spacer {

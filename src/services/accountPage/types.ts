@@ -1,5 +1,6 @@
 
 
+import type { StopLossTarget } from '../trade/core/StopLossTargets';
 import { AccountData } from '../account/types';
 
 
@@ -46,7 +47,7 @@ export interface AccountTradeData {
   optionType?: string;
   rMultiple?: number;
   riskAmount?: number;
-  stopLoss?: number;
+  stopLosses?: StopLossTarget[];
   
   currency?: string;
   

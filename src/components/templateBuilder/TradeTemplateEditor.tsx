@@ -12,6 +12,7 @@ import { Notice } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import {
   TradeMetricType,
+  TradeImageLayout,
   TradeNoteSectionId,
   TradeTemplate,
   TradeTemplateAssetType,
@@ -20,7 +21,9 @@ import { TradeTemplateService } from '../../services/templates/TradeTemplateServ
 import { t } from '../../lang/helpers';
 import { CustomFieldDefinition } from '../../types/customFields';
 import { ReorderControls } from '../shared/ReorderControls';
+import { SegmentedControl } from '../shared/SegmentedControl';
 import { FloatingUnsavedChangesBanner } from './FloatingUnsavedChangesBanner';
+import { TradeNoteSectionsPanel } from './TradeNoteSectionsPanel';
 
 interface TradeTemplateEditorProps {
   plugin: JournalitPlugin;
@@ -101,7 +104,7 @@ function tradeTemplateEditorUiReducer(
 const DEFAULT_SECTIONS: TradeTemplate['sections'] = {
   header: { show: true },
   navigation: { show: true },
-  images: { show: true, position: 'top' },
+  images: { show: true, layout: 'carousel' },
   metadata: {
     show: true,
     showAccounts: true,
@@ -124,6 +127,7 @@ const DEFAULT_SECTIONS: TradeTemplate['sections'] = {
   },
   reviewButton: { show: true },
   missedReason: { show: true },
+  rating: { show: true },
 };
 
 function normalizeSectionOrder(
@@ -238,6 +242,10 @@ function mergeSections(
       show: base.missedReason?.show ?? true,
       ...overrides?.missedReason,
     },
+    rating: {
+      show: base.rating?.show ?? true,
+      ...overrides?.rating,
+    },
   };
 }
 
@@ -269,7 +277,7 @@ const Toggle: React.FC<ToggleProps> = ({
 const SectionRow: React.FC<{
   label: string;
   description?: string;
-  children: React.ReactElement<ToggleProps>;
+  children: React.ReactElement<{ ariaLabel?: string }>;
 }> = ({ label, description, children }) => (
   <div className="template-section-row">
     <div className="template-section-row__info">
@@ -444,6 +452,29 @@ const SectionVisibilityPanel: React.FC<{
         disabled={!canEdit}
       />
     </SectionRow>
+    {sections.images.show && (
+      <SectionRow
+        label={t('template.editor.image-layout')}
+        description={t('template.editor.image-layout-desc')}
+      >
+        <SegmentedControl<TradeImageLayout>
+          options={[
+            {
+              value: 'carousel',
+              label: t('template.editor.image-layout-carousel'),
+            },
+            {
+              value: 'stacked',
+              label: t('template.editor.image-layout-stacked'),
+            },
+          ]}
+          value={sections.images.layout ?? 'carousel'}
+          onChange={(layout) => updateSection('images', { layout })}
+          size="small"
+          disabled={!canEdit}
+        />
+      </SectionRow>
+    )}
     <SectionRow
       label={t('template.editor.metrics')}
       description={t('template.editor.metrics-desc')}
@@ -483,6 +514,16 @@ const SectionVisibilityPanel: React.FC<{
       <Toggle
         checked={sections.metadata.show}
         onChange={(checked) => updateSection('metadata', { show: checked })}
+        disabled={!canEdit}
+      />
+    </SectionRow>
+    <SectionRow
+      label={t('template.editor.rating')}
+      description={t('template.editor.rating-desc')}
+    >
+      <Toggle
+        checked={sections.rating?.show !== false}
+        onChange={(checked) => updateSection('rating', { show: checked })}
         disabled={!canEdit}
       />
     </SectionRow>
@@ -600,6 +641,97 @@ function updateMetricList(
   }
   return metrics.filter((item) => item !== metric);
 }
+
+
+function resolveActiveTradeLayout(
+  template: TradeTemplate,
+  scope: TradeTemplateLayoutScope
+): {
+  activeSections: TradeTemplate['sections'];
+  activeSectionOrder: TradeNoteSectionId[];
+} {
+  const sections = getSections(template);
+  const sectionOrder = normalizeSectionOrder(template.sectionOrder);
+  if (!isTradeTemplateAssetType(scope)) {
+    return { activeSections: sections, activeSectionOrder: sectionOrder };
+  }
+  const assetOverride = template.assetOverrides?.[scope];
+  const assetDefault = template.assetDefaults?.[scope];
+  const defaultAssetSections = assetDefault?.sections
+    ? mergeSections(sections, assetDefault.sections)
+    : sections;
+  return {
+    activeSections: mergeSections(
+      defaultAssetSections,
+      assetOverride?.sections
+    ),
+    activeSectionOrder: normalizeSectionOrder(
+      assetOverride?.sectionOrder ?? assetDefault?.sectionOrder ?? sectionOrder
+    ),
+  };
+}
+
+const TradeTemplateTitle: React.FC<{
+  name: string;
+  isBuiltIn: boolean;
+  canEdit: boolean;
+  isEditingName: boolean;
+  nameInputRef: React.RefObject<HTMLInputElement | null>;
+  onNameChange: (name: string) => void;
+  onEditingNameChange: (isEditing: boolean) => void;
+}> = ({
+  name,
+  isBuiltIn,
+  canEdit,
+  isEditingName,
+  nameInputRef,
+  onNameChange,
+  onEditingNameChange,
+}) => {
+  const startEditingName = () => {
+    onEditingNameChange(true);
+    window.requestAnimationFrame(() => nameInputRef.current?.focus());
+  };
+  return (
+    <>
+      {isEditingName && canEdit ? (
+        <input
+          aria-label={t('templateEditor.field.template-name')}
+          ref={nameInputRef}
+          type="text"
+          value={name}
+          onChange={(event) => onNameChange(event.target.value)}
+          onBlur={() => onEditingNameChange(false)}
+          className="template-editor-title-input"
+        />
+      ) : (
+        <h2
+          role={canEdit ? 'button' : undefined}
+          tabIndex={canEdit ? 0 : undefined}
+          onClick={() => {
+            if (!canEdit) return;
+            startEditingName();
+          }}
+          onKeyDown={(event) => {
+            if (!canEdit || (event.key !== 'Enter' && event.key !== ' ')) {
+              return;
+            }
+            event.preventDefault();
+            startEditingName();
+          }}
+          className={`template-editor-title-text${canEdit ? ' is-editable' : ''}`}
+        >
+          {name}
+        </h2>
+      )}
+      {isBuiltIn && (
+        <span className="template-editor-badge">
+          {t('template.editor.built-in')}
+        </span>
+      )}
+    </>
+  );
+};
 
 export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
   plugin,
@@ -833,6 +965,7 @@ export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
         assetDefaults: editingTemplate.assetDefaults,
         sections: getSections(editingTemplate),
         assetOverrides: editingTemplate.assetOverrides,
+        noteSections: editingTemplate.noteSections,
       });
       loadTemplate();
       onTemplateChange?.();
@@ -859,33 +992,16 @@ export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
     );
   }
 
-  const sections = getSections(editingTemplate);
-  const sectionOrder = normalizeSectionOrder(editingTemplate.sectionOrder);
   const configuredAssetTypes = ASSET_TYPES.filter(
     (assetType) => editingTemplate.assetOverrides?.[assetType] !== undefined
   );
   const availableAssetTypes = ASSET_TYPES.filter(
     (assetType) => !configuredAssetTypes.includes(assetType)
   );
-  const selectedAssetOverride = isTradeTemplateAssetType(selectedScope)
-    ? editingTemplate.assetOverrides?.[selectedScope]
-    : undefined;
-  const selectedAssetDefault = isTradeTemplateAssetType(selectedScope)
-    ? editingTemplate.assetDefaults?.[selectedScope]
-    : undefined;
-  const defaultAssetSections = selectedAssetDefault?.sections
-    ? mergeSections(sections, selectedAssetDefault.sections)
-    : sections;
-  const activeSections = isTradeTemplateAssetType(selectedScope)
-    ? mergeSections(defaultAssetSections, selectedAssetOverride?.sections)
-    : sections;
-  const activeSectionOrder = isTradeTemplateAssetType(selectedScope)
-    ? normalizeSectionOrder(
-        selectedAssetOverride?.sectionOrder ??
-          selectedAssetDefault?.sectionOrder ??
-          sectionOrder
-      )
-    : sectionOrder;
+  const { activeSections, activeSectionOrder } = resolveActiveTradeLayout(
+    editingTemplate,
+    selectedScope
+  );
 
   const updateActiveSection = <K extends keyof TradeTemplate['sections']>(
     sectionKey: K,
@@ -918,54 +1034,19 @@ export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
       
       <div className="template-editor-topbar">
         <div className="template-editor-topbar-group template-editor-topbar-group--tight">
-          {isEditingNameField && canEdit ? (
-            <input
-              aria-label={t('templateEditor.field.template-name')}
-              ref={nameInputRef}
-              type="text"
-              value={editingTemplate.name}
-              onChange={(event) =>
-                updateTemplate((template) => ({
-                  ...template,
-                  name: event.target.value,
-                }))
-              }
-              onBlur={() =>
-                dispatchUiState({ type: 'setEditingName', value: false })
-              }
-              className="template-editor-title-input"
-            />
-          ) : (
-            <h2
-              role={canEdit ? 'button' : undefined}
-              tabIndex={canEdit ? 0 : undefined}
-              onClick={() => {
-                if (!canEdit) return;
-                dispatchUiState({ type: 'setEditingName', value: true });
-                window.requestAnimationFrame(() =>
-                  nameInputRef.current?.focus()
-                );
-              }}
-              onKeyDown={(event) => {
-                if (!canEdit || (event.key !== 'Enter' && event.key !== ' ')) {
-                  return;
-                }
-                event.preventDefault();
-                dispatchUiState({ type: 'setEditingName', value: true });
-                window.requestAnimationFrame(() =>
-                  nameInputRef.current?.focus()
-                );
-              }}
-              className={`template-editor-title-text${canEdit ? ' is-editable' : ''}`}
-            >
-              {editingTemplate.name}
-            </h2>
-          )}
-          {editingTemplate.isBuiltIn && (
-            <span className="template-editor-badge">
-              {t('template.editor.built-in')}
-            </span>
-          )}
+          <TradeTemplateTitle
+            name={editingTemplate.name}
+            isBuiltIn={editingTemplate.isBuiltIn}
+            canEdit={canEdit}
+            isEditingName={isEditingNameField}
+            nameInputRef={nameInputRef}
+            onNameChange={(name) =>
+              updateTemplate((template) => ({ ...template, name }))
+            }
+            onEditingNameChange={(value) =>
+              dispatchUiState({ type: 'setEditingName', value })
+            }
+          />
         </div>
       </div>
 
@@ -1028,6 +1109,18 @@ export const TradeTemplateEditor: React.FC<TradeTemplateEditorProps> = ({
               customFieldCount={customFields.length}
               updateMetadata={(updates) =>
                 updateActiveSection('metadata', updates)
+              }
+            />
+
+            <TradeNoteSectionsPanel
+              canEdit={canEdit}
+              sections={editingTemplate.noteSections ?? []}
+              onChange={(noteSections) =>
+                updateTemplate((template) => ({
+                  ...template,
+                  noteSections:
+                    noteSections.length > 0 ? noteSections : undefined,
+                }))
               }
             />
           </div>

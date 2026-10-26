@@ -2,7 +2,7 @@
 
 import React, { useReducer, useRef } from 'react';
 import { AlertTriangle } from '../shared/icons/ObsidianIcon';
-import { Modal, App } from 'obsidian';
+import { App } from 'obsidian';
 import type { Root } from 'react-dom/client';
 import { AccountInfo } from '../../settings/types';
 import { AccountType } from '../../services/account/types';
@@ -12,6 +12,7 @@ import { getApp } from '../../utils/obsidian';
 import { formatDateDisplay, getUserDateFormat } from '../../utils/dateUtils';
 import { t } from '../../lang/helpers';
 import { formatAccountTypeLabel } from '../../utils/accountTypeLabel';
+import { JournalitModal } from '../modals/JournalitModal';
 
 const EMPTY_EXISTING_ACCOUNTS: ExistingAccount[] = [];
 const EMPTY_AVAILABLE_ACCOUNT_TYPES: string[] = [];
@@ -434,7 +435,7 @@ const AccountLinkModal: React.FC<AccountLinkModalProps> = ({
 };
 
 
-export class AccountLinkModalWrapper extends Modal {
+export class AccountLinkModalWrapper extends JournalitModal {
   private accountInfo: AccountInfo;
   private onLink: (
     accountId: string,

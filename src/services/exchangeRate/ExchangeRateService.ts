@@ -75,6 +75,35 @@ const FRANKFURTER_BASE_URL = 'https://api.frankfurter.dev/v1';
 const CACHE_TTL_MS = 24 * 60 * 60 * 1000; 
 const CACHE_KEY = 'journalit-exchange-rates';
 
+
+interface ConversionAttribution {
+  conversionUsedManualRate?: boolean;
+  conversionUsedFetchedRates?: boolean;
+  conversionPnlFactor?: number;
+  conversionPartialCurrencies?: string[];
+}
+
+
+export class SameCurrencyConversionMemo<T extends ConvertibleTrade> {
+  private readonly byTrade = new WeakMap<
+    T,
+    Map<string, T & ConversionAttribution>
+  >();
+
+  get(trade: T, context: string): (T & ConversionAttribution) | undefined {
+    return this.byTrade.get(trade)?.get(context);
+  }
+
+  set(trade: T, context: string, converted: T & ConversionAttribution): void {
+    const byContext = this.byTrade.get(trade);
+    if (byContext) {
+      byContext.set(context, converted);
+    } else {
+      this.byTrade.set(trade, new Map([[context, converted]]));
+    }
+  }
+}
+
 export class ExchangeRateService {
   private plugin: JournalitPlugin;
   private memoryCache: CachedExchangeRates | null = null;
@@ -237,7 +266,10 @@ export class ExchangeRateService {
     trades: T[],
     baseCurrency: string,
     defaultCurrency: string = baseCurrency,
-    options: { includeUnrealizedPnl?: boolean } = {}
+    options: {
+      includeUnrealizedPnl?: boolean;
+      sameCurrencyMemo?: SameCurrencyConversionMemo<T>;
+    } = {}
   ): Promise<ConvertedTradesResult<T> | null> {
     const includeUnrealizedPnl = options.includeUnrealizedPnl === true;
     const hasUsableBrokerBasePnl = (trade: T): boolean =>
@@ -361,7 +393,7 @@ export class ExchangeRateService {
     let brokerBaseCurrencyTradeCount = 0;
     let manualFxRateTradeCount = 0;
 
-    const convertedTrades = trades.map((trade) => {
+    const convertTrade = (trade: T) => {
       const tradeCurrency = trade.currency || defaultCurrency;
 
       
@@ -384,8 +416,8 @@ export class ExchangeRateService {
         if (usedManualRate) {
           manualFxRateTradeCount += 1;
         }
-        return {
-          ...converted,
+        
+        return Object.assign(converted, {
           conversionUsedManualRate: usedManualRate ? true : undefined,
           conversionUsedFetchedRates: usedFetchedDailyRates ? true : undefined,
           conversionPnlFactor: conversionPnlFactor ?? undefined,
@@ -393,7 +425,7 @@ export class ExchangeRateService {
             tradePartialCurrencies.size > 0
               ? Array.from(tradePartialCurrencies)
               : undefined,
-        };
+        });
       };
 
       const lookupRate = (currency?: string): number | null => {
@@ -817,6 +849,23 @@ export class ExchangeRateService {
         dividends: convertedDividends,
         ...convertedBreakEvenAccountBalanceFields,
       });
+    };
+
+    const { sameCurrencyMemo } = options;
+    const memoContext = `${baseCurrency}\u0000${String(includeUnrealizedPnl)}`;
+    const convertedTrades = trades.map((trade) => {
+      if (
+        !sameCurrencyMemo ||
+        (trade.currency || defaultCurrency) !== baseCurrency ||
+        hasForeignAuxiliaryMonetaryFields(trade)
+      ) {
+        return convertTrade(trade);
+      }
+      const cached = sameCurrencyMemo.get(trade, memoContext);
+      if (cached) return cached;
+      const converted = convertTrade(trade);
+      if (converted) sameCurrencyMemo.set(trade, memoContext, converted);
+      return converted;
     });
 
     

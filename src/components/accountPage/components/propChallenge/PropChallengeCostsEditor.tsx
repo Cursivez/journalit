@@ -18,6 +18,7 @@ import { Button } from '../../../ui/Button';
 import { numberValue } from './editorOptions';
 
 interface Props {
+  monthlyCostField: React.ReactNode;
   value: PropChallengeConfig;
   disabled: boolean;
   onChange: (value: PropChallengeConfig) => void;
@@ -57,16 +58,25 @@ function formatCostDate(value: Date | string | undefined): string | undefined {
   ].join('-');
 }
 
-export function PropChallengeCostsEditor({ value, disabled, onChange }: Props) {
+export function PropChallengeCostsEditor({
+  monthlyCostField,
+  value,
+  disabled,
+  onChange,
+}: Props) {
+  const costs = value.oneTimeCosts ?? [];
   return (
     <div className="journalit-prop-challenge-costs">
+      <strong className="journalit-prop-challenge-costs-title">
+        {t('account.prop-challenge.costs.section-title')}
+      </strong>
+      {monthlyCostField}
       <div className="journalit-prop-challenge-costs-heading">
         <div className="journalit-prop-challenge-costs-heading-copy">
           <strong>{t('account.prop-challenge.costs.title')}</strong>
           <span>{t('account.prop-challenge.costs.description')}</span>
         </div>
         <Button
-          variant="plain"
           size="small"
           className="journalit-prop-challenge-add-cost"
           disabled={disabled}
@@ -78,19 +88,20 @@ export function PropChallengeCostsEditor({ value, disabled, onChange }: Props) {
           {t('account.prop-challenge.costs.add')}
         </Button>
       </div>
-      <div className="journalit-prop-challenge-costs-columns">
-        <span>{t('account.prop-challenge.costs.kind')}</span>
-        <span>{t('account.prop-challenge.costs.date')}</span>
-        <span>{t('account.prop-challenge.costs.amount')}</span>
-        <span>{t('account.prop-challenge.costs.note')}</span>
-        <span aria-hidden="true" />
-      </div>
-      {(value.oneTimeCosts ?? []).length === 0 && (
+      {costs.length === 0 ? (
         <div className="journalit-prop-challenge-costs-empty">
           {t('account.prop-challenge.costs.empty')}
         </div>
+      ) : (
+        <div className="journalit-prop-challenge-costs-columns">
+          <span>{t('account.prop-challenge.costs.kind')}</span>
+          <span>{t('account.prop-challenge.costs.date')}</span>
+          <span>{t('account.prop-challenge.costs.amount')}</span>
+          <span>{t('account.prop-challenge.costs.note')}</span>
+          <span aria-hidden="true" />
+        </div>
       )}
-      {(value.oneTimeCosts ?? []).map((cost) => (
+      {costs.map((cost) => (
         <div className="journalit-prop-challenge-cost" key={cost.id}>
           <label className="journalit-prop-challenge-field">
             <span>{t('account.prop-challenge.costs.kind')}</span>
@@ -137,7 +148,8 @@ export function PropChallengeCostsEditor({ value, disabled, onChange }: Props) {
               type="number"
               min="0"
               step="0.01"
-              value={cost.amount}
+              value={cost.amount === 0 ? '' : cost.amount}
+              placeholder="0"
               disabled={disabled}
               onChange={(event) =>
                 onChange(

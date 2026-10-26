@@ -99,9 +99,12 @@ export class DemoSessionService {
     this.progressNotice = null;
   }
 
-  async initialize(): Promise<void> {
+  
+  async initialize(
+    startupManifest?: Promise<DemoManifest | null>
+  ): Promise<void> {
     return this.runExclusive(async () => {
-      const manifest = await this.manifestStore.load();
+      const manifest = await (startupManifest ?? this.manifestStore.load());
       if (!manifest) return;
       this.updateSnapshot({ phase: manifest.phase, root: manifest.root });
       if (manifest.phase === 'retiring') {
@@ -834,11 +837,8 @@ export class DemoSessionService {
       };
     }
     await this.plugin.uiStateManager.updateStateImmediate({
-      dashboardActiveLayout: 'Performance Overview',
-      homeActiveLayout: 'Daily Routine',
       homeViewMode: 'overview',
       selectedPeriod: 'lifetime',
-      lastUsedFilters: filters,
       viewFilters,
       gettingStartedDismissed: true,
       recentItems: [],

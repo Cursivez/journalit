@@ -1,57 +1,17 @@
 
 
 import { App, TFile, TAbstractFile, TFolder } from 'obsidian';
-import { scheduleIdle } from '../../utils/deferredExecution';
 import type JournalitPlugin from '../../main';
 import { eventBus } from '../events/EventBus';
-import type { Unsubscribe } from '../events/types';
 import { safeString } from '../../utils/safeString';
-import {
-  getJournalitIndexesPath,
-  isPathWithinDirectory,
-} from './pluginStoragePaths';
-import { CoalescedWriter } from './CoalescedWriter';
+import { isPathWithinDirectory } from './pluginStoragePaths';
+import { whenMetadataCacheResolved } from './metadataCacheReadiness';
+import { createTimeSlicer } from '../../utils/mainThreadYield';
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object' && !Array.isArray(value)
     ? Object.fromEntries(Object.entries(value))
     : undefined;
-}
-
-interface SerializedIndexEntry {
-  path: string;
-  values: Record<string, unknown>;
-}
-
-interface SerializedIndex {
-  name: string;
-  entries: SerializedIndexEntry[];
-}
-
-function parseSerializedIndex(value: unknown): SerializedIndex | null {
-  const record = asRecord(value);
-  if (
-    !record ||
-    typeof record.name !== 'string' ||
-    !Array.isArray(record.entries)
-  ) {
-    return null;
-  }
-
-  const entries = record.entries.flatMap((entry) => {
-    const entryRecord = asRecord(entry);
-    if (!entryRecord || typeof entryRecord.path !== 'string') {
-      return [];
-    }
-    return [
-      {
-        path: entryRecord.path,
-        values: asRecord(entryRecord.values) ?? {},
-      },
-    ];
-  });
-
-  return { name: record.name, entries };
 }
 
 
@@ -84,8 +44,7 @@ export interface IndexEntry {
 
 
 export class IndexManager {
-  private static readonly SAVE_DELAY_MS = 2000;
-  private static readonly MAX_SAVE_DELAY_MS = 30_000;
+  private static readonly METADATA_RESOLVE_TIMEOUT_MS = 30_000;
   
   private indexes: Map<string, IndexEntry[]> = new Map();
   
@@ -97,26 +56,18 @@ export class IndexManager {
   
   private readyIndexes: Set<string> = new Set();
   
-  private processedFiles: Set<string> = new Set();
-  
   private boundHandleFileChange: (
     file: TAbstractFile,
     oldPath?: string
   ) => void;
   
   private app: App;
-  private persistenceWriter: CoalescedWriter;
-  
-  private persistIndexes: boolean = true;
   
   private isInitialized: boolean = false;
   
-  private pendingFileChanges: Array<{
-    file: TAbstractFile;
-    oldPath?: string;
-  }> = [];
+  private initialization: Promise<void> | null = null;
   
-  private saveIntervalId: number | null = null;
+  private readonly unloadController = new AbortController();
   
   private dataExtractor: (file: TFile) => Promise<unknown>;
 
@@ -127,27 +78,16 @@ export class IndexManager {
   
   private pendingRebuildIndexes: Set<string> = new Set();
   
-  private eventUnsubscribers: Unsubscribe[] = [];
+  private noteUpdates: Promise<void> = Promise.resolve();
+  
+  private pendingNoteUpdates = 0;
   
   private listenersRegistered: boolean = false;
 
   
-  constructor(
-    app: App,
-    dataExtractor: (file: TFile) => Promise<unknown>,
-    options: { persistIndexes?: boolean } = {}
-  ) {
+  constructor(app: App, dataExtractor: (file: TFile) => Promise<unknown>) {
     this.app = app;
     this.dataExtractor = dataExtractor;
-    this.persistIndexes = options.persistIndexes ?? true;
-    this.persistenceWriter = new CoalescedWriter({
-      delayMs: IndexManager.SAVE_DELAY_MS,
-      maxDelayMs: IndexManager.MAX_SAVE_DELAY_MS,
-      writeSnapshot: () => this.writeIndexSnapshot(),
-      onScheduledWriteError: (error) => {
-        console.error('Failed to save indexes:', error);
-      },
-    });
     this.boundHandleFileChange = (file: TAbstractFile, oldPath?: string) => {
       this.handleFileChange(file, oldPath);
     };
@@ -161,84 +101,60 @@ export class IndexManager {
 
     if (!this.listenersRegistered) {
       
+      
+      
       this.plugin.registerEvent(
         this.app.vault.on('create', this.boundHandleFileChange)
       );
+      
+      
+      
+      
+      
       this.plugin.registerEvent(
-        this.app.vault.on('modify', this.boundHandleFileChange)
+        this.app.metadataCache.on('changed', (file) => {
+          this.handleFileChange(file);
+        })
       );
       this.plugin.registerEvent(
-        this.app.vault.on('delete', this.boundHandleFileChange)
+        this.app.vault.on('delete', (file) => this.handleFileDeleted(file))
       );
       this.plugin.registerEvent(
         this.app.vault.on('rename', this.boundHandleFileChange)
       );
-
-      
-      
-      this.eventUnsubscribers.push(
-        eventBus.subscribe('trade:changed', (payload) => {
-          if (payload.action === 'relocated') return;
-          this.markAllIndexesDirty();
-        })
-      );
-      this.eventUnsubscribers.push(
-        eventBus.subscribe('missed-trade:changed', () => {
-          this.markAllIndexesDirty();
-        })
-      );
-      this.eventUnsubscribers.push(
-        eventBus.subscribe('backtest-trade:changed', () => {
-          this.markAllIndexesDirty();
-        })
-      );
       this.listenersRegistered = true;
-    }
-
-    
-    
-    if (this.isInitialized && this.persistIndexes && !this.saveIntervalId) {
-      this.saveIntervalId = this.plugin.registerInterval(
-        window.setInterval(() => void this.flushIndexes(), 5 * 60 * 1000)
-      );
     }
   }
 
   
-  public async initialize(): Promise<void> {
-    if (this.isInitialized) return;
+  public initialize(): Promise<void> {
+    this.initialization ??= this.initializeOnceMetadataResolved();
+    return this.initialization;
+  }
 
+  private async initializeOnceMetadataResolved(): Promise<void> {
     try {
-      
-      const indexDir = getJournalitIndexesPath(this.app);
-      if (!(await this.app.vault.adapter.exists(indexDir))) {
-        await this.app.vault.adapter.mkdir(indexDir);
+      const resolved = await whenMetadataCacheResolved(
+        this.app,
+        IndexManager.METADATA_RESOLVE_TIMEOUT_MS,
+        this.unloadController.signal
+      );
+      if (this.unloadController.signal.aborted) return;
+      if (!resolved) {
+        console.warn(
+          'IndexManager: metadata cache did not resolve in time; indexing the current vault snapshot'
+        );
       }
 
       
-      if (this.persistIndexes) {
-        await this.loadIndexes();
-      }
-
+      
+      
       this.isInitialized = true;
-
-      
-      for (const { file, oldPath } of this.pendingFileChanges) {
-        this.handleFileChange(file, oldPath);
-      }
-      this.pendingFileChanges = [];
 
       for (const indexName of this.indexConfigs.keys()) {
         if (!this.buildingIndexes.has(indexName)) {
           void this.buildIndex(indexName);
         }
-      }
-
-      
-      if (this.persistIndexes && this.plugin) {
-        this.saveIntervalId = this.plugin.registerInterval(
-          window.setInterval(() => void this.flushIndexes(), 5 * 60 * 1000)
-        );
       }
     } catch (error) {
       console.error('Failed to initialize index manager:', error);
@@ -451,13 +367,6 @@ export class IndexManager {
   }
 
   
-  public markAllIndexesDirty(): void {
-    for (const indexName of this.indexConfigs.keys()) {
-      this.markDirty(indexName);
-    }
-  }
-
-  
   public isDirtyIndex(indexName: string): boolean {
     return this.dirtyIndexes.has(indexName);
   }
@@ -498,16 +407,15 @@ export class IndexManager {
           : allFiles.filter((file) => file.extension === 'md');
 
         
+        const slicer = createTimeSlicer();
         for (const file of filesToIndex) {
           try {
             await this.indexFile(file, indexName);
           } catch (error) {
             console.error(`Error re-indexing file ${file.path}:`, error);
           }
+          await slicer.maybeYield();
         }
-
-        
-        this.markPersistenceDirty();
       } finally {
         
         this.buildingIndexes.delete(indexName);
@@ -527,10 +435,6 @@ export class IndexManager {
 
       this.readyIndexes.add(indexName);
       eventBus.publish('index:ready', { indexName });
-    }
-
-    if (this.persistIndexes && this.buildingIndexes.size === 0) {
-      this.persistenceWriter.scheduleIfDirty();
     }
   }
 
@@ -558,15 +462,6 @@ export class IndexManager {
         ? allFiles.filter(config.fileFilter)
         : allFiles.filter((file) => file.extension === 'md');
 
-      
-      const batchSize = 20;
-      const batches = [];
-
-      for (let i = 0; i < filesToIndex.length; i += batchSize) {
-        const batch = filesToIndex.slice(i, i + batchSize);
-        batches.push(batch);
-      }
-
       const existingIndex = this.indexes.get(indexName);
       const hasExistingEntries = !!existingIndex && existingIndex.length > 0;
 
@@ -590,30 +485,15 @@ export class IndexManager {
       }
 
       
-      for (const batch of batches) {
-        
-        const tasks = batch.map((file) => {
-          return async () => {
-            try {
-              await this.indexFile(file, indexName);
-            } catch (error) {
-              console.error(`Error indexing file ${file.path}:`, error);
-            }
-          };
-        });
-
-        
-        for (let i = 0; i < tasks.length; i++) {
-          await tasks[i]();
-
-          
-          if (i % 5 === 0 && i > 0) {
-            await new Promise((resolve) => window.setTimeout(resolve, 10));
-          }
+      const slicer = createTimeSlicer();
+      for (const file of filesToIndex) {
+        try {
+          await this.indexFile(file, indexName);
+        } catch (error) {
+          console.error(`Error indexing file ${file.path}:`, error);
         }
+        await slicer.maybeYield();
       }
-
-      this.markPersistenceDirty();
 
       if (this.pendingRebuildIndexes.has(indexName)) {
         this.pendingRebuildIndexes.delete(indexName);
@@ -634,10 +514,6 @@ export class IndexManager {
       eventBus.publish('index:ready', { indexName });
     } finally {
       this.buildingIndexes.delete(indexName);
-
-      if (this.persistIndexes && this.buildingIndexes.size === 0) {
-        this.persistenceWriter.scheduleIfDirty();
-      }
     }
   }
 
@@ -656,6 +532,9 @@ export class IndexManager {
       
       const data = await this.dataExtractor(file);
       if (!data) return;
+      
+      
+      if (this.app.vault.getAbstractFileByPath(file.path) !== file) return;
       if (config.dataFilter && !config.dataFilter(data, file)) {
         this.removeFileFromIndex(file.path, indexName);
         return;
@@ -710,7 +589,6 @@ export class IndexManager {
       }
 
       this.indexes.set(indexName, index);
-      this.markPersistenceDirty();
     } catch (error) {
       console.error(
         `Error indexing file ${file.path} for index ${indexName}:`,
@@ -745,13 +623,11 @@ export class IndexManager {
       }
 
       index.pop();
-      this.markPersistenceDirty();
     }
 
     fileIndices.delete(indexName);
     if (fileIndices.size === 0) {
       this.filePathMap.delete(filePath);
-      this.processedFiles.delete(filePath);
     }
   }
 
@@ -789,13 +665,11 @@ export class IndexManager {
 
         
         index.pop();
-        this.markPersistenceDirty();
       }
     }
 
     
     this.filePathMap.delete(filePath);
-    this.processedFiles.delete(filePath);
   }
 
   private getIndexesForPathAndDescendants(path: string): Set<string> {
@@ -857,12 +731,9 @@ export class IndexManager {
     }
     if (retainedMappings.size > 0) {
       this.filePathMap.set(file.path, newMappings);
-      this.processedFiles.add(file.path);
-      this.markPersistenceDirty();
     }
     if (oldMappings?.size === 0) {
       this.filePathMap.delete(oldPath);
-      this.processedFiles.delete(oldPath);
     }
 
     for (const [indexName, config] of this.indexConfigs.entries()) {
@@ -879,60 +750,74 @@ export class IndexManager {
   
   private handleFileChange(file: TAbstractFile, oldPath?: string): void {
     
-    if (
-      !('path' in file) ||
-      isPathWithinDirectory(file.path, getJournalitIndexesPath(this.app))
-    )
-      return;
-
     
-    if (!this.isInitialized) {
-      this.pendingFileChanges.push({ file, oldPath });
-      return;
-    }
+    
+    
+    if (!this.isInitialized) return;
 
-    const isFolder = file instanceof TFolder;
-    if (isFolder) {
+    if (file instanceof TFolder) {
+      
+      
       for (const indexName of this.getIndexesAffectedByFolderChange(
         file,
         oldPath
       )) {
         this.markDirty(indexName);
       }
-    } else if (file instanceof TFile && oldPath && oldPath !== file.path) {
+      return;
+    }
+    if (!(file instanceof TFile)) return;
+    if (oldPath && oldPath !== file.path) {
       this.handleFileRenameImmediately(file, oldPath);
     }
+    if (file.extension !== 'md') return;
 
-    scheduleIdle(async () => {
-      try {
-        if (isFolder) {
-          
-          
-          this.removeFileFromIndexes(file.path);
-        } else if (file instanceof TFile) {
-          if (file.extension !== 'md') return;
+    this.pendingNoteUpdates += 1;
+    this.noteUpdates = this.noteUpdates
+      .then(() => this.updateNote(file))
+      .finally(() => {
+        this.pendingNoteUpdates -= 1;
+      });
+  }
 
-          
-          for (const indexName of this.indexConfigs.keys()) {
-            
-            
-            
-            if (this.buildingIndexes.has(indexName)) {
-              this.markDirty(indexName);
-              continue;
-            }
+  
+  public whenNotesApplied(): Promise<void> | null {
+    return this.pendingNoteUpdates > 0 ? this.noteUpdates : null;
+  }
 
-            
-            await this.indexFile(file, indexName);
-          }
-        } else {
-          
-          this.removeFileFromIndexes(file.path);
+  private async updateNote(file: TFile): Promise<void> {
+    
+    
+    if (this.app.vault.getAbstractFileByPath(file.path) !== file) return;
+    try {
+      for (const indexName of this.indexConfigs.keys()) {
+        
+        
+        if (this.buildingIndexes.has(indexName)) {
+          this.markDirty(indexName);
+          continue;
         }
-      } catch (error) {
-        console.error(`Error handling file change for ${file.path}:`, error);
+        await this.indexFile(file, indexName);
       }
-    });
+    } catch (error) {
+      console.error(`Error handling file change for ${file.path}:`, error);
+    }
+  }
+
+  
+  private handleFileDeleted(file: TAbstractFile): void {
+    if (!this.isInitialized) return;
+
+    if (file instanceof TFolder) {
+      for (const indexName of this.getIndexesAffectedByFolderChange(file)) {
+        this.markDirty(indexName);
+      }
+      return;
+    }
+    for (const indexName of this.buildingIndexes) {
+      this.markDirty(indexName);
+    }
+    this.removeFileFromIndexes(file.path);
   }
 
   
@@ -943,148 +828,15 @@ export class IndexManager {
   }
 
   
-  private markPersistenceDirty(): void {
-    if (!this.persistIndexes) return;
-    this.persistenceWriter.markDirty({ defer: this.buildingIndexes.size > 0 });
-  }
-
-  private async writeIndexSnapshot(): Promise<void> {
-    const indexDir = getJournalitIndexesPath(this.app);
-    const serializedIndexes = Array.from(this.indexes.entries()).map(
-      ([indexName, entries]) => ({
-        path: `${indexDir}/${indexName}.json`,
-        content: JSON.stringify({
-          name: indexName,
-          entries: entries.map((entry) => ({
-            path: entry.file.path,
-            values: entry.values,
-          })),
-        }),
-      })
-    );
-
-    if (!(await this.app.vault.adapter.exists(indexDir))) {
-      await this.app.vault.adapter.mkdir(indexDir);
-    }
-
-    for (const index of serializedIndexes) {
-      await this.app.vault.adapter.write(index.path, index.content);
-    }
-  }
-
-  
-  public async flushIndexes(): Promise<void> {
-    if (!this.persistIndexes) return;
-
-    try {
-      await this.persistenceWriter.flush();
-    } catch (error) {
-      console.error('Failed to save indexes:', error);
-    }
-  }
-
-  
-  private async loadIndexes(): Promise<void> {
-    try {
-      const indexDir = getJournalitIndexesPath(this.app);
-
-      
-      if (!(await this.app.vault.adapter.exists(indexDir))) {
-        return;
-      }
-
-      
-      const { files } = await this.app.vault.adapter.list(indexDir);
-
-      
-      for (const filePath of files) {
-        try {
-          const content = await this.app.vault.adapter.read(filePath);
-          const serialized = parseSerializedIndex(
-            JSON.parse(content) as unknown
-          );
-
-          if (!serialized) {
-            console.warn(`Invalid index file format: ${filePath}`);
-            continue;
-          }
-
-          
-          const indexName = serialized.name;
-          const config = this.indexConfigs.get(indexName);
-          if (!config) continue;
-          this.indexes.set(indexName, []);
-
-          const serializedEntriesByPath = new Map<
-            string,
-            SerializedIndexEntry
-          >();
-          for (const serializedEntry of serialized.entries) {
-            serializedEntriesByPath.set(serializedEntry.path, serializedEntry);
-          }
-
-          
-          for (const serializedEntry of serializedEntriesByPath.values()) {
-            const filePath = serializedEntry.path;
-            const file = this.app.vault.getAbstractFileByPath(filePath);
-
-            
-            if (!file || !(file instanceof TFile)) continue;
-            if (config.fileFilter && !config.fileFilter(file)) continue;
-
-            
-            const entry: IndexEntry = {
-              data: null, 
-              file: file,
-              values: serializedEntry.values,
-            };
-
-            
-            const index = this.indexes.get(indexName)!;
-            index.push(entry);
-
-            
-            if (!this.filePathMap.has(filePath)) {
-              this.filePathMap.set(filePath, new Map());
-            }
-
-            this.filePathMap.get(filePath)!.set(indexName, index.length - 1);
-            this.processedFiles.add(filePath);
-          }
-        } catch (error) {
-          console.error(`Failed to load index file ${filePath}:`, error);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to load indexes:', error);
-    }
-  }
-
-  
   public async unload(): Promise<void> {
-    
-    this.saveIntervalId = null;
+    this.unloadController.abort();
 
     
-
-    
-    for (const unsubscribe of this.eventUnsubscribers) {
-      unsubscribe();
-    }
-    this.eventUnsubscribers = [];
-
-    try {
-      await this.persistenceWriter.dispose();
-    } catch (error) {
-      console.error('Failed to save indexes:', error);
-    }
 
     
     this.indexes.clear();
     this.dirtyIndexes.clear();
     this.indexConfigs.clear();
     this.filePathMap.clear();
-    this.processedFiles.clear();
-    this.pendingFileChanges = [];
   }
 }

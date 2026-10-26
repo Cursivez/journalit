@@ -117,6 +117,11 @@ export const TRADE_IMPORT_SOURCE_STYLES = `
   color: var(--text-muted);
 }
 
+.journalit-csv-import .journalit-trade-import-sync-suggestion__scope {
+  margin-top: 2px;
+  font-size: var(--font-ui-smaller);
+}
+
 .journalit-csv-import .journalit-trade-import-sync-suggestion__action {
   display: inline-flex;
   flex: 0 0 auto;

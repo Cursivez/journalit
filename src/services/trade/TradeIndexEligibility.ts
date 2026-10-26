@@ -14,7 +14,7 @@ export function isTradeIndexEligible(
     return false;
   }
 
-  if (frontmatter?.isMissedTrade) {
+  if (frontmatter?.isMissedTrade || frontmatter?.type === 'missed-trade') {
     return false;
   }
 
@@ -23,4 +23,19 @@ export function isTradeIndexEligible(
   }
 
   return /\/trades\//.test(file.path);
+}
+
+
+export function isMissedTradeNote(
+  file: Pick<TFile, 'path'>,
+  frontmatter: Record<string, unknown> | null | undefined,
+  folderPathService: Pick<FolderPathService, 'isJournalPath'>
+): boolean {
+  return (
+    file.path.endsWith('.md') &&
+    /\/trades\//.test(file.path) &&
+    folderPathService.isJournalPath(file.path) &&
+    (frontmatter?.type === 'missed-trade' ||
+      Boolean(frontmatter?.isMissedTrade))
+  );
 }

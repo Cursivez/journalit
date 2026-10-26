@@ -26,7 +26,6 @@ export const CHART_STYLES = `
   overflow: visible;
   border-radius: 8px;
   background-color: transparent;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
   padding: 4px;
 }
 
@@ -264,7 +263,7 @@ export const CHART_STYLES = `
   margin-top: 0;
 }
 
-.journalit-dashboard-mfe-scatter .journalit-chart-container .recharts-scatter-symbol [data-journalit-chart-mark="true"]:hover .recharts-symbols {
+.journalit-dashboard-excursion-scatter .journalit-chart-container .recharts-scatter-symbol [data-journalit-chart-mark="true"]:hover .recharts-symbols {
   fill-opacity: 1;
   stroke: var(--text-normal);
   stroke-width: 1.25px;
@@ -293,7 +292,7 @@ export const CHART_STYLES = `
   min-width: 140px;
   max-width: min(320px, calc(100vw - 48px));
   border: 1px solid var(--background-modifier-border);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: var(--shadow-s);
   transform: translateY(-4px);
   position: relative;
   animation: journalit-chart-tooltip-fade-in 0.2s var(--chart-animation-function);
@@ -356,7 +355,6 @@ export const CHART_STYLES = `
   border-radius: 8px;
   padding: 12px;
   min-width: 0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .journalit-chart-tooltip-label {
@@ -403,6 +401,24 @@ export const CHART_STYLES = `
 
 .journalit-chart-container svg {
   --no-tooltip: true;
+}
+
+
+@media print {
+  .journalit-chart-container .recharts-wrapper,
+  .journalit-chart-container .recharts-surface {
+    max-width: 100%;
+  }
+
+  .journalit-chart-container .recharts-surface {
+    height: auto;
+  }
+
+  
+  .journalit-reviewv2-chart-container,
+  .journalit-reviewv2-directional-section {
+    page-break-inside: avoid;
+  }
 }
 
 .journalit-chart-container .recharts-cartesian-grid-horizontal line,
@@ -475,7 +491,6 @@ export const CHART_STYLES = `
 .journalit-chart-container .recharts-tooltip-wrapper {
   pointer-events: none;
   z-index: 1000;
-  filter: drop-shadow(0 4px 12px rgba(0, 0, 0, 0.25));
   max-width: min(320px, calc(100vw - 48px));
 }
 
@@ -483,8 +498,12 @@ export const CHART_STYLES = `
   --chart-positive: var(--text-success, #43a047);
   --chart-negative: var(--text-error, #e53935);
   --chart-neutral: var(--text-muted, #888888);
+  
   position: fixed;
-  inset: 0;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 0;
   z-index: var(--journalit-chart-tooltip-z-index, 999999);
   pointer-events: none;
 }
@@ -538,20 +557,10 @@ export const CHART_STYLES = `
 
 
 .journalit-chart-container .recharts-bar-rectangle.recharts-active {
-  filter: brightness(1.2) drop-shadow(0 0 6px rgba(0, 0, 0, 0.3));
+  filter: brightness(1.2);
 }
 
 
-@keyframes journalit-chart-bar-fade-in {
-  from {
-    opacity: 0;
-    transform: scaleY(0.8);
-  }
-  to {
-    opacity: 1;
-    transform: scaleY(1);
-  }
-}
 
 .journalit-chart-container .recharts-bar-rectangle {
   
@@ -569,21 +578,8 @@ export const CHART_STYLES = `
   }
 }
 
-@keyframes journalit-chart-pulse-border {
-  0% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent), 0 4px 12px color-mix(in srgb, var(--interactive-accent) 25%, transparent);
-  }
-  50% {
-    box-shadow: 0 0 0 3px color-mix(in srgb, var(--interactive-accent) 30%, transparent), 0 4px 15px color-mix(in srgb, var(--interactive-accent) 35%, transparent);
-  }
-  100% {
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 20%, transparent), 0 4px 12px color-mix(in srgb, var(--interactive-accent) 25%, transparent);
-  }
-}
-
 
 .journalit-dashboard-calendar-day.today {
-  animation: journalit-chart-pulse-border 2s infinite ease-in-out;
   border: 2px solid var(--interactive-accent) !important;
   z-index: 2 !important;
 }

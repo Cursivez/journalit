@@ -15,18 +15,6 @@ export const interactionsCSS = `
 }
 
 
-.jl-restore-button-hover {
-  background-color: var(--background-secondary);
-  border-color: var(--background-modifier-border);
-  transition: all 0.2s ease;
-}
-
-.jl-restore-button-hover:hover:not(:disabled) {
-  background-color: var(--background-modifier-hover);
-  border-color: var(--text-accent);
-}
-
-
 .jl-quick-link-hover {
   background-color: var(--background-secondary);
   border-color: var(--background-modifier-border);
@@ -39,7 +27,6 @@ export const interactionsCSS = `
   background-color: var(--background-modifier-hover);
   border-color: var(--link-color, var(--interactive-accent));
   transform: translateY(-1px);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 
@@ -56,34 +43,6 @@ export const interactionsCSS = `
 
 
 
-.jl-checkbox-wrapper:hover .jl-checkbox:not(.jl-checkbox-checked) {
-  background-color: var(--background-modifier-hover);
-  border-color: var(--interactive-accent);
-}
-
-
-.jl-checkbox-wrapper:hover .jl-checkbox.jl-checkbox-checked {
-  opacity: 0.85 !important;
-  box-shadow: 0 0 0 2px var(--background-modifier-border) !important;
-}
-
-.jl-checkbox {
-  background-color: var(--background-primary);
-  border-color: var(--background-modifier-border);
-  transition: background-color 0.2s ease, border-color 0.2s ease;
-}
-
-.jl-checkbox-checked {
-  background-color: var(--interactive-accent);
-  color: var(--text-on-accent);
-  border-color: var(--interactive-accent);
-}
-
-
-.jl-checkbox svg {
-  pointer-events: none !important;
-}
-
 
 .jl-checkbox-wrapper,
 .jl-checkbox-wrapper *:not(svg) {
@@ -98,30 +57,6 @@ export const interactionsCSS = `
 }
 
 
-.jl-checkbox {
-  cursor: pointer !important;
-}
-
-
-.jl-button-destructive {
-  background-color: var(--background-modifier-error);
-  color: var(--text-on-accent);
-  border-color: var(--background-modifier-error);
-}
-
-.jl-button-destructive:hover:not(:disabled) {
-  background-color: var(--background-modifier-error-hover);
-  opacity: 0.9;
-}
-
-
-.jl-image-hidden {
-  display: none;
-}
-
-.jl-component-visible {
-  display: block !important;
-}
 
 .jl-force-redraw {
   opacity: 0.99;
@@ -139,22 +74,6 @@ export const interactionsCSS = `
   height: 0;
   width: 0;
   pointer-events: none;
-}
-
-
-.jl-component-reset {
-  margin: 0;
-  padding: 0;
-  border: none;
-}
-
-.jl-component-container-reset {
-  margin: 0;
-  padding: 0;
-  border: none;
-  width: 100%;
-  display: block;
-  box-sizing: border-box;
 }
 
 

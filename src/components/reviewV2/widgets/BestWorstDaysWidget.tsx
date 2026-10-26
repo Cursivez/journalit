@@ -4,8 +4,6 @@ import React, { useState, useMemo, useCallback } from 'react';
 import JournalitPlugin from '../../../main';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
-import { CurrencyCode } from '../../../utils/currencyConfig';
-import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
 import {
   getEffectivePnL,
@@ -22,11 +20,17 @@ import {
   splitReviewTradeByRealizedPnlEvent,
 } from '../utils/reviewTradeDates';
 import { TradesPreviewData } from '../../../types/reviewV2';
-import { BestWorstCard } from './shared/BestWorstCard';
+import {
+  BestWorstPeriodGrid,
+  BestWorstSkeletonGrid,
+} from './shared/BestWorstPeriodGrid';
+import {
+  readReviewTradeSettings,
+  resolveReviewCurrency,
+} from './shared/reviewWidgetSettings';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { useReviewTrades } from '../hooks/useReviewData';
 import { useEventBus } from '../../../hooks/useEventBus';
-import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t, tPlural } from '../../../lang/helpers';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 
@@ -101,39 +105,6 @@ interface DayStats {
   }>;
 }
 
-const renderSkeletonCard = (
-  isPositive: boolean,
-  titleKey:
-    | 'widget.best-worst-days.best-day'
-    | 'widget.best-worst-days.worst-day'
-) => (
-  <div>
-    <div className="journalit-reviewv2-bestworst-label">{t(titleKey)}</div>
-    <div
-      className={[
-        'journalit-reviewv2-bestworst-card',
-        isPositive
-          ? 'journalit-reviewv2-bestworst-card--positive'
-          : 'journalit-reviewv2-bestworst-card--negative',
-        'journalit-reviewv2-bestworst-card--preview',
-      ]
-        .filter(Boolean)
-        .join(' ')}
-    >
-      <div className="journalit-reviewv2-bestworst-pnl-col">
-        <SkeletonBox width={70} height={20} borderRadius="4px" />
-      </div>
-      <div className="journalit-reviewv2-bestworst-details">
-        <SkeletonBox width={140} height={16} borderRadius="4px" />
-        <div className="journalit-u-flex journalit-u-gap-8 journalit-u-mt-4">
-          <SkeletonBox width={50} height={12} borderRadius="4px" />
-          <SkeletonBox width={70} height={12} borderRadius="4px" />
-        </div>
-      </div>
-    </div>
-  </div>
-);
-
 export const BestWorstDaysWidget: React.FC<BestWorstDaysWidgetProps> =
   React.memo(
     ({ filePath, plugin, config = {}, preview = false, previewData }) => {
@@ -169,22 +140,19 @@ export const BestWorstDaysWidget: React.FC<BestWorstDaysWidgetProps> =
         preview || (noteType !== 'drc' && noteType !== 'trade');
 
       
-      const currency =
-        getSingleExplicitCurrency(trades) ||
-        plugin?.settings?.general?.currency ||
-        CurrencyCode.USD;
+      const currency = resolveReviewCurrency(trades, plugin);
       const { formatValue, shouldMask } = useDisplayFormatter();
       const isPnlMasked = shouldMask('pnl');
       const isReturnPercentMasked = shouldMask('returnPercent');
       const applyAccountCountMultiplier = false;
-      const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
-      const dateFormat = plugin?.settings?.trade?.dateFormat || 'DDMMYY';
-      const breakEvenThresholdMode =
-        plugin?.settings?.trade?.breakEvenThresholdMode;
-      const breakEvenThresholdPercent =
-        plugin?.settings?.trade?.breakEvenThresholdPercent;
-      const breakEvenRangeMin = plugin?.settings?.trade?.breakEvenRangeMin;
-      const breakEvenRangeMax = plugin?.settings?.trade?.breakEvenRangeMax;
+      const {
+        defaultRiskAmount,
+        dateFormat,
+        breakEvenThresholdMode,
+        breakEvenThresholdPercent,
+        breakEvenRangeMin,
+        breakEvenRangeMax,
+      } = readReviewTradeSettings(plugin);
       
       const { bestDay, worstDay } = useMemo(() => {
         const closedTrades = asReviewBestWorstTrades(
@@ -370,26 +338,13 @@ export const BestWorstDaysWidget: React.FC<BestWorstDaysWidgetProps> =
       };
 
       if (loading) {
-        const showBoth = Boolean(
-          mergedConfig.showBest && mergedConfig.showWorst
-        );
-
         return (
-          <div
-            className={[
-              'journalit-reviewv2-bestworst-grid',
-              showBoth
-                ? 'journalit-reviewv2-bestworst-grid--both'
-                : 'journalit-reviewv2-bestworst-grid--single',
-            ]
-              .filter(Boolean)
-              .join(' ')}
-          >
-            {mergedConfig.showBest &&
-              renderSkeletonCard(true, 'widget.best-worst-days.best-day')}
-            {mergedConfig.showWorst &&
-              renderSkeletonCard(false, 'widget.best-worst-days.worst-day')}
-          </div>
+          <BestWorstSkeletonGrid
+            config={mergedConfig}
+            bestTitle={t('widget.best-worst-days.best-day')}
+            worstTitle={t('widget.best-worst-days.worst-day')}
+            primaryWidth={140}
+          />
         );
       }
 
@@ -452,66 +407,34 @@ export const BestWorstDaysWidget: React.FC<BestWorstDaysWidgetProps> =
         );
       }
 
+      const formatPeriodPnl = (period: DayStats): string =>
+        formatValue({
+          kind: 'pnl',
+          value: period.pnl,
+          currencyCode: currency,
+          rMultiple: period.pnlR,
+        });
+
       return (
-        <div
-          className={[
-            'journalit-reviewv2-bestworst-grid',
-            mergedConfig.showBest && mergedConfig.showWorst
-              ? 'journalit-reviewv2-bestworst-grid--both'
-              : 'journalit-reviewv2-bestworst-grid--single',
-          ]
-            .filter(Boolean)
-            .join(' ')}
-        >
-          {mergedConfig.showBest && (
-            <BestWorstCard
-              title={t('widget.best-worst-days.best-day')}
-              isPositive={true}
-              isMasked={isPnlMasked}
-              isEmpty={!bestDay}
-              emptyMessage={t('widget.best-worst-days.no-profitable-days')}
-              pnl={
-                bestDay
-                  ? formatValue({
-                      kind: 'pnl',
-                      value: bestDay.pnl,
-                      currencyCode: currency,
-                      rMultiple: bestDay.pnlR,
-                    })
-                  : ''
-              }
-              primaryText={bestDay ? formatDayName(bestDay.date) : ''}
-              metaItems={bestDay ? buildMetaItems(bestDay) : []}
-              onClick={bestDay ? () => void openDRC(bestDay.date) : undefined}
-              currencyConversion={currencyConversion}
-              conversionTrades={bestDay?.trades}
-            />
-          )}
-          {mergedConfig.showWorst && (
-            <BestWorstCard
-              title={t('widget.best-worst-days.worst-day')}
-              isPositive={false}
-              isMasked={isPnlMasked}
-              isEmpty={!worstDay}
-              emptyMessage={t('widget.best-worst-days.no-losing-days')}
-              pnl={
-                worstDay
-                  ? formatValue({
-                      kind: 'pnl',
-                      value: worstDay.pnl,
-                      currencyCode: currency,
-                      rMultiple: worstDay.pnlR,
-                    })
-                  : ''
-              }
-              primaryText={worstDay ? formatDayName(worstDay.date) : ''}
-              metaItems={worstDay ? buildMetaItems(worstDay) : []}
-              onClick={worstDay ? () => void openDRC(worstDay.date) : undefined}
-              currencyConversion={currencyConversion}
-              conversionTrades={worstDay?.trades}
-            />
-          )}
-        </div>
+        <BestWorstPeriodGrid
+          config={mergedConfig}
+          best={{
+            title: t('widget.best-worst-days.best-day'),
+            emptyMessage: t('widget.best-worst-days.no-profitable-days'),
+            period: bestDay,
+          }}
+          worst={{
+            title: t('widget.best-worst-days.worst-day'),
+            emptyMessage: t('widget.best-worst-days.no-losing-days'),
+            period: worstDay,
+          }}
+          isPnlMasked={isPnlMasked}
+          currencyConversion={currencyConversion}
+          formatPnl={formatPeriodPnl}
+          formatName={(day) => formatDayName(day.date)}
+          buildMetaItems={buildMetaItems}
+          onOpen={(day) => void openDRC(day.date)}
+        />
       );
     }
   );

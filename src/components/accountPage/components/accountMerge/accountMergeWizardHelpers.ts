@@ -12,8 +12,10 @@ import type {
 import {
   isPropChallengeRuleComplete,
   isPropChallengePayoutPolicyComplete,
+  phaseProfitTargetNeedsBalance,
 } from '../../../../services/propChallenge/PropChallengeConfig';
 import type {
+  PropChallengePhase,
   PropChallengeRule,
   PropChallengePayoutPolicy,
 } from '../../../../services/propChallenge/types';
@@ -40,6 +42,17 @@ export function hasIncompleteAccountMergeRules(
       (policy) => !isPropChallengePayoutPolicyComplete(policy)
     )
   );
+}
+
+
+export function accountMergeRulesIssue(
+  hasIncompleteRules: boolean,
+  phases: readonly PropChallengePhase[]
+): TranslationKey | undefined {
+  if (hasIncompleteRules) return 'account.create.error.rule-incomplete';
+  return phases.some(phaseProfitTargetNeedsBalance)
+    ? 'account.merge.error.target-needs-balance'
+    : undefined;
 }
 
 export function hasEditedAccountMergeRules(

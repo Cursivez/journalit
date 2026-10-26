@@ -1,6 +1,6 @@
 
 
-import { App, Modal, Notice } from 'obsidian';
+import { App, Notice } from 'obsidian';
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import { Plus } from '../../shared/icons/ObsidianIcon';
@@ -27,6 +27,7 @@ import {
 } from '../../../services/propChallenge/stageAccountTypes';
 import type { PropChallengeStage } from '../../../services/propChallenge/types';
 import { formatAccountTypeLabel } from '../../../utils/accountTypeLabel';
+import { JournalitModal } from '../../modals/JournalitModal';
 
 const CHALLENGE_STAGE_ROWS: ReadonlyArray<{
   stage: PropChallengeStage;
@@ -64,7 +65,7 @@ interface AccountDashboardSettingsModalProps {
 }
 
 
-export class AccountDashboardSettingsModal extends Modal {
+export class AccountDashboardSettingsModal extends JournalitModal {
   private props: AccountDashboardSettingsModalProps;
   private container: HTMLDivElement;
   private root: Root | null = null;
@@ -180,6 +181,368 @@ const handleOperationWithRetry = async (
   return false;
 };
 
+type AccountTypeDeletionImpact = {
+  affectedAccounts: number;
+  accountNames: string[];
+  settingsImpact: {
+    inExcludedTypes: boolean;
+    inDisplayOrder: boolean;
+    inWithdrawalSettings: boolean;
+  };
+};
+
+type MigrationOption = 'reassign' | 'archive' | 'delete';
+
+const MIGRATION_OPTION_COPY = {
+  reassign: {
+    title: 'account.settings.migration.option.reassign.title',
+    desc: 'account.settings.migration.option.reassign.desc',
+  },
+  archive: {
+    title: 'account.settings.migration.option.archive.title',
+    desc: 'account.settings.migration.option.archive.desc',
+  },
+  delete: {
+    title: 'account.settings.migration.option.delete.title',
+    desc: 'account.settings.migration.option.delete.desc',
+  },
+} as const;
+
+const isMigrationOption = (value: string): value is MigrationOption =>
+  value === 'reassign' || value === 'archive' || value === 'delete';
+
+
+function AffectedAccountNames({
+  names,
+  limit,
+  className,
+}: {
+  names: string[];
+  limit: number;
+  className?: string;
+}) {
+  return (
+    <ul className={className}>
+      {names.slice(0, limit).map((name) => (
+        <li key={name}>{name}</li>
+      ))}
+      {names.length > limit && (
+        <li>
+          {t('account.settings.migration.more-accounts', {
+            count: (names.length - limit).toString(),
+          })}
+        </li>
+      )}
+    </ul>
+  );
+}
+
+function MigrationOptionRadio({
+  option,
+  selected,
+  onChange,
+}: {
+  option: MigrationOption;
+  selected: MigrationOption;
+  onChange: (option: MigrationOption) => void;
+}) {
+  const copy = MIGRATION_OPTION_COPY[option];
+  const title = t(copy.title);
+  return (
+    <label
+      className="migration-option"
+      htmlFor={`migration-option-${option}`}
+      aria-label={title}
+    >
+      <input
+        id={`migration-option-${option}`}
+        type="radio"
+        name="migrationOption"
+        value={option}
+        checked={selected === option}
+        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+          const value = e.target.value;
+          if (isMigrationOption(value)) {
+            onChange(value);
+          }
+        }}
+      />
+      <span className="migration-option-content">
+        <span className="migration-option-title">{title}</span>
+        <span className="migration-option-desc">{t(copy.desc)}</span>
+      </span>
+    </label>
+  );
+}
+
+function AccountMigrationPanel({
+  accountType,
+  deletionImpact,
+  isSaving,
+  migrationOption,
+  migrationTargetType,
+  availableMigrationTypes,
+  onMigrationOptionChange,
+  onMigrationTargetTypeChange,
+  onCancel,
+  onConfirm,
+}: {
+  accountType: string;
+  deletionImpact: AccountTypeDeletionImpact;
+  isSaving: boolean;
+  migrationOption: MigrationOption;
+  migrationTargetType: string;
+  availableMigrationTypes: string[];
+  onMigrationOptionChange: (option: MigrationOption) => void;
+  onMigrationTargetTypeChange: (type: string) => void;
+  onCancel: () => void;
+  onConfirm: () => void;
+}) {
+  return (
+    <div className="account-migration-modal-overlay">
+      <ConfirmationPanel<AccountMigrationAction>
+        title={t('account.settings.migration.title')}
+        disabled={isSaving}
+        className="account-migration-modal"
+        actions={
+          [
+            {
+              id: 'cancel',
+              value: 'cancel',
+              label: t('button.cancel'),
+              variant: 'secondary',
+              initialFocus: true,
+            },
+            {
+              id: 'migrate',
+              value: 'migrate',
+              label: isSaving
+                ? t('account.settings.migration.button.migrating')
+                : t('account.settings.migration.button.migrate'),
+              variant: 'destructive',
+              disabled: migrationOption === 'reassign' && !migrationTargetType,
+            },
+          ] satisfies readonly ConfirmationPanelAction<AccountMigrationAction>[]
+        }
+        onAction={(action) => {
+          if (action === 'cancel') {
+            onCancel();
+            return;
+          }
+          onConfirm();
+        }}
+      >
+        <div>
+          <div className="migration-warning">
+            <p>
+              <strong>
+                {t('account.settings.migration.warning', {
+                  name: formatAccountTypeLabel(accountType),
+                  count: deletionImpact.affectedAccounts.toString(),
+                })}
+              </strong>
+            </p>
+            <p>{t('account.settings.migration.instruction')}</p>
+            <AffectedAccountNames
+              names={deletionImpact.accountNames}
+              limit={3}
+              className="affected-accounts-list"
+            />
+          </div>
+
+          <div className="migration-options">
+            <h4>{t('account.settings.migration.choose-option')}</h4>
+
+            <div className="migration-option-group">
+              <MigrationOptionRadio
+                option="reassign"
+                selected={migrationOption}
+                onChange={onMigrationOptionChange}
+              />
+
+              {migrationOption === 'reassign' && (
+                <div className="target-type-select">
+                  <label htmlFor="account-migration-target-type">
+                    {t('account.settings.migration.target-type.label')}
+                  </label>
+                  <select
+                    id="account-migration-target-type"
+                    value={migrationTargetType}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                      onMigrationTargetTypeChange(e.target.value)
+                    }
+                    disabled={isSaving}
+                  >
+                    {availableMigrationTypes.map((type) => (
+                      <option key={type} value={type}>
+                        {formatAccountTypeLabel(type)}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <MigrationOptionRadio
+                option="archive"
+                selected={migrationOption}
+                onChange={onMigrationOptionChange}
+              />
+
+              <MigrationOptionRadio
+                option="delete"
+                selected={migrationOption}
+                onChange={onMigrationOptionChange}
+              />
+            </div>
+          </div>
+        </div>
+      </ConfirmationPanel>
+    </div>
+  );
+}
+
+const deletePanelActions = (
+  hasAffectedAccounts: boolean,
+  isSaving: boolean
+): readonly ConfirmationPanelAction<AccountTypeDeleteAction>[] => [
+  {
+    id: 'cancel',
+    value: 'cancel',
+    label: t('button.cancel'),
+    variant: 'secondary',
+    initialFocus: true,
+  },
+  hasAffectedAccounts
+    ? {
+        id: 'setup-migration',
+        value: 'setup-migration',
+        label: t('account.settings.delete.button.setup-migration'),
+        variant: 'primary',
+      }
+    : {
+        id: 'delete',
+        value: 'delete',
+        label: isSaving
+          ? t('account.settings.delete.button.deleting')
+          : t('account.settings.delete.button.delete'),
+        variant: 'destructive',
+      },
+];
+
+function SettingsCleanupPreview({
+  settingsImpact,
+}: {
+  settingsImpact: AccountTypeDeletionImpact['settingsImpact'];
+}) {
+  const hasCleanup =
+    settingsImpact.inExcludedTypes ||
+    settingsImpact.inDisplayOrder ||
+    settingsImpact.inWithdrawalSettings;
+  return (
+    <div className="settings-cleanup">
+      <h5>{t('account.settings.delete.cleanup-title')}</h5>
+      <ul>
+        {settingsImpact.inExcludedTypes && (
+          <li>{t('account.settings.delete.cleanup.excluded')}</li>
+        )}
+        {settingsImpact.inDisplayOrder && (
+          <li>{t('account.settings.delete.cleanup.order')}</li>
+        )}
+        {settingsImpact.inWithdrawalSettings && (
+          <li>{t('account.settings.delete.cleanup.withdrawals')}</li>
+        )}
+        {!hasCleanup && <li>{t('account.settings.delete.cleanup.none')}</li>}
+      </ul>
+    </div>
+  );
+}
+
+function AccountTypeDeletePanel({
+  accountType,
+  deletionImpact,
+  isSaving,
+  onCancel,
+  onSetupMigration,
+  onConfirm,
+}: {
+  accountType: string;
+  deletionImpact: AccountTypeDeletionImpact;
+  isSaving: boolean;
+  onCancel: () => void;
+  onSetupMigration: () => void;
+  onConfirm: () => void;
+}) {
+  const hasAffectedAccounts = deletionImpact.affectedAccounts > 0;
+  return (
+    <div className="account-type-delete-modal-overlay">
+      <ConfirmationPanel<AccountTypeDeleteAction>
+        title={t('account.settings.delete.title')}
+        disabled={isSaving}
+        actions={deletePanelActions(hasAffectedAccounts, isSaving)}
+        onAction={(action) => {
+          if (action === 'cancel') {
+            onCancel();
+            return;
+          }
+          if (action === 'setup-migration') {
+            onSetupMigration();
+            return;
+          }
+          onConfirm();
+        }}
+      >
+        <div>
+          <div className="delete-warning">
+            <p>
+              <strong>
+                {t('account.settings.delete.confirm-question', {
+                  name: formatAccountTypeLabel(accountType),
+                })}
+              </strong>
+            </p>
+          </div>
+
+          
+          <div className="impact-analysis">
+            <h4>{t('account.settings.delete.impact-analysis')}</h4>
+
+            {hasAffectedAccounts ? (
+              <div className="affected-accounts">
+                <div className="impact-item impact-critical">
+                  <strong>
+                    {t('account.settings.delete.affected-accounts', {
+                      count: deletionImpact.affectedAccounts.toString(),
+                    })}
+                  </strong>
+                  <AffectedAccountNames
+                    names={deletionImpact.accountNames}
+                    limit={5}
+                  />
+                </div>
+                <div className="migration-notice">
+                  <strong>{t('common.info')}:</strong>{' '}
+                  {t('account.settings.delete.migration-notice')}
+                </div>
+              </div>
+            ) : (
+              <div className="no-affected-accounts">
+                <div className="impact-item impact-safe">
+                  {t('account.settings.delete.no-affected')}
+                </div>
+              </div>
+            )}
+
+            
+            <SettingsCleanupPreview
+              settingsImpact={deletionImpact.settingsImpact}
+            />
+          </div>
+        </div>
+      </ConfirmationPanel>
+    </div>
+  );
+}
+
 function useAccountDashboardSettingsModel({
   plugin,
   onSave,
@@ -201,22 +564,14 @@ function useAccountDashboardSettingsModel({
   
   const [showDeleteConfirmation, setShowDeleteConfirmation] = useState(false);
   const [accountTypeToDelete, setAccountTypeToDelete] = useState<string>('');
-  const [deletionImpact, setDeletionImpact] = useState<{
-    affectedAccounts: number;
-    accountNames: string[];
-    settingsImpact: {
-      inExcludedTypes: boolean;
-      inDisplayOrder: boolean;
-      inWithdrawalSettings: boolean;
-    };
-  } | null>(null);
+  const [deletionImpact, setDeletionImpact] =
+    useState<AccountTypeDeletionImpact | null>(null);
 
   
   const [showMigrationModal, setShowMigrationModal] = useState(false);
   const [migrationTargetType, setMigrationTargetType] = useState<string>('');
-  const [migrationOption, setMigrationOption] = useState<
-    'reassign' | 'archive' | 'delete'
-  >('reassign');
+  const [migrationOption, setMigrationOption] =
+    useState<MigrationOption>('reassign');
 
   
   const [dashboardSettings, setDashboardSettings] = useState<{
@@ -413,15 +768,7 @@ function useAccountDashboardSettingsModel({
   
   const analyzeAccountTypeDeletionImpact = async (
     accountType: string
-  ): Promise<{
-    affectedAccounts: number;
-    accountNames: string[];
-    settingsImpact: {
-      inExcludedTypes: boolean;
-      inDisplayOrder: boolean;
-      inWithdrawalSettings: boolean;
-    };
-  }> => {
+  ): Promise<AccountTypeDeletionImpact> => {
     try {
       
       const allAccounts: AccountCatalogEntry[] =
@@ -1049,329 +1396,30 @@ function useAccountDashboardSettingsModel({
 
   const accountMigrationModal =
     showMigrationModal && deletionImpact && accountTypeToDelete ? (
-      <div className="account-migration-modal-overlay">
-        <ConfirmationPanel<AccountMigrationAction>
-          title={t('account.settings.migration.title')}
-          disabled={isSaving}
-          className="account-migration-modal"
-          actions={
-            [
-              {
-                id: 'cancel',
-                value: 'cancel',
-                label: t('button.cancel'),
-                variant: 'secondary',
-                initialFocus: true,
-              },
-              {
-                id: 'migrate',
-                value: 'migrate',
-                label: isSaving
-                  ? t('account.settings.migration.button.migrating')
-                  : t('account.settings.migration.button.migrate'),
-                variant: 'destructive',
-                disabled:
-                  migrationOption === 'reassign' && !migrationTargetType,
-              },
-            ] satisfies readonly ConfirmationPanelAction<AccountMigrationAction>[]
-          }
-          onAction={(action) => {
-            if (action === 'cancel') {
-              void handleCancelMigration();
-              return;
-            }
-            void handleConfirmMigration();
-          }}
-        >
-          <div>
-            <div className="migration-warning">
-              <p>
-                <strong>
-                  {t('account.settings.migration.warning', {
-                    name: formatAccountTypeLabel(accountTypeToDelete),
-                    count: deletionImpact.affectedAccounts.toString(),
-                  })}
-                </strong>
-              </p>
-              <p>{t('account.settings.migration.instruction')}</p>
-              <ul className="affected-accounts-list">
-                {deletionImpact.accountNames.slice(0, 3).map((name) => (
-                  <li key={name}>{name}</li>
-                ))}
-                {deletionImpact.accountNames.length > 3 && (
-                  <li>
-                    {t('account.settings.migration.more-accounts', {
-                      count: (
-                        deletionImpact.accountNames.length - 3
-                      ).toString(),
-                    })}
-                  </li>
-                )}
-              </ul>
-            </div>
-
-            <div className="migration-options">
-              <h4>{t('account.settings.migration.choose-option')}</h4>
-
-              <div className="migration-option-group">
-                <label
-                  className="migration-option"
-                  htmlFor="migration-option-reassign"
-                  aria-label={t(
-                    'account.settings.migration.option.reassign.title'
-                  )}
-                >
-                  <input
-                    id="migration-option-reassign"
-                    type="radio"
-                    name="migrationOption"
-                    value="reassign"
-                    checked={migrationOption === 'reassign'}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      const value = e.target.value;
-                      if (
-                        value === 'reassign' ||
-                        value === 'archive' ||
-                        value === 'delete'
-                      ) {
-                        setMigrationOption(value);
-                      }
-                    }}
-                  />
-                  <span className="migration-option-content">
-                    <span className="migration-option-title">
-                      {t('account.settings.migration.option.reassign.title')}
-                    </span>
-                    <span className="migration-option-desc">
-                      {t('account.settings.migration.option.reassign.desc')}
-                    </span>
-                  </span>
-                </label>
-
-                {migrationOption === 'reassign' && (
-                  <div className="target-type-select">
-                    <label htmlFor="account-migration-target-type">
-                      {t('account.settings.migration.target-type.label')}
-                    </label>
-                    <select
-                      id="account-migration-target-type"
-                      value={migrationTargetType}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                        setMigrationTargetType(e.target.value)
-                      }
-                      disabled={isSaving}
-                    >
-                      {availableMigrationTypes.map((type) => (
-                        <option key={type} value={type}>
-                          {formatAccountTypeLabel(type)}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-
-                <label
-                  className="migration-option"
-                  htmlFor="migration-option-archive"
-                  aria-label={t(
-                    'account.settings.migration.option.archive.title'
-                  )}
-                >
-                  <input
-                    id="migration-option-archive"
-                    type="radio"
-                    name="migrationOption"
-                    value="archive"
-                    checked={migrationOption === 'archive'}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      const value = e.target.value;
-                      if (
-                        value === 'reassign' ||
-                        value === 'archive' ||
-                        value === 'delete'
-                      ) {
-                        setMigrationOption(value);
-                      }
-                    }}
-                  />
-                  <span className="migration-option-content">
-                    <span className="migration-option-title">
-                      {t('account.settings.migration.option.archive.title')}
-                    </span>
-                    <span className="migration-option-desc">
-                      {t('account.settings.migration.option.archive.desc')}
-                    </span>
-                  </span>
-                </label>
-
-                <label
-                  className="migration-option"
-                  htmlFor="migration-option-delete"
-                  aria-label={t(
-                    'account.settings.migration.option.delete.title'
-                  )}
-                >
-                  <input
-                    id="migration-option-delete"
-                    type="radio"
-                    name="migrationOption"
-                    value="delete"
-                    checked={migrationOption === 'delete'}
-                    onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                      const value = e.target.value;
-                      if (
-                        value === 'reassign' ||
-                        value === 'archive' ||
-                        value === 'delete'
-                      ) {
-                        setMigrationOption(value);
-                      }
-                    }}
-                  />
-                  <span className="migration-option-content">
-                    <span className="migration-option-title">
-                      {t('account.settings.migration.option.delete.title')}
-                    </span>
-                    <span className="migration-option-desc">
-                      {t('account.settings.migration.option.delete.desc')}
-                    </span>
-                  </span>
-                </label>
-              </div>
-            </div>
-          </div>
-        </ConfirmationPanel>
-      </div>
+      <AccountMigrationPanel
+        accountType={accountTypeToDelete}
+        deletionImpact={deletionImpact}
+        isSaving={isSaving}
+        migrationOption={migrationOption}
+        migrationTargetType={migrationTargetType}
+        availableMigrationTypes={availableMigrationTypes}
+        onMigrationOptionChange={setMigrationOption}
+        onMigrationTargetTypeChange={setMigrationTargetType}
+        onCancel={() => void handleCancelMigration()}
+        onConfirm={() => void handleConfirmMigration()}
+      />
     ) : null;
 
   const deleteConfirmationModal =
     showDeleteConfirmation && deletionImpact ? (
-      <div className="account-type-delete-modal-overlay">
-        <ConfirmationPanel<AccountTypeDeleteAction>
-          title={t('account.settings.delete.title')}
-          disabled={isSaving}
-          actions={
-            (deletionImpact.affectedAccounts > 0
-              ? [
-                  {
-                    id: 'cancel',
-                    value: 'cancel',
-                    label: t('button.cancel'),
-                    variant: 'secondary',
-                    initialFocus: true,
-                  },
-                  {
-                    id: 'setup-migration',
-                    value: 'setup-migration',
-                    label: t('account.settings.delete.button.setup-migration'),
-                    variant: 'primary',
-                  },
-                ]
-              : [
-                  {
-                    id: 'cancel',
-                    value: 'cancel',
-                    label: t('button.cancel'),
-                    variant: 'secondary',
-                    initialFocus: true,
-                  },
-                  {
-                    id: 'delete',
-                    value: 'delete',
-                    label: isSaving
-                      ? t('account.settings.delete.button.deleting')
-                      : t('account.settings.delete.button.delete'),
-                    variant: 'destructive',
-                  },
-                ]) satisfies readonly ConfirmationPanelAction<AccountTypeDeleteAction>[]
-          }
-          onAction={(action) => {
-            if (action === 'cancel') {
-              void handleCancelDeleteAccountType();
-              return;
-            }
-            if (action === 'setup-migration') {
-              void handleStartMigration();
-              return;
-            }
-            void handleConfirmDeleteAccountType();
-          }}
-        >
-          <div>
-            <div className="delete-warning">
-              <p>
-                <strong>
-                  {t('account.settings.delete.confirm-question', {
-                    name: formatAccountTypeLabel(accountTypeToDelete),
-                  })}
-                </strong>
-              </p>
-            </div>
-
-            
-            <div className="impact-analysis">
-              <h4>{t('account.settings.delete.impact-analysis')}</h4>
-
-              {deletionImpact.affectedAccounts > 0 ? (
-                <div className="affected-accounts">
-                  <div className="impact-item impact-critical">
-                    <strong>
-                      {t('account.settings.delete.affected-accounts', {
-                        count: deletionImpact.affectedAccounts.toString(),
-                      })}
-                    </strong>
-                    <ul>
-                      {deletionImpact.accountNames.slice(0, 5).map((name) => (
-                        <li key={name}>{name}</li>
-                      ))}
-                      {deletionImpact.accountNames.length > 5 && (
-                        <li>
-                          {t('account.settings.migration.more-accounts', {
-                            count: (
-                              deletionImpact.accountNames.length - 5
-                            ).toString(),
-                          })}
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                  <div className="migration-notice">
-                    <strong>{t('common.info')}:</strong>{' '}
-                    {t('account.settings.delete.migration-notice')}
-                  </div>
-                </div>
-              ) : (
-                <div className="no-affected-accounts">
-                  <div className="impact-item impact-safe">
-                    {t('account.settings.delete.no-affected')}
-                  </div>
-                </div>
-              )}
-
-              
-              <div className="settings-cleanup">
-                <h5>{t('account.settings.delete.cleanup-title')}</h5>
-                <ul>
-                  {deletionImpact.settingsImpact.inExcludedTypes && (
-                    <li>{t('account.settings.delete.cleanup.excluded')}</li>
-                  )}
-                  {deletionImpact.settingsImpact.inDisplayOrder && (
-                    <li>{t('account.settings.delete.cleanup.order')}</li>
-                  )}
-                  {deletionImpact.settingsImpact.inWithdrawalSettings && (
-                    <li>{t('account.settings.delete.cleanup.withdrawals')}</li>
-                  )}
-                  {!deletionImpact.settingsImpact.inExcludedTypes &&
-                    !deletionImpact.settingsImpact.inDisplayOrder &&
-                    !deletionImpact.settingsImpact.inWithdrawalSettings && (
-                      <li>{t('account.settings.delete.cleanup.none')}</li>
-                    )}
-                </ul>
-              </div>
-            </div>
-          </div>
-        </ConfirmationPanel>
-      </div>
+      <AccountTypeDeletePanel
+        accountType={accountTypeToDelete}
+        deletionImpact={deletionImpact}
+        isSaving={isSaving}
+        onCancel={() => void handleCancelDeleteAccountType()}
+        onSetupMigration={() => void handleStartMigration()}
+        onConfirm={() => void handleConfirmDeleteAccountType()}
+      />
     ) : null;
 
   return {

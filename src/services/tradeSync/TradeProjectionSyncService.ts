@@ -13,17 +13,19 @@ import {
   emptyTradeProjectionSyncResult,
   TradeProjectionRestoreRunner,
 } from './TradeProjectionRestoreRunner';
-import { TradovateClientDiagnosticsService } from './TradovateClientDiagnosticsService';
+import { BrokerClientDiagnostics } from './BrokerClientDiagnostics';
 import { BrokerSyncJobPoller } from './BrokerSyncJobPoller';
 import { TradovateBrokerSyncProvider } from './TradovateBrokerSyncProvider';
 import { RithmicBrokerSyncProvider } from './RithmicBrokerSyncProvider';
 import { CTraderBrokerSyncProvider } from './CTraderBrokerSyncProvider';
+import { HyperliquidBrokerSyncProvider } from './HyperliquidBrokerSyncProvider';
 import type { BrokerSyncAccountBinding } from './BrokerSyncProvider';
-import type {
-  BrokerClientOperationContext,
-  BrokerConnectionSyncOutcome,
-  BrokerSyncAllResult,
-  TradeProjectionSyncResult,
+import {
+  partialIsProviderOnly,
+  type BrokerClientOperationContext,
+  type BrokerConnectionSyncOutcome,
+  type BrokerSyncAllResult,
+  type TradeProjectionSyncResult,
 } from './types';
 import { buildProjectionSyncOperationResult } from '../tradeOperations/resultBuilders';
 import { DemoSyncGate } from '../../demo/DemoSyncGate';
@@ -32,21 +34,23 @@ const AUTOMATIC_SYNC_INTERVAL_MS = 15 * 60 * 1000;
 
 export class TradeProjectionSyncService {
   private readonly projectionClient = new TradeProjectionClient();
-  private readonly diagnostics: TradovateClientDiagnosticsService;
+  private readonly diagnostics: BrokerClientDiagnostics;
   private readonly restoreRunner: TradeProjectionRestoreRunner;
   private readonly tradovate: BrokerSyncJobPoller;
   private readonly rithmic: BrokerSyncJobPoller;
   private readonly ctrader: BrokerSyncJobPoller;
+  private readonly hyperliquid: BrokerSyncJobPoller;
   private activeSync: Promise<TradeProjectionSyncResult> | null = null;
   private readonly timerIds = new Set<number>();
   private readonly sleepResolvers = new Map<number, () => void>();
   private stopped = false;
 
   constructor(private readonly plugin: JournalitPlugin) {
-    this.diagnostics = new TradovateClientDiagnosticsService(plugin);
+    this.diagnostics = new BrokerClientDiagnostics(plugin);
     const tradovateProvider = new TradovateBrokerSyncProvider();
     const rithmicProvider = new RithmicBrokerSyncProvider();
     const ctraderProvider = new CTraderBrokerSyncProvider();
+    const hyperliquidProvider = new HyperliquidBrokerSyncProvider();
     const host = {
       isStopped: () => this.stopped,
       sleep: (delayMs: number) => this.sleep(delayMs),
@@ -69,11 +73,22 @@ export class TradeProjectionSyncService {
       this.diagnostics,
       host
     );
+    this.hyperliquid = new BrokerSyncJobPoller(
+      plugin,
+      hyperliquidProvider,
+      this.diagnostics,
+      host
+    );
     this.restoreRunner = new TradeProjectionRestoreRunner(
       plugin,
       this.projectionClient,
       this.diagnostics,
-      [tradovateProvider, rithmicProvider, ctraderProvider],
+      [
+        tradovateProvider,
+        rithmicProvider,
+        ctraderProvider,
+        hyperliquidProvider,
+      ],
       () => this.stopped
     );
   }
@@ -203,6 +218,17 @@ export class TradeProjectionSyncService {
     operation?: BrokerClientOperationContext
   ): Promise<TradeProjectionSyncResult> {
     return this.runConnectionSync(this.ctrader, connectionId, operation);
+  }
+
+  syncHyperliquidConnection(
+    connectionId: string,
+    operation?: BrokerClientOperationContext
+  ): Promise<TradeProjectionSyncResult> {
+    return this.runConnectionSync(this.hyperliquid, connectionId, operation);
+  }
+
+  syncHyperliquidAll(connectionIds: string[]): Promise<BrokerSyncAllResult> {
+    return this.runSyncAll(this.hyperliquid, connectionIds);
   }
 
   projectAfterJob(
@@ -357,7 +383,13 @@ export class TradeProjectionSyncService {
     assertHandoffOwner();
     const result = await this.syncProjections(projectionOperation);
     assertHandoffOwner();
-    return cloudStatus === 'partial' ? { ...result, partial: true } : result;
+    return cloudStatus === 'partial'
+      ? {
+          ...result,
+          partial: true,
+          providerPartial: partialIsProviderOnly(result),
+        }
+      : result;
   }
 
   private async runSyncAll(

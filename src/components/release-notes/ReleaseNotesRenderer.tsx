@@ -20,11 +20,6 @@ interface ChangelogEntry {
   content: string;
 }
 
-interface ReleaseMarkdownListItem {
-  key: string;
-  nodes: React.ReactNode[];
-}
-
 function sanitizeExternalHref(href: string): string | null {
   try {
     const url = new URL(href);
@@ -214,118 +209,142 @@ function parseInlineReleaseMarkdownNodes(
   return nodes;
 }
 
-function ReleaseMarkdown({ content }: { content: string }) {
-  const lines = content.split('\n');
-  const elements: React.ReactElement[] = [];
-  let listItems: ReleaseMarkdownListItem[] = [];
-  let key = 0;
+interface ReleaseMarkdownLine {
+  
+  line: number;
+  text: string;
+}
 
-  const flushList = () => {
-    if (listItems.length > 0) {
-      elements.push(
-        <ul key={`list-${key++}`}>
-          {listItems.map((item) => (
-            <li key={item.key}>{item.nodes}</li>
+type ReleaseMarkdownBlock = { line: number } & (
+  | { kind: 'heading'; level: 2 | 3 | 4; text: string }
+  | { kind: 'image'; alt: string; url: string }
+  | { kind: 'list'; items: ReleaseMarkdownLine[] }
+  | { kind: 'paragraph'; text: string }
+);
+
+const RELEASE_HEADING_PREFIXES = [
+  ['# ', 2],
+  ['## ', 3],
+  ['### ', 4],
+] as const;
+
+const RELEASE_LIST_ITEM = /^[\s]*[-*]\s+/;
+
+
+const releaseStandaloneBlock = (
+  line: string,
+  lineNumber: number
+): ReleaseMarkdownBlock | undefined => {
+  for (const [prefix, level] of RELEASE_HEADING_PREFIXES) {
+    if (line.startsWith(prefix)) {
+      return {
+        line: lineNumber,
+        kind: 'heading',
+        level,
+        text: line.slice(prefix.length),
+      };
+    }
+  }
+  const imageMatch = line.match(/!\[([^\]]*)\]\(([^)]+)\)/);
+  if (!imageMatch) return undefined;
+  const [, alt, url] = imageMatch;
+  
+  if (url.startsWith('./') || url.startsWith('../')) {
+    console.warn(
+      '[ReleaseNotes] Relative image paths not supported, use remote URLs:',
+      url
+    );
+  }
+  return { line: lineNumber, kind: 'image', alt, url };
+};
+
+
+const parseReleaseMarkdownBlocks = (
+  content: string
+): ReleaseMarkdownBlock[] => {
+  const blocks: ReleaseMarkdownBlock[] = [];
+  let list: ReleaseMarkdownLine[] | null = null;
+  content.split('\n').forEach((line, lineNumber) => {
+    if (line.trim() === '') {
+      list = null;
+      return;
+    }
+    const standalone = releaseStandaloneBlock(line, lineNumber);
+    if (!standalone && RELEASE_LIST_ITEM.test(line)) {
+      if (!list) {
+        list = [];
+        blocks.push({ line: lineNumber, kind: 'list', items: list });
+      }
+      list.push({
+        line: lineNumber,
+        text: line.replace(RELEASE_LIST_ITEM, ''),
+      });
+      return;
+    }
+    list = null;
+    blocks.push(
+      standalone ?? { line: lineNumber, kind: 'paragraph', text: line }
+    );
+  });
+  return blocks;
+};
+
+const ReleaseMarkdownHeading: React.FC<{
+  level: 2 | 3 | 4;
+  children: React.ReactNode;
+}> = ({ level, children }) => {
+  const Tag = `h${level}` as const;
+  return <Tag>{children}</Tag>;
+};
+
+const ReleaseMarkdownBlockView: React.FC<{
+  block: ReleaseMarkdownBlock;
+  keyPrefix: string;
+}> = ({ block, keyPrefix }) => {
+  switch (block.kind) {
+    case 'heading':
+      return (
+        <ReleaseMarkdownHeading level={block.level}>
+          {parseInlineReleaseMarkdownNodes(block.text, keyPrefix)}
+        </ReleaseMarkdownHeading>
+      );
+    case 'image':
+      return (
+        <div className="changelog-image">
+          <img src={block.url} alt={block.alt} />
+        </div>
+      );
+    case 'list':
+      return (
+        <ul>
+          {block.items.map((item) => (
+            <li key={item.line}>
+              {parseInlineReleaseMarkdownNodes(
+                item.text,
+                `${keyPrefix}-${item.line}`
+              )}
+            </li>
           ))}
         </ul>
       );
-      listItems = [];
-    }
-  };
-
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[i];
-
-    
-    if (line.trim() === '') {
-      flushList();
-      continue;
-    }
-
-    
-    if (line.startsWith('# ')) {
-      flushList();
-      elements.push(
-        <h2 key={`h2-${key++}`}>
-          {parseInlineReleaseMarkdownNodes(line.slice(2), `h2-${key}`)}
-        </h2>
-      );
-      continue;
-    }
-
-    
-    if (line.startsWith('## ')) {
-      flushList();
-      elements.push(
-        <h3 key={`h3-${key++}`}>
-          {parseInlineReleaseMarkdownNodes(line.slice(3), `h3-${key}`)}
-        </h3>
-      );
-      continue;
-    }
-
-    
-    if (line.startsWith('### ')) {
-      flushList();
-      elements.push(
-        <h4 key={`h4-${key++}`}>
-          {parseInlineReleaseMarkdownNodes(line.slice(4), `h4-${key}`)}
-        </h4>
-      );
-      continue;
-    }
-
-    
-    const imageMatch = line.match(/!\[([^\]]*)\]\(([^)]+)\)/);
-    if (imageMatch) {
-      flushList();
-      const [, alt, url] = imageMatch;
-
-      
-      
-      const resolvedUrl = url;
-
-      
-      if (url.startsWith('./') || url.startsWith('../')) {
-        console.warn(
-          '[ReleaseNotes] Relative image paths not supported, use remote URLs:',
-          url
-        );
-      }
-
-      elements.push(
-        <div key={`img-${key++}`} className="changelog-image">
-          <img src={resolvedUrl} alt={alt} />
-        </div>
-      );
-      continue;
-    }
-
-    
-    if (line.match(/^[\s]*[-*]\s+/)) {
-      const itemContent = line.replace(/^[\s]*[-*]\s+/, '');
-      listItems.push({
-        key: `li-${key}-${listItems.length}-${itemContent}`,
-        nodes: parseInlineReleaseMarkdownNodes(
-          itemContent,
-          `li-${key}-${listItems.length}`
-        ),
-      });
-      continue;
-    }
-
-    
-    flushList();
-    elements.push(
-      <p key={`p-${key++}`}>
-        {parseInlineReleaseMarkdownNodes(line, `p-${key}`)}
-      </p>
-    );
+    case 'paragraph':
+      return <p>{parseInlineReleaseMarkdownNodes(block.text, keyPrefix)}</p>;
   }
+};
 
-  flushList();
-
-  return <>{elements}</>;
+function ReleaseMarkdown({ content }: { content: string }) {
+  const blocks = parseReleaseMarkdownBlocks(content);
+  return (
+    <>
+      {blocks.map((block) => (
+        <ReleaseMarkdownBlockView
+          key={block.line}
+          block={block}
+          keyPrefix={`${block.kind}-${block.line}`}
+        />
+      ))}
+    </>
+  );
 }
 
 const loadBundledChangelogs = (): ChangelogEntry[] => {

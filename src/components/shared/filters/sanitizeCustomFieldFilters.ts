@@ -13,7 +13,7 @@ import {
   areFilterMatchModesEqual,
 } from './filterMatchModes';
 
-export function sanitizeCustomFieldFilters(
+function sanitizeCustomFieldFilters(
   customFieldFilters: CustomFieldFilterSelections | undefined,
   customFields: readonly CustomFieldDefinition[]
 ): CustomFieldFilterSelections {

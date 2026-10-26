@@ -167,6 +167,38 @@ function getTargetDateFromFrontmatter(
   return null;
 }
 
+function readContextFieldsDisplay(
+  config: ReviewContextFieldsWidgetProps['config']
+) {
+  return {
+    showInherited: config?.showInherited ?? true,
+    showLocal: config?.showLocal ?? true,
+    hideEmpty: config?.hideEmpty ?? false,
+  };
+}
+
+const ReviewContextFieldsEmpty: React.FC<{
+  readOnly: boolean;
+  onConfigure: () => void;
+}> = ({ readOnly, onConfigure }) => (
+  <div className="review-context-fields-empty">
+    <p>{t('widget.review-context-fields.empty-title')}</p>
+    
+    <p {...shareCaptureExcludeProps}>
+      {t('widget.review-context-fields.empty-desc')}
+    </p>
+    {!readOnly && (
+      <Button
+        variant="primary"
+        onClick={onConfigure}
+        {...shareCaptureExcludeProps}
+      >
+        {t('widget.review-context-fields.configure')}
+      </Button>
+    )}
+  </div>
+);
+
 export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps> =
   React.memo(({ filePath, plugin, config, preview, previewReviewType }) => {
     const embeddedReadOnly = useReviewReadOnly();
@@ -595,9 +627,8 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
       },
       [config?.groupId, config?.selectionMode, selectedFieldIds]
     );
-    const showInherited = config?.showInherited ?? true;
-    const showLocal = config?.showLocal ?? true;
-    const hideEmpty = config?.hideEmpty ?? false;
+    const { showInherited, showLocal, hideEmpty } =
+      readContextFieldsDisplay(config);
     const visibleEditableFields = useMemo(
       () => fields.filter(filterFieldByConfig),
       [fields, filterFieldByConfig]
@@ -680,24 +711,18 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
 
     if (groupedFields.length === 0 && !hasInheritedContext) {
       return (
-        <div className="review-context-fields-empty">
-          <p>{t('widget.review-context-fields.empty-title')}</p>
-          
-          <p {...shareCaptureExcludeProps}>
-            {t('widget.review-context-fields.empty-desc')}
-          </p>
-          {!readOnly && (
-            <Button
-              variant="primary"
-              onClick={openReviewFieldSettings}
-              {...shareCaptureExcludeProps}
-            >
-              {t('widget.review-context-fields.configure')}
-            </Button>
-          )}
-        </div>
+        <ReviewContextFieldsEmpty
+          readOnly={readOnly}
+          onConfigure={openReviewFieldSettings}
+        />
       );
     }
+
+    const canEditLocalContext =
+      !readOnly && showLocal && visibleEditableFields.length > 0;
+    const localSourceLabel = reviewType
+      ? getReviewTypeSourceLabel(reviewType)
+      : 'Local';
 
     return (
       <div className="review-context-fields">
@@ -707,7 +732,7 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
               <div className="review-context-fields-inherited-title">
                 {t('widget.review-context-fields.group.default')}
               </div>
-              {!readOnly && showLocal && visibleEditableFields.length > 0 ? (
+              {canEditLocalContext ? (
                 <Button
                   variant="secondary"
                   size="small"
@@ -745,11 +770,7 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
                     onOpenSource={(source) =>
                       void handleOpenSourceReview(source)
                     }
-                    localSourceLabel={
-                      reviewType
-                        ? getReviewTypeSourceLabel(reviewType)
-                        : 'Local'
-                    }
+                    localSourceLabel={localSourceLabel}
                     preview={preview}
                   />
                 </div>

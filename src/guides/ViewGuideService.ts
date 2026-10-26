@@ -95,6 +95,8 @@ export class ViewGuideService {
   };
   private activeLeaf: WorkspaceLeaf | null = null;
   private saveQueue: Promise<void> = Promise.resolve();
+  
+  private lastSaveFailed = false;
   private listeners = new Set<() => void>();
   private resolvedGuideByLeafId = new Map<string, string>();
   private resolutionOwnerByLeafId = new Map<string, symbol>();
@@ -142,7 +144,7 @@ export class ViewGuideService {
     }
     this.eventRefs = [];
 
-    await this.saveData();
+    await this.finishSaving();
 
     for (const session of this.sessions.values()) {
       session.status = 'ended';
@@ -318,7 +320,8 @@ export class ViewGuideService {
   }
 
   async prepareContextSwitch(): Promise<void> {
-    await this.saveData();
+    
+    await this.finishSaving();
     for (const session of this.sessions.values()) {
       session.status = 'ended';
     }
@@ -763,6 +766,12 @@ export class ViewGuideService {
     }
   }
 
+  
+  private async finishSaving(): Promise<void> {
+    await this.saveQueue;
+    if (this.lastSaveFailed) await this.saveData();
+  }
+
   private async saveData(): Promise<void> {
     this.saveQueue = this.saveQueue
       .catch(() => {
@@ -781,7 +790,9 @@ export class ViewGuideService {
         VIEW_GUIDES_DATA_KEY,
         this.data
       );
+      this.lastSaveFailed = false;
     } catch (error) {
+      this.lastSaveFailed = true;
       console.error('[ViewGuideService] Failed to save guide data:', error);
     }
   }

@@ -3,16 +3,16 @@
 import React, { memo, useMemo, useCallback } from 'react';
 import { TrendingUp } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
-import { ProfitTargetType } from '../../../services/account/types';
 import {
   calculateAccountGrowthAmount,
   calculateProfitTargetProgress,
 } from '../../account/dashboard/utils';
 import { useHomeAccount } from '../context/HomeAccountContext';
-import { useHomeAccountsData } from '../context/HomeAccountsDataContext';
+import { useHomeAccountsState } from '../context/HomeAccountsDataContext';
 import { t } from '../../../lang/helpers';
 import { AccountProgressListItem } from './AccountProgressListWidget';
 import { ConfigurableAccountProgressWidget } from './ConfigurableAccountProgressWidget';
+import { resolveProfitTargetAmount } from '../../../services/account/accountDefinitionRules';
 
 interface ProfitTargetWidgetProps {
   plugin: JournalitPlugin;
@@ -47,14 +47,8 @@ const ProfitTargetWidgetComponent: React.FC<ProfitTargetWidgetProps> = ({
   isEditing = false,
 }) => {
   const accountContext = useHomeAccount();
-  const homeAccountsData = useHomeAccountsData();
-  const accounts = useMemo(
-    () => homeAccountsData?.accounts || [],
-    [homeAccountsData?.accounts]
-  );
-  const challengeProgress = homeAccountsData?.challengeProgress;
-  const isLoading = homeAccountsData?.isLoading ?? true;
-  const error = homeAccountsData?.error ?? null;
+  const { accounts, challengeProgress, isLoading, error } =
+    useHomeAccountsState();
 
   const handleAccountClick = useCallback(
     (accountName: string) => {
@@ -87,12 +81,9 @@ const ProfitTargetWidgetComponent: React.FC<ProfitTargetWidgetProps> = ({
         });
         continue;
       }
-      if (!acc.hasProfitTarget || acc.profitTarget <= 0) continue;
+      const targetAmount = resolveProfitTargetAmount(acc);
+      if (targetAmount === undefined) continue;
       const progressPercent = calculateProfitTargetProgress(acc);
-      const targetAmount =
-        acc.profitTargetType === ProfitTargetType.PERCENTAGE
-          ? (acc.initialBalance * acc.profitTarget) / 100
-          : acc.profitTarget;
       accountInfos.push({
         name: accountName,
         accountName,

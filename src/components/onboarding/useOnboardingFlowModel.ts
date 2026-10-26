@@ -121,7 +121,7 @@ export const stepBeforePersonalise = (
 ): OnboardingStepId =>
   data.answers.dataSource === 'broker' ? 'broker' : 'data-source';
 
-export async function leaveSampleJourney(
+async function leaveSampleJourney(
   plugin: JournalitPlugin,
   service: OnboardingService,
   samplePhase: ReturnType<
@@ -142,7 +142,7 @@ export async function leaveSampleJourney(
   }
 }
 
-export function isSamplePreparationStalled({
+function isSamplePreparationStalled({
   onboardingStep,
   operationBusy,
   sampleBusy,

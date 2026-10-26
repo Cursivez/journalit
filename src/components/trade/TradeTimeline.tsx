@@ -69,7 +69,7 @@ const getTradeNavLabel = (item: TradeItem): string => {
   return `${item.ticker} ${prefix}${item.tradeNumber}`;
 };
 
-export const getTradeTimelineDate = (
+const getTradeTimelineDate = (
   frontmatter: Record<string, unknown> | undefined,
   filePath: string
 ): Date | null => {

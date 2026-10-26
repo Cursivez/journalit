@@ -21,6 +21,8 @@ export const ACCOUNT_DASHBOARD_CHALLENGE_OVERVIEW_TARGET_ID =
 export const ACCOUNT_DASHBOARD_AUM_CHART_TARGET_ID =
   'account-dashboard.aum-chart';
 export const ACCOUNT_DASHBOARD_METRICS_TARGET_ID = 'account-dashboard.metrics';
+export const ACCOUNT_DASHBOARD_MONTHLY_RETURNS_TARGET_ID =
+  'account-dashboard.monthly-returns';
 export const ACCOUNT_DASHBOARD_SECTIONS_TARGET_ID =
   'account-dashboard.sections';
 export const ACCOUNT_DASHBOARD_SETTINGS_BUTTON_TARGET_ID =

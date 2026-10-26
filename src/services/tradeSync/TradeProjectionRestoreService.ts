@@ -47,6 +47,7 @@ export class TradeProjectionRestoreService {
             accountDisplayName: projection.accountName,
             broker: projection.broker,
             importId: projection.importId,
+            destination: projection.destination,
             previewTrade: projection.previewTrade,
           })),
           ownerUserId,

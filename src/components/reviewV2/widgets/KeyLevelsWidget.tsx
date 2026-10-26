@@ -6,6 +6,7 @@ import { TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { SkeletonBox } from '../../shared/SkeletonBox';
+import { Plus } from '../../shared/icons/ObsidianIcon';
 import type { KeyLevel, KeyLevels } from '../../drc/types';
 import {
   getWeekAnchorDate,
@@ -22,7 +23,10 @@ import { cssVars } from '../../../styles/inlineStylePolicy';
 import { mergeClassNames } from '../../../utils/classNames';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 import { useReviewReadOnly } from '../ReviewReadOnlyContext';
-import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
+import {
+  shareCaptureExcludeProps,
+  shareCaptureUnwrapProps,
+} from '../../../services/share/brandedCapture';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -59,7 +63,7 @@ interface ImportanceMenuPosition {
 
 interface DisplayKeyLevel extends KeyLevel {
   source: KeyLevelSource;
-  currentIndex?: number;
+  sourceIndex: number;
   sourcePath?: string;
   sourceLabel?: string;
 }
@@ -250,7 +254,7 @@ const sortKeyLevels = (levels: KeyLevels): KeyLevels => ({
   resistance: sortLevelsForType('resistance', levels.resistance),
 });
 
-const dedupeLevels = (
+const mergeDisplayLevels = (
   type: KeyLevelType,
   groups: KeyLevelGroup[]
 ): DisplayKeyLevel[] => {
@@ -261,15 +265,16 @@ const dedupeLevels = (
     group.levels[type].forEach((level, index) => {
       const key = level.price.trim();
       if (!key || seen.has(key)) return;
-      seen.add(key);
       result.push({
         ...level,
         source: group.source,
-        currentIndex: group.source === 'current' ? index : undefined,
+        sourceIndex: index,
         sourcePath: group.sourcePath,
         sourceLabel: group.sourceLabel,
       });
     });
+    
+    for (const level of group.levels[type]) seen.add(level.price.trim());
   }
 
   return sortLevelsForType(type, result);
@@ -342,7 +347,8 @@ const getOptions = (): {
 const FlagPicker: React.FC<{
   value: ImportanceLevel;
   onChange: (value: ImportanceLevel) => void;
-}> = ({ value, onChange }) => {
+  compact?: boolean;
+}> = ({ value, onChange, compact = false }) => {
   const options = getOptions();
   const [menuPosition, setMenuPosition] =
     useState<ImportanceMenuPosition | null>(null);
@@ -382,8 +388,8 @@ const FlagPicker: React.FC<{
   useEffect(() => {
     if (!menuPosition || !containerRef.current) return;
 
-    const activeDocument = containerRef.current.ownerDocument;
-    const activeWindow = activeDocument.defaultView;
+    const ownerDocument = containerRef.current.ownerDocument;
+    const activeWindow = ownerDocument.defaultView;
     if (!activeWindow) return;
 
     const closeMenu = () => setMenuPosition(null);
@@ -401,12 +407,12 @@ const FlagPicker: React.FC<{
       if (event.key === 'Escape') closeMenu();
     };
 
-    activeDocument.addEventListener('mousedown', handleClickOutside);
+    ownerDocument.addEventListener('mousedown', handleClickOutside);
     activeWindow.addEventListener('keydown', handleKeyDown);
     activeWindow.addEventListener('resize', closeMenu);
     activeWindow.addEventListener('scroll', closeMenu, true);
     return () => {
-      activeDocument.removeEventListener('mousedown', handleClickOutside);
+      ownerDocument.removeEventListener('mousedown', handleClickOutside);
       activeWindow.removeEventListener('keydown', handleKeyDown);
       activeWindow.removeEventListener('resize', closeMenu);
       activeWindow.removeEventListener('scroll', closeMenu, true);
@@ -420,6 +426,7 @@ const FlagPicker: React.FC<{
       ? createPortal(
           <div
             ref={menuRef}
+            {...shareCaptureExcludeProps}
             className="journalit-home-period-menu journalit-key-levels-importance-dropdown journalit-key-levels-importance-dropdown--portal"
             style={cssVars({
               '--journalit-key-levels-menu-top': `${menuPosition.top}px`,
@@ -439,9 +446,11 @@ const FlagPicker: React.FC<{
                     ? 'journalit-home-period-option--active journalit-key-levels-importance-option--selected'
                     : ''
                 }`}
-                aria-label={option.label}
               >
-                <span className="journalit-key-levels-importance-option-icon">
+                <span
+                  className="journalit-key-levels-importance-option-icon"
+                  aria-hidden="true"
+                >
                   <FlagSvg color={option.color} size={16} />
                 </span>
                 <span className="journalit-home-period-option__label journalit-key-levels-importance-option-label">
@@ -454,8 +463,15 @@ const FlagPicker: React.FC<{
         )
       : null;
 
+  
   return (
-    <div ref={containerRef} className="journalit-key-levels-importance">
+    <div
+      ref={containerRef}
+      className={mergeClassNames(
+        'journalit-key-levels-importance',
+        compact && 'journalit-key-levels-importance--compact'
+      )}
+    >
       <button
         type="button"
         className="clickable-icon journalit-key-levels-importance-button"
@@ -463,6 +479,8 @@ const FlagPicker: React.FC<{
           menuPosition ? setMenuPosition(null) : updateMenuPosition()
         }
         aria-label={t('widget.key-levels.select-importance')}
+        aria-expanded={Boolean(menuPosition)}
+        {...(compact ? shareCaptureUnwrapProps : {})}
       >
         <FlagSvg color={currentOption.color} />
       </button>
@@ -575,16 +593,18 @@ function useKeyLevelsWidgetModel({
         displayLevels: {
           support: sortLevelsForType(
             'support',
-            previewData.keyLevels.support.map((level) => ({
+            previewData.keyLevels.support.map((level, sourceIndex) => ({
               ...level,
               source: 'current' as const,
+              sourceIndex,
             }))
           ),
           resistance: sortLevelsForType(
             'resistance',
-            previewData.keyLevels.resistance.map((level) => ({
+            previewData.keyLevels.resistance.map((level, sourceIndex) => ({
               ...level,
               source: 'current' as const,
+              sourceIndex,
             }))
           ),
         },
@@ -682,8 +702,8 @@ function useKeyLevelsWidgetModel({
 
     return {
       displayLevels: {
-        support: dedupeLevels('support', groups),
-        resistance: dedupeLevels('resistance', groups),
+        support: mergeDisplayLevels('support', groups),
+        resistance: mergeDisplayLevels('resistance', groups),
       },
       dependencyPaths: nextDependencyPaths,
       inheritedGroups: groups.filter((group) => group.source !== 'current'),
@@ -795,11 +815,11 @@ function useKeyLevelsWidgetModel({
     const sortedLevels = sortKeyLevels(updatedLevels);
     setKeyLevels(sortedLevels);
     setDisplayLevels({
-      support: dedupeLevels('support', [
+      support: mergeDisplayLevels('support', [
         { levels: sortedLevels, source: 'current' },
         ...inheritedGroupsRef.current,
       ]),
-      resistance: dedupeLevels('resistance', [
+      resistance: mergeDisplayLevels('resistance', [
         { levels: sortedLevels, source: 'current' },
         ...inheritedGroupsRef.current,
       ]),
@@ -883,17 +903,32 @@ function useKeyLevelsWidgetModel({
     setEditing({ type, index, value: level.price });
   };
 
+  const updateImportance = async (
+    type: KeyLevelType,
+    index: number,
+    importance: ImportanceLevel
+  ) => {
+    if (readOnly) return;
+    await commitKeyLevels({
+      ...keyLevels,
+      [type]: keyLevels[type].map((level, levelIndex) =>
+        levelIndex === index ? { ...level, importance } : level
+      ),
+    });
+  };
+
   const cancelEditing = () => setEditing(null);
 
   const commitEditing = async () => {
     if (!editing) return;
     const price = editing.value.trim();
-    if (!price) {
+    const levels = keyLevels[editing.type];
+    
+    if (!price || price === levels[editing.index]?.price) {
       cancelEditing();
       return;
     }
 
-    const levels = keyLevels[editing.type];
     const updatedTypeLevels = levels.map((level, index) =>
       index === editing.index ? { ...level, price } : level
     );
@@ -956,6 +991,7 @@ function useKeyLevelsWidgetModel({
     handleSupportKeyDown,
     handleResistanceKeyDown,
     handleEditKeyDown,
+    updateImportance,
   };
 }
 
@@ -989,6 +1025,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
     handleSupportKeyDown,
     handleResistanceKeyDown,
     handleEditKeyDown,
+    updateImportance,
   } = useKeyLevelsWidgetModel(props);
 
   if (loading) {
@@ -1053,18 +1090,28 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
     isLast: boolean
   ) => {
     const isCurrent = level.source === 'current';
-    const currentIndex = isCurrent ? (level.currentIndex ?? -1) : -1;
+    const currentIndex = level.sourceIndex;
     const isEditing =
       editing?.type === type && editing.index === currentIndex && isCurrent;
-    const canEditLevel = isCurrent && !readOnly && currentIndex >= 0;
+    const canEditLevel = isCurrent && !readOnly;
 
     return (
       <div
-        key={`${type}-${level.source}-${level.currentIndex ?? level.sourcePath ?? 'inherited'}-${level.price}`}
+        key={`${type}-${level.source}-${level.sourcePath ?? ''}-${level.sourceIndex}-${level.price}`}
         className={`key-levels-item ${isLast ? 'key-levels-item--last' : ''}`}
       >
         <div className="key-levels-item-content">
-          <KeyLevelsFlagIcon importance={level.importance} />
+          {canEditLevel && !isEditing ? (
+            <FlagPicker
+              compact
+              value={level.importance}
+              onChange={(importance) =>
+                void updateImportance(type, currentIndex, importance)
+              }
+            />
+          ) : (
+            <KeyLevelsFlagIcon importance={level.importance} />
+          )}
           {isEditing ? (
             <input
               aria-label={
@@ -1101,7 +1148,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
           )}
           {getSourceTag(level)}
         </div>
-        {!readOnly && isCurrent && currentIndex >= 0 && (
+        {canEditLevel && (
           <button
             onClick={() =>
               type === 'support'
@@ -1169,7 +1216,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               disabled={!newSupportLevel.trim()}
               className="journalit-native-button key-levels-add-button"
             >
-              +
+              <Plus size={16} aria-hidden="true" />
             </button>
           </div>
         )}
@@ -1220,7 +1267,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               disabled={!newResistanceLevel.trim()}
               className="journalit-native-button key-levels-add-button"
             >
-              +
+              <Plus size={16} aria-hidden="true" />
             </button>
           </div>
         )}

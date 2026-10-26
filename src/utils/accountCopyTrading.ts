@@ -177,6 +177,86 @@ export function isCopyTradingBaseEligible(
   );
 }
 
+
+type CopyTradingRequest =
+  | { readonly enabled: false }
+  | {
+      readonly enabled: true;
+      readonly baseAccount: string;
+      readonly multiplier: number;
+      
+      readonly startDate: Date | null;
+    };
+
+
+export function nextCopyTradingPeriods(
+  current: readonly CopyTradingPeriod[],
+  request: CopyTradingRequest,
+  now: Date = new Date()
+): CopyTradingPeriod[] {
+  const periods = current.map((period) => ({ ...period }));
+  const activePeriodIndex = periods.findIndex((period) => !period.endDate);
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+
+  if (!request.enabled) {
+    if (activePeriodIndex >= 0) {
+      const activeStartTime = toStartOfDayTime(
+        periods[activePeriodIndex].startDate
+      );
+      if (activeStartTime !== null && activeStartTime >= startOfDayTime(now)) {
+        periods.splice(activePeriodIndex, 1);
+        return periods;
+      }
+      periods[activePeriodIndex] = {
+        ...periods[activePeriodIndex],
+        endDate: yesterday,
+      };
+    }
+    return periods;
+  }
+
+  let startDate = request.startDate ?? new Date(1970, 0, 1);
+  const latestHistoricalEndTime = periods.reduce((latest, period) => {
+    if (!period.endDate) return latest;
+    const endTime = toStartOfDayTime(period.endDate);
+    return endTime === null ? latest : Math.max(latest, endTime);
+  }, Number.NEGATIVE_INFINITY);
+  if (latestHistoricalEndTime !== Number.NEGATIVE_INFINITY) {
+    const earliestNextStartDate = new Date(latestHistoricalEndTime);
+    earliestNextStartDate.setDate(earliestNextStartDate.getDate() + 1);
+    if (startOfDayTime(startDate) < earliestNextStartDate.getTime()) {
+      startDate = earliestNextStartDate;
+    }
+  }
+
+  if (activePeriodIndex === -1) {
+    return [
+      ...periods,
+      {
+        baseAccount: request.baseAccount,
+        multiplier: request.multiplier,
+        startDate,
+      },
+    ];
+  }
+
+  const activePeriod = periods[activePeriodIndex];
+  if (
+    activePeriod.baseAccount === request.baseAccount &&
+    activePeriod.multiplier === request.multiplier
+  ) {
+    return periods;
+  }
+  periods[activePeriodIndex] = { ...activePeriod, endDate: yesterday };
+  periods.push({
+    baseAccount: request.baseAccount,
+    multiplier: request.multiplier,
+    startDate: new Date(now),
+  });
+  return periods;
+}
+
 function startOfDayTime(value: Date): number {
   return new Date(
     value.getFullYear(),

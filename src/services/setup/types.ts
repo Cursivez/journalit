@@ -33,6 +33,8 @@ export interface SetupRuleGroup {
 
 export interface Setup {
   id: string;
+  
+  agentEntityId?: string;
   name: string;
   description?: string;
   model?: string;

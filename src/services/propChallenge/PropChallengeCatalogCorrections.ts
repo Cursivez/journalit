@@ -9,6 +9,7 @@ import type {
   PropFirmProfileSelection,
 } from './types';
 import { profilePolicyHash } from './ProfileApplicability';
+import { isExecutableRule } from './PropChallengeRuleReview';
 import {
   canonicalProfileContent,
   canPreserveProfileState,
@@ -19,6 +20,8 @@ import {
 import { evaluatePropChallengePhase } from './PropChallengeRuleEngine';
 import { reconcileChallengeHardFailure } from './PropChallengeConfig';
 import { generateUUID } from '../../utils/uuid';
+import { matchesSavedProfilePhase } from './profilePhaseIdentity';
+import { isAuthoritativeDrawdown } from './PropChallengeRuleReview';
 
 export interface CorrectionMatch {
   blocked?: boolean;
@@ -80,6 +83,7 @@ export async function findCatalogCorrections(
     if (
       index === undefined ||
       !source ||
+      !matchesSavedProfilePhase(config, phase, selection, index) ||
       source.stage !== phase.stage ||
       source.startingBalance !== phase.startingBalance ||
       !source.catalogCorrections?.length
@@ -221,6 +225,7 @@ export async function previewCatalogCorrection(input: CorrectionPreviewInput) {
     recorded &&
     failedPolicy &&
     failedRule &&
+    isExecutableRule(failedRule) &&
     correction.fromPolicyHashes.includes(
       await profilePolicyHash({ ...before, ...failedPolicy })
     ) &&
@@ -341,6 +346,17 @@ export async function previewCatalogCorrection(input: CorrectionPreviewInput) {
       effectiveAt: begins,
       application: undefined,
     };
+    if (changed.transition?.basis === 'custom') {
+      const authoritativeDrawdownIds = new Set<string>();
+      for (const rule of changed.rules) {
+        if (isAuthoritativeDrawdown(rule)) {
+          authoritativeDrawdownIds.add(rule.id);
+        }
+      }
+      changed.transition.drawdowns = changed.transition.drawdowns.filter(
+        (state) => authoritativeDrawdownIds.has(state.ruleId)
+      );
+    }
     if (!pending && start > Date.parse(revision.effectiveAt))
       changed.transition = { basis: 'preserve' };
     corrected.push(changed);

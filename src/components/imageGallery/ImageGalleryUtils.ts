@@ -16,11 +16,8 @@ const IMAGE_GALLERY_MIN_CARD_WIDTH: Record<ImageGallerySize, number> = {
   medium: 340,
   large: 460,
 };
-const IMAGE_GALLERY_CARD_EXTRA_HEIGHT: Record<ImageGallerySize, number> = {
-  small: 50,
-  medium: 50,
-  large: 50,
-};
+
+const IMAGE_GALLERY_CARD_EXTRA_HEIGHT = 34;
 const IMAGE_GALLERY_SCROLL_UPDATE_ROW_GRANULARITY = 2;
 
 export function reconcileImageGalleryItem(
@@ -46,9 +43,17 @@ export function shouldReloadImageGalleryForSettingsChange(payload: {
   return payload.source !== 'gallery-folders-service';
 }
 
+
+export interface ImageGalleryGridMetrics {
+  columnCount: number;
+  
+  rowHeight: number;
+  gap: number;
+}
+
 export function getImageGalleryVirtualWindow(
   itemCount: number,
-  size: ImageGallerySize,
+  metrics: ImageGalleryGridMetrics,
   viewport: { width: number; height: number; scrollTop: number }
 ): {
   startIndex: number;
@@ -69,10 +74,7 @@ export function getImageGalleryVirtualWindow(
     };
   }
 
-  const { columnCount, rowHeight } = getImageGalleryVirtualGridMetrics(
-    size,
-    viewport.width
-  );
+  const { columnCount, rowHeight, gap } = metrics;
   const totalRows = Math.ceil(itemCount / columnCount);
   const overscanRows = 2;
   const maxFirstVisibleRow = Math.max(0, totalRows - 1);
@@ -84,12 +86,17 @@ export function getImageGalleryVirtualWindow(
     totalRows,
     Math.ceil((viewport.scrollTop + viewport.height) / rowHeight) + overscanRows
   );
+  const rowsBelow = Math.max(0, totalRows - lastVisibleRow);
 
+  
+  
+  
   return {
     startIndex: firstVisibleRow * columnCount,
     endIndex: Math.min(itemCount, lastVisibleRow * columnCount),
-    topSpacerHeight: firstVisibleRow * rowHeight,
-    bottomSpacerHeight: Math.max(0, (totalRows - lastVisibleRow) * rowHeight),
+    topSpacerHeight:
+      firstVisibleRow > 0 ? firstVisibleRow * rowHeight - gap : 0,
+    bottomSpacerHeight: rowsBelow > 0 ? rowsBelow * rowHeight - gap : 0,
   };
 }
 
@@ -107,7 +114,7 @@ export function shouldUpdateImageGalleryViewport(
 
   if (nextViewport.width <= 0) return false;
 
-  const { rowHeight } = getImageGalleryVirtualGridMetrics(
+  const { rowHeight } = estimateImageGalleryGridMetrics(
     size,
     nextViewport.width
   );
@@ -126,10 +133,11 @@ export function shouldUpdateImageGalleryViewport(
   );
 }
 
-function getImageGalleryVirtualGridMetrics(
+
+export function estimateImageGalleryGridMetrics(
   size: ImageGallerySize,
   viewportWidth: number
-): { columnCount: number; rowHeight: number } {
+): ImageGalleryGridMetrics {
   const minCardWidth = IMAGE_GALLERY_MIN_CARD_WIDTH[size];
   const columnCount = Math.max(
     1,
@@ -145,8 +153,9 @@ function getImageGalleryVirtualGridMetrics(
     columnCount,
     rowHeight:
       (cardWidth * 9) / 16 +
-      IMAGE_GALLERY_CARD_EXTRA_HEIGHT[size] +
+      IMAGE_GALLERY_CARD_EXTRA_HEIGHT +
       IMAGE_GALLERY_GRID_GAP,
+    gap: IMAGE_GALLERY_GRID_GAP,
   };
 }
 

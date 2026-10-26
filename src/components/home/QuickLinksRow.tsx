@@ -34,7 +34,7 @@ import { useSessionIndicatorPhase } from '../../hooks/useSessionIndicatorPhase';
 import type { SessionIndicatorPhase } from '../../services/sessionMode/SessionPhaseWatcher';
 import { getSessionIndicatorLabel } from '../navigation/sessionIndicatorLabel';
 
-export function mergeQuickLinksWithDefaults(
+function mergeQuickLinksWithDefaults(
   currentQuickLinks: QuickLinkButton[]
 ): QuickLinkButton[] {
   const defaultQuickLinks = DEFAULT_SETTINGS.home?.quickLinks || [];

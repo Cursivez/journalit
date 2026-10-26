@@ -21,6 +21,7 @@ import type {
 } from '../../../../types/sessionMode';
 import { openExternalUrl } from '../../../../utils/externalLinks';
 import { generateUUID } from '../../../../utils/uuid';
+import { deleteTradeGateQuestionFromLibrary } from '../../../../components/sessionMode/tradeGateUtils';
 import { TradeGateFlowMap } from './TradeGateFlowMap';
 import { openTradeGateLibraryModal } from './TradeGateLibraryModal';
 import { openTradeGateQuestionModal } from './TradeGateQuestionModal';
@@ -30,7 +31,6 @@ import {
   createEmptyTradeGateWorkflow,
   createStarterTradeGateWorkflow,
   createTradeGateWorkflowNode,
-  deleteTradeGateQuestionFromLibrary,
   duplicateTradeGateQuestion,
   getTradeGateNodeById,
   getTradeGateQuestionById,
@@ -422,22 +422,14 @@ interface TradeGateWorkflowEditorProps {
   removeWorkflow: () => Promise<void>;
 }
 
-function TradeGateWorkflowEditor({
-  workflow,
-  questions,
-  isExpanded,
-  setExpanded,
-  openNode,
-  openQuestionPicker,
-  updateWorkflow,
-  removeWorkflow,
-}: TradeGateWorkflowEditorProps) {
-  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
+
+function buildStartChoices(
+  workflow: TradeGateWorkflow,
+  questions: TradeGateQuestion[]
+): Array<{ nodeId: string; title: string }> {
   const questionsById = new Map(
     questions.map((question) => [question.id, question])
   );
-  
-  
   const questionPlacementCounts = new Map<string, number>();
   for (const node of workflow.nodes) {
     questionPlacementCounts.set(
@@ -461,6 +453,21 @@ function TradeGateWorkflowEditor({
       title: isDuplicated ? `${baseTitle} (${occurrence})` : baseTitle,
     });
   }
+  return startChoices;
+}
+
+function TradeGateWorkflowEditor({
+  workflow,
+  questions,
+  isExpanded,
+  setExpanded,
+  openNode,
+  openQuestionPicker,
+  updateWorkflow,
+  removeWorkflow,
+}: TradeGateWorkflowEditorProps) {
+  const [isSimulatorOpen, setIsSimulatorOpen] = useState(false);
+  const startChoices = buildStartChoices(workflow, questions);
   const simulationRegionId = `journalit-trade-gate-simulator-${workflow.id}`;
 
   return (

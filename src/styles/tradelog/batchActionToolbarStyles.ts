@@ -62,10 +62,6 @@ export const BATCH_ACTION_TOOLBAR_STYLES = `
       gap: 8px;
     }
 
-    .batch-action-toolbar-count {
-      font-size: 13px;
-    }
-
     .batch-action-toolbar-actions {
       gap: 6px;
     }

@@ -21,9 +21,7 @@ interface KeyboardTargetWithClosest extends EventTarget {
   closest?: (selector: string) => Element | null;
 }
 
-export function isInteractiveKeyboardTarget(
-  target: EventTarget | null
-): boolean {
+function isInteractiveKeyboardTarget(target: EventTarget | null): boolean {
   if (!target) return false;
 
   const candidate = target as KeyboardTargetWithClosest;
@@ -200,9 +198,9 @@ function useFullscreenVideoPlayer(src: string) {
       }
     };
 
-    const activeDocument = window.activeDocument;
-    activeDocument.addEventListener('keydown', handleKeyDown);
-    return () => activeDocument.removeEventListener('keydown', handleKeyDown);
+    const listenerDocument = window.activeDocument;
+    listenerDocument.addEventListener('keydown', handleKeyDown);
+    return () => listenerDocument.removeEventListener('keydown', handleKeyDown);
   }, [seekBy, toggleMute, togglePlayback]);
 
   return {

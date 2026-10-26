@@ -35,11 +35,6 @@ export const deviceFlowSignInModalStyles = `
 }
 
 
-.device-activation-modal-container .activation-right {
-  display: none;
-}
-
-
 .device-activation-modal-container .activation-header {
   margin-bottom: 0;
 }
@@ -47,11 +42,6 @@ export const deviceFlowSignInModalStyles = `
 .device-activation-modal-container .activation-header h2 {
   font-size: 1.5rem;
   margin-bottom: 0.5rem;
-}
-
-.device-activation-modal-container .activation-subtitle {
-  font-size: 0.9rem;
-  margin: 0;
 }
 
 

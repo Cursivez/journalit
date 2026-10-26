@@ -1,7 +1,10 @@
 
 
 import { t } from '../../../../lang/helpers';
-import type { PropChallengeRuleEvaluation } from '../../../../services/propChallenge/PropChallengeRuleEngine';
+import {
+  isUnconfirmedTerm,
+  type PropChallengeRuleEvaluation,
+} from '../../../../services/propChallenge/PropChallengeRuleEngine';
 import type { DisplayValueOptions } from '../../../../services/display/DisplayPolicy';
 import {
   propChallengeRuleHelp,
@@ -11,7 +14,8 @@ import {
 type FormatDisplayValue = (options: DisplayValueOptions) => string;
 
 
-export type PropChallengeLedgerState =
+type PropChallengeLedgerState =
+  | 'needs-review'
   | 'not-started'
   | 'in-progress'
   | 'reached'
@@ -35,7 +39,7 @@ export type PropChallengeLedgerTone =
   | 'negative';
 
 
-export interface PropChallengeLedgerExplanation {
+interface PropChallengeLedgerExplanation {
   title: string;
   description: string;
   formula: string;
@@ -69,6 +73,7 @@ export type PropChallengeLedgerEntry = Omit<PropChallengeLedgerRow, 'kind'>;
 
 const TONE_BY_STATE: Record<PropChallengeLedgerState, PropChallengeLedgerTone> =
   {
+    'needs-review': 'warning',
     'not-started': 'neutral',
     'in-progress': 'attention',
     reached: 'positive',
@@ -94,14 +99,6 @@ function clampRatio(value: number): number {
 
 function ratioOf(value: number, total: number): number {
   return total > 0 ? clampRatio(value / total) : 0;
-}
-
-
-function sizeDecimals(value: number): number {
-  const hundredths = Math.round(value * 100);
-  if (hundredths % 100 === 0) return 0;
-  if (hundredths % 10 === 0) return 1;
-  return 2;
 }
 
 function money(
@@ -192,10 +189,12 @@ function consistencyExplanation(
     );
     if (rule.satisfied) {
       calculations.push(
-        t('account.prop-challenge.ledger.tooltip.consistency.within', {
-          share,
-          maximum,
-        })
+        rule.comparison === 'strictly_below'
+          ? t('account.prop-challenge.rule.strict-help')
+          : t('account.prop-challenge.ledger.tooltip.consistency.within', {
+              share,
+              maximum,
+            })
       );
     } else if (rule.target <= 0) {
       
@@ -206,11 +205,13 @@ function consistencyExplanation(
       );
     } else if (rule.requiredTotalProfit > rule.totalProfit) {
       calculations.push(
-        t('account.prop-challenge.ledger.tooltip.consistency.goal', {
-          best: bestDay,
-          maximum,
-          goal: money(formatValue, rule.requiredTotalProfit, currency),
-        }),
+        rule.comparison === 'strictly_below'
+          ? `${bestDay} ÷ ${maximum} < ${money(formatValue, rule.requiredTotalProfit, currency)}`
+          : t('account.prop-challenge.ledger.tooltip.consistency.goal', {
+              best: bestDay,
+              maximum,
+              goal: money(formatValue, rule.requiredTotalProfit, currency),
+            }),
         t('account.prop-challenge.ledger.tooltip.consistency.goal-hint')
       );
     }
@@ -245,7 +246,29 @@ function buildRow(
   'ruleId' | 'kind' | 'label' | 'tone' | 'explanation' | 'help'
 > {
   switch (rule.kind) {
+    case 'manual_review':
+      return {
+        progressText: rule.reviewRequired
+          ? t('account.prop-challenge.ledger.state.needs-review')
+          : t('account.prop-challenge.ledger.state.in-progress'),
+        progressRatio: 0,
+        requirementText:
+          rule.target > 0
+            ? money(formatValue, rule.target, currency)
+            : t('account.prop-challenge.ledger.state.needs-review'),
+        state: rule.reviewRequired ? 'needs-review' : 'in-progress',
+      };
     case 'profit_target':
+      if (rule.targetNeedsBalance) {
+        return {
+          progressText: money(formatValue, rule.current, currency),
+          progressRatio: 0,
+          requirementText: t(
+            'account.prop-challenge.rule.target-needs-balance'
+          ),
+          state: 'needs-review',
+        };
+      }
       return {
         progressText: currentOf(
           money(formatValue, rule.current, currency),
@@ -397,7 +420,10 @@ function buildRow(
       
       
       
-      const requirementText = requirement('best-day', percent(rule.target));
+      const requirementText =
+        rule.comparison === 'strictly_below'
+          ? `< ${percent(rule.target)}`
+          : requirement('best-day', percent(rule.target));
       
       
       const bestDayShare = () =>
@@ -443,23 +469,6 @@ function buildRow(
       };
     }
 
-    case 'max_position_size': {
-      const size = (value: number) =>
-        formatValue({
-          kind: 'positionSize',
-          value,
-          precision: sizeDecimals(value),
-        });
-      return {
-        progressText: currentOf(size(rule.current), size(rule.target)),
-        progressRatio: ratioOf(rule.current, rule.target),
-        requirementText: requirement('at-most', size(rule.target)),
-        
-        
-        state: limitState(rule.breached, false, 'within-rule'),
-      };
-    }
-
     default: {
       const exhaustive: never = rule;
       return exhaustive;
@@ -473,26 +482,30 @@ export function buildPropChallengeLedgerRows(
   formatValue: FormatDisplayValue,
   currency: string
 ): PropChallengeLedgerRow[] {
-  return rules.map((rule) => {
+  return rules.flatMap((rule) => {
+    
+    if (isUnconfirmedTerm(rule)) return [];
     const row = buildRow(rule, formatValue, currency);
-    return {
-      ruleId: rule.ruleId,
-      kind: rule.kind,
-      
-      
-      label:
-        rule.kind === 'drawdown'
-          ? t(`account.prop-challenge.summary.rule.drawdown-${rule.mode}`)
-          : t(`account.prop-challenge.summary.rule.${rule.kind}`),
-      tone: TONE_BY_STATE[row.state],
-      
-      
-      explanation:
-        rule.kind === 'consistency'
-          ? consistencyExplanation(rule, formatValue, currency)
-          : undefined,
-      help: propChallengeRuleHelp(rule, formatValue, currency),
-      ...row,
-    };
+    return [
+      {
+        ruleId: rule.ruleId,
+        kind: rule.kind,
+        
+        
+        label:
+          rule.kind === 'drawdown'
+            ? t(`account.prop-challenge.summary.rule.drawdown-${rule.mode}`)
+            : t(`account.prop-challenge.summary.rule.${rule.kind}`),
+        tone: TONE_BY_STATE[row.state],
+        
+        
+        explanation:
+          rule.kind === 'consistency'
+            ? consistencyExplanation(rule, formatValue, currency)
+            : undefined,
+        help: propChallengeRuleHelp(rule, formatValue, currency),
+        ...row,
+      },
+    ];
   });
 }

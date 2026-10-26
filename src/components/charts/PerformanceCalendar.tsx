@@ -40,6 +40,15 @@ import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { getDisplayPnL, getAccountCount } from '../../utils/pnlUtils';
 import { hasTranslation, t } from '../../lang/helpers';
 import { cssVars } from '../../styles/inlineStylePolicy';
+import {
+  addMissedTrade,
+  MissedOnlySummary,
+  MissedTradesMarker,
+  TradeAndMissedCounts,
+  sumMissedTotals,
+  type MissedTotals,
+  type MissedTradesByDate,
+} from './performanceCalendarMissed';
 import type { NavigationSource } from '../../navigation/types';
 import { resolveSidebarTabNavigation } from '../../navigation/sidebarTabBehavior';
 import type JournalitPlugin from '../../main';
@@ -94,6 +103,8 @@ interface DayData {
   isToday: boolean;
   rMultiple: number | null;
   reviewed: boolean;
+  
+  missed: MissedTotals | null;
   breakEvenAccountCurrentBalance?: number;
   hasUnresolvedBreakEvenBalance?: boolean;
 }
@@ -113,82 +124,79 @@ const ReviewedIndicator: React.FC = () => (
   </>
 );
 
+interface CalendarBreakEvenSettings {
+  breakEvenRangeMin: number;
+  breakEvenRangeMax: number;
+  breakEvenThresholdMode?: 'fixed' | 'percentage_current_balance';
+  breakEvenThresholdPercent?: number;
+}
 
-const CalendarDay = memo<{
-  day: DayData;
-  onClick?: (date: Date) => void;
-  breakEvenSettings: {
-    breakEvenRangeMin: number;
-    breakEvenRangeMax: number;
-    breakEvenThresholdMode?: 'fixed' | 'percentage_current_balance';
-    breakEvenThresholdPercent?: number;
-  };
-}>(({ day, onClick, breakEvenSettings }) => {
-  const { currency } = useCurrency();
-  const { formatValue, shouldMask } = useDisplayFormatter();
-  const isPnlMasked = shouldMask('pnl');
+const OUTCOME_TONE = {
+  win: 'positive',
+  loss: 'negative',
+  breakeven: 'neutral',
+  unknown: 'neutral',
+} as const;
 
-  const handleClick = useCallback(() => {
-    if (day.date && day.currentMonth && onClick) onClick(day.date);
-  }, [day.currentMonth, day.date, onClick]);
-  const isClickable = Boolean(day.date && day.currentMonth && onClick);
-  const handleKeyDown = useCallback(
-    (event: React.KeyboardEvent<HTMLDivElement>) => {
-      if (!isClickable) return;
-      if (event.key === 'Enter' || event.key === ' ') {
-        event.preventDefault();
-        handleClick();
-      }
-    },
-    [handleClick, isClickable]
-  );
 
-  const isWeekendDay = day.date ? isWeekend(day.date) : false;
-  const dayOutcome =
-    day.pnl !== null && day.tradeCount > 0
-      ? classifyPnLWithBreakEvenSettings(
-          day.pnl,
-          breakEvenSettings,
-          day.breakEvenAccountCurrentBalance
-        )
-      : null;
+function dayToneOf(
+  day: DayData,
+  breakEvenSettings: CalendarBreakEvenSettings
+): (typeof OUTCOME_TONE)[keyof typeof OUTCOME_TONE] | null {
+  if (day.pnl === null || day.tradeCount <= 0) return null;
+  return OUTCOME_TONE[
+    classifyPnLWithBreakEvenSettings(
+      day.pnl,
+      breakEvenSettings,
+      day.breakEvenAccountCurrentBalance
+    )
+  ];
+}
 
-  const isPositiveDay = dayOutcome === 'win';
-  const isNegativeDay = dayOutcome === 'loss';
-  const isNeutralDay =
-    day.pnl !== null &&
-    day.tradeCount > 0 &&
-    (dayOutcome === 'breakeven' || dayOutcome === 'unknown');
+const isMissedOnly = (day: DayData): boolean =>
+  day.missed !== null && day.tradeCount === 0;
 
-  const dayClasses = [
+function calendarDayClasses(
+  day: DayData,
+  tone: string | null,
+  isPnlMasked: boolean
+): string {
+  return [
     'journalit-dashboard-calendar-day',
     day.currentMonth ? 'current-month' : 'other-month',
     day.tradeCount > 0 ? 'has-trades' : '',
-    !isPnlMasked && isPositiveDay ? 'positive' : '',
-    !isPnlMasked && isNegativeDay ? 'negative' : '',
-    !isPnlMasked && isNeutralDay ? 'neutral' : '',
-    isWeekendDay ? 'weekend-day' : '',
+    day.missed ? 'has-missed' : '',
+    isMissedOnly(day) ? 'missed-only' : '',
+    isPnlMasked ? '' : (tone ?? ''),
+    day.date && isWeekend(day.date) ? 'weekend-day' : '',
     day.isToday ? 'today' : '',
   ]
     .filter(Boolean)
     .join(' ');
+}
 
-  const interactiveDayProps = isClickable
-    ? {
-        onClick: handleClick,
-        onKeyDown: handleKeyDown,
-        role: 'button',
-        tabIndex: 0,
-        'aria-label': day.date
-          ? `${t('calendar.aria.open-daily-review', {
-              date: formatLocalDateString(day.date),
-            })}${day.reviewed ? ` (${t('calendar.reviewed')})` : ''}`
-          : undefined,
-      }
-    : {};
+function calendarDayAriaLabel(day: DayData): string | undefined {
+  if (!day.date) return undefined;
+  const reviewed = day.reviewed ? ` (${t('calendar.reviewed')})` : '';
+  const missed = day.missed
+    ? ` (${t('calendar.missed', { count: String(day.missed.count) })})`
+    : '';
+  return `${t('calendar.aria.open-daily-review', {
+    date: formatLocalDateString(day.date),
+  })}${reviewed}${missed}`;
+}
 
+const tradeCountLabel = (tradeCount: number): string =>
+  tradeCount === 1
+    ? t('calendar.trade', { count: '1' })
+    : t('calendar.trades', { count: String(tradeCount) });
+
+
+const CalendarDayContent: React.FC<{ day: DayData }> = ({ day }) => {
+  const { currency } = useCurrency();
+  const { formatValue } = useDisplayFormatter();
   return (
-    <div className={dayClasses} {...interactiveDayProps}>
+    <>
       <div className="journalit-dashboard-calendar-day-number">
         {day.dayNumber || ''}
       </div>
@@ -206,11 +214,76 @@ const CalendarDay = memo<{
       )}
       {day.tradeCount > 0 && (
         <div className="journalit-dashboard-calendar-day-trades">
-          {day.tradeCount === 1
-            ? t('calendar.trade', { count: '1' })
-            : t('calendar.trades', { count: String(day.tradeCount) })}
+          {day.missed ? (
+            <TradeAndMissedCounts
+              tradeCount={day.tradeCount}
+              missedCount={day.missed.count}
+            />
+          ) : (
+            tradeCountLabel(day.tradeCount)
+          )}
         </div>
       )}
+      {day.missed && <CalendarDayMissed day={day} missed={day.missed} />}
+    </>
+  );
+};
+
+const CalendarDayMissed: React.FC<{ day: DayData; missed: MissedTotals }> = ({
+  day,
+  missed,
+}) =>
+  isMissedOnly(day) ? (
+    <MissedOnlySummary
+      totals={missed}
+      valueClassName="journalit-dashboard-calendar-day-pnl"
+      countClassName="journalit-dashboard-calendar-day-trades"
+    />
+  ) : (
+    <MissedTradesMarker />
+  );
+
+
+const CalendarDay = memo<{
+  day: DayData;
+  onClick?: (date: Date) => void;
+  breakEvenSettings: CalendarBreakEvenSettings;
+}>(({ day, onClick, breakEvenSettings }) => {
+  const { shouldMask } = useDisplayFormatter();
+
+  const handleClick = useCallback(() => {
+    if (day.date && day.currentMonth && onClick) onClick(day.date);
+  }, [day.currentMonth, day.date, onClick]);
+  const isClickable = Boolean(day.date && day.currentMonth && onClick);
+  const handleKeyDown = useCallback(
+    (event: React.KeyboardEvent<HTMLDivElement>) => {
+      if (!isClickable) return;
+      if (event.key === 'Enter' || event.key === ' ') {
+        event.preventDefault();
+        handleClick();
+      }
+    },
+    [handleClick, isClickable]
+  );
+
+  const dayClasses = calendarDayClasses(
+    day,
+    dayToneOf(day, breakEvenSettings),
+    shouldMask('pnl')
+  );
+  const interactiveDayProps = isClickable
+    ? {
+        onClick: handleClick,
+        onKeyDown: handleKeyDown,
+        role: 'button',
+        tabIndex: 0,
+        'aria-label': calendarDayAriaLabel(day),
+      }
+    : {};
+
+  return (
+    <div className={dayClasses} {...interactiveDayProps}>
+      <CalendarDayContent day={day} />
     </div>
   );
 });
@@ -369,6 +442,7 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
       rMultipleByDate,
       breakEvenBalancesByDate,
       hasUnresolvedBreakEvenBalanceByDate,
+      missedByDate,
     } = useMemo(() => {
       
       const tradesByDate: { [date: string]: number } = {};
@@ -378,9 +452,27 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
       const breakEvenBalancesByDate: { [date: string]: Set<number> } = {};
       const hasUnresolvedBreakEvenBalanceByDate: { [date: string]: boolean } =
         {};
+      const missedByDate: MissedTradesByDate = new Map();
+      const isOutsideDateRange = (date: Date): boolean =>
+        Boolean(
+          (filters?.dateRange?.[0] && date < filters.dateRange[0]) ||
+          (filters?.dateRange?.[1] && date > filters.dateRange[1])
+        );
 
       
       trades.forEach((trade) => {
+        
+        
+        if (trade.isMissedTrade === true) {
+          addMissedTrade(missedByDate, trade, {
+            analyticsDateBasis,
+            plugin,
+            defaultRiskAmount,
+            isOutsideDateRange,
+          });
+          return;
+        }
+
         const tradeDate = getTradeAnalyticsTradingDay(
           trade,
           analyticsDateBasis,
@@ -397,11 +489,6 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
 
         
         if (!isPnlContributingTrade(trade)) {
-          return;
-        }
-
-        
-        if (trade.isMissedTrade === true) {
           return;
         }
 
@@ -434,10 +521,7 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
 
         for (const event of pnlEvents) {
           const eventDate = event.tradingDay;
-          if (
-            (filters?.dateRange?.[0] && eventDate < filters.dateRange[0]) ||
-            (filters?.dateRange?.[1] && eventDate > filters.dateRange[1])
-          ) {
+          if (isOutsideDateRange(eventDate)) {
             continue;
           }
 
@@ -502,6 +586,7 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
         rMultipleByDate,
         breakEvenBalancesByDate,
         hasUnresolvedBreakEvenBalanceByDate,
+        missedByDate,
       };
     }, [
       analyticsDateBasis,
@@ -649,6 +734,7 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
           rMultipleByDate,
           breakEvenBalancesByDate,
           hasUnresolvedBreakEvenBalanceByDate,
+          missedByDate,
           weekStartDayIndex,
           reviewedDayKeys,
           todayKey
@@ -656,6 +742,7 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
       [
         breakEvenBalancesByDate,
         hasUnresolvedBreakEvenBalanceByDate,
+        missedByDate,
         rMultipleByDate,
         reviewedDayKeys,
         tradeCountByDate,
@@ -894,6 +981,15 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
                 }
               });
 
+              const weeklyMissed = sumMissedTotals(
+                currentMonthWeekDays.map((day) => day.missed)
+              );
+              const isMissedOnlyWeek = weeklyMissed !== null && validDays === 0;
+              const weeklyTradeLabel =
+                weeklyTradeCount === 1
+                  ? t('calendar.trade', { count: '1' })
+                  : t('calendar.trades', { count: String(weeklyTradeCount) });
+
               const weeklyHasUnresolvedBreakEvenBalance =
                 currentMonthWeekDays.some(
                   (day) => day.hasUnresolvedBreakEvenBalance === true
@@ -974,13 +1070,17 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
                               {
                                 date: formatLocalDateString(firstValidDate),
                               }
-                            )}${weekReviewed ? ` (${t('calendar.reviewed')})` : ''}`,
+                            )}${weekReviewed ? ` (${t('calendar.reviewed')})` : ''}${
+                              weeklyMissed
+                                ? ` (${t('calendar.missed', { count: String(weeklyMissed.count) })})`
+                                : ''
+                            }`,
                           }
                         : {};
 
                       return (
                         <div
-                          className={`journalit-dashboard-calendar-weekly-pnl ${weeklyTradeCount > 0 ? 'has-trades' : ''} ${weeklyOutcomeClass}`}
+                          className={`journalit-dashboard-calendar-weekly-pnl ${weeklyTradeCount > 0 ? 'has-trades' : ''} ${weeklyMissed ? 'has-missed' : ''} ${isMissedOnlyWeek ? 'missed-only' : ''} ${weeklyOutcomeClass}`}
                           {...interactiveWeekProps}
                         >
                           {firstValidDate && (
@@ -993,11 +1093,13 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
                             </div>
                           )}
                           {weekReviewed && <ReviewedIndicator />}
+                          {(validDays > 0 || isMissedOnlyWeek) && (
+                            <div className="journalit-dashboard-calendar-week-total-label">
+                              {t('calendar.week')}
+                            </div>
+                          )}
                           {validDays > 0 && (
                             <>
-                              <div className="journalit-dashboard-calendar-week-total-label">
-                                {t('calendar.week')}
-                              </div>
                               <div className="journalit-dashboard-calendar-week-total-value">
                                 {formatValue({
                                   kind: 'pnl',
@@ -1011,15 +1113,28 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
                               </div>
                               {weeklyTradeCount > 0 && (
                                 <div className="journalit-dashboard-calendar-week-trade-count">
-                                  {weeklyTradeCount === 1
-                                    ? t('calendar.trade', { count: '1' })
-                                    : t('calendar.trades', {
-                                        count: String(weeklyTradeCount),
-                                      })}
+                                  {weeklyMissed ? (
+                                    <TradeAndMissedCounts
+                                      tradeCount={weeklyTradeCount}
+                                      missedCount={weeklyMissed.count}
+                                    />
+                                  ) : (
+                                    weeklyTradeLabel
+                                  )}
                                 </div>
                               )}
                             </>
                           )}
+                          {weeklyMissed &&
+                            (isMissedOnlyWeek ? (
+                              <MissedOnlySummary
+                                totals={weeklyMissed}
+                                valueClassName="journalit-dashboard-calendar-week-total-value"
+                                countClassName="journalit-dashboard-calendar-week-trade-count"
+                              />
+                            ) : (
+                              <MissedTradesMarker />
+                            ))}
                         </div>
                       );
                     })()}
@@ -1045,6 +1160,7 @@ const generateCalendarGrid = (
   rMultipleByDate: { [date: string]: number },
   breakEvenBalancesByDate: { [date: string]: Set<number> },
   hasUnresolvedBreakEvenBalanceByDate: { [date: string]: boolean },
+  missedByDate: MissedTradesByDate,
   weekStartDayIndex: number,
   reviewedDayKeys: ReadonlySet<string>,
   todayKey: string
@@ -1097,6 +1213,9 @@ const generateCalendarGrid = (
         );
         const breakEvenAccountCurrentBalance =
           balancesForDate.length === 1 ? balancesForDate[0] : undefined;
+        const missedTally = currentMonth
+          ? missedByDate.get(dateStr)
+          : undefined;
 
         week.push({
           dayNumber,
@@ -1107,6 +1226,7 @@ const generateCalendarGrid = (
           isToday: dateStr === todayKey,
           rMultiple: currentMonth ? (rMultipleByDate[dateStr] ?? null) : null,
           reviewed: currentMonth && reviewedDayKeys.has(dateStr),
+          missed: missedTally ? { ...missedTally } : null,
           breakEvenAccountCurrentBalance: currentMonth
             ? breakEvenAccountCurrentBalance
             : undefined,

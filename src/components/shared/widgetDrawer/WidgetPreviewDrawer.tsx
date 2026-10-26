@@ -1,14 +1,7 @@
 
 
-import React, {
-  useCallback,
-  useEffect,
-  useEffectEvent,
-  useId,
-  useRef,
-  useState,
-} from 'react';
-import { createPortal } from 'react-dom';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
+import { Drawer } from '../drawer/Drawer';
 import {
   Check,
   ChevronLeft,
@@ -16,12 +9,10 @@ import {
   Plus,
   Search,
   Trash2,
-  X,
   type ObsidianIconComponent,
 } from '../icons/ObsidianIcon';
 import { t } from '../../../lang/helpers';
 import { DisplayPolicyProvider } from '../../../contexts/DisplayPolicyContext';
-import { ESCAPE_DELEGATE_ATTRIBUTE } from '../../../views/escapeKeySuppression';
 
 const ALL_TAB_ID = 'all';
 
@@ -192,8 +183,6 @@ interface WidgetPreviewDrawerProps {
 }
 
 const NAV_SELECTOR = '[data-journalit-wpd-nav]';
-const ESCAPE_OWNED_SURFACE_SELECTOR =
-  '.modal-container, .prompt, .menu, .suggestion-container';
 
 
 
@@ -348,39 +337,6 @@ const CardSection: React.FC<{
     </section>
   );
 
-
-const useDrawerEscape = (
-  overlayRef: React.RefObject<HTMLDivElement | null>,
-  onEscape: () => void
-) => {
-  const handleEscape = useEffectEvent((event: KeyboardEvent) => {
-    
-    if (event.key !== 'Escape' || event.isComposing) return;
-    const target = event.target;
-    
-    
-    const ElementCtor =
-      overlayRef.current?.ownerDocument.defaultView?.Element ?? Element;
-    if (
-      target instanceof ElementCtor &&
-      !overlayRef.current?.contains(target) &&
-      target.closest(ESCAPE_OWNED_SURFACE_SELECTOR)
-    ) {
-      return;
-    }
-    event.preventDefault();
-    event.stopPropagation();
-    event.stopImmediatePropagation(); 
-    onEscape();
-  });
-
-  useEffect(() => {
-    const doc = window.activeDocument;
-    doc.addEventListener('keydown', handleEscape, true);
-    return () => doc.removeEventListener('keydown', handleEscape, true);
-  }, []);
-};
-
 const ActionPillSection: React.FC<{
   title: string;
   actions: WidgetDrawerAction[];
@@ -420,10 +376,8 @@ export const WidgetPreviewDrawer: React.FC<WidgetPreviewDrawerProps> = ({
   onClose,
   panelRef,
 }) => {
-  const titleId = useId();
   const [activeTabId, setActiveTabId] = useState(ALL_TAB_ID);
   const [query, setQuery] = useState('');
-  const overlayRef = useRef<HTMLDivElement>(null);
   const bodyRef = useRef<HTMLDivElement>(null);
   const searchRef = useRef<HTMLInputElement>(null);
   const pendingFocusIndexRef = useRef<number | null>(null);
@@ -515,33 +469,14 @@ export const WidgetPreviewDrawer: React.FC<WidgetPreviewDrawerProps> = ({
     (next ?? searchRef.current)?.focus();
   }, [items]);
 
-  
-  
-  
-  useEffect(() => {
-    const doc = window.activeDocument;
-    const opener = doc.activeElement;
-    const overlay = overlayRef.current;
-    searchRef.current?.focus();
-    return () => {
-      const current = doc.activeElement;
-      const focusWasLost =
-        !current || current === doc.body || overlay?.contains(current);
-      const OpenerCtor = doc.defaultView?.HTMLElement ?? HTMLElement;
-      if (focusWasLost && opener instanceof OpenerCtor && opener.isConnected) {
-        opener.focus();
-      }
-    };
-  }, []);
-
-  useDrawerEscape(overlayRef, () => {
+  const handleEscape = () => {
     if (query) {
       setQuery('');
       searchRef.current?.focus();
       return;
     }
     onClose();
-  });
+  };
 
   const handleBodyKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     if (
@@ -584,111 +519,78 @@ export const WidgetPreviewDrawer: React.FC<WidgetPreviewDrawerProps> = ({
     first.focus();
   };
 
-  
-  
-  return createPortal(
-    <div
-      ref={overlayRef}
-      className="journalit-wpd-overlay"
-      role="presentation"
-      {...{ [ESCAPE_DELEGATE_ATTRIBUTE]: 'true' }}
-      onClick={(event) => {
-        if (event.target === event.currentTarget) onClose();
-      }}
+  return (
+    <Drawer
+      title={title}
+      subtitle={subtitle}
+      onClose={onClose}
+      onEscape={handleEscape}
+      panelRef={panelRef}
+      initialFocusRef={searchRef}
+      overlayClassName="journalit-widget-drawer"
+      allowWorkspaceShortcuts
     >
-      <div
-        ref={panelRef}
-        className="journalit-wpd-panel"
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={titleId}
-      >
-        
-        <div className="journalit-wpd-panel-inner">
-          <div className="journalit-wpd-header">
-            <div className="journalit-wpd-heading">
-              <h2 id={titleId} className="journalit-wpd-title">
-                {title}
-              </h2>
-              <p className="journalit-wpd-subtitle">{subtitle}</p>
-            </div>
-            <button
-              type="button"
-              className="journalit-wpd-close clickable-icon"
-              aria-label={t('widget-drawer.close')}
-              onClick={onClose}
-            >
-              <X size={18} />
-            </button>
-          </div>
+      <DrawerTabStrip
+        tabs={[{ id: ALL_TAB_ID, label: t('widget-drawer.tab.all') }, ...tabs]}
+        activeTabId={activeTabId}
+        onSelect={setActiveTabId}
+      />
 
-          <DrawerTabStrip
-            tabs={[
-              { id: ALL_TAB_ID, label: t('widget-drawer.tab.all') },
-              ...tabs,
-            ]}
-            activeTabId={activeTabId}
-            onSelect={setActiveTabId}
+      
+      <label className="journalit-wpd-search">
+        <span className="journalit-sr-only">
+          {t('widget-drawer.search.placeholder')}
+        </span>
+        <Search size={14} />
+        <input
+          ref={searchRef}
+          type="search"
+          className="journalit-wpd-search-input"
+          placeholder={t('widget-drawer.search.placeholder')}
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+          onKeyDown={handleSearchKeyDown}
+        />
+      </label>
+
+      
+      <DisplayPolicyProvider privacyModeOverride={false}>
+        <div
+          ref={bodyRef}
+          className="journalit-wpd-body"
+          onKeyDown={handleBodyKeyDown}
+          role="presentation"
+        >
+          {availableSections.map((section) => (
+            <CardSection
+              key={section.id}
+              title={section.title}
+              items={section.items}
+              onAdd={handleAdd}
+            />
+          ))}
+
+          {actionsTab && visibleActions.length > 0 && (
+            <ActionPillSection
+              title={actionsTab.label}
+              actions={visibleActions}
+            />
+          )}
+
+          <CardSection
+            title={t('widget-drawer.section.in-use')}
+            items={inUseItems}
+            onAdd={handleAdd}
+            onRemove={handleRemove}
           />
 
-          
-          <label className="journalit-wpd-search">
-            <span className="journalit-sr-only">
-              {t('widget-drawer.search.placeholder')}
-            </span>
-            <Search size={14} />
-            <input
-              ref={searchRef}
-              type="search"
-              className="journalit-wpd-search-input"
-              placeholder={t('widget-drawer.search.placeholder')}
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              onKeyDown={handleSearchKeyDown}
-            />
-          </label>
-
-          
-          <DisplayPolicyProvider privacyModeOverride={false}>
-            <div
-              ref={bodyRef}
-              className="journalit-wpd-body"
-              onKeyDown={handleBodyKeyDown}
-              role="presentation"
-            >
-              {availableSections.map((section) => (
-                <CardSection
-                  key={section.id}
-                  title={section.title}
-                  items={section.items}
-                  onAdd={handleAdd}
-                />
-              ))}
-
-              {actionsTab && visibleActions.length > 0 && (
-                <ActionPillSection
-                  title={actionsTab.label}
-                  actions={visibleActions}
-                />
-              )}
-
-              <CardSection
-                title={t('widget-drawer.section.in-use')}
-                items={inUseItems}
-                onAdd={handleAdd}
-                onRemove={handleRemove}
-              />
-
-              {isEmpty && (
-                <div className="journalit-wpd-empty">
-                  {t('widget-drawer.empty-search')}
-                </div>
-              )}
+          {isEmpty && (
+            <div className="journalit-wpd-empty">
+              {t('widget-drawer.empty-search')}
             </div>
-          </DisplayPolicyProvider>
+          )}
         </div>
-      </div>
-    </div>,
-    window.activeDocument.body
+      </DisplayPolicyProvider>
+    </Drawer>
   );
 };

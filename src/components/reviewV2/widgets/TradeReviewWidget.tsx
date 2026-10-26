@@ -7,6 +7,19 @@ import React, {
   useImperativeHandle,
 } from 'react';
 import type JournalitPlugin from '../../../main';
+import { Notice } from 'obsidian';
+import { getTradeMediaOwner } from '../../../services/trade/core/TradeMediaOwnership';
+import {
+  isEditingTradeReviewField,
+  TradeReviewEditableValue,
+  TradeReviewEditableMedia,
+  useTradeReviewJournalEditing,
+  type TradeReviewJournalSaveHandle,
+} from './TradeReviewInlineEditing';
+import {
+  isEditableJournalField,
+  normalizeTradeJournalSelection,
+} from '../../../services/trade/core/TradeJournalFields';
 import type { TradeReviewData } from '../../../services/backend/types';
 import type { CustomFieldDefinition } from '../../../types/customFields';
 import { ImageCarousel } from '../../image/ImageCarousel';
@@ -14,9 +27,11 @@ import { useReviewTrades } from '../hooks/useReviewData';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../contexts/DisplayPolicyContext';
 import { getCurrencyConfig } from '../../../utils/currencyConfig';
+import { formatTradePositionSize } from '../../forms/trade/utils';
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import {
   getEffectivePnL,
+  getExecutionFillPrices,
   isTradeOpenWithContext,
 } from '../../../utils/tradeStatusUtils';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
@@ -44,11 +59,19 @@ import {
   resolveTradeReviewQuestions,
   resolveTradeReviewQuestionDepths,
   resolveVisibleTradeReviewQuestions,
+  expandTradeReviewFieldGroups,
+  getTradeReviewBuiltInFieldLabel,
+  getTradeReviewCustomFieldId,
+  isTradeReviewCustomFieldRef,
+  resolveTradeReviewFieldLayout,
   type TradeReviewCardField,
+  type TradeReviewFieldId,
   type TradeReviewQuestionConfig,
   type TradeReviewWidgetConfig,
 } from './tradeReviewConfig';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
+import { partitionMarkdownSectionsByHeading } from '../../../utils/markdownSectionExtractor';
+import { TradeReviewMarkdownText } from './TradeReviewMarkdownText';
 
 const RESOLVED_SAVE_PROMISE = Promise.resolve();
 
@@ -82,7 +105,7 @@ type ReviewTrade = Record<string, unknown> & {
   useDirectPnLInput?: boolean;
   rMultiple?: number;
   riskAmount?: number;
-  stopLoss?: number;
+  stopLosses?: Array<{ price?: number }>;
   takeProfits?: Array<{ price?: number; closePercent?: number }>;
   commission?: number;
   fees?: number;
@@ -92,7 +115,6 @@ type ReviewTrade = Record<string, unknown> & {
   setup?: string[];
   mistake?: string[];
   tags?: string[];
-  customTags?: string[];
   images?: string[] | string;
   tradeStatus?: string;
   tradeReview?: TradeReviewData;
@@ -112,20 +134,6 @@ type ReviewTrade = Record<string, unknown> & {
 type TradeReviewQuestionSaveHandle = {
   flushPendingSaves: () => Promise<void>;
 };
-
-const DEFAULT_FIELDS: TradeReviewCardField[] = [
-  'entry',
-  'exit',
-  'duration',
-  'risk',
-  'account',
-  'setup',
-  'mistakes',
-  'tags',
-  'thesis',
-  'notes',
-  'customFields',
-];
 
 const SESSION_VISIBLE_REVIEWED_PATHS_BY_REVIEW = new Map<string, Set<string>>();
 const RECENT_REVIEW_TOGGLE_VISIBLE_UNTIL_BY_REVIEW = new Map<
@@ -243,7 +251,7 @@ function hasRecentReviewToggle(
   return false;
 }
 
-export function getStableDisplayTrades(
+function getStableDisplayTrades(
   reviewFilePath: string,
   displayTrades: ReviewTrade[],
   options: { isTransientRefresh: boolean } = { isTransientRefresh: false }
@@ -291,7 +299,7 @@ const TIME_FORMATTER = new Intl.DateTimeFormat(undefined, {
   minute: '2-digit',
 });
 
-export function asReviewTrades(value: unknown): ReviewTrade[] {
+function asReviewTrades(value: unknown): ReviewTrade[] {
   return Array.isArray(value)
     ? value.filter((item): item is ReviewTrade =>
         Boolean(
@@ -390,7 +398,7 @@ function getTradeKey(trade: ReviewTrade, index: number): string {
   return String(trade.tradeId ?? trade.id ?? trade.path ?? `trade-${index}`);
 }
 
-export function getOutcome(
+function getOutcome(
   trade: ReviewTrade,
   breakEvenSettings?: JournalitSettings['trade']
 ): 'win' | 'loss' | 'breakeven' | 'unknown' | 'open' | 'cancelled' {
@@ -419,7 +427,7 @@ export function getOutcome(
   return outcome === 'unknown' ? 'breakeven' : outcome;
 }
 
-export function getQuestions(
+function getQuestions(
   config: TradeReviewWidgetConfig,
   outcome: ReturnType<typeof getOutcome>
 ): TradeReviewQuestionConfig[] {
@@ -427,7 +435,7 @@ export function getQuestions(
   return resolveTradeReviewQuestions(config, outcome);
 }
 
-export function getDisplayQuestions(
+function getDisplayQuestions(
   config: TradeReviewWidgetConfig,
   outcome: ReturnType<typeof getOutcome>,
   isOutcomeMasked: boolean
@@ -436,7 +444,7 @@ export function getDisplayQuestions(
   return getQuestions(config, outcome);
 }
 
-export function getPreferredOutcomeLabel({
+function getPreferredOutcomeLabel({
   outcome,
   displayRMultiples,
   effectiveR,
@@ -470,7 +478,7 @@ export function getPreferredOutcomeLabel({
   return formatValue({ kind: 'pnl', value: pnl, currencyCode: currency });
 }
 
-export function getReviewText(
+function getReviewText(
   review: TradeReviewData | undefined,
   question: TradeReviewQuestionConfig,
   allQuestions: TradeReviewQuestionConfig[] = [question]
@@ -520,7 +528,7 @@ function getReviewChoiceOptionId(
   return undefined;
 }
 
-export function includeLegacyAnsweredQuestions(
+function includeLegacyAnsweredQuestions(
   questions: TradeReviewQuestionConfig[],
   review: TradeReviewData | undefined
 ): TradeReviewQuestionConfig[] {
@@ -557,12 +565,52 @@ export function includeLegacyAnsweredQuestions(
     : questions;
 }
 
+
+function getChipField(
+  trade: ReviewTrade,
+  field: TradeReviewCardField
+): {
+  values: string[];
+  selectionId: 'setup' | 'mistake' | 'tags' | null;
+} | null {
+  switch (field) {
+    case 'account':
+      return { values: formatItems(trade.account), selectionId: null };
+    case 'setup':
+      return {
+        values: formatItems(
+          normalizeTradeJournalSelection(trade.setup, 'setup')
+        ),
+        selectionId: 'setup',
+      };
+    case 'mistakes':
+      return {
+        values: formatItems(
+          normalizeTradeJournalSelection(trade.mistake, 'mistake')
+        ),
+        selectionId: 'mistake',
+      };
+    case 'tags':
+      return {
+        values: formatItems(trade.tags),
+        selectionId: 'tags',
+      };
+    default:
+      return null;
+  }
+}
+
 function formatItems(value: unknown): string[] {
   if (Array.isArray(value)) {
-    return value.filter(
-      (item): item is string =>
-        typeof item === 'string' && item.trim().length > 0
-    );
+    
+    return [
+      ...new Set(
+        value.filter(
+          (item): item is string =>
+            typeof item === 'string' && item.trim().length > 0
+        )
+      ),
+    ];
   }
   if (typeof value === 'string' && value.trim()) return [value.trim()];
   return [];
@@ -578,91 +626,188 @@ function formatDirectionLabel(trade: ReviewTrade): string | null {
   return directionKind === 'unknown' ? null : directionKind.toUpperCase();
 }
 
-const METRIC_FIELD_SET = new Set<TradeReviewCardField>([
-  'entry',
-  'exit',
-  'duration',
-  'risk',
-  'positionSize',
-  'stopLoss',
-  'takeProfit',
-  'fees',
-  'commission',
-  'mae',
-  'mfe',
-]);
+type TradeReviewEditableField = React.ComponentProps<
+  typeof TradeReviewEditableValue
+>['field'];
 
-const CONTEXT_FIELD_SET = new Set<TradeReviewCardField>([
-  'account',
-  'setup',
-  'mistakes',
-  'tags',
-]);
+type TradeReviewJournalEditing = ReturnType<
+  typeof useTradeReviewJournalEditing
+>;
+
+
+type TradeReviewFieldDisplay = {
+  id: string;
+  label: string;
+  
+  editableField?: TradeReviewEditableField;
+} & (
+  | { kind: 'chips'; field: TradeReviewCardField; values: string[] }
+  | {
+      kind: 'text';
+      value: string;
+      
+      markdownSourcePath?: string;
+    }
+);
+
+function hasDisplayValue(item: TradeReviewFieldDisplay): boolean {
+  return item.kind === 'chips'
+    ? item.values.length > 0
+    : isPresentDisplayValue(item.value);
+}
+
+
+function getShownFieldDisplays(
+  items: TradeReviewFieldDisplay[],
+  editing: TradeReviewJournalEditing
+): TradeReviewFieldDisplay[] {
+  return items.filter(
+    (item) =>
+      hasDisplayValue(item) ||
+      (editing.enabled && item.editableField !== undefined)
+  );
+}
 
 function TradeReviewMetrics({
-  fields,
-  values,
+  items,
+  editing,
 }: {
-  fields: TradeReviewCardField[];
-  values: Partial<Record<TradeReviewCardField, string>>;
+  items: TradeReviewFieldDisplay[];
+  editing: TradeReviewJournalEditing;
 }) {
-  const visibleFields = fields.filter((field) =>
-    isPresentDisplayValue(values[field] ?? '')
-  );
-  if (visibleFields.length === 0) return null;
+  
+  const shownItems = getShownFieldDisplays(items, editing);
+  if (shownItems.length === 0) return null;
 
   return (
     <div
-      className={`journalit-trade-review-metrics journalit-trade-review-metrics--count-${visibleFields.length}`}
+      className={`journalit-trade-review-metrics journalit-trade-review-metrics--count-${shownItems.length}`}
     >
-      {visibleFields.map((field) => (
-        <div key={field} className="journalit-trade-review-metric-card">
-          <span className="journalit-trade-review-metric-label">
-            {getFieldLabel(field)}
-          </span>
+      {shownItems.map((item) => {
+        const empty = !hasDisplayValue(item);
+        const valueEl = (
           <span className="journalit-trade-review-metric-value">
-            {values[field]}
+            {item.kind === 'chips' ? item.values.join(', ') : item.value}
           </span>
+        );
+        return (
+          <div
+            key={item.id}
+            
+            className={`journalit-trade-review-metric-card${
+              item.editableField &&
+              isEditingTradeReviewField(editing, item.editableField)
+                ? ' journalit-trade-review-metric-card--editing'
+                : ''
+            }`}
+            {...(empty ? shareCaptureExcludeProps : {})}
+          >
+            <span className="journalit-trade-review-metric-label">
+              {item.label}
+            </span>
+            {item.editableField ? (
+              <TradeReviewEditableValue
+                editing={editing}
+                field={item.editableField}
+                empty={empty}
+              >
+                {valueEl}
+              </TradeReviewEditableValue>
+            ) : (
+              valueEl
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+
+function TradeReviewFieldRow({
+  item,
+  editing,
+  plugin,
+}: {
+  item: TradeReviewFieldDisplay;
+  plugin: JournalitPlugin;
+  editing: TradeReviewJournalEditing;
+}) {
+  const empty = !hasDisplayValue(item);
+  const editable = (content: React.ReactNode) =>
+    item.editableField ? (
+      <TradeReviewEditableValue
+        editing={editing}
+        field={item.editableField}
+        empty={empty}
+      >
+        {content}
+      </TradeReviewEditableValue>
+    ) : (
+      content
+    );
+
+  return (
+    <div
+      data-context-field={item.id}
+      className="journalit-trade-review-context-row"
+      {...(empty ? shareCaptureExcludeProps : {})}
+    >
+      <span className="journalit-trade-review-context-label">{item.label}</span>
+      {item.kind === 'chips' ? (
+        <div className="journalit-trade-review-context-values">
+          {editable(
+            item.values.map((value) => (
+              <span
+                key={value}
+                className={`journalit-trade-review-context-chip journalit-trade-review-context-chip--${item.field}`}
+              >
+                {value}
+              </span>
+            ))
+          )}
         </div>
-      ))}
+      ) : item.markdownSourcePath !== undefined ? (
+        editable(
+          <TradeReviewMarkdownText
+            plugin={plugin}
+            markdown={item.value}
+            sourcePath={item.markdownSourcePath}
+          />
+        )
+      ) : (
+        editable(
+          <span className="journalit-trade-review-context-text">
+            {item.value}
+          </span>
+        )
+      )}
     </div>
   );
 }
 
 function TradeReviewContext({
-  fields,
-  itemsByField,
+  items,
+  editing,
+  plugin,
 }: {
-  fields: TradeReviewCardField[];
-  itemsByField: Partial<Record<TradeReviewCardField, string[]>>;
+  items: TradeReviewFieldDisplay[];
+  editing: TradeReviewJournalEditing;
+  plugin: JournalitPlugin;
 }) {
-  const visibleFields = fields.filter(
-    (field) => (itemsByField[field] ?? []).length > 0
-  );
-  if (visibleFields.length === 0) return null;
+  const shownItems = getShownFieldDisplays(items, editing);
+  if (shownItems.length === 0) return null;
 
   return (
     <div className="journalit-trade-review-context">
-      {visibleFields.map((field) => {
-        const items = itemsByField[field] ?? [];
-        return (
-          <div key={field} className="journalit-trade-review-context-row">
-            <span className="journalit-trade-review-context-label">
-              {getFieldLabel(field)}
-            </span>
-            <span className="journalit-trade-review-context-values">
-              {items.map((item) => (
-                <span
-                  key={item}
-                  className={`journalit-trade-review-context-chip journalit-trade-review-context-chip--${field}`}
-                >
-                  {item}
-                </span>
-              ))}
-            </span>
-          </div>
-        );
-      })}
+      {shownItems.map((item) => (
+        <TradeReviewFieldRow
+          key={item.id}
+          item={item}
+          editing={editing}
+          plugin={plugin}
+        />
+      ))}
     </div>
   );
 }
@@ -683,20 +828,18 @@ function toFiniteNumber(value: unknown): number | null {
   return null;
 }
 
-interface TradeReviewMoreContextItem {
-  id: string;
-  label: string;
-  value: string;
-  multiline?: boolean;
-}
-
 function TradeReviewMoreContext({
   items,
+  editing,
+  plugin,
 }: {
-  items: TradeReviewMoreContextItem[];
+  items: TradeReviewFieldDisplay[];
+  editing: TradeReviewJournalEditing;
+  plugin: JournalitPlugin;
 }) {
   const [isExpanded, setIsExpanded] = useState(false);
-  if (items.length === 0) return null;
+  const shownItems = getShownFieldDisplays(items, editing);
+  if (shownItems.length === 0) return null;
 
   return (
     <div
@@ -708,7 +851,18 @@ function TradeReviewMoreContext({
         type="button"
         className="journalit-trade-review-more-context-toggle"
         aria-expanded={isExpanded}
-        onClick={() => setIsExpanded((expanded) => !expanded)}
+        onClick={() => {
+          if (!isExpanded) {
+            setIsExpanded(true);
+            return;
+          }
+          void editing
+            .save()
+            .then(() => setIsExpanded(false))
+            .catch(() => {
+              // intentional
+            });
+        }}
       >
         <span
           className={`journalit-weekly-drc-accordion-indicator journalit-trade-review-more-context-chevron ${isExpanded ? 'is-expanded' : ''}`}
@@ -718,29 +872,25 @@ function TradeReviewMoreContext({
         </span>
         <span>{t('widget.trade-review.more-context')}</span>
         <span className="journalit-trade-review-more-context-count">
-          {items.length}
+          {shownItems.filter(hasDisplayValue).length}
         </span>
       </button>
       {isExpanded && (
         <div className="journalit-trade-review-more-context-body">
-          {items.map((item) => (
-            <div
+          {shownItems.map((item) => (
+            <TradeReviewFieldRow
               key={item.id}
-              className={`journalit-trade-review-more-context-row ${item.multiline ? 'journalit-trade-review-more-context-row--multiline' : ''}`}
-            >
-              <span className="journalit-trade-review-more-context-label">
-                {item.label}
-              </span>
-              <span className="journalit-trade-review-more-context-value">
-                {item.value}
-              </span>
-            </div>
+              item={item}
+              editing={editing}
+              plugin={plugin}
+            />
           ))}
         </div>
       )}
     </div>
   );
 }
+
 
 function formatContextScalar(value: unknown): string {
   if (Array.isArray(value)) {
@@ -761,27 +911,23 @@ function formatContextScalar(value: unknown): string {
   return '';
 }
 
-function addMoreContextItem(
-  items: TradeReviewMoreContextItem[],
-  item: TradeReviewMoreContextItem
-) {
-  if (!isPresentDisplayValue(item.value)) return;
-  items.push(item);
-}
 
-function formatTakeProfitValues(
-  takeProfits: ReviewTrade['takeProfits'],
-  formatPrice: (value: unknown) => string
+function formatTargetPrices(
+  targets: Array<{ price?: number }> | undefined,
+  formatPrice: (value: unknown) => string,
+  emptyValue?: string
 ): string {
-  if (!Array.isArray(takeProfits)) return t('common.na');
+  if (!Array.isArray(targets)) return t('common.na');
   const values: string[] = [];
-  for (const target of takeProfits) {
+  for (const target of targets) {
     const formattedTarget = formatPrice(toFiniteNumber(target.price));
     if (isPresentDisplayValue(formattedTarget)) {
       values.push(formattedTarget);
     }
   }
-  return values.join(', ');
+  return values.length === 0 && emptyValue !== undefined
+    ? emptyValue
+    : values.join(', ');
 }
 
 function getCustomFieldValue(
@@ -797,120 +943,145 @@ function getCustomFieldValue(
   return trade[field.fieldKey];
 }
 
-function buildMoreContextItems({
-  fields,
-  trade,
-  customFieldDefinitions,
-  formatPrice,
-  formatMoney,
-  formatPositionSize,
-  formatCustomFieldValue,
-}: {
-  fields: TradeReviewCardField[];
+interface TradeReviewFieldValueSources {
   trade: ReviewTrade;
+  factValues: Partial<Record<TradeReviewCardField, string>>;
   customFieldDefinitions: CustomFieldDefinition[];
-  formatPrice: (value: unknown) => string;
-  formatMoney: (value: number | null) => string;
-  formatPositionSize: (value: unknown) => string;
   formatCustomFieldValue: (value: unknown) => string;
-}): TradeReviewMoreContextItem[] {
-  const items: TradeReviewMoreContextItem[] = [];
-  const shouldShow = (field: TradeReviewCardField) => fields.includes(field);
+  notesSections: string[] | undefined;
+  
+  notesSourcePath: string;
+}
 
-  if (shouldShow('positionSize')) {
-    addMoreContextItem(items, {
-      id: 'positionSize',
-      label: getFieldLabel('positionSize'),
-      value: formatPositionSize(trade.positionSize),
-    });
-  }
-  if (shouldShow('stopLoss')) {
-    addMoreContextItem(items, {
-      id: 'stopLoss',
-      label: getFieldLabel('stopLoss'),
-      value: formatPrice(trade.stopLoss),
-    });
-  }
-  if (shouldShow('takeProfit')) {
-    const takeProfitValues: string[] = [];
-    if (Array.isArray(trade.takeProfits)) {
-      for (const target of trade.takeProfits) {
-        const formattedTarget = formatPrice(target.price);
-        if (isPresentDisplayValue(formattedTarget)) {
-          takeProfitValues.push(formattedTarget);
-        }
-      }
-    }
-    addMoreContextItem(items, {
-      id: 'takeProfit',
-      label: getFieldLabel('takeProfit'),
-      value: takeProfitValues.join(', '),
-    });
-  }
-  if (shouldShow('fees')) {
-    addMoreContextItem(items, {
-      id: 'fees',
-      label: getFieldLabel('fees'),
-      value: formatMoney(toFiniteNumber(trade.fees)),
-    });
-  }
-  if (shouldShow('commission')) {
-    addMoreContextItem(items, {
-      id: 'commission',
-      label: getFieldLabel('commission'),
-      value: formatMoney(toFiniteNumber(trade.commission)),
-    });
-  }
-  if (shouldShow('mae')) {
-    addMoreContextItem(items, {
-      id: 'mae',
-      label: getFieldLabel('mae'),
-      value: formatMoney(toFiniteNumber(trade.mae)),
-    });
-  }
-  if (shouldShow('mfe')) {
-    addMoreContextItem(items, {
-      id: 'mfe',
-      label: getFieldLabel('mfe'),
-      value: formatMoney(toFiniteNumber(trade.mfe)),
-    });
-  }
-  if (shouldShow('thesis')) {
-    addMoreContextItem(items, {
-      id: 'thesis',
-      label: getFieldLabel('thesis'),
-      value: formatContextScalar(trade.thesis),
-      multiline: true,
-    });
-  }
-  if (shouldShow('notes')) {
-    addMoreContextItem(items, {
-      id: 'notes',
-      label: getFieldLabel('notes'),
-      value: formatContextScalar(trade.notes),
-      multiline: true,
-    });
-  }
 
-  const explicitCustomFields = fields.flatMap((field) =>
-    field.startsWith('custom:') ? [field.slice('custom:'.length)] : []
+function buildFieldDisplays(
+  fields: readonly TradeReviewFieldId[],
+  {
+    trade,
+    factValues,
+    customFieldDefinitions,
+    formatCustomFieldValue,
+    notesSections,
+    notesSourcePath,
+  }: TradeReviewFieldValueSources
+): TradeReviewFieldDisplay[] {
+  const items: TradeReviewFieldDisplay[] = [];
+  const definitionsById = new Map(
+    customFieldDefinitions.map((definition) => [definition.id, definition])
   );
-  const explicitCustomFieldsSet = new Set(explicitCustomFields);
-  const includedCustomFields = shouldShow('customFields')
-    ? customFieldDefinitions
-    : customFieldDefinitions.filter((field) =>
-        explicitCustomFieldsSet.has(field.id)
+
+  for (const field of fields) {
+    if (isTradeReviewCustomFieldRef(field)) {
+      const definition = definitionsById.get(
+        getTradeReviewCustomFieldId(field)
       );
-  for (const field of includedCustomFields) {
-    addMoreContextItem(items, {
-      id: `custom:${field.id}`,
-      label: field.label,
-      value: formatCustomFieldValue(getCustomFieldValue(trade, field)),
-      multiline: true,
+      if (!definition) continue;
+      items.push({
+        id: field,
+        label: definition.label,
+        kind: 'text',
+        value: formatCustomFieldValue(getCustomFieldValue(trade, definition)),
+        editableField: isEditableJournalField(definition)
+          ? {
+              kind: 'custom',
+              id: definition.id,
+              label: definition.label,
+              definition,
+            }
+          : undefined,
+      });
+      continue;
+    }
+    if (field === 'customFields') continue;
+
+    const label = getTradeReviewBuiltInFieldLabel(field);
+    const chipField = getChipField(trade, field);
+    if (chipField) {
+      const { values, selectionId } = chipField;
+      items.push({
+        id: field,
+        label,
+        kind: 'chips',
+        field,
+        values,
+        editableField: selectionId
+          ? { kind: 'selection', id: selectionId, label }
+          : undefined,
+      });
+      continue;
+    }
+    if (field === 'thesis') {
+      items.push({
+        id: field,
+        label,
+        kind: 'text',
+        value: formatContextScalar(trade.thesis),
+        editableField: { kind: 'text', id: 'thesis', label },
+      });
+      continue;
+    }
+    if (field === 'notes') {
+      if (notesSections && notesSections.length > 0) {
+        
+        partitionMarkdownSectionsByHeading(
+          typeof trade.notes === 'string' ? trade.notes : '',
+          notesSections
+        ).forEach((section, index) => {
+          items.push({
+            id: `notes:${index}`,
+            label: section.heading,
+            kind: 'text',
+            value: section.content,
+            markdownSourcePath: notesSourcePath,
+          });
+        });
+      } else {
+        items.push({
+          id: field,
+          label,
+          kind: 'text',
+          value: formatContextScalar(trade.notes),
+          markdownSourcePath: notesSourcePath,
+        });
+      }
+      continue;
+    }
+    items.push({
+      id: field,
+      label,
+      kind: 'text',
+      value: factValues[field] ?? '',
     });
   }
 
   return items;
+}
+
+
+function formatPositionSize({
+  trade,
+  currency,
+  formatValue,
+  isMasked,
+}: {
+  trade: ReviewTrade;
+  currency: string;
+  formatValue: ReturnType<typeof useDisplayFormatter>['formatValue'];
+  isMasked: boolean;
+}): string {
+  const value = toFiniteNumber(trade.positionSize);
+  if (isMasked || value === null) {
+    return formatValue({
+      kind: 'positionSize',
+      value,
+      fallback: t('common.na'),
+    });
+  }
+  return formatTradePositionSize(
+    value,
+    trade.assetType,
+    getCurrencyConfig(currency).locale
+  );
 }
 
 function buildFactValues({
@@ -918,16 +1089,23 @@ function buildFactValues({
   currency,
   formatPrice,
   formatValue,
+  isPositionSizeMasked,
 }: {
   trade: ReviewTrade;
   currency: string;
-  formatPrice: (value: unknown) => string;
+  formatPrice: (value: unknown, fillPrices?: readonly number[]) => string;
   formatValue: ReturnType<typeof useDisplayFormatter>['formatValue'];
+  isPositionSizeMasked: boolean;
 }): Partial<Record<TradeReviewCardField, string>> {
+  const fillPrices = getExecutionFillPrices(trade);
   return {
-    entry: formatPrice(trade.entryPrice ?? trade.entries?.[0]?.price),
+    entry: formatPrice(
+      trade.entryPrice ?? trade.entries?.[0]?.price,
+      fillPrices.entry
+    ),
     exit: formatPrice(
-      trade.exitPrice ?? trade.exits?.[trade.exits.length - 1]?.price
+      trade.exitPrice ?? trade.exits?.[trade.exits.length - 1]?.price,
+      fillPrices.exit
     ),
     duration: formatDuration(trade),
     risk: formatValue({
@@ -936,14 +1114,14 @@ function buildFactValues({
       currencyCode: currency,
       fallback: t('common.na'),
     }),
-    positionSize: formatValue({
-      kind: 'positionSize',
-      value: toFiniteNumber(trade.positionSize),
-      precision: 4,
-      fallback: t('common.na'),
+    positionSize: formatPositionSize({
+      trade,
+      currency,
+      formatValue,
+      isMasked: isPositionSizeMasked,
     }),
-    stopLoss: formatPrice(trade.stopLoss),
-    takeProfit: formatTakeProfitValues(trade.takeProfits, formatPrice),
+    stopLoss: formatTargetPrices(trade.stopLosses, formatPrice, t('common.na')),
+    takeProfit: formatTargetPrices(trade.takeProfits, formatPrice),
     fees: formatValue({
       kind: 'fee',
       value: toFiniteNumber(trade.fees),
@@ -1090,7 +1268,7 @@ function TradeReviewChoiceInput({
   );
 }
 
-export function shouldRetainTradeReviewChoiceDraft({
+function shouldRetainTradeReviewChoiceDraft({
   review,
   question,
   questions,
@@ -1140,7 +1318,7 @@ function pruneSettledChoiceDrafts(
     : Object.fromEntries(entries);
 }
 
-export function useTradeReviewChoiceDrafts({
+function useTradeReviewChoiceDrafts({
   review,
   questions,
   commitQuestionSave,
@@ -1469,14 +1647,14 @@ const TradeReviewCardBody: React.FC<{
   trade: ReviewTrade;
   filePath: string;
   plugin: JournalitPlugin;
-  metricFields: TradeReviewCardField[];
-  factValues: Partial<Record<TradeReviewCardField, string>>;
-  contextFields: TradeReviewCardField[];
-  contextItems: Partial<Record<TradeReviewCardField, string[]>>;
-  moreContextItems: TradeReviewMoreContextItem[];
+  cardItems: TradeReviewFieldDisplay[];
+  visibleItems: TradeReviewFieldDisplay[];
+  moreContextItems: TradeReviewFieldDisplay[];
   questions: TradeReviewQuestionConfig[];
   review: TradeReviewData | undefined;
   questionSaveRef: React.RefObject<TradeReviewQuestionSaveHandle | null>;
+  journalSaveRef: React.RefObject<TradeReviewJournalSaveHandle | null>;
+  canEditJournal: boolean;
 }> = ({
   images,
   readOnly,
@@ -1484,72 +1662,104 @@ const TradeReviewCardBody: React.FC<{
   trade,
   filePath,
   plugin,
-  metricFields,
-  factValues,
-  contextFields,
-  contextItems,
+  cardItems,
+  visibleItems,
   moreContextItems,
   questions,
   review,
   questionSaveRef,
-}) => (
-  <div className="journalit-trade-review-card-body">
-    {showMedia &&
-      (images.length > 0 ? (
-        <div className="journalit-trade-review-media journalit-images-widget journalit-media-carousel-surface">
-          <ImageCarousel
-            images={images}
-            altPrefix={t('widget.trade-review.image-alt-prefix')}
-            displayOptions={{
-              showThumbnails: images.length > 1,
-              showCounter: images.length > 1,
-              enableFullscreen: true,
-            }}
-            deleteOptions={{ enabled: false }}
-            fullscreenAnnotationOptions={{ enabled: !readOnly }}
-            useResolveMediaPath={true}
-            sourcePath={trade.path || filePath}
-          />
-        </div>
-      ) : (
-        <div
-          className="journalit-trade-review-empty-media"
-          {...shareCaptureExcludeProps}
-        >
-          {t('widget.trade-review.no-image')}
-        </div>
-      ))}
+  journalSaveRef,
+  canEditJournal,
+}) => {
+  const canUpload =
+    canEditJournal && Boolean(getTradeMediaOwner(trade.path, trade.instrument));
+  const editing = useTradeReviewJournalEditing(
+    plugin,
+    trade.path,
+    canEditJournal,
+    journalSaveRef
+  );
+  const renderMedia = (thumbnailActions?: React.ReactNode) =>
+    images.length > 0 ? (
+      <div className="journalit-trade-review-media journalit-images-widget journalit-media-carousel-surface">
+        <ImageCarousel
+          images={images}
+          thumbnailActions={thumbnailActions}
+          altPrefix={t('widget.trade-review.image-alt-prefix')}
+          displayOptions={{
+            showThumbnails: true,
+            showCounter: images.length > 1,
+            enableFullscreen: true,
+          }}
+          deleteOptions={{ enabled: false }}
+          fullscreenAnnotationOptions={{ enabled: !readOnly }}
+          useResolveMediaPath={true}
+          sourcePath={trade.path || filePath}
+        />
+      </div>
+    ) : null;
+  return (
+    <div className="journalit-trade-review-card-body">
+      {showMedia &&
+        (canUpload && trade.path ? (
+          <TradeReviewEditableMedia
+            plugin={plugin}
+            tradePath={trade.path}
+            editing={editing}
+            empty={images.length === 0}
+          >
+            {renderMedia}
+          </TradeReviewEditableMedia>
+        ) : (
+          (renderMedia() ?? (
+            <div
+              className="journalit-trade-review-empty-media"
+              {...shareCaptureExcludeProps}
+            >
+              {t('widget.trade-review.no-image')}
+            </div>
+          ))
+        ))}
 
-    <TradeReviewMetrics fields={metricFields} values={factValues} />
+      <TradeReviewMetrics items={cardItems} editing={editing} />
 
-    <TradeReviewContext fields={contextFields} itemsByField={contextItems} />
+      <TradeReviewContext
+        items={visibleItems}
+        editing={editing}
+        plugin={plugin}
+      />
 
-    <TradeReviewMoreContext items={moreContextItems} />
+      <TradeReviewMoreContext
+        items={moreContextItems}
+        editing={editing}
+        plugin={plugin}
+      />
 
-    <TradeReviewQuestions
-      ref={questionSaveRef}
-      plugin={plugin}
-      tradePath={trade.path}
-      questions={questions}
-      review={review}
-    />
+      <TradeReviewQuestions
+        ref={questionSaveRef}
+        plugin={plugin}
+        tradePath={trade.path}
+        questions={questions}
+        review={review}
+      />
 
-    <div
-      className="journalit-trade-review-actions"
-      {...shareCaptureExcludeProps}
-    >
-      {trade.path && (
-        <button
-          type="button"
-          className="journalit-trade-review-secondary-action"
-          onClick={() => void openReviewWidgetFile(plugin, trade.path!)}
-        >
-          {t('widget.trade-review.open-trade-note')}
-        </button>
-      )}
+      <div
+        className="journalit-trade-review-actions"
+        {...shareCaptureExcludeProps}
+      >
+        {trade.path && (
+          <button
+            type="button"
+            className="journalit-trade-review-secondary-action"
+            onClick={() => void openReviewWidgetFile(plugin, trade.path!)}
+          >
+            {t('widget.trade-review.open-trade-note')}
+          </button>
+        )}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 TradeReviewCardBody.displayName = 'TradeReviewCardBody';
 
@@ -1632,7 +1842,7 @@ function TradeReviewCardHeader({
   );
 }
 
-export async function updateTradeReviewStatusForTrade(
+async function updateTradeReviewStatusForTrade(
   plugin: JournalitPlugin,
   trade: ReviewTrade,
   reviewed: boolean
@@ -1696,7 +1906,7 @@ async function processNextTradeReviewStatusWrite(
   }
 }
 
-export async function queueTradeReviewStatusUpdate(
+async function queueTradeReviewStatusUpdate(
   plugin: JournalitPlugin,
   trade: ReviewTrade,
   reviewed: boolean
@@ -1724,6 +1934,107 @@ export async function queueTradeReviewStatusUpdate(
   }
 }
 
+
+function createTradeReviewPriceFormatter({
+  currency,
+  formatValue,
+  isPriceMasked,
+}: {
+  currency: string;
+  formatValue: ReturnType<typeof useDisplayFormatter>['formatValue'];
+  isPriceMasked: boolean;
+}): (value: unknown, fillPrices?: readonly number[]) => string {
+  const { locale } = getCurrencyConfig(currency);
+  return (value, fillPrices) => {
+    const numericValue = toFiniteNumber(value);
+    if (numericValue === null) return t('common.na');
+    if (fillPrices) {
+      return formatValue({
+        kind: 'price',
+        value: numericValue,
+        currencyCode: currency,
+        priceStyle: 'decimal',
+        fillPrices,
+        fallback: t('common.na'),
+      });
+    }
+    if (isPriceMasked) {
+      return formatValue({
+        kind: 'price',
+        value: numericValue,
+        currencyCode: currency,
+        fallback: t('common.na'),
+      });
+    }
+    return numericValue.toLocaleString(locale, {
+      minimumFractionDigits: numericValue < 10 ? 4 : 2,
+      maximumFractionDigits: numericValue < 10 ? 5 : 2,
+    });
+  };
+}
+
+function resolveCardFieldConfig(config: TradeReviewWidgetConfig) {
+  return {
+    fieldLayout: resolveTradeReviewFieldLayout(config),
+    showMedia: config.showImages !== false,
+  };
+}
+
+function outcomeClassName(outcome: ReturnType<typeof getOutcome>): string {
+  if (outcome === 'open') return '';
+  if (outcome === 'win') return 'journalit-trade-review-card-outcome--positive';
+  if (outcome === 'loss')
+    return 'journalit-trade-review-card-outcome--negative';
+  return 'journalit-trade-review-card-outcome--muted';
+}
+
+
+function canEditTradeJournal(trade: ReviewTrade, readOnly: boolean): boolean {
+  return Boolean(trade.path) && !readOnly && trade.isCopiedTrade !== true;
+}
+
+function tradeReviewCardTitle(
+  trade: ReviewTrade,
+  showInstrument: boolean
+): string {
+  return [
+    showInstrument && trade.instrument ? trade.instrument : null,
+    formatDirectionLabel(trade),
+  ]
+    .filter(Boolean)
+    .join(' · ');
+}
+
+
+function useOptimisticReviewed(
+  trade: ReviewTrade
+): [boolean, (reviewed: boolean | undefined) => void] {
+  const savedState = `${String(trade.reviewed)}|${String(trade.reviewedAt)}`;
+  const [local, setLocal] = useState<boolean | undefined>();
+  const [localSavedState, setLocalSavedState] = useState(savedState);
+  if (localSavedState !== savedState) {
+    setLocalSavedState(savedState);
+    setLocal(undefined);
+  }
+  return [local ?? trade.reviewed === true, setLocal];
+}
+
+
+function useCardExpansion(
+  filePath: string,
+  cardKey: string,
+  isInitiallyExpanded: boolean
+): [boolean, (expanded: boolean) => void] {
+  const [override, setOverride] = useState<boolean | undefined>(() =>
+    getStoredCardExpansion(filePath, cardKey)
+  );
+  const setExpanded = (expanded: boolean) => {
+    setOverride(expanded);
+    setStoredCardExpansion(filePath, cardKey, expanded);
+  };
+  return [override ?? isInitiallyExpanded, setExpanded];
+}
+
 const TradeReviewCard: React.FC<{
   trade: ReviewTrade;
   index: number;
@@ -1733,6 +2044,7 @@ const TradeReviewCard: React.FC<{
   showInstrument: boolean;
   isInitiallyExpanded: boolean;
   enableStickyHeader: boolean;
+  preview: boolean;
   onSessionVisibilityChange: (filePath: string, keepVisible: boolean) => void;
 }> = ({
   trade,
@@ -1743,29 +2055,23 @@ const TradeReviewCard: React.FC<{
   showInstrument,
   isInitiallyExpanded,
   enableStickyHeader,
+  preview,
   onSessionVisibilityChange,
 }) => {
   const readOnly = useReviewReadOnly();
   const cardKey = getTradeKey(trade, index);
-  const storedExpansion = getStoredCardExpansion(filePath, cardKey);
   const cardRef = useRef<HTMLElement | null>(null);
   const headerRef = useRef<HTMLDivElement | null>(null);
   const questionSaveRef = useRef<TradeReviewQuestionSaveHandle | null>(null);
-  const [hasExpansionOverride, setHasExpansionOverride] = useState(
-    storedExpansion !== undefined
+  const journalSaveRef = useRef<TradeReviewJournalSaveHandle | null>(null);
+  const journalTransitionRef = useRef(false);
+  const [isExpanded, setExpanded] = useCardExpansion(
+    filePath,
+    cardKey,
+    isInitiallyExpanded
   );
-  const [expansionOverride, setExpansionOverride] = useState(
-    storedExpansion ?? false
-  );
-  const [localReviewed, setLocalReviewed] = useState<boolean | undefined>();
+  const [isReviewed, setLocalReviewed] = useOptimisticReviewed(trade);
 
-  useEffect(() => {
-    setLocalReviewed(undefined);
-  }, [trade.reviewed, trade.reviewedAt]);
-
-  const isExpanded = hasExpansionOverride
-    ? expansionOverride
-    : isInitiallyExpanded;
   const { currency: globalCurrency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
   const isPnlMasked = shouldMask('pnl');
@@ -1773,7 +2079,6 @@ const TradeReviewCard: React.FC<{
   const isPriceMasked = shouldMask('price');
   const currency =
     typeof trade.currency === 'string' ? trade.currency : globalCurrency;
-  const currencyConfig = getCurrencyConfig(currency);
   const outcome = getOutcome(trade, plugin.settings.trade);
   const review = trade.tradeReview;
   const isOutcomeMasked = isPnlMasked || isRMasked;
@@ -1781,15 +2086,9 @@ const TradeReviewCard: React.FC<{
     getDisplayQuestions(config, outcome, isOutcomeMasked),
     isOutcomeMasked ? undefined : review
   );
-  const legacyFields = config.fields ?? DEFAULT_FIELDS;
-  const primaryMetricFields = config.primaryMetrics ?? legacyFields;
-  const classificationConfigFields =
-    config.classificationFields ?? legacyFields;
-  const moreContextConfigFields = config.moreContextFields ?? legacyFields;
+  const { fieldLayout, showMedia } = resolveCardFieldConfig(config);
   const customFieldDefinitions = plugin.customFieldsService?.getFields() ?? [];
-  const showMedia = config.showImages !== false;
   const images = showMedia ? normalizeImages(trade.images) : [];
-  const isReviewed = localReviewed ?? trade.reviewed === true;
   const pnl = getEffectivePnL(trade);
   const effectiveR = calculateEffectiveRMultiple(
     pnl ?? undefined,
@@ -1805,135 +2104,126 @@ const TradeReviewCard: React.FC<{
     currency,
     formatValue,
   });
-  const outcomeClass =
-    isPnlMasked || isRMasked || outcome === 'open'
-      ? ''
-      : outcome === 'win'
-        ? 'journalit-trade-review-card-outcome--positive'
-        : outcome === 'loss'
-          ? 'journalit-trade-review-card-outcome--negative'
-          : 'journalit-trade-review-card-outcome--muted';
+  const outcomeClass = isOutcomeMasked ? '' : outcomeClassName(outcome);
 
-  const formatPrice = (value: unknown): string => {
-    const numericValue = toFiniteNumber(value);
-    if (numericValue === null) return t('common.na');
-    if (isPriceMasked) {
-      return formatValue({
-        kind: 'price',
-        value: numericValue,
-        currencyCode: currency,
-        fallback: t('common.na'),
-      });
-    }
-    return numericValue.toLocaleString(currencyConfig.locale, {
-      minimumFractionDigits: numericValue < 10 ? 4 : 2,
-      maximumFractionDigits: numericValue < 10 ? 5 : 2,
-    });
-  };
+  const formatPrice = createTradeReviewPriceFormatter({
+    currency,
+    formatValue,
+    isPriceMasked,
+  });
 
   const handleToggleReviewed = (event: React.MouseEvent<HTMLButtonElement>) => {
     event.stopPropagation();
     if (readOnly || !trade.path) return;
-    const nextReviewed = !isReviewed;
-    
-    
-    const pendingAnswerSaves =
-      questionSaveRef.current?.flushPendingSaves() ?? Promise.resolve();
-    
-    
-    pendingAnswerSaves.catch(() => undefined);
-    setLocalReviewed(nextReviewed);
-    if (nextReviewed && isExpanded) {
-      keepReviewItemHeaderInPlaceOnCollapse(cardRef.current);
-      setHasExpansionOverride(true);
-      setExpansionOverride(false);
-      setStoredCardExpansion(filePath, cardKey, false);
-    }
-    plugin.reviewDataCache?.setSessionReviewedTradeVisibility(
-      filePath,
-      trade.path,
-      nextReviewed
-    );
-    onSessionVisibilityChange(trade.path, nextReviewed);
-    window.setTimeout(() => {
-      if (!trade.path) return;
-      void (async () => {
-        await pendingAnswerSaves;
-        await queueTradeReviewStatusUpdate(plugin, trade, nextReviewed);
-      })().catch((error: unknown) => {
-        console.error(
-          '[TradeReviewWidget] Error updating review status:',
-          error
-        );
-        plugin.reviewDataCache?.setSessionReviewedTradeVisibility(
-          filePath,
-          trade.path!,
-          false
-        );
-        setLocalReviewed(undefined);
-        onSessionVisibilityChange(trade.path!, false);
+    const tradePath = trade.path;
+    if (journalTransitionRef.current) return;
+    journalTransitionRef.current = true;
+    void (async () => {
+      await journalSaveRef.current?.flushPendingSaves();
+      const nextReviewed = !isReviewed;
+      
+      
+      const pendingAnswerSaves =
+        questionSaveRef.current?.flushPendingSaves() ?? Promise.resolve();
+      
+      
+      pendingAnswerSaves.catch(() => undefined);
+      setLocalReviewed(nextReviewed);
+      if (nextReviewed && isExpanded) {
+        keepReviewItemHeaderInPlaceOnCollapse(cardRef.current);
+        setExpanded(false);
+      }
+      plugin.reviewDataCache?.setSessionReviewedTradeVisibility(
+        filePath,
+        tradePath,
+        nextReviewed
+      );
+      onSessionVisibilityChange(tradePath, nextReviewed);
+      window.setTimeout(() => {
+        void (async () => {
+          await pendingAnswerSaves;
+          await queueTradeReviewStatusUpdate(plugin, trade, nextReviewed);
+        })().catch((error: unknown) => {
+          console.error(
+            '[TradeReviewWidget] Error updating review status:',
+            error
+          );
+          plugin.reviewDataCache?.setSessionReviewedTradeVisibility(
+            filePath,
+            tradePath,
+            false
+          );
+          setLocalReviewed(undefined);
+          onSessionVisibilityChange(tradePath, false);
+        });
+      }, 0);
+    })()
+      .catch((error: unknown) => {
+        new Notice(error instanceof Error ? error.message : String(error));
+      })
+      .finally(() => {
+        journalTransitionRef.current = false;
       });
-    }, 0);
   };
 
   const toggleExpansion = () => {
-    const nextExpanded = !isExpanded;
-    if (!nextExpanded) {
-      keepReviewItemHeaderInPlaceOnCollapse(cardRef.current);
+    const applyExpansion = () => {
+      const nextExpanded = !isExpanded;
+      if (!nextExpanded) {
+        keepReviewItemHeaderInPlaceOnCollapse(cardRef.current);
+      }
+      setExpanded(nextExpanded);
+    };
+    if (!isExpanded || !journalSaveRef.current || readOnly || preview) {
+      applyExpansion();
+      return;
     }
-    setHasExpansionOverride(true);
-    setExpansionOverride(nextExpanded);
-    setStoredCardExpansion(filePath, cardKey, nextExpanded);
+    if (journalTransitionRef.current) return;
+    journalTransitionRef.current = true;
+    void journalSaveRef.current
+      .flushPendingSaves()
+      .then(applyExpansion)
+      .catch((error: unknown) => {
+        new Notice(error instanceof Error ? error.message : String(error));
+      })
+      .finally(() => {
+        journalTransitionRef.current = false;
+      });
   };
 
-  const factValues = buildFactValues({
+  const canEditJournal = canEditTradeJournal(trade, readOnly || preview);
+  const fieldValueSources: TradeReviewFieldValueSources = {
     trade,
-    currency,
-    formatPrice,
-    formatValue,
-  });
-  const metricFields = primaryMetricFields.filter((field) =>
-    METRIC_FIELD_SET.has(field)
-  );
-  const contextFields = classificationConfigFields.filter((field) =>
-    CONTEXT_FIELD_SET.has(field)
-  );
-  const moreContextItems = buildMoreContextItems({
-    fields: moreContextConfigFields,
-    trade,
+    factValues: buildFactValues({
+      trade,
+      currency,
+      formatPrice,
+      formatValue,
+      isPositionSizeMasked: shouldMask('positionSize'),
+    }),
     customFieldDefinitions,
-    formatPrice,
-    formatMoney: (value) =>
-      formatValue({
-        kind: 'money',
-        value,
-        currencyCode: currency,
-        fallback: t('common.na'),
-      }),
-    formatPositionSize: (value) =>
-      formatValue({
-        kind: 'positionSize',
-        value: toFiniteNumber(value),
-        fallback: t('common.na'),
-      }),
     formatCustomFieldValue: (value) =>
       shouldMask('metric')
         ? formatValue({ kind: 'metric', value: 0, precision: 0 })
         : formatContextScalar(value),
-  });
-  const contextItems: Partial<Record<TradeReviewCardField, string[]>> = {
-    account: formatItems(trade.account),
-    setup: formatItems(trade.setup),
-    mistakes: formatItems(trade.mistake),
-    tags: formatItems(trade.customTags ?? trade.tags),
+    notesSections: config.notesSections,
+    notesSourcePath: trade.path || filePath,
   };
+  const fieldGroups = expandTradeReviewFieldGroups(
+    fieldLayout,
+    customFieldDefinitions.map((definition) => definition.id)
+  );
+  const cardItems = buildFieldDisplays(fieldGroups.cards, fieldValueSources);
+  const visibleItems = buildFieldDisplays(
+    fieldGroups.visible,
+    fieldValueSources
+  );
+  const moreContextItems = buildFieldDisplays(
+    fieldGroups.collapsed,
+    fieldValueSources
+  );
 
-  const directionLabel = formatDirectionLabel(trade);
-  const titleParts = [
-    showInstrument && trade.instrument ? trade.instrument : null,
-    directionLabel,
-  ].filter(Boolean);
-  const title = titleParts.join(' · ');
+  const title = tradeReviewCardTitle(trade, showInstrument);
   const stickyHeader = useStickyHeader({
     containerRef: cardRef,
     enabled: enableStickyHeader && isExpanded,
@@ -1980,60 +2270,19 @@ const TradeReviewCard: React.FC<{
           trade={trade}
           filePath={filePath}
           plugin={plugin}
-          metricFields={metricFields}
-          factValues={factValues}
-          contextFields={contextFields}
-          contextItems={contextItems}
+          cardItems={cardItems}
+          visibleItems={visibleItems}
           moreContextItems={moreContextItems}
           questions={questions}
           review={review}
           questionSaveRef={questionSaveRef}
+          journalSaveRef={journalSaveRef}
+          canEditJournal={canEditJournal}
         />
       )}
     </article>
   );
 };
-
-function getFieldLabel(field: TradeReviewCardField): string {
-  switch (field) {
-    case 'entry':
-      return t('widget.trade-review.field.entry');
-    case 'exit':
-      return t('widget.trade-review.field.exit');
-    case 'duration':
-      return t('widget.trade-review.field.duration');
-    case 'risk':
-      return t('widget.trade-review.field.risk');
-    case 'positionSize':
-      return t('widget.trade-review.field.position-size');
-    case 'stopLoss':
-      return t('widget.trade-review.field.stop-loss');
-    case 'takeProfit':
-      return t('widget.trade-review.field.take-profit');
-    case 'fees':
-      return t('widget.trade-review.field.fees');
-    case 'commission':
-      return t('widget.trade-review.field.commission');
-    case 'mae':
-      return t('widget.trade-review.field.mae');
-    case 'mfe':
-      return t('widget.trade-review.field.mfe');
-    case 'account':
-      return t('widget.trade-review.field.account');
-    case 'setup':
-      return t('widget.trade-review.field.setup');
-    case 'mistakes':
-      return t('widget.trade-review.field.mistakes');
-    case 'tags':
-      return t('widget.trade-review.field.tags');
-    case 'thesis':
-      return t('widget.trade-review.field.thesis');
-    case 'notes':
-      return t('widget.trade-review.field.notes');
-    case 'customFields':
-      return t('widget.trade-review.field.custom-fields');
-  }
-}
 
 export const TradeReviewWidget: React.FC<TradeReviewWidgetProps> = React.memo(
   ({ filePath, plugin, config = {}, preview = false, previewData }) => {
@@ -2059,13 +2308,24 @@ export const TradeReviewWidget: React.FC<TradeReviewWidgetProps> = React.memo(
     );
     const [markdownReviewState, setMarkdownReviewState] = useState<{
       key: string;
-      trades: ReviewTrade[];
+      contexts: Array<Pick<ReviewTrade, 'tradeReview' | 'notes'>>;
     } | null>(null);
-    const markdownReviewTrades =
+    const markdownContexts =
       markdownReviewState?.key === baseTradesKey
-        ? markdownReviewState.trades
+        ? markdownReviewState.contexts
         : null;
-    const trades = markdownReviewTrades ?? baseTrades;
+    
+    
+    const trades = useMemo(
+      () =>
+        markdownContexts
+          ? baseTrades.map((trade, index) => ({
+              ...trade,
+              ...markdownContexts[index],
+            }))
+          : baseTrades,
+      [baseTrades, markdownContexts]
+    );
 
     useEffect(() => {
       if (preview) return;
@@ -2080,7 +2340,9 @@ export const TradeReviewWidget: React.FC<TradeReviewWidgetProps> = React.memo(
           if (!cancelled) {
             setMarkdownReviewState({
               key: baseTradesKey,
-              trades: asReviewTrades(hydratedTrades),
+              contexts: asReviewTrades(hydratedTrades).map(
+                ({ tradeReview, notes }) => ({ tradeReview, notes })
+              ),
             });
           }
         })
@@ -2182,6 +2444,7 @@ export const TradeReviewWidget: React.FC<TradeReviewWidgetProps> = React.memo(
                 config.defaultExpanded !== false && index === 0
               }
               enableStickyHeader={!preview}
+              preview={preview}
               onSessionVisibilityChange={handleSessionVisibilityChange}
             />
           ))}

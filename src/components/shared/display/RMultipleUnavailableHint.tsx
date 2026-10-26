@@ -21,9 +21,13 @@ export const TradeRUnavailableHint: React.FC<{
   value: number | null | undefined;
   rMultiple: number | null | undefined;
   children: React.ReactNode;
-}> = ({ value, rMultiple, children }) => {
+  disabled?: boolean;
+}> = ({ value, rMultiple, children, disabled = false }) => {
   const policy = useDisplayPolicy();
-  if (!isRMultipleUnavailable({ kind: 'pnl', value, rMultiple }, policy)) {
+  if (
+    disabled ||
+    !isRMultipleUnavailable({ kind: 'pnl', value, rMultiple }, policy)
+  ) {
     return <>{children}</>;
   }
 

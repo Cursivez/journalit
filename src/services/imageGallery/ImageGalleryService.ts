@@ -75,6 +75,19 @@ import {
 } from './ImageGalleryIndexStorage';
 import { refreshMetadataWithRecovery } from './ImageGalleryMetadataRefresh';
 
+
+export type ImageAnnotationChange =
+  | {
+      readonly imagePath: string;
+      
+      readonly annotation: ImageGalleryAnnotation | null;
+    }
+  | {
+      readonly imagePath: string;
+      
+      readonly storedEntry: Readonly<Record<string, unknown>>;
+    };
+
 export class ImageGalleryService {
   private cachedItems: ImageGalleryItem[] | null = null;
   private pendingLoad: Promise<ImageGalleryItem[]> | null = null;
@@ -94,9 +107,13 @@ export class ImageGalleryService {
   }
 
   private invalidateMemory(): void {
+    this.invalidateInMemoryCache();
+    this.persistedIndexInvalidated = true;
+  }
+
+  invalidateInMemoryCache(): void {
     this.cachedItems = null;
     this.pendingLoad = null;
-    this.persistedIndexInvalidated = true;
     this.loadGeneration += 1;
   }
 
@@ -179,6 +196,14 @@ export class ImageGalleryService {
     sourcePath: string,
     imagePath: string
   ): Promise<ImageGalleryAnnotation> {
+    return this.getEffectiveImageAnnotationSync(sourcePath, imagePath);
+  }
+
+  
+  getEffectiveImageAnnotationSync(
+    sourcePath: string,
+    imagePath: string
+  ): ImageGalleryAnnotation {
     const file = this.plugin.app.vault.getAbstractFileByPath(sourcePath);
     if (!(file instanceof TFile)) {
       throw new Error(`Source note not found: ${sourcePath}`);
@@ -195,6 +220,14 @@ export class ImageGalleryService {
       return getAnnotation(annotations, normalizedImagePath);
     }
 
+    return this.getCentralImageAnnotation(sourcePath, imagePath);
+  }
+
+  
+  getCentralImageAnnotation(
+    sourcePath: string,
+    imagePath: string
+  ): ImageGalleryAnnotation {
     const resolvedMediaFile = resolveVaultMediaFile(
       this.plugin.app,
       imagePath,
@@ -230,21 +263,48 @@ export class ImageGalleryService {
       await this.clearPersistedIndex();
       return;
     }
+    await this.updateImageAnnotations(sourcePath, [{ imagePath, annotation }]);
+  }
+
+  
+  async updateImageAnnotations(
+    sourcePath: string,
+    changes: readonly ImageAnnotationChange[],
+    guard?: (annotations: Readonly<Record<string, unknown>>) => void
+  ): Promise<Readonly<Record<string, unknown>>> {
     const file = this.plugin.app.vault.getAbstractFileByPath(sourcePath);
     if (!(file instanceof TFile)) {
       throw new Error(`Source note not found: ${sourcePath}`);
     }
 
-    const normalizedImagePath = normalizeImagePath(imagePath);
-    const persistedAnnotation = serializeImageAnnotation(annotation);
-    const resolvedMediaFile = resolveVaultMediaFile(
-      this.plugin.app,
-      imagePath,
-      sourcePath
-    );
-    const hasCentralEntry =
-      !!resolvedMediaFile &&
-      this.annotations.hasEntryFor(resolvedMediaFile.path, false);
+    const writes = changes.map((change) => {
+      const key = normalizeImagePath(change.imagePath);
+      if ('storedEntry' in change) {
+        return {
+          key,
+          persisted: structuredClone(change.storedEntry),
+          hasCentralEntry: false,
+          exact: true,
+        };
+      }
+      const resolvedMediaFile = resolveVaultMediaFile(
+        this.plugin.app,
+        change.imagePath,
+        sourcePath
+      );
+      return {
+        key,
+        persisted:
+          change.annotation === null
+            ? null
+            : serializeImageAnnotation(change.annotation),
+        hasCentralEntry:
+          !!resolvedMediaFile &&
+          this.annotations.hasEntryFor(resolvedMediaFile.path, false),
+        exact: false,
+      };
+    });
+    let written: Readonly<Record<string, unknown>> = {};
     let resolvedSourceType: ImageGallerySourceType | 'note' = 'note';
     let tradeType: 'regular' | 'missed' | 'backtest' = 'regular';
 
@@ -252,6 +312,10 @@ export class ImageGalleryService {
       file,
       (frontmatter) => {
         const record = isRecord(frontmatter) ? frontmatter : {};
+        const currentAnnotations = isRecord(record.imageAnnotations)
+          ? { ...record.imageAnnotations }
+          : {};
+        guard?.(currentAnnotations);
         const noteType = getString(record.type);
         if (isReviewNoteType(noteType)) {
           resolvedSourceType = REVIEW_TYPE_TO_SOURCE[noteType];
@@ -271,18 +335,18 @@ export class ImageGalleryService {
           resolvedSourceType = 'trade';
         }
 
-        const currentAnnotations = isRecord(record.imageAnnotations)
-          ? { ...record.imageAnnotations }
-          : {};
-
-        if (isEmptyPersistedAnnotation(persistedAnnotation)) {
-          if (hasCentralEntry) {
-            currentAnnotations[normalizedImagePath] = {};
+        for (const { key, persisted, hasCentralEntry, exact } of writes) {
+          if (persisted === null) {
+            delete currentAnnotations[key];
+          } else if (!exact && isEmptyPersistedAnnotation(persisted)) {
+            if (hasCentralEntry) {
+              currentAnnotations[key] = {};
+            } else {
+              delete currentAnnotations[key];
+            }
           } else {
-            delete currentAnnotations[normalizedImagePath];
+            currentAnnotations[key] = persisted;
           }
-        } else {
-          currentAnnotations[normalizedImagePath] = persistedAnnotation;
         }
 
         if (Object.keys(currentAnnotations).length > 0) {
@@ -290,6 +354,7 @@ export class ImageGalleryService {
         } else {
           delete record.imageAnnotations;
         }
+        written = structuredClone(currentAnnotations);
       }
     );
 
@@ -309,6 +374,7 @@ export class ImageGalleryService {
         filePath: sourcePath,
       });
     };
+    
     await refreshMetadataWithRecovery(
       this.plugin.app,
       file,
@@ -316,6 +382,7 @@ export class ImageGalleryService {
     );
     publishNoteAnnotationChanged();
     await this.clearPersistedIndex();
+    return written;
   }
 
   private async getAllItems(): Promise<ImageGalleryItem[]> {

@@ -1,6 +1,42 @@
 import { App, TFile, parseYaml } from 'obsidian';
 import { getTradeIdValue } from '../../../utils/tradeIdentity';
-import type { TradeIdentitySnapshot } from './tradeCoreTypes';
+import { MANAGED_PROPERTIES } from '../../graph/graphTypes';
+import type {
+  TradeIdentitySnapshot,
+  TradeMutationRevisionSnapshot,
+} from './tradeCoreTypes';
+
+async function sha256Hex(value: string): Promise<string> {
+  const digest = await crypto.subtle.digest(
+    'SHA-256',
+    new TextEncoder().encode(value)
+  );
+  return Array.from(new Uint8Array(digest), (byte) =>
+    byte.toString(16).padStart(2, '0')
+  ).join('');
+}
+
+
+function editableContent(content: string): string {
+  const match = content.match(/^---\r?\n([\s\S]*?)\r?\n---/);
+  if (!match) return content;
+  let frontmatter: unknown;
+  try {
+    frontmatter = parseYaml(match[1]);
+  } catch {
+    return content;
+  }
+  if (
+    frontmatter === null ||
+    typeof frontmatter !== 'object' ||
+    Array.isArray(frontmatter)
+  ) {
+    return content;
+  }
+  const managed = new Set<string>(MANAGED_PROPERTIES);
+  const kept = Object.entries(frontmatter).filter(([key]) => !managed.has(key));
+  return `${JSON.stringify(kept)}\n${content.slice(match[0].length)}`;
+}
 
 export class ObsidianTradeNoteStore {
   constructor(private readonly app: App) {}
@@ -35,6 +71,36 @@ export class ObsidianTradeNoteStore {
     return cachedIdentity;
   }
 
+  public async readMutationRevision(
+    filePath: string
+  ): Promise<TradeMutationRevisionSnapshot | null> {
+    const content = await this.readNote(filePath);
+    if (content === null) return null;
+    return {
+      identity: this.extractIdentity(this.parseFrontmatter(content)),
+      contentRevision: await sha256Hex(content),
+    };
+  }
+
+  
+  public async readEditRevision(
+    filePath: string
+  ): Promise<{ contentRevision: string; editRevision: string } | null> {
+    const content = await this.readNote(filePath);
+    if (content === null) return null;
+    return {
+      contentRevision: await sha256Hex(content),
+      editRevision: await sha256Hex(editableContent(content)),
+    };
+  }
+
+  
+  private async readNote(filePath: string): Promise<string | null> {
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile)) return null;
+    return this.app.vault.read(file);
+  }
+
   public async readAssignedTags(filePath: string): Promise<string[]> {
     const file = this.app.vault.getAbstractFileByPath(filePath);
     if (!(file instanceof TFile)) return [];
@@ -51,12 +117,11 @@ export class ObsidianTradeNoteStore {
   }
 
   private extractAssignedTags(frontmatter: Record<string, unknown>): string[] {
-    const values = [frontmatter.tags, frontmatter.customTags].flatMap(
-      (value) =>
-        Array.isArray(value)
-          ? value.filter((entry): entry is string => typeof entry === 'string')
-          : []
-    );
+    const values = Array.isArray(frontmatter.tags)
+      ? frontmatter.tags.filter(
+          (entry): entry is string => typeof entry === 'string'
+        )
+      : [];
     return Array.from(
       new Map(
         values.flatMap((value) => {

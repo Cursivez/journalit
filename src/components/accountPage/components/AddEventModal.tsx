@@ -1,6 +1,6 @@
 
 
-import { App, Modal, Notice } from 'obsidian';
+import { App, Notice } from 'obsidian';
 import React, { useState } from 'react';
 import { createRoot, Root } from 'react-dom/client';
 import JournalitPlugin from '../../../main';
@@ -16,6 +16,7 @@ import {
   useCurrency,
 } from '../../../contexts/CurrencyContext';
 import { t } from '../../../lang/helpers';
+import { AccountEventDescriptionField } from './AccountEventDescriptionField';
 import { FastDateTimeInput } from '../../core/FastDateTimeInput';
 import {
   DateDraftGateContext,
@@ -30,6 +31,7 @@ import {
   accountEventDateForSave,
   isFutureAccountEvent,
 } from './accountEventDate';
+import { JournalitModal } from '../../modals/JournalitModal';
 
 function isTransactionType(value: string): value is TransactionType {
   return value === 'deposit' || value === 'withdrawal';
@@ -144,7 +146,7 @@ function showAddEventConfirmation({
 }
 
 
-class AddEventModal extends Modal {
+class AddEventModal extends JournalitModal {
   private props: AddEventModalProps;
   private container: HTMLDivElement;
   private root: Root;
@@ -390,63 +392,41 @@ const AddEventModalContent: React.FC<
         </div>
 
         
-        <div
-          className={`setting-item two-column${includeTime ? ' journalit-event-date-time' : ''}`}
-        >
-          <div className="column">
-            <div className="setting-item-info">
-              <div className="setting-item-name">
-                {t('account.add-event.field.date')}
-              </div>
-              <div className="setting-item-description">
-                {t('account.add-event.field.date-desc')}
-              </div>
+        <div className="setting-item">
+          <div className="setting-item-info">
+            <div className="setting-item-name">
+              {t('account.add-event.field.date')}
             </div>
-            <div className="setting-item-control">
-              <FastDateTimeInput
-                value={eventData.date ?? undefined}
-                includeTime={includeTime}
-                showSeconds={includeTime}
-                use24HourTime={getUse24HourTimeSetting(plugin)}
-                onChange={(value) => {
-                  setEventData((currentData) => ({
-                    ...currentData,
-                    date: value instanceof Date ? value : null,
-                  }));
-                }}
-                disabled={isSaving}
-              />
+            <div className="setting-item-description">
+              {t('account.add-event.field.date-desc')}
             </div>
           </div>
-          <div className="column">
-            <div className="setting-item-info">
-              <div className="setting-item-name">
-                {t('account.add-event.field.description')}
-              </div>
-              <div className="setting-item-description">
-                {t('account.add-event.field.description-desc')}
-              </div>
-            </div>
-            <div className="setting-item-control">
-              <input
-                type="text"
-                value={eventData.description}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  setEventData((currentData) => ({
-                    ...currentData,
-                    description: e.target.value,
-                  }))
-                }
-                placeholder={
-                  eventData.type === TransactionType.DEPOSIT
-                    ? t('account.add-event.placeholder.deposit')
-                    : t('account.add-event.placeholder.withdrawal')
-                }
-                disabled={isSaving}
-              />
-            </div>
+          <div className="setting-item-control">
+            <FastDateTimeInput
+              value={eventData.date ?? undefined}
+              includeTime={includeTime}
+              showSeconds={includeTime}
+              use24HourTime={getUse24HourTimeSetting(plugin)}
+              onChange={(value) => {
+                setEventData((currentData) => ({
+                  ...currentData,
+                  date: value instanceof Date ? value : null,
+                }));
+              }}
+              disabled={isSaving}
+            />
           </div>
         </div>
+        <AccountEventDescriptionField
+          label={t('account.add-event.field.description')}
+          hint={t('account.add-event.field.description-desc')}
+          value={eventData.description}
+          eventType={eventData.type}
+          disabled={isSaving}
+          onChange={(description) =>
+            setEventData((currentData) => ({ ...currentData, description }))
+          }
+        />
 
         
         <div className="add-event-buttons">
