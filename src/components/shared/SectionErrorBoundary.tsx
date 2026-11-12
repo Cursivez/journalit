@@ -1,5 +1,6 @@
 import React from 'react';
 import { t } from '../../lang/helpers';
+import { Button } from '../ui/Button';
 
 interface SectionErrorBoundaryProps {
   
@@ -48,13 +49,14 @@ export function SectionErrorFallback({
   return (
     <div className="journalit-section-error" role="alert">
       <span>{t('common.section-error')}</span>
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="small"
         className="journalit-section-error__retry"
         onClick={onRetry}
       >
         {t('common.retry')}
-      </button>
+      </Button>
     </div>
   );
 }

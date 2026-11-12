@@ -1,6 +1,7 @@
 
 
 import type JournalitPlugin from '../main';
+import { getPluginInstance } from './pluginContext';
 
 
 export function formatTimeOfDay(
@@ -26,6 +27,12 @@ export function formatTimeOfDay(
 
 export function getUse24HourTimeSetting(plugin: JournalitPlugin): boolean {
   return plugin.settings?.trade?.use24HourTime === true;
+}
+
+
+export function getUserHourCycle(): 'h23' | 'h12' {
+  const plugin = getPluginInstance();
+  return plugin && getUse24HourTimeSetting(plugin) ? 'h23' : 'h12';
 }
 
 

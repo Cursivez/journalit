@@ -25,8 +25,10 @@ import {
   type AgentReviewContentValue,
   type AgentReviewGoal,
   type AgentReviewGrades,
+  type AgentReviewKeyLevelGroup,
   type AgentReviewKeyLevels,
 } from './AgentReviewContent';
+import type { MarketBiasEntry } from '../../reviews/marketBias';
 
 const INVALID_REQUEST_MESSAGE = 'Invalid review read request.';
 const LIMIT_EXCEEDED_MESSAGE = 'Review content limit exceeded.';
@@ -39,6 +41,9 @@ const MAX_GOAL_CODE_POINTS = 1_000;
 const MAX_CHECKLIST_ITEMS = 100;
 const MAX_CHECKLIST_CODE_POINTS = 500;
 const MAX_KEY_LEVELS = 50;
+
+export const MAX_KEY_LEVEL_GROUPS = 50;
+const MAX_MARKET_BIAS_ENTRIES = 50;
 const MAX_KEY_LEVEL_CODE_POINTS = 40;
 
 export interface AgentReviewIdentity {
@@ -60,10 +65,14 @@ export interface AgentReviewReadRecord extends AgentReviewIdentity {
   readonly goals: readonly AgentReviewGoal[];
   readonly checklist: readonly AgentReviewChecklistItem[];
   readonly keyLevels: AgentReviewKeyLevels;
+  readonly keyLevelGroups: readonly AgentReviewKeyLevelGroup[];
+  readonly marketBias: readonly MarketBiasEntry[];
   readonly grades: AgentReviewGrades;
   readonly reviewed: boolean;
   
   readonly reviewedRecord: Readonly<Record<string, unknown>> | null;
+  
+  readonly keyLevelGroupsRecord: unknown;
 }
 
 export class AgentReviewReadError extends Error {
@@ -105,6 +114,7 @@ class AgentReviewReadRecordValue implements AgentReviewReadRecord {
   readonly #analyticsFrom: Date;
   readonly #analyticsTo: Date;
   readonly #reviewedRecord: Readonly<Record<string, unknown>> | null;
+  readonly #keyLevelGroupsRecord: unknown;
 
   constructor(
     identity: AgentReviewIdentity,
@@ -114,7 +124,8 @@ class AgentReviewReadRecordValue implements AgentReviewReadRecord {
     questionById: ReadonlyMap<string, string>,
     analyticsFrom: Date,
     analyticsTo: Date,
-    reviewedRecord: Readonly<Record<string, unknown>> | null
+    reviewedRecord: Readonly<Record<string, unknown>> | null,
+    keyLevelGroupsRecord: unknown
   ) {
     this.period = identity.period;
     this.period_start = identity.period_start;
@@ -124,6 +135,8 @@ class AgentReviewReadRecordValue implements AgentReviewReadRecord {
     this.goals = content.goals;
     this.checklist = content.checklist;
     this.keyLevels = content.keyLevels;
+    this.keyLevelGroups = content.keyLevelGroups;
+    this.marketBias = content.marketBias;
     this.grades = content.grades;
     this.reviewed = content.reviewed;
     this.#file = file;
@@ -131,6 +144,7 @@ class AgentReviewReadRecordValue implements AgentReviewReadRecord {
     this.#analyticsFrom = analyticsFrom;
     this.#analyticsTo = analyticsTo;
     this.#reviewedRecord = reviewedRecord;
+    this.#keyLevelGroupsRecord = keyLevelGroupsRecord;
   }
 
   readonly period: AgentReviewPeriod;
@@ -141,6 +155,8 @@ class AgentReviewReadRecordValue implements AgentReviewReadRecord {
   readonly goals: readonly AgentReviewGoal[];
   readonly checklist: readonly AgentReviewChecklistItem[];
   readonly keyLevels: AgentReviewKeyLevels;
+  readonly keyLevelGroups: readonly AgentReviewKeyLevelGroup[];
+  readonly marketBias: readonly MarketBiasEntry[];
   readonly grades: AgentReviewGrades;
   readonly reviewed: boolean;
 
@@ -162,6 +178,10 @@ class AgentReviewReadRecordValue implements AgentReviewReadRecord {
 
   get reviewedRecord(): Readonly<Record<string, unknown>> | null {
     return this.#reviewedRecord;
+  }
+
+  get keyLevelGroupsRecord(): unknown {
+    return this.#keyLevelGroupsRecord;
   }
 }
 
@@ -313,10 +333,10 @@ function comparePaths(left: TFile, right: TFile): number {
 
 
 function enforceLimits(content: AgentReviewContentValue): void {
-  const levels = [
-    ...content.keyLevels.support,
-    ...content.keyLevels.resistance,
-  ];
+  const levelLists = [content.keyLevels, ...content.keyLevelGroups].flatMap(
+    (levels) => [levels.support, levels.resistance]
+  );
+  const levels = levelLists.flat();
   if (
     codePointLength(content.summary) > MAX_SUMMARY_CODE_POINTS ||
     content.questionEntries.length > MAX_ANSWERS ||
@@ -334,8 +354,9 @@ function enforceLimits(content: AgentReviewContentValue): void {
         item.text === '' ||
         codePointLength(item.text) > MAX_CHECKLIST_CODE_POINTS
     ) ||
-    content.keyLevels.support.length > MAX_KEY_LEVELS ||
-    content.keyLevels.resistance.length > MAX_KEY_LEVELS ||
+    content.keyLevelGroups.length > MAX_KEY_LEVEL_GROUPS ||
+    levelLists.some((list) => list.length > MAX_KEY_LEVELS) ||
+    content.marketBias.length > MAX_MARKET_BIAS_ENTRIES ||
     levels.some(
       (level) => codePointLength(level.price) > MAX_KEY_LEVEL_CODE_POINTS
     )
@@ -477,6 +498,8 @@ export class AgentReviewReadService {
       goals: projected.goals,
       checklist: projected.checklist,
       keyLevels: projected.keyLevels,
+      keyLevelGroups: projected.keyLevelGroups,
+      marketBias: projected.marketBias,
       grades: projected.grades,
       reviewed: projected.reviewed,
     };
@@ -492,7 +515,8 @@ export class AgentReviewReadService {
       questionById,
       range.from,
       range.to,
-      projected.reviewedRecord
+      projected.reviewedRecord,
+      projected.keyLevelGroupsRecord
     );
   }
 

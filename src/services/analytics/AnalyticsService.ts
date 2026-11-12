@@ -124,6 +124,7 @@ const SINGLE_CURRENCY_METRICS = new Set<AnalyticsMetricId>([
   'best_day',
   'largest_win',
   'largest_loss',
+  'commission_and_fees',
 ]);
 
 interface AnalyticsPartitionDescriptor {
@@ -523,7 +524,8 @@ export class AnalyticsService {
     descriptor: AnalyticsPartitionDescriptor,
     dateRange: AnalyticsDateRange | undefined,
     interval: AnalyticsSeriesRequest['interval'],
-    cache: AnalyticsEvaluationCache
+    cache: AnalyticsEvaluationCache,
+    windowTrade?: (trade: Trade) => boolean
   ): AnalyticsPreparedDataset {
     const result: AnalyticsPreparedDataset = {
       metricTrades: [],
@@ -537,6 +539,7 @@ export class AnalyticsService {
       trade: Trade,
       role: AnalyticsDatasetRole
     ): boolean => {
+      if (windowTrade && !windowTrade(trade)) return false;
       const tradingDay = this.getCachedTradingDay(trade, role, cache);
       if (!this.isDateEligible(tradingDay, dateRange, interval)) return false;
       if (
@@ -579,7 +582,8 @@ export class AnalyticsService {
     for (const trade of dataset.metricTrades) {
       const tradingDay = this.getCachedTradingDay(trade, 'metricTrades', cache);
       if (
-        !this.isDateEligible(tradingDay, request.dateRange, request.interval)
+        !this.isDateEligible(tradingDay, request.dateRange, request.interval) ||
+        (request.windowTrades && !request.windowTrades.current(trade))
       ) {
         continue;
       }
@@ -612,7 +616,8 @@ export class AnalyticsService {
     for (const trade of dataset.metricTrades) {
       const tradingDay = this.getCachedTradingDay(trade, 'metricTrades', cache);
       if (
-        !this.isDateEligible(tradingDay, request.dateRange, request.interval)
+        !this.isDateEligible(tradingDay, request.dateRange, request.interval) ||
+        (request.windowTrades && !request.windowTrades.current(trade))
       ) {
         continue;
       }
@@ -788,7 +793,8 @@ export class AnalyticsService {
             { groupKey },
             request.dateRange,
             request.interval,
-            cache
+            cache,
+            request.windowTrades?.current
           );
           return {
             groupKey,
@@ -840,7 +846,8 @@ export class AnalyticsService {
             descriptor,
             request.dateRange,
             request.interval,
-            cache
+            cache,
+            request.windowTrades?.current
           ),
           request.metricIds,
           minimumSampleSize
@@ -858,7 +865,8 @@ export class AnalyticsService {
           { groupKey: descriptor.groupKey },
           this.comparisonRange(request, descriptor),
           undefined,
-          cache
+          cache,
+          request.windowTrades?.baseline
         );
         const baseline = this.projectMetrics(
           baselineDataset,
@@ -875,7 +883,8 @@ export class AnalyticsService {
       {},
       request.dateRange,
       request.interval,
-      cache
+      cache,
+      request.windowTrades?.current
     );
     return {
       series,

@@ -33,7 +33,9 @@ const ToggleSwitch: React.FC<ToggleSwitchProps> = ({
   const toggleId = id || `toggle-${Math.random().toString(36).substring(2, 9)}`;
 
   return (
-    <div className={`toggle-switch-container ${disabled ? 'disabled' : ''}`}>
+    <div
+      className={`journalit-toggle-switch toggle-switch-container ${disabled ? 'disabled' : ''}`}
+    >
       <input
         type="checkbox"
         id={toggleId}

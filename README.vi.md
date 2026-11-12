@@ -27,7 +27,7 @@ Nhật ký giao dịch ưu tiên lưu trữ cục bộ cho Obsidian.
   <a href="README.ar.md">العربية</a>
 </p>
 
-[Cài đặt](#cài-đặt) · [Ứng dụng AI (MCP)](#ai-apps-mcp) · [Broker được hỗ trợ](#broker-được-hỗ-trợ) · [Quyền riêng tư](PRIVACY.md)
+[Cài đặt](#cài-đặt) · [MCP](#mcp) · [Broker được hỗ trợ](#broker-được-hỗ-trợ) · [Quyền riêng tư](PRIVACY.md)
 
 </div>
 
@@ -52,7 +52,7 @@ Trang cộng đồng: https://community.obsidian.md/plugins/journalit
 - **Hệ thống đánh giá (V2)**: mẫu từ hằng ngày → hằng năm với trình tạo bố cục.
 - **[Trade Import](https://journalit.co/csv-import)**: nhập giao dịch qua backend cho CSV, bảng tính, HTML và báo cáo broker.
 - **[Trade Sync](https://journalit.co/docs/trade-sync)**: tự động đồng bộ giao dịch cho các nhà môi giới được hỗ trợ.
-- **[Ứng dụng AI (MCP)](https://journalit.co/docs/ai-apps)**: kết nối ứng dụng AI để phân tích giao dịch, soạn bài đánh giá và cập nhật nhật ký.
+- **[MCP](https://journalit.co/docs/mcp)**: kết nối ứng dụng AI để phân tích giao dịch, soạn bài đánh giá và cập nhật nhật ký.
 
 ## Ảnh chụp màn hình
 
@@ -90,19 +90,19 @@ Trang cộng đồng: https://community.obsidian.md/plugins/journalit
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
-<a id="ai-apps-mcp"></a>
+<a id="mcp"></a>
 
-## Ứng dụng AI (MCP)
+## MCP
 
 Kết nối Claude, Claude Code, ChatGPT, Codex, Hermes, Grok Bot hoặc ứng dụng tương thích khác với nhật ký qua MCP (Model Context Protocol). Nhờ ứng dụng phân tích giao dịch, soạn bài đánh giá tuần hoặc cập nhật các trường trong nhật ký mà không cần sao chép ghi chú vào cuộc trò chuyện.
 
-1. Đăng nhập Journalit trong Obsidian. Mở **Cài đặt → Journalit → Ứng dụng AI (MCP)** và bật **Bật truy cập MCP**.
+1. Đăng nhập Journalit trong Obsidian. Mở **Cài đặt → Journalit → MCP** và bật **Bật truy cập MCP**.
 2. Thêm `https://api.journalit.co/mcp` làm máy chủ MCP từ xa trong ứng dụng AI.
 3. Đăng nhập Journalit khi được yêu cầu, chọn vault, kiểm tra các quyền được yêu cầu và chấp thuận kết nối.
 
 Giữ Obsidian mở và Journalit đang chạy. Theo mặc định, việc xóa, hợp nhất và các thay đổi lớn cần bạn chấp thuận.
 
-Xem **[hướng dẫn thiết lập ứng dụng AI](https://journalit.co/docs/ai-apps)** để biết các bước cho từng ứng dụng, quyền truy cập, cách hoàn tác và giới hạn sử dụng hằng tháng.
+Xem **[hướng dẫn thiết lập ứng dụng AI](https://journalit.co/docs/mcp)** để biết các bước cho từng ứng dụng, quyền truy cập, cách hoàn tác và giới hạn sử dụng hằng tháng.
 
 ## Broker được hỗ trợ
 

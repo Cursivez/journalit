@@ -365,20 +365,21 @@ function AccountMigrationPanel({
                   <label htmlFor="account-migration-target-type">
                     {t('account.settings.migration.target-type.label')}
                   </label>
-                  <select
+                  <DropdownSelect
                     id="account-migration-target-type"
+                    ariaLabel={t(
+                      'account.settings.migration.target-type.label'
+                    )}
                     value={migrationTargetType}
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                      onMigrationTargetTypeChange(e.target.value)
-                    }
+                    options={availableMigrationTypes.map((type) => ({
+                      value: type,
+                      label: formatAccountTypeLabel(type),
+                    }))}
                     disabled={isSaving}
-                  >
-                    {availableMigrationTypes.map((type) => (
-                      <option key={type} value={type}>
-                        {formatAccountTypeLabel(type)}
-                      </option>
-                    ))}
-                  </select>
+                    onChange={(nextValue) =>
+                      onMigrationTargetTypeChange(nextValue)
+                    }
+                  />
                 </div>
               )}
 
@@ -1547,22 +1548,26 @@ function AvailableAccountTypesSection({
                         className="account-type-name-input"
                       />
                       <div className="add-account-type-buttons">
-                        <button
+                        <Button
+                          variant="primary"
+                          size="small"
                           onClick={() => void handleAddAccountType()}
                           disabled={isSaving || !newTypeName.trim()}
                           className="add-account-type-confirm-btn"
                           aria-label={t('button.add')}
                         >
                           {t('button.add')}
-                        </button>
-                        <button
+                        </Button>
+                        <Button
+                          variant="secondary"
+                          size="small"
                           onClick={() => void handleCancelAddAccountType()}
                           disabled={isSaving}
                           className="add-account-type-cancel-btn"
                           aria-label={t('button.cancel')}
                         >
                           {t('button.cancel')}
-                        </button>
+                        </Button>
                       </div>
                     </div>
                   ) : (

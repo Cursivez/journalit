@@ -13,11 +13,17 @@ import { formatHoldTime } from '../../utils/analyticsUtils';
 import { getActiveLayout, saveLayout } from '../../utils/layoutUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import {
+  type DashboardDataContextValue,
   haveDashboardFiltersChanged,
   isDashboardSettingsChange,
+  useDashboardCompareData,
   useDashboardData,
 } from '../../context/DashboardDataContext';
-import { MetricCard } from './MetricCard';
+import { MetricCard, type MetricCardValue } from './MetricCard';
+import {
+  COMPARE_LOW_SAMPLE_TRADES,
+  sameDateRange,
+} from '../../compare/dashboardComparison';
 import { ExpectancyGapMetric } from './ExpectancyGapMetric';
 import {
   DndContext,
@@ -134,6 +140,7 @@ const getRComparisonNote = (
 
 const MONEY_AND_DECIMAL_DELTA_METRICS = new Set([
   'netPnL',
+  'commissionAndFees',
   'expectancy',
   'avgWin',
   'avgLoss',
@@ -320,6 +327,7 @@ function getMetricDeltaZeroThreshold(
   if (usesRMultipleDelta) return 0.05;
   if (metric === 'timeInDrawdown') return 0.05;
   if (metric === 'winRate') return 0.0005;
+  if (metric === 'avgTradesPerDay') return 0.05;
   return MONEY_AND_DECIMAL_DELTA_METRICS.has(metric) ? 0.005 : undefined;
 }
 
@@ -369,6 +377,10 @@ function getDashboardComparisonDateRange(
 } {
   const [startDate, endDate] = filters.dateRange;
   const today = new Date();
+
+  if (filters.recentPeriod) {
+    return { dateRange: [null, null], mode: 'previous' };
+  }
 
   if (!startDate && !endDate) {
     const past30Start = startOfDay(today);
@@ -569,6 +581,8 @@ const getMetricDisplayKind = (metric: string): DisplayValueKind => {
       return 'pnl';
     case 'maxDrawdown':
       return 'drawdown';
+    case 'commissionAndFees':
+      return 'fee';
     case 'winRate':
     case 'timeInDrawdown':
       return 'returnPercent';
@@ -628,6 +642,10 @@ const getMetricName = (metric: string): string => {
       return t('dashboard.metrics.largestWin');
     case 'largestLoss':
       return t('dashboard.metrics.largestLoss');
+    case 'commissionAndFees':
+      return t('dashboard.metrics.commissionAndFees');
+    case 'avgTradesPerDay':
+      return t('dashboard.metrics.avgTradesPerDay');
     case 'longestWinStreak':
       return t('dashboard.metrics.longestWinStreak');
     case 'longestLossStreak':
@@ -683,6 +701,7 @@ const isPositiveMetric = (
     case 'winRate':
       return undefined;
     case 'maxDrawdown':
+    case 'commissionAndFees':
     case 'timeInDrawdown':
     case 'largestLoss':
     case 'numLossTrades':
@@ -707,15 +726,65 @@ const isPositiveMetric = (
   }
 };
 
-function useTopSectionModel() {
+interface TopSectionModelOptions {
+  
+  source?: Pick<
+    DashboardDataContextValue,
+    'dashboardData' | 'dataFilters' | 'error'
+  > | null;
+  
+  compareAgainst?: DashboardData | null;
+}
+
+interface CommittedMetricsPair {
+  data: DashboardData;
+  filters: FilterState;
+  comparison: DashboardData | null;
+  mode: 'previous' | 'past30d';
+  
+  reusable: boolean;
+}
+
+
+const displayedMetricsData = (
+  committed: CommittedMetricsPair | null,
+  dataFilters: FilterState | null | undefined,
+  liveData: DashboardData | null
+): DashboardData | null =>
+  committed &&
+  dataFilters &&
+  (!committed.reusable ||
+    haveDashboardFiltersChanged(committed.filters, dataFilters))
+    ? committed.data
+    : liveData;
+
+
+const maxDrawdownPercentOf = (data: DashboardData | null) => {
+  const percent = data?.metrics.maxDrawdownAmountPercent;
+  return percent != null && Number.isFinite(percent) ? percent : undefined;
+};
+
+
+const sameCurrencyComparison = (
+  comparison: DashboardData | null | undefined,
+  data: DashboardData | null
+): DashboardData | null =>
+  comparison && comparison.currency === data?.currency ? comparison : null;
+
+function useTopSectionModel({
+  source,
+  compareAgainst,
+}: TopSectionModelOptions = {}) {
   const plugin = usePlugin();
   const { currency: liveCurrency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
+  const dashboardSource = useDashboardData();
   const {
     dashboardData: liveData,
     dataFilters,
     error: contextError,
-  } = useDashboardData();
+  } = source ?? dashboardSource;
+  const isCompareMode = compareAgainst !== undefined;
   const displayMaeMfeTicks =
     plugin?.settings?.trade?.maeMfeDisplayUnit === 'ticks';
   const [activeMetrics, setActiveMetrics] = useState<string[]>([]);
@@ -732,21 +801,10 @@ function useTopSectionModel() {
   
   
   
-  const [committed, commitPair] = useState<{
-    data: DashboardData;
-    filters: FilterState;
-    comparison: DashboardData | null;
-    mode: 'previous' | 'past30d';
-    
-    reusable: boolean;
-  } | null>(null);
-  const data =
-    committed &&
-    dataFilters &&
-    (!committed.reusable ||
-      haveDashboardFiltersChanged(committed.filters, dataFilters))
-      ? committed.data
-      : liveData;
+  const [committed, commitPair] = useState<CommittedMetricsPair | null>(null);
+  const data = isCompareMode
+    ? liveData
+    : displayedMetricsData(committed, dataFilters, liveData);
   
   
   const currency = data?.currency ?? liveCurrency;
@@ -768,19 +826,16 @@ function useTopSectionModel() {
   });
   useEventBus('account:changed', retireComparison);
   useEventBus('folder-path:changed', retireComparison);
-  
-  const maxDrawdownPercentBasis =
-    data?.metrics.maxDrawdownAmountPercent != null &&
-    Number.isFinite(data.metrics.maxDrawdownAmountPercent)
-      ? data.metrics.maxDrawdownAmountPercent
-      : undefined;
-  
-  
-  const comparisonData =
-    committed?.comparison && committed.comparison.currency === data?.currency
-      ? committed.comparison
-      : null;
-  const comparisonMode = committed?.mode ?? 'previous';
+  const maxDrawdownPercentBasis = maxDrawdownPercentOf(data);
+  const { comparisonData, comparisonMode } = isCompareMode
+    ? {
+        comparisonData: sameCurrencyComparison(compareAgainst, data),
+        comparisonMode: 'compare' as const,
+      }
+    : {
+        comparisonData: sameCurrencyComparison(committed?.comparison, data),
+        comparisonMode: committed?.mode ?? 'previous',
+      };
   const isUnconvertedGroupedDisplay =
     Boolean(data?.metrics.isMultiCurrency) &&
     !data?.metrics.conversionBaseCurrency;
@@ -788,7 +843,8 @@ function useTopSectionModel() {
   useEffect(() => {
     
     
-    if (!liveData || !dataFilters || !plugin) return;
+    
+    if (isCompareMode || !liveData || !dataFilters || !plugin) return;
     const comparisonRange = getDashboardComparisonDateRange(
       dataFilters,
       getWeekStartDaySetting(plugin)
@@ -796,13 +852,19 @@ function useTopSectionModel() {
 
     let isMounted = true;
     const retirements = retirementsRef.current;
+    
     fetchDashboardData(
       plugin.app,
       plugin.tradeService,
-      { ...dataFilters, dateRange: comparisonRange.dateRange },
+      dataFilters.recentPeriod
+        ? dataFilters
+        : { ...dataFilters, dateRange: comparisonRange.dateRange },
       plugin.settings?.trade?.defaultRiskAmount,
       plugin,
-      { freshTradeQuery: false }
+      {
+        freshTradeQuery: false,
+        recentPeriodWindowIndex: dataFilters.recentPeriod ? 1 : undefined,
+      }
     )
       .then((nextComparisonData) => {
         if (isMounted) {
@@ -834,7 +896,7 @@ function useTopSectionModel() {
     return () => {
       isMounted = false;
     };
-  }, [liveData, dataFilters, plugin]);
+  }, [isCompareMode, liveData, dataFilters, plugin]);
 
   
   useEffect(() => {
@@ -1124,6 +1186,13 @@ function useTopSectionModel() {
               currencyCode: effectiveCurrency,
               rMultiple: data?.metrics.maxDrawdownR,
             });
+      case 'commissionAndFees':
+        
+        return formatValue({
+          kind: 'fee',
+          value,
+          currencyCode: effectiveCurrency,
+        });
       case 'bestDay':
         return formatValue({
           kind: 'pnl',
@@ -1140,6 +1209,8 @@ function useTopSectionModel() {
         });
       case 'timeInDrawdown':
         return formatValue({ kind, value, signed: false, precision: 1 });
+      case 'avgTradesPerDay':
+        return formatValue({ kind, value, precision: 1 });
       case 'profitFactor':
         return formatTopSectionProfitFactor({
           value,
@@ -1237,7 +1308,9 @@ function useTopSectionModel() {
     const suffixKey =
       comparisonMode === 'past30d'
         ? ('dashboard.metrics.past-30d' as const)
-        : ('widget.stats.vs-prev' as const);
+        : comparisonMode === 'compare'
+          ? ('dashboard.compare.a-vs-b' as const)
+          : ('widget.stats.vs-prev' as const);
     const rMultipleDeltaValues = (() => {
       if (!plugin?.settings?.trade?.displayRMultiples) return null;
 
@@ -1364,6 +1437,13 @@ function useTopSectionModel() {
             currencyCode: currency,
             signed: true,
           });
+        case 'commissionAndFees':
+          return formatValue({
+            kind: 'fee',
+            value: deltaValue,
+            currencyCode: currency,
+            signed: true,
+          });
         case 'maxDrawdown':
           return usesMaxDrawdownPercentDelta
             ? formatValue({
@@ -1400,6 +1480,8 @@ function useTopSectionModel() {
         case 'avgRecoveryTime':
         case 'longestDrawdown':
           return formatDurationDelta(deltaValue * 24 * 60 * 60 * 1000);
+        case 'avgTradesPerDay':
+          return signedNumber(Math.round(deltaValue * 10) / 10);
         default:
           return signedNumber(deltaValue);
       }
@@ -1407,6 +1489,7 @@ function useTopSectionModel() {
 
     const lowerIsBetter = [
       'maxDrawdown',
+      'commissionAndFees',
       'timeInDrawdown',
       'avgLossHoldTime',
       'avgRecoveryTime',
@@ -1423,6 +1506,7 @@ function useTopSectionModel() {
     ].includes(metric);
     const neutralTone = [
       'numTrades',
+      'avgTradesPerDay',
       'avgHoldTime',
       'avgWinHoldTime',
       'avgLossHoldTime',
@@ -1474,79 +1558,6 @@ function useTopSectionModel() {
     });
   };
 
-  const formatMetricPercentSuffix = (
-    metric: string,
-    formattedValue: string
-  ): { value: string; isPositive: boolean } | undefined => {
-    if (
-      !data ||
-      formattedValue === 'N/A' ||
-      plugin?.settings?.trade?.displayRMultiples ||
-      shouldMask(getMetricDisplayKind(metric))
-    ) {
-      return undefined;
-    }
-
-    if (
-      isUnconvertedGroupedDisplay &&
-      (metric === 'largestWin' || metric === 'largestLoss')
-    ) {
-      return undefined;
-    }
-
-    let percentValue: number | undefined;
-    switch (metric) {
-      case 'avgWin':
-        percentValue = data.metrics.avgWinPercent;
-        break;
-      case 'avgLoss':
-        percentValue = data.metrics.avgLossPercent;
-        break;
-      case 'largestWin':
-        percentValue = data.metrics.largestWinPercent;
-        break;
-      case 'largestLoss':
-        percentValue = data.metrics.largestLossPercent;
-        break;
-      case 'maxDrawdown':
-        return data.metrics.maxDrawdownAmountPercent != null &&
-          Number.isFinite(data.metrics.maxDrawdownAmountPercent)
-          ? {
-              value: formatValue({
-                kind: 'drawdown',
-                value: -Math.abs(data.metrics.maxDrawdown),
-                currencyCode:
-                  data.metrics.isMultiCurrency &&
-                  data.metrics.conversionBaseCurrency
-                    ? data.metrics.conversionBaseCurrency
-                    : currency,
-              }),
-              isPositive: false,
-            }
-          : undefined;
-      default:
-        return undefined;
-    }
-
-    if (
-      percentValue === undefined ||
-      percentValue === null ||
-      isNaN(percentValue)
-    ) {
-      return undefined;
-    }
-
-    const roundedPercent = Math.abs(percentValue).toFixed(1);
-    const formattedPercent = roundedPercent.endsWith('.0')
-      ? roundedPercent.slice(0, -2)
-      : roundedPercent;
-
-    return {
-      value: `${percentValue >= 0 ? '↑' : '↓'} ${formattedPercent}%`,
-      isPositive: percentValue >= 0,
-    };
-  };
-
   
 
   
@@ -1564,6 +1575,7 @@ function useTopSectionModel() {
       'bestDay',
       'largestWin',
       'largestLoss',
+      'commissionAndFees',
     ].includes(metric);
   };
 
@@ -1578,6 +1590,7 @@ function useTopSectionModel() {
     'largestLoss',
     'maxDrawdown',
     'bestDay',
+    'commissionAndFees',
   ];
 
   const getExcursionCoverage = (
@@ -2112,7 +2125,6 @@ function useTopSectionModel() {
     activeMetrics,
     handleDragEnd,
     formatMetricValue,
-    formatMetricPercentSuffix,
     createMetricDelta,
     getMetricName,
     getMetricDisplayKind,
@@ -2128,14 +2140,16 @@ function useTopSectionModel() {
   };
 }
 
-export const TopSection: React.FC<TopSectionProps> = ({ isEditing }) => {
+type TopSectionModel = ReturnType<typeof useTopSectionModel>;
+
+
+function getMetricCardProps(
+  model: TopSectionModel,
+  data: DashboardData,
+  metric: string
+): React.ComponentProps<typeof MetricCard> {
   const {
-    data,
-    error,
-    activeMetrics,
-    handleDragEnd,
     formatMetricValue,
-    formatMetricPercentSuffix,
     createMetricDelta,
     getMetricName,
     getMetricDisplayKind,
@@ -2145,13 +2159,76 @@ export const TopSection: React.FC<TopSectionProps> = ({ isEditing }) => {
     getMetricTooltip,
     getMetricTooltipDisclosureLabel,
     hasMetricWarning,
-    handleRemoveMetric,
     shouldMask,
     getNetPnLUnrealizedDisplay,
-  } = useTopSectionModel();
+  } = model;
+  const rawMetricValue = getDashboardMetricValue(data.metrics, metric);
+  const netPnLUnrealized =
+    metric === 'netPnL'
+      ? getNetPnLUnrealizedDisplay(rawMetricValue)
+      : undefined;
+  const metricValue = netPnLUnrealized
+    ? netPnLUnrealized.value
+    : rawMetricValue;
+  const formattedValue = formatMetricValue(metric, metricValue);
 
-  const metricColumns = getMetricLayoutColumns(activeMetrics.length);
-  const sensors = useSensors(
+  
+  
+  
+  const previousDelta =
+    rawMetricValue === undefined || netPnLUnrealized?.combined
+      ? undefined
+      : createMetricDelta(metric, rawMetricValue);
+
+  return {
+    name: getMetricName(metric),
+    value: formattedValue,
+    isPositive: shouldMask(getMetricDisplayKind(metric))
+      ? undefined
+      : isPositiveMetric(metric, metricValue),
+    
+    mainPart: getMainPart(metric, metricValue, formattedValue),
+    decimalPart: getDecimalPart(metric, metricValue, formattedValue),
+    tooltip: getMetricTooltip(metric, previousDelta),
+    tooltipDisclosureLabel: getMetricTooltipDisclosureLabel(
+      metric,
+      previousDelta
+    ),
+    hasWarning: hasMetricWarning(metric),
+    previousDelta,
+    subline: netPnLUnrealized?.subline,
+    sublineIsPositive: netPnLUnrealized?.sublineIsPositive,
+  };
+}
+
+const hasTrades = (data: DashboardData): boolean =>
+  (data.metrics.numTrades ?? 0) + (data.metrics.unrealizedTradeCount ?? 0) > 0;
+
+
+const NO_TRADES_METRIC_WITH_VALUE = 'numTrades';
+
+
+const toCompareValue = (
+  props: React.ComponentProps<typeof MetricCard>,
+  data: DashboardData,
+  metric: string,
+  lowSampleTrades: number | undefined
+): MetricCardValue => {
+  if (!hasTrades(data) && metric !== NO_TRADES_METRIC_WITH_VALUE) {
+    return { value: '—', lowSampleTrades };
+  }
+  const neutral = !hasTrades(data);
+  return {
+    value: props.value,
+    isPositive: neutral ? undefined : props.isPositive,
+    mainPart: props.mainPart,
+    decimalPart: props.decimalPart,
+    lowSampleTrades,
+  };
+};
+
+const useMetricSensors = () =>
+  useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 8 } }),
     useSensor(TouchSensor, {
       activationConstraint: { delay: 250, tolerance: 5 },
@@ -2161,130 +2238,232 @@ export const TopSection: React.FC<TopSectionProps> = ({ isEditing }) => {
     })
   );
 
+
+const MetricCardGrid: React.FC<{
+  model: TopSectionModel;
+  isEditing: boolean;
+  renderCard: (metric: string) => React.ReactNode;
+}> = ({ model, isEditing, renderCard }) => {
+  const { activeMetrics, handleDragEnd, handleRemoveMetric } = model;
+  const metricColumns = getMetricLayoutColumns(activeMetrics.length);
+  const sensors = useMetricSensors();
   return (
-    <div className="journalit-dashboard-top-section">
-      {!data && !error ? (
-        <div className="metric-cards-skeleton">
-          {Array.from({ length: 4 }).map((_, idx) => (
-            <MetricCardSkeleton key={idx} />
-          ))}
-        </div>
-      ) : error ? (
-        <div className="journalit-dashboard-error">{error}</div>
-      ) : data ? (
-        <div
-          className="journalit-dashboard-top-section-body"
-          style={cssVars({
-            '--journalit-dashboard-metric-wide-columns': metricColumns.wide,
-            '--journalit-dashboard-metric-medium-columns': metricColumns.medium,
-            '--journalit-dashboard-metric-narrow-columns': metricColumns.narrow,
-          })}
-        >
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-            autoScroll={true}
+    <div
+      className="journalit-dashboard-top-section-body"
+      style={cssVars({
+        '--journalit-dashboard-metric-wide-columns': metricColumns.wide,
+        '--journalit-dashboard-metric-large-columns': metricColumns.large,
+        '--journalit-dashboard-metric-medium-columns': metricColumns.medium,
+        '--journalit-dashboard-metric-narrow-columns': metricColumns.narrow,
+      })}
+    >
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragEnd={handleDragEnd}
+        autoScroll={true}
+      >
+        <SortableContext items={activeMetrics} strategy={rectSortingStrategy}>
+          <div
+            className="journalit-dashboard-metrics"
+            id="topsection-metrics-container"
           >
-            <SortableContext
-              items={activeMetrics}
-              strategy={rectSortingStrategy}
-            >
-              <div
-                className="journalit-dashboard-metrics"
-                id="topsection-metrics-container"
+            {activeMetrics.map((metric) => (
+              <SortableMetricCard
+                key={metric}
+                id={metric}
+                isEditing={isEditing}
+                onRemove={(id) => void handleRemoveMetric(id)}
               >
-                {activeMetrics.map((metric) => {
-                  if (metric === 'expectancyGap') {
-                    return (
-                      <SortableMetricCard
-                        key={metric}
-                        id={metric}
-                        isEditing={isEditing}
-                        onRemove={(id) => void handleRemoveMetric(id)}
-                      >
-                        <ExpectancyGapMetric
-                          sample={data.expectancySample}
-                          isEditingLayout={isEditing}
-                        />
-                      </SortableMetricCard>
-                    );
-                  }
-                  const rawMetricValue = getDashboardMetricValue(
-                    data.metrics,
-                    metric
-                  );
-                  const netPnLUnrealized =
-                    metric === 'netPnL'
-                      ? getNetPnLUnrealizedDisplay(rawMetricValue)
-                      : undefined;
-                  const metricValue = netPnLUnrealized
-                    ? netPnLUnrealized.value
-                    : rawMetricValue;
-                  const formattedValue = formatMetricValue(metric, metricValue);
-
-                  const percentSuffix = formatMetricPercentSuffix(
-                    metric,
-                    formattedValue
-                  );
-                  
-                  
-                  
-                  const previousDelta =
-                    rawMetricValue === undefined || netPnLUnrealized?.combined
-                      ? undefined
-                      : createMetricDelta(metric, rawMetricValue);
-
-                  return (
-                    <SortableMetricCard
-                      key={metric}
-                      id={metric}
-                      isEditing={isEditing}
-                      onRemove={(id) => void handleRemoveMetric(id)}
-                    >
-                      <MetricCard
-                        name={getMetricName(metric)}
-                        value={formattedValue}
-                        valueSuffix={percentSuffix?.value}
-                        valueSuffixIsPositive={percentSuffix?.isPositive}
-                        isPositive={
-                          shouldMask(getMetricDisplayKind(metric))
-                            ? undefined
-                            : isPositiveMetric(metric, metricValue)
-                        }
-                        
-                        mainPart={getMainPart(
-                          metric,
-                          metricValue,
-                          formattedValue
-                        )}
-                        decimalPart={getDecimalPart(
-                          metric,
-                          metricValue,
-                          formattedValue
-                        )}
-                        tooltip={getMetricTooltip(metric, previousDelta)}
-                        tooltipDisclosureLabel={getMetricTooltipDisclosureLabel(
-                          metric,
-                          previousDelta
-                        )}
-                        hasWarning={hasMetricWarning(metric)}
-                        previousDelta={previousDelta}
-                        subline={netPnLUnrealized?.subline}
-                        sublineIsPositive={netPnLUnrealized?.sublineIsPositive}
-                      />
-                    </SortableMetricCard>
-                  );
-                })}
-              </div>
-            </SortableContext>
-          </DndContext>
-        </div>
-      ) : (
-        <div className="journalit-dashboard-no-data">
-          {t('dashboard.no-data')}
-        </div>
-      )}
+                {renderCard(metric)}
+              </SortableMetricCard>
+            ))}
+          </div>
+        </SortableContext>
+      </DndContext>
     </div>
+  );
+};
+
+const TopSectionFrame: React.FC<{
+  data: DashboardData | null;
+  error: string | null;
+  children: (data: DashboardData) => React.ReactNode;
+}> = ({ data, error, children }) => (
+  <div className="journalit-dashboard-top-section">
+    {!data && !error ? (
+      <div className="metric-cards-skeleton">
+        {Array.from({ length: 4 }).map((_, idx) => (
+          <MetricCardSkeleton key={idx} />
+        ))}
+      </div>
+    ) : error ? (
+      <div className="journalit-dashboard-error">{error}</div>
+    ) : data ? (
+      children(data)
+    ) : (
+      <div className="journalit-dashboard-no-data">
+        {t('dashboard.no-data')}
+      </div>
+    )}
+  </div>
+);
+
+const SingleTopSection: React.FC<TopSectionProps> = ({ isEditing }) => {
+  const model = useTopSectionModel();
+  return (
+    <TopSectionFrame data={model.data} error={model.error}>
+      {(data) => (
+        <MetricCardGrid
+          model={model}
+          isEditing={isEditing}
+          renderCard={(metric) =>
+            metric === 'expectancyGap' ? (
+              <ExpectancyGapMetric
+                sample={data.expectancySample}
+                isEditingLayout={isEditing}
+              />
+            ) : (
+              <MetricCard {...getMetricCardProps(model, data, metric)} />
+            )
+          }
+        />
+      )}
+    </TopSectionFrame>
+  );
+};
+
+type CompareSideSource = Pick<
+  DashboardDataContextValue,
+  'dashboardData' | 'dataFilters'
+>;
+
+
+function useMatchingComparePair(
+  a: CompareSideSource,
+  b: CompareSideSource
+): { a: CompareSideSource; b: CompareSideSource } | null {
+  const live =
+    a.dashboardData &&
+    b.dashboardData &&
+    sameDateRange(a.dataFilters, b.dataFilters)
+      ? {
+          a: { dashboardData: a.dashboardData, dataFilters: a.dataFilters },
+          b: { dashboardData: b.dashboardData, dataFilters: b.dataFilters },
+        }
+      : null;
+  const [matched, setMatched] = useState(live);
+  if (
+    live &&
+    (live.a.dashboardData !== matched?.a.dashboardData ||
+      live.b.dashboardData !== matched?.b.dashboardData)
+  ) {
+    setMatched(live);
+  }
+  return live ?? matched;
+}
+
+
+const hasCombinedNetPnLHeadline = (
+  model: TopSectionModel,
+  data: DashboardData,
+  metric: string
+): boolean =>
+  metric === 'netPnL' &&
+  model.getNetPnLUnrealizedDisplay(
+    getDashboardMetricValue(data.metrics, 'netPnL')
+  ).combined;
+
+
+const CompareTopSection: React.FC<
+  TopSectionProps & { compareSource: DashboardDataContextValue }
+> = ({ isEditing, compareSource }) => {
+  const sourceA = useDashboardData();
+  const pair = useMatchingComparePair(sourceA, compareSource);
+  const modelB = useTopSectionModel({
+    source: pair ? { ...compareSource, ...pair.b } : compareSource,
+    compareAgainst: null,
+  });
+  
+  const modelA = useTopSectionModel({
+    source: pair ? { ...sourceA, ...pair.a } : sourceA,
+    compareAgainst: pair ? modelB.data : null,
+  });
+  const dataB = modelB.data;
+  const error = modelA.error ?? modelB.error;
+  const markerMetric = modelA.activeMetrics.includes('numTrades')
+    ? 'numTrades'
+    : modelA.activeMetrics.find((metric) => metric !== 'expectancyGap');
+  const lowSample = (data: DashboardData, metric: string) =>
+    metric === markerMetric &&
+    data.metrics.numTrades < COMPARE_LOW_SAMPLE_TRADES
+      ? data.metrics.numTrades
+      : undefined;
+  return (
+    <TopSectionFrame data={dataB ? modelA.data : null} error={error}>
+      {(dataA) =>
+        dataB ? (
+          <MetricCardGrid
+            model={modelA}
+            isEditing={isEditing}
+            renderCard={(metric) => {
+              if (metric === 'expectancyGap') {
+                return (
+                  <ExpectancyGapMetric
+                    sample={dataA.expectancySample}
+                    compareSample={{ sample: dataB.expectancySample }}
+                    isEditingLayout={isEditing}
+                  />
+                );
+              }
+              const a = getMetricCardProps(modelA, dataA, metric);
+              const b = getMetricCardProps(modelB, dataB, metric);
+              
+              
+              
+              
+              
+              const delta =
+                !a.previousDelta?.rComparisonUnavailable &&
+                !hasCombinedNetPnLHeadline(modelB, dataB, metric) &&
+                (metric === NO_TRADES_METRIC_WITH_VALUE ||
+                  (hasTrades(dataA) && hasTrades(dataB)))
+                  ? a.previousDelta
+                  : undefined;
+              return (
+                <MetricCard
+                  {...a}
+                  previousDelta={delta}
+                  tooltipDisclosureLabel={a.tooltipDisclosureLabel}
+                  compare={{
+                    a: toCompareValue(
+                      a,
+                      dataA,
+                      metric,
+                      lowSample(dataA, metric)
+                    ),
+                    b: toCompareValue(
+                      b,
+                      dataB,
+                      metric,
+                      lowSample(dataB, metric)
+                    ),
+                  }}
+                />
+              );
+            }}
+          />
+        ) : null
+      }
+    </TopSectionFrame>
+  );
+};
+
+export const TopSection: React.FC<TopSectionProps> = ({ isEditing }) => {
+  const compareSource = useDashboardCompareData();
+  return compareSource ? (
+    <CompareTopSection isEditing={isEditing} compareSource={compareSource} />
+  ) : (
+    <SingleTopSection isEditing={isEditing} />
   );
 };

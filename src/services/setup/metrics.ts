@@ -1,10 +1,24 @@
 
 
-import { Setup, SetupMetrics } from './types';
+import {
+  Setup,
+  SetupMetrics,
+  SetupMetricsResult,
+  SetupOutcomeScope,
+} from './types';
 import { calculateWinRateExcludingBreakeven } from '../../utils/breakEvenRange';
 import { isPnlContributingTrade } from '../../utils/tradeStatusUtils';
-import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
+import {
+  getSetupTradeType,
+  LIVE_SETUP_TRADE_TYPES,
+  type SetupTradeType,
+} from './setupTradeTypes';
 import { calculateSetupTradePnl, toSetupTradePnlInput } from './setupTradePnl';
+import type {
+  SetupTradeBalanceFields,
+  SetupTradeOutcome,
+  SetupTradeOutcomeClassifier,
+} from './setupTradeOutcome';
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -25,7 +39,7 @@ function dateString(value: unknown): string {
   return typeof value === 'string' ? value : '';
 }
 
-interface Trade extends Record<string, unknown> {
+interface Trade extends Record<string, unknown>, SetupTradeBalanceFields {
   path?: string;
   type?: unknown;
   isMissedTrade?: unknown;
@@ -81,26 +95,58 @@ function normalizeSetupMetricTrade(value: unknown): Trade | null {
   };
 }
 
+function isInScope(
+  outcome: SetupTradeOutcome,
+  scope: SetupOutcomeScope
+): boolean {
+  if (scope === 'all') return true;
+  return scope === 'wins' ? outcome === 'win' : outcome === 'loss';
+}
+
+
+interface TradeResult {
+  pnl: number;
+  outcome: SetupTradeOutcome;
+}
+
+function pnlsWithOutcome(
+  results: readonly TradeResult[],
+  outcome: SetupTradeOutcome
+): number[] {
+  return results.flatMap((result) =>
+    result.outcome === outcome ? [result.pnl] : []
+  );
+}
+
 
 export class SetupMetricsCalculator {
   
   public calculateMetricsForSetupsFromTradeData(
     setups: readonly Setup[],
-    tradeData: Array<Record<string, unknown>>
-  ): Map<string, SetupMetrics> {
+    tradeData: Array<Record<string, unknown>>,
+    classifyOutcome: SetupTradeOutcomeClassifier,
+    scope: SetupOutcomeScope = 'all',
+    tradeTypes: ReadonlySet<SetupTradeType> = LIVE_SETUP_TRADE_TYPES
+  ): SetupMetricsResult {
     const trades: Trade[] = [];
+    
+    const results: TradeResult[] = [];
     const tradeIndexesByToken = new Map<string, number[]>();
     for (const value of tradeData) {
       const trade = normalizeSetupMetricTrade(value);
       if (
         !trade ||
-        !this.isRegularTrade(trade) ||
+        !tradeTypes.has(getSetupTradeType(trade)) ||
         !isPnlContributingTrade(trade)
       ) {
         continue;
       }
+      const pnl = calculateSetupTradePnl(toSetupTradePnlInput(trade));
+      const outcome = classifyOutcome(pnl, trade);
+      if (!isInScope(outcome, scope)) continue;
       const tradeIndex = trades.length;
       trades.push(trade);
+      results.push({ pnl, outcome });
       for (const label of trade.setup) {
         const token = this.normalizeSetupToken(label);
         if (!token) continue;
@@ -122,29 +168,32 @@ export class SetupMetricsCalculator {
         }
       }
       
-      const setupTrades = Array.from(matchingIndexes)
-        .sort((a, b) => a - b)
-        .map((index) => trades[index]);
-      metricsBySetupId.set(
-        setup.id,
-        this.calculateMetricsForTrades(setupTrades)
+      const setupIndexes = Array.from(matchingIndexes).sort((a, b) => a - b);
+      const metrics = this.calculateMetricsForTrades(
+        setupIndexes.map((index) => trades[index]),
+        setupIndexes.map((index) => results[index])
       );
+      metrics.shareOfTrades = trades.length
+        ? (metrics.totalTrades / trades.length) * 100
+        : 0;
+      metricsBySetupId.set(setup.id, metrics);
     }
-    return metricsBySetupId;
+    return { metricsBySetupId, tradeCount: trades.length };
   }
 
-  private calculateMetricsForTrades(trades: Trade[]): SetupMetrics {
+  private calculateMetricsForTrades(
+    trades: Trade[],
+    tradeResults: TradeResult[]
+  ): SetupMetrics {
     if (!trades.length) {
       return this.getEmptyMetrics();
     }
 
-    const results = trades.map((trade) =>
-      calculateSetupTradePnl(toSetupTradePnlInput(trade))
-    );
-    const winners = results.filter((r) => r > 0);
-    const losers = results.filter((r) => r < 0);
+    const results = tradeResults.map(({ pnl }) => pnl);
+    const winners = pnlsWithOutcome(tradeResults, 'win');
+    const losers = pnlsWithOutcome(tradeResults, 'loss');
 
-    const streaks = this.calculateStreaks(results);
+    const streaks = this.calculateStreaks(tradeResults);
 
     const baseMetrics = this.getEmptyMetrics();
     return {
@@ -162,7 +211,7 @@ export class SetupMetricsCalculator {
       winStreak: streaks.maxWin,
       loseStreak: streaks.maxLoss,
       currentStreak: streaks.current,
-      ...this.calculateAdvancedMetrics(trades, results),
+      ...this.calculateAdvancedMetrics(trades, results, winners, losers),
     };
   }
 
@@ -175,17 +224,6 @@ export class SetupMetricsCalculator {
     );
   }
 
-  private isRegularTrade(trade: Trade): boolean {
-    return (
-      inferStoredTradeType({
-        filePath: trade.path,
-        type: trade.type,
-        isMissedTrade: trade.isMissedTrade,
-        isBacktestTrade: trade.isBacktestTrade,
-      }) === 'regular'
-    );
-  }
-
   private normalizeSetupToken(value: string): string {
     return value
       .trim()
@@ -195,7 +233,7 @@ export class SetupMetricsCalculator {
   }
 
   
-  private calculateStreaks(results: number[]): {
+  private calculateStreaks(results: TradeResult[]): {
     maxWin: number;
     maxLoss: number;
     current: number;
@@ -204,12 +242,12 @@ export class SetupMetricsCalculator {
     let maxWin = 0;
     let maxLoss = 0;
 
-    results.forEach((pnl) => {
-      if (pnl > 0) {
+    results.forEach(({ outcome }) => {
+      if (outcome === 'win') {
         if (currentStreak < 0) currentStreak = 0;
         currentStreak++;
         maxWin = Math.max(maxWin, currentStreak);
-      } else if (pnl < 0) {
+      } else if (outcome === 'loss') {
         if (currentStreak > 0) currentStreak = 0;
         currentStreak--;
         maxLoss = Math.min(maxLoss, currentStreak);
@@ -229,6 +267,7 @@ export class SetupMetricsCalculator {
     return {
       
       totalTrades: 0,
+      shareOfTrades: 0,
       winRate: 0,
       totalPnL: 0,
       avgWinner: 0,
@@ -256,12 +295,11 @@ export class SetupMetricsCalculator {
   
   private calculateAdvancedMetrics(
     trades: Trade[],
-    results: number[]
+    results: number[],
+    winningTrades: number[],
+    losingTrades: number[]
   ): Partial<SetupMetrics> {
     if (!trades.length) return {};
-
-    const winningTrades = results.filter((r) => r > 0);
-    const losingTrades = results.filter((r) => r < 0);
 
     
     const durations = trades.flatMap((trade) => {

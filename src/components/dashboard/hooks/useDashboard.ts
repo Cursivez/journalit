@@ -21,6 +21,17 @@ import { normalizeDashboardWidgetIds } from '../components/BottomSection/types';
 import { AccountChangedPayload } from '../../../services/events/types';
 import { remapAccountFilterFromAccountChange } from '../../shared/filters/remapSelectedAccounts';
 import { persistViewFilter } from '../../shared/filters/viewFilterPersistence';
+import {
+  readPersistedDashboardCompare,
+  readPersistedDashboardFilters,
+} from '../dashboardViewState';
+import {
+  type DashboardComparisonFilters,
+  normalizeComparisonFilters,
+  toComparisonFilters,
+  withSharedDateRange,
+} from '../compare/dashboardComparison';
+import { useDatePresetRollover } from '../../../hooks/useDatePresetRollover';
 
 export const useDashboard = () => {
   const plugin = usePlugin();
@@ -38,25 +49,48 @@ export const useDashboard = () => {
   const [isFiltersHydrated, setIsFiltersHydrated] = useState(false);
 
   
+  const [compareFilters, setCompareFilters] =
+    useState<DashboardComparisonFilters | null>(null);
+  const compareFiltersRef = useRef(compareFilters);
+  const applyCompareFilters = useCallback(
+    (next: DashboardComparisonFilters | null) => {
+      compareFiltersRef.current = next;
+      setCompareFilters(next);
+      
+      void plugin?.uiStateManager.updateState({
+        dashboardCompare: next ?? undefined,
+      });
+    },
+    [plugin]
+  );
+
+  
   
   useLayoutEffect(() => {
     if (!plugin || isFiltersHydrated) return;
 
-    const persisted = plugin.uiStateManager.getState().viewFilters?.dashboard;
-    if (persisted) {
-      const normalizedPersisted = normalizeDashboardFilters(persisted);
-      const hydratedFilters: FilterState = {
-        ...normalizedPersisted,
-        
-        dateRange: [
-          persisted.dateRange[0] ? new Date(persisted.dateRange[0]) : null,
-          persisted.dateRange[1] ? new Date(persisted.dateRange[1]) : null,
-        ] as [Date | null, Date | null],
-      };
-      applyFilters(hydratedFilters);
+    const uiState = plugin.uiStateManager.getState();
+    const persisted = readPersistedDashboardFilters(uiState);
+    if (persisted) applyFilters(persisted);
+    const persistedCompare = readPersistedDashboardCompare(uiState);
+    if (persistedCompare) {
+      compareFiltersRef.current = persistedCompare;
+      setCompareFilters(persistedCompare);
     }
     setIsFiltersHydrated(true);
   }, [applyFilters, isFiltersHydrated, plugin]);
+
+  
+  useEventBus('dashboard:view-requested', () => {
+    if (!plugin) return;
+    const uiState = plugin.uiStateManager.getState();
+    applyFilters(
+      readPersistedDashboardFilters(uiState) ?? createDashboardFilters()
+    );
+    const persistedCompare = readPersistedDashboardCompare(uiState);
+    compareFiltersRef.current = persistedCompare;
+    setCompareFilters(persistedCompare);
+  });
 
   
   const [isEditing, setIsEditing] = useState<boolean>(false);
@@ -92,6 +126,24 @@ export const useDashboard = () => {
         payload
       );
 
+      
+      const currentCompare = compareFiltersRef.current;
+      if (currentCompare) {
+        const compareState = withSharedDateRange(
+          currentCompare,
+          currentFilters
+        );
+        const remappedCompare = remapAccountFilterFromAccountChange(
+          compareState,
+          payload
+        );
+        if (remappedCompare !== compareState) {
+          applyCompareFilters(
+            toComparisonFilters(normalizeDashboardFilters(remappedCompare))
+          );
+        }
+      }
+
       if (remappedFilters === currentFilters) return;
 
       const nextFilters = normalizeDashboardFilters(remappedFilters);
@@ -101,7 +153,7 @@ export const useDashboard = () => {
         persistViewFilter(plugin.uiStateManager, 'dashboard', nextFilters);
       }
     },
-    [applyFilters, plugin]
+    [applyCompareFilters, applyFilters, plugin]
   );
 
   
@@ -185,6 +237,47 @@ export const useDashboard = () => {
   );
 
   
+  useDatePresetRollover(filters, handleFilterChange);
+
+  
+  const handleCompareFilterChange = useCallback(
+    (newFilters: FilterState) => {
+      applyCompareFilters(
+        toComparisonFilters(normalizeDashboardFilters(newFilters))
+      );
+    },
+    [applyCompareFilters]
+  );
+
+  
+  const startComparison = useCallback(
+    (comparison?: {
+      a: DashboardComparisonFilters;
+      b: DashboardComparisonFilters;
+    }) => {
+      const current = filtersRef.current;
+      if (comparison) {
+        handleFilterChange(withSharedDateRange(comparison.a, current));
+        applyCompareFilters(normalizeComparisonFilters(comparison.b));
+        return;
+      }
+      applyCompareFilters(toComparisonFilters(current));
+    },
+    [applyCompareFilters, handleFilterChange]
+  );
+
+  const stopComparison = useCallback(() => {
+    applyCompareFilters(null);
+  }, [applyCompareFilters]);
+
+  
+  const compareFilterState = useMemo(
+    () =>
+      compareFilters ? withSharedDateRange(compareFilters, filters) : null,
+    [compareFilters, filters]
+  );
+
+  
   const toggleEditMode = useCallback(() => {
     const nextIsEditing = !isEditing;
     if (!nextIsEditing && showUnifiedSelector) {
@@ -249,6 +342,10 @@ export const useDashboard = () => {
 
   return {
     filters,
+    compareFilters: compareFilterState,
+    handleCompareFilterChange,
+    startComparison,
+    stopComparison,
     isFiltersHydrated,
     setFilters,
     isLoading: false,

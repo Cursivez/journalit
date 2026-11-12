@@ -150,10 +150,6 @@ export const DASHBOARD_STYLES = `
     min-width: 0;
   }
 
-  .journalit-dashboard-metric-wrapper--sortable {
-    height: 100% !important;
-  }
-
   .journalit-dashboard-metric-wrapper[data-dragging="true"] {
     z-index: 3;
   }
@@ -252,7 +248,7 @@ export const DASHBOARD_STYLES = `
     width: 100% !important;
     min-width: 100% !important;
     max-width: none !important;
-    padding: 14px !important;
+    padding: 10px 12px !important;
     background-color: var(--journalit-dashboard-widget-background, var(--background-primary)) !important;
     border-radius: 8px !important;
     border: 1px solid color-mix(in srgb, var(--text-normal) 8%, transparent) !important;
@@ -260,7 +256,6 @@ export const DASHBOARD_STYLES = `
     flex-direction: column !important;
     align-items: flex-start !important;
     position: relative !important;
-    min-height: 98px !important;
   }
 
   .journalit-dashboard-metric-wrapper[data-editing="true"]::after {
@@ -387,7 +382,6 @@ export const DASHBOARD_STYLES = `
     line-height: 1.05 !important;
   }
 
-  
   .journalit-dashboard-metric-value.positive {
     color: var(--color-green) !important; 
   }
@@ -405,36 +399,11 @@ export const DASHBOARD_STYLES = `
     display: inline-block !important;
   }
 
-  .journalit-dashboard-metric-suffix {
-    font-size: 12px !important;
-    line-height: 1 !important;
-    opacity: 0.95 !important;
-    font-weight: 500 !important;
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    flex: 0 0 auto !important;
-    white-space: nowrap !important;
-    color: var(--text-muted) !important;
-    margin-top: 2px !important;
-  }
-
-  .journalit-dashboard-metric-suffix--with-cents,
-  .journalit-dashboard-metric-suffix--without-cents {
-    margin-left: 0 !important;
-  }
-
-  .journalit-dashboard-metric-suffix.positive {
-    color: var(--color-green) !important;
-  }
-
-  .journalit-dashboard-metric-suffix.negative {
-    color: var(--color-red) !important;
-  }
-
+  
   .journalit-dashboard-metric-previous-delta-slot {
     min-height: 20px !important;
-    margin-top: 6px !important;
+    margin-top: auto !important;
+    padding-top: 6px !important;
   }
 
   .journalit-dashboard-metric-unrealized {
@@ -495,20 +464,37 @@ export const DASHBOARD_STYLES = `
   }
 
   
-  @container journalit-dashboard-metrics (min-width: 1504px) {
+  @container journalit-dashboard-metrics (min-width: 900px) {
+    .journalit-dashboard-metrics {
+      --journalit-dashboard-metric-columns: var(--journalit-dashboard-metric-large-columns);
+    }
+  }
+
+  @container journalit-dashboard-metrics (min-width: 1200px) {
     .journalit-dashboard-metrics {
       --journalit-dashboard-metric-columns: var(--journalit-dashboard-metric-wide-columns);
+    }
+  }
+
+  
+  @container journalit-dashboard-metrics (min-width: 900px) and (max-width: 1399px) {
+    .journalit-dashboard-metric-card {
+      padding: 8px 10px !important;
+    }
+
+    .journalit-dashboard-metric-name {
+      font-size: 11px !important;
+      letter-spacing: 0 !important;
+    }
+
+    .journalit-dashboard-metric-value {
+      font-size: 20px !important;
     }
   }
 
   @container journalit-dashboard-metrics (max-width: 751px) {
     .journalit-dashboard-metrics {
       --journalit-dashboard-metric-columns: var(--journalit-dashboard-metric-narrow-columns);
-    }
-
-    .journalit-dashboard-metric-card {
-      min-height: 94px;
-      padding: 12px;
     }
 
     .journalit-dashboard-metric-value {
@@ -691,45 +677,9 @@ export const DASHBOARD_STYLES = `
   }
   
   .journalit-dashboard-filter-actions {
-    display: flex !important;
-    align-items: center !important;
     
-    flex: 0 0 auto !important; 
-    gap: 6px !important;
-    min-width: fit-content !important; 
     justify-self: end !important; 
     margin-left: auto !important; 
-  }
-
-  .journalit-dashboard-filter-actions > * {
-    flex-shrink: 0 !important; 
-  }
-
-  .journalit-dashboard-filter-actions
-    .journalit-filter-button-container
-    .journalit-filter-button.journalit-dashboard-filter-button {
-    width: 32px !important;
-    height: 28px !important;
-    min-width: 32px !important;
-    min-height: 28px !important;
-    box-sizing: border-box !important;
-    padding: 0 !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: 4px !important;
-    background: var(--background-primary) !important;
-    color: var(--text-normal) !important;
-    box-shadow: none !important;
-  }
-
-  .journalit-dashboard-filter-actions
-    .journalit-filter-button-container
-    .journalit-filter-button.journalit-dashboard-filter-button:hover,
-  .journalit-dashboard-filter-actions
-    .journalit-filter-button-container
-    .journalit-filter-button.journalit-dashboard-filter-button:focus-visible {
-    border-color: var(--background-modifier-border-hover) !important;
-    background: var(--background-modifier-hover) !important;
-    color: var(--text-normal) !important;
   }
 
   .journalit-dashboard-filter-actions
@@ -773,52 +723,181 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-primary-filters {
     display: flex !important;
     align-items: center !important;
-    flex: 1 1 auto !important;
+    flex: 0 1 auto !important;
+    max-width: 100% !important;
     min-width: 0 !important;
   }
 
   
   .journalit-dashboard-date-range-filter {
     display: flex !important;
+    flex: 0 1 auto !important;
     flex-direction: column !important;
     gap: 8px !important;
+    max-width: 100% !important;
     min-width: 0 !important;
   }
   
   
   .journalit-dashboard-date-range-presets {
+    position: relative !important;
     display: flex !important;
-    flex-wrap: wrap !important;
-    gap: 6px !important;
+    flex-wrap: nowrap !important;
+    gap: 0 !important;
     align-items: center !important;
+    box-sizing: border-box !important;
+    width: max-content !important;
+    max-width: 100% !important;
+    height: var(--journalit-control-height) !important;
     min-width: 0 !important;
+    padding: 2px !important;
+    overflow-x: auto;
+    border-radius: var(--journalit-control-radius) !important;
+    background: var(--journalit-control-strip) !important;
+    scrollbar-width: none;
   }
   
+  
+  .journalit-dashboard-date-range-compact {
+    position: relative;
+  }
+
+  .journalit-dashboard-date-range-compact button.journalit-dashboard-date-range-compact__trigger {
+    display: inline-flex;
+    align-items: center;
+    box-sizing: border-box;
+    height: var(--journalit-control-height);
+    padding: 2px;
+    border: 0;
+    border-radius: var(--journalit-control-radius);
+    background: var(--journalit-control-strip);
+    box-shadow: none;
+    cursor: pointer;
+  }
+
+  .journalit-dashboard-date-range-compact__thumb {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    box-sizing: border-box;
+    height: 24px;
+    padding: 0 8px 0 10px;
+    border-radius: var(--journalit-control-inner-radius);
+    background: var(--journalit-control-selected-fill);
+    box-shadow: var(--journalit-control-selected-shadow);
+    color: var(--journalit-control-selected-text);
+    font-size: var(--font-ui-small);
+    font-weight: 500;
+    white-space: nowrap;
+  }
+
+  
+  .journalit-anchored-menu.journalit-dashboard-date-range-menu-host {
+    box-sizing: border-box;
+    border-radius: var(--journalit-control-radius);
+  }
+
+  
+  .journalit-dashboard-date-range-menu {
+    position: static;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    width: auto;
+    min-width: 0;
+    max-width: none;
+    margin: 0;
+    padding: 2px;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+    overflow: visible;
+  }
+
+  .journalit-dashboard-date-range-menu button.journalit-home-period-option {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 8px;
+    box-sizing: border-box;
+    width: 100%;
+    min-height: var(--journalit-control-height);
+    padding: 0 8px;
+    border: 0;
+    border-radius: var(--journalit-control-inner-radius);
+    background: transparent;
+    box-shadow: none;
+    color: var(--text-normal);
+    font-size: var(--font-ui-small);
+    text-align: left;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .journalit-dashboard-date-range-menu button.journalit-home-period-option:hover,
+  .journalit-dashboard-date-range-menu button.journalit-home-period-option:focus-visible {
+    background: var(--journalit-control-overlay-hover);
+  }
+
+  .journalit-dashboard-date-range-menu .journalit-home-period-option__check {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    justify-content: center;
+    width: 14px;
+    color: var(--text-accent);
+    font-size: var(--font-ui-smaller);
+  }
+
+  .journalit-dashboard-date-range-thumb {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    left: 0;
+    width: var(--journalit-seg-thumb-width, 0);
+    border-radius: var(--journalit-control-inner-radius);
+    background: var(--journalit-control-selected-fill);
+    box-shadow: var(--journalit-control-selected-shadow);
+    pointer-events: none;
+    transform: translateX(var(--journalit-seg-thumb-left, 0));
+    transition:
+      transform 180ms var(--journalit-control-curve),
+      width 180ms var(--journalit-control-curve);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    .journalit-dashboard-date-range-thumb {
+      transition: none;
+    }
+  }
+
   .journalit-dashboard-date-range-presets button.journalit-native-button {
-    background-color: var(--background-primary) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: 4px !important;
-    padding: 5px 10px !important;
-    font-size: 12px !important;
-    font-weight: 500 !important;
-    color: var(--text-normal) !important;
-    cursor: pointer !important;
-    transition: all 0.2s ease !important;
-    height: 28px !important;
-    line-height: 1 !important;
+    position: relative !important;
     flex: 0 0 auto !important;
+    box-sizing: border-box !important;
+    height: 24px !important;
+    padding: 0 10px !important;
+    border: 0 !important;
+    border-radius: var(--journalit-control-inner-radius) !important;
+    background: none !important;
+    box-shadow: none !important;
+    color: var(--text-muted) !important;
+    font-size: var(--font-ui-small) !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
     white-space: nowrap !important;
+    cursor: pointer !important;
+    transition: color 180ms var(--journalit-control-curve) !important;
   }
 
   .journalit-dashboard-date-range-presets button.journalit-native-button:hover {
-    background-color: var(--background-modifier-hover) !important;
-    border-color: var(--interactive-accent) !important;
+    background: none !important;
+    color: var(--text-normal) !important;
   }
   
   .journalit-dashboard-date-range-presets button.journalit-native-button.active {
-    background-color: var(--interactive-accent) !important;
-    color: var(--text-on-accent, white) !important;
-    border-color: var(--interactive-accent) !important;
+    background: none !important;
+    color: var(--journalit-control-selected-text) !important;
   }
 
   .journalit-dashboard-custom-date-anchor {
@@ -839,7 +918,8 @@ export const DASHBOARD_STYLES = `
     position: fixed;
     top: var(--journalit-dashboard-date-dropdown-top);
     left: var(--journalit-dashboard-date-dropdown-left);
-    z-index: 1000;
+    
+    z-index: var(--layer-menu);
     width: max-content;
     max-width: calc(100vw - 32px);
     box-shadow: var(--shadow-s);
@@ -866,8 +946,60 @@ export const DASHBOARD_STYLES = `
     pointer-events: none;
   }
 
-  .journalit-dashboard-custom-date-dropdown > .journalit-date-range-editor {
+  .journalit-dashboard-custom-date-dropdown > .journalit-date-range-editor,
+  .journalit-dashboard-custom-date-dropdown > .journalit-dashboard-custom-date-tabs,
+  .journalit-dashboard-custom-date-dropdown > .journalit-dashboard-recent-period {
     grid-column: 1 / -1;
+  }
+
+  
+  .journalit-dashboard-recent-period {
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-2);
+    color: var(--text-normal);
+    font-size: var(--font-ui-small);
+  }
+
+  .journalit-dashboard-recent-period input.journalit-dashboard-recent-period__count {
+    box-sizing: border-box;
+    width: 64px;
+    height: var(--input-height);
+    margin: 0;
+  }
+
+  .journalit-dashboard-recent-period .journalit-dropdown-select__trigger {
+    display: flex;
+    align-items: center;
+    gap: var(--size-4-2);
+    box-sizing: border-box;
+    min-width: 110px;
+    height: var(--input-height);
+    margin: 0;
+    padding: 0 var(--size-4-2);
+    border: 1px solid var(--background-modifier-border);
+    border-radius: var(--input-radius);
+    background: var(--background-modifier-form-field);
+    box-shadow: none;
+    color: var(--text-normal);
+    font-size: var(--font-ui-small);
+    font-weight: var(--font-normal);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .journalit-dashboard-recent-period .journalit-dropdown-select__trigger:hover {
+    border-color: var(--background-modifier-border-hover);
+  }
+
+  .journalit-dashboard-recent-period .journalit-dropdown-select__summary {
+    flex: 1;
+    min-width: 0;
+  }
+
+  .journalit-dashboard-recent-period .journalit-dropdown-select__chevron {
+    flex: none;
+    color: var(--text-muted);
   }
 
   
@@ -988,16 +1120,6 @@ export const DASHBOARD_STYLES = `
 
   .journalit-dashboard-grid-error__retry {
     margin-top: 10px;
-    padding: 6px 12px;
-    border-radius: 6px;
-    border: 1px solid var(--background-modifier-border);
-    background: var(--background-primary);
-    color: var(--text-normal);
-    cursor: pointer;
-  }
-
-  .journalit-dashboard-grid-error__retry:hover {
-    background: var(--background-modifier-hover);
   }
   
   
@@ -1078,7 +1200,6 @@ export const DASHBOARD_STYLES = `
     user-select: none !important;
   }
 
-  
   
   .journalit-dashboard-grid-layout .react-grid-item,
   .journalit-home-grid-layout .react-grid-item {
@@ -2144,85 +2265,6 @@ export const DASHBOARD_STYLES = `
   .journalit-dashboard-calendar .journalit-dashboard-calendar-weekly-pnl.missed-only .journalit-dashboard-calendar-week-total-value {
     color: var(--color-orange) !important;
   }
-  
-  
-  .journalit-dashboard-view-container
-    .journalit-dashboard-filter-actions
-    .journalit-dashboard-edit-mode-button {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    gap: 4px !important;
-    background-color: var(--background-primary) !important;
-    color: var(--text-normal) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: 4px !important;
-    box-shadow: none !important;
-    width: 32px !important;
-    min-width: 32px !important;
-    padding: 5px !important;
-    font-size: 12px !important;
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    transition:
-      background-color 0.2s ease,
-      border-color 0.2s ease,
-      color 0.2s ease,
-      box-shadow 0.2s ease !important;
-    white-space: nowrap !important;
-    height: 28px !important;
-    line-height: 1 !important;
-  }
-  
-  .journalit-dashboard-view-container
-    .journalit-dashboard-filter-actions
-    .journalit-dashboard-edit-mode-button:hover {
-    background-color: var(--background-modifier-hover) !important;
-    border-color: var(--interactive-accent) !important;
-    box-shadow: none !important;
-  }
-  
-  .journalit-dashboard-view-container
-    .journalit-dashboard-filter-actions
-    .journalit-dashboard-edit-mode-button.active {
-    background-color: var(--interactive-accent) !important;
-    color: var(--text-on-accent, white) !important;
-    border-color: var(--interactive-accent) !important;
-    box-shadow: none !important;
-  }
-
-  
-  .journalit-dashboard-view-container
-    .journalit-dashboard-filter-actions
-    .journalit-dashboard-add-widget-button {
-    display: flex !important;
-    align-items: center !important;
-    gap: 4px !important;
-    background-color: var(--background-primary) !important;
-    color: var(--text-normal) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: 4px !important;
-    box-shadow: none !important;
-    padding: 5px 10px !important;
-    font-size: 12px !important;
-    font-weight: 500 !important;
-    cursor: pointer !important;
-    transition:
-      background-color 0.2s ease,
-      border-color 0.2s ease,
-      color 0.2s ease,
-      box-shadow 0.2s ease !important;
-    white-space: nowrap !important;
-    height: 28px !important;
-    line-height: 1 !important;
-  }
-
-  .journalit-dashboard-view-container
-    .journalit-dashboard-filter-actions
-    .journalit-dashboard-add-widget-button:hover {
-    background-color: var(--background-modifier-hover) !important;
-    border-color: var(--interactive-accent) !important;
-  }
 
   
   .journalit-dashboard-loading,
@@ -2248,15 +2290,6 @@ export const DASHBOARD_STYLES = `
       --journalit-dashboard-gutter: 12px;
     }
 
-    
-    .journalit-dashboard-filter-actions {
-      gap: 6px !important;
-    }
-
-    .journalit-dashboard-filter-actions button {
-      padding: 6px !important;
-      min-width: auto !important;
-    }
   }
   
   
@@ -2264,11 +2297,6 @@ export const DASHBOARD_STYLES = `
     
     .journalit-dashboard-view-container {
       --journalit-dashboard-gutter: 10px;
-    }
-
-    
-    .journalit-dashboard-primary-filters {
-      max-width: 500px !important;
     }
 
     .journalit-dashboard-header,
@@ -2306,11 +2334,6 @@ export const DASHBOARD_STYLES = `
     
     
 
-    
-    .journalit-dashboard-primary-filters {
-      max-width: 450px !important;
-    }
-
     .journalit-dashboard-header,
     .journalit-dashboard-header-compact {
       gap: 8px !important;
@@ -2347,23 +2370,8 @@ export const DASHBOARD_STYLES = `
       width: 100% !important;
     }
 
-    .journalit-dashboard-edit-mode-button {
-      margin: 5px 0 !important;
-    }
     
     
-    
-    
-    .journalit-dashboard-filter-actions {
-      gap: 4px !important;
-      flex-wrap: nowrap !important;
-    }
-
-    .journalit-dashboard-filter-actions button {
-      padding: 4px 6px !important;
-      font-size: 11px !important;
-    }
-
     .journalit-dashboard-edit-layout-button span {
       display: none !important; 
     }
@@ -2382,33 +2390,12 @@ export const DASHBOARD_STYLES = `
     }
     
     
-    .journalit-dashboard-reset-button,
-    .journalit-dashboard-edit-mode-button {
+    .journalit-dashboard-reset-button {
       padding: 10px !important;
       height: auto !important;
       min-height: 40px !important;
     }
     
-    .journalit-dashboard-date-range-presets {
-      justify-content: flex-start !important;
-    }
-    
-    .journalit-dashboard-date-range-presets button.journalit-native-button {
-      flex: 0 0 auto !important;
-      margin: 2px !important;
-      font-size: 11px !important;
-      padding: 4px 8px !important;
-    }
-    
-
-    
-    .journalit-dashboard-filter-actions {
-      gap: 2px !important;
-    }
-
-    .journalit-dashboard-filter-actions button {
-      padding: 4px !important;
-    }
   }
 
   
@@ -2427,22 +2414,8 @@ export const DASHBOARD_STYLES = `
     .journalit-dashboard-bottom-section {
       padding: 2px !important;
     }
-    
-    
-    .journalit-dashboard-date-range-presets button.journalit-native-button {
-      padding: 3px 6px !important;
-      font-size: 10px !important;
-    }
   }
 
-  
-  @media screen and (max-width: 1160px) {
-    .journalit-dashboard-primary-filters {
-      max-width: 600px !important;
-    }
-  }
-
-  
   
   .journalit-dashboard-widget-container {
     background-color: transparent !important;

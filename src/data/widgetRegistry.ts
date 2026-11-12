@@ -112,6 +112,14 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     availableIn: ['drc', 'weekly'],
   },
   {
+    type: 'market-bias',
+    name: t('widget.market-bias.name'),
+    description: t('widget.market-bias.description'),
+    category: 'content',
+    availableIn: ['drc', 'weekly'],
+    defaultConfig: { biasFor: 'overall' },
+  },
+  {
     type: 'missed-trades',
     name: t('widget.missed-trades.name'),
     description: t('widget.missed-trades.description'),
@@ -168,6 +176,14 @@ export const WIDGET_REGISTRY: WidgetDefinition[] = [
     description: t('widget.drawdown-chart.description'),
     category: 'charts',
     availableIn: ['drc', 'weekly', 'monthly', 'quarterly', 'yearly'],
+  },
+  {
+    type: 'rolling-bias-win-rate',
+    name: t('widget.rolling-bias-win-rate.name'),
+    description: t('widget.rolling-bias-win-rate.description'),
+    category: 'charts',
+    availableIn: ['weekly', 'monthly', 'quarterly', 'yearly'],
+    defaultConfig: { window: 10 },
   },
   {
     type: 'directional-pnl',

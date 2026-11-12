@@ -715,23 +715,10 @@ export const ACCOUNT_STYLES = `
 
 .settings-modal-buttons .save-settings-button {
   min-width: 90px;
-  padding: 8px 16px;
 }
 
 .settings-modal-buttons .cancel-button {
   min-width: 60px;
-  padding: 8px 12px;
-}
-
-.account-dashboard-settings-modal-container
-  .settings-modal-buttons
-  .journalit-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 6px;
-  font-weight: 500;
-  box-shadow: none;
 }
 
 .account-dashboard-settings-modal-container
@@ -744,37 +731,6 @@ export const ACCOUNT_STYLES = `
   .settings-modal-buttons
   .journalit-button:disabled {
   cursor: not-allowed;
-}
-
-.account-dashboard-settings-modal-container
-  .settings-modal-buttons
-  .journalit-button--primary {
-  background: var(--interactive-accent);
-  border-color: var(--interactive-accent);
-  color: var(--text-on-accent);
-}
-
-.account-dashboard-settings-modal-container
-  .settings-modal-buttons
-  .journalit-button--primary:hover:not(:disabled) {
-  background: var(--interactive-accent-hover);
-  color: var(--text-on-accent);
-  border-color: var(--interactive-accent-hover);
-}
-
-.account-dashboard-settings-modal-container
-  .settings-modal-buttons
-  .journalit-button--secondary {
-  background: transparent;
-  border-color: var(--background-modifier-border);
-  color: var(--text-muted);
-}
-
-.account-dashboard-settings-modal-container
-  .settings-modal-buttons
-  .journalit-button--secondary:hover:not(:disabled) {
-  background: var(--background-modifier-hover);
-  color: var(--text-normal);
 }
 
 
@@ -2920,8 +2876,8 @@ export const ACCOUNT_STYLES = `
   align-items: center;
   gap: var(--size-2-2);
   padding: var(--size-4-8) var(--size-4-4);
-  border: 1px dashed var(--background-modifier-border);
-  border-radius: var(--radius-m);
+  justify-content: center;
+  min-height: 60vh;
   text-align: center;
 }
 

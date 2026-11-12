@@ -1,4 +1,13 @@
+import { normalizeTradeBiasFilters } from '../services/marketBias/tradeMarketBias';
 import { FilterState } from '../components/dashboard/DashboardView';
+import {
+  normalizeDatePresetSelection,
+  type DatePresetSelection,
+} from '../utils/datePresets';
+import {
+  normalizeRecentPeriod,
+  type RecentPeriod,
+} from '../components/shared/filters/recentPeriod';
 import type {
   AccountPhaseScope,
   UnifiedFilters,
@@ -194,6 +203,7 @@ const DEFAULT_DASHBOARD_FILTERS: FilterState = {
   statuses: [],
   reviewStatus: [],
   ratings: [],
+  marketBias: [],
   directions: [],
   customFieldFilters: {},
   exclusions: createFilterExclusions(),
@@ -209,6 +219,7 @@ const DEFAULT_TRADELOG_FILTERS: TradeLogFilters = {
   statuses: [],
   reviewStatus: [],
   ratings: [],
+  marketBias: [],
   accounts: [],
   accountPhases: [],
   directions: [],
@@ -235,6 +246,7 @@ const DEFAULT_REVIEW_FILTERS: UnifiedFilters = {
   statuses: [],
   reviewStatus: [],
   ratings: [],
+  marketBias: [],
   directions: [],
   customFieldFilters: {},
   exclusions: createFilterExclusions(),
@@ -258,6 +270,7 @@ export const createDashboardFilters = (): FilterState => ({
   statuses: [...DEFAULT_DASHBOARD_FILTERS.statuses],
   reviewStatus: [...DEFAULT_DASHBOARD_FILTERS.reviewStatus],
   ratings: [...DEFAULT_DASHBOARD_FILTERS.ratings],
+  marketBias: [...DEFAULT_DASHBOARD_FILTERS.marketBias],
   directions: [...DEFAULT_DASHBOARD_FILTERS.directions],
   customFieldFilters: { ...DEFAULT_DASHBOARD_FILTERS.customFieldFilters },
   exclusions: cloneFilterExclusions(DEFAULT_DASHBOARD_FILTERS.exclusions),
@@ -275,6 +288,7 @@ export const createTradeLogFilters = (): TradeLogFilters => ({
   statuses: [...DEFAULT_TRADELOG_FILTERS.statuses],
   reviewStatus: [...DEFAULT_TRADELOG_FILTERS.reviewStatus],
   ratings: [...DEFAULT_TRADELOG_FILTERS.ratings],
+  marketBias: [...DEFAULT_TRADELOG_FILTERS.marketBias],
   accounts: [...DEFAULT_TRADELOG_FILTERS.accounts],
   accountPhases: DEFAULT_TRADELOG_FILTERS.accountPhases.map((scope) => ({
     ...scope,
@@ -306,6 +320,7 @@ export const createReviewFilters = (): UnifiedFilters => ({
   statuses: [...DEFAULT_REVIEW_FILTERS.statuses],
   reviewStatus: [...DEFAULT_REVIEW_FILTERS.reviewStatus],
   ratings: [...DEFAULT_REVIEW_FILTERS.ratings],
+  marketBias: [],
   directions: [...DEFAULT_REVIEW_FILTERS.directions],
   customFieldFilters: { ...DEFAULT_REVIEW_FILTERS.customFieldFilters },
   exclusions: cloneFilterExclusions(DEFAULT_REVIEW_FILTERS.exclusions),
@@ -316,6 +331,29 @@ export const createReviewFilters = (): UnifiedFilters => ({
   imageTags: [...(DEFAULT_REVIEW_FILTERS.imageTags || [])],
 });
 
+
+
+const normalizeDateFilter = (
+  filters?: {
+    dateRange?: [Date | null, Date | null];
+    datePreset?: unknown;
+    recentPeriod?: unknown;
+  } | null
+): {
+  dateRange: [Date | null, Date | null];
+  datePreset: DatePresetSelection | undefined;
+  recentPeriod: RecentPeriod | undefined;
+} => {
+  const recentPeriod = normalizeRecentPeriod(filters?.recentPeriod);
+  return recentPeriod
+    ? { dateRange: [null, null], datePreset: undefined, recentPeriod }
+    : {
+        dateRange: filters?.dateRange ?? [null, null],
+        datePreset: normalizeDatePresetSelection(filters?.datePreset),
+        recentPeriod: undefined,
+      };
+};
+
 export const normalizeDashboardFilters = (
   filters?: Partial<FilterState> | null
 ): FilterState => {
@@ -324,7 +362,7 @@ export const normalizeDashboardFilters = (
   return {
     ...defaults,
     ...filters,
-    dateRange: filters?.dateRange ?? defaults.dateRange,
+    ...normalizeDateFilter(filters),
     accounts: filters?.accounts ? [...filters.accounts] : defaults.accounts,
     accountPhases: normalizeAccountPhaseScopes(filters?.accountPhases),
     tickers: filters?.tickers ? [...filters.tickers] : defaults.tickers,
@@ -337,6 +375,7 @@ export const normalizeDashboardFilters = (
       ? [...filters.reviewStatus]
       : defaults.reviewStatus,
     ratings: normalizeRatingFilters(filters?.ratings),
+    marketBias: normalizeTradeBiasFilters(filters?.marketBias),
     directions: filters?.directions
       ? [...filters.directions]
       : defaults.directions,
@@ -366,13 +405,14 @@ export const normalizeTradeLogFilters = (
     ...defaults,
     ...filters,
     analyticsDateBasis,
-    dateRange: filters?.dateRange ?? defaults.dateRange,
+    ...normalizeDateFilter(filters),
     tradeTypes: normalizeTradeLogTradeTypes(filters?.tradeTypes),
     statuses: normalizeStatuses(filters?.statuses),
     reviewStatus: filters?.reviewStatus
       ? [...filters.reviewStatus]
       : defaults.reviewStatus,
     ratings: normalizeRatingFilters(filters?.ratings),
+    marketBias: normalizeTradeBiasFilters(filters?.marketBias),
     accounts: filters?.accounts ? [...filters.accounts] : defaults.accounts,
     accountPhases: normalizeAccountPhaseScopes(filters?.accountPhases),
     directions: filters?.directions
@@ -423,6 +463,8 @@ export const normalizeReviewFilters = (
       ? [...filters.reviewStatus]
       : defaults.reviewStatus,
     ratings: normalizeRatingFilters(filters?.ratings),
+    
+    marketBias: [],
     directions: filters?.directions
       ? [...filters.directions]
       : defaults.directions,

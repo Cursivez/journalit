@@ -245,7 +245,7 @@ function AccountDateWarningBanner({
               ? 'account.header.warning.earliest-trade'
               : 'account.header.warning.earliest-trade-phase',
             {
-              date: dateWarning.earliestTradeDate.toLocaleDateString(),
+              date: formatDateDisplay(dateWarning.earliestTradeDate),
             }
           )}
         </div>
@@ -377,7 +377,7 @@ export const AccountHeader: React.FC<{
         });
         new Notice(
           t('account.header.notice.phase-start-updated', {
-            date: dateWarning.suggestedDate.toLocaleDateString(),
+            date: formatDateDisplay(dateWarning.suggestedDate),
           })
         );
       } else if (createdDate) {
@@ -389,7 +389,7 @@ export const AccountHeader: React.FC<{
       if (createdDate) {
         new Notice(
           t('account.header.notice.date-updated', {
-            date: createdDate.toLocaleDateString(),
+            date: formatDateDisplay(createdDate),
           })
         );
       }
@@ -414,11 +414,10 @@ export const AccountHeader: React.FC<{
   const { account } = accountPageData;
 
   const handleEditAccount = () => {
-    openEditAccountModal(
+    void openEditAccountModal(
       plugin.app,
       plugin,
       account,
-      accountPageData.trades,
       () => void refreshData() 
     );
   };

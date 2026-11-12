@@ -122,14 +122,6 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 
-.journalit-template-builder-container select.template-form-input {
-  height: 40px;
-  min-height: 40px;
-  line-height: 20px;
-  padding: 8px 12px;
-}
-
-
 
 .journalit-template-builder-container .template-section-item {
   display: flex;
@@ -306,7 +298,7 @@ export const TEMPLATE_BUILDER_STYLES = `
   padding: 6px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 8px;
-  background: var(--background-primary);
+  background: var(--journalit-control-menu-fill);
   box-shadow: var(--shadow-s);
 }
 
@@ -346,24 +338,12 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 .journalit-template-builder-container .template-section-move-button.journalit-button {
-  min-width: 28px !important;
-  width: 28px !important;
-  height: 28px !important;
-  padding: 5px !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: 4px !important;
-  background-color: var(--background-primary) !important;
-  color: var(--text-normal) !important;
-  gap: 0 !important;
+  
+  width: 28px;
+  min-width: 28px;
+  padding: 0;
+  gap: 0;
   flex: 0 0 28px;
-  line-height: 1;
-  transition: all 0.2s ease !important;
-}
-
-.journalit-template-builder-container .template-section-move-button.journalit-button:hover:not(:disabled) {
-  background-color: var(--background-modifier-hover) !important;
-  border-color: var(--interactive-accent) !important;
-  color: var(--text-normal) !important;
 }
 
 .journalit-template-builder-container .template-section-move-button.journalit-button:disabled {
@@ -376,58 +356,11 @@ export const TEMPLATE_BUILDER_STYLES = `
   align-items: center;
   justify-content: center;
   gap: 6px;
-  padding: 8px 16px;
-  border-radius: 6px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  border: 1px solid transparent;
   white-space: nowrap;
-}
-
-.journalit-template-builder-container .template-action-button--primary {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent, white);
-  border-color: var(--interactive-accent);
-}
-
-.journalit-template-builder-container .template-action-button--primary:hover {
-  background: var(--interactive-accent-hover);
-  color: var(--text-on-accent);
-  border-color: var(--interactive-accent-hover);
-}
-
-.journalit-template-builder-container .template-action-button--secondary {
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  border-color: var(--background-modifier-border);
-}
-
-.journalit-template-builder-container .template-action-button--secondary:hover {
-  background: var(--background-modifier-hover);
-  border-color: var(--background-modifier-border-hover);
-}
-
-.journalit-template-builder-container .template-action-button--compact {
-  padding: 5px 12px;
-  font-size: 12px;
-}
-
-.journalit-template-builder-container .template-action-button--neutral {
-  background: var(--background-primary);
-  color: var(--text-normal);
-  border-color: var(--background-modifier-border);
-}
-
-.journalit-template-builder-container .template-action-button--neutral:hover {
-  background: var(--background-modifier-hover);
-  border-color: var(--background-modifier-border-hover);
 }
 
 .journalit-template-builder-container .template-action-button:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
 }
 
 
@@ -457,11 +390,6 @@ export const TEMPLATE_BUILDER_STYLES = `
 
   .journalit-template-builder-container .template-list-item-description {
     display: none;
-  }
-
-  .journalit-template-builder-container .template-action-button {
-    padding: 6px 12px;
-    font-size: 13px;
   }
 }
 
@@ -555,9 +483,18 @@ export const TEMPLATE_BUILDER_STYLES = `
   padding: 0 8px;
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  background: var(--background-primary);
+  border: 0;
+  border-radius: var(--journalit-control-radius);
+  outline: 1px solid transparent;
+  outline-offset: -1px;
+  background-color: var(--journalit-control-field-fill);
+  box-shadow: var(--journalit-control-field-ring);
+}
+
+
+.journalit-template-builder-container .widget-picker-search--inline:focus-within {
+  outline-color: var(--journalit-control-focus);
+  box-shadow: none;
 }
 
 .journalit-template-builder-container .widget-picker-search-icon {
@@ -576,17 +513,13 @@ export const TEMPLATE_BUILDER_STYLES = `
   background: transparent;
   border: 0;
   border-radius: 0;
+  outline: none;
   box-shadow: none;
 }
 
 .journalit-template-builder-container .widget-picker-search--inline input.widget-picker-search-input:focus {
-  border: 0;
+  outline: none;
   box-shadow: none;
-}
-
-.journalit-template-builder-container .widget-picker-search--inline:focus-within {
-  outline: 2px solid var(--background-modifier-border-focus);
-  outline-offset: 1px;
 }
 
 .journalit-template-builder-container .widget-picker-search-clear {
@@ -596,22 +529,19 @@ export const TEMPLATE_BUILDER_STYLES = `
   flex: 0 0 auto;
   width: 26px;
   height: 26px;
-  padding: 0;
   color: var(--text-muted);
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  box-shadow: none;
   cursor: pointer;
+  min-width: 0;
+  min-height: 0;
 }
 
 .journalit-template-builder-container .widget-picker-search-clear:hover {
   color: var(--text-normal);
-  background: var(--background-modifier-hover);
 }
 
 .journalit-widget-picker-dropdown .widget-picker-results {
   min-height: 0;
+  overflow-x: hidden;
   overflow-y: auto;
 }
 
@@ -674,6 +604,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .widget-picker-item,
 .journalit-widget-picker-dropdown .widget-picker-item {
   display: flex;
+  min-width: 0;
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
@@ -719,6 +650,9 @@ export const TEMPLATE_BUILDER_STYLES = `
   font-size: 13px;
   font-weight: 500;
   color: var(--text-normal);
+  
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
 .journalit-template-builder-container .widget-picker-item-description,
@@ -729,45 +663,10 @@ export const TEMPLATE_BUILDER_STYLES = `
   font-size: 11px;
   color: var(--text-muted);
   line-height: 1.4;
+  white-space: normal;
+  overflow-wrap: anywhere;
 }
 
-
-.journalit-template-builder-container .template-toggle {
-  width: 36px;
-  height: 20px;
-  border-radius: 10px;
-  border: none;
-  background: var(--background-modifier-border);
-  position: relative;
-  cursor: pointer;
-  transition: background 0.2s;
-}
-
-.journalit-template-builder-container .template-toggle.is-checked {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-}
-
-.journalit-template-builder-container .template-toggle.is-disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
-.journalit-template-builder-container .template-toggle__thumb {
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: white;
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  transition: left 0.2s;
-  box-shadow: var(--toggle-thumb-shadow);
-}
-
-.journalit-template-builder-container .template-toggle.is-checked .template-toggle__thumb {
-  left: 18px;
-}
 
 .journalit-template-builder-container .template-section-row {
   display: flex;
@@ -801,27 +700,6 @@ export const TEMPLATE_BUILDER_STYLES = `
   margin-left: 16px;
 }
 
-.journalit-template-builder-container .template-select {
-  padding: 6px 10px;
-  border-radius: var(--radius-s);
-  border: 1px solid var(--background-modifier-border);
-  background: var(--background-primary);
-  color: var(--text-normal);
-  font-size: 13px;
-  cursor: pointer;
-  opacity: 1;
-  text-align: center;
-}
-
-.journalit-template-builder-container .template-select--compact {
-  padding: 4px 8px;
-}
-
-.journalit-template-builder-container .template-select.is-disabled {
-  cursor: not-allowed;
-  opacity: 0.5;
-}
-
 .journalit-template-builder-container .template-input {
   width: 100%;
   padding: 8px 10px;
@@ -843,6 +721,19 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 .journalit-template-builder-container .template-section-card {
+  
+  --template-widget-row-padding-x: 12px;
+  --template-widget-row-gap: 12px;
+  --template-widget-handle-width: 20px;
+  --template-widget-actions-width: 60px;
+  --template-widget-settings-inset-start: calc(
+    var(--template-widget-row-padding-x) + var(--template-widget-handle-width) +
+      var(--template-widget-row-gap)
+  );
+  --template-widget-settings-inset-end: calc(
+    var(--template-widget-row-padding-x) + var(--template-widget-actions-width) +
+      var(--template-widget-row-gap)
+  );
   position: relative;
   background: var(--background-secondary);
   border-radius: var(--radius-s);
@@ -874,9 +765,13 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .template-section-handle {
   color: var(--text-faint);
   cursor: default;
+  box-sizing: border-box;
+  flex: 0 0 auto;
+  width: var(--template-widget-handle-width);
   padding: 4px;
   display: flex;
   align-items: center;
+  justify-content: center;
   touch-action: none;
   opacity: 0.3;
 }
@@ -904,10 +799,6 @@ export const TEMPLATE_BUILDER_STYLES = `
   justify-content: center;
   width: 28px;
   height: 28px;
-  padding: 0;
-  background: var(--background-primary);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
   cursor: pointer;
 }
 
@@ -917,7 +808,6 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container .template-section-duplicate:hover {
   color: var(--text-normal);
-  background: var(--background-modifier-hover);
 }
 
 .journalit-template-builder-container .template-section-remove {
@@ -926,7 +816,6 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container .template-section-remove:hover {
   color: var(--text-error);
-  background: var(--background-modifier-hover);
 }
 
 .journalit-template-builder-container .template-section-remove:disabled {
@@ -1289,16 +1178,24 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .template-widget-row {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: var(--template-widget-row-gap);
+  padding: 10px var(--template-widget-row-padding-x);
 }
 
 .journalit-template-builder-container .template-widget-handle-spacer {
-  width: 20px;
+  flex: 0 0 auto;
+  width: var(--template-widget-handle-width);
 }
 
 .journalit-template-builder-container .template-widget-info {
   flex: 1;
+  min-width: 0;
+}
+
+.journalit-template-builder-container .template-widget-row > .template-section-actions {
+  flex: 0 0 auto;
+  justify-content: flex-end;
+  width: var(--template-widget-actions-width);
 }
 
 .journalit-template-builder-container .template-widget-info-row {
@@ -1323,12 +1220,18 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .template-widget-config-row {
   display: flex;
   gap: 12px;
-  padding: 0 12px 10px 40px;
+  padding: 0 var(--template-widget-settings-inset-end) 10px
+    var(--template-widget-settings-inset-start);
   align-items: center;
 }
 
 .journalit-template-builder-container .template-widget-config-row--wide {
   gap: 16px;
+}
+
+.journalit-template-builder-container .template-widget-config-row--options {
+  flex-wrap: wrap;
+  row-gap: var(--journalit-space-2);
 }
 
 .journalit-template-builder-container .template-widget-config-row--demon-tracker {
@@ -1366,11 +1269,6 @@ export const TEMPLATE_BUILDER_STYLES = `
   line-height: 1.35;
 }
 
-.journalit-template-builder-container .template-widget-config-row--markdown-zone {
-  padding-right: 12px;
-  padding-top: 0;
-}
-
 .journalit-template-builder-container .template-widget-config-label {
   display: flex;
   align-items: center;
@@ -1390,7 +1288,8 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .template-review-context-config {
   display: flex;
   flex-direction: column;
-  margin: 0 12px 12px 40px;
+  margin: 0 var(--template-widget-settings-inset-end) 12px
+    var(--template-widget-settings-inset-start);
   border: none;
   border-radius: 0;
   background: transparent;
@@ -1402,11 +1301,32 @@ export const TEMPLATE_BUILDER_STYLES = `
   gap: 14px;
   align-items: center;
   min-height: 44px;
-  padding: 10px 12px;
+  padding: 10px 0;
 }
 
-.journalit-template-builder-container .template-review-context-config-row--fields {
-  align-items: center;
+
+.journalit-template-builder-container .template-review-context-config-row--stacked {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 4px;
+}
+
+.journalit-template-builder-container
+  .template-review-context-config-row--stacked
+  .journalit-combobox.combobox-container {
+  margin-bottom: 0;
+}
+
+.journalit-template-builder-container
+  .template-review-context-config-row--stacked
+  .journalit-combobox
+  > label {
+  display: block;
+  margin: 0 0 4px;
+  color: var(--text-muted);
+  font-size: var(--font-ui-small);
+  font-weight: 500;
 }
 
 .journalit-template-builder-container .template-review-context-config-label {
@@ -1422,12 +1342,7 @@ export const TEMPLATE_BUILDER_STYLES = `
   min-width: 0;
 }
 
-.journalit-template-builder-container .template-review-context-config-control .template-select {
-  width: min(100%, 280px);
-}
-
-.journalit-template-builder-container .template-review-context-pills,
-.journalit-template-builder-container .template-review-context-field-list {
+.journalit-template-builder-container .template-review-context-pills {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
@@ -1446,145 +1361,12 @@ export const TEMPLATE_BUILDER_STYLES = `
   cursor: pointer;
 }
 
-.journalit-template-builder-container .template-review-context-field-filter {
-  position: relative;
-  width: min(100%, 280px);
-}
-
-.journalit-template-builder-container button.template-review-context-field-filter__trigger {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 6px;
-  width: 100%;
-  max-width: none;
-  height: auto;
-  padding: 8px 12px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  box-shadow: none;
-  background: var(--background-primary);
-  background-color: var(--background-primary);
-  color: var(--text-normal);
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.journalit-template-builder-container button.template-review-context-field-filter__trigger:hover {
-  background: var(--background-modifier-hover);
-  background-color: var(--background-modifier-hover);
-}
-
-.journalit-template-builder-container .template-review-context-field-filter__summary {
-  min-width: 0;
-  max-width: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.journalit-template-builder-container .template-review-context-field-filter__chevron {
-  color: var(--text-muted);
-  flex-shrink: 0;
-  transition: transform 0.15s ease;
-}
-
-.journalit-template-builder-container .template-review-context-field-filter__chevron--open {
-  transform: rotate(180deg);
-}
-
-.journalit-template-builder-container .template-review-context-field-filter__menu {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  right: 0;
-  z-index: 50;
-  min-width: 100%;
-  max-width: none;
-  max-height: min(300px, 50vh);
-  overflow-y: auto;
-  margin-top: 4px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  background-color: var(--background-primary);
-  box-shadow: var(--shadow-s);
-}
-
-.journalit-template-builder-container .template-review-context-field-filter__option {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 8px;
-  width: 100%;
-  padding: 6px 10px;
-  border: none !important;
-  border-radius: 0;
-  box-shadow: none !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  color: var(--text-normal) !important;
-  font-size: 13px;
-  text-align: left;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  transition: background-color 0.15s ease;
-}
-
-.journalit-template-builder-container .template-review-context-field-filter__option:hover,
-.journalit-template-builder-container .template-review-context-field-filter__option:focus-visible {
-  background: var(--background-modifier-hover) !important;
-  background-color: var(--background-modifier-hover) !important;
-  color: var(--text-normal) !important;
-}
-
-.journalit-template-builder-container .template-review-context-field-filter__option--active {
-  background: transparent !important;
-  background-color: transparent !important;
-  color: var(--text-normal) !important;
-}
-
-.journalit-template-builder-container .template-review-context-field-filter__option-detail {
-  margin-left: auto;
-  padding-left: 12px;
-  color: var(--text-faint);
-  font-size: var(--font-ui-smaller);
-  white-space: nowrap;
-}
-
-.journalit-template-builder-container .template-review-context-field-filter__checkbox {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 14px;
-  height: 14px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 2px;
-  background-color: var(--background-primary);
-  color: var(--text-on-accent);
-  font-size: 10px;
-  flex-shrink: 0;
-}
-
-.journalit-template-builder-container .template-review-context-field-filter__checkbox--checked {
-  border-color: var(--interactive-accent);
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-}
-
-.journalit-template-builder-container .template-review-context-field-filter__option-label {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
 .journalit-template-builder-container .template-trade-review-question-editor {
   display: flex;
   flex-direction: column;
   gap: 12px;
   margin-top: 4px;
-  padding: 16px 12px 4px;
+  padding: 16px 0 4px;
   border-top: 1px solid var(--background-modifier-border);
 }
 
@@ -1620,63 +1402,10 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container .template-trade-review-reset-button {
   flex: 0 0 auto;
-  min-height: 28px;
-  padding: 0 9px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.journalit-template-builder-container .template-trade-review-reset-button:hover:not(:disabled) {
-  background: var(--background-modifier-hover);
-  color: var(--text-normal);
 }
 
 .journalit-template-builder-container .template-trade-review-reset-button:disabled {
   opacity: 0.45;
-  cursor: default;
-}
-
-.journalit-template-builder-container .template-trade-review-outcome-options {
-  width: 100%;
-  border-radius: 8px;
-  background: var(--background-secondary);
-}
-
-.journalit-template-builder-container .template-trade-review-outcome-options button.segmented-control-option {
-  min-width: 0;
-  border: none;
-  box-shadow: none;
-  background: transparent;
-  background-color: transparent;
-  color: var(--text-muted);
-  font-weight: 600;
-  appearance: none;
-  -webkit-appearance: none;
-}
-
-.journalit-template-builder-container .template-trade-review-outcome-options button.segmented-control-option:not(.is-active):hover {
-  background: var(--background-modifier-hover);
-  background-color: var(--background-modifier-hover);
-  color: var(--text-normal);
-}
-
-.journalit-template-builder-container .template-trade-review-outcome-options button.segmented-control-option.is-active {
-  background: color-mix(
-    in srgb,
-    var(--interactive-accent) 14%,
-    var(--background-primary)
-  );
-  background-color: color-mix(
-    in srgb,
-    var(--interactive-accent) 14%,
-    var(--background-primary)
-  );
-  color: var(--text-accent);
-  box-shadow: none;
 }
 
 .journalit-template-builder-container .template-trade-review-question-surface {
@@ -1801,17 +1530,11 @@ export const TEMPLATE_BUILDER_STYLES = `
   justify-content: center;
   width: 28px;
   height: 28px;
-  padding: 0;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  box-shadow: none;
-  background: var(--background-primary);
   color: var(--text-muted);
   cursor: pointer;
 }
 
 .journalit-template-builder-container button.template-trade-review-question-action:hover:not(:disabled) {
-  background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
 
@@ -1834,77 +1557,9 @@ export const TEMPLATE_BUILDER_STYLES = `
 .journalit-template-builder-container .template-trade-review-question-meta {
   display: flex;
   flex-direction: column;
-  align-items: stretch;
+  align-items: flex-start;
   gap: 4px;
   min-width: 0;
-}
-
-.journalit-template-builder-container .template-trade-review-dropdown {
-  position: relative;
-  align-self: flex-start;
-  width: fit-content;
-  max-width: 100%;
-  min-width: 0;
-}
-
-.journalit-template-builder-container .template-trade-review-answer-type-select {
-  min-width: 90px;
-}
-
-.journalit-template-builder-container button.template-trade-review-dropdown-trigger {
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 4px;
-  height: 26px;
-  width: auto;
-  max-width: 100%;
-  padding: 0 8px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 5px;
-  box-shadow: none;
-  background: var(--background-secondary);
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.journalit-template-builder-container button.template-trade-review-dropdown-trigger:hover {
-  background: var(--background-modifier-hover);
-  color: var(--text-normal);
-}
-
-.journalit-template-builder-container .template-trade-review-dropdown-value {
-  flex: 1;
-  max-width: none;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  text-align: left;
-}
-
-.journalit-template-builder-container .template-trade-review-dropdown-menu {
-  left: 0;
-  right: auto;
-  z-index: var(--layer-menu);
-  width: max-content;
-  min-width: 100%;
-  max-width: min(280px, 90vw);
-}
-
-.journalit-template-builder-container .template-trade-review-dropdown .journalit-home-trade-type-filter__option {
-  border: none;
-  border-radius: 0;
-  box-shadow: none;
-  background: transparent;
-  background-color: transparent;
-}
-
-.journalit-template-builder-container .template-trade-review-dropdown .journalit-home-trade-type-filter__option:hover,
-.journalit-template-builder-container .template-trade-review-dropdown .journalit-home-trade-type-filter__option:focus-visible {
-  background: var(--background-modifier-hover);
-  background-color: var(--background-modifier-hover);
 }
 
 .journalit-template-builder-container .template-trade-review-option-editor {
@@ -1931,32 +1586,13 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container button.template-trade-review-add-option {
   align-self: flex-start;
-  padding: 3px 10px;
-  border: 1px dashed var(--background-modifier-border);
-  border-radius: 5px;
-  box-shadow: none;
-  background: transparent;
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 500;
-  cursor: pointer;
-}
-
-.journalit-template-builder-container button.template-trade-review-add-option:hover {
-  border-color: var(--interactive-accent);
-  color: var(--text-accent);
-  background: color-mix(
-    in srgb,
-    var(--interactive-accent) 6%,
-    transparent
-  );
 }
 
 .journalit-template-builder-container button.template-trade-review-option-remove {
   width: 24px;
   height: 24px;
-  border: none;
-  background: transparent;
+  min-width: 0;
+  min-height: 0;
 }
 
 .journalit-template-builder-container .template-trade-review-question-empty {
@@ -1971,10 +1607,6 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 @media (max-width: 760px) {
-  .journalit-template-builder-container .template-trade-review-outcome-options {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
   .journalit-template-builder-container .template-trade-review-question-fields {
     grid-template-columns: minmax(0, 1fr);
   }
@@ -1994,6 +1626,7 @@ export const TEMPLATE_BUILDER_STYLES = `
 
 .journalit-template-builder-container .template-widget-config-input {
   flex: 1;
+  min-width: 0;
 }
 
 .journalit-template-builder-container .template-widget-config-textarea {
@@ -2006,7 +1639,16 @@ export const TEMPLATE_BUILDER_STYLES = `
   display: flex;
   flex-direction: column;
   gap: 14px;
-  padding: 2px 16px 14px 40px;
+  padding: 2px var(--template-widget-settings-inset-end) 14px
+    var(--template-widget-settings-inset-start);
+}
+
+
+.journalit-template-builder-container
+  .template-review-context-config
+  .template-widget-config-row--previous-context {
+  padding-right: 0;
+  padding-left: 0;
 }
 
 .journalit-template-builder-container .template-weekly-drc-config {
@@ -2014,24 +1656,25 @@ export const TEMPLATE_BUILDER_STYLES = `
   padding-top: 6px;
 }
 
+.journalit-template-builder-container .template-library-layout-select {
+  min-width: 200px;
+  max-width: min(100%, 320px);
+}
+
 .journalit-template-builder-container .template-weekly-drc-options {
-  display: grid;
-  grid-template-columns: minmax(140px, 1fr) minmax(140px, 1fr) auto;
+  display: flex;
+  flex-wrap: wrap;
   gap: 14px;
-  align-items: end;
+  align-items: flex-end;
   width: 100%;
 }
 
 .journalit-template-builder-container .template-weekly-drc-field {
   display: flex;
   flex-direction: column;
+  align-items: flex-start;
   gap: 6px;
   min-width: 0;
-}
-
-.journalit-template-builder-container .template-weekly-drc-field .template-select {
-  width: 100%;
-  min-height: 32px;
 }
 
 .journalit-template-builder-container .template-weekly-drc-collapse-toggle {
@@ -2107,29 +1750,8 @@ export const TEMPLATE_BUILDER_STYLES = `
   appearance: none;
 }
 
-.journalit-template-builder-container .template-previous-context-select-icon {
-  position: absolute;
-  top: 50%;
-  right: 10px;
-  pointer-events: none;
-  transform: translateY(-50%);
-}
-
 .journalit-template-builder-container .template-previous-context-remove {
   flex: 0 0 auto;
-  height: 28px;
-  padding: 0 8px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  background: var(--background-primary);
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: 11px;
-}
-
-.journalit-template-builder-container .template-previous-context-remove:hover {
-  color: var(--text-error);
-  background: var(--background-modifier-hover);
 }
 
 .journalit-template-builder-container .template-previous-context-remove--icon {
@@ -2137,25 +1759,31 @@ export const TEMPLATE_BUILDER_STYLES = `
   align-items: center;
   justify-content: center;
   width: 32px;
-  padding: 0;
   color: var(--text-muted);
+}
+
+.journalit-template-builder-container .template-key-levels-add-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--journalit-space-1);
+}
+
+.journalit-template-builder-container .template-key-levels-config .template-previous-context-section-row .journalit-reorder-controls {
+  flex: 0 0 auto;
+}
+
+.journalit-template-builder-container .template-key-levels-group-input {
+  width: 100%;
+}
+
+.journalit-template-builder-container .template-key-levels-group-input:disabled {
+  color: var(--journalit-text-muted);
+  font-style: italic;
 }
 
 .journalit-template-builder-container .template-previous-context-add-button {
   flex: 0 0 auto;
-  height: 32px;
-  padding: 0 12px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  background: var(--background-primary);
-  color: var(--text-accent);
-  cursor: pointer;
   white-space: nowrap;
-  font-weight: 500;
-}
-
-.journalit-template-builder-container .template-previous-context-add-button:hover {
-  background: var(--background-modifier-hover);
 }
 
 .journalit-template-builder-container .template-previous-context-fallback-select {
@@ -2301,20 +1929,8 @@ export const TEMPLATE_BUILDER_STYLES = `
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 8px 12px;
-  background: var(--background-primary);
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s);
-  cursor: pointer;
-  font-size: 13px;
   width: 100%;
   text-align: left;
-}
-
-.journalit-template-builder-container .template-builder-library-button.is-selected {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
 }
 
 .journalit-template-builder-container .sidebar-template-item {
@@ -2441,10 +2057,10 @@ export const TEMPLATE_BUILDER_STYLES = `
 }
 
 .journalit-template-builder-container .template-item-action-button {
-  background: transparent;
-  border: none;
+  min-width: 0;
+  min-height: 0;
+  padding: 3px;
   cursor: pointer;
-  padding: 2px;
   color: inherit;
   opacity: 0.7;
   display: flex;

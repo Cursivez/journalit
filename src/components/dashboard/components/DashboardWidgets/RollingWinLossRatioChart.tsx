@@ -1,7 +1,11 @@
 
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState } from 'react';
 import { BaseWidget, BaseWidgetProps } from './BaseWidget';
+import {
+  CompareLegend,
+  CompareRollingChart,
+} from '../../compare/CompareCharts';
 import {
   LineChart,
   Line,
@@ -31,6 +35,7 @@ import {
   getTradeAnalyticsDate,
 } from '../../../../utils/tradeAnalyticsDate';
 import { skipVerticalGridCoordinates } from '../../../charts/chartGrid';
+import { DropdownSelect } from '../../../shared/DropdownSelect';
 
 
 const ROLLING_PERIODS = [10, 20, 30, 50] as const;
@@ -524,9 +529,6 @@ const RollingWinLossRatioTooltip = (props: CustomTooltipProps) => {
 };
 
 
-let gradientIdCounter = 0;
-
-
 export const RollingWinLossRatioChart = React.memo<BaseWidgetProps>(
   ({ dateFormat }) => {
     const chartRef = React.useRef<HTMLDivElement>(null);
@@ -537,29 +539,24 @@ export const RollingWinLossRatioChart = React.memo<BaseWidgetProps>(
     const isMetricMasked = shouldMask('metric');
 
     
-    const chartIdRef = useRef<string | null>(null);
-    useEffect(() => {
-      if (!chartIdRef.current) {
-        chartIdRef.current = `rolling-win-loss-ratio-${++gradientIdCounter}`;
-      }
-    }, []);
-    const chartId = chartIdRef.current || 'rolling-win-loss-ratio-default';
+    const chartId = `rolling-win-loss-ratio-${React.useId()}`;
     
     const LINE_COLOR = 'var(--text-muted)';
 
     return (
       <BaseWidget dateFormat={dateFormat} skeletonType="line-chart">
-        {(data) => {
+        {(data, _dateFormat, filters, compare) => {
           
           
-          const allStats = calculateRollingWinLossRatio(
-            data.trades,
-            selectedPeriod,
-            defaultRiskAmount,
-            getAnalyticsDateBasis(plugin?.settings)
-          );
-          
-          const chartData = allStats.slice(-selectedPeriod);
+          const recentWindows = (source: typeof data) =>
+            calculateRollingWinLossRatio(
+              source.trades,
+              selectedPeriod,
+              defaultRiskAmount,
+              getAnalyticsDateBasis(plugin?.settings)
+            ).slice(-selectedPeriod);
+          const chartData = recentWindows(data);
+          const compareWindows = compare ? recentWindows(compare.data) : null;
 
           
           
@@ -593,31 +590,66 @@ export const RollingWinLossRatioChart = React.memo<BaseWidgetProps>(
                   {t('dashboard.rolling_win_loss.title')}
                 </div>
                 <div className="journalit-chart-widget__selector">
-                  <select
+                  <DropdownSelect
+                    variant="button"
+                    menuWidth="content"
+                    showOptionTooltips={false}
                     id="rolling-period-select"
-                    aria-label={t('dashboard.rolling_win_loss.period_aria')}
-                    className="journalit-chart-widget__select"
-                    value={selectedPeriod}
-                    onChange={(e) => {
-                      const period = parseRollingPeriod(Number(e.target.value));
+                    ariaLabel={t('dashboard.rolling_win_loss.period_aria')}
+                    value={String(selectedPeriod)}
+                    options={ROLLING_PERIODS.map((period) => ({
+                      value: String(period),
+                      label: t('dashboard.rolling_win_loss.trades_count', {
+                        count: String(period),
+                      }),
+                    }))}
+                    onChange={(nextValue) => {
+                      const period = parseRollingPeriod(Number(nextValue));
                       if (period) {
                         setSelectedPeriod(period);
                       }
                     }}
-                  >
-                    {ROLLING_PERIODS.map((period) => (
-                      <option key={period} value={period}>
-                        {t('dashboard.rolling_win_loss.trades_count', {
-                          count: String(period),
-                        })}
-                      </option>
-                    ))}
-                  </select>
+                  />
                 </div>
               </div>
 
               
-              {chartData.length === 0 ? (
+              {compare && compareWindows ? (
+                chartData.length === 0 && compareWindows.length === 0 ? (
+                  <div className="journalit-dashboard-directional-chart-empty">
+                    {t('dashboard.rolling_win_loss.window_not_filled', {
+                      count: String(selectedPeriod),
+                    })}
+                  </div>
+                ) : (
+                  <div className="journalit-compare-widget">
+                    <CompareRollingChart
+                      series={[
+                        {
+                          key: 'a',
+                          side: 'a',
+                          values: chartData.map((point) => point.ratio),
+                        },
+                        {
+                          key: 'b',
+                          side: 'b',
+                          values: compareWindows.map((point) => point.ratio),
+                        },
+                      ]}
+                      formatValue={(value) =>
+                        formatValue({ kind: 'metric', value, precision: 2 })
+                      }
+                      masked={isMetricMasked}
+                      referenceY={BREAKEVEN_RATIO}
+                      ariaLabel={t('dashboard.rolling_win_loss.title')}
+                    />
+                    <CompareLegend
+                      aFilters={filters}
+                      bFilters={compare.filters}
+                    />
+                  </div>
+                )
+              ) : chartData.length === 0 ? (
                 <div className="journalit-dashboard-directional-chart-empty">
                   {t('dashboard.rolling_win_loss.window_not_filled', {
                     count: String(selectedPeriod),

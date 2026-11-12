@@ -31,7 +31,10 @@ import { Mutex } from '../../utils/mutex';
 import { safeString } from '../../utils/safeString';
 import { getDefaultTradeTemplateMetadata } from '../templates/defaultTradeTemplateMetadata';
 import { getDefaultTradeNoteSectionsMarkdown } from '../templates/tradeNoteSections';
-import { serializeIdealExitFrontmatter } from '../trade/core/TradeFrontmatterCodec';
+import {
+  applyClearedTradeFields,
+  serializeIdealExitFrontmatter,
+} from '../trade/core/TradeFrontmatterCodec';
 import { createUserOwnedTradeContent } from '../trade/core/TradeNoteDocumentCodec';
 import type { PreviousTagAssignments } from '../options/CustomOptionsService';
 import { serializeImageAnnotationsForFrontmatter } from '../../utils/imageAnnotations';
@@ -504,6 +507,8 @@ export class MissedTradeService extends CustomDataService {
       if (data.thesis !== undefined) frontmatterData.thesis = data.thesis ?? '';
       if (data.missedReason !== undefined)
         frontmatterData.missedReason = data.missedReason || '';
+      if (data.exitReason !== undefined)
+        frontmatterData.exitReason = data.exitReason || '';
       frontmatterData.commission = data.commission;
       frontmatterData.commissionType = data.commissionType;
       frontmatterData.hasExplicitCommission = data.hasExplicitCommission;
@@ -605,6 +610,7 @@ export class MissedTradeService extends CustomDataService {
       }
 
       
+      applyClearedTradeFields(frontmatterData, data);
       await this.updateFrontmatter(file, frontmatterData);
 
       
@@ -1021,6 +1027,9 @@ export class MissedTradeService extends CustomDataService {
       data.missedReason !== undefined
         ? `missedReason: ${JSON.stringify(data.missedReason || '')}`
         : null,
+      data.exitReason !== undefined
+        ? `exitReason: ${JSON.stringify(data.exitReason || '')}`
+        : null,
 
       
       data.setup?.length
@@ -1116,9 +1125,13 @@ export class MissedTradeService extends CustomDataService {
       'commissionType',
       'hasExplicitCommission',
       'fees',
+      'currency',
+      'fxRate',
+      'fxRateBaseCurrency',
       'assetType',
       'thesis',
       'missedReason',
+      'exitReason',
       'tradeRating',
       'clearTradeRating',
 

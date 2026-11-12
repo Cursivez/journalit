@@ -27,7 +27,7 @@ Obsidian के लिए लोकल-फ़र्स्ट ट्रेडि�
   <a href="README.ar.md">العربية</a>
 </p>
 
-[इंस्टॉल](#installation) · [AI ऐप्स (MCP)](#ai-apps-mcp) · [समर्थित ब्रोकर्स](#supported-brokers) · [प्राइवेसी](PRIVACY.md)
+[इंस्टॉल](#installation) · [MCP](#mcp) · [समर्थित ब्रोकर्स](#supported-brokers) · [प्राइवेसी](PRIVACY.md)
 
 </div>
 
@@ -54,7 +54,7 @@ Journalit को Obsidian Community Plugins से इंस्टॉल कर�
 - **रिव्यू सिस्टम (V2)**: डेली से इयरली टेम्पलेट्स, लेआउट बिल्डर के साथ।
 - **[Trade Import](https://journalit.co/csv-import)**: CSV, स्प्रेडशीट, HTML और ब्रोकर स्टेटमेंट के लिए बैकएंड-पावर्ड इंपोर्ट।
 - **[Trade Sync](https://journalit.co/docs/trade-sync)**: समर्थित ब्रोकरों के लिए ऑटोमेटेड ट्रेड सिंक।
-- **[AI ऐप्स (MCP)](https://journalit.co/docs/ai-apps)**: ट्रेड का विश्लेषण करने, समीक्षा का मसौदा बनाने और जर्नल अपडेट करने के लिए अपना AI ऐप कनेक्ट करें।
+- **[MCP](https://journalit.co/docs/mcp)**: ट्रेड का विश्लेषण करने, समीक्षा का मसौदा बनाने और जर्नल अपडेट करने के लिए अपना AI ऐप कनेक्ट करें।
 
 <a id="screenshots"></a>
 
@@ -94,19 +94,19 @@ Journalit को Obsidian Community Plugins से इंस्टॉल कर�
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
-<a id="ai-apps-mcp"></a>
+<a id="mcp"></a>
 
-## AI ऐप्स (MCP)
+## MCP
 
 MCP (Model Context Protocol) के ज़रिए Claude, Claude Code, ChatGPT, Codex, Hermes, Grok Bot या कोई अन्य संगत AI ऐप अपने जर्नल से कनेक्ट करें। नोट्स को चैट में कॉपी किए बिना उससे ट्रेड का विश्लेषण, साप्ताहिक समीक्षा का मसौदा या जर्नल फ़ील्ड अपडेट करने को कहें।
 
-1. Obsidian में Journalit में साइन इन करें। **सेटिंग्स → Journalit → AI ऐप्स (MCP)** खोलें और **MCP एक्सेस चालू करें** चालू करें।
+1. Obsidian में Journalit में साइन इन करें। **सेटिंग्स → Journalit → MCP** खोलें और **MCP एक्सेस चालू करें** चालू करें।
 2. अपने AI ऐप में `https://api.journalit.co/mcp` को रिमोट MCP सर्वर के रूप में जोड़ें।
 3. कहे जाने पर Journalit में साइन इन करें, अपना वॉल्ट चुनें, माँगी गई अनुमतियाँ जाँचें और कनेक्शन को मंज़ूरी दें।
 
 Obsidian खुला रखें और Journalit चलने दें। डिफ़ॉल्ट रूप से डिलीट करने, मर्ज करने और बड़े बदलावों के लिए आपकी मंज़ूरी चाहिए।
 
-हर क्लाइंट के चरणों, अनुमतियों, बदलाव वापस लेने और मासिक उपयोग सीमाओं के लिए **[AI ऐप सेटअप गाइड](https://journalit.co/docs/ai-apps)** देखें।
+हर क्लाइंट के चरणों, अनुमतियों, बदलाव वापस लेने और मासिक उपयोग सीमाओं के लिए **[AI ऐप सेटअप गाइड](https://journalit.co/docs/mcp)** देखें।
 
 <a id="supported-brokers"></a>
 

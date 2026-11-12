@@ -48,6 +48,8 @@ export interface TradeJournalPatch {
   removeCustomFieldValues?: string[];
   addImages?: string[];
   
+  removeImages?: string[];
+  
   dayFieldSources?: Record<string, unknown> | null;
   
   tradeRating?: number | null;
@@ -177,6 +179,7 @@ export function hasTradeJournalChanges(patch: TradeJournalPatch): boolean {
     patch.mistake ||
     patch.tags ||
     patch.addImages?.length ||
+    patch.removeImages?.length ||
     patch.dayFieldSources !== undefined ||
     patch.tradeRating !== undefined ||
     patch.removeCustomFieldValues?.length ||
@@ -295,6 +298,26 @@ export function applyTradeJournalPatch(
         ...patch.addImages,
       ]),
     ];
+  if (patch.removeImages?.length) {
+    const removed = new Set(patch.removeImages);
+    const images = journalStringList(frontmatter.images).filter(
+      (entry) => !removed.has(entry)
+    );
+    if (images.length > 0) frontmatter.images = images;
+    else delete frontmatter.images;
+    const annotations: unknown = frontmatter.imageAnnotations;
+    if (
+      typeof annotations === 'object' &&
+      annotations !== null &&
+      !Array.isArray(annotations)
+    ) {
+      const kept = Object.fromEntries(
+        Object.entries(annotations).filter(([entry]) => !removed.has(entry))
+      );
+      if (Object.keys(kept).length > 0) frontmatter.imageAnnotations = kept;
+      else delete frontmatter.imageAnnotations;
+    }
+  }
   for (const { key, value } of customWrites) {
     if (value === undefined) delete frontmatter[key];
     else frontmatter[key] = value;
@@ -320,7 +343,7 @@ export function applyTradeJournalPatch(
         }
       : {}),
     ...(patch.tags ? { tags: normalizeStringArray(frontmatter.tags) } : {}),
-    ...(patch.addImages
+    ...(patch.addImages || patch.removeImages
       ? { images: journalStringList(frontmatter.images) }
       : {}),
     ...(patch.tradeRating !== undefined

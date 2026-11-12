@@ -62,23 +62,9 @@ export const RELEASE_NOTES_STYLES = `
 }
 
 .journalit-release-notes-container .release-notes-action-button {
-  background: var(--background-secondary);
-  color: var(--text-normal);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 6px;
-  padding: 4px 10px;
-  font-size: 12px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   gap: 4px;
-}
-
-.journalit-release-notes-container .release-notes-action-button:hover {
-  background: var(--background-modifier-hover);
-  border-color: var(--background-modifier-border-hover);
 }
 
 .journalit-release-notes-container .release-notes-action-button .button-icon {

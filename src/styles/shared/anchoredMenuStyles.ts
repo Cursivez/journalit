@@ -12,7 +12,7 @@ export const ANCHORED_MENU_STYLES = `
   overflow-y: auto;
   border: 1px solid var(--background-modifier-border);
   border-radius: 4px;
-  background: var(--background-primary);
+  background: var(--journalit-control-menu-fill);
   box-shadow: var(--shadow-s);
 }
 `;

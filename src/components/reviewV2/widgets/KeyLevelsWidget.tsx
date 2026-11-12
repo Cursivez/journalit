@@ -27,6 +27,12 @@ import {
   shareCaptureExcludeProps,
   shareCaptureUnwrapProps,
 } from '../../../services/share/brandedCapture';
+import {
+  isDefaultKeyLevelsGroups,
+  keyLevelsGroupUpdate,
+  readKeyLevelsForGroup,
+  type KeyLevelsGroupKey,
+} from '../../../services/reviews/keyLevelGroups';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -36,18 +42,29 @@ interface KeyLevelsPreviewData {
   keyLevels: KeyLevels;
 }
 
-// eslint-disable-next-line @typescript-eslint/no-empty-object-type -- component has no props but keeps an explicit props alias
-interface KeyLevelsWidgetConfig {
-  
-}
-
 interface KeyLevelsWidgetProps {
   filePath: string;
   plugin: JournalitPlugin;
-  config?: KeyLevelsWidgetConfig;
+  
+  groups?: readonly KeyLevelsGroupKey[];
+  
+  showInheritedLevels?: boolean;
   
   preview?: boolean;
   
+  previewData?: KeyLevelsPreviewData;
+}
+
+interface KeyLevelsGroupBlockProps {
+  filePath: string;
+  plugin: JournalitPlugin;
+  group: KeyLevelsGroupKey;
+  
+  showsTitle: boolean;
+  showInheritedLevels: boolean;
+  
+  reportsInvalidContext: boolean;
+  preview?: boolean;
   previewData?: KeyLevelsPreviewData;
 }
 
@@ -81,16 +98,10 @@ interface EditingState {
 
 
 const WIDGET_CLASS = 'journalit-key-levels-widget';
-const EMPTY_KEY_LEVELS: KeyLevels = { support: [], resistance: [] };
 const IMPORTANCE_MENU_WIDTH = 150;
 const IMPORTANCE_MENU_HEIGHT = 122;
 const IMPORTANCE_MENU_GAP = 4;
 const IMPORTANCE_MENU_VIEWPORT_PADDING = 8;
-
-const asRecord = (value: unknown): Record<string, unknown> | null =>
-  value && typeof value === 'object' && !Array.isArray(value)
-    ? Object.fromEntries(Object.entries(value))
-    : null;
 
 const parseReviewMode = (value: unknown): ReviewMode | null => {
   switch (value) {
@@ -174,52 +185,6 @@ const ResistanceArrow: React.FC = () => (
     <path d="M12 5v14M5 12l7 7 7-7" />
   </svg>
 );
-
-const isKeyLevels = (value: unknown): value is KeyLevels => {
-  const record = asRecord(value);
-  return Boolean(
-    record && Array.isArray(record.support) && Array.isArray(record.resistance)
-  );
-};
-
-const normalizeKeyLevel = (level: unknown): KeyLevel | null => {
-  const keyLevel = asRecord(level);
-  if (!keyLevel || keyLevel.price === undefined || keyLevel.price === null) {
-    return null;
-  }
-
-  const rawPrice = keyLevel.price;
-  if (typeof rawPrice !== 'string' && typeof rawPrice !== 'number') {
-    return null;
-  }
-
-  const price = String(rawPrice).trim();
-  if (!price) return null;
-
-  return {
-    price,
-    importance:
-      keyLevel.importance === 'High' ||
-      keyLevel.importance === 'Medium' ||
-      keyLevel.importance === 'Low'
-        ? keyLevel.importance
-        : null,
-  };
-};
-
-const normalizeKeyLevelArray = (levels: unknown[]): KeyLevel[] =>
-  levels.flatMap((level) => {
-    const normalized = normalizeKeyLevel(level);
-    return normalized ? [normalized] : [];
-  });
-
-const normalizeKeyLevels = (value: unknown): KeyLevels => {
-  if (!isKeyLevels(value)) return { support: [], resistance: [] };
-  return {
-    support: normalizeKeyLevelArray(value.support),
-    resistance: normalizeKeyLevelArray(value.resistance),
-  };
-};
 
 interface KeyLevelGroup {
   levels: KeyLevels;
@@ -535,9 +500,11 @@ function KeyLevelsSkeleton() {
 function useKeyLevelsWidgetModel({
   filePath,
   plugin,
+  group,
+  showInheritedLevels,
   preview,
   previewData,
-}: KeyLevelsWidgetProps) {
+}: KeyLevelsGroupBlockProps) {
   const embeddedReadOnly = useReviewReadOnly();
   const readOnly = preview || embeddedReadOnly;
   const [levelsState, setLevelsState] = useState<{
@@ -637,14 +604,22 @@ function useKeyLevelsWidgetModel({
       plugin.app.metadataCache.off('changed', handleMetadataChange);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps -- loadKeyLevels is intentionally not in deps to prevent infinite loops
-  }, [filePath, preview, previewData, plugin.app.metadataCache]);
+  }, [
+    filePath,
+    group,
+    showInheritedLevels,
+    preview,
+    previewData,
+    plugin.app.metadataCache,
+  ]);
 
   const getLevelsFromPath = (path: string): KeyLevels => {
     const file = plugin.app.vault.getAbstractFileByPath(path);
-    if (!(file instanceof TFile)) return { ...EMPTY_KEY_LEVELS };
-    const frontmatter =
-      plugin.app.metadataCache.getFileCache(file)?.frontmatter;
-    return normalizeKeyLevels(frontmatter?.keyLevels);
+    if (!(file instanceof TFile)) return { support: [], resistance: [] };
+    return readKeyLevelsForGroup(
+      plugin.app.metadataCache.getFileCache(file)?.frontmatter,
+      group
+    );
   };
 
   const buildDisplayLevels = async (
@@ -666,7 +641,7 @@ function useKeyLevelsWidgetModel({
     ];
     const nextDependencyPaths = new Set<string>([filePath]);
 
-    if (date && mode === 'drc') {
+    if (showInheritedLevels && date && mode === 'drc') {
       const weeklyService = plugin.serviceManager
         ? await plugin.serviceManager.getWeeklyReviewService()
         : plugin.weeklyReviewService;
@@ -684,7 +659,7 @@ function useKeyLevelsWidgetModel({
       }
     }
 
-    if (monthlyDate && mode !== 'monthly-review') {
+    if (showInheritedLevels && monthlyDate && mode !== 'monthly-review') {
       const monthlyService = plugin.serviceManager
         ? await plugin.serviceManager.getMonthlyReviewService()
         : plugin.monthlyReviewService;
@@ -757,7 +732,7 @@ function useKeyLevelsWidgetModel({
       }));
       return;
     }
-    const levels = normalizeKeyLevels(frontmatter.keyLevels);
+    const levels = readKeyLevelsForGroup(frontmatter, group);
     const buildResult = await buildDisplayLevels(mode, frontmatter, levels);
 
     if (loadGeneration !== loadGenerationRef.current) return;
@@ -780,13 +755,14 @@ function useKeyLevelsWidgetModel({
     const file = plugin.app.vault.getAbstractFileByPath(filePath);
     if (!(file instanceof TFile) || !reviewMode) return;
 
+    
+    const compute = (frontmatter: Readonly<Record<string, unknown>>) =>
+      keyLevelsGroupUpdate(frontmatter, group, updatedLevels);
     try {
       if (reviewMode === 'drc') {
-        await plugin.drcService.updateDRCFrontmatter(
+        await plugin.drcService.updateDRCFrontmatterWith(
           filePath,
-          {
-            keyLevels: updatedLevels,
-          },
+          compute,
           'user-input'
         );
       } else if (reviewMode === 'weekly-review') {
@@ -794,17 +770,19 @@ function useKeyLevelsWidgetModel({
           ? await plugin.serviceManager.getWeeklyReviewService()
           : plugin.weeklyReviewService;
         if (!weeklyService) return;
-        await weeklyService.updateWeeklyReviewFrontmatter(filePath, {
-          keyLevels: updatedLevels,
-        });
+        await weeklyService.updateWeeklyReviewFrontmatterWith(
+          filePath,
+          compute
+        );
       } else {
         const monthlyService = plugin.serviceManager
           ? await plugin.serviceManager.getMonthlyReviewService()
           : plugin.monthlyReviewService;
         if (!monthlyService) return;
-        await monthlyService.updateMonthlyReviewFrontmatter(filePath, {
-          keyLevels: updatedLevels,
-        });
+        await monthlyService.updateMonthlyReviewFrontmatterWith(
+          filePath,
+          compute
+        );
       }
     } catch (error) {
       console.error('[KeyLevelsWidget] Failed to update frontmatter:', error);
@@ -995,8 +973,8 @@ function useKeyLevelsWidgetModel({
   };
 }
 
-export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
-  const { plugin, preview } = props;
+const KeyLevelsGroupBlock: React.FC<KeyLevelsGroupBlockProps> = (props) => {
+  const { plugin, preview, group, showsTitle, reportsInvalidContext } = props;
   const embeddedReadOnly = useReviewReadOnly();
   const readOnly = preview || embeddedReadOnly;
   const {
@@ -1033,6 +1011,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
   }
 
   if (!isValidContext) {
+    if (!reportsInvalidContext) return null;
     return (
       <InvalidContextMessage
         widgetType={t('widget.key-levels.title')}
@@ -1169,7 +1148,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
     );
   };
 
-  return (
+  const block = (
     <div className={WIDGET_CLASS}>
       
       <div className="key-levels-section key-levels-section--support">
@@ -1214,7 +1193,7 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               aria-label={`${t('button.add')} ${t('widget.key-levels.support')}`}
               onClick={() => void addSupportLevel()}
               disabled={!newSupportLevel.trim()}
-              className="journalit-native-button key-levels-add-button"
+              className="key-levels-add-button journalit-icon-button"
             >
               <Plus size={16} aria-hidden="true" />
             </button>
@@ -1265,13 +1244,61 @@ export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = (props) => {
               aria-label={`${t('button.add')} ${t('widget.key-levels.resistance')}`}
               onClick={() => void addResistanceLevel()}
               disabled={!newResistanceLevel.trim()}
-              className="journalit-native-button key-levels-add-button"
+              className="key-levels-add-button journalit-icon-button"
             >
               <Plus size={16} aria-hidden="true" />
             </button>
           </div>
         )}
       </div>
+    </div>
+  );
+
+  if (!showsTitle) return block;
+  return (
+    <section className="journalit-key-levels-group">
+      <h4
+        className={mergeClassNames(
+          'journalit-key-levels-group-title',
+          group === null && 'journalit-key-levels-group-title--no-group'
+        )}
+      >
+        {group ?? t('widget.key-levels.no-group')}
+      </h4>
+      {block}
+    </section>
+  );
+};
+
+export const KeyLevelsWidget: React.FC<KeyLevelsWidgetProps> = ({
+  groups = [null],
+  showInheritedLevels = true,
+  ...props
+}) => {
+  
+  if (isDefaultKeyLevelsGroups(groups)) {
+    return (
+      <KeyLevelsGroupBlock
+        {...props}
+        group={null}
+        showsTitle={false}
+        showInheritedLevels={showInheritedLevels}
+        reportsInvalidContext
+      />
+    );
+  }
+  return (
+    <div className="journalit-key-levels-groups">
+      {groups.map((group, index) => (
+        <KeyLevelsGroupBlock
+          key={group ?? ''}
+          {...props}
+          group={group}
+          showsTitle={group !== null || index > 0}
+          showInheritedLevels={showInheritedLevels}
+          reportsInvalidContext={index === 0}
+        />
+      ))}
     </div>
   );
 };

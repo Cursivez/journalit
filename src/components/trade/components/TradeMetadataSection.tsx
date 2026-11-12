@@ -7,6 +7,7 @@ import { TradeTemplate } from '../../../types/reviewV2';
 import { t } from '../../../lang/helpers';
 import {
   AlertTriangle,
+  CornerDownRight,
   FlaskConical,
   Tag,
   User,
@@ -77,6 +78,8 @@ function resolveMetadataRows(
     setups: shown(config?.showSetups, data.setup),
     mistakes: shown(config?.showMistakes, data.mistake),
     tags: shown(config?.showTags, data.tags),
+    exitReason:
+      data.isMissedTrade === true ? (data.exitReason?.trim() ?? '') : '',
     mtComment: typeof data.mtComment === 'string' ? data.mtComment.trim() : '',
   };
 }
@@ -186,6 +189,20 @@ const TagMetadataRow: React.FC<{
   );
 };
 
+const ExitReasonMetadataRow: React.FC<{ exitReason: string }> = ({
+  exitReason,
+}) => {
+  if (!exitReason) return null;
+  return (
+    <MetadataRow
+      icon={<CornerDownRight size={18} />}
+      label={t('trade.metadata.exit-reason')}
+    >
+      <span className="trade-context-text">{exitReason}</span>
+    </MetadataRow>
+  );
+};
+
 const BrokerCommentSection: React.FC<{ comment: string }> = ({ comment }) => {
   if (comment.length === 0) return null;
   return (
@@ -217,7 +234,8 @@ export const TradeMetadataSection: React.FC<TradeMetadataSectionProps> = ({
     rows.accounts.length > 0 ||
     rows.setups.length > 0 ||
     rows.mistakes.length > 0 ||
-    rows.tags.length > 0;
+    rows.tags.length > 0 ||
+    rows.exitReason.length > 0;
 
   
   if (!hasContextRows && rows.mtComment.length === 0 && !children) {
@@ -239,6 +257,7 @@ export const TradeMetadataSection: React.FC<TradeMetadataSectionProps> = ({
             <SetupMetadataRow setups={rows.setups} labelColors={labelColors} />
             <MistakeMetadataRow mistakes={rows.mistakes} />
             <TagMetadataRow tags={rows.tags} labelColors={labelColors} />
+            <ExitReasonMetadataRow exitReason={rows.exitReason} />
             {children}
           </div>
         </div>

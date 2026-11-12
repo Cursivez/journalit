@@ -192,54 +192,7 @@ export const TRADELOG_SETTINGS_MODAL_STYLES = `
     flex: 0 0 auto;
   }
 
-  .tradelog-settings-modal-buttons button {
-    padding: 8px 16px;
-    border-radius: 6px;
-    font-size: 14px;
-    cursor: pointer;
-    border: 1px solid var(--background-modifier-border);
-    background: var(--background-secondary);
-    color: var(--text-normal);
-    box-shadow: none;
-  }
-
-  .tradelog-settings-modal-buttons button:hover {
-    background: var(--background-modifier-hover);
-  }
-
-  .tradelog-settings-modal-buttons .cancel-button {
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none;
-    color: var(--text-muted);
-  }
-
-  .tradelog-settings-modal-buttons .cancel-button:hover:not(:disabled) {
-    background: var(--background-modifier-hover);
-    color: var(--text-normal);
-  }
-
-  .tradelog-settings-modal-buttons button.primary {
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
-    border-color: var(--interactive-accent);
-  }
-
-  .tradelog-settings-modal-buttons button.primary:hover {
-    background: var(--interactive-accent-hover);
-    color: var(--text-on-accent);
-  }
-
   .tradelog-settings-modal-buttons .reset-button {
     margin-right: auto;
-    background: transparent;
-    border-color: transparent;
-    box-shadow: none;
-    color: var(--text-muted);
-  }
-
-  .tradelog-settings-modal-buttons .reset-button:hover:not(:disabled) {
-    background: var(--background-modifier-hover);
-    color: var(--text-normal);
   }
 `;

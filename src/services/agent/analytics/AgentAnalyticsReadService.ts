@@ -37,10 +37,18 @@ import {
   type AgentTradeReadRecord,
   type AgentTradeReadService,
   isEntryTimeInRange,
+  selectRecentPeriodRecords,
 } from '../trades';
+import type { RecentPeriod } from '../../../components/shared/filters/recentPeriod';
+import { createDateWithoutTime } from '../../../utils/dateUtils';
 import { getEffectivePnL } from '../../../utils/tradeStatusUtils';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
-import { getTradingDayString } from '../../../utils/tradingDayUtils';
+import {
+  getTradingDay,
+  getTradingDayString,
+} from '../../../utils/tradingDayUtils';
+import { getTradeAnalyticsDate } from '../../../utils/tradeAnalyticsDate';
+import { loadTradeMarketBiasResolver } from '../../marketBias/loadTradeMarketBiasResolver';
 import type { BehaviorTrade } from './behaviorAnalysis';
 import type { AgentEntityIdentityService } from '../identity';
 import { isAccountAgentId } from '../identity/accountIdentityStore';
@@ -164,6 +172,17 @@ function mapDateRange(
 function assertComparisonHasBoundedCurrentRange(
   request: EvaluateTradesRequest
 ): void {
+  if (request.filters?.recent !== undefined) {
+    
+    
+    if (
+      request.filters.date !== undefined ||
+      request.comparison?.mode === 'previous_year'
+    ) {
+      throw new AnalyticsEvaluationError('invalid_request');
+    }
+    return;
+  }
   if (
     request.comparison !== undefined &&
     request.comparison.mode !== 'custom' &&
@@ -239,13 +258,17 @@ function selectionDateRanges(
 }
 
 function selectionReadRequest(filters: EvaluateTradesRequest['filters']): {
-  filters?: Omit<NonNullable<EvaluateTradesRequest['filters']>, 'date'>;
+  filters?: Omit<
+    NonNullable<EvaluateTradesRequest['filters']>,
+    'date' | 'recent'
+  >;
 } {
   if (filters === undefined) {
     return {};
   }
   const nonDateFilters = { ...filters };
   delete nonDateFilters.date;
+  delete nonDateFilters.recent;
   return Object.keys(nonDateFilters).length === 0
     ? {}
     : { filters: nonDateFilters };
@@ -265,6 +288,7 @@ function emptyFilters(accounts: string[], setups: string[]): FilterState {
     reviewStatus: [],
     ratings: [],
     directions: [],
+    marketBias: [],
     customFieldFilters: {},
     exclusions: createFilterExclusions(),
     matchModes: createFilterMatchModes(),
@@ -358,12 +382,20 @@ export class AgentAnalyticsReadService {
     signal: AbortSignal
   ): Promise<AnalyticsSeriesResult> {
     throwIfAborted(signal);
-    const seriesRequest = mapSeriesRequest(request);
+    let seriesRequest = mapSeriesRequest(request);
+    const recentPeriod = request.filters?.recent;
     const { prepared } = await this.prepareSelection(
       request.filters,
       selectionReadRequest(request.filters),
       signal,
       (records) => {
+        if (recentPeriod) {
+          seriesRequest = this.recentPeriodSeriesRequest(
+            seriesRequest,
+            recentPeriod,
+            records
+          );
+        }
         
         
         
@@ -397,6 +429,66 @@ export class AgentAnalyticsReadService {
       groupingResolvers,
     });
     return analytics.evaluateSeries(seriesRequest, prepared.dataset);
+  }
+
+  
+  private recentPeriodSeriesRequest(
+    seriesRequest: AnalyticsSeriesRequest,
+    period: RecentPeriod,
+    records: readonly AgentTradeReadRecord[]
+  ): AnalyticsSeriesRequest {
+    const { plugin } = this.dependencies;
+    const current = selectRecentPeriodRecords(records, period, plugin);
+    const baseline =
+      seriesRequest.comparison?.mode === 'previous_period' &&
+      !seriesRequest.interval
+        ? selectRecentPeriodRecords(records, period, plugin, 1)
+        : null;
+    const windowMembership = (
+      window: { range: unknown; records: readonly AgentTradeReadRecord[] },
+      { unit }: RecentPeriod
+    ): ((trade: Trade) => boolean) => {
+      if (!window.range) return () => false;
+      if (unit !== 'trades') return () => true;
+      const paths = new Set(window.records.map((record) => record.file.path));
+      return (trade: Trade) => isSelectedPath(trade, paths);
+    };
+    
+    const today = getTradingDay(new Date(), plugin);
+    const emptyRange = {
+      from: createDateWithoutTime(today, true),
+      to: createDateWithoutTime(today, false),
+    };
+    return {
+      ...seriesRequest,
+      dateRange: current.range ?? emptyRange,
+      ...(baseline
+        ? {
+            comparison: {
+              mode: 'custom' as const,
+              dateRange: baseline.range ?? emptyRange,
+            },
+          }
+        : {}),
+      
+      
+      
+      
+      ...(period.unit === 'trades' ||
+      !current.range ||
+      (baseline && !baseline.range)
+        ? {
+            windowTrades: {
+              current: windowMembership(current, period),
+              baseline: baseline
+                ? windowMembership(baseline, period)
+                : 
+                  
+                  () => true,
+            },
+          }
+        : {}),
+    };
   }
 
   
@@ -611,6 +703,20 @@ export class AgentAnalyticsReadService {
     }
     if (dimension === 'setup') {
       return { setup: await this.buildSetupResolver(dataset, signal) };
+    }
+    if (dimension === 'market_bias') {
+      const resolveBias = await awaitBoundary(
+        loadTradeMarketBiasResolver(this.dependencies.plugin),
+        signal
+      );
+      return {
+        marketBias: (trade) => {
+          const entryTime = getTradeAnalyticsDate(trade, 'entry');
+          return entryTime
+            ? resolveBias({ ...trade, entryTime }).alignment
+            : 'none';
+        },
+      };
     }
     return {};
   }

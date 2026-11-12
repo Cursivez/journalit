@@ -19,6 +19,7 @@ import {
   Star,
   Zap,
 } from '../shared/icons/ObsidianIcon';
+import { Button } from '../ui/Button';
 
 const toPickerItems = (
   sources: TradeImportSourceOption[]
@@ -140,14 +141,15 @@ export const TradeImportSourceSummary: React.FC<SourceSummaryProps> = ({
         >
           <Star size={14} />
         </button>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="small"
           className="journalit-trade-import-source-summary__change"
           disabled={busy}
           onClick={onChange}
         >
           {t('trade-import.source.change')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -229,9 +231,10 @@ export const TradeImportSyncSuggestion: React.FC<{
           </span>
         )}
       </div>
-      <button
-        type="button"
-        className="mod-cta journalit-trade-import-sync-suggestion__action"
+      <Button
+        variant="primary"
+        size="small"
+        className="journalit-trade-import-sync-suggestion__action"
         disabled={busy}
         onClick={onOpenTradeSync}
       >
@@ -239,7 +242,7 @@ export const TradeImportSyncSuggestion: React.FC<{
         {syncOnly
           ? t('trade-import.sync-suggestion.action.open')
           : t('trade-import.sync-suggestion.action')}
-      </button>
+      </Button>
     </div>
   );
 };

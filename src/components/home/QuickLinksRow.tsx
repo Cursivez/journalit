@@ -141,7 +141,7 @@ const SortableQuickLinkButton: React.FC<{
           <button
             onClick={() => void handleButtonClick()}
             disabled={isEditing}
-            className="journalit-quick-link-button jl-quick-link-hover"
+            className="journalit-quick-link-button"
             style={cssVars({ '--link-color': quickLink.color })}
             aria-label={
               sessionPhase
@@ -207,7 +207,7 @@ const EntityQuickLinkButton: React.FC<{
         <button
           onClick={() => onClick(target)}
           disabled={isEditing}
-          className="journalit-quick-link-button jl-quick-link-hover"
+          className="journalit-quick-link-button"
           style={cssVars({ '--link-color': 'var(--text-accent)' })}
           aria-label={label}
           type="button"

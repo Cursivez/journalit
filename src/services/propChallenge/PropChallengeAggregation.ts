@@ -4,6 +4,7 @@ import { TransactionType } from '../account/types';
 import type { PropChallengeConfig, PropChallengePhase } from './types';
 import { resolvePropChallengePayoutPhaseAt } from './PropChallengeConfig';
 import { payoutReceiptTotals } from './PayoutReceipt';
+import { parseLocalDateSafe } from '../../utils/dateUtils';
 
 function addPayouts(left: number | null, right: number | null): number | null {
   return left === null || right === null ? null : left + right;
@@ -219,10 +220,7 @@ export function aggregatePropFirmStats(
     };
     const outcome = getPropChallengeOutcome(challenge);
     const totalCosts = calculateAccountTotalCosts(account);
-    const totalPayouts = fundedPhasePayoutTotal(
-      challenge,
-      account.transactions
-    );
+    const totalPayouts = challengePayoutTotal(challenge, account.transactions);
     const currencyKey = account.currency ?? '';
     const monetaryTotals = firm.monetaryTotalsByCurrency.get(currencyKey) ?? {
       totalCosts: 0,
@@ -281,6 +279,34 @@ function fundedPhasePayoutTotal(
   ).traderNet;
 }
 
+
+export function priorPayoutTotal(
+  challenge: PropChallengeConfig,
+  includeDate?: (date: Date) => boolean
+): number {
+  let total = 0;
+  for (const payout of challenge.priorPayouts ?? []) {
+    if (includeDate) {
+      const date = parseLocalDateSafe(payout.date);
+      if (!date || !includeDate(date)) continue;
+    }
+    total += Math.max(0, payout.amount);
+  }
+  return total;
+}
+
+
+function challengePayoutTotal(
+  challenge: PropChallengeConfig,
+  withdrawals: readonly AccountTransaction[],
+  includePriorPayoutDate?: (date: Date) => boolean
+): number | null {
+  return addPayouts(
+    fundedPhasePayoutTotal(challenge, withdrawals),
+    priorPayoutTotal(challenge, includePriorPayoutDate)
+  );
+}
+
 export function aggregatePropChallengeStats(
   accounts: readonly AccountData[]
 ): PropChallengeStats {
@@ -320,7 +346,7 @@ export function aggregatePropChallengeStats(
     if (outcome === 'failed') failedChallenges += 1;
 
     const accountCosts = calculateAccountTotalCosts(account);
-    const accountPayouts = fundedPhasePayoutTotal(
+    const accountPayouts = challengePayoutTotal(
       challenge,
       account.transactions
     );
@@ -328,15 +354,16 @@ export function aggregatePropChallengeStats(
     totalPayouts = addPayouts(totalPayouts, accountPayouts);
     if (
       outcome === 'passed' &&
-      account.transactions.some(
-        (transaction) =>
-          transaction.type === TransactionType.WITHDRAWAL &&
-          transaction.amount !== 0 &&
-          resolvePropChallengePayoutPhaseAt(
-            challenge,
-            new Date(transaction.date)
-          )
-      )
+      (priorPayoutTotal(challenge) > 0 ||
+        account.transactions.some(
+          (transaction) =>
+            transaction.type === TransactionType.WITHDRAWAL &&
+            transaction.amount !== 0 &&
+            resolvePropChallengePayoutPhaseAt(
+              challenge,
+              new Date(transaction.date)
+            )
+        ))
     ) {
       passedChallengesWithPayouts += 1;
     }
@@ -429,13 +456,14 @@ export function aggregatePropChallengeEconomics(
       account,
       period?.includesCostDate
     );
-    const accountPayouts = fundedPhasePayoutTotal(
+    const accountPayouts = challengePayoutTotal(
       challenge,
       account.transactions.filter((transaction) => {
         if (transaction.type !== TransactionType.WITHDRAWAL) return false;
         const date = new Date(transaction.date);
         return !period || period.includesPayoutTimestamp(date);
-      })
+      }),
+      period?.includesCostDate
     );
 
     const currencyKey = account.currency ?? '';

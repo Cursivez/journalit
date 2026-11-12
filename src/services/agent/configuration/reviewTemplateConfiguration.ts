@@ -64,6 +64,7 @@ const MAX_TEMPLATES = 100;
 const MAX_PROJECTED_BYTES = 2 * 1024 * 1024;
 
 const STRING_CONFIG_KEYS = new Set([
+  'biasFor',
   'fieldIds',
   'groupId',
   'headings',
@@ -73,6 +74,7 @@ const STRING_CONFIG_KEYS = new Set([
   'selectionMode',
   'period',
   'text',
+  'tickers',
   'trackingMethod',
 ]);
 const BOOLEAN_CONFIG_KEYS = new Set([
@@ -82,7 +84,7 @@ const BOOLEAN_CONFIG_KEYS = new Set([
   'showLocal',
   'showOpenTrades',
 ]);
-const NUMBER_CONFIG_KEYS = new Set(['level', 'stopThreshold']);
+const NUMBER_CONFIG_KEYS = new Set(['level', 'stopThreshold', 'window']);
 
 function hasValidWidgetConfigTypes(config: BoundedJSONObject): boolean {
   return Object.entries(config).every(([key, value]) => {

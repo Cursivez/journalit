@@ -2,6 +2,7 @@
 
 import React, { memo, useCallback, useEffect, useMemo, useState } from 'react';
 import { Check, X } from '../../shared/icons/ObsidianIcon';
+import { Button } from '../../ui/Button';
 import JournalitPlugin from '../../../main';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { eventBus } from '../../../services/events/EventBus';
@@ -242,20 +243,24 @@ const TopBreakdownConfigPanel: React.FC<TopBreakdownConfigPanelProps> = ({
         <span>{title}</span>
       </span>
       <div className="journalit-home-setups__actions">
-        <button
-          className="clickable-icon journalit-home-setups__save-button"
+        <Button
+          variant="primary"
+          size="small"
+          className="journalit-home-config-icon-button"
           onClick={onSave}
           aria-label={t('button.save')}
         >
-          <Check size={14} />
-        </button>
-        <button
-          className="clickable-icon journalit-home-setups__cancel-button"
+          <Check size={14} aria-hidden="true" />
+        </Button>
+        <Button
+          variant="secondary"
+          size="small"
+          className="journalit-home-config-icon-button"
           onClick={onCancel}
           aria-label={t('button.cancel')}
         >
-          <X size={14} />
-        </button>
+          <X size={14} aria-hidden="true" />
+        </Button>
       </div>
     </div>
 

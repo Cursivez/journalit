@@ -37,6 +37,13 @@ interface MediaPreviewProps {
   tabIndex?: number;
 }
 
+
+const VideoPlayBadge: React.FC = () => (
+  <span className="journalit-media-preview-video__badge" aria-hidden="true">
+    <Play size={22} fill="currentColor" />
+  </span>
+);
+
 export const MediaPreview: React.FC<MediaPreviewProps> = ({
   app,
   path,
@@ -94,14 +101,7 @@ export const MediaPreview: React.FC<MediaPreviewProps> = ({
           muted
           playsInline
         />
-        {showVideoBadge && (
-          <span
-            className="journalit-media-preview-video__badge"
-            aria-hidden="true"
-          >
-            <Play size={18} strokeWidth={2.25} />
-          </span>
-        )}
+        {showVideoBadge && <VideoPlayBadge />}
       </div>
     );
   }
@@ -109,6 +109,9 @@ export const MediaPreview: React.FC<MediaPreviewProps> = ({
   if (mediaKind === 'youtube') {
     return (
       <YouTubeMediaPreview
+        
+        
+        key={path}
         url={path}
         alt={alt}
         className={className}
@@ -240,14 +243,7 @@ const YouTubeMediaPreview: React.FC<YouTubeMediaPreviewProps> = ({
         }}
         onError={(event) => handleMissingThumbnail(event.currentTarget)}
       />
-      {showVideoBadge && (
-        <span
-          className="journalit-media-preview-video__badge"
-          aria-hidden="true"
-        >
-          <Play size={18} strokeWidth={2.25} />
-        </span>
-      )}
+      {showVideoBadge && <VideoPlayBadge />}
     </div>
   );
 };

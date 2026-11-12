@@ -5,6 +5,7 @@ import { t } from '../../../lang/helpers';
 import type { AccountData } from '../../../services/account/types';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import {
+  accountPriorPayouts,
   calculateAccountAge,
   calculateAccountWithdrawals,
   getWithdrawalsByMonth,
@@ -17,7 +18,8 @@ type FormatDisplayValue = ReturnType<typeof useDisplayFormatter>['formatValue'];
 export function calculateAccountCardDetailMetrics(account: AccountData) {
   return {
     accountAge: calculateAccountAge(account.createdDate),
-    totalWithdrawals: calculateAccountWithdrawals(account),
+    totalWithdrawals:
+      calculateAccountWithdrawals(account) + accountPriorPayouts(account),
     
     
     

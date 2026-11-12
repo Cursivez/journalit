@@ -46,6 +46,7 @@ import { shareCaptureExcludeProps } from '../../services/share/brandedCapture';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { eventBus } from '../../services/events/EventBus';
 import { SectionErrorBoundary } from '../shared/SectionErrorBoundary';
+import { Button } from '../ui/Button';
 
 interface SessionLogPanelProps {
   plugin: JournalitPlugin;
@@ -475,8 +476,8 @@ const SessionLogComposer: React.FC<SessionLogComposerProps> = ({
         type="button"
         className={
           timestamp.enabled
-            ? 'journalit-session-log-icon-button is-active'
-            : 'journalit-session-log-icon-button'
+            ? 'journalit-icon-button journalit-session-log-icon-button is-active'
+            : 'journalit-icon-button journalit-session-log-icon-button'
         }
         onClick={timestamp.onToggle}
         aria-label={
@@ -489,7 +490,7 @@ const SessionLogComposer: React.FC<SessionLogComposerProps> = ({
       </button>
       <button
         type="button"
-        className="journalit-session-log-icon-button journalit-session-log-send-button"
+        className="journalit-session-log-icon-button journalit-session-log-send-button journalit-icon-button"
         onClick={input.onSubmit}
         disabled={input.submitDisabled}
         aria-label={t('session-log.action.add-entry')}
@@ -499,7 +500,7 @@ const SessionLogComposer: React.FC<SessionLogComposerProps> = ({
       {input.onHide && (
         <button
           type="button"
-          className="journalit-session-log-icon-button"
+          className="journalit-session-log-icon-button journalit-icon-button"
           onClick={input.onHide}
           aria-label={t('session-log.action.hide-composer')}
         >
@@ -1165,7 +1166,7 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                             </div>
                             <button
                               type="button"
-                              className="journalit-session-log-icon-button"
+                              className="journalit-session-log-icon-button journalit-icon-button"
                               onClick={() => void openTrade(entry.tradePath)}
                               aria-label={t('session-log.action.open-trade')}
                               {...shareCaptureExcludeProps}
@@ -1269,7 +1270,7 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                             >
                               <button
                                 type="button"
-                                className="custom-options-compact-icon-button journalit-session-log-edit-icon-button"
+                                className="custom-options-compact-icon-button journalit-session-log-edit-icon-button journalit-icon-button"
                                 onClick={() => void saveEdit()}
                                 aria-label={t('session-log.action.save')}
                               >
@@ -1277,7 +1278,7 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                               </button>
                               <button
                                 type="button"
-                                className="custom-options-compact-icon-button journalit-session-log-edit-icon-button"
+                                className="custom-options-compact-icon-button journalit-session-log-edit-icon-button journalit-icon-button"
                                 onClick={() => {
                                   setEditingId(null);
                                   setIsEditTagMenuOpen(false);
@@ -1313,18 +1314,19 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                                 >
                                   {tag?.requiresResolution &&
                                     !entry.resolved && (
-                                      <button
-                                        type="button"
+                                      <Button
+                                        variant="secondary"
+                                        size="small"
                                         className="journalit-session-log-action-button journalit-session-log-action-button--text"
                                         onClick={() => beginClassify(entry)}
                                       >
                                         <Check size={14} />{' '}
                                         {t('session-log.action.classify')}
-                                      </button>
+                                      </Button>
                                     )}
                                   <button
                                     type="button"
-                                    className="journalit-session-log-action-button journalit-session-log-action-button--icon"
+                                    className="journalit-session-log-action-button journalit-session-log-action-button--icon journalit-icon-button"
                                     onClick={() => beginEdit(entry)}
                                     aria-label={t('session-log.action.edit')}
                                   >
@@ -1332,7 +1334,7 @@ export const SessionLogPanel: React.FC<SessionLogPanelProps> = React.memo(
                                   </button>
                                   <button
                                     type="button"
-                                    className="journalit-session-log-action-button journalit-session-log-action-button--icon"
+                                    className="journalit-session-log-action-button journalit-session-log-action-button--icon journalit-icon-button"
                                     onClick={() =>
                                       void deleteSessionLogEntry({
                                         plugin,

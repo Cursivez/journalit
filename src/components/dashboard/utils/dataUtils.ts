@@ -8,6 +8,10 @@ import {
   parseStopLossTargets,
   type StopLossTarget,
 } from '../../../services/trade/core/StopLossTargets';
+import {
+  resolveRecentPeriodWindow,
+  type RecentPeriodAccess,
+} from '../../shared/filters/recentPeriod';
 import { App, TFile } from 'obsidian';
 
 import { TradeService } from '../../../services/trade/TradeService';
@@ -30,12 +34,14 @@ import {
 
 import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import { normalizeStringArray } from '../../../utils/dataUtils';
+import { calculateCommissionCost } from '../../../utils/pnlUtils';
 import {
   getAllocatedRealizedPnlEvents,
   getAnalyticsDateBasis,
   getProjectedRealizedEventTrades,
   getTradeAnalyticsDate,
   getTradeAnalyticsTradingDay,
+  getTradeFirstRealizedTradingDay,
 } from '../../../utils/tradeAnalyticsDate';
 import { getTradingDay } from '../../../utils/tradingDayUtils';
 import { CurrencyCode } from '../../../utils/currencyConfig';
@@ -50,6 +56,7 @@ import {
   normalizeBreakEvenRange,
 } from '../../../utils/breakEvenRange';
 import {
+  createDateWithoutTime,
   formatLocalDateString,
   parseTradeTimestampValue,
   safeParseDateValue,
@@ -68,10 +75,6 @@ import {
   calculateExpectancySample,
   type ExpectancySample,
 } from './expectancyGap';
-import {
-  calculateTradeReturnPercent,
-  type TradeMetricInput,
-} from '../../tradelog/tradeMetricUtils';
 import {
   getTradeMaeTicks,
   getTradeMaeValue,
@@ -105,6 +108,8 @@ import {
 } from '../../../services/trade/core/BreakEvenAccountBalance';
 import { normalizeTradeExecutionForAnalytics } from '../../../services/trade/core/TradeExecutionAnalytics';
 import { applyTradeFilters } from '../../shared/filters/filterUtils';
+import { filterTradesByMarketBias } from '../../../services/marketBias/tradeMarketBias';
+import { loadTradeMarketBiasResolver } from '../../../services/marketBias/loadTradeMarketBiasResolver';
 import {
   accountsRequiringCopiedRows,
   resolveAccountPhaseWindowsFromPlugin,
@@ -133,7 +138,10 @@ import {
   type AnalyticsContext,
 } from '../../../services/analytics/AnalyticsContext';
 import type { AnalyticsGroupingResolvers } from '../../../services/analytics/grouping';
-import { calculateCoreTradeMetrics } from '../../../services/analytics/metrics';
+import {
+  calculateCoreTradeMetrics,
+  calculateExpectancyR,
+} from '../../../services/analytics/metrics';
 import type { CustomFieldDefinition } from '../../../types/customFields';
 
 
@@ -271,7 +279,12 @@ interface DashboardDataFetchOptions {
   freshTradeQuery?: boolean;
   dateBasisOverride?: AnalyticsDateBasis;
   executionScopedDateRange?: boolean;
+  
+  recentPeriodWindowIndex?: number;
 }
+
+
+export type RecentPeriodRange = [Date, Date | null] | null;
 
 export class AnalyticsPreparationError extends Error {
   constructor() {
@@ -416,6 +429,8 @@ type NormalizedMetricsTrade = Omit<
   path: string;
   currency: string;
   _dashboardRealizedTradingDay?: Date;
+  
+  _dashboardOwnsSourceCosts?: boolean;
 };
 
 
@@ -679,6 +694,8 @@ export interface Trade {
   _analyticsRangeStart?: Date;
   _analyticsRangeEnd?: Date;
   _dashboardExcursionSourceKey?: string;
+  
+  _dashboardClosesSourceTrade?: boolean;
   _dashboardExcursionPnL?: number;
   _dashboardExcursionFxExcluded?: boolean;
   instrument?: string;
@@ -739,6 +756,8 @@ export interface Trade {
   originalCurrency?: string;
   
   conversionPnlFactor?: number;
+  
+  conversionAmountFactor?: number;
   
   originalPnlBeforeConversion?: number;
   originalMaeBeforeConversion?: number;
@@ -893,6 +912,8 @@ export interface DashboardData {
   drawdownCapitalBasis?: DrawdownCapitalBasis;
   
   realizedEventTrades?: Trade[];
+  
+  recentPeriodRange?: RecentPeriodRange;
   metrics: {
     netPnL: number;
     winRate: number;
@@ -910,8 +931,6 @@ export interface DashboardData {
     numLossTrades: number;
     avgWin: number;
     avgLoss: number;
-    avgWinPercent?: number;
-    avgLossPercent?: number;
     avgRR?: number;
     avgRRRiskBased?: number;
     
@@ -934,13 +953,15 @@ export interface DashboardData {
     
     unrealizedPnL?: number;
     maxDrawdown: number;
+    
+    commissionAndFees: number;
+    
+    avgTradesPerDay: number;
     maxDrawdownAmountPercent?: number | null;
     maxDrawdownAmountPercentBasisLabel?: string | null;
     bestDay: number;
     largestWin: number;
     largestLoss: number;
-    largestWinPercent?: number;
-    largestLossPercent?: number;
     longestWinStreak: number;
     longestLossStreak: number;
     avgHoldTime: number;
@@ -1025,6 +1046,13 @@ const buildDashboardTrade = (
 
   const originalPnlWasNull =
     frontmatter.pnl === undefined || frontmatter.pnl === null;
+  const directPnL =
+    frontmatter.directPnL !== undefined &&
+    frontmatter.directPnL !== null &&
+    Number.isFinite(Number(frontmatter.directPnL))
+      ? Number(frontmatter.directPnL)
+      : undefined;
+  const useDirectPnLInput = getBooleanField(frontmatter, 'useDirectPnLInput');
   const storedTradeType = inferStoredTradeType({
     filePath: path,
     type: frontmatter.type,
@@ -1040,19 +1068,15 @@ const buildDashboardTrade = (
     path,
     ...normalizedExecution,
     direction: getStringField(frontmatter, 'direction') ?? '',
-    pnl:
-      frontmatter.pnl !== undefined && frontmatter.pnl !== null
-        ? Number(frontmatter.pnl)
-        : 0,
-    directPnL:
-      frontmatter.directPnL !== undefined &&
-      frontmatter.directPnL !== null &&
-      Number.isFinite(Number(frontmatter.directPnL))
-        ? Number(frontmatter.directPnL)
-        : undefined,
+    
+    
+    pnl: originalPnlWasNull
+      ? getEffectivePnL({ directPnL, useDirectPnLInput })
+      : Number(frontmatter.pnl),
+    directPnL,
     ...extractCanonicalProjectionPnlFields(frontmatter),
     tradeStatus: getStringField(frontmatter, 'tradeStatus'),
-    useDirectPnLInput: getBooleanField(frontmatter, 'useDirectPnLInput'),
+    useDirectPnLInput,
     dividends: parseTradeDividendTransactions(frontmatter.dividends),
     rebate:
       frontmatter.rebate !== undefined && frontmatter.rebate !== null
@@ -1249,9 +1273,106 @@ interface PreparedTradeData {
   trades: Trade[];
   customFieldDefinitions: CustomFieldDefinition[];
   skippedTradeFileCount: number;
+  
+  recentPeriodRange?: RecentPeriodRange;
 }
 
+
+export const dashboardRecentPeriodAccess = (
+  basis: AnalyticsDateBasis,
+  plugin: JournalitPlugin | undefined
+): RecentPeriodAccess<Trade> => ({
+  dayOf: (trade) => getTradeAnalyticsTradingDay(trade, basis, plugin),
+  firstDayOf: (trade) => getTradeFirstRealizedTradingDay(trade, basis, plugin),
+  isClosed: (trade) => !trade.isMissedTrade && isPnlContributingTrade(trade),
+  timeOf: (trade) => getTradeAnalyticsDate(trade, basis)?.getTime() ?? 0,
+  
+  
+  keyOf: (trade) => trade.path,
+});
+
+
 const prepareTradeData = async (
+  app: App,
+  tradeService: TradeService,
+  filters: FilterState,
+  plugin?: JournalitPlugin,
+  options?: DashboardDataFetchOptions,
+  mode: AnalyticsPreparationMode = { kind: 'tolerant' }
+): Promise<PreparedTradeData> => {
+  const recentPeriod = filters.recentPeriod;
+  if (!recentPeriod) {
+    return prepareTradeDataForRange(
+      app,
+      tradeService,
+      filters,
+      plugin,
+      options,
+      mode
+    );
+  }
+  const basis =
+    options?.dateBasisOverride ?? getAnalyticsDateBasis(plugin?.settings);
+  const access = dashboardRecentPeriodAccess(basis, plugin);
+  const resolveOptions = {
+    today: getTradingDay(new Date(), plugin),
+    windowIndex: options?.recentPeriodWindowIndex,
+  };
+  const unbounded: FilterState = {
+    ...filters,
+    recentPeriod: undefined,
+    dateRange: [null, null],
+  };
+  
+  const candidates =
+    recentPeriod.unit === 'days'
+      ? null
+      : await prepareTradeDataForRange(
+          app,
+          tradeService,
+          unbounded,
+          plugin,
+          options,
+          mode
+        );
+  const window = resolveRecentPeriodWindow(
+    candidates?.trades ?? [],
+    recentPeriod,
+    access,
+    resolveOptions
+  );
+  if (window.empty || !window.start) {
+    return {
+      trades: [],
+      customFieldDefinitions: candidates?.customFieldDefinitions ?? [],
+      skippedTradeFileCount: candidates?.skippedTradeFileCount ?? 0,
+      recentPeriodRange: null,
+    };
+  }
+  const range: [Date, Date | null] = [
+    createDateWithoutTime(window.start, true),
+    window.end ? createDateWithoutTime(window.end, false) : null,
+  ];
+  const prepared = await prepareTradeDataForRange(
+    app,
+    tradeService,
+    { ...unbounded, dateRange: range },
+    plugin,
+    
+    candidates ? { ...options, freshTradeQuery: false } : options,
+    mode
+  );
+  const keys = window.keys;
+  return {
+    ...prepared,
+    trades: keys
+      ? prepared.trades.filter((trade) => keys.has(access.keyOf(trade)))
+      : prepared.trades,
+    recentPeriodRange: range,
+  };
+};
+
+const prepareTradeDataForRange = async (
   app: App,
   tradeService: TradeService,
   filters: FilterState,
@@ -1471,20 +1592,26 @@ const prepareTradeData = async (
       (trade): trade is Trade => trade !== null
     );
 
+    const filteredTrades = applyTradeFilters(
+      nonNullTrades,
+      filters,
+      customFieldDefinitions,
+      {
+        isTradeOpen: isTradeOpenInDashboard,
+        breakEvenSettings,
+        getBreakEvenBalance: (trade) => trade.breakEvenAccountCurrentBalance,
+        accountPhaseWindows: resolveAccountPhaseWindowsFromPlugin(
+          filters.accountPhases,
+          plugin
+        ),
+      }
+    );
+
     return {
-      trades: applyTradeFilters(
-        nonNullTrades,
-        filters,
-        customFieldDefinitions,
-        {
-          isTradeOpen: isTradeOpenInDashboard,
-          breakEvenSettings,
-          getBreakEvenBalance: (trade) => trade.breakEvenAccountCurrentBalance,
-          accountPhaseWindows: resolveAccountPhaseWindowsFromPlugin(
-            filters.accountPhases,
-            plugin
-          ),
-        }
+      trades: await filterDashboardTradesByMarketBias(
+        filteredTrades,
+        filters.marketBias,
+        plugin
       ),
       customFieldDefinitions,
       skippedTradeFileCount,
@@ -1498,6 +1625,20 @@ const prepareTradeData = async (
       skippedTradeFileCount: 0,
     };
   }
+};
+
+
+const filterDashboardTradesByMarketBias = async (
+  trades: Trade[],
+  selected: FilterState['marketBias'],
+  plugin: JournalitPlugin | undefined
+): Promise<Trade[]> => {
+  if (selected.length === 0 || !plugin) return trades;
+  const resolveBias = await loadTradeMarketBiasResolver(plugin);
+  return filterTradesByMarketBias(trades, selected, (trade) => {
+    const entryTime = getTradeAnalyticsDate(trade, 'entry');
+    return entryTime ? resolveBias({ ...trade, entryTime }).alignment : 'none';
+  });
 };
 
 const createCopiedDashboardTrades = (
@@ -1783,10 +1924,6 @@ const getDrawdownAnalyticsTrade = (
   }));
 
 const tradeExcursionValues = createTradeDerivationCache<number | undefined>();
-const tradeReturnPercents = createTradeDerivationCache<number | undefined>();
-
-const getTradeReturnPercent = (trade: TradeMetricInput): number | undefined =>
-  tradeReturnPercents(trade, '', () => calculateTradeReturnPercent(trade));
 
 const calculateExcursionMetrics = (
   sourceTrades: NormalizedMetricsTrade[],
@@ -1836,8 +1973,11 @@ const calculateExcursionMetrics = (
   const maeContext = `mae\u0000${displayUnit}`;
   const mfeContext = `mfe\u0000${displayUnit}`;
   
+  
+  
   const seenSourceKeys = new Set<string>();
   for (const trade of sourceTrades) {
+    if (trade._dashboardClosesSourceTrade === false) continue;
     const sourceKey = getExcursionSourceKey(trade);
     if (seenSourceKeys.has(sourceKey)) continue;
     seenSourceKeys.add(sourceKey);
@@ -2040,8 +2180,6 @@ export const calculateMetrics = (
       numLossTrades: 0,
       avgWin: 0,
       avgLoss: 0,
-      avgWinPercent: undefined,
-      avgLossPercent: undefined,
       avgRR: undefined,
       avgRRRiskBased: undefined,
       riskBasedTradesCount: 0,
@@ -2056,13 +2194,13 @@ export const calculateMetrics = (
           ? undefined
           : (unrealizedPnLR ?? 0) + (snapshotTimelineRAdjustment ?? 0),
       maxDrawdown: 0,
+      commissionAndFees: 0,
+      avgTradesPerDay: 0,
       maxDrawdownAmountPercent: null,
       maxDrawdownAmountPercentBasisLabel: null,
       bestDay: 0,
       largestWin: 0,
       largestLoss: 0,
-      largestWinPercent: undefined,
-      largestLossPercent: undefined,
       longestWinStreak: 0,
       longestLossStreak: 0,
       avgHoldTime: 0,
@@ -2096,6 +2234,28 @@ export const calculateMetrics = (
   const closedTrades = contributingTrades.map((trade) =>
     normalizeTradeForMetrics(trade, defaultCurrency)
   );
+  
+  
+  
+  
+  
+  
+  
+  
+  let commissionAndFees = 0;
+  for (const trade of closedTrades) {
+    if (trade._dashboardOwnsSourceCosts === false) continue;
+    const commissionCost = calculateCommissionCost(trade);
+    const wasConverted =
+      trade.originalCurrency !== undefined &&
+      trade.originalCurrency !== trade.currency;
+    commissionAndFees +=
+      (trade.commissionType === 'percentage'
+        ? wasConverted
+          ? commissionCost * (trade.conversionAmountFactor ?? 0)
+          : commissionCost
+        : commissionCost) + Math.abs(trade.fees ?? 0);
+  }
   const sharpeRatioInputTrades =
     options.sharpeRatioTrades ?? contributingTrades;
   
@@ -2139,33 +2299,6 @@ export const calculateMetrics = (
     }
   }
 
-  const winningReturnPercents: number[] = [];
-  const losingReturnPercents: number[] = [];
-  const hasMatchingReturnPercentSign = (
-    bucket: 'win' | 'loss',
-    returnPercent: number | undefined
-  ): returnPercent is number => {
-    if (returnPercent === undefined || isNaN(returnPercent)) {
-      return false;
-    }
-
-    return bucket === 'win' ? returnPercent > 0 : returnPercent < 0;
-  };
-
-  for (const trade of winningTrades) {
-    const returnPercent = getTradeReturnPercent(trade);
-    if (hasMatchingReturnPercentSign('win', returnPercent)) {
-      winningReturnPercents.push(returnPercent);
-    }
-  }
-
-  for (const trade of losingTrades) {
-    const returnPercent = getTradeReturnPercent(trade);
-    if (hasMatchingReturnPercentSign('loss', returnPercent)) {
-      losingReturnPercents.push(returnPercent);
-    }
-  }
-
   const coreMetrics = calculateCoreTradeMetrics({
     netPnLValues,
     winningNetPnL,
@@ -2173,19 +2306,6 @@ export const calculateMetrics = (
   });
   const { netPnL, winRate, profitFactor, expectancy, avgWin, avgLoss, avgRR } =
     coreMetrics;
-  const avgWinPercent =
-    winningReturnPercents.length > 0 &&
-    winningReturnPercents.length === winningNetPnL.length
-      ? winningReturnPercents.reduce((sum, percent) => sum + percent, 0) /
-        winningReturnPercents.length
-      : undefined;
-  const avgLossPercent =
-    losingReturnPercents.length > 0 &&
-    losingReturnPercents.length === losingNetPnL.length
-      ? losingReturnPercents.reduce((sum, percent) => sum + percent, 0) /
-        losingReturnPercents.length
-      : undefined;
-
   const sharpeRatioValues: number[] = [];
   for (const trade of sharpeRatioTrades) {
     const pnl = getEffectivePnL(trade);
@@ -2287,9 +2407,7 @@ export const calculateMetrics = (
         ? avgWinRiskBasedR / avgLossRiskBasedR
         : undefined;
 
-    
-    const rWinRate = winningRMultiples.length / effectiveRMultiples.length;
-    expectancyR = rWinRate * avgWinR - (1 - rWinRate) * avgLossR;
+    expectancyR = calculateExpectancyR(effectiveRMultiples);
   }
 
   const drawdownAnalyticsTrades = closedTrades.map((trade) =>
@@ -2320,6 +2438,7 @@ export const calculateMetrics = (
 
   
   const dailyPnL = new Map<string, number>();
+  let tradesOnTradingDays = 0;
   closedTrades.forEach((trade) => {
     const dateStr = getMetricsTradingDayKey(
       trade,
@@ -2329,6 +2448,7 @@ export const calculateMetrics = (
     if (!dateStr) {
       return;
     }
+    tradesOnTradingDays += 1;
 
     dailyPnL.set(
       dateStr,
@@ -2337,57 +2457,14 @@ export const calculateMetrics = (
   });
   const bestDay =
     dailyPnL.size > 0 ? Math.max(...Array.from(dailyPnL.values())) : 0;
-
-  const getAuthoritativeExtremePercent = (
-    tradesForExtreme: NormalizedMetricsTrade[],
-    extremePnL: number,
-    bucket: 'win' | 'loss'
-  ): number | undefined => {
-    const tiedTrades = tradesForExtreme.filter(
-      (trade) => getEffectivePnL(trade) === extremePnL
-    );
-
-    if (tiedTrades.length === 0) {
-      return undefined;
-    }
-
-    const computedPercents = tiedTrades.map((trade) =>
-      getTradeReturnPercent(trade)
-    );
-
-    if (
-      computedPercents.some(
-        (percent) => !hasMatchingReturnPercentSign(bucket, percent)
-      )
-    ) {
-      return undefined;
-    }
-
-    const firstPercent = computedPercents[0];
-    if (firstPercent === undefined) {
-      return undefined;
-    }
-    const allMatch = computedPercents.every(
-      (percent) =>
-        percent !== undefined && Math.abs(percent - firstPercent) < 0.0001
-    );
-
-    return allMatch ? firstPercent : undefined;
-  };
+  const avgTradesPerDay =
+    dailyPnL.size > 0 ? tradesOnTradingDays / dailyPnL.size : 0;
 
   
   const largestWin = winningNetPnL.length > 0 ? Math.max(...winningNetPnL) : 0;
-  const largestWinPercent =
-    winningNetPnL.length > 0
-      ? getAuthoritativeExtremePercent(winningTrades, largestWin, 'win')
-      : undefined;
 
   
   const largestLoss = losingNetPnL.length > 0 ? Math.min(...losingNetPnL) : 0;
-  const largestLossPercent =
-    losingNetPnL.length > 0
-      ? getAuthoritativeExtremePercent(losingTrades, largestLoss, 'loss')
-      : undefined;
 
   
   const chronologicalTradesByExit = [...closedTrades].sort((a, b) => {
@@ -2512,8 +2589,6 @@ export const calculateMetrics = (
     numLossTrades: coreMetrics.numLossTrades,
     avgWin,
     avgLoss,
-    avgWinPercent,
-    avgLossPercent,
     avgRR,
     avgRRRiskBased,
     riskBasedTradesCount,
@@ -2525,13 +2600,13 @@ export const calculateMetrics = (
     netPnLR,
     unrealizedPnLR: undefined,
     maxDrawdown,
+    commissionAndFees,
+    avgTradesPerDay,
     maxDrawdownAmountPercent,
     maxDrawdownAmountPercentBasisLabel,
     bestDay,
     largestWin,
     largestLoss,
-    largestWinPercent,
-    largestLossPercent,
     longestWinStreak,
     longestLossStreak,
     avgHoldTime,
@@ -2640,6 +2715,7 @@ const projectExitDateTradesToRealizedEvents = (
   for (const trade of trades) {
     const excursionSourceKey = getDashboardExcursionSourceKey(trade);
     const excursionPnL = getEffectivePnL(trade);
+    const sourceClosed = !isTradeOpenInDashboard(trade);
     const rangeStart = trade._analyticsRangeStart;
     const rangeEnd = trade._analyticsRangeEnd;
     const events = getProjectedRealizedEventTrades(trade, plugin).filter(
@@ -2647,15 +2723,19 @@ const projectExitDateTradesToRealizedEvents = (
         (!rangeStart || event.tradingDay >= rangeStart) &&
         (!rangeEnd || event.tradingDay <= rangeEnd)
     );
-    events.forEach(({ trade: projectedTrade, event, originalIndex }) => {
-      projectedTrades.push({
-        ...projectedTrade,
-        path: `${trade.path || trade.instrument || 'trade'}#realized-${originalIndex}`,
-        _dashboardRealizedTradingDay: event.tradingDay,
-        _dashboardExcursionSourceKey: excursionSourceKey,
-        _dashboardExcursionPnL: excursionPnL,
-      } as Trade);
-    });
+    events.forEach(
+      ({ trade: projectedTrade, event, originalIndex, isFinalEvent }) => {
+        projectedTrades.push({
+          ...projectedTrade,
+          path: `${trade.path || trade.instrument || 'trade'}#realized-${originalIndex}`,
+          _dashboardRealizedTradingDay: event.tradingDay,
+          _dashboardOwnsSourceCosts: isFinalEvent,
+          _dashboardClosesSourceTrade: isFinalEvent && sourceClosed,
+          _dashboardExcursionSourceKey: excursionSourceKey,
+          _dashboardExcursionPnL: excursionPnL,
+        } as Trade);
+      }
+    );
   }
 
   return projectedTrades;
@@ -2756,6 +2836,7 @@ interface DashboardAnalyticsBuild extends PreparedDashboardAnalytics {
   needsCurrencyConversion: boolean;
   drawdownCapitalBasis: DrawdownCapitalBasis;
   executionScopedDateRange: boolean;
+  recentPeriodRange?: RecentPeriodRange;
 }
 
 const resolveRuntimeTimezone = (): string | undefined =>
@@ -2774,8 +2855,12 @@ const buildDashboardAnalytics = async (
   
   const slicer = createTimeSlicer();
   
-  const { trades, customFieldDefinitions, skippedTradeFileCount } =
-    await prepareTradeData(app, tradeService, filters, plugin, options, mode);
+  const {
+    trades,
+    customFieldDefinitions,
+    skippedTradeFileCount,
+    recentPeriodRange,
+  } = await prepareTradeData(app, tradeService, filters, plugin, options, mode);
   await slicer.maybeYield();
 
   const breakEvenRangeMin = plugin?.settings?.trade?.breakEvenRangeMin;
@@ -3104,6 +3189,7 @@ const buildDashboardAnalytics = async (
     needsCurrencyConversion,
     drawdownCapitalBasis,
     executionScopedDateRange: options?.executionScopedDateRange === true,
+    recentPeriodRange,
   };
 };
 
@@ -3177,6 +3263,7 @@ export const fetchDashboardData = async (
       needsCurrencyConversion,
       drawdownCapitalBasis,
       executionScopedDateRange,
+      recentPeriodRange,
     } = prepared;
     const metrics = createAnalyticsService().calculateDashboardMetrics(dataset);
 
@@ -3296,6 +3383,7 @@ export const fetchDashboardData = async (
         analyticsDateBasis === 'exit' ? dataset.metricTrades : undefined,
       metrics,
       currency: baseCurrencyCode,
+      recentPeriodRange,
     };
   } catch (error) {
     console.error('Error fetching dashboard data:', error);

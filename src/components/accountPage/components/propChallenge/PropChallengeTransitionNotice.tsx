@@ -16,6 +16,7 @@ import {
 import { savePropChallengeConfig } from '../../../../services/propChallenge/PropChallengePersistence';
 import { TransactionType } from '../../../../services/account/types';
 import { formatDateDisplay } from '../../../../utils/dateUtils';
+import { formatLocalizedDateTime } from '../../../../utils/localizedDateTime';
 import { Button } from '../../../ui/Button';
 import {
   AlertTriangle,
@@ -154,7 +155,7 @@ const targetReachedContent: NoticeContentBuilder = (notice, { lifecycle }) => {
     extraDescription:
       notice.breachAfterReached && notice.reachedAt
         ? t('account.prop-challenge.notice.breach-after-reached', {
-            time: new Date(notice.reachedAt).toLocaleString(),
+            time: formatLocalizedDateTime(notice.reachedAt, 'medium'),
           })
         : undefined,
     primary: {

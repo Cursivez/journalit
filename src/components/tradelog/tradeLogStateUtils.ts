@@ -43,6 +43,7 @@ export function getActiveTreeSessionLogTags(
 function hasActiveTradeLogResultFilters(filters: TradeLogFilters): boolean {
   return (
     filters.dateRange.some((date) => date !== null) ||
+    filters.recentPeriod !== undefined ||
     (filters.tradeTypes.length > 0 &&
       filters.tradeTypes.length < SELECTABLE_TRADE_TYPES_COUNT) ||
     (filters.statuses.length > 0 &&
@@ -57,6 +58,7 @@ function hasActiveTradeLogResultFilters(filters: TradeLogFilters): boolean {
     filters.mistakes.length > 0 ||
     filters.reviewStatus.length > 0 ||
     filters.ratings.length > 0 ||
+    filters.marketBias.length > 0 ||
     Object.values(filters.customFieldFilters).some(
       (values) => values.length > 0
     ) ||

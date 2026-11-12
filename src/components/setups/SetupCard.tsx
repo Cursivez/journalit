@@ -26,6 +26,8 @@ import {
   getSetupSparklineTone,
 } from './setupsViewModel';
 import { SetupTagIndicator } from './SetupTags';
+import { SetupTradeCount } from './SetupTradeCount';
+import { SVG_LABEL_TOOLTIP_PROPS } from '../charts/svgLabelTooltip';
 
 const MASKED_SPARKLINE_BASELINE_Y = '34';
 const MASKED_SPARKLINE_PATH = 'M 8.0 34.0 L 312.0 34.0';
@@ -221,8 +223,7 @@ export const SetupCard: React.FC<{
           </span>
         </span>
         <span className="journalit-setup-card__trades">
-          <MetricValue kind="count" value={metrics.totalTrades} tone="none" />{' '}
-          {t('setups.view.metric.trades')}
+          <SetupTradeCount count={metrics.totalTrades} />
         </span>
       </div>
     </article>
@@ -268,6 +269,7 @@ const SetupSparkline: React.FC<{
       viewBox="0 0 320 68"
       preserveAspectRatio="none"
       role="img"
+      {...SVG_LABEL_TOOLTIP_PROPS}
       aria-label={t('setups.view.card.sparkline-aria')}
       focusable="false"
     >

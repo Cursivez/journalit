@@ -77,6 +77,7 @@ export function resetMenuFilters(
     statuses: [],
     reviewStatus: [],
     ratings: [],
+    marketBias: [],
     directions: [],
     sessionLogTags: [],
     customFieldFilters: {},

@@ -21,6 +21,7 @@ import { useSetupPicker } from '../../hooks/useSetupNotes';
 import { t, tPlural } from '../../lang/helpers';
 import { showConfirmationModal } from '../shared/ConfirmationModal';
 import { JournalitModal } from '../modals/JournalitModal';
+import { Button } from '../ui/Button';
 
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
@@ -94,20 +95,26 @@ const SetupsModalContent: React.FC<SetupsModalContentProps> = ({
         />
       </div>
       <div className="batch-action-modal-buttons">
-        <button onClick={onClose} disabled={isSubmitting}>
+        <Button
+          variant="secondary"
+          size="small"
+          onClick={onClose}
+          disabled={isSubmitting}
+        >
           {t('button.cancel')}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="primary"
+          size="small"
           onClick={() => void handleConfirm()}
           disabled={isSubmitting || selectedSetups.length === 0}
-          className="primary"
         >
           {isSubmitting
             ? t('tradelog.batch.adding')
             : t('tradelog.batch.add-count', {
                 count: selectedSetups.length.toString(),
               })}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -231,20 +238,26 @@ const OptionsBatchModalContent: React.FC<OptionsBatchModalContentProps> = ({
         />
       </div>
       <div className="batch-action-modal-buttons">
-        <button onClick={onClose} disabled={isSubmitting}>
+        <Button
+          variant="secondary"
+          size="small"
+          onClick={onClose}
+          disabled={isSubmitting}
+        >
           {t('button.cancel')}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="primary"
+          size="small"
           onClick={() => void handleConfirm()}
           disabled={isSubmitting || selected.length === 0}
-          className="primary"
         >
           {isSubmitting
             ? t('tradelog.batch.adding')
             : t('tradelog.batch.add-count', {
                 count: selected.length.toString(),
               })}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -605,7 +618,9 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
                   count: selectedCount.toString(),
                 })}
           </span>
-          <button
+          <Button
+            variant="plain"
+            size="small"
             className="batch-action-select-all-btn"
             onClick={onSelectAll}
             disabled={loadingAction !== null}
@@ -615,11 +630,13 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
             <span className="select-all-label">
               {t('tradelog.batch.select-all.label')}
             </span>
-          </button>
+          </Button>
         </div>
 
         <div className="batch-action-toolbar-actions">
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="batch-action-button"
             onClick={() => void handleMarkAsReviewed()}
             disabled={isSubmitting || selectedCount === 0}
@@ -633,9 +650,11 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
             ) : (
               <span className="btn-label">{t('button.mark-reviewed')}</span>
             )}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="batch-action-button"
             onClick={() => void handleAddTags()}
             disabled={isSubmitting || selectedCount === 0}
@@ -649,9 +668,11 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
                 {t('tradelog.batch.add-tags.label')}
               </span>
             )}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="batch-action-button"
             onClick={() => void handleAddSetups()}
             disabled={isSubmitting || selectedCount === 0}
@@ -665,9 +686,11 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
                 {t('tradelog.batch.add-setups.label')}
               </span>
             )}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="batch-action-button"
             onClick={() => void handleAddMistakes()}
             disabled={isSubmitting || selectedCount === 0}
@@ -681,9 +704,11 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
                 {t('tradelog.batch.add-mistakes.label')}
               </span>
             )}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="batch-action-button journalit-batch-action-button"
             onClick={() => void handleDuplicate()}
             disabled={isSubmitting || selectedCount === 0}
@@ -699,10 +724,12 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
                 {t('tradelog.batch.duplicate.label')}
               </span>
             )}
-          </button>
+          </Button>
 
-          <button
-            className="batch-action-button batch-action-delete danger"
+          <Button
+            variant="danger"
+            size="small"
+            className="batch-action-button batch-action-delete"
             onClick={() => void handleDelete()}
             disabled={isSubmitting || selectedCount === 0}
             aria-label={t('tradelog.batch.delete.aria')}
@@ -713,9 +740,11 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
             ) : (
               <span className="btn-label">{t('button.delete')}</span>
             )}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="plain"
+            size="small"
             className="batch-action-button batch-action-clear"
             onClick={onClearSelection}
             disabled={isSubmitting || selectedCount === 0}
@@ -723,7 +752,7 @@ export const BatchActionToolbar = memo<BatchActionToolbarProps>(
           >
             <X size={18} />
             <span className="btn-label">{t('tradelog.batch.clear.label')}</span>
-          </button>
+          </Button>
         </div>
       </div>
     );

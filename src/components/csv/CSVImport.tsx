@@ -136,6 +136,7 @@ import {
   requiredFieldsForManualMode,
   resolveManualImportMode,
 } from '../../services/tradeImport/manualMappingValidation';
+import { Button } from '../ui/Button';
 
 interface CSVImportProps {
   plugin: JournalitPlugin;
@@ -145,9 +146,6 @@ type TradeImportWizardStep = 1 | 2 | 3;
 
 const TRADE_IMPORT_STEP_NUMBERS: TradeImportWizardStep[] = [1, 2, 3];
 const TRADE_FIELD_VALUES = new Set<string>(TRADE_FIELDS);
-
-const isManualImportMode = (value: unknown): value is ManualImportMode =>
-  value === 'price_based' || value === 'direct_pnl';
 
 const isTradeField = (value: unknown): value is TradeField =>
   typeof value === 'string' && TRADE_FIELD_VALUES.has(value);
@@ -257,13 +255,14 @@ const TradeImportSignInGate: React.FC<{ onSignIn: () => void }> = ({
       </div>
 
       <div className="journalit-trade-import-gate-actions">
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="small"
           className="journalit-trade-import-gate-primary"
           onClick={onSignIn}
         >
           {t('trade-import.gate.sign-in.cta')}
-        </button>
+        </Button>
       </div>
     </div>
   </div>
@@ -475,14 +474,13 @@ const TradeImportDropdown: React.FC<{
         type="button"
         disabled={disabled}
         onClick={() => dispatchMenuState({ isOpen: !isOpen })}
-        className="journalit-home-period-selector journalit-trade-import-dropdown-trigger clickable-icon"
+        className="journalit-dropdown-select__trigger journalit-trade-import-dropdown-trigger"
         aria-label={label}
       >
-        <span>{selectedOption?.label ?? label}</span>
-        <ChevronDown
-          size={14}
-          className={`journalit-home-period-chevron${isOpen ? ' journalit-home-period-chevron--open' : ''}`}
-        />
+        <span className="journalit-dropdown-select__summary">
+          {selectedOption?.label ?? label}
+        </span>
+        <ChevronDown size={14} className={chevronClass(isOpen)} />
       </button>
       {menu}
     </div>
@@ -793,13 +791,15 @@ const TradeImportPreviewAction: React.FC<TradeImportPreviewActionProps> = ({
             )}
         </div>
       )}
-      <button
+      <Button
+        variant="primary"
+        size="small"
         className="journalit-trade-import-primary"
         disabled={!ready || busy || mappingIncomplete}
         onClick={onPreview}
       >
         {t('trade-import.action.preview')}
-      </button>
+      </Button>
     </>
   );
 };
@@ -1163,13 +1163,14 @@ function SourceChoiceStep({
         onSelect={onSelect}
       />
       {changing && (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="small"
           className="journalit-trade-import-source-step__cancel"
           onClick={onCancel}
         >
           {t('button.cancel')}
-        </button>
+        </Button>
       )}
     </div>
   );
@@ -1227,7 +1228,7 @@ function ChosenSourceHeader({
 }
 
 const chevronClass = (isOpen: boolean) =>
-  `journalit-home-period-chevron${isOpen ? ' journalit-home-period-chevron--open' : ''}`;
+  `journalit-dropdown-select__chevron${isOpen ? ' is-open' : ''}`;
 
 
 function FavoriteOptionRow({
@@ -1314,10 +1315,12 @@ function ImportAccountPicker({
           type="button"
           disabled={busy}
           onClick={onToggleOpen}
-          className="journalit-home-period-selector journalit-trade-import-account-trigger clickable-icon"
+          className="journalit-dropdown-select__trigger journalit-trade-import-account-trigger"
           aria-label={t('trade-import.label.account')}
         >
-          <span>{selectedAccount}</span>
+          <span className="journalit-dropdown-select__summary">
+            {selectedAccount}
+          </span>
           <ChevronDown size={14} className={chevronClass(isOpen)} />
         </button>
         {isOpen && (
@@ -1560,10 +1563,10 @@ function TemplatePicker({
           type="button"
           disabled={busy}
           onClick={onToggleOpen}
-          className="journalit-home-period-selector journalit-trade-import-template-trigger clickable-icon"
+          className="journalit-dropdown-select__trigger journalit-trade-import-template-trigger"
           aria-label={t('trade-import.label.template')}
         >
-          <span>
+          <span className="journalit-dropdown-select__summary">
             {selectedTemplateId
               ? selectedTemplateName
               : t('trade-import.template.none')}
@@ -1626,7 +1629,7 @@ function TemplateActionsMenu({
     >
       <button
         type="button"
-        className="journalit-trade-import-template-menu-trigger"
+        className="journalit-trade-import-template-menu-trigger journalit-icon-button"
         disabled={busy}
         aria-label={t('trade-import.label.template-actions')}
         onClick={onToggle}
@@ -1715,12 +1718,22 @@ function TemplateImportPanel({
         />
       </label>
       <div className="journalit-trade-import-template-actions">
-        <button disabled={!shareCode.trim() || busy} onClick={onImport}>
+        <Button
+          variant="primary"
+          size="small"
+          disabled={!shareCode.trim() || busy}
+          onClick={onImport}
+        >
           {t('csv.template-import.button.import')}
-        </button>
-        <button disabled={busy} onClick={onCancel}>
+        </Button>
+        <Button
+          variant="secondary"
+          size="small"
+          disabled={busy}
+          onClick={onCancel}
+        >
           {t('button.cancel')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -1741,11 +1754,11 @@ function TemplateExportPanel({
         {t('csv.export-template.label.share-code')}
         <textarea readOnly value={code} />
       </label>
-      <button onClick={onCopy}>
+      <Button variant="secondary" size="small" onClick={onCopy}>
         {copied
           ? t('csv.export-template.button.copied')
           : t('csv.export-template.button.copy')}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -1774,11 +1787,28 @@ function TradeImportPrivacyNote() {
 type ManualMappingCustomFields = ReturnType<typeof customFieldDefinitions>;
 
 
+const OPTIONS_ONLY_FIELDS: ReadonlySet<string> = new Set([
+  'strike_price',
+  'option_type',
+]);
+
+
+function optionsFieldsApply(
+  assetType: AssetType,
+  assignments: Record<string, string>
+): boolean {
+  return (
+    assetType === 'options' || Object.values(assignments).includes('asset_type')
+  );
+}
+
+
 function mappingOptionsForHeader(
   selectedField: string,
   assignments: Record<string, string>,
   customFields: ManualMappingCustomFields,
-  perRowMode: boolean
+  perRowMode: boolean,
+  optionsFieldsApplicable: boolean
 ): DropdownOption[] {
   const usedSingleFields = new Set(
     Object.values(assignments).filter(
@@ -1789,9 +1819,13 @@ function mappingOptionsForHeader(
   );
   const isOffered = (field: string) =>
     field === selectedField || !usedSingleFields.has(field);
+  const applies = (field: string) =>
+    field === selectedField ||
+    optionsFieldsApplicable ||
+    !OPTIONS_ONLY_FIELDS.has(field);
   
   const tradeFieldOptions = TRADE_FIELDS.flatMap((field) =>
-    (field !== 'status' || !perRowMode) && isOffered(field)
+    (field !== 'status' || !perRowMode) && isOffered(field) && applies(field)
       ? [{ value: field, label: fieldLabel(field) }]
       : []
   );
@@ -1883,32 +1917,19 @@ function ManualModePicker({
         {t('csv.mapper.mode.title')}
       </div>
       <p>{t('csv.mapper.mode.help')}</p>
-      <div
-        className="journalit-trade-import-manual-mode-options"
-        role="radiogroup"
-        aria-labelledby={titleId}
-      >
-        {MANUAL_MODE_OPTIONS.map(([value, labelKey]) => (
-          <label
-            key={value}
-            className={`journalit-trade-import-manual-mode-option${manualMode === value ? ' is-selected' : ''}${busy ? ' is-disabled' : ''}`}
-          >
-            <input
-              type="radio"
-              name="journalit-trade-import-manual-mode"
-              value={value}
-              disabled={busy}
-              checked={manualMode === value}
-              onChange={(event) => {
-                if (isManualImportMode(event.target.value)) {
-                  onChange(event.target.value);
-                }
-              }}
-            />
-            <span>{t(labelKey)}</span>
-          </label>
-        ))}
-      </div>
+      <SegmentedControl<ManualImportMode>
+        groupRole="radiogroup"
+        ariaLabelledBy={titleId}
+        size="small"
+        fullWidth
+        disabled={busy}
+        value={manualMode}
+        options={MANUAL_MODE_OPTIONS.map(([value, labelKey]) => ({
+          value,
+          label: t(labelKey),
+        }))}
+        onChange={onChange}
+      />
     </div>
   );
 }
@@ -2059,6 +2080,7 @@ function ManualColumnMapper({
   const assignments = columnAssignmentsFromMappings(columnMappings, headers);
   const customFields = customFieldDefinitions(plugin);
   const requiredFields = new Set<string>(requiredMappingFields);
+  const optionsFieldsApplicable = optionsFieldsApply(assetType, assignments);
   return (
     <div className="csv-column-mapper journalit-trade-import-inline-mapper">
       <div className="csv-mapper-header">
@@ -2093,7 +2115,8 @@ function ManualColumnMapper({
                   selectedField,
                   assignments,
                   customFields,
-                  perRowMode
+                  perRowMode,
+                  optionsFieldsApplicable
                 )}
                 busy={busy}
                 onChange={(value) => onAssignColumn(header, value)}
@@ -2146,12 +2169,14 @@ function ManualColumnMapper({
             placeholder={t('trade-import.placeholder.template-name')}
           />
         </label>
-        <button
+        <Button
+          variant="secondary"
+          size="small"
           disabled={!templateName.trim() || busy}
           onClick={onSaveTemplate}
         >
           {t('trade-import.action.save-template')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -2463,13 +2488,14 @@ function TradeImportPreviewHeader({
         {hasIssues ? <AlertTriangle /> : <BadgeCheck />}{' '}
         {getTradeImportCompletionTitle(completedResult, operationResult)}
       </h2>
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="small"
         className="journalit-trade-import-completion-header__reset"
         onClick={onReset}
       >
         {t('csv.button.import-another')}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -4259,13 +4285,15 @@ export const CSVImport = memo<CSVImportProps>(({ plugin }) => {
 
                 <TradeImportPrivacyNote />
 
-                <button
+                <Button
+                  variant="primary"
+                  size="small"
                   className="journalit-trade-import-primary"
                   disabled={!canAnalyse(file, capabilities, busy)}
                   onClick={() => void runAnalyse()}
                 >
                   {t('trade-import.action.analyse')}
-                </button>
+                </Button>
               </>
             )}
           </section>

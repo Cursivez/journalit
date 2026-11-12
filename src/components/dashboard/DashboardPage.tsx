@@ -12,9 +12,14 @@ import { DashboardContent } from './components/DashboardContent';
 import { useDashboard } from './hooks';
 import type { FilterState } from './DashboardView';
 import {
+  DashboardCompareDataProvider,
   DashboardDataProvider,
   useDashboardData,
 } from './context/DashboardDataContext';
+import {
+  DashboardCompareControlsProvider,
+  type DashboardCompareControlsValue,
+} from './compare/DashboardCompareControls';
 import { useDebounced } from '../../hooks/useDebounced';
 import { useEventBusMultiple } from '../../hooks/useEventBus';
 import { usePlugin } from '../../hooks/usePlugin';
@@ -212,6 +217,7 @@ interface DashboardBodyProps {
   leaf: WorkspaceLeaf;
   modeToggle: React.ReactNode;
   filters: FilterState;
+  compareControls: DashboardCompareControlsValue;
   activeMetrics: string[];
   activeWidgets: string[];
   handleFilterChange: (filters: FilterState) => void;
@@ -241,6 +247,7 @@ const DashboardBody: React.FC<DashboardBodyProps> = ({
   leaf,
   modeToggle,
   filters,
+  compareControls,
   activeMetrics,
   activeWidgets,
   handleFilterChange,
@@ -254,45 +261,67 @@ const DashboardBody: React.FC<DashboardBodyProps> = ({
 }) => {
   
   const debouncedFilters = useDebounced(filters, 150);
+  const debouncedCompareFilters = useDebounced(
+    compareControls.compareFilters,
+    150
+  );
+
+  const content = (
+    <div className="journalit-dashboard-view-container journalit-dashboard-view--embedded">
+      <div className="journalit-dashboard-view">
+        <DashboardGuideCoordinator
+          leaf={leaf}
+          isActive={isActive}
+          isEditing={isEditing}
+          showUnifiedSelector={showUnifiedSelector}
+        />
+        <FilterControls
+          filters={filters}
+          onFilterChange={handleFilterChange}
+          isEditing={isEditing}
+          onToggleEditMode={toggleEditMode}
+          onOpenAddWidget={openUnifiedSelector}
+          modeToggle={modeToggle}
+        />
+        <DashboardContentWrapper
+          isLoading={isLoading}
+          filters={debouncedFilters}
+          isEditing={isEditing}
+          showUnifiedSelector={showUnifiedSelector}
+          activeMetrics={activeMetrics}
+          activeWidgets={activeWidgets}
+          onCloseSelector={closeUnifiedSelector}
+          openUnifiedSelector={openUnifiedSelector}
+        />
+      </div>
+    </div>
+  );
 
   return (
-    <DashboardDataProvider
-      app={plugin.app}
-      tradeService={plugin.tradeService}
-      filters={debouncedFilters}
-      defaultRiskAmount={plugin.settings.trade?.defaultRiskAmount}
-      plugin={plugin}
-      isActive={isActive}
-    >
-      <div className="journalit-dashboard-view-container journalit-dashboard-view--embedded">
-        <div className="journalit-dashboard-view">
-          <DashboardGuideCoordinator
-            leaf={leaf}
-            isActive={isActive}
-            isEditing={isEditing}
-            showUnifiedSelector={showUnifiedSelector}
-          />
-          <FilterControls
-            filters={filters}
-            onFilterChange={handleFilterChange}
-            isEditing={isEditing}
-            onToggleEditMode={toggleEditMode}
-            onOpenAddWidget={openUnifiedSelector}
-            modeToggle={modeToggle}
-          />
-          <DashboardContentWrapper
-            isLoading={isLoading}
-            filters={debouncedFilters}
-            isEditing={isEditing}
-            showUnifiedSelector={showUnifiedSelector}
-            activeMetrics={activeMetrics}
-            activeWidgets={activeWidgets}
-            onCloseSelector={closeUnifiedSelector}
-            openUnifiedSelector={openUnifiedSelector}
-          />
-        </div>
-      </div>
-    </DashboardDataProvider>
+    <DashboardCompareControlsProvider value={compareControls}>
+      <DashboardDataProvider
+        app={plugin.app}
+        tradeService={plugin.tradeService}
+        filters={debouncedFilters}
+        defaultRiskAmount={plugin.settings.trade?.defaultRiskAmount}
+        plugin={plugin}
+        isActive={isActive}
+      >
+        
+        <DashboardCompareDataProvider
+          app={plugin.app}
+          tradeService={plugin.tradeService}
+          filters={
+            compareControls.compareFilters ? debouncedCompareFilters : null
+          }
+          defaultRiskAmount={plugin.settings.trade?.defaultRiskAmount}
+          plugin={plugin}
+          isActive={isActive}
+        >
+          {content}
+        </DashboardCompareDataProvider>
+      </DashboardDataProvider>
+    </DashboardCompareControlsProvider>
   );
 };
 
@@ -315,6 +344,10 @@ export const DashboardPage = React.memo(function DashboardPage({
   const suppressWidgetPickerAutoOpenRef = useRef(false);
   const {
     filters,
+    compareFilters,
+    handleCompareFilterChange,
+    startComparison,
+    stopComparison,
     isFiltersHydrated,
     isLoading,
     isEditing,
@@ -358,6 +391,16 @@ export const DashboardPage = React.memo(function DashboardPage({
 
   useGuideBackHandler(isActive ? handleGuideBack : null);
 
+  const compareControls = useMemo<DashboardCompareControlsValue>(
+    () => ({
+      compareFilters,
+      onCompareFilterChange: handleCompareFilterChange,
+      startComparison,
+      stopComparison,
+    }),
+    [compareFilters, handleCompareFilterChange, startComparison, stopComparison]
+  );
+
   useEffect(() => {
     if (!isActive) return;
     if (currentGuideStepId !== 'widget-picker') {
@@ -393,6 +436,7 @@ export const DashboardPage = React.memo(function DashboardPage({
       leaf={leaf}
       modeToggle={modeToggle}
       filters={filters}
+      compareControls={compareControls}
       activeMetrics={activeMetrics}
       activeWidgets={activeWidgets}
       handleFilterChange={handleFilterChange}

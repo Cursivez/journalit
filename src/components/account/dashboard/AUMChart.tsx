@@ -372,9 +372,9 @@ const AUMChartDefs: React.FC<{
       />
     </linearGradient>
 
-    <SeriesShadowFilter id="aumShadow" />
+    <SeriesShadowFilter id={`${chartId}-shadow`} />
 
-    <SeriesGlowFilter id="aumGlow" />
+    <SeriesGlowFilter id={`${chartId}-glow`} />
   </defs>
 );
 
@@ -571,7 +571,7 @@ export const AUMChart: React.FC<AUMChartProps> = ({
             dot={false}
             activeDot={false}
             baseValue={domain[0]}
-            filter="url(#aumShadow)"
+            filter={`url(#${chartId}-shadow)`}
             isAnimationActive={animateSeries}
           />
 
@@ -589,7 +589,7 @@ export const AUMChart: React.FC<AUMChartProps> = ({
               stroke: 'var(--background-primary)',
               strokeWidth: 1,
               fill: 'var(--interactive-accent)',
-              filter: 'url(#aumGlow)',
+              filter: `url(#${chartId}-glow)`,
             }}
             name="AUM Balance"
           />

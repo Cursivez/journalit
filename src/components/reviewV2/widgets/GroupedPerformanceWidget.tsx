@@ -259,7 +259,7 @@ const selectGroupedPerformanceRows = (
         }))
       : tableRows;
   return {
-    chartRows: kind === 'tag' ? presentationRows : [...data],
+    chartRows: presentationRows,
     tableRows: presentationRows,
   };
 };

@@ -131,6 +131,23 @@ export class AgentEntityIdentityService {
     return (await this.resolveSetupRecord(agentId))?.name ?? null;
   }
 
+  
+  public async resolveSetupIds(
+    agentIds: readonly string[]
+  ): Promise<ReadonlyMap<string, string | null>> {
+    const setups = await this.listSetupsStrict();
+    return new Map(
+      agentIds.map((agentId) => [
+        agentId,
+        isSetupAgentId(agentId)
+          ? (setups
+              .filter((setup) => setup.agentEntityId === agentId)
+              .sort(compareSetupIdentityOrder)[0]?.name ?? null)
+          : null,
+      ])
+    );
+  }
+
   public async resolveSetupRecord(agentId: string): Promise<Setup | null> {
     if (!isSetupAgentId(agentId)) {
       return null;

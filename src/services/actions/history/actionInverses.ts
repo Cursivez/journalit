@@ -10,6 +10,7 @@ import {
   accountFieldsRestore,
   customFieldRestore,
   customFieldSettingsRestore,
+  dashboardComparisonFieldsRestore,
   isBoolean,
   isReview,
   imageAnnotationsRestore,
@@ -22,6 +23,8 @@ import {
   setupFieldsRestore,
   shaped,
   tradeFieldsRestore,
+  idealExitsRestore,
+  dividendsRestore,
   type InputShape,
 } from './restoreShapes';
 import { settingsInverse, settingsRestoreShape } from './settingsInverses';
@@ -61,7 +64,10 @@ export interface InverseItemGuard extends EditableItem {
 }
 
 export interface EditableItem {
-  readonly kind: 'account_transaction' | 'prop_challenge_cost';
+  readonly kind:
+    | 'account_transaction'
+    | 'prop_challenge_cost'
+    | 'prop_challenge_prior_payout';
   readonly accountId: string;
   readonly itemId: string;
 }
@@ -81,6 +87,12 @@ export function editableItemOf(
   if (action === 'prop_challenge.add_cost') {
     const itemId = text(output.cost_id);
     return itemId ? { kind: 'prop_challenge_cost', accountId, itemId } : null;
+  }
+  if (action === 'prop_challenge.add_prior_payout') {
+    const itemId = text(output.payout_id);
+    return itemId
+      ? { kind: 'prop_challenge_prior_payout', accountId, itemId }
+      : null;
   }
   return null;
 }
@@ -116,6 +128,8 @@ const INVERSE_INPUT_TABLE: Partial<Record<ActionId, InputShape>> = {
       set: tradeFieldsRestore,
       stop_losses: plannedTargets,
       take_profits: plannedTargets,
+      ideal_exits: idealExitsRestore,
+      dividends: dividendsRestore,
       add_tags: isTexts,
       remove_tags: isTexts,
       add_mistakes: isTexts,
@@ -138,6 +152,19 @@ const INVERSE_INPUT_TABLE: Partial<Record<ActionId, InputShape>> = {
   },
   'account.delete_transaction': ids('account_id', 'transaction_id'),
   'prop_challenge.delete_cost': ids('account_id', 'cost_id'),
+  'prop_challenge.delete_prior_payout': ids('account_id', 'payout_id'),
+  'prop_challenge.remove_drawdown_floor': ids(
+    'account_id',
+    'expected_revision',
+    'rule_id'
+  ),
+  'dashboard_comparison.update': {
+    required: {
+      comparison_id: isText,
+      expected_revision: isText,
+      fields: dashboardComparisonFieldsRestore,
+    },
+  },
   'session_log_tag.update': {
     required: {
       tag_id: isText,
@@ -211,11 +238,17 @@ const INVERSE_INPUT_TABLE: Partial<Record<ActionId, InputShape>> = {
   },
   'custom_field.delete': ids('field_id'),
   'session_log_tag.delete': ids('tag_id'),
+  'dashboard_comparison.delete': ids('comparison_id'),
   'review.delete_session_log_entry': {
     required: { review: isReview, entry_id: isText },
   },
   'review.remove_images': {
     required: { review: isReview, widget: isText, media_ids: isTexts },
+  },
+  'trade.remove_images': {
+    required: { trade_id: isText },
+    optional: { media_ids: isTexts, urls: isTexts },
+    needsOptional: true,
   },
   'dashboard_layout.delete': ids('name'),
   'home_layout.delete': ids('name'),
@@ -235,11 +268,14 @@ const REMOVAL_INVERSES: ReadonlySet<ActionId> = new Set<ActionId>([
   'account.delete',
   'account.delete_transaction',
   'prop_challenge.delete_cost',
+  'prop_challenge.delete_prior_payout',
   'custom_field.delete',
   'session_log_tag.delete',
+  'dashboard_comparison.delete',
   'review.delete_session_log_entry',
   'review.delete_key_event',
   'review.remove_images',
+  'trade.remove_images',
   'dashboard_layout.delete',
   'home_layout.delete',
   'review_template.delete',
@@ -434,6 +470,7 @@ const RESTORE_TARGETS: Partial<Record<ActionId, string>> = {
   'trade.update': 'trade_id',
   'account.update': 'account_id',
   'session_log_tag.update': 'tag_id',
+  'dashboard_comparison.update': 'comparison_id',
   'setup.update': 'setup_id',
   'custom_field.update': 'field_id',
   'review.update': 'review',
@@ -511,10 +548,60 @@ function buildInverse(
           }
         : null;
     }
+    case 'prop_challenge.add_prior_payout': {
+      const accountId = text(output.account_id);
+      const payoutId = text(output.payout_id);
+      return accountId && payoutId
+        ? {
+            calls: [
+              call('prop_challenge.delete_prior_payout', {
+                account_id: accountId,
+                payout_id: payoutId,
+              }),
+            ],
+          }
+        : null;
+    }
+    case 'prop_challenge.set_drawdown_floor': {
+      
+      
+      
+      
+      const accountId = text(output.account_id);
+      const revision = text(output.revision);
+      const ruleId = text(planned.rule_id);
+      return accountId && revision && ruleId && planned.replaces === undefined
+        ? {
+            calls: [
+              call('prop_challenge.remove_drawdown_floor', {
+                account_id: accountId,
+                expected_revision: revision,
+                rule_id: ruleId,
+              }),
+            ],
+          }
+        : null;
+    }
     case 'custom_field.create': {
       const fieldId = text(output.field_id);
       return fieldId
         ? { calls: [call('custom_field.delete', { field_id: fieldId })] }
+        : null;
+    }
+    case 'dashboard_comparison.create': {
+      
+      
+      const comparisonId = text(output.comparison_id);
+      const revision = text(output.revision);
+      return comparisonId && revision
+        ? {
+            calls: [
+              call('dashboard_comparison.delete', {
+                comparison_id: comparisonId,
+              }),
+            ],
+            createdItems: [revision],
+          }
         : null;
     }
     case 'session_log_tag.create': {
@@ -563,6 +650,22 @@ function buildInverse(
         );
       }
       return { calls };
+    }
+    case 'trade.add_images': {
+      
+      const mediaIds = strings(output.media_ids);
+      const urls = strings(output.urls);
+      return mediaIds.length + urls.length > 0
+        ? {
+            calls: [
+              call('trade.remove_images', {
+                trade_id: given.trade_id,
+                ...(mediaIds.length > 0 ? { media_ids: mediaIds } : {}),
+                ...(urls.length > 0 ? { urls } : {}),
+              }),
+            ],
+          }
+        : null;
     }
     case 'review.add_images': {
       const widget = text(output.widget);

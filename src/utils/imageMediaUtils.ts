@@ -147,7 +147,11 @@ function parseYouTubeVideoId(url: string): string | null {
     }
 
     const pathParts = parsed.pathname.split('/').filter(Boolean);
-    if (pathParts[0] === 'shorts' || pathParts[0] === 'embed') {
+    if (
+      pathParts[0] === 'shorts' ||
+      pathParts[0] === 'embed' ||
+      pathParts[0] === 'live'
+    ) {
       const id = pathParts[1];
       return isValidYouTubeId(id) ? id : null;
     }

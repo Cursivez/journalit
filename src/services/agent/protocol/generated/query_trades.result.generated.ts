@@ -6,7 +6,7 @@ export interface Success {
 status: "ok"
 meta: ResultMeta
 
-fields: ("trade_id" | "symbol" | "direction" | "status" | "entry_time" | "exit_time" | "account_id" | "setup_id" | "volume" | "entry_price" | "exit_price" | "pnl" | "commission" | "r_multiple" | "tags" | "mistakes" | "trade_revision")[]
+fields: ("trade_id" | "symbol" | "direction" | "status" | "entry_time" | "exit_time" | "account_id" | "setup_id" | "volume" | "entry_price" | "exit_price" | "pnl" | "commission" | "r_multiple" | "tags" | "mistakes" | "rating" | "market_bias" | "trade_revision")[]
 
 trades: Trade[]
 page: PageInfo
@@ -36,6 +36,21 @@ r_multiple?: (number | null)
 tags?: string[]
 
 mistakes?: string[]
+
+rating?: ((0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5) | null)
+
+market_bias?: {
+
+alignment: ("with" | "against" | "neutral" | "none")
+
+bias: (("long" | "neutral" | "short") | null)
+
+from_week: boolean
+
+daily: (("long" | "neutral" | "short") | null)
+
+weekly: (("long" | "neutral" | "short") | null)
+}
 trade_revision?: number
 }
 export interface PageInfo {

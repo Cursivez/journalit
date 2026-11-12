@@ -62,7 +62,6 @@ export const deviceFlowSignInModalStyles = `
 .device-activation-modal-container .copy-button {
   width: 40px;
   height: 40px;
-  padding: 0;
 }
 
 

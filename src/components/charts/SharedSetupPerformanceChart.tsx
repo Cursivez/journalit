@@ -17,6 +17,7 @@ import {
 import { useCurrency } from '../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { ChartBase } from './ChartBase';
+import { SeriesGlowFilter, SeriesShadowFilter } from './SignedSeriesDefs';
 import { RechartsPortalTooltip } from './RechartsPortalTooltip';
 import { generateNiceAxis, calculateYAxisWidth } from '../../utils/chartUtils';
 import type JournalitPlugin from '../../main';
@@ -26,6 +27,13 @@ import { useTwoStageTouchNavigation } from './useTwoStageTouchNavigation';
 import { handleRovingChartMarkKeyDown } from './chartKeyboardNavigation';
 import { useChartAnimationActive } from './chartAnimation';
 import { skipVerticalGridCoordinates } from './chartGrid';
+import { formatSetupTradeCount } from '../setups/SetupTradeCount';
+import { SVG_LABEL_TOOLTIP_PROPS } from './svgLabelTooltip';
+import {
+  SETUP_NAME_AXIS_TICK_MARGIN,
+  SetupNameAxisTick,
+  setupNameAxisWidth,
+} from './SetupNameAxisTick';
 
 const EPSILON = 1e-6; 
 const SVG_TEXT_ANCHOR_START = 'start';
@@ -143,6 +151,11 @@ export const SharedSetupPerformanceChart: React.FC<
   plugin,
 }) => {
   const isAnimationActive = useChartAnimationActive();
+  
+  
+  const chartId = React.useId();
+  const shadowId = `setup-bar-shadow-${chartId}`;
+  const glowId = `setup-bar-glow-${chartId}`;
   const chartRef = React.useRef<HTMLDivElement>(null);
   const { currency: globalCurrency } = useCurrency();
   const { formatValue, shouldMask } = useDisplayFormatter();
@@ -248,25 +261,8 @@ export const SharedSetupPerformanceChart: React.FC<
         margin={{ top: 6, right: 5, left: 0, bottom: 5 }}
       >
         <defs>
-          
-          <filter id="setup-bar-shadow" height="130%">
-            <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.1" />
-          </filter>
-          
-          <filter id="setup-bar-glow" height="130%">
-            <feGaussianBlur
-              in="SourceGraphic"
-              stdDeviation="1.5"
-              result="blur"
-            />
-            <feColorMatrix
-              in="blur"
-              mode="matrix"
-              values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
-              result="glow"
-            />
-            <feComposite in="SourceGraphic" in2="glow" operator="over" />
-          </filter>
+          <SeriesShadowFilter id={shadowId} variant="bar" />
+          <SeriesGlowFilter id={glowId} variant="bar" />
         </defs>
 
         <CartesianGrid
@@ -346,10 +342,10 @@ export const SharedSetupPerformanceChart: React.FC<
           stroke="var(--background-primary)"
           strokeWidth={0.8}
           strokeOpacity={0.5}
-          filter="url(#setup-bar-shadow)"
+          filter={`url(#${shadowId})`}
           radius={[2, 2, 0, 0]}
           activeBar={{
-            filter: 'url(#setup-bar-glow)',
+            filter: `url(#${glowId})`,
             strokeWidth: 1.2,
             strokeOpacity: 0.8,
           }}
@@ -424,6 +420,8 @@ interface SetupPerformanceRankingPoint {
   value: number;
   rawValue: number;
   trades: number;
+  
+  shareOfTrades?: number;
   winRate: number;
   profitFactor: number;
 }
@@ -433,7 +431,13 @@ interface SetupPerformanceRankingChartProps {
   height?: number;
   metricKind: SetupPerformanceMetricKind;
   metricKey: string;
+  
+  metricPrecision?: number;
+  
+  metricNeutralTone?: boolean;
   metricLabel: string;
+  
+  outcome?: 'wins' | 'losses';
   isChartMasked: boolean;
   onPointClick?: (pointId: string) => void;
 }
@@ -452,7 +456,7 @@ interface SetupPerformanceBarShapeProps {
 
 interface SetupPerformanceBarInteractionProps {
   isChartMasked: boolean;
-  metricKey: string;
+  metricNeutralTone: boolean;
   isInteractive?: boolean;
   isInitialTabStop?: boolean;
   onKeyboardActivate?: (
@@ -473,7 +477,7 @@ const SetupPerformanceBarShape: React.FC<
   strokeWidth,
   strokeOpacity,
   isChartMasked,
-  metricKey,
+  metricNeutralTone,
   isInteractive = false,
   isInitialTabStop = false,
   onKeyboardActivate,
@@ -491,7 +495,7 @@ const SetupPerformanceBarShape: React.FC<
       fill={getPerformanceBarFill(
         payload?.value ?? 0,
         isChartMasked,
-        metricKey
+        metricNeutralTone
       )}
       stroke={stroke}
       strokeWidth={strokeWidth}
@@ -502,6 +506,7 @@ const SetupPerformanceBarShape: React.FC<
       role={isInteractive ? 'button' : undefined}
       tabIndex={isInteractive ? (isInitialTabStop ? 0 : -1) : undefined}
       data-journalit-chart-mark={isInteractive ? 'true' : undefined}
+      {...SVG_LABEL_TOOLTIP_PROPS}
       aria-label={
         isInteractive && payload
           ? t('setups.view.card.open-named', { name: payload.name })
@@ -521,6 +526,13 @@ const SetupPerformanceBarShape: React.FC<
 
 SetupPerformanceBarShape.displayName = 'SetupPerformanceBarShape';
 
+
+const MeasuredChart: React.FC<{
+  render: (size: { width: number; height: number }) => React.ReactElement;
+  width?: number;
+  height?: number;
+}> = ({ render, width = 0, height = 0 }) => render({ width, height });
+
 export const SetupPerformanceRankingChart: React.FC<
   SetupPerformanceRankingChartProps
 > = ({
@@ -528,7 +540,10 @@ export const SetupPerformanceRankingChart: React.FC<
   height,
   metricKind,
   metricKey,
+  metricPrecision = 2,
+  metricNeutralTone = false,
   metricLabel,
+  outcome,
   isChartMasked,
   onPointClick,
 }) => {
@@ -549,9 +564,9 @@ export const SetupPerformanceRankingChart: React.FC<
       formatValue({
         kind: metricKind,
         value: metricKey === 'profitFactor' ? value + 1 : value,
-        precision: metricKey === 'totalTrades' ? 0 : 2,
+        precision: metricPrecision,
       }),
-    [formatValue, metricKind, metricKey]
+    [formatValue, metricKind, metricKey, metricPrecision]
   );
 
   const axisConfig = React.useMemo(() => {
@@ -587,134 +602,190 @@ export const SetupPerformanceRankingChart: React.FC<
 
   return (
     <ChartBase height={chartHeight} width="100%" chartRef={chartRef}>
-      <BarChart
-        data={data}
-        layout="vertical"
-        margin={{ top: 4, right: 8, bottom: 0, left: 0 }}
-        barCategoryGap={10}
-      >
-        <CartesianGrid
-          horizontal={false}
-          stroke="var(--background-modifier-border)"
-          strokeDasharray="3 3"
-          strokeOpacity={0.35}
-        />
-        <XAxis
-          type="number"
-          domain={axisConfig.domain}
-          ticks={axisConfig.ticks}
-          tickLine={false}
-          axisLine={{
-            stroke: 'var(--background-modifier-border)',
-            strokeOpacity: 0.5,
-          }}
-          tick={{
-            fill: 'var(--text-muted)',
-            fontSize: 11,
-            fontWeight: 500,
-          }}
-          tickMargin={5}
-          tickFormatter={(value) => formatMetric(Number(value))}
-        />
-        <YAxis
-          type="category"
-          dataKey="name"
-          width={160}
-          tickLine={false}
-          axisLine={false}
-          tick={{
-            fill: 'var(--text-muted)',
-            fontSize: 11,
-            fontWeight: 600,
-          }}
-          tickMargin={8}
-        />
-        <ReferenceLine
-          x={0}
-          stroke="var(--text-normal, #888888)"
-          strokeOpacity={0.55}
-          strokeWidth={1}
-        />
-        <RechartsPortalTooltip
-          chartRef={chartRef}
-          placementMode="bar"
-          cursor={{
-            fill: 'var(--interactive-hover)',
-            fillOpacity: 0.1,
-            strokeOpacity: 0.3,
-            strokeWidth: 1,
-            stroke: 'var(--interactive-accent)',
-          }}
-        >
-          {(props) => (
-            <SetupPerformanceTooltip
-              active={props.active}
-              payload={props.payload}
-              metricLabel={metricLabel}
-              metricKind={metricKind}
+      <MeasuredChart
+        render={({ width, height: measuredHeight }) => (
+          <BarChart
+            width={width}
+            height={measuredHeight}
+            data={data}
+            layout="vertical"
+            margin={{ top: 4, right: 8, bottom: 0, left: 0 }}
+            barCategoryGap={10}
+          >
+            <CartesianGrid
+              horizontal={false}
+              stroke="var(--background-modifier-border)"
+              strokeDasharray="3 3"
+              strokeOpacity={0.35}
             />
-          )}
-        </RechartsPortalTooltip>
-        <Bar
-          dataKey="value"
-          barSize={16}
-          fill="var(--interactive-accent)"
-          cursor={canNavigate ? 'pointer' : undefined}
-          onClick={(point, _index, event) => {
-            if (!canNavigate || !isSetupPerformanceRankingPoint(point)) {
-              return;
-            }
-            handleClick(point.id, event, () => onPointClick?.(point.id));
-          }}
-          onTouchEnd={(point) => {
-            if (canNavigate && isSetupPerformanceRankingPoint(point)) {
-              recordTouch(point.id);
-            }
-          }}
-          minPointSize={0}
-          isAnimationActive={isAnimationActive}
-          animationDuration={700}
-          animationEasing="ease-out"
-          stroke="var(--background-primary)"
-          strokeWidth={0.8}
-          strokeOpacity={0.5}
-          shape={(props: SetupPerformanceBarShapeProps) => (
-            <SetupPerformanceBarShape
-              {...props}
-              isChartMasked={isChartMasked}
-              metricKey={metricKey}
-              isInteractive={canNavigate}
-              isInitialTabStop={props.index === 0}
-              onKeyboardActivate={(point, event) =>
-                handleKeyDown(event, () => onPointClick?.(point.id))
-              }
+            <XAxis
+              type="number"
+              domain={axisConfig.domain}
+              ticks={axisConfig.ticks}
+              tickLine={false}
+              axisLine={{
+                stroke: 'var(--background-modifier-border)',
+                strokeOpacity: 0.5,
+              }}
+              tick={{
+                fill: 'var(--text-muted)',
+                fontSize: 11,
+                fontWeight: 500,
+              }}
+              tickMargin={5}
+              tickFormatter={(value) => formatMetric(Number(value))}
             />
-          )}
-        />
-      </BarChart>
+            <YAxis
+              type="category"
+              dataKey="name"
+              width={setupNameAxisWidth(width)}
+              tickLine={false}
+              axisLine={false}
+              tick={<SetupNameAxisTick fill="var(--text-muted)" />}
+              tickMargin={SETUP_NAME_AXIS_TICK_MARGIN}
+            />
+            <ReferenceLine
+              x={0}
+              stroke="var(--text-normal, #888888)"
+              strokeOpacity={0.55}
+              strokeWidth={1}
+            />
+            <RechartsPortalTooltip
+              chartRef={chartRef}
+              placementMode="bar"
+              cursor={{
+                fill: 'var(--interactive-hover)',
+                fillOpacity: 0.1,
+                strokeOpacity: 0.3,
+                strokeWidth: 1,
+                stroke: 'var(--interactive-accent)',
+              }}
+            >
+              {(props) => (
+                <SetupPerformanceTooltip
+                  active={props.active}
+                  payload={props.payload}
+                  metricLabel={metricLabel}
+                  metricKind={metricKind}
+                  metricKey={metricKey}
+                  metricPrecision={metricPrecision}
+                  metricNeutralTone={metricNeutralTone}
+                  outcome={outcome}
+                />
+              )}
+            </RechartsPortalTooltip>
+            <Bar
+              dataKey="value"
+              barSize={16}
+              fill="var(--interactive-accent)"
+              cursor={canNavigate ? 'pointer' : undefined}
+              onClick={(point, _index, event) => {
+                if (!canNavigate || !isSetupPerformanceRankingPoint(point)) {
+                  return;
+                }
+                handleClick(point.id, event, () => onPointClick?.(point.id));
+              }}
+              onTouchEnd={(point) => {
+                if (canNavigate && isSetupPerformanceRankingPoint(point)) {
+                  recordTouch(point.id);
+                }
+              }}
+              minPointSize={0}
+              isAnimationActive={isAnimationActive}
+              animationDuration={700}
+              animationEasing="ease-out"
+              stroke="var(--background-primary)"
+              strokeWidth={0.8}
+              strokeOpacity={0.5}
+              shape={(props: SetupPerformanceBarShapeProps) => (
+                <SetupPerformanceBarShape
+                  {...props}
+                  isChartMasked={isChartMasked}
+                  metricNeutralTone={metricNeutralTone}
+                  isInteractive={canNavigate}
+                  isInitialTabStop={props.index === 0}
+                  onKeyboardActivate={(point, event) =>
+                    handleKeyDown(event, () => onPointClick?.(point.id))
+                  }
+                />
+              )}
+            />
+          </BarChart>
+        )}
+      />
     </ChartBase>
   );
 };
 
 SetupPerformanceRankingChart.displayName = 'SetupPerformanceRankingChart';
 
+const SHARE_OF_OUTCOME_KEY = {
+  wins: 'setups.view.overview.outcome.share.wins',
+  losses: 'setups.view.overview.outcome.share.losses',
+} as const;
+
 const SetupPerformanceTooltip: React.FC<{
   active?: boolean;
   payload?: unknown;
   metricLabel: string;
   metricKind: SetupPerformanceMetricKind;
-}> = ({ active, payload, metricLabel, metricKind }) => {
+  metricKey: string;
+  metricPrecision: number;
+  metricNeutralTone: boolean;
+  outcome?: 'wins' | 'losses';
+}> = ({
+  active,
+  payload,
+  metricLabel,
+  metricKind,
+  metricKey,
+  metricPrecision,
+  metricNeutralTone,
+  outcome,
+}) => {
   const { formatValue, shouldMask } = useDisplayFormatter();
   const point = getSetupPerformanceTooltipPoint(payload);
   if (!active || !point) return null;
 
   const isMetricMasked = metricKind !== 'count' && shouldMask(metricKind);
   const valueToneClass =
-    isMetricMasked || metricKind === 'count'
+    isMetricMasked || metricNeutralTone
       ? ''
       : point.value >= 0
         ? 'positive'
         : 'negative';
+  const formattedShare =
+    point.shareOfTrades === undefined || metricKey === 'shareOfTrades'
+      ? null
+      : formatValue({
+          kind: 'percentage',
+          value: point.shareOfTrades,
+          precision: 1,
+        });
+  const details = [
+    formatSetupTradeCount(point.trades, (value) =>
+      formatValue({ kind: 'count', value, precision: 0 })
+    ),
+    ...(formattedShare === null
+      ? []
+      : [
+          outcome
+            ? t(SHARE_OF_OUTCOME_KEY[outcome], { share: formattedShare })
+            : t('setups.view.metric.share-of-trades-value', {
+                share: formattedShare,
+              }),
+        ]),
+    ...(outcome
+      ? []
+      : [
+          formatValue({ kind: 'percentage', value: point.winRate }),
+          `${formatValue({
+            kind: 'metric',
+            value: point.profitFactor,
+            precision: 2,
+          })} ${t('setups.view.metric.profit-factor')}`,
+        ]),
+  ];
 
   return (
     <div className="journalit-chart-tooltip">
@@ -728,7 +799,7 @@ const SetupPerformanceTooltip: React.FC<{
         {formatValue({
           kind: metricKind,
           value: point.rawValue,
-          precision: metricKind === 'count' ? 0 : 2,
+          precision: metricPrecision,
         })}
       </div>
 
@@ -737,15 +808,7 @@ const SetupPerformanceTooltip: React.FC<{
       </div>
 
       <div className="journalit-chart-tooltip-info journalit-chart-tooltip-info--tight">
-        {formatValue({ kind: 'count', value: point.trades, precision: 0 })}{' '}
-        {t('setups.view.metric.trades')} ·{' '}
-        {formatValue({ kind: 'percentage', value: point.winRate })} ·{' '}
-        {formatValue({
-          kind: 'metric',
-          value: point.profitFactor,
-          precision: 2,
-        })}{' '}
-        {t('setups.view.metric.profit-factor')}
+        {details.join(' · ')}
       </div>
     </div>
   );
@@ -778,10 +841,10 @@ function isSetupPerformanceRankingPoint(
 function getPerformanceBarFill(
   value: number,
   isMasked: boolean,
-  metricKey: string
+  isNeutralTone: boolean
 ): string {
   if (isMasked) return 'var(--text-muted)';
-  if (metricKey === 'winRate' || metricKey === 'totalTrades') {
+  if (isNeutralTone) {
     return 'var(--chart-neutral, var(--text-muted))';
   }
   if (value < 0) return 'var(--chart-negative)';

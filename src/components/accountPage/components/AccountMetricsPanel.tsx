@@ -8,7 +8,7 @@ import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';
 import { ACCOUNT_PAGE_METRICS_SECTION_TARGET_ID } from '../../../guides/accountPageGuideIds';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
-import { metricGridLayout } from './metricGridLayout';
+import { metricGridLayout } from '../../../utils/metricGridLayout';
 
 
 const MAX_COLUMNS = { lg: 7, md: 4, sm: 2 } as const;

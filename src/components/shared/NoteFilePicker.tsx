@@ -2,6 +2,7 @@ import React, { memo, useMemo, useState } from 'react';
 import type { TFile } from 'obsidian';
 import { t } from '../../lang/helpers';
 import { FileText } from './icons/ObsidianIcon';
+import { Button } from '../ui/Button';
 
 interface NoteFilePickerProps {
   files: TFile[];
@@ -44,13 +45,14 @@ export const NoteFilePicker = memo<NoteFilePickerProps>(
               {title}
             </div>
             {onCancel ? (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="small"
                 onClick={onCancel}
                 className="journalit-note-file-picker__cancel-button"
               >
                 {t('button.cancel')}
-              </button>
+              </Button>
             ) : null}
           </div>
         ) : null}

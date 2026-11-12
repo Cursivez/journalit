@@ -36,8 +36,9 @@ export const TRADE_FORM_STYLES = `
     color: var(--text-muted);
   }
 
+  
   .journalit-trade-form-customization-page .journalit-trade-form-layout-editor {
-    flex: 1;
+    flex: none;
   }
 
   .journalit-trade-form-customization-page .journalit-trade-form-layout-editor__mode-stack {
@@ -45,12 +46,21 @@ export const TRADE_FORM_STYLES = `
   }
 
   .journalit-trade-form-customization-page .journalit-visibility-editor {
-    flex: 1;
-    min-height: 160px;
+    flex: none;
   }
 
   .journalit-trade-form-customization-page .journalit-visibility-editor__content {
     max-height: none;
+    overflow: visible;
+  }
+
+  .journalit-trade-form-customization-page .journalit-trade-form-layout-editor__footer {
+    position: sticky;
+    bottom: -20px;
+    margin: 0 -20px -20px;
+    padding: 12px 20px;
+    background: var(--background-primary);
+    z-index: 2;
   }
 
   
@@ -116,13 +126,7 @@ export const TRADE_FORM_STYLES = `
   .trade-form-view-container input,
   .trade-form-view-container textarea {
     box-sizing: border-box !important;
-    background-color: var(--background-primary) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    color: var(--text-normal) !important;
-    border-radius: 4px !important;
-    padding: 8px 12px !important;
     width: 100% !important;
-    font-size: 16px !important;
   }
 
   
@@ -130,8 +134,7 @@ export const TRADE_FORM_STYLES = `
     width: 38px !important;
     min-width: 38px !important;
     max-width: 38px !important;
-    padding: 6px 4px !important;
-    font-size: 14px !important;
+    padding: 0 4px !important;
     text-align: center !important;
     flex-shrink: 0 !important;
     flex-grow: 0 !important;
@@ -144,51 +147,11 @@ export const TRADE_FORM_STYLES = `
     opacity: 0.7 !important;
   }
   
-  .trade-form-view-container select,
-  .trade-form-view-container .journalit-select {
-    background-color: var(--background-primary) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    color: var(--text-normal) !important;
-    border-radius: 4px !important;
-    padding: 8px 30px 8px 12px !important; 
-    width: 100% !important;
-    font-size: 16px !important;
-    min-height: 38px !important; 
-    line-height: 1.5 !important; 
-    text-overflow: ellipsis !important; 
-  }
-
-  
-  .trade-form-view-container select:invalid,
-  .trade-form-view-container select:not([value]),
-  .trade-form-view-container select[value=""] {
-    color: var(--text-muted) !important;
-    opacity: 0.7 !important; 
-  }
-
-  
-  .trade-form-view-container select[data-has-value="true"] {
-    color: var(--text-normal) !important;
-    opacity: 1 !important;
-  }
-
-  
-  .trade-form-view-container select option[value=""][disabled],
-  .trade-form-view-container select option:first-child:not([value]),
-  .trade-form-view-container select option:first-child[value=""],
-  .trade-form-view-container .select-placeholder,
-  .trade-form-view-container option.select-placeholder {
+  .trade-form-view-container .select-placeholder {
     color: var(--text-muted) !important;
     opacity: 0.7 !important;
   }
 
-  
-  .trade-form-view-container select option:not([value=""]):not(:disabled),
-  .trade-form-view-container select option:not(.select-placeholder),
-  .trade-form-view-container select option:checked {
-    color: var(--text-normal) !important;
-    opacity: 1 !important;
-  }
   
   .trade-form-view-container input[type="date"] {
     padding-left: 35px !important; 
@@ -276,29 +239,9 @@ export const TRADE_FORM_STYLES = `
   }
 
   
-  .trade-form-view-container select option {
-    padding: 8px 12px !important;
-    font-size: 16px !important;
-    line-height: 1.5 !important;
-    background-color: var(--background-primary) !important;
-    color: var(--text-normal) !important;
-  }
-
-  
-  .trade-form-view-container select option[value=""][disabled],
-  .trade-form-view-container select option:first-child:not([value]),
-  .trade-form-view-container select option:first-child[value=""],
-  .trade-form-view-container .select-placeholder,
-  .trade-form-view-container option.select-placeholder {
+  .trade-form-view-container .select-placeholder {
     color: var(--text-muted) !important;
     font-style: italic !important; 
-  }
-  .trade-form-view-container input:focus,
-  .trade-form-view-container select:focus,
-  .trade-form-view-container textarea:focus {
-    border-color: var(--interactive-accent) !important;
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 30%, transparent) !important;
-    outline: none !important;
   }
   .trade-form-view-container .label {
     display: block !important;
@@ -324,17 +267,6 @@ export const TRADE_FORM_STYLES = `
     color: var(--text-error) !important;
     margin-top: 2px !important;
     padding-left: 1px !important;
-  }
-  
-  .trade-form-view-container button:not(.journalit-trade-form-header-action):not(.journalit-button):not(.journalit-star-rating__star) {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 8px 16px !important;
-    border-radius: 4px !important;
-    cursor: pointer !important;
-    font-weight: 500 !important;
-    font-size: 16px !important;
   }
   .trade-form-view-container button.primary {
     background-color: var(--interactive-accent) !important;
@@ -394,50 +326,11 @@ export const TRADE_FORM_STYLES = `
     align-items: center !important;
     gap: 8px !important;
   }
-  .trade-form-view-container .formActions .journalit-button {
-    display: inline-flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    border-radius: 6px !important;
-    font-weight: 500 !important;
-    box-shadow: none !important;
-    gap: 8px !important;
-    user-select: none !important;
-  }
   .trade-form-view-container .formActions .create-account-button {
     min-width: 100px !important;
   }
   .trade-form-view-container .formActions .cancel-button {
     min-width: 70px !important;
-  }
-  .trade-form-view-container .formActions .journalit-button--primary {
-    background: var(--interactive-accent) !important;
-    border-color: var(--interactive-accent) !important;
-    color: var(--text-on-accent) !important;
-  }
-  .trade-form-view-container .formActions .journalit-button--primary:hover:not(:disabled) {
-    background: var(--interactive-accent-hover) !important;
-    color: var(--text-on-accent) !important;
-    border-color: var(--interactive-accent-hover) !important;
-  }
-  .trade-form-view-container .formActions .journalit-button--secondary {
-    background: transparent !important;
-    border-color: var(--background-modifier-border) !important;
-    color: var(--text-muted) !important;
-  }
-  .trade-form-view-container .formActions .journalit-button--secondary:hover:not(:disabled) {
-    background: var(--background-modifier-hover) !important;
-    color: var(--text-normal) !important;
-  }
-  .trade-form-view-container .formActions .journalit-button--secondary.importTradesButton {
-    min-width: 108px !important;
-    background: var(--background-secondary) !important;
-    border-color: var(--background-modifier-border) !important;
-    color: var(--text-normal) !important;
-  }
-  .trade-form-view-container .formActions .journalit-button--secondary.importTradesButton:hover:not(:disabled) {
-    background: var(--background-modifier-hover) !important;
-    border-color: var(--interactive-accent) !important;
   }
   .trade-form-view-container .twoColumnLayout {
     display: grid !important;
@@ -579,27 +472,28 @@ export const TRADE_FORM_STYLES = `
   }
 
   .trade-form-view-container .asset-type-button {
-    background-color: var(--background-primary) !important;
+    background: var(--journalit-control-secondary-fill) !important;
     color: var(--text-normal) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: 6px !important;
-    padding: 8px 4px;
-    font-size: 13px !important;
-    height: 34px;
-    transition: background-color 0.2s, border-color 0.2s !important;
+    border: 0 !important;
+    box-shadow: var(--journalit-control-secondary-shadow) !important;
+    padding: 0 4px !important;
+    font-size: var(--font-ui-small) !important;
+    height: var(--journalit-control-height) !important;
+    transition: background-color 90ms ease-out !important;
     cursor: pointer !important;
     margin: 0 !important;
+    border-radius: var(--journalit-control-radius);
   }
 
   .trade-form-view-container .asset-type-button[aria-checked="true"] {
-    background-color: var(--interactive-accent) !important;
-    border-color: var(--interactive-accent) !important;
+    background: var(--journalit-control-primary-fill) !important;
+    box-shadow: var(--journalit-control-primary-shadow) !important;
     color: var(--text-on-accent) !important;
     font-weight: 500 !important;
   }
 
   .trade-form-view-container .asset-type-button:hover:not([aria-checked="true"]) {
-    background-color: var(--background-secondary-alt) !important;
+    background: var(--journalit-control-secondary-fill-hover) !important;
   }
 
   
@@ -621,28 +515,31 @@ export const TRADE_FORM_STYLES = `
 
   .trade-form-view-container .direction-button {
     flex: 1 !important;
-    background-color: var(--background-primary) !important;
+    background: var(--journalit-control-secondary-fill) !important;
     color: var(--text-normal) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: 6px !important;
-    padding: 8px 4px !important;
-    font-size: 13px !important;
-    height: 34px !important;
-    transition: background-color 0.2s, border-color 0.2s !important;
+    border: 0 !important;
+    box-shadow: var(--journalit-control-secondary-shadow) !important;
+    padding: 0 4px !important;
+    font-size: var(--font-ui-small) !important;
+    height: var(--journalit-control-height) !important;
+    transition: background-color 90ms ease-out !important;
     cursor: pointer !important;
     margin: 0 !important;
+    border-radius: var(--journalit-control-radius);
   }
 
   
   
 
   .trade-form-view-container .direction-button[aria-checked="true"] {
-    background-color: var(--interactive-accent) !important;
+    background: var(--journalit-control-primary-fill) !important;
+    box-shadow: var(--journalit-control-primary-shadow) !important;
     color: var(--text-on-accent) !important;
+    font-weight: 500 !important;
   }
 
   .trade-form-view-container .direction-button:hover:not([aria-checked="true"]) {
-    background-color: var(--background-secondary-alt) !important;
+    background: var(--journalit-control-secondary-fill-hover) !important;
   }
 
   
@@ -779,29 +676,6 @@ export const TRADE_FORM_STYLES = `
     font-weight: 600 !important;
     line-height: 1.2 !important;
     margin-bottom: 6px !important;
-  }
-
-  .trade-form-view-container .custom-field-control .journalit-custom-field-dropdown .journalit-dropdown-select__trigger {
-    justify-content: space-between !important;
-    width: 100% !important;
-    padding: 8px 12px !important;
-    background-color: var(--background-primary) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: 4px !important;
-    font-size: 16px !important;
-    font-weight: var(--font-normal) !important;
-  }
-
-  .trade-form-view-container .custom-field-control .journalit-custom-field-dropdown .journalit-dropdown-select__trigger:focus-visible {
-    border-color: var(--interactive-accent) !important;
-    box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 30%, transparent) !important;
-  }
-
-  .trade-form-view-container .custom-field-control input:not(.combobox-input),
-  .trade-form-view-container .custom-field-control textarea,
-  .trade-form-view-container .custom-field-control select,
-  .trade-form-view-container .custom-field-control .journalit-dropdown-select__trigger {
-    min-height: 38px !important;
   }
 
   .trade-form-view-container .custom-fields-empty {
@@ -990,9 +864,7 @@ export const TRADE_FORM_STYLES = `
   
   @media (max-width: 600px) {
     .trade-form-view-container input,
-    .trade-form-view-container textarea,
-    .trade-form-view-container select,
-    .trade-form-view-container .journalit-select {
+    .trade-form-view-container textarea {
       font-size: 18px !important;
     }
   }
@@ -1027,27 +899,34 @@ export const TRADE_FORM_STYLES = `
   }
 
   .trade-form-view-container .journalit-tab-button {
-    background: transparent;
+    height: 32px;
+    padding: 0 10px;
     border: none;
-    border-bottom: 2px solid transparent;
-    padding: 10px 20px;
+    border-radius: var(--journalit-control-radius) var(--journalit-control-radius) 0 0;
+    background: transparent;
+    box-shadow: none;
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--font-ui-small);
     font-weight: 500;
     color: var(--text-muted);
-    transition: all 0.2s ease;
     position: relative;
   }
 
   .trade-form-view-container .journalit-tab-button:hover {
     color: var(--text-normal);
-    background-color: var(--background-modifier-hover);
+    background: var(--journalit-control-overlay-hover);
+    box-shadow: none;
+  }
+
+  .trade-form-view-container .journalit-tab-button:focus-visible {
+    outline: 2px solid var(--journalit-control-focus);
+    outline-offset: -2px;
   }
 
   .trade-form-view-container .journalit-tab-button.journalit-tab-active {
+    background: transparent;
+    box-shadow: inset 0 -2px 0 var(--interactive-accent);
     color: var(--text-normal);
-    font-weight: 600;
-    border-bottom-color: var(--text-accent);
   }
 
   .trade-form-view-container .journalit-tab-error-badge {
@@ -1162,12 +1041,7 @@ export const TRADE_FORM_STYLES = `
 
   .trade-form-view-container .journalit-image-url-input {
     flex: 1 !important;
-    padding: 0.5rem !important;
-    background: var(--background-secondary) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: var(--radius-s) !important;
     color: var(--text-normal) !important;
-    font-size: 0.9em !important;
   }
 
   .trade-form-view-container .journalit-image-url-input.has-error {
@@ -1175,18 +1049,16 @@ export const TRADE_FORM_STYLES = `
   }
 
   .trade-form-view-container .journalit-image-url-button {
-    padding: 0.5rem 1rem !important;
-    background: var(--background-secondary) !important;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: var(--radius-s) !important;
-    color: var(--text-muted) !important;
     cursor: not-allowed !important;
-    font-size: 0.9em !important;
-    font-weight: 500 !important;
+    height: var(--journalit-control-height);
+    padding: 0 11px;
+    border-radius: var(--journalit-control-radius);
+    font-size: var(--font-ui-small);
   }
 
   .trade-form-view-container .journalit-image-url-button.is-active {
-    background: var(--interactive-accent) !important;
+    background: var(--journalit-control-primary-fill) !important;
+    box-shadow: var(--journalit-control-primary-shadow) !important;
     color: var(--text-on-accent) !important;
     cursor: pointer !important;
   }
@@ -1198,34 +1070,28 @@ export const TRADE_FORM_STYLES = `
   }
 
   
+  
   .trade-form-view-container .journalit-trade-type-selector {
     margin-bottom: 16px;
-    border-radius: 8px;
-  }
-
-  .trade-form-view-container .journalit-trade-type-selector.is-expanded {
-    border: 1px solid var(--background-modifier-border);
-    background-color: var(--background-secondary);
+    border-radius: var(--journalit-control-radius);
+    background: var(--journalit-control-field-fill);
+    box-shadow: var(--journalit-control-field-ring);
   }
 
   .trade-form-view-container .journalit-trade-type-selector__header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 12px 16px;
+    padding: 8px 12px;
     cursor: pointer;
     user-select: none;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 8px;
-    background-color: var(--background-primary);
+    border-radius: var(--journalit-control-radius);
   }
 
   .trade-form-view-container .journalit-trade-type-selector.is-expanded
     .journalit-trade-type-selector__header {
-    border: none;
     border-bottom: 1px solid var(--background-modifier-border);
-    border-radius: 0;
-    background-color: transparent;
+    border-radius: var(--journalit-control-radius) var(--journalit-control-radius) 0 0;
   }
 
   .trade-form-view-container .journalit-trade-type-selector__header-main {

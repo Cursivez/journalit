@@ -1,5 +1,7 @@
 import React from 'react';
 import { t } from '../../lang/helpers';
+import { IconButton } from '../ui/IconButton';
+import { RotateCcw } from './icons/ObsidianIcon';
 import {
   DEFAULT_TAG_PICKER_COLOR,
   normalizeLabelColor,
@@ -41,16 +43,14 @@ export const LabelColorPicker: React.FC<LabelColorPickerProps> = ({
           disabled={disabled}
         />
       </label>
-      {hasColor && (
-        <button
-          type="button"
-          className="journalit-label-color-picker__reset"
-          onClick={() => onChange(null)}
-          disabled={disabled}
-        >
-          {t('button.reset')}
-        </button>
-      )}
+      <IconButton
+        ariaLabel={t('button.reset')}
+        className="journalit-label-color-picker__reset"
+        onClick={() => onChange(null)}
+        disabled={disabled || !hasColor}
+      >
+        <RotateCcw size={16} aria-hidden="true" />
+      </IconButton>
     </div>
   );
 };

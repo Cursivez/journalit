@@ -1,6 +1,11 @@
 import { DEFAULT_PRIVACY_MASK } from '../../constants';
 import { CurrencyCode, getCurrencyConfig } from '../../utils/currencyConfig';
-import { formatCost, formatCurrency, formatPnL } from '../../utils/formatting';
+import {
+  formatCost,
+  formatCurrency,
+  formatMoney,
+  formatPnL,
+} from '../../utils/formatting';
 
 export type DisplayValueKind =
   | 'pnl'
@@ -23,6 +28,8 @@ export interface DisplayPolicy {
   privacyMask: string;
   currencyCode: string;
   displayRMultiples: boolean;
+  
+  hideDollarAmountsInRMode: boolean;
   defaultRiskAmount?: number;
   locale?: string;
   
@@ -39,6 +46,7 @@ interface DisplayPolicySettingsInput {
   };
   trade?: {
     displayRMultiples?: boolean;
+    hideDollarAmountsInRMode?: boolean;
     defaultRiskAmount?: number;
   };
 }
@@ -87,6 +95,7 @@ export function createDisplayPolicy(
     privacyMask: normalizePrivacyMask(settings.display?.privacyMask),
     currencyCode: settings.general?.currency ?? CurrencyCode.USD,
     displayRMultiples: settings.trade?.displayRMultiples ?? false,
+    hideDollarAmountsInRMode: settings.trade?.hideDollarAmountsInRMode ?? false,
     defaultRiskAmount: settings.trade?.defaultRiskAmount,
   };
 }
@@ -202,7 +211,7 @@ export function formatDisplayValue(
             false,
             undefined
           )
-        : formatCurrency(options.value, options.signed ?? false, currencyCode);
+        : formatMoney(options.value, options.signed ?? false, currencyCode);
     case 'price':
       if (options.priceStyle === 'decimal') {
         return formatDecimalQuotePrice(

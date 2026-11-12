@@ -9,6 +9,7 @@ import { t } from '../../lang/helpers';
 import { compareReleaseVersions } from './versionSort';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { Accordion } from '../shared/Accordion';
+import { Button } from '../ui/Button';
 
 interface Props {
   leaf: WorkspaceLeaf;
@@ -407,21 +408,27 @@ export const ReleaseNotesRenderer: React.FC<Props> = ({
       <div className="release-notes-header">
         <h2>{t('release-notes.title')}</h2>
         <div className="release-notes-header-actions">
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="release-notes-action-button"
             onClick={() => openExternalUrl('https://journalit.co/docs')}
           >
             <span ref={docsIconRef} className="button-icon" />
             <span>{t('release-notes.link.docs')}</span>
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
+            size="small"
             className="release-notes-action-button"
             onClick={() => openExternalUrl('https://discord.gg/AkSw3D9h8b')}
           >
             <span ref={discordIconRef} className="button-icon" />
             <span>{t('release-notes.link.discord')}</span>
-          </button>
-          <button
+          </Button>
+          <Button
+            variant="secondary"
+            size="small"
             className="release-notes-action-button"
             onClick={() =>
               openExternalUrl('https://github.com/Cursivez/journalit')
@@ -429,7 +436,7 @@ export const ReleaseNotesRenderer: React.FC<Props> = ({
           >
             <span ref={githubIconRef} className="button-icon" />
             <span>{t('release-notes.link.github')}</span>
-          </button>
+          </Button>
         </div>
         <div className="current-version">
           {t('release-notes.current-version', {

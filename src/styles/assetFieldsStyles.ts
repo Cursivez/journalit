@@ -235,6 +235,15 @@ export const ASSET_FIELDS_STYLES = `
       margin-top: 4px;
       display: block;
     }
+
+    
+    .trade-form-view-container .journalit-r-entry-actions {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--size-4-2);
+      margin-top: var(--size-4-2);
+    }
 `;
 
 

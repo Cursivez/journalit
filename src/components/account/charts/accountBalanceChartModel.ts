@@ -41,10 +41,12 @@ function buildPhaseBalanceChartData(
     now: new Date(overlay.endMs),
     tradingDayCutoffTime: plugin?.settings.trade.tradingDayCutoffTime,
   });
-  const drawdown = overlay.drawdown;
-  let floor = drawdown ? phase.startingBalance - drawdown.amount : undefined;
-  let peak = phase.startingBalance;
-  let locked = false;
+  
+  
+  
+  const showsFloor = overlay.drawdown !== undefined;
+  const floorAt = (floor: number | undefined) =>
+    showsFloor && floor !== undefined ? { drawdownLevel: floor } : {};
   const opening = new Date(startOfLocalDay(overlay.startMs));
   const data: BalanceChartDataPoint[] = [
     {
@@ -52,53 +54,32 @@ function buildPhaseBalanceChartData(
       rawDate: opening,
       balance: phase.startingBalance,
       isInitialBalance: true,
-      ...(floor !== undefined ? { drawdownLevel: floor } : {}),
+      ...floorAt(timeline.openingDrawdownFloor),
     },
   ];
-  const days = new Map<string, typeof timeline>();
-  for (const event of timeline) {
+  const days = new Map<string, typeof timeline.points>();
+  for (const event of timeline.points) {
     const day = getTradingDayKey(getTradingDay(event.date, plugin));
     const events = days.get(day) ?? [];
     events.push(event);
     days.set(day, events);
   }
-  const advanceFloor = (balance: number) => {
-    if (!drawdown || floor === undefined || locked) return;
-    const advanced = advanceTrailingFloor(
-      floor,
-      balance,
-      peak,
-      drawdown.amount,
-      drawdown.lockAtBalance
-    );
-    floor = advanced.floor;
-    peak = advanced.peak;
-  };
   for (const events of days.values()) {
     const transactions: AccountTransaction[] = [];
+    
+    
+    const tradingDay = events.some((event) => event.transaction);
     for (const event of events) {
-      const aftermath = event.payoutAftermath;
-      if (aftermath?.drawdownAction === 'lock_at_balance') {
-        floor = aftermath.drawdownFloor;
-        locked = true;
-      } else if (aftermath?.drawdownAction === 'reset_from_starting_balance') {
-        floor = drawdown ? phase.startingBalance - drawdown.amount : undefined;
-        peak = phase.startingBalance;
-        locked = false;
-      }
-      if (drawdown?.mode === 'intraday_trailing' && event.advancesTrailingPeak)
-        advanceFloor(event.balance);
       if (event.transaction) transactions.push(event.transaction);
-      else
+      else if (!(event.firmFloor && tradingDay))
         data.push({
           date: formatDateDisplay(event.date, userDateFormat),
           rawDate: event.date,
           balance: event.balance,
-          ...(floor !== undefined ? { drawdownLevel: floor } : {}),
+          ...floorAt(event.drawdownFloor),
         });
     }
     const last = events[events.length - 1];
-    if (drawdown?.mode === 'eod_trailing') advanceFloor(last.balance);
     if (transactions.length > 0) {
       const tradeTransactions = transactions.filter(
         (t) => t.type === TransactionType.TRADE
@@ -107,7 +88,7 @@ function buildPhaseBalanceChartData(
         date: formatDateDisplay(last.date, userDateFormat),
         rawDate: last.date,
         balance: last.balance,
-        ...(floor !== undefined ? { drawdownLevel: floor } : {}),
+        ...floorAt(last.drawdownFloor),
         isConsolidated: true,
         tradeCount: tradeTransactions.length,
         dailyPnL: tradeTransactions.reduce((sum, t) => sum + t.amount, 0),
@@ -127,13 +108,9 @@ function buildPhaseBalanceChartData(
             (t.type === TransactionType.DEPOSIT && t.amount < 0)
         ),
       });
-    } else {
-      
-      data[data.length - 1] = {
-        ...data[data.length - 1],
-        ...(floor !== undefined ? { drawdownLevel: floor } : {}),
-      };
     }
+    
+    
   }
   return data;
 }
@@ -166,27 +143,6 @@ export const startOfLocalDay = (ms: number): number => {
   const date = new Date(ms);
   date.setHours(0, 0, 0, 0);
   return date.getTime();
-};
-
-
-const advanceTrailingFloor = (
-  floor: number,
-  balance: number,
-  peak: number,
-  amount: number,
-  lockAtBalance?: number
-): { floor: number; peak: number } => {
-  const nextPeak = Math.max(peak, balance);
-  const candidate = nextPeak - amount;
-  return {
-    peak: nextPeak,
-    floor: Math.max(
-      floor,
-      lockAtBalance === undefined
-        ? candidate
-        : Math.min(candidate, lockAtBalance)
-    ),
-  };
 };
 
 export const buildBalanceChartData = (

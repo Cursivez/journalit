@@ -56,6 +56,18 @@ export const REVIEW_SHARE_STYLES = `
     min-height: 0;
   }
 
+  .journalit-review-share-export-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--journalit-space-2);
+  }
+
+  .journalit-review-share-export-actions .journalit-button {
+    height: auto;
+    min-height: var(--input-height);
+    white-space: normal;
+  }
+
   @container (max-width: 560px) {
     .journalit-review-share-layout {
       grid-template-columns: minmax(0, 1fr);

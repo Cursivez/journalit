@@ -15,7 +15,6 @@ import type {
 } from '../../trade/TradeNoteWriter';
 import type { TradeData, TradeService } from '../../trade/TradeService';
 import { t, tPlural } from '../../../lang/helpers';
-import { parseLocalDateSafe } from '../../../utils/dateUtils';
 import { ActionExecutionError, ActionPlanError } from '../ActionErrors';
 import {
   ActionExecution,
@@ -34,15 +33,29 @@ import {
   normalizedTradeForWrite,
   parseExecutions,
   throwIfAborted,
+  type Executions,
 } from './tradeActionSupport';
 import { tradeTypeLabel } from './tradeTypeLabels';
+import {
+  applyDetailFields,
+  applyForexConversion,
+  applyOption,
+  checkDetailFields,
+  checkDividendsAllowed,
+  dividendsFromWire,
+  idealExitsFromWire,
+  makeResultOnly,
+  resolveForexConversion,
+  type ForexRateLookup,
+} from './tradeDetailFields';
+import { formatActionMoney } from './actionDisplayFormat';
 import { parseTargetList, validateTargetTotals } from './tradePlannedTargets';
 import {
   normalizeUserOwnedTradeNotes,
   replaceUserOwnedTradeNotes,
   USER_OWNED_TRADE_CONTENT_MARKER,
 } from '../../trade/core/TradeNoteDocumentCodec';
-import { MAX_TEXT, textLength } from './tradeUpdateChanges';
+import { INSTRUMENT_PATTERN, MAX_TEXT, textLength } from './tradeUpdateChanges';
 import { TradeRevisionConflictError } from '../../trade/core/TradeCommandService';
 import {
   customFieldValuesAfter,
@@ -64,6 +77,8 @@ interface InstrumentCatalog {
     instrument: string,
     assetType: string
   ): InstrumentContractFields;
+  
+  currency(instrument: string, assetType: string): string | undefined;
 }
 
 interface TradeCreateActionDependencies {
@@ -91,11 +106,15 @@ interface TradeCreateActionDependencies {
     addFieldOption(fieldId: string, option: string): Promise<boolean>;
   };
   calculateCommission?: InstrumentCommissionCalculator;
+  
+  getGlobalCurrency: () => string;
+  
+  forexRates: ForexRateLookup;
+  now?: () => Date;
 }
 
 const MAX_VALUE = 1_000_000_000;
 const MAX_AMOUNT = 1_000_000_000_000;
-const INSTRUMENT_PATTERN = /^[A-Z0-9.]{1,40}$/;
 
 function finite(
   value: number | undefined,
@@ -108,19 +127,62 @@ function finite(
 }
 
 
+type TradeLegs =
+  | { readonly executions: Executions; readonly resultOnly: null }
+  | {
+      readonly executions: null;
+      readonly resultOnly: { readonly entry: Date; readonly exit: Date };
+    };
 
-function optionExpirationDate(value: string): Date {
-  const date = /^\d{4}-\d{2}-\d{2}$/.test(value)
-    ? parseLocalDateSafe(value)
-    : null;
-  if (!date) throw new ActionPlanError('invalid_request', 'option.expiration');
-  return date;
+
+function tradeLegs(input: TradeCreateInput): TradeLegs {
+  if (input.executions !== undefined) {
+    if (input.entry_time !== undefined || input.exit_time !== undefined) {
+      throw new ActionPlanError('invalid_request', 'entry_time');
+    }
+    return { executions: parseExecutions(input.executions), resultOnly: null };
+  }
+  if (input.direct_pnl === undefined) {
+    throw new ActionPlanError('invalid_request', 'executions');
+  }
+  if (input.entry_time === undefined) {
+    throw new ActionPlanError('invalid_request', 'entry_time');
+  }
+  const entry = new Date(input.entry_time);
+  const exit =
+    input.exit_time === undefined ? entry : new Date(input.exit_time);
+  if (
+    Number.isNaN(entry.getTime()) ||
+    Number.isNaN(exit.getTime()) ||
+    exit < entry
+  ) {
+    throw new ActionPlanError('invalid_request', 'exit_time');
+  }
+  return { executions: null, resultOnly: { entry, exit } };
 }
+
 
 function validateInput(input: TradeCreateInput): void {
   if (!INSTRUMENT_PATTERN.test(input.instrument)) {
     throw new ActionPlanError('invalid_request', 'instrument');
   }
+  if (input.commission_type !== undefined && input.commission === undefined) {
+    throw new ActionPlanError('invalid_request', 'commission_type');
+  }
+  if (
+    input.unrealized_price_snapshot !== undefined &&
+    input.executions === undefined
+  ) {
+    
+    throw new ActionPlanError('invalid_request', 'unrealized_price_snapshot');
+  }
+  if (
+    input.forex_conversion_rate !== undefined &&
+    input.direct_pnl !== undefined
+  ) {
+    throw new ActionPlanError('invalid_request', 'forex_conversion_rate');
+  }
+  checkDetailFields(input, '', input.asset_type, input.trade_type);
   if ((input.asset_type === 'options') !== (input.option !== undefined)) {
     throw new ActionPlanError('invalid_request', 'option');
   }
@@ -130,6 +192,14 @@ function validateInput(input: TradeCreateInput): void {
     }
     if (input.missed_reason.trim() === '') {
       throw new ActionPlanError('invalid_request', 'missed_reason');
+    }
+  }
+  if (input.exit_reason !== undefined) {
+    if (input.trade_type !== 'missed') {
+      throw new ActionPlanError('invalid_request', 'exit_reason');
+    }
+    if (input.exit_reason.trim() === '') {
+      throw new ActionPlanError('invalid_request', 'exit_reason');
     }
   }
   if (input.trade_type === 'regular' && input.account_id === undefined) {
@@ -179,7 +249,6 @@ function validateInput(input: TradeCreateInput): void {
   if (input.option) {
     finite(input.option.strike, 'option.strike', (v) => v > 0);
     finite(input.option.contract_size, 'option.contract_size', (v) => v > 0);
-    optionExpirationDate(input.option.expiration);
   }
 }
 
@@ -219,7 +288,8 @@ export class TradeCreateAction implements ActionDefinition<'trade.create'> {
     const { signal } = context;
     throwIfAborted(signal);
     validateInput(input);
-    const executions = parseExecutions(input.executions);
+    const legs = tradeLegs(input);
+    const { executions } = legs;
     const tags =
       input.tags === undefined
         ? []
@@ -241,17 +311,20 @@ export class TradeCreateAction implements ActionDefinition<'trade.create'> {
     const names = await this.resolveNames(input, signal);
     const customFields = this.resolveCustomFields(input);
 
+    const defaults = this.deps.instruments.contractDefaults(
+      input.instrument,
+      input.asset_type
+    );
     const data: TradeData = {
       instrument: input.instrument,
       assetType: input.asset_type,
       direction: input.direction,
-      entryTime: firstEntryTime(executions),
-      entryPrice: executions.entries[0].price,
+      entryTime: legs.executions
+        ? firstEntryTime(legs.executions)
+        : legs.resultOnly.entry,
+      entryPrice: executions ? executions.entries[0].price : 0,
       positionSize: 0,
-      ...this.deps.instruments.contractDefaults(
-        input.instrument,
-        input.asset_type
-      ),
+      ...defaults,
       account: names.account === undefined ? [] : [names.account],
       setup: names.setup === undefined ? [] : [names.setup],
       tags: [...tags],
@@ -260,14 +333,34 @@ export class TradeCreateAction implements ActionDefinition<'trade.create'> {
         ? { customFields: customFieldValuesAfter(undefined, customFields) }
         : {}),
     };
-    applyExecutions(data, executions);
-    if (input.option) {
-      data.optionType = input.option.type;
-      data.strikePrice = input.option.strike;
-      data.expirationDate = optionExpirationDate(input.option.expiration);
-      if (input.option.contract_size !== undefined) {
-        data.contractSize = input.option.contract_size;
+    if (legs.executions) applyExecutions(data, legs.executions);
+    else makeResultOnly(data, legs.resultOnly.entry, legs.resultOnly.exit);
+    if (input.option) applyOption(data, input.option, 'option');
+    const globalCurrency = this.deps.getGlobalCurrency();
+    
+    
+    const catalogCurrency =
+      input.asset_type === 'cfd' && input.currency === undefined
+        ? this.deps.instruments.currency(input.instrument, 'cfd')
+        : undefined;
+    applyDetailFields(
+      data,
+      catalogCurrency === undefined
+        ? input
+        : { ...input, currency: catalogCurrency },
+      {
+        prefix: '',
+        defaults,
+        globalCurrency,
+        now: this.deps.now?.() ?? new Date(),
       }
+    );
+    if (input.ideal_exits !== undefined) {
+      data.idealExits = idealExitsFromWire(input.ideal_exits);
+    }
+    if (input.dividends !== undefined) {
+      checkDividendsAllowed(input.asset_type, input.trade_type, 'dividends');
+      data.dividends = dividendsFromWire(input.dividends, 'dividends');
     }
     if (input.stop_loss !== undefined) {
       data.stopLosses = [{ price: input.stop_loss }];
@@ -282,6 +375,7 @@ export class TradeCreateAction implements ActionDefinition<'trade.create'> {
       data.takeProfits = parseTargetList(input.take_profits, 'take_profits');
     }
     if (input.thesis !== undefined) data.thesis = input.thesis;
+    if (input.rating !== undefined) data.tradeRating = input.rating;
     if (input.risk_amount !== undefined) data.riskAmount = input.risk_amount;
     if (input.direct_pnl !== undefined) {
       data.useDirectPnLInput = true;
@@ -292,6 +386,9 @@ export class TradeCreateAction implements ActionDefinition<'trade.create'> {
     if (input.missed_reason !== undefined) {
       data.missedReason = input.missed_reason.trim();
     }
+    if (input.exit_reason !== undefined) {
+      data.exitReason = input.exit_reason.trim();
+    }
     const withCommission =
       input.commission === undefined
         ? applyAutoCommission(
@@ -301,9 +398,23 @@ export class TradeCreateAction implements ActionDefinition<'trade.create'> {
         : {
             ...data,
             commission: input.commission,
-            commissionType: 'fixed' as const,
+            commissionType: input.commission_type ?? ('fixed' as const),
             hasExplicitCommission: true,
           };
+    applyForexConversion(
+      withCommission,
+      await resolveForexConversion({
+        trade: withCommission,
+        type: input.trade_type,
+        requested: input.forex_conversion_rate,
+        field: 'forex_conversion_rate',
+        globalCurrency,
+        lookup: this.deps.forexRates,
+      })
+    );
+    throwIfAborted(signal);
+    
+    delete withCommission.clearUnsetFields;
 
     const normalized = normalizedTradeForWrite(
       withCommission,
@@ -311,6 +422,9 @@ export class TradeCreateAction implements ActionDefinition<'trade.create'> {
       { requireAccount: true }
     );
     if (!normalized) throw new ActionPlanError('invalid_request', 'executions');
+    if (input.unrealized_price_snapshot !== undefined && !normalized.isOpen) {
+      throw new ActionPlanError('invalid_request', 'unrealized_price_snapshot');
+    }
     const brokenTotal = validateTargetTotals(normalized.data, {
       stopLosses: input.stop_losses !== undefined,
       takeProfits: input.take_profits !== undefined,
@@ -328,9 +442,14 @@ export class TradeCreateAction implements ActionDefinition<'trade.create'> {
       instrument: input.instrument,
       asset_type: input.asset_type,
       direction: input.direction,
-      executions: structuredClone(input.executions),
+      ...(input.executions === undefined
+        ? {}
+        : { executions: structuredClone(input.executions) }),
+      ...(input.entry_time === undefined
+        ? {}
+        : { entry_time: input.entry_time }),
       status: normalized.isOpen
-        ? executions.exits.length > 0
+        ? executions && executions.exits.length > 0
           ? 'partially_closed'
           : 'open'
         : 'closed',
@@ -348,13 +467,26 @@ export class TradeCreateAction implements ActionDefinition<'trade.create'> {
       ...(notes === '' ? {} : { notes }),
     };
     const changes = [
-      t('actions.trade.create', {
-        type: tradeTypeLabel(input.trade_type),
-        direction: input.direction,
-        instrument: input.instrument,
-        entries: tPlural('actions.trade.entries', executions.entries.length),
-        exits: tPlural('actions.trade.exits', executions.exits.length),
-      }),
+      executions
+        ? t('actions.trade.create', {
+            type: tradeTypeLabel(input.trade_type),
+            direction: input.direction,
+            instrument: input.instrument,
+            entries: tPlural(
+              'actions.trade.entries',
+              executions.entries.length
+            ),
+            exits: tPlural('actions.trade.exits', executions.exits.length),
+          })
+        : t('actions.trade.create.result-only', {
+            type: tradeTypeLabel(input.trade_type),
+            direction: input.direction,
+            instrument: input.instrument,
+            pnl: formatActionMoney(
+              input.direct_pnl ?? 0,
+              input.currency ?? globalCurrency
+            ),
+          }),
     ];
     if (planned.addsInstrument) {
       changes.push(

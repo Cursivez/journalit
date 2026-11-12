@@ -25,6 +25,7 @@ import {
   type PanelFrameProps,
   BranchPanel,
   MENU_ITEM_SELECTOR,
+  FormPanel,
   RootPanel,
   ValuesPanel,
   DateRangePanel,
@@ -70,6 +71,7 @@ interface PanelNavigation {
   onCloseChild: () => void;
   onHoverRow: (childId: string | null) => void;
   registerAnchor: (id: string, element: HTMLElement | null) => void;
+  onCloseMenu: () => void;
 }
 
 interface FilterMenuPanelProps extends DateRangePickerLifecycle {
@@ -77,7 +79,7 @@ interface FilterMenuPanelProps extends DateRangePickerLifecycle {
   frame: PanelFrameProps;
   navigation: PanelNavigation;
   entries: FilterMenuEntry[];
-  title: string;
+  title: React.ReactNode;
   canReset: boolean;
   onReset: () => void;
   onClear: (node: FilterMenuValuesNode) => void;
@@ -118,6 +120,11 @@ const FilterMenuPanel: React.FC<FilterMenuPanelProps> = ({
       />
     );
   }
+  if (node.kind === 'form') {
+    return (
+      <FormPanel {...frame} node={node} onCloseMenu={navigation.onCloseMenu} />
+    );
+  }
   if (node.kind === 'date-range') {
     return (
       <DateRangePanel
@@ -140,7 +147,7 @@ const FilterMenuPanel: React.FC<FilterMenuPanelProps> = ({
 
 interface FilterMenuLayerProps {
   entries: FilterMenuEntry[];
-  title: string;
+  title: React.ReactNode;
   canReset: boolean;
   onReset: () => void;
   triggerRef: RefObject<HTMLElement | null>;
@@ -274,7 +281,8 @@ export const FilterMenuLayer: React.FC<FilterMenuLayerProps> = ({
   const handlePanelKeyDown = useCallback(
     (depth: number, event: React.KeyboardEvent<HTMLDivElement>) => {
       
-      if (openNodes[depth - 1]?.kind === 'date-range') return;
+      const formKind = openNodes[depth - 1]?.kind;
+      if (formKind === 'date-range' || formKind === 'form') return;
       const panel = event.currentTarget;
       const active = panel.ownerDocument.activeElement;
       const isTextInput = active instanceof HTMLInputElement;
@@ -404,7 +412,13 @@ export const FilterMenuLayer: React.FC<FilterMenuLayerProps> = ({
                       if (!event.currentTarget.contains(event.relatedTarget))
                         node.onActivate?.();
                     }
-                  : undefined,
+                  : node?.kind === 'form'
+                    ? () => {
+                        
+                        clearHoverTimer();
+                        dateRangeEditingRef.current = true;
+                      }
+                    : undefined,
               onBack:
                 layout === 'drilldown' && depth > 0
                   ? () => setPathAt(depth - 1, null, true)
@@ -417,6 +431,7 @@ export const FilterMenuLayer: React.FC<FilterMenuLayerProps> = ({
               onCloseChild: () => setPathAt(depth, null),
               onHoverRow: (childId) => scheduleHover(depth, childId),
               registerAnchor,
+              onCloseMenu: () => closeMenu(true),
             }}
             title={title}
             canReset={canReset}

@@ -12,6 +12,7 @@ import { aggregatePropChallengeEconomics } from '../../../services/propChallenge
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonText } from '../../shared/SkeletonText';
 import { t } from '../../../lang/helpers';
+import { SVG_LABEL_TOOLTIP_PROPS } from '../../charts/svgLabelTooltip';
 
 interface EvalRoiWidgetProps {
   plugin: JournalitPlugin;
@@ -126,6 +127,7 @@ function EvalRoiGauge({
       viewBox={`0 0 ${GAUGE_WIDTH} ${GAUGE_HEIGHT}`}
       className="journalit-home-eval-roi__gauge-svg"
       role="img"
+      {...SVG_LABEL_TOOLTIP_PROPS}
       aria-label={breakEvenLabel}
     >
       <title>{breakEvenLabel}</title>

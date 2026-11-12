@@ -3,6 +3,8 @@ import type { PropChallengeConfig } from '../../../../services/propChallenge/typ
 import { policyAt } from '../../../../services/propChallenge/PropChallengePolicyHistory';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
 import { t } from '../../../../lang/helpers';
+import { formatDateDisplay } from '../../../../utils/dateUtils';
+import { formatLocalizedDateTime } from '../../../../utils/localizedDateTime';
 import { correctionHistoryDiff } from './correctionHistoryDiff';
 
 type Audit = NonNullable<PropChallengeConfig['correctionHistory']>[number];
@@ -34,13 +36,7 @@ function CorrectionEntry({ audit }: { audit: Audit }) {
     <article className="journalit-correction-entry">
       <h4>
         <time dateTime={audit.appliedAt}>
-          {new Date(audit.appliedAt).toLocaleString(undefined, {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-            hour: 'numeric',
-            minute: '2-digit',
-          })}
+          {formatLocalizedDateTime(audit.appliedAt)}
         </time>
         {' · '}
         {audit.before.name}
@@ -50,9 +46,7 @@ function CorrectionEntry({ audit }: { audit: Audit }) {
           {periods.length > 1 && (
             <p>
               {t('account.profiles.correction-period')} ·{' '}
-              <time dateTime={period.at}>
-                {new Date(period.at).toLocaleDateString()}
-              </time>
+              <time dateTime={period.at}>{formatDateDisplay(period.at)}</time>
             </p>
           )}
           {period.changes.map((change) => (

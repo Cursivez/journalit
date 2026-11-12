@@ -1,3 +1,4 @@
+import { GOAL_HEADER_KEYS } from '../../../components/home/widgets/goalDefinitions';
 import { t, tPlural } from '../../../lang/helpers';
 import type {
   LayoutChange,
@@ -9,6 +10,11 @@ import type {
   SettingsChange,
 } from '../../agent/configuration/configurationChangeTypes';
 import type { PlannedConfigurationChange } from '../../agent/configuration/configurationPlan';
+import { goalTypeOf } from '../../agent/configuration/homeGoalConfiguration';
+import type {
+  HomeGoalPlanner,
+  HomeGoalPlanSummary,
+} from '../../agent/configuration/HomeGoalPlanner';
 import { LayoutConfigurationError } from '../../agent/configuration/LayoutPlanner';
 import type {
   DashboardLayoutPlanner,
@@ -100,7 +106,7 @@ interface ConfigurationActionSpec<
 > {
   collection: Collection;
   
-  part?: string;
+  part?: string | ((input: ActionInput<Id>) => string);
   plan(input: ActionInput<Id>, signal: AbortSignal): Promise<Planned>;
   describe(summary: Summary): readonly string[];
   
@@ -145,11 +151,13 @@ function configurationAction<
       ) as unknown as ActionSummary<Id>;
       
       const result = summary as unknown as ActionResult<Id>;
+      const part =
+        typeof spec.part === 'function' ? spec.part(input) : spec.part;
       return {
         target:
-          spec.part === undefined
+          part === undefined
             ? `configuration:${spec.collection}`
-            : `configuration:${spec.collection}.${spec.part}`,
+            : `configuration:${spec.collection}.${part}`,
         summary,
         affectedNotes: 0,
         display: {
@@ -283,10 +291,20 @@ function describeWorkflow(summary: SessionWorkflowPlanSummary): string[] {
   }
 }
 
+function describeHomeGoal(summary: HomeGoalPlanSummary): string[] {
+  const direction = summary.goal.direction === 'at_most' ? 'atMost' : 'atLeast';
+  return [
+    t('actions.configuration.set-goal', {
+      goal: t(GOAL_HEADER_KEYS[direction][goalTypeOf(summary.goal.metric)]),
+    }),
+  ];
+}
+
 interface ConfigurationPlanners {
   settings(): Pick<SettingsPlanner, 'plan'>;
   dashboardLayouts(): Pick<DashboardLayoutPlanner, 'plan'>;
   homeLayouts(): Pick<HomeLayoutPlanner, 'plan'>;
+  homeGoals(): Pick<HomeGoalPlanner, 'plan'>;
   reviewTemplates(): Pick<ReviewTemplatePlanner, 'plan'>;
   sessionWorkflows(): Pick<SessionWorkflowPlanner, 'plan'>;
 }
@@ -301,6 +319,7 @@ type ConfigurationActionId =
   | `settings.${SettingsKind}`
   | `dashboard_layout.${LayoutKind}`
   | `home_layout.${LayoutKind}`
+  | 'home_goal.set'
   | `review_template.${TemplateKind}`
   | `session_workflow.${WorkflowKind}`;
 type ConfigurationActionDefinitions = Pick<
@@ -473,6 +492,14 @@ export function createConfigurationActions(
     ),
     ...layoutActions(planners, 'dashboard'),
     ...layoutActions(planners, 'home'),
+    'home_goal.set': configurationAction<'home_goal.set', HomeGoalPlanSummary>({
+      collection: 'home_layouts',
+      
+      
+      part: (input) => `goals.${input.widget_id}`,
+      plan: (input, signal) => planners.homeGoals().plan(input, signal),
+      describe: describeHomeGoal,
+    }),
     'review_template.create': templateAction(planners, 'create'),
     'review_template.duplicate': templateAction(planners, 'duplicate'),
     'review_template.update': templateAction(planners, 'update'),

@@ -1,6 +1,9 @@
 import { t, type TranslationKey } from '../lang/helpers';
 import type { NewsEvent } from '../services/weekly/types';
 
+
+export const KEY_EVENTS_NO_NEWS_FIELD = 'keyEventsNoNews';
+
 export const KEY_EVENT_DAYS = [
   'Monday',
   'Tuesday',

@@ -9,7 +9,7 @@ import { SkeletonBox } from '../../shared/SkeletonBox';
 import { SkeletonCircle } from '../../shared/SkeletonCircle';
 import { LinkedItemText } from './shared/LinkedItemText';
 import { Tooltip } from '../../shared/Tooltip';
-import { Edit, Trash2 } from '../../shared/icons/ObsidianIcon';
+import { Check, Edit, Trash2, X } from '../../shared/icons/ObsidianIcon';
 import { NoTooltipButton } from '../../ui/NoTooltipButton';
 import { t } from '../../../lang/helpers';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
@@ -552,18 +552,18 @@ export const GoalsWidget: React.FC<GoalsWidgetProps> = React.memo(
                     <button
                       onClick={() => void handleSaveEdit()}
                       aria-label={t('button.save')}
-                      className="journalit-reviewv2-action-button journalit-reviewv2-action-button--primary"
+                      className="journalit-reviewv2-action-button journalit-reviewv2-action-button--primary journalit-reviewv2-action-button--icon"
                       {...shareCaptureExcludeProps}
                     >
-                      {t('button.save')}
+                      <Check size={16} aria-hidden="true" />
                     </button>
                     <button
                       onClick={() => setEditingIndex(null)}
                       aria-label={t('button.cancel')}
-                      className="journalit-reviewv2-action-button journalit-reviewv2-action-button--secondary"
+                      className="journalit-reviewv2-action-button journalit-reviewv2-action-button--secondary journalit-reviewv2-action-button--icon"
                       {...shareCaptureExcludeProps}
                     >
-                      {t('button.cancel')}
+                      <X size={16} aria-hidden="true" />
                     </button>
                   </>
                 ) : readOnly ? (

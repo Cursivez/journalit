@@ -16,15 +16,22 @@ import {
 } from '../../core/DateDraftGate';
 import {
   formatDateDisplay,
+  formatLocalDateString,
   getUserDateFormat,
   isValidDate,
+  parseLocalDateSafe,
 } from '../../../utils/dateUtils';
+import type { PropChallengePriorPayout } from '../../../services/propChallenge/types';
 import {
   CurrencyProvider,
   useCurrency,
 } from '../../../contexts/CurrencyContext';
 import { t } from '../../../lang/helpers';
-import { AccountEventDescriptionField } from './AccountEventDescriptionField';
+import {
+  AccountEventDescriptionField,
+  PRIOR_PAYOUT_EVENT,
+  type AccountEventType,
+} from './AccountEventDescriptionField';
 import {
   ConfirmationPanel,
   type ConfirmationPanelAction,
@@ -40,17 +47,38 @@ import {
   isFutureAccountEvent,
 } from './accountEventDate';
 import { JournalitModal } from '../../modals/JournalitModal';
+import { DropdownSelect } from '../../shared/DropdownSelect';
 
 const getErrorMessage = (error: unknown): string =>
   error instanceof Error ? error.message : String(error);
+
+
+type EditableAccountEvent =
+  | { kind: 'transaction'; transaction: AccountTransaction }
+  | { kind: 'prior-payout'; payout: PropChallengePriorPayout };
 
 interface EditEventModalProps {
   app: App;
   plugin: JournalitPlugin;
   accountName: string;
-  transaction: AccountTransaction;
+  event: EditableAccountEvent;
   onClose: () => void;
   onSave: () => void;
+}
+
+function eventType(event: EditableAccountEvent): AccountEventType {
+  return event.kind === 'transaction'
+    ? event.transaction.type
+    : PRIOR_PAYOUT_EVENT;
+}
+
+
+function eventTypeText(event: EditableAccountEvent): string {
+  if (event.kind === 'prior-payout')
+    return t('account.edit-event.type.prior-payout');
+  return event.transaction.type === TransactionType.DEPOSIT
+    ? t('account.add-event.type.deposit')
+    : t('account.add-event.type.withdrawal');
 }
 
 
@@ -62,11 +90,9 @@ class EditEventModal extends JournalitModal {
   constructor(props: EditEventModalProps) {
     super(props.app);
     this.props = props;
-    const typeText =
-      this.props.transaction.type === TransactionType.DEPOSIT
-        ? t('account.add-event.type.deposit')
-        : t('account.add-event.type.withdrawal');
-    this.titleEl.setText(t('account.edit-event.title', { type: typeText }));
+    this.titleEl.setText(
+      t('account.edit-event.title', { type: eventTypeText(props.event) })
+    );
   }
 
   onOpen() {
@@ -105,7 +131,7 @@ class EditEventModal extends JournalitModal {
 
 
 type EditEventFormState = {
-  type: TransactionType;
+  type: AccountEventType;
   amount: string;
   date: Date | null;
   dateEdited: boolean;
@@ -115,15 +141,37 @@ type EditEventFormState = {
 interface EditEventModalModelProps {
   plugin: JournalitPlugin;
   accountName: string;
-  transaction: AccountTransaction;
+  event: EditableAccountEvent;
   onSave: () => void;
   onModalClose: () => void;
+}
+
+
+function editedEventValues(
+  event: EditableAccountEvent,
+  includeTime: boolean
+): { amount: number; date: Date; description: string } {
+  if (event.kind === 'prior-payout') {
+    return {
+      amount: event.payout.amount,
+      date: parseLocalDateSafe(event.payout.date) ?? new Date(),
+      description: event.payout.note ?? '',
+    };
+  }
+  return {
+    amount: Math.abs(event.transaction.amount),
+    date: accountEventDateForEditing({
+      date: event.transaction.date,
+      includeTime,
+    }),
+    description: event.transaction.description || '',
+  };
 }
 
 function useEditEventModalModel({
   plugin,
   accountName,
-  transaction,
+  event,
   onSave,
   onModalClose,
 }: EditEventModalModelProps) {
@@ -138,20 +186,22 @@ function useEditEventModalModel({
     plugin.settings?.account?.accountMetadata?.[accountName]?.currency;
   const currency = accountCurrency || globalCurrency;
   const includeTime =
-    isTimedAccountEvent(transaction) &&
+    event.kind === 'transaction' &&
+    isTimedAccountEvent(event.transaction) &&
     Boolean(
       plugin.settings.account?.accountMetadata?.[accountName]?.propChallenge
     );
   const use24HourTime = getUse24HourTimeSetting(plugin);
+  const original = editedEventValues(event, includeTime);
 
   
-  const [eventData, setEventData] = useState<EditEventFormState>({
-    type: transaction.type,
-    amount: Math.abs(transaction.amount).toString(),
-    date: accountEventDateForEditing({ date: transaction.date, includeTime }),
+  const [eventData, setEventData] = useState<EditEventFormState>(() => ({
+    type: eventType(event),
+    amount: original.amount.toString(),
+    date: original.date,
     dateEdited: false,
-    description: transaction.description || '',
-  });
+    description: original.description,
+  }));
 
   const formatCurrency = (value: number): string => {
     return Math.abs(value).toLocaleString('en-US', {
@@ -161,10 +211,7 @@ function useEditEventModalModel({
     });
   };
 
-  const typeText =
-    transaction.type === TransactionType.DEPOSIT
-      ? t('account.add-event.type.deposit')
-      : t('account.add-event.type.withdrawal');
+  const typeText = eventTypeText(event);
 
   const handleSave = async () => {
     if (!dateDraftGate.confirm()) return;
@@ -205,22 +252,33 @@ function useEditEventModalModel({
         return;
       }
 
-      
-      await plugin.accountPageService?.updateManualTransaction(
-        accountName,
-        transaction.id,
-        {
-          amount: amount,
-          ...(eventData.dateEdited &&
-          eventDate.getTime() !== transaction.date.getTime()
-            ? {
-                date: eventDate,
-                datePrecision: includeTime ? 'instant' : 'day',
-              }
-            : {}),
-          description: eventData.description || undefined,
-        }
-      );
+      if (event.kind === 'prior-payout') {
+        await plugin.accountPageService?.updatePriorPayout(accountName, {
+          id: event.payout.id,
+          date: eventData.dateEdited
+            ? formatLocalDateString(eventData.date)
+            : event.payout.date,
+          amount,
+          ...(eventData.description ? { note: eventData.description } : {}),
+        });
+      } else {
+        const { transaction } = event;
+        await plugin.accountPageService?.updateManualTransaction(
+          accountName,
+          transaction.id,
+          {
+            amount: amount,
+            ...(eventData.dateEdited &&
+            eventDate.getTime() !== transaction.date.getTime()
+              ? {
+                  date: eventDate,
+                  datePrecision: includeTime ? 'instant' : 'day',
+                }
+              : {}),
+            description: eventData.description || undefined,
+          }
+        );
+      }
 
       new Notice(t('account.edit-event.success.update', { type: typeText }));
 
@@ -243,10 +301,17 @@ function useEditEventModalModel({
     try {
       setIsDeleting(true);
 
-      await plugin.accountPageService?.deleteManualTransaction(
-        accountName,
-        transaction.id
-      );
+      if (event.kind === 'prior-payout') {
+        await plugin.accountPageService?.deletePriorPayout(
+          accountName,
+          event.payout.id
+        );
+      } else {
+        await plugin.accountPageService?.deleteManualTransaction(
+          accountName,
+          event.transaction.id
+        );
+      }
 
       new Notice(t('account.edit-event.success.delete', { type: typeText }));
 
@@ -272,6 +337,7 @@ function useEditEventModalModel({
     use24HourTime,
     showDeleteConfirm,
     eventData,
+    original,
     currency,
     typeText,
     setShowDeleteConfirm,
@@ -289,10 +355,10 @@ type EditEventDeleteAction = 'cancel' | 'delete';
 
 function EditEventDeleteConfirm({
   model,
-  transaction,
+  event,
 }: {
   model: EditEventModalModel;
-  transaction: AccountTransaction;
+  event: EditableAccountEvent;
 }) {
   const {
     isDeleting,
@@ -301,7 +367,11 @@ function EditEventDeleteConfirm({
     formatCurrency,
     handleDelete,
   } = model;
-  const { includeTime, use24HourTime } = model;
+  const { includeTime, use24HourTime, original } = model;
+  const time =
+    includeTime && event.kind === 'transaction'
+      ? ` ${formatTimeOfDay(event.transaction.date, use24HourTime, true)}`
+      : '';
 
   return (
     <ConfirmationPanel<EditEventDeleteAction>
@@ -339,8 +409,8 @@ function EditEventDeleteConfirm({
         <div className="setting-item-description">
           {t('account.edit-event.delete-confirm.message', {
             type: typeText.toLowerCase(),
-            amount: formatCurrency(transaction.amount),
-            date: `${formatDateDisplay(accountEventDateForEditing({ date: transaction.date, includeTime }), getUserDateFormat())}${includeTime ? ` ${formatTimeOfDay(transaction.date, use24HourTime, true)}` : ''}`,
+            amount: formatCurrency(original.amount),
+            date: `${formatDateDisplay(original.date, getUserDateFormat())}${time}`,
           })}
         </div>
         <div className="setting-item-description warning">
@@ -385,18 +455,22 @@ function EditEventForm({
               </div>
             </div>
             <div className="setting-item-control">
-              <select
-                aria-label={t('account.edit-event.field.type')}
-                defaultValue={eventData.type}
-                disabled={true}
-              >
-                <option value={TransactionType.DEPOSIT}>
-                  {t('account.add-event.type.deposit')}
-                </option>
-                <option value={TransactionType.WITHDRAWAL}>
-                  {t('account.add-event.type.withdrawal')}
-                </option>
-              </select>
+              
+              <DropdownSelect
+                ariaLabel={t('account.edit-event.field.type')}
+                value={eventData.type}
+                disabled
+                options={[
+                  {
+                    value: eventData.type,
+                    label:
+                      eventData.type === PRIOR_PAYOUT_EVENT
+                        ? t('account.add-event.type.prior-payout')
+                        : typeText,
+                  },
+                ]}
+                onChange={() => undefined}
+              />
             </div>
           </div>
           <div className="column">
@@ -485,6 +559,14 @@ function EditEventForm({
           </div>
           <div className="button-group-right">
             <Button
+              variant="plain"
+              onClick={onModalClose}
+              disabled={isSaving}
+              className="cancel-button"
+            >
+              {t('button.cancel')}
+            </Button>
+            <Button
               variant="primary"
               onClick={handleSave}
               disabled={isSaving}
@@ -493,14 +575,6 @@ function EditEventForm({
               {isSaving
                 ? t('account.edit-event.button.saving')
                 : t('account.edit-event.button.save')}
-            </Button>
-            <Button
-              variant="plain"
-              onClick={onModalClose}
-              disabled={isSaving}
-              className="cancel-button"
-            >
-              {t('button.cancel')}
             </Button>
           </div>
         </div>
@@ -517,7 +591,7 @@ const EditEventModalContent: React.FC<
 > = ({
   plugin,
   accountName,
-  transaction,
+  event,
   onSave,
   onModalClose,
   onModalTitleChange,
@@ -525,7 +599,7 @@ const EditEventModalContent: React.FC<
   const model = useEditEventModalModel({
     plugin,
     accountName,
-    transaction,
+    event,
     onSave,
     onModalClose,
   });
@@ -541,7 +615,7 @@ const EditEventModalContent: React.FC<
   }, [model.showDeleteConfirm, model.typeText, onModalTitleChange]);
 
   if (model.showDeleteConfirm) {
-    return <EditEventDeleteConfirm model={model} transaction={transaction} />;
+    return <EditEventDeleteConfirm model={model} event={event} />;
   }
 
   return <EditEventForm model={model} onModalClose={onModalClose} />;
@@ -555,13 +629,30 @@ export function openEditEventModal(
   transaction: AccountTransaction,
   onSave: () => void
 ): void {
-  const modal = new EditEventModal({
+  new EditEventModal({
     app,
     plugin,
     accountName,
-    transaction,
+    event: { kind: 'transaction', transaction },
     onClose: () => {}, 
     onSave,
-  });
-  modal.open();
+  }).open();
+}
+
+
+export function openEditPriorPayoutModal(
+  app: App,
+  plugin: JournalitPlugin,
+  accountName: string,
+  payout: PropChallengePriorPayout,
+  onSave: () => void
+): void {
+  new EditEventModal({
+    app,
+    plugin,
+    accountName,
+    event: { kind: 'prior-payout', payout },
+    onClose: () => {},
+    onSave,
+  }).open();
 }

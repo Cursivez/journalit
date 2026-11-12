@@ -1,6 +1,6 @@
 
 
-import { useEffect, useState } from 'react';
+import { useEffect, useEffectEvent, useState } from 'react';
 
 const startOfToday = (): Date => {
   const now = new Date();
@@ -8,8 +8,9 @@ const startOfToday = (): Date => {
 };
 
 
-export function useCalendarToday(): Date {
+export function useCalendarToday(onDayChange?: () => void): Date {
   const [today, setToday] = useState(startOfToday);
+  const dayChanged = useEffectEvent(() => onDayChange?.());
 
   useEffect(() => {
     const nextMidnight = new Date(
@@ -18,7 +19,10 @@ export function useCalendarToday(): Date {
       today.getDate() + 1
     );
     const timeout = window.setTimeout(
-      () => setToday(startOfToday()),
+      () => {
+        setToday(startOfToday());
+        dayChanged();
+      },
       Math.max(0, nextMidnight.getTime() - Date.now())
     );
     return () => window.clearTimeout(timeout);

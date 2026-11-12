@@ -27,7 +27,7 @@ Diario de trading local-first para Obsidian.
   <a href="README.ar.md">العربية</a>
 </p>
 
-[Instalación](#installation) · [Apps de IA (MCP)](#ai-apps-mcp) · [Brokers compatibles](#supported-brokers) · [Privacidad](PRIVACY.md)
+[Instalación](#installation) · [MCP](#mcp) · [Brokers compatibles](#supported-brokers) · [Privacidad](PRIVACY.md)
 
 </div>
 
@@ -54,7 +54,7 @@ Página de la comunidad: https://community.obsidian.md/plugins/journalit
 - **Sistema de revisión (V2)**: plantillas diarias → anuales con constructor de diseños.
 - **[Trade Import](https://journalit.co/csv-import)**: importaciones con backend para CSV, hojas de cálculo, HTML y extractos de brokers.
 - **[Trade Sync](https://journalit.co/docs/trade-sync)**: sincronización automática de operaciones para brokers compatibles.
-- **[Apps de IA (MCP)](https://journalit.co/docs/ai-apps)**: conecta tu app de IA para analizar operaciones, redactar revisiones y actualizar tu diario.
+- **[MCP](https://journalit.co/docs/mcp)**: conecta tu app de IA para analizar operaciones, redactar revisiones y actualizar tu diario.
 
 <a id="screenshots"></a>
 
@@ -94,19 +94,19 @@ Página de la comunidad: https://community.obsidian.md/plugins/journalit
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
-<a id="ai-apps-mcp"></a>
+<a id="mcp"></a>
 
-## Apps de IA (MCP)
+## MCP
 
 Conecta Claude, Claude Code, ChatGPT, Codex, Hermes, Grok Bot u otra app compatible a tu diario mediante MCP (Model Context Protocol). Pídele que analice tus operaciones, redacte una revisión semanal o actualice campos del diario sin copiar notas en un chat.
 
-1. Inicia sesión en Journalit desde Obsidian. Abre **Ajustes → Journalit → Apps de IA (MCP)** y activa **Activar acceso MCP**.
+1. Inicia sesión en Journalit desde Obsidian. Abre **Ajustes → Journalit → MCP** y activa **Activar acceso MCP**.
 2. Añade `https://api.journalit.co/mcp` como servidor MCP remoto en tu app de IA.
 3. Inicia sesión en Journalit cuando se te solicite, elige tu bóveda, revisa los permisos solicitados y aprueba la conexión.
 
 Mantén Obsidian abierto con Journalit en ejecución. De forma predeterminada, las eliminaciones, fusiones y cambios de gran alcance requieren tu aprobación.
 
-Consulta la **[guía de configuración de apps de IA](https://journalit.co/docs/ai-apps)** para ver los pasos de cada cliente, los permisos, cómo deshacer cambios y los límites de uso mensuales.
+Consulta la **[guía de configuración de apps de IA](https://journalit.co/docs/mcp)** para ver los pasos de cada cliente, los permisos, cómo deshacer cambios y los límites de uso mensuales.
 
 <a id="supported-brokers"></a>
 

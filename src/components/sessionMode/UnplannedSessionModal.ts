@@ -39,13 +39,16 @@ export class UnplannedSessionModal extends JournalitModal {
       },
     });
 
-    const buttonRow = contentEl.createDiv({ cls: 'modal-button-container' });
+    const buttonRow = contentEl.createDiv({ cls: 'journalit-modal-actions' });
     const cancelButton = buttonRow.createEl('button', {
+      type: 'button',
       text: t('button.cancel'),
+      cls: 'journalit-button journalit-button--secondary',
     });
     const startButton = buttonRow.createEl('button', {
+      type: 'button',
       text: t('session-mode.unplanned.start'),
-      cls: 'mod-cta',
+      cls: 'journalit-button journalit-button--primary',
     });
 
     const submit = () => {

@@ -152,24 +152,31 @@ export const TRADE_OPERATION_HANDOFF_STYLES = `
     padding-left: 0;
   }
 
-  .journalit-trade-operation-result__review-split {
+  
+  .journalit-trade-operation-result__review-split-button {
     display: inline-flex;
     align-items: stretch;
+    border-radius: var(--journalit-control-radius);
+    box-shadow: var(--journalit-control-primary-shadow);
   }
 
-  .journalit-trade-operation-result__review-split
-    .journalit-trade-operation-result__review-button {
+  .journalit-trade-operation-result__review-split-button > button.journalit-button {
+    box-shadow: none;
+  }
+
+  .journalit-trade-operation-result__review-split-button
+    .journalit-trade-operation-result__review-button:not(:only-child) {
     border-top-right-radius: 0;
     border-bottom-right-radius: 0;
   }
 
-  .journalit-trade-operation-result__review-menu-button {
-    width: 28px;
+  .journalit-trade-operation-result__review-split-button
+    > button.journalit-trade-operation-result__review-menu-button {
+    width: 26px;
     padding: 0;
-    border-left: 1px solid
-      color-mix(in srgb, var(--text-on-accent) 25%, transparent);
     border-top-left-radius: 0;
     border-bottom-left-radius: 0;
+    box-shadow: inset 1px 0 0 color-mix(in srgb, var(--text-on-accent) 22%, transparent);
   }
 
   .journalit-trade-operation-result

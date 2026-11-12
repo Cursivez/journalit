@@ -71,7 +71,13 @@ import {
 } from './tradeReviewConfig';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 import { partitionMarkdownSectionsByHeading } from '../../../utils/markdownSectionExtractor';
+import { formatDateDisplay } from '../../../utils/dateUtils';
+import {
+  formatLocalizedDateTime,
+  formatLocalizedTime,
+} from '../../../utils/localizedDateTime';
 import { TradeReviewMarkdownText } from './TradeReviewMarkdownText';
+import { Button } from '../../ui/Button';
 
 const RESOLVED_SAVE_PROMISE = Promise.resolve();
 
@@ -287,18 +293,6 @@ function ReviewedCheckmark() {
   );
 }
 
-const DATE_TIME_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  month: 'short',
-  day: 'numeric',
-  hour: '2-digit',
-  minute: '2-digit',
-});
-
-const TIME_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  hour: '2-digit',
-  minute: '2-digit',
-});
-
 function asReviewTrades(value: unknown): ReviewTrade[] {
   return Array.isArray(value)
     ? value.filter((item): item is ReviewTrade =>
@@ -333,15 +327,14 @@ function formatTradeTime(trade: ReviewTrade): string {
   );
   if (!entryDate && !exitDate) return t('common.na');
   if (entryDate && !exitDate) {
-    return `${DATE_TIME_FORMATTER.format(entryDate)} → ${t('widget.trade-review.time.open')}`;
+    return `${formatLocalizedDateTime(entryDate)} → ${t('widget.trade-review.time.open')}`;
   }
-  if (!entryDate && exitDate)
-    return `— → ${DATE_TIME_FORMATTER.format(exitDate)}`;
+  if (!entryDate && exitDate) return `— → ${formatLocalizedDateTime(exitDate)}`;
   if (!entryDate || !exitDate) return t('common.na');
   if (sameCalendarDay(entryDate, exitDate)) {
-    return `${TIME_FORMATTER.format(entryDate)} → ${TIME_FORMATTER.format(exitDate)}`;
+    return `${formatLocalizedTime(entryDate)} → ${formatLocalizedTime(exitDate)}`;
   }
-  return `${DATE_TIME_FORMATTER.format(entryDate)} → ${DATE_TIME_FORMATTER.format(exitDate)}`;
+  return `${formatLocalizedDateTime(entryDate)} → ${formatLocalizedDateTime(exitDate)}`;
 }
 
 function formatDuration(trade: ReviewTrade): string {
@@ -907,7 +900,7 @@ function formatContextScalar(value: unknown): string {
   if (typeof value === 'number' && Number.isFinite(value)) return String(value);
   if (typeof value === 'boolean')
     return value ? t('common.yes') : t('common.no');
-  if (value instanceof Date) return value.toLocaleDateString();
+  if (value instanceof Date) return formatDateDisplay(value);
   return '';
 }
 
@@ -1748,13 +1741,14 @@ const TradeReviewCardBody: React.FC<{
         {...shareCaptureExcludeProps}
       >
         {trade.path && (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="small"
             className="journalit-trade-review-secondary-action"
             onClick={() => void openReviewWidgetFile(plugin, trade.path!)}
           >
             {t('widget.trade-review.open-trade-note')}
-          </button>
+          </Button>
         )}
       </div>
     </div>
@@ -2418,7 +2412,7 @@ export const TradeReviewWidget: React.FC<TradeReviewWidgetProps> = React.memo(
           <div className="journalit-reviewv2-chart-title">
             {t('widget.trade-review.name')}
           </div>
-          <div className="journalit-widget-empty">
+          <div className="journalit-reviewv2-empty">
             {t('widget.trade-review.no-trades')}
           </div>
         </div>

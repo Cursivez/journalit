@@ -150,9 +150,11 @@ export class SettingsExporter {
       }
 
       
+      
+      const importedSettings = sanitizeSettingsImport(importData.settings);
       const mergedSettings = this.deepMergeSettings(
         this.plugin.settings,
-        sanitizeSettingsImport(importData.settings)
+        importedSettings
       );
       if (this.isPlainObject(mergedSettings.dashboard)) {
         mergedSettings.dashboard.expectancyBenchmarkR =
@@ -205,7 +207,7 @@ export class SettingsExporter {
           DEFAULT_SETTINGS.sessionMode.showTradeExecutionsInSessionLog;
       }
 
-      migrateSettingsSchema(mergedSettings, importData.settings, {
+      migrateSettingsSchema(mergedSettings, importedSettings, {
         mode: 'import',
       });
 

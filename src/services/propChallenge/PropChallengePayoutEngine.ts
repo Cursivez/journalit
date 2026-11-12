@@ -8,6 +8,7 @@ import {
 } from './PropChallengeRuleEngine';
 import type {
   PropChallengeConfig,
+  PropChallengePayoutAvailability,
   PropChallengePayoutPolicy,
   PropChallengePayoutMaximum,
   PropChallengePhase,
@@ -236,7 +237,10 @@ function maximumForPayout(
     case 'none':
       return Number.POSITIVE_INFINITY;
     case 'fixed':
-      return maximumRequest.amount;
+      return maximumRequest.appliesToFirstPayouts !== undefined &&
+        payoutCount >= maximumRequest.appliesToFirstPayouts
+        ? Number.POSITIVE_INFINITY
+        : maximumRequest.amount;
     case 'first_fixed_then_none':
       return payoutCount === 0
         ? maximumRequest.amount
@@ -252,6 +256,50 @@ function maximumForPayout(
         0
       );
   }
+}
+
+
+function strictestDrawdownFloor(
+  evaluation: PayoutEngineInput['evaluation']
+): number | undefined {
+  let strictest: number | undefined;
+  for (const rule of evaluation.rules) {
+    if (rule.kind !== 'drawdown') continue;
+    strictest =
+      strictest === undefined
+        ? rule.currentFloor
+        : Math.max(strictest, rule.currentFloor);
+  }
+  return strictest;
+}
+
+
+function availableAboveFloor(
+  availability: PropChallengePayoutAvailability,
+  payoutCount: number,
+  phase: PropChallengePhase,
+  evaluation: PayoutEngineInput['evaluation']
+): number {
+  const share = availability.requestPercent / 100;
+  const balance = evaluation.currentBalance;
+  if (availability.kind === 'profit_above_starting_balance') {
+    return Math.max(0, balance - phase.startingBalance) * share;
+  }
+  if (
+    availability.appliesToFirstPayouts !== undefined &&
+    payoutCount >= availability.appliesToFirstPayouts
+  ) {
+    const floor = strictestDrawdownFloor(evaluation) ?? phase.startingBalance;
+    return Math.max(0, balance - floor) * share;
+  }
+  if (availability.belowFloorAllowance === undefined) {
+    return Math.max(0, balance - availability.balanceFloor) * share;
+  }
+  
+  return balance >= availability.balanceFloor
+    ? (balance - availability.balanceFloor) * share +
+        availability.belowFloorAllowance
+    : 0;
 }
 
 function scheduledValue(
@@ -663,8 +711,10 @@ export function evaluatePropChallengePayout(
       ? phaseRealizedEvents.reduce((total, event) => total + event.amount, 0)
       : cycleProfit;
     const bestDay = Math.max(0, ...consistencyDailyProfit.values());
+    
+    
     const current =
-      consistencyProfit > 0 ? (bestDay / consistencyProfit) * 100 : 100;
+      consistencyProfit > 0 ? (bestDay / consistencyProfit) * 100 : 0;
     requirements.push({
       kind: 'consistency',
       ...(lifetime ? { basis: 'lifetime_gross_profit' as const } : {}),
@@ -687,13 +737,12 @@ export function evaluatePropChallengePayout(
     activeLifetimeUnlock?.availability ?? input.policy.availability;
   const effectiveMaximumRequest =
     activeLifetimeUnlock?.maximumRequest ?? input.policy.maximumRequest;
-  const availabilityFloor =
-    effectiveAvailability.kind === 'profit_above_balance_floor'
-      ? effectiveAvailability.balanceFloor
-      : input.phase.startingBalance;
-  const percentageAvailable =
-    Math.max(0, input.evaluation.currentBalance - availabilityFloor) *
-    (effectiveAvailability.requestPercent / 100);
+  const percentageAvailable = availableAboveFloor(
+    effectiveAvailability,
+    payoutCount,
+    input.phase,
+    input.evaluation
+  );
   const maximumRequest = maximumForPayout(
     effectiveMaximumRequest,
     payoutCount,
@@ -807,14 +856,7 @@ export function previewPropChallengePayout(
   
   
   
-  let strictestFloor: number | undefined;
-  for (const rule of input.evaluation.rules) {
-    if (rule.kind !== 'drawdown') continue;
-    strictestFloor =
-      strictestFloor === undefined
-        ? rule.currentFloor
-        : Math.max(strictestFloor, rule.currentFloor);
-  }
+  const strictestFloor = strictestDrawdownFloor(input.evaluation);
   let drawdownFloor: number | undefined;
   switch (afterPayout.drawdownAction) {
     case 'raise_to_starting_balance':

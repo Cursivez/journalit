@@ -63,8 +63,19 @@ import {
 } from '../utils/dateUtils';
 import { getTradingDay } from '../utils/tradingDayUtils';
 import { createReviewImageActions } from './actions/domains/reviewImageActions';
+import { createTradeImageActions } from './actions/domains/tradeImageActions';
+import { downloadAgentImageUpload } from './agent/media/agentImageUploads';
 import { readSessionLogEntries } from './sessionLog/sessionLogEntries';
 import { createSessionLogTagActions } from './actions/domains/sessionLogTagActions';
+import { createDashboardComparisonActions } from './actions/domains/dashboardComparisonActions';
+import type {
+  DashboardFilterIdentities,
+  WireFilterResolver,
+} from './agent/dashboard/dashboardFilters';
+import {
+  persistSavedComparisons,
+  readSavedComparisons,
+} from '../components/dashboard/compare/savedComparisonStore';
 import { createAccountActions } from './actions/domains/accountActions';
 import { AgentChangeHistory } from './actions/history/AgentChangeHistory';
 import type { ActionId } from './actions/ActionTypes';
@@ -75,6 +86,11 @@ import {
   type EditableItem,
 } from './actions/history/actionInverses';
 import { undoAgentChange } from './actions/history/undoAgentChange';
+import {
+  costItemSnapshot,
+  priorPayoutItemSnapshot,
+  transactionItemSnapshot,
+} from './actions/history/itemSnapshots';
 import { createPropChallengeActions } from './actions/domains/propChallengeActions';
 import { availableAccountTypes } from './propChallenge/stageAccountTypes';
 import { rewriteAccountReferenceNotes } from './account/accountRename';
@@ -84,6 +100,9 @@ import { TradeCreateAction } from './actions/domains/tradeCreateAction';
 import type { ActionDefinitions } from './actions/ActionTypes';
 import { createTradeLifecycleActions } from './actions/domains/tradeLifecycleActions';
 import { resolveInstrumentContractDefaults } from './trade/instrumentContractDefaults';
+import { ExchangeRateService } from './exchangeRate/ExchangeRateService';
+import { resolveForexQuoteCurrency } from '../utils/forexCurrency';
+import type { ForexRateLookup } from './actions/domains/tradeDetailFields';
 import {
   ReviewCreateAction,
   ReviewUpdateAction,
@@ -128,6 +147,7 @@ import { AVAILABLE_HOME_WIDGETS } from '../components/home/homeTypes';
 import { ReviewTemplateService } from './templates/ReviewTemplateService';
 import {
   DashboardLayoutPlanner,
+  HomeGoalPlanner,
   HomeLayoutPlanner,
   ReviewTemplatePlanner,
   SessionWorkflowPlanner,
@@ -169,7 +189,10 @@ import {
   readFrontmatterFromDisk,
 } from '../utils/dataRefresh';
 import { eventBus, type Unsubscribe } from './events';
-import { resolveVaultMediaFile } from '../utils/imageMediaUtils';
+import {
+  resolveImageInput,
+  resolveVaultMediaFile,
+} from '../utils/imageMediaUtils';
 import {
   AgentInstallationRegistrationClient,
   AgentAccessSessionService,
@@ -289,6 +312,7 @@ export class ServiceManager {
   private _reviewTemplatePlanner: ReviewTemplatePlanner | null = null;
   private _dashboardLayoutPlanner: DashboardLayoutPlanner | null = null;
   private _homeLayoutPlanner: HomeLayoutPlanner | null = null;
+  private _homeGoalPlanner: HomeGoalPlanner | null = null;
   private _settingsPlanner: SettingsPlanner | null = null;
 
   
@@ -532,6 +556,11 @@ export class ServiceManager {
         >[0]
       ) => this.getOptionsServiceSync().calculateInstrumentCommission(input),
     };
+    const details = {
+      instruments: this.createTradeInstrumentCatalog(),
+      getGlobalCurrency: () => this.plugin.settings.general?.currency || 'USD',
+      forexRates: this.createForexRateLookup(),
+    };
     const lifecycle = async () => {
       const [tradeIdentityService, entityIdentityService] =
         await loadIdentities();
@@ -552,7 +581,7 @@ export class ServiceManager {
           customFields: this.getCustomFieldsService(),
           writer: this.getTradeNoteWriter(),
           tradeService: this.getTradeService(),
-          instruments: this.createTradeInstrumentCatalog(),
+          ...details,
           ...labels,
         });
       }),
@@ -565,6 +594,7 @@ export class ServiceManager {
           customFields: this.getCustomFieldsService(),
           tradeService: this.getTradeService(),
           writer: this.getTradeNoteWriter(),
+          ...details,
           ...labels,
         });
       }),
@@ -574,6 +604,53 @@ export class ServiceManager {
       'trade.delete': lazyAction(
         async () => (await lifecycle())['trade.delete']
       ),
+    };
+  }
+
+  
+  private createLazyTradeImageActions(): Pick<
+    ActionDefinitions,
+    'trade.add_images' | 'trade.remove_images'
+  > {
+    let actions: ReturnType<typeof createTradeImageActions> | null = null;
+    const load = async () =>
+      (actions ??= createTradeImageActions({
+        app: this.app,
+        tradeIdentityService: await this.getAgentTradeIdentityService(),
+        tradeService: this.getTradeService(),
+        tradeMedia: (tradeId, signal) =>
+          this.readAgentTradeMediaOwner(tradeId, signal),
+        resolveMediaFile: (pathOrLink, sourcePath) =>
+          resolveVaultMediaFile(this.app, pathOrLink, sourcePath),
+        resolveImageUrl: (url, sourcePath) =>
+          resolveImageInput(this.app, url, sourcePath),
+        downloadImageUpload: (uploadId) => downloadAgentImageUpload(uploadId),
+      }));
+    return {
+      'trade.add_images': lazyAction(
+        async () => (await load())['trade.add_images']
+      ),
+      'trade.remove_images': lazyAction(
+        async () => (await load())['trade.remove_images']
+      ),
+    };
+  }
+
+  
+  private createForexRateLookup(): ForexRateLookup {
+    return {
+      quoteCurrency: (instrument) => {
+        const spec = this.plugin.specService?.getSpecsForSymbol(
+          instrument,
+          'forex'
+        );
+        return resolveForexQuoteCurrency(
+          instrument,
+          spec && 'lotSize' in spec ? spec : null
+        );
+      },
+      getRates: (baseCurrency) =>
+        new ExchangeRateService(this.plugin).getRates(baseCurrency),
     };
   }
 
@@ -601,6 +678,8 @@ export class ServiceManager {
           specs: this.plugin.specService,
           catalog: options(),
         }),
+      currency: (instrument, assetType) =>
+        options().getInstrument(instrument, assetType)?.currency,
     };
   }
 
@@ -1061,6 +1140,13 @@ export class ServiceManager {
                         tradingDayCutoffTime,
                       })
                     : null,
+                history: data
+                  ? {
+                      trades: data.trades,
+                      transactions: data.account.transactions,
+                      tradingDayCutoffTime,
+                    }
+                  : null,
               };
             }),
         ];
@@ -1113,11 +1199,13 @@ export class ServiceManager {
           entityIdentityService,
           setupService,
           drcService,
+          weeklyReviewService,
         ] = await Promise.all([
           this.getAgentTradeIdentityService(),
           this.getAgentEntityIdentityService(),
           this.getSetupService(),
           this.getDRCService(),
+          this.getWeeklyReviewService(),
         ]);
         
         
@@ -1133,6 +1221,7 @@ export class ServiceManager {
               entityIdentityService,
               setupService,
               drcService,
+              weeklyReviewService,
               customFieldsService,
               getImageGalleryService: () => {
                 if (!this._agentTradeReadImageGalleryService) {
@@ -1246,6 +1335,7 @@ export class ServiceManager {
             getReviewTemplateService: () =>
               this.getNavigationReviewTemplateService(),
             customFieldsService: this.getCustomFieldsService(),
+            dashboardFilterResolver: this.createDashboardFilterIdentities(),
             openAgentActivity: () => this.openAgentActivity(),
             openPositionSizeCalculator: () =>
               new PositionSizeCalculatorModal(this.app, this.plugin).open(),
@@ -1335,6 +1425,10 @@ export class ServiceManager {
             topBreakdowns: this.plugin.settings.home?.topBreakdowns,
           }),
           getHomeWidgetCatalog: () => AVAILABLE_HOME_WIDGETS,
+          getOrCreateAccountId: async (name) =>
+            (await this.getAgentEntityIdentityService()).getOrCreateAccountId(
+              name
+            ),
           getRawOptionSettings: () =>
             this.plugin.settings.customOptions_options,
           getRawAccountSettings: () => this.plugin.settings.account,
@@ -1367,6 +1461,8 @@ export class ServiceManager {
           readAccountSources: (signal) => this.readAgentAccountSources(signal),
           readPropChallengeSources: (signal) =>
             this.readAgentPropChallengeSources(signal),
+          getSavedDashboardComparisons: () => readSavedComparisons(this.plugin),
+          dashboardFilterIdentities: this.createDashboardFilterIdentities(),
         }),
       });
       registry.register({
@@ -1879,6 +1975,43 @@ export class ServiceManager {
     return this._homeLayoutPlanner;
   }
 
+  private getHomeGoalPlanner(): HomeGoalPlanner {
+    if (!this._homeGoalPlanner) {
+      this._homeGoalPlanner = new HomeGoalPlanner({
+        getSettings: () => ({
+          layouts: this.plugin.settings.home?.layouts,
+          activeLayout: this.plugin.settings.home?.activeLayout,
+          goals: this.plugin.settings.home?.goals,
+        }),
+        homeWidgets: AVAILABLE_HOME_WIDGETS,
+        resolveAccountName: async (accountId) =>
+          (await this.getAgentEntityIdentityService()).resolveAccountId(
+            accountId
+          ),
+        saveGoal: async (widgetId, goal) => {
+          const home = this.plugin.settings.home;
+          if (!home) throw new Error('Home settings are unavailable.');
+          const previousGoals = home.goals;
+          const installedGoals = { ...previousGoals, [widgetId]: goal };
+          home.goals = installedGoals;
+          try {
+            await this.plugin.saveSettings();
+          } catch (error) {
+            if (home.goals === installedGoals) home.goals = previousGoals;
+            throw error;
+          }
+          eventBus.publish('settings:changed', {
+            section: 'home',
+            source: 'agent',
+          });
+        },
+        now: () => new Date(),
+      });
+      this.initializedServices.add('homeGoalPlanner');
+    }
+    return this._homeGoalPlanner;
+  }
+
   private publishNoteRewriteCommitted(
     plan: Parameters<typeof publishNoteRewriteCommitted>[0]
   ): void {
@@ -2179,6 +2312,23 @@ export class ServiceManager {
   }
 
   
+  private createDashboardFilterIdentities(): WireFilterResolver &
+    DashboardFilterIdentities {
+    const identities = () => this.getAgentEntityIdentityService();
+    return {
+      accountName: async (accountId) =>
+        (await identities()).resolveAccountId(accountId),
+      setupNames: async (setupIds) =>
+        (await identities()).resolveSetupIds(setupIds),
+      accountId: async (name) =>
+        (await identities()).getOrCreateAccountId(name),
+      setupIds: async (names) =>
+        (await identities()).getOrCreateSetupIds(names),
+      customField: (fieldId) => this.getCustomFieldsService().getField(fieldId),
+    };
+  }
+
+  
   
   private createLazyCustomFieldActions(): ReturnType<
     typeof createCustomFieldActions
@@ -2335,23 +2485,18 @@ export class ServiceManager {
       const transaction = metadata?.manualTransactions?.find(
         (candidate) => candidate.id === item.itemId
       );
-      return transaction
-        ? JSON.stringify([
-            transaction.type,
-            transaction.amount,
-            new Date(transaction.date).getTime(),
-            transaction.datePrecision ?? null,
-            transaction.description ?? null,
-            transaction.payoutReceipt ?? null,
-          ])
-        : undefined;
+      return transaction ? transactionItemSnapshot(transaction) : undefined;
+    }
+    if (item.kind === 'prop_challenge_prior_payout') {
+      const payout = metadata?.propChallenge?.priorPayouts?.find(
+        (candidate) => candidate.id === item.itemId
+      );
+      return payout ? priorPayoutItemSnapshot(payout) : undefined;
     }
     const cost = metadata?.propChallenge?.oneTimeCosts?.find(
       (candidate) => candidate.id === item.itemId
     );
-    return cost
-      ? JSON.stringify([cost.kind, cost.amount, cost.date, cost.note ?? null])
-      : undefined;
+    return cost ? costItemSnapshot(cost) : undefined;
   }
 
   
@@ -2515,6 +2660,7 @@ export class ServiceManager {
                   resolveMediaFile: (pathOrLink, sourcePath) =>
                     resolveVaultMediaFile(this.app, pathOrLink, sourcePath),
                 }),
+                ...this.createLazyTradeImageActions(),
                 ...createImageAnnotationActions({
                   tradeMedia: (tradeId, signal) =>
                     this.readAgentTradeMediaOwner(tradeId, signal),
@@ -2544,6 +2690,12 @@ export class ServiceManager {
                       changes,
                       guard
                     ),
+                }),
+                ...createDashboardComparisonActions({
+                  getSaved: () => readSavedComparisons(this.plugin),
+                  save: (next) =>
+                    persistSavedComparisons(this.plugin, next, 'agent-action'),
+                  ids: this.createDashboardFilterIdentities(),
                 }),
                 ...createSessionLogTagActions({
                   getTags: () => this.plugin.settings.drc.sessionLogTags,
@@ -2578,6 +2730,7 @@ export class ServiceManager {
                   settings: () => this.getSettingsPlanner(),
                   dashboardLayouts: () => this.getDashboardLayoutPlanner(),
                   homeLayouts: () => this.getHomeLayoutPlanner(),
+                  homeGoals: () => this.getHomeGoalPlanner(),
                   reviewTemplates: () => this.getReviewTemplatePlanner(),
                   sessionWorkflows: () => this.getSessionWorkflowPlanner(),
                 }),
@@ -2855,6 +3008,7 @@ export class ServiceManager {
     this._reviewTemplatePlanner = null;
     this._dashboardLayoutPlanner = null;
     this._homeLayoutPlanner = null;
+    this._homeGoalPlanner = null;
     this._settingsPlanner = null;
     delete this.lazyServices.agentNavigationService;
     if (this._agentIntegrationService) {

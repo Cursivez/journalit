@@ -759,6 +759,27 @@ function normalizeTradeExecutionForCompatibility(
 }
 
 
+export function getExecutionLegs(
+  trade: Pick<TradeExecutionCompatibilityInput, 'entries' | 'exits'>
+): {
+  entries: { time: Date | null; price: number }[];
+  exits: { time: Date | null; price: number }[];
+} {
+  const normalized = normalizeTradeExecutionForCompatibility({
+    entries: trade.entries,
+    exits: trade.exits,
+  });
+  return {
+    entries: normalized.entries.flatMap(({ time, price }) =>
+      price === null ? [] : [{ time, price }]
+    ),
+    exits: normalized.exits.flatMap(({ time, price, hasExplicitPrice }) =>
+      price === null || hasExplicitPrice === false ? [] : [{ time, price }]
+    ),
+  };
+}
+
+
 export function getExecutionFillPrices(
   trade: Pick<TradeExecutionCompatibilityInput, 'entries' | 'exits'>
 ): { entry: number[]; exit: number[] } {

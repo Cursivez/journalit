@@ -1,4 +1,7 @@
+import type { Trade } from '../../components/dashboard/utils/dataUtils';
 import type { UnifiedFilters } from '../../components/shared/filters/types';
+import type { TradeRatingBucket } from '../../utils/tradeRating';
+import type { TradeBiasAlignment } from '../marketBias/tradeMarketBias';
 
 export const ANALYTICS_METRIC_IDS = [
   'net_pnl',
@@ -20,6 +23,8 @@ export const ANALYTICS_METRIC_IDS = [
   'best_day',
   'largest_win',
   'largest_loss',
+  'commission_and_fees',
+  'average_trades_per_day',
 ] as const;
 
 export type AnalyticsMetricId = (typeof ANALYTICS_METRIC_IDS)[number];
@@ -55,7 +60,9 @@ export type AnalyticsGroupDimension =
   | 'weekday'
   | 'month'
   | 'tag'
-  | 'mistake';
+  | 'mistake'
+  | 'rating'
+  | 'market_bias';
 
 interface AnalyticsGrouping {
   dimension: AnalyticsGroupDimension;
@@ -80,6 +87,11 @@ export interface AnalyticsSeriesRequest extends AnalyticsEvaluationRequest {
   comparison?: AnalyticsComparison;
   interval?: AnalyticsInterval;
   sort?: AnalyticsSort;
+  
+  windowTrades?: {
+    current: (trade: Trade) => boolean;
+    baseline: (trade: Trade) => boolean;
+  };
 }
 
 export interface AnalyticsEntityGroupKey {
@@ -115,12 +127,26 @@ interface AnalyticsMonthGroupKey {
   value: string;
 }
 
+
+interface AnalyticsRatingGroupKey {
+  kind: 'rating';
+  value: `${TradeRatingBucket}`;
+}
+
+
+interface AnalyticsMarketBiasGroupKey {
+  kind: 'market_bias';
+  value: TradeBiasAlignment;
+}
+
 export type AnalyticsGroupKey =
+  | AnalyticsMarketBiasGroupKey
   | AnalyticsEntityGroupKey
   | AnalyticsStringGroupKey
   | AnalyticsDirectionGroupKey
   | AnalyticsWeekdayGroupKey
-  | AnalyticsMonthGroupKey;
+  | AnalyticsMonthGroupKey
+  | AnalyticsRatingGroupKey;
 
 interface AvailableMetricValue {
   status: 'available';

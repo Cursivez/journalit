@@ -4,9 +4,19 @@ import type {
   Setup,
   SetupAdvancedAnalyticsBySetup,
   SetupMetrics,
+  SetupMetricKey,
+  SetupMetricsResult,
   SetupOpportunityStats,
+  SetupOutcomeScope,
+  SetupOverviewChartMode,
+  SetupOverviewMetricKey,
+  SetupPairMetricKey,
   SetupRule,
 } from '../../services/setup/types';
+import type {
+  SetupTradeBalanceFields,
+  SetupTradeOutcome,
+} from '../../services/setup/setupTradeOutcome';
 import type { ObsidianIconComponent } from '../shared/icons/ObsidianIcon';
 
 export type SetupsViewPage = 'overview' | 'detail' | 'compare';
@@ -26,26 +36,12 @@ export interface SetupsViewState {
   selectedSetupIds?: string[];
 }
 
-export type MetricKey =
-  | 'expectedValue'
-  | 'expectedR'
-  | 'totalPnL'
-  | 'totalR'
-  | 'winRate'
-  | 'profitFactor'
-  | 'totalTrades'
-  | 'cumulativePnl'
-  | 'cumulativeR';
-
-export type SetupOverviewChartMode = 'setups' | 'pairs';
-export type SetupPairMetricKey =
-  | 'edgeR'
-  | 'expectancyR'
-  | 'totalR'
-  | 'totalPnL'
-  | 'winRate'
-  | 'profitFactor'
-  | 'totalTrades';
+export type MetricKey = SetupMetricKey;
+export type {
+  SetupOverviewChartMode,
+  SetupOverviewMetricKey,
+  SetupPairMetricKey,
+};
 
 export interface SetupViewModel {
   setup: Setup;
@@ -60,12 +56,10 @@ export interface SetupTradeIndex {
   any: Map<string, SetupLinkedTrade[]>;
 }
 
-export interface SetupsDataState {
-  viewModels: SetupViewModel[];
-  tradeIndex: SetupTradeIndex;
-  loadError: string | null;
-  hasLoadedData: boolean;
-}
+
+export type SetupOutcomeMetricsSource = (
+  outcome: Exclude<SetupOutcomeScope, 'all'>
+) => SetupMetricsResult;
 
 export interface SetupLinkedTrade {
   path: string;
@@ -79,6 +73,8 @@ export interface SetupLinkedTrade {
   exitTime: string;
   images: string[];
   pnl: number;
+  
+  outcome: SetupTradeOutcome;
   rMultiple?: number;
   pnlContributing: boolean;
   reviewed: boolean;
@@ -160,19 +156,21 @@ export interface SetupCompareEdgeReason {
 }
 
 export interface SetupOverviewChartSettings {
-  metricKey: MetricKey;
+  metricKey: SetupOverviewMetricKey;
+  outcomeScope: SetupOutcomeScope;
   chartMode: SetupOverviewChartMode;
   pairMetricKey: SetupPairMetricKey;
   selectedSetupIds?: string[];
 }
 
 export type SetupOverviewChartSettingsAction =
-  | { type: 'metric'; metricKey: MetricKey }
+  | { type: 'metric'; metricKey: SetupOverviewMetricKey }
+  | { type: 'outcomeScope'; outcomeScope: SetupOutcomeScope }
   | { type: 'mode'; chartMode: SetupOverviewChartMode }
   | { type: 'pairMetric'; pairMetricKey: SetupPairMetricKey }
   | { type: 'selectedSetups'; selectedSetupIds?: string[] };
 
-export interface TradeRecordForSetups {
+export interface TradeRecordForSetups extends SetupTradeBalanceFields {
   path?: unknown;
   type?: unknown;
   isMissedTrade?: unknown;

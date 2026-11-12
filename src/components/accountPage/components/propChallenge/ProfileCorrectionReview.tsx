@@ -25,6 +25,9 @@ import {
 } from '../../../../services/propChallenge/PropChallengePolicyHistory';
 import { eventBus } from '../../../../services/events/EventBus';
 import { t } from '../../../../lang/helpers';
+import { formatDateDisplay } from '../../../../utils/dateUtils';
+import { formatLocalizedDateTime } from '../../../../utils/localizedDateTime';
+import { useHourCycle } from '../../../../hooks/useHourCycle';
 import { CurrencyCode } from '../../../../utils/currencyConfig';
 import { Button } from '../../../ui/Button';
 import Checkbox from '../../../ui/Checkbox';
@@ -93,9 +96,9 @@ type Period = CorrectionMatch['periods'][number];
 function formatPeriod(period: Period) {
   if (!period.from)
     return t('account.prop-challenge.summary.phase-status.pending');
-  const from = new Date(period.from).toLocaleDateString();
+  const from = formatDateDisplay(period.from);
   return period.until
-    ? `${from} – ${new Date(period.until).toLocaleDateString()}`
+    ? `${from} – ${formatDateDisplay(period.until)}`
     : t('account.profiles.correction-period-open', { date: from });
 }
 
@@ -239,6 +242,7 @@ function correctionReviewOf(
 }
 
 export function ProfileCorrectionReview(props: Props) {
+  useHourCycle();
   const currency = reviewCurrency(props);
   const [choice, setChoice] = useState('0');
   const match = props.matches[Number(choice)];
@@ -395,7 +399,7 @@ export function ProfileCorrectionReview(props: Props) {
           ariaLabel={t('account.profiles.correction-title')}
           options={props.matches.map((m, i) => ({
             value: String(i),
-            label: `${i + 1}. ${props.config.phases.find((p) => p.id === m.phaseId)?.name}${m.periods.length ? ` · ${m.periods.map((period) => (period.from ? new Date(period.from).toLocaleString() : t('account.prop-challenge.summary.phase-status.pending'))).join(', ')}` : ''}`,
+            label: `${i + 1}. ${props.config.phases.find((p) => p.id === m.phaseId)?.name}${m.periods.length ? ` · ${m.periods.map((period) => (period.from ? formatLocalizedDateTime(period.from, 'medium') : t('account.prop-challenge.summary.phase-status.pending'))).join(', ')}` : ''}`,
           }))}
         />
       )}
@@ -431,10 +435,10 @@ export function ProfileCorrectionReview(props: Props) {
           {preview?.match.periods.map((period, index) => (
             <p key={index}>
               {period.from
-                ? new Date(period.from).toLocaleString()
+                ? formatLocalizedDateTime(period.from, 'medium')
                 : t('account.prop-challenge.summary.phase-status.pending')}
               {period.until
-                ? ` – ${new Date(period.until).toLocaleString()}`
+                ? ` – ${formatLocalizedDateTime(period.until, 'medium')}`
                 : ''}
             </p>
           ))}

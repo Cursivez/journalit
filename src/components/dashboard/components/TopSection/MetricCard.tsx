@@ -1,6 +1,7 @@
 
 
-import React from 'react';
+import React, { useLayoutEffect, useRef, useState } from 'react';
+import { cssVars } from '../../../../styles/inlineStylePolicy';
 import {
   AlertTriangle,
   ArrowDown,
@@ -8,16 +9,24 @@ import {
   Info,
 } from '../../../shared/icons/ObsidianIcon';
 import { Tooltip } from '../../../shared/Tooltip';
-import { t } from '../../../../lang/helpers';
+import { t, tPlural } from '../../../../lang/helpers';
 import type { StatDelta } from '../../../../utils/previousPeriodDelta';
+
+
+export interface MetricCardValue {
+  value: string;
+  isPositive?: boolean;
+  mainPart?: string;
+  decimalPart?: string;
+  
+  lowSampleTrades?: number;
+}
 
 interface MetricCardProps {
   
   headerAction?: React.ReactNode;
   name: string;
   value: string;
-  valueSuffix?: string;
-  valueSuffixIsPositive?: boolean;
   isPositive?: boolean;
   mainPart?: string; 
   decimalPart?: string; 
@@ -28,6 +37,8 @@ interface MetricCardProps {
   previousDelta?: StatDelta;
   subline?: string; 
   sublineIsPositive?: boolean;
+  
+  compare?: { a: MetricCardValue; b: MetricCardValue };
 }
 
 const DeltaArrow: React.FC<{ direction: 'up' | 'down' }> = ({ direction }) => {
@@ -54,19 +65,6 @@ const toneClassOf = (isPositive: boolean | undefined): string => {
 };
 
 const classNames = (...names: string[]) => names.filter(Boolean).join(' ');
-
-
-const splitSuffixArrow = (
-  suffix: string
-): { direction: 'up' | 'down' | undefined; text: string } => {
-  if (suffix.startsWith('↑')) {
-    return { direction: 'up', text: suffix.slice(1).trimStart() };
-  }
-  if (suffix.startsWith('↓')) {
-    return { direction: 'down', text: suffix.slice(1).trimStart() };
-  }
-  return { direction: undefined, text: suffix };
-};
 
 const DELTA_TONE_CLASS: Record<NonNullable<StatDelta['tone']>, string> = {
   green: 'journalit-dashboard-metric-previous-delta--positive',
@@ -117,29 +115,6 @@ const MetricCardIcons: React.FC<{
   );
 };
 
-const MetricCardSuffix: React.FC<{
-  suffix: string;
-  isPositive: boolean | undefined;
-  hasCents: boolean;
-}> = ({ suffix, isPositive, hasCents }) => {
-  const { direction, text } = splitSuffixArrow(suffix);
-  return (
-    <span
-      dir="ltr"
-      className={classNames(
-        'journalit-dashboard-metric-suffix',
-        toneClassOf(isPositive),
-        hasCents
-          ? 'journalit-dashboard-metric-suffix--with-cents'
-          : 'journalit-dashboard-metric-suffix--without-cents'
-      )}
-    >
-      {direction && <DeltaArrow direction={direction} />}
-      {text}
-    </span>
-  );
-};
-
 const MetricCardPrimaryValue: React.FC<{
   value: string;
   mainPart: string | undefined;
@@ -177,12 +152,110 @@ const MetricPreviousDelta: React.FC<{ delta: StatDelta }> = ({ delta }) => (
 );
 
 
+const LowSampleMarker: React.FC<{ trades: number }> = ({ trades }) => {
+  const label = tPlural('dashboard.compare.low-sample', trades);
+  return (
+    <span
+      className="journalit-compare-low-sample"
+      role="img"
+      tabIndex={0}
+      aria-label={label}
+    >
+      <AlertTriangle size={13} aria-hidden="true" />
+    </span>
+  );
+};
+
+const CompareValue: React.FC<{
+  side: 'a' | 'b';
+  value: MetricCardValue;
+}> = ({ side, value }) => (
+  <div className="journalit-compare-metric-value">
+    <span
+      className={`journalit-compare-tag journalit-compare-tag--${side}`}
+      aria-label={t('dashboard.compare.filter-side', {
+        side: side === 'a' ? 'A' : 'B',
+      })}
+    >
+      {side === 'a' ? 'A' : 'B'}
+    </span>
+    <div
+      className={`journalit-dashboard-metric-value ${toneClassOf(value.isPositive)}`}
+    >
+      <MetricCardPrimaryValue
+        value={value.value}
+        mainPart={value.mainPart}
+        decimalPart={value.decimalPart}
+      />
+      {value.lowSampleTrades !== undefined && (
+        <LowSampleMarker trades={value.lowSampleTrades} />
+      )}
+    </div>
+  </div>
+);
+
+
+const MIN_COMPARE_VALUE_SCALE = 0.5;
+
+
+const CompareValues: React.FC<{ a: MetricCardValue; b: MetricCardValue }> = ({
+  a,
+  b,
+}) => {
+  const ref = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+  
+  
+  useLayoutEffect(() => {
+    const element = ref.current;
+    if (!element) return;
+    const fit = () => {
+      let next = 1;
+      for (const value of element.querySelectorAll<HTMLElement>(
+        '.journalit-dashboard-metric-value'
+      )) {
+        
+        
+        const parts = Array.from(value.children);
+        const gap = parseFloat(getComputedStyle(value).columnGap) || 0;
+        const content =
+          parts.reduce(
+            (width, part) => width + part.getBoundingClientRect().width,
+            0
+          ) +
+          gap * Math.max(parts.length - 1, 0);
+        const neededAtFullSize = content / scale;
+        if (neededAtFullSize > value.clientWidth) {
+          next = Math.min(next, value.clientWidth / neededAtFullSize);
+        }
+      }
+      next = Math.max(MIN_COMPARE_VALUE_SCALE, Math.floor(next * 100) / 100);
+      setScale((current) => (Math.abs(current - next) < 0.01 ? current : next));
+    };
+    fit();
+    const observer = new (
+      element.ownerDocument.defaultView ?? window
+    ).ResizeObserver(fit);
+    observer.observe(element);
+    return () => observer.disconnect();
+  }, [a, b, scale]);
+  return (
+    <div
+      ref={ref}
+      className="journalit-compare-metric-values"
+      style={cssVars({ '--journalit-compare-value-scale': scale })}
+    >
+      <CompareValue side="a" value={a} />
+      <CompareValue side="b" value={b} />
+    </div>
+  );
+};
+
+
 export const MetricCard: React.FC<MetricCardProps> = ({
   headerAction,
   name,
   value,
-  valueSuffix,
-  valueSuffixIsPositive,
   isPositive,
   mainPart,
   decimalPart,
@@ -192,6 +265,7 @@ export const MetricCard: React.FC<MetricCardProps> = ({
   previousDelta,
   subline,
   sublineIsPositive,
+  compare,
 }) => {
   const metricCard = (
     <div className="journalit-dashboard-metric-card">
@@ -204,23 +278,20 @@ export const MetricCard: React.FC<MetricCardProps> = ({
         />
         {headerAction}
       </div>
-      <div
-        className={`journalit-dashboard-metric-value ${toneClassOf(isPositive)}`}
-      >
-        <MetricCardPrimaryValue
-          value={value}
-          mainPart={mainPart}
-          decimalPart={decimalPart}
-        />
-        {valueSuffix && (
-          <MetricCardSuffix
-            suffix={valueSuffix}
-            isPositive={valueSuffixIsPositive}
-            hasCents={Boolean(decimalPart)}
+      {compare ? (
+        <CompareValues a={compare.a} b={compare.b} />
+      ) : (
+        <div
+          className={`journalit-dashboard-metric-value ${toneClassOf(isPositive)}`}
+        >
+          <MetricCardPrimaryValue
+            value={value}
+            mainPart={mainPart}
+            decimalPart={decimalPart}
           />
-        )}
-      </div>
-      {subline && (
+        </div>
+      )}
+      {subline && !compare && (
         <div
           className={classNames(
             'journalit-dashboard-metric-unrealized',

@@ -19,6 +19,7 @@ import {
   isStrictName,
   type RawHomeLayoutSettings,
 } from './layoutConfiguration';
+import { GRID_COLS } from '../../../components/shared/gridLayout/gridLayoutUtils';
 import {
   canonicalizeConfigurationValue,
   configurationRevision,
@@ -192,6 +193,65 @@ function isOmissionCounts(value: unknown): value is OmissionCounts {
   );
 }
 
+
+const LEGACY_GRID_COLUMNS = 12;
+
+type GridColumns = typeof LEGACY_GRID_COLUMNS | typeof GRID_COLS.lg;
+
+function declaredGridColumns(
+  layout: Record<string, unknown>
+): GridColumns | undefined {
+  const declared = layout.grid_columns;
+  if (
+    declared !== undefined &&
+    declared !== LEGACY_GRID_COLUMNS &&
+    declared !== GRID_COLS.lg
+  )
+    throw new LayoutConfigurationError('invalid_request');
+  return declared;
+}
+
+function placementScale(declared: GridColumns | undefined): number {
+  return GRID_COLS.lg / (declared ?? LEGACY_GRID_COLUMNS);
+}
+
+function scaleWireBreakpoints(
+  breakpoints: WireBreakpoints,
+  scale: (value: number) => number
+): WireBreakpoints {
+  const convert = (placement: WirePlacement): WirePlacement => ({
+    ...placement,
+    x: scale(placement.x),
+    w: scale(placement.w),
+  });
+  return {
+    lg: breakpoints.lg.map(convert),
+    md: breakpoints.md.map(convert),
+    sm: breakpoints.sm.map(convert),
+    xs: breakpoints.xs.map(convert),
+    xxs: breakpoints.xxs.map(convert),
+  };
+}
+
+
+function inSubmittedGrid(
+  artifact: AnyArtifact,
+  submitted: unknown
+): AnyArtifact {
+  if (!isRecord(submitted))
+    throw new LayoutConfigurationError('invalid_request');
+  const declared = declaredGridColumns(submitted);
+  const scale = placementScale(declared);
+  const result = clone(artifact);
+  result.breakpoints = scaleWireBreakpoints(
+    artifact.breakpoints,
+    (value) => value / scale
+  );
+  if (declared === undefined) delete result.grid_columns;
+  else result.grid_columns = declared;
+  return result;
+}
+
 function toPersistedBreakpoints(
   breakpoints: WireBreakpoints
 ): PersistedBreakpoints {
@@ -258,6 +318,7 @@ function parseMutationArtifact(
       return undefined;
     return {
       name: value.name,
+      grid_columns: GRID_COLS.lg,
       top_section: value.top_section,
       breakpoints: value.breakpoints,
       omitted_placement_counts: omittedPlacementCounts,
@@ -266,9 +327,20 @@ function parseMutationArtifact(
   }
   return {
     name: value.name,
+    grid_columns: GRID_COLS.lg,
     breakpoints: value.breakpoints,
     omitted_placement_counts: omittedPlacementCounts,
   };
+}
+
+function storedBreakpoints(
+  layout: Record<string, unknown>,
+  breakpoints: WireBreakpoints
+): PersistedBreakpoints {
+  const scale = placementScale(declaredGridColumns(layout));
+  return toPersistedBreakpoints(
+    scaleWireBreakpoints(breakpoints, (value) => value * scale)
+  );
 }
 
 function persistedContent<D extends Domain>(
@@ -285,12 +357,12 @@ function persistedContent<D extends Domain>(
       throw new LayoutConfigurationError('invalid_request');
     return {
       topSection: clone(layout.top_section),
-      bottomSection: toPersistedBreakpoints(layout.breakpoints),
+      bottomSection: storedBreakpoints(layout, layout.breakpoints),
     };
   }
   if (!isRecord(layout) || !isWireBreakpoints(layout.breakpoints))
     throw new LayoutConfigurationError('invalid_request');
-  return toPersistedBreakpoints(layout.breakpoints);
+  return storedBreakpoints(layout, layout.breakpoints);
 }
 
 function contractBreakpoints(content: unknown, domain: Domain) {
@@ -649,12 +721,15 @@ async function materialize(
       action.name,
       persistedContent(domain, action.layout)
     );
-    artifact = await validateAndProject(
-      domain,
-      action.name,
-      layouts[action.name],
-      dependencies,
-      settings
+    artifact = inSubmittedGrid(
+      await validateAndProject(
+        domain,
+        action.name,
+        layouts[action.name],
+        dependencies,
+        settings
+      ),
+      action.layout
     );
   } else if (action.kind === 'duplicate') {
     if (!isStrictName(action.source_name))
@@ -679,12 +754,15 @@ async function materialize(
       action.name,
       persistedContent(domain, action.layout)
     );
-    artifact = await validateAndProject(
-      domain,
-      action.name,
-      layouts[action.name],
-      dependencies,
-      settings
+    artifact = inSubmittedGrid(
+      await validateAndProject(
+        domain,
+        action.name,
+        layouts[action.name],
+        dependencies,
+        settings
+      ),
+      action.layout
     );
   } else if (action.kind === 'rename') {
     if (!exists) throw new LayoutConfigurationError('not_found');

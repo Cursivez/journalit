@@ -42,13 +42,6 @@ export const SETTINGS_ECONOMIC_CALENDAR_STYLES = `
 
 .journalit-settings-econ .journalit-settings-econ__gate-cta {
   flex: 0 0 auto;
-  padding: 3px 10px;
-  border: none;
-  border-radius: 4px;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent, #ffffff);
-  font-size: 12px;
-  cursor: pointer;
 }
 
 .journalit-settings-econ .journalit-settings-econ__chips {
@@ -62,11 +55,11 @@ export const SETTINGS_ECONOMIC_CALENDAR_STYLES = `
 .journalit-settings-econ .journalit-settings-econ__chip {
   display: inline-flex;
   align-items: center;
-  height: 22px;
-  padding: 0 9px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 11px;
-  background: transparent;
+  height: 24px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: var(--journalit-control-inner-radius);
+  background: var(--journalit-control-strip);
   box-shadow: none;
   color: var(--text-muted);
   font-size: 11px;
@@ -79,9 +72,9 @@ export const SETTINGS_ECONOMIC_CALENDAR_STYLES = `
 }
 
 .journalit-settings-econ .journalit-settings-econ__chip[aria-pressed='true'] {
-  border-color: var(--interactive-accent);
-  background-color: var(--background-modifier-hover);
-  color: var(--text-normal);
+  background: var(--journalit-control-primary-fill);
+  box-shadow: var(--journalit-control-primary-shadow);
+  color: var(--text-on-accent);
 }
 
 .journalit-settings-econ .journalit-settings-econ__chip:disabled {

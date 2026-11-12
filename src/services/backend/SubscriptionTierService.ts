@@ -8,6 +8,7 @@ import { clearPersistedBackendAuthSession } from './BackendAuthFailure';
 import { ApiError } from '../../types/errors';
 import { t } from '../../lang/helpers';
 import { DemoSyncGate } from '../../demo/DemoSyncGate';
+import { paymentRecoveryStore } from './paymentRecoveryBanner';
 
 export type SubscriptionTierRefreshStatus =
   | 'premium'
@@ -50,6 +51,10 @@ interface BackendEntitlementsResponse {
     };
     paidThrough: string | null;
     lifetime: boolean;
+    
+    pastDue?: boolean;
+    
+    graceEndsAt?: string | null;
   };
   accountEntitlements: {
     lifetimePro: boolean;
@@ -111,17 +116,21 @@ export class SubscriptionTierService {
     return refresh;
   }
 
+  
+  private clearPaymentRecoveryForSession(authSessionVersion: number): void {
+    if (ApiClient.getAuthSessionVersion() === authSessionVersion) {
+      paymentRecoveryStore.clear(this.plugin);
+    }
+  }
+
   private async performRefresh(
     reason: string,
     authToken: string | null,
     authSessionVersion: number
   ): Promise<SubscriptionTierRefreshResult> {
     const backend = this.plugin.settings.backendIntegration;
-    if (!backend) {
-      return { status: 'signed_out' };
-    }
-
-    if (!authToken) {
+    if (!backend || !authToken) {
+      paymentRecoveryStore.clear(this.plugin);
       return { status: 'signed_out' };
     }
 
@@ -154,6 +163,10 @@ export class SubscriptionTierService {
         return { status: 'unverified' };
       }
 
+      paymentRecoveryStore.setSubscription(
+        this.plugin,
+        entitlements.subscription
+      );
       const nextTier = entitlements.subscription.isPro ? 'premium' : 'free';
       const nextUserId = String(entitlements.user.id);
       const entitlementEventDetail = {
@@ -190,6 +203,7 @@ export class SubscriptionTierService {
         error instanceof Error &&
         error.message === 'Authenticated request cancelled'
       ) {
+        this.clearPaymentRecoveryForSession(authSessionVersion);
         return { status: 'signed_out' };
       }
 
@@ -206,6 +220,7 @@ export class SubscriptionTierService {
           if (cleared && !this.hasBackendIntegrationService()) {
             this.showAuthExpiredNoticeWithoutBackendService();
           }
+          this.clearPaymentRecoveryForSession(authSessionVersion);
           return { status: 'signed_out' };
         }
       }

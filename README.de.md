@@ -27,7 +27,7 @@ Local-first Trading-Journal für Obsidian.
   <a href="README.ar.md">العربية</a>
 </p>
 
-[Installation](#installation) · [KI-Apps (MCP)](#ai-apps-mcp) · [Unterstützte Broker](#supported-brokers) · [Datenschutz](PRIVACY.md)
+[Installation](#installation) · [MCP](#mcp) · [Unterstützte Broker](#supported-brokers) · [Datenschutz](PRIVACY.md)
 
 </div>
 
@@ -54,7 +54,7 @@ Community-Seite: https://community.obsidian.md/plugins/journalit
 - **Review-System (V2)**: tägliche bis jährliche Vorlagen mit Layout-Builder.
 - **[Trade Import](https://journalit.co/csv-import)**: backendgestützte Importe für CSV, Tabellen, HTML und Broker-Abrechnungen.
 - **[Trade Sync](https://journalit.co/docs/trade-sync)**: automatische Tradesynchronisierung für unterstützte Broker.
-- **[KI-Apps (MCP)](https://journalit.co/docs/ai-apps)**: verbinde deine KI-App, um Trades zu analysieren, Reviews zu entwerfen und dein Journal zu aktualisieren.
+- **[MCP](https://journalit.co/docs/mcp)**: verbinde deine KI-App, um Trades zu analysieren, Reviews zu entwerfen und dein Journal zu aktualisieren.
 
 <a id="screenshots"></a>
 
@@ -94,19 +94,19 @@ Community-Seite: https://community.obsidian.md/plugins/journalit
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
-<a id="ai-apps-mcp"></a>
+<a id="mcp"></a>
 
-## KI-Apps (MCP)
+## MCP
 
 Verbinde Claude, Claude Code, ChatGPT, Codex, Hermes, Grok Bot oder eine andere kompatible KI-App über MCP (Model Context Protocol) mit deinem Journal. Lass sie Trades analysieren, einen Wochenreview entwerfen oder Journalfelder aktualisieren, ohne Notizen in einen Chat zu kopieren.
 
-1. Melde dich in Obsidian bei Journalit an. Öffne **Einstellungen → Journalit → KI-Apps (MCP)** und aktiviere **MCP-Zugriff aktivieren**.
+1. Melde dich in Obsidian bei Journalit an. Öffne **Einstellungen → Journalit → MCP** und aktiviere **MCP-Zugriff aktivieren**.
 2. Füge `https://api.journalit.co/mcp` in deiner KI-App als Remote-MCP-Server hinzu.
 3. Melde dich bei Aufforderung bei Journalit an, wähle deinen Vault, prüfe die angeforderten Berechtigungen und genehmige die Verbindung.
 
 Lass Obsidian mit laufendem Journalit geöffnet. Löschungen, Zusammenführungen und umfangreiche Änderungen benötigen standardmäßig deine Zustimmung.
 
-Die **[Einrichtungsanleitung für KI-Apps](https://journalit.co/docs/ai-apps)** erklärt die Schritte für die einzelnen Clients, Berechtigungen, das Rückgängigmachen von Änderungen und monatliche Nutzungslimits.
+Die **[Einrichtungsanleitung für KI-Apps](https://journalit.co/docs/mcp)** erklärt die Schritte für die einzelnen Clients, Berechtigungen, das Rückgängigmachen von Änderungen und monatliche Nutzungslimits.
 
 <a id="supported-brokers"></a>
 

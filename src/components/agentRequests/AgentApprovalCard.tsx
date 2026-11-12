@@ -105,7 +105,7 @@ export const AgentApprovalCard: React.FC<AgentApprovalCardProps> = ({
           <span className="journalit-agent-approval-pager">
             <button
               type="button"
-              className="journalit-agent-approval-icon-button"
+              className="journalit-agent-approval-icon-button journalit-icon-button"
               aria-label={t('agent-approval.previous')}
               disabled={index === 0}
               onClick={() => show(index - 1)}
@@ -120,7 +120,7 @@ export const AgentApprovalCard: React.FC<AgentApprovalCardProps> = ({
             </span>
             <button
               type="button"
-              className="journalit-agent-approval-icon-button"
+              className="journalit-agent-approval-icon-button journalit-icon-button"
               aria-label={t('agent-approval.next')}
               disabled={index === requests.length - 1}
               onClick={() => show(index + 1)}
@@ -131,7 +131,7 @@ export const AgentApprovalCard: React.FC<AgentApprovalCardProps> = ({
         )}
         <button
           type="button"
-          className="journalit-agent-approval-icon-button"
+          className="journalit-agent-approval-icon-button journalit-icon-button"
           aria-label={t('agent-approval.hide')}
           onClick={onDismiss}
         >

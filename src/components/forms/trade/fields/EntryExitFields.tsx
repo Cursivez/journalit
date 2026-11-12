@@ -48,6 +48,8 @@ import {
   type ExecutionRows,
 } from '../executionDates';
 import { PnLValue } from '../../../shared/display/DisplayValue';
+import { RMultipleEntryInput } from './RMultipleEntryInput';
+import { useDisplayPolicy } from '../../../../hooks/useDisplayPolicy';
 
 type TransactionFieldValue = number | Date | string | undefined | boolean;
 type IdealExitFieldValue = number | string | undefined;
@@ -157,11 +159,6 @@ function PnLModeToggle({ useDirectPnLInput, onToggle }: PnLModeToggleProps) {
           {t('form.entry-exit.direct-pnl')}
         </label>
       </div>
-      <p className="journalit-pnl-toggle-description">
-        {useDirectPnLInput
-          ? t('form.entry-exit.direct-pnl-desc')
-          : t('form.entry-exit.calc-pnl')}
-      </p>
     </div>
   );
 }
@@ -181,7 +178,10 @@ function DirectPnLSection({
   inputMode,
   showSeconds,
 }: DirectPnLSectionProps) {
+  const plugin = usePlugin();
+  const { displayRMultiples } = useDisplayPolicy();
   if (!data.useDirectPnLInput) return null;
+  const defaultRiskAmount = plugin?.settings.trade.defaultRiskAmount;
 
   return (
     <div className="journalit-direct-pnl-section">
@@ -199,16 +199,30 @@ function DirectPnLSection({
         </div>
       )}
       <div className="field journalit-direct-pnl-value-field">
-        <NumberInput
-          label={t('form.field.total-pnl')}
-          value={data.directPnL}
-          onChange={(value) => onChange('directPnL', value)}
-          error={errors.directPnL}
-          allowDecimal={true}
-          precision={2}
-          required={!data.isMissedTrade}
-          placeholder={t('form.field.direct-pnl-placeholder')}
-        />
+        {displayRMultiples ? (
+          <RMultipleEntryInput
+            field="directPnL"
+            data={data}
+            label={t('form.field.total-pnl-r')}
+            placeholder={t('form.field.direct-pnl-r-placeholder')}
+            error={errors.directPnL}
+            required={!data.isMissedTrade}
+            currencyCode={data.currency || undefined}
+            defaultRiskAmount={defaultRiskAmount}
+            onChange={onChange}
+          />
+        ) : (
+          <NumberInput
+            label={t('form.field.total-pnl')}
+            value={data.directPnL}
+            onChange={(value) => onChange('directPnL', value)}
+            error={errors.directPnL}
+            allowDecimal={true}
+            precision={2}
+            required={!data.isMissedTrade}
+            placeholder={t('form.field.direct-pnl-placeholder')}
+          />
+        )}
       </div>
     </div>
   );
@@ -298,7 +312,7 @@ function EntriesSection({
                 {(data.entries?.length || 0) > 1 && (
                   <button
                     type="button"
-                    className="remove-button-inline"
+                    className="remove-button-inline journalit-icon-button"
                     onClick={() => onRemoveEntry(index)}
                     aria-label={t('form.entry-exit.remove-entry')}
                   >
@@ -1642,7 +1656,7 @@ function ExitsSection({
                 {exits.length > 1 && (
                   <button
                     type="button"
-                    className="remove-button-inline"
+                    className="remove-button-inline journalit-icon-button"
                     onClick={() => onRemoveExit(index)}
                     aria-label={t('form.entry-exit.remove-exit')}
                   >
@@ -1925,7 +1939,7 @@ const EntryExitFieldsComponent: React.FC<EntryExitFieldsProps> = ({
                     {(data.dividends?.length || 0) > 0 && (
                       <button
                         type="button"
-                        className="remove-button-inline"
+                        className="remove-button-inline journalit-icon-button"
                         onClick={() => handleRemoveDividend(index)}
                         aria-label={t('form.dividends.remove-dividend')}
                       >

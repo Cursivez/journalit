@@ -1,6 +1,5 @@
 import type { AgentEntityIdentityService } from '../../agent/identity/AgentEntityIdentityService';
 import type { TradeData } from '../../trade/TradeService';
-import type { InstrumentCommissionCalculator } from '../../trade/autoCommission';
 import { normalizeOptionKey } from '../../../utils/stringNormalization';
 import { replaceUserOwnedTradeNotes } from '../../trade/core/TradeNoteDocumentCodec';
 import { ActionPlanError } from '../ActionErrors';
@@ -16,6 +15,8 @@ import {
   fieldValue,
   FIELD_ORDER,
   MAX_TEXT,
+  ratingValue,
+  rederivesTrade,
   requireResolved,
   textLength,
   thesisValue,
@@ -24,9 +25,11 @@ import {
   type FieldChanges,
   type FieldName,
   type JournalChanges,
+  type TradeChangeContext,
   type TradeChanges,
   type TradeUpdateInput,
 } from './tradeUpdateChanges';
+import { exchangeKey } from './tradeDetailFields';
 
 
 
@@ -88,7 +91,29 @@ const RESTORED_FIELDS = [
   'commissionType',
   'fees',
   'swap',
+  'rebate',
+  'fxRate',
+  'fxRateBaseCurrency',
+  'exchange',
+  'cryptoExchange',
+  'dollarPerPoint',
+  'tickSize',
+  'tickValue',
+  'lotSize',
+  'pipValue',
+  'pipSize',
+  'contractSize',
+  'leverageRatio',
+  'mae',
+  'mfe',
+  'maePrice',
+  'mfePrice',
+  'unrealizedPriceSnapshot',
+  'unrealizedPriceSnapshotTime',
+  'idealExits',
+  'dividends',
   'missedReason',
+  'exitReason',
 ] as const satisfies readonly (keyof TradeData)[];
 
 
@@ -137,10 +162,13 @@ function restoresJournal(
   
   const reviewedAt =
     journal.reviewed === false ? null : unsetAsNull(written.reviewedAt);
+  const rating =
+    journal.rating !== undefined ? journal.rating : ratingValue(written);
   if (
     thesis !== thesisValue(previous) ||
     reviewed !== (previous.reviewed === true) ||
-    reviewedAt !== unsetAsNull(previous.reviewedAt)
+    reviewedAt !== unsetAsNull(previous.reviewedAt) ||
+    rating !== ratingValue(previous)
   ) {
     return false;
   }
@@ -161,7 +189,7 @@ interface TradeRestoreDependencies {
     changes: TradeChanges,
     signal: AbortSignal
   ): Promise<EntityLookup>;
-  calculateCommission?: InstrumentCommissionCalculator;
+  context: TradeChangeContext;
 }
 
 
@@ -178,9 +206,7 @@ export async function captureRestore(
   }
 ): Promise<TradeUpdateInput | null> {
   const { requested, previous, written, notes, signal } = capture;
-  if (requested.executions || requested.set.direct_pnl !== undefined) {
-    return null;
-  }
+  if (rederivesTrade(requested)) return null;
   try {
     const input = await restoringInput(
       deps,
@@ -196,8 +222,7 @@ export async function captureRestore(
       await deps.resolveEntities(changes, signal)
     );
     const restored =
-      entities &&
-      applyChanges(written, changes, entities, deps.calculateCommission);
+      entities && applyChanges(written, changes, entities, deps.context);
     return restored &&
       sameRestorableFields(restored, previous) &&
       restoresJournal(changes.journal, previous, written, notes)
@@ -239,6 +264,12 @@ async function restoringInput(
     if (previous.reviewed === true) return null;
     set.reviewed = false;
   }
+  if (
+    journal.rating !== undefined &&
+    ratingValue(previous) !== ratingValue(written)
+  ) {
+    set.rating = ratingValue(previous);
+  }
   if (journal.notes !== undefined) {
     if (!notes) return null;
     const before = userNotes(notes.previous);
@@ -279,6 +310,19 @@ async function restoringInput(
     requested.takeProfits
   );
   if (stopLosses === null || takeProfits === null) return null;
+  const idealExits =
+    requested.idealExits === undefined ||
+    JSON.stringify(previous.idealExits ?? []) ===
+      JSON.stringify(written.idealExits ?? [])
+      ? undefined
+      : wireIdealExits(previous);
+  const dividends =
+    requested.dividends === undefined ||
+    JSON.stringify(previous.dividends ?? []) ===
+      JSON.stringify(written.dividends ?? [])
+      ? undefined
+      : wireDividends(previous);
+  if (idealExits === null || dividends === null) return null;
   if (
     (set.stop_loss !== undefined || stopLosses !== undefined) &&
     set.risk_amount === undefined &&
@@ -292,6 +336,8 @@ async function restoringInput(
   if (Object.keys(set).length > 0) input.set = set;
   if (stopLosses) input.stop_losses = stopLosses;
   if (takeProfits) input.take_profits = takeProfits;
+  if (idealExits) input.ideal_exits = idealExits;
+  if (dividends) input.dividends = dividends;
   const tagsBefore = currentTags(previous);
   const tagsAfter = currentTags(written);
   const addTags = labelsMissingFrom(tagsBefore, tagsAfter, lowerCase);
@@ -335,7 +381,7 @@ async function previousFieldValue(
   deps: TradeRestoreDependencies,
   previous: TradeData,
   field: FieldName
-): Promise<string | number | null | undefined> {
+): Promise<FieldChanges[FieldName] | undefined> {
   const number = (value: number | undefined) =>
     value === undefined ? null : Number.isFinite(value) ? value : undefined;
   switch (field) {
@@ -378,11 +424,110 @@ async function previousFieldValue(
       return number(previous.fees);
     case 'swap':
       return number(previous.swap);
-    case 'missed_reason': {
+    case 'missed_reason':
+    case 'exit_reason': {
       const reason = fieldValue(previous, field);
       return typeof reason === 'string' ? reason : null;
     }
+    case 'commission_type':
+      
+      return previous.commissionType;
+    case 'rebate':
+      return number(previous.rebate);
+    case 'fx_rate':
+      return number(previous.fxRate);
+    case 'exchange': {
+      const exchange = previous[exchangeKey(previous.assetType)];
+      return typeof exchange === 'string' && exchange !== '' ? exchange : null;
+    }
+    case 'dollar_per_point':
+      return number(previous.dollarPerPoint);
+    case 'tick_size':
+      return number(previous.tickSize);
+    case 'tick_value':
+      return number(previous.tickValue);
+    case 'lot_size':
+      return number(previous.lotSize);
+    case 'pip_value':
+      return number(previous.pipValue);
+    case 'pip_size':
+      return number(previous.pipSize);
+    case 'contract_size':
+      return number(previous.contractSize);
+    case 'leverage_ratio':
+      return number(previous.leverageRatio);
+    case 'mae':
+      return number(previous.mae);
+    case 'mfe':
+      return number(previous.mfe);
+    case 'mae_price':
+      return number(previous.maePrice);
+    case 'mfe_price':
+      return number(previous.mfePrice);
+    case 'unrealized_price_snapshot': {
+      const price = previous.unrealizedPriceSnapshot;
+      if (price === undefined) return null;
+      const time = previous.unrealizedPriceSnapshotTime;
+      
+      return Number.isFinite(price) && time && !Number.isNaN(time.getTime())
+        ? { price, time: time.toISOString() }
+        : undefined;
+    }
+    
     case 'direct_pnl':
+    case 'instrument':
+    case 'asset_type':
+    case 'option':
+    case 'entry_time':
+    case 'exit_time':
+    case 'currency':
+    case 'forex_conversion_rate':
       return undefined;
   }
+}
+
+
+function wireIdealExits(
+  previous: TradeData
+): NonNullable<TradeUpdateInput['ideal_exits']> | null {
+  const exits = previous.idealExits ?? [];
+  if (exits.length > 100) return null;
+  const wire: NonNullable<TradeUpdateInput['ideal_exits']> = [];
+  for (const exit of exits) {
+    if (
+      exit.price === undefined ||
+      !(exit.price > 0) ||
+      (exit.time !== undefined && Number.isNaN(exit.time.getTime()))
+    ) {
+      return null;
+    }
+    wire.push({
+      price: exit.price,
+      ...(exit.time === undefined ? {} : { time: exit.time.toISOString() }),
+      ...(exit.size === undefined ? {} : { size: exit.size }),
+    });
+  }
+  return wire;
+}
+
+
+function wireDividends(
+  previous: TradeData
+): NonNullable<TradeUpdateInput['dividends']> | null {
+  const dividends = previous.dividends ?? [];
+  if (
+    dividends.length > 100 ||
+    dividends.some(
+      (dividend) =>
+        Number.isNaN(dividend.time.getTime()) ||
+        !Number.isFinite(dividend.amount) ||
+        dividend.amount === 0
+    )
+  ) {
+    return null;
+  }
+  return dividends.map((dividend) => ({
+    time: dividend.time.toISOString(),
+    amount: dividend.amount,
+  }));
 }

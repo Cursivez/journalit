@@ -211,46 +211,12 @@ export const TRADE_FORM_LAYOUT_STYLES = `
     margin-right: auto;
   }
 
-  .journalit-trade-form-layout-editor__footer .journalit-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px;
-    font-weight: 500;
-    box-shadow: none;
-    gap: 8px;
-    user-select: none;
-  }
-
   .journalit-trade-form-layout-editor__footer .create-account-button {
     min-width: 100px;
   }
 
   .journalit-trade-form-layout-editor__footer .cancel-button {
     min-width: 70px;
-  }
-
-  .journalit-trade-form-layout-editor__footer .journalit-button--primary {
-    background: var(--interactive-accent);
-    border-color: var(--interactive-accent);
-    color: var(--text-on-accent);
-  }
-
-  .journalit-trade-form-layout-editor__footer .journalit-button--primary:hover:not(:disabled) {
-    background: var(--interactive-accent-hover);
-    color: var(--text-on-accent);
-    border-color: var(--interactive-accent-hover);
-  }
-
-  .journalit-trade-form-layout-editor__footer .journalit-button--secondary {
-    background: transparent;
-    border-color: var(--background-modifier-border);
-    color: var(--text-muted);
-  }
-
-  .journalit-trade-form-layout-editor__footer .journalit-button--secondary:hover:not(:disabled) {
-    background: var(--background-modifier-hover);
-    color: var(--text-normal);
   }
 
   .journalit-trade-form-header-action {

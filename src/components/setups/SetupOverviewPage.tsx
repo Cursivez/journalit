@@ -23,13 +23,17 @@ import {
 } from '../../guides/setupsGuideIds';
 import { EmptyState } from '../shared/EmptyState';
 import { Plus } from '../shared/icons/ObsidianIcon';
+import type { SetupOutcomeScope } from '../../services/setup/types';
 import type {
-  MetricKey,
+  SetupOutcomeMetricsSource,
   SetupOverviewChartMode,
+  SetupOverviewMetricKey,
   SetupPairMetricKey,
   SetupTradeIndex,
   SetupViewModel,
 } from './setupsViewTypes';
+import { normalizeSetupOutcomeScope } from './setupOverviewScope';
+import { ALL_OUTCOMES_ONLY_METRIC_KEYS } from './setupOverviewMetrics';
 import {
   setupOverviewChartSettingsReducer,
   sortSetupCardsByRecentActivity,
@@ -44,12 +48,14 @@ import {
   useSetupOverviewTagFilter,
 } from './SetupTags';
 import type { App } from 'obsidian';
+import type { SetupTradeType } from '../../services/setup/setupTradeTypes';
 
 function useSetupOverviewFilterActions({
   currentGuideStepId,
   handleDirectionFiltersChange,
   handleFiltersChange,
   handleTagFiltersChange,
+  onTradeTypesChange,
   setIsCompareSelecting,
 }: {
   currentGuideStepId: string | null;
@@ -59,6 +65,7 @@ function useSetupOverviewFilterActions({
     directions: SetupDirectionFilter[]
   ) => number;
   handleTagFiltersChange: (tags: string[]) => number;
+  onTradeTypesChange: (tradeTypes: SetupTradeType[]) => void;
   setIsCompareSelecting: React.Dispatch<React.SetStateAction<boolean>>;
 }) {
   const exitInvalidCompareSelection = useCallback(
@@ -79,10 +86,10 @@ function useSetupOverviewFilterActions({
       exitInvalidCompareSelection(handleDirectionFiltersChange(directions)),
     [exitInvalidCompareSelection, handleDirectionFiltersChange]
   );
-  const onReset = useCallback(
-    () => exitInvalidCompareSelection(handleFiltersChange([], [])),
-    [exitInvalidCompareSelection, handleFiltersChange]
-  );
+  const onReset = useCallback(() => {
+    onTradeTypesChange([]);
+    exitInvalidCompareSelection(handleFiltersChange([], []));
+  }, [exitInvalidCompareSelection, handleFiltersChange, onTradeTypesChange]);
   return { onDirectionsChange, onReset, onTagsChange };
 }
 
@@ -105,10 +112,93 @@ function useSetupChartNavigation(
   );
 }
 
+
+function useSetupOverviewChartSettings(plugin: JournalitPlugin) {
+  const [chartSettings, dispatchChartSettings] = useReducer(
+    setupOverviewChartSettingsReducer,
+    undefined,
+    () => ({
+      metricKey:
+        plugin.uiStateManager.getState().setupOverviewMetricKey ??
+        'profitFactor',
+      outcomeScope: normalizeSetupOutcomeScope(
+        plugin.uiStateManager.getState().setupOverviewOutcomeScope
+      ),
+      chartMode:
+        plugin.uiStateManager.getState().setupOverviewChartMode ?? 'setups',
+      pairMetricKey:
+        plugin.uiStateManager.getState().setupOverviewPairMetricKey ??
+        (plugin.settings.trade?.displayRMultiples ? 'edgeR' : 'profitFactor'),
+      selectedSetupIds:
+        plugin.uiStateManager.getState().setupOverviewSelectedSetupIds,
+    })
+  );
+  const handleMetricKeyChange = (nextMetricKey: SetupOverviewMetricKey) => {
+    dispatchChartSettings({ type: 'metric', metricKey: nextMetricKey });
+    
+    
+    const resetsOutcome =
+      chartSettings.outcomeScope !== 'all' &&
+      ALL_OUTCOMES_ONLY_METRIC_KEYS.has(nextMetricKey);
+    if (resetsOutcome) {
+      dispatchChartSettings({ type: 'outcomeScope', outcomeScope: 'all' });
+    }
+    void plugin.uiStateManager.updateState({
+      setupOverviewMetricKey: nextMetricKey,
+      ...(resetsOutcome ? { setupOverviewOutcomeScope: 'all' } : {}),
+    });
+  };
+
+  const handleOutcomeScopeChange = (nextScope: SetupOutcomeScope) => {
+    dispatchChartSettings({ type: 'outcomeScope', outcomeScope: nextScope });
+    void plugin.uiStateManager.updateState({
+      setupOverviewOutcomeScope: nextScope,
+    });
+  };
+
+  const handleChartModeChange = (nextMode: SetupOverviewChartMode) => {
+    dispatchChartSettings({ type: 'mode', chartMode: nextMode });
+    void plugin.uiStateManager.updateState({
+      setupOverviewChartMode: nextMode,
+    });
+  };
+
+  const handlePairMetricKeyChange = (nextMetricKey: SetupPairMetricKey) => {
+    dispatchChartSettings({ type: 'pairMetric', pairMetricKey: nextMetricKey });
+    void plugin.uiStateManager.updateState({
+      setupOverviewPairMetricKey: nextMetricKey,
+    });
+  };
+
+  const handleChartSelectedSetupIdsChange = (
+    nextSelectedSetupIds: string[] | undefined
+  ) => {
+    dispatchChartSettings({
+      type: 'selectedSetups',
+      selectedSetupIds: nextSelectedSetupIds,
+    });
+    void plugin.uiStateManager.updateState({
+      setupOverviewSelectedSetupIds: nextSelectedSetupIds,
+    });
+  };
+
+  return {
+    chartSettings,
+    handleMetricKeyChange,
+    handleOutcomeScopeChange,
+    handleChartModeChange,
+    handlePairMetricKeyChange,
+    handleChartSelectedSetupIdsChange,
+  };
+}
+
 export const SetupOverviewPage: React.FC<{
   plugin: JournalitPlugin;
   viewModels: SetupViewModel[];
   tradeIndex: SetupTradeIndex;
+  outcomeMetrics: SetupOutcomeMetricsSource;
+  tradeTypes: SetupTradeType[];
+  onTradeTypesChange: (tradeTypes: SetupTradeType[]) => void;
   selectedSetupIds: string[];
   onSelectedSetupIdsChange: (setupIds: string[]) => void;
   onOpenSetup: (setupId: string, setupName: string, setupPath?: string) => void;
@@ -118,6 +208,9 @@ export const SetupOverviewPage: React.FC<{
   plugin,
   viewModels,
   tradeIndex,
+  outcomeMetrics,
+  tradeTypes,
+  onTradeTypesChange,
   selectedSetupIds,
   onSelectedSetupIdsChange,
   onOpenSetup,
@@ -142,22 +235,14 @@ export const SetupOverviewPage: React.FC<{
     isGuideActive: Boolean(currentGuideStepId),
   });
 
-  const [chartSettings, dispatchChartSettings] = useReducer(
-    setupOverviewChartSettingsReducer,
-    undefined,
-    () => ({
-      metricKey:
-        plugin.uiStateManager.getState().setupOverviewMetricKey ??
-        'profitFactor',
-      chartMode:
-        plugin.uiStateManager.getState().setupOverviewChartMode ?? 'setups',
-      pairMetricKey:
-        plugin.uiStateManager.getState().setupOverviewPairMetricKey ??
-        (plugin.settings.trade?.displayRMultiples ? 'edgeR' : 'profitFactor'),
-      selectedSetupIds:
-        plugin.uiStateManager.getState().setupOverviewSelectedSetupIds,
-    })
-  );
+  const {
+    chartSettings,
+    handleMetricKeyChange,
+    handleOutcomeScopeChange,
+    handleChartModeChange,
+    handlePairMetricKeyChange,
+    handleChartSelectedSetupIdsChange,
+  } = useSetupOverviewChartSettings(plugin);
   const [isCompareSelecting, setIsCompareSelecting] = useState(
     selectedSetupIds.length > 0 && effectiveViewModels.length >= 2
   );
@@ -170,6 +255,7 @@ export const SetupOverviewPage: React.FC<{
     handleDirectionFiltersChange,
     handleFiltersChange,
     handleTagFiltersChange,
+    onTradeTypesChange,
     setIsCompareSelecting,
   });
   const emitGuideAction = useGuideAction();
@@ -188,7 +274,7 @@ export const SetupOverviewPage: React.FC<{
     effectiveViewModels,
     onOpenSetup
   );
-  const { metricKey, chartMode, pairMetricKey } = chartSettings;
+  const { metricKey, outcomeScope, chartMode, pairMetricKey } = chartSettings;
   const chartSelectedSetupIds = chartSettings.selectedSetupIds;
   const guideForcesPairsView =
     currentGuideStepId === 'pairs-mode' || currentGuideStepId === 'pairs-chart';
@@ -270,39 +356,6 @@ export const SetupOverviewPage: React.FC<{
     onCompareSelected(setupIds);
   };
 
-  const handleMetricKeyChange = (nextMetricKey: MetricKey) => {
-    dispatchChartSettings({ type: 'metric', metricKey: nextMetricKey });
-    void plugin.uiStateManager.updateState({
-      setupOverviewMetricKey: nextMetricKey,
-    });
-  };
-
-  const handleChartModeChange = (nextMode: SetupOverviewChartMode) => {
-    dispatchChartSettings({ type: 'mode', chartMode: nextMode });
-    void plugin.uiStateManager.updateState({
-      setupOverviewChartMode: nextMode,
-    });
-  };
-
-  const handlePairMetricKeyChange = (nextMetricKey: SetupPairMetricKey) => {
-    dispatchChartSettings({ type: 'pairMetric', pairMetricKey: nextMetricKey });
-    void plugin.uiStateManager.updateState({
-      setupOverviewPairMetricKey: nextMetricKey,
-    });
-  };
-
-  const handleChartSelectedSetupIdsChange = (
-    nextSelectedSetupIds: string[] | undefined
-  ) => {
-    dispatchChartSettings({
-      type: 'selectedSetups',
-      selectedSetupIds: nextSelectedSetupIds,
-    });
-    void plugin.uiStateManager.updateState({
-      setupOverviewSelectedSetupIds: nextSelectedSetupIds,
-    });
-  };
-
   const effectiveVisibleSelectedSetupIdsSet = new Set(
     effectiveVisibleSelectedSetupIds
   );
@@ -317,6 +370,7 @@ export const SetupOverviewPage: React.FC<{
         selectedDirectionFilters={selectedDirectionFilters}
         selectedSetupCount={effectiveVisibleSelectedSetupIds.length}
         selectedTagFilters={selectedTagFilters}
+        tradeTypes={tradeTypes}
         onCompare={handleCompareAction}
         onCreateSetup={handleCreateSetupAction}
         onDirectionFiltersChange={handleOverviewDirectionFiltersChange}
@@ -324,6 +378,7 @@ export const SetupOverviewPage: React.FC<{
         onPairs={handlePairsAction}
         onResetFilters={resetOverviewFilters}
         onTagFiltersChange={handleOverviewTagFiltersChange}
+        onTradeTypesChange={onTradeTypesChange}
         registerCompareTabTarget={registerCompareTabTarget}
         registerCreateButtonTarget={registerCreateButtonTarget}
         registerOverviewTabTarget={registerOverviewTabTarget}
@@ -336,11 +391,14 @@ export const SetupOverviewPage: React.FC<{
         plugin={plugin}
         viewModels={effectiveViewModels}
         tradeIndex={tradeIndex}
+        outcomeMetrics={outcomeMetrics}
         chartMode={effectiveChartMode}
         metricKey={metricKey}
+        outcomeScope={outcomeScope}
         pairMetricKey={pairMetricKey}
         selectedSetupIds={chartSelectedSetupIds}
         onMetricKeyChange={handleMetricKeyChange}
+        onOutcomeScopeChange={handleOutcomeScopeChange}
         onPairMetricKeyChange={handlePairMetricKeyChange}
         onSelectedSetupIdsChange={handleChartSelectedSetupIdsChange}
         onSetupSelected={handleSetupChartSelected}
@@ -424,6 +482,7 @@ const SetupOverviewHeader: React.FC<{
   selectedDirectionFilters: SetupDirectionFilter[];
   selectedSetupCount: number;
   selectedTagFilters: string[];
+  tradeTypes: SetupTradeType[];
   onCompare: () => void;
   onCreateSetup: () => void;
   onDirectionFiltersChange: (directions: SetupDirectionFilter[]) => void;
@@ -431,6 +490,7 @@ const SetupOverviewHeader: React.FC<{
   onPairs: () => void;
   onResetFilters: () => void;
   onTagFiltersChange: (tags: string[]) => void;
+  onTradeTypesChange: (tradeTypes: SetupTradeType[]) => void;
   registerCompareTabTarget: (element: HTMLElement | null) => void;
   registerCreateButtonTarget: (element: HTMLElement | null) => void;
   registerOverviewTabTarget: (element: HTMLElement | null) => void;
@@ -446,6 +506,7 @@ const SetupOverviewHeader: React.FC<{
   selectedDirectionFilters,
   selectedSetupCount,
   selectedTagFilters,
+  tradeTypes,
   onCompare,
   onCreateSetup,
   onDirectionFiltersChange,
@@ -453,6 +514,7 @@ const SetupOverviewHeader: React.FC<{
   onPairs,
   onResetFilters,
   onTagFiltersChange,
+  onTradeTypesChange,
   registerCompareTabTarget,
   registerCreateButtonTarget,
   registerOverviewTabTarget,
@@ -512,9 +574,11 @@ const SetupOverviewHeader: React.FC<{
           availableTags={availableTags}
           selectedDirections={selectedDirectionFilters}
           selectedTags={selectedTagFilters}
+          tradeTypes={tradeTypes}
           onDirectionsChange={onDirectionFiltersChange}
           onReset={onResetFilters}
           onTagsChange={onTagFiltersChange}
+          onTradeTypesChange={onTradeTypesChange}
         />
       </div>
       <button

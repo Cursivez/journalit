@@ -10,6 +10,7 @@ import {
 } from '../services/propChallenge/PropChallengePayoutRequirements';
 import { normalizePropChallengeConfig } from '../services/propChallenge/normalization';
 import { normalizePersonalProfiles } from '../services/propChallenge/PersonalPropFirmProfiles';
+import { migrateLayoutGridResolution } from './layoutGridResolution';
 
 type SettingsMigrationMode = 'load' | 'import';
 
@@ -347,6 +348,10 @@ export function migrateSettingsSchema(
 
   if (storedVersion < 3) {
     changed = migrateTradeFormTagsItemId(settings, source) || changed;
+  }
+
+  if (storedVersion < 4) {
+    changed = migrateLayoutGridResolution(settings, source) || changed;
   }
 
   

@@ -29,7 +29,10 @@ import { calculateEffectiveRMultiple } from '../../../utils/formatting';
 import { hasSizedExplicitExitPrice } from '../../../services/trade/core/TradeExecutionNormalization';
 import { shareDollarAmountProps } from '../../../services/share/brandedCapture';
 import { FitText } from '../../shared/FitText';
+import { cssVars } from '../../../styles/inlineStylePolicy';
+import { metricGridLayout } from '../../../utils/metricGridLayout';
 import { getExecutionFillPrices } from '../../../utils/tradeStatusUtils';
+import { formatDateDisplay } from '../../../utils/dateUtils';
 
 interface ExecutionItem {
   time?: Date;
@@ -44,8 +47,6 @@ interface MetricCardProps {
   subtitle?: React.ReactNode;
   valueClassName?: string;
   tooltipContent?: React.ReactNode;
-  
-  dollarAmount?: boolean;
 }
 
 interface ExecutionBreakdownProps {
@@ -82,7 +83,11 @@ interface TradeThesisSectionProps {
   thesis?: string;
 }
 
+
+const MAX_METRIC_COLUMNS = { lg: 8, md: 5, sm: 3, xs: 2 } as const;
+
 interface ConfiguredMetricCardsProps {
+  displayPolicy: ReturnType<typeof useDisplayPolicy>;
   shareOptions?: TradeShareOptions;
   allowedMetrics: TradeMetricType[];
   data: PartialTradeFrontmatter;
@@ -359,26 +364,15 @@ const getValidExecutionDates = (items: ExecutionItem[]) => {
   return dates;
 };
 
-const SHORT_DATE_TIME_FORMATTER = new Intl.DateTimeFormat(undefined, {
-  month: 'short',
-  day: 'numeric',
-  hour: 'numeric',
-  minute: '2-digit',
-});
-
 const MetricCard: React.FC<MetricCardProps> = ({
   label,
   value,
   subtitle,
   valueClassName,
   tooltipContent,
-  dollarAmount,
 }) => {
   const card = (
-    <div
-      className="metric-card"
-      {...(dollarAmount ? shareDollarAmountProps : {})}
-    >
+    <div className="metric-card">
       <div className="metric-label">{label}</div>
       <div
         className={
@@ -387,7 +381,7 @@ const MetricCard: React.FC<MetricCardProps> = ({
       >
         <FitText>{value}</FitText>
       </div>
-      <div className="metric-subtitle">{subtitle ?? '\u00a0'}</div>
+      {subtitle && <div className="metric-subtitle">{subtitle}</div>}
     </div>
   );
 
@@ -478,7 +472,8 @@ const TradeThesisSection: React.FC<TradeThesisSectionProps> = ({ thesis }) => {
   );
 };
 
-const ConfiguredMetricCards: React.FC<ConfiguredMetricCardsProps> = ({
+const buildConfiguredMetricCards = ({
+  displayPolicy,
   shareOptions,
   allowedMetrics,
   data,
@@ -491,7 +486,7 @@ const ConfiguredMetricCards: React.FC<ConfiguredMetricCardsProps> = ({
   formatValue,
   shouldMask,
   isPositionSizeMasked,
-}) => {
+}: ConfiguredMetricCardsProps): React.ReactNode[] => {
   const isMetricAllowed = (metric: TradeMetricType) =>
     allowedMetrics.includes(metric);
   const effectiveRMultiple = calculateEffectiveRMultiple(
@@ -500,7 +495,6 @@ const ConfiguredMetricCards: React.FC<ConfiguredMetricCardsProps> = ({
     data.riskAmount,
     defaultRiskAmount
   );
-  const displayPolicy = useDisplayPolicy();
   
   
   const pnlShownInDollars = shareOptions
@@ -522,57 +516,95 @@ const ConfiguredMetricCards: React.FC<ConfiguredMetricCardsProps> = ({
         currencyCode: currency,
       };
 
+  const dollarsHidden = shareOptions?.hideDollarAmounts === true;
+
+  return [
+    isMetricAllowed('size') && (
+      <MetricCard
+        key="size"
+        label={t('template.editor.metric.position-size')}
+        value={formatDisplayPositionSize(data.positionSize)}
+        valueClassName={isPositionSizeMasked ? 'journalit-privacy-mask' : ''}
+      />
+    ),
+    isMetricAllowed('pnl') && !(dollarsHidden && pnlShownInDollars) && (
+      <MetricCard
+        key="pnl"
+        label={t(
+          shareOptions
+            ? tradeSharePnlLabel(shareOptions.pnlMode)
+            : 'template.editor.metric.pnl'
+        )}
+        value={formatValue(pnlDisplayOptions)}
+        valueClassName={shouldMask('pnl') ? 'journalit-privacy-mask' : ''}
+        tooltipContent={
+          isRMultipleUnavailable(pnlDisplayOptions, displayPolicy) ? (
+            <TradeRUnavailableMessage />
+          ) : undefined
+        }
+      />
+    ),
+    isMetricAllowed('rMultiple') && (
+      <MetricCard
+        key="rMultiple"
+        label={t('template.editor.metric.r-multiple')}
+        value={formatValue({ kind: 'rMultiple', value: effectiveRMultiple })}
+        valueClassName={shouldMask('rMultiple') ? 'journalit-privacy-mask' : ''}
+      />
+    ),
+    isMetricAllowed('costs') && hasCosts && !dollarsHidden && (
+      <MetricCard
+        key="costs"
+        label={t('template.editor.metric.costs')}
+        value={formatValue({
+          kind: 'fee',
+          value: totalCosts,
+          currencyCode: currency,
+        })}
+        valueClassName={shouldMask('fee') ? 'journalit-privacy-mask' : ''}
+      />
+    ),
+  ];
+};
+
+
+const TradeMetricsGrid: React.FC<{ cards: React.ReactNode[] }> = ({
+  cards,
+}) => {
+  
+  const visibleCards = React.Children.toArray(cards).filter(
+    React.isValidElement
+  );
+  const lg = metricGridLayout(visibleCards.length, MAX_METRIC_COLUMNS.lg);
+  const md = metricGridLayout(visibleCards.length, MAX_METRIC_COLUMNS.md);
+  const sm = metricGridLayout(visibleCards.length, MAX_METRIC_COLUMNS.sm);
+  const xs = metricGridLayout(visibleCards.length, MAX_METRIC_COLUMNS.xs);
+
   return (
-    <>
-      {isMetricAllowed('size') && (
-        <MetricCard
-          label={t('template.editor.metric.position-size')}
-          value={formatDisplayPositionSize(data.positionSize)}
-          valueClassName={isPositionSizeMasked ? 'journalit-privacy-mask' : ''}
-        />
-      )}
-
-      {isMetricAllowed('pnl') && (
-        <MetricCard
-          label={t(
-            shareOptions
-              ? tradeSharePnlLabel(shareOptions.pnlMode)
-              : 'template.editor.metric.pnl'
-          )}
-          value={formatValue(pnlDisplayOptions)}
-          valueClassName={shouldMask('pnl') ? 'journalit-privacy-mask' : ''}
-          tooltipContent={
-            isRMultipleUnavailable(pnlDisplayOptions, displayPolicy) ? (
-              <TradeRUnavailableMessage />
-            ) : undefined
-          }
-          dollarAmount={pnlShownInDollars}
-        />
-      )}
-
-      {isMetricAllowed('rMultiple') && (
-        <MetricCard
-          label={t('template.editor.metric.r-multiple')}
-          value={formatValue({ kind: 'rMultiple', value: effectiveRMultiple })}
-          valueClassName={
-            shouldMask('rMultiple') ? 'journalit-privacy-mask' : ''
-          }
-        />
-      )}
-
-      {isMetricAllowed('costs') && hasCosts && (
-        <MetricCard
-          label={t('template.editor.metric.costs')}
-          dollarAmount
-          value={formatValue({
-            kind: 'fee',
-            value: totalCosts,
-            currencyCode: currency,
+    <div
+      className="trade-metrics-grid"
+      style={cssVars({
+        '--journalit-trade-metric-tracks': String(lg.tracks),
+        '--journalit-trade-metric-tracks-md': String(md.tracks),
+        '--journalit-trade-metric-tracks-sm': String(sm.tracks),
+        '--journalit-trade-metric-tracks-xs': String(xs.tracks),
+      })}
+    >
+      {visibleCards.map((card, index) => (
+        <div
+          key={card.key}
+          className="trade-metric-cell"
+          style={cssVars({
+            '--journalit-trade-metric-span': String(lg.spans[index]),
+            '--journalit-trade-metric-span-md': String(md.spans[index]),
+            '--journalit-trade-metric-span-sm': String(sm.spans[index]),
+            '--journalit-trade-metric-span-xs': String(xs.spans[index]),
           })}
-          valueClassName={shouldMask('fee') ? 'journalit-privacy-mask' : ''}
-        />
-      )}
-    </>
+        >
+          {card}
+        </div>
+      ))}
+    </div>
   );
 };
 
@@ -638,6 +670,7 @@ export const TradeDetailsSection: React.FC<TradeDetailsSectionProps> = ({
   const { currency: globalCurrency } = useCurrency();
   const currency = data.currency || globalCurrency;
   const { formatValue, shouldMask } = useDisplayFormatter();
+  const displayPolicy = useDisplayPolicy();
   const isPriceMasked = shouldMask('price');
   const isPositionSizeMasked = shouldMask('positionSize');
 
@@ -694,7 +727,7 @@ export const TradeDetailsSection: React.FC<TradeDetailsSectionProps> = ({
     const parsedDate = parseExecutionDate(date);
     if (!parsedDate) return formatTime(date);
     return spansMultipleDates
-      ? SHORT_DATE_TIME_FORMATTER.format(parsedDate)
+      ? `${formatDateDisplay(parsedDate)} ${formatTime(date)}`
       : formatTime(date);
   };
   const totalCosts = calculateTotalCosts(data);
@@ -811,52 +844,53 @@ export const TradeDetailsSection: React.FC<TradeDetailsSectionProps> = ({
           className="trade-overview-section"
           {...tradeShareSectionProps('metrics')}
         >
-          
-          <div className="trade-metrics-grid">
-            {isMetricAllowed('entry') && (
-              <MetricCard
-                label={t('trade.details.entry')}
-                value={formatEntryPrice(data.entryPrice)}
-                subtitle={entrySubtitle}
-                valueClassName={priceValueClassName}
-                tooltipContent={entryTooltipContent}
-              />
-            )}
-
-            {isMetricAllowed('exit') && (
-              <MetricCard
-                label={t('trade.details.exit')}
-                value={formatExitPrice(displayExitPrice)}
-                subtitle={exitSubtitle}
-                valueClassName={priceValueClassName}
-                tooltipContent={exitTooltipContent}
-              />
-            )}
-
-            {isMetricAllowed('duration') && (
-              <MetricCard
-                label={t('trade.details.duration')}
-                value={metrics.duration || t('common.na')}
-              />
-            )}
-
-            <ConfiguredMetricCards
-              shareOptions={shareOptions}
-              allowedMetrics={allowedMetrics}
-              data={data}
-              pnl={metrics.pnl}
-              defaultRiskAmount={defaultRiskAmount}
-              currency={currency}
-              totalCosts={totalCosts}
-              hasCosts={hasCosts}
-              formatDisplayPositionSize={formatDisplayPositionSize}
-              formatValue={formatValue}
-              shouldMask={shouldMask}
-              isPositionSizeMasked={isPositionSizeMasked}
-            />
-
-            {rating}
-          </div>
+          <TradeMetricsGrid
+            cards={[
+              isMetricAllowed('entry') && (
+                <MetricCard
+                  key="entry"
+                  label={t('trade.details.entry')}
+                  value={formatEntryPrice(data.entryPrice)}
+                  subtitle={entrySubtitle}
+                  valueClassName={priceValueClassName}
+                  tooltipContent={entryTooltipContent}
+                />
+              ),
+              isMetricAllowed('exit') && (
+                <MetricCard
+                  key="exit"
+                  label={t('trade.details.exit')}
+                  value={formatExitPrice(displayExitPrice)}
+                  subtitle={exitSubtitle}
+                  valueClassName={priceValueClassName}
+                  tooltipContent={exitTooltipContent}
+                />
+              ),
+              isMetricAllowed('duration') && (
+                <MetricCard
+                  key="duration"
+                  label={t('trade.details.duration')}
+                  value={metrics.duration || t('common.na')}
+                />
+              ),
+              ...buildConfiguredMetricCards({
+                displayPolicy,
+                shareOptions,
+                allowedMetrics,
+                data,
+                pnl: metrics.pnl,
+                defaultRiskAmount,
+                currency,
+                totalCosts,
+                hasCosts,
+                formatDisplayPositionSize,
+                formatValue,
+                shouldMask,
+                isPositionSizeMasked,
+              }),
+              rating,
+            ]}
+          />
 
           <PlanMetricStrip rows={planMetricRows} />
         </div>

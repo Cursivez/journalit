@@ -26,7 +26,7 @@ export const KeyEventsCalendarButton: React.FC<
   return (
     <button
       type="button"
-      className={`journalit-native-button journalit-key-events-calendar-button ${className}`}
+      className={`journalit-icon-button journalit-key-events-calendar-button ${className}`}
       onClick={openCalendarView}
       aria-label={t('widget.key-events.open-calendar-aria')}
     >

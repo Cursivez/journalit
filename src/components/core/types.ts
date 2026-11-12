@@ -1,6 +1,6 @@
 
 
-import { InputHTMLAttributes, Ref, SelectHTMLAttributes } from 'react';
+import { InputHTMLAttributes, Ref } from 'react';
 
 
 interface BaseComponentProps {
@@ -45,15 +45,13 @@ export interface InputProps
 }
 
 
-export interface SelectProps
-  extends
-    BaseComponentProps,
-    Omit<
-      SelectHTMLAttributes<HTMLSelectElement>,
-      'className' | 'disabled' | 'size' | 'onChange'
-    > {
+export interface SelectProps extends BaseComponentProps {
   
   label?: string;
+  
+  'aria-label'?: string;
+  
+  value?: string;
   
   options: Array<{
     value: string;
@@ -64,13 +62,9 @@ export interface SelectProps
   
   helperText?: string;
   
-  size?: 'sm' | 'md' | 'lg';
-  
   placeholder?: string;
   
   onChange?: (value: string) => void | Promise<void>;
-  
-  ref?: Ref<HTMLSelectElement>;
 }
 
 

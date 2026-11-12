@@ -32,6 +32,7 @@ import {
   DATE_ORDER_DIAGNOSTIC_CODES,
 } from './dateOrderQuestion';
 import type { BreakEvenRangeSettings } from '../../utils/breakEvenRange';
+import { Button } from '../ui/Button';
 
 interface GroupedTradeImportDiagnostic {
   affectedRowCount?: number;
@@ -773,21 +774,25 @@ export function TradeImportRecoveryReview({
       />
       <div className="journalit-trade-import-actions">
         {recovery.canReviewHeader && onReviewHeader && (
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="journalit-trade-import-cancel-preview-button"
             disabled={busy}
             onClick={onReviewHeader}
           >
             {t('trade-import.step.analyse')}
-          </button>
+          </Button>
         )}
-        <button
+        <Button
+          variant="secondary"
+          size="small"
           className="journalit-trade-import-confirm-button"
           disabled={busy}
           onClick={onChooseAnotherFile}
         >
           {t(recovery.anotherFileLabel ?? 'csv.button.import-another')}
-        </button>
+        </Button>
       </div>
     </>
   );
@@ -910,13 +915,15 @@ function PreviewConfirmButton({
 }: Parameters<typeof previewConfirmAction>[0] & { disabled: boolean }) {
   const action = previewConfirmAction(actionInput);
   return (
-    <button
+    <Button
+      variant="primary"
+      size="small"
       className="journalit-trade-import-confirm-button"
       disabled={disabled}
       onClick={action.onClick}
     >
       {action.label}
-    </button>
+    </Button>
   );
 }
 
@@ -1041,13 +1048,15 @@ const TradeImportStandardPreviewReview: React.FC<
         />
 
         <div className="journalit-trade-import-actions">
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="journalit-trade-import-cancel-preview-button"
             disabled={busy}
             onClick={onCancel}
           >
             {t('trade-import.action.cancel-preview')}
-          </button>
+          </Button>
         </div>
       </>
     );
@@ -1121,13 +1130,15 @@ const TradeImportStandardPreviewReview: React.FC<
       />
 
       <div className="journalit-trade-import-actions">
-        <button
+        <Button
+          variant="secondary"
+          size="small"
           className="journalit-trade-import-cancel-preview-button"
           disabled={locked}
           onClick={onCancel}
         >
           {t('trade-import.action.cancel-preview')}
-        </button>
+        </Button>
         {(canCommit || preview.outcome !== 'failed') && (
           <PreviewConfirmButton
             canCommit={canCommit}

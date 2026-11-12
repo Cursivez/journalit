@@ -1,10 +1,7 @@
-import React, { useCallback, useEffect, useReducer, useState } from 'react';
+import React, { useCallback, useEffect, useReducer } from 'react';
 import { Menu } from 'obsidian';
-import {
-  ChevronDown,
-  ChevronRight,
-  MoreHorizontal,
-} from '../../../components/shared/icons/ObsidianIcon';
+import { Accordion } from '../../../components/shared/Accordion';
+import { MoreHorizontal } from '../../../components/shared/icons/ObsidianIcon';
 import { showConfirmationModal } from '../../../components/shared/ConfirmationModal';
 import { Button } from '../../../components/ui/Button';
 import { IconButton } from '../../../components/ui/IconButton';
@@ -182,7 +179,6 @@ export const TradeImportHistorySection: React.FC<
   TradeImportHistorySectionProps
 > = ({ plugin, onDeleted, defaultOpen = false, revision }) => {
   const [state, dispatch] = useReducer(historyReducer, initialState);
-  const [open, setOpen] = useState(defaultOpen);
   const client = React.useMemo(() => new TradeImportManagementClient(), []);
 
   const loadPage = useCallback(
@@ -260,30 +256,20 @@ export const TradeImportHistorySection: React.FC<
   const countLabel = historyCountLabel(state);
 
   return (
-    <section className="journalit-trade-import-history">
-      <button
-        type="button"
-        className="journalit-trade-import-history__toggle"
-        aria-expanded={open}
-        onClick={() => setOpen(!open)}
-      >
-        {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
-        <span>
-          {t('trade-import.history.title')}
-          {countLabel}
-        </span>
-      </button>
-      {open && (
-        <TradeImportHistoryBody
-          state={state}
-          busy={busy}
-          onOpenActions={openActions}
-          onLoadMore={(cursor) => {
-            dispatch({ type: 'load-more' });
-            void loadPage(cursor);
-          }}
-        />
-      )}
-    </section>
+    <Accordion
+      className="journalit-trade-import-history"
+      title={`${t('trade-import.history.title')}${countLabel}`}
+      defaultExpanded={defaultOpen}
+    >
+      <TradeImportHistoryBody
+        state={state}
+        busy={busy}
+        onOpenActions={openActions}
+        onLoadMore={(cursor) => {
+          dispatch({ type: 'load-more' });
+          void loadPage(cursor);
+        }}
+      />
+    </Accordion>
   );
 };

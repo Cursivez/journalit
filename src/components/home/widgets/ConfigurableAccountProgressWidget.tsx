@@ -15,6 +15,7 @@ import { t } from '../../../lang/helpers';
 import { eventBus } from '../../../services/events/EventBus';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { Check, X } from '../../shared/icons/ObsidianIcon';
+import { Button } from '../../ui/Button';
 import {
   ACCOUNT_PROGRESS_MAX_OPTIONS,
   getAccountProgressConfig,
@@ -194,24 +195,26 @@ const AccountProgressConfigPanel: React.FC<ConfigPanelProps> = ({
           {modeButton('selected')}
         </div>
         <div className="journalit-home-streak__config-actions">
-          <button
-            type="button"
-            className="clickable-icon journalit-home-streak__config-save"
+          <Button
+            variant="primary"
+            size="small"
+            className="journalit-home-config-icon-button"
             onClick={() => onSave(draft)}
             aria-label={t('button.save')}
             disabled={isSaving}
           >
-            <Check size={14} />
-          </button>
-          <button
-            type="button"
-            className="clickable-icon journalit-home-streak__config-cancel"
+            <Check size={14} aria-hidden="true" />
+          </Button>
+          <Button
+            variant="secondary"
+            size="small"
+            className="journalit-home-config-icon-button"
             onClick={onCancel}
             aria-label={t('button.cancel')}
             disabled={isSaving}
           >
-            <X size={14} />
-          </button>
+            <X size={14} aria-hidden="true" />
+          </Button>
         </div>
       </div>
 

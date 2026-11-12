@@ -45,6 +45,7 @@ import type {
   OAuthBrokerSharedCopy,
   OAuthBrokerSyncPanelContentProps,
 } from './types';
+import { DropdownSelect } from '../../../../components/shared/DropdownSelect';
 
 function isHistoryChoice(value: string): value is HistoryChoice {
   return (
@@ -191,31 +192,33 @@ const OAuthBrokerHistoryFields: React.FC<
   if (selection.mode !== 'plugin') {
     return null;
   }
+  const historyFieldId = `journalit-broker-history-${connection.id}-${account.id}`;
 
   return (
     <div className="journalit-tradovate-account-field">
       <label>
-        <span>{t(selection.copy.historyLabel)}</span>
-        <select
+        <span id={`${historyFieldId}-label`}>
+          {t(selection.copy.historyLabel)}
+        </span>
+        <DropdownSelect
+          ariaLabel={t(selection.copy.historyLabel)}
+          ariaLabelledBy={`${historyFieldId}-label`}
           value={draft.historyChoice}
           disabled={disabled}
-          onChange={(event) => {
-            if (isHistoryChoice(event.target.value)) {
+          options={[
+            { value: 'all_available', label: t(selection.copy.historyAll) },
+            { value: 'recent_90_days', label: t(selection.copy.historyRecent) },
+            { value: 'custom_date', label: t(selection.copy.historyCustom) },
+            { value: 'new_trades_only', label: t(selection.copy.historyNew) },
+          ]}
+          onChange={(value) => {
+            if (isHistoryChoice(value)) {
               updateDraft(connection.id, account.id, {
-                historyChoice: event.target.value,
+                historyChoice: value,
               });
             }
           }}
-        >
-          <option value="all_available">{t(selection.copy.historyAll)}</option>
-          <option value="recent_90_days">
-            {t(selection.copy.historyRecent)}
-          </option>
-          <option value="custom_date">{t(selection.copy.historyCustom)}</option>
-          <option value="new_trades_only">
-            {t(selection.copy.historyNew)}
-          </option>
-        </select>
+        />
       </label>
       {draft.historyChoice === 'custom_date' && (
         <label>
@@ -402,7 +405,10 @@ const OAuthBrokerAccountCard: React.FC<OAuthBrokerAccountCardProps> = ({
         />
         <div className="journalit-tradovate-account-field journalit-tradovate-local-account-field">
           <div className="journalit-tradovate-local-account-heading">
-            <label htmlFor={localAccountFieldId}>
+            <label
+              id={`${localAccountFieldId}-label`}
+              htmlFor={localAccountFieldId}
+            >
               {t('trade-sync.import.account.local-account')}
             </label>
             <button

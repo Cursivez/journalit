@@ -8,6 +8,7 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import ToggleSwitch from '../ui/ToggleSwitch';
 import { Notice } from 'obsidian';
 import type JournalitPlugin from '../../main';
 import {
@@ -24,6 +25,7 @@ import { ReorderControls } from '../shared/ReorderControls';
 import { SegmentedControl } from '../shared/SegmentedControl';
 import { FloatingUnsavedChangesBanner } from './FloatingUnsavedChangesBanner';
 import { TradeNoteSectionsPanel } from './TradeNoteSectionsPanel';
+import { Button } from '../ui/Button';
 
 interface TradeTemplateEditorProps {
   plugin: JournalitPlugin;
@@ -249,31 +251,6 @@ function mergeSections(
   };
 }
 
-interface ToggleProps {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  disabled?: boolean;
-  ariaLabel?: string;
-}
-
-const Toggle: React.FC<ToggleProps> = ({
-  checked,
-  onChange,
-  disabled,
-  ariaLabel,
-}) => (
-  <button
-    type="button"
-    onClick={() => !disabled && onChange(!checked)}
-    className={`journalit-button template-toggle${checked ? ' is-checked' : ''}${disabled ? ' is-disabled' : ''}`}
-    aria-label={ariaLabel}
-    aria-pressed={checked}
-    disabled={disabled}
-  >
-    <div className="template-toggle__thumb" />
-  </button>
-);
-
 const SectionRow: React.FC<{
   label: string;
   description?: string;
@@ -351,26 +328,28 @@ const LayoutScopePanel: React.FC<{
       {(availableAssetTypes.length > 0 || canRemoveSelectedAssetScope) && (
         <div className="template-layout-scope-actions">
           {canRemoveSelectedAssetScope && (
-            <button
-              type="button"
-              className="journalit-button template-action-button template-action-button--neutral template-action-button--compact"
+            <Button
+              variant="secondary"
+              size="small"
+              className="template-action-button template-action-button--neutral template-action-button--compact"
               onClick={removeSelectedAssetScope}
             >
               {t('template.editor.remove-asset-layout')}
-            </button>
+            </Button>
           )}
           {availableAssetTypes.length > 0 && (
             <div className="template-layout-scope-menu-wrapper">
-              <button
-                type="button"
-                className="journalit-button template-action-button template-action-button--neutral template-action-button--compact"
+              <Button
+                variant="secondary"
+                size="small"
+                className="template-action-button template-action-button--neutral template-action-button--compact"
                 onClick={() => setIsAddingAssetScope(!isAddingAssetScope)}
                 disabled={!canEdit}
                 aria-expanded={isAddingAssetScope}
               >
                 <span aria-hidden="true">+</span>
                 {t('template.editor.asset-type-add')}
-              </button>
+              </Button>
               {isAddingAssetScope && (
                 <div className="template-layout-scope-menu">
                   {availableAssetTypes.map((assetType) => (
@@ -436,7 +415,7 @@ const SectionVisibilityPanel: React.FC<{
       label={t('template.editor.nav-bar')}
       description={t('template.editor.nav-bar-desc')}
     >
-      <Toggle
+      <ToggleSwitch
         checked={sections.navigation.show}
         onChange={(checked) => updateSection('navigation', { show: checked })}
         disabled={!canEdit}
@@ -446,7 +425,7 @@ const SectionVisibilityPanel: React.FC<{
       label={t('template.editor.images')}
       description={t('template.editor.images-desc')}
     >
-      <Toggle
+      <ToggleSwitch
         checked={sections.images.show}
         onChange={(checked) => updateSection('images', { show: checked })}
         disabled={!canEdit}
@@ -479,7 +458,7 @@ const SectionVisibilityPanel: React.FC<{
       label={t('template.editor.metrics')}
       description={t('template.editor.metrics-desc')}
     >
-      <Toggle
+      <ToggleSwitch
         checked={sections.details.show}
         onChange={(checked) => updateSection('details', { show: checked })}
         disabled={!canEdit}
@@ -489,7 +468,7 @@ const SectionVisibilityPanel: React.FC<{
       label={t('template.editor.thesis')}
       description={t('template.editor.thesis-desc')}
     >
-      <Toggle
+      <ToggleSwitch
         checked={sections.details.showThesis !== false}
         onChange={(checked) =>
           updateSection('details', { showThesis: checked })
@@ -501,7 +480,7 @@ const SectionVisibilityPanel: React.FC<{
       label={t('template.editor.missed-reason')}
       description={t('template.editor.missed-reason-desc')}
     >
-      <Toggle
+      <ToggleSwitch
         checked={sections.missedReason?.show !== false}
         onChange={(checked) => updateSection('missedReason', { show: checked })}
         disabled={!canEdit}
@@ -511,7 +490,7 @@ const SectionVisibilityPanel: React.FC<{
       label={t('template.editor.metadata')}
       description={t('template.editor.metadata-desc')}
     >
-      <Toggle
+      <ToggleSwitch
         checked={sections.metadata.show}
         onChange={(checked) => updateSection('metadata', { show: checked })}
         disabled={!canEdit}
@@ -521,7 +500,7 @@ const SectionVisibilityPanel: React.FC<{
       label={t('template.editor.rating')}
       description={t('template.editor.rating-desc')}
     >
-      <Toggle
+      <ToggleSwitch
         checked={sections.rating?.show !== false}
         onChange={(checked) => updateSection('rating', { show: checked })}
         disabled={!canEdit}
@@ -531,7 +510,7 @@ const SectionVisibilityPanel: React.FC<{
       label={t('template.editor.review-button')}
       description={t('template.editor.review-button-desc')}
     >
-      <Toggle
+      <ToggleSwitch
         checked={sections.reviewButton.show}
         onChange={(checked) => updateSection('reviewButton', { show: checked })}
         disabled={!canEdit}
@@ -551,7 +530,7 @@ const MetricCardsPanel: React.FC<{
     </h3>
     {METRIC_OPTIONS.map((metric) => (
       <SectionRow key={metric} label={getMetricLabel(metric)}>
-        <Toggle
+        <ToggleSwitch
           checked={metrics.includes(metric)}
           onChange={(checked) =>
             updateMetrics(updateMetricList(metrics, metric, checked))
@@ -576,28 +555,28 @@ const MetadataRowsPanel: React.FC<{
       {t('template.editor.metadata-rows')}
     </h3>
     <SectionRow label={t('template.editor.accounts')}>
-      <Toggle
+      <ToggleSwitch
         checked={metadata.showAccounts}
         onChange={(checked) => updateMetadata({ showAccounts: checked })}
         disabled={!canEdit}
       />
     </SectionRow>
     <SectionRow label={t('template.editor.setups')}>
-      <Toggle
+      <ToggleSwitch
         checked={metadata.showSetups}
         onChange={(checked) => updateMetadata({ showSetups: checked })}
         disabled={!canEdit}
       />
     </SectionRow>
     <SectionRow label={t('template.editor.mistakes')}>
-      <Toggle
+      <ToggleSwitch
         checked={metadata.showMistakes}
         onChange={(checked) => updateMetadata({ showMistakes: checked })}
         disabled={!canEdit}
       />
     </SectionRow>
     <SectionRow label={t('template.editor.tags')}>
-      <Toggle
+      <ToggleSwitch
         checked={metadata.showTags}
         onChange={(checked) => updateMetadata({ showTags: checked })}
         disabled={!canEdit}
@@ -609,7 +588,7 @@ const MetadataRowsPanel: React.FC<{
         count: String(customFieldCount),
       })}
     >
-      <Toggle
+      <ToggleSwitch
         checked={metadata.showCustomFields !== false}
         onChange={(checked) => updateMetadata({ showCustomFields: checked })}
         disabled={!canEdit}

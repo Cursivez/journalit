@@ -8,6 +8,7 @@ import type {
   PropChallengeConfig,
   PropFirmCatalogCorrection,
   PropChallengeCost,
+  PropChallengePriorPayout,
   PropChallengeMaximumPayoutOutcome,
   PropChallengePayoutAftermath,
   PropChallengePayoutAvailability,
@@ -672,11 +673,23 @@ function normalizePayoutAvailability(
     case 'profit_above_starting_balance':
       return { kind: value.kind, requestPercent: value.requestPercent };
     case 'profit_above_balance_floor':
-      return isFiniteNumber(value.balanceFloor) && value.balanceFloor >= 0
+      return isFiniteNumber(value.balanceFloor) &&
+        value.balanceFloor >= 0 &&
+        (value.belowFloorAllowance === undefined ||
+          (isFiniteNumber(value.belowFloorAllowance) &&
+            value.belowFloorAllowance > 0)) &&
+        (value.appliesToFirstPayouts === undefined ||
+          isPositiveDayCount(value.appliesToFirstPayouts))
         ? {
             kind: value.kind,
             balanceFloor: value.balanceFloor,
             requestPercent: value.requestPercent,
+            ...(isFiniteNumber(value.belowFloorAllowance)
+              ? { belowFloorAllowance: value.belowFloorAllowance }
+              : {}),
+            ...(isPositiveDayCount(value.appliesToFirstPayouts)
+              ? { appliesToFirstPayouts: value.appliesToFirstPayouts }
+              : {}),
           }
         : null;
     default:
@@ -696,8 +709,17 @@ function normalizePayoutMaximum(
     case 'none':
       return { kind: value.kind };
     case 'fixed':
-      return isFiniteNumber(value.amount) && value.amount > 0
-        ? { kind: value.kind, amount: value.amount }
+      return isFiniteNumber(value.amount) &&
+        value.amount > 0 &&
+        (value.appliesToFirstPayouts === undefined ||
+          isPositiveDayCount(value.appliesToFirstPayouts))
+        ? {
+            kind: value.kind,
+            amount: value.amount,
+            ...(isPositiveDayCount(value.appliesToFirstPayouts)
+              ? { appliesToFirstPayouts: value.appliesToFirstPayouts }
+              : {}),
+          }
         : null;
     case 'first_fixed_then_none':
       return isFiniteNumber(value.amount) && value.amount > 0
@@ -1420,14 +1442,14 @@ export function normalizePropFirmProfileCatalogCache(
   
   if (
     !isRecord(value) ||
-    value.contractVersion !== 4 ||
+    value.contractVersion !== 5 ||
     !isIsoDateString(value.fetchedAt)
   )
     return undefined;
   const catalog = normalizePropFirmProfileCatalog(value.catalog);
   if (!catalog) return undefined;
   return {
-    contractVersion: 4,
+    contractVersion: 5,
     catalog,
     etag: typeof value.etag === 'string' ? value.etag : undefined,
     fetchedAt: value.fetchedAt,
@@ -1619,6 +1641,30 @@ function normalizePhase(value: unknown): PropChallengePhase | null {
           Date.parse(left.recordedAt) - Date.parse(right.recordedAt)
       );
   }
+  if (value.drawdownFloorAdjustments !== undefined) {
+    if (!Array.isArray(value.drawdownFloorAdjustments)) return null;
+    const floors: NonNullable<PropChallengePhase['drawdownFloorAdjustments']> =
+      [];
+    for (const adjustment of value.drawdownFloorAdjustments) {
+      if (
+        !isRecord(adjustment) ||
+        typeof adjustment.ruleId !== 'string' ||
+        !isFiniteNumber(adjustment.floor) ||
+        !isIsoDateString(adjustment.recordedAt)
+      )
+        return null;
+      floors.push({
+        ruleId: adjustment.ruleId,
+        floor: adjustment.floor,
+        recordedAt: adjustment.recordedAt,
+      });
+    }
+    if (floors.length)
+      phase.drawdownFloorAdjustments = floors.sort(
+        (left, right) =>
+          Date.parse(left.recordedAt) - Date.parse(right.recordedAt)
+      );
+  }
   if (application === null) return null;
   if (application) phase.profileApplication = application;
   if (value.policyHistory !== undefined) {
@@ -1704,6 +1750,23 @@ function normalizeCost(value: unknown): PropChallengeCost | null {
     amount: value.amount,
     kind: value.kind,
     note: typeof value.note === 'string' ? value.note : undefined,
+  };
+}
+
+function normalizePriorPayout(value: unknown): PropChallengePriorPayout | null {
+  if (
+    !isRecord(value) ||
+    typeof value.id !== 'string' ||
+    !isIsoDateString(value.date) ||
+    !isFiniteNumber(value.amount) ||
+    value.amount < 0
+  )
+    return null;
+  return {
+    id: value.id,
+    date: value.date,
+    amount: value.amount,
+    ...(typeof value.note === 'string' ? { note: value.note } : {}),
   };
 }
 
@@ -1865,6 +1928,11 @@ export function normalizePropChallengeConfig(
   if (Array.isArray(value.oneTimeCosts))
     config.oneTimeCosts = value.oneTimeCosts.flatMap((cost) => {
       const normalized = normalizeCost(cost);
+      return normalized ? [normalized] : [];
+    });
+  if (Array.isArray(value.priorPayouts))
+    config.priorPayouts = value.priorPayouts.flatMap((payout) => {
+      const normalized = normalizePriorPayout(payout);
       return normalized ? [normalized] : [];
     });
   const payoutPlan = normalizePayoutPlan(value.payoutPlan);

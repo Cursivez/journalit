@@ -1,6 +1,7 @@
 import React from 'react';
 import { Lock } from '../shared/icons/ObsidianIcon';
 import { t, tPlural } from '../../lang/helpers';
+import { Button } from '../ui/Button';
 
 interface TradeImportProGateProps {
   busy: boolean;
@@ -38,14 +39,15 @@ export const TradeImportProGate: React.FC<TradeImportProGateProps> = ({
         </p>
       </div>
       <div className="journalit-trade-import-pro-banner__actions">
-        <button
-          type="button"
+        <Button
+          variant="primary"
+          size="small"
           className="journalit-trade-import-gate-primary journalit-trade-import-pro-banner__primary"
           disabled={actionsDisabled}
           onClick={onUpgrade}
         >
           {t('trade-import.pro-gate.cta')}
-        </button>
+        </Button>
         <button
           type="button"
           className="journalit-trade-import-pro-banner__secondary"

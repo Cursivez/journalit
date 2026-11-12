@@ -1,30 +1,35 @@
+import {
+  costItemSnapshot,
+  priorPayoutItemSnapshot,
+} from '../history/itemSnapshots';
 import { t, tPlural } from '../../../lang/helpers';
 import type { AccountMetadata } from '../../../settings/types';
 import { generateUUID } from '../../../utils/uuid';
 import type { AccountPageService } from '../../accountPage/AccountPageService';
 import {
   addPropChallengeCost,
+  addPropChallengePriorPayout,
+  invalidPriorPayoutField,
   advancePhase,
   getCurrentPropChallengePhase,
-  isPropChallengeRuleComplete,
   markChallengeFailed,
   removePropChallengeCost,
+  removePropChallengePriorPayout,
   reopenChallenge,
-  setPropChallengePhaseStart,
-  validatePhaseTimeline,
 } from '../../propChallenge/PropChallengeConfig';
-import { normalizePropChallengeConfig } from '../../propChallenge/normalization';
-import { isExecutableRule } from '../../propChallenge/PropChallengeRuleReview';
-import { ruleFromWire } from '../../agent/configuration/propChallengeRuleWire';
-import { canonicalizeConfigurationValue } from '../../agent/configuration/configurationPrimitives';
+import { trailingDrawdownForFirmFloor } from '../../propChallenge/PropChallengeRuleEngine';
+import {
+  planDrawdownFloor,
+  planDrawdownFloorRemoval,
+  withPropChallengePhase,
+  type DrawdownFloorContext,
+} from '../../propChallenge/drawdownFloorPlan';
 import type { AccountSources } from '../../agent/configuration/accountConfigurationSources';
 import { accountDefinitionIssue } from '../../account/accountDefinitionRules';
 import { parseLocalDateSafe } from '../../../utils/dateUtils';
 import { resolveStageAccountType } from '../../propChallenge/stageAccountTypes';
 import type {
   PropChallengeConfig,
-  PropChallengePhase,
-  PropChallengeRule,
   PropChallengeStage,
 } from '../../propChallenge/types';
 import { accountRevision } from '../../agent/configuration/accountConfiguration';
@@ -35,10 +40,10 @@ import { ActionExecutionError, ActionPlanError } from '../ActionErrors';
 import type {
   ActionDefinition,
   ActionDefinitions,
-  ActionInput,
   ActionPlanContext,
 } from '../ActionTypes';
 import { throwIfAborted } from './tradeActionSupport';
+import { configuredChallenge } from './propChallengeConfigurePlan';
 import { accountWriteError, expectAccountUnchanged } from './accountWriteGuard';
 import { formatActionMoney } from './actionDisplayFormat';
 
@@ -48,6 +53,10 @@ type PropChallengeActionId =
   | 'prop_challenge.reopen'
   | 'prop_challenge.add_cost'
   | 'prop_challenge.delete_cost'
+  | 'prop_challenge.add_prior_payout'
+  | 'prop_challenge.delete_prior_payout'
+  | 'prop_challenge.set_drawdown_floor'
+  | 'prop_challenge.remove_drawdown_floor'
   | 'prop_challenge.configure';
 
 interface PropChallengeActionDependencies {
@@ -376,9 +385,11 @@ export function createPropChallengeActions(
         (candidate) => candidate.id === input.cost_id
       );
       if (!cost) throw new ActionPlanError('not_found', 'cost_id');
+      const baseItem = costItemSnapshot(cost);
       return {
         target: `prop_challenge_cost:${cost.id}`,
         dependsOn: [`account:${source.account.accountId}`],
+        baseItem,
         summary: {
           account_id: source.account.accountId,
           cost_id: cost.id,
@@ -399,8 +410,14 @@ export function createPropChallengeActions(
         execute: async (executionSignal) => {
           throwIfAborted(executionSignal);
           await writeCosts(source, (config) => {
-            if (!config.oneTimeCosts?.some((item) => item.id === cost.id)) {
-              throw new ActionExecutionError('not_found', false);
+            const current = config.oneTimeCosts?.find(
+              (item) => item.id === cost.id
+            );
+            if (!current) throw new ActionExecutionError('not_found', false);
+            
+            
+            if (costItemSnapshot(current) !== baseItem) {
+              throw new ActionExecutionError('conflict', false);
             }
             return removePropChallengeCost(config, cost.id);
           });
@@ -409,6 +426,263 @@ export function createPropChallengeActions(
       };
     },
   };
+
+  const addPriorPayout: ActionDefinition<'prop_challenge.add_prior_payout'> = {
+    async plan(input, context: ActionPlanContext) {
+      const { signal } = context;
+      throwIfAborted(signal);
+      const source = await requireChallenge(input.account_id, signal);
+      const invalidField = invalidPriorPayoutField(input);
+      if (invalidField)
+        throw new ActionPlanError('invalid_request', invalidField);
+      const payout = {
+        id: generateUUID(),
+        date: input.date,
+        amount: input.amount,
+        ...(input.note ? { note: input.note } : {}),
+      };
+      return {
+        target: `prop_challenge_prior_payout:new:${source.account.accountId}:${input.date}:${input.amount}`,
+        dependsOn: [`account:${source.account.accountId}`],
+        summary: {
+          account_id: source.account.accountId,
+          amount: input.amount,
+          date: input.date,
+        },
+        affectedNotes: 0,
+        display: {
+          target: source.account.name,
+          changes: [
+            t('actions.prop-challenge.prior-payout.add', {
+              amount: formatActionMoney(input.amount, accountCurrency(source)),
+              date: input.date,
+            }),
+          ],
+        },
+        execute: async (executionSignal) => {
+          throwIfAborted(executionSignal);
+          await writeCosts(source, (config) =>
+            addPropChallengePriorPayout(config, payout)
+          );
+          return { account_id: source.account.accountId, payout_id: payout.id };
+        },
+      };
+    },
+  };
+
+  const deletePriorPayout: ActionDefinition<'prop_challenge.delete_prior_payout'> =
+    {
+      async plan(input, context: ActionPlanContext) {
+        const { signal } = context;
+        throwIfAborted(signal);
+        const source = await requireChallenge(input.account_id, signal);
+        const payout = source.config.priorPayouts?.find(
+          (candidate) => candidate.id === input.payout_id
+        );
+        if (!payout) throw new ActionPlanError('not_found', 'payout_id');
+        const baseItem = priorPayoutItemSnapshot(payout);
+        return {
+          target: `prop_challenge_prior_payout:${payout.id}`,
+          dependsOn: [`account:${source.account.accountId}`],
+          baseItem,
+          summary: {
+            account_id: source.account.accountId,
+            payout_id: payout.id,
+            amount: payout.amount,
+            date: payout.date,
+          },
+          affectedNotes: 0,
+          display: {
+            target: source.account.name,
+            changes: [
+              t('actions.prop-challenge.prior-payout.delete', {
+                amount: formatActionMoney(
+                  payout.amount,
+                  accountCurrency(source)
+                ),
+                date: payout.date,
+              }),
+            ],
+          },
+          execute: async (executionSignal) => {
+            throwIfAborted(executionSignal);
+            await writeCosts(source, (config) => {
+              const current = config.priorPayouts?.find(
+                (item) => item.id === payout.id
+              );
+              if (!current) throw new ActionExecutionError('not_found', false);
+              
+              
+              if (priorPayoutItemSnapshot(current) !== baseItem) {
+                throw new ActionExecutionError('conflict', false);
+              }
+              return removePropChallengePriorPayout(config, payout.id);
+            });
+            return {
+              account_id: source.account.accountId,
+              payout_id: payout.id,
+            };
+          },
+        };
+      },
+    };
+
+  
+  const floorContext = (
+    source: PropChallengeSource,
+    ruleId: string | undefined
+  ): DrawdownFloorContext => {
+    const { config, history } = source;
+    const phase = getCurrentPropChallengePhase(config);
+    if (
+      source.account.archived ||
+      config.status !== 'active' ||
+      phase?.status !== 'active' ||
+      !history
+    ) {
+      throw new ActionPlanError('conflict', 'account_id');
+    }
+    const at = now();
+    const rule = trailingDrawdownForFirmFloor(phase, at);
+    if (!rule || (ruleId !== undefined && rule.id !== ruleId)) {
+      throw new ActionPlanError('not_found', 'rule_id');
+    }
+    return { config, phase, rule, ...history, now: at };
+  };
+
+  const setDrawdownFloor: ActionDefinition<'prop_challenge.set_drawdown_floor'> =
+    {
+      async plan(input, context: ActionPlanContext) {
+        const { signal } = context;
+        throwIfAborted(signal);
+        const source = await requireChallenge(input.account_id, signal);
+        const baseRevision = await requireRevision(
+          source,
+          input.expected_revision
+        );
+        const floorAt = floorContext(source, input.rule_id);
+        const plan = planDrawdownFloor(floorAt, input.floor);
+        if (plan.problem || !plan.after || !plan.current.rule) {
+          throw new ActionPlanError('invalid_request', 'floor');
+        }
+        const currency = accountCurrency(source);
+        const { replaces } = plan;
+        return {
+          target: `account:${source.account.accountId}`,
+          summary: {
+            account_id: source.account.accountId,
+            base_revision: baseRevision,
+            phase_id: floorAt.phase.id,
+            rule_id: floorAt.rule.id,
+            floor: input.floor,
+            previous_floor: plan.current.rule.currentFloor,
+            remaining: plan.after.remaining,
+            ...(replaces
+              ? {
+                  replaces: {
+                    floor: replaces.floor,
+                    recorded_at: new Date(replaces.recordedAt).toISOString(),
+                  },
+                }
+              : {}),
+          },
+          affectedNotes: 0,
+          display: {
+            target: source.account.name,
+            changes: [
+              t('actions.prop-challenge.floor.set', {
+                floor: formatActionMoney(input.floor, currency),
+                remaining: formatActionMoney(
+                  Math.max(0, plan.after.remaining),
+                  currency
+                ),
+              }),
+              ...(replaces
+                ? [
+                    t('actions.prop-challenge.floor.replaces', {
+                      floor: formatActionMoney(replaces.floor, currency),
+                    }),
+                  ]
+                : []),
+            ],
+          },
+          execute: async (executionSignal) => {
+            throwIfAborted(executionSignal);
+            return {
+              account_id: source.account.accountId,
+              revision: await writePlanned(
+                source,
+                withPropChallengePhase(source.config, plan.phase),
+                undefined
+              ),
+            };
+          },
+        };
+      },
+    };
+
+  const removeDrawdownFloor: ActionDefinition<'prop_challenge.remove_drawdown_floor'> =
+    {
+      async plan(input, context: ActionPlanContext) {
+        const { signal } = context;
+        throwIfAborted(signal);
+        const source = await requireChallenge(input.account_id, signal);
+        const baseRevision = await requireRevision(
+          source,
+          input.expected_revision
+        );
+        const floorAt = floorContext(source, input.rule_id);
+        const plan = planDrawdownFloorRemoval(floorAt);
+        if (!plan?.after) throw new ActionPlanError('not_found', 'rule_id');
+        const currency = accountCurrency(source);
+        return {
+          target: `account:${source.account.accountId}`,
+          summary: {
+            account_id: source.account.accountId,
+            base_revision: baseRevision,
+            phase_id: floorAt.phase.id,
+            rule_id: floorAt.rule.id,
+            removed: {
+              floor: plan.removed.floor,
+              recorded_at: new Date(plan.removed.recordedAt).toISOString(),
+            },
+            floor: plan.after.currentFloor,
+            remaining: plan.after.remaining,
+            ...(plan.failsAt
+              ? { fails_phase_at: plan.failsAt.toISOString() }
+              : {}),
+          },
+          affectedNotes: 0,
+          display: {
+            target: source.account.name,
+            changes: [
+              t('actions.prop-challenge.floor.remove', {
+                floor: formatActionMoney(plan.removed.floor, currency),
+                restored: formatActionMoney(plan.after.currentFloor, currency),
+              }),
+              ...(plan.failsAt
+                ? [
+                    t('actions.prop-challenge.floor.remove-fails', {
+                      date: plan.failsAt.toISOString().slice(0, 10),
+                    }),
+                  ]
+                : []),
+            ],
+          },
+          execute: async (executionSignal) => {
+            throwIfAborted(executionSignal);
+            return {
+              account_id: source.account.accountId,
+              revision: await writePlanned(
+                source,
+                withPropChallengePhase(source.config, plan.phase),
+                undefined
+              ),
+            };
+          },
+        };
+      },
+    };
 
   const configure: ActionDefinition<'prop_challenge.configure'> = {
     async plan(input, context: ActionPlanContext) {
@@ -552,201 +826,9 @@ export function createPropChallengeActions(
     'prop_challenge.reopen': reopen,
     'prop_challenge.add_cost': addCost,
     'prop_challenge.delete_cost': deleteCost,
+    'prop_challenge.add_prior_payout': addPriorPayout,
+    'prop_challenge.delete_prior_payout': deletePriorPayout,
+    'prop_challenge.set_drawdown_floor': setDrawdownFloor,
+    'prop_challenge.remove_drawdown_floor': removeDrawdownFloor,
   };
-}
-
-type ChallengeInput = ActionInput<'prop_challenge.configure'>['challenge'];
-type PhaseInput = ChallengeInput['phases'][number];
-
-function sameJson(left: unknown, right: unknown): boolean {
-  return (
-    JSON.stringify(canonicalizeConfigurationValue(left)) ===
-    JSON.stringify(canonicalizeConfigurationValue(right))
-  );
-}
-
-
-function phaseRules(
-  input: PhaseInput,
-  existing: PropChallengePhase | undefined,
-  field: string
-): PropChallengeRule[] {
-  const ruleIds = input.rules.flatMap((wire) =>
-    wire.rule_id === undefined ? [] : [wire.rule_id]
-  );
-  if (new Set(ruleIds).size !== ruleIds.length) {
-    throw new ActionPlanError('invalid_request', field);
-  }
-  return input.rules.map((wire) => {
-    const ruleId = wire.rule_id;
-    if (
-      ruleId !== undefined &&
-      !existing?.rules.some((rule) => rule.id === ruleId)
-    ) {
-      throw new ActionPlanError('not_found', field);
-    }
-    const rule = ruleFromWire(wire, ruleId ?? generateUUID());
-    
-    
-    if (!rule || !isPropChallengeRuleComplete(rule)) {
-      throw new ActionPlanError('invalid_request', field);
-    }
-    
-    
-    
-    if (
-      !isExecutableRule(rule) &&
-      !existing?.rules.some(
-        (archived) => archived.id === rule.id && sameJson(archived, rule)
-      )
-    ) {
-      throw new ActionPlanError('unsupported_capability', field);
-    }
-    return rule;
-  });
-}
-
-function phaseStart(value: string): string {
-  const time = Date.parse(value);
-  if (Number.isNaN(time)) {
-    throw new ActionPlanError('invalid_request', 'challenge.phases');
-  }
-  return new Date(time).toISOString();
-}
-
-
-function configuredChallenge(
-  existing: PropChallengeConfig | undefined,
-  input: ChallengeInput,
-  createdDate: Date | string
-): PropChallengeConfig {
-  const field = 'challenge.phases';
-  const byId = new Map(existing?.phases.map((phase) => [phase.id, phase]));
-  
-  
-  const phaseIds = input.phases.flatMap((phase) =>
-    phase.phase_id === undefined ? [] : [phase.phase_id]
-  );
-  if (new Set(phaseIds).size !== phaseIds.length) {
-    throw new ActionPlanError('invalid_request', field);
-  }
-  const phases = input.phases.map((phaseInput, index): PropChallengePhase => {
-    const old =
-      phaseInput.phase_id === undefined
-        ? undefined
-        : byId.get(phaseInput.phase_id);
-    if (phaseInput.phase_id !== undefined && !old) {
-      throw new ActionPlanError('not_found', field);
-    }
-    const rules = phaseRules(phaseInput, old, field);
-    if (old) {
-      if (
-        old.policyHistory?.length &&
-        (old.name !== phaseInput.name ||
-          old.stage !== phaseInput.stage ||
-          old.startingBalance !== phaseInput.starting_balance ||
-          !sameJson(old.rules, rules))
-      ) {
-        
-        throw new ActionPlanError('unsupported_capability', field);
-      }
-      const kept: PropChallengePhase = {
-        ...old,
-        name: phaseInput.name,
-        stage: phaseInput.stage,
-        startingBalance: phaseInput.starting_balance,
-        rules,
-      };
-      if (phaseInput.started_at === undefined) return kept;
-      if (old.status === 'pending') {
-        throw new ActionPlanError('invalid_request', field);
-      }
-      return setPropChallengePhaseStart(
-        kept,
-        phaseStart(phaseInput.started_at)
-      );
-    }
-    const first = existing === undefined && index === 0;
-    if (phaseInput.started_at !== undefined && !first) {
-      throw new ActionPlanError('invalid_request', field);
-    }
-    const created = parseLocalDateSafe(
-      createdDate instanceof Date ? createdDate : String(createdDate)
-    );
-    return {
-      id: generateUUID(),
-      name: phaseInput.name,
-      stage: phaseInput.stage,
-      status: first ? 'active' : 'pending',
-      startingBalance: phaseInput.starting_balance,
-      rules,
-      ...(first
-        ? {
-            startedAt:
-              phaseInput.started_at !== undefined
-                ? phaseStart(phaseInput.started_at)
-                : (created ?? new Date()).toISOString(),
-          }
-        : {}),
-    };
-  });
-
-  for (const phase of existing?.phases ?? []) {
-    if (
-      !phases.some((kept) => kept.id === phase.id) &&
-      (phase.status !== 'pending' || phase.policyHistory?.length)
-    ) {
-      throw new ActionPlanError('conflict', field);
-    }
-  }
-  
-  
-  const keptOrder = phases.flatMap((phase) => {
-    const index = existing?.phases.findIndex((old) => old.id === phase.id);
-    return index === undefined || index < 0 ? [] : [index];
-  });
-  if (
-    keptOrder.some((value, index) => index > 0 && value < keptOrder[index - 1])
-  ) {
-    throw new ActionPlanError('invalid_request', field);
-  }
-  const firstPending = phases.findIndex((phase) => phase.status === 'pending');
-  if (
-    firstPending >= 0 &&
-    phases.slice(firstPending).some((phase) => phase.status !== 'pending')
-  ) {
-    throw new ActionPlanError('invalid_request', field);
-  }
-
-  const firmName =
-    input.firm_name === undefined
-      ? existing?.firmName
-      : (input.firm_name ?? undefined);
-  const purchaseDate = input.purchase_date ?? existing?.purchaseDate;
-  const config: PropChallengeConfig = existing
-    ? {
-        ...existing,
-        challengeName: input.challenge_name,
-        firmName,
-        purchaseDate,
-        phases,
-      }
-    : {
-        challengeName: input.challenge_name,
-        ...(firmName ? { firmName } : {}),
-        ...(purchaseDate ? { purchaseDate } : {}),
-        status: 'active',
-        currentPhaseId: phases[0].id,
-        phases,
-      };
-  if (validatePhaseTimeline(config) !== undefined) {
-    throw new ActionPlanError('invalid_request', field);
-  }
-  
-  
-  const loaded = normalizePropChallengeConfig(structuredClone(config));
-  if (!loaded || !sameJson(config, loaded)) {
-    throw new ActionPlanError('invalid_request', field);
-  }
-  return loaded;
 }

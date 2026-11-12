@@ -17,6 +17,10 @@ import {
 interface DropdownSelectOption {
   value: string;
   label: string;
+  
+  group?: string;
+  
+  description?: string;
 }
 
 interface DropdownSelectProps {
@@ -37,11 +41,45 @@ interface DropdownSelectProps {
   className?: string;
   leadingContent?: React.ReactNode;
   triggerRef?: React.Ref<HTMLButtonElement>;
+  
   menuWidth?: 'trigger' | 'content';
   
   showOptionTooltips?: boolean;
   
   showSelectionIndicator?: boolean;
+  
+  variant?: 'field' | 'button';
+  
+  width?: 'fill' | 'content';
+}
+
+
+function DropdownSelectSummary({
+  text,
+  sizerLabels,
+}: {
+  text: string;
+  sizerLabels: ReadonlyArray<string | undefined> | null;
+}) {
+  if (!sizerLabels) {
+    return <span className="journalit-dropdown-select__summary">{text}</span>;
+  }
+  return (
+    <span className="journalit-dropdown-select__summary">
+      <span className="journalit-dropdown-select__summary-text">{text}</span>
+      {sizerLabels.map((label, index) =>
+        label === undefined ? null : (
+          <span
+            key={index}
+            className="journalit-dropdown-select__summary-sizer"
+            aria-hidden="true"
+          >
+            {label}
+          </span>
+        )
+      )}
+    </span>
+  );
 }
 
 export function DropdownSelect({
@@ -59,9 +97,11 @@ export function DropdownSelect({
   className,
   leadingContent,
   triggerRef,
-  menuWidth = 'trigger',
+  width = 'fill',
+  menuWidth = width === 'content' ? 'content' : 'trigger',
   showOptionTooltips = true,
   showSelectionIndicator = true,
+  variant = 'field',
 }: DropdownSelectProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -196,7 +236,7 @@ export function DropdownSelect({
   return (
     <div
       ref={rootRef}
-      className={`journalit-dropdown-select${className ? ` ${className}` : ''}`}
+      className={`journalit-dropdown-select${variant === 'button' ? ' journalit-dropdown-select--button' : ''}${width === 'content' ? ' journalit-dropdown-select--content' : ''}${className ? ` ${className}` : ''}`}
     >
       <button
         id={id}
@@ -224,9 +264,14 @@ export function DropdownSelect({
         }}
       >
         {leadingContent}
-        <span className="journalit-dropdown-select__summary">
-          {selectedLabel ?? placeholder ?? ariaLabel}
-        </span>
+        <DropdownSelectSummary
+          text={selectedLabel ?? placeholder ?? ariaLabel}
+          sizerLabels={
+            width === 'content'
+              ? [placeholder, ...options.map((option) => option.label)]
+              : null
+          }
+        />
         <ChevronDown
           size={14}
           className={`journalit-dropdown-select__chevron${isOpen ? ' is-open' : ''}`}
@@ -255,35 +300,59 @@ export function DropdownSelect({
           >
             {options.map((option, index) => {
               const selected = option.value === value;
+              const groupHeading =
+                option.group && option.group !== options[index - 1]?.group
+                  ? option.group
+                  : null;
               return (
-                <button
-                  ref={(element) => {
-                    optionRefs.current[index] = element;
-                  }}
-                  key={option.value}
-                  type="button"
-                  className={`journalit-dropdown-select__option${selected ? ' is-selected' : ''}`}
-                  role="option"
-                  
-                  
-                  aria-label={showOptionTooltips ? option.label : undefined}
-                  aria-selected={selected}
-                  tabIndex={index === activeIndex ? 0 : -1}
-                  onMouseEnter={() => setActiveIndex(index)}
-                  onClick={() => selectOption(index)}
-                >
-                  {showSelectionIndicator && (
-                    <span
-                      className={`journalit-dropdown-select__check${selected ? ' is-checked' : ''}`}
-                      aria-hidden="true"
+                <React.Fragment key={option.value}>
+                  {groupHeading && (
+                    <div
+                      className="journalit-dropdown-select__group"
+                      role="presentation"
                     >
-                      {selected ? '✓' : ''}
-                    </span>
+                      {groupHeading}
+                    </div>
                   )}
-                  <span className="journalit-dropdown-select__option-label">
-                    {option.label}
-                  </span>
-                </button>
+                  <button
+                    ref={(element) => {
+                      optionRefs.current[index] = element;
+                    }}
+                    type="button"
+                    className={`journalit-dropdown-select__option${option.description ? ' journalit-dropdown-select__option--described' : ''}${selected ? ' is-selected' : ''}`}
+                    role="option"
+                    
+                    
+                    aria-label={showOptionTooltips ? option.label : undefined}
+                    aria-selected={selected}
+                    tabIndex={index === activeIndex ? 0 : -1}
+                    onMouseEnter={() => setActiveIndex(index)}
+                    onClick={() => selectOption(index)}
+                  >
+                    {option.description ? (
+                      <span className="journalit-dropdown-select__option-text">
+                        <span className="journalit-dropdown-select__option-label">
+                          {option.label}
+                        </span>
+                        <span className="journalit-dropdown-select__option-description">
+                          {option.description}
+                        </span>
+                      </span>
+                    ) : (
+                      <span className="journalit-dropdown-select__option-label">
+                        {option.label}
+                      </span>
+                    )}
+                    {showSelectionIndicator && (
+                      <span
+                        className={`journalit-dropdown-select__check${selected ? ' is-checked' : ''}`}
+                        aria-hidden="true"
+                      >
+                        {selected ? '✓' : ''}
+                      </span>
+                    )}
+                  </button>
+                </React.Fragment>
               );
             })}
           </div>,

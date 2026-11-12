@@ -521,7 +521,7 @@ export const WidgetPicker: React.FC<WidgetPickerProps> = React.memo(
               <button
                 ref={clearButtonRef}
                 type="button"
-                className="journalit-widget-picker-search-clear widget-picker-search-clear"
+                className="journalit-widget-picker-search-clear widget-picker-search-clear journalit-icon-button"
                 onClick={handleClearSearch}
               >
                 <X size={13} aria-hidden="true" />

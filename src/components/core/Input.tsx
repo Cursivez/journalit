@@ -85,6 +85,7 @@ function InputControl({
 const inputContainerClassName = (variant: InputVariant, loading: boolean) =>
   [
     'inputContainer',
+    'journalit-input-field',
     variant === 'modal' ? 'journalit-modal-field' : '',
     loading ? 'loading' : '',
   ]

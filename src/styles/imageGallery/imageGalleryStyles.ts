@@ -75,39 +75,6 @@ export const imageGalleryStyles = `
   margin-top: 8px;
 }
 
-.journalit-image-gallery-empty-state__actions .journalit-image-gallery-empty-state__button.journalit-button {
-  min-height: 32px;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 13px;
-  font-weight: 600;
-  box-shadow: none !important;
-}
-
-.journalit-image-gallery-empty-state__actions .journalit-image-gallery-empty-state__button.journalit-button--primary {
-  border-color: var(--interactive-accent) !important;
-  background: var(--interactive-accent) !important;
-  color: var(--text-on-accent) !important;
-}
-
-.journalit-image-gallery-empty-state__actions .journalit-image-gallery-empty-state__button.journalit-button--primary:hover:not(:disabled) {
-  border-color: var(--interactive-accent-hover) !important;
-  background: var(--interactive-accent-hover) !important;
-  color: var(--text-on-accent) !important;
-}
-
-.journalit-image-gallery-empty-state__actions .journalit-image-gallery-empty-state__button.journalit-button--secondary {
-  border-color: var(--background-modifier-border) !important;
-  background: transparent !important;
-  color: var(--text-muted) !important;
-}
-
-.journalit-image-gallery-empty-state__actions .journalit-image-gallery-empty-state__button.journalit-button--secondary:hover:not(:disabled) {
-  border-color: var(--background-modifier-border-hover) !important;
-  background: var(--background-modifier-hover) !important;
-  color: var(--text-normal) !important;
-}
-
 .journalit-image-gallery-header {
   display: flex;
   gap: 12px;
@@ -125,70 +92,6 @@ export const imageGalleryStyles = `
   gap: 10px;
   align-items: center;
   flex: 0 0 auto;
-}
-
-.journalit-image-gallery-toolbar button.journalit-toolbar-button {
-  background: var(--background-secondary);
-  border-color: var(--background-modifier-border);
-  color: var(--text-muted);
-  overflow: visible;
-}
-
-.journalit-image-gallery-toolbar button.journalit-toolbar-button:hover:not(:disabled),
-.journalit-image-gallery-toolbar button.journalit-toolbar-button:focus-visible:not(:disabled) {
-  background: var(--background-modifier-hover);
-  color: var(--text-normal);
-}
-
-.journalit-image-gallery-toolbar button.journalit-toolbar-button--active,
-.journalit-image-gallery-toolbar button.journalit-toolbar-button--active:hover:not(:disabled),
-.journalit-image-gallery-toolbar button.journalit-toolbar-button--active:focus-visible:not(:disabled) {
-  background: var(--background-secondary);
-  border-color: var(--interactive-accent);
-  color: var(--text-accent);
-}
-
-.journalit-image-gallery-size-toggle {
-  display: inline-flex;
-  align-items: center;
-}
-
-.journalit-image-gallery-size-toggle {
-  gap: 0;
-}
-
-.journalit-image-gallery-size-toggle .journalit-toolbar-button {
-  position: relative;
-  z-index: 1;
-  border-radius: 0;
-  margin-left: -1px;
-  color: var(--text-normal);
-}
-
-.journalit-image-gallery-size-toggle .journalit-toolbar-button--active {
-  z-index: 4;
-  color: var(--text-normal);
-}
-
-.journalit-image-gallery-size-toggle .journalit-toolbar-button:hover,
-.journalit-image-gallery-size-toggle .journalit-toolbar-button:focus-visible {
-  z-index: 2;
-}
-
-.journalit-image-gallery-size-toggle .journalit-toolbar-button--active:hover,
-.journalit-image-gallery-size-toggle .journalit-toolbar-button--active:focus-visible {
-  z-index: 5;
-}
-
-.journalit-image-gallery-size-toggle .journalit-toolbar-button:first-child {
-  margin-left: 0;
-  border-top-left-radius: 4px;
-  border-bottom-left-radius: 4px;
-}
-
-.journalit-image-gallery-size-toggle .journalit-toolbar-button:last-child {
-  border-top-right-radius: 4px;
-  border-bottom-right-radius: 4px;
 }
 
 .journalit-image-gallery-sort {

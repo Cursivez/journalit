@@ -32,6 +32,12 @@ import {
   CurrencyConversionInfo,
 } from '../../../shared/display/CurrencyConversionInfo';
 import { skipVerticalGridCoordinates } from '../../../charts/chartGrid';
+import type { DashboardData } from '../../utils/dataUtils';
+import {
+  CompareBarsWidget,
+  tradeCountNote,
+} from '../../compare/CompareBarsWidget';
+import { DropdownSelect } from '../../../shared/DropdownSelect';
 
 interface HourlyPerformanceDataPoint {
   bucketStart: number;
@@ -229,7 +235,7 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
 
     return (
       <BaseWidget dateFormat={dateFormat} skeletonType="bar-chart">
-        {(data, _dateFormat, filters) => {
+        {(data, _dateFormat, filters, compare) => {
           const [filterStartDate, filterEndDate] = filters.dateRange;
           const activeCurrency =
             (data.metrics.isMultiCurrency
@@ -237,118 +243,223 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
               : data.currency) || data.currency;
           const currencyCode = activeCurrency;
 
-          const bucketStarts = Array.from(
-            { length: MINUTES_PER_DAY / bucketMinutes },
-            (_, index) => index * bucketMinutes
-          );
-          const aggregates = new Map<number, HourlyPerformanceDataPoint>(
-            bucketStarts.map((bucketStart) => [
-              bucketStart,
-              {
-                bucketStart,
-                label: formatBucketLabel(bucketStart, bucketMinutes),
-                netPnL: 0,
-                netR: 0,
-                trades: 0,
-                pnlEvents: 0,
-                rTrades: 0,
-                wins: 0,
-                losses: 0,
-                displayValue: 0,
-              },
-            ])
-          );
-          const tradeIdsByBucket = new Map<number, Set<string>>(
-            bucketStarts.map((bucketStart) => [bucketStart, new Set<string>()])
-          );
-
-          data.trades.forEach((trade) => {
-            if (!isPnlContributingTrade(trade)) return;
-            const realizedEvents = getTradeRealizedPnlEvents(
-              trade,
-              analyticsDateBasis,
-              plugin
+          const buildHourlyData = (source: DashboardData) => {
+            const bucketStarts = Array.from(
+              { length: MINUTES_PER_DAY / bucketMinutes },
+              (_, index) => index * bucketMinutes
             );
-            if (realizedEvents.length === 0) return;
+            const aggregates = new Map<number, HourlyPerformanceDataPoint>(
+              bucketStarts.map((bucketStart) => [
+                bucketStart,
+                {
+                  bucketStart,
+                  label: formatBucketLabel(bucketStart, bucketMinutes),
+                  netPnL: 0,
+                  netR: 0,
+                  trades: 0,
+                  pnlEvents: 0,
+                  rTrades: 0,
+                  wins: 0,
+                  losses: 0,
+                  displayValue: 0,
+                },
+              ])
+            );
+            const tradeIdsByBucket = new Map<number, Set<string>>(
+              bucketStarts.map((bucketStart) => [
+                bucketStart,
+                new Set<string>(),
+              ])
+            );
 
-            const useStoredRMultiple = realizedEvents.length === 1;
-            const tradeKey = trade.tradeId ?? trade.path ?? trade.instrument;
-
-            for (const event of realizedEvents) {
-              if (
-                (filterStartDate && event.tradingDay < filterStartDate) ||
-                (filterEndDate && event.tradingDay > filterEndDate) ||
-                (trade._analyticsRangeStart &&
-                  event.tradingDay < trade._analyticsRangeStart) ||
-                (trade._analyticsRangeEnd &&
-                  event.tradingDay > trade._analyticsRangeEnd)
-              ) {
-                continue;
-              }
-
-              const bucketStart = getBucketStart(event.date, bucketMinutes);
-              const bucket = aggregates.get(bucketStart);
-              if (!bucket) continue;
-
-              bucket.netPnL += event.pnl;
-              bucket.pnlEvents += 1;
-
-              const bucketTradeIds = tradeIdsByBucket.get(bucketStart);
-              if (tradeKey && bucketTradeIds && !bucketTradeIds.has(tradeKey)) {
-                bucketTradeIds.add(tradeKey);
-                bucket.trades += 1;
-              } else if (!tradeKey) {
-                bucket.trades += 1;
-              }
-
-              const outcome = classifyPnLWithBreakEvenSettings(
-                event.pnl,
-                breakEvenSettings,
-                trade.breakEvenAccountCurrentBalance
+            source.trades.forEach((trade) => {
+              if (!isPnlContributingTrade(trade)) return;
+              const realizedEvents = getTradeRealizedPnlEvents(
+                trade,
+                analyticsDateBasis,
+                plugin
               );
-              if (outcome === 'win') {
-                bucket.wins += 1;
-              } else if (outcome === 'loss') {
-                bucket.losses += 1;
-              }
+              if (realizedEvents.length === 0) return;
 
-              const effectiveR = calculateEffectiveRMultiple(
-                event.pnl,
-                useStoredRMultiple ? trade.rMultiple : undefined,
-                trade.riskAmount,
-                defaultRiskAmount
-              );
-              if (effectiveR !== undefined && Number.isFinite(effectiveR)) {
-                bucket.netR += effectiveR;
-                bucket.rTrades += 1;
-              }
-            }
-          });
+              const useStoredRMultiple = realizedEvents.length === 1;
+              const tradeKey = trade.tradeId ?? trade.path ?? trade.instrument;
 
-          const hourlyData = bucketStarts.map((bucketStart) =>
-            aggregates.get(bucketStart)!
-          );
-          const hasCompleteRCoverage = hourlyData.every(
-            (item) => item.pnlEvents === 0 || item.pnlEvents === item.rTrades
-          );
-          const useRMultiples = displayRMultiples && hasCompleteRCoverage;
+              for (const event of realizedEvents) {
+                if (
+                  (filterStartDate && event.tradingDay < filterStartDate) ||
+                  (filterEndDate && event.tradingDay > filterEndDate) ||
+                  (trade._analyticsRangeStart &&
+                    event.tradingDay < trade._analyticsRangeStart) ||
+                  (trade._analyticsRangeEnd &&
+                    event.tradingDay > trade._analyticsRangeEnd)
+                ) {
+                  continue;
+                }
+
+                const bucketStart = getBucketStart(event.date, bucketMinutes);
+                const bucket = aggregates.get(bucketStart);
+                if (!bucket) continue;
+
+                bucket.netPnL += event.pnl;
+                bucket.pnlEvents += 1;
+
+                const bucketTradeIds = tradeIdsByBucket.get(bucketStart);
+                if (
+                  tradeKey &&
+                  bucketTradeIds &&
+                  !bucketTradeIds.has(tradeKey)
+                ) {
+                  bucketTradeIds.add(tradeKey);
+                  bucket.trades += 1;
+                } else if (!tradeKey) {
+                  bucket.trades += 1;
+                }
+
+                const outcome = classifyPnLWithBreakEvenSettings(
+                  event.pnl,
+                  breakEvenSettings,
+                  trade.breakEvenAccountCurrentBalance
+                );
+                if (outcome === 'win') {
+                  bucket.wins += 1;
+                } else if (outcome === 'loss') {
+                  bucket.losses += 1;
+                }
+
+                const effectiveR = calculateEffectiveRMultiple(
+                  event.pnl,
+                  useStoredRMultiple ? trade.rMultiple : undefined,
+                  trade.riskAmount,
+                  defaultRiskAmount
+                );
+                if (effectiveR !== undefined && Number.isFinite(effectiveR)) {
+                  bucket.netR += effectiveR;
+                  bucket.rTrades += 1;
+                }
+              }
+            });
+
+            const hourlyData = bucketStarts.map((bucketStart) =>
+              aggregates.get(bucketStart)!
+            );
+            const hasCompleteRCoverage = hourlyData.every(
+              (item) => item.pnlEvents === 0 || item.pnlEvents === item.rTrades
+            );
+            const useRMultiples = displayRMultiples && hasCompleteRCoverage;
+            const chartData = hourlyData.map((item) => ({
+              ...item,
+              displayValue:
+                metric === 'average'
+                  ? useRMultiples
+                    ? item.rTrades > 0
+                      ? item.netR / item.rTrades
+                      : 0
+                    : item.trades > 0
+                      ? item.netPnL / item.trades
+                      : 0
+                  : useRMultiples
+                    ? item.netR
+                    : item.netPnL,
+            }));
+            return { chartData, useRMultiples };
+          };
+          const { chartData, useRMultiples } = buildHourlyData(data);
           const isMasked = shouldMask(useRMultiples ? 'rMultiple' : 'pnl');
 
-          const chartData = hourlyData.map((item) => ({
-            ...item,
-            displayValue:
-              metric === 'average'
-                ? useRMultiples
-                  ? item.rTrades > 0
-                    ? item.netR / item.rTrades
-                    : 0
-                  : item.trades > 0
-                    ? item.netPnL / item.trades
-                    : 0
-                : useRMultiples
-                  ? item.netR
-                  : item.netPnL,
-          }));
+          const header = (
+            <div className="journalit-chart-widget__header">
+              <div className="journalit-chart-widget__title">
+                {t('dashboard.widgets.hourly-performance.title')}
+                {!useRMultiples && (
+                  <CurrencyConversionInfo
+                    metadata={buildCurrencyConversionMetadata(data.metrics)}
+                    trades={data.trades}
+                  />
+                )}
+              </div>
+              <div className="journalit-chart-widget__selector journalit-hourly-performance-controls">
+                <DropdownSelect
+                  variant="button"
+                  menuWidth="content"
+                  showOptionTooltips={false}
+                  ariaLabel={t(
+                    'dashboard.widgets.hourly-performance.bucket-aria'
+                  )}
+                  value={String(bucketMinutes)}
+                  options={BUCKET_OPTIONS.map((option) => ({
+                    value: String(option),
+                    label: t(
+                      'dashboard.widgets.hourly-performance.bucket-option',
+                      {
+                        minutes: String(option),
+                      }
+                    ),
+                  }))}
+                  onChange={(nextValue) =>
+                    setBucketMinutes(parseBucketMinutes(nextValue))
+                  }
+                />
+                <DropdownSelect
+                  variant="button"
+                  menuWidth="content"
+                  showOptionTooltips={false}
+                  ariaLabel={t(
+                    'dashboard.widgets.hourly-performance.metric-aria'
+                  )}
+                  value={metric}
+                  options={METRIC_OPTIONS.map((option) => ({
+                    value: option,
+                    label: getMetricLabel(option),
+                  }))}
+                  onChange={(nextValue) => setMetric(parseMetric(nextValue))}
+                />
+              </div>
+            </div>
+          );
+
+          if (compare) {
+            const b = buildHourlyData(compare.data);
+            
+            const compareInR = useRMultiples && b.useRMultiples;
+            const valueOf = (item: HourlyPerformanceDataPoint | undefined) =>
+              !item || item.pnlEvents === 0
+                ? null
+                : compareInR
+                  ? metric === 'average'
+                    ? item.rTrades > 0
+                      ? item.netR / item.rTrades
+                      : 0
+                    : item.netR
+                  : metric === 'average'
+                    ? item.trades > 0
+                      ? item.netPnL / item.trades
+                      : 0
+                    : item.netPnL;
+            return (
+              <div className="journalit-chart-widget">
+                {header}
+                <div className="journalit-chart-widget__body">
+                  <CompareBarsWidget
+                    rows={chartData.map((item, index) => ({
+                      key: String(item.bucketStart),
+                      label: item.label,
+                      a: valueOf(item),
+                      b: valueOf(b.chartData[index]),
+                      aNote: tradeCountNote(item.trades),
+                      bNote: tradeCountNote(b.chartData[index]?.trades),
+                    }))}
+                    kind={compareInR ? 'rMultiple' : 'pnl'}
+                    currencyCode={currencyCode}
+                    formatCategory={formatXAxisTick}
+                    aFilters={filters}
+                    bFilters={compare.filters}
+                    ariaLabel={t('dashboard.widgets.hourly-performance.title')}
+                  />
+                </div>
+              </div>
+            );
+          }
+
           const displayChartData = isMasked
             ? chartData.map((item) => ({ ...item, displayValue: 1 }))
             : chartData;
@@ -375,56 +486,8 @@ export const HourlyPerformanceChart = React.memo<BaseWidgetProps>(
 
           return (
             <div className="journalit-chart-widget">
-              <div className="journalit-chart-widget__header">
-                <div className="journalit-chart-widget__title">
-                  {t('dashboard.widgets.hourly-performance.title')}
-                  {!useRMultiples && (
-                    <CurrencyConversionInfo
-                      metadata={buildCurrencyConversionMetadata(data.metrics)}
-                      trades={data.trades}
-                    />
-                  )}
-                </div>
-                <div className="journalit-chart-widget__selector journalit-hourly-performance-controls">
-                  <select
-                    className="journalit-chart-widget__select"
-                    aria-label={t(
-                      'dashboard.widgets.hourly-performance.bucket-aria'
-                    )}
-                    value={String(bucketMinutes)}
-                    onChange={(event) =>
-                      setBucketMinutes(parseBucketMinutes(event.target.value))
-                    }
-                  >
-                    {BUCKET_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {t(
-                          'dashboard.widgets.hourly-performance.bucket-option',
-                          {
-                            minutes: String(option),
-                          }
-                        )}
-                      </option>
-                    ))}
-                  </select>
-                  <select
-                    className="journalit-chart-widget__select"
-                    aria-label={t(
-                      'dashboard.widgets.hourly-performance.metric-aria'
-                    )}
-                    value={metric}
-                    onChange={(event) =>
-                      setMetric(parseMetric(event.target.value))
-                    }
-                  >
-                    {METRIC_OPTIONS.map((option) => (
-                      <option key={option} value={option}>
-                        {getMetricLabel(option)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              {header}
+
               <div className="journalit-chart-widget__body">
                 <ChartBase height="100%" width="100%" chartRef={chartRef}>
                   <BarChart

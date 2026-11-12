@@ -39,6 +39,7 @@ import {
   resolveBreakEvenAccountBalances,
   type BreakEvenAccountBalanceLookup,
 } from '../../../services/trade/core/BreakEvenAccountBalance';
+import { Button } from '../../ui/Button';
 
 
 const MAX_FRONTMATTER_RETRIES = 5;
@@ -108,6 +109,7 @@ interface MissedTradeFrontmatter {
   mistake?: string | string[];
   account?: string | string[];
   missedReason?: string;
+  exitReason?: string;
   thesis?: string;
   entryTime?: string | Date;
   reviewed?: boolean;
@@ -150,6 +152,7 @@ export interface MissedTradeDisplayData {
   mistake: string[];
   account: string[];
   missedReason?: string;
+  exitReason?: string;
   thesis?: string;
   entryTime: Date;
   
@@ -277,6 +280,7 @@ export const buildMissedTradeDisplayData = (
     mistake: normalizeStringList(frontmatter.mistake),
     account: normalizeStringList(frontmatter.account),
     missedReason: parseDisplayText(frontmatter.missedReason) || '',
+    exitReason: parseDisplayText(frontmatter.exitReason) || '',
     thesis: parseDisplayText(frontmatter.thesis) || '',
     entryTime: getValidDate(frontmatter.entryTime),
     tradingDay,
@@ -811,11 +815,15 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
             </div>
           )}
 
-          {(trade.missedReason || trade.thesis) && (
+          {(trade.missedReason || trade.exitReason || trade.thesis) && (
             <div className="journalit-reviewv2-missed-summary">
               <MissedTradeSummaryRow
                 label={t('drc.missed-trades.label.reason')}
                 value={trade.missedReason}
+              />
+              <MissedTradeSummaryRow
+                label={t('trade.metadata.exit-reason')}
+                value={trade.exitReason}
               />
               <MissedTradeSummaryRow
                 label={t('trade.details.thesis')}
@@ -876,7 +884,9 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
               </span>
             )}
             {!readOnly && noteType === 'drc' && (
-              <button
+              <Button
+                variant="secondary"
+                size="small"
                 {...shareCaptureExcludeProps}
                 onClick={() => void handleCreateMissedTrade()}
                 className="journalit-reviewv2-missed-add"
@@ -884,7 +894,7 @@ export const MissedTradesWidget: React.FC<MissedTradesWidgetProps> = memo(
               >
                 <Plus size={12} />
                 {t('widget.missed-trades.add-button')}
-              </button>
+              </Button>
             )}
           </div>
 

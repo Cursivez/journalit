@@ -1,5 +1,7 @@
 
 
+import { TRADE_BIAS_ALIGNMENTS } from '../../../../services/marketBias/tradeMarketBias';
+import { tradeBiasAlignmentLabel } from '../../../../services/marketBias/tradeMarketBiasLabel';
 import { t, type TranslationKey } from '../../../../lang/helpers';
 import type { ObsidianIconComponent } from '../../icons/ObsidianIcon';
 import { FILTER_MENU_ICONS } from './filterMenuIcons';
@@ -13,13 +15,7 @@ import {
   offersPhaseList,
 } from '../accountPhaseScope';
 import { normalizeAccountLookupKey } from '../../../../services/trade/core/TradeAccountIdentity';
-import type {
-  DirectionFilter,
-  ImageAnnotationStatusFilter,
-  ReviewStatusFilter,
-  TradeStatus,
-  TradeType,
-} from '../../../../services/tradelog/types';
+import type { TradeType } from '../../../../services/tradelog/types';
 import {
   CustomFieldType,
   type DropdownOption,
@@ -32,12 +28,6 @@ import {
 } from '../filterMatchModes';
 import { formatDateDisplay } from '../../../../utils/dateUtils';
 import {
-  getRatingFilterValue,
-  getTradeRatingBucketLabel,
-  TRADE_RATING_BUCKETS,
-  type RatingFilter,
-} from '../../../../utils/tradeRating';
-import {
   type ExcludableFilterField,
   type MatchModeField,
   clearFieldValues,
@@ -46,6 +36,14 @@ import {
   getIncludedValues,
   toggleFieldValue,
 } from './filterMenuUpdates';
+import {
+  DIRECTION_OPTIONS,
+  IMAGE_ANNOTATION_OPTIONS,
+  REVIEW_STATUS_OPTIONS,
+  STATUS_OPTIONS,
+  TRADE_TYPE_OPTIONS,
+  ratingFilterOptions,
+} from '../tradeChoiceLabels';
 import {
   type FilterMenuEntry,
   type FilterMenuNode,
@@ -357,61 +355,6 @@ function buildAccountsNode(
   };
 }
 
-const TRADE_TYPE_OPTIONS: Array<{
-  value: TradeType;
-  labelKey: TranslationKey;
-}> = [
-  { value: 'regular', labelKey: 'tradelog.type.regular' },
-  { value: 'missed', labelKey: 'tradelog.type.missed' },
-  { value: 'backtest', labelKey: 'tradelog.type.backtest' },
-];
-
-const STATUS_OPTIONS: Array<{ value: TradeStatus; labelKey: TranslationKey }> =
-  [
-    { value: 'open', labelKey: 'tradelog.filter.open' },
-    { value: 'win', labelKey: 'tradelog.filter.winners' },
-    { value: 'loss', labelKey: 'tradelog.filter.losers' },
-    { value: 'breakeven', labelKey: 'tradelog.filter.breakeven' },
-    { value: 'cancelled', labelKey: 'filter.menu.status.cancelled' },
-  ];
-
-const DIRECTION_OPTIONS: Array<{
-  value: DirectionFilter;
-  labelKey: TranslationKey;
-}> = [
-  { value: 'long', labelKey: 'filter.modal.direction.long-call' },
-  { value: 'short', labelKey: 'filter.modal.direction.short-put' },
-];
-
-const REVIEW_STATUS_OPTIONS: Array<{
-  value: ReviewStatusFilter;
-  labelKey: TranslationKey;
-}> = [
-  { value: 'reviewed', labelKey: 'filter.modal.review-status.reviewed' },
-  { value: 'unreviewed', labelKey: 'filter.modal.review-status.unreviewed' },
-];
-
-
-function ratingFilterOptions(): Array<{ value: RatingFilter; label: string }> {
-  return [
-    ...TRADE_RATING_BUCKETS.map((bucket) => ({
-      value: getRatingFilterValue(bucket),
-      label: getTradeRatingBucketLabel(bucket),
-    })),
-    { value: 'unrated', label: t('filter.menu.rating.unrated') },
-  ];
-}
-
-const IMAGE_ANNOTATION_OPTIONS: Array<{
-  value: ImageAnnotationStatusFilter;
-  labelKey: TranslationKey;
-}> = [
-  { value: 'tagged', labelKey: 'filter.modal.image.status.tagged' },
-  { value: 'untagged', labelKey: 'filter.modal.image.status.untagged' },
-  { value: 'hasNotes', labelKey: 'filter.modal.image.status.has-notes' },
-  { value: 'noNotes', labelKey: 'filter.modal.image.status.no-notes' },
-];
-
 function translated<T extends string>(
   options: Array<{ value: T; labelKey: TranslationKey }>
 ): Array<{ value: T; label: string }> {
@@ -597,6 +540,20 @@ function buildFilterMenuDrafts(
         },
         filters.ratings,
         (next) => ({ ...filters, ratings: next })
+      ),
+      includeOnlyNode(
+        filters,
+        {
+          id: 'marketBias',
+          label: t('filter.menu.market-bias'),
+          icon: FILTER_MENU_ICONS.marketBias,
+          options: TRADE_BIAS_ALIGNMENTS.map((value) => ({
+            value,
+            label: tradeBiasAlignmentLabel(value),
+          })),
+        },
+        filters.marketBias,
+        (next) => ({ ...filters, marketBias: next })
       )
     );
   }

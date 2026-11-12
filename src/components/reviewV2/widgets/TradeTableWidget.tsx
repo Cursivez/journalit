@@ -52,6 +52,7 @@ import { formatDateDisplay } from '../../../utils/dateUtils';
 import { getReviewTradeDate } from '../utils/reviewTradeDates';
 import { openReviewWidgetFile } from '../reviewWidgetNavigation';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
+import { Button } from '../../ui/Button';
 
 type ReviewTableTrade = Record<string, unknown> &
   Parameters<typeof calculateAssetAdjustedPriceMoveValue>[0] & {
@@ -537,26 +538,30 @@ const TradeTablePagination: React.FC<{
       className="journalit-reviewv2-pagination-controls"
       {...shareCaptureExcludeProps}
     >
-      <button
+      <Button
+        variant="secondary"
+        size="small"
         onClick={onPrev}
         disabled={page === 0}
         className="journalit-reviewv2-pagination-button"
       >
         {t('widget.trade-table.pagination.prev')}
-      </button>
+      </Button>
       <span className="journalit-reviewv2-pagination-status">
         {t('widget.trade-table.pagination.page', {
           current: padTo(page + 1, totalPages),
           total: String(totalPages),
         })}
       </span>
-      <button
+      <Button
+        variant="secondary"
+        size="small"
         onClick={onNext}
         disabled={page >= totalPages - 1}
         className="journalit-reviewv2-pagination-button"
       >
         {t('widget.trade-table.pagination.next')}
-      </button>
+      </Button>
     </div>
   </div>
 );

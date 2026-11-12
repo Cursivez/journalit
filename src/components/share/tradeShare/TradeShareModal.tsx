@@ -10,6 +10,7 @@ import { Select } from '../../core/Select';
 import { ShareCard } from '../ShareCard';
 import { ShareComposer } from '../ShareComposer';
 import {
+  TRADE_SHARE_PNL_OPTIONS,
   TRADE_SHARE_SECTION_LABELS,
   type TradeShareImageLayout,
   type TradeSharePresentation,
@@ -18,13 +19,8 @@ import {
 } from './tradeShareModel';
 import { loadTradeShareSnapshot } from './loadTradeShareSnapshot';
 import { JournalitModal } from '../../modals/JournalitModal';
-
-const PNL_OPTION_LABELS = [
-  { value: 'currency', label: 'settings.general.currency' },
-  { value: 'r', label: 'template.editor.metric.r-multiple' },
-  { value: 'position-percent', label: 'share.trade.position-return' },
-  { value: 'account-percent', label: 'share.trade.account-return' },
-] as const;
+import { SegmentedControl } from '../../shared/SegmentedControl';
+import { TradeMotionCardPanel } from './motionCard/TradeMotionCardPanel';
 
 const IMAGE_LAYOUT_OPTION_LABELS = [
   { value: 'current', label: 'template-picker.badge.current' },
@@ -72,6 +68,7 @@ const TradeSharePanel: React.FC<{
                 pnlMode,
                 imageLayout,
                 accountBalance,
+                hideDollarAmounts,
                 presentation,
               })}
             </div>
@@ -146,7 +143,7 @@ const TradeSharePanel: React.FC<{
       <Select
         label={t('template.editor.metric.pnl')}
         value={pnlMode}
-        options={PNL_OPTION_LABELS.map(({ value, label }) => ({
+        options={TRADE_SHARE_PNL_OPTIONS.map(({ value, label }) => ({
           value,
           label: t(label),
         }))}
@@ -161,6 +158,47 @@ const TradeSharePanel: React.FC<{
         }}
       />
     </ShareComposer>
+  );
+};
+
+type TradeShareMode = 'note' | 'video-card';
+
+const TradeShareModes: React.FC<
+  React.ComponentProps<typeof TradeSharePanel> & {
+    sourcePath: string;
+    wrapVideoCard: (element: React.ReactElement) => React.ReactElement;
+  }
+> = ({ sourcePath, wrapVideoCard, ...panel }) => {
+  const [mode, setMode] = useState<TradeShareMode>('note');
+  return (
+    <div className="journalit-trade-share-modes">
+      <SegmentedControl<TradeShareMode>
+        ariaLabel={t('share.trade.mode-label')}
+        fullWidth
+        size="small"
+        value={mode}
+        onChange={setMode}
+        options={[
+          { value: 'note', label: t('share.trade.mode-note') },
+          { value: 'video-card', label: t('share.trade.mode-video-card') },
+        ]}
+      />
+      {mode === 'note' ? (
+        <TradeSharePanel {...panel} />
+      ) : (
+        wrapVideoCard(
+          <TradeMotionCardPanel
+            plugin={panel.plugin}
+            data={panel.data}
+            sourcePath={sourcePath}
+            accountBalance={panel.accountBalance}
+            breakEvenAccountCurrentBalance={
+              panel.presentation.breakEvenAccountCurrentBalance
+            }
+          />
+        )
+      )}
+    </div>
   );
 };
 
@@ -193,11 +231,15 @@ export class TradeShareModal extends JournalitModal {
       if (!mountPoint.isConnected) return;
       this.root = createRoot(mountPoint);
       this.root.render(
-        <TradeSharePanel
+        <TradeShareModes
           plugin={this.plugin}
           {...snapshot}
           sections={this.sections}
           renderer={this.renderer}
+          sourcePath={this.file.path}
+          wrapVideoCard={(element) =>
+            this.renderer.wrapShareElement(snapshot.data, element)
+          }
         />
       );
     } catch (error) {

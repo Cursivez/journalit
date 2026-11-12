@@ -88,22 +88,6 @@ export const CSV_IMPORT_STYLES = `
 	flex-wrap: wrap;
 }
 
-.journalit-csv-import .journalit-trade-import-gate-primary {
-	min-height: 38px;
-	padding: 8px 20px;
-	border-radius: 8px;
-	font-weight: 600;
-	border-color: var(--interactive-accent);
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-}
-
-.journalit-csv-import .journalit-trade-import-gate-primary:hover {
-	border-color: var(--interactive-accent-hover);
-	background: var(--interactive-accent-hover);
-	color: var(--text-on-accent);
-}
-
 .journalit-csv-import .csv-import-header {
 	margin-bottom: 24px;
 }
@@ -117,60 +101,63 @@ export const CSV_IMPORT_STYLES = `
 	font-size: 30px;
 }
 
+
 .journalit-csv-import .journalit-trade-import-stepper {
 	display: grid;
 	grid-template-columns: repeat(3, 1fr);
-	gap: 10px;
+	gap: 2px;
 	max-width: 900px;
 	margin-bottom: 18px;
+	padding: 2px;
+	border-radius: calc(var(--journalit-control-radius) + 2px);
+	background: var(--journalit-control-field-fill);
 }
 
-.journalit-csv-import .journalit-trade-import-step {
+.journalit-csv-import button.journalit-trade-import-step {
 	display: flex;
 	align-items: center;
-	gap: 10px;
+	justify-content: center;
+	gap: 8px;
+	box-sizing: border-box;
 	width: 100%;
-	padding: 12px 14px;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 8px;
-	background: var(--background-primary-alt);
+	height: var(--journalit-control-height);
+	padding: 0 10px;
+	border: 0;
+	border-radius: var(--journalit-control-radius);
+	background: transparent;
+	box-shadow: none;
 	color: var(--text-muted);
-	text-align: left;
+	font-size: var(--font-ui-small);
 	cursor: pointer;
 }
 
-.journalit-csv-import .journalit-trade-import-step.is-active {
-	border-color: var(--background-modifier-border-hover);
-	color: var(--text-muted);
-}
-
-.journalit-csv-import .journalit-trade-import-step.is-current {
-	border-color: var(--interactive-accent);
-	background: var(--background-primary);
+.journalit-csv-import button.journalit-trade-import-step:hover:not(:disabled) {
+	background: var(--journalit-control-overlay-hover);
 	color: var(--text-normal);
-	box-shadow: inset 0 0 0 1px var(--interactive-accent);
 }
 
-.journalit-csv-import .journalit-trade-import-step:disabled {
+.journalit-csv-import button.journalit-trade-import-step.is-current,
+.journalit-csv-import button.journalit-trade-import-step.is-current:hover:not(:disabled) {
+	background: var(--journalit-control-secondary-fill);
+	box-shadow: var(--journalit-control-secondary-shadow);
+	color: var(--text-normal);
+}
+
+.journalit-csv-import button.journalit-trade-import-step:disabled {
 	cursor: default;
-	opacity: 0.65;
+	opacity: 0.5;
 }
 
 .journalit-csv-import .journalit-trade-import-step span {
 	display: inline-flex;
 	align-items: center;
 	justify-content: center;
-	width: 24px;
-	height: 24px;
+	width: 18px;
+	height: 18px;
 	border-radius: 999px;
-	background: var(--background-modifier-border);
-	font-size: 12px;
-	font-weight: 700;
-}
-
-.journalit-csv-import .journalit-trade-import-step.is-active span {
-	background: var(--background-modifier-border);
-	color: var(--text-muted);
+	background: var(--background-modifier-hover);
+	font-size: var(--font-ui-smaller);
+	font-weight: var(--font-semibold);
 }
 
 .journalit-csv-import .journalit-trade-import-step.is-current span {
@@ -179,8 +166,7 @@ export const CSV_IMPORT_STYLES = `
 }
 
 .journalit-csv-import .journalit-trade-import-step strong {
-	font-size: 13px;
-	font-weight: 600;
+	font-weight: 500;
 }
 
 .journalit-csv-import .journalit-trade-import-layout {
@@ -242,8 +228,7 @@ export const CSV_IMPORT_STYLES = `
 	color: var(--text-muted);
 }
 
-.journalit-csv-import .csv-import-card input,
-.journalit-csv-import .csv-import-card select {
+.journalit-csv-import .csv-import-card input {
 	width: 100%;
 	max-width: none;
 }
@@ -306,53 +291,9 @@ export const CSV_IMPORT_STYLES = `
 	gap: 12px;
 }
 
-.journalit-csv-import .journalit-trade-import-account-trigger,
-.journalit-csv-import .journalit-trade-import-template-trigger {
-	justify-content: space-between;
-	min-height: 31px;
-	font-size: 13px;
-}
-
-.journalit-csv-import .journalit-trade-import-account-trigger,
-.journalit-csv-import .journalit-trade-import-dropdown-trigger,
-.journalit-csv-import .journalit-trade-import-template-trigger {
-	background-color: var(--background-primary);
-	border: 1px solid var(--background-modifier-border);
-	box-shadow: none;
-}
-
-.journalit-csv-import .journalit-trade-import-account-trigger:hover:not(:disabled),
-.journalit-csv-import .journalit-trade-import-dropdown-trigger:hover:not(:disabled),
-.journalit-csv-import .journalit-trade-import-template-trigger:hover:not(:disabled),
-.journalit-csv-import .journalit-trade-import-account-trigger:focus-visible,
-.journalit-csv-import .journalit-trade-import-dropdown-trigger:focus-visible,
-.journalit-csv-import .journalit-trade-import-template-trigger:focus-visible {
-	background-color: var(--background-primary);
-	border-color: var(--interactive-accent);
-	box-shadow: 0 0 0 1px var(--interactive-accent);
-}
-
-.journalit-csv-import .journalit-trade-import-template-trigger span:first-child {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-}
 
 .journalit-csv-import .journalit-trade-import-dropdown {
 	width: 100%;
-}
-
-.journalit-csv-import .journalit-trade-import-dropdown-trigger {
-	justify-content: space-between;
-	width: 100%;
-	min-height: 31px;
-	font-size: 13px;
-}
-
-.journalit-csv-import .journalit-trade-import-dropdown-trigger span:first-child {
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
 }
 
 .journalit-csv-import .journalit-trade-import-manual-mode {
@@ -383,65 +324,6 @@ export const CSV_IMPORT_STYLES = `
 	color: var(--text-muted);
 	font-size: 12px;
 	line-height: 1.35;
-}
-
-.journalit-csv-import .journalit-trade-import-manual-mode-options {
-	display: grid;
-	grid-template-columns: repeat(2, minmax(0, 1fr));
-	gap: 8px;
-	margin-top: 0;
-}
-
-.journalit-csv-import .journalit-trade-import-manual-mode-option {
-	display: block;
-	min-height: 27px;
-	padding: 5px 12px;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 4px;
-	background-color: var(--background-secondary);
-	color: var(--text-normal);
-	font-size: 12px;
-	font-weight: 600;
-	line-height: 1.2;
-	text-align: center;
-	cursor: pointer;
-	transition:
-		border-color 120ms ease,
-		background-color 120ms ease,
-		color 120ms ease,
-		box-shadow 120ms ease;
-}
-
-.journalit-csv-import .journalit-trade-import-manual-mode-option:hover {
-	border-color: var(--background-modifier-border-hover);
-	background-color: var(--background-modifier-hover);
-	color: var(--text-normal);
-}
-
-.journalit-csv-import .journalit-trade-import-manual-mode-option.is-selected {
-	border-color: var(--interactive-accent);
-	background-color: var(--interactive-accent);
-	color: var(--text-on-accent);
-	box-shadow: none;
-}
-
-.journalit-csv-import .journalit-trade-import-manual-mode-option:focus-within {
-	border-color: var(--interactive-accent);
-	box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
-}
-
-.journalit-csv-import .journalit-trade-import-manual-mode-option.is-disabled {
-	cursor: not-allowed;
-	opacity: 0.65;
-}
-
-.journalit-csv-import .journalit-trade-import-manual-mode-option input {
-	position: absolute;
-	width: 1px;
-	height: 1px;
-	margin: 0;
-	opacity: 0;
-	pointer-events: none;
 }
 
 .journalit-csv-import .journalit-trade-import-dropdown-menu {
@@ -725,55 +607,14 @@ export const CSV_IMPORT_STYLES = `
 	margin-top: 10px;
 }
 
-.journalit-csv-import .journalit-trade-import-recovery-switch,
-.journalit-quick-import-modal .journalit-trade-import-recovery-switch {
-	padding: 5px 10px;
-	border: 1px solid var(--interactive-accent);
-	border-radius: 6px;
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-	font-size: 12px;
-	font-weight: 600;
-	cursor: pointer;
-}
-
-.journalit-csv-import .journalit-trade-import-recovery-switch:hover,
-.journalit-csv-import .journalit-trade-import-recovery-switch:focus-visible,
-.journalit-quick-import-modal .journalit-trade-import-recovery-switch:hover,
-.journalit-quick-import-modal .journalit-trade-import-recovery-switch:focus-visible {
-	background: var(--interactive-accent-hover);
-	color: var(--text-on-accent);
-}
-
 .journalit-csv-import .journalit-trade-import-recovery-switch:disabled,
 .journalit-quick-import-modal .journalit-trade-import-recovery-switch:disabled {
 	opacity: 0.6;
-	cursor: not-allowed;
-}
-
-.journalit-csv-import .journalit-trade-import-recovery-continue,
-.journalit-quick-import-modal .journalit-trade-import-recovery-continue {
-	padding: 5px 10px;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	background: transparent;
-	color: var(--text-normal);
-	font-size: 12px;
-	font-weight: 600;
-	cursor: pointer;
-}
-
-.journalit-csv-import .journalit-trade-import-recovery-continue:hover,
-.journalit-csv-import .journalit-trade-import-recovery-continue:focus-visible,
-.journalit-quick-import-modal .journalit-trade-import-recovery-continue:hover,
-.journalit-quick-import-modal .journalit-trade-import-recovery-continue:focus-visible {
-	background: var(--background-modifier-hover);
 }
 
 .journalit-csv-import .journalit-trade-import-recovery-continue:disabled,
 .journalit-quick-import-modal .journalit-trade-import-recovery-continue:disabled {
 	opacity: 0.6;
-	cursor: not-allowed;
 }
 
 .journalit-csv-import .journalit-trade-import-file-types {
@@ -970,15 +811,10 @@ export const CSV_IMPORT_STYLES = `
 	justify-content: center;
 	width: 34px;
 	height: 34px;
-	padding: 0;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 8px;
-	background: var(--background-primary);
 	color: var(--text-muted);
 }
 
 .journalit-csv-import .journalit-trade-import-template-menu-trigger:hover {
-	border-color: var(--interactive-accent);
 	color: var(--text-normal);
 }
 
@@ -1104,11 +940,6 @@ export const CSV_IMPORT_STYLES = `
 	gap: 8px;
 }
 
-.journalit-csv-import .journalit-trade-import-template-actions button,
-.journalit-csv-import .journalit-trade-import-template-panel button {
-	min-height: 32px;
-}
-
 .journalit-csv-import .journalit-trade-import-template-panel textarea {
 	width: 100%;
 	min-height: 74px;
@@ -1120,9 +951,6 @@ export const CSV_IMPORT_STYLES = `
 .journalit-csv-import .journalit-trade-import-primary,
 .journalit-csv-import .journalit-trade-import-confirm-button {
 	margin-top: 16px;
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-	cursor: pointer;
 }
 
 .journalit-csv-import .journalit-trade-import-primary {
@@ -1397,41 +1225,6 @@ export const CSV_IMPORT_STYLES = `
 	width: 100%;
 }
 
-.journalit-trade-import-new-field-modal .journalit-trade-import-new-field__types {
-	display: flex;
-	gap: 4px;
-	padding: 3px;
-	border: 1px solid var(--background-modifier-border);
-	border-radius: 6px;
-	background: var(--background-primary);
-}
-
-.journalit-trade-import-new-field-modal .journalit-trade-import-new-field__type {
-	position: relative;
-	display: flex;
-	align-items: center;
-	padding: 4px 10px;
-	border-radius: 4px;
-	font-size: 12px;
-	color: var(--text-muted);
-	cursor: pointer;
-}
-
-.journalit-trade-import-new-field-modal .journalit-trade-import-new-field__type input {
-	position: absolute;
-	opacity: 0;
-	pointer-events: none;
-}
-
-.journalit-trade-import-new-field-modal .journalit-trade-import-new-field__type.is-selected {
-	background: var(--interactive-accent);
-	color: var(--text-on-accent);
-}
-
-.journalit-trade-import-new-field-modal .journalit-trade-import-new-field__type:focus-within {
-	box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
-}
-
 .journalit-trade-import-new-field-modal .journalit-trade-import-new-field__error {
 	margin: 0;
 	font-size: 12px;
@@ -1459,10 +1252,11 @@ export const CSV_IMPORT_STYLES = `
 }
 
 .journalit-csv-import .journalit-trade-import-review-controls {
-	display: grid;
-	grid-template-columns: minmax(120px, 160px) minmax(110px, 140px) minmax(240px, 320px);
+	
+	display: flex;
+	flex-wrap: wrap;
 	gap: 12px;
-	align-items: end;
+	align-items: flex-end;
 	margin: 14px 0 12px;
 	padding: 12px;
 	border: 1px solid var(--background-modifier-border);
@@ -1471,6 +1265,8 @@ export const CSV_IMPORT_STYLES = `
 }
 
 .journalit-csv-import .journalit-trade-import-review-controls label {
+	flex: 0 1 160px;
+	min-width: 110px;
 	margin: 0;
 	gap: 5px;
 }
@@ -1481,19 +1277,15 @@ export const CSV_IMPORT_STYLES = `
 	font-weight: 500;
 }
 
-.journalit-csv-import .journalit-trade-import-review-controls select,
-.journalit-csv-import .journalit-trade-import-review-controls input {
-	min-height: 30px;
-}
-
-.journalit-csv-import .journalit-trade-import-date-format-control {
-	max-width: 320px;
+.journalit-csv-import .journalit-trade-import-review-controls > .journalit-trade-import-date-format-control {
+	flex: 0 1 320px;
+	min-width: 240px;
 }
 
 .journalit-csv-import .journalit-trade-import-header-row-error {
 	
 	order: 1;
-	grid-column: 1 / -1;
+	flex-basis: 100%;
 	margin: 0;
 	font-size: 12px;
 	color: var(--text-error);
@@ -1767,11 +1559,6 @@ export const CSV_IMPORT_STYLES = `
 	margin-left: auto;
 }
 
-.journalit-csv-import .journalit-trade-import-pro-banner__primary {
-	min-height: 36px;
-	padding: 6px 18px;
-}
-
 .journalit-csv-import .journalit-trade-import-pro-banner__secondary {
 	min-height: 36px;
 	padding: 6px 12px;
@@ -1838,10 +1625,6 @@ export const CSV_IMPORT_STYLES = `
 	color: var(--text-normal);
 }
 
-.journalit-csv-import .journalit-trade-import-cancel-preview-button {
-	color: var(--text-muted);
-}
-
 .journalit-csv-import .journalit-trade-import-save-template-row {
 	display: flex;
 	align-items: end;
@@ -1856,7 +1639,6 @@ export const CSV_IMPORT_STYLES = `
 
 .journalit-csv-import .journalit-trade-import-save-template-row button {
 	flex: 0 0 auto;
-	min-height: 32px;
 }
 
 .journalit-csv-import .csv-tip-text {
@@ -1912,10 +1694,6 @@ export const CSV_IMPORT_STYLES = `
 	color: var(--text-muted);
 	font-size: 20px;
 	font-weight: 600;
-}
-
-.journalit-csv-import .csv-mapper-target select {
-	width: 100%;
 }
 
 .journalit-csv-import .csv-mapper-target .journalit-trade-import-dropdown-menu {

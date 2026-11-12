@@ -96,9 +96,48 @@ export interface SetupRefResolution {
 
 export type ConvertUnmanagedSetupLabelData = Partial<SetupData>;
 
+
+export type SetupOutcomeScope = 'all' | 'wins' | 'losses';
+
+
+export type SetupMetricKey =
+  | 'expectedValue'
+  | 'expectedR'
+  | 'totalPnL'
+  | 'totalR'
+  | 'winRate'
+  | 'profitFactor'
+  | 'totalTrades'
+  | 'shareOfTrades'
+  | 'cumulativePnl'
+  | 'cumulativeR';
+
+
+export type SetupOverviewMetricKey = SetupMetricKey | 'timesSeen';
+
+export type SetupOverviewChartMode = 'setups' | 'pairs';
+
+export type SetupPairMetricKey =
+  | 'edgeR'
+  | 'expectancyR'
+  | 'totalR'
+  | 'totalPnL'
+  | 'winRate'
+  | 'profitFactor'
+  | 'totalTrades';
+
+
+export interface SetupMetricsResult {
+  metricsBySetupId: Map<string, SetupMetrics>;
+  
+  tradeCount: number;
+}
+
 export interface SetupMetrics {
   
   totalTrades: number;
+  
+  shareOfTrades: number;
   winRate: number;
   totalPnL: number;
   avgWinner: number;

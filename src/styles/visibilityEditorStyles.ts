@@ -24,30 +24,32 @@ export const VISIBILITY_EDITOR_STYLES = `
   }
 
   .journalit-visibility-editor .journalit-tab-button {
-    background: transparent;
+    height: 32px;
+    padding: 0 10px;
     border: none;
-    border-bottom: 2px solid transparent;
-    padding: 10px 20px;
+    border-radius: var(--journalit-control-radius) var(--journalit-control-radius) 0 0;
+    background: transparent;
+    box-shadow: none;
     cursor: pointer;
-    font-size: 14px;
+    font-size: var(--font-ui-small);
     font-weight: 500;
     color: var(--text-muted);
-    transition: color 0.2s ease, background-color 0.2s ease, border-color 0.2s ease;
     position: relative;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
   }
 
   .journalit-visibility-editor .journalit-tab-button:hover {
     color: var(--text-normal);
-    background-color: var(--background-modifier-hover);
+    background: var(--journalit-control-overlay-hover);
+    box-shadow: none;
   }
 
   .journalit-visibility-editor .journalit-tab-button.journalit-tab-active {
+    background: transparent;
+    box-shadow: inset 0 -2px 0 var(--interactive-accent);
     color: var(--text-normal);
-    font-weight: 600;
-    border-bottom-color: var(--text-accent);
   }
 
   .journalit-visibility-editor .journalit-tab-count {
@@ -202,20 +204,14 @@ export const VISIBILITY_EDITOR_STYLES = `
     justify-content: center;
     width: 24px;
     height: 24px;
-    border: none;
-    background: transparent;
     color: var(--text-muted);
     cursor: pointer;
-    border-radius: 4px;
-    font-size: 16px;
-    font-weight: 400;
-    line-height: 1;
-    padding: 0;
-    transition: color 0.15s ease, background-color 0.15s ease, opacity 0.15s ease;
+    line-height: 0;
+    min-width: 0;
+    min-height: 0;
   }
 
   .journalit-visibility-editor__remove-button:hover:not(:disabled) {
-    background: var(--background-modifier-error);
     color: var(--text-on-accent);
   }
 
@@ -301,19 +297,13 @@ export const VISIBILITY_EDITOR_STYLES = `
     width: 24px;
     height: 24px;
     min-width: 24px;
-    padding: 0;
-    border: none;
-    appearance: none;
-    background: var(--interactive-accent);
     color: var(--text-on-accent);
     cursor: pointer;
-    border-radius: 4px;
     line-height: 0;
-    transition: background-color 0.15s ease;
+    min-height: 0;
   }
 
   .journalit-visibility-editor__add-button:hover {
-    background: var(--interactive-accent-hover);
     color: var(--text-on-accent);
   }
 
@@ -321,6 +311,11 @@ export const VISIBILITY_EDITOR_STYLES = `
     width: 14px;
     height: 14px;
     flex: 0 0 14px;
-    transform: translateX(0.5px);
+  }
+
+  .journalit-visibility-editor__remove-button-icon {
+    width: 14px;
+    height: 14px;
+    flex: 0 0 14px;
   }
 `;

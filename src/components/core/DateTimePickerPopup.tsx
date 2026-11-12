@@ -12,6 +12,7 @@ import {
 } from '../shared/icons/ObsidianIcon';
 import { useAnchoredMenuPosition } from '../shared/menus/useAnchoredMenuPosition';
 import type { DatePickerLocale } from './datePickerLocales';
+import { Button } from '../ui/Button';
 
 export interface DateTimePickerPopupConfig {
   value?: Date;
@@ -315,13 +316,13 @@ export const DateTimePickerPopup: React.FC<DateTimePickerPopupProps> = ({
         </>
       )}
       <div className="journalit-date-picker__footer">
-        <button
-          type="button"
+        <Button
+          size="small"
           className="journalit-date-picker__action"
           onClick={clear}
         >
           {t('datepicker.button.clear')}
-        </button>
+        </Button>
         {hasTime && (
           <TimeFields
             time={time}
@@ -333,14 +334,14 @@ export const DateTimePickerPopup: React.FC<DateTimePickerPopupProps> = ({
             onEnter={() => onDismiss(true)}
           />
         )}
-        <button
-          type="button"
+        <Button
+          size="small"
           className="journalit-date-picker__action"
           disabled={!todayAllowed(todayDate)}
           onClick={today}
         >
           {t(timeOnly ? 'datepicker.button.now' : 'datepicker.button.today')}
-        </button>
+        </Button>
       </div>
     </div>
   );

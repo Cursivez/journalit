@@ -1,4 +1,4 @@
-import { App, MarkdownView, TFile } from 'obsidian';
+import { App, Editor, MarkdownView, TFile } from 'obsidian';
 
 class StaleVaultProcessError extends Error {
   constructor() {
@@ -7,9 +7,19 @@ class StaleVaultProcessError extends Error {
   }
 }
 
-function isMarkdownFileView(view: unknown, file: TFile): view is MarkdownView {
+function hasModeGetter(view: object): view is { getMode: () => string } {
+  return 'getMode' in view && typeof view.getMode === 'function';
+}
+
+
+function isMarkdownFileView(
+  view: unknown,
+  filePath: string
+): view is MarkdownView {
   if (view === null || typeof view !== 'object') return false;
-  if (!('file' in view) || !('editor' in view)) return false;
+  if (!('file' in view) || !('editor' in view) || !hasModeGetter(view)) {
+    return false;
+  }
   const candidate = view.file;
   if (
     candidate === null ||
@@ -18,23 +28,30 @@ function isMarkdownFileView(view: unknown, file: TFile): view is MarkdownView {
   ) {
     return false;
   }
-  return candidate.path === file.path && view.editor !== undefined;
+  return (
+    candidate.path === filePath &&
+    view.editor !== undefined &&
+    view.getMode() === 'source'
+  );
 }
 
 function getActiveMarkdownViewForFile(
   app: App,
-  file: TFile
+  filePath: string
 ): MarkdownView | null {
   if (!app.workspace?.getActiveViewOfType) {
     return null;
   }
 
   const activeView = app.workspace.getActiveViewOfType(MarkdownView);
-  return isMarkdownFileView(activeView, file) ? activeView : null;
+  return isMarkdownFileView(activeView, filePath) ? activeView : null;
 }
 
-function getMarkdownViewForFile(app: App, file: TFile): MarkdownView | null {
-  const activeView = getActiveMarkdownViewForFile(app, file);
+function getMarkdownViewForFile(
+  app: App,
+  filePath: string
+): MarkdownView | null {
+  const activeView = getActiveMarkdownViewForFile(app, filePath);
   if (activeView) return activeView;
 
   if (typeof app.workspace?.getLeavesOfType !== 'function') {
@@ -45,14 +62,25 @@ function getMarkdownViewForFile(app: App, file: TFile): MarkdownView | null {
   if (!Array.isArray(leaves)) return null;
   for (let index = 0; index < leaves.length; index += 1) {
     const view = leaves[index]?.view;
-    if (isMarkdownFileView(view, file)) return view;
+    if (isMarkdownFileView(view, filePath)) return view;
   }
   return null;
 }
 
 
 export function isOpenInEditor(app: App, file: TFile): boolean {
-  return getMarkdownViewForFile(app, file) !== null;
+  return getMarkdownViewForFile(app, file.path) !== null;
+}
+
+
+export function getSourceEditor(
+  app: App,
+  filePath: string
+): { lines: string[]; editor: Editor } | null {
+  const view = getMarkdownViewForFile(app, filePath);
+  return view
+    ? { lines: view.editor.getValue().split('\n'), editor: view.editor }
+    : null;
 }
 
 function deferToNextTick(): Promise<void> {
@@ -98,7 +126,7 @@ export async function readFileContentForMutation(
   app: App,
   file: TFile
 ): Promise<string> {
-  const openView = getMarkdownViewForFile(app, file);
+  const openView = getMarkdownViewForFile(app, file.path);
   if (openView) {
     return openView.editor.getValue();
   }
@@ -112,7 +140,7 @@ export async function replaceFileContent(
   file: TFile,
   newContent: string
 ): Promise<void> {
-  const openView = getMarkdownViewForFile(app, file);
+  const openView = getMarkdownViewForFile(app, file.path);
 
   if (openView) {
     replaceEditorContent(openView, newContent);
@@ -120,7 +148,7 @@ export async function replaceFileContent(
     await writeVaultContent(app, file, newContent);
     await deferToNextTick();
 
-    const currentOpenView = getMarkdownViewForFile(app, file);
+    const currentOpenView = getMarkdownViewForFile(app, file.path);
     if (currentOpenView) {
       replaceEditorContent(currentOpenView, newContent);
       await currentOpenView.save(true);
@@ -137,7 +165,7 @@ export async function transformFileContent(
   file: TFile,
   transform: (currentContent: string) => string
 ): Promise<void> {
-  const activeView = getActiveMarkdownViewForFile(app, file);
+  const activeView = getActiveMarkdownViewForFile(app, file.path);
   if (activeView) {
     const currentContent = activeView.editor.getValue();
     const nextContent = transform(currentContent);
@@ -163,7 +191,7 @@ export async function replaceFileContentIfUnchanged(
   expectedContent: string,
   nextContent: string
 ): Promise<ConditionalFileReplacementStatus> {
-  const openView = getMarkdownViewForFile(app, file);
+  const openView = getMarkdownViewForFile(app, file.path);
   if (openView) {
     if (openView.editor.getValue() !== expectedContent) {
       return 'stale';

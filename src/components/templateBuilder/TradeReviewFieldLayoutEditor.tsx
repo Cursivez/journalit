@@ -1,7 +1,7 @@
 import React from 'react';
 import { t } from '../../lang/helpers';
 import type { CustomFieldDefinition } from '../../types/customFields';
-import { MultiSelectDropdownFilter } from '../shared/MultiSelectDropdownFilter';
+import { ComboBox } from '../core/ComboBox';
 import {
   canPlaceTradeReviewField,
   expandTradeReviewFieldGroups,
@@ -137,58 +137,48 @@ export const TradeReviewFieldLayoutEditor: React.FC<
     <>
       {TRADE_REVIEW_FIELD_PLACEMENTS.map((placement) => {
         const listed = getListedFields(placement);
-        const sectionLabel = getPlacementLabel(placement);
-        const summary =
-          listed.length > 0
-            ? listed.map(({ label }) => label).join(', ')
-            : t('templateEditor.widget.trade-review.fields-none');
+        const options = allFields.filter(({ field }) =>
+          canPlaceTradeReviewField(field, placement)
+        );
+        const labels = new Map(
+          options.map(({ field, label }): [string, string] => {
+            
+            
+            const group = placementByField.get(field);
+            return [
+              field,
+              group && group !== placement && group !== 'hidden'
+                ? `${label} · ${getPlacementLabel(group)}`
+                : label,
+            ];
+          })
+        );
         return (
           <div
             key={placement}
-            className="template-review-context-config-row template-review-context-config-row--fields"
+            className="template-review-context-config-row template-review-context-config-row--stacked"
           >
-            <div className="template-review-context-config-label">
-              {sectionLabel}
-            </div>
-            <div className="template-review-context-config-control template-review-context-field-list">
-              <MultiSelectDropdownFilter
-                options={allFields.flatMap(({ field, label }) => {
-                  if (!canPlaceTradeReviewField(field, placement)) return [];
-                  const group = placementByField.get(field);
-                  return [
-                    {
-                      value: field,
-                      label,
-                      
-                      detail:
-                        group && group !== placement && group !== 'hidden'
-                          ? getPlacementLabel(group)
-                          : undefined,
-                    },
-                  ];
-                })}
-                selectedValues={listed.map(({ field }) => field)}
-                summary={summary}
-                ariaLabel={`${sectionLabel}: ${summary}`}
-                emptyMessage={t(
-                  'templateEditor.widget.trade-review.fields-none'
-                )}
-                classNamePrefix="template-review-context-field-filter"
-                onChange={(values) =>
-                  commit(
-                    applySectionSelection(
-                      groups,
-                      placement,
-                      listed.map(({ field }) => field),
-                      values.flatMap((value) => {
-                        const field = fieldIdsByValue.get(value);
-                        return field ? [field] : [];
-                      })
-                    )
+            <ComboBox
+              isMulti
+              label={getPlacementLabel(placement)}
+              options={options.map(({ field }) => field)}
+              getOptionLabel={(value) => labels.get(value) ?? value}
+              value={listed.map(({ field }) => field)}
+              placeholder={t('templateEditor.widget.trade-review.fields-none')}
+              onChange={(values) =>
+                commit(
+                  applySectionSelection(
+                    groups,
+                    placement,
+                    listed.map(({ field }) => field),
+                    values.flatMap((value) => {
+                      const field = fieldIdsByValue.get(value);
+                      return field ? [field] : [];
+                    })
                   )
-                }
-              />
-            </div>
+                )
+              }
+            />
           </div>
         );
       })}

@@ -58,17 +58,13 @@ export const AGENT_APPROVAL_CARD_STYLES = `
     justify-content: center;
     width: 20px;
     height: 20px;
-    padding: 0;
-    border: none;
-    border-radius: var(--radius-s);
-    background: transparent;
-    box-shadow: none;
     color: var(--text-faint);
     cursor: var(--cursor);
+    min-width: 0;
+    min-height: 0;
   }
 
   .journalit-agent-approval .journalit-agent-approval-icon-button:hover:not(:disabled) {
-    background: var(--background-modifier-hover);
     color: var(--text-normal);
   }
 

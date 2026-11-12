@@ -2,6 +2,8 @@
 
 export type GetReviewResult = (Success | Error)
 
+export type MarketBias = MarketBiasEntry[]
+
 export type DayTradeFieldList = string[]
 
 export interface Success {
@@ -15,13 +17,13 @@ performance?: {
 calculation_context: CalculationContext
 
 metrics: ({
-metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")
+metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")
 sample_count: number
 status: "available"
 value: number
 unit: ("currency" | "fraction" | "ratio" | "count" | "r_multiple")
 } | {
-metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")
+metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")
 sample_count: number
 status: "unavailable"
 value: null
@@ -39,6 +41,9 @@ goals?: Goal[]
 
 checklist?: ChecklistItem[]
 key_levels?: KeyLevels
+
+key_level_groups?: KeyLevelGroup[]
+market_bias?: MarketBias
 grades?: {
 mental: ((("A" | "B" | "C") | (0 | 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5)) | null)
 technical: ((("A" | "B" | "C") | (0 | 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5)) | null)
@@ -145,6 +150,19 @@ export interface KeyLevel {
 
 price: string
 importance: ("High" | "Medium" | "Low" | null)
+}
+export interface KeyLevelGroup {
+
+name: string
+
+support: KeyLevel[]
+
+resistance: KeyLevel[]
+}
+export interface MarketBiasEntry {
+
+ticker?: string
+bias: ("long" | "neutral" | "short")
 }
 export interface MediaMetadata {
 media_id: string

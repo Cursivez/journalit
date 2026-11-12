@@ -60,6 +60,7 @@ import { EvalRoiWidget } from './widgets/EvalRoiWidget';
 import { ChallengeAlertsWidget } from './widgets/ChallengeAlertsWidget';
 import { GettingStartedWidget } from './widgets/GettingStartedWidget';
 import { KeyEventsHomeWidget } from './widgets/KeyEventsHomeWidget';
+import { Button } from '../ui/Button';
 
 
 class GridLayoutErrorBoundary extends React.Component<
@@ -95,12 +96,14 @@ class GridLayoutErrorBoundary extends React.Component<
               error: this.state.error?.message || '',
             })}
           </p>
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="journalit-home-grid-error__retry"
             onClick={() => this.setState({ hasError: false, error: null })}
           >
             {t('home.grid.error.retry')}
-          </button>
+          </Button>
         </div>
       );
     }

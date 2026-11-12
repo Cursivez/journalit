@@ -8,6 +8,7 @@ import { BottomSection } from './BottomSection';
 import { UnifiedComponentSelector } from './UnifiedComponentSelector';
 import { FilterState } from '../DashboardView';
 import { DashboardData } from '../utils/dataUtils';
+import { useDashboardCompareData } from '../context/DashboardDataContext';
 import { TradeFormDrawer } from '../../forms/trade/TradeFormDrawer';
 import { usePlugin } from '../../../hooks/usePlugin';
 import { t } from '../../../lang/helpers';
@@ -30,6 +31,11 @@ interface DashboardContentProps {
   onCloseSelector: () => void;
   openUnifiedSelector: () => void;
 }
+
+const hasNoTrades = (data: DashboardData): boolean =>
+  data.trades.length === 0 &&
+  (data.unrealizedTrades?.length ?? 0) === 0 &&
+  (data.excursionTrades?.length ?? 0) === 0;
 
 const GuideTargetContainer: React.FC<{
   targetId: string;
@@ -84,12 +90,19 @@ export const DashboardContent: React.FC<DashboardContentProps> = React.memo(
     };
 
     
+    
+    const compareSource = useDashboardCompareData();
+    const compareIsEmpty =
+      compareSource === null ||
+      (compareSource.dashboardSnapshot !== null &&
+        hasNoTrades(compareSource.dashboardSnapshot.data));
+
+    
     if (
       !isLoading &&
       dashboardData &&
-      dashboardData.trades.length === 0 &&
-      (dashboardData.unrealizedTrades?.length ?? 0) === 0 &&
-      (dashboardData.excursionTrades?.length ?? 0) === 0
+      hasNoTrades(dashboardData) &&
+      compareIsEmpty
     ) {
       return (
         <DashboardEmptyStateGuideTarget>

@@ -1,5 +1,6 @@
 import type { JournalitSettings } from '../../settings/types';
 import type { AccountReferenceChange } from '../accountMerge/types';
+import { repointFavoriteAccounts } from '../account/favoriteAccounts';
 import { normalizeAccountLookupKey } from '../trade/core/TradeAccountIdentity';
 
 
@@ -193,6 +194,19 @@ export function repointAccountReferences(
     settings.csvFavoriteAccount = newName;
   }
 
+  const favoriteAccounts = repointFavoriteAccounts(
+    settings.trade?.favoriteAccounts,
+    oldName,
+    newName
+  );
+  if (favoriteAccounts) {
+    changes.push({
+      kind: 'favoriteAccounts',
+      previous: settings.trade.favoriteAccounts ?? [],
+    });
+    settings.trade.favoriteAccounts = favoriteAccounts;
+  }
+
   return changes;
 }
 
@@ -282,6 +296,10 @@ function revertAccountReferenceChange(
     }
     case 'csvFavoriteAccount': {
       settings.csvFavoriteAccount = change.previous;
+      return;
+    }
+    case 'favoriteAccounts': {
+      settings.trade.favoriteAccounts = change.previous;
       return;
     }
     case 'homeAccountProgress': {

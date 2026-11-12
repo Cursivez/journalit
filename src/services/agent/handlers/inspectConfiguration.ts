@@ -12,6 +12,9 @@ import type { CustomFieldDefinition } from '../../../types/customFields';
 import type { SessionLogTagDefinition } from '../../../types/sessionLog';
 import { projectCustomFieldConfiguration } from '../configuration/customFieldConfiguration';
 import { projectSessionLogTagConfiguration } from '../configuration/sessionLogTagConfiguration';
+import { projectDashboardComparisonConfiguration } from '../configuration/dashboardComparisonConfiguration';
+import type { DashboardFilterIdentities } from '../dashboard/dashboardFilters';
+import type { SavedDashboardComparison } from '../../../components/dashboard/compare/dashboardComparison';
 import { projectAccountConfiguration } from '../configuration/accountConfiguration';
 import type { AccountSources } from '../configuration/accountConfigurationSources';
 import {
@@ -28,6 +31,7 @@ import {
   isSetupIdentityCandidate,
   OptionCatalogProjectionLimitError,
   projectDashboardLayoutConfiguration,
+  homeGoalAccountNames,
   projectHomeLayoutConfiguration,
   projectOptionCatalogConfiguration,
   projectReviewTemplateConfiguration,
@@ -76,6 +80,8 @@ interface InspectConfigurationDependencies {
   getDashboardWidgetCatalog(): readonly DashboardWidgetDefinition[];
   getHomeLayoutSettings(): RawHomeLayoutSettings;
   getHomeWidgetCatalog(): readonly HomeWidgetDefinition[];
+  
+  getOrCreateAccountId(accountName: string): Promise<string | null>;
   getRawOptionSettings(): unknown;
   getRawAccountSettings(): unknown;
   listSetups(): Promise<Setup[]>;
@@ -97,6 +103,8 @@ interface InspectConfigurationDependencies {
   readPropChallengeSources(
     signal: AbortSignal
   ): Promise<readonly PropChallengeSource[]>;
+  getSavedDashboardComparisons(): readonly SavedDashboardComparison[];
+  dashboardFilterIdentities: DashboardFilterIdentities;
 }
 
 export function createInspectConfigurationHandler(
@@ -147,14 +155,24 @@ export function createInspectConfigurationHandler(
                 dependencies.getDashboardWidgetCatalog()
               ),
             ];
-          case 'home_layouts':
+          case 'home_layouts': {
+            const settings = dependencies.getHomeLayoutSettings();
+            
+            const accountIds = new Map<string, string>();
+            for (const name of homeGoalAccountNames(settings.goals)) {
+              const accountId = await dependencies.getOrCreateAccountId(name);
+              if (context.signal.aborted) throw context.signal.reason;
+              if (accountId !== null) accountIds.set(name, accountId);
+            }
             return [
               domain,
               await projectHomeLayoutConfiguration(
-                dependencies.getHomeLayoutSettings(),
-                dependencies.getHomeWidgetCatalog()
+                settings,
+                dependencies.getHomeWidgetCatalog(),
+                (name) => accountIds.get(name)
               ),
             ];
+          }
           case 'settings':
             return [
               domain,
@@ -283,6 +301,14 @@ export function createInspectConfigurationHandler(
               await projectPropChallengeConfiguration(challenges),
             ];
           }
+          case 'dashboard_comparisons':
+            return [
+              domain,
+              await projectDashboardComparisonConfiguration(
+                dependencies.getSavedDashboardComparisons(),
+                dependencies.dashboardFilterIdentities
+              ),
+            ];
           default: {
             const exhaustiveDomain: never = domain;
             return exhaustiveDomain;

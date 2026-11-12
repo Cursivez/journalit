@@ -11,6 +11,7 @@ import {
 } from '../../../components/shared/icons/ObsidianIcon';
 import { Button } from '../../../components/ui/Button';
 import { t } from '../../../lang/helpers';
+import { formatDateDisplay } from '../../../utils/dateUtils';
 
 interface StatusCardsProps {
   
@@ -49,7 +50,7 @@ function formatLastSync(timestamp?: string): string {
     if (diffDays < 7)
       return t('backend.sync.days-ago', { count: String(diffDays) });
 
-    return date.toLocaleDateString();
+    return formatDateDisplay(date);
   } catch {
     return t('backend.sync.invalid-date');
   }

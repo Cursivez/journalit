@@ -12,7 +12,6 @@ import { resolveReviewCurrency } from './shared/reviewWidgetSettings';
 import { getDisplayPnL, getAccountCount } from '../../../utils/pnlUtils';
 import {
   formatDateDisplay,
-  getUserDateFormat,
   safeDateSort,
   getQuarterForMonth,
   getWeekNumberForDate,
@@ -23,6 +22,7 @@ import { TradesPreviewData } from '../../../types/reviewV2';
 import { Trade } from '../../drc/types';
 import { useReviewTrades } from '../hooks/useReviewData';
 import { useEventBus } from '../../../hooks/useEventBus';
+import { useDateFormat } from '../../../hooks/useDateFormat';
 import { SkeletonBox } from '../../shared/SkeletonBox';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { classifyPnLWithBreakEvenSettings } from '../../../utils/breakEvenRange';
@@ -309,7 +309,7 @@ export const BreakdownTableWidget: React.FC<BreakdownTableWidgetProps> =
       const noteType = cachedNoteType || '';
 
       
-      const userDateFormat = useMemo(() => getUserDateFormat(), []);
+      const userDateFormat = useDateFormat();
 
       
       const [, setSettingsVersion] = useState(0);

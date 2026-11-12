@@ -127,19 +127,19 @@ import { clearDrilldownBasisForTradeLogMode } from './tradeLogFilterChanges';
 import { getSessionLogTags } from '../sessionLog/sessionLogUtils';
 import { mergeClassNames } from '../../utils/classNames';
 import { sanitizeFilterCustomFields } from '../shared/filters/sanitizeCustomFieldFilters';
+import {
+  collectExpandedPillColumn,
+  widestPillListWidth,
+  type ExpandedPillColumnValues,
+} from './expandedPillWidths';
+import { getWeekStartDaySetting } from '../../utils/dateUtils';
+import { rollDatePreset } from '../../utils/datePresets';
+import { useDatePresetRollover } from '../../hooks/useDatePresetRollover';
+import { Button } from '../ui/Button';
 
 interface TradeLogProps {
   plugin: JournalitPlugin;
   leaf: WorkspaceLeaf;
-}
-
-function getDuplicateAwareStringKeys(values: string[]): string[] {
-  const occurrenceByValue = new Map<string, number>();
-  return values.map((value) => {
-    const occurrence = occurrenceByValue.get(value) ?? 0;
-    occurrenceByValue.set(value, occurrence + 1);
-    return JSON.stringify([value, occurrence]);
-  });
 }
 
 const GUIDE_REFRESH_EVENTS: Array<
@@ -164,12 +164,14 @@ const TRADE_DATA_CHANGE_EVENTS: Array<
   | 'backtest-trade:changed'
   | 'folder-path:changed'
   | 'drc:session-log-index-invalidated'
+  | 'market-bias:changed'
 > = [
   'trade-data:changed',
   'missed-trade-data:changed',
   'backtest-trade:changed',
   'folder-path:changed',
   'drc:session-log-index-invalidated',
+  'market-bias:changed',
 ];
 
 type TradeLogFilterSyncWindow = Window & {
@@ -225,13 +227,18 @@ function loadPersistedTradeLogFilters(
     return null;
   }
 
-  const normalizedFilters: TradeLogFilters = {
-    ...normalizeTradeLogFilters(persisted),
-    dateRange: [
-      persisted.dateRange?.[0] ? new Date(persisted.dateRange[0]) : null,
-      persisted.dateRange?.[1] ? new Date(persisted.dateRange[1]) : null,
-    ],
-  };
+  
+  const normalizedFilters: TradeLogFilters = rollDatePreset(
+    {
+      ...normalizeTradeLogFilters(persisted),
+      dateRange: [
+        persisted.dateRange?.[0] ? new Date(persisted.dateRange[0]) : null,
+        persisted.dateRange?.[1] ? new Date(persisted.dateRange[1]) : null,
+      ],
+    },
+    getWeekStartDaySetting(plugin),
+    new Date()
+  );
   const configuredTagIds = new Set(
     getSessionLogTags(plugin).map((tag) => tag.id)
   );
@@ -345,12 +352,8 @@ const EXPANDABLE_COLUMNS = ['setups', 'mistakes', 'tags'];
 
 type TradeLogColumn = ReturnType<typeof getVisibleColumns>[number];
 
-interface TradeLogSizerRowData {
-  setups: string[];
-  mistakes: string[];
-  tags: string[];
-  customMultiselects: Record<string, string[]>;
-}
+
+type TradeLogSizerRowData = Record<string, ExpandedPillColumnValues>;
 
 interface ExpandedModeSizerRowProps {
   isExpandedMode: boolean;
@@ -359,6 +362,7 @@ interface ExpandedModeSizerRowProps {
   visibleColumns: TradeLogColumn[];
   sizerRowData: TradeLogSizerRowData;
 }
+
 
 const ExpandedModeSizerRow: React.FC<ExpandedModeSizerRowProps> = ({
   isExpandedMode,
@@ -373,106 +377,59 @@ const ExpandedModeSizerRow: React.FC<ExpandedModeSizerRowProps> = ({
     return null;
   }
 
-  const setupKeys = getDuplicateAwareStringKeys(sizerRowData.setups);
-  const mistakeKeys = getDuplicateAwareStringKeys(sizerRowData.mistakes);
-  const tagKeys = getDuplicateAwareStringKeys(sizerRowData.tags);
+  const renderPill = (columnId: string, label: string) => {
+    if (columnId === 'setups' || columnId === 'tags') {
+      const color =
+        columnId === 'setups'
+          ? getSetupLabelColor(labelColors.setups, label)
+          : getTagLabelColor(labelColors.tags, label);
+      return (
+        <span
+          key={label}
+          data-sizer-label={label}
+          className={`pill pill--${columnId === 'setups' ? 'setup' : 'tag'} ${getLabelColorClassName(color)}`}
+          style={cssVars({
+            '--journalit-label-color': color,
+            '--journalit-label-foreground': getLabelColorForeground(color),
+          })}
+        >
+          {label}
+        </span>
+      );
+    }
+    return (
+      <span
+        key={label}
+        data-sizer-label={label}
+        className={`pill ${columnId === 'mistakes' ? 'pill--mistake' : 'pill--tag'}`}
+      >
+        {label}
+      </span>
+    );
+  };
 
   return (
     <div ref={sizerRowRef} className="trade-log-sizer-row" aria-hidden="true">
       {visibleColumns.map((col) => {
-        if (col.id === 'setups') {
-          return (
-            <div
-              key={col.id}
-              data-sizer-col="setups"
-              className="trade-setups-cell expanded sizer-cell"
-            >
-              <div className="expanded-pills sizer-pills">
-                {sizerRowData.setups.map((setup, i) => {
-                  const color = getSetupLabelColor(labelColors.setups, setup);
-                  return (
-                    <span
-                      key={setupKeys[i]}
-                      className={`pill pill--setup ${getLabelColorClassName(color)}`}
-                      style={cssVars({
-                        '--journalit-label-color': color,
-                        '--journalit-label-foreground':
-                          getLabelColorForeground(color),
-                      })}
-                    >
-                      {setup}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          );
+        const column = sizerRowData[col.id];
+        if (!column) {
+          return <div key={col.id} />;
         }
-        if (col.id === 'mistakes') {
-          return (
-            <div
-              key={col.id}
-              data-sizer-col="mistakes"
-              className="trade-mistakes-cell expanded sizer-cell"
-            >
-              <div className="expanded-pills sizer-pills">
-                {sizerRowData.mistakes.map((mistake, i) => (
-                  <span key={mistakeKeys[i]} className="pill pill--mistake">
-                    {mistake}
-                  </span>
-                ))}
-              </div>
+        const cellClassName =
+          col.id === 'setups' || col.id === 'mistakes' || col.id === 'tags'
+            ? `trade-${col.id}-cell`
+            : 'trade-custom-field-cell';
+        return (
+          <div
+            key={col.id}
+            data-sizer-col={col.id}
+            className={`${cellClassName} expanded sizer-cell`}
+          >
+            <div className="expanded-pills sizer-pills">
+              {column.labels.map((label) => renderPill(col.id, label))}
             </div>
-          );
-        }
-        if (col.id === 'tags') {
-          return (
-            <div
-              key={col.id}
-              data-sizer-col="tags"
-              className="trade-tags-cell expanded sizer-cell"
-            >
-              <div className="expanded-pills sizer-pills">
-                {sizerRowData.tags.map((tag, i) => {
-                  const color = getTagLabelColor(labelColors.tags, tag);
-                  return (
-                    <span
-                      key={tagKeys[i]}
-                      className={`pill pill--tag ${getLabelColorClassName(color)}`}
-                      style={cssVars({
-                        '--journalit-label-color': color,
-                        '--journalit-label-foreground':
-                          getLabelColorForeground(color),
-                      })}
-                    >
-                      {tag}
-                    </span>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        }
-        if (col.customField?.type === CustomFieldType.MULTISELECT) {
-          const values = sizerRowData.customMultiselects[col.id] || [];
-          const valueKeys = getDuplicateAwareStringKeys(values);
-          return (
-            <div
-              key={col.id}
-              data-sizer-col={col.id}
-              className="trade-custom-field-cell expanded sizer-cell"
-            >
-              <div className="expanded-pills sizer-pills">
-                {values.map((value, i) => (
-                  <span key={valueKeys[i]} className="pill pill--tag">
-                    {value}
-                  </span>
-                ))}
-              </div>
-            </div>
-          );
-        }
-        return <div key={col.id} />;
+          </div>
+        );
       })}
     </div>
   );
@@ -910,56 +867,46 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     plugin.settings.trade.maeMfeDisplayUnit,
   ]);
 
-  const sizerRowData = useMemo(() => {
+  const sizerRowData = useMemo<TradeLogSizerRowData>(() => {
     if (!isExpandedMode) {
-      return {
-        setups: [] as string[],
-        mistakes: [] as string[],
-        tags: [] as string[],
-        customMultiselects: {},
-      };
+      return {};
     }
 
-    let widestSetups: string[] = [];
-    let widestMistakes: string[] = [];
-    let widestTags: string[] = [];
-    const widestCustomMultiselects: Record<string, string[]> = {};
-
-    const customMultiselectColumns = visibleColumns.filter(
-      (column) => column.customField?.type === CustomFieldType.MULTISELECT
+    const expandableColumns = visibleColumns.filter(
+      (column) =>
+        EXPANDABLE_COLUMNS.includes(column.id) ||
+        column.customField?.type === CustomFieldType.MULTISELECT
     );
-
-    const getListWeight = (values: string[]): number =>
-      values.join('').length + values.length * 4;
+    const collected = expandableColumns.map((column) => ({
+      column,
+      lists: [] as string[][],
+    }));
 
     const traverse = (nodeList: TimeNode[]) => {
       for (const node of nodeList) {
         if (node.type === 'trade' && node.trade) {
-          const trade = asRecord(node.trade);
-          const setups = asStringArray(trade?.setup);
-          const mistakes = asStringArray(trade?.mistake);
-          const tags = asStringArray(trade?.tags);
-
-          if (setups.length > widestSetups.length) widestSetups = setups;
-          if (mistakes.length > widestMistakes.length) {
-            widestMistakes = mistakes;
-          }
-          if (tags.length > widestTags.length) widestTags = tags;
-
-          for (const column of customMultiselectColumns) {
+          const trade = asRecord(node.trade) ?? {};
+          for (const { column, lists } of collected) {
             const field = column.customField;
-            if (!field) continue;
-
-            const values = getCustomFieldDisplayValues(
-              field,
-              getCustomFieldRawValue(trade ?? {}, field)
-            );
-
-            if (values.length === 0) continue;
-
-            const existing = widestCustomMultiselects[column.id] || [];
-            if (getListWeight(values) > getListWeight(existing)) {
-              widestCustomMultiselects[column.id] = values;
+            if (field) {
+              lists.push(
+                getCustomFieldDisplayValues(
+                  field,
+                  getCustomFieldRawValue(trade, field)
+                )
+              );
+            } else if (column.id === 'setups') {
+              lists.push(asStringArray(trade.setup));
+            } else if (column.id === 'mistakes') {
+              lists.push(asStringArray(trade.mistake));
+            } else {
+              
+              lists.push(
+                asStringArray(trade.tags).flatMap((tag) => {
+                  const trimmed = tag.trim();
+                  return trimmed ? [trimmed] : [];
+                })
+              );
             }
           }
         }
@@ -968,37 +915,47 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     };
     traverse(nodes);
 
-    return {
-      setups: widestSetups,
-      mistakes: widestMistakes,
-      tags: widestTags,
-      customMultiselects: widestCustomMultiselects,
-    };
+    const data: TradeLogSizerRowData = {};
+    for (const { column, lists } of collected) {
+      data[column.id] = collectExpandedPillColumn(lists);
+    }
+    return data;
   }, [nodes, isExpandedMode, visibleColumns]);
 
   
+  
   useEffect(() => {
-    if (!isExpandedMode || !sizerRowRef.current) {
+    const sizerRow = sizerRowRef.current;
+    if (!isExpandedMode || !isDataLoaded || !sizerRow) {
       setMeasuredWidths({});
       return;
     }
 
     
-    window.requestAnimationFrame(() => {
-      if (!sizerRowRef.current) return;
-
+    const frame = window.requestAnimationFrame(() => {
       const newWidths: Record<string, number> = {};
-      const cells = sizerRowRef.current.querySelectorAll('[data-sizer-col]');
-      cells.forEach((cell) => {
-        const colId = cell.getAttribute('data-sizer-col');
-        if (colId) {
-          newWidths[colId] = cell.getBoundingClientRect().width;
-        }
-      });
+      for (const [colId, column] of Object.entries(sizerRowData)) {
+        
+        const pills = sizerRow.querySelector<HTMLElement>(
+          `[data-sizer-col="${CSS.escape(colId)}"] .sizer-pills`
+        )!;
+        const widthByLabel = new Map<string, number>();
+        pills
+          .querySelectorAll<HTMLElement>('[data-sizer-label]')
+          .forEach((pill) => {
+            widthByLabel.set(
+              pill.dataset.sizerLabel!,
+              pill.getBoundingClientRect().width
+            );
+          });
+        const gap = Number.parseFloat(getComputedStyle(pills).columnGap) || 0;
+        newWidths[colId] = widestPillListWidth(column.lists, widthByLabel, gap);
+      }
 
       setMeasuredWidths(newWidths);
     });
-  }, [isExpandedMode, sizerRowData]);
+    return () => window.cancelAnimationFrame(frame);
+  }, [isExpandedMode, isDataLoaded, sizerRowData]);
 
   
   
@@ -1034,7 +991,12 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     tradeLogService.connect();
     return () => tradeLogService.destroy();
   }, [tradeLogService]);
-  const [imageGalleryService] = useState(() => new ImageGalleryService(plugin));
+  const [imageGalleryService] = useState(
+    () =>
+      new ImageGalleryService(plugin, (scopeFilters) =>
+        tradeLogService.resolveRecentPeriodScope(scopeFilters)
+      )
+  );
 
   
   const debouncedFilters = useDebounced(filters, 150);
@@ -2239,6 +2201,10 @@ const useTradeLogController = ({ plugin, leaf }: TradeLogProps) => {
     [commitFilters, tradeLogMode]
   );
 
+  
+  
+  useDatePresetRollover(filters, commitFilters);
+
   const handleAccountChanged = useCallback(
     (payload: AccountChangedPayload) => {
       const remappedFilters = remapAccountFilterFromAccountChange(
@@ -2442,13 +2408,14 @@ const TradeLogContent: React.FC<{
           })}
         </span>
       </div>
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="small"
         className="journalit-trade-log-operation-scope__exit"
         onClick={clearTradeLogOperationScope}
       >
         {t('trade-handoff.scope.exit')}
-      </button>
+      </Button>
     </div>
   ) : null;
 

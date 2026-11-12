@@ -14,6 +14,8 @@ import JournalitPlugin from '../main';
 import { t } from '../lang/helpers';
 import { getTradingDay, getTradingDayRange } from '../utils/tradingDayUtils';
 import { formatLocalDateString } from '../utils/dateUtils';
+import { formatLocalizedReviewDate } from '../utils/localizedDateTime';
+import { useDateFormat } from '../hooks/useDateFormat';
 import { TradeFormDrawer } from '../components/forms/trade/TradeFormDrawer';
 import {
   fetchDashboardData,
@@ -629,9 +631,10 @@ const SessionModeSettingsButton: React.FC<{ plugin: JournalitPlugin }> = ({
   const registerTarget = useGuideTarget(SESSION_MODE_EDIT_BUTTON_TARGET_ID);
   const emitGuideAction = useGuideAction();
   return (
-    <button
+    <Button
+      variant="secondary"
+      size="small"
       ref={registerTarget}
-      type="button"
       className="journalit-session-mode-edit-button"
       onClick={() => {
         emitGuideAction(SESSION_MODE_SETTINGS_OPENED_ACTION_ID);
@@ -640,7 +643,7 @@ const SessionModeSettingsButton: React.FC<{ plugin: JournalitPlugin }> = ({
     >
       <Edit size={14} aria-hidden="true" />
       <span>{t('button.edit')}</span>
-    </button>
+    </Button>
   );
 };
 
@@ -655,7 +658,7 @@ const SessionModeHeaderDRCButton: React.FC<{
   return (
     <button
       type="button"
-      className="journalit-session-mode-drc-header-button"
+      className="journalit-session-mode-drc-header-button journalit-icon-button"
       onClick={() => void openDRC()}
       aria-label={t('session-mode.ended.action.open-drc')}
     >
@@ -686,14 +689,15 @@ const UnplannedSessionStrip: React.FC<{
         })}
       </span>
     </div>
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      size="small"
       className="journalit-session-mode-unplanned-strip__stop"
       onClick={onStop}
     >
       <Square size={12} aria-hidden="true" />
       <span>{t('session-mode.unplanned.stop')}</span>
-    </button>
+    </Button>
   </div>
 );
 
@@ -820,15 +824,12 @@ const SessionModeDRCLink: React.FC<{
   filePath: string;
   tradingDay: Date;
 }> = ({ plugin, filePath, tradingDay }) => {
+  const dateFormat = useDateFormat();
   const openDRC = async () => {
     await openSessionModeFile(plugin, filePath);
   };
 
-  const label = tradingDay.toLocaleDateString(undefined, {
-    weekday: 'long',
-    month: 'long',
-    day: 'numeric',
-  });
+  const label = formatLocalizedReviewDate(tradingDay, 'full', dateFormat);
 
   return (
     <button
@@ -1440,22 +1441,24 @@ const SessionModeWaitingState: React.FC<{
         })}
       </div>
       <div className="journalit-session-mode-waiting-state__actions">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="small"
           className="journalit-session-mode-waiting-state__action"
           onClick={() => void openDRC()}
         >
           <Calendar size={16} aria-hidden="true" />
           <span>{t('session-mode.waiting.open-drc')}</span>
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="primary"
+          size="small"
           className="journalit-session-mode-waiting-state__action"
           onClick={onStartUnplannedSession}
         >
           <Play size={16} aria-hidden="true" />
           <span>{t('session-mode.unplanned.start')}</span>
-        </button>
+        </Button>
       </div>
     </section>
   );
@@ -1503,22 +1506,24 @@ const SessionModeBreakState: React.FC<{
         {t('session-mode.break.description')}
       </p>
       <div className="journalit-session-mode-break-state__actions">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="small"
           className="journalit-session-mode-break-state__action"
           onClick={() => void openDRC()}
         >
           <Calendar size={16} aria-hidden="true" />
           <span>{t('session-mode.break.open-drc')}</span>
-        </button>
-        <button
-          type="button"
+        </Button>
+        <Button
+          variant="primary"
+          size="small"
           className="journalit-session-mode-break-state__action"
           onClick={onStartUnplannedSession}
         >
           <Play size={16} aria-hidden="true" />
           <span>{t('session-mode.unplanned.start')}</span>
-        </button>
+        </Button>
       </div>
     </section>
   );

@@ -80,6 +80,8 @@ interface ConversionAttribution {
   conversionUsedManualRate?: boolean;
   conversionUsedFetchedRates?: boolean;
   conversionPnlFactor?: number;
+  
+  conversionAmountFactor?: number;
   conversionPartialCurrencies?: string[];
 }
 
@@ -408,6 +410,7 @@ export class ExchangeRateService {
       
       
       let conversionPnlFactor: number | null = null;
+      let conversionAmountFactor: number | null = null;
       const tradePartialCurrencies = new Set<string>();
 
       const finalizeConvertedTrade = <TConverted extends object>(
@@ -421,6 +424,7 @@ export class ExchangeRateService {
           conversionUsedManualRate: usedManualRate ? true : undefined,
           conversionUsedFetchedRates: usedFetchedDailyRates ? true : undefined,
           conversionPnlFactor: conversionPnlFactor ?? undefined,
+          conversionAmountFactor: conversionAmountFactor ?? undefined,
           conversionPartialCurrencies:
             tradePartialCurrencies.size > 0
               ? Array.from(tradePartialCurrencies)
@@ -624,6 +628,7 @@ export class ExchangeRateService {
             : null;
         if (tradeCurrency !== baseCurrency) {
           conversionPnlFactor = impliedBrokerFactor ?? dividendMultiplier;
+          conversionAmountFactor = dividendMultiplier;
         }
         const convertedBreakEvenAccountBalanceFields =
           convertBreakEvenAccountBalanceFields();
@@ -786,6 +791,7 @@ export class ExchangeRateService {
       }
       if (tradeCurrency !== baseCurrency) {
         conversionPnlFactor = 1 / tradeRate;
+        conversionAmountFactor = 1 / tradeRate;
       }
 
       

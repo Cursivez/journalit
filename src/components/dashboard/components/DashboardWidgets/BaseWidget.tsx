@@ -1,6 +1,6 @@
 
 
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { FilterState } from '../../DashboardView';
 import { DashboardData } from '../../utils/dataUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
@@ -8,9 +8,19 @@ import { getUserDateFormat } from '../../../../utils/dateUtils';
 import { t } from '../../../../lang/helpers';
 import { TradeFormDrawer } from '../../../forms/trade/TradeFormDrawer';
 import { EmptyState } from '../../../shared/EmptyState';
-import { useDashboardData } from '../../context/DashboardDataContext';
+import {
+  useDashboardCompareData,
+  useDashboardData,
+} from '../../context/DashboardDataContext';
 import { DashboardWidgetSkeleton } from './DashboardWidgetSkeleton';
 import { useWidgetDataTurn } from './widgetDataTurns';
+import { sameDateRange } from '../../compare/dashboardComparison';
+
+
+export interface WidgetCompare {
+  data: DashboardData;
+  filters: FilterState;
+}
 
 export interface BaseWidgetProps {
   dateFormat?: string; 
@@ -26,7 +36,8 @@ export const BaseWidget: React.FC<
     children: (
       data: DashboardData,
       dateFormat: string,
-      filters: FilterState
+      filters: FilterState,
+      compare: WidgetCompare | null
     ) => React.ReactNode;
   }
 > = ({
@@ -43,8 +54,33 @@ export const BaseWidget: React.FC<
   
   
   
-  const { dashboardSnapshot, error } = useDashboardData();
-  const snapshot = useWidgetDataTurn(dashboardSnapshot);
+  const { dashboardSnapshot, error: dataError } = useDashboardData();
+  
+  
+  
+  const compareSource = useDashboardCompareData();
+  const comparing = compareSource !== null;
+  const compareSnapshot = compareSource?.dashboardSnapshot ?? null;
+  const candidate = useMemo(
+    () =>
+      !comparing
+        ? { snapshot: dashboardSnapshot, compare: null }
+        : !dashboardSnapshot || !compareSnapshot
+          ? null
+          : sameDateRange(dashboardSnapshot.filters, compareSnapshot.filters)
+            ? { snapshot: dashboardSnapshot, compare: compareSnapshot }
+            : undefined,
+    [comparing, compareSnapshot, dashboardSnapshot]
+  );
+  const [latest, setLatest] = useState(candidate ?? null);
+  if (candidate !== undefined && candidate !== latest) setLatest(candidate);
+  const shown = useWidgetDataTurn(latest);
+  const snapshot = shown?.snapshot ?? null;
+  const compare = shown?.compare ?? null;
+  const error = dataError ?? compareSource?.error ?? null;
+  const tradeCount =
+    (snapshot?.data[tradeSource]?.length ?? 0) +
+    (compare?.data[tradeSource]?.length ?? 0);
 
   
   const userDateFormat = dateFormat || getUserDateFormat();
@@ -63,7 +99,7 @@ export const BaseWidget: React.FC<
             {(typeof error === 'string' ? error : error?.message) ||
               t('dashboard.error.load-failed')}
           </div>
-        ) : !snapshot || (snapshot.data[tradeSource]?.length ?? 0) === 0 ? (
+        ) : !snapshot || tradeCount === 0 ? (
           <div className="journalit-dashboard-widget-body">
             <EmptyState
               message={t('widget.empty.no-data')}
@@ -82,16 +118,17 @@ export const BaseWidget: React.FC<
           </div>
         ) : (
           <div className="journalit-dashboard-widget-body">
-            {children(snapshot.data, userDateFormat, snapshot.filters)}
+            {children(snapshot.data, userDateFormat, snapshot.filters, compare)}
           </div>
         )}
       </div>
     ),
     [
       snapshot,
+      compare,
+      tradeCount,
       error,
       skeletonType,
-      tradeSource,
       plugin,
       children,
       userDateFormat,

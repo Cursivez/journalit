@@ -12,6 +12,10 @@ import {
 
 type PluralBaseKey =
   | 'agent-requests.changes'
+  | 'dashboard.compare.low-sample'
+  | 'dashboard.compare.trade-count'
+  | 'dashboard.compare.trades-back'
+  | 'dashboard.compare.sessions-back'
   | 'actions.review.answers'
   | 'actions.review.goals'
   | 'actions.review.checklist'
@@ -71,6 +75,7 @@ type PluralBaseKey =
   | 'quick-import.action.import-count'
   | 'settings.customization.custom-fields.option-count'
   | 'widget.best-worst-days.trade-count'
+  | 'setups.view.trade-count'
   | 'widget.trading-score.weeks-to-unlock'
   | 'widget.trading-score.trades-to-unlock'
   | 'widget.trading-score.trades-logged'
@@ -86,7 +91,11 @@ type PluralBaseKey =
   | 'view.economic-calendar.import-count'
   | 'widget.key-events.event-count'
   | 'trade-handoff.trade-count'
-  | 'trade-handoff.action.view-trades-count';
+  | 'trade-handoff.action.view-trades-count'
+  | 'dashboard.filter.date.recent.label.sessions'
+  | 'dashboard.filter.date.recent.label.trades'
+  | 'dashboard.filter.date.recent.label.days'
+  | 'home.widget.goals-progress.period-label.sessions';
 
 type SupportedLanguageCode =
   | 'en'

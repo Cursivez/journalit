@@ -21,7 +21,10 @@ import type {
 } from './AgentChangeHistory';
 
 
-type BasePlan = Pick<ActionPlan<ActionId>, 'baseContent' | 'baseEntry'> &
+type BasePlan = Pick<
+  ActionPlan<ActionId>,
+  'baseContent' | 'baseEntry' | 'baseRevision' | 'baseItem'
+> &
   CreatedItemPlan;
 
 interface UndoDependencies {
@@ -53,11 +56,19 @@ function preconditionFor(
   const guard = inverse.tradeContent;
   const entryGuard = inverse.entryContent;
   const call = inverse.calls[index];
+  
+  
+  
+  const itemGuard = isRemovalInverse(call.action)
+    ? inverse.itemGuard
+    : undefined;
   const created = isCreatedItemRemoval(call.action)
     ? inverse.createdItems?.[index]
     : undefined;
-  if (!guard && !entryGuard && created === undefined) return undefined;
+  if (!guard && !entryGuard && !itemGuard && created === undefined)
+    return undefined;
   return (plan) => {
+    if (itemGuard && plan.baseItem !== itemGuard.snapshot) return false;
     if (
       guard &&
       (plan.baseContent?.path !== guard.path ||

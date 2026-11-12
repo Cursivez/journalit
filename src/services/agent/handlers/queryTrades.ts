@@ -12,6 +12,8 @@ import {
   type AgentTradeReadRecord,
   type AgentTradeReadService,
 } from '../trades';
+import { isValidTradeRating } from '../../../utils/tradeRating';
+import { TRADE_BIAS_ALIGNMENTS } from '../../marketBias/tradeMarketBias';
 
 type QueryField = QueryTradesRequest['fields'][number];
 type Success = Extract<QueryTradesResult, { status: 'ok' }>;
@@ -79,6 +81,8 @@ const QUERY_FIELDS: readonly QueryField[] = [
   'r_multiple',
   'tags',
   'mistakes',
+  'rating',
+  'market_bias',
   'trade_revision',
 ];
 const TRADE_ID_PATTERN =
@@ -226,6 +230,20 @@ function projectTrade(
       case 'mistakes':
         row.mistakes = normalizedList(record.mistakes);
         break;
+      case 'rating':
+        row.rating = record.rating ?? null;
+        break;
+      case 'market_bias': {
+        const { alignment, bias, fromWeek, daily, weekly } = record.marketBias;
+        row.market_bias = {
+          alignment,
+          bias,
+          from_week: fromWeek,
+          daily,
+          weekly,
+        };
+        break;
+      }
       case 'trade_revision':
         
         
@@ -287,7 +305,28 @@ const NULLABLE_FIELDS: ReadonlySet<QueryField> = new Set([
   'pnl',
   'commission',
   'r_multiple',
+  'rating',
 ]);
+
+const BIAS_ALIGNMENTS: ReadonlySet<unknown> = new Set(TRADE_BIAS_ALIGNMENTS);
+const BIAS_DIRECTIONS: ReadonlySet<unknown> = new Set([
+  'long',
+  'neutral',
+  'short',
+  null,
+]);
+
+function isMarketBiasValue(value: unknown): boolean {
+  return (
+    isPlainObject(value) &&
+    Object.keys(value).length === 5 &&
+    BIAS_ALIGNMENTS.has(value.alignment) &&
+    BIAS_DIRECTIONS.has(value.bias) &&
+    typeof value.from_week === 'boolean' &&
+    BIAS_DIRECTIONS.has(value.daily) &&
+    BIAS_DIRECTIONS.has(value.weekly)
+  );
+}
 
 function isCachedFieldValue(field: QueryField, value: unknown): boolean {
   if (value === null) return NULLABLE_FIELDS.has(field);
@@ -346,6 +385,10 @@ function isCachedFieldValue(field: QueryField, value: unknown): boolean {
     case 'tags':
     case 'mistakes':
       return isStringList(value);
+    case 'rating':
+      return typeof value === 'number' && isValidTradeRating(value);
+    case 'market_bias':
+      return isMarketBiasValue(value);
     case 'trade_revision':
       return (
         typeof value === 'number' && Number.isSafeInteger(value) && value >= 0

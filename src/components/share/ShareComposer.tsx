@@ -11,6 +11,7 @@ import {
   observeShareLoadingContent,
 } from '../../services/share/brandedCapture';
 import { writeClipboardPendingPng } from '../../utils/clipboard';
+import { saveShareImage } from '../../services/share/saveShareImage';
 import { cssVars } from '../../styles/inlineStylePolicy';
 import { Button } from '../ui/Button';
 
@@ -54,7 +55,7 @@ export const ShareComposer: React.FC<{
   allowHideDollarAmounts,
   hideDollarAmountsHint,
 }) => {
-  const [copying, setCopying] = useState(false);
+  const [exporting, setExporting] = useState<'copy' | 'download' | null>(null);
   const canHideDollarAmounts =
     allowHideDollarAmounts ?? Boolean(plugin.settings.trade.displayRMultiples);
   const [hideDollarPreference, setHideDollarAmounts] = useState(
@@ -99,30 +100,40 @@ export const ShareComposer: React.FC<{
       ? Math.min(1, previewWidth / CARD_WIDTH)
       : FALLBACK_PREVIEW_SCALE;
 
-  const copyCard = () => {
+  const exportCard = (action: 'copy' | 'download') => {
     if (
       !frame ||
       !card ||
       !hasContent ||
-      copying ||
+      exporting ||
       cardLoading ||
       hasShareLoadingContent(card)
     )
       return;
-    setCopying(true);
+    setExporting(action);
     const png = captureElementPng(plugin.app, card, frame, CARD_PIXEL_RATIO);
     png.catch((error: unknown) => {
       console.error('[Journalit] Failed to render share card:', error);
     });
-    writeClipboardPendingPng(png)
+    
+    
+    const exported =
+      action === 'copy'
+        ? writeClipboardPendingPng(png)
+        : png.then((blob) =>
+            saveShareImage(plugin.app, card.ownerDocument, blob)
+          );
+    void exported
       .then(() => {
-        new Notice(copiedMessage);
+        if (action === 'copy') new Notice(copiedMessage);
       })
       .catch((error: unknown) => {
-        console.error('[Journalit] Failed to copy share card:', error);
-        new Notice(failedMessage);
+        console.error(`[Journalit] Failed to ${action} share card:`, error);
+        new Notice(
+          action === 'copy' ? failedMessage : t('share.download-failed')
+        );
       })
-      .finally(() => setCopying(false));
+      .finally(() => setExporting(null));
   };
 
   return (
@@ -149,7 +160,7 @@ export const ShareComposer: React.FC<{
           <input
             type="checkbox"
             checked={hideDollarAmounts}
-            disabled={!canHideDollarAmounts || copying}
+            disabled={!canHideDollarAmounts || exporting !== null}
             onChange={() => changeHideDollarAmounts(!hideDollarAmounts)}
           />
           <span className="journalit-review-share-option-text">
@@ -162,15 +173,26 @@ export const ShareComposer: React.FC<{
             </span>
           </span>
         </label>
-        <Button
-          variant="primary"
-          fullWidth
-          onClick={copyCard}
-          loading={copying || (cardLoading && hasContent)}
-          disabled={copying || cardLoading || !hasContent}
-        >
-          {t('share.review.copy')}
-        </Button>
+        <div className="journalit-review-share-export-actions">
+          <Button
+            variant="primary"
+            fullWidth
+            onClick={() => exportCard('copy')}
+            loading={exporting === 'copy' || (cardLoading && hasContent)}
+            disabled={exporting !== null || cardLoading || !hasContent}
+          >
+            {t('share.review.copy')}
+          </Button>
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={() => exportCard('download')}
+            loading={exporting === 'download'}
+            disabled={exporting !== null || cardLoading || !hasContent}
+          >
+            {t('share.download')}
+          </Button>
+        </div>
       </div>
     </div>
   );

@@ -25,7 +25,7 @@ import {
   normalizeAccountLookupKey,
   normalizeTradeAccountIdentity,
 } from '../../../services/trade/core/TradeAccountIdentity';
-import { getTradeDirectionDisplayKind } from '../../../services/trade/core/TradeDirection';
+import { getTradeMarketSide } from '../../../services/trade/core/TradeDirection';
 import { createTickerMatcher } from '../../../utils/tickerMatching';
 import { getTradeBrokerIdentity } from '../../../services/propChallenge/tradeIdentity';
 import { hasUnknownCanonicalPnL } from '../../../services/trade/core/CanonicalProjectionFields';
@@ -68,31 +68,6 @@ function normalizeCustomFieldFilterValue(value: unknown): string | null {
   }
 
   return null;
-}
-
-function normalizeDirectionFilterGroup(
-  direction: unknown
-): 'long' | 'short' | null {
-  if (typeof direction !== 'string') {
-    return null;
-  }
-
-  const normalized = direction.trim().toLowerCase();
-  if (normalized === 'long' || normalized === 'call' || normalized === 'buy') {
-    return 'long';
-  }
-
-  if (normalized === 'short' || normalized === 'put' || normalized === 'sell') {
-    return 'short';
-  }
-
-  return null;
-}
-
-function getTradeDirectionFilterGroup(
-  trade: PartialTradeFrontmatter
-): 'long' | 'short' | null {
-  return normalizeDirectionFilterGroup(getTradeDirectionDisplayKind(trade));
 }
 
 function getTradeCustomFieldRawValue(
@@ -332,7 +307,7 @@ export function applyTradeFilters<T extends object>(
     const selectedDirections = new Set(filters.directions);
 
     filtered = filtered.filter((t) => {
-      const directionGroup = getTradeDirectionFilterGroup(t);
+      const directionGroup = getTradeMarketSide(t);
       return directionGroup !== null && selectedDirections.has(directionGroup);
     });
   }

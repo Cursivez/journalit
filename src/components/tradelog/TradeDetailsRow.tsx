@@ -35,6 +35,10 @@ import {
 } from '../../utils/dateUtils';
 import { Tooltip } from '../shared/Tooltip';
 import {
+  tradeMarketBiasCellLabel,
+  tradeMarketBiasHoverLines,
+} from '../../services/marketBias/tradeMarketBiasLabel';
+import {
   TradeRUnavailableHint,
   WithTradeRUnavailableNote,
 } from '../shared/display/RMultipleUnavailableHint';
@@ -1699,6 +1703,54 @@ const TradeDetailsContent = memo<{
                 )}
               </div>
             );
+
+          case 'marketBias': {
+            const bias = trade.marketBias;
+            const label = bias ? tradeMarketBiasCellLabel(bias) : null;
+            if (!bias || label === null) {
+              return (
+                <div
+                  key="marketBias"
+                  className="journalit-trade-market-bias-cell"
+                >
+                  <span className="trade-no-data">-</span>
+                </div>
+              );
+            }
+            return (
+              <div
+                key="marketBias"
+                className="journalit-trade-market-bias-cell"
+              >
+                <Tooltip
+                  content={
+                    <div className="journalit-trade-bias-tooltip">
+                      {tradeMarketBiasHoverLines(bias).map((line, index) => (
+                        <div
+                          key={line}
+                          className={
+                            index > 0
+                              ? 'journalit-trade-bias-tooltip__note'
+                              : undefined
+                          }
+                        >
+                          {line}
+                        </div>
+                      ))}
+                    </div>
+                  }
+                  delay={0}
+                  preferredPosition="top"
+                >
+                  <span
+                    className={`journalit-trade-bias journalit-trade-bias--${bias.alignment}`}
+                  >
+                    {label}
+                  </span>
+                </Tooltip>
+              </div>
+            );
+          }
 
           case 'positionSize': {
             

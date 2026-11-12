@@ -27,7 +27,7 @@ Local-first trading journal for Obsidian.
   <a href="README.ar.md">العربية</a>
 </p>
 
-[Installation](#installation) · [AI apps (MCP)](#ai-apps-mcp) · [Supported brokers](#supported-brokers) · [Privacy](PRIVACY.md)
+[Installation](#installation) · [MCP](#mcp) · [Supported brokers](#supported-brokers) · [Privacy](PRIVACY.md)
 
 </div>
 
@@ -52,7 +52,7 @@ Community page: https://community.obsidian.md/plugins/journalit
 - **Review system (V2)**: daily → yearly templates with a layout builder.
 - **[Trade Import](https://journalit.co/csv-import)**: backend-powered imports for CSV, spreadsheets, HTML, and broker statements.
 - **[Trade Sync](https://journalit.co/docs/trade-sync)**: automatic trade sync for supported brokers.
-- **[AI apps (MCP)](https://journalit.co/docs/ai-apps)**: connect your AI app to analyse trades, draft reviews and update your journal.
+- **[MCP](https://journalit.co/docs/mcp)**: connect your AI app to analyse trades, draft reviews and update your journal.
 
 ## Screenshots
 
@@ -90,17 +90,17 @@ Community page: https://community.obsidian.md/plugins/journalit
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
-## AI apps (MCP)
+## MCP
 
 Connect Claude, Claude Code, ChatGPT, Codex, Hermes, Grok Bot or another compatible AI app to your journal using MCP (Model Context Protocol). Ask it to analyse your trades, draft a weekly review or update journal fields without copying notes into a chat.
 
-1. Sign in to Journalit in Obsidian. Open **Settings → Journalit → AI apps (MCP)** and turn on **Enable MCP access**.
+1. Sign in to Journalit in Obsidian. Open **Settings → Journalit → MCP** and turn on **Enable MCP access**.
 2. Add `https://api.journalit.co/mcp` as a remote MCP server in your AI app.
 3. Sign in to Journalit when prompted, choose your vault, review the requested permissions and approve the connection.
 
 Keep Obsidian open with Journalit running. Deletions, merges and large changes need your approval by default.
 
-See the **[AI apps setup guide](https://journalit.co/docs/ai-apps)** for client-specific steps, permissions, undo and monthly usage limits.
+See the **[MCP setup guide](https://journalit.co/docs/mcp)** for client-specific steps, permissions, undo and monthly usage limits.
 
 ## Supported brokers
 

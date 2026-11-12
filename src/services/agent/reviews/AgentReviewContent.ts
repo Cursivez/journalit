@@ -1,4 +1,10 @@
+import { normalizeKeyLevelGroups } from '../../reviews/keyLevelGroups';
 import type { AgentReviewPeriod } from './AgentReviewRevision';
+import {
+  normalizeMarketBiasTicker,
+  readMarketBias,
+  type MarketBiasEntry,
+} from '../../reviews/marketBias';
 
 
 
@@ -20,6 +26,11 @@ interface AgentReviewKeyLevel {
 export interface AgentReviewKeyLevels {
   readonly support: readonly AgentReviewKeyLevel[];
   readonly resistance: readonly AgentReviewKeyLevel[];
+}
+
+
+export interface AgentReviewKeyLevelGroup extends AgentReviewKeyLevels {
+  readonly name: string;
 }
 
 
@@ -51,6 +62,10 @@ export interface AgentReviewContentValue {
   readonly goals: readonly AgentReviewGoal[];
   readonly checklist: readonly AgentReviewChecklistItem[];
   readonly keyLevels: AgentReviewKeyLevels;
+  readonly keyLevelGroups: readonly AgentReviewKeyLevelGroup[];
+  
+  readonly keyLevelGroupsRecord: unknown;
+  readonly marketBias: readonly MarketBiasEntry[];
   readonly grades: AgentReviewGrades;
   readonly reviewed: boolean;
   
@@ -64,6 +79,37 @@ export function reviewHasChecklist(period: AgentReviewPeriod): boolean {
 
 export function reviewHasKeyLevels(period: AgentReviewPeriod): boolean {
   return period === 'day' || period === 'week' || period === 'month';
+}
+
+export function reviewHasMarketBias(period: AgentReviewPeriod): boolean {
+  return period === 'day' || period === 'week';
+}
+
+
+export function canonicalMarketBias(
+  entries: ReadonlyArray<{
+    readonly ticker?: string;
+    readonly bias: MarketBiasEntry['bias'];
+  }>
+): MarketBiasEntry[] | null {
+  const seen = new Set<string | undefined>();
+  const result: MarketBiasEntry[] = [];
+  for (const entry of entries) {
+    if (
+      entry.ticker !== undefined &&
+      normalizeMarketBiasTicker(entry.ticker) !== entry.ticker
+    ) {
+      return null;
+    }
+    if (seen.has(entry.ticker)) return null;
+    seen.add(entry.ticker);
+    result.push(
+      entry.ticker === undefined
+        ? { bias: entry.bias }
+        : { ticker: entry.ticker, bias: entry.bias }
+    );
+  }
+  return result;
 }
 
 function goalField(period: AgentReviewPeriod): string {
@@ -255,6 +301,14 @@ export function readAgentReviewContent(
     keyLevels: reviewHasKeyLevels(period)
       ? readKeyLevels(frontmatter)
       : { support: [], resistance: [] },
+    
+    keyLevelGroups: reviewHasKeyLevels(period)
+      ? normalizeKeyLevelGroups(frontmatter.keyLevelGroups)
+      : [],
+    keyLevelGroupsRecord: reviewHasKeyLevels(period)
+      ? structuredClone(frontmatter.keyLevelGroups)
+      : undefined,
+    marketBias: reviewHasMarketBias(period) ? readMarketBias(frontmatter) : [],
     grades: {
       mental: readGrade(frontmatter.mentalGrade),
       technical: readGrade(frontmatter.technicalGrade),

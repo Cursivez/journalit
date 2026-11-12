@@ -152,7 +152,7 @@ export const EntityShortcutPicker: React.FC<EntityShortcutPickerProps> = ({
           </span>
           <button
             type="button"
-            className="journalit-shared-selector-close"
+            className="journalit-shared-selector-close journalit-icon-button"
             aria-label={t('navigation.shortcuts.close')}
             onClick={onClose}
           >

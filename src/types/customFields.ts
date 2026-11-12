@@ -178,6 +178,7 @@ export const RESERVED_FRONTMATTER_KEYS = new Set([
   'backendAccountId',
   'isMissedTrade',
   'isBacktestTrade',
+  'exitReason',
   'filePath',
   'thesis',
   'mtComment',

@@ -30,6 +30,7 @@ import {
   LAYOUT_BUILDER_SELECTED_TEMPLATE_IS_DEFAULT_CONTEXT_KEY,
 } from '../../guides/layoutBuilderGuideIds';
 import { mergeClassNames } from '../../utils/classNames';
+import { Button } from '../ui/Button';
 
 
 type SelectionType = 'template' | 'snippet' | 'library';
@@ -224,7 +225,7 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
           e.stopPropagation();
           void onDuplicate();
         }}
-        className="journalit-native-button template-item-action-button"
+        className="template-item-action-button journalit-icon-button"
       >
         <svg
           width="12"
@@ -245,7 +246,7 @@ const TemplateItem: React.FC<TemplateItemProps> = ({
             e.stopPropagation();
             void onDelete();
           }}
-          className="journalit-native-button template-item-action-button template-item-action-button--danger"
+          className="template-item-action-button template-item-action-button--danger journalit-icon-button"
         >
           <svg
             width="12"
@@ -887,12 +888,14 @@ export const BuilderSidebar: React.FC<BuilderSidebarProps> = (props) => {
           onToggle={() => toggleSection('library')}
         >
           <div className="template-builder-library-wrapper">
-            <button
+            <Button
+              variant="secondary"
+              size="small"
               onClick={() =>
                 void onSelectionChange({ type: 'library', id: 'share' })
               }
               className={mergeClassNames(
-                'journalit-native-button',
+                '',
                 `template-builder-library-button${
                   selection?.type === 'library' ? ' is-selected' : ''
                 }`
@@ -913,7 +916,7 @@ export const BuilderSidebar: React.FC<BuilderSidebarProps> = (props) => {
                 <line x1="15.41" y1="6.51" x2="8.59" y2="10.49" />
               </svg>
               {t('builder.sidebar.share-template')}
-            </button>
+            </Button>
           </div>
         </Section>
       </div>

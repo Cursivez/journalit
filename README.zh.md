@@ -27,7 +27,7 @@
   <a href="README.ar.md">العربية</a>
 </p>
 
-[安装](#installation) · [AI 应用 (MCP)](#ai-apps-mcp) · [支持的经纪商](#supported-brokers) · [隐私](PRIVACY.md)
+[安装](#installation) · [MCP](#mcp) · [支持的经纪商](#supported-brokers) · [隐私](PRIVACY.md)
 
 </div>
 
@@ -54,7 +54,7 @@
 - **复盘系统 (V2)**：从每日到每年的模板，并带有布局构建器。
 - **[Trade Import](https://journalit.co/csv-import)**：由后端驱动，支持 CSV、电子表格、HTML 和经纪商报表导入。
 - **[Trade Sync](https://journalit.co/docs/trade-sync)**：自动同步受支持经纪商的交易。
-- **[AI 应用 (MCP)](https://journalit.co/docs/ai-apps)**: 连接 AI 应用，分析交易、起草复盘并更新交易日志。
+- **[MCP](https://journalit.co/docs/mcp)**: 连接 AI 应用，分析交易、起草复盘并更新交易日志。
 
 <a id="screenshots"></a>
 
@@ -94,19 +94,19 @@
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
-<a id="ai-apps-mcp"></a>
+<a id="mcp"></a>
 
-## AI 应用 (MCP)
+## MCP
 
 通过 MCP（Model Context Protocol）将 Claude、Claude Code、ChatGPT、Codex、Hermes、Grok Bot 或其他兼容的 AI 应用连接到交易日志。无需把笔记复制到聊天窗口，即可让它分析交易、起草每周复盘或更新日志字段。
 
-1. 在 Obsidian 中登录 Journalit。打开 **设置 → Journalit → AI 应用 (MCP)**，勾选 **启用 MCP 访问**。
+1. 在 Obsidian 中登录 Journalit。打开 **设置 → Journalit → MCP**，勾选 **启用 MCP 访问**。
 2. 在 AI 应用中，将 `https://api.journalit.co/mcp` 添加为远程 MCP 服务器。
 3. 按照提示登录 Journalit，选择仓库，检查请求的权限并批准连接。
 
 使用 AI 应用时，请保持 Obsidian 打开且 Journalit 正在运行。默认情况下，删除、合并和大范围更改需要你批准。
 
-各客户端的具体步骤、权限、撤销操作及每月用量限制，请参阅 **[AI 应用设置指南](https://journalit.co/docs/ai-apps)**。
+各客户端的具体步骤、权限、撤销操作及每月用量限制，请参阅 **[AI 应用设置指南](https://journalit.co/docs/mcp)**。
 
 <a id="supported-brokers"></a>
 

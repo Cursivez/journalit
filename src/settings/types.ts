@@ -12,6 +12,7 @@ import {
   TRADING_DAY_CUTOFF_END_OF_DAY_MIGRATION_VERSION,
 } from '../utils/tradingDayUtils';
 import { FilterState } from '../components/dashboard/DashboardView';
+import type { SavedDashboardComparison } from '../components/dashboard/compare/dashboardComparison';
 import { createFilterExclusions } from '../components/shared/filters/filterExclusions';
 import { createFilterMatchModes } from '../components/shared/filters/filterMatchModes';
 import type { TradeLogFilters } from '../services/tradelog/types';
@@ -23,20 +24,29 @@ import type {
 import type { TradeImportDestination } from '../services/tradeImport/types';
 
 export const SETTINGS_TAB_IDS = {
-  GENERAL: 'general',
-  TRADING: 'trading',
-  JOURNAL: 'journal',
-  SYNC: 'sync',
-  ADVANCED: 'advanced',
-  ECONOMIC_CALENDAR: 'economicCalendar',
   
-  REVIEWS: 'reviews',
-  CUSTOMIZATION: 'customization',
-  SESSION_MODE: 'sessionMode',
+  CONNECTIONS: 'connections',
+  ACCOUNTS: 'accounts',
   TRADE_SYNC: 'tradeSync',
   TRADE_IMPORT_SYNC: 'tradeImportSync',
-  ACCOUNTS: 'accounts',
+  ECONOMIC_CALENDAR: 'economicCalendar',
   MCP_ACCESS: 'mcpAccess',
+  JOURNAL: 'journal',
+  REVIEWS: 'reviews',
+  SESSION_MODE: 'sessionMode',
+  CUSTOM_FIELDS: 'customFields',
+  SYMBOLS: 'symbols',
+  SYMBOL_MAPPINGS: 'symbolMappings',
+  TAGS: 'tags',
+  MISTAKES: 'mistakes',
+  EVENTS: 'events',
+  CALCULATIONS: 'calculations',
+  PREFERENCES: 'preferences',
+  CURRENCY_AND_DATES: 'currencyAndDates',
+  APPEARANCE: 'appearance',
+  PRIVACY: 'privacy',
+  NOTIFICATIONS: 'notifications',
+  FILES_AND_BACKUPS: 'filesAndBackups',
 } as const;
 
 export type SettingsTabId =
@@ -90,7 +100,7 @@ import type { SessionModeSettings } from '../types/sessionMode';
 import { DEFAULT_SESSION_MODE_SETTINGS } from '../types/sessionMode';
 import type { UnifiedFilters } from '../components/shared/filters/types';
 
-export type AccentColorSource = 'journalit' | 'obsidian';
+type AccentColorSource = 'journalit' | 'obsidian';
 
 
 interface GeneralSettings {
@@ -489,6 +499,10 @@ interface TradeSettings {
   
   showSeconds?: boolean;
   
+  favoriteAccounts?: string[];
+  
+  favoriteSymbol?: string;
+  
   skipWeekends: boolean;
   
   weekStartDay?: WeekStartDay;
@@ -518,6 +532,8 @@ interface TradeSettings {
   defaultRiskAmount?: number;
   
   displayRMultiples?: boolean;
+  
+  hideDollarAmountsInRMode?: boolean;
   
   includeCopyAccountsInAllAccountsAnalytics?: boolean;
   
@@ -596,6 +612,8 @@ export interface DashboardSettings {
   tagPerformanceViewMode?: PerformanceBreakdownViewMode;
   
   ratingPerformanceMetric?: PerformanceBreakdownMetric;
+  
+  savedComparisons?: SavedDashboardComparison[];
   
   defaultFilters: FilterState;
 }
@@ -683,7 +701,7 @@ export interface SidebarNavItem {
 }
 
 
-export type SidebarTabBehavior = 'newTab' | 'replaceActiveTab';
+type SidebarTabBehavior = 'newTab' | 'replaceActiveTab';
 
 
 interface NavigationSettings {
@@ -898,10 +916,24 @@ export interface EmbeddedNoteConfig {
 }
 
 
-export type GoalType = 'pnl' | 'tradesJournaled' | 'winRate';
+export type GoalType =
+  | 'pnl'
+  | 'tradesJournaled'
+  | 'winRate'
+  | 'profitFactor'
+  | 'expectancy'
+  | 'maxDrawdown';
 
 
-export type GoalPeriod = 'daily' | 'weekly' | 'monthly' | 'lifetime';
+export type GoalPeriod =
+  | 'daily'
+  | 'weekly'
+  | 'monthly'
+  | 'sessions'
+  | 'lifetime';
+
+
+export type GoalDirection = 'atLeast' | 'atMost';
 
 
 export type HomePeriod =
@@ -924,6 +956,10 @@ export interface GoalConfig {
   target: number;
   
   period: GoalPeriod;
+  
+  sessionCount?: number;
+  
+  direction?: GoalDirection;
   
   useRMultiples?: boolean;
   
@@ -1367,6 +1403,7 @@ type StaticTradeLogColumnId =
   | 'tags'
   | 'reviewed'
   | 'tradeRating'
+  | 'marketBias'
   | 'thesis'
   | 'mtComment';
 
@@ -1481,7 +1518,7 @@ export function createDefaultEconomicCalendarSettings(): EconomicCalendarSetting
 export const DEFAULT_ECONOMIC_CALENDAR_SETTINGS: EconomicCalendarSettings =
   createDefaultEconomicCalendarSettings();
 
-export const CURRENT_SETTINGS_SCHEMA_VERSION = 3;
+export const CURRENT_SETTINGS_SCHEMA_VERSION = 4;
 
 
 export interface JournalitSettings {
@@ -1581,39 +1618,39 @@ export const DEFAULT_DASHBOARD_LAYOUT: DashboardSettings['layouts'][string] = {
   ],
   bottomSection: {
     lg: [
+      { i: 'pnlChart', x: 0, y: 0, w: 12, h: 8 },
+      { i: 'performanceCalendar', x: 12, y: 0, w: 12, h: 8 },
+      { i: 'recentTrades', x: 16, y: 8, w: 8, h: 6 },
+      { i: 'longPnLChart', x: 0, y: 8, w: 8, h: 6 },
+      { i: 'shortPnLChart', x: 8, y: 8, w: 8, h: 6 },
+    ],
+    md: [
       { i: 'pnlChart', x: 0, y: 0, w: 6, h: 8 },
       { i: 'performanceCalendar', x: 6, y: 0, w: 6, h: 8 },
-      { i: 'recentTrades', x: 8, y: 8, w: 4, h: 6 },
+      { i: 'recentTrades', x: 0, y: 14, w: 12, h: 4 },
+      { i: 'longPnLChart', x: 0, y: 8, w: 6, h: 6 },
+      { i: 'shortPnLChart', x: 6, y: 8, w: 6, h: 6 },
+    ],
+    sm: [
+      { i: 'pnlChart', x: 0, y: 0, w: 4, h: 8 },
+      { i: 'performanceCalendar', x: 4, y: 0, w: 4, h: 8 },
+      { i: 'recentTrades', x: 0, y: 14, w: 8, h: 4 },
       { i: 'longPnLChart', x: 0, y: 8, w: 4, h: 6 },
       { i: 'shortPnLChart', x: 4, y: 8, w: 4, h: 6 },
     ],
-    md: [
-      { i: 'pnlChart', x: 0, y: 0, w: 3, h: 8 },
-      { i: 'performanceCalendar', x: 3, y: 0, w: 3, h: 8 },
-      { i: 'recentTrades', x: 0, y: 14, w: 6, h: 4 },
-      { i: 'longPnLChart', x: 0, y: 8, w: 3, h: 6 },
-      { i: 'shortPnLChart', x: 3, y: 8, w: 3, h: 6 },
-    ],
-    sm: [
-      { i: 'pnlChart', x: 0, y: 0, w: 2, h: 8 },
-      { i: 'performanceCalendar', x: 2, y: 0, w: 2, h: 8 },
-      { i: 'recentTrades', x: 0, y: 14, w: 4, h: 4 },
-      { i: 'longPnLChart', x: 0, y: 8, w: 2, h: 6 },
-      { i: 'shortPnLChart', x: 2, y: 8, w: 2, h: 6 },
-    ],
     xs: [
+      { i: 'pnlChart', x: 0, y: 0, w: 4, h: 6 },
+      { i: 'performanceCalendar', x: 0, y: 6, w: 4, h: 6 },
+      { i: 'recentTrades', x: 0, y: 12, w: 4, h: 4 },
+      { i: 'longPnLChart', x: 0, y: 16, w: 4, h: 6 },
+      { i: 'shortPnLChart', x: 0, y: 22, w: 4, h: 6 },
+    ],
+    xxs: [
       { i: 'pnlChart', x: 0, y: 0, w: 2, h: 6 },
       { i: 'performanceCalendar', x: 0, y: 6, w: 2, h: 6 },
       { i: 'recentTrades', x: 0, y: 12, w: 2, h: 4 },
       { i: 'longPnLChart', x: 0, y: 16, w: 2, h: 6 },
       { i: 'shortPnLChart', x: 0, y: 22, w: 2, h: 6 },
-    ],
-    xxs: [
-      { i: 'pnlChart', x: 0, y: 0, w: 1, h: 6 },
-      { i: 'performanceCalendar', x: 0, y: 6, w: 1, h: 6 },
-      { i: 'recentTrades', x: 0, y: 12, w: 1, h: 4 },
-      { i: 'longPnLChart', x: 0, y: 16, w: 1, h: 6 },
-      { i: 'shortPnLChart', x: 0, y: 22, w: 1, h: 6 },
     ],
   },
 };
@@ -1640,6 +1677,8 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     dateFormat: 'DDMMYY',
     use24HourTime: false, 
     showSeconds: false,
+    favoriteAccounts: [],
+    favoriteSymbol: '',
     skipWeekends: true,
     weekStartDay: 'monday',
     useDirectPnLInput: false, 
@@ -1656,6 +1695,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
     includeUnrealizedPnLInCalculations: false, 
     defaultRiskAmount: 0,
     displayRMultiples: false,
+    hideDollarAmountsInRMode: false,
     includeCopyAccountsInAllAccountsAnalytics: false,
     analyticsDateBasis: 'entry',
     tradeFormLayout: DEFAULT_TRADE_FORM_LAYOUT_SETTINGS,
@@ -1781,6 +1821,7 @@ export const DEFAULT_SETTINGS: JournalitSettings = {
       reviewStatus: [],
       ratings: [],
       directions: [],
+      marketBias: [],
       customFieldFilters: {},
       exclusions: createFilterExclusions(),
       matchModes: createFilterMatchModes(),

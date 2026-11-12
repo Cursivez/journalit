@@ -14,11 +14,13 @@ import { TradeService } from '../../../services/trade/TradeService';
 import { DashboardData, fetchDashboardData } from '../utils/dataUtils';
 import type { FilterState } from '../DashboardView';
 import { areFilterExclusionsEqual } from '../../shared/filters/filterExclusions';
+import { areRecentPeriodsEqual } from '../../shared/filters/recentPeriod';
 import { areFilterMatchModesEqual } from '../../shared/filters/filterMatchModes';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { t } from '../../../lang/helpers';
 import type JournalitPlugin from '../../../main';
 import type { SettingsChangedPayload } from '../../../services/events/types';
+import { createDashboardFilters } from '../../../settings/viewFiltersDefaults';
 
 
 interface MetricValue {
@@ -33,7 +35,7 @@ interface DashboardSnapshot {
   filters: FilterState;
 }
 
-interface DashboardDataContextValue {
+export interface DashboardDataContextValue {
   
   
   dashboardSnapshot: DashboardSnapshot | null;
@@ -62,14 +64,21 @@ interface DashboardDataState {
   error: Error | null;
 }
 
-interface DashboardDataProviderProps {
+interface DashboardDataSourceOptions {
   app: App;
   tradeService: TradeService;
   filters: FilterState;
-  children: ReactNode;
   defaultRiskAmount?: number; 
   plugin?: JournalitPlugin; 
   isActive?: boolean;
+  
+  enabled?: boolean;
+  
+  authoritativeFirstLoad?: boolean;
+}
+
+interface DashboardDataProviderProps extends DashboardDataSourceOptions {
+  children: ReactNode;
 }
 
 
@@ -83,6 +92,15 @@ export const isDashboardSettingsChange = (
   payload?.section === 'general' ||
   payload?.section === 'copyTradeAdjustments';
 
+
+const withResolvedRecentPeriod = (
+  filters: FilterState,
+  data: DashboardData
+): FilterState =>
+  filters.recentPeriod && data.recentPeriodRange
+    ? { ...filters, dateRange: data.recentPeriodRange }
+    : filters;
+
 export const haveDashboardFiltersChanged = (
   prevFilters: FilterState,
   currentFilters: FilterState
@@ -91,7 +109,11 @@ export const haveDashboardFiltersChanged = (
     prevFilters.dateRange[0]?.getTime() !==
       currentFilters.dateRange[0]?.getTime() ||
     prevFilters.dateRange[1]?.getTime() !==
-      currentFilters.dateRange[1]?.getTime();
+      currentFilters.dateRange[1]?.getTime() ||
+    !areRecentPeriodsEqual(
+      prevFilters.recentPeriod,
+      currentFilters.recentPeriod
+    );
 
   const accountsChanged =
     prevFilters.accounts.length !== currentFilters.accounts.length ||
@@ -140,6 +162,11 @@ export const haveDashboardFiltersChanged = (
     prevFilters.ratings.length !== currentFilters.ratings.length ||
     !prevFilters.ratings.every((rating) => ratingsSet.has(rating));
 
+  const marketBiasSet = new Set(currentFilters.marketBias);
+  const marketBiasChanged =
+    prevFilters.marketBias.length !== currentFilters.marketBias.length ||
+    !prevFilters.marketBias.every((alignment) => marketBiasSet.has(alignment));
+
   const mistakesSet = new Set(currentFilters.mistakes || []);
   const mistakesChanged =
     (prevFilters.mistakes?.length || 0) !==
@@ -176,6 +203,7 @@ export const haveDashboardFiltersChanged = (
     statusesChanged ||
     directionsChanged ||
     ratingsChanged ||
+    marketBiasChanged ||
     mistakesChanged ||
     tagsChanged ||
     customFieldFiltersChanged
@@ -300,21 +328,28 @@ function useDashboardDataInvalidation(
   });
   useEventBus('account:changed', invalidate);
   
+  useEventBus('market-bias:changed', () => {
+    if (filtersRef.current.marketBias.length > 0) invalidate();
+  });
+  
   useEventBus('folder-path:changed', invalidate);
   useEventBus('settings:changed', (payload) => {
     if (isDashboardSettingsChange(payload)) invalidate();
   });
 }
 
-export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
+
+function useDashboardDataSource({
   app,
   tradeService,
   filters,
-  children,
   defaultRiskAmount,
   plugin,
-  isActive = true,
-}) => {
+  isActive: isViewActive = true,
+  enabled = true,
+  authoritativeFirstLoad = true,
+}: DashboardDataSourceOptions): DashboardDataContextValue {
+  const isActive = isViewActive && enabled;
   
   
   const [state, dispatchState] = useReducer(
@@ -355,6 +390,17 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   React.useEffect(() => {
     isActiveRef.current = isActive;
   }, [isActive]);
+
+  
+  
+  const generationRef = useRef(0);
+  React.useEffect(() => {
+    if (enabled) return;
+    generationRef.current += 1;
+    completedFetchRef.current = { hasData: false, timestamp: 0 };
+    pendingInvalidationRef.current = false;
+    dispatchState({ snapshot: null, error: null });
+  }, [enabled]);
 
   
   React.useEffect(() => {
@@ -412,6 +458,10 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
 
           const fetchFilters = filtersRef.current;
           const freshTradeQuery = authoritativeLoadPendingRef.current;
+          const generation = generationRef.current;
+          
+          
+          let discarded = false;
           try {
             const data = await fetchDashboardData(
               app,
@@ -422,27 +472,38 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
               { freshTradeQuery }
             );
             if (freshTradeQuery) authoritativeLoadPendingRef.current = false;
-            completedFetchRef.current = {
-              hasData: true,
-              timestamp: Date.now(),
-            };
-            dispatchState({
-              snapshot: { data, filters: fetchFilters },
-              error: null,
-            });
+            discarded = generation !== generationRef.current;
+            if (!discarded) {
+              completedFetchRef.current = {
+                hasData: true,
+                timestamp: Date.now(),
+              };
+              dispatchState({
+                snapshot: {
+                  data,
+                  filters: withResolvedRecentPeriod(fetchFilters, data),
+                },
+                error: null,
+              });
+            }
           } catch (err) {
             console.error('Error fetching dashboard data:', err);
-            dispatchState({
-              error:
-                err instanceof Error
-                  ? err
-                  : new Error('Failed to fetch dashboard data'),
-            });
+            discarded = generation !== generationRef.current;
+            if (!discarded) {
+              dispatchState({
+                error:
+                  err instanceof Error
+                    ? err
+                    : new Error('Failed to fetch dashboard data'),
+              });
+            }
           } finally {
             fetchingRef.current = false;
           }
 
-          shouldForceRefresh = pendingForceRefreshRef.current;
+          shouldForceRefresh =
+            pendingForceRefreshRef.current ||
+            (discarded && isActiveRef.current);
           pendingForceRefreshRef.current = false;
         } while (shouldForceRefresh);
       })();
@@ -511,14 +572,14 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
     void tradeService.waitForTradeDataReady().then(() => {
       if (cancelled) return;
       dataReadyRef.current = true;
-      authoritativeLoadPendingRef.current = true;
+      authoritativeLoadPendingRef.current = authoritativeFirstLoad;
       void refreshData(true);
     });
 
     return () => {
       cancelled = true;
     };
-  }, [isActive, refreshData, tradeService]);
+  }, [authoritativeFirstLoad, isActive, refreshData, tradeService]);
 
   React.useEffect(() => {
     if (isActive && !wasActiveRef.current && pendingInvalidationRef.current) {
@@ -529,7 +590,7 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
   }, [isActive, refreshData]);
 
   
-  const contextValue = useMemo<DashboardDataContextValue>(
+  return useMemo<DashboardDataContextValue>(
     () => ({
       dashboardSnapshot,
       dashboardData,
@@ -552,13 +613,49 @@ export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
       getWidgetData,
     ]
   );
+}
 
+export const DashboardDataProvider: React.FC<DashboardDataProviderProps> = ({
+  children,
+  ...options
+}) => {
+  const contextValue = useDashboardDataSource(options);
   return (
     <DashboardDataContext.Provider value={contextValue}>
       {children}
     </DashboardDataContext.Provider>
   );
 };
+
+
+const DashboardCompareDataContext =
+  createContext<DashboardDataContextValue | null>(null);
+
+const NOT_COMPARING_FILTERS = createDashboardFilters();
+
+
+export const DashboardCompareDataProvider: React.FC<
+  Omit<DashboardDataProviderProps, 'filters'> & { filters: FilterState | null }
+> = ({ children, filters, ...options }) => {
+  const primaryLoaded = use(DashboardDataContext)?.dashboardSnapshot != null;
+  const contextValue = useDashboardDataSource({
+    ...options,
+    filters: filters ?? NOT_COMPARING_FILTERS,
+    enabled: filters !== null && primaryLoaded,
+    authoritativeFirstLoad: false,
+  });
+  return (
+    <DashboardCompareDataContext.Provider
+      value={filters === null ? null : contextValue}
+    >
+      {children}
+    </DashboardCompareDataContext.Provider>
+  );
+};
+
+
+export const useDashboardCompareData = (): DashboardDataContextValue | null =>
+  use(DashboardCompareDataContext);
 
 
 export const useDashboardData = () => {

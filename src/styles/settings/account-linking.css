@@ -23,11 +23,6 @@
   gap: 10px;
 }
 
-.account-linking-controls select {
-  flex: 1;
-  max-width: 250px;
-}
-
 .account-linking-warning {
   background: var(--background-modifier-warning);
   padding: 12px;

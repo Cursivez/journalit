@@ -38,6 +38,7 @@ import {
   getFallbackSetupRuleGroup,
 } from './setupsViewModel';
 import { JournalitModal } from '../modals/JournalitModal';
+import { DropdownSelect } from '../shared/DropdownSelect';
 
 export const SetupRulesPanel: React.FC<{
   plugin: JournalitPlugin;
@@ -79,7 +80,7 @@ export const SetupRulesPanel: React.FC<{
         </div>
         <button
           type="button"
-          className="journalit-setups-icon-button journalit-setups-detail-action-icon"
+          className="journalit-setups-icon-button journalit-setups-detail-action-icon journalit-icon-button"
           onClick={handleEditRules}
           aria-label={t('setups.view.detail.rules.edit')}
         >
@@ -101,8 +102,9 @@ export const SetupRulesPanel: React.FC<{
             ))}
           </div>
           <div className="journalit-setups-rules-panel__empty-actions">
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="small"
               className="journalit-setups-button journalit-setups-button--primary"
               onClick={() => void handleApplyTemplate()}
               disabled={isApplyingTemplate}
@@ -111,15 +113,16 @@ export const SetupRulesPanel: React.FC<{
               {isApplyingTemplate
                 ? t('setups.view.detail.rules.applying-template')
                 : t('setups.view.detail.rules.use-template')}
-            </button>
-            <button
-              type="button"
+            </Button>
+            <Button
+              variant="secondary"
+              size="small"
               className="journalit-setups-button journalit-setups-button--ghost"
               onClick={handleEditRules}
             >
               <Plus size={15} strokeWidth={1.9} aria-hidden="true" />
               {t('setups.view.detail.rules.add-custom')}
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
@@ -230,14 +233,15 @@ const SetupRuleGroupsEditor: React.FC<{
   <section className="journalit-setups-rules-editor__groups">
     <div className="journalit-setups-rules-editor__section-header">
       <span>{t('setups.view.detail.rules.groups')}</span>
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="small"
         className="journalit-setup-secondary-action-button"
         onClick={onAddGroup}
       >
         <Plus size={14} />
         {t('setups.view.detail.rules.add-group')}
-      </button>
+      </Button>
     </div>
     {ruleGroups.map((group) => (
       <div className="journalit-setups-rules-editor__group-name" key={group.id}>
@@ -249,7 +253,7 @@ const SetupRuleGroupsEditor: React.FC<{
         />
         <button
           type="button"
-          className="journalit-setups-icon-button"
+          className="journalit-setups-icon-button journalit-icon-button"
           onClick={() => onDeleteGroup(group.id)}
           aria-label={`${t('button.delete')} ${group.name}`}
         >
@@ -311,10 +315,17 @@ const SetupRuleEditorRow: React.FC<{
       <div className="journalit-setups-rules-editor-row__meta">
         <label>
           <span>{t('setups.view.detail.rules.field.group')}</span>
-          <select
-            value={rule.groupId ?? getFallbackRuleGroupId(rule.category)}
-            onChange={(event) => {
-              const groupId = event.target.value;
+          <DropdownSelect
+            ariaLabel={t('setups.view.detail.rules.field.group')}
+            value={String(
+              rule.groupId ?? getFallbackRuleGroupId(rule.category)
+            )}
+            options={ruleGroups.map((group) => ({
+              value: group.id,
+              label: group.name,
+            }))}
+            onChange={(nextValue) => {
+              const groupId = nextValue;
               onUpdate(rule.draftId, 'groupId', groupId);
               onUpdate(
                 rule.draftId,
@@ -322,13 +333,7 @@ const SetupRuleEditorRow: React.FC<{
                 getCategoryForRuleGroupId(groupId)
               );
             }}
-          >
-            {ruleGroups.map((group) => (
-              <option key={group.id} value={group.id}>
-                {group.name}
-              </option>
-            ))}
-          </select>
+          />
         </label>
         <label className="journalit-setups-rules-editor-row__required">
           <input
@@ -345,7 +350,7 @@ const SetupRuleEditorRow: React.FC<{
     <div className="journalit-setups-rules-editor-row__actions">
       <button
         type="button"
-        className="journalit-setups-icon-button"
+        className="journalit-setups-icon-button journalit-icon-button"
         onClick={() => onMove(rule.draftId, -1)}
         disabled={isFirst}
         aria-label={t('setups.view.detail.rules.move-up')}
@@ -354,7 +359,7 @@ const SetupRuleEditorRow: React.FC<{
       </button>
       <button
         type="button"
-        className="journalit-setups-icon-button"
+        className="journalit-setups-icon-button journalit-icon-button"
         onClick={() => onMove(rule.draftId, 1)}
         disabled={isLast}
         aria-label={t('setups.view.detail.rules.move-down')}
@@ -363,7 +368,7 @@ const SetupRuleEditorRow: React.FC<{
       </button>
       <button
         type="button"
-        className="journalit-setups-icon-button"
+        className="journalit-setups-icon-button journalit-icon-button"
         onClick={() => onDelete(rule.draftId)}
         aria-label={t('setups.view.detail.rules.delete')}
       >
@@ -542,13 +547,14 @@ const SetupRulesEditor: React.FC<{
         {rules.length === 0 ? (
           <div className="journalit-setups-rules-editor__empty">
             <h3>{t('setups.view.detail.rules.empty-title')}</h3>
-            <button
-              type="button"
+            <Button
+              variant="primary"
+              size="small"
               className="journalit-setups-button journalit-setups-button--primary"
               onClick={handleUseTemplate}
             >
               {t('setups.view.detail.rules.use-template')}
-            </button>
+            </Button>
           </div>
         ) : (
           rules.map((rule, index) => {
@@ -576,14 +582,15 @@ const SetupRulesEditor: React.FC<{
       </div>
 
       <footer className="journalit-setups-rules-editor__footer">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="small"
           className="journalit-setup-secondary-action-button"
           onClick={handleAddRule}
         >
           <Plus size={14} />
           {t('setups.view.detail.rules.add')}
-        </button>
+        </Button>
         <div className="journalit-modal-actions">
           <Button
             variant="secondary"

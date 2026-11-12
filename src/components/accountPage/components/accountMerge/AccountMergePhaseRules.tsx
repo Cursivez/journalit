@@ -65,6 +65,7 @@ export const AccountMergePhaseRules: React.FC<Props> = ({
           ariaLabel={t('account.prop-challenge.add-rule')}
           placeholder={t('account.prop-challenge.add-rule')}
           className="journalit-prop-challenge-add-rule-menu"
+          variant="button"
           leadingContent={<Plus size={15} aria-hidden="true" />}
           triggerRef={addRuleTriggerRef}
         />

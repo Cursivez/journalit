@@ -212,7 +212,6 @@ export const DRC_STYLES = `
     color: var(--color-error, #e53935);
   }
 
-  .drc-trade-table select,
   .drc-trade-table input {
     width: 100%;
     padding: 6px 10px;
@@ -539,7 +538,6 @@ export const DRC_STYLES = `
   }
 
   
-  .drc-container select,
   .drc-container input,
   .drc-container textarea {
     box-sizing: border-box !important;

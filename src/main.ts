@@ -1,6 +1,6 @@
 
 
-import { Plugin, Notice, TFile, requireApiVersion } from 'obsidian';
+import { Plugin, Notice, TFile } from 'obsidian';
 import { t } from './lang/helpers';
 import { JournalitModal } from './components/modals/JournalitModal';
 import { JournalitSettingsTab } from './settings';
@@ -41,6 +41,7 @@ import { AccountMergeService } from './services/accountMerge';
 import { BackendIntegrationService } from './services/backend';
 import { BackendHttpClient } from './services/backend/BackendHttpClient';
 import { SubscriptionTierService } from './services/backend/SubscriptionTierService';
+import { paymentRecoveryStore } from './services/backend/paymentRecoveryBanner';
 import { ensureAuthReady } from './services/backend/TokenManager';
 import { TradeProjectionSyncService } from './services/tradeSync/TradeProjectionSyncService';
 import { TradeSyncCoordinator } from './services/tradeSync/TradeSyncCoordinator';
@@ -339,6 +340,16 @@ export default class JournalitPlugin extends Plugin {
     
     
     
+    this.registerDomEvent(window, 'focus', () => {
+      if (paymentRecoveryStore.claimFocusRefresh(this, Date.now())) {
+        void new SubscriptionTierService(this).refreshTier(
+          'payment recovery focus'
+        );
+      }
+    });
+    
+    
+    
     void ensureAuthReady(this)
       .then((readiness) => {
         if (
@@ -447,42 +458,22 @@ export default class JournalitPlugin extends Plugin {
 
   
   openSettings(): void {
-    if (requireApiVersion('1.13.0')) {
-      this.app.setting?.clearPageStack?.();
-    }
+    this.openSettingsTabById(this.manifest.id);
+  }
+
+  
+  openSettingsTabById(tabId: string): void {
+    this.app.setting?.clearPageStack?.();
 
     this.app.setting?.open();
-    this.app.setting?.openTabById(this.manifest.id);
+    this.app.setting?.openTabById(tabId);
   }
 
   
   openSettingsToTab(tabId: SettingsTabId): void {
-    if (requireApiVersion('1.13.0')) {
-      this.app.setting?.open();
-      this.app.setting?.openTabById(this.manifest.id);
-      this.settingsTab?.openNativeSettingsPage(tabId);
-      return;
-    }
-
-    
-    if (this.settingsTab) {
-      this.settingsTab.setInitialTab(tabId);
-    }
-
-    
     this.app.setting?.open();
     this.app.setting?.openTabById(this.manifest.id);
-    if (this.settingsTab) {
-      this.settingsTab.setInitialTab(tabId);
-      this.settingsTab.renderInitialTab();
-    }
-    window.setTimeout(() => {
-      window.dispatchEvent(
-        new CustomEvent('journalit:open-settings-tab', {
-          detail: { tabId },
-        })
-      );
-    }, 0);
+    this.settingsTab?.openNativeSettingsPage(tabId);
   }
 
   

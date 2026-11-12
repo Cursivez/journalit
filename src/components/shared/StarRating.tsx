@@ -62,8 +62,9 @@ export const StarRating: React.FC<StarRatingProps> = ({
   };
 
   
+  
   const shownValue =
-    hoveredStar === null ? currentValue : (getClickValue(hoveredStar) ?? 0);
+    (hoveredStar === null ? null : getClickValue(hoveredStar)) ?? currentValue;
 
   const rootClassName = mergeClassNames(
     'journalit-star-rating',

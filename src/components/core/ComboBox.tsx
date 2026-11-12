@@ -3,7 +3,7 @@ import { createPortal } from 'react-dom';
 import { t } from '../../lang/helpers';
 import { shareCaptureExcludeProps } from '../../services/share/brandedCapture';
 import { cssVars } from '../../styles/inlineStylePolicy';
-import { Check, ChevronDown, Plus, X } from '../shared/icons/ObsidianIcon';
+import { ChevronDown, Plus, Star, X } from '../shared/icons/ObsidianIcon';
 import { anchoredMenuPortalRoot } from '../shared/menus/useAnchoredMenuPosition';
 import { useComboBox, type ComboBoxProps } from './combobox/useComboBox';
 import type { ComboBoxItem } from './combobox/comboBoxOptions';
@@ -12,21 +12,59 @@ type ComboBoxModel = ReturnType<typeof useComboBox>;
 
 const preventFocusLoss = (event: React.MouseEvent) => event.preventDefault();
 
+type ComboBoxFavorites = NonNullable<ComboBoxProps['favorites']>;
+
+function FavoriteStar({
+  value,
+  favorite,
+  className,
+}: {
+  value: string;
+  favorite: ComboBoxFavorites;
+  className?: string;
+}) {
+  const isFavorite = favorite.values.includes(value);
+  return (
+    <button
+      type="button"
+      className={`journalit-combobox-favorite${isFavorite ? ' is-favorite' : ''}${className ? ` ${className}` : ''}`}
+      aria-label={isFavorite ? favorite.removeLabel : favorite.setLabel}
+      onMouseDown={preventFocusLoss}
+      onClick={(event) => {
+        event.stopPropagation();
+        favorite.onToggle(value);
+      }}
+      {...shareCaptureExcludeProps}
+    >
+      <Star size={13} aria-hidden="true" />
+    </button>
+  );
+}
+
 function ComboBoxChips({
   values,
   disabled,
   getOptionLabel,
   remove,
+  favorite,
 }: {
   values: readonly string[];
   disabled: boolean;
   getOptionLabel: (value: string) => string;
   remove: (value: string) => void;
+  favorite?: ComboBoxFavorites;
 }) {
   return (
     <>
       {values.map((value) => (
         <span key={value} className="selected-item">
+          {favorite && (
+            <FavoriteStar
+              value={value}
+              favorite={favorite}
+              className="journalit-combobox-favorite--chip"
+            />
+          )}
           <span className="journalit-combobox-chip-label">
             {getOptionLabel(value)}
           </span>
@@ -52,28 +90,20 @@ function ComboBoxChips({
   );
 }
 
-function ComboBoxOptionIcon({
-  item,
-  selected,
-}: {
-  item: ComboBoxItem;
-  selected: ReadonlySet<string>;
-}) {
-  if (item.kind === 'create') return <Plus size={14} />;
-  return selected.has(item.value) ? <Check size={14} /> : null;
-}
-
 function ComboBoxOption({
   item,
   index,
   model,
+  favorite,
 }: {
   item: ComboBoxItem;
   index: number;
   model: ComboBoxModel;
+  favorite?: ComboBoxFavorites;
 }) {
   const { listId, activeIndex, highlight, inputRef, select, selected } = model;
   const isCreate = item.kind === 'create';
+  const isSelected = !isCreate && selected.has(item.value);
   return (
     <li
       id={`${listId}-${index}`}
@@ -92,14 +122,28 @@ function ComboBoxOption({
         select(item);
       }}
     >
-      <span className="journalit-combobox-option-icon" aria-hidden="true">
-        <ComboBoxOptionIcon item={item} selected={selected} />
-      </span>
-      <span>
+      {isCreate && (
+        <span className="journalit-combobox-option-icon" aria-hidden="true">
+          <Plus size={14} />
+        </span>
+      )}
+      <span className="journalit-combobox-option-label">
         {isCreate
           ? t('combobox.add-option', { value: item.value })
           : item.label}
       </span>
+      {!isCreate && favorite && (
+        <FavoriteStar value={item.value} favorite={favorite} />
+      )}
+      {!isCreate && (
+        
+        <span
+          className={`journalit-dropdown-select__check${isSelected ? ' is-checked' : ''}`}
+          aria-hidden="true"
+        >
+          {isSelected ? '✓' : ''}
+        </span>
+      )}
     </li>
   );
 }
@@ -108,10 +152,12 @@ function ComboBoxListbox({
   model,
   ariaLabel,
   portalDropdown,
+  favorite,
 }: {
   model: ComboBoxModel;
   ariaLabel: string;
   portalDropdown: boolean;
+  favorite?: ComboBoxFavorites;
 }) {
   const { popupRef, listId, position, items } = model;
   return (
@@ -141,6 +187,7 @@ function ComboBoxListbox({
             item={item}
             index={index}
             model={model}
+            favorite={favorite}
           />
         ))
       )}
@@ -226,7 +273,10 @@ export function ComboBox(props: ComboBoxProps) {
     disabled = false,
     required = false,
     portalDropdown = true,
-    placeholder = t('combobox.placeholder.default'),
+    allowCreate = false,
+    placeholder = allowCreate
+      ? t('combobox.placeholder.creatable')
+      : t('combobox.placeholder.default'),
   } = props;
   const model = useComboBox(props);
   const {
@@ -242,6 +292,7 @@ export function ComboBox(props: ComboBoxProps) {
     openList,
     remove,
     onKeyDown,
+    keyShortcuts,
     changeQuery,
     toggleList,
   } = model;
@@ -252,6 +303,7 @@ export function ComboBox(props: ComboBoxProps) {
       model={model}
       ariaLabel={label || placeholder}
       portalDropdown={portalDropdown}
+      favorite={props.favorites}
     />
   ) : null;
 
@@ -282,6 +334,7 @@ export function ComboBox(props: ComboBoxProps) {
           disabled={disabled}
           getOptionLabel={getOptionLabel}
           remove={remove}
+          favorite={props.favorites}
         />
         <input
           ref={inputRef}
@@ -298,6 +351,7 @@ export function ComboBox(props: ComboBoxProps) {
           aria-expanded={isOpen}
           aria-autocomplete="list"
           aria-haspopup="listbox"
+          aria-keyshortcuts={keyShortcuts}
           aria-controls={isOpen ? listId : undefined}
           aria-activedescendant={activeId}
           aria-invalid={Boolean(error)}

@@ -1,4 +1,5 @@
 import React from 'react';
+import type { MenuDisclosureMenuProps } from '../../hooks/useMenuDisclosure';
 
 export interface DropdownMenuOption<T extends string> {
   value: T;
@@ -10,6 +11,8 @@ interface DropdownMenuProps<T extends string> {
   value: T;
   onChange: (value: T) => void;
   className?: string;
+  
+  menuProps?: MenuDisclosureMenuProps;
 }
 
 export function DropdownMenu<T extends string>({
@@ -17,9 +20,11 @@ export function DropdownMenu<T extends string>({
   value,
   onChange,
   className = '',
+  menuProps,
 }: DropdownMenuProps<T>) {
   return (
     <div
+      {...menuProps}
       className={['journalit-home-period-menu', className]
         .filter(Boolean)
         .join(' ')}
@@ -37,14 +42,14 @@ export function DropdownMenu<T extends string>({
           role="menuitemradio"
           type="button"
         >
+          <span className="journalit-home-period-option__label">
+            {option.label}
+          </span>
           <span
             className="journalit-home-period-option__check"
             aria-hidden="true"
           >
             {value === option.value ? '✓' : ''}
-          </span>
-          <span className="journalit-home-period-option__label">
-            {option.label}
           </span>
         </button>
       ))}

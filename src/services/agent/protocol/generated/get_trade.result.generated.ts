@@ -19,16 +19,65 @@ exit_time?: (string | null)
 pnl?: number
 
 missed_reason?: string
+option?: OptionContract
+
+exchange?: string
+
+dollar_per_point?: number
+
+tick_size?: number
+
+tick_value?: number
+
+lot_size?: number
+
+pip_value?: number
+
+pip_size?: number
+
+contract_size?: number
+
+leverage_ratio?: number
+
+exit_reason?: string
 }
 execution?: {
 volume?: number
 entry_price?: number
 exit_price?: number
 commission?: number
+
+commission_type?: ("fixed" | "percentage")
 fees?: number
 swap?: number
+rebate?: number
+
+dividends?: Dividend[]
+
+currency?: string
+
+fx_rate?: number
+fx_rate_base_currency?: string
+
+forex_conversion?: {
+
+rate: number
+quote_currency: string
+base_currency: string
+date?: string
+source: ("automatic" | "manual")
+}
 
 direct_pnl?: number
+
+ideal_exits?: IdealExit[]
+
+mae?: number
+
+mfe?: number
+mae_price?: number
+mfe_price?: number
+unrealized_price_snapshot?: UnrealizedPriceSnapshot
 
 entries?: ExecutionLeg[]
 
@@ -59,6 +108,8 @@ thesis: (string | null)
 
 thesis_truncated: boolean
 reviewed: boolean
+
+rating?: ((0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5) | null)
 }
 notes?: string
 
@@ -69,6 +120,10 @@ field_id: string
 
 value: (string | number | string[])
 }[]
+
+media_links?: {
+url: string
+}[]
 }
 
 notes_truncated?: boolean
@@ -78,6 +133,31 @@ contract_version: "1.0.0"
 contract_digest: string
 cached: boolean
 row_count?: number
+}
+
+export interface OptionContract {
+type: ("call" | "put")
+strike: number
+expiration: string
+
+contract_size?: number
+}
+
+export interface Dividend {
+time: string
+amount: number
+}
+
+export interface IdealExit {
+price: number
+time?: string
+size?: number
+}
+
+export interface UnrealizedPriceSnapshot {
+price: number
+
+time?: string
 }
 export interface ExecutionLeg {
 time: string

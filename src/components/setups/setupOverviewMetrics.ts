@@ -1,16 +1,25 @@
 import type { TranslationKey } from '../../lang/helpers';
-import type { MetricKey, SetupPairMetricKey } from './setupsViewTypes';
+import type {
+  MetricKey,
+  SetupOverviewMetricKey,
+  SetupPairMetricKey,
+} from './setupsViewTypes';
 
-interface SetupOverviewMetricOption {
-  key: MetricKey;
+interface MetricOptionDisplay {
   labelKey: TranslationKey;
   displayKind: 'count' | 'pnl' | 'percentage' | 'metric' | 'rMultiple';
+  
+  precision?: number;
+  
+  neutralTone?: boolean;
 }
 
-interface SetupPairMetricOption {
+interface SetupOverviewMetricOption extends MetricOptionDisplay {
+  key: MetricKey;
+}
+
+interface SetupPairMetricOption extends MetricOptionDisplay {
   key: SetupPairMetricKey;
-  labelKey: TranslationKey;
-  displayKind: 'count' | 'pnl' | 'percentage' | 'metric' | 'rMultiple';
 }
 
 export const METRIC_OPTIONS: SetupOverviewMetricOption[] = [
@@ -53,11 +62,21 @@ export const METRIC_OPTIONS: SetupOverviewMetricOption[] = [
     key: 'winRate',
     labelKey: 'setups.view.metric.win-rate',
     displayKind: 'percentage',
+    neutralTone: true,
   },
   {
     key: 'totalTrades',
     labelKey: 'setups.view.metric.trade-count',
     displayKind: 'count',
+    precision: 0,
+    neutralTone: true,
+  },
+  {
+    key: 'shareOfTrades',
+    labelKey: 'setups.view.metric.share-of-trades',
+    displayKind: 'percentage',
+    precision: 1,
+    neutralTone: true,
   },
 ];
 
@@ -86,11 +105,14 @@ export const SETUP_PAIR_METRIC_OPTIONS: SetupPairMetricOption[] = [
     key: 'winRate',
     labelKey: 'setups.view.metric.win-rate',
     displayKind: 'percentage',
+    neutralTone: true,
   },
   {
     key: 'totalTrades',
     labelKey: 'setups.view.metric.trade-count',
     displayKind: 'count',
+    precision: 0,
+    neutralTone: true,
   },
   {
     key: 'edgeR',
@@ -112,3 +134,10 @@ export const PAIR_R_METRIC_KEYS = new Set<SetupPairMetricKey>([
 ]);
 
 export const SETUP_PAIR_MIN_TRADES = 5;
+
+
+export const ALL_OUTCOMES_ONLY_METRIC_KEYS: ReadonlySet<SetupOverviewMetricKey> =
+  new Set<SetupOverviewMetricKey>(['winRate', 'profitFactor']);
+
+
+export const OUTCOME_SCOPE_FALLBACK_METRIC_KEY: MetricKey = 'shareOfTrades';

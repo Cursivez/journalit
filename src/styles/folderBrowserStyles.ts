@@ -44,22 +44,11 @@ export const folderBrowserCSS = `
   position: relative;
   z-index: 1;
   width: 100%;
-  padding: 8px 12px;
   padding-right: 30px;
-  border: 1px solid var(--background-modifier-border, #ddd);
-  border-radius: 4px;
-  background-color: var(--background-primary, #fff);
   color: var(--text-normal, #333);
-  font-size: 14px;
   transition: border-color 0.15s ease;
 }
 
-
-.journalit-folder-browser-input:focus {
-  border-color: var(--interactive-accent, #5183e4);
-  box-shadow: 0 0 0 2px rgba(83, 141, 226, 0.3);
-  outline: none;
-}
 
 
 .journalit-folder-browser-dropdown {

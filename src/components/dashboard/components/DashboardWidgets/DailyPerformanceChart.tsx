@@ -23,6 +23,14 @@ import {
   CurrencyConversionInfo,
 } from '../../../shared/display/CurrencyConversionInfo';
 import { openCanonicalReviewIfAllowed } from '../../../../utils/reviewNavigation';
+import type { Trade } from '../../utils/dataUtils';
+import type JournalitPlugin from '../../../../main';
+import {
+  CompareBarsWidget,
+  tradeCountNote,
+} from '../../compare/CompareBarsWidget';
+import { widgetCurrency } from '../../compare/CompareCurveWidget';
+import { DropdownSelect } from '../../../shared/DropdownSelect';
 
 
 const DAILY_PERIODS = [10, 20, 30, 50] as const;
@@ -40,6 +48,123 @@ const parseDailyPeriod = (value: number): DailyPeriod | null => {
   }
 };
 
+interface DailyTotal {
+  pnl: number;
+  trades: number;
+  rMultiple: number;
+  
+  rComplete: boolean;
+}
+
+type DailyTotals = Record<string, DailyTotal>;
+
+
+const openDailyReviewNote = (plugin: JournalitPlugin, day: string): void => {
+  const date = parseLocalDateSafe(day);
+  if (!date) return;
+  void openCanonicalReviewIfAllowed({
+    plugin,
+    autoCreate: plugin.settings.drc.autoCreateDRCOnNavigation ?? true,
+    getService: () => plugin.serviceManager.getDRCService(),
+    getPath: (service) => service.getDRCNotePath(date),
+    open: (service) => service.openDRC(date),
+  });
+};
+
+
+const aggregateDailyTotals = (
+  trades: Trade[],
+  plugin: JournalitPlugin | null
+): DailyTotals => {
+  
+  const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
+  const analyticsDateBasis =
+    plugin?.settings?.trade?.analyticsDateBasis ?? 'entry';
+
+  
+  const tradesByDate: DailyTotals = {};
+  const tradeIdsByDate: { [date: string]: Set<string> } = {};
+
+  
+  trades.forEach((trade) => {
+    if (!isPnlContributingTrade(trade)) return;
+    
+    const tradeDate = getTradeAnalyticsTradingDay(
+      trade,
+      analyticsDateBasis,
+      plugin
+    );
+    const realizedEvents = getTradeRealizedPnlEvents(
+      trade,
+      analyticsDateBasis,
+      plugin
+    );
+    if (!tradeDate && realizedEvents.length === 0) {
+      return;
+    }
+
+    const pnlEvents = realizedEvents.length
+      ? realizedEvents
+      : tradeDate
+        ? [
+            {
+              tradingDay: tradeDate,
+              pnl: getEffectivePnL(trade),
+            },
+          ]
+        : [];
+    const useStoredRMultiple = pnlEvents.length === 1;
+
+    for (const event of pnlEvents) {
+      const eventDate = event.tradingDay;
+      if (
+        (trade._analyticsRangeStart &&
+          eventDate < trade._analyticsRangeStart) ||
+        (trade._analyticsRangeEnd && eventDate > trade._analyticsRangeEnd)
+      ) {
+        continue;
+      }
+
+      const year = eventDate.getFullYear();
+      const month = String(eventDate.getMonth() + 1).padStart(2, '0');
+      const day = String(eventDate.getDate()).padStart(2, '0');
+      const dateKey = `${year}-${month}-${day}`;
+
+      if (!tradesByDate[dateKey]) {
+        tradesByDate[dateKey] = {
+          pnl: 0,
+          trades: 0,
+          rMultiple: 0,
+          rComplete: true,
+        };
+        tradeIdsByDate[dateKey] = new Set<string>();
+      }
+
+      tradesByDate[dateKey].pnl += event.pnl;
+      const tradeKey = trade.tradeId ?? trade.path ?? trade.instrument;
+      if (tradeKey && !tradeIdsByDate[dateKey].has(tradeKey)) {
+        tradeIdsByDate[dateKey].add(tradeKey);
+        tradesByDate[dateKey].trades += 1;
+      }
+
+      const effectiveRMultiple = calculateEffectiveRMultiple(
+        event.pnl,
+        useStoredRMultiple ? trade.rMultiple : undefined,
+        trade.riskAmount,
+        defaultRiskAmount
+      );
+
+      if (effectiveRMultiple !== undefined && !isNaN(effectiveRMultiple)) {
+        tradesByDate[dateKey].rMultiple += effectiveRMultiple;
+      } else {
+        tradesByDate[dateKey].rComplete = false;
+      }
+    }
+  });
+
+  return tradesByDate;
+};
+
 
 export const DailyPerformanceChart = React.memo<BaseWidgetProps>(
   ({ dateFormat }) => {
@@ -48,91 +173,101 @@ export const DailyPerformanceChart = React.memo<BaseWidgetProps>(
 
     return (
       <BaseWidget dateFormat={dateFormat} skeletonType="bar-chart">
-        {(data, userDateFormat) => {
-          
-          const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
-          const analyticsDateBasis =
-            plugin?.settings?.trade?.analyticsDateBasis ?? 'entry';
+        {(data, userDateFormat, filters, compare) => {
+          const tradesByDate = aggregateDailyTotals(data.trades, plugin);
+          const openDailyReview = (day: string) => {
+            if (plugin) openDailyReviewNote(plugin, day);
+          };
+          const header = (
+            <>
+              <div className="journalit-dashboard-daily-performance-chart__header">
+                <div className="journalit-dashboard-daily-performance-chart__title">
+                  {t('dashboard.widgets.daily-performance.title')}
+                  <CurrencyConversionInfo
+                    metadata={buildCurrencyConversionMetadata(data.metrics)}
+                    trades={data.trades}
+                  />
+                </div>
+                <div className="journalit-dashboard-daily-performance-chart__selector">
+                  <DropdownSelect
+                    variant="button"
+                    menuWidth="content"
+                    showOptionTooltips={false}
+                    ariaLabel={t(
+                      'dashboard.widgets.daily-performance.period-aria'
+                    )}
+                    value={String(selectedPeriod)}
+                    options={DAILY_PERIODS.map((period) => ({
+                      value: String(period),
+                      label: t(
+                        'dashboard.widgets.daily-performance.period-days',
+                        {
+                          count: period.toString(),
+                        }
+                      ),
+                    }))}
+                    onChange={(nextValue) => {
+                      const period = parseDailyPeriod(Number(nextValue));
+                      if (period) {
+                        setSelectedPeriod(period);
+                      }
+                    }}
+                  />
+                </div>
+              </div>
+            </>
+          );
 
-          
-          const tradesByDate: {
-            [date: string]: { pnl: number; trades: number; rMultiple: number };
-          } = {};
-          const tradeIdsByDate: { [date: string]: Set<string> } = {};
-
-          
-          data.trades.forEach((trade) => {
-            if (!isPnlContributingTrade(trade)) return;
+          if (compare) {
+            const compareByDate = aggregateDailyTotals(
+              compare.data.trades,
+              plugin
+            );
+            const days = Array.from(
+              new Set([
+                ...Object.keys(tradesByDate),
+                ...Object.keys(compareByDate),
+              ])
+            )
+              .sort()
+              .slice(-selectedPeriod);
             
-            const tradeDate = getTradeAnalyticsTradingDay(
-              trade,
-              analyticsDateBasis,
-              plugin
-            );
-            const realizedEvents = getTradeRealizedPnlEvents(
-              trade,
-              analyticsDateBasis,
-              plugin
-            );
-            if (!tradeDate && realizedEvents.length === 0) {
-              return;
-            }
-
-            const pnlEvents = realizedEvents.length
-              ? realizedEvents
-              : tradeDate
-                ? [
-                    {
-                      tradingDay: tradeDate,
-                      pnl: getEffectivePnL(trade),
-                    },
-                  ]
-                : [];
-            const useStoredRMultiple = pnlEvents.length === 1;
-
-            for (const event of pnlEvents) {
-              const eventDate = event.tradingDay;
-              if (
-                (trade._analyticsRangeStart &&
-                  eventDate < trade._analyticsRangeStart) ||
-                (trade._analyticsRangeEnd &&
-                  eventDate > trade._analyticsRangeEnd)
-              ) {
-                continue;
-              }
-
-              const year = eventDate.getFullYear();
-              const month = String(eventDate.getMonth() + 1).padStart(2, '0');
-              const day = String(eventDate.getDate()).padStart(2, '0');
-              const dateKey = `${year}-${month}-${day}`;
-
-              if (!tradesByDate[dateKey]) {
-                tradesByDate[dateKey] = { pnl: 0, trades: 0, rMultiple: 0 };
-                tradeIdsByDate[dateKey] = new Set<string>();
-              }
-
-              tradesByDate[dateKey].pnl += event.pnl;
-              const tradeKey = trade.tradeId ?? trade.path ?? trade.instrument;
-              if (tradeKey && !tradeIdsByDate[dateKey].has(tradeKey)) {
-                tradeIdsByDate[dateKey].add(tradeKey);
-                tradesByDate[dateKey].trades += 1;
-              }
-
-              const effectiveRMultiple = calculateEffectiveRMultiple(
-                event.pnl,
-                useStoredRMultiple ? trade.rMultiple : undefined,
-                trade.riskAmount,
-                defaultRiskAmount
+            const inR =
+              Boolean(plugin?.settings?.trade?.displayRMultiples) &&
+              days.every(
+                (day) =>
+                  (tradesByDate[day]?.rComplete ?? true) &&
+                  (compareByDate[day]?.rComplete ?? true)
               );
-
-              if (
-                effectiveRMultiple !== undefined &&
-                !isNaN(effectiveRMultiple)
-              ) {
-                tradesByDate[dateKey].rMultiple += effectiveRMultiple;
-              }
-            }
-          });
+            const dayValue = (total: DailyTotal | undefined) =>
+              total ? (inR ? total.rMultiple : total.pnl) : null;
+            return (
+              <div className="journalit-dashboard-daily-performance-chart">
+                {header}
+                <div className="journalit-dashboard-daily-performance-chart__body">
+                  <CompareBarsWidget
+                    rows={days.map((day) => ({
+                      key: day,
+                      label: formatDateDisplay(
+                        parseLocalDateSafe(day) ?? new Date(day),
+                        userDateFormat
+                      ),
+                      a: dayValue(tradesByDate[day]),
+                      b: dayValue(compareByDate[day]),
+                      aNote: tradeCountNote(tradesByDate[day]?.trades),
+                      bNote: tradeCountNote(compareByDate[day]?.trades),
+                    }))}
+                    kind={inR ? 'rMultiple' : 'pnl'}
+                    currencyCode={widgetCurrency(data)}
+                    aFilters={filters}
+                    bFilters={compare.filters}
+                    ariaLabel={t('dashboard.widgets.daily-performance.title')}
+                    onCategoryClick={plugin ? openDailyReview : undefined}
+                  />
+                </div>
+              </div>
+            );
+          }
 
           
           const allChartData = Object.entries(tradesByDate).map(
@@ -171,39 +306,7 @@ export const DailyPerformanceChart = React.memo<BaseWidgetProps>(
           
           return (
             <div className="journalit-dashboard-daily-performance-chart">
-              
-              <div className="journalit-dashboard-daily-performance-chart__header">
-                <div className="journalit-dashboard-daily-performance-chart__title">
-                  {t('dashboard.widgets.daily-performance.title')}
-                  <CurrencyConversionInfo
-                    metadata={buildCurrencyConversionMetadata(data.metrics)}
-                    trades={data.trades}
-                  />
-                </div>
-                <div className="journalit-dashboard-daily-performance-chart__selector">
-                  <select
-                    aria-label={t(
-                      'dashboard.widgets.daily-performance.period-aria'
-                    )}
-                    value={selectedPeriod}
-                    onChange={(e) => {
-                      const period = parseDailyPeriod(Number(e.target.value));
-                      if (period) {
-                        setSelectedPeriod(period);
-                      }
-                    }}
-                    className="journalit-dashboard-daily-performance-chart__select"
-                  >
-                    {DAILY_PERIODS.map((period) => (
-                      <option key={period} value={period}>
-                        {t('dashboard.widgets.daily-performance.period-days', {
-                          count: period.toString(),
-                        })}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              {header}
 
               
               <div className="journalit-dashboard-daily-performance-chart__body">
@@ -218,20 +321,9 @@ export const DailyPerformanceChart = React.memo<BaseWidgetProps>(
                               date: point.date,
                             }),
                           onPointClick: (point) => {
-                            if (!point.originalDate) return;
-                            const date = parseLocalDateSafe(point.originalDate);
-                            if (!date) return;
-                            void openCanonicalReviewIfAllowed({
-                              plugin,
-                              autoCreate:
-                                plugin.settings.drc.autoCreateDRCOnNavigation ??
-                                true,
-                              getService: () =>
-                                plugin.serviceManager.getDRCService(),
-                              getPath: (service) =>
-                                service.getDRCNotePath(date),
-                              open: (service) => service.openDRC(date),
-                            });
+                            if (point.originalDate) {
+                              openDailyReview(point.originalDate);
+                            }
                           },
                         }
                       : undefined

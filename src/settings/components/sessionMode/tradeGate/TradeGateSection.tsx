@@ -38,6 +38,7 @@ import {
   type TradeGateEditContext,
   type TradeGateQuestionEdit,
 } from './tradeGateEditorUtils';
+import { DropdownSelect } from '../../../../components/shared/DropdownSelect';
 
 interface TradeGateSectionProps {
   app: App;
@@ -541,24 +542,29 @@ function TradeGateWorkflowEditor({
               <span className="setting-item-description">
                 {t('settings.session-mode.trade-gate.start-node')}
               </span>
-              <select
+              <DropdownSelect
+                ariaLabel={t('settings.session-mode.trade-gate.start-node')}
                 value={workflow.startNodeId}
-                onChange={(event) =>
-                  void updateWorkflow({ startNodeId: event.target.value })
+                options={[
+                  ...(workflow.startNodeId === ''
+                    ? [
+                        {
+                          value: '',
+                          label: t(
+                            'settings.session-mode.trade-gate.not-wired'
+                          ),
+                        },
+                      ]
+                    : []),
+                  ...startChoices.map((choice) => ({
+                    value: choice.nodeId,
+                    label: choice.title,
+                  })),
+                ]}
+                onChange={(nextValue) =>
+                  void updateWorkflow({ startNodeId: nextValue })
                 }
-                className="dropdown journalit-settings-input"
-              >
-                {workflow.startNodeId === '' && (
-                  <option value="">
-                    {t('settings.session-mode.trade-gate.not-wired')}
-                  </option>
-                )}
-                {startChoices.map((choice) => (
-                  <option key={choice.nodeId} value={choice.nodeId}>
-                    {choice.title}
-                  </option>
-                ))}
-              </select>
+              />
             </label>
           </div>
 

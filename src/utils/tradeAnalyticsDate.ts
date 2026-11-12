@@ -252,6 +252,21 @@ export function getTradeAnalyticsTradingDay(
 }
 
 
+export function getTradeFirstRealizedTradingDay(
+  trade: AnalyticsDateTradeLike,
+  basis: AnalyticsDateBasis,
+  plugin: Parameters<typeof getTradeAnalyticsTradingDay>[2]
+): Date | null {
+  if (basis === 'entry')
+    return getTradeAnalyticsTradingDay(trade, basis, plugin);
+  let first: Date | null = null;
+  for (const event of getTradeRealizedPnlEvents(trade, basis, plugin)) {
+    if (!first || event.tradingDay < first) first = event.tradingDay;
+  }
+  return first ?? getTradeAnalyticsTradingDay(trade, basis, plugin);
+}
+
+
 export function getMissedTradeTradingDay(
   trade: AnalyticsDateTradeLike,
   basis: AnalyticsDateBasis,

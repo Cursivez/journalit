@@ -27,7 +27,7 @@ Journal de trading local-first pour Obsidian.
   <a href="README.ar.md">العربية</a>
 </p>
 
-[Installation](#installation) · [Apps d'IA (MCP)](#ai-apps-mcp) · [Courtiers pris en charge](#supported-brokers) · [Confidentialité](PRIVACY.md)
+[Installation](#installation) · [MCP](#mcp) · [Courtiers pris en charge](#supported-brokers) · [Confidentialité](PRIVACY.md)
 
 </div>
 
@@ -54,7 +54,7 @@ Page communautaire: https://community.obsidian.md/plugins/journalit
 - **Système de revue (V2)** : modèles quotidiens → annuels avec constructeur de mise en page.
 - **[Trade Import](https://journalit.co/csv-import)** : imports alimentés par le backend pour CSV, feuilles de calcul, HTML et relevés de courtiers.
 - **[Trade Sync](https://journalit.co/docs/trade-sync)** : synchronisation automatique des trades pour les courtiers pris en charge.
-- **[Apps d'IA (MCP)](https://journalit.co/docs/ai-apps)**: connectez votre app d’IA pour analyser vos trades, préparer des bilans et mettre à jour votre journal.
+- **[MCP](https://journalit.co/docs/mcp)**: connectez votre app d’IA pour analyser vos trades, préparer des bilans et mettre à jour votre journal.
 
 <a id="screenshots"></a>
 
@@ -94,19 +94,19 @@ Page communautaire: https://community.obsidian.md/plugins/journalit
 
 ![Trade Import](https://raw.githubusercontent.com/Cursivez/journalit/main/assets/readme/trade-import.png)
 
-<a id="ai-apps-mcp"></a>
+<a id="mcp"></a>
 
-## Apps d'IA (MCP)
+## MCP
 
 Connectez Claude, Claude Code, ChatGPT, Codex, Hermes, Grok Bot ou une autre app compatible à votre journal via MCP (Model Context Protocol). Demandez-lui d’analyser vos trades, de préparer un bilan hebdomadaire ou de modifier les champs du journal sans copier vos notes dans une conversation.
 
-1. Connectez-vous à Journalit dans Obsidian. Ouvrez **Paramètres → Journalit → Apps d'IA (MCP)** et activez **Activer l'accès MCP**.
+1. Connectez-vous à Journalit dans Obsidian. Ouvrez **Paramètres → Journalit → MCP** et activez **Activer l'accès MCP**.
 2. Ajoutez `https://api.journalit.co/mcp` comme serveur MCP distant dans votre app d’IA.
 3. Connectez-vous à Journalit lorsque cela vous est demandé, choisissez votre coffre, vérifiez les autorisations demandées et approuvez la connexion.
 
 Gardez Obsidian ouvert avec Journalit en cours d’exécution. Par défaut, les suppressions, les fusions et les modifications de grande ampleur nécessitent votre approbation.
 
-Consultez le **[guide de configuration des apps d’IA](https://journalit.co/docs/ai-apps)** pour les étapes propres à chaque client, les autorisations, l’annulation des modifications et les limites mensuelles.
+Consultez le **[guide de configuration des apps d’IA](https://journalit.co/docs/mcp)** pour les étapes propres à chaque client, les autorisations, l’annulation des modifications et les limites mensuelles.
 
 <a id="supported-brokers"></a>
 

@@ -12,6 +12,47 @@ import { mapTradesToDisplayPnL } from '../../../../utils/pnlUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
 import { resolveDrawdownCapitalBasis } from '../../../../utils/drawdownAnalytics';
+import type { FilterState } from '../../DashboardView';
+import type { DashboardData } from '../../utils/dataUtils';
+import type JournalitPlugin from '../../../../main';
+import {
+  CompareCurveWidget,
+  drawdownCurves,
+} from '../../compare/CompareCurveWidget';
+
+
+const directionalDrawdownState = (
+  data: DashboardData,
+  filters: FilterState,
+  dateFormat: string,
+  direction: 'long' | 'short',
+  plugin: JournalitPlugin | null
+) => {
+  const tradesWithDisplayPnL = mapTradesToDisplayPnL(data.trades, false);
+  const currencyOverride = data.metrics.isMultiCurrency
+    ? data.metrics.conversionBaseCurrency
+    : undefined;
+  const drawdownCapitalBasis =
+    data.drawdownCapitalBasis ??
+    resolveDrawdownCapitalBasis(
+      tradesWithDisplayPnL,
+      plugin?.settings?.account?.accountMetadata,
+      {
+        filters,
+        displayCurrency:
+          currencyOverride ?? plugin?.settings?.general?.currency,
+      }
+    );
+  return prepareDrawdownChartState(
+    tradesWithDisplayPnL,
+    dateFormat,
+    plugin?.settings?.trade?.defaultRiskAmount,
+    direction,
+    plugin,
+    undefined,
+    drawdownCapitalBasis
+  );
+};
 
 interface DirectionalDrawdownChartProps extends BaseWidgetProps {
   showLong?: boolean;
@@ -33,18 +74,71 @@ const DirectionalDrawdownChartComponent: React.FC<
 
   return (
     <BaseWidget dateFormat={dateFormat}>
-      {(data, userDateFormat, filters) => {
+      {(data, userDateFormat, filters, compare) => {
         const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
         const applyAccountCountMultiplier = false;
 
         if (
-          data.metrics.isMultiCurrency &&
-          !data.metrics.conversionBaseCurrency
+          (data.metrics.isMultiCurrency &&
+            !data.metrics.conversionBaseCurrency) ||
+          (compare?.data.metrics.isMultiCurrency &&
+            !compare.data.metrics.conversionBaseCurrency)
         ) {
           return (
             <div className="journalit-dashboard-directional-chart-empty">
               {t('widget.drawdownStats.no-conversion')}
             </div>
+          );
+        }
+
+        
+        
+        const compareDirection =
+          showLong && !showShort
+            ? 'long'
+            : !showLong && showShort
+              ? 'short'
+              : null;
+        if (compare && compareDirection) {
+          const aChart = directionalDrawdownState(
+            data,
+            filters,
+            userDateFormat,
+            compareDirection,
+            plugin
+          );
+          const bChart = directionalDrawdownState(
+            compare.data,
+            compare.filters,
+            userDateFormat,
+            compareDirection,
+            plugin
+          );
+          if (aChart.totalClosedTrades + bChart.totalClosedTrades === 0) {
+            return (
+              <div className="journalit-dashboard-directional-chart-empty">
+                {t(
+                  compareDirection === 'long'
+                    ? 'widget.directional-drawdown.empty.no-long'
+                    : 'widget.directional-drawdown.empty.no-short'
+                )}
+              </div>
+            );
+          }
+          return (
+            <CompareCurveWidget
+              curves={drawdownCurves(
+                aChart.totalClosedTrades > 0 ? aChart.data : [],
+                bChart.totalClosedTrades > 0 ? bChart.data : [],
+                plugin?.settings?.trade?.displayRMultiples ?? false
+              )}
+              measure="drawdown"
+              aData={data}
+              aFilters={filters}
+              bFilters={compare.filters}
+              dateFormat={userDateFormat}
+              ariaLabel={singleDirectionTitle ?? ''}
+            />
           );
         }
 

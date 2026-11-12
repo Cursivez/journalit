@@ -4,6 +4,7 @@ import type { AccountTradeData } from '../accountPage/types';
 import { getTradingDayString } from '../../utils/tradingDayUtils';
 import type {
   PropChallengeConfig,
+  PropChallengeDrawdownFloorAdjustment,
   PropChallengePhase,
   PropChallengePolicyRevision,
   PropChallengeRule,
@@ -15,7 +16,11 @@ import {
   resolvePhaseProfitTarget,
 } from './PropChallengeConfig';
 import { normalizeLiveBalanceAdjustment } from '../account/liveBalanceAdjustment';
-import { isDisputedRule, isExecutableRule } from './PropChallengeRuleReview';
+import {
+  isAuthoritativeDrawdown,
+  isDisputedRule,
+  isExecutableRule,
+} from './PropChallengeRuleReview';
 
 
 const PROP_CHALLENGE_WARNING_THRESHOLD = 0.8;
@@ -59,6 +64,10 @@ interface DrawdownRuleEvaluation extends RuleEvaluationBase {
   currentUsed: number;
   
   currentBufferWarning: boolean;
+  
+  floorLocked: boolean;
+  
+  firmFloorRecordedAt?: Date;
 }
 
 interface DailyLossUsage {
@@ -251,6 +260,8 @@ type ScopedEvent = {
   payoutAftermath?: NonNullable<
     PropChallengePhase['payoutPolicy']
   >['afterPayout'];
+  
+  drawdownFloor?: { ruleId: string; floor: number };
 };
 
 type ScopedTrade = {
@@ -353,6 +364,8 @@ function scopeInput(
   evaluatedAt: Date
 ): {
   events: ScopedEvent[];
+  
+  drawdownEvents: ScopedEvent[];
   closedTrades: ScopedTrade[];
   positionTrades: ScopedTrade[];
 } {
@@ -440,7 +453,29 @@ function scopeInput(
     )
     .sort((left, right) => left.closedAt.getTime() - right.closedAt.getTime());
 
-  return { events, closedTrades, positionTrades };
+  
+  
+  
+  const floorEvents: ScopedEvent[] = [];
+  for (const adjustment of input.phase.drawdownFloorAdjustments ?? []) {
+    const date = new Date(adjustment.recordedAt);
+    if (date.getTime() > end) continue;
+    floorEvents.push({
+      date,
+      amount: 0,
+      isTrade: false,
+      isPayout: false,
+      advancesTrailingPeak: false,
+      drawdownFloor: { ruleId: adjustment.ruleId, floor: adjustment.floor },
+    });
+  }
+  const drawdownEvents = floorEvents.length
+    ? [...events, ...floorEvents].sort(
+        (left, right) => left.date.getTime() - right.date.getTime()
+      )
+    : events;
+
+  return { events, drawdownEvents, closedTrades, positionTrades };
 }
 
 
@@ -471,7 +506,9 @@ function evaluateDrawdown(
   cutoffTime?: string,
   revision?: PropChallengePolicyRevision,
   
-  endedUnderFloorBefore?: boolean
+  endedUnderFloorBefore?: boolean,
+  
+  floorTrace?: Map<ScopedEvent, number>
 ): DrawdownRuleEvaluation {
   let balance = phase.startingBalance;
   let floor = phase.startingBalance - rule.amount;
@@ -483,6 +520,7 @@ function evaluateDrawdown(
   
   let insideWaivedBreach = false;
   let trailingFloorLocked = false;
+  let firmFloorRecordedAt: Date | undefined;
   const carriedRevision = revision
     ? (latestCustomTransition(phase, revision.effectiveAt, rule.id) ?? revision)
     : undefined;
@@ -521,6 +559,22 @@ function evaluateDrawdown(
   }
 
   const inspectPoint = (event: ScopedEvent) => {
+    if (event.drawdownFloor) {
+      
+      
+      if (event.drawdownFloor.ruleId !== rule.id || rule.mode === 'static')
+        return;
+      
+      
+      
+      
+      
+      
+      if (event.drawdownFloor.floor < floor) trailingFloorLocked = false;
+      floor = event.drawdownFloor.floor;
+      highestBalance = floor + rule.amount;
+      firmFloorRecordedAt = event.date;
+    }
     const payoutAftermath = event.payoutAftermath;
     balance =
       payoutAftermath?.balanceAction === 'reset_to_starting_balance'
@@ -531,16 +585,19 @@ function evaluateDrawdown(
       if (floor < phase.startingBalance) {
         floor = phase.startingBalance;
         trailingFloorLocked = true;
+        firmFloorRecordedAt = undefined;
       }
     } else if (payoutAftermath?.drawdownAction === 'lock_at_balance') {
       floor = payoutAftermath.drawdownFloor ?? phase.startingBalance;
       trailingFloorLocked = true;
+      firmFloorRecordedAt = undefined;
     } else if (
       payoutAftermath?.drawdownAction === 'reset_from_starting_balance'
     ) {
       floor = phase.startingBalance - rule.amount;
       highestBalance = phase.startingBalance;
       trailingFloorLocked = false;
+      firmFloorRecordedAt = undefined;
     }
     const buffer = balance - floor;
     lowestBuffer = Math.min(lowestBuffer, buffer);
@@ -562,6 +619,7 @@ function evaluateDrawdown(
         tradingDayKey(events[index].date, cutoffTime) === day
       ) {
         inspectPoint(events[index]);
+        floorTrace?.set(events[index], floor);
         index += 1;
       }
       if (!trailingFloorLocked) {
@@ -573,6 +631,7 @@ function evaluateDrawdown(
             rule.lockAtBalance
           )
         );
+        floorTrace?.set(events[index - 1], floor);
       }
     }
   } else {
@@ -592,6 +651,7 @@ function evaluateDrawdown(
           )
         );
       }
+      floorTrace?.set(event, floor);
     }
   }
 
@@ -620,6 +680,11 @@ function evaluateDrawdown(
     limit: rule.amount,
     currentUsed,
     currentBufferWarning: currentProgress >= PROP_CHALLENGE_WARNING_THRESHOLD,
+    floorLocked:
+      rule.mode === 'static' ||
+      trailingFloorLocked ||
+      (rule.lockAtBalance !== undefined && floor >= rule.lockAtBalance),
+    ...(firmFloorRecordedAt ? { firmFloorRecordedAt } : {}),
   };
 }
 
@@ -1233,7 +1298,7 @@ function evaluateSinglePolicy(
   
   
   const evaluatedAt = input.now ?? new Date();
-  const { events, closedTrades, positionTrades } = scopeInput(
+  const { events, drawdownEvents, closedTrades, positionTrades } = scopeInput(
     input,
     evaluatedAt
   );
@@ -1266,7 +1331,7 @@ function evaluateSinglePolicy(
       evaluateDrawdown(
         rule,
         input.phase,
-        events,
+        drawdownEvents,
         input.tradingDayCutoffTime,
         revision,
         endedUnderFloor ? endedUnderFloor.has(rule.id) : undefined
@@ -1439,28 +1504,104 @@ export function propChallengePhaseBalancesAfter(
   input: PropChallengeRuleEngineInput
 ): ReadonlyMap<AccountTransaction, number> {
   const balances = new Map<AccountTransaction, number>();
-  for (const event of propChallengePhaseBalanceTimeline(input)) {
-    if (event.transaction) balances.set(event.transaction, event.balance);
+  let balance = input.phase.startingBalance;
+  for (const event of scopeInput(input, input.now ?? new Date()).events) {
+    balance += event.amount;
+    if (event.source) balances.set(event.source, balance);
   }
   return balances;
+}
+
+export interface PropChallengeBalanceTimelinePoint {
+  date: Date;
+  balance: number;
+  
+  transaction?: AccountTransaction;
+  
+  firmFloor?: true;
+  
+  drawdownFloor?: number;
+}
+
+
+function shownDrawdownRule(
+  rules: readonly PropChallengeRule[]
+): Extract<PropChallengeRule, { kind: 'drawdown' }> | undefined {
+  return rules.find(
+    (rule): rule is Extract<PropChallengeRule, { kind: 'drawdown' }> =>
+      rule.enabled && isAuthoritativeDrawdown(rule) && rule.amount > 0
+  );
 }
 
 
 export function propChallengePhaseBalanceTimeline(
   input: PropChallengeRuleEngineInput
-) {
-  const { events } = scopeInput(input, input.now ?? new Date());
+): {
+  openingDrawdownFloor?: number;
+  points: PropChallengeBalanceTimelinePoint[];
+} {
+  const { drawdownEvents } = scopeInput(input, input.now ?? new Date());
+  const history = input.phase.policyHistory;
+  const intervals = history?.length
+    ? history.map((revision, index) => ({
+        revision,
+        rules: revision.rules,
+        endsAt: history[index + 1]
+          ? Date.parse(history[index + 1].effectiveAt)
+          : Number.POSITIVE_INFINITY,
+      }))
+    : [
+        {
+          revision: undefined,
+          rules: input.phase.rules,
+          endsAt: Number.POSITIVE_INFINITY,
+        },
+      ];
+  const floors = new Map<ScopedEvent, number>();
+  let openingDrawdownFloor: number | undefined;
+  for (const [index, interval] of intervals.entries()) {
+    const rule = shownDrawdownRule(interval.rules);
+    if (!rule) continue;
+    const trace = new Map<ScopedEvent, number>();
+    evaluateDrawdown(
+      rule,
+      input.phase,
+      drawdownEvents.filter((event) => event.date.getTime() < interval.endsAt),
+      input.tradingDayCutoffTime,
+      interval.revision,
+      undefined,
+      trace
+    );
+    if (index === 0) {
+      openingDrawdownFloor = evaluateDrawdown(
+        rule,
+        input.phase,
+        [],
+        input.tradingDayCutoffTime,
+        interval.revision
+      ).currentFloor;
+    }
+    const startsAt = interval.revision
+      ? Date.parse(interval.revision.effectiveAt)
+      : Number.NEGATIVE_INFINITY;
+    for (const [event, floor] of trace) {
+      const at = event.date.getTime();
+      if (at >= startsAt && at < interval.endsAt) floors.set(event, floor);
+    }
+  }
   let balance = input.phase.startingBalance;
-  return events.map((event) => {
+  const points = drawdownEvents.map((event) => {
     balance += event.amount;
+    const drawdownFloor = floors.get(event);
     return {
       date: event.date,
       balance,
-      transaction: event.source,
-      advancesTrailingPeak: event.advancesTrailingPeak,
-      payoutAftermath: event.payoutAftermath,
+      ...(event.source ? { transaction: event.source } : {}),
+      ...(event.drawdownFloor ? { firmFloor: true as const } : {}),
+      ...(drawdownFloor !== undefined ? { drawdownFloor } : {}),
     };
   });
+  return { openingDrawdownFloor, points };
 }
 
 export class InactivePropChallengeBalanceError extends Error {
@@ -1503,6 +1644,84 @@ export function calibratePropChallengeBalance(
   if (adjustments.length) phase.balanceAdjustments = adjustments;
   else delete phase.balanceAdjustments;
   return phase;
+}
+
+function latestFloorIndex(
+  adjustments: readonly PropChallengeDrawdownFloorAdjustment[],
+  ruleId: string
+): number {
+  for (let index = adjustments.length - 1; index >= 0; index -= 1) {
+    if (adjustments[index].ruleId === ruleId) return index;
+  }
+  return -1;
+}
+
+export type TrailingDrawdownRule = Extract<
+  PropChallengeRule,
+  { kind: 'drawdown' }
+> & {
+  mode: 'eod_trailing' | 'intraday_trailing';
+};
+
+
+export function trailingDrawdownForFirmFloor(
+  phase: PropChallengePhase,
+  now: Date
+): TrailingDrawdownRule | undefined {
+  return policyAt(phase, now).rules.find(
+    (rule): rule is TrailingDrawdownRule =>
+      rule.enabled &&
+      isAuthoritativeDrawdown(rule) &&
+      rule.mode !== 'static' &&
+      rule.amount > 0
+  );
+}
+
+
+export function latestPropChallengeDrawdownFloor(
+  phase: PropChallengePhase,
+  ruleId: string
+): PropChallengeDrawdownFloorAdjustment | undefined {
+  const adjustments = phase.drawdownFloorAdjustments ?? [];
+  return adjustments[latestFloorIndex(adjustments, ruleId)];
+}
+
+
+export function setPropChallengeDrawdownFloor(
+  input: PropChallengeRuleEngineInput,
+  ruleId: string,
+  floor: number
+): PropChallengePhase {
+  if (input.phase.status !== 'active')
+    throw new InactivePropChallengeBalanceError();
+  const now = input.now ?? new Date();
+  const adjustments = [...(input.phase.drawdownFloorAdjustments ?? [])];
+  const lastIndex = latestFloorIndex(adjustments, ruleId);
+  const last = adjustments[lastIndex];
+  if (
+    last &&
+    !scopeInput(input, now).events.some(
+      (event) => event.date.getTime() >= Date.parse(last.recordedAt)
+    )
+  )
+    adjustments.splice(lastIndex, 1);
+  adjustments.push({ ruleId, floor, recordedAt: now.toISOString() });
+  return { ...input.phase, drawdownFloorAdjustments: adjustments };
+}
+
+
+export function removeLatestPropChallengeDrawdownFloor(
+  phase: PropChallengePhase,
+  ruleId: string
+): PropChallengePhase {
+  const adjustments = [...(phase.drawdownFloorAdjustments ?? [])];
+  const lastIndex = latestFloorIndex(adjustments, ruleId);
+  if (lastIndex === -1) return phase;
+  adjustments.splice(lastIndex, 1);
+  const next = { ...phase };
+  if (adjustments.length) next.drawdownFloorAdjustments = adjustments;
+  else delete next.drawdownFloorAdjustments;
+  return next;
 }
 
 export function evaluatePropChallengePhase(

@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from 'react';
+import React, { useId, useState } from 'react';
 import { generateUUID } from '../../utils/uuid';
 import { t } from '../../lang/helpers';
 import { SegmentedControl } from '../shared/SegmentedControl';
@@ -6,7 +6,6 @@ import { Tooltip } from '../shared/Tooltip';
 import {
   ArrowDown,
   ArrowUp,
-  ChevronDown,
   Info,
   Trash2,
   X,
@@ -21,6 +20,8 @@ import {
   type TradeReviewQuestionConfigKey,
   type TradeReviewWidgetConfig,
 } from '../reviewV2/widgets/tradeReviewConfig';
+import { DropdownSelect } from '../shared/DropdownSelect';
+import { Button } from '../ui/Button';
 
 interface TradeReviewQuestionEditorProps {
   config: TradeReviewWidgetConfig;
@@ -52,174 +53,6 @@ const getOutcomeOptions = (): Array<{
     label: t('templateEditor.widget.trade-review.outcome.open'),
   },
 ];
-
-interface QuestionEditorDropdownProps {
-  ariaLabel: string;
-  options: Array<{ value: string; label: string }>;
-  value: string;
-  onChange: (value: string) => void;
-  className?: string;
-}
-
-const QuestionEditorDropdown: React.FC<QuestionEditorDropdownProps> = ({
-  ariaLabel,
-  options,
-  value,
-  onChange,
-  className = '',
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const wrapperRef = useRef<HTMLDivElement | null>(null);
-  const triggerRef = useRef<HTMLButtonElement | null>(null);
-  const optionRefs = useRef<Array<HTMLButtonElement | null>>([]);
-  const menuId = useId();
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const handlePointerDown = (event: MouseEvent) => {
-      const ActiveDocumentNode = activeDocument.defaultView?.Node;
-      if (
-        ActiveDocumentNode &&
-        event.target instanceof ActiveDocumentNode &&
-        wrapperRef.current?.contains(event.target)
-      ) {
-        return;
-      }
-      setIsOpen(false);
-    };
-    const listenerDocument = window.activeDocument;
-    listenerDocument.addEventListener('mousedown', handlePointerDown);
-    return () =>
-      listenerDocument.removeEventListener('mousedown', handlePointerDown);
-  }, [isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-    const selectedIndex = options.findIndex((option) => option.value === value);
-    optionRefs.current[selectedIndex >= 0 ? selectedIndex : 0]?.focus();
-  }, [isOpen, options, value]);
-
-  const closeMenu = (): void => {
-    setIsOpen(false);
-    triggerRef.current?.focus();
-  };
-
-  const handleMenuKeyDown = (event: React.KeyboardEvent): void => {
-    const currentIndex = optionRefs.current.findIndex(
-      (option) => option === activeDocument.activeElement
-    );
-    let nextIndex: number | undefined;
-    switch (event.key) {
-      case 'ArrowDown':
-        nextIndex = (currentIndex + 1) % options.length;
-        break;
-      case 'ArrowUp':
-        nextIndex = (currentIndex - 1 + options.length) % options.length;
-        break;
-      case 'Home':
-        nextIndex = 0;
-        break;
-      case 'End':
-        nextIndex = options.length - 1;
-        break;
-      case 'Escape':
-        event.preventDefault();
-        closeMenu();
-        return;
-      case 'Tab':
-        setIsOpen(false);
-        return;
-      default:
-        return;
-    }
-    event.preventDefault();
-    optionRefs.current[nextIndex]?.focus();
-  };
-
-  const selectedOption = options.find((option) => option.value === value);
-
-  return (
-    <div
-      ref={wrapperRef}
-      className={`journalit-home-trade-type-filter template-trade-review-dropdown ${className}`}
-    >
-      <button
-        ref={triggerRef}
-        type="button"
-        aria-label={ariaLabel}
-        aria-expanded={isOpen}
-        aria-haspopup="menu"
-        aria-controls={isOpen ? menuId : undefined}
-        className="journalit-home-trade-type-filter__trigger clickable-icon template-trade-review-dropdown-trigger"
-        onClick={() => setIsOpen((current) => !current)}
-        onKeyDown={(event) => {
-          if (
-            !isOpen &&
-            ['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(event.key)
-          ) {
-            event.preventDefault();
-            setIsOpen(true);
-          } else if (isOpen && event.key === 'Escape') {
-            event.preventDefault();
-            closeMenu();
-          }
-        }}
-      >
-        <span className="journalit-home-trade-type-filter__summary template-trade-review-dropdown-value">
-          {selectedOption?.label ?? value}
-        </span>
-        <ChevronDown
-          size={12}
-          aria-hidden="true"
-          className={
-            isOpen
-              ? 'journalit-home-trade-type-filter__chevron journalit-home-trade-type-filter__chevron--open'
-              : 'journalit-home-trade-type-filter__chevron'
-          }
-        />
-      </button>
-      {isOpen ? (
-        <div
-          id={menuId}
-          className="journalit-home-trade-type-filter__menu template-trade-review-dropdown-menu"
-          role="menu"
-          onKeyDown={handleMenuKeyDown}
-        >
-          {options.map((option, index) => {
-            const selected = option.value === value;
-            return (
-              <button
-                ref={(element) => {
-                  optionRefs.current[index] = element;
-                }}
-                key={option.value}
-                type="button"
-                role="menuitemradio"
-                aria-checked={selected}
-                tabIndex={selected || (value === '' && index === 0) ? 0 : -1}
-                className={`journalit-home-trade-type-filter__option${selected ? ' journalit-home-trade-type-filter__option--active' : ''}`}
-                onClick={() => {
-                  closeMenu();
-                  onChange(option.value);
-                }}
-              >
-                <span
-                  className={`journalit-home-trade-type-filter__checkbox${selected ? ' journalit-home-trade-type-filter__checkbox--checked' : ''}`}
-                  aria-hidden="true"
-                >
-                  {selected ? '✓' : ''}
-                </span>
-                <span className="journalit-home-trade-type-filter__option-label">
-                  {option.label}
-                </span>
-              </button>
-            );
-          })}
-        </div>
-      ) : null}
-    </div>
-  );
-};
 
 function encodeConditionValue(questionId: string, optionId: string): string {
   return JSON.stringify([questionId, optionId]);
@@ -321,11 +154,11 @@ const TradeReviewQuestionRow: React.FC<TradeReviewQuestionRowProps> = ({
             />
           </label>
           <div className="template-trade-review-question-meta">
-            <QuestionEditorDropdown
+            <DropdownSelect
               ariaLabel={t(
                 'templateEditor.widget.trade-review.answer-type-label'
               )}
-              className="template-trade-review-answer-type-select"
+              width="content"
               value={isChoice ? 'choice' : 'text'}
               options={[
                 {
@@ -349,11 +182,12 @@ const TradeReviewQuestionRow: React.FC<TradeReviewQuestionRowProps> = ({
               }
             />
             {conditionSources.length > 0 && (
-              <QuestionEditorDropdown
+              <DropdownSelect
                 ariaLabel={t(
                   'templateEditor.widget.trade-review.condition-label'
                 )}
-                className="template-trade-review-condition-select"
+                width="content"
+                showOptionTooltips={false}
                 value={conditionValue}
                 options={[
                   {
@@ -428,7 +262,7 @@ const TradeReviewQuestionRow: React.FC<TradeReviewQuestionRowProps> = ({
                   <Tooltip content={t('button.remove')}>
                     <button
                       type="button"
-                      className="journalit-template-builder-button template-trade-review-question-action template-trade-review-question-action--remove template-trade-review-option-remove"
+                      className="journalit-template-builder-button template-trade-review-question-action template-trade-review-question-action--remove template-trade-review-option-remove journalit-icon-button"
                       onClick={() => onRemoveOption(questionIndex, optionIndex)}
                     >
                       <X size={13} aria-hidden="true" />
@@ -440,13 +274,14 @@ const TradeReviewQuestionRow: React.FC<TradeReviewQuestionRowProps> = ({
                 </div>
               )
             )}
-            <button
-              type="button"
+            <Button
+              variant="secondary"
+              size="small"
               className="journalit-template-builder-button template-trade-review-add-option"
               onClick={() => onAddOption(questionIndex)}
             >
               {t('templateEditor.widget.trade-review.add-option')}
-            </button>
+            </Button>
           </div>
         ) : (
           <label className="template-trade-review-field-label">
@@ -472,7 +307,7 @@ const TradeReviewQuestionRow: React.FC<TradeReviewQuestionRowProps> = ({
         <Tooltip content={t('button.move-up')}>
           <button
             type="button"
-            className="journalit-template-builder-button template-trade-review-question-action"
+            className="journalit-template-builder-button template-trade-review-question-action journalit-icon-button"
             disabled={questionIndex === 0}
             onClick={() => onMoveQuestion(questionIndex, -1)}
           >
@@ -485,7 +320,7 @@ const TradeReviewQuestionRow: React.FC<TradeReviewQuestionRowProps> = ({
         <Tooltip content={t('button.move-down')}>
           <button
             type="button"
-            className="journalit-template-builder-button template-trade-review-question-action"
+            className="journalit-template-builder-button template-trade-review-question-action journalit-icon-button"
             disabled={questionIndex === questionCount - 1}
             onClick={() => onMoveQuestion(questionIndex, 1)}
           >
@@ -498,7 +333,7 @@ const TradeReviewQuestionRow: React.FC<TradeReviewQuestionRowProps> = ({
         <Tooltip content={t('button.remove')}>
           <button
             type="button"
-            className="journalit-template-builder-button template-trade-review-question-action template-trade-review-question-action--remove"
+            className="journalit-template-builder-button template-trade-review-question-action template-trade-review-question-action--remove journalit-icon-button"
             onClick={() => onRemoveQuestion(questionIndex)}
           >
             <Trash2 size={14} aria-hidden="true" />
@@ -711,14 +546,15 @@ export const TradeReviewQuestionEditor: React.FC<
             </span>
           </Tooltip>
         </div>
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="small"
           className="journalit-template-builder-button template-trade-review-reset-button"
           disabled={!isCustomized}
           onClick={() => onReset(configKey)}
         >
           {t('button.reset-to-defaults')}
-        </button>
+        </Button>
       </div>
 
       <SegmentedControl<TradeReviewOutcome>
@@ -798,13 +634,14 @@ export const TradeReviewQuestionEditor: React.FC<
         </div>
       </div>
 
-      <button
-        type="button"
+      <Button
+        variant="secondary"
+        size="small"
         className="journalit-template-builder-button template-previous-context-add-button template-trade-review-add-question"
         onClick={addQuestion}
       >
         {t('templateEditor.widget.trade-review.add-question')}
-      </button>
+      </Button>
     </section>
   );
 };

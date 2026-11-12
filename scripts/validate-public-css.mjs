@@ -12,6 +12,9 @@ function walk(dir) {
     if (name === 'node_modules' || name === '.git' || name === '.cache')
       continue;
     const fullPath = path.join(dir, name);
+    
+    
+    if (dir === root && name === 'canvas') continue;
     const stat = statSync(fullPath);
     if (stat.isDirectory()) entries.push(...walk(fullPath));
     else entries.push(fullPath);

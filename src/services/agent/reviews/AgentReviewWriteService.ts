@@ -6,11 +6,17 @@ import type {
 import type { AgentActionContracts } from '../protocol/generated/actions.generated';
 import {
   AgentReviewReadError,
+  MAX_KEY_LEVEL_GROUPS,
   type AgentReviewIdentity,
   type AgentReviewReadRecord,
   type AgentReviewReadService,
 } from './AgentReviewReadService';
 import {
+  MARKET_BIAS_FIELD,
+  marketBiasFrontmatterValue,
+} from '../../reviews/marketBias';
+import {
+  canonicalMarketBias,
   checklistUpdates,
   goalUpdates,
   gradeUpdates,
@@ -18,10 +24,18 @@ import {
   reviewedUpdates,
   reviewHasChecklist,
   reviewHasKeyLevels,
+  reviewHasMarketBias,
   type AgentReviewContentValue,
+  type AgentReviewKeyLevelGroup,
 } from './AgentReviewContent';
 import {
+  keyLevelGroupsAfter,
+  normalizeKeyLevelGroups,
+} from '../../reviews/keyLevelGroups';
+import {
   createAgentReviewQuestionId,
+  keyLevelGroupsKey,
+  keyLevelsKey,
   type AgentReviewAnswer,
   type AgentReviewHash,
   type AgentReviewPeriod,
@@ -125,6 +139,8 @@ interface TargetContent {
   readonly goals: AgentReviewReadRecord['goals'];
   readonly checklist: AgentReviewReadRecord['checklist'];
   readonly keyLevels: AgentReviewReadRecord['keyLevels'];
+  readonly keyLevelGroups: AgentReviewReadRecord['keyLevelGroups'];
+  readonly marketBias: AgentReviewReadRecord['marketBias'];
   readonly grades: AgentReviewReadRecord['grades'];
   readonly reviewed: boolean;
 }
@@ -153,9 +169,12 @@ function contentKey(content: TargetContent): string {
     ]),
     goals: content.goals.map((goal) => [goal.text, goal.done]),
     checklist: content.checklist.map((item) => [item.text, item.done]),
-    keyLevels: [content.keyLevels.support, content.keyLevels.resistance].map(
-      (levels) => levels.map((level) => [level.price, level.importance])
-    ),
+    keyLevels: keyLevelsKey(content.keyLevels),
+    keyLevelGroups: keyLevelGroupsKey(content.keyLevelGroups),
+    marketBias: content.marketBias.map((entry) => [
+      entry.ticker ?? null,
+      entry.bias,
+    ]),
     grades: [content.grades.mental, content.grades.technical],
     reviewed: content.reviewed,
   });
@@ -177,17 +196,49 @@ function detachedResult(record: AgentReviewReadRecord): {
 }
 
 
+export function keyLevelGroupsAfterWrite(
+  record: Pick<AgentReviewReadRecord, 'keyLevelGroupsRecord'>,
+  requested: NonNullable<ReviewContent['key_level_groups']>
+): AgentReviewKeyLevelGroup[] {
+  return normalizeKeyLevelGroups(
+    keyLevelGroupsAfter(record.keyLevelGroupsRecord, requested)
+  );
+}
+
+
+function requestedMarketBias(
+  entries: NonNullable<ReviewContent['market_bias']>
+): AgentReviewReadRecord['marketBias'] {
+  const canonical = canonicalMarketBias(entries);
+  if (canonical === null) throw new AgentReviewWriteError('invalid_request');
+  return canonical;
+}
+
+
 function applyContent(
-  record: TargetContent,
+  record: AgentReviewReadRecord,
   content: ReviewContent,
   answers: readonly AgentReviewAnswer[]
 ): TargetContent {
+  const keyLevelGroups =
+    content.key_level_groups === undefined
+      ? record.keyLevelGroups
+      : keyLevelGroupsAfterWrite(record, content.key_level_groups);
+  
+  if (keyLevelGroups.length > MAX_KEY_LEVEL_GROUPS) {
+    throw new AgentReviewWriteError('limit_exceeded');
+  }
   return {
     summary: content.summary ?? record.summary,
     answers,
     goals: content.goals ?? record.goals,
     checklist: content.checklist ?? record.checklist,
     keyLevels: content.key_levels ?? record.keyLevels,
+    keyLevelGroups,
+    marketBias:
+      content.market_bias === undefined
+        ? record.marketBias
+        : requestedMarketBias(content.market_bias),
     grades: {
       mental:
         content.grades?.mental === undefined
@@ -204,7 +255,10 @@ function applyContent(
 
 
 function widgetUpdates(
-  record: Pick<AgentReviewReadRecord, 'period' | 'reviewedRecord'>,
+  record: Pick<
+    AgentReviewReadRecord,
+    'period' | 'reviewedRecord' | 'keyLevelGroupsRecord'
+  >,
   content: ReviewContent,
   now: Date
 ): Updates {
@@ -212,7 +266,14 @@ function widgetUpdates(
   if (content.checklist !== undefined && !reviewHasChecklist(period)) {
     throw new AgentReviewWriteError('unsupported_capability');
   }
-  if (content.key_levels !== undefined && !reviewHasKeyLevels(period)) {
+  if (
+    (content.key_levels !== undefined ||
+      content.key_level_groups !== undefined) &&
+    !reviewHasKeyLevels(period)
+  ) {
+    throw new AgentReviewWriteError('unsupported_capability');
+  }
+  if (content.market_bias !== undefined && !reviewHasMarketBias(period)) {
     throw new AgentReviewWriteError('unsupported_capability');
   }
   return {
@@ -230,6 +291,22 @@ function widgetUpdates(
               ...level,
             })),
           },
+        }),
+    
+    ...(content.key_level_groups === undefined
+      ? {}
+      : {
+          keyLevelGroups: keyLevelGroupsAfter(
+            record.keyLevelGroupsRecord,
+            content.key_level_groups
+          ),
+        }),
+    ...(content.market_bias === undefined
+      ? {}
+      : {
+          [MARKET_BIAS_FIELD]: marketBiasFrontmatterValue(
+            requestedMarketBias(content.market_bias)
+          ),
         }),
     ...(content.grades === undefined ? {} : gradeUpdates(content.grades)),
     ...(content.reviewed === undefined
@@ -461,7 +538,9 @@ export class AgentReviewWriteService {
     }
     const expectedWidgets = widgetKey(record);
     
+    
     const expectedReviewedRecord = JSON.stringify(record.reviewedRecord);
+    const expectedKeyLevelGroups = JSON.stringify(record.keyLevelGroupsRecord);
     return (frontmatter) => {
       let current: AgentReviewContentValue;
       try {
@@ -478,7 +557,8 @@ export class AgentReviewWriteService {
       if (
         !questionsMatch ||
         widgetKey(current) !== expectedWidgets ||
-        JSON.stringify(current.reviewedRecord) !== expectedReviewedRecord
+        JSON.stringify(current.reviewedRecord) !== expectedReviewedRecord ||
+        JSON.stringify(current.keyLevelGroupsRecord) !== expectedKeyLevelGroups
       ) {
         throw new AgentReviewWriteError('conflict');
       }
@@ -532,6 +612,8 @@ export class AgentReviewWriteService {
     const hasWidgetContent =
       content.checklist !== undefined ||
       content.key_levels !== undefined ||
+      content.key_level_groups !== undefined ||
+      content.market_bias !== undefined ||
       content.grades !== undefined ||
       content.reviewed !== undefined ||
       (content.goals ?? []).some((goal) => goal.done);
@@ -545,11 +627,17 @@ export class AgentReviewWriteService {
         ? {
             frontmatter: widgetUpdates(
               
-              { period: preview.review.period, reviewedRecord: null },
+              {
+                period: preview.review.period,
+                reviewedRecord: null,
+                keyLevelGroupsRecord: undefined,
+              },
               {
                 goals: content.goals,
                 checklist: content.checklist,
                 key_levels: content.key_levels,
+                key_level_groups: content.key_level_groups,
+                market_bias: content.market_bias,
                 grades: content.grades,
                 reviewed: content.reviewed,
               },

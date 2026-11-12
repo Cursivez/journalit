@@ -58,12 +58,24 @@ export type TradeSharePnlMode =
   | 'position-percent'
   | 'account-percent';
 
+export const TRADE_SHARE_PNL_OPTIONS = [
+  { value: 'currency', label: 'settings.general.currency' },
+  { value: 'r', label: 'template.editor.metric.r-multiple' },
+  { value: 'position-percent', label: 'share.trade.position-return' },
+  { value: 'account-percent', label: 'share.trade.account-return' },
+] as const satisfies readonly {
+  value: TradeSharePnlMode;
+  label: keyof Lang;
+}[];
+
 export interface TradeShareOptions {
   sections: ReadonlySet<TradeShareSection>;
   pnlMode: TradeSharePnlMode;
   imageLayout: TradeShareImageLayout;
   
   accountBalance: number | undefined;
+  
+  hideDollarAmounts: boolean;
   presentation: TradeSharePresentation;
 }
 

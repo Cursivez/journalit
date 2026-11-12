@@ -22,6 +22,8 @@ import {
 } from '../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../main';
 import { useEventBus } from '../../hooks/useEventBus';
+import { formatDateDisplay } from '../../utils/dateUtils';
+import { formatLocalizedReviewDate } from '../../utils/localizedDateTime';
 import { t } from '../../lang/helpers';
 import { resolveSidebarTabNavigation } from '../../navigation/sidebarTabBehavior';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
@@ -162,17 +164,6 @@ const DATE_FORMATS = {
   monthShort: new Intl.DateTimeFormat('en-US', { month: 'short' }),
   weekdayLong: new Intl.DateTimeFormat('en-US', { weekday: 'long' }),
   weekdayShort: new Intl.DateTimeFormat('en-US', { weekday: 'short' }),
-  shortDate: new Intl.DateTimeFormat('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  }),
-  reviewDay: new Intl.DateTimeFormat('en-US', {
-    weekday: 'short',
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-  }),
 };
 
 const MONTH_NAMES = [
@@ -278,10 +269,6 @@ function getTradeIcon(
   return Minus;
 }
 
-function formatShortDate(date: Date): string {
-  return DATE_FORMATS.shortDate.format(date);
-}
-
 function getReviewDateInfo(
   reviewType: string,
   frontmatter: Record<string, unknown>
@@ -293,7 +280,7 @@ function getReviewDateInfo(
       const [y, m, d] = dateStr.split('-').map(Number);
       const parsed = new Date(y, m - 1, d);
       if (isNaN(parsed.getTime())) return dateStr;
-      return DATE_FORMATS.reviewDay.format(parsed);
+      return formatLocalizedReviewDate(parsed, 'medium');
     }
     case 'weekly-review': {
       const week = stringFrontmatterValue(frontmatter, 'week');
@@ -612,7 +599,7 @@ const SidebarSearchResults: React.FC<SidebarSearchResultsProps> = ({
                 </div>
                 <div className="journalit-nav-search-result-secondary">
                   {directionLabel.toUpperCase()} &middot;{' '}
-                  {formatShortDate(result.entryTime)}
+                  {formatDateDisplay(result.entryTime)}
                   {result.currency ? ` · ${result.currency}` : ''}
                 </div>
               </div>
@@ -702,6 +689,7 @@ const useSidebarSearchData = (plugin: JournalitPlugin) => {
     BreakEvenRangeSettings['breakEvenThresholdMode']
   > | null>(null);
   const reviewsRef = useRef<ReviewSearchResult[]>([]);
+  const loadedReviewDateFormatRef = useRef<string | null>(null);
   const tradeDateTokensRef = useRef<Map<string, string[]>>(new Map());
   const reviewSearchIndexRef = useRef<Map<string, ReviewSearchIndexEntry>>(
     new Map()
@@ -804,6 +792,7 @@ const useSidebarSearchData = (plugin: JournalitPlugin) => {
     }
 
     reviewsRef.current = reviewResults;
+    loadedReviewDateFormatRef.current = plugin.settings.trade.dateFormat;
     reviewSearchIndexRef.current = reviewSearchIndex;
     setDataRefreshVersion((prev) => prev + 1);
   }, [plugin]);
@@ -825,6 +814,11 @@ const useSidebarSearchData = (plugin: JournalitPlugin) => {
   
   
   const handleSettingsChanged = useCallback(() => {
+    if (
+      plugin.settings.trade.dateFormat !== loadedReviewDateFormatRef.current
+    ) {
+      loadReviews();
+    }
     const breakEvenMode =
       plugin.settings.trade.breakEvenThresholdMode ?? 'fixed';
     if (breakEvenMode !== loadedBreakEvenModeRef.current) {
@@ -832,7 +826,7 @@ const useSidebarSearchData = (plugin: JournalitPlugin) => {
       return;
     }
     setDataRefreshVersion((prev) => prev + 1);
-  }, [loadTrades, plugin]);
+  }, [loadReviews, loadTrades, plugin]);
 
   useEventBus('trade-data:changed', handleTradeChanged);
   useEventBus('backtest-trade:changed', handleTradeChanged);

@@ -93,7 +93,7 @@ const TradeTypeSelectorComponent: React.FC<TradeTypeSelectorProps> = ({
       const height = contentRef.current.scrollHeight;
       setContentHeight(height);
     }
-  }, [isExpanded, currentTradeType, data.missedReason]);
+  }, [isExpanded, currentTradeType, data.missedReason, data.exitReason]);
 
   
   const handleTradeTypeChange = useCallback(
@@ -137,6 +137,13 @@ const TradeTypeSelectorComponent: React.FC<TradeTypeSelectorProps> = ({
   const handleMissedReasonChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       onChange('missedReason', e.target.value);
+    },
+    [onChange]
+  );
+
+  const handleExitReasonChange = useCallback(
+    (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+      onChange('exitReason', e.target.value);
     },
     [onChange]
   );
@@ -215,22 +222,40 @@ const TradeTypeSelectorComponent: React.FC<TradeTypeSelectorProps> = ({
 
             
             {currentTradeType === 'missed' && (
-              <div className="field journalit-trade-type-selector__missed-field">
-                <label
-                  htmlFor="journalit-tradetypeselector-234"
-                  className="label"
-                >
-                  {t('form.trade-type.missed-reason')}
-                </label>
-                <textarea
-                  id="journalit-tradetypeselector-234"
-                  value={data.missedReason || ''}
-                  onChange={handleMissedReasonChange}
-                  placeholder={t('form.trade-type.missed-reason-placeholder')}
-                  rows={3}
-                  className="textarea journalit-trade-type-selector__textarea"
-                />
-              </div>
+              <>
+                <div className="field journalit-trade-type-selector__missed-field">
+                  <label
+                    htmlFor="journalit-tradetypeselector-234"
+                    className="label"
+                  >
+                    {t('form.trade-type.missed-reason')}
+                  </label>
+                  <textarea
+                    id="journalit-tradetypeselector-234"
+                    value={data.missedReason || ''}
+                    onChange={handleMissedReasonChange}
+                    placeholder={t('form.trade-type.missed-reason-placeholder')}
+                    rows={3}
+                    className="textarea journalit-trade-type-selector__textarea"
+                  />
+                </div>
+                <div className="field journalit-trade-type-selector__missed-field">
+                  <label
+                    htmlFor="journalit-tradetypeselector-exit-reason"
+                    className="label"
+                  >
+                    {t('form.trade-type.exit-reason')}
+                  </label>
+                  <textarea
+                    id="journalit-tradetypeselector-exit-reason"
+                    value={data.exitReason || ''}
+                    onChange={handleExitReasonChange}
+                    placeholder={t('form.trade-type.exit-reason-placeholder')}
+                    rows={3}
+                    className="textarea journalit-trade-type-selector__textarea"
+                  />
+                </div>
+              </>
             )}
           </div>
         </div>
@@ -247,6 +272,7 @@ export const TradeTypeSelector = memo(
       prevProps.data.isMissedTrade === nextProps.data.isMissedTrade &&
       prevProps.data.isBacktestTrade === nextProps.data.isBacktestTrade &&
       prevProps.data.missedReason === nextProps.data.missedReason &&
+      prevProps.data.exitReason === nextProps.data.exitReason &&
       prevProps.onChange === nextProps.onChange
     );
   }

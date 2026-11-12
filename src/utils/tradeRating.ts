@@ -3,6 +3,9 @@
 const TRADE_RATING_MAX = 5;
 
 
+export type TradeRating = 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5;
+
+
 export const TRADE_RATING_BUCKETS = [5, 4, 3, 2, 1] as const;
 export type TradeRatingBucket = (typeof TRADE_RATING_BUCKETS)[number];
 
@@ -26,7 +29,7 @@ export function isRatingFilter(value: unknown): value is RatingFilter {
 }
 
 
-export function isValidTradeRating(value: number): boolean {
+export function isValidTradeRating(value: number): value is TradeRating {
   return (
     Number.isFinite(value) &&
     value > 0 &&
@@ -36,7 +39,7 @@ export function isValidTradeRating(value: number): boolean {
 }
 
 
-export function parseTradeRating(value: unknown): number | undefined {
+export function parseTradeRating(value: unknown): TradeRating | undefined {
   const numeric =
     typeof value === 'number'
       ? value

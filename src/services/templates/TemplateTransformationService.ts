@@ -1,18 +1,18 @@
 
 
-import { TFile, Notice, Plugin } from 'obsidian';
+import { TFile, Notice, Plugin, MarkdownView } from 'obsidian';
 import { t } from '../../lang/helpers';
 import type { ReviewTemplate } from '../../types/reviewV2';
 import { showTemplateSwitchWarning } from '../../components/modals/TemplateSwitchWarningModal';
 import { ReviewTemplateService } from './ReviewTemplateService';
+import {
+  KEY_LEVELS_GROUPS_CONFIG_KEY,
+  serializeKeyLevelsGroupsConfig,
+} from '../reviews/keyLevelGroups';
 import { generateUUID } from '../../utils/uuid';
 import { safeString } from '../../utils/safeString';
 import { parseFrontmatterFromContentOrThrow } from '../../utils/dataRefresh';
 import type { JournalitSettings } from '../../settings/types';
-import {
-  readFileContentForMutation,
-  replaceFileContent,
-} from '../../utils/fileMutation';
 import {
   serializeTradeReviewNotesSections,
   serializeTradeReviewQuestions,
@@ -59,6 +59,9 @@ function formatWidgetConfigValue(
   if (key === 'notesSections') {
     return serializeTradeReviewNotesSections(value);
   }
+  if (key === KEY_LEVELS_GROUPS_CONFIG_KEY) {
+    return serializeKeyLevelsGroupsConfig(value);
+  }
   if (Array.isArray(value)) {
     return value
       .filter((item): item is string => typeof item === 'string')
@@ -72,6 +75,24 @@ interface TemplateParseCursor {
   widgets: ReviewTemplate['widgets'];
   index: number;
 }
+
+
+function findSourceViews(
+  plugin: JournalitPluginInstance,
+  file: TFile
+): MarkdownView[] {
+  return plugin.app.workspace
+    .getLeavesOfType('markdown')
+    .map((leaf) => leaf.view)
+    .filter(
+      (view): view is MarkdownView =>
+        view instanceof MarkdownView &&
+        view.file?.path === file.path &&
+        view.getMode() === 'source'
+    );
+}
+
+class LayoutSwitchConflict extends Error {}
 
 function getSequentialMarkdownZoneContentKey(index: number): string {
   return `${MARKDOWN_ZONE_CONTENT_KEY_PREFIX}${index}`;
@@ -228,7 +249,18 @@ export class TemplateTransformationService {
     }
 
     
-    const content = await readFileContentForMutation(this.plugin.app, file);
+    
+    if (findSourceViews(this.plugin, file).length > 0) {
+      new Notice(t('template.transformation.changed-in-editor'));
+      return false;
+    }
+
+    
+    
+    const content = (await this.plugin.app.vault.read(file)).replace(
+      /\r\n/g,
+      '\n'
+    );
 
     
     const sourceTemplate = this.getSourceTemplate(content);
@@ -256,14 +288,29 @@ export class TemplateTransformationService {
     }
 
     
-    const newContent = this.buildNoteFromTemplate(
-      template,
-      mappedContent,
-      content
-    );
-
     
-    await replaceFileContent(this.plugin.app, file, newContent);
+    const transform = (rawContent: string): string => {
+      const current = rawContent.replace(/\r\n/g, '\n');
+      const currentTemplate = this.getSourceTemplate(current);
+      const currentWidgets = this.parseNoteWidgets(current, currentTemplate);
+      return this.buildNoteFromTemplate(
+        template,
+        this.mapContentToWidgets(currentWidgets),
+        current
+      );
+    };
+
+    try {
+      await this.plugin.app.vault.process(file, (current) => {
+        if (findSourceViews(this.plugin, file).length > 0)
+          throw new LayoutSwitchConflict();
+        return transform(current);
+      });
+    } catch (error) {
+      if (!(error instanceof LayoutSwitchConflict)) throw error;
+      new Notice(t('template.transformation.changed-in-editor'));
+      return false;
+    }
 
     new Notice(t('notice.template-applied', { name: template.name }));
     return true;
@@ -381,6 +428,7 @@ export class TemplateTransformationService {
     let lastWidgetId: string | undefined;
     let lastWidgetIsMarkdownZone = false;
     let lastMarkdownHeaderContentKey: string | undefined;
+    const codeblockOccurrences = new Map<string, number>();
     const templateCursor = this.createTemplateParseCursor(sourceTemplate);
 
     for (let i = 0; i < lines.length; i++) {
@@ -426,7 +474,9 @@ export class TemplateTransformationService {
           widgetType: codeblockType,
           content: '',
         });
-        lastWidgetId = codeblockType;
+        const occurrence = (codeblockOccurrences.get(codeblockType) ?? 0) + 1;
+        codeblockOccurrences.set(codeblockType, occurrence);
+        lastWidgetId = `${codeblockType}#${occurrence}`;
         lastWidgetIsMarkdownZone = false;
         this.advanceCursorPastCodeblock(templateCursor, codeblockType);
         inCodeblock = false;
@@ -608,6 +658,7 @@ export class TemplateTransformationService {
     let imageWidgetIndex = 0;
     let markdownZoneIndex = 0;
     let pendingMarkdownHeaderContentKey: string | undefined;
+    const codeblockOccurrences = new Map<string, number>();
 
     for (const widget of template.widgets) {
       if (widget.type === 'markdown-zone') {
@@ -666,7 +717,9 @@ export class TemplateTransformationService {
         widgetLines.push('```');
 
         
-        const noteKey = `${widget.type}-notes`;
+        const occurrence = (codeblockOccurrences.get(widget.type) ?? 0) + 1;
+        codeblockOccurrences.set(widget.type, occurrence);
+        const noteKey = `${widget.type}#${occurrence}-notes`;
         if (mappedContent[noteKey]) {
           const entry = mappedContent[noteKey];
           widgetLines.push(entry.content);

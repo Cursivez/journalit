@@ -9,19 +9,26 @@ import {
   AccountTransaction,
   TransactionType,
 } from '../../../services/account/types';
+import type { PropChallengePriorPayout } from '../../../services/propChallenge/types';
+import { priorPayoutTotal } from '../../../services/propChallenge/PropChallengeAggregation';
 import { resolvePropChallengePayoutPhaseAt } from '../../../services/propChallenge/PropChallengeConfig';
 import {
   doesPhaseOwnTransaction,
   propChallengePhaseBalancesAfter,
 } from '../../../services/propChallenge/PropChallengeRuleEngine';
 import type { AccountTradeData } from '../../../services/accountPage/types';
-import { openEditEventModal } from './EditEventModal';
+import { openEditEventModal, openEditPriorPayoutModal } from './EditEventModal';
 import {
   formatDateDisplay,
   getUserDateFormat,
+  parseLocalDateSafe,
   safeParseDateValue,
 } from '../../../utils/dateUtils';
 import { useCurrency } from '../../../contexts/CurrencyContext';
+import {
+  accountEventDateForEditing,
+  isTimedAccountEvent,
+} from './accountEventDate';
 import { t } from '../../../lang/helpers';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { useGuideTarget } from '../../../guides/GuideRuntimeLayer';
@@ -35,6 +42,21 @@ import {
 
 
 const EMPTY_TRADES_BY_PATH: ReadonlyMap<string, AccountTradeData> = new Map();
+
+
+function transactionLocalDate(transaction: AccountTransaction): Date {
+  return accountEventDateForEditing({
+    date: transaction.date,
+    includeTime: isTimedAccountEvent(transaction),
+  });
+}
+
+function transactionDateText(transaction: AccountTransaction): string {
+  return formatDateDisplay(
+    transactionLocalDate(transaction),
+    getUserDateFormat()
+  );
+}
 
 type LedgerTone = 'neutral' | 'payout' | 'deposit' | 'withdrawal';
 
@@ -155,7 +177,7 @@ const LedgerRow: React.FC<{
 
   const tone = ledgerTone(isMoneyMasked, isPayout, isDeposit);
   const amountSign = ledgerAmountSign(isMoneyMasked, isPayout, isDeposit);
-  const dateText = formatDateDisplay(transaction.date, getUserDateFormat());
+  const dateText = transactionDateText(transaction);
 
   return (
     <tr
@@ -206,6 +228,84 @@ const LedgerRow: React.FC<{
     </tr>
   );
 };
+
+
+const PriorPayoutRow: React.FC<{
+  payout: PropChallengePriorPayout;
+  currency: string;
+  onEdit: () => void;
+}> = ({ payout, currency, onEdit }) => {
+  const { formatValue, shouldMask } = useDisplayFormatter();
+  const isMoneyMasked = shouldMask('money');
+  const date = parseLocalDateSafe(payout.date);
+  const dateText = date
+    ? formatDateDisplay(date, getUserDateFormat())
+    : payout.date;
+  const tone: LedgerTone = isMoneyMasked ? 'neutral' : 'payout';
+  return (
+    <tr className="journalit-account-ledger-row" onClick={onEdit}>
+      <td className="journalit-account-ledger-cell-date">
+        <button
+          type="button"
+          className="journalit-account-ledger-edit"
+          aria-label={`${t('account.edit-event.title', { type: t('account.edit-event.type.prior-payout') })}: ${dateText}`}
+        >
+          {dateText}
+        </button>
+      </td>
+      <td className="journalit-account-ledger-cell-type">
+        <span
+          className={`journalit-account-ledger-type journalit-account-ledger-type-${tone}`}
+        >
+          {isMoneyMasked ? <ArrowUpDown size={13} /> : <HandCoins size={13} />}
+        </span>
+      </td>
+      <td className="journalit-account-ledger-cell-description">
+        {payout.note}
+      </td>
+      <td
+        className={`journalit-account-ledger-cell-amount journalit-account-ledger-amount-${tone}`}
+      >
+        {formatValue({
+          kind: 'money',
+          value: payout.amount,
+          currencyCode: currency,
+          signed: false,
+        })}
+      </td>
+      <td className="journalit-account-ledger-cell-balance">—</td>
+    </tr>
+  );
+};
+
+type LedgerEntry =
+  | { kind: 'transaction'; transaction: AccountTransaction; time: number }
+  | { kind: 'prior'; payout: PropChallengePriorPayout; time: number };
+
+
+function ledgerEntries(
+  sortedTransactions: AccountTransaction[],
+  account: AccountData
+): LedgerEntry[] {
+  const entries: LedgerEntry[] = sortedTransactions.map((transaction) => ({
+    kind: 'transaction',
+    transaction,
+    time: transactionLocalDate(transaction).getTime(),
+  }));
+  for (const payout of account.propChallenge?.priorPayouts ?? []) {
+    entries.push({
+      kind: 'prior',
+      payout,
+      time: parseLocalDateSafe(payout.date)?.getTime() ?? 0,
+    });
+  }
+  
+  return entries.sort(
+    (a, b) =>
+      b.time - a.time ||
+      (a.kind === b.kind ? 0 : a.kind === 'transaction' ? -1 : 1)
+  );
+}
 
 interface Ledger {
   
@@ -328,8 +428,15 @@ const LedgerSummary: React.FC<{
   readsAsPayouts: boolean;
   payouts: AccountTransaction[];
   sortedTransactions: AccountTransaction[];
+  priorTotal: number;
   currency: string;
-}> = ({ readsAsPayouts, payouts, sortedTransactions, currency }) => {
+}> = ({
+  readsAsPayouts,
+  payouts,
+  sortedTransactions,
+  priorTotal,
+  currency,
+}) => {
   const { formatValue, shouldMask } = useDisplayFormatter();
   const formatMoney = (value: number): string =>
     formatValue({
@@ -339,10 +446,20 @@ const LedgerSummary: React.FC<{
       signed: false,
     });
 
+  
+  
+  if (
+    (readsAsPayouts || sortedTransactions.length === 0) &&
+    shouldMask('money')
+  )
+    return t('account.payouts.summary-masked');
+  const prior =
+    priorTotal > 0
+      ? t('account.payouts.prior-summary', { total: formatMoney(priorTotal) })
+      : null;
+  if (sortedTransactions.length === 0) return prior;
+
   if (readsAsPayouts) {
-    
-    
-    if (shouldMask('money')) return t('account.payouts.summary-masked');
     const total = payouts.reduce(
       (sum, transaction) => sum + Math.abs(transaction.amount),
       0
@@ -350,10 +467,7 @@ const LedgerSummary: React.FC<{
     const params = {
       count: String(payouts.length),
       total: formatMoney(total),
-      date: formatDateDisplay(
-        payouts[payouts.length - 1].date,
-        getUserDateFormat()
-      ),
+      date: transactionDateText(payouts[payouts.length - 1]),
     };
     return (
       <>
@@ -362,6 +476,7 @@ const LedgerSummary: React.FC<{
           {payouts.length === 1
             ? t('account.payouts.summary-one', params)
             : t('account.payouts.summary', params)}
+          {prior && ` · ${prior}`}
         </span>
       </>
     );
@@ -374,11 +489,12 @@ const LedgerSummary: React.FC<{
     .filter(movesOut)
     .reduce((sum, transaction) => sum + Math.abs(transaction.amount), 0);
 
-  return t('account.deposits-withdrawals.summary', {
+  const summary = t('account.deposits-withdrawals.summary', {
     deposits: formatMoney(deposited),
     withdrawn: formatMoney(withdrawn),
-    date: formatDateDisplay(sortedTransactions[0].date, getUserDateFormat()),
+    date: transactionDateText(sortedTransactions[0]),
   });
+  return prior && !shouldMask('money') ? `${summary} · ${prior}` : summary;
 };
 
 const LedgerEmptyState: React.FC<{ readsAsPayouts: boolean }> = ({
@@ -423,6 +539,11 @@ export const DepositsWithdrawalsSection: React.FC = () => {
 
   const { sortedTransactions, payoutNumbers, payouts, phaseBalances } =
     buildLedger(account, accountPageData.trades, selectedPhaseId);
+  const entries = ledgerEntries(sortedTransactions, account);
+  const priorTotal = account.propChallenge
+    ? priorPayoutTotal(account.propChallenge)
+    : 0;
+  const hasRows = entries.length > 0;
 
   
   
@@ -440,19 +561,20 @@ export const DepositsWithdrawalsSection: React.FC = () => {
             ? t('account.payouts.title')
             : t('account.deposits-withdrawals.title')}
         </h3>
-        {sortedTransactions.length > 0 && (
+        {hasRows && (
           <span className="journalit-account-ledger-summary">
             <LedgerSummary
               readsAsPayouts={readsAsPayouts}
               payouts={payouts}
               sortedTransactions={sortedTransactions}
+              priorTotal={priorTotal}
               currency={currency}
             />
           </span>
         )}
       </div>
 
-      {sortedTransactions.length === 0 ? (
+      {!hasRows ? (
         <LedgerEmptyState readsAsPayouts={readsAsPayouts} />
       ) : (
         <table className="journalit-account-ledger">
@@ -478,21 +600,39 @@ export const DepositsWithdrawalsSection: React.FC = () => {
             </tr>
           </thead>
           <tbody>
-            {sortedTransactions.map((transaction) => (
-              <LedgerRow
-                key={transaction.id}
-                transaction={transaction}
-                accountName={account.name}
-                currency={currency}
-                payoutNumber={
-                  isProp ? payoutNumbers.get(transaction) : undefined
-                }
-                balanceAfter={
-                  phaseBalances?.get(transaction) ?? transaction.balanceAfter
-                }
-                onUpdate={() => void refreshData()}
-              />
-            ))}
+            {entries.map((entry) =>
+              entry.kind === 'transaction' ? (
+                <LedgerRow
+                  key={entry.transaction.id}
+                  transaction={entry.transaction}
+                  accountName={account.name}
+                  currency={currency}
+                  payoutNumber={
+                    isProp ? payoutNumbers.get(entry.transaction) : undefined
+                  }
+                  balanceAfter={
+                    phaseBalances?.get(entry.transaction) ??
+                    entry.transaction.balanceAfter
+                  }
+                  onUpdate={() => void refreshData()}
+                />
+              ) : (
+                <PriorPayoutRow
+                  key={entry.payout.id}
+                  payout={entry.payout}
+                  currency={currency}
+                  onEdit={() =>
+                    openEditPriorPayoutModal(
+                      plugin.app,
+                      plugin,
+                      account.name,
+                      entry.payout,
+                      () => void refreshData()
+                    )
+                  }
+                />
+              )
+            )}
           </tbody>
         </table>
       )}

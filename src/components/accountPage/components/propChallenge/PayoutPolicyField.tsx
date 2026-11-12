@@ -47,6 +47,10 @@ const FIELD_HELP = {
     'account.prop-challenge.payout-rules.help.availability',
   'account.prop-challenge.payout-rules.balance-floor':
     'account.prop-challenge.payout-rules.help.balance-floor',
+  'account.prop-challenge.payout-rules.balance-floor-first-payouts':
+    'account.prop-challenge.payout-rules.help.balance-floor-first-payouts',
+  'account.prop-challenge.payout-rules.below-floor-allowance':
+    'account.prop-challenge.payout-rules.help.below-floor-allowance',
   'account.prop-challenge.payout-rules.request-percent':
     'account.prop-challenge.payout-rules.help.request-percent',
   'account.prop-challenge.payout-rules.new-profit-percent':
@@ -57,6 +61,8 @@ const FIELD_HELP = {
     'account.prop-challenge.payout-rules.help.maximum',
   'account.prop-challenge.payout-rules.maximum-amount':
     'account.prop-challenge.payout-rules.help.maximum-amount',
+  'account.prop-challenge.payout-rules.maximum-first-payouts':
+    'account.prop-challenge.payout-rules.help.maximum-first-payouts',
   'account.prop-challenge.payout-rules.maximum-first-amount':
     'account.prop-challenge.payout-rules.help.first-maximum',
   'account.prop-challenge.payout-rules.schedule':

@@ -6,6 +6,7 @@ import { t } from '../../../lang/helpers';
 import type { TradeProjectionAccountInventoryItem } from '../../../services/tradeSync/types';
 import { formatLocalizedDateTime } from '../../../utils/localizedDateTime';
 import { rateLimitUiState } from './brokerSyncKit/rateLimitCooldowns';
+import { DropdownSelect } from '../../../components/shared/DropdownSelect';
 
 export interface ImportAccountOption {
   name: string;
@@ -161,20 +162,19 @@ const TradeImportAccountRow: React.FC<{
           </span>
         )}
       </div>
-      <select
-        className="journalit-trade-import-account-row__link dropdown"
-        aria-label={t('trade-sync.import.account.local-account')}
+      <DropdownSelect
+        ariaLabel={t('trade-sync.import.account.local-account')}
         value={selectedLocalAccount}
+        options={[
+          { value: '', label: t('account.link-modal.select-account') },
+          ...localAccounts.map((localAccount) => ({
+            value: localAccount.name,
+            label: localAccount.name,
+          })),
+        ]}
         disabled={busy || mappingRateLimited}
-        onChange={(event) => onSelectLocalAccount(event.target.value)}
-      >
-        <option value="">{t('account.link-modal.select-account')}</option>
-        {localAccounts.map((localAccount) => (
-          <option key={localAccount.name} value={localAccount.name}>
-            {localAccount.name}
-          </option>
-        ))}
-      </select>
+        onChange={(nextValue) => onSelectLocalAccount(nextValue)}
+      />
       <IconButton
         className="journalit-trade-import-account-row__menu"
         ariaLabel={t('trade-sync.import.more-actions')}

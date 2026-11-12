@@ -1,7 +1,10 @@
+import { keyLevelGroupMatchKey } from '../../reviews/keyLevelGroups';
+import type { MarketBiasEntry } from '../../reviews/marketBias';
 import type {
   AgentReviewChecklistItem,
   AgentReviewGoal,
   AgentReviewGrades,
+  AgentReviewKeyLevelGroup,
   AgentReviewKeyLevels,
 } from './AgentReviewContent';
 
@@ -19,6 +22,8 @@ export interface AgentReviewRevisionContent {
   readonly goals: readonly AgentReviewGoal[];
   readonly checklist: readonly AgentReviewChecklistItem[];
   readonly keyLevels: AgentReviewKeyLevels;
+  readonly keyLevelGroups: readonly AgentReviewKeyLevelGroup[];
+  readonly marketBias: readonly MarketBiasEntry[];
   readonly grades: AgentReviewGrades;
   readonly reviewed: boolean;
 }
@@ -53,6 +58,25 @@ export async function createAgentReviewQuestionId(
   return `question_${await hashText(encodedIdentity, hash)}`;
 }
 
+
+export function keyLevelsKey(levels: AgentReviewKeyLevels): unknown {
+  return [levels.support, levels.resistance].map((side) =>
+    side.map((level) => [level.price, level.importance])
+  );
+}
+
+
+export function keyLevelGroupsKey(
+  groups: readonly AgentReviewKeyLevelGroup[]
+): unknown {
+  return groups
+    .map((group) => ({ key: keyLevelGroupMatchKey(group.name), group }))
+    .sort((left, right) =>
+      left.key < right.key ? -1 : left.key > right.key ? 1 : 0
+    )
+    .map(({ group }) => [group.name, keyLevelsKey(group)]);
+}
+
 export async function createAgentReviewRevision(
   content: AgentReviewRevisionContent,
   hash: AgentReviewHash = webCryptoSha256
@@ -69,11 +93,23 @@ export async function createAgentReviewRevision(
     answers,
     goals: content.goals.map((goal) => [goal.text, goal.done]),
     checklist: content.checklist.map((item) => [item.text, item.done]),
-    keyLevels: [content.keyLevels.support, content.keyLevels.resistance].map(
-      (levels) => levels.map((level) => [level.price, level.importance])
-    ),
+    keyLevels: keyLevelsKey(content.keyLevels),
+    
+    ...(content.keyLevelGroups.length > 0
+      ? { keyLevelGroups: keyLevelGroupsKey(content.keyLevelGroups) }
+      : {}),
     grades: [content.grades.mental, content.grades.technical],
     reviewed: content.reviewed,
+    
+    
+    ...(content.marketBias.length > 0
+      ? {
+          marketBias: content.marketBias.map((entry) => [
+            entry.ticker ?? null,
+            entry.bias,
+          ]),
+        }
+      : {}),
   });
   return `sha256:${await hashText(canonicalJson, hash)}`;
 }

@@ -5,6 +5,12 @@ import { TradeFormData, TradeFormErrors, TradeFormProps } from './types';
 import { BasicTab, DetailsTab, AdvancedTab } from './tabs';
 import { useTradeForm } from './hooks';
 import { useTradeFormNavigation } from './hooks/useTradeFormNavigation';
+import {
+  RiskAmountActions,
+  TradeFormRiskNavigationContext,
+  useTradeFormRiskNavigation,
+} from './fields/RiskAmountActions';
+import { hasAnyUnconvertibleRMultipleEntry } from './rMultipleEntry';
 import { DateDraftGateContext } from '../../core/DateDraftGate';
 import { BacktestSessionDayContext } from './executionDates';
 import { FormActions, ManualTradeImportNudge } from './components';
@@ -85,6 +91,8 @@ const BASIC_TAB_ERROR_FIELDS: Array<keyof TradeFormErrors> = [
   'takeProfits',
   'takeProfitsTotal',
   'riskAmount',
+  'mae',
+  'mfe',
   'unrealizedPriceSnapshot',
 ];
 const DETAILS_TAB_ERROR_FIELDS: Array<keyof TradeFormErrors> = ['setup'];
@@ -224,9 +232,12 @@ function createTradeFormTabs({
 function TradeFormErrorSummary({
   errors,
   tabErrorCounts,
+  needsRiskAmount,
 }: {
   errors: TradeFormErrors;
   tabErrorCounts: TabErrorCounts;
+  
+  needsRiskAmount: boolean;
 }) {
   if (
     !errors.form &&
@@ -258,6 +269,7 @@ function TradeFormErrorSummary({
           </li>
         )}
       </ul>
+      {needsRiskAmount && <RiskAmountActions />}
     </div>
   );
 }
@@ -786,6 +798,8 @@ export const TradeForm: React.FC<TradeFormProps> = ({
         }),
     });
 
+  const riskNavigation = useTradeFormRiskNavigation(formRef, handleTabChange);
+
   
   
 
@@ -871,69 +885,72 @@ export const TradeForm: React.FC<TradeFormProps> = ({
 
   return (
     <DateDraftGateContext.Provider value={dateDraftGate}>
-      <BacktestSessionDayContext.Provider value={backtestSessionDay}>
-        <form
-          ref={formRef}
-          className="formContainer"
-          onSubmit={(event) => void handleSubmit(event)}
-        >
-          
-          <TradeFormTabNav
-            tabs={tabs}
-            activeTab={effectiveActiveTab}
-            isEditMode={isEditMode}
-            showLayoutSettings={!!plugin && !!onOpenCustomization}
-            onTabChange={handleTabChange}
-            onOpenLayoutSettings={handleOpenLayoutSettings}
-          />
+      <TradeFormRiskNavigationContext.Provider value={riskNavigation}>
+        <BacktestSessionDayContext.Provider value={backtestSessionDay}>
+          <form
+            ref={formRef}
+            className="formContainer"
+            onSubmit={(event) => void handleSubmit(event)}
+          >
+            
+            <TradeFormTabNav
+              tabs={tabs}
+              activeTab={effectiveActiveTab}
+              isEditMode={isEditMode}
+              showLayoutSettings={!!plugin && !!onOpenCustomization}
+              onTabChange={handleTabChange}
+              onOpenLayoutSettings={handleOpenLayoutSettings}
+            />
 
-          <TradeFormErrorSummary
-            errors={errors}
-            tabErrorCounts={tabErrorCounts}
-          />
+            <TradeFormErrorSummary
+              errors={errors}
+              tabErrorCounts={tabErrorCounts}
+              needsRiskAmount={hasAnyUnconvertibleRMultipleEntry(formData)}
+            />
 
-          {plugin &&
-            showsManualImportNudge({
-              isEditMode,
-              isImportShortcutVisible,
-              formData,
-            }) && (
-              <ManualTradeImportNudge
-                plugin={plugin}
-                disabled={isSubmitting}
-                closeForm={handleCancel}
-              />
-            )}
+            {plugin &&
+              showsManualImportNudge({
+                isEditMode,
+                isImportShortcutVisible,
+                formData,
+              }) && (
+                <ManualTradeImportNudge
+                  plugin={plugin}
+                  disabled={isSubmitting}
+                  closeForm={handleCancel}
+                />
+              )}
 
-          
-          {getTabContent()}
+            
+            {getTabContent()}
 
-          
-          <FormActions
-            onCancel={() => void handleCancel()}
-            onImportTrades={
-              !!plugin && isImportShortcutVisible
-                ? () => void handleOpenTradeImport()
-                : undefined
-            }
-            isSubmitting={isSubmitting}
-            errors={errors}
-            submissionState={submissionState}
-            isEditMode={isEditMode}
-            hasEntryTime={!!initialData.entryTime}
-            disabledReason={
-              isAccountCreationBlocked
-                ? t('form.account-empty-state.submit-disabled')
-                : undefined
-            }
-            footerSummary={
-              isTradeFormLayoutItemVisible(tradeFormLayout, 'pnlPreview') ? (
-                <TradeFormFooterPnlPreview data={formData} />
-              ) : null
-            }
-          />
-        </form>
-      </BacktestSessionDayContext.Provider>
+            
+            <FormActions
+              onCancel={() => void handleCancel()}
+              onImportTrades={
+                !!plugin && isImportShortcutVisible
+                  ? () => void handleOpenTradeImport()
+                  : undefined
+              }
+              isSubmitting={isSubmitting}
+              errors={errors}
+              submissionState={submissionState}
+              isEditMode={isEditMode}
+              hasEntryTime={!!initialData.entryTime}
+              disabledReason={
+                isAccountCreationBlocked
+                  ? t('form.account-empty-state.submit-disabled')
+                  : undefined
+              }
+              footerSummary={
+                isTradeFormLayoutItemVisible(tradeFormLayout, 'pnlPreview') ? (
+                  <TradeFormFooterPnlPreview data={formData} />
+                ) : null
+              }
+            />
+          </form>
+        </BacktestSessionDayContext.Provider>
+      </TradeFormRiskNavigationContext.Provider>
     </DateDraftGateContext.Provider>
   );
 };

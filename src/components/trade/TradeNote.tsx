@@ -12,6 +12,7 @@ import type JournalitPlugin from '../../main';
 import { TradeFormData } from '../forms/trade/types';
 import { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 import { usePlugin } from '../../hooks/usePlugin';
+import { snapshotUnrealizedPnL } from './tradeHeaderOutcome';
 import { useAccountPageService } from '../../hooks/useService';
 import { useEventBus } from '../../hooks/useEventBus';
 import { TradeNavigation } from './TradeNavigation';
@@ -24,10 +25,6 @@ import {
 } from './components';
 import { hasTradeCustomFieldDisplayEntries } from './components/TradeCustomFieldsSection';
 import { TradeRatingCard } from './components/TradeRatingCard';
-import {
-  areSnapshotKeysClaimedByCustomFields,
-  calculateUnrealizedPnL,
-} from '../../utils/unrealizedPnl';
 import { useTradeMetrics } from './hooks';
 import { resolveDefaultTradeTemplate } from '../../services/templates/defaultTradeTemplateMetadata';
 import {
@@ -348,16 +345,6 @@ const showsSessionNavigation = (
 
 const displaysRMultiples = (plugin: ReturnType<typeof usePlugin>): boolean =>
   plugin?.settings?.trade?.displayRMultiples ?? false;
-
-
-
-const snapshotUnrealizedPnL = (
-  plugin: ReturnType<typeof usePlugin>,
-  data: PartialTradeFrontmatter
-) =>
-  areSnapshotKeysClaimedByCustomFields(plugin?.customFieldsService?.getFields())
-    ? null
-    : calculateUnrealizedPnL(data);
 
 
 const TradeNoteHeader: React.FC<{
@@ -921,11 +908,11 @@ export const TradeNote: React.FC<TradeNoteProps> = React.memo(
                 ) : null;
               case 'missedReason':
                 return data.isMissedTrade === true &&
-                  data.missedReason &&
+                  data.missedReason?.trim() &&
                   isMissedReasonVisible(effectiveTradeTemplate) ? (
                   <MissedTradeReasonSection
                     key={sectionId}
-                    reason={data.missedReason}
+                    reason={data.missedReason.trim()}
                   />
                 ) : null;
               case 'metadata':

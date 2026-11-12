@@ -1,5 +1,7 @@
 
 
+import { SETTINGS_TAB_IDS } from '../../../../settings/types';
+import { OPEN_CUSTOM_FIELDS_REQUEST } from '../../../../settings/settingsOpenRequests';
 import React, { useId, useMemo } from 'react';
 import { Input } from '../../../core/Input';
 import { NumberInput } from '../../../core/NumberInput';
@@ -288,14 +290,13 @@ const CustomFieldsRendererComponent: React.FC<CustomFieldsRendererProps> = ({
 }) => {
   const plugin = usePlugin();
   const openCustomFieldsSettings = () => {
-    plugin?.app.saveLocalStorage('journalit:open-custom-fields-settings', '1');
+    plugin?.app.saveLocalStorage(OPEN_CUSTOM_FIELDS_REQUEST, '1');
     
     
     
     
     
-    plugin?.openSettingsToTab('customization');
-    window.dispatchEvent(new Event('journalit:open-custom-fields-settings'));
+    plugin?.openSettingsToTab(SETTINGS_TAB_IDS.CUSTOM_FIELDS);
   };
 
   if (!fields || fields.length === 0) {

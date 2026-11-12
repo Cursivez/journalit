@@ -13,7 +13,7 @@ import {
   isTradeOpenPreservingNullPnl,
 } from '../../../../utils/tradeStatusUtils';
 import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
-import { safeDateSort } from '../../../../utils/dateUtils';
+import { formatDateDisplay, safeDateSort } from '../../../../utils/dateUtils';
 import {
   getAnalyticsDateBasis,
   getTradeAnalyticsDate,
@@ -21,7 +21,6 @@ import {
 import { getDisplayPnL, getAccountCount } from '../../../../utils/pnlUtils';
 import { classifyPnLWithBreakEvenSettings } from '../../../../utils/breakEvenRange';
 import { t } from '../../../../lang/helpers';
-import type JournalitPlugin from '../../../../main';
 import { getTradeDirectionDisplayLabel } from '../../../../utils/tradeDirectionDisplay';
 import { getTradeNotePath } from '../../../../utils/chartUtils';
 
@@ -29,34 +28,35 @@ type RecentTradeRow = {
   trade: Trade;
   analyticsDate: Date;
   realizedPnL: number | undefined;
+  
+  inA?: boolean;
+  inB?: boolean;
 };
 
+const recentRowKey = (row: RecentTradeRow) =>
+  `${row.trade.path}-${row.analyticsDate.toISOString()}-${row.realizedPnL ?? 'trade'}`;
 
-const formatDate = (date: Date, plugin: JournalitPlugin | null): string => {
-  try {
-    
-    const dateFormat = plugin?.settings?.trade?.dateFormat || 'MMDDYY';
 
-    const day = String(date.getDate()).padStart(2, '0');
-    const month = String(date.getMonth() + 1).padStart(2, '0');
-    const year = String(date.getFullYear());
-    const shortYear = year.slice(2);
-
-    
-    switch (dateFormat) {
-      case 'DDMMYY':
-        return `${day}/${month}/${shortYear}`;
-      case 'MMDDYY':
-        return `${month}/${day}/${shortYear}`;
-      case 'YYMMDD':
-        return `${shortYear}/${month}/${day}`;
-      default:
-        return date.toLocaleDateString();
-    }
-  } catch {
-    
-    return date.toLocaleDateString();
-  }
+const MembershipDots: React.FC<{ inA: boolean; inB: boolean }> = ({
+  inA,
+  inB,
+}) => {
+  const label = [
+    inA ? t('dashboard.compare.filter-side', { side: 'A' }) : null,
+    inB ? t('dashboard.compare.filter-side', { side: 'B' }) : null,
+  ]
+    .filter(Boolean)
+    .join(', ');
+  return (
+    <span className="journalit-compare-dots" role="img" aria-label={label}>
+      <span
+        className={`journalit-compare-dot journalit-compare-dot--a${inA ? '' : ' is-empty'}`}
+      />
+      <span
+        className={`journalit-compare-dot journalit-compare-dot--b${inB ? '' : ' is-empty'}`}
+      />
+    </span>
+  );
 };
 
 
@@ -78,46 +78,84 @@ const RecentTradesWidgetComponent: React.FC<BaseWidgetProps> = () => {
 
   return (
     <BaseWidget skeletonType="table">
-      {(data) => {
+      {(data, _dateFormat, _filters, compare) => {
         
         
         
-        const hasRealizedEventRows =
-          analyticsDateBasis === 'exit' &&
-          data.realizedEventTrades !== undefined;
-        const rowSourceTrades = hasRealizedEventRows
-          ? data.realizedEventTrades!
-          : data.trades;
-        const recentTrades: RecentTradeRow[] = rowSourceTrades
-          .flatMap((trade) => {
-            const analyticsDate = hasRealizedEventRows
-              ? ((trade.exitTime as Date | null | undefined) ?? null)
-              : getTradeAnalyticsDate(trade, analyticsDateBasis);
-            if (analyticsDate === null) {
-              return [];
-            }
-            return [
-              {
-                trade,
-                analyticsDate,
-                realizedPnL: hasRealizedEventRows
-                  ? getEffectivePnL(trade)
-                  : undefined,
-              },
-            ];
-          })
-          .sort((a, b) => safeDateSort(b.analyticsDate, a.analyticsDate))
-          .slice(0, 10); 
+        const recentRows = (source: typeof data): RecentTradeRow[] => {
+          const hasRealizedEventRows =
+            analyticsDateBasis === 'exit' &&
+            source.realizedEventTrades !== undefined;
+          const rowSourceTrades = hasRealizedEventRows
+            ? source.realizedEventTrades!
+            : source.trades;
+          return rowSourceTrades
+            .flatMap((trade) => {
+              const analyticsDate = hasRealizedEventRows
+                ? ((trade.exitTime as Date | null | undefined) ?? null)
+                : getTradeAnalyticsDate(trade, analyticsDateBasis);
+              if (analyticsDate === null) {
+                return [];
+              }
+              return [
+                {
+                  trade,
+                  analyticsDate,
+                  realizedPnL: hasRealizedEventRows
+                    ? getEffectivePnL(trade)
+                    : undefined,
+                },
+              ];
+            })
+            .sort((a, b) => safeDateSort(b.analyticsDate, a.analyticsDate))
+            .slice(0, 10); 
+        };
+        const aRows = recentRows(data);
+        
+        
+        const recentTrades: RecentTradeRow[] = compare
+          ? (() => {
+              const bKeys = new Set(recentRows(compare.data).map(recentRowKey));
+              const aKeys = new Set(aRows.map(recentRowKey));
+              const merged = new Map<string, RecentTradeRow>();
+              for (const row of [...aRows, ...recentRows(compare.data)]) {
+                const key = recentRowKey(row);
+                if (!merged.has(key)) {
+                  merged.set(key, {
+                    ...row,
+                    inA: aKeys.has(key),
+                    inB: bKeys.has(key),
+                  });
+                }
+              }
+              return Array.from(merged.values())
+                .sort((a, b) => safeDateSort(b.analyticsDate, a.analyticsDate))
+                .slice(0, 10);
+            })()
+          : aRows;
+        const comparing = compare !== null;
+        const columnCount = comparing ? 5 : 4;
 
         return (
           <div className="journalit-dashboard-recent-trades">
             
             <table
               role="table"
-              className="journalit-dashboard-recent-trades-table"
+              className={`journalit-dashboard-recent-trades-table${comparing ? ' journalit-dashboard-recent-trades-table--compare' : ''}`}
             >
               <thead role="rowgroup">
                 <tr role="row">
+                  {comparing && (
+                    <th
+                      role="columnheader"
+                      scope="col"
+                      className="journalit-compare-dots-column"
+                    >
+                      <span className="journalit-sr-only">
+                        {t('dashboard.compare.in-filters')}
+                      </span>
+                    </th>
+                  )}
                   <th role="columnheader" scope="col">
                     {t('widget.recentTrades.date')}
                   </th>
@@ -137,8 +175,8 @@ const RecentTradesWidgetComponent: React.FC<BaseWidgetProps> = () => {
                   <tr role="row">
                     <td
                       role="cell"
-                      colSpan={4}
-                      aria-colspan={4}
+                      colSpan={columnCount}
+                      aria-colspan={columnCount}
                       className="journalit-dashboard-recent-trades-empty-cell"
                     >
                       <div className="journalit-dashboard-recent-trades-empty-wrapper">
@@ -163,7 +201,8 @@ const RecentTradesWidgetComponent: React.FC<BaseWidgetProps> = () => {
                     </td>
                   </tr>
                 ) : (
-                  recentTrades.map(({ trade, analyticsDate, realizedPnL }) => {
+                  recentTrades.map((row) => {
+                    const { trade, analyticsDate, realizedPnL } = row;
                     const tradeIsOpen = isTradeOpenPreservingNullPnl({
                       tradeStatus: trade.tradeStatus,
                       exitTime: trade.exitTime,
@@ -214,12 +253,23 @@ const RecentTradesWidgetComponent: React.FC<BaseWidgetProps> = () => {
                             event.currentTarget.click();
                           }
                         }}
-                        key={`${trade.path}-${analyticsDate.toISOString()}-${realizedPnL ?? 'trade'}`}
+                        key={recentRowKey(row)}
                         onClick={() => openTradeNote(trade.path)}
                         className={`trade-row${tradeIsOpen && !isRealizedEvent ? ' open-trade' : ''}`}
                       >
+                        {comparing && (
+                          <td
+                            role="cell"
+                            className="journalit-compare-dots-column"
+                          >
+                            <MembershipDots
+                              inA={row.inA ?? false}
+                              inB={row.inB ?? false}
+                            />
+                          </td>
+                        )}
                         <td role="cell" className="date-cell">
-                          {formatDate(analyticsDate, plugin)}
+                          {formatDateDisplay(analyticsDate)}
                         </td>
                         <td role="cell" className="ticker-cell">
                           {trade.instrument || t('widget.recentTrades.unknown')}

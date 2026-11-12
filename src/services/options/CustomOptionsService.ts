@@ -583,6 +583,11 @@ export class CustomOptionsService {
   private readonly mistakeRetirementVersions = new Map<string, number>();
   private readonly eventRetirementVersions = new Map<string, number>();
 
+  
+  public queuedMutations(): Promise<void> {
+    return this.optionMutationTail;
+  }
+
   private enqueueOptionMutation<T>(operation: () => Promise<T>): Promise<T> {
     const result = this.optionMutationTail.then(operation, operation);
     this.optionMutationTail = result.then(

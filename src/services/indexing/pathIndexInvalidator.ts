@@ -7,7 +7,7 @@ interface PathIndexInvalidatorOptions {
   
   matchesPath: (path: string) => boolean;
   
-  onInvalidate: () => void;
+  onInvalidate: (changedPaths?: readonly string[]) => void;
 }
 
 
@@ -19,7 +19,7 @@ export function registerPathIndexInvalidator({
   let metadataCacheEventRefs: EventRef[] = [
     app.metadataCache.on('changed', (file) => {
       if (matchesPath(file.path)) {
-        onInvalidate();
+        onInvalidate([file.path]);
       }
     }),
   ];
@@ -42,13 +42,13 @@ export function registerPathIndexInvalidator({
   let vaultEventRefs: EventRef[] = [
     app.vault.on('delete', (file) => {
       if (file instanceof TFile && matchesPath(file.path)) {
-        onInvalidate();
+        onInvalidate([file.path]);
       }
     }),
     app.vault.on('rename', (file, oldPath) => {
       const newPathMatches = file instanceof TFile && matchesPath(file.path);
       if (newPathMatches || matchesPath(oldPath)) {
-        onInvalidate();
+        onInvalidate([oldPath, file.path]);
       }
     }),
   ];

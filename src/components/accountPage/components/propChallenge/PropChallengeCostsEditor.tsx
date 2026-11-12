@@ -43,11 +43,13 @@ function parseCostKind(value: string): PropChallengeCost['kind'] {
   }
 }
 
-function parseCostDate(value: string): Date {
+export function parseCostDate(value: string): Date {
   return new Date(`${value.slice(0, 10)}T00:00:00`);
 }
 
-function formatCostDate(value: Date | string | undefined): string | undefined {
+export function formatCostDate(
+  value: Date | string | undefined
+): string | undefined {
   if (!value) return undefined;
   const date = typeof value === 'string' ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return undefined;
@@ -56,6 +58,39 @@ function formatCostDate(value: Date | string | undefined): string | undefined {
     String(date.getMonth() + 1).padStart(2, '0'),
     String(date.getDate()).padStart(2, '0'),
   ].join('-');
+}
+
+
+export function DatedListHeading({
+  title,
+  description,
+  addLabel,
+  disabled,
+  onAdd,
+}: {
+  title: string;
+  description: string;
+  addLabel: string;
+  disabled: boolean;
+  onAdd: () => void;
+}) {
+  return (
+    <div className="journalit-prop-challenge-costs-heading">
+      <div className="journalit-prop-challenge-costs-heading-copy">
+        <strong>{title}</strong>
+        <span>{description}</span>
+      </div>
+      <Button
+        size="small"
+        className="journalit-prop-challenge-add-cost"
+        disabled={disabled}
+        onClick={onAdd}
+      >
+        <Plus size={15} aria-hidden="true" />
+        {addLabel}
+      </Button>
+    </div>
+  );
 }
 
 export function PropChallengeCostsEditor({
@@ -71,23 +106,15 @@ export function PropChallengeCostsEditor({
         {t('account.prop-challenge.costs.section-title')}
       </strong>
       {monthlyCostField}
-      <div className="journalit-prop-challenge-costs-heading">
-        <div className="journalit-prop-challenge-costs-heading-copy">
-          <strong>{t('account.prop-challenge.costs.title')}</strong>
-          <span>{t('account.prop-challenge.costs.description')}</span>
-        </div>
-        <Button
-          size="small"
-          className="journalit-prop-challenge-add-cost"
-          disabled={disabled}
-          onClick={() =>
-            onChange(addPropChallengeCost(value, createPropChallengeCost()))
-          }
-        >
-          <Plus size={15} aria-hidden="true" />
-          {t('account.prop-challenge.costs.add')}
-        </Button>
-      </div>
+      <DatedListHeading
+        title={t('account.prop-challenge.costs.title')}
+        description={t('account.prop-challenge.costs.description')}
+        addLabel={t('account.prop-challenge.costs.add')}
+        disabled={disabled}
+        onAdd={() =>
+          onChange(addPropChallengeCost(value, createPropChallengeCost()))
+        }
+      />
       {costs.length === 0 ? (
         <div className="journalit-prop-challenge-costs-empty">
           {t('account.prop-challenge.costs.empty')}
@@ -178,7 +205,7 @@ export function PropChallengeCostsEditor({
           </label>
           <button
             type="button"
-            className="journalit-prop-challenge-cost-remove"
+            className="journalit-prop-challenge-cost-remove journalit-icon-button"
             aria-label={`${t('button.remove')}: ${t(`account.prop-challenge.costs.kind.${cost.kind}`)}`}
             disabled={disabled}
             onClick={() => onChange(removePropChallengeCost(value, cost.id))}

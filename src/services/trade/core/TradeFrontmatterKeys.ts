@@ -13,6 +13,7 @@ export const KNOWN_TRADE_FRONTMATTER_KEYS = new Set<string>([
   'isMissedTrade',
   'isBacktestTrade',
   'missedReason',
+  'exitReason',
   MISSED_TRADE_AGENT_ID_KEY,
   SAMPLE_INSTANCE_FRONTMATTER_KEY,
   SAMPLE_ENTITY_ID_FRONTMATTER_KEY,

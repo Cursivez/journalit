@@ -18,6 +18,8 @@ import {
   parseLocalDateSafe,
 } from '../../../utils/dateUtils';
 import { waitForFileIndexed } from '../../../utils/dataRefresh';
+import { formatLocalizedReviewDate } from '../../../utils/localizedDateTime';
+import { useDateFormat } from '../../../hooks/useDateFormat';
 import { extractReviewContextSections } from '../../../utils/reviewContextSections';
 import { t } from '../../../lang/helpers';
 import { eventBus } from '../../../services/events/EventBus';
@@ -114,17 +116,6 @@ function formatDateKey(date: Date): string {
   const month = String(date.getMonth() + 1).padStart(2, '0');
   const day = String(date.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
-}
-
-const dayHeadingFormatter = new Intl.DateTimeFormat(undefined, {
-  weekday: 'long',
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-});
-
-function formatDayHeading(date: Date): string {
-  return dayHeadingFormatter.format(date);
 }
 
 interface WeeklyDRCAccordionHeaderProps {
@@ -241,12 +232,13 @@ const WeeklyDRCDay: React.FC<{
   preview?: boolean;
   ancestorSourcePaths: readonly string[];
 }> = ({ day, plugin, defaultExpanded, preview, ancestorSourcePaths }) => {
+  const dateFormat = useDateFormat();
   const readOnly = useReviewReadOnly();
   const hasSourceCycle =
     day.sourcePath !== undefined &&
     ancestorSourcePaths.includes(day.sourcePath);
   const hasContent = day.sections.length > 0;
-  const title = formatDayHeading(day.date);
+  const title = formatLocalizedReviewDate(day.date, 'full', dateFormat);
   const [dayState, setDayState] = useState<{
     dateKey: string | null;
     sourceReviewed: boolean;

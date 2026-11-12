@@ -47,6 +47,7 @@ import {
   getCompareMetricWinnerId,
   getSetupTrades,
 } from './setupsViewModel';
+import { Button } from '../ui/Button';
 
 const LazySetupCompareCumulativeChart = React.lazy(async () => {
   const module = await import('../charts/SharedSetupPerformanceChart');
@@ -131,7 +132,9 @@ export const SetupComparePage: React.FC<{
   return (
     <div className="journalit-setups-view journalit-setups-compare-page">
       <header className="journalit-setups-compare-header">
-        <button
+        <Button
+          variant="plain"
+          size="small"
           className="journalit-setups-detail-back-button"
           onClick={() => {
             emitGuideAction(SETUPS_OVERVIEW_OPENED_ACTION_ID);
@@ -141,7 +144,7 @@ export const SetupComparePage: React.FC<{
         >
           <MoveLeft size={15} strokeWidth={2} aria-hidden="true" />
           {t('setups.view.detail.back')}
-        </button>
+        </Button>
         <h1 className="journalit-setups-compare-header__title">
           <SetupCompareTitle compareModels={compareModels} />
         </h1>

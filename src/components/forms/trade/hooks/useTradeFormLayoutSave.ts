@@ -7,6 +7,10 @@ import {
   resolveTradeFormLayoutSettings,
   type TradeFormLayoutSettings,
 } from '../../../../settings/types';
+import {
+  readTradeFormEntryPreferences,
+  type TradeFormEntryPreferences,
+} from '../tradeFormEntryPreferences';
 
 interface TradeFormLayoutSaveOptions {
   plugin: JournalitPlugin;
@@ -25,21 +29,37 @@ export function useTradeFormLayoutSave({
   const [isSaving, setIsSaving] = useState(false);
   const saveInFlightRef = useRef(false);
 
-  const saveLayout = async (layout: TradeFormLayoutSettings) => {
+  
+  const saveLayout = async (
+    layout: TradeFormLayoutSettings,
+    entry: TradeFormEntryPreferences
+  ) => {
     if (saveInFlightRef.current) return;
+    const trade = plugin.settings.trade;
     const resolvedLayout = resolveTradeFormLayoutSettings(layout);
-    const previousLayout = plugin.settings.trade.tradeFormLayout;
+    const previousLayout = trade.tradeFormLayout;
+    const previousEntry = readTradeFormEntryPreferences(trade);
     saveInFlightRef.current = true;
     if (savingStateRef) savingStateRef.current = true;
     try {
       setIsSaving(true);
-      plugin.settings.trade.tradeFormLayout = resolvedLayout;
+      trade.tradeFormLayout = resolvedLayout;
+      Object.assign(trade, entry);
       try {
         await plugin.saveSettings();
       } catch (error) {
         
-        if (plugin.settings.trade.tradeFormLayout === resolvedLayout) {
-          plugin.settings.trade.tradeFormLayout = previousLayout;
+        if (trade.tradeFormLayout === resolvedLayout) {
+          trade.tradeFormLayout = previousLayout;
+        }
+        if (trade.useDollarValueInput === entry.useDollarValueInput) {
+          trade.useDollarValueInput = previousEntry.useDollarValueInput;
+        }
+        if (trade.maeMfeInputMode === entry.maeMfeInputMode) {
+          trade.maeMfeInputMode = previousEntry.maeMfeInputMode;
+        }
+        if (trade.showSeconds === entry.showSeconds) {
+          trade.showSeconds = previousEntry.showSeconds;
         }
         throw error;
       }

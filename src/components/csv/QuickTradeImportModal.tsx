@@ -85,6 +85,7 @@ import {
 } from './TradeImportPreviewReview';
 import { openImportManagement } from '../../services/tradeImport/importManagementNavigation';
 import { JournalitModal } from '../modals/JournalitModal';
+import { Button } from '../ui/Button';
 
 const LOCAL_WRITE_TIMEOUT_MS = 10000;
 const PRIVACY_URL = 'https://journalit.co/privacy';
@@ -731,18 +732,19 @@ function QuickImportActions({
   return (
     <div className="journalit-quick-import-actions">
       {anotherFileLabel && (
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="small"
           className="journalit-quick-import-another-file-button"
           onClick={onChooseAnotherFile}
         >
           {anotherFileLabel}
-        </button>
+        </Button>
       )}
       {fullImportLabel && (
-        <button type="button" onClick={onOpenFullImport}>
+        <Button variant="secondary" size="small" onClick={onOpenFullImport}>
           {fullImportLabel}
-        </button>
+        </Button>
       )}
       <div className="journalit-quick-import-actions__primary">
         {importButton}
@@ -770,16 +772,17 @@ function QuickImportImportButton({
   onImport: () => void;
 }) {
   return (
-    <button
-      type="button"
-      className="mod-cta"
+    <Button
+      variant="primary"
+      size="small"
+
       disabled={disabled}
       onClick={onImport}
     >
       {importing
         ? t('quick-import.status.importing')
         : tPlural('quick-import.action.import-count', writableCount)}
-    </button>
+    </Button>
   );
 }
 
@@ -958,9 +961,9 @@ function renderQuickImportAccessGate({
     return (
       <div className="journalit-quick-import-modal">
         <p>{t('quick-import.gate.sign-in')}</p>
-        <button type="button" className="mod-cta" onClick={onSignIn}>
+        <Button variant="primary" size="small" onClick={onSignIn}>
           {t('quick-import.gate.sign-in-cta')}
-        </button>
+        </Button>
       </div>
     );
   }
@@ -978,9 +981,9 @@ function renderQuickImportAccessGate({
       <div className="journalit-quick-import-modal">
         <p>{t('quick-import.gate.pro')}</p>
         <div className="journalit-quick-import-gate-actions">
-          <button type="button" className="mod-cta" onClick={onUpgrade}>
+          <Button variant="primary" size="small" onClick={onUpgrade}>
             {t('premium.gate.cta.continue-pro')}
-          </button>
+          </Button>
           <button
             type="button"
             className="journalit-quick-import-preview-free-button"

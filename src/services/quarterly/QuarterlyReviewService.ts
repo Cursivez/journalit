@@ -27,12 +27,11 @@ import {
 } from '../../demo/DemoOwnership';
 
 import { FolderPathService } from '../core/FolderPathService';
-import { parseTradeFinancialFields } from '../../utils/tradeUtils';
+import { buildPeriodAnalyticsTrade } from '../trade/core/PeriodAnalyticsTrade';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
 import { eventBus } from '../events/EventBus';
 import { ReviewChangedPayload } from '../events/types';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
-import { extractCanonicalProjectionPnlFields } from '../trade/core/CanonicalProjectionFields';
 import {
   applyReviewFrontmatterUpdates,
   applyReviewInitialContent,
@@ -83,22 +82,6 @@ function getNumberValue(
   return typeof value === 'number' ? value : undefined;
 }
 
-function getBooleanValue(
-  record: Record<string, unknown>,
-  key: string
-): boolean | undefined {
-  const value = record[key];
-  if (value === 'true') return true;
-  if (value === 'false') return false;
-  return typeof value === 'boolean' ? value : undefined;
-}
-
-function getStringArray(value: unknown): string[] {
-  return Array.isArray(value)
-    ? value.filter((item): item is string => typeof item === 'string')
-    : [];
-}
-
 function getGradeValue(value: unknown): keyof GradeDistribution | undefined {
   switch (value) {
     case 'A':
@@ -108,43 +91,6 @@ function getGradeValue(value: unknown): keyof GradeDistribution | undefined {
     default:
       return undefined;
   }
-}
-
-function createQuarterlyTradeFromFrontmatter(
-  frontmatter: Record<string, unknown>,
-  normalizedExecution: ReturnType<
-    typeof normalizeTradeExecutionForPeriodAnalytics
-  > & {},
-  path: string
-): Trade {
-  const originalPnlWasNull =
-    frontmatter.pnl === undefined || frontmatter.pnl === null;
-
-  return {
-    instrument:
-      getStringValue(frontmatter, 'instrument') ??
-      getStringValue(frontmatter, 'ticker'),
-    direction:
-      getStringValue(frontmatter, 'direction') ??
-      getStringValue(frontmatter, 'side') ??
-      '',
-    ...normalizedExecution,
-    pnl: typeof frontmatter.pnl === 'number' ? frontmatter.pnl : 0,
-    setup: getStringArray(frontmatter.setup),
-    tags: getStringArray(frontmatter.tags),
-    mistake: getStringArray(frontmatter.mistake),
-    account: Array.isArray(frontmatter.account)
-      ? getStringArray(frontmatter.account)
-      : typeof frontmatter.account === 'string'
-        ? [frontmatter.account]
-        : [],
-    path,
-    ...extractCanonicalProjectionPnlFields(frontmatter),
-    tradeStatus: getStringValue(frontmatter, 'tradeStatus'),
-    useDirectPnLInput: getBooleanValue(frontmatter, 'useDirectPnLInput'),
-    _originalPnlWasNull: originalPnlWasNull,
-    ...parseTradeFinancialFields(frontmatter),
-  };
 }
 
 export class QuarterlyReviewService extends CustomDataService {
@@ -542,7 +488,7 @@ export class QuarterlyReviewService extends CustomDataService {
             const tradeQuarter = getQuarterForMonth(tradingDay.getMonth() + 1);
             if (tradingDay.getFullYear() === year && tradeQuarter === quarter) {
               trades.push(
-                createQuarterlyTradeFromFrontmatter(
+                buildPeriodAnalyticsTrade(
                   frontmatter,
                   normalizedExecution,
                   file.path

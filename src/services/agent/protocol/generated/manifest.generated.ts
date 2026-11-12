@@ -27,10 +27,11 @@ import type { ViewImageResult } from './view_image.result.generated';
 export const agentContractManifest = {
   "version": "1.0.0",
   "protocol_major": 1,
-  "digest": "sha256:2eeb8fdd27aa163cae31004ad4a782fd6d54cefb9292bd1f2dba0e066df0b9dc",
+  "digest": "sha256:875454ba57910b0cafcb178da23cca2d1650209393157f3298cfdda44c3e01f5",
   "schemas": [
     "actions_accounts",
     "actions_custom_fields",
+    "actions_dashboard_comparisons",
     "actions_layouts",
     "actions_options",
     "actions_prop_challenges",
@@ -92,6 +93,9 @@ export const agentContractManifest = {
     "custom_field.delete",
     "custom_field.reorder",
     "custom_field.update",
+    "dashboard_comparison.create",
+    "dashboard_comparison.delete",
+    "dashboard_comparison.update",
     "dashboard_layout.create",
     "dashboard_layout.delete",
     "dashboard_layout.duplicate",
@@ -103,6 +107,7 @@ export const agentContractManifest = {
     "event.merge",
     "event.rename",
     "event.update_style",
+    "home_goal.set",
     "home_layout.create",
     "home_layout.delete",
     "home_layout.duplicate",
@@ -114,11 +119,15 @@ export const agentContractManifest = {
     "mistake.merge",
     "mistake.rename",
     "prop_challenge.add_cost",
+    "prop_challenge.add_prior_payout",
     "prop_challenge.advance",
     "prop_challenge.configure",
     "prop_challenge.delete_cost",
+    "prop_challenge.delete_prior_payout",
     "prop_challenge.fail",
+    "prop_challenge.remove_drawdown_floor",
     "prop_challenge.reopen",
+    "prop_challenge.set_drawdown_floor",
     "review.add_images",
     "review.add_key_events",
     "review.add_session_log_entries",
@@ -165,8 +174,10 @@ export const agentContractManifest = {
     "tag.merge",
     "tag.rename",
     "tag.set_color",
+    "trade.add_images",
     "trade.create",
     "trade.delete",
+    "trade.remove_images",
     "trade.set_image_annotations",
     "trade.set_type",
     "trade.update"
@@ -218,6 +229,20 @@ export const agentActionCatalog = [
     "scope": "trades:write",
     "approval": "always",
     "title": "Delete trade"
+  },
+  {
+    "id": "trade.add_images",
+    "domain": "trades",
+    "scope": "trades:write",
+    "approval": "standard",
+    "title": "Add trade images"
+  },
+  {
+    "id": "trade.remove_images",
+    "domain": "trades",
+    "scope": "trades:write",
+    "approval": "always",
+    "title": "Remove trade images"
   },
   {
     "id": "trade.set_image_annotations",
@@ -612,6 +637,13 @@ export const agentActionCatalog = [
     "title": "Set active home layout"
   },
   {
+    "id": "home_goal.set",
+    "domain": "layouts",
+    "scope": "configuration:write",
+    "approval": "standard",
+    "title": "Set home goal"
+  },
+  {
     "id": "review_template.create",
     "domain": "review_templates",
     "scope": "configuration:write",
@@ -829,11 +861,60 @@ export const agentActionCatalog = [
     "title": "Delete challenge cost"
   },
   {
+    "id": "prop_challenge.add_prior_payout",
+    "domain": "prop_challenges",
+    "scope": "configuration:write",
+    "approval": "standard",
+    "title": "Record earlier payout"
+  },
+  {
+    "id": "prop_challenge.delete_prior_payout",
+    "domain": "prop_challenges",
+    "scope": "configuration:write",
+    "approval": "always",
+    "title": "Delete earlier payout"
+  },
+  {
+    "id": "prop_challenge.set_drawdown_floor",
+    "domain": "prop_challenges",
+    "scope": "configuration:write",
+    "approval": "standard",
+    "title": "Set drawdown floor"
+  },
+  {
+    "id": "prop_challenge.remove_drawdown_floor",
+    "domain": "prop_challenges",
+    "scope": "configuration:write",
+    "approval": "always",
+    "title": "Remove drawdown floor"
+  },
+  {
     "id": "prop_challenge.configure",
     "domain": "prop_challenges",
     "scope": "configuration:write",
     "approval": "standard",
     "title": "Set up challenge"
+  },
+  {
+    "id": "dashboard_comparison.create",
+    "domain": "dashboard_comparisons",
+    "scope": "configuration:write",
+    "approval": "standard",
+    "title": "Save a Dashboard comparison"
+  },
+  {
+    "id": "dashboard_comparison.update",
+    "domain": "dashboard_comparisons",
+    "scope": "configuration:write",
+    "approval": "standard",
+    "title": "Update a saved Dashboard comparison"
+  },
+  {
+    "id": "dashboard_comparison.delete",
+    "domain": "dashboard_comparisons",
+    "scope": "configuration:write",
+    "approval": "standard",
+    "title": "Delete a saved Dashboard comparison"
   }
 ] as const;
 
