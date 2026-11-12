@@ -182,16 +182,65 @@ export const KEY_EVENTS_WIDGET_STYLES = `
   display: flex;
   align-items: center;
   gap: 2px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: none;
-  background: transparent;
+}
+
+.journalit-key-events .key-events-no-news {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  padding: 4px 10px;
+  border-radius: var(--journalit-radius-md);
+  background: color-mix(in srgb, var(--background-secondary) 72%, transparent);
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--journalit-font-size-caption);
+}
+
+.journalit-key-events .key-events-no-news-icon {
+  flex-shrink: 0;
+  color: var(--text-faint);
+}
+
+.journalit-key-events .journalit-key-events-no-news-clear {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: none;
+  border-radius: var(--journalit-radius-sm);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-faint);
   cursor: pointer;
 }
 
-.journalit-key-events .journalit-key-events-header-add-button:hover {
+.journalit-key-events .journalit-key-events-no-news-clear:hover {
+  background: var(--background-modifier-hover);
+  color: var(--text-normal);
+}
+
+.journalit-key-events .journalit-key-events-add-row-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  width: 100%;
+  min-height: 30px;
+  margin-top: 6px;
+  padding: 4px 10px;
+  border: 1px dashed var(--background-modifier-border);
+  border-radius: var(--journalit-radius-md);
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-muted);
+  font-size: var(--journalit-font-size-caption);
+  cursor: pointer;
+}
+
+.journalit-key-events .journalit-key-events-add-row-button:hover {
   background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
@@ -208,39 +257,13 @@ export const KEY_EVENTS_WIDGET_STYLES = `
   align-items: center;
   justify-content: center;
   gap: 5px;
-  min-height: 26px;
-  padding: 3px 8px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-muted);
-  font-size: 11px;
-  cursor: pointer;
-}
-
-.journalit-key-events .journalit-key-events-source-button:hover:not(:disabled) {
-  background: var(--background-modifier-hover);
-  color: var(--text-normal);
-}
-
-.journalit-key-events .key-events-source-button--calendar {
-  color: var(--text-normal);
 }
 
 .journalit-key-events .key-events-source-button--restore {
   margin-left: auto;
-  border-color: transparent;
-  color: var(--text-muted);
-}
-
-.journalit-key-events .journalit-key-events-source-button:focus-visible {
-  outline: 2px solid var(--interactive-accent);
-  outline-offset: 1px;
 }
 
 .journalit-key-events .journalit-key-events-source-button:disabled {
-  cursor: wait;
   opacity: 0.45;
 }
 
@@ -476,23 +499,10 @@ export const KEY_EVENTS_WIDGET_STYLES = `
 
 .journalit-key-events .journalit-key-events-add-button {
   align-self: flex-start;
-  padding: 8px 16px;
-  border-radius: 4px;
-  border: none;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-  font-size: 14px;
-  cursor: pointer;
-}
-
-.journalit-key-events .journalit-key-events-add-button:hover:not(:disabled) {
-  background: var(--interactive-accent-hover);
-  color: var(--text-on-accent);
 }
 
 .journalit-key-events .journalit-key-events-add-button:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .journalit-key-events .key-events-list {
@@ -652,17 +662,18 @@ export const KEY_EVENTS_WIDGET_STYLES = `
   margin-top: 2px;
 }
 
-.journalit-key-events .key-events-action-button,
-.journalit-key-events .key-events-remove-button,
 .journalit-key-events .journalit-key-events-secondary-button,
 .journalit-key-events .key-events-save-button {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  padding: 2px 6px;
-  border-radius: 4px;
-  border: none;
-  background: transparent;
+}
+
+.journalit-key-events .key-events-action-button,
+.journalit-key-events .key-events-remove-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   color: var(--text-muted);
   font-size: 11px;
   cursor: pointer;
@@ -673,32 +684,19 @@ export const KEY_EVENTS_WIDGET_STYLES = `
 .journalit-key-events .key-events-remove-button {
   width: 24px;
   height: 24px;
-  padding: 0;
+  min-width: 0;
+  min-height: 0;
 }
 
-.journalit-key-events .key-events-action-button:hover,
-.journalit-key-events .journalit-key-events-secondary-button:hover {
-  background: var(--background-modifier-hover);
+.journalit-key-events .key-events-action-button:hover {
   color: var(--text-normal);
-}
-
-.journalit-key-events .key-events-save-button {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-}
-
-.journalit-key-events .key-events-save-button:hover:not(:disabled) {
-  background: var(--interactive-accent-hover);
-  color: var(--text-on-accent);
 }
 
 .journalit-key-events .key-events-save-button:disabled {
   opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .journalit-key-events .key-events-remove-button:hover {
-  background: var(--background-modifier-hover);
   color: var(--text-error);
 }
 
@@ -808,21 +806,7 @@ export const KEY_EVENTS_WIDGET_STYLES = `
 
 .journalit-key-events .journalit-key-events-show-all-toggle {
   align-self: flex-end;
-  height: auto;
   margin-top: 6px;
-  padding: 2px 6px;
-  border: none;
-  border-radius: 4px;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-faint);
-  font-size: 11px;
   font-style: normal;
-  cursor: pointer;
-}
-
-.journalit-key-events .journalit-key-events-show-all-toggle:hover {
-  background: var(--background-modifier-hover);
-  color: var(--text-muted);
 }
 `;

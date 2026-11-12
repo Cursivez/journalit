@@ -279,6 +279,8 @@ const formatDrawdown = (
 export interface PnLChartDataPoint {
   date: string;
   dateKey: string;
+  
+  time?: number;
   pnl: number;
   tradePnL: number;
   accounts?: string;
@@ -425,6 +427,7 @@ const buildPnLChartData = (
     chartData.push({
       date: '', 
       dateKey: nextDateKey(firstTimestamp, 'initial'),
+      time: firstTimestamp ?? undefined,
       pnl: 0,
       tradePnL: 0,
       cumulativeR: 0,
@@ -478,6 +481,7 @@ const buildPnLChartData = (
     chartData.push({
       date: '', 
       dateKey: nextDateKey(safeGetTime(tradeDate), 'trade'),
+      time: safeGetTime(tradeDate) ?? undefined,
       pnl: cumulativePnL,
       tradePnL: tradePnL,
       accounts: formatTradeAccountLabel(trade),
@@ -500,6 +504,8 @@ const buildPnLChartData = (
 export interface DrawdownChartDataPoint {
   date: string;
   dateKey: string;
+  
+  time?: number;
   drawdown: number;
   drawdownAmount: number;
   drawdownPercent?: number | null;
@@ -688,6 +694,7 @@ export const prepareDrawdownChartState = (
     chartData.push({
       date: '',
       dateKey: nextDateKey(analytics.points[0].realizedAtMs, 'initial'),
+      time: analytics.points[0].realizedAtMs ?? undefined,
       drawdown: 0,
       drawdownAmount: 0,
       drawdownPercent:
@@ -741,6 +748,7 @@ export const prepareDrawdownChartState = (
       chartData.push({
         date: '',
         dateKey: nextDateKey(point.realizedAtMs, 'trade'),
+        time: point.realizedAtMs ?? undefined,
         drawdown: -point.drawdownAmount,
         drawdownAmount: point.drawdownAmount,
         drawdownPercent: point.drawdownPercent,

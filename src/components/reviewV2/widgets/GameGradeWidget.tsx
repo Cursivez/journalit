@@ -25,6 +25,7 @@ import {
 } from '../reviewWidgetNavigation';
 import { resolveYearlyReviewYear } from '../../../utils/yearlyReviewYear';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
+import { Button } from '../../ui/Button';
 
 type GameKind = 'mental' | 'technical';
 
@@ -508,26 +509,30 @@ const GameGradePagination: React.FC<{
       className="journalit-reviewv2-pagination-controls"
       {...shareCaptureExcludeProps}
     >
-      <button
+      <Button
+        variant="secondary"
+        size="small"
         onClick={onPrev}
         disabled={page === 0}
         className="journalit-reviewv2-pagination-button"
       >
         {t('widget.pagination.prev')}
-      </button>
+      </Button>
       <span className="journalit-reviewv2-pagination-status">
         {t('widget.pagination.page', {
           current: String(page + 1),
           total: String(totalPages),
         })}
       </span>
-      <button
+      <Button
+        variant="secondary"
+        size="small"
         onClick={onNext}
         disabled={page >= totalPages - 1}
         className="journalit-reviewv2-pagination-button"
       >
         {t('widget.pagination.next')}
-      </button>
+      </Button>
     </div>
   </div>
 );

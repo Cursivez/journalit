@@ -257,37 +257,24 @@ export const SESSION_MODE_STYLES = `
   margin-top: var(--size-2-1);
 }
 
-.journalit-session-mode .journalit-session-mode-edit-button,
-.journalit-session-mode .journalit-session-mode-drc-header-button {
-  all: unset;
+.journalit-session-mode .journalit-session-mode-edit-button {
+  
+  justify-self: end;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   gap: var(--size-2-1);
-  min-height: 28px;
-  padding: 0 var(--size-2-2);
-  border: 1px solid transparent;
-  border-radius: var(--radius-s);
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: var(--font-ui-smaller);
-  font-weight: var(--font-medium);
-  line-height: 1;
 }
 
-.journalit-session-mode .journalit-session-mode-edit-button:hover,
-.journalit-session-mode .journalit-session-mode-edit-button:focus-visible,
+.journalit-session-mode .journalit-session-mode-drc-header-button {
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--size-2-1);
+}
+
 .journalit-session-mode .journalit-session-mode-drc-header-button:hover,
 .journalit-session-mode .journalit-session-mode-drc-header-button:focus-visible {
-  border-color: transparent;
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
   color: var(--text-normal);
 }
 
@@ -295,7 +282,7 @@ export const SESSION_MODE_STYLES = `
   justify-content: center;
   width: 24px;
   min-height: 24px;
-  padding: 0;
+  min-width: 0;
 }
 
 .journalit-session-mode-header h3 {
@@ -479,7 +466,7 @@ export const SESSION_MODE_STYLES = `
   overflow-y: auto;
   border: 1px solid var(--background-modifier-border);
   border-radius: 6px;
-  background: var(--background-primary);
+  background: var(--journalit-control-menu-fill);
   box-shadow: var(--shadow-s);
   animation: none;
   transform: none;
@@ -571,22 +558,17 @@ export const SESSION_MODE_STYLES = `
   height: 34px;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s);
-  background: var(--background-primary-alt);
   color: var(--text-muted);
   cursor: pointer;
 }
 
 .journalit-trade-gate-restart-button:hover,
 .journalit-trade-gate-restart-button:focus-visible {
-  border-color: var(--interactive-accent);
   color: var(--text-normal);
 }
 
 .journalit-trade-gate-outcome .journalit-trade-gate-restart-button {
   margin-left: auto;
-  background: rgba(var(--mono-rgb-100), 0.06);
 }
 
 .journalit-trade-gate-accordion {
@@ -1107,39 +1089,12 @@ export const SESSION_MODE_STYLES = `
 }
 
 .journalit-session-mode-waiting-state .journalit-session-mode-waiting-state__action {
-  all: unset;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--size-2-2);
   width: 100%;
-  min-height: 36px;
-  padding: var(--size-2-2) var(--size-4-3);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  appearance: none;
-  background: transparent;
-  background-color: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: var(--font-ui-small);
-  line-height: 1.2;
-  transition:
-    border-color 120ms ease,
-    color 120ms ease;
-}
-
-.journalit-session-mode-waiting-state .journalit-session-mode-waiting-state__action:hover,
-.journalit-session-mode-waiting-state .journalit-session-mode-waiting-state__action:focus-visible {
-  border-color: var(--background-modifier-border-hover);
-  background: transparent;
-  background-color: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  color: var(--text-normal);
 }
 
 .journalit-session-mode-break-state {
@@ -1194,39 +1149,12 @@ export const SESSION_MODE_STYLES = `
 }
 
 .journalit-session-mode-break-state .journalit-session-mode-break-state__action {
-  all: unset;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: var(--size-2-2);
   width: 100%;
-  min-height: 36px;
-  padding: var(--size-2-2) var(--size-4-3);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  appearance: none;
-  background: transparent;
-  background-color: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-size: var(--font-ui-small);
-  line-height: 1.2;
-  transition:
-    border-color 120ms ease,
-    color 120ms ease;
-}
-
-.journalit-session-mode-break-state .journalit-session-mode-break-state__action:hover,
-.journalit-session-mode-break-state .journalit-session-mode-break-state__action:focus-visible {
-  border-color: var(--background-modifier-border-hover);
-  background: transparent;
-  background-color: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  color: var(--text-normal);
 }
 
 .journalit-session-mode-ended-summary {
@@ -1677,8 +1605,8 @@ export const SESSION_MODE_STYLES = `
   padding: 0;
   border: 1px solid var(--background-modifier-border) !important;
   border-radius: 4px;
-  background: var(--background-primary) !important;
-  background-color: var(--background-primary) !important;
+  background: var(--journalit-control-menu-fill) !important;
+  background-color: var(--journalit-control-menu-fill) !important;
   box-shadow: var(--shadow-s) !important;
 }
 
@@ -1789,7 +1717,6 @@ export const SESSION_MODE_STYLES = `
   box-shadow: none !important;
 }
 
-.journalit-session-log-edit-form select,
 .journalit-session-log-edit-form textarea {
   width: 100%;
 }
@@ -2113,37 +2040,8 @@ export const SESSION_MODE_STYLES = `
   opacity: 1;
 }
 
-.journalit-session-log-entry__actions button,
-.journalit-session-log-icon-button {
-  min-height: 26px;
-  padding: 0 var(--size-2-2);
-  font-size: var(--font-ui-smaller);
-}
-
 .journalit-session-log-entry__actions .journalit-session-log-action-button {
-  all: unset;
-  appearance: none !important;
-  -webkit-appearance: none !important;
-  box-sizing: border-box;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--size-2-1);
-  height: 28px;
-  min-height: 28px;
-  margin: 0 !important;
-  padding: 0 var(--size-2-2) !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: var(--radius-s) !important;
-  background: var(--background-primary-alt) !important;
-  background-color: var(--background-primary-alt) !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  color: var(--text-muted);
-  cursor: pointer;
-  font-family: inherit;
-  font-size: var(--font-ui-smaller);
-  line-height: 1;
+  margin: 0;
 }
 
 .journalit-session-log-entry__actions .journalit-session-log-action-button--icon {
@@ -2151,16 +2049,6 @@ export const SESSION_MODE_STYLES = `
   min-width: 28px;
   height: 28px;
   min-height: 28px;
-  padding: 5px !important;
-}
-
-.journalit-session-log-entry__actions .journalit-session-log-action-button:hover,
-.journalit-session-log-entry__actions .journalit-session-log-action-button:focus-visible {
-  border-color: var(--background-modifier-border-hover) !important;
-  background: var(--background-modifier-hover) !important;
-  background-color: var(--background-modifier-hover) !important;
-  box-shadow: none !important;
-  color: var(--text-normal);
 }
 
 .journalit-session-log-entry__actions .journalit-session-log-action-button .journalit-obsidian-icon {
@@ -2182,17 +2070,11 @@ export const SESSION_MODE_STYLES = `
   width: 34px;
   min-width: 34px;
   height: 34px;
-  padding: 0;
-  border-radius: var(--radius-s);
   opacity: 0;
-  transition: opacity 120ms ease-in-out;
 }
 
 .journalit-session-log-composer-bar .journalit-session-log-icon-button {
   opacity: 1;
-  border-color: transparent;
-  background: transparent;
-  box-shadow: none;
 }
 
 .journalit-session-log-composer-bar .journalit-session-log-icon-button:not(:disabled) {
@@ -2201,12 +2083,6 @@ export const SESSION_MODE_STYLES = `
 
 .journalit-session-log-composer-bar .journalit-session-log-icon-button:disabled {
   cursor: not-allowed;
-}
-
-.journalit-session-log-composer-bar .journalit-session-log-send-button {
-  border-color: var(--background-modifier-border);
-  background: var(--background-primary-alt);
-  box-shadow: var(--input-shadow);
 }
 
 .journalit-session-log-composer-bar .journalit-session-log-icon-button.is-active {
@@ -2266,56 +2142,6 @@ export const SESSION_MODE_STYLES = `
 .journalit-session-log-entry--tag-amber .journalit-session-log-entry__body { border-left-color: rgba(var(--color-yellow-rgb, 224, 175, 72), 0.9); }
 .journalit-session-log-entry--tag-red .journalit-session-log-entry__body { border-left-color: rgba(var(--color-red-rgb, 233, 49, 71), 0.9); }
 .journalit-session-log-entry--tag-orange .journalit-session-log-entry__body { border-left-color: rgba(var(--color-orange-rgb, 245, 124, 0), 0.9); }
-
-.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-container {
-  position: relative;
-  display: inline-block;
-  flex: 0 0 auto;
-  width: 36px;
-  height: 20px;
-}
-
-.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-input {
-  position: absolute;
-  width: 1px;
-  height: 1px;
-  margin: 0;
-  opacity: 0;
-}
-
-.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-label {
-  position: absolute;
-  inset: 0;
-  display: block;
-  cursor: pointer;
-  overflow: hidden;
-  border-radius: 999px;
-  background: var(--background-modifier-border);
-}
-
-.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-button {
-  position: absolute;
-  top: 2px;
-  left: 2px;
-  width: 16px;
-  height: 16px;
-  border-radius: 50%;
-  background: var(--background-primary);
-  box-shadow: var(--toggle-thumb-shadow);
-}
-
-.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-input:checked + .toggle-switch-label {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-}
-
-.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-input:checked + .toggle-switch-label .toggle-switch-button {
-  transform: translateX(16px);
-}
-
-.journalit-settings .journalit-session-log-trade-events-setting .toggle-switch-input:focus-visible + .toggle-switch-label {
-  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
-}
 
 .journalit-session-log-tag-settings-list {
   display: flex;
@@ -2573,24 +2399,12 @@ export const SESSION_MODE_STYLES = `
 }
 
 .journalit-settings-tab .session-mode-settings .journalit-session-mode-layout-reorder-button.journalit-button {
-  min-width: 28px !important;
-  width: 28px !important;
-  height: 28px !important;
-  padding: 5px !important;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: 4px !important;
-  background-color: var(--background-primary) !important;
-  color: var(--text-normal) !important;
-  gap: 0 !important;
+  
+  width: 28px;
+  min-width: 28px;
+  padding: 0;
+  gap: 0;
   flex: 0 0 28px;
-  line-height: 1;
-  transition: all 0.2s ease !important;
-}
-
-.journalit-settings-tab .session-mode-settings .journalit-session-mode-layout-reorder-button.journalit-button:hover:not(:disabled) {
-  border-color: var(--interactive-accent) !important;
-  background-color: var(--background-modifier-hover) !important;
-  color: var(--text-normal) !important;
 }
 
 .journalit-settings-tab .session-mode-settings .journalit-session-mode-layout-reorder-button.journalit-button:disabled {
@@ -2640,14 +2454,11 @@ export const SESSION_MODE_STYLES = `
   line-height: 1.2;
 }
 
-.journalit-session-log-tag-field > input,
-.journalit-session-log-tag-field > select {
+.journalit-session-log-tag-field > input {
   width: 100%;
 }
 
 .journalit-settings .journalit-session-log-tag-field > input.journalit-settings-input {
-  height: 36px;
-  min-height: 36px;
   box-sizing: border-box;
 }
 
@@ -2656,7 +2467,7 @@ export const SESSION_MODE_STYLES = `
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  height: 36px;
+  height: var(--journalit-control-height);
   margin-top: calc(var(--font-ui-smaller) * 1.2 + var(--size-2-1));
 }
 
@@ -2780,12 +2591,11 @@ export const SESSION_MODE_STYLES = `
 }
 
 .journalit-settings .journalit-session-log-tag-add-row .journalit-settings-input,
-.journalit-settings .journalit-session-log-tag-add-row select,
 .journalit-settings .journalit-session-log-tag-add-row button.journalit-button {
   align-self: stretch !important;
   justify-self: stretch !important;
-  min-height: 36px !important;
-  height: 36px !important;
+  min-height: var(--journalit-control-height) !important;
+  height: var(--journalit-control-height) !important;
   box-sizing: border-box;
 }
 
@@ -2884,11 +2694,15 @@ export const SESSION_MODE_STYLES = `
   flex: 1 1 auto;
   width: auto;
   min-width: 0;
+  box-sizing: border-box;
+  
+  field-sizing: content;
+  height: auto;
   min-height: 30px;
-  height: 30px;
   max-height: 96px;
   padding: 6px 8px;
-  resize: vertical;
+  overflow-y: auto;
+  resize: none;
   line-height: 1.35;
 }
 
@@ -2908,23 +2722,13 @@ export const SESSION_MODE_STYLES = `
   height: 28px;
   min-height: 28px;
   margin: 0;
-  padding: 5px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  background-color: var(--background-primary);
-  box-shadow: none;
   color: var(--text-normal);
   cursor: pointer;
   line-height: 1;
-  transition: all 0.2s ease;
 }
 
 .journalit-session-log-entry button.journalit-session-log-edit-icon-button.custom-options-compact-icon-button:hover,
 .journalit-session-log-entry button.journalit-session-log-edit-icon-button.custom-options-compact-icon-button:focus-visible {
-  outline: none;
-  border-color: var(--interactive-accent);
-  background-color: var(--background-modifier-hover);
-  box-shadow: none;
   color: var(--text-normal);
 }
 
@@ -2990,34 +2794,11 @@ export const SESSION_MODE_STYLES = `
 }
 
 .journalit-session-mode .journalit-session-mode-unplanned-strip__stop {
-  all: unset;
   box-sizing: border-box;
   display: inline-flex;
   align-items: center;
   gap: var(--size-2-2);
-  min-height: 32px;
-  padding: 0 var(--size-4-2);
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-m);
-  color: var(--text-normal);
-  cursor: pointer;
-  font-size: var(--font-ui-small);
-  font-weight: var(--font-medium);
-  line-height: 1;
   white-space: nowrap;
-  transition:
-    border-color 120ms ease,
-    color 120ms ease;
-}
-
-.journalit-session-mode .journalit-session-mode-unplanned-strip__stop:hover,
-.journalit-session-mode .journalit-session-mode-unplanned-strip__stop:focus-visible {
-  border-color: var(--background-modifier-border-hover);
-  color: var(--text-error);
-}
-
-.journalit-session-mode .journalit-session-mode-unplanned-strip__stop:focus-visible {
-  box-shadow: 0 0 0 2px var(--background-modifier-border-focus);
 }
 
 .journalit-session-mode-ended-summary__unplanned {

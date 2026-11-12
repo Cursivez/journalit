@@ -1,6 +1,13 @@
 
 
-import React, { useCallback, useMemo, useRef, useState } from 'react';
+import React, {
+  type Ref,
+  type RefObject,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+} from 'react';
 import type JournalitPlugin from '../../../../main';
 import type { UnifiedFilters } from '../types';
 import {
@@ -13,6 +20,7 @@ import type {
 } from './filterMenuState';
 import {
   CascadingFilterMenu,
+  type FilterMenuHandle,
   type FilterMenuTriggerState,
 } from './CascadingFilterMenu';
 import {
@@ -84,6 +92,14 @@ interface FilterMenuButtonProps {
   onOpenChange?: (isOpen: boolean) => void;
   
   guideTour?: TradeFilterMenuTour | null;
+  
+  title?: React.ReactNode;
+  
+  extraEntries?: FilterMenuEntry[];
+  
+  menuRef?: Ref<FilterMenuHandle>;
+  
+  anchorRef?: RefObject<HTMLElement | null>;
 }
 
 
@@ -99,6 +115,10 @@ export const FilterMenuButton: React.FC<FilterMenuButtonProps> = ({
   renderTrigger,
   onOpenChange,
   guideTour = null,
+  title,
+  extraEntries,
+  menuRef,
+  anchorRef,
 }) => {
   const loadGenerationRef = useRef(0);
   const [asyncOptions, setAsyncOptions] =
@@ -112,9 +132,20 @@ export const FilterMenuButton: React.FC<FilterMenuButtonProps> = ({
     showImageFilters,
   });
   
-  const entries = useMemo(
+  const filterEntries = useMemo(
     () => buildFilterMenuEntries(filters, sources, onChange),
     [filters, onChange, sources]
+  );
+  const entries = useMemo(
+    () =>
+      extraEntries && extraEntries.length > 0
+        ? [
+            ...filterEntries,
+            { kind: 'divider' as const, id: 'divider-commands' },
+            ...extraEntries,
+          ]
+        : filterEntries,
+    [extraEntries, filterEntries]
   );
 
   const handleOpenChange = useCallback(
@@ -183,6 +214,9 @@ export const FilterMenuButton: React.FC<FilterMenuButtonProps> = ({
       onOpenChange={handleOpenChange}
       renderTrigger={renderTrigger}
       guideTour={menuGuideTour}
+      title={title}
+      menuRef={menuRef}
+      anchorRef={anchorRef}
     />
   );
 };

@@ -15,7 +15,9 @@ import {
 import type { FilterMatchMode } from '../filterMatchModes';
 import { matchModeLabel } from './filterMenuNodes';
 import {
+  type FilterMenuActionEntry,
   type FilterMenuEntry,
+  type FilterMenuFormNode,
   type FilterMenuNode,
   type FilterMenuValuesNode,
   type FilterMenuDateRangeNode,
@@ -82,7 +84,7 @@ export interface PanelFrameProps {
 }
 
 interface PanelChromeProps extends PanelFrameProps {
-  title: string;
+  title: React.ReactNode;
   isForm?: boolean;
   headerAction?: React.ReactNode;
   
@@ -195,7 +197,93 @@ interface BranchRowsProps {
   onOpenChild: (childId: string, focus: boolean) => void;
   onHoverRow: (childId: string | null) => void;
   registerAnchor: (id: string, element: HTMLElement | null) => void;
+  onCloseMenu: () => void;
 }
+
+
+const ActionRow: React.FC<{
+  entry: FilterMenuActionEntry;
+  onHoverRow: (childId: string | null) => void;
+  onCloseMenu: () => void;
+}> = ({ entry, onHoverRow, onCloseMenu }) => {
+  const Icon = entry.icon;
+  const PairIcon = entry.pairIcon?.icon;
+  const row = (
+    <button
+      type="button"
+      role="menuitem"
+      className="journalit-filter-menu__row journalit-filter-menu__row--action"
+      onClick={() => {
+        entry.onSelect();
+        onCloseMenu();
+      }}
+      onPointerEnter={() => onHoverRow(null)}
+      data-filter-menu-item
+    >
+      {Icon && (
+        <span className="journalit-filter-menu__row-icons" aria-hidden="true">
+          <Icon
+            size={PairIcon ? 12 : 14}
+            className={[
+              'journalit-filter-menu__row-icon',
+              entry.iconClassName ?? '',
+            ]
+              .filter(Boolean)
+              .join(' ')}
+          />
+          {PairIcon && entry.pairIcon && (
+            <PairIcon
+              size={12}
+              className={`journalit-filter-menu__row-icon ${entry.pairIcon.className}`}
+            />
+          )}
+        </span>
+      )}
+      <span className="journalit-filter-menu__row-label">{entry.label}</span>
+    </button>
+  );
+  if (!entry.secondary) return row;
+  const Secondary = entry.secondary.icon;
+  const secondary = entry.secondary;
+  return (
+    <div role="none" className="journalit-filter-menu__option-row">
+      {row}
+      <button
+        type="button"
+        role="menuitem"
+        className="journalit-filter-menu__exclude clickable-icon"
+        aria-label={secondary.label}
+        onClick={(event) => {
+          
+          
+          
+          const button = event.currentTarget;
+          const items = Array.from(
+            button
+              .closest('[role="menu"]')
+              ?.querySelectorAll<HTMLElement>(MENU_ITEM_SELECTOR) ?? []
+          );
+          const index = items.indexOf(button);
+          
+          const neighbours = [
+            ...items.slice(index + 1),
+            ...items.slice(0, Math.max(index - 1, 0)).reverse(),
+          ];
+          secondary.onSelect();
+          const doc = button.ownerDocument;
+          doc.defaultView?.requestAnimationFrame(() => {
+            if (button.isConnected) return;
+            neighbours.find((item) => item.isConnected)?.focus();
+          });
+        }}
+        onPointerEnter={() => onHoverRow(null)}
+        data-filter-menu-item
+      >
+        <Secondary size={13} aria-hidden="true" />
+      </button>
+    </div>
+  );
+};
 
 const BranchRows: React.FC<BranchRowsProps> = ({
   entries,
@@ -203,11 +291,33 @@ const BranchRows: React.FC<BranchRowsProps> = ({
   onOpenChild,
   onHoverRow,
   registerAnchor,
+  onCloseMenu,
 }) => (
   <>
     {entries.map((entry) => {
       if (entry.kind === 'divider') {
         return <hr key={entry.id} className="journalit-filter-menu__divider" />;
+      }
+      if (entry.kind === 'heading') {
+        return (
+          <div
+            key={entry.id}
+            role="presentation"
+            className="journalit-filter-menu__heading"
+          >
+            {entry.label}
+          </div>
+        );
+      }
+      if (entry.kind === 'action') {
+        return (
+          <ActionRow
+            key={entry.id}
+            entry={entry}
+            onHoverRow={onHoverRow}
+            onCloseMenu={onCloseMenu}
+          />
+        );
       }
       const Icon = entry.icon;
       const isOpen = openChildId === entry.id;
@@ -217,7 +327,11 @@ const BranchRows: React.FC<BranchRowsProps> = ({
           ref={(el) => registerAnchor(entry.id, el)}
           type="button"
           role="menuitem"
-          aria-haspopup={entry.kind === 'date-range' ? 'dialog' : 'menu'}
+          aria-haspopup={
+            entry.kind === 'date-range' || entry.kind === 'form'
+              ? 'dialog'
+              : 'menu'
+          }
           aria-expanded={isOpen}
           className={`journalit-filter-menu__row${isOpen ? ' is-open' : ''}`}
           onClick={() => onOpenChild(entry.id, false)}
@@ -253,12 +367,14 @@ interface NavigationProps {
   onCloseChild: () => void;
   onHoverRow: (childId: string | null) => void;
   registerAnchor: (id: string, element: HTMLElement | null) => void;
+  
+  onCloseMenu: () => void;
 }
 
 export const RootPanel: React.FC<
   PanelFrameProps &
     NavigationProps & {
-      title: string;
+      title: React.ReactNode;
       entries: FilterMenuEntry[];
       canReset: boolean;
       onReset: () => void;
@@ -299,6 +415,14 @@ const MATCH_MODE_BADGE_KEYS: Record<
   only: 'filter.menu.match.badge.only',
   exact: 'filter.menu.match.badge.exact',
 };
+
+export const FormPanel: React.FC<
+  PanelFrameProps & { node: FilterMenuFormNode; onCloseMenu: () => void }
+> = ({ node, onCloseMenu, ...frame }) => (
+  <PanelChrome {...frame} title={node.label} isForm>
+    {node.render(onCloseMenu)}
+  </PanelChrome>
+);
 
 export const DateRangePanel: React.FC<
   PanelFrameProps &

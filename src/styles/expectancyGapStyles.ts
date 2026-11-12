@@ -2,7 +2,8 @@ export const EXPECTANCY_GAP_STYLES = `
 .journalit-expectancy-metric-edit {
   margin-inline-start: auto;
   padding: 0 4px;
-  height: 20px;
+  
+  height: 18px;
   flex-shrink: 0;
   color: var(--text-muted);
   background: transparent;

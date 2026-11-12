@@ -3,7 +3,14 @@ import {
   type AgentReviewHash,
   type AgentReviewRevisionContent,
 } from '../../agent/reviews/AgentReviewRevision';
+import type { AgentReviewKeyLevelGroup } from '../../agent/reviews/AgentReviewContent';
+import {
+  keyLevelGroupMatchKey,
+  keyLevelGroupsAfter,
+  normalizeKeyLevelGroups,
+} from '../../reviews/keyLevelGroups';
 import type { ActionInput } from '../ActionTypes';
+import { canonicalMarketBias } from '../../agent/reviews/AgentReviewContent';
 
 type ReviewUpdateInput = ActionInput<'review.update'>;
 type ReviewContent = ReviewUpdateInput['content'];
@@ -40,6 +47,16 @@ function applied(
     goals: content.goals ?? review.goals,
     checklist: content.checklist ?? review.checklist,
     keyLevels: content.key_levels ?? review.keyLevels,
+    keyLevelGroups:
+      content.key_level_groups === undefined
+        ? review.keyLevelGroups
+        : normalizeKeyLevelGroups(
+            keyLevelGroupsAfter(review.keyLevelGroups, content.key_level_groups)
+          ),
+    marketBias:
+      content.market_bias === undefined
+        ? review.marketBias
+        : (canonicalMarketBias(content.market_bias) ?? review.marketBias),
     grades: {
       mental:
         content.grades?.mental === undefined
@@ -53,6 +70,17 @@ function applied(
     reviewed: content.reviewed ?? review.reviewed,
   };
 }
+
+function groupNamed(
+  groups: readonly AgentReviewKeyLevelGroup[],
+  name: string
+): AgentReviewKeyLevelGroup | undefined {
+  const matchKey = keyLevelGroupMatchKey(name);
+  return groups.find((group) => keyLevelGroupMatchKey(group.name) === matchKey);
+}
+
+const copyLevels = (levels: AgentReviewKeyLevelGroup['support']) =>
+  levels.map(({ price, importance }) => ({ price, importance }));
 
 
 function previousContent(
@@ -98,6 +126,30 @@ function previousContent(
         ({ price, importance }) => ({ price, importance })
       ),
     };
+  }
+  
+  
+  const groups: NonNullable<ReviewContent['key_level_groups']> = [];
+  for (const { name } of requested.key_level_groups ?? []) {
+    const before = groupNamed(previous.keyLevelGroups, name);
+    const after = groupNamed(written.keyLevelGroups, name);
+    if (same(before, after)) continue;
+    groups.push({
+      name: before?.name ?? after?.name ?? name,
+      support: copyLevels(before?.support ?? []),
+      resistance: copyLevels(before?.resistance ?? []),
+    });
+  }
+  if (groups.length > 0) content.key_level_groups = groups;
+  if (
+    requested.market_bias !== undefined &&
+    !same(previous.marketBias, written.marketBias)
+  ) {
+    content.market_bias = previous.marketBias.map((entry) =>
+      entry.ticker === undefined
+        ? { bias: entry.bias }
+        : { ticker: entry.ticker, bias: entry.bias }
+    );
   }
   const grades: NonNullable<ReviewContent['grades']> = {};
   for (const key of ['mental', 'technical'] as const) {

@@ -9,9 +9,16 @@ import type { AccountPhaseScope } from '../shared/filters/types';
 import type { FilterExclusions } from '../shared/filters/filterExclusions';
 import type { FilterMatchModes } from '../shared/filters/filterMatchModes';
 import type { RatingFilter } from '../../utils/tradeRating';
+import type { TradeBiasAlignment } from '../../services/marketBias/tradeMarketBias';
+import type { DatePresetSelection } from '../../utils/datePresets';
+import type { RecentPeriod } from '../shared/filters/recentPeriod';
 
 export interface FilterState {
   dateRange: [Date | null, Date | null];
+  
+  datePreset?: DatePresetSelection;
+  
+  recentPeriod?: RecentPeriod;
   accounts: string[];
   accountPhases: AccountPhaseScope[];
   tickers: string[];
@@ -23,6 +30,7 @@ export interface FilterState {
   reviewStatus: ReviewStatusFilter[];
   ratings: RatingFilter[];
   directions: DirectionFilter[];
+  marketBias: TradeBiasAlignment[];
   customFieldFilters: CustomFieldFilterSelections;
   exclusions: FilterExclusions;
   matchModes: FilterMatchModes;

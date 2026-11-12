@@ -39,6 +39,7 @@ import {
   restrictNavigationDragTransform,
   useNavigationItems,
 } from './useNavigationItems';
+import { Button } from '../ui/Button';
 
 type Section = 'overview' | 'reviews' | 'tools';
 type EntityShortcutKind = EntityShortcutTarget['kind'];
@@ -499,13 +500,14 @@ export const NavigationSidebar: React.FC<NavigationSidebarProps> = ({
                       <IconComponent size={14} />
                       <span>{label}</span>
                     </div>
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="small"
                       className="journalit-nav-restore-btn"
                       onClick={() => handleRestoreItem(item.id)}
-                      type="button"
                     >
                       {t('navigation.edit-mode.restore')}
-                    </button>
+                    </Button>
                   </div>
                 );
               })}

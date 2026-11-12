@@ -2,7 +2,7 @@
 
 export interface InspectConfigurationRequest {
 
-domains: ("session_mode" | "review_templates" | "dashboard_layouts" | "home_layouts" | "option_catalogs" | "settings" | "setups" | "custom_fields" | "session_log_tags" | "accounts" | "prop_challenges")[]
+domains: ("session_mode" | "review_templates" | "dashboard_layouts" | "home_layouts" | "option_catalogs" | "settings" | "setups" | "custom_fields" | "session_log_tags" | "accounts" | "prop_challenges" | "dashboard_comparisons")[]
 
 setup_ids?: string[]
 

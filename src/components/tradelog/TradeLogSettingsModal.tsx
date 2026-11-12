@@ -37,6 +37,7 @@ import { eventBus } from '../../services/events/EventBus';
 import ToggleSwitch from '../ui/ToggleSwitch';
 import { showConfirmationModal } from '../shared/ConfirmationModal';
 import { JournalitModal } from '../modals/JournalitModal';
+import { Button } from '../ui/Button';
 
 interface TradeLogSettingsModalProps {
   app: App;
@@ -224,6 +225,7 @@ function parseTradeLogColumnId(value: string): TradeLogColumnId | null {
     case 'tags':
     case 'reviewed':
     case 'tradeRating':
+    case 'marketBias':
     case 'thesis':
     case 'mtComment':
       return value;
@@ -669,8 +671,8 @@ const TradeLogSettingsModalContent: React.FC<
           availableDescription={t('tradelog.settings.available-desc')}
           emptyActiveText={t('tradelog.settings.no-active')}
           emptyAvailableText={t('tradelog.settings.all-active')}
-          getAddAriaLabel={(label) => `Add ${label} column`}
-          getRemoveAriaLabel={(label) => `Remove ${label} column`}
+          getAddAriaLabel={(label) => `Show ${label} column`}
+          getRemoveAriaLabel={(label) => `Hide ${label} column`}
           onReorder={handleReorderColumn}
           onAdd={handleAddColumn}
           onRemove={handleRemoveColumn}
@@ -697,27 +699,30 @@ const TradeLogSettingsModalContent: React.FC<
 
       
       <div className="tradelog-settings-modal-buttons">
-        <button
+        <Button
+          variant="plain"
+          size="small"
           onClick={() => void handleReset()}
           disabled={isSaving}
           className="reset-button"
         >
           {t('tradelog.settings.reset')}
-        </button>
-        <button
+        </Button>
+        <Button
+          size="small"
           onClick={() => void handleCancel()}
           disabled={isSaving}
-          className="journalit-tradelog-settings-cancel-button cancel-button"
         >
           {t('button.cancel')}
-        </button>
-        <button
+        </Button>
+        <Button
+          variant="primary"
+          size="small"
           onClick={() => void handleSave()}
           disabled={isSaving}
-          className="primary"
         >
           {isSaving ? t('tradelog.settings.saving') : t('button.save')}
-        </button>
+        </Button>
       </div>
     </div>
   );

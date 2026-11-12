@@ -14,6 +14,7 @@ import {
 import type { FilterExclusions } from './filterExclusions';
 import type { FilterMatchModes } from './filterMatchModes';
 import type { RatingFilter } from '../../../utils/tradeRating';
+import type { TradeBiasAlignment } from '../../../services/marketBias/tradeMarketBias';
 
 
 export interface UnifiedFilters {
@@ -49,6 +50,9 @@ export interface UnifiedFilters {
 
   
   directions: DirectionFilter[];
+
+  
+  marketBias: TradeBiasAlignment[];
 
   
   sessionLogTags?: string[];

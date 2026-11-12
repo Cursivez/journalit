@@ -7,7 +7,12 @@ import { preparePnLChartData } from '../../../../utils/chartUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { t } from '../../../../lang/helpers';
 import { isPnlContributingTrade } from '../../../../utils/tradeStatusUtils';
+import { getTradeMarketSide } from '../../../../services/trade/core/TradeDirection';
 import type { Trade } from '../../utils/dataUtils';
+import {
+  CompareCurveWidget,
+  pnlCurves,
+} from '../../compare/CompareCurveWidget';
 
 interface DirectionalPnLChartProps extends BaseWidgetProps {
   direction: 'long' | 'short';
@@ -39,8 +44,7 @@ function getDirectionTrades(
   }
   return (byDirection[direction] ??= trades.filter(
     (trade) =>
-      isPnlContributingTrade(trade) &&
-      trade.direction?.toLowerCase() === direction
+      isPnlContributingTrade(trade) && getTradeMarketSide(trade) === direction
   ));
 }
 
@@ -53,8 +57,50 @@ const DirectionalPnLChartComponent: React.FC<DirectionalPnLChartProps> = ({
 
   return (
     <BaseWidget dateFormat={dateFormat}>
-      {(data, userDateFormat) => {
+      {(data, userDateFormat, filters, compare) => {
         const directionTrades = getDirectionTrades(data.trades, direction);
+
+        if (compare) {
+          const compareTrades = getDirectionTrades(
+            compare.data.trades,
+            direction
+          );
+          if (directionTrades.length + compareTrades.length === 0) {
+            return (
+              <div className="journalit-dashboard-directional-chart-empty">
+                {t(directionTranslationKeys[direction].empty)}
+              </div>
+            );
+          }
+          const curve = (trades: Trade[]) =>
+            trades.length > 0
+              ? preparePnLChartData(
+                  trades,
+                  userDateFormat,
+                  defaultRiskAmount,
+                  plugin
+                )
+              : [];
+          return (
+            <CompareCurveWidget
+              curves={pnlCurves(
+                curve(directionTrades),
+                curve(compareTrades),
+                plugin?.settings?.trade?.displayRMultiples ?? false
+              )}
+              measure="pnl"
+              aData={data}
+              aFilters={filters}
+              bFilters={compare.filters}
+              dateFormat={userDateFormat}
+              ariaLabel={t(
+                direction === 'long'
+                  ? 'widget.longPnLChart.name'
+                  : 'widget.shortPnLChart.name'
+              )}
+            />
+          );
+        }
 
         if (directionTrades.length === 0) {
           return (

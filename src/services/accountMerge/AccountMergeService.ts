@@ -46,6 +46,7 @@ interface AccountMergeSettingsSnapshot {
   accountMerges: Record<string, AccountMergeRecord>;
   accountMapping?: Record<string, string>;
   csvFavoriteAccount?: string;
+  favoriteAccounts?: string[];
   copyTradeAdjustments?: JournalitSettings['copyTradeAdjustments'];
   homeGoals?: Record<string, GoalConfig>;
   homeAccountProgress?: HomeSettings['accountProgress'];
@@ -791,6 +792,7 @@ export class AccountMergeService {
         this.plugin.settings.backendIntegration?.accountMapping
       ),
       csvFavoriteAccount: this.plugin.settings.csvFavoriteAccount,
+      favoriteAccounts: cloneValue(this.plugin.settings.trade.favoriteAccounts),
       copyTradeAdjustments: cloneValue(
         this.plugin.settings.copyTradeAdjustments
       ),
@@ -821,6 +823,9 @@ export class AccountMergeService {
     }
 
     this.plugin.settings.csvFavoriteAccount = snapshot.csvFavoriteAccount;
+    this.plugin.settings.trade.favoriteAccounts = cloneValue(
+      snapshot.favoriteAccounts
+    );
 
     if (snapshot.copyTradeAdjustments === undefined) {
       delete this.plugin.settings.copyTradeAdjustments;

@@ -1,5 +1,6 @@
 
 
+import type { ReactNode } from 'react';
 import type { ObsidianIconComponent } from '../../icons/ObsidianIcon';
 import type { FilterMatchMode } from '../filterMatchModes';
 
@@ -60,13 +61,56 @@ export interface FilterMenuDateRangeNode<R = void> {
   onApply: (range: [Date, Date]) => R;
 }
 
+
+export interface FilterMenuActionEntry {
+  kind: 'action';
+  id: string;
+  label: string;
+  icon?: ObsidianIconComponent;
+  
+  iconClassName?: string;
+  
+  pairIcon?: { icon: ObsidianIconComponent; className: string };
+  onSelect: () => void;
+  secondary?: {
+    label: string;
+    icon: ObsidianIconComponent;
+    onSelect: () => void;
+  };
+}
+
+
+export interface FilterMenuFormNode {
+  kind: 'form';
+  id: string;
+  label: string;
+  icon?: ObsidianIconComponent;
+  render: (close: () => void) => ReactNode;
+}
+
 export type FilterMenuNode<R = void> =
   | FilterMenuValuesNode<R>
   | FilterMenuBranchNode<R>
-  | FilterMenuDateRangeNode<R>;
+  | FilterMenuDateRangeNode<R>
+  | FilterMenuFormNode;
 export type FilterMenuEntry<R = void> =
   | FilterMenuNode<R>
-  | { kind: 'divider'; id: string };
+  | FilterMenuActionEntry
+  | { kind: 'divider'; id: string }
+  | { kind: 'heading'; id: string; label: string };
+
+
+type FilterMenuPassiveEntry = Exclude<FilterMenuEntry, FilterMenuNode>;
+
+function isPassiveEntry<R>(
+  entry: FilterMenuEntry<R>
+): entry is FilterMenuPassiveEntry {
+  return (
+    entry.kind === 'divider' ||
+    entry.kind === 'heading' ||
+    entry.kind === 'action'
+  );
+}
 
 
 export interface FilterMenuGuideTour {
@@ -103,6 +147,7 @@ function bindNode<R>(
   node: FilterMenuNode<R>,
   apply: (result: R) => void
 ): FilterMenuNode {
+  if (node.kind === 'form') return node;
   if (node.kind === 'date-range') {
     const activate = node.onActivate;
     return {
@@ -122,7 +167,7 @@ export function bindEntries<R>(
   apply: (result: R) => void
 ): FilterMenuEntry[] {
   return entries.map((entry) =>
-    entry.kind === 'divider' ? entry : bindNode(entry, apply)
+    isPassiveEntry(entry) ? entry : bindNode(entry, apply)
   );
 }
 
@@ -162,7 +207,9 @@ export function countNode<R>(node: FilterMenuNode<R>): {
   included: number;
   excluded: number;
 } {
-  if (node.kind === 'date-range') return { included: 0, excluded: 0 };
+  if (node.kind === 'date-range' || node.kind === 'form') {
+    return { included: 0, excluded: 0 };
+  }
   if (node.kind === 'values') {
     let included = node.appliedCount ?? node.included.size;
     if (node.optionChildren) {
@@ -176,7 +223,7 @@ export function countNode<R>(node: FilterMenuNode<R>): {
   let included = 0;
   let excluded = 0;
   for (const child of node.children) {
-    if (child.kind === 'divider') continue;
+    if (isPassiveEntry(child)) continue;
     const counts = countNode(child);
     included += counts.included;
     excluded += counts.excluded;
@@ -193,7 +240,7 @@ function isValuesNodeApplied(node: FilterMenuNode): boolean {
 export function countAppliedFilters(entries: FilterMenuEntry[]): number {
   let count = 0;
   for (const entry of entries) {
-    if (entry.kind === 'divider') continue;
+    if (isPassiveEntry(entry) || entry.kind === 'form') continue;
     if (entry.kind === 'branch') {
       count += countAppliedFilters(entry.children);
     } else if (isValuesNodeApplied(entry)) {
@@ -206,8 +253,8 @@ export function countAppliedFilters(entries: FilterMenuEntry[]): number {
 
 export function hasAppliedEntries(entries: FilterMenuEntry[]): boolean {
   return entries.some((entry) => {
-    if (entry.kind === 'divider') return false;
-    if (entry.kind === 'date-range') return false;
+    if (isPassiveEntry(entry)) return false;
+    if (entry.kind === 'date-range' || entry.kind === 'form') return false;
     if (entry.kind === 'branch') return hasAppliedEntries(entry.children);
     return (
       isValuesNodeApplied(entry) ||
@@ -223,12 +270,12 @@ export function findChildNode(
 ): FilterMenuNode | undefined {
   if (Array.isArray(parent)) {
     for (const entry of parent) {
-      if (entry.kind !== 'divider' && entry.id === id) return entry;
+      if (!isPassiveEntry(entry) && entry.id === id) return entry;
     }
     return undefined;
   }
   if (parent.kind === 'branch') return findChildNode(parent.children, id);
-  if (parent.kind === 'date-range') return undefined;
+  if (parent.kind === 'date-range' || parent.kind === 'form') return undefined;
   if (parent.matchChild?.id === id) return parent.matchChild;
   if (!parent.optionChildren) return undefined;
   for (const child of parent.optionChildren.values()) {

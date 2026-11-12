@@ -12,37 +12,44 @@ export const comboboxCSS = `
 }
 
 .journalit-combobox .input-container {
-  position: relative;
-  display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 4px;
-  width: 100%;
-  min-height: 36px;
-  box-sizing: border-box;
-  padding: 4px 30px 4px 8px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--input-radius, 6px);
-  background: var(--background-primary);
-  cursor: text;
+position: relative;
+display: flex;
+flex-wrap: wrap;
+align-items: center;
+gap: 4px;
+width: 100%;
+min-height: var(--journalit-control-height);
+box-sizing: border-box;
+
+padding: 3px 26px 3px 8px;
+border: 0;
+border-radius: var(--journalit-control-radius);
+outline: 1px solid transparent;
+outline-offset: -1px;
+background: var(--journalit-control-field-fill);
+box-shadow: var(--journalit-control-field-ring);
+cursor: text;
+transition: outline-color 85ms ease-out, box-shadow 85ms ease-out;
 }
 
-.journalit-combobox .input-container:hover {
-  border-color: var(--background-modifier-border-hover);
+.journalit-combobox .input-container:hover:not(:focus-within) {
+  background: var(--journalit-control-field-fill-hover);
 }
 
 .journalit-combobox .input-container:focus-within {
-  border-color: var(--interactive-accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--interactive-accent) 18%, transparent);
+  outline-color: var(--journalit-control-focus);
+  box-shadow: none;
 }
 
 .journalit-combobox .combobox-input {
-  flex: 1 1 80px;
+  
+  flex: 1 1 24px;
   width: 0;
   min-width: 0;
   max-width: 100%;
-  height: 26px;
-  padding: 2px;
+  height: 20px;
+  min-height: 20px;
+  padding: 0;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -64,20 +71,19 @@ export const comboboxCSS = `
 .journalit-combobox .journalit-combobox-chevron {
   position: absolute;
   right: 4px;
-  top: 18px;
+  top: 4px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
   padding: 0;
   border: 0;
-  border-radius: 3px;
+  border-radius: var(--journalit-radius-sm);
   background: transparent;
   box-shadow: none;
   color: var(--text-muted);
   cursor: pointer;
-  transform: translateY(-50%);
 }
 
 .journalit-combobox .journalit-combobox-chevron:hover {
@@ -85,20 +91,23 @@ export const comboboxCSS = `
 }
 
 .journalit-combobox[data-is-open="true"] .journalit-combobox-chevron {
-  transform: translateY(-50%) rotate(180deg);
+  transform: rotate(180deg);
 }
 
 .journalit-combobox.combobox-dropdown {
   position: absolute;
   top: calc(100% + 4px);
   left: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
   width: 100%;
   box-sizing: border-box;
   margin: 0;
-  padding: 4px;
+  padding: 2px;
   border: 1px solid var(--background-modifier-border);
-  border-radius: 8px;
-  background: var(--background-primary);
+  border-radius: var(--journalit-control-radius);
+  background: var(--journalit-control-menu-fill);
   color: var(--text-normal);
   box-shadow: var(--shadow-s);
   max-height: 240px;
@@ -119,22 +128,30 @@ export const comboboxCSS = `
 .journalit-combobox .combobox-option,
 .journalit-combobox .combobox-add-option {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   gap: 8px;
-  min-height: 32px;
+  min-height: var(--journalit-control-height);
   box-sizing: border-box;
   margin: 0;
-  padding: 6px 8px;
-  border-radius: 4px;
+  padding: 0 8px;
+  border-radius: var(--journalit-control-inner-radius);
+  color: var(--text-normal);
   cursor: pointer;
   font-size: var(--font-ui-small);
+  font-weight: var(--font-normal);
   line-height: 1.4;
   overflow-wrap: anywhere;
 }
 
+.journalit-combobox .combobox-option .journalit-combobox-option-label {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
 .journalit-combobox .combobox-option.highlighted,
 .journalit-combobox .combobox-add-option.highlighted {
-  background: var(--background-modifier-hover);
+  background: var(--journalit-control-overlay-hover);
 }
 
 .journalit-combobox .combobox-add-option {
@@ -161,7 +178,7 @@ export const comboboxCSS = `
   align-items: center;
   gap: 4px;
   max-width: 100%;
-  padding: 2px 4px 2px 8px;
+  padding: 0 4px 0 8px;
   border: 1px solid var(--background-modifier-border);
   border-radius: 4px;
   background: var(--background-secondary);
@@ -205,8 +222,7 @@ export const comboboxCSS = `
 .journalit-combobox .journalit-combobox-clear {
   position: absolute;
   right: 28px;
-  top: 18px;
-  transform: translateY(-50%);
+  top: 4px;
 }
 
 .journalit-combobox .remove-button:focus-visible {
@@ -219,7 +235,44 @@ export const comboboxCSS = `
   cursor: not-allowed;
 }
 
-.journalit-combobox[data-invalid="true"] .input-container {
-  border-color: var(--text-error);
+.journalit-combobox[data-invalid="true"] .input-container,
+.journalit-combobox[data-invalid="true"] .input-container:focus-within {
+  outline-color: var(--text-error);
+  box-shadow: none;
+}
+
+.journalit-combobox .journalit-combobox-favorite {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  margin: 0 0 0 auto;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  color: var(--text-faint);
+  cursor: pointer;
+}
+
+.journalit-combobox .journalit-combobox-favorite:hover,
+.journalit-combobox .journalit-combobox-favorite:focus-visible {
+  color: var(--text-normal);
+}
+
+.journalit-combobox .journalit-combobox-favorite.is-favorite {
+  color: var(--text-accent);
+}
+
+.journalit-combobox .journalit-combobox-favorite.is-favorite svg {
+  fill: currentColor;
+}
+
+.journalit-combobox .journalit-combobox-favorite--chip {
+  width: 16px;
+  height: 16px;
+  margin: 0;
 }
 `;

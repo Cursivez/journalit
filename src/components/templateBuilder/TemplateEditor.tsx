@@ -19,7 +19,7 @@ import {
 } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { dndKitStyle } from '../../styles/inlineStylePolicy';
-import { ChevronDown, Info } from '../shared/icons/ObsidianIcon';
+import { Info } from '../shared/icons/ObsidianIcon';
 import { Tooltip } from '../shared/Tooltip';
 import type JournalitPlugin from '../../main';
 import {
@@ -36,10 +36,20 @@ import {
   WidgetPlacement,
 } from '../../types/reviewV2';
 import { SegmentedControl, SegmentOption } from '../shared/SegmentedControl';
-import { MultiSelectDropdownFilter } from '../shared/MultiSelectDropdownFilter';
+import { ComboBox } from '../core/ComboBox';
 import { TemplatePreview } from './TemplatePreview';
 import type { ReviewTemplateService } from '../../services/templates/ReviewTemplateService';
 import { WidgetPicker } from './WidgetPicker';
+import { WidgetOptionControls } from './WidgetOptionControls';
+import { MarketBiasConfigEditor } from './MarketBiasConfigEditor';
+import {
+  DEFAULT_ROLLING_BIAS_REVIEW_PERIOD,
+  toRollingBiasWidgetConfig,
+} from '../reviewV2/widgets/RollingBiasWinRateWidget';
+import {
+  ROLLING_BIAS_PERIODS,
+  parseRollingBiasPeriod,
+} from '../../services/marketBias/rollingBiasWinRate';
 import { FloatingUnsavedChangesBanner } from './FloatingUnsavedChangesBanner';
 import {
   getWidgetNameByPlacement,
@@ -67,6 +77,11 @@ import {
 } from '../../guides/layoutBuilderGuideIds';
 import { openExternalUrl } from '../../utils/externalLinks';
 import { TradeReviewQuestionEditor } from './TradeReviewQuestionEditor';
+import {
+  KeyLevelsConfigEditor,
+  useKeyLevelsParentGroups,
+  type KeyLevelsParentGroups,
+} from './KeyLevelsConfigEditor';
 import { TradeReviewFieldLayoutEditor } from './TradeReviewFieldLayoutEditor';
 import type {
   TradeReviewFieldLayout,
@@ -83,6 +98,8 @@ import {
 } from '../reviewV2/widgets/tradeReviewConfig';
 import { mergeClassNames } from '../../utils/classNames';
 import { WidgetInsertSlot, getFirstInsertableIndex } from './WidgetInsertSlot';
+import { DropdownSelect } from '../shared/DropdownSelect';
+import { Button } from '../ui/Button';
 
 interface TemplateEditorProps {
   plugin: JournalitPlugin;
@@ -177,6 +194,7 @@ interface SortableWidgetItemProps {
   availableDrcMarkdownHeadings: string[];
   
   availableTradeNoteHeadings: string[];
+  keyLevelsParentGroups: KeyLevelsParentGroups;
   skipWeekends: boolean;
   onWidgetChange: (index: number, widget: WidgetDefinition) => void;
   onConfigChange: (index: number, config: Record<string, unknown>) => void;
@@ -273,6 +291,7 @@ interface WidgetConfigEditorProps {
   availableMarkdownHeadings: string[];
   availableDrcMarkdownHeadings: string[];
   availableTradeNoteHeadings: string[];
+  keyLevelsParentGroups: KeyLevelsParentGroups;
   skipWeekends: boolean;
   onConfigChange: (index: number, config: Record<string, unknown>) => void;
 }
@@ -314,25 +333,26 @@ const MarkdownHeaderConfigEditor: React.FC<WidgetConfigEditorProps> = ({
   const headerText = headerConfig?.text ?? '';
   return (
     <div className="template-widget-config-row">
-      <select
-        aria-label={t('widget.markdown-header.name')}
-        value={headerLevel}
-        onChange={(e) =>
+      <DropdownSelect
+        ariaLabel={t('widget.markdown-header.name')}
+        width="content"
+        value={String(headerLevel)}
+        options={[
+          { value: '1', label: 'H1' },
+          { value: '2', label: 'H2' },
+          { value: '3', label: 'H3' },
+          { value: '4', label: 'H4' },
+          { value: '5', label: 'H5' },
+          { value: '6', label: 'H6' },
+        ]}
+        onChange={(nextValue) =>
           onConfigChange(index, {
             ...widget.config,
-            level: parseInt(e.target.value, 10),
+            level: parseInt(nextValue, 10),
             text: headerText,
           })
         }
-        className="template-select"
-      >
-        <option value={1}>H1</option>
-        <option value={2}>H2</option>
-        <option value={3}>H3</option>
-        <option value={4}>H4</option>
-        <option value={5}>H5</option>
-        <option value={6}>H6</option>
-      </select>
+      />
       <input
         type="text"
         value={headerText}
@@ -425,20 +445,12 @@ const ReviewContextFieldsConfigEditor: React.FC<WidgetConfigEditorProps> = ({
     [reviewContextConfig?.fieldIds]
   );
 
-  const reviewContextFieldsSummary = useMemo(() => {
-    const selectedFields = reviewContextFields.filter((field) =>
-      reviewContextSelectedFieldIds.has(field.id)
-    );
-    if (selectedFields.length === 0) {
-      return t(
-        'templateEditor.widget.review-context-fields.fields-placeholder'
-      );
-    }
-    if (selectedFields.length === 1) return selectedFields[0].label;
-    return t('templateEditor.widget.review-context-fields.fields-selected', {
-      count: String(selectedFields.length),
-    });
-  }, [reviewContextFields, reviewContextSelectedFieldIds]);
+  const reviewContextFieldLabels = new Map(
+    reviewContextFields.map((field): [string, string] => [
+      field.id,
+      field.label,
+    ])
+  );
   const updateReviewContextConfig = (
     updates: Partial<ReviewContextFieldsWidgetConfig>
   ) => {
@@ -466,34 +478,40 @@ const ReviewContextFieldsConfigEditor: React.FC<WidgetConfigEditorProps> = ({
           {t('templateEditor.widget.review-context-fields.selection')}
         </div>
         <div className="template-review-context-config-control">
-          <select
-            aria-label={t(
+          <DropdownSelect
+            ariaLabel={t(
               'templateEditor.widget.review-context-fields.selection'
             )}
+            width="content"
             value={reviewContextSelectionMode}
-            onChange={(event) =>
-              updateReviewContextConfig({
-                selectionMode: parseReviewContextFieldsSelectionMode(
-                  event.target.value
+            options={[
+              {
+                value: 'all',
+                label: t(
+                  'templateEditor.widget.review-context-fields.selection.all'
                 ),
+              },
+              {
+                value: 'group',
+                label: t(
+                  'templateEditor.widget.review-context-fields.selection.group'
+                ),
+              },
+              {
+                value: 'fields',
+                label: t(
+                  'templateEditor.widget.review-context-fields.selection.fields'
+                ),
+              },
+            ]}
+            onChange={(nextValue) =>
+              updateReviewContextConfig({
+                selectionMode: parseReviewContextFieldsSelectionMode(nextValue),
                 groupId: undefined,
                 fieldIds: undefined,
               })
             }
-            className="template-select template-select--compact"
-          >
-            <option value="all">
-              {t('templateEditor.widget.review-context-fields.selection.all')}
-            </option>
-            <option value="group">
-              {t('templateEditor.widget.review-context-fields.selection.group')}
-            </option>
-            <option value="fields">
-              {t(
-                'templateEditor.widget.review-context-fields.selection.fields'
-              )}
-            </option>
-          </select>
+          />
         </div>
       </div>
 
@@ -503,63 +521,61 @@ const ReviewContextFieldsConfigEditor: React.FC<WidgetConfigEditorProps> = ({
             {t('templateEditor.widget.review-context-fields.group')}
           </div>
           <div className="template-review-context-config-control">
-            <select
-              aria-label={t(
-                'templateEditor.widget.review-context-fields.group'
-              )}
+            <DropdownSelect
+              ariaLabel={t('templateEditor.widget.review-context-fields.group')}
+              width="content"
               value={reviewContextConfig?.groupId || ''}
-              onChange={(event) =>
-                updateReviewContextConfig({ groupId: event.target.value })
+              options={[
+                {
+                  value: '',
+                  label: t(
+                    'templateEditor.widget.review-context-fields.group-placeholder'
+                  ),
+                },
+                ...reviewContextGroups.map((group) => ({
+                  value: group.id,
+                  label: group.name,
+                })),
+              ]}
+              onChange={(nextValue) =>
+                updateReviewContextConfig({ groupId: nextValue })
               }
-              className="template-select template-select--compact"
-            >
-              <option value="">
-                {t(
-                  'templateEditor.widget.review-context-fields.group-placeholder'
-                )}
-              </option>
-              {reviewContextGroups.map((group) => (
-                <option key={group.id} value={group.id}>
-                  {group.name}
-                </option>
-              ))}
-            </select>
+            />
           </div>
         </div>
       )}
 
-      {reviewContextSelectionMode === 'fields' && (
-        <div className="template-review-context-config-row template-review-context-config-row--fields">
-          <div className="template-review-context-config-label">
-            {t('templateEditor.widget.review-context-fields.fields')}
+      {reviewContextSelectionMode === 'fields' &&
+        (reviewContextFields.length === 0 ? (
+          <div className="template-review-context-config-row">
+            <div className="template-review-context-config-label">
+              {t('templateEditor.widget.review-context-fields.fields')}
+            </div>
+            <div className="template-widget-config-help">
+              {t('templateEditor.widget.review-context-fields.no-fields')}
+            </div>
           </div>
-          <div className="template-review-context-config-control template-review-context-field-list">
-            {reviewContextFields.length === 0 ? (
-              <div className="template-widget-config-help">
-                {t('templateEditor.widget.review-context-fields.no-fields')}
-              </div>
-            ) : (
-              <MultiSelectDropdownFilter
-                options={reviewContextFields.map((field) => ({
-                  value: field.id,
-                  label: field.label,
-                }))}
-                selectedValues={Array.from(reviewContextSelectedFieldIds)}
-                summary={reviewContextFieldsSummary}
-                emptyMessage={t(
-                  'templateEditor.widget.review-context-fields.no-fields'
-                )}
-                classNamePrefix="template-review-context-field-filter"
-                onChange={(fieldIds) =>
-                  updateReviewContextConfig({
-                    fieldIds: fieldIds.join(','),
-                  })
-                }
-              />
-            )}
+        ) : (
+          <div className="template-review-context-config-row template-review-context-config-row--stacked">
+            <ComboBox
+              isMulti
+              label={t('templateEditor.widget.review-context-fields.fields')}
+              options={reviewContextFields.map((field) => field.id)}
+              getOptionLabel={(fieldId) =>
+                reviewContextFieldLabels.get(fieldId) ?? fieldId
+              }
+              value={Array.from(reviewContextSelectedFieldIds)}
+              placeholder={t(
+                'templateEditor.widget.review-context-fields.fields-placeholder'
+              )}
+              onChange={(fieldIds) =>
+                updateReviewContextConfig({
+                  fieldIds: fieldIds.join(','),
+                })
+              }
+            />
           </div>
-        </div>
-      )}
+        ))}
 
       <div className="template-review-context-config-row">
         <div className="template-review-context-config-label">
@@ -621,7 +637,7 @@ const TradeReviewConfigEditor: React.FC<WidgetConfigEditorProps> = ({
   
   const notesSectionOptions = [
     ...new Set([...availableTradeNoteHeadings, ...notesSectionValues]),
-  ].map((heading) => ({ value: heading, label: heading }));
+  ];
   const updateTradeReviewConfig = (updates: Record<string, unknown>): void => {
     onConfigChange(index, {
       ...widget.config,
@@ -668,30 +684,24 @@ const TradeReviewConfigEditor: React.FC<WidgetConfigEditorProps> = ({
       />
 
       {notesShown && (
-        <div className="template-review-context-config-row template-review-context-config-row--fields">
-          <div className="template-review-context-config-label">
-            {t('templateEditor.widget.trade-review.notes-sections')}
-          </div>
-          <div className="template-review-context-config-control template-review-context-field-list">
-            <MultiSelectDropdownFilter
-              options={notesSectionOptions}
-              selectedValues={notesSectionValues}
-              summary={
-                notesSectionValues.length === 0
-                  ? t('templateEditor.widget.trade-review.notes-all')
-                  : notesSectionValues.join(', ')
-              }
-              emptyMessage={t(
-                'templateEditor.widget.trade-review.notes-sections-empty'
-              )}
-              classNamePrefix="template-review-context-field-filter"
-              onChange={(headings) =>
-                updateTradeReviewConfig({
-                  notesSections: headings.length > 0 ? headings : undefined,
-                })
-              }
-            />
-          </div>
+        <div className="template-review-context-config-row template-review-context-config-row--stacked">
+          <ComboBox
+            isMulti
+            label={t('templateEditor.widget.trade-review.notes-sections')}
+            options={notesSectionOptions}
+            value={notesSectionValues}
+            placeholder={t('templateEditor.widget.trade-review.notes-all')}
+            onChange={(headings) =>
+              updateTradeReviewConfig({
+                notesSections: headings.length > 0 ? headings : undefined,
+              })
+            }
+          />
+          {notesSectionOptions.length === 0 && (
+            <div className="template-widget-config-help">
+              {t('templateEditor.widget.trade-review.notes-sections-empty')}
+            </div>
+          )}
         </div>
       )}
 
@@ -738,7 +748,7 @@ const TradeReviewConfigEditor: React.FC<WidgetConfigEditorProps> = ({
 
 const PreviousTradingDayContextConfigEditor: React.FC<
   WidgetConfigEditorProps
-> = ({ id, index, widget, availableMarkdownHeadings, onConfigChange }) => {
+> = ({ index, widget, availableMarkdownHeadings, onConfigChange }) => {
   const previousContextConfig = widget.config as
     | { headings?: string; headingsJson?: string; fallbackMode?: string }
     | undefined;
@@ -749,7 +759,6 @@ const PreviousTradingDayContextConfigEditor: React.FC<
     previousContextConfig?.fallbackMode ?? 'nearest-earlier';
   const previousContextSectionRows =
     previousContextHeadings.length > 0 ? previousContextHeadings : [''];
-  const previousContextDatalistId = `previous-context-heading-options-${id}`;
   const updatePreviousContextHeading = (
     headingIndex: number,
     value: string
@@ -793,45 +802,45 @@ const PreviousTradingDayContextConfigEditor: React.FC<
 
   return (
     <div className="template-widget-config-row--previous-context">
-      <datalist id={previousContextDatalistId}>
-        {availableMarkdownHeadings.map((heading) => (
-          <option key={heading} value={heading} />
-        ))}
-      </datalist>
-
       <div className="template-previous-context-controls">
-        <button
-          type="button"
+        <Button
+          variant="secondary"
+          size="small"
           className="template-previous-context-add-button"
           onClick={addPreviousContextHeading}
         >
           {t('templateEditor.widget.previous-context-add-section')}
-        </button>
+        </Button>
 
-        <select
+        <DropdownSelect
+          ariaLabel={t('templateEditor.widget.previous-context-fallback-label')}
+          width="content"
           value={previousContextFallbackMode}
-          onChange={(e) =>
+          options={[
+            {
+              value: 'nearest-earlier',
+              label: t(
+                'templateEditor.widget.previous-context-fallback-nearest'
+              ),
+            },
+            {
+              value: 'expected-only',
+              label: t(
+                'templateEditor.widget.previous-context-fallback-expected'
+              ),
+            },
+          ]}
+          onChange={(nextValue) =>
             onConfigChange(
               index,
               buildPreviousContextConfig(
                 widget.config,
                 previousContextHeadings,
-                e.target.value
+                nextValue
               )
             )
           }
-          className="template-select template-select--compact template-previous-context-fallback-select"
-          aria-label={t(
-            'templateEditor.widget.previous-context-fallback-label'
-          )}
-        >
-          <option value="nearest-earlier">
-            {t('templateEditor.widget.previous-context-fallback-nearest')}
-          </option>
-          <option value="expected-only">
-            {t('templateEditor.widget.previous-context-fallback-expected')}
-          </option>
-        </select>
+        />
       </div>
 
       <div className="template-previous-context-sections">
@@ -844,41 +853,39 @@ const PreviousTradingDayContextConfigEditor: React.FC<
             className="template-previous-context-section-row"
           >
             <div className="template-previous-context-select-wrapper">
-              <select
-                value={heading}
-                onChange={(e) =>
-                  updatePreviousContextHeading(headingIndex, e.target.value)
-                }
-                aria-label={t(
+              <DropdownSelect
+                ariaLabel={t(
                   'templateEditor.widget.previous-context-heading-label'
                 )}
-                className="template-select template-select--compact template-previous-context-heading-input"
-              >
-                <option value="">
-                  {t(
-                    'templateEditor.widget.previous-context-heading-placeholder'
-                  )}
-                </option>
-                {availableMarkdownHeadings.map((availableHeading) => (
-                  <option key={availableHeading} value={availableHeading}>
-                    {availableHeading}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={14}
-                className="widget-picker-icon template-previous-context-select-icon"
-                aria-hidden="true"
+                
+                menuWidth="content"
+                value={heading}
+                options={[
+                  {
+                    value: '',
+                    label: t(
+                      'templateEditor.widget.previous-context-heading-placeholder'
+                    ),
+                  },
+                  ...availableMarkdownHeadings.map((availableHeading) => ({
+                    value: availableHeading,
+                    label: availableHeading,
+                  })),
+                ]}
+                onChange={(nextValue) =>
+                  updatePreviousContextHeading(headingIndex, nextValue)
+                }
               />
             </div>
-            <button
-              type="button"
+            <Button
+              variant="danger"
+              size="small"
               className="template-previous-context-remove"
               onClick={() => removePreviousContextHeading(headingIndex)}
               aria-label={t('button.remove')}
             >
               {t('button.remove')}
-            </button>
+            </Button>
           </div>
         ))}
       </div>
@@ -887,7 +894,6 @@ const PreviousTradingDayContextConfigEditor: React.FC<
 };
 
 const WeeklyDrcContextConfigEditor: React.FC<WidgetConfigEditorProps> = ({
-  id,
   index,
   widget,
   availableDrcMarkdownHeadings,
@@ -923,7 +929,6 @@ const WeeklyDrcContextConfigEditor: React.FC<WidgetConfigEditorProps> = ({
   const weeklyDrcHeadings = parsePreviousContextHeadings(weeklyDrcConfig);
   const weeklyDrcSectionRows =
     weeklyDrcHeadings.length > 0 ? weeklyDrcHeadings : [''];
-  const weeklyDrcDatalistId = `weekly-drc-heading-options-${id}`;
 
   const buildWeeklyDrcConfig = (
     headings: string[],
@@ -960,38 +965,34 @@ const WeeklyDrcContextConfigEditor: React.FC<WidgetConfigEditorProps> = ({
 
   return (
     <div className="template-widget-config-row--previous-context template-weekly-drc-config">
-      <datalist id={weeklyDrcDatalistId}>
-        {availableDrcMarkdownHeadings.map((heading) => (
-          <option key={heading} value={heading} />
-        ))}
-      </datalist>
-
       <div className="template-weekly-drc-options">
         <label className="template-weekly-drc-field">
           <span className="template-widget-config-label">
             {t('templateEditor.widget.weekly-drc-day-label')}
           </span>
-          <select
+          <DropdownSelect
+            ariaLabel={t('templateEditor.widget.weekly-drc-day-label')}
+            width="content"
             value={weeklyDrcDayScope}
-            onChange={(e) =>
+            options={[
+              {
+                value: 'all',
+                label: t('templateEditor.widget.weekly-drc-day-all'),
+              },
+              ...weeklyDrcDayOptions.map((day) => ({
+                value: day,
+                label: day.charAt(0).toUpperCase() + day.slice(1),
+              })),
+            ]}
+            onChange={(nextValue) =>
               onConfigChange(
                 index,
                 buildWeeklyDrcConfig(weeklyDrcHeadings, {
-                  dayScope: e.target.value,
+                  dayScope: nextValue,
                 })
               )
             }
-            className="template-select template-select--compact"
-          >
-            <option value="all">
-              {t('templateEditor.widget.weekly-drc-day-all')}
-            </option>
-            {weeklyDrcDayOptions.map((day) => (
-              <option key={day} value={day}>
-                {day.charAt(0).toUpperCase() + day.slice(1)}
-              </option>
-            ))}
-          </select>
+          />
         </label>
 
         <label className="template-weekly-drc-collapse-toggle">
@@ -1016,13 +1017,14 @@ const WeeklyDrcContextConfigEditor: React.FC<WidgetConfigEditorProps> = ({
           <div className="template-weekly-drc-sections-title">
             {t('templateEditor.widget.previous-context-sections-label')}
           </div>
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="small"
             className="template-previous-context-add-button"
             onClick={addWeeklyDrcHeading}
           >
             {t('templateEditor.widget.previous-context-add-section')}
-          </button>
+          </Button>
         </div>
         {weeklyDrcSectionRows.map((heading, headingIndex) => (
           <div
@@ -1030,36 +1032,33 @@ const WeeklyDrcContextConfigEditor: React.FC<WidgetConfigEditorProps> = ({
             className="template-previous-context-section-row"
           >
             <div className="template-previous-context-select-wrapper">
-              <select
-                aria-label={t(
+              <DropdownSelect
+                ariaLabel={t(
                   'templateEditor.widget.previous-context-heading-label'
                 )}
+                
+                menuWidth="content"
                 value={heading}
-                onChange={(e) =>
-                  updateWeeklyDrcHeading(headingIndex, e.target.value)
+                options={[
+                  {
+                    value: '',
+                    label: t(
+                      'templateEditor.widget.previous-context-heading-placeholder'
+                    ),
+                  },
+                  ...availableDrcMarkdownHeadings.map((availableHeading) => ({
+                    value: availableHeading,
+                    label: availableHeading,
+                  })),
+                ]}
+                onChange={(nextValue) =>
+                  updateWeeklyDrcHeading(headingIndex, nextValue)
                 }
-                className="template-select template-select--compact template-previous-context-heading-input"
-              >
-                <option value="">
-                  {t(
-                    'templateEditor.widget.previous-context-heading-placeholder'
-                  )}
-                </option>
-                {availableDrcMarkdownHeadings.map((availableHeading) => (
-                  <option key={availableHeading} value={availableHeading}>
-                    {availableHeading}
-                  </option>
-                ))}
-              </select>
-              <ChevronDown
-                size={14}
-                className="widget-picker-icon template-previous-context-select-icon"
-                aria-hidden="true"
               />
             </div>
             <button
               type="button"
-              className="template-previous-context-remove template-previous-context-remove--icon"
+              className="template-previous-context-remove template-previous-context-remove--icon journalit-icon-button"
               onClick={() => removeWeeklyDrcHeading(headingIndex)}
               aria-label={t('button.remove')}
             >
@@ -1084,56 +1083,6 @@ const WeeklyDrcContextConfigEditor: React.FC<WidgetConfigEditorProps> = ({
   );
 };
 
-const GameConfigEditor: React.FC<WidgetConfigEditorProps> = ({
-  index,
-  widget,
-  onConfigChange,
-}) => {
-  const gameConfig = widget.config as
-    | { pageSize?: number; showRating?: boolean }
-    | undefined;
-  const pageSize = gameConfig?.pageSize ?? 5;
-  const showRating = gameConfig?.showRating ?? true;
-  return (
-    <div className="template-widget-config-row template-widget-config-row--wide">
-      <label className="template-widget-config-label">
-        {t('templateEditor.widget.page-size')}
-        <select
-          value={pageSize}
-          onChange={(e) =>
-            onConfigChange(index, {
-              ...widget.config,
-              pageSize: parseInt(e.target.value, 10),
-              showRating,
-            })
-          }
-          className="template-select template-select--compact"
-        >
-          <option value={5}>5</option>
-          <option value={10}>10</option>
-          <option value={15}>15</option>
-          <option value={20}>20</option>
-        </select>
-      </label>
-      <label className="template-widget-config-label template-widget-config-label--clickable">
-        <input
-          type="checkbox"
-          checked={showRating}
-          onChange={(e) =>
-            onConfigChange(index, {
-              ...widget.config,
-              pageSize,
-              showRating: e.target.checked,
-            })
-          }
-          className="template-widget-config-checkbox"
-        />
-        {t('templateEditor.widget.show-rating-column')}
-      </label>
-    </div>
-  );
-};
-
 const DemonTrackerConfigEditor: React.FC<WidgetConfigEditorProps> = ({
   id,
   index,
@@ -1150,7 +1099,10 @@ const DemonTrackerConfigEditor: React.FC<WidgetConfigEditorProps> = ({
     <div className="template-widget-config-row template-widget-config-row--wide template-widget-config-row--demon-tracker">
       <div className="template-widget-config-label">
         <span className="template-widget-config-label-heading">
-          <label htmlFor={demonTrackingMethodSelectId}>
+          <label
+            id={`${demonTrackingMethodSelectId}-label`}
+            htmlFor={demonTrackingMethodSelectId}
+          >
             {t('templateEditor.widget.demon-tracker.tracking-method')}
           </label>
           <Tooltip
@@ -1166,11 +1118,17 @@ const DemonTrackerConfigEditor: React.FC<WidgetConfigEditorProps> = ({
             </span>
           </Tooltip>
         </span>
-        <select
+        <DropdownSelect
           id={demonTrackingMethodSelectId}
+          ariaLabel={t('templateEditor.widget.demon-tracker.tracking-method')}
+          width="content"
+          ariaLabelledBy={`${demonTrackingMethodSelectId}-label`}
           value={demonOptions.trackingMethod}
-          onChange={(event) => {
-            const trackingMethod = event.target.value;
+          options={DEMON_TRACKER_TRACKING_METHODS.map((method) => ({
+            value: method,
+            label: getDemonTrackerTrackingMethodLabel(method),
+          }))}
+          onChange={(trackingMethod) => {
             if (isDemonTrackerTrackingMethod(trackingMethod)) {
               onConfigChange(index, {
                 ...widget.config,
@@ -1178,23 +1136,22 @@ const DemonTrackerConfigEditor: React.FC<WidgetConfigEditorProps> = ({
               });
             }
           }}
-          className="template-select template-select--compact"
-        >
-          {DEMON_TRACKER_TRACKING_METHODS.map((method) => (
-            <option key={method} value={method}>
-              {getDemonTrackerTrackingMethodLabel(method)}
-            </option>
-          ))}
-        </select>
+        />
       </div>
 
       {(templateType === 'weekly' || templateType === 'monthly') && (
         <label className="template-widget-config-label">
           {t('templateEditor.widget.demon-tracker.stop-after')}
-          <select
-            value={demonOptions.stopThreshold}
-            onChange={(event) => {
-              const stopThreshold = Number(event.target.value);
+          <DropdownSelect
+            ariaLabel={t('templateEditor.widget.demon-tracker.stop-after')}
+            width="content"
+            value={String(demonOptions.stopThreshold)}
+            options={DEMON_TRACKER_STOP_THRESHOLDS.map((threshold) => ({
+              value: String(threshold),
+              label: String(threshold),
+            }))}
+            onChange={(nextValue) => {
+              const stopThreshold = Number(nextValue);
               if (isDemonTrackerStopThreshold(stopThreshold)) {
                 onConfigChange(index, {
                   ...widget.config,
@@ -1202,20 +1159,44 @@ const DemonTrackerConfigEditor: React.FC<WidgetConfigEditorProps> = ({
                 });
               }
             }}
-            aria-label={t('templateEditor.widget.demon-tracker.stop-after')}
-            className="template-select template-select--compact"
-          >
-            {DEMON_TRACKER_STOP_THRESHOLDS.map((threshold) => (
-              <option key={threshold} value={threshold}>
-                {threshold}
-              </option>
-            ))}
-          </select>
+          />
         </label>
       )}
     </div>
   );
 };
+
+const RollingBiasConfigEditor: React.FC<WidgetConfigEditorProps> = ({
+  index,
+  widget,
+  onConfigChange,
+}) => (
+  <div className="template-widget-config-row">
+    <label className="template-widget-config-label">
+      {t('templateEditor.widget.rolling-bias-win-rate.window')}
+      <DropdownSelect
+        ariaLabel={t('templateEditor.widget.rolling-bias-win-rate.window')}
+        width="content"
+        value={String(
+          toRollingBiasWidgetConfig(widget.config).window ??
+            DEFAULT_ROLLING_BIAS_REVIEW_PERIOD
+        )}
+        options={ROLLING_BIAS_PERIODS.map((period) => ({
+          value: String(period),
+          label: t('dashboard.rolling_bias.last_trades', {
+            count: String(period),
+          }),
+        }))}
+        onChange={(nextValue) => {
+          const period = parseRollingBiasPeriod(nextValue);
+          if (period) {
+            onConfigChange(index, { ...widget.config, window: period });
+          }
+        }}
+      />
+    </label>
+  </div>
+);
 
 const WIDGET_CONFIG_EDITORS = new Map<
   string,
@@ -1223,17 +1204,37 @@ const WIDGET_CONFIG_EDITORS = new Map<
 >(
   Object.entries({
     'session-log': SessionLogConfigEditor,
+    'key-levels': KeyLevelsConfigEditor,
     'markdown-header': MarkdownHeaderConfigEditor,
     'markdown-zone': MarkdownZoneConfigEditor,
     'review-context-fields': ReviewContextFieldsConfigEditor,
     'trade-review': TradeReviewConfigEditor,
     'previous-trading-day-context': PreviousTradingDayContextConfigEditor,
     'weekly-drc-context': WeeklyDrcContextConfigEditor,
-    'technical-game': GameConfigEditor,
-    'mental-game': GameConfigEditor,
     'demon-tracker': DemonTrackerConfigEditor,
+    'market-bias': MarketBiasConfigEditor,
+    'rolling-bias-win-rate': RollingBiasConfigEditor,
   })
 );
+
+
+const WidgetRowConfig: React.FC<
+  WidgetConfigEditorProps & { isEditing: boolean }
+> = ({ isEditing, ...editorProps }) => {
+  if (!isEditing) return null;
+  const ConfigEditor = WIDGET_CONFIG_EDITORS.get(editorProps.widget.type);
+  return (
+    <>
+      {ConfigEditor && <ConfigEditor {...editorProps} />}
+      <WidgetOptionControls
+        widget={editorProps.widget}
+        onConfigChange={(config) =>
+          editorProps.onConfigChange(editorProps.index, config)
+        }
+      />
+    </>
+  );
+};
 
 const WidgetRowActions: React.FC<{
   index: number;
@@ -1243,7 +1244,7 @@ const WidgetRowActions: React.FC<{
   <div className="template-section-actions">
     <button
       onClick={() => onDuplicate(index)}
-      className="template-section-action template-section-duplicate"
+      className="template-section-action template-section-duplicate journalit-icon-button"
       aria-label={t('builder.sidebar.duplicate')}
     >
       <svg
@@ -1260,7 +1261,7 @@ const WidgetRowActions: React.FC<{
     </button>
     <button
       onClick={() => onRemove(index)}
-      className="template-section-action template-section-remove"
+      className="template-section-action template-section-remove journalit-icon-button"
       aria-label={t('button.remove')}
     >
       <svg
@@ -1293,6 +1294,7 @@ function useSortableWidgetItemContent({
   availableMarkdownHeadings,
   availableDrcMarkdownHeadings,
   availableTradeNoteHeadings,
+  keyLevelsParentGroups,
   skipWeekends,
   onWidgetChange,
   onConfigChange,
@@ -1311,9 +1313,6 @@ function useSortableWidgetItemContent({
     isDragging,
   } = useSortable({ id, disabled: !isEditing || widget.locked });
   const canEditWidget = isEditing && !widget.locked;
-  const ConfigEditor = isEditing
-    ? WIDGET_CONFIG_EDITORS.get(widget.type)
-    : undefined;
 
   return (
     <div
@@ -1391,20 +1390,20 @@ function useSortableWidgetItemContent({
         )}
       </div>
 
-      {ConfigEditor && (
-        <ConfigEditor
-          id={id}
-          index={index}
-          widget={widget}
-          plugin={plugin}
-          templateType={templateType}
-          availableMarkdownHeadings={availableMarkdownHeadings}
-          availableDrcMarkdownHeadings={availableDrcMarkdownHeadings}
-          availableTradeNoteHeadings={availableTradeNoteHeadings}
-          skipWeekends={skipWeekends}
-          onConfigChange={onConfigChange}
-        />
-      )}
+      <WidgetRowConfig
+        isEditing={isEditing}
+        id={id}
+        index={index}
+        widget={widget}
+        plugin={plugin}
+        templateType={templateType}
+        availableMarkdownHeadings={availableMarkdownHeadings}
+        availableDrcMarkdownHeadings={availableDrcMarkdownHeadings}
+        availableTradeNoteHeadings={availableTradeNoteHeadings}
+        keyLevelsParentGroups={keyLevelsParentGroups}
+        skipWeekends={skipWeekends}
+        onConfigChange={onConfigChange}
+      />
     </div>
   );
 }
@@ -1548,6 +1547,11 @@ function useTemplateEditorModel({
         return heading ? [heading] : [];
       }),
     [editingWidgets]
+  );
+
+  const keyLevelsParentGroups = useKeyLevelsParentGroups(
+    templateService,
+    templateType
   );
 
   const availableDrcMarkdownHeadings = useMemo(() => {
@@ -1744,14 +1748,16 @@ function useTemplateEditorModel({
       const newWidgets = [...editingWidgetsRef.current];
       
       
-      
+      const sameType = newWidgets[index].type === widgetDef.type;
+      const previousConfig = sameType ? newWidgets[index].config : undefined;
       const mergedConfig = widgetDef.defaultConfig
-        ? { ...newWidgets[index].config, ...widgetDef.defaultConfig }
-        : newWidgets[index].config;
+        ? { ...previousConfig, ...widgetDef.defaultConfig }
+        : previousConfig;
       const nextWidget: WidgetPlacement = {
         ...newWidgets[index],
         type: widgetDef.type,
         config: mergedConfig,
+        id: sameType ? newWidgets[index].id : undefined,
       };
 
       if (widgetDef.type === 'images' && !nextWidget.id) {
@@ -1903,6 +1909,7 @@ function useTemplateEditorModel({
     availableMarkdownHeadings,
     availableDrcMarkdownHeadings,
     availableTradeNoteHeadings,
+    keyLevelsParentGroups,
     canEdit,
     getWidgetEditorId,
     previewTemplate,
@@ -1943,6 +1950,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
     availableMarkdownHeadings,
     availableDrcMarkdownHeadings,
     availableTradeNoteHeadings,
+    keyLevelsParentGroups,
     canEdit,
     getWidgetEditorId,
     previewTemplate,
@@ -2071,19 +2079,23 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
                 </div>
                 {canEdit && (
                   <div className="template-editor-widget-actions">
-                    <button
+                    <Button
+                      variant="secondary"
+                      size="small"
                       onClick={() => void handleOpenWidgetLibraryDocs()}
-                      className="journalit-native-button template-action-button template-action-button--neutral template-action-button--compact"
+                      className="template-action-button template-action-button--neutral template-action-button--compact"
                     >
                       {t('templateEditor.button.widget-library-docs')}
-                    </button>
-                    <button
+                    </Button>
+                    <Button
+                      variant="primary"
+                      size="small"
                       ref={registerAddWidgetButtonTarget}
                       onClick={() => void handleAddWidget()}
                       className="template-action-button template-action-button--secondary template-action-button--compact"
                     >
                       {t('templateEditor.button.add-widget')}
-                    </button>
+                    </Button>
                   </div>
                 )}
               </div>
@@ -2118,6 +2130,7 @@ export const TemplateEditor: React.FC<TemplateEditorProps> = (props) => {
                           availableDrcMarkdownHeadings
                         }
                         availableTradeNoteHeadings={availableTradeNoteHeadings}
+                        keyLevelsParentGroups={keyLevelsParentGroups}
                         skipWeekends={
                           plugin.settings.trade.skipWeekends ?? true
                         }

@@ -1,7 +1,6 @@
 
 
 import {
-  Editor,
   MarkdownPostProcessor,
   MarkdownPostProcessorContext,
   MarkdownPreviewRenderer,
@@ -12,7 +11,10 @@ import {
 import { Root } from 'react-dom/client';
 import { createWorkspaceRoot } from '../../core/libraryGlobals';
 import { createElement, type ReactElement } from 'react';
-import { replaceFileContent } from '../../utils/fileMutation';
+import {
+  getSourceEditor,
+  transformFileContent,
+} from '../../utils/fileMutation';
 import type {
   ReviewContextFieldsWidgetConfig,
   ReviewWidgetType,
@@ -77,7 +79,19 @@ import { parseDemonTrackerWidgetConfig } from './widgets/shared/demonTrackerConf
 import { SessionMistakesWidget } from './widgets/SessionMistakesWidget';
 import { DayTradeFieldsWidget } from './widgets/DayTradeFieldsWidget';
 import { KeyLevelsWidget } from './widgets/KeyLevelsWidget';
+import {
+  KEY_LEVELS_GROUPS_CONFIG_KEY,
+  KEY_LEVELS_SHOW_INHERITED_CONFIG_KEY,
+  parseKeyLevelsGroupsConfig,
+  type KeyLevelsGroupKey,
+} from '../../services/reviews/keyLevelGroups';
 import { KeyEventsWidget } from './widgets/KeyEventsWidget';
+import { MarketBiasWidget } from './widgets/MarketBiasWidget';
+import {
+  RollingBiasWinRateWidget,
+  parseRollingBiasWidgetConfig,
+} from './widgets/RollingBiasWinRateWidget';
+import { parseMarketBiasWidgetConfig } from '../../services/reviews/marketBias';
 import { MissedTradesWidget } from './widgets/MissedTradesWidget';
 import { BacktestTradesWidget } from './widgets/BacktestTradesWidget';
 import type { WeeklyDRCContextConfig } from './widgets/WeeklyDRCContextWidget';
@@ -95,6 +109,51 @@ const WEEKLY_DRC_DAY_SCOPES = new Set([
 
 function findConfigSeparator(line: string): number {
   return line.search(/:/);
+}
+
+
+function parseKeyLevelsWidgetConfig(source: string): {
+  groups?: KeyLevelsGroupKey[];
+  showInheritedLevels?: boolean;
+} {
+  const config: {
+    groups?: KeyLevelsGroupKey[];
+    showInheritedLevels?: boolean;
+  } = {};
+  for (const line of source.split('\n')) {
+    const colonIndex = findConfigSeparator(line);
+    if (colonIndex <= 0) continue;
+    const key = line.substring(0, colonIndex).trim();
+    const value = line.substring(colonIndex + 1).trim();
+    if (key === KEY_LEVELS_GROUPS_CONFIG_KEY) {
+      const groups = parseKeyLevelsGroupsConfig(value);
+      if (groups) config.groups = groups;
+    }
+    if (key === KEY_LEVELS_SHOW_INHERITED_CONFIG_KEY) {
+      config.showInheritedLevels = value !== 'false';
+    }
+  }
+  return config;
+}
+
+function parseGameWidgetConfig(source: string): {
+  pageSize?: number;
+  showRating?: boolean;
+} {
+  const config: { pageSize?: number; showRating?: boolean } = {};
+  for (const line of source.split('\n')) {
+    const colonIndex = findConfigSeparator(line);
+    if (colonIndex <= 0) continue;
+    const key = line.substring(0, colonIndex).trim();
+    const value = line.substring(colonIndex + 1).trim();
+    if (key === 'pageSize') {
+      const pageSize = Number(value);
+      if (Number.isInteger(pageSize) && pageSize > 0)
+        config.pageSize = pageSize;
+    }
+    if (key === 'showRating') config.showRating = value === 'true';
+  }
+  return config;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -144,10 +203,6 @@ const globallyRegisteredCodeblockProcessors = new Map<
 >();
 import { generateUUID } from '../../utils/uuid';
 import { forceMetadataCacheRefresh } from '../../utils/dataRefresh';
-import {
-  isMarkdownView,
-  isViewWithTFile,
-} from '../../types/obsidian-extensions';
 import {
   isInShareHideDollarAmountsArea,
   markShareLoadingUntil,
@@ -269,6 +324,36 @@ function parseImageLayout(value: string): 'carousel' | 'stacked' | undefined {
   }
 }
 
+
+interface ImageCodeblockScan {
+  blocks: Array<{ start: number; end: number; id: string }>;
+  inserts: Array<{ line: number; id: string }>;
+  replacements: Array<{ line: number; id: string }>;
+}
+
+function hasImageIdChanges(scan: ImageCodeblockScan): boolean {
+  return scan.inserts.length > 0 || scan.replacements.length > 0;
+}
+
+
+function sortByLineDescending<T extends { line: number }>(items: T[]): T[] {
+  return [...items].sort((a, b) => b.line - a.line);
+}
+
+function withImageIdChanges(
+  lines: string[],
+  scan: ImageCodeblockScan
+): string[] {
+  const next = [...lines];
+  for (const replacement of sortByLineDescending(scan.replacements)) {
+    next[replacement.line] = `id: ${replacement.id}`;
+  }
+  for (const insert of sortByLineDescending(scan.inserts)) {
+    next.splice(insert.line, 0, `id: ${insert.id}`);
+  }
+  return next;
+}
+
 export class WidgetCodeblockProcessor {
   private plugin: JournalitPlugin;
   
@@ -314,10 +399,12 @@ export class WidgetCodeblockProcessor {
 
       
       'key-events',
+      'market-bias',
       'previous-trading-day-context',
       'weekly-drc-context',
       'pnl-chart',
       'drawdown-chart',
+      'rolling-bias-win-rate',
       'breakdown', 
       'best-worst', 
       'trades-chart', 
@@ -805,6 +892,14 @@ export class WidgetCodeblockProcessor {
       });
     }
 
+    if (widgetType === 'rolling-bias-win-rate') {
+      return createElement(RollingBiasWinRateWidget, {
+        filePath,
+        plugin: this.plugin,
+        config: parseRollingBiasWidgetConfig(source),
+      });
+    }
+
     
     if (widgetType === 'trades') {
       const config: Record<string, unknown> = {};
@@ -1118,12 +1213,17 @@ export class WidgetCodeblockProcessor {
       return createElement(TechnicalGameWidget, {
         filePath,
         plugin: this.plugin,
+        config: parseGameWidgetConfig(source),
       });
     }
 
     
     if (widgetType === 'mental-game') {
-      return createElement(MentalGameWidget, { filePath, plugin: this.plugin });
+      return createElement(MentalGameWidget, {
+        filePath,
+        plugin: this.plugin,
+        config: parseGameWidgetConfig(source),
+      });
     }
 
     
@@ -1172,12 +1272,24 @@ export class WidgetCodeblockProcessor {
 
     
     if (widgetType === 'key-levels') {
-      return createElement(KeyLevelsWidget, { filePath, plugin: this.plugin });
+      return createElement(KeyLevelsWidget, {
+        filePath,
+        plugin: this.plugin,
+        ...parseKeyLevelsWidgetConfig(source),
+      });
     }
 
     
     if (widgetType === 'key-events') {
       return createElement(KeyEventsWidget, { filePath, plugin: this.plugin });
+    }
+
+    if (widgetType === 'market-bias') {
+      return createElement(MarketBiasWidget, {
+        filePath,
+        plugin: this.plugin,
+        config: parseMarketBiasWidgetConfig(source),
+      });
     }
 
     
@@ -1231,31 +1343,6 @@ export class WidgetCodeblockProcessor {
     }
   }
 
-  private getEditorContext(
-    filePath: string
-  ): { lines: string[]; editor: Editor } | null {
-    const leaves = this.plugin.app.workspace.getLeavesOfType('markdown');
-    for (const leaf of leaves) {
-      const view = leaf.view;
-      if (!isMarkdownView(view) || !isViewWithTFile(view)) {
-        continue;
-      }
-
-      if (view.file.path !== filePath) {
-        continue;
-      }
-
-      const content = view.editor?.getValue();
-      if (content === undefined) {
-        continue;
-      }
-
-      return { lines: content.split('\n'), editor: view.editor };
-    }
-
-    return null;
-  }
-
   private async waitForEditorUpdate(): Promise<void> {
     await new Promise<void>((resolve) => {
       window.setTimeout(resolve, 0);
@@ -1263,77 +1350,60 @@ export class WidgetCodeblockProcessor {
   }
 
   private async runImageWidgetIdMigration(filePath: string): Promise<boolean> {
-    const editorContext = this.getEditorContext(filePath);
-    let lines = editorContext?.lines ?? null;
-
-    let file: TFile | null = null;
-    if (!lines) {
-      const abstractFile =
-        this.plugin.app.vault.getAbstractFileByPath(filePath);
-      if (!(abstractFile instanceof TFile)) {
-        return false;
-      }
-      file = abstractFile;
-      const content = await this.plugin.app.vault.read(file);
-      lines = content.split('\n');
-    } else {
-      const abstractFile =
-        this.plugin.app.vault.getAbstractFileByPath(filePath);
-      if (abstractFile instanceof TFile) {
-        file = abstractFile;
-      }
-    }
-
-    if (!lines || !file) {
+    const file = this.plugin.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile)) {
       return false;
     }
 
-    const { blocks, inserts, replacements } = this.parseImageCodeblocks(lines);
-    if (!blocks.length) {
-      return false;
-    }
-
-    let didUpdate = false;
-
-    if (inserts.length > 0 || replacements.length > 0) {
-      didUpdate = true;
-      const sortedInserts = [...inserts].sort((a, b) => b.line - a.line);
-      const sortedReplacements = [...replacements].sort(
-        (a, b) => b.line - a.line
-      );
-
-      const updatedLines = [...lines];
-      for (const replacement of sortedReplacements) {
-        updatedLines[replacement.line] = `id: ${replacement.id}`;
-      }
-      for (const insert of sortedInserts) {
-        updatedLines.splice(insert.line, 0, `id: ${insert.id}`);
-      }
-
-      if (editorContext?.editor) {
+    const editorContext = getSourceEditor(this.plugin.app, filePath);
+    let parsed: ImageCodeblockScan;
+    if (editorContext) {
+      parsed = this.parseImageCodeblocks(editorContext.lines);
+      if (parsed.blocks.length > 0 && hasImageIdChanges(parsed)) {
         await this.waitForEditorUpdate();
-        for (const replacement of sortedReplacements) {
-          const lineText = editorContext.editor.getLine(replacement.line);
-          editorContext.editor.replaceRange(
+        const { editor } = editorContext;
+        for (const replacement of sortByLineDescending(parsed.replacements)) {
+          editor.replaceRange(
             `id: ${replacement.id}`,
             { line: replacement.line, ch: 0 },
-            { line: replacement.line, ch: lineText.length }
+            {
+              line: replacement.line,
+              ch: editor.getLine(replacement.line).length,
+            }
           );
         }
-        for (const insert of sortedInserts) {
-          editorContext.editor.replaceRange(`id: ${insert.id}\n`, {
+        for (const insert of sortByLineDescending(parsed.inserts)) {
+          editor.replaceRange(`id: ${insert.id}\n`, {
             line: insert.line,
             ch: 0,
           });
         }
-      } else {
-        await replaceFileContent(
-          this.plugin.app,
-          file,
-          updatedLines.join('\n')
-        );
       }
-      lines = updatedLines;
+    } else {
+      
+      
+      let latest: ImageCodeblockScan = {
+        blocks: [],
+        inserts: [],
+        replacements: [],
+      };
+      await transformFileContent(this.plugin.app, file, (content) => {
+        const lines = content.split('\n');
+        latest = this.parseImageCodeblocks(lines);
+        return hasImageIdChanges(latest)
+          ? withImageIdChanges(lines, latest).join('\n')
+          : content;
+      });
+      parsed = latest;
+    }
+
+    const { blocks } = parsed;
+    if (!blocks.length) {
+      return false;
+    }
+
+    const didUpdate = hasImageIdChanges(parsed);
+    if (didUpdate) {
       this.fileLineCache.delete(filePath);
       this.imageCodeblockIndex.delete(filePath);
     }
@@ -1448,11 +1518,7 @@ export class WidgetCodeblockProcessor {
     return true;
   }
 
-  private parseImageCodeblocks(lines: string[]): {
-    blocks: Array<{ start: number; end: number; id: string }>;
-    inserts: Array<{ line: number; id: string }>;
-    replacements: Array<{ line: number; id: string }>;
-  } {
+  private parseImageCodeblocks(lines: string[]): ImageCodeblockScan {
     const blocks: Array<{ start: number; end: number; id: string }> = [];
     const inserts: Array<{ line: number; id: string }> = [];
     const replacements: Array<{ line: number; id: string }> = [];
@@ -1561,7 +1627,7 @@ export class WidgetCodeblockProcessor {
   }
 
   private async getFileLines(filePath: string): Promise<string[] | null> {
-    const editorContext = this.getEditorContext(filePath);
+    const editorContext = getSourceEditor(this.plugin.app, filePath);
     if (editorContext?.lines) {
       return editorContext.lines;
     }

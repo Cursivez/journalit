@@ -410,6 +410,19 @@ function payoutFields(
         value.balanceFloor,
         'balance'
       );
+    if (value.kind === 'profit_above_balance_floor') {
+      f.numeric(
+        `${key}.appliesToFirstPayouts`,
+        'account.prop-challenge.payout-rules.balance-floor-first-payouts',
+        value.appliesToFirstPayouts,
+        'count'
+      );
+      f.numeric(
+        `${key}.belowFloorAllowance`,
+        'account.prop-challenge.payout-rules.below-floor-allowance',
+        value.belowFloorAllowance
+      );
+    }
   };
   const maximum = (value: PropChallengePayoutMaximum, lifetime: boolean) => {
     const key = lifetime ? 'lifetime.maximum' : 'maximum';
@@ -449,6 +462,13 @@ function payoutFields(
             ? 'account.prop-challenge.payout-rules.maximum-amount'
             : 'account.prop-challenge.payout-rules.maximum-first-amount',
         value.amount
+      );
+    if (value.kind === 'fixed')
+      f.numeric(
+        `${key}.appliesToFirstPayouts`,
+        'account.prop-challenge.payout-rules.maximum-first-payouts',
+        value.appliesToFirstPayouts,
+        'count'
       );
     if (value.kind === 'cycle_profit_percent')
       f.numeric(

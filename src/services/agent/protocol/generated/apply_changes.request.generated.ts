@@ -45,6 +45,15 @@ input: CustomFieldReorderInput
 action: "custom_field.update"
 input: CustomFieldUpdateInput
 } | {
+action: "dashboard_comparison.create"
+input: DashboardComparisonCreateInput
+} | {
+action: "dashboard_comparison.delete"
+input: DashboardComparisonDeleteInput
+} | {
+action: "dashboard_comparison.update"
+input: DashboardComparisonUpdateInput
+} | {
 action: "dashboard_layout.create"
 input: DashboardLayoutCreateInput
 } | {
@@ -77,6 +86,9 @@ input: EventRenameInput
 } | {
 action: "event.update_style"
 input: EventUpdateStyleInput
+} | {
+action: "home_goal.set"
+input: HomeGoalSetInput
 } | {
 action: "home_layout.create"
 input: HomeLayoutCreateInput
@@ -111,6 +123,9 @@ input: MistakeRenameInput
 action: "prop_challenge.add_cost"
 input: PropChallengeAddCostInput
 } | {
+action: "prop_challenge.add_prior_payout"
+input: PropChallengeAddPriorPayoutInput
+} | {
 action: "prop_challenge.advance"
 input: PropChallengeAdvanceInput
 } | {
@@ -120,11 +135,20 @@ input: PropChallengeConfigureInput
 action: "prop_challenge.delete_cost"
 input: PropChallengeDeleteCostInput
 } | {
+action: "prop_challenge.delete_prior_payout"
+input: PropChallengeDeletePriorPayoutInput
+} | {
 action: "prop_challenge.fail"
 input: PropChallengeFailInput
 } | {
+action: "prop_challenge.remove_drawdown_floor"
+input: PropChallengeRemoveDrawdownFloorInput
+} | {
 action: "prop_challenge.reopen"
 input: PropChallengeReopenInput
+} | {
+action: "prop_challenge.set_drawdown_floor"
+input: PropChallengeSetDrawdownFloorInput
 } | {
 action: "review.add_images"
 input: ReviewAddImagesInput
@@ -264,11 +288,17 @@ input: TagRenameInput
 action: "tag.set_color"
 input: TagSetColorInput
 } | {
+action: "trade.add_images"
+input: TradeAddImagesInput
+} | {
 action: "trade.create"
 input: TradeCreateInput
 } | {
 action: "trade.delete"
 input: TradeDeleteInput
+} | {
+action: "trade.remove_images"
+input: TradeRemoveImagesInput
 } | {
 action: "trade.set_image_annotations"
 input: TradeSetImageAnnotationsInput
@@ -289,6 +319,32 @@ preview_id: string
 export type CustomFieldOptions = CustomFieldOption[]
 
 export type CustomFieldOptions1 = CustomFieldOption[]
+
+export type IdValues = string[]
+
+export type StringValues = string[]
+
+export type DirectionValues = ("long" | "short")[]
+
+export type DashboardStatusValues = ("open" | "win" | "loss" | "breakeven" | "cancelled")[]
+
+export type TradeTypeValues = ("regular" | "missed" | "backtest")[]
+
+export type ReviewStatusValues = ("reviewed" | "unreviewed")[]
+
+export type RatingValues = ("5" | "4" | "3" | "2" | "1" | "unrated")[]
+
+export type MarketBiasValues = ("with" | "against" | "neutral" | "none")[]
+
+export type ImageAnnotationStatusValues = ("tagged" | "untagged" | "has_notes" | "no_notes")[]
+
+export type CustomFieldClauses = {
+field_id: string
+operator: ("equals" | "not_equals" | "contains" | "greater_than" | "greater_than_or_equal" | "less_than" | "less_than_or_equal")
+value: (string | number | boolean | string[])
+}[]
+
+export type MarketBias = MarketBiasEntry[]
 
 export type DayTradeFieldList = string[]
 
@@ -311,6 +367,8 @@ export type WidgetPlacements = WidgetPlacement[]
 
 export type WorkflowQuestions = TradeGateQuestion[]
 
+export type SettingsFavoriteAccounts = string[]
+
 export type LabelList = string[]
 
 export type PreferenceList = string[]
@@ -318,6 +376,10 @@ export type PreferenceList = string[]
 export type StopLossList = PlannedTarget[]
 
 export type TakeProfitList = PlannedTarget[]
+
+export type IdealExitList = IdealExit[]
+
+export type DividendList = Dividend[]
 
 export type LabelBatch2 = string[]
 
@@ -511,6 +573,41 @@ max_length?: number
 
 pattern?: string
 }
+
+export interface DashboardComparisonCreateInput {
+name: string
+a: DashboardComparisonFilters
+b: DashboardComparisonFilters
+}
+
+export interface DashboardComparisonFilters {
+account_ids?: IdValues
+setup_ids?: IdValues
+tickers?: StringValues
+tags?: StringValues
+mistakes?: StringValues
+directions?: DirectionValues
+status?: DashboardStatusValues
+trade_types?: TradeTypeValues
+review_status?: ReviewStatusValues
+ratings?: RatingValues
+market_bias?: MarketBiasValues
+image_annotation_status?: ImageAnnotationStatusValues
+image_tags?: StringValues
+custom_fields?: CustomFieldClauses
+}
+export interface DashboardComparisonDeleteInput {
+comparison_id: string
+}
+export interface DashboardComparisonUpdateInput {
+comparison_id: string
+expected_revision: string
+fields: {
+name?: string
+a?: DashboardComparisonFilters
+b?: DashboardComparisonFilters
+}
+}
 export interface DashboardLayoutCreateInput {
 name: string
 layout: DashboardLayoutContent
@@ -519,6 +616,8 @@ export interface DashboardLayoutContent {
 
 top_section: string[]
 breakpoints: CompleteLayoutBreakpointPlacements
+
+grid_columns?: (12 | 24)
 }
 export interface CompleteLayoutBreakpointPlacements {
 
@@ -589,12 +688,32 @@ color: ("red" | "orange" | "yellow" | "gray")
 
 notes?: (string | null)
 }
+export interface HomeGoalSetInput {
+widget_id: string
+goal: HomeGoal
+}
+
+export interface HomeGoal {
+metric: ("net_pnl" | "trade_count" | "win_rate" | "profit_factor" | "expectancy" | "max_drawdown")
+direction: ("at_least" | "at_most")
+target: number
+period: ("day" | "week" | "month" | "sessions" | "all_time")
+session_count?: number
+r_multiples?: boolean
+
+account_targets?: {
+account_id: string
+target: number
+}[]
+}
 export interface HomeLayoutCreateInput {
 name: string
 layout: HomeLayoutContent
 }
 export interface HomeLayoutContent {
 breakpoints: CompleteLayoutBreakpointPlacements
+
+grid_columns?: (12 | 24)
 }
 export interface HomeLayoutDeleteInput {
 name: string
@@ -647,6 +766,13 @@ target_value: string
 export interface PropChallengeAddCostInput {
 account_id: string
 kind: ("purchase" | "reset" | "activation" | "other")
+amount: number
+date: string
+note?: string
+}
+
+export interface PropChallengeAddPriorPayoutInput {
+account_id: string
 amount: number
 date: string
 note?: string
@@ -760,15 +886,35 @@ export interface PropChallengeDeleteCostInput {
 account_id: string
 cost_id: string
 }
+export interface PropChallengeDeletePriorPayoutInput {
+account_id: string
+payout_id: string
+}
 
 export interface PropChallengeFailInput {
 account_id: string
 expected_revision: string
 }
 
+export interface PropChallengeRemoveDrawdownFloorInput {
+account_id: string
+expected_revision: string
+
+rule_id?: string
+}
+
 export interface PropChallengeReopenInput {
 account_id: string
 expected_revision: string
+}
+
+export interface PropChallengeSetDrawdownFloorInput {
+account_id: string
+expected_revision: string
+
+rule_id?: string
+
+floor: number
 }
 
 export interface ReviewAddImagesInput {
@@ -831,6 +977,9 @@ goals?: Goal[]
 
 checklist?: ChecklistItem[]
 key_levels?: KeyLevels
+
+key_level_groups?: KeyLevelGroup[]
+market_bias?: MarketBias
 grades?: Grades
 
 reviewed?: boolean
@@ -854,6 +1003,19 @@ export interface KeyLevel {
 
 price: string
 importance: ("High" | "Medium" | "Low" | null)
+}
+export interface KeyLevelGroup {
+
+name: string
+
+support: KeyLevel[]
+
+resistance: KeyLevel[]
+}
+export interface MarketBiasEntry {
+
+ticker?: string
+bias: ("long" | "neutral" | "short")
 }
 
 export interface Grades {
@@ -1171,6 +1333,8 @@ display_r_multiples?: boolean
 
 hide_dollar_amounts_in_shares?: boolean
 
+hide_dollar_amounts_in_r_mode?: boolean
+
 mae_mfe_input_mode?: ("price" | "dollar")
 
 mae_mfe_display_unit?: ("dollar" | "ticks")
@@ -1213,6 +1377,9 @@ use_dollar_value_input?: boolean
 take_profit_unit?: ("percent" | "size")
 
 stop_loss_unit?: ("percent" | "size")
+favorite_accounts?: SettingsFavoriteAccounts
+
+default_symbol?: string
 }
 export interface SettingsSetTradingDayInput {
 
@@ -1346,14 +1513,51 @@ value: string
 color: string
 }
 
+export interface TradeAddImagesInput {
+trade_id: string
+
+sources: ({
+url: string
+} | {
+trade_id: string
+
+media_id: string
+} | {
+
+upload_id: string
+})[]
+}
+
 export interface TradeCreateInput {
 trade_type: ("regular" | "missed" | "backtest")
 
 instrument: string
 asset_type: ("stock" | "futures" | "forex" | "crypto" | "options" | "cfd")
 direction: ("long" | "short")
-executions: Executions
+executions?: Executions
+
+entry_time?: string
+
+exit_time?: string
 option?: OptionContract
+
+exchange?: string
+
+dollar_per_point?: number
+
+tick_size?: number
+
+tick_value?: number
+
+lot_size?: number
+
+pip_value?: number
+
+pip_size?: number
+
+contract_size?: number
+
+leverage_ratio?: number
 setup_id?: string
 account_id?: string
 stop_loss?: number
@@ -1361,19 +1565,44 @@ stop_losses?: StopLossList
 take_profit?: number
 take_profits?: TakeProfitList
 risk_amount?: number
+ideal_exits?: IdealExitList
+
+mae?: number
+
+mfe?: number
+
+mae_price?: number
+
+mfe_price?: number
+unrealized_price_snapshot?: UnrealizedPriceSnapshot
 
 direct_pnl?: number
 
 commission?: number
+
+commission_type?: ("fixed" | "percentage")
 fees?: number
 swap?: number
+
+rebate?: number
+dividends?: DividendList
+
+currency?: string
+
+fx_rate?: number
+
+forex_conversion_rate?: number
 tags?: LabelBatch2
 mistakes?: MistakeIdentityBatch
 
 missed_reason?: string
+
+exit_reason?: string
 custom_fields?: CustomFieldAssignments
 
 thesis?: string
+
+rating?: (0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5)
 
 notes?: string
 }
@@ -1404,8 +1633,33 @@ close_percent?: number
 
 size?: number
 }
+
+export interface IdealExit {
+price: number
+time?: string
+size?: number
+}
+
+export interface UnrealizedPriceSnapshot {
+price: number
+
+time?: string
+}
+
+export interface Dividend {
+time: string
+amount: number
+}
 export interface TradeDeleteInput {
 trade_id: string
+}
+
+export interface TradeRemoveImagesInput {
+trade_id: string
+
+media_ids?: string[]
+
+urls?: string[]
 }
 
 export interface TradeSetImageAnnotationsInput {
@@ -1429,26 +1683,89 @@ remove_tags?: LabelBatch2
 add_mistakes?: MistakeIdentityBatch
 remove_mistakes?: MistakeIdentityBatch
 executions?: Executions
+
+remove_executions?: true
+ideal_exits?: IdealExitList
+dividends?: DividendList
 custom_fields?: CustomFieldChanges1
 }
 export interface FieldChanges1 {
+
+instrument?: string
+
+asset_type?: ("stock" | "futures" | "forex" | "crypto" | "options" | "cfd")
+option?: OptionContract1
+
+exchange?: (string | null)
+
+dollar_per_point?: (number | null)
+
+tick_size?: (number | null)
+
+tick_value?: (number | null)
+
+lot_size?: (number | null)
+
+pip_value?: (number | null)
+
+pip_size?: (number | null)
+
+contract_size?: (number | null)
+
+leverage_ratio?: (number | null)
+
+entry_time?: string
+
+exit_time?: string
 setup_id?: (string | null)
 account_id?: (string | null)
 stop_loss?: (number | null)
 take_profit?: (number | null)
 risk_amount?: (number | null)
+
+mae?: (number | null)
+
+mfe?: (number | null)
+
+mae_price?: (number | null)
+
+mfe_price?: (number | null)
+
+unrealized_price_snapshot?: (UnrealizedPriceSnapshot | null)
 direction?: ("long" | "short")
 
 direct_pnl?: (number | null)
 
 commission?: (number | null)
+
+commission_type?: ("fixed" | "percentage")
 fees?: (number | null)
 swap?: (number | null)
+
+rebate?: (number | null)
+
+currency?: (string | null)
+
+fx_rate?: (number | null)
+
+forex_conversion_rate?: (number | null)
 missed_reason?: (string | null)
+
+exit_reason?: (string | null)
 
 thesis?: (string | null)
 
 reviewed?: boolean
 
+rating?: ((0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5) | null)
+
 notes?: string
+}
+
+export interface OptionContract1 {
+type: ("call" | "put")
+strike: number
+expiration: string
+
+contract_size?: number
 }

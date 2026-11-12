@@ -5,6 +5,11 @@ import { BaseWidget, BaseWidgetProps } from './BaseWidget';
 import { SharedPnLChart } from '../../../charts/SharedPnLChart';
 import { preparePnLChartData } from '../../../../utils/chartUtils';
 import { usePlugin } from '../../../../hooks/usePlugin';
+import { t } from '../../../../lang/helpers';
+import {
+  CompareCurveWidget,
+  pnlCurves,
+} from '../../compare/CompareCurveWidget';
 
 
 export const PnLChart = React.memo<BaseWidgetProps>(({ dateFormat }) => {
@@ -13,7 +18,7 @@ export const PnLChart = React.memo<BaseWidgetProps>(({ dateFormat }) => {
 
   return (
     <BaseWidget dateFormat={dateFormat}>
-      {(data, userDateFormat) => {
+      {(data, userDateFormat, filters, compare) => {
         
         const chartData = preparePnLChartData(
           data.trades,
@@ -21,6 +26,31 @@ export const PnLChart = React.memo<BaseWidgetProps>(({ dateFormat }) => {
           defaultRiskAmount,
           plugin
         );
+
+        if (compare) {
+          return (
+            <CompareCurveWidget
+              curves={pnlCurves(
+                data.trades.length > 0 ? chartData : [],
+                compare.data.trades.length > 0
+                  ? preparePnLChartData(
+                      compare.data.trades,
+                      userDateFormat,
+                      defaultRiskAmount,
+                      plugin
+                    )
+                  : [],
+                plugin?.settings?.trade?.displayRMultiples ?? false
+              )}
+              measure="pnl"
+              aData={data}
+              aFilters={filters}
+              bFilters={compare.filters}
+              dateFormat={userDateFormat}
+              ariaLabel={t('widget.pnlChart.name')}
+            />
+          );
+        }
 
         
         const currencyOverride = data.metrics.isMultiCurrency

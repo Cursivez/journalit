@@ -13,6 +13,12 @@ import React, {
 } from 'react';
 import { Notice } from 'obsidian';
 import { NumberInput } from '../../../core/NumberInput';
+import { RMultipleEntryInput } from './RMultipleEntryInput';
+import {
+  hasRMultipleEntryValues,
+  resolveRMultipleEntryRisk,
+} from '../rMultipleEntry';
+import { TRADE_FORM_RISK_AMOUNT_INPUT_ID } from './RiskAmountActions';
 import { ComboBox } from '../../../core/ComboBox';
 import { Select } from '../../../core/Select';
 import { Button } from '../../../ui/Button';
@@ -27,22 +33,26 @@ import {
   resolveTakeProfitClosePercent,
   resolveTakeProfitCloseSize,
 } from '../validation';
-import { formatPnL } from '../../../../utils/formatting';
 import { formatCost } from '../../../../utils/formatting';
 import { isTradeOpenWithContext } from '../../../../utils/tradeStatusUtils';
 import { OptionType } from '../../../../services/options';
 import { getPluginInstance } from '../../../../utils/pluginContext';
 import { areSnapshotKeysClaimedByCustomFields } from '../../../../utils/unrealizedPnl';
 import { useCurrency } from '../../../../contexts/CurrencyContext';
-import { useDisplayFormatter } from '../../../../hooks/useDisplayPolicy';
+import {
+  useDisplayFormatter,
+  useDisplayPolicy,
+} from '../../../../hooks/useDisplayPolicy';
 import { getCurrencyOptions } from '../../../../utils/currencyConfig';
 import { debounce } from '../../../../utils/debounce';
 import { calculateAssetAdjustedPriceMoveValue } from '../../../../utils/priceMoveValue';
 import { useEventBus } from '../../../../hooks/useEventBus';
 import { t } from '../../../../lang/helpers';
-import { filterActiveCopyAccounts } from '../../../../utils/accountCopyTrading';
-import { normalizeAccountLookupKey } from '../../../../services/trade/core/TradeAccountIdentity';
-import type { AccountCatalogEntry } from '../../../../services/accountPage/types';
+import { loadSelectableTradeFormAccountNames } from '../accountOptions';
+import {
+  pinFavoritesFirst,
+  useTradeFormFavorites,
+} from '../hooks/useTradeFormFavorites';
 import {
   TradeFormInputMode,
   TradeFormLayoutItemId,
@@ -76,41 +86,6 @@ const parseCommissionType = (value: string): 'fixed' | 'percentage' =>
   value === 'percentage' ? 'percentage' : 'fixed';
 
 const EMPTY_INSTRUMENTS: Array<{ id: string; name: string }> = [];
-
-function mergeActiveTradeFormAccountNames(
-  catalogAccounts: ReadonlyArray<
-    Pick<AccountCatalogEntry, 'name' | 'archived'>
-  >,
-  uniqueAccounts: readonly string[]
-): string[] {
-  const archivedLookupKeys = new Set<string>();
-  const activeAccountsByLookupKey = new Map<string, string>();
-
-  for (const account of catalogAccounts) {
-    const lookupKey = normalizeAccountLookupKey(account.name);
-    if (!lookupKey) {
-      continue;
-    }
-    if (account.archived) {
-      archivedLookupKeys.add(lookupKey);
-    } else {
-      activeAccountsByLookupKey.set(lookupKey, account.name);
-    }
-  }
-
-  for (const accountName of uniqueAccounts) {
-    const lookupKey = normalizeAccountLookupKey(accountName);
-    if (
-      lookupKey &&
-      !archivedLookupKeys.has(lookupKey) &&
-      !activeAccountsByLookupKey.has(lookupKey)
-    ) {
-      activeAccountsByLookupKey.set(lookupKey, accountName);
-    }
-  }
-
-  return Array.from(activeAccountsByLookupKey.values());
-}
 
 const ASSET_SPECIFIC_ERROR_FIELDS: Array<keyof TradeFormErrors> = [
   'expirationDate',
@@ -397,10 +372,12 @@ function AccountSelectField({
   onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
   onRequestCreateAccount: (name: string) => void;
 }) {
+  const favorites = useTradeFormFavorites();
   return (
     <ComboBox
       label={t('form.field.account')}
-      options={accountOptions}
+      options={pinFavoritesFirst(accountOptions, favorites.accounts.values)}
+      favorites={favorites.accounts}
       value={Array.isArray(data.account) ? data.account : []}
       onChange={(selectedNames) => {
         
@@ -598,6 +575,11 @@ interface RiskManagementSectionProps {
   showTitle?: boolean;
   showResultPreview?: boolean;
   onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
+  
+  onRMultipleEntryChange: (
+    field: keyof TradeFormData,
+    value: TradeFormValue
+  ) => void;
 }
 
 type RiskFieldId = 'stopLoss' | 'riskAmount' | 'takeProfits' | 'mae' | 'mfe';
@@ -806,6 +788,183 @@ function TakeProfitsSection({
   );
 }
 
+
+function ExcursionHint({ text }: { text: string }) {
+  return text ? <span className="calculated-risk-hint">= {text}</span> : null;
+}
+
+
+const EXCURSION_FIELD_TEXT = {
+  mae: {
+    priceLabel: (isShort: boolean) =>
+      isShort ? 'MAE Price (High)' : 'MAE Price (Low)',
+    pricePlaceholder: (isShort: boolean) =>
+      isShort ? 'Highest price reached' : 'Lowest price reached',
+    label: (currency: string) =>
+      t('tradelog.column.mae-with-currency', { currency }),
+    rPlaceholder: () => t('form.field.mae-placeholder-r'),
+    currencyPlaceholder: (currency: string) =>
+      t('form.field.mae-placeholder-currency', { currency }),
+  },
+  mfe: {
+    priceLabel: (isShort: boolean) =>
+      isShort ? 'MFE Price (Low)' : 'MFE Price (High)',
+    pricePlaceholder: (isShort: boolean) =>
+      isShort ? 'Lowest price reached' : 'Highest price reached',
+    label: (currency: string) =>
+      t('tradelog.column.mfe-with-currency', { currency }),
+    rPlaceholder: () => t('form.field.mfe-placeholder-r'),
+    currencyPlaceholder: (currency: string) =>
+      t('form.field.mfe-placeholder-currency', { currency }),
+  },
+} as const;
+
+
+function ExcursionPriceField({
+  side,
+  data,
+  errors,
+  isShort,
+  pnlCurrency,
+  defaultRiskAmount,
+  displayRMultiples,
+  onChange,
+}: {
+  side: 'mae' | 'mfe';
+  data: Partial<TradeFormData>;
+  errors: TradeFormErrors;
+  isShort: boolean;
+  pnlCurrency: string;
+  defaultRiskAmount: number;
+  displayRMultiples: boolean;
+  onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
+}) {
+  const { formatValue } = useDisplayFormatter();
+  const text = EXCURSION_FIELD_TEXT[side];
+  const priceField = side === 'mae' ? 'maePrice' : 'mfePrice';
+  const price = data[priceField];
+  const moveValue =
+    price !== undefined &&
+    data.entryPrice &&
+    data.positionSize &&
+    data.positionSize > 0
+      ? calculateAssetAdjustedPriceMoveValue(
+          data,
+          isShort ? data.entryPrice - price : price - data.entryPrice,
+          data.positionSize
+        )
+      : undefined;
+  const risk = resolveRMultipleEntryRisk(data, defaultRiskAmount);
+  
+  let hint = '';
+  if (moveValue !== undefined) {
+    hint =
+      displayRMultiples && risk.status === 'known'
+        ? formatValue({
+            kind: 'pnl',
+            value: moveValue,
+            rMultiple: moveValue / risk.amount,
+          })
+        : formatValue({
+            kind: 'money',
+            value: moveValue,
+            currencyCode: pnlCurrency,
+            notation: 'compact',
+            showCents: true,
+          });
+  }
+  return (
+    <div className="field">
+      <NumberInput
+        label={text.priceLabel(isShort)}
+        value={price}
+        onChange={(value) => onChange(priceField, value)}
+        error={errors[priceField] ?? errors[side]}
+        precision={data.assetType === 'forex' ? 5 : 2}
+        allowDecimal={true}
+        placeholder={text.pricePlaceholder(isShort)}
+      />
+      <ExcursionHint text={hint} />
+    </div>
+  );
+}
+
+
+function ExcursionField({
+  side,
+  data,
+  errors,
+  pnlCurrency,
+  defaultRiskAmount,
+  displayRMultiples,
+  onChange,
+  onRMultipleEntryChange,
+}: {
+  side: 'mae' | 'mfe';
+  data: Partial<TradeFormData>;
+  errors: TradeFormErrors;
+  pnlCurrency: string;
+  defaultRiskAmount: number;
+  displayRMultiples: boolean;
+  onChange: (field: keyof TradeFormData, value: TradeFormValue) => void;
+  onRMultipleEntryChange: (
+    field: keyof TradeFormData,
+    value: TradeFormValue
+  ) => void;
+}) {
+  const text = EXCURSION_FIELD_TEXT[side];
+  const maeMfeInputMode = getPluginInstance()?.settings.trade.maeMfeInputMode;
+  const isShort =
+    data.direction?.toUpperCase() === 'SHORT' ||
+    data.direction?.toUpperCase() === 'SELL';
+
+  if (maeMfeInputMode === 'price') {
+    return (
+      <ExcursionPriceField
+        side={side}
+        data={data}
+        errors={errors}
+        isShort={isShort}
+        pnlCurrency={pnlCurrency}
+        defaultRiskAmount={defaultRiskAmount}
+        displayRMultiples={displayRMultiples}
+        onChange={onChange}
+      />
+    );
+  }
+
+  if (displayRMultiples) {
+    return (
+      <div className="field">
+        <RMultipleEntryInput
+          field={side}
+          data={data}
+          label={text.label('R')}
+          placeholder={text.rPlaceholder()}
+          error={errors[side]}
+          currencyCode={pnlCurrency}
+          defaultRiskAmount={defaultRiskAmount}
+          onChange={onRMultipleEntryChange}
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="field">
+      <NumberInput
+        label={text.label(pnlCurrency)}
+        value={data[side]}
+        onChange={(value) => onChange(side, value)}
+        error={errors[side]}
+        precision={2}
+        allowDecimal={true}
+        placeholder={text.currencyPlaceholder(pnlCurrency)}
+      />
+    </div>
+  );
+}
+
 function RiskManagementSection({
   data,
   errors,
@@ -818,15 +977,10 @@ function RiskManagementSection({
   showTitle = true,
   showResultPreview = true,
   onChange,
+  onRMultipleEntryChange,
 }: RiskManagementSectionProps) {
   const { formatValue } = useDisplayFormatter();
   const plugin = getPluginInstance();
-  const maeMfeInputMode = plugin?.settings.trade.maeMfeInputMode;
-  const showPriceFields = maeMfeInputMode === 'price';
-  const showDollarFields = maeMfeInputMode !== 'price';
-  const isShort =
-    data.direction?.toUpperCase() === 'SHORT' ||
-    data.direction?.toUpperCase() === 'SELL';
   const takeProfits = data.takeProfits || [];
   const formLayout = resolveTradeFormLayoutSettings(
     plugin?.settings.trade.tradeFormLayout
@@ -863,6 +1017,7 @@ function RiskManagementSection({
         return (
           <div className="field" key={fieldId}>
             <NumberInput
+              id={TRADE_FORM_RISK_AMOUNT_INPUT_ID}
               label={t('form.field.risk-amount')}
               value={data.riskAmount}
               onChange={(value) => onChange('riskAmount', value)}
@@ -885,18 +1040,22 @@ function RiskManagementSection({
                     ? calculatedRisk / riskBudgetAmount
                     : undefined;
 
-                return (
+                
+                
+                const calculatedRiskText = formatValue({
+                  kind: 'risk',
+                  value: calculatedRisk,
+                  currencyCode: pnlCurrency,
+                  showCents: true,
+                  ...(displayRMultiples && calculatedRiskRMultiple !== undefined
+                    ? { rMultiple: calculatedRiskRMultiple }
+                    : {}),
+                });
+                return calculatedRiskText ? (
                   <span className="calculated-risk-hint">
-                    {t('form.calculated')}:{' '}
-                    {formatPnL(
-                      calculatedRisk,
-                      true,
-                      pnlCurrency,
-                      displayRMultiples,
-                      calculatedRiskRMultiple
-                    )}
+                    {t('form.calculated')}: {calculatedRiskText}
                   </span>
-                );
+                ) : null;
               })()}
           </div>
         );
@@ -914,125 +1073,20 @@ function RiskManagementSection({
           />
         ) : null;
       case 'mae':
-        if (showPriceFields) {
-          return (
-            <div className="field" key={fieldId}>
-              <NumberInput
-                label={isShort ? 'MAE Price (High)' : 'MAE Price (Low)'}
-                value={data.maePrice}
-                onChange={(value) => onChange('maePrice', value)}
-                error={errors.maePrice}
-                precision={data.assetType === 'forex' ? 5 : 2}
-                allowDecimal={true}
-                placeholder={
-                  isShort ? 'Highest price reached' : 'Lowest price reached'
-                }
-              />
-              {data.maePrice !== undefined &&
-                data.entryPrice &&
-                data.positionSize &&
-                data.positionSize > 0 && (
-                  <span className="calculated-risk-hint">
-                    ={' '}
-                    {formatValue({
-                      kind: 'money',
-                      value: calculateAssetAdjustedPriceMoveValue(
-                        data,
-                        isShort
-                          ? data.entryPrice - data.maePrice
-                          : data.maePrice - data.entryPrice,
-                        data.positionSize
-                      ),
-                      currencyCode: pnlCurrency,
-                      notation: 'compact',
-                      showCents: true,
-                    })}
-                  </span>
-                )}
-            </div>
-          );
-        }
-
-        if (showDollarFields) {
-          return (
-            <div className="field" key={fieldId}>
-              <NumberInput
-                label={t('tradelog.column.mae-with-currency', {
-                  currency: pnlCurrency,
-                })}
-                value={data.mae}
-                onChange={(value) => onChange('mae', value)}
-                error={errors.mae}
-                precision={2}
-                allowDecimal={true}
-                placeholder={t('form.field.mae-placeholder-currency', {
-                  currency: pnlCurrency,
-                })}
-              />
-            </div>
-          );
-        }
-        return null;
       case 'mfe':
-        if (showPriceFields) {
-          return (
-            <div className="field" key={fieldId}>
-              <NumberInput
-                label={isShort ? 'MFE Price (Low)' : 'MFE Price (High)'}
-                value={data.mfePrice}
-                onChange={(value) => onChange('mfePrice', value)}
-                error={errors.mfePrice}
-                precision={data.assetType === 'forex' ? 5 : 2}
-                allowDecimal={true}
-                placeholder={
-                  isShort ? 'Lowest price reached' : 'Highest price reached'
-                }
-              />
-              {data.mfePrice !== undefined &&
-                data.entryPrice &&
-                data.positionSize &&
-                data.positionSize > 0 && (
-                  <span className="calculated-risk-hint">
-                    ={' '}
-                    {formatValue({
-                      kind: 'money',
-                      value: calculateAssetAdjustedPriceMoveValue(
-                        data,
-                        isShort
-                          ? data.entryPrice - data.mfePrice
-                          : data.mfePrice - data.entryPrice,
-                        data.positionSize
-                      ),
-                      currencyCode: pnlCurrency,
-                      notation: 'compact',
-                      showCents: true,
-                    })}
-                  </span>
-                )}
-            </div>
-          );
-        }
-
-        if (showDollarFields) {
-          return (
-            <div className="field" key={fieldId}>
-              <NumberInput
-                label={t('tradelog.column.mfe-with-currency', {
-                  currency: pnlCurrency,
-                })}
-                value={data.mfe}
-                onChange={(value) => onChange('mfe', value)}
-                error={errors.mfe}
-                precision={2}
-                allowDecimal={true}
-                placeholder={t('form.field.mfe-placeholder-currency', {
-                  currency: pnlCurrency,
-                })}
-              />
-            </div>
-          );
-        }
-        return null;
+        return (
+          <ExcursionField
+            key={fieldId}
+            side={fieldId}
+            data={data}
+            errors={errors}
+            pnlCurrency={pnlCurrency}
+            defaultRiskAmount={defaultRiskAmount}
+            displayRMultiples={displayRMultiples}
+            onChange={onChange}
+            onRMultipleEntryChange={onRMultipleEntryChange}
+          />
+        );
       default:
         return null;
     }
@@ -1328,6 +1382,30 @@ function useAssetTypeChangeHandler({
   );
 }
 
+
+function tradeContractSpecs(
+  specs: Partial<
+    Pick<
+      TradeFormData,
+      | 'dollarPerPoint'
+      | 'tickSize'
+      | 'tickValue'
+      | 'lotSize'
+      | 'pipValue'
+      | 'pipSize'
+    >
+  >
+): { futures: boolean; forex: boolean } {
+  const positive = (value: number | undefined) =>
+    typeof value === 'number' && value > 0;
+  return {
+    futures: positive(specs.dollarPerPoint) || positive(specs.tickValue),
+    forex:
+      positive(specs.lotSize) ||
+      (positive(specs.pipValue) && positive(specs.pipSize)),
+  };
+}
+
 function useAssetFieldsModel({
   data,
   onChange,
@@ -1355,6 +1433,9 @@ function useAssetFieldsModel({
   const currentCfdContractSizeRef = useRef<number | undefined>(
     typeof data.contractSize === 'number' ? data.contractSize : undefined
   );
+  
+  const [initialTradeSpecs] = useState(() => tradeContractSpecs(data));
+  const tradeSpecsRef = useRef(initialTradeSpecs);
   const pendingCreatedAccountNameRef = useRef<string | null>(null);
   const selectedAccountsRef = useRef<string[]>(
     Array.isArray(data.account) ? data.account : []
@@ -1397,9 +1478,7 @@ function useAssetFieldsModel({
       setIsLoadingAccounts(true);
 
       const plugin = getPluginInstance();
-      const accountPageService = plugin?.accountPageService;
-      const tradeService = plugin?.tradeService;
-      if (!accountPageService && !tradeService) {
+      if (!plugin || (!plugin.accountPageService && !plugin.tradeService)) {
         console.warn(
           'Account services not available, skipping account loading'
         );
@@ -1407,19 +1486,8 @@ function useAssetFieldsModel({
         return;
       }
 
-      const catalogAccounts = accountPageService
-        ? await accountPageService.getAccountCatalog()
-        : [];
-      const uniqueAccounts = tradeService
-        ? await tradeService.getUniqueAccounts()
-        : [];
-      const allAccountNames = mergeActiveTradeFormAccountNames(
-        catalogAccounts,
-        uniqueAccounts
-      );
-      const selectableAccountNames = filterActiveCopyAccounts(
-        allAccountNames,
-        plugin?.settings.account?.accountMetadata,
+      const selectableAccountNames = await loadSelectableTradeFormAccountNames(
+        plugin,
         data.entryTime
       );
 
@@ -1569,6 +1637,24 @@ function useAssetFieldsModel({
     }
   }, [data.contractSize, data.assetType]);
 
+  useEffect(() => {
+    tradeSpecsRef.current = tradeContractSpecs({
+      dollarPerPoint: data.dollarPerPoint,
+      tickSize: data.tickSize,
+      tickValue: data.tickValue,
+      lotSize: data.lotSize,
+      pipValue: data.pipValue,
+      pipSize: data.pipSize,
+    });
+  }, [
+    data.dollarPerPoint,
+    data.tickSize,
+    data.tickValue,
+    data.lotSize,
+    data.pipValue,
+    data.pipSize,
+  ]);
+
   useForexPnlConversionRate({ data, globalCurrency, onChange });
 
   useEffect(() => {
@@ -1674,6 +1760,13 @@ function useAssetFieldsModel({
       return;
     }
 
+    
+    
+    
+    const keepsTradeSpecs =
+      Boolean(data.filePath) &&
+      previousInstrumentRef.current === data.instrument &&
+      previousAssetTypeRef.current === data.assetType;
     previousInstrumentRef.current = data.instrument;
 
     const instrument = data.instrument;
@@ -1683,14 +1776,20 @@ function useAssetFieldsModel({
         catalog: optionsService,
       });
 
-    if (data.assetType === 'futures') {
+    if (
+      data.assetType === 'futures' &&
+      !(keepsTradeSpecs && tradeSpecsRef.current.futures)
+    ) {
       const defaults = contractDefaults('futures');
       onChange('dollarPerPoint', defaults.dollarPerPoint);
       onChange('tickSize', defaults.tickSize);
       onChange('tickValue', defaults.tickValue);
     }
 
-    if (data.assetType === 'forex') {
+    if (
+      data.assetType === 'forex' &&
+      !(keepsTradeSpecs && tradeSpecsRef.current.forex)
+    ) {
       const defaults = contractDefaults('forex');
       onChange('pipValue', defaults.pipValue);
       onChange('pipSize', defaults.pipSize);
@@ -1776,6 +1875,10 @@ function useAssetFieldsModel({
     if (data.assetType !== 'futures' || !data.instrument) return;
 
     
+    
+    if (data.filePath) return;
+
+    
     if (data.dollarPerPoint === undefined) return;
 
     
@@ -1804,6 +1907,7 @@ function useAssetFieldsModel({
   }, [
     data.assetType,
     data.instrument,
+    data.filePath,
     data.dollarPerPoint,
     data.tickSize,
     data.tickValue,
@@ -1850,7 +1954,8 @@ function useAssetFieldsModel({
 
   
   const plugin = getPluginInstance();
-  const displayRMultiples = plugin?.settings.trade.displayRMultiples ?? false;
+  
+  const { displayRMultiples } = useDisplayPolicy();
   const defaultRiskAmount = plugin?.settings.trade.defaultRiskAmount ?? 0;
 
   
@@ -1977,6 +2082,9 @@ function resolveBasicLayoutVisibility({
           Boolean(
             errors.stopLosses || errors.stopLossesTotal || errors.riskAmount
           )) ||
+        
+        
+        (itemId === 'riskPlanning' && hasRMultipleEntryValues(data)) ||
         (itemId === 'takeProfits' &&
           Boolean(errors.takeProfits || errors.takeProfitsTotal)) ||
         (itemId === 'maeMfe' &&
@@ -2013,8 +2121,9 @@ const isLayoutItemShown = (
   (isEditMode && hasPopulatedTradeFormLayoutItem(data, itemId));
 
 
-const errorVisibleBasicItemsOf = (
-  errors: TradeFormErrors
+const forcedVisibleBasicItemsOf = (
+  errors: TradeFormErrors,
+  data: Partial<TradeFormData>
 ): Set<TradeFormLayoutItemId> => {
   const items = new Set<TradeFormLayoutItemId>();
   const errorItems: Array<[TradeFormLayoutItemId, boolean]> = [
@@ -2030,7 +2139,9 @@ const errorVisibleBasicItemsOf = (
     ],
     [
       'riskPlanning',
-      Boolean(errors.stopLosses || errors.stopLossesTotal || errors.riskAmount),
+      Boolean(
+        errors.stopLosses || errors.stopLossesTotal || errors.riskAmount
+      ) || hasRMultipleEntryValues(data),
     ],
     ['takeProfits', Boolean(errors.takeProfits || errors.takeProfitsTotal)],
     [
@@ -2207,6 +2318,7 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
     { layout, data, isEditMode },
     'tradeCurrency'
   );
+  const favorites = useTradeFormFavorites();
   const {
     pnlCurrency,
     tradeCurrencyOptions,
@@ -2247,7 +2359,7 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
   const { visibleBasicOptionalItems, visibleBasicOptionalItemSet } =
     withErrorVisibleItems(
       layoutVisibleBasicOptionalItems,
-      errorVisibleBasicItemsOf(errors)
+      forcedVisibleBasicItemsOf(errors, data)
     );
   const entryExitVisibility = resolveEntryExitVisibility({
     layout,
@@ -2303,6 +2415,7 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
             displayRMultiples={displayRMultiples}
             visibleRiskGroups={visibleRiskGroups}
             onChange={debouncedOnChange}
+            onRMultipleEntryChange={onChange}
           />
         );
       }
@@ -2345,7 +2458,11 @@ const AssetFieldsComponent: React.FC<AssetFieldsProps> = ({
       <div className="field">
         <ComboBox
           label={getInstrumentLabel()}
-          options={instrumentOptions}
+          options={pinFavoritesFirst(
+            instrumentOptions,
+            favorites.symbol.values
+          )}
+          favorites={favorites.symbol}
           value={data.instrument || ''}
           onChange={(value) => onChange('instrument', value)}
           error={errors.instrument}

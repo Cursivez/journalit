@@ -1,6 +1,10 @@
 import { parseLocalDateSafe } from '../../utils/dateUtils';
 import { createTickerMatcher } from '../../utils/tickerMatching';
-import type { DirectionFilter, TradeLogFilters } from '../tradelog/types';
+import type {
+  DirectionFilter,
+  RecentPeriodScope,
+  TradeLogFilters,
+} from '../tradelog/types';
 import type { ImageGalleryItem } from '../../components/imageGallery/types';
 import type { FilterExclusions } from '../../components/shared/filters/filterExclusions';
 import {
@@ -170,6 +174,20 @@ function normalizeDirectionFilterValue(
     return 'short';
   }
   return null;
+}
+
+
+export function matchesRecentPeriodScope(
+  item: ImageGalleryItem,
+  scope: RecentPeriodScope
+): boolean {
+  if (item.sourceType === 'trade') return scope.tradePaths.has(item.sourcePath);
+  const timestamp = getTimestamp(item.date);
+  const [startDate, endDate] = scope.dateRange;
+  return (
+    timestamp >= startDate.getTime() &&
+    (!endDate || timestamp <= endDate.getTime())
+  );
 }
 
 export function matchesImageGalleryTradeLogFilters(

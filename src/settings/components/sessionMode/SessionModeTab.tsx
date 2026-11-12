@@ -61,6 +61,7 @@ import {
   normalizeSessionModePhaseLayouts,
   SESSION_MODE_CONFIGURABLE_PHASES,
 } from '../../../utils/sessionModeLayout';
+import { DropdownSelect } from '../../../components/shared/DropdownSelect';
 
 interface SessionModeTabProps {
   plugin: JournalitPlugin;
@@ -1230,6 +1231,7 @@ function SessionLogTagDraftFields({
   setDraft,
   labelPrefix,
 }: SessionLogTagDraftFieldsProps) {
+  const tagColorLabelId = `${labelPrefix}-color-label`;
   return (
     <div className="journalit-session-log-tag-draft-fields">
       <label className="journalit-session-log-tag-field">
@@ -1267,22 +1269,24 @@ function SessionLogTagDraftFields({
         />
       </label>
       <label className="journalit-session-log-tag-field">
-        <span className="journalit-session-log-tag-field__label">
+        <span
+          id={tagColorLabelId}
+          className="journalit-session-log-tag-field__label"
+        >
           {t('settings.session-mode.tag-color')}
         </span>
-        <select
+        <DropdownSelect
+          ariaLabel={t('settings.session-mode.tag-color')}
+          ariaLabelledBy={tagColorLabelId}
           value={draft.color}
-          onChange={(event) =>
-            setDraft((current) => ({ ...current, color: event.target.value }))
+          options={SESSION_LOG_TAG_COLORS.map((color) => ({
+            value: color,
+            label: t(`settings.session-mode.tag-color.${color}`),
+          }))}
+          onChange={(value) =>
+            setDraft((current) => ({ ...current, color: value }))
           }
-          className="dropdown journalit-settings-input journalit-session-log-tag-color-select"
-        >
-          {SESSION_LOG_TAG_COLORS.map((color) => (
-            <option key={color} value={color}>
-              {t(`settings.session-mode.tag-color.${color}`)}
-            </option>
-          ))}
-        </select>
+        />
       </label>
       <div className="journalit-session-log-tag-toggles">
         <label className="journalit-session-log-tag-toggle">

@@ -132,6 +132,18 @@ function requirementRow(
     }
 
     case 'consistency':
+      
+      
+      
+      if (requirement.cycleProfit <= 0)
+        return {
+          ...base,
+          state: 'not-started',
+          tone: 'neutral',
+          progressText: t('account.prop-challenge.ledger.value.no-profit'),
+          progressRatio: 0,
+          requirementText: maximum(share(requirement.target)),
+        };
       return {
         ...base,
         ...entry(requirement.satisfied, true),

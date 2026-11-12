@@ -21,7 +21,7 @@ export const FILTER_MENU_STYLES = `
   padding: var(--size-2-3);
   border: var(--border-width) solid var(--background-modifier-border-hover);
   border-radius: var(--radius-m);
-  background-color: var(--background-primary);
+  background-color: var(--journalit-control-menu-fill);
   box-shadow: var(--shadow-s);
   color: var(--text-normal);
   font-size: var(--font-ui-small);
@@ -109,11 +109,14 @@ export const FILTER_MENU_STYLES = `
   background-color: var(--background-modifier-hover);
 }
 
+
 .journalit-filter-menu .journalit-filter-menu__scroll {
   display: flex;
   flex-direction: column;
   gap: 1px;
   min-height: 0;
+  margin-right: calc(-1 * var(--size-2-3));
+  padding-right: var(--size-2-3);
   overflow-x: hidden;
   overflow-y: auto;
 }
@@ -260,9 +263,15 @@ export const FILTER_MENU_STYLES = `
   gap: 2px;
 }
 
-.journalit-filter-menu .journalit-filter-menu__option-row .journalit-filter-menu__option {
+.journalit-filter-menu .journalit-filter-menu__option-row .journalit-filter-menu__option,
+.journalit-filter-menu .journalit-filter-menu__option-row .journalit-filter-menu__row {
   flex: 1 1 auto;
   min-width: 0;
+}
+
+
+.journalit-filter-menu .journalit-filter-menu__option-row .journalit-filter-menu__row-label {
+  flex-shrink: 1;
 }
 
 

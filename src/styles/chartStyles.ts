@@ -276,6 +276,27 @@ export const CHART_STYLES = `
   background-color: var(--legend-color);
 }
 
+.journalit-chart-widget__legend-swatch--dashed {
+  background: repeating-linear-gradient(
+    90deg,
+    var(--legend-color) 0 4px,
+    transparent 4px 7px
+  );
+}
+
+.journalit-rolling-bias-chart {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.journalit-rolling-bias-review-body {
+  display: flex;
+  flex-direction: column;
+  height: 300px;
+}
+
 .journalit-chart-widget__legend-swatch--dot {
   width: 6px;
   height: 6px;

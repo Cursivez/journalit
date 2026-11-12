@@ -221,6 +221,22 @@ function updateBalanceFloor(
     : availability;
 }
 
+
+function updateBalanceFloorOption(
+  availability: PropChallengePayoutAvailability,
+  field: 'appliesToFirstPayouts' | 'belowFloorAllowance',
+  value: string
+): PropChallengePayoutAvailability {
+  if (availability.kind !== 'profit_above_balance_floor') return availability;
+  const parsed = optionalPositiveNumberValue(value);
+  const next = { ...availability };
+  if (parsed === undefined) delete next[field];
+  else
+    next[field] =
+      field === 'appliesToFirstPayouts' ? Math.floor(parsed) : parsed;
+  return next;
+}
+
 function updateDrawdownFloor(
   aftermath: PropChallengePayoutAftermath,
   drawdownFloor: number
@@ -918,11 +934,43 @@ function MaximumRequestFields({
               onChange({
                 ...policy,
                 maximumRequest: {
+                  ...policy.maximumRequest,
                   kind: 'fixed',
                   amount: positiveNumberValue(event.target.value),
                 },
               })
             }
+            disabled={disabled}
+          />
+        </PayoutPolicyField>
+      )}
+
+      {policy.maximumRequest.kind === 'fixed' && (
+        <PayoutPolicyField
+          translationKey="account.prop-challenge.payout-rules.maximum-first-payouts"
+          kind="input"
+        >
+          <DraftInput
+            type="number"
+            min="1"
+            step="1"
+            value={policy.maximumRequest.appliesToFirstPayouts ?? ''}
+            onChange={(event) => {
+              if (policy.maximumRequest.kind !== 'fixed') return;
+              const parsed = optionalPositiveNumberValue(event.target.value);
+              const { appliesToFirstPayouts: _previous, ...maximumRequest } =
+                policy.maximumRequest;
+              onChange({
+                ...policy,
+                maximumRequest:
+                  parsed === undefined
+                    ? maximumRequest
+                    : {
+                        ...maximumRequest,
+                        appliesToFirstPayouts: Math.floor(parsed),
+                      },
+              });
+            }}
             disabled={disabled}
           />
         </PayoutPolicyField>
@@ -1055,6 +1103,7 @@ function LifetimeUnlockMaximumFields({
                 lifetimeQualifyingDaysUnlock: {
                   ...lifetimeUnlock,
                   maximumRequest: {
+                    ...lifetimeUnlock.maximumRequest,
                     kind: 'fixed',
                     amount: positiveNumberValue(event.target.value),
                   },
@@ -1445,6 +1494,56 @@ function PayoutPolicyAvailabilitySection({
                   availability: updateBalanceFloor(
                     policy.availability,
                     Math.max(0, numberValue(event.target.value))
+                  ),
+                })
+              }
+              disabled={disabled}
+            />
+          </PayoutPolicyField>
+        )}
+
+        {policy.availability.kind === 'profit_above_balance_floor' && (
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.balance-floor-first-payouts"
+            kind="input"
+          >
+            <DraftInput
+              type="number"
+              min="1"
+              step="1"
+              value={policy.availability.appliesToFirstPayouts ?? ''}
+              onChange={(event) =>
+                onChange({
+                  ...policy,
+                  availability: updateBalanceFloorOption(
+                    policy.availability,
+                    'appliesToFirstPayouts',
+                    event.target.value
+                  ),
+                })
+              }
+              disabled={disabled}
+            />
+          </PayoutPolicyField>
+        )}
+
+        {policy.availability.kind === 'profit_above_balance_floor' && (
+          <PayoutPolicyField
+            translationKey="account.prop-challenge.payout-rules.below-floor-allowance"
+            kind="input"
+          >
+            <DraftInput
+              type="number"
+              min="1"
+              step="50"
+              value={policy.availability.belowFloorAllowance ?? ''}
+              onChange={(event) =>
+                onChange({
+                  ...policy,
+                  availability: updateBalanceFloorOption(
+                    policy.availability,
+                    'belowFloorAllowance',
+                    event.target.value
                   ),
                 })
               }

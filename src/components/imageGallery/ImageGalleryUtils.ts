@@ -443,6 +443,5 @@ function formatDateLabel(value: string, dateFormat?: string): string {
   if (!value) return t('imageGallery.date.unknown');
   const date = parseLocalDateSafe(value);
   if (!date) return value;
-  if (dateFormat) return formatDateDisplay(date, dateFormat);
-  return date.toLocaleDateString();
+  return formatDateDisplay(date, dateFormat);
 }

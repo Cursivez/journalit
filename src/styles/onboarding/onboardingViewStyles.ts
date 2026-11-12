@@ -1392,21 +1392,15 @@ export const ONBOARDING_VIEW_STYLES = `
   }
 
   .journalit-onboarding-view-container .copy-button {
-    padding: 0.75rem;
-    background: var(--interactive-accent);
     color: var(--text-on-accent);
-    border: none;
-    border-radius: 8px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
     position: relative;
   }
 
   .journalit-onboarding-view-container .copy-button:hover {
-    background: var(--interactive-accent-hover);
     color: var(--text-on-accent);
     transform: scale(1.05);
   }
@@ -1417,12 +1411,7 @@ export const ONBOARDING_VIEW_STYLES = `
     transform: none;
   }
 
-  .journalit-onboarding-view-container .copy-button.copied {
-    background: var(--color-green);
-  }
-
   .journalit-onboarding-view-container .copy-button.copied:hover {
-    background: var(--color-green);
     transform: scale(1);
   }
 

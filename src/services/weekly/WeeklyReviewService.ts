@@ -1,6 +1,12 @@
 
 
 import { App, TFile, normalizePath, FileView, WorkspaceLeaf } from 'obsidian';
+import {
+  EMPTY_MARKET_BIAS,
+  MarketBiasIndexCache,
+  type MarketBiasNote,
+} from '../marketBias/marketBiasIndex';
+import { readMarketBias, type MarketBiasEntry } from '../reviews/marketBias';
 import { imageService } from '../../services/image/ImageService';
 import {
   NewsEvent,
@@ -100,14 +106,16 @@ function createWeeklyReviewData(
   const year = typeof frontmatter.year === 'string' ? frontmatter.year : '';
   const reviewQuestions = getStringRecord(frontmatter.reviewQuestions);
 
-  return Object.assign(frontmatter, {
+  
+  return {
+    ...frontmatter,
     type: 'weekly-review' as const,
     date,
     week,
     month,
     year,
     reviewQuestions,
-  });
+  };
 }
 
 function createDRCData(frontmatter: Record<string, unknown>): DRCData | null {
@@ -128,7 +136,9 @@ function createDRCData(frontmatter: Record<string, unknown>): DRCData | null {
       ? frontmatter.technicalGrade
       : 'C';
 
-  return Object.assign(frontmatter, {
+  
+  return {
+    ...frontmatter,
     date: frontmatter.date,
     preTradeChecklist: getBooleanRecord(frontmatter.preTradeChecklist),
     mentalGrade,
@@ -136,7 +146,7 @@ function createDRCData(frontmatter: Record<string, unknown>): DRCData | null {
     tradeRatings: {},
     reviewQuestions: getStringRecord(frontmatter.reviewQuestions),
     missedTrades: [],
-  });
+  };
 }
 
 export class WeeklyReviewService {
@@ -164,6 +174,17 @@ export class WeeklyReviewService {
 
   
   private reviewedWeeklyReviewPaths: ReadonlySet<string> | null = null;
+
+  
+  private readonly marketBiasByPath = new MarketBiasIndexCache({
+    notePaths: () =>
+      this.app.vault
+        .getMarkdownFiles()
+        .flatMap((file) =>
+          this.isWeeklyReviewMarkdownPath(file.path) ? [file.path] : []
+        ),
+    readNote: (path) => this.readWeeklyMarketBias(path),
+  });
 
   
   constructor(
@@ -194,7 +215,9 @@ export class WeeklyReviewService {
     this.unsubscribeFns.push(
       eventBus.subscribe('review:changed', (payload) => {
         if (payload.type === 'weekly') {
-          this.invalidateReviewedWeekIndex();
+          this.invalidateReviewedWeekIndex(
+            payload.filePath === undefined ? undefined : [payload.filePath]
+          );
         }
       }),
       eventBus.subscribe('folder-path:changed', () => {
@@ -205,12 +228,20 @@ export class WeeklyReviewService {
     this.disposeIndexInvalidator = registerPathIndexInvalidator({
       app: this.app,
       matchesPath: (path) => this.isWeeklyReviewMarkdownPath(path),
-      onInvalidate: () => this.invalidateReviewedWeekIndex(),
+      onInvalidate: (changedPaths) =>
+        this.invalidateReviewedWeekIndex(changedPaths),
     });
   }
 
-  private invalidateReviewedWeekIndex(): void {
+  
+  private invalidateReviewedWeekIndex(changedPaths?: readonly string[]): void {
     this.reviewedWeeklyReviewPaths = null;
+    if (changedPaths === undefined) this.marketBiasByPath.invalidate();
+    else {
+      for (const path of changedPaths) {
+        this.marketBiasByPath.update(normalizePath(path));
+      }
+    }
     eventBus.publish('weekly:reviewed-index-invalidated');
   }
 
@@ -290,6 +321,28 @@ export class WeeklyReviewService {
 
     this.reviewedWeeklyReviewPaths = reviewedPaths;
     return reviewedPaths;
+  }
+
+  private readWeeklyMarketBias(path: string): MarketBiasNote | null {
+    const file = this.app.vault.getFileByPath(path);
+    if (!file || !this.isWeeklyReviewMarkdownPath(path)) return null;
+    const frontmatter: unknown =
+      this.app.metadataCache.getFileCache(file)?.frontmatter;
+    if (!isRecord(frontmatter) || frontmatter.type !== 'weekly-review') {
+      return null;
+    }
+    const entries = readMarketBias(frontmatter);
+    return entries.length > 0
+      ? { key: normalizePath(file.path), entries }
+      : null;
+  }
+
+  
+  public getMarketBiasForWeek(date: Date): readonly MarketBiasEntry[] {
+    return (
+      this.marketBiasByPath.get().get(this.getWeeklyReviewPath(date)) ??
+      EMPTY_MARKET_BIAS
+    );
   }
 
   
@@ -736,8 +789,7 @@ export class WeeklyReviewService {
     try {
       await this.updateWeeklyReviewFrontmatterCore(
         filePath,
-        updates,
-        () => undefined,
+        () => updates,
         undefined,
         true
       );
@@ -758,17 +810,35 @@ export class WeeklyReviewService {
   ): Promise<void> {
     await this.updateWeeklyReviewFrontmatterCore(
       filePath,
-      updates,
-      guard,
+      (frontmatter) => {
+        guard(frontmatter);
+        return updates;
+      },
       source,
       false
     );
   }
 
+  
+  public async updateWeeklyReviewFrontmatterWith(
+    filePath: string,
+    compute: (
+      frontmatter: Readonly<Record<string, unknown>>
+    ) => Partial<Record<string, unknown>>
+  ): Promise<void> {
+    await this.updateWeeklyReviewFrontmatterCore(
+      filePath,
+      compute,
+      undefined,
+      true
+    );
+  }
+
   private async updateWeeklyReviewFrontmatterCore(
     filePath: string,
-    updates: Partial<Record<string, unknown>>,
-    guard: ReviewFrontmatterGuard,
+    compute: (
+      frontmatter: Readonly<Record<string, unknown>>
+    ) => Partial<Record<string, unknown>>,
     source: string | undefined,
     logCarryoverErrors: boolean
   ): Promise<void> {
@@ -776,10 +846,11 @@ export class WeeklyReviewService {
     if (!(file instanceof TFile))
       throw new Error(`Weekly Review file not found: ${filePath}`);
 
+    let updates: Partial<Record<string, unknown>> = {};
     await this.app.fileManager.processFrontMatter(
       file,
       (frontmatter: Record<string, unknown>) => {
-        guard(frontmatter);
+        updates = compute(frontmatter);
         applyReviewFrontmatterUpdates(frontmatter, updates);
       }
     );

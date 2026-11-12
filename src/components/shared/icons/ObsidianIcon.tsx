@@ -148,6 +148,7 @@ export const Clock: ObsidianIconComponent = createIcon('clock');
 export const ClockAlert: ObsidianIconComponent =
   createIcon('lucide-clock-alert');
 export const ClockIcon: ObsidianIconComponent = createIcon('clock');
+export const Compass: ObsidianIconComponent = createIcon('compass');
 export const Copy: ObsidianIconComponent = createIcon('copy');
 export const Edit: ObsidianIconComponent = createIcon('edit');
 export const Pencil: ObsidianIconComponent = createIcon('pencil');
@@ -171,6 +172,7 @@ export const FolderOpen: ObsidianIconComponent = createIcon('folder-open');
 export const FolderTree: ObsidianIconComponent = createIcon('folder-tree');
 export const Funnel: ObsidianIconComponent = createIcon('funnel');
 export const Ghost: ObsidianIconComponent = createIcon('ghost');
+export const GitCompare: ObsidianIconComponent = createIcon('git-compare');
 export const GitMerge: ObsidianIconComponent = createIcon('git-merge');
 export const GlassWater: ObsidianIconComponent = createIcon('glass-water');
 export const Network: ObsidianIconComponent = createIcon('network');

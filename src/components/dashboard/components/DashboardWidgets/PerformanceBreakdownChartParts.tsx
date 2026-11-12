@@ -14,6 +14,7 @@ import {
   type PerformanceBreakdownTooltipProps,
 } from './performanceBreakdownChartModel';
 import { handleRovingChartMarkKeyDown } from '../../../charts/chartKeyboardNavigation';
+import { SVG_LABEL_TOOLTIP_PROPS } from '../../../charts/svgLabelTooltip';
 
 interface PerformanceBreakdownDividerLabelProps {
   dividerLabel: string;
@@ -208,6 +209,7 @@ const interactiveBarProps = (
   cursor: 'pointer',
   role: 'button',
   'data-journalit-chart-mark': 'true',
+  ...SVG_LABEL_TOOLTIP_PROPS,
   'aria-label': t('setups.view.card.open-named', { name: payload.label }),
   onKeyDown: onKeyboardActivate
     ? (event) =>

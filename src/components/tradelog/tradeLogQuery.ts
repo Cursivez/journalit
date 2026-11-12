@@ -30,6 +30,8 @@ export function queryTradeLog(
     filters.exclusions,
     filters.matchModes,
     resultMode,
-    filters.ratings
+    filters.ratings,
+    filters.marketBias,
+    filters.recentPeriod
   );
 }

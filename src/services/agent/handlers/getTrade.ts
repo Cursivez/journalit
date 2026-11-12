@@ -64,6 +64,7 @@ const SECTION_NAMES: readonly SectionName[] = [
   'notes',
   'media',
   'custom_fields',
+  'media_links',
 ];
 const SECTION_NAME_SET = new Set<string>(SECTION_NAMES);
 const MAX_NOTES_CHARS = 20_000;
@@ -153,6 +154,23 @@ function boundedNumber(
     : undefined;
 }
 
+
+function positiveNumber(
+  value: number | undefined,
+  maximum: number
+): number | undefined {
+  return value !== undefined &&
+    Number.isFinite(value) &&
+    value > 0 &&
+    value <= maximum
+    ? value
+    : undefined;
+}
+
+const MAX_PRICE = 1_000_000_000;
+const MAX_AMOUNT = 1_000_000_000_000;
+const MAX_LIST = 100;
+
 function truncateCodePoints(value: string, maximum: number): string {
   return Array.from(value).slice(0, maximum).join('');
 }
@@ -185,6 +203,9 @@ function projectSummary(
   if (record.missedReason !== undefined) {
     result.missed_reason = truncateCodePoints(record.missedReason, 500);
   }
+  if (record.exitReason !== undefined) {
+    result.exit_reason = truncateCodePoints(record.exitReason, 500);
+  }
   if (record.direction !== undefined) result.direction = record.direction;
   if (record.entryTime !== undefined) {
     if (!Number.isFinite(record.entryTime.getTime())) {
@@ -200,7 +221,142 @@ function projectSummary(
   }
   const pnl = boundedNumber(record.pnl, -1_000_000_000, 1_000_000_000);
   if (pnl !== undefined) result.pnl = pnl;
+  const { option, exchange, specs } = record.details;
+  if (option) {
+    const strike = positiveNumber(option.strike, MAX_PRICE);
+    const contractSize = positiveNumber(option.contractSize, 1_000_000);
+    if (strike !== undefined) {
+      result.option = {
+        type: option.type,
+        strike,
+        expiration: option.expiration,
+        ...(contractSize === undefined ? {} : { contract_size: contractSize }),
+      };
+    }
+  }
+  if (exchange !== undefined) {
+    result.exchange = truncateCodePoints(exchange, 100);
+  }
+  const spec = (
+    key: keyof typeof specs,
+    maximum: number,
+    allowZero = false
+  ): number | undefined =>
+    allowZero
+      ? boundedNumber(specs[key], 0, maximum)
+      : positiveNumber(specs[key], maximum);
+  const dollarPerPoint = spec('dollarPerPoint', MAX_PRICE);
+  const tickSize = spec('tickSize', MAX_PRICE);
+  const tickValue = spec('tickValue', MAX_PRICE);
+  const lotSize = spec('lotSize', MAX_PRICE, true);
+  const pipValue = spec('pipValue', MAX_PRICE);
+  const pipSize = spec('pipSize', MAX_PRICE);
+  const contractSize = spec('contractSize', 1_000_000);
+  const leverageRatio = spec('leverageRatio', 1_000_000);
+  if (dollarPerPoint !== undefined) result.dollar_per_point = dollarPerPoint;
+  if (tickSize !== undefined) result.tick_size = tickSize;
+  if (tickValue !== undefined) result.tick_value = tickValue;
+  if (lotSize !== undefined) result.lot_size = lotSize;
+  if (pipValue !== undefined) result.pip_value = pipValue;
+  if (pipSize !== undefined) result.pip_size = pipSize;
+  if (contractSize !== undefined) result.contract_size = contractSize;
+  if (leverageRatio !== undefined) result.leverage_ratio = leverageRatio;
   return result;
+}
+
+function isoTime(time: Date): string {
+  if (!Number.isFinite(time.getTime())) throw new ProjectionError('internal');
+  return time.toISOString();
+}
+
+
+function projectExecutionDetails(
+  details: AgentTradeReadRecord['details'],
+  result: NonNullable<Sections['execution']>
+): void {
+  if (details.commissionType !== undefined) {
+    result.commission_type = details.commissionType;
+  }
+  const rebate = boundedNumber(details.rebate, 0, MAX_PRICE);
+  if (rebate !== undefined) result.rebate = rebate;
+  if (details.dividends.length > MAX_LIST) throw new ProjectionError('limit');
+  const dividends = details.dividends.flatMap((dividend) => {
+    const amount = boundedNumber(dividend.amount, -MAX_AMOUNT, MAX_AMOUNT);
+    return amount === undefined
+      ? []
+      : [{ time: isoTime(dividend.time), amount }];
+  });
+  if (dividends.length > 0) result.dividends = dividends;
+  if (details.currency !== undefined) result.currency = details.currency;
+  const fxRate = positiveNumber(details.fxRate, MAX_PRICE);
+  if (fxRate !== undefined && details.fxRateBaseCurrency !== undefined) {
+    result.fx_rate = fxRate;
+    result.fx_rate_base_currency = details.fxRateBaseCurrency;
+  }
+  const conversion = details.forexConversion;
+  const conversionRate = positiveNumber(conversion?.rate, MAX_PRICE);
+  if (conversion && conversionRate !== undefined) {
+    result.forex_conversion = {
+      rate: conversionRate,
+      quote_currency: conversion.quoteCurrency,
+      base_currency: conversion.baseCurrency,
+      ...(conversion.date === undefined ? {} : { date: conversion.date }),
+      source: conversion.source,
+    };
+  }
+}
+
+
+function projectHindsight(
+  details: AgentTradeReadRecord['details'],
+  result: NonNullable<Sections['execution']>
+): void {
+  if (details.idealExits.length > MAX_LIST) throw new ProjectionError('limit');
+  const idealExits = details.idealExits.flatMap((exit) => {
+    const price = positiveNumber(exit.price, MAX_PRICE);
+    const size = positiveNumber(exit.size, MAX_AMOUNT);
+    return price === undefined
+      ? []
+      : [
+          {
+            price,
+            ...(exit.time === undefined ? {} : { time: isoTime(exit.time) }),
+            ...(size === undefined ? {} : { size }),
+          },
+        ];
+  });
+  if (idealExits.length > 0) result.ideal_exits = idealExits;
+  const mae = boundedNumber(details.mae, -MAX_AMOUNT, MAX_AMOUNT);
+  const mfe = boundedNumber(details.mfe, -MAX_AMOUNT, MAX_AMOUNT);
+  const maePrice = boundedNumber(details.maePrice, -MAX_PRICE, MAX_PRICE);
+  const mfePrice = boundedNumber(details.mfePrice, -MAX_PRICE, MAX_PRICE);
+  if (mae !== undefined) result.mae = mae;
+  if (mfe !== undefined) result.mfe = mfe;
+  if (maePrice !== undefined) result.mae_price = maePrice;
+  if (mfePrice !== undefined) result.mfe_price = mfePrice;
+  const snapshot = details.unrealizedPriceSnapshot;
+  const snapshotPrice = boundedNumber(snapshot?.price, 0, MAX_PRICE);
+  if (snapshot && snapshotPrice !== undefined) {
+    result.unrealized_price_snapshot = {
+      price: snapshotPrice,
+      ...(snapshot.time === undefined ? {} : { time: isoTime(snapshot.time) }),
+    };
+  }
+}
+
+
+function projectMediaLinks(
+  record: AgentTradeReadRecord
+): NonNullable<Sections['media_links']> {
+  const links = [
+    ...new Set(
+      record.mediaPaths.filter(
+        (source) => /^https?:\/\//i.test(source) && source.length <= 2000
+      )
+    ),
+  ];
+  if (links.length > MAX_LIST) throw new ProjectionError('limit');
+  return links.map((url) => ({ url }));
 }
 
 function projectExecution(
@@ -235,12 +391,14 @@ function projectExecution(
     1_000_000_000_000
   );
   if (swap !== undefined) result.swap = swap;
+  projectExecutionDetails(record.details, result);
   const directPnl = boundedNumber(
     record.directPnl,
     -1_000_000_000_000,
     1_000_000_000_000
   );
   if (directPnl !== undefined) result.direct_pnl = directPnl;
+  projectHindsight(record.details, result);
   if (record.entries.length > MAX_EXECUTION_LEGS)
     throw new AgentTradeReadError('limit_exceeded');
   if (record.exits.length > MAX_EXECUTION_LEGS)
@@ -351,6 +509,7 @@ function projectJournal(
     
     thesis_truncated: thesis !== null && thesis !== record.thesis,
     reviewed: record.reviewed,
+    rating: record.rating ?? null,
   };
 }
 
@@ -463,6 +622,9 @@ async function projectSections(input: {
         break;
       case 'custom_fields':
         sections.custom_fields = projectCustomFields(record);
+        break;
+      case 'media_links':
+        sections.media_links = projectMediaLinks(record);
         break;
       default: {
         const exhaustiveSection: never = section;

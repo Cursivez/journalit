@@ -3,6 +3,7 @@
 import React, { useId, useState } from 'react';
 import { t } from '../../lang/helpers';
 import { Button } from '../ui/Button';
+import { SegmentedControl } from '../shared/SegmentedControl';
 import { CustomFieldType } from '../../types/customFields';
 import {
   inferColumnCustomFieldType,
@@ -87,28 +88,17 @@ export const CreateCustomFieldFromColumn: React.FC<{
             }}
           />
         </label>
-        <div
-          className="journalit-trade-import-new-field__types"
-          role="radiogroup"
-          aria-label={t('trade-import.custom-field.type')}
-        >
-          {TYPE_OPTIONS.map(([value, optionLabel]) => (
-            <label
-              key={value}
-              className={`journalit-trade-import-new-field__type${type === value ? ' is-selected' : ''}`}
-            >
-              <input
-                type="radio"
-                name={`${nameId}-type`}
-                value={value}
-                checked={type === value}
-                disabled={disabled}
-                onChange={() => setType(value)}
-              />
-              <span>{optionLabel()}</span>
-            </label>
-          ))}
-        </div>
+        <SegmentedControl<ColumnCustomFieldType>
+          options={TYPE_OPTIONS.map(([value, optionLabel]) => ({
+            value,
+            label: optionLabel(),
+          }))}
+          value={type}
+          onChange={setType}
+          disabled={disabled}
+          groupRole="radiogroup"
+          ariaLabel={t('trade-import.custom-field.type')}
+        />
       </div>
       {labelError && labelError !== 'empty' && (
         <p className="journalit-trade-import-new-field__error">

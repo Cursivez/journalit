@@ -44,6 +44,7 @@ import {
   CurrencyConversionInfo,
 } from '../../../shared/display/CurrencyConversionInfo';
 import { isPnlContributingTrade } from '../../../../utils/tradeStatusUtils';
+import { getTradeMarketSide } from '../../../../services/trade/core/TradeDirection';
 import { StaticWidgetGrid } from '../../../shared/gridLayout/StaticWidgetGrid';
 import { cssVars } from '../../../../styles/inlineStylePolicy';
 import { shouldShowDashboardWidgetMinimalHeader } from './widgetHeaderVisibility';
@@ -83,12 +84,14 @@ class GridLayoutErrorBoundary extends React.Component<
               error: this.state.error?.message || '',
             })}
           </p>
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="journalit-dashboard-grid-error__retry"
             onClick={() => this.setState({ hasError: false, error: null })}
           >
             {t('home.grid.error.retry')}
-          </button>
+          </Button>
         </div>
       );
     }
@@ -109,12 +112,14 @@ import { DirectionalDrawdownChart } from '../DashboardWidgets/DirectionalDrawdow
 import { RecentTradesWidget } from '../DashboardWidgets/RecentTradesWidget';
 import { RollingWinLossRatioChart } from '../DashboardWidgets/RollingWinLossRatioChart';
 import { RollingStatsChart } from '../DashboardWidgets/RollingStatsChart';
+import { RollingBiasWinRateChart } from '../DashboardWidgets/RollingBiasWinRateChart';
 import { WeekdayPerformanceChart } from '../DashboardWidgets/WeekdayPerformanceChart';
 import { HourlyPerformanceChart } from '../DashboardWidgets/HourlyPerformanceChart';
 import { TickerPerformanceChart } from '../DashboardWidgets/TickerPerformanceChart';
 import { SetupPerformanceChart } from '../DashboardWidgets/SetupPerformanceChart';
 import { TagPerformanceChart } from '../DashboardWidgets/TagPerformanceChart';
 import { RatingPerformanceChart } from '../DashboardWidgets/RatingPerformanceChart';
+import { Button } from '../../../ui/Button';
 
 
 const GRID_MARGIN = 4;
@@ -250,7 +255,25 @@ const DASHBOARD_WIDGET_RENDERERS = new Map<string, DashboardWidgetRenderFn>(
     rollingWinRate: (dateFormat) => (
       <RollingWinLossRatioChart dateFormat={dateFormat} />
     ),
-    rollingStats: (dateFormat) => <RollingStatsChart dateFormat={dateFormat} />,
+    
+    rollingStats: (dateFormat) => (
+      <RollingStatsChart dateFormat={dateFormat} metric="avgWinLoss" />
+    ),
+    rollingStatsWinRate: (dateFormat) => (
+      <RollingStatsChart dateFormat={dateFormat} metric="winRate" />
+    ),
+    rollingStatsProfitFactor: (dateFormat) => (
+      <RollingStatsChart dateFormat={dateFormat} metric="profitFactor" />
+    ),
+    rollingStatsExpectancy: (dateFormat) => (
+      <RollingStatsChart dateFormat={dateFormat} metric="expectancy" />
+    ),
+    rollingStatsAvgSessionPnL: (dateFormat) => (
+      <RollingStatsChart dateFormat={dateFormat} metric="avgSessionPnL" />
+    ),
+    rollingBiasWinRate: (dateFormat) => (
+      <RollingBiasWinRateChart dateFormat={dateFormat} />
+    ),
     weekdayPerformance: (dateFormat) => (
       <WeekdayPerformanceChart dateFormat={dateFormat} />
     ),
@@ -796,7 +819,7 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
         const scopedTrades = trades.filter(
           (trade) =>
             isPnlContributingTrade(trade) &&
-            String(trade.direction || '').toLowerCase() === 'long'
+            getTradeMarketSide(trade) === 'long'
         );
         return scopedTrades.length > 0 ||
           !dashboardData?.metrics.unconvertedCurrencies?.length
@@ -808,7 +831,7 @@ export const GridLayout: React.FC<GridLayoutProps> = ({
         const scopedTrades = trades.filter(
           (trade) =>
             isPnlContributingTrade(trade) &&
-            String(trade.direction || '').toLowerCase() === 'short'
+            getTradeMarketSide(trade) === 'short'
         );
         return scopedTrades.length > 0 ||
           !dashboardData?.metrics.unconvertedCurrencies?.length

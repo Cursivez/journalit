@@ -37,12 +37,11 @@ import {
   isPnlContributingTrade,
 } from '../../utils/tradeStatusUtils';
 import { FolderPathService } from '../core/FolderPathService';
-import { parseTradeFinancialFields } from '../../utils/tradeUtils';
+import { buildPeriodAnalyticsTrade } from '../trade/core/PeriodAnalyticsTrade';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
 import { eventBus } from '../events/EventBus';
 import { ReviewChangedPayload } from '../events/types';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
-import { extractCanonicalProjectionPnlFields } from '../trade/core/CanonicalProjectionFields';
 import type { ReviewStreakItem } from '../../utils/reviewStreaks';
 import {
   applyReviewFrontmatterUpdates,
@@ -99,43 +98,6 @@ function getGradeValue(value: unknown): keyof GradeDistribution | undefined {
     default:
       return undefined;
   }
-}
-
-function createTradeFromFrontmatter(
-  frontmatter: Record<string, unknown>,
-  normalizedExecution: ReturnType<
-    typeof normalizeTradeExecutionForPeriodAnalytics
-  > & {},
-  path: string
-): Trade {
-  const originalPnlWasNull =
-    frontmatter.pnl === undefined || frontmatter.pnl === null;
-
-  return {
-    instrument:
-      getStringValue(frontmatter, 'instrument') ??
-      getStringValue(frontmatter, 'ticker'),
-    direction:
-      getStringValue(frontmatter, 'direction') ??
-      getStringValue(frontmatter, 'side') ??
-      '',
-    ...normalizedExecution,
-    pnl: typeof frontmatter.pnl === 'number' ? frontmatter.pnl : 0,
-    setup: getStringArray(frontmatter.setup),
-    tags: getStringArray(frontmatter.tags),
-    mistake: getStringArray(frontmatter.mistake),
-    account: Array.isArray(frontmatter.account)
-      ? getStringArray(frontmatter.account)
-      : typeof frontmatter.account === 'string'
-        ? [frontmatter.account]
-        : [],
-    path,
-    ...extractCanonicalProjectionPnlFields(frontmatter),
-    tradeStatus: getStringValue(frontmatter, 'tradeStatus'),
-    useDirectPnLInput: getBooleanValue(frontmatter, 'useDirectPnLInput'),
-    _originalPnlWasNull: originalPnlWasNull,
-    ...parseTradeFinancialFields(frontmatter),
-  };
 }
 
 export class MonthlyReviewService extends CustomDataService {
@@ -614,7 +576,7 @@ export class MonthlyReviewService extends CustomDataService {
               tradingDay.getMonth() + 1 === month
             ) {
               trades.push(
-                createTradeFromFrontmatter(
+                buildPeriodAnalyticsTrade(
                   frontmatter,
                   normalizedExecution,
                   file.path
@@ -1021,8 +983,7 @@ export class MonthlyReviewService extends CustomDataService {
     try {
       await this.updateMonthlyReviewFrontmatterCore(
         filePath,
-        updates,
-        () => undefined,
+        () => updates,
         undefined
       );
     } catch (error) {
@@ -1042,16 +1003,29 @@ export class MonthlyReviewService extends CustomDataService {
   ): Promise<void> {
     await this.updateMonthlyReviewFrontmatterCore(
       filePath,
-      updates,
-      guard,
+      (frontmatter) => {
+        guard(frontmatter);
+        return updates;
+      },
       source
     );
   }
 
+  
+  public async updateMonthlyReviewFrontmatterWith(
+    filePath: string,
+    compute: (
+      frontmatter: Readonly<Record<string, unknown>>
+    ) => Partial<Record<string, unknown>>
+  ): Promise<void> {
+    await this.updateMonthlyReviewFrontmatterCore(filePath, compute, undefined);
+  }
+
   private async updateMonthlyReviewFrontmatterCore(
     filePath: string,
-    updates: Partial<Record<string, unknown>>,
-    guard: ReviewFrontmatterGuard,
+    compute: (
+      frontmatter: Readonly<Record<string, unknown>>
+    ) => Partial<Record<string, unknown>>,
     source: string | undefined
   ): Promise<void> {
     const file = this.app.vault.getAbstractFileByPath(filePath);
@@ -1060,8 +1034,7 @@ export class MonthlyReviewService extends CustomDataService {
     await this.app.fileManager.processFrontMatter(
       file,
       (frontmatter: Record<string, unknown>) => {
-        guard(frontmatter);
-        applyReviewFrontmatterUpdates(frontmatter, updates);
+        applyReviewFrontmatterUpdates(frontmatter, compute(frontmatter));
       }
     );
     await Promise.all([

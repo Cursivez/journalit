@@ -23,12 +23,11 @@ import {
 } from '../../demo/DemoOwnership';
 
 import { FolderPathService } from '../core/FolderPathService';
-import { parseTradeFinancialFields } from '../../utils/tradeUtils';
+import { buildPeriodAnalyticsTrade } from '../trade/core/PeriodAnalyticsTrade';
 import { ReviewTemplateService } from '../templates/ReviewTemplateService';
 import { eventBus } from '../events/EventBus';
 import { ReviewChangedPayload } from '../events/types';
 import { TemplateTransformationService } from '../templates/TemplateTransformationService';
-import { extractCanonicalProjectionPnlFields } from '../trade/core/CanonicalProjectionFields';
 import {
   applyReviewFrontmatterUpdates,
   applyReviewInitialContent,
@@ -76,16 +75,6 @@ function getNumberValue(
 ): number | undefined {
   const value = record[key];
   return typeof value === 'number' ? value : undefined;
-}
-
-function getBooleanValue(
-  record: Record<string, unknown>,
-  key: string
-): boolean | undefined {
-  const value = record[key];
-  if (value === 'true') return true;
-  if (value === 'false') return false;
-  return typeof value === 'boolean' ? value : undefined;
 }
 
 function getGradeValue(value: unknown): keyof GradeDistribution | undefined {
@@ -481,53 +470,13 @@ export class YearlyReviewService extends CustomDataService {
 
             
             if (tradingDay.getFullYear() === year) {
-              const originalPnlWasNull =
-                frontmatter.pnl === undefined || frontmatter.pnl === null;
-
-              const trade: Trade = {
-                instrument:
-                  getStringValue(frontmatter, 'instrument') ??
-                  getStringValue(frontmatter, 'ticker') ??
-                  '',
-                direction:
-                  getStringValue(frontmatter, 'direction') ??
-                  getStringValue(frontmatter, 'side') ??
-                  '',
-                ...normalizedExecution,
-                pnl: typeof frontmatter.pnl === 'number' ? frontmatter.pnl : 0,
-                setup: Array.isArray(frontmatter.setup)
-                  ? frontmatter.setup.filter(
-                      (item): item is string => typeof item === 'string'
-                    )
-                  : [],
-                tags: Array.isArray(frontmatter.tags)
-                  ? frontmatter.tags.filter(
-                      (item): item is string => typeof item === 'string'
-                    )
-                  : [],
-                mistake: Array.isArray(frontmatter.mistake)
-                  ? frontmatter.mistake.filter(
-                      (item): item is string => typeof item === 'string'
-                    )
-                  : [],
-                account: Array.isArray(frontmatter.account)
-                  ? frontmatter.account.filter(
-                      (item): item is string => typeof item === 'string'
-                    )
-                  : typeof frontmatter.account === 'string'
-                    ? [frontmatter.account]
-                    : [],
-                path: file.path,
-                ...extractCanonicalProjectionPnlFields(frontmatter),
-                tradeStatus: getStringValue(frontmatter, 'tradeStatus'),
-                useDirectPnLInput: getBooleanValue(
+              trades.push(
+                buildPeriodAnalyticsTrade(
                   frontmatter,
-                  'useDirectPnLInput'
-                ),
-                _originalPnlWasNull: originalPnlWasNull,
-                ...parseTradeFinancialFields(frontmatter),
-              };
-              trades.push(trade);
+                  normalizedExecution,
+                  file.path
+                )
+              );
             }
           }
         } catch (fileError) {

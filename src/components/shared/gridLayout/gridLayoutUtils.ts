@@ -35,11 +35,11 @@ export function isBreakpointKey(value: string): value is BreakpointKey {
 
 
 export const GRID_COLS = {
-  lg: 12,
-  md: 6,
-  sm: 4,
-  xs: 2,
-  xxs: 1,
+  lg: 24,
+  md: 12,
+  sm: 8,
+  xs: 4,
+  xxs: 2,
 } as const satisfies Record<BreakpointKey, number>;
 
 

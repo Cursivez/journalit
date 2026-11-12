@@ -1,10 +1,12 @@
 import {
   AgentReviewReadError,
+  MAX_KEY_LEVEL_GROUPS,
   type AgentReviewReadRecord,
   type AgentReviewReadService,
 } from '../../agent/reviews/AgentReviewReadService';
 import {
   AgentReviewWriteError,
+  keyLevelGroupsAfterWrite,
   type AgentReviewWriteRequest,
   type AgentReviewWriteService,
 } from '../../agent/reviews/AgentReviewWriteService';
@@ -14,10 +16,14 @@ import {
   type AgentReviewPeriod,
 } from '../../agent/reviews/AgentReviewRevision';
 import { t, tPlural } from '../../../lang/helpers';
+import { keyLevelGroupMatchKey } from '../../reviews/keyLevelGroups';
 import {
+  canonicalMarketBias,
   reviewHasChecklist,
   reviewHasKeyLevels,
+  reviewHasMarketBias,
 } from '../../agent/reviews/AgentReviewContent';
+import type { MarketBiasDirection } from '../../reviews/marketBias';
 import { ActionExecutionError, ActionPlanError } from '../ActionErrors';
 import {
   ActionExecution,
@@ -76,6 +82,67 @@ function validatePeriodSections(
   if (content.key_levels !== undefined && !reviewHasKeyLevels(review.period)) {
     throw new ActionPlanError('unsupported_capability', 'content.key_levels');
   }
+  if (
+    content.key_level_groups !== undefined &&
+    !reviewHasKeyLevels(review.period)
+  ) {
+    throw new ActionPlanError(
+      'unsupported_capability',
+      'content.key_level_groups'
+    );
+  }
+  if (content.market_bias !== undefined) {
+    if (!reviewHasMarketBias(review.period)) {
+      throw new ActionPlanError(
+        'unsupported_capability',
+        'content.market_bias'
+      );
+    }
+    if (canonicalMarketBias(content.market_bias) === null) {
+      throw new ActionPlanError('invalid_request', 'content.market_bias');
+    }
+  }
+}
+
+function marketBiasDirectionLabel(bias: MarketBiasDirection): string {
+  switch (bias) {
+    case 'long':
+      return t('widget.market-bias.long');
+    case 'neutral':
+      return t('widget.market-bias.neutral');
+    case 'short':
+      return t('widget.market-bias.short');
+  }
+}
+
+function describeMarketBias(
+  entries: NonNullable<ReviewContent['market_bias']>
+): string {
+  if (entries.length === 0) return t('actions.review.market-bias.clear');
+  return t('actions.review.market-bias', {
+    value: entries
+      .map((entry) =>
+        entry.ticker === undefined
+          ? marketBiasDirectionLabel(entry.bias)
+          : `${entry.ticker} ${marketBiasDirectionLabel(entry.bias)}`
+      )
+      .join(', '),
+  });
+}
+
+
+function validateKeyLevelGroupNames(content: ReviewContent): void {
+  const seen = new Set<string>();
+  for (const group of content.key_level_groups ?? []) {
+    const matchKey = keyLevelGroupMatchKey(group.name);
+    if (seen.has(matchKey)) {
+      throw new ActionPlanError(
+        'invalid_request',
+        'content.key_level_groups.name'
+      );
+    }
+    seen.add(matchKey);
+  }
 }
 
 function gradeLabel(value: string | number | null): string {
@@ -106,6 +173,16 @@ function describeContent(
         resistance: String(content.key_levels.resistance.length),
       })
     );
+  }
+  if (content.key_level_groups !== undefined) {
+    changes.push(
+      t('actions.review.key-level-groups', {
+        groups: content.key_level_groups.map((group) => group.name).join(', '),
+      })
+    );
+  }
+  if (content.market_bias !== undefined) {
+    changes.push(describeMarketBias(content.market_bias));
   }
   if (content.grades?.mental !== undefined) {
     changes.push(
@@ -235,6 +312,7 @@ export class ReviewCreateAction implements ActionDefinition<'review.create'> {
     throwIfAborted(signal);
     validateUniqueAnswerIds(input.content);
     validatePeriodSections(input.review, input.content);
+    validateKeyLevelGroupNames(input.content);
     if (await this.planner.read(input.review, signal)) {
       throw new ActionPlanError('conflict', 'review');
     }
@@ -277,12 +355,20 @@ export class ReviewUpdateAction implements ActionDefinition<'review.update'> {
     throwIfAborted(signal);
     validateUniqueAnswerIds(input.content);
     validatePeriodSections(input.review, input.content);
+    validateKeyLevelGroupNames(input.content);
     const record = await this.planner.read(input.review, signal);
     if (!record) throw new ActionPlanError('not_found', 'review');
     if (record.revision !== input.expected_revision) {
       throw new ActionPlanError('conflict', 'expected_revision');
     }
     validateKnownAnswerIds(input.content, record.questionById);
+    if (
+      input.content.key_level_groups !== undefined &&
+      keyLevelGroupsAfterWrite(record, input.content.key_level_groups).length >
+        MAX_KEY_LEVEL_GROUPS
+    ) {
+      throw new ActionPlanError('limit_exceeded', 'content.key_level_groups');
+    }
     const request: AgentReviewWriteRequest = {
       create: false,
       review: structuredClone(input.review),

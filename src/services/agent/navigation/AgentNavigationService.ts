@@ -8,14 +8,95 @@ import { openTradeLogWithFilters } from '../../../utils/openTradeLogWithFilters'
 import type { NavigationManager } from '../../../navigation/NavigationManager';
 import type { TemplateBuilderSelectionRequest } from '../../../views/TemplateBuilderView';
 import type { TradeLogFilters } from '../../tradelog/types';
+import type { FilterState } from '../../../components/dashboard/dashboardTypes';
+import type { DashboardComparisonFilters } from '../../../components/dashboard/compare/dashboardComparison';
 import type { CustomFieldsService } from '../../CustomFieldsService';
 import type { ReviewTemplateService } from '../../templates/ReviewTemplateService';
 import type { AgentEntityIdentityService } from '../identity';
 import type { AgentTradeIdentityService } from '../identity';
 import type { NavigateJournalitRequest } from '../protocol/generated/navigate_journalit.request.generated';
 import type { AgentReviewReadService } from '../reviews';
+import {
+  readPersistedDashboardCompare,
+  readPersistedDashboardFilters,
+  requestDashboardView,
+} from '../../../components/dashboard/dashboardViewState';
+import { getWeekStartDaySetting } from '../../../utils/dateUtils';
+import {
+  type RollingDatePreset,
+  selectDatePreset,
+} from '../../../utils/datePresets';
+import { readSavedComparisons } from '../../../components/dashboard/compare/savedComparisonStore';
+import { withSharedDateRange } from '../../../components/dashboard/compare/dashboardComparison';
+import { createDashboardFilters } from '../../../settings/viewFiltersDefaults';
+import {
+  DashboardFilterError,
+  type WireFilterResolver,
+  dashboardFiltersFromWire,
+  dashboardSideFromWire,
+  withSetupNamesResolved,
+} from '../dashboard/dashboardFilters';
 
 type NavigationTarget = NavigateJournalitRequest['target'];
+type WireDatePreset = NonNullable<
+  Extract<NavigationTarget, { kind: 'trade_log' }>['date_preset']
+>;
+
+const DATE_PRESETS: Record<WireDatePreset, RollingDatePreset> = {
+  today: 'today',
+  yesterday: 'yesterday',
+  this_week: 'thisWeek',
+  this_month: 'thisMonth',
+  this_quarter: 'thisQuarter',
+  this_year: 'thisYear',
+};
+
+
+function datePresetDates(
+  preset: WireDatePreset,
+  plugin: JournalitPlugin
+): Pick<FilterState, 'dateRange' | 'datePreset' | 'recentPeriod'> {
+  return {
+    ...selectDatePreset(
+      DATE_PRESETS[preset],
+      getWeekStartDaySetting(plugin),
+      new Date()
+    ),
+    recentPeriod: undefined,
+  };
+}
+
+type WireRecentPeriod = NonNullable<
+  Extract<NavigationTarget, { kind: 'dashboard' }>['recent']
+>;
+
+
+function recentPeriodDates(
+  recent: WireRecentPeriod
+): Pick<FilterState, 'dateRange' | 'datePreset' | 'recentPeriod'> {
+  return {
+    dateRange: [null, null],
+    datePreset: undefined,
+    recentPeriod: { unit: recent.unit, count: recent.count },
+  };
+}
+
+
+function assertSingleDateSource(target: {
+  date_preset?: WireDatePreset;
+  recent?: WireRecentPeriod;
+  filters?: { date?: unknown; recent?: unknown };
+}): void {
+  const sources = [
+    target.date_preset,
+    target.recent,
+    target.filters?.date,
+    target.filters?.recent,
+  ].filter((source) => source !== undefined);
+  if (sources.length > 1) {
+    throw new AgentNavigationError('invalid_request');
+  }
+}
 type TradeFilters = Extract<NavigationTarget, { kind: 'trade_log' }>['filters'];
 type SettingsSection = Extract<
   NavigationTarget,
@@ -27,17 +108,18 @@ const SETTINGS_SECTION_TABS: Record<
   SettingsSection,
   (typeof SETTINGS_TAB_IDS)[keyof typeof SETTINGS_TAB_IDS]
 > = {
-  custom_options: SETTINGS_TAB_IDS.CUSTOMIZATION,
+  custom_options: SETTINGS_TAB_IDS.JOURNAL,
   accounts: SETTINGS_TAB_IDS.ACCOUNTS,
   session_mode: SETTINGS_TAB_IDS.SESSION_MODE,
-  analytics_calculation: SETTINGS_TAB_IDS.TRADING,
-  date_time_display: SETTINGS_TAB_IDS.TRADING,
-  display_preferences: SETTINGS_TAB_IDS.GENERAL,
-  trading_day: SETTINGS_TAB_IDS.TRADING,
-  risk_display: SETTINGS_TAB_IDS.TRADING,
-  break_even: SETTINGS_TAB_IDS.TRADING,
-  trade_entry: SETTINGS_TAB_IDS.TRADING,
-  review_automation: SETTINGS_TAB_IDS.JOURNAL,
+  analytics_calculation: SETTINGS_TAB_IDS.CALCULATIONS,
+  date_time_display: SETTINGS_TAB_IDS.CURRENCY_AND_DATES,
+  display_preferences: SETTINGS_TAB_IDS.PREFERENCES,
+  trading_day: SETTINGS_TAB_IDS.CALCULATIONS,
+  risk_display: SETTINGS_TAB_IDS.CALCULATIONS,
+  break_even: SETTINGS_TAB_IDS.CALCULATIONS,
+  
+  trade_entry: SETTINGS_TAB_IDS.JOURNAL,
+  review_automation: SETTINGS_TAB_IDS.REVIEWS,
   economic_calendar: SETTINGS_TAB_IDS.ECONOMIC_CALENDAR,
   session_schedule: SETTINGS_TAB_IDS.SESSION_MODE,
 };
@@ -75,6 +157,8 @@ interface AgentNavigationDependencies {
   
   openPositionSizeCalculator(): void;
   customFieldsService: Pick<CustomFieldsService, 'getField'>;
+  
+  dashboardFilterResolver: WireFilterResolver;
 }
 
 function throwIfAborted(signal: AbortSignal): void {
@@ -116,6 +200,18 @@ function imageAnnotationStatus(
   });
 }
 
+
+async function dashboardFilters<T>(map: () => Promise<T>): Promise<T> {
+  try {
+    return await map();
+  } catch (error) {
+    if (error instanceof DashboardFilterError) {
+      throw new AgentNavigationError(error.code);
+    }
+    throw error;
+  }
+}
+
 export class AgentNavigationService {
   constructor(private readonly dependencies: AgentNavigationDependencies) {}
 
@@ -127,15 +223,99 @@ export class AgentNavigationService {
           this.dependencies.plugin.viewManager.openHomeView('overview')
         );
         return;
-      case 'dashboard':
+      case 'dashboard': {
+        assertSingleDateSource(target);
+        const plugin = this.dependencies.plugin;
+        const preset =
+          target.date_preset !== undefined
+            ? datePresetDates(target.date_preset, plugin)
+            : target.recent !== undefined
+              ? recentPeriodDates(target.recent)
+              : {};
+        if (target.filters !== undefined) {
+          const wire = target.filters;
+          const filters = await boundary(signal, () =>
+            dashboardFilters(() =>
+              dashboardFiltersFromWire(
+                wire,
+                this.dependencies.dashboardFilterResolver
+              )
+            )
+          );
+          requestDashboardView(plugin, { ...filters, ...preset }, null);
+        } else if (
+          target.date_preset !== undefined ||
+          target.recent !== undefined
+        ) {
+          
+          const state = plugin.uiStateManager.getState();
+          requestDashboardView(
+            plugin,
+            {
+              ...(readPersistedDashboardFilters(state) ??
+                createDashboardFilters()),
+              ...preset,
+            },
+            readPersistedDashboardCompare(state)
+          );
+        }
         await boundary(signal, () =>
           this.dependencies.plugin.viewManager.openDashboardView()
         );
         return;
+      }
+      case 'dashboard_comparison': {
+        const comparison = await boundary(signal, () =>
+          this.resolveComparison(target)
+        );
+        const plugin = this.dependencies.plugin;
+        
+        
+        assertSingleDateSource({
+          date_preset: target.date_preset,
+          recent: target.recent,
+          filters: { date: target.date },
+        });
+        const dates: Pick<
+          FilterState,
+          'dateRange' | 'datePreset' | 'recentPeriod'
+        > = target.date_preset
+          ? datePresetDates(target.date_preset, plugin)
+          : target.recent
+            ? recentPeriodDates(target.recent)
+            : target.date
+              ? {
+                  dateRange: [
+                    parseDate(target.date.from),
+                    parseDate(target.date.to),
+                  ],
+                }
+              : (readPersistedDashboardFilters(
+                  plugin.uiStateManager.getState()
+                ) ?? createDashboardFilters());
+        requestDashboardView(
+          plugin,
+          withSharedDateRange(comparison.a, dates),
+          comparison.b
+        );
+        await boundary(signal, () => plugin.viewManager.openDashboardView());
+        return;
+      }
       case 'trade_log': {
-        const filters = await boundary(signal, () =>
+        assertSingleDateSource(target);
+        const resolved = await boundary(signal, () =>
           this.resolveTradeLogFilters(target.filters, signal)
         );
+        const filters =
+          target.date_preset === undefined
+            ? resolved
+            : {
+                ...resolved,
+                ...datePresetDates(
+                  target.date_preset,
+                  this.dependencies.plugin
+                ),
+              };
         await boundary(signal, () =>
           openTradeLogWithFilters(this.dependencies.plugin, filters)
         );
@@ -287,6 +467,32 @@ export class AgentNavigationService {
   }
 
   
+  private async resolveComparison(
+    target: Extract<NavigationTarget, { kind: 'dashboard_comparison' }>
+  ): Promise<{ a: DashboardComparisonFilters; b: DashboardComparisonFilters }> {
+    if (target.comparison_id !== undefined) {
+      const saved = readSavedComparisons(this.dependencies.plugin).find(
+        (comparison) => comparison.id === target.comparison_id
+      );
+      if (!saved) throw new AgentNavigationError('not_found');
+      return saved;
+    }
+    
+    const { a, b } = target;
+    if (a === undefined || b === undefined) {
+      throw new AgentNavigationError('invalid_request');
+    }
+    const resolver = await withSetupNamesResolved(
+      [a, b],
+      this.dependencies.dashboardFilterResolver
+    );
+    return {
+      a: await dashboardFilters(() => dashboardSideFromWire(a, resolver)),
+      b: await dashboardFilters(() => dashboardSideFromWire(b, resolver)),
+    };
+  }
+
+  
   private async resolveTemplateSelection(
     templateId: string | undefined,
     signal: AbortSignal
@@ -343,7 +549,14 @@ export class AgentNavigationService {
     if (from !== null && to !== null && from.getTime() > to.getTime()) {
       throw new AgentNavigationError('invalid_request');
     }
-    filters.dateRange = [from, to];
+    if (canonical?.recent !== undefined) {
+      if (canonical.date !== undefined) {
+        throw new AgentNavigationError('invalid_request');
+      }
+      filters.recentPeriod = { ...canonical.recent };
+    } else {
+      filters.dateRange = [from, to];
+    }
     filters.tickers = [...(canonical?.tickers ?? [])];
     filters.tags = [...(canonical?.tags ?? [])];
     filters.mistakes = [...(canonical?.mistakes ?? [])];
@@ -353,6 +566,8 @@ export class AgentNavigationService {
       ? [...canonical.trade_types]
       : filters.tradeTypes;
     filters.reviewStatus = [...(canonical?.review_status ?? [])];
+    filters.ratings = [...(canonical?.ratings ?? [])];
+    filters.marketBias = [...(canonical?.market_bias ?? [])];
     filters.sessionLogTags = [...(canonical?.session_log_tags ?? [])];
     filters.imageAnnotationStatus = imageAnnotationStatus(
       canonical?.image_annotation_status

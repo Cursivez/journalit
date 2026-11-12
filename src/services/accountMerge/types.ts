@@ -128,6 +128,7 @@ export type AccountReferenceChange =
       previousPeriods: CopyTradingPeriod[];
     }
   | { kind: 'csvFavoriteAccount'; previous: string }
+  | { kind: 'favoriteAccounts'; previous: string[] }
   | {
       kind: 'homeAccountProgress';
       widgetId: string;

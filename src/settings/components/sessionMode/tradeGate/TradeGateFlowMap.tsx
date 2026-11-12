@@ -37,6 +37,7 @@ import {
   type TradeGateFlowLayoutEdge,
   type TradeGateFlowLayoutNode,
 } from './tradeGateEditorUtils';
+import { SVG_LABEL_TOOLTIP_PROPS } from '../../../../components/charts/svgLabelTooltip';
 
 const TRADE_GATE_FLOW_MIN_SCALE = 0.45;
 const TRADE_GATE_FLOW_MAX_SCALE = 1.4;
@@ -395,6 +396,7 @@ function TradeGateFlowStage({
         height={layout.height}
         viewBox={`0 0 ${layout.width} ${layout.height}`}
         role="img"
+        {...SVG_LABEL_TOOLTIP_PROPS}
         aria-label={t('settings.session-mode.trade-gate.flow-map')}
       >
         {layout.edges.map((edge) => (

@@ -15,6 +15,7 @@ import {
   GRID_ROW_HEIGHT,
 } from '../../../components/shared/gridLayout/gridLayoutUtils';
 import type { InspectConfigurationResult } from '../protocol/generated/inspect_configuration.result.generated';
+import { projectHomeGoal } from './homeGoalConfiguration';
 import {
   boundedText,
   compareCodePoints,
@@ -122,7 +123,7 @@ function isSize(value: unknown): value is { w: number; h: number } {
     typeof value.w === 'number' &&
     typeof value.h === 'number' &&
     value.w >= 1 &&
-    value.w <= 12 &&
+    value.w <= GRID_COLS.lg &&
     value.h >= 1 &&
     value.h <= 10_000
   );
@@ -817,9 +818,11 @@ export async function projectDashboardLayoutConfiguration(
   };
 }
 
+
 export async function projectHomeLayoutConfiguration(
   settings: RawHomeLayoutSettings,
-  widgets: readonly HomeWidgetDefinition[]
+  widgets: readonly HomeWidgetDefinition[],
+  accountIdFor?: (accountName: string) => string | undefined
 ): Promise<HomeProjection> {
   const { domain, catalog, instances } = validateHomeLayoutDomain(
     settings,
@@ -839,6 +842,35 @@ export async function projectHomeLayoutConfiguration(
     omitted_layout_count: bounded.omitted,
     grid: GRID,
     widget_catalog: catalog.wire,
-    configured_widget_instances: instances.wire,
+    configured_widget_instances:
+      accountIdFor === undefined
+        ? instances.wire
+        : instances.wire.map((instance) => {
+            if (instance.type !== 'goalsProgress') return instance;
+            const goal = projectHomeGoal(
+              isRecord(settings.goals)
+                ? settings.goals[instance.id]
+                : undefined,
+              accountIdFor
+            );
+            return goal === undefined ? instance : { ...instance, goal };
+          }),
   };
+}
+
+
+export function homeGoalAccountNames(goals: unknown): string[] {
+  const names = new Set<string>();
+  if (!isRecord(goals)) return [];
+  for (const goal of Object.values(goals)) {
+    if (
+      !isRecord(goal) ||
+      goal.accountAware !== true ||
+      !Array.isArray(goal.accountTargetAccounts)
+    )
+      continue;
+    for (const name of goal.accountTargetAccounts)
+      if (typeof name === 'string') names.add(name);
+  }
+  return [...names].sort(compareCodePoints);
 }

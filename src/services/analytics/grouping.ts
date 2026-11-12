@@ -1,5 +1,7 @@
 import type { Trade } from '../../components/dashboard/utils/dataUtils';
-import { getTradeDirectionDisplayKind } from '../trade/core/TradeDirection';
+import { getTradeMarketSide } from '../trade/core/TradeDirection';
+import { getTradeRatingBucket } from '../../utils/tradeRating';
+import type { TradeBiasAlignment } from '../marketBias/tradeMarketBias';
 import type {
   AnalyticsEntityGroupKey,
   AnalyticsGroupDimension,
@@ -13,6 +15,7 @@ export type AnalyticsEntityGroupResolver = (
 export interface AnalyticsGroupingResolvers {
   account?: AnalyticsEntityGroupResolver;
   setup?: AnalyticsEntityGroupResolver;
+  marketBias?: (trade: Trade) => TradeBiasAlignment;
 }
 
 const WEEKDAYS = [
@@ -81,14 +84,8 @@ export const getAnalyticsGroupKeys = (
         (value) => ({ kind: 'ticker', value })
       );
     case 'direction': {
-      const direction = getTradeDirectionDisplayKind(trade);
-      if (direction === 'long' || direction === 'call') {
-        return [{ kind: 'direction', value: 'long' }];
-      }
-      if (direction === 'short' || direction === 'put') {
-        return [{ kind: 'direction', value: 'short' }];
-      }
-      return [];
+      const direction = getTradeMarketSide(trade);
+      return direction ? [{ kind: 'direction', value: direction }] : [];
     }
     case 'tag':
       return normalizeValues(trade.tags).map((value) => ({
@@ -103,6 +100,21 @@ export const getAnalyticsGroupKeys = (
     case 'weekday':
       return tradingDay
         ? [{ kind: 'weekday', value: WEEKDAYS[tradingDay.getDay()] }]
+        : [];
+    
+    case 'rating':
+      return trade.tradeRating === undefined
+        ? []
+        : [
+            {
+              kind: 'rating',
+              value: `${getTradeRatingBucket(trade.tradeRating)}`,
+            },
+          ];
+    
+    case 'market_bias':
+      return resolvers.marketBias
+        ? [{ kind: 'market_bias', value: resolvers.marketBias(trade) }]
         : [];
     case 'month':
       return tradingDay

@@ -358,7 +358,7 @@ export function createDateWithoutTime(
 
 export function formatDateDisplay(
   date: Date | string | null | undefined,
-  format: string = 'DDMMYY',
+  format: string = getUserDateFormat(),
   separator: string = '/'
 ): string {
   
@@ -395,7 +395,7 @@ export function formatDateDisplay(
 
 export function formatDayMonthDisplay(
   date: Date,
-  format: string = 'DDMMYY',
+  format: string = getUserDateFormat(),
   separator: string = '/'
 ): string {
   const day = String(date.getDate()).padStart(2, '0');
@@ -637,7 +637,7 @@ export function safeDateDuration(
 
 export function formatDatesForChartAxis(
   dates: (Date | string | null | undefined)[],
-  format: string = 'DDMMYY',
+  format: string = getUserDateFormat(),
   separator: string = '/'
 ): string[] {
   
@@ -687,8 +687,9 @@ export function formatDatesForChartAxis(
       
       return `#${i + 1}`;
     } else if (sameYear) {
-      
-      return `${dateObj.getDate()} ${getMonthShort(dateObj)}`;
+      const day = dateObj.getDate();
+      const month = getMonthShort(dateObj);
+      return format === 'DDMMYY' ? `${day} ${month}` : `${month} ${day}`;
     } else {
       
       return formatDateDisplay(dateObj, format, separator);

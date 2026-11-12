@@ -186,7 +186,10 @@ export class TradeFormDrawer extends Component {
     });
     this.root = createRoot(this.container);
     this.root.render(
-      <DisplayPolicyProvider privacyModeOverride={false}>
+      <DisplayPolicyProvider
+        privacyModeOverride={false}
+        hideDollarAmountsInRMode
+      >
         <CurrencyProvider>
           <TradeFormDrawerContent
             {...this.props}
@@ -378,6 +381,7 @@ function useTradeFormDrawerContentModel({
         rebate: data.rebate,
         isMissedTrade: data.isMissedTrade,
         missedReason: data.missedReason,
+        exitReason: data.exitReason,
         isBacktestTrade: data.isBacktestTrade || false,
         customFields: data.customFields,
         currency: data.currency,

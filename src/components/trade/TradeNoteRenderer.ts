@@ -86,8 +86,19 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
     data: PartialTradeFrontmatter,
     shareOptions: TradeShareOptions
   ): React.ReactElement {
+    return this.wrapShareElement(
+      data,
+      React.createElement(TradeNote, { data, shareOptions })
+    );
+  }
+
+  
+  public wrapShareElement(
+    data: PartialTradeFrontmatter,
+    element: React.ReactElement
+  ): React.ReactElement {
     return this.wrapWithSharedProviders(
-      React.createElement(TradeNote, { data, shareOptions }),
+      element,
       this.getDisplayPolicyPrivacyModeOverride(data)
     );
   }
@@ -630,6 +641,12 @@ export class TradeNoteRenderer extends BaseComponentRenderer {
         ? frontmatter.missedReason
         : undefined;
     tradeData.missedReason = parseDisplayText(missedReasonValue) || '';
+
+    const exitReasonValue =
+      typeof frontmatter.exitReason === 'string'
+        ? frontmatter.exitReason
+        : undefined;
+    tradeData.exitReason = parseDisplayText(exitReasonValue) || '';
 
     const mtCommentValue =
       typeof frontmatter.mtComment === 'string'

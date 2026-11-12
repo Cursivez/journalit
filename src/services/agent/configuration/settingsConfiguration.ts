@@ -1,5 +1,6 @@
 import { ECONOMIC_CALENDAR_CURRENCIES } from '../../economicCalendar/economicCalendarScope';
 import { ECONOMIC_CALENDAR_IMPACTS } from '../../../settings/types';
+import { MAX_FAVORITE_ACCOUNTS } from '../../account/favoriteAccounts';
 import { getBaseCurrencyOptions } from '../../../utils/currencyConfig';
 import type { InspectConfigurationResult } from '../protocol/generated/inspect_configuration.result.generated';
 import { configurationRevision } from './configurationPrimitives';
@@ -83,6 +84,47 @@ function numberIn(minimum: number, maximum: number) {
       ? stored
       : undefined;
 }
+
+const TRADE_FORM_DEFAULT_NAME_MAX_LENGTH = 200;
+
+
+function tradeFormDefaultName(stored: unknown): unknown {
+  return typeof stored === 'string' &&
+    stored === stored.trim() &&
+    Array.from(stored).length <= TRADE_FORM_DEFAULT_NAME_MAX_LENGTH
+    ? stored
+    : undefined;
+}
+
+const FAVORITE_ACCOUNT_NAME_MAX_LENGTH = 200;
+
+function isFavoriteAccountName(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    value.length > 0 &&
+    value === value.trim() &&
+    Array.from(value).length <= FAVORITE_ACCOUNT_NAME_MAX_LENGTH
+  );
+}
+
+
+const favoriteAccounts: SettingsField = {
+  field: 'favorite_accounts',
+  path: 'trade.favoriteAccounts',
+  defaultValue: [],
+  read: (stored) =>
+    Array.isArray(stored)
+      ? [...new Set(stored.filter(isFavoriteAccountName))].slice(
+          0,
+          MAX_FAVORITE_ACCOUNTS
+        )
+      : undefined,
+  valid: (value) =>
+    Array.isArray(value) &&
+    value.length <= MAX_FAVORITE_ACCOUNTS &&
+    new Set(value).size === value.length &&
+    value.every(isFavoriteAccountName),
+};
 
 function timeOfDay(stored: unknown): unknown {
   return isTimeOfDay(stored) ? stored : undefined;
@@ -408,6 +450,12 @@ const SETTINGS_GROUPS: readonly SettingsGroup[] = [
         boolean
       ),
       field(
+        'hide_dollar_amounts_in_r_mode',
+        'trade.hideDollarAmountsInRMode',
+        false,
+        boolean
+      ),
+      field(
         'mae_mfe_input_mode',
         'trade.maeMfeInputMode',
         'dollar',
@@ -478,6 +526,8 @@ const SETTINGS_GROUPS: readonly SettingsGroup[] = [
         'percent',
         oneOf('percent', 'size')
       ),
+      favoriteAccounts,
+      field('default_symbol', 'trade.favoriteSymbol', '', tradeFormDefaultName),
     ],
   },
   {

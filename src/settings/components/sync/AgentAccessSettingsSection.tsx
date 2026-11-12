@@ -7,6 +7,9 @@ import React, {
 } from 'react';
 import type JournalitPlugin from '../../../main';
 import { getCurrentLanguage, t } from '../../../lang/helpers';
+import { formatDateDisplay } from '../../../utils/dateUtils';
+import { getUserHourCycle } from '../../../utils/timeFormat';
+import { useHourCycle } from '../../../hooks/useHourCycle';
 import type {
   AgentAccessSessionService,
   AgentAccessSessionSnapshot,
@@ -53,17 +56,26 @@ const RELAY_LOADING_SNAPSHOT: AgentRelaySessionSnapshot = Object.freeze({
 });
 
 
-
 function openUpgrade(): void {
   openExternalUrl(resolveUpgradeUrl('mcpAccess'));
 }
 
-function isConnectionLost(snapshot: AgentRelaySessionSnapshot): boolean {
-  return (
-    snapshot.status === 'blocked' &&
-    (snapshot.reason === 'installation_inactive' ||
-      snapshot.reason === 'installation_revoked')
-  );
+
+type RelayProblem = 'connection_lost' | 'update_required';
+
+function relayProblem(
+  snapshot: AgentRelaySessionSnapshot
+): RelayProblem | null {
+  if (snapshot.status !== 'blocked') return null;
+  switch (snapshot.reason) {
+    case 'installation_inactive':
+    case 'installation_revoked':
+      return 'connection_lost';
+    case 'protocol_incompatible':
+      return 'update_required';
+    default:
+      return null;
+  }
 }
 
 type FailedReason = Extract<
@@ -84,22 +96,12 @@ function startOfLocalDay(time: number): number {
 }
 
 const relativeDayFormatters = new Map<string, Intl.RelativeTimeFormat>();
-const mediumDateFormatters = new Map<string, Intl.DateTimeFormat>();
 
 function relativeDayFormatter(language: string): Intl.RelativeTimeFormat {
   let formatter = relativeDayFormatters.get(language);
   if (!formatter) {
     formatter = new Intl.RelativeTimeFormat(language, { numeric: 'auto' });
     relativeDayFormatters.set(language, formatter);
-  }
-  return formatter;
-}
-
-function mediumDateFormatter(language: string): Intl.DateTimeFormat {
-  let formatter = mediumDateFormatters.get(language);
-  if (!formatter) {
-    formatter = new Intl.DateTimeFormat(language, { dateStyle: 'medium' });
-    mediumDateFormatters.set(language, formatter);
   }
   return formatter;
 }
@@ -114,7 +116,7 @@ function lastUsedLabel(lastSeenAt: string): string {
   );
   return days < RECENT_DAYS
     ? relativeDayFormatter(language).format(-days, 'day')
-    : mediumDateFormatter(language).format(seen);
+    : formatDateDisplay(new Date(seen));
 }
 
 
@@ -215,7 +217,7 @@ type UsageState =
 
 interface UsageFormatters {
   readonly count: Intl.NumberFormat;
-  readonly date: Intl.DateTimeFormat;
+  readonly time: Intl.DateTimeFormat;
 }
 
 const usageFormatters = new Map<string, UsageFormatters>();
@@ -223,7 +225,8 @@ const usageFormatters = new Map<string, UsageFormatters>();
 
 function usageFormattersFor(language: string): UsageFormatters {
   const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  const key = `${language}|${timeZone}`;
+  const hourCycle = getUserHourCycle();
+  const key = `${language}|${timeZone}|${hourCycle}`;
   const cached = usageFormatters.get(key);
   if (cached) return cached;
   const formatters: UsageFormatters = {
@@ -232,12 +235,10 @@ function usageFormattersFor(language: string): UsageFormatters {
     
     
     
-    date: new Intl.DateTimeFormat(language, {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
+    time: new Intl.DateTimeFormat(language, {
       hour: 'numeric',
       minute: '2-digit',
+      hourCycle,
       timeZoneName: 'short',
       timeZone,
     }),
@@ -247,8 +248,8 @@ function usageFormattersFor(language: string): UsageFormatters {
 }
 
 function usageDescription(usage: McpUsage): string {
-  const { count, date: dateFormat } = usageFormattersFor(getCurrentLanguage());
-  const date = dateFormat.format(usage.resetAt);
+  const { count, time } = usageFormattersFor(getCurrentLanguage());
+  const date = `${formatDateDisplay(new Date(usage.resetAt))} ${time.format(usage.resetAt)}`;
   if (usage.limit === 0) {
     return t('settings.mcp-access.usage.unlimited', {
       consumed: count.format(usage.consumed),
@@ -386,7 +387,7 @@ const CopyButton: React.FC<{ text: string; label: string }> = ({
 
   return (
     <Button variant="secondary" onClick={copy} aria-label={label}>
-      <span aria-live="polite">
+      <span aria-live="polite" className="journalit-button__label">
         {state === 'copied'
           ? t('settings.mcp-access.connect.copied')
           : state === 'failed'
@@ -398,18 +399,21 @@ const CopyButton: React.FC<{ text: string; label: string }> = ({
 };
 
 
-const CopyField: React.FC<{ value: string; label: string }> = ({
-  value,
-  label,
-}) => (
-  <div className="journalit-mcp-access__copy-field">
+const CopyField: React.FC<{
+  value: string;
+  label: string;
+  multiline?: boolean;
+}> = ({ value, label, multiline = false }) => (
+  <div
+    className={`journalit-mcp-access__copy-field${multiline ? ' journalit-mcp-access__copy-field--multiline' : ''}`}
+  >
     <code className="journalit-mcp-access__copy-value">{value}</code>
     <CopyButton text={value} label={label} />
   </div>
 );
 
 
-const AI_APPS = ['claude', 'chatgpt', 'claudeCode'] as const;
+const AI_APPS = ['claude', 'chatgpt', 'claudeCode', 'opencode'] as const;
 type AiApp = (typeof AI_APPS)[number];
 
 
@@ -417,6 +421,7 @@ const AI_APP_NAMES: Record<AiApp, string> = {
   claude: 'Claude',
   chatgpt: 'ChatGPT',
   claudeCode: 'Claude Code',
+  opencode: 'OpenCode',
 };
 const AI_APP_OPTIONS: SegmentOption<AiApp>[] = AI_APPS.map((value) => ({
   value,
@@ -429,7 +434,7 @@ function mcpServerUrl(): string {
 }
 
 
-const ConnectAiApp: React.FC = () => {
+export const ConnectAiApp: React.FC = () => {
   const [app, setApp] = useState<AiApp>('claude');
   const url = mcpServerUrl();
   const approve = t('settings.mcp-access.connect.step.approve');
@@ -488,6 +493,32 @@ const ConnectAiApp: React.FC = () => {
           <li>{t('settings.mcp-access.connect.claude-code.sign-in')}</li>
         </ol>
       )}
+      {app === 'opencode' && (
+        <ol className="journalit-mcp-access__steps">
+          <li>
+            {t('settings.mcp-access.connect.opencode.add')}
+            <CopyField
+              multiline
+              value={JSON.stringify(
+                {
+                  mcp: {
+                    servers: {
+                      journalit: { type: 'remote', url, protocol: 'auto' },
+                    },
+                  },
+                },
+                null,
+                2
+              )}
+              label={t('settings.mcp-access.connect.copy-config')}
+            />
+            <p className="journalit-mcp-access__connect-note">
+              {t('settings.mcp-access.connect.opencode.protocol')}
+            </p>
+          </li>
+          <li>{t('settings.mcp-access.connect.opencode.sign-in')}</li>
+        </ol>
+      )}
       <p className="journalit-mcp-access__connect-note">
         {t('settings.mcp-access.connect.sign-in-note')}{' '}
         <button
@@ -519,32 +550,47 @@ function replaceableVaultOf(
     : null;
 }
 
+function relayProblemDetail(problem: RelayProblem): string {
+  switch (problem) {
+    case 'connection_lost':
+      return t('settings.mcp-access.status.lost-detail');
+    case 'update_required':
+      return t('settings.mcp-access.status.update-detail');
+    default: {
+      const exhaustiveProblem: never = problem;
+      return exhaustiveProblem;
+    }
+  }
+}
+
 const AgentAccessStatusRow: React.FC<{
   snapshot: AgentAccessSessionSnapshot;
-  connectionLost: boolean;
+  problem: RelayProblem | null;
   isActionPending: boolean;
   onRetry: () => void;
   onReconnect: () => void;
+  onCheckUpdates: () => void;
   onMove: (vault: ReplaceableAgentVault) => void;
 }> = ({
   snapshot,
-  connectionLost,
+  problem,
   isActionPending,
   onRetry,
   onReconnect,
+  onCheckUpdates,
   onMove,
 }) => {
   const canRetry =
     snapshot.status === 'failed' && snapshot.enabled && snapshot.retryable;
   const replaceableVault = replaceableVaultOf(snapshot);
-  const statusClass = connectionLost ? 'failed' : snapshot.status;
+  const statusClass = problem ? 'failed' : snapshot.status;
   return (
     <div aria-live="polite">
       <SettingRow
         name={t('settings.mcp-access.status.label')}
         description={
-          connectionLost
-            ? t('settings.mcp-access.status.lost-detail')
+          problem
+            ? relayProblemDetail(problem)
             : replaceableVault
               ? vaultLimitMoveDetail(replaceableVault)
               : statusDetail(snapshot)
@@ -559,13 +605,18 @@ const AgentAccessStatusRow: React.FC<{
             {t('settings.mcp-access.action.move-here')}
           </Button>
         )}
-        {connectionLost && (
+        {problem === 'connection_lost' && (
           <Button
             variant="secondary"
             onClick={onReconnect}
             disabled={isActionPending}
           >
             {t('settings.mcp-access.action.reconnect')}
+          </Button>
+        )}
+        {problem === 'update_required' && (
+          <Button variant="secondary" onClick={onCheckUpdates}>
+            {t('settings.mcp-access.action.check-updates')}
           </Button>
         )}
         {canRetry && (
@@ -578,7 +629,7 @@ const AgentAccessStatusRow: React.FC<{
           </Button>
         )}
         <span className={`journalit-mcp-access__status is-${statusClass}`}>
-          {connectionLost
+          {problem
             ? t('settings.mcp-access.status.failed')
             : statusLabel(snapshot)}
         </span>
@@ -590,6 +641,7 @@ const AgentAccessStatusRow: React.FC<{
 export const AgentAccessSettingsSection: React.FC<
   AgentAccessSettingsSectionProps
 > = ({ plugin }) => {
+  useHourCycle();
   const [session, setSession] = useState<AgentAccessSessionService | null>(
     null
   );
@@ -677,6 +729,12 @@ export const AgentAccessSettingsSection: React.FC<
     if (session) void runAction(() => session.reconnect());
   }, [runAction, session]);
 
+  
+  
+  const handleCheckUpdates = useCallback(() => {
+    plugin.openSettingsTabById('community-plugins');
+  }, [plugin]);
+
   const handleMove = useCallback(
     (vault: ReplaceableAgentVault) => {
       if (!session) return;
@@ -725,11 +783,11 @@ export const AgentAccessSettingsSection: React.FC<
 
   const isEnabled = isAgentAccessEnabled(snapshot);
   const fullAccess = session.getFullAccess();
-  const connectionLost =
-    snapshot.status === 'ready' && isConnectionLost(relaySnapshot);
+  const problem =
+    snapshot.status === 'ready' ? relayProblem(relaySnapshot) : null;
   const canConnectApps =
     snapshot.status === 'registering' ||
-    (snapshot.status === 'ready' && !connectionLost);
+    (snapshot.status === 'ready' && problem === null);
 
   return (
     <section
@@ -755,10 +813,11 @@ export const AgentAccessSettingsSection: React.FC<
       </SettingRow>
       <AgentAccessStatusRow
         snapshot={snapshot}
-        connectionLost={connectionLost}
+        problem={problem}
         isActionPending={isActionPending}
         onRetry={handleRetry}
         onReconnect={handleReconnect}
+        onCheckUpdates={handleCheckUpdates}
         onMove={handleMove}
       />
       {canConnectApps && <ConnectAiApp />}
@@ -791,7 +850,7 @@ export const AgentAccessSettingsSection: React.FC<
           />
         </SettingRow>
       )}
-      {snapshot.status === 'ready' && !connectionLost && <UsageRow />}
+      {snapshot.status === 'ready' && problem === null && <UsageRow />}
       {isEnabled && (
         <SettingRow
           name={t('agent-activity.title')}

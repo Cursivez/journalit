@@ -194,15 +194,8 @@ export const DATE_PICKER_STYLES = `
   width: 12px;
 }
 
-.journalit-date-picker[data-has-seconds="true"] .journalit-date-picker__action {
-  padding: 6px 7px;
-}
-
 .journalit-date-picker__action {
   flex-shrink: 0;
-  padding: 6px 10px;
-  font-size: var(--font-ui-smaller);
-  white-space: nowrap;
 }
 
 .journalit-date-picker__time {

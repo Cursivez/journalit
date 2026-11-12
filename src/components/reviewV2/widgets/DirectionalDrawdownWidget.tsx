@@ -16,6 +16,7 @@ import { useAccountCapitalBasisLookup } from '../hooks/useAccountCapitalBasisLoo
 import { t } from '../../../lang/helpers';
 import { getSingleExplicitCurrency } from '../../../utils/currencyAggregation';
 import { isPnlContributingTrade } from '../../../utils/tradeStatusUtils';
+import { getTradeMarketSide } from '../../../services/trade/core/TradeDirection';
 import { getReviewAnalyticsDateBasis } from '../utils/reviewTradeDates';
 import { resolveDrawdownCapitalBasis } from '../../../utils/drawdownAnalytics';
 import {
@@ -31,9 +32,6 @@ const asDirectionalTrades = (value: unknown): Trade[] =>
         Boolean(item && typeof item === 'object' && !Array.isArray(item))
       )
     : [];
-
-const normalizeDirectionValue = (value: unknown): string =>
-  typeof value === 'string' ? value.toLowerCase() : '';
 
 const DIRECTION_EMPTY_KEYS = {
   long: 'widget.directional-drawdown.empty.no-long',
@@ -152,10 +150,10 @@ export const DirectionalDrawdownWidget: React.FC<DirectionalDrawdownWidgetProps>
           isPnlContributingTrade(trade)
         );
         const longTrades = pnlContributingTrades.filter(
-          (trade) => trade.direction?.toLowerCase() === 'long'
+          (trade) => getTradeMarketSide(trade) === 'long'
         );
         const shortTrades = pnlContributingTrades.filter(
-          (trade) => trade.direction?.toLowerCase() === 'short'
+          (trade) => getTradeMarketSide(trade) === 'short'
         );
         const tradesWithDisplayPnL = mapTradesToDisplayPnL(
           trades,
@@ -241,7 +239,7 @@ export const DirectionalDrawdownWidget: React.FC<DirectionalDrawdownWidgetProps>
         trades: [
           ...directionTrades[direction],
           ...unconvertedTrades.filter(
-            (trade) => normalizeDirectionValue(trade.direction) === direction
+            (trade) => getTradeMarketSide(trade) === direction
           ),
         ],
       });

@@ -1,12 +1,18 @@
 
 
 import type { CustomFieldFilterSelections } from '../../types/customFields';
+import type { DatePresetSelection } from '../../utils/datePresets';
+import type { RecentPeriod } from '../../components/shared/filters/recentPeriod';
 import type { AccountPhaseScope } from '../../components/shared/filters/types';
 import type { FilterExclusions } from '../../components/shared/filters/filterExclusions';
 import type { FilterMatchModes } from '../../components/shared/filters/filterMatchModes';
 import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 import type { AnalyticsDateBasis } from '../../settings/types';
 import type { RatingFilter } from '../../utils/tradeRating';
+import type {
+  TradeBiasAlignment,
+  TradeMarketBias,
+} from '../marketBias/tradeMarketBias';
 
 export type ViewLevel =
   | 'years'
@@ -65,6 +71,8 @@ export type TradeLogTrade = PartialTradeFrontmatter &
     path?: string;
     file?: { path?: string };
     
+    marketBias?: TradeMarketBias;
+    
     _analyticsEventContext?: {
       ownsSourceCashflows: boolean;
       pnl: number | null;
@@ -115,8 +123,20 @@ export type ImageAnnotationStatusFilter =
 export const SELECTABLE_TRADE_TYPES_COUNT = 3; 
 export const SELECTABLE_STATUSES_COUNT = 5; 
 
+
+export interface RecentPeriodScope {
+  
+  dateRange: [Date, Date | null];
+  
+  tradePaths: ReadonlySet<string>;
+}
+
 export interface TradeLogFilters {
   dateRange: [Date | null, Date | null];
+  
+  datePreset?: DatePresetSelection;
+  
+  recentPeriod?: RecentPeriod;
   analyticsDateBasis?: AnalyticsDateBasis;
   viewLevel: ViewLevel;
   tradeTypes: TradeType[];
@@ -131,6 +151,7 @@ export interface TradeLogFilters {
   mistakes: string[];
   reviewStatus: ReviewStatusFilter[];
   ratings: RatingFilter[];
+  marketBias: TradeBiasAlignment[];
   customFieldFilters: CustomFieldFilterSelections;
   exclusions: FilterExclusions;
   matchModes: FilterMatchModes;

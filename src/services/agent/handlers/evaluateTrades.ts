@@ -196,6 +196,27 @@ function projectGroupKey(value: AnalyticsGroupKey): SeriesRow['group_key'] {
         default:
           throw new AnalyticsProjectionError('internal');
       }
+    case 'market_bias':
+      switch (value.value) {
+        case 'with':
+        case 'against':
+        case 'neutral':
+        case 'none':
+          return { kind: 'market_bias', value: value.value };
+        default:
+          throw new AnalyticsProjectionError('internal');
+      }
+    case 'rating':
+      switch (value.value) {
+        case '5':
+        case '4':
+        case '3':
+        case '2':
+        case '1':
+          return { kind: 'rating', value: value.value };
+        default:
+          throw new AnalyticsProjectionError('internal');
+      }
     default: {
       const exhaustive: never = value;
       void exhaustive;

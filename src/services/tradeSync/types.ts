@@ -94,6 +94,34 @@ export interface RithmicConnectionAccount {
   lastSuccessfulSyncAt?: string;
 }
 
+type RithmicSyncMode = 'finite' | 'continuous';
+
+export interface RithmicStreamStatus {
+  phase:
+    | 'paused'
+    | 'claiming'
+    | 'connecting'
+    | 'bootstrapping'
+    | 'listening'
+    | 'reconnecting'
+    | 'updating_history'
+    | 'needs_attention';
+  bootstrapStrategy: 'subscription_replay';
+  lastReceivedAt?: string;
+  lastIngestedAt?: string;
+  lastReconciledAt?: string;
+  attentionCode?: string;
+}
+
+export interface RithmicCoverageStatus {
+  connectionAccountId: string;
+  currentSession: 'pending' | 'complete' | 'gap' | 'unavailable';
+  priorHistory: 'pending' | 'complete' | 'unavailable' | 'limited';
+  boundary: 'known_flat' | 'known_open' | 'unknown';
+  recovery: 'pending' | 'recovering' | 'complete' | 'unresolved';
+  limitationCode?: string;
+}
+
 export interface RithmicConnection {
   id: string;
   displayName: string;
@@ -103,6 +131,9 @@ export interface RithmicConnection {
   lastSuccessfulSyncAt?: string;
   lastErrorCode?: string;
   lastErrorAt?: string;
+  syncMode: RithmicSyncMode;
+  stream: RithmicStreamStatus;
+  coverage: RithmicCoverageStatus[];
   accounts: RithmicConnectionAccount[];
   jobs: BrokerSyncJob[];
 }
@@ -388,6 +419,14 @@ export interface TradeProjectionAccountVaultMapping {
   mappingStatus: 'mapped';
   lastSyncedAt?: string | null;
   updatedAt?: string | null;
+}
+
+
+export interface TradeVerificationRecord {
+  sourceKind: string;
+  broker: string;
+  environment: 'demo' | 'live' | null;
+  previewTrade: TradeImportPreviewTrade;
 }
 
 export interface TradeProjectionAccountInventoryItem {

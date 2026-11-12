@@ -19,7 +19,8 @@ import {
   SETUPS_MAIN_GUIDE_ID,
 } from '../../guides/setupsGuideIds';
 import type { EventName } from '../../services/events';
-import type { Setup, SetupMetrics } from '../../services/setup/types';
+import type { Setup, SetupMetricsResult } from '../../services/setup/types';
+import type { SetupService } from '../../services/setup/SetupService';
 import { buildSetupAdvancedAnalytics } from '../../services/setup/setupAdvancedAnalytics';
 import { buildSetupOpportunityStats } from '../../services/setup/setupOpportunityStats';
 import { getAnalyticsDateBasis } from '../../utils/tradeAnalyticsDate';
@@ -27,7 +28,6 @@ import { t } from '../../lang/helpers';
 import { openCreateSetupModal, openEditSetupModal } from './CreateSetupModal';
 import { SetupComparePage } from './SetupComparePage';
 import {
-  loadSetupBacktestTradeData,
   loadSetupMissedTradeData,
   openSetupsOverview,
   SetupDetailPage,
@@ -35,12 +35,28 @@ import {
 import { SetupOverviewPage } from './SetupOverviewPage';
 import { SetupViewSkeleton } from './SetupViewSkeleton';
 import { buildSetupTradeIndex, getCompletenessBadges } from './setupsViewModel';
+import { EMPTY_SETUP_METRICS, type SetupOutcome } from './setupOverviewScope';
 import type {
+  SetupOutcomeMetricsSource,
   SetupTradeIndex,
   SetupViewModel,
-  SetupsDataState,
   SetupsViewState,
 } from './setupsViewTypes';
+import type { SetupOpportunityStats } from '../../services/setup/types';
+import {
+  normalizeSetupTradeTypes,
+  type SetupTradeType,
+} from '../../services/setup/setupTradeTypes';
+import type { AnalyticsDateBasis } from '../../settings/types';
+import {
+  createSetupTradeOutcomeClassifier,
+  type SetupTradeOutcomeClassifier,
+} from '../../services/setup/setupTradeOutcome';
+import {
+  attachBreakEvenAccountBalancesToTrade,
+  fetchBreakEvenAccountBalanceLookup,
+} from '../../services/trade/core/BreakEvenAccountBalance';
+import { Button } from '../ui/Button';
 
 export type { SetupsViewState } from './setupsViewTypes';
 
@@ -58,51 +74,130 @@ const SETUPS_VIEW_REFRESH_EVENTS: EventName[] = [
   'backtest-trade:changed',
   'options:changed',
   'settings:changed',
+  
+  'account:changed',
 ];
 
-const EMPTY_METRICS: SetupMetrics = {
-  totalTrades: 0,
-  winRate: 0,
-  totalPnL: 0,
-  avgWinner: 0,
-  avgLoser: 0,
-  winStreak: 0,
-  loseStreak: 0,
-  currentStreak: 0,
-  expectedValue: 0,
-  riskRewardRatio: 0,
-  profitFactor: 0,
-  averageDuration: 0,
-  bestTrade: 0,
-  worstTrade: 0,
-  averageVolume: 0,
-  lastTradeDate: '',
-  tradingFrequency: 0,
-  inactivityStreak: 0,
-};
+
+interface SetupsLoadedData {
+  setupService: SetupService;
+  setups: Setup[];
+  
+  trades: Array<Record<string, unknown>>;
+  classifyOutcome: SetupTradeOutcomeClassifier;
+  defaultRiskAmount: number | undefined;
+  analyticsDateBasis: AnalyticsDateBasis;
+  
+  opportunityStatsBySetupId: Record<string, SetupOpportunityStats>;
+}
+
+interface SetupsDataState {
+  loaded: SetupsLoadedData | null;
+  loadError: string | null;
+  hasLoadedData: boolean;
+}
+
+interface SetupsViewData {
+  viewModels: SetupViewModel[];
+  tradeIndex: SetupTradeIndex;
+  outcomeMetrics: SetupOutcomeMetricsSource;
+}
 
 const INITIAL_SETUPS_DATA_STATE: SetupsDataState = {
-  viewModels: [],
-  tradeIndex: {
-    primary: new Map(),
-    any: new Map(),
-  },
+  loaded: null,
   loadError: null,
   hasLoadedData: false,
 };
 
-function buildSetupsViewOpportunityStats(
-  setups: Setup[],
-  liveTrades: unknown[],
-  missedTrades: unknown[],
-  backtestTrades: unknown[],
-  defaultRiskAmount?: number
-) {
-  return buildSetupOpportunityStats(
+const EMPTY_SETUPS_VIEW_DATA: SetupsViewData = {
+  viewModels: [],
+  tradeIndex: { primary: new Map(), any: new Map() },
+  outcomeMetrics: () => ({ metricsBySetupId: new Map(), tradeCount: 0 }),
+};
+
+
+function createOutcomeMetricsSource(
+  loaded: SetupsLoadedData,
+  tradeTypes: ReadonlySet<SetupTradeType>
+): SetupOutcomeMetricsSource {
+  const cache = new Map<SetupOutcome, SetupMetricsResult>();
+  return (outcome) => {
+    const cached = cache.get(outcome);
+    if (cached) return cached;
+    const metrics = loaded.setupService.getAllSetupMetricsFromTradeData(
+      loaded.setups,
+      loaded.trades,
+      loaded.classifyOutcome,
+      outcome,
+      tradeTypes
+    );
+    cache.set(outcome, metrics);
+    return metrics;
+  };
+}
+
+
+function buildSetupsViewData(
+  loaded: SetupsLoadedData,
+  selectedTradeTypes: readonly SetupTradeType[]
+): SetupsViewData {
+  const tradeTypes = new Set(selectedTradeTypes);
+  const { setups, trades, classifyOutcome } = loaded;
+  const { metricsBySetupId } =
+    loaded.setupService.getAllSetupMetricsFromTradeData(
+      setups,
+      trades,
+      classifyOutcome,
+      'all',
+      tradeTypes
+    );
+  const advancedAnalytics = buildSetupAdvancedAnalytics(
     setups,
-    [...liveTrades, ...missedTrades, ...backtestTrades],
-    defaultRiskAmount
+    trades,
+    classifyOutcome,
+    tradeTypes
   );
+  return {
+    viewModels: setups.map((setup) => ({
+      setup,
+      metrics: metricsBySetupId.get(setup.id) ?? EMPTY_SETUP_METRICS,
+      advancedAnalytics: advancedAnalytics.bySetup[setup.id],
+      opportunityStats: loaded.opportunityStatsBySetupId[setup.id],
+      completenessBadges: getCompletenessBadges(setup),
+    })),
+    tradeIndex: buildSetupTradeIndex(
+      setups,
+      trades,
+      loaded.defaultRiskAmount,
+      loaded.analyticsDateBasis,
+      classifyOutcome,
+      tradeTypes
+    ),
+    outcomeMetrics: createOutcomeMetricsSource(loaded, tradeTypes),
+  };
+}
+
+
+async function loadBreakEvenBalanceAttacher(
+  plugin: JournalitPlugin
+): Promise<<T>(trades: T[]) => T[]> {
+  if (
+    plugin.settings.trade?.breakEvenThresholdMode !==
+    'percentage_current_balance'
+  ) {
+    return (trades) => trades;
+  }
+  const lookup = await fetchBreakEvenAccountBalanceLookup(plugin);
+  return (trades) =>
+    trades.map((trade) =>
+      isTradeRecord(trade)
+        ? attachBreakEvenAccountBalancesToTrade(trade, lookup)
+        : trade
+    );
+}
+
+function isTradeRecord<T>(value: T): value is T & Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
 
@@ -125,7 +220,7 @@ const SetupsGuideResolution: React.FC<{ page: SetupsViewState['page'] }> = ({
 
 function useSetupsGuideNavigation(
   state: SetupsViewState,
-  viewModels: SetupsDataState['viewModels'],
+  viewModels: SetupViewModel[],
   onStateChange: (state: SetupsViewState) => void
 ): void {
   const guideBackHandler = useCallback(
@@ -238,7 +333,27 @@ const SetupsViewBody: React.FC<SetupsViewContentProps> = ({
   const [dataState, setDataState] = useState<SetupsDataState>(
     INITIAL_SETUPS_DATA_STATE
   );
-  const { viewModels, tradeIndex, loadError, hasLoadedData } = dataState;
+  const { loaded, loadError, hasLoadedData } = dataState;
+  const [tradeTypes, setTradeTypes] = useState<SetupTradeType[]>(() =>
+    normalizeSetupTradeTypes(
+      plugin.uiStateManager.getState().setupOverviewTradeTypes
+    )
+  );
+  const handleTradeTypesChange = useCallback(
+    (nextTradeTypes: SetupTradeType[]) => {
+      const normalized = normalizeSetupTradeTypes(nextTradeTypes);
+      setTradeTypes(normalized);
+      void plugin.uiStateManager.updateState({
+        setupOverviewTradeTypes: normalized,
+      });
+    },
+    [plugin.uiStateManager]
+  );
+  const { viewModels, tradeIndex, outcomeMetrics } = useMemo(
+    () =>
+      loaded ? buildSetupsViewData(loaded, tradeTypes) : EMPTY_SETUPS_VIEW_DATA,
+    [loaded, tradeTypes]
+  );
 
   const loadData = useCallback(
     async (options?: { forceFresh?: boolean }) => {
@@ -250,41 +365,34 @@ const SetupsViewBody: React.FC<SetupsViewContentProps> = ({
         if (options?.forceFresh) {
           await setupService.clearCache();
         }
-        const [setups, trades, missedTrades, backtestTrades] =
+        const [setups, rawTrades, rawMissedTrades, attachBalances] =
           await Promise.all([
             setupService.listSetups(),
+            
             plugin.tradeService.getTradeData(),
             loadSetupMissedTradeData(plugin),
-            loadSetupBacktestTradeData(plugin),
+            loadBreakEvenBalanceAttacher(plugin),
           ]);
-        const metricsBySetupId = setupService.getAllSetupMetricsFromTradeData(
-          setups,
-          trades
+        const trades = attachBalances([...rawTrades, ...rawMissedTrades]);
+        const classifyOutcome = createSetupTradeOutcomeClassifier(
+          plugin.settings.trade
         );
-
-        const advancedAnalytics = buildSetupAdvancedAnalytics(setups, trades);
-        const opportunityStatsBySetupId = buildSetupsViewOpportunityStats(
-          setups,
-          trades,
-          missedTrades,
-          backtestTrades,
-          plugin.settings.trade?.defaultRiskAmount
-        );
-        const tradeIndex = buildSetupTradeIndex(
-          setups,
-          trades,
-          plugin.settings.trade?.defaultRiskAmount,
-          getAnalyticsDateBasis(plugin.settings)
-        );
+        const defaultRiskAmount = plugin.settings.trade?.defaultRiskAmount;
         setDataState({
-          viewModels: setups.map((setup) => ({
-            setup,
-            metrics: metricsBySetupId.get(setup.id) ?? EMPTY_METRICS,
-            advancedAnalytics: advancedAnalytics.bySetup[setup.id],
-            opportunityStats: opportunityStatsBySetupId[setup.id],
-            completenessBadges: getCompletenessBadges(setup),
-          })),
-          tradeIndex,
+          loaded: {
+            setupService,
+            setups,
+            trades,
+            classifyOutcome,
+            defaultRiskAmount,
+            analyticsDateBasis: getAnalyticsDateBasis(plugin.settings),
+            opportunityStatsBySetupId: buildSetupOpportunityStats(
+              setups,
+              trades,
+              classifyOutcome,
+              defaultRiskAmount
+            ),
+          },
           loadError: null,
           hasLoadedData: true,
         });
@@ -325,12 +433,14 @@ const SetupsViewBody: React.FC<SetupsViewContentProps> = ({
         <div className="journalit-setups-error">
           <strong>{t('setups.view.error.title')}</strong>
           <p>{currentError}</p>
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="journalit-setups-button"
             onClick={() => void loadData({ forceFresh: true })}
           >
             {t('setups.view.action.retry')}
-          </button>
+          </Button>
         </div>
       </div>
     );
@@ -448,6 +558,9 @@ const SetupsViewBody: React.FC<SetupsViewContentProps> = ({
         plugin={plugin}
         viewModels={viewModels}
         tradeIndex={tradeIndex}
+        outcomeMetrics={outcomeMetrics}
+        tradeTypes={tradeTypes}
+        onTradeTypesChange={handleTradeTypesChange}
         onOpenSetup={(setupId, setupName, setupPath) => {
           onStateChange({
             page: 'detail',

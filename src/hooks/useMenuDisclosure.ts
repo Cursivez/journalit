@@ -14,7 +14,7 @@ import { ESCAPE_DELEGATE_ATTRIBUTE } from '../views/escapeKeySuppression';
 import { useCloseOnOutsideMouseDown } from './useCloseOnOutsideMouseDown';
 
 
-interface MenuDisclosureMenuProps {
+export interface MenuDisclosureMenuProps {
   ref: RefObject<HTMLDivElement | null>;
   role: 'menu';
   onKeyDown: (event: ReactKeyboardEvent<HTMLDivElement>) => void;
@@ -42,7 +42,10 @@ export function useMenuDisclosure(options?: {
     if (returnFocus) triggerRef.current?.focus();
   }, []);
 
-  useCloseOnOutsideMouseDown(containerRef, () => close(false), isOpen);
+  
+  
+  const [outsideRoots] = useState(() => [containerRef, menuRef]);
+  useCloseOnOutsideMouseDown(outsideRoots, () => close(false), isOpen);
 
   useEffect(() => {
     if (!isOpen) return;

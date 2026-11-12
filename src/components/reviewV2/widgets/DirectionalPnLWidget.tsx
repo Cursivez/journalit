@@ -3,6 +3,7 @@
 import React, { useMemo } from 'react';
 import JournalitPlugin from '../../../main';
 import { isPnlContributingTrade } from '../../../utils/tradeStatusUtils';
+import { getTradeMarketSide } from '../../../services/trade/core/TradeDirection';
 import { SharedPnLChart } from '../../charts/SharedPnLChart';
 import type { Trade } from '../../dashboard/utils/dataUtils';
 import { preparePnLChartData } from '../../../utils/chartUtils';
@@ -23,9 +24,6 @@ const asDirectionalTrades = (value: unknown): Trade[] =>
         Boolean(item && typeof item === 'object' && !Array.isArray(item))
       )
     : [];
-
-const normalizeDirectionValue = (value: unknown): string =>
-  typeof value === 'string' ? value.toLowerCase() : '';
 
 const DIRECTION_TITLE_KEYS = {
   long: 'widget.directional-pnl.title.long',
@@ -116,10 +114,10 @@ export const DirectionalPnLWidget: React.FC<DirectionalPnLWidgetProps> =
         );
 
         const longTrades = pnlContributingTrades.filter(
-          (t) => t.direction?.toLowerCase() === 'long'
+          (t) => getTradeMarketSide(t) === 'long'
         );
         const shortTrades = pnlContributingTrades.filter(
-          (t) => t.direction?.toLowerCase() === 'short'
+          (t) => getTradeMarketSide(t) === 'short'
         );
 
         
@@ -156,7 +154,7 @@ export const DirectionalPnLWidget: React.FC<DirectionalPnLWidgetProps> =
       const getDirectionalConversionTrades = (direction: TradeDirection) => [
         ...(direction === 'long' ? longTrades : shortTrades),
         ...asDirectionalTrades(currencyConversion?.unconvertedTrades).filter(
-          (trade) => normalizeDirectionValue(trade.direction) === direction
+          (trade) => getTradeMarketSide(trade) === direction
         ),
       ];
 

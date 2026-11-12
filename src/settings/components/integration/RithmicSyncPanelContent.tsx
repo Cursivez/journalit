@@ -80,6 +80,19 @@ function connectionStatusTone(status: string): BrokerConnectionTone {
   return 'error';
 }
 
+function formatStreamPhase(connection: RithmicConnection): string {
+  switch (connection.stream.phase) {
+    case 'listening':
+      return t('backend.status.connected');
+    case 'paused':
+      return t('trade-sync.rithmic.status.paused');
+    case 'needs_attention':
+      return t('trade-sync.rithmic.status.error');
+    default:
+      return t('trade-sync.rithmic.status.connecting');
+  }
+}
+
 function formatJobStatus(status: string): string {
   switch (status) {
     case 'queued':
@@ -167,7 +180,10 @@ const RithmicAccountRow: React.FC<RithmicAccountRowProps> = ({
       </span>
     </div>
     <div className="journalit-rithmic-account-field">
-      <label htmlFor={`rithmic-local-account-${connectionId}-${account.id}`}>
+      <label
+        id={`rithmic-local-account-${connectionId}-${account.id}-label`}
+        htmlFor={`rithmic-local-account-${connectionId}-${account.id}`}
+      >
         {t('trade-sync.import.account.local-account')}
       </label>
       <BrokerLocalAccountSelect
@@ -188,6 +204,103 @@ const RithmicAccountRow: React.FC<RithmicAccountRowProps> = ({
 );
 
 RithmicAccountRow.displayName = 'RithmicAccountRow';
+
+type RithmicLatestJob = ConnectionUiState['latestJob'];
+
+interface RithmicConnectionDetailProps {
+  connection: RithmicConnection;
+  latestJob: RithmicLatestJob;
+}
+
+const RithmicConnectionMeta: React.FC<RithmicConnectionDetailProps> = ({
+  connection,
+  latestJob,
+}) => (
+  <div className="journalit-rithmic-connection-meta">
+    {connection.systemName && (
+      <span>
+        {t('trade-sync.rithmic.system')}: {connection.systemName}
+      </span>
+    )}
+    <span>
+      {t('trade-sync.rithmic.accounts')}: {connection.accounts.length}
+    </span>
+    {connection.syncMode === 'continuous' && (
+      <span>
+        {t('backend.sync.status')}: {formatStreamPhase(connection)}
+      </span>
+    )}
+    {connection.syncMode === 'continuous' ? (
+      <>
+        <span>
+          {t('trade-sync.rithmic.last-provider-event')}:{' '}
+          {formatSyncTime(connection.stream.lastReceivedAt)}
+        </span>
+        <span>
+          {t('trade-sync.rithmic.last-durable-fill')}:{' '}
+          {formatSyncTime(connection.stream.lastIngestedAt)}
+        </span>
+        <span>
+          {t('trade-sync.rithmic.last-reconciliation')}:{' '}
+          {formatSyncTime(connection.stream.lastReconciledAt)}
+        </span>
+      </>
+    ) : (
+      <span>
+        {t('trade-sync.rithmic.last-sync')}:{' '}
+        {formatSyncTime(connection.lastSuccessfulSyncAt)}
+      </span>
+    )}
+    {latestJob && (
+      <span className="journalit-rithmic-connection-job">
+        {isBrokerSyncJobInProgress(latestJob.status)
+          ? t('trade-sync.rithmic.job.running')
+          : t('trade-sync.rithmic.job.last', {
+              status: formatJobStatus(latestJob.status),
+            })}
+      </span>
+    )}
+  </div>
+);
+
+RithmicConnectionMeta.displayName = 'RithmicConnectionMeta';
+
+const RithmicConnectionAlert: React.FC<RithmicConnectionDetailProps> = ({
+  connection,
+  latestJob,
+}) => {
+  const jobErrorCode = latestJob?.errorCode ?? connection.lastErrorCode;
+  const showRequestError = Boolean(
+    jobErrorCode &&
+    (latestJob?.status === 'failed' ||
+      latestJob?.status === 'partial' ||
+      latestJob === undefined)
+  );
+  
+  
+  const streamNeedsAttention =
+    !showRequestError &&
+    connection.syncMode === 'continuous' &&
+    connection.stream.phase === 'needs_attention';
+  const displayedErrorCode = showRequestError ? jobErrorCode : undefined;
+  const showJobError = showRequestError || streamNeedsAttention;
+  if (!showJobError) return null;
+  return (
+    <div className="journalit-rithmic-connection-error" role="status">
+      <AlertCircle size={15} />
+      <span>
+        {streamNeedsAttention
+          ? t('trade-sync.rithmic.error.stream-attention')
+          : rithmicSyncErrorMessage(displayedErrorCode)}
+        {isRithmicRetryingErrorCode(displayedErrorCode)
+          ? ` ${t('trade-sync.rithmic.error.auto-retry')}`
+          : ''}
+      </span>
+    </div>
+  );
+};
+
+RithmicConnectionAlert.displayName = 'RithmicConnectionAlert';
 
 interface RithmicConnectionCardProps {
   connection: RithmicConnection;
@@ -215,13 +328,6 @@ const RithmicConnectionCard: React.FC<RithmicConnectionCardProps> = ({
   updateMapping,
 }) => {
   const latestJob = state.latestJob;
-  const jobErrorCode = latestJob?.errorCode ?? connection.lastErrorCode;
-  const showJobError = Boolean(
-    jobErrorCode &&
-    (latestJob?.status === 'failed' ||
-      latestJob?.status === 'partial' ||
-      latestJob === undefined)
-  );
   const mappingRateLimited = connection.accounts.some(
     (account) =>
       mappingDirty[account.canonicalAccountId] &&
@@ -243,38 +349,8 @@ const RithmicConnectionCard: React.FC<RithmicConnectionCardProps> = ({
           label={formatConnectionStatus(connection.status)}
         />
       </div>
-      <div className="journalit-rithmic-connection-meta">
-        <span>
-          {t('trade-sync.rithmic.system')}: {connection.systemName}
-        </span>
-        <span>
-          {t('trade-sync.rithmic.accounts')}: {connection.accounts.length}
-        </span>
-        <span>
-          {t('trade-sync.rithmic.last-sync')}:{' '}
-          {formatSyncTime(connection.lastSuccessfulSyncAt)}
-        </span>
-        {latestJob && (
-          <span className="journalit-rithmic-connection-job">
-            {isBrokerSyncJobInProgress(latestJob.status)
-              ? t('trade-sync.rithmic.job.running')
-              : t('trade-sync.rithmic.job.last', {
-                  status: formatJobStatus(latestJob.status),
-                })}
-          </span>
-        )}
-      </div>
-      {showJobError && (
-        <div className="journalit-rithmic-connection-error" role="status">
-          <AlertCircle size={15} />
-          <span>
-            {rithmicSyncErrorMessage(jobErrorCode)}
-            {isRithmicRetryingErrorCode(jobErrorCode)
-              ? ` ${t('trade-sync.rithmic.error.auto-retry')}`
-              : ''}
-          </span>
-        </div>
-      )}
+      <RithmicConnectionMeta connection={connection} latestJob={latestJob} />
+      <RithmicConnectionAlert connection={connection} latestJob={latestJob} />
       {connection.accounts.length > 0 && (
         <div className="journalit-rithmic-connection-accounts">
           {connection.accounts.map((account) => {
@@ -325,7 +401,9 @@ const RithmicConnectionCard: React.FC<RithmicConnectionCardProps> = ({
           <Download size={14} />
           {state.hasRunningJob
             ? t('trade-sync.rithmic.syncing')
-            : t('trade-sync.rithmic.sync-to-vault')}
+            : connection.syncMode === 'continuous'
+              ? t('trade-sync.rithmic.reconcile-to-vault')
+              : t('trade-sync.rithmic.sync-to-vault')}
         </Button>
       </BrokerActionsRow>
     </section>

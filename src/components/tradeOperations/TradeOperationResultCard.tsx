@@ -19,6 +19,7 @@ import {
   ListFilter,
   X,
 } from '../shared/icons/ObsidianIcon';
+import { Button } from '../ui/Button';
 
 type TradeOperationResultPresentation = 'toast' | 'inline' | 'inline-compact';
 
@@ -394,25 +395,27 @@ export const TradeOperationResultCard: React.FC<
 
       <div className="journalit-trade-operation-result__actions">
         {recommendedPeriod ? (
-          <div className="journalit-trade-operation-result__review-split">
-            <button
-              type="button"
-              className="journalit-trade-operation-result__review-button mod-cta"
+          <div className="journalit-trade-operation-result__review-split-button">
+            <Button
+              variant="primary"
+              size="small"
+              className="journalit-trade-operation-result__review-button "
               onClick={() => void openReview(recommendedPeriod)}
             >
               <CalendarRange size={15} aria-hidden="true" />
               {t('trade-handoff.action.review-now')}
-            </button>
+            </Button>
             {periodOptions.length > 1 ? (
-              <button
-                type="button"
-                className="journalit-trade-operation-result__review-menu-button mod-cta"
+              <Button
+                variant="primary"
+                size="small"
+                className="journalit-trade-operation-result__review-menu-button "
                 aria-label={t('trade-handoff.periods.choose')}
                 aria-haspopup="menu"
                 onClick={openReviewMenu}
               >
                 <ChevronDown size={14} aria-hidden="true" />
-              </button>
+              </Button>
             ) : null}
           </div>
         ) : null}

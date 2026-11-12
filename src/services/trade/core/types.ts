@@ -127,6 +127,8 @@ export interface TradeMutationInput {
   canonicalProjectionSchemaVersion?: number;
   
   canonicalProjectionClearFields?: CanonicalProjectionClearField[];
+  
+  clearUnsetFields?: readonly string[];
   tradeId?: string;
   schemaVersion?: number;
   tradeRevision?: number;

@@ -77,6 +77,15 @@ input: CustomFieldReorderInput
 action: "custom_field.update"
 input: CustomFieldUpdateInput
 } | {
+action: "dashboard_comparison.create"
+input: DashboardComparisonCreateInput
+} | {
+action: "dashboard_comparison.delete"
+input: DashboardComparisonDeleteInput
+} | {
+action: "dashboard_comparison.update"
+input: DashboardComparisonUpdateInput
+} | {
 action: "dashboard_layout.create"
 input: DashboardLayoutCreateInput
 } | {
@@ -109,6 +118,9 @@ input: EventRenameInput
 } | {
 action: "event.update_style"
 input: EventUpdateStyleInput
+} | {
+action: "home_goal.set"
+input: HomeGoalSetInput
 } | {
 action: "home_layout.create"
 input: HomeLayoutCreateInput
@@ -143,6 +155,9 @@ input: MistakeRenameInput
 action: "prop_challenge.add_cost"
 input: PropChallengeAddCostInput
 } | {
+action: "prop_challenge.add_prior_payout"
+input: PropChallengeAddPriorPayoutInput
+} | {
 action: "prop_challenge.advance"
 input: PropChallengeAdvanceInput
 } | {
@@ -152,11 +167,20 @@ input: PropChallengeConfigureInput
 action: "prop_challenge.delete_cost"
 input: PropChallengeDeleteCostInput
 } | {
+action: "prop_challenge.delete_prior_payout"
+input: PropChallengeDeletePriorPayoutInput
+} | {
 action: "prop_challenge.fail"
 input: PropChallengeFailInput
 } | {
+action: "prop_challenge.remove_drawdown_floor"
+input: PropChallengeRemoveDrawdownFloorInput
+} | {
 action: "prop_challenge.reopen"
 input: PropChallengeReopenInput
+} | {
+action: "prop_challenge.set_drawdown_floor"
+input: PropChallengeSetDrawdownFloorInput
 } | {
 action: "review.add_images"
 input: ReviewAddImagesInput
@@ -296,11 +320,17 @@ input: TagRenameInput
 action: "tag.set_color"
 input: TagSetColorInput
 } | {
+action: "trade.add_images"
+input: TradeAddImagesInput
+} | {
 action: "trade.create"
 input: TradeCreateInput
 } | {
 action: "trade.delete"
 input: TradeDeleteInput
+} | {
+action: "trade.remove_images"
+input: TradeRemoveImagesInput
 } | {
 action: "trade.set_image_annotations"
 input: TradeSetImageAnnotationsInput
@@ -512,9 +542,33 @@ export type IdValues = string[]
 
 export type StringValues = string[]
 
+export type DirectionValues = ("long" | "short")[]
+
+export type StatusValues = ("open" | "partially_closed" | "closed" | "win" | "loss" | "breakeven" | "cancelled")[]
+
+export type TradeTypeValues = ("regular" | "missed" | "backtest")[]
+
+export type ReviewStatusValues = ("reviewed" | "unreviewed")[]
+
+export type RatingValues = ("5" | "4" | "3" | "2" | "1" | "unrated")[]
+
+export type MarketBiasValues = ("with" | "against" | "neutral" | "none")[]
+
+export type ImageAnnotationStatusValues = ("tagged" | "untagged" | "has_notes" | "no_notes")[]
+
+export type CustomFieldClauses = {
+field_id: string
+operator: ("equals" | "not_equals" | "contains" | "greater_than" | "greater_than_or_equal" | "less_than" | "less_than_or_equal")
+value: (string | number | boolean | string[])
+}[]
+
 export type CustomFieldOptions = CustomFieldOption[]
 
 export type CustomFieldOptions1 = CustomFieldOption[]
+
+export type DashboardStatusValues = ("open" | "win" | "loss" | "breakeven" | "cancelled")[]
+
+export type MarketBias = MarketBiasEntry[]
 
 export type DayTradeFieldList = string[]
 
@@ -537,6 +591,8 @@ export type WidgetPlacements = WidgetPlacement[]
 
 export type WorkflowQuestions = TradeGateQuestion[]
 
+export type SettingsFavoriteAccounts = string[]
+
 export type LabelList = string[]
 
 export type PreferenceList = string[]
@@ -544,6 +600,10 @@ export type PreferenceList = string[]
 export type StopLossList = PlannedTarget[]
 
 export type TakeProfitList = PlannedTarget[]
+
+export type IdealExitList = IdealExit[]
+
+export type DividendList = Dividend[]
 
 export type LabelBatch2 = string[]
 
@@ -726,6 +786,10 @@ result: (Success8 | Error)
 
 export type ImageAnnotationChanges = ImageAnnotationChange[]
 
+export type SettingsFavoriteAccounts1 = string[]
+
+export type MarketBias1 = MarketBiasEntry[]
+
 export type DayTradeFieldList2 = string[]
 
 export type SetupPreferences = string[]
@@ -766,34 +830,32 @@ filters?: TradeFilters
 
 export interface TradeFilters {
 date?: DateRange
+recent?: RecentPeriod
 account_ids?: IdValues
 setup_ids?: IdValues
 tickers?: StringValues
 tags?: StringValues
 mistakes?: StringValues
-
-directions?: ("long" | "short")[]
-
-status?: ("open" | "partially_closed" | "closed" | "win" | "loss" | "breakeven" | "cancelled")[]
+directions?: DirectionValues
+status?: StatusValues
 pnl?: NumberRange
-
-trade_types?: ("regular" | "missed" | "backtest")[]
-
-review_status?: ("reviewed" | "unreviewed")[]
+trade_types?: TradeTypeValues
+review_status?: ReviewStatusValues
+ratings?: RatingValues
+market_bias?: MarketBiasValues
 session_log_tags?: StringValues
-
-image_annotation_status?: ("tagged" | "untagged" | "has_notes" | "no_notes")[]
+image_annotation_status?: ImageAnnotationStatusValues
 image_tags?: StringValues
-
-custom_fields?: {
-field_id: string
-operator: ("equals" | "not_equals" | "contains" | "greater_than" | "greater_than_or_equal" | "less_than" | "less_than_or_equal")
-value: (string | number | boolean | string[])
-}[]
+custom_fields?: CustomFieldClauses
 }
 export interface DateRange {
 from?: string
 to?: string
+}
+
+export interface RecentPeriod {
+unit: ("sessions" | "trades" | "days")
+count: number
 }
 export interface NumberRange {
 min?: number
@@ -976,6 +1038,41 @@ max_length?: number
 
 pattern?: string
 }
+
+export interface DashboardComparisonCreateInput {
+name: string
+a: DashboardComparisonFilters
+b: DashboardComparisonFilters
+}
+
+export interface DashboardComparisonFilters {
+account_ids?: IdValues
+setup_ids?: IdValues
+tickers?: StringValues
+tags?: StringValues
+mistakes?: StringValues
+directions?: DirectionValues
+status?: DashboardStatusValues
+trade_types?: TradeTypeValues
+review_status?: ReviewStatusValues
+ratings?: RatingValues
+market_bias?: MarketBiasValues
+image_annotation_status?: ImageAnnotationStatusValues
+image_tags?: StringValues
+custom_fields?: CustomFieldClauses
+}
+export interface DashboardComparisonDeleteInput {
+comparison_id: string
+}
+export interface DashboardComparisonUpdateInput {
+comparison_id: string
+expected_revision: string
+fields: {
+name?: string
+a?: DashboardComparisonFilters
+b?: DashboardComparisonFilters
+}
+}
 export interface DashboardLayoutCreateInput {
 name: string
 layout: DashboardLayoutContent
@@ -984,6 +1081,8 @@ export interface DashboardLayoutContent {
 
 top_section: string[]
 breakpoints: CompleteLayoutBreakpointPlacements
+
+grid_columns?: (12 | 24)
 }
 export interface CompleteLayoutBreakpointPlacements {
 
@@ -1054,12 +1153,32 @@ color: ("red" | "orange" | "yellow" | "gray")
 
 notes?: (string | null)
 }
+export interface HomeGoalSetInput {
+widget_id: string
+goal: HomeGoal
+}
+
+export interface HomeGoal {
+metric: ("net_pnl" | "trade_count" | "win_rate" | "profit_factor" | "expectancy" | "max_drawdown")
+direction: ("at_least" | "at_most")
+target: number
+period: ("day" | "week" | "month" | "sessions" | "all_time")
+session_count?: number
+r_multiples?: boolean
+
+account_targets?: {
+account_id: string
+target: number
+}[]
+}
 export interface HomeLayoutCreateInput {
 name: string
 layout: HomeLayoutContent
 }
 export interface HomeLayoutContent {
 breakpoints: CompleteLayoutBreakpointPlacements
+
+grid_columns?: (12 | 24)
 }
 export interface HomeLayoutDeleteInput {
 name: string
@@ -1112,6 +1231,13 @@ target_value: string
 export interface PropChallengeAddCostInput {
 account_id: string
 kind: ("purchase" | "reset" | "activation" | "other")
+amount: number
+date: string
+note?: string
+}
+
+export interface PropChallengeAddPriorPayoutInput {
+account_id: string
 amount: number
 date: string
 note?: string
@@ -1225,15 +1351,35 @@ export interface PropChallengeDeleteCostInput {
 account_id: string
 cost_id: string
 }
+export interface PropChallengeDeletePriorPayoutInput {
+account_id: string
+payout_id: string
+}
 
 export interface PropChallengeFailInput {
 account_id: string
 expected_revision: string
 }
 
+export interface PropChallengeRemoveDrawdownFloorInput {
+account_id: string
+expected_revision: string
+
+rule_id?: string
+}
+
 export interface PropChallengeReopenInput {
 account_id: string
 expected_revision: string
+}
+
+export interface PropChallengeSetDrawdownFloorInput {
+account_id: string
+expected_revision: string
+
+rule_id?: string
+
+floor: number
 }
 
 export interface ReviewAddImagesInput {
@@ -1296,6 +1442,9 @@ goals?: Goal[]
 
 checklist?: ChecklistItem[]
 key_levels?: KeyLevels
+
+key_level_groups?: KeyLevelGroup[]
+market_bias?: MarketBias
 grades?: Grades
 
 reviewed?: boolean
@@ -1319,6 +1468,19 @@ export interface KeyLevel {
 
 price: string
 importance: ("High" | "Medium" | "Low" | null)
+}
+export interface KeyLevelGroup {
+
+name: string
+
+support: KeyLevel[]
+
+resistance: KeyLevel[]
+}
+export interface MarketBiasEntry {
+
+ticker?: string
+bias: ("long" | "neutral" | "short")
 }
 
 export interface Grades {
@@ -1636,6 +1798,8 @@ display_r_multiples?: boolean
 
 hide_dollar_amounts_in_shares?: boolean
 
+hide_dollar_amounts_in_r_mode?: boolean
+
 mae_mfe_input_mode?: ("price" | "dollar")
 
 mae_mfe_display_unit?: ("dollar" | "ticks")
@@ -1678,6 +1842,9 @@ use_dollar_value_input?: boolean
 take_profit_unit?: ("percent" | "size")
 
 stop_loss_unit?: ("percent" | "size")
+favorite_accounts?: SettingsFavoriteAccounts
+
+default_symbol?: string
 }
 export interface SettingsSetTradingDayInput {
 
@@ -1811,14 +1978,51 @@ value: string
 color: string
 }
 
+export interface TradeAddImagesInput {
+trade_id: string
+
+sources: ({
+url: string
+} | {
+trade_id: string
+
+media_id: string
+} | {
+
+upload_id: string
+})[]
+}
+
 export interface TradeCreateInput {
 trade_type: ("regular" | "missed" | "backtest")
 
 instrument: string
 asset_type: ("stock" | "futures" | "forex" | "crypto" | "options" | "cfd")
 direction: ("long" | "short")
-executions: Executions
+executions?: Executions
+
+entry_time?: string
+
+exit_time?: string
 option?: OptionContract
+
+exchange?: string
+
+dollar_per_point?: number
+
+tick_size?: number
+
+tick_value?: number
+
+lot_size?: number
+
+pip_value?: number
+
+pip_size?: number
+
+contract_size?: number
+
+leverage_ratio?: number
 setup_id?: string
 account_id?: string
 stop_loss?: number
@@ -1826,19 +2030,44 @@ stop_losses?: StopLossList
 take_profit?: number
 take_profits?: TakeProfitList
 risk_amount?: number
+ideal_exits?: IdealExitList
+
+mae?: number
+
+mfe?: number
+
+mae_price?: number
+
+mfe_price?: number
+unrealized_price_snapshot?: UnrealizedPriceSnapshot
 
 direct_pnl?: number
 
 commission?: number
+
+commission_type?: ("fixed" | "percentage")
 fees?: number
 swap?: number
+
+rebate?: number
+dividends?: DividendList
+
+currency?: string
+
+fx_rate?: number
+
+forex_conversion_rate?: number
 tags?: LabelBatch2
 mistakes?: MistakeIdentityBatch
 
 missed_reason?: string
+
+exit_reason?: string
 custom_fields?: CustomFieldAssignments
 
 thesis?: string
+
+rating?: (0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5)
 
 notes?: string
 }
@@ -1869,8 +2098,33 @@ close_percent?: number
 
 size?: number
 }
+
+export interface IdealExit {
+price: number
+time?: string
+size?: number
+}
+
+export interface UnrealizedPriceSnapshot {
+price: number
+
+time?: string
+}
+
+export interface Dividend {
+time: string
+amount: number
+}
 export interface TradeDeleteInput {
 trade_id: string
+}
+
+export interface TradeRemoveImagesInput {
+trade_id: string
+
+media_ids?: string[]
+
+urls?: string[]
 }
 
 export interface TradeSetImageAnnotationsInput {
@@ -1894,32 +2148,95 @@ remove_tags?: LabelBatch2
 add_mistakes?: MistakeIdentityBatch
 remove_mistakes?: MistakeIdentityBatch
 executions?: Executions
+
+remove_executions?: true
+ideal_exits?: IdealExitList
+dividends?: DividendList
 custom_fields?: CustomFieldChanges1
 }
 export interface FieldChanges1 {
+
+instrument?: string
+
+asset_type?: ("stock" | "futures" | "forex" | "crypto" | "options" | "cfd")
+option?: OptionContract1
+
+exchange?: (string | null)
+
+dollar_per_point?: (number | null)
+
+tick_size?: (number | null)
+
+tick_value?: (number | null)
+
+lot_size?: (number | null)
+
+pip_value?: (number | null)
+
+pip_size?: (number | null)
+
+contract_size?: (number | null)
+
+leverage_ratio?: (number | null)
+
+entry_time?: string
+
+exit_time?: string
 setup_id?: (string | null)
 account_id?: (string | null)
 stop_loss?: (number | null)
 take_profit?: (number | null)
 risk_amount?: (number | null)
+
+mae?: (number | null)
+
+mfe?: (number | null)
+
+mae_price?: (number | null)
+
+mfe_price?: (number | null)
+
+unrealized_price_snapshot?: (UnrealizedPriceSnapshot | null)
 direction?: ("long" | "short")
 
 direct_pnl?: (number | null)
 
 commission?: (number | null)
+
+commission_type?: ("fixed" | "percentage")
 fees?: (number | null)
 swap?: (number | null)
+
+rebate?: (number | null)
+
+currency?: (string | null)
+
+fx_rate?: (number | null)
+
+forex_conversion_rate?: (number | null)
 missed_reason?: (string | null)
+
+exit_reason?: (string | null)
 
 thesis?: (string | null)
 
 reviewed?: boolean
 
+rating?: ((0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5) | null)
+
 notes?: string
+}
+
+export interface OptionContract1 {
+type: ("call" | "put")
+strike: number
+expiration: string
+
+contract_size?: number
 }
 export interface Request1 {
 
-metrics: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")[]
+metrics: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")[]
 filters?: TradeFilters1
 group_by?: Grouping
 comparison?: ({
@@ -1934,38 +2251,31 @@ minimum_sample_size?: number
 sort?: {
 by: ("group" | "value" | "sample_count")
 direction: ("asc" | "desc")
-metric_id?: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")
+metric_id?: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")
 }
 }
 export interface TradeFilters1 {
 date?: DateRange
+recent?: RecentPeriod
 account_ids?: IdValues
 setup_ids?: IdValues
 tickers?: StringValues
 tags?: StringValues
 mistakes?: StringValues
-
-directions?: ("long" | "short")[]
-
-status?: ("open" | "partially_closed" | "closed" | "win" | "loss" | "breakeven" | "cancelled")[]
+directions?: DirectionValues
+status?: StatusValues
 pnl?: NumberRange
-
-trade_types?: ("regular" | "missed" | "backtest")[]
-
-review_status?: ("reviewed" | "unreviewed")[]
+trade_types?: TradeTypeValues
+review_status?: ReviewStatusValues
+ratings?: RatingValues
+market_bias?: MarketBiasValues
 session_log_tags?: StringValues
-
-image_annotation_status?: ("tagged" | "untagged" | "has_notes" | "no_notes")[]
+image_annotation_status?: ImageAnnotationStatusValues
 image_tags?: StringValues
-
-custom_fields?: {
-field_id: string
-operator: ("equals" | "not_equals" | "contains" | "greater_than" | "greater_than_or_equal" | "less_than" | "less_than_or_equal")
-value: (string | number | boolean | string[])
-}[]
+custom_fields?: CustomFieldClauses
 }
 export interface Grouping {
-dimension: ("account" | "setup" | "ticker" | "direction" | "weekday" | "month" | "tag" | "mistake")
+dimension: ("account" | "setup" | "ticker" | "direction" | "weekday" | "month" | "tag" | "mistake" | "rating" | "market_bias")
 limit?: number
 }
 export interface Request2 {
@@ -1976,17 +2286,17 @@ account_ids?: IdValues1
 export interface Request3 {
 review: ReviewIdentity
 
-sections: ("summary" | "performance" | "answers" | "goals" | "checklist" | "key_levels" | "grades" | "reviewed" | "session_log" | "images" | "key_events" | "day_trade_fields")[]
+sections: ("summary" | "performance" | "answers" | "goals" | "checklist" | "key_levels" | "key_level_groups" | "market_bias" | "grades" | "reviewed" | "session_log" | "images" | "key_events" | "day_trade_fields")[]
 }
 export interface Request4 {
 trade_id: string
 
-sections: ("summary" | "execution" | "classification" | "risk" | "journal" | "notes" | "media" | "custom_fields")[]
+sections: ("summary" | "execution" | "classification" | "risk" | "journal" | "notes" | "media" | "custom_fields" | "media_links")[]
 notes_max_chars?: number
 }
 export interface Request5 {
 
-domains: ("session_mode" | "review_templates" | "dashboard_layouts" | "home_layouts" | "option_catalogs" | "settings" | "setups" | "custom_fields" | "session_log_tags" | "accounts" | "prop_challenges")[]
+domains: ("session_mode" | "review_templates" | "dashboard_layouts" | "home_layouts" | "option_catalogs" | "settings" | "setups" | "custom_fields" | "session_log_tags" | "accounts" | "prop_challenges" | "dashboard_comparisons")[]
 
 setup_ids?: string[]
 
@@ -2003,9 +2313,24 @@ target: ({
 kind: "home"
 } | {
 kind: "dashboard"
+filters?: DashboardFilters
+
+date_preset?: ("today" | "yesterday" | "this_week" | "this_month" | "this_quarter" | "this_year")
+recent?: RecentPeriod
+} | {
+kind: "dashboard_comparison"
+comparison_id?: string
+a?: DashboardComparisonFilters
+b?: DashboardComparisonFilters
+date?: DateRange
+
+date_preset?: ("today" | "yesterday" | "this_week" | "this_month" | "this_quarter" | "this_year")
+recent?: RecentPeriod
 } | {
 kind: "trade_log"
 filters?: TradeFilters1
+
+date_preset?: ("today" | "yesterday" | "this_week" | "this_month" | "this_quarter" | "this_year")
 } | {
 kind: "trade"
 trade_id: string
@@ -2053,13 +2378,32 @@ kind: "settings"
 section: ("custom_options" | "accounts" | "session_mode" | "analytics_calculation" | "date_time_display" | "display_preferences" | "trading_day" | "risk_display" | "break_even" | "trade_entry" | "review_automation" | "economic_calendar" | "session_schedule")
 })
 }
+
+export interface DashboardFilters {
+date?: DateRange
+account_ids?: IdValues
+setup_ids?: IdValues
+tickers?: StringValues
+tags?: StringValues
+mistakes?: StringValues
+directions?: DirectionValues
+status?: DashboardStatusValues
+trade_types?: TradeTypeValues
+review_status?: ReviewStatusValues
+ratings?: RatingValues
+market_bias?: MarketBiasValues
+image_annotation_status?: ImageAnnotationStatusValues
+image_tags?: StringValues
+custom_fields?: CustomFieldClauses
+}
 export interface Request8 {
 
-fields: ("trade_id" | "symbol" | "direction" | "status" | "entry_time" | "exit_time" | "account_id" | "setup_id" | "volume" | "entry_price" | "exit_price" | "pnl" | "commission" | "r_multiple" | "tags" | "mistakes" | "trade_revision")[]
+fields: ("trade_id" | "symbol" | "direction" | "status" | "entry_time" | "exit_time" | "account_id" | "setup_id" | "volume" | "entry_price" | "exit_price" | "pnl" | "commission" | "r_multiple" | "tags" | "mistakes" | "rating" | "market_bias" | "trade_revision")[]
 filters?: TradeFilters1
 
 sort?: {
-field: ("entry_time" | "exit_time" | "symbol" | "pnl" | "r_multiple")
+
+field: ("entry_time" | "exit_time" | "symbol" | "pnl" | "r_multiple" | "rating")
 direction: ("asc" | "desc")
 }[]
 page: Page
@@ -2277,6 +2621,18 @@ action: "custom_field.update"
 index: number
 summary: CustomFieldUpdateSummary
 } | {
+action: "dashboard_comparison.create"
+index: number
+summary: DashboardComparisonCreateSummary
+} | {
+action: "dashboard_comparison.delete"
+index: number
+summary: DashboardComparisonDeleteSummary
+} | {
+action: "dashboard_comparison.update"
+index: number
+summary: DashboardComparisonUpdateSummary
+} | {
 action: "dashboard_layout.create"
 index: number
 summary: DashboardLayoutCreateResult
@@ -2320,6 +2676,10 @@ summary: EventRenameResult
 action: "event.update_style"
 index: number
 summary: EventUpdateStyleResult
+} | {
+action: "home_goal.set"
+index: number
+summary: HomeGoalSetResult
 } | {
 action: "home_layout.create"
 index: number
@@ -2365,6 +2725,10 @@ action: "prop_challenge.add_cost"
 index: number
 summary: PropChallengeAddCostSummary
 } | {
+action: "prop_challenge.add_prior_payout"
+index: number
+summary: PropChallengeAddPriorPayoutSummary
+} | {
 action: "prop_challenge.advance"
 index: number
 summary: PropChallengeAdvanceSummary
@@ -2377,13 +2741,25 @@ action: "prop_challenge.delete_cost"
 index: number
 summary: PropChallengeDeleteCostSummary
 } | {
+action: "prop_challenge.delete_prior_payout"
+index: number
+summary: PropChallengeDeletePriorPayoutSummary
+} | {
 action: "prop_challenge.fail"
 index: number
 summary: PropChallengeFailSummary
 } | {
+action: "prop_challenge.remove_drawdown_floor"
+index: number
+summary: PropChallengeRemoveDrawdownFloorSummary
+} | {
 action: "prop_challenge.reopen"
 index: number
 summary: PropChallengeReopenSummary
+} | {
+action: "prop_challenge.set_drawdown_floor"
+index: number
+summary: PropChallengeSetDrawdownFloorSummary
 } | {
 action: "review.add_images"
 index: number
@@ -2569,6 +2945,10 @@ action: "tag.set_color"
 index: number
 summary: TagSetColorResult
 } | {
+action: "trade.add_images"
+index: number
+summary: TradeAddImagesSummary
+} | {
 action: "trade.create"
 index: number
 summary: TradeCreateSummary
@@ -2576,6 +2956,10 @@ summary: TradeCreateSummary
 action: "trade.delete"
 index: number
 summary: TradeDeleteSummary
+} | {
+action: "trade.remove_images"
+index: number
+summary: TradeRemoveImagesSummary
 } | {
 action: "trade.set_image_annotations"
 index: number
@@ -2752,6 +3136,19 @@ base_revision: string
 
 changed_fields: ("label" | "options" | "validation" | "placeholder" | "helper_text" | "allow_create_options")[]
 }
+export interface DashboardComparisonCreateSummary {
+name: string
+}
+export interface DashboardComparisonDeleteSummary {
+comparison_id: string
+name: string
+}
+export interface DashboardComparisonUpdateSummary {
+comparison_id: string
+base_revision: string
+
+changed_fields: ("name" | "a" | "b")[]
+}
 export interface DashboardLayoutCreateResult {
 base_revision: string
 resulting_revision: string
@@ -2779,6 +3176,8 @@ top_section: string[]
 breakpoints: CompleteLayoutBreakpointPlacements
 omitted_placement_counts: CompleteLayoutOmittedPlacementCounts
 omitted_metric_count: number
+
+grid_columns?: (12 | 24)
 }
 export interface CompleteLayoutOmittedPlacementCounts {
 lg: number
@@ -2912,6 +3311,17 @@ settings_only: true
 affected_note_count: 0
 message: string
 }
+export interface HomeGoalSetResult {
+base_revision: string
+resulting_revision: string
+change: HomeGoalChangeSummary
+goal: HomeGoal
+}
+export interface HomeGoalChangeSummary {
+action: ("create" | "update")
+widget_id: string
+message: string
+}
 export interface HomeLayoutCreateResult {
 base_revision: string
 resulting_revision: string
@@ -2935,6 +3345,8 @@ export interface HomeLayoutMutationArtifact {
 name: string
 breakpoints: CompleteLayoutBreakpointPlacements
 omitted_placement_counts: CompleteLayoutOmittedPlacementCounts
+
+grid_columns?: (12 | 24)
 }
 export interface HomeLayoutDeleteResult {
 base_revision: string
@@ -3066,6 +3478,11 @@ kind: ("purchase" | "reset" | "activation" | "other")
 amount: number
 date: string
 }
+export interface PropChallengeAddPriorPayoutSummary {
+account_id: string
+amount: number
+date: string
+}
 export interface PropChallengeAdvanceSummary {
 account_id: string
 base_revision: string
@@ -3093,16 +3510,57 @@ kind: ("purchase" | "reset" | "activation" | "other")
 amount: number
 date: string
 }
+export interface PropChallengeDeletePriorPayoutSummary {
+account_id: string
+payout_id: string
+amount: number
+date: string
+}
 export interface PropChallengeFailSummary {
 account_id: string
 base_revision: string
 phase_id: string
+}
+export interface PropChallengeRemoveDrawdownFloorSummary {
+account_id: string
+base_revision: string
+phase_id: string
+rule_id: string
+removed: PropChallengeFirmFloor
+
+floor: number
+
+remaining: number
+
+fails_phase_at?: string
+}
+
+export interface PropChallengeFirmFloor {
+floor: number
+recorded_at: string
 }
 export interface PropChallengeReopenSummary {
 account_id: string
 base_revision: string
 phase_id: string
 account_type?: string
+}
+export interface PropChallengeSetDrawdownFloorSummary {
+account_id: string
+base_revision: string
+phase_id: string
+rule_id: string
+floor: number
+
+previous_floor: number
+
+remaining: number
+replaces?: PropChallengeFirmFloor1
+}
+
+export interface PropChallengeFirmFloor1 {
+floor: number
+recorded_at: string
 }
 export interface ReviewAddImagesSummary {
 review: ReviewIdentity
@@ -3348,7 +3806,7 @@ message: string
 export interface SettingsSetRiskDisplaySummary {
 action: "set_risk_display"
 
-changed_fields: ("default_risk_amount" | "display_r_multiples" | "hide_dollar_amounts_in_shares" | "mae_mfe_input_mode" | "mae_mfe_display_unit")[]
+changed_fields: ("default_risk_amount" | "display_r_multiples" | "hide_dollar_amounts_in_shares" | "hide_dollar_amounts_in_r_mode" | "mae_mfe_input_mode" | "mae_mfe_display_unit")[]
 message: string
 }
 export interface SettingsSetBreakEvenSummary {
@@ -3360,7 +3818,7 @@ message: string
 export interface SettingsSetTradeEntrySummary {
 action: "set_trade_entry"
 
-changed_fields: ("auto_open_created_trades" | "use_dollar_value_input" | "take_profit_unit" | "stop_loss_unit")[]
+changed_fields: ("auto_open_created_trades" | "use_dollar_value_input" | "take_profit_unit" | "stop_loss_unit" | "favorite_accounts" | "default_symbol")[]
 message: string
 }
 export interface SettingsSetReviewAutomationSummary {
@@ -3438,6 +3896,8 @@ default_risk_amount: number
 display_r_multiples: boolean
 
 hide_dollar_amounts_in_shares: boolean
+
+hide_dollar_amounts_in_r_mode?: boolean
 mae_mfe_input_mode: ("price" | "dollar")
 mae_mfe_display_unit: ("dollar" | "ticks")
 }
@@ -3458,6 +3918,9 @@ auto_open_created_trades: boolean
 use_dollar_value_input: boolean
 take_profit_unit: ("percent" | "size")
 stop_loss_unit: ("percent" | "size")
+favorite_accounts?: SettingsFavoriteAccounts1
+
+default_symbol?: string
 }
 
 export interface SettingsReviewAutomation {
@@ -3732,6 +4195,17 @@ settings_only: true
 affected_note_count: 0
 message: string
 }
+export interface TradeAddImagesSummary {
+trade_id: string
+base_revision: number
+image_count: number
+
+uploads?: {
+upload_id: string
+media_type: ("image/png" | "image/jpeg" | "image/webp")
+byte_size: number
+}[]
+}
 
 export interface TradeCreateSummary {
 trade_type: ("regular" | "missed" | "backtest")
@@ -3739,7 +4213,9 @@ trade_type: ("regular" | "missed" | "backtest")
 instrument: string
 asset_type: ("stock" | "futures" | "forex" | "crypto" | "options" | "cfd")
 direction: ("long" | "short")
-executions: Executions
+executions?: Executions
+
+entry_time?: string
 status: ("open" | "partially_closed" | "closed")
 pnl: (number | null)
 }
@@ -3747,6 +4223,11 @@ export interface TradeDeleteSummary {
 trade_id: string
 trade_type: ("regular" | "missed" | "backtest")
 base_revision: number
+}
+export interface TradeRemoveImagesSummary {
+trade_id: string
+base_revision: number
+image_count: number
 }
 
 export interface TradeSetImageAnnotationsSummary {
@@ -3775,6 +4256,10 @@ remove_tags?: LabelBatch2
 add_mistakes?: MistakeIdentityBatch
 remove_mistakes?: MistakeIdentityBatch
 executions?: Executions
+
+remove_executions?: true
+ideal_exits?: IdealExitList
+dividends?: DividendList
 custom_fields?: CustomFieldChanges1
 }
 export interface Approval {
@@ -3855,6 +4340,21 @@ index: number
 outcome: "applied"
 result: CustomFieldUpdateResult
 } | {
+action: "dashboard_comparison.create"
+index: number
+outcome: "applied"
+result: DashboardComparisonCreateResult
+} | {
+action: "dashboard_comparison.delete"
+index: number
+outcome: "applied"
+result: DashboardComparisonDeleteResult
+} | {
+action: "dashboard_comparison.update"
+index: number
+outcome: "applied"
+result: DashboardComparisonUpdateResult
+} | {
 action: "dashboard_layout.create"
 index: number
 outcome: "applied"
@@ -3909,6 +4409,11 @@ action: "event.update_style"
 index: number
 outcome: "applied"
 result: EventUpdateStyleResult
+} | {
+action: "home_goal.set"
+index: number
+outcome: "applied"
+result: HomeGoalSetResult
 } | {
 action: "home_layout.create"
 index: number
@@ -3965,6 +4470,11 @@ index: number
 outcome: "applied"
 result: PropChallengeAddCostResult
 } | {
+action: "prop_challenge.add_prior_payout"
+index: number
+outcome: "applied"
+result: PropChallengeAddPriorPayoutResult
+} | {
 action: "prop_challenge.advance"
 index: number
 outcome: "applied"
@@ -3980,15 +4490,30 @@ index: number
 outcome: "applied"
 result: PropChallengeDeleteCostResult
 } | {
+action: "prop_challenge.delete_prior_payout"
+index: number
+outcome: "applied"
+result: PropChallengeDeletePriorPayoutResult
+} | {
 action: "prop_challenge.fail"
 index: number
 outcome: "applied"
 result: PropChallengeFailResult
 } | {
+action: "prop_challenge.remove_drawdown_floor"
+index: number
+outcome: "applied"
+result: PropChallengeRemoveDrawdownFloorResult
+} | {
 action: "prop_challenge.reopen"
 index: number
 outcome: "applied"
 result: PropChallengeReopenResult
+} | {
+action: "prop_challenge.set_drawdown_floor"
+index: number
+outcome: "applied"
+result: PropChallengeSetDrawdownFloorResult
 } | {
 action: "review.add_images"
 index: number
@@ -4220,6 +4745,11 @@ index: number
 outcome: "applied"
 result: TagSetColorResult
 } | {
+action: "trade.add_images"
+index: number
+outcome: "applied"
+result: TradeAddImagesResult
+} | {
 action: "trade.create"
 index: number
 outcome: "applied"
@@ -4229,6 +4759,11 @@ action: "trade.delete"
 index: number
 outcome: "applied"
 result: TradeDeleteResult
+} | {
+action: "trade.remove_images"
+index: number
+outcome: "applied"
+result: TradeRemoveImagesResult
 } | {
 action: "trade.set_image_annotations"
 index: number
@@ -4245,12 +4780,12 @@ index: number
 outcome: "applied"
 result: TradeUpdateResult
 }) | ({
-action: ("account.add_transaction" | "account.create" | "account.delete" | "account.delete_transaction" | "account.rename" | "account.update" | "account_type.create" | "account_type.delete" | "account_type.move" | "account_type.rename" | "custom_field.create" | "custom_field.delete" | "custom_field.reorder" | "custom_field.update" | "dashboard_layout.create" | "dashboard_layout.delete" | "dashboard_layout.duplicate" | "dashboard_layout.rename" | "dashboard_layout.set_active" | "dashboard_layout.update" | "event.create" | "event.delete" | "event.merge" | "event.rename" | "event.update_style" | "home_layout.create" | "home_layout.delete" | "home_layout.duplicate" | "home_layout.rename" | "home_layout.set_active" | "home_layout.update" | "mistake.create" | "mistake.delete" | "mistake.merge" | "mistake.rename" | "prop_challenge.add_cost" | "prop_challenge.advance" | "prop_challenge.configure" | "prop_challenge.delete_cost" | "prop_challenge.fail" | "prop_challenge.reopen" | "review.add_images" | "review.add_key_events" | "review.add_session_log_entries" | "review.create" | "review.delete_key_event" | "review.delete_session_log_entry" | "review.remove_images" | "review.set_day_trade_fields" | "review.set_image_annotations" | "review.update" | "review.update_key_event" | "review.update_session_log_entry" | "review_template.create" | "review_template.delete" | "review_template.duplicate" | "review_template.set_default" | "review_template.update" | "session.start_unplanned" | "session.stop_unplanned" | "session_log_tag.create" | "session_log_tag.delete" | "session_log_tag.update" | "session_workflow.create" | "session_workflow.delete" | "session_workflow.delete_question" | "session_workflow.update" | "settings.set_analytics_calculation" | "settings.set_break_even" | "settings.set_date_time_display" | "settings.set_display_preferences" | "settings.set_economic_calendar" | "settings.set_review_automation" | "settings.set_risk_display" | "settings.set_session_schedule" | "settings.set_trade_entry" | "settings.set_trading_day" | "setup.create" | "setup.delete" | "setup.rename" | "setup.update" | "tag.clear_color" | "tag.create" | "tag.delete" | "tag.merge" | "tag.rename" | "tag.set_color" | "trade.create" | "trade.delete" | "trade.set_image_annotations" | "trade.set_type" | "trade.update")
+action: ("account.add_transaction" | "account.create" | "account.delete" | "account.delete_transaction" | "account.rename" | "account.update" | "account_type.create" | "account_type.delete" | "account_type.move" | "account_type.rename" | "custom_field.create" | "custom_field.delete" | "custom_field.reorder" | "custom_field.update" | "dashboard_comparison.create" | "dashboard_comparison.delete" | "dashboard_comparison.update" | "dashboard_layout.create" | "dashboard_layout.delete" | "dashboard_layout.duplicate" | "dashboard_layout.rename" | "dashboard_layout.set_active" | "dashboard_layout.update" | "event.create" | "event.delete" | "event.merge" | "event.rename" | "event.update_style" | "home_goal.set" | "home_layout.create" | "home_layout.delete" | "home_layout.duplicate" | "home_layout.rename" | "home_layout.set_active" | "home_layout.update" | "mistake.create" | "mistake.delete" | "mistake.merge" | "mistake.rename" | "prop_challenge.add_cost" | "prop_challenge.add_prior_payout" | "prop_challenge.advance" | "prop_challenge.configure" | "prop_challenge.delete_cost" | "prop_challenge.delete_prior_payout" | "prop_challenge.fail" | "prop_challenge.remove_drawdown_floor" | "prop_challenge.reopen" | "prop_challenge.set_drawdown_floor" | "review.add_images" | "review.add_key_events" | "review.add_session_log_entries" | "review.create" | "review.delete_key_event" | "review.delete_session_log_entry" | "review.remove_images" | "review.set_day_trade_fields" | "review.set_image_annotations" | "review.update" | "review.update_key_event" | "review.update_session_log_entry" | "review_template.create" | "review_template.delete" | "review_template.duplicate" | "review_template.set_default" | "review_template.update" | "session.start_unplanned" | "session.stop_unplanned" | "session_log_tag.create" | "session_log_tag.delete" | "session_log_tag.update" | "session_workflow.create" | "session_workflow.delete" | "session_workflow.delete_question" | "session_workflow.update" | "settings.set_analytics_calculation" | "settings.set_break_even" | "settings.set_date_time_display" | "settings.set_display_preferences" | "settings.set_economic_calendar" | "settings.set_review_automation" | "settings.set_risk_display" | "settings.set_session_schedule" | "settings.set_trade_entry" | "settings.set_trading_day" | "setup.create" | "setup.delete" | "setup.rename" | "setup.update" | "tag.clear_color" | "tag.create" | "tag.delete" | "tag.merge" | "tag.rename" | "tag.set_color" | "trade.add_images" | "trade.create" | "trade.delete" | "trade.remove_images" | "trade.set_image_annotations" | "trade.set_type" | "trade.update")
 failure: ActionFailure
 index: number
 outcome: "failed"
 } | {
-action: ("account.add_transaction" | "account.create" | "account.delete" | "account.delete_transaction" | "account.rename" | "account.update" | "account_type.create" | "account_type.delete" | "account_type.move" | "account_type.rename" | "custom_field.create" | "custom_field.delete" | "custom_field.reorder" | "custom_field.update" | "dashboard_layout.create" | "dashboard_layout.delete" | "dashboard_layout.duplicate" | "dashboard_layout.rename" | "dashboard_layout.set_active" | "dashboard_layout.update" | "event.create" | "event.delete" | "event.merge" | "event.rename" | "event.update_style" | "home_layout.create" | "home_layout.delete" | "home_layout.duplicate" | "home_layout.rename" | "home_layout.set_active" | "home_layout.update" | "mistake.create" | "mistake.delete" | "mistake.merge" | "mistake.rename" | "prop_challenge.add_cost" | "prop_challenge.advance" | "prop_challenge.configure" | "prop_challenge.delete_cost" | "prop_challenge.fail" | "prop_challenge.reopen" | "review.add_images" | "review.add_key_events" | "review.add_session_log_entries" | "review.create" | "review.delete_key_event" | "review.delete_session_log_entry" | "review.remove_images" | "review.set_day_trade_fields" | "review.set_image_annotations" | "review.update" | "review.update_key_event" | "review.update_session_log_entry" | "review_template.create" | "review_template.delete" | "review_template.duplicate" | "review_template.set_default" | "review_template.update" | "session.start_unplanned" | "session.stop_unplanned" | "session_log_tag.create" | "session_log_tag.delete" | "session_log_tag.update" | "session_workflow.create" | "session_workflow.delete" | "session_workflow.delete_question" | "session_workflow.update" | "settings.set_analytics_calculation" | "settings.set_break_even" | "settings.set_date_time_display" | "settings.set_display_preferences" | "settings.set_economic_calendar" | "settings.set_review_automation" | "settings.set_risk_display" | "settings.set_session_schedule" | "settings.set_trade_entry" | "settings.set_trading_day" | "setup.create" | "setup.delete" | "setup.rename" | "setup.update" | "tag.clear_color" | "tag.create" | "tag.delete" | "tag.merge" | "tag.rename" | "tag.set_color" | "trade.create" | "trade.delete" | "trade.set_image_annotations" | "trade.set_type" | "trade.update")
+action: ("account.add_transaction" | "account.create" | "account.delete" | "account.delete_transaction" | "account.rename" | "account.update" | "account_type.create" | "account_type.delete" | "account_type.move" | "account_type.rename" | "custom_field.create" | "custom_field.delete" | "custom_field.reorder" | "custom_field.update" | "dashboard_comparison.create" | "dashboard_comparison.delete" | "dashboard_comparison.update" | "dashboard_layout.create" | "dashboard_layout.delete" | "dashboard_layout.duplicate" | "dashboard_layout.rename" | "dashboard_layout.set_active" | "dashboard_layout.update" | "event.create" | "event.delete" | "event.merge" | "event.rename" | "event.update_style" | "home_goal.set" | "home_layout.create" | "home_layout.delete" | "home_layout.duplicate" | "home_layout.rename" | "home_layout.set_active" | "home_layout.update" | "mistake.create" | "mistake.delete" | "mistake.merge" | "mistake.rename" | "prop_challenge.add_cost" | "prop_challenge.add_prior_payout" | "prop_challenge.advance" | "prop_challenge.configure" | "prop_challenge.delete_cost" | "prop_challenge.delete_prior_payout" | "prop_challenge.fail" | "prop_challenge.remove_drawdown_floor" | "prop_challenge.reopen" | "prop_challenge.set_drawdown_floor" | "review.add_images" | "review.add_key_events" | "review.add_session_log_entries" | "review.create" | "review.delete_key_event" | "review.delete_session_log_entry" | "review.remove_images" | "review.set_day_trade_fields" | "review.set_image_annotations" | "review.update" | "review.update_key_event" | "review.update_session_log_entry" | "review_template.create" | "review_template.delete" | "review_template.duplicate" | "review_template.set_default" | "review_template.update" | "session.start_unplanned" | "session.stop_unplanned" | "session_log_tag.create" | "session_log_tag.delete" | "session_log_tag.update" | "session_workflow.create" | "session_workflow.delete" | "session_workflow.delete_question" | "session_workflow.update" | "settings.set_analytics_calculation" | "settings.set_break_even" | "settings.set_date_time_display" | "settings.set_display_preferences" | "settings.set_economic_calendar" | "settings.set_review_automation" | "settings.set_risk_display" | "settings.set_session_schedule" | "settings.set_trade_entry" | "settings.set_trading_day" | "setup.create" | "setup.delete" | "setup.rename" | "setup.update" | "tag.clear_color" | "tag.create" | "tag.delete" | "tag.merge" | "tag.rename" | "tag.set_color" | "trade.add_images" | "trade.create" | "trade.delete" | "trade.remove_images" | "trade.set_image_annotations" | "trade.set_type" | "trade.update")
 index: number
 outcome: "not_attempted"
 }))[]
@@ -4296,9 +4831,24 @@ export interface CustomFieldUpdateResult {
 field_id: string
 revision: string
 }
+export interface DashboardComparisonCreateResult {
+comparison_id: string
+revision: string
+}
+export interface DashboardComparisonDeleteResult {
+comparison_id: string
+}
+export interface DashboardComparisonUpdateResult {
+comparison_id: string
+revision: string
+}
 export interface PropChallengeAddCostResult {
 account_id: string
 cost_id: string
+}
+export interface PropChallengeAddPriorPayoutResult {
+account_id: string
+payout_id: string
 }
 export interface PropChallengeAdvanceResult {
 account_id: string
@@ -4312,11 +4862,23 @@ export interface PropChallengeDeleteCostResult {
 account_id: string
 cost_id: string
 }
+export interface PropChallengeDeletePriorPayoutResult {
+account_id: string
+payout_id: string
+}
 export interface PropChallengeFailResult {
 account_id: string
 revision: string
 }
+export interface PropChallengeRemoveDrawdownFloorResult {
+account_id: string
+revision: string
+}
 export interface PropChallengeReopenResult {
+account_id: string
+revision: string
+}
+export interface PropChallengeSetDrawdownFloorResult {
 account_id: string
 revision: string
 }
@@ -4403,12 +4965,24 @@ export interface SetupUpdateResult {
 setup_id: string
 revision: string
 }
+export interface TradeAddImagesResult {
+trade_id: string
+trade_revision: number
+
+media_ids: string[]
+
+urls?: string[]
+}
 export interface TradeCreateResult {
 trade_id: string
 trade_revision: number
 }
 export interface TradeDeleteResult {
 trade_id: string
+}
+export interface TradeRemoveImagesResult {
+trade_id: string
+trade_revision: number
 }
 export interface TradeSetImageAnnotationsResult {
 trade_id: string
@@ -4449,13 +5023,13 @@ series: {
 interval_start?: string
 
 metrics: ({
-metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")
+metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")
 sample_count: number
 status: "available"
 value: number
 unit: ("currency" | "fraction" | "ratio" | "count" | "r_multiple")
 } | {
-metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")
+metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")
 sample_count: number
 status: "unavailable"
 value: null
@@ -4480,21 +5054,29 @@ value: string
 } | {
 kind: "direction"
 value: ("long" | "short")
+} | {
+kind: "rating"
+
+value: ("5" | "4" | "3" | "2" | "1")
+} | {
+kind: "market_bias"
+
+value: ("with" | "against" | "neutral" | "none")
 })
 }[]
 calculation_context: CalculationContext
 }
 export interface ComparisonMetric {
-metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")
+metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")
 
 current: ({
-metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")
+metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")
 sample_count: number
 status: "available"
 value: number
 unit: ("currency" | "fraction" | "ratio" | "count" | "r_multiple")
 } | {
-metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")
+metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")
 sample_count: number
 status: "unavailable"
 value: null
@@ -4503,13 +5085,13 @@ unavailable_reason: ("insufficient_sample" | "not_calculable" | "currency_conver
 })
 
 baseline: ({
-metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")
+metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")
 sample_count: number
 status: "available"
 value: number
 unit: ("currency" | "fraction" | "ratio" | "count" | "r_multiple")
 } | {
-metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")
+metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")
 sample_count: number
 status: "unavailable"
 value: null
@@ -4606,13 +5188,13 @@ performance?: {
 calculation_context: CalculationContext
 
 metrics: ({
-metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")
+metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")
 sample_count: number
 status: "available"
 value: number
 unit: ("currency" | "fraction" | "ratio" | "count" | "r_multiple")
 } | {
-metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")
+metric_id: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")
 sample_count: number
 status: "unavailable"
 value: null
@@ -4630,6 +5212,9 @@ goals?: Goal[]
 
 checklist?: ChecklistItem[]
 key_levels?: KeyLevels1
+
+key_level_groups?: KeyLevelGroup[]
+market_bias?: MarketBias1
 grades?: {
 mental: ((("A" | "B" | "C") | (0 | 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5)) | null)
 technical: ((("A" | "B" | "C") | (0 | 0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5)) | null)
@@ -4726,16 +5311,65 @@ exit_time?: (string | null)
 pnl?: number
 
 missed_reason?: string
+option?: OptionContract2
+
+exchange?: string
+
+dollar_per_point?: number
+
+tick_size?: number
+
+tick_value?: number
+
+lot_size?: number
+
+pip_value?: number
+
+pip_size?: number
+
+contract_size?: number
+
+leverage_ratio?: number
+
+exit_reason?: string
 }
 execution?: {
 volume?: number
 entry_price?: number
 exit_price?: number
 commission?: number
+
+commission_type?: ("fixed" | "percentage")
 fees?: number
 swap?: number
+rebate?: number
+
+dividends?: Dividend[]
+
+currency?: string
+
+fx_rate?: number
+fx_rate_base_currency?: string
+
+forex_conversion?: {
+
+rate: number
+quote_currency: string
+base_currency: string
+date?: string
+source: ("automatic" | "manual")
+}
 
 direct_pnl?: number
+
+ideal_exits?: IdealExit[]
+
+mae?: number
+
+mfe?: number
+mae_price?: number
+mfe_price?: number
+unrealized_price_snapshot?: UnrealizedPriceSnapshot1
 
 entries?: ExecutionLeg[]
 
@@ -4766,6 +5400,8 @@ thesis: (string | null)
 
 thesis_truncated: boolean
 reviewed: boolean
+
+rating?: ((0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5) | null)
 }
 notes?: string
 
@@ -4776,9 +5412,27 @@ field_id: string
 
 value: (string | number | string[])
 }[]
+
+media_links?: {
+url: string
+}[]
 }
 
 notes_truncated?: boolean
+}
+
+export interface OptionContract2 {
+type: ("call" | "put")
+strike: number
+expiration: string
+
+contract_size?: number
+}
+
+export interface UnrealizedPriceSnapshot1 {
+price: number
+
+time?: string
 }
 
 export interface StoredTarget {
@@ -4801,6 +5455,7 @@ custom_fields?: CustomFieldsProjection
 session_log_tags?: SessionLogTagsProjection
 accounts?: AccountsProjection
 prop_challenges?: PropChallengesProjection
+dashboard_comparisons?: DashboardComparisonsProjection
 }
 }
 export interface SessionMode {
@@ -4960,14 +5615,15 @@ sm: number
 xs?: number
 xxs?: number
 }
+
 export interface LayoutGridMetadata {
 row_height: 50
 columns: {
-lg: 12
-md: 6
-sm: 4
-xs: 2
-xxs: 1
+lg: (12 | 24)
+md: (6 | 12)
+sm: (4 | 8)
+xs: (2 | 4)
+xxs: (1 | 2)
 }
 }
 export interface DashboardMetricCatalogEntry {
@@ -5030,9 +5686,11 @@ default_size: LayoutSize
 max_size?: LayoutSize
 configurable: boolean
 }
+
 export interface ConfiguredWidgetInstance {
 id: string
 type: string
+goal?: HomeGoal
 }
 export interface OptionCatalogs {
 tags: {
@@ -5292,6 +5950,8 @@ challenge_id: string
 phases: PropChallengePhase[]
 
 costs: PropChallengeCost[]
+
+prior_payouts?: PropChallengePriorPayout[]
 progress?: PropChallengeProgress
 
 revision: string
@@ -5397,6 +6057,15 @@ kind: ("purchase" | "reset" | "activation" | "other")
 note?: string
 }
 
+export interface PropChallengePriorPayout {
+payout_id: string
+
+date: string
+
+amount: number
+note?: string
+}
+
 export interface PropChallengeProgress {
 phase_id: string
 status: ("active" | "passed" | "failed" | "warning")
@@ -5414,6 +6083,31 @@ target: number
 remaining: number
 satisfied: boolean
 breached: boolean
+firm_floor?: PropChallengeFirmFloor2
+}
+
+export interface PropChallengeFirmFloor2 {
+floor: number
+recorded_at: string
+}
+
+export interface DashboardComparisonsProjection {
+
+comparisons: DashboardComparison[]
+
+omitted_count: number
+}
+export interface DashboardComparison {
+comparison_id: string
+name: string
+a: DashboardComparisonSide
+b: DashboardComparisonSide
+revision: string
+}
+export interface DashboardComparisonSide {
+filters: DashboardComparisonFilters
+
+unrepresented_criteria?: ("excluded_values" | "match_modes" | "account_phases" | "missing_values" | "custom_field_alternatives" | "unresolved_values" | "unsupported_values")[]
 }
 export interface Success5 {
 status: "ok"
@@ -5435,7 +6129,7 @@ tags?: string[]
 mistakes?: string[]
 }
 
-metrics?: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss")[]
+metrics?: ("net_pnl" | "win_rate" | "profit_factor" | "expectancy" | "trade_count" | "win_count" | "loss_count" | "average_win" | "average_loss" | "payoff_ratio" | "sharpe_ratio" | "net_r" | "expectancy_r" | "average_win_r" | "average_loss_r" | "max_drawdown" | "best_day" | "largest_win" | "largest_loss" | "commission_and_fees" | "average_trades_per_day")[]
 calculation_settings?: {
 currency?: string
 date_basis?: ("entry" | "exit")
@@ -5501,9 +6195,24 @@ target: ({
 kind: "home"
 } | {
 kind: "dashboard"
+filters?: DashboardFilters
+
+date_preset?: ("today" | "yesterday" | "this_week" | "this_month" | "this_quarter" | "this_year")
+recent?: RecentPeriod
+} | {
+kind: "dashboard_comparison"
+comparison_id?: string
+a?: DashboardComparisonFilters
+b?: DashboardComparisonFilters
+date?: DateRange
+
+date_preset?: ("today" | "yesterday" | "this_week" | "this_month" | "this_quarter" | "this_year")
+recent?: RecentPeriod
 } | {
 kind: "trade_log"
 filters?: TradeFilters1
+
+date_preset?: ("today" | "yesterday" | "this_week" | "this_month" | "this_quarter" | "this_year")
 } | {
 kind: "trade"
 trade_id: string
@@ -5556,7 +6265,7 @@ export interface Success7 {
 status: "ok"
 meta: ResultMeta
 
-fields: ("trade_id" | "symbol" | "direction" | "status" | "entry_time" | "exit_time" | "account_id" | "setup_id" | "volume" | "entry_price" | "exit_price" | "pnl" | "commission" | "r_multiple" | "tags" | "mistakes" | "trade_revision")[]
+fields: ("trade_id" | "symbol" | "direction" | "status" | "entry_time" | "exit_time" | "account_id" | "setup_id" | "volume" | "entry_price" | "exit_price" | "pnl" | "commission" | "r_multiple" | "tags" | "mistakes" | "rating" | "market_bias" | "trade_revision")[]
 
 trades: Trade[]
 page: PageInfo
@@ -5580,6 +6289,21 @@ r_multiple?: (number | null)
 tags?: string[]
 
 mistakes?: string[]
+
+rating?: ((0.5 | 1 | 1.5 | 2 | 2.5 | 3 | 3.5 | 4 | 4.5 | 5) | null)
+
+market_bias?: {
+
+alignment: ("with" | "against" | "neutral" | "none")
+
+bias: (("long" | "neutral" | "short") | null)
+
+from_week: boolean
+
+daily: (("long" | "neutral" | "short") | null)
+
+weekly: (("long" | "neutral" | "short") | null)
+}
 trade_revision?: number
 }
 export interface PageInfo {

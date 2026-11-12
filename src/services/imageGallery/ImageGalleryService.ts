@@ -16,7 +16,8 @@ import {
 import { fetchBreakEvenAccountBalanceLookup } from '../trade/core/BreakEvenAccountBalance';
 import { getTradeDirectionDisplayKind } from '../trade/core/TradeDirection';
 import { OptionType } from '../options/CustomOptionsService';
-import type { TradeLogFilters } from '../tradelog/types';
+import type { RecentPeriodScope, TradeLogFilters } from '../tradelog/types';
+import type { RecentPeriod } from '../../components/shared/filters/recentPeriod';
 import type {
   ImageGalleryAnnotation,
   ImageGalleryItem,
@@ -45,6 +46,7 @@ import {
 } from './ImageGalleryInternal';
 import {
   matchesImageGalleryTradeLogFilters,
+  matchesRecentPeriodScope,
   normalizeCustomFieldFilterValue,
 } from './ImageGalleryFilters';
 import {
@@ -96,7 +98,13 @@ export class ImageGalleryService {
   private annotations: ImageGalleryAnnotationStore;
   private folderSource: ImageGalleryFolderSource;
 
-  constructor(private plugin: JournalitPlugin) {
+  
+  constructor(
+    private plugin: JournalitPlugin,
+    private readonly resolveRecentPeriodScope?: (
+      filters: TradeLogFilters & { recentPeriod: RecentPeriod }
+    ) => Promise<RecentPeriodScope | null>
+  ) {
     this.annotations = new ImageGalleryAnnotationStore(plugin);
     this.folderSource = new ImageGalleryFolderSource(plugin, this.annotations);
   }
@@ -129,12 +137,23 @@ export class ImageGalleryService {
       filters.sessionLogTags.length > 0
         ? this.getSessionLogMatchingDays(filters.sessionLogTags)
         : Promise.resolve(null);
-    const [allItems, sessionLogMatchingDays] = await Promise.all([
-      this.getAllItems(),
-      sessionLogMatchingDaysPromise,
-    ]);
+    const [allItems, sessionLogMatchingDays, recentPeriodScope] =
+      await Promise.all([
+        this.getAllItems(),
+        sessionLogMatchingDaysPromise,
+        this.getRecentPeriodScope(filters),
+      ]);
+    if (recentPeriodScope === null) {
+      return { items: [], totalItemCount: allItems.length };
+    }
 
     const items = allItems.filter((item) => {
+      if (
+        recentPeriodScope &&
+        !matchesRecentPeriodScope(item, recentPeriodScope)
+      ) {
+        return false;
+      }
       let itemTradingDay: string | null = null;
       if (sessionLogMatchingDays) {
         const itemDate = parseLocalDateSafe(item.date);
@@ -149,6 +168,20 @@ export class ImageGalleryService {
       });
     });
     return { items, totalItemCount: allItems.length };
+  }
+
+  
+  private async getRecentPeriodScope(
+    filters: TradeLogFilters
+  ): Promise<RecentPeriodScope | null | undefined> {
+    const recentPeriod = filters.recentPeriod;
+    if (!recentPeriod) return undefined;
+    if (!this.resolveRecentPeriodScope) {
+      throw new Error(
+        'ImageGalleryService needs a recent period resolver for these filters'
+      );
+    }
+    return this.resolveRecentPeriodScope({ ...filters, recentPeriod });
   }
 
   private async getSessionLogMatchingDays(

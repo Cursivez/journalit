@@ -34,7 +34,9 @@ export function summarizeChallengeRuleProgress(
       const used = drawdownUsed(rule);
       progress.drawdown = {
         percent: clampPercent((used / rule.limit) * 100),
-        remaining: Math.max(0, rule.limit - used),
+        
+        
+        remaining: rule.breached ? 0 : Math.max(0, rule.remaining),
       };
     } else if (
       rule.kind === 'profit_target' &&

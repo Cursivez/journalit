@@ -1,3 +1,4 @@
+import { transactionItemSnapshot } from '../history/itemSnapshots';
 import { t, tPlural } from '../../../lang/helpers';
 import type {
   AccountMetadata,
@@ -48,6 +49,7 @@ import {
 } from './accountRestore';
 import {
   accountWriteError,
+  expectAccount,
   expectAccountUnchanged,
   expectNoAccount,
 } from './accountWriteGuard';
@@ -572,7 +574,9 @@ export function createAccountActions(
           if (liveBalance !== undefined) {
             
             
-            const page = await deps.accounts.getAccountPageData(source.name);
+            const page = await deps.accounts.getAccountPageData(source.name, [
+              'regular',
+            ]);
             const computed =
               (page?.account.currentBalance ?? before?.initialBalance ?? 0) -
               (page?.account.liveBalanceAdjustment ?? 0) +
@@ -883,9 +887,11 @@ export function createAccountActions(
       const type =
         transaction.type === TransactionType.DEPOSIT ? 'deposit' : 'withdrawal';
       const amount = Math.abs(transaction.amount);
+      const baseItem = transactionItemSnapshot(transaction);
       return {
         target: `account_transaction:${transaction.id}`,
         dependsOn: [`account:${source.accountId}`],
+        baseItem,
         summary: {
           account_id: source.accountId,
           transaction_id: transaction.id,
@@ -916,9 +922,20 @@ export function createAccountActions(
           );
           if (!stillThere) throw new ActionExecutionError('not_found', false);
           try {
+            
+            
             await deps.accounts.deleteManualTransaction(
               source.name,
-              transaction.id
+              transaction.id,
+              expectAccount((current) => {
+                const stored = current?.manualTransactions?.find(
+                  (candidate) => candidate.id === transaction.id
+                );
+                return (
+                  stored !== undefined &&
+                  transactionItemSnapshot(stored) === baseItem
+                );
+              })
             );
           } catch (error) {
             return accountWriteError(error);

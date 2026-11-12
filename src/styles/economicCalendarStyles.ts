@@ -543,41 +543,15 @@ export const ECONOMIC_CALENDAR_STYLES = `
   display: inline-flex;
   gap: 6px;
   align-items: center;
-  padding: 6px 14px;
-  border-radius: 5px;
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.journalit-econ-footer__restore {
-  border: 1px solid var(--background-modifier-border);
-  background-color: transparent;
-  color: var(--text-muted);
-}
-
-.journalit-econ-footer__restore:hover:not(:disabled) {
-  border-color: var(--background-modifier-border-hover);
-  background-color: var(--background-modifier-hover);
-  color: var(--text-normal);
 }
 
 .journalit-econ-footer__import {
   margin-left: auto;
-  border: none;
-  background-color: var(--interactive-accent);
-  color: var(--text-on-accent);
-}
-
-.journalit-econ-footer__import:hover:not(:disabled) {
-  background-color: var(--interactive-accent-hover);
-  color: var(--text-on-accent);
 }
 
 .journalit-econ-footer__restore:disabled,
 .journalit-econ-footer__import:disabled {
   opacity: 0.45;
-  cursor: default;
 }
 
 
@@ -614,21 +588,6 @@ export const ECONOMIC_CALENDAR_STYLES = `
   margin: 0;
   color: var(--text-muted);
   font-size: 13px;
-}
-
-.journalit-econ-message__action {
-  padding: 5px 12px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 5px;
-  background: transparent;
-  box-shadow: none;
-  color: var(--text-normal);
-  font-size: 12px;
-  cursor: pointer;
-}
-
-.journalit-econ-message__action:hover {
-  background-color: var(--background-modifier-hover);
 }
 
 .journalit-econ-gate {
@@ -675,21 +634,6 @@ export const ECONOMIC_CALENDAR_STYLES = `
 }
 
 
-.journalit-econ-gate .journalit-econ-gate__cta {
-  padding: 7px 18px;
-  border: none;
-  border-radius: 5px;
-  background-color: var(--interactive-accent);
-  color: var(--text-on-accent);
-  font-size: 12px;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.journalit-econ-gate .journalit-econ-gate__cta:hover {
-  background-color: var(--interactive-accent-hover);
-  color: var(--text-on-accent);
-}
 
 .journalit-econ-gate .journalit-econ-gate__secondary {
   padding: 2px 6px;

@@ -8,6 +8,7 @@ import {
 } from './defaultHomeLayout';
 import JournalitPlugin from '../../main';
 import {
+  GRID_COLS,
   normalizeLayoutForSave,
   fitLayoutItemToBreakpoint,
   LAYOUT_BOTTOM_POSITION,
@@ -277,13 +278,7 @@ const applyLayout = (plugin: JournalitPlugin, layout: HomeLayout): void => {
     layoutCopy[breakpoint].forEach((item: Layout) => allWidgetIds.add(item.i));
   }
 
-  const cols: Record<string, number> = {
-    lg: 12,
-    md: 6,
-    sm: 4,
-    xs: 2,
-    xxs: 1,
-  };
+  const cols: Record<string, number> = GRID_COLS;
 
   const sourceItemsByWidgetId = new Map<string, Layout>();
   for (const sourceBp of HOME_LAYOUT_BREAKPOINTS) {

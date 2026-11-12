@@ -51,6 +51,18 @@ export function formatCost(
 }
 
 
+export function formatMoney(
+  value: number | undefined | null,
+  showPlusSign: boolean = false,
+  currencyCode: string = CurrencyCode.USD
+): string {
+  if (value === undefined || value === null || isNaN(value)) return 'N/A';
+  const formatted = formatCost(Math.abs(value), currencyCode);
+  if (value < 0) return `-${formatted}`;
+  return showPlusSign && value > 0 ? `+${formatted}` : formatted;
+}
+
+
 export function formatCurrency(
   value: number | undefined | null,
   showPlusSign: boolean = false,

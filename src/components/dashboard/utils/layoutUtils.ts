@@ -2,6 +2,7 @@
 
 import type { Layout } from '../../shared/gridLayout/reactGridLayoutCompat';
 import {
+  GRID_COLS,
   LAYOUT_BOTTOM_POSITION,
   fitLayoutItemToBreakpoint,
   normalizeLayoutItem,
@@ -386,14 +387,7 @@ const applyLayout = (
     bpLayout.forEach((item: Layout) => allWidgetIds.add(item.i));
   });
 
-  
-  const cols: Record<string, number> = {
-    lg: 12,
-    md: 6,
-    sm: 4,
-    xs: 2,
-    xxs: 1,
-  };
+  const cols: Record<string, number> = GRID_COLS;
 
   const sourceItemsByWidgetId = new Map<string, Layout>();
   for (const sourceBp of ['lg', 'md', 'sm', 'xs', 'xxs'] as const) {

@@ -17,6 +17,10 @@ export async function openTradeLogWithFilters(
 ): Promise<void> {
   const currentState = plugin.uiStateManager.getState();
   const currentFilters = currentState.viewFilters?.tradelog;
+  
+  
+  const callerSetsDates =
+    filters.dateRange !== undefined || filters.recentPeriod !== undefined;
 
   await plugin.uiStateManager.updateState({
     tradeLogMode: 'trades',
@@ -28,6 +32,15 @@ export async function openTradeLogWithFilters(
         ...createTradeLogFilters(),
         ...currentFilters,
         ...filters,
+        
+        
+        
+        datePreset: callerSetsDates
+          ? filters.datePreset
+          : currentFilters?.datePreset,
+        recentPeriod: callerSetsDates
+          ? filters.recentPeriod
+          : currentFilters?.recentPeriod,
       },
     },
   });

@@ -13,7 +13,24 @@ import {
   getTotalEntrySize,
   isTradeOpenWithContext,
 } from '../../../utils/tradeStatusUtils';
-import { getTradingDayString } from '../../../utils/tradingDayUtils';
+import {
+  getTradingDay,
+  getTradingDayString,
+} from '../../../utils/tradingDayUtils';
+import { createDateWithoutTime } from '../../../utils/dateUtils';
+import { getAnalyticsDateBasis } from '../../../utils/tradeAnalyticsDate';
+import {
+  isInRecentPeriodWindow,
+  resolveRecentPeriodWindow,
+  type RecentPeriod,
+  type RecentPeriodAccess,
+} from '../../../components/shared/filters/recentPeriod';
+import { formatLocalDateString } from '../../../utils/dateUtils';
+import {
+  getRatingFilterValue,
+  parseTradeRating,
+  type TradeRating,
+} from '../../../utils/tradeRating';
 import {
   parseStoredDateLikeValue,
   serializeCustomFieldValue,
@@ -21,12 +38,19 @@ import {
 import type { ImageGalleryItem } from '../../../components/imageGallery/types';
 import type { CustomFieldsService } from '../../CustomFieldsService';
 import type { DRCService } from '../../drc/DRCService';
+import type { WeeklyReviewService } from '../../weekly/WeeklyReviewService';
+import {
+  createTradeMarketBiasResolver,
+  NO_TRADE_MARKET_BIAS,
+  type TradeMarketBias,
+  type TradeMarketBiasResolver,
+} from '../../marketBias/tradeMarketBias';
 import type { ImageGalleryService } from '../../imageGallery/ImageGalleryService';
 import type { SetupService } from '../../setup/SetupService';
 import type { Setup } from '../../setup/types';
 import { normalizeSetupKey } from '../../setup/setupIdentity';
 import { normalizeTradeAccountIdentity } from '../../trade/core/TradeAccountIdentity';
-import { getTradeDirectionDisplayKind } from '../../trade/core/TradeDirection';
+import { getTradeMarketSide } from '../../trade/core/TradeDirection';
 import { normalizeTradeExecution } from '../../trade/core/TradeExecutionNormalization';
 import {
   parseStopLossTargets,
@@ -85,6 +109,8 @@ export interface AgentTradeReadRecord {
   readonly assetType?: AssetType;
   
   readonly missedReason?: string;
+  
+  readonly exitReason?: string;
   readonly direction?: Direction;
   readonly executionStatus: ExecutionStatus;
   readonly outcome?: Outcome;
@@ -118,7 +144,224 @@ export interface AgentTradeReadRecord {
   readonly tags: readonly string[];
   readonly mistakes: readonly string[];
   readonly reviewed: boolean;
+  
+  readonly rating?: TradeRating;
+  
+  readonly marketBias: TradeMarketBias;
   readonly customFields: Readonly<Record<string, CustomFieldValue>>;
+  
+  readonly details: AgentTradeDetails;
+}
+
+
+type ContractSpecKey =
+  | 'dollarPerPoint'
+  | 'tickSize'
+  | 'tickValue'
+  | 'lotSize'
+  | 'pipValue'
+  | 'pipSize'
+  | 'contractSize'
+  | 'leverageRatio';
+
+
+const CONTRACT_SPEC_KEYS: Readonly<
+  Partial<Record<AssetType, readonly ContractSpecKey[]>>
+> = {
+  futures: ['dollarPerPoint', 'tickSize', 'tickValue'],
+  forex: ['lotSize', 'pipValue', 'pipSize'],
+  cfd: ['contractSize', 'leverageRatio'],
+};
+
+
+interface AgentTradeDetails {
+  readonly option?: {
+    readonly type: 'call' | 'put';
+    readonly strike: number;
+    
+    readonly expiration: string;
+    readonly contractSize?: number;
+  };
+  readonly exchange?: string;
+  readonly specs: Readonly<Partial<Record<ContractSpecKey, number>>>;
+  readonly commissionType?: 'fixed' | 'percentage';
+  readonly rebate?: number;
+  readonly dividends: readonly { time: Date; amount: number }[];
+  readonly currency?: string;
+  readonly fxRate?: number;
+  readonly fxRateBaseCurrency?: string;
+  readonly forexConversion?: {
+    readonly rate: number;
+    readonly quoteCurrency: string;
+    readonly baseCurrency: string;
+    readonly date?: string;
+    readonly source: 'automatic' | 'manual';
+  };
+  readonly idealExits: readonly { price: number; time?: Date; size?: number }[];
+  readonly mae?: number;
+  readonly mfe?: number;
+  readonly maePrice?: number;
+  readonly mfePrice?: number;
+  readonly unrealizedPriceSnapshot?: { price: number; time?: Date };
+}
+
+const CURRENCY_PATTERN = /^[A-Z]{3}$/;
+
+function currencyCode(value: unknown): string | undefined {
+  return typeof value === 'string' && CURRENCY_PATTERN.test(value)
+    ? value
+    : undefined;
+}
+
+function recordList(value: unknown): Record<string, unknown>[] {
+  return Array.isArray(value)
+    ? value.filter(
+        (item): item is Record<string, unknown> =>
+          item !== null && typeof item === 'object' && !Array.isArray(item)
+      )
+    : [];
+}
+
+
+function expirationDay(value: unknown): string | undefined {
+  if (typeof value === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return value;
+  }
+  const date = validDate(value);
+  return date ? formatLocalDateString(date) : undefined;
+}
+
+
+function tradeDetails(
+  source: Record<string, unknown>,
+  assetType: AssetType | undefined,
+  tradeType: TradeType
+): AgentTradeDetails {
+  const rawOptionType =
+    typeof source.optionType === 'string'
+      ? source.optionType.toLowerCase()
+      : undefined;
+  const optionType: 'call' | 'put' | undefined =
+    rawOptionType === 'call' || rawOptionType === 'put'
+      ? rawOptionType
+      : undefined;
+  const strike = frontmatterNumber(source.strikePrice);
+  const expiration = expirationDay(source.expirationDate);
+  const contractSize = frontmatterNumber(source.contractSize);
+  const option =
+    assetType === 'options' &&
+    optionType !== undefined &&
+    strike !== undefined &&
+    expiration !== undefined
+      ? {
+          type: optionType,
+          strike,
+          expiration,
+          ...(contractSize === undefined ? {} : { contractSize }),
+        }
+      : undefined;
+  const exchange = normalizedString(
+    assetType === 'crypto'
+      ? source.cryptoExchange
+      : assetType === 'stock'
+        ? source.exchange
+        : undefined
+  );
+  const specs: Partial<Record<ContractSpecKey, number>> = {};
+  for (const key of (assetType && CONTRACT_SPEC_KEYS[assetType]) ?? []) {
+    const value = frontmatterNumber(source[key]);
+    if (value !== undefined) specs[key] = value;
+  }
+  const commissionType =
+    source.commissionType === 'fixed' || source.commissionType === 'percentage'
+      ? source.commissionType
+      : undefined;
+  const dividends = recordList(source.dividends).flatMap((dividend) => {
+    const time = validDate(dividend.time);
+    const amount = frontmatterNumber(dividend.amount);
+    return time && amount !== undefined && amount !== 0
+      ? [{ time, amount }]
+      : [];
+  });
+  const idealExits = recordList(source.idealExits).flatMap((exit) => {
+    const price = frontmatterNumber(exit.price);
+    if (price === undefined || price <= 0) return [];
+    const time = validDate(exit.time);
+    const size = frontmatterNumber(exit.size);
+    return [
+      {
+        price,
+        ...(time ? { time } : {}),
+        ...(size !== undefined && size > 0 ? { size } : {}),
+      },
+    ];
+  });
+  const quoteCurrency = currencyCode(source.forexQuoteCurrency);
+  const conversionBase = currencyCode(source.forexPnlConversionBaseCurrency);
+  const conversionRate = frontmatterNumber(source.forexPnlConversionRate);
+  const conversionSource = source.forexPnlConversionRateSource;
+  const conversionDate =
+    typeof source.forexPnlConversionRateDate === 'string' &&
+    /^\d{4}-\d{2}-\d{2}$/.test(source.forexPnlConversionRateDate)
+      ? source.forexPnlConversionRateDate
+      : undefined;
+  const snapshotPrice =
+    tradeType === 'regular'
+      ? frontmatterNumber(source.unrealizedPriceSnapshot)
+      : undefined;
+  const snapshotTime = validDate(source.unrealizedPriceSnapshotTime);
+  const number = (key: string): number | undefined =>
+    frontmatterNumber(source[key]);
+  const fxRate = number('fxRate');
+  const fxRateBaseCurrency = currencyCode(source.fxRateBaseCurrency);
+  return {
+    ...(option ? { option } : {}),
+    ...(exchange ? { exchange } : {}),
+    specs,
+    ...(commissionType ? { commissionType } : {}),
+    ...(assetType === 'options' && number('rebate') !== undefined
+      ? { rebate: number('rebate') }
+      : {}),
+    dividends,
+    ...(currencyCode(source.currency)
+      ? { currency: currencyCode(source.currency) }
+      : {}),
+    ...(fxRate !== undefined && fxRateBaseCurrency
+      ? { fxRate, fxRateBaseCurrency }
+      : {}),
+    ...(assetType === 'forex' &&
+    quoteCurrency &&
+    conversionBase &&
+    conversionRate !== undefined &&
+    (conversionSource === 'automatic' || conversionSource === 'manual')
+      ? {
+          forexConversion: {
+            rate: conversionRate,
+            quoteCurrency,
+            baseCurrency: conversionBase,
+            ...(conversionDate ? { date: conversionDate } : {}),
+            source: conversionSource,
+          },
+        }
+      : {}),
+    idealExits,
+    ...(number('mae') === undefined ? {} : { mae: number('mae') }),
+    ...(number('mfe') === undefined ? {} : { mfe: number('mfe') }),
+    ...(number('maePrice') === undefined
+      ? {}
+      : { maePrice: number('maePrice') }),
+    ...(number('mfePrice') === undefined
+      ? {}
+      : { mfePrice: number('mfePrice') }),
+    ...(snapshotPrice === undefined
+      ? {}
+      : {
+          unrealizedPriceSnapshot: {
+            price: snapshotPrice,
+            ...(snapshotTime ? { time: snapshotTime } : {}),
+          },
+        }),
+  };
 }
 
 
@@ -189,7 +432,11 @@ interface AgentTradeReadDependencies {
     'getOrCreateAccountId' | 'getOrCreateSetupId'
   >;
   setupService: Pick<SetupService, 'listSetupsForAgentIdentityStrict'>;
-  drcService: Pick<DRCService, 'getSessionLogTagIdsByDay'>;
+  drcService: Pick<
+    DRCService,
+    'getSessionLogTagIdsByDay' | 'getMarketBiasByDay'
+  >;
+  weeklyReviewService: Pick<WeeklyReviewService, 'getMarketBiasForWeek'>;
   customFieldsService: Pick<CustomFieldsService, 'getField' | 'getFields'>;
   getImageGalleryService: () => Pick<ImageGalleryService, 'getAllGalleryItems'>;
   readFrontmatter: (file: TFile) => Promise<Readonly<Record<string, unknown>>>;
@@ -254,6 +501,74 @@ export function isEntryTimeInRange(
   return !(to && (!record.entryTime || record.entryTime > to));
 }
 
+
+function recentPeriodRecordAccess(
+  plugin: Pick<JournalitPlugin, 'settings'>
+): RecentPeriodAccess<AgentTradeReadRecord> {
+  const exitBasis = getAnalyticsDateBasis(plugin.settings) === 'exit';
+  const timeOf = (record: AgentTradeReadRecord): Date | undefined =>
+    exitBasis
+      ? record.executionStatus === 'closed'
+        ? record.exitTime
+        : undefined
+      : record.entryTime;
+  const dayOf = (record: AgentTradeReadRecord): Date | null => {
+    
+    
+    const time =
+      record.tradeType === 'missed' && exitBasis
+        ? (record.exitTime ?? record.entryTime)
+        : timeOf(record);
+    return time ? getTradingDay(time, plugin) : null;
+  };
+  return {
+    dayOf,
+    
+    firstDayOf: (record) => {
+      if (!exitBasis) return dayOf(record);
+      let first: Date | undefined;
+      for (const exit of record.exits) {
+        if (!first || exit.time < first) first = exit.time;
+      }
+      return first ? getTradingDay(first, plugin) : dayOf(record);
+    },
+    isClosed: (record) =>
+      record.tradeType !== 'missed' &&
+      (record.executionStatus === 'closed' ||
+        record.executionStatus === 'partially_closed'),
+    timeOf: (record) => timeOf(record)?.getTime() ?? 0,
+    keyOf: (record) => record.file.path,
+  };
+}
+
+
+export function selectRecentPeriodRecords(
+  records: readonly AgentTradeReadRecord[],
+  period: RecentPeriod,
+  plugin: Pick<JournalitPlugin, 'settings'>,
+  windowIndex = 0
+): {
+  records: AgentTradeReadRecord[];
+  range: { from: Date; to: Date } | null;
+} {
+  const access = recentPeriodRecordAccess(plugin);
+  const today = getTradingDay(new Date(), plugin);
+  const window = resolveRecentPeriodWindow(records, period, access, {
+    today,
+    windowIndex,
+  });
+  if (window.empty || !window.start) return { records: [], range: null };
+  return {
+    records: records.filter((record) =>
+      isInRecentPeriodWindow(record, window, access)
+    ),
+    range: {
+      from: createDateWithoutTime(window.start, true),
+      to: createDateWithoutTime(window.end ?? today, false),
+    },
+  };
+}
+
 function validDate(value: unknown): Date | undefined {
   const date =
     value instanceof Date
@@ -299,15 +614,6 @@ function normalizedMediaSources(value: unknown): string[] {
     if (normalized) result.push(normalized);
   }
   return result;
-}
-
-function normalizeDirection(
-  source: Record<string, unknown>
-): Direction | undefined {
-  const kind = getTradeDirectionDisplayKind(source);
-  if (kind === 'long' || kind === 'call') return 'long';
-  if (kind === 'short' || kind === 'put') return 'short';
-  return undefined;
 }
 
 function normalizeDateLikeCustomFieldValue(
@@ -700,6 +1006,14 @@ function compareBySort(
         sort.direction,
         (a, b) => a - b
       );
+    
+    case 'rating':
+      return compareOptional(
+        left.rating,
+        right.rating,
+        sort.direction,
+        (a, b) => a - b
+      );
   }
 }
 
@@ -827,6 +1141,19 @@ export class AgentTradeReadService {
     };
   }
 
+  
+  private createMarketBiasResolver(): TradeMarketBiasResolver {
+    const { drcService, weeklyReviewService, plugin } = this.dependencies;
+    return createTradeMarketBiasResolver(
+      {
+        getMarketBiasByDay: () => drcService.getMarketBiasByDay(),
+        getMarketBiasForWeek: (day) =>
+          weeklyReviewService.getMarketBiasForWeek(day),
+      },
+      (entryTime) => getTradingDay(entryTime, plugin)
+    );
+  }
+
   private async projectMaterialized(
     materialized: readonly MaterializedRecord[],
     customFields: readonly CustomFieldDefinition[],
@@ -850,8 +1177,15 @@ export class AgentTradeReadService {
       signal,
       abortMode
     );
+    const resolveBias = this.createMarketBiasResolver();
     const records = materialized.map((item) =>
-      this.toRecord(item, accountIdsByName, setupIdsByKey, customFields)
+      this.toRecord(
+        item,
+        accountIdsByName,
+        setupIdsByKey,
+        customFields,
+        resolveBias
+      )
     );
     throwIfAborted(signal, abortMode);
     return records;
@@ -872,9 +1206,14 @@ export class AgentTradeReadService {
     ];
     for (const entry of sort) {
       if (
-        !['entry_time', 'exit_time', 'symbol', 'pnl', 'r_multiple'].includes(
-          entry.field
-        ) ||
+        ![
+          'entry_time',
+          'exit_time',
+          'symbol',
+          'pnl',
+          'r_multiple',
+          'rating',
+        ].includes(entry.field) ||
         (entry.direction !== 'asc' && entry.direction !== 'desc')
       ) {
         throw new AgentTradeReadError('invalid_request');
@@ -907,6 +1246,8 @@ export class AgentTradeReadService {
       (request.filters?.date?.from && !dateFrom) ||
       (request.filters?.date?.to && !dateTo) ||
       (dateFrom && dateTo && dateFrom > dateTo) ||
+      (request.filters?.date !== undefined &&
+        request.filters.recent !== undefined) ||
       (request.filters?.pnl?.min !== undefined &&
         request.filters.pnl.max !== undefined &&
         request.filters.pnl.min > request.filters.pnl.max)
@@ -978,7 +1319,8 @@ export class AgentTradeReadService {
     item: MaterializedRecord,
     accountIdsByName: ReadonlyMap<string, string>,
     setupIdsByKey: ReadonlyMap<string, string>,
-    fields: readonly CustomFieldDefinition[]
+    fields: readonly CustomFieldDefinition[],
+    resolveBias: TradeMarketBiasResolver
   ): AgentTradeReadRecord {
     const { source, identity } = item;
     const execution = normalizeTradeExecution(source, {
@@ -1014,7 +1356,11 @@ export class AgentTradeReadService {
       identity.tradeType === 'missed'
         ? normalizedString(source.missedReason)
         : undefined;
-    const direction = normalizeDirection(source);
+    const exitReason =
+      identity.tradeType === 'missed'
+        ? normalizedString(source.exitReason)
+        : undefined;
+    const direction = getTradeMarketSide(source) ?? undefined;
     const stopLoss = frontmatterNumber(source.stopLoss);
     
     const stopLosses = storedTargets(parseStopLossTargets(source.stopLosses));
@@ -1027,6 +1373,7 @@ export class AgentTradeReadService {
         ? source.thesis
         : undefined;
     const riskAmount = frontmatterNumber(source.riskAmount);
+    const rating = parseTradeRating(source.tradeRating);
     const record: Omit<AgentTradeReadRecord, 'file' | 'mediaPaths'> = {
       tradeId: identity.tradeId,
       tradeType: identity.tradeType,
@@ -1036,6 +1383,7 @@ export class AgentTradeReadService {
       ...(symbol ? { symbol } : {}),
       ...(isAssetType(source.assetType) ? { assetType: source.assetType } : {}),
       ...(missedReason ? { missedReason } : {}),
+      ...(exitReason ? { exitReason } : {}),
       ...(direction ? { direction } : {}),
       executionStatus: status,
       ...(outcomeValue && outcomeValue !== 'unknown'
@@ -1089,7 +1437,22 @@ export class AgentTradeReadService {
       tags: normalizedSourceArray(source.tags),
       mistakes: normalizedSourceArray(source.mistake),
       reviewed: source.reviewed === true,
+      ...(rating === undefined ? {} : { rating }),
+      marketBias: execution.firstEntryTime
+        ? resolveBias({
+            instrument: source.instrument,
+            direction: source.direction,
+            assetType: source.assetType,
+            optionType: source.optionType,
+            entryTime: execution.firstEntryTime,
+          })
+        : NO_TRADE_MARKET_BIAS,
       customFields: customFieldSource(source, fields),
+      details: tradeDetails(
+        source,
+        isAssetType(source.assetType) ? source.assetType : undefined,
+        identity.tradeType
+      ),
     };
     return defineInternalProperties(
       record,
@@ -1136,7 +1499,7 @@ export class AgentTradeReadService {
         .filter(Boolean)
     );
 
-    return records.filter((record) => {
+    const matched = records.filter((record) => {
       throwIfAborted(signal, 'fixed');
       if (!isEntryTimeInRange(record, from, to)) return false;
       if (
@@ -1205,6 +1568,17 @@ export class AgentTradeReadService {
         )
       )
         return false;
+      
+      if (
+        filters.ratings?.length &&
+        !filters.ratings.includes(getRatingFilterValue(record.rating))
+      )
+        return false;
+      if (
+        filters.market_bias?.length &&
+        !filters.market_bias.includes(record.marketBias.alignment)
+      )
+        return false;
       if (tagsByDay && sessionTags.size > 0) {
         if (!record.entryTime) return false;
         const dayTags = tagsByDay.get(
@@ -1230,6 +1604,13 @@ export class AgentTradeReadService {
         matchesCustomClause(record, field, clause)
       );
     });
+    if (!filters.recent) return matched;
+    
+    return selectRecentPeriodRecords(
+      matched,
+      filters.recent,
+      this.dependencies.plugin
+    ).records;
   }
 
   private sortRecords(

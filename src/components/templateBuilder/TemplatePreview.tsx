@@ -9,6 +9,7 @@ import {
 } from '../../types/reviewV2';
 import { previewDataBundle } from '../../data/mockTemplateData';
 import JournalitPlugin from '../../main';
+import { resolveKeyLevelsGroups } from '../../services/reviews/keyLevelGroups';
 import { t } from '../../lang/helpers';
 import { Tooltip } from '../shared/Tooltip';
 import {
@@ -29,6 +30,10 @@ import { AccountBreakdownWidget } from '../reviewV2/widgets/AccountBreakdownWidg
 import { TradeTableWidget } from '../reviewV2/widgets/TradeTableWidget';
 import { PnLChartWidget } from '../reviewV2/widgets/PnLChartWidget';
 import { DrawdownChartWidget } from '../reviewV2/widgets/DrawdownChartWidget';
+import {
+  RollingBiasWinRateWidget,
+  toRollingBiasWidgetConfig,
+} from '../reviewV2/widgets/RollingBiasWinRateWidget';
 import { SetupPerformanceWidget } from '../reviewV2/widgets/SetupPerformanceWidget';
 import { TagPerformanceWidget } from '../reviewV2/widgets/TagPerformanceWidget';
 import { BestWorstTradesWidget } from '../reviewV2/widgets/BestWorstTradesWidget';
@@ -51,6 +56,14 @@ import { MentalGameWidget } from '../reviewV2/widgets/MentalGameWidget';
 import { DemonTrackerWidget } from '../reviewV2/widgets/DemonTrackerWidget';
 import { KeyLevelsWidget } from '../reviewV2/widgets/KeyLevelsWidget';
 import { KeyEventsWidget } from '../reviewV2/widgets/KeyEventsWidget';
+import { MarketBiasWidget } from '../reviewV2/widgets/MarketBiasWidget';
+import {
+  resolveMarketBiasRows,
+  toMarketBiasWidgetConfig,
+  type MarketBiasDirection,
+  type MarketBiasEntry,
+  type MarketBiasWidgetConfig,
+} from '../../services/reviews/marketBias';
 import { MissedTradesWidget } from '../reviewV2/widgets/MissedTradesWidget';
 import { BacktestTradesWidget } from '../reviewV2/widgets/BacktestTradesWidget';
 import { SessionMistakesWidget } from '../reviewV2/widgets/SessionMistakesWidget';
@@ -104,6 +117,22 @@ type DemonTrackerPreviewNoteType =
   | 'monthly-review'
   | 'quarterly-review'
   | 'yearly-review';
+
+
+const MARKET_BIAS_PREVIEW_ORDER: readonly MarketBiasDirection[] = [
+  'long',
+  'short',
+  'neutral',
+];
+
+const getMarketBiasPreviewEntries = (
+  config: MarketBiasWidgetConfig
+): MarketBiasEntry[] =>
+  resolveMarketBiasRows(config).flatMap((ticker, index) => {
+    const bias = MARKET_BIAS_PREVIEW_ORDER[index];
+    if (bias === undefined) return [];
+    return [ticker === undefined ? { bias } : { ticker, bias }];
+  });
 
 const getDemonTrackerPreviewNoteType = (
   templateType: ReviewTemplateType
@@ -372,6 +401,15 @@ function getWidgetPreviewContent({
         <DrawdownChartWidget
           {...commonProps}
           config={widget.config}
+          previewData={{ trades }}
+        />
+      );
+
+    case 'rolling-bias-win-rate':
+      return (
+        <RollingBiasWinRateWidget
+          {...commonProps}
+          config={toRollingBiasWidgetConfig(widget.config)}
           previewData={{ trades }}
         />
       );
@@ -765,7 +803,7 @@ function getWidgetPreviewContent({
         <div className="journalit-widget journalit-key-levels">
           <KeyLevelsWidget
             {...commonProps}
-            config={widget.config}
+            groups={resolveKeyLevelsGroups(widget.config)}
             previewData={{ keyLevels }}
           />
         </div>
@@ -808,6 +846,20 @@ function getWidgetPreviewContent({
           />
         </div>
       );
+
+    case 'market-bias': {
+      const marketBiasConfig = toMarketBiasWidgetConfig(widget.config);
+      return (
+        <div className="journalit-widget journalit-market-bias">
+          <MarketBiasWidget
+            {...commonProps}
+            config={marketBiasConfig}
+            previewPeriod={templateType === 'weekly' ? 'week' : 'day'}
+            previewEntries={getMarketBiasPreviewEntries(marketBiasConfig)}
+          />
+        </div>
+      );
+    }
 
     case 'game-performance':
       return (

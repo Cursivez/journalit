@@ -59,7 +59,6 @@ import {
   TRADE_LOG_MULTI_SELECT_BUTTON_TARGET_ID,
   TRADE_LOG_VIEW_SELECTOR_TARGET_ID,
 } from '../../guides/tradeLogGuideIds';
-import { ToolbarButton } from '../shared/ToolbarButton';
 import { DropdownMenu, type DropdownMenuOption } from '../shared/DropdownMenu';
 import { areSessionLogTagsActive } from './tradeLogStateUtils';
 import { useFilterMenuWhatsNewTour } from '../../guides/useFilterMenuWhatsNewTour';
@@ -184,50 +183,35 @@ const ImageGalleryHeaderControls: React.FC<{
       />
     </div>
 
-    <div
-      className="journalit-image-gallery-view-toggle"
-      aria-label={t('imageGallery.view-mode-aria')}
-      ref={groupingTargetRef}
-      role="group"
-    >
-      {(['grouped', 'individual'] satisfies ImageGalleryViewMode[]).map(
-        (viewMode) => (
-          <button
-            aria-pressed={controls.viewMode === viewMode}
-            className={
-              controls.viewMode === viewMode
-                ? 'journalit-image-gallery-view-toggle__button journalit-image-gallery-view-toggle__button--active'
-                : 'journalit-image-gallery-view-toggle__button'
-            }
-            key={viewMode}
-            onClick={() => onChange({ viewMode })}
-            type="button"
-          >
-            {viewMode === 'grouped'
-              ? t('imageGallery.view-mode.grouped')
-              : t('imageGallery.view-mode.individual')}
-          </button>
-        )
-      )}
+    <div className="trade-log-image-gallery-group" ref={groupingTargetRef}>
+      <SegmentedControl<ImageGalleryViewMode>
+        ariaLabel={t('imageGallery.view-mode-aria')}
+        options={[
+          { value: 'grouped', label: t('imageGallery.view-mode.grouped') },
+          {
+            value: 'individual',
+            label: t('imageGallery.view-mode.individual'),
+          },
+        ]}
+        size="small"
+        value={controls.viewMode}
+        onChange={(viewMode) => onChange({ viewMode })}
+      />
     </div>
 
-    <div
-      className="journalit-image-gallery-size-toggle"
-      aria-label={t('imageGallery.size-aria')}
-      ref={sizeTargetRef}
-    >
-      {IMAGE_GALLERY_SIZES.map((size) => (
-        <ToolbarButton
-          active={controls.size === size}
-          aria-label={getImageGallerySizeLabel(size)}
-          key={size}
-          onClick={() => onChange({ size })}
-          type="button"
-          variant="icon"
-        >
-          <ImageGallerySizeIcon size={size} />
-        </ToolbarButton>
-      ))}
+    <div className="trade-log-image-gallery-group" ref={sizeTargetRef}>
+      <SegmentedControl
+        ariaLabel={t('imageGallery.size-aria')}
+        options={IMAGE_GALLERY_SIZES.map((size) => ({
+          value: size,
+          label: getImageGallerySizeLabel(size),
+          icon: <ImageGallerySizeIcon size={size} />,
+          iconOnly: true,
+        }))}
+        size="small"
+        value={controls.size}
+        onChange={(size) => onChange({ size })}
+      />
     </div>
 
     {filterButton}
@@ -568,11 +552,12 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
           </div>
 
           <DateRangeFilter
+            shareRow
             dateRange={filters.dateRange}
-            onChange={(newRange) =>
-              onFilterChange({
-                dateRange: newRange,
-              })
+            datePreset={filters.datePreset}
+            recentPeriod={filters.recentPeriod}
+            onChange={({ dateRange, datePreset, recentPeriod }) =>
+              onFilterChange({ dateRange, datePreset, recentPeriod })
             }
           />
 
@@ -582,7 +567,7 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
               onChange={onImageGalleryControlsChange}
               filterButton={
                 <div
-                  className="trade-log-image-gallery-filter-action"
+                  className="trade-log-image-gallery-filter-action journalit-icon-strip"
                   ref={registerFilterButtonTarget}
                 >
                   {filterMenuButton}
@@ -595,8 +580,9 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
             />
           ) : null}
 
-          <div className="trade-log-filter-actions">
-            {mode === 'trades' ? (
+          
+          {mode === 'trades' ? (
+            <div className="trade-log-filter-actions">
               <div
                 className="trade-log-view-selector"
                 ref={registerViewSelectorTarget}
@@ -612,47 +598,45 @@ export const TradeLogHeader = memo<TradeLogHeaderProps>(
                   }}
                 />
               </div>
-            ) : null}
-            {mode !== 'imageGallery' ? (
-              <div ref={registerFilterButtonTarget}>{filterMenuButton}</div>
-            ) : null}
-            {mode === 'trades' && filters.viewLevel === 'trades' && (
-              <div
-                className="journalit-filter-button-container"
-                ref={registerMultiSelectButtonTarget}
-              >
-                <button
-                  className={`journalit-filter-button clickable-icon trade-log-image-gallery-filter-button ${isMultiSelectMode ? 'active' : ''}`}
-                  onClick={() => {
-                    onToggleMultiSelectMode?.();
-                  }}
-                  aria-label={
-                    isMultiSelectMode
-                      ? t('tradelog.batch.disable-multi-select')
-                      : t('tradelog.batch.enable-multi-select')
-                  }
-                >
-                  {isMultiSelectMode ? (
-                    <SquareCheckBig size={16} />
-                  ) : (
-                    <Square size={16} />
-                  )}
-                </button>
+              <div className="journalit-icon-strip">
+                <div ref={registerFilterButtonTarget}>{filterMenuButton}</div>
+                {filters.viewLevel === 'trades' && (
+                  <div
+                    className="journalit-filter-button-container"
+                    ref={registerMultiSelectButtonTarget}
+                  >
+                    <button
+                      className={`journalit-filter-button clickable-icon trade-log-image-gallery-filter-button ${isMultiSelectMode ? 'active' : ''}`}
+                      onClick={() => {
+                        onToggleMultiSelectMode?.();
+                      }}
+                      aria-label={
+                        isMultiSelectMode
+                          ? t('tradelog.batch.disable-multi-select')
+                          : t('tradelog.batch.enable-multi-select')
+                      }
+                    >
+                      {isMultiSelectMode ? (
+                        <SquareCheckBig size={16} />
+                      ) : (
+                        <Square size={16} />
+                      )}
+                    </button>
+                  </div>
+                )}
+                <div className="journalit-filter-button-container">
+                  <button
+                    ref={registerColumnSettingsTarget}
+                    className="journalit-filter-button clickable-icon trade-log-image-gallery-filter-button"
+                    onClick={handleOpenSettingsModal}
+                    aria-label={t('tradelog.batch.column-settings')}
+                  >
+                    <SlidersHorizontal size={16} />
+                  </button>
+                </div>
               </div>
-            )}
-            {mode === 'trades' ? (
-              <div className="journalit-filter-button-container">
-                <button
-                  ref={registerColumnSettingsTarget}
-                  className="journalit-filter-button clickable-icon trade-log-image-gallery-filter-button"
-                  onClick={handleOpenSettingsModal}
-                  aria-label={t('tradelog.batch.column-settings')}
-                >
-                  <SlidersHorizontal size={16} />
-                </button>
-              </div>
-            ) : null}
-          </div>
+            </div>
+          ) : null}
         </div>
       </div>
     );

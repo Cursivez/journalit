@@ -15,8 +15,10 @@ import {
   decodeTradeProjectionMappingResponse,
   decodeTradeProjectionAccountRemapResponse,
   decodeTradeProjectionResponse,
+  decodeTradeVerificationResponse,
 } from './BackendTradeProjectionResponseDecoders';
 import type {
+  TradeVerificationRecord,
   BrokerClientOperationContext,
   TradeProjectionAckRequest,
   TradeProjectionAccountInventoryResponse,
@@ -283,6 +285,35 @@ export class TradeProjectionClient {
         }
       );
     }
+  }
+
+  
+  async getTradeVerification(
+    tradeId: string
+  ): Promise<TradeVerificationRecord> {
+    const { response, requestAuthToken } = await requestTradeSyncWithAuthRetry(
+      (authToken) => ({
+        url: ApiClient.buildUrl(
+          `/api/v1/trade-projections/${encodeURIComponent(tradeId)}/verification`
+        ),
+        method: 'GET',
+        headers: authHeaders(authToken),
+        throw: false,
+      })
+    );
+    if (response.status < 200 || response.status >= 300) {
+      handleTradeSyncHttpError(
+        response.status,
+        requestAuthToken,
+        'Trade verification',
+        false
+      );
+      throw new ApiError(
+        `Trade verification unavailable (${response.status})`,
+        response.status
+      );
+    }
+    return decodeTradeVerificationResponse(response.json, tradeId);
   }
 
   async getRestorableProjections(

@@ -28,8 +28,6 @@ export interface ProjectedPropChallengeRules {
   drawdown?: {
     mode: PropChallengeDrawdownMode;
     amount: number;
-    
-    lockAtBalance?: number;
   };
   
   profitTargetValue?: number;
@@ -60,7 +58,6 @@ export function projectCurrentPropChallengeRules(
       ? {
           mode: drawdownRule.mode,
           amount: drawdownRule.amount,
-          lockAtBalance: drawdownRule.lockAtBalance,
         }
       : undefined;
 

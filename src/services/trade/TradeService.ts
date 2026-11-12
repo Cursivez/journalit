@@ -11,6 +11,7 @@ import { KNOWN_TRADE_FRONTMATTER_KEYS } from './core/TradeFrontmatterKeys';
 import {
   applySubmittedTradeRating,
   parseTradeRating,
+  type TradeRating,
 } from '../../utils/tradeRating';
 import {
   readTradeSelectionEntry,
@@ -159,6 +160,7 @@ import {
   type CanonicalProjectionClearField,
 } from './core/CanonicalProjectionFields';
 import {
+  applyClearedTradeFields,
   backfillCanonicalExecutionFrontmatter,
   buildTradeFrontmatter,
   CANONICAL_EXECUTION_MIGRATION_VERSION,
@@ -954,6 +956,10 @@ export interface TradeJournalEntryEdit {
   thesis?: string;
   reviewed?: { reviewed: boolean; reviewedAt: string };
   
+  tradeRating?: TradeRating | null;
+  
+  images?: { add?: string[]; remove?: string[] };
+  
   notes?: string;
   
   appendNotes?: boolean;
@@ -1117,6 +1123,8 @@ export interface TradeData {
   canonicalProjectionSchemaVersion?: number;
   
   canonicalProjectionClearFields?: CanonicalProjectionClearField[];
+  
+  clearUnsetFields?: readonly string[];
 
   
   
@@ -1460,18 +1468,25 @@ export class TradeService extends CustomDataService {
         return next;
       });
     }
-    const { thesis, reviewed } = edit;
-    if (thesis === undefined && reviewed === undefined) return;
+    const { thesis, reviewed, tradeRating, images } = edit;
+    const patchesJournal =
+      thesis !== undefined || tradeRating !== undefined || images !== undefined;
+    if (!patchesJournal && reviewed === undefined) return;
     const fieldsService = plugin.serviceManager.getCustomFieldsService();
     let journalFields: TradeJournalCommit = { customFields: [] };
     const commit = this.commitTradeJournalWrite(
       plugin,
       filePath,
       (frontmatter) => {
-        if (thesis !== undefined) {
+        if (patchesJournal) {
           journalFields = applyTradeJournalPatch(
             frontmatter,
-            { thesis },
+            {
+              ...(thesis === undefined ? {} : { thesis }),
+              ...(tradeRating === undefined ? {} : { tradeRating }),
+              ...(images?.add ? { addImages: images.add } : {}),
+              ...(images?.remove ? { removeImages: images.remove } : {}),
+            },
             fieldsService.getFields(),
             (id) => fieldsService.getFieldOptions(id)
           );
@@ -1497,7 +1512,7 @@ export class TradeService extends CustomDataService {
     if (!written) return;
     const reviewedAt =
       reviewed?.reviewed === true ? reviewed.reviewedAt : undefined;
-    if (thesis !== undefined) {
+    if (patchesJournal) {
       eventBus.publish('trade:changed', {
         action: 'updated',
         filePaths: [filePath],
@@ -2051,6 +2066,9 @@ export class TradeService extends CustomDataService {
               existingFrontmatter.lotSize !== normalizedForComparison.lotSize ||
               existingFrontmatter.pipValue !==
                 normalizedForComparison.pipValue ||
+              existingFrontmatter.pipSize !== normalizedForComparison.pipSize ||
+              existingFrontmatter.assetType !==
+                normalizedForComparison.assetType ||
               existingFrontmatter.forexPnlConversionRate !==
                 normalizedForComparison.forexPnlConversionRate ||
               existingFrontmatter.leverageRatio !==
@@ -2257,6 +2275,7 @@ export class TradeService extends CustomDataService {
         frontmatterData.isBacktestTrade = undefined;
       }
       frontmatterData.missedReason = undefined;
+      frontmatterData.exitReason = undefined;
 
       if (
         Object.prototype.hasOwnProperty.call(data, 'mtComment') &&
@@ -2405,6 +2424,8 @@ export class TradeService extends CustomDataService {
         }
       }
       delete data.canonicalProjectionClearFields;
+      applyClearedTradeFields(frontmatterData, data);
+      delete data.clearUnsetFields;
 
       
       
@@ -5432,6 +5453,10 @@ export class TradeService extends CustomDataService {
         missedReason:
           typeof frontmatter.missedReason === 'string'
             ? frontmatter.missedReason
+            : undefined,
+        exitReason:
+          typeof frontmatter.exitReason === 'string'
+            ? frontmatter.exitReason
             : undefined,
         backendTradeId: this.parseFiniteNumber(frontmatter.backendTradeId),
         tradeImportId:

@@ -19,6 +19,7 @@ import { t } from '../../../lang/helpers';
 import { SupportErrorDetails } from '../../../utils/supportReport';
 import { BackendSecretStorage } from '../../../services/backend/BackendSecretStorage';
 import { writeClipboardText } from '../../../utils/clipboard';
+import { Button } from '../../../components/ui/Button';
 
 interface FTPCredentialsSectionProps {
   userId: string;
@@ -434,15 +435,17 @@ export const FTPCredentialsSection: React.FC<FTPCredentialsSectionProps> = (
           </div>
 
           <div className="ftp-reset-password">
-            <button
-              className="mod-cta ftp-reset-password-button"
+            <Button
+              variant="secondary"
+              size="small"
+              className="ftp-reset-password-button"
               onClick={() => void handleResetPassword()}
               disabled={isResettingPassword}
             >
               {isResettingPassword
                 ? t('settings.ftp.button.resetting')
                 : t('settings.ftp.button.reset')}
-            </button>
+            </Button>
             <div className="ftp-reset-hint">{t('settings.ftp.reset-hint')}</div>
           </div>
 

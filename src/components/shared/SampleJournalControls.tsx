@@ -3,6 +3,7 @@ import { usePlugin } from '../../hooks/usePlugin';
 import { t } from '../../lang/helpers';
 import type { DemoSessionSnapshot } from '../../demo/DemoSessionService';
 import { FlaskConical } from './icons/ObsidianIcon';
+import { Button } from '../ui/Button';
 
 const INACTIVE_SNAPSHOT: DemoSessionSnapshot = {
   active: false,
@@ -28,14 +29,15 @@ export const SampleJournalEntryButton: React.FC = () => {
   }
 
   return (
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      size="small"
       className="journalit-empty-state-secondary-action-button"
       onClick={() => void session.startOrOpen()}
       disabled={snapshot.busy}
     >
       <FlaskConical size={16} className="journalit-empty-state-action-icon" />
       {t('sample.action.try')}
-    </button>
+    </Button>
   );
 };

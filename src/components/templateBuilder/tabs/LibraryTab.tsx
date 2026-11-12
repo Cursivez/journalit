@@ -20,6 +20,8 @@ import { eventBus } from '../../../services/events/EventBus';
 import { createReloadReviewTemplatesHandler } from '../reviewTemplateEventUtils';
 import { t } from '../../../lang/helpers';
 import { writeClipboardText } from '../../../utils/clipboard';
+import { DropdownSelect } from '../../shared/DropdownSelect';
+import { Button } from '../../ui/Button';
 export const LIBRARY_TAB_STYLES = `
 		.library-tab {
 			max-width: 800px;
@@ -512,7 +514,9 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
         </div>
 
         <div className="template-actions">
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="template-action-button template-action-button--secondary"
             onClick={() => void handleValidate()}
             disabled={!importCode.trim()}
@@ -520,15 +524,17 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
             {importStatus === 'validating'
               ? t('library.button.validating')
               : t('library.button.validate')}
-          </button>
+          </Button>
 
-          <button
+          <Button
+            variant="primary"
+            size="small"
             className="template-action-button template-action-button--primary"
             onClick={() => void handleImport()}
             disabled={importStatus !== 'valid'}
           >
             {t('library.button.import')}
-          </button>
+          </Button>
         </div>
 
         
@@ -581,32 +587,36 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
               >
                 {t('library.label.select-template')}
               </label>
-              <select
+              <DropdownSelect
                 id="journalit-librarytab-571"
-                className="template-form-input"
+                ariaLabel={t('library.label.select-template')}
+                width="content"
+                className="template-library-layout-select"
                 value={selectedTemplateId || ''}
-                onChange={(e) => {
-                  setSelectedTemplateId(e.target.value || null);
+                options={[
+                  { value: '', label: t('library.option.select-template') },
+                  ...allTemplates.map((t) => ({
+                    value: t.id,
+                    label: `${t.name} (${getTranslatedType(t.type)})`,
+                  })),
+                ]}
+                onChange={(nextValue) => {
+                  setSelectedTemplateId(nextValue || null);
                   setExportedCode(null);
                 }}
-              >
-                <option value="">{t('library.option.select-template')}</option>
-                {allTemplates.map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name} ({getTranslatedType(t.type)})
-                  </option>
-                ))}
-              </select>
+              />
             </div>
 
             <div className="template-actions">
-              <button
+              <Button
+                variant="primary"
+                size="small"
                 className="template-action-button template-action-button--primary"
                 onClick={() => void handleExport()}
                 disabled={!selectedTemplateId}
               >
                 {t('library.button.generate-code')}
-              </button>
+              </Button>
             </div>
           </>
         )}
@@ -632,12 +642,14 @@ export const LibraryTab: React.FC<LibraryTabProps> = ({
             </div>
 
             <div className="template-actions">
-              <button
+              <Button
+                variant="secondary"
+                size="small"
                 className="template-action-button template-action-button--secondary template-action-btn"
                 onClick={() => void handleCopyToClipboard()}
               >
                 {t('library.button.copy-code')}
-              </button>
+              </Button>
             </div>
           </div>
         )}

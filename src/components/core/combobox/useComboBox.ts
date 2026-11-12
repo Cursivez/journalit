@@ -31,6 +31,13 @@ interface ComboBoxBaseProps {
   required?: boolean;
   disabled?: boolean;
   portalDropdown?: boolean;
+  
+  favorites?: {
+    values: readonly string[];
+    onToggle: (value: string) => void;
+    setLabel: string;
+    removeLabel: string;
+  };
 }
 
 export type ComboBoxProps = ComboBoxBaseProps &
@@ -78,6 +85,7 @@ export function useComboBox(props: ComboBoxProps) {
     allowCreate = false,
     disabled = false,
     portalDropdown = true,
+    favorites,
   } = props;
   const id = useId();
   const inputId = `combobox-${id}`;
@@ -213,6 +221,14 @@ export function useComboBox(props: ComboBoxProps) {
       return;
     }
     if (event.ctrlKey || event.metaKey || event.shiftKey) return;
+    if (favorites && isOpen && event.altKey && event.key === 'Enter') {
+      
+      event.preventDefault();
+      event.stopPropagation();
+      const item = items[activeIndex];
+      if (item?.kind === 'option') favorites.onToggle(item.value);
+      return;
+    }
     if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
       event.preventDefault();
       if (event.altKey) {
@@ -275,6 +291,8 @@ export function useComboBox(props: ComboBoxProps) {
     select,
     remove,
     onKeyDown,
+    
+    keyShortcuts: favorites ? 'Alt+Enter' : undefined,
     changeQuery,
     clear,
     toggleList,

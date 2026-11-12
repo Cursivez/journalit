@@ -55,20 +55,6 @@ export const SETUPS_VIEW_STYLES = `
   display: inline-flex;
 }
 
-.journalit-setups-filter-button-container .journalit-setups-filter-button {
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border-color: var(--background-modifier-border);
-  color: var(--text-muted);
-}
-
-.journalit-setups-filter-button-container .journalit-setups-filter-button:hover,
-.journalit-setups-filter-button-container .journalit-setups-filter-button:focus-visible {
-  border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
-  color: var(--text-normal);
-}
-
 
 .journalit-setups-view__tabs {
   display: flex;
@@ -84,27 +70,16 @@ export const SETUPS_VIEW_STYLES = `
   justify-content: center;
   width: 32px;
   height: 32px;
-  padding: 0;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: var(--radius-s, 6px);
-  background: transparent;
   color: var(--text-muted);
   cursor: pointer;
   line-height: 1;
   opacity: 0.75;
-  transition:
-    opacity 0.16s ease,
-    color 0.16s ease,
-    border-color 0.16s ease,
-    background-color 0.16s ease;
 }
 
 .journalit-setups-icon-button:hover:not(:disabled),
 .journalit-setups-icon-button:focus-visible:not(:disabled) {
   opacity: 1;
   color: var(--text-normal);
-  background: var(--background-modifier-hover);
-  border-color: var(--background-modifier-border-hover, var(--background-modifier-border));
 }
 
 .journalit-setups-icon-button:disabled {
@@ -117,24 +92,25 @@ export const SETUPS_VIEW_STYLES = `
   align-items: center;
   justify-content: center;
   gap: 6px;
-  min-height: 32px;
-  padding: 0 10px;
-  border: 1px solid transparent;
-  border-radius: var(--radius-s, 6px);
-  background: var(--interactive-accent);
+  box-sizing: border-box;
+  height: var(--journalit-control-height);
+  min-height: var(--journalit-control-height);
+  padding: 0 11px;
+  border: 0;
+  border-radius: var(--journalit-control-radius);
+  background: var(--journalit-control-primary-fill);
+  box-shadow: var(--journalit-control-primary-shadow);
   color: var(--text-on-accent);
   cursor: pointer;
   font-size: var(--font-ui-small);
   font-weight: 500;
   line-height: 1;
-  transition:
-    opacity 0.16s ease,
-    background-color 0.16s ease;
 }
 
 .journalit-setups-create-button:hover:not(:disabled),
 .journalit-setups-create-button:focus-visible:not(:disabled) {
-  background: var(--interactive-accent-hover, var(--interactive-accent));
+  background: var(--journalit-control-primary-fill-hover);
+  box-shadow: var(--journalit-control-primary-shadow);
   color: var(--text-on-accent);
 }
 
@@ -143,23 +119,7 @@ export const SETUPS_VIEW_STYLES = `
   opacity: 0.72;
 }
 
-.journalit-setups-button {
-  border: 1px solid var(--background-modifier-border);
-  background: var(--interactive-normal);
-  color: var(--text-normal);
-  border-radius: 8px;
-  padding: 7px 12px;
-  font-size: var(--font-ui-small);
-  cursor: pointer;
-}
-
-.journalit-setups-button:hover:not(:disabled),
-.journalit-setups-button:focus-visible:not(:disabled) {
-  background: var(--interactive-hover);
-}
-
 .journalit-setups-button:disabled {
-  cursor: not-allowed;
   opacity: 0.55;
 }
 
@@ -224,16 +184,6 @@ export const SETUPS_VIEW_STYLES = `
   margin-top: 16px;
 }
 
-.journalit-setups-button--primary {
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
-  border-color: var(--interactive-accent);
-}
-
-.journalit-setups-button--ghost {
-  background: transparent;
-}
-
 
 .journalit-create-setup-modal .create-setup-modal-container {
   max-width: 600px;
@@ -275,43 +225,48 @@ export const SETUPS_VIEW_STYLES = `
   align-items: center;
 }
 
+.journalit-create-setup-modal .create-setup-form [data-combobox-type] label,
+.journalit-create-setup-modal .create-setup-form [data-combobox-type] label > span {
+  color: var(--text-normal);
+  font-size: var(--font-ui-small);
+  font-weight: 600;
+}
+
 .journalit-create-setup-modal .create-setup-form .create-setup-name-row .setting-item-name::after {
   content: ':';
 }
 
 .journalit-create-setup-modal .create-setup-color-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: 170px minmax(0, 1fr);
   align-items: center;
-  justify-content: space-between;
-  flex-wrap: wrap;
-  gap: 16px;
+  gap: 10px;
   min-height: 36px;
-  padding: 4px 0;
+  padding: var(--journalit-space-2) 0;
 }
 
 .journalit-create-setup-modal .create-setup-color-row__info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: var(--journalit-space-1);
   min-width: 0;
-  flex: 1 1 220px;
 }
 
 .journalit-create-setup-modal .create-setup-color-row__label {
   color: var(--text-normal);
-  font-size: 13px;
-  font-weight: 600;
+  font-size: var(--journalit-font-size-label);
+  font-weight: var(--journalit-font-weight-semibold);
   line-height: 1.2;
 }
 
 .journalit-create-setup-modal .create-setup-color-row__description {
   color: var(--text-muted);
-  font-size: 11px;
+  font-size: var(--journalit-font-size-caption);
   line-height: 1.2;
 }
 
 .journalit-create-setup-modal .create-setup-color-row .journalit-label-color-picker {
-  flex: 0 0 auto;
+  justify-self: start;
 }
 
 .journalit-create-setup-tags-field {
@@ -531,23 +486,6 @@ export const SETUPS_VIEW_STYLES = `
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-height: 30px;
-  padding: 5px 10px;
-  border: 1px solid var(--background-modifier-border);
-  border-radius: 4px;
-  background: var(--background-primary);
-  color: var(--text-normal);
-  cursor: pointer;
-  font-size: var(--font-ui-small);
-  font-weight: 500;
-  line-height: 1;
-  transition: all 0.15s ease;
-}
-
-.journalit-setup-secondary-action-button:hover:not(:disabled),
-.journalit-setup-secondary-action-button:focus-visible:not(:disabled) {
-  background: var(--background-modifier-hover);
-  border-color: var(--interactive-accent);
 }
 
 .journalit-create-setup-modal .create-setup-note-picker {
@@ -596,10 +534,10 @@ export const SETUPS_VIEW_STYLES = `
 
 .journalit-setups-performance-widget__header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 14px 16px 8px;
+  padding: 10px 16px;
   border-bottom: 1px solid var(--background-modifier-border);
 }
 
@@ -622,25 +560,75 @@ export const SETUPS_VIEW_STYLES = `
   overflow: visible;
 }
 
-button.journalit-toolbar-button.journalit-setups-performance-widget__metric-trigger {
-  min-width: 132px;
-  height: 30px;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 0 10px 0 12px;
-  background: color-mix(in srgb, var(--background-primary) 72%, transparent);
-  border: 1px solid color-mix(in srgb, var(--background-modifier-border) 72%, transparent);
-  border-radius: 6px;
-  box-shadow: none;
-  color: var(--text-normal);
-  font-weight: 500;
+.journalit-setups-performance-widget__outcome-control {
+  flex: 0 0 auto;
+  align-self: center;
 }
 
-button.journalit-toolbar-button.journalit-setups-performance-widget__metric-trigger:hover:not(:disabled),
-button.journalit-toolbar-button.journalit-setups-performance-widget__metric-trigger:focus-visible:not(:disabled) {
-  background: color-mix(in srgb, var(--background-primary) 82%, var(--background-modifier-hover));
-  border-color: var(--background-modifier-border-hover);
-  color: var(--text-normal);
+.journalit-setups-times-seen-legend {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+
+.journalit-setups-times-seen-legend .journalit-chart-widget__legend-item {
+  align-items: baseline;
+  color: var(--text-muted);
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+.journalit-setups-times-seen-legend__swatch {
+  flex: 0 0 auto;
+  width: 1cap;
+  height: 1cap;
+  
+  border-radius: 25%;
+}
+
+@supports not (height: 1cap) {
+  .journalit-setups-times-seen-legend__swatch {
+    width: 9px;
+    height: 9px;
+  }
+}
+
+.journalit-setups-times-seen-legend__swatch--taken {
+  background: var(--chart-neutral, var(--text-muted));
+}
+
+.journalit-setups-times-seen-legend__swatch--missed {
+  background: color-mix(in srgb, var(--interactive-accent) 55%, transparent);
+}
+
+
+@container (max-width: 720px) {
+  .journalit-setups-performance-widget__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .journalit-setups-performance-widget .journalit-chart-widget__selector {
+    flex-wrap: wrap;
+  }
+}
+
+
+@container (max-width: 560px) {
+  .journalit-setups-performance-widget .journalit-setups-performance-summary {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}
+
+button.journalit-toolbar-button.journalit-setups-performance-widget__metric-trigger {
+  min-width: 132px;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 0 10px;
+  font-weight: 500;
 }
 
 .journalit-setups-performance-widget__metric-dropdown {
@@ -715,20 +703,6 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 
 .journalit-setups-performance-widget__setup-actions button {
   flex: 1 1 0;
-  min-height: 24px;
-  border: 1px solid var(--background-modifier-border) !important;
-  border-radius: 4px !important;
-  background: transparent !important;
-  color: var(--text-muted) !important;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 500;
-}
-
-.journalit-setups-performance-widget__setup-actions button:hover,
-.journalit-setups-performance-widget__setup-actions button:focus-visible {
-  background: var(--background-modifier-hover) !important;
-  color: var(--text-normal) !important;
 }
 
 .journalit-setups-performance-widget__setup-list {
@@ -1460,20 +1434,28 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   font-size: var(--font-ui-small);
 }
 
+
 .journalit-setups-performance-summary {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
-  gap: 6px 10px;
+  gap: 6px 20px;
   margin-top: 6px;
+  overflow: hidden;
   color: var(--text-muted);
   font-size: var(--font-ui-small);
   line-height: 1.35;
 }
 
-.journalit-setups-performance-summary > span:not(:last-child)::after {
+.journalit-setups-performance-summary > span {
+  position: relative;
+}
+
+.journalit-setups-performance-summary > span + span::before {
   content: '·';
-  margin-left: 10px;
+  position: absolute;
+  left: -10px;
+  transform: translateX(-50%);
   color: var(--text-faint);
 }
 
@@ -1525,7 +1507,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   justify-content: center;
   width: 24px;
   height: 24px;
-  color: var(--text-accent);
+  color: var(--text-muted);
   cursor: help;
 }
 
@@ -1539,8 +1521,8 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   place-items: center;
   padding: 0 3px;
   border-radius: 999px;
-  background: var(--interactive-accent);
-  color: var(--text-on-accent);
+  background: var(--background-modifier-border);
+  color: var(--text-normal);
   font-size: 8px;
   font-weight: 700;
   line-height: 1;
@@ -1647,49 +1629,20 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 .journalit-setups-detail-action-icon {
   width: 30px;
   height: 30px;
-  border-radius: 4px;
-  border-color: color-mix(in srgb, var(--background-modifier-border) 72%, transparent);
-  background: color-mix(in srgb, var(--background-primary) 68%, transparent);
   color: var(--text-muted);
   opacity: 1;
-  box-shadow: none;
-  transition:
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    color 0.16s ease,
-    opacity 0.16s ease;
 }
 
 .journalit-setups-detail-action-icon:hover:not(:disabled),
 .journalit-setups-detail-action-icon:focus-visible:not(:disabled) {
-  border-color: var(--background-modifier-border-hover);
-  background: var(--background-modifier-hover);
   color: var(--text-normal);
 }
 
 .journalit-setups-detail-back-button {
-  appearance: none;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  min-height: 28px;
-  padding: 0 4px;
-  border: 1px solid transparent !important;
-  border-radius: 0;
-  background-color: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-  color: var(--text-muted) !important;
-  cursor: pointer;
-  font-size: var(--font-ui-smaller);
-  font-weight: 600;
-  line-height: 1;
   opacity: 0.92;
-  transition:
-    background-color 0.16s ease,
-    border-color 0.16s ease,
-    color 0.16s ease,
-    opacity 0.16s ease;
 }
 
 .journalit-setups-detail-back-button .journalit-obsidian-icon {
@@ -1699,13 +1652,8 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 
 .journalit-setups-detail-back-button:hover,
 .journalit-setups-detail-back-button:focus-visible {
-  color: var(--text-normal) !important;
-  border-color: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
   opacity: 1;
   text-decoration: none;
-  outline: none;
 }
 
 .journalit-setups-detail-header h2 {
@@ -2608,39 +2556,8 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   display: inline-flex;
   width: auto;
   flex: 0 0 auto;
-  min-height: 34px;
   align-items: center;
   gap: 8px;
-  padding: 7px 10px;
-  border-radius: 8px;
-  box-shadow: none;
-  font-size: var(--font-ui-small);
-  font-weight: 600;
-}
-
-.journalit-setups-view .journalit-setups-rules-panel__empty-actions button.journalit-setups-button--primary {
-  border: 1px solid color-mix(in srgb, var(--interactive-accent) 72%, transparent);
-  background: color-mix(in srgb, var(--interactive-accent) 72%, var(--background-secondary));
-  color: var(--text-on-accent);
-}
-
-.journalit-setups-view .journalit-setups-rules-panel__empty-actions button.journalit-setups-button--primary:hover {
-  border-color: var(--interactive-accent);
-  background: color-mix(in srgb, var(--interactive-accent) 82%, var(--background-secondary));
-  color: var(--text-on-accent);
-}
-
-.journalit-setups-view .journalit-setups-rules-panel__empty-actions button.journalit-setups-button--ghost {
-  min-height: 30px;
-  padding: 5px 0;
-  border: 0;
-  background: transparent;
-  color: var(--text-muted);
-}
-
-.journalit-setups-view .journalit-setups-rules-panel__empty-actions button.journalit-setups-button--ghost:hover {
-  background: transparent;
-  color: var(--text-normal);
 }
 
 .modal.journalit-setups-rules-modal .modal-content {
@@ -2696,11 +2613,6 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
   color: var(--text-muted);
   font-size: var(--font-ui-smaller);
   font-weight: 650;
-}
-
-.journalit-setups-rules-editor__section-header .journalit-setups-button {
-  min-height: 26px;
-  padding: 3px 8px;
 }
 
 .journalit-setups-rules-editor__group-name {
@@ -2796,8 +2708,7 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 }
 
 .journalit-setups-rules-editor-row__fields input[type='text'],
-.journalit-setups-rules-editor-row__fields textarea,
-.journalit-setups-rules-editor-row__fields select {
+.journalit-setups-rules-editor-row__fields textarea {
   box-sizing: border-box;
   width: 100%;
   max-width: 100%;
@@ -2836,6 +2747,8 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 .journalit-setups-rules-editor-row__actions .journalit-setups-icon-button {
   width: 26px;
   height: 26px;
+  min-width: 0;
+  min-height: 0;
 }
 
 .journalit-setups-rules-editor__footer {
@@ -3004,6 +2917,8 @@ button.journalit-toolbar-button.journalit-setups-performance-widget__setup-trigg
 .journalit-setups-brief__section-action {
   width: 24px;
   height: 24px;
+  min-width: 0;
+  min-height: 0;
 }
 
 .journalit-setups-brief__health-value {
@@ -3793,35 +3708,13 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 .journalit-setups-compare-header .journalit-setups-detail-back-button {
   position: relative;
   z-index: 1;
-  min-height: 28px;
-  padding-inline: 4px;
-  border-radius: 0;
 }
 
 
-.journalit-setups-view button.journalit-setups-detail-back-button {
-  border-color: transparent !important;
-  border-radius: 0;
-  padding-inline: 4px;
-  background: transparent !important;
-  background-color: transparent !important;
-  background-image: none !important;
-  box-shadow: none !important;
-}
 
 .journalit-setups-view button.journalit-setups-detail-back-button:hover,
 .journalit-setups-view button.journalit-setups-detail-back-button:focus-visible {
-  border-color: transparent !important;
-  background: transparent !important;
-  background-color: transparent !important;
-  box-shadow: none !important;
-  color: var(--text-normal) !important;
   opacity: 1;
-}
-
-.journalit-setups-view button.journalit-setups-detail-back-button:focus-visible {
-  outline: 2px solid var(--interactive-accent);
-  outline-offset: 2px;
 }
 
 .journalit-setups-compare-edge-card {
@@ -4425,6 +4318,11 @@ button.journalit-toolbar-button.journalit-setups-detail-performance__chart-mode-
 
   .journalit-create-setup-profile__grid {
     grid-template-columns: 1fr;
+  }
+
+  .journalit-create-setup-modal .create-setup-color-row {
+    grid-template-columns: 1fr;
+    gap: var(--journalit-space-2);
   }
 
   .journalit-create-setup-combobox-fields > .journalit-combobox {

@@ -297,47 +297,13 @@ export const DAY_TRADE_FIELDS_STYLES = `
   }
 
   
-  .journalit-day-trade-fields-add .journalit-dropdown-select__trigger {
-    box-shadow: none;
-    cursor: pointer;
-  }
-
-  .journalit-day-trade-fields-add .journalit-dropdown-select__chevron {
-    color: var(--text-muted);
-    transition: transform 0.15s ease;
-  }
-
-  .journalit-day-trade-fields-add .journalit-dropdown-select__chevron.is-open {
-    transform: rotate(180deg);
-  }
-
-  
   .journalit-day-trade-fields-add-wrapper {
     display: inline-flex;
     margin-left: auto;
   }
 
-  .journalit-day-trade-fields-card .journalit-day-trade-fields-add .journalit-dropdown-select__trigger,
-  .journalit-day-trade-fields-edit-button {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.35rem;
-    height: auto;
-    min-height: 1.75rem;
-    padding: 0.25rem 0.6rem;
-    font-size: var(--font-ui-small);
-  }
-
   .journalit-day-trade-fields-edit-button {
     margin-left: auto;
-  }
-
-  
-  .journalit-day-trade-fields-card .journalit-day-trade-fields-editor-control .journalit-dropdown-select__trigger {
-    min-height: 2.25rem;
-    padding: 0.35rem 0.6rem;
-    background: var(--background-secondary);
-    border-radius: var(--radius-s);
   }
 
   

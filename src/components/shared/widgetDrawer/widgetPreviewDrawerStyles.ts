@@ -96,28 +96,32 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
     color: var(--text-normal);
   }
 
+  
   .journalit-wpd-search {
     display: flex;
     align-items: center;
     gap: 8px;
+    box-sizing: border-box;
+    height: var(--journalit-control-height);
     margin: 0 20px 8px;
-    padding: 0 10px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: var(--radius-m);
-    background-color: var(--background-secondary);
+    padding: 0 8px;
+    border: 0;
+    border-radius: var(--journalit-control-radius);
+    outline: 1px solid transparent;
+    outline-offset: -1px;
+    background-color: var(--journalit-control-field-fill);
+    box-shadow: var(--journalit-control-field-ring);
     color: var(--text-faint);
     cursor: text;
-    transition: background-color 120ms ease;
   }
 
-  
-  .journalit-wpd-search:hover,
-  .journalit-wpd-search:focus-within {
-    background-color: var(--background-modifier-form-field);
+  .journalit-wpd-search:hover {
+    background-color: var(--journalit-control-field-fill-hover);
   }
 
   .journalit-wpd-search:focus-within {
-    border-color: var(--interactive-accent);
+    outline-color: var(--journalit-control-focus);
+    box-shadow: none;
   }
 
   
@@ -127,9 +131,10 @@ export const WIDGET_PREVIEW_DRAWER_STYLES = `
   .journalit-widget-drawer .journalit-wpd-search .journalit-wpd-search-input:active {
     flex: 1;
     min-width: 0;
-    height: 34px;
+    height: 100%;
     padding: 0;
     border: none;
+    outline: none;
     background-color: transparent;
     box-shadow: none;
     font-size: var(--font-ui-small);

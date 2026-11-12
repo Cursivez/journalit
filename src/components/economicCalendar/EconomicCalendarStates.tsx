@@ -10,6 +10,7 @@ import {
 import { t, type TranslationKey } from '../../lang/helpers';
 import { resolveUpgradeUrl } from '../../services/upgrade/upgradeOrigin';
 import { openExternalUrl } from '../../utils/externalLinks';
+import { Button } from '../ui/Button';
 
 
 const SKELETON_CURRENCY_CHIPS = [
@@ -167,13 +168,14 @@ export const EconomicCalendarError: React.FC<EconomicCalendarErrorProps> = ({
   <div className="journalit-econ-message">
     <AlertTriangle size={22} aria-hidden="true" />
     <p className="journalit-econ-message__text">{t(messageKey)}</p>
-    <button
-      type="button"
+    <Button
+      variant="secondary"
+      size="small"
       className="journalit-econ-message__action"
       onClick={onRetry}
     >
       {t('view.economic-calendar.retry')}
-    </button>
+    </Button>
   </div>
 );
 
@@ -204,13 +206,14 @@ export const EconomicCalendarProGate: React.FC<
         <span>{t('view.economic-calendar.pro-benefit-trial')}</span>
       </div>
     </div>
-    <button
-      type="button"
+    <Button
+      variant="primary"
+      size="small"
       className="journalit-econ-gate__cta"
       onClick={() => openExternalUrl(resolveUpgradeUrl('economicCalendar'))}
     >
       {t('premium.gate.cta.continue-pro')}
-    </button>
+    </Button>
     {onSignIn && (
       <button
         type="button"

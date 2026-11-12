@@ -174,14 +174,18 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     color: var(--text-muted);
   }
 
+  
   .journalit-header .layout-e .journalit-header-subtle-controls {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
+    gap: 0;
     flex-shrink: 0;
+    height: var(--journalit-control-height);
+    border-radius: var(--journalit-control-radius);
+    background: var(--journalit-control-strip);
     white-space: nowrap;
     color: var(--text-muted);
-    font-size: 0.9em;
+    font-size: var(--font-ui-small);
   }
 
   @container (max-width: 560px) {
@@ -235,12 +239,20 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   }
 
   .journalit-header .layout-e .nav-link {
-    padding: 0.3rem 0.6rem;
-    background: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    box-sizing: border-box;
+    height: var(--journalit-control-height);
+    margin: 0;
+    padding: 0 8px;
+    border: 0;
+    border-radius: var(--journalit-control-radius);
+    background: none;
+    box-shadow: none;
+    color: var(--text-muted);
+    font-size: var(--font-ui-small);
     cursor: pointer;
-    transition: all 0.15s ease;
     user-select: none;
   }
 
@@ -254,16 +266,16 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    box-sizing: border-box;
+    width: 32px;
+    height: var(--journalit-control-height);
     padding: 0;
-    background: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
+    background: none;
+    border: 0;
+    border-radius: var(--journalit-control-radius);
     box-shadow: none;
     color: var(--text-muted);
     cursor: pointer;
-    transition: all 0.15s ease;
   }
 
   .journalit-header .layout-e .journalit-header-icon-button:hover:not(:disabled) {
@@ -926,22 +938,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     align-items: center;
   }
 
-  .journalit-reviewv2-pagination-button {
-    padding: 0.25rem 0.5rem;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: var(--radius-s);
-    background: var(--background-primary);
-    color: var(--text-normal);
-    cursor: pointer;
-    font-size: 0.85rem;
-  }
-
-  .journalit-reviewv2-pagination-button:disabled {
-    background: var(--background-secondary);
-    color: var(--text-faint);
-    cursor: not-allowed;
-  }
-
   .journalit-reviewv2-pagination-status {
     min-width: 7.5em;
     text-align: center;
@@ -981,22 +977,23 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     display: flex;
     justify-content: center;
     width: 100%;
+    margin-block: var(--journalit-space-5);
   }
 
+  
   .journalit-reviewv2-card {
-    padding: 1rem;
-    background: var(--background-primary);
-    border-radius: var(--radius-m);
-    border: 1px solid var(--background-modifier-border);
+    padding: 0;
+    background: none;
+    border-radius: 0;
+    border: 0;
   }
 
   .journalit-reviewv2-card--centered {
-    max-width: 600px;
     width: 100%;
   }
 
   .journalit-reviewv2-card--compact {
-    padding: 0.75rem;
+    padding: 0;
   }
 
   
@@ -1007,68 +1004,76 @@ ${TRADE_ACCOUNT_CELL_STYLES}
       var(--reviewv2-stats-columns, 4),
       minmax(0, 1fr)
     );
-    gap: 12px;
+    gap: var(--journalit-space-3);
   }
 
   .journalit-reviewv2-stats-card {
+    display: flex;
+    flex-direction: column;
+    box-sizing: border-box;
     min-width: 0;
-    padding: 0.75rem;
-    background: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
+    padding: 8px 10px;
+    background: var(--background-primary);
+    border: 1px solid color-mix(in srgb, var(--text-normal) 8%, transparent);
     border-radius: var(--radius-m);
   }
 
   .journalit-reviewv2-stats-label {
     margin: 0 0 6px 0;
-    font-size: 0.7rem;
-    font-weight: 500;
+    font-size: 0.6875rem;
+    font-weight: 600;
     color: var(--text-muted);
     text-transform: uppercase;
-    letter-spacing: 0.5px;
-    line-height: 1.2;
+    line-height: 1.3;
+    white-space: nowrap;
   }
 
   .journalit-reviewv2-stats-value {
     margin: 0;
-    font-size: 1.35rem;
+    font-size: 1.25rem;
     font-weight: 600;
     color: var(--text-normal);
-    line-height: 1.2;
+    line-height: 1.3;
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
   }
 
   .journalit-reviewv2-stats-value--positive {
-    color: var(--text-success);
+    color: var(--color-green);
   }
 
   .journalit-reviewv2-stats-value--negative {
-    color: var(--text-error);
+    color: var(--color-red);
   }
 
+  
   .journalit-reviewv2-stats-delta {
     display: flex;
     align-items: center;
-    gap: 0.25rem;
-    margin-top: 0.35rem;
-    font-size: 0.68rem;
+    gap: 3px;
+    margin-top: auto;
+    padding-top: 6px;
+    font-size: 0.6875rem;
     font-weight: 500;
+    line-height: 1.2;
     color: var(--text-muted);
     white-space: nowrap;
   }
 
   .journalit-reviewv2-stats-delta--positive {
-    color: var(--text-success);
+    color: var(--color-green);
   }
 
   .journalit-reviewv2-stats-delta--negative {
-    color: var(--text-error);
+    color: var(--color-red);
   }
 
   .journalit-reviewv2-stats-delta-arrow {
-    font-size: 0.9rem;
-    line-height: 1;
+    flex: 0 0 12px;
+    width: 12px;
+    height: 12px;
+    stroke-width: 3.5;
   }
 
   .journalit-reviewv2-stats-delta-suffix {
@@ -1080,10 +1085,9 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     display: flex;
     flex-wrap: wrap;
     align-items: center;
-    justify-content: space-between;
-    column-gap: 0.75rem;
-    row-gap: 0.25rem;
-    margin-bottom: 0.75rem;
+    justify-content: flex-start;
+    gap: var(--journalit-space-3);
+    margin-bottom: var(--journalit-space-2);
   }
 
   .journalit-reviewv2-card-header--center {
@@ -1100,7 +1104,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-reviewv2-card-title {
     margin: 0;
-    font-size: 1em;
+    font-size: var(--font-ui-medium);
     font-weight: 600;
     color: var(--text-normal);
   }
@@ -1116,7 +1120,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-reviewv2-card-subtitle {
     margin-left: auto;
-    font-size: 0.8em;
+    font-size: var(--font-ui-small);
     color: var(--text-muted);
     white-space: nowrap;
   }
@@ -1140,17 +1144,16 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .journalit-reviewv2-list {
     display: flex;
     flex-direction: column;
-    gap: 0.5rem;
+    gap: 0;
   }
 
   .journalit-reviewv2-list-item {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.5rem;
-    background: var(--background-secondary);
-    border-radius: var(--radius-s);
-    border: 1px solid var(--background-modifier-border);
+    min-height: 34px;
+    padding: var(--journalit-space-2) 0;
+    border-bottom: 1px solid var(--background-modifier-border);
   }
 
   .journalit-reviewv2-checkbox {
@@ -1205,39 +1208,76 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .journalit-reviewv2-edit-input {
     flex: 1;
     min-width: 0;
-    padding: 0.25rem 0.5rem;
-    background: var(--background-primary);
-    border: 1px solid var(--interactive-accent);
-    border-radius: var(--radius-s);
+    height: var(--journalit-control-height);
+    padding: 0;
+    background: none;
+    border: 0;
+    border-radius: 0;
+    box-shadow: none;
     color: var(--text-normal);
-    font-size: 0.9em;
+    font-size: inherit;
+  }
+
+  .journalit-reviewv2-edit-input:focus,
+  .journalit-reviewv2-add-input:focus {
+    outline: none;
+    box-shadow: inset 0 -1px 0 var(--journalit-control-focus);
   }
 
   .journalit-reviewv2-action-button {
     padding: 0.25rem 0.5rem;
-    border-radius: var(--radius-s);
+    border: 0;
+    border-radius: var(--journalit-control-radius);
     font-size: 0.8em;
     font-weight: 500;
     cursor: pointer;
   }
 
+  .journalit-reviewv2-action-button--icon {
+    display: inline-flex;
+    flex: none;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+  }
+
   .journalit-reviewv2-action-button--primary {
-    background: var(--interactive-accent);
-    border: none;
+    background: var(--journalit-control-primary-fill);
+    box-shadow: var(--journalit-control-primary-shadow);
     color: var(--text-on-accent);
   }
 
   .journalit-reviewv2-action-button--secondary {
-    background: transparent;
-    border: 1px solid var(--background-modifier-border);
+    background: var(--journalit-control-strip);
+    box-shadow: none;
     color: var(--text-muted);
   }
 
+  .journalit-reviewv2-action-button--secondary:hover {
+    color: var(--text-normal);
+  }
+
+  
   .journalit-reviewv2-item-actions {
     display: inline-flex;
     flex-shrink: 0;
     align-items: center;
     gap: 4px;
+    opacity: 0;
+    transition: opacity 120ms ease;
+  }
+
+  .journalit-reviewv2-list-item:is(:hover, :focus-within) .journalit-reviewv2-item-actions {
+    opacity: 1;
+  }
+
+  
+  @media (hover: none) {
+    .journalit-reviewv2-item-actions {
+      opacity: 1;
+    }
   }
 
   .journalit-no-tooltip-button.journalit-reviewv2-settings-icon-button {
@@ -1249,19 +1289,17 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     min-width: 28px;
     margin: 0;
     padding: 5px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    background-color: var(--background-primary);
-    color: var(--text-normal);
+    border: 0;
+    border-radius: var(--journalit-control-radius);
+    background: none;
+    color: var(--text-muted);
     box-sizing: border-box;
     cursor: pointer;
-    transition: all 0.2s ease;
     line-height: 1;
   }
 
   .journalit-no-tooltip-button.journalit-reviewv2-settings-icon-button:hover {
-    background-color: var(--background-modifier-hover);
-    border-color: var(--interactive-accent);
+    background: var(--journalit-control-overlay-hover);
     color: var(--text-normal);
   }
 
@@ -1285,37 +1323,45 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-top: 0.5rem;
+    margin-top: 2px;
   }
 
   .journalit-reviewv2-add-input {
     flex: 1;
     
     min-width: 0;
-    padding: 0.5rem;
-    background: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: var(--radius-s);
+    height: var(--journalit-control-height);
+    padding: 0;
+    background: none;
+    border: 0;
+    box-shadow: none;
     color: var(--text-normal);
-    font-size: 0.9em;
+    font-size: inherit;
   }
 
   .journalit-reviewv2-add-button {
     flex-shrink: 0;
-    padding: 0.5rem 1rem;
+    height: var(--journalit-control-height);
+    padding: 0 11px;
     white-space: nowrap;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: var(--radius-s);
-    font-size: 0.9em;
+    border: 0;
+    border-radius: var(--journalit-control-radius);
+    box-shadow: none;
+    font-size: var(--font-ui-small);
     font-weight: 500;
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
+    background: none;
+    color: var(--text-muted);
     cursor: pointer;
   }
 
+  
+  .journalit-reviewv2-add-input:placeholder-shown:not(:focus) + .journalit-reviewv2-add-button {
+    visibility: hidden;
+  }
+
   .journalit-reviewv2-add-button:disabled {
-    background: var(--background-secondary);
-    color: var(--text-muted);
+    background: none;
+    color: var(--text-faint);
     cursor: not-allowed;
   }
 
@@ -1497,30 +1543,12 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .journalit-reviewv2-missed-card-shell--empty .journalit-reviewv2-missed-add {
     margin-left: auto;
-    padding: 4px 9px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 6px;
-    background: var(--background-secondary);
-    color: var(--text-normal);
-    box-shadow: var(--input-shadow);
   }
 
   .journalit-reviewv2-missed-add {
-    padding: 2px 6px;
-    border-radius: 4px;
-    background: transparent;
-    border: none;
-    color: var(--text-muted);
-    font-size: 11px;
-    cursor: pointer;
     display: flex;
     align-items: center;
     gap: 2px;
-  }
-
-  .journalit-reviewv2-missed-add:hover {
-    background: var(--background-modifier-hover);
-    color: var(--text-normal);
   }
 
   .journalit-reviewv2-missed-list {
@@ -2232,36 +2260,38 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   }
 
   .journalit-reviewv2-mark-reviewed-button {
-    padding: 0.5rem 1rem;
-    border-radius: var(--radius-s);
-    font-size: 0.85em;
+    box-sizing: border-box;
+    height: var(--journalit-control-height);
+    padding: 0 11px;
+    border: 0;
+    border-radius: var(--journalit-control-radius);
+    font-size: var(--font-ui-small);
     font-weight: 500;
     cursor: pointer;
-    transition: all 0.2s ease;
     display: flex;
     align-items: center;
     gap: 0.4rem;
   }
 
   .journalit-reviewv2-mark-reviewed-button--reviewed {
-    background: transparent;
-    border: 1px solid var(--background-modifier-border);
+    background: var(--journalit-control-secondary-fill);
+    box-shadow: var(--journalit-control-secondary-shadow);
     color: var(--text-muted);
   }
 
   .journalit-reviewv2-mark-reviewed-button--pending {
-    background: var(--interactive-accent);
-    border: none;
+    background: var(--journalit-control-primary-fill);
+    box-shadow: var(--journalit-control-primary-shadow);
     color: var(--text-on-accent);
   }
 
   .journalit-reviewv2-mark-reviewed-button--reviewed:hover {
-    background: var(--background-modifier-hover);
+    background: var(--journalit-control-secondary-fill-hover);
     color: var(--text-normal);
   }
 
   .journalit-reviewv2-mark-reviewed-button--pending:hover {
-    background: var(--interactive-accent-hover);
+    background: var(--journalit-control-primary-fill-hover);
     color: var(--text-on-accent);
   }
 
@@ -2321,8 +2351,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     align-items: center;
     flex-shrink: 0;
     vertical-align: middle;
-    position: relative;
-    top: -0.1em;
     cursor: pointer;
     opacity: 1;
     transition: opacity 0.15s ease;
@@ -2952,17 +2980,11 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     height: 30px;
     min-width: 36px;
     min-height: 30px;
-    padding: 0;
-    background: transparent;
-    border: 1px solid var(--interactive-accent);
-    border-radius: 4px;
     color: var(--text-accent);
     cursor: pointer;
-    transition: all 0.15s ease;
   }
 
   .key-levels-add-button:disabled {
-    border: 1px solid var(--background-modifier-border);
     color: var(--text-faint);
     cursor: not-allowed;
   }
@@ -2990,6 +3012,23 @@ ${TRADE_ACCOUNT_CELL_STYLES}
 
   .key-levels-arrow {
     flex-shrink: 0;
+  }
+
+  .journalit-key-levels-groups {
+    display: flex;
+    flex-direction: column;
+    gap: var(--journalit-space-6);
+  }
+
+  .journalit-key-levels-group > .journalit-key-levels-group-title {
+    margin: 0 0 var(--journalit-space-3);
+    font-size: var(--journalit-font-size-heading);
+    font-weight: var(--journalit-font-weight-semibold);
+    color: var(--journalit-text-normal);
+  }
+
+  .journalit-key-levels-group > .journalit-key-levels-group-title--no-group {
+    color: var(--journalit-text-muted);
   }
 
   .key-levels-skeleton-section {
@@ -3218,50 +3257,17 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     background: transparent;
   }
 
+  
   .review-context-fields-inherited-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 0.5rem;
-    margin: 0;
-    padding: 0 0 0.65rem;
     position: relative;
-  }
-
-  .review-context-fields-inherited-title {
-    color: var(--text-muted);
-    font-size: 0.7rem;
-    font-weight: 500;
-    letter-spacing: 0.5px;
-    text-transform: uppercase;
-    text-align: center;
+    height: 0;
   }
 
   .review-context-fields-edit-toggle.journalit-button {
     position: absolute;
     right: 0;
     top: 0;
-    appearance: none;
-    min-height: 0;
-    height: auto;
-    padding: 0;
-    border: 0;
-    box-shadow: none;
-    background: transparent;
-    background-color: transparent;
-    color: var(--text-accent);
-    font-size: 0.75rem;
-    font-weight: 500;
-    line-height: 1.25;
-    text-decoration: underline;
-    text-underline-offset: 0.18rem;
-    cursor: pointer;
-  }
-
-  .review-context-fields-edit-toggle.journalit-button:hover,
-  .review-context-fields-edit-toggle.journalit-button:focus-visible {
-    color: var(--text-accent-hover, var(--text-accent));
-    text-decoration-thickness: 2px;
+    z-index: 1;
   }
 
   .review-context-fields-by-field {
@@ -3271,16 +3277,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   }
 
   .review-context-fields-field-group {
-    display: grid;
-    grid-template-columns: minmax(8rem, 0.22fr) minmax(0, 1fr);
-    gap: 0;
-    padding: 0;
-    border-bottom: 1px solid var(--background-modifier-border-hover);
-  }
-
-  .review-context-fields-field-group:last-child {
-    padding-bottom: 0;
-    border-bottom: none;
+    padding: var(--journalit-space-2) 0;
   }
 
   .review-context-fields-field-chain {
@@ -3293,84 +3290,52 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .review-context-fields-field-entry,
   .review-context-fields-source-status-row {
     display: grid;
-    grid-template-columns: 4.25rem minmax(0, 1fr);
+    grid-template-columns: 3.25rem minmax(0, 1fr);
     gap: 0.55rem;
-    align-items: center;
+    align-items: baseline;
     min-width: 0;
-    padding: 0.38rem 0.75rem;
-    border-bottom: 1px solid var(--background-modifier-border-hover);
+    padding: 3px 0;
   }
 
-  .review-context-fields-field-entry:last-child,
-  .review-context-fields-source-status-row:last-child {
-    border-bottom: none;
+  
+  .review-context-fields-field-entry--editing {
+    align-items: start;
   }
 
-  .review-context-fields-field-entry--local {
-    margin-top: 0;
-    padding: 0.38rem 0.75rem;
-    border-left: none;
-    border-radius: 0;
-    background: transparent;
-  }
-
-  .review-context-fields-field-entry--local .review-context-fields-source-label {
-    margin-left: 0;
-  }
-
-  .review-context-fields-field-entry:not(.review-context-fields-field-entry--local) .review-context-fields-source-link,
-  .review-context-fields-source-status-row .review-context-fields-source-link,
-  .review-context-fields-source-status-row .review-context-fields-source-label {
-    margin-left: 0;
+  .review-context-fields-field-entry--editing .review-context-fields-source-label {
+    line-height: var(--journalit-control-height);
   }
 
   .review-context-fields-source-link {
     appearance: none;
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 0;
-    height: auto;
-    width: fit-content;
-    min-width: 3.75rem;
     margin: 0;
-    padding: 0.12rem 0.45rem;
-    border: 1px solid var(--background-modifier-border) !important;
-    border-radius: var(--radius-s);
-    box-shadow: none !important;
-    background: var(--background-secondary) !important;
-    background-color: var(--background-secondary) !important;
-    color: var(--text-muted) !important;
-    font: inherit;
-    font-size: 0.74rem;
-    font-weight: 600;
-    line-height: 1.35;
+    box-shadow: none;
     cursor: pointer;
-    text-align: center;
   }
 
   .review-context-fields-source-label,
   .review-context-fields-source-link {
     display: inline-flex;
     align-items: center;
-    justify-content: center;
+    justify-content: flex-start;
     box-sizing: border-box;
     width: fit-content;
-    min-width: 3.75rem;
-    height: 1.55rem;
-    padding: 0.12rem 0.45rem;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: var(--radius-s);
-    background: var(--background-secondary);
-    color: var(--text-muted) !important;
-    font-size: 0.74rem;
-    font-weight: 600;
+    height: auto;
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: var(--text-muted);
+    font: inherit;
+    font-size: var(--font-ui-smaller);
+    font-weight: 500;
     line-height: 1.35;
   }
 
   .review-context-fields-source-link:hover,
   .review-context-fields-source-link:focus-visible {
-    color: var(--text-accent);
+    background: none;
+    color: var(--text-normal);
     text-decoration: underline;
     text-underline-offset: 0.18rem;
   }
@@ -3384,15 +3349,14 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   }
 
   .review-context-fields-inherited-label {
-    color: var(--text-normal);
-    font-size: 0.84rem;
-    font-weight: 600;
+    margin-bottom: 2px;
+    color: var(--text-muted);
+    font-size: var(--font-ui-small);
+    font-weight: 500;
     letter-spacing: 0;
     line-height: 1.25;
     text-transform: none;
     white-space: normal;
-    padding: 0.75rem 0.85rem;
-    border-right: 1px solid var(--background-modifier-border-hover);
   }
 
   .review-context-fields-inherited-label::after {
@@ -3420,7 +3384,7 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   }
 
   .review-context-fields-inline-control {
-    width: min(28rem, 100%);
+    width: 100%;
     min-width: 0;
   }
 
@@ -3435,9 +3399,13 @@ ${TRADE_ACCOUNT_CELL_STYLES}
   .review-context-fields-inline-control :is(input.input, textarea.input, .select) {
     width: 100%;
     min-width: min(18rem, 100%);
-    background: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
+  }
+
+  
+  .review-context-fields-inline-control textarea.input {
+    field-sizing: content;
+    max-height: 20rem;
+    resize: none;
   }
 
   @media (max-width: 640px) {
@@ -3459,35 +3427,19 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     display: flex;
     flex-direction: column;
     gap: 0;
-    border: 1px solid var(--background-modifier-border-hover);
-    border-radius: var(--radius-m);
-    background: transparent;
-    overflow: hidden;
-  }
-
-  .review-context-fields-local-group + .review-context-fields-local-group {
-    padding-top: 0;
   }
 
   .review-context-fields-local-group-title {
     display: flex;
     align-items: center;
     justify-content: flex-start;
-    gap: 0;
-    padding: 0.6rem 0.85rem;
-    border-bottom: 1px solid var(--background-modifier-border);
-    background: var(--background-secondary);
+    min-height: var(--journalit-control-height);
     color: var(--text-normal);
-    font-size: 0.92rem;
+    font-size: var(--font-ui-medium);
     font-weight: 600;
     letter-spacing: 0;
     line-height: 1.3;
     text-transform: none;
-  }
-
-  .review-context-fields-local-group-title::before,
-  .review-context-fields-local-group-title::after {
-    content: none;
   }
 
   .review-context-fields-list {
@@ -3625,14 +3577,15 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     align-items: center;
     justify-content: center;
     gap: 0.4rem;
-    min-height: 30px;
-    padding: 1px 0.7rem 0;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: var(--radius-s);
-    background: transparent !important;
-    color: var(--text-muted);
-    box-shadow: none !important;
-    font-size: 0.78rem;
+    box-sizing: border-box;
+    min-height: var(--journalit-control-height);
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--journalit-control-radius);
+    background: var(--journalit-control-secondary-fill) !important;
+    color: var(--text-normal);
+    box-shadow: var(--journalit-control-secondary-shadow) !important;
+    font-size: var(--font-ui-small);
     font-weight: 500;
     line-height: 1;
     cursor: pointer !important;
@@ -3687,8 +3640,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     border: 1.5px solid currentColor;
     border-radius: 999px;
     flex: 0 0 auto;
-    position: relative;
-    top: -1px;
   }
 
   .journalit-weekly-drc-context .journalit-weekly-drc-mark-reviewed-icon--reviewed,
@@ -4327,22 +4278,6 @@ ${TRADE_ACCOUNT_CELL_STYLES}
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    min-height: 30px;
-    padding: 1px 0.7rem 0;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: var(--radius-s);
-    background: transparent !important;
-    color: var(--text-muted);
-    box-shadow: none !important;
-    font-size: 0.78rem;
-    font-weight: 500;
-    cursor: pointer;
-  }
-
-  .journalit-trade-review-secondary-action:hover,
-  .journalit-trade-review-secondary-action:focus-visible {
-    border-color: var(--interactive-accent);
-    color: var(--text-normal);
   }
 
   .journalit-trade-review-card-header .journalit-weekly-drc-mark-reviewed-button {

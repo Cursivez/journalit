@@ -14,6 +14,11 @@ import {
 } from '../shared/filters/menu/menuModel';
 import { FILTER_MENU_ICONS } from '../shared/filters/menu/filterMenuIcons';
 import type { SetupViewModel } from './setupsViewTypes';
+import {
+  isDefaultSetupTradeTypeSelection,
+  type SetupTradeType,
+} from '../../services/setup/setupTradeTypes';
+import type { TranslationKey } from '../../lang/helpers';
 
 export { UNTAGGED_SETUP_FILTER_VALUE };
 
@@ -308,10 +313,21 @@ interface SetupOverviewFilterProps {
   availableTags: string[];
   selectedTags: string[];
   selectedDirections: SetupDirectionFilter[];
+  tradeTypes: SetupTradeType[];
   onTagsChange: (tags: string[]) => void;
   onDirectionsChange: (directions: SetupDirectionFilter[]) => void;
+  onTradeTypesChange: (tradeTypes: SetupTradeType[]) => void;
   onReset: () => void;
 }
+
+const SETUP_TRADE_TYPE_OPTIONS: Array<{
+  value: SetupTradeType;
+  labelKey: TranslationKey;
+}> = [
+  { value: 'regular', labelKey: 'tradelog.type.regular' },
+  { value: 'missed', labelKey: 'tradelog.type.missed' },
+  { value: 'backtest', labelKey: 'tradelog.type.backtest' },
+];
 
 const directionLabel = (direction: SetupDirectionFilter) =>
   direction === 'unspecified'
@@ -339,8 +355,10 @@ export const SetupOverviewFilter: React.FC<SetupOverviewFilterProps> = ({
   availableTags,
   selectedTags,
   selectedDirections,
+  tradeTypes,
   onTagsChange,
   onDirectionsChange,
+  onTradeTypesChange,
   onReset,
 }) => {
   const triggerLabelId = useId();
@@ -412,12 +430,42 @@ export const SetupOverviewFilter: React.FC<SetupOverviewFilterProps> = ({
         },
         onClear: () => onDirectionsChange([]),
       }),
+      { kind: 'divider', id: 'divider-trades' },
+      
+      
+      checklistNode({
+        id: 'tradeTypes',
+        label: t('filter.menu.trade-type'),
+        icon: FILTER_MENU_ICONS.tradeType,
+        options: SETUP_TRADE_TYPE_OPTIONS.map((option) => ({
+          value: option.value,
+          label: t(option.labelKey),
+        })),
+        selected: tradeTypes,
+        appliedCount: isDefaultSetupTradeTypeSelection(tradeTypes)
+          ? 0
+          : tradeTypes.length,
+        onToggle: (value) => {
+          const tradeType = SETUP_TRADE_TYPE_OPTIONS.find(
+            (option) => option.value === value
+          )?.value;
+          if (!tradeType) return;
+          onTradeTypesChange(
+            tradeTypes.includes(tradeType)
+              ? tradeTypes.filter((selected) => selected !== tradeType)
+              : [...tradeTypes, tradeType]
+          );
+        },
+        onClear: () => onTradeTypesChange([]),
+      }),
     ],
     [
       onDirectionsChange,
       onTagsChange,
+      onTradeTypesChange,
       selectedDirections,
       tagOptions,
+      tradeTypes,
       validTags,
     ]
   );

@@ -23,6 +23,7 @@ import { useReviewData } from '../hooks/useReviewData';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { SkeletonBox } from '../../shared/SkeletonBox';
+import { ArrowDown, ArrowUp } from '../../shared/icons/ObsidianIcon';
 import {
   CurrencyConversionInfo,
   type CurrencyConversionTrade,
@@ -119,8 +120,8 @@ interface StatCardsInput {
   stats: NonNullable<StatsWidgetConfig['stats']>;
   metrics: NonNullable<StatsMetrics>;
   previousMetrics: StatsMetrics | null;
-  plRatio: number;
-  previousPLRatio: number;
+  plRatio: number | null;
+  previousPLRatio: number | null;
   currency: string;
   previousCurrency: string;
   displayRMultiples: boolean | undefined;
@@ -352,14 +353,29 @@ function buildStatCards({
     {
       key: 'plRatio',
       label: t('widget.stats.pl-ratio'),
-      value: formatValue({ kind: 'metric', value: plRatio, precision: 2 }),
+      
+      
+      
+      
+      value: formatValue({
+        kind: 'metric',
+        value: plRatio ?? (isMetricMasked ? 0 : null),
+        precision: 2,
+        fallback: '—',
+      }),
       color:
-        isMetricMasked || isReturnPercentMasked
+        isMetricMasked || isReturnPercentMasked || plRatio === null
           ? undefined
           : plRatio >= 1
             ? 'green'
             : 'red',
-      delta: createStatDelta(plRatio, previousPLRatio, metricDeltaOptions),
+      delta:
+        plRatio !== null &&
+        Number.isFinite(plRatio) &&
+        previousPLRatio !== null &&
+        Number.isFinite(previousPLRatio)
+          ? createStatDelta(plRatio, previousPLRatio, metricDeltaOptions)
+          : undefined,
     },
   ];
   return cards.filter((card) => stats[card.key]);
@@ -642,8 +658,10 @@ export const StatsWidget: React.FC<StatsWidgetProps> = React.memo(
 
 StatsWidget.displayName = 'StatsWidget';
 
-function calculatePLRatio(metrics: StatsMetrics | null): number {
-  if (!metrics || metrics.avgLoss === 0) return 0;
+
+function calculatePLRatio(metrics: StatsMetrics | null): number | null {
+  if (!metrics) return null;
+  if (metrics.avgLoss === 0) return metrics.avgWin > 0 ? Infinity : null;
   return Math.abs(metrics.avgWin / metrics.avgLoss);
 }
 
@@ -833,6 +851,7 @@ const StatCard: React.FC<StatCardProps> = ({
   currencyConversion,
   conversionTrades,
 }) => {
+  const DeltaArrow = delta?.direction === 'up' ? ArrowUp : ArrowDown;
   return (
     <div className="journalit-reviewv2-stats-card">
       <div className="journalit-reviewv2-stats-label">
@@ -870,9 +889,11 @@ const StatCard: React.FC<StatCardProps> = ({
             .join(' ')}
         >
           {delta.direction !== 'flat' && (
-            <span className="journalit-reviewv2-stats-delta-arrow">
-              {delta.direction === 'up' ? '↑' : '↓'}
-            </span>
+            <DeltaArrow
+              className="journalit-reviewv2-stats-delta-arrow"
+              size={12}
+              aria-hidden="true"
+            />
           )}
           <span>{delta.value}</span>
           <span className="journalit-reviewv2-stats-delta-suffix">

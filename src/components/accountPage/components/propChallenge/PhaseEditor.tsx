@@ -414,6 +414,7 @@ export function PhaseEditor({
             placeholder={t('account.prop-challenge.add-rule')}
             disabled={disabled}
             className="journalit-prop-challenge-add-rule-menu"
+            variant="button"
             showOptionTooltips={false}
             menuWidth="content"
             leadingContent={<Plus size={15} aria-hidden="true" />}

@@ -158,15 +158,16 @@ export const EconomicCalendarSettingsSection: React.FC<
           <span className="journalit-settings-econ__gate-text">
             {t('settings.economic-calendar.pro-required')}
           </span>
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="small"
             className="journalit-settings-econ__gate-cta"
             onClick={() =>
               openExternalUrl(resolveUpgradeUrl('economicCalendar'))
             }
           >
             {t('premium.gate.cta.continue-pro')}
-          </button>
+          </Button>
         </div>
       )}
 

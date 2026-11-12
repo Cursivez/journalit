@@ -37,25 +37,38 @@ interface DisplayPolicyProviderProps {
   privacyModeOverride?: boolean;
   
   hideDollarAmounts?: boolean;
+  
+  hideDollarAmountsInRMode?: boolean;
 }
 
 export const DisplayPolicyProvider: React.FC<DisplayPolicyProviderProps> = ({
   children,
   privacyModeOverride,
   hideDollarAmounts,
+  hideDollarAmountsInRMode,
 }) => {
   const plugin = usePlugin();
   const createCurrentPolicy = useCallback(() => {
     const settings = plugin?.settings ?? getPluginInstance()?.settings ?? {};
     const currentPolicy = createDisplayPolicy(settings);
+    const hidesDollars =
+      hideDollarAmounts ||
+      (hideDollarAmountsInRMode &&
+        currentPolicy.displayRMultiples &&
+        currentPolicy.hideDollarAmountsInRMode);
     return {
       ...currentPolicy,
       ...(privacyModeOverride === undefined
         ? {}
         : { privacyMode: privacyModeOverride }),
-      ...(hideDollarAmounts ? { hideDollarAmounts } : {}),
+      ...(hidesDollars ? { hideDollarAmounts: true } : {}),
     };
-  }, [plugin, privacyModeOverride, hideDollarAmounts]);
+  }, [
+    plugin,
+    privacyModeOverride,
+    hideDollarAmounts,
+    hideDollarAmountsInRMode,
+  ]);
 
   const [policy, setPolicy] = useState<DisplayPolicy>(createCurrentPolicy);
 
@@ -76,7 +89,12 @@ export const DisplayPolicyProvider: React.FC<DisplayPolicyProviderProps> = ({
   const pluginAvailable = Boolean(plugin);
   useEffect(() => {
     refreshPolicyRef.current();
-  }, [pluginAvailable, privacyModeOverride, hideDollarAmounts]);
+  }, [
+    pluginAvailable,
+    privacyModeOverride,
+    hideDollarAmounts,
+    hideDollarAmountsInRMode,
+  ]);
 
   useEffect(() => {
     const refreshCurrentPolicy = () => {

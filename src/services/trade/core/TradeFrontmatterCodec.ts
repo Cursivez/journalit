@@ -106,6 +106,18 @@ export function formatTradeFrontmatterDate(
   return formatLocalDateTime(date);
 }
 
+
+export function applyClearedTradeFields(
+  frontmatter: Record<string, unknown>,
+  data: Readonly<Record<string, unknown>> & {
+    readonly clearUnsetFields?: readonly string[];
+  }
+): void {
+  for (const field of data.clearUnsetFields ?? []) {
+    if (data[field] === undefined) frontmatter[field] = undefined;
+  }
+}
+
 export function serializeIdealExitFrontmatter(
   idealExits: TradeMutationInput['idealExits'],
   invalidDateFallback: 'preserve' | 'now' = 'preserve'

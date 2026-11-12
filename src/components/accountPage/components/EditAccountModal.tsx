@@ -1571,7 +1571,8 @@ const useEditAccountModalController = ({
         (!liveBalanceUntouched || baselineChanged)
       ) {
         const fresh = await plugin.accountPageService.getAccountPageData(
-          account.name
+          account.name,
+          ['regular']
         );
         if (!fresh) {
           new Notice(t('account.edit.error.service-unavailable'));
@@ -2387,20 +2388,38 @@ export const EditAccountModalContent: React.FC<
 };
 
 
-export function openEditAccountModal(
+export async function openEditAccountModal(
   app: App,
   plugin: JournalitPlugin,
   account: AccountData,
-  trades: readonly AccountTradeData[],
   onSave: () => void
-): void {
-  const modal = new EditAccountModal({
-    app,
-    plugin,
-    account,
-    trades,
-    onClose: () => {}, 
-    onSave,
-  });
-  modal.open();
+): Promise<void> {
+  try {
+    
+    
+    const regular = await plugin.accountPageService.getAccountPageDataOrThrow(
+      account.name,
+      ['regular']
+    );
+    const modal = new EditAccountModal({
+      app,
+      plugin,
+      
+      
+      account: regular?.account ?? {
+        ...account,
+        currentBalance: 0,
+        lifetimeBalance: undefined,
+        transactions: [],
+        dailyBalances: [],
+      },
+      trades: regular?.trades ?? [],
+      onClose: () => {}, 
+      onSave,
+    });
+    modal.open();
+  } catch (error) {
+    console.error('Error loading account for editing:', error);
+    new Notice(t('account.edit.error.service-unavailable'));
+  }
 }

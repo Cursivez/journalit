@@ -14,13 +14,16 @@ import { parseNewsEvents } from '../../../services/weekly/parseNewsEvents';
 import { useReviewReadOnly } from '../ReviewReadOnlyContext';
 import type { ReviewChangedPayload } from '../../../services/events/types';
 import {
+  CalendarOff,
   CalendarRange,
+  CheckCircle2,
   Edit,
   Ghost,
   Import,
   Info,
   Plus,
   Trash,
+  X,
 } from '../../shared/icons/ObsidianIcon';
 import { Tooltip } from '../../shared/Tooltip';
 import { useKeyEventRestore } from './useKeyEventRestore';
@@ -49,6 +52,7 @@ import {
   isKeyEventPast,
   KEY_EVENT_COLORS,
   KEY_EVENT_DAYS,
+  KEY_EVENTS_NO_NEWS_FIELD,
   type KeyEventColor,
 } from '../../../utils/keyEvents';
 import {
@@ -64,6 +68,9 @@ import { mergeClassNames } from '../../../utils/classNames';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 import { KeyEventsDayPicker } from './KeyEventsDayPicker';
 import { useKeyEventDayPicker } from './useKeyEventDayPicker';
+import { useKeyEventsNoNews, type KeyEventsDayRow } from './useKeyEventsNoNews';
+import { DropdownSelect } from '../../shared/DropdownSelect';
+import { Button } from '../../ui/Button';
 
 
 interface KeyEventsPreviewData {
@@ -199,19 +206,19 @@ const KeyEventMetaFields: React.FC<KeyEventMetaFieldsProps> = ({
         >
           {t('widget.key-events.currency-label')}
         </label>
-        <select
+        <DropdownSelect
           id={`${idPrefix}-currency`}
-          className="key-events-meta-select"
+          ariaLabel={t('widget.key-events.currency-label')}
           value={draft.currency}
-          onChange={(e) => onChange({ ...draft, currency: e.target.value })}
-        >
-          <option value="">{t('widget.key-events.field-unset')}</option>
-          {KEY_EVENT_CURRENCIES.map((currency) => (
-            <option key={currency} value={currency}>
-              {currency}
-            </option>
-          ))}
-        </select>
+          options={[
+            { value: '', label: t('widget.key-events.field-unset') },
+            ...KEY_EVENT_CURRENCIES.map((currency) => ({
+              value: currency,
+              label: currency,
+            })),
+          ]}
+          onChange={(nextValue) => onChange({ ...draft, currency: nextValue })}
+        />
       </div>
 
       {showTime && (
@@ -239,14 +246,31 @@ const KeyEventMetaFields: React.FC<KeyEventMetaFieldsProps> = ({
 
 KeyEventMetaFields.displayName = 'KeyEventMetaFields';
 
-function addFormVisibility(
-  canAddEvent: boolean,
-  eventCount: number,
-  isAddFormOpen: boolean
-) {
+
+function addFormVisibility({
+  canAddEvent,
+  eventCount,
+  isAddFormOpen,
+  dayRow,
+  addsBelowList,
+}: {
+  canAddEvent: boolean;
+  eventCount: number;
+  isAddFormOpen: boolean;
+  dayRow: KeyEventsDayRow;
+  addsBelowList: boolean;
+}) {
+  const collapsed = eventCount > 0 || dayRow !== null;
+  const showCompactAdd = canAddEvent && eventCount > 0 && !isAddFormOpen;
+  const shouldShowAddForm = canAddEvent && (!collapsed || isAddFormOpen);
   return {
-    shouldShowAddForm: canAddEvent && (eventCount === 0 || isAddFormOpen),
-    shouldShowCompactAdd: canAddEvent && eventCount > 0 && !isAddFormOpen,
+    shouldShowAddForm,
+    
+    visibleDayRow: shouldShowAddForm ? null : dayRow,
+    shouldShowHeaderAdd: showCompactAdd && !addsBelowList,
+    shouldShowRowAdd: showCompactAdd && addsBelowList,
+    
+    isFormOnDemand: eventCount > 0 || addsBelowList,
   };
 }
 
@@ -316,19 +340,18 @@ const KeyEventDaySelect: React.FC<{
     <span className="key-events-day-label">
       {t('widget.key-events.day-label')}
     </span>
-    <select
-      aria-label={t('widget.key-events.day-label')}
+    <DropdownSelect
+      ariaLabel={t('widget.key-events.day-label')}
       value={value}
-      onChange={(e) => onChange(e.target.value)}
-      className="key-events-day-select"
-    >
-      <option value="">{t('common.day.all-week')}</option>
-      {KEY_EVENT_DAYS.map((day) => (
-        <option key={day} value={day}>
-          {getKeyEventDayLabel(day)}
-        </option>
-      ))}
-    </select>
+      options={[
+        { value: '', label: t('common.day.all-week') },
+        ...KEY_EVENT_DAYS.map((day) => ({
+          value: day,
+          label: getKeyEventDayLabel(day),
+        })),
+      ]}
+      onChange={(nextValue) => onChange(nextValue)}
+    />
   </div>
 );
 
@@ -356,17 +379,129 @@ const KeyEventsHeader: React.FC<{
     </div>
     {showCompactAdd && (
       <div className="key-events-header-actions" {...shareCaptureExcludeProps}>
-        <button
+        <Button
+          variant="secondary"
+          size="small"
           className="journalit-key-events-header-add-button"
           onClick={onOpenAddForm}
         >
           <Plus size={12} aria-hidden="true" />
           {t('widget.key-events.add-button')}
-        </button>
+        </Button>
       </div>
     )}
   </div>
 );
+
+const KeyEventsRowAddButton: React.FC<{ onClick: () => void }> = ({
+  onClick,
+}) => (
+  <Button
+    variant="secondary"
+    size="small"
+    className="journalit-key-events-source-button"
+    onClick={onClick}
+    {...shareCaptureExcludeProps}
+  >
+    <Plus size={13} aria-hidden="true" />
+    {t('widget.key-events.add-button')}
+  </Button>
+);
+
+
+const KeyEventsNewsQuestion: React.FC<{
+  onMarkNoNews: () => void;
+  onAddEvent: () => void;
+}> = ({ onMarkNoNews, onAddEvent }) => (
+  <div className="key-events-no-news" {...shareCaptureExcludeProps}>
+    <span className="key-events-no-news-label">
+      {t('widget.key-events.news-question')}
+    </span>
+    <Button
+      variant="secondary"
+      size="small"
+      className="journalit-key-events-source-button"
+      onClick={onMarkNoNews}
+    >
+      <CalendarOff size={13} aria-hidden="true" />
+      {t('widget.key-events.mark-no-news')}
+    </Button>
+    <KeyEventsRowAddButton onClick={onAddEvent} />
+  </div>
+);
+
+
+const KeyEventsNoNews: React.FC<{
+  actions: { onAddEvent: () => void; onClear: () => void } | null;
+}> = ({ actions }) => (
+  <div className="key-events-no-news">
+    <CheckCircle2
+      size={14}
+      className="key-events-no-news-icon"
+      aria-hidden="true"
+    />
+    <span className="key-events-no-news-label">
+      {t('widget.key-events.no-news')}
+    </span>
+    {actions && (
+      <>
+        <KeyEventsRowAddButton onClick={actions.onAddEvent} />
+        <Tooltip content={t('widget.key-events.clear-no-news')}>
+          <button
+            type="button"
+            className="journalit-key-events-no-news-clear"
+            aria-label={t('widget.key-events.clear-no-news')}
+            onClick={actions.onClear}
+            {...shareCaptureExcludeProps}
+          >
+            <X size={12} aria-hidden="true" />
+          </button>
+        </Tooltip>
+      </>
+    )}
+  </div>
+);
+
+
+const KeyEventsDrcDayRow: React.FC<{
+  row: KeyEventsDayRow;
+  canEdit: boolean;
+  onMarkNoNews: () => void;
+  onClearNoNews: () => void;
+  onAddEvent: () => void;
+}> = ({ row, canEdit, onMarkNoNews, onClearNoNews, onAddEvent }) => {
+  if (row === 'news-question') {
+    return (
+      <KeyEventsNewsQuestion
+        onMarkNoNews={onMarkNoNews}
+        onAddEvent={onAddEvent}
+      />
+    );
+  }
+  if (row !== 'no-news') return null;
+  return (
+    <KeyEventsNoNews
+      actions={canEdit ? { onAddEvent, onClear: onClearNoNews } : null}
+    />
+  );
+};
+
+
+const KeyEventsAddRow: React.FC<{ visible: boolean; onClick: () => void }> = ({
+  visible,
+  onClick,
+}) =>
+  visible ? (
+    <button
+      type="button"
+      className="journalit-key-events-add-row-button"
+      onClick={onClick}
+      {...shareCaptureExcludeProps}
+    >
+      <Plus size={13} aria-hidden="true" />
+      {t('widget.key-events.add-button')}
+    </button>
+  ) : null;
 
 interface RestoreAutoImportState {
   visible: boolean;
@@ -378,8 +513,9 @@ interface RestoreAutoImportState {
 const RestoreAutoImportButton: React.FC<{
   restore: RestoreAutoImportState;
 }> = ({ restore: { disabled, check, onRestore } }) => (
-  <button
-    type="button"
+  <Button
+    variant="secondary"
+    size="small"
     className="journalit-key-events-source-button key-events-source-button--restore"
     disabled={disabled}
     onClick={onRestore}
@@ -390,7 +526,7 @@ const RestoreAutoImportButton: React.FC<{
           count: String(check.missingCount),
         })
       : t('widget.key-events.restore-auto-import')}
-  </button>
+  </Button>
 );
 
 interface KeyEventsAddFormProps {
@@ -448,14 +584,15 @@ const KeyEventsAddForm: React.FC<KeyEventsAddFormProps> = ({
     >
       {isWeekly && (
         <div className="key-events-source-actions">
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="small"
             className="journalit-key-events-source-button key-events-source-button--calendar"
             onClick={onOpenCalendar}
           >
             <CalendarRange size={13} aria-hidden="true" />
             {t('view.economic-calendar.title')}
-          </button>
+          </Button>
           {restore.visible && <RestoreAutoImportButton restore={restore} />}
         </div>
       )}
@@ -507,20 +644,24 @@ const KeyEventsAddForm: React.FC<KeyEventsAddFormProps> = ({
 
       <div className="key-events-form-actions">
         {canCancel && (
-          <button
+          <Button
+            variant="secondary"
+            size="small"
             className="journalit-key-events-secondary-button"
             onClick={onCancel}
           >
             {t('button.cancel')}
-          </button>
+          </Button>
         )}
-        <button
+        <Button
+          variant="primary"
+          size="small"
           className="journalit-key-events-add-button"
           onClick={onAdd}
           disabled={!selectedEvent.trim() || isSaving}
         >
           {t('widget.key-events.add-button')}
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -572,8 +713,9 @@ const WeeklyKeyEventsList: React.FC<{
       </section>
     ))}
     {dayPicker.tiles && (
-      <button
-        type="button"
+      <Button
+        variant="plain"
+        size="small"
         className="journalit-key-events-show-all-toggle"
         aria-expanded={dayPicker.showAllDays}
         onClick={dayPicker.toggleShowAllDays}
@@ -582,19 +724,21 @@ const WeeklyKeyEventsList: React.FC<{
         {dayPicker.showAllDays
           ? t('widget.key-events.show-one-day')
           : t('widget.key-events.show-all-days')}
-      </button>
+      </Button>
     )}
   </div>
 );
 
 const KeyEventsList: React.FC<{
   reviewMode: ReviewMode | null;
+  showNoNews: boolean;
   sortedEvents: KeyEventListEntry[];
   dayPicker: ReturnType<typeof useKeyEventDayPicker<KeyEventDayGroup>>;
   renderEventCard: RenderKeyEventCard;
   canAddFromDrc: boolean;
 }> = ({
   reviewMode,
+  showNoNews,
   sortedEvents,
   dayPicker,
   renderEventCard,
@@ -602,7 +746,7 @@ const KeyEventsList: React.FC<{
 }) => {
   if (sortedEvents.length === 0) {
     
-    return reviewMode === 'drc' && !canAddFromDrc ? (
+    return reviewMode === 'drc' && !canAddFromDrc && !showNoNews ? (
       <KeyEventsDrcEmptyState />
     ) : null;
   }
@@ -703,11 +847,31 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
     const canAddFromDrc = reviewMode === 'drc' && !readOnly && drcDate !== null;
     const isDrcEditable = canAddFromDrc;
     const canAddEvent = isWeeklyEditable || canAddFromDrc;
-    const { shouldShowAddForm, shouldShowCompactAdd } = addFormVisibility(
+    const {
+      setIsMarked: setIsNoNewsMarked,
+      setNoNews,
+      clearAfterEventAdded: clearNoNewsAfterEventAdded,
+      dayRow,
+    } = useKeyEventsNoNews({
+      plugin,
+      filePath,
+      isDrc: reviewMode === 'drc',
+      canAddFromDrc,
+      eventCount: events.length,
+    });
+    const {
+      shouldShowAddForm,
+      visibleDayRow,
+      shouldShowHeaderAdd,
+      shouldShowRowAdd,
+      isFormOnDemand,
+    } = addFormVisibility({
       canAddEvent,
-      events.length,
-      isAddFormOpen
-    );
+      eventCount: events.length,
+      isAddFormOpen,
+      dayRow,
+      addsBelowList: canAddFromDrc,
+    });
     
     useEffect(() => {
       if (!plugin.optionsService) return;
@@ -792,6 +956,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
         }
 
         setDrcDate(date);
+        setIsNoNewsMarked(frontmatter[KEY_EVENTS_NO_NEWS_FIELD] === true);
 
         try {
           
@@ -816,7 +981,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
         setIsValidContext(true);
         setLoading(false);
       }
-    }, [filePath, plugin, preview, previewData]);
+    }, [filePath, plugin, preview, previewData, setIsNoNewsMarked]);
 
     const {
       check: restoreCheck,
@@ -1019,6 +1184,8 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
         if (canAddFromDrc) {
           await addDrcEventToWeeklyReview(newEvent, drcDate);
           setEvents((currentEvents) => [...currentEvents, newEvent]);
+          
+          await clearNoNewsAfterEventAdded();
         } else {
           const updatedEvents = [...events, newEvent];
           setEvents(updatedEvents);
@@ -1027,15 +1194,13 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
           await updateFrontmatter(updatedEvents);
         }
 
-        const hadExistingEvents = events.length > 0;
-
         
         setSelectedEvent('');
         setEventNotes('');
         setSelectedColor('gray');
         setSelectedDay('');
         setEventDraft(EMPTY_MANUAL_KEY_EVENT_DRAFT);
-        if (hadExistingEvents) {
+        if (isFormOnDemand) {
           setIsAddFormOpen(false);
         }
       } catch (error) {
@@ -1272,19 +1437,23 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                 className="key-events-edit-actions"
                 {...shareCaptureExcludeProps}
               >
-                <button
+                <Button
+                  variant="secondary"
+                  size="small"
                   className="journalit-key-events-secondary-button"
                   onClick={() => void handleCancelEditEvent()}
                 >
                   {t('button.cancel')}
-                </button>
-                <button
+                </Button>
+                <Button
+                  variant="primary"
+                  size="small"
                   className="key-events-save-button"
                   onClick={() => void handleSaveEditEvent()}
                   disabled={!editEventName.trim()}
                 >
                   {t('button.save')}
-                </button>
+                </Button>
               </div>
             </div>
           </div>
@@ -1336,14 +1505,14 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
                 {...shareCaptureExcludeProps}
               >
                 <button
-                  className="key-events-action-button"
+                  className="key-events-action-button journalit-icon-button"
                   onClick={() => void handleStartEditEvent(event, index)}
                   aria-label={t('button.edit')}
                 >
                   <Edit size={14} aria-hidden="true" />
                 </button>
                 <button
-                  className="key-events-remove-button"
+                  className="key-events-remove-button journalit-icon-button"
                   onClick={() => void handleRemoveEvent(index)}
                   aria-label={t('button.remove')}
                 >
@@ -1382,8 +1551,19 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
           <KeyEventsHeader
             eventCount={events.length}
             isDrc={reviewMode === 'drc'}
-            showCompactAdd={shouldShowCompactAdd}
+            showCompactAdd={shouldShowHeaderAdd}
             onOpenAddForm={() => setIsAddFormOpen(true)}
+          />
+
+          <KeyEventsDrcDayRow
+            row={visibleDayRow}
+            canEdit={canAddFromDrc}
+            onMarkNoNews={() => {
+              setIsAddFormOpen(false);
+              void setNoNews(true);
+            }}
+            onClearNoNews={() => void setNoNews(false)}
+            onAddEvent={() => setIsAddFormOpen(true)}
           />
 
           {shouldShowAddForm && (
@@ -1411,7 +1591,7 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
               use24HourTime={use24HourTime}
               notes={eventNotes}
               onNotesChange={setEventNotes}
-              canCancel={events.length > 0}
+              canCancel={isFormOnDemand}
               onCancel={handleCancelAddEvent}
               onAdd={() => void handleAddEvent()}
               isSaving={isSavingEvent}
@@ -1420,10 +1600,16 @@ export const KeyEventsWidget: React.FC<KeyEventsWidgetProps> = React.memo(
 
           <KeyEventsList
             reviewMode={reviewMode}
+            showNoNews={dayRow === 'no-news'}
             sortedEvents={sortedEvents}
             dayPicker={dayPicker}
             renderEventCard={renderEventCard}
             canAddFromDrc={canAddFromDrc}
+          />
+
+          <KeyEventsAddRow
+            visible={shouldShowRowAdd}
+            onClick={() => setIsAddFormOpen(true)}
           />
         </div>
       </div>

@@ -1,9 +1,9 @@
 
 
-import React, { useState, useRef, useCallback } from 'react';
+import React, { useState, useRef, useCallback, useId } from 'react';
+import { Notice } from 'obsidian';
 import { FolderOpen, ClipboardPaste } from '../shared/icons/ObsidianIcon';
 import { t } from '../../lang/helpers';
-import { imageService } from '../../services/image/ImageService';
 import { PasteManager } from '../../utils/PasteManager';
 import { getApp } from '../../utils/obsidian';
 import { resolveImageInput } from '../../utils/imageMediaUtils';
@@ -26,11 +26,11 @@ interface CompactImageUploaderProps {
   
   onMultipleImagesAdded?: (imagePaths: string[]) => void | Promise<void>;
   
-  onError?: (error: Error) => void;
-  
   saveImageFunction?: (file: File) => Promise<string>;
   
   multiple?: boolean;
+  
+  maxFiles?: number;
   
   className?: string;
   
@@ -44,20 +44,23 @@ interface CompactImageUploaderProps {
 function useCompactImageUploaderModel({
   onImageAdded,
   onMultipleImagesAdded,
-  onError,
   saveImageFunction,
   multiple,
+  maxFiles,
   sourcePath = '',
 }: Pick<
   CompactImageUploaderProps,
   | 'onImageAdded'
   | 'onMultipleImagesAdded'
-  | 'onError'
   | 'saveImageFunction'
   | 'multiple'
+  | 'maxFiles'
   | 'sourcePath'
 >) {
   const [urlInput, setUrlInput] = useState('');
+  
+  
+  const [error, setError] = useState<string | null>(null);
   const [isDragging, setIsDragging] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -65,25 +68,52 @@ function useCompactImageUploaderModel({
   const dragCounter = useRef(0);
 
   
+  const addMediaPaths = useCallback(
+    async (paths: string[]): Promise<boolean> => {
+      if (paths.length === 0) return false;
+      try {
+        if (paths.length > 1 && onMultipleImagesAdded) {
+          await onMultipleImagesAdded(paths);
+        } else {
+          await onImageAdded(paths[0]);
+        }
+        return true;
+      } catch {
+        setError(t('image.uploader.error-add-failed'));
+        return false;
+      }
+    },
+    [onImageAdded, onMultipleImagesAdded]
+  );
+
+  
   const handleUrlSubmit = useCallback(async () => {
     const url = urlInput.trim();
     if (!url) return;
 
-    setIsProcessing(true);
+    let finalUrl: string;
     try {
-      const finalUrl = resolveImageInput(getApp(), url, sourcePath);
-
-      void onImageAdded(finalUrl);
-      setUrlInput('');
-    } catch (error) {
-      console.error('[CompactImageUploader] URL error:', error);
-      if (onError && error instanceof Error) {
-        onError(error);
-      }
-    } finally {
-      setIsProcessing(false);
+      finalUrl = resolveImageInput(getApp(), url, sourcePath);
+    } catch {
+      
+      
+      setError(t('image.uploader.error-invalid-url'));
+      return;
     }
-  }, [urlInput, onImageAdded, onError, sourcePath]);
+
+    
+    
+    setError(null);
+    setUrlInput('');
+    if (!(await addMediaPaths([finalUrl]))) {
+      setUrlInput((current) => current || url);
+    }
+  }, [urlInput, addMediaPaths, sourcePath]);
+
+  const changeUrlInput = useCallback((value: string) => {
+    setUrlInput(value);
+    setError(null);
+  }, []);
 
   
   const handleKeyDown = useCallback(
@@ -101,8 +131,30 @@ function useCompactImageUploaderModel({
     fileInputRef.current?.click();
   }, []);
 
+  const takeSupportedFiles = useCallback(
+    (files: File[]): File[] => {
+      const unsupported = files.find(
+        (file) => !isSupportedCompactMediaFile(file)
+      );
+      if (unsupported) {
+        setError(
+          t('image.uploader.error-unsupported-file', { name: unsupported.name })
+        );
+      }
+      const supported = files.filter(isSupportedCompactMediaFile);
+      return multiple ? supported : supported.slice(0, 1);
+    },
+    [multiple]
+  );
+
   const saveImageFiles = useCallback(
     async (filesToProcess: File[], failureContext: string) => {
+      if (maxFiles !== undefined && filesToProcess.length > maxFiles) {
+        new Notice(
+          t('image.uploader.too-many-files', { count: String(maxFiles) })
+        );
+        return [];
+      }
       
       
       const savedPaths = await filesToProcess.reduce<
@@ -123,14 +175,14 @@ function useCompactImageUploaderModel({
             `[CompactImageUploader] Failed to save ${failureContext}:`,
             error
           );
-          if (onError && error instanceof Error) onError(error);
+          setError(t('image.uploader.error-save-failed', { name: file.name }));
           return [...paths, null];
         }
       }, Promise.resolve([]));
 
       return savedPaths.filter((path): path is string => path !== null);
     },
-    [onError, saveImageFunction]
+    [maxFiles, saveImageFunction]
   );
 
   
@@ -139,43 +191,27 @@ function useCompactImageUploaderModel({
       const files = e.target.files;
       if (!files || files.length === 0) return;
 
+      setError(null);
       setIsProcessing(true);
       try {
-        const supportedFiles = Array.from(files).filter((file) => {
-          if (isSupportedCompactMediaFile(file)) return true;
-          if (onError) {
-            onError(new Error(`Unsupported media file type: ${file.name}`));
-          }
-          return false;
-        });
-        const filesToProcess = multiple
-          ? supportedFiles
-          : supportedFiles.slice(0, 1);
-        if (filesToProcess.length === 0) return;
-
-        const imagePaths = await saveImageFiles(
-          filesToProcess,
-          'selected image'
+        const filesToProcess = takeSupportedFiles(Array.from(files));
+        await addMediaPaths(
+          await saveImageFiles(filesToProcess, 'selected image')
         );
-
-        if (imagePaths.length > 1 && onMultipleImagesAdded) {
-          void onMultipleImagesAdded(imagePaths);
-        } else if (imagePaths.length > 0) {
-          void onImageAdded(imagePaths[0]);
-        }
       } finally {
         setIsProcessing(false);
         
         if (e.target) e.target.value = '';
       }
     },
-    [multiple, onError, onImageAdded, onMultipleImagesAdded, saveImageFiles]
+    [addMediaPaths, saveImageFiles, takeSupportedFiles]
   );
 
   
   const handleClipboardPaste = useCallback(async () => {
     if (isProcessing) return;
 
+    setError(null);
     setIsProcessing(true);
     try {
       const result = await PasteManager.extractClipboardImages();
@@ -185,43 +221,27 @@ function useCompactImageUploaderModel({
         try {
           const text = await readClipboardText();
           if (text?.trim()) {
-            setUrlInput(text);
-            setIsProcessing(false);
+            changeUrlInput(text);
             return;
           }
         } catch {
           // intentional
         }
 
-        if (result.error && !result.error.includes('No images found')) {
-          throw new Error(result.error);
-        }
+        setError(result.error ?? t('paste.error.no-images-found'));
         return;
       }
 
       
       const filesToProcess = multiple ? result.files : [result.files[0]];
-      const imagePaths = await saveImageFiles(filesToProcess, 'pasted image');
-
-      if (imagePaths.length > 1 && onMultipleImagesAdded) {
-        void onMultipleImagesAdded(imagePaths);
-      } else if (imagePaths.length > 0) {
-        void onImageAdded(imagePaths[0]);
-      }
+      await addMediaPaths(await saveImageFiles(filesToProcess, 'pasted image'));
     } catch (error) {
       console.error('[CompactImageUploader] Paste error:', error);
-      if (onError && error instanceof Error) onError(error);
+      setError(t('error.clipboard.paste-failed'));
     } finally {
       setIsProcessing(false);
     }
-  }, [
-    isProcessing,
-    multiple,
-    onImageAdded,
-    onMultipleImagesAdded,
-    onError,
-    saveImageFiles,
-  ]);
+  }, [isProcessing, multiple, addMediaPaths, saveImageFiles, changeUrlInput]);
 
   
   const handleDragEnter = useCallback((e: React.DragEvent) => {
@@ -257,38 +277,30 @@ function useCompactImageUploaderModel({
 
       if (!e.dataTransfer.files?.length) return;
 
+      setError(null);
       setIsProcessing(true);
       try {
-        const imageFiles = imageService.getMediaFromDataTransfer(
-          e.dataTransfer
+        const filesToProcess = takeSupportedFiles(
+          Array.from(e.dataTransfer.files)
         );
-        if (imageFiles.length === 0) return;
-
-        const filesToProcess = multiple ? imageFiles : [imageFiles[0]];
-        const imagePaths = await saveImageFiles(
-          filesToProcess,
-          'dropped image'
+        await addMediaPaths(
+          await saveImageFiles(filesToProcess, 'dropped image')
         );
-
-        if (imagePaths.length > 1 && onMultipleImagesAdded) {
-          void onMultipleImagesAdded(imagePaths);
-        } else if (imagePaths.length > 0) {
-          void onImageAdded(imagePaths[0]);
-        }
       } finally {
         setIsProcessing(false);
       }
     },
-    [multiple, onImageAdded, onMultipleImagesAdded, saveImageFiles]
+    [addMediaPaths, saveImageFiles, takeSupportedFiles]
   );
 
   return {
     urlInput,
+    error,
     isDragging,
     isProcessing,
     fileInputRef,
     containerRef,
-    setUrlInput,
+    changeUrlInput,
     handleKeyDown,
     handleFilePickerClick,
     handleFileSelect,
@@ -310,20 +322,23 @@ function CompactImageUploaderControls({
   placeholder,
   disabled,
   multiple,
+  errorId,
 }: {
   model: CompactImageUploaderModel;
   className: string;
   placeholder: string;
   disabled: boolean;
   multiple: boolean;
+  errorId: string;
 }) {
   const {
     urlInput,
+    error,
     isDragging,
     isProcessing,
     fileInputRef,
     containerRef,
-    setUrlInput,
+    changeUrlInput,
     handleKeyDown,
     handleFilePickerClick,
     handleFileSelect,
@@ -349,11 +364,13 @@ function CompactImageUploaderControls({
         type="text"
         className="journalit-compact-uploader-url-input"
         value={urlInput}
-        onChange={(e) => setUrlInput(e.target.value)}
+        onChange={(e) => changeUrlInput(e.target.value)}
         onKeyDown={(event) => void handleKeyDown(event)}
         placeholder={placeholder}
         disabled={disabled || isProcessing}
         aria-label={t('image.uploader.url-input-aria')}
+        aria-invalid={error ? true : undefined}
+        aria-describedby={error ? errorId : undefined}
       />
 
       <button
@@ -393,9 +410,9 @@ function CompactImageUploaderControls({
 const CompactImageUploaderComponent: React.FC<CompactImageUploaderProps> = ({
   onImageAdded,
   onMultipleImagesAdded,
-  onError,
   saveImageFunction,
   multiple = true,
+  maxFiles,
   className = '',
   placeholder = t('image.uploader.url-placeholder'),
   disabled = false,
@@ -404,11 +421,12 @@ const CompactImageUploaderComponent: React.FC<CompactImageUploaderProps> = ({
   const model = useCompactImageUploaderModel({
     onImageAdded,
     onMultipleImagesAdded,
-    onError,
     saveImageFunction,
     multiple,
+    maxFiles,
     sourcePath,
   });
+  const errorId = useId();
 
   return (
     <div className="journalit-compact-uploader-wrapper">
@@ -418,7 +436,19 @@ const CompactImageUploaderComponent: React.FC<CompactImageUploaderProps> = ({
         placeholder={placeholder}
         disabled={disabled}
         multiple={multiple}
+        errorId={errorId}
       />
+      {model.error ? (
+        <div
+          id={errorId}
+          
+          {...shareCaptureExcludeProps}
+          className="journalit-compact-uploader-error"
+          role="alert"
+        >
+          {model.error}
+        </div>
+      ) : null}
     </div>
   );
 };

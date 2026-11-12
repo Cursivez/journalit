@@ -78,6 +78,12 @@ export const AVAILABLE_METRICS: MetricDefinition[] = [
     category: 'performance',
   },
   {
+    id: 'commissionAndFees',
+    name: t('metric.commissionAndFees.name'),
+    description: t('metric.commissionAndFees.description'),
+    category: 'volume',
+  },
+  {
     id: 'longestWinStreak',
     name: t('metric.longestWinStreak.name'),
     description: t('metric.longestWinStreak.description'),
@@ -93,6 +99,12 @@ export const AVAILABLE_METRICS: MetricDefinition[] = [
     id: 'numTrades',
     name: t('metric.numTrades.name'),
     description: t('metric.numTrades.description'),
+    category: 'volume',
+  },
+  {
+    id: 'avgTradesPerDay',
+    name: t('metric.avgTradesPerDay.name'),
+    description: t('metric.avgTradesPerDay.description'),
     category: 'volume',
   },
   {

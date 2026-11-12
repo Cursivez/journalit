@@ -10,6 +10,8 @@ import {
   useDateDraftGate,
 } from '../../../core/DateDraftGate';
 import { t } from '../../../../lang/helpers';
+import { formatLocalizedDateTime } from '../../../../utils/localizedDateTime';
+import { useHourCycle } from '../../../../hooks/useHourCycle';
 import { createConfigFromProfile } from '../../../../services/propChallenge/PropChallengeConfig';
 import {
   isAuthoritativeDrawdown,
@@ -82,6 +84,7 @@ function groupByKind<T extends PropChallengeRule | PropFirmProfileRule>(
 }
 
 export function ProfileUpdateReview(props: Props) {
+  useHourCycle();
   const dateDraftGate = useDateDraftGate();
   const [purchaseDate, setPurchaseDate] = useState(
     props.config.purchaseDate ?? ''
@@ -687,7 +690,7 @@ function PhaseUpdateReview({
         <div className="journalit-profile-review__transition">
           <p role="status">
             {applicability.kind === 'scheduled'
-              ? `${t('account.profiles.published-date')}: ${new Date(applicability.effectiveAt).toLocaleString()}`
+              ? `${t('account.profiles.published-date')}: ${formatLocalizedDateTime(applicability.effectiveAt, 'medium')}`
               : t(
                   applicability.kind === 'needs_purchase_date'
                     ? 'account.profiles.purchase-needed'
@@ -814,7 +817,12 @@ function PhaseUpdateReview({
                   {published ? (
                     <div>
                       <span>{t('account.profiles.published-date')}</span>
-                      <p>{new Date(published.effectiveAt).toLocaleString()}</p>
+                      <p>
+                        {formatLocalizedDateTime(
+                          published.effectiveAt,
+                          'medium'
+                        )}
+                      </p>
                       <a
                         href={published.sourceUrl}
                         target="_blank"

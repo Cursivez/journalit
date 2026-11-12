@@ -216,13 +216,6 @@ export const PROFILE_LIBRARY_STYLES = `
 .journalit-profile-review__actions {
   justify-content: flex-end;
 }
-.journalit-profile-update-modal .journalit-dropdown-select,
-.journalit-profile-update-modal .journalit-dropdown-select__trigger {
-  width: 100%;
-}
-.journalit-profile-update-modal .journalit-dropdown-select__trigger {
-  justify-content: space-between;
-}
 .journalit-profile-policy-diff .journalit-prop-challenge-rule-toggle {
   grid-template-columns: minmax(0, 1fr) auto;
   min-height: 36px;

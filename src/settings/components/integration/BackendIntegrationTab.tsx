@@ -1317,9 +1317,7 @@ function BackendIntegrationErrorPanel({
                 noteIconClassName="backend-integration__sync-discord-help-icon"
                 renderButton={({ variant, onClick, content }) => (
                   <Button variant={variant} onClick={onClick}>
-                    <div className="backend-integration__button-content">
-                      {content}
-                    </div>
+                    {content}
                   </Button>
                 )}
               />
@@ -1391,14 +1389,12 @@ function BackendSetupSection({
               !backendService
             }
           >
-            <div className="backend-integration__button-content">
-              {connectionState.isRegistering && (
-                <LoadingSpinner size="small" message="" />
-              )}
-              {connectionState.isRegistering
-                ? t('backend.register.registering')
-                : t('backend.register.button')}
-            </div>
+            {connectionState.isRegistering && (
+              <LoadingSpinner size="small" message="" />
+            )}
+            {connectionState.isRegistering
+              ? t('backend.register.registering')
+              : t('backend.register.button')}
           </Button>
         </div>
       </div>
@@ -1418,14 +1414,12 @@ function BackendSetupSection({
               onClick={() => void handleCreateFTPCredentials()}
               disabled={ftpState.isCreating || !backendService}
             >
-              <div className="backend-integration__button-content">
-                {ftpState.isCreating && (
-                  <LoadingSpinner size="small" message="" />
-                )}
-                {ftpState.isCreating
-                  ? t('backend.ftp.creating')
-                  : t('backend.ftp.create-button')}
-              </div>
+              {ftpState.isCreating && (
+                <LoadingSpinner size="small" message="" />
+              )}
+              {ftpState.isCreating
+                ? t('backend.ftp.creating')
+                : t('backend.ftp.create-button')}
             </Button>
           </div>
         </div>

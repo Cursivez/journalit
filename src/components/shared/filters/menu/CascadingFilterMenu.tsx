@@ -1,7 +1,10 @@
 
 
 import React, {
+  type Ref,
+  type RefObject,
   useCallback,
+  useImperativeHandle,
   useEffect,
   useEffectEvent,
   useRef,
@@ -25,16 +28,25 @@ export interface FilterMenuTriggerState {
   activeFilterCount: number;
 }
 
+export interface FilterMenuHandle {
+  open: () => void;
+  close: () => void;
+}
+
 interface CascadingFilterMenuProps {
   app: App;
   entries: FilterMenuEntry[];
   onReset: () => void;
   
   canReset?: boolean;
-  title?: string;
+  title?: React.ReactNode;
   className?: string;
   
   onOpenChange?: (isOpen: boolean) => void;
+  
+  menuRef?: Ref<FilterMenuHandle>;
+  
+  anchorRef?: RefObject<HTMLElement | null>;
   
   renderTrigger?: (trigger: FilterMenuTriggerState) => React.ReactNode;
   ariaLabelledBy?: string;
@@ -53,8 +65,14 @@ export const CascadingFilterMenu: React.FC<CascadingFilterMenuProps> = ({
   renderTrigger,
   ariaLabelledBy,
   guideTour = null,
+  menuRef,
+  anchorRef,
 }) => {
   const triggerRef = useRef<HTMLDivElement>(null);
+  
+  
+  
+  
   const [isOpen, setIsOpen] = useState(false);
   const isGuided = guideTour !== null;
   const activeFilterCount = countAppliedFilters(entries);
@@ -106,6 +124,15 @@ export const CascadingFilterMenu: React.FC<CascadingFilterMenuProps> = ({
     syncWithTour(isGuided);
   }, [isGuided]);
 
+  useImperativeHandle(
+    menuRef,
+    () => ({
+      open: () => setOpen(true),
+      close: () => handleClose(false),
+    }),
+    [handleClose, setOpen]
+  );
+
   const handleTriggerClick = useCallback(() => {
     if (isOpen) {
       handleClose(false);
@@ -140,7 +167,7 @@ export const CascadingFilterMenu: React.FC<CascadingFilterMenuProps> = ({
           title={title ?? t('filter.menu.title')}
           canReset={canReset ?? hasAppliedEntries(entries)}
           onReset={onReset}
-          triggerRef={triggerRef}
+          triggerRef={anchorRef ?? triggerRef}
           onClose={handleClose}
           guideTour={guideTour}
         />

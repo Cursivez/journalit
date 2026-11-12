@@ -5,12 +5,17 @@ import {
   DrawdownType,
   TransactionType,
 } from '../../../services/account/types';
-import { formatDateDisplay, getUserDateFormat } from '../../../utils/dateUtils';
+import {
+  formatDateDisplay,
+  getUserDateFormat,
+  parseLocalDateSafe,
+} from '../../../utils/dateUtils';
 import { DashboardMetricsData, AUMChartDataPoint } from './types';
 import { AccountSettings } from '../../../settings/types';
 import { normalizeLiveBalanceAdjustment } from '../../../services/account/liveBalanceAdjustment';
 import { getCurrentLanguage } from '../../../lang/helpers';
 import { resolveProfitTargetAmount } from '../../../services/account/accountDefinitionRules';
+import { priorPayoutTotal } from '../../../services/propChallenge/PropChallengeAggregation';
 
 
 type SettingsWithAccount = { account?: AccountSettings };
@@ -196,9 +201,8 @@ export function calculateDashboardMetrics(
       ? (totalGrowthAmount / totalInitialBalance) * 100
       : 0;
 
-  
   const totalWithdrawals = withdrawalAccounts.reduce(
-    (sum, account) => sum + (account.metrics.totalWithdrawals || 0),
+    (sum, account) => sum + accountTotalWithdrawals(account),
     0
   );
 
@@ -450,6 +454,16 @@ export function calculateProfitTargetProgress(account: AccountData): number {
 }
 
 
+function accountTotalWithdrawals(account: AccountData): number {
+  return (account.metrics.totalWithdrawals || 0) + accountPriorPayouts(account);
+}
+
+
+export function accountPriorPayouts(account: AccountData): number {
+  return account.propChallenge ? priorPayoutTotal(account.propChallenge) : 0;
+}
+
+
 export function calculateAccountWithdrawals(account: AccountData): number {
   return account.transactions
     .filter(
@@ -519,6 +533,10 @@ export function getWithdrawalsByMonth(
   accounts: AccountData[]
 ): MonthlyWithdrawal[] {
   const monthMap = new Map<string, number>();
+  const add = (date: Date, amount: number) => {
+    const key = `${date.getFullYear()}-${date.getMonth()}`;
+    monthMap.set(key, (monthMap.get(key) || 0) + amount);
+  };
 
   for (const account of accounts) {
     const withdrawals = account.transactions.filter(
@@ -528,11 +546,16 @@ export function getWithdrawalsByMonth(
     );
 
     for (const w of withdrawals) {
-      const date = w.date instanceof Date ? w.date : new Date(w.date);
-      const year = date.getFullYear();
-      const month = date.getMonth();
-      const key = `${year}-${month}`;
-      monthMap.set(key, (monthMap.get(key) || 0) + Math.abs(w.amount));
+      add(
+        w.date instanceof Date ? w.date : new Date(w.date),
+        Math.abs(w.amount)
+      );
+    }
+
+    
+    for (const payout of account.propChallenge?.priorPayouts ?? []) {
+      const date = parseLocalDateSafe(payout.date);
+      if (date && payout.amount > 0) add(date, payout.amount);
     }
   }
 
@@ -661,9 +684,8 @@ export function calculateAccountTypeMetrics(
   
   const aumWeightPercent = totalAUM > 0 ? (aumAmount / totalAUM) * 100 : 0;
 
-  
   const totalWithdrawals = accounts.reduce(
-    (sum, account) => sum + (account.metrics.totalWithdrawals || 0),
+    (sum, account) => sum + accountTotalWithdrawals(account),
     0
   );
 

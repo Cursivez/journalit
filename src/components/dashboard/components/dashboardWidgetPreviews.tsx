@@ -69,6 +69,32 @@ const lineChart = (
   </ChartFrame>
 );
 
+
+const rollingLineChart = (
+  id: string,
+  values: number[],
+  min: number,
+  max: number,
+  yLabels: string[],
+  tone: PreviewTone,
+  baselineAt?: number
+) => (
+  <ChartFrame
+    title={widgetName(id)}
+    control="20"
+    yLabels={yLabels}
+    xLabels={['#76', '#80', '#85', '#90', '#95']}
+  >
+    <PlotLine
+      values={values}
+      min={min}
+      max={max}
+      tone={tone}
+      baselineAt={baselineAt}
+    />
+  </ChartFrame>
+);
+
 const CALENDAR_CELLS: Array<[string, number]> = [
   ['3', 0],
   ['4', 0],
@@ -473,6 +499,87 @@ export const DASHBOARD_WIDGET_PREVIEWS: Record<string, () => React.ReactNode> =
         />
       </ChartFrame>
     ),
+    rollingStatsWinRate: () =>
+      rollingLineChart(
+        'rollingStatsWinRate',
+        [
+          45, 45, 50, 50, 55, 55, 50, 55, 60, 60, 55, 55, 60, 65, 65, 60, 55,
+          60, 65, 65,
+        ],
+        0,
+        100,
+        ['100%', '75%', '50%', '25%', '0%'],
+        'muted'
+      ),
+    rollingStatsProfitFactor: () =>
+      rollingLineChart(
+        'rollingStatsProfitFactor',
+        [
+          0.9, 0.8, 1, 1.2, 1.1, 1.4, 1.6, 1.5, 1.3, 1.5, 1.8, 2, 1.9, 1.7, 1.6,
+          1.9, 2.2, 2.1, 2.3, 2.2,
+        ],
+        0,
+        3,
+        ['3.00', '2.25', '1.50', '0.75', '0.00'],
+        'muted',
+        1
+      ),
+    rollingStatsExpectancy: () =>
+      rollingLineChart(
+        'rollingStatsExpectancy',
+        [
+          30, 20, 35, 45, 40, 55, 65, 60, 50, 60, 75, 85, 80, 70, 65, 80, 95,
+          90, 105, 100,
+        ],
+        0,
+        120,
+        ['$120', '$90', '$60', '$30', '$0'],
+        'pos'
+      ),
+    rollingStatsAvgSessionPnL: () =>
+      rollingLineChart(
+        'rollingStatsAvgSessionPnL',
+        [
+          60, 80, 110, 100, 130, 150, 135, 120, 145, 170, 165, 145, 180, 205,
+          190, 185, 210, 235, 225, 230,
+        ],
+        0,
+        250,
+        ['$250', '$188', '$125', '$63', '$0'],
+        'pos'
+      ),
+    rollingBiasWinRate: () => (
+      <ChartFrame
+        title={widgetName('rollingBiasWinRate')}
+        control="20"
+        legend={[
+          { label: t('dashboard.rolling_bias.with_bias'), tone: 'pos' },
+          { label: t('dashboard.rolling_bias.against_bias'), tone: 'neg' },
+        ]}
+        yLabels={['100%', '75%', '50%', '25%', '0%']}
+        xLabels={['#48', '#94', '#143', '#193', '#243']}
+      >
+        <PlotLine
+          values={[
+            70, 65, 70, 75, 70, 65, 60, 65, 70, 75, 65, 60, 55, 60, 65, 70, 75,
+            80, 75, 70,
+          ]}
+          min={0}
+          max={100}
+          tone="pos"
+          baselineAt={50}
+        />
+        <PlotLine
+          values={[
+            40, 40, 35, 30, 35, 30, 25, 20, 20, 25, 25, 30, 35, 40, 45, 50, 50,
+            45, 50, 55,
+          ]}
+          min={0}
+          max={100}
+          tone="neg"
+        />
+      </ChartFrame>
+    ),
   };
 
 interface MetricSample {
@@ -524,9 +631,19 @@ const DASHBOARD_METRIC_PREVIEWS: Record<string, MetricSample> = {
   bestDay: money('$1,350', '.00', true, up('$210.00')),
   largestWin: money('$920', '.50', true, up('$120.50')),
   largestLoss: money('-$410', '.25', false, down('$60.00', 'green')),
+  commissionAndFees: {
+    value: '$184.50',
+    mainPart: '$184',
+    decimalPart: '.50',
+    delta: down('$12.30', 'green'),
+  },
   longestWinStreak: { value: '7', delta: up('2') },
   longestLossStreak: { value: '3', delta: down('1', 'green') },
   numTrades: { value: '128', delta: up('14') },
+  avgTradesPerDay: {
+    value: '3.2',
+    delta: { value: '0.4', direction: 'down' },
+  },
   numWinTrades: { value: '80', isPositive: true, delta: up('9') },
   numLossTrades: { value: '48', isPositive: false, delta: up('5') },
   avgWin: money('$215', '.40', true, up('$18.20')),

@@ -20,6 +20,15 @@ export function expectAccountUnchanged(
 }
 
 
+export function expectAccount(
+  holds: (current: Readonly<AccountMetadata> | undefined) => boolean
+): AccountMetadataExpectation {
+  return (current) => {
+    if (!holds(current)) throw new AccountChangedError();
+  };
+}
+
+
 export const expectNoAccount: AccountMetadataExpectation = (current) => {
   if (current !== undefined) throw new AccountChangedError();
 };

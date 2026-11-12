@@ -69,9 +69,10 @@ function restoreFocusedControl(container: HTMLElement, index: number): void {
     !container.contains(active)
   )
     return;
-  container
-    .querySelectorAll<HTMLElement>(FOCUSABLE_CONTROL_SELECTOR)
-    [index]?.focus({ preventScroll: true });
+  const controls = container.querySelectorAll<HTMLElement>(
+    FOCUSABLE_CONTROL_SELECTOR
+  );
+  controls[index]?.focus({ preventScroll: true });
 }
 
 export class TradeNoteProcessor extends BaseComponentProcessor {

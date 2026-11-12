@@ -23,7 +23,10 @@ import {
   DEFAULT_HOME_WIDGETS,
   getHomeWidgetById,
 } from './homeTypes';
-import { LAYOUT_BOTTOM_POSITION } from '../shared/gridLayout/gridLayoutUtils';
+import {
+  GRID_COLS,
+  LAYOUT_BOTTOM_POSITION,
+} from '../shared/gridLayout/gridLayoutUtils';
 import { generateUUID } from '../../utils/uuid';
 import { DashboardDataProvider } from '../dashboard/context/DashboardDataContext';
 import { HomePeriodProvider } from './context/HomePeriodContext';
@@ -37,6 +40,9 @@ import { getTradingDay } from '../../utils/tradingDayUtils';
 import { HomeAccountProvider } from './context/HomeAccountContext';
 import { HomeGridLayout } from './HomeGridLayout';
 import { HomeAccountsDataProvider } from './context/HomeAccountsDataContext';
+import { usePaymentRecoveryBanner } from '../../hooks/usePaymentRecoveryBanner';
+import { paymentRecoveryMessage } from '../shared/paymentRecoveryMessage';
+import { HomeGreetingSubtitle } from './HomePaymentRecovery';
 import { QuickLinksRow } from './QuickLinksRow';
 import { HomeWidgetSelector } from './components/HomeWidgetSelector';
 import { HomeFilterPopover } from './components/HomeFilterPopover';
@@ -48,6 +54,7 @@ import {
   HomePeriod,
   HomeQuickLinksPosition,
   HomeViewMode,
+  SETTINGS_TAB_IDS,
 } from '../../settings/types';
 import { useEventBus } from '../../hooks/useEventBus';
 import {
@@ -600,44 +607,44 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
         layouts: {
           Default: {
             lg: [
-              { i: 'weeklySummary', x: 2, y: 4, w: 4, h: 4 },
-              { i: 'gettingStarted', x: 6, y: 2, w: 3, h: 6 },
-              { i: 'unreviewedTrades', x: 6, y: 0, w: 3, h: 2 },
-              { i: 'recentItems', x: 0, y: 4, w: 2, h: 4 },
-              { i: 'positionSize', x: 9, y: 0, w: 3, h: 8 },
-              { i: 'yearHeatmap', x: 0, y: 0, w: 6, h: 4 },
+              { i: 'weeklySummary', x: 4, y: 4, w: 8, h: 4 },
+              { i: 'gettingStarted', x: 12, y: 2, w: 6, h: 6 },
+              { i: 'unreviewedTrades', x: 12, y: 0, w: 6, h: 2 },
+              { i: 'recentItems', x: 0, y: 4, w: 4, h: 4 },
+              { i: 'positionSize', x: 18, y: 0, w: 6, h: 8 },
+              { i: 'yearHeatmap', x: 0, y: 0, w: 12, h: 4 },
             ],
             md: [
-              { i: 'weeklySummary', x: 3, y: 1, w: 3, h: 5 },
-              { i: 'gettingStarted', x: 0, y: 0, w: 3, h: 6 },
-              { i: 'unreviewedTrades', x: 3, y: 0, w: 3, h: 1 },
-              { i: 'yearHeatmap', x: 0, y: 6, w: 6, h: 5 },
-              { i: 'positionSize', x: 0, y: 11, w: 3, h: 8 },
-              { i: 'recentItems', x: 3, y: 11, w: 3, h: 8 },
+              { i: 'weeklySummary', x: 6, y: 1, w: 6, h: 5 },
+              { i: 'gettingStarted', x: 0, y: 0, w: 6, h: 6 },
+              { i: 'unreviewedTrades', x: 6, y: 0, w: 6, h: 1 },
+              { i: 'yearHeatmap', x: 0, y: 6, w: 12, h: 5 },
+              { i: 'positionSize', x: 0, y: 11, w: 6, h: 8 },
+              { i: 'recentItems', x: 6, y: 11, w: 6, h: 8 },
             ],
             sm: [
-              { i: 'weeklySummary', x: 0, y: 1, w: 2, h: 5 },
-              { i: 'gettingStarted', x: 2, y: 0, w: 2, h: 6 },
-              { i: 'unreviewedTrades', x: 0, y: 0, w: 2, h: 1 },
-              { i: 'yearHeatmap', x: 0, y: 6, w: 4, h: 5 },
-              { i: 'recentItems', x: 0, y: 11, w: 2, h: 7 },
-              { i: 'positionSize', x: 2, y: 11, w: 2, h: 7 },
+              { i: 'weeklySummary', x: 0, y: 1, w: 4, h: 5 },
+              { i: 'gettingStarted', x: 4, y: 0, w: 4, h: 6 },
+              { i: 'unreviewedTrades', x: 0, y: 0, w: 4, h: 1 },
+              { i: 'yearHeatmap', x: 0, y: 6, w: 8, h: 5 },
+              { i: 'recentItems', x: 0, y: 11, w: 4, h: 7 },
+              { i: 'positionSize', x: 4, y: 11, w: 4, h: 7 },
             ],
             xs: [
-              { i: 'gettingStarted', x: 0, y: 0, w: 1, h: 6 },
-              { i: 'recentItems', x: 1, y: 0, w: 1, h: 6 },
-              { i: 'weeklySummary', x: 0, y: 6, w: 2, h: 4 },
-              { i: 'unreviewedTrades', x: 0, y: 10, w: 2, h: 2 },
-              { i: 'yearHeatmap', x: 0, y: 12, w: 2, h: 5 },
-              { i: 'positionSize', x: 0, y: 17, w: 2, h: 7 },
+              { i: 'gettingStarted', x: 0, y: 0, w: 2, h: 6 },
+              { i: 'recentItems', x: 2, y: 0, w: 2, h: 6 },
+              { i: 'weeklySummary', x: 0, y: 6, w: 4, h: 4 },
+              { i: 'unreviewedTrades', x: 0, y: 10, w: 4, h: 2 },
+              { i: 'yearHeatmap', x: 0, y: 12, w: 4, h: 5 },
+              { i: 'positionSize', x: 0, y: 17, w: 4, h: 7 },
             ],
             xxs: [
-              { i: 'gettingStarted', x: 0, y: 0, w: 1, h: 6 },
-              { i: 'weeklySummary', x: 0, y: 6, w: 1, h: 4 },
-              { i: 'unreviewedTrades', x: 0, y: 10, w: 1, h: 2 },
-              { i: 'recentItems', x: 0, y: 12, w: 1, h: 5 },
-              { i: 'yearHeatmap', x: 0, y: 17, w: 1, h: 5 },
-              { i: 'positionSize', x: 0, y: 22, w: 1, h: 7 },
+              { i: 'gettingStarted', x: 0, y: 0, w: 2, h: 6 },
+              { i: 'weeklySummary', x: 0, y: 6, w: 2, h: 4 },
+              { i: 'unreviewedTrades', x: 0, y: 10, w: 2, h: 2 },
+              { i: 'recentItems', x: 0, y: 12, w: 2, h: 5 },
+              { i: 'yearHeatmap', x: 0, y: 17, w: 2, h: 5 },
+              { i: 'positionSize', x: 0, y: 22, w: 2, h: 7 },
             ],
           },
         },
@@ -1276,7 +1283,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
       if (plugin.settings.home) {
         const widgetDef = getHomeWidgetById(finalWidgetId);
         if (widgetDef) {
-          const cols = { lg: 12, md: 6, sm: 4, xs: 2, xxs: 1 };
+          const cols = GRID_COLS;
           const currentLayoutName =
             plugin.settings.home.activeLayout || 'Default';
           const currentLayouts =
@@ -1339,7 +1346,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
                   i: finalWidgetId,
                   x: 0,
                   y: LAYOUT_BOTTOM_POSITION,
-                  w: 1,
+                  w: cols.xxs,
                   h: widgetDef.defaultSize.h,
                 },
               ];
@@ -1482,6 +1489,7 @@ function useHomePageModel(plugin: JournalitPlugin, isActive: boolean) {
       reviewStatus: [],
       ratings: [],
       directions: [],
+      marketBias: [],
       tags: [],
       mistakes: [],
       customFieldFilters: {},
@@ -1611,22 +1619,47 @@ const HomeModeToggle: React.FC<HomeModeToggleProps> = ({
 interface HomeSettingsButtonProps {
   plugin: JournalitPlugin;
   registerTarget?: (element: HTMLButtonElement | null) => void;
+  
+  dotForGrace?: boolean;
 }
+
 
 const HomeSettingsButton: React.FC<HomeSettingsButtonProps> = ({
   plugin,
   registerTarget,
-}) => (
-  <button
-    type="button"
-    onClick={() => plugin.openSettings()}
-    className="journalit-home-settings-button clickable-icon"
-    aria-label={t('home.aria.open-settings')}
-    ref={registerTarget}
-  >
-    <Settings size={16} aria-hidden="true" />
-  </button>
-);
+  dotForGrace = false,
+}) => {
+  const paymentRecovery = usePaymentRecoveryBanner(plugin);
+  const attention =
+    paymentRecovery && (dotForGrace || paymentRecovery.banner.kind !== 'grace')
+      ? paymentRecoveryMessage(paymentRecovery.banner)
+      : null;
+  return (
+    <button
+      type="button"
+      onClick={() =>
+        attention
+          ? plugin.openSettingsToTab(SETTINGS_TAB_IDS.CONNECTIONS)
+          : plugin.openSettings()
+      }
+      className={`journalit-home-settings-button clickable-icon${attention ? ' journalit-home-settings-button--attention' : ''}`}
+      aria-label={
+        attention
+          ? `${t('home.aria.open-settings')}. ${attention}`
+          : t('home.aria.open-settings')
+      }
+      ref={registerTarget}
+    >
+      <Settings size={16} aria-hidden="true" />
+      {attention && (
+        <span
+          className="journalit-home-settings-button__dot"
+          aria-hidden="true"
+        />
+      )}
+    </button>
+  );
+};
 
 interface HomeOverviewPanelProps {
   model: HomePageModel;
@@ -1664,11 +1697,14 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
             />
           )}
           <div className="journalit-home-subtitle-row">
-            <p className="journalit-home-greeting-subtitle">
-              {model.memoizedSubtitle}
-            </p>
+            <HomeGreetingSubtitle
+              plugin={plugin}
+              subtitle={model.memoizedSubtitle}
+            />
 
-            <div className="journalit-home-actions">
+            <div
+              className={`journalit-home-actions journalit-view-actions${model.isEditing ? ' is-editing-layout' : ''}`}
+            >
               <div ref={model.registerFiltersTarget}>
                 <HomeFilterPopover
                   app={plugin.app}
@@ -1700,21 +1736,8 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
               {model.isEditing && (
                 <button
                   type="button"
-                  onClick={() => model.setShowWidgetSelector(true)}
-                  className="journalit-home-add-widget-button clickable-icon"
-                  aria-label={t('home.button.add-widget')}
-                  ref={model.registerAddWidgetButtonTarget}
-                >
-                  <Plus size={14} />
-                  <span>{t('home.button.add-widget')}</span>
-                </button>
-              )}
-
-              {model.isEditing && (
-                <button
-                  type="button"
                   onClick={() => void model.handleToggleQuickLinksPosition()}
-                  className="journalit-home-quick-links-position-toggle clickable-icon"
+                  className="journalit-home-quick-links-position-toggle journalit-view-actions__tool clickable-icon"
                   aria-label={
                     model.quickLinksPosition === 'belowWidgets'
                       ? t('home.quick-links.move-above')
@@ -1730,10 +1753,25 @@ const HomeOverviewPanel: React.FC<HomeOverviewPanelProps> = ({
                 </button>
               )}
 
+              {model.isEditing && (
+                <button
+                  type="button"
+                  onClick={() => model.setShowWidgetSelector(true)}
+                  className="journalit-home-add-widget-button journalit-view-actions__tool journalit-view-actions__tool--label clickable-icon"
+                  aria-label={t('home.button.add-widget')}
+                  ref={model.registerAddWidgetButtonTarget}
+                >
+                  <Plus size={14} />
+                  <span className="journalit-button__label">
+                    {t('home.button.add-widget')}
+                  </span>
+                </button>
+              )}
+
               <button
                 type="button"
                 onClick={() => void model.handleToggleEdit()}
-                className={`journalit-home-edit-toggle clickable-icon${model.isEditing ? ' journalit-home-edit-toggle--active' : ''}`}
+                className={`journalit-home-edit-toggle journalit-view-actions__save clickable-icon${model.isEditing ? ' journalit-home-edit-toggle--active' : ''}`}
                 aria-label={
                   model.isEditing
                     ? t('home.aria.save-layout')
@@ -1960,7 +1998,7 @@ const HomePageComponent: React.FC<HomePageProps> = ({
   const dashboardToggle = useMemo(
     () => (
       <>
-        <HomeSettingsButton plugin={plugin} />
+        <HomeSettingsButton plugin={plugin} dotForGrace />
         <HomeModeToggle />
       </>
     ),

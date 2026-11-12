@@ -10,6 +10,8 @@ import React, {
 import { TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { parseLocalDateSafe } from '../../../utils/dateUtils';
+import { formatLocalizedReviewDate } from '../../../utils/localizedDateTime';
+import { useDateFormat } from '../../../hooks/useDateFormat';
 import { ImageCarousel } from '../../image/ImageCarousel';
 import { createSvgPlaceholderDataUri } from '../../../utils/placeholderImage';
 import type { PreviousTradingDayContextResult } from '../../../services/drc/DRCService';
@@ -27,13 +29,6 @@ interface PreviousTradingDayContextConfig {
   headingsJson?: string;
   fallbackMode?: 'expected-only' | 'nearest-earlier';
 }
-
-const previousDRCDateFormatter = new Intl.DateTimeFormat(undefined, {
-  weekday: 'long',
-  month: 'short',
-  day: 'numeric',
-  year: 'numeric',
-});
 
 interface PreviousTradingDayContextWidgetProps {
   filePath: string;
@@ -69,11 +64,11 @@ function parseHeadings(
   });
 }
 
-function formatPreviousDRCDate(sourceDate: string): string {
+function formatPreviousDRCDate(sourceDate: string, dateFormat: string): string {
   const parsedDate = parseLocalDateSafe(sourceDate);
   if (!parsedDate) return sourceDate;
 
-  return previousDRCDateFormatter.format(parsedDate);
+  return formatLocalizedReviewDate(parsedDate, 'full', dateFormat);
 }
 
 export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContextWidgetProps> =
@@ -85,6 +80,7 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
       preview,
       ancestorSourcePaths = NO_ANCESTOR_SOURCES,
     }) => {
+      const dateFormat = useDateFormat();
       const [state, dispatchState] = useReducer(
         (
           current: {
@@ -287,7 +283,7 @@ export const PreviousTradingDayContextWidget: React.FC<PreviousTradingDayContext
                 {t('widget.previous-trading-day-context.reference-label')}
               </div>
               <div className="journalit-previous-drc-reference-date">
-                {formatPreviousDRCDate(context.sourceDate)}
+                {formatPreviousDRCDate(context.sourceDate, dateFormat)}
               </div>
             </div>
             {isNested && !hasSourceCycle && (

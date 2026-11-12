@@ -57,6 +57,28 @@ export const calculateCoreTradeMetrics = ({
   };
 };
 
+
+export const calculateExpectancyR = (rValues: number[]): number | undefined => {
+  if (rValues.length === 0) return undefined;
+  let winSum = 0;
+  let winCount = 0;
+  let lossSum = 0;
+  let lossCount = 0;
+  for (const r of rValues) {
+    if (r > 0) {
+      winSum += r;
+      winCount += 1;
+    } else if (r < 0) {
+      lossSum += r;
+      lossCount += 1;
+    }
+  }
+  const avgWinR = winCount > 0 ? winSum / winCount : 0;
+  const avgLossR = lossCount > 0 ? Math.abs(lossSum / lossCount) : 0;
+  const rWinRate = winCount / rValues.length;
+  return rWinRate * avgWinR - (1 - rWinRate) * avgLossR;
+};
+
 const getMetricNumber = (
   metrics: DashboardMetrics,
   metricId: AnalyticsMetricId
@@ -100,6 +122,10 @@ const getMetricNumber = (
       return metrics.largestWin;
     case 'largest_loss':
       return metrics.largestLoss;
+    case 'commission_and_fees':
+      return metrics.commissionAndFees;
+    case 'average_trades_per_day':
+      return metrics.avgTradesPerDay;
     default: {
       const exhaustive: never = metricId;
       return exhaustive;

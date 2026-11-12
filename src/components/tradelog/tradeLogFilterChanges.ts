@@ -1,3 +1,4 @@
+import { areRecentPeriodsEqual } from '../shared/filters/recentPeriod';
 import { normalizeTradeLogFilters } from '../../settings/viewFiltersDefaults';
 import type { TradeLogFilters } from '../../services/tradelog/types';
 import type { TradeLogMode } from './tradeLogStateUtils';
@@ -18,10 +19,14 @@ export function mergeUserTradeLogFilterChange(
       sameDate(nextRange[0], currentFilters.dateRange[0]) &&
       sameDate(nextRange[1], currentFilters.dateRange[1])
     );
+  const recentPeriodChanged =
+    'recentPeriod' in changes &&
+    !areRecentPeriodsEqual(changes.recentPeriod, currentFilters.recentPeriod);
   const viewLevelChanged =
     changes.viewLevel !== undefined &&
     changes.viewLevel !== currentFilters.viewLevel;
-  const clearsDrilldownDateBasis = dateRangeChanged || viewLevelChanged;
+  const clearsDrilldownDateBasis =
+    dateRangeChanged || recentPeriodChanged || viewLevelChanged;
 
   return normalizeTradeLogFilters({
     ...currentFilters,

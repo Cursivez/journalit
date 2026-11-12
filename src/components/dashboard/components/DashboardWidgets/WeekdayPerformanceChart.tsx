@@ -40,6 +40,12 @@ import {
   CurrencyConversionInfo,
 } from '../../../shared/display/CurrencyConversionInfo';
 import { skipVerticalGridCoordinates } from '../../../charts/chartGrid';
+import type { DashboardData } from '../../utils/dataUtils';
+import {
+  CompareBarsWidget,
+  tradeCountNote,
+} from '../../compare/CompareBarsWidget';
+import { DropdownSelect } from '../../../shared/DropdownSelect';
 
 type WeekdayKey = 'mon' | 'tue' | 'wed' | 'thu' | 'fri' | 'sat' | 'sun';
 
@@ -360,110 +366,22 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
 
     return (
       <BaseWidget dateFormat={dateFormat} skeletonType="bar-chart">
-        {(data) => {
+        {(data, _dateFormat, filters, compare) => {
           const activeCurrency =
             (data.metrics.isMultiCurrency
               ? data.metrics.conversionBaseCurrency
               : data.currency) || data.currency;
           const currencyCode = parseCuratedCurrencyCode(activeCurrency);
 
-          const visibleDays = skipWeekends
-            ? DAY_ORDER.filter((dayKey) => !WEEKEND_DAY_KEYS.has(dayKey))
-            : DAY_ORDER;
+          const buildWeekdayData = (source: DashboardData) => {
+            const visibleDays = skipWeekends
+              ? DAY_ORDER.filter((dayKey) => !WEEKEND_DAY_KEYS.has(dayKey))
+              : DAY_ORDER;
 
-          const aggregates = new Map<WeekdayKey, WeekdayAggregate>(
-            visibleDays.map((dayKey) => [
-              dayKey,
-              {
-                key: dayKey,
-                label: weekdayLabelMap[dayKey],
-                netPnL: 0,
-                netR: 0,
-                trades: 0,
-                rTrades: 0,
-                wins: 0,
-                losses: 0,
-              },
-            ])
-          );
-
-          const analyticsDateBasis =
-            plugin?.settings?.trade?.analyticsDateBasis ?? 'entry';
-          const sourceTrades =
-            analyticsDateBasis === 'exit'
-              ? (data.realizedEventTrades ?? data.trades)
-              : data.trades;
-          const closedTrades = sourceTrades.filter((trade) =>
-            isPnlContributingTrade(trade)
-          );
-
-          closedTrades.forEach((trade) => {
-            const events = [
-              {
-                tradingDay:
-                  getDashboardRealizedTradingDay(trade) ??
-                  getTradeAnalyticsTradingDay(
-                    trade,
-                    analyticsDateBasis,
-                    plugin
-                  ),
-                pnl: getEffectivePnL(trade),
-                useStoredRMultiple: analyticsDateBasis !== 'exit',
-              },
-            ];
-
-            events.forEach(({ tradingDay, pnl, useStoredRMultiple }) => {
-              if (!tradingDay) {
-                return;
-              }
-
-              const dayKey = DAY_KEY_BY_STANDARD_INDEX[tradingDay.getDay()];
-              const bucket = aggregates.get(dayKey);
-
-              if (!bucket) return;
-
-              bucket.netPnL += pnl;
-              bucket.trades += 1;
-
-              const outcome = classifyPnLWithBreakEvenSettings(
-                pnl,
-                breakEvenSettings,
-                trade.breakEvenAccountCurrentBalance
-              );
-              if (outcome === 'win') {
-                bucket.wins += 1;
-              } else if (outcome === 'loss') {
-                bucket.losses += 1;
-              }
-
-              const effectiveR = calculateEffectiveRMultiple(
-                pnl,
-                useStoredRMultiple ? trade.rMultiple : undefined,
-                trade.riskAmount,
-                defaultRiskAmount
-              );
-              if (effectiveR !== undefined && Number.isFinite(effectiveR)) {
-                bucket.netR += effectiveR;
-                bucket.rTrades += 1;
-              }
-            });
-          });
-
-          const hasCompleteRCoverage = Array.from(aggregates.values()).every(
-            (item) => item.trades === 0 || item.trades === item.rTrades
-          );
-          const useRMultiples = displayRMultiples && hasCompleteRCoverage;
-
-          const isSelectedMetricMasked =
-            (selectedMetric === 'net' &&
-              shouldMask(useRMultiples ? 'rMultiple' : 'pnl')) ||
-            (selectedMetric === 'winRate' && shouldMask('returnPercent'));
-
-          const chartData: WeekdayPerformanceDataPoint[] = visibleDays.map(
-            (dayKey) => {
-              const item = aggregates.get(dayKey);
-              if (!item) {
-                return {
+            const aggregates = new Map<WeekdayKey, WeekdayAggregate>(
+              visibleDays.map((dayKey) => [
+                dayKey,
+                {
                   key: dayKey,
                   label: weekdayLabelMap[dayKey],
                   netPnL: 0,
@@ -472,31 +390,202 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
                   rTrades: 0,
                   wins: 0,
                   losses: 0,
-                  winRate: 0,
-                  displayValue: 0,
+                },
+              ])
+            );
+
+            const analyticsDateBasis =
+              plugin?.settings?.trade?.analyticsDateBasis ?? 'entry';
+            const sourceTrades =
+              analyticsDateBasis === 'exit'
+                ? (source.realizedEventTrades ?? source.trades)
+                : source.trades;
+            const closedTrades = sourceTrades.filter((trade) =>
+              isPnlContributingTrade(trade)
+            );
+
+            closedTrades.forEach((trade) => {
+              const events = [
+                {
+                  tradingDay:
+                    getDashboardRealizedTradingDay(trade) ??
+                    getTradeAnalyticsTradingDay(
+                      trade,
+                      analyticsDateBasis,
+                      plugin
+                    ),
+                  pnl: getEffectivePnL(trade),
+                  useStoredRMultiple: analyticsDateBasis !== 'exit',
+                },
+              ];
+
+              events.forEach(({ tradingDay, pnl, useStoredRMultiple }) => {
+                if (!tradingDay) {
+                  return;
+                }
+
+                const dayKey = DAY_KEY_BY_STANDARD_INDEX[tradingDay.getDay()];
+                const bucket = aggregates.get(dayKey);
+
+                if (!bucket) return;
+
+                bucket.netPnL += pnl;
+                bucket.trades += 1;
+
+                const outcome = classifyPnLWithBreakEvenSettings(
+                  pnl,
+                  breakEvenSettings,
+                  trade.breakEvenAccountCurrentBalance
+                );
+                if (outcome === 'win') {
+                  bucket.wins += 1;
+                } else if (outcome === 'loss') {
+                  bucket.losses += 1;
+                }
+
+                const effectiveR = calculateEffectiveRMultiple(
+                  pnl,
+                  useStoredRMultiple ? trade.rMultiple : undefined,
+                  trade.riskAmount,
+                  defaultRiskAmount
+                );
+                if (effectiveR !== undefined && Number.isFinite(effectiveR)) {
+                  bucket.netR += effectiveR;
+                  bucket.rTrades += 1;
+                }
+              });
+            });
+
+            const hasCompleteRCoverage = Array.from(aggregates.values()).every(
+              (item) => item.trades === 0 || item.trades === item.rTrades
+            );
+            const useRMultiples = displayRMultiples && hasCompleteRCoverage;
+
+            const chartData: WeekdayPerformanceDataPoint[] = visibleDays.map(
+              (dayKey) => {
+                const item = aggregates.get(dayKey);
+                if (!item) {
+                  return {
+                    key: dayKey,
+                    label: weekdayLabelMap[dayKey],
+                    netPnL: 0,
+                    netR: 0,
+                    trades: 0,
+                    rTrades: 0,
+                    wins: 0,
+                    losses: 0,
+                    winRate: 0,
+                    displayValue: 0,
+                  };
+                }
+
+                const decidedTrades = item.wins + item.losses;
+                const winRate =
+                  decidedTrades > 0 ? (item.wins / decidedTrades) * 100 : 0;
+
+                let displayValue: number;
+                if (selectedMetric === 'winRate') {
+                  displayValue = winRate;
+                } else if (selectedMetric === 'trades') {
+                  displayValue = item.trades;
+                } else {
+                  displayValue = useRMultiples ? item.netR : item.netPnL;
+                }
+
+                return {
+                  ...item,
+                  winRate,
+                  displayValue,
                 };
               }
+            );
 
-              const decidedTrades = item.wins + item.losses;
-              const winRate =
-                decidedTrades > 0 ? (item.wins / decidedTrades) * 100 : 0;
+            return { chartData, useRMultiples };
+          };
+          const { chartData, useRMultiples } = buildWeekdayData(data);
 
-              let displayValue: number;
-              if (selectedMetric === 'winRate') {
-                displayValue = winRate;
-              } else if (selectedMetric === 'trades') {
-                displayValue = item.trades;
-              } else {
-                displayValue = useRMultiples ? item.netR : item.netPnL;
-              }
+          const isSelectedMetricMasked =
+            (selectedMetric === 'net' &&
+              shouldMask(useRMultiples ? 'rMultiple' : 'pnl')) ||
+            (selectedMetric === 'winRate' && shouldMask('returnPercent'));
 
-              return {
-                ...item,
-                winRate,
-                displayValue,
-              };
-            }
+          const header = (
+            <div className="journalit-chart-widget__header">
+              <div className="journalit-chart-widget__title">
+                {t('dashboard.widgets.weekday-performance.title')}
+                {selectedMetric === 'net' && !useRMultiples && (
+                  <CurrencyConversionInfo
+                    metadata={buildCurrencyConversionMetadata(data.metrics)}
+                    trades={data.trades}
+                  />
+                )}
+              </div>
+              <div className="journalit-chart-widget__selector">
+                <DropdownSelect
+                  variant="button"
+                  menuWidth="content"
+                  showOptionTooltips={false}
+                  ariaLabel={t(
+                    'dashboard.widgets.weekday-performance.metric-aria'
+                  )}
+                  value={selectedMetric}
+                  options={METRIC_OPTIONS.map((metricOption) => ({
+                    value: metricOption,
+                    label: getMetricLabel(metricOption),
+                  }))}
+                  onChange={(nextValue) =>
+                    void handleMetricChange(normalizeMetric(nextValue))
+                  }
+                />
+              </div>
+            </div>
           );
+
+          if (compare) {
+            const b = buildWeekdayData(compare.data);
+            
+            const compareInR = useRMultiples && b.useRMultiples;
+            const valueOf = (item: WeekdayPerformanceDataPoint | undefined) =>
+              !item || item.trades === 0
+                ? null
+                : selectedMetric === 'winRate'
+                  ? item.winRate
+                  : selectedMetric === 'trades'
+                    ? item.trades
+                    : compareInR
+                      ? item.netR
+                      : item.netPnL;
+            return (
+              <div className="journalit-chart-widget">
+                {header}
+                <div className="journalit-chart-widget__body">
+                  <CompareBarsWidget
+                    rows={chartData.map((item, index) => ({
+                      key: item.key,
+                      label: item.label,
+                      a: valueOf(item),
+                      b: valueOf(b.chartData[index]),
+                      aNote: tradeCountNote(item.trades),
+                      bNote: tradeCountNote(b.chartData[index]?.trades),
+                    }))}
+                    kind={
+                      selectedMetric === 'winRate'
+                        ? 'winRate'
+                        : selectedMetric === 'trades'
+                          ? 'count'
+                          : compareInR
+                            ? 'rMultiple'
+                            : 'pnl'
+                    }
+                    currencyCode={currencyCode}
+                    aFilters={filters}
+                    bFilters={compare.filters}
+                    ariaLabel={t('dashboard.widgets.weekday-performance.title')}
+                  />
+                </div>
+              </div>
+            );
+          }
 
           const displayChartData = isSelectedMetricMasked
             ? chartData.map((item) => ({ ...item, displayValue: 1 }))
@@ -570,37 +659,7 @@ export const WeekdayPerformanceChart = React.memo<BaseWidgetProps>(
 
           return (
             <div className="journalit-chart-widget">
-              <div className="journalit-chart-widget__header">
-                <div className="journalit-chart-widget__title">
-                  {t('dashboard.widgets.weekday-performance.title')}
-                  {selectedMetric === 'net' && !useRMultiples && (
-                    <CurrencyConversionInfo
-                      metadata={buildCurrencyConversionMetadata(data.metrics)}
-                      trades={data.trades}
-                    />
-                  )}
-                </div>
-                <div className="journalit-chart-widget__selector">
-                  <select
-                    aria-label={t(
-                      'dashboard.widgets.weekday-performance.metric-aria'
-                    )}
-                    className="journalit-chart-widget__select"
-                    value={selectedMetric}
-                    onChange={(event) =>
-                      void handleMetricChange(
-                        normalizeMetric(event.target.value)
-                      )
-                    }
-                  >
-                    {METRIC_OPTIONS.map((metricOption) => (
-                      <option key={metricOption} value={metricOption}>
-                        {getMetricLabel(metricOption)}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
+              {header}
 
               <div className="journalit-chart-widget__body">
                 <ChartBase height="100%" width="100%" chartRef={chartRef}>

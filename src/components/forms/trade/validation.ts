@@ -15,6 +15,10 @@ import {
 import { CustomFieldsService } from '../../../services/CustomFieldsService';
 import { isValidDate, safeGetTime } from '../../../utils/dateUtils';
 import { t } from '../../../lang/helpers';
+import {
+  hasUnconvertibleRMultipleEntry,
+  isRMultipleEntryStopUnpriced,
+} from './rMultipleEntry';
 import { normalizeTradeExecution } from '../../../services/trade/core/TradeExecutionNormalization';
 import { isUnrealizedSnapshotExecutionValid } from '../../../utils/unrealizedPnl';
 import {
@@ -478,6 +482,21 @@ export const validateTradeForm = (
   }
 
   
+  
+  const rEntryError = isRMultipleEntryStopUnpriced(data)
+    ? t('form.r-entry.stop-unpriced')
+    : t('trade.validation.r-entry-needs-risk');
+  if (isDirectPnLMode && hasUnconvertibleRMultipleEntry(data, 'directPnL')) {
+    errors.directPnL = rEntryError;
+  }
+  if (hasUnconvertibleRMultipleEntry(data, 'mae')) {
+    errors.mae = rEntryError;
+  }
+  if (hasUnconvertibleRMultipleEntry(data, 'mfe')) {
+    errors.mfe = rEntryError;
+  }
+
+  
   const hasValidEntries =
     data.entries &&
     data.entries.length > 0 &&
@@ -718,7 +737,8 @@ export const validateTradeForm = (
   if (data.rebate !== undefined && data.rebate !== null) {
     
     if (data.assetType !== 'options') {
-      errors.rebate = t('trade.validation.rebate-options-only');
+      if (data.rebate !== 0)
+        errors.rebate = t('trade.validation.rebate-options-only');
     } else {
       
       if (typeof data.rebate !== 'number') {

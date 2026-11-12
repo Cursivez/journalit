@@ -2,9 +2,10 @@
 
 import React, { useId } from 'react';
 import { SelectProps } from './types';
+import { DropdownSelect } from '../shared/DropdownSelect';
+import { t } from '../../lang/helpers';
 
 const EMPTY_SELECT_OPTIONS: SelectProps['options'] = [];
-import { t } from '../../lang/helpers';
 
 
 export const Select: React.FC<SelectProps> = ({
@@ -12,85 +13,44 @@ export const Select: React.FC<SelectProps> = ({
   id,
   label,
   options = EMPTY_SELECT_OPTIONS,
+  value = '',
   error,
   helperText,
   disabled = false,
-  size = 'md',
   placeholder,
   onChange,
-  ref,
-  ...rest
+  'aria-label': ariaLabel,
 }) => {
-  
   const uniqueId = useId();
   const selectId = id || `select-${uniqueId}`;
-
-  
+  const labelId = `label-${selectId}`;
   const helperId = `helper-${selectId}`;
   const errorId = `error-${selectId}`;
-
-  
-  const selectClasses = [
-    'select',
-    size,
-    error ? 'error' : '',
-    className,
-    'journalit-select', 
-  ]
-    .filter(Boolean)
-    .join(' ');
-
-  
-  const selectOption = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    if (onChange) {
-      void onChange(e.target.value);
-    }
-
-    
-    if (e.target) {
-      e.target.setAttribute(
-        'data-has-value',
-        e.target.value ? 'true' : 'false'
-      );
-    }
-  };
 
   return (
     <div className="selectContainer">
       {label && (
-        <label htmlFor={selectId} className="label">
+        <label id={labelId} htmlFor={selectId} className="label">
           {label}
         </label>
       )}
 
       <div className="selectWrapper">
-        <select
-          ref={ref}
+        <DropdownSelect
           id={selectId}
-          className={selectClasses}
-          disabled={disabled}
-          data-has-value={
-            !!rest.value || !!rest.defaultValue ? 'true' : 'false'
+          className={['journalit-select', className].filter(Boolean).join(' ')}
+          value={value}
+          options={options}
+          onChange={(next) => void onChange?.(next)}
+          ariaLabel={
+            ariaLabel ?? label ?? placeholder ?? t('common.select-option')
           }
-          aria-invalid={!!error}
-          aria-describedby={error ? errorId : helperText ? helperId : undefined}
-          onChange={selectOption}
-          {...rest}
-        >
-          
-          {!rest.value && !rest.defaultValue && (
-            <option value="" disabled className="select-placeholder">
-              {placeholder ?? t('common.select-option')}
-            </option>
-          )}
-
-          
-          {options.map((option) => (
-            <option key={option.value} value={option.value}>
-              {option.label}
-            </option>
-          ))}
-        </select>
+          ariaLabelledBy={label ? labelId : undefined}
+          ariaDescribedBy={error ? errorId : helperText ? helperId : undefined}
+          placeholder={placeholder ?? t('common.select-option')}
+          disabled={disabled}
+          invalid={Boolean(error)}
+        />
       </div>
 
       {error && (
@@ -107,6 +67,5 @@ export const Select: React.FC<SelectProps> = ({
     </div>
   );
 };
-
 
 Select.displayName = 'Select';

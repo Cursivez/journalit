@@ -3,6 +3,9 @@
 import type { Lang } from './en';
 
 const fr: Lang = {
+  'share.download': 'Télécharger l’image',
+  'share.download-failed': 'Impossible de télécharger l’image',
+  'share.saved-to-vault': 'Image enregistrée dans le coffre : {filename}',
   'tradelog.export.button': 'Exporter',
   'tradelog.export.title': 'Exporter les trades',
   'tradelog.export.format': 'Format',
@@ -67,6 +70,20 @@ const fr: Lang = {
   'account.prop-challenge.rule.comparison': 'Comparaison',
   'templateEditor.widget.session-log.hide-empty-outside':
     'Masquer le journal hors session lorsqu’il est vide',
+  'templateEditor.widget.key-levels.groups': 'Groupes',
+  'templateEditor.widget.key-levels.add-group': 'Ajouter un groupe',
+  'templateEditor.widget.key-levels.group-placeholder':
+    'Nom du groupe, p. ex. NQ',
+  'templateEditor.widget.key-levels.group-name': 'Nom du groupe',
+  'templateEditor.widget.key-levels.remove-group': 'Supprimer le groupe',
+  'templateEditor.widget.key-levels.inherited':
+    'Niveaux hebdomadaires et mensuels',
+  'templateEditor.widget.key-levels.inherited-show': 'Afficher',
+  'templateEditor.widget.key-levels.inherited-hide': 'Masquer',
+  'templateEditor.widget.key-levels.inherits-from': 'Hérite de',
+  'templateEditor.widget.key-levels.inherits-weekly': 'Hebdomadaire : {groups}',
+  'templateEditor.widget.key-levels.inherits-monthly': 'Mensuel : {groups}',
+  'templateEditor.widget.key-levels.no-widget': 'aucun widget Niveaux clés',
   'account.profiles.correction-title': 'Correction du catalogue',
   'account.profiles.correction-source': 'Source des règles',
   'account.profiles.correction-period': 'Historique concerné',
@@ -557,7 +574,6 @@ const fr: Lang = {
   'form.layout.save-layout': 'Enregistrer la disposition',
   'form.layout.discard-changes.body':
     'Abandonner la personnalisation non enregistrée ? Votre brouillon de trade sera conservé.',
-  'form.layout.settings-title': 'Disposition du formulaire de trade',
 
   'form.layout.input-mode': 'Mode de saisie',
   'form.layout.input-mode-prices': 'Prix',
@@ -578,7 +594,7 @@ const fr: Lang = {
     'Ajoutez de nouveau les blocs masqués au formulaire quand vous en avez besoin.',
   'form.layout.empty-active': 'Aucun bloc optionnel n’est visible.',
   'form.layout.all-active': 'Tous les blocs optionnels sont visibles.',
-  'form.layout.add-field-aria': 'Ajouter {field} au formulaire de trade',
+  'form.layout.add-field-aria': 'Afficher {field} dans le formulaire de trade',
   'form.layout.remove-field-aria':
     'Masquer {field} dans le formulaire de trade',
   'form.layout.saved': 'Disposition du formulaire de trade enregistrée',
@@ -601,6 +617,13 @@ const fr: Lang = {
     "Basculer un trade sur la saisie d'un P&L total au lieu des prix de sortie.",
   'form.layout.manual-fx-rate': 'Remplacement du taux de change',
   'form.layout.result-r': 'Résultat en R',
+  'form.layout.mae-mfe-entry': 'MAE / MFE saisis en',
+  'form.layout.position-size-quantity': 'Quantité',
+  'form.layout.position-size-home-widget':
+    'Aussi utilisé par le widget Taille de position sur l’accueil.',
+  'form.layout.trade-times': 'Heures des trades',
+  'form.layout.trade-times-minutes': 'HH:MM',
+  'form.layout.trade-times-seconds': 'HH:MM:SS',
   'form.layout.entry-time': 'Heure du trade',
   'form.field.account': 'Compte',
   'form.field.prop-challenge-phase': 'Phase associée : {name}',
@@ -640,6 +663,21 @@ const fr: Lang = {
   'form.field.risk-amount': 'Montant du risque',
   'form.field.profit-loss': 'Bénéfice/Perte',
   'form.field.total-pnl': 'P&L du trade',
+  'form.field.total-pnl-r': 'P&L du trade (R)',
+  'form.field.direct-pnl-r-placeholder': 'p. ex. 2 ou -1',
+  'form.field.mae-placeholder-r': 'Drawdown maximal en R',
+  'form.field.mfe-placeholder-r': 'Profit maximal en R',
+  'form.r-entry.one-r': '1R équivaut à {amount}',
+  'form.r-entry.saved-without-risk':
+    "Enregistré comme {amount}. Ajoutez un montant de risque ou un stop loss pour l'afficher en R.",
+  'form.r-entry.stop-unpriced':
+    'Ajoutez la taille du contrat ou la valeur du tick pour que le stop loss puisse évaluer 1R.',
+  'form.r-entry.set-risk-amount': 'Définir le montant de risque',
+  'form.r-entry.set-default-risk': 'Définir le risque par défaut',
+  'form.r-entry.needs-risk':
+    'Ajoutez un montant de risque ou un stop loss pour saisir des valeurs en R.',
+  'trade.validation.r-entry-needs-risk':
+    'Ajoutez un montant de risque ou un stop loss pour pouvoir enregistrer cette valeur en R.',
   'form.field.realized-pnl': 'P&L réalisé',
   'form.field.floating-pnl': 'P&L flottant',
   'form.field.total-costs': 'Coûts totaux :',
@@ -780,11 +818,7 @@ const fr: Lang = {
   'form.entry-exit.open': '(Ouverte)',
   'form.entry-exit.closed': '(Fermée)',
   'form.entry-exit.direct-pnl':
-    'Saisir directement le P&L de base du trade au lieu des prix',
-  'form.entry-exit.direct-pnl-desc':
-    'Saisissez le profit/la perte du trade avant dividendes. Les commissions et frais seront toujours appliqués séparément.',
-  'form.entry-exit.calc-pnl':
-    'Calculer le P&L à partir des prix d’entrée/sortie et des tailles de position.',
+    'Saisir directement le P&L du trade au lieu des prix',
   'form.trade-type.title': 'Type de trade',
   'form.trade-type.subtitle': 'Choisissez le type de trade que vous créez',
   'form.trade-type.regular': 'Trade classique',
@@ -799,6 +833,9 @@ const fr: Lang = {
   'form.trade-type.missed-reason': 'Pourquoi avez-vous raté ce trade ?',
   'form.trade-type.missed-reason-placeholder':
     'Décrivez pourquoi vous avez raté cette opportunité de trading...',
+  'form.trade-type.exit-reason': 'Comment serait-il sorti ?',
+  'form.trade-type.exit-reason-placeholder':
+    'Décrivez comment ce trade se serait déroulé...',
   'button.save': 'Enregistrer',
   'button.cancel': 'Annuler',
   'button.close': 'Fermer',
@@ -1477,6 +1514,8 @@ const fr: Lang = {
   'dashboard.metrics.bestDay': 'Meilleur jour',
   'dashboard.metrics.largestWin': 'La plus grande victoire',
   'dashboard.metrics.largestLoss': 'La plus grande perte',
+  'dashboard.metrics.commissionAndFees': 'Commissions et frais',
+  'dashboard.metrics.avgTradesPerDay': 'Moy. trades / jour',
   'dashboard.metrics.longestWinStreak': 'Meilleure séquence',
   'dashboard.metrics.longestLossStreak': 'Pire séquence',
   'dashboard.metrics.avgHoldTime': 'Temps de maintien moyen',
@@ -1544,6 +1583,38 @@ const fr: Lang = {
   'dashboard.filter.date.this-year': 'Cette année',
   'dashboard.filter.date.all-time': 'Tout le temps',
   'dashboard.filter.date.custom': 'Personnalisé',
+  'dashboard.filter.date.tab.label': 'Type de période personnalisée',
+  'dashboard.filter.date.tab.dates': 'Dates',
+  'dashboard.filter.date.tab.recent': 'Récent',
+  'dashboard.filter.date.recent.last.sessions': 'Dernières',
+  'dashboard.filter.date.recent.last.trades': 'Derniers',
+  'dashboard.filter.date.recent.last.days': 'Derniers',
+  'dashboard.filter.date.recent.label.sessions.one': '{count} dernière session',
+  'dashboard.filter.date.recent.label.sessions.few':
+    '{count} dernières sessions',
+  'dashboard.filter.date.recent.label.sessions.many':
+    '{count} dernières sessions',
+  'dashboard.filter.date.recent.label.sessions.other':
+    '{count} dernières sessions',
+  'dashboard.filter.date.recent.label.trades.one': '{count} dernier trade',
+  'dashboard.filter.date.recent.label.trades.few': '{count} derniers trades',
+  'dashboard.filter.date.recent.label.trades.many': '{count} derniers trades',
+  'dashboard.filter.date.recent.label.trades.other': '{count} derniers trades',
+  'dashboard.filter.date.recent.label.days.one': '{count} dernier jour',
+  'dashboard.filter.date.recent.label.days.few': '{count} derniers jours',
+  'dashboard.filter.date.recent.label.days.many': '{count} derniers jours',
+  'dashboard.filter.date.recent.label.days.other': '{count} derniers jours',
+  'dashboard.filter.date.recent.count': 'Nombre',
+  'dashboard.filter.date.recent.unit': 'Unité',
+  'dashboard.filter.date.recent.unit.sessions': 'Sessions',
+  'dashboard.filter.date.recent.unit.trades': 'Trades',
+  'dashboard.filter.date.recent.unit.days': 'Jours',
+  'dashboard.filter.date.recent.hint.sessions':
+    'Jours où vous avez tradé ; ignore les jours sans trading',
+  'dashboard.filter.date.recent.hint.trades':
+    'Vos trades clôturés les plus récents',
+  'dashboard.filter.date.recent.hint.days':
+    'Jours calendaires, avec ou sans trades',
   'dashboard.filter.date.from': 'Depuis',
   'dashboard.filter.date.to': 'À',
 
@@ -1620,6 +1691,46 @@ const fr: Lang = {
   'dashboard.widgets.rollingStats.avgWin': 'Victoire moyenne',
   'dashboard.widgets.rollingStats.avgLoss': 'Perte moyenne',
   'dashboard.widgets.rollingStats.tooltip.trade': 'Trade {label}',
+  'dashboard.compare.all-trades': 'Tous les trades',
+  'dashboard.compare.a-vs-b': 'par rapport à B',
+  'dashboard.compare.calendar-switch': 'Filtre du calendrier',
+  'dashboard.compare.control-label': 'Comparer des filtres',
+  'dashboard.compare.delete-saved': 'Supprimer {name}',
+  'dashboard.compare.filtered': 'Trades filtrés',
+  'dashboard.compare.filter-side': 'Filtre {side}',
+  'dashboard.compare.in-filters': 'Dans les filtres',
+  'dashboard.compare.latest-trade': 'Le plus récent',
+  'dashboard.compare.menu': 'Comparer',
+  'dashboard.compare.name-suggestion': '{a} contre {b}',
+  'dashboard.compare.new': 'Nouvelle comparaison',
+  'dashboard.compare.no-trades': 'Aucun trade',
+  'dashboard.compare.not-value': 'pas {value}',
+  'dashboard.compare.save': 'Enregistrer la comparaison',
+  'dashboard.compare.saved': 'Enregistrées',
+  'dashboard.compare.saved-notice': 'Comparaison « {name} » enregistrée',
+  'dashboard.compare.save-name-label': 'Nom de la comparaison',
+  'dashboard.compare.side-label': 'Filtre {side} : {description}',
+  'dashboard.compare.stop': 'Arrêter la comparaison',
+  'dashboard.compare.low-sample.one': 'Petit échantillon : {count} trade',
+  'dashboard.compare.low-sample.few': 'Petit échantillon : {count} trades',
+  'dashboard.compare.low-sample.many': 'Petit échantillon : {count} trades',
+  'dashboard.compare.low-sample.other': 'Petit échantillon : {count} trades',
+  'dashboard.compare.trade-count.one': '{count} trade',
+  'dashboard.compare.trade-count.few': '{count} trades',
+  'dashboard.compare.trade-count.many': '{count} trades',
+  'dashboard.compare.trade-count.other': '{count} trades',
+  'dashboard.compare.sessions-back.one': 'il y a {count} session',
+  'dashboard.compare.sessions-back.few': 'il y a {count} sessions',
+  'dashboard.compare.sessions-back.many': 'il y a {count} sessions',
+  'dashboard.compare.sessions-back.other': 'il y a {count} sessions',
+  'dashboard.compare.trades-back.one': 'il y a {count} trade',
+  'dashboard.compare.trades-back.few': 'il y a {count} trades',
+  'dashboard.compare.trades-back.many': 'il y a {count} trades',
+  'dashboard.compare.trades-back.other': 'il y a {count} trades',
+  'dashboard.widgets.rollingStats.avgSessionPnL': 'P&L moyen par session',
+  'dashboard.widgets.rollingStats.sessions': '{count} sessions',
+  'dashboard.widgets.rollingStats.group.trades': 'Trades',
+  'dashboard.widgets.rollingStats.group.sessions': 'Sessions',
   'dashboard.rolling_win_loss.title': 'Ratio de gains/pertes glissant',
   'dashboard.rolling_win_loss.period_aria': 'Période',
   'dashboard.rolling_win_loss.trades_count': '{count} trades',
@@ -2022,6 +2133,12 @@ const fr: Lang = {
   'image.uploader.paste-clipboard-aria': 'Coller depuis le presse-papiers',
   'image.uploader.error-invalid-url':
     'URL ou chemin de média invalide. Saisissez une URL d’image/vidéo prise en charge, un chemin de média du coffre ou un lien Excalidraw.',
+  'image.uploader.error-save-failed':
+    'Impossible d’enregistrer {name}. Veuillez réessayer.',
+  'image.uploader.error-unsupported-file':
+    '{name} n’est pas un fichier image ou vidéo pris en charge.',
+  'image.uploader.error-add-failed':
+    'Impossible d’ajouter le média à cette note. Veuillez réessayer.',
   'image.viewer.alt-default': 'Image',
   'image.viewer.description-default': 'Aperçu du média',
 
@@ -2240,48 +2357,40 @@ const fr: Lang = {
   'settings.ftp.error.reset-failed':
     'Échec de la réinitialisation du mot de passe',
 
-  'settings.auth.status-offline': 'Hors ligne',
-  'settings.auth.status-online': 'En ligne',
-
   'settings.auth.sign-in-up': "Se connecter / S'inscrire",
   'settings.auth.sign-out': 'se déconnecter',
 
-  'settings.auth.guest': 'Invitée',
-
   'settings.auth.your-plan': 'Votre plan',
+  'settings.auth.status-signed-in': 'Connecté',
+  'settings.auth.not-signed-in': 'Non connecté',
+  'settings.auth.signed-out-desc':
+    "Connectez-vous pour utiliser Trade Sync, Trade Import, l'Economic Calendar et MCP.",
+  'settings.auth.plan-includes-pro': 'Inclus dans Pro',
+  'settings.auth.plan-includes-free': 'Inclus dans Free',
+  'settings.auth.plan-includes-enterprise': 'Inclus dans Enterprise',
 
   'settings.auth.manage-subscription': "Gérer l'abonnement",
-  'settings.tab.general': 'Générale',
-  'settings.tab.reviews': 'Revues',
+  'payment-recovery.grace':
+    "Le paiement a échoué. Pro reste actif jusqu'au {date}. Mettez à jour votre moyen de paiement pour conserver Pro.",
+  'payment-recovery.no-access':
+    'Le paiement a échoué. Mettez à jour votre carte pour récupérer Pro.',
+  'payment-recovery.paused':
+    "Votre abonnement est en pause car le paiement n'a pas abouti. Mettez à jour votre moyen de paiement pour réactiver Pro.",
+  'payment-recovery.action': 'Mettre à jour le moyen de paiement',
+  'payment-recovery.home-notice':
+    'Le paiement a échoué. Pro prend fin le {date}.',
+  'payment-recovery.home-notice-action': 'Régler le paiement',
 
-  'settings.tab.customization': 'Personnalisation',
   'settings.tab.journal-setup': 'Journal',
-  'settings.tab.trading': 'Valeurs par défaut des trades',
-  'settings.tab.sync': 'Compte et synchronisation',
   'settings.page.reviews.title': 'Layouts de revue, objectifs et checklists',
   'settings.page.reviews.desc':
     'Ouvre tous les réglages de revue : layouts, objectifs récurrents et checklists.',
-  'settings.page.customization.desc':
-    'Ouvre les champs personnalisés, la disposition du formulaire, les symboles, les correspondances, les setups, les erreurs, les tags et les événements.',
   'settings.page.trade-sync.desc':
     'Ouvre les fournisseurs de synchronisation des brokers, les identifiants FTP, la gestion des comptes, les diagnostics et les préférences de notification de synchronisation.',
-  'settings.page.general.desc':
-    "Devise, nom d'affichage, vue au démarrage, éléments récents et préférences de navigation.",
-  'settings.page.sync.desc':
-    'Compte Journalit, abonnement, synchronisation des trades, Trade Import et calendrier économique.',
-  'settings.page.trading.desc':
-    "Valeurs par défaut des nouveaux trades, gestion des dates, risque, logique du seuil de rentabilité et préférences d'affichage des analyses.",
-  'settings.page.journal.desc':
-    'Modèles de revue, automatisation, champs personnalisés, disposition du formulaire, symboles, setups, erreurs, tags et événements.',
   'settings.page.advanced.desc':
     "Dossier du journal, maintenance des chemins d'images, sauvegarde des réglages, import, export et réinitialisation.",
   'settings.page.mcp-access.desc':
     "Autorisez les apps d'IA que vous connectez via MCP à utiliser ce coffre, choisissez ce qui nécessite votre approbation et consultez l'activité des agents.",
-  'settings.reviews.drc': 'DRC',
-  'settings.reviews.weekly': 'Revue hebdomadaire',
-  'settings.reviews.monthly': 'Revue mensuelle',
-  'settings.reviews.quarterly': 'Revue trimestrielle',
-  'settings.reviews.yearly': 'Revue annuelle',
 
   'settings.reviews.template-builder': 'Layout Builder',
   'settings.reviews.template-builder-desc':
@@ -2291,9 +2400,6 @@ const fr: Lang = {
     'Ouvrir les liens des widgets de revue dans de nouveaux onglets',
   'settings.general.review-links-new-tab-desc':
     'Si cette option est désactivée, les liens remplacent l’onglet actuel.',
-  'settings.general.review-links-new-tab-aria':
-    'Ouvrir les liens de notes des widgets de revue dans de nouveaux onglets',
-  'settings.general.tab-behavior': 'Comportement des onglets',
   'settings.reviews.recurring-goals': 'Objectifs récurrents',
   'settings.reviews.recurring-goals-desc':
     'Définissez des objectifs qui apparaissent automatiquement à chaque nouvelle revue. Ceux-ci sont copiés lors de la création de la revue et peuvent être modifiés par revue.',
@@ -2313,45 +2419,19 @@ const fr: Lang = {
     'Revue de création automatique globale',
   'settings.reviews.global-auto-create-desc':
     "Créez automatiquement des revues lorsque le premier trade de la période correspondante est enregistré. Ce paramètre s'applique aux revues quotidiennes, hebdomadaires, mensuelles, trimestrielles et annuelles.",
-  'settings.reviews.global-auto-create-aria':
-    'Revue de création automatique globale',
-  'settings.reviews.auto-create-drc-nav':
-    'Créer automatiquement un DRC lors de la navigation',
   'settings.reviews.auto-create-drc-nav-desc':
     "Créez automatiquement un nouveau DRC lorsque vous accédez à un jour qui n'en a pas.",
-  'settings.reviews.auto-create-drc-nav-aria':
-    'Créer automatiquement un DRC lors de la navigation',
-  'settings.reviews.auto-create-weekly-nav':
-    'Créer automatiquement une revue hebdomadaire sur la navigation',
   'settings.reviews.auto-create-weekly-nav-desc':
     "Créez automatiquement une nouvelle revue hebdomadaire lorsque vous accédez à une semaine qui n'en a pas",
-  'settings.reviews.auto-create-weekly-nav-aria':
-    'Créer automatiquement une revue hebdomadaire sur la navigation',
-  'settings.reviews.auto-create-monthly-nav':
-    'Créer automatiquement une revue mensuelle sur la navigation',
   'settings.reviews.auto-create-monthly-nav-desc':
     "Créez automatiquement une nouvelle revue mensuelle lorsque vous accédez à un mois qui n'en a pas",
-  'settings.reviews.auto-create-monthly-nav-aria':
-    'Créer automatiquement une revue mensuelle sur la navigation',
-  'settings.reviews.auto-create-quarterly-nav':
-    'Créer automatiquement une revue trimestrielle sur la navigation',
   'settings.reviews.auto-create-quarterly-nav-desc':
     "Créez automatiquement une nouvelle revue trimestrielle lorsque vous accédez à un trimestre qui n'en a pas",
-  'settings.reviews.auto-create-quarterly-nav-aria':
-    'Créer automatiquement une revue trimestrielle sur la navigation',
-  'settings.reviews.auto-create-yearly-nav':
-    "Création automatique d'une revue annuelle sur la navigation",
   'settings.reviews.auto-create-yearly-nav-desc':
     "Créez automatiquement une nouvelle revue annuelle lorsque vous accédez à une année qui n'en a pas",
-  'settings.reviews.auto-create-yearly-nav-aria':
-    "Création automatique d'une revue annuelle sur la navigation",
 
   'settings.reviews.notice.builder-not-found':
     'Commande Layout Builder introuvable',
-  'settings.reviews.notice.global-auto-create':
-    'Création automatique pour tous les revue {status}',
-  'settings.reviews.notice.auto-create-nav':
-    'Créer automatiquement {type} lors de la navigation {status}',
 
   'library.type.drc': 'DRC',
   'library.type.weekly': 'Hebdomadaire',
@@ -2709,6 +2789,8 @@ const fr: Lang = {
   'csv.date-format.eu-dash': 'Tableau de bord UE : 25-12-2024',
   'csv.date-format.eu-dash-datetime': 'EU Dash DateHeure : 25-12-2024 14:30:00',
   'upgrade.title': 'Passer à Pro',
+  'upgrade.plan-message':
+    'Débloquez toutes les fonctionnalités Pro de Journalit.',
   'upgrade.feature-message':
     '{featureName} est une fonctionnalité Pro. Mettez à niveau pour débloquer l’automatisation et les fonctionnalités avancées.',
   'upgrade.benefits-title': 'Les fonctionnalités professionnelles incluent :',
@@ -3019,6 +3101,7 @@ const fr: Lang = {
 
   'trade.metadata.setups': 'Setups',
   'trade.metadata.mistakes': 'Erreurs',
+  'trade.metadata.exit-reason': 'Raison de sortie',
   'trade.image.no-images': 'Aucune image pour ce trade',
   'trade.image.click-edit': 'Ajouter une image',
   'trade.image.alt-prefix': 'Image de trading',
@@ -3029,6 +3112,44 @@ const fr: Lang = {
     'La note du trade est encore en cours de chargement. Réessayez dans un instant.',
   'share.review.action': 'Partager la carte de revue',
   'share.trade.modal-title': 'Partager le trade',
+  'share.trade.mode-label': 'Format de partage',
+  'share.trade.mode-note': 'Note du trade',
+  'share.trade.mode-video-card': 'Carte vidéo',
+  'share.motion.preview-label': 'Aperçu de la carte vidéo du trade',
+  'share.motion.background': 'Arrière-plan',
+  'share.motion.choose-file': 'Choisir une image, un GIF ou une vidéo',
+  'share.motion.remove-background': 'Retirer',
+  'share.motion.error-unsupported':
+    'Impossible de lire ce fichier. Essayez MP4, WebM, GIF, PNG ou JPEG.',
+  'share.motion.return': 'Rendement',
+  'share.motion.format': 'Format de la carte',
+  'share.motion.format-landscape': 'Paysage',
+  'share.motion.format-square': 'Carré',
+  'share.motion.format-portrait': 'Vertical',
+  'share.motion.verified': 'Vérifié',
+  'share.motion.self-reported': 'Autodéclaré',
+  'share.motion.imported': 'Importé depuis un fichier',
+  'share.motion.demo': 'Démo',
+  'share.motion.live': 'Réel',
+  'share.motion.length': 'Durée',
+  'share.motion.length-auto': "Comme l'arrière-plan",
+  'share.motion.length-seconds': '{seconds} secondes',
+  'share.motion.dim': "Assombrir l'arrière-plan",
+  'share.motion.sound': 'Inclure le son',
+  'share.motion.sound-opus-hint':
+    'Cet ordinateur enregistre le son en Opus, que certaines applications et les iPhone ne lisent pas. Désactivez le son si une publication échoue.',
+  'share.motion.video-unavailable':
+    'Cet appareil ne peut pas créer de vidéos. Vous pouvez toujours copier la carte en image.',
+  'share.motion.copy-image': "Copier l'image",
+  'share.motion.copied': 'Image de la carte copiée dans le presse-papiers',
+  'share.motion.copy-failed': "Impossible de copier l'image de la carte",
+  'share.motion.save-video': 'Enregistrer la vidéo',
+  'share.motion.save-gif': 'Enregistrer le GIF',
+  'share.motion.gif-saved': 'GIF enregistré sous {filename}',
+  'share.motion.gif-failed': 'Impossible de créer le GIF',
+  'share.motion.exporting': 'Création : {percent} %. Cliquez pour annuler',
+  'share.motion.saved': 'Vidéo enregistrée sous {filename}',
+  'share.motion.export-failed': 'Impossible de créer la vidéo',
   'share.trade.position-return': 'Rendement de la position % (avant frais)',
   'share.trade.account-return': 'Rendement du compte % (solde actuel)',
   'share.trade.hide-dollar-hint':
@@ -3073,7 +3194,6 @@ const fr: Lang = {
 
   'missed-trade.reason-title': 'Pourquoi ai-je raté ce trade ?',
 
-  'settings.general.title': 'Paramètres généraux',
   'settings.general.docs': 'Documents',
   'settings.general.discord': 'Discord',
   'settings.general.github': 'GitHub',
@@ -3081,12 +3201,6 @@ const fr: Lang = {
   'settings.general.currency': 'Devise',
   'settings.general.currency-desc':
     'Choisissez la devise à afficher pour toutes les valeurs monétaires dans le plugin',
-  'settings.general.currency-aria':
-    'Sélectionnez la devise pour afficher les valeurs monétaires',
-  'settings.general.currency-changed':
-    'La devise est désormais {currency}. Tous les composants seront mis à jour immédiatement !',
-  'settings.general.currency-save-failed':
-    "Échec de l'enregistrement du paramètre de devise. Veuillez réessayer.",
   'settings.general.path-change.title':
     'Emplacement du dossier du journal modifié',
   'settings.general.path-change.new-trades-title':
@@ -3117,20 +3231,11 @@ const fr: Lang = {
     "Ajouter un nouveau nom d'affichage...",
   'settings.general.display-name-aria':
     "Nom d'affichage pour le message de bienvenue",
-  'settings.general.display-name-confirm-aria':
-    "Confirmer le changement de nom d'affichage",
-  'settings.general.display-name-cancel-aria':
-    "Annuler le changement de nom d'affichage",
-  'settings.general.display-name-saved':
-    'Nom à afficher enregistré sous "{name}"',
-  'settings.general.display-name-cleared': "Nom d'affichage effacé",
   'settings.general.display-name-save-failed':
     "Échec de l'enregistrement du nom d'affichage. Veuillez réessayer.",
   'settings.general.privacy-mode': 'Mode confidentialité',
   'settings.general.privacy-mode-desc':
     'Masque les valeurs sensibles de trading, de compte, de prix et de performance dans l’interface sans modifier les données enregistrées.',
-  'settings.general.privacy-mode-aria':
-    'Activer ou désactiver le mode confidentialité',
   'home.widget.profit-target-widget.name': 'Objectif de profit',
   'home.widget.profit-target-widget.description':
     'Progression des objectifs de profit',
@@ -3170,7 +3275,6 @@ const fr: Lang = {
     "Couleur des boutons, interrupteurs et surlignages de Journalit. L'accent Journalit n'est utilisé que lorsque Obsidian utilise son accent par défaut ; un accent choisi dans les réglages d'apparence d'Obsidian ou un thème est toujours prioritaire.",
   'settings.general.accent-color-journalit': 'Accent Journalit (par défaut)',
   'settings.general.accent-color-obsidian': "Suivre l'accent d'Obsidian",
-  'settings.general.home-view-settings': "Paramètres d'affichage de l'accueil",
   'settings.general.home-auto-open':
     "Ouverture automatique de la vue d'accueil",
   'settings.general.home-auto-open-desc':
@@ -3179,18 +3283,10 @@ const fr: Lang = {
     'Toujours ouvert + focus (par défaut)',
   'settings.general.home-auto-open-ifnone': 'Seulement si aucun fichier actif',
   'settings.general.home-auto-open-never': 'Jamais (manuel uniquement)',
-  'settings.general.home-auto-open-aria':
-    'Sélectionnez le comportement de démarrage à domicile',
-  'settings.general.home-startup-changed':
-    'Le comportement de démarrage de Journalit a été modifié comme suit : {behavior}',
   'settings.general.filter-recent':
     'Filtrer les éléments récents dans les fichiers Journalit',
   'settings.general.filter-recent-desc':
     'Afficher uniquement les fichiers liés à Journalit dans le widget Éléments récents (fichiers dans le dossier .journalit). Masque tous les autres fichiers du vault de la liste des éléments récents.',
-  'settings.general.filter-recent-aria':
-    'Filtrer les éléments récents dans les fichiers Journalit',
-  'settings.general.filter-recent-toggled':
-    'Filtrer les éléments récents dans les fichiers Journalit {status}',
   'settings.general.home-widget-opacity': 'Opacité des widgets',
   'settings.general.home-widget-opacity-desc':
     'Fonds des widgets avec une image : 0% est transparent, 100% est opaque. Le réglage concerne le thème actuel ; les valeurs des thèmes clair et sombre sont enregistrées séparément.',
@@ -3203,8 +3299,6 @@ const fr: Lang = {
     'Afficher aussi l’arrière-plan dans le Dashboard',
   'settings.general.home-background-dashboard-desc':
     'Utilise la même image d’arrière-plan en mode Dashboard.',
-  'settings.general.home-background-dashboard-aria':
-    'Afficher l’arrière-plan de l’accueil dans le Dashboard',
 
   'settings.general.home-background-choose': 'Choisir une image',
   'settings.general.home-background-clear': 'Effacer',
@@ -3246,83 +3340,90 @@ const fr: Lang = {
     'Mise à jour des trades {updated} avec des erreurs {failed}. Vérifiez la console pour plus de détails.',
   'settings.general.update-image-paths-failed':
     "Échec de la mise à jour des chemins d'accès aux images. Vérifiez la console pour plus de détails.",
-  'settings.general.trade-settings': 'Paramètres de trading',
   'settings.general.auto-open-trades': 'Ouverture automatique des trades créés',
   'settings.general.auto-open-trades-desc':
     'Ouvrir automatiquement les notes de trading dans un nouvel onglet après leur création',
-  'settings.general.auto-open-trades-aria':
-    'Ouverture automatique des trades créés',
-  'settings.general.auto-open-toggled':
-    'Ouverture automatique des trades créés {status}',
+  'settings.general.trade-form': 'Formulaire de trade',
+  'settings.general.trade-form-desc':
+    'Les champs affichés dans le formulaire de trade et la façon de saisir vos trades : taille de position, MAE/MFE et heures des trades.',
+  'settings.hub.value.on': 'Activé',
+  'settings.hub.value.off': 'Désactivé',
+  'settings.hub.connections': 'Connexions',
+  'settings.hub.connections.desc':
+    'Compte Journalit, Trade Sync, Trade Import, Calendrier économique, MCP',
+  'settings.hub.journal.desc':
+    'Formulaire de trade, revues, Session Mode, symboles et tags, champs personnalisés',
+  'settings.hub.calculations': 'Calculs',
+  'settings.hub.calculations.desc':
+    'Journée de trading, analyses, risque et règles de break-even.',
+  'settings.hub.calculations.value': 'La journée se termine à {time}',
+  'settings.hub.preferences': 'Préférences',
+  'settings.hub.preferences.desc':
+    'Devise et dates, apparence, confidentialité, notifications',
+  'settings.hub.files': 'Fichiers et sauvegardes',
+  'settings.hub.custom-fields': 'Champs personnalisés',
+  'settings.hub.custom-fields.desc':
+    'Ajoutez vos propres champs aux trades et aux revues.',
+  'settings.hub.symbols-and-tags': 'Symboles et tags',
+  'settings.hub.symbols.desc':
+    'Les tickers que vous tradez, avec leur type d’actif.',
+  'settings.hub.tags.desc': 'Les libellés que vous pouvez ajouter aux trades.',
+  'settings.hub.mistakes.desc':
+    'Les erreurs que vous pouvez noter sur les trades.',
+  'settings.hub.events.desc':
+    'Les événements que vous pouvez noter sur les trades.',
+  'settings.hub.checklists': 'Listes de contrôle',
+  'settings.hub.create-on-open': 'Créer à l’ouverture d’une période vide',
+  'settings.hub.period.day': 'Jour',
+  'settings.hub.trading-day': 'Journée de trading',
+  'settings.hub.analytics': 'Analyses',
+  'settings.hub.risk': 'Risque',
+  'settings.hub.break-even': 'Seuil de rentabilité',
+  'settings.hub.currency-and-dates': 'Devise et dates',
+  'settings.hub.currency-and-dates.desc':
+    'Devise, multiples de R, unités MAE/MFE et formats de date et d’heure.',
+  'settings.hub.numbers': 'Nombres',
+  'settings.hub.dates-and-times': 'Dates et heures',
+  'settings.hub.appearance': 'Apparence et navigation',
+  'settings.hub.appearance.desc':
+    'Couleur d’accent, Accueil, barres latérales et ouverture des liens et des nouveaux trades.',
+  'settings.hub.privacy': 'Confidentialité',
+  'settings.hub.privacy.desc':
+    'Masquer les valeurs sensibles à l’écran et dans les images partagées.',
+  'settings.hub.notifications': 'Notifications',
+  'settings.hub.notifications.desc': 'Les avis de mise à jour que vous voyez.',
+  'settings.hub.home': 'Accueil',
+  'settings.hub.sidebars': 'Barres latérales',
+  'settings.hub.opening-links': 'Ouverture des liens',
+  'settings.hub.updates': 'Mises à jour',
   'settings.general.date-format': 'Format des dates',
   'settings.general.date-format-desc':
     "Format d'affichage des dates dans tout le plugin",
-  'settings.general.date-format-aria':
-    'Sélectionnez le format de date pour les notes de trading',
-  'settings.general.date-format-ddmmyy': 'JJ/MM/AA (31/12/23)',
-  'settings.general.date-format-mmddyy': 'MM/JJ/AA (31/12/23)',
-  'settings.general.date-format-yymmdd': 'AA/MM/JJ (23/12/31)',
-  'settings.general.date-format-changed':
-    'Le format de la date de la note de trading a été remplacé par {format}.',
   'settings.general.use-24-hour-time':
     "Utiliser le format d'heure de 24 heures",
   'settings.general.use-24-hour-time-desc':
     'Afficher les heures au format 24 heures (14h30) au lieu du format 12 heures AM/PM (14h30)',
-  'settings.general.use-24-hour-time-aria':
-    'Utiliser le format horaire 24 heures',
-  'settings.general.show-seconds':
-    'Afficher les secondes dans les heures de trading',
   'settings.general.show-seconds-desc':
     "Afficher les secondes lors de la saisie des heures d'entrée et de sortie.",
-  'settings.general.show-seconds-aria':
-    'Afficher les secondes dans les heures de trading',
   'settings.general.skip-weekends': 'Exclure les week-ends',
   'settings.general.skip-weekends-desc':
     'Lorsque cette option est activée, Journalit traite les week-ends comme des jours sans trading dans tout le plugin. Désactivez-la si vous tradez ou analysez une activité le samedi et le dimanche.',
-  'settings.general.skip-weekends-aria': 'Exclure les week-ends dans Journalit',
-  'settings.general.skip-weekends-toggled': 'Exclusion des week-ends {status}',
   'settings.general.week-start': 'Jour de début de semaine',
   'settings.general.week-start-desc':
     'Choisissez le jour où commence votre semaine de trading. Affecte les revues et les rapports hebdomadaires.',
-  'settings.general.week-start-aria':
-    'Sélectionnez le jour de début de la semaine',
-  'settings.general.week-start-changed':
-    'Le jour de début de la semaine a été remplacé par {day}',
   'settings.general.analytics-date-basis': "Base de date d'analyse",
   'settings.general.analytics-date-basis-desc':
     "Idéal pour les swing traders. Utilise la date d'entrée ou la date de sortie finale pour l'analyse. Le mode date de sortie ne compte que les trades fermés et nécessite une date de sortie pour les trades P&L directes.",
-  'settings.general.analytics-date-basis-aria':
-    "Sélectionnez la base de la date d'analyse",
   'settings.general.analytics-date-basis-entry': "Date d'entrée",
   'settings.general.analytics-date-basis-exit': 'Date de sortie',
-  'settings.general.analytics-date-basis-changed':
-    "La base de date d'analyse a été modifiée en {basis}",
-  'settings.general.dollar-value-input':
-    'Entrez la taille de la position comme valeur en dollars',
   'settings.general.dollar-value-input-desc':
     'Lorsque cette option est activée, entrez la taille de la position sous forme de montant en dollars (par exemple, 10 000 $) au lieu de quantité (actions/lots/contrats). La quantité sera calculée automatiquement à partir du prix. Fonctionne mieux pour les actions ;les contrats à terme/forex ont des multiplicateurs de contrat qui ne sont pas pris en compte.',
-  'settings.general.dollar-value-input-aria':
-    'Entrez la taille de la position comme valeur en dollars',
-  'settings.general.dollar-value-input-toggled':
-    'Saisie de la taille de position : {mode}',
   'settings.general.dollar-value': 'Valeur en dollars',
-  'settings.general.quantity': 'Quantité',
-  'settings.general.mae-mfe-input-mode': "Mode d'entrée MAE/MFE",
-  'settings.general.mae-mfe-input-mode-desc':
-    "Choisissez comment saisir les valeurs d'excursion maximales défavorables/favorables dans le formulaire de trade.",
-  'settings.general.mae-mfe-input-mode-desc-price':
-    'Niveaux de prix : saisissez le prix le plus bas/le plus élevé atteint pendant le trade.',
-  'settings.general.mae-mfe-input-mode-desc-dollar':
-    'Valeurs en dollars : saisissez directement le drawdown/bénéfice maximum en dollars.',
-  'settings.general.mae-mfe-input-mode-aria':
-    "Sélectionnez le mode d'entrée MAE/MFE",
   'settings.general.mae-mfe-input-mode-price': 'Niveaux de prix',
   'settings.general.mae-mfe-input-mode-dollar': 'Valeurs en dollars',
   'settings.general.mae-mfe-display-unit': 'Unité d’affichage MAE/MFE',
   'settings.general.mae-mfe-display-unit-desc':
     'Affichez la MAE/MFE en devise ou en ticks de contrats à terme dans les analyses et les vues de transactions. Le mode ticks recalcule automatiquement les transactions existantes compatibles sans modifier les données enregistrées.',
-  'settings.general.mae-mfe-display-unit-aria':
-    'Sélectionner l’unité d’affichage MAE/MFE',
   'settings.general.mae-mfe-display-dollar': 'Devise',
   'settings.general.mae-mfe-display-ticks': 'Ticks',
   'common.ticks': 'pas de cotation',
@@ -3331,9 +3432,6 @@ const fr: Lang = {
   'settings.general.cutoff-time': 'Heure limite du jour de bourse',
   'settings.general.cutoff-time-desc':
     'Heure qui définit la fin d’une journée de trading. Les trades après cette heure seront regroupés avec le jour suivant. (Format 24 heures, par exemple 23h30 pour 23h30)',
-  'settings.general.cutoff-time-aria': 'Heure limite du jour de bourse',
-  'settings.general.cutoff-time-changed':
-    "L'heure limite du jour de bourse a été modifiée à {time}",
   'settings.general.break-even-threshold-mode': 'Type de seuil de rentabilité',
   'settings.general.break-even-threshold-mode-desc':
     'Choisissez si le seuil de rentabilité est déterminé par une fourchette fixe de P&L ou par un pourcentage du solde actuel de chaque compte de trading.',
@@ -3343,30 +3441,21 @@ const fr: Lang = {
   'settings.general.break-even-percent': "Pourcentage d'équilibre",
   'settings.general.break-even-percent-desc':
     'Seuil symétrique autour de zéro (±X% du solde du compte courant). Les trades sans solde de compte résoluble sont exclues des statistiques de gains/pertes.',
-  'settings.general.break-even-percent-placeholder': '0,05',
-  'settings.general.break-even-percent-aria':
-    'Pourcentage de rentabilité du solde du compte courant',
   'settings.general.break-even-range': 'Plage de rentabilité',
   'settings.general.break-even-range-desc':
     'Définissez une fourchette de P&L pour considérer les trades comme étant à l’équilibre. Par exemple, définir Min : -20 et Max : 20 traitera les trades entre -20 $ et +20 $ comme le seuil de rentabilité. Réglez les deux sur 0 pour considérer uniquement 0,00 $ exact comme seuil de rentabilité. Le minimum doit être inférieur ou égal au maximum.',
-  'settings.general.break-even-min-placeholder': 'Min.',
-  'settings.general.break-even-max-placeholder': 'Max.',
   'settings.general.break-even-min-aria': 'Plage de rentabilité minimale',
   'settings.general.break-even-max-aria': 'Plage de rentabilité maximale',
-  'settings.general.break-even-to': 'à',
-  'settings.general.break-even-updated':
-    'Plage de rentabilité mise à jour - les vues seront actualisées au prochain chargement',
   'settings.general.default-risk': 'Montant du risque de défaut',
   'settings.general.default-risk-desc':
     'Montant du risque par défaut (dans la devise du compte) utilisé pour les calculs R-multiples. Laissez vide pour exiger une saisie manuelle par trade.',
-  'settings.general.default-risk-aria': 'Montant du risque de défaut',
   'settings.general.display-r-multiples': 'Afficher les R-Multiples',
   'settings.general.display-r-multiples-desc':
     'Afficher les valeurs R multiples (rapports risque/récompense) au lieu des montants en devises dans tout le plugin',
-  'settings.general.display-r-multiples-aria':
-    'Afficher les R-multiples dans les vues de trading',
-  'settings.general.display-r-multiples-toggled':
-    'Les R-multiples affichent {status}',
+  'settings.general.hide-dollar-amounts-in-r-mode':
+    'Masquer les montants en devise en mode R',
+  'settings.general.hide-dollar-amounts-in-r-mode-desc':
+    "Lorsque les résultats s'affichent en multiples de R, le formulaire de trade affiche le résultat, le MAE et le MFE uniquement en R. Les trades restent enregistrés dans votre devise ; le montant de risque et les frais l'affichent toujours.",
   'settings.general.notification-settings': 'Paramètres de notification',
   'settings.general.sync-notifications': 'Synchroniser les notifications',
   'settings.general.sync-notifications-desc':
@@ -3387,9 +3476,6 @@ const fr: Lang = {
     'Afficher les notifications de mise à jour',
   'settings.general.update-notifications-desc':
     'Afficher les rappels de mise à jour et les nouveautés après une mise à jour.',
-  'settings.general.update-notifications-aria':
-    'Afficher les notifications de mise à jour',
-  'settings.general.data-management': 'Gestion des données & confidentialité',
   'settings.general.backup-restore-section':
     'Sauvegarde, restauration et réinitialisation',
   'settings.general.export-settings': "Paramètres d'exportation",
@@ -3408,11 +3494,6 @@ const fr: Lang = {
   'settings.general.reset-to-defaults-resetting': 'Réinitialisation...',
   'settings.general.enabled': 'activé',
   'settings.general.disabled': 'désactivé',
-  'settings.customization.title': 'Personnalisation',
-  'settings.customization.description':
-    "Personnalisez les options, l'apparence et le comportement du plugin Journalit.",
-  'settings.customization.trade-form-layout.description':
-    'Choisissez les champs et sections affichés dans le formulaire de trade.',
   'settings.customization.trade-form-layout.button':
     'Personnaliser la disposition',
   'settings.customization.tickers-symbols': 'Tickers/Symboles',
@@ -3492,10 +3573,10 @@ const fr: Lang = {
   'settings.customization.options.aria.confirm-add':
     "Confirmez l'ajout de {type}",
   'settings.customization.options.label.locked': 'Fermée',
-  'settings.customization.options.aria.reset-all':
-    'Supprimer tous les {type} personnalisés',
-  'settings.customization.options.button.reset-all':
-    'Tout réinitialiser {type}',
+  'settings.customization.options.reset.name':
+    'Rétablir les valeurs par défaut',
+  'settings.customization.options.reset.desc':
+    'Remplace cette liste par la liste par défaut. Les trades conservent les valeurs déjà renseignées.',
   'settings.customization.options.placeholder.new-name': 'Nouveau nom {type}',
   'settings.customization.options.placeholder.dollar-per-point': '$/point',
   'settings.customization.options.placeholder.tick-size': 'Taille du tick',
@@ -4042,8 +4123,8 @@ const fr: Lang = {
   'widget.header.week': 'Semaine {number}',
   'widget.header.quarter': 'Q{number}',
   'widget.header.drc': 'DRC',
-  'widget.header.nav.prev': '← Précédent',
-  'widget.header.nav.next': 'Suivant →',
+  'widget.header.nav.prev': 'Précédent',
+  'widget.header.nav.next': 'Suivant',
   'widget.header.month.0': 'Janvier',
   'widget.header.month.1': 'Février',
   'widget.header.month.2': 'Mars',
@@ -4104,6 +4185,7 @@ const fr: Lang = {
     "Cette revue parente existe, mais ce n'est pas une note de revue valide.",
   'widget.review-context-fields.source-empty':
     "Aucune valeur héritée n'est encore renseignée dans cette revue parente.",
+  'widget.review-context-fields.input-placeholder': 'Ajouter {field}',
 
   'widget.review.title': 'Évaluation de la performance',
   'widget.review.mental-game': 'Mental',
@@ -4120,6 +4202,33 @@ const fr: Lang = {
   'widget.key-levels.name': 'Niveaux clés',
   'widget.key-levels.description':
     'Des niveaux de prix importants à surveiller',
+  'widget.market-bias.name': 'Biais de marché',
+  'widget.market-bias.description':
+    'Définissez un biais acheteur, neutre ou vendeur pour la journée ou la semaine',
+  'widget.market-bias.title.day': 'Biais du jour',
+  'widget.market-bias.title.week': 'Biais de la semaine',
+  'widget.market-bias.tooltip':
+    "Passez d'un biais global à un biais par ticker dans les paramètres de ce widget, dans le Layout Builder.",
+  'widget.market-bias.overall.day': 'Votre biais du jour',
+  'widget.market-bias.overall.week': 'Votre biais de la semaine',
+  'widget.market-bias.long': 'Achat',
+  'widget.market-bias.neutral': 'Neutre',
+  'widget.market-bias.short': 'Vente',
+  'widget.market-bias.row-aria': 'Biais pour {row}',
+  'widget.market-bias.save-failed':
+    "Impossible d'enregistrer votre biais. Réessayez.",
+  'widget.market-bias.invalid-context':
+    "Ce widget n'est disponible que dans les DRC et les revues hebdomadaires",
+  'templateEditor.widget.market-bias.bias-for': 'Biais pour',
+  'templateEditor.widget.market-bias.bias-for.overall': 'Un biais global',
+  'templateEditor.widget.market-bias.bias-for.tickers': 'Chaque ticker',
+  'templateEditor.widget.market-bias.tickers': 'Tickers',
+  'templateEditor.widget.market-bias.tickers-placeholder':
+    'Saisissez un ticker et appuyez sur Entrée',
+  'templateEditor.widget.market-bias.tickers-empty':
+    'Ajoutez un ticker. En attendant, le widget affiche un biais global.',
+  'actions.review.market-bias': 'Biais de marché : {value}',
+  'actions.review.market-bias.clear': 'Effacer le biais de marché',
   'widget.key-events.name': 'Événements clés',
   'widget.key-events.description': 'Événements importants de la période',
   'widget.key-events.title': 'Événements clés',
@@ -4145,6 +4254,11 @@ const fr: Lang = {
   'widget.key-events.event-count.few': '{count} événements',
   'widget.key-events.event-count.many': '{count} événements',
   'widget.key-events.event-count.other': '{count} événements',
+  'widget.key-events.mark-no-news': "Pas d'actualités",
+  'widget.key-events.news-question':
+    "Des actualités importantes pour le marché aujourd'hui ?",
+  'widget.key-events.no-news': "Aucune actualité importante aujourd'hui",
+  'widget.key-events.clear-no-news': "Retirer le marquage « pas d'actualités »",
   'widget.key-events.empty-state': "Aucun événement clé pour aujourd'hui",
   'widget.key-events.empty-state-sub':
     'Ajoutez des événements dans votre revue hebdomadaire',
@@ -4167,6 +4281,8 @@ const fr: Lang = {
   'widget.images.empty': 'Aucun média',
   'widget.images.placeholder': 'Collez l’URL ou le chemin du média...',
   'widget.images.placeholder-add-more': 'Ajouter plus de médias...',
+  'widget.images.notice-remove-failed':
+    'Impossible de retirer le média de cette note. Veuillez réessayer.',
   'widget.mark-reviewed.name': 'Marquer comme révisé',
   'widget.mark-reviewed.description': 'Marquer la revue terminée',
   'widget.mark-reviewed.status.reviewed': 'RÉVISÉ',
@@ -4551,6 +4667,12 @@ const fr: Lang = {
   'metric.largestWin.description': 'Le plus grand trade gagnant',
   'metric.largestLoss.name': 'La plus grande perte',
   'metric.largestLoss.description': 'La plus grande trade perdant',
+  'metric.avgTradesPerDay.name': 'Moy. trades / jour',
+  'metric.avgTradesPerDay.description':
+    'Moyenne des trades clôturés par jour de trading avec des trades (par session)',
+  'metric.commissionAndFees.name': 'Commissions et frais',
+  'metric.commissionAndFees.description':
+    'Total des commissions et frais payés',
   'metric.longestWinStreak.name': 'Meilleure séquence',
   'metric.longestWinStreak.description':
     'Plus longue série de gains consécutifs',
@@ -4698,6 +4820,10 @@ const fr: Lang = {
   'account.add-event.field.description-desc': 'Notes complémentaires',
   'account.add-event.type.deposit': 'Dépôt',
   'account.add-event.type.withdrawal': 'Retrait',
+  'account.add-event.type.prior-payout': 'Paiement avant Journalit',
+  'account.add-event.field.type-desc.prior-payout': 'Ne modifie pas le solde',
+  'account.add-event.placeholder.prior-payout': 'Paiement antérieur',
+  'account.add-event.confirm.type.prior-payout': 'paiement avant Journalit',
   'account.add-event.placeholder.deposit': 'Dépôt manuel',
   'account.add-event.placeholder.withdrawal': 'Retrait manuel',
   'account.add-event.button.add': 'Ajouter un trade',
@@ -4729,6 +4855,7 @@ const fr: Lang = {
   'account.risk-metrics.label.target': 'Cible:',
   'account.risk-metrics.label.target-date': 'Date cible :',
   'account.edit-event.title': 'Modifier {type}',
+  'account.edit-event.type.prior-payout': 'Paiement',
   'account.edit-event.field.type': 'Type de trade',
   'account.edit-event.field.type-desc':
     "Ne peut pas être modifié lors de l'édition",
@@ -4802,6 +4929,23 @@ const fr: Lang = {
     'Ce challenge a été mis à jour ailleurs. Vérifiez-le et réessayez.',
   'account.prop-challenge.actions.reopen': 'Rouvrir',
   'account.prop-challenge.actions.link-rules': 'Lier aux règles de la firme…',
+  'account.prop-challenge.actions.set-drawdown-floor':
+    'Définir le plancher de drawdown…',
+  'account.prop-challenge.floor.title': 'Définir le plancher de drawdown',
+  'account.prop-challenge.floor.field': 'Plancher affiché par votre firme',
+  'account.prop-challenge.floor.room': 'Marge avant violation',
+  'account.prop-challenge.floor.error-at-balance':
+    'Le plancher doit être inférieur à votre solde de {balance}.',
+  'account.prop-challenge.floor.error-above-lock':
+    'Ne peut pas dépasser le solde de verrouillage de {lock}.',
+  'account.prop-challenge.floor.error-too-low':
+    'Ne peut pas être plus de {amount} sous votre solde.',
+  'account.prop-challenge.floor.error-below-start':
+    'Ne peut pas être inférieur au plancher initial de {floor}.',
+  'account.prop-challenge.floor.existing': 'Défini à {floor} le {date}.',
+  'account.prop-challenge.floor.remove-breach':
+    'Sans ce plancher, le drawdown aurait été enfreint le {date}. Le supprimer fait échouer cette phase.',
+  'account.prop-challenge.floor.save': 'Enregistrer le plancher',
   'account.prop-challenge.view-trades': 'Voir les trades de {phase}',
   'account.prop-challenge.actions.manual': 'Actions manuelles',
   'account.prop-challenge.notice.failed-title': '{phase} échouée',
@@ -4893,6 +5037,12 @@ const fr: Lang = {
   'account.prop-challenge.costs.amount': 'Montant',
   'account.prop-challenge.costs.note': 'Note (facultative)',
   'account.prop-challenge.costs.add': 'Ajouter un coût',
+  'account.prop-challenge.prior-payouts.title': 'Paiements avant Journalit',
+  'account.prop-challenge.prior-payouts.description':
+    'Versés avant que vous suiviez ce compte ici.',
+  'account.prop-challenge.prior-payouts.add': 'Ajouter un paiement',
+  'account.prop-challenge.prior-payouts.empty': 'Aucun paiement antérieur.',
+  'account.prop-challenge.prior-payouts.amount': 'Reçu',
   'account.header.copies': 'Copie',
   'account.header.copied-by-more': '+{count} de plus',
   'account.header.created': 'Créé le :',
@@ -5019,6 +5169,35 @@ const fr: Lang = {
     'Texte à insérer dans les nouvelles notes de revue...',
   'templateEditor.widget.page-size': 'Taille de la page:',
   'templateEditor.widget.show-rating-column': 'Afficher la colonne de notation',
+  'image.uploader.too-many-files':
+    'Vous pouvez ajouter au maximum {count} fichiers supplémentaires à la fois.',
+  'template.transformation.changed-in-editor':
+    'Pour protéger les modifications non enregistrées, passez cette note en mode Lecture dans chaque volet, puis réessayez.',
+  'templateEditor.widget.option.max-images': 'Images max.',
+  'templateEditor.widget.option.no-limit': 'Sans limite',
+  'templateEditor.widget.option.layout': 'Disposition',
+  'templateEditor.widget.option.layout.carousel': 'Carrousel',
+  'templateEditor.widget.option.layout.stacked': 'Empilé',
+  'templateEditor.widget.option.layout.side-by-side': 'Côte à côte',
+  'templateEditor.widget.option.show-uploader': 'Zone de dépôt',
+  'templateEditor.widget.option.trades-per-page': 'Trades par page',
+  'templateEditor.widget.option.show-open-trades': 'Inclure les trades ouverts',
+  'templateEditor.widget.option.columns': 'Colonnes',
+  'templateEditor.widget.option.rows': 'Lignes',
+  'templateEditor.widget.option.sort-by': 'Trier par',
+  'templateEditor.widget.option.show': 'Afficher',
+  'templateEditor.widget.option.long-and-short': 'Achat et vente',
+  'templateEditor.widget.option.long-only': 'Achat uniquement',
+  'templateEditor.widget.option.short-only': 'Vente uniquement',
+  'templateEditor.widget.option.chart-and-table': 'Graphique et tableau',
+  'templateEditor.widget.option.chart-only': 'Graphique uniquement',
+  'templateEditor.widget.option.table-only': 'Tableau uniquement',
+  'templateEditor.widget.option.best-and-worst': 'Meilleurs et pires',
+  'templateEditor.widget.option.best-only': 'Meilleurs uniquement',
+  'templateEditor.widget.option.worst-only': 'Pires uniquement',
+  'templateEditor.widget.option.show-duration': 'Afficher la durée',
+  'templateEditor.widget.option.show-setups': 'Afficher les setups',
+  'templateEditor.widget.option.show-mistakes': 'Afficher les erreurs',
   'templateEditor.widget.demon-tracker.tracking-method':
     'Suivre les erreurs par :',
   'templateEditor.widget.demon-tracker.tracking-method.trade-occurrences':
@@ -5076,6 +5255,7 @@ const fr: Lang = {
   'account.deposits-withdrawals.summary':
     '{deposits} déposés · {withdrawn} retirés · dernier {date}',
   'account.payouts.title': 'Retraits de gains',
+  'account.payouts.prior-summary': '{total} avant Journalit',
   'account.payouts.summary': '{count} retraits · {total} · dernier {date}',
   'account.payouts.summary-masked':
     'Historique des retraits masqué tant que les valeurs le sont',
@@ -5233,14 +5413,8 @@ const fr: Lang = {
     'Échec du chargement du contenu de la note',
   'home.widget.embedded-note.error.deleted': 'Le fichier source a été supprimé',
   'home.widget.goals-progress.type.pnl': 'Objectif de P&L',
-  'home.widget.goals-progress.type.pnl-desc':
-    'Objectif de profit/perte pour une période',
   'home.widget.goals-progress.type.trades-logged': 'Nombre de trades',
-  'home.widget.goals-progress.type.trades-logged-desc':
-    'Nombre de trades à vie',
   'home.widget.goals-progress.type.win-rate': 'Taux de gain',
-  'home.widget.goals-progress.type.win-rate-desc':
-    'Objectif de pourcentage de victoires',
   'home.widget.goals-progress.period.daily': 'Tous les jours',
   'home.widget.goals-progress.period.weekly': 'Hebdomadaire',
   'home.widget.goals-progress.period.monthly': 'Mensuellement',
@@ -5251,14 +5425,11 @@ const fr: Lang = {
   'home.widget.goals-progress.trades-count': '{count} trades',
   'home.widget.goals-progress.set-goal': 'Fixer un objectif',
   'home.widget.goals-progress.target': 'Cibles',
-  'home.widget.goals-progress.tracks-lifetime':
-    'Suivi du total de la durée de vie',
   'home.widget.goals-progress.use-r-multiples': 'Utiliser des R-multiples',
   'home.widget.goals-progress.account-aware': 'Objectifs par compte',
   'home.widget.goals-progress.no-target-selected':
     'Aucun objectif pour le compte sélectionné',
   'home.widget.goals-progress.configured-for': 'Configuré pour {accounts}',
-  'home.widget.goals-progress.account-scope': 'Portée du compte',
   'home.widget.goals-progress.add-account': 'Ajouter un compte',
   'home.widget.goals-progress.click-to-set': 'Cliquez pour définir un objectif',
   'home.widget.goals-progress.header.pnl': 'Objectif de P&L',
@@ -5272,6 +5443,49 @@ const fr: Lang = {
   'home.widget.goals-progress.aria.save-goal': "Enregistrer l'objectif",
   'home.widget.goals-progress.aria.set-goal': 'Fixez-vous un objectif',
   'home.widget.goals-progress.aria.change-goal': 'Cliquer pour modifier',
+  'home.widget.goals-progress.type.profit-factor': 'Ratio gains/pertes',
+  'home.widget.goals-progress.type.expectancy': 'Espérance de gain',
+  'home.widget.goals-progress.type.max-drawdown': 'Drawdown max.',
+  'home.widget.goals-progress.period.sessions': 'Séances',
+  'home.widget.goals-progress.period.lifetime': 'Depuis le début',
+  'home.widget.goals-progress.period-label.sessions.one':
+    'sur la dernière {count} séance',
+  'home.widget.goals-progress.period-label.sessions.few':
+    'sur les {count} dernières séances',
+  'home.widget.goals-progress.period-label.sessions.many':
+    'sur les {count} dernières séances',
+  'home.widget.goals-progress.period-label.sessions.other':
+    'sur les {count} dernières séances',
+  'home.widget.goals-progress.field.metric': 'Indicateur',
+  'home.widget.goals-progress.field.rule': 'Règle',
+  'home.widget.goals-progress.field.limit': 'Plafond',
+  'home.widget.goals-progress.field.targets': 'Objectifs',
+  'home.widget.goals-progress.field.limits': 'Plafonds',
+  'home.widget.goals-progress.field.period': 'Période',
+  'home.widget.goals-progress.field.last': 'Dernières',
+  'home.widget.goals-progress.field.sessions-unit': 'séances',
+  'home.widget.goals-progress.direction.at-least': 'Au moins',
+  'home.widget.goals-progress.direction.at-most': 'Au plus',
+  'home.widget.goals-progress.aria.account-target': 'Objectif de {account}',
+  'home.widget.goals-progress.aria.remove-account': 'Retirer {account}',
+  'home.widget.goals-progress.header.profit-factor':
+    'Objectif de ratio gains/pertes',
+  'home.widget.goals-progress.header.expectancy':
+    "Objectif d'espérance de gain",
+  'home.widget.goals-progress.header.max-drawdown': 'Objectif de drawdown',
+  'home.widget.goals-progress.header.limit.pnl': 'Plafond de P&L',
+  'home.widget.goals-progress.header.limit.trades': 'Plafond de trades',
+  'home.widget.goals-progress.header.limit.win-rate':
+    'Plafond de taux de réussite',
+  'home.widget.goals-progress.header.limit.profit-factor':
+    'Plafond de ratio gains/pertes',
+  'home.widget.goals-progress.header.limit.expectancy':
+    "Plafond d'espérance de gain",
+  'home.widget.goals-progress.header.limit.max-drawdown': 'Plafond de drawdown',
+  'home.widget.goals-progress.of-limit': 'sur un plafond de {target} {period}',
+  'home.widget.goals-progress.limit-used': '{percent} % du plafond utilisé',
+  'home.widget.goals-progress.over-limit': 'Au-delà du plafond',
+  'home.widget.goals-progress.limit-exceeded': 'Plafond dépassé',
   'home.widget.best-hours.title': 'Meilleures heures',
   'home.widget.best-hours.no-data': 'Pas de trade',
   'home.widget.best-hours.trades-count': '{count} trades',
@@ -5631,6 +5845,7 @@ const fr: Lang = {
   'widget.key-levels.importance.high': 'Élevée',
   'widget.key-levels.importance.medium': 'Moyen',
   'widget.key-levels.importance.low': 'Faible',
+  'widget.key-levels.no-group': 'Sans groupe',
   'manual-drawdown.notice.deleted': 'Instantané supprimé',
   'manual-drawdown.notice.updated': 'Instantané mis à jour',
   'manual-drawdown.notice.added': 'Instantané ajouté',
@@ -5756,12 +5971,24 @@ const fr: Lang = {
   'widget.recentTrades.empty-submessage':
     'Essayez de sélectionner une autre plage de dates',
   'widget.recentTrades.unknown': 'Inconnu',
-  'widget.rollingWinRate.name': 'Taux de réussite glissant',
+  'widget.rollingWinRate.name': 'Ratio gain moyen/perte moyenne glissant',
   'widget.rollingWinRate.description':
     'Ratio gain/perte moyen des derniers trades',
 
   'widget.rollingStats.name': 'Gain/perte moyen continu (e)',
   'widget.rollingStats.description': 'Gain et perte moyens des derniers trades',
+  'widget.rollingStatsWinRate.name': 'Taux de réussite glissant',
+  'widget.rollingStatsWinRate.description':
+    'Taux de réussite des derniers trades',
+  'widget.rollingStatsProfitFactor.name': 'Ratio gains/pertes glissant',
+  'widget.rollingStatsProfitFactor.description':
+    'Ratio gains/pertes des derniers trades',
+  'widget.rollingStatsExpectancy.name': 'Espérance de gain glissante',
+  'widget.rollingStatsExpectancy.description':
+    'Espérance de gain des derniers trades',
+  'widget.rollingStatsAvgSessionPnL.name': 'P&L moyen par session glissant',
+  'widget.rollingStatsAvgSessionPnL.description':
+    'P&L moyen par session de trading',
 
   'shared.filter.disabled-preview': "Filtres désactivés dans l'aperçu",
   'shared.filter.open': 'Ouvrir les filtres',
@@ -5773,6 +6000,7 @@ const fr: Lang = {
     "Effacer pour utiliser l'emplacement par défaut",
 
   'combobox.placeholder.default': 'Sélectionnez ou tapez...',
+  'combobox.placeholder.creatable': 'Sélectionnez ou tapez pour en ajouter...',
   'combobox.aria.remove-item': 'Enlever cette œuvre {item}',
   'combobox.add-option': 'Valeur ajoutée {value}',
   'error.render-component': 'Erreur de rendu {component} : {error}',
@@ -5924,7 +6152,6 @@ const fr: Lang = {
   'navigation.items.nav-session-mode': 'Mode session',
   'navigation.items.nav-economic-calendar': 'Calendrier économique',
   'navigation.items.nav-position-size': 'Calculateur de taille de position',
-  'settings.general.navigation-sidebar': 'Barre latérale de navigation',
   'notice.error.open-navigation-sidebar':
     'Impossible d’ouvrir la barre latérale de navigation. Réessayez.',
   'navigation.setting.open': 'Ouvrir la barre latérale de navigation',
@@ -6005,8 +6232,6 @@ const fr: Lang = {
   'templateEditor.widget.review-context-fields.fields': 'Champs',
   'templateEditor.widget.review-context-fields.fields-placeholder':
     'Sélectionnez des champs',
-  'templateEditor.widget.review-context-fields.fields-selected':
-    '{count} champs sélectionnés',
   'templateEditor.widget.review-context-fields.no-fields':
     'Créez d’abord des champs de revue dans les paramètres.',
 
@@ -6073,18 +6298,10 @@ const fr: Lang = {
     'Inclure les comptes copiés dans les analyses tous comptes',
   'settings.general.include-copy-accounts-analytics-desc':
     'Lorsque cette option est activée, les analyses de trading tous comptes incluent les résultats dérivés des comptes copiés et les comptent comme des trades au niveau du compte.',
-  'settings.general.include-copy-accounts-analytics-aria':
-    'Inclure les comptes copiés dans les analyses tous comptes',
-  'settings.general.include-copy-accounts-toggled':
-    'Comptes copiés dans les analyses tous comptes : {status}',
   'settings.general.include-unrealized-pnl':
     'Inclure le P&L latent dans les analyses',
   'settings.general.include-unrealized-pnl-desc':
     "Lorsque cette option est activée, les totaux de P&L net incluent le P&L latent des positions ouvertes disposant d'un instantané de prix, affiché séparément des résultats réalisés. Les statistiques comme le taux de réussite et les séries restent basées sur le réalisé.",
-  'settings.general.include-unrealized-pnl-aria':
-    'Inclure le P&L latent dans les analyses',
-  'settings.general.include-unrealized-pnl-toggled':
-    'P&L latent dans les analyses {status}',
   'settings.customization.options.commission.costs': 'Frais',
   'settings.customization.options.commission.add-rule':
     '+ Ajouter une règle de frais',
@@ -6320,7 +6537,7 @@ const fr: Lang = {
   'trade-import.label.broker': 'Source d’exportation / plateforme',
   'trade-import.label.asset-type': 'Type d’actif',
   'trade-import.label.destination': 'Importer comme',
-  'trade-import.destination.live': 'Trades réels',
+  'trade-import.destination.live': 'Trades réguliers',
   'trade-import.destination.backtest': 'Trades de backtest',
   'trade-import.destination.backtest-hint':
     'Enregistrés comme trades de backtest, séparés de vos trades réels.',
@@ -6694,7 +6911,42 @@ const fr: Lang = {
   'setups.view.ranking.empty': 'Pas encore de données de performance.',
 
   'setups.view.metric.trade-count': 'Nombre de trades',
-  'setups.view.metric.trades': 'trades',
+  'setups.view.metric.share-of-trades': 'Part des trades',
+  'setups.view.metric.share-of-trades-value': '{share} des trades',
+  'setups.view.overview.outcome.aria': 'Trades à compter',
+  'setups.view.overview.outcome.all': 'Tous',
+  'setups.view.overview.outcome.wins': 'Gains',
+  'setups.view.overview.outcome.losses': 'Pertes',
+  'setups.view.overview.outcome.count.wins': 'Trades gagnants : {count}',
+  'setups.view.overview.outcome.count.losses': 'Trades perdants : {count}',
+  'setups.view.overview.outcome.largest': 'Le plus élevé',
+  'setups.view.overview.outcome.metric.wins': '{metric} · trades gagnants',
+  'setups.view.overview.outcome.metric.losses': '{metric} · trades perdants',
+  'setups.view.overview.outcome.share.wins': '{share} des trades gagnants',
+  'setups.view.overview.outcome.share.losses': '{share} des trades perdants',
+  'setups.view.overview.outcome.empty.wins':
+    'Aucun trade gagnant avec ces setups',
+  'setups.view.overview.outcome.empty.losses':
+    'Aucun trade perdant avec ces setups',
+  'setups.view.overview.outcome.empty-submessage':
+    'Passez à Tous pour voir chaque trade.',
+  'setups.view.overview.outcome.privacy-submessage':
+    'Désactivez le mode confidentialité pour compter les trades gagnants ou perdants.',
+  'setups.view.metric.times-seen': 'Fois vu',
+  'setups.view.times-seen.taken': 'Pris',
+  'setups.view.times-seen.missed': 'Manqués',
+  'setups.view.times-seen.seen-count': '{count} vus',
+  'setups.view.times-seen.missed-count': '{count} manqués',
+  'setups.view.times-seen.breakdown': '{taken} pris · {missed} manqués',
+  'setups.view.times-seen.most-skipped': 'Le plus ignoré',
+  'setups.view.times-seen.not-taken': '{missed} sur {seen} non pris',
+  'setups.view.times-seen.none-missed': 'Aucun trade manqué enregistré',
+  'setups.view.times-seen.empty': 'Aucun trade ni trade manqué avec ces setups',
+  'setups.view.metric.trades': 'Trades',
+  'setups.view.trade-count.one': '{count} trade',
+  'setups.view.trade-count.few': '{count} trades',
+  'setups.view.trade-count.many': '{count} trades',
+  'setups.view.trade-count.other': '{count} trades',
   'setups.view.metric.net-pnl': 'PnL total',
   'setups.view.metric.total-pnl': 'PnL total',
   'setups.view.metric.win-rate': 'Taux de réussite',
@@ -6886,6 +7138,7 @@ const fr: Lang = {
   'setups.view.pairs.metric-aria': 'Métrique des paires',
   'setups.view.pairs.metric.edge': 'Avantage de la paire',
   'setups.view.pairs.metric.edge-short': 'avantage',
+  'setups.view.pairs.edge-label': 'Avantage',
   'setups.view.pairs.metric.expectancy': 'Espérance de la paire',
 
   'setups.view.pairs.together': 'Ensemble',
@@ -7007,7 +7260,6 @@ const fr: Lang = {
   'setups.view.detail.brief.count.rules': '{count}',
   'setups.view.detail.brief.count.notes': '{count}',
   'setups.view.detail.brief.count.images': '{count}',
-  'setups.view.detail.brief.count.trades': '{count}',
   'setups.view.detail.brief.more': '{count}',
   'setups.view.detail.attention.title': 'Nécessite votre attention',
   'setups.view.detail.attention.count': '{count} éléments',
@@ -7087,6 +7339,9 @@ const fr: Lang = {
   'trade-sync.rithmic.system': 'Système Rithmic',
   'trade-sync.rithmic.accounts': 'Comptes',
   'trade-sync.rithmic.last-sync': 'Dernière synchronisation',
+  'trade-sync.rithmic.last-provider-event': 'Dernier événement du fournisseur',
+  'trade-sync.rithmic.last-durable-fill': 'Dernière exécution enregistrée',
+  'trade-sync.rithmic.last-reconciliation': 'Dernière réconciliation',
   'trade-sync.rithmic.never': 'Jamais',
   'trade-sync.rithmic.job.running': 'Synchronisation en cours…',
   'trade-sync.rithmic.job.last': 'Dernière tâche : {status}',
@@ -7098,6 +7353,7 @@ const fr: Lang = {
   'trade-sync.job.status.cancelled': 'Annulé',
   'trade-sync.job.status.unknown': 'Inconnu',
   'trade-sync.rithmic.sync-to-vault': 'Synchroniser',
+  'trade-sync.rithmic.reconcile-to-vault': 'Réconcilier',
   'trade-sync.rithmic.syncing': 'Synchronisation…',
   'trade-sync.rithmic.mapping-required':
     'Choisissez un compte local du coffre pour chaque compte Rithmic synchronisé.',
@@ -7113,7 +7369,7 @@ const fr: Lang = {
   'trade-sync.rithmic.sync-all-provider-partial':
     '{succeeded} connexion(s) Rithmic synchronisée(s) sur {total} · synchronisation partiellement terminée',
   'trade-sync.rithmic.error.session-conflict':
-    'Rithmic n’autorise qu’une seule session active. Fermez R|Trader, NinjaTrader ou toute autre plateforme utilisant cet identifiant Rithmic.',
+    'Cet identifiant Rithmic est déjà utilisé par une autre connexion Journalit ou par la session d’une autre plateforme. Actualisez l’état et réessayez une fois cette session terminée.',
   'trade-sync.rithmic.error.auto-retry': 'Journalit réessaie automatiquement.',
   'trade-sync.rithmic.error.invalid-credentials':
     'Rithmic a refusé les identifiants enregistrés. Mettez-les à jour sur Journalit.co, puis réessayez.',
@@ -7123,6 +7379,8 @@ const fr: Lang = {
     'La synchronisation Rithmic est désactivée pour cette connexion. Gérez-la sur Journalit.co.',
   'trade-sync.rithmic.error.sync-failed':
     'La synchronisation Rithmic a échoué. Vérifiez la connexion sur Journalit.co, puis réessayez.',
+  'trade-sync.rithmic.error.stream-attention':
+    'La connexion Rithmic persistante nécessite votre attention. Actualisez son état, puis relancez la réconciliation.',
   'trade-sync.broker.mapping-unsaved-hint':
     "L'association est enregistrée lors de la synchronisation.",
   'trade-sync.broker.sync-all-blocked.unsaved-changes':
@@ -7958,15 +8216,17 @@ const fr: Lang = {
   'account.prop-challenge.ledger.help.drawdown.static':
     'Le maximum dont le solde peut descendre sous le solde de départ. Le plancher ne bouge jamais.',
   'account.prop-challenge.ledger.help.drawdown.static.example':
-    'Le plancher de ce compte est {floor} ; le solde doit rester au-dessus. Il reste {buffer} de la limite de {limit}.',
+    'Le plancher de ce compte est {floor} ; le solde doit rester au-dessus. {buffer} restants.',
   'account.prop-challenge.ledger.help.drawdown.eod_trailing':
     "Le plancher suit le plus haut solde de clôture journalière et ne fait que monter, jusqu'à se verrouiller au niveau de blocage de la société.",
   'account.prop-challenge.ledger.help.drawdown.eod_trailing.example':
     'Le plancher est actuellement {floor} (plus haute clôture moins {limit}) et il monte à chaque clôture plus haute. {buffer} restants.',
   'account.prop-challenge.ledger.help.drawdown.intraday_trailing':
-    "Le plancher suit votre solde le plus élevé à tout moment, profit ouvert inclus. Journalit ne voit que les trades clôturés : ce plancher suit le meilleur solde après chaque clôture ; un pic atteint pendant un trade ouvert n'est pas compté. Vérifiez le chiffre de la firme.",
+    "Le plancher suit votre solde le plus élevé à tout moment, profit ouvert inclus. Journalit ne voit que les trades clôturés : ce plancher suit le meilleur solde après chaque clôture ; un pic atteint pendant un trade ouvert n'est pas compté. Si votre firme affiche un plancher plus haut, saisissez-le avec Définir le plancher de drawdown.",
   'account.prop-challenge.ledger.help.drawdown.intraday_trailing.example':
     'Le plancher est actuellement {floor} (meilleur solde après trades clôturés moins {limit}). {buffer} restants ; le chiffre en direct de la société peut être plus serré.',
+  'account.prop-challenge.ledger.help.drawdown.firm-floor.example':
+    "Le plancher est actuellement {floor}, d'après le plancher affiché par votre firme le {date}. {buffer} restants.",
   'account.prop-challenge.ledger.help.daily_loss_limit':
     "Le maximum que vous pouvez perdre en une journée de trading. L'atteindre fait échouer la phase ou suspend le trading jusqu'à la séance suivante, selon la société.",
   'account.prop-challenge.ledger.help.daily_loss_limit.example':
@@ -8284,6 +8544,10 @@ const fr: Lang = {
   'account.prop-challenge.payout-rules.availability.balance-floor':
     'Au-dessus du plancher de solde',
   'account.prop-challenge.payout-rules.balance-floor': 'Plancher de solde',
+  'account.prop-challenge.payout-rules.balance-floor-first-payouts':
+    'Le plancher s’applique aux premiers paiements',
+  'account.prop-challenge.payout-rules.below-floor-allowance':
+    'Marge sous le plancher',
   'account.prop-challenge.payout-rules.request-percent': 'Part retirable (%)',
   'account.prop-challenge.payout-rules.new-profit-percent':
     'Nouveau profit requis pour chaque demande (%)',
@@ -8300,6 +8564,8 @@ const fr: Lang = {
   'account.prop-challenge.payout-rules.maximum.cycle-profit-percent':
     'Pourcentage du profit du cycle',
   'account.prop-challenge.payout-rules.maximum-amount': 'Montant maximal',
+  'account.prop-challenge.payout-rules.maximum-first-payouts':
+    'Le maximum s’applique aux premiers paiements',
   'account.prop-challenge.payout-rules.maximum-first-amount':
     'Plafond du premier retrait',
   'account.prop-challenge.payout-rules.maximum-cycle-profit-percent':
@@ -8768,6 +9034,10 @@ const fr: Lang = {
     'Calcule le bénéfice demandable au-dessus du solde initial de la phase ou du plancher choisi. Pourcentages et autres plafonds restent applicables.',
   'account.prop-challenge.payout-rules.help.balance-floor':
     'Solde exclu du bénéfice disponible. La part retirable porte seulement sur l’excédent ; cela ne change pas la règle de drawdown.',
+  'account.prop-challenge.payout-rules.help.balance-floor-first-payouts':
+    'Nombre de paiements auxquels s’applique le plancher de solde. Les paiements suivants ne sont limités que par le plancher de drawdown. Laissez vide pour appliquer le plancher à chaque paiement.',
+  'account.prop-challenge.payout-rules.help.below-floor-allowance':
+    'Une fois le plancher atteint, une demande peut faire descendre le solde jusqu’à ce montant en dessous. Laissez vide pour aucune marge.',
   'account.prop-challenge.payout-rules.help.request-percent':
     'Pourcentage demandable du solde dépassant le plancher choisi. Les plafonds de demande et de nouveau bénéfice peuvent le réduire.',
   'account.prop-challenge.payout-rules.help.minimum-request':
@@ -8776,6 +9046,8 @@ const fr: Lang = {
     'Plafond fixe, uniquement au premier paiement, par numéro de paiement ou en pourcentage du bénéfice du cycle. Sans maximum retire seulement ce plafond.',
   'account.prop-challenge.payout-rules.help.maximum-amount':
     'Demande brute maximale avant partage du bénéfice. Le bénéfice disponible et les autres plafonds peuvent la réduire.',
+  'account.prop-challenge.payout-rules.help.maximum-first-payouts':
+    'Nombre de paiements plafonnés par ce maximum. Les paiements suivants n’ont pas de plafond venant de ce réglage. Laissez vide pour plafonner chaque paiement.',
   'account.prop-challenge.payout-rules.help.first-maximum':
     'Plafond brut uniquement pour le premier paiement de cette phase. Ensuite ce plafond disparaît, mais les autres limites restent.',
   'account.prop-challenge.payout-rules.help.maximum-schedule':
@@ -8814,6 +9086,8 @@ const fr: Lang = {
   'actions.trade.reviewed.mark': 'Marquer comme revu',
   'actions.trade.reviewed.unmark': 'Marquer comme non revu',
   'actions.trade.notes.set': 'Remplacer les notes',
+  'actions.trade.rating.set': 'Note : {value}/5',
+  'actions.trade.rating.clear': 'Supprimer la note',
   'actions.trade.stop-losses': 'Stop-loss : {value}',
   'actions.trade.stop-losses.clear': 'Supprimer les stop-loss',
   'actions.trade.take-profits': 'Objectifs de gain : {value}',
@@ -8880,6 +9154,7 @@ const fr: Lang = {
   'actions.configuration.delete-question-unused':
     'Supprimer « {name} » (utilisée dans aucun workflow)',
   'actions.configuration.set-active': 'Faire de {name} la disposition active',
+  'actions.configuration.set-goal': 'Définir : {goal}',
   'actions.configuration.set-default': 'Modifier le modèle {type} par défaut',
   'actions.configuration.reset-default':
     'Utiliser le modèle {type} intégré par défaut',
@@ -8902,6 +9177,40 @@ const fr: Lang = {
   'actions.trade.set.swap': 'Swap : {value}',
   'actions.trade.executions': 'Remplacer les exécutions : {entries}, {exits}',
   'actions.trade.set.missed_reason': 'Raison du trade manqué : {value}',
+  'actions.trade.set.exit_reason': 'Raison de sortie : {value}',
+  'actions.trade.set.instrument': 'Instrument : {value}',
+  'actions.trade.set.asset_type': "Type d'actif : {value}",
+  'actions.trade.set.option': 'Option : {value}',
+  'actions.trade.set.entry_time': "Heure d'entrée : {value}",
+  'actions.trade.set.exit_time': 'Heure de sortie : {value}',
+  'actions.trade.set.commission_type': 'Type de commission : {value}',
+  'actions.trade.set.rebate': 'Ristourne : {value}',
+  'actions.trade.set.currency': 'Devise : {value}',
+  'actions.trade.set.fx_rate': 'Taux de change : {value}',
+  'actions.trade.set.forex_conversion_rate':
+    'Taux de conversion forex : {value}',
+  'actions.trade.set.exchange': 'Bourse/Exchange : {value}',
+  'actions.trade.set.dollar_per_point': 'Dollars par point : {value}',
+  'actions.trade.set.tick_size': 'Taille du tick : {value}',
+  'actions.trade.set.tick_value': 'Valeur du tick : {value}',
+  'actions.trade.set.lot_size': 'Taille du lot : {value}',
+  'actions.trade.set.pip_value': 'Valeur du pip : {value}',
+  'actions.trade.set.pip_size': 'Taille du pip : {value}',
+  'actions.trade.set.contract_size': 'Taille du contrat : {value}',
+  'actions.trade.set.leverage_ratio': 'Ratio de levier : {value}',
+  'actions.trade.set.mae': 'MAE : {value}',
+  'actions.trade.set.mfe': 'MFE : {value}',
+  'actions.trade.set.mae_price': 'Prix MAE : {value}',
+  'actions.trade.set.mfe_price': 'Prix MFE : {value}',
+  'actions.trade.set.unrealized_price_snapshot': 'Prix non réalisé : {value}',
+  'actions.trade.remove-executions':
+    'Supprimer les exécutions ; garder le P&L direct',
+  'actions.trade.ideal-exits': 'Sorties idéales : {value}',
+  'actions.trade.ideal-exits.clear': 'Supprimer les sorties idéales',
+  'actions.trade.dividends': 'Dividendes : {value}',
+  'actions.trade.dividends.clear': 'Supprimer les dividendes',
+  'actions.trade.create.result-only':
+    'Créer {type} : {direction} {instrument}, résultat {pnl}',
   'actions.trade.create':
     'Créer {type} : {direction} {instrument}, {entries}, {exits}',
   'actions.trade.create.new-instrument': 'Ajouter {instrument} aux instruments',
@@ -8918,6 +9227,13 @@ const fr: Lang = {
     'nouvelles options depuis les trades',
   'actions.custom-field.order-target': 'Champs personnalisés',
   'actions.custom-field.reorder': 'Nouvel ordre : {labels}',
+  'actions.dashboard-comparison.create':
+    'Enregistrer la comparaison {comparison}',
+  'actions.dashboard-comparison.field.name': 'nom',
+  'actions.dashboard-comparison.field.a': 'filtre A',
+  'actions.dashboard-comparison.field.b': 'filtre B',
+  'actions.dashboard-comparison.delete':
+    'Retirer du menu des filtres du tableau de bord',
   'actions.session-log-tag.create': 'Créer le tag {short} {label}',
   'actions.session-log-tag.field.label': 'nom',
   'actions.session-log-tag.field.short_label': 'libellé court',
@@ -8942,6 +9258,7 @@ const fr: Lang = {
   'actions.review.checklist.other': 'Définir {count} éléments de checklist',
   'actions.review.key-levels':
     'Définir les niveaux clés : {support} support, {resistance} résistance',
+  'actions.review.key-level-groups': 'Définir les niveaux clés de {groups}',
   'actions.review.grade.mental': 'Note mentale : {value}',
   'actions.review.grade.technical': 'Note technique : {value}',
   'actions.review.reviewed': 'Marquer comme revue',
@@ -9018,6 +9335,18 @@ const fr: Lang = {
     'Enregistrer un coût de {amount} le {date}',
   'actions.prop-challenge.cost.delete':
     'Supprimer le coût de {amount} du {date}',
+  'actions.prop-challenge.prior-payout.add':
+    'Enregistrer un paiement antérieur de {amount} le {date}',
+  'actions.prop-challenge.prior-payout.delete':
+    'Supprimer le paiement antérieur de {amount} du {date}',
+  'actions.prop-challenge.floor.set':
+    'Définir le plancher de drawdown à {floor} ({remaining} de marge avant une violation)',
+  'actions.prop-challenge.floor.replaces':
+    'Remplace le plancher de {floor} défini avant que le solde ne bouge',
+  'actions.prop-challenge.floor.remove':
+    'Supprimer le plancher de drawdown de {floor} ; le plancher revient à {restored}',
+  'actions.prop-challenge.floor.remove-fails':
+    'La phase échoue : le solde a touché le plancher précédent le {date}',
   'actions.prop-challenge.configure.create.one':
     'Configurer {name} avec {count} phase',
   'actions.prop-challenge.configure.create.other':
@@ -9053,6 +9382,8 @@ const fr: Lang = {
     'Mettre à jour une entrée du journal de session',
   'agent-action.title.review.delete_session_log_entry':
     'Supprimer une entrée du journal de session',
+  'agent-action.title.trade.add_images': 'Ajouter des images au trade',
+  'agent-action.title.trade.remove_images': 'Retirer des images du trade',
   'agent-action.title.review.add_images': 'Ajouter des images à la revue',
   'agent-action.title.review.set_image_annotations':
     'Définir les tags et notes des images de la revue',
@@ -9132,6 +9463,7 @@ const fr: Lang = {
     "Supprimer la disposition de l'accueil",
   'agent-action.title.home_layout.set_active':
     "Activer la disposition de l'accueil",
+  'agent-action.title.home_goal.set': "Définir un objectif de l'accueil",
   'agent-action.title.review_template.create': 'Créer un modèle de revue',
   'agent-action.title.review_template.duplicate':
     'Dupliquer le modèle de revue',
@@ -9156,6 +9488,12 @@ const fr: Lang = {
   'agent-action.title.custom_field.delete': 'Supprimer le champ personnalisé',
   'agent-action.title.custom_field.reorder':
     'Réordonner les champs personnalisés',
+  'agent-action.title.dashboard_comparison.create':
+    'Enregistrer une comparaison du tableau de bord',
+  'agent-action.title.dashboard_comparison.update':
+    'Mettre à jour une comparaison du tableau de bord',
+  'agent-action.title.dashboard_comparison.delete':
+    'Supprimer une comparaison du tableau de bord',
   'agent-action.title.session_log_tag.create':
     'Créer un tag de journal de session',
   'agent-action.title.session_log_tag.update':
@@ -9178,6 +9516,14 @@ const fr: Lang = {
     'Enregistrer un coût de challenge',
   'agent-action.title.prop_challenge.delete_cost':
     'Supprimer un coût de challenge',
+  'agent-action.title.prop_challenge.add_prior_payout':
+    'Enregistrer un paiement antérieur',
+  'agent-action.title.prop_challenge.delete_prior_payout':
+    'Supprimer un paiement antérieur',
+  'agent-action.title.prop_challenge.set_drawdown_floor':
+    'Définir le plancher de drawdown',
+  'agent-action.title.prop_challenge.remove_drawdown_floor':
+    'Supprimer le plancher de drawdown',
   'agent-action.title.prop_challenge.configure': 'Configurer le challenge',
   'agent-history.undo-confirm.title': "Annuler la modification de l'agent ?",
   'agent-history.undo-confirm.message':
@@ -9197,7 +9543,7 @@ const fr: Lang = {
   'agent-activity.title': 'Activité des agents IA',
   'agent-activity.waiting': 'En attente de votre réponse',
   'command.open-agent-activity': "Ouvrir l'activité des agents IA",
-  'settings.mcp-access.title': "Apps d'IA (MCP)",
+  'settings.mcp-access.title': 'MCP',
   'settings.mcp-access.description':
     "Autorisez les apps d'IA que vous connectez à votre compte Journalit, comme Claude ou ChatGPT, à lire et mettre à jour ce coffre via MCP.",
   'settings.mcp-access.loading': "Chargement de l'accès MCP…",
@@ -9219,6 +9565,8 @@ const fr: Lang = {
   'settings.mcp-access.status.failed': 'Non connecté',
   'settings.mcp-access.status.lost-detail':
     "Journalit ne reconnaît plus la connexion de ce coffre, vos apps d'IA ne peuvent donc plus l'utiliser. Reconnectez-le pour leur redonner l'accès.",
+  'settings.mcp-access.status.update-detail':
+    "Vos apps d'IA ne peuvent pas utiliser ce coffre avec cette version de Journalit. Recherchez une mise à jour de Journalit pour leur redonner l'accès.",
   'settings.mcp-access.failed.account-unavailable':
     "Votre compte Journalit ne peut pas utiliser l'accès MCP pour le moment.",
   'settings.mcp-access.failed.vault-limit-reached':
@@ -9242,6 +9590,7 @@ const fr: Lang = {
   'settings.mcp-access.activity.open': 'Ouvrir',
   'settings.mcp-access.action.retry': 'Réessayer',
   'settings.mcp-access.action.reconnect': 'Reconnecter',
+  'settings.mcp-access.action.check-updates': 'Rechercher des mises à jour',
   'settings.mcp-access.failed.sign-in-required':
     'Connectez-vous à votre compte Journalit, puis réessayez.',
   'settings.mcp-access.failed.vault-identity':
@@ -9281,6 +9630,13 @@ const fr: Lang = {
   'settings.mcp-access.connect.copy-failed': 'Copie impossible',
   'settings.mcp-access.connect.copy-url': "Copier l'URL du serveur MCP",
   'settings.mcp-access.connect.copy-command': 'Copier la commande',
+  'settings.mcp-access.connect.copy-config': 'Copier la configuration',
+  'settings.mcp-access.connect.opencode.add':
+    'Ajoutez ceci à votre configuration OpenCode V2 (opencode.json) :',
+  'settings.mcp-access.connect.opencode.protocol':
+    'Utilisez "protocol": "auto" ; OpenCode utilise un ancien protocole MCP par défaut.',
+  'settings.mcp-access.connect.opencode.sign-in':
+    'Exécutez opencode mcp auth journalit, puis connectez-vous à Journalit dans votre navigateur.',
   'settings.mcp-access.connect.app-label': "App d'IA",
   'settings.mcp-access.connect.claude.open':
     'Dans Claude (web ou bureau), ouvrez Customize → Connectors.',
@@ -9312,5 +9668,51 @@ const fr: Lang = {
   'agent-requests.changes.one': '{count} modification',
   'agent-requests.changes.other': '{count} modifications',
   'agent-requests.kind-count': '{title} ×{count}',
+  'widget.rollingBiasWinRate.name': 'Taux de réussite glissant par biais',
+  'widget.rollingBiasWinRate.description':
+    'Taux de réussite glissant des trades pris dans le sens de votre biais de marché et à contre-sens',
+  'dashboard.rolling_bias.title': 'Taux de réussite glissant par biais',
+  'dashboard.rolling_bias.last_trades': '{count} derniers trades',
+  'dashboard.rolling_bias.empty':
+    'Il faut {count} trades clôturés dans le sens de votre biais ou à contre-sens. Définissez un biais dans votre DRC ou votre revue hebdomadaire.',
+  'dashboard.rolling_bias.window_filling': 'Pas encore assez de trades',
+  'dashboard.rolling_bias.tooltip_label': '{label} · {count} derniers trades',
+  'dashboard.rolling_bias.before_period': 'Trade antérieur à cette période',
+  'dashboard.rolling_bias.with_value': 'Avec le biais : {value}',
+  'dashboard.rolling_bias.against_value': 'Contre le biais : {value}',
+  'dashboard.rolling_bias.with_bias': 'Avec le biais',
+  'dashboard.rolling_bias.against_bias': 'Contre le biais',
+  'dashboard.rolling_bias.before_period_legend':
+    'Pointillés : trades antérieurs',
+  'widget.rolling-bias-win-rate.name': 'Taux de réussite glissant par biais',
+  'widget.rolling-bias-win-rate.description':
+    'Taux de réussite glissant des trades pris dans le sens de votre biais de marché et à contre-sens',
+  'widget.rolling-bias-win-rate.empty':
+    'Aucun trade dans le sens de votre biais ou à contre-sens sur cette période',
+  'widget.rolling-bias-win-rate.week-starts': 'Début de semaine',
+  'widget.rolling-bias-win-rate.month-starts': 'Début de mois',
+  'widget.rolling-bias-win-rate.quarter-starts': 'Début de trimestre',
+  'widget.rolling-bias-win-rate.year-starts': "Début d'année",
+  'templateEditor.widget.rolling-bias-win-rate.window': 'Fenêtre',
+  'tradelog.column.marketBias': 'Biais',
+  'tradelog.bias.with': 'Avec · {bias}',
+  'tradelog.bias.against': 'Contre · {bias}',
+  'tradelog.bias.neutral-day': 'Jour neutre',
+  'tradelog.bias.neutral-week': 'Semaine neutre',
+  'tradelog.bias.from-week': '{label} (semaine)',
+  'tradelog.bias.tooltip.daily': 'Biais du jour : {bias}',
+  'tradelog.bias.tooltip.weekly': 'Biais de la semaine : {bias}',
+  'tradelog.bias.cell.with': 'Avec',
+  'tradelog.bias.cell.against': 'Contre',
+  'tradelog.bias.tooltip.with-daily': 'Avec le biais du jour : {bias}',
+  'tradelog.bias.tooltip.with-weekly': 'Avec le biais de la semaine : {bias}',
+  'tradelog.bias.tooltip.against-daily': 'Contre le biais du jour : {bias}',
+  'tradelog.bias.tooltip.against-weekly':
+    'Contre le biais de la semaine : {bias}',
+  'tradelog.bias.filter.with': 'Avec le biais',
+  'tradelog.bias.filter.against': 'Contre le biais',
+  'tradelog.bias.filter.neutral': 'Biais neutre',
+  'tradelog.bias.filter.none': 'Sans biais',
+  'filter.menu.market-bias': 'Biais',
 };
 export default fr;

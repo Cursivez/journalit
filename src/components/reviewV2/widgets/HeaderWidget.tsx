@@ -11,6 +11,8 @@ import React, {
 import { TFile } from 'obsidian';
 import {
   CheckCircle2,
+  ChevronLeft,
+  ChevronRight,
   Circle,
   Funnel,
   Repeat2,
@@ -27,6 +29,7 @@ import { HeaderPreviewData } from '../../../types/reviewV2';
 import { eventBus } from '../../../services/events/EventBus';
 import { reviewChangeAffectsPath } from '../../../services/events/reviewChangedPaths';
 import { useEventBus } from '../../../hooks/useEventBus';
+import { useDateFormat } from '../../../hooks/useDateFormat';
 import type {
   AccountChangedPayload,
   ReviewChangedPayload,
@@ -179,7 +182,6 @@ interface HeaderData {
     | 'trade';
   date: Date;
   title: string;
-  subtitle?: string;
 }
 
 
@@ -241,20 +243,30 @@ const activateOnKey = (e: React.KeyboardEvent<HTMLButtonElement>) => {
 
 const HeaderTitle: React.FC<{
   headerData: HeaderData;
+  dateFormat: string;
   reviewed: boolean;
   readOnly: boolean;
   reviewedRef: ReturnType<typeof useGuideTarget>;
   onToggleReviewed: () => void;
-}> = ({ headerData, reviewed, readOnly, reviewedRef, onToggleReviewed }) => (
+}> = ({
+  headerData,
+  dateFormat,
+  reviewed,
+  readOnly,
+  reviewedRef,
+  onToggleReviewed,
+}) => (
   <div className="journalit-header-title">
     {headerData.type === 'drc' ? (
       <span className="journalit-header-title-text journalit-header-title-text--responsive-date">
-        <span className="journalit-header-date-full">{headerData.title}</span>
+        <span className="journalit-header-date-full">
+          {formatLocalizedReviewDate(headerData.date, 'full', dateFormat)}
+        </span>
         <span className="journalit-header-date-medium">
-          {formatLocalizedReviewDate(headerData.date, 'medium')}
+          {formatLocalizedReviewDate(headerData.date, 'medium', dateFormat)}
         </span>
         <span className="journalit-header-date-short">
-          {formatLocalizedReviewDate(headerData.date, 'short')}
+          {formatLocalizedReviewDate(headerData.date, 'short', dateFormat)}
         </span>
       </span>
     ) : (
@@ -291,10 +303,11 @@ const HeaderTitle: React.FC<{
 );
 
 const HeaderNavLink: React.FC<{
+  direction: 'prev' | 'next';
   disabled: boolean;
   label: string;
   onNavigate: () => void;
-}> = ({ disabled, label, onNavigate }) => (
+}> = ({ direction, disabled, label, onNavigate }) => (
   <button
     type="button"
     className={mergeClassNames(
@@ -307,12 +320,15 @@ const HeaderNavLink: React.FC<{
       if (!disabled) onNavigate();
     }}
   >
-    {label}
+    {direction === 'prev' && <ChevronLeft size={14} aria-hidden="true" />}
+    <span className="journalit-button__label">{label}</span>
+    {direction === 'next' && <ChevronRight size={14} aria-hidden="true" />}
   </button>
 );
 
 export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
   ({ filePath, plugin, preview, previewData }) => {
+    const dateFormat = useDateFormat();
     const embeddedReadOnly = useReviewReadOnly();
     const readOnly = preview || embeddedReadOnly;
     const [headerData, setHeaderData] = useState<HeaderData | null>(null);
@@ -560,15 +576,6 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       []
     );
 
-    const formatTradeSubtitle = useCallback((date: Date): string => {
-      const monthKey = `widget.header.month-short.${date.getMonth()}`;
-      const monthName = hasTranslation(monthKey) ? t(monthKey) : monthKey;
-      const day = date.getDate();
-      const year = date.getFullYear();
-
-      return `${monthName} ${day}, ${year}`;
-    }, []);
-
     const loadHeaderData = useCallback(async () => {
       
       if (preview && previewData) {
@@ -591,12 +598,11 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
         
         const reviewType = typeMap[previewData.reviewType] || 'drc';
         const date = previewData.date;
-        let title: string;
+        let title = '';
         const mockFrontmatter: Record<string, unknown> = {};
 
         switch (previewData.reviewType) {
           case 'drc':
-            title = formatLocalizedReviewDate(date, 'full');
             break;
           case 'weekly':
             title = formatWeeklyDate(date, mockFrontmatter);
@@ -617,14 +623,13 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
             title = String(date.getFullYear());
             break;
           default:
-            title = formatLocalizedReviewDate(date, 'full');
+            break;
         }
 
         setHeaderData({
           type: reviewType,
           date: previewData.date,
           title,
-          subtitle: undefined,
         });
         setLoading(false);
         return;
@@ -698,11 +703,9 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
 
       
       let title = '';
-      let subtitle: string | undefined;
 
       switch (frontmatter.type) {
         case 'drc':
-          title = formatLocalizedReviewDate(date, 'full');
           break;
         case 'weekly-review':
           title = formatWeeklyDate(date, frontmatter);
@@ -731,7 +734,6 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
           break;
         case 'trade':
           title = formatTradeHeader(frontmatter, date);
-          subtitle = formatTradeSubtitle(date);
           break;
       }
 
@@ -739,7 +741,6 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
         type: frontmatter.type,
         date,
         title,
-        subtitle,
       });
 
       
@@ -780,7 +781,6 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
       formatWeeklyDate,
       formatMonthlyDate,
       formatTradeHeader,
-      formatTradeSubtitle,
     ]);
 
     useEffect(() => {
@@ -1522,15 +1522,16 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
           )}
         <div className="journalit-header-main">
           <HeaderTitle
+            dateFormat={dateFormat}
             headerData={headerData}
             reviewed={reviewed}
             readOnly={readOnly}
             reviewedRef={reviewedGuideTarget}
             onToggleReviewed={() => void toggleReviewedStatus()}
           />
-          {headerData.subtitle && (
+          {headerData.type === 'trade' && (
             <div className="journalit-header-subtitle">
-              {headerData.subtitle}
+              {formatLocalizedReviewDate(headerData.date, 'short', dateFormat)}
             </div>
           )}
           <div className="journalit-header-bottom-row">
@@ -1590,11 +1591,13 @@ export const HeaderWidget: React.FC<HeaderWidgetProps> = React.memo(
                 </button>
               )}
               <HeaderNavLink
+                direction="prev"
                 disabled={Boolean(preview)}
                 label={t('widget.header.nav.prev')}
                 onNavigate={() => void handleNavigate(-1)}
               />
               <HeaderNavLink
+                direction="next"
                 disabled={Boolean(preview)}
                 label={t('widget.header.nav.next')}
                 onNavigate={() => void handleNavigate(1)}

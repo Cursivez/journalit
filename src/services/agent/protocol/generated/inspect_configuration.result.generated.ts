@@ -6,11 +6,37 @@ export type BoundedJSONArray = ((string | number | boolean | null) | BoundedJSON
 
 export type WidgetPlacements = WidgetPlacement[]
 
+export type SettingsFavoriteAccounts = string[]
+
 export type LabelList = string[]
 
 export type SetupPreferences = string[]
 
 export type CustomFieldOptions = CustomFieldOption[]
+
+export type IdValues = string[]
+
+export type StringValues = string[]
+
+export type DirectionValues = ("long" | "short")[]
+
+export type DashboardStatusValues = ("open" | "win" | "loss" | "breakeven" | "cancelled")[]
+
+export type TradeTypeValues = ("regular" | "missed" | "backtest")[]
+
+export type ReviewStatusValues = ("reviewed" | "unreviewed")[]
+
+export type RatingValues = ("5" | "4" | "3" | "2" | "1" | "unrated")[]
+
+export type MarketBiasValues = ("with" | "against" | "neutral" | "none")[]
+
+export type ImageAnnotationStatusValues = ("tagged" | "untagged" | "has_notes" | "no_notes")[]
+
+export type CustomFieldClauses = {
+field_id: string
+operator: ("equals" | "not_equals" | "contains" | "greater_than" | "greater_than_or_equal" | "less_than" | "less_than_or_equal")
+value: (string | number | boolean | string[])
+}[]
 
 export interface Success {
 status: "ok"
@@ -27,6 +53,7 @@ custom_fields?: CustomFieldsProjection
 session_log_tags?: SessionLogTagsProjection
 accounts?: AccountsProjection
 prop_challenges?: PropChallengesProjection
+dashboard_comparisons?: DashboardComparisonsProjection
 }
 }
 export interface ResultMeta {
@@ -256,14 +283,15 @@ sm: number
 xs?: number
 xxs?: number
 }
+
 export interface LayoutGridMetadata {
 row_height: 50
 columns: {
-lg: 12
-md: 6
-sm: 4
-xs: 2
-xxs: 1
+lg: (12 | 24)
+md: (6 | 12)
+sm: (4 | 8)
+xs: (2 | 4)
+xxs: (1 | 2)
 }
 }
 export interface DashboardMetricCatalogEntry {
@@ -326,9 +354,25 @@ default_size: LayoutSize
 max_size?: LayoutSize
 configurable: boolean
 }
+
 export interface ConfiguredWidgetInstance {
 id: string
 type: string
+goal?: HomeGoal
+}
+
+export interface HomeGoal {
+metric: ("net_pnl" | "trade_count" | "win_rate" | "profit_factor" | "expectancy" | "max_drawdown")
+direction: ("at_least" | "at_most")
+target: number
+period: ("day" | "week" | "month" | "sessions" | "all_time")
+session_count?: number
+r_multiples?: boolean
+
+account_targets?: {
+account_id: string
+target: number
+}[]
 }
 export interface OptionCatalogs {
 tags: {
@@ -490,6 +534,8 @@ default_risk_amount: number
 display_r_multiples: boolean
 
 hide_dollar_amounts_in_shares: boolean
+
+hide_dollar_amounts_in_r_mode?: boolean
 mae_mfe_input_mode: ("price" | "dollar")
 mae_mfe_display_unit: ("dollar" | "ticks")
 }
@@ -510,6 +556,9 @@ auto_open_created_trades: boolean
 use_dollar_value_input: boolean
 take_profit_unit: ("percent" | "size")
 stop_loss_unit: ("percent" | "size")
+favorite_accounts?: SettingsFavoriteAccounts
+
+default_symbol?: string
 }
 
 export interface SettingsReviewAutomation {
@@ -759,6 +808,8 @@ challenge_id: string
 phases: PropChallengePhase[]
 
 costs: PropChallengeCost[]
+
+prior_payouts?: PropChallengePriorPayout[]
 progress?: PropChallengeProgress
 
 revision: string
@@ -864,6 +915,15 @@ kind: ("purchase" | "reset" | "activation" | "other")
 note?: string
 }
 
+export interface PropChallengePriorPayout {
+payout_id: string
+
+date: string
+
+amount: number
+note?: string
+}
+
 export interface PropChallengeProgress {
 phase_id: string
 status: ("active" | "passed" | "failed" | "warning")
@@ -881,6 +941,48 @@ target: number
 remaining: number
 satisfied: boolean
 breached: boolean
+firm_floor?: PropChallengeFirmFloor
+}
+
+export interface PropChallengeFirmFloor {
+floor: number
+recorded_at: string
+}
+
+export interface DashboardComparisonsProjection {
+
+comparisons: DashboardComparison[]
+
+omitted_count: number
+}
+export interface DashboardComparison {
+comparison_id: string
+name: string
+a: DashboardComparisonSide
+b: DashboardComparisonSide
+revision: string
+}
+export interface DashboardComparisonSide {
+filters: DashboardComparisonFilters
+
+unrepresented_criteria?: ("excluded_values" | "match_modes" | "account_phases" | "missing_values" | "custom_field_alternatives" | "unresolved_values" | "unsupported_values")[]
+}
+
+export interface DashboardComparisonFilters {
+account_ids?: IdValues
+setup_ids?: IdValues
+tickers?: StringValues
+tags?: StringValues
+mistakes?: StringValues
+directions?: DirectionValues
+status?: DashboardStatusValues
+trade_types?: TradeTypeValues
+review_status?: ReviewStatusValues
+ratings?: RatingValues
+market_bias?: MarketBiasValues
+image_annotation_status?: ImageAnnotationStatusValues
+image_tags?: StringValues
+custom_fields?: CustomFieldClauses
 }
 export interface Error {
 status: "error"

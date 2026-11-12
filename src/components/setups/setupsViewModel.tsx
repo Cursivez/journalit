@@ -36,7 +36,11 @@ import { prepareDrawdownChartData } from '../../utils/chartUtils';
 import type { Trade as DashboardTrade } from '../dashboard/utils/dataUtils';
 import { formatDateDisplay } from '../../utils/dateUtils';
 import type { AnalyticsDateBasis } from '../../settings/types';
-import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
+import {
+  getSetupTradeType,
+  LIVE_SETUP_TRADE_TYPES,
+  type SetupTradeType,
+} from '../../services/setup/setupTradeTypes';
 import { isPnlContributingTrade } from '../../utils/tradeStatusUtils';
 import { getTradeAnalyticsDate } from '../../utils/tradeAnalyticsDate';
 import { calculateEffectiveRMultiple } from '../../utils/formatting';
@@ -77,6 +81,8 @@ import type {
   TradeRecordForSetups,
 } from './setupsViewTypes';
 import { JournalitModal } from '../modals/JournalitModal';
+import { formatSetupTradeCount } from './SetupTradeCount';
+import type { SetupTradeOutcomeClassifier } from '../../services/setup/setupTradeOutcome';
 
 const OVERVIEW_R_METRIC_KEYS = new Set<MetricKey>([
   'cumulativeR',
@@ -195,9 +201,7 @@ export function getSetupBriefHealthItems(
     {
       key: 'trades',
       label: t('setups.view.detail.brief.health.trades'),
-      value: t('setups.view.detail.brief.count.trades', {
-        count: String(linkedTradeCount),
-      }),
+      value: formatSetupTradeCount(linkedTradeCount),
       complete: linkedTradeCount > 0,
     },
   ];
@@ -570,14 +574,18 @@ export function getMetricValue(
       return metrics.profitFactor;
     case 'totalTrades':
       return metrics.totalTrades;
+    case 'shareOfTrades':
+      return metrics.shareOfTrades;
   }
 }
+
 
 export function buildSetupRankingChartData(
   viewModels: SetupViewModel[],
   metricKey: MetricKey,
   isChartMasked: boolean,
-  rMetricsBySetupId: Map<string, SetupCompareMetrics>
+  rMetricsBySetupId: Map<string, SetupCompareMetrics>,
+  byMagnitude = false
 ) {
   const profitFactorChartCap = getProfitFactorChartCap(
     viewModels.map(({ metrics }) => metrics.profitFactor)
@@ -600,6 +608,7 @@ export function buildSetupRankingChartData(
           value: isChartMasked ? 1 : chartValue,
           rawValue,
           trades: metrics.totalTrades,
+          shareOfTrades: metrics.shareOfTrades,
           winRate: metrics.winRate,
           profitFactor: metrics.profitFactor,
         },
@@ -607,7 +616,9 @@ export function buildSetupRankingChartData(
     })
     .sort((a, b) => {
       if (isChartMasked) return a.name.localeCompare(b.name);
-      return b.rawValue - a.rawValue;
+      return byMagnitude
+        ? Math.abs(b.rawValue) - Math.abs(a.rawValue)
+        : b.rawValue - a.rawValue;
     });
 }
 
@@ -1106,8 +1117,7 @@ function formatDateLabel(value: string, dateFormat?: string): string {
   if (!value) return t('setups.view.date.never');
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return value;
-  if (dateFormat) return formatDateDisplay(date, dateFormat);
-  return date.toLocaleDateString();
+  return formatDateDisplay(date, dateFormat);
 }
 
 export function formatRelativeDateLabel(value: string): string {
@@ -1159,6 +1169,8 @@ export function setupOverviewChartSettingsReducer(
   switch (action.type) {
     case 'metric':
       return { ...state, metricKey: action.metricKey };
+    case 'outcomeScope':
+      return { ...state, outcomeScope: action.outcomeScope };
     case 'mode':
       return { ...state, chartMode: action.chartMode };
     case 'pairMetric':
@@ -1172,7 +1184,9 @@ export function buildSetupTradeIndex(
   setups: Setup[],
   tradeData: unknown[],
   defaultRiskAmount: number | undefined,
-  analyticsDateBasis: AnalyticsDateBasis
+  analyticsDateBasis: AnalyticsDateBasis,
+  classifyOutcome: SetupTradeOutcomeClassifier,
+  tradeTypes: ReadonlySet<SetupTradeType> = LIVE_SETUP_TRADE_TYPES
 ): SetupTradeIndex {
   const setupIds = new Set(setups.map((setup) => setup.id));
   const legacyLabels = collectLegacySetupLabelsFromTrades(tradeData);
@@ -1189,7 +1203,7 @@ export function buildSetupTradeIndex(
 
   for (const rawTrade of tradeData) {
     const trade = toSetupTradeRecord(rawTrade);
-    if (!isRegularSetupRecord(trade)) continue;
+    if (!tradeTypes.has(getSetupTradeType(trade))) continue;
     const anySetupIds = getAnySetupIdsForTrade(
       trade,
       setupIds,
@@ -1206,7 +1220,8 @@ export function buildSetupTradeIndex(
     const linkedTrade = toSetupLinkedTrade(
       trade,
       defaultRiskAmount,
-      analyticsDateBasis
+      analyticsDateBasis,
+      classifyOutcome
     );
 
     for (const setupId of anySetupIds) {
@@ -1273,17 +1288,6 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-function isRegularSetupRecord(trade: TradeRecordForSetups): boolean {
-  return (
-    inferStoredTradeType({
-      filePath: typeof trade.path === 'string' ? trade.path : undefined,
-      type: trade.type,
-      isMissedTrade: trade.isMissedTrade,
-      isBacktestTrade: trade.isBacktestTrade,
-    }) === 'regular'
-  );
-}
-
 function getAnySetupIdsForTrade(
   trade: TradeRecordForSetups,
   setupIds: Set<string>,
@@ -1320,7 +1324,8 @@ function getPrimarySetupIdsForTrade(
 function toSetupLinkedTrade(
   trade: TradeRecordForSetups,
   defaultRiskAmount: number | undefined,
-  analyticsDateBasis: AnalyticsDateBasis
+  analyticsDateBasis: AnalyticsDateBasis,
+  classifyOutcome: SetupTradeOutcomeClassifier
 ): SetupLinkedTrade {
   const entryTime = stringifyDateLike(trade.entryTime);
   const exitTime = stringifyDateLike(trade.exitTime) || entryTime;
@@ -1349,6 +1354,7 @@ function toSetupLinkedTrade(
     exitTime,
     images: getStringArray(trade.images),
     pnl,
+    outcome: classifyOutcome(pnl, trade),
     rMultiple: calculateEffectiveRMultiple(
       pnl,
       getOptionalNumber(trade.rMultiple) ?? undefined,
@@ -1582,12 +1588,15 @@ function truncateText(value: string, maxLength: number): string {
     : `${value.slice(0, Math.max(0, maxLength - 1))}…`;
 }
 
+
 export function getMetricLeader(
   viewModels: SetupViewModel[],
   metricKey: MetricKey,
-  rMetricsBySetupId: Map<string, SetupCompareMetrics>
+  rMetricsBySetupId: Map<string, SetupCompareMetrics>,
+  byMagnitude = false
 ): SetupViewModel | null {
   let leader: SetupViewModel | null = null;
+  let leaderValue = Number.NEGATIVE_INFINITY;
 
   for (const viewModel of viewModels) {
     if (viewModel.metrics.totalTrades <= 0) continue;
@@ -1595,14 +1604,8 @@ export function getMetricLeader(
     if (OVERVIEW_R_METRIC_KEYS.has(metricKey) && !hasRMetrics(rMetrics)) {
       continue;
     }
-    const value = getMetricValue(viewModel.metrics, metricKey, rMetrics);
-    const leaderValue = leader
-      ? getMetricValue(
-          leader.metrics,
-          metricKey,
-          rMetricsBySetupId.get(leader.setup.id)
-        )
-      : Number.NEGATIVE_INFINITY;
+    const metricValue = getMetricValue(viewModel.metrics, metricKey, rMetrics);
+    const value = byMagnitude ? Math.abs(metricValue) : metricValue;
     if (
       !leader ||
       value > leaderValue ||
@@ -1610,6 +1613,7 @@ export function getMetricLeader(
         viewModel.metrics.totalTrades > leader.metrics.totalTrades)
     ) {
       leader = viewModel;
+      leaderValue = value;
     }
   }
 
@@ -1762,10 +1766,11 @@ export function buildSetupOverviewPnlChartModel(
     series: [
       {
         key: 'combined',
-        label:
-          includesAllSetups && metricViewModels.length === viewModels.length
-            ? t('setups.view.overview.pnl-chart.combined')
-            : t('setups.view.overview.pnl-chart.selected-combined'),
+        
+        
+        label: includesAllSetups
+          ? t('setups.view.overview.pnl-chart.combined')
+          : t('setups.view.overview.pnl-chart.selected-combined'),
         color: 'var(--chart-positive, var(--text-success, #43a047))',
         isCombined: true,
       },
@@ -1806,7 +1811,7 @@ function formatSetupOverviewPnlPointLabel(
 ): string {
   const date = stringifyDateLike(trade.exitTime || trade.entryTime);
   if (!date) return String(index + 1);
-  return formatDateDisplay(date, 'YYYY-MM-DD');
+  return formatDateDisplay(date);
 }
 
 function getSetupCardSortStatusRank(status: SetupStatus): number {
@@ -1872,8 +1877,12 @@ export function calculateCompareMetrics(
       ? [trade.rMultiple]
       : []
   );
-  const winners = results.filter((pnl) => pnl > 0);
-  const losers = results.filter((pnl) => pnl < 0);
+  const winners = contributingTrades.flatMap((trade) =>
+    trade.outcome === 'win' ? [trade.pnl] : []
+  );
+  const losers = contributingTrades.flatMap((trade) =>
+    trade.outcome === 'loss' ? [trade.pnl] : []
+  );
   const totalLoss = Math.abs(losers.reduce((sum, pnl) => sum + pnl, 0));
   const totalWin = winners.reduce((sum, pnl) => sum + pnl, 0);
   const totalR = rResults.reduce((sum, value) => sum + value, 0);
@@ -1940,10 +1949,10 @@ export function buildSetupPairEvidenceTrend(
         rMultipleCount += 1;
       }
 
-      if (trade.pnl > 0) {
+      if (trade.outcome === 'win') {
         winners += 1;
         totalWin += trade.pnl;
-      } else if (trade.pnl < 0) {
+      } else if (trade.outcome === 'loss') {
         losers += 1;
         totalLoss += Math.abs(trade.pnl);
       }

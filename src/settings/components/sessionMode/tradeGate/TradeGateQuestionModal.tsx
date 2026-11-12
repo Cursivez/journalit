@@ -31,6 +31,7 @@ import {
   type TradeGateQuestionEdit,
 } from './tradeGateEditorUtils';
 import { JournalitModal } from '../../../../components/modals/JournalitModal';
+import { DropdownSelect } from '../../../../components/shared/DropdownSelect';
 
 const TRADE_GATE_OUTCOME_TYPES: TradeGateOutcomeType[] = [
   'green-light',
@@ -454,51 +455,52 @@ function TradeGateOptionEditor({
           aria-label={t('settings.session-mode.trade-gate.option-label')}
         />
         {showRouting && (
-          <select
+          <DropdownSelect
+            ariaLabel={t('settings.session-mode.trade-gate.option-target')}
             value={encodeTarget(draft.target)}
-            onChange={(event) => changeTarget(draft.id, event.target.value)}
-            className="dropdown"
-            aria-label={t('settings.session-mode.trade-gate.option-target')}
-          >
-            <option value="">
-              {t('settings.session-mode.trade-gate.not-wired')}
-            </option>
-            {currentNodeTarget && (
-              <option value={`node:${currentNodeTarget.nodeId}`}>
-                {t('settings.session-mode.trade-gate.target-current', {
-                  title: currentNodeTarget.title,
-                })}
-              </option>
-            )}
-            {questionChoices.length > 0 && (
-              <optgroup
-                label={t(
+            menuWidth="content"
+            showOptionTooltips={false}
+            options={[
+              {
+                value: '',
+                label: t('settings.session-mode.trade-gate.not-wired'),
+              },
+              ...(currentNodeTarget
+                ? [
+                    {
+                      value: `node:${currentNodeTarget.nodeId}`,
+                      label: t(
+                        'settings.session-mode.trade-gate.target-current',
+                        { title: currentNodeTarget.title }
+                      ),
+                    },
+                  ]
+                : []),
+              ...questionChoices.map((candidate) => ({
+                value: `question:${candidate.id}`,
+                label:
+                  candidate.title ||
+                  t('settings.session-mode.trade-gate.question'),
+                group: t(
                   'settings.session-mode.trade-gate.target-group-questions'
-                )}
-              >
-                {questionChoices.map((candidate) => (
-                  <option key={candidate.id} value={`question:${candidate.id}`}>
-                    {candidate.title ||
-                      t('settings.session-mode.trade-gate.question')}
-                  </option>
-                ))}
-              </optgroup>
-            )}
-            <optgroup
-              label={t(
-                'settings.session-mode.trade-gate.target-group-outcomes'
-              )}
-            >
-              {TRADE_GATE_OUTCOME_TYPES.map((outcome) => (
-                <option key={outcome} value={`outcome:${outcome}`}>
-                  {getDefaultOutcomeTitle(outcome)}
-                </option>
-              ))}
-            </optgroup>
-            <option value="new-question">
-              {t('settings.session-mode.trade-gate.new-question-target')}
-            </option>
-          </select>
+                ),
+              })),
+              ...TRADE_GATE_OUTCOME_TYPES.map((outcome) => ({
+                value: `outcome:${outcome}`,
+                label: getDefaultOutcomeTitle(outcome),
+                group: t(
+                  'settings.session-mode.trade-gate.target-group-outcomes'
+                ),
+              })),
+              {
+                value: 'new-question',
+                label: t(
+                  'settings.session-mode.trade-gate.new-question-target'
+                ),
+              },
+            ]}
+            onChange={(value) => changeTarget(draft.id, value)}
+          />
         )}
         <NoTooltipButton
           label={t('button.delete')}

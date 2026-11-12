@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { t } from '../../lang/helpers';
+import { formatLocalizedDateTime } from '../../utils/localizedDateTime';
 import {
   BarChart,
   Bar,
@@ -18,6 +19,7 @@ import {
   TradesChartDataPoint,
 } from '../../utils/chartUtils';
 import { ChartBase } from './ChartBase';
+import { SeriesGlowFilter, SeriesShadowFilter } from './SignedSeriesDefs';
 import { ChartTooltip } from './ChartTooltip';
 import { RechartsPortalTooltip } from './RechartsPortalTooltip';
 import { TradesChartProps } from './types';
@@ -29,6 +31,7 @@ import { handleRovingChartMarkKeyDown } from './chartKeyboardNavigation';
 import { useTwoStageTouchNavigation } from './useTwoStageTouchNavigation';
 import { shouldAnimateSeries, useChartAnimationActive } from './chartAnimation';
 import { skipVerticalGridCoordinates } from './chartGrid';
+import { SVG_LABEL_TOOLTIP_PROPS } from './svgLabelTooltip';
 
 type TradesPointClickHandler = (
   data: TradesChartDataPoint,
@@ -114,10 +117,10 @@ const renderTradesChartTooltip = (
 
   
   const entryDate = data.entryTime
-    ? new Date(data.entryTime).toLocaleString()
+    ? formatLocalizedDateTime(data.entryTime, 'medium')
     : 'Unknown';
   const exitDate = data.exitTime
-    ? new Date(data.exitTime).toLocaleString()
+    ? formatLocalizedDateTime(data.exitTime, 'medium')
     : 'Unknown';
 
   return (
@@ -194,22 +197,11 @@ function TradesChartEmptyState({
   );
 }
 
-function TradesChartDefs() {
+function TradesChartDefs({ chartId }: { chartId: string }) {
   return (
     <defs>
-      <filter id="tradesChartBarShadow" height="130%">
-        <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.1" />
-      </filter>
-      <filter id="tradesChartBarGlow" height="130%">
-        <feGaussianBlur in="SourceGraphic" stdDeviation="1.5" result="blur" />
-        <feColorMatrix
-          in="blur"
-          mode="matrix"
-          values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
-          result="glow"
-        />
-        <feComposite in="SourceGraphic" in2="glow" operator="over" />
-      </filter>
+      <SeriesShadowFilter id={`${chartId}-shadow`} variant="bar" />
+      <SeriesGlowFilter id={`${chartId}-glow`} variant="bar" />
     </defs>
   );
 }
@@ -252,6 +244,7 @@ function interactiveTradesBarProps(
     role: 'button',
     tabIndex: isInitialTabStop ? 0 : -1,
     'data-journalit-chart-mark': 'true',
+    ...SVG_LABEL_TOOLTIP_PROPS,
     'aria-label': `${t('widget.trade-review.open-trade-note')} ${accessibleTradeNumber}`,
     onKeyDown:
       keyboardPoint !== undefined && keyboardIndex !== undefined
@@ -315,11 +308,19 @@ function tradesChartPlotMode(
 }
 
 
-const tradesBarStyle = (isValueMasked: boolean, canNavigate: boolean) => ({
+const tradesBarStyle = ({
+  isValueMasked,
+  canNavigate,
+  chartId,
+}: {
+  isValueMasked: boolean;
+  canNavigate: boolean;
+  chartId: string;
+}) => ({
   fillOpacity: isValueMasked ? 0.45 : 1,
-  filter: isValueMasked ? undefined : 'url(#tradesChartBarShadow)',
+  filter: isValueMasked ? undefined : `url(#${chartId}-shadow)`,
   activeBar: {
-    filter: isValueMasked ? undefined : 'url(#tradesChartBarGlow)',
+    filter: isValueMasked ? undefined : `url(#${chartId}-glow)`,
     strokeWidth: 1.2,
     strokeOpacity: isValueMasked ? 0.4 : 0.8,
     cursor: canNavigate ? 'pointer' : undefined,
@@ -348,6 +349,7 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
   valueMode,
 }) => {
   const isAnimationActive = useChartAnimationActive();
+  const chartId = `trades-chart-${React.useId()}`;
   const chartRef = React.useRef<HTMLDivElement>(null);
   const touchResetKey = React.useMemo(
     () =>
@@ -452,7 +454,7 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
       skeletonVariant="bar"
     >
       <BarChart data={displayData} margin={margin}>
-        <TradesChartDefs />
+        <TradesChartDefs chartId={chartId} />
         <CartesianGrid
           strokeDasharray="3 3"
           vertical={false}
@@ -536,7 +538,7 @@ export const SharedTradesChart: React.FC<SharedTradesChartProps> = ({
           strokeWidth={0.8} 
           strokeOpacity={0.5} 
           
-          {...tradesBarStyle(isValueMasked, canNavigate)}
+          {...tradesBarStyle({ isValueMasked, canNavigate, chartId })}
           
           radius={[2, 2, 0, 0]}
           onClick={

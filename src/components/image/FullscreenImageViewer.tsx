@@ -916,7 +916,7 @@ export const FullscreenImageViewer: React.FC<FullscreenImageViewerProps> = ({
             variant="secondary"
           >
             <Tag size={14} />
-            <span>{t('imageGallery.annotation.tag')}</span>
+            {t('imageGallery.annotation.tag')}
           </Button>
         </div>
       ) : null}

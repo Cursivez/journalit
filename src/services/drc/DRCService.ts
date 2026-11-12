@@ -1,9 +1,16 @@
 
 
 import { App, TFile, normalizePath, FileView, WorkspaceLeaf } from 'obsidian';
+import {
+  MarketBiasIndexCache,
+  type MarketBiasIndex,
+  type MarketBiasNote,
+} from '../marketBias/marketBiasIndex';
+import { readMarketBias } from '../reviews/marketBias';
 import { DRCData } from './types';
 import { NewsEvent } from '../weekly/types';
 import { parseNewsEvents } from '../weekly/parseNewsEvents';
+import { KEY_EVENTS_NO_NEWS_FIELD } from '../../utils/keyEvents';
 
 import JournalitPlugin from '../../main';
 import type { NavigationSource } from '../../navigation/types';
@@ -143,6 +150,12 @@ export class DRCService {
   private reviewedDayKeys: ReadonlySet<string> | null = null;
 
   
+  private readonly marketBiasByDay = new MarketBiasIndexCache({
+    notePaths: () => this.getDRCMarkdownFiles().map((file) => file.path),
+    readNote: (path) => this.readDRCMarketBias(path),
+  });
+
+  
   constructor(
     app: App,
     plugin: JournalitPlugin,
@@ -181,7 +194,9 @@ export class DRCService {
       }),
       eventBus.subscribe('review:changed', (payload) => {
         if (payload.type === 'drc') {
-          this.invalidateDRCIndexes();
+          this.invalidateDRCIndexes(
+            payload.filePath === undefined ? undefined : [payload.filePath]
+          );
         }
       }),
       eventBus.subscribe('folder-path:changed', () => {
@@ -192,13 +207,20 @@ export class DRCService {
     this.disposeIndexInvalidator = registerPathIndexInvalidator({
       app: this.app,
       matchesPath: (path) => this.isDRCMarkdownPath(path),
-      onInvalidate: () => this.invalidateDRCIndexes(),
+      onInvalidate: (changedPaths) => this.invalidateDRCIndexes(changedPaths),
     });
   }
 
-  private invalidateDRCIndexes(): void {
+  
+  private invalidateDRCIndexes(changedPaths?: readonly string[]): void {
     this.sessionLogTagIdsByDay = null;
     this.reviewedDayKeys = null;
+    if (changedPaths === undefined) this.marketBiasByDay.invalidate();
+    else {
+      for (const path of changedPaths) {
+        this.marketBiasByDay.update(normalizePath(path));
+      }
+    }
     eventBus.publish('drc:session-log-index-invalidated');
     eventBus.publish('drc:reviewed-index-invalidated');
   }
@@ -248,6 +270,22 @@ export class DRCService {
     return this.app.vault
       .getMarkdownFiles()
       .filter((file) => this.isDRCMarkdownPath(file.path));
+  }
+
+  
+  public getMarketBiasByDay(): MarketBiasIndex {
+    return this.marketBiasByDay.get();
+  }
+
+  private readDRCMarketBias(path: string): MarketBiasNote | null {
+    const file = this.app.vault.getFileByPath(path);
+    const drcNote =
+      file && this.isDRCMarkdownPath(path)
+        ? this.getDRCFrontmatter(file)
+        : null;
+    if (!drcNote) return null;
+    const entries = readMarketBias(drcNote.frontmatter);
+    return entries.length > 0 ? { key: drcNote.dayKey, entries } : null;
   }
 
   public getSessionLogTagIdsByDay(): ReadonlyMap<string, ReadonlySet<string>> {
@@ -714,6 +752,25 @@ export class DRCService {
       filePath,
       source,
     });
+  }
+
+  
+  public async setKeyEventsNoNews(
+    filePath: string,
+    noNews: boolean
+  ): Promise<void> {
+    const file = this.app.vault.getAbstractFileByPath(filePath);
+    if (!(file instanceof TFile))
+      throw new Error(`DRC file not found: ${filePath}`);
+
+    await this.app.fileManager.processFrontMatter(
+      file,
+      (frontmatter: Record<string, unknown>) => {
+        if (noNews) frontmatter[KEY_EVENTS_NO_NEWS_FIELD] = true;
+        else delete frontmatter[KEY_EVENTS_NO_NEWS_FIELD];
+      }
+    );
+    await forceMetadataCacheRefresh(this.app, file);
   }
 
   

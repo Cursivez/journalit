@@ -9,16 +9,15 @@ import React, {
 } from 'react';
 import { Grid2x2Plus, Check, Plus } from '../../../shared/icons/ObsidianIcon';
 import { t } from '../../../../lang/helpers';
-import { DateRangeFilter } from './DateRangeFilter';
+import { DateRangeFilter, type DateRangeFilterValue } from './DateRangeFilter';
 import { FilterControlsProps } from './types';
 import { usePlugin } from '../../../../hooks/usePlugin';
 import { useViewportThreshold } from '../../../../hooks/useResizeObserver';
 import { Button } from '../../../../components/ui/Button';
 import type { UnifiedFilters } from '../../../shared/filters/types';
-import {
-  FilterMenuButton,
-  type LoadedFilterMenuOptions,
-} from '../../../shared/filters/menu/FilterMenu';
+import type { LoadedFilterMenuOptions } from '../../../shared/filters/menu/FilterMenu';
+import { CompareFilterControl } from '../../compare/CompareFilterControl';
+import { useDashboardCompareControls } from '../../compare/DashboardCompareControls';
 import { loadTradeFilterMenuOptions } from '../../../shared/filters/menu/loadTradeFilterMenuOptions';
 import {
   type CustomFieldDefinition,
@@ -48,7 +47,7 @@ const EditLayoutButton: React.FC<{
   onClick: () => void;
 }> = ({ isEditing, onClick }) => (
   <Button
-    className={`journalit-dashboard-edit-mode-button ${isEditing ? 'active' : ''}`}
+    className={`journalit-dashboard-edit-mode-button journalit-view-actions__save ${isEditing ? 'active' : ''}`}
     onClick={onClick}
     variant="plain"
     aria-label={
@@ -73,6 +72,9 @@ export const FilterControls = React.memo<FilterControlsProps>(
   }) => {
     const plugin = usePlugin();
     const { dashboardData } = useDashboardData();
+    const compare = useDashboardCompareControls();
+    const compareFilters = compare?.compareFilters ?? null;
+    const onCompareFilterChange = compare?.onCompareFilterChange;
     const registerFilterButtonTarget = useGuideTarget(
       DASHBOARD_FILTER_BUTTON_TARGET_ID
     );
@@ -149,6 +151,26 @@ export const FilterControls = React.memo<FilterControlsProps>(
     }, [filters, onFilterChange, sanitizedFilters]);
 
     
+    const sanitizedCompareFilters = useMemo(
+      () =>
+        compareFilters
+          ? sanitizeFilterCustomFields(compareFilters, discreteCustomFields)
+          : null,
+      [compareFilters, discreteCustomFields]
+    );
+
+    useEffect(() => {
+      if (
+        !sanitizedCompareFilters ||
+        sanitizedCompareFilters === compareFilters ||
+        !onCompareFilterChange
+      ) {
+        return;
+      }
+      onCompareFilterChange(sanitizedCompareFilters);
+    }, [compareFilters, onCompareFilterChange, sanitizedCompareFilters]);
+
+    
     const availableAccounts = useMemo(() => {
       if (!dashboardData?.trades) return [];
       const accountByLookupKey = new Map<string, string>();
@@ -178,9 +200,13 @@ export const FilterControls = React.memo<FilterControlsProps>(
 
     
     const handleDateRangeChange = useCallback(
-      (dateRange: [Date | null, Date | null]) => {
-        const mergedFilters = { ...sanitizedFilters, dateRange };
-        onFilterChange(mergedFilters);
+      ({ dateRange, datePreset, recentPeriod }: DateRangeFilterValue) => {
+        onFilterChange({
+          ...sanitizedFilters,
+          dateRange,
+          datePreset,
+          recentPeriod,
+        });
       },
       [onFilterChange, sanitizedFilters]
     );
@@ -213,15 +239,29 @@ export const FilterControls = React.memo<FilterControlsProps>(
       [discreteCustomFields, filters, onFilterChange]
     );
 
+    const handleCompareFilterMenuChange = useCallback(
+      (menuFilters: UnifiedFilters) => {
+        if (!compareFilters || !onCompareFilterChange) return;
+        onCompareFilterChange(
+          sanitizeFilterCustomFields(
+            { ...compareFilters, ...menuFilters },
+            discreteCustomFields
+          )
+        );
+      },
+      [compareFilters, discreteCustomFields, onCompareFilterChange]
+    );
+
     const filterMenuButton = plugin ? (
       <div ref={registerFilterButtonTarget}>
-        <FilterMenuButton
+        <CompareFilterControl
           plugin={plugin}
-          context="dashboard"
           filters={sanitizedFilters}
-          onChange={handleFilterMenuChange}
+          onFilterMenuChange={handleFilterMenuChange}
+          compareFilters={sanitizedCompareFilters}
+          onCompareFilterMenuChange={handleCompareFilterMenuChange}
+          compare={compare}
           loadOptions={loadFilterMenuOptions}
-          className="journalit-dashboard-filter-button"
           onOpenChange={filterMenuWhatsNew.onOpenChange}
           guideTour={filterMenuWhatsNew.guideTour}
         />
@@ -242,14 +282,21 @@ export const FilterControls = React.memo<FilterControlsProps>(
           <div className="journalit-dashboard-primary-filters">
             <DateRangeFilter
               dateRange={filters.dateRange}
+              datePreset={filters.datePreset}
+              recentPeriod={filters.recentPeriod}
               onChange={handleDateRangeChange}
             />
           </div>
 
-          <div className="journalit-dashboard-filter-actions">
+          <div
+            className={`journalit-dashboard-filter-actions journalit-view-actions${isEditing ? ' is-editing-layout' : ''}`}
+          >
             {filterMenuButton}
             {isEditing && onOpenAddWidget && (
-              <div ref={registerAddWidgetTarget}>
+              <div
+                className="journalit-view-actions__tool"
+                ref={registerAddWidgetTarget}
+              >
                 <Button
                   className="journalit-dashboard-add-widget-button"
                   onClick={onOpenAddWidget}
@@ -257,12 +304,15 @@ export const FilterControls = React.memo<FilterControlsProps>(
                   aria-label={t('dashboard.button.add-widget')}
                 >
                   <Plus size={16} />
-                  <span>{t('dashboard.button.add-widget')}</span>
+                  {t('dashboard.button.add-widget')}
                 </Button>
               </div>
             )}
             {onToggleEditMode && (
-              <div ref={registerEditLayoutTarget}>
+              <div
+                className="journalit-view-actions__save-slot"
+                ref={registerEditLayoutTarget}
+              >
                 <EditLayoutButton
                   isEditing={isEditing}
                   onClick={onToggleEditMode}

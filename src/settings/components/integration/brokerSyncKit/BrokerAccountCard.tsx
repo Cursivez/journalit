@@ -4,6 +4,7 @@ import React from 'react';
 import { Users } from '../../../../components/shared/icons/ObsidianIcon';
 import { t } from '../../../../lang/helpers';
 import type { LocalAccountOption } from './types';
+import { DropdownSelect } from '../../../../components/shared/DropdownSelect';
 
 interface BrokerAccountCardProps {
   
@@ -59,19 +60,20 @@ interface BrokerLocalAccountSelectProps {
 export const BrokerLocalAccountSelect: React.FC<
   BrokerLocalAccountSelectProps
 > = ({ id, value, disabled, localAccounts, onChange }) => (
-  <select
+  
+  <DropdownSelect
     id={id}
+    ariaLabel={t('trade-sync.import.account.local-account')}
+    ariaLabelledBy={`${id}-label`}
     value={value}
     disabled={disabled}
-    onChange={(event) => onChange(event.target.value)}
-  >
-    <option value="">{t('account.link-modal.select-account')}</option>
-    {localAccounts.map((localAccount) => (
-      <option key={localAccount.id} value={localAccount.id}>
-        {localAccount.name}
-      </option>
-    ))}
-  </select>
+    placeholder={t('account.link-modal.select-account')}
+    options={localAccounts.map((localAccount) => ({
+      value: localAccount.id,
+      label: localAccount.name,
+    }))}
+    onChange={onChange}
+  />
 );
 
 BrokerLocalAccountSelect.displayName = 'BrokerLocalAccountSelect';

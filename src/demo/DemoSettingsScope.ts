@@ -1,11 +1,14 @@
 import type { EntityShortcut, JournalitSettings } from '../settings/types';
 import { DEFAULT_SETTINGS } from '../settings/types';
 import { migrateRetiredSettings } from '../settings/settingsSchema';
+import { migrateLayoutGridResolution } from '../settings/layoutGridResolution';
 import { normalizeExpectancyBenchmark } from '../settings/expectancyBenchmark';
 
 export type JournalSettingsContext = 'real' | 'sample';
 
-const SAMPLE_SETTINGS_SCHEMA_VERSION = 1;
+
+const SAMPLE_SETTINGS_SCHEMA_VERSION = 2;
+const PRE_GRID_RESOLUTION_SAMPLE_SCHEMA_VERSION = 1;
 
 const JOURNAL_SCOPED_KEYS = new Set([
   'trade',
@@ -248,22 +251,27 @@ export function parseSampleSettingsDocument(
   value: unknown
 ): SampleSettingsDocument | null {
   if (!isRecord(value)) return null;
-  if (value.schemaVersion !== SAMPLE_SETTINGS_SCHEMA_VERSION) return null;
+  if (
+    value.schemaVersion !== SAMPLE_SETTINGS_SCHEMA_VERSION &&
+    value.schemaVersion !== PRE_GRID_RESOLUTION_SAMPLE_SCHEMA_VERSION
+  )
+    return null;
   if (!isRecord(value.settings) || !isRecord(value.localMeta)) return null;
+
+  const stored: Record<string, unknown> = structuredClone(value.settings);
+  if (value.schemaVersion === PRE_GRID_RESOLUTION_SAMPLE_SCHEMA_VERSION) {
+    migrateLayoutGridResolution(stored, value.settings);
+  }
 
   const settings: Partial<JournalitSettings> = {};
   const defaults = createDefaultSampleSettings();
-  for (const key of Object.keys(value.settings)) {
+  for (const key of Object.keys(stored)) {
     if (isJournalScopedSettingsKey(key)) {
       const fallback = defaults[key];
       if (fallback !== undefined) {
-        settings[key] = normalizeSettingValue(
-          value.settings[key],
-          fallback,
-          key
-        );
-      } else if (isRecord(value.settings[key])) {
-        settings[key] = structuredClone(value.settings[key]);
+        settings[key] = normalizeSettingValue(stored[key], fallback, key);
+      } else if (isRecord(stored[key])) {
+        settings[key] = structuredClone(stored[key]);
       }
     }
   }

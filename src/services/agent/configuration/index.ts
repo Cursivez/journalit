@@ -7,6 +7,7 @@ export {
 export { ReviewTemplatePlanner } from './ReviewTemplatePlanner';
 export {
   projectDashboardLayoutConfiguration,
+  homeGoalAccountNames,
   projectHomeLayoutConfiguration,
   validateDashboardLayoutDomain,
   validateHomeLayoutDomain,
@@ -20,6 +21,7 @@ export {
   projectOptionCatalogConfiguration,
 } from './optionCatalogConfiguration';
 export { DashboardLayoutPlanner, HomeLayoutPlanner } from './LayoutPlanner';
+export { HomeGoalPlanner } from './HomeGoalPlanner';
 export {
   projectSettingsConfiguration,
   type RawOwnedSettings,

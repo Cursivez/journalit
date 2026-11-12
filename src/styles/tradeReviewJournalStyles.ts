@@ -35,8 +35,7 @@ export const TRADE_REVIEW_JOURNAL_STYLES = `
   .journalit-trade-inline-control .inputContainer,
   .journalit-trade-inline-control .selectContainer { margin: 0; }
   
-  .journalit-trade-inline-control input:not(.journalit-fast-datetime input):not(.combobox-input),
-  .journalit-trade-inline-control select { width: 100%; max-width: 100%; font-size: 0.8rem; }
+  .journalit-trade-inline-control input:not(.journalit-fast-datetime input):not(.combobox-input) { width: 100%; max-width: 100%; font-size: 0.8rem; }
   .journalit-trade-inline-control .journalit-dropdown-select__trigger { font-size: 0.8rem; }
   .journalit-trade-inline-control textarea {
     width: 100%; min-height: 5.5rem; resize: vertical; font-size: 0.8rem;

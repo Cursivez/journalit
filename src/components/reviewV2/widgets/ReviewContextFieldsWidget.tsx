@@ -5,6 +5,8 @@ import React, {
   useRef,
   useState,
 } from 'react';
+import { SETTINGS_TAB_IDS } from '../../../settings/types';
+import { OPEN_REVIEW_FIELDS_REQUEST } from '../../../settings/settingsOpenRequests';
 import { TFile } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { useReviewReadOnly } from '../ReviewReadOnlyContext';
@@ -139,12 +141,16 @@ function reviewContextValueToString(value: unknown): string {
 }
 
 function formatReviewContextDisplayValue(value: unknown): string {
-  const displayValue = reviewContextValueToString(value).trim();
-  if (displayValue) return displayValue;
-  if (Array.isArray(value) && value.length > 0) {
-    return value.map(reviewContextValueToString).join(', ');
-  }
-  return t('common.none');
+  
+  const displayValue = Array.isArray(value)
+    ? value
+        .flatMap((item) => {
+          const text = reviewContextValueToString(item).trim();
+          return text ? [text] : [];
+        })
+        .join(', ')
+    : reviewContextValueToString(value).trim();
+  return displayValue || t('common.none');
 }
 
 function getTargetDateFromFrontmatter(
@@ -538,9 +544,8 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
     );
 
     const openReviewFieldSettings = useCallback(() => {
-      plugin.app.saveLocalStorage('journalit:open-review-fields-settings', '1');
-      plugin.openSettingsToTab('customization');
-      window.dispatchEvent(new Event('journalit:open-review-fields-settings'));
+      plugin.app.saveLocalStorage(OPEN_REVIEW_FIELDS_REQUEST, '1');
+      plugin.openSettingsToTab(SETTINGS_TAB_IDS.CUSTOM_FIELDS);
     }, [plugin]);
 
     const handleOpenSourceReview = useCallback(
@@ -729,9 +734,6 @@ export const ReviewContextFieldsWidget: React.FC<ReviewContextFieldsWidgetProps>
         {groupedFields.length > 0 && (
           <section className="review-context-fields-inherited">
             <div className="review-context-fields-inherited-header">
-              <div className="review-context-fields-inherited-title">
-                {t('widget.review-context-fields.group.default')}
-              </div>
               {canEditLocalContext ? (
                 <Button
                   variant="secondary"
@@ -848,18 +850,22 @@ const InheritedContextFieldGroups: React.FC<
               source,
               sourceLabel: getCompactSourceLabel(source),
               value: inheritedField.formattedValue || t('common.none'),
+              isEmpty: !inheritedField.formattedValue,
             },
           ];
         });
         const isEditable = editableFieldIds.has(field.id);
+        const inheritedRows = isEditable
+          ? inheritedEntries.filter(({ isEmpty }) => !isEmpty)
+          : inheritedEntries;
         const localValue = localValues[field.id] ?? getDefaultFieldValue(field);
         const localDisplayValue = formatReviewContextDisplayValue(localValue);
         const hasLocalDisplayValue = localDisplayValue !== t('common.none');
 
-        if (inheritedEntries.length === 0 && !isEditable) return null;
+        if (inheritedRows.length === 0 && !isEditable) return null;
         if (
           hideEmpty &&
-          inheritedEntries.length === 0 &&
+          inheritedRows.length === 0 &&
           isEditable &&
           !isEditing &&
           !hasLocalDisplayValue
@@ -873,7 +879,7 @@ const InheritedContextFieldGroups: React.FC<
               {field.label}
             </div>
             <div className="review-context-fields-field-chain">
-              {inheritedEntries.map(({ source, sourceLabel, value }) => (
+              {inheritedRows.map(({ source, sourceLabel, value }) => (
                 <div
                   key={`${field.id}:${source.type}:${source.path}`}
                   className="review-context-fields-field-entry"
@@ -897,7 +903,9 @@ const InheritedContextFieldGroups: React.FC<
                 </div>
               ))}
               {isEditable ? (
-                <div className="review-context-fields-field-entry review-context-fields-field-entry--local">
+                <div
+                  className={`review-context-fields-field-entry review-context-fields-field-entry--local${isEditing ? ' review-context-fields-field-entry--editing' : ''}`}
+                >
                   <span className="review-context-fields-source-label">
                     {localSourceLabel}
                   </span>
@@ -965,6 +973,27 @@ interface ReviewContextFieldControlProps {
   onChange: (value: unknown) => void;
 }
 
+function reviewContextFieldCommonProps(
+  field: CustomReviewFieldDefinition,
+  value: unknown,
+  error: string | undefined,
+  onChange: (value: unknown) => void
+) {
+  return {
+    label: field.label,
+    value,
+    onChange,
+    placeholder:
+      field.placeholder ||
+      t('widget.review-context-fields.input-placeholder', {
+        field: field.label,
+      }),
+    helperText: field.description || field.helperText,
+    error,
+    required: field.validation?.required || false,
+  };
+}
+
 const ReviewContextFieldControl: React.FC<ReviewContextFieldControlProps> = ({
   field,
   value,
@@ -986,15 +1015,12 @@ const ReviewContextFieldControl: React.FC<ReviewContextFieldControlProps> = ({
     [field.allowCreateOptions, field.id, service]
   );
 
-  const commonProps = {
-    label: field.label,
+  const commonProps = reviewContextFieldCommonProps(
+    field,
     value,
-    onChange,
-    placeholder: field.placeholder,
-    helperText: field.description || field.helperText,
     error,
-    required: field.validation?.required || false,
-  };
+    onChange
+  );
 
   switch (field.type) {
     case CustomFieldType.TEXT:

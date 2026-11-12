@@ -19,11 +19,14 @@ import type {
   RithmicConnection,
   RithmicConnectionAccount,
   RithmicConnections,
+  RithmicCoverageStatus,
+  RithmicStreamStatus,
   CTraderConnections,
   TradovateConnection,
   TradovateConnectionAccount,
   TradovateConnections,
   BrokerSyncJob,
+  TradeVerificationRecord,
 } from './types';
 
 const asRecord = (value: unknown): Record<string, unknown> | null =>
@@ -761,6 +764,33 @@ export function decodeRestoreProjectionResponse(
   };
 }
 
+export function decodeTradeVerificationResponse(
+  value: unknown,
+  tradeId: string
+): TradeVerificationRecord {
+  const record = asRecord(value);
+  if (
+    record?.schemaVersion !== 'trade-projection-verification-v1' ||
+    record.tradeId !== tradeId ||
+    typeof record.sourceKind !== 'string' ||
+    typeof record.broker !== 'string' ||
+    (record.environment !== null &&
+      record.environment !== 'demo' &&
+      record.environment !== 'live')
+  ) {
+    throw new ApiError('Invalid trade verification response', 502);
+  }
+  const [previewTrade] = previewTradesArray([
+    asRecord(record.projectionTrade)?.previewTrade,
+  ]);
+  return {
+    sourceKind: record.sourceKind,
+    broker: record.broker,
+    environment: record.environment,
+    previewTrade,
+  };
+}
+
 export function decodeTradovateSyncJobResponse(
   value: unknown,
   connectionId: string
@@ -1296,6 +1326,138 @@ function normalizeRithmicAccount(
   };
 }
 
+const RITHMIC_STREAM_PHASES = new Set<string>([
+  'paused',
+  'claiming',
+  'connecting',
+  'bootstrapping',
+  'listening',
+  'reconnecting',
+  'updating_history',
+  'needs_attention',
+]);
+
+function isRithmicStreamPhase(
+  value: unknown
+): value is RithmicStreamStatus['phase'] {
+  return typeof value === 'string' && RITHMIC_STREAM_PHASES.has(value);
+}
+
+function isRithmicCurrentSessionState(
+  value: unknown
+): value is RithmicCoverageStatus['currentSession'] {
+  return (
+    value === 'pending' ||
+    value === 'complete' ||
+    value === 'gap' ||
+    value === 'unavailable'
+  );
+}
+
+function isRithmicPriorHistoryState(
+  value: unknown
+): value is RithmicCoverageStatus['priorHistory'] {
+  return (
+    value === 'pending' ||
+    value === 'complete' ||
+    value === 'unavailable' ||
+    value === 'limited'
+  );
+}
+
+function isRithmicBoundaryState(
+  value: unknown
+): value is RithmicCoverageStatus['boundary'] {
+  return (
+    value === 'known_flat' || value === 'known_open' || value === 'unknown'
+  );
+}
+
+function isRithmicRecoveryState(
+  value: unknown
+): value is RithmicCoverageStatus['recovery'] {
+  return (
+    value === 'pending' ||
+    value === 'recovering' ||
+    value === 'complete' ||
+    value === 'unresolved'
+  );
+}
+
+
+
+
+function normalizeRithmicStream(value: unknown): RithmicStreamStatus {
+  const stream = asRecord(value);
+  if (
+    !stream ||
+    !isRithmicStreamPhase(stream.phase) ||
+    stream.bootstrapStrategy !== 'subscription_replay'
+  ) {
+    throw new Error('Invalid Rithmic stream status response');
+  }
+  return {
+    phase: stream.phase,
+    bootstrapStrategy: stream.bootstrapStrategy,
+    lastReceivedAt:
+      nullableProjectionTimestamp(stream.lastReceivedAt, 'lastReceivedAt') ??
+      undefined,
+    lastIngestedAt:
+      nullableProjectionTimestamp(stream.lastIngestedAt, 'lastIngestedAt') ??
+      undefined,
+    lastReconciledAt:
+      nullableProjectionTimestamp(
+        stream.lastReconciledAt,
+        'lastReconciledAt'
+      ) ?? undefined,
+    attentionCode:
+      nullableProjectionString(stream.attentionCode, 'attentionCode') ??
+      undefined,
+  };
+}
+
+function normalizeRithmicCoverage(
+  value: unknown,
+  accountIds: Set<string>
+): RithmicCoverageStatus[] {
+  if (!Array.isArray(value)) {
+    throw new Error('Invalid Rithmic coverage response');
+  }
+  const seen = new Set<string>();
+  return value.map((item) => {
+    const coverage = asRecord(item);
+    if (!coverage) throw new Error('Invalid Rithmic coverage response');
+    const connectionAccountId = scopedIdentifier(
+      coverage.connectionAccountId,
+      'coverage account identity',
+      'Rithmic'
+    );
+    if (
+      !accountIds.has(connectionAccountId) ||
+      seen.has(connectionAccountId) ||
+      !isRithmicCurrentSessionState(coverage.currentSession) ||
+      !isRithmicPriorHistoryState(coverage.priorHistory) ||
+      !isRithmicBoundaryState(coverage.boundary) ||
+      !isRithmicRecoveryState(coverage.recovery)
+    ) {
+      throw new Error('Invalid Rithmic coverage response');
+    }
+    seen.add(connectionAccountId);
+    return {
+      connectionAccountId,
+      currentSession: coverage.currentSession,
+      priorHistory: coverage.priorHistory,
+      boundary: coverage.boundary,
+      recovery: coverage.recovery,
+      limitationCode:
+        nullableProjectionString(
+          coverage.limitationCode,
+          'coverage limitationCode'
+        ) ?? undefined,
+    };
+  });
+}
+
 function normalizeRithmicConnection(value: unknown): RithmicConnection {
   const connection = asRecord(value);
   if (
@@ -1303,7 +1465,10 @@ function normalizeRithmicConnection(value: unknown): RithmicConnection {
     typeof connection.displayName !== 'string' ||
     connection.displayName.trim() === '' ||
     typeof connection.systemName !== 'string' ||
-    connection.systemName.trim() === '' ||
+    (connection.systemName.trim() === '' &&
+      !(
+        connection.status === 'disconnected' && connection.systemName === ''
+      )) ||
     typeof connection.status !== 'string' ||
     connection.status.trim() === '' ||
     connection.status !== connection.status.trim() ||
@@ -1336,6 +1501,10 @@ function normalizeRithmicConnection(value: unknown): RithmicConnection {
     jobIds.add(job.id);
     return job;
   });
+  const syncMode = connection.syncMode;
+  if (syncMode !== 'finite' && syncMode !== 'continuous') {
+    throw new Error('Invalid Rithmic sync mode response');
+  }
   return {
     id,
     displayName: connection.displayName.trim(),
@@ -1355,6 +1524,9 @@ function normalizeRithmicConnection(value: unknown): RithmicConnection {
     lastErrorAt:
       nullableProjectionTimestamp(connection.lastErrorAt, 'lastErrorAt') ??
       undefined,
+    syncMode,
+    stream: normalizeRithmicStream(connection.stream),
+    coverage: normalizeRithmicCoverage(connection.coverage, accountIds),
     accounts,
     jobs,
   };

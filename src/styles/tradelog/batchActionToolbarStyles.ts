@@ -13,49 +13,6 @@ export const BATCH_ACTION_TOOLBAR_STYLES = `
     justify-content: flex-start;
   }
 
-  .batch-action-toolbar-actions button,
-  .batch-action-toolbar-actions button.journalit-batch-action-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    gap: 6px;
-    padding: 6px 10px;
-    border-radius: 6px;
-    font-size: 13px;
-    cursor: pointer;
-    border: 1px solid var(--background-modifier-border);
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
-    font-weight: 500;
-    transition: background 0.2s ease, opacity 0.2s ease;
-  }
-
-  .batch-action-toolbar-actions button:hover:not(:disabled) {
-    opacity: 0.85;
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
-  }
-
-  .batch-action-toolbar-actions button:active:not(:disabled) {
-    opacity: 0.8;
-  }
-
-  .batch-action-toolbar-actions button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .batch-action-toolbar-actions button.danger {
-    background: var(--text-error);
-    border-color: var(--text-error);
-    color: white;
-  }
-
-  .batch-action-toolbar-actions button.danger:hover:not(:disabled) {
-    opacity: 0.85;
-    background: var(--text-error);
-  }
-
   @media (max-width: 768px) {
     .batch-action-toolbar {
       padding: 8px 12px;
@@ -64,11 +21,6 @@ export const BATCH_ACTION_TOOLBAR_STYLES = `
 
     .batch-action-toolbar-actions {
       gap: 6px;
-    }
-
-    .batch-action-toolbar-actions button {
-      padding: 6px 12px;
-      font-size: 13px;
     }
   }
 
@@ -113,36 +65,6 @@ export const BATCH_ACTION_TOOLBAR_STYLES = `
     background: var(--background-primary);
   }
 
-  .batch-action-modal-buttons button {
-    padding: 8px 16px;
-    border-radius: 4px;
-    border: 1px solid var(--background-modifier-border);
-    background: var(--background-primary);
-    color: var(--text-normal);
-    cursor: pointer;
-    font-size: 14px;
-  }
-
-  .batch-action-modal-buttons button:hover:not(:disabled) {
-    background: var(--background-modifier-hover);
-  }
-
-  .batch-action-modal-buttons button:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-  }
-
-  .batch-action-modal-buttons button.primary {
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
-    border-color: var(--interactive-accent);
-  }
-
-  .batch-action-modal-buttons button.primary:hover:not(:disabled) {
-    background: var(--interactive-accent-hover);
-    color: var(--text-on-accent);
-  }
-
   .journalit-batch-modal-title {
     margin: 0 0 16px 0;
     font-size: 18px;
@@ -181,27 +103,7 @@ export const BATCH_ACTION_TOOLBAR_STYLES = `
     align-items: center;
     justify-content: center;
     gap: 6px;
-    padding: 6px 10px;
-    border-radius: 6px;
-    border: 1px solid var(--background-modifier-border);
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
     white-space: nowrap;
-    transition: background 0.2s ease, opacity 0.2s ease;
-  }
-
-  .batch-action-select-all-btn:hover:not(:disabled) {
-    opacity: 0.85;
-    background: var(--interactive-accent);
-    color: var(--text-on-accent);
-  }
-
-  .batch-action-select-all-btn:disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
   }
 
   .batch-action-select-all-btn svg {
@@ -218,9 +120,7 @@ export const BATCH_ACTION_TOOLBAR_STYLES = `
       display: none;
     }
     .batch-action-select-all-btn {
-      padding: 6px;
-      min-width: 28px;
-      justify-content: center;
+      min-width: var(--journalit-control-height);
     }
   }
 
@@ -235,21 +135,14 @@ export const BATCH_ACTION_TOOLBAR_STYLES = `
     flex-shrink: 0;
   }
 
-  @media (max-width: 1024px) {
-    .batch-action-toolbar-actions button {
-      padding: 6px 10px;
-    }
-  }
-
   
   @media (max-width: 900px) {
     .batch-action-toolbar-actions .btn-label {
       display: none;
     }
     .batch-action-toolbar-actions button {
-      padding: 6px;
-      min-width: 32px;
-      justify-content: center;
+      min-width: var(--journalit-control-height);
+      padding: 0;
     }
     .batch-action-toolbar-actions button svg {
       flex-shrink: 0;

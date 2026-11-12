@@ -62,6 +62,15 @@ export const TRADE_ACCOUNT_CELL_STYLES = `
   text-align: center;
 }
 
+
+@supports (text-box: trim-both cap alphabetic) {
+  .trade-account-count-badge {
+    display: block;
+    padding-block: calc((12px - 1cap) / 2);
+    text-box: trim-both cap alphabetic;
+  }
+}
+
 .journalit-tooltip.accounts-tooltip .tooltip-title {
   color: var(--text-accent);
 }

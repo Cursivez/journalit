@@ -1,3 +1,4 @@
+import { tradeMarketBiasLabel } from '../../services/marketBias/tradeMarketBiasLabel';
 import type { TimeNode, TradeLogTrade } from '../../services/tradelog/types';
 import type {
   MaeMfeDisplayUnit,
@@ -250,6 +251,10 @@ function columnValue(
       return trade.tags ?? [];
     case 'reviewed':
       return trade.reviewed === true;
+    case 'tradeRating':
+      return trade.tradeRating ?? null;
+    case 'marketBias':
+      return trade.marketBias ? tradeMarketBiasLabel(trade.marketBias) : null;
     case 'thesis':
       return trade.thesis ?? null;
     case 'mtComment':

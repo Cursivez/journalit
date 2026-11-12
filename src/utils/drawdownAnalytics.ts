@@ -1,6 +1,7 @@
 import { calculateEffectiveRMultiple } from './formatting';
 import { safeGetTime, safeParseDateValue } from './dateUtils';
 import { isTradeOpenWithContext } from './tradeStatusUtils';
+import { getTradeMarketSide } from '../services/trade/core/TradeDirection';
 import {
   type FilterExclusions,
   hasFilterExclusions,
@@ -30,6 +31,8 @@ interface DrawdownAnalyzableTrade {
   exitTime?: Date | string | null;
   pnl?: number | null;
   direction?: string | null;
+  assetType?: unknown;
+  optionType?: unknown;
   tradeStatus?: string;
   useDirectPnLInput?: boolean;
   exits?: Array<{
@@ -169,6 +172,7 @@ interface DrawdownCapitalBasisFilterScope {
   tradeTypes?: string[];
   statuses?: string[];
   ratings?: string[];
+  marketBias?: string[];
   customFieldFilters?: Record<string, unknown>;
   exclusions?: FilterExclusions;
 }
@@ -231,12 +235,6 @@ const createEmptySummary = (
   basis,
 });
 
-const normalizeDirection = (direction?: string | null): DrawdownDirection => {
-  if (direction?.toLowerCase() === 'long') return 'long';
-  if (direction?.toLowerCase() === 'short') return 'short';
-  return 'combined';
-};
-
 const normalizeLookupKey = (value: string): string =>
   value.trim().toLowerCase();
 
@@ -258,6 +256,7 @@ export const isNonAccountFilterActive = (
     nonDefaultTradeTypeFilterActive ||
     (filters.statuses?.length ?? 0) > 0 ||
     (filters.ratings?.length ?? 0) > 0 ||
+    (filters.marketBias?.length ?? 0) > 0 ||
     Object.values(filters.customFieldFilters ?? {}).some((value) => {
       if (Array.isArray(value)) return value.length > 0;
       return value !== undefined && value !== null && value !== '';
@@ -537,7 +536,7 @@ const matchesDirection = (
   direction: DrawdownDirection
 ): boolean => {
   if (direction === 'combined') return true;
-  return normalizeDirection(trade.direction) === direction;
+  return getTradeMarketSide(trade) === direction;
 };
 
 const isClosedTrade = (trade: DrawdownAnalyzableTrade): boolean => {
@@ -933,7 +932,7 @@ export const getDrawdownCacheSignature = (
         item.realizedAtMs ?? 'no-time',
         item.entryTimeMs ?? 'no-entry-time',
         item.trade.pnl ?? 0,
-        item.trade.direction ?? 'combined',
+        getTradeMarketSide(item.trade) ?? 'combined',
         item.trade.rMultiple ?? 'no-r',
         item.trade.riskAmount ?? 'no-risk',
       ].join('|')

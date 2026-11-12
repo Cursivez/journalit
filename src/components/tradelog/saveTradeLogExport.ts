@@ -1,5 +1,5 @@
 import { type App, Notice, Platform } from 'obsidian';
-import { createElement } from 'react';
+import { createElement, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import { t } from '../../lang/helpers';
 import { Select } from '../core/Select';
@@ -9,6 +9,33 @@ import {
   type TradeLogExportFormat,
   type TradeLogExportTable,
 } from './tradeLogExport';
+
+const EXPORT_FORMAT_OPTIONS = [
+  { value: 'csv', label: 'CSV' }, 
+  { value: 'json', label: 'JSON' }, 
+  { value: 'md', label: 'Markdown' }, 
+];
+
+function ExportFormatSelect({
+  initial,
+  onChange,
+}: {
+  initial: TradeLogExportFormat;
+  onChange: (format: TradeLogExportFormat) => void;
+}) {
+  const [value, setValue] = useState(initial);
+  return createElement(Select, {
+    label: t('tradelog.export.format'),
+    value,
+    options: EXPORT_FORMAT_OPTIONS,
+    onChange: (next) => {
+      if (next === 'csv' || next === 'json' || next === 'md') {
+        setValue(next);
+        onChange(next);
+      }
+    },
+  });
+}
 
 export async function offerTradeLogExport(
   app: App,
@@ -37,18 +64,10 @@ export async function offerTradeLogExport(
     renderContent: (contentEl) => {
       const root = createRoot(contentEl.createDiv());
       root.render(
-        createElement(Select, {
-          label: t('tradelog.export.format'),
-          className: 'dropdown',
-          defaultValue: format,
-          options: [
-            { value: 'csv', label: 'CSV' }, 
-            { value: 'json', label: 'JSON' }, 
-            { value: 'md', label: 'Markdown' }, 
-          ],
+        createElement(ExportFormatSelect, {
+          initial: format,
           onChange: (value) => {
-            if (value === 'csv' || value === 'json' || value === 'md')
-              format = value;
+            format = value;
           },
         })
       );
@@ -70,7 +89,16 @@ export async function offerTradeLogExport(
     return;
   }
 
-  const url = URL.createObjectURL(new Blob([content], { type: mimeType }));
+  downloadBlob(doc, new Blob([content], { type: mimeType }), filename);
+}
+
+
+export function downloadBlob(
+  doc: Document,
+  blob: Blob,
+  filename: string
+): void {
+  const url = URL.createObjectURL(blob);
   const anchor = doc.body.createEl('a');
   anchor.href = url;
   anchor.download = filename;

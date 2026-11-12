@@ -42,6 +42,7 @@ export const SetupExecutionGapChart: React.FC<SetupExecutionGapChartProps> = ({
   isMasked,
   valueMode,
 }) => {
+  const missedPatternId = `journalit-execution-gap-missed-pattern-${React.useId()}`;
   const chartRef = useRef<HTMLDivElement>(null);
   if (isMasked) {
     return (
@@ -117,7 +118,7 @@ export const SetupExecutionGapChart: React.FC<SetupExecutionGapChartProps> = ({
           >
             <defs>
               <pattern
-                id="journalit-execution-gap-missed-pattern"
+                id={missedPatternId}
                 patternUnits="userSpaceOnUse"
                 width="8"
                 height="8"
@@ -205,7 +206,7 @@ export const SetupExecutionGapChart: React.FC<SetupExecutionGapChartProps> = ({
               name={t('setups.view.detail.execution-gap.missed-edge')}
               stackId="captured"
               isAnimationActive={false}
-              fill="url(#journalit-execution-gap-missed-pattern)"
+              fill={`url(#${missedPatternId})`}
               fillOpacity={0.62}
               maxBarSize={108}
               radius={[4, 4, 0, 0]}

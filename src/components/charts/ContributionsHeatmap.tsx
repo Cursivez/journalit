@@ -21,7 +21,15 @@ import {
   isPnlContributingTrade,
 } from '../../utils/tradeStatusUtils';
 import { hasTranslation, t } from '../../lang/helpers';
+import {
+  classifyGroupedPnLWithBreakEvenSettings,
+  type BreakEvenRangeSettings,
+  type GroupedBreakEvenAccountBalance,
+  type PnLOutcomeWithUnknown,
+} from '../../utils/breakEvenRange';
+import { getWeeklySummaryBreakEvenBalanceGroups } from '../home/widgets/weeklySummaryUtils';
 import { cssVars } from '../../styles/inlineStylePolicy';
+import { formatLocalizedReviewDate } from '../../utils/localizedDateTime';
 
 export const CONTRIBUTIONS_HEATMAP_STYLES = `
 
@@ -41,6 +49,9 @@ export const CONTRIBUTIONS_HEATMAP_STYLES = `
           --heatmap-loss-2: rgba(239, 68, 68, 0.35);
           --heatmap-loss-3: rgba(239, 68, 68, 0.65);
           --heatmap-loss-4: rgba(220, 38, 38, 0.85);
+
+          
+          --heatmap-breakeven: color-mix(in srgb, var(--journalit-pnl-neutral) 55%, transparent);
 
           
           --heatmap-text-primary: var(--text-normal);
@@ -85,7 +96,6 @@ export const CONTRIBUTIONS_HEATMAP_STYLES = `
           position: relative;
           overflow: hidden;
           background-color: var(--heatmap-cell-bg, transparent);
-          border: var(--heatmap-cell-border, none);
         }
 
         .contributions-heatmap .heatmap-cell::before {
@@ -308,11 +318,21 @@ interface ContributionsHeatmapProps {
   rollingMode?: boolean;
 }
 
+type HeatmapDayOutcome = 'profit' | 'loss' | 'breakeven';
+
+interface DailyHeatmapEntry {
+  pnl: number;
+  count: number;
+  rMultiple: number;
+  outcome: HeatmapDayOutcome;
+}
+
 interface DayData {
   date: Date;
   dateString: string;
   pnl: number;
   tradeCount: number;
+  outcome: HeatmapDayOutcome;
   intensity: number; 
   isEmpty: boolean;
   
@@ -327,6 +347,7 @@ interface TooltipState {
     date: string;
     pnl: number;
     tradeCount: number;
+    outcome: HeatmapDayOutcome;
     isEmpty: boolean;
     rMultiple?: number;
   } | null;
@@ -345,7 +366,19 @@ interface DailyHeatmapDataOptions {
   rollingDateRange: { startDate: Date; endDate: Date } | null;
   plugin: ReturnType<typeof usePlugin>;
   analyticsDateBasis: 'entry' | 'exit';
+  breakEvenSettings: BreakEvenRangeSettings;
 }
+
+
+const resolveHeatmapDayOutcome = (
+  pnl: number,
+  outcome: PnLOutcomeWithUnknown
+): HeatmapDayOutcome => {
+  if (outcome === 'win') return 'profit';
+  if (outcome === 'loss') return 'loss';
+  if (outcome === 'breakeven' || pnl === 0) return 'breakeven';
+  return pnl > 0 ? 'profit' : 'loss';
+};
 
 const buildDailyHeatmapData = ({
   trades,
@@ -356,14 +389,14 @@ const buildDailyHeatmapData = ({
   rollingDateRange,
   plugin,
   analyticsDateBasis,
+  breakEvenSettings,
 }: DailyHeatmapDataOptions) => {
-  const dailyPnL: {
-    [dateString: string]: { pnl: number; count: number; rMultiple: number };
-  } = {};
+  const dailyPnL: Record<string, DailyHeatmapEntry> = {};
+  const dailyBalanceGroups: Record<string, GroupedBreakEvenAccountBalance[]> =
+    {};
   trades.forEach((trade) => {
     if (!isPnlContributingTrade(trade)) return;
     const effectivePnL = getEffectivePnL(trade);
-    if (effectivePnL === 0) return;
 
     const tradeDate = getTradeAnalyticsTradingDay(
       trade,
@@ -383,8 +416,18 @@ const buildDailyHeatmapData = ({
     }
 
     const dateString = `${tradeDate.getFullYear()}-${String(tradeDate.getMonth() + 1).padStart(2, '0')}-${String(tradeDate.getDate()).padStart(2, '0')}`;
-    if (!dailyPnL[dateString])
-      dailyPnL[dateString] = { pnl: 0, count: 0, rMultiple: 0 };
+    if (!dailyPnL[dateString]) {
+      dailyPnL[dateString] = {
+        pnl: 0,
+        count: 0,
+        rMultiple: 0,
+        outcome: 'breakeven',
+      };
+      dailyBalanceGroups[dateString] = [];
+    }
+    dailyBalanceGroups[dateString].push(
+      ...getWeeklySummaryBreakEvenBalanceGroups(trade)
+    );
 
     const displayPnL = getDisplayPnL(
       effectivePnL,
@@ -405,6 +448,17 @@ const buildDailyHeatmapData = ({
     }
   });
 
+  for (const [dateString, day] of Object.entries(dailyPnL)) {
+    day.outcome = resolveHeatmapDayOutcome(
+      day.pnl,
+      classifyGroupedPnLWithBreakEvenSettings({
+        pnl: day.pnl,
+        settings: breakEvenSettings,
+        accountBalanceGroups: dailyBalanceGroups[dateString],
+      })
+    );
+  }
+
   return {
     dailyData: dailyPnL,
     maxAbsPnL: Math.max(
@@ -415,7 +469,7 @@ const buildDailyHeatmapData = ({
 };
 
 const buildHeatmapWeeks = (
-  dailyData: Record<string, { pnl: number; count: number; rMultiple: number }>,
+  dailyData: Record<string, DailyHeatmapEntry>,
   maxAbsPnL: number,
   year: number,
   rollingMode: boolean,
@@ -459,6 +513,7 @@ const buildHeatmapWeeks = (
         dateString,
         pnl: dayPnl,
         tradeCount,
+        outcome: dayData?.outcome ?? 'breakeven',
         intensity,
         isEmpty: !isInRange || tradeCount === 0,
         isInRange,
@@ -552,10 +607,10 @@ const getVisibleHeatmapMonths = (
 const getHeatmapDayColor = (day: DayData, isPnlMasked: boolean): string => {
   if (day.isEmpty || day.tradeCount === 0) return 'var(--heatmap-empty)';
   if (isPnlMasked) return 'var(--text-muted)';
-  const prefix = day.pnl > 0 ? 'profit' : 'loss';
-  return day.intensity >= 1 && day.intensity <= 4
-    ? `var(--heatmap-${prefix}-${day.intensity})`
-    : 'var(--heatmap-empty)';
+  if (day.outcome === 'breakeven') return 'var(--heatmap-breakeven)';
+  
+  const intensity = Math.min(Math.max(day.intensity, 1), 4);
+  return `var(--heatmap-${day.outcome}-${intensity})`;
 };
 
 const calculateHeatmapTooltipPosition = (
@@ -774,12 +829,7 @@ const HeatmapGrid: React.FC<HeatmapGridProps> = ({
                 onMouseEnter={(event) => showTooltip(event, day)}
                 onMouseLeave={hideTooltip}
                 onMouseMove={updateTooltipPosition}
-                style={cssVars({
-                  '--heatmap-cell-bg': getDayColor(day),
-                  '--heatmap-cell-border': day.isEmpty
-                    ? 'none'
-                    : `1px solid color-mix(in srgb, var(--text-normal) 8%, transparent)`,
-                })}
+                style={cssVars({ '--heatmap-cell-bg': getDayColor(day) })}
                 {...interactiveProps}
               >
                 {isActionable && (
@@ -851,9 +901,9 @@ const HeatmapTooltipPortal: React.FC<HeatmapTooltipPortalProps> = ({
           className={`heatmap-tooltip-value ${
             isPnlMasked
               ? ''
-              : tooltip.content.pnl > 0
+              : tooltip.content.outcome === 'profit'
                 ? 'positive'
-                : tooltip.content.pnl < 0
+                : tooltip.content.outcome === 'loss'
                   ? 'negative'
                   : ''
           }`}
@@ -909,12 +959,7 @@ const useHeatmapTooltipState = () => {
       }
       if (timeoutRef.current) window.clearTimeout(timeoutRef.current);
 
-      const dateStr = day.date.toLocaleDateString('en-US', {
-        weekday: 'long',
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-      });
+      const dateStr = formatLocalizedReviewDate(day.date, 'full');
       lastMouseEvent.current = {
         clientX: event.clientX,
         clientY: event.clientY,
@@ -926,6 +971,7 @@ const useHeatmapTooltipState = () => {
           date: dateStr,
           pnl: day.pnl,
           tradeCount: day.tradeCount,
+          outcome: day.outcome,
           isEmpty: day.isEmpty || day.tradeCount === 0,
           rMultiple: day.rMultiple,
         },
@@ -1049,6 +1095,25 @@ const ContributionsHeatmapComponent: React.FC<ContributionsHeatmapProps> = ({
     plugin?.settings?.trade?.analyticsDateBasis ?? 'entry';
   const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
   const applyAccountCountMultiplier = false;
+  const tradeSettings = plugin?.settings?.trade;
+  const breakEvenRangeMin = tradeSettings?.breakEvenRangeMin;
+  const breakEvenRangeMax = tradeSettings?.breakEvenRangeMax;
+  const breakEvenThresholdMode = tradeSettings?.breakEvenThresholdMode;
+  const breakEvenThresholdPercent = tradeSettings?.breakEvenThresholdPercent;
+  const breakEvenSettings = useMemo<BreakEvenRangeSettings>(
+    () => ({
+      breakEvenRangeMin,
+      breakEvenRangeMax,
+      breakEvenThresholdMode,
+      breakEvenThresholdPercent,
+    }),
+    [
+      breakEvenRangeMin,
+      breakEvenRangeMax,
+      breakEvenThresholdMode,
+      breakEvenThresholdPercent,
+    ]
+  );
 
   const {
     tooltip,
@@ -1087,8 +1152,10 @@ const ContributionsHeatmapComponent: React.FC<ContributionsHeatmapProps> = ({
         rollingDateRange,
         plugin,
         analyticsDateBasis,
+        breakEvenSettings,
       }),
     [
+      breakEvenSettings,
       trades,
       year,
       defaultRiskAmount,

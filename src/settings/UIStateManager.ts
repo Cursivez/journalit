@@ -17,9 +17,20 @@ import {
 } from './types';
 import { normalizeEconomicCalendarViewFilters } from '../services/economicCalendar/economicCalendarScope';
 import type { TradeType } from '../services/tradelog/types';
-import type { SetupDirection } from '../services/setup/types';
+import {
+  normalizeSetupTradeTypes,
+  type SetupTradeType,
+} from '../services/setup/setupTradeTypes';
+import type {
+  SetupDirection,
+  SetupOutcomeScope,
+  SetupOverviewChartMode,
+  SetupOverviewMetricKey,
+  SetupPairMetricKey,
+} from '../services/setup/types';
 import { migrateLegacyAllStatusSelection } from './viewFiltersDefaults';
 import type { JournalSettingsContext } from '../demo/DemoSettingsScope';
+import type { DashboardComparisonFilters } from '../components/dashboard/compare/dashboardComparison';
 import {
   ensureDemoStateDirectory,
   getDemoStateDirectoryPath,
@@ -30,12 +41,15 @@ import { Mutex } from '../utils/mutex';
 const UI_STATE_FILENAME = 'ui-state.json';
 
 
-interface UIState {
+export interface UIState {
   
   recentItems: RecentItem[];
 
   
   viewFilters?: PersistedViewFilters;
+
+  
+  dashboardCompare?: DashboardComparisonFilters;
 
   
   statusFilterCancelledMigrationVersion?: number;
@@ -100,16 +114,10 @@ interface UIState {
   setupDetailAnalysisMode?: 'performance' | 'execution-gap';
 
   
-  setupOverviewMetricKey?:
-    | 'expectedValue'
-    | 'expectedR'
-    | 'totalPnL'
-    | 'totalR'
-    | 'winRate'
-    | 'profitFactor'
-    | 'totalTrades'
-    | 'cumulativePnl'
-    | 'cumulativeR';
+  setupOverviewMetricKey?: SetupOverviewMetricKey;
+
+  
+  setupOverviewOutcomeScope?: SetupOutcomeScope;
 
   
   setupOverviewSelectedSetupIds?: string[];
@@ -121,17 +129,13 @@ interface UIState {
   setupOverviewSelectedDirections?: Array<SetupDirection | 'unspecified'>;
 
   
-  setupOverviewChartMode?: 'setups' | 'pairs';
+  setupOverviewTradeTypes?: SetupTradeType[];
 
   
-  setupOverviewPairMetricKey?:
-    | 'edgeR'
-    | 'expectancyR'
-    | 'totalR'
-    | 'totalPnL'
-    | 'winRate'
-    | 'profitFactor'
-    | 'totalTrades';
+  setupOverviewChartMode?: SetupOverviewChartMode;
+
+  
+  setupOverviewPairMetricKey?: SetupPairMetricKey;
 
   
   economicCalendar?: {
@@ -354,6 +358,9 @@ export class UIStateManager {
           normalizeSetupOverviewSelectedDirections(
             persistedState.setupOverviewSelectedDirections
           ),
+        setupOverviewTradeTypes: normalizeSetupTradeTypes(
+          persistedState.setupOverviewTradeTypes
+        ),
         economicCalendar: normalizeEconomicCalendarUiState(
           persistedState.economicCalendar
         ),

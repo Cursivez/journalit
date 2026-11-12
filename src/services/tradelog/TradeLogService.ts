@@ -3,6 +3,7 @@
 import { parseStopLossTargets } from '../trade/core/StopLossTargets';
 import { TradeService } from '../trade/TradeService';
 import {
+  createDateWithoutTime,
   formatDateDisplay,
   formatLocalDateString,
   getWeekNumberForDate,
@@ -11,13 +12,27 @@ import {
   type WeekStartDaySetting,
 } from '../../utils/dateUtils';
 import {
+  getTradingDay,
   getTradingDayString,
   createTradingDayFromString,
 } from '../../utils/tradingDayUtils';
 import {
   getProjectedRealizedEventTrades,
+  getTradeAnalyticsDate,
+  getAnalyticsDateBasis,
+  getMissedTradeTradingDay,
+  getTradeAnalyticsTradingDay,
+  getTradeFirstRealizedTradingDay,
   getTradeRealizedPnlEvents,
 } from '../../utils/tradeAnalyticsDate';
+import {
+  isDayInRecentPeriodWindow,
+  isInRecentPeriodWindow,
+  resolveRecentPeriodWindow,
+  type RecentPeriod,
+  type RecentPeriodAccess,
+  type RecentPeriodWindow,
+} from '../../components/shared/filters/recentPeriod';
 import type { AnalyticsDateBasis } from '../../settings/types';
 import {
   TimeNode,
@@ -29,6 +44,8 @@ import {
   ReviewStatusFilter,
   DirectionFilter,
   SELECTABLE_TRADE_TYPES_COUNT,
+  type RecentPeriodScope,
+  type TradeLogFilters,
 } from './types';
 import {
   getCurrentRealizedPnL,
@@ -58,6 +75,13 @@ import {
 import type { PartialTradeFrontmatter } from '../../types/TradeFrontmatter';
 import type JournalitPlugin from '../../main';
 import { normalizePath } from 'obsidian';
+import {
+  filterTradesByMarketBias,
+  type TradeBiasAlignment,
+  type TradeMarketBias,
+  type TradeMarketBiasResolver,
+} from '../marketBias/tradeMarketBias';
+import { loadTradeMarketBiasResolver } from '../marketBias/loadTradeMarketBiasResolver';
 import { parseTradeRating, type RatingFilter } from '../../utils/tradeRating';
 import { t } from '../../lang/helpers';
 import {
@@ -116,6 +140,11 @@ interface DateComponents {
 }
 
 
+
+
+function recentPeriodTradeKey(trade: TradeLogData): string {
+  return trade.copySourceFilePath || trade.filePath || trade.path || '';
+}
 
 function isTradeLogRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === 'object' && !Array.isArray(value);
@@ -196,6 +225,8 @@ type TradeLogData = PartialTradeFrontmatter &
     
     performanceIndicator?: 'best' | 'worst';
     
+    marketBias?: TradeMarketBias;
+    
     isCopiedTrade?: boolean;
     copiedFromAccount?: string;
     copyMultiplier?: number;
@@ -215,6 +246,7 @@ type TradeLogData = PartialTradeFrontmatter &
 
 type EnrichedTradeData = TradeLogData & {
   _dateComponents: DateComponents;
+  marketBias: TradeMarketBias;
 };
 
 interface HierarchicalQueryParams {
@@ -239,6 +271,8 @@ interface HierarchicalQueryParams {
   exclusions: FilterExclusions;
   matchModes: FilterMatchModes;
   ratings?: RatingFilter[];
+  marketBias?: TradeBiasAlignment[];
+  recentPeriod?: RecentPeriod;
 }
 
 function normalizeCustomFieldFilterValue(value: unknown): string | null {
@@ -375,6 +409,7 @@ export class TradeLogService {
         'drc:session-log-index-invalidated',
         bumpQueryRevisionAndClearCache
       ),
+      eventBus.subscribe('market-bias:changed', bumpQueryRevisionAndClearCache),
       eventBus.subscribe('folder-path:changed', bumpQueryRevisionAndClearCache),
       eventBus.subscribe('account:changed', bumpTradeRevisionAndClearCache)
     );
@@ -801,6 +836,8 @@ export class TradeLogService {
         query.matchModes,
         query.resultMode,
         query.ratings,
+        query.marketBias,
+        query.recentPeriod,
         retryCount + 1
       );
     }
@@ -833,6 +870,8 @@ export class TradeLogService {
     matchModes: FilterMatchModes = createFilterMatchModes(),
     resultMode: 'view' | 'trades' = 'view',
     ratings?: RatingFilter[],
+    marketBias?: TradeBiasAlignment[],
+    recentPeriod?: RecentPeriod,
     retryCount: number = 0
   ): Promise<TimeNode[]> {
     
@@ -873,6 +912,8 @@ export class TradeLogService {
       exclusions,
       matchModes,
       ratings,
+      marketBias,
+      recentPeriod,
     };
 
     const requestRevisionToken = this.tradeCommitRevisionToken;
@@ -886,7 +927,7 @@ export class TradeLogService {
             .map((scope) => `${scope.account}\0${scope.phaseId}`)
             .sort()
             .join(',');
-    const cacheKey = `v${this.CACHE_VERSION}-${resultMode}-r${requestRevisionToken}-copy${includeCopyAccountsInAllAccounts}-${viewLevel}-${startDate?.toISOString()}-${endDate?.toISOString()}-${analyticsDateBasis ?? 'calendar-entry'}-${normalizeFilterArray(tradeTypes)}-${normalizeFilterArray(statuses)}-${normalizeFilterArray(reviewStatus)}-${normalizeFilterArray(ratings)}-${normalizeFilterArray(directions)}-${normalizeFilterArray(sessionLogTags)}-${normalizeFilterArray(accounts)}-${normalizeFilterArray(tickers)}-${normalizeFilterArray(setups)}-${normalizeFilterArray(tags)}-${normalizeFilterArray(mistakes)}-${normalizeCustomFieldFilters(customFieldFilters)}-${normalizeFilterArray(operationFilePaths)}-${accountPhaseCacheKey}-${getFilterExclusionsCacheKey(exclusions)}-${getFilterMatchModesCacheKey(matchModes)}`;
+    const cacheKey = `v${this.CACHE_VERSION}-${resultMode}-r${requestRevisionToken}-copy${includeCopyAccountsInAllAccounts}-${viewLevel}-${startDate?.toISOString()}-${endDate?.toISOString()}-${analyticsDateBasis ?? 'calendar-entry'}-${normalizeFilterArray(tradeTypes)}-${normalizeFilterArray(statuses)}-${normalizeFilterArray(reviewStatus)}-${normalizeFilterArray(ratings)}-${normalizeFilterArray(directions)}-${normalizeFilterArray(sessionLogTags)}-${normalizeFilterArray(accounts)}-${normalizeFilterArray(tickers)}-${normalizeFilterArray(setups)}-${normalizeFilterArray(tags)}-${normalizeFilterArray(mistakes)}-${normalizeCustomFieldFilters(customFieldFilters)}-${normalizeFilterArray(operationFilePaths)}-${accountPhaseCacheKey}-${getFilterExclusionsCacheKey(exclusions)}-${getFilterMatchModesCacheKey(matchModes)}-${normalizeFilterArray(marketBias)}-${recentPeriod ? `${recentPeriod.unit}${recentPeriod.count}-${getAnalyticsDateBasis(this.plugin.settings)}` : 'ALL'}`;
     const now = Date.now();
 
     
@@ -932,11 +973,34 @@ export class TradeLogService {
       reviewStatus: reviewStatus || [],
       ratings: ratings || [],
       directions: directions || [],
+      
+      marketBias: [],
       customFieldFilters: customFieldFilters || {},
       exclusions,
       matchModes,
     });
-    if (startDate || endDate || analyticsDateBasis === 'exit') {
+    const resolveBias = await this.loadMarketBiasResolver();
+    let recentWindow: RecentPeriodWindow | undefined;
+    
+    
+    
+    
+    if (recentPeriod) {
+      filteredTrades = this.filterByMarketBias(
+        filteredTrades,
+        marketBias ?? [],
+        resolveBias
+      );
+      if (viewLevel === 'days' && sessionLogTags?.length) {
+        filteredTrades = await this.filterToSessionLogTagDays(
+          filteredTrades,
+          sessionLogTags
+        );
+      }
+      const recent = this.resolveRecentPeriod(filteredTrades, recentPeriod);
+      filteredTrades = recent.trades;
+      recentWindow = recent.window;
+    } else if (startDate || endDate || analyticsDateBasis === 'exit') {
       filteredTrades = this.filterTradesByDateRange(
         filteredTrades,
         startDate,
@@ -946,7 +1010,12 @@ export class TradeLogService {
     }
 
     
-    let enrichedTrades = this.preComputeDateComponents(filteredTrades);
+    
+    let enrichedTrades = filterTradesByMarketBias(
+      this.preComputeDateComponents(filteredTrades, resolveBias),
+      marketBias ?? [],
+      (trade) => trade.marketBias.alignment
+    );
     const selectedSessionLogTags = sessionLogTags || [];
     const sessionLogFilterActive =
       viewLevel === 'days' && selectedSessionLogTags.length > 0;
@@ -1026,14 +1095,12 @@ export class TradeLogService {
         const date = createTradingDayFromString(dayId);
         if (startDate && date < startDate) continue;
         if (endDate && date > endDate) continue;
+        if (recentWindow && !isDayInRecentPeriodWindow(date, recentWindow))
+          continue;
         result.push({
           type: 'day',
           id: dayId,
-          label: date.toLocaleDateString('en-US', {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric',
-          }),
+          label: formatDateDisplay(date, this.plugin.settings.trade.dateFormat),
           metrics: { totalPnL: 0, winRate: 0, tradeCount: 0 },
           sessionLogTagIds: this.getSessionLogTagIdsForDay(
             dayId,
@@ -1165,7 +1232,10 @@ export class TradeLogService {
         }
       }
 
-      enrichedTrades = this.preComputeDateComponents(trades);
+      enrichedTrades = this.preComputeDateComponents(
+        trades,
+        await this.loadMarketBiasResolver()
+      );
       if (requestRevisionToken === this.tradeCommitRevisionToken) {
         this.cachedEnrichedTrades = enrichedTrades;
         this.cachedEnrichedTradesCacheKey = null;
@@ -1220,8 +1290,10 @@ export class TradeLogService {
   }
 
   
+  
   private preComputeDateComponents(
-    trades: TradeLogData[]
+    trades: TradeLogData[],
+    resolveBias: TradeMarketBiasResolver
   ): EnrichedTradeData[] {
     const result = trades.flatMap((trade) => {
       
@@ -1250,6 +1322,7 @@ export class TradeLogService {
       return [
         {
           ...trade,
+          marketBias: resolveBias(trade),
           _dateComponents: {
             date,
             year,
@@ -1647,6 +1720,108 @@ export class TradeLogService {
   }
 
   
+  
+  async resolveRecentPeriodScope(
+    filters: TradeLogFilters & { recentPeriod: RecentPeriod }
+  ): Promise<RecentPeriodScope | null> {
+    let trades = this.applySharedTradeFilters(
+      await this.getTradesWithPaths(
+        filters.tradeTypes,
+        filters.accounts,
+        undefined,
+        filters.accountPhases
+      ),
+      {
+        accounts: filters.accounts,
+        accountPhases: filters.accountPhases,
+        tickers: filters.tickers,
+        setups: filters.setups,
+        tags: filters.tags,
+        mistakes: filters.mistakes,
+        tradeTypes: filters.tradeTypes,
+        statuses: filters.statuses,
+        reviewStatus: filters.reviewStatus,
+        ratings: filters.ratings,
+        directions: filters.directions,
+        
+        marketBias: [],
+        customFieldFilters: filters.customFieldFilters,
+        exclusions: filters.exclusions,
+        matchModes: filters.matchModes,
+      }
+    );
+    trades = this.filterByMarketBias(
+      trades,
+      filters.marketBias,
+      await this.loadMarketBiasResolver()
+    );
+    
+    if (filters.sessionLogTags.length > 0) {
+      trades = await this.filterToSessionLogTagDays(
+        trades,
+        filters.sessionLogTags
+      );
+    }
+    const recent = this.resolveRecentPeriod(trades, filters.recentPeriod);
+    if (!recent.window.start) return null;
+    return {
+      dateRange: [
+        createDateWithoutTime(recent.window.start, true),
+        recent.window.end
+          ? createDateWithoutTime(recent.window.end, false)
+          : null,
+      ],
+      tradePaths: new Set(recent.trades.map(recentPeriodTradeKey)),
+    };
+  }
+
+  
+  private async filterToSessionLogTagDays(
+    trades: TradeLogData[],
+    sessionLogTags: readonly string[]
+  ): Promise<TradeLogData[]> {
+    const selected = new Set(sessionLogTags);
+    const tagIdsByDay = await this.loadSessionLogTagIdsByDay();
+    return trades.filter((trade) => {
+      const dayTags = tagIdsByDay.get(
+        this.getTradingDayStringMemoized(new Date(trade.entryTime))
+      );
+      if (!dayTags) return false;
+      for (const tag of dayTags) if (selected.has(tag)) return true;
+      return false;
+    });
+  }
+
+  
+  private resolveRecentPeriod(
+    trades: TradeLogData[],
+    period: RecentPeriod
+  ): { trades: TradeLogData[]; window: RecentPeriodWindow } {
+    const basis = getAnalyticsDateBasis(this.plugin.settings);
+    const access: RecentPeriodAccess<TradeLogData> = {
+      
+      dayOf: (trade) =>
+        trade.isMissedTrade
+          ? getMissedTradeTradingDay(trade, basis, this.plugin)
+          : getTradeAnalyticsTradingDay(trade, basis, this.plugin),
+      firstDayOf: (trade) =>
+        getTradeFirstRealizedTradingDay(trade, basis, this.plugin),
+      isClosed: (trade) =>
+        !trade.isMissedTrade && isPnlContributingTrade(trade),
+      timeOf: (trade) => getTradeAnalyticsDate(trade, basis)?.getTime() ?? 0,
+      keyOf: recentPeriodTradeKey,
+    };
+    const window = resolveRecentPeriodWindow(trades, period, access, {
+      today: getTradingDay(new Date(), this.plugin),
+    });
+    return {
+      trades: trades.filter((trade) =>
+        isInRecentPeriodWindow(trade, window, access)
+      ),
+      window,
+    };
+  }
+
   private filterTradesByDateRange(
     trades: TradeLogData[],
     startDate?: Date,
@@ -2441,11 +2616,10 @@ export class TradeLogService {
       dayNodes.push({
         type: 'day',
         id: dayId,
-        label: createTradingDayFromString(dayId).toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-          year: 'numeric',
-        }),
+        label: formatDateDisplay(
+          createTradingDayFromString(dayId),
+          this.plugin.settings.trade.dateFormat
+        ),
         metrics:
           dayTrades.length > 500
             ? this.calculateMetricsLightweight(dayTrades)
@@ -2468,6 +2642,23 @@ export class TradeLogService {
   ): string[] | undefined {
     const tagIds = sessionLogTagIdsByDay?.get(dayId);
     return tagIds && tagIds.size > 0 ? [...tagIds].sort() : undefined;
+  }
+
+  
+  private filterByMarketBias(
+    trades: TradeLogData[],
+    selected: readonly TradeBiasAlignment[],
+    resolveBias: TradeMarketBiasResolver
+  ): TradeLogData[] {
+    return filterTradesByMarketBias(trades, selected, (trade) =>
+      trade.entryTime
+        ? resolveBias({ ...trade, entryTime: trade.entryTime }).alignment
+        : 'none'
+    );
+  }
+
+  private loadMarketBiasResolver(): Promise<TradeMarketBiasResolver> {
+    return loadTradeMarketBiasResolver(this.plugin);
   }
 
   private async loadSessionLogTagIdsByDay(): Promise<

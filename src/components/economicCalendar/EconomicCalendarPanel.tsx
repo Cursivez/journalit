@@ -64,6 +64,7 @@ import {
 } from '../../guides/economicCalendarGuideIds';
 import { useEventBus } from '../../hooks/useEventBus';
 import { DeviceFlowSignInModal } from '../auth/DeviceFlowSignInModal';
+import { Button } from '../ui/Button';
 
 const ERROR_MESSAGE_KEYS: Record<'offline' | 'error', TranslationKey> = {
   offline: 'view.economic-calendar.error.offline',
@@ -502,9 +503,10 @@ export const EconomicCalendarPanel: React.FC<EconomicCalendarPanelProps> = ({
           )}
 
           <div className="journalit-econ-footer">
-            <button
+            <Button
+              variant="secondary"
+              size="small"
               ref={registerRestoreTarget}
-              type="button"
               className="journalit-econ-footer__restore"
               onClick={() => void handleRestoreConfiguredEvents()}
               disabled={
@@ -517,10 +519,11 @@ export const EconomicCalendarPanel: React.FC<EconomicCalendarPanelProps> = ({
               {t('view.economic-calendar.restore-missing-events', {
                 count: String(missingConfiguredCount),
               })}
-            </button>
-            <button
+            </Button>
+            <Button
+              variant="primary"
+              size="small"
               ref={registerManualImportTarget}
-              type="button"
               className="journalit-econ-footer__import"
               onClick={() => void handleImport()}
               disabled={
@@ -533,7 +536,7 @@ export const EconomicCalendarPanel: React.FC<EconomicCalendarPanelProps> = ({
                 'view.economic-calendar.import-count',
                 selectedVisibleIds.length
               )}
-            </button>
+            </Button>
           </div>
         </>
       )}

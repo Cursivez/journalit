@@ -8,6 +8,8 @@ export interface MissedTradeFormData extends TradeFormData {
   isMissedTrade: true;
   
   missedReason?: string;
+  
+  exitReason?: string;
 }
 
 export {};

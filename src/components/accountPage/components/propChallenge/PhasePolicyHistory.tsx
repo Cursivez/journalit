@@ -2,6 +2,8 @@
 
 import React from 'react';
 import { t } from '../../../../lang/helpers';
+import { formatLocalizedDateTime } from '../../../../utils/localizedDateTime';
+import { useHourCycle } from '../../../../hooks/useHourCycle';
 import type { PropChallengePhase } from '../../../../services/propChallenge/types';
 import { CollapsibleSection } from '../../../shared/CollapsibleSection';
 import { PhaseEditor } from './PhaseEditor';
@@ -17,6 +19,7 @@ export const PhasePolicyHistory: React.FC<Props> = ({
   phases,
   currencyCode,
 }) => {
+  useHourCycle();
   if (!phase.policyHistory) return null;
   return (
     <CollapsibleSection
@@ -29,7 +32,7 @@ export const PhasePolicyHistory: React.FC<Props> = ({
         {phase.policyHistory.map((revision) => (
           <CollapsibleSection
             key={revision.effectiveAt}
-            title={new Date(revision.effectiveAt).toLocaleString()}
+            title={formatLocalizedDateTime(revision.effectiveAt, 'medium')}
             defaultOpen={false}
             className="journalit-profile-history__entry"
           >

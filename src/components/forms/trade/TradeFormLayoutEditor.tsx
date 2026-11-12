@@ -2,19 +2,17 @@
 
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import JournalitPlugin from '../../../main';
-import { Select } from '../../core/Select';
 import { SegmentedControl } from '../../shared/SegmentedControl';
-import { Tooltip } from '../../shared/Tooltip';
 import {
   VisibilityEditor,
   VisibilityEditorItem,
   VisibilityEditorTab,
 } from '../../shared/visibilityEditor';
-import { Info } from '../../shared/icons/ObsidianIcon';
 import { Button } from '../../ui/Button';
 import { t } from '../../../lang/helpers';
 import { useTradeFormLayoutSave } from './hooks/useTradeFormLayoutSave';
 import {
+  DEFAULT_SETTINGS,
   DEFAULT_TRADE_FORM_LAYOUT_SETTINGS,
   TradeFormAssetTypeMode,
   TradeFormDefaultAssetType,
@@ -29,6 +27,16 @@ import {
   getTradeFormLayoutCategories,
   getTradeFormLayoutItemDefinitions,
 } from './tradeFormLayoutConfig';
+import {
+  readTradeFormEntryPreferences,
+  type TradeFormEntryPreferences,
+} from './tradeFormEntryPreferences';
+import {
+  AssetTypeModeCard,
+  EntryPreferenceCards,
+  InputModeCard,
+  MaeMfeEntryControl,
+} from './TradeFormLayoutModeCards';
 
 
 
@@ -292,15 +300,6 @@ const createEditorItems = (
   };
 };
 
-const getAssetTypeOptions = () => [
-  { value: 'stock', label: t('form.field.asset-type.stock') },
-  { value: 'options', label: t('form.field.asset-type.options') },
-  { value: 'futures', label: t('form.field.asset-type.futures') },
-  { value: 'forex', label: t('form.field.asset-type.forex') },
-  { value: 'crypto', label: t('form.field.asset-type.crypto') },
-  { value: 'cfd', label: t('form.field.asset-type.cfd') },
-];
-
 const parseDefaultAssetType = (
   value: string
 ): TradeFormDefaultAssetType | null => {
@@ -322,6 +321,8 @@ interface RiskFieldsVisibilitySelectorProps {
   onChange: (itemId: string, isVisible: boolean) => void;
   onTakeProfitUnitChange: (unit: TradeFormTakeProfitUnit) => void;
   onStopLossUnitChange: (unit: TradeFormStopLossUnit) => void;
+  
+  maeMfeControl: React.ReactNode;
 }
 
 interface CostFieldsVisibilitySelectorProps {
@@ -363,7 +364,13 @@ CostFieldsVisibilitySelector.displayName = 'CostFieldsVisibilitySelector';
 
 const RiskFieldsVisibilitySelector: React.FC<
   RiskFieldsVisibilitySelectorProps
-> = ({ layout, onChange, onTakeProfitUnitChange, onStopLossUnitChange }) => {
+> = ({
+  layout,
+  onChange,
+  onTakeProfitUnitChange,
+  onStopLossUnitChange,
+  maeMfeControl,
+}) => {
   const riskItems = getTradeFormLayoutItemDefinitions().reduce<
     ReturnType<typeof getTradeFormLayoutItemDefinitions>
   >((items, item) => {
@@ -433,6 +440,9 @@ const RiskFieldsVisibilitySelector: React.FC<
               />
             </div>
           )}
+          {item.id === 'maeMfe' &&
+            visibleItemsSet2.has('maeMfe') &&
+            maeMfeControl}
         </React.Fragment>
       ))}
     </div>
@@ -463,100 +473,6 @@ const ManualFxRateToggle: React.FC<ManualFxRateToggleProps> = ({
 );
 
 ManualFxRateToggle.displayName = 'ManualFxRateToggle';
-
-interface InputModeCardProps {
-  value: TradeFormInputMode;
-  onChange: (value: TradeFormInputMode) => void;
-}
-
-const InputModeCard: React.FC<InputModeCardProps> = ({ value, onChange }) => (
-  <div className="journalit-trade-form-layout-editor__mode-card">
-    <div className="journalit-trade-form-layout-editor__mode-heading">
-      <div className="journalit-trade-form-layout-editor__mode-title">
-        {t('form.layout.input-mode')}
-      </div>
-      <Tooltip
-        className="trade-form-input-mode-tooltip"
-        triggerClassName="journalit-trade-form-layout-editor__mode-info-trigger"
-        preferredPosition="top"
-        content={
-          <div className="journalit-trade-form-layout-editor__mode-tooltip">
-            <div className="journalit-trade-form-layout-editor__mode-tooltip-row">
-              <strong>{t('form.layout.input-mode-prices')}</strong>
-              <span>{t('form.layout.input-mode-prices-desc')}</span>
-            </div>
-            <div className="journalit-trade-form-layout-editor__mode-tooltip-row">
-              <strong>{t('form.layout.input-mode-pnl-risk')}</strong>
-              <span>{t('form.layout.input-mode-pnl-risk-desc')}</span>
-            </div>
-          </div>
-        }
-      >
-        <span
-          className="journalit-dashboard-metric-info journalit-trade-form-layout-editor__mode-info"
-          aria-label={t('form.layout.input-mode')}
-        >
-          <Info size={10} aria-hidden="true" />
-        </span>
-      </Tooltip>
-    </div>
-    <SegmentedControl<TradeFormInputMode>
-      options={[
-        { value: 'prices', label: t('form.layout.input-mode-prices') },
-        { value: 'pnl-risk', label: t('form.layout.input-mode-pnl-risk') },
-      ]}
-      value={value}
-      onChange={onChange}
-      size="small"
-      fullWidth={false}
-    />
-  </div>
-);
-
-InputModeCard.displayName = 'InputModeCard';
-
-interface AssetTypeModeCardProps {
-  assetTypeMode: TradeFormAssetTypeMode;
-  defaultAssetType: TradeFormDefaultAssetType;
-  onAssetTypeModeChange: (value: TradeFormAssetTypeMode) => void;
-  onDefaultAssetTypeChange: (value: string) => void;
-}
-
-const AssetTypeModeCard: React.FC<AssetTypeModeCardProps> = ({
-  assetTypeMode,
-  defaultAssetType,
-  onAssetTypeModeChange,
-  onDefaultAssetTypeChange,
-}) => (
-  <div className="journalit-trade-form-layout-editor__mode-card">
-    <div className="journalit-trade-form-layout-editor__mode-title">
-      {t('form.layout.asset-type-mode')}
-    </div>
-    <div className="journalit-trade-form-layout-editor__asset-controls">
-      <SegmentedControl<TradeFormAssetTypeMode>
-        options={[
-          { value: 'show', label: t('form.layout.asset-type-mode-show') },
-          { value: 'fixed', label: t('form.layout.asset-type-mode-fixed') },
-        ]}
-        value={assetTypeMode}
-        onChange={onAssetTypeModeChange}
-        size="small"
-        fullWidth={false}
-      />
-      {assetTypeMode === 'fixed' && (
-        <Select
-          className="journalit-trade-form-layout-editor__asset-select"
-          value={defaultAssetType}
-          onChange={onDefaultAssetTypeChange}
-          options={getAssetTypeOptions()}
-          aria-label={t('form.layout.default-asset-type')}
-        />
-      )}
-    </div>
-  </div>
-);
-
-AssetTypeModeCard.displayName = 'AssetTypeModeCard';
 
 interface LayoutEditorFooterProps {
   compactFooter: boolean;
@@ -699,6 +615,13 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
     [plugin]
   );
   const [layout, setLayout] = useState<TradeFormLayoutSettings>(initialLayout);
+  const initialEntry = useMemo(
+    () => readTradeFormEntryPreferences(plugin.settings.trade),
+    [plugin]
+  );
+  const [entry, setEntry] = useState<TradeFormEntryPreferences>(initialEntry);
+  const updateEntry = (change: Partial<TradeFormEntryPreferences>) =>
+    setEntry((previous) => ({ ...previous, ...change }));
   const [activeTab, setActiveTab] = useState<VisibilityEditorTab>('active');
   const { isSaving, saveLayout } = useTradeFormLayoutSave({
     plugin,
@@ -709,8 +632,9 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
   const isDirty = useCallback(
     (): boolean =>
       JSON.stringify(resolveTradeFormLayoutSettings(layout)) !==
-      JSON.stringify(resolveTradeFormLayoutSettings(initialLayout)),
-    [initialLayout, layout]
+        JSON.stringify(resolveTradeFormLayoutSettings(initialLayout)) ||
+      JSON.stringify(entry) !== JSON.stringify(initialEntry),
+    [initialLayout, layout, initialEntry, entry]
   );
 
   useEffect(() => {
@@ -818,13 +742,19 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
           onChange={handleRiskGroupVisibilityChange}
           onTakeProfitUnitChange={handleTakeProfitUnitChange}
           onStopLossUnitChange={handleStopLossUnitChange}
+          maeMfeControl={
+            <MaeMfeEntryControl
+              value={entry.maeMfeInputMode}
+              onChange={(maeMfeInputMode) => updateEntry({ maeMfeInputMode })}
+            />
+          }
         />,
         <ManualFxRateToggle
           layout={layout}
           onChange={handleManualFxRateChange}
         />
       ),
-    [layout]
+    [layout, entry.maeMfeInputMode]
   );
 
   const handleReorder = (activeId: string, overId: string) => {
@@ -911,6 +841,7 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
     setLayout(
       resolveTradeFormLayoutSettings(DEFAULT_TRADE_FORM_LAYOUT_SETTINGS)
     );
+    setEntry(readTradeFormEntryPreferences(DEFAULT_SETTINGS.trade));
   };
 
   return (
@@ -927,6 +858,8 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
           onAssetTypeModeChange={handleAssetTypeModeChange}
           onDefaultAssetTypeChange={handleDefaultAssetTypeChange}
         />
+
+        <EntryPreferenceCards entry={entry} onChange={updateEntry} />
       </div>
 
       <VisibilityEditor
@@ -959,7 +892,7 @@ export const TradeFormLayoutEditor: React.FC<TradeFormLayoutEditorProps> = ({
         isSaving={isSaving}
         onReset={handleReset}
         onCancel={onCancel}
-        onSave={() => void saveLayout(layout)}
+        onSave={() => void saveLayout(layout, entry)}
       />
     </div>
   );

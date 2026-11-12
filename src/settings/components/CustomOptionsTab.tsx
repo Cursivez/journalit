@@ -13,7 +13,6 @@ import {
   Edit,
   Trash,
   Lock,
-  ChevronDown,
 } from '../../components/shared/icons/ObsidianIcon';
 import {
   showActionConfirmationModal,
@@ -22,6 +21,7 @@ import {
 import { Notice } from 'obsidian';
 import { hasTranslation, t } from '../../lang/helpers';
 import { ErrorHandler } from '../../utils/errorHandler';
+import { formatDateDisplay } from '../../utils/dateUtils';
 import JournalitPlugin from '../../main';
 
 import {
@@ -55,6 +55,8 @@ import { mergeClassNames } from '../../utils/classNames';
 import type { AccountCatalogEntry } from '../../services/accountPage/types';
 import { normalizeAccountLookupKey } from '../../services/trade/core/TradeAccountIdentity';
 import { useEventBus } from '../../hooks/useEventBus';
+import { DropdownSelect } from '../../components/shared/DropdownSelect';
+import { SegmentedControl } from '../../components/shared/SegmentedControl';
 
 interface CustomOptionsTabProps {
   plugin: JournalitPlugin;
@@ -138,105 +140,6 @@ type CommissionRuleDraft = {
   entryCommission: string;
   exitCommission: string;
   roundTripCommission: string;
-};
-
-interface CommissionAccountDropdownProps {
-  accounts: string[];
-  value: string;
-  onChange: (account: string) => void;
-}
-
-const CommissionAccountDropdown: React.FC<CommissionAccountDropdownProps> = ({
-  accounts,
-  value,
-  onChange,
-}) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const allAccountsLabel = t(
-    'settings.customization.options.commission.all-accounts'
-  );
-  const summary = value || allAccountsLabel;
-
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target;
-      if (
-        dropdownRef.current &&
-        target instanceof Node &&
-        !dropdownRef.current.contains(target)
-      ) {
-        setIsOpen(false);
-      }
-    };
-
-    const listenerDocument = window.activeDocument;
-    listenerDocument.addEventListener('mousedown', handleClickOutside);
-    return () =>
-      listenerDocument.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleSelect = (account: string) => {
-    onChange(account);
-    setIsOpen(false);
-  };
-
-  return (
-    <div
-      className="custom-options-commission-account-dropdown"
-      ref={dropdownRef}
-    >
-      <button
-        type="button"
-        className="custom-options-commission-account-dropdown__trigger clickable-icon"
-        aria-label={summary}
-        aria-expanded={isOpen}
-        onClick={() => setIsOpen((previous) => !previous)}
-      >
-        <span className="custom-options-commission-account-dropdown__summary">
-          {summary}
-        </span>
-        <ChevronDown
-          size={14}
-          className={`custom-options-commission-account-dropdown__chevron${isOpen ? ' custom-options-commission-account-dropdown__chevron--open' : ''}`}
-          aria-hidden="true"
-        />
-      </button>
-      {isOpen && (
-        <div className="custom-options-commission-account-dropdown__menu">
-          <button
-            type="button"
-            className={mergeClassNames(
-              'journalit-native-button',
-              `custom-options-commission-account-dropdown__option${value ? '' : ' custom-options-commission-account-dropdown__option--active'}`
-            )}
-            aria-pressed={!value}
-            onClick={() => handleSelect('')}
-          >
-            <span className="custom-options-commission-account-dropdown__option-label">
-              {allAccountsLabel}
-            </span>
-          </button>
-          {accounts.map((account) => (
-            <button
-              key={account}
-              type="button"
-              className={mergeClassNames(
-                'journalit-native-button',
-                `custom-options-commission-account-dropdown__option${value === account ? ' custom-options-commission-account-dropdown__option--active' : ''}`
-              )}
-              aria-pressed={value === account}
-              onClick={() => handleSelect(account)}
-            >
-              <span className="custom-options-commission-account-dropdown__option-label">
-                {account}
-              </span>
-            </button>
-          ))}
-        </div>
-      )}
-    </div>
-  );
 };
 
 type BuildEditStatesOptions = {
@@ -2227,27 +2130,27 @@ const renderCustomOptionsTab = (
                                     { option: optionKey }
                                   )}
                                 />
-                                <select
-                                  aria-label={t('form.field.asset-type')}
+                                <DropdownSelect
                                   className="custom-options-asset-select"
-                                  value={
+                                  ariaLabel={t('form.field.asset-type')}
+                                  value={String(
                                     optionInfo.editAssetType ||
-                                    instrument.assetType
-                                  }
-                                  onChange={(e) =>
+                                      instrument.assetType
+                                  )}
+                                  options={Object.values(AssetType).map(
+                                    (assetType) => ({
+                                      value: assetType,
+                                      label: getAssetTypeDisplayName(assetType),
+                                    })
+                                  )}
+                                  onChange={(nextValue) =>
                                     updateEditAssetType(
                                       type,
                                       optionKey,
-                                      e.target.value
+                                      nextValue
                                     )
                                   }
-                                >
-                                  {Object.values(AssetType).map((assetType) => (
-                                    <option key={assetType} value={assetType}>
-                                      {getAssetTypeDisplayName(assetType)}
-                                    </option>
-                                  ))}
-                                </select>
+                                />
                               </div>
 
                               {(optionInfo.editAssetType ||
@@ -2264,40 +2167,32 @@ const renderCustomOptionsTab = (
                                     >
                                       {t('settings.general.currency')}
                                     </label>
-                                    <select
+                                    <DropdownSelect
                                       id={getCustomOptionFieldId(
                                         type,
                                         optionKey,
                                         'currency'
                                       )}
-                                      aria-label={t(
-                                        'settings.general.currency'
-                                      )}
-                                      className="journalit-u-w-full"
+                                      ariaLabel={t('settings.general.currency')}
                                       value={optionInfo.editCurrency || ''}
-                                      onChange={(e) =>
+                                      options={[
+                                        { value: '', label: t('common.none') },
+                                        ...getCurrencyOptions().map(
+                                          (currencyOption) => ({
+                                            value: currencyOption.value,
+                                            label: currencyOption.label,
+                                          })
+                                        ),
+                                      ]}
+                                      onChange={(nextValue) =>
                                         updateSpecField(
                                           type,
                                           optionKey,
                                           'editCurrency',
-                                          e.target.value
+                                          nextValue
                                         )
                                       }
-                                    >
-                                      <option value="">
-                                        {t('common.none')}
-                                      </option>
-                                      {getCurrencyOptions().map(
-                                        (currencyOption) => (
-                                          <option
-                                            key={currencyOption.value}
-                                            value={currencyOption.value}
-                                          >
-                                            {currencyOption.label}
-                                          </option>
-                                        )
-                                      )}
-                                    </select>
+                                    />
                                   </div>
                                   <div>
                                     <label
@@ -2629,9 +2524,25 @@ const renderCustomOptionsTab = (
                                                 'settings.customization.options.commission.applies-to'
                                               )}
                                             </span>
-                                            <CommissionAccountDropdown
-                                              accounts={commissionAccounts}
+                                            <DropdownSelect
+                                              ariaLabel={t(
+                                                'settings.customization.options.commission.applies-to'
+                                              )}
                                               value={rule.account}
+                                              options={[
+                                                {
+                                                  value: '',
+                                                  label: t(
+                                                    'settings.customization.options.commission.all-accounts'
+                                                  ),
+                                                },
+                                                ...commissionAccounts.map(
+                                                  (account) => ({
+                                                    value: account,
+                                                    label: account,
+                                                  })
+                                                ),
+                                              ]}
                                               onChange={(account) =>
                                                 updateCommissionRule(
                                                   type,
@@ -2649,56 +2560,38 @@ const renderCustomOptionsTab = (
                                                 'settings.customization.options.commission.method'
                                               )}
                                             </span>
-                                            <div
-                                              className="custom-options-commission-method-toggle"
-                                              role="radiogroup"
-                                              aria-label={t(
+                                            <SegmentedControl<InstrumentCommissionRuleMethod>
+                                              ariaLabel={t(
                                                 'settings.customization.options.commission.method'
                                               )}
-                                            >
-                                              <button
-                                                type="button"
-                                                className="custom-options-commission-method-button"
-                                                aria-checked={
-                                                  rule.method === 'perSide'
-                                                }
-                                                role="radio"
-                                                onClick={() =>
-                                                  updateCommissionRule(
-                                                    type,
-                                                    optionKey,
-                                                    ruleIndex,
-                                                    'method',
-                                                    'perSide'
-                                                  )
-                                                }
-                                              >
-                                                {t(
-                                                  'settings.customization.options.commission.per-side'
-                                                )}
-                                              </button>
-                                              <button
-                                                type="button"
-                                                className="custom-options-commission-method-button"
-                                                aria-checked={
-                                                  rule.method === 'roundTrip'
-                                                }
-                                                role="radio"
-                                                onClick={() =>
-                                                  updateCommissionRule(
-                                                    type,
-                                                    optionKey,
-                                                    ruleIndex,
-                                                    'method',
-                                                    'roundTrip'
-                                                  )
-                                                }
-                                              >
-                                                {t(
-                                                  'settings.customization.options.commission.round-trip'
-                                                )}
-                                              </button>
-                                            </div>
+                                              groupRole="radiogroup"
+                                              size="small"
+                                              fullWidth
+                                              options={[
+                                                {
+                                                  value: 'perSide',
+                                                  label: t(
+                                                    'settings.customization.options.commission.per-side'
+                                                  ),
+                                                },
+                                                {
+                                                  value: 'roundTrip',
+                                                  label: t(
+                                                    'settings.customization.options.commission.round-trip'
+                                                  ),
+                                                },
+                                              ]}
+                                              value={rule.method}
+                                              onChange={(method) =>
+                                                updateCommissionRule(
+                                                  type,
+                                                  optionKey,
+                                                  ruleIndex,
+                                                  'method',
+                                                  method
+                                                )
+                                              }
+                                            />
                                           </div>
                                           {rule.method === 'perSide' && (
                                             <>
@@ -3412,24 +3305,6 @@ const renderCustomOptionsTab = (
                           );
                         }
                       )}
-
-                
-                <div className="custom-options-reset-container">
-                  <Button
-                    variant="danger"
-                    size="small"
-                    onClick={() => resetOptionsType(type)}
-                    className="reset-category-button"
-                    aria-label={t(
-                      'settings.customization.options.aria.reset-all',
-                      { type: getDisplayName(type).toLowerCase() }
-                    )}
-                  >
-                    {t('settings.customization.options.button.reset-all', {
-                      type: getDisplayName(type),
-                    })}
-                  </Button>
-                </div>
               </div>
             )}
 
@@ -3468,18 +3343,16 @@ const renderCustomOptionsTab = (
                         }}
                         className="journalit-u-flex-1"
                       />
-                      <select
-                        aria-label={t('form.field.asset-type')}
+                      <DropdownSelect
                         className="custom-options-asset-select"
+                        ariaLabel={t('form.field.asset-type')}
                         value={newAssetType}
-                        onChange={(e) => setNewAssetType(e.target.value)}
-                      >
-                        {Object.values(AssetType).map((assetType) => (
-                          <option key={assetType} value={assetType}>
-                            {getAssetTypeDisplayName(assetType)}
-                          </option>
-                        ))}
-                      </select>
+                        options={Object.values(AssetType).map((assetType) => ({
+                          value: assetType,
+                          label: getAssetTypeDisplayName(assetType),
+                        }))}
+                        onChange={(nextValue) => setNewAssetType(nextValue)}
+                      />
                     </div>
 
                     {newAssetType === 'cfd' && (
@@ -3492,27 +3365,24 @@ const renderCustomOptionsTab = (
                             {t('settings.general.currency')}{' '}
                             {t('settings.customization.options.field.optional')}
                           </label>
-                          <select
+                          <DropdownSelect
                             id="journalit-customoptionstab-3293"
-                            className="journalit-u-w-full"
+                            ariaLabel={t('settings.general.currency')}
                             value={newTickerSpecs.currency}
-                            onChange={(e) =>
+                            options={[
+                              { value: '', label: t('common.none') },
+                              ...getCurrencyOptions().map((currencyOption) => ({
+                                value: currencyOption.value,
+                                label: currencyOption.label,
+                              })),
+                            ]}
+                            onChange={(nextValue) =>
                               setNewTickerSpecs((prev) => ({
                                 ...prev,
-                                currency: e.target.value,
+                                currency: nextValue,
                               }))
                             }
-                          >
-                            <option value="">{t('common.none')}</option>
-                            {getCurrencyOptions().map((currencyOption) => (
-                              <option
-                                key={currencyOption.value}
-                                value={currencyOption.value}
-                              >
-                                {currencyOption.label}
-                              </option>
-                            ))}
-                          </select>
+                          />
                         </div>
                         <div>
                           <label
@@ -3830,6 +3700,23 @@ const renderCustomOptionsTab = (
                 </div>
               )}
             </div>
+
+            
+            <div className="setting-item">
+              <div className="setting-item-info">
+                <div className="setting-item-name">
+                  {t('settings.customization.options.reset.name')}
+                </div>
+                <div className="setting-item-description">
+                  {t('settings.customization.options.reset.desc')}
+                </div>
+              </div>
+              <div className="setting-item-control">
+                <Button variant="danger" onClick={() => resetOptionsType(type)}>
+                  {t('button.reset')}
+                </Button>
+              </div>
+            </div>
           </div>
         ))}
 
@@ -3867,9 +3754,7 @@ const renderCustomOptionsTab = (
                         {t(
                           'settings.customization.options.mapping.created-at',
                           {
-                            date: new Date(
-                              mapping.dateCreated
-                            ).toLocaleDateString(),
+                            date: formatDateDisplay(mapping.dateCreated),
                           }
                         )}
                       </div>

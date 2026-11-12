@@ -12,9 +12,10 @@ import { dndKitStyle } from '../../../styles/inlineStylePolicy';
 import {
   ChevronDown,
   ChevronRight,
+  Eye,
+  EyeOff,
   GripVertical,
   Lock,
-  Plus,
 } from '../icons/ObsidianIcon';
 
 export type VisibilityEditorTab = 'active' | 'available';
@@ -408,12 +409,16 @@ const SortableVisibilityItem: React.FC<SortableVisibilityItemProps> =
 
         <button
           type="button"
-          className="journalit-visibility-editor__remove-button"
+          className="journalit-visibility-editor__remove-button journalit-icon-button"
           onClick={() => onRemove(item.id)}
           disabled={!canRemove}
           aria-label={removeAriaLabel}
         >
-          ×
+          <Eye
+            size={14}
+            className="journalit-visibility-editor__remove-button-icon"
+            aria-hidden="true"
+          />
         </button>
       </div>
     );
@@ -443,11 +448,11 @@ const AvailableVisibilityItem: React.FC<AvailableVisibilityItemProps> =
         </div>
         <button
           type="button"
-          className="journalit-visibility-editor__add-button"
+          className="journalit-visibility-editor__add-button journalit-icon-button"
           onClick={() => onAdd(item.id)}
           aria-label={addAriaLabel}
         >
-          <Plus
+          <EyeOff
             size={14}
             className="journalit-visibility-editor__add-button-icon"
             aria-hidden="true"

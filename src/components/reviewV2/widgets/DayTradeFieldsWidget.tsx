@@ -1,7 +1,7 @@
 
 
-import React, { useId, useMemo, useState, useSyncExternalStore } from 'react';
-import { Notice, TFile } from 'obsidian';
+import React, { useId, useMemo, useState } from 'react';
+import { Notice } from 'obsidian';
 import type JournalitPlugin from '../../../main';
 import { CustomFieldRenderer } from '../../forms/trade/fields/CustomFieldRenderer';
 import { CommonFields } from '../../forms/trade/fields/CommonFields';
@@ -16,6 +16,7 @@ import {
 } from '../../core/DateDraftGate';
 import { useEventBus } from '../../../hooks/useEventBus';
 import { useReviewReadOnly } from '../ReviewReadOnlyContext';
+import { useNoteFrontmatter } from '../hooks/useNoteFrontmatter';
 import { DisplayPolicyProvider } from '../../../contexts/DisplayPolicyContext';
 import { shareCaptureExcludeProps } from '../../../services/share/brandedCapture';
 import { t, tPlural } from '../../../lang/helpers';
@@ -72,28 +73,6 @@ function displayValues(field: ResolvedDayTradeField, value: unknown): string[] {
     if (option) return [option.label];
   }
   return [String(normalized)];
-}
-
-
-function useNoteFrontmatter(
-  plugin: JournalitPlugin,
-  filePath: string
-): Record<string, unknown> | null {
-  const subscribe = useMemo(
-    () => (notify: () => void) => {
-      const ref = plugin.app.metadataCache.on('changed', (file) => {
-        if (file.path === filePath) notify();
-      });
-      return () => plugin.app.metadataCache.offref(ref);
-    },
-    [plugin, filePath]
-  );
-  return useSyncExternalStore(subscribe, () => {
-    const file = plugin.app.vault.getAbstractFileByPath(filePath);
-    return file instanceof TFile
-      ? (plugin.app.metadataCache.getFileCache(file)?.frontmatter ?? null)
-      : null;
-  });
 }
 
 const ValueChips: React.FC<{ values: string[] }> = ({ values }) => (
@@ -240,6 +219,7 @@ const AddFieldMenu: React.FC<{
       placeholder={t('widget.day-trade-fields.add-field')}
       disabled={disabled}
       className="journalit-day-trade-fields-add"
+      variant="button"
       menuWidth="content"
       showOptionTooltips={false}
       showSelectionIndicator={false}

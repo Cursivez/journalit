@@ -5,6 +5,7 @@ import { type BalanceChartDataPoint } from './accountBalanceChartModel';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
 import { TransactionType } from '../../../services/account/types';
 import { TooltipProps } from 'recharts';
+import { formatDayMonthDisplay } from '../../../utils/dateUtils';
 
 
 interface CustomTooltipContentProps extends TooltipProps<number, string> {
@@ -43,10 +44,7 @@ const formatTradeDescription = (description: string | undefined): string => {
 
     
     const date = new Date(`${year}-${month}-${day}`);
-    const formattedDate = date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-    });
+    const formattedDate = formatDayMonthDisplay(date);
 
     
     return `${ticker} ${tradeNumber} (${formattedDate})`;

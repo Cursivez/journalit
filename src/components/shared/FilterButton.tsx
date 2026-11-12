@@ -91,34 +91,14 @@ export const FILTER_BUTTON_STYLES = `
   }
 
   
-  .journalit-filter-button-container .journalit-filter-button {
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    padding: 6px;
-    background-color: transparent;
-    color: var(--text-normal);
-    border: 1px solid transparent;
-    border-radius: 4px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .journalit-filter-button-container .journalit-filter-button:hover {
-    background-color: var(--background-modifier-hover);
-  }
-
   .journalit-filter-button-container .journalit-filter-button:disabled {
     cursor: default;
     opacity: 0.6;
   }
 
   .journalit-filter-button-container .journalit-filter-button:disabled:hover {
-    background-color: transparent;
-  }
-
-  .journalit-filter-button-container .journalit-filter-button.journalit-header-icon-button:disabled:hover {
-    background-color: var(--background-secondary);
+    background: transparent;
+    color: var(--text-muted);
   }
 
   

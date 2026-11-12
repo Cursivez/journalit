@@ -2,6 +2,7 @@
 
 import type JournalitPlugin from '../../main';
 import { ApiClient } from './ApiClient';
+import { paymentRecoveryStore } from './paymentRecoveryBanner';
 import {
   normalizeSecretStorageValue,
   readSecretStorageValue,
@@ -192,6 +193,8 @@ export class BackendSecretStorage {
   }
 
   static clearAuthToken(plugin: JournalitPlugin): void {
+    
+    paymentRecoveryStore.clear(plugin);
     let clearError: unknown;
     try {
       clearSecret(plugin, getSecretId(plugin, AUTH_TOKEN_SECRET_NAME));

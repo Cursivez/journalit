@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { t } from '../../../lang/helpers';
 import { cssVars } from '../../../styles/inlineStylePolicy';
-import { getUserDateFormat } from '../../../utils/dateUtils';
+import { useDateFormat } from '../../../hooks/useDateFormat';
 import {
   CurrencyCode,
   parseCuratedCurrencyCode,
@@ -291,7 +291,7 @@ function useAccountBalanceChartModel(
     [account.propChallenge, selectedPhaseId]
   );
   const { formatValue } = useDisplayFormatter();
-  const userDateFormat = React.useMemo(() => getUserDateFormat(), []);
+  const userDateFormat = useDateFormat();
   const plugin = usePlugin();
 
   
@@ -468,6 +468,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
   );
   const balanceGradientId = `${chartIdRef.current}-balance-gradient`;
   const balanceStrokeGradientId = `${chartIdRef.current}-balance-stroke-gradient`;
+  const drawdownGradientId = `${chartIdRef.current}-drawdown-gradient`;
   const { currency: globalCurrency } = useCurrency();
   
   const currency = resolveChartCurrency(
@@ -565,6 +566,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
         <AccountBalanceChartDefs
           balanceGradientId={balanceGradientId}
           balanceStrokeGradientId={balanceStrokeGradientId}
+          drawdownGradientId={drawdownGradientId}
           balanceAreaTransitionOffset={balanceTransitionOffsets.area}
           balanceStrokeTransitionOffset={balanceTransitionOffsets.stroke}
           isBalanceMasked={isBalanceMasked}
@@ -690,7 +692,7 @@ export const AccountBalanceChart: React.FC<AccountBalanceChartProps> = ({
             type="monotone"
             dataKey="displayDrawdownLevel"
             stroke="none"
-            fill="url(#drawdownGradient)"
+            fill={`url(#${drawdownGradientId})`}
             fillOpacity={1}
             isAnimationActive={animateSeries}
           />

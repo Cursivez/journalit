@@ -84,6 +84,11 @@ export const ENTRY_EXIT_STYLES = `
       flex-wrap: wrap;
     }
 
+    
+    .trade-form-view-container .time-field-wrapper {
+      flex: 1 1 100%;
+    }
+
     .trade-form-view-container .time-field {
       flex: 2;
       min-width: 180px;
@@ -294,21 +299,14 @@ export const ENTRY_EXIT_STYLES = `
       width: 24px !important;
       height: 24px !important;
       min-width: 24px !important;
-      padding: 0 !important;
       display: flex !important;
       align-items: center !important;
       justify-content: center !important;
-      border-radius: 4px !important;
-      background: transparent !important;
-      border: 1px solid var(--background-modifier-border) !important;
       color: var(--text-muted) !important;
       cursor: pointer !important;
-      transition: all 0.15s ease !important;
     }
 
     .trade-form-view-container .remove-button-inline:hover {
-      background: rgba(var(--color-red-rgb, 233, 49, 71), 0.1) !important;
-      border-color: var(--text-error) !important;
       color: var(--text-error) !important;
     }
 
@@ -725,73 +723,5 @@ export const ENTRY_EXIT_STYLES = `
       color: var(--text-normal);
     }
 
-    .trade-form-view-container .journalit-pnl-toggle-description {
-      color: var(--text-muted);
-      font-size: 0.9em;
-      line-height: 1.4;
-      margin: 0;
-    }
 
-    
-    .trade-form-view-container .toggle-switch-container {
-      position: relative;
-      display: inline-block;
-      width: 40px;
-      height: 24px;
-      flex-shrink: 0;
-    }
-
-    .trade-form-view-container .toggle-switch-input {
-      opacity: 0;
-      width: 0;
-      height: 0;
-      position: absolute;
-    }
-
-    .trade-form-view-container .toggle-switch-label {
-      position: absolute;
-      cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: var(--background-modifier-border);
-      transition: background-color 0.3s ease, box-shadow 0.3s ease;
-      border-radius: 34px;
-      overflow: hidden;
-    }
-
-    .trade-form-view-container .toggle-switch-label .toggle-switch-button {
-      position: absolute;
-      height: 18px;
-      width: 18px;
-      left: 3px;
-      bottom: 3px;
-      background-color: var(--background-primary);
-      transition: transform 0.3s ease;
-      border-radius: 50%;
-      box-shadow: var(--toggle-thumb-shadow);
-    }
-
-    .trade-form-view-container .toggle-switch-input:checked + .toggle-switch-label {
-      background-color: var(--interactive-accent);
-      color: var(--text-on-accent);
-      box-shadow: inset 0 0 5px rgba(0, 0, 0, 0.2);
-    }
-
-    .trade-form-view-container .toggle-switch-input:checked + .toggle-switch-label .toggle-switch-button {
-      transform: translateX(16px);
-    }
-
-    .trade-form-view-container .toggle-switch-input:focus + .toggle-switch-label {
-      box-shadow: 0 0 2px var(--interactive-accent);
-    }
-
-    .trade-form-view-container .toggle-switch-container.disabled {
-      opacity: 0.6;
-    }
-
-    .trade-form-view-container .toggle-switch-container.disabled .toggle-switch-label {
-      cursor: not-allowed;
-    }
 `;

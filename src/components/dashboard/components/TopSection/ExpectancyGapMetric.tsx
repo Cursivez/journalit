@@ -14,9 +14,12 @@ import { Pencil } from '../../../shared/icons/ObsidianIcon';
 
 export function ExpectancyGapMetric({
   sample,
+  compareSample,
   isEditingLayout,
 }: {
   sample: ExpectancySample | undefined;
+  
+  compareSample?: { sample: ExpectancySample | undefined };
   isEditingLayout: boolean;
 }) {
   const plugin = usePlugin();
@@ -52,11 +55,31 @@ export function ExpectancyGapMetric({
       precision: 2,
       fallback: t('common.na'),
     });
+  const gapTone = (value: number | null) =>
+    !masked && value !== null && value !== 0 ? value > 0 : undefined;
+  const compareGap =
+    compareSample === undefined
+      ? undefined
+      : calculateExpectancyGap(
+          compareSample.sample?.realizedR ?? null,
+          expected
+        );
   return (
     <MetricCard
       name={t('metric.expectancyGap.name')}
       value={displayR(gap)}
-      isPositive={!masked && gap !== null && gap !== 0 ? gap > 0 : undefined}
+      isPositive={gapTone(gap)}
+      compare={
+        compareGap === undefined
+          ? undefined
+          : {
+              a: { value: displayR(gap), isPositive: gapTone(gap) },
+              b: {
+                value: displayR(compareGap),
+                isPositive: gapTone(compareGap),
+              },
+            }
+      }
       tooltipDisclosureLabel={`${t('metric.expectancyGap.name')}: ${t('expectancy-gap.method-title')}`}
       tooltip={
         <div className="journalit-dashboard-metric-tooltip">

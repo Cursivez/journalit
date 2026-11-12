@@ -26,9 +26,15 @@ importers:
       fflate:
         specifier: ^0.8.3
         version: 0.8.3
+      gifenc:
+        specifier: 1.0.3
+        version: 1.0.3
       html-to-image:
         specifier: ^1.11.13
         version: 1.11.13
+      mp4-muxer:
+        specifier: 5.2.2
+        version: 5.2.2
       react:
         specifier: ^19.2.7
         version: 19.2.7
@@ -788,6 +794,9 @@ packages:
   '@types/d3-timer@3.0.2':
     resolution: {integrity: sha512-Ps3T8E8dZDam6fUyNiMkekK3XUsaUEik+idO9/YjPtfj2qruF8tFBXS7XhtE4iIXBLxhmLjP3SXpLhVf21I9Lw==}
 
+  '@types/dom-webcodecs@0.1.19':
+    resolution: {integrity: sha512-+yFUIDUaASFz0vQpWBErPxun/Lb+F0TdrlTsj50gm7K797YzEx2TmV6fEiwciHyFNghlZYPgQXH5qRcwMHcJFQ==}
+
   '@types/eslint@9.6.1':
     resolution: {integrity: sha512-FXx2pKgId/WyYo2jXw63kk7/+TY7u7AziEJxJAnSFzHlqTAS3Ync6SvgYAN/k4/PQpnnVuzoMuVnByKK2qp0ag==}
 
@@ -828,6 +837,9 @@ packages:
 
   '@types/use-sync-external-store@0.0.6':
     resolution: {integrity: sha512-zFDAD+tlpf2r4asuHEj0XH6pY6i0g5NeAHPn+15wk3BV6JA69eERFXC1gyGThDkVa1zCyKr5jox1+2LbV/AMLg==}
+
+  '@types/wicg-file-system-access@2020.9.8':
+    resolution: {integrity: sha512-ggMz8nOygG7d/stpH40WVaNvBwuyYLnrg5Mbyf6bmsj/8+gb6Ei4ZZ9/4PNpcPNTT8th9Q8sM8wYmWGjMWLX/A==}
 
   '@typescript-eslint/eslint-plugin@8.62.1':
     resolution: {integrity: sha512-4EQM77WgVNxj7OkL/5b/D/xZsw00G577+UriYTC7JF5opcF3T2AuoeY7ueLaZgSVjSgCS6yOAJB5bRGLPSJUzA==}
@@ -1560,6 +1572,9 @@ packages:
   get-tsconfig@4.14.0:
     resolution: {integrity: sha512-yTb+8DXzDREzgvYmh6s9vHsSVCHeC0G3PI5bEXNBHtmshPnO+S5O7qgLEOn0I5QvMy6kpZN8K1NKGyilLb93wA==}
 
+  gifenc@1.0.3:
+    resolution: {integrity: sha512-xdr6AdrfGBcfzncONUOlXMBuc5wJDtOueE3c5rdG0oNgtINLD+f2iFZltrBRZYzACRbKr+mSVU/x98zv2u3jmw==}
+
   glob-parent@5.1.2:
     resolution: {integrity: sha512-AOIgSQCepiJYwP3ARnGx+5VnTu2HBYdzbGP45eLw1vr3zB3vZLeyed1sC9hnbcOc9/SrMyM5RPQrkGz4aS9Zow==}
     engines: {node: '>= 6'}
@@ -1954,6 +1969,10 @@ packages:
 
   moment@2.29.4:
     resolution: {integrity: sha512-5LC9SOxjSc2HF6vO2CyuTDNivEdoz2IvyJJGj6X8DJ0eFyfszE0QiEd+iXmBvUP3WHxSjFH/vIsA0EN00cgr8w==}
+
+  mp4-muxer@5.2.2:
+    resolution: {integrity: sha512-dhozjTywI0h2qFzeShagt8YYw811fh1XlwiDCE2f6Aeqf6xG2CyuShoSa5E0AZDO8pPF0JOZ3wOmWBNWIGdSpQ==}
+    deprecated: This library is superseded by Mediabunny. Please migrate to it.
 
   ms@2.1.3:
     resolution: {integrity: sha512-6FlzubTLZG3J2a/NVCAleEhjzq5oxgHyaCU9yYXvcLsvoVaHJq/s5xXI6/XXP6tz7R9xAOtHnSO/tXtF3WRTlA==}
@@ -2627,8 +2646,8 @@ packages:
     peerDependencies:
       zod: ^3.25.0 || ^4.0.0
 
-  zod@4.1.11:
-    resolution: {integrity: sha512-WPsqwxITS2tzx1bzhIKsEs19ABD5vmCVa4xBo2tq/SrV4RNZtfws1EnCWQXM6yh8bD08a1idvkB5MZSBiZsjwg==}
+  zod@4.6.7:
+    resolution: {integrity: sha512-g8W2D2kU6a8untc053fX1uVBKzM7yqAxW/3zwk83+6RyF2+SKOuV+c0wBDhUwzV1PaGapmZH+rmcUzPf+3CGwg==}
 
 snapshots:
 
@@ -3169,6 +3188,8 @@ snapshots:
 
   '@types/d3-timer@3.0.2': {}
 
+  '@types/dom-webcodecs@0.1.19': {}
+
   '@types/eslint@9.6.1':
     dependencies:
       '@types/estree': 1.0.9
@@ -3207,6 +3228,8 @@ snapshots:
       '@types/estree': 1.0.9
 
   '@types/use-sync-external-store@0.0.6': {}
+
+  '@types/wicg-file-system-access@2020.9.8': {}
 
   '@typescript-eslint/eslint-plugin@8.62.1(@typescript-eslint/parser@8.62.1(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3))(eslint@9.39.4(jiti@2.7.0))(typescript@5.9.3)':
     dependencies:
@@ -3990,8 +4013,8 @@ snapshots:
       '@babel/parser': 7.29.3
       eslint: 9.39.4(jiti@2.7.0)
       hermes-parser: 0.25.1
-      zod: 4.1.11
-      zod-validation-error: 4.0.2(zod@4.1.11)
+      zod: 4.6.7
+      zod-validation-error: 4.0.2(zod@4.6.7)
     transitivePeerDependencies:
       - supports-color
 
@@ -4215,6 +4238,8 @@ snapshots:
   get-tsconfig@4.14.0:
     dependencies:
       resolve-pkg-maps: 1.0.0
+
+  gifenc@1.0.3: {}
 
   glob-parent@5.1.2:
     dependencies:
@@ -4584,6 +4609,11 @@ snapshots:
   module-replacements@2.11.0: {}
 
   moment@2.29.4: {}
+
+  mp4-muxer@5.2.2:
+    dependencies:
+      '@types/dom-webcodecs': 0.1.19
+      '@types/wicg-file-system-access': 2020.9.8
 
   ms@2.1.3: {}
 
@@ -5408,8 +5438,8 @@ snapshots:
 
   yocto-queue@0.1.0: {}
 
-  zod-validation-error@4.0.2(zod@4.1.11):
+  zod-validation-error@4.0.2(zod@4.6.7):
     dependencies:
-      zod: 4.1.11
+      zod: 4.6.7
 
-  zod@4.1.11: {}
+  zod@4.6.7: {}

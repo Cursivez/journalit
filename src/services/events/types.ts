@@ -210,9 +210,13 @@ export interface EventMap {
   'drc:reviewed-index-invalidated': void;
   
   'weekly:reviewed-index-invalidated': void;
+  
+  'market-bias:changed': void;
   'image-gallery:changed': void;
   'filter:changed': FilterChangedPayload;
   'tradelog:filters-updated': void;
+  
+  'dashboard:view-requested': void;
   'review:filter-sync': ReviewFilterSyncPayload;
   'data:changed': DataChangedPayload;
 

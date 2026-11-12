@@ -61,6 +61,8 @@ import {
   openSetupPlaybookNoteModal,
   triggerSetupLinkedNoteHover,
 } from './setupsViewModel';
+import { formatSetupTradeCount } from './SetupTradeCount';
+import { Button } from '../ui/Button';
 
 export const SetupDetailPage: React.FC<{
   hoverParent: Component;
@@ -108,8 +110,9 @@ export const SetupDetailPage: React.FC<{
         ref={registerDetailHeaderTarget}
       >
         <div className="journalit-setups-detail-header__back">
-          <button
-            type="button"
+          <Button
+            variant="plain"
+            size="small"
             className="journalit-setups-detail-back-button"
             onClick={handleBack}
             ref={registerBackButtonTarget}
@@ -118,7 +121,7 @@ export const SetupDetailPage: React.FC<{
             <span className="journalit-setups-detail-back-button-label">
               {t('setups.view.detail.back')}
             </span>
-          </button>
+          </Button>
         </div>
         <div className="journalit-setups-detail-header__identity">
           <h1 className="journalit-setups-view__title">{setup.name}</h1>
@@ -191,15 +194,6 @@ export async function loadSetupMissedTradeData(
       path: file.path,
     }))
   );
-}
-
-export async function loadSetupBacktestTradeData(
-  plugin: JournalitPlugin
-): Promise<unknown[]> {
-  const backtestTradeService =
-    await plugin.serviceManager.getBacktestTradeService();
-  const { startDate, endDate } = getSetupHistoryDateRange();
-  return backtestTradeService.getBacktestTrades(startDate, endDate);
 }
 
 const SetupDetailScaffold: React.FC<{
@@ -343,7 +337,7 @@ const SetupPlaybookPanel: React.FC<{
             {selectedPlaybookNotePath && playbookNoteHasContent ? (
               <button
                 type="button"
-                className="journalit-setups-icon-button journalit-setups-detail-action-icon"
+                className="journalit-setups-icon-button journalit-setups-detail-action-icon journalit-icon-button"
                 onClick={handleOpenPlaybookNote}
                 aria-label={t('home.widget.embedded-note.open-note')}
               >
@@ -352,7 +346,7 @@ const SetupPlaybookPanel: React.FC<{
             ) : null}
             <button
               type="button"
-              className="journalit-setups-icon-button journalit-setups-detail-action-icon"
+              className="journalit-setups-icon-button journalit-setups-detail-action-icon journalit-icon-button"
               onClick={handleLinkPlaybookNote}
               aria-label={
                 selectedPlaybookNotePath
@@ -473,11 +467,7 @@ const SetupBriefPanel: React.FC<{
         count: String(screenshots.length),
       })
     ),
-    splitCountLabel(
-      t('setups.view.detail.brief.count.trades', {
-        count: String(linkedTrades.length),
-      })
-    ),
+    splitCountLabel(formatSetupTradeCount(linkedTrades.length)),
   ];
 
   const currentFullscreenIndex =
@@ -561,7 +551,7 @@ const SetupBriefPanel: React.FC<{
             <button
               type="button"
               aria-label={t('setups.view.detail.brief.linked-notes-add')}
-              className="journalit-setups-icon-button journalit-setups-brief__section-action"
+              className="journalit-setups-icon-button journalit-setups-brief__section-action journalit-icon-button"
               onClick={() => onEditSetup(setup)}
             >
               <Plus size={14} strokeWidth={2.1} aria-hidden="true" />

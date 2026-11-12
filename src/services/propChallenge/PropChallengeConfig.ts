@@ -3,6 +3,7 @@ import { generateUUID } from '../../utils/uuid';
 import type {
   PropChallengeConfig,
   PropChallengeCost,
+  PropChallengePriorPayout,
   PropChallengeFailure,
   PropChallengePhase,
   PropChallengePayoutPolicy,
@@ -261,24 +262,33 @@ export function replacePropChallengeWithProfile(
   profile: PropFirmProfileSelection
 ): PropChallengeConfig {
   const replacement = createConfigFromProfile(profile);
-  return config.oneTimeCosts
-    ? { ...replacement, oneTimeCosts: config.oneTimeCosts }
-    : replacement;
+  return {
+    ...replacement,
+    ...(config.oneTimeCosts ? { oneTimeCosts: config.oneTimeCosts } : {}),
+    ...(config.priorPayouts ? { priorPayouts: config.priorPayouts } : {}),
+  };
 }
 
-export function createPropChallengeCost(): PropChallengeCost {
+function todayLocalDate(): string {
   const now = new Date();
-  const localDate = [
+  return [
     now.getFullYear(),
     String(now.getMonth() + 1).padStart(2, '0'),
     String(now.getDate()).padStart(2, '0'),
   ].join('-');
+}
+
+export function createPropChallengeCost(): PropChallengeCost {
   return {
     id: generateUUID(),
     kind: 'purchase',
-    date: localDate,
+    date: todayLocalDate(),
     amount: 0,
   };
+}
+
+export function createPropChallengePriorPayout(): PropChallengePriorPayout {
+  return { id: generateUUID(), date: todayLocalDate(), amount: 0 };
 }
 
 
@@ -696,6 +706,50 @@ export function removePropChallengeCost(
     ...config,
     oneTimeCosts: (config.oneTimeCosts ?? []).filter(
       (cost) => cost.id !== costId
+    ),
+  };
+}
+
+
+export function invalidPriorPayoutField(
+  payout: Pick<PropChallengePriorPayout, 'date' | 'amount'>
+): 'amount' | 'date' | undefined {
+  if (!Number.isFinite(payout.amount) || payout.amount <= 0) return 'amount';
+  if (
+    !/^\d{4}-\d{2}-\d{2}$/.test(payout.date) ||
+    payout.date > todayLocalDate()
+  )
+    return 'date';
+  return undefined;
+}
+
+export function addPropChallengePriorPayout(
+  config: PropChallengeConfig,
+  payout: PropChallengePriorPayout
+): PropChallengeConfig {
+  return { ...config, priorPayouts: [...(config.priorPayouts ?? []), payout] };
+}
+
+export function updatePropChallengePriorPayout(
+  config: PropChallengeConfig,
+  payout: PropChallengePriorPayout
+): PropChallengeConfig {
+  return {
+    ...config,
+    priorPayouts: (config.priorPayouts ?? []).map((item) =>
+      item.id === payout.id ? payout : item
+    ),
+  };
+}
+
+export function removePropChallengePriorPayout(
+  config: PropChallengeConfig,
+  payoutId: string
+): PropChallengeConfig {
+  return {
+    ...config,
+    priorPayouts: (config.priorPayouts ?? []).filter(
+      (payout) => payout.id !== payoutId
     ),
   };
 }

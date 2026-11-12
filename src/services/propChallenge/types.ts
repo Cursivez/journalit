@@ -129,12 +129,21 @@ export type PropChallengePayoutAvailability =
       kind: 'profit_above_balance_floor';
       balanceFloor: number;
       requestPercent: number;
+      
+      belowFloorAllowance?: number;
+      
+      appliesToFirstPayouts?: number;
     };
 
 export type PropChallengePayoutMaximum =
   | { kind: 'unresolved'; reason: string }
   | { kind: 'none' }
-  | { kind: 'fixed'; amount: number }
+  | {
+      kind: 'fixed';
+      amount: number;
+      
+      appliesToFirstPayouts?: number;
+    }
   | { kind: 'first_fixed_then_none'; amount: number }
   | { kind: 'cycle_profit_percent'; percent: number }
   | { kind: 'schedule'; amounts: number[]; repeatLast?: boolean };
@@ -252,6 +261,8 @@ export interface PropChallengePhase {
   
   balanceAdjustments?: Array<{ amount: number; recordedAt: string }>;
   
+  drawdownFloorAdjustments?: PropChallengeDrawdownFloorAdjustment[];
+  
   brokerAccountIds?: string[];
   
   legacyAccountName?: string;
@@ -267,6 +278,12 @@ export interface PropChallengePhase {
   
   profileSnapshot?: PropFirmProfilePhase;
   profilePhaseIndex?: number;
+}
+
+export interface PropChallengeDrawdownFloorAdjustment {
+  ruleId: string;
+  floor: number;
+  recordedAt: string;
 }
 
 export interface PropChallengePolicyRevision {
@@ -314,6 +331,15 @@ export interface PropChallengeCost {
   date: string;
   amount: number;
   kind: 'purchase' | 'reset' | 'activation' | 'other';
+  note?: string;
+}
+
+
+export interface PropChallengePriorPayout {
+  id: string;
+  
+  date: string;
+  amount: number;
   note?: string;
 }
 
@@ -381,6 +407,7 @@ export interface PropChallengeConfig {
   currentPhaseId?: string;
   phases: PropChallengePhase[];
   oneTimeCosts?: PropChallengeCost[];
+  priorPayouts?: PropChallengePriorPayout[];
 }
 
 interface PropChallengeProfileRef {
@@ -484,7 +511,7 @@ export interface PropFirmProfileSelection {
 }
 
 export interface PropFirmProfileCatalogCache {
-  contractVersion: 4;
+  contractVersion: 5;
   catalog: PropFirmProfileCatalog;
   etag?: string;
   fetchedAt: string;

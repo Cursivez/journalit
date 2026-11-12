@@ -8,6 +8,7 @@ const NEGATIVE_BALANCE_COLOR = 'var(--chart-negative, #e53935)';
 export const AccountBalanceChartDefs: React.FC<{
   balanceGradientId: string;
   balanceStrokeGradientId: string;
+  drawdownGradientId: string;
   balanceAreaTransitionOffset: number;
   balanceStrokeTransitionOffset: number;
   isBalanceMasked: boolean;
@@ -15,6 +16,7 @@ export const AccountBalanceChartDefs: React.FC<{
 }> = ({
   balanceGradientId,
   balanceStrokeGradientId,
+  drawdownGradientId,
   balanceAreaTransitionOffset,
   balanceStrokeTransitionOffset,
   isBalanceMasked,
@@ -83,10 +85,7 @@ export const AccountBalanceChartDefs: React.FC<{
           </>
         )}
       </linearGradient>
-      <filter id="balanceShadow" height="120%">
-        <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
-      </filter>
-      <linearGradient id="drawdownGradient" x1="0" y1="0" x2="0" y2="1">
+      <linearGradient id={drawdownGradientId} x1="0" y1="0" x2="0" y2="1">
         <stop
           offset="0%"
           stopColor={

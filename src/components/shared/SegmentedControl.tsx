@@ -1,6 +1,7 @@
 
 
-import React, { useId, useLayoutEffect, useRef, useState } from 'react';
+import React, { useId } from 'react';
+import { useSlidingThumb } from '../../hooks/useSlidingThumb';
 import { cssVars } from '../../styles/inlineStylePolicy';
 
 export interface SegmentOption<T extends string> {
@@ -8,6 +9,10 @@ export interface SegmentOption<T extends string> {
   label: string;
   
   disabled?: boolean;
+  
+  icon?: React.ReactNode;
+  
+  iconOnly?: boolean;
 }
 
 interface SegmentedControlProps<T extends string> {
@@ -29,23 +34,23 @@ interface SegmentedControlProps<T extends string> {
 
 const sizeStyles = {
   small: {
-    padding: '4px 10px',
+    padding: '0 8px',
     fontSize: '12px',
-    gap: '2px',
+    gap: '0',
     containerPadding: '2px',
-    borderRadius: '4px',
+    borderRadius: '6px',
   },
   medium: {
-    padding: '6px 14px',
-    fontSize: '13px',
-    gap: '2px',
-    containerPadding: '3px',
-    borderRadius: '5px',
+    padding: '0 10px',
+    fontSize: 'var(--font-ui-small)',
+    gap: '0',
+    containerPadding: '2px',
+    borderRadius: '6px',
   },
   large: {
-    padding: '8px 18px',
-    fontSize: '14px',
-    gap: '3px',
+    padding: '0 14px',
+    fontSize: 'var(--font-ui-small)',
+    gap: '0',
     containerPadding: '4px',
     borderRadius: '6px',
   },
@@ -65,9 +70,9 @@ export function SegmentedControl<T extends string>({
   getOptionRef,
 }: SegmentedControlProps<T>): React.ReactElement {
   const styles = sizeStyles[size];
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [thumb, setThumb] = useState<{ left: number; width: number } | null>(
-    null
+  const { containerRef, thumb } = useSlidingThumb(
+    '.segmented-control-option.is-active',
+    [value, options, size, fullWidth]
   );
   
   
@@ -76,44 +81,6 @@ export function SegmentedControl<T extends string>({
   const hasHiddenLabel = Boolean(ariaLabel) && !ariaLabelledBy;
   const labelledBy =
     ariaLabelledBy ?? (hasHiddenLabel ? generatedLabelId : undefined);
-
-  
-  
-  useLayoutEffect(() => {
-    const container = containerRef.current;
-    if (!container) return;
-
-    const measure = () => {
-      const active = container.querySelector<HTMLButtonElement>(
-        '.segmented-control-option.is-active'
-      );
-      if (!active) {
-        setThumb(null);
-        return;
-      }
-
-      const containerRect = container.getBoundingClientRect();
-      const activeRect = active.getBoundingClientRect();
-      setThumb((current) => {
-        const next = {
-          left: activeRect.left - containerRect.left - container.clientLeft,
-          width: activeRect.width,
-        };
-        return current &&
-          current.left === next.left &&
-          current.width === next.width
-          ? current
-          : next;
-      });
-    };
-
-    measure();
-    
-    if (typeof ResizeObserver === 'undefined') return;
-    const resizeObserver = new ResizeObserver(measure);
-    resizeObserver.observe(container);
-    return () => resizeObserver.disconnect();
-  }, [value, options, size, fullWidth]);
 
   const handleRadioKeyDown = (
     event: React.KeyboardEvent<HTMLButtonElement>,
@@ -212,7 +179,7 @@ export function SegmentedControl<T extends string>({
               if (groupRole === 'radiogroup' && isActive) return;
               onChange(option.value);
             }}
-            className={`journalit-segmented-control-option segmented-control-option ${isActive ? 'is-active' : ''}`}
+            className={`journalit-segmented-control-option segmented-control-option ${isActive ? 'is-active' : ''} ${option.icon ? 'has-icon' : ''}`}
             type="button"
             disabled={disabled || option.disabled}
             role={groupRole === 'radiogroup' ? 'radio' : undefined}
@@ -227,7 +194,16 @@ export function SegmentedControl<T extends string>({
             }
             onKeyDown={(event) => handleRadioKeyDown(event, optionIndex)}
           >
-            {option.label}
+            {option.icon}
+            <span
+              className={
+                option.iconOnly
+                  ? 'journalit-sr-only'
+                  : 'journalit-button__label'
+              }
+            >
+              {option.label}
+            </span>
           </button>
         );
       })}

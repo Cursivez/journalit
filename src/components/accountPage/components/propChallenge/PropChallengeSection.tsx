@@ -10,6 +10,7 @@ import { t } from '../../../../lang/helpers';
 import {
   hasFundedLimitWarning,
   isReviewOnlyWarning,
+  trailingDrawdownForFirmFloor,
 } from '../../../../services/propChallenge/PropChallengeRuleEngine';
 import {
   applyPropChallengeLifecycleAction,
@@ -20,6 +21,7 @@ import { ACCOUNT_PAGE_CHALLENGE_SECTION_TARGET_ID } from '../../../../guides/acc
 import { PropChallengePhaseNav } from './PropChallengePhaseNav';
 import { openProfileSourceModal } from './ProfileUpdateModal';
 import { openCorrectionHistoryModal } from './CorrectionHistoryModal';
+import { openDrawdownFloorModal } from './DrawdownFloorModal';
 import { PropFirmRuleUpdatesTeaser } from './PropFirmPrefillTeaser';
 import { PropChallengeRuleLedger } from './PropChallengeRuleLedger';
 import { PropChallengePayoutCard } from './PropChallengePayoutCard';
@@ -137,6 +139,7 @@ function buildChallengeMenuActions({
   isSaving,
   isAccountArchived,
   canLinkRules,
+  canSetDrawdownFloor,
 }: {
   challenge: PropChallengeCockpitState['challenge'];
   selectedPhase: PropChallengeCockpitState['selectedPhase'];
@@ -145,6 +148,7 @@ function buildChallengeMenuActions({
   isSaving: boolean;
   isAccountArchived: boolean;
   canLinkRules: boolean;
+  canSetDrawdownFloor: boolean;
 }): PropChallengeMenuAction[] {
   const isConcluded =
     challenge.status === 'passed' || challenge.status === 'failed';
@@ -156,6 +160,15 @@ function buildChallengeMenuActions({
       (audit) => audit.before.id === selectedPhase.id
     ) === true;
   return [
+    ...(canSetDrawdownFloor
+      ? [
+          {
+            id: 'set-drawdown-floor' as const,
+            label: t('account.prop-challenge.actions.set-drawdown-floor'),
+            disabled: isSaving,
+          },
+        ]
+      : []),
     ...(hasCorrections
       ? [
           {
@@ -316,6 +329,7 @@ export const PropChallengeSection: React.FC<{
   const currency = accountPageData.account.currency || globalCurrency;
 
   const { selectedIsFunded, statusClass } = selectedPhaseStatus(state);
+  const floorRule = trailingDrawdownForFirmFloor(currentPhase, new Date());
 
   const applyAction = async (action: PropChallengeManualAction) => {
     if (!plugin?.accountPageService) return;
@@ -332,6 +346,24 @@ export const PropChallengeSection: React.FC<{
         plugin,
         account: accountPageData.account,
         onUpdated: refreshData,
+      });
+      return;
+    }
+    if (action === 'set-drawdown-floor') {
+      if (!floorRule) return;
+      openDrawdownFloorModal({
+        app: plugin.app,
+        accountPageService: plugin.accountPageService,
+        accountName: accountPageData.account.name,
+        accountId: accountPageData.account.accountId,
+        challenge,
+        phase: currentPhase,
+        rule: floorRule,
+        trades: accountPageData.trades,
+        transactions: accountPageData.account.transactions,
+        tradingDayCutoffTime: plugin.settings.trade.tradingDayCutoffTime,
+        currency,
+        onSaved: refreshData,
       });
       return;
     }
@@ -372,6 +404,15 @@ export const PropChallengeSection: React.FC<{
     isSaving,
     isAccountArchived,
     canLinkRules,
+    
+    
+    canSetDrawdownFloor:
+      floorRule !== undefined &&
+      !outcomeMasked &&
+      !isAccountArchived &&
+      challenge.status === 'active' &&
+      currentPhase.status === 'active' &&
+      selectedPhase.id === currentPhase.id,
   });
 
   

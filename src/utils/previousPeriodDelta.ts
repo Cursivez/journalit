@@ -2,7 +2,10 @@ export interface StatDelta {
   value: string;
   direction: 'up' | 'down' | 'flat';
   tone?: 'green' | 'red';
-  suffixKey?: 'widget.stats.vs-prev' | 'dashboard.metrics.past-30d';
+  suffixKey?:
+    | 'widget.stats.vs-prev'
+    | 'dashboard.metrics.past-30d'
+    | 'dashboard.compare.a-vs-b';
   
   rComparisonUnavailable?: boolean;
 }

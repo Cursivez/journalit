@@ -1,4 +1,5 @@
 import { defineOwnEntry } from '../../utils/defineOwnEntry';
+import { accountDetailTradeTypes } from './accountDetailScope';
 import { parseStopLossTargets } from '../trade/core/StopLossTargets';
 import { hasStopLossRiskBasis } from '../../utils/riskCalculation';
 import { logger } from '../../utils/logger';
@@ -7,9 +8,18 @@ import {
   buildPayoutReceipt,
   normalizePayoutReceipt,
 } from '../propChallenge/PayoutReceipt';
-import type { PropChallengeConfig } from '../propChallenge/types';
+import type {
+  PropChallengeConfig,
+  PropChallengePriorPayout,
+} from '../propChallenge/types';
 import { getAccountBalanceAdjustment } from '../propChallenge/PropChallengeBalance';
-import { getCurrentPropChallengePhase } from '../propChallenge/PropChallengeConfig';
+import {
+  addPropChallengePriorPayout,
+  getCurrentPropChallengePhase,
+  invalidPriorPayoutField,
+  removePropChallengePriorPayout,
+  updatePropChallengePriorPayout,
+} from '../propChallenge/PropChallengeConfig';
 import { evaluatePropChallengePhase } from '../propChallenge/PropChallengeRuleEngine';
 import { calculateProfitFactor } from '../../utils/profitFactor';
 
@@ -101,8 +111,10 @@ import {
   hasLiveBalanceAdjustment,
   normalizeLiveBalanceAdjustment,
 } from '../account/liveBalanceAdjustment';
+import { removeFavoriteAccounts } from '../account/favoriteAccounts';
 import { withPropChallengePhaseResets } from '../account/monthlyReturns';
 import { formatLocalDateString } from '../../utils/dateUtils';
+import { generateUUID } from '../../utils/uuid';
 import {
   getEffectivePnL,
   getLastExitTime,
@@ -174,6 +186,14 @@ function assertManualTransactionDate(
         Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
   if (isFuture) {
     throw new Error('Transaction date must be valid and not in the future');
+  }
+}
+
+function assertPriorPayout(payout: Omit<PropChallengePriorPayout, 'id'>): void {
+  const field = invalidPriorPayoutField(payout);
+  if (field === 'amount') throw new Error('Payout amount must be positive');
+  if (field === 'date') {
+    throw new Error('Payout date must be valid and not in the future');
   }
 }
 
@@ -2394,9 +2414,17 @@ export class AccountPageService extends CustomDataService {
     accountName: string,
     tradeTypes?: TradeType[]
   ): Promise<AccountPageData | null> {
+    
+    
+    
+    const detailTradeTypes: TradeType[] =
+      tradeTypes ??
+      accountDetailTradeTypes(
+        this.getAccountMetadataEntry(accountName)?.metadata
+      );
     const snapshot = await this.getAccountAggregateSnapshot(
       accountName,
-      tradeTypes
+      detailTradeTypes
     );
     if (!snapshot) {
       return null;
@@ -3787,10 +3815,21 @@ export class AccountPageService extends CustomDataService {
       }
     }
 
+    const previousFavoriteAccounts =
+      this.plugin.settings.trade.favoriteAccounts;
+    const remainingFavoriteAccounts = removeFavoriteAccounts(
+      previousFavoriteAccounts,
+      accountLookupKeysToRemove
+    );
+    if (remainingFavoriteAccounts) {
+      this.plugin.settings.trade.favoriteAccounts = remainingFavoriteAccounts;
+    }
+
     if (
       deletedMetadataEntries.length > 0 ||
       deletedMappingEntries.length > 0 ||
-      updatedHomeGoalEntries.length > 0
+      updatedHomeGoalEntries.length > 0 ||
+      remainingFavoriteAccounts
     ) {
       try {
         await this.plugin.saveSettings();
@@ -3806,6 +3845,10 @@ export class AccountPageService extends CustomDataService {
           }
         }
         restoreUpdatedHomeGoals();
+        if (remainingFavoriteAccounts) {
+          this.plugin.settings.trade.favoriteAccounts =
+            previousFavoriteAccounts;
+        }
 
         throw new Error(
           `Account deletion could not persist settings before trade rewrites: ${
@@ -4653,17 +4696,20 @@ export class AccountPageService extends CustomDataService {
   
   public async deleteManualTransaction(
     accountName: string,
-    transactionId: string
+    transactionId: string,
+    expect?: AccountMetadataExpectation
   ): Promise<void> {
     return this.runMutationExclusive(() =>
-      this.deleteManualTransactionNow(accountName, transactionId)
+      this.deleteManualTransactionNow(accountName, transactionId, expect)
     );
   }
 
   private async deleteManualTransactionNow(
     accountName: string,
-    transactionId: string
+    transactionId: string,
+    expect?: AccountMetadataExpectation
   ): Promise<void> {
+    expect?.(this.findAccountMetadataEntry(accountName)?.metadata);
     const metadata = this.getTransactionMutationMetadata(accountName);
     if (!metadata?.manualTransactions) {
       throw new Error('No manual transactions found for this account');
@@ -4684,6 +4730,60 @@ export class AccountPageService extends CustomDataService {
     eventBus.publish('account:changed', {
       action: 'transaction-deleted',
       accountName,
+    });
+  }
+
+  
+  public async addPriorPayout(
+    accountName: string,
+    payout: Omit<PropChallengePriorPayout, 'id'>
+  ): Promise<string> {
+    assertPriorPayout(payout);
+    const id = generateUUID();
+    await this.changePriorPayouts(accountName, (config) =>
+      addPropChallengePriorPayout(config, { id, ...payout })
+    );
+    return id;
+  }
+
+  public async updatePriorPayout(
+    accountName: string,
+    payout: PropChallengePriorPayout
+  ): Promise<void> {
+    assertPriorPayout(payout);
+    await this.changePriorPayouts(accountName, (config) => {
+      if (!config.priorPayouts?.some((item) => item.id === payout.id)) {
+        throw new Error('Payout not found');
+      }
+      return updatePropChallengePriorPayout(config, payout);
+    });
+  }
+
+  public async deletePriorPayout(
+    accountName: string,
+    payoutId: string
+  ): Promise<void> {
+    await this.changePriorPayouts(accountName, (config) => {
+      if (!config.priorPayouts?.some((item) => item.id === payoutId)) {
+        throw new Error('Payout not found');
+      }
+      return removePropChallengePriorPayout(config, payoutId);
+    });
+  }
+
+  
+  private changePriorPayouts(
+    accountName: string,
+    change: (config: PropChallengeConfig) => PropChallengeConfig
+  ): Promise<void> {
+    return this.runMutationExclusive(async () => {
+      const config =
+        this.findAccountMetadataEntry(accountName)?.metadata.propChallenge;
+      if (!config) throw new Error('This account is not a prop challenge');
+      await this.saveAccountMetadata(accountName, {
+        propChallenge: change(config),
+      });
+      eventBus.publish('account:changed', { action: 'updated', accountName });
     });
   }
 

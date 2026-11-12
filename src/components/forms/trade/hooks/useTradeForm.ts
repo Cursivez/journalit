@@ -29,6 +29,7 @@ import {
   isEmptyExitPlaceholder,
   resolveFormExitExplicitness,
 } from '../exitExplicitness';
+import { resolveFavoriteAccounts } from '../../../../services/account/favoriteAccounts';
 import type { TradeFormLayoutSettings } from '../../../../settings/types';
 import {
   validateTradeForm,
@@ -36,7 +37,21 @@ import {
   validateCustomFields,
 } from '../validation';
 import { deriveRawDirectPnLFromStoredCombinedPnL } from '../../../../utils/pnlCalculation';
+import {
+  applyRMultipleEntries,
+  hasAnyUnconvertibleRMultipleEntry,
+  isRMultipleEntryField,
+  mergeRMultipleEntries,
+  withoutRMultipleEntry,
+} from '../rMultipleEntry';
 import { usePlugin } from '../../../../hooks/usePlugin';
+import { loadSelectableTradeFormAccountNames } from '../accountOptions';
+import {
+  resolveFavoriteAccountToPrefill,
+  resolveFavoriteSymbol,
+  resolveFavoriteSymbolForNewTrade,
+} from '../tradeFormDefaults';
+import { useEventBus } from '../../../../hooks/useEventBus';
 import { getTradingDay } from '../../../../utils/tradingDayUtils';
 import { isTradeOpenWithContext } from '../../../../utils/tradeStatusUtils';
 import { applyAutoCommission } from '../../../../services/trade/autoCommission';
@@ -588,6 +603,30 @@ export const useTradeForm = ({
     }
 
     
+    
+    try {
+      const tradeFormLayout = plugin.settings.trade.tradeFormLayout;
+      const favoriteSymbol = resolveFavoriteSymbol(
+        plugin.settings.trade.favoriteSymbol
+      );
+      if (tradeFormLayout && favoriteSymbol && !mergedData.instrument) {
+        const defaultSymbol = resolveFavoriteSymbolForNewTrade({
+          layout: tradeFormLayout,
+          favoriteSymbol,
+          assetType: mergedData.assetType,
+          isSymbolKnownFor: (symbol, assetType) =>
+            plugin.optionsService?.isInstrumentValidForAssetType(
+              symbol,
+              assetType
+            ) ?? false,
+        });
+        if (defaultSymbol) mergedData.instrument = defaultSymbol;
+      }
+    } catch (error) {
+      console.error('Error applying starred symbol from settings:', error);
+    }
+
+    
     try {
       if (plugin.settings.trade.defaultRiskAmount) {
         const defaultRisk = plugin.settings.trade.defaultRiskAmount;
@@ -618,6 +657,43 @@ export const useTradeForm = ({
     },
     []
   );
+
+  
+  
+  
+  
+  useEffect(() => {
+    if (isEditMode) return;
+    const favoriteAccounts = resolveFavoriteAccounts(
+      plugin.settings.trade.favoriteAccounts
+    );
+    if (favoriteAccounts.length === 0) return;
+
+    let cancelled = false;
+    void (async () => {
+      try {
+        const accountNames = await loadSelectableTradeFormAccountNames(plugin);
+        const account = resolveFavoriteAccountToPrefill(
+          favoriteAccounts,
+          accountNames
+        );
+        if (cancelled || !account) return;
+        commitFormData((current) =>
+          current.isMissedTrade ||
+          current.isBacktestTrade ||
+          (Array.isArray(current.account) && current.account.length > 0)
+            ? current
+            : { ...current, account: [account] }
+        );
+      } catch (error) {
+        console.error('Error applying starred account from settings:', error);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- Intentional: mount only, re-running would restore an account the user cleared
+  }, []);
 
   
   
@@ -778,8 +854,23 @@ export const useTradeForm = ({
         [field]: value,
       };
 
+      
+      
+      if (field === 'rEntries') {
+        newData.rEntries = mergeRMultipleEntries(
+          currentFormData.rEntries,
+          newData.rEntries
+        );
+      }
+
       if (field === 'commission') {
         newData.hasExplicitCommission = true;
+      }
+
+      
+      
+      if (isRMultipleEntryField(field)) {
+        newData.rEntries = withoutRMultipleEntry(newData.rEntries, field);
       }
 
       
@@ -862,10 +953,17 @@ export const useTradeForm = ({
           )
         : newData;
 
-      commitFormData(nextData);
+      
+      
+      const convertedData = applyRMultipleEntries(
+        nextData,
+        plugin.settings?.trade?.defaultRiskAmount
+      );
+
+      commitFormData(convertedData);
 
       if (formSubmitted) {
-        runValidation(materializeBlankTradeTimes(nextData));
+        runValidation(materializeBlankTradeTimes(convertedData));
       }
     },
     [
@@ -875,9 +973,29 @@ export const useTradeForm = ({
       resolveBlankDefaultDay,
       plugin.optionsService,
       plugin.settings?.general?.currency,
+      plugin.settings?.trade?.defaultRiskAmount,
       runValidation,
     ]
   );
+
+  
+  
+  
+  useEventBus('settings:changed', (payload) => {
+    if (payload.section !== 'trade' || payload.source !== 'defaultRiskAmount') {
+      return;
+    }
+    const current = formDataRef.current;
+    if (!current.rEntries) return;
+    const converted = applyRMultipleEntries(
+      current,
+      plugin.settings?.trade?.defaultRiskAmount
+    );
+    commitFormData(converted);
+    if (formSubmitted) {
+      runValidation(materializeBlankTradeTimes(converted));
+    }
+  });
 
   
   const pendingImagesRef = useRef<string[]>([]);
@@ -1150,10 +1268,16 @@ export const useTradeForm = ({
     
     
     
+    
+    
+    const reconciledFormData = applyRMultipleEntries(
+      formData,
+      plugin.settings?.trade?.defaultRiskAmount
+    );
     const submitReadyData = clearInvalidUnrealizedSnapshot(
       syncHiddenDirectPnLExitTime(
         materializeBlankTradeTimes(
-          withResolvedSnapshotExitExplicitness(formData)
+          withResolvedSnapshotExitExplicitness(reconciledFormData)
         ),
         layout ?? plugin?.settings.trade.tradeFormLayout,
         isEditMode
@@ -1174,6 +1298,8 @@ export const useTradeForm = ({
     const dataToSubmit = {
       ...normalizeSubmittedTradeStatus(submitReadyData),
     };
+    
+    delete dataToSubmit.rEntries;
 
     
     if (isEditMode && initialData.filePath) {
@@ -1189,8 +1315,8 @@ export const useTradeForm = ({
     if (formData.useDirectPnLInput !== undefined) {
       dataToSubmit.useDirectPnLInput = formData.useDirectPnLInput;
     }
-    if (formData.directPnL !== undefined) {
-      dataToSubmit.directPnL = formData.directPnL;
+    if (reconciledFormData.directPnL !== undefined) {
+      dataToSubmit.directPnL = reconciledFormData.directPnL;
     }
 
     
@@ -1199,6 +1325,9 @@ export const useTradeForm = ({
     }
     if (formData.missedReason !== undefined) {
       dataToSubmit.missedReason = formData.missedReason;
+    }
+    if (formData.exitReason !== undefined) {
+      dataToSubmit.exitReason = formData.exitReason;
     }
 
     
@@ -1622,6 +1751,16 @@ export const useTradeForm = ({
     const riskAmountChanged =
       normalizeOptionalNumber(formData.riskAmount) !==
       normalizeOptionalNumber(initial.riskAmount);
+    
+    const excursionChanged = [
+      [formData.mae, initial.mae],
+      [formData.mfe, initial.mfe],
+      [formData.maePrice, initial.maePrice],
+      [formData.mfePrice, initial.mfePrice],
+    ].some(
+      ([current, before]) =>
+        normalizeOptionalNumber(current) !== normalizeOptionalNumber(before)
+    );
     const unrealizedPriceSnapshotChanged =
       normalizeOptionalNumber(formData.unrealizedPriceSnapshot) !==
       normalizeOptionalNumber(initial.unrealizedPriceSnapshot);
@@ -1645,6 +1784,11 @@ export const useTradeForm = ({
       normalizeDateSnapshot(initial.unrealizedPriceSnapshotTime);
     const thesisChanged =
       (formData.thesis || '').trim() !== (initial.thesis || '').trim();
+    const missedReasonChanged =
+      (formData.missedReason || '').trim() !==
+      (initial.missedReason || '').trim();
+    const exitReasonChanged =
+      (formData.exitReason || '').trim() !== (initial.exitReason || '').trim();
     const directionChanged =
       (formData.direction || '') !== (initial.direction || '');
     const normalizeDividendSnapshot = (
@@ -1762,7 +1906,17 @@ export const useTradeForm = ({
       ) !==
       JSON.stringify(serializeImageAnnotations(initial.imageAnnotations ?? {}));
 
+    
+    
+    const unconvertedREntry = hasAnyUnconvertibleRMultipleEntry({
+      rEntries: formData.rEntries,
+      directPnL: formData.directPnL,
+      mae: formData.mae,
+      mfe: formData.mfe,
+    });
+
     return (
+      unconvertedREntry ||
       instrumentChanged ||
       entryPriceChanged ||
       exitPriceChanged ||
@@ -1774,6 +1928,7 @@ export const useTradeForm = ({
       forexPnlConversionContextChanged ||
       directPnLChanged ||
       riskAmountChanged ||
+      excursionChanged ||
       stopLossesChanged ||
       unrealizedPriceSnapshotChanged ||
       unrealizedPriceSnapshotTimeChanged ||
@@ -1783,6 +1938,8 @@ export const useTradeForm = ({
       exitsChanged ||
       idealExitsChanged ||
       thesisChanged ||
+      missedReasonChanged ||
+      exitReasonChanged ||
       imagesChanged ||
       imageAnnotationsChanged ||
       directionChanged ||
@@ -1812,11 +1969,18 @@ export const useTradeForm = ({
     formData.exits,
     formData.idealExits,
     formData.thesis,
+    formData.missedReason,
+    formData.exitReason,
     formData.images,
     formData.imageAnnotations,
     formData.direction,
     formData.dividends,
     formData.takeProfits,
+    formData.rEntries,
+    formData.mae,
+    formData.mfe,
+    formData.maePrice,
+    formData.mfePrice,
   ]);
 
   const displayedErrors = {

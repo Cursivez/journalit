@@ -3,6 +3,7 @@
 import React from 'react';
 import { Ghost, Plus } from './icons/ObsidianIcon';
 import { t } from '../../lang/helpers';
+import { Button } from '../ui/Button';
 
 interface EmptyStateProps {
   
@@ -81,14 +82,15 @@ export const EmptyState: React.FC<EmptyStateProps> = ({
               </button>
             )}
             {secondaryActionButtonText && onSecondaryActionButtonClick && (
-              <button
-                type="button"
+              <Button
+                variant="secondary"
+                size="small"
                 className="journalit-empty-state-secondary-action-button"
                 onClick={onSecondaryActionButtonClick}
               >
                 <Plus size={16} className="journalit-empty-state-action-icon" />
                 {secondaryActionButtonText}
-              </button>
+              </Button>
             )}
             {additionalAction}
           </div>

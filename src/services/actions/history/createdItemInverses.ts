@@ -11,6 +11,7 @@ const CREATED_ITEM_REMOVALS: ReadonlySet<ActionId> = new Set<ActionId>([
   'account_type.delete',
   'event.delete',
   'setup.delete',
+  'dashboard_comparison.delete',
 ]);
 
 
@@ -52,7 +53,11 @@ export function isCreatedItemRemoval(action: ActionId): boolean {
 
 export type CreatedItemPlan = Pick<
   ActionPlan<ActionId>,
-  'summary' | 'affectedNotes' | 'baseContent' | 'discardsUserSettings'
+  | 'summary'
+  | 'affectedNotes'
+  | 'baseContent'
+  | 'baseRevision'
+  | 'discardsUserSettings'
 >;
 
 
@@ -65,6 +70,8 @@ export function checkCreatedItem(
     return 'in_use';
   if (action === 'setup.delete')
     return plan.baseContent?.editRevision === created ? 'ok' : 'edited';
+  if (action === 'dashboard_comparison.delete')
+    return plan.baseRevision === created ? 'ok' : 'edited';
   const summary = record(plan.summary);
   if (
     action === 'event.delete' &&
@@ -90,7 +97,11 @@ export function createdItemsGuarded(
     calls.every((entry, index) => {
       const state = createdItems[index];
       if (!isText(state)) return false;
-      if (entry.action === 'setup.delete') return true;
+      if (
+        entry.action === 'setup.delete' ||
+        entry.action === 'dashboard_comparison.delete'
+      )
+        return true;
       const key = catalogKey(entry.action);
       const created = parseState(state);
       return created !== null && created[key] === record(entry.input)[key];

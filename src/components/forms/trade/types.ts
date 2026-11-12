@@ -13,6 +13,12 @@ import type { TradeFormLayoutSettings } from '../../../settings/types';
 import type { StopLossTarget } from '../../../services/trade/core/StopLossTargets';
 
 
+export type RMultipleEntryField = 'directPnL' | 'mae' | 'mfe';
+
+
+export type TradeFormREntries = Partial<Record<RMultipleEntryField, number>>;
+
+
 export enum AssetType {
   STOCK = 'stock',
   OPTIONS = 'options',
@@ -172,6 +178,8 @@ export interface TradeFormData {
   
   directPnL?: number;
   
+  rEntries?: TradeFormREntries;
+  
   commission?: number;
   
   hasExplicitCommission?: boolean;
@@ -280,6 +288,8 @@ export interface TradeFormData {
   type?: string;
   
   missedReason?: string;
+  
+  exitReason?: string;
 
   
   
@@ -399,6 +409,7 @@ export const DEFAULT_TRADE_FORM_DATA: TradeFormData = {
   
   isMissedTrade: false,
   missedReason: '',
+  exitReason: '',
 
   
   isBacktestTrade: false,

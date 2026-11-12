@@ -1,48 +1,69 @@
 
 
-import * as Obsidian from 'obsidian';
-import { App, PluginSettingTab, requireApiVersion, setIcon } from 'obsidian';
+import {
+  App,
+  ButtonComponent,
+  Notice,
+  PluginSettingTab,
+  SettingPage,
+  setIcon,
+} from 'obsidian';
 import type { SettingControl, SettingDefinitionItem } from 'obsidian';
-import React, { useEffect, useState } from 'react';
+import React from 'react';
+import { flushSync } from 'react-dom';
 import { createRoot, Root } from 'react-dom/client';
 import { eventBus } from '../services/events/EventBus';
 import { clearUpgradeOrigin } from '../services/upgrade/upgradeOrigin';
+import { OptionType } from '../services/options/CustomOptionsService';
 import { t } from '../lang/helpers';
 import JournalitPlugin from '../main';
 import { getBaseCurrencyOptions } from '../utils/currencyConfig';
-import { SETTINGS_TAB_IDS, type SettingsTabId } from './types';
+import {
+  DEFAULT_SETTINGS,
+  SETTINGS_TAB_IDS,
+  type SettingsTabId,
+} from './types';
 import { saveDisplayName } from './displayName';
+import {
+  OPEN_CUSTOM_FIELDS_REQUEST,
+  OPEN_REVIEW_FIELDS_REQUEST,
+} from './settingsOpenRequests';
 import {
   applySettingsControlValue,
   getSettingsPath,
   publishSettingsControlChange,
 } from './settingsControlWrites';
 
-
 import {
-  GeneralTab,
+  AdvancedSettings,
   GalleryFoldersSettingsControl,
   HomeBackgroundControls,
   NavigationSidebarOpenControl,
   CalendarSidebarOpenControl,
 } from './components/general/GeneralTab';
 import { EconomicCalendarSettingsSection } from './components/economicCalendar/EconomicCalendarSettingsSection';
-import { JournalSettingsTab } from './components/journal/JournalSettingsTab';
+import { SessionModeTab } from './components/sessionMode/SessionModeTab';
 import { SyncSettingsTab } from './components/sync/SyncSettingsTab';
 import { AuthTab } from './components/accounts/AuthTab';
+import { CustomOptionsTab } from './components/CustomOptionsTab';
+import { CustomFieldsManager } from './components/customization/CustomFieldsManager';
+import { ReviewFieldsManager } from './components/customization/ReviewFieldsManager';
+import { ReviewItemList } from './components/reviews/ReviewItemList';
 import { openExternalUrl } from '../utils/externalLinks';
+import { openTradeFormLayoutSettingsModal } from '../components/forms/trade/TradeFormLayoutSettingsModal';
 import { JOURNALIT_SETTINGS_RESOURCES } from './settingsResources';
-import { mergeClassNames } from '../utils/classNames';
+import { LOGO_DATA_URI } from '../assets/logoData';
 import { HomeWidgetOpacityControl } from './components/general/HomeWidgetOpacityControl';
 
 interface NativeSettingDefinitionPage {
   type: 'page';
   tabId?: SettingsTabId;
   name: string;
-  desc: string;
+  desc?: string;
   aliases?: string[];
+  displayValue?: () => string;
   items?: NativeSettingDefinitionItem[];
-  page?: () => NativeSettingPage;
+  page?: () => SettingPage;
 }
 
 interface NativeSettingDefinitionGroup {
@@ -83,134 +104,71 @@ type NativeSettingDefinitionItem =
 
 interface NativeSettingRenderTarget {
   settingEl: HTMLElement;
+  nameEl: HTMLElement;
   controlEl: HTMLElement;
 }
 
-interface NativeSettingPage {
-  containerEl?: HTMLElement;
-  display(): void;
-  hide?(): void;
-}
-
-type NativeSettingPageConstructor = new () => NativeSettingPage;
-
-interface SettingsPageDefinitionBase {
-  tabId: SettingsTabId;
-  label: string;
-  desc: string;
-  aliases: string[];
-}
-
-interface SettingsPageDefinitionWithItems extends SettingsPageDefinitionBase {
-  createItems: (tab: JournalitSettingsTab) => NativeSettingDefinitionItem[];
-  createPage?: never;
-}
-
-interface SettingsPageDefinitionWithPage extends SettingsPageDefinitionBase {
-  createItems?: never;
-  createPage: (tab: JournalitSettingsTab) => NativeSettingPage;
-}
-
-type SettingsPageDefinition =
-  | SettingsPageDefinitionWithItems
-  | SettingsPageDefinitionWithPage;
-
 export class JournalitSettingsTab extends PluginSettingTab {
   plugin: JournalitPlugin;
-  private root: Root | null = null;
-  private initialTab: SettingsTabId = SETTINGS_TAB_IDS.GENERAL;
 
   constructor(app: App, plugin: JournalitPlugin) {
     super(app, plugin);
     this.plugin = plugin;
   }
 
-  setInitialTab(tabId: SettingsTabId): void {
-    this.initialTab = tabId;
-  }
-
-  renderInitialTab(): void {
-    const tabToDisplay = this.initialTab;
-    this.initialTab = SETTINGS_TAB_IDS.GENERAL;
-    this.renderReactSettings(this.containerEl, tabToDisplay, true);
-  }
-
+  
   openNativeSettingsPage(tabId: SettingsTabId): boolean {
-    if (!requireApiVersion('1.13.0')) {
-      return false;
-    }
-
     const settingManager = this.app.setting;
     if (!settingManager) {
       return false;
     }
 
-    settingManager.clearPageStack?.();
+    
+    const pageId =
+      tabId === SETTINGS_TAB_IDS.ACCOUNTS
+        ? SETTINGS_TAB_IDS.CONNECTIONS
+        : tabId;
+    const path = findNativePagePath(this.getNativeSettingDefinitions(), pageId);
+    if (!path) {
+      return false;
+    }
 
-    const definition = findNativePageDefinition(
-      this.getNativeSettingDefinitions(),
-      tabId
-    );
-    if (definition?.page) {
-      if (settingManager.openPage) {
-        settingManager.openPage(definition.page());
-        return true;
+    settingManager.clearPageStack?.();
+    for (const name of path) {
+      const settingEl = this.findPageRow(name);
+      if (!settingEl) {
+        return false;
+      }
+      if (settingManager.activateSettingItem) {
+        settingManager.activateSettingItem(settingEl);
+      } else {
+        settingEl.click();
       }
     }
-
-    const rootTabId = normalizeSettingsTabId(tabId);
-    const rootDefinition = getSettingsPageDefinitions().find(
-      (page) => page.tabId === rootTabId
-    );
-    if (!rootDefinition) {
-      return false;
-    }
-
-    const settingEl = Array.from(
-      this.containerEl.querySelectorAll<HTMLElement>(
-        '.setting-item.mod-navigable'
-      )
-    ).find(
-      (element) =>
-        element.querySelector('.setting-item-name')?.textContent?.trim() ===
-        rootDefinition.label
-    );
-    if (!settingEl) {
-      return false;
-    }
-
-    if (settingManager.activateSettingItem) {
-      settingManager.activateSettingItem(settingEl);
-    } else {
-      settingEl.click();
-    }
-
     return true;
   }
 
-  getSettingDefinitions(): SettingDefinitionItem<string>[] {
-    if (!requireApiVersion('1.13.0')) {
-      return [];
-    }
+  
+  private findPageRow(name: string): HTMLElement | undefined {
+    const settingsEl =
+      this.containerEl.closest('.modal.mod-settings') ?? this.containerEl;
+    return Array.from(
+      settingsEl.querySelectorAll<HTMLElement>('.setting-item.mod-navigable')
+    )
+      .filter(
+        (element) =>
+          element.querySelector('.setting-item-name')?.textContent?.trim() ===
+          name
+      )
+      .last();
+  }
 
+  getSettingDefinitions(): SettingDefinitionItem<string>[] {
     return this.getNativeSettingDefinitions();
   }
 
   private getNativeSettingDefinitions(): NativeSettingDefinitionItem[] {
-    const pageItems = getSettingsPageDefinitions().map(
-      (definition): NativeSettingDefinitionPage => ({
-        type: 'page',
-        tabId: definition.tabId,
-        name: definition.label,
-        desc: definition.desc,
-        aliases: definition.aliases,
-        ...(definition.createItems
-          ? { items: definition.createItems(this) }
-          : { page: () => definition.createPage(this) }),
-      })
-    );
-
-    const homeDefinitions: NativeSettingDefinitionItem[] = [
+    return withJournalitGroupScope([
       {
         type: 'group',
         cls: 'journalit-settings-home-intro',
@@ -218,17 +176,10 @@ export class JournalitSettingsTab extends PluginSettingTab {
       },
       {
         type: 'group',
-        cls: 'journalit-settings-home-quick-settings',
-        items: createNativeHomeQuickSettingsItems(),
-      },
-      {
-        type: 'group',
         cls: 'journalit-settings-home-navigation',
-        items: pageItems,
+        items: createHubPages(this),
       },
-    ];
-
-    return withJournalitGroupScope(homeDefinitions);
+    ]);
   }
 
   getControlValue(key: string): unknown {
@@ -244,275 +195,41 @@ export class JournalitSettingsTab extends PluginSettingTab {
       try {
         await saveDisplayName(this.plugin, value);
       } finally {
-        this.refreshNativeSettingsDomState();
+        this.refreshDomState();
       }
       return;
     }
 
     applySettingsControlValue(this.plugin.settings, key, value);
     await this.plugin.saveSettings();
-    this.refreshNativeSettingsDomState();
+    this.refreshDomState();
     await publishSettingsControlChange(this.plugin, key);
-  }
-
-  refreshNativeSettingsDomState(): void {
-    const refreshDomState = Reflect.get(this, 'refreshDomState');
-    if (typeof refreshDomState === 'function') {
-      Reflect.apply(refreshDomState, this, []);
-    }
-  }
-
-  updateNativeSettingsDefinitions(): void {
-    const update = Reflect.get(this, 'update');
-    if (typeof update === 'function') {
-      Reflect.apply(update, this, []);
-    }
-  }
-
-  display(): void {
-    this.renderInitialTab();
-  }
-
-  renderReactSettings(
-    containerEl: HTMLElement,
-    tabToDisplay: SettingsTabId,
-    showTabs: boolean,
-    isNativeSubPage = false
-  ): void {
-    this.unmountReactSettings(containerEl);
-    containerEl.empty();
-    containerEl.addClass('journalit-settings');
-
-    const wrapperEl = containerEl.createDiv({
-      cls: 'journalit-settings-wrapper',
-    });
-
-    const root = createRoot(wrapperEl);
-    settingsRoots.set(containerEl, root);
-
-    if (containerEl === this.containerEl) {
-      this.root = root;
-    }
-
-    root.render(
-      <React.StrictMode>
-        <SettingsTabContent
-          plugin={this.plugin}
-          initialTab={tabToDisplay}
-          showTabs={showTabs}
-          isNativeSubPage={isNativeSubPage}
-        />
-      </React.StrictMode>
-    );
-  }
-
-  unmountReactSettings(containerEl: HTMLElement): void {
-    const root = settingsRoots.get(containerEl);
-    if (root) {
-      root.unmount();
-      settingsRoots.delete(containerEl);
-    }
-
-    if (containerEl === this.containerEl) {
-      this.root = null;
-    }
-
-    containerEl.removeClass('journalit-settings');
   }
 
   
   hide(): void {
     clearUpgradeOrigin('metatraderSync');
-    this.unmountReactSettings(this.containerEl);
     this.containerEl.empty();
   }
 }
 
 
-interface SettingsTabContentProps {
-  plugin: JournalitPlugin;
-  initialTab?: SettingsTabId;
-  showTabs?: boolean;
-  isNativeSubPage?: boolean;
-}
-
-
-const tabLabelKeys: Array<{
-  id: SettingsTabId;
-  labelKey: Parameters<typeof t>[0];
-}> = [
-  { id: SETTINGS_TAB_IDS.GENERAL, labelKey: 'settings.tab.general' },
-  { id: SETTINGS_TAB_IDS.SYNC, labelKey: 'settings.tab.sync' },
-  { id: SETTINGS_TAB_IDS.TRADING, labelKey: 'settings.tab.trading' },
-  {
-    id: SETTINGS_TAB_IDS.JOURNAL,
-    labelKey: 'settings.tab.journal-setup',
-  },
-  { id: SETTINGS_TAB_IDS.ADVANCED, labelKey: 'form.tab.advanced' },
-];
-
-const getTabs = () =>
-  tabLabelKeys.map(({ id, labelKey }) => ({ id, label: t(labelKey) }));
-
-const SettingsTabContent: React.FC<SettingsTabContentProps> = React.memo(
-  ({
-    plugin,
-    initialTab = SETTINGS_TAB_IDS.GENERAL,
-    showTabs = true,
-    isNativeSubPage = false,
-  }: SettingsTabContentProps) => {
-    const tabs = getTabs();
-    const [tabState, setTabState] = useState(() => ({
-      initialTab,
-      activeTab: initialTab,
-    }));
-    
-    
-    const requestedTab =
-      tabState.initialTab === initialTab ? tabState.activeTab : initialTab;
-    const activeTab = normalizeSettingsTabId(requestedTab);
-
-    
-    const handleTabChange = (newTab: SettingsTabId) => {
-      setTabState({ initialTab, activeTab: newTab });
-    };
-
-    useEffect(() => {
-      const handleOpenSettingsTab = (event: Event) => {
-        if (!(event instanceof CustomEvent) || !isRecord(event.detail)) return;
-        const tabId = event.detail.tabId;
-        if (typeof tabId !== 'string') return;
-        if (!isSettingsTabId(tabId)) return;
-        setTabState({
-          initialTab: tabId,
-          activeTab: tabId,
-        });
-      };
-
-      window.addEventListener(
-        'journalit:open-settings-tab',
-        handleOpenSettingsTab
-      );
-      return () => {
-        window.removeEventListener(
-          'journalit:open-settings-tab',
-          handleOpenSettingsTab
-        );
-      };
-    }, []);
-
-    return (
-      <div className="settings-tab-container">
-        {showTabs && (
-          <nav className="settings-tab-nav journalit-settings-main-nav">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                className={mergeClassNames(
-                  'journalit-native-button',
-                  `settings-tab-button ${activeTab === tab.id ? 'settings-tab-button--active' : ''}`
-                )}
-                onClick={() => handleTabChange(tab.id)}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </nav>
-        )}
-
-        <div
-          className="settings-tab-content journalit-tab-content"
-          role="tabpanel"
-          aria-labelledby={`tab-${activeTab}`}
-        >
-          {activeTab === SETTINGS_TAB_IDS.GENERAL && (
-            <GeneralTab plugin={plugin} scope="general" />
-          )}
-          {activeTab === SETTINGS_TAB_IDS.TRADING && (
-            <GeneralTab plugin={plugin} scope="trading" />
-          )}
-          {activeTab === SETTINGS_TAB_IDS.JOURNAL && (
-            <JournalSettingsTab
-              plugin={plugin}
-              initialSection={
-                requestedTab === SETTINGS_TAB_IDS.SESSION_MODE
-                  ? 'sessionMode'
-                  : requestedTab === SETTINGS_TAB_IDS.CUSTOMIZATION
-                    ? 'fields'
-                    : 'reviews'
-              }
-              showSectionTabs={!isNativeSubPage}
-            />
-          )}
-          {activeTab === SETTINGS_TAB_IDS.SYNC && (
-            <SyncSettingsTab
-              plugin={plugin}
-              initialSection={
-                requestedTab === SETTINGS_TAB_IDS.TRADE_IMPORT_SYNC
-                  ? 'tradeImport'
-                  : requestedTab === SETTINGS_TAB_IDS.MCP_ACCESS
-                    ? 'mcpAccess'
-                    : 'brokerSync'
-              }
-              isNativeSubPage={isNativeSubPage}
-            />
-          )}
-          {activeTab === SETTINGS_TAB_IDS.ADVANCED && (
-            <GeneralTab plugin={plugin} scope="advanced" />
-          )}
-          {activeTab === SETTINGS_TAB_IDS.ECONOMIC_CALENDAR && (
-            <EconomicCalendarSettingsSection plugin={plugin} />
-          )}
-        </div>
-      </div>
-    );
-  }
-);
-
-SettingsTabContent.displayName = 'SettingsTabContent';
-
-const settingsRoots = new WeakMap<HTMLElement, Root>();
-
-function isSettingsTabId(tabId: string): tabId is SettingsTabId {
-  return Object.values(SETTINGS_TAB_IDS).some((value) => value === tabId);
-}
-
-function normalizeSettingsTabId(tabId: SettingsTabId): SettingsTabId {
-  if (
-    tabId === SETTINGS_TAB_IDS.REVIEWS ||
-    tabId === SETTINGS_TAB_IDS.CUSTOMIZATION ||
-    tabId === SETTINGS_TAB_IDS.SESSION_MODE
-  ) {
-    return SETTINGS_TAB_IDS.JOURNAL;
-  }
-
-  if (
-    tabId === SETTINGS_TAB_IDS.TRADE_SYNC ||
-    tabId === SETTINGS_TAB_IDS.TRADE_IMPORT_SYNC ||
-    tabId === SETTINGS_TAB_IDS.ACCOUNTS ||
-    tabId === SETTINGS_TAB_IDS.MCP_ACCESS
-  ) {
-    return SETTINGS_TAB_IDS.SYNC;
-  }
-
-  return tabId;
-}
-
-function findNativePageDefinition(
+function findNativePagePath(
   definitions: NativeSettingDefinitionItem[],
   tabId: SettingsTabId
-): NativeSettingDefinitionPage | undefined {
+): string[] | undefined {
   for (const definition of definitions) {
-    if (
-      'type' in definition &&
-      definition.type === 'page' &&
-      definition.tabId === tabId
-    ) {
-      return definition;
-    }
-
-    if ('items' in definition && definition.items) {
-      const nested = findNativePageDefinition(definition.items, tabId);
+    if ('type' in definition && definition.type === 'page') {
+      if (definition.tabId === tabId) {
+        return [definition.name];
+      }
+      const nested =
+        definition.items && findNativePagePath(definition.items, tabId);
+      if (nested) {
+        return [definition.name, ...nested];
+      }
+    } else if ('type' in definition && definition.type === 'group') {
+      const nested = findNativePagePath(definition.items, tabId);
       if (nested) {
         return nested;
       }
@@ -520,110 +237,6 @@ function findNativePageDefinition(
   }
 
   return undefined;
-}
-
-function getSettingsPageDefinitions(): SettingsPageDefinition[] {
-  return [
-    {
-      tabId: SETTINGS_TAB_IDS.GENERAL,
-      label: t('settings.tab.general'),
-      desc: t('settings.page.general.desc'),
-      createItems: createGeneralNativeSettingItems,
-      aliases: [
-        'currency',
-        'display name',
-        'home view',
-        'recent items',
-        'navigation sidebar',
-        'privacy mode',
-      ],
-    },
-    {
-      tabId: SETTINGS_TAB_IDS.SYNC,
-      label: t('settings.tab.sync'),
-      desc: t('settings.page.sync.desc'),
-      createItems: createSyncNativeSettingItems,
-      aliases: [
-        'account',
-        'sync',
-        'subscription',
-        'billing',
-        'backend',
-        'sign in',
-        'sign out',
-        'MetaTrader',
-        'Tradovate',
-        'Rithmic',
-        'cTrader',
-        'FTP',
-        'credentials',
-        'account linking',
-        'import trades',
-        'diagnostics',
-        'economic calendar',
-      ],
-    },
-    {
-      tabId: SETTINGS_TAB_IDS.TRADING,
-      label: t('settings.tab.trading'),
-      desc: t('settings.page.trading.desc'),
-      createItems: createTradingNativeSettingItems,
-      aliases: [
-        'trades',
-        'trading',
-        'date format',
-        'risk amount',
-        'R-multiples',
-        'unrealized P&L',
-        'floating P&L',
-        'break-even',
-        'MAE',
-        'MFE',
-        'copy trading PnL',
-        'trading day cutoff',
-      ],
-    },
-    {
-      tabId: SETTINGS_TAB_IDS.JOURNAL,
-      label: t('settings.tab.journal-setup'),
-      desc: t('settings.page.journal.desc'),
-      createItems: createJournalNativeSettingItems,
-      aliases: [
-        'journal setup',
-        'daily review',
-        'weekly review',
-        'review templates',
-        'recurring goals',
-        'checklist',
-        'custom fields',
-        'trade form layout',
-        'symbols',
-        'setups',
-        'mistakes',
-        'tags',
-        'events',
-      ],
-    },
-    {
-      tabId: SETTINGS_TAB_IDS.ADVANCED,
-      label: t('form.tab.advanced'),
-      desc: t('settings.page.advanced.desc'),
-      createPage: (tab) =>
-        createReactSettingsPage(
-          tab,
-          SETTINGS_TAB_IDS.ADVANCED,
-          t('form.tab.advanced')
-        ),
-      aliases: [
-        'journal folder',
-        'image paths',
-        'backup',
-        'import settings',
-        'export settings',
-        'reset settings',
-      ],
-    },
-  ];
 }
 
 
@@ -655,111 +268,806 @@ function withNestedPageScope<T extends NativeSettingDefinitionItem>(
   return item;
 }
 
-function createNativeHomeIntroItems(
-  plugin: JournalitPlugin
-): NativeSettingGroupItem[] {
+const onOff = (value: boolean | undefined): string =>
+  value ? t('settings.hub.value.on') : t('settings.hub.value.off');
+
+function createHubPages(tab: JournalitSettingsTab): NativeSettingGroupItem[] {
   return [
     {
-      name: `Journalit ${plugin.manifest.version}`,
-      searchable: false,
-      render: (setting) => {
-        setting.settingEl.classList.add('journalit-settings-home-header');
-        setting.controlEl.empty();
-
-        const links = [
-          {
-            label: t('settings.general.docs'),
-            icon: 'book-open',
-            url: JOURNALIT_SETTINGS_RESOURCES.docs,
-          },
-          {
-            label: t('settings.general.discord'),
-            icon: 'messages-square',
-            url: JOURNALIT_SETTINGS_RESOURCES.discord,
-          },
-          {
-            label: t('settings.general.github'),
-            icon: 'github',
-            url: JOURNALIT_SETTINGS_RESOURCES.github,
-          },
-        ] as const;
-
-        const listeners: Array<{
-          button: HTMLButtonElement;
-          handleClick: () => void;
-        }> = [];
-
-        for (const link of links) {
-          const button = setting.controlEl.createEl('button', {
-            cls: 'journalit-settings-home-resource-button',
-            attr: { type: 'button' },
-          });
-          setIcon(button, link.icon);
-          button.createSpan({ text: link.label });
-
-          const handleClick = () => openExternalUrl(link.url);
-          button.addEventListener('click', handleClick);
-          listeners.push({ button, handleClick });
-        }
-
-        return () => {
-          for (const { button, handleClick } of listeners) {
-            button.removeEventListener('click', handleClick);
-          }
-          setting.settingEl.classList.remove('journalit-settings-home-header');
-        };
-      },
+      type: 'page',
+      tabId: SETTINGS_TAB_IDS.CONNECTIONS,
+      name: t('settings.hub.connections'),
+      desc: t('settings.hub.connections.desc'),
+      aliases: [
+        'account',
+        'sync',
+        'subscription',
+        'billing',
+        'sign in',
+        'sign out',
+        'MetaTrader',
+        'Tradovate',
+        'Rithmic',
+        'cTrader',
+        'FTP',
+        'import trades',
+        'economic calendar',
+        'mcp',
+      ],
+      items: createConnectionsItems(tab),
+    },
+    {
+      type: 'page',
+      tabId: SETTINGS_TAB_IDS.JOURNAL,
+      name: t('settings.tab.journal-setup'),
+      desc: t('settings.hub.journal.desc'),
+      aliases: [
+        'trade form',
+        'reviews',
+        'recurring goals',
+        'checklist',
+        'custom fields',
+        'symbols',
+        'tags',
+        'mistakes',
+        'events',
+      ],
+      items: createJournalSetupItems(tab),
+    },
+    {
+      type: 'page',
+      tabId: SETTINGS_TAB_IDS.CALCULATIONS,
+      name: t('settings.hub.calculations'),
+      desc: t('settings.hub.calculations.desc'),
+      displayValue: () =>
+        t('settings.hub.calculations.value', {
+          time: tab.plugin.settings.trade.tradingDayCutoffTime ?? '23:59',
+        }),
+      items: createCalculationsItems(tab),
+    },
+    {
+      type: 'page',
+      tabId: SETTINGS_TAB_IDS.PREFERENCES,
+      name: t('settings.hub.preferences'),
+      desc: t('settings.hub.preferences.desc'),
+      items: createPreferencesItems(tab),
+    },
+    {
+      type: 'page',
+      tabId: SETTINGS_TAB_IDS.FILES_AND_BACKUPS,
+      name: t('settings.hub.files'),
+      desc: t('settings.page.advanced.desc'),
+      aliases: [
+        'journal folder',
+        'image paths',
+        'backup',
+        'import settings',
+        'export settings',
+        'reset settings',
+      ],
+      items: [
+        {
+          
+          
+          type: 'group',
+          cls: 'journalit-settings-plain-group',
+          items: [
+            {
+              ...inlineReactRow('', undefined, () => (
+                <AdvancedSettings plugin={tab.plugin} />
+              )),
+              searchable: false,
+            },
+          ],
+        },
+        {
+          type: 'group',
+          items: [
+            inlineReactRow(
+              t('settings.gallery-folders.section'),
+              t('settings.gallery-folders.description'),
+              () => <GalleryFoldersSettingsControl plugin={tab.plugin} />
+            ),
+          ],
+        },
+      ],
     },
   ];
 }
 
-function createNativeHomeQuickSettingsItems(): NativeSettingGroupItem[] {
-  const currencyOptions = Object.fromEntries(
-    getBaseCurrencyOptions().map((option) => [option.value, option.label])
-  );
-
-  return [
-    dropdownSetting(
-      t('settings.general.currency'),
-      t('settings.general.currency-desc'),
-      'general.currency',
-      currencyOptions,
-      'USD'
-    ),
-    textSetting(
-      t('settings.general.display-name'),
-      t('settings.general.display-name-desc'),
-      'general.displayName',
-      t('settings.general.display-name-placeholder')
-    ),
-  ];
-}
-
-function createGeneralNativeSettingItems(
+function createConnectionsItems(
   tab: JournalitSettingsTab
 ): NativeSettingDefinitionItem[] {
   return [
     {
       type: 'group',
-      heading: t('settings.general.notification-settings'),
+      cls: 'journalit-settings-account-card-group',
       items: [
-        toggleSetting(
-          t('settings.general.update-notifications'),
-          t('settings.general.update-notifications-desc'),
-          'backendIntegration.showUpdateNotifications',
-          true
+        {
+          
+          
+          
+          name: '',
+          searchable: false,
+          render: (setting) => {
+            setting.settingEl.classList.add(
+              'journalit-settings-account-card-item'
+            );
+            const root = createRoot(setting.controlEl);
+            root.render(
+              <div className="journalit-settings journalit-settings-account-card">
+                <AuthTab plugin={tab.plugin} />
+              </div>
+            );
+            return () => {
+              root.unmount();
+              setting.settingEl.classList.remove(
+                'journalit-settings-account-card-item'
+              );
+            };
+          },
+        },
+      ],
+    },
+    {
+      type: 'group',
+      items: [
+        createReactPage({
+          tabId: SETTINGS_TAB_IDS.TRADE_SYNC,
+          name: t('trade-sync.providers.title'),
+          desc: t('settings.page.trade-sync.desc'),
+          aliases: [
+            'MetaTrader',
+            'Tradovate',
+            'Rithmic',
+            'cTrader',
+            'broker sync',
+            'FTP',
+            'credentials',
+            'account management',
+            'diagnostics',
+            'notifications',
+          ],
+          content: () => (
+            <SyncSettingsTab plugin={tab.plugin} section="brokerSync" />
+          ),
+          onHide: () => clearUpgradeOrigin('metatraderSync'),
+        }),
+        createReactPage({
+          tabId: SETTINGS_TAB_IDS.TRADE_IMPORT_SYNC,
+          name: t('trade-sync.source.trade-import'),
+          desc: t('trade-sync.source.trade-import.description'),
+          aliases: [
+            'trade import',
+            'import trades',
+            'inventory',
+            'restore',
+            'account mapping',
+          ],
+          content: () => (
+            <SyncSettingsTab plugin={tab.plugin} section="tradeImport" />
+          ),
+        }),
+        {
+          ...createReactPage({
+            tabId: SETTINGS_TAB_IDS.ECONOMIC_CALENDAR,
+            name: t('settings.economic-calendar.title'),
+            desc: t('settings.economic-calendar.description'),
+            aliases: [
+              'economic calendar',
+              'news events',
+              'key events',
+              'auto-import',
+            ],
+            content: () => (
+              <EconomicCalendarSettingsSection plugin={tab.plugin} />
+            ),
+          }),
+          displayValue: () =>
+            onOff(tab.plugin.settings.economicCalendar?.autoImport),
+        },
+        createReactPage({
+          tabId: SETTINGS_TAB_IDS.MCP_ACCESS,
+          name: t('settings.mcp-access.title'),
+          desc: t('settings.page.mcp-access.desc'),
+          aliases: [
+            'mcp',
+            'mcp access',
+            'ai',
+            'ai apps',
+            'ai access',
+            'ai assistant',
+            'ai agent activity',
+            'agent',
+            'claude',
+            'claude code',
+            'chatgpt',
+            'connector',
+            'ai connections',
+          ],
+          content: () => (
+            <SyncSettingsTab plugin={tab.plugin} section="mcpAccess" />
+          ),
+        }),
+      ],
+    },
+  ];
+}
+
+function createJournalSetupItems(
+  tab: JournalitSettingsTab
+): NativeSettingDefinitionItem[] {
+  const listPage = (
+    tabId: SettingsTabId,
+    name: string,
+    desc: string,
+    list: React.ComponentProps<typeof CustomOptionsTab>
+  ) =>
+    createReactPage({
+      tabId,
+      name,
+      desc,
+      content: () => (
+        <div className="journalit-settings-tab customization-settings">
+          <CustomOptionsTab {...list} />
+        </div>
+      ),
+    });
+
+  return [
+    {
+      type: 'group',
+      items: [
+        {
+          name: t('settings.general.trade-form'),
+          desc: t('settings.general.trade-form-desc'),
+          
+          aliases: [
+            'form layout',
+            'position size',
+            'dollar value',
+            'MAE',
+            'MFE',
+            'seconds',
+            'trade times',
+            'stop loss unit',
+            'take profit unit',
+          ],
+          render: (setting) => {
+            new ButtonComponent(setting.controlEl)
+              .setButtonText(
+                t('settings.customization.trade-form-layout.button')
+              )
+              .onClick(() =>
+                openTradeFormLayoutSettingsModal({
+                  app: tab.app,
+                  plugin: tab.plugin,
+                })
+              );
+          },
+        },
+        {
+          type: 'page',
+          tabId: SETTINGS_TAB_IDS.REVIEWS,
+          name: t('settings.page.reviews.title'),
+          desc: t('settings.page.reviews.desc'),
+          aliases: ['review layouts', 'recurring goals', 'checklist'],
+          items: createReviewsItems(tab),
+        },
+        createReactPage({
+          tabId: SETTINGS_TAB_IDS.SESSION_MODE,
+          name: t('settings.session-mode.title'),
+          desc: t('settings.session-mode.description'),
+          aliases: [
+            'session mode',
+            'trading sessions',
+            'phase layout',
+            'trade gate',
+            'session log tags',
+          ],
+          content: () => <SessionModeTab plugin={tab.plugin} />,
+        }),
+        {
+          type: 'page',
+          tabId: SETTINGS_TAB_IDS.CUSTOM_FIELDS,
+          name: t('settings.hub.custom-fields'),
+          desc: t('settings.hub.custom-fields.desc'),
+          items: [
+            {
+              type: 'group',
+              items: [
+                inlineReactRow(
+                  t('settings.customization.trade-fields'),
+                  undefined,
+                  () => <CustomFieldsManager plugin={tab.plugin} />,
+                  { app: tab.app, request: OPEN_CUSTOM_FIELDS_REQUEST }
+                ),
+              ],
+            },
+            {
+              type: 'group',
+              items: [
+                inlineReactRow(
+                  t('settings.customization.review-fields'),
+                  undefined,
+                  () => <ReviewFieldsManager plugin={tab.plugin} />,
+                  { app: tab.app, request: OPEN_REVIEW_FIELDS_REQUEST }
+                ),
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.hub.symbols-and-tags'),
+      items: [
+        listPage(
+          SETTINGS_TAB_IDS.SYMBOLS,
+          t('settings.customization.tickers-symbols'),
+          t('settings.hub.symbols.desc'),
+          { plugin: tab.plugin, filterType: OptionType.INSTRUMENT }
         ),
-        toggleSetting(
-          t('settings.general.available-update-notifications'),
-          t('settings.general.available-update-notifications-desc'),
-          'backendIntegration.showAvailableUpdateNotifications',
-          true,
-          () =>
-            tab.plugin.settings.backendIntegration?.showUpdateNotifications ===
-            false
+        listPage(
+          SETTINGS_TAB_IDS.SYMBOL_MAPPINGS,
+          t('settings.customization.symbol-mappings'),
+          t('settings.customization.options.mapping.description'),
+          { plugin: tab.plugin, showSymbolMappings: true }
+        ),
+        listPage(
+          SETTINGS_TAB_IDS.TAGS,
+          t('settings.customization.tags'),
+          t('settings.hub.tags.desc'),
+          { plugin: tab.plugin, filterType: OptionType.TAG }
+        ),
+        listPage(
+          SETTINGS_TAB_IDS.MISTAKES,
+          t('settings.customization.mistakes'),
+          t('settings.hub.mistakes.desc'),
+          { plugin: tab.plugin, filterType: OptionType.MISTAKE }
+        ),
+        listPage(
+          SETTINGS_TAB_IDS.EVENTS,
+          t('settings.customization.events'),
+          t('settings.hub.events.desc'),
+          { plugin: tab.plugin, filterType: OptionType.EVENT }
         ),
       ],
     },
+  ];
+}
+
+function createReviewsItems(
+  tab: JournalitSettingsTab
+): NativeSettingDefinitionItem[] {
+  const itemList = (
+    name: string,
+    desc: string | undefined,
+    list: Omit<React.ComponentProps<typeof ReviewItemList>, 'plugin'>
+  ) =>
+    inlineReactRow(name, desc, () => (
+      <ReviewItemList plugin={tab.plugin} {...list} />
+    ));
+
+  return [
+    {
+      type: 'group',
+      items: [
+        {
+          name: t('settings.reviews.template-builder'),
+          desc: t('settings.reviews.template-builder-desc'),
+          aliases: ['layout builder', 'review templates'],
+          render: (setting) => {
+            new ButtonComponent(setting.controlEl)
+              .setButtonText(t('settings.reviews.open-builder'))
+              .onClick(() => {
+                const commands = tab.app.commands;
+                if (commands?.executeCommandById) {
+                  commands.executeCommandById('journalit:open-layout-builder');
+                } else {
+                  new Notice(t('settings.reviews.notice.builder-not-found'));
+                }
+              });
+          },
+        },
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.reviews.recurring-goals'),
+      items: [
+        itemList(
+          t('settings.reviews.daily-goals'),
+          t('settings.reviews.recurring-goals-desc'),
+          {
+            defaultItems: [],
+            settingsPath: 'drc.recurringGoals',
+            placeholder: t('settings.reviews.daily-goal-placeholder'),
+            settingsEventComponent: 'drc',
+          }
+        ),
+        itemList(t('settings.reviews.weekly-goals'), undefined, {
+          defaultItems: [],
+          settingsPath: 'weekly.recurringGoals',
+          placeholder: t('settings.reviews.weekly-goal-placeholder'),
+          settingsEventComponent: 'weekly',
+        }),
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.hub.checklists'),
+      items: [
+        itemList(
+          t('settings.reviews.checklist'),
+          t('settings.reviews.checklist-desc'),
+          {
+            defaultItems: [],
+            settingsPath: 'drc.checklistItems',
+            placeholder: t('settings.reviews.checklist-placeholder'),
+            settingsEventComponent: 'drc',
+          }
+        ),
+        itemList(
+          t('settings.reviews.weekly-checklist'),
+          t('settings.reviews.weekly-checklist-desc'),
+          {
+            defaultItems: DEFAULT_SETTINGS.weekly.checklistItems ?? [],
+            settingsPath: 'weekly.checklistItems',
+            placeholder: t('settings.reviews.weekly-checklist-placeholder'),
+            settingsEventComponent: 'weekly',
+          }
+        ),
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.reviews.auto-create'),
+      items: [
+        toggleSetting(
+          t('settings.reviews.global-auto-create'),
+          t('settings.reviews.global-auto-create-desc'),
+          'reviews.globalAutoCreate',
+          true
+        ),
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.hub.create-on-open'),
+      items: [
+        toggleSetting(
+          t('settings.hub.period.day'),
+          t('settings.reviews.auto-create-drc-nav-desc'),
+          'drc.autoCreateDRCOnNavigation',
+          true
+        ),
+        toggleSetting(
+          t('common.week'),
+          t('settings.reviews.auto-create-weekly-nav-desc'),
+          'weekly.autoCreateWeeklyReviewOnNavigation',
+          true
+        ),
+        toggleSetting(
+          t('common.month'),
+          t('settings.reviews.auto-create-monthly-nav-desc'),
+          'monthly.autoCreateMonthlyReviewOnNavigation',
+          true
+        ),
+        toggleSetting(
+          t('common.quarter'),
+          t('settings.reviews.auto-create-quarterly-nav-desc'),
+          'quarterly.autoCreateQuarterlyReviewOnNavigation',
+          true
+        ),
+        toggleSetting(
+          t('common.year'),
+          t('settings.reviews.auto-create-yearly-nav-desc'),
+          'yearly.autoCreateYearlyReviewOnNavigation',
+          true
+        ),
+      ],
+    },
+  ];
+}
+
+function createCalculationsItems(
+  tab: JournalitSettingsTab
+): NativeSettingDefinitionItem[] {
+  const usesPercentBreakEven = () =>
+    tab.plugin.settings.trade.breakEvenThresholdMode ===
+    'percentage_current_balance';
+
+  return [
+    {
+      type: 'group',
+      heading: t('settings.hub.trading-day'),
+      items: [
+        {
+          ...textSetting(
+            t('settings.general.cutoff-time'),
+            t('settings.general.cutoff-time-desc'),
+            'trade.tradingDayCutoffTime',
+            '23:59',
+            validateTime
+          ),
+          aliases: ['trading day cutoff', 'cutoff time'],
+        },
+        toggleSetting(
+          t('settings.general.skip-weekends'),
+          t('settings.general.skip-weekends-desc'),
+          'trade.skipWeekends',
+          true
+        ),
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.hub.analytics'),
+      items: [
+        dropdownSetting(
+          t('settings.general.analytics-date-basis'),
+          t('settings.general.analytics-date-basis-desc'),
+          'trade.analyticsDateBasis',
+          {
+            entry: t('settings.general.analytics-date-basis-entry'),
+            exit: t('settings.general.analytics-date-basis-exit'),
+          },
+          'entry'
+        ),
+        toggleSetting(
+          t('settings.general.include-unrealized-pnl'),
+          t('settings.general.include-unrealized-pnl-desc'),
+          'trade.includeUnrealizedPnLInCalculations',
+          false,
+          undefined,
+          ['unrealized P&L', 'floating P&L', 'open position P&L']
+        ),
+        toggleSetting(
+          t('settings.general.include-copy-accounts-analytics'),
+          t('settings.general.include-copy-accounts-analytics-desc'),
+          'trade.includeCopyAccountsInAllAccountsAnalytics',
+          false,
+          undefined,
+          ['copy accounts', 'copy trading analytics']
+        ),
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.hub.risk'),
+      items: [
+        numberSetting(
+          t('settings.general.default-risk'),
+          t('settings.general.default-risk-desc'),
+          'trade.defaultRiskAmount',
+          0,
+          { min: 0, step: 0.01 }
+        ),
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.hub.break-even'),
+      items: [
+        dropdownSetting(
+          t('settings.general.break-even-threshold-mode'),
+          t('settings.general.break-even-threshold-mode-desc'),
+          'trade.breakEvenThresholdMode',
+          {
+            fixed: t('settings.general.break-even-mode-fixed'),
+            percentage_current_balance: t(
+              'settings.general.break-even-mode-percent'
+            ),
+          },
+          'fixed'
+        ),
+        {
+          ...numberSetting(
+            t('settings.general.break-even-percent'),
+            t('settings.general.break-even-percent-desc'),
+            'trade.breakEvenThresholdPercent',
+            0.05,
+            { min: 0, step: 0.01 }
+          ),
+          aliases: ['break-even percentage'],
+          visible: usesPercentBreakEven,
+        },
+        {
+          ...numberSetting(
+            t('settings.general.break-even-min-aria'),
+            t('settings.general.break-even-range-desc'),
+            'trade.breakEvenRangeMin',
+            0,
+            { max: 0, step: 0.01 }
+          ),
+          aliases: ['break-even minimum', 'break-even range'],
+          visible: () => !usesPercentBreakEven(),
+        },
+        {
+          ...numberSetting(
+            t('settings.general.break-even-max-aria'),
+            '',
+            'trade.breakEvenRangeMax',
+            0,
+            { min: 0, step: 0.01 }
+          ),
+          aliases: ['break-even maximum', 'break-even range'],
+          visible: () => !usesPercentBreakEven(),
+        },
+      ],
+    },
+  ];
+}
+
+function createPreferencesItems(
+  tab: JournalitSettingsTab
+): NativeSettingDefinitionItem[] {
+  const { plugin } = tab;
+  const currencyOptions = Object.fromEntries(
+    getBaseCurrencyOptions().map((option) => [option.value, option.label])
+  );
+
+  return [
+    {
+      type: 'group',
+      items: [
+        {
+          type: 'page',
+          tabId: SETTINGS_TAB_IDS.CURRENCY_AND_DATES,
+          name: t('settings.hub.currency-and-dates'),
+          desc: t('settings.hub.currency-and-dates.desc'),
+          displayValue: () =>
+            `${plugin.settings.general?.currency ?? 'USD'} · ${plugin.settings.trade.dateFormat}`,
+          items: [
+            {
+              type: 'group',
+              heading: t('settings.hub.numbers'),
+              items: [
+                dropdownSetting(
+                  t('settings.general.currency'),
+                  t('settings.general.currency-desc'),
+                  'general.currency',
+                  currencyOptions,
+                  'USD'
+                ),
+                toggleSetting(
+                  t('settings.general.display-r-multiples'),
+                  t('settings.general.display-r-multiples-desc'),
+                  'trade.displayRMultiples',
+                  false
+                ),
+                toggleSetting(
+                  t('settings.general.hide-dollar-amounts-in-r-mode'),
+                  t('settings.general.hide-dollar-amounts-in-r-mode-desc'),
+                  'trade.hideDollarAmountsInRMode',
+                  false,
+                  () => !plugin.settings.trade.displayRMultiples,
+                  ['hide dollars', 'R only']
+                ),
+                dropdownSetting(
+                  t('settings.general.mae-mfe-display-unit'),
+                  t('settings.general.mae-mfe-display-unit-desc'),
+                  'trade.maeMfeDisplayUnit',
+                  {
+                    dollar: t('settings.general.mae-mfe-display-dollar'),
+                    ticks: t('settings.general.mae-mfe-display-ticks'),
+                  },
+                  'dollar'
+                ),
+              ],
+            },
+            {
+              type: 'group',
+              heading: t('settings.hub.dates-and-times'),
+              items: [
+                dropdownSetting(
+                  t('settings.general.date-format'),
+                  t('settings.general.date-format-desc'),
+                  'trade.dateFormat',
+                  { DDMMYY: 'DDMMYY', MMDDYY: 'MMDDYY', YYMMDD: 'YYMMDD' },
+                  'DDMMYY'
+                ),
+                toggleSetting(
+                  t('settings.general.use-24-hour-time'),
+                  t('settings.general.use-24-hour-time-desc'),
+                  'trade.use24HourTime',
+                  false
+                ),
+                dropdownSetting(
+                  t('settings.general.week-start'),
+                  t('settings.general.week-start-desc'),
+                  'trade.weekStartDay',
+                  {
+                    sunday: t('common.day.sunday'),
+                    monday: t('common.day.monday'),
+                    tuesday: t('common.day.tuesday'),
+                    wednesday: t('common.day.wednesday'),
+                    thursday: t('common.day.thursday'),
+                    friday: t('common.day.friday'),
+                    saturday: t('common.day.saturday'),
+                  },
+                  'monday'
+                ),
+              ],
+            },
+          ],
+        },
+        {
+          type: 'page',
+          tabId: SETTINGS_TAB_IDS.APPEARANCE,
+          name: t('settings.hub.appearance'),
+          desc: t('settings.hub.appearance.desc'),
+          items: createAppearanceItems(tab),
+        },
+        {
+          type: 'page',
+          tabId: SETTINGS_TAB_IDS.PRIVACY,
+          name: t('settings.hub.privacy'),
+          desc: t('settings.hub.privacy.desc'),
+          displayValue: () => onOff(plugin.settings.display?.privacyMode),
+          items: [
+            {
+              type: 'group',
+              items: [
+                toggleSetting(
+                  t('settings.general.privacy-mode'),
+                  t('settings.general.privacy-mode-desc'),
+                  'display.privacyMode',
+                  false
+                ),
+                toggleSetting(
+                  t('settings.general.hide-dollar-amounts-in-shares'),
+                  t('settings.general.hide-dollar-amounts-in-shares-desc'),
+                  'display.hideDollarAmountsInShares',
+                  false,
+                  
+                  () => !plugin.settings.trade.displayRMultiples,
+                  ['share', 'screenshot']
+                ),
+              ],
+            },
+          ],
+        },
+        {
+          type: 'page',
+          tabId: SETTINGS_TAB_IDS.NOTIFICATIONS,
+          name: t('settings.hub.notifications'),
+          desc: t('settings.hub.notifications.desc'),
+          items: [
+            {
+              type: 'group',
+              heading: t('settings.hub.updates'),
+              items: [
+                toggleSetting(
+                  t('settings.general.update-notifications'),
+                  t('settings.general.update-notifications-desc'),
+                  'backendIntegration.showUpdateNotifications',
+                  true
+                ),
+                toggleSetting(
+                  t('settings.general.available-update-notifications'),
+                  t('settings.general.available-update-notifications-desc'),
+                  'backendIntegration.showAvailableUpdateNotifications',
+                  true,
+                  () =>
+                    plugin.settings.backendIntegration
+                      ?.showUpdateNotifications === false
+                ),
+              ],
+            },
+          ],
+        },
+      ],
+    },
+  ];
+}
+
+function createAppearanceItems(
+  tab: JournalitSettingsTab
+): NativeSettingDefinitionItem[] {
+  return [
     {
       type: 'group',
       heading: t('settings.general.appearance'),
@@ -773,29 +1081,6 @@ function createGeneralNativeSettingItems(
             obsidian: t('settings.general.accent-color-obsidian'),
           },
           'journalit'
-        ),
-      ],
-    },
-    {
-      type: 'group',
-      heading: t('settings.general.home-view-settings'),
-      items: [
-        dropdownSetting(
-          t('settings.general.home-auto-open'),
-          t('settings.general.home-auto-open-desc'),
-          'general.homeStartupBehavior',
-          {
-            always: t('settings.general.home-auto-open-always'),
-            ifNone: t('settings.general.home-auto-open-ifnone'),
-            never: t('settings.general.home-auto-open-never'),
-          },
-          'always'
-        ),
-        toggleSetting(
-          t('settings.general.filter-recent'),
-          t('settings.general.filter-recent-desc'),
-          'home.filterRecentItemsToJournalit',
-          false
         ),
         {
           name: t('settings.general.home-background'),
@@ -834,7 +1119,7 @@ function createGeneralNativeSettingItems(
                   (payload.section === 'home' &&
                     payload.source === 'background-image')
                 ) {
-                  tab.refreshNativeSettingsDomState();
+                  tab.refreshDomState();
                 }
               }
             );
@@ -848,7 +1133,36 @@ function createGeneralNativeSettingItems(
     },
     {
       type: 'group',
-      heading: t('settings.general.navigation-sidebar'),
+      heading: t('settings.hub.home'),
+      items: [
+        textSetting(
+          t('settings.general.display-name'),
+          t('settings.general.display-name-desc'),
+          'general.displayName',
+          t('settings.general.display-name-placeholder')
+        ),
+        dropdownSetting(
+          t('settings.general.home-auto-open'),
+          t('settings.general.home-auto-open-desc'),
+          'general.homeStartupBehavior',
+          {
+            always: t('settings.general.home-auto-open-always'),
+            ifNone: t('settings.general.home-auto-open-ifnone'),
+            never: t('settings.general.home-auto-open-never'),
+          },
+          'always'
+        ),
+        toggleSetting(
+          t('settings.general.filter-recent'),
+          t('settings.general.filter-recent-desc'),
+          'home.filterRecentItemsToJournalit',
+          false
+        ),
+      ],
+    },
+    {
+      type: 'group',
+      heading: t('settings.hub.sidebars'),
       items: [
         {
           name: t('navigation.setting.open'),
@@ -878,8 +1192,14 @@ function createGeneralNativeSettingItems(
     },
     {
       type: 'group',
-      heading: t('settings.general.tab-behavior'),
+      heading: t('settings.hub.opening-links'),
       items: [
+        toggleSetting(
+          t('settings.general.auto-open-trades'),
+          t('settings.general.auto-open-trades-desc'),
+          'trade.autoOpenCreatedTrades',
+          false
+        ),
         dropdownSetting(
           t('navigation.setting.tab-behavior'),
           t('navigation.setting.tab-behavior.desc'),
@@ -898,451 +1218,186 @@ function createGeneralNativeSettingItems(
         ),
       ],
     },
-    {
-      type: 'group',
-      heading: t('settings.general.data-management'),
-      items: [
-        toggleSetting(
-          t('settings.general.privacy-mode'),
-          t('settings.general.privacy-mode-desc'),
-          'display.privacyMode',
-          false
-        ),
-      ],
-    },
   ];
 }
 
-function createTradingNativeSettingItems(
-  tab: JournalitSettingsTab
-): NativeSettingDefinitionItem[] {
+const INLINE_ROW_CLASS = 'journalit-settings-inline-item';
+
+
+function inlineReactRow(
+  name: string,
+  desc: string | undefined,
+  content: () => React.ReactNode,
+  scrollRequest?: { app: App; request: string }
+): NativeSettingDefinitionRender {
+  return {
+    name,
+    desc,
+    render: (setting) => {
+      setting.settingEl.classList.add(INLINE_ROW_CLASS);
+      const root = createRoot(setting.controlEl);
+      
+      
+      flushSync(() =>
+        root.render(
+          <div className="journalit-settings journalit-settings-tab customization-settings">
+            {content()}
+          </div>
+        )
+      );
+      if (
+        scrollRequest &&
+        scrollRequest.app.loadLocalStorage(scrollRequest.request) === '1'
+      ) {
+        scrollRequest.app.saveLocalStorage(scrollRequest.request, null);
+        scrollIntoViewOnceAttached(setting.settingEl);
+      }
+      return () => {
+        root.unmount();
+        setting.settingEl.classList.remove(INLINE_ROW_CLASS);
+      };
+    },
+  };
+}
+
+
+function scrollIntoViewOnceAttached(el: HTMLElement, framesLeft = 30): void {
+  el.win.requestAnimationFrame(() => {
+    if (el.isConnected) {
+      el.scrollIntoView({ block: 'start' });
+    } else if (framesLeft > 0) {
+      scrollIntoViewOnceAttached(el, framesLeft - 1);
+    }
+  });
+}
+
+interface ReactPageOptions {
+  tabId: SettingsTabId;
+  name: string;
+  desc: string;
+  aliases?: string[];
+  content: () => React.ReactNode;
+  onHide?: () => void;
+}
+
+
+function createReactPage(
+  options: ReactPageOptions
+): NativeSettingDefinitionPage {
+  return {
+    type: 'page',
+    tabId: options.tabId,
+    name: options.name,
+    desc: options.desc,
+    aliases: options.aliases,
+    page: () =>
+      createNativeReactSettingsPage({
+        title: options.name,
+        display: (containerEl) => {
+          unmountReactSettings(containerEl);
+          containerEl.empty();
+          containerEl.addClass('journalit-settings');
+          const root = createRoot(
+            containerEl.createDiv({ cls: 'journalit-settings-wrapper' })
+          );
+          settingsRoots.set(containerEl, root);
+          root.render(
+            <React.StrictMode>
+              <div className="settings-tab-container">
+                <div className="settings-tab-content journalit-tab-content">
+                  {options.content()}
+                </div>
+              </div>
+            </React.StrictMode>
+          );
+        },
+        hide: (containerEl) => {
+          options.onHide?.();
+          unmountReactSettings(containerEl);
+        },
+      }),
+  };
+}
+
+const settingsRoots = new WeakMap<HTMLElement, Root>();
+
+function unmountReactSettings(containerEl: HTMLElement): void {
+  settingsRoots.get(containerEl)?.unmount();
+  settingsRoots.delete(containerEl);
+  containerEl.removeClass('journalit-settings');
+}
+
+function createNativeHomeIntroItems(
+  plugin: JournalitPlugin
+): NativeSettingGroupItem[] {
   return [
     {
-      type: 'group',
-      heading: t('settings.general.trade-settings'),
-      items: [
-        toggleSetting(
-          t('settings.general.auto-open-trades'),
-          t('settings.general.auto-open-trades-desc'),
-          'trade.autoOpenCreatedTrades',
-          false
-        ),
-        dropdownSetting(
-          t('settings.general.date-format'),
-          t('settings.general.date-format-desc'),
-          'trade.dateFormat',
-          { DDMMYY: 'DDMMYY', MMDDYY: 'MMDDYY', YYMMDD: 'YYMMDD' },
-          'DDMMYY'
-        ),
-        toggleSetting(
-          t('settings.general.use-24-hour-time'),
-          t('settings.general.use-24-hour-time-desc'),
-          'trade.use24HourTime',
-          false
-        ),
-        toggleSetting(
-          t('settings.general.show-seconds'),
-          t('settings.general.show-seconds-desc'),
-          'trade.showSeconds',
-          false
-        ),
-        toggleSetting(
-          t('settings.general.skip-weekends'),
-          t('settings.general.skip-weekends-desc'),
-          'trade.skipWeekends',
-          true
-        ),
-        dropdownSetting(
-          t('settings.general.week-start'),
-          t('settings.general.week-start-desc'),
-          'trade.weekStartDay',
-          {
-            sunday: t('common.day.sunday'),
-            monday: t('common.day.monday'),
-            tuesday: t('common.day.tuesday'),
-            wednesday: t('common.day.wednesday'),
-            thursday: t('common.day.thursday'),
-            friday: t('common.day.friday'),
-            saturday: t('common.day.saturday'),
-          },
-          'monday'
-        ),
-        dropdownSetting(
-          t('settings.general.analytics-date-basis'),
-          t('settings.general.analytics-date-basis-desc'),
-          'trade.analyticsDateBasis',
-          {
-            entry: t('settings.general.analytics-date-basis-entry'),
-            exit: t('settings.general.analytics-date-basis-exit'),
-          },
-          'entry'
-        ),
-        toggleSetting(
-          t('settings.general.dollar-value-input'),
-          t('settings.general.dollar-value-input-desc'),
-          'trade.useDollarValueInput',
-          false
-        ),
-        textSetting(
-          t('settings.general.cutoff-time'),
-          t('settings.general.cutoff-time-desc'),
-          'trade.tradingDayCutoffTime',
-          '23:59',
-          validateTime
-        ),
-        dropdownSetting(
-          t('settings.general.break-even-threshold-mode'),
-          t('settings.general.break-even-threshold-mode-desc'),
-          'trade.breakEvenThresholdMode',
-          {
-            fixed: t('settings.general.break-even-mode-fixed'),
-            percentage_current_balance: t(
-              'settings.general.break-even-mode-percent'
-            ),
-          },
-          'fixed'
-        ),
-        {
-          ...numberSetting(
-            t('settings.general.break-even-percent'),
-            t('settings.general.break-even-percent-desc'),
-            'trade.breakEvenThresholdPercent',
-            0.05,
-            { min: 0, step: 0.01 }
-          ),
-          aliases: ['break-even percentage'],
-          visible: () =>
-            tab.plugin.settings.trade.breakEvenThresholdMode ===
-            'percentage_current_balance',
-        },
-        {
-          ...numberSetting(
-            t('settings.general.break-even-min-aria'),
-            t('settings.general.break-even-range-desc'),
-            'trade.breakEvenRangeMin',
-            0,
-            { max: 0, step: 0.01 }
-          ),
-          aliases: ['break-even minimum', 'break-even range'],
-          visible: () =>
-            tab.plugin.settings.trade.breakEvenThresholdMode !==
-            'percentage_current_balance',
-        },
-        {
-          ...numberSetting(
-            t('settings.general.break-even-max-aria'),
-            '',
-            'trade.breakEvenRangeMax',
-            0,
-            { min: 0, step: 0.01 }
-          ),
-          aliases: ['break-even maximum', 'break-even range'],
-          visible: () =>
-            tab.plugin.settings.trade.breakEvenThresholdMode !==
-            'percentage_current_balance',
-        },
-      ],
-    },
-    {
-      type: 'group',
-      heading: 'Risk and display',
-      items: [
-        numberSetting(
-          t('settings.general.default-risk'),
-          t('settings.general.default-risk-desc'),
-          'trade.defaultRiskAmount',
-          0,
-          { min: 0, step: 0.01 }
-        ),
-        toggleSetting(
-          t('settings.general.display-r-multiples'),
-          t('settings.general.display-r-multiples-desc'),
-          'trade.displayRMultiples',
-          false
-        ),
-        toggleSetting(
-          t('settings.general.hide-dollar-amounts-in-shares'),
-          t('settings.general.hide-dollar-amounts-in-shares-desc'),
-          'display.hideDollarAmountsInShares',
-          false,
-          
-          () => !tab.plugin.settings.trade.displayRMultiples,
-          ['share', 'screenshot', 'privacy']
-        ),
-        toggleSetting(
-          t('settings.general.include-unrealized-pnl'),
-          t('settings.general.include-unrealized-pnl-desc'),
-          'trade.includeUnrealizedPnLInCalculations',
-          false,
-          undefined,
-          ['unrealized P&L', 'floating P&L', 'open position P&L']
-        ),
-        toggleSetting(
-          t('settings.general.include-copy-accounts-analytics'),
-          t('settings.general.include-copy-accounts-analytics-desc'),
-          'trade.includeCopyAccountsInAllAccountsAnalytics',
-          false,
-          undefined,
-          ['copy accounts', 'copy trading analytics']
-        ),
-        dropdownSetting(
-          t('settings.general.mae-mfe-input-mode'),
-          t('settings.general.mae-mfe-input-mode-desc'),
-          'trade.maeMfeInputMode',
-          {
-            price: t('settings.general.mae-mfe-input-mode-price'),
-            dollar: t('settings.general.mae-mfe-input-mode-dollar'),
-          },
-          'dollar'
-        ),
-        dropdownSetting(
-          t('settings.general.mae-mfe-display-unit'),
-          t('settings.general.mae-mfe-display-unit-desc'),
-          'trade.maeMfeDisplayUnit',
-          {
-            dollar: t('settings.general.mae-mfe-display-dollar'),
-            ticks: t('settings.general.mae-mfe-display-ticks'),
-          },
-          'dollar'
-        ),
-      ],
-    },
-    {
-      name: t('settings.gallery-folders.section'),
-      desc: t('settings.gallery-folders.description'),
-      aliases: ['media gallery', 'gallery folders'],
+      name: 'Journalit',
+      searchable: false,
       render: (setting) => {
-        setting.settingEl.classList.add(
-          'journalit-settings-gallery-folders-item'
-        );
-        const root = createRoot(setting.controlEl);
-        root.render(<GalleryFoldersSettingsControl plugin={tab.plugin} />);
-        return () => {
-          root.unmount();
-          setting.settingEl.classList.remove(
-            'journalit-settings-gallery-folders-item'
+        setting.settingEl.classList.add('journalit-settings-home-header');
+        setting.nameEl.empty();
+        setting.nameEl.createEl('img', {
+          cls: 'journalit-settings-home-logo',
+          attr: { src: LOGO_DATA_URI, alt: 'Journalit' },
+        });
+        setting.nameEl.createSpan({
+          cls: 'journalit-settings-home-version',
+          text: `v${plugin.manifest.version}`,
+        });
+        setting.controlEl.empty();
+
+        const links = [
+          {
+            label: t('settings.general.docs'),
+            icon: 'book-open',
+            url: JOURNALIT_SETTINGS_RESOURCES.docs,
+          },
+          {
+            label: t('settings.general.discord'),
+            icon: 'messages-square',
+            url: JOURNALIT_SETTINGS_RESOURCES.discord,
+          },
+          {
+            label: t('settings.general.github'),
+            icon: 'github',
+            url: JOURNALIT_SETTINGS_RESOURCES.github,
+          },
+        ] as const;
+
+        const listeners: Array<{
+          button: HTMLButtonElement;
+          handleClick: () => void;
+        }> = [];
+
+        for (const link of links) {
+          const button = setting.controlEl.createEl('button', {
+            cls: 'journalit-button journalit-button--secondary journalit-button--small',
+            attr: { type: 'button' },
+          });
+          setIcon(
+            button.createSpan({ cls: 'journalit-settings-home-resource-icon' }),
+            link.icon
           );
+          button.createSpan({
+            cls: 'journalit-button__label',
+            text: link.label,
+          });
+
+          const handleClick = () => openExternalUrl(link.url);
+          button.addEventListener('click', handleClick);
+          listeners.push({ button, handleClick });
+        }
+
+        return () => {
+          for (const { button, handleClick } of listeners) {
+            button.removeEventListener('click', handleClick);
+          }
+          setting.settingEl.classList.remove('journalit-settings-home-header');
         };
       },
     },
   ];
-}
-
-function createJournalNativeSettingItems(
-  tab: JournalitSettingsTab
-): NativeSettingDefinitionItem[] {
-  return [
-    {
-      type: 'group',
-      heading: t('settings.reviews.auto-create'),
-      items: [
-        toggleSetting(
-          t('settings.reviews.global-auto-create'),
-          t('settings.reviews.global-auto-create-desc'),
-          'reviews.globalAutoCreate',
-          true
-        ),
-        toggleSetting(
-          t('settings.reviews.auto-create-drc-nav'),
-          t('settings.reviews.auto-create-drc-nav-desc'),
-          'drc.autoCreateDRCOnNavigation',
-          true
-        ),
-        toggleSetting(
-          t('settings.reviews.auto-create-weekly-nav'),
-          t('settings.reviews.auto-create-weekly-nav-desc'),
-          'weekly.autoCreateWeeklyReviewOnNavigation',
-          true
-        ),
-        toggleSetting(
-          t('settings.reviews.auto-create-monthly-nav'),
-          t('settings.reviews.auto-create-monthly-nav-desc'),
-          'monthly.autoCreateMonthlyReviewOnNavigation',
-          true
-        ),
-        toggleSetting(
-          t('settings.reviews.auto-create-quarterly-nav'),
-          t('settings.reviews.auto-create-quarterly-nav-desc'),
-          'quarterly.autoCreateQuarterlyReviewOnNavigation',
-          true
-        ),
-        toggleSetting(
-          t('settings.reviews.auto-create-yearly-nav'),
-          t('settings.reviews.auto-create-yearly-nav-desc'),
-          'yearly.autoCreateYearlyReviewOnNavigation',
-          true
-        ),
-      ],
-    },
-    createReactPageDefinition(
-      tab,
-      SETTINGS_TAB_IDS.REVIEWS,
-      t('settings.page.reviews.title'),
-      t('settings.page.reviews.desc'),
-      ['review templates', 'recurring goals', 'checklist', 'template builder']
-    ),
-    createReactPageDefinition(
-      tab,
-      SETTINGS_TAB_IDS.CUSTOMIZATION,
-      t('settings.tab.customization'),
-      t('settings.page.customization.desc'),
-      [
-        'custom fields',
-        'trade form layout',
-        'symbols',
-        'symbol mappings',
-        'setups',
-        'mistakes',
-        'tags',
-        'events',
-      ]
-    ),
-    createReactPageDefinition(
-      tab,
-      SETTINGS_TAB_IDS.SESSION_MODE,
-      t('settings.session-mode.title'),
-      t('settings.session-mode.description'),
-      [
-        'session mode',
-        'trading sessions',
-        'phase layout',
-        'trade gate',
-        'session log tags',
-      ]
-    ),
-  ];
-}
-
-function createSyncNativeSettingItems(
-  tab: JournalitSettingsTab
-): NativeSettingDefinitionItem[] {
-  return [
-    {
-      type: 'group',
-      cls: 'journalit-settings-account-card-group',
-      items: [
-        {
-          
-          
-          
-          name: '',
-          searchable: false,
-          render: (setting) => {
-            setting.settingEl.classList.add(
-              'journalit-settings-account-card-item'
-            );
-            const root = createRoot(setting.controlEl);
-            root.render(
-              <div className="journalit-settings journalit-settings-account-card">
-                <AuthTab plugin={tab.plugin} />
-              </div>
-            );
-            return () => {
-              root.unmount();
-              setting.settingEl.classList.remove(
-                'journalit-settings-account-card-item'
-              );
-            };
-          },
-        },
-      ],
-    },
-    createReactPageDefinition(
-      tab,
-      SETTINGS_TAB_IDS.TRADE_SYNC,
-      t('trade-sync.providers.title'),
-      t('settings.page.trade-sync.desc'),
-      [
-        'MetaTrader',
-        'Tradovate',
-        'Rithmic',
-        'cTrader',
-        'broker sync',
-        'FTP',
-        'credentials',
-        'account management',
-        'diagnostics',
-        'notifications',
-      ]
-    ),
-    createReactPageDefinition(
-      tab,
-      SETTINGS_TAB_IDS.TRADE_IMPORT_SYNC,
-      t('trade-sync.source.trade-import'),
-      t('trade-sync.source.trade-import.description'),
-      [
-        'trade import',
-        'import trades',
-        'inventory',
-        'restore',
-        'account mapping',
-      ]
-    ),
-    createReactPageDefinition(
-      tab,
-      SETTINGS_TAB_IDS.ECONOMIC_CALENDAR,
-      t('settings.economic-calendar.title'),
-      t('settings.economic-calendar.description'),
-      ['economic calendar', 'news events', 'key events', 'auto-import']
-    ),
-    createReactPageDefinition(
-      tab,
-      SETTINGS_TAB_IDS.MCP_ACCESS,
-      t('settings.mcp-access.title'),
-      t('settings.page.mcp-access.desc'),
-      [
-        'mcp',
-        'mcp access',
-        'ai',
-        'ai apps',
-        'ai access',
-        'ai assistant',
-        'ai agent activity',
-        'agent',
-        'claude',
-        'claude code',
-        'chatgpt',
-        'connector',
-        'ai connections',
-      ]
-    ),
-  ];
-}
-
-function createReactPageDefinition(
-  tab: JournalitSettingsTab,
-  tabId: SettingsTabId,
-  name: string,
-  desc: string,
-  aliases: string[]
-): NativeSettingDefinitionPage {
-  return {
-    type: 'page',
-    tabId,
-    name,
-    desc,
-    aliases,
-    page: () => createReactSettingsPage(tab, tabId, name),
-  };
-}
-
-function createReactSettingsPage(
-  tab: JournalitSettingsTab,
-  tabId: SettingsTabId,
-  title: string
-): NativeSettingPage {
-  return createNativeReactSettingsPage({
-    title,
-    display: (containerEl) => {
-      tab.renderReactSettings(containerEl, tabId, false, true);
-    },
-    hide: (containerEl) => {
-      if (tabId === SETTINGS_TAB_IDS.TRADE_SYNC) {
-        clearUpgradeOrigin('metatraderSync');
-      }
-      tab.unmountReactSettings(containerEl);
-    },
-  });
 }
 
 function toggleSetting(
@@ -1416,10 +1471,6 @@ function validateTime(value: string): string | void {
   return 'Use 24-hour time in HH:MM format.';
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
 interface NativeReactSettingsPageOptions {
   title: string;
   display(containerEl: HTMLElement): void;
@@ -1428,56 +1479,20 @@ interface NativeReactSettingsPageOptions {
 
 function createNativeReactSettingsPage(
   options: NativeReactSettingsPageOptions
-): NativeSettingPage {
-  const SettingPage = getNativeSettingPageConstructor();
-
+): SettingPage {
   return new (class JournalitNativeSettingsPage extends SettingPage {
     constructor() {
       super();
-      Reflect.set(this, 'title', options.title);
+      this.title = options.title;
     }
 
     display(): void {
-      options.display(getNativeSettingPageContainer(this));
+      options.display(this.containerEl);
     }
 
     hide(): void {
-      hideNativeSettingPageBase(this, SettingPage);
-      options.hide(getNativeSettingPageContainer(this));
+      super.hide();
+      options.hide(this.containerEl);
     }
   })();
-}
-
-function isNativeSettingPageConstructor(
-  value: unknown
-): value is NativeSettingPageConstructor {
-  return typeof value === 'function' && 'prototype' in value;
-}
-
-function getNativeSettingPageConstructor(): NativeSettingPageConstructor {
-  const settingPageConstructor: unknown = Reflect.get(Obsidian, 'SettingPage');
-  if (!isNativeSettingPageConstructor(settingPageConstructor)) {
-    throw new Error('Obsidian SettingPage API is unavailable.');
-  }
-
-  return settingPageConstructor;
-}
-
-function getNativeSettingPageContainer(page: NativeSettingPage): HTMLElement {
-  const containerEl = Reflect.get(page, 'containerEl');
-  if (!(containerEl instanceof HTMLElement)) {
-    throw new Error('Obsidian SettingPage container is unavailable.');
-  }
-
-  return containerEl;
-}
-
-function hideNativeSettingPageBase(
-  page: NativeSettingPage,
-  pageConstructor: NativeSettingPageConstructor
-): void {
-  const hide: unknown = Reflect.get(pageConstructor.prototype, 'hide');
-  if (typeof hide === 'function') {
-    Reflect.apply(hide, page, []);
-  }
 }

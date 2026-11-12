@@ -11,10 +11,11 @@ export type ConfirmationActionVariant = 'secondary' | 'primary' | 'destructive';
 export function getConfirmationActionClass(
   variant: ConfirmationActionVariant
 ): string {
-  const baseClass = 'journalit-confirmation-action';
-  if (variant === 'destructive') return `${baseClass} mod-warning`;
-  if (variant === 'primary') return `${baseClass} mod-cta`;
-  return `${baseClass} journalit-button journalit-button--secondary journalit-button--medium journalit-modal-actions__cancel cancel-button journalit-confirmation-modal__cancel`;
+  const baseClass =
+    'journalit-confirmation-action journalit-button journalit-button--medium';
+  if (variant === 'destructive') return `${baseClass} journalit-button--danger`;
+  if (variant === 'primary') return `${baseClass} journalit-button--primary`;
+  return `${baseClass} journalit-button--secondary journalit-modal-actions__cancel cancel-button journalit-confirmation-modal__cancel`;
 }
 
 export interface ConfirmationAction<TResult> {

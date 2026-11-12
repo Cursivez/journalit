@@ -1,6 +1,6 @@
 
 
-import React from 'react';
+import React, { Children, Fragment, isValidElement } from 'react';
 
 type ButtonVariant =
   | 'primary'
@@ -25,6 +25,45 @@ interface ButtonProps extends Omit<
   className?: string;
   children: React.ReactNode;
   ref?: React.Ref<HTMLButtonElement>;
+}
+
+
+function labelTextRuns(children: React.ReactNode): React.ReactNode[] {
+  const labelled: React.ReactNode[] = [];
+  let run = '';
+
+  const endRun = () => {
+    if (run.trim()) {
+      labelled.push(
+        <span className="journalit-button__label" key={labelled.length}>
+          {run}
+        </span>
+      );
+    }
+    run = '';
+  };
+
+  for (const child of Children.toArray(children)) {
+    if (typeof child === 'string' || typeof child === 'number') {
+      run += child;
+      continue;
+    }
+
+    endRun();
+    labelled.push(
+      isValidElement<React.PropsWithChildren>(child) &&
+        child.type === Fragment ? (
+        <Fragment key={child.key}>
+          {labelTextRuns(child.props.children)}
+        </Fragment>
+      ) : (
+        child
+      )
+    );
+  }
+
+  endRun();
+  return labelled;
 }
 
 export const Button: React.FC<ButtonProps> = ({
@@ -78,7 +117,7 @@ export const Button: React.FC<ButtonProps> = ({
       {...props}
       onClick={onClick ? (event) => void onClick(event) : undefined}
     >
-      {children}
+      {labelTextRuns(children)}
     </button>
   );
 };

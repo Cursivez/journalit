@@ -1,5 +1,6 @@
 import { isRecord } from '../../agent/configuration/configurationPrimitives';
 import { KEY_EVENT_COLORS, KEY_EVENT_DAYS } from '../../../utils/keyEvents';
+import { isValidTradeRating } from '../../../utils/tradeRating';
 import { KEY_EVENT_CURRENCIES } from '../../../components/reviewV2/widgets/keyEventFields';
 import { MAX_TEXT, textLength } from '../domains/tradeUpdateChanges';
 import { MAX_PRICE, MAX_TARGETS } from '../domains/tradePlannedTargets';
@@ -51,7 +52,7 @@ function listOf(check: FieldCheck, max: number): FieldCheck {
     Array.isArray(value) && value.length <= max && value.every(check);
 }
 
-function isNumber(value: unknown): boolean {
+function isNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value);
 }
 
@@ -116,6 +117,11 @@ function inRange(minimum: number, maximum: number): FieldCheck {
 }
 
 
+function upTo(maximum: number): FieldCheck {
+  return (value) => isNumber(value) && value >= 0 && value <= maximum;
+}
+
+
 const plannedTarget: FieldCheck = (value) =>
   shaped({
     required: {
@@ -137,6 +143,38 @@ export const plannedTargets: FieldCheck = (value) =>
   value.length <= MAX_TARGETS &&
   value.every(plannedTarget);
 
+const ISO_TIME =
+  /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/;
+
+function isTime(value: unknown): boolean {
+  return (
+    typeof value === 'string' &&
+    ISO_TIME.test(value) &&
+    !Number.isNaN(new Date(value).getTime())
+  );
+}
+
+
+export const idealExitsRestore: FieldCheck = listOf(
+  shaped({
+    required: { price: inRange(0, MAX_PRICE) },
+    optional: { time: isTime, size: inRange(0, 1_000_000_000_000) },
+  }),
+  100
+);
+
+
+export const dividendsRestore: FieldCheck = listOf(
+  shaped({
+    required: {
+      time: isTime,
+      amount: (value) =>
+        isNumber(value) && value !== 0 && Math.abs(value) <= 1_000_000_000_000,
+    },
+  }),
+  100
+);
+
 export const tradeFieldsRestore = shaped({
   required: {},
   optional: {
@@ -147,12 +185,40 @@ export const tradeFieldsRestore = shaped({
     take_profit: orNull(isNumber),
     risk_amount: orNull(isNumber),
     commission: orNull(isNumber),
+    commission_type: oneOf('fixed', 'percentage'),
     fees: orNull(isNumber),
     swap: orNull(isNumber),
+    rebate: orNull(isNumber),
+    fx_rate: orNull(inRange(0, MAX_PRICE)),
+    exchange: orNull((value) => isText(value) && value.length <= 100),
+    dollar_per_point: orNull(inRange(0, MAX_PRICE)),
+    tick_size: orNull(inRange(0, MAX_PRICE)),
+    tick_value: orNull(inRange(0, MAX_PRICE)),
+    lot_size: orNull(upTo(MAX_PRICE)),
+    pip_value: orNull(inRange(0, MAX_PRICE)),
+    pip_size: orNull(inRange(0, MAX_PRICE)),
+    contract_size: orNull(inRange(0, 1_000_000)),
+    leverage_ratio: orNull(inRange(0, 1_000_000)),
+    mae: orNull(isNumber),
+    mfe: orNull(isNumber),
+    mae_price: orNull(isNumber),
+    mfe_price: orNull(isNumber),
+    unrealized_price_snapshot: orNull(
+      shaped({
+        required: {
+          price: upTo(MAX_PRICE),
+          time: isTime,
+        },
+      })
+    ),
     missed_reason: orNull(isText),
+    exit_reason: orNull(isText),
     thesis: orNull((value) => isBoundedText(value, 1)),
     
     reviewed: (value) => value === false,
+    rating: orNull(
+      (value) => typeof value === 'number' && isValidTradeRating(value)
+    ),
     notes: (value) => isBoundedText(value, 0),
   },
   needsOptional: true,
@@ -338,6 +404,26 @@ export const reviewContentRestore = shaped({
         resistance: listOf(keyLevel, 50),
       },
     }),
+    key_level_groups: (value) =>
+      Array.isArray(value) &&
+      value.length > 0 &&
+      listOf(
+        shaped({
+          required: {
+            name: isText,
+            support: listOf(keyLevel, 50),
+            resistance: listOf(keyLevel, 50),
+          },
+        }),
+        50
+      )(value),
+    market_bias: listOf(
+      shaped({
+        required: { bias: oneOf('long', 'neutral', 'short') },
+        optional: { ticker: isText },
+      }),
+      50
+    ),
     grades: shaped({
       required: {},
       optional: { mental: grade, technical: grade },
@@ -357,3 +443,80 @@ export const imageAnnotationsRestore: FieldCheck = (value) =>
   Array.isArray(value) &&
   value.length > 0 &&
   listOf(imageAnnotationRestore, 20)(value);
+
+
+function uniqueListOf(check: FieldCheck, max: number): FieldCheck {
+  return (value) =>
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.length <= max &&
+    new Set(value).size === value.length &&
+    value.every(check);
+}
+
+
+function textUpTo(maximum: number): FieldCheck {
+  return (value) =>
+    typeof value === 'string' &&
+    textLength(value) >= 1 &&
+    textLength(value) <= maximum;
+}
+
+const filterText = textUpTo(100);
+
+
+const dashboardComparisonFilters = shaped({
+  required: {},
+  optional: {
+    account_ids: uniqueListOf(isText, 100),
+    setup_ids: uniqueListOf(isText, 100),
+    tickers: uniqueListOf(filterText, 100),
+    tags: uniqueListOf(filterText, 100),
+    mistakes: uniqueListOf(filterText, 100),
+    directions: uniqueListOf(oneOf('long', 'short'), 2),
+    status: uniqueListOf(
+      oneOf(
+        'open',
+        'partially_closed',
+        'closed',
+        'win',
+        'loss',
+        'breakeven',
+        'cancelled'
+      ),
+      7
+    ),
+    trade_types: uniqueListOf(oneOf('regular', 'missed', 'backtest'), 3),
+    review_status: uniqueListOf(oneOf('reviewed', 'unreviewed'), 2),
+    ratings: uniqueListOf(oneOf('5', '4', '3', '2', '1', 'unrated'), 6),
+    market_bias: uniqueListOf(oneOf('with', 'against', 'neutral', 'none'), 4),
+    image_annotation_status: uniqueListOf(
+      oneOf('tagged', 'untagged', 'has_notes', 'no_notes'),
+      4
+    ),
+    image_tags: uniqueListOf(filterText, 100),
+    custom_fields: (value) =>
+      Array.isArray(value) &&
+      value.length > 0 &&
+      value.length <= 50 &&
+      value.every(
+        shaped({
+          required: {
+            field_id: isText,
+            operator: oneOf('equals', 'contains'),
+            value: textUpTo(500),
+          },
+        })
+      ),
+  },
+});
+
+export const dashboardComparisonFieldsRestore = shaped({
+  required: {},
+  optional: {
+    name: textUpTo(80),
+    a: dashboardComparisonFilters,
+    b: dashboardComparisonFilters,
+  },
+  needsOptional: true,
+});

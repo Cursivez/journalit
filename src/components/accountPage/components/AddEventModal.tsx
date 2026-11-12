@@ -8,6 +8,7 @@ import { TransactionType } from '../../../services/account/types';
 import { Button } from '../../ui/Button';
 import {
   formatDateDisplay,
+  formatLocalDateString,
   getUserDateFormat,
   isValidDate,
 } from '../../../utils/dateUtils';
@@ -16,7 +17,11 @@ import {
   useCurrency,
 } from '../../../contexts/CurrencyContext';
 import { t } from '../../../lang/helpers';
-import { AccountEventDescriptionField } from './AccountEventDescriptionField';
+import {
+  AccountEventDescriptionField,
+  PRIOR_PAYOUT_EVENT,
+  type AccountEventType,
+} from './AccountEventDescriptionField';
 import { FastDateTimeInput } from '../../core/FastDateTimeInput';
 import {
   DateDraftGateContext,
@@ -32,13 +37,27 @@ import {
   isFutureAccountEvent,
 } from './accountEventDate';
 import { JournalitModal } from '../../modals/JournalitModal';
+import { DropdownSelect } from '../../shared/DropdownSelect';
 
-function isTransactionType(value: string): value is TransactionType {
-  return value === 'deposit' || value === 'withdrawal';
+const EVENT_TYPES: readonly AccountEventType[] = [
+  TransactionType.DEPOSIT,
+  TransactionType.WITHDRAWAL,
+  PRIOR_PAYOUT_EVENT,
+];
+
+function eventTypeFromSelect(value: string): AccountEventType {
+  return (
+    EVENT_TYPES.find((type) => String(type) === value) ??
+    TransactionType.DEPOSIT
+  );
 }
 
-function transactionTypeFromSelect(value: string): TransactionType {
-  return isTransactionType(value) ? value : TransactionType.DEPOSIT;
+function eventTypeLabel(type: AccountEventType): string {
+  if (type === PRIOR_PAYOUT_EVENT)
+    return t('account.add-event.type.prior-payout');
+  return type === TransactionType.DEPOSIT
+    ? t('account.add-event.type.deposit')
+    : t('account.add-event.type.withdrawal');
 }
 
 function errorMessage(error: unknown): string {
@@ -46,7 +65,7 @@ function errorMessage(error: unknown): string {
 }
 
 interface EventData {
-  type: TransactionType;
+  type: AccountEventType;
   amount: string;
   date: Date | null;
   description: string;
@@ -95,9 +114,9 @@ function showAddEventConfirmation({
       minimumFractionDigits: 2,
     });
   const typeText =
-    eventData.type === TransactionType.DEPOSIT
-      ? t('account.add-event.type.deposit').toLowerCase()
-      : t('account.add-event.type.withdrawal').toLowerCase();
+    eventData.type === PRIOR_PAYOUT_EVENT
+      ? t('account.add-event.confirm.type.prior-payout')
+      : eventTypeLabel(eventData.type).toLowerCase();
   const eventDate = `${formatDateDisplay(date, getUserDateFormat())}${includeTime ? ` ${formatTimeOfDay(date, use24HourTime, true)}` : ''}`;
 
   return showActionConfirmationModal(app, {
@@ -202,7 +221,7 @@ const AddEventModalContent: React.FC<
   const accountCurrency =
     plugin.settings?.account?.accountMetadata?.[accountName]?.currency;
   const currency = accountCurrency || globalCurrency;
-  const includeTime = Boolean(
+  const isProp = Boolean(
     plugin.settings.account?.accountMetadata?.[accountName]?.propChallenge
   );
 
@@ -221,6 +240,16 @@ const AddEventModalContent: React.FC<
     date: new Date(),
     description: initial?.description ?? '',
   });
+  const isPriorPayout = eventData.type === PRIOR_PAYOUT_EVENT;
+  
+  const includeTime = isProp && !isPriorPayout;
+  
+  const typeOptions = EVENT_TYPES.filter(
+    (type) => isProp || type !== PRIOR_PAYOUT_EVENT
+  ).map((value) => ({
+    value,
+    label: eventTypeLabel(value),
+  }));
 
   const handleSave = async () => {
     if (!dateDraftGate.confirm()) return;
@@ -267,7 +296,8 @@ const AddEventModalContent: React.FC<
         amount,
         accountName,
         currency,
-        eventDate,
+        
+        eventDate: eventData.date,
         includeTime,
         use24HourTime: getUse24HourTimeSetting(plugin),
       });
@@ -276,7 +306,13 @@ const AddEventModalContent: React.FC<
       }
 
       
-      if (eventData.type === TransactionType.DEPOSIT) {
+      if (eventData.type === PRIOR_PAYOUT_EVENT) {
+        await plugin.accountPageService?.addPriorPayout(accountName, {
+          date: formatLocalDateString(eventData.date),
+          amount,
+          ...(eventData.description ? { note: eventData.description } : {}),
+        });
+      } else if (eventData.type === TransactionType.DEPOSIT) {
         await plugin.accountPageService?.addManualDeposit(
           accountName,
           amount,
@@ -295,13 +331,9 @@ const AddEventModalContent: React.FC<
       }
 
       
-      const typeText =
-        eventData.type === TransactionType.DEPOSIT
-          ? t('account.add-event.type.deposit')
-          : t('account.add-event.type.withdrawal');
       new Notice(
         t('account.add-event.success', {
-          type: typeText,
+          type: eventTypeLabel(eventData.type),
           amount: formatCurrency(amount),
         })
       );
@@ -332,29 +364,28 @@ const AddEventModalContent: React.FC<
                 {t('account.add-event.field.type')}
               </div>
               <div className="setting-item-description">
-                {t('account.add-event.field.type-desc')}
+                {isPriorPayout
+                  ? t('account.add-event.field.type-desc.prior-payout')
+                  : t('account.add-event.field.type-desc')}
               </div>
             </div>
             <div className="setting-item-control">
-              <select
-                aria-label={t('account.add-event.field.type')}
+              <DropdownSelect
+                ariaLabel={t('account.add-event.field.type')}
                 value={eventData.type}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                options={typeOptions}
+                disabled={isSaving}
+                
+                
+                onBeforeChange={() => dateDraftGate.confirm()}
+                onChange={(nextValue) =>
                   setEventData((currentData) => ({
                     ...currentData,
-                    type: transactionTypeFromSelect(e.target.value),
+                    type: eventTypeFromSelect(nextValue),
                     description: '', 
                   }))
                 }
-                disabled={isSaving}
-              >
-                <option value={TransactionType.DEPOSIT}>
-                  {t('account.add-event.type.deposit')}
-                </option>
-                <option value={TransactionType.WITHDRAWAL}>
-                  {t('account.add-event.type.withdrawal')}
-                </option>
-              </select>
+              />
             </div>
           </div>
           <div className="column">

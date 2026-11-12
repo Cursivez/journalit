@@ -54,6 +54,8 @@ const ANALYTICS_METRIC_REGISTRY: ReadonlyMap<
     definition('best_day', 'currency', 'not_calculable'),
     definition('largest_win', 'currency', 'not_calculable', 'wins'),
     definition('largest_loss', 'currency', 'not_calculable', 'losses'),
+    definition('commission_and_fees', 'currency', 'zero'),
+    definition('average_trades_per_day', 'ratio', 'not_calculable'),
   ].map((item) => [item.id, item])
 );
 

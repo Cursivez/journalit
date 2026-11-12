@@ -1,6 +1,7 @@
 
 
 import React, { useState } from 'react';
+import { DropdownSelect } from '../../../shared/DropdownSelect';
 import { BaseWidget, BaseWidgetProps } from './BaseWidget';
 import { SharedTradesChart } from '../../../charts/SharedTradesChart';
 import {
@@ -13,6 +14,78 @@ import {
   buildCurrencyConversionMetadata,
   CurrencyConversionInfo,
 } from '../../../shared/display/CurrencyConversionInfo';
+import type { FilterState } from '../../DashboardView';
+import { CompareLegend, CompareTag } from '../../compare/CompareCharts';
+
+type TradesChartPoint = ReturnType<typeof prepareTradesChartData>[number];
+
+
+const plottedValue = (
+  point: TradesChartPoint,
+  displayRMultiples: boolean
+): number | null => {
+  if (!displayRMultiples) return point.pnl;
+  return point.rMultiple !== undefined && Number.isFinite(point.rMultiple)
+    ? point.rMultiple
+    : null;
+};
+
+
+const CompareTradesMultiples: React.FC<{
+  a: TradesChartPoint[];
+  b: TradesChartPoint[];
+  currencyOverride: string | undefined;
+  displayRMultiples: boolean;
+  aFilters: FilterState;
+  bFilters: FilterState;
+  onOpenTrade: (path: string) => void;
+}> = ({
+  a,
+  b,
+  currencyOverride,
+  displayRMultiples,
+  aFilters,
+  bFilters,
+  onOpenTrade,
+}) => {
+  const values = [...a, ...b].flatMap((point) => {
+    const value = plottedValue(point, displayRMultiples);
+    return value === null ? [] : [value];
+  });
+  const minValue = Math.min(0, ...values);
+  const maxValue = Math.max(0, ...values);
+  return (
+    <div className="journalit-compare-multiples">
+      {(
+        [
+          ['a', a],
+          ['b', b],
+        ] as const
+      ).map(([side, points]) => (
+        <div key={side} className="journalit-compare-multiples__row">
+          <CompareTag side={side} />
+          {points.length > 0 ? (
+            <SharedTradesChart
+              data={points}
+              currencyOverride={currencyOverride}
+              minValue={minValue}
+              maxValue={maxValue}
+              className="journalit-compare-multiples__chart"
+              onPointClick={(point) => {
+                if (point.path) onOpenTrade(point.path);
+              }}
+            />
+          ) : (
+            <div className="journalit-compare-multiples__empty">
+              {t('dashboard.compare.no-trades')}
+            </div>
+          )}
+        </div>
+      ))}
+      <CompareLegend aFilters={aFilters} bFilters={bFilters} />
+    </div>
+  );
+};
 
 
 const TRADE_LIMITS = [25, 50, 75, 100] as const;
@@ -38,20 +111,15 @@ const TradesChartComponent: React.FC<BaseWidgetProps> = ({ dateFormat }) => {
 
   return (
     <BaseWidget dateFormat={dateFormat} skeletonType="bar-chart">
-      {(data, _userDateFormat) => {
+      {(data, _userDateFormat, filters, compare) => {
         
-        const allChartData = prepareTradesChartData(
-          data.trades,
-          defaultRiskAmount,
-          plugin
-        );
-        const limitedData = allChartData.slice(-selectedLimit);
-        const chartData = limitedData.map((point, _index) => ({
-          ...point,
-          tradeIndex: _index,
-        }));
+        const limitedChartData = (source: typeof data) =>
+          prepareTradesChartData(source.trades, defaultRiskAmount, plugin)
+            .slice(-selectedLimit)
+            .map((point, index) => ({ ...point, tradeIndex: index }));
+        const chartData = limitedChartData(data);
         const limitedTradePaths = new Set(
-          limitedData.flatMap((point) =>
+          chartData.flatMap((point) =>
             typeof point.path === 'string' ? [point.path] : []
           )
         );
@@ -80,39 +148,59 @@ const TradesChartComponent: React.FC<BaseWidgetProps> = ({ dateFormat }) => {
                 />
               </div>
               <div className="journalit-dashboard-trades-chart__selector">
-                <select
-                  aria-label={t('widget.tradesChart.name')}
-                  value={selectedLimit}
-                  onChange={(e) => {
-                    const limit = parseTradeLimit(Number(e.target.value));
+                <DropdownSelect
+                  variant="button"
+                  menuWidth="content"
+                  showOptionTooltips={false}
+                  ariaLabel={t('widget.tradesChart.name')}
+                  value={String(selectedLimit)}
+                  options={TRADE_LIMITS.map((limit) => ({
+                    value: String(limit),
+                    label: t('widget.tradesChart.limit', {
+                      count: String(limit),
+                    }),
+                  }))}
+                  onChange={(value) => {
+                    const limit = parseTradeLimit(Number(value));
                     if (limit) {
                       setSelectedLimit(limit);
                     }
                   }}
-                  className="journalit-dashboard-trades-chart__select"
-                >
-                  {TRADE_LIMITS.map((limit) => (
-                    <option key={limit} value={limit}>
-                      {t('widget.tradesChart.limit', { count: String(limit) })}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             </div>
 
             
-            <div className="journalit-dashboard-trades-chart__body">
-              <SharedTradesChart
-                data={chartData}
+            {compare ? (
+              <CompareTradesMultiples
+                a={chartData}
+                b={limitedChartData(compare.data)}
                 currencyOverride={currencyOverride}
-                className="dashboard-trades-chart journalit-dashboard-trades-chart__chart"
-                onPointClick={(point) => {
-                  if (plugin && point.path) {
-                    void plugin.openFile(getTradeNotePath(point.path), true);
+                displayRMultiples={Boolean(
+                  plugin?.settings?.trade?.displayRMultiples
+                )}
+                aFilters={filters}
+                bFilters={compare.filters}
+                onOpenTrade={(path) => {
+                  if (plugin) {
+                    void plugin.openFile(getTradeNotePath(path), true);
                   }
                 }}
               />
-            </div>
+            ) : (
+              <div className="journalit-dashboard-trades-chart__body">
+                <SharedTradesChart
+                  data={chartData}
+                  currencyOverride={currencyOverride}
+                  className="dashboard-trades-chart journalit-dashboard-trades-chart__chart"
+                  onPointClick={(point) => {
+                    if (plugin && point.path) {
+                      void plugin.openFile(getTradeNotePath(point.path), true);
+                    }
+                  }}
+                />
+              </div>
+            )}
           </div>
         );
       }}

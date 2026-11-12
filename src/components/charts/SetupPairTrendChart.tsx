@@ -73,6 +73,7 @@ export const SetupPairTrendChart: React.FC<SetupPairTrendChartProps> = ({
         };
   const isNeutralSeries =
     displayKind === 'percentage' || displayKind === 'count';
+  const tradeTicks = wholeTradeTicks(points);
 
   const formatAxisValue = (value: number): string => {
     if (!Number.isFinite(value)) return '';
@@ -125,7 +126,9 @@ export const SetupPairTrendChart: React.FC<SetupPairTrendChartProps> = ({
           height={16}
           interval="preserveStartEnd"
           minTickGap={24}
-          tickFormatter={(value: number) => String(Math.round(value))}
+          allowDecimals={false}
+          ticks={tradeTicks}
+          tickFormatter={(value: number) => String(value)}
           tickLine={false}
           tickMargin={4}
           type="number"
@@ -332,4 +335,19 @@ function getTooltipPoint(
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+const MAX_TRADE_TICKS = 6;
+
+
+function wholeTradeTicks(points: readonly SetupPairTrendPoint[]): number[] {
+  if (points.length === 0) return [];
+  const first = Math.ceil(Math.min(...points.map(({ index }) => index)));
+  const last = Math.floor(Math.max(...points.map(({ index }) => index)));
+  if (last <= first) return [first];
+  const step = Math.ceil((last - first) / (MAX_TRADE_TICKS - 1));
+  const ticks: number[] = [];
+  for (let tick = first; tick < last; tick += step) ticks.push(tick);
+  ticks.push(last);
+  return ticks;
 }

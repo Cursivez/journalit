@@ -15,21 +15,6 @@ export const interactionsCSS = `
 }
 
 
-.jl-quick-link-hover {
-  background-color: var(--background-secondary);
-  border-color: var(--background-modifier-border);
-  transform: translateY(0);
-  box-shadow: none;
-  transition: all 0.2s ease;
-}
-
-.jl-quick-link-hover:hover:not(:disabled) {
-  background-color: var(--background-modifier-hover);
-  border-color: var(--link-color, var(--interactive-accent));
-  transform: translateY(-1px);
-}
-
-
 .jl-recent-item-hover {
   background-color: var(--background-secondary);
   border-color: var(--background-modifier-border);

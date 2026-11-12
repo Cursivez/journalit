@@ -14,12 +14,14 @@ import { useCurrency } from '../../contexts/CurrencyContext';
 import { usePlugin } from '../../hooks/usePlugin';
 import { useDisplayFormatter } from '../../hooks/useDisplayPolicy';
 import { ChartBase } from './ChartBase';
+import { SeriesGlowFilter, SeriesShadowFilter } from './SignedSeriesDefs';
 import { RechartsPortalTooltip } from './RechartsPortalTooltip';
 import { generateNiceAxis, calculateYAxisWidth } from '../../utils/chartUtils';
 import { handleRovingChartMarkKeyDown } from './chartKeyboardNavigation';
 import { useTwoStageTouchNavigation } from './useTwoStageTouchNavigation';
 import { shouldAnimateSeries, useChartAnimationActive } from './chartAnimation';
 import { skipVerticalGridCoordinates } from './chartGrid';
+import { SVG_LABEL_TOOLTIP_PROPS } from './svgLabelTooltip';
 
 const EPSILON = 1e-6; 
 
@@ -129,6 +131,7 @@ const DailyPerformanceBarShape: React.FC<
       role={isInteractive ? 'button' : undefined}
       tabIndex={isInteractive ? (isInitialTabStop ? 0 : -1) : undefined}
       data-journalit-chart-mark={isInteractive ? 'true' : undefined}
+      {...SVG_LABEL_TOOLTIP_PROPS}
       aria-label={isInteractive && payload ? ariaLabel : undefined}
       onKeyDown={
         canActivate
@@ -213,6 +216,7 @@ export const SharedDailyPerformanceChart =
       navigation,
     }) => {
       const isAnimationActive = useChartAnimationActive();
+      const chartId = `daily-performance-${React.useId()}`;
       const chartRef = React.useRef<HTMLDivElement>(null);
       const touchResetKey = React.useMemo(
         () =>
@@ -321,30 +325,8 @@ export const SharedDailyPerformanceChart =
             margin={{ top: 6, right: 5, left: 0, bottom: 10 }}
           >
             <defs>
-              
-              <filter id="dailyPerformanceBarShadow" height="130%">
-                <feDropShadow
-                  dx="0"
-                  dy="2"
-                  stdDeviation="2"
-                  floodOpacity="0.1"
-                />
-              </filter>
-              
-              <filter id="dailyPerformanceBarGlow" height="130%">
-                <feGaussianBlur
-                  in="SourceGraphic"
-                  stdDeviation="1.5"
-                  result="blur"
-                />
-                <feColorMatrix
-                  in="blur"
-                  mode="matrix"
-                  values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7"
-                  result="glow"
-                />
-                <feComposite in="SourceGraphic" in2="glow" operator="over" />
-              </filter>
+              <SeriesShadowFilter id={`${chartId}-shadow`} variant="bar" />
+              <SeriesGlowFilter id={`${chartId}-glow`} variant="bar" />
             </defs>
             <CartesianGrid
               strokeDasharray="3 3"
@@ -426,13 +408,11 @@ export const SharedDailyPerformanceChart =
               stroke="var(--background-primary)" 
               strokeWidth={0.8} 
               strokeOpacity={0.5} 
-              filter="url(#dailyPerformanceBarShadow)" 
+              filter={`url(#${chartId}-shadow)`} 
               cursor={canNavigate ? 'pointer' : undefined}
               
               activeBar={{
-                filter: isPnlMasked
-                  ? undefined
-                  : 'url(#dailyPerformanceBarGlow)',
+                filter: isPnlMasked ? undefined : `url(#${chartId}-glow)`,
                 strokeWidth: 1.2,
                 strokeOpacity: isPnlMasked ? 0.4 : 0.8,
                 cursor: canNavigate ? 'pointer' : undefined,

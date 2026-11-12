@@ -1,6 +1,10 @@
 
 
 import { t } from '../../../../lang/helpers';
+import {
+  formatDateDisplay,
+  getUserDateFormat,
+} from '../../../../utils/dateUtils';
 import type { TranslationKey } from '../../../../lang/locale/en';
 import type { DisplayValueOptions } from '../../../../services/display/DisplayPolicy';
 import type { PropChallengePayoutRequirement } from '../../../../services/propChallenge/PropChallengePayoutEngine';
@@ -90,16 +94,22 @@ function drawdownHelp(
   const params = {
     floor: money(formatValue, rule.currentFloor, currency),
     limit: money(formatValue, rule.limit, currency),
-    buffer: money(
-      formatValue,
-      nonNegative(rule.limit - rule.currentUsed),
-      currency
-    ),
+    buffer: money(formatValue, nonNegative(rule.remaining), currency),
   };
   return ruleHelp(
     rule,
-    `account.prop-challenge.ledger.help.drawdown.${rule.mode}.example`,
-    params
+    rule.firmFloorRecordedAt
+      ? 'account.prop-challenge.ledger.help.drawdown.firm-floor.example'
+      : `account.prop-challenge.ledger.help.drawdown.${rule.mode}.example`,
+    rule.firmFloorRecordedAt
+      ? {
+          ...params,
+          date: formatDateDisplay(
+            rule.firmFloorRecordedAt,
+            getUserDateFormat()
+          ),
+        }
+      : params
   );
 }
 

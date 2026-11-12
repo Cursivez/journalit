@@ -2,6 +2,7 @@ import React from 'react';
 
 import { openExternalUrl } from '../../utils/externalLinks';
 import { AlertTriangle, ExternalLink } from '../shared/icons/ObsidianIcon';
+import { Button } from '../ui/Button';
 
 interface BrokerImportRecoveryNoticeProps {
   className: string;
@@ -41,24 +42,26 @@ export const BrokerImportRecoveryNotice: React.FC<
       <p>{message}</p>
       <div className="journalit-broker-import-recovery-actions">
         {actionLabel && onSwitchSource && (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="small"
             className="journalit-trade-import-recovery-switch"
             disabled={disabled}
             onClick={onSwitchSource}
           >
             {actionLabel}
-          </button>
+          </Button>
         )}
         {continueLabel && onContinue && (
-          <button
-            type="button"
+          <Button
+            variant="primary"
+            size="small"
             className="journalit-trade-import-recovery-continue"
             disabled={disabled}
             onClick={onContinue}
           >
             {continueLabel}
-          </button>
+          </Button>
         )}
         {guideUrl && guideLabel && (
           <button

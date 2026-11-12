@@ -13,6 +13,7 @@ import { formatDateDisplay, getUserDateFormat } from '../../utils/dateUtils';
 import { t } from '../../lang/helpers';
 import { formatAccountTypeLabel } from '../../utils/accountTypeLabel';
 import { JournalitModal } from '../modals/JournalitModal';
+import { DropdownSelect } from '../shared/DropdownSelect';
 
 const EMPTY_EXISTING_ACCOUNTS: ExistingAccount[] = [];
 const EMPTY_AVAILABLE_ACCOUNT_TYPES: string[] = [];
@@ -109,20 +110,16 @@ function AccountTypeSelect({
       <label htmlFor="journalit-accountlinkmodal-122" className="field-label">
         {t('account.link-modal.account-type')}
       </label>
-      <select
+      <DropdownSelect
         id="journalit-accountlinkmodal-122"
+        ariaLabel={t('account.link-modal.account-type')}
         value={selectedAccountType}
-        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-          onChange(e.target.value)
-        }
-        className="modal-select"
-      >
-        {availableAccountTypes.map((type) => (
-          <option key={type} value={type}>
-            {formatAccountTypeLabel(type)}
-          </option>
-        ))}
-      </select>
+        options={availableAccountTypes.map((type) => ({
+          value: type,
+          label: formatAccountTypeLabel(type),
+        }))}
+        onChange={(nextValue) => onChange(nextValue)}
+      />
     </div>
   );
 }
@@ -211,23 +208,18 @@ function LinkOptionsForm({
 
           {linkOption === 'existing' && hasExistingAccounts && (
             <div className="existing-account-select">
-              <select
-                aria-label={t('account.link-modal.option.existing')}
+              <DropdownSelect
+                ariaLabel={t('account.link-modal.option.existing')}
                 value={selectedAccount}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                  onSelectedAccountChange(e.target.value)
-                }
-                className="modal-select"
-              >
-                <option value="">
-                  {t('account.link-modal.select-account')}
-                </option>
-                {existingAccounts.map((account) => (
-                  <option key={account.path} value={account.path}>
-                    {account.name}
-                  </option>
-                ))}
-              </select>
+                options={[
+                  { value: '', label: t('account.link-modal.select-account') },
+                  ...existingAccounts.map((account) => ({
+                    value: account.path,
+                    label: account.name,
+                  })),
+                ]}
+                onChange={(nextValue) => onSelectedAccountChange(nextValue)}
+              />
             </div>
           )}
 

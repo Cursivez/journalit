@@ -15,9 +15,9 @@ import {
 } from '../shared/display/DisplayValue';
 import { SETUP_PAIR_METRIC_OPTIONS } from './setupOverviewMetrics';
 import type {
-  MetricKey,
   SetupCompareMetrics,
   SetupDetailMetricTone,
+  SetupOverviewMetricKey,
   SetupPairMetricKey,
   SetupPairSummary,
   SetupPairTrendPoint,
@@ -33,6 +33,7 @@ import {
   getValueTone,
   getWorstSetupPair,
 } from './setupsViewModel';
+import { SetupTradeCount } from './SetupTradeCount';
 
 const LazySetupPairTrendChart = React.lazy(async () => {
   const module = await import('../charts/SetupPairTrendChart');
@@ -59,12 +60,7 @@ const SetupPairsSummary: React.FC<{
         <RMultipleValue value={summary.bestPair.edgeR} precision={2} />{' '}
         {t('setups.view.pairs.metric.edge-short')}
         <span aria-hidden="true">·</span>
-        <MetricValue
-          kind="count"
-          value={summary.bestPair.metrics.totalTrades}
-          tone="none"
-        />{' '}
-        {t('setups.view.metric.trades')}
+        <SetupTradeCount count={summary.bestPair.metrics.totalTrades} />
       </span>
     ) : null}
     <span className="journalit-setups-performance-summary__warning">
@@ -106,12 +102,12 @@ SetupPairsSummaryPanel.displayName = 'SetupPairsSummaryPanel';
 
 export const SetupPerformanceMetricSelect: React.FC<{
   menuOpen: boolean;
-  metricKey: MetricKey;
+  metricKey: SetupOverviewMetricKey;
   metricLabel: string;
   menuRef: React.RefObject<HTMLDivElement | null>;
-  onMetricKeyChange: (metricKey: MetricKey) => void;
+  onMetricKeyChange: (metricKey: SetupOverviewMetricKey) => void;
   onMenuOpenChange: (open: boolean) => void;
-  options: Array<DropdownMenuOption<MetricKey>>;
+  options: Array<DropdownMenuOption<SetupOverviewMetricKey>>;
 }> = ({
   menuOpen,
   metricKey,
@@ -567,8 +563,13 @@ const SetupPairEvidencePanel: React.FC<{
   const togetherAvailable = pair.metrics.totalTrades > 0;
   const firstSoloAvailable = pair.firstSoloMetrics.totalTrades > 0;
   const secondSoloAvailable = pair.secondSoloMetrics.totalTrades > 0;
+  
+  
   const edgeAvailable =
-    togetherAvailable && firstSoloAvailable && secondSoloAvailable;
+    togetherAvailable &&
+    firstSoloAvailable &&
+    secondSoloAvailable &&
+    Number.isFinite(edgeValue);
   const trend = togetherAvailable
     ? buildSetupPairEvidenceTrend(pair, metric.key)
     : [];
@@ -605,65 +606,29 @@ const SetupPairEvidencePanel: React.FC<{
           <div className="journalit-setups-pairs-evidence__section-title">
             {t('setups.view.pairs.evidence')}
           </div>
-          <PairEvidenceMetric
+          <PairEvidenceSelectedMetric
             label={t('setups.view.pairs.together')}
-            tone={
-              togetherAvailable
-                ? getSetupPairEvidenceMetricTone(metric, togetherValue)
-                : 'neutral'
-            }
-            value={
-              <PairEvidenceSelectedMetricValue
-                available={togetherAvailable}
-                metric={metric}
-                value={togetherValue}
-              />
-            }
+            available={togetherAvailable}
+            metric={metric}
+            value={togetherValue}
           />
-          <PairEvidenceMetric
+          <PairEvidenceSelectedMetric
             label={pair.setupNames[0]}
-            tone={
-              firstSoloAvailable
-                ? getSetupPairEvidenceMetricTone(metric, firstSoloValue)
-                : 'neutral'
-            }
-            value={
-              <PairEvidenceSelectedMetricValue
-                available={firstSoloAvailable}
-                metric={metric}
-                value={firstSoloValue}
-              />
-            }
+            available={firstSoloAvailable}
+            metric={metric}
+            value={firstSoloValue}
           />
-          <PairEvidenceMetric
+          <PairEvidenceSelectedMetric
             label={pair.setupNames[1]}
-            tone={
-              secondSoloAvailable
-                ? getSetupPairEvidenceMetricTone(metric, secondSoloValue)
-                : 'neutral'
-            }
-            value={
-              <PairEvidenceSelectedMetricValue
-                available={secondSoloAvailable}
-                metric={metric}
-                value={secondSoloValue}
-              />
-            }
+            available={secondSoloAvailable}
+            metric={metric}
+            value={secondSoloValue}
           />
-          <PairEvidenceMetric
-            label={t('setups.view.pairs.metric.edge-short')}
-            tone={
-              edgeAvailable
-                ? getSetupPairEvidenceMetricTone(metric, edgeValue)
-                : 'neutral'
-            }
-            value={
-              <PairEvidenceSelectedMetricValue
-                available={edgeAvailable}
-                metric={metric}
-                value={edgeValue}
-              />
-            }
+          <PairEvidenceSelectedMetric
+            label={t('setups.view.pairs.edge-label')}
+            available={edgeAvailable}
+            metric={metric}
+            value={edgeValue}
           />
           <PairEvidenceMetric
             label={t('setups.view.metric.trades')}
@@ -689,6 +654,28 @@ const SetupPairEvidencePanel: React.FC<{
 };
 
 SetupPairEvidencePanel.displayName = 'SetupPairEvidencePanel';
+
+
+const PairEvidenceSelectedMetric: React.FC<{
+  label: string;
+  available: boolean;
+  metric: (typeof SETUP_PAIR_METRIC_OPTIONS)[number];
+  value: number;
+}> = ({ label, available, metric, value }) => (
+  <PairEvidenceMetric
+    label={label}
+    tone={available ? getSetupPairEvidenceMetricTone(metric, value) : 'neutral'}
+    value={
+      <PairEvidenceSelectedMetricValue
+        available={available}
+        metric={metric}
+        value={value}
+      />
+    }
+  />
+);
+
+PairEvidenceSelectedMetric.displayName = 'PairEvidenceSelectedMetric';
 
 const PairEvidenceMetric: React.FC<{
   label: string;
@@ -874,7 +861,7 @@ const SetupPairInsightPanel: React.FC<{
           }
         />
         <PairInsightMetric
-          label={t('setups.view.pairs.metric.edge-short')}
+          label={t('setups.view.pairs.edge-label')}
           value={
             <PairInsightMetricValue
               displayRMultiples={displayRMultiples}

@@ -116,7 +116,9 @@ function readItemGuard(value: unknown): InverseItemGuard | undefined | null {
   if (value === undefined) return undefined;
   if (!isRecord(value)) return null;
   const { kind, accountId, itemId, snapshot } = value;
-  return (kind === 'account_transaction' || kind === 'prop_challenge_cost') &&
+  return (kind === 'account_transaction' ||
+    kind === 'prop_challenge_cost' ||
+    kind === 'prop_challenge_prior_payout') &&
     isString(accountId) &&
     isString(itemId) &&
     isString(snapshot)

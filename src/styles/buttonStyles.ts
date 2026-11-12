@@ -13,8 +13,8 @@ export const BUTTON_STYLES = `
     width: auto;
     height: auto;
     min-height: 0;
-    border: 1px solid transparent;
-    border-radius: 6px;
+    border: 0;
+    border-radius: var(--journalit-control-radius);
     box-shadow: none;
     font-family: inherit;
     font-weight: 500;
@@ -23,80 +23,90 @@ export const BUTTON_STYLES = `
     user-select: none;
     white-space: nowrap;
     cursor: pointer;
-    transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease, opacity 0.15s ease;
+    transition:
+      background var(--journalit-motion-fast) var(--journalit-easing-standard),
+      box-shadow var(--journalit-motion-fast) var(--journalit-easing-standard),
+      color var(--journalit-motion-fast) var(--journalit-easing-standard),
+      opacity var(--journalit-motion-fast) var(--journalit-easing-standard);
   }
 
   button.journalit-button {
-    padding: 6px 12px;
-    background-color: var(--background-primary);
-    border-color: var(--background-modifier-border);
+    box-sizing: border-box;
+    height: var(--journalit-control-height);
+    min-height: var(--journalit-control-height);
+    padding: 0 11px;
+    background: var(--journalit-control-secondary-fill);
+    box-shadow: var(--journalit-control-secondary-shadow);
     color: var(--text-normal);
     font-size: var(--font-ui-small);
   }
 
+  
+  button.journalit-button:focus-visible,
+  button.journalit-icon-button:focus-visible,
+  button.journalit-no-tooltip-button:focus-visible {
+    outline: 2px solid var(--journalit-control-focus);
+    outline-offset: 2.5px;
+  }
+
+  
+  button .journalit-button__label:not(#journalit-button-label) {
+    color: inherit;
+  }
+
+  
+  @supports (text-box: trim-both cap alphabetic) {
+    button .journalit-button__label {
+      display: block;
+      padding-block: calc((1lh - 1cap) / 2);
+      text-box: trim-both cap alphabetic;
+    }
+  }
+
   button.journalit-button:hover:not(:disabled) {
-    background-color: var(--background-modifier-hover);
+    background: var(--journalit-control-secondary-fill-hover);
     color: var(--text-normal);
   }
 
   button.journalit-button--primary {
-    background-color: var(--interactive-accent);
-    border-color: var(--interactive-accent);
+    background: var(--journalit-control-primary-fill);
+    box-shadow: var(--journalit-control-primary-shadow);
     color: var(--text-on-accent);
   }
 
   button.journalit-button--primary:hover:not(:disabled) {
-    background-color: var(--interactive-accent-hover);
-    border-color: var(--interactive-accent-hover);
+    background: var(--journalit-control-primary-fill-hover);
     color: var(--text-on-accent);
   }
 
-  button.journalit-button--secondary {
-    background-color: var(--background-primary);
-    border-color: var(--background-modifier-border);
-    color: var(--text-normal);
-  }
-
-  button.journalit-button--secondary:hover:not(:disabled) {
-    background-color: var(--background-modifier-hover);
-  }
-
+  
   button.journalit-button--danger {
-    background-color: var(--background-primary);
-    border-color: var(--background-modifier-error);
-    color: var(--text-error);
+    color: var(--journalit-control-danger-text);
   }
 
   button.journalit-button--danger:hover:not(:disabled) {
-    background-color: var(--background-modifier-error);
-    border-color: var(--background-modifier-error);
-    color: var(--text-on-accent);
+    color: var(--journalit-control-danger-text);
   }
 
   button.journalit-button--plain {
-    background-color: transparent;
-    border-color: transparent;
+    background: transparent;
+    box-shadow: none;
     color: var(--text-muted);
   }
 
   button.journalit-button--plain:hover:not(:disabled) {
-    background-color: var(--background-modifier-hover);
+    background: var(--journalit-control-overlay-hover);
     color: var(--text-normal);
   }
 
   button.journalit-button--small {
-    padding: 4px 8px;
-    font-size: var(--font-ui-smaller);
-  }
-
-  button.journalit-button--medium {
-    padding: 6px 12px;
-    font-size: var(--font-ui-small);
+    padding: 0 8px;
   }
 
   button.journalit-button--large {
-    padding: 8px 16px;
-    font-size: var(--font-ui-medium);
+    height: 32px;
+    min-height: 32px;
+    padding: 0 16px;
   }
 
   button.journalit-button--full-width {
@@ -113,11 +123,10 @@ export const BUTTON_STYLES = `
 
   button.journalit-icon-button,
   button.journalit-no-tooltip-button {
-    min-width: 28px;
-    min-height: 28px;
+    min-width: var(--journalit-control-height);
+    min-height: var(--journalit-control-height);
     padding: 6px;
     background-color: transparent;
-    border-color: transparent;
     color: var(--text-muted);
   }
 
@@ -129,7 +138,7 @@ export const BUTTON_STYLES = `
 
   button.journalit-icon-button:hover:not(:disabled),
   button.journalit-no-tooltip-button:hover:not(:disabled) {
-    background-color: var(--background-modifier-hover);
+    background-color: var(--journalit-control-overlay-hover);
     color: var(--text-normal);
   }
 
@@ -151,14 +160,16 @@ export const BUTTON_STYLES = `
     justify-content: center;
     flex-shrink: 0;
     gap: 4px;
+    box-sizing: border-box;
     width: auto;
-    height: 28px;
+    height: var(--journalit-control-height);
     min-width: 24px;
     min-height: 24px;
-    padding: 5px 10px;
-    border: 1px solid var(--background-modifier-border);
-    border-radius: 4px;
-    background-color: var(--background-primary);
+    padding: 0 10px;
+    border: 0;
+    border-radius: var(--journalit-control-radius);
+    background: var(--journalit-control-secondary-fill);
+    box-shadow: var(--journalit-control-secondary-shadow);
     color: var(--text-normal);
     font-size: 12px;
     font-weight: 500;
@@ -167,8 +178,7 @@ export const BUTTON_STYLES = `
   }
 
   button.journalit-toolbar-icon-button:hover:not(:disabled) {
-    background-color: var(--background-modifier-hover);
-    border-color: var(--interactive-accent);
+    background: var(--journalit-control-secondary-fill-hover);
     color: var(--text-normal);
   }
 `;

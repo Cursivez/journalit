@@ -1,6 +1,7 @@
 
 
 import React, { useMemo } from 'react';
+import { useDateFormat } from '../../../hooks/useDateFormat';
 import { isPnlContributingTrade } from '../../../utils/tradeStatusUtils';
 import JournalitPlugin from '../../../main';
 import { SharedPnLChart } from '../../charts/SharedPnLChart';
@@ -57,6 +58,7 @@ export const PnLChartWidget: React.FC<PnLChartWidgetProps> = React.memo(
 
     
     
+    const dateFormat = useDateFormat();
     const { chartData, currencyOverride } = useMemo(() => {
       const pnlContributingTrades = trades.filter((t) =>
         isPnlContributingTrade(t)
@@ -66,7 +68,6 @@ export const PnLChartWidget: React.FC<PnLChartWidgetProps> = React.memo(
         return { chartData: [], currencyOverride: undefined };
       }
 
-      const dateFormat = plugin?.settings?.trade?.dateFormat || 'DDMMYY';
       const defaultRiskAmount = plugin?.settings?.trade?.defaultRiskAmount;
       return {
         chartData: preparePnLChartData(
@@ -77,7 +78,7 @@ export const PnLChartWidget: React.FC<PnLChartWidgetProps> = React.memo(
         ),
         currencyOverride: getSingleExplicitCurrency(pnlContributingTrades),
       };
-    }, [trades, plugin]);
+    }, [trades, plugin, dateFormat]);
 
     if (loading) {
       return (

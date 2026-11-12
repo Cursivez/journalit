@@ -25,7 +25,16 @@ import {
 } from '../../../shared/display/CurrencyConversionInfo';
 import type { FilterState } from '../../DashboardView';
 import type { DashboardData, Trade } from '../../utils/dataUtils';
-import { BaseWidget, type BaseWidgetProps } from './BaseWidget';
+import {
+  BaseWidget,
+  type BaseWidgetProps,
+  type WidgetCompare,
+} from './BaseWidget';
+import {
+  CompareBarsWidget,
+  tradeCountNote,
+} from '../../compare/CompareBarsWidget';
+import type { CompareBarRow } from '../../compare/CompareCharts';
 import {
   createMaskedChartData,
   getAxisConfig,
@@ -58,6 +67,7 @@ import {
   hasCompletePerformanceBreakdownRMultipleCoverage,
   hasUnconvertedMixedCurrencyPerformanceGroups,
   PERFORMANCE_BREAKDOWN_MAX_VISIBLE_ROWS,
+  type PerformanceBreakdownRow,
   type PerformanceGroupExtractor,
 } from './performanceBreakdownUtils';
 import {
@@ -66,6 +76,7 @@ import {
 } from './usePerformanceBreakdownPreferences';
 import { useTwoStageTouchNavigation } from '../../../charts/useTwoStageTouchNavigation';
 import { openDashboardPerformanceBreakdownTarget } from '../../performanceBreakdownNavigation';
+import { DropdownSelect } from '../../../shared/DropdownSelect';
 
 interface PerformanceBreakdownChartProps extends BaseWidgetProps {
   kind: PerformanceBreakdownKind;
@@ -113,35 +124,33 @@ const PerformanceBreakdownHeader: React.FC<PerformanceBreakdownHeaderProps> = ({
       )}
     </div>
     <div className="journalit-chart-widget__selector journalit-performance-breakdown-controls">
-      <select
-        aria-label={`${title} — ${t('dashboard.widgets.ticker-performance.metric-aria')}`}
-        className="journalit-chart-widget__select"
+      <DropdownSelect
+        variant="button"
+        menuWidth="content"
+        showOptionTooltips={false}
+        ariaLabel={`${title} — ${t('dashboard.widgets.ticker-performance.metric-aria')}`}
         value={selectedMetric}
-        onChange={(event) =>
-          onMetricChange(normalizeMetric(event.target.value))
-        }
-      >
-        {METRIC_OPTIONS.map((metric) => (
-          <option key={metric} value={metric}>
-            {getMetricLabel(metric, usesRMultiples)}
-          </option>
-        ))}
-      </select>
+        options={METRIC_OPTIONS.map((metric) => ({
+          value: metric,
+          label: getMetricLabel(metric, usesRMultiples),
+        }))}
+        onChange={(nextValue) => onMetricChange(normalizeMetric(nextValue))}
+      />
       {showViewSelector && (
-        <select
-          aria-label={`${title} — ${t('dashboard.widgets.ticker-performance.view-aria')}`}
-          className="journalit-chart-widget__select"
+        <DropdownSelect
+          variant="button"
+          menuWidth="content"
+          showOptionTooltips={false}
+          ariaLabel={`${title} — ${t('dashboard.widgets.ticker-performance.view-aria')}`}
           value={selectedViewMode}
-          onChange={(event) =>
-            onViewModeChange(normalizeViewMode(event.target.value))
+          options={VIEW_MODE_OPTIONS.map((viewMode) => ({
+            value: viewMode,
+            label: getViewModeLabel(viewMode),
+          }))}
+          onChange={(nextValue) =>
+            onViewModeChange(normalizeViewMode(nextValue))
           }
-        >
-          {VIEW_MODE_OPTIONS.map((viewMode) => (
-            <option key={viewMode} value={viewMode}>
-              {getViewModeLabel(viewMode)}
-            </option>
-          ))}
-        </select>
+        />
       )}
     </div>
   </div>
@@ -154,6 +163,8 @@ interface PerformanceBreakdownBodyProps extends Omit<
   data: DashboardData;
   
   filters: FilterState;
+  
+  compare: WidgetCompare | null;
 }
 
 type TradeSettings = NonNullable<
@@ -225,6 +236,55 @@ const breakdownDisplayData = ({
     return chartData;
   }
   return insertDividerPoint(chartData, dividerIndex, dividerLabel);
+};
+
+
+const COMPARE_MAX_ROWS = PERFORMANCE_BREAKDOWN_MAX_VISIBLE_ROWS;
+
+
+const comparePerformanceRows = (
+  aRows: readonly PerformanceBreakdownRow[],
+  bRows: readonly PerformanceBreakdownRow[],
+  valueOf: (row: PerformanceBreakdownRow) => number,
+  fixedRowOrder: readonly string[] | undefined,
+  masked: boolean
+): CompareBarRow[] => {
+  const aByLabel = new Map(aRows.map((row) => [row.label, row]));
+  const bByLabel = new Map(bRows.map((row) => [row.label, row]));
+  const present = new Set([...aByLabel.keys(), ...bByLabel.keys()]);
+  const labels = Array.from(present);
+  const best = (label: string) =>
+    Math.max(
+      ...[aByLabel.get(label), bByLabel.get(label)]
+        .filter((row): row is PerformanceBreakdownRow => row !== undefined)
+        .map(valueOf)
+    );
+  const ordered = fixedRowOrder
+    ? fixedRowOrder.filter((label) => present.has(label))
+    : masked
+      ? labels.sort((left, right) => left.localeCompare(right))
+      : labels.sort((left, right) => best(right) - best(left));
+  const visible =
+    fixedRowOrder || ordered.length <= COMPARE_MAX_ROWS
+      ? ordered
+      : masked
+        ? ordered.slice(0, COMPARE_MAX_ROWS)
+        : [
+            ...ordered.slice(0, COMPARE_MAX_ROWS / 2),
+            ...ordered.slice(-COMPARE_MAX_ROWS / 2),
+          ];
+  return visible.map((label) => {
+    const a = aByLabel.get(label);
+    const b = bByLabel.get(label);
+    return {
+      key: label,
+      label,
+      a: a ? valueOf(a) : null,
+      b: b ? valueOf(b) : null,
+      aNote: tradeCountNote(a?.tradeCount),
+      bNote: tradeCountNote(b?.tradeCount),
+    };
+  });
 };
 
 interface PerformanceBreakdownBarHandlers {
@@ -433,9 +493,75 @@ const PerformanceBreakdownPlot: React.FC<PerformanceBreakdownPlotProps> = ({
   );
 };
 
+
+const PerformanceBreakdownCompareView: React.FC<{
+  a: ReturnType<typeof buildPerformanceBreakdown>;
+  b: ReturnType<typeof buildPerformanceBreakdown>;
+  headerProps: Omit<
+    PerformanceBreakdownHeaderProps,
+    'showConversionInfo' | 'usesRMultiples' | 'showViewSelector'
+  >;
+  selectedMetric: PerformanceBreakdownMetric;
+  fixedRowOrder: readonly string[] | undefined;
+  emptyMessage: string;
+  currencyCode: string;
+  filters: FilterState;
+  compare: WidgetCompare;
+  title: string;
+}> = ({
+  a,
+  b,
+  headerProps,
+  selectedMetric,
+  fixedRowOrder,
+  emptyMessage,
+  currencyCode,
+  filters,
+  compare,
+  title,
+}) => {
+  const { shouldMask } = useDisplayFormatter();
+  if (a.rankedRows.length === 0 && b.rankedRows.length === 0) {
+    return <PerformanceBreakdownNoDataState message={emptyMessage} />;
+  }
+  
+  const inR = a.usesRMultiples && b.usesRMultiples;
+  const rows = comparePerformanceRows(
+    a.rankedRows,
+    b.rankedRows,
+    (row) => getDisplayValue(row, selectedMetric, inR),
+    fixedRowOrder,
+    shouldMask(breakdownMaskKind(selectedMetric, inR))
+  );
+  let kind: 'winRate' | 'rMultiple' | 'pnl' = inR ? 'rMultiple' : 'pnl';
+  if (selectedMetric === 'winRate') kind = 'winRate';
+  return (
+    <div className="journalit-chart-widget">
+      <PerformanceBreakdownHeader
+        {...headerProps}
+        showConversionInfo={false}
+        usesRMultiples={inR}
+        showViewSelector={false}
+      />
+      <div className="journalit-chart-widget__body">
+        <CompareBarsWidget
+          rows={rows}
+          kind={kind}
+          currencyCode={currencyCode}
+          orientation={fixedRowOrder ? 'columns' : 'rows'}
+          aFilters={filters}
+          bFilters={compare.filters}
+          ariaLabel={title}
+        />
+      </div>
+    </div>
+  );
+};
+
 const PerformanceBreakdownBody: React.FC<PerformanceBreakdownBodyProps> = ({
   data,
   filters,
+  compare,
   kind,
   title,
   emptyMessage,
@@ -472,29 +598,37 @@ const PerformanceBreakdownBody: React.FC<PerformanceBreakdownBodyProps> = ({
     breakEvenSettings,
   } = breakdownTradeSettings(plugin?.settings.trade);
 
-  const sourceTrades = breakdownSourceTrades(data, analyticsDateBasis);
   const useStoredRMultiple = analyticsDateBasis !== 'exit';
   
   
-  const mixedCurrencyPnL = hasUnconvertedMixedCurrencyPerformanceGroups(
-    sourceTrades,
-    {
-      defaultCurrency: data.currency,
-      conversionBaseCurrency: data.metrics.conversionBaseCurrency,
+  const analyzeSource = (source: DashboardData) => {
+    const trades = breakdownSourceTrades(source, analyticsDateBasis);
+    const mixedCurrency = hasUnconvertedMixedCurrencyPerformanceGroups(trades, {
+      defaultCurrency: source.currency,
+      conversionBaseCurrency: source.metrics.conversionBaseCurrency,
       getGroups,
-    }
-  );
+    });
+    const netUnavailable =
+      selectedMetric === 'net' &&
+      mixedCurrency &&
+      !(
+        displayRMultiples &&
+        hasCompletePerformanceBreakdownRMultipleCoverage(trades, {
+          defaultRiskAmount,
+          useStoredRMultiple,
+          getGroups,
+        })
+      );
+    return { trades, mixedCurrency, netUnavailable };
+  };
+  const {
+    trades: sourceTrades,
+    mixedCurrency: mixedCurrencyPnL,
+    netUnavailable,
+  } = analyzeSource(data);
+  const compareSource = compare ? analyzeSource(compare.data) : null;
   const netViewUnavailable =
-    selectedMetric === 'net' &&
-    mixedCurrencyPnL &&
-    !(
-      displayRMultiples &&
-      hasCompletePerformanceBreakdownRMultipleCoverage(sourceTrades, {
-        defaultRiskAmount,
-        useStoredRMultiple,
-        getGroups,
-      })
-    );
+    netUnavailable || Boolean(compareSource?.netUnavailable);
 
   const headerProps = {
     title,
@@ -522,17 +656,36 @@ const PerformanceBreakdownBody: React.FC<PerformanceBreakdownBodyProps> = ({
     );
   }
 
-  const result = buildPerformanceBreakdown(sourceTrades, {
-    breakEvenSettings,
-    defaultRiskAmount,
-    useStoredRMultiple,
-    includePnLTotals: !mixedCurrencyPnL,
-    displayRMultiples,
-    metric: selectedMetric,
-    viewMode: selectedViewMode,
-    getGroups,
-    fixedRowOrder,
-  });
+  const buildFor = (trades: Trade[], mixedCurrency: boolean) =>
+    buildPerformanceBreakdown(trades, {
+      breakEvenSettings,
+      defaultRiskAmount,
+      useStoredRMultiple,
+      includePnLTotals: !mixedCurrency,
+      displayRMultiples,
+      metric: selectedMetric,
+      viewMode: selectedViewMode,
+      getGroups,
+      fixedRowOrder,
+    });
+  const result = buildFor(sourceTrades, mixedCurrencyPnL);
+
+  if (compare && compareSource) {
+    return (
+      <PerformanceBreakdownCompareView
+        a={result}
+        b={buildFor(compareSource.trades, compareSource.mixedCurrency)}
+        headerProps={headerProps}
+        selectedMetric={selectedMetric}
+        fixedRowOrder={fixedRowOrder}
+        emptyMessage={emptyMessage}
+        currencyCode={breakdownCurrencyCode(data)}
+        filters={filters}
+        compare={compare}
+        title={title}
+      />
+    );
+  }
 
   if (result.rankedRows.length === 0) {
     return <PerformanceBreakdownNoDataState message={emptyMessage} />;
@@ -636,10 +789,11 @@ export const PerformanceBreakdownChart =
       fixedRowOrder,
     }) => (
       <BaseWidget dateFormat={dateFormat} skeletonType="bar-chart">
-        {(data, _dateFormat, filters) => (
+        {(data, _dateFormat, filters, compare) => (
           <PerformanceBreakdownBody
             data={data}
             filters={filters}
+            compare={compare}
             kind={kind}
             title={title}
             emptyMessage={emptyMessage}

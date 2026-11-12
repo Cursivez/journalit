@@ -8,7 +8,7 @@ import React, {
   useReducer,
   useRef,
 } from 'react';
-import { Save, RotateCcw, ChevronDown } from '../../shared/icons/ObsidianIcon';
+import { Save, RotateCcw } from '../../shared/icons/ObsidianIcon';
 import JournalitPlugin from '../../../main';
 import { useCurrency } from '../../../contexts/CurrencyContext';
 import { useDisplayFormatter } from '../../../hooks/useDisplayPolicy';
@@ -22,6 +22,7 @@ import { PositionSizeAssetType } from '../../../settings/types';
 import { getSizePrecision } from '../../forms/trade/utils';
 import { hasTranslation, t } from '../../../lang/helpers';
 import { DraftInput } from '../../ui/DraftInput';
+import { DropdownSelect } from '../../shared/DropdownSelect';
 
 interface PositionSizeWidgetProps {
   plugin: JournalitPlugin;
@@ -518,20 +519,14 @@ const FuturesInputs: React.FC<FuturesInputsProps> = ({
       <div className="journalit-home-position__select-wrapper">
         <label className="journalit-home-position__label">
           {t('form.field.instrument')}
-          <select
+          <DropdownSelect
+            ariaLabel={t('form.field.instrument')}
             value={futuresSymbol}
-            onChange={(e) => onFuturesSymbolChange(e.target.value)}
-            className="journalit-home-position__select"
-          >
-            {FUTURES_OPTIONS.map((opt) => (
-              <option key={opt.symbol} value={opt.symbol}>
-                {opt.symbol} - {opt.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={14}
-            className="journalit-home-position__select-icon"
+            options={FUTURES_OPTIONS.map((opt) => ({
+              value: opt.symbol,
+              label: `${opt.symbol} - ${opt.name}`,
+            }))}
+            onChange={onFuturesSymbolChange}
           />
         </label>
       </div>
@@ -610,20 +605,14 @@ const ForexInputs: React.FC<ForexInputsProps> = ({
       <div className="journalit-home-position__select-wrapper">
         <label className="journalit-home-position__label">
           {t('widget.position-size.currency-pair')}
-          <select
+          <DropdownSelect
+            ariaLabel={t('widget.position-size.currency-pair')}
             value={forexSymbol}
-            onChange={(e) => onForexSymbolChange(e.target.value)}
-            className="journalit-home-position__select"
-          >
-            {FOREX_OPTIONS.map((opt) => (
-              <option key={opt.symbol} value={opt.symbol}>
-                {opt.symbol} - {opt.name}
-              </option>
-            ))}
-          </select>
-          <ChevronDown
-            size={14}
-            className="journalit-home-position__select-icon"
+            options={FOREX_OPTIONS.map((opt) => ({
+              value: opt.symbol,
+              label: `${opt.symbol} - ${opt.name}`,
+            }))}
+            onChange={onForexSymbolChange}
           />
         </label>
       </div>

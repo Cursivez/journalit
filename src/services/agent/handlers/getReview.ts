@@ -294,6 +294,12 @@ const UNSUPPORTED_KEY_EVENTS: GetReviewResult = {
   message: 'Only week reviews have key events.',
   retryable: false,
 };
+const UNSUPPORTED_MARKET_BIAS: GetReviewResult = {
+  status: 'error',
+  code: 'unsupported_capability',
+  message: 'Only day and week reviews have a market bias.',
+  retryable: false,
+};
 const UNSUPPORTED_DAY_TRADE_FIELDS: GetReviewResult = {
   status: 'error',
   code: 'unsupported_capability',
@@ -513,6 +519,25 @@ export function createGetReviewHandler(
                 ...level,
               })),
             };
+            break;
+          case 'key_level_groups':
+            sections.key_level_groups = review.keyLevelGroups.map(
+              ({ name, support, resistance }) => ({
+                name,
+                support: support.map((level) => ({ ...level })),
+                resistance: resistance.map((level) => ({ ...level })),
+              })
+            );
+            break;
+          case 'market_bias':
+            if (review.period !== 'day' && review.period !== 'week') {
+              return { result: UNSUPPORTED_MARKET_BIAS };
+            }
+            sections.market_bias = review.marketBias.map((entry) =>
+              entry.ticker === undefined
+                ? { bias: entry.bias }
+                : { ticker: entry.ticker, bias: entry.bias }
+            );
             break;
           case 'grades':
             sections.grades = {

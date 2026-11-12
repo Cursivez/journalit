@@ -170,6 +170,7 @@ function hasActiveTradeLogFilters(filters: TradeLogFilters): boolean {
     filters.imageAnnotationStatus.length > 0 ||
     filters.imageTags.length > 0 ||
     filters.dateRange.some(Boolean) ||
+    filters.recentPeriod !== undefined ||
     Object.values(filters.customFieldFilters).some(
       (values) => values.length > 0
     ) ||
@@ -460,7 +461,7 @@ export const ImageGalleryFullscreen: React.FC<{
               size="small"
             >
               <Tag size={14} />
-              <span>{t('imageGallery.annotation.tag')}</span>
+              {t('imageGallery.annotation.tag')}
             </Button>
           </span>
           <Button
@@ -470,7 +471,7 @@ export const ImageGalleryFullscreen: React.FC<{
             size="small"
           >
             <ExternalLink size={14} />
-            <span>{t('imageGallery.open-source')}</span>
+            {t('imageGallery.open-source')}
           </Button>
         </div>
       </div>
@@ -734,7 +735,7 @@ const ImageGalleryCard = React.memo(function ImageGalleryCard({
         onClick={() => onOpenSource(item.sourcePath)}
         type="button"
       >
-        <span>{t('imageGallery.open-source')}</span>
+        {t('imageGallery.open-source')}
         <ExternalLink size={13} aria-hidden="true" />
       </button>
     </article>

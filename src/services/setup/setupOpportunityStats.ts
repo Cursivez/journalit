@@ -9,8 +9,13 @@ import type {
   SetupOpportunityStats,
   SetupOpportunityTradeType,
 } from './types';
+import type {
+  SetupTradeBalanceFields,
+  SetupTradeOutcome,
+  SetupTradeOutcomeClassifier,
+} from './setupTradeOutcome';
 
-interface SetupOpportunityRecord {
+interface SetupOpportunityRecord extends SetupTradeBalanceFields {
   path?: unknown;
   type?: unknown;
   isMissedTrade?: unknown;
@@ -51,6 +56,7 @@ interface AttributedOpportunityTrade {
   type: SetupOpportunityTradeType;
   missedReason: string | null;
   pnl: number;
+  outcome: SetupTradeOutcome;
   pnlContributing: boolean;
   rMultiple: number | null;
 }
@@ -70,6 +76,7 @@ const EMPTY_BUCKET: SetupOpportunityBucket = {
 export function buildSetupOpportunityStats(
   setups: Setup[],
   tradeData: unknown[],
+  classifyOutcome: SetupTradeOutcomeClassifier,
   defaultRiskAmount?: number
 ): Record<string, SetupOpportunityStats> {
   const setupById = new Map(setups.map((setup) => [setup.id, setup]));
@@ -79,6 +86,7 @@ export function buildSetupOpportunityStats(
       rawTrade,
       setupById,
       resolveToken,
+      classifyOutcome,
       defaultRiskAmount
     );
     return trade ? [trade] : [];
@@ -132,14 +140,17 @@ function calculateBucket(
   trades: AttributedOpportunityTrade[]
 ): SetupOpportunityBucket {
   if (trades.length === 0) return { ...EMPTY_BUCKET };
-  const pnlResults = trades.flatMap((trade) =>
-    trade.pnlContributing ? [trade.pnl] : []
-  );
+  const contributing = trades.filter((trade) => trade.pnlContributing);
+  const pnlResults = contributing.map((trade) => trade.pnl);
   const rMultiples = trades.flatMap((trade) =>
     trade.rMultiple !== null ? [trade.rMultiple] : []
   );
-  const winners = pnlResults.filter((pnl) => pnl > 0);
-  const losers = pnlResults.filter((pnl) => pnl < 0);
+  const winners = contributing.flatMap((trade) =>
+    trade.outcome === 'win' ? [trade.pnl] : []
+  );
+  const losers = contributing.flatMap((trade) =>
+    trade.outcome === 'loss' ? [trade.pnl] : []
+  );
   const totalPnL = pnlResults.reduce((sum, pnl) => sum + pnl, 0);
   const totalWin = winners.reduce((sum, pnl) => sum + pnl, 0);
   const totalLoss = Math.abs(losers.reduce((sum, pnl) => sum + pnl, 0));
@@ -177,6 +188,7 @@ function toAttributedOpportunityTrade(
   rawTrade: unknown,
   setupById: Map<string, Setup>,
   resolveToken: (token: string) => string | null,
+  classifyOutcome: SetupTradeOutcomeClassifier,
   defaultRiskAmount?: number
 ): AttributedOpportunityTrade | null {
   const trade: SetupOpportunityRecord = isRecord(rawTrade) ? rawTrade : {};
@@ -192,6 +204,7 @@ function toAttributedOpportunityTrade(
     missedReason:
       typeof trade.missedReason === 'string' ? trade.missedReason : null,
     pnl,
+    outcome: classifyOutcome(pnl, trade),
     pnlContributing,
     rMultiple: pnlContributing
       ? calculateEffectiveRMultiple(

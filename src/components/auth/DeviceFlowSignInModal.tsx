@@ -538,7 +538,7 @@ function DeviceFlowWaiting({ model }: { model: DeviceFlowSignInModel }) {
               <button
                 className={mergeClassNames(
                   'journalit-native-button',
-                  `copy-button ${copySuccess ? 'copied' : ''}`
+                  `journalit-icon-button copy-button ${copySuccess ? 'copied' : ''}`
                 )}
                 onClick={() => void handleCopyCode()}
                 disabled={!deviceCode}
@@ -611,7 +611,7 @@ function DeviceFlowWaiting({ model }: { model: DeviceFlowSignInModel }) {
               <button
                 className={mergeClassNames(
                   'journalit-native-button',
-                  `copy-button onboarding-link-fallback-copy ${copyUrlSuccess ? 'copied' : ''}`
+                  `journalit-icon-button copy-button onboarding-link-fallback-copy ${copyUrlSuccess ? 'copied' : ''}`
                 )}
                 onClick={() =>
                   void handleCopyActivationUrl(activationUrlFallback)

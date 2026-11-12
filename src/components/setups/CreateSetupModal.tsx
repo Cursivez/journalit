@@ -32,6 +32,7 @@ import {
   normalizeOptionKey,
 } from '../../utils/stringNormalization';
 import { JournalitModal } from '../modals/JournalitModal';
+import { DropdownSelect } from '../shared/DropdownSelect';
 
 interface CreateSetupModalProps {
   app: App;
@@ -299,14 +300,15 @@ function CreateSetupLinkedNotesField({
           </div>
         )}
         {!showNotePicker ? (
-          <button
-            type="button"
+          <Button
+            variant="secondary"
+            size="small"
             className="journalit-setup-secondary-action-button"
             onClick={onShowNotePicker}
             disabled={isSaving}
           >
             {t('setups.create.linked-notes.add')}
-          </button>
+          </Button>
         ) : null}
       </div>
       {showNotePicker ? (
@@ -740,18 +742,19 @@ const CreateSetupStatusField: React.FC<{
       <div className="setting-item-name">{t('setups.create.field.status')}</div>
     </div>
     <div className="setting-item-control">
-      <select
-        aria-label={t('setups.create.field.status')}
+      <DropdownSelect
+        ariaLabel={t('setups.create.field.status')}
         value={form.status}
-        onChange={(event) =>
-          onChange('status', parseCreateSetupStatus(event.target.value))
-        }
+        options={[
+          { value: 'active', label: t('setups.view.status.active') },
+          { value: 'testing', label: t('setups.view.status.testing') },
+          { value: 'archived', label: t('setups.view.status.archived') },
+        ]}
         disabled={isSaving}
-      >
-        <option value="active">{t('setups.view.status.active')}</option>
-        <option value="testing">{t('setups.view.status.testing')}</option>
-        <option value="archived">{t('setups.view.status.archived')}</option>
-      </select>
+        onChange={(nextValue) =>
+          onChange('status', parseCreateSetupStatus(nextValue))
+        }
+      />
     </div>
   </div>
 );
@@ -771,19 +774,20 @@ const CreateSetupDirectionField: React.FC<{
       </div>
     </div>
     <div className="setting-item-control">
-      <select
-        aria-label={t('setups.create.field.direction')}
+      <DropdownSelect
+        ariaLabel={t('setups.create.field.direction')}
         value={form.direction}
-        onChange={(event) =>
-          onChange('direction', parseCreateSetupDirection(event.target.value))
-        }
+        options={[
+          { value: '', label: t('setups.create.direction.any') },
+          { value: 'long', label: t('setups.create.direction.long') },
+          { value: 'short', label: t('setups.create.direction.short') },
+          { value: 'both', label: t('setups.create.direction.both') },
+        ]}
         disabled={isSaving}
-      >
-        <option value="">{t('setups.create.direction.any')}</option>
-        <option value="long">{t('setups.create.direction.long')}</option>
-        <option value="short">{t('setups.create.direction.short')}</option>
-        <option value="both">{t('setups.create.direction.both')}</option>
-      </select>
+        onChange={(nextValue) =>
+          onChange('direction', parseCreateSetupDirection(nextValue))
+        }
+      />
     </div>
   </div>
 );

@@ -21,6 +21,7 @@ import { Button } from '../../../ui/Button';
 import { Plus } from '../../../shared/icons/ObsidianIcon';
 import { PhaseEditor } from './PhaseEditor';
 import { PropChallengeCostsEditor } from './PropChallengeCostsEditor';
+import { PropChallengePriorPayoutsEditor } from './PropChallengePriorPayoutsEditor';
 import { PropFirmProfilePicker } from './PropFirmProfilePicker';
 import {
   PropFirmPrefillHeadingLink,
@@ -407,6 +408,11 @@ export function PropChallengeSettingsSection({
         )}
         <PropChallengeCostsEditor
           monthlyCostField={monthlyCostField}
+          value={value}
+          disabled={disabled}
+          onChange={onChange}
+        />
+        <PropChallengePriorPayoutsEditor
           value={value}
           disabled={disabled}
           onChange={onChange}

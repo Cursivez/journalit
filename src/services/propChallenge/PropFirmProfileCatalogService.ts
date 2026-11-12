@@ -83,7 +83,7 @@ export class PropFirmProfileCatalogService {
           method: 'GET',
           headers: {
             'x-endpoint': '/api/v1/prop-firm-profiles',
-            'X-Prop-Catalog-Contract': '4',
+            'X-Prop-Catalog-Contract': '5',
             ...(cache?.etag ? { 'If-None-Match': cache.etag } : {}),
           },
         },
@@ -110,7 +110,7 @@ export class PropFirmProfileCatalogService {
       }
       
       
-      if (responseContract !== '4')
+      if (responseContract !== '5')
         return { kind: 'unavailable', catalog: cache?.catalog };
       if (responseStatus === 304 && cache) {
         await this.persistCache({
@@ -122,7 +122,7 @@ export class PropFirmProfileCatalogService {
       const catalog = normalizePropFirmProfileCatalog(response);
       if (!catalog) return { kind: 'unavailable', catalog: cache?.catalog };
       await this.persistCache({
-        contractVersion: 4,
+        contractVersion: 5,
         catalog,
         etag: responseEtag,
         fetchedAt: new Date().toISOString(),
@@ -215,7 +215,7 @@ export class PropFirmProfileCatalogService {
   private getCache(): PropFirmProfileCatalogCache | undefined {
     const cache =
       this.plugin.settings.backendIntegration?.propFirmProfileCatalogCache;
-    return cache?.contractVersion === 4 ? cache : undefined;
+    return cache?.contractVersion === 5 ? cache : undefined;
   }
 
   private async persistCache(

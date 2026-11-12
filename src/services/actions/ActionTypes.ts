@@ -36,6 +36,10 @@ export interface ActionPlan<Id extends ActionId> {
   
   readonly baseEntry?: string;
   
+  readonly baseRevision?: string;
+  
+  readonly baseItem?: string;
+  
   readonly discardsUserSettings?: boolean;
   execute(signal: AbortSignal): Promise<ActionExecuted<Id>>;
 }
@@ -53,6 +57,7 @@ export type UndoCapturingActionId =
   | 'trade.update'
   | 'account.update'
   | 'session_log_tag.update'
+  | 'dashboard_comparison.update'
   | 'setup.update'
   | 'custom_field.update'
   | 'review.update'

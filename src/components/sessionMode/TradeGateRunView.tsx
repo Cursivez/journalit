@@ -165,7 +165,7 @@ export const TradeGateRunView: React.FC<TradeGateRunViewProps> = ({
           </div>
           <button
             type="button"
-            className="journalit-trade-gate-restart-button"
+            className="journalit-trade-gate-restart-button journalit-icon-button"
             onClick={onRestart}
             aria-label={t('trade-gate.action.start-another')}
           >

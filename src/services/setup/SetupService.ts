@@ -23,7 +23,8 @@ import {
   Setup,
   SetupData,
   SetupFilter,
-  SetupMetrics,
+  SetupMetricsResult,
+  SetupOutcomeScope,
   SetupRefResolution,
   SetupRule,
   SetupRuleCategory,
@@ -37,6 +38,7 @@ import {
   SetupNoteFormatError,
 } from './setupReadErrors';
 import { SetupMetricsCalculator } from './metrics';
+import { SetupNoteChangeFeed } from './SetupNoteChangeFeed';
 import { TradeService } from '../trade/TradeService';
 import { eventBus } from '../events/EventBus';
 import { type PreviousTagAssignments } from '../options/CustomOptionsService';
@@ -75,6 +77,8 @@ import {
   SETUP_AGENT_ID_FRONTMATTER_KEY,
   upsertSetupAgentId,
 } from '../agent/identity/setupIdentityStore';
+import type { SetupTradeOutcomeClassifier } from './setupTradeOutcome';
+import type { SetupTradeType } from './setupTradeTypes';
 
 const SETUPS_FOLDER_NAME = 'Setups';
 const FRONTMATTER_BLOCK_PATTERN = /^---\r?\n([\s\S]*?)\r?\n---/;
@@ -199,6 +203,7 @@ export class SetupService extends CustomDataService {
   private legacyMigrationPromise: Promise<void> | null = null;
   private mutationQueue: Promise<void> = Promise.resolve();
   private setupRecordsGeneration = 0;
+  private noteChangeFeed: SetupNoteChangeFeed | null = null;
 
   constructor(
     app: App,
@@ -231,6 +236,21 @@ export class SetupService extends CustomDataService {
         void this.clearCache();
       })
     );
+    this.noteChangeFeed?.stop();
+    const feed = new SetupNoteChangeFeed(this.app, {
+      isSetupNotePath: (path) =>
+        path.endsWith('.md') && this.isPathInSetupsFolder(path),
+      whenWritesSettled: () => this.whenSetupNoteWritesSettled(),
+    });
+    this.noteChangeFeed = feed;
+    feed.start();
+    plugin.register(() => feed.stop());
+  }
+
+  public override async cleanup(): Promise<void> {
+    this.noteChangeFeed?.stop();
+    this.noteChangeFeed = null;
+    await super.cleanup();
   }
 
   
@@ -243,11 +263,17 @@ export class SetupService extends CustomDataService {
 
   public getAllSetupMetricsFromTradeData(
     setups: Setup[],
-    tradeData: Array<Record<string, unknown>>
-  ): Map<string, SetupMetrics> {
+    tradeData: Array<Record<string, unknown>>,
+    classifyOutcome: SetupTradeOutcomeClassifier,
+    outcome: SetupOutcomeScope = 'all',
+    tradeTypes?: ReadonlySet<SetupTradeType>
+  ): SetupMetricsResult {
     return this.metricsCalculator.calculateMetricsForSetupsFromTradeData(
       setups,
-      tradeData
+      tradeData,
+      classifyOutcome,
+      outcome,
+      tradeTypes
     );
   }
 
@@ -900,6 +926,23 @@ export class SetupService extends CustomDataService {
       () => undefined
     );
     return result;
+  }
+
+  
+  private async whenSetupNoteWritesSettled(): Promise<void> {
+    const options = this.plugin?.optionsService;
+    for (;;) {
+      const setupWrites = this.mutationQueue;
+      const optionWrites = options?.queuedMutations();
+      await Promise.all([setupWrites, optionWrites]);
+      if (
+        setupWrites === this.mutationQueue &&
+        optionWrites === options?.queuedMutations()
+      ) {
+        break;
+      }
+    }
+    await new Promise<void>((resolve) => window.setTimeout(resolve, 0));
   }
 
   private runWithTagAssignments<T>(

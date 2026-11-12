@@ -9,6 +9,7 @@ import {
   Clock,
   LinkIcon,
   MoreVertical,
+  Pencil,
   RotateCcw,
   X,
   type ObsidianIconComponent,
@@ -24,7 +25,8 @@ export type PropChallengeLifecycleAction =
 export type PropChallengeManualAction =
   | PropChallengeLifecycleAction
   | 'link-rules'
-  | 'rule-corrections';
+  | 'rule-corrections'
+  | 'set-drawdown-floor';
 
 export interface PropChallengeMenuAction {
   id: PropChallengeManualAction;
@@ -39,6 +41,7 @@ const ACTION_ICONS: Record<PropChallengeManualAction, ObsidianIconComponent> = {
   reopen: RotateCcw,
   'link-rules': LinkIcon,
   'rule-corrections': Clock,
+  'set-drawdown-floor': Pencil,
 };
 
 export const PropChallengeActionsMenu: React.FC<{

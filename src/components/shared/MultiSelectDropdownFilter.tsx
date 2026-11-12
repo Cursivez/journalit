@@ -2,6 +2,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { usePopupDismiss } from './menus/usePopupDismiss';
 import { FilterButton } from './FilterButton';
 import { ChevronDown, type ObsidianIconComponent } from './icons/ObsidianIcon';
+import { Button } from '../ui/Button';
 
 interface MultiSelectDropdownOption {
   value: string;
@@ -146,13 +147,14 @@ const MultiSelectDropdownMenu: React.FC<{
     {header ? (
       <div className={`${classNamePrefix}__header`}>
         <span>{header.title}</span>
-        <button
-          className={`journalit-native-button journalit-multi-select-dropdown-filter__reset ${classNamePrefix}__reset`}
-          type="button"
+        <Button
+          variant="plain"
+          size="small"
+          className={`journalit-multi-select-dropdown-filter__reset ${classNamePrefix}__reset`}
           onClick={header.onReset}
         >
           {header.resetLabel}
-        </button>
+        </Button>
       </div>
     ) : null}
     {options.length > 0 ? (

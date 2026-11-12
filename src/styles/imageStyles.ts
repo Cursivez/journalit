@@ -51,9 +51,9 @@ export const IMAGE_STYLES = `
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background-color: var(--interactive-accent);
-    color: var(--text-on-accent, white);
-    border: 2px solid var(--interactive-accent);
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+    border: 2px solid var(--background-modifier-border);
     border-radius: 6px;
     box-shadow: none;
     cursor: pointer;
@@ -66,9 +66,9 @@ export const IMAGE_STYLES = `
   }
 
   .journalit-image-upload-paste-area:hover {
-    background-color: var(--interactive-accent-hover);
-    color: var(--text-on-accent);
-    border-color: var(--interactive-accent-hover);
+    background-color: var(--background-modifier-hover);
+    color: var(--text-normal);
+    border-color: var(--background-modifier-border-hover);
     transform: translateY(-1px);
   }
 
@@ -474,6 +474,11 @@ export const IMAGE_STYLES = `
     background: var(--background-primary);
   }
 
+  
+  .journalit-media-preview-video[role='button'] {
+    cursor: pointer;
+  }
+
   .journalit-media-preview-video video {
     display: block;
     width: 100%;
@@ -554,6 +559,7 @@ export const IMAGE_STYLES = `
     display: none;
   }
 
+  
   .journalit-media-preview-video__badge {
     position: absolute;
     top: 50%;
@@ -562,11 +568,12 @@ export const IMAGE_STYLES = `
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 2rem;
-    height: 2rem;
+    width: 3rem;
+    height: 3rem;
+    border: 1px solid rgba(var(--mono-rgb-100), 0.18);
     border-radius: 50%;
-    background: rgba(var(--mono-rgb-0), 0.64);
-    color: var(--text-on-accent);
+    background: rgba(var(--mono-rgb-0), 0.72);
+    color: var(--text-normal);
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.26);
     backdrop-filter: blur(8px);
     pointer-events: none;
@@ -1458,9 +1465,10 @@ export const IMAGE_STYLES = `
     justify-content: center;
     width: 5.5rem;
     height: 5.5rem;
+    border: 1px solid rgba(var(--mono-rgb-100), 0.18);
     border-radius: 50%;
-    background: rgba(var(--mono-rgb-0), 0.62);
-    color: var(--text-on-accent);
+    background: rgba(var(--mono-rgb-0), 0.72);
+    color: var(--text-normal);
     box-shadow: 0 18px 48px rgba(0, 0, 0, 0.34);
     backdrop-filter: blur(10px);
     pointer-events: none;
@@ -1753,13 +1761,21 @@ export const IMAGE_STYLES = `
 
   .journalit-compact-uploader-wrapper {
     display: flex;
-    justify-content: center;
+    flex-direction: column;
+    align-items: center;
     width: 100%;
   }
 
-  .journalit-compact-uploader-container {
+  .journalit-compact-uploader-container,
+  .journalit-compact-uploader-error {
     max-width: 600px;
     width: 100%;
+  }
+
+  .journalit-compact-uploader-error {
+    margin-top: var(--journalit-space-1);
+    color: var(--journalit-status-error);
+    font-size: var(--journalit-font-size-caption);
   }
 
   .journalit-compact-uploader {
@@ -1787,22 +1803,31 @@ export const IMAGE_STYLES = `
   .journalit-compact-uploader-url-input {
     flex: 1;
     min-width: 0;
-    padding: 0.5rem;
-    font-size: 0.9em;
-    background: var(--background-secondary);
-    border: 1px solid var(--background-modifier-border);
-    border-radius: var(--radius-s);
+    box-sizing: border-box;
+    height: var(--journalit-control-height);
+    padding: 0 8px;
+    font-size: var(--font-ui-small);
+    background-color: var(--journalit-control-field-fill);
+    border: 0;
+    border-radius: var(--journalit-control-radius);
+    outline: 1px solid transparent;
+    outline-offset: -1px;
+    box-shadow: var(--journalit-control-field-ring);
     color: var(--text-normal);
-    transition: all 0.2s ease;
+    transition: background-color 90ms ease-out;
   }
 
   .journalit-compact-uploader-url-input::placeholder {
-    color: var(--text-muted);
+    color: var(--text-faint);
   }
 
   .journalit-compact-uploader-url-input:focus {
-    outline: none;
-    border-color: var(--interactive-accent);
+    outline-color: var(--journalit-control-focus);
+    box-shadow: none;
+  }
+
+  .journalit-compact-uploader-url-input[aria-invalid='true'] {
+    outline-color: var(--journalit-status-error);
   }
 
   .journalit-compact-uploader-url-input:disabled {

@@ -33,6 +33,12 @@ import {
 } from '../../../../utils/chartUtils';
 import { useTwoStageTouchNavigation } from '../../../charts/useTwoStageTouchNavigation';
 import { handleRovingChartMarkKeyDown } from '../../../charts/chartKeyboardNavigation';
+import { SVG_LABEL_TOOLTIP_PROPS } from '../../../charts/svgLabelTooltip';
+import {
+  CompareLegend,
+  CompareScatterChart,
+  type CompareScatterPoint,
+} from '../../compare/CompareCharts';
 
 interface ExcursionMarkerShapeProps {
   cx?: number;
@@ -63,6 +69,7 @@ const ExcursionMarkerShape: React.FC<ExcursionMarkerShapeProps> = ({
       role={isInteractive ? 'button' : undefined}
       tabIndex={isInteractive ? (isInitialTabStop ? 0 : -1) : undefined}
       data-journalit-chart-mark={isInteractive ? 'true' : undefined}
+      {...SVG_LABEL_TOOLTIP_PROPS}
       aria-label={
         isInteractive && payload
           ? `${t('widget.trade-review.open-trade-note')} ${payload.observationIndex}`
@@ -167,14 +174,75 @@ const ExcursionScatterComponent: React.FC<ExcursionScatterProps> = ({
       tradeSource="excursionTrades"
       skeletonType="scatter-chart"
     >
-      {(data) => {
-        const points = prepareExcursionScatterData(
-          data.excursionTrades ?? [],
-          excursion,
-          unit,
-          currency,
-          plugin?.settings.trade
+      {(data, _dateFormat, filters, compare) => {
+        const pointsOf = (source: typeof data) =>
+          prepareExcursionScatterData(
+            source.excursionTrades ?? [],
+            excursion,
+            unit,
+            currency,
+            plugin?.settings.trade
+          );
+        const points = pointsOf(data);
+        const header = (
+          <div className="journalit-dashboard-trades-chart__header">
+            <div className="journalit-dashboard-trades-chart__title">
+              {copy.title()}
+              {unit === 'dollar' && (
+                <CurrencyConversionInfo
+                  metadata={buildCurrencyConversionMetadata({
+                    ...data.metrics,
+                    
+                    
+                    conversionBaseCurrency: currency,
+                  })}
+                />
+              )}
+            </div>
+          </div>
         );
+        if (compare) {
+          const toCompare = (
+            source: readonly ExcursionScatterDataPoint[]
+          ): CompareScatterPoint[] =>
+            source.map((point) => ({
+              x: point.excursion,
+              y: point.realized,
+              id: point.path,
+            }));
+          const bPoints = pointsOf(compare.data);
+          return (
+            <div className="journalit-dashboard-trades-chart journalit-dashboard-excursion-scatter">
+              {header}
+              {points.length === 0 && bPoints.length === 0 ? (
+                <div className="journalit-dashboard-trades-chart__body">
+                  <EmptyState message={copy.empty()} />
+                </div>
+              ) : (
+                <div className="journalit-compare-widget">
+                  <CompareScatterChart
+                    a={toCompare(points)}
+                    b={toCompare(bPoints)}
+                    formatX={format}
+                    formatY={format}
+                    xLabel={xLabel}
+                    masked={masked}
+                    ariaLabel={copy.title()}
+                    onPointClick={(path) => {
+                      if (plugin) {
+                        void plugin.openFile(getTradeNotePath(path));
+                      }
+                    }}
+                  />
+                  <CompareLegend
+                    aFilters={filters}
+                    bFilters={compare.filters}
+                  />
+                </div>
+              )}
+            </div>
+          );
+        }
         const extent = points.reduce(
           (range, point) => ({
             xMax: Math.max(range.xMax, point.excursion),
@@ -232,21 +300,7 @@ const ExcursionScatterComponent: React.FC<ExcursionScatterProps> = ({
         );
         return (
           <div className="journalit-dashboard-trades-chart journalit-dashboard-excursion-scatter">
-            <div className="journalit-dashboard-trades-chart__header">
-              <div className="journalit-dashboard-trades-chart__title">
-                {copy.title()}
-                {unit === 'dollar' && (
-                  <CurrencyConversionInfo
-                    metadata={buildCurrencyConversionMetadata({
-                      ...data.metrics,
-                      
-                      
-                      conversionBaseCurrency: currency,
-                    })}
-                  />
-                )}
-              </div>
-            </div>
+            {header}
             <div className="journalit-dashboard-trades-chart__body">
               {masked ? (
                 <EmptyState message={formatValue({ kind: 'pnl', value: 0 })} />

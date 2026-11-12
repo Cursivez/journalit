@@ -91,6 +91,8 @@ interface PerformanceCalendarProps {
   compactWidthThreshold?: number;
   compactHeightThreshold?: number;
   navigationSource?: NavigationSource;
+  
+  toolbarAction?: React.ReactNode;
 }
 
 
@@ -301,6 +303,7 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
     compactWidthThreshold = 320,
     compactHeightThreshold = 300,
     navigationSource,
+    toolbarAction,
   }) => {
     const plugin = usePlugin();
     const { currency } = useCurrency();
@@ -855,7 +858,9 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
         })}
       >
         <div className="journalit-dashboard-calendar-inner">
-          <div className="journalit-dashboard-calendar-month-toolbar">
+          <div
+            className={`journalit-dashboard-calendar-month-toolbar${toolbarAction ? ' journalit-dashboard-calendar-month-toolbar--with-action' : ''}`}
+          >
             <button
               className="journalit-dashboard-calendar-nav-button"
               type="button"
@@ -898,6 +903,7 @@ export const PerformanceCalendar = memo<PerformanceCalendarProps>(
             >
               →
             </button>
+            {toolbarAction}
           </div>
           <div
             className={`journalit-dashboard-calendar-header ${skipWeekends ? 'hide-weekends' : ''}`}

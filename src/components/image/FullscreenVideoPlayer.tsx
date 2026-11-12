@@ -439,7 +439,11 @@ export function FullscreenVideoPlayer({ src }: FullscreenVideoPlayerProps) {
       />
       {clickFeedback && (
         <div className="journalit-fullscreen-video-feedback" aria-hidden="true">
-          {clickFeedback === 'pause' ? <Pause size={42} /> : <Play size={42} />}
+          {clickFeedback === 'pause' ? (
+            <Pause size={42} fill="currentColor" />
+          ) : (
+            <Play size={42} fill="currentColor" />
+          )}
         </div>
       )}
     </div>

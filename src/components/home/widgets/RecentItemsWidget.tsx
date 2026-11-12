@@ -7,9 +7,14 @@ import { RecentItem } from '../../../settings/types';
 import { HOME_VIEW_TYPE } from '../../../views/HomeView';
 import { ONBOARDING_VIEW_TYPE } from '../../../views/OnboardingView';
 import { TEMPLATE_BUILDER_VIEW_TYPE } from '../../../views/TemplateBuilderView';
-import { safeParseDateValue, safeGetTime } from '../../../utils/dateUtils';
+import {
+  formatDateDisplay,
+  safeParseDateValue,
+  safeGetTime,
+} from '../../../utils/dateUtils';
 import { resolveIcon } from '../../../utils/iconResolver';
 import { useEventBus } from '../../../hooks/useEventBus';
+import { useDateFormat } from '../../../hooks/useDateFormat';
 import { t } from '../../../lang/helpers';
 
 interface RecentItemsWidgetProps {
@@ -56,7 +61,7 @@ const getItemIcon = (
   return resolveIcon('file', File);
 };
 
-const formatDate = (dateString: string): string => {
+const formatDate = (dateString: string, dateFormat: string): string => {
   const date = safeParseDateValue(dateString);
   if (!date) {
     return t('home.widget.recent.unknown');
@@ -85,10 +90,11 @@ const formatDate = (dateString: string): string => {
   if (diffDays < 7)
     return t('home.widget.recent.days-ago', { days: String(diffDays) });
 
-  return date.toLocaleDateString();
+  return formatDateDisplay(date, dateFormat);
 };
 
 export const RecentItemsWidget = memo<RecentItemsWidgetProps>(({ plugin }) => {
+  const dateFormat = useDateFormat();
   const [recentItems, setRecentItems] = useState<RecentItem[]>(
     () => plugin.uiStateManager.getState().recentItems || []
   );
@@ -228,7 +234,7 @@ export const RecentItemsWidget = memo<RecentItemsWidgetProps>(({ plugin }) => {
                       {item.title}
                     </div>
                     <div className="journalit-home-recent__item-date">
-                      {formatDate(item.openedAt)}
+                      {formatDate(item.openedAt, dateFormat)}
                     </div>
                   </div>
                 </div>

@@ -1,5 +1,6 @@
 import { logger } from '../utils/logger';
 import { normalizeExpectancyBenchmark } from './expectancyBenchmark';
+import { normalizeSavedComparisons } from '../components/dashboard/compare/dashboardComparison';
 import {
   normalizeStoredPersonalProfiles,
   normalizeStoredPropChallenge,
@@ -2007,6 +2008,9 @@ export class SettingsManager {
         ratingPerformanceMetric: normalizePerformanceBreakdownMetric(
           saved.dashboard.ratingPerformanceMetric,
           defaults.dashboard?.ratingPerformanceMetric || 'net'
+        ),
+        savedComparisons: normalizeSavedComparisons(
+          saved.dashboard.savedComparisons
         ),
 
         

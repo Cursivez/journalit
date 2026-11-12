@@ -60,6 +60,16 @@ export function getTradeDirectionDisplayKind(
   return resolveTradePositionSide(input) ?? 'unknown';
 }
 
+
+export function getTradeMarketSide(
+  input: TradeDirectionInput
+): TradePositionSide | null {
+  const kind = getTradeDirectionDisplayKind(input);
+  if (kind === 'long' || kind === 'call') return 'long';
+  if (kind === 'short' || kind === 'put') return 'short';
+  return null;
+}
+
 export function calculateTradeDirectionPriceDiff(
   input: TradeDirectionInput,
   entryPrice: number | null,

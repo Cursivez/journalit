@@ -9,7 +9,7 @@ import {
 } from '../../../services/reviews/reviewImages';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useReviewReadOnly } from '../ReviewReadOnlyContext';
-import { TFile, normalizePath } from 'obsidian';
+import { Notice, TFile, normalizePath } from 'obsidian';
 import JournalitPlugin from '../../../main';
 import { InvalidContextMessage } from './InvalidContextMessage';
 import { ImageCarousel } from '../../image/ImageCarousel';
@@ -22,11 +22,10 @@ import { SkeletonBox } from '../../shared/SkeletonBox';
 import { t } from '../../../lang/helpers';
 import { generateUUID } from '../../../utils/uuid';
 import { forceMetadataCacheRefresh } from '../../../utils/dataRefresh';
-import { replaceFileContent } from '../../../utils/fileMutation';
 import {
-  isMarkdownView,
-  isViewWithTFile,
-} from '../../../types/obsidian-extensions';
+  getSourceEditor,
+  transformFileContent,
+} from '../../../utils/fileMutation';
 import { resolveMediaDisplayPath } from '../../../utils/imageMediaUtils';
 
 
@@ -74,6 +73,89 @@ export interface ImageWidgetConfig {
   maxImages?: number;
   showUploader?: boolean;
   layout?: 'carousel' | 'stacked';
+}
+
+const IMAGES_FENCE_PREFIX = '```journalit-images';
+
+
+const CODEBLOCK_SEARCH_WINDOW = 10;
+
+
+const SETTLED_SAVE_QUEUE: Promise<void> = Promise.resolve();
+
+
+function locateImagesCodeblock(
+  lines: string[],
+  target: { lineStart: number; index?: number }
+): { start: number; id: string | null; idLine: number | null } | null {
+  if (lines.length === 0) return null;
+
+  const isImagesFence = (line: number): boolean =>
+    line >= 0 &&
+    line < lines.length &&
+    lines[line].trim().startsWith(IMAGES_FENCE_PREFIX);
+
+  const findByIndex = (targetIndex: number): number | null => {
+    let count = 0;
+    for (let i = 0; i < lines.length; i++) {
+      if (!isImagesFence(i)) continue;
+      if (count === targetIndex) return i;
+      count += 1;
+    }
+    return null;
+  };
+
+  const findNearby = (): number | null => {
+    const from = Math.min(Math.max(target.lineStart, 0), lines.length - 1);
+    for (let i = from; i >= 0 && i >= from - CODEBLOCK_SEARCH_WINDOW; i--) {
+      if (isImagesFence(i)) return i;
+    }
+    for (
+      let i = from;
+      i < lines.length && i <= from + CODEBLOCK_SEARCH_WINDOW;
+      i++
+    ) {
+      if (isImagesFence(i)) return i;
+    }
+    return null;
+  };
+
+  let start: number | null = target.lineStart;
+  if (!isImagesFence(start) && typeof target.index === 'number') {
+    start = findByIndex(target.index);
+  }
+  if (start === null || !isImagesFence(start)) {
+    start = findNearby();
+  }
+  if (start === null) return null;
+
+  for (let i = start + 1; i < lines.length; i++) {
+    const trimmed = lines[i].trim();
+    if (trimmed === '```') break;
+    if (trimmed.startsWith('id:')) {
+      return {
+        start,
+        id: trimmed.slice('id:'.length).trim() || null,
+        idLine: i,
+      };
+    }
+  }
+  return { start, id: null, idLine: null };
+}
+
+
+function withImagesCodeblockId(
+  lines: string[],
+  block: { start: number; idLine: number | null },
+  id: string
+): string[] {
+  const next = [...lines];
+  if (block.idLine === null) {
+    next.splice(block.start + 1, 0, `id: ${id}`);
+  } else {
+    next[block.idLine] = `id: ${id}`;
+  }
+  return next;
 }
 
 export interface ImageWidgetCodeblockContext {
@@ -182,6 +264,7 @@ const ImageWidgetGallery: React.FC<{
 const ImageWidgetUploader: React.FC<{
   preview: boolean;
   hasImages: boolean;
+  remainingImages?: number;
   filePath: string;
   onImageAdded: React.ComponentProps<
     typeof CompactImageUploader
@@ -189,17 +272,16 @@ const ImageWidgetUploader: React.FC<{
   onMultipleImagesAdded: React.ComponentProps<
     typeof CompactImageUploader
   >['onMultipleImagesAdded'];
-  onError: React.ComponentProps<typeof CompactImageUploader>['onError'];
   saveImage: React.ComponentProps<
     typeof CompactImageUploader
   >['saveImageFunction'];
 }> = ({
   preview,
   hasImages,
+  remainingImages,
   filePath,
   onImageAdded,
   onMultipleImagesAdded,
-  onError,
   saveImage,
 }) =>
   preview ? (
@@ -214,9 +296,9 @@ const ImageWidgetUploader: React.FC<{
     <CompactImageUploader
       onImageAdded={onImageAdded}
       onMultipleImagesAdded={onMultipleImagesAdded}
-      onError={onError}
       saveImageFunction={saveImage}
       multiple={true}
+      maxFiles={remainingImages}
       sourcePath={filePath}
       placeholder={
         hasImages
@@ -232,6 +314,18 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
     const embeddedReadOnly = useReviewReadOnly();
     const readOnly = preview || embeddedReadOnly;
     const [images, setImages] = useState<string[]>([]);
+    const imagesRef = useRef<string[]>([]);
+    
+    
+    
+    
+    const saveQueueRef = useRef<Promise<void>>(SETTLED_SAVE_QUEUE);
+    const pendingSavesRef = useRef(0);
+    const lastSavedImagesRef = useRef<string[] | null>(null);
+    const showImages = useCallback((next: string[]) => {
+      imagesRef.current = next;
+      setImages(next);
+    }, []);
     const [loading, setLoading] = useState(true);
     const [isValidContext, setIsValidContext] = useState(true);
     const [noteContext, setNoteContext] = useState<NoteContext | null>(null);
@@ -340,33 +434,10 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
       await forceMetadataCacheRefresh(plugin.app, file);
     }, [filePath, plugin]);
 
-    const getEditorContext = useCallback(() => {
-      const leaves = plugin.app.workspace.getLeavesOfType('markdown');
-      for (const leaf of leaves) {
-        const view = leaf.view;
-        if (!isMarkdownView(view) || !isViewWithTFile(view)) {
-          continue;
-        }
-
-        if (view.file.path !== filePath) {
-          continue;
-        }
-
-        const content = view.editor?.getValue();
-        if (content === undefined) {
-          continue;
-        }
-
-        return { lines: content.split('\n'), editor: view.editor };
-      }
-
-      return null;
-    }, [filePath, plugin]);
-
     const loadImages = async () => {
       
       if (preview && previewData) {
-        setImages(previewData.images || []);
+        showImages(previewData.images || []);
         setLoading(false);
         setIsValidContext(true);
         return;
@@ -417,7 +488,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
       const useLegacyImages = isLegacyOwner && widgetImages === undefined;
       const imageArray = widgetImages ?? (useLegacyImages ? legacyImages : []);
 
-      setImages(imageArray);
+      showImages(imageArray);
       setIsValidContext(true);
       setLoading(false);
     };
@@ -494,137 +565,46 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
         if (lineStart === undefined || lineStart === null) {
           return null;
         }
+        const target = { lineStart, index: codeblockContext?.index };
 
-        const editorContext = getEditorContext();
-        const lines = editorContext?.lines ?? null;
-
-        let file: TFile | null = null;
-        let fileLines = lines;
-        if (!fileLines) {
-          const abstractFile = plugin.app.vault.getAbstractFileByPath(filePath);
-          if (!(abstractFile instanceof TFile)) {
-            return null;
+        const editorContext = getSourceEditor(plugin.app, filePath);
+        if (editorContext) {
+          const block = locateImagesCodeblock(editorContext.lines, target);
+          if (!block) return null;
+          if (block.id) return block.id;
+          const { editor } = editorContext;
+          if (block.idLine === null) {
+            editor.replaceRange(`id: ${newId}\n`, {
+              line: block.start + 1,
+              ch: 0,
+            });
+          } else {
+            editor.replaceRange(
+              `id: ${newId}`,
+              { line: block.idLine, ch: 0 },
+              { line: block.idLine, ch: editor.getLine(block.idLine).length }
+            );
           }
-          file = abstractFile;
-          const content = await plugin.app.vault.read(file);
-          fileLines = content.split('\n');
+          return newId;
         }
 
-        if (!fileLines || fileLines.length === 0) {
+        const file = plugin.app.vault.getAbstractFileByPath(filePath);
+        if (!(file instanceof TFile)) {
           return null;
         }
-
-        const resolveStartByIndex = (
-          lines: string[],
-          targetIndex: number
-        ): number | null => {
-          let count = 0;
-          for (let i = 0; i < lines.length; i++) {
-            if (lines[i]?.trim().startsWith('```journalit-images')) {
-              if (count === targetIndex) {
-                return i;
-              }
-              count += 1;
-            }
-          }
-          return null;
-        };
-
-        const isImagesFence = (line: number | null): boolean => {
-          return (
-            line !== null &&
-            line >= 0 &&
-            line < fileLines.length &&
-            fileLines[line]?.trim().startsWith('```journalit-images')
-          );
-        };
-
-        const clampedLineStart = Math.min(
-          Math.max(lineStart, 0),
-          fileLines.length - 1
-        );
-
-        let startLine = lineStart;
-        if (!isImagesFence(startLine)) {
-          const resolvedByIndex =
-            typeof codeblockContext?.index === 'number'
-              ? resolveStartByIndex(fileLines, codeblockContext.index)
-              : null;
-          if (resolvedByIndex !== null) {
-            startLine = resolvedByIndex;
-          }
-        }
-
-        if (!isImagesFence(startLine)) {
-          const searchWindow = 10;
-          let resolved: number | null = null;
-          for (
-            let i = clampedLineStart;
-            i >= 0 && i >= clampedLineStart - searchWindow;
-            i--
-          ) {
-            if (isImagesFence(i)) {
-              resolved = i;
-              break;
-            }
-          }
-
-          if (resolved === null) {
-            for (
-              let i = clampedLineStart;
-              i < fileLines.length && i <= clampedLineStart + searchWindow;
-              i++
-            ) {
-              if (isImagesFence(i)) {
-                resolved = i;
-                break;
-              }
-            }
-          }
-
-          if (resolved !== null) {
-            startLine = resolved;
-          }
-        }
-
-        if (!isImagesFence(startLine)) {
-          return null;
-        }
-
-        let endLine = fileLines.length - 1;
-        for (let i = startLine + 1; i < fileLines.length; i++) {
-          if (fileLines[i]?.trim() === '```') {
-            endLine = i;
-            break;
-          }
-        }
-
-        for (let i = startLine + 1; i <= endLine; i++) {
-          const trimmed = fileLines[i].trim();
-          if (trimmed === '```') {
-            break;
-          }
-          if (trimmed.startsWith('id:')) {
-            return trimmed.slice('id:'.length).trim();
-          }
-        }
-
-        const insertion = `id: ${newId}\n`;
-        if (editorContext?.editor) {
-          editorContext.editor.replaceRange(insertion, {
-            line: startLine + 1,
-            ch: 0,
-          });
-        } else if (file) {
-          fileLines.splice(startLine + 1, 0, `id: ${newId}`);
-          await replaceFileContent(plugin.app, file, fileLines.join('\n'));
-        } else {
-          return null;
-        }
-
-        return newId;
+        
+        
+        let resolvedId: string | null = null;
+        await transformFileContent(plugin.app, file, (content) => {
+          const lines = content.split('\n');
+          const block = locateImagesCodeblock(lines, target);
+          resolvedId = block ? (block.id ?? newId) : null;
+          if (!block || block.id) return content;
+          return withImagesCodeblockId(lines, block, newId).join('\n');
+        });
+        return resolvedId;
       },
-      [codeblockContext, filePath, plugin, getEditorContext]
+      [codeblockContext, filePath, plugin]
     );
 
     const ensureWidgetId = useCallback(async (): Promise<string | null> => {
@@ -639,6 +619,7 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
         return contextId;
       }
 
+      
       const generatedId = `images-${generateUUID()}`;
       const persistedId = await insertWidgetIdIntoCodeblock(generatedId);
       if (!persistedId) {
@@ -755,36 +736,58 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
       ]
     );
 
+    const saveImagesChange = useCallback(
+      (change: (current: string[]) => string[]): Promise<void> => {
+        pendingSavesRef.current += 1;
+        const run = saveQueueRef.current
+          .then(async () => {
+            const previous = lastSavedImagesRef.current ?? imagesRef.current;
+            const next = change(previous);
+            showImages(next);
+            try {
+              await updateFrontmatterImages(next);
+              lastSavedImagesRef.current = next;
+            } catch (error) {
+              showImages(previous);
+              throw error;
+            }
+          })
+          .finally(() => {
+            pendingSavesRef.current -= 1;
+            if (pendingSavesRef.current === 0) {
+              lastSavedImagesRef.current = null;
+            }
+          });
+        saveQueueRef.current = run.catch(() => undefined);
+        return run;
+      },
+      [showImages, updateFrontmatterImages]
+    );
+
     
     const handleImageUploaded = useCallback(
       async (imagePath: string) => {
-        const newImages = [...images, imagePath];
-        setImages(newImages);
         try {
-          await updateFrontmatterImages(newImages);
+          await saveImagesChange((current) => [...current, imagePath]);
         } catch (error) {
           console.error('[ImageWidget] Failed to save image:', error);
-          
-          setImages(images);
+          throw error;
         }
       },
-      [images, updateFrontmatterImages]
+      [saveImagesChange]
     );
 
     
     const handleMultipleImagesUploaded = useCallback(
       async (imagePaths: string[]) => {
-        const newImages = [...images, ...imagePaths];
-        setImages(newImages);
         try {
-          await updateFrontmatterImages(newImages);
+          await saveImagesChange((current) => [...current, ...imagePaths]);
         } catch (error) {
           console.error('[ImageWidget] Failed to save images:', error);
-          
-          setImages(images);
+          throw error;
         }
       },
-      [images, updateFrontmatterImages]
+      [saveImagesChange]
     );
 
     
@@ -792,18 +795,20 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
       async (index: number, imagePath: string) => {
         if (readOnly) return;
 
-        const previousImages = images;
-        const newImages = images.filter((_, i) => i !== index);
-        setImages(newImages);
-
         try {
-          await updateFrontmatterImages(newImages);
+          await saveImagesChange((current) => {
+            
+            
+            const at =
+              current[index] === imagePath ? index : current.indexOf(imagePath);
+            return at === -1 ? current : current.filter((_, i) => i !== at);
+          });
         } catch (error) {
           console.error(
             '[ImageWidget] Failed to remove image from frontmatter:',
             error
           );
-          setImages(previousImages);
+          new Notice(t('widget.images.notice-remove-failed'));
           return;
         }
 
@@ -828,20 +833,8 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
           
         }
       },
-      [
-        filePath,
-        images,
-        isWidgetOwnedUpload,
-        plugin,
-        readOnly,
-        updateFrontmatterImages,
-      ]
+      [filePath, isWidgetOwnedUpload, plugin, readOnly, saveImagesChange]
     );
-
-    
-    const handleUploadError = useCallback((error: Error) => {
-      console.error('[ImageWidget] Upload error:', error.message);
-    }, []);
 
     if (loading) {
       return <ImageWidgetSkeleton />;
@@ -880,10 +873,12 @@ export const ImageWidget: React.FC<ImageWidgetProps> = React.memo(
           <ImageWidgetUploader
             preview={Boolean(preview)}
             hasImages={images.length > 0}
+            remainingImages={
+              maxImages === undefined ? undefined : maxImages - images.length
+            }
             filePath={filePath}
             onImageAdded={handleImageUploaded}
             onMultipleImagesAdded={handleMultipleImagesUploaded}
-            onError={handleUploadError}
             saveImage={saveImage}
           />
         )}

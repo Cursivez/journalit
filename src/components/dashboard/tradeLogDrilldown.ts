@@ -24,9 +24,17 @@ export function createDashboardTradeLogDrilldownFilters(
   return {
     ...createTradeLogFilters(),
     analyticsDateBasis: overrides.analyticsDateBasis,
+    
+    
+    
+    
+    
+    
     dateRange: overrides.dateRange
       ? [...overrides.dateRange]
       : [...filters.dateRange],
+    
+    datePreset: overrides.dateRange ? undefined : filters.datePreset,
     tradeTypes: [...filters.tradeTypes],
     statuses: [...filters.statuses],
     reviewStatus: [...filters.reviewStatus],
@@ -37,6 +45,7 @@ export function createDashboardTradeLogDrilldownFilters(
     setups: overrides.setups ? [...overrides.setups] : [...filters.setups],
     tags: overrides.tags ? [...overrides.tags] : [...filters.tags],
     mistakes: [...filters.mistakes],
+    marketBias: [...filters.marketBias],
     customFieldFilters: { ...filters.customFieldFilters },
     exclusions: cloneFilterExclusions(filters.exclusions),
     

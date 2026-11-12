@@ -1,6 +1,10 @@
 import { calculateWinRateExcludingBreakeven } from '../../utils/breakEvenRange';
 import { isPnlContributingTrade } from '../../utils/tradeStatusUtils';
-import { inferStoredTradeType } from '../../utils/tradeTypeRouting';
+import {
+  getSetupTradeType,
+  LIVE_SETUP_TRADE_TYPES,
+  type SetupTradeType,
+} from './setupTradeTypes';
 import { calculateSetupTradePnl, toSetupTradePnlInput } from './setupTradePnl';
 import type {
   Setup,
@@ -10,8 +14,13 @@ import type {
   SetupNeedsAttentionInsight,
   SetupOutcomeMetrics,
 } from './types';
+import type {
+  SetupTradeBalanceFields,
+  SetupTradeOutcome,
+  SetupTradeOutcomeClassifier,
+} from './setupTradeOutcome';
 
-interface SetupAdvancedAnalyticsTradeRecord {
+interface SetupAdvancedAnalyticsTradeRecord extends SetupTradeBalanceFields {
   path?: unknown;
   type?: unknown;
   isMissedTrade?: unknown;
@@ -46,17 +55,26 @@ interface SetupAdvancedAnalyticsTradeRecord {
 interface AttributedTrade {
   setupIds: string[];
   pnl: number;
+  outcome: SetupTradeOutcome;
   pnlContributing: boolean;
 }
 
 export function buildSetupAdvancedAnalytics(
   setups: Setup[],
-  tradeData: unknown[]
+  tradeData: unknown[],
+  classifyOutcome: SetupTradeOutcomeClassifier,
+  tradeTypes: ReadonlySet<SetupTradeType> = LIVE_SETUP_TRADE_TYPES
 ): SetupAdvancedAnalytics {
   const setupById = new Map(setups.map((setup) => [setup.id, setup]));
   const resolver = createSetupTokenResolver(setups);
   const attributedTrades = tradeData.flatMap((trade) => {
-    const attributedTrade = toAttributedTrade(trade, setupById, resolver);
+    const attributedTrade = toAttributedTrade(
+      trade,
+      setupById,
+      resolver,
+      classifyOutcome,
+      tradeTypes
+    );
     return attributedTrade ? [attributedTrade] : [];
   });
 
@@ -158,11 +176,14 @@ function buildCombinationAnalytics(
 function calculateOutcomeMetrics(
   trades: AttributedTrade[]
 ): SetupOutcomeMetrics {
-  const results = trades.flatMap((trade) =>
-    trade.pnlContributing ? [trade.pnl] : []
+  const contributing = trades.filter((trade) => trade.pnlContributing);
+  const results = contributing.map((trade) => trade.pnl);
+  const winners = contributing.flatMap((trade) =>
+    trade.outcome === 'win' ? [trade.pnl] : []
   );
-  const winners = results.filter((pnl) => pnl > 0);
-  const losers = results.filter((pnl) => pnl < 0);
+  const losers = contributing.flatMap((trade) =>
+    trade.outcome === 'loss' ? [trade.pnl] : []
+  );
   const totalPnL = results.reduce((sum, pnl) => sum + pnl, 0);
   const totalWin = winners.reduce((sum, pnl) => sum + pnl, 0);
   const totalLoss = Math.abs(losers.reduce((sum, pnl) => sum + pnl, 0));
@@ -180,32 +201,25 @@ function calculateOutcomeMetrics(
 function toAttributedTrade(
   rawTrade: unknown,
   setupById: Map<string, Setup>,
-  resolveToken: (token: string) => string | null
+  resolveToken: (token: string) => string | null,
+  classifyOutcome: SetupTradeOutcomeClassifier,
+  tradeTypes: ReadonlySet<SetupTradeType>
 ): AttributedTrade | null {
   const trade = isRecord(rawTrade) ? rawTrade : {};
-  if (!isRegularTrade(trade)) return null;
+  if (!tradeTypes.has(getSetupTradeType(trade))) return null;
   const setupIds = getAnySetupIdsForTrade(trade, setupById, resolveToken);
   if (setupIds.length === 0) return null;
 
   const pnlInput = toSetupTradePnlInput(trade);
   const pnlContributing = isPnlContributingTrade(pnlInput);
 
+  const pnl = pnlContributing ? calculateSetupTradePnl(pnlInput) : 0;
   return {
     setupIds,
-    pnl: pnlContributing ? calculateSetupTradePnl(pnlInput) : 0,
+    pnl,
+    outcome: classifyOutcome(pnl, trade),
     pnlContributing,
   };
-}
-
-function isRegularTrade(trade: SetupAdvancedAnalyticsTradeRecord): boolean {
-  return (
-    inferStoredTradeType({
-      filePath: typeof trade.path === 'string' ? trade.path : undefined,
-      type: trade.type,
-      isMissedTrade: trade.isMissedTrade,
-      isBacktestTrade: trade.isBacktestTrade,
-    }) === 'regular'
-  );
 }
 
 function getAnySetupIdsForTrade(

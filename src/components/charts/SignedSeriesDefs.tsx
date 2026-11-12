@@ -47,17 +47,37 @@ export const SignedStrokeGradientStops = ({
   );
 };
 
+interface SeriesFilterProps {
+  id: string;
+  variant?: 'area' | 'bar';
+}
 
-export const SeriesShadowFilter = ({ id }: { id: string }) => (
-  <filter id={id} height="120%">
-    <feDropShadow dx="0" dy="1" stdDeviation="2" floodOpacity="0.1" />
+
+export const SeriesShadowFilter = ({
+  id,
+  variant = 'area',
+}: SeriesFilterProps) => (
+  <filter id={id} height={variant === 'bar' ? '130%' : '120%'}>
+    <feDropShadow
+      dx="0"
+      dy={variant === 'bar' ? '2' : '1'}
+      stdDeviation="2"
+      floodOpacity="0.1"
+    />
   </filter>
 );
 
 
-export const SeriesGlowFilter = ({ id }: { id: string }) => (
+export const SeriesGlowFilter = ({
+  id,
+  variant = 'area',
+}: SeriesFilterProps) => (
   <filter id={id} height="130%">
-    <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
+    <feGaussianBlur
+      in="SourceGraphic"
+      stdDeviation={variant === 'bar' ? '1.5' : '2'}
+      result="blur"
+    />
     <feColorMatrix
       in="blur"
       mode="matrix"

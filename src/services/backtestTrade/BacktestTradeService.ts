@@ -31,7 +31,10 @@ import { buildTradeIdentityFields } from '../../utils/tradeIdentity';
 import { Mutex } from '../../utils/mutex';
 import { getDefaultTradeTemplateMetadata } from '../templates/defaultTradeTemplateMetadata';
 import { getDefaultTradeNoteSectionsMarkdown } from '../templates/tradeNoteSections';
-import { serializeIdealExitFrontmatter } from '../trade/core/TradeFrontmatterCodec';
+import {
+  applyClearedTradeFields,
+  serializeIdealExitFrontmatter,
+} from '../trade/core/TradeFrontmatterCodec';
 import { createUserOwnedTradeContent } from '../trade/core/TradeNoteDocumentCodec';
 import { normalizeStringArray } from '../../utils/dataUtils';
 import { readFrontmatterFromDisk } from '../../utils/dataRefresh';
@@ -704,6 +707,7 @@ export class BacktestTradeService extends CustomDataService {
         useDirectPnLInput: data.useDirectPnLInput,
         directPnL: data.directPnL,
         missedReason: undefined,
+        exitReason: undefined,
         tags:
           data.tags && data.tags.length > 0
             ? data.tags.flatMap((tag) => {
@@ -761,6 +765,7 @@ export class BacktestTradeService extends CustomDataService {
       Object.assign(frontmatter, mappedCustomFields);
       applySubmittedTradeRating(frontmatter, data);
 
+      applyClearedTradeFields(frontmatter, data);
       await this.updateFrontmatter(file, frontmatter);
 
       

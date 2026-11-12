@@ -7,6 +7,7 @@ import type { PropChallengePhase } from '../../../services/propChallenge/types';
 import { openTradeLogWithFilters } from '../../../utils/openTradeLogWithFilters';
 import { ScanSearch } from '../../shared/icons/ObsidianIcon';
 import { IconButton } from '../../ui/IconButton';
+import { accountDetailTradeTypes } from '../../../services/accountPage/accountDetailScope';
 
 export const AccountTradeLogControl: React.FC<{
   accountName: string;
@@ -22,6 +23,7 @@ export const AccountTradeLogControl: React.FC<{
         dateRange: [null, null],
         accounts: [],
         accountPhases: [{ account: accountName, phaseId: selectedPhase.id }],
+        tradeTypes: ['regular'],
       });
       return;
     }
@@ -29,6 +31,9 @@ export const AccountTradeLogControl: React.FC<{
       dateRange: [null, null],
       accounts: [accountName],
       accountPhases: [],
+      tradeTypes: accountDetailTradeTypes(
+        plugin.accountPageService.getAccountMetadataEntry(accountName)?.metadata
+      ),
     });
   };
 
